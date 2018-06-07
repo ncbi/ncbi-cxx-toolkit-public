@@ -64,6 +64,7 @@ CAliasTypeInfo::CAliasTypeInfo(const string& name, TTypeInfo type)
       m_DataOffset(0), m_FullAlias(false)
 {
     InitAliasTypeInfoFunctions();
+    CopyInfoItem(type);
 }
 
 

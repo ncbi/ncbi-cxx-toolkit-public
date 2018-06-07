@@ -274,6 +274,7 @@ public:
     EDataSpec GetDataSpec(void) const {
         return m_DataSpec;
     }
+    void CopyInfoItem(TTypeInfo other);
 private:
     // private constructors to avoid copying
     CTypeInfo(const CTypeInfo&);

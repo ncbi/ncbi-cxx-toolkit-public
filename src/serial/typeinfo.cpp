@@ -228,6 +228,16 @@ void CTypeInfo::x_CreateInfoItemIfNeeded(void) const
     }
 }
 
+void CTypeInfo::CopyInfoItem(TTypeInfo other)
+{
+    if (other->m_InfoItem) {
+        if (m_InfoItem) {
+            delete m_InfoItem;
+        }
+        m_InfoItem = new CNamespaceInfoItem(*(other->m_InfoItem));
+    }
+}
+
 const string& CTypeInfo::GetName(void) const
 {
     return IsInternal()? kEmptyStr: m_Name;
