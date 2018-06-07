@@ -74,6 +74,7 @@ CPointerTypeInfo::CPointerTypeInfo(const string& name, size_t size, TTypeInfo ty
       m_DataTypeRef(type)
 {
     InitPointerTypeInfoFunctions();
+    CopyInfoItem(type);
 }
 
 void CPointerTypeInfo::InitPointerTypeInfoFunctions(void)
