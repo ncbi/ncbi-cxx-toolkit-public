@@ -111,6 +111,23 @@ bool NStr::IsBlank(const CTempString str, SIZE_TYPE pos)
 }
 
 
+int NStr::CompareCase(const CTempStringEx s1, const CTempStringEx s2)
+{
+    SIZE_TYPE n1 = s1.length();
+    SIZE_TYPE n2 = s2.length();
+    if ( !n1 ) {
+        return n2 ? -1 : 0;
+    }
+    if ( !n2 ) {
+        return 1;
+    }
+    if (int res = memcmp(s1.data(), s2.data(), min(n1, n2))) {
+        return res;
+    }
+    return (n1 == n2) ? 0 : (n1 > n2 ? 1 : -1);
+}
+
+
 int NStr::CompareCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                       const char* pattern)
 {
@@ -132,7 +149,6 @@ int NStr::CompareCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
     }
     return *s - *pattern;
 }
-
 
 
 int NStr::CompareCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
@@ -164,6 +180,31 @@ int NStr::CompareCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
     }
 
     return *s - *p;
+}
+
+
+int NStr::CompareNocase(const CTempStringEx s1, const CTempStringEx s2)
+{
+    SIZE_TYPE n1 = s1.length();
+    SIZE_TYPE n2 = s2.length();
+
+    if ( !n1 ) {
+        return n2 ? -1 : 0;
+    }
+    if ( !n2 ) {
+        return 1;
+    }
+    SIZE_TYPE n = min(n1, n2);
+    const char* p1 = s1.data();
+    const char* p2 = s2.data();
+
+    while (n  &&  tolower((unsigned char)(*p1)) == tolower((unsigned char)(*p2))) {
+        p1++;  p2++;  n--;
+    }
+    if ( !n ) {
+        return (n1 == n2) ? 0 : (n1 > n2 ? 1 : -1);
+    }
+    return tolower((unsigned char)(*p1)) - tolower((unsigned char)(*p2));
 }
 
 

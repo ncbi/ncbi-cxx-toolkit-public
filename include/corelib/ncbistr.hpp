@@ -1222,7 +1222,7 @@ public:
     ///   - Positive integer, if str[pos:pos+n) >  pattern.   
     /// @sa
     ///   Other forms of overloaded CompareCase() with differences in argument
-    ///   types: char* vs. CTempString[Ex]&
+    ///   types: char* vs. CTempString[Ex]
     static int CompareCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                            const char* pattern);
 
@@ -1242,7 +1242,7 @@ public:
     ///   - Positive integer, if str[pos:pos+n) >  pattern.   
     /// @sa
     ///   Other forms of overloaded CompareCase() with differences in argument
-    ///   types: char* vs. CTempString[Ex]&
+    ///   types: char* vs. CTempString[Ex]
     static int CompareCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                            const CTempString pattern);
 
@@ -1292,7 +1292,7 @@ public:
     ///     compare).
     /// @sa
     ///   Other forms of overloaded CompareNocase() with differences in
-    ///   argument types: char* vs. CTempString[Ex]&
+    ///   argument types: char* vs. CTempString[Ex]
     static int CompareNocase(const CTempString str, 
                              SIZE_TYPE pos, SIZE_TYPE n, const char* pattern);
 
@@ -1314,7 +1314,7 @@ public:
     ///     compare).
     /// @sa
     ///   Other forms of overloaded CompareNocase() with differences in
-    ///   argument types: char* vs. CTempString[Ex]&
+    ///   argument types: char* vs. CTempString[Ex]
     static int CompareNocase(const CTempString str, 
                              SIZE_TYPE pos, SIZE_TYPE n,
                              const CTempString pattern);
@@ -1366,7 +1366,7 @@ public:
     ///   - Positive integer, if str[pos:pos+n) >  pattern.   
     /// @sa
     ///   Other forms of overloaded Compare() with differences in argument
-    ///   types: char* vs. CTempString[Ex]&
+    ///   types: char* vs. CTempString[Ex]
     static int Compare(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                        const char* pattern, ECase use_case = eCase);
 
@@ -1389,7 +1389,7 @@ public:
     ///   - Positive integer, if str[pos:pos+n) >  pattern.   
     /// @sa
     ///   Other forms of overloaded Compare() with differences in argument
-    ///   types: char* vs. CTempString[Ex]&
+    ///   types: char* vs. CTempString[Ex]
     static int Compare(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                        const CTempString pattern, ECase use_case = eCase);
 
@@ -1408,7 +1408,7 @@ public:
     ///   - Positive integer, if s1 > s2.   
     /// @sa
     ///   Other forms of overloaded Compare() with differences in argument
-    ///   types: char* vs. CTempString[Ex]&
+    ///   types: char* vs. CTempString[Ex]
     static int Compare(const char* s1, const char* s2,
                        ECase use_case = eCase);
 
@@ -1428,7 +1428,7 @@ public:
     ///   - Positive integer, if s1 > s2.   
     /// @sa
     ///   Other forms of overloaded Compare() with differences in argument
-    ///   types: char* vs. CTempString[Ex]&
+    ///   types: char* vs. CTempString[Ex]
     static int Compare(const CTempStringEx s1, const CTempStringEx s2,
                        ECase use_case = eCase);
 
@@ -1447,7 +1447,7 @@ public:
     ///   - false, otherwise
     /// @sa
     ///   Other forms of overloaded EqualCase() with differences in argument
-    ///   types: char* vs. CTempString[Ex]&
+    ///   types: char* vs. CTempString[Ex]
     static bool EqualCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                           const char* pattern);
 
@@ -1466,7 +1466,7 @@ public:
     ///   - false, otherwise
     /// @sa
     ///   Other forms of overloaded EqualCase() with differences in argument
-    ///   types: char* vs. CTempString[Ex]&
+    ///   types: char* vs. CTempString[Ex]
     static bool EqualCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                           const CTempString pattern);
 
@@ -1511,9 +1511,8 @@ public:
     ///   - false, otherwise.
     /// @sa
     ///   Other forms of overloaded EqualNocase() with differences in
-    ///   argument types: char* vs. CTempString[Ex]&
-    static bool EqualNocase(const CTempString str,
-                            SIZE_TYPE pos, SIZE_TYPE n,
+    ///   argument types: char* vs. CTempString[Ex]
+    static bool EqualNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                             const char* pattern);
 
     /// Case-insensitive equality of a substring with a pattern.
@@ -1531,7 +1530,7 @@ public:
     ///   - false, otherwise.
     /// @sa
     ///   Other forms of overloaded EqualNocase() with differences in
-    ///   argument types: char* vs. CTempString[Ex]&
+    ///   argument types: char* vs. CTempString[Ex]
     static bool EqualNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                             const CTempString pattern);
 
@@ -1579,7 +1578,7 @@ public:
     ///   - false, otherwise.
     /// @sa
     ///   Other forms of overloaded Equal() with differences in argument
-    ///   types: char* vs. CTempString[Ex]&
+    ///   types: char* vs. CTempString[Ex]
     static bool Equal(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                       const char* pattern, ECase use_case = eCase);
 
@@ -1602,7 +1601,7 @@ public:
     ///   - Positive integer, if str[pos:pos+n) >  pattern.   
     /// @sa
     ///   Other forms of overloaded Equal() with differences in argument
-    ///   types: char* vs. CTempString[Ex]&
+    ///   types: char* vs. CTempString[Ex]
     static bool Equal(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                       const CTempString pattern, ECase use_case = eCase);
 
@@ -5018,18 +5017,6 @@ int NStr::CompareNocase(const char* s1, const char* s2)
 }
 
 inline
-int NStr::CompareCase(const CTempStringEx s1, const CTempStringEx s2)
-{
-    return CompareCase(s1, 0, s1.length(), s2);
-}
-
-inline
-int NStr::CompareNocase(const CTempStringEx s1, const CTempStringEx s2)
-{
-    return CompareNocase(s1, 0, s1.length(), s2);
-}
-
-inline
 int NStr::Compare(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                   const char* pattern, ECase use_case)
 {
@@ -5061,6 +5048,8 @@ inline
 bool NStr::EqualCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                      const char* pattern)
 {
+    // Not optimal implementation but 'pos' and 'n' can be NPOS
+    // or any other number to add all checks here. 
     return NStr::CompareCase(str, pos, n, pattern) == 0;
 }
 
@@ -5068,18 +5057,27 @@ inline
 bool NStr::EqualCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                      const CTempString pattern)
 {
+    // Not optimal implementation but 'pos' and 'n' can be NPOS
+    // or any other number to add all checks here. 
     return NStr::CompareCase(str, pos, n, pattern) == 0;
 }
 
 inline
 bool NStr::EqualCase(const char* s1, const char* s2)
 {
-    return NStr::strcmp(s1, s2) == 0;
+    size_t n = strlen(s1);
+    if (n != strlen(s2)) {
+        return false;
+    }
+    return NStr::strncmp(s1, s2, n) == 0;
 }
 
 inline
 bool NStr::EqualCase(const CTempStringEx s1, const CTempStringEx s2)
 {
+    if (s1.length() != s2.length()) {
+        return false;
+    }
     return s1 == s2;
 }
 
@@ -5087,6 +5085,8 @@ inline
 bool NStr::EqualNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                        const char* pattern)
 {
+    // Not optimal implementation but 'pos' and 'n' can be NPOS
+    // or any other number to add all checks here. 
     return CompareNocase(str, pos, n, pattern) == 0;
 }
 
@@ -5094,19 +5094,28 @@ inline
 bool NStr::EqualNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                        const CTempString pattern)
 {
+    // Not optimal implementation but 'pos' and 'n' can be NPOS
+    // or any other number to add all checks here. 
     return CompareNocase(str, pos, n, pattern) == 0;
 }
 
 inline
 bool NStr::EqualNocase(const char* s1, const char* s2)
 {
-    return NStr::strcasecmp(s1, s2) == 0;
+    size_t n = strlen(s1);
+    if (n != strlen(s2)) {
+        return false;
+    }
+    return NStr::strncasecmp(s1, s2, n) == 0;
 }
 
 inline
 bool NStr::EqualNocase(const CTempStringEx s1, const CTempStringEx s2)
 {
-    return EqualNocase(s1, 0, s1.length(), s2);
+    if (s1.length() != s2.length()) {
+        return false;
+    }
+    return CompareNocase(s1, s2) == 0;
 }
 
 inline
