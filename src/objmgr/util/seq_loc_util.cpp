@@ -300,6 +300,9 @@ bool IsValid(const CSeq_interval& interval, CScope* scope)
 bool IsSameBioseq(const CSeq_id& id1, const CSeq_id& id2, CScope* scope,
                   CScope::EGetBioseqFlag get_flag)
 {
+    if ( id1.Match(id2) ) {
+        return true;
+    }
     return IsSameBioseq(CSeq_id_Handle::GetHandle(id1),
                         CSeq_id_Handle::GetHandle(id2),
                         scope, get_flag);
@@ -382,7 +385,7 @@ CSeq_id_Handle GetIdHandle(const CSeq_loc& loc, CScope* scope)
 
 bool IsOneBioseq(const CSeq_loc& loc, CScope* scope)
 {
-    return s_GetId(loc, scope) != NULL;
+    return loc.GetId() != NULL || s_GetId(loc, scope) != NULL;
 }
 
 
