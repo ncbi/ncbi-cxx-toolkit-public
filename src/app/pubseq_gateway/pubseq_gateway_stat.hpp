@@ -68,6 +68,9 @@ public:
     void IncUnknownError(void)
     { ++m_UnknownError; }
 
+    void IncSatToSatName(void)
+    { ++m_SatToSatNameError; }
+
 
     uint64_t GetBadUrlPath(void) const
     { return m_BadUrlPath; }
@@ -93,6 +96,9 @@ public:
     uint64_t GetUnknownError(void) const
     { return m_UnknownError; }
 
+    uint64_t GetSatToSatNameError(void) const
+    { return m_SatToSatNameError; }
+
 private:
     atomic_uint_fast64_t        m_BadUrlPath;
     atomic_uint_fast64_t        m_InsufficientArguments;
@@ -102,6 +108,7 @@ private:
     atomic_uint_fast64_t        m_GetBlobNotFound;      // 404
     atomic_uint_fast64_t        m_GetBlobError;         // 502
     atomic_uint_fast64_t        m_UnknownError;         // 503
+    atomic_uint_fast64_t        m_SatToSatNameError;
 };
 
 
@@ -111,7 +118,7 @@ class CPubseqGatewayRequestCounters
 public:
     CPubseqGatewayRequestCounters() :
         m_Admin(0), m_Resolve(0),
-        m_GetBlobByAccession(0), m_GetBlobBySatSatKey(0)
+        m_GetBlobBySeqId(0), m_GetBlobBySatSatKey(0)
     {}
 
     void IncAdmin(void)
@@ -120,8 +127,8 @@ public:
     void IncResolve(void)
     { ++m_Resolve; }
 
-    void IncGetBlobByAccession(void)
-    { ++m_GetBlobByAccession; }
+    void IncGetBlobBySeqId(void)
+    { ++m_GetBlobBySeqId; }
 
     void IncGetBlobBySatSatKey(void)
     { ++m_GetBlobBySatSatKey; }
@@ -132,8 +139,8 @@ public:
     uint64_t GetResolve(void) const
     { return m_Resolve; }
 
-    uint64_t GetGetBlobByAccession(void) const
-    { return m_GetBlobByAccession; }
+    uint64_t GetGetBlobBySeqId(void) const
+    { return m_GetBlobBySeqId; }
 
     uint64_t GetGetBlobBySatSatKey(void) const
     { return m_GetBlobBySatSatKey; }
@@ -141,7 +148,7 @@ public:
 private:
     atomic_uint_fast64_t        m_Admin;
     atomic_uint_fast64_t        m_Resolve;
-    atomic_uint_fast64_t        m_GetBlobByAccession;
+    atomic_uint_fast64_t        m_GetBlobBySeqId;
     atomic_uint_fast64_t        m_GetBlobBySatSatKey;
 };
 

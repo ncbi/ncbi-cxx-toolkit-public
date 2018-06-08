@@ -36,6 +36,8 @@
 #include <corelib/ncbidiag.hpp>
 #include <connect/services/json_over_uttp.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/bioseq_info.hpp>
+
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
@@ -74,37 +76,46 @@ SBlobId ParseBlobId(const string &  blob_id);
 
 // A few protocol utils
 CJsonNode  BlobPropToJSON(const CBlobRecord &  blob);
+CJsonNode  BioseqInfoToJSON(const SBioseqInfo &  bioseq_info);
 
 
 enum EPubseqGatewayErrorCode {
     eUnknownSatellite = 300,
     eUnknownResolvedSatellite,
+    eBadID2Info,
     eResolutionNotFound,
     eUnpackingError
 };
 
+// Bioseq messages
+string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size);
+string  GetBioseqMessageHeader(size_t  item_id, size_t  msg_size,
+                               CRequestStatus::ECode  status, int  code,
+                               EDiagSev  severity);
+string  GetBioseqCompletionHeader(size_t  item_id, size_t  chunk_count);
 
-string  GetResolutionHeader(size_t  resolution_size);
-string  GetBioseqInfoHeader(size_t  blob_prop_size, const SBlobId &  blob_id);
-string  GetBlobPropHeader(size_t  blob_prop_size, const SBlobId &  blob_id);
-string  GetBlobChunkHeader(size_t  chunk_size, const SBlobId &  blob_id,
-                           size_t  chunk_number);
-string  GetBlobCompletionHeader(const SBlobId &  blob_id,
-                                size_t  total_blob_data_chunks,
-                                size_t  total_cnunks);
-string  GetReplyCompletionHeader(size_t  chunk_count);
-string  GetResolutionErrorHeader(const string &  accession, size_t  msg_size,
+// Blob prop messages
+string  GetBlobPropHeader(size_t  item_id, size_t  blob_prop_size);
+string  GetBlobPropMessageHeader(size_t  item_id, size_t  msg_size,
                                  CRequestStatus::ECode  status, int  code,
                                  EDiagSev  severity);
-string  GetBlobErrorHeader(const SBlobId &  blob_id, size_t  msg_size,
-                           CRequestStatus::ECode  status, int  code,
-                           EDiagSev  severity);
-string  GetBlobMessageHeader(const SBlobId &  blob_id, size_t  msg_size,
+string  GetBlobPropCompletionHeader(size_t  item_id, size_t  chunk_count);
+
+// Blob chunk messages
+string  GetBlobChunkHeader(size_t  item_id, const SBlobId &  blob_id,
+                           size_t  chunk_size, size_t  chunk_number);
+string  GetBlobCompletionHeader(size_t  item_id, const SBlobId &  blob_id,
+                                size_t  chunk_count);
+string  GetBlobMessageHeader(size_t  item_id, const SBlobId &  blob_id,
+                             size_t  msg_size,
                              CRequestStatus::ECode  status, int  code,
                              EDiagSev  severity);
-string  GetReplyErrorHeader(size_t  msg_size,
-                            CRequestStatus::ECode  status, int  code,
-                            EDiagSev  severity);
+
+// Reply messages
+string  GetReplyCompletionHeader(size_t  chunk_count);
+string  GetReplyMessageHeader(size_t  msg_size,
+                              CRequestStatus::ECode  status, int  code,
+                              EDiagSev  severity);
 
 
 // Reset the request context if necessary

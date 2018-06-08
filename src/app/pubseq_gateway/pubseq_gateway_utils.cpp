@@ -112,30 +112,64 @@ CJsonNode  BlobPropToJSON(const CBlobRecord &  blob_prop)
 }
 
 
+CJsonNode  BioseqInfoToJSON(const SBioseqInfo &  bioseq_info)
+{
+    CJsonNode       json(CJsonNode::NewObjectNode());
+
+    json.SetString("Accession", bioseq_info.m_Accession);
+    json.SetInteger("Version", bioseq_info.m_Version);
+    json.SetInteger("IdType", bioseq_info.m_IdType);
+    json.SetInteger("Mol", bioseq_info.m_Mol);
+    json.SetInteger("Length", bioseq_info.m_Length);
+    json.SetInteger("State", bioseq_info.m_State);
+    json.SetInteger("Sat", bioseq_info.m_Sat);
+    json.SetInteger("SatKey", bioseq_info.m_SatKey);
+    json.SetInteger("TaxId", bioseq_info.m_TaxId);
+    json.SetInteger("Hash", bioseq_info.m_Hash);
+
+    CJsonNode       seq_ids(CJsonNode::NewArrayNode());
+    for (const auto &  seq_id: bioseq_info.m_SeqIds)
+        seq_ids.AppendString(seq_id);
+    json.SetByKey("SeqIds", seq_ids);
+
+    return json;
+}
+
+
 static string   s_ProtocolPrefix = "\n\nPSG-Reply-Chunk: ";
+
+// Names
+static string   s_ItemId = "item_id=";
 static string   s_ItemType = "item_type=";
 static string   s_ChunkType = "chunk_type=";
 static string   s_Size = "size=";
-static string   s_BlobId = "blob_id=";
-static string   s_Accession = "accession=";
 static string   s_BlobChunk = "blob_chunk=";
-static string   s_ReplyNChunks = "reply_n_chunks=";
-static string   s_BlobNChunks = "blob_n_chunks=";
-static string   s_BlobNDataChunks = "blob_n_data_chunks=";
+static string   s_NChunks = "n_chunks=";
 static string   s_Status = "status=";
 static string   s_Code = "code=";
 static string   s_Severity = "severity=";
-static string   s_ReplyItem = "reply";
-static string   s_BlobItem = "blob";
-static string   s_ResolutionItem = "resolution";
-static string   s_BlobPropItem = "blob_prop";
-static string   s_BioseqInfoItem = "bioseq_info";
+static string   s_BlobId = "blob_id=";
+
+// Fixed values
+static string   s_BioseqInfo = "bioseq_info";
+static string   s_BlobProp = "blob_prop";
 static string   s_Data = "data";
+static string   s_Reply = "reply";
+static string   s_Blob = "blob";
 static string   s_Meta = "meta";
-static string   s_Error = "error";
 static string   s_Message = "message";
 
-static string   s_ReplyBegin = s_ProtocolPrefix + s_ItemType;
+// Combinations
+static string   s_BioseqInfoItem = s_ItemType + s_BioseqInfo;
+static string   s_BlobPropItem = s_ItemType + s_BlobProp;
+static string   s_BlobItem = s_ItemType + s_Blob;
+static string   s_ReplyItem = s_ItemType + s_Reply;
+
+static string   s_DataChunk = s_ChunkType + s_Data;
+static string   s_MetaChunk = s_ChunkType + s_Meta;
+static string   s_MessageChunk = s_ChunkType + s_Message;
+
+static string   s_ReplyBegin = s_ProtocolPrefix + s_ItemId;
 
 
 
@@ -147,40 +181,87 @@ static string SeverityToLowerString(EDiagSev  severity)
 }
 
 
-string  GetResolutionHeader(size_t  resolution_size)
+string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size)
 {
-    return s_ReplyBegin + s_ResolutionItem +
-           "&" + s_ChunkType + s_Data +
-           "&" + s_Size + NStr::NumericToString(resolution_size) +
-           "\n";
-}
-
-
-string  GetBioseqInfoHeader(size_t  bioseq_info_size, const SBlobId &  blob_id)
-{
-    return s_ReplyBegin + s_BioseqInfoItem +
-           "&" + s_ChunkType + s_Data +
+    // E.g. PSG-Reply-Chunk: item_id=1&item_type=bioseq_info&chunk_type=data&size=450
+    return s_ReplyBegin + NStr::NumericToString(item_id) +
+           "&" + s_BioseqInfoItem +
+           "&" + s_DataChunk +
            "&" + s_Size + NStr::NumericToString(bioseq_info_size) +
-           "&" + s_BlobId + GetBlobId(blob_id) +
            "\n";
 }
 
 
-string  GetBlobPropHeader(size_t  blob_prop_size, const SBlobId &  blob_id)
+string  GetBioseqMessageHeader(size_t  item_id, size_t  msg_size,
+                               CRequestStatus::ECode  status, int  code,
+                               EDiagSev  severity)
 {
-    return s_ReplyBegin + s_BlobPropItem +
-           "&" + s_ChunkType + s_Data +
-           "&" + s_Size + NStr::NumericToString(blob_prop_size) +
-           "&" + s_BlobId + GetBlobId(blob_id) +
+    return s_ReplyBegin + NStr::NumericToString(item_id) +
+           "&" + s_BioseqInfoItem +
+           "&" + s_MessageChunk +
+           "&" + s_Size + NStr::NumericToString(msg_size) +
+           "&" + s_Status + NStr::NumericToString(static_cast<int>(status)) +
+           "&" + s_Code + NStr::NumericToString(code) +
+           "&" + s_Severity + SeverityToLowerString(severity) +
            "\n";
 }
 
 
-string  GetBlobChunkHeader(size_t  chunk_size, const SBlobId &  blob_id,
+string  GetBioseqCompletionHeader(size_t  item_id, size_t  chunk_count)
+{
+    // E.g. PSG-Reply-Chunk: item_id=1&item_type=bioseq_info&chunk_type=meta&n_chunks=1
+    return s_ReplyBegin + NStr::NumericToString(item_id) +
+           "&" + s_BioseqInfoItem +
+           "&" + s_MetaChunk +
+           "&" + s_NChunks + NStr::NumericToString(chunk_count) +
+           "\n";
+}
+
+
+string  GetBlobPropHeader(size_t  item_id, size_t  blob_prop_size)
+{
+    // E.g. PSG-Reply-Chunk: item_id=2&item_type=blob_prop&chunk_type=data&size=550
+    return s_ReplyBegin + NStr::NumericToString(item_id) +
+           "&" + s_BlobPropItem +
+           "&" + s_DataChunk +
+           "&" + s_Size + NStr::NumericToString(blob_prop_size) +
+           "\n";
+}
+
+
+string  GetBlobPropMessageHeader(size_t  item_id, size_t  msg_size,
+                                 CRequestStatus::ECode  status, int  code,
+                                 EDiagSev  severity)
+{
+    return s_ReplyBegin + NStr::NumericToString(item_id) +
+           "&" + s_BlobPropItem +
+           "&" + s_MessageChunk +
+           "&" + s_Size + NStr::NumericToString(msg_size) +
+           "&" + s_Status + NStr::NumericToString(static_cast<int>(status)) +
+           "&" + s_Code + NStr::NumericToString(code) +
+           "&" + s_Severity + SeverityToLowerString(severity) +
+           "\n";
+}
+
+
+string  GetBlobPropCompletionHeader(size_t  item_id, size_t  chunk_count)
+{
+    return s_ReplyBegin + NStr::NumericToString(item_id) +
+           "&" + s_BlobPropItem +
+           "&" + s_MetaChunk +
+           "&" + s_NChunks + NStr::NumericToString(chunk_count) +
+           "\n";
+}
+
+
+string  GetBlobChunkHeader(size_t  item_id, const SBlobId &  blob_id,
+                           size_t  chunk_size,
                            size_t  chunk_number)
 {
-    return s_ReplyBegin + s_BlobItem +
-           "&" + s_ChunkType + s_Data +
+    // E.g. PSG-Reply-Chunk: item_id=3&item_type=blob&chunk_type=data&size=2345&blob_id=333.444&blob_chunk=37
+    return s_ReplyBegin + NStr::NumericToString(item_id) +
+           "&" + s_BlobItem +
+           "&" + s_DataChunk +
            "&" + s_Size + NStr::NumericToString(chunk_size) +
            "&" + s_BlobId + GetBlobId(blob_id) +
            "&" + s_BlobChunk + NStr::NumericToString(chunk_number) +
@@ -188,71 +269,30 @@ string  GetBlobChunkHeader(size_t  chunk_size, const SBlobId &  blob_id,
 }
 
 
-string  GetBlobCompletionHeader(const SBlobId &  blob_id,
-                                size_t  total_blob_data_chunks,
-                                size_t  total_cnunks)
+string  GetBlobCompletionHeader(size_t  item_id, const SBlobId &  blob_id,
+                                size_t  chunk_count)
 {
-    return s_ReplyBegin + s_BlobItem +
-           "&" + s_ChunkType + s_Meta +
+    // E.g. PSG-Reply-Chunk: item_id=4&item_type=blob&chunk_type=meta&blob_id=333.444&n_chunks=100
+    return s_ReplyBegin + NStr::NumericToString(item_id) +
+           "&" + s_BlobItem +
+           "&" + s_MetaChunk +
            "&" + s_BlobId + GetBlobId(blob_id) +
-           "&" + s_BlobNDataChunks + NStr::NumericToString(total_blob_data_chunks) +
-           "&" + s_BlobNChunks + NStr::NumericToString(total_cnunks) +
+           "&" + s_NChunks + NStr::NumericToString(chunk_count) +
            "\n";
 }
 
 
-string  GetBlobErrorHeader(const SBlobId &  blob_id, size_t  msg_size,
-                           CRequestStatus::ECode  status, int  code,
-                           EDiagSev  severity)
-{
-    return s_ReplyBegin + s_BlobItem +
-           "&" + s_ChunkType + s_Error +
-           "&" + s_Size + NStr::NumericToString(msg_size) +
-           "&" + s_BlobId + GetBlobId(blob_id) +
-           "&" + s_Status + NStr::NumericToString(static_cast<int>(status)) +
-           "&" + s_Code + NStr::NumericToString(code) +
-           "&" + s_Severity + SeverityToLowerString(severity) +
-           "\n";
-}
-
-
-string  GetBlobMessageHeader(const SBlobId &  blob_id, size_t  msg_size,
+string  GetBlobMessageHeader(size_t  item_id, const SBlobId &  blob_id,
+                             size_t  msg_size,
                              CRequestStatus::ECode  status, int  code,
                              EDiagSev  severity)
 {
-    return s_ReplyBegin + s_BlobItem +
-           "&" + s_ChunkType + s_Message +
+    // E.g. PSG-Reply-Chunk: item_id=3&item_type=blob&chunk_type=message&size=22&blob_id=333.444&status=404&code=5&severity=critical
+    return s_ReplyBegin + NStr::NumericToString(item_id) +
+           "&" + s_BlobItem +
+           "&" + s_MessageChunk +
            "&" + s_Size + NStr::NumericToString(msg_size) +
            "&" + s_BlobId + GetBlobId(blob_id) +
-           "&" + s_Status + NStr::NumericToString(static_cast<int>(status)) +
-           "&" + s_Code + NStr::NumericToString(code) +
-           "&" + s_Severity + SeverityToLowerString(severity) +
-           "\n";
-}
-
-
-string  GetResolutionErrorHeader(const string &  accession, size_t  msg_size,
-                                 CRequestStatus::ECode  status, int  code,
-                                 EDiagSev  severity)
-{
-    return s_ReplyBegin + s_ResolutionItem +
-           "&" + s_ChunkType + s_Error +
-           "&" + s_Size + NStr::NumericToString(msg_size) +
-           "&" + s_Accession + accession +
-           "&" + s_Status + NStr::NumericToString(static_cast<int>(status)) +
-           "&" + s_Code + NStr::NumericToString(code) +
-           "&" + s_Severity + SeverityToLowerString(severity) +
-           "\n";
-}
-
-
-string  GetReplyErrorHeader(size_t  msg_size,
-                            CRequestStatus::ECode  status, int  code,
-                            EDiagSev  severity)
-{
-    return s_ReplyBegin + s_ReplyItem +
-           "&" + s_ChunkType + s_Error +
-           "&" + s_Size + NStr::NumericToString(msg_size) +
            "&" + s_Status + NStr::NumericToString(static_cast<int>(status)) +
            "&" + s_Code + NStr::NumericToString(code) +
            "&" + s_Severity + SeverityToLowerString(severity) +
@@ -262,11 +302,30 @@ string  GetReplyErrorHeader(size_t  msg_size,
 
 string  GetReplyCompletionHeader(size_t  chunk_count)
 {
-    return s_ReplyBegin + s_ReplyItem +
-           "&" + s_ChunkType + s_Meta +
-           "&" + s_ReplyNChunks + NStr::NumericToString(chunk_count) +
+    // E.g. PSG-Reply-Chunk: item_id=0&item_type=reply&chunk_type=meta&n_chunks=153
+    return s_ReplyBegin + "0"
+           "&" + s_ReplyItem +
+           "&" + s_MetaChunk +
+           "&" + s_NChunks + NStr::NumericToString(chunk_count) +
            "\n";
 }
+
+
+string  GetReplyMessageHeader(size_t  msg_size,
+                              CRequestStatus::ECode  status, int  code,
+                              EDiagSev  severity)
+{
+    // E.g. PSG-Reply-Chunk: item_id=0&item_type=reply&chunk_type=message&size=22&status=404&code=5&severity=critical
+    return s_ReplyBegin + "0"
+           "&" + s_ReplyItem +
+           "&" + s_MessageChunk +
+           "&" + s_Size + NStr::NumericToString(msg_size) +
+           "&" + s_Status + NStr::NumericToString(static_cast<int>(status)) +
+           "&" + s_Code + NStr::NumericToString(code) +
+           "&" + s_Severity + SeverityToLowerString(severity) +
+           "\n";
+}
+
 
 
 CRequestContextResetter::CRequestContextResetter()
