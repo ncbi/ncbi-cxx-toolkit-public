@@ -534,7 +534,7 @@ CopySources()
   for input in $old_dir$1/*; do
     base=`basename $input | sed -e "s/${old_proj_name}/${proj_name}/g; s/${old_header_name}/${proj_name}/g"`
     case $base in
-      *~ | CVS | .svn )
+      CMakeLists.* | *~ | CVS | .svn )
         continue ;; # skip
     esac
 
