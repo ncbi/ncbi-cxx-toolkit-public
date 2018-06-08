@@ -89,7 +89,27 @@ struct PHashNocase {
 struct PEqualNocase {
     bool operator()(const string& s1, const string& s2) const
         {
-            return NStr::EqualNocase(s1, s2);
+            // in most cases letter cases match,
+            // so it's faster first to check that
+            // with more efficient direct string comparison
+            if ( s1 == s2 ) {
+                return true;
+            }
+            // otherwise we first check if lengths are the same
+            size_t len = s1.size();
+            if ( s2.size() != len ) {
+                return false;
+            }
+            for ( size_t i = 0; i < len; ++i ) {
+                char c1 = s1[i];
+                char c2 = s2[i];
+                if ( tolower((unsigned char)c1) != tolower((unsigned char)c2) ) {
+                    return false;
+                }
+            }
+            return true;
+            // commented out old less efficient comparison
+            //return NStr::EqualNocase(s1, s2);
         }
 };
 
@@ -340,13 +360,17 @@ public:
 
         unsigned m_Hash;
         TVersion m_Version;
-        string m_Prefix;
+        Uint1 m_PrefixLen;
+        enum {
+            kMaxPrefixLen = 7
+        };
+        char m_PrefixBuf[kMaxPrefixLen];
 
         DECLARE_OPERATOR_BOOL(m_Hash != 0);
 
         bool operator==(const TKey& b) const {
             return m_Hash == b.m_Hash && m_Version == b.m_Version &&
-                NStr::EqualNocase(m_Prefix, b.m_Prefix);
+                NStr::EqualNocase(GetAccPrefix(), b.GetAccPrefix());
         }
         bool operator!=(const TKey& b) const {
             return !(*this == b);
@@ -356,7 +380,7 @@ public:
                 (m_Hash == b.m_Hash &&
                  (m_Version < b.m_Version ||
                   (m_Version == b.m_Version &&
-                   NStr::CompareNocase(m_Prefix, b.m_Prefix) < 0)));
+                   NStr::CompareNocase(GetAccPrefix(), b.GetAccPrefix()) < 0)));
         }
 
         bool SameHash(const TKey& b) const {
@@ -367,7 +391,7 @@ public:
         }
         bool EqualAcc(const TKey& b) const {
             return SameHashNoVer(b) &&
-                NStr::EqualNocase(m_Prefix, b.m_Prefix);
+                NStr::EqualNocase(GetAccPrefix(), b.GetAccPrefix());
         }
 
         bool IsSetVersion(void) const {
@@ -389,6 +413,13 @@ public:
             return (m_Hash & 0xff) >> 1;
         }
         TVariant ParseCaseVariant(const string& acc) const;
+        
+        size_t GetPrefixLen() const {
+            return m_PrefixLen;
+        }
+        CTempString GetAccPrefix(void) const {
+            return CTempString(m_PrefixBuf, m_PrefixLen);
+        }
     };
     CSeq_id_Textseq_Info(CSeq_id::E_Choice type,
                          CSeq_id_Mapper* mapper,
@@ -398,10 +429,10 @@ public:
     const TKey& GetKey(void) const {
         return m_Key;
     }
-    const string& GetAccPrefix(void) const {
-        return m_Key.m_Prefix;
+    CTempString GetAccPrefix(void) const {
+        return m_Key.GetAccPrefix();
     }
-    bool GoodPrefix(const string& acc) const {
+    bool GoodPrefix(const CTempString& acc) const {
         return NStr::StartsWith(acc, GetAccPrefix(), NStr::eNocase);
     }
     int GetAccDigits(void) const {
@@ -767,9 +798,9 @@ public:
         string m_StrSuffix;
         bool operator==(const TKey& b) const {
             return m_Key == b.m_Key &&
-                NStr::EqualNocase(m_StrSuffix, b.m_StrSuffix) &&
-                NStr::EqualNocase(m_StrPrefix, b.m_StrPrefix) &&
-                NStr::EqualNocase(m_Db, b.m_Db);
+                PEqualNocase()(m_StrSuffix, b.m_StrSuffix) &&
+                PEqualNocase()(m_StrPrefix, b.m_StrPrefix) &&
+                PEqualNocase()(m_Db, b.m_Db);
         }
         bool operator!=(const TKey& b) const {
             return !(*this == b);
@@ -792,6 +823,11 @@ public:
                 }
             }
             return diff < 0;
+        }
+    };
+    struct PHash {
+        bool operator()(const TKey& a) const {
+            return a.m_Key;
         }
     };
 
@@ -873,8 +909,8 @@ private:
     typedef map<TPackedIdKey, CConstRef<CSeq_id_General_Id_Info>,
                 CSeq_id_General_Id_Info::PKeyLess> TPackedIdMap;
     typedef CSeq_id_General_Str_Info::TKey TPackedStrKey;
-    typedef map<TPackedStrKey, CConstRef<CSeq_id_General_Str_Info>,
-                CSeq_id_General_Str_Info::PKeyLess> TPackedStrMap;
+    typedef unordered_map<TPackedStrKey, CConstRef<CSeq_id_General_Str_Info>,
+                          CSeq_id_General_Str_Info::PHash> TPackedStrMap;
 
     TDbMap m_DbMap;
     TPackedIdMap m_PackedIdMap;

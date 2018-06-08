@@ -762,7 +762,7 @@ CSeq_id_Handle::TVariant s_RestoreCaseVariant(string& str, CSeq_id_Handle::TVari
 
 static inline
 pair<CSeq_id_Handle::TVariant, CSeq_id_Handle::TVariant>
-s_ParseCaseVariant(const string& ref, const char* str,
+s_ParseCaseVariant(CTempString ref, const char* str,
                    CSeq_id_Handle::TVariant bit)
 {
     CSeq_id_Handle::TVariant variant = 0;
@@ -785,7 +785,7 @@ s_ParseCaseVariant(const string& ref, const char* str,
 
 static inline
 pair<CSeq_id_Handle::TVariant, CSeq_id_Handle::TVariant>
-s_ParseCaseVariant(const string& ref, const string& str,
+s_ParseCaseVariant(CTempString ref, const string& str,
                    CSeq_id_Handle::TVariant bit = 1)
 {
     _ASSERT(ref.size() <= str.size());
@@ -859,10 +859,14 @@ CSeq_id_Textseq_Info::ParseAcc(const string& acc,
         acc_digits = max(size_t(6), real_digits);
         prefix_len = len - acc_digits;
     }
-    key.m_Prefix = acc.substr(0, prefix_len);
+    if ( prefix_len > key.kMaxPrefixLen ) {
+        return key;
+    }
+    key.m_PrefixLen = prefix_len;
+    memcpy(key.m_PrefixBuf, acc.data(), prefix_len);
     unsigned hash = 0;
     for ( size_t i = 0; i < 3 && i < prefix_len; ++i ) {
-        hash = (hash << 8) | toupper(key.m_Prefix[i] & 0xff);
+        hash = (hash << 8) | toupper(key.m_PrefixBuf[i] & 0xff);
     }
     hash = (hash << 8) | unsigned(acc_digits << 1);
     key.m_Hash = hash;
@@ -900,7 +904,7 @@ inline
 CSeq_id_Textseq_Info::TPacked
 CSeq_id_Textseq_Info::Pack(const TKey& key, const string& acc)
 {
-    return s_ParseNumber(acc, key.m_Prefix.size(), key.GetAccDigits());
+    return s_ParseNumber(acc, key.GetPrefixLen(), key.GetAccDigits());
 }
 
 
@@ -924,7 +928,7 @@ inline
 CSeq_id_Info::TVariant
 CSeq_id_Textseq_Info::TKey::ParseCaseVariant(const string& acc) const
 {
-    return s_ParseCaseVariant(m_Prefix, acc).first;
+    return s_ParseCaseVariant(GetAccPrefix(), acc).first;
 }
 
 
@@ -1619,7 +1623,7 @@ size_t CSeq_id_Textseq_Tree::Dump(CNcbiOstream& out,
             // map value, CSeq_id_Textseq_Info
             elem_size += 2*kMallocOverhead;
             ITERATE ( TPackedMap, it, m_PackedMap ) {
-                extra_size += sx_StringMemory(it->first.m_Prefix);
+                //extra_size += sx_StringMemory(it->first.m_Prefix);
             }
         }
         size_t bytes = extra_size + size*elem_size;
@@ -1635,7 +1639,7 @@ size_t CSeq_id_Textseq_Tree::Dump(CNcbiOstream& out,
         }
         ITERATE ( TPackedMap, it, m_PackedMap ) {
             out << "  packed prefix "
-                << it->first.m_Prefix<<"."<<it->first.m_Version << endl;
+                << it->first.GetAccPrefix()<<"."<<it->first.m_Version << endl;
         }
     }
     return total_bytes;
@@ -2441,19 +2445,19 @@ CSeq_id_Handle CSeq_id_General_Tree::FindOrCreate(const CSeq_id& id)
             }
             TPacked packed = CSeq_id_General_Str_Info::Pack(key, dbid);
             TWriteLockGuard guard(m_TreeLock);
-            TPackedStrMap::iterator it = m_PackedStrMap.lower_bound(key);
-            CSeq_id_Handle::TVariant variant = 0;
-            if ( it == m_PackedStrMap.end() ||
-                 m_PackedStrMap.key_comp()(key, it->first) ) {
+            TPackedStrMap::iterator it = m_PackedStrMap.find(key);
+            if ( it == m_PackedStrMap.end() ) {
                 CConstRef<CSeq_id_General_Str_Info> info
                     (new CSeq_id_General_Str_Info(m_Mapper, key));
-                it = m_PackedStrMap.insert
-                    (it, TPackedStrMap::value_type(key, info));
+                m_PackedStrMap.insert(TPackedStrMap::value_type(key, info));
+                // newly created ids have case variant bits all zeros
+                return CSeq_id_Handle(info, packed, 0);
             }
             else {
-                variant = it->first.ParseCaseVariant(dbid);
+                // determine case variant
+                CSeq_id_Handle::TVariant variant = it->first.ParseCaseVariant(dbid);
+                return CSeq_id_Handle(it->second, packed, variant);
             }
-            return CSeq_id_Handle(it->second, packed, variant);
         }
         case CObject_id::e_Id:
         {
