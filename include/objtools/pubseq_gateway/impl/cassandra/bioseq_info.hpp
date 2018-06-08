@@ -56,7 +56,7 @@ struct SBioseqInfo
     int                 m_SatKey;
     int                 m_TaxId;
     int                 m_Hash;
-    vector<string>      m_SeqIds;
+    map<int, string>    m_SeqIds;
 };
 
 

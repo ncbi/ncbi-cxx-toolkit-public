@@ -127,9 +127,11 @@ CJsonNode  BioseqInfoToJSON(const SBioseqInfo &  bioseq_info)
     json.SetInteger("TaxId", bioseq_info.m_TaxId);
     json.SetInteger("Hash", bioseq_info.m_Hash);
 
-    CJsonNode       seq_ids(CJsonNode::NewArrayNode());
-    for (const auto &  seq_id: bioseq_info.m_SeqIds)
-        seq_ids.AppendString(seq_id);
+    CJsonNode       seq_ids(CJsonNode::NewObjectNode());
+    for (map<int, string>::const_iterator  it = bioseq_info.m_SeqIds.begin();
+         it != bioseq_info.m_SeqIds.end(); ++it) {
+        seq_ids.SetString(NStr::NumericToString(it->first), it->second);
+    }
     json.SetByKey("SeqIds", seq_ids);
 
     return json;

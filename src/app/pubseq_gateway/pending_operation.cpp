@@ -180,9 +180,6 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         // The next item here is a blob prop and it should use its own id
         m_BlobRequest.m_ItemId = GetItemId();
 
-        if (resp.IsOutputReady())
-            Peek(resp, false);
-
         // Translate sat to keyspace
         SBlobId     blob_id(bioseq_info.m_Sat, bioseq_info.m_SatKey);
 

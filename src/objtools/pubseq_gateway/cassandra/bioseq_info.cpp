@@ -50,7 +50,7 @@ bool FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
     shared_ptr<CCassQuery>  query = conn->NewQuery();
 
     query->SetSQL("SELECT accession, version, id_type FROM "
-                  "bioseq.SI2CSI WHERE "
+                  "idmain.SI2CSI WHERE "
                   "seq_id = ? AND seq_id_type = ?", 2);
     query->BindStr(0, seq_id);
     query->BindInt32(1, seq_id_type);
@@ -93,7 +93,7 @@ bool FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
         bioseq_info.m_SatKey = query->FieldGetInt32Value(4);
         bioseq_info.m_TaxId =query->FieldGetInt32Value(5);
         bioseq_info.m_Hash = query->FieldGetInt32Value(6);
-        query->FieldGetSetValues(7, bioseq_info.m_SeqIds);
+        query->FieldGetMapValue(7, bioseq_info.m_SeqIds);
         return true;
     }
     return false;
