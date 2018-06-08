@@ -62,7 +62,6 @@ CLocalTaxon::CLocalTaxon()
     /// Initializing without command-line arguments; use Taxon server
     m_TaxonConn.reset(new CTaxon1);
     m_TaxonConn->Init();
-    s_InvalidNode = m_Nodes.end();
 }
 
 CLocalTaxon::CLocalTaxon(const CArgs &args)
@@ -78,7 +77,6 @@ CLocalTaxon::CLocalTaxon(const CArgs &args)
         m_TaxonConn.reset(new CTaxon1);
         m_TaxonConn->Init();
     }
-    s_InvalidNode = m_Nodes.end();
 }
 
 CLocalTaxon::~CLocalTaxon()
