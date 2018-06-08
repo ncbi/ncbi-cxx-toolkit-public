@@ -158,8 +158,11 @@ void CFastaDeflineReader::ParseDefline(const CTempString& defline,
             }
         }
 
-        range_len = ParseRange(defline.substr(start, pos - start),
-            rangeStart, rangeEnd, pMessageListener);
+
+        if ( ! (fFastaFlags & CFastaReader::fDisableParseRange) ) {
+            range_len = ParseRange(defline.substr(start, pos - start),
+                                   rangeStart, rangeEnd, pMessageListener);
+        }
 
         auto id_string = defline.substr(start, pos - start - range_len);
         if (NStr::IsBlank(id_string)) {

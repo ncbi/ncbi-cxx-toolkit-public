@@ -326,6 +326,13 @@ namespace {
         pObjIStrm->Read( &*pObj,
             pObj->GetThisTypeInfo() );
     }
+
+    string s_ObjectToTextASN(const CSerialObject & obj)
+    {
+        CNcbiOstrstream asn1_str;
+        asn1_str << MSerial_AsnText << obj;
+        return (string)CNcbiOstrstreamToString(asn1_str);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(TestBadResidues)
@@ -476,6 +483,7 @@ namespace {
             }
 
             CRef<CSeq_entry> pEntry = fasta_reader.ReadOneSeq(pMessageListener.GetPointer());
+            cerr << s_ObjectToTextASN(*pEntry) << endl;
             BOOST_REQUIRE(pEntry->IsSeq());
             pRetvalBioseq.Reset( & pEntry->SetSeq() );
 
@@ -1475,8 +1483,10 @@ BOOST_AUTO_TEST_CASE(TestLetterGaps)
         *pExpectedDeltaExt ) )
     {
         BOOST_ERROR("Delta-ext differs from expected.");
-        cerr << "Expected: " << MSerial_AsnText << *pExpectedDeltaExt << endl;
-        cerr << "Received: " << MSerial_AsnText << *pResultingDeltaExt << endl;
+        cerr << "Expected: "
+             << s_ObjectToTextASN(*pExpectedDeltaExt) << endl;
+        cerr << "Received: "
+             << s_ObjectToTextASN(*pResultingDeltaExt) << endl;
     }
 }
 
@@ -1522,6 +1532,43 @@ BOOST_AUTO_TEST_CASE(TestHyphensIgnoreAndWarn)
 
         BOOST_CHECK_EQUAL( uNumBasesExpected, pBioseq->GetLength() );
     }}
+}
+
+BOOST_AUTO_TEST_CASE(TestDisableParseRange)
+{
+    const string kData =
+        ">Seq1:40-80\n"
+        "ACTACGTACGTACGTACGTACGTACGTACTACGTACGTACGTACGT\n";
+
+    ITERATE_BOTH_BOOL_VALUES(bDoDisableParseRange) {
+        CFastaReader::TFlags fFlags = kDefaultFastaReaderFlags;
+        if( bDoDisableParseRange ) {
+            fFlags |= CFastaReader::fDisableParseRange;
+        }
+        CRef<CBioseq> pBioseq = s_ParseFasta(kData, fFlags);
+        BOOST_REQUIRE(pBioseq);
+
+        if( bDoDisableParseRange ) {
+            BOOST_CHECK_EQUAL("Seq1:40-80",
+                              pBioseq->GetFirstId()->GetLocal().GetStr());
+            BOOST_CHECK( ! pBioseq->GetInst().IsSetHist() );
+        } else {
+            BOOST_CHECK_EQUAL(1,
+                              pBioseq->GetFirstId()->GetLocal().GetId());
+            BOOST_CHECK( pBioseq->GetInst().IsSetHist() );
+            const auto & assemblies =
+                pBioseq->GetInst().GetHist().GetAssembly();
+
+            BOOST_CHECK_EQUAL(1, assemblies.size());
+            const auto & the_assembly = *assemblies.front();
+            const int row = 1;
+            BOOST_CHECK_EQUAL(39, the_assembly.GetSeqStart(row));
+            BOOST_CHECK_EQUAL(79, the_assembly.GetSeqStop(row));
+            BOOST_CHECK_EQUAL(
+                "Seq1",
+                the_assembly.GetSeq_id(row).GetLocal().GetStr());
+        }
+    }
 }
 
 BOOST_AUTO_TEST_CASE(TestIgnoringSpacesAfterGreaterThanInDefline)
@@ -1588,7 +1635,7 @@ BOOST_AUTO_TEST_CASE(TestModFilter)
             ( bUseFilter ? pModFilter : CRef<CSourceModParser::CModFilter>() ),
             expected_unused_mods );
         
-        cout << MSerial_AsnText << *pBioseq << endl;
+        cout << s_ObjectToTextASN(*pBioseq) << endl;
 
         // check if pBioseq has an org
         bool has_org = false;

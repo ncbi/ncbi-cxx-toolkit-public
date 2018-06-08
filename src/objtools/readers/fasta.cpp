@@ -601,8 +601,8 @@ bool CFastaReader::xSetSeqMol(const list<CRef<CSeq_id>>& ids, CSeq_inst_Base::EM
 
 void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageListener)
 {
-    TSeqPos range_start, range_end;
-    bool has_range;
+    TSeqPos range_start = 0, range_end = 0;
+    bool has_range = false;
     SDefLineParseInfo parseInfo;
     parseInfo.fBaseFlags = m_iFlags;
     parseInfo.fFastaFlags = GetFlags();
