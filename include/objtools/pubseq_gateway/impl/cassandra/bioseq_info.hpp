@@ -1,3 +1,6 @@
+#ifndef BIOSEQ_INFO__HPP
+#define BIOSEQ_INFO__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -27,39 +30,50 @@
  *
  * File Description:
  *
- * The functionality not directly related to blob operations
+ * Synchronous retrieving data from bioseq. tables
  *
  */
 
-#include <ncbi_pch.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
-
-#define KEYSPACE_MAPPING_CONSISTENCY    CassConsistency::CASS_CONSISTENCY_LOCAL_QUORUM
+#include <corelib/ncbistd.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
+#include "IdCassScope.hpp"
 
 BEGIN_IDBLOB_SCOPE
 
+USING_NCBI_SCOPE;
 
-vector<string> FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
-                                         shared_ptr<CCassConnection>  conn)
+
+struct SBioseqInfo
 {
-    vector<string>          mapping;
-    shared_ptr<CCassQuery>  query = conn->NewQuery();
+    string              m_Accession;
+    int                 m_Version;
+    int                 m_IdType;
 
-    query->SetSQL("SELECT sat, keyspace_name FROM " +
-                  mapping_keyspace + ".sat2keyspace", 0);
-    query->Query(KEYSPACE_MAPPING_CONSISTENCY, false, false);
+    int                 m_Mol;
+    int                 m_Length;
+    int                 m_State;
+    int                 m_Sat;
+    int                 m_SatKey;
+    int                 m_TaxId;
+    int                 m_Hash;
+    vector<string>      m_SeqIds;
+};
 
-    while (query->NextRow() == ar_dataready) {
-        int32_t     sat = query->FieldGetInt32Value(0);
-        string      name = query->FieldGetStrValue(1);
 
-        while (static_cast<int32_t>(mapping.size()) <= sat)
-            mapping.push_back("");
-        mapping[sat] = name;
-    }
+// true => fetch succeeded
+// false => not found
+bool FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
+                         const string &  seq_id,
+                         int  seq_id_type,
+                         string &  accession,
+                         int &  version,
+                         int &  id_type);
 
-    return mapping;
-}
-
+// true => fetch succeeded
+// false => not found
+bool FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
+                     SBioseqInfo &  bioseq_info);
 
 END_IDBLOB_SCOPE
+
+#endif
