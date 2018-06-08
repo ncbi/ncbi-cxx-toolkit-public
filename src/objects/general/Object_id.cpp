@@ -101,7 +101,7 @@ CObject_id::E_Choice CObject_id::GetIdType(TId8& value) const
         // try to treat the string as a valid integer the same way as SetStrOrId() does
         // but also allowing any Int8 values
         const string& str = GetStr();
-        value = NStr::StringToInt8(str, NStr::fConvErr_NoThrow);
+        value = NStr::StringToInt8(str, NStr::fConvErr_NoThrow|NStr::fConvErr_NoErrMessage);
         if ( !value ) {
             if ( errno ) {
                 // not convertible to integer
