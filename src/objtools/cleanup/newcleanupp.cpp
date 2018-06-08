@@ -8951,7 +8951,7 @@ public:
 
     }
 
-    bool operator()( const CRef<CCode_break> break1, const CRef<CCode_break> break2 )
+    bool operator()( const CRef<CCode_break> break1, const CRef<CCode_break> break2 ) const
     {
         // check for missing locs (shouldn't happen, since locations are mandatory)
         const bool has_loc1 = FIELD_IS_SET(*break1, Loc);
@@ -8976,7 +8976,7 @@ public:
     }
 private:
     const CSeq_loc &m_Seq_feat_location;
-    CRef<CScope> m_Scope;
+    mutable CRef<CScope> m_Scope;
 };
 
 class CCodeBreakEqual 
