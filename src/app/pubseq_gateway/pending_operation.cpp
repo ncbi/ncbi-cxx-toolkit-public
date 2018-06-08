@@ -55,6 +55,19 @@ CPendingOperation::CPendingOperation(const SBlobRequest &  blob_request,
     m_NextItemId(0)
 {
     m_BlobRequest.m_ItemId = GetItemId();
+
+    if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
+        ERR_POST(Trace << "CPendingOperation::CPendingOperation: blob "
+                 "requested by seq_id/id_type: " <<
+                 m_BlobRequest.m_SeqId << "." << m_BlobRequest.m_IdType <<
+                 ", this: " << this);
+    } else {
+        ERR_POST(Trace << "CPendingOperation::CPendingOperation: blob "
+                 "requested by sat/sat_key: " <<
+                 m_BlobRequest.m_BlobId.m_Sat << "." <<
+                 m_BlobRequest.m_BlobId.m_SatKey <<
+                 ", this: " << this);
+    }
 }
 
 
@@ -281,6 +294,8 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
         x_Peek(resp, need_wait, m_Id2ShellFetchDetails);
     if (m_Id2InfoFetchDetails)
         x_Peek(resp, need_wait, m_Id2InfoFetchDetails);
+    if (m_OriginalBlobChunkFetch)
+        x_Peek(resp, need_wait, m_OriginalBlobChunkFetch);
 
     bool    all_finished_read = x_AllFinishedRead();
     if (resp.IsOutputReady() && (!m_Chunks.empty() || all_finished_read)) {
@@ -294,6 +309,9 @@ void CPendingOperation::x_Peek(HST::CHttpReply<CPendingOperation>& resp,
                                bool  need_wait,
                                unique_ptr<SBlobFetchDetails> &  fetch_details)
 {
+    if (!fetch_details->m_Loader)
+        return;
+
     if (need_wait)
         if (!fetch_details->m_FinishedRead)
             fetch_details->m_Loader->Wait();
@@ -344,19 +362,33 @@ void CPendingOperation::x_Peek(HST::CHttpReply<CPendingOperation>& resp,
 
 bool CPendingOperation::x_AllFinishedRead(void) const
 {
-    if (m_MainBlobFetchDetails)
+    size_t  started_count = 0;
+
+    if (m_MainBlobFetchDetails) {
+        ++started_count;
         if (!m_MainBlobFetchDetails->m_FinishedRead)
             return false;
+    }
 
-    if (m_Id2ShellFetchDetails)
+    if (m_Id2ShellFetchDetails) {
+        ++started_count;
         if (!m_Id2ShellFetchDetails->m_FinishedRead)
             return false;
+    }
 
-    if (m_Id2InfoFetchDetails)
+    if (m_Id2InfoFetchDetails) {
+        ++started_count;
         if (!m_Id2InfoFetchDetails->m_FinishedRead)
             return false;
+    }
 
-    return true;
+    if (m_OriginalBlobChunkFetch) {
+        ++started_count;
+        if (!m_OriginalBlobChunkFetch->m_FinishedRead)
+            return false;
+    }
+
+    return started_count != 0;
 }
 
 
@@ -773,36 +805,39 @@ void CBlobPropCallback::x_SendBlobPropCompletion(void)
 
 void CBlobPropCallback::x_RequestOriginalBlobChunks(CBlobRecord const &  blob)
 {
-    // Update the fields in the original request and reinstall the loader
-    m_FetchDetails->m_Loader->SetDataReadyCB(nullptr, nullptr);
-    m_FetchDetails->m_Loader->SetErrorCB(nullptr);
-    m_FetchDetails->m_Loader->SetChunkCallback(nullptr);
+    // Cannot reuse the fetch details, it leads to a core dump
 
-    m_FetchDetails->m_NeedBlobProp = false;
-    m_FetchDetails->m_NeedChunks = true;
-    m_FetchDetails->m_Optional = false;
-    m_FetchDetails->m_FinishedRead = false;
-    m_FetchDetails->m_TotalSentBlobChunks = 0;
-    m_FetchDetails->m_ItemId = m_PendingOp->GetItemId();
+    SBlobRequest    orig_blob_request(m_FetchDetails->m_BlobId,
+                                      NStr::NumericToString(blob.GetModified()));
 
-    m_FetchDetails->m_Loader.reset(
+    orig_blob_request.m_NeedBlobProp = false;
+    orig_blob_request.m_NeedChunks = true;
+    orig_blob_request.m_Optional = false;
+    orig_blob_request.m_ItemId = m_PendingOp->GetItemId();
+
+    m_PendingOp->m_OriginalBlobChunkFetch.reset(
+            new CPendingOperation::SBlobFetchDetails(orig_blob_request));
+    m_PendingOp->m_OriginalBlobChunkFetch->m_Loader.reset(
             new CCassBlobTaskLoadBlob(
-                m_PendingOp->m_Timeout,
-                m_PendingOp->m_MaxRetries,
-                m_PendingOp->m_Conn,
-                m_FetchDetails->m_BlobId.m_SatName,
-                m_FetchDetails->m_BlobId.m_SatKey,
-                blob.GetModified(),
-                true, nullptr));
-    m_FetchDetails->m_Loader->SetDataReadyCB(
+                    m_PendingOp->m_Timeout,
+                    m_PendingOp->m_MaxRetries,
+                    m_PendingOp->m_Conn,
+                    orig_blob_request.m_BlobId.m_SatName,
+                    orig_blob_request.m_BlobId.m_SatKey,
+                    blob.GetModified(),
+                    true, nullptr));
+
+    m_PendingOp->m_OriginalBlobChunkFetch->m_Loader->SetDataReadyCB(
             HST::CHttpReply<CPendingOperation>::s_DataReady,
             m_Reply);
-    m_FetchDetails->m_Loader->SetErrorCB(
-            CGetBlobErrorCallback(m_PendingOp, m_Reply, m_FetchDetails));
-    m_FetchDetails->m_Loader->SetPropsCallback(nullptr);
-    m_FetchDetails->m_Loader->SetChunkCallback(
-            CBlobChunkCallback(m_PendingOp, m_Reply, m_FetchDetails));
-    m_FetchDetails->m_Loader->Wait();
+    m_PendingOp->m_OriginalBlobChunkFetch->m_Loader->SetErrorCB(
+            CGetBlobErrorCallback(m_PendingOp, m_Reply,
+                                  m_PendingOp->m_OriginalBlobChunkFetch.get()));
+    m_PendingOp->m_OriginalBlobChunkFetch->m_Loader->SetPropsCallback(nullptr);
+    m_PendingOp->m_OriginalBlobChunkFetch->m_Loader->SetChunkCallback(
+            CBlobChunkCallback(m_PendingOp, m_Reply,
+                               m_PendingOp->m_OriginalBlobChunkFetch.get()));
+    m_PendingOp->m_OriginalBlobChunkFetch->m_Loader->Wait();
 }
 
 
@@ -933,7 +968,6 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
             CBlobChunkCallback(m_PendingOp, m_Reply,
                                m_PendingOp->m_Id2ShellFetchDetails.get()));
     m_PendingOp->m_Id2ShellFetchDetails->m_Loader->Wait();
-
 
     // Deploy Id2Info retrieval
     m_PendingOp->m_Id2InfoFetchDetails.reset(

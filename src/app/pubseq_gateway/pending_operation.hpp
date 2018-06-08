@@ -192,6 +192,7 @@ private:
             m_IncludeDataFlags(0)
         {}
 
+
         SBlobId                             m_BlobId;
 
         bool                                m_NeedBlobProp;
@@ -240,6 +241,8 @@ private:
     unique_ptr<SBlobFetchDetails>           m_MainBlobFetchDetails;
     unique_ptr<SBlobFetchDetails>           m_Id2ShellFetchDetails;
     unique_ptr<SBlobFetchDetails>           m_Id2InfoFetchDetails;
+
+    unique_ptr<SBlobFetchDetails>           m_OriginalBlobChunkFetch;
 
     size_t                                  m_NextItemId;
 
