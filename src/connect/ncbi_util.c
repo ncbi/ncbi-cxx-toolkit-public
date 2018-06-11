@@ -961,7 +961,7 @@ extern void CORE_Msdelay(unsigned long ms)
 #  else
     struct timeval tv;
     tv.tv_sec  = (long) (ms / 1000);
-    tv.tv_usec = (logn)((ms % 1000) * 1000);
+    tv.tv_usec = (long)((ms % 1000) * 1000);
     select(0, 0, 0, 0, &tv);
 #  endif /*HAVE_NANOSLEEP*/
 #else
