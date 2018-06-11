@@ -167,20 +167,6 @@ CFormatGuess::EFormat CMultiReader::xReadFile(CNcbiIstream& istr, CRef<CSeq_entr
     else { // RW-616 - Assume FASTA
         entry = xReadFasta(istr);
     }
-/*
-
-    switch (uFormat)
-    {
-    case CFormatGuess::eTextASN:
-        xReadASN1(uFormat, istr, entry, submit);
-        break;
-    case CFormatGuess::eFasta:
-        entry = xReadFasta(istr);
-        break;
-    default:
-        entry.Reset();
-    }
-*/
     if (entry.Empty())
         NCBI_THROW2(CObjReaderParseException, eFormat,
         "File format not recognized", 0);
