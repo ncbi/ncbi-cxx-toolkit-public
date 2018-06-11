@@ -427,7 +427,7 @@ struct Deleter<SConnNetInfo>
 
 static CConn_IOStream::TConn_Pair
 s_HttpConnectorBuilder(const SConnNetInfo* net_info,
-                       TReqMethod          method,
+                       EReqMethod          method,
                        const char*         url,
                        const char*         host,
                        unsigned short      port,

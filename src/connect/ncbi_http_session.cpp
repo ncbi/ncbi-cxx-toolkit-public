@@ -229,7 +229,7 @@ void CHttpFormData::SetContentType(EContentType content_type)
 {
     if (!m_Providers.empty()  &&  content_type != eMultipartFormData) {
         NCBI_THROW(CHttpSessionException, eBadContentType,
-            "The requested Content-Type can not be used with the form data.");
+            "The requested Content-Type cannot be used with the form data.");
     }
     m_ContentType = content_type;
 }
@@ -241,7 +241,7 @@ void CHttpFormData::AddEntry(CTempString entry_name,
 {
     if ( entry_name.empty() ) {
         NCBI_THROW(CHttpSessionException, eBadFormDataName,
-            "Form data entry name can not be empty.");
+            "Form data entry name must not be empty.");
     }
     TValues& values = m_Entries[entry_name];
     SFormData entry;
@@ -256,7 +256,7 @@ void CHttpFormData::AddProvider(CTempString             entry_name,
 {
     if ( entry_name.empty() ) {
         NCBI_THROW(CHttpSessionException, eBadFormDataName,
-            "Form data entry name can not be empty.");
+            "Form data entry name must not be empty.");
     }
     m_ContentType = eMultipartFormData;
     m_Providers[entry_name].push_back(Ref(provider));
@@ -534,15 +534,15 @@ unsigned short SGetHttpDefaultRetries::operator()(void) const
     ConnNetInfo_GetValue(0, REG_CONN_MAX_TRY, buf, sizeof(buf), STR(DEF_CONN_MAX_TRY));
 #undef   STR
 #undef  _STR
-    unsigned short maxtry = atoi(buf);
-    return maxtry ? maxtry - 1 : 0;
+    int maxtry = atoi(buf);
+    return (unsigned short)(maxtry ? maxtry - 1 : 0);
 }
 
 
 inline
 unsigned short x_RetriesToMaxtry(unsigned short retries)
 {
-    return ++retries ? retries : retries - 1;
+    return (unsigned short)(++retries ? retries : retries - 1);
 }
 
 
