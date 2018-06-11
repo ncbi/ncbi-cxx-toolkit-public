@@ -172,20 +172,19 @@ static int/*bool*/ s_HEAP_fast = 1/*true*/;
 
 
 #define _HEAP_ALIGN_EX(a, b)  ((((unsigned long)(a) + ((b) - 1)) / (b)) * (b))
-#define _HEAP_ALIGN(a, b)     (( (unsigned long)(a) + ((b) - 1)) & ~((b) - 1))
+#define _HEAP_ALIGN_2(a, b)   (( (unsigned long)(a) + ((b) - 1)) \
+                               & (unsigned long)(~((b) - 1)))
 #define _HEAP_SIZESHIFT       4
 #define HEAP_BLOCKS(s)        ((s) >> _HEAP_SIZESHIFT)
 #define HEAP_EXTENT(b)        ((b) << _HEAP_SIZESHIFT)
-#define HEAP_ALIGN(a)         _HEAP_ALIGN(a, HEAP_EXTENT(1))
+#define HEAP_ALIGN(a)         _HEAP_ALIGN_2(a, HEAP_EXTENT(1))
 #define HEAP_MASK             (~(HEAP_EXTENT(1) - 1))
-#define _HEAP_OLDLAST         0x80000000UL
 #define HEAP_PREV_BIT         8
 #define HEAP_NEXT_BIT         4
-#define HEAP_LAST             (2 | _HEAP_OLDLAST)
+#define HEAP_LAST             2
 #define HEAP_USED             1
-#define HEAP_FREE             0
-#define HEAP_SIZE(s)          ((s) &  HEAP_MASK)
-#define HEAP_FLAG(s)          ((s) & ~HEAP_MASK)
+#define HEAP_SIZE(s)          ((s) & (unsigned long)  HEAP_MASK)
+#define HEAP_FLAG(s)          ((s) & (unsigned long)(~HEAP_MASK))
 #define HEAP_NEXT(b)          ((SHEAP_HeapBlock*)                       \
                                ((char*)(b) +           (b)->head.size))
 #define HEAP_PREV(b)          ((SHEAP_HeapBlock*)                       \
@@ -201,8 +200,7 @@ static int/*bool*/ s_HEAP_fast = 1/*true*/;
     assert(heap->last <= heap->size);                               \
     assert(heap->used == heap->size  ||  heap->free < heap->size)
 
-#if ~HEAP_MASK != ((HEAP_PREV_BIT | HEAP_NEXT_BIT |                      \
-                    HEAP_FREE | HEAP_USED | HEAP_LAST) & ~_HEAP_OLDLAST) \
+#if ~HEAP_MASK != (HEAP_PREV_BIT | HEAP_NEXT_BIT |  HEAP_LAST | HEAP_USED) \
     ||  HEAP_BLOCKS(~HEAP_MASK) != 0
 #  error "HEAP_MASK is invalid!"
 #endif
@@ -212,20 +210,17 @@ static int/*bool*/ s_HEAP_fast = 1/*true*/;
  * 1. flag is to keep byte-size of the previous block (instead of the magic);
  * 2. since sizes always have last nibble zero, use that in the flag field as
  *    the following:
- *    bit 0 -- set for used, unset for free block;
- *    bit 1 -- set for last block in the heap.
+ *    bit 0 -- set for used, unset for a free block;
+ *    bit 1 -- set for the last block in the heap.
  * 3. bits 2 & 3 can be used as a parity checks for each size to compensate
  *    for discontinued use of the magic value (at least for used blocks).
  * With this scheme, block freeing will no longer need a lookup.
  * Yet keeping current size clean will still allow fast forward moves.
- * Remove:
- *   HEAP_FREE
- *   _HEAP_OLDLAST
- * Change:
- *   HEAP_LAST -> 2
- *   Use HEAP_ISLAST() return value instead of the ternary op in assgn: faster
  */
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
 static int/*bool*/ x_Parity(unsigned int v)
 {
 #if 0
@@ -234,10 +229,10 @@ static int/*bool*/ x_Parity(unsigned int v)
     v  = (v & 0x11111111U) * 0x11111111U;
     return (v >> 28) & 1;
 #else
-    v ^= v >> 16;
-    v ^= v >> 8;
-    v ^= v >> 4;
-    v &= 0xF;
+    v ^=  v >> 16;
+    v ^=  v >> 8;
+    v ^=  v >> 4;
+    v &=  0xF;
     return (0x6996 >> v) & 1;
 #endif
 }
@@ -268,7 +263,7 @@ extern HEAP HEAP_Create(void*      base,  TNCBI_Size   size,
 
     assert(HEAP_EXTENT(1) == sizeof(SHEAP_HeapBlock));
     assert(_HEAP_ALIGN_EX(1, sizeof(SHEAP_Block)) ==
-           _HEAP_ALIGN   (1, sizeof(SHEAP_Block)));
+           _HEAP_ALIGN_2 (1, sizeof(SHEAP_Block)));
 
     if (!base != !size)
         return 0;
@@ -286,21 +281,21 @@ extern HEAP HEAP_Create(void*      base,  TNCBI_Size   size,
     heap->used   = 0;
     heap->free   = 0;
     heap->last   = 0;
-    heap->chunk  = chunk        ? HEAP_ALIGN(chunk) : 0;
-    heap->resize = heap->chunk  ? resize            : 0;
-    heap->auxarg = heap->resize ? auxarg            : 0;
+    heap->chunk  = chunk        ? (TNCBI_Size) HEAP_ALIGN(chunk) : 0;
+    heap->resize = heap->chunk  ? resize                         : 0;
+    heap->auxarg = heap->resize ? auxarg                         : 0;
     heap->refcnt = 0/*original*/;
     heap->serial = 0;
     if (base) {
         SHEAP_HeapBlock* b = heap->base;
         /* Reformat the pre-allocated heap */
-        if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
+        if (_HEAP_ALIGN_2(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
             CORE_LOGF_X(2, eLOG_Warning,
                         ("Heap Create: Unaligned base (0x%08lX)",
                          (long) base));
         }
-        b->head.flag = HEAP_FREE | HEAP_LAST;
-        b->head.size = HEAP_SIZE(size);
+        b->head.flag = HEAP_LAST;
+        b->head.size = (TNCBI_Size) HEAP_SIZE(size);
         b->nextfree  = 0;
         b->prevfree  = 0;
     }
@@ -314,11 +309,11 @@ extern HEAP HEAP_AttachFast(const void* base, TNCBI_Size size, int serial)
 
     assert(HEAP_EXTENT(1) == sizeof(SHEAP_HeapBlock));
     assert(_HEAP_ALIGN_EX(1, sizeof(SHEAP_Block)) ==
-           _HEAP_ALIGN   (1, sizeof(SHEAP_Block)));
+           _HEAP_ALIGN_2 (1, sizeof(SHEAP_Block)));
 
     if (!base != !size  ||  !(heap = (HEAP) calloc(1, sizeof(*heap))))
         return 0;
-    if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
+    if (_HEAP_ALIGN_2(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
         CORE_LOGF_X(3, eLOG_Warning,
                     ("Heap Attach: Unaligned base (0x%08lX)", (long) base));
     }
@@ -532,7 +527,7 @@ static SHEAP_HeapBlock* s_HEAP_Collect(HEAP heap, TNCBI_Size need)
         SHEAP_HeapBlock* n = b == e ? 0 : HEAP_NEXT(b);
         assert(!n  ||  HEAP_SIZE(b->head.size) == b->head.size);
         if (n)
-            last = HEAP_ISLAST(b) ? HEAP_LAST : 0;
+            last = HEAP_ISLAST(b);
         if (!n  ||  !HEAP_ISUSED(b)) {
             if (n) {
                 assert(!need  ||  b->head.size < need);
@@ -568,9 +563,9 @@ static SHEAP_HeapBlock* s_HEAP_Collect(HEAP heap, TNCBI_Size need)
                     memmove(f, u, HEAP_EXTENT(used));
                     assert(p);
                     p -= size;
-                    p->head.flag &= ~HEAP_LAST;
+                    p->head.flag &= (unsigned int)(~HEAP_LAST);
                     f += used;
-                    f->head.flag = HEAP_FREE | last;
+                    f->head.flag = last;
                     f->head.size = free;
                     s_HEAP_Unlink(f);
                     if (last)
@@ -615,11 +610,11 @@ static SHEAP_Block* s_HEAP_Take(HEAP heap,
     assert(!HEAP_ISUSED(b)  &&  size <= b->head.size);
     if (size + HEAP_EXTENT(1) <= b->head.size) {
         /* the block is to be split */
-        unsigned int last = HEAP_ISLAST(b) ? HEAP_LAST : 0;
+        unsigned int last = HEAP_ISLAST(b);
         SHEAP_HeapBlock* f;
         if (tail) {
             f = b;
-            f->head.flag &= ~HEAP_LAST;
+            f->head.flag &= (unsigned int)(~HEAP_LAST);
             f->head.size -= size;
             b = HEAP_NEXT(f);
             b->head.flag  = HEAP_USED | last;
@@ -670,7 +665,7 @@ extern SHEAP_Block* HEAP_Alloc(HEAP        heap,
         return 0;
 
     size += (TNCBI_Size) sizeof(SHEAP_Block);
-    need  = HEAP_ALIGN(size);
+    need  = (TNCBI_Size) HEAP_ALIGN(size);
 
     if (need <= HEAP_EXTENT(heap->size - heap->used)) {
         assert(heap->free < heap->size);
@@ -696,18 +691,19 @@ extern SHEAP_Block* HEAP_Alloc(HEAP        heap,
             f = s_HEAP_Collect(heap, need);
             assert(f  &&  !HEAP_ISUSED(f)  &&  need <= f->head.size);
             if (unlikely(f->head.flag & HEAP_LAST))
-                f->head.flag = HEAP_FREE | HEAP_LAST;
+                f->head.flag = HEAP_LAST;
             n = 0;
         }
     } else
         f = n = 0;
     if (unlikely(!f)) {
-        TNCBI_Size dsize = HEAP_EXTENT(heap->size);
-        TNCBI_Size hsize = _HEAP_ALIGN_EX(dsize + need, heap->chunk);
+        TNCBI_Size dsize = (TNCBI_Size) HEAP_EXTENT(heap->size);
+        TNCBI_Size hsize = (TNCBI_Size) _HEAP_ALIGN_EX(dsize + need,
+                                                       heap->chunk);
         SHEAP_HeapBlock* base = (SHEAP_HeapBlock*)
             heap->resize(heap->base, hsize, heap->auxarg);
         if (unlikely
-            (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base)) {
+            (_HEAP_ALIGN_2(base,sizeof(SHEAP_Block)) != (unsigned long) base)){
             CORE_LOGF_X(9, eLOG_Warning,
                         ("Heap Alloc%s: Unaligned base (0x%08lX)",
                          s_HEAP_Id(_id, heap), (long) base));
@@ -719,7 +715,7 @@ extern SHEAP_Block* HEAP_Alloc(HEAP        heap,
         f = base + heap->last;
         if (unlikely(!heap->base)) {
             assert(!heap->last  &&  !heap->free);
-            f->head.flag = HEAP_FREE | HEAP_LAST;
+            f->head.flag = HEAP_LAST;
             f->head.size = hsize;
             hsize = HEAP_BLOCKS(hsize);
             heap->free = hsize;
@@ -727,11 +723,11 @@ extern SHEAP_Block* HEAP_Alloc(HEAP        heap,
             assert(base <= f  &&  f < base + heap->size  &&  HEAP_ISLAST(f));
             hsize = HEAP_BLOCKS(hsize);
             if (unlikely(HEAP_ISUSED(f))) {
-                f->head.flag &= ~HEAP_LAST;
+                f->head.flag &= (unsigned int)(~HEAP_LAST);
                 /* New block is at the very top of the heap */
                 heap->last = heap->size;
                 f = base + heap->size;
-                f->head.flag  = HEAP_FREE | HEAP_LAST;
+                f->head.flag  = HEAP_LAST;
                 f->head.size  = dsize;
                 if (heap->free == heap->size)
                     heap->free  = hsize;
@@ -768,7 +764,7 @@ static void s_HEAP_Free(HEAP             heap,
     /* NB: in order to maintain HEAP_Walk() "b" must have "size" updated
      * so that the next heap block could be located correctly, and also
      * "flag" must keep its HEAP_LAST bit so that it can be verified. */
-    unsigned int last = HEAP_ISLAST(b) ? HEAP_LAST : 0;
+    unsigned int last = HEAP_ISLAST(b);
 
     assert(HEAP_ISUSED(b));
     assert(p < b  &&  b < n);
@@ -776,7 +772,7 @@ static void s_HEAP_Free(HEAP             heap,
     assert((!p  ||  heap->base <= p)  &&  n <= heap->base + heap->size);
 
     s_HEAP_Unlink(b);
-    b->head.flag = HEAP_FREE | last;
+    b->head.flag = last;
     heap->used -= HEAP_BLOCKS(b->head.size);
     if (!last  &&  !HEAP_ISUSED(n)) {
         assert((n->nextfree | n->prevfree) != (TNCBI_Size)(~0));
@@ -959,8 +955,8 @@ extern HEAP HEAP_Trim(HEAP heap)
 
     if (b) {
         assert(!HEAP_ISUSED(b)  &&  HEAP_ISLAST(b));
-        prev = HEAP_BLOCKS(b->head.flag & ~_HEAP_OLDLAST);
-        b->head.flag = HEAP_FREE | HEAP_LAST;
+        prev = HEAP_BLOCKS(b->head.flag);
+        b->head.flag = HEAP_LAST;
     } else
         prev = 0;
     if (!b  ||  b->head.size < heap->chunk) {
@@ -982,7 +978,7 @@ extern HEAP HEAP_Trim(HEAP heap)
             assert(!base);
         else if (!base)
             return 0;
-        if (_HEAP_ALIGN(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
+        if (_HEAP_ALIGN_2(base, sizeof(SHEAP_Block)) != (unsigned long) base) {
             CORE_LOGF_X(31, eLOG_Warning,
                         ("Heap Trim%s: Unaligned base (0x%08lX)",
                          s_HEAP_Id(_id, heap), (long) base));
@@ -1242,7 +1238,7 @@ extern HEAP HEAP_Copy(const HEAP heap, size_t extra, int serial)
     TNCBI_Size size;
 
     assert(_HEAP_ALIGN_EX(1, sizeof(SHEAP_Block)) ==
-           _HEAP_ALIGN   (1, sizeof(SHEAP_Block)));
+           _HEAP_ALIGN_2 (1, sizeof(SHEAP_Block)));
 
     if (!heap)
         return 0;
@@ -1255,8 +1251,8 @@ extern HEAP HEAP_Copy(const HEAP heap, size_t extra, int serial)
         return 0;
     if (size) {
         char* base = (char*) copy + sizeof(*copy);
-        base += _HEAP_ALIGN(base, sizeof(SHEAP_Block)) - (unsigned long) base;
-        assert(_HEAP_ALIGN(base, sizeof(SHEAP_Block)) == (unsigned long) base);
+        base +=_HEAP_ALIGN_2(base,sizeof(SHEAP_Block)) - (unsigned long) base;
+        assert(_HEAP_ALIGN_2(base,sizeof(SHEAP_Block)) ==(unsigned long) base);
         copy->base = (SHEAP_HeapBlock*) base;
     } else
         copy->base = 0;
