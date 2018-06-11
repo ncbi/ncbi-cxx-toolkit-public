@@ -135,7 +135,8 @@ static int s_Server(const char* sport)
             break;
         }
 
-        len = (size_t)(((double) rand()/(double) RAND_MAX)*sizeof(minibuf));
+        len = (size_t)(((double) rand() / (double) RAND_MAX)
+                       * (double) sizeof(minibuf));
         if ((status = DSOCK_RecvMsg(server, minibuf, len, 0, &msglen,
                                     &host, &port)) != eIO_Success) {
             CORE_LOGF(eLOG_Error, ("[Server]  Cannot read from DSOCK: %s",
@@ -161,7 +162,8 @@ static int s_Server(const char* sport)
             memcpy(buf, minibuf, len);
 
         while (len < msglen) {
-            n = (size_t)(((double)rand()/(double)RAND_MAX)*(msglen-len) + 0.5);
+            n = (size_t)(((double) rand() / (double) RAND_MAX)
+                         * (double)(msglen - len) + 0.5);
             if ((status = SOCK_Read(server, buf + len, n, &n, eIO_ReadPlain))
                 != eIO_Success) {
                 CORE_LOGF(eLOG_Error,("[Server]  Cannot read msg @ byte %lu:"
@@ -188,7 +190,8 @@ static int s_Server(const char* sport)
 
         msglen -= 10;
         for (len = 0;  len < msglen;  len += n) {
-            n = (size_t)(((double)rand()/(double)RAND_MAX)*(msglen-len) + 0.5);
+            n = (size_t)(((double) rand() / (double) RAND_MAX)
+                         * (double)(msglen - len) + 0.5);
             if ((status = SOCK_Write(server, buf + len, n, &n, eIO_WritePlain))
                 != eIO_Success) {
                 CORE_LOGF(eLOG_Error,("[Server]  Cannot write msg @ byte %lu:"
@@ -242,9 +245,9 @@ static int s_Client(int x_port, unsigned int max_try)
 
     CORE_LOGF(eLOG_Note, ("[Client]  DSOCK on port %hu", port));
 
-    msglen = (size_t)(((double)rand()/(double)RAND_MAX) * s_MTU);
-    if (msglen < sizeof(time_t) + 10)
-        msglen = sizeof(time_t) + 10;
+    msglen = (size_t)(((double) rand() / (double) RAND_MAX) * (double) s_MTU);
+    if (msglen < sizeof(unsigned long) + 10)
+        msglen = sizeof(unsigned long) + 10;
     if (msglen == MAX_UDP_DGRAM_SIZE)
         msglen--;
 
@@ -258,21 +261,21 @@ static int s_Client(int x_port, unsigned int max_try)
         return 1;
     }
 
-    for (n = sizeof(unsigned long); n < msglen - 10; n++)
-        buf[n] = rand() % 0xFF;
+    for (n = sizeof(unsigned long);  n < msglen - 10;  ++n)
+        buf[n] = (char)(rand() % 0xFF);
     memcpy(buf + msglen - 10, "\0\0\0\0\0\0\0\0\0", 10);
 
     id = (unsigned long) time(0);
 
-    for (m = 1;  m <= max_try;  m++) {
+    for (m = 1;  m <= max_try;  ++m) {
         unsigned long tmp;
         unsigned int  k;
 
         if (m != 1)
             CORE_LOGF(eLOG_Note, ("[Client]  Attempt #%u", (unsigned int) m));
-        id++;
+        ++id;
 
-        *((unsigned long*) buf) = SOCK_HostToNetLong((unsigned long) id);
+        *((unsigned long*) buf) = id;
 
         if ((status = DSOCK_SendMsg(client, "127.0.0.1", port, buf, msglen))
             != eIO_Success) {
@@ -309,11 +312,11 @@ static int s_Client(int x_port, unsigned int max_try)
         }
 
         memcpy(&tmp, buf + msglen, sizeof(tmp));
-        if (SOCK_NetToHostLong(tmp) != id) {
-            k++;
+        if (tmp != id) {
+            ++k;
             CORE_LOGF(k < max_try ? eLOG_Warning : eLOG_Error,
                       ("[Client]  Stale message received%s",
-                       k < max_try ? ", reattempting to fetch" : ""));
+                       k < max_try ? ", re-attempting to fetch" : ""));
             if (k < max_try)
                 goto again;
             break;
@@ -329,13 +332,12 @@ static int s_Client(int x_port, unsigned int max_try)
         return 1;
     }
 
-    for (n = sizeof(unsigned long);  n < msglen - 10;  n++) {
+    for (n = sizeof(unsigned long);  n < msglen - 10;  ++n) {
         if (buf[n] != buf[msglen + n])
             break;
     }
-
     if (n < msglen - 10) {
-        CORE_LOGF(eLOG_Error, ("[Client]  Bounced message corrupted, off=%lu",
+        CORE_LOGF(eLOG_Error, ("[Client]  Bounced message corrupt, offset=%lu",
                                (unsigned long) n));
         SOCK_Close(client);
         return 1;
@@ -378,10 +380,11 @@ int main(int argc, const char* argv[])
     if (argc < 2  ||  argc > 5)
         return s_Usage(argv[0]);
 
-    if (argc <= 4)
-        g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
-    else
-        g_NCBI_ConnectRandomSeed = atoi(argv[4]);
+    if (argc <= 4) {
+        g_NCBI_ConnectRandomSeed
+            = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+    } else
+        g_NCBI_ConnectRandomSeed = (unsigned int) atoi(argv[4]);
     CORE_LOGF(eLOG_Note, ("Random SEED = %u", g_NCBI_ConnectRandomSeed));
     srand(g_NCBI_ConnectRandomSeed);
 
@@ -394,7 +397,7 @@ int main(int argc, const char* argv[])
     if (argc > 3) {
         int mtu = atoi(argv[3]);
         if (mtu > 28  &&  mtu < (int) s_MTU)
-            s_MTU = mtu - 28/*small protocol -IP(20)/UDP(8)- overhead*/;
+            s_MTU = (unsigned short)(mtu - 28/*IP(20)/UDP(8) overhead*/);
     }
 
     if (strcasecmp(argv[1], "client") == 0) {

@@ -141,10 +141,13 @@ int CNCBITestConnStreamApp::Run(void)
     SConnNetInfo* net_info;
     size_t i, j, k, l, m, n, size;
 
-    if (GetArguments().Size() <= 1)
-        g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
-    else
-        g_NCBI_ConnectRandomSeed = atoi(GetArguments()[1].c_str());
+    if (GetArguments().Size() > 1) {
+        g_NCBI_ConnectRandomSeed
+            = (unsigned int) atoi(GetArguments()[1].c_str());
+    } else {
+        g_NCBI_ConnectRandomSeed
+            = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+    }
     CORE_LOGF(eLOG_Note, ("Random SEED = %u", g_NCBI_ConnectRandomSeed));
     srand(g_NCBI_ConnectRandomSeed);
 

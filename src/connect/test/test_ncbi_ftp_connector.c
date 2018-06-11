@@ -78,7 +78,8 @@ int main(int argc, char* argv[])
     EIO_Status    status;
     CONN          conn;
 
-    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+    g_NCBI_ConnectRandomSeed
+        = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
 
     /* Log and data-log streams */

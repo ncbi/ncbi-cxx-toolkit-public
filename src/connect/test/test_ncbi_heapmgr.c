@@ -127,9 +127,11 @@ int main(int argc, const char* argv[])
     CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Fatal, 0/*false*/);
     CORE_SetLOGFILE_Ex(stderr, eLOG_Trace, eLOG_Warning, 0/*false*/);
     if (argc > 1)
-        g_NCBI_ConnectRandomSeed = atoi(argv[1]);
-    else
-        g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+        g_NCBI_ConnectRandomSeed = (unsigned int) atoi(argv[1]);
+    else {
+        g_NCBI_ConnectRandomSeed
+            = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+    }
     CORE_LOGF(eLOG_Note, ("Using seed %d", g_NCBI_ConnectRandomSeed));
     HEAP_Options(eOff/*slow*/, eDefault);
     srand(g_NCBI_ConnectRandomSeed);

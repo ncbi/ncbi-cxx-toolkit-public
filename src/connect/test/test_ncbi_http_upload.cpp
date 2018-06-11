@@ -165,9 +165,11 @@ int CTestHttpUploadApp::Run(void)
     const CArgs& args = GetArgs();
     if (args["seed"].HasValue()) {
         g_NCBI_ConnectRandomSeed
-            = NStr::StringToUInt8(args["seed"].AsString());
-    } else
-        g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+            = (unsigned int) NStr::StringToUInt8(args["seed"].AsString());
+    } else {
+        g_NCBI_ConnectRandomSeed
+            = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+    }
     ERR_POST(Info << "Random SEED = "
              + NStr::NumericToString(g_NCBI_ConnectRandomSeed));
     srand(g_NCBI_ConnectRandomSeed);

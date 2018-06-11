@@ -579,7 +579,8 @@ static void TEST_DoubleConv(void)
 
 int main(void)
 {
-    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+    g_NCBI_ConnectRandomSeed
+        = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |

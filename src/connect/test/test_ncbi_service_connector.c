@@ -51,7 +51,8 @@ int main(int argc, const char* argv[])
     CONN conn;
     size_t n;
 
-    g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+    g_NCBI_ConnectRandomSeed
+        = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
