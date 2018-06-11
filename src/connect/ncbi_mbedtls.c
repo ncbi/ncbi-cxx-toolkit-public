@@ -433,8 +433,8 @@ static int x_MbedTlsPush(void* ctx, const unsigned char* data, size_t size)
                 assert(status == eIO_Success);
                 assert(x_written <= size);
                 n_written += (ssize_t) x_written;
-                size      -= x_written;
-                data       = data + x_written;
+                size      -=           x_written;
+                data       = data  +   x_written;
             }
         } while (size);
         return (int) n_written;

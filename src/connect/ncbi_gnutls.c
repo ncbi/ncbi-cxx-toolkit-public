@@ -480,8 +480,8 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
             } else {
                 assert(status == eIO_Success);
                 assert(x_written <= size);
-                n_written += x_written;
-                size      -= x_written;
+                n_written += (ssize_t)            x_written;
+                size      -=                      x_written;
                 data       = (const char*) data + x_written;
             }
         } while (size);
@@ -563,7 +563,7 @@ static EIO_Status s_GnuTlsRead(void* session, void* buf, size_t n_todo,
     } else
         status = eIO_Success;
 
-    *n_done = x_read;
+    *n_done = (size_t) x_read;
     return status;
 }
 
@@ -588,7 +588,7 @@ static EIO_Status x_GnuTlsWrite(void* session, const void* data, size_t n_todo,
     } else
         status = eIO_Success;
 
-    *n_done = x_written;
+    *n_done = (size_t) x_written;
     return status;
 }
 
