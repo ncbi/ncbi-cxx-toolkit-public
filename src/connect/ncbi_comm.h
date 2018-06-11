@@ -65,44 +65,86 @@ extern "C" {
 typedef unsigned int  ticket_t;
 
 
-/* This structure is assumed packed */
+/** FWDaemon request / reply.
+ *  Assumed packed, all intergal fields are in network byte order.
+ *
+ *  A client (identified by its IP in the "origin" field, or "0" for current
+ *  host, or "-1" for unknown host) requests to connect to "host:port", and to
+ *  send an optional (when non-zero) "ticket" as the very first data in that
+ *  connection.
+ *  The client may also (optionally) identify the connection with a variable
+ *  size "text" (like a service name) that must be '\0'-terminated unless it
+ *  extends to the maximal request size, FWD_RR_MAX_SIZE.  In case if no such
+ *  information can or should be provided, the request may skip transmitting
+ *  the "text" field altogether, or can put a single '\0' in that field.
+ *  @note that in order to be processed correctly, if the "text" field is to be
+ *  sent, it _must_ be sent in a single transaction (syscall) with the rest of
+ *  the request.
+ *  Bit 0 (FWD_RR_FIREWALL, if set) of the FWDaemon control ("flag") is used to
+ *  indicate that the client is a true firewall client.  If the bit is clear,
+ *  it means that the client is a relay client (and should use a secondary,
+ *  _not an official firewall_, port of the daemon, if available).
+ *
+ *  In a successful reply, the FWDaemon sends back a "host:port" pair for the
+ *  client to re-connect to, and to send a new (non-zero) "ticket" as the very
+ *  first data of that connection, so that the client can reach the endpoint
+ *  requested.  If FWD_RR_KEEPALIVE was requested in "flag", the "ticket" can
+ *  be returned as 0 to indicate that the client _must_ keep reusing the
+ *  existing connection to the FWDaemon to talk to the endpoint.
+ *  FWDaemon identifies itself in the "origin" field.
+ *  Non-zero bit 0 in "flag" of a successful reply indicates that the true
+ *  firewall mode (via DMZ) is available (acknowledged when requested), and is
+ *  being used by FWDaemon.  The "text" field contains no useful information
+ *  (it may not present at all if the "ticket" returned non-zero, i.e. the
+ *  re-connect is required;  otherwise, it is always '\0'-terminated unless it
+ *  extends to the maximal reply size, FWD_RR_MAX_SIZE).
+ *
+ *  An error is signified by either a short reply (shorter than up to "text" --
+ *  have to be discarded, and not considered to have any valid fields), or by
+ *  "port" returned 0, or by the "flag" field testing non-zero with the
+ *  FWD_RR_ERRORMASK mask.  In the latter two cases of a full (i.e. not
+ *  short) failure reply received:
+ *  1. If "flag" does not have any bits set within FWD_RR_ERRORMASK, then:
+ *      if "flag" has some bits set in FWD_RR_REJECTMASK, then the client was
+ *      "rejected"; otherwise, the error is "unknown" (the "text" field, if
+ *      received and non-empty, may contain an optional error message in either
+ *      of these cases);
+ *  2. If "flag" has some bits set within FWD_RR_ERRORMASK, then:
+ *      if first 4 bytes of the reply contain "NCBI", then the entire reply is
+ *      an error message (up to FWD_RR_MAX_SIZE or '\0', whichever comes first)
+ *      and all the remaining fields of the reply should be considered invalid;
+ *      else if the "text" field is present and non-empty, then it contains an
+ *      error message;  otherwise, the error is "unspecified".
+ *
+ * @sa
+ *   FWDaemon_Request
+ */
+
+#define FWD_RR_FIREWALL    1  /**< FIREWALL mode client, else RELAY          */
+#define FWD_RR_KEEPALIVE   2  /**< Try to reuse the connection               */
+
+#define FWD_RR_BADREQUEST  1  /**< Bad request    (e.g. port 0 and no svc)   */
+#define FWD_RR_USEDIRECT   2  /**< Use directly   (e.g. direct connection)   */
+#define FWD_RR_NOFORWARD   3  /**< Bad forwarding (e.g. non-local endpoint)  */
+#define FWD_RR_NOTFOUND    4  /**< Service not found                         */
+#define FWD_RR_REFUSED     5  /**< Refused due to abuse                      */
+
+#define FWD_RR_ERRORMASK   0xF0F0
+#define FWD_RR_REJECTMASK  0x0F0F
+
 typedef struct {
-    unsigned int   host;   /* must be in network byte order                  */
-    unsigned short port;   /* see note about byte flag byte order below      */
-    unsigned short flag;   /* FWDaemon control information, see below        */
-    ticket_t       ticket; /* connection ticket (raw binary data, n.b.o.)    */
-    unsigned int   client; /* expected host to call back (nbo, logging only) */
-    char           text[1];/* name requested (for statistics purposes only)  */
+    unsigned int   host;      /**< Host to connect to                        */
+    unsigned short port;      /**< Port to connect to (if 0, use service)    */
+    unsigned short flag;      /**< FWDaemon control flag                     */
+    ticket_t       ticket;    /**< Connection ticket                         */
+    unsigned int   origin;    /**< Host requesting / replying                */
+    char           text[1];   /**< Service name / error message / status     */
 } SFWDRequestReply;
 
 
-/* Maximal accepted request/reply size */
-#define FWD_MAX_RR_SIZE  128
-
-
-/*
- * Currently, bit 0 (if set) of FWDaemon control information (flag) is used to
- * indicate that the client is a true firewall client.  If the bit is clear,
- * it means that the client is a relay client (and should use a secondary
- * -not an official firewall- port of the daemon, if available).
- * Non-zero bit 0 in response indicates that the true firewall mode (via DMZ)
- * is available (acknowledged when requested) and is being used by FWDaemon.
- *
- * Byte order for port and flag fields:
- * When FWDaemon is contacted via INET socket, these two fields must be
- * in network byte order.
- * When FWDaemon is contacted via UNIX socket, these two fields are assumed
- * to be in host byte order, unless 0xF000 is ORed with input "flag" value
- * and both fields are then converted (or not) into network byte order:  in
- * this case the byte order can be auto-detected, and the values returned
- * in both fields in the response are going to use that very same byte order.
- * NOTE:  0xF000 can also be used with INET socket, but conversion to and
- *        from network byte order is still mandatory.
- * NOTE:  0xF000 is ORed in reply flag field only if it has been present
- *        in the request.
- * NOTE:  This is a transitional interface;  future revisions will
- *        require both flag and port to always be in network byte order.
- */
+/** Maximal accepted request/reply size */
+#define FWD_RR_MAX_SIZE  128
+#define FWD_MAX_RR_SIZE  FWD_RR_MAX_SIZE
 
 
 #ifdef __cplusplus
