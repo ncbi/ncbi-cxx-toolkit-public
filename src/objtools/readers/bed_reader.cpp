@@ -591,12 +591,12 @@ void CBedReader::x_SetFeatureDisplayData(
     if ( m_columncount >= 7 ) {
         display_data->AddField( 
             "thickStart",
-            NStr::StringToInt(fields[6], NStr::fConvErr_NoThrow) );
+            NStr::StringToInt(fields[6], NStr::fDS_ProhibitFractions) );
     }
     if ( m_columncount >= 8 ) {
         display_data->AddField( 
             "thickEnd",
-            NStr::StringToInt(fields[7], NStr::fConvErr_NoThrow) - 1 );
+            NStr::StringToInt(fields[7], NStr::fDS_ProhibitFractions) - 1 );
     }
     if ( m_columncount >= 9 ) {
         display_data->AddField( 
@@ -606,7 +606,7 @@ void CBedReader::x_SetFeatureDisplayData(
     if ( m_columncount >= 10 ) {
         display_data->AddField( 
             "blockCount",
-            NStr::StringToInt(fields[9], NStr::fConvErr_NoThrow) );
+            NStr::StringToInt(fields[9], NStr::fDS_ProhibitFractions) );
     }
     if ( m_columncount >= 11 ) {
         display_data->AddField( "blockSizes", fields[10] );
