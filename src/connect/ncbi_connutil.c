@@ -415,7 +415,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* port # */
     REG_VALUE(REG_CONN_PORT, str, DEF_CONN_PORT);
     errno = 0;
-    if (*str  &&  (val = (long)strtoul(str, &e, 10)) > 0  &&  !errno
+    if (*str  &&  (val = (long) strtoul(str, &e, 10)) > 0  &&  !errno
         &&  !*e  &&  val < (1 << 16)) {
         info->port = (unsigned short) val;
     } else
@@ -433,7 +433,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     if (info->http_proxy_host[0]) {
         REG_VALUE(REG_CONN_HTTP_PROXY_PORT, str, DEF_CONN_HTTP_PROXY_PORT);
         errno = 0;
-        if (*str  &&  (val = (long)strtoul(str, &e, 10)) > 0
+        if (*str  &&  (val = (long) strtoul(str, &e, 10)) > 0
             &&  !errno  &&  !*e  &&  val < (1 << 16)) {
             info->http_proxy_port = (unsigned short) val;
         } else
@@ -466,7 +466,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* connection timeout */
     REG_VALUE(REG_CONN_TIMEOUT, str, 0);
     val = (long) strlen(str);
-    if (val < 3  ||  8 < val  ||  strncasecmp(str, "infinite", (size_t)val) != 0) {
+    if (val < 3  ||  8 < val
+        ||  strncasecmp(str, "infinite", (size_t) val) != 0) {
         if (!*str || (dbl = NCBI_simple_atof(str, &e)) < 0.0 || errno || *e)
             dbl = DEF_CONN_TIMEOUT;
         info->tmo.sec      = (unsigned int)  dbl;
@@ -1328,7 +1329,7 @@ static const char* x_CredInfo(NCBI_CRED cred, char buf[])
     if (!cred)
         return "NULL";
     who  = (cred->type / 100) * 100;
-    what = cred->type % 100;
+    what =  cred->type % 100;
     switch (who) {
     case eNcbiCred_GnuTls:
         switch (what) {
@@ -1428,11 +1429,14 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     else
         s_SaveKeyval(s, "client_host",     "(default)");
     s_SaveKeyval    (s, "scheme",         (info->scheme
-                                           ? x_Scheme((EURLScheme)info->scheme, buf)
+                                           ? x_Scheme((EURLScheme)
+                                                      info->scheme, buf)
                                            : "(unspec)"));
-    s_SaveKeyval    (s, "req_method",      x_ReqMethod((TReqMethod)(info->req_method | 
-                                                                   (info->version ? eReqMethod_v1 : 0))
-                                                       , buf));
+    s_SaveKeyval    (s, "req_method",      x_ReqMethod((TReqMethod)
+                                                        (info->req_method
+                                                         | (info->version
+                                                            ? eReqMethod_v1
+                                                            : 0)), buf));
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
     s_SaveString    (s, "user",            info->user);
 #else
@@ -1540,14 +1544,14 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
         assert(scheme  &&  args);
         strlwr((char*) memcpy(url, scheme, schlen + 1));
         len = schlen;
-        len += (size_t)sprintf(url + len, &"://%s"[schlen
-                                           ? 0
-                                           : req_method == eReqMethod_Connect
-                                           ? 3
-                                           : 1], info->host);
-        if (info->port  ||  !path/*req_method == eReqMethod_Connect*/) {
-            len += (size_t)sprintf(url + len, ":%hu", info->port);
-        }
+        len += (size_t) sprintf(url + len,
+                                &"://%s"[schlen
+                                         ? 0
+                                         : req_method == eReqMethod_Connect
+                                         ? 3
+                                         : 1], info->host);
+        if (info->port  ||  !path/*req_method == eReqMethod_Connect*/)
+            len += (size_t) sprintf(url + len, ":%hu", info->port);
         sprintf(url + len, "%s%s%s%s",
                 &"/"[! path  ||  *path == '/'], path ? path : "",
                 &"?"[!*args  ||  *args == '#'], args);
@@ -2296,7 +2300,7 @@ extern void URL_EncodeEx
           (*src_read)++, (*dst_written)++, src++, dst++) {
         const char* subst = allow_symbols ? strchr(allow_symbols, *src) : 0;
         if (!subst)
-            subst = s_EncodeTable[*(unsigned char*)src];
+            subst = s_EncodeTable[*((unsigned char*) src)];
         if (*subst != '%') {
             *dst = *subst;
         } else if (*dst_written < dst_size - 2) {
@@ -2517,8 +2521,8 @@ int/*bool*/ SERV_IsFirewallPort(unsigned short port)
 
 void SERV_PrintFirewallPorts(char* buf, size_t bufsize, EFWMode mode)
 {
+    unsigned short m;
     size_t len, n;
-    unsigned int m;
 
     assert(buf  &&  bufsize > 1);
     switch (mode) {
@@ -2531,22 +2535,22 @@ void SERV_PrintFirewallPorts(char* buf, size_t bufsize, EFWMode mode)
     default:
         break;
     }
+    m = 0;
     len = 0;
-    for (n = m = 0; n < SizeOf(s_FWPorts); ++n, m += (unsigned int)sizeof(s_FWPorts[0])<<3) {
+    for (n = 0;  n < SizeOf(s_FWPorts);  ++n) {
         unsigned short p;
         TNCBI_BigCount mask = s_FWPorts[n];
         for (p = (unsigned short)(m + 1);  mask;  ++p, mask >>= 1) {
             if (mask & 1) {
                 char port[10];
-                int  k = sprintf(port, &" %hu"[!len], p);
-                if (k > 0) {
-                    if (len + (size_t)k < bufsize) {
-                        memcpy(buf + len, port, (size_t)k);
-                        len += (size_t)k;
-                    }
+                size_t k = (size_t) sprintf(port, &" %hu"[!len], p);
+                if (len + k < bufsize) {
+                    memcpy(buf + len, port, k);
+                    len += k;
                 }
             }
         }
+        m = (unsigned short)(m + (sizeof(s_FWPorts[0]) << 3));
     }
     buf[len] = '\0';
 }

@@ -124,7 +124,7 @@ char* strupr(char* s)
     unsigned char* t = (unsigned char*) s;
 
     while ( *t ) {
-        *t = (unsigned char)toupper(*t);
+        *t = (unsigned char) toupper(*t);
         t++;
     }
     return s;
@@ -136,7 +136,7 @@ char* strlwr(char* s)
     unsigned char* t = (unsigned char*) s;
 
     while ( *t ) {
-        *t = (unsigned char)tolower(*t);
+        *t = (unsigned char) tolower(*t);
         t++;
     }
     return s;
@@ -196,7 +196,7 @@ char* NCBI_simple_ftoa(char* s, double f, int p)
     w = x_pow10[p];
     v = f < 0.0 ? -f : f;
     x = (long)(v + 0.5 / w);
-    y = (long)(w * (v - (double)x) + 0.5);
+    y = (long)(w * (v - (double) x) + 0.5);
     assert(p  ||  !y);  /* with precision 0, output of ".0" is empty */
     return s + sprintf(s, &"-%ld%s%.*lu"[!(f < 0.0)], x, &"."[!p], p, y);
 }
@@ -222,9 +222,9 @@ double NCBI_simple_atof(const char* s, char** t)
     errno = 0;
     x = strtol(s, &e, 10);
     if (*e == '.') {
-        if (isdigit((unsigned char)(e[1]))) {
-            double w;
+        if (isdigit((unsigned char) e[1])) {
             unsigned long y;
+            double w;
             int p;
             s = ++e;
             errno = 0/*maybe EINVAL here for ".NNN"*/;
@@ -244,8 +244,8 @@ double NCBI_simple_atof(const char* s, char** t)
                 w  = x_pow10[p];
             if (t)
                 *t = e;
-            return n ? (double)-x - (double)y / w : 
-                       (double) x + (double)y / w;
+            return n ? (double)(-x) - (double) y / w : 
+                       (double)  x  + (double) y / w;
         } else if (t  &&  e > s)
             *t = ++e;
     } else if (t  &&  e > s)

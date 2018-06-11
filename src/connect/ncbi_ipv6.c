@@ -196,15 +196,15 @@ static const char* x_StringToIPv4(unsigned int* dst,
 
     *ptr = 0;
     for (n = 0;  n < len;  ++n) {
-        unsigned char c = str[n];
+        char c = str[n];
         if ('0' <= c  &&  c <= '9') {
             unsigned int val;
             if (was_digit  &&  !*ptr)
                 return 0/*leading "0" in octet*/;
-            val = *ptr * 10 + (c - '0');
+            val = (unsigned int)(*ptr * 10 + (c - '0'));
             if (val > 255)
                 return 0;
-            *ptr = val;
+            *ptr = (unsigned char) val;
             if (!was_digit) {
                 ++octets;
                 assert(octets <= 4);
@@ -254,7 +254,8 @@ static const char* x_StringToIPv6(TNCBI_IPv6Addr* addr,
 
     if (len < 2  ||  (str[n = 0] == ':'  &&  str[++n] != ':'))
         return 0/*failure*/;
-    gap = ipv4 = 0/*false*/;
+    gap = 0;
+    ipv4 = 0/*false*/;
     token[t = 0].ptr = str + n;
     while (n <= len) {
         assert(t <= maxt);
@@ -646,19 +647,19 @@ static const char* s_StringToAddr(TNCBI_IPv6Addr* addr,
     if (dns) {
         dns = str[--n] == '.' ? 1/*true*/ : 0/*false*/;
         if (len > kIPv4DNS.len
-            &&  strncasecmp(tmp = str + len - (kIPv4DNS.len + dns),
+            &&  strncasecmp(tmp = str + len - (kIPv4DNS.len + !!dns),
                             kIPv4DNS.sfx, kIPv4DNS.len) == 0) {
-            if (x_DNSToIPv4(&ipv4, str, len - (kIPv4DNS.len + dns)) == tmp) {
+            if (x_DNSToIPv4(&ipv4, str, len - (kIPv4DNS.len + !!dns)) == tmp) {
                 NcbiIPv4ToIPv6(addr, ipv4, 0);
-                return tmp + (kIPv4DNS.len + dns);
+                return tmp + (kIPv4DNS.len + !!dns);
             } else if (dns)
                 return 0/*failure*/;
         }
         if (len > kIPv6DNS.len
-            &&  strncasecmp(tmp = str + len - (kIPv6DNS.len + dns),
+            &&  strncasecmp(tmp = str + len - (kIPv6DNS.len + !!dns),
                             kIPv6DNS.sfx, kIPv6DNS.len) == 0) {
-            if (x_DNSToIPv6(addr,  str, len - (kIPv6DNS.len + dns)) == tmp)
-                return tmp + (kIPv6DNS.len + dns);
+            if (x_DNSToIPv6(addr,  str, len - (kIPv6DNS.len + !!dns)) == tmp)
+                return tmp + (kIPv6DNS.len + !!dns);
             else if (dns)
                 return 0/*failure*/;
         }
@@ -701,13 +702,13 @@ extern int/*bool*/ NcbiIsInIPv6Network(const TNCBI_IPv6Addr* base,
     for (n = 0;  n < sizeof(addr->octet);  ++n) {
         unsigned char mask;
         if (!bits)
-            mask  =  0;
+            mask  =                  0;
         else if (8 > bits) {
-            mask  = ~0 << (8 - bits);
-            bits  =  0;
+            mask  = (unsigned char)(~0 << (8 - bits));
+            bits  =                  0;
         } else {
-            mask  = ~0;
-            bits -=  8;
+            mask  = (unsigned char)(~0);
+            bits -=                  8;
         }
         if ((addr->octet[n] & mask) ^ base->octet[n])
             return 0/*false*/;
@@ -727,7 +728,7 @@ extern int/*bool*/ NcbiIPv6Subnet(TNCBI_IPv6Addr* addr, unsigned int bits)
             if (!bits)
                 addr->octet[n] = 0;
             else if (8 > bits) {
-                unsigned char mask = ~0 << (8 - bits);
+                unsigned char mask = (unsigned char)(~0 << (8 - bits));
                 if (addr->octet[n] &= mask)
                     zero = 0/*false*/;
                 bits  = 0;

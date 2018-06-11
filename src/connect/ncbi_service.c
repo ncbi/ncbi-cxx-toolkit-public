@@ -187,7 +187,7 @@ static int/*bool*/ s_IsMapperConfigured(const char* service, const char* key)
 
 
 static SERV_ITER x_Open(const char*         service,
-                        unsigned/*bool*/    ismask,
+                        int/*bool*/         ismask,
                         TSERV_Type          types,
                         unsigned int        preferred_host,
                         unsigned short      preferred_port,
@@ -195,7 +195,7 @@ static SERV_ITER x_Open(const char*         service,
                         const SConnNetInfo* net_info,
                         SSERV_InfoCPtr      skip[],
                         size_t              n_skip,
-                        unsigned/*bool*/    external,
+                        int/*bool*/         external,
                         const char*         arg,
                         const char*         val,
                         SSERV_Info**        info,
@@ -231,7 +231,7 @@ static SERV_ITER x_Open(const char*         service,
                                :  0.01 * (preference > 100.0
                                           ? 100.0
                                           : preference));
-    iter->types             = types;
+    iter->types             = (TSERV_TypeOnly) types;
     if (ismask)
         iter->ismask        = 1;
     if (types & fSERV_IncludeDown)
@@ -464,7 +464,8 @@ static int/*bool*/ x_ConsistencyCheck(SERV_ITER iter, const SSERV_Info* info)
         RETURN(0/*failure*/);
     }
 
-    if (!(types = iter->types & ~(fSERV_Stateless | fSERV_Firewall))) {
+    if (!(types = iter->types &
+          (TSERV_TypeOnly)(~(fSERV_Stateless | fSERV_Firewall)))) {
         if (info->type == fSERV_Dns  &&  !iter->reverse_dns) {
             CORE_LOGF(eLOG_Critical,
                       ("[%s]  DNS entry unwarranted:\n%s", iter->name,
@@ -596,7 +597,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER   iter,
 
 
 static SERV_ITER s_Open(const char*         service,
-                        unsigned/*bool*/    ismask,
+                        int/*bool*/         ismask,
                         TSERV_Type          types,
                         unsigned int        preferred_host,
                         unsigned short      preferred_port,
@@ -604,7 +605,7 @@ static SERV_ITER s_Open(const char*         service,
                         const SConnNetInfo* net_info,
                         SSERV_InfoCPtr      skip[],
                         size_t              n_skip,
-                        int /*bool*/        external,
+                        int/*bool*/         external,
                         const char*         arg,
                         const char*         val,
                         SSERV_Info**        info,
@@ -948,21 +949,23 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
     BUF buf = 0;
 
     /* Put client version number */
-    buflen = sprintf(buffer, kClientRevision,
-                     SERV_CLIENT_REVISION_MAJOR, SERV_CLIENT_REVISION_MINOR);
+    buflen = (size_t) sprintf(buffer, kClientRevision,
+                              SERV_CLIENT_REVISION_MAJOR,
+                              SERV_CLIENT_REVISION_MINOR);
     assert(buflen < sizeof(buffer));
     if (!BUF_Write(&buf, buffer, buflen)) {
         BUF_Destroy(buf);
         return 0;
     }
     if (iter) {
-        TSERV_TypeOnly t, types = iter->types & ~fSERV_Stateless;
+        TSERV_TypeOnly t, types
+            = iter->types & (TSERV_TypeOnly)(~fSERV_Stateless);
         if (net_info  &&  !net_info->http_referer  &&  iter->op->mapper)
             s_SetDefaultReferer(net_info, iter);
         /* Accepted server types */
         buflen = sizeof(kAcceptedServerTypes) - 1;
         memcpy(buffer, kAcceptedServerTypes, buflen);
-        for (t = 1;  t;  t <<= 1) {
+        for (t = 1;  t;  t = (TSERV_TypeOnly)(t << 1)) {
             if (types & t) {
                 const char* name = SERV_TypeStr((ESERV_Type) t);
                 size_t namelen = strlen(name);
@@ -1040,9 +1043,8 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
             if (but_last  &&  iter->last == iter->skip[i]) {
                 buflen = sizeof(kUsedServerInfo) - 1;
                 memcpy(buffer, kUsedServerInfo, buflen);
-            } else {
-                buflen = (size_t)sprintf(buffer, kSkipInfo, (unsigned) i + 1);
-            }
+            } else
+                buflen = (size_t) sprintf(buffer, kSkipInfo, (unsigned) i + 1);
             assert(buflen < sizeof(buffer) - 1);
             if (!BUF_Write(&buf, buffer, buflen)                ||
                 (namelen  &&  !BUF_Write(&buf, name, namelen))  ||

@@ -72,7 +72,7 @@ extern "C" {
  */
 typedef struct {
     SSERV_Info* (*GetNextInfo)(SERV_ITER iter, HOST_INFO* host_info);
-    int/*bool*/ (*Feedback)   (SERV_ITER iter, double value, int/*bool*/ fine);
+    int/*bool*/ (*Feedback)   (SERV_ITER iter, double rate, TNCBI_Time fine);
     int/*bool*/ (*Update)     (SERV_ITER iter, const char* text, int code);
     void        (*Reset)      (SERV_ITER iter);
     void        (*Close)      (SERV_ITER iter);

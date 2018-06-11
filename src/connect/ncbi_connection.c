@@ -108,6 +108,7 @@
           static const STimeout* timeout = 0/*dummy*/;                  \
           CONN_LOG_EX(subcode, func_name, eLOG_Critical,                \
                       "Corrupted connection handle", 0);                \
+          assert(0);                                                    \
       }                                                                 \
   } while (0)
 

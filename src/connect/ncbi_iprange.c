@@ -63,8 +63,8 @@ extern int/*bool*/ NcbiIsInIPRange(const SIPRange*       range,
             assert(ip  &&  a < b);
             return a <= ip  &&  ip <= b;
         case eIPRange_Network:
-            a = (unsigned int)NcbiIsIPv4(&range->a);
-            b = (unsigned int)NcbiIsIPv4(addr);
+            a = (unsigned int) NcbiIsIPv4(&range->a);
+            b = (unsigned int) NcbiIsIPv4(addr);
             if (!(a & b)) {
                 return a ^ b
                     ? 0/*false*/
@@ -258,7 +258,7 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
                         range->type = eIPRange_Host;
                         return 1/*success*/;
                     }
-                    range->b    = (unsigned int)d; /* d > 0 */
+                    range->b    = (unsigned int) d; /* d > 0 */
                     range->type = eIPRange_Network;
                     d = (long)(sizeof(range->a.octet) << 3) - d;
                     for (n = sizeof(range->a.octet);  n > 0;  --n) {
@@ -307,7 +307,7 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
             switch (range->type) {
             case eIPRange_Host:
                 addr <<= 8;
-                addr  |= (unsigned int)d;
+                addr  |= (unsigned int) d;
                 if (*p != '.') {
                     addr <<= (3 - dots) << 3;
                     switch (*p) {

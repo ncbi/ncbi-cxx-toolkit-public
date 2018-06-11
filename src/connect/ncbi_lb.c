@@ -51,11 +51,11 @@ static double s_Preference(double pref, double gap, size_t n)
     assert(n >= 2);
     if (gap >= pref)
         return gap;
-    spread = 14.0/(n + 12.0);
+    spread = 14.0/((double) n + 12.0);
     if (gap >= spread/((double) n))
         return pref;
     else
-        return 2.0/spread*gap*pref;
+        return 2.0/spread * gap * pref;
 }
 
 
@@ -73,7 +73,7 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
     if (iter->ismask  ||  iter->ok_down  ||  iter->ok_suppressed)
         return 0/*first entry (DISPD: probably) fits*/;
     fixed = 0/*false*/;
-    for (n = 0; ; n++) {
+    for (n = 0;  ;  ++n) {
         int/*bool*/ latch;
         if (!(cand = get_candidate(data, n)))
             break;
@@ -131,7 +131,7 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
 #endif /*NCBI_LB_DEBUG*/
                 status = total * p;
                 p = total * (1.0 - p) / (total - access);
-                for (i = 0; i < n; i++) {
+                for (i = 0;  i < n;  ++i) {
                     cand = get_candidate(data, i);
                     if (point <= cand->status)
                         cand->status  = p * (cand->status - access) + status;
@@ -140,7 +140,7 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
                 }
 #ifdef NCBI_LB_DEBUG
                 status = 0.0;
-                for (i = 0;  i < n;  i++) {
+                for (i = 0;  i < n;  ++i) {
                     char addr[80];
                     cand   = get_candidate(data, i);
                     info   = cand->info;
@@ -161,7 +161,8 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
         /* We take pre-chosen local server only if its status is not less
            than p% of the average remaining status; otherwise, we ignore
            the server, and apply the generic procedure by random seeding.*/
-        if (point <= 0.0  ||  access * (n - 1) < p * 0.01 * (total - access)) {
+        if (point <= 0.0
+            ||  access * (double)(n - 1) < p * 0.01 * (total - access)) {
             point = (total * rand()) / (double) RAND_MAX;
 #ifdef NCBI_LB_DEBUG
             CORE_LOGF(eLOG_Note, ("P = %lf", point));
@@ -169,7 +170,7 @@ size_t LB_Select(SERV_ITER     iter,          void*  data,
         }
 
         total = 0.0;
-        for (i = 0; i < n; i++) {
+        for (i = 0;  i < n;  ++i) {
             cand = get_candidate(data, i);
             assert(cand);
             if (point <= cand->status) {

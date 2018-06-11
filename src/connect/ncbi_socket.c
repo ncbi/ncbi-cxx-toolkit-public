@@ -404,8 +404,8 @@ static const char* s_ID(const SOCK sock, char buf[MAXIDLEN])
         addr[0] = '\0';
         n = sock->myport ? sprintf(addr, "(:%hu)", sock->myport) : 0;
         if (sock->host  ||  sock->port) {
-            SOCK_HostPortToString(sock->host, sock->port, addr + n,
-                                  sizeof(addr) - (size_t)n);
+            SOCK_HostPortToString(sock->host, sock->port,
+                                  addr + n, sizeof(addr) - (size_t) n);
         }
         cp = addr;
         break;
@@ -2047,8 +2047,8 @@ static EIO_Status s_Poll_(size_t                n,
         }
 
         if (s_SelectTimeout) {
-            slice = (s_SelectTimeout->tv_sec         * 1000 +
-                    (s_SelectTimeout->tv_usec + 500) / 1000);
+            slice = (int)((s_SelectTimeout->tv_sec         * 1000 +
+                          (s_SelectTimeout->tv_usec + 500) / 1000));
             if (wait != -1  &&  wait < slice)
                 slice = wait;
         } else
@@ -2698,9 +2698,9 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                 SOCK_SET_TIMEOUT(sock, r, tv);
                 SOCK_SET_TIMEOUT(sock, w, tv);
                 status = sslopen(sock->session, error, &desc);
-                if ((sock->w_tv_set = wtv_set) != 0)
+                if ((sock->w_tv_set = wtv_set & 1) != 0)
                     x_tvcpy(&sock->w_tv, &wtv);
-                if ((sock->r_tv_set = rtv_set) != 0)
+                if ((sock->r_tv_set = rtv_set & 1) != 0)
                     x_tvcpy(&sock->r_tv, &rtv);
                 if (status == eIO_Success) {
                     sock->pending = 0;
@@ -2778,7 +2778,7 @@ static EIO_Status s_Recv(SOCK    sock,
     readable = 0/*false*/;
     for (;;) { /* optionally auto-resume if interrupted */
         int error;
-        int x_read = recv(sock->sock, buf, WIN_INT_CAST size, 0/*flags*/);
+        ssize_t x_read = recv(sock->sock, buf, WIN_INT_CAST size, 0/*flags*/);
 #ifdef NCBI_OS_MSWIN
         /* recv() resets IO event recording */
         sock->readable = sock->closing;
@@ -2807,7 +2807,7 @@ static EIO_Status s_Recv(SOCK    sock,
             if (x_read > 0) {
                 assert((size_t) x_read <= size);
                 sock->n_read += (TNCBI_BigCount) x_read;
-                *n_read       = x_read;
+                *n_read       = (size_t)         x_read;
             } else {
                 /* catch EOF/failure */
                 sock->eof = 1/*true*/;
@@ -3059,7 +3059,7 @@ static EIO_Status s_Read_(SOCK    sock,
         sock->r_tv_set = 1;
         memset(&sock->r_tv, 0, sizeof(sock->r_tv));
     } while (peek < 0  ||  (!buf  &&  *n_read < size));
-    if ((sock->r_tv_set = rtv_set) != 0)
+    if ((sock->r_tv_set = rtv_set & 1) != 0)
         x_tvcpy(&sock->r_tv, &rtv);
 
     return *n_read ? eIO_Success : status;
@@ -3269,8 +3269,8 @@ static EIO_Status s_Send(SOCK        sock,
     for (;;) { /* optionally auto-resume if interrupted */
         int error = 0;
 
-        int x_written = send(sock->sock, (void*) data, WIN_INT_CAST size, 
-                             flag < 0 ? MSG_OOB : 0);
+        ssize_t x_written = send(sock->sock, (void*) data, WIN_INT_CAST size, 
+                                 flag < 0 ? MSG_OOB : 0);
 
         if (x_written >= 0  ||
             (x_written < 0  &&  ((error = SOCK_ERRNO) == SOCK_EPIPE       ||
@@ -3294,7 +3294,7 @@ static EIO_Status s_Send(SOCK        sock,
 
             if (x_written > 0) {
                 sock->n_written += (TNCBI_BigCount) x_written;
-                *n_written       = x_written;
+                *n_written       = (size_t)         x_written;
                 sock->w_status = eIO_Success;
                 break/*success*/;
             }
@@ -3529,9 +3529,9 @@ static EIO_Status s_WritePending(SOCK                  sock,
                                  int/*bool*/           oob)
 {
     struct XWriteBufCtx ctx;
+    unsigned int restore;
     unsigned int wtv_set;
     struct timeval wtv;
-    int restore;
 
     assert(sock->type == eSocket  &&  sock->sock != SOCK_INVALID);
 
@@ -3578,10 +3578,8 @@ static EIO_Status s_WritePending(SOCK                  sock,
                                 x_WriteBuf, &ctx, sock->w_len);
     assert((sock->w_len != 0) == (ctx.status != eIO_Success));
 
-    if (restore) {
-        if ((sock->w_tv_set = wtv_set) != 0)
-            x_tvcpy(&sock->w_tv, &wtv);
-    }
+    if (restore  &&  (sock->w_tv_set = wtv_set & 1) != 0)
+        x_tvcpy(&sock->w_tv, &wtv);
     return ctx.status;
 }
 
@@ -3747,9 +3745,9 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                     SOCK_SET_TIMEOUT(sock, r, tv);
                     SOCK_SET_TIMEOUT(sock, w, tv);
                     status = sslclose(sock->session, how, &error);
-                    if ((sock->w_tv_set = wtv_set) != 0)
+                    if ((sock->w_tv_set = wtv_set & 1) != 0)
                         x_tvcpy(&sock->w_tv, &wtv);
-                    if ((sock->r_tv_set = rtv_set) != 0)
+                    if ((sock->r_tv_set = rtv_set & 1) != 0)
                         x_tvcpy(&sock->r_tv, &rtv);
                     if (status != eIO_Success) {
                         const char* strerr = s_StrError(sock, error);
@@ -3855,8 +3853,8 @@ static EIO_Status s_Close_(SOCK sock, int abort)
                 lgr.l_linger = 120; /* this is standard TCP TTL, 2 minutes */
                 lgr.l_onoff  = 1;
             } else if (sock->c_tv.tv_sec | sock->c_tv.tv_usec) {
-                unsigned int seconds = sock->c_tv.tv_sec
-                    + (sock->c_tv.tv_usec + 500000) / 1000000;
+                int seconds = (int)(sock->c_tv.tv_sec  +
+                                   (sock->c_tv.tv_usec + 500000) / 1000000);
                 if (seconds) {
                     linger = 1/*true*/;
                     lgr.l_linger = seconds;
@@ -4421,8 +4419,8 @@ static EIO_Status s_Create(const char*     hostpath,
     x_sock->sock      = SOCK_INVALID;
     x_sock->id        = x_id;
     x_sock->type      = eSocket;
-    x_sock->log       = flags;
     x_sock->side      = eSOCK_Client;
+    x_sock->log       = flags & (fSOCK_LogDefault & fSOCK_LogOn);
     x_sock->session   = flags & fSOCK_Secure ? SESSION_INVALID : 0;
     x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/  : 0/*false*/;
     x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
@@ -4706,8 +4704,8 @@ static EIO_Status s_CreateOnTop(const void*   handle,
     }
     x_sock->myport    = myport;
     x_sock->type      = eSocket;
-    x_sock->log       = flags;
     x_sock->side      = eSOCK_Server;
+    x_sock->log       = flags & (fSOCK_LogDefault | fSOCK_LogOn);
     x_sock->session   = flags & fSOCK_Secure ? SESSION_INVALID : 0;
     x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/  : 0/*false*/;
     x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
@@ -5118,8 +5116,8 @@ static EIO_Status s_CreateListening(const char*    path,
     x_lsock->id       = x_id;
     x_lsock->port     = port;
     x_lsock->type     = eListening;
-    x_lsock->log      = flags;
     x_lsock->side     = eSOCK_Server;
+    x_lsock->log      = flags & (fSOCK_LogDefault | fSOCK_LogOn);
     x_lsock->keep     = flags & fSOCK_KeepOnClose ? 1/*true*/ : 0/*false*/;
     x_lsock->i_on_sig = flags & fSOCK_InterruptOnSignal ? eOn : eDefault;
 #if   defined(NCBI_OS_UNIX)
@@ -5362,8 +5360,8 @@ static EIO_Status s_Accept(LSOCK           lsock,
     x_sock->sock      = fd;
     x_sock->id        = x_id;
     x_sock->type      = eSocket;
-    x_sock->log       = flags;
     x_sock->side      = eSOCK_Server;
+    x_sock->log       = flags & (fSOCK_LogDefault | fSOCK_LogOn);
     x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/ : 0/*false*/;
     x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn : eDefault;
     x_sock->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn : eDefault;
@@ -5554,7 +5552,7 @@ static EIO_Status s_RecvMsg(SOCK            sock,
     }
 
     for (;;) { /* auto-resume if either blocked or interrupted (optional) */
-        int                x_read;
+        ssize_t            x_read;
         int                error;
         struct sockaddr_in sin;
         TSOCK_socklen_t    sinlen = (TSOCK_socklen_t) sizeof(sin);
@@ -5578,7 +5576,7 @@ static EIO_Status s_RecvMsg(SOCK            sock,
             sock->r_status = eIO_Success;
             sock->r_len = (TNCBI_BigCount) x_read;
             if ( msglen )
-                *msglen = x_read;
+                *msglen = (size_t) x_read;
             if ( sender_addr )
                 *sender_addr =       sin.sin_addr.s_addr;
             if ( sender_port )
@@ -5589,8 +5587,9 @@ static EIO_Status s_RecvMsg(SOCK            sock,
                                (size_t)x_read - bufsize)) {
                 CORE_LOGF_X(20, eLOG_Error,
                             ("%s[DSOCK::RecvMsg] "
-                             " Message truncated: %lu/%u",
-                             s_ID(sock, w), (unsigned long) bufsize, x_read));
+                             " Message truncated: %lu/%lu",
+                             s_ID(sock, w),
+                             (unsigned long) bufsize, (unsigned long) x_read));
                 status = eIO_Unknown;
             } else
                 status = eIO_Success;
@@ -5723,7 +5722,7 @@ static EIO_Status s_SendMsg(SOCK           sock,
 
     for (;;) { /* optionally auto-resume if interrupted */
         int error;
-        int x_written;
+        ssize_t x_written;
 
         if ((x_written = sendto(sock->sock, x_msg,
 #ifdef NCBI_OS_MSWIN
@@ -6885,7 +6884,7 @@ extern EIO_Status SOCK_ReadLine(SOCK    sock,
                                 size_t  size,
                                 size_t* n_read)
 {
-    int/*bool*/ cr_seen, done;
+    unsigned int/*bool*/ cr_seen, done;
     EIO_Status  status;
     size_t      len;
 
@@ -7465,8 +7464,8 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     x_sock->id        = x_id;
     /* no host and port - not "connected" */
     x_sock->type      = eDatagram;
-    x_sock->log       = flags;
     x_sock->side      = eSOCK_Client;
+    x_sock->log       = flags & (fSOCK_LogDefault | fSOCK_LogOn);
     x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/ : 0/*false*/;
     x_sock->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn : eDefault;
 #ifdef NCBI_OS_MSWIN
@@ -8151,7 +8150,7 @@ extern int SOCK_ntoa(unsigned int host,
         int len = sprintf(x_buf, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
         assert(0 < len  &&  (size_t) len < sizeof(x_buf));
         if ((size_t) len < bufsize) {
-            memcpy(buf, x_buf, (size_t)len + 1);
+            memcpy(buf, x_buf, (size_t) len + 1);
             return 0/*success*/;
         }
         buf[0] = '\0';
@@ -8408,7 +8407,7 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
     } else
         len = strlen(x_buf);
     if (port  ||  !host)
-        len += (size_t)sprintf(x_buf + len, ":%hu", port);
+        len += (size_t) sprintf(x_buf + len, ":%hu", port);
     assert(len < sizeof(x_buf));
     if (len >= bufsize) {
         *buf = '\0';

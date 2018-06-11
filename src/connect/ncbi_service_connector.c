@@ -181,10 +181,10 @@ static EHTTP_HeaderParse s_ParseHeader(const char* header,
                                                  [header[m] == '$'])))) {
                     break/*failed - unreadable connection info*/;
                 }
-                o1 = (unsigned char)i1;
-                o2 = (unsigned char)i2;
-                o3 = (unsigned char)i3;
-                o4 = (unsigned char)i4;
+                o1 = (unsigned char) i1;
+                o2 = (unsigned char) i2;
+                o3 = (unsigned char) i3;
+                o4 = (unsigned char) i4;
                 sprintf(ipaddr, "%u.%u.%u.%u", o1, o2, o3, o4);
                 if (strncmp(header, ipaddr, n) != 0
                     ||  !(uuu->host = SOCK_gethostbyname(ipaddr))
@@ -433,7 +433,8 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
         *status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
         assert(!sock ^ !(*status != eIO_Success));
         if (*status == eIO_Success
-            &&  (size  ||  (flags & (TSOCK_Flags)(~(fSOCK_LogOn | fSOCK_LogDefault))))) {
+            &&  (size  ||  (flags & (TSOCK_Flags)(~(fSOCK_LogOn |
+                                                    fSOCK_LogDefault))))) {
             /* push initial data through the proxy, as-is (i.e. clear-text) */
             TSOCK_Flags tempf = flags;
             if (size  &&  (flags & fSOCK_Secure)) {
@@ -466,7 +467,7 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
         TSOCK_Flags tempf = flags;
         if (size  &&  (flags & fSOCK_Secure)) {
             tempf &=  fSOCK_LogOn | fSOCK_LogDefault;
-            tempf &=  (TSOCK_Flags)~fSOCK_Secure;
+            tempf &=  (TSOCK_Flags)(~fSOCK_Secure);
         }
         if (!proxy  &&  net_info->debug_printout) {
             net_info->scheme = eURL_Unspec;
@@ -537,7 +538,7 @@ static int/*bool*/ x_SetHostPort(SConnNetInfo* net_info,
     if (info->host == SOCK_HostToNetLong((unsigned int)(-1L))) {
         int/*bool*/ ipv6 = !NcbiIsIPv4(&info->addr);
         char* end = NcbiAddrToString(net_info->host + ipv6,
-                                     sizeof(net_info->host) - 2*(size_t)ipv6,
+                                     sizeof(net_info->host) - (size_t)(2*ipv6),
                                      &info->addr);
         if (!end) {
             *net_info->host = '\0';
@@ -939,8 +940,11 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         ||  uuu->extra.adjust(net_info, uuu->extra.data, (unsigned int)(-1))
         ? HTTP_CreateConnectorEx(net_info,
                                  (uuu->extra.flags
-                                  & (THTTP_Flags)(fHTTP_Flushable | fHTTP_NoAutoRetry |
-                                     (uuu->extra.adjust ? fHTTP_AdjustOnRedirect : 0)))
+                                  & (THTTP_Flags)(fHTTP_Flushable   |
+                                                  fHTTP_NoAutoRetry |
+                                                  (uuu->extra.adjust
+                                                   ? fHTTP_AdjustOnRedirect
+                                                   : 0)))
                                  | fHTTP_AutoReconnect,
                                  s_ParseHeaderUCB, uuu/*user_data*/,
                                  s_Adjust, 0/*cleanup*/)
@@ -1204,7 +1208,7 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     ccc->setup    = s_Setup;
     ccc->destroy  = s_Destroy;
 
-    xxx->types    = (TSERV_TypeOnly)types;
+    xxx->types    = (TSERV_TypeOnly) types;
     x_net_info    = (net_info
                      ? ConnNetInfo_Clone(net_info)
                      : ConnNetInfo_Create(x_service));

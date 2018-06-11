@@ -156,7 +156,7 @@ static EIO_Status s_VT_Open
         if (!(xxx->fout = fopen(xxx->ofname, mode)))
             return eIO_Unknown;
         if (xxx->attr.w_mode == eFCM_Seek  &&  xxx->attr.w_pos
-            &&  fseek(xxx->fout, xxx->attr.w_pos, SEEK_SET) != 0) {
+            &&  fseek(xxx->fout, (long) xxx->attr.w_pos, SEEK_SET) != 0) {
             fclose(xxx->fout);
             xxx->fout = 0;
             return eIO_Unknown;
@@ -173,7 +173,7 @@ static EIO_Status s_VT_Open
             return eIO_Unknown;
         }
         if (xxx->attr.r_pos
-            &&  fseek(xxx->finp, xxx->attr.r_pos, SEEK_SET) != 0) {
+            &&  fseek(xxx->finp, (long) xxx->attr.r_pos, SEEK_SET) != 0) {
             fclose(xxx->finp);
             xxx->finp = 0;
             if (xxx->fout) {

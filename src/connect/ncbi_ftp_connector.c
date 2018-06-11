@@ -406,69 +406,69 @@ static EIO_Status x_FTPHelpCB(SFTPConnector* xxx, int code,
         assert(code == 211  ||  code == 214);
         if ((s = x_4Word(line, "NOOP")) != 0) {  /* RFC 959 */
             if (s[4 + strspn(s + 4, " \t")] != '*')
-                xxx->feat |=  fFtpFeature_NOOP;
+                xxx->feat |=                  fFtpFeature_NOOP;
             else
-                xxx->feat &= ~fFtpFeature_NOOP;
+                xxx->feat &= (TFTP_Features)(~fFtpFeature_NOOP);
         }
         if ((s = x_4Word(line, "SYST")) != 0) {  /* RFC 959 */
             if (s[4 + strspn(s + 4, " \t")] != '*')
-                xxx->feat |=  fFtpFeature_SYST;
+                xxx->feat |=                  fFtpFeature_SYST;
             else
-                xxx->feat &= ~fFtpFeature_SYST;
+                xxx->feat &= (TFTP_Features)(~fFtpFeature_SYST);
         }
         if ((s = x_4Word(line, "SITE")) != 0) {  /* RFC 959, 1123 */
             if (s[4 + strspn(s + 4, " \t")] != '*')
-                xxx->feat |=  fFtpFeature_SITE;
+                xxx->feat |=                  fFtpFeature_SITE;
             else
-                xxx->feat &= ~fFtpFeature_SITE;
+                xxx->feat &= (TFTP_Features)(~fFtpFeature_SITE);
         }
         if ((s = x_4Word(line, "FEAT")) != 0) {  /* RFC 3659 */
             if (s[4 + strspn(s + 4, " \t")] != '*')
-                xxx->feat |=  fFtpFeature_FEAT;
+                xxx->feat |=                  fFtpFeature_FEAT;
             else
-                xxx->feat &= ~fFtpFeature_FEAT;
+                xxx->feat &= (TFTP_Features)(~fFtpFeature_FEAT);
         }
         if ((s = x_4Word(line, "MDTM")) != 0) {  /* RFC 3659 */
             if (s[4 + strspn(s + 4, " \t")] != '*')
-                xxx->feat |=  fFtpFeature_MDTM;
+                xxx->feat |=                  fFtpFeature_MDTM;
             else
-                xxx->feat &= ~fFtpFeature_MDTM;
+                xxx->feat &= (TFTP_Features)(~fFtpFeature_MDTM);
         }
         if ((s = x_4Word(line, "SIZE")) != 0) {  /* RFC 3659 */
             if (s[4 + strspn(s + 4, " \t")] != '*')
-                xxx->feat |=  fFtpFeature_SIZE;
+                xxx->feat |=                  fFtpFeature_SIZE;
             else
-                xxx->feat &= ~fFtpFeature_SIZE;
+                xxx->feat &= (TFTP_Features)(~fFtpFeature_SIZE);
         }
         if ((s = x_4Word(line, "REST")) != 0) {  /* RFC 3659, NB: FEAT */
             if (s[4 + strspn(s + 4, " \t")] != '*')
-                xxx->feat |=  fFtpFeature_REST;
+                xxx->feat |=                  fFtpFeature_REST;
             else
-                xxx->feat &= ~fFtpFeature_REST;
+                xxx->feat &= (TFTP_Features)(~fFtpFeature_REST);
         }
         if ((s = x_4Word(line, "MLST")) != 0) {  /* RFC 3659 */
             if (s[4 + strspn(s + 4, " \t")] != '*')
-                xxx->feat |=  fFtpFeature_MLSx;
+                xxx->feat |=                  fFtpFeature_MLSx;
             else
-                xxx->feat &= ~fFtpFeature_MLSx;
+                xxx->feat &= (TFTP_Features)(~fFtpFeature_MLSx);
         }
         if ((s = x_4Word(line, "MLSD")) != 0) {  /* RFC 3659 */
             if (s[4 + strspn(s + 4, " \t")] != '*')
-                xxx->feat |=  fFtpFeature_MLSx;
+                xxx->feat |=                  fFtpFeature_MLSx;
             else
-                xxx->feat &= ~fFtpFeature_MLSx;
+                xxx->feat &= (TFTP_Features)(~fFtpFeature_MLSx);
         }
         if ((s = x_4Word(line, "EPRT")) != 0) {  /* RFC 2428 */
             if (s[4 + strspn(s + 4, " \t")] != '*')
-                xxx->feat |=  fFtpFeature_EPRT;
+                xxx->feat |=                  fFtpFeature_EPRT;
             else
-                xxx->feat &= ~fFtpFeature_EPRT;
+                xxx->feat &= (TFTP_Features)(~fFtpFeature_EPRT);
         }
         if ((s = x_4Word(line, "EPSV")) != 0) {  /* RFC 2428 (cf 1579) */
             if (s[4 + strspn(s + 4, " \t")] != '*')
-                xxx->feat |=  fFtpFeature_EPSV;
+                xxx->feat |=                  fFtpFeature_EPSV;
             else
-                xxx->feat &= ~fFtpFeature_EPSV;
+                xxx->feat &= (TFTP_Features)(~fFtpFeature_EPSV);
         }
     } /* else last line */
     return eIO_Success;
@@ -825,7 +825,7 @@ static EIO_Status x_FTPAbort(SFTPConnector*  xxx,
                 status = eIO_Unknown;
         } else if (status == eIO_Timeout  &&  !code)
             sync = 0/*false*/;
-        xxx->sync = sync;
+        xxx->sync = sync ? 1 : 0;
     }
     return status;
 }
@@ -897,7 +897,7 @@ static EIO_Status x_FTPPasv(SFTPConnector*  xxx,
         for (i = 0;  i < (unsigned int)(sizeof(o) / sizeof(o[0]));  i++) {
             if (sscanf(c + len, &",%d%n"[!i], &o[i], &code) < 1)
                 break;
-            len += code;
+            len += (size_t) code;
         }
         if (i >= (unsigned int)(sizeof(o) / sizeof(o[0])))
             break;
@@ -911,10 +911,10 @@ static EIO_Status x_FTPPasv(SFTPConnector*  xxx,
         if (o[i] < 0  ||  o[i] > 255)
             return eIO_Unknown;
     }
-    if (!(i = (((((o[0] << 8) | o[1]) << 8) | o[2]) << 8) | o[3]))
+    if (!(i = (unsigned int)((((((o[0]<<8) | o[1])<<8) | o[2])<<8) | o[3])))
         return eIO_Unknown;
     *host = SOCK_HostToNetLong(i);
-    if (!(i = (o[4] << 8) | o[5]))
+    if (!(i = (unsigned int)((o[4]<<8) | o[5])))
         return eIO_Unknown;
     *port = (unsigned short) i;
     return eIO_Success;
@@ -932,15 +932,16 @@ static EIO_Status x_FTPPassive(SFTPConnector*  xxx,
     if ((xxx->feat & fFtpFeature_APSV) == fFtpFeature_APSV) {
         /* first time here, try to set EPSV ALL */
         if (x_FTPEpsv(xxx, 0, 0) == eIO_Success)
-            xxx->feat &= ~fFtpFeature_EPSV;                     /* APSV mode */
-        else
-            xxx->feat &= ~fFtpFeature_APSV | fFtpFeature_EPSV;  /* EPSV mode */
+            xxx->feat &= (TFTP_Features)(~fFtpFeature_EPSV); /* APSV mode */
+
+        else                                                 /* EPSV mode */
+            xxx->feat &= (TFTP_Features)(~fFtpFeature_APSV | fFtpFeature_EPSV);
     }
     if (xxx->feat & fFtpFeature_APSV) {
         status = x_FTPEpsv(xxx, &host, &port);
         switch (status) {
         case eIO_NotSupported:
-            xxx->feat &= ~fFtpFeature_EPSV;
+            xxx->feat &= (TFTP_Features)(~fFtpFeature_EPSV);
             port = 0;
             break;
         case eIO_Success:
@@ -1054,7 +1055,7 @@ static EIO_Status x_FTPActive(SFTPConnector*  xxx,
         status = x_FTPEprt(xxx, host, port);
         if (status != eIO_NotSupported)
             return status;
-        xxx->feat &= ~fFtpFeature_EPRT;
+        xxx->feat &= (TFTP_Features)(~fFtpFeature_EPRT);
     }
     return x_FTPPort(xxx, host, port);
 }
@@ -1362,8 +1363,8 @@ static EIO_Status x_FTPParseMdtm(SFTPConnector* xxx, char* timestamp)
      *    input format specifiers in the format string (%-based);
      * 2. None to any spaces are allowed to match a space in the format, whilst
      *    an MDTM response must not contain even a single space. */
-    for (n = 0;  n < 6;  n++) {
-        size_t len = n ? 2 : 4/*year*/;
+    for (n = 0;  n < 6;  ++n) {
+        len = n ? 2 : 4/*year*/;
         if (len != strlen(strncpy0(buf, timestamp, len))  ||
             len != strspn(buf, kDigits)) {
             return eIO_Unknown;
@@ -1673,7 +1674,7 @@ static EIO_Status s_FTPPollCntl(SFTPConnector* xxx, const STimeout* timeout)
         if (status == eIO_Closed)
             break;
     }
-    xxx->abor = abor;
+    xxx->abor = abor ? 1 : 0;
     return status;
 }
 
@@ -2291,7 +2292,7 @@ extern CONNECTOR s_CreateConnector(const SConnNetInfo*  info,
         strcpy(xxx->info->user, user  &&  *user ? user : "ftp");
         strcpy(xxx->info->pass, pass            ? pass : "-none@");
         strcpy(xxx->info->path, path            ? path : "");
-        flag &= ~fFTP_IgnorePath;
+        flag &= (TFTP_Flags)(~fFTP_IgnorePath);
     } else if (!(flag & fFTP_LogAll)) {
         switch (info->debug_printout) {
         case eDebugPrintout_Some:

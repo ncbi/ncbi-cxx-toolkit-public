@@ -36,6 +36,6 @@
 #include "ncbi_assert.h"
 #include <connect/ncbi_base64.h>
 
-#define _ASSERT assert
+#define _ASSERT  assert
 
 #endif /* NCBI_BASE64__H */

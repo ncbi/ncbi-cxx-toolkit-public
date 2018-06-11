@@ -80,7 +80,7 @@ static int/*bool*/ s_AddService(const SSERV_Info* info,
         data->cand   = temp;
     }
 
-    n = rand() % ++data->n_cand;
+    n = (size_t) rand() % ++data->n_cand;
     if (n < data->n_cand - 1) {
         temp = data->cand + n++;
         memmove(temp + 1, temp, (data->n_cand - n) * sizeof(*data->cand));
@@ -92,7 +92,8 @@ static int/*bool*/ s_AddService(const SSERV_Info* info,
 
 static int/*bool*/ s_LoadSingleService(const char* name, SERV_ITER iter)
 {
-    TSERV_Type types = iter->types & ~(fSERV_Stateless | fSERV_Firewall);
+    TSERV_Type types
+        = iter->types & (TSERV_Type)(~(fSERV_Stateless | fSERV_Firewall));
     struct SLOCAL_Data* data = (struct SLOCAL_Data*) iter->data;
     char key[sizeof(REG_CONN_LOCAL_SERVER) + 10];
     int/*bool*/ ok = 0/*failed*/;
@@ -220,8 +221,8 @@ static SLB_Candidate* s_GetCandidate(void* user_data, size_t i)
 
 static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 {
+    const TSERV_Type types = iter->types & (TSERV_Type)(~fSERV_Firewall);
     struct SLOCAL_Data* data = (struct SLOCAL_Data*) iter->data;
-    const TSERV_Type types = iter->types & ~fSERV_Firewall;
     int/*bool*/ dns_info_seen = 0/*false*/;
     SSERV_Info* info;
     size_t i, n;

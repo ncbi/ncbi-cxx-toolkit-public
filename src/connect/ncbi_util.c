@@ -343,7 +343,7 @@ extern const char* NcbiMessagePlusError
     mlen += 7;
 
     if (error)
-        mlen += (size_t)sprintf(buf + mlen, "%d%s", error, &","[!*descr]);
+        mlen += (size_t) sprintf(buf + mlen, "%d%s", error, &","[!*descr]);
 
     memcpy((char*) memcpy(buf + mlen, descr, dlen) + dlen, "}", 2);
     if (release)
@@ -954,14 +954,14 @@ extern void CORE_Msdelay(unsigned long ms)
 #  if    defined(HAVE_NANOSLEEP)
     struct timespec ts;
     ts.tv_sec  = (time_t)(ms / 1000);
-    ts.tv_nsec = (long)((ms % 1000) * 1000000);
+    ts.tv_nsec = (long) ((ms % 1000) * 1000000);
     nanosleep(&ts, 0);
 #  elif !defined(NCBI_OS_DARWIN)  &&  defined(HAVE_POLL_H)
-    poll(0, 0, ms);
+    poll(0, 0, (int) ms);
 #  else
     struct timeval tv;
-    tv.tv_sec  =  ms / 1000;
-    tv.tv_usec = (ms % 1000) * 1000;
+    tv.tv_sec  = (long) (ms / 1000);
+    tv.tv_usec = (logn)((ms % 1000) * 1000);
     select(0, 0, 0, 0, &tv);
 #  endif /*HAVE_NANOSLEEP*/
 #else
@@ -1243,8 +1243,8 @@ extern int/*bool*/ UTIL_MatchesMaskEx(const char* name, const char* mask,
         } else {
             d = *name++;
             if (ignore_case) {
-                c = (char)tolower((unsigned char) c);
-                d = (char)tolower((unsigned char) d);
+                c = (char) tolower((unsigned char) c);
+                d = (char) tolower((unsigned char) d);
             }
             if (c != d)
                 return 0/*false*/;

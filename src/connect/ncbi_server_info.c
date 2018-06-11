@@ -173,7 +173,7 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
         memcpy(s, attr->tag, attr->len);
         s += attr->len;
         *s++ = ' ';
-        if (info->host == SOCK_HostToNetLong(-1L)) {
+        if (info->host == SOCK_HostToNetLong((unsigned int)(-1L))) {
             int/*bool*/ ipv6 = !NcbiIsIPv4(&info->addr)  &&  info->port;
             if (ipv6)
                 *s++ = '[';
@@ -269,7 +269,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
         }
         if (end) {
             int/*bool*/ ipv6 = *str == '['  &&  len > 2 ? 1/*T*/ : 0/*F*/;
-            const char* tmp = NcbiIPToAddr(&addr, str + ipv6, len - ipv6);
+            const char* tmp = NcbiIPToAddr(&addr, str + ipv6, len - !!ipv6);
             if (tmp  &&  (!ipv6  ||  (*tmp++ == ']'  &&  *tmp == ':'))) {
                 if (tmp != end  &&  *tmp != ':')
                     return 0;
@@ -289,14 +289,14 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 return 0;
             else if (str != end)
                 return 0;
-            else if (host == SOCK_HostToNetLong(-1L))
+            else if (host == SOCK_HostToNetLong((unsigned int)(-1L)))
                 vhost = 0;
             if (!ipv6)
                 NcbiIPv4ToIPv6(&addr, host, 0);
             else if (NcbiIsIPv4(&addr))
                 host = NcbiIPv6ToIPv4(&addr, 0);
             else
-                host = SOCK_HostToNetLong(-1L);
+                host = SOCK_HostToNetLong((unsigned int)(-1L));
             while (*str  &&  isspace((unsigned char)(*str)))
                 ++str;
             if (vhost) {
@@ -432,10 +432,10 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 locl = 1/*true*/;
                 if (sscanf(++str, "%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
-                        info->site |=  fSERV_Local;
+                        info->site |=               fSERV_Local;
                         str += n;
                     } else if (strcasecmp(s, "NO") == 0) {
-                        info->site &= ~fSERV_Local;
+                        info->site &= (TSERV_Site)(~fSERV_Local);
                         str += n;
                     }
                 }
@@ -446,10 +446,10 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 priv = 1/*true*/;
                 if (sscanf(++str, "%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
-                        info->site |=  fSERV_Private;
+                        info->site |=               fSERV_Private;
                         str += n;
                     } else if (strcasecmp(s, "NO") == 0) {
-                        info->site &= ~fSERV_Private;
+                        info->site &= (TSERV_Site)(~fSERV_Private);
                         str += n;
                     }
                 }
@@ -476,10 +476,10 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 sful = 1/*true*/;
                 if (sscanf(++str, "%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
-                        info->mode |=  fSERV_Stateful;
+                        info->mode |=               fSERV_Stateful;
                         str += n;
                     } else if (strcasecmp(s, "NO") == 0) {
-                        info->mode &= ~fSERV_Stateful;
+                        info->mode &= (TSERV_Mode)(~fSERV_Stateful);
                         str += n;
                     }
                 }
@@ -490,10 +490,10 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 secu = 1/*true*/;
                 if (sscanf(++str, "%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
-                        info->mode |=  fSERV_Secure;
+                        info->mode |=               fSERV_Secure;
                         str += n;
                     } else if (strcasecmp(s, "NO") == 0) {
-                        info->mode &= ~fSERV_Secure;
+                        info->mode &= (TSERV_Mode)(~fSERV_Secure);
                         str += n;
                     }
                 }
@@ -513,10 +513,10 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 cros = 1/*true*/;
                 if (sscanf(++str, "%3s%n", s, &n) >= 1) {
                     if (strcasecmp(s, "YES") == 0) {
-                        info->site |=  fSERV_Interzone;
+                        info->site |=               fSERV_Interzone;
                         str += n;
                     } else if (strcasecmp(s, "NO") == 0) {
-                        info->mode &= ~fSERV_Interzone;
+                        info->site &= (TSERV_Site)(~fSERV_Interzone);
                         str += n;
                     }
                 }
@@ -531,7 +531,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                         if (cros)
                             break;
                         cros = 1/*true*/;
-                        info->site |= kFlags[i].site;
+                        info->site |= (TSERV_Site) kFlags[i].site;
                     }
                     info->algo = kFlags[i].algo;
                     str += kFlags[i].len;
@@ -899,7 +899,7 @@ SSERV_Info* SERV_CreateHttpInfoEx(ESERV_Type     type,
 {
     SSERV_Info* info;
 
-    if (type & ~fSERV_Http)
+    if (type & (unsigned int)(~fSERV_Http))
         return 0;
     add += (path ? strlen(path) : 0) + 1 + (args ? strlen(args) : 0);
     if ((info = (SSERV_Info*) malloc(sizeof(SSERV_Info) + add + 1)) != 0) {

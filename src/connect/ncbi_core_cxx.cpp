@@ -480,7 +480,8 @@ static void s_Init(const IRWRegistry* reg  = 0,
     s_CORE_Set |=  set;
 
     if (s_ConnectInit == eConnectInit_Intact) {
-        g_NCBI_ConnectRandomSeed  = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
+        g_NCBI_ConnectRandomSeed
+            = (unsigned int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
         srand(g_NCBI_ConnectRandomSeed);
         atexit(s_Fini);
     }

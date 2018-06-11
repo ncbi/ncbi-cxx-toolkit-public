@@ -43,7 +43,7 @@ extern void BASE64_Encode
  size_t*     dst_written,
  size_t*     line_len)
 {
-    static const char syms[] =
+    static const unsigned char kSyms[] =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ" /*26*/
         "abcdefghijklmnopqrstuvwxyz" /*52*/
         "0123456789+/";              /*64*/
@@ -73,8 +73,8 @@ extern void BASE64_Encode
             dst[j++] = '\n';
             len = 0;
         }
-        _ASSERT((size_t)(temp | bits) < sizeof(syms) - 1);
-        dst[j++] = syms[temp | bits];
+        _ASSERT((size_t)(temp | bits) < sizeof(kSyms) - 1);
+        dst[j++] = kSyms[temp | bits];
         len++;
         if (i >= src_size) {
             break;
