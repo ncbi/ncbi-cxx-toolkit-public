@@ -2916,7 +2916,21 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
             }
 
             if (has_gap && gap_start == feat_start && feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) {
-                return; // continue;
+                if (next_gap < num_gaps) {
+                    CRef<CGapIndex> sgr = gaps[next_gap];
+                    gap_start = sgr->GetStart();
+                    gap_end = sgr->GetEnd();
+                    gap_length = sgr->GetLength();
+                    gap_type = sgr->GetGapType();
+                    gap_evidence = sgr->GetGapEvidence();
+                    is_unknown_length = sgr->IsUnknownLength();
+                    is_assembly_gap = sgr->IsAssemblyGap();
+                    has_gap = true;
+                    next_gap++;
+                } else {
+                    has_gap = false;
+                }
+                // return; // continue;
             }
 
             item.Reset( x_NewFeatureItem(mf, ctx, feat_loc, m_Feat_Tree) );
