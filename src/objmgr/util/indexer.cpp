@@ -1782,6 +1782,7 @@ void CBioseqIndex::x_InitFeats (void)
 
             // set specific flags for various feature types
             CSeqFeatData::E_Choice type = sfx->GetType();
+            CSeqFeatData::ESubtype subtype = sfx->GetSubtype();
 
             if (type == CSeqFeatData::e_Biosrc) {
                 if (! m_BioSource) {
@@ -1811,7 +1812,7 @@ void CBioseqIndex::x_InitFeats (void)
                 continue;
             }
 
-            if (type == CSeqFeatData::eSubtype_operon) {
+            if (subtype == CSeqFeatData::eSubtype_operon) {
                 m_HasOperon = true;
                 continue;
             }
