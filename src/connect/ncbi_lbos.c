@@ -121,14 +121,8 @@ static void           s_LBOS_DestroyData   (SLBOS_Data*   data);
 static SSERV_Info*    s_LBOS_GetNextInfo   (SERV_ITER     iter,
                                             HOST_INFO*    host_info);
 static void           s_LBOS_Initialize    (void);
-static int/*bool*/    s_LBOS_Feedback      (SERV_ITER     a,
-                                            double        b,
-                                            int           c);
 static void           s_LBOS_Close         (SERV_ITER     iter);
 static void           s_LBOS_Reset         (SERV_ITER     iter);
-static int/*bool*/    s_LBOS_Update        (SERV_ITER     iter,
-                                            const char*   text,
-                                            int           code);
 #if defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN
 static const char*    s_LBOS_ReadLbosresolver(void);
 #endif /* defined NCBI_OS_LINUX || defined NCBI_OS_MSWIN */
@@ -342,8 +336,8 @@ clear_and_exit:
 static const SSERV_VTable s_lbos_op =  {
         s_LBOS_GetNextInfo, /**< Use open()'ed iterator to get next found
                              *   server*/
-        s_LBOS_Feedback,    /**< Not used                                    */
-        s_LBOS_Update,      /**< Not used                                    */
+        0,                  /**< Feedback, not used                          */
+        0,                  /**< Update, Not used                            */
         s_LBOS_Reset,       /**< Free iterator's 'data'                      */
         s_LBOS_Close,       /**< Close iterator and free its 'data'          */
         "lbos"              /**< name of mapper                              */
@@ -1789,20 +1783,6 @@ static void s_LBOS_Reset(SERV_ITER iter)
         data->pos_cand = 0;
     }
     return;
-}
-
-
-/** Not implemented in LBOS client. */
-static int/*bool*/ s_LBOS_Feedback (SERV_ITER a, double b, int c)
-{
-    return 0;
-}
-
-
-/** Not implemented in LBOS client. */
-static int/*bool*/ s_LBOS_Update(SERV_ITER iter, const char* text, int code)
-{
-    return 1;
 }
 
 
