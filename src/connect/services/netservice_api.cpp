@@ -435,83 +435,98 @@ void SNetServiceXSiteAPI::InitXSite(CSynRegistry& registry, const SRegSynonyms& 
 
 void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
         SNetServerImpl::SConnectDeadline& deadline,
-        const SServerAddress& original, const string& service_name)
+        const SServerAddress& original, const string& service)
 {
     SServerAddress actual(original);
+    _ASSERT(actual.port);
     ticket_t ticket = 0;
 
     if (IsForeignAddr(actual.host)) {
         union {
             SFWDRequestReply rr;
-            char buf[FWD_MAX_RR_SIZE + 1];
+            char buf[FWD_RR_MAX_SIZE + 1];
         };
+        memset(&rr, 0, sizeof(rr));
 
-        memset(buf, 0, sizeof(buf));
         rr.host =                     actual.host;
         rr.port = SOCK_HostToNetShort(actual.port);
-        rr.flag = SOCK_HostToNetShort(1);
+        rr.flag = SOCK_HostToNetShort(FWD_RR_FIREWALL | FWD_RR_KEEPALIVE);
 
-        const auto text_max = sizeof(buf) - 1 - offsetof(SFWDRequestReply, text);
-        const auto text_len = min(service_name.size() + 1, text_max);
-        memcpy(rr.text, service_name.c_str(), text_len);
+        auto text_max = sizeof(buf)-1 - offsetof(SFWDRequestReply,text);
+        auto text_len = service.size() ? min(service.size() + 1, text_max) : 0;
+        memcpy(rr.text, service.c_str(), text_len);
 
         size_t len = 0;
 
         CConn_ServiceStream svc(kXSiteFwd);
+        svc.rdbuf()->PUBSETBUF(0, 0);  // quick way to make stream unbuffered
         if (svc.write((const char*) &rr.ticket/*0*/, sizeof(rr.ticket))  &&
-            svc.write(buf, offsetof(SFWDRequestReply, text) + text_len)) {
-            svc.read(buf, sizeof(buf) - 1);
+            svc.write(buf, offsetof(SFWDRequestReply,text) + text_len)) {
+            svc.read(buf, sizeof(buf)-1);
             len = (size_t) svc.gcount();
             _ASSERT(len < sizeof(buf));
         }
 
-        memset(buf + len, 0, sizeof(buf) - len);
+        memset(buf + len, 0, sizeof(buf) - len); // NB: terminates "text" field
 
-        if (len < offsetof(SFWDRequestReply, text) ||
-            (rr.flag & 0xF0F0) || rr.port == 0) {
+        if (len < offsetof(SFWDRequestReply,text)
+            ||  (rr.flag & FWD_RR_ERRORMASK)  ||  !rr.port) {
             const char* err;
             if (len == 0)
                 err = "Connection refused";
-            else if (len < offsetof(SFWDRequestReply, text))
+            else if (len < offsetof(SFWDRequestReply,text))
                 err = "Short response received";
-            else if (!(rr.flag & 0xF0F0))
-                err = rr.flag & 0x0F0F ? "Client rejected" : "Unknown error";
-            else if (NStr::strncasecmp(buf, "NCBI", 4) == 0)
-                err = buf;
-            else if (rr.text[0])
-                err = rr.text;
+            else if (!(rr.flag & FWD_RR_ERRORMASK))
+                err = rr.flag & FWD_RR_REJECTMASK
+                    ? "Client rejected" : "Unknown error";
+            else if (memcmp(buf, "NCBI", 4) != 0)
+                err = rr.text[0] ? rr.text : "Unspecified error";
             else
-                err = "Unspecified error";
+                err = buf;
             NCBI_THROW_FMT(CNetSrvConnException, eConnectionFailure,
-                           "Error while acquiring an auth ticket from a "
-                           "cross-site connection proxy: " << err);
+                           "Error while acquiring auth ticket from"
+                           " cross-site connection proxy "
+                           << kXSiteFwd << ": " << err);
         }
 
-        if (rr.ticket != 0) {
+        if (rr.ticket) {
+            ticket      = rr.ticket;
             actual.host =                     rr.host;
             actual.port = SOCK_NetToHostShort(rr.port);
         } else {
             SOCK sock;
-            actual.port = 0;
             EIO_Status io_st = CONN_GetSOCK(svc.GetCONN(), &sock);
-            if (sock != NULL)
-                SOCK_CreateOnTop(sock, 0, &sock);
-            if (io_st != eIO_Success  ||  sock == NULL) {
-                NCBI_THROW(CNetSrvConnException, eConnectionFailure,
-                           "Error while connecting to proxy.");
+            if (sock)
+                io_st = SOCK_CreateOnTop(sock, 0, &sock);
+            _ASSERT(!sock == !(io_st == eIO_Success));
+            if (sock) {
+                // excess read data to return into sock
+                text_len  = strlen(rr.text) + 1/*'\0'-terminated*/;
+                if (text_len > text_max)
+                    text_len = text_max;
+                text_len += offsetof(SFWDRequestReply,text);
+                _ASSERT(text_len <= len);
+                io_st = SOCK_Pushback(sock, buf + text_len, len - text_len);
+            }
+            if (io_st != eIO_Success) {
+                SOCK_Destroy(sock);
+                const char* err = IO_StatusStr(io_st);
+                NCBI_THROW_FMT(CNetSrvConnException, eConnectionFailure,
+                               "Error while tunneling through proxy "
+                               << kXSiteFwd << ": " << err);
             }
             socket.Reset(sock, eTakeOwnership, eCopyTimeoutsToSOCK);
+            actual.port = 0;
         }
-        ticket = rr.ticket;
     }
 
     if (actual.port) {
         SNetServerImpl::ConnectImpl(socket, deadline, actual, original);
     }
 
-    if (ticket && socket.Write(&ticket, sizeof(ticket)) != eIO_Success) {
+    if (ticket  &&  socket.Write(&ticket, sizeof(ticket)) != eIO_Success) {
         NCBI_THROW(CNetSrvConnException, eConnectionFailure,
-                "Error while sending proxy auth ticket.");
+                   "Error while sending proxy auth ticket");
     }
 }
 
@@ -524,7 +539,8 @@ int SNetServiceXSiteAPI::GetDomain(unsigned int ip)
     NcbiIsLocalIPEx(&addr, &info);
 
     if (!info.num) {
-        NCBI_THROW(CNetSrvConnException, eLBNameNotFound, "Cannot determine local domain");
+        NCBI_THROW(CNetSrvConnException, eLBNameNotFound,
+                   "Cannot determine local domain");
     }
     
     return info.num;
