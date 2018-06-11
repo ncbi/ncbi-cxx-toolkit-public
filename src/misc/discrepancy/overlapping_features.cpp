@@ -287,30 +287,30 @@ DISCREPANCY_CASE(RNA_CDS_OVERLAP, COverlappingFeatures, eDisc | eSubmitter | eSm
             const CSeq_loc& loc_j = cds[j]->GetLocation();
             sequence::ECompare compare = context.Compare(loc_j, loc_i);
             if (compare == sequence::eSame) {
-                m_Objs[kCDSRNAAnyOverlap][kCDSRNAExactMatch].Ext().Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false).Fatal();
+                m_Objs[kCDSRNAAnyOverlap][kCDSRNAExactMatch].Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false).Fatal();
             }
             else if (compare == sequence::eContained) {
-                m_Objs[kCDSRNAAnyOverlap][kCDSRNAContainedIn].Ext().Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false); // no Fatal();
+                m_Objs[kCDSRNAAnyOverlap][kCDSRNAContainedIn].Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false); // no Fatal();
             }
             else if (compare == sequence::eContains) {
                 if (rnas[i]->GetData().GetSubtype() == CSeqFeatData::eSubtype_tRNA) {
-                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAContainstRNA].Ext().Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false).Fatal();
+                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAContainstRNA].Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false).Fatal();
                 }
                 else {
-                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAContains].Ext().Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false).Fatal();
+                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAContains].Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false).Fatal();
                 }
             }
             else if (compare != sequence::eNoOverlap) {
                 ENa_strand cds_strand = cds[j]->GetLocation().GetStrand();
                 ENa_strand rna_strand = rnas[i]->GetLocation().GetStrand();
                 if (cds_strand == eNa_strand_minus && rna_strand != eNa_strand_minus) {
-                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain].Ext()[kCDSRNAOverlapNoContainOppStrand].Ext().Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false); // no Fatal();
+                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain][kCDSRNAOverlapNoContainOppStrand].Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false); // no Fatal();
                 }
                 else if (cds_strand != eNa_strand_minus && rna_strand == eNa_strand_minus) {
-                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain].Ext()[kCDSRNAOverlapNoContainOppStrand].Ext().Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false); // no Fatal();
+                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain][kCDSRNAOverlapNoContainOppStrand].Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false); // no Fatal();
                 }
                 else {
-                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain].Ext()[kCDSRNAOverlapNoContainSameStrand].Ext().Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false); // no Fatal();
+                    m_Objs[kCDSRNAAnyOverlap][kCDSRNAOverlapNoContain][kCDSRNAOverlapNoContainSameStrand].Add(*context.DiscrObj(*rnas[i]), false).Add(*context.DiscrObj(*cds[j]), false); // no Fatal();
                 }
             }
         }
