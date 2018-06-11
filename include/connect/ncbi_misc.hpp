@@ -152,7 +152,9 @@ inline double CRateMonitor::GetTime(void) const
 
 inline double CRateMonitor::GetPace(void) const
 {
-    return GetTime() ? m_Data.front().first / m_Data.front().second : 0.0;
+    return GetTime()
+        ? double(m_Data.front().first) / m_Data.front().second
+        : 0.0;
 }
 
 

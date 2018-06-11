@@ -51,7 +51,7 @@
  * @sa
  *  SERV_OpenEx, SERV_GetInfoEx
  */
-#define SERV_LOCALHOST  ((unsigned int) ~0UL)
+#define SERV_LOCALHOST  ((unsigned int)(~0UL))
 #define SERV_ANYHOST    0
 
 

@@ -80,7 +80,7 @@ typedef struct {
     size_t           body_size;     /**< Message body size (if specified)    */
     STimeout         mx_timeout;    /**< Timeout for all network transactions*/
     const char*      mx_host;       /**< Host to contact an MTA at           */
-    short            mx_port;       /**< Port to contact an MTA at           */
+    unsigned short   mx_port;       /**< Port to contact an MTA at           */
     TSendMailOptions mx_options;    /**< See ESendMailOption                 */
     unsigned int     magic;         /**< RO, filled in by SendMailInfo_Init  */
 } SSendMailInfo;

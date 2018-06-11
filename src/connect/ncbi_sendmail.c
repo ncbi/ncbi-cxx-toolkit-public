@@ -285,7 +285,7 @@ static void x_Sendmail_InitEnv(void)
         tmo = 120.0/*2 min*/;
     }
     if (!ConnNetInfo_GetValue(0, "MX_PORT", buf, sizeof(buf), 0)
-        ||  !(port = (unsigned int)atoi(buf))  ||  port > 65535) {
+        ||  !(port = (unsigned int) atoi(buf))  ||  port > 65535) {
         port = CONN_PORT_SMTP;
     }
     if (!ConnNetInfo_GetValue(0, "MX_HOST", buf, sizeof(buf), 0)
@@ -301,7 +301,7 @@ static void x_Sendmail_InitEnv(void)
     s_MxTimeout.sec  = (unsigned int)  tmo;
     s_MxTimeout.usec = (unsigned int)((tmo - s_MxTimeout.sec) * 1000000.0);
     strcpy(s_MxHost, buf);
-    s_MxPort = port;
+    s_MxPort = (unsigned short) port;
     CORE_UNLOCK;
 }
 

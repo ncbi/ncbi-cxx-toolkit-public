@@ -146,7 +146,7 @@ double CRateMonitor::GetRate(void) const
 
     double weight = 1.0;
     for (;;) {
-        double rate = gaps.front().first / gaps.front().second;
+        double rate = double(gaps.front().first) / gaps.front().second;
         gaps.pop_front();
         if (gaps.empty()) {
             m_Rate += rate * weight;
@@ -170,7 +170,7 @@ double CRateMonitor::GetETA(void) const
     double rate = GetRate();
     if (!rate)
         return -1.0;
-    double eta = (m_Size - pos) / rate;
+    double eta = double(m_Size - pos) / rate;
     if (eta < kMinSpan)
         eta = 0.0;
     return eta;
@@ -189,7 +189,7 @@ double CRateMonitor::GetTimeRemaining(void) const
     double time = m_Data.front().second;
     // NB: Essentially, there is the same formula as in GetETA(),
     //     if to notice that rate = pos / time in this case.
-    time = time * m_Size / pos - time;
+    time = time * double(m_Size) / double(pos) - time;
     if (time < kMinSpan)
         time = 0.0;
     return time;
