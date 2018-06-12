@@ -1,5 +1,7 @@
 # $Id$
 
+ASN_DEP = seq taxon1
+
 LIB = local_taxon
 SRC = local_taxon
 
