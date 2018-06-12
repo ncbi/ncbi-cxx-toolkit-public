@@ -5020,46 +5020,42 @@ inline
 int NStr::Compare(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                   const char* pattern, ECase use_case)
 {
-    return use_case == eCase ?
-        CompareCase(str, pos, n, pattern): CompareNocase(str, pos, n, pattern);
+    return use_case == eCase ? CompareCase(str.substr(pos, n), pattern)
+                             : CompareNocase(str.substr(pos, n), pattern);
 }
 
 inline
 int NStr::Compare(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                   const CTempString pattern, ECase use_case)
 {
-    return use_case == eCase ?
-        CompareCase(str, pos, n, pattern): CompareNocase(str, pos, n, pattern);
+    return use_case == eCase ? CompareCase(str.substr(pos, n), pattern)
+                             : CompareNocase(str.substr(pos, n), pattern);
 }
 
 inline
 int NStr::Compare(const char* s1, const char* s2, ECase use_case)
 {
-    return use_case == eCase ? CompareCase(s1, s2): CompareNocase(s1, s2);
+    return use_case == eCase ? CompareCase(s1, s2) : CompareNocase(s1, s2);
 }
 
 inline
 int NStr::Compare(const CTempStringEx s1, const CTempStringEx s2, ECase use_case)
 {
-    return use_case == eCase ? CompareCase(s1, s2): CompareNocase(s1, s2);
+    return use_case == eCase ? CompareCase(s1, s2) : CompareNocase(s1, s2);
 }
 
 inline
 bool NStr::EqualCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                      const char* pattern)
 {
-    // Not optimal implementation but 'pos' and 'n' can be NPOS
-    // or any other number to add all checks here. 
-    return NStr::CompareCase(str, pos, n, pattern) == 0;
+    return str.substr(pos, n) == pattern;
 }
 
 inline
 bool NStr::EqualCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                      const CTempString pattern)
 {
-    // Not optimal implementation but 'pos' and 'n' can be NPOS
-    // or any other number to add all checks here. 
-    return NStr::CompareCase(str, pos, n, pattern) == 0;
+    return str.substr(pos, n) == pattern;
 }
 
 inline
@@ -5075,9 +5071,6 @@ bool NStr::EqualCase(const char* s1, const char* s2)
 inline
 bool NStr::EqualCase(const CTempStringEx s1, const CTempStringEx s2)
 {
-    if (s1.length() != s2.length()) {
-        return false;
-    }
     return s1 == s2;
 }
 
@@ -5085,18 +5078,14 @@ inline
 bool NStr::EqualNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                        const char* pattern)
 {
-    // Not optimal implementation but 'pos' and 'n' can be NPOS
-    // or any other number to add all checks here. 
-    return CompareNocase(str, pos, n, pattern) == 0;
+    return CompareNocase(str.substr(pos, n), pattern) == 0;
 }
 
 inline
 bool NStr::EqualNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                        const CTempString pattern)
 {
-    // Not optimal implementation but 'pos' and 'n' can be NPOS
-    // or any other number to add all checks here. 
-    return CompareNocase(str, pos, n, pattern) == 0;
+    return CompareNocase(str.substr(pos, n), pattern) == 0;
 }
 
 inline
@@ -5122,16 +5111,16 @@ inline
 bool NStr::Equal(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                  const char* pattern, ECase use_case)
 {
-    return use_case == eCase ?
-        EqualCase(str, pos, n, pattern) : EqualNocase(str, pos, n, pattern);
+    return use_case == eCase ? EqualCase(str.substr(pos, n), pattern) 
+                             : EqualNocase(str.substr(pos, n), pattern);
 }
 
 inline
 bool NStr::Equal(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                  const CTempString pattern, ECase use_case)
 {
-    return use_case == eCase ?
-        EqualCase(str, pos, n, pattern) : EqualNocase(str, pos, n, pattern);
+    return use_case == eCase ? EqualCase(str.substr(pos, n), pattern)
+                             : EqualNocase(str.substr(pos, n), pattern);
 }
 
 inline
@@ -5150,23 +5139,25 @@ inline
 bool NStr::StartsWith(const CTempString str, const CTempString start, ECase use_case)
 {
     return str.size() >= start.size()  &&
-        Compare(str, 0, start.size(), start, use_case) == 0;
+           Equal(str.substr(0, start.size()), start, use_case);
 }
 
 inline
 bool NStr::StartsWith(const CTempString str, char start, ECase use_case)
 {
     return !str.empty()  &&
-        ((use_case == eCase) ? (str[0] == start) :
-         (toupper((unsigned char) str[0]) == start  ||
-          tolower((unsigned char) str[0])));
+           (use_case == eCase ? (str[0] == start)
+                              : (str[0] == start  ||
+                                 toupper((unsigned char) str[0]) == start  ||
+                                 tolower((unsigned char) str[0]))
+           );
 }
 
 inline
 bool NStr::EndsWith(const CTempString str, const CTempString end, ECase use_case)
 {
     return str.size() >= end.size()  &&
-        Compare(str, str.size() - end.size(), end.size(), end, use_case) == 0;
+           Equal(str.substr(str.size() - end.size(), end.size()), end, use_case);
 }
 
 inline
@@ -5174,9 +5165,10 @@ bool NStr::EndsWith(const CTempString str, char end, ECase use_case)
 {
     if (!str.empty()) {
         char last = str[str.length() - 1];
-        return (use_case == eCase) ? (last == end) :
-               (toupper((unsigned char) last) == end  ||
-                tolower((unsigned char) last) == end);
+        return use_case == eCase ? (last == end)
+                                 : (last == end  ||
+                                    toupper((unsigned char) last) == end  ||
+                                    tolower((unsigned char) last) == end);
     }
     return false;
 }
@@ -5463,8 +5455,7 @@ CUtf8::x_Append(CStringUTF8& u8str, const TChar* src, SIZE_TYPE to)
 inline  CStringUTF8
 CUtf8::TruncateSpaces(const CTempString& str, NStr::ETrunc side) {
     CStringUTF8 u8;
-    return x_Append(u8, TruncateSpaces_Unsafe(str,side),
-                    eEncoding_UTF8, eNoValidate);
+    return x_Append(u8, TruncateSpaces_Unsafe(str,side), eEncoding_UTF8, eNoValidate);
 }
 
 // deprecated CStringUTF8 is there

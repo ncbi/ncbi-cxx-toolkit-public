@@ -216,24 +216,36 @@ private:
 inline
 bool operator==(const char* str1, const CTempString str2)
 {
+    if (strlen(str1) != str2.length()) {
+        return false;
+    }
     return str2.compare(str1) == 0;
 }
 
 inline
 bool operator==(const string& str1, const CTempString str2)
 {
+    if (str1.length() != str2.length()) {
+        return false;
+    }
     return str2.compare(str1) == 0;
 }
 
 inline
 bool operator!=(const char* str1, const CTempString str2)
 {
+    if (strlen(str1) == str2.length()) {
+        return false;
+    }
     return str2.compare(str1) != 0;
 }
 
 inline
 bool operator!=(const string& str1, const CTempString str2)
 {
+    if (str1.length() == str2.length()) {
+        return false;
+    }
     return str2.compare(str1) != 0;
 }
 
@@ -838,7 +850,7 @@ int CTempString::compare(const CTempString str) const
         return n2 ? kLess : kEqual;
     }
     if ( !n2 ) {
-        return n1 ? kGreater : kEqual;
+        return kGreater;
     }
     int res = memcmp(data(), str.data(), min(n1, n2));
     if ( res ) {
@@ -857,12 +869,18 @@ int CTempString::compare(const CTempString str) const
 inline
 bool CTempString::operator==(const CTempString str) const
 {
+    if (length() != str.length()) {
+        return false;
+    }
     return compare(str) == 0;
 }
 
 inline
 bool CTempString::operator!=(const CTempString str) const
 {
+    if (length() == str.length()) {
+        return false;
+    }
     return compare(str) != 0;
 }
 

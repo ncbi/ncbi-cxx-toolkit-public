@@ -198,11 +198,15 @@ int NStr::CompareNocase(const CTempStringEx s1, const CTempStringEx s2)
     const char* p1 = s1.data();
     const char* p2 = s2.data();
 
-    while (n  &&  tolower((unsigned char)(*p1)) == tolower((unsigned char)(*p2))) {
+    while (n  &&  (*p1 == *p2  ||  
+                   tolower((unsigned char)(*p1)) == tolower((unsigned char)(*p2))) ) {
         p1++;  p2++;  n--;
     }
     if ( !n ) {
         return (n1 == n2) ? 0 : (n1 > n2 ? 1 : -1);
+    }
+    if (*p1 == *p2) {
+        return 0;
     }
     return tolower((unsigned char)(*p1)) - tolower((unsigned char)(*p2));
 }
@@ -223,16 +227,16 @@ int NStr::CompareNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
     }
 
     const char* s = str.data() + pos;
-    while (n  &&  *pattern  &&
-           tolower((unsigned char)(*s)) == 
-           tolower((unsigned char)(*pattern))) {
+    while (n  &&  *pattern  &&  (*s == *pattern  ||  
+           tolower((unsigned char)(*s)) ==  tolower((unsigned char)(*pattern))) ) {
         s++;  pattern++;  n--;
     }
-
     if (n == 0) {
         return *pattern ? -1 : 0;
     }
-
+    if (*s == *pattern) {
+        return 0;
+    }
     return tolower((unsigned char)(*s)) - tolower((unsigned char)(*pattern));
 }
 
@@ -246,7 +250,6 @@ int NStr::CompareNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
     if (pattern.empty()) {
         return 1;
     }
-
     if (n == NPOS  ||  n > str.length() - pos) {
         n = str.length() - pos;
     }
@@ -257,17 +260,16 @@ int NStr::CompareNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
     }
     const char* s = str.data() + pos;
     const char* p = pattern.data();
-    while (n_cmp  &&  
-           tolower((unsigned char)(*s)) == tolower((unsigned char)(*p))) {
+    while (n_cmp  &&  (*s == *p  ||
+           tolower((unsigned char)(*s)) == tolower((unsigned char)(*p))) ) {
         s++;  p++;  n_cmp--;
     }
-
     if (n_cmp == 0) {
-        if (n == pattern.length())
-            return 0;
-        return n > pattern.length() ? 1 : -1;
+        return (n == pattern.length()) ? 0 : (n > pattern.length() ? 1 : -1);
     }
-
+    if (*s == *p) {
+        return 0;
+    }
     return tolower((unsigned char)(*s)) - tolower((unsigned char)(*p));
 }
 
@@ -313,11 +315,13 @@ bool NStr::MatchesMask(CTempString str, CTempString mask, ECase use_case)
             // Compare non pattern character in mask and name
             char s = str[str_pos++];
             if (use_case == NStr::eNocase) {
-                c = (char)tolower((unsigned char) c);
-                s = (char)tolower((unsigned char) s);
-            }
-            if (c != s) {
-                return false;
+                if (c != s  &&  tolower((unsigned char)c) != tolower((unsigned char)s)) {
+                    return false;
+                }
+            } else {
+                if (c != s) {
+                    return false;
+                }
             }
             break;
         }
