@@ -131,13 +131,16 @@ void CTable2AsnValidator::Validate(CRef<CSeq_submit> submit, CRef<CSeq_entry> en
     scope.AddDefaults();
     validator::CValidator validator(scope.GetObjectManager());
 
-    Uint4 opts = 0;
+    Uint4 options = 0;
+    if (m_context->m_master_genome_flag == "M")
+        options |= validator::CValidator::eVal_genome_submission;
+
     CConstRef<CValidError> errors;
 
     if (submit.Empty())
     {
         CSeq_entry_Handle top_se = scope.AddTopLevelSeqEntry(*entry);
-        errors = validator.Validate(top_se, opts);
+        errors = validator.Validate(top_se, options);
     }
     else
     {
@@ -145,7 +148,7 @@ void CTable2AsnValidator::Validate(CRef<CSeq_submit> submit, CRef<CSeq_entry> en
         {
             scope.AddTopLevelSeqEntry(**it);
         }
-        errors = validator.Validate(*submit, &scope, opts);
+        errors = validator.Validate(*submit, &scope, options);
     }
     if (errors.NotEmpty())
     {
