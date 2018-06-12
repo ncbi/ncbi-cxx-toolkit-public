@@ -2,8 +2,6 @@
 # $Id$
 #############################################################################
 
-if(NCBI_EXPERIMENTAL_API)
-
 NCBI_begin_lib(test_boost)
   NCBI_sources(test_boost teamcity_messages)
   NCBI_headers(test_boost.hpp)
@@ -13,7 +11,7 @@ NCBI_begin_lib(test_boost)
   NCBI_project_watchers(vakatov satskyse)
 NCBI_end_lib()
 
-else()
+if(OFF)
 
 add_library(test_boost test_boost teamcity_messages)
 target_link_libraries(test_boost  xncbi)
