@@ -725,8 +725,35 @@ find_external_library(libxlsxwriter
     HINTS "${NCBI_TOOLS_ROOT}/libxlsxwriter-0.6.9"
     EXTRALIBS ${Z_LIBS})
 
-find_external_library(LIBUNWIND INCLUDES libunwind.h LIBS unwind HINTS "${NCBI_TOOLS_ROOT}/libunwind-1.1")
-set(HAVE_LIBUNWIND ${LIBUNWIND_FOUND})
+#find_external_library(LIBUNWIND INCLUDES libunwind.h LIBS unwind HINTS "${NCBI_TOOLS_ROOT}/libunwind-1.1")
+#set(HAVE_LIBUNWIND ${LIBUNWIND_FOUND})
+
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release" AND
+        EXISTS /opt/ncbi/64/libunwind-1.1/lib/)
+    set(_UNWIND_HINTS "/opt/ncbi/64/libunwind-1.1/lib/")
+else()
+    set(_UNWIND_HINTS "${NCBI_TOOLS_ROOT}/libunwind-1.1")
+endif()
+
+find_library(LIBUNWIND_LIBS
+    NAMES unwind
+    HINTS ${_UNWIND_HINTS}
+    )
+if (LIBUNWIND_LIBS)
+    find_path(LIBUNWIND_INCLUDE
+        NAME libunwind.h
+        HINTS "${NCBI_TOOLS_ROOT}/libunwind-1.1/include")
+    if (LIBUNWIND_INCLUDE)
+        set(HAVE_LIBUNWIND True)
+    endif()
+endif()
+
+if (HAVE_LIBUNWIND)
+    message(STATUS "Found libunwind: ${LIBUNWIND_LIBS}")
+    message(STATUS "Found libunwind.h: ${LIBUNWIND_INCLUDE}")
+else()
+    message(STATUS "Cannot find libunwind")
+endif()
 
 if (EXISTS "${NCBI_TOOLS_ROOT}/msgsl-0.0.20171114-1c95f94/include/gsl/gsl")
     set(MSGSL_INCLUDE "${NCBI_TOOLS_ROOT}/msgsl-0.0.20171114-1c95f94/include/")

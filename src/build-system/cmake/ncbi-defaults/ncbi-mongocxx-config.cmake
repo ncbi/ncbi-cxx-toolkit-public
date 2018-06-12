@@ -1,0 +1,80 @@
+# Config file for NCBI-specific libxml layout
+#
+
+#############################################################################
+##
+## Standard boilerplate capturing NCBI library layout issues
+##
+
+if (BUILD_SHARED_LIBS)
+    set(_NCBI_LIBRARY_SUFFIX .so)
+else()
+    set(_NCBI_LIBRARY_SUFFIX -static.a)
+endif()
+
+
+#############################################################################
+##
+## Module-specific checks
+##
+
+set(_MONGODB_VERSION "mongodb-3.2.0")
+set(_MONGO_C_DRIVER_VERSION "mongo-c-driver-1.9.3")
+
+get_filename_component(MONGOCXX_CMAKE_DIR "$ENV{NCBI}/${_MONGODB_VERSION}" REALPATH)
+string(REGEX REPLACE ".*-([0-9].*)" "\\1" MONGOCXX_VERSION_STRING "${MONGOCXX_CMAKE_DIR}")
+
+set(MONGOCXX_FOUND True)
+set(MONGOCXX_INCLUDE_DIR
+    ${MONGOCXX_CMAKE_DIR}/include/mongocxx/v_noabi
+    )
+
+set(BSONCXX_FOUND True)
+set(BSONCXX_INCLUDE_DIR
+    ${MONGOCXX_CMAKE_DIR}/include/bsoncxx/v_noabi
+    )
+
+# Choose the proper library path
+# For some libraries, we look in /opt/ncbi/64
+set(_libpath_mongocxx ${MONGOCXX_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64/lib)
+if (CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
+    if (EXISTS /opt/ncbi/64/${_MONGODB_VERSION}/lib)
+        set(_libpath_mongocxx /opt/ncbi/64/${_MONGODB_VERSION}/lib)
+    endif()
+endif()
+
+set(_libpath_mongo_c_driver ${MONGOCXX_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64/lib)
+if (CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
+    if (EXISTS /opt/ncbi/64/${_MONGO_C_DRIVER_VERSION}/lib)
+        set(_libpath_mongo_c_driver /opt/ncbi/64/${_MONGO_C_DRIVER_VERSION}/lib)
+    endif()
+endif()
+
+set(MONGOCXX_LIBRARIES
+    ${_libpath_mongocxx}/libmongocxx${_NCBI_LIBRARY_SUFFIX}
+    ${_libpath_mongo_c_driver}/libmongoc-1.0${_NCBI_LIBRARY_SUFFIX}
+    )
+
+set(BSONCXX_LIBRARIES
+    ${_libpath_mongocxx}/libbsoncxx${_NCBI_LIBRARY_SUFFIX}
+    ${_libpath_mongo_c_driver}/libbson-1.0${_NCBI_LIBRARY_SUFFIX}
+    )
+
+set(MONGOCXX_INCLUDE_DIRS ${MONGOCXX_INCLUDE_DIR})
+set(BSONCXX_INCLUDE_DIRS ${BSONCXX_INCLUDE_DIR})
+
+#############################################################################
+##
+## Logging
+##
+
+#if (_NCBI_MODULE_DEBUG)
+if (True)
+    message(STATUS "MONGOCXX (NCBI): FOUND = ${MONGOCXX_FOUND}")
+    message(STATUS "MONGOCXX (NCBI): INCLUDE = ${MONGOCXX_INCLUDE_DIR}")
+    message(STATUS "MONGOCXX (NCBI): LIBRARIES = ${MONGOCXX_LIBRARIES}")
+    message(STATUS "BSONCXX (NCBI): FOUND = ${BSONCXX_FOUND}")
+    message(STATUS "BSONCXX (NCBI): INCLUDE = ${BSONCXX_INCLUDE_DIR}")
+    message(STATUS "BSONCXX (NCBI): LIBRARIES = ${BSONCXX_LIBRARIES}")
+endif()
+
