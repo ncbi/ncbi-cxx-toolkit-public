@@ -1058,7 +1058,6 @@ sdbapi needs dbapi
 sdbapi needs dbapi_util_blobstore
 sdbapi needs ncbi_xdbapi_ftds
 sdbapi needs ncbi_xdbapi_ftds100
-sdbapi needs ncbi_xdbapi_ftds64
 sdbapi needs ncbi_xdbapi_ftds95
 sdbapi needs xconnect
 sdncbiauth needs generic_db_core
