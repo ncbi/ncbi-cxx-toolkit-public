@@ -146,7 +146,7 @@ void CCassBlobOp::GetBlob(unsigned int  op_timeout_ms,
     );
 
     if (is_error)
-        RAISE_DB_ERROR(eQueryFailedRestartable, errmsg);
+        RAISE_DB_ERROR(eQueryFailed, errmsg);
     if (blob_stat)
         *blob_stat = loader.GetBlobStat();
 }

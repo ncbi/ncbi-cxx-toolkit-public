@@ -114,14 +114,14 @@ void CCassBlobLoader::Cancel(void)
     m_State = eError;
 }
 
-bool CCassBlobLoader::Restart(unsigned int max_retries)
+bool CCassBlobLoader::Restart()
 {
     m_StatLoaded = false;
     m_BlobStat = SBlobStat();
     m_ExpectedSize = 0;
     m_RemainingSize = 0;
     m_LargeParts = 0;
-    return CCassBlobWaiter::Restart(max_retries);
+    return CCassBlobWaiter::Restart();
 }
 
 int32_t CCassBlobLoader::GetTotalChunksInBlob(void) const
