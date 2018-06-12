@@ -125,6 +125,9 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     const CassPrepared * Prepare(const string & sql);
 
  public:
+    using TTokenValue = int64_t;
+    using TTokenRanges = vector<pair<TTokenValue,TTokenValue>>;
+
     CCassConnection(const CCassConnection&) = delete;
     CCassConnection& operator=(const CCassConnection&) = delete;
 
@@ -166,8 +169,10 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     string Keyspace(void) const;
 
     shared_ptr<CCassQuery> NewQuery();
-    void getTokenRanges(vector< pair<int64_t,int64_t> > &ranges);
-    vector<string> GetPartitionKeyColumnNames(string const & keyspace, string const & table);
+    void GetTokenRanges(TTokenRanges &ranges);
+    // @deprecated
+    void getTokenRanges(TTokenRanges &ranges);
+    vector<string> GetPartitionKeyColumnNames(string const & keyspace, string const & table) const;
     static string NewTimeUUID();
     static void Perform(
         unsigned int optimeoutms,

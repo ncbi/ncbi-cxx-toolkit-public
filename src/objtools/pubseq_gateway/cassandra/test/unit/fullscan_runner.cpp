@@ -26,7 +26,7 @@
 * Author:  Dmitrii Saprykin, NCBI
 *
 * File Description:
-*   Unit test suite to check cassandra cluster meta data operations
+*   Unit test suite to check fullscan runner operations
 *
 * ===========================================================================
 */
@@ -36,26 +36,30 @@
 #include <corelib/ncbireg.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/fullscan/runner.hpp>
 
 #include <gtest/gtest.h>
 
 #include <memory>
 #include <string>
 #include <vector>
+#include <thread>
 
 namespace {
 
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
-class CassandraClusterMetaTest
+class CCassandraFullscanRunnerTest
     : public testing::Test
 {
  public:
-    CassandraClusterMetaTest()
+    CCassandraFullscanRunnerTest()
      : m_TestClusterName("ID_CASS_TEST")
      , m_Factory(nullptr)
      , m_Connection(nullptr)
+     , m_KeyspaceName("test_ipg_storage_entrez")
+     , m_TableName("ipg_report")
     {}
 
     virtual void SetUp()
@@ -79,38 +83,43 @@ class CassandraClusterMetaTest
     const string m_TestClusterName;
     shared_ptr<CCassConnectionFactory> m_Factory;
     shared_ptr<CCassConnection> m_Connection;
+
+    string m_KeyspaceName;
+    string m_TableName;
 };
 
-TEST_F(CassandraClusterMetaTest, GetPartitionKeyColumnNames) {
-    string keyspace_name = "test_ipg_storage_entrez";
-    string table_name = "ipg_report";
-    vector<string> expected = {"ipg"};
-    vector<string> actual = m_Connection->GetPartitionKeyColumnNames(keyspace_name, table_name);
-    EXPECT_EQ(expected, actual)
-        << "Partition key column list for " << keyspace_name << "." << table_name << " is not equal to expected";
+class CSimpleRowConsumer
+    : public ICassandraFullscanConsumer
+{
+ public:
+    virtual bool Tick() {
+        return true;
+    }
+    virtual bool ReadRow(CCassQuery const & query) {
+        //cout << " ipg = " << query.FieldGetInt64Value(0) << " " << this_thread::get_id() << endl;
+        //cout << " accession = " << query.FieldGetStrValueDef(1, "fake") << " " << this_thread::get_id() << endl;
+        return true;
+    }
+    virtual void Finalize() {
+        cout << "Finalize called " << this_thread::get_id() << endl;
+    }
+    virtual ~CSimpleRowConsumer() = default;
+};
 
-    keyspace_name = "test_mlst_storage";
-    table_name = "allele_data";
-    expected = {"taxid", "version"};
-    actual = m_Connection->GetPartitionKeyColumnNames(keyspace_name, table_name);
-    EXPECT_EQ(expected, actual)
-        << "Partition key column list for " << keyspace_name << "." << table_name << " is not equal to expected";
-
-    EXPECT_THROW(
-        m_Connection->GetPartitionKeyColumnNames("non_existent", table_name),
-        CCassandraException
-    ) << "GetPartitionKeyColumnNames should throw for non existent keyspace";
-
-    EXPECT_THROW(
-        m_Connection->GetPartitionKeyColumnNames(keyspace_name, "non_existent"),
-        CCassandraException
-    ) << "GetPartitionKeyColumnNames should throw for non existent table";
-
-    m_Connection->Close();
-    EXPECT_THROW(
-        m_Connection->GetPartitionKeyColumnNames(keyspace_name, table_name),
-        CCassandraException
-    ) << "GetPartitionKeyColumnNames should throw on closed connection";
+TEST_F(CCassandraFullscanRunnerTest, SmokeTest) {
+    CCassandraFullscanRunner runner;
+    runner
+        .SetConnection(m_Connection)
+        .SetFieldList({"ipg", "accession"})
+        .SetThreadCount(4)
+        .SetKeyspace(m_KeyspaceName)
+        .SetTable(m_TableName)
+        .SetConsumerFactory(
+            []() -> unique_ptr<CSimpleRowConsumer> {
+                return unique_ptr<CSimpleRowConsumer>(new CSimpleRowConsumer());
+            }
+        );
+    runner.Execute();
 }
 
 }  // namespace

@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistr.hpp>
 #include <sstream>
+#include <utility>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
