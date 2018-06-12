@@ -12,6 +12,7 @@
 ##  NCBI_COMPONENT_XXX_DEFINES
 ##  NCBI_COMPONENT_XXX_LIBS
 ##  HAVE_LIBXXX
+##  HAVE_XXX
 
 
 # NOTE:
@@ -884,6 +885,26 @@ else()
 endif()
 
 #############################################################################
+# Boost.Test
+if(Boost_FOUND)
+  set(NCBI_COMPONENT_Boost.Test_FOUND YES)
+  set(NCBI_COMPONENT_Boost.Test_INCLUDE ${Boost_INCLUDE_DIRS})
+  set(NCBI_COMPONENT_Boost.Test_LIBS    ${Boost_LIBRARIES})
+else()
+  set(NCBI_COMPONENT_Boost.Test_FOUND NO)
+endif()
+
+#############################################################################
+# Boost.Spirit
+if(Boost_FOUND)
+  set(NCBI_COMPONENT_Boost.Spirit_FOUND YES)
+  set(NCBI_COMPONENT_Boost.Spirit_INCLUDE ${Boost_INCLUDE_DIRS})
+  set(NCBI_COMPONENT_Boost.Spirit_LIBS    ${Boost_LIBRARIES})
+else()
+  set(NCBI_COMPONENT_Boost.Spirit_FOUND NO)
+endif()
+
+#############################################################################
 #LocalPCRE
 if (EXISTS ${includedir}/util/regexp)
   set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
@@ -964,6 +985,17 @@ else()
 endif()
 
 #############################################################################
+#BerkeleyDB
+if(BERKELEYDB_FOUND)
+  set(NCBI_COMPONENT_BerkeleyDB_FOUND YES)
+  set(NCBI_COMPONENT_BerkeleyDB_INCLUDE ${BerkeleyDB_INCLUDE_DIR})
+  set(NCBI_COMPONENT_BerkeleyDB_LIBS ${BerkeleyDB_LIBRARIES})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} BerkeleyDB")
+else()
+  set(NCBI_COMPONENT_BerkeleyDB_FOUND NO)
+endif()
+
+#############################################################################
 #LocalLMDB
 if (EXISTS ${includedir}/util/lmdb)
   set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
@@ -1020,6 +1052,46 @@ if(HAVE_LIBTIFF)
   set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} TIFF")
 else()
   set(NCBI_COMPONENT_TIFF_FOUND NO)
+endif()
+
+#############################################################################
+# XML
+if(LIBXML2_FOUND)
+  set(NCBI_COMPONENT_XML_FOUND YES)
+  set(NCBI_COMPONENT_XML_INCLUDE ${LIBXML_INCLUDE})
+  set(NCBI_COMPONENT_XML_LIBS ${LIBXML_LIBS})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} XML")
+else()
+  set(NCBI_COMPONENT_XML_FOUND NO)
+endif()
+
+#############################################################################
+# XSLT
+# EXSLT
+if(LIBXSLT_FOUND)
+  set(NCBI_COMPONENT_XSLT_FOUND YES)
+  set(NCBI_COMPONENT_XSLT_INCLUDE ${LIBXSLT_INCLUDE})
+  set(NCBI_COMPONENT_XSLT_LIBS ${LIBXSLT_LIBS})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} XSLT")
+
+  set(NCBI_COMPONENT_EXSLT_FOUND YES)
+  set(NCBI_COMPONENT_EXSLT_INCLUDE ${LIBEXSLT_INCLUDE})
+  set(NCBI_COMPONENT_EXSLT_LIBS ${LIBEXSLT_LIBS})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} EXSLT")
+else()
+  set(NCBI_COMPONENT_XSLT_FOUND NO)
+  set(NCBI_COMPONENT_EXSLT_FOUND NO)
+endif()
+
+#############################################################################
+#SQLITE3
+if(SQLITE3_FOUND)
+  set(NCBI_COMPONENT_SQLITE3_FOUND YES)
+  set(NCBI_COMPONENT_SQLITE3_INCLUDE ${SQLITE3_INCLUDE})
+  set(NCBI_COMPONENT_SQLITE3_LIBS ${SQLITE3_LIBS})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} SQLITE3")
+else()
+  set(NCBI_COMPONENT_SQLITE3_FOUND NO)
 endif()
 
 

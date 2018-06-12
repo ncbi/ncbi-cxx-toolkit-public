@@ -12,6 +12,7 @@
 ##  NCBI_COMPONENT_XXX_DEFINES
 ##  NCBI_COMPONENT_XXX_LIBS
 ##  HAVE_LIBXXX
+##  HAVE_XXX
 
 
 set(NCBI_ALL_COMPONENTS "")
@@ -43,23 +44,39 @@ endif()
 
 set(NCBI_ThirdParty_NCBI_C  //snowman/win-coremake/Lib/Ncbi/C/${NCBI_ThirdPartyCompiler}/c.current)
 
-set(NCBI_ThirdParty_TLS     ${NCBI_ThirdPartyBasePath}/gnutls/${NCBI_ThirdPartyCompiler}/3.4.9)
-set(NCBI_ThirdParty_FASTCGI ${NCBI_ThirdPartyBasePath}/fastcgi/${NCBI_ThirdPartyCompiler}/2.4.0)
-set(NCBI_ThirdParty_Boost   ${NCBI_ThirdPartyBasePath}/boost/${NCBI_ThirdPartyCompiler}/1.61.0)
-set(NCBI_ThirdParty_PCRE    ${NCBI_ThirdPartyBasePath}/pcre/${NCBI_ThirdPartyCompiler}/7.9)
-set(NCBI_ThirdParty_Z       ${NCBI_ThirdPartyBasePath}/z/${NCBI_ThirdPartyCompiler}/1.2.8)
-set(NCBI_ThirdParty_BZ2     ${NCBI_ThirdPartyBasePath}/bzip2/${NCBI_ThirdPartyCompiler}/1.0.6)
-set(NCBI_ThirdParty_LZO     ${NCBI_ThirdPartyBasePath}/lzo/${NCBI_ThirdPartyCompiler}/2.05)
-set(NCBI_ThirdParty_LMDB    ${NCBI_ThirdPartyBasePath}/lmdb/${NCBI_ThirdPartyCompiler}/0.9.21)
-set(NCBI_ThirdParty_JPEG    ${NCBI_ThirdPartyBasePath}/jpeg/${NCBI_ThirdPartyCompiler}/6b)
-set(NCBI_ThirdParty_PNG     ${NCBI_ThirdPartyBasePath}/png/${NCBI_ThirdPartyCompiler}/1.2.7)
-set(NCBI_ThirdParty_GIF     ${NCBI_ThirdPartyBasePath}/gif/${NCBI_ThirdPartyCompiler}/4.1.3)
-set(NCBI_ThirdParty_TIFF    ${NCBI_ThirdPartyBasePath}/tiff/${NCBI_ThirdPartyCompiler}/3.6.1)
+set(NCBI_ThirdParty_TLS        ${NCBI_ThirdPartyBasePath}/gnutls/${NCBI_ThirdPartyCompiler}/3.4.9)
+set(NCBI_ThirdParty_FASTCGI    ${NCBI_ThirdPartyBasePath}/fastcgi/${NCBI_ThirdPartyCompiler}/2.4.0)
+set(NCBI_ThirdParty_Boost      ${NCBI_ThirdPartyBasePath}/boost/${NCBI_ThirdPartyCompiler}/1.61.0)
+set(NCBI_ThirdParty_PCRE       ${NCBI_ThirdPartyBasePath}/pcre/${NCBI_ThirdPartyCompiler}/7.9)
+set(NCBI_ThirdParty_Z          ${NCBI_ThirdPartyBasePath}/z/${NCBI_ThirdPartyCompiler}/1.2.8)
+set(NCBI_ThirdParty_BZ2        ${NCBI_ThirdPartyBasePath}/bzip2/${NCBI_ThirdPartyCompiler}/1.0.6)
+set(NCBI_ThirdParty_LZO        ${NCBI_ThirdPartyBasePath}/lzo/${NCBI_ThirdPartyCompiler}/2.05)
+set(NCBI_ThirdParty_BerkeleyDB ${NCBI_ThirdPartyBasePath}/berkeleydb/${NCBI_ThirdPartyCompiler}/4.6.21.NC)
+set(NCBI_ThirdParty_LMDB       ${NCBI_ThirdPartyBasePath}/lmdb/${NCBI_ThirdPartyCompiler}/0.9.21)
+set(NCBI_ThirdParty_JPEG       ${NCBI_ThirdPartyBasePath}/jpeg/${NCBI_ThirdPartyCompiler}/6b)
+set(NCBI_ThirdParty_PNG        ${NCBI_ThirdPartyBasePath}/png/${NCBI_ThirdPartyCompiler}/1.2.7)
+set(NCBI_ThirdParty_GIF        ${NCBI_ThirdPartyBasePath}/gif/${NCBI_ThirdPartyCompiler}/4.1.3)
+set(NCBI_ThirdParty_TIFF       ${NCBI_ThirdPartyBasePath}/tiff/${NCBI_ThirdPartyCompiler}/3.6.1)
+set(NCBI_ThirdParty_XML        ${NCBI_ThirdPartyBasePath}/xml/${NCBI_ThirdPartyCompiler}/2.7.8)
+set(NCBI_ThirdParty_XSLT       ${NCBI_ThirdPartyBasePath}/xslt/${NCBI_ThirdPartyCompiler}/1.1.26)
+set(NCBI_ThirdParty_EXSLT      ${NCBI_ThirdParty_XSLT})
+set(NCBI_ThirdParty_SQLITE3    ${NCBI_ThirdPartyBasePath}/sqlite/${NCBI_ThirdPartyCompiler}/3.8.10.1)
 
 
 #############################################################################
-macro(NCBI_define_component _name _lib)
-  set(_root ${NCBI_ThirdParty_${_name}})
+macro(NCBI_define_component _name)
+  if (DEFINED NCBI_ThirdParty_${_name})
+    set(_root ${NCBI_ThirdParty_${_name}})
+  else()
+    string(FIND ${_name} "." dotfound)
+    string(SUBSTRING ${_name} 0 ${dotfound} _dotname)
+    if (DEFINED NCBI_ThirdParty_${_dotname})
+      set(_root ${NCBI_ThirdParty_${_dotname}})
+    else()
+      message("Component ${_name} ERROR: NCBI_ThirdParty_${_name} not found")
+    endif()
+  endif()
+  set(_args ${ARGN})
   if (EXISTS ${_root}/include)
     set(_found YES)
   else()
@@ -69,19 +86,29 @@ macro(NCBI_define_component _name _lib)
   if (_found)
     set(_libtype lib_static)
     foreach(_cfg ${CMAKE_CONFIGURATION_TYPES})
-      if(NOT EXISTS ${_root}/${_libtype}/${_cfg}/${_lib})
-        message("Component ${_name} ERROR: ${_root}/${_libtype}/${_cfg}/${_lib} not found")
-        set(_found NO)
-      endif()
+      foreach(_lib IN LISTS _args)
+        if(NOT EXISTS ${_root}/${_libtype}/${_cfg}/${_lib})
+          message("Component ${_name} ERROR: ${_root}/${_libtype}/${_cfg}/${_lib} not found")
+          set(_found NO)
+        endif()
+      endforeach()
     endforeach()
   endif()
   if (_found)
     message("${_name} found at ${_root}")
     set(NCBI_COMPONENT_${_name}_FOUND YES)
     set(NCBI_COMPONENT_${_name}_INCLUDE ${_root}/include)
-    set(NCBI_COMPONENT_${_name}_LIBS ${_root}/${_libtype}/\$\(Configuration\)/${_lib})
+    foreach(_lib IN LISTS _args)
+      set(NCBI_COMPONENT_${_name}_LIBS ${NCBI_COMPONENT_${_name}_LIBS} ${_root}/${_libtype}/\$\(Configuration\)/${_lib})
+    endforeach()
+#message("NCBI_COMPONENT_${_name}_INCLUDE ${NCBI_COMPONENT_${_name}_INCLUDE}")
+#message("NCBI_COMPONENT_${_name}_LIBS ${NCBI_COMPONENT_${_name}_LIBS}")
+
     string(TOUPPER ${_name} _upname)
     set(HAVE_LIB${_upname} 1)
+    string(REPLACE "." "_" _altname ${_upname})
+    set(HAVE_${_altname} 1)
+
     set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} ${_name}")
   else()
     set(NCBI_COMPONENT_${_name}_FOUND NO)
@@ -141,6 +168,20 @@ if (EXISTS ${NCBI_ThirdParty_Boost}/include)
 else()
   message("Component Boost.Test.Included ERROR: ${NCBI_ThirdParty_Boost}/include not found")
   set(NCBI_COMPONENT_Boost.Test.Included_FOUND NO)
+endif()
+
+#############################################################################
+# Boost.Test
+NCBI_define_component(Boost.Test libboost_unit_test_framework.lib)
+if(NCBI_COMPONENT_Boost.Test_FOUND)
+  set(NCBI_COMPONENT_Boost.Test_DEFINES BOOST_AUTO_LINK_NOMANGLE)
+endif()
+
+#############################################################################
+# Boost.Spirit
+NCBI_define_component(Boost.Spirit libboost_thread.lib)
+if(NCBI_COMPONENT_Boost.Spirit_FOUND)
+  set(NCBI_COMPONENT_Boost.Spirit_DEFINES BOOST_AUTO_LINK_NOMANGLE)
 endif()
 
 #############################################################################
@@ -205,6 +246,15 @@ endif()
 NCBI_define_component(LZO liblzo.lib)
 
 #############################################################################
+#BerkeleyDB
+NCBI_define_component(BerkeleyDB libdb.lib)
+if(NCBI_COMPONENT_BerkeleyDB_FOUND)
+  set(HAVE_BERKELEY_DB 1)
+  set(HAVE_BDB         1)
+  set(HAVE_BDB_CACHE   1)
+endif()
+
+#############################################################################
 #LocalLMDB
 if (EXISTS ${includedir}/util/lmdb)
   set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
@@ -239,4 +289,21 @@ NCBI_define_component(GIF libgif.lib)
 # TIFF
 NCBI_define_component(TIFF libtiff.lib)
 
+#############################################################################
+# XML
+NCBI_define_component(XML libxml2.lib)
+if (NCBI_COMPONENT_XML_FOUND)
+  set (NCBI_COMPONENT_XML_DEFINES LIBXML_STATIC)
+endif()
 
+#############################################################################
+# XSLT
+NCBI_define_component(XSLT libexslt.lib libxslt.lib)
+
+#############################################################################
+# EXSLT
+NCBI_define_component(EXSLT libexslt.lib)
+
+#############################################################################
+# SQLITE3
+NCBI_define_component(SQLITE3 sqlite3.lib)

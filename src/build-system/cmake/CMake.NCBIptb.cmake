@@ -169,6 +169,7 @@ endfunction()
 
 #############################################################################
 macro(NCBI_begin_lib _name)
+  set(NCBI_PROJECT_lib ${_name})
   if(NCBI_EXPERIMENTAL_CFG)
     set(NCBI_PROJECT ${_name})
     set(NCBI_${NCBI_PROJECT}_OUTPUT ${_name})
@@ -191,12 +192,16 @@ endmacro()
 
 #############################################################################
 macro(NCBI_end_lib)
+  if(NOT DEFINED NCBI_PROJECT_lib)
+    message(SEND_ERROR "${NCBI_CURRENT_SOURCE_DIR}/${NCBI_PROJECT}: Unexpected NCBI_end_lib call")
+  endif()
   NCBI_internal_add_project()
   unset(NCBI_PROJECT)
 endmacro()
 
 #############################################################################
 macro(NCBI_begin_app _name)
+  set(NCBI_PROJECT_app ${_name})
   if(NCBI_EXPERIMENTAL_CFG)
     set(NCBI_PROJECT ${_name})
     set(NCBI_${NCBI_PROJECT}_OUTPUT ${_name})
@@ -209,6 +214,9 @@ endmacro()
 
 #############################################################################
 macro(NCBI_end_app)
+  if(NOT DEFINED NCBI_PROJECT_app)
+    message(SEND_ERROR "${NCBI_CURRENT_SOURCE_DIR}/${NCBI_PROJECT}: Unexpected NCBI_end_app call")
+  endif()
   NCBI_internal_add_project()
   unset(NCBI_PROJECT)
 endmacro()

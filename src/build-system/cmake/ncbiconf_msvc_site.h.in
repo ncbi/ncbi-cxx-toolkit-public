@@ -1,13 +1,13 @@
-#define HAVE_BDB 1
-#define HAVE_BDB_CACHE 1
-#define HAVE_BERKELEY_DB 1
-#define HAVE_BOOST_SPIRIT 1
-#define HAVE_BOOST_TEST 1
+#cmakedefine HAVE_BDB 1
+#cmakedefine HAVE_BDB_CACHE 1
+#cmakedefine HAVE_BERKELEY_DB 1
+#cmakedefine HAVE_BOOST_SPIRIT 1
+#cmakedefine HAVE_BOOST_TEST 1
 #define HAVE_FCGX_ACCEPT_R 1
 #define HAVE_FREETYPE 1
 /* #undef HAVE_ICU */
 #define HAVE_LIBCONNEXT 1
-#define HAVE_LIBEXSLT 1
+#cmakedefine HAVE_LIBEXSLT 1
 #cmakedefine HAVE_LIBFASTCGI 1
 #define HAVE_LIBFTGL 1
 #cmakedefine HAVE_LIBGIF 1
@@ -21,11 +21,11 @@
 /* #undef HAVE_LIBMUPARSER */
 #define HAVE_LIBOPENSSL 1
 #cmakedefine HAVE_LIBPNG 1
-#define HAVE_LIBSQLITE3 1
+#cmakedefine HAVE_LIBSQLITE3 1
 #define HAVE_LIBSYBASE 1
 #cmakedefine HAVE_LIBTIFF 1
-#define HAVE_LIBXML 1
-#define HAVE_LIBXSLT 1
+#cmakedefine HAVE_LIBXML 1
+#cmakedefine HAVE_LIBXSLT 1
 /* #undef HAVE_LOCAL_LBSM */
 #define HAVE_NCBI_VDB 1
 #define HAVE_ODBC 1
