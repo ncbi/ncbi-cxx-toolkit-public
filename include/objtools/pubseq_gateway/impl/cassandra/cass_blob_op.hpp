@@ -119,7 +119,7 @@ public:
         return (m_State == eDone || m_State == eError);
     }
 
-    virtual bool Restart(unsigned int  max_retries = 0)
+    virtual bool Restart()
     {
         CloseAll();
         m_State = eInit;
@@ -305,7 +305,7 @@ public:
     int32_t GetTotalChunksInBlob(void) const;
 
     void Cancel(void);
-    virtual bool Restart(unsigned int  max_retries = 0) override;
+    virtual bool Restart() override;
 
 protected:
     virtual void Wait1(void) override;
