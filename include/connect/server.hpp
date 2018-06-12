@@ -66,7 +66,8 @@ enum EServIO_Event {
     eServIO_ClientClose = 0x04,
     eServIO_OurClose    = 0x08,
     eServIO_Inactivity  = 0x10,
-    eServIO_Delete      = 0x20
+    eServIO_Delete      = 0x20,
+    eServIO_Alarm       = 0x40
 };
 
 

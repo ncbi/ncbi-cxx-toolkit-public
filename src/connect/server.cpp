@@ -532,10 +532,6 @@ bool CServer_Connection::IsOpen(void)
 
 void CServer_Connection::OnSocketEvent(EServIO_Event event)
 {
-    if (event == (EServIO_Event) -1) {
-        m_Handler->OnTimer();
-        return;
-    }
     switch (event) {
     case eServIO_Open:
         m_Handler->OnOpen();
@@ -555,6 +551,9 @@ void CServer_Connection::OnSocketEvent(EServIO_Event event)
         // fall through
     case eServIO_Delete:
         delete this;
+        break;
+    case eServIO_Alarm:
+        m_Handler->OnTimer();
         break;
     default:
         if (eServIO_Read & event)
@@ -740,7 +739,7 @@ void CServer::x_DoRun(void)
                 {
                     IServer_ConnectionBase* conn_base = *it;
                     CRef<CStdRequest> req(conn_base->CreateRequest(
-                                          (EServIO_Event)-1, *m_ConnectionPool, timeout));
+                                          eServIO_Alarm, *m_ConnectionPool, timeout));
                     m_ThreadPool->AcceptRequest(req);
                 }
             }
