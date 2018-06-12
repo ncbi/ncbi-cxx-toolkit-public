@@ -427,7 +427,7 @@ void CFlatFileGenerator::Generate
 
 
 void CFlatFileGenerator::Generate
-(CSeq_submit& submit,
+(const CSeq_submit& submit,
  CScope& scope,
  CFlatItemOStream& item_os)
 {
@@ -439,7 +439,7 @@ void CFlatFileGenerator::Generate
     // NB: though the spec specifies a submission may contain multiple entries
     // this is not the case. A submission should only have a single Top-level
     // Seq-entry
-    CRef<CSeq_entry> e(submit.SetData().SetEntrys().front());
+    CConstRef<CSeq_entry> e(submit.GetData().GetEntrys().front());
     if (e.NotEmpty()) {
         // get Seq_entry_Handle from scope
         CSeq_entry_Handle entry;
@@ -527,7 +527,7 @@ void CFlatFileGenerator::Generate
 
 
 void CFlatFileGenerator::Generate
-(CSeq_submit& submit,
+(const CSeq_submit& submit,
  CScope& scope,
  CNcbiOstream& os)
 {

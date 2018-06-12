@@ -79,7 +79,7 @@ public:
 
     void SetFeatTree(feature::CFeatTree* tree);
 
-    void Generate(CSeq_submit& submit, CScope& scope, CNcbiOstream& os);
+    void Generate(const CSeq_submit& submit, CScope& scope, CNcbiOstream& os);
     void Generate(const CBioseq& bioseq, CScope& scope, CNcbiOstream& os);
     void Generate(const CSeq_loc& loc, CScope& scope, CNcbiOstream& os);
     void Generate(const CSeq_entry_Handle& entry, CNcbiOstream& os);
@@ -88,7 +88,7 @@ public:
         ENa_strand strand, CScope& scope, CNcbiOstream& os);
 
     // NB: the item ostream should be allocated on the heap!
-    void Generate(CSeq_submit& submit, CScope& scope, CFlatItemOStream& item_os);
+    void Generate(const CSeq_submit& submit, CScope& scope, CFlatItemOStream& item_os);
     void Generate(const CBioseq& bioseq, CScope& scope, CFlatItemOStream& item_os);
     void Generate(const CSeq_loc& loc, CScope& scope, CFlatItemOStream& item_os);
     void Generate(const CSeq_entry_Handle& entry, CFlatItemOStream& item_os);
