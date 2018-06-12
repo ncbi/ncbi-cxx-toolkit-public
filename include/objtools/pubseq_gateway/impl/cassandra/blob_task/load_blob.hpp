@@ -98,7 +98,7 @@ public:
     void SetDataReadyCB(TDataReadyCallback callback, void * data);
 
     void Cancel(void);
-    virtual bool Restart(unsigned int max_retries) override;
+    virtual bool Restart() override;
 
 protected:
     virtual void Wait1(void) override;
