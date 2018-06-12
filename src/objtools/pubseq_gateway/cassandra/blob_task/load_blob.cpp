@@ -292,7 +292,7 @@ void CCassBlobTaskLoadBlob::Cancel(void)
     }
 }
 
-bool CCassBlobTaskLoadBlob::Restart(unsigned int max_retries)
+bool CCassBlobTaskLoadBlob::Restart()
 {
     m_Blob.reset(new CBlobRecord(m_Key));
     m_Blob->SetModified(m_Modified);
@@ -303,7 +303,7 @@ bool CCassBlobTaskLoadBlob::Restart(unsigned int max_retries)
     CloseAll();
     m_QueryArr.clear();
 
-    return CCassBlobWaiter::Restart(max_retries);
+    return CCassBlobWaiter::Restart();
 }
 
 bool CCassBlobTaskLoadBlob::x_AreAllChunksProcessed(void) const
