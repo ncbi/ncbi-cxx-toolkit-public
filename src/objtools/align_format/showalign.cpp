@@ -1665,7 +1665,7 @@ void CDisplaySeqalign::x_DisplaySequenceIDForQueryAnchored(SAlnRowInfo *alnRoInf
             checkBoxTmpl = CAlignFormatUtil::MapTemplate(checkBoxTmpl,"queryNumber",NStr::IntToString(m_QueryNumber));       
             if(m_AlignOption & eShowCheckBox) {
                 const CRef<CSeq_id> seqID = FindBestChoice(m_AV->GetBioseqHandle(row).GetBioseqCore()->GetId(), CSeq_id::WorstRank);
-                id_lbl = CAlignFormatUtil::GetLabel(seqID);
+                id_lbl = CAlignFormatUtil::GetLabel(seqID,CSeq_id::eContent);
                 if(seqID->IsLocal()) {
                     id_lbl = "lcl|" + id_lbl;            
                 }        
@@ -2144,7 +2144,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 		alnDispParams->seqID = FindBestChoice(ids, CSeq_id::WorstRank); //change to use use_this_seq		
         alnDispParams->hasTextSeqID = CAlignFormatUtil::GetTextSeqID(alnDispParams->seqID);
         alnDispParams->ids = bsp_handle.GetBioseqCore()->GetId();
-		alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);//Just accession without db part like ref| or pdbd|
+		alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID,CSeq_id::eContent);//Just accession without db part like ref| or pdbd|
         
 		if(m_AlignOption&eHtml){
 			int taxid = 0;
@@ -2201,7 +2201,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CB
     SAlnDispParams *alnDispParams = new SAlnDispParams();
 	alnDispParams->gi = FindGi(bsp_handle.GetBioseqCore()->GetId());
 	alnDispParams->seqID = FindBestChoice(bsp_handle.GetBioseqCore()->GetId(),CSeq_id::WorstRank);
-	alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID);
+	alnDispParams->label =  CAlignFormatUtil::GetLabel(alnDispParams->seqID,CSeq_id::eContent);
 	if(m_AlignOption&eHtml){           	            
         alnDispParams->ids = bsp_handle.GetBioseqCore()->GetId();
         alnDispParams->seqUrlInfo = x_InitSeqUrl(alnDispParams->gi,alnDispParams->label,0,alnDispParams->ids);    
@@ -4497,14 +4497,14 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
                             = FindBestChoice(m_AV->GetBioseqHandle(row).\
                                              GetBioseqCore()->GetId(), 
                                              CSeq_id::WorstRank);
-                        id = CAlignFormatUtil::GetLabel(wid).c_str();
+                        id = CAlignFormatUtil::GetLabel(wid,CSeq_id::eContent).c_str();
                     }
                 } else {
                     const CRef<CSeq_id> wid 
                         = FindBestChoice(m_AV->GetBioseqHandle(row).\
                                          GetBioseqCore()->GetId(), 
                                          CSeq_id::WorstRank);
-                    id = CAlignFormatUtil::GetLabel(wid).c_str();
+                    id = CAlignFormatUtil::GetLabel(wid,CSeq_id::eContent).c_str();
                 }           
             }
         }
@@ -4525,14 +4525,14 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
                     = FindBestChoice(m_AV->GetBioseqHandle(row).\
                                      GetBioseqCore()->GetId(),
                                      CSeq_id::WorstRank);
-                id = CAlignFormatUtil::GetLabel(wid).c_str();
+                id = CAlignFormatUtil::GetLabel(wid,CSeq_id::eContent).c_str();
             }
         } else {
             const CRef<CSeq_id> wid 
                 = FindBestChoice(m_AV->GetBioseqHandle(row).\
                                  GetBioseqCore()->GetId(), 
                                  CSeq_id::WorstRank);
-            id = CAlignFormatUtil::GetLabel(wid).c_str();
+            id = CAlignFormatUtil::GetLabel(wid,CSeq_id::eContent).c_str();
         }     
     }
 }
