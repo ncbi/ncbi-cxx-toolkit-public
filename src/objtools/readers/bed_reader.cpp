@@ -388,7 +388,7 @@ bool CBedReader::xAppendFeatureChrom(
         //xSetFeatureTitle(feature, fields);
         xSetFeatureLocationChrom(feature, fields);
         xSetFeatureIdsChrom(feature, fields, baseId);
-        xSetFeatureBedData(feature, fields);
+        xSetFeatureBedData(feature, fields, pEC);
     }
     catch(CObjReaderLineException& err) {
         //m_currentId.clear();
@@ -415,7 +415,7 @@ bool CBedReader::xAppendFeatureGene(
         ////xSetFeatureTitle(feature, fields);
         xSetFeatureLocationGene(feature, fields);
         xSetFeatureIdsGene(feature, fields, baseId);
-        xSetFeatureBedData(feature, fields);
+        xSetFeatureBedData(feature, fields, pEC);
     }
     catch(CObjReaderLineException& err) {
         //m_currentId.clear();
@@ -442,7 +442,7 @@ bool CBedReader::xAppendFeatureThick(
         //xSetFeatureTitle(feature, fields);
         xSetFeatureLocationThick(feature, fields);
         xSetFeatureIdsThick(feature, fields, baseId);
-        xSetFeatureBedData(feature, fields);
+        xSetFeatureBedData(feature, fields, pEC);
     }
     catch(CObjReaderLineException& err) {
         //m_currentId.clear();
@@ -468,7 +468,7 @@ bool CBedReader::xAppendFeatureCds(
         ////xSetFeatureTitle(feature, fields);
         xSetFeatureLocationCds(feature, fields);
         xSetFeatureIdsCds(feature, fields, baseId);
-        xSetFeatureBedData(feature, fields);
+        xSetFeatureBedData(feature, fields, pEC);
     }
     catch(CObjReaderLineException& err) {
         //m_currentId.clear();
@@ -494,7 +494,7 @@ bool CBedReader::xAppendFeatureBlock(
         ////xSetFeatureTitle(feature, fields);
         xSetFeatureLocationBlock(feature, fields);
         xSetFeatureIdsBlock(feature, fields, baseId);
-        xSetFeatureBedData(feature, fields);
+        xSetFeatureBedData(feature, fields, pEC);
     }
     catch(CObjReaderLineException& err) {
         //m_currentId.clear();
@@ -520,7 +520,7 @@ bool CBedReader::xAppendFeatureRna(
         //xSetFeatureTitle(feature, fields);
         xSetFeatureLocationRna(feature, fields);
         xSetFeatureIdsRna(feature, fields, baseId);
-        xSetFeatureBedData(feature, fields);
+        xSetFeatureBedData(feature, fields, pEC);
     }
     catch(CObjReaderLineException& err) {
         //m_currentId.clear();
@@ -1192,7 +1192,8 @@ void CBedReader::xSetFeatureScore(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureColor(
     CRef<CUser_object> pDisplayData,
-    const vector<string>& fields )
+    const vector<string>& fields,
+    ILineErrorListener* pEC )
 //  ----------------------------------------------------------------------------
 {
     //1: if track line itemRgb is set, try that first:
@@ -1200,7 +1201,7 @@ void CBedReader::xSetFeatureColor(
     if (trackItemRgb == "On"  &&  fields.size() >= 9) {
         string featItemRgb = fields[8];
         if (featItemRgb != ".") {
-            xSetFeatureColorFromItemRgb(pDisplayData, featItemRgb);
+            xSetFeatureColorFromItemRgb(pDisplayData, featItemRgb, pEC);
             return;
         }
     }
@@ -1220,14 +1221,14 @@ void CBedReader::xSetFeatureColor(
     if (!trackColorByStrand.empty()  && fields.size() >= 6) {
         ENa_strand strand = 
             (fields[5] == "-") ? eNa_strand_minus : eNa_strand_plus;
-        xSetFeatureColorByStrand(pDisplayData, trackColorByStrand, strand);
+        xSetFeatureColorByStrand(pDisplayData, trackColorByStrand, strand, pEC);
         return;
     }
     //4: if none of the track color attributes are set, attempt feature itemRgb:
     if (fields.size() >= 9) {
         string featItemRgb = fields[8];
         if (featItemRgb != ".") {
-            xSetFeatureColorFromItemRgb(pDisplayData, featItemRgb);
+            xSetFeatureColorFromItemRgb(pDisplayData, featItemRgb, pEC);
             return;
         }
     }
@@ -1249,14 +1250,15 @@ void CBedReader::xSetFeatureColorDefault(
 void CBedReader::xSetFeatureColorByStrand(
     CRef<CUser_object> pDisplayData,
     const string& trackColorByStrand,
-    ENa_strand strand)
+    ENa_strand strand,
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     try {
         string colorPlus, colorMinus;
         NStr::SplitInTwo(trackColorByStrand, " ", colorPlus, colorMinus);
         string useColor = (strand == eNa_strand_minus) ? colorMinus : colorPlus;
-        xSetFeatureColorFromItemRgb(pDisplayData, useColor);
+        xSetFeatureColorFromItemRgb(pDisplayData, useColor, pEC);
     }
     catch (std::exception&) {
         AutoPtr<CObjReaderLineException> pErr(
@@ -1303,57 +1305,95 @@ void CBedReader::xSetFeatureColorFromScore(
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureColorFromItemRgb(
     CRef<CUser_object> pDisplayData,
-    const string& itemRgb )
+    const string& itemRgb,
+    ILineErrorListener* pEC )
 //  ----------------------------------------------------------------------------
 {
-    vector<string> srgb;
-    if (itemRgb == "0") {
-        srgb.push_back("0");
-        srgb.push_back("0");
-        srgb.push_back("0");
-    }
-    else {
-        NStr::Split(itemRgb, ",", srgb);
-    }
-    if (srgb.size() != 3) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Error,
-            0,
-            "Invalid data line: Bad color value.") );
-        pErr->Throw();
-    }
-    try {
-        for (int i=0; i < 3; i++)
-        {
-           int x = NStr::StringToInt(srgb[i]);
-           if (x<0 || x>255) {
-                AutoPtr<CObjReaderLineException> pErr(
-                    CObjReaderLineException::Create(
-                    eDiag_Error,
-                    0,
-                    "Invalid data line: Bad color value.") );
-                pErr->Throw();
-           }
+    AutoPtr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+            eDiag_Warning,
+            this->m_uLineNumber,
+            "Bad color value - converted to BLACK.") );
+    const string rgbDefault = "0 0 0";
 
+    //optimization for common case:
+    if (itemRgb == "0") {
+        pDisplayData->AddField("color", rgbDefault);
+        return;
+    }
+
+    vector<string> srgb;
+    NStr::Split(itemRgb, ",", srgb);
+
+    if (srgb.size() == 3) {
+        auto valuesOk = true;
+        for (auto i=0; i<3; ++i) {
+            int test;
+            try {
+                test = NStr::StringToInt(srgb[i], NStr::fDS_ProhibitFractions);
+            }
+            catch(CException&) {
+                valuesOk = false;
+                break;
+            }
+            if ((test < 0)  ||  (256 <= test)) {
+                valuesOk = false;
+                break;
+            }
         }
+        if (!valuesOk) {
+            ProcessWarning(*pErr, pEC);
+            pDisplayData->AddField("color", rgbDefault);
+            return;
+        }
+        auto outValue = srgb[0] + " " + srgb[1] + " " + srgb[2];
+        pDisplayData->AddField("color", outValue);
+        return;
+    } 
+
+    if (srgb.size() == 1) {
+        auto assumeHex = false;
+        string itemRgbCopy(itemRgb);
+        if (NStr::StartsWith(itemRgbCopy, "0x")) {
+            assumeHex = true;
+            itemRgbCopy = itemRgb.substr(2);
+        }
+        else if (NStr::StartsWith(itemRgbCopy, "#")) {
+            assumeHex = true;
+            itemRgbCopy = itemRgbCopy.substr(1);
+        }
+        int colorValue;
+        int radix = (assumeHex ? 16 : 10);
+        try {
+            colorValue = NStr::StringToInt(
+                itemRgbCopy, NStr::fDS_ProhibitFractions, radix);
+        }
+        catch (CStringException&) {
+            ProcessWarning(*pErr, pEC);
+            pDisplayData->AddField("color", rgbDefault);
+            return;
+        }
+        int blue = colorValue & 0xFF;
+        colorValue >>= 8;
+        int green = colorValue & 0xFF;
+        colorValue >>= 8;
+        int red = colorValue & 0xFF;
+        auto outValue = NStr::IntToString(red) + " " + NStr::IntToString(green) + 
+            " " + NStr::IntToString(blue);
+        pDisplayData->AddField("color", outValue);
+        return;
     }
-    catch(const std::exception&) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Error,
-            0,
-            "Invalid data line: Bad color value.") );
-        pErr->Throw();
-    }
-    string rgbValue = NStr::Join(srgb, " ");
-    pDisplayData->AddField("color", rgbValue);
+
+    ProcessWarning(*pErr, pEC);
+    pDisplayData->AddField("color", rgbDefault);
+    return;
 }
 
 //  ----------------------------------------------------------------------------
 void CBedReader::xSetFeatureBedData(
     CRef<CSeq_feat>& feature,
-    const vector<string>& fields )
+    const vector<string>& fields,
+    ILineErrorListener* pEc )
 //  ----------------------------------------------------------------------------
 {
     CSeqFeatData& data = feature->SetData();
@@ -1371,7 +1411,7 @@ void CBedReader::xSetFeatureBedData(
     exts.push_front(pDisplayData);
 
     xSetFeatureScore(pDisplayData, fields);
-    xSetFeatureColor(pDisplayData, fields);
+    xSetFeatureColor(pDisplayData, fields, pEc);
 }
 
 //  ----------------------------------------------------------------------------

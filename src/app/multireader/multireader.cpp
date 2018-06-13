@@ -137,7 +137,7 @@ private:
     virtual void Init(void);
     virtual int  Run(void);
 
-    void xProcessSingleFile(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    bool xProcessSingleFile(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessDefault(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessWiggle(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessWiggleRaw(const CArgs&, CNcbiIstream&, CNcbiOstream&);
@@ -673,7 +673,9 @@ CMultiReaderApp::Run(void)
             }
             CNcbiIfstream istr(inFile.c_str(), IOS_BASE::binary);
             CNcbiOfstream ostr(outFile.c_str());
-            xProcessSingleFile(args, istr, ostr);
+            if (!xProcessSingleFile(args, istr, ostr)) {
+                return 1;
+            }
             retIn = fileSource.Next(inFile);
         }
     }
@@ -681,13 +683,15 @@ CMultiReaderApp::Run(void)
         // at this point, implies single file operation
         CNcbiIstream& istr = args["input"].AsInputFile(CArgValue::fBinary);
         CNcbiOstream& ostr = args["output"].AsOutputFile();
-        xProcessSingleFile(args, istr, ostr);
+        if (!xProcessSingleFile(args, istr, ostr)) {
+            return 1;
+        }
     }
     return 0;
 }
 
 //  -----------------------------------------------------------------------------
-void
+bool
 CMultiReaderApp::xProcessSingleFile(
     const CArgs& args,
     CNcbiIstream& istr,
@@ -698,6 +702,7 @@ CMultiReaderApp::xProcessSingleFile(
     CRef< CSerialObject> object;
     vector< CRef< CSeq_annot > > annots;
 
+    bool retCode = true;
     try {
         switch( m_uFormat ) {
             default: 
@@ -764,8 +769,8 @@ CMultiReaderApp::xProcessSingleFile(
             sCreateSimpleMessage(
                 eDiag_Fatal, "Reading aborted due to fatal error.");
         m_pErrors->PutError(*line_error_p);
-
         m_pErrors->PutError(reader_ex);
+        retCode = false;
     } catch(const std::exception & std_ex) {
         AutoPtr<ILineError> line_error_p =
             sCreateSimpleMessage(
@@ -773,13 +778,16 @@ CMultiReaderApp::xProcessSingleFile(
                 FORMAT(
                     "Reading aborted due to fatal error: " << std_ex.what()));
         m_pErrors->PutError(*line_error_p);
+        retCode = false;
     } catch(...) {
         AutoPtr<ILineError> line_error_p =
             sCreateSimpleMessage(
                 eDiag_Fatal, "Unknown Fatal Error occurred");
         m_pErrors->PutError(*line_error_p);
+        retCode = false;
     }
     xDumpErrors( cerr );
+    return retCode;
 }
 
 //  ----------------------------------------------------------------------------

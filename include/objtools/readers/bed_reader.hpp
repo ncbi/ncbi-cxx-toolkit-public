@@ -326,7 +326,8 @@ protected:
         
     void xSetFeatureBedData(
         CRef<CSeq_feat>&,
-        const vector<string>&);
+        const vector<string>&,
+        ILineErrorListener*);
         
     void xSetFeatureTitle(
         CRef<CSeq_feat>&,
@@ -337,18 +338,21 @@ protected:
         const vector<string>&);
     void xSetFeatureColor(
         CRef<CUser_object>,
-        const vector<string>&);
+        const vector<string>&,
+        ILineErrorListener*);
 
     void xSetFeatureColorFromItemRgb(
         CRef<CUser_object>,
-        const string&);
+        const string&,
+        ILineErrorListener*);
     void xSetFeatureColorFromScore(
         CRef<CUser_object>,
         const string&);
     void xSetFeatureColorByStrand(
         CRef<CUser_object>,
         const string&,
-        ENa_strand);
+        ENa_strand,
+        ILineErrorListener*);
     void xSetFeatureColorDefault(
         CRef<CUser_object>);
 
