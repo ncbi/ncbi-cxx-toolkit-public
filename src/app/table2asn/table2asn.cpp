@@ -95,14 +95,26 @@ class CTable2AsnLogger: public CMessageListenerLenient
 public:
     CTable2AsnLogger(): m_enable_log(false) {}
     bool m_enable_log;
-protected:
+
     virtual void PutProgress(
         const string & sMessage,
         const Uint8 iNumDone = 0,
-        const Uint8 iNumTotal = 0)
+        const Uint8 iNumTotal = 0) override
     {
         if (m_enable_log)
             CMessageListenerLenient::PutProgress(sMessage, iNumDone, iNumTotal);
+    }
+
+    virtual bool PutError(const ILineError& err) override
+    {
+        const ILineError* converted = &err;
+        if (err.Problem() == ILineError::eProblem_Missing && NStr::EndsWith(err.ErrorMessage(), "feature is missing locus tag."))
+        {
+            NCBI_THROW(CArgException, eNoArg,
+                "GFF annotation requires locus tag, which is missing from arguments");
+        }
+        bool retval = CMessageListenerLenient::PutError(err);
+        return retval;
     }
 };
 
