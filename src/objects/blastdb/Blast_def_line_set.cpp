@@ -227,6 +227,7 @@ void GetLinkoutTypes(vector<TLinkoutTypeString>& rv)
     rv.push_back(make_pair(eBioAssay, string("eBioAssay")));
     rv.push_back(make_pair(eReprMicrobialGenomes, string("eReprMicrobialGenomes")));
     rv.push_back(make_pair(eGenomeDataViewer, string("eGenomeDataViewer")));
+    rv.push_back(make_pair(eTranscript, string("eTranscript")));
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
