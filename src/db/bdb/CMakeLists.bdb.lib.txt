@@ -1,3 +1,20 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+
+NCBI_begin_lib(bdb)
+  NCBI_sources(
+    bdb_types bdb_file bdb_cursor bdb_blob bdb_expt bdb_env bdb_filedump
+    bdb_volumes bdb_trans bdb_query bdb_query_parser_main bdb_util
+    bdb_checkpoint_thread bdb_ext_blob
+  )
+  NCBI_requires(BerkeleyDB)
+  NCBI_uses_toolkit_libraries(xutil)
+  NCBI_project_watchers(kuznets)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -11,3 +28,4 @@ include_directories(SYSTEM ${BERKELEYDB_INCLUDE})
 target_link_libraries(bdb
     xutil ${BERKELEYDB_LIBS}
 )
+endif()

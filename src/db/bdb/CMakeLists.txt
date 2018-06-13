@@ -1,4 +1,11 @@
-##############################################################################
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_add_library(bdb ncbi_xcache_bdb)
+NCBI_add_subdirectory(test_split demo dumper test)
+
+if(OFF)
 # 
 #
 
@@ -12,3 +19,4 @@ add_subdirectory(dumper)
 add_subdirectory(test)
 add_subdirectory(test_split)
 add_subdirectory(test_vmerge)
+endif()

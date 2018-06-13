@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+
+NCBI_begin_lib(ncbi_xcache_bdb)
+  NCBI_sources(bdb_blobcache)
+  NCBI_requires(BerkeleyDB)
+  NCBI_uses_toolkit_libraries(bdb)
+  NCBI_project_watchers(kuznets)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -9,3 +22,4 @@ include_directories(SYSTEM ${BERKELEYDB_INCLUDE})
 target_link_libraries(ncbi_xcache_bdb
     bdb
 )
+endif()
