@@ -1094,4 +1094,13 @@ else()
   set(NCBI_COMPONENT_SQLITE3_FOUND NO)
 endif()
 
-
+#############################################################################
+#LAPACK
+if(LAPACK_FOUND)
+  set(NCBI_COMPONENT_LAPACK_FOUND YES)
+  set(NCBI_COMPONENT_LAPACK_INCLUDE ${LAPACK_INCLUDE})
+  set(NCBI_COMPONENT_LAPACK_LIBS ${LAPACK_LIBS})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} LAPACK")
+else()
+  set(NCBI_COMPONENT_LAPACK_FOUND NO)
+endif()

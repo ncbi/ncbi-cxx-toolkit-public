@@ -307,3 +307,7 @@ NCBI_define_component(EXSLT libexslt.lib)
 #############################################################################
 # SQLITE3
 NCBI_define_component(SQLITE3 sqlite3.lib)
+
+#############################################################################
+#LAPACK
+set(NCBI_COMPONENT_LAPACK_FOUND NO)
