@@ -267,24 +267,11 @@ CAsnCache_DataLoader::GetBlobById(const TBlobId& blob_id)
             ++index.found;
             lock->SetSeq_entry(*entry);
             lock.SetLoaded();
-
-            /**
-            LOG_POST(Error
-                     << "CAsnCache_DataLoader::GetBlobById(): loaded seq-entry for "
-                     << idh);
         } else {
-
-            LOG_POST(Error
-                     << "CAsnCache_DataLoader::GetBlobById(): failed to load seq-entry for "
-                     << idh);
-                     **/
+            NCBI_THROW(CException, eUnknown,
+                       "CAsnCache_DataLoader::GetBlobById(): blob for " +
+                       idh.AsString() + " not found");
         }
-        /**
-    } else {
-        LOG_POST(Error
-                 << "CAsnCache_DataLoader::GetBlobById(): already loaded: "
-                 << idh);
-                 **/
     }
     return lock;
 }
