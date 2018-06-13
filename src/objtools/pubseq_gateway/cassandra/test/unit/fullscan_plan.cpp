@@ -44,7 +44,7 @@
 #include <vector>
 #include <limits>
 
-#include "../../fullscan/plan.hpp"
+#include <objtools/pubseq_gateway/impl/cassandra/fullscan/plan.hpp>
 
 namespace {
 
@@ -91,9 +91,18 @@ class CCassandraFullscanPlanTest
 
 TEST_F(CCassandraFullscanPlanTest, CheckEmptyPlan) {
     CCassandraFullscanPlan plan;
+    plan.SetConnection(m_Connection);
+    EXPECT_THROW(
+        plan.Generate(),
+        CCassandraException
+    ) << "Generate should throw without table and keyspace";
+    plan
+        .SetConnection(nullptr)
+        .SetKeyspace(m_KeyspaceName)
+        .SetTable(m_TableName);
     EXPECT_EQ(nullptr, plan.GetNextQuery());
     EXPECT_THROW(
-        plan.Generate(m_KeyspaceName, m_TableName),
+        plan.Generate(),
         CCassandraException
     ) << "Generate should throw without established connection";
 }
@@ -102,11 +111,14 @@ TEST_F(CCassandraFullscanPlanTest, CheckQuery) {
     CCassConnection::TTokenRanges ranges;
     m_Connection->GetTokenRanges(ranges);
     CCassandraFullscanPlan plan;
-    plan.SetConnection(m_Connection);
-    plan.SetMinPartitionsForSubrangeScan(0);
+    plan
+        .SetConnection(m_Connection)
+        .SetKeyspace(m_KeyspaceName)
+        .SetTable(m_TableName)
+        .SetMinPartitionsForSubrangeScan(0);
     EXPECT_EQ(nullptr, plan.GetNextQuery())
         << "Plan sould be empty on creation";
-    plan.Generate(m_KeyspaceName, m_TableName);
+    plan.Generate();
     shared_ptr<CCassQuery> query = plan.GetNextQuery();
     string expected_template =
         "SELECT * FROM test_mlst_storage.allele_data WHERE TOKEN(taxid,version) > ? AND TOKEN(taxid,version) <= ?";
@@ -120,7 +132,7 @@ TEST_F(CCassandraFullscanPlanTest, CheckQuery) {
     }
 
     plan.SetFieldList({"id", "modified_time() as m"});
-    plan.Generate(m_KeyspaceName, m_TableName);
+    plan.Generate();
     query = plan.GetNextQuery();
     expected_template =
             "SELECT id, modified_time() as m FROM test_mlst_storage.allele_data "
@@ -135,7 +147,7 @@ TEST_F(CCassandraFullscanPlanTest, CheckQuery) {
     }
 
     plan.SetMinPartitionsForSubrangeScan(numeric_limits<size_t>::max());
-    plan.Generate(m_KeyspaceName, m_TableName);
+    plan.Generate();
     expected_template = "SELECT id, modified_time() as m FROM test_mlst_storage.allele_data";
     query = plan.GetNextQuery();
     ASSERT_EQ(expected_template, query->ToString())
@@ -146,11 +158,14 @@ TEST_F(CCassandraFullscanPlanTest, CheckQueryCount) {
     CCassConnection::TTokenRanges ranges;
     m_Connection->GetTokenRanges(ranges);
     CCassandraFullscanPlan plan;
-    plan.SetConnection(m_Connection);
-    plan.SetMinPartitionsForSubrangeScan(0);
+    plan
+        .SetConnection(m_Connection)
+        .SetKeyspace(m_KeyspaceName)
+        .SetTable(m_TableName)
+        .SetMinPartitionsForSubrangeScan(0);
     EXPECT_EQ(0UL, plan.GetMinPartitionsForSubrangeScan());
     EXPECT_EQ(nullptr, plan.GetNextQuery());
-    plan.Generate(m_KeyspaceName, m_TableName);
+    plan.Generate();
     EXPECT_EQ(ranges.size(), plan.GetQueryCount())
         << "Subrange plan should have one query per token range";
     size_t query_count = 0;
@@ -160,7 +175,7 @@ TEST_F(CCassandraFullscanPlanTest, CheckQueryCount) {
     EXPECT_EQ(ranges.size(), query_count);
 
     plan.SetMinPartitionsForSubrangeScan(numeric_limits<size_t>::max());
-    plan.Generate(m_KeyspaceName, m_TableName);
+    plan.Generate();
     ASSERT_EQ(1UL, plan.GetQueryCount())
         << "Short plan should have one query";
     query_count = 0;

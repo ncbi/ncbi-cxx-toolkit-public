@@ -39,7 +39,6 @@
 
 #include <corelib/ncbistr.hpp>
 #include <cassandra.h>
-#include "plan.hpp"
 #include "worker.hpp"
 
 BEGIN_IDBLOB_SCOPE
@@ -50,25 +49,11 @@ const unsigned int CCassandraFullscanRunner::kMaxActiveStatementsDefault = 256;
 const unsigned int CCassandraFullscanRunner::kMaxRetryCountDefault = 5;
 
 CCassandraFullscanRunner::CCassandraFullscanRunner()
-    : m_Connection(nullptr)
-    , m_FieldList({"*"})
-    , m_ThreadCount(1)
+    : m_ThreadCount(1)
     , m_Consistency(CASS_CONSISTENCY_LOCAL_QUORUM)
     , m_PageSize(kPageSizeDefault)
     , m_MaxActiveStatements(kMaxActiveStatementsDefault)
 {
-}
-
-CCassandraFullscanRunner& CCassandraFullscanRunner::SetConnection(shared_ptr<CCassConnection> connection)
-{
-    swap(m_Connection, connection);
-    return *this;
-}
-
-CCassandraFullscanRunner& CCassandraFullscanRunner::SetFieldList(vector<string> fields)
-{
-    m_FieldList = move(fields);
-    return *this;
 }
 
 CCassandraFullscanRunner& CCassandraFullscanRunner::SetThreadCount(size_t value)
@@ -99,18 +84,6 @@ CCassandraFullscanRunner& CCassandraFullscanRunner::SetMaxActiveStatements(unsig
     return *this;
 }
 
-CCassandraFullscanRunner& CCassandraFullscanRunner::SetKeyspace(string value)
-{
-    m_Keyspace = value;
-    return *this;
-}
-
-CCassandraFullscanRunner& CCassandraFullscanRunner::SetTable(string value)
-{
-    m_Table = value;
-    return *this;
-}
-
 CCassandraFullscanRunner& CCassandraFullscanRunner::SetConsumerFactory(
     TCassandraFullscanConsumerFactory consumer_factory
 )
@@ -119,15 +92,30 @@ CCassandraFullscanRunner& CCassandraFullscanRunner::SetConsumerFactory(
     return *this;
 }
 
+CCassandraFullscanRunner& CCassandraFullscanRunner::SetExecutionPlan(
+    unique_ptr<ICassandraFullscanPlan> plan
+)
+{
+    if (m_ExecutionPlan) {
+        NCBI_THROW(CCassandraException, eSeqFailed,
+               "Invalid sequence of operations, execution plan should not be overriden"
+            );
+    }
+    m_ExecutionPlan = move(plan);
+    return *this;
+}
+
 bool CCassandraFullscanRunner::Execute()
 {
-    CCassandraFullscanPlan execution_plan;
-    execution_plan
-        .SetConnection(m_Connection)
-        .SetFieldList(m_FieldList)
-        .Generate(m_Keyspace, m_Table);
+    if (!m_ExecutionPlan) {
+        NCBI_THROW(CCassandraException, eSeqFailed,
+           "Invalid sequence of operations, execution plan should be provided"
+        );
+    }
+    m_ExecutionPlan->Generate();
+    ICassandraFullscanPlan* plan = m_ExecutionPlan.get();
 
-    size_t thread_count = min(m_ThreadCount, execution_plan.GetQueryCount());
+    size_t thread_count = min(m_ThreadCount, plan->GetQueryCount());
     vector<thread> worker_threads;
     vector<CCassandraFullscanWorker> workers;
     CFastMutex plan_mutex;
@@ -136,17 +124,17 @@ bool CCassandraFullscanRunner::Execute()
 
     CCassandraFullscanWorker::TTaskProvider task_provider;
     if (thread_count > 1) {
-        task_provider = [&plan_mutex, &execution_plan]() -> CCassandraFullscanPlan::TQueryPtr {
+        task_provider = [&plan_mutex, plan]() -> CCassandraFullscanPlan::TQueryPtr {
             CCassandraFullscanPlan::TQueryPtr query;
             {
                 CFastMutexGuard _(plan_mutex);
-                query = execution_plan.GetNextQuery();
+                query = plan->GetNextQuery();
             }
             return query;
         };
     } else {
-        task_provider = [&execution_plan]() -> CCassandraFullscanPlan::TQueryPtr {
-            return execution_plan.GetNextQuery();
+        task_provider = [plan]() -> CCassandraFullscanPlan::TQueryPtr {
+            return plan->GetNextQuery();
         };
     }
 

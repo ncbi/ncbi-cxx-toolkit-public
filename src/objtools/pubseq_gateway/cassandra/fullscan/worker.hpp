@@ -36,6 +36,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/SyncObj.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/fullscan/consumer.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/fullscan/plan.hpp>
 
 #include <memory>
 #include <string>
@@ -43,8 +44,6 @@
 #include <atomic>
 #include <utility>
 #include <vector>
-
-#include "plan.hpp"
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;

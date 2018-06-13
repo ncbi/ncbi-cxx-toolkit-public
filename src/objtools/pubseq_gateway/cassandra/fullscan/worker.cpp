@@ -235,8 +235,9 @@ void CCassandraFullscanWorker::operator()()
 
     try {
         m_RowConsumer->Finalize();
-        m_Finished = true;
+        m_Finished = do_next;
     } catch (const exception &  e) {
+        m_Finished = false;
         ProcessError(e);
     }
 }

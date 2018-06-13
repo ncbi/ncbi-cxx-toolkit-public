@@ -28,7 +28,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "plan.hpp"
+#include <objtools/pubseq_gateway/impl/cassandra/fullscan/plan.hpp>
 
 #include <vector>
 #include <string>
@@ -66,12 +66,24 @@ CCassandraFullscanPlan& CCassandraFullscanPlan::SetMinPartitionsForSubrangeScan(
     return *this;
 }
 
+CCassandraFullscanPlan& CCassandraFullscanPlan::SetKeyspace(string const & keyspace)
+{
+    m_Keyspace = keyspace;
+    return *this;
+}
+
+CCassandraFullscanPlan& CCassandraFullscanPlan::SetTable(string const & table)
+{
+    m_Table = table;
+    return *this;
+}
+
 size_t CCassandraFullscanPlan::GetMinPartitionsForSubrangeScan()
 {
     return m_MinPartitionsForSubrangeScan;
 }
 
-size_t CCassandraFullscanPlan::GetPartitionCountEstimate(string const & keyspace, string const & table)
+size_t CCassandraFullscanPlan::GetPartitionCountEstimate()
 {
     string datacenter, schema, schema_bytes;
     int64_t peers_count = 0, partition_count = 0;
@@ -97,8 +109,8 @@ size_t CCassandraFullscanPlan::GetPartitionCountEstimate(string const & keyspace
 
     query = m_Connection->NewQuery();
     query->SetSQL("SELECT partitions_count FROM system.size_estimates WHERE table_name = ? AND keyspace_name = ?", 2);
-    query->BindStr(0, table);
-    query->BindStr(1, keyspace);
+    query->BindStr(0, m_Table);
+    query->BindStr(1, m_Keyspace);
     query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
     while (query->NextRow() == ar_dataready) {
         partition_count += query->FieldGetInt64Value(0);
@@ -135,22 +147,22 @@ size_t CCassandraFullscanPlan::GetQueryCount() const
     return m_TokenRanges.size();
 }
 
-void CCassandraFullscanPlan::Generate(string const & keyspace, string const & table)
+void CCassandraFullscanPlan::Generate()
 {
-    if (!m_Connection) {
+    if (!m_Connection || m_Keyspace.empty() || m_Table.empty()) {
         NCBI_THROW(CCassandraException, eSeqFailed, "Invalid sequence of operations, connection should be provided");
     }
 
     m_TokenRanges.clear();
-    if (GetPartitionCountEstimate(keyspace, table) < m_MinPartitionsForSubrangeScan) {
-        m_SqlTemplate = "SELECT " + NStr::Join(m_FieldList, ", ") + " FROM " + keyspace + "." + table;
+    if (GetPartitionCountEstimate() < m_MinPartitionsForSubrangeScan) {
+        m_SqlTemplate = "SELECT " + NStr::Join(m_FieldList, ", ") + " FROM " + m_Keyspace + "." + m_Table;
         m_TokenRanges.push_back(make_pair(0, 0));
     } else {
-        vector<string> partition_fields = m_Connection->GetPartitionKeyColumnNames(keyspace, table);
+        vector<string> partition_fields = m_Connection->GetPartitionKeyColumnNames(m_Keyspace, m_Table);
         m_Connection->GetTokenRanges(m_TokenRanges);
         string partition = NStr::Join(partition_fields, ",");
         m_SqlTemplate = "SELECT " + NStr::Join(m_FieldList, ", ") + " FROM "
-            + keyspace + "." + table + " WHERE TOKEN(" + partition + ") > ? AND TOKEN(" + partition + ") <= ?";
+            + m_Keyspace + "." + m_Table + " WHERE TOKEN(" + partition + ") > ? AND TOKEN(" + partition + ") <= ?";
         ERR_POST(Trace << "CCassandraFullscanPlanner::Generate - Sql template = '" << m_SqlTemplate << "'");
     }
 }

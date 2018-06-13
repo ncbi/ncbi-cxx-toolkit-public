@@ -40,7 +40,19 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
+class ICassandraFullscanPlan
+{
+ public:
+    using TQueryPtr = shared_ptr<CCassQuery>;
+
+    virtual TQueryPtr GetNextQuery() = 0;
+    virtual size_t    GetQueryCount() const = 0;
+    virtual void      Generate() = 0;
+    virtual ~ICassandraFullscanPlan() = default;
+};
+
 class CCassandraFullscanPlan
+    : public ICassandraFullscanPlan
 {
     static const size_t kMinPartitionsForSubrangeScanDefault = 100000;
  public:
@@ -52,21 +64,26 @@ class CCassandraFullscanPlan
     CCassandraFullscanPlan& operator=(const CCassandraFullscanPlan&) = default;
     CCassandraFullscanPlan& operator=(CCassandraFullscanPlan&&) = default;
 
+    virtual ~CCassandraFullscanPlan() = default;
+
     CCassandraFullscanPlan& SetConnection(shared_ptr<CCassConnection> connection);
     CCassandraFullscanPlan& SetFieldList(vector<string> fields);
     CCassandraFullscanPlan& SetMinPartitionsForSubrangeScan(size_t value);
+    CCassandraFullscanPlan& SetKeyspace(string const & keyspace);
+    CCassandraFullscanPlan& SetTable(string const & table);
     size_t GetMinPartitionsForSubrangeScan();
 
-    void Generate(string const & keyspace, string const & table);
-
-    TQueryPtr GetNextQuery();
-    size_t    GetQueryCount() const;
+    virtual void Generate();
+    virtual TQueryPtr GetNextQuery();
+    virtual size_t    GetQueryCount() const;
 
  private:
-    size_t GetPartitionCountEstimate(string const & keyspace, string const & table);
+    size_t GetPartitionCountEstimate();
 
     shared_ptr<CCassConnection> m_Connection;
     vector<string> m_FieldList;
+    string m_Keyspace;
+    string m_Table;
     string m_SqlTemplate;
     CCassConnection::TTokenRanges m_TokenRanges;
     size_t m_MinPartitionsForSubrangeScan;

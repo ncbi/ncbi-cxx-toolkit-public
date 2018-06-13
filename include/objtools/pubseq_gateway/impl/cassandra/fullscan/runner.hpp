@@ -35,6 +35,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/fullscan/consumer.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/fullscan/plan.hpp>
 
 #include <memory>
 #include <vector>
@@ -42,9 +43,6 @@
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
-
-class CCassandraFullscanWorker;
-class CCassandraFullscanPlan;
 
 class CCassandraFullscanRunner
 {
@@ -59,28 +57,21 @@ class CCassandraFullscanRunner
     CCassandraFullscanRunner& operator=(const CCassandraFullscanRunner&) = delete;
     CCassandraFullscanRunner& operator=(CCassandraFullscanRunner&&) = default;
 
-    CCassandraFullscanRunner& SetConnection(shared_ptr<CCassConnection> connection);
-    CCassandraFullscanRunner& SetFieldList(vector<string> fields);
     CCassandraFullscanRunner& SetThreadCount(size_t value);
     CCassandraFullscanRunner& SetConsistency(CassConsistency value);
     CCassandraFullscanRunner& SetPageSize(unsigned int value);
     CCassandraFullscanRunner& SetMaxActiveStatements(unsigned int value);
-    CCassandraFullscanRunner& SetKeyspace(string value);
-    CCassandraFullscanRunner& SetTable(string value);
     CCassandraFullscanRunner& SetConsumerFactory(TCassandraFullscanConsumerFactory consumer_factory);
+    CCassandraFullscanRunner& SetExecutionPlan(unique_ptr<ICassandraFullscanPlan> plan);
 
     bool Execute();
-
  private:
-    shared_ptr<CCassConnection> m_Connection;
-    string m_Keyspace;
-    string m_Table;
-    vector<string> m_FieldList;
     size_t m_ThreadCount;
     CassConsistency m_Consistency;
     unsigned int m_PageSize;
     unsigned int m_MaxActiveStatements;
     TCassandraFullscanConsumerFactory m_ConsumerFactory;
+    unique_ptr<ICassandraFullscanPlan> m_ExecutionPlan;
 };
 
 END_IDBLOB_SCOPE

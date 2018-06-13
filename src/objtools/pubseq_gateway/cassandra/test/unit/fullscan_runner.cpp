@@ -44,6 +44,9 @@
 #include <string>
 #include <vector>
 #include <thread>
+#include <utility>
+
+#include "fullscan_plan_mock.hpp"
 
 namespace {
 
@@ -92,28 +95,54 @@ class CSimpleRowConsumer
     : public ICassandraFullscanConsumer
 {
  public:
-    virtual bool Tick() {
+    virtual bool Tick()
+    {
+        EXPECT_EQ(true, ICassandraFullscanConsumer::Tick())
+                << "Base Tick funcion should return true always";
         return true;
     }
-    virtual bool ReadRow(CCassQuery const & query) {
-        //cout << " ipg = " << query.FieldGetInt64Value(0) << " " << this_thread::get_id() << endl;
-        //cout << " accession = " << query.FieldGetStrValueDef(1, "fake") << " " << this_thread::get_id() << endl;
+    virtual bool ReadRow(CCassQuery const & query)
+    {
         return true;
     }
     virtual void Finalize() {
-        cout << "Finalize called " << this_thread::get_id() << endl;
+        m_FinalizeCalled = true;
     }
-    virtual ~CSimpleRowConsumer() = default;
+
+    bool m_FinalizeCalled = false;
 };
 
-TEST_F(CCassandraFullscanRunnerTest, SmokeTest) {
+TEST_F(CCassandraFullscanRunnerTest, NonConfiguredRunnerTest) {
+    CCassandraFullscanRunner runner;
+    EXPECT_THROW(runner.Execute(), CCassandraException)
+        << "Execute should throw without configuration";
+}
+
+TEST_F(CCassandraFullscanRunnerTest, OneThreadRunnerTest) {
+
+    /*shared_ptr<MockCassandraFullscanPlan> plan_mock = make_shared<MockCassandraFullscanPlan>();
+
     CCassandraFullscanRunner runner;
     runner
         .SetConnection(m_Connection)
-        .SetFieldList({"ipg", "accession"})
-        .SetThreadCount(4)
+        .SetFieldList({"ipg"})
+        .SetThreadCount(1)
         .SetKeyspace(m_KeyspaceName)
-        .SetTable(m_TableName)
+        .SetTable(m_TableName)*/
+}
+
+TEST_F(CCassandraFullscanRunnerTest, SmokeTest) {
+    unique_ptr<CCassandraFullscanPlan> plan(new CCassandraFullscanPlan());
+    plan
+        ->SetConnection(m_Connection)
+        .SetFieldList({"ipg", "accession"})
+        .SetKeyspace(m_KeyspaceName)
+        .SetTable(m_TableName);
+
+    CCassandraFullscanRunner runner;
+    runner
+        .SetThreadCount(4)
+        .SetExecutionPlan(move(plan))
         .SetConsumerFactory(
             []() -> unique_ptr<CSimpleRowConsumer> {
                 return unique_ptr<CSimpleRowConsumer>(new CSimpleRowConsumer());
