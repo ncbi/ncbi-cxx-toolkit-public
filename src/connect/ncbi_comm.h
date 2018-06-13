@@ -123,11 +123,13 @@ typedef unsigned int  ticket_t;
 #define FWD_RR_FIREWALL    1  /**< FIREWALL mode client, else RELAY          */
 #define FWD_RR_KEEPALIVE   2  /**< Try to reuse the connection               */
 
+/** FWDaemon rejection codes */
 #define FWD_RR_BADREQUEST  1  /**< Bad request    (e.g. port 0 and no svc)   */
 #define FWD_RR_USEDIRECT   2  /**< Use directly   (e.g. direct connection)   */
 #define FWD_RR_NOFORWARD   3  /**< Bad forwarding (e.g. non-local endpoint)  */
 #define FWD_RR_NOTFOUND    4  /**< Service not found                         */
-#define FWD_RR_REFUSED     5  /**< Refused due to abuse                      */
+#define FWD_RR_CANTCONN    5  /**< Cannot connect to server                  */
+#define FWD_RR_REFUSED     6  /**< Refused (e.g. due to abuse)               */
 
 #define FWD_RR_ERRORMASK   0xF0F0
 #define FWD_RR_REJECTMASK  0x0F0F
