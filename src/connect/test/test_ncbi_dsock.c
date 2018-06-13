@@ -66,7 +66,7 @@
 #define DEFAULT_PORT  55555
 
 
-static unsigned short s_MTU = MAX_DGRAM_SIZE;
+static int s_MTU = MAX_DGRAM_SIZE;
 
 
 static int s_Usage(const char* prog)
@@ -245,10 +245,12 @@ static int s_Client(int x_port, unsigned int max_try)
 
     CORE_LOGF(eLOG_Note, ("[Client]  DSOCK on port %hu", port));
 
-    msglen = (size_t)(((double) rand() / (double) RAND_MAX) * (double) s_MTU);
+    msglen = s_MTU <= 0
+        ? (size_t)(-s_MTU)
+        : (size_t)(((double) rand() / (double) RAND_MAX) * (double) s_MTU);
     if (msglen < sizeof(unsigned long) + 10)
         msglen = sizeof(unsigned long) + 10;
-    if (msglen == MAX_UDP_DGRAM_SIZE)
+    if (msglen == MAX_UDP_DGRAM_SIZE  &&  s_MTU > 0)
         msglen--;
 
     CORE_LOGF(eLOG_Note, ("[Client]  Generating a message %lu bytes long",
@@ -396,8 +398,10 @@ int main(int argc, const char* argv[])
 
     if (argc > 3) {
         int mtu = atoi(argv[3]);
-        if (mtu > 28  &&  mtu < (int) s_MTU)
-            s_MTU = (unsigned short)(mtu - 28/*IP(20)/UDP(8) overhead*/);
+        s_MTU = 28 < mtu  &&  mtu < s_MTU
+            ? (mtu - 28/*IP(20)/UDP(8) overhead*/)
+            :  mtu;
+        CORE_LOGF(eLOG_Note, ("MTU = %d/%d", s_MTU, MAX_UDP_DGRAM_SIZE));
     }
 
     if (strcasecmp(argv[1], "client") == 0) {
