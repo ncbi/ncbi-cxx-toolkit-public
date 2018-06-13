@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(hydra_client)
+  NCBI_sources(hydra_client)
+  NCBI_uses_toolkit_libraries(xmlwrapp)
+  NCBI_project_watchers(grichenk choi)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -7,3 +18,4 @@ add_library(hydra_client
 target_link_libraries(hydra_client
     xmlwrapp
 )
+endif()

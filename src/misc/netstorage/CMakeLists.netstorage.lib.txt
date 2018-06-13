@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(netstorage)
+  NCBI_sources(state object netstorage filetrack)
+  NCBI_uses_toolkit_libraries(ncbi_xcache_netcache)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -7,3 +18,4 @@ add_library(netstorage
 target_link_libraries(netstorage
     ncbi_xcache_netcache
 )
+endif()

@@ -2,8 +2,6 @@
 # $Id$
 #############################################################################
 
-NCBI_add_library(xmlwrapp)
-
-# Include projects from this directory
-#include(CMakeLists.xmlwrapp.lib.txt)
-
+NCBI_project_tags(web)
+NCBI_add_library(cgi_redirect)
+NCBI_add_app(cgi_redirect)

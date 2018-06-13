@@ -1,7 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+
+NCBI_add_library(discrepancy)
 ##############################################################################
 # 
 #
 
 # Include projects from this directory
-include(CMakeLists.discrepancy.lib.txt)
+#include(CMakeLists.discrepancy.lib.txt)
 

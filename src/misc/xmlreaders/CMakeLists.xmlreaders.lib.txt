@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xmlreaders)
+  NCBI_sources(rfam_tool)
+  NCBI_uses_toolkit_libraries(xmlwrapp)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -8,3 +18,4 @@ add_library(xmlreaders
 target_link_libraries(xmlreaders
     xmlwrapp
 )
+endif()

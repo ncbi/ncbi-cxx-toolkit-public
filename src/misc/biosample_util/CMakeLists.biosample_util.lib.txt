@@ -1,3 +1,17 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xbiosample_util)
+  NCBI_sources(biosample_util struc_table_column)
+  NCBI_uses_toolkit_libraries(
+    xmlwrapp xobjedit
+    taxon3 seqset macro valid
+  )
+  NCBI_project_watchers(bollin)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -11,4 +25,4 @@ add_dependencies(xbiosample_util
 target_link_libraries(xbiosample_util
     xmlwrapp xobjedit
 )
-
+endif()

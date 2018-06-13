@@ -2,8 +2,6 @@
 # $Id$
 #############################################################################
 
-NCBI_add_library(xmlwrapp)
-
-# Include projects from this directory
-#include(CMakeLists.xmlwrapp.lib.txt)
-
+NCBI_begin_lib(grpc_integration)
+  NCBI_sources(grpc_integration)
+NCBI_end_lib()

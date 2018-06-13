@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(test_hgvs_parser_app)
+  NCBI_sources(test_hgvs_parser_app)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(hgvs test_boost)
+  NCBI_add_test(test_hgvs_parser -in test_variations.asn)
+  NCBI_project_watchers(astashya)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -11,4 +24,5 @@ set_target_properties(test_hgvs_parser-app PROPERTIES OUTPUT_NAME test_hgvs_pars
 target_link_libraries(test_hgvs_parser-app
     hgvs test_boost
 )
+endif()
 

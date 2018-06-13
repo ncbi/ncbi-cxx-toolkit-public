@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(hgvs2variation)
+  NCBI_sources(hgvs2variation)
+  NCBI_uses_toolkit_libraries(hgvs)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -11,4 +21,4 @@ set_target_properties(hgvs2variation-app PROPERTIES OUTPUT_NAME hgvs2variation)
 target_link_libraries(hgvs2variation-app
     hgvs
 )
-
+endif()

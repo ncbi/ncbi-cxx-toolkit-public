@@ -1,3 +1,19 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xdiscrepancy)
+  NCBI_sources(
+    discrepancy_core report_object discrepancy_context utils text_output
+    discrepancy_case overlapping_features suspect_product_names division_code_conflicts feature_per_bioseq seqdesc_per_bioseq
+    gene_names rna_names transl_too_long sesame_street transl_note feature_tests
+    sequence_tests pub_tests biosource_tests spell_check 
+  )
+  NCBI_uses_toolkit_libraries(macro xcleanup xobjedit)
+  NCBI_project_watchers(kachalos)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +26,4 @@ add_library(xdiscrepancy
 target_link_libraries(xdiscrepancy
     macro xcleanup xobjedit
 )
-
+endif()

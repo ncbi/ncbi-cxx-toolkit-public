@@ -1,3 +1,22 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xmlwrapp)
+  NCBI_sources(
+    ait_impl document event_parser node_iterator
+    xml_init attributes node node_manip stylesheet utility    
+    xslt_init namespace xpath_expression node_set document_impl schema errors dtd
+    document_proxy libxml2_xmlwrapp deref_impl xpath_object extension_function
+    extension_element https_input_impl
+  )
+  NCBI_disable_pch()
+  NCBI_requires(XML XSLT)
+  NCBI_uses_toolkit_libraries(xconnect)
+  NCBI_project_watchers(satskyse)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -13,3 +32,4 @@ include_directories(SYSTEM ${LIBXML_INCLUDE} ${LIBXSLT_INCLUDE})
 target_link_libraries(xmlwrapp
     ${LIBXSLT_LIBS} ${LIBXML_LIBS} xconnect
 )
+endif()
