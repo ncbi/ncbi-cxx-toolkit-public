@@ -5,7 +5,7 @@ SRC = psg_cassandra_test unit/blob_record unit/cluster_meta unit/fullscan_plan \
 WATCHERS=saprykin
 REQUIRES = CASSANDRA MT Linux GCC
 
-COVERAGE_FLAGS=-fprofile-arcs -ftest-coverage
+#COVERAGE_FLAGS=-fprofile-arcs -ftest-coverage
 CPPFLAGS=$(ORIG_CPPFLAGS) $(GMOCK_INCLUDE) $(CASSANDRA_INCLUDE) $(COVERAGE_FLAGS)
 
 MY_LIB=$(XCONNEXT) xconnect connext
