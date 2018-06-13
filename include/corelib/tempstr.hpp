@@ -211,68 +211,6 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 
 
-// Global comparison operators (counterparts for CTempString::operator's).
-
-inline
-bool operator==(const char* str1, const CTempString str2)
-{
-    if (strlen(str1) != str2.length()) {
-        return false;
-    }
-    return str2.compare(str1) == 0;
-}
-
-inline
-bool operator==(const string& str1, const CTempString str2)
-{
-    if (str1.length() != str2.length()) {
-        return false;
-    }
-    return str2.compare(str1) == 0;
-}
-
-inline
-bool operator!=(const char* str1, const CTempString str2)
-{
-    if (strlen(str1) == str2.length()) {
-        return false;
-    }
-    return str2.compare(str1) != 0;
-}
-
-inline
-bool operator!=(const string& str1, const CTempString str2)
-{
-    if (str1.length() == str2.length()) {
-        return false;
-    }
-    return str2.compare(str1) != 0;
-}
-
-inline
-bool operator<(const char* str1, const CTempString str2)
-{
-    return str2.compare(str1) > 0;
-}
-
-inline
-bool operator<(const string& str1, const CTempString str2)
-{
-    return str2.compare(str1) > 0;
-}
-
-inline
-bool operator>(const char* str1, const CTempString str2)
-{
-    return str2.compare(str1) < 0;
-}
-
-inline
-bool operator>(const string& str1, const CTempString str2)
-{
-    return str2.compare(str1) < 0;
-}
-
 // Operator +
 
 /// @internal
@@ -869,19 +807,13 @@ int CTempString::compare(const CTempString str) const
 inline
 bool CTempString::operator==(const CTempString str) const
 {
-    if (length() != str.length()) {
-        return false;
-    }
-    return compare(str) == 0;
+    return length() == str.length() && memcmp(data(), str.data(), length()) == 0;
 }
 
 inline
 bool CTempString::operator!=(const CTempString str) const
 {
-    if (length() == str.length()) {
-        return false;
-    }
-    return compare(str) != 0;
+    return !(*this == str);
 }
 
 inline
@@ -896,6 +828,55 @@ bool CTempString::operator>(const CTempString str) const
     return compare(str) > 0;
 }
 
+// Global comparison operators (counterparts for CTempString::operator's).
+
+inline
+bool operator==(const char* str1, const CTempString str2)
+{
+    return str2 == str1;
+}
+
+inline
+bool operator==(const string& str1, const CTempString str2)
+{
+    return str2 == str1;
+}
+
+inline
+bool operator!=(const char* str1, const CTempString str2)
+{
+    return str2 != str1;
+}
+
+inline
+bool operator!=(const string& str1, const CTempString str2)
+{
+    return str2 != str1;
+}
+
+inline
+bool operator<(const char* str1, const CTempString str2)
+{
+    return str2 > str1;
+}
+
+inline
+bool operator<(const string& str1, const CTempString str2)
+{
+    return str2 > str1;
+}
+
+inline
+bool operator>(const char* str1, const CTempString str2)
+{
+    return str2 < str1;
+}
+
+inline
+bool operator>(const string& str1, const CTempString str2)
+{
+    return str2 < str1;
+}
 
 
 class CTempStringEx : public CTempString
