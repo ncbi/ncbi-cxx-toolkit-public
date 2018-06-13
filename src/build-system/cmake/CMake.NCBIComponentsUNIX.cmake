@@ -373,27 +373,37 @@ endif()
 include(${top_src_dir}/src/build-system/cmake/CMakeChecks.wxwidgets.cmake)
 
 # Fast-CGI
+set(_fcgi_version "fcgi-2.4.0")
 if (APPLE)
   find_external_library(FastCGI
       INCLUDES fastcgi.h
       LIBS fcgi
-      HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0")
+      HINTS "${NCBI_TOOLS_ROOT}/${_fcgi_version}")
 else ()
-    if ("${BUILD_SHARED_LIBS}" STREQUAL "OFF")
-        find_external_library(FastCGI
-            INCLUDES fastcgi.h
-            LIBS fcgi
-            INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/include"
-            LIBS_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/lib"
-            EXTRALIBS ${NETWORK_LIBS})
-    else ()
-    find_external_library(FastCGI
-        INCLUDES fastcgi.h
-        LIBS fcgi
-        INCLUDE_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/include"
-        LIBS_HINTS "${NCBI_TOOLS_ROOT}/fcgi-2.4.0/shlib"
-        EXTRALIBS ${NETWORK_LIBS})
-  endif()
+    set(_fcgi_root "${NCBI_TOOLS_ROOT}/${_fcgi_version}")
+    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release" AND
+            EXISTS /opt/ncbi/64/${_fcgi_version} )
+        set(_fcgi_root "/opt/ncbi/64/${_fcgi_version}")
+    endif()
+
+    if (BUILD_SHARED_LIBS)
+        set(_fcgi_root "${_fcgi_root}/shlib")
+    else()
+        set(_fcgi_root "${_fcgi_root}/lib")
+    endif()
+
+    find_library(FASTCGI_LIBS
+        NAMES fcgi
+        HINTS "${_fcgi_root}")
+    find_path(FASTCGI_INCLUDE
+        NAME fastcgi.h
+        HINTS "${NCBI_TOOLS_ROOT}/${_fcgi_version}/include")
+
+    if (FASTCGI_LIBS)
+        set(FASTCGI_FOUND True)
+    endif()
+
+    message(STATUS "FastCGI found at: ${FASTCGI_LIBS}")
 endif()
 
 # Fast-CGI lib:  (module to add to the "xcgi" library)
@@ -720,30 +730,55 @@ if (LMDB_INCLUDE)
     set(HAVE_LIBLMDB 1)
 endif()
 
-find_external_library(libxlsxwriter
-    INCLUDES xlsxwriter.h
-    LIBS xlsxwriter
-    HINTS "${NCBI_TOOLS_ROOT}/libxlsxwriter-0.6.9"
-    EXTRALIBS ${Z_LIBS})
+############################################################################
+##
+## libxlsxwriter
 
-#find_external_library(LIBUNWIND INCLUDES libunwind.h LIBS unwind HINTS "${NCBI_TOOLS_ROOT}/libunwind-1.1")
-#set(HAVE_LIBUNWIND ${LIBUNWIND_FOUND})
-
+set(_xlsxwriter_version "libxlsxwriter-0.6.9")
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release" AND
-        EXISTS /opt/ncbi/64/libunwind-1.1/lib/)
-    set(_UNWIND_HINTS "/opt/ncbi/64/libunwind-1.1/lib/")
+        EXISTS /opt/ncbi/64/${_xlsxwriter_version}/lib/)
+    set(_xlsxwriter_hints "/opt/ncbi/64/${_xlsxwriter_version}")
 else()
-    set(_UNWIND_HINTS "${NCBI_TOOLS_ROOT}/libunwind-1.1")
+    set(_xlsxwriter_hints "${NCBI_TOOLS_ROOT}/${_xlsxwriter_version}")
+endif()
+
+find_library(LIBXLSXWRITER_LIBS
+    NAMES xlsxwriter
+    HINTS "${_xlsxwriter_hints}/lib")
+if (LIBXLSXWRITER_LIBS)
+    find_path(LIBXLSXWRITER_INCLUDE
+        NAMES xlsxwriter.h
+        HINTS "${NCBI_TOOLS_ROOT}/${_xlsxwriter_version}/include")
+    if (LIBXLSXWRITER_INCLUDE)
+        set(LIBXLSXWRITER_FOUND True)
+    endif()
+endif()
+if (LIBXLSXWRITER_FOUND)
+    message(STATUS "Found libxlsxwriter: ${LIBXLSXWRITER_LIBS}")
+else()
+    message(STATUS "Could not find libxlsxwriter")
+endif()
+
+############################################################################
+##
+## libunwind
+
+set(_unwind_version "libunwind-1.1")
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release" AND
+        EXISTS /opt/ncbi/64/${_unwind_version}/lib/)
+    set(_unwind_hints "/opt/ncbi/64/${_unwind_version}")
+else()
+    set(_unwind_hints "${NCBI_TOOLS_ROOT}/${_unwind_version}")
 endif()
 
 find_library(LIBUNWIND_LIBS
     NAMES unwind
-    HINTS ${_UNWIND_HINTS}
+    HINTS "${_unwind_hints}/lib"
     )
 if (LIBUNWIND_LIBS)
     find_path(LIBUNWIND_INCLUDE
         NAME libunwind.h
-        HINTS "${NCBI_TOOLS_ROOT}/libunwind-1.1/include")
+        HINTS "${NCBI_TOOLS_ROOT}/${_unwind_version}/include")
     if (LIBUNWIND_INCLUDE)
         set(HAVE_LIBUNWIND True)
     endif()
@@ -866,11 +901,12 @@ endif()
 #############################################################################
 # FASTCGI
 if(FASTCGI_FOUND)
-  message("FASTCGI found at ${FASTCGI_INCLUDE}")
+  message(STATUS "FASTCGI found at ${FASTCGI_INCLUDE}")
   set(NCBI_COMPONENT_FASTCGI_FOUND YES)
   set(NCBI_COMPONENT_FASTCGI_INCLUDE ${FASTCGI_INCLUDE})
   set(NCBI_COMPONENT_FASTCGI_LIBS ${FASTCGI_LIBS})
 else()
+    message(STATUS "FASTCGI not found")
   set(NCBI_COMPONENT_FASTCGI_FOUND NO)
 endif()
 

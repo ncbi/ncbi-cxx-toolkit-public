@@ -14,6 +14,8 @@ set(Boost_USE_MULTITHREADED     ON)
 
 set(_foo_CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH})
 
+set(_boost_version "boost-1.62.0-ncbi1")
+
 if(WIN32)
     set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${BOOST_ROOT})
 #	set(WINDOWS_BOOST_DIR "${WIN32_PACKAGE_ROOT}/boost_1_57_0")
@@ -22,21 +24,26 @@ if(WIN32)
 #	set(BOOST_LIBRARYDIR "${BOOST_ROOT}/stage/lib")
 else()
     # preferentially set a specific NCBI version of Boost
-	set(BOOST_ROOT ${NCBI_TOOLS_ROOT}/boost-1.62.0-ncbi1 )
+    set(BOOST_ROOT ${NCBI_TOOLS_ROOT}/${_boost_version})
+    set(BOOST_LIBRARYDIR /opt/ncbi/64/${_boost_version}/lib)
+
 endif()
 
-
 #set(Boost_DEBUG ON)
-#include(FindBoost)
-#set(CMAKE_LIBRARY_PATH ${NCBI_TOOLS_ROOT}/boost-1.41.0/lib)
 find_package(Boost
              COMPONENTS filesystem regex system
              REQUIRED)
 set(CMAKE_PREFIX_PATH ${_foo_CMAKE_PREFIX_PATH})
 
 set(BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
-set(BOOST_LIBPATH -L${Boost_LIBRARY_DIRS} -Wl,-rpath,${Boost_LIBRARY_DIRS})
+set(BOOST_LIBPATH -Wl,-rpath,${Boost_LIBRARY_DIRS} -L${Boost_LIBRARY_DIRS})
 
+message(STATUS "Boost libraries: ${Boost_LIBRARY_DIRS}")
+
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release" AND
+        EXISTS /opt/ncbi/64/${_boost_version}/lib/ )
+    set(BOOST_LIBPATH -Wl,-rpath,/opt/ncbi/64/${_boost_version}/lib/ -L${Boost_LIBRARY_DIRS})
+endif()
 #
 # As a blanket statement, we now include Boost everywhere
 # This avoids a serious insidious version skew if we have both the
