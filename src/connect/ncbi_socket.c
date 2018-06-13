@@ -4420,7 +4420,7 @@ static EIO_Status s_Create(const char*     hostpath,
     x_sock->id        = x_id;
     x_sock->type      = eSocket;
     x_sock->side      = eSOCK_Client;
-    x_sock->log       = flags & (fSOCK_LogDefault & fSOCK_LogOn);
+    x_sock->log       = flags & (fSOCK_LogDefault | fSOCK_LogOn);
     x_sock->session   = flags & fSOCK_Secure ? SESSION_INVALID : 0;
     x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/  : 0/*false*/;
     x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
