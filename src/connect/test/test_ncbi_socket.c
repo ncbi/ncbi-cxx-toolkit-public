@@ -32,7 +32,7 @@
 
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
-#include <connect/ncbi_socket.h>
+#include <connect/ncbi_socket_unix.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -877,6 +877,35 @@ static void TEST_SOCK_isip(void)
 }
 
 
+#ifdef NCBI_OS_LINUX
+static void TEST_OnTopSock(void)
+{
+    LSOCK pipe;
+    SOCK  server, client, ontop;
+    const char* unique = tmpnam(0);
+    CORE_LOGF(eLOG_Note, ("SOCK_OnTop(\"%s\")", unique));
+    SOCK_SetDataLoggingAPI(fSOCK_LogOn);
+    verify(LSOCK_CreateUNIX(unique, 64, &pipe, fSOCK_LogDefault)
+           == eIO_Success);
+    verify(SOCK_CreateUNIX(unique, 0, &client, 0, 0, fSOCK_LogDefault)
+           == eIO_Success);
+    verify(LSOCK_Accept(pipe, 0, &server)
+           == eIO_Success);
+    verify(SOCK_CreateOnTop(client, 0, &ontop)
+           == eIO_Success);
+    verify(SOCK_Destroy(client)
+           == eIO_Closed);
+    verify(SOCK_Destroy(ontop)
+           == eIO_Success);
+    verify(SOCK_Destroy(server)
+           == eIO_Success);
+    verify(LSOCK_Close(pipe)
+           == eIO_Success);
+    remove(unique);
+}
+#endif /*NCBI_OS_LINUX*/
+
+
 /* Main function
  * Parse command-line options, initialize and cleanup API internals;
  * run client or server test
@@ -914,6 +943,10 @@ extern int main(int argc, const char* argv[])
         TEST_gethostby();
 
         TEST_SOCK_isip();
+
+#ifdef NCBI_OS_LINUX
+        TEST_OnTopSock();
+#endif/*NCBI_OS_LINUX*/
 
         assert(SOCK_ShutdownAPI() == eIO_Success);
 
