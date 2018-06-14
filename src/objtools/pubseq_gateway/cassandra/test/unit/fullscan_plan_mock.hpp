@@ -41,7 +41,7 @@ class MockCassandraFullscanPlan
 {
  public:
     MOCK_METHOD0(GetNextQuery, TQueryPtr());
-    MOCK_METHOD0(GetQueryCount, size_t());
+    MOCK_CONST_METHOD0(GetQueryCount, size_t());
     MOCK_METHOD0(Generate, void());
 };
 

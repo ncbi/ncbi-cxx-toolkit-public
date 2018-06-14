@@ -116,6 +116,12 @@ bool CCassandraFullscanRunner::Execute()
     ICassandraFullscanPlan* plan = m_ExecutionPlan.get();
 
     size_t thread_count = min(m_ThreadCount, plan->GetQueryCount());
+    thread_count = max(thread_count, 1UL);
+    if (thread_count > m_MaxActiveStatements) {
+        NCBI_THROW(CCassandraException, eSeqFailed,
+           "Invalid sequence of operations. Thread count is greater than max_active_statements total."
+        );
+    }
     vector<thread> worker_threads;
     vector<CCassandraFullscanWorker> workers;
     CFastMutex plan_mutex;
@@ -169,11 +175,11 @@ bool CCassandraFullscanRunner::Execute()
     worker_threads.clear();
 
     bool all_finished = true;
-    for (size_t i = 0; i < workers.size() - 1; ++i) {
+    for (size_t i = 0; i < workers.size(); ++i) {
         if (workers[i].HadError()) {
             NCBI_THROW(CCassandraException, eFatal,
                "Fullscan failed: one of workers got exception with message - " + workers[i].GetFirstError()
-           );
+            );
         }
         if (!workers[i].IsFinished()) {
             all_finished = false;

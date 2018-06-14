@@ -136,7 +136,7 @@ bool CCassandraFullscanWorker::StartQuery(size_t index)
 bool CCassandraFullscanWorker::ProcessQueryResult(size_t index)
 {
     assert(m_Queries[index].query != nullptr);
-    bool do_next = true, restart_request = false;
+    bool do_next = true, restart_request = false, result = true;
     SQueryContext& context = m_Queries[index];
     *context.data_ready = false;
     m_ReadyQueries->Dec(false);
@@ -164,18 +164,17 @@ bool CCassandraFullscanWorker::ProcessQueryResult(size_t index)
             restart_request = true;
         } else {
             ProcessError(e);
+            result = false;
         }
     } catch(exception const & e) {
         ProcessError(e);
+        result = false;
     }
 
     if (restart_request) {
         string params;
         for (size_t i = 0; i < context.query->ParamCount(); ++i) {
-            if (i > 0) {
-                params += ",";
-            }
-            params += context.query->ParamAsStr(i);
+            params += (i > 0 ? "," : "" ) + context.query->ParamAsStr(i);
         }
         ERR_POST(
             Info << "Query timeout! SQL - " << context.query->ToString()
@@ -183,7 +182,7 @@ bool CCassandraFullscanWorker::ProcessQueryResult(size_t index)
         );
         context.query->Query(m_Consistency, true, true, m_PageSize);
     }
-    return do_next;
+    return result && do_next;
 }
 
 bool CCassandraFullscanWorker::IsFinished() const
@@ -205,11 +204,12 @@ void CCassandraFullscanWorker::operator()()
 {
     m_Queries.clear();
     m_Queries.resize(m_MaxActiveStatements);
-    bool finished = false, more_tasks = true, do_next = true;
-    while (!finished && !m_HadError) {
+    m_Finished = false;
+    bool need_exit = false, more_tasks = true, contunue_processing = true;
+    while (!need_exit && !m_HadError) {
         for (
             size_t i = 0;
-            more_tasks && i < m_Queries.size() && *m_ActiveQueries <= m_MaxActiveStatements && do_next;
+            more_tasks && i < m_Queries.size() && *m_ActiveQueries <= m_MaxActiveStatements;
             ++i
         ) {
             if (m_Queries[i].query == nullptr) {
@@ -223,23 +223,23 @@ void CCassandraFullscanWorker::operator()()
             i < m_Queries.size()
                 && m_ReadyQueries->Value() > 0
                 && *m_ActiveQueries > 0
-                && do_next;
+                && contunue_processing;
             ++i
         ) {
             if (*(m_Queries[i].data_ready)) {
-                do_next = ProcessQueryResult(i);
+                contunue_processing = ProcessQueryResult(i);
             }
         }
-        finished = (!more_tasks && *m_ActiveQueries == 0) || !do_next || !m_RowConsumer->Tick();
+        contunue_processing = contunue_processing && m_RowConsumer->Tick();
+        need_exit = (!more_tasks && *m_ActiveQueries == 0) || !contunue_processing;
     }
 
     try {
         m_RowConsumer->Finalize();
-        m_Finished = do_next;
     } catch (const exception &  e) {
-        m_Finished = false;
         ProcessError(e);
     }
+    m_Finished = contunue_processing && !m_HadError;
 }
 
 END_IDBLOB_SCOPE
