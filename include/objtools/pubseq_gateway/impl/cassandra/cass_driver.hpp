@@ -709,6 +709,9 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     void Query(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM,
                bool run_async = false, bool allow_prepare = CASS_PREPARED_Q,
                unsigned int page_size = DEFAULT_PAGE_SIZE);
+
+    void RestartQuery(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM);
+
     /* returns no resultset */
     void Execute(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM,
                  bool run_async = false, bool allow_prepare = CASS_PREPARED_Q);

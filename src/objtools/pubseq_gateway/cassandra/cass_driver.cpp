@@ -837,7 +837,6 @@ CCassQuery::~CCassQuery()
     ERR_POST(Trace << "CCassQuery::~CCassQuery this=" << this);
 }
 
-
 void CCassQuery::InternalClose(bool  closebatch)
 {
     ERR_POST(Trace << "CCassQuery::InternalClose: this: " << this <<
@@ -1114,6 +1113,17 @@ void CCassQuery::Query(CassConsistency  c, bool  run_async,
         Close();
         throw;
     }
+}
+
+void CCassQuery::RestartQuery(CassConsistency c)
+{
+    unsigned int page_size = m_page_size;
+    CCassParams params = move(m_params);
+    bool async = m_async, allow_prepared = m_is_prepared;
+
+    Close();
+    m_params = move(params);
+    Query(c, async, allow_prepared, page_size);
 }
 
 
