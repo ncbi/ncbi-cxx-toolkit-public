@@ -51,7 +51,8 @@
    /* This has been found experimentally on IRIX64 6.5 04101931 IP25 */
 #  define MAX_DGRAM_SIZE  (60*1024)
 #elif defined(NCBI_OS_LINUX)
-   /* Larger sizes do not seem to work everywhere */
+   /* Larger sizes did not seem to work everywhere; although recent tests show
+    * that 65507 is okay now (cf. SOLARIS/MSWIN right below) */
 #  define MAX_DGRAM_SIZE  59550
 #elif defined(NCBI_OS_SOLARIS)  ||  defined(NCBI_OS_MSWIN)
    /* 65508 was reported too large */
@@ -401,7 +402,8 @@ int main(int argc, const char* argv[])
         s_MTU = 28 < mtu  &&  mtu < s_MTU
             ? (mtu - 28/*IP(20)/UDP(8) overhead*/)
             :  mtu;
-        CORE_LOGF(eLOG_Note, ("MTU = %d/%d", s_MTU, MAX_UDP_DGRAM_SIZE));
+        CORE_LOGF(eLOG_Note, ("MTU = %d/%d/%d",
+                              s_MTU, MAX_DGRAM_SIZE, MAX_UDP_DGRAM_SIZE));
     }
 
     if (strcasecmp(argv[1], "client") == 0) {
