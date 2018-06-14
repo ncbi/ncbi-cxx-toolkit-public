@@ -431,7 +431,7 @@ class CCassPrm
                 // no break
             case CASS_VALUE_TYPE_VARCHAR:
                 value = m_bytes;
-                // no break
+                break;
             default:
                 RAISE_DB_ERROR(eBindFailed, string("Can't convert Param to string"));
         }
