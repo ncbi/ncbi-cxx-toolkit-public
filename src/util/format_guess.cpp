@@ -186,10 +186,10 @@ int CFormatGuess::s_CheckOrder[] =
     eAlignment,    
     eTaxplot,
     ePhrapAce,
-    eTable,
     eBinaryASN,
     eUCSCRegion,
-    eJSON
+    eJSON,
+    eTable
 };
 
 
