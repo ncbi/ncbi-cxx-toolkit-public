@@ -133,9 +133,9 @@
 
 
 #ifdef NCBI_MONKEY
-/* A hack - we know that SOCK variable has name "sock" in code.
+/* A hack - we assume that SOCK variable is named "sock" in the code.
    If the desired behavior is timeout, "sock" will be replaced with a
-   connection to non-working server */
+   connection to a non-responsive server */
 #  define send(a,b,c,d)                                                 \
     (g_MONKEY_Send    ? g_MONKEY_Send(a,b,c,d,&sock) : send(a,b,c,d))
 #  define recv(a,b,c,d)                                                 \
@@ -3595,6 +3595,8 @@ static EIO_Status s_Write_(SOCK        sock,
 {
     EIO_Status status;
 
+    assert(sock->type & eSocket);
+
     if (sock->type == eDatagram) {
         sock->w_len = 0;
         if (sock->eof) {
@@ -3960,6 +3962,11 @@ static EIO_Status s_Close_(SOCK sock, int abort)
 #endif /*NCBI_OS_MSWIN*/
         if (abort < 0)
             abort = 1;
+#ifdef NCBI_MONKEY
+        /* Not interception of close():  only to "forget" this socket */
+        if (g_MONKEY_Close)
+            g_MONKEY_Close(fd);
+#endif /*NCBI_MONKEY*/
         for (;;) { /* close persistently - retry if interrupted by a signal */
             if (SOCK_CLOSE(fd) == 0)
                 break;
@@ -4012,13 +4019,6 @@ static EIO_Status s_Close_(SOCK sock, int abort)
 static EIO_Status s_Close(SOCK sock)
 {
     EIO_Status status;
-
-#ifdef NCBI_MONKEY
-    /* Not interception of close().
-       We only tell Monkey to "forget" this socket */
-    if (g_MONKEY_Close)
-        g_MONKEY_Close(sock->sock);
-#endif /*NCBI_MONKEY*/
 
     status = s_Close_(sock, 0/*orderly*/);
     if (s_ErrHook  &&  status != eIO_Success) {
@@ -4434,16 +4434,14 @@ static EIO_Status s_Create(const char*     hostpath,
 
     /* setup initial data */
     BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
-    if (size) {
-        if (BUF_SetChunkSize(&x_sock->w_buf, size) < size
-            ||  !BUF_Write(&x_sock->w_buf, data, size)) {
-            CORE_LOGF_ERRNO_X(27, eLOG_Error, errno,
-                              ("%s[SOCK::Create] "
-                               " Cannot store initial data",
-                               s_ID(x_sock, _id)));
-            SOCK_Destroy(x_sock);
-            return eIO_Unknown;
-        }
+    if (size  &&  (BUF_SetChunkSize(&x_sock->w_buf, size) < size  ||
+                   !BUF_Write(&x_sock->w_buf, data, size))) {
+        CORE_LOGF_ERRNO_X(27, eLOG_Error, errno,
+                          ("%s[SOCK::Create] "
+                           " Cannot store initial data",
+                           s_ID(x_sock, _id)));
+        SOCK_Destroy(x_sock);
+        return eIO_Unknown;
     }
     if (x_sock->session)
         x_sock->cred = cred;
@@ -4505,24 +4503,25 @@ static EIO_Status s_CreateOnTop(const void*   handle,
 
     if (!handle_size) {
         x_orig = (SOCK) handle;
-        if (x_orig->type != eSocket)
+        if (x_orig->type != eSocket) {
+            assert(0);
             return eIO_InvalidArg;
+        }
         fd = x_orig->sock;
         if (s_Initialized <= 0  ||  fd == SOCK_INVALID)
             return eIO_Closed;
-        x_orig->keep = 1/*true*/;
+        if (!x_orig->keep)
+            *oldfd = fd;
+        else
+            x_orig->keep = 1/*true*/;
         myport = x_orig->myport;
         s_Close(x_orig);
-        *oldfd = fd;
     } else
         memcpy(&fd, handle, sizeof(fd));
 
     /* initialize internals */
-    if (s_InitAPI(flags & fSOCK_Secure) != eIO_Success) {
-        if (x_orig)
-            x_orig->sock = fd;
+    if (s_InitAPI(flags & fSOCK_Secure) != eIO_Success)
         return eIO_NotSupported;
-    }
 
     /* get peer's address */
     peerlen = (TSOCK_socklen_t) sizeof(peer);
@@ -4535,13 +4534,12 @@ static EIO_Status s_CreateOnTop(const void*   handle,
         CORE_LOGF_ERRNO_EXX(148, eLOG_Error,
                             error, strerr ? strerr : "",
                             ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
-                             " %s OS socket handle",
+                             " %s %s handle",
                              x_id, (unsigned int) fd,
                              error == SOCK_ENOTCONN
-                             ? "Unconnected" : "Invalid"));
+                             ? "Unconnected" : "Invalid",
+                             x_orig ? "SOCK" : "OS socket"));
         UTIL_ReleaseBuffer(strerr);
-        if (x_orig)
-            x_orig->sock = fd;
         return eIO_Closed;
     }
 #ifdef NCBI_OS_UNIX
@@ -4555,8 +4553,7 @@ static EIO_Status s_CreateOnTop(const void*   handle,
     if (peer.sa.sa_family != AF_INET)
 #endif /*NCBI_OS_UNIX*/
     {
-        if (x_orig)
-            x_orig->sock = fd;
+        assert(!x_orig);
         return eIO_NotSupported;
     }
 
@@ -4569,30 +4566,22 @@ static EIO_Status s_CreateOnTop(const void*   handle,
 #  endif /*NCBI_OS*/
         peer.sa.sa_family == AF_UNIX) {
         if (peerlen == sizeof(peer.sa.sa_family)  ||  !peer.un.sun_path[0]) {
-            if (peerlen > sizeof(peer.sa.sa_family)) {
-                /* named but can be abstract */
-                peerlen = (TSOCK_socklen_t) sizeof(peer);
-                memset(&peer, 0, sizeof(peer));
+            peerlen = (TSOCK_socklen_t) sizeof(peer);
+            memset(&peer, 0, sizeof(peer));
 #  ifdef HAVE_SIN_LEN
-                peer.sa.sa_len = peerlen;
+            peer.sa.sa_len = peerlen;
 #  endif /*HAVE_SIN_LEN*/
-                if (getsockname(fd, &peer.sa, &peerlen) != 0) {
-                    if (x_orig)
-                        x_orig->sock = fd;
-                    return eIO_Closed;
-                }
-                assert(peer.sa.sa_family == AF_UNIX);
-            } /* else "unnamed" e.g. from socketpair() */
+            if (getsockname(fd, &peer.sa, &peerlen) != 0)
+                return eIO_Closed;
+            assert(peer.sa.sa_family == AF_UNIX);
             if (peerlen == sizeof(peer.sa.sa_family) || !peer.un.sun_path[0]) {
                 CORE_LOGF_X(48, eLOG_Error,
                             ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
-                             " %s UNIX socket",
+                             " %s UNIX socket handle",
                              x_id, (unsigned int) fd,
                              peerlen == sizeof(peer.sa.sa_family)
                              ? "Unnamed" : "Abstract"));
-                assert(0);
-                if (x_orig)
-                    x_orig->sock = fd;
+                assert(!x_orig);
                 return eIO_InvalidArg;
             }
         }
@@ -4617,18 +4606,15 @@ static EIO_Status s_CreateOnTop(const void*   handle,
         x_orig->r_buf = 0;
     } else
         BUF_SetChunkSize(&r_buf, SOCK_BUF_CHUNK_SIZE);
-    if (size) {
-        if (BUF_SetChunkSize(&w_buf, size) < size  ||
-            !BUF_Write(&w_buf, data, size)) {
-            CORE_LOGF_ERRNO_X(49, eLOG_Error, errno,
-                              ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
-                               " Cannot store initial data",
-                               x_id, (unsigned int) fd));
-            BUF_Destroy(w_buf);
-            if (x_orig)
-                x_orig->sock = fd;
-            return eIO_Unknown;
-        }
+    if (size  &&  (BUF_SetChunkSize(&w_buf, size) < size  ||
+                   !BUF_Write(&w_buf, data, size))) {
+        CORE_LOGF_ERRNO_X(49, eLOG_Error, errno,
+                          ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
+                           " Cannot store initial data",
+                           x_id, (unsigned int) fd));
+        BUF_Destroy(r_buf);
+        BUF_Destroy(w_buf);
+        return eIO_Unknown;
     }
 
 #ifdef NCBI_OS_MSWIN
@@ -4645,8 +4631,8 @@ static EIO_Status s_CreateOnTop(const void*   handle,
                              " Failed to create IO event",
                              x_id, (unsigned int) fd));
         UTIL_ReleaseBufferOnHeap(strerr);
-        if (x_orig)
-            x_orig->sock = fd;
+        BUF_Destroy(r_buf);
+        BUF_Destroy(w_buf);
         return eIO_Unknown;
     }
     /* NB: WSAEventSelect() sets non-blocking automatically */
@@ -4659,8 +4645,8 @@ static EIO_Status s_CreateOnTop(const void*   handle,
                              x_id, (unsigned int) fd));
         UTIL_ReleaseBuffer(strerr);
         WSACloseEvent(event);
-        if (x_orig)
-            x_orig->sock = fd;
+        BUF_Destroy(r_buf);
+        BUF_Destroy(w_buf);
         return eIO_Unknown;
     }
 #else
@@ -4673,21 +4659,20 @@ static EIO_Status s_CreateOnTop(const void*   handle,
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) fd));
         UTIL_ReleaseBuffer(strerr);
-        if (x_orig)
-            x_orig->sock = fd;
+        BUF_Destroy(r_buf);
+        BUF_Destroy(w_buf);
         return eIO_Unknown;
     }
 #endif /*NCBI_OS_MSWIN*/
 
-    /* create and fill socket handle */
+    /* create and fill in a socket handle */
     if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + socklen))) {
-        BUF_Destroy(r_buf);
-        BUF_Destroy(w_buf);
 #ifdef NCBI_OS_MSWIN
+        WSAEventSelect(fd, event, 0/*de-associate*/);
         WSACloseEvent(event);
 #endif /*NCBI_OS_MSWIN*/
-        if (x_orig)
-            x_orig->sock = fd;
+        BUF_Destroy(r_buf);
+        BUF_Destroy(w_buf);
         return eIO_Unknown;
     }
     x_sock->sock      = fd;
@@ -4744,8 +4729,6 @@ static EIO_Status s_CreateOnTop(const void*   handle,
             WSAEventSelect(fd, event, 0/*de-associate*/);
 #endif /*NCBI_OS_MSWIN*/
             SOCK_Destroy(x_sock);
-            if (x_orig)
-                x_orig->sock = fd;
             return eIO_NotSupported;
         }
         assert(session != SESSION_INVALID);
@@ -6199,7 +6182,7 @@ extern unsigned short LSOCK_GetPort(LSOCK         lsock,
                                     ENH_ByteOrder byte_order)
 {
     unsigned short port;
-    port = lsock->sock != SOCK_INVALID ? lsock->port : 0;
+    port = lsock  &&  lsock->sock != SOCK_INVALID ? lsock->port : 0;
     return byte_order == eNH_HostByteOrder ? port : htons(port);
 }
 
@@ -6674,14 +6657,12 @@ extern EIO_Status SOCK_Poll(size_t          n,
     size_t         i;
 
 #ifdef NCBI_MONKEY
-    int/*bool*/ call_intercepted = 0;
     SSOCK_Poll* orig_polls = polls; /* to know if 'polls' was replaced */
     EIO_Status  mnk_status = -1;
     size_t      orig_n = n;
-    if (g_MONKEY_Poll) {
-        /* Not a poll function itself, just removes some of "polls" items */
-        call_intercepted = g_MONKEY_Poll(&n, &polls, &mnk_status);
-    }
+    /* Not a poll function itself, just removes some of "polls" items */
+    if (g_MONKEY_Poll)
+        g_MONKEY_Poll(&n, &polls, &mnk_status);
     /* Even if call was intercepted, s_Select() continues as if nothing
        happened, because what we did was just removed some SSOCK_Poll pointers.
        The changes made in s_Select() will appear in the original array, but
@@ -6719,28 +6700,23 @@ extern EIO_Status SOCK_Poll(size_t          n,
     status = s_SelectStallsafe(n, polls, s_to2tv(timeout, &tv), n_ready);
 
 #ifdef NCBI_MONKEY
-    /* Copy poll results to the original array.  Probably Monkey excluded some
-       sockets from array, so we need two iterators */
     if (orig_polls != polls) {
+        /* Copy poll results to the original array if some were excluded */
         size_t orig_iter, new_iter;
-        for (orig_iter = 0;  orig_iter < orig_n;  orig_iter++) {
-            orig_polls[orig_iter].event  = eIO_Open/*no event*/;
-            orig_polls[orig_iter].revent = eIO_Open/*no event*/;
-        }
-        for (new_iter = 0;  new_iter < n;  new_iter++) {
-            for (orig_iter = 0;  orig_iter < orig_n;  orig_iter++) {
-                if (orig_polls[orig_iter].sock->sock
-                    == polls[new_iter].sock->sock) {
+        for (orig_iter = 0;  orig_iter < orig_n;  ++orig_iter) {
+            for (new_iter = 0;  new_iter < n;  ++new_iter) {
+                if (orig_polls[orig_iter].sock == polls[new_iter].sock) {
                     orig_polls[orig_iter] = polls[new_iter];
                     break;
                 }
+                if (new_iter >= n)
+                    orig_polls[orig_iter].revent = eIO_Open/*no event*/;
             }
         }
         free(polls);
         polls = orig_polls;
-        if (mnk_status != -1) {
-            return mnk_status;
-        }
+        if (mnk_status != -1)
+            status = mnk_status;
     }
 #endif /*NCBI_MONKEY*/
 

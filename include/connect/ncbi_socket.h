@@ -630,17 +630,17 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  );
 
 
-/** [SERVER-side]  Create a socket on top of either an OS-dependent "handle"
+/** [SERVER-side]  Create a SOCKet on top of either an OS-dependent "handle"
  * (file descriptor on Unix, SOCKET on MS-Windows) or an existing SOCK object.
  * Returned socket is not reopenable to its default peer (SOCK_Reconnect() may
  * not specify zeros for the connection point).
  * All timeouts are set to default [infinite] values.
  * The call does *not* destroy either the OS handle or the SOCK passed in the
  * arguments, regardless of the return status code.
- * When a socket gets successfully created on top of a "SOCK" handle, the
- * original SOCK is emptied (and the underlying OS handle removed from it) upon
- * the call returns, and will still need SOCK_Destroy() in the caller's code to
- * free up the memory it occupies.
+ * When a socket is being created on top of a SOCK handle, the original SOCK
+ * gets emptied (and the underlying OS handle removed from it) upon the call
+ * returns (whether successfully or not), yet will still need SOCK_Destroy() in
+ * the caller's code to free up the memory it  occupies.
  * Any secure session that may have existed in the original SOCK will have
  * been terminated (and new session may have been initiated in the new SOCK --
  * at this time the old session is not allowed to "migrate").
@@ -650,12 +650,16 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * socket, taking the ownership of the underlying OS handle, and then create a
  * SOCK on top of the bare "handle", specifying its (non-zero) "handle_size".
  * @warning
- *  It is not recommended to use this call on a not fully connected sockets
+ *  It is not recommended to use this call on not fully connected sockets
  *  (either bare OS handle or SOCK) in native MS-Windows builds (e.g. Cygwin is
  *  okay).
  * @note
  *  SOCK_Close[Ex]() on the resultant socket will not close the underlying OS
  *  handle if fSOCK_KeepOnClose is set in "flags".
+ * @note
+ *  (SOCK_IsClientSide() | SOCK_IsServerSide()) can be used to determine if the
+ *  original SOCK was stripped off the underlying handle:  the expression would
+ *  evaluate to 0(false) iff the underlying object does not have the OS handle.
  * @param handle
  *  [in]  OS-dependent "handle" or SOCK to be converted
  * @param handle_size
@@ -669,9 +673,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * @param flags
  *  [in]  additional socket requirements
  * @return
- *  Return eIO_Success on success;  otherwise: eIO_Closed if the "handle" does
- *  not refer to an open socket [but e.g. to a normal file or a pipe];  other
- *  error codes in case of other errors.
+ *  Return eIO_Success on success;  otherwise: eIO_InvalidArg if the "handle"
+ *  does not refer to an open socket [but e.g. to a normal file or a pipe];
+ *  eIO_Closed when the original socket is not connected;  other error codes
+ *  in case of other errors.
  * @sa
  *  SOCK_GetOSHandleEx, SOCK_CreateOnTop, SOCK_Reconnect, SOCK_Close
  */

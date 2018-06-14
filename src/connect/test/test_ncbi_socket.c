@@ -881,7 +881,7 @@ static void TEST_SOCK_isip(void)
 static void TEST_OnTopSock(void)
 {
     LSOCK pipe;
-    SOCK  server, client, ontop;
+    SOCK  server, client, ontop[2];
     const char* unique = tmpnam(0);
     CORE_LOGF(eLOG_Note, ("SOCK_OnTop(\"%s\")", unique));
     SOCK_SetDataLoggingAPI(fSOCK_LogOn);
@@ -891,13 +891,17 @@ static void TEST_OnTopSock(void)
            == eIO_Success);
     verify(LSOCK_Accept(pipe, 0, &server)
            == eIO_Success);
-    verify(SOCK_CreateOnTop(client, 0, &ontop)
+    verify(SOCK_CreateOnTop(server, 0, &ontop[0])
+           == eIO_Success);
+    verify(SOCK_CreateOnTop(client, 0, &ontop[1])
            == eIO_Success);
     verify(SOCK_Destroy(client)
            == eIO_Closed);
-    verify(SOCK_Destroy(ontop)
-           == eIO_Success);
     verify(SOCK_Destroy(server)
+           == eIO_Closed);
+    verify(SOCK_Destroy(ontop[0])
+           == eIO_Success);
+    verify(SOCK_Destroy(ontop[1])
            == eIO_Success);
     verify(LSOCK_Close(pipe)
            == eIO_Success);
