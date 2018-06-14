@@ -26,9 +26,8 @@
 * Author:  Dmitriy Elisov
 *
 * File Description:
-*   Chaos Monkey - a library that is hooked with ncbi_socket.c and introduces 
+*   Chaos Monkey - a library that is hooked up with ncbi_socket.c to simulate 
 *   problems in network connectivity - losses, bad data, delays.
-*   difficulties
 *
 */
 
@@ -37,35 +36,35 @@
 #include "ncbi_priv.h"
 
 #ifdef NCBI_MONKEY
-#   include <connect/ncbi_connutil.h>
-#   include <corelib/ncbi_system.hpp>
-#   include <corelib/ncbireg.hpp>
-#   include <corelib/ncbithr.hpp>
-#   include <corelib/env_reg.hpp>
-#   include <corelib/ncbiapp.hpp>
-#   include <corelib/ncbimisc.hpp>
-#   include "ncbi_monkeyp.hpp"
-#   include <list>
-#include <vector>
+#  include <connect/ncbi_connutil.h>
+#  include <corelib/ncbi_system.hpp>
+#  include <corelib/ncbireg.hpp>
+#  include <corelib/ncbithr.hpp>
+#  include <corelib/env_reg.hpp>
+#  include <corelib/ncbiapp.hpp>
+#  include <corelib/ncbimisc.hpp>
+#  include "ncbi_monkeyp.hpp"
+#  include <list>
+#  include <vector>
 
 /* OS-dependent way to set socket errors */
-#   ifdef NCBI_OS_MSWIN
-#       define MONKEY_SET_SOCKET_ERROR(error) WSASetLastError(error)
-#       define MONKEY_ENOPROTOOPT WSAENOPROTOOPT 
-#   else
-#       define MONKEY_SET_SOCKET_ERROR(error) errno = error
-#       define MONKEY_ENOPROTOOPT ENOPROTOOPT 
-#   endif /* NCBI_OS_MSWIN */
+#  ifdef NCBI_OS_MSWIN
+#    define MONKEY_SET_SOCKET_ERROR(error)  WSASetLastError(error)
+#    define MONKEY_ENOPROTOOPT              WSAENOPROTOOPT
+#  else
+#    define MONKEY_SET_SOCKET_ERROR(error)  errno = error
+#    define MONKEY_ENOPROTOOPT              ENOPROTOOPT
+#  endif /* NCBI_OS_MSWIN */
 
 /* Include OS-specific headers */
-#   ifdef NCBI_OS_MSWIN
-#       include <regex>
-#   else
-#       include <arpa/inet.h>
-#       include <sys/types.h>
-#       include <sys/socket.h>
-#       include <sys/un.h>
-#   endif /* NCBI_OS_MSWIN */
+#  ifdef NCBI_OS_MSWIN
+#    include <regex>
+#  else
+#    include <arpa/inet.h>
+#    include <sys/types.h>
+#    include <sys/socket.h>
+#    include <sys/un.h>
+#  endif /* NCBI_OS_MSWIN */
 
 
 BEGIN_NCBI_SCOPE
@@ -94,21 +93,20 @@ const string             kSeedField      = "seed";
 /*/////////////////////////////////////////////////////////////////////////////
 //                              MOCK DEFINITIONS                             //
 /////////////////////////////////////////////////////////////////////////////*/
-#   ifdef NCBI_MONKEY_TESTS
-#       undef DECLARE_MONKEY_MOCK
+#  ifdef NCBI_MONKEY_TESTS
+#    undef DECLARE_MONKEY_MOCK
 /* Declare a static variable and global getter&setter for it */
-#       define DECLARE_MONKEY_MOCK(ty,name,def_val)                            \
-            static ty s_Monkey_ ## name = def_val;                             \
-            ty g_MonkeyMock_Get ## name() {                                    \
-                return s_Monkey_ ## name;                                      \
-            }                                                                  \
-            void g_MonkeyMock_Set ## name(const ty& val) {                     \
-                s_Monkey_ ## name = val;                                       \
-            }
+#    define DECLARE_MONKEY_MOCK(ty,name,def_val)                        \
+    static ty s_Monkey_ ## name = def_val;                              \
+    ty g_MonkeyMock_Get ## name() {                                     \
+        return s_Monkey_ ## name;                                       \
+    }                                                                   \
+    void g_MonkeyMock_Set ## name(const ty& val) {                      \
+        s_Monkey_ ## name = val;                                        \
+    }
 
-/* This macro contains the list of variables to be mocked. Needed mocks will
- * be created with DECLARE_MONKEY_MOCK
- */
+/* This macro contains the list of variables to be mocked.
+ * Needed mocks will be created with DECLARE_MONKEY_MOCK */
 MONKEY_MOCK_MACRO()
 
 string CMonkeyMocks::MainMonkeySection = "CHAOS_MONKEY";
@@ -129,9 +127,9 @@ void CMonkeyMocks::SetMainMonkeySection(string section)
 }
 
 
-/*//////////////////////////////////////////////////////////////////////////////
-//                            CMonkeyException                                //
-//////////////////////////////////////////////////////////////////////////////*/
+/*/////////////////////////////////////////////////////////////////////////////
+//                           CMonkeyException                                //
+/////////////////////////////////////////////////////////////////////////////*/
 const char* CMonkeyException::what() const throw()
 {
 
@@ -139,7 +137,9 @@ const char* CMonkeyException::what() const throw()
 }
 
 
-#   endif /* NCBI_MONKEY_TESTS */
+#  endif /* NCBI_MONKEY_TESTS */
+
+
 /*/////////////////////////////////////////////////////////////////////////////
 //                    STATIC CONVENIENCE FUNCTIONS                           //
 /////////////////////////////////////////////////////////////////////////////*/
@@ -170,7 +170,7 @@ static void s_TimeoutingSocketInit(void)
     CListeningSocket* server_socket;
 
     for (;  i < 8100;  i++) {
-        /* Initialize a timeouting socket */
+        /* initialize a timing out socket */
         try {
             server_socket = new CListeningSocket(i);
         } catch (CException) {
