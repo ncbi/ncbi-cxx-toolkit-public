@@ -170,7 +170,7 @@ static void s_TimeoutingSocketInit(void)
     CListeningSocket* server_socket;
 
     for (;  i < 8100;  i++) {
-        /* initialize a timing out socket */
+        /* Initialize a timing out socket */
         try {
             server_socket = new CListeningSocket(i);
         } catch (CException) {
