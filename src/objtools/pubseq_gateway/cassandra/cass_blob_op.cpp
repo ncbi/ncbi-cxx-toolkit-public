@@ -136,10 +136,15 @@ void CCassBlobOp::GetBlob(unsigned int  op_timeout_ms,
     );
 
     CCassConnection::Perform(op_timeout_ms, nullptr, nullptr,
-        [&loader](bool is_repeated)
+        [&loader, &is_error, &errmsg](bool is_repeated)
         {
-            if (is_repeated)
-                loader.Restart();
+            if (is_repeated) {
+                bool allowed = loader.Restart();
+                if (!allowed)
+                    return true;
+                is_error = false;
+                errmsg.clear();
+            }
             bool b = loader.Wait();
             return b;
         }
