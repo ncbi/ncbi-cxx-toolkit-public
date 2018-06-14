@@ -1581,6 +1581,8 @@ namespace {
     }
 }
 
+static const bool kSplitCircular = true;
+static const bool kOptimizeTestOverlap = true;
 
 /// @name GetParentFeature
 /// The algorithm is the following:
@@ -1746,6 +1748,52 @@ namespace {
             }
     };
 
+    inline
+    bool s_AddCircularRanges(vector<SFeatRangeInfo>& rr,
+                             SFeatRangeInfo& range_info,
+                             bool by_product = false)
+    {
+        if ( !kSplitCircular ) {
+            return false;
+        }
+        if ( range_info.m_Range.GetFrom() != 0 ) {
+            // not from the beginning of sequence
+            return false;
+        }
+        const CSeq_loc& loc = by_product?
+            range_info.m_Info->m_Feat.GetProduct():
+            range_info.m_Info->m_Feat.GetLocation();
+        ENa_strand strand = loc.GetStrand();
+        if ( strand == eNa_strand_other ) {
+            // multiple strands
+            return false;
+        }
+        TSeqPos start = loc.GetStart(eExtreme_Biological);
+        TSeqPos stop  = loc.GetStop (eExtreme_Biological);
+        if ( IsReverse(strand) ) {
+            swap(start, stop);
+        }
+        if ( start <= stop ) {
+            // direction matches strand - non circular
+            return false;
+        }
+        TSeqPos circular_length = sx_GetCircularLength(range_info.m_Info->m_Feat.GetScope(), range_info.m_Id);
+        if ( circular_length == kInvalidSeqPos ) {
+            return false;
+        }
+        if ( range_info.m_Range.GetToOpen() < circular_length ) {
+            // not till the end of sequence
+            return false;
+        }
+        // 0-start, end-circular end
+        range_info.m_Range.SetTo(stop);
+        rr.push_back(range_info);
+        range_info.m_Range.SetFrom(start);
+        range_info.m_Range.SetToOpen(circular_length);
+        rr.push_back(range_info);
+        return true;
+    }        
+
     void s_AddRanges(TCanonicalIdsMap& ids_map,
                      vector<SFeatRangeInfo>& rr,
                      CFeatTree::CFeatInfo& info,
@@ -1800,7 +1848,9 @@ namespace {
                 }
                 SFeatRangeInfo range_info(ids_map, feat_info, 0, m_ByProduct);
                 if ( range_info.m_Id ) {
-                    m_Index.push_back(range_info);
+                    if ( !s_AddCircularRanges(m_Index, range_info, m_ByProduct) ) {
+                        m_Index.push_back(range_info);
+                    }
                 }
                 else {
                     s_AddRanges(ids_map,
@@ -2379,6 +2429,13 @@ void CDisambiguator::Disambiguate(TBestArray& bests)
 }
 
 
+static inline
+bool s_IsNotSubrange(const CRange<TSeqPos>& r1, const CRange<TSeqPos>& r2)
+{
+    return r1.GetFrom() < r2.GetFrom() || r1.GetToOpen() > r2.GetToOpen();
+}
+
+
 static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                                   TBestArray& bests,
                                   const STypeLink& link,
@@ -2408,7 +2465,9 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
         SBestInfo* best = &bests[i];
         SFeatRangeInfo range_info(ids_map, feat_info, best);
         if ( range_info.m_Id ) {
-            cc.push_back(range_info);
+            if ( !s_AddCircularRanges(cc, range_info) ) {
+                cc.push_back(range_info);
+            }
         }
         else {
             s_AddRanges(ids_map, cc, feat_info, best, feat_info.m_Feat.GetLocation());
@@ -2511,11 +2570,20 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                     Int1 quality = s_GetParentQuality(info, *pc->m_Info);
                     Int8 overlap;
                     try {
-                        overlap = TestForOverlap64(p_loc,
-                                                   c_loc,
-                                                   overlap_type,
-                                                   circular_length,
-                                                   scope);
+                        if ( kOptimizeTestOverlap && overlap_type == eOverlap_Subset &&
+                             ci->m_Id && pc->m_Id &&
+                             s_IsNotSubrange(ci->m_Range, pc->m_Range) ) {
+                            // fast check with simple locations failed
+                            overlap = -1;
+                        }
+                        else {
+                            // full check
+                            overlap = TestForOverlap64(p_loc,
+                                                       c_loc,
+                                                       overlap_type,
+                                                       circular_length,
+                                                       scope);
+                        }
                     }
                     catch ( CException& /*ignored*/ ) {
                         overlap = -1;
