@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(unit_test_seq_loc_util)
+  NCBI_sources(unit_test_seq_loc_util)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(test_boost xobjutil)
+  NCBI_project_watchers(vasilche grichenk)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +25,4 @@ set_target_properties(unit_test_seq_loc_util-app PROPERTIES OUTPUT_NAME unit_tes
 target_link_libraries(unit_test_seq_loc_util-app
     test_boost xobjutil
 )
-
+endif()
