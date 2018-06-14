@@ -270,7 +270,7 @@ static void s_LoadLocalIPs(void)
             n = strcasecmp(net_info->svc, REG_CONN_LOCAL_IPS_DISABLE) ? 1 : 0;
         else
             n = 0;
-        /* Build HTTP connector here to save on a dispatcher hit */
+        /* Build an HTTP connector here to save on a dispatcher hit */
         if (n  &&  ConnNetInfo_SetupStandardArgs(net_info, net_info->svc)  &&
             x_LoadLocalIPs(HTTP_CreateConnector(net_info,
                                                 "User-Agent: ncbi_localip",
