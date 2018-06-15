@@ -103,6 +103,10 @@ void CGRPCClientContext::AddStandardNCBIMetadata(grpc::ClientContext& cctx)
     cctx.AddMetadata("ncbiphid", rctx.GetNextSubHitID());
     cctx.AddMetadata("dtab",     rctx.GetDtab());
     cctx.AddMetadata("client",   dctx.GetAppName());
+    
+    CRequestContext_PassThrough pass_through;
+    pass_through.Enumerate([&](const string& name, const string& value)
+                              { cctx.AddMetadata(name, value); return true; });
 }
 
 
@@ -177,7 +181,9 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
             }
         }
         for (const auto& metadata : sctx->client_metadata()) {
-            CTempString value(metadata.second.data(), metadata.second.size());
+            string name (metadata.first .data(), metadata.first .size());
+            string value(metadata.second.data(), metadata.second.size());
+            rctx.AddPassThroughProperty(name, value);
             if (metadata.first == "sessionid") {
                 rctx.SetSessionID(value);
             } else if (metadata.first == "ncbiphid") {
