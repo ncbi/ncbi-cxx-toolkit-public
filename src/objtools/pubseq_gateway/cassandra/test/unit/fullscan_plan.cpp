@@ -56,42 +56,42 @@ class CCassandraFullscanPlanTest
 {
  public:
     CCassandraFullscanPlanTest()
-     : m_TestClusterName("ID_CASS_TEST")
-     , m_Factory(nullptr)
-     , m_Connection(nullptr)
-     , m_KeyspaceName("test_mlst_storage")
+     : m_KeyspaceName("test_mlst_storage")
      , m_TableName("allele_data")
     {}
 
-    virtual void SetUp()
-    {
+ protected:
+    static void SetUpTestCase() {
         const string config_section = "TEST";
         CNcbiRegistry r;
-        r.Set(config_section, "service", m_TestClusterName, IRegistry::fPersistent);
-        m_Factory = CCassConnectionFactory::s_Create();
-        m_Factory->LoadConfig(r, config_section);
-        m_Connection = m_Factory->CreateInstance();
-        m_Connection->Connect();
+        r.Set(config_section, "service", string(s_TestClusterName), IRegistry::fPersistent);
+        s_Factory = CCassConnectionFactory::s_Create();
+        s_Factory->LoadConfig(r, config_section);
+        s_Connection = s_Factory->CreateInstance();
+        s_Connection->Connect();
     }
 
-    virtual void TearDown()
-    {
-        m_Connection->Close();
-        m_Connection = nullptr;
-        m_Factory = nullptr;
+    static void TearDownTestCase() {
+        s_Connection->Close();
+        s_Connection = nullptr;
+        s_Factory = nullptr;
     }
- protected:
-    const string m_TestClusterName;
-    shared_ptr<CCassConnectionFactory> m_Factory;
-    shared_ptr<CCassConnection> m_Connection;
+
+    static const char* s_TestClusterName;
+    static shared_ptr<CCassConnectionFactory> s_Factory;
+    static shared_ptr<CCassConnection> s_Connection;
 
     string m_KeyspaceName;
     string m_TableName;
 };
 
+const char* CCassandraFullscanPlanTest::s_TestClusterName = "ID_CASS_TEST";
+shared_ptr<CCassConnectionFactory> CCassandraFullscanPlanTest::s_Factory(nullptr);
+shared_ptr<CCassConnection> CCassandraFullscanPlanTest::s_Connection(nullptr);
+
 TEST_F(CCassandraFullscanPlanTest, CheckEmptyPlan) {
     CCassandraFullscanPlan plan;
-    plan.SetConnection(m_Connection);
+    plan.SetConnection(s_Connection);
     EXPECT_THROW(
         plan.Generate(),
         CCassandraException
@@ -109,10 +109,10 @@ TEST_F(CCassandraFullscanPlanTest, CheckEmptyPlan) {
 
 TEST_F(CCassandraFullscanPlanTest, CheckQuery) {
     CCassConnection::TTokenRanges ranges;
-    m_Connection->GetTokenRanges(ranges);
+    s_Connection->GetTokenRanges(ranges);
     CCassandraFullscanPlan plan;
     plan
-        .SetConnection(m_Connection)
+        .SetConnection(s_Connection)
         .SetKeyspace(m_KeyspaceName)
         .SetTable(m_TableName)
         .SetMinPartitionsForSubrangeScan(0);
@@ -156,10 +156,10 @@ TEST_F(CCassandraFullscanPlanTest, CheckQuery) {
 
 TEST_F(CCassandraFullscanPlanTest, CheckQueryCount) {
     CCassConnection::TTokenRanges ranges;
-    m_Connection->GetTokenRanges(ranges);
+    s_Connection->GetTokenRanges(ranges);
     CCassandraFullscanPlan plan;
     plan
-        .SetConnection(m_Connection)
+        .SetConnection(s_Connection)
         .SetKeyspace(m_KeyspaceName)
         .SetTable(m_TableName)
         .SetMinPartitionsForSubrangeScan(0);

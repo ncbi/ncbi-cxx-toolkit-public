@@ -234,6 +234,14 @@ void CCassandraFullscanWorker::operator()()
         need_exit = (!more_tasks && *m_ActiveQueries == 0) || !contunue_processing;
     }
 
+    for (size_t i = 0; i < m_Queries.size(); ++i) {
+        if (m_Queries[i].query != nullptr) {
+            m_Queries[i].query->Close();
+            m_Queries[i].query = nullptr;
+        }
+    }
+    m_Queries.clear();
+
     try {
         m_RowConsumer->Finalize();
     } catch (const exception &  e) {

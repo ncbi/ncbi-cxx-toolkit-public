@@ -62,38 +62,38 @@ class CCassandraFullscanRunnerTest
 {
  public:
     CCassandraFullscanRunnerTest()
-     : m_TestClusterName("ID_CASS_TEST")
-     , m_Factory(nullptr)
-     , m_Connection(nullptr)
-     , m_KeyspaceName("test_ipg_storage_entrez")
+     : m_KeyspaceName("test_ipg_storage_entrez")
      , m_TableName("ipg_report")
     {}
 
-    virtual void SetUp()
-    {
+ protected:
+    static void SetUpTestCase() {
         const string config_section = "TEST";
         CNcbiRegistry r;
-        r.Set(config_section, "service", m_TestClusterName, IRegistry::fPersistent);
+        r.Set(config_section, "service", string(m_TestClusterName), IRegistry::fPersistent);
         m_Factory = CCassConnectionFactory::s_Create();
         m_Factory->LoadConfig(r, config_section);
         m_Connection = m_Factory->CreateInstance();
         m_Connection->Connect();
     }
 
-    virtual void TearDown()
-    {
+    static void TearDownTestCase() {
         m_Connection->Close();
         m_Connection = nullptr;
         m_Factory = nullptr;
     }
- protected:
-    const string m_TestClusterName;
-    shared_ptr<CCassConnectionFactory> m_Factory;
-    shared_ptr<CCassConnection> m_Connection;
+
+    static const char* m_TestClusterName;
+    static shared_ptr<CCassConnectionFactory> m_Factory;
+    static shared_ptr<CCassConnection> m_Connection;
 
     string m_KeyspaceName;
     string m_TableName;
 };
+
+const char* CCassandraFullscanRunnerTest::m_TestClusterName = "ID_CASS_TEST";
+shared_ptr<CCassConnectionFactory> CCassandraFullscanRunnerTest::m_Factory(nullptr);
+shared_ptr<CCassConnection> CCassandraFullscanRunnerTest::m_Connection(nullptr);
 
 struct SConsumeContext {
     CFastMutex mutex;
