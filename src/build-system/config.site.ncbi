@@ -288,7 +288,7 @@ esac
 
 : ${SABLOT_PATH=$NCBI/Sablot-1.0.2}
 
-: ${SGE_PATH=/netopt/uge}
+: ${SGE_PATH=/netmnt/gridengine/uge855}
 
 : ${SQLITE3_PATH=$NCBI/sqlite-3.8.10.1-ncbi1}
 
