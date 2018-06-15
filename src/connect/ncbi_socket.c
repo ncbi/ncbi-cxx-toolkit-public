@@ -4510,10 +4510,10 @@ static EIO_Status s_CreateOnTop(const void*   handle,
         fd = x_orig->sock;
         if (s_Initialized <= 0  ||  fd == SOCK_INVALID)
             return eIO_Closed;
-        if (!x_orig->keep)
-            *oldfd = fd;
-        else
+        if (!x_orig->keep) {
             x_orig->keep = 1/*true*/;
+            *oldfd = fd;
+        }
         myport = x_orig->myport;
         s_Close(x_orig);
     } else
