@@ -299,19 +299,34 @@ public:
 
     /// @brief 
     ///   Set connection timeout.    
-    /// 
+    ///
+    /// This timeout limits how long each query or the like can take.
     /// @param nof_secs 
     ///   Number of seconds.  If "nof_secs" is zero or is "too big" 
     ///   (depends on the underlying DB API), then set the timeout to infinite.
+    /// @sa GetTimeout, SetCancelTimeout, I_DriverContext::SetTimeout, I_DriverContext::SetLoginTimeout
     virtual void SetTimeout(size_t nof_secs);
 
     /// Set timeout for command cancellation and connection closing
+    ///
+    /// This timeout limits how long to wait for the server to acknowledge
+    /// requests to cancel a query gracefully or close a connection gracefully
+    /// before pulling the plug.
+    /// @sa GetCancelTimeout, SetTimeout, I_DriverContext::SetTimeout, I_DriverContext::SetLoginTimeout
     virtual void SetCancelTimeout(size_t nof_secs);
 
     /// Get connection timeout.    
+    ///
+    /// This timeout limits how long each query or the like can take.
+    /// @sa SetTimeout, GetCancelTimeout, I_DriverContext::GetTimeout, I_DriverContext::GetLoginTimeout
     size_t GetTimeout(void) const;
 
     /// Get timeout for command cancellation and connection closing
+    ///
+    /// This timeout limits how long to wait for the server to acknowledge
+    /// requests to cancel a query gracefully or close a connection gracefully
+    /// before pulling the plug.
+    /// @sa SetCancelTimeout, GetTimeout, I_DriverContext::GetTimeout, I_DriverContext::GetLoginTimeout
     size_t GetCancelTimeout(void) const;
     
     /// Get interface for extra features that could be implemented in the driver.

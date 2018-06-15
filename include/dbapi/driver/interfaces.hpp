@@ -821,6 +821,8 @@ public:
     
     /// Set login timeout.
     ///
+    /// This timeout limits how long each login attempt can take.  (If you've
+    /// enabled retrying, the total time can be longer.)
     /// @param nof_secs
     ///   Timeout in seconds. If "nof_secs" is zero or is "too big" 
     ///    (depends on the underlying DB API), then set the timeout to infinite.
@@ -828,11 +830,13 @@ public:
     ///   FALSE on error.
     ///
     /// @sa
-    ///   GetLoginTimeout()
+    ///   GetLoginTimeout, SetTimeout, CDB_Connection::SetTimeout, CDB_Connection::SetCancelTimeout
     virtual bool SetLoginTimeout(unsigned int nof_secs = 0) = 0;
 
-    /// Set connection timeouts.
+    /// Set connection timeout.
     ///
+    /// This timeout limits how long each query or the like can take by default
+    /// in subsequently created connections.
     /// @param nof_secs
     ///   Timeout in seconds. If "nof_secs" is zero or is "too big" 
     ///   (depends on the underlying DB API), then set the timeout to infinite.
@@ -840,24 +844,28 @@ public:
     ///   FALSE on error.
     ///
     /// @sa
-    ///   GetTimeout()
+    ///   GetTimeout, SetLoginTimeout, CDB_Connection::SetTimeout, CDB_Connection::SetCancelTimeout
     virtual bool SetTimeout(unsigned int nof_secs = 0) = 0;
 
     /// Get login timeout
     ///
+    /// This timeout limits how long each login attempt can take.  (If you've
+    /// enabled retrying, the total time can be longer.)
     /// @return
     ///   Login timeout.
     /// @sa
-    ///   SetLoginTimeout()
+    ///   SetLoginTimeout, GetTimeout, CDB_Connection::GetTimeout, CDB_Connection::GetCancelTimeout
     virtual unsigned int GetLoginTimeout(void) const = 0;
 
     /// Get connection timeout
     ///
+    /// This timeout limits how long each query or the like can take by default
+    /// in subsequently created connections.
     /// @return
     ///   Connection timeout.
     ///
     /// @sa
-    ///   SetTimeout()
+    ///   SetTimeout, GetLoginTimeout, CDB_Connection::GetTimeout, CDB_Connection::GetCancelTimeout
     virtual unsigned int GetTimeout(void) const = 0;
 
     /// Set maximal size for BLOB data. 
@@ -1375,12 +1383,15 @@ protected:
     /// @brief 
     ///   Set connection timeout.    
     /// 
+    /// This timeout limits how long each query or the like can take.
     /// @param nof_secs 
     ///   Number of seconds.  If "nof_secs" is zero or is "too big" 
     ///   (depends on the underlying DB API), then set the timeout to infinite.
     virtual void SetTimeout(size_t nof_secs) = 0;
 
     /// Get connection timeout.    
+    ///
+    /// This timeout limits how long each query or the like can take.
     virtual size_t GetTimeout(void) const = 0;
 
     /// Get interface for extra features that could be implemented in the driver.
