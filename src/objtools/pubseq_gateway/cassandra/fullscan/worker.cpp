@@ -180,7 +180,12 @@ bool CCassandraFullscanWorker::ProcessQueryResult(size_t index)
             Info << "Query timeout! SQL - " << context.query->ToString()
             << " Params - (" << params  << ") Restart count - " << context.retires
         );
-        context.query->RestartQuery(m_Consistency);
+        try {
+            context.query->RestartQuery(m_Consistency);
+        } catch(exception const & e) {
+            ProcessError(e);
+            result = false;
+        }
     }
     return result && do_next;
 }
