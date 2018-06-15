@@ -1,0 +1,121 @@
+{
+    "svn_id":   "$Id$",
+
+    "mappers": {
+        "local": {
+            "enabled":  true,
+            "env_set": {
+                "CONN_LOCAL_ENABLE":    "true",
+                "CONN_DISPD_DISABLE":   "true",
+                "CONN_LBSMD_DISABLE":   "true",
+                "CONN_NAMERD_ENABLE":   "false",
+                "CONN_LINKERD_ENABLE":  "false"
+            }
+        },
+        "dispd": {
+            "enabled":  true,
+            "env_set": {
+                "CONN_LOCAL_ENABLE":    "false",
+                "CONN_DISPD_DISABLE":   "false",
+                "CONN_LBSMD_DISABLE":   "true",
+                "CONN_NAMERD_ENABLE":   "false",
+                "CONN_LINKERD_ENABLE":  "false"
+            }
+        },
+        "lbsmd": {
+            "enabled":  true,
+            "env_set": {
+                "CONN_LOCAL_ENABLE":    "false",
+                "CONN_DISPD_DISABLE":   "true",
+                "CONN_LBSMD_DISABLE":   "false",
+                "CONN_NAMERD_ENABLE":   "false",
+                "CONN_LINKERD_ENABLE":  "false"
+            }
+        },
+        "linkerd": {
+            "enabled":  true,
+            "env_set": {
+                "CONN_LOCAL_ENABLE":    "false",
+                "CONN_DISPD_DISABLE":   "true",
+                "CONN_LBSMD_DISABLE":   "true",
+                "CONN_NAMERD_ENABLE":   "false",
+                "CONN_LINKERD_ENABLE":  "true"
+            }
+        },
+        "namerd": {
+            "enabled":  true,
+            "env_set": {
+                "CONN_LOCAL_ENABLE":    "false",
+                "CONN_DISPD_DISABLE":   "true",
+                "CONN_LBSMD_DISABLE":   "true",
+                "CONN_NAMERD_ENABLE":   "true",
+                "CONN_LINKERD_ENABLE":  "false"
+            }
+        }
+    },
+
+    "get": {
+        "urls": [
+            "test",
+            "http://sutils101/Service/test.cgi",
+            "https://submit.ncbi.nlm.nih.gov/genbank/template/submission/",
+            "ncbilb://test/Service/test.cgi",
+            "http+ncbilb://test/Service/test.cgi"
+        ],
+        "services": [
+            "test"
+        ],
+        "service_paths": [
+            {
+                "service":  "test",
+                "path":     "/Service/test.cgi"
+            }
+        ],
+        "scheme_service_paths": [
+            {
+                "scheme":   "http",
+                "service":  "test",
+                "path":     "/Service/test.cgi"
+            }
+        ]
+    },
+
+    "post": {
+        "data": "hi there",
+        "urls": [
+            "bounce",
+            "bouncehttp",
+            "http://sutils101/Service/bounce.cgi",
+            "ncbilb://bounce/Service/bounce.cgi",
+            "ncbilb://bouncehttp/Service/bounce.cgi",
+            "http+ncbilb://bounce/Service/bounce.cgi",
+            "http+ncbilb://bouncehttp/Service/bounce.cgi"
+        ],
+        "services": [
+            "bounce",
+            "bouncehttp"
+        ],
+        "service_paths": [
+            {
+                "service":  "bounce",
+                "path":     "/Service/bounce.cgi"
+            },
+            {
+                "service":  "bouncehttp",
+                "path":     "/Service/bounce.cgi"
+            }
+        ],
+        "scheme_service_paths": [
+            {
+                "scheme":   "http",
+                "service":  "bounce",
+                "path":     "/Service/bounce.cgi"
+            },
+            {
+                "scheme":   "http",
+                "service":  "bouncehttp",
+                "path":     "/Service/bounce.cgi"
+            }
+        ]
+    }
+}
