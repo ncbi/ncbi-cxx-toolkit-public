@@ -55,34 +55,69 @@
     },
 
     "get": {
-        "urls": [
-            "test",
-            "http://sutils101/Service/test.cgi",
-            "https://submit.ncbi.nlm.nih.gov/genbank/template/submission/",
-            "ncbilb://test/Service/test.cgi",
-            "http+ncbilb://test/Service/test.cgi"
-        ],
-        "services": [
+        "curl_service": [
             "test"
         ],
-        "service_paths": [
+        "curl_service_path": [
             {
                 "service":  "test",
                 "path":     "/Service/test.cgi"
             }
         ],
-        "scheme_service_paths": [
+        "curl_scheme_service_path": [
             {
                 "scheme":   "http",
                 "service":  "test",
                 "path":     "/Service/test.cgi"
             }
+        ],
+        "http": [
+            "test",
+            "http://sutils101/Service/test.cgi",
+            "ncbilb://test/Service/test.cgi",
+            "http+ncbilb://test/Service/test.cgi"
+        ],
+        "http_stream": [
+            "test",
+            "http://sutils101/Service/test.cgi"
+        ],
+        "new_request": [
+            "test",
+            "http://sutils101/Service/test.cgi",
+            "ncbilb://test/Service/test.cgi",
+            "http+ncbilb://test/Service/test.cgi"
         ]
     },
 
     "post": {
         "data": "hi there",
-        "urls": [
+        "curl_service": [
+            "bounce",
+            "bouncehttp"
+        ],
+        "curl_service_path": [
+            {
+                "service":  "bounce",
+                "path":     "/Service/bounce.cgi"
+            },
+            {
+                "service":  "bouncehttp",
+                "path":     "/Service/bounce.cgi"
+            }
+        ],
+        "curl_scheme_service_path": [
+            {
+                "scheme":   "http",
+                "service":  "bounce",
+                "path":     "/Service/bounce.cgi"
+            },
+            {
+                "scheme":   "http",
+                "service":  "bouncehttp",
+                "path":     "/Service/bounce.cgi"
+            }
+        ],
+        "http": [
             "bounce",
             "bouncehttp",
             "http://sutils101/Service/bounce.cgi",
@@ -91,31 +126,19 @@
             "http+ncbilb://bounce/Service/bounce.cgi",
             "http+ncbilb://bouncehttp/Service/bounce.cgi"
         ],
-        "services": [
+        "http_stream": [
             "bounce",
-            "bouncehttp"
+            "bouncehttp",
+            "http://sutils101/Service/bounce.cgi"
         ],
-        "service_paths": [
-            {
-                "service":  "bounce",
-                "path":     "/Service/bounce.cgi"
-            },
-            {
-                "service":  "bouncehttp",
-                "path":     "/Service/bounce.cgi"
-            }
-        ],
-        "scheme_service_paths": [
-            {
-                "scheme":   "http",
-                "service":  "bounce",
-                "path":     "/Service/bounce.cgi"
-            },
-            {
-                "scheme":   "http",
-                "service":  "bouncehttp",
-                "path":     "/Service/bounce.cgi"
-            }
+        "new_request": [
+            "bounce",
+            "bouncehttp",
+            "http://sutils101/Service/bounce.cgi",
+            "ncbilb://bounce/Service/bounce.cgi",
+            "ncbilb://bouncehttp/Service/bounce.cgi",
+            "http+ncbilb://bounce/Service/bounce.cgi",
+            "http+ncbilb://bouncehttp/Service/bounce.cgi"
         ]
     }
 }

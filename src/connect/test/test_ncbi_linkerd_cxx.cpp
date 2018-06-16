@@ -107,40 +107,44 @@ private:
         const string* service = 0,
         const string* path = 0);
 
-    int TestGetHttp(const string& url);
-    int TestGetNewRequest(const CUrl& curl, bool nested = false);
-    int TestGetHttpStream(const string& url);
-    int TestGetUrl(const string& url);
-    int TestGetService(const string& service);
-    int TestGetServicePath(const string& service, const string& path);
-    int TestGetSchemeServicePath(const string& scheme, const string& service, const string& path);
-    int TestPostHttp(const string& url);
-    int TestPostNewRequest(const CUrl& curl, bool nested = false);
-    int TestPostHttpStream(const string& url);
-    int TestPostUrl(const string& url);
-    int TestPostService(const string& service);
-    int TestPostServicePath(const string& service, const string& path);
-    int TestPostSchemeServicePath(const string& scheme, const string& service, const string& path);
+    int TestGet_CUrl_Service(const string& service);
+    int TestGet_CUrl_ServicePath(const string& service, const string& path);
+    int TestGet_CUrl_SchemeServicePath(const string& scheme, const string& service, const string& path);
+    int TestGet_Http(const string& url);
+    int TestGet_HttpStream(const string& url);
+    int TestGet_NewRequest(const CUrl& curl, bool nested = false);
+
+    int TestPost_CUrl_Service(const string& service);
+    int TestPost_CUrl_ServicePath(const string& service, const string& path);
+    int TestPost_CUrl_SchemeServicePath(const string& scheme, const string& service, const string& path);
+    int TestPost_Http(const string& url);
+    int TestPost_HttpStream(const string& url);
+    int TestPost_NewRequest(const CUrl& curl, bool nested = false);
 
     int RunTests(SMapper& mapper);
 
 private:
     CTimeout            m_Timeout;
     unsigned short      m_Retries;
+    char                m_Hostname[300];
 
     list<SMapper>       m_Mappers;
-    string              m_PostData;
     string              m_MapperName;
+    string              m_PostData;
 
-    list<string>                m_GetUrls;
-    list<string>                m_GetServices;
-    list<SServicePath>          m_GetServicePaths;
-    list<SSchemeServicePath>    m_GetSchemeServicePaths;
+    list<string>                m_GetCurlService;
+    list<SServicePath>          m_GetCurlServicePath;
+    list<SSchemeServicePath>    m_GetCurlSchemeServicePath;
+    list<string>                m_GetHttp;
+    list<string>                m_GetHttpStream;
+    list<string>                m_GetNewRequest;
 
-    list<string>                m_PostUrls;
-    list<string>                m_PostServices;
-    list<SServicePath>          m_PostServicePaths;
-    list<SSchemeServicePath>    m_PostSchemeServicePaths;
+    list<string>                m_PostCurlService;
+    list<SServicePath>          m_PostCurlServicePath;
+    list<SSchemeServicePath>    m_PostCurlSchemeServicePath;
+    list<string>                m_PostHttp;
+    list<string>                m_PostHttpStream;
+    list<string>                m_PostNewRequest;
 };
 
 
@@ -163,6 +167,10 @@ void CTestNcbiLinkerdCxxApp::ReadData(void)
 
     x_JSON_Value    *root_value = NULL;
     x_JSON_Object   *root_obj;
+    x_JSON_Object   *obj;
+    x_JSON_Array    *arr;
+    size_t          num;
+    const char      *url;
 
     string test_file(GetArgs()["test_file"].AsString());
     ERR_POST(Info << "Test file: " << test_file);
@@ -178,16 +186,16 @@ void CTestNcbiLinkerdCxxApp::ReadData(void)
     }
 
     // Mapper specs
-    x_JSON_Object *mappers_obj = x_json_object_get_object(root_obj, "mappers");
-    size_t n_mappers = x_json_object_get_count(mappers_obj);
+    obj = x_json_object_get_object(root_obj, "mappers");
+    size_t n_mappers = x_json_object_get_count(obj);
     for (size_t map_idx = 0; map_idx < n_mappers; ++map_idx) {
         SMapper                 mapper;
         map<string, string>     env_vars;
 
-        const char *map_name = x_json_object_get_name(mappers_obj, map_idx);
+        const char *map_name = x_json_object_get_name(obj, map_idx);
         mapper.name = map_name;
 
-        x_JSON_Object *map_obj = x_json_object_get_object(mappers_obj, map_name);
+        x_JSON_Object *map_obj = x_json_object_get_object(obj, map_name);
         mapper.enabled = (x_json_object_get_boolean(map_obj, "enabled") == 1);
 
         x_JSON_Object *envs_obj = x_json_object_get_object(map_obj, "env_set");
@@ -202,90 +210,107 @@ void CTestNcbiLinkerdCxxApp::ReadData(void)
     }
 
     // GET specs
-    x_JSON_Object *get_obj = x_json_object_get_object(root_obj, "get");
-    x_JSON_Array *get_arr = x_json_object_get_array(get_obj, "urls");
-    size_t n_get = x_json_array_get_count(get_arr);
-    for (size_t get_idx = 0; get_idx < n_get; ++get_idx) {
-        const char *url = x_json_array_get_string(get_arr, get_idx);
-        m_GetUrls.push_back(url);
+    obj = x_json_object_get_object(root_obj, "get");
+    arr = x_json_object_get_array(obj, "curl_service");
+    num = x_json_array_get_count(arr);
+    for (size_t idx = 0; idx < num; ++idx) {
+        const char *svc = x_json_array_get_string(arr, idx);
+        m_GetCurlService.push_back(svc);
     }
-    //
-    x_JSON_Array *svc_arr = x_json_object_get_array(get_obj, "services");
-    size_t n_svc = x_json_array_get_count(svc_arr);
-    for (size_t svc_idx = 0; svc_idx < n_svc; ++svc_idx) {
-        const char *svc = x_json_array_get_string(svc_arr, svc_idx);
-        m_GetServices.push_back(svc);
-    }
-    //
-    x_JSON_Array *svc_path_arr = x_json_object_get_array(get_obj, "service_paths");
-    size_t n_svc_path = x_json_array_get_count(svc_path_arr);
-    for (size_t svc_path_idx = 0; svc_path_idx < n_svc_path; ++svc_path_idx) {
+    arr = x_json_object_get_array(obj, "curl_service_path");
+    num = x_json_array_get_count(arr);
+    for (size_t idx = 0; idx < num; ++idx) {
         SServicePath    svc_path;
-        x_JSON_Object *svc_path_obj = x_json_array_get_object(svc_path_arr, svc_path_idx);
+        x_JSON_Object *svc_path_obj = x_json_array_get_object(arr, idx);
         const char *svc = x_json_object_get_string(svc_path_obj, "service");
         const char *path = x_json_object_get_string(svc_path_obj, "path");
         svc_path.service = svc;
         svc_path.path    = path;
-        m_GetServicePaths.push_back(svc_path);
+        m_GetCurlServicePath.push_back(svc_path);
     }
-    //
-    x_JSON_Array *sch_svc_path_arr = x_json_object_get_array(get_obj, "scheme_service_paths");
-    size_t n_sch_svc_path = x_json_array_get_count(sch_svc_path_arr);
-    for (size_t sch_svc_path_idx = 0; sch_svc_path_idx < n_sch_svc_path; ++sch_svc_path_idx) {
+    arr = x_json_object_get_array(obj, "curl_scheme_service_path");
+    num = x_json_array_get_count(arr);
+    for (size_t idx = 0; idx < num; ++idx) {
         SSchemeServicePath  sch_svc_path;
-        x_JSON_Object *sch_svc_path_obj = x_json_array_get_object(sch_svc_path_arr, sch_svc_path_idx);
+        x_JSON_Object *sch_svc_path_obj = x_json_array_get_object(arr, idx);
         const char *sch = x_json_object_get_string(sch_svc_path_obj, "scheme");
         const char *svc = x_json_object_get_string(sch_svc_path_obj, "service");
         const char *path = x_json_object_get_string(sch_svc_path_obj, "path");
         sch_svc_path.scheme  = sch;
         sch_svc_path.service = svc;
         sch_svc_path.path    = path;
-        m_GetSchemeServicePaths.push_back(sch_svc_path);
+        m_GetCurlSchemeServicePath.push_back(sch_svc_path);
+    }
+    arr = x_json_object_get_array(obj, "http");
+    num = x_json_array_get_count(arr);
+    for (size_t idx = 0; idx < num; ++idx) {
+        url = x_json_array_get_string(arr, idx);
+        m_GetHttp.push_back(url);
+    }
+    arr = x_json_object_get_array(obj, "http_stream");
+    num = x_json_array_get_count(arr);
+    for (size_t idx = 0; idx < num; ++idx) {
+        url = x_json_array_get_string(arr, idx);
+        m_GetHttpStream.push_back(url);
+    }
+    arr = x_json_object_get_array(obj, "new_request");
+    num = x_json_array_get_count(arr);
+    for (size_t idx = 0; idx < num; ++idx) {
+        url = x_json_array_get_string(arr, idx);
+        m_GetNewRequest.push_back(url);
     }
 
     // POST specs
-    x_JSON_Object *post_obj = x_json_object_get_object(root_obj, "post");
-    const char *post_data = x_json_object_get_string(post_obj, "data");
+    obj = x_json_object_get_object(root_obj, "post");
+    const char *post_data = x_json_object_get_string(obj, "data");
     m_PostData = post_data;
-    //
-    x_JSON_Array *post_arr = x_json_object_get_array(post_obj, "urls");
-    size_t n_post = x_json_array_get_count(post_arr);
-    for (size_t post_idx = 0; post_idx < n_post; ++post_idx) {
-        const char *url = x_json_array_get_string(post_arr, post_idx);
-        m_PostUrls.push_back(url);
+    arr = x_json_object_get_array(obj, "curl_service");
+    num = x_json_array_get_count(arr);
+    for (size_t idx = 0; idx < num; ++idx) {
+        const char *svc = x_json_array_get_string(arr, idx);
+        m_PostCurlService.push_back(svc);
     }
-    //
-    svc_arr = x_json_object_get_array(post_obj, "services");
-    n_svc = x_json_array_get_count(svc_arr);
-    for (size_t svc_idx = 0; svc_idx < n_svc; ++svc_idx) {
-        const char *svc = x_json_array_get_string(svc_arr, svc_idx);
-        m_PostServices.push_back(svc);
-    }
-    //
-    svc_path_arr = x_json_object_get_array(post_obj, "service_paths");
-    n_svc_path = x_json_array_get_count(svc_path_arr);
-    for (size_t svc_path_idx = 0; svc_path_idx < n_svc_path; ++svc_path_idx) {
+    arr = x_json_object_get_array(obj, "curl_service_path");
+    num = x_json_array_get_count(arr);
+    for (size_t idx = 0; idx < num; ++idx) {
         SServicePath    svc_path;
-        x_JSON_Object *svc_path_obj = x_json_array_get_object(svc_path_arr, svc_path_idx);
+        x_JSON_Object *svc_path_obj = x_json_array_get_object(arr, idx);
         const char *svc = x_json_object_get_string(svc_path_obj, "service");
         const char *path = x_json_object_get_string(svc_path_obj, "path");
         svc_path.service = svc;
         svc_path.path    = path;
-        m_PostServicePaths.push_back(svc_path);
+        m_PostCurlServicePath.push_back(svc_path);
     }
-    //
-    sch_svc_path_arr = x_json_object_get_array(post_obj, "scheme_service_paths");
-    n_sch_svc_path = x_json_array_get_count(sch_svc_path_arr);
-    for (size_t sch_svc_path_idx = 0; sch_svc_path_idx < n_sch_svc_path; ++sch_svc_path_idx) {
+    arr = x_json_object_get_array(obj, "curl_scheme_service_path");
+    num = x_json_array_get_count(arr);
+    for (size_t idx = 0; idx < num; ++idx) {
         SSchemeServicePath  sch_svc_path;
-        x_JSON_Object *sch_svc_path_obj = x_json_array_get_object(sch_svc_path_arr, sch_svc_path_idx);
+        x_JSON_Object *sch_svc_path_obj = x_json_array_get_object(arr, idx);
         const char *sch = x_json_object_get_string(sch_svc_path_obj, "scheme");
         const char *svc = x_json_object_get_string(sch_svc_path_obj, "service");
         const char *path = x_json_object_get_string(sch_svc_path_obj, "path");
         sch_svc_path.scheme  = sch;
         sch_svc_path.service = svc;
         sch_svc_path.path    = path;
-        m_PostSchemeServicePaths.push_back(sch_svc_path);
+        m_PostCurlSchemeServicePath.push_back(sch_svc_path);
+    }
+    arr = x_json_object_get_array(obj, "http");
+    num = x_json_array_get_count(arr);
+    for (size_t idx = 0; idx < num; ++idx) {
+        url = x_json_array_get_string(arr, idx);
+        m_PostHttp.push_back(url);
+    }
+    arr = x_json_object_get_array(obj, "http_stream");
+    num = x_json_array_get_count(arr);
+    for (size_t idx = 0; idx < num; ++idx) {
+        url = x_json_array_get_string(arr, idx);
+        m_PostHttpStream.push_back(url);
+    }
+    arr = x_json_object_get_array(obj, "new_request");
+    num = x_json_array_get_count(arr);
+    for (size_t idx = 0; idx < num; ++idx) {
+        url = x_json_array_get_string(arr, idx);
+        m_PostNewRequest.push_back(url);
     }
 }
 
@@ -335,7 +360,7 @@ void CTestNcbiLinkerdCxxApp::TestCaseStart(
     const string* path)
 {
     cout << "\n\n" << string(80, '=') << endl;
-    cout << string(10, '<') << "  " << m_MapperName << "  " << test_case;
+    cout << "TestCaseStart  " << m_MapperName << "  " << test_case;
     if (url) {
         cout << "  " << *url << "  string";
     } else if (curl) {
@@ -347,13 +372,13 @@ void CTestNcbiLinkerdCxxApp::TestCaseStart(
     cout << "  " << (scheme ? *scheme : "_na_");
     cout << "  " << (service ? *service : "_na_");
     cout << "  " << (path ? *path : "_na_") << endl;
-    cout << "  " << string(10, '>') << endl;
 }
 
 
 // Create a record that can be (a) easily found in the large log file, and (b)
 // easily transformed into a CSV.  For example:
-//      grep -P '^TestCaseEnd:\t' | tr '\t' , > results.csv
+//      ./test_ncbi_linkerd_cxx >& testout.txt
+//      cat testout.txt | grep -P '^nTestCaseEnd\t' | tr '\t' , > results.csv
 void CTestNcbiLinkerdCxxApp::TestCaseEnd(
     const string& test_case,
     int           result,
@@ -363,25 +388,70 @@ void CTestNcbiLinkerdCxxApp::TestCaseEnd(
     const string* service,
     const string* path)
 {
-    char hostname[300];
-    SOCK_gethostname(hostname, 300);
-    cout << "\nTestCaseResult:\t" << hostname << "\t" << (result == 0 ? "PASS" : "FAIL") << "\t" << m_MapperName << "\t" << test_case;
+    cout << "\nTestCaseEnd\t" << m_Hostname << "\t" << (result == 0 ? "PASS" : "FAIL");
+    cout << "\t" << test_case << "\t";
     if (url) {
-        cout << "\t" << *url << "\tstring";
+        cout << "string_url(" << *url << ")";
     } else if (curl) {
         CUrl curl2(*curl);
-        cout << "\t" << curl2.ComposeUrl(CUrlArgs::eAmp_Char) << "\tCUrl";
+        cout << "CUrl=" << curl2.ComposeUrl(CUrlArgs::eAmp_Char);
     } else {
-        cout << "\t_na_\t_na_";
+        CUrl curl;
+        cout << "CUrl.Set(";
+        if (scheme) {
+            curl.SetScheme(*scheme);
+            cout << "scheme=" << *scheme << ",";
+        }
+        curl.SetService(*service);
+        cout << "service=" << *service;
+        if (path) {
+            curl.SetPath(*path);
+            cout << ",path=" << *path;
+        }
+        cout << ")=" << curl.ComposeUrl(CUrlArgs::eAmp_Char);
     }
-    cout << "\t" << (scheme ? *scheme : "_na_");
-    cout << "\t" << (service ? *service : "_na_");
-    cout << "\t" << (path ? *path : "_na_") << endl;
-    cout << string(80, '-') << "\n" << endl;
+    cout << "\t" << m_MapperName;
+    cout << "\n" << string(80, '-') << "\n" << endl;
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestGetHttp(const string& url)
+int CTestNcbiLinkerdCxxApp::TestGet_CUrl_Service(const string& service)
+{
+    TestCaseStart("CUrl.Service.GET", 0, 0, 0, &service);
+    CUrl curl;
+    curl.SetService(service);
+    int result = TestGet_NewRequest(curl, true);
+    TestCaseEnd("CUrl.Service.GET", result, 0, 0, 0, &service);
+    return result;
+}
+
+
+int CTestNcbiLinkerdCxxApp::TestGet_CUrl_ServicePath(const string& service, const string& path)
+{
+    TestCaseStart("CUrl.Service.Path.GET", 0, 0, 0, &service, &path);
+    CUrl curl;
+    curl.SetService(service);
+    curl.SetPath(path);
+    int result = TestGet_NewRequest(curl, true);
+    TestCaseEnd("CUrl.Service.Path.GET", result, 0, 0, 0, &service, &path);
+    return result;
+}
+
+
+int CTestNcbiLinkerdCxxApp::TestGet_CUrl_SchemeServicePath(const string& scheme, const string& service, const string& path)
+{
+    TestCaseStart("CUrl.Scheme.Service.Path.GET", 0, 0, &scheme, &service, &path);
+    CUrl curl;
+    curl.SetScheme(scheme);
+    curl.SetService(service);
+    curl.SetPath(path);
+    int result = TestGet_NewRequest(curl, true);
+    TestCaseEnd("CUrl.Scheme.Service.Path.GET", result, 0, 0, &scheme, &service, &path);
+    return result;
+}
+
+
+int CTestNcbiLinkerdCxxApp::TestGet_Http(const string& url)
 {
     TestCaseStart("g_HttpGet", &url);
     CHttpResponse resp = g_HttpGet(url);
@@ -391,22 +461,7 @@ int CTestNcbiLinkerdCxxApp::TestGetHttp(const string& url)
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestGetNewRequest(const CUrl& curl, bool nested)
-{
-    if ( ! nested)
-        TestCaseStart("CHttpSession::NewRequest.GET", 0, &curl);
-    CHttpSession session;
-    CHttpRequest req = session.NewRequest(curl);
-    SetupRequest(req);
-    CHttpResponse resp = req.Execute();
-    int result = PrintResponse(&session, resp);
-    if ( ! nested)
-        TestCaseEnd("CHttpSession::NewRequest.GET", result, 0, &curl);
-    return result;
-}
-
-
-int CTestNcbiLinkerdCxxApp::TestGetHttpStream(const string& url)
+int CTestNcbiLinkerdCxxApp::TestGet_HttpStream(const string& url)
 {
     TestCaseStart("CConn_HttpStream.GET", &url);
     try {
@@ -427,53 +482,58 @@ int CTestNcbiLinkerdCxxApp::TestGetHttpStream(const string& url)
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestGetUrl(const string& url)
+int CTestNcbiLinkerdCxxApp::TestGet_NewRequest(const CUrl& curl, bool nested)
 {
-    int num_errors = 0;
-    num_errors += TestGetNewRequest(CUrl(url));
-    num_errors += TestGetHttp(url);
-    num_errors += TestGetHttpStream(url);
-    return num_errors;
-}
-
-
-int CTestNcbiLinkerdCxxApp::TestGetService(const string& service)
-{
-    TestCaseStart("CUrl.SetService.GET", 0, 0, 0, &service);
-    CUrl curl;
-    curl.SetService(service);
-    int result = TestGetNewRequest(curl, true);
-    TestCaseEnd("CUrl.SetService.GET", result, 0, 0, 0, &service);
+    if ( ! nested)
+        TestCaseStart("CHttpSession::NewRequest.GET", 0, &curl);
+    CHttpSession session;
+    CHttpRequest req = session.NewRequest(curl);
+    SetupRequest(req);
+    CHttpResponse resp = req.Execute();
+    int result = PrintResponse(&session, resp);
+    if ( ! nested)
+        TestCaseEnd("CHttpSession::NewRequest.GET", result, 0, &curl);
     return result;
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestGetServicePath(const string& service, const string& path)
+int CTestNcbiLinkerdCxxApp::TestPost_CUrl_Service(const string& service)
 {
-    TestCaseStart("CUrl.SetService.SetPath.GET", 0, 0, 0, &service, &path);
+    TestCaseStart("CUrl.Service.POST", 0, 0, 0, &service);
+    CUrl curl;
+    curl.SetService(service);
+    int result = TestPost_NewRequest(curl, true);
+    TestCaseEnd("CUrl.Service.POST", result, 0, 0, 0, &service);
+    return result;
+}
+
+
+int CTestNcbiLinkerdCxxApp::TestPost_CUrl_ServicePath(const string& service, const string& path)
+{
+    TestCaseStart("CUrl.Service.Path.POST", 0, 0, 0, &service, &path);
     CUrl curl;
     curl.SetService(service);
     curl.SetPath(path);
-    int result = TestGetNewRequest(curl, true);
-    TestCaseEnd("CUrl.SetService.SetPath.GET", result, 0, 0, 0, &service, &path);
+    int result = TestPost_NewRequest(curl, true);
+    TestCaseEnd("CUrl.Service.Path.POST", result, 0, 0, 0, &service, &path);
     return result;
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestGetSchemeServicePath(const string& scheme, const string& service, const string& path)
+int CTestNcbiLinkerdCxxApp::TestPost_CUrl_SchemeServicePath(const string& scheme, const string& service, const string& path)
 {
-    TestCaseStart("CUrl.SetScheme.SetService.SetPath.GET", 0, 0, &scheme, &service, &path);
+    TestCaseStart("CUrl.Scheme.Service.Path.POST", 0, 0, &scheme, &service, &path);
     CUrl curl;
     curl.SetScheme(scheme);
     curl.SetService(service);
     curl.SetPath(path);
-    int result = TestGetNewRequest(curl, true);
-    TestCaseEnd("CUrl.SetScheme.SetService.SetPath.GET", result, 0, 0, &scheme, &service, &path);
+    int result = TestPost_NewRequest(curl, true);
+    TestCaseEnd("CUrl.Scheme.Service.Path.POST", result, 0, 0, &scheme, &service, &path);
     return result;
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestPostHttp(const string& url)
+int CTestNcbiLinkerdCxxApp::TestPost_Http(const string& url)
 {
     TestCaseStart("g_HttpPost", &url);
     CHttpResponse resp = g_HttpPost(url, m_PostData);
@@ -483,22 +543,7 @@ int CTestNcbiLinkerdCxxApp::TestPostHttp(const string& url)
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestPostNewRequest(const CUrl& curl, bool nested)
-{
-    if ( ! nested)
-        TestCaseStart("CHttpSession::NewRequest.POST", 0, &curl);
-    CHttpSession session;
-    CHttpRequest req = session.NewRequest(curl, CHttpSession::ePost);
-    SetupRequest(req);
-    CHttpResponse resp = req.Execute();
-    int result = PrintResponse(&session, resp);
-    if ( ! nested)
-        TestCaseEnd("CHttpSession::NewRequest.POST", result, 0, &curl);
-    return result;
-}
-
-
-int CTestNcbiLinkerdCxxApp::TestPostHttpStream(const string& url)
+int CTestNcbiLinkerdCxxApp::TestPost_HttpStream(const string& url)
 {
     TestCaseStart("CConn_HttpStream.POST", &url);
     try {
@@ -520,48 +565,17 @@ int CTestNcbiLinkerdCxxApp::TestPostHttpStream(const string& url)
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestPostUrl(const string& url)
+int CTestNcbiLinkerdCxxApp::TestPost_NewRequest(const CUrl& curl, bool nested)
 {
-    int num_errors = 0;
-    num_errors += TestPostNewRequest(CUrl(url));
-    num_errors += TestPostHttp(url);
-    num_errors += TestPostHttpStream(url);
-    return num_errors;
-}
-
-
-int CTestNcbiLinkerdCxxApp::TestPostService(const string& service)
-{
-    TestCaseStart("CUrl.SetService.POST", 0, 0, 0, &service);
-    CUrl curl;
-    curl.SetService(service);
-    int result = TestPostNewRequest(curl, true);
-    TestCaseEnd("CUrl.SetService.POST", result, 0, 0, 0, &service);
-    return result;
-}
-
-
-int CTestNcbiLinkerdCxxApp::TestPostServicePath(const string& service, const string& path)
-{
-    TestCaseStart("CUrl.SetService.SetPath.POST", 0, 0, 0, &service, &path);
-    CUrl curl;
-    curl.SetService(service);
-    curl.SetPath(path);
-    int result = TestPostNewRequest(curl, true);
-    TestCaseEnd("CUrl.SetService.SetPath.POST", result, 0, 0, 0, &service, &path);
-    return result;
-}
-
-
-int CTestNcbiLinkerdCxxApp::TestPostSchemeServicePath(const string& scheme, const string& service, const string& path)
-{
-    TestCaseStart("CUrl.SetScheme.SetService.SetPath.POST", 0, 0, &scheme, &service, &path);
-    CUrl curl;
-    curl.SetScheme(scheme);
-    curl.SetService(service);
-    curl.SetPath(path);
-    int result = TestPostNewRequest(curl, true);
-    TestCaseEnd("CUrl.SetScheme.SetService.SetPath.POST", result, 0, 0, &scheme, &service, &path);
+    if ( ! nested)
+        TestCaseStart("CHttpSession::NewRequest.POST", 0, &curl);
+    CHttpSession session;
+    CHttpRequest req = session.NewRequest(curl, CHttpSession::ePost);
+    SetupRequest(req);
+    CHttpResponse resp = req.Execute();
+    int result = PrintResponse(&session, resp);
+    if ( ! nested)
+        TestCaseEnd("CHttpSession::NewRequest.POST", result, 0, &curl);
     return result;
 }
 
@@ -579,30 +593,42 @@ int CTestNcbiLinkerdCxxApp::RunTests(SMapper& mapper)
     mapper.Configure(GetRWConfig());
     m_MapperName = mapper.name;
 
-    for (string url : m_GetUrls) {
-        num_errors += TestGetUrl(url);
+    for (string svc : m_GetCurlService) {
+        num_errors += TestGet_CUrl_Service(svc);
     }
-    for (string service : m_GetServices) {
-        num_errors += TestGetService(service);
+    for (SServicePath svc_path : m_GetCurlServicePath) {
+        num_errors += TestGet_CUrl_ServicePath(svc_path.service, svc_path.path);
     }
-    for (SServicePath svc_path : m_GetServicePaths) {
-        num_errors += TestGetServicePath(svc_path.service, svc_path.path);
+    for (SSchemeServicePath sch_svc_path : m_GetCurlSchemeServicePath) {
+        num_errors += TestGet_CUrl_SchemeServicePath(sch_svc_path.scheme, sch_svc_path.service, sch_svc_path.path);
     }
-    for (SSchemeServicePath sch_svc_path : m_GetSchemeServicePaths) {
-        num_errors += TestGetSchemeServicePath(sch_svc_path.scheme, sch_svc_path.service, sch_svc_path.path);
+    for (string url : m_GetHttp) {
+        num_errors += TestGet_Http(url);
+    }
+    for (string url : m_GetHttpStream) {
+        num_errors += TestGet_HttpStream(url);
+    }
+    for (string url : m_GetNewRequest) {
+        num_errors += TestGet_NewRequest(CUrl(url));
     }
 
-    for (string url : m_PostUrls) {
-        num_errors += TestPostUrl(url);
+    for (string svc : m_PostCurlService) {
+        num_errors += TestPost_CUrl_Service(svc);
     }
-    for (string service : m_PostServices) {
-        num_errors += TestPostService(service);
+    for (SServicePath svc_path : m_PostCurlServicePath) {
+        num_errors += TestPost_CUrl_ServicePath(svc_path.service, svc_path.path);
     }
-    for (SServicePath svc_path : m_PostServicePaths) {
-        num_errors += TestPostServicePath(svc_path.service, svc_path.path);
+    for (SSchemeServicePath sch_svc_path : m_PostCurlSchemeServicePath) {
+        num_errors += TestPost_CUrl_SchemeServicePath(sch_svc_path.scheme, sch_svc_path.service, sch_svc_path.path);
     }
-    for (SSchemeServicePath sch_svc_path : m_PostSchemeServicePaths) {
-        num_errors += TestPostSchemeServicePath(sch_svc_path.scheme, sch_svc_path.service, sch_svc_path.path);
+    for (string url : m_PostHttp) {
+        num_errors += TestPost_Http(url);
+    }
+    for (string url : m_PostHttpStream) {
+        num_errors += TestPost_HttpStream(url);
+    }
+    for (string url : m_PostNewRequest) {
+        num_errors += TestPost_NewRequest(CUrl(url));
     }
 
     return num_errors;
@@ -625,6 +651,8 @@ void CTestNcbiLinkerdCxxApp::Init(void)
            CArgDescriptions::eString, "test_ncbi_linkerd_cxx.json");
 
     SetupArgDescriptions(arg_desc.release());
+
+    SOCK_gethostname(m_Hostname, sizeof(m_Hostname));
 }
 
 
