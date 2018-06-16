@@ -39,6 +39,7 @@
 
 #include <corelib/ncbireg.hpp>
 #include <connect/ncbi_tls.h>
+#include <string.h>
 
 
 /** @addtogroup UtilityFunc
@@ -173,10 +174,10 @@ protected:
 /// @param sto
 ///   Variable used to store numeric timeout value.
 /// @return
-///   A special constants kDefaultTimeout or kInfiniteTimeout, 
-///   if timeout have default or infinite value accordingly.
-///   A pointer to "sto" object, if timeout have numeric value. 
-///   "sto" will be used to store numeric value.
+///   A special constant kDefaultTimeout or kInfiniteTimeout, 
+///   if timeout is a default or an infinite one, respectively.
+///   A pointer to the "sto" object, if timeout has a numeric value. 
+///   "sto" will be used to store the numeric value.
 /// @sa CTimeout, STimeout
 const STimeout* g_CTimeoutToSTimeout(const CTimeout& cto, STimeout& sto);
 
@@ -191,12 +192,11 @@ const STimeout* g_CTimeoutToSTimeout(const CTimeout& cto, STimeout& sto)
 {
     if ( cto.IsDefault() )
         return kDefaultTimeout;
-    else if ( cto.IsInfinite() )
+    if ( cto.IsInfinite() )
         return kInfiniteTimeout;
-    else {
-        cto.Get(&sto.sec, &sto.usec);
-        return &sto;
-    }
+    ::memset(&sto, 0, sizeof(sto));
+    cto.Get(&sto.sec, &sto.usec);
+    return &sto;
 }
 
 inline 
@@ -204,7 +204,7 @@ CTimeout g_STimeoutToCTimeout(const STimeout* sto)
 {
     if ( sto == kDefaultTimeout )
         return CTimeout(CTimeout::eDefault);
-    else if ( sto == kInfiniteTimeout )
+    if ( sto == kInfiniteTimeout )
         return CTimeout(CTimeout::eInfinite);
     return CTimeout(sto->sec, sto->usec);
 }

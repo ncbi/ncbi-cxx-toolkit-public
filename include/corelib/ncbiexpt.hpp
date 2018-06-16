@@ -39,8 +39,6 @@
 /// the C++ exception specification.
 
 
-#include <corelib/ncbidiag.hpp>
-#include <corelib/ncbi_stack.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <errno.h>
 #include <string.h>
