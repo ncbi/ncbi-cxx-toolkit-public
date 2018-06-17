@@ -957,21 +957,23 @@ void CRegEx::CRegXAssert::Render(CRegExFSA& fsa, size_t from, size_t to) const
             return;
         case eAssertWord:     // \b
             x = fsa.AddState(eTypeStart | eTypeNoWord | eTypeToWord);
-            DummyTrans(fsa, x, eTypeStop);
+            DummyTrans(fsa, x, eTypeWord);
             fsa.Short(from, x);
             fsa.Short(x, to);
             x = fsa.AddState(eTypeWord | eTypeToNoWord | eTypeToStop);
+            DummyTrans(fsa, x, eTypeNoWord);
             DummyTrans(fsa, x, eTypeStop);
             fsa.Short(from, x);
             fsa.Short(x, to);
             return;
         case eAssertWordNeg:  // \B
             x = fsa.AddState(eTypeStart | eTypeNoWord | eTypeToNoWord | eTypeToStop);
+            DummyTrans(fsa, x, eTypeNoWord);
             DummyTrans(fsa, x, eTypeStop);
             fsa.Short(from, x);
             fsa.Short(x, to);
             x = fsa.AddState(eTypeWord | eTypeToWord);
-            DummyTrans(fsa, x, eTypeStop);
+            DummyTrans(fsa, x, eTypeWord);
             fsa.Short(from, x);
             fsa.Short(x, to);
             return;
@@ -1351,13 +1353,13 @@ void CRegExFSA::GenerateDotGraph(ostream& out) const  // Dump in DOT format (htt
 
 void CRegExFSA::GenerateSourceCode(ostream& out) const
 {
-    out << "    //const unsigned char* p;\n";
+    out << "// Input from the outer code: const unsigned char* p;\n//\n\n    const unsigned char* _p = p;\n";
     for (size_t n = 1; n < m_States.size(); ++n) {
         if (n > 1) {
             out << "_" << n << ":\n";
         }
         for (auto E = m_States[n]->m_Emit.begin(); E != m_States[n]->m_Emit.end(); ++E) {
-            out << "    if (report(" << *E << ", p)) return;  // " << m_Str[*E] << "\n";
+            out << "    if (report(" << *E << ", p - _p)) return;  // " << m_Str[*E] << "\n";
         }
         if (m_States[n]->m_Type & CRegEx::eTypeStop) {
             out << "    return;\n";
