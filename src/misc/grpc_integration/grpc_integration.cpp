@@ -105,8 +105,12 @@ void CGRPCClientContext::AddStandardNCBIMetadata(grpc::ClientContext& cctx)
     cctx.AddMetadata("client",   dctx.GetAppName());
     
     CRequestContext_PassThrough pass_through;
-    pass_through.Enumerate([&](const string& name, const string& value)
-                              { cctx.AddMetadata(name, value); return true; });
+    pass_through.Enumerate([&](const string& name, const string& value) {
+                               string lc = name;
+                               NStr::ToLower(lc);
+                               cctx.AddMetadata(name, value);
+                               return true;
+                           });
 }
 
 
@@ -183,6 +187,7 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
         for (const auto& metadata : sctx->client_metadata()) {
             string name (metadata.first .data(), metadata.first .size());
             string value(metadata.second.data(), metadata.second.size());
+            // NStr::ToUpper(name);
             rctx.AddPassThroughProperty(name, value);
             if (metadata.first == "sessionid") {
                 rctx.SetSessionID(value);
