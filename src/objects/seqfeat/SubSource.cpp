@@ -3048,8 +3048,7 @@ static const SStaticPair<const char*, const char*> s_map_whole_country_fixes[] =
   {"great britain", "United Kingdom: Great Britain"},
   {"new jersey, usa", "USA: New Jersey"}
 };
-typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;
-DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_whole_country_fixes, s_map_whole_country_fixes);
+DEFINE_STATIC_ARRAY_MAP(CCountries::TCStringPairsMap,k_whole_country_fixes, s_map_whole_country_fixes);
 
 static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = {
 {"ABW", "Aruba"},
@@ -3069,12 +3068,8 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"AUS", "Australia"},
 {"AUT", "Austria"},
 {"AZE", "Azerbaijan"},
-{"Antigua", "Antigua and Barbuda: Antigua"},
 {"Antigua & Barbuda", "Antigua and Barbuda"},
 {"Ashmore & Cartier Islands", "Ashmore and Cartier Islands"},
-{"Ashmore Island", "Ashmore and Cartier Islands: Ashmore Island"},
-{"Autonomous Region of the Azores", "Portugal: Azores"},
-{"Azores", "Portugal: Azores"},
 {"BDI", "Burundi"},
 {"BEL", "Belgium"},
 {"BEN", "Benin"},
@@ -3096,8 +3091,6 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"BTN", "Bhutan"},
 {"BVT", "Bouvet Island"},
 {"BWA", "Botswana"},
-{"Barbuda", "Antigua and Barbuda: Barbuda"},
-{"Bassas da India", "French Southern and Antarctic Lands: Bassas da India"},
 {"Brasil", "Brazil"},
 {"CAF", "Central African Republic"},
 {"CAN", "Canada"},
@@ -3120,10 +3113,7 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"CYM", "Cayman Islands"},
 {"CYP", "Cyprus"},
 {"CZE", "Czech Republic"},
-{"Caicos Islands", "Turks and Caicos Islands: Caicos Islands"},
-{"Canary Islands", "Spain: Canary Islands"},
 {"Cape Verde Islands", "Cape Verde"},
-{"Cartier Island", "Ashmore and Cartier Islands: Cartier Island"},
 {"DEU", "Germany"},
 {"DJI", "Djibouti"},
 {"DMA", "Dominica"},
@@ -3137,9 +3127,6 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"ESP", "Spain"},
 {"EST", "Estonia"},
 {"ETH", "Ethiopia"},
-{"East Germany", "Germany: East Germany"},
-{"El Hierro", "Spain: El Hierro"},
-{"Europa Island", "French Southern and Antarctic Lands: Europa Island"},
 {"FIN", "Finland"},
 {"FJI", "Fiji"},
 {"FLK", "Falkland Islands (Islas Malvinas)"},
@@ -3148,7 +3135,6 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"FSM", "Micronesia"},
 {"Falkland Islands", "Falkland Islands (Islas Malvinas)"},
 {"French Southern & Antarctic Lands", "French Southern and Antarctic Lands"},
-{"Fuerteventura", "Spain: Fuerteventura"},
 {"GAB", "Gabon"},
 {"GBR", "United Kingdom"},
 {"GEO", "Georgia"},
@@ -3167,16 +3153,12 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"GUF", "French Guiana"},
 {"GUM", "Guam"},
 {"GUY", "Guyana"},
-{"Glorioso Islands", "French Southern and Antarctic Lands: Glorioso Islands"},
-{"Gran Canaria", "Spain: Gran Canaria"},
-{"Grenadines", "Saint Vincent and the Grenadines: Grenadines"},
 {"HKG", "Hong Kong"},
 {"HMD", "Heard Island and McDonald Islands"},
 {"HND", "Honduras"},
 {"HRV", "Croatia"},
 {"HTI", "Haiti"},
 {"HUN", "Hungary"},
-{"Heard Island", "Heard Island and McDonald Islands: Heard Island"},
 {"Heard Island & McDonald Islands", "Heard Island and McDonald Islands"},
 {"IDN", "Indonesia"},
 {"IMN", "Isle of Man"},
@@ -3188,16 +3170,11 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"ISL", "Iceland"},
 {"ISR", "Israel"},
 {"ITA", "Italy"},
-{"Ile Amsterdam", "French Southern and Antarctic Lands: Ile Amsterdam"},
-{"Ile Saint-Paul", "French Southern and Antarctic Lands: Ile Saint-Paul"},
-{"Iles Crozet", "French Southern and Antarctic Lands: Iles Crozet"},
-{"Iles Kerguelen", "French Southern and Antarctic Lands: Iles Kerguelen"},
 {"Ivory Coast", "Cote d'Ivoire"},
 {"JAM", "Jamaica"},
 {"JEY", "Jersey"},
 {"JOR", "Jordan"},
 {"JPN", "Japan"},
-{"Juan de Nova Island", "French Southern and Antarctic Lands: Juan de Nova Island"},
 {"KAZ", "Kazakhstan"},
 {"KEN", "Kenya"},
 {"KGZ", "Kyrgyzstan"},
@@ -3217,11 +3194,7 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"LTU", "Lithuania"},
 {"LUX", "Luxembourg"},
 {"LVA", "Latvia"},
-{"La Gomera", "Spain: La Gomera"},
-{"La Graciosa", "Spain: La Graciosa"},
-{"La Palma", "Spain: La Palma"},
 {"La Reunion Island", "Reunion"},
-{"Lanzarote", "Spain: Lanzarote"},
 {"Luxemburg", "Luxembourg"},
 {"MAC", "Macao"},
 {"MAF", "Saint Martin (French part)"},
@@ -3248,10 +3221,6 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"MYS", "Malaysia"},
 {"MYT", "Mayotte"},
 {"Macedonia", "The former Yugoslav Republic of Macedonia"},
-{"Madeira", "Portugal: Madeira"},
-{"McDonald Island", "Heard Island and McDonald Islands: McDonald Island"},
-{"McDonald Islands", "Heard Island and McDonald Islands: McDonald Islands"},
-{"Miquelon", "Saint Pierre and Miquelon: Miquelon"},
 {"NAM", "Namibia"},
 {"NCL", "New Caledonia"},
 {"NER", "Niger"},
@@ -3265,7 +3234,6 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"NRU", "Nauru"},
 {"NZL", "New Zealand"},
 {"Netherland", "Netherlands"},
-{"Nevis", "Saint Kitts and Nevis: Nevis"},
 {"New Guinea", "Papua New Guinea"},
 {"OMN", "Oman"},
 {"P, R, China", "China"},
@@ -3288,7 +3256,6 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"People's Republic of China", "China"},
 {"Pr China", "China"},
 {"Prchina", "China"},
-{"Principe", "Sao Tome and Principe: Principe"},
 {"QAT", "Qatar"},
 {"REU", "Reunion"},
 {"ROU", "Romania"},
@@ -3318,36 +3285,22 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"SXM", "Sint Maarten (Dutch part)"},
 {"SYC", "Seychelles"},
 {"SYR", "Syrian Arab Republic"},
-{"Saint Kitts", "Saint Kitts and Nevis: Saint Kitts"},
 {"Saint Kitts & Nevis", "Saint Kitts and Nevis"},
-{"Saint Pierre", "Saint Pierre and Miquelon: Saint Pierre"},
 {"Saint Pierre & Miquelon", "Saint Pierre and Miquelon"},
-{"Saint Vincent", "Saint Vincent and the Grenadines: Saint Vincent"},
 {"Saint Vincent & Grenadines", "Saint Vincent and the Grenadines"},
 {"Saint Vincent & the Grenadines", "Saint Vincent and the Grenadines"},
 {"Saint Vincent and Grenadines", "Saint Vincent and the Grenadines"},
 {"San Tome and Principe Island", "Sao Tome and Principe"},
-{"Sao Tome", "Sao Tome and Principe: Sao Tome"},
 {"Sao Tome & Principe", "Sao Tome and Principe"},
-{"Scotland", "United Kingdom: Scotland"},
 {"South Georgia & South Sandwich Islands", "South Georgia and the South Sandwich Islands"},
 {"South Georgia & the South Sandwich Islands", "South Georgia and the South Sandwich Islands"},
-{"South Sandwich Islands", "South Georgia and the South Sandwich Islands: South Sandwich Islands"},
 {"St Helena", "Saint Helena"},
-{"St Kitts", "Saint Kitts and Nevis: Saint Kitts"},
 {"St Lucia", "Saint Lucia"},
-{"St Pierre", "Saint Pierre and Miquelon: Saint Pierre"},
 {"St Pierre and Miquelon", "Saint Pierre and Miquelon"},
-{"St Thomas", "USA: Saint Thomas"},
-{"St Vincent", "Saint Vincent and the Grenadines: Saint Vincent"},
 {"St Vincent and the Grenadines", "Saint Vincent and the Grenadines"},
 {"St. Helena", "Saint Helena"},
-{"St. Kitts", "Saint Kitts and Nevis: Saint Kitts"},
 {"St. Lucia", "Saint Lucia"},
-{"St. Pierre", "Saint Pierre and Miquelon: Saint Pierre"},
 {"St. Pierre and Miquelon", "Saint Pierre and Miquelon"},
-{"St. Thomas", "USA: Saint Thomas"},
-{"St. Vincent", "Saint Vincent and the Grenadines: Saint Vincent"},
 {"St. Vincent and the Grenadines", "Saint Vincent and the Grenadines"},
 {"TCA", "Turks and Caicos Islands"},
 {"TCD", "Chad"},
@@ -3364,15 +3317,10 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"TUV", "Tuvalu"},
 {"TWN", "Taiwan"},
 {"TZA", "Tanzania"},
-{"Tenerife", "Spain: Tenerife"},
 {"The Netherlands", "Netherlands"},
-{"Tobago", "Trinidad and Tobago: Tobago"},
-{"Trinidad", "Trinidad and Tobago: Trinidad"},
 {"Trinidad & Tobago", "Trinidad and Tobago"},
-{"Tromelin Island", "French Southern and Antarctic Lands: Tromelin Island"},
 {"Turks & Caicos", "Turks and Caicos Islands"},
 {"Turks & Caicos Islands", "Turks and Caicos Islands"},
-{"Turks Islands", "Turks and Caicos Islands: Turks Islands"},
 {"Turks and Caicos", "Turks and Caicos Islands"},
 {"U.S.A.", "USA"},
 {"UGA", "Uganda"},
@@ -3393,8 +3341,6 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"Vietnam", "Viet Nam"},
 {"WLF", "Wallis and Futuna"},
 {"WSM", "Samoa"},
-{"Wales", "United Kingdom: Wales"},
-{"West Germany", "Germany: West Germany"},
 {"YEM", "Yemen"},
 {"ZAF", "South Africa"},
 {"ZMB", "Zambia"},
@@ -3402,7 +3348,67 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"the Netherlands", "Netherlands"}
 };
 
-DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_country_name_fixes, s_map_country_name_fixes);
+DEFINE_STATIC_ARRAY_MAP(CCountries::TCStringPairsMap,k_country_name_fixes, s_map_country_name_fixes);
+
+// for GB-7408
+static const SStaticPair<const char*, const char*> s_map_subregion_fixes[] = {
+{"Antigua", "Antigua and Barbuda: Antigua"},
+{"Ashmore Island", "Ashmore and Cartier Islands: Ashmore Island"},
+{"Autonomous Region of the Azores", "Portugal: Azores"},
+{"Azores", "Portugal: Azores"},
+{"Barbuda", "Antigua and Barbuda: Barbuda"},
+{"Bassas da India", "French Southern and Antarctic Lands: Bassas da India"},
+{"Caicos Islands", "Turks and Caicos Islands: Caicos Islands"},
+{"Canary Islands", "Spain: Canary Islands"},
+{"Cartier Island", "Ashmore and Cartier Islands: Cartier Island"},
+{"East Germany", "Germany: East Germany"},
+{"El Hierro", "Spain: El Hierro"},
+{"Europa Island", "French Southern and Antarctic Lands: Europa Island"},
+{"Fuerteventura", "Spain: Fuerteventura"},
+{"Glorioso Islands", "French Southern and Antarctic Lands: Glorioso Islands"},
+{"Gran Canaria", "Spain: Gran Canaria"},
+{"Grenadines", "Saint Vincent and the Grenadines: Grenadines"},
+{"Heard Island", "Heard Island and McDonald Islands: Heard Island"},
+{"Ile Amsterdam", "French Southern and Antarctic Lands: Ile Amsterdam"},
+{"Ile Saint-Paul", "French Southern and Antarctic Lands: Ile Saint-Paul"},
+{"Iles Crozet", "French Southern and Antarctic Lands: Iles Crozet"},
+{"Iles Kerguelen", "French Southern and Antarctic Lands: Iles Kerguelen"},
+{"Juan de Nova Island", "French Southern and Antarctic Lands: Juan de Nova Island"},
+{"La Gomera", "Spain: La Gomera"},
+{"La Graciosa", "Spain: La Graciosa"},
+{"La Palma", "Spain: La Palma"},
+{"Lanzarote", "Spain: Lanzarote"},
+{"Madeira", "Portugal: Madeira"},
+{"McDonald Island", "Heard Island and McDonald Islands: McDonald Island"},
+{"McDonald Islands", "Heard Island and McDonald Islands: McDonald Islands"},
+{"Miquelon", "Saint Pierre and Miquelon: Miquelon"},
+{"Nevis", "Saint Kitts and Nevis: Nevis"},
+{"Principe", "Sao Tome and Principe: Principe"},
+{"Saint Kitts", "Saint Kitts and Nevis: Saint Kitts"},
+{"Saint Pierre", "Saint Pierre and Miquelon: Saint Pierre"},
+{"Saint Vincent", "Saint Vincent and the Grenadines: Saint Vincent"},
+{"Sao Tome", "Sao Tome and Principe: Sao Tome"},
+{"Scotland", "United Kingdom: Scotland"},
+{"South Sandwich Islands", "South Georgia and the South Sandwich Islands: South Sandwich Islands"},
+{"St Kitts", "Saint Kitts and Nevis: Saint Kitts"},
+{"St Pierre", "Saint Pierre and Miquelon: Saint Pierre"},
+{"St Thomas", "USA: Saint Thomas"},
+{"St Vincent", "Saint Vincent and the Grenadines: Saint Vincent"},
+{"St. Kitts", "Saint Kitts and Nevis: Saint Kitts"},
+{"St. Pierre", "Saint Pierre and Miquelon: Saint Pierre"},
+{"St. Thomas", "USA: Saint Thomas"},
+{"St. Vincent", "Saint Vincent and the Grenadines: Saint Vincent"},
+{"Tenerife", "Spain: Tenerife"},
+{"Tobago", "Trinidad and Tobago: Tobago"},
+{"Trinidad", "Trinidad and Tobago: Trinidad"},
+{"Tromelin Island", "French Southern and Antarctic Lands: Tromelin Island"},
+{"Turks Islands", "Turks and Caicos Islands: Turks Islands"},
+{"Wales", "United Kingdom: Wales"},
+{"West Germany", "Germany: West Germany"},
+
+};
+DEFINE_STATIC_ARRAY_MAP(CCountries::TCStringPairsMap,k_subregion_fixes, s_map_subregion_fixes);
+
 
 // to be expanded to include other states
 static const char* s_USAStates[] = {
@@ -3604,6 +3610,55 @@ bool s_SuppressCountryFix(const string& test)
 }
 
 
+void CCountries::x_FindCountryName
+(const TCStringPairsMap& fix_map,
+ const vector<string>& countries, 
+ string& valid_country, 
+ string& orig_valid_country, 
+ bool& too_many_countries,
+ bool& bad_cap)
+{
+    for (auto country : countries) {
+        if (!country.empty() && !too_many_countries)
+        {
+            string check = country;
+            NStr::TruncateSpacesInPlace(check);
+            x_RemoveDelimitersFromEnds(check);
+
+            bool check_has_bad_cap = false;
+            if (IsValid(check,check_has_bad_cap))
+            {
+                if (valid_country.empty())
+                {
+                    valid_country = check;
+                    orig_valid_country = check;
+                    bad_cap = check_has_bad_cap;
+                }
+                else
+                {
+                    too_many_countries = true;
+                }
+            }
+            else // see if this is a fixable country
+            {
+                TCStringPairsMap::const_iterator found = fix_map.find(check.c_str());
+                if (found != fix_map.end())
+                {
+                    if (valid_country.empty())
+                    {
+                        valid_country = found->second;
+                        orig_valid_country = check;
+                    }
+                    else
+                    {
+                        too_many_countries = true;
+                    }
+                }
+            }
+        }
+    }
+}
+
 string CCountries::NewFixCountry (const string& test)
 {
     // change requested for JIRA:SQD-1410
@@ -3638,45 +3693,10 @@ string CCountries::NewFixCountry (const string& test)
     vector<string> countries = x_Tokenize(input);
     string valid_country;
     string orig_valid_country;
-    for(vector<string>::iterator country = countries.begin(); country != countries.end(); ++country)
-    {        
-        if (!country->empty() && !too_many_countries)
-        {
-            string check = *country;
-            NStr::TruncateSpacesInPlace(check);
-            x_RemoveDelimitersFromEnds(check);
 
-            bool check_has_bad_cap = false;
-            if (IsValid(check,check_has_bad_cap))
-            {
-                if (valid_country.empty())
-                {
-                    valid_country = check;
-                    orig_valid_country = check;
-                    bad_cap = check_has_bad_cap;
-                }
-                else
-                {
-                    too_many_countries = true;
-                }
-            }
-            else // see if this is a fixable country
-            {
-                TCStringPairsMap::const_iterator found = k_country_name_fixes.find(check.c_str());
-                if (found != k_country_name_fixes.end())
-                {
-                    if (valid_country.empty())
-                    {
-                        valid_country = found->second;
-                        orig_valid_country = check;
-                    }
-                    else
-                    {
-                        too_many_countries = true;
-                    }
-                }
-            }
-        }
+    x_FindCountryName(k_country_name_fixes, countries, valid_country, orig_valid_country, too_many_countries, bad_cap);
+    if (valid_country.empty()) {
+        x_FindCountryName(k_subregion_fixes, countries, valid_country, orig_valid_country, too_many_countries, bad_cap);
     }
 
     if (!valid_country.empty() && !too_many_countries) 
@@ -3704,8 +3724,13 @@ string CCountries::NewFixCountry (const string& test)
         NStr::TruncateSpacesInPlace(after);
         if (bad_cap) new_country = GetCorrectedCountryCapitalization(valid_country);
         else new_country = valid_country;
-        if (!before.empty() || !after.empty())
-            new_country += ": ";
+        if (!before.empty() || !after.empty()) {
+            if (NStr::Find(valid_country, ":") == NPOS) {
+                new_country += ": ";
+            } else {
+                new_country += ", ";
+            }
+        }
         if (!before.empty())
             new_country += before;
         if (!before.empty() && !after.empty() && !NStr::Equal(after, ")"))

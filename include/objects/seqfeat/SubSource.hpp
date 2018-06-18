@@ -50,6 +50,7 @@
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
 #include <corelib/ncbitime.hpp>
+#include <util/static_map.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -291,10 +292,12 @@ public:
     static string NewFixCountry (const string& input);
     static string CountryFixupItem(const string &input, bool capitalize_after_colon);
 private:
+    typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;
     static const string sm_Countries[];
     static const string sm_Former_Countries[];
     static void x_RemoveDelimitersFromEnds(string& val, bool except_paren = false);
     static vector<string> x_Tokenize(const string& val);
+    static void x_FindCountryName(const TCStringPairsMap& fix_map, const vector<string>& countries, string& valid_country, string& orig_valid_country, bool& too_many_countries, bool& bad_cap);
 };
 
 
