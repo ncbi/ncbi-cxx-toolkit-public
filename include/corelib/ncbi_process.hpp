@@ -32,7 +32,7 @@
  */
 
 /// @file ncbi_process.hpp
-/// Defines a process management classes.
+/// Defines process management classes.
 ///
 /// Defines classes:
 ///     CProcess
@@ -480,7 +480,7 @@ public:
     ///
     /// If the file already exists and identifies a live process,
     /// throws CPIDGuardException.
-    /// @filename
+    /// @param filename
     ///   Name of the file to store PID. 
     ///   If "filename" contains path, it should be absolute
     ///   and points to an existing directory.
@@ -493,10 +493,10 @@ public:
     /// If the file already exists and identifies a live process,
     /// throws CPIDGuardException.
     ///
-    /// @filename
+    /// @param filename
     ///   Name of the file to store PID. 
     ///   If should not include any path, relative or absolute.
-    /// @dir
+    /// @param dir
     ///   An absolute path to the existing directory on the file system
     ///   to store PID file "filename".
     ///   If "dir" is empty and "filename" contains no path,
