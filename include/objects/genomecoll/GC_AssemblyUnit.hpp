@@ -49,6 +49,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CGC_Assembly;
+
 /////////////////////////////////////////////////////////////////////////////
 class NCBI_GENOME_COLLECTION_EXPORT CGC_AssemblyUnit : public CGC_AssemblyUnit_Base
 {
@@ -66,6 +68,17 @@ public:
     /// Retrieve this unit's accession
 	string GetAccession() const;
 
+    /// Get full display name of assembly unit
+    string GetDisplayName() const;
+
+    /// Retrieve the file-safe version of assembly name, if available;
+    /// othwreise default to standard name
+    string GetFileSafeName() const;
+
+    /// Get file-safe version of full label for assmebly
+    string GetFileSafeDisplayName() const;
+
+
     /// Retrieve the release id for this assembly
     int GetReleaseId() const;
 
@@ -76,6 +89,9 @@ public:
 
     /// Is this the primary unit of its full assembly?
     bool IsPrimaryUnit() const;
+    //
+    /// Is this a non-nuclear assembly unit?
+    bool IsOrganelle() const;
 
 protected:
     CGC_Assembly* m_Assembly;

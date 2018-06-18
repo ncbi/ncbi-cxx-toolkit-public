@@ -46,6 +46,7 @@
 
 // generated classes
 #include <objects/genomecoll/GC_TaggedSequences.hpp>
+#include <objects/genomecoll/GC_AssemblyUnit.hpp>
 #include <objects/genomecoll/GC_Sequence.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
@@ -91,11 +92,28 @@ public:
     /// Retrieve the name of this assembly
     string GetName() const;
 
+    /// Get full label for assmebly; if this is a unit, full assembly name
+    /// followed by unit name
+    string GetDisplayName() const;
+
+    /// Retrieve the file-safe version of assembly name, if available;
+    /// othwreise default to standard name
+    string GetFileSafeName() const;
+
+    /// Get file-safe version of full label for assmebly
+    string GetFileSafeDisplayName() const;
+
     /// Is this assembly a RefSeq assembly?
     bool IsRefSeq() const;
 
     /// Is this assembly a GenBank assembly?
     bool IsGenBank() const;
+
+    /// Is this a non-nuclear assembly unit?
+    bool IsOrganelle() const;
+
+    /// If this is an assembly unit, get unit class
+    CGC_AssemblyUnit::TClass GetUnitClass() const;
 
     /// Generate the internal up-pointers
     void CreateHierarchy(CGC_Assembly *target_set = NULL);
@@ -129,10 +147,24 @@ public:
     void Find(const CSeq_id_Handle& id,
               TSequenceList& sequences) const;
 
+    enum EFindSeqOption {
+        eEnforceSingle,
+        eChooseAny,
+        eChooseBest
+    };
+
     /// Find a single sequence corresponding to the supplied id.
-    /// This variant will throw an exception if the sequence occurs more than
-    /// once
-    CConstRef<CGC_Sequence> Find(const CSeq_id_Handle& id) const;
+    /// Flag find_option specifies what to do if more than one sequence is found with this id.
+    /// - eEnforceSingle: throw an exception. This is the default
+    /// - eChooseAny: arbitrarily choose one of the sequences
+    /// - eChooseBest: choose the best sequneces available with this id. Criteria are:
+    /// -- Choose a sequence from the reference full assembly in preference to a sequence from another full assembly
+    /// -- Choose a sequence from the primary unit in preference to a sequence from another unit
+    /// -- Choose a top-level sequence in preference to a non-top-level sequence
+    /// -- Choose a scaffold in preference to a component
+    /// -- If there's more than one sequence that's "best" by the above criteria, choose one arbitrarily
+    CConstRef<CGC_Sequence> Find(const CSeq_id_Handle& id,
+                                 EFindSeqOption find_option = eEnforceSingle) const;
 
     /// Returns replicon type, location and role
     void GetRepliconTypeLocRole(const CSeq_id_Handle& id, string& type, string& location, set<int>& role) const;

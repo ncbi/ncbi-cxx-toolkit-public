@@ -95,6 +95,15 @@ public:
 	
 	bool HasRole(int Role) const;
 
+    /// Get name of chromosome that this sequence belongs to, if any
+    string GetChrName() const;
+
+    /// Get full display name of assmebly unit
+    string GetUnitDisplayName() const;
+
+    /// Is this aN organelle sequence?
+    bool IsOrganelle() const;
+
     /// Is the length statistic available?
     bool  CanGetLength() const;
     /// return the length of this sequence.

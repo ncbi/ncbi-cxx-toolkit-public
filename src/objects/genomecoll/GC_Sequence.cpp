@@ -100,7 +100,7 @@ CGC_TaggedSequences::TState CGC_Sequence::GetParentRelation() const
 
 CConstRef<CGC_Sequence> CGC_Sequence::GetTopLevelParent() const
 {
-    CConstRef<CGC_Sequence> top = GetParent();
+    CConstRef<CGC_Sequence> top(this);
     for ( ;  top  &&  top->GetParent();  top = top->GetParent()) {
     }
     return top;
@@ -201,6 +201,27 @@ bool CGC_Sequence::HasRole(int Role) const
 	return false;
 }
 
+string CGC_Sequence::GetChrName() const
+{
+    if (GetTopLevelParent()->GetReplicon() &&
+        GetTopLevelParent()->GetReplicon()->IsSetName())
+    {
+        return GetTopLevelParent()->GetReplicon()->GetName();
+    } else {
+        return "Un";
+    }
+}
+
+string CGC_Sequence::GetUnitDisplayName() const
+{
+    return GetAssemblyUnit()->GetDisplayName();
+}
+
+
+bool CGC_Sequence::IsOrganelle() const
+{
+    return GetChrName() == "MT" || GetChrName() == "Pltd";
+}
 
 bool CGC_Sequence::CanGetLength() const
 {

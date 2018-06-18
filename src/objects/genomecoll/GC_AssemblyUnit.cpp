@@ -82,6 +82,25 @@ string CGC_AssemblyUnit::GetAccession() const
 	return "";
 }
 
+string CGC_AssemblyUnit::GetDisplayName() const
+{
+    return GetFullAssembly()->GetName() + ' ' + GetName();
+}
+
+
+string CGC_AssemblyUnit::GetFileSafeName() const
+{
+    return GetDesc().IsSetFilesafe_name()
+               ? GetDesc().GetFilesafe_name()
+               : NStr::Replace(GetName(), " ", "_");
+}
+
+
+string CGC_AssemblyUnit::GetFileSafeDisplayName() const
+{
+    return GetFullAssembly()->GetFileSafeName() + '_' + GetFileSafeName();
+}
+
 
 int CGC_AssemblyUnit::GetReleaseId() const
 {
@@ -95,6 +114,11 @@ int CGC_AssemblyUnit::GetReleaseId() const
         }
     }
     return release_id;
+}
+
+bool CGC_AssemblyUnit::IsOrganelle() const
+{
+    return GetName() == "non-nuclear";
 }
 
 

@@ -161,6 +161,38 @@ string CGC_Assembly::GetName() const
 }
 
 
+string CGC_Assembly::GetDisplayName() const
+{
+    if (IsAssembly_set()) {
+        return GetName();
+    } else if (IsUnit()) {
+        return GetUnit().GetDisplayName();
+    }
+
+    return kEmptyStr;
+}
+
+
+string CGC_Assembly::GetFileSafeName() const
+{
+    return GetDesc().IsSetFilesafe_name()
+               ? GetDesc().GetFilesafe_name()
+               : NStr::Replace(GetName(), " ", "_");
+}
+
+
+string CGC_Assembly::GetFileSafeDisplayName() const
+{
+    if (IsAssembly_set()) {
+        return GetFileSafeName();
+    } else if (IsUnit()) {
+        return GetUnit().GetFileSafeDisplayName();
+    }
+
+    return kEmptyStr;
+}
+
+
 int CGC_Assembly::GetTaxId() const
 {
     CConstRef<CGC_AssemblyDesc> desc;
@@ -214,6 +246,19 @@ bool CGC_Assembly::IsGenBank() const
     return false;
 }
 
+bool CGC_Assembly::IsOrganelle() const
+{
+    return GetName() == "non-nuclear";
+}
+
+CGC_AssemblyUnit::TClass CGC_Assembly::GetUnitClass() const
+{
+    if (IsUnit()) {
+        return GetUnit().GetClass();
+    } else {
+        return CGC_AssemblyUnit::eClass_other;
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -286,7 +331,58 @@ CGC_Assembly::TFullAssemblies CGC_Assembly::GetFullAssemblies() const
 
 /////////////////////////////////////////////////////////////////////////////
 
-CConstRef<CGC_Sequence> CGC_Assembly::Find(const CSeq_id_Handle& id) const
+struct SBestSequence {
+    bool operator()(const CConstRef<CGC_Sequence> &seq1,
+                    const CConstRef<CGC_Sequence> &seq2) const
+    {
+        /// Prefer sequence from reference full assembly
+        if (seq1->GetFullAssembly()->IsTargetSetReference() &&
+           !seq2->GetFullAssembly()->IsTargetSetReference())
+        {
+            return true;
+        }
+        if (seq2->GetFullAssembly()->IsTargetSetReference() &&
+           !seq1->GetFullAssembly()->IsTargetSetReference())
+        {
+            return false;
+        }
+
+        /// Prefer sequence from primary unit
+        if (seq1->GetAssemblyUnit()->IsPrimaryUnit() &&
+           !seq2->GetAssemblyUnit()->IsPrimaryUnit())
+        {
+            return true;
+        }
+        if (seq2->GetAssemblyUnit()->IsPrimaryUnit() &&
+           !seq1->GetAssemblyUnit()->IsPrimaryUnit())
+        {
+            return false;
+        }
+
+        /// Prefer top-level sequence
+        if (seq1->HasRole(eGC_SequenceRole_top_level) &&
+           !seq2->HasRole(eGC_SequenceRole_top_level))
+        {
+            return true;
+        }
+        if (seq2->HasRole(eGC_SequenceRole_top_level) &&
+           !seq1->HasRole(eGC_SequenceRole_top_level))
+        {
+            return false;
+        }
+
+        /// Prefer scaffold
+        if (seq1->HasRole(eGC_SequenceRole_scaffold) &&
+           !seq2->HasRole(eGC_SequenceRole_scaffold))
+        {
+            return true;
+        }
+        return false;
+    }
+};
+
+CConstRef<CGC_Sequence> CGC_Assembly::Find(const CSeq_id_Handle& id,
+                                           EFindSeqOption find_option) const
 {
     if (m_SequenceMap.empty()) {
         const_cast<CGC_Assembly&>(*this).CreateIndex();
@@ -296,9 +392,19 @@ CConstRef<CGC_Sequence> CGC_Assembly::Find(const CSeq_id_Handle& id) const
         return CConstRef<CGC_Sequence>();
     }
     if (it->second.size() > 1) {
-        NCBI_THROW(CException, eUnknown,
-                   "multiple sequences found in assembly: " +
-                   id.GetSeqId()->AsFastaString());
+        switch (find_option) {
+        case eEnforceSingle:
+            NCBI_THROW(CException, eUnknown,
+                       "multiple sequences found in assembly: " +
+                       id.GetSeqId()->AsFastaString());
+
+        case eChooseBest:
+            return *min_element(it->second.begin(), it->second.end(), SBestSequence());
+
+        default:
+            /// Arbitrarily take first one on list
+            break;
+        }
     }
     return it->second.front();
 }
