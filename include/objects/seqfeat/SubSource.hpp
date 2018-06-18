@@ -291,8 +291,8 @@ public:
     static string GetCorrectedCountryCapitalization(const string& country);
     static string NewFixCountry (const string& input);
     static string CountryFixupItem(const string &input, bool capitalize_after_colon);
-private:
     typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;
+private:
     static const string sm_Countries[];
     static const string sm_Former_Countries[];
     static void x_RemoveDelimitersFromEnds(string& val, bool except_paren = false);
