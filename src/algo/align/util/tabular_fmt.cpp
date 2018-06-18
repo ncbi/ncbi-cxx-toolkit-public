@@ -2064,11 +2064,8 @@ void CTabularFormatter_AssemblyInfo::Print(CNcbiOstream& ostr,
         return;
     }
     
-    CConstRef<CGC_Sequence> Seq;
-    CGC_Assembly::TSequenceList SeqList;
-    m_Gencoll->Find(CSeq_id_Handle::GetHandle(align.GetSeq_id(m_Row)), SeqList);
-    if(!SeqList.empty())
-        Seq = SeqList.front();
+    CConstRef<CGC_Sequence> Seq = m_Gencoll->Find(CSeq_id_Handle::GetHandle(align.GetSeq_id(m_Row)),
+                                                  CGC_Assembly::eChooseAny);
 
     if(!Seq) {
         return;
@@ -2110,17 +2107,7 @@ void CTabularFormatter_AssemblyInfo::Print(CNcbiOstream& ostr,
         break;
 
     case eChromosome:
-        {{
-            CConstRef<CGC_Sequence> top_level = Seq->GetTopLevelParent();
-            if (top_level && top_level->HasRole(eGC_SequenceRole_chromosome) &&
-                top_level->GetReplicon() &&
-                top_level->GetReplicon()->IsSetName())
-            {
-                ostr << top_level->GetReplicon()->GetName();
-            } else {
-                ostr << "NA";
-            }
-        }}
+         ostr << Seq->GetChrName();
         break;
     }
 }
@@ -2215,12 +2202,7 @@ TSeqPos s_FindGaps(const CGC_Assembly& Assembly,
                    const TSeqPos Offset, 
                    list<TSeqRange>& Gaps) 
 {
-    CConstRef<CGC_Sequence> Seq;
-    CGC_Assembly::TSequenceList SeqList;
-    Assembly.Find(CSeq_id_Handle::GetHandle(Id), SeqList);
-    if(SeqList.empty())
-        return 0;
-    Seq = SeqList.front();
+    CConstRef<CGC_Sequence> Seq = Assembly.Find(CSeq_id_Handle::GetHandle(Id), CGC_Assembly::eChooseAny);
 
     if(!Seq)
         return 0;
