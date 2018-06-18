@@ -66,7 +66,10 @@ fi
 
 # Second run
 unset NCBI_CONFIG_PATH NCBI_CONFIG_OVERRIDES
-export NCBI_DONT_USE_LOCAL_CONFIG=1
+case " $FEATURES " in
+    *\ XCODE\ * ) ;;
+    *           ) export NCBI_DONT_USE_LOCAL_CONFIG=1 ;;
+esac
 
 if [[ "$unamestr" == MINGW* ]] || [[ "$unamestr" == CYGWIN* ]]; then
     unset NCBI_CONFIG_E__TEST NCBI_CONFIG__TEST__E NCBI_CONFIG__TEST__EX
