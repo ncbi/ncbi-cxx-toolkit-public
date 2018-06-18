@@ -3048,7 +3048,8 @@ static const SStaticPair<const char*, const char*> s_map_whole_country_fixes[] =
   {"great britain", "United Kingdom: Great Britain"},
   {"new jersey, usa", "USA: New Jersey"}
 };
-DEFINE_STATIC_ARRAY_MAP(CCountries::TCStringPairsMap,k_whole_country_fixes, s_map_whole_country_fixes);
+typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;
+DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap, k_whole_country_fixes, s_map_whole_country_fixes);
 
 static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = {
 {"ABW", "Aruba"},
@@ -3348,7 +3349,7 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"the Netherlands", "Netherlands"}
 };
 
-DEFINE_STATIC_ARRAY_MAP(CCountries::TCStringPairsMap,k_country_name_fixes, s_map_country_name_fixes);
+DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_country_name_fixes, s_map_country_name_fixes);
 
 // for GB-7408
 static const SStaticPair<const char*, const char*> s_map_subregion_fixes[] = {
@@ -3407,7 +3408,7 @@ static const SStaticPair<const char*, const char*> s_map_subregion_fixes[] = {
 {"West Germany", "Germany: West Germany"},
 
 };
-DEFINE_STATIC_ARRAY_MAP(CCountries::TCStringPairsMap,k_subregion_fixes, s_map_subregion_fixes);
+DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_subregion_fixes, s_map_subregion_fixes);
 
 
 // to be expanded to include other states
