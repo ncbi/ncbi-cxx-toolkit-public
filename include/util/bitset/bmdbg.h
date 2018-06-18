@@ -18,7 +18,10 @@ limitations under the License.
 For more information please visit:  http://bitmagic.io
 */
 
-/// BitMagic debugging functions (internal header)
+/*! \file bmdbg.h
+    \brief Debugging functions (internal)
+*/
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -142,7 +145,7 @@ int read_dump_file(const std::string& fname, VT& data)
     fin.seekg(0, std::ios::end);
     fsize = fin.tellg();
     
-    data.resize(fsize/sizeof(value_type));
+    data.resize(unsigned(fsize)/sizeof(value_type));
 
     if (!fsize)
     {
@@ -248,6 +251,7 @@ void PrintBits32(unsigned val)
     PrintBinary(val);
 }
 
+inline
 void PrintDistanceMatrix(
    const unsigned distance[bm::set_block_plain_cnt][bm::set_block_plain_cnt])
 {
@@ -419,7 +423,7 @@ void print_stat(const BV& bv, unsigned blocks = 0)
 
         if (IS_FULL_BLOCK(blk))
         {
-           if (bman.is_block_gap(nb)) // gap block
+           if (BM_IS_GAP(blk)) // gap block
            {
                printf("[Alert!%i]", nb);
                assert(0);
@@ -431,7 +435,7 @@ void print_stat(const BV& bv, unsigned blocks = 0)
                blk = bman.get_block(nb);
                if (IS_FULL_BLOCK(blk))
                {
-                 if (bman.is_block_gap(nb)) // gap block
+                 if (BM_IS_GAP(blk)) // gap block
                  {
                      printf("[Alert!%i]", nb);
                      assert(0);
@@ -454,10 +458,10 @@ void print_stat(const BV& bv, unsigned blocks = 0)
         {
             if ((nb-1) != nb_prev)
             {
-                printf("..%i..", (int)nb-nb_prev);
+                printf("..%zd..", (size_t)nb-nb_prev);
             }
 
-            if (bman.is_block_gap(nb)) // gap block
+            if (BM_IS_GAP(blk))
             {
                 unsigned bc = bm::gap_bit_count(BMGAP_PTR(blk));
                 /*unsigned sum = */bm::gap_control_sum(BMGAP_PTR(blk));
@@ -466,18 +470,17 @@ void print_stat(const BV& bv, unsigned blocks = 0)
                unsigned len = bm::gap_length(BMGAP_PTR(blk))-1;
                unsigned raw_size=bc*2;
                unsigned cmr_len=len*2;
-               int mem_eff = raw_size - cmr_len;
-               total_gap_eff += mem_eff;
+               size_t mem_eff = raw_size - cmr_len;
+               total_gap_eff += unsigned(mem_eff);
                
                unsigned i,j;
-               bman.get_block_coord(nb, &i, &j);
-                printf(" [GAP %i(%i,%i)=%i:%i-L%i(%i)] ", nb, i, j, bc, level, len, mem_eff);
+               bman.get_block_coord(nb, i, j);
+                printf(" [GAP %i(%i,%i)=%i:%i-L%i(%zd)] ", nb, i, j, bc, level, len, mem_eff);
                 ++printed;
             }
             else // bitset
             {
-                const bm::word_t* blk_end = blk + bm::set_block_size;
-                unsigned bc = bm::bit_block_calc_count(blk, blk_end);
+                unsigned bc = bm::bit_block_count(blk);
 
                 unsigned zw = 0;
                 for (unsigned i = 0; i < bm::set_block_size; ++i) 
@@ -588,7 +591,7 @@ void print_svector_stat(const SV& svect, bool print_sim = false)
                 bvx ^= *bv1;
                 
                 unsigned bv_size_x = compute_serialization_size(bvx);
-                int diff = bv_size2 - bv_size_x;
+                size_t diff = bv_size2 - bv_size_x;
                 if (diff > 0) // only positive diff (saving) counts
                 {
                     std:: cout << "["  << sim_vec[k].get_first_idx()
@@ -616,9 +619,9 @@ void print_svector_stat(const SV& svect, bool print_sim = false)
     std::cout << "Memory used:      " << st.memory_used << " "
               << (st.memory_used / (1024 * 1024))       << "MB" << std::endl;
     
-    std::cout << "Projected mem usage for vector<int>:"
-              << sizeof(int) * svect.size() << " "
-              << (sizeof(int) * svect.size()) / (1024 * 1024) << "MB"
+    std::cout << "Projected mem usage for vector<value_type>:"
+              << sizeof(typename SV::value_type) * svect.size() << " "
+              << (sizeof(typename SV::value_type) * svect.size()) / (1024 * 1024) << "MB"
               << std::endl;
     if (sizeof(typename SV::value_type) > 4)
     {
@@ -652,11 +655,25 @@ void print_svector_stat(const SV& svect, bool print_sim = false)
             }
             else
             {
-                bv_join |= *bv_plain;
-                
+                bv_join |= *bv_plain;                
                 print_bvector_stat(*bv_plain);
             }
     } // for i
+
+    const typename SV::bvector_type* bv_null = svect.get_null_bvector();
+    if (bv_null)
+    {
+        std::cout << "(not) NULL plain:\n";
+        print_bvector_stat(*bv_null);
+        unsigned not_null_cnt = bv_null->count();
+        std::cout << " - Bitcount: " << not_null_cnt << std::endl;
+
+        std::cout << "Projected mem usage for std::vector<pair<unsigned, value_type> >:"
+            << ((sizeof(typename SV::value_type) + sizeof(unsigned)) * not_null_cnt) << " "
+            << ((sizeof(typename SV::value_type) + sizeof(unsigned)) * not_null_cnt) / (1024 * 1024) << "MB"
+            << std::endl;
+    }
+
     if (svect.size())
     {
         bm::id64_t bv_join_cnt = bv_join.count();
@@ -668,6 +685,8 @@ void print_svector_stat(const SV& svect, bool print_sim = false)
         std::cout << "Projected mem usage for non-zero elements: " << non_zero_mem << " "
                   << non_zero_mem / (1024*1024) << " MB"
                   << std::endl;
+
+        
     }
 }
 
@@ -702,6 +721,34 @@ int file_save_compressed_collection(const CBC& cbc, const std::string& fname, si
     return 0;
 }
 
+// load compressed collection from disk
+//
+template<class CBC>
+int file_load_compressed_collection(CBC& cbc, const std::string& fname)
+{
+    std::vector<unsigned char> buffer;
+
+    // read the input buffer, validate errors
+    auto ret = bm::read_dump_file(fname, buffer);
+    if (ret != 0)
+    {
+        return -2;
+    }
+    if (buffer.size() == 0)
+    {
+        return -3;
+    }
+    
+    const unsigned char* buf = &buffer[0];
+    
+    compressed_collection_deserializer<CBC> cbcd;
+    cbcd.deserialize(cbc, buf);
+
+    return 0;
+}
+
+
+
 // save sparse_vector dump to disk
 //
 template<class SV>
@@ -720,7 +767,7 @@ int file_save_svector(const SV& sv, const std::string& fname, size_t* sv_blob_si
         return -1;
     }
     const char* buf = (char*)sv_lay.buf();
-    fout.write(buf, sv_lay.size());
+    fout.write(buf, unsigned(sv_lay.size()));
     if (!fout.good())
     {
         return -1;

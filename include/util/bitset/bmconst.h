@@ -18,23 +18,26 @@ limitations under the License.
 For more information please visit:  http://bitmagic.io
 */
 
+/*! \file bmconst.h
+    \brief Various constants and tables
+*/
+
 namespace bm
 {
 
 #if defined(_WIN32) || defined (_WIN64)
-
 typedef unsigned __int64 id64_t;
-
 #else
-
 typedef unsigned long long int id64_t;
-
 #endif
 
 typedef unsigned int   id_t;
 typedef unsigned int   word_t;
 typedef unsigned short short_t;
 
+#ifndef BM_DEFAULT_POOL_SIZE
+# define BM_DEFAULT_POOL_SIZE 4096
+#endif
 
 
 const unsigned id_max = 0xFFFFFFFF;
@@ -92,8 +95,6 @@ const unsigned set_block_size_op  = bm::set_block_size;
 
 #endif
 
-# define BM_DECLARE_TEMP_BLOCK(x)  unsigned BM_VECT_ALIGN x[bm::set_block_size] BM_VECT_ALIGN_ATTR;
-
 
 /*!
    @brief Block allocation strategies.
@@ -104,6 +105,30 @@ enum strategy
     BM_BIT = 0, //!< No GAP compression strategy. All new blocks are bit blocks.
     BM_GAP = 1  //!< GAP compression is ON.
 };
+
+/**
+    Codes of set operations
+    @ingroup bvector
+*/
+enum set_operation
+{
+    set_AND         = 0,
+    set_OR          = 1,
+    set_SUB         = 2,
+    set_XOR         = 3,
+    set_ASSIGN      = 4,
+    set_COUNT       = 5,
+    set_COUNT_AND   = 6,
+    set_COUNT_XOR   = 7,
+    set_COUNT_OR    = 8,
+    set_COUNT_SUB_AB= 9,
+    set_COUNT_SUB_BA= 10,
+    set_COUNT_A     = 11,
+    set_COUNT_B     = 12,
+
+    set_END
+};
+
 
 
 /*!
@@ -118,8 +143,20 @@ enum set_representation
     set_array0  = 3   //!< array of 0 values
 };
 
+/*!
+   @brief NULL-able value support
+   @ingroup bvector
+*/
+enum null_support
+{
+    use_null = 0, //!< support "non-assigned" or "NULL" logic
+    no_null  = 1   //!< do not support NULL values
+};
+
+
 /**
     Internal structure. Copyright information.
+    @internal
 */
 template<bool T> struct _copyright
 {
@@ -128,8 +165,8 @@ template<bool T> struct _copyright
 };
 
 template<bool T> const char _copyright<T>::_p[] = 
-    "BitMagic C++ Library. v.3.10.1 (c) 2002-2017 Anatoliy Kuznetsov.";
-template<bool T> const unsigned _copyright<T>::_v[3] = {3, 9, 0};
+    "BitMagic C++ Library. v.3.12.0 (c) 2002-2018 Anatoliy Kuznetsov.";
+template<bool T> const unsigned _copyright<T>::_v[3] = {3, 12, 0};
 
 
 template<bool T> struct DeBruijn_bit_position
@@ -137,13 +174,18 @@ template<bool T> struct DeBruijn_bit_position
     static const unsigned _multiply[32];
 };
 
+/**
+    DeBruijn majic table
+    @internal
+*/
 template<bool T>
 const unsigned DeBruijn_bit_position<T>::_multiply[32] = { 
   0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 
   31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
 };
 
-/** Structure keeps index of first right 1 bit for every byte.  
+/**
+    Structure keeps index of first right 1 bit for every byte.
     @ingroup bitfunc 
 */
 template<bool T> struct first_bit_table
@@ -271,7 +313,6 @@ const gap_word_t gap_len_table_nl<T>::_len[bm::gap_levels] =
 
 /*!
     @brief codes for supported SIMD optimizations
-    @internal
 */
 enum simd_codes
 {

@@ -16,16 +16,10 @@ limitations under the License.
 For more information please visit:  http://bitmagic.io
 */
 
-#undef BMCOUNT_INC
-#undef BMCOUNT_DEC
-#undef BMCOUNT_VALID
-#undef BMCOUNT_SET
-#undef BMCOUNT_ADJ
-#undef BMCOUNT_INC
-#undef BMCOUNT_DEC
-#undef BMCOUNT_VALID
-#undef BMCOUNT_SET
-#undef BMCOUNT_ADJ
+/*! \file bmundef.h
+    \brief pre-processor un-defines to avoid global space pollution (internal)
+*/
+
 #undef BMRESTRICT
 #undef BMFORCEINLINE
 #undef BMGAP_PTR

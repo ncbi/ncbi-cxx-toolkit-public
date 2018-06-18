@@ -18,6 +18,10 @@ limitations under the License.
 For more information please visit:  http://bitmagic.io
 */
 
+/*! \file bmutil.h
+    \brief Bit manipulation primitives (internal)
+*/
+
 #include "bmdef.h"
 #include "bmconst.h"
 
@@ -25,20 +29,52 @@ For more information please visit:  http://bitmagic.io
 #include <intrin.h>
 #endif
 
+#ifdef __GNUG__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#endif
+
+
 namespace bm
 {
 
+        /**
+        bit-block array wrapped into union for correct interpretation of
+        32-bit vs 64-bit access vs SIMD
+        @internal
+        */
+        struct bit_block_t
+        {
+            union bunion_t
+            {
+                bm::word_t BM_VECT_ALIGN w32[bm::set_block_size] BM_VECT_ALIGN_ATTR;
+                bm::id64_t BM_VECT_ALIGN w64[bm::set_block_size / 2] BM_VECT_ALIGN_ATTR;
+#ifdef BMAVX2OPT
+                __m256i  BM_VECT_ALIGN w256[bm::set_block_size / 8] BM_VECT_ALIGN_ATTR;
+#endif
+#if defined(BMSSE2OPT) || defined(BMSSE42OPT)
+                __m128i  BM_VECT_ALIGN w128[bm::set_block_size / 4] BM_VECT_ALIGN_ATTR;
+#endif
+            } b_;
 
+            operator bm::word_t*() { return &(b_.w32[0]); }
+            operator const bm::word_t*() const { return &(b_.w32[0]); }
+            explicit operator bm::id64_t*() { return &b_.w64[0]; }
+            explicit operator const bm::id64_t*() const { return &b_.w64[0]; }
+#ifdef BMAVX2OPT
+            explicit operator __m256i*() { return &b_.w256[0]; }
+            explicit operator const __m256i*() const { return &b_.w256[0]; }
+#endif
+#if defined(BMSSE2OPT) || defined(BMSSE42OPT)
+            explicit operator __m128i*() { return &b_.w128[0]; }
+            explicit operator const __m128i*() const { return &b_.w128[0]; }
+#endif
 
-// From:
-// http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.37.8562
-//
-template<typename T>
-T bit_scan_fwd(T v)
-{
-    return 
-        DeBruijn_bit_position<true>::_multiply[((word_t)((v & -v) * 0x077CB531U)) >> 27];
-}
+            const bm::word_t* begin() const { return (b_.w32 + 0); }
+            bm::word_t* begin() { return (b_.w32 + 0); }
+            const bm::word_t* end() const { return (b_.w32 + bm::set_block_size); }
+            bm::word_t* end() { return (b_.w32 + bm::set_block_size); }
+        };
 
 /**
     Get minimum of 2 values
@@ -110,7 +146,7 @@ T ilog2_LUT(T x)
     {
         l += 8; x >>= 8;
     }
-    return l + first_bit_table<true>::_idx[x];
+    return l + T(first_bit_table<true>::_idx[x]);
 }
 
 /**
@@ -119,13 +155,13 @@ T ilog2_LUT(T x)
 template<>
 inline bm::gap_word_t ilog2_LUT<bm::gap_word_t>(bm::gap_word_t x)
 {
-    unsigned l = 0;    
+    bm::gap_word_t l = 0;
     if (x & 0xff00) 
     {
-        l += 8;
-        x = (bm::gap_word_t)(x >> 8);
+        l = bm::gap_word_t( + 8u);
+        x = bm::gap_word_t(x >> 8u);
     }
-    return (bm::gap_word_t)(l + first_bit_table<true>::_idx[x]);
+    return bm::gap_word_t(l + bm::gap_word_t(first_bit_table<true>::_idx[x]));
 }
 
 
@@ -134,7 +170,7 @@ inline bm::gap_word_t ilog2_LUT<bm::gap_word_t>(bm::gap_word_t x)
 #ifdef BM_x86
 #ifdef __GNUG__
 
-inline 
+BMFORCEINLINE
 unsigned bsf_asm32(unsigned int v)
 {
     unsigned r;
@@ -142,7 +178,8 @@ unsigned bsf_asm32(unsigned int v)
     return r;
 }
  
-BMFORCEINLINE unsigned bsr_asm32(register unsigned int v)
+BMFORCEINLINE
+unsigned bsr_asm32(unsigned int v)
 {
     unsigned r;
     asm volatile(" bsrl %1, %0": "=r"(r): "rm"(v) );
@@ -155,14 +192,16 @@ BMFORCEINLINE unsigned bsr_asm32(register unsigned int v)
 
 #if defined(_M_AMD64) || defined(_M_X64) // inline assembly not supported
 
-BMFORCEINLINE unsigned int bsr_asm32(unsigned int value)
+BMFORCEINLINE
+unsigned int bsr_asm32(unsigned int value)
 {
     unsigned long r;
     _BitScanReverse(&r, value);
     return r;
 }
 
-BMFORCEINLINE unsigned int bsf_asm32(unsigned int value)
+BMFORCEINLINE
+unsigned int bsf_asm32(unsigned int value)
 {
     unsigned long r;
     _BitScanForward(&r, value);
@@ -171,12 +210,14 @@ BMFORCEINLINE unsigned int bsf_asm32(unsigned int value)
 
 #else
 
-BMFORCEINLINE unsigned int bsr_asm32(register unsigned int value)
+BMFORCEINLINE
+unsigned int bsr_asm32(unsigned int value)
 {   
   __asm  bsr  eax, value
 }
 
-BMFORCEINLINE unsigned int bsf_asm32(register unsigned int value)
+BMFORCEINLINE
+unsigned int bsf_asm32(unsigned int value)
 {   
   __asm  bsf  eax, value
 }
@@ -187,6 +228,31 @@ BMFORCEINLINE unsigned int bsf_asm32(register unsigned int value)
 
 #endif // BM_x86
 
+
+// From:
+// http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.37.8562
+//
+template<typename T>
+T bit_scan_fwd(T v)
+{
+    return
+        DeBruijn_bit_position<true>::_multiply[(((v & -v) * 0x077CB531U)) >> 27];
+}
+
+inline
+unsigned bit_scan_reverse32(unsigned value)
+{
+    BM_ASSERT(value);
+#if defined(BM_x86) && (defined(__GNUG__) || defined(_MSC_VER))
+    return bm::bsr_asm32(value);
+#else
+    return bm::ilog2_LUT<unsigned int>(value);
+#endif
+}
+
+#ifdef __GNUG__
+#pragma GCC diagnostic pop
+#endif
 
 
 } // bm

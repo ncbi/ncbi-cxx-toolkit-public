@@ -18,7 +18,9 @@ limitations under the License.
 For more information please visit:  http://bitmagic.io
 */
 
-// BitMagic timing functions (internal header)
+/*! \file bmtimer.h
+    \brief Timing utilities for benchmarking (internal)
+*/
 
 #include <iostream>
 #include <iomanip>
@@ -31,6 +33,8 @@ namespace bm
 
 
 /// Utility class to collect performance measurements and statistics.
+///
+/// @internal
 ///
 class chrono_taker
 {
@@ -126,7 +130,16 @@ public:
             switch (f)
             {
             case ct_time:
-                std::cout << it->first << "; " << it->second.duration.count() << " ms" << std::endl;
+                {
+                auto ms = it->second.duration.count();
+                if (ms > 1000)
+                {
+                    double sec = ms / 1000;
+                    std::cout << it->first << "; " << std::setprecision(4) << sec << " sec" << std::endl;
+                }
+                else
+                    std::cout << it->first << "; " << it->second.duration.count() << " ms" << std::endl;
+                }
                 break;
             case ct_ops_per_sec:
                 {

@@ -21,11 +21,13 @@ For more information please visit:  http://bitmagic.io
 #include <memory.h>
 #include <stdexcept>
 
+#include "bmserial.h"
 #include "bmdef.h"
-
 
 namespace bm
 {
+
+
 
 /*!
     \brief Bit-bector prefix sum address resolver using bit-vector prefix sum
@@ -43,6 +45,25 @@ public:
 public:
     bvps_addr_resolver();
     bvps_addr_resolver(const bvps_addr_resolver& addr_res);
+    
+    bvps_addr_resolver& operator=(const bvps_addr_resolver& addr_res)
+    {
+        if (this != &addr_res)
+        {
+            addr_bv_ = addr_res.addr_bv_;
+            in_sync_ = addr_res.in_sync_;
+            if (in_sync_)
+            {
+                bv_blocks_.copy_from(addr_res.bv_blocks_);
+            }
+        }
+        return *this;
+    }
+    
+    /*!
+        \brief Move content from the argument address resolver
+    */
+    void move_from(bvps_addr_resolver& addr_res) BMNOEXEPT;
     
     /*!
         \brief Resolve id to integer id (address)
@@ -115,11 +136,16 @@ public:
         \brief optimize underlying bit-vector
     */
     void optimize(bm::word_t* temp_block = 0);
+    
+    /*!
+        \brief equality comparison
+    */
+    bool equal(const bvps_addr_resolver& addr_res) const;
 
     
 private:
     bvector_type              addr_bv_;   ///< bit-vector for id translation
-    bvector_blocks_psum_type  bv_blocks_; ///< prefix sum for fast translation
+    bvector_blocks_psum_type  bv_blocks_; ///< prefix sum for rank translation
     bool                      in_sync_;   ///< flag if prefix sum is in-sync with vector
 };
 
@@ -250,7 +276,9 @@ public:
     */
     size_t size() const { return dense_vect_.size(); }
     
-    bool equals(const compressed_collection<Value, BV>& ccoll) const;
+    /** perform equality comparison with another collection
+    */
+    bool equal(const compressed_collection<Value, BV>& ccoll) const;
     
     /** return dense container for direct access
         (this should be treated as an internal function designed for deserialization)
@@ -331,8 +359,8 @@ public:
             extra_mem = 4096;
         st->max_serialize_mem += extra_mem;
     }
-    
 };
+
 
 
 //---------------------------------------------------------------------
@@ -356,6 +384,23 @@ bvps_addr_resolver<BV>::bvps_addr_resolver(const bvps_addr_resolver& addr_res)
         bv_blocks_.copy_from(addr_res.bv_blocks_);
     }
     addr_bv_.init();
+}
+
+//---------------------------------------------------------------------
+
+
+template<class BV>
+void bvps_addr_resolver<BV>::move_from(bvps_addr_resolver& addr_res) BMNOEXEPT
+{
+    if (this != &addr_res)
+    {
+        addr_bv_.move_from(addr_res.addr_bv_);
+        in_sync_ = addr_res.in_sync_;
+        if (in_sync_)
+        {
+            bv_blocks_.copy_from(addr_res.bv_blocks_);
+        }
+    }
 }
 
 //---------------------------------------------------------------------
@@ -431,6 +476,14 @@ void bvps_addr_resolver<BV>::optimize(bm::word_t* temp_block)
 
 //---------------------------------------------------------------------
 
+template<class BV>
+bool bvps_addr_resolver<BV>::equal(const bvps_addr_resolver& addr_res) const
+{
+    int cmp = addr_bv_.compare(addr_res.addr_bv_);
+    return (cmp == 0);
+}
+
+//---------------------------------------------------------------------
 
 
 
@@ -513,8 +566,8 @@ bool compressed_collection<Value, BV>::push_back(key_type key, const value_type&
     }
     
     addr_res_.set(key);
-    last_add_ = key;
     dense_vect_.push_back(val);
+    last_add_ = key;
     return true;
 }
 
@@ -601,7 +654,7 @@ void compressed_collection<Value, BV>::throw_range_error(const char* err_msg) co
 //---------------------------------------------------------------------
 
 template<class Value, class BV>
-bool compressed_collection<Value, BV>::equals(
+bool compressed_collection<Value, BV>::equal(
                      const compressed_collection<Value, BV>& ccoll) const
 {
     const bvector_type& bv = addr_res_.get_bvector();

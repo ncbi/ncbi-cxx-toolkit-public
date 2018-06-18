@@ -18,6 +18,11 @@ limitations under the License.
 For more information please visit:  http://bitmagic.io
 */
 
+/*! \file encoding.h
+    \brief Encoding utilities for serialization (internal)
+*/
+
+
 #include <memory.h>
 #include "bmutil.h"
 
@@ -105,6 +110,8 @@ public:
     bm::word_t get_32();
     bm::id64_t get_64();
     void get_32(bm::word_t* w, unsigned count);
+    void get_32_OR(bm::word_t* w, unsigned count);
+    void get_32_AND(bm::word_t* w, unsigned count);
     void get_16(bm::short_t* s, unsigned count);
 };
 
@@ -134,6 +141,8 @@ public:
     bm::short_t get_16();
     bm::word_t get_32();
     void get_32(bm::word_t* w, unsigned count);
+    void get_32_OR(bm::word_t* w, unsigned count);
+    void get_32_AND(bm::word_t* w, unsigned count);
     void get_16(bm::short_t* s, unsigned count);
 };
 
@@ -172,15 +181,16 @@ public:
         unsigned acc = accum_;
 
         {
-            unsigned mask = ~0;
+            unsigned mask = ~0u;
             mask >>= (sizeof(accum_) * 8) - count;
             value &= mask;
         }
         for (;count;)
         {  
+            unsigned free_bits = unsigned(sizeof(accum_) * 8) - used;
+            BM_ASSERT(free_bits);
             acc |= value << used;
 
-            unsigned free_bits = (sizeof(accum_) * 8) - used;
             if (count <= free_bits)
             {
                 used += count;
@@ -194,6 +204,11 @@ public:
                 acc = used = 0;
                 continue;
             }
+        }
+        if (used == (sizeof(accum_) * 8))
+        {
+            dest_.put_32(acc);
+            acc = used = 0;
         }
         used_bits_ = used;
         accum_ = acc;
@@ -237,12 +252,7 @@ public:
     {
         BM_ASSERT(value);
 
-        unsigned logv = 
-        #if defined(BM_x86) && (defined(__GNUG__) || defined(_MSC_VER))
-            bm::bsr_asm32(value);
-        #else
-            bm::ilog2_LUT(value);
-        #endif
+        unsigned logv = bm::bit_scan_reverse32(value);
 
         // Put zeroes + 1 bit
 
@@ -252,29 +262,29 @@ public:
         unsigned free_bits = acc_bits - used;
 
         {
-        unsigned count = logv;
-        if (count >= free_bits)
-        {
-            dest_.put_32(acc);
-            acc = used ^= used;
-            count -= free_bits;
-
-            for ( ;count >= acc_bits; count -= acc_bits)
+            unsigned count = logv;
+            if (count >= free_bits)
             {
-                dest_.put_32(0);
+                dest_.put_32(acc);
+                acc = used ^= used;
+                count -= free_bits;
+
+                for ( ;count >= acc_bits; count -= acc_bits)
+                {
+                    dest_.put_32(0);
+                }
+                used += count;
             }
-            used += count; 
-        }
-        else
-        {
-            used += count;
-        }
-        acc |= (1 << used);
-        if (++used == acc_bits)
-        {
-            dest_.put_32(acc);
-            acc = used ^= used;
-        }
+            else
+            {
+                used += count;
+            }
+            acc |= (1 << used);
+            if (++used == acc_bits)
+            {
+                dest_.put_32(acc);
+                acc = used ^= used;
+            }
         }
 
         // Put the value bits
@@ -428,6 +438,36 @@ public:
         accum_ = acc;
         used_bits_ = used;
         return current;
+    }
+    
+    unsigned get_bits(unsigned count)
+    {
+        BM_ASSERT(count);
+        
+        unsigned value = 0;
+        unsigned free_bits = unsigned((sizeof(accum_) * 8) - used_bits_);
+        if (count <= free_bits)
+        {
+        take_accum:
+            value =
+                (accum_ & block_set_table<true>::_left[count-1]);
+            accum_ >>= count;
+            used_bits_ += count;
+            return value;
+        }
+        if (used_bits_ == (sizeof(accum_) * 8))
+        {
+            accum_ = src_.get_32();
+            used_bits_ ^= used_bits_;
+            goto take_accum;
+        }
+        value = accum_;
+        accum_ = src_.get_32();
+        used_bits_ = count - free_bits;
+        value |=
+            ((accum_ & block_set_table<true>::_left[used_bits_-1]) << free_bits);
+        accum_ >>= used_bits_;
+        return value;
     }
 
 
@@ -811,12 +851,12 @@ inline void decoder::get_32(bm::word_t* w, unsigned count)
 {
     if (!w) 
     {
-        seek(count * 4);
+        seek(int(count * sizeof(bm::word_t)));
         return;
     }
 #if (BM_UNALIGNED_ACCESS_OK == 1)
 	::memcpy(w, buf_, count * sizeof(bm::word_t));
-	seek(count * 4);
+	seek(int(count * sizeof(bm::word_t)));
 	return;
 #else
     const unsigned char* buf = buf_;
@@ -833,6 +873,82 @@ inline void decoder::get_32(bm::word_t* w, unsigned count)
 }
 
 /*!
+   \brief Reads block of 32-bit words from the decoding buffer and ORs
+   to the destination
+   \param w - pointer on memory block to read into
+   \param count - should match bm::set_block_size
+*/
+inline
+void decoder::get_32_OR(bm::word_t* w, unsigned count)
+{
+    if (!w)
+    {
+        seek(int(count * sizeof(bm::word_t)));
+        return;
+    }
+#if defined(BMAVX2OPT)
+        __m256i* buf_start = (__m256i*)buf_;
+        seek(int(count * sizeof(bm::word_t)));
+        __m256i* buf_end = (__m256i*)buf_;
+
+        bm::avx2_or_arr_unal((__m256i*)w, buf_start, buf_end);
+#elif defined(BMSSE42OPT) || defined(BMSSE2OPT)
+        __m128i* buf_start = (__m128i*)buf_;
+        seek(int(count * sizeof(bm::word_t)));
+        __m128i* buf_end = (__m128i*)buf_;
+
+        bm::sse2_or_arr_unal((__m128i*)w, buf_start, buf_end);
+#else
+        for (unsigned i = 0; i < count; i+=4)
+        {
+            w[i+0] |= get_32();
+            w[i+1] |= get_32();
+            w[i+2] |= get_32();
+            w[i+3] |= get_32();
+        }
+#endif
+}
+
+/*!
+   \brief Reads block of 32-bit words from the decoding buffer and ANDs
+   to the destination
+   \param w - pointer on memory block to read into
+   \param count - should match bm::set_block_size
+*/
+inline
+void decoder::get_32_AND(bm::word_t* w, unsigned count)
+{
+    if (!w)
+    {
+        seek(int(count * sizeof(bm::word_t)));
+        return;
+    }
+#if defined(BMAVX2OPT)
+        __m256i* buf_start = (__m256i*)buf_;
+        seek(int(count * sizeof(bm::word_t)));
+        __m256i* buf_end = (__m256i*)buf_;
+
+        bm::avx2_and_arr_unal((__m256i*)w, buf_start, buf_end);
+#elif defined(BMSSE42OPT) || defined(BMSSE2OPT)
+        __m128i* buf_start = (__m128i*)buf_;
+        seek(int(count * sizeof(bm::word_t)));
+        __m128i* buf_end = (__m128i*)buf_;
+
+        bm::sse2_and_arr_unal((__m128i*)w, buf_start, buf_end);
+#else
+        for (unsigned i = 0; i < count; i+=4)
+        {
+            w[i+0] &= get_32();
+            w[i+1] &= get_32();
+            w[i+2] &= get_32();
+            w[i+3] &= get_32();
+        }
+#endif
+}
+
+
+
+/*!
    \fn void decoder::get_16(bm::short_t* s, unsigned count)
    \brief Reads block of 32-bit words from the decoding buffer.
    \param s - pointer on memory block to read into.
@@ -842,7 +958,7 @@ inline void decoder::get_16(bm::short_t* s, unsigned count)
 {
     if (!s) 
     {
-        seek(count * 2);
+        seek(int(count * sizeof(bm::short_t)));
         return;
     }
 #if (BM_UNALIGNED_ACCESS_OK == 1)
@@ -874,14 +990,18 @@ inline decoder_little_endian::decoder_little_endian(const unsigned char* buf)
 {
 }
 
-BMFORCEINLINE bm::short_t decoder_little_endian::get_16()
+BMFORCEINLINE
+bm::short_t decoder_little_endian::get_16()
 {
-    bm::short_t a = bm::short_t((buf_[0] << 8) + buf_[1]);
+    bm::short_t v1 = bm::short_t(buf_[0]);
+    bm::short_t v2 = bm::short_t(buf_[1]);
+    bm::short_t a = bm::short_t((v1 << 8) + v2);
     buf_ += sizeof(a);
     return a;
 }
 
-BMFORCEINLINE bm::word_t decoder_little_endian::get_32() 
+BMFORCEINLINE
+bm::word_t decoder_little_endian::get_32()
 {
     bm::word_t a = ((unsigned)buf_[0] << 24)+ ((unsigned)buf_[1] << 16) +
                    ((unsigned)buf_[2] << 8) + ((unsigned)buf_[3]);
@@ -889,11 +1009,12 @@ BMFORCEINLINE bm::word_t decoder_little_endian::get_32()
     return a;
 }
 
-inline void decoder_little_endian::get_32(bm::word_t* w, unsigned count)
+inline
+void decoder_little_endian::get_32(bm::word_t* w, unsigned count)
 {
     if (!w) 
     {
-        seek(count * 4);
+        seek(int(count * sizeof(bm::word_t)));
         return;
     }
 
@@ -909,11 +1030,37 @@ inline void decoder_little_endian::get_32(bm::word_t* w, unsigned count)
     buf_ = (unsigned char*)buf;
 }
 
-inline void decoder_little_endian::get_16(bm::short_t* s, unsigned count)
+inline
+void decoder_little_endian::get_32_OR(bm::word_t* w, unsigned count)
+{
+    for (unsigned i = 0; i < count; i+=4)
+    {
+        w[i+0] |= get_32();
+        w[i+1] |= get_32();
+        w[i+2] |= get_32();
+        w[i+3] |= get_32();
+    }
+}
+
+inline
+void decoder_little_endian::get_32_AND(bm::word_t* w, unsigned count)
+{
+    for (unsigned i = 0; i < count; i+=4)
+    {
+        w[i+0] &= get_32();
+        w[i+1] &= get_32();
+        w[i+2] &= get_32();
+        w[i+3] &= get_32();
+    }
+}
+
+
+inline
+void decoder_little_endian::get_16(bm::short_t* s, unsigned count)
 {
     if (!s) 
     {
-        seek(count * 2);
+        seek(int(count * sizeof(bm::short_t)));
         return;
     }
 
@@ -921,9 +1068,11 @@ inline void decoder_little_endian::get_16(bm::short_t* s, unsigned count)
     const bm::short_t* s_end = s + count;
     do 
     {
-        bm::short_t a = bm::short_t((buf[0] << 8) + buf[1]);
+        bm::short_t v1 = bm::short_t(buf_[0]);
+        bm::short_t v2 = bm::short_t(buf_[1]);
+        bm::short_t a = bm::short_t((v1 << 8) + v2);
         *s++ = a;
-        buf = buf + sizeof(a); // fixes conversion warning with: buf += sizeof(a)
+        buf += sizeof(a);
     } while (s < s_end);
     buf_ = (unsigned char*)buf;
 }

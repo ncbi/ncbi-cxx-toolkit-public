@@ -16,6 +16,10 @@ limitations under the License.
 For more information please visit:  http://bitmagic.io
 */
 
+/*! \file bmdef.h
+    \brief Definitions(internal)
+*/
+
 #include <climits>
 
 // Incorporate appropriate tuneups when the NCBI C++ Toolkit's core
@@ -135,6 +139,8 @@ For more information please visit:  http://bitmagic.io
 #define IS_FULL_BLOCK(addr) bm::all_set<true>::is_full_block(addr)
 #define IS_EMPTY_BLOCK(addr) bool(addr == 0)
 
+#define BM_BLOCK_TYPE(addr) bm::all_set<true>::block_type(addr)
+
 // Macro definitions to manipulate bits in pointers
 // This trick is based on the fact that pointers allocated by malloc are
 // aligned and bit 0 is never set. It means we are safe to use it.
@@ -196,6 +202,18 @@ For more information please visit:  http://bitmagic.io
 # endif
 # undef BMSSE2OPT
 #endif
+
+#ifdef BMAVX2OPT
+# if defined(BM64OPT) || defined(__x86_64) || defined(_M_AMD64) || defined(_WIN64) || \
+    defined(__LP64__) || defined(_LP64)
+#   undef BM64OPT
+#   undef  BM64_SSE4
+#   define BM64_AVX2
+# endif
+# undef BMSSE2OPT
+# undef BMSSE42OPT
+#endif
+
 
 # ifndef BM_SET_MMX_GUARD
 #  define BM_SET_MMX_GUARD
@@ -270,7 +288,7 @@ For more information please visit:  http://bitmagic.io
 
 #if (defined(BMSSE42OPT) || defined(BMAVX2OPT))
 
-# define BM_INCWORD_BITCOUNT(cnt, w) cnt += _mm_popcnt_u32(w);
+# define BM_INCWORD_BITCOUNT(cnt, w) cnt += unsigned(_mm_popcnt_u32(w));
 
 #else
 
@@ -288,6 +306,8 @@ For more information please visit:  http://bitmagic.io
 #ifndef BM_ASSERT_THROW
 #define BM_ASSERT_THROW(x, xerrcode)
 #endif
+
+
 
 #endif
 

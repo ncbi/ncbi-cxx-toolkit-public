@@ -18,10 +18,10 @@ limitations under the License.
 For more information please visit:  http://bitmagic.io
 */
 
+/*! \file bmsse4.h
+    \brief Compute functions for SSE4.2 SIMD instruction set (internal)
+*/
 
-
-//    Header implements processor specific intrinsics declarations for SSE2
-//    instruction set
 #include<mmintrin.h>
 #include<emmintrin.h>
 #include<smmintrin.h>
@@ -39,6 +39,11 @@ namespace bm
     @internal
     @ingroup bvector
  */
+
+#ifdef __GNUG__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#endif
 
 
 
@@ -147,20 +152,26 @@ inline
 bool sse4_is_all_zero(const __m128i* BMRESTRICT block,
                       const __m128i* BMRESTRICT block_end)
 {
+    __m128i w0, w1, w;
     __m128i maskz = _mm_setzero_si128();
 
     do
     {
-        __m128i w0 = _mm_load_si128(block+0);
-        __m128i w1 = _mm_load_si128(block+1);
+        w0 = _mm_load_si128(block+0);
+        w1 = _mm_load_si128(block+1);
         
-        __m128i w = _mm_or_si128(w0, w1);
+        w = _mm_or_si128(w0, w1);
         if (!_mm_test_all_ones(_mm_cmpeq_epi8(w, maskz))) // (w0 | w1) != maskz
-        {
             return false;
-        }
+        
+        w0 = _mm_load_si128(block+2);
+        w1 = _mm_load_si128(block+3);
+        
+        w = _mm_or_si128(w0, w1);
+        if (!_mm_test_all_ones(_mm_cmpeq_epi8(w, maskz))) // (w0 | w1) != maskz
+            return false;
 
-        block += 2;
+        block += 4;
     
     } while (block < block_end);
     return true;
@@ -187,6 +198,16 @@ bool sse4_is_all_one(const __m128i* BMRESTRICT block,
     return true;
 }
 
+/*!
+    @brief check if wave of pointers is all NULL
+    @ingroup AVX2
+*/
+BMFORCEINLINE
+bool sse42_test_all_zero_wave(void* ptr)
+{
+    __m128i w0 = _mm_loadu_si128((__m128i*)ptr);
+    return _mm_testz_si128(w0, w0);
+}
 
 
 #define VECT_XOR_ARR_2_MASK(dst, src, src_end, mask)\
@@ -248,10 +269,9 @@ bm::id_t sse4_bit_block_calc_count_change(const __m128i* BMRESTRICT block,
                                           const __m128i* BMRESTRICT block_end,
                                                unsigned* BMRESTRICT bit_count)
 {
-//   __m128i mask1 = _mm_set_epi32(0x1, 0x1, 0x1, 0x1);
-   BMREGISTER int count = (unsigned)(block_end - block)*4;
+   int count = (unsigned)(block_end - block)*4;
 
-   BMREGISTER bm::word_t  w0, w_prev;
+   bm::word_t  w0, w_prev;
    const int w_shift = sizeof(w0) * 8 - 1;
    bool first_word = true;
    *bit_count = 0;
@@ -407,6 +427,9 @@ unsigned sse4_gap_find(const bm::gap_word_t* BMRESTRICT pbuf, const bm::gap_word
 #endif
 
 
+#ifdef __GNUG__
+#pragma GCC diagnostic pop
+#endif
 
 
 } // namespace

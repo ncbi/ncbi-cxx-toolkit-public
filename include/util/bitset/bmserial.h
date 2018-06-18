@@ -18,13 +18,15 @@ limitations under the License.
 For more information please visit:  http://bitmagic.io
 */
 
+/*! \file bmserial.h
+    \brief Serialization / compression of bvector<>. Set operations on compressed BLOBs.
+*/
 
 /*! 
     \defgroup bvserial bvector<> serialization
     Serialization for bvector<> container
     \ingroup bvector
- 
- */
+*/
 
 #ifndef BM__H__INCLUDED__
 #define BM__H__INCLUDED__
@@ -930,7 +932,7 @@ unsigned serializer<BV>::serialize(const BV& bv,
         // Empty or ONE block serialization
 
         bool flag;
-        flag = bman.is_block_zero(i, blk, false);
+        flag = bm::check_block_zero(blk, false/*shallow check*/);
         if (flag)
         {
         zero_block:
@@ -960,14 +962,14 @@ unsigned serializer<BV>::serialize(const BV& bv,
         }
         else
         {
-            flag = bman.is_block_one(i, blk, false);
+            flag = bm::check_block_one(blk, false);
             if (flag)
             {
                 // Look ahead for similar blocks
                 for(j = i+1; j < bm::set_total_blocks; ++j)
                 {
                    bm::word_t* blk_next = bman.get_block(j);
-                   if (flag != bman.is_block_one(j, blk_next, false))
+                   if (flag != bm::check_block_one(blk_next, false))
                        break;
                 }
                 if (j == bm::set_total_blocks)
@@ -1011,19 +1013,20 @@ unsigned serializer<BV>::serialize(const BV& bv,
         // compute bit-block statistics: bit-count and number of GAPS
         unsigned block_bc = 0;
         bm::id_t bit_gaps = 
-            bit_block_calc_count_change(blk, blk + bm::set_block_size,
-							            &block_bc);
+            bm::bit_block_calc_count_change(blk, blk + bm::set_block_size, &block_bc);
         unsigned block_bc_inv = bm::gap_max_bits - block_bc;
         switch (block_bc)
         {
         case 1: // corner case: only 1 bit on
-        {
-            bm::id_t bit_idx = 0;
-            bit_find_in_block(blk, bit_idx, &bit_idx);
-            enc.put_8(set_block_bit_1bit); enc.put_16((short)bit_idx);
-            continue;
-        }
+            {
+                bm::id_t bit_idx = 0;
+                bm::bit_find_in_block(blk, bit_idx, &bit_idx);
+                enc.put_8(set_block_bit_1bit); enc.put_16(bm::short_t(bit_idx));
+                continue;
+            }
         case 0: goto zero_block; // empty block
+        default:
+            break;
         }
        
        
@@ -1067,7 +1070,7 @@ unsigned serializer<BV>::serialize(const BV& bv,
             {
             bit_as_array:
                 gap_word_t arr_len;
-                unsigned mask = inverted ? ~0 : 0;
+                unsigned mask = inverted ? ~0u : 0u;
                 arr_len = bit_convert_to_arr(gap_temp_block, 
                                              blk, 
                                              bm::gap_max_bits, 
@@ -1461,13 +1464,15 @@ deserializer<BV, DEC>::deserialize_gap(unsigned char btype, decoder_type& dec,
 
         if (blk == 0)
         {
+            BM_ASSERT(level >= 0);
             gap_word_t* gap_blk = 
-              bman.get_allocator().alloc_gap_block(level, bman.glen());
+              bman.get_allocator().alloc_gap_block(unsigned(level), bman.glen());
             gap_word_t* gap_blk_ptr = BMGAP_PTR(gap_blk);
             *gap_blk_ptr = gap_head;
-            set_gap_level(gap_blk_ptr, level);
-            bman.set_block(i, (bm::word_t*)gap_blk);
-            bman.set_block_gap(i);
+            bm::set_gap_level(gap_blk_ptr, level);
+            blk = bman.set_block(i, (bm::word_t*)BMPTR_SETBIT0(gap_blk));
+            BM_ASSERT(blk == 0);
+            
             dec.get_16(gap_blk + 1, len - 1);
             gap_blk[len] = bm::gap_max_bits - 1;
         }
@@ -1601,6 +1606,7 @@ unsigned deserializer<BV, DEC>::deserialize(bvector_type&        bv,
     {
         btype = dec.get_8();
         bm::word_t* blk = bman.get_block(i);
+        
         // pre-check if we have short zero-run packaging here
         //
         if (btype & (1 << 7))
@@ -1744,19 +1750,17 @@ unsigned deserializer<BV, DEC>::deserialize(bvector_type&        bv,
             gap_word_t len = (gap_word_t)
                 (sizeof(gap_word_t) == 2 ? dec.get_16() : dec.get_32());
 
-            if (bman.is_block_gap(i))
+            if (BM_IS_GAP(blk))
             {
-                // Here we most probably does not want to keep
-                // the block GAP since generic bitblock offers better
-                // performance.
-                blk = bman.convert_gap2bitset(i);
+                // convert from GAP cause generic bitblock is faster
+                blk = bman.deoptimize_block(i);
             }
             else
             {
                 if (blk == 0)  // block does not exists yet
                 {
                     blk = bman.get_allocator().alloc_bit_block();
-                    bit_block_set(blk, 0);
+                    bm::bit_block_set(blk, 0);
                     bman.set_block(i, blk);
                 }
             }
@@ -1765,7 +1769,7 @@ unsigned deserializer<BV, DEC>::deserialize(bvector_type&        bv,
             for (unsigned k = 0; k < len; ++k)
             {
                 gap_word_t bit_idx = dec.get_16();
-				set_bit(blk, bit_idx);
+				bm::set_bit(blk, bit_idx);
             }
             continue;
         }
@@ -1898,9 +1902,9 @@ void serial_stream_iterator<DEC>::next()
 
         // pre-check for 7-bit zero block
         //
-        if (block_type_ & (1 << 7))
+        if (block_type_ & (1u << 7u))
         {
-            mono_block_cnt_ = (block_type_ & ~(1 << 7)) - 1;
+            mono_block_cnt_ = (block_type_ & ~(1u << 7u)) - 1;
             state_ = e_zero_blocks;
             break;
         }
@@ -2055,7 +2059,9 @@ serial_stream_iterator<DEC>::get_bit_block_ASSIGN(
             }
             else
             {
-                decoder_.seek((tail_idx - head_idx + 1) * 4);
+                int pos = int(tail_idx - head_idx) + 1;
+                pos *= 4u;
+                decoder_.seek(pos);
             }
         }
         break;
@@ -2082,35 +2088,7 @@ serial_stream_iterator<DEC>::get_bit_block_OR(bm::word_t*  dst_block,
     switch (block_type_)
     {
     case set_block_bit:
-        {
-#ifdef BMAVX2OPT
-        for (unsigned i = 0; i < bm::set_block_size; i+=8)
-        {
-            unsigned i0 = decoder_.get_32();
-            unsigned i1 = decoder_.get_32();
-            unsigned i2 = decoder_.get_32();
-            unsigned i3 = decoder_.get_32();
-            unsigned i4 = decoder_.get_32();
-            unsigned i5 = decoder_.get_32();
-            unsigned i6 = decoder_.get_32();
-            unsigned i7 = decoder_.get_32();
-            
-            __m256i ymm0 = _mm256_setr_epi32(i0, i1, i2, i3, i4, i5, i6, i7);
-            __m256i ymm1 = _mm256_load_si256((__m256i*)(dst_block+i));
-            ymm0 = _mm256_or_si256(ymm0, ymm1);
-            _mm256_store_si256((__m256i*)(dst_block+i), ymm0);
-        }
-#else
-        for (unsigned i = 0; i < bm::set_block_size; i+=4)
-        {
-            dst_block[i+0] |= decoder_.get_32();
-            dst_block[i+1] |= decoder_.get_32();
-            dst_block[i+2] |= decoder_.get_32();
-            dst_block[i+3] |= decoder_.get_32();
-        }
-#endif
-        }
-
+        decoder_.get_32_OR(dst_block, bm::set_block_size);
         break;
     case set_block_bit_interval:
         {
@@ -2163,33 +2141,7 @@ serial_stream_iterator<DEC>::get_bit_block_AND(bm::word_t* BMRESTRICT dst_block,
     switch (block_type_)
     {
     case set_block_bit:
-
-#ifdef BMAVX2OPT
-        for (unsigned i = 0; i < bm::set_block_size; i+=8)
-        {
-            unsigned i0 = decoder_.get_32();
-            unsigned i1 = decoder_.get_32();
-            unsigned i2 = decoder_.get_32();
-            unsigned i3 = decoder_.get_32();
-            unsigned i4 = decoder_.get_32();
-            unsigned i5 = decoder_.get_32();
-            unsigned i6 = decoder_.get_32();
-            unsigned i7 = decoder_.get_32();
-            
-            __m256i ymm0 = _mm256_setr_epi32(i0, i1, i2, i3, i4, i5, i6, i7);
-            __m256i ymm1 = _mm256_load_si256((__m256i*)(dst_block+i));
-            ymm0 = _mm256_and_si256(ymm0, ymm1);
-            _mm256_store_si256((__m256i*)(dst_block+i), ymm0);
-        }
-#else
-        for (unsigned i = 0; i < bm::set_block_size; i+=4)
-		{
-            dst_block[i+0] &= decoder_.get_32();
-            dst_block[i+1] &= decoder_.get_32();
-            dst_block[i+2] &= decoder_.get_32();
-            dst_block[i+3] &= decoder_.get_32();
-		}
-#endif
+        decoder_.get_32_AND(dst_block, bm::set_block_size);
         break;
     case set_block_bit_0runs:
         {
@@ -2429,9 +2381,7 @@ serial_stream_iterator<DEC>::get_bit_block_COUNT_A(bm::word_t*  dst_block,
     if (dst_block)
     {
         // count the block bitcount
-        count = 
-            bit_block_calc_count(dst_block, 
-                                 dst_block + bm::set_block_size);
+        count = bm::bit_block_count(dst_block);
     }
 
     switch (block_type_)
@@ -2532,8 +2482,7 @@ serial_stream_iterator<DEC>::get_bit_block_COUNT_AND(bm::word_t*  dst_block,
     case set_block_arrbit:
         get_arr_bit(tmp_block, true /*clear target*/);
         count += 
-            bit_operation_and_count(dst_block, dst_block + bm::set_block_size, 
-                                    tmp_block);
+            bit_operation_and_count(dst_block, tmp_block);
         break;
     default:
         BM_ASSERT(0);
@@ -2610,9 +2559,7 @@ serial_stream_iterator<DEC>::get_bit_block_COUNT_OR(bm::word_t*  dst_block,
     case set_block_arrbit:
         get_arr_bit(tmp_block, true /* clear target*/);
         return 
-            bit_operation_or_count(dst_block, 
-                                   dst_block + bm::set_block_size,
-                                   tmp_block);
+            bit_operation_or_count(dst_block, tmp_block);
     default:
         BM_ASSERT(0);
     } // switch
@@ -2688,9 +2635,7 @@ serial_stream_iterator<DEC>::get_bit_block_COUNT_XOR(bm::word_t*  dst_block,
     case set_block_arrbit:
         get_arr_bit(tmp_block, true /* clear target*/);
         return 
-            bit_operation_xor_count(dst_block, 
-                                    dst_block + bm::set_block_size,
-                                    tmp_block);
+            bit_operation_xor_count(dst_block, tmp_block);
     default:
         BM_ASSERT(0);
     } // switch
@@ -2767,9 +2712,7 @@ serial_stream_iterator<DEC>::get_bit_block_COUNT_SUB_AB(bm::word_t*  dst_block,
     case set_block_arrbit:
         get_arr_bit(tmp_block, true /* clear target*/);
         return 
-            bit_operation_sub_count(dst_block, 
-                                    dst_block + bm::set_block_size,
-                                    tmp_block);
+            bit_operation_sub_count(dst_block, tmp_block);
     default:
         BM_ASSERT(0);
     } // switch
@@ -2839,9 +2782,7 @@ serial_stream_iterator<DEC>::get_bit_block_COUNT_SUB_BA(bm::word_t*  dst_block,
     case set_block_arrbit:
         get_arr_bit(tmp_block, true /* clear target*/);
         return 
-            bit_operation_sub_count(tmp_block,
-                                    tmp_block + bm::set_block_size,
-                                    dst_block);
+            bit_operation_sub_count(tmp_block, dst_block);
     default:
         BM_ASSERT(0);
     } // switch
@@ -3102,11 +3043,10 @@ iterator_deserializer<BV, SerialIterator>::finalize_target_vector(
         // clear the rest of the target vector
         {
             unsigned i, j;
-            bman.get_block_coord(bv_block_idx, &i, &j);
+            bman.get_block_coord(bv_block_idx, i, j);
             bm::word_t*** blk_root = bman.top_blocks_root();
-            unsigned effective_top_size = 
-                bman.effective_top_block_size();
-            for (;i < effective_top_size; ++i) 
+            unsigned top_size = bman.top_block_size();
+            for (; i < top_size; ++i)
             {
                 bm::word_t** blk_blk = blk_root[i];
                 if (blk_blk == 0) 
@@ -3117,7 +3057,7 @@ iterator_deserializer<BV, SerialIterator>::finalize_target_vector(
                 }
                 for (;j < bm::set_array_size; ++j, ++bv_block_idx)
                 {
-                    if (blk_blk[j])
+                    //if (blk_blk[j])
                         bman.zero_block(bv_block_idx);
                 } // for j
                 j = 0;
@@ -3130,11 +3070,10 @@ iterator_deserializer<BV, SerialIterator>::finalize_target_vector(
         // count bits in the target vector
         {
             unsigned i, j;
-            bman.get_block_coord(bv_block_idx, &i, &j);
+            bman.get_block_coord(bv_block_idx, i, j);
             bm::word_t*** blk_root = bman.top_blocks_root();
-            unsigned effective_top_size = 
-                bman.effective_top_block_size();
-            for (;i < effective_top_size; ++i) 
+            unsigned top_size = bman.top_block_size();
+            for (;i < top_size; ++i)
             {
                 bm::word_t** blk_blk = blk_root[i];
                 if (blk_blk == 0) 
@@ -3146,13 +3085,14 @@ iterator_deserializer<BV, SerialIterator>::finalize_target_vector(
                 for (;j < bm::set_array_size; ++j, ++bv_block_idx)
                 {
                     if (blk_blk[j])
-                        count += bman.block_bitcount(blk_blk[j]);//, bv_block_idx);
+                        count += bman.block_bitcount(blk_blk[j]);
                 } // for j
                 j = 0;
             } // for i
 
         }
         break;
+    case set_END:
     default:
         BM_ASSERT(0);
     }
@@ -3219,7 +3159,7 @@ iterator_deserializer<BV, SerialIterator>::process_id_list(
             // TODO: get rid of the temp vector
             BV bv_tmp(BM_GAP);
             load_id_list(bv_tmp, sit, id_count, true);
-            count += count_xor(bv, bv_tmp);
+            count += bm::count_xor(bv, bv_tmp);
         }
         break;
     case set_COUNT_OR:
@@ -3227,7 +3167,7 @@ iterator_deserializer<BV, SerialIterator>::process_id_list(
             // TODO: get rid of the temp. vector
             BV bv_tmp(BM_GAP);
             load_id_list(bv_tmp, sit, id_count, true);
-            count += count_or(bv, bv_tmp);
+            count += bm::count_or(bv, bv_tmp);
         }
         break;
     case set_COUNT_SUB_AB:
@@ -3238,6 +3178,14 @@ iterator_deserializer<BV, SerialIterator>::process_id_list(
             count += bv_tmp.count();
         }
         break;
+    case set_COUNT_SUB_BA:
+        {
+            BV bv_tmp(BM_GAP);
+            load_id_list(bv_tmp, sit, id_count, true);
+            count += bm::count_sub(bv_tmp, bv);        
+        }
+        break;
+    case set_END:
     default:
         BM_ASSERT(0);
     } // switch
@@ -3344,6 +3292,16 @@ void iterator_deserializer<BV, SerialIterator>::deserialize(
                     case set_OR: case set_XOR:
                         blk_target = bman_target.make_bit_block(bv_block_idx);
                         break;
+                    case set_ASSIGN:
+                    case set_COUNT:
+                    case set_COUNT_AND:
+                    case set_COUNT_XOR:
+                    case set_COUNT_OR:
+                    case set_COUNT_SUB_AB:
+                    case set_COUNT_SUB_BA:
+                    case set_COUNT_A:
+                    case set_COUNT_B:
+                    case set_END:
                     default:
                         BM_ASSERT(0);
                     }
@@ -3590,7 +3548,8 @@ iterator_deserializer<BV, SerialIterator>::deserialize(
                 {
                 case set_AND: case set_ASSIGN:
                     // the result is 0
-                    blk = bman.zero_block(bv_block_idx);
+                    //blk =
+                    bman.zero_block(bv_block_idx);
                     break;
 
                 case set_SUB: case set_COUNT_AND:    case set_OR:
@@ -3604,8 +3563,7 @@ iterator_deserializer<BV, SerialIterator>::deserialize(
                     // results with same block data
                     // all we need is to bitcount bv block
                     {
-                    unsigned c = bman.block_bitcount(blk);//, bv_block_idx);
-                    count += c;
+                    count += blk ? bman.block_bitcount(blk) : 0;
 					if (exit_on_one && count) // early exit
 						return count;
                     }
@@ -3634,13 +3592,14 @@ iterator_deserializer<BV, SerialIterator>::deserialize(
                 count += bm::bits_in_block;
                 break;
             case set_SUB:
-                blk = bman.zero_block(bv_block_idx);
+                //blk =
+                bman.zero_block(bv_block_idx);
                 break;
             case set_COUNT_SUB_AB: case set_AND:
                 // nothing to do
                 break;
             case set_COUNT_AND: case set_COUNT_A:
-                count += bman.block_bitcount(blk);//, bv_block_idx);
+                count += blk ? bman.block_bitcount(blk) : 0;
                 break;
             default:
                 if (blk)
@@ -3730,7 +3689,8 @@ iterator_deserializer<BV, SerialIterator>::deserialize(
             {
                 if ((sop == set_ASSIGN) && blk) // target block override
                 {
-                    blk = bman.zero_block(bv_block_idx);
+                    //blk =
+                    bman.zero_block(bv_block_idx);
                     sop = set_OR;
                 }
                 if (blk == 0) // target block not found
@@ -3743,6 +3703,7 @@ iterator_deserializer<BV, SerialIterator>::deserialize(
                         bman.set_gap_block(
                             bv_block_idx, gap_temp_block, level);
                         break;
+                    
                     default:
                         BM_ASSERT(0);
                     } // switch
@@ -3773,7 +3734,7 @@ iterator_deserializer<BV, SerialIterator>::deserialize(
                     blk = bman.get_block(bv_block_idx);
                     if (blk) 
                     {
-                        bool z = bman.is_block_zero(bv_block_idx, blk);
+                        bool z = bm::check_block_zero(blk, true/*deep check*/);
                         if (!z) 
                             return 1;
                     } 

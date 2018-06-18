@@ -18,6 +18,10 @@ limitations under the License.
 For more information please visit:  http://bitmagic.io
 */
 
+/*! \file bmfwd.h
+    \brief Forward declarations
+*/
+
 #include "bmconst.h"
 
 namespace bm
@@ -26,15 +30,17 @@ namespace bm
 class block_allocator;
 class ptr_allocator;
 
-template<class BA = block_allocator, class PA = ptr_allocator> class mem_alloc;
+template<class BA, class PA> class alloc_pool;
+typedef bm::alloc_pool<block_allocator, ptr_allocator> standard_alloc_pool;
+
+template<class BA = block_allocator, class PA = ptr_allocator, class APool = standard_alloc_pool > class mem_alloc;
 
 template <class A, size_t N> class miniset;
 template<size_t N> class bvmini;
 
-typedef mem_alloc<block_allocator, ptr_allocator> standard_allocator;
+typedef bm::mem_alloc<block_allocator, ptr_allocator, standard_alloc_pool> standard_allocator;
 
 template<class A = bm::standard_allocator> class bvector;
-
 
 
 } // namespace
