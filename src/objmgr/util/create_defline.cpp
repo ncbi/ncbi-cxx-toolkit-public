@@ -525,6 +525,30 @@ void CDeflineGenerator::x_SetFlagsIdx (
     m_Substrain = bsx->GetSubstrain();
 
     m_IsUnverified = bsx->IsUnverified();
+    m_UnverifiedPrefix.clear();
+    if (m_IsUnverified) {
+        int unverified_count = 0;
+        if (bsx->IsUnverifiedOrganism()) {
+            m_UnverifiedPrefix = "UNVERIFIED_ORG: ";
+            unverified_count++;
+        }
+        if (bsx->IsUnverifiedMisassembled()) {
+            m_UnverifiedPrefix = "UNVERIFIED_ASMBLY: ";
+            unverified_count++;
+        }
+        if (bsx->IsUnverifiedContaminant()) {
+            m_UnverifiedPrefix = "UNVERIFIED_CONTAM: ";
+            unverified_count++;
+        }
+        if (bsx->IsUnverifiedFeature()) {
+            m_UnverifiedPrefix = "UNVERIFIED: ";
+            unverified_count++;
+        }
+        if (unverified_count > 1) {
+            m_UnverifiedPrefix = "UNVERIFIED: ";
+        }
+    }
+
     m_Comment = bsx->GetComment();
     m_IsPseudogene = bsx->IsPseudogene();
     m_TargetedLocus = bsx->GetTargetedLocus();

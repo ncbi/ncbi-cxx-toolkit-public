@@ -517,7 +517,13 @@ public:
     CTempString GetPDBCompound (void);
 
     bool IsForceOnlyNearFeats (void);
+
     bool IsUnverified (void);
+    bool IsUnverifiedFeature (void);
+    bool IsUnverifiedOrganism (void);
+    bool IsUnverifiedMisassembled (void);
+    bool IsUnverifiedContaminant (void);
+
     CTempString GetTargetedLocus (void);
 
     const string& GetComment (void);
@@ -687,7 +693,14 @@ private:
 
     // User object fields
     bool m_ForceOnlyNearFeats;
+
     bool m_IsUnverified;
+    bool m_IsUnverifiedFeature;
+    bool m_IsUnverifiedOrganism;
+    bool m_IsUnverifiedMisassembled;
+    bool m_IsUnverifiedContaminant;
+    CTempString m_UnverifiedPrefix;
+
     CTempString m_TargetedLocus;
 
     // Comment fields

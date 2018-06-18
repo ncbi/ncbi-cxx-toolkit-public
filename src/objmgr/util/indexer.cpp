@@ -787,6 +787,11 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_Substrain.clear();
 
     m_IsUnverified = false;
+    m_IsUnverifiedFeature = false;
+    m_IsUnverifiedOrganism = false;
+    m_IsUnverifiedMisassembled = false;
+    m_IsUnverifiedContaminant = false;
+
     m_TargetedLocus.clear();
 
     m_Comment.clear();
@@ -1554,6 +1559,18 @@ void CBioseqIndex::x_InitDescs (void)
                                 }
                             } else if (NStr::EqualNocase(type, "Unverified")) {
                                 m_IsUnverified = true;
+                                if (usr.IsUnverifiedOrganism()) {
+                                    m_IsUnverifiedOrganism = true;
+                                }
+                                if (usr.IsUnverifiedMisassembled()) {
+                                    m_IsUnverifiedMisassembled = true;
+                                }
+                                if (usr.IsUnverifiedContaminant()) {
+                                    m_IsUnverifiedContaminant = true;
+                                }
+                                if (usr.IsUnverifiedFeature()) {
+                                    m_IsUnverifiedFeature = true;
+                                }
                             } else if (NStr::EqualNocase(type, "AutodefOptions")) {
                                 FOR_EACH_USERFIELD_ON_USEROBJECT (uitr, usr) {
                                     const CUser_field& fld = **uitr;
@@ -2441,6 +2458,46 @@ bool CBioseqIndex::IsUnverified (void)
     }
 
     return m_IsUnverified;
+}
+
+bool CBioseqIndex::IsUnverifiedFeature (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_IsUnverifiedFeature;
+}
+
+bool CBioseqIndex::IsUnverifiedOrganism (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_IsUnverifiedOrganism;
+}
+
+bool CBioseqIndex::IsUnverifiedMisassembled (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_IsUnverifiedMisassembled;
+}
+
+bool CBioseqIndex::IsUnverifiedContaminant (void)
+
+{
+    if (! m_DescsInitialized) {
+        x_InitDescs();
+    }
+
+    return m_IsUnverifiedContaminant;
 }
 
 CTempString CBioseqIndex::GetTargetedLocus (void)

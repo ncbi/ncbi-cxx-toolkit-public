@@ -2914,7 +2914,7 @@ void CFeatTree::x_AssignParents(void)
         }
         // all remaining features are without parent
         ITERATE ( TFeatArray, it, feats ) {
-            x_SetNoParent(**it);
+            // x_SetNoParent(**it);
         }
     }
 
