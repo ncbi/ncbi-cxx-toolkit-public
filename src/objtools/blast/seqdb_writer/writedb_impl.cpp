@@ -1616,8 +1616,10 @@ static bool s_IsValidPdb(const string& s)
             return false;
         }
     } else if (len == 8  ||  len == 10  ||  len == 11) {
-        if (s.find_first_of("pdb|") == NPOS
-                &&  s.find_first_of("PDB|") == NPOS) {
+        string lc("pdb|");
+        string uc("PDB|");
+        if (s.compare(0, lc.size(), lc) != 0
+            &&  s.compare(0, uc.size(), uc) != 0) {
             return false;
         }
         long_seqid = true;
