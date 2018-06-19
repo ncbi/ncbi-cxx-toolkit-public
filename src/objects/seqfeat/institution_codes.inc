@@ -31,6 +31,7 @@
  */
 
 static const char* const kInstitutionCollectionCodeList[] = {
+"\tc\tNorwegian Culture Collection of Algae\tNIVA",
 " DZSJRP\ts\tDepartmento de Zoologia e Botanica, Universidade Estadual Paulista\t\t",
 "A\ts\tArnold Arboretum, Harvard University\t\t",
 "AA\ts\tMinistry of Science, Academy of Sciences\t\t",
@@ -4656,7 +4657,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NHR\th\tInstitute of Scientific and Technological Research (IRST)\t\t",
 "NHRI\ts\tIslandic Museum of Natural History\t\t",
 "NHRM\ts\tNaturhistoriska Rijkmuseet\t\t",
-"NHRS\ts\tSwedish Museum of Natural History, Entomology Collections\t\t",
+"NHRS\ts\tSwedish Museum of Natural History\t\t",
 "NHSD\ts\tNatural History Society of Dublin\t\t",
 "NHST\ts\tMuseum of Natural History, Reunion\t\t",
 "NHT\ts\tTropical Pesticides Research Institute\t\t",
@@ -4690,7 +4691,6 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NIPH\tc\tNational Institute of Public Health, Collection A. Nemec\t\t",
 "NIPR\ts\tNational Institute of Polar Research, Biological Data Department\t\t",
 "NIT\ts\tJardim Botanico de Niteroi\t\t",
-"NIVA\tc\tNorwegian Culture Collection of Algae\tNIVA",
 "NIWA\ts\tNational Institute of Water and Atmospheric Research\t\t",
 "NJ\ts\tNjala University College\t\t",
 "NJM<CZE>\ts\tMuzeum Novojieinska\t\t",

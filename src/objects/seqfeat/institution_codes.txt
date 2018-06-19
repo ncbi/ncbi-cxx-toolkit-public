@@ -1,3 +1,4 @@
+	c	Norwegian Culture Collection of Algae	NIVA
  DZSJRP	s	Departmento de Zoologia e Botanica, Universidade Estadual Paulista		
 A	s	Arnold Arboretum, Harvard University		
 AA	s	Ministry of Science, Academy of Sciences		
@@ -4623,7 +4624,7 @@ NHNE	s	New England College, Biology Department
 NHR	h	Institute of Scientific and Technological Research (IRST)		
 NHRI	s	Islandic Museum of Natural History		
 NHRM	s	Naturhistoriska Rijkmuseet		
-NHRS	s	Swedish Museum of Natural History, Entomology Collections		
+NHRS	s	Swedish Museum of Natural History		
 NHSD	s	Natural History Society of Dublin		
 NHST	s	Museum of Natural History, Reunion		
 NHT	s	Tropical Pesticides Research Institute		
@@ -4657,7 +4658,6 @@ NIOCC	c	National Institute of Oceanography Culture Collection
 NIPH	c	National Institute of Public Health, Collection A. Nemec		
 NIPR	s	National Institute of Polar Research, Biological Data Department		
 NIT	s	Jardim Botanico de Niteroi		
-NIVA	c	Norwegian Culture Collection of Algae	NIVA
 NIWA	s	National Institute of Water and Atmospheric Research		
 NJ	s	Njala University College		
 NJM<CZE>	s	Muzeum Novojieinska		
