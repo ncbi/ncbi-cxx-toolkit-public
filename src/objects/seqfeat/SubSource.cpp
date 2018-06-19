@@ -2334,9 +2334,19 @@ void s_CollectNumberAndUnits(const string& value, string& number, string& units)
     }
 
     bool any_digit = false;
-    while (it != value.end() && isdigit(*it)) {
-        any_digit = true;
-        number += *it;
+    bool skip_comma = true;
+    while (it != value.end() && (isdigit(*it) || *it == ',')) {
+        if (*it == ',') {
+            if (skip_comma) {
+                // only skip the first comma
+                skip_comma = false;
+            } else {
+                break;
+            }
+        } else {
+            any_digit = true;
+            number += *it;
+        }
         it++;
     }
 
@@ -2424,14 +2434,15 @@ string CSubSource::FixAltitude (const string& value)
         units = "m";
     } 
     
+    string rval = kEmptyStr;
     if (NStr::Equal(units, "m.")
         || NStr::Equal(units, "meters")
         || NStr::Equal(units, "meter")
         || NStr::Equal(units, "m")) {
-        return number + " " + "m";
-    } else {
-        return kEmptyStr;
+
+        rval = number + " " + "m";
     }
+    return rval;
 }
 
 

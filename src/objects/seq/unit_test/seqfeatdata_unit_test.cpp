@@ -1170,6 +1170,9 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2183)
     BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 m"), "100 m");
     BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 feet"), "30 m");
     BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 foot"), "30 m");
+
+    //for VR-823
+    BOOST_CHECK_EQUAL(CSubSource::FixAltitude("1,950 m"), "1950 m");
 }
 
 
