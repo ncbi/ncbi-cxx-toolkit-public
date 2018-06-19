@@ -40,6 +40,7 @@
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
+#include <atomic>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
