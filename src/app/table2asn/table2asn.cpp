@@ -280,6 +280,7 @@ void CTbl2AsnApp::Init(void)
       w WGS cleanup\n\
       d Correct Collection Dates (assume month first)\n\
       D Correct Collection Dates(assume day first)\n\
+      x Extend ends of features by one or two nucleotides to abut gaps or sequence ends\n\
       - avoid cleanup", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("z", "OutFile", "Cleanup Log File", CArgDescriptions::eOutputFile);
