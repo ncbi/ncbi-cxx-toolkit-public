@@ -666,9 +666,6 @@ CFormatGuess::EnsureStats()
                 if ( type & fProtein_Alphabet ) {
                     ++m_iStatsCountAaChars;
                 }
-                if ( type & fLineEnd ) {
-                    ++m_iStatsCountAlNumChars;
-                }
             }
         }
     }
