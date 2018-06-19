@@ -105,10 +105,19 @@ void CGRPCClientContext::AddStandardNCBIMetadata(grpc::ClientContext& cctx)
     cctx.AddMetadata("client",   dctx.GetAppName());
     
     CRequestContext_PassThrough pass_through;
+    CTempString legal_punct("-_.");
     pass_through.Enumerate([&](const string& name, const string& value) {
                                string lc = name;
                                NStr::ToLower(lc);
-                               cctx.AddMetadata(name, value);
+                               for (char& c : lc) {
+                                   if ( !isalnum((unsigned char) c)
+                                       &&  legal_punct.find(c) == NPOS) {
+                                       c = '_';
+                                   }
+                               }
+                               cctx.AddMetadata
+                                   (lc,
+                                    NStr::CEncode(value, NStr::eNotQuoted));
                                return true;
                            });
 }
@@ -188,7 +197,8 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
             string name (metadata.first .data(), metadata.first .size());
             string value(metadata.second.data(), metadata.second.size());
             // NStr::ToUpper(name);
-            rctx.AddPassThroughProperty(name, value);
+            rctx.AddPassThroughProperty(name,
+                                        NStr::CParse(value, NStr::eNotQuoted));
             if (metadata.first == "sessionid") {
                 rctx.SetSessionID(value);
             } else if (metadata.first == "ncbiphid") {
