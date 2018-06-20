@@ -1643,20 +1643,10 @@ void CFeatureItem::x_AddQualsIdx(
 
         if (! suppressed) {
             CRef<CFeatureIndex> ft;
+            bool is_mapped = false;
             if (parentFeatureItem) {
                 ft = bsx->GetFeatIndex (parentFeatureItem->GetFeat());
-            } else {
-                ft = bsx->GetFeatIndex (m_Feat);
-            }
-            if (ft) {
-                CRef<CFeatureIndex> fsx = ft->GetBestGene();
-                if (fsx) {
-                    const CMappedFeat mf = fsx->GetMappedFeat();
-                    if (subtype != CSeqFeatData::eSubtype_primer_bind || feat_gene_xref) {
-                        gene_feat = &(mf.GetMappedFeature());
-                        gene_ref = &(mf.GetData().GetGene());
-                    }
-                } else if (parentFeatureItem) {
+                if (ft) {
                     if (subtype == CSeqFeatData::eSubtype_preprotein         ||
                         subtype == CSeqFeatData::eSubtype_mat_peptide_aa     ||
                         subtype == CSeqFeatData::eSubtype_sig_peptide_aa     ||
@@ -1668,7 +1658,20 @@ void CFeatureItem::x_AddQualsIdx(
                             parent_feat_handle = parentFeatureItem->GetFeat();
                             CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref,
                                                                 gene_feat, parent_feat_handle );
+                            is_mapped = true;
                         } catch (CException&) {}
+                    }
+                }
+            } else {
+                ft = bsx->GetFeatIndex (m_Feat);
+            }
+            if (ft && (! is_mapped)) {
+                CRef<CFeatureIndex> fsx = ft->GetBestGene();
+                if (fsx) {
+                    const CMappedFeat mf = fsx->GetMappedFeat();
+                    if (subtype != CSeqFeatData::eSubtype_primer_bind || feat_gene_xref) {
+                        gene_feat = &(mf.GetMappedFeature());
+                        gene_ref = &(mf.GetData().GetGene());
                     }
                 }
             }
