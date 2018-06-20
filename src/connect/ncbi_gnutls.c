@@ -395,7 +395,7 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error, char** desc)
         *error = x_error;
     } else {
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x030110
-        char* temp = gnutls_session_get_desc(session);
+        char* temp = gnutls_session_get_desc((gnutls_session_t) session);
         if (temp) {
             *desc = strdup(temp);
             gnutls_free(temp);
@@ -753,12 +753,14 @@ static void s_GnuTlsExit(void)
 }
 
  
-static const char* s_GnuTlsError(void* session/*unused*/, int error,
+static const char* s_GnuTlsError(void* session, int error,
                                  char* buf/*unused*/, size_t size/*unused*/)
 {
     /* GNUTLS defines only negative error codes */
-    return error >= 0 ? 0 : error < GNUTLS_E_APPLICATION_ERROR_MAX
-        ? gnutls_alert_get_name(GNUTLS_E_APPLICATION_ERROR_MAX - error)
+    return error >= 0 ? 0 :
+        error == GNUTLS_E_WARNING_ALERT_RECEIVED  ||
+        error == GNUTLS_E_FATAL_ALERT_RECEIVED
+        ? gnutls_alert_get_strname(gnutls_alert_get((gnutls_session_t)session))
         : gnutls_strerror(error);
 }
 
