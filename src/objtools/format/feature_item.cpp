@@ -1656,6 +1656,20 @@ void CFeatureItem::x_AddQualsIdx(
                         gene_feat = &(mf.GetMappedFeature());
                         gene_ref = &(mf.GetData().GetGene());
                     }
+                } else if (parentFeatureItem) {
+                    if (subtype == CSeqFeatData::eSubtype_preprotein         ||
+                        subtype == CSeqFeatData::eSubtype_mat_peptide_aa     ||
+                        subtype == CSeqFeatData::eSubtype_sig_peptide_aa     ||
+                        subtype == CSeqFeatData::eSubtype_transit_peptide_aa     ||
+                        subtype == CSeqFeatData::eSubtype_propeptide_aa) {
+                        try {
+                            // e.g., check sig_peptide for gene overlapping parent CDS
+                            CSeq_feat_Handle parent_feat_handle;
+                            parent_feat_handle = parentFeatureItem->GetFeat();
+                            CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref,
+                                                                gene_feat, parent_feat_handle );
+                        } catch (CException&) {}
+                    }
                 }
             }
         }
