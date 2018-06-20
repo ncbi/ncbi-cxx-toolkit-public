@@ -92,13 +92,14 @@ string CGffIdGenerator::GetGffId(
         auto subType = mf.GetFeatSubtype();
         switch(subType) {
         default:
+            if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
+                id = xGetIdForRna(mf, pFeatTree);
+                break;
+            }
             id = xGetGenericId(mf, pFeatTree);
             break;
         case CSeqFeatData::eSubtype_gene:
             id = xGetIdForGene(mf, pFeatTree);
-            break;
-        case CSeqFeatData::eSubtype_mRNA:
-            id = xGetIdForMrna(mf, pFeatTree);
             break;
         case CSeqFeatData::eSubtype_cdregion:
             id = xGetIdForCds(mf, pFeatTree);
@@ -204,7 +205,7 @@ string CGffIdGenerator::xGetIdForGene(
 }
 
 //  ----------------------------------------------------------------------------
-string CGffIdGenerator::xGetIdForMrna(
+string CGffIdGenerator::xGetIdForRna(
     const CMappedFeat& mf,
     feature::CFeatTree* pFeatTree) 
 //  ----------------------------------------------------------------------------
@@ -224,7 +225,14 @@ string CGffIdGenerator::xGetIdForMrna(
     }
 
     //try to inherit from gene
-    auto gene = feature::GetBestGeneForMrna(mf, pFeatTree);
+    auto subtype = mf.GetFeatSubtype();
+    CMappedFeat gene;
+    if (subtype == CSeqFeatData::eSubtype_mRNA) {
+        gene = feature::GetBestGeneForMrna(mf, pFeatTree);
+    }
+    else {
+        gene = feature::GetBestGeneForFeat(mf, pFeatTree);
+    }
     auto stem = xExtractGeneLocusTagOrLocus(gene);
     if (!stem.empty()) {
         return (commonPrefix + stem);

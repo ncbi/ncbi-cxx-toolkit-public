@@ -74,7 +74,7 @@ protected:
         const CMappedFeat&,
         feature::CFeatTree*);
 
-    std::string xGetIdForMrna(
+    std::string xGetIdForRna(
         const CMappedFeat&,
         feature::CFeatTree*);
 
