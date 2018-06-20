@@ -298,11 +298,11 @@ int main(int argc, const char* argv[])
                     SHINFO_PortUsage* ports, x_ports[16];
                     size_t c = sizeof(x_ports) / sizeof(x_ports[0]);
                     int i;
-                    if (n <= c  ||  !(ports = (SHINFO_PortUsage*)
-                                      malloc(n * sizeof(*ports)))) {
+                    if ((size_t) n <= c  ||  !(ports = (SHINFO_PortUsage*)
+                                               malloc(n * sizeof(*ports)))) {
                         ports = x_ports;
                     } else
-                        c = n;
+                        c = (size_t) n;
                     verify(HINFO_PortUsage(hinfo, ports, c) == n);
                     if (n > (int) c)
                         n = (int) c;

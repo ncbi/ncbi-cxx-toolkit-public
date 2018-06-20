@@ -51,7 +51,9 @@
 
 /*ARGSUSED*/
 #ifdef __cplusplus
-extern "C"
+extern "C" {
+    static EIO_Status s_NoTlsInit(FSSLPull unused_pull, FSSLPush unused_push);
+}
 #endif /*__cplusplus*/
 static EIO_Status s_NoTlsInit(FSSLPull unused_pull, FSSLPush unused_push)
 {

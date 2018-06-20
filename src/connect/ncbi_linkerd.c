@@ -440,7 +440,7 @@ static int s_Resolve(SERV_ITER iter)
     char vhost[300];
     sprintf(vhost, "%s%s", iter->name, LINKERD_HOST_HDR_SFX);
 
-    char *secure = ( dni->scheme == eURL_Https ? "YES" : "NO" );
+    const char *secure = ( dni->scheme == eURL_Https ? "YES" : "NO" );
 
     /*  SSERV_Info member to format string mapping:
         mode (secure) --------------------------------------------+

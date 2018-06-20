@@ -104,8 +104,8 @@ static struct {
     /* must be ordered longer-to-shorter */
     { kRegularInter, sizeof(kRegularInter)-1, eSERV_Regular, fSERV_Interzone },
     { kBlastInter,   sizeof(kBlastInter)-1,   eSERV_Blast,   fSERV_Interzone },
-    { kRegular,      sizeof(kRegular)-1,      eSERV_Regular, 0               },
-    { kBlast,        sizeof(kBlast)-1,        eSERV_Blast,   0               }
+    { kRegular,      sizeof(kRegular)-1,      eSERV_Regular, (ESERV_Site) 0  },
+    { kBlast,        sizeof(kBlast)-1,        eSERV_Blast,   (ESERV_Site) 0  }
 };
 
 

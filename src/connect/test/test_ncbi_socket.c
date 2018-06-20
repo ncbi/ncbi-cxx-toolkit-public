@@ -884,7 +884,7 @@ static void TEST_OnTopSock(void)
     SOCK  server, client, ontop[2];
     const char* unique = tmpnam(0);
     CORE_LOGF(eLOG_Note, ("SOCK_OnTop(\"%s\")", unique));
-    SOCK_SetDataLoggingAPI(fSOCK_LogOn);
+    SOCK_SetDataLoggingAPI(eOn);
     verify(LSOCK_CreateUNIX(unique, 64, &pipe, fSOCK_LogDefault)
            == eIO_Success);
     verify(SOCK_CreateUNIX(unique, 0, &client, 0, 0, fSOCK_LogDefault)

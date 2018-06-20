@@ -620,8 +620,8 @@ static TNCBI_Time s_ParseExpires(time_t tt_now, const char* expires)
         int     now_min  = tm_now.tm_min;
         int     now_sec  = tm_now.tm_sec;
         char    now_str[32]; /* need 21 for 'yyyy-mm-ddThh:mm:ssZ' */
-        char*   td_sign;
         double  td_diff, td_hour, td_min, td_sec;
+        const char* td_sign;
 
         if ((now_year < 2017  ||  now_year > 9999)  ||
             (now_mon  < 1     ||  now_mon  > 12)    ||

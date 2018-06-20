@@ -252,7 +252,8 @@ extern int/*bool*/ NcbiParseIPRange(SIPRange* range, const char* str)
                     range->b    = SOCK_HostToNetLong(temp);
                     range->type = eIPRange_Network;
                     return addr  &&  !(addr & ~temp);
-                } else if (!ipv4  &&  d <= (sizeof(range->a.octet) << 3)) {
+                } else if (!ipv4
+                           &&  (size_t) d <= (sizeof(range->a.octet) << 3)) {
                     if (!d  ||  d == (sizeof(range->a.octet) << 3)) {
                         range->b    = 0;
                         range->type = eIPRange_Host;

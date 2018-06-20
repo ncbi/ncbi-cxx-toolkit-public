@@ -229,14 +229,14 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
     case MBEDTLS_ERR_NET_RECV_FAILED:
         if (sock->r_status != eIO_Success  &&
             sock->r_status != eIO_Unknown) {
-            status = sock->r_status;
+            status = (EIO_Status) sock->r_status;
         } else
             status = eIO_Unknown;
         break;
     case MBEDTLS_ERR_NET_SEND_FAILED:
         if (sock->w_status != eIO_Success  &&
             sock->w_status != eIO_Unknown) {
-            status = sock->w_status;
+            status = (EIO_Status) sock->w_status;
         } else
             status = eIO_Unknown;
         break;
@@ -503,8 +503,9 @@ static EIO_Status s_MbedTlsRead(void* session, void* buf, size_t n_todo,
 
     assert(session);
 
-    x_read = mbedtls_ssl_read((mbedtls_ssl_context*) session, buf, n_todo);
-    assert(x_read < 0  ||  x_read <= n_todo);
+    x_read = mbedtls_ssl_read((mbedtls_ssl_context*) session,
+                              (unsigned char*) buf, n_todo);
+    assert(x_read < 0  ||  (size_t) x_read <= n_todo);
 
     if (x_read <= 0) {
         status = x_ErrorToStatus(x_read, (mbedtls_ssl_context*) session,
@@ -527,8 +528,9 @@ static EIO_Status x_MbedTlsWrite(void* session, const void* data,
 
     assert(session);
 
-    x_written = mbedtls_ssl_write((mbedtls_ssl_context*)session, data, n_todo);
-    assert(x_written < 0  ||  x_written <= n_todo);
+    x_written = mbedtls_ssl_write((mbedtls_ssl_context*) session,
+                                  (const unsigned char*) data, n_todo);
+    assert(x_written < 0  ||  (size_t) x_written <= n_todo);
 
     if (x_written <= 0) {
         status = x_ErrorToStatus(x_written, (mbedtls_ssl_context*) session,

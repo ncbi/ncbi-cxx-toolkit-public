@@ -978,7 +978,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     size_t length;
     size_t user_dtab_length;
     char* new_dtab = NULL;
-    char* user_dtab_end;
+    const char* user_dtab_end;
     /* Allocate space for answer (will be expanded later, if needed) */
     infos = (SSERV_Info**)calloc(2, sizeof(SSERV_Info*));
     if (infos == NULL) {
@@ -1067,6 +1067,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     x_JSON_Array  *serviceEndpoints;
     x_JSON_Object *serviceEndpoint;
     unsigned int j = 0;
+    time_t now = 0;
     root_value = x_json_parse_string(lbos_answer);
     if (x_json_value_get_type(root_value) != JSONObject) {
         goto clean_and_exit;
@@ -1079,7 +1080,6 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     serviceEndpoints = 
         x_json_object_get_array(services, x_json_object_get_name(services, 0));
     /* Iterate through endpoints */
-    time_t now = 0;
     for (j = 0;  j < x_json_array_get_count(serviceEndpoints);  j++) {
         const char *host, *rate, *extra, *type;
         char* server_description;
@@ -1124,7 +1124,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
         length = strlen(descr_format) + strlen(type) + strlen(host) + 
                  5 /*length of port*/ + strlen(extra) + strlen(rate) +
                  40/*time*/;
-        server_description = malloc(sizeof(char) * length);
+        server_description = (char*) malloc(sizeof(char) * length);
         if (!now)
             now = time(0);
         sprintf(server_description, descr_format, type, host, 
@@ -1676,7 +1676,7 @@ static EHTTP_HeaderParse s_LBOS_ParseHeader(const char*      header,
     SLBOS_UserData* response_output;
     int             status_code = 0/*success code if any*/;
     /* For all we know, status message ends before \r\n */
-    char*           header_end;
+    const char*     header_end;
     char*           status_message;
     unsigned int    content_length;
     char*           content_length_pos;
