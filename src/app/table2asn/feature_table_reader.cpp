@@ -330,6 +330,7 @@ namespace
     }
 
 
+    //LCOV_EXCL_START
     CRef<CSeq_annot> FindORF(const CBioseq& bioseq)
     {
         if (bioseq.IsNa())
@@ -356,6 +357,7 @@ namespace
         }
         return CRef<CSeq_annot>();
     }
+    //LCOV_EXCL_STOP
 
     bool BioseqHasId(const CBioseq& seq, const CSeq_id* id)
     {
