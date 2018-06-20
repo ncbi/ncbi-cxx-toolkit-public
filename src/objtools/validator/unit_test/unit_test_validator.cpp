@@ -11027,6 +11027,36 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InvalidForType)
 }
 
 
+CRef<CUser_field> MakeStructuredCommentField(const string& label, const string& value)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetData().SetStr(value);
+    return field;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_828)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> gene = AddMiscFeature(prot, prot->GetSeq().GetLength() - 1);
+    gene->SetData().SetGene().SetLocus("x");
+
+    CRef<CSeqdesc> pgap(new CSeqdesc());
+    pgap->SetUser().SetObjectType(CUser_object::eObjectType_StructuredComment);
+    pgap->SetUser().SetData().push_back(MakeStructuredCommentField("StructuredCommentPrefix", "##Genome-Annotation-Data-START##"));
+    pgap->SetUser().SetData().push_back(MakeStructuredCommentField("Annotation Provider", "NCBI"));
+    entry->SetSet().SetDescr().Set().push_back(pgap);
+
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+}
+
+
 static CRef<CSeq_entry> BuildGoodSpliceNucProtSet (void)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet ();

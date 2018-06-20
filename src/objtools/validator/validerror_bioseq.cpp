@@ -6071,6 +6071,22 @@ void CValidError_bioseq::x_ReportPseudogeneConflict(CConstRef <CSeq_feat> gene, 
 }
 
 
+bool CValidError_bioseq::x_HasPGAPStructuredCommend(CBioseq_Handle bsh)
+{
+    CSeqdesc_CI di(bsh, CSeqdesc::e_User);
+    while (di) {
+        if (di->GetUser().HasField("StructuredCommentPrefix")) {
+            const CUser_field& field = di->GetUser().GetField("StructuredCommentPrefix");
+            if (field.IsSetData() && field.GetData().IsStr() && NStr::EqualNocase(field.GetData().GetStr(), "##Genome-Annotation-Data-START##")) {
+                return true;
+            }
+        }
+        ++di;
+    }
+    return false;
+}
+
+
 void CValidError_bioseq::ValidateSeqFeatContext(
     const CBioseq& seq)
 {
@@ -6240,7 +6256,9 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                         
                     case CSeqFeatData::e_Gene:
                         // report only if NOT standalone protein
-                        if ( !s_StandaloneProt(m_CurrentHandle) ) {
+                        // and NOT PGAP
+                        if ( !s_StandaloneProt(m_CurrentHandle) &&
+                            !x_HasPGAPStructuredCommend(m_CurrentHandle)) {
                             PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFeatureForProtein,
                                 "Invalid feature for a protein Bioseq.", feat);
                         }
