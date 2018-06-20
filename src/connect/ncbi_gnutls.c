@@ -236,12 +236,12 @@ static EIO_Status x_ErrorToStatus(int* error, gnutls_session_t session,
     else if (*error == GNUTLS_E_PULL_ERROR
              &&  sock->r_status != eIO_Success
              &&  sock->r_status != eIO_Unknown) {
-        status = sock->r_status;
+        status = (EIO_Status) sock->r_status;
     }
     else if (*error == GNUTLS_E_PUSH_ERROR
              &&  sock->w_status != eIO_Success
              &&  sock->w_status != eIO_Unknown) {
-        status = sock->w_status;
+        status = (EIO_Status) sock->w_status;
     }
     else if (gnutls_error_is_fatal(*error))
         status = eIO_Closed;
