@@ -1641,7 +1641,11 @@ void CFeatureItem::x_AddQualsIdx(
             }
         }
 
-        if (! suppressed) {
+        if (feat_gene_xref && ! suppressed && 
+            ! CGeneFinder::ResolveGeneXref(feat_gene_xref, ctx.GetTopLevelEntry())) {
+            gene_ref = feat_gene_xref;
+        } else if ((! feat_gene_xref || ! suppressed) &&
+                   subtype != CSeqFeatData::eSubtype_primer_bind) {
             CRef<CFeatureIndex> ft;
             bool is_mapped = false;
             if (parentFeatureItem) {
@@ -1669,7 +1673,7 @@ void CFeatureItem::x_AddQualsIdx(
                 CRef<CFeatureIndex> fsx = ft->GetBestGene();
                 if (fsx) {
                     const CMappedFeat mf = fsx->GetMappedFeat();
-                    if (subtype != CSeqFeatData::eSubtype_primer_bind || feat_gene_xref) {
+                    if (mf) {
                         gene_feat = &(mf.GetMappedFeature());
                         gene_ref = &(mf.GetData().GetGene());
                     }
