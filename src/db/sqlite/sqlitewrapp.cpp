@@ -466,7 +466,7 @@ CSQLITE_Connection::CSQLITE_Connection(CTempString     file_name,
     : m_FileName(file_name),
       m_Flags(flags),
       m_PageSize(kSQLITE_DefPageSize),
-      m_CacheSize(0),
+      m_CacheSize(2000),
       m_HandlePool(CSQLITE_HandleFactory(this)),
       m_InMemory(0)
 {
