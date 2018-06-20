@@ -1365,7 +1365,7 @@ void CBedReader::xSetFeatureColorFromItemRgb(
         int colorValue;
         int radix = (assumeHex ? 16 : 10);
         try {
-            colorValue = NStr::StringToInt(
+            colorValue = NStr::StringToULong(
                 itemRgbCopy, NStr::fDS_ProhibitFractions, radix);
         }
         catch (CStringException&) {

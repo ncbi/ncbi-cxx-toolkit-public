@@ -342,7 +342,7 @@ Seq-annot ::= {
             },
             {
               label str "color",
-              data str "1 226 64"
+              data str "209 164 121"
             }
           }
         },
@@ -384,7 +384,7 @@ Seq-annot ::= {
             },
             {
               label str "color",
-              data str "1 226 64"
+              data str "209 164 121"
             }
           }
         },
@@ -434,7 +434,7 @@ Seq-annot ::= {
             },
             {
               label str "color",
-              data str "1 226 64"
+              data str "209 164 121"
             }
           }
         },
