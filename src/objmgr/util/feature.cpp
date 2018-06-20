@@ -2964,7 +2964,7 @@ void CFeatTree::x_SetParent(CFeatInfo& info, CFeatInfo& parent)
 
 void CFeatTree::x_SetNoParent(CFeatInfo& info)
 {
-    _ASSERT(!info.IsSetParent());
+    // _ASSERT(!info.IsSetParent());
     _ASSERT(!info.m_Parent);
     m_RootInfo.m_Children.push_back(&info);
     info.m_IsSetParent = true;
