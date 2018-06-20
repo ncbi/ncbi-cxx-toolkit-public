@@ -2224,78 +2224,48 @@ static SpellFixData kSpellFixes[] = {
     { "mithocon", nullptr, false },
 };
 
-
-class CIdxObject : public CObject
-{
-public:
-    CIdxObject(size_t idx) :
-        m_idx(idx) {}
-
-    size_t GetIdx() const
-    {
-        return m_idx;
-    }
-
-private:
-    size_t m_idx;
-};
-
-
-static void FindSuspectTextInObject(const CSerialObject& obj, list<size_t>& misspells)
-{
-    for (CStdTypeConstIterator<string> it(obj); it; ++it) {
-        for (size_t i = 0; i < sizeof(kSpellFixes) / sizeof(kSpellFixes[0]); ++i) {
-            size_t pos = kSpellFixes[i].m_whole_word ? NStr::FindWord(*it, kSpellFixes[i].m_misspell) : NStr::Find(*it, kSpellFixes[i].m_misspell);
-            if (pos != NPOS) {
-                misspells.push_back(i);
-            }
-        }
-    }
-}
-
+static const size_t kSpellFixesSize = sizeof(kSpellFixes) / sizeof(kSpellFixes[0]);
 static const string kFixable = "Fixable";
 static const string kNonFixable = "Non-fixable";
 
-void  AddMisspellsToReport(const list<size_t>& misspells, CReportNode& node, const CSeq_feat& obj, CDiscrepancyContext& context)
-{
-    ITERATE (list<size_t>, misspell_idx, misspells) {
-        string subitem = string("[n] object[s] contain[S] ") + kSpellFixes[*misspell_idx].m_misspell;
-        bool autofix = kSpellFixes[*misspell_idx].m_correct != nullptr;
-        const string& fixable = (autofix ? kFixable : kNonFixable);
-        node[fixable][subitem].Add(*context.DiscrObj(obj, autofix, CRef<CIdxObject>(new CIdxObject(*misspell_idx))));
-    }
-}
 
-
-void  AddMisspellsToReport(const list<size_t>& misspells, CReportNode& node, const CSeqdesc& obj, CDiscrepancyContext& context)
+static void FindFlatfileText(const unsigned char* p, bool *result)
 {
-    ITERATE (list<size_t>, misspell_idx, misspells) {
-        string subitem = string("[n] object[s] contain[S] ") + kSpellFixes[*misspell_idx].m_misspell;
-        bool autofix = kSpellFixes[*misspell_idx].m_correct != nullptr;
-        const string& fixable = (autofix ? kFixable : kNonFixable);
-        node[fixable][subitem].Add(*context.SeqdescObj(obj, autofix, CRef<CIdxObject>(new CIdxObject(*misspell_idx))));
-    }
+#define report(x, y) result[x] = true, false
+#include "FLATFILE_FIND.inc"
+#undef report
 }
 
 
 DISCREPANCY_CASE(FLATFILE_FIND, COverlappingFeatures, eOncaller, "Flatfile representation of object contains suspect text")
 {
-// may need to rewrite
-    CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
-    CBioseq_Handle bioseq_h = context.GetScope().GetBioseqHandle(*bioseq);
-    for (CSeqdesc_CI descr(bioseq_h); descr; ++descr) {
-        list<size_t> misspells;
-        FindSuspectTextInObject(*descr, misspells);
-        if (!misspells.empty()) {
-            AddMisspellsToReport(misspells, m_Objs, *descr, context);
+    bool Found[kSpellFixesSize];
+    for (CSeqdesc_CI descr(context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq())); descr; ++descr) {
+        memset(Found, 0, kSpellFixesSize);
+        for (CStdTypeConstIterator<string> it(*descr); it; ++it) {
+            FindFlatfileText((const unsigned char*)it->c_str(), Found);
+        }
+        for (size_t i = 0; i < kSpellFixesSize; i++) {
+            if (Found[i]) {
+                string subitem = string("[n] object[s] contain[S] ") + kSpellFixes[i].m_misspell;
+                bool autofix = kSpellFixes[i].m_correct != nullptr;
+                const string& fixable = (autofix ? kFixable : kNonFixable);
+                m_Objs[fixable][subitem].Add(*context.SeqdescObj(*descr, autofix));
+            }
         }
     }
-    const vector<CConstRef<CSeq_feat> >& all = context.FeatAll();
-    ITERATE (vector<CConstRef<CSeq_feat>>, feat, all) {
-        list<size_t> misspells;
-        FindSuspectTextInObject(**feat, misspells);
-        if (!misspells.empty()) {
-            AddMisspellsToReport(misspells, m_Objs, **feat, context);
+    for (auto feat: context.FeatAll()) {
+        memset(Found, 0, kSpellFixesSize);
+        for (CStdTypeConstIterator<string> it(*feat); it; ++it) {
+            FindFlatfileText((const unsigned char*)it->c_str(), Found);
+        }
+        for (size_t i = 0; i < kSpellFixesSize; i++) {
+            if (Found[i]) {
+                string subitem = string("[n] object[s] contain[S] ") + kSpellFixes[i].m_misspell;
+                bool autofix = kSpellFixes[i].m_correct != nullptr;
+                const string& fixable = (autofix ? kFixable : kNonFixable);
+                m_Objs[fixable][subitem].Add(*context.DiscrObj(*feat, autofix));
+            }
         }
     }
 }
@@ -2323,25 +2293,40 @@ static bool FixTextInObject(CSerialObject* obj, size_t misspell_idx)
 
 DISCREPANCY_AUTOFIX(FLATFILE_FIND)
 {
+    bool Found[kSpellFixesSize];
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
-    NON_CONST_ITERATE (TReportObjectList, it, list) {
-        if ((*it)->CanAutofix()) {
-            CDiscrepancyObject* dobj = dynamic_cast<CDiscrepancyObject*>(it->GetPointer());
-            const CObject* cur_obj_ptr = dobj->GetObject().GetPointer();
+    for (auto it: list) {
+        if (it->CanAutofix()) {
+            const CObject* cur_obj_ptr = it->GetObject();
             const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(cur_obj_ptr);
             const CSeqdesc* descr = dynamic_cast<const CSeqdesc*>(cur_obj_ptr);
-            size_t misspell_idx = dynamic_cast<const CIdxObject*>(dobj->GetMoreInfo().GetPointer())->GetIdx();
             if (feat) {
-                if (FixTextInObject(const_cast<CSeq_feat*>(feat), misspell_idx)) {
-                    ++n;
-                    dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                memset(Found, 0, kSpellFixesSize);
+                for (CStdTypeConstIterator<string> it(*feat); it; ++it) {
+                    FindFlatfileText((const unsigned char*)it->c_str(), Found);
+                }
+                for (size_t i = 0; i < kSpellFixesSize; i++) {
+                    if (Found[i]) {
+                        if (FixTextInObject(const_cast<CSeq_feat*>(feat), i)) {
+                            dynamic_cast<CDiscrepancyObject*>(&*it)->SetFixed();
+                            ++n;
+                        }
+                    }
                 }
             }
             else if (descr) {
-                if (FixTextInObject(const_cast<CSeqdesc*>(descr), misspell_idx)) {
-                    ++n;
-                    dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->SetFixed();
+                memset(Found, 0, kSpellFixesSize);
+                for (CStdTypeConstIterator<string> it(*descr); it; ++it) {
+                    FindFlatfileText((const unsigned char*)it->c_str(), Found);
+                }
+                for (size_t i = 0; i < kSpellFixesSize; i++) {
+                    if (Found[i]) {
+                        if (FixTextInObject(const_cast<CSeqdesc*>(descr), i)) {
+                            dynamic_cast<CDiscrepancyObject*>(&*it)->SetFixed();
+                            ++n;
+                        }
+                    }
                 }
             }
         }
