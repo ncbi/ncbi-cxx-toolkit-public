@@ -3,7 +3,7 @@
 #!processor NCBI annotwriter
 ##sequence-region NT_187557.1 1 75005
 ##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-NT_187557.1	RefSeq	region	1	75005	.	+	.	ID=id-1;Dbxref=taxon:9606;Name=6;chromosome=6;gbkey=Src;genome=genomic;map=6q27;mol_type=genomic DNA
+NT_187557.1	RefSeq	region	1	75005	.	+	.	ID=NT_187557.1:1..75005;Dbxref=taxon:9606;Name=6;chromosome=6;gbkey=Src;genome=genomic;map=6q27;mol_type=genomic DNA
 NT_187557.1	RefSeq	sequence_feature	1	39535	.	+	.	ID=id-1;Note=Anchor sequence. This sequence is derived from alt loci or patch scaffold components that are also components of the primary assembly unit. It was included to ensure a robust alignment of this scaffold to the primary assembly unit. Anchor component: AL121956.21;gbkey=misc_feature
 NT_187557.1	BestRefSeq	gene	16390	36368	.	+	.	ID=gene-LOC101929297;Dbxref=GeneID:101929297;Name=LOC101929297;description=uncharacterized LOC101929297;gbkey=Gene;gene=LOC101929297;gene_biotype=lncRNA
 NT_187557.1	BestRefSeq	lnc_RNA	16390	36368	.	+	.	ID=id-LOC101929297;Parent=gene-LOC101929297;Dbxref=GeneID:101929297,Genbank:NR_125862.1;Name=NR_125862.1;gbkey=ncRNA;gene=LOC101929297;product=uncharacterized LOC101929297;transcript_id=NR_125862.1

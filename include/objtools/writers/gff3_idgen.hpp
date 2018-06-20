@@ -61,6 +61,9 @@ public:
 
     std::string GetGffId();
 
+    std::string GetGffSourceId(
+        CBioseq_Handle);
+
     std::string GetNextGffExonId(
         const std::string&);
 

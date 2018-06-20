@@ -3,7 +3,7 @@
 #!processor NCBI annotwriter
 ##sequence-region NW_004504305.1 1 74013
 ##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-NW_004504305.1	RefSeq	region	1	74013	.	+	.	ID=id-1;Dbxref=taxon:9606;Name=22;chromosome=22;gbkey=Src;genome=genomic;map=22q13.2;mol_type=genomic DNA
+NW_004504305.1	RefSeq	region	1	74013	.	+	.	ID=NW_004504305.1:1..74013;Dbxref=taxon:9606;Name=22;chromosome=22;gbkey=Src;genome=genomic;map=22q13.2;mol_type=genomic DNA
 NW_004504305.1	RefSeq	sequence_feature	1	4404	.	+	.	ID=id-1;Note=Anchor sequence. This sequence is derived from alt loci or patch scaffold components that are also components of the primary assembly unit. It was included to ensure a robust alignment of this scaffold to the primary assembly unit. Anchor component: Z82192.1;gbkey=misc_feature
 NW_004504305.1	BestRefSeq	gene	1	1783	.	+	.	ID=gene-PHETA2;Dbxref=GeneID:150368,HGNC:HGNC:27161,MIM:614240;Name=PHETA2;description=family with sequence similarity 109 member B;gbkey=Gene;gene=PHETA2;gene_biotype=protein_coding;gene_synonym=IPIP27B,Ses2;partial=true;start_range=.,1
 NW_004504305.1	BestRefSeq	mRNA	1	1783	.	+	.	ID=rna-NM_001002034.2;Parent=gene-PHETA2;Dbxref=GeneID:150368,Genbank:NM_001002034.2,HGNC:HGNC:27161,MIM:614240;Name=NM_001002034.2;Note=The RefSeq transcript aligns at 76%25 coverage compared to this genomic sequence;exception=annotated by transcript or proteomic data;gbkey=mRNA;gene=PHETA2;inference=similar to RNA sequence%2C mRNA (same species):RefSeq:NM_001002034.2;partial=true;product=PH domain containing endocytic trafficking adaptor 2;start_range=.,1;transcript_id=NM_001002034.2

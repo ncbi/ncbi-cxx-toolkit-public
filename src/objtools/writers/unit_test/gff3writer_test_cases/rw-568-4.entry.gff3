@@ -3,7 +3,7 @@
 #!processor NCBI annotwriter
 ##sequence-region GU182347.1 1 223161
 ##species https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606
-GU182347.1	Genbank	region	1	223161	.	+	.	ID=id-1;Dbxref=taxon:9606;Name=19;chromosome=19;gbkey=Src;genome=genomic;haplotype=FH15 KIR B;map=19q13.4;mol_type=genomic DNA
+GU182347.1	Genbank	region	1	223161	.	+	.	ID=GU182347.1:1..223161;Dbxref=taxon:9606;Name=19;chromosome=19;gbkey=Src;genome=genomic;haplotype=FH15 KIR B;map=19q13.4;mol_type=genomic DNA
 GU182347.1	Genbank	sequence_feature	475	214381	.	+	.	ID=id-GU182347.1:475..214381;Note=KIR gene cluster;gbkey=misc_feature
 GU182347.1	Genbank	gene	475	12032	.	+	.	ID=gene-KIR3DL3;Name=KIR3DL3;end_range=12032,.;gbkey=Gene;gene=KIR3DL3;gene_biotype=protein_coding;partial=true;start_range=.,475
 GU182347.1	Genbank	mRNA	475	12032	.	+	.	ID=rna-KIR3DL3;Parent=gene-KIR3DL3;end_range=12032,.;gbkey=mRNA;gene=KIR3DL3;partial=true;product=killer cell immunoglobulin-like receptor three domains long cytoplasmic tail 3;start_range=.,475

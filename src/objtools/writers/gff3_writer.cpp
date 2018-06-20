@@ -2967,7 +2967,7 @@ bool CGff3Writer::xAssignSourceAttributes(
     CBioseq_Handle bsh)
 //  ----------------------------------------------------------------------------
 {
-    record.SetRecordId(m_idGenerator.GetGffId());
+    record.SetRecordId(m_idGenerator.GetGffSourceId(bsh));
     return (xAssignSourceAttributeGbKey(record)  &&
         xAssignSourceAttributeMolType(record, bsh)  &&
         xAssignSourceAttributeIsCircular(record, bsh)  &&

@@ -89,7 +89,8 @@ string CGffIdGenerator::GetGffId(
 {
     auto id = mf.GetNamedQual("ID");
     if (id.empty()) {
-        switch(mf.GetFeatSubtype()) {
+        auto subType = mf.GetFeatSubtype();
+        switch(subType) {
         default:
             id = xGetGenericId(mf, pFeatTree);
             break;
@@ -117,7 +118,41 @@ string CGffIdGenerator::GetGffId()
 {
     return string("id-") + NStr::NumericToString(++mLastTrulyGenericSuffix);
 }
-    
+   
+//  -----------------------------------------------------------------------------
+string CGffIdGenerator::GetGffSourceId(
+    CBioseq_Handle bsh)
+//  -----------------------------------------------------------------------------
+{
+    string locationId("unknown");
+
+    string bestId;
+    CConstRef<CSeq_id> pId = bsh.GetNonLocalIdOrNull();
+    if (pId) {
+        CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*pId);
+        if (CWriteUtil::GetBestId(idh, bsh.GetScope(), bestId)) {
+            locationId = bestId;
+        }
+    }
+    else {
+        auto ids = bsh.GetId();
+        if (!ids.empty()) {
+            auto id = ids.front();
+            CWriteUtil::GetBestId(id, bsh.GetScope(), bestId);
+            locationId = bestId;
+        }
+    }
+
+    string seqStart = "1";//always for source
+    string seqStop = NStr::NumericToString(bsh.GetBioseqLength());
+
+    locationId += ":";
+    locationId += seqStart;
+    locationId += "..";
+    locationId += seqStop;
+    return locationId;
+}
+ 
 //  -----------------------------------------------------------------------------
 void CGffIdGenerator::Reset()
 //  -----------------------------------------------------------------------------
