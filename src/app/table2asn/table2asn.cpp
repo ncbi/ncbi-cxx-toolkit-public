@@ -48,6 +48,7 @@
 
 #include <util/line_reader.hpp>
 #include <objtools/edit/remote_updater.hpp>
+#include <objtools/cleanup/cleanup.hpp>
 
 #include "multireader.hpp"
 #include "table2asn_context.hpp"
@@ -892,7 +893,8 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     //m_context.MakeGenomeCenterId(*entry);
 
-    CSeq_entry_EditHandle entry_edit_handle = m_context.m_scope->AddTopLevelSeqEntry(*entry).GetEditHandle();
+    CSeq_entry_Handle seh = m_context.m_scope->AddTopLevelSeqEntry(*entry);
+    CSeq_entry_EditHandle entry_edit_handle = seh.GetEditHandle();
 
     fr.MakeGapsFromFeatures(entry_edit_handle);
 
@@ -904,6 +906,8 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     {
         VisitAllFeatures(entry_edit_handle, [this](CSeq_feat& feature){m_context.RemoveProteinIdsQuals(feature); });
     }
+
+    CCleanup::ConvertPubFeatsToPubDescs(seh);
 
     if (m_context.m_RemotePubLookup)
     {

@@ -210,25 +210,9 @@ namespace
         }
     }
 
-    void PostProcessFeatureTable(CSeq_entry& entry, CSeq_annot::TData::TFtable& ftable, int& id)
+    void PostProcessFeatureTable(CSeq_entry& entry, CSeq_annot::TData::TFtable& ftable)
     {
         ftable.sort(SSeqAnnotCompare());
-        for (CSeq_annot::C_Data::TFtable::iterator it = ftable.begin(); it != ftable.end(); )
-        {
-            CSeq_feat& feature = **it;
-            if (feature.IsSetData())
-            {
-                if (feature.GetData().IsPub())
-                {
-                    CRef<CSeqdesc> pub_desc(new CSeqdesc);
-                    pub_desc->SetPub(feature.SetData().SetPub());
-                    entry.SetDescr().Set().push_back(pub_desc);
-                    ftable.erase(it++);
-                    continue; // avoid iterator increment
-                }
-            }
-            it++;
-        }
     }
 
     bool GetProteinName(string& protein_name, const CSeq_feat& cds)
@@ -291,6 +275,10 @@ namespace
             if (!hid || !it->IsBetter(hid)) {
                 hid = *it;
             }
+        }
+
+        if (hid) {
+            hid.GetSeqId()->GetLabel(&id_base, CSeq_id::eContent);
         }
 
         return GetNewProteinId(seh.GetScope(), id_base);
@@ -948,7 +936,7 @@ void CFeatureTableReader::_MoveCdRegions(CSeq_entry_Handle entry_h, const CBiose
 {
     // sort and number ids
     CSeq_entry& entry = *(CSeq_entry*)entry_h.GetEditHandle().GetSeq_entryCore().GetPointerOrNull();
-    PostProcessFeatureTable(entry, seq_ftable, m_local_id_counter);
+    PostProcessFeatureTable(entry, seq_ftable);
     for (CSeq_annot::TData::TFtable::iterator feat_it = seq_ftable.begin(); seq_ftable.end() != feat_it;)
     {
         CRef<CSeq_feat> feature = (*feat_it);
