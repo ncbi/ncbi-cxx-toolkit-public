@@ -486,6 +486,9 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
     err_count = m_ErrorCounters.GetSatToSatNameError();
     err_sum += err_count;
     reply.SetInteger("SatToSatNameErrorCount", err_count);
+    err_count = m_ErrorCounters.GetCanonicalSeqIdError();
+    err_sum += err_count;
+    reply.SetInteger("CanonicalSeqIdErrorCount", err_count);
 
     reply.SetInteger("TotalErrorCount", err_sum);
 

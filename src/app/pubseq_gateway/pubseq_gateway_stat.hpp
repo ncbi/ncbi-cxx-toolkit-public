@@ -71,6 +71,9 @@ public:
     void IncSatToSatName(void)
     { ++m_SatToSatNameError; }
 
+    void IncCanonicalSeqIdError(void)
+    { ++m_CanonicalSeqIdError; }
+
 
     uint64_t GetBadUrlPath(void) const
     { return m_BadUrlPath; }
@@ -99,6 +102,9 @@ public:
     uint64_t GetSatToSatNameError(void) const
     { return m_SatToSatNameError; }
 
+    uint64_t GetCanonicalSeqIdError(void) const
+    { return m_CanonicalSeqIdError; }
+
 private:
     atomic_uint_fast64_t        m_BadUrlPath;
     atomic_uint_fast64_t        m_InsufficientArguments;
@@ -109,6 +115,7 @@ private:
     atomic_uint_fast64_t        m_GetBlobError;         // 502
     atomic_uint_fast64_t        m_UnknownError;         // 503
     atomic_uint_fast64_t        m_SatToSatNameError;
+    atomic_uint_fast64_t        m_CanonicalSeqIdError;
 };
 
 

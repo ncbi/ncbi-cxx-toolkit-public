@@ -463,6 +463,8 @@ bool CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
     if (!msg.empty()) {
         size_t      item_id = m_BlobRequest.m_ItemId;
 
+        CPubseqGatewayApp::GetInstance()->GetErrorCounters().
+                                                     IncCanonicalSeqIdError();
         ERR_POST(msg);
         string  header = GetBioseqMessageHeader(item_id, msg.size(),
                                                 status, status,
