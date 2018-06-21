@@ -66,10 +66,11 @@ fi
 
 # Second run
 unset NCBI_CONFIG_PATH NCBI_CONFIG_OVERRIDES
-case " $FEATURES " in
-    *\ XCODE\ * ) ;;
-    *           ) export NCBI_DONT_USE_LOCAL_CONFIG=1 ;;
-esac
+if $CHECK_EXEC ./test_sub_reg -dryrun; then
+    export NCBI_DONT_USE_LOCAL_CONFIG=1
+else
+    unset HOME # still need ., since executable is elsewhere
+fi
 
 if [[ "$unamestr" == MINGW* ]] || [[ "$unamestr" == CYGWIN* ]]; then
     unset NCBI_CONFIG_E__TEST NCBI_CONFIG__TEST__E NCBI_CONFIG__TEST__EX
