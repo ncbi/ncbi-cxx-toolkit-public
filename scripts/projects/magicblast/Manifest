@@ -21,7 +21,7 @@ APP: magicblast makeblastdb
 
 POSTBUILD: $srcdir/scripts/projects/magicblast/post_build/make_installers.py -v $version $platform $installdir "$tarball" $bindir
 
-DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --with-build-root=$srcdir/ReleaseMT --with-downloaded-vdb --with-static-vdb
+DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --with-build-root=$srcdir/ReleaseMT
 
 # Each line describes a single configuration
 # The format is as follows:
@@ -34,9 +34,9 @@ DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --
 # ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
 # that. The build-root is needed so that rpmbuild can find the proper directories
 # to copy the binaries from
-Linux64-Centos     : icc : ICC.sh           --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --with-downloaded-vdb --with-static-vdb --without-gnutls --without-gcrypt
-#Linux64-Centos     : gcc : GCC.sh           --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --with-downloaded-vdb --with-static-vdb
-#Linux64-Centos     : gcc-debug : GCC.sh                        --with-strip --with-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-downloaded-vdb
+Linux64-Centos     : icc : ICC.sh           --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --with-vdb=/panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt
+#Linux64-Centos     : gcc : GCC.sh           --with-bin-release --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-experimental=Int8GI --with-vdb=/panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb
+#Linux64-Centos     : gcc-debug : GCC.sh                        --with-strip --with-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-vdb=/panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb
 
 DEFAULT_CONFIGURATIONS: Linux64-Centos:icc
 #DEFAULT_CONFIGURATIONS: Linux64-Centos:gcc
@@ -45,6 +45,6 @@ Win64         : plain : static  64  ReleaseDLL <ENV>NCBI_CONFIG____ENABLEDUSERRE
 
 #IntelMAC            : gcc : GCC.sh   --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-downloaded-vdb --with-static-vdb
 #IntelMAC            : clang     : Clang.sh          --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-downloaded-vdb --with-static-vdb --without-gnutls --without-gcrypt
-IntelMAC    : clang     : Clang.sh    --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-downloaded-vdb --with-static-vdb --without-gnutls --without-gcrypt
+IntelMAC    : clang     : Clang.sh    --with-bin-release --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public --with-experimental=Int8GI --with-vdb=/panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software/vdb --with-static-vdb --without-gnutls --without-gcrypt
 
 USE_COMPONENTS
