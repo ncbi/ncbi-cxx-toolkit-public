@@ -1668,6 +1668,9 @@ void CFeatureItem::x_AddQualsIdx(
                 }
             } else {
                 ft = bsx->GetFeatIndex (m_Feat);
+                if (! ft) {
+                    ft = bsx->GetFeatureForProduct();
+                }
             }
             if (ft && (! is_mapped)) {
                 CRef<CFeatureIndex> fsx = ft->GetBestGene();
