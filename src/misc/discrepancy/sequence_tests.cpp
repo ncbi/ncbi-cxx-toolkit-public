@@ -2241,7 +2241,7 @@ DISCREPANCY_CASE(FLATFILE_FIND, COverlappingFeatures, eOncaller, "Flatfile repre
 {
     bool Found[kSpellFixesSize];
     for (CSeqdesc_CI descr(context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq())); descr; ++descr) {
-        memset(Found, 0, kSpellFixesSize);
+        fill(Found, Found + kSpellFixesSize, 0);
         for (CStdTypeConstIterator<string> it(*descr); it; ++it) {
             FindFlatfileText((const unsigned char*)it->c_str(), Found);
         }
@@ -2255,7 +2255,7 @@ DISCREPANCY_CASE(FLATFILE_FIND, COverlappingFeatures, eOncaller, "Flatfile repre
         }
     }
     for (auto feat: context.FeatAll()) {
-        memset(Found, 0, kSpellFixesSize);
+        fill(Found, Found + kSpellFixesSize, 0);
         for (CStdTypeConstIterator<string> it(*feat); it; ++it) {
             FindFlatfileText((const unsigned char*)it->c_str(), Found);
         }
@@ -2302,7 +2302,7 @@ DISCREPANCY_AUTOFIX(FLATFILE_FIND)
             const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(cur_obj_ptr);
             const CSeqdesc* descr = dynamic_cast<const CSeqdesc*>(cur_obj_ptr);
             if (feat) {
-                memset(Found, 0, kSpellFixesSize);
+                fill(Found, Found + kSpellFixesSize, 0);
                 for (CStdTypeConstIterator<string> it(*feat); it; ++it) {
                     FindFlatfileText((const unsigned char*)it->c_str(), Found);
                 }
@@ -2316,7 +2316,7 @@ DISCREPANCY_AUTOFIX(FLATFILE_FIND)
                 }
             }
             else if (descr) {
-                memset(Found, 0, kSpellFixesSize);
+                fill(Found, Found + kSpellFixesSize, 0);
                 for (CStdTypeConstIterator<string> it(*descr); it; ++it) {
                     FindFlatfileText((const unsigned char*)it->c_str(), Found);
                 }
