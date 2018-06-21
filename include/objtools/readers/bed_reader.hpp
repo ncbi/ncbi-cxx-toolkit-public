@@ -254,19 +254,19 @@ protected:
         CRef<CSeq_annot>&,
         ILineErrorListener*);
 
-    bool xAppendFeatureGene(
+    CRef<CSeq_feat> xAppendFeatureGene(
         const vector<string>&,
         CRef<CSeq_annot>&,
         unsigned int,
         ILineErrorListener*);
 
-    bool xAppendFeatureRna(
+    CRef<CSeq_feat> xAppendFeatureRna(
         const vector<string>&,
         CRef<CSeq_annot>&,
         unsigned int,
         ILineErrorListener*);
 
-    bool xAppendFeatureCds(
+    CRef<CSeq_feat> xAppendFeatureCds(
         const vector<string>&,
         CRef<CSeq_annot>&,
         unsigned int,

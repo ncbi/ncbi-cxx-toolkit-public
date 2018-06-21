@@ -357,18 +357,33 @@ bool CBedReader::xParseFeatureGeneModelFormat(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-     unsigned int baseId = 3*m_CurrentFeatureCount;
+    unsigned int baseId = 3*m_CurrentFeatureCount;
 
-   if (!xAppendFeatureGene(fields, annot, baseId, pEC)) {
+    CRef<CSeq_feat> pGene = xAppendFeatureGene(fields, annot, baseId, pEC);
+    if (!pGene) {
         return false;
     }
-    if (xContainsCdsFeature(fields)  &&  
-            !xAppendFeatureCds(fields, annot, baseId, pEC)) {
-        return false;
+
+    CRef<CSeq_feat> pRna;
+    if (xContainsCdsFeature(fields)) {
+        pRna = xAppendFeatureCds(fields, annot, baseId, pEC);
+        if (!pRna) {
+            return false;
+        }
     }
-    if (xContainsRnaFeature(fields)  &&
-            !xAppendFeatureRna(fields, annot, baseId, pEC)) {
-        return false;
+
+    CRef<CSeq_feat> pCds;
+    if (xContainsRnaFeature(fields)) {
+        pCds = xAppendFeatureRna(fields, annot, baseId, pEC);
+        if (!pCds) {
+            return false;
+        }
+    }
+
+    if (pRna  &&  pCds) {
+        CRef<CSeq_loc> pCdsLoc(new CSeq_loc);
+        pCdsLoc->Assign(pCds->GetLocation());
+        pRna->SetLocation(*pCdsLoc);
     }
     return true;
 }
@@ -401,7 +416,7 @@ bool CBedReader::xAppendFeatureChrom(
 }
 
 //  ----------------------------------------------------------------------------
-bool CBedReader::xAppendFeatureGene(
+CRef<CSeq_feat> CBedReader::xAppendFeatureGene(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
     unsigned int baseId,
@@ -420,11 +435,11 @@ bool CBedReader::xAppendFeatureGene(
     catch(CObjReaderLineException& err) {
         //m_currentId.clear();
         ProcessError(err, pEC);
-        return false;
+        return CRef<CSeq_feat>();
     }
     ftable.push_back(feature);
     m_currentId = fields[0];
-    return true;
+    return feature;
 }
 
 //  ----------------------------------------------------------------------------
@@ -454,7 +469,7 @@ bool CBedReader::xAppendFeatureThick(
 }
 
 //  ----------------------------------------------------------------------------
-bool CBedReader::xAppendFeatureCds(
+CRef<CSeq_feat> CBedReader::xAppendFeatureCds(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
     unsigned int baseId,
@@ -473,10 +488,10 @@ bool CBedReader::xAppendFeatureCds(
     catch(CObjReaderLineException& err) {
         //m_currentId.clear();
         ProcessError(err, pEC);
-        return false;
+        return CRef<CSeq_feat>();
     }
     ftable.push_back(feature);
-    return true;
+    return feature;
 }
 
 //  ----------------------------------------------------------------------------
@@ -506,7 +521,7 @@ bool CBedReader::xAppendFeatureBlock(
 }
 
 //  ----------------------------------------------------------------------------
-bool CBedReader::xAppendFeatureRna(
+CRef<CSeq_feat> CBedReader::xAppendFeatureRna(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
     unsigned int baseId,
@@ -525,10 +540,10 @@ bool CBedReader::xAppendFeatureRna(
     catch(CObjReaderLineException& err) {
         //m_currentId.clear();
         ProcessError(err, pEC);
-        return false;
+        return CRef<CSeq_feat>();
     }
     ftable.push_back(feature);
-    return true;
+    return feature;
 }
 
 
