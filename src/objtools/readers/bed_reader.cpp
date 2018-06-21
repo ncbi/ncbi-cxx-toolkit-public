@@ -90,12 +90,101 @@
 #include <objtools/error_codes.hpp>
 
 #include <algorithm>
+#include <deque>
 
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_RepMask
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
+//  ============================================================================
+class CLinePreBuffer
+//  ============================================================================
+{
+public:
+    using LinePreIt = deque<string>::const_iterator;
+
+    CLinePreBuffer(
+        ILineReader& lineReader):
+        mLineReader(lineReader),
+        mLineNumber(0)
+    {};
+
+    virtual ~CLinePreBuffer() {};
+
+    bool FillBuffer(
+        size_t numLines)
+    {
+        CTempString line;
+        while (numLines  &&  !mLineReader.AtEOF()) {
+            line = *++mLineReader;
+            NStr::TruncateSpacesInPlace(line);
+            mBuffer.push_back(line);
+            if (!IsCommentLine(line)) {
+                --numLines;
+            }
+        }
+        return true;
+    }
+            
+    virtual bool IsCommentLine(
+        const CTempString& line)
+    {
+        return NStr::StartsWith(line, "#");
+    };
+
+    bool GetLine(
+        string& line)
+    {
+        while (!mBuffer.empty()  ||  !mLineReader.AtEOF()) {
+            string temp;
+            if (!mBuffer.empty()) {
+                temp = mBuffer.front();
+                mBuffer.pop_front();
+            }
+            else {
+                temp = *++mLineReader;
+                NStr::TruncateSpacesInPlace(temp);
+            }
+            if (!IsCommentLine(temp)) {
+                line = temp;
+                ++mLineNumber;
+                return true;
+            }
+        }
+        return false;   
+    };
+
+    bool UngetLine(
+        const string& line)
+    {
+        mBuffer.push_front(line);
+        --mLineNumber;
+        return true;
+    }
+
+    size_t LineNumber() const
+    {
+        return mLineNumber;
+    };
+
+    LinePreIt begin()
+    {
+        return mBuffer.begin();
+    };
+
+    LinePreIt end()
+    {
+        return mBuffer.end();
+    };
+
+protected:
+    ILineReader& mLineReader;
+    deque<string> mBuffer;
+    size_t mLineNumber;
+};
+
 
 //  ----------------------------------------------------------------------------
 CBedReader::CBedReader(
@@ -134,11 +223,11 @@ CBedReader::ReadSeqAnnot(
 //  ----------------------------------------------------------------------------                
 CRef< CSeq_annot >
 CBedReader::ReadSeqAnnot(
-    ILineReader& lr,
+    ILineReader& lineReader,
     ILineErrorListener* pEC ) 
 //  ----------------------------------------------------------------------------                
 {
-    xProgressInit(lr);
+    xProgressInit(lineReader);
 
     CRef<CSeq_annot> annot;
     CRef<CAnnot_descr> desc;
@@ -152,42 +241,97 @@ CBedReader::ReadSeqAnnot(
     xParseTrackLine("track", pEC);
 
     string line;
-    while (xGetLine(lr, line)) {
+    CLinePreBuffer preBuffer(lineReader);
 
-        // interact with calling party
-        if (IsCanceled()) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
-                eDiag_Info,
-                0,
-                "Reader stopped by user.",
-                ILineError::eProblem_ProgressInfo));
-            ProcessError(*pErr, pEC);
-            return CRef<CSeq_annot>();
-        }
-        xReportProgress(pEC);
+    try {
+        xDetermineLikelyColumnCount(preBuffer, pEC);
+        while (preBuffer.GetLine(line)) {
+            m_uLineNumber = preBuffer.LineNumber();
+            // interact with calling party
+            if (IsCanceled()) {
+                AutoPtr<CObjReaderLineException> pErr(
+                    CObjReaderLineException::Create(
+                    eDiag_Info,
+                    0,
+                    "Reader stopped by user.",
+                    ILineError::eProblem_ProgressInfo));
+                ProcessError(*pErr, pEC);
+                return CRef<CSeq_annot>();
+            }
+            xReportProgress(pEC);
 
-        if (xIsTrackLine(line)) {
-            if (!m_CurrentFeatureCount) {
-                xParseTrackLine(line, pEC);
+            if (xIsTrackLine(line)) {
+                if (!m_CurrentFeatureCount) {
+                    xParseTrackLine(line, pEC);
+                    continue;
+                }
+                preBuffer.UngetLine(line);
+                xDetermineLikelyColumnCount(preBuffer, pEC);
+                break;
+            }
+            if (xParseBrowserLine(line, annot, pEC)) {
                 continue;
             }
-            xUngetLine(lr);
-            break;
-        }
-        if (xParseBrowserLine(line, annot, pEC)) {
-            continue;
-        }
-        if (xParseFeature(line, annot, pEC)) {
-            continue;
+            if (xParseFeature(line, annot, pEC)) {
+                continue;
+            }
         }
     }
+    catch(CObjReaderLineException& err) {
+        ProcessError(err, pEC);
+        return CRef<CSeq_annot>();
+    }
+
     //  Only return a valid object if there was at least one feature
     if (0 == m_CurrentFeatureCount) {
         return CRef<CSeq_annot>();
     }
     xPostProcessAnnot(annot, pEC);
     return annot;
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedReader::xDetermineLikelyColumnCount(
+    CLinePreBuffer& preBuffer,
+    ILineErrorListener* pEc)
+//  ----------------------------------------------------------------------------
+{
+    using LineIt = CLinePreBuffer::LinePreIt;
+
+    AutoPtr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+            eDiag_Fatal,
+            0,
+            "Bad data line: Inconsistent column count." ) );
+
+    const size_t MIN_SAMPLE_SIZE = 50;
+    preBuffer.FillBuffer(MIN_SAMPLE_SIZE);
+
+    size_t realColumnCount = 0;
+    m_columncount = 0;
+    for (LineIt lineIt = preBuffer.begin(); lineIt != preBuffer.end(); ++lineIt) {
+        const auto& line = *lineIt;
+        if (preBuffer.IsCommentLine(line)) {
+            continue;
+        }
+        if (this->xIsTrackLine(line)) {
+            continue;
+        }
+        if (this->xIsBrowserLine(line)) {
+            continue;
+        }
+        vector<string> columns;
+        NStr::Split(line, " \t", columns, NStr::fSplit_MergeDelimiters);
+        xCleanColumnValues(columns);
+        if (realColumnCount == 0 ) {
+            realColumnCount = columns.size();
+        }
+        if (realColumnCount != columns.size()) {
+            pErr->Throw();
+        }
+    } 
+    m_columncount = realColumnCount;
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -234,9 +378,6 @@ CBedReader::xParseTrackLine(
         if (col2_is_numeric  &&  col3_is_numeric) {
             return false;
         }
-    }
-    if ( !m_currentId.empty() ) {
-        m_columncount = 0;
     }
     m_currentId.clear();
     if (!CReaderBase::xParseTrackLine(strLine, pEC)) {
@@ -302,18 +443,13 @@ bool CBedReader::xParseFeature(
     count++;
 
     if (fields.size() != m_columncount) {
-        if ( 0 == m_columncount ) {
-            m_columncount = fields.size();
-        }
-        else {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
-                eDiag_Error,
-                0,
-                "Bad data line: Inconsistent column count." ) );
-            ProcessError(*pErr, pEC );
-            return false;
-        }
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            "Bad data line: Inconsistent column count." ) );
+        ProcessError(*pErr, pEC );
+        return false;
     }
 
     if (m_iFlags & CBedReader::fThreeFeatFormat) {
@@ -1377,7 +1513,7 @@ void CBedReader::xSetFeatureColorFromItemRgb(
             assumeHex = true;
             itemRgbCopy = itemRgbCopy.substr(1);
         }
-        int colorValue;
+        unsigned long colorValue;
         int radix = (assumeHex ? 16 : 10);
         try {
             colorValue = NStr::StringToULong(
@@ -1570,18 +1706,13 @@ CBedReader::xReadBedRecordRaw(
     }
 
     if (columns.size() != m_columncount) {
-        if ( 0 == m_columncount ) {
-            m_columncount = columns.size();
-        }
-        else {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
-                eDiag_Error,
-                0,
-                "Bad data line: Inconsistent column count." ) );
-            ProcessError(*pErr, pMessageListener);
-            return false;
-        }
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            "Bad data line: Inconsistent column count." ) );
+        ProcessError(*pErr, pMessageListener);
+        return false;
     }
 
     //assign columns to record:
@@ -1809,13 +1940,13 @@ CBedReader::xAssignBedColumnCount(
     if(m_columncount < 3) {
         return;
     }
-    CRef<CUser_object> columnCountUser( new CUser_object() );
-    columnCountUser->SetType().SetStr( "NCBI_BED_COLUMN_COUNT" );
-    columnCountUser->AddField("NCBI_BED_COLUMN_COUNT", int ( m_columncount ) );
+    CRef<CUser_object> columnCountUser(new CUser_object());
+    columnCountUser->SetType().SetStr("NCBI_BED_COLUMN_COUNT");
+    columnCountUser->AddField("NCBI_BED_COLUMN_COUNT", int (m_columncount));
     
-    CRef<CAnnotdesc> userDesc( new CAnnotdesc() );
-    userDesc->SetUser().Assign( *columnCountUser );
-    annot.SetDesc().Set().push_back( userDesc );
+    CRef<CAnnotdesc> userDesc(new CAnnotdesc());
+    userDesc->SetUser().Assign(*columnCountUser);
+    annot.SetDesc().Set().push_back(userDesc);
 }                   
 
 END_objects_SCOPE

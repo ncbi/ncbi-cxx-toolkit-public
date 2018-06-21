@@ -275,7 +275,6 @@ CReaderBase::ProcessError(
             "Error allowance exceeded",
             ILineError::eProblem_GeneralParsingError) );
         pErr->Throw();
-        //err.Throw();
     }
 }
 

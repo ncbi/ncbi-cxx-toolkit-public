@@ -46,6 +46,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
+class CLinePreBuffer;
+
 //  ----------------------------------------------------------------------------
 class CRawBedRecord
 //  ----------------------------------------------------------------------------
@@ -207,6 +209,10 @@ public:
         ILineErrorListener* =0 );
 
 protected:
+    virtual bool xDetermineLikelyColumnCount(
+        CLinePreBuffer&,
+        ILineErrorListener*);
+
     virtual bool xParseTrackLine(
         const string&,
         ILineErrorListener*);
@@ -405,7 +411,6 @@ protected:
     //
 protected:
     string m_currentId;
-
     vector<string>::size_type m_columncount;
     unsigned int m_CurrentFeatureCount;
     bool m_usescore;
