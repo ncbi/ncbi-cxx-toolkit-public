@@ -51,7 +51,9 @@ RAPIDJSON_DIAG_OFF(effc++)
 RAPIDJSON_DIAG_OFF(terminate) // ignore throwing RAPIDJSON_ASSERT in RAPIDJSON_NOEXCEPT functions
 #endif
 // NCBI
+#ifndef __clang__
 #define RAPIDJSON_NCBI_NOOPTIMIZE  __attribute__((optimize("O0")))
+#endif
 #endif // __GNUC__
 
 // NCBI
