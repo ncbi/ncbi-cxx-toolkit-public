@@ -11057,6 +11057,30 @@ BOOST_AUTO_TEST_CASE(Test_VR_828)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_VR_829)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> gene = AddMiscFeature(prot, prot->GetSeq().GetLength() - 1);
+    gene->SetData().SetGene().SetLocus_tag("x");
+
+    CRef<CSeqdesc> pgap(new CSeqdesc());
+    pgap->SetUser().SetObjectType(CUser_object::eObjectType_StructuredComment);
+    pgap->SetUser().SetData().push_back(MakeStructuredCommentField("StructuredCommentPrefix", "##Genome-Annotation-Data-START##"));
+    pgap->SetUser().SetData().push_back(MakeStructuredCommentField("Annotation Provider", "NCBI"));
+    entry->SetSet().SetDescr().Set().push_back(pgap);
+
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+
+    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "LocusTagProblem",
+        "Genes on protein sequences with PGAP annotation should not have locus tags."));
+    CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
+}
+
+
 static CRef<CSeq_entry> BuildGoodSpliceNucProtSet (void)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet ();

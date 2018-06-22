@@ -6071,7 +6071,7 @@ void CValidError_bioseq::x_ReportPseudogeneConflict(CConstRef <CSeq_feat> gene, 
 }
 
 
-bool CValidError_bioseq::x_HasPGAPStructuredCommend(CBioseq_Handle bsh)
+bool CValidError_bioseq::x_HasPGAPStructuredComment(CBioseq_Handle bsh)
 {
     CSeqdesc_CI di(bsh, CSeqdesc::e_User);
     while (di) {
@@ -6255,10 +6255,14 @@ void CValidError_bioseq::ValidateSeqFeatContext(
                         break;
                         
                     case CSeqFeatData::e_Gene:
-                        // report only if NOT standalone protein
-                        // and NOT PGAP
-                        if ( !s_StandaloneProt(m_CurrentHandle) &&
-                            !x_HasPGAPStructuredCommend(m_CurrentHandle)) {
+                        if (x_HasPGAPStructuredComment(m_CurrentHandle)) {
+                            if (feat.GetData().GetGene().IsSetLocus_tag()) {
+                                PostErr(eDiag_Error, eErr_SEQ_FEAT_LocusTagProblem,
+                                    "Genes on protein sequences with PGAP annotation should not have locus tags.", feat);
+                            }
+                        } else if (!s_StandaloneProt(m_CurrentHandle)) {
+                            // report only if NOT standalone protein
+                            // and NOT PGAP
                             PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFeatureForProtein,
                                 "Invalid feature for a protein Bioseq.", feat);
                         }

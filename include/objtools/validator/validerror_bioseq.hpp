@@ -201,7 +201,7 @@ private:
     bool x_IsSameAsCDS(const CMappedFeat& feat);
     void x_ReportPseudogeneConflict(CConstRef <CSeq_feat> gene, const CSeq_feat& feat);
     void ValidateSeqFeatContext(const CBioseq& seq);
-    static bool x_HasPGAPStructuredCommend(CBioseq_Handle bsh);
+    static bool x_HasPGAPStructuredComment(CBioseq_Handle bsh);
     EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool viral, bool htgs, bool same_annot, bool same_label);
     bool x_ReportDupOverlapFeaturePair (const CSeq_feat_Handle & f1, const CSeq_feat_Handle & f2, bool fruit_fly, bool viral, bool htgs);
     bool x_SuppressDicistronic(const CSeq_feat_Handle & f1, const CSeq_feat_Handle & f2, bool fruit_fly);
