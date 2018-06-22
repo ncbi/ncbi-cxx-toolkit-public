@@ -210,7 +210,7 @@ void CSpecificHostRequest::PostErrors(CValidError_imp& imp)
 
     if (!NStr::IsBlank(m_HostLineage) && !NStr::IsBlank(m_OrgLineage) &&
         (NStr::Find(m_OrgLineage, "Streptophyta") != NPOS || NStr::Find(m_OrgLineage, "Metazoa") != NPOS) &&
-        (NStr::Find(m_HostLineage, "Fungi") != NPOS || NStr::Find(m_HostLineage, "Bacteria") != NPOS ||
+        (NStr::Find(m_HostLineage, "Fungi;") != NPOS || NStr::Find(m_HostLineage, "Bacteria") != NPOS ||
         NStr::Find(m_HostLineage, "Archaea") != NPOS || NStr::Find(m_HostLineage, "Viruses") != NPOS)) {
         for (auto it = m_Descs.begin(); it != m_Descs.end(); it++) {
             imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
