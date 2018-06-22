@@ -291,8 +291,6 @@ use m_NewCleanup.UserObjectBC {
     Seqdesc.user
 }
 
-use m_NewCleanup.x_AddNumToUserField { User-field }
-
 use m_NewCleanup.x_CleanupECNumberList { Prot-ref.ec }
 
 # While we're traversing the hierarchy AND we record any

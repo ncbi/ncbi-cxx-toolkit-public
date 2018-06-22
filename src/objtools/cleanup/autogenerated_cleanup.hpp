@@ -49,8 +49,6 @@
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Packed_seqpnt.hpp>
-#include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp>
 #include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
@@ -107,6 +105,7 @@
 #include <objects/seqfeat/RNA_qual.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/Txinit.hpp>
+#include <objects/general/User_object.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
@@ -210,27 +209,6 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_locs_E_E_l
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_location_location_equiv_equiv_E_ETC( CSeq_loc & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_loc_ >
 void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_location_location_equiv_equiv_ETC( Tcontainer_ncbi_cref_cseq_loc_ & arg0 );
-  void x_BasicCleanupSeqFeat_exts_E_E_data_E_E_data_fields_E( CUser_field & arg0 );
-  template< typename Tcontainer_ncbi_cref_cuser_field_ >
-void x_BasicCleanupSeqFeat_exts_E_E_data_E_E_data_fields( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
-  void x_BasicCleanupSeqFeat_exts_E_E_data_E( CUser_field & arg0 );
-  template< typename Tcontainer_ncbi_cref_cuser_field_ >
-void x_BasicCleanupSeqFeat_exts_E_E_data( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
-  void x_BasicCleanupSeqFeat_exts_E_object1818( CUser_object & arg0 );
-  void x_BasicCleanupSeqFeat_exts_E_E_data_E_E_data_object( CUser_object & arg0 );
-  void x_BasicCleanupSeqFeat_exts_E_E1817( CUser_object & arg0 );
-  void x_BasicCleanupSeqFeat_exts_E_E_data_E_E_data_objects_E( CUser_object & arg0 );
-  template< typename Tcontainer_ncbi_cref_cuser_object_ >
-void x_BasicCleanupSeqFeat_exts_E_E_data_E_E_data_objects( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
-  void x_BasicCleanupSeqFeat_exts_E_E_data_E_E_data( CUser_field::C_Data & arg0 );
-  void x_BasicCleanupSeqFeat_exts_E_E_data_E_E_ETC( CUser_field & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields_E_ETC( CUser_field & arg0 );
-  template< typename Tcontainer_ncbi_cref_cuser_field_ >
-void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_fields_ETC( Tcontainer_ncbi_cref_cuser_field_ & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_object1816_ETC( CUser_object & arg0 );
-  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects_E_ETC( CUser_object & arg0 );
-  template< typename Tcontainer_ncbi_cref_cuser_object_ >
-void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_ext_data_E_E_data_objects_ETC( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
   template< typename Tcontainer_ncbi_cref_cseq_id_ >
 void x_BasicCleanupSeqFeat_support_support_inference_E_E_basis_basis_accessions_ETC( Tcontainer_ncbi_cref_cseq_id_ & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_num_num_ref_ref_aligns_aligns_segs_dendiag_E_E_ETC( CDense_diag & arg0 );
@@ -486,9 +464,6 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_data_set_varia
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_ETC( CVariation_ref & arg0 );
   void x_BasicCleanupSeqFeat_data_data( CSeqFeatData & arg0 );
   void x_BasicCleanupSeqFeat_data( CSeqFeatData & arg0 );
-  void x_BasicCleanupSeqFeat_exts_E( CUser_object & arg0 );
-  template< typename Tcontainer_ncbi_cref_cuser_object_ >
-void x_BasicCleanupSeqFeat_exts( Tcontainer_ncbi_cref_cuser_object_ & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_location_location_equiv_ETC( CSeq_loc_equiv & arg0 );
   void x_BasicCleanupSeqFeat_location_location1767_ETC( CSeq_loc & arg0 );
   void x_BasicCleanupSeqFeat_location_ETC( CSeq_loc & arg0 );

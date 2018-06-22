@@ -9553,39 +9553,6 @@ void CNewCleanup_imp::x_AuthListBCWithFixInitials( CAuth_list& al )
     AuthListBC( al, true );
 }
 
-void CNewCleanup_imp::x_AddNumToUserField( CUser_field &field )
-{
-    SWITCH_ON_USERFIELD_CHOICE( field ) {
-    case NCBI_USERFIELD(Strs):
-        if (!field.IsSetNum() || field.GetNum() != field.GetData().GetStrs().size()) {
-            field.SetNum(field.GetData().GetStrs().size());
-            ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-        }
-        break;
-    case NCBI_USERFIELD(Ints):
-        if (!field.IsSetNum() || field.GetNum() != field.GetData().GetInts().size()) {
-            field.SetNum(field.GetData().GetInts().size());
-            ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-        }
-        break;
-    case NCBI_USERFIELD(Reals):
-        if (!field.IsSetNum() || field.GetNum() != field.GetData().GetReals().size()) {
-            field.SetNum(field.GetData().GetReals().size());
-            ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-        }
-        break;
-    case NCBI_USERFIELD(Oss):
-        if (!field.IsSetNum() || field.GetNum() != field.GetData().GetOss().size()) {
-            field.SetNum(field.GetData().GetOss().size());
-            ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-        }
-        break;
-    default:
-        break;
-    }
-
-}
-
 void CNewCleanup_imp::x_PostProcessing(void)
 {
     // convert muid to pmid, where possible

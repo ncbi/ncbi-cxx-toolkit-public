@@ -509,8 +509,6 @@ private:
 
     void x_AuthListBCWithFixInitials( CAuth_list& al );
 
-    void x_AddNumToUserField( CUser_field &field );
-
     void x_GeneOntologyTermsBC( vector< CRef< CUser_field > > &go_terms );
 
     // After we've traversed the hierarchy of objects, there may be some
