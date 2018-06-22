@@ -391,8 +391,8 @@ size_t UTF8ToUnicode( const char* theUTF, TUnicode* theUnicode )
         return 1;
     }
 
-    if ( ((*theUTF) & 0xC0) != 0xC0 ) {
-        // This is not a unicode
+    if ( ((*theUTF) & 0xC0) != 0xC0  || ((*theUTF) & 0xFE) == 0xC0) {
+        // This is not UTF8
         return 0;
     }
 
