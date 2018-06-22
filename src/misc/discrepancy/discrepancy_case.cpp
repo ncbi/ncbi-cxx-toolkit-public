@@ -995,18 +995,20 @@ DISCREPANCY_AUTOFIX(ORDERED_LOCATION)
 
 // MISSING_LOCUS_TAGS
 
-DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeq_feat, eDisc | eSubmitter | eSmart, "Missing locus tags")
+DISCREPANCY_CASE(MISSING_LOCUS_TAGS, COverlappingFeatures, eDisc | eSubmitter | eSmart, "Missing locus tags")
 {
-    if (obj.IsSetData() && obj.GetData().IsGene()) {
-        const CGene_ref& gene_ref = obj.GetData().GetGene();
-        if (gene_ref.CanGetPseudo() && gene_ref.GetPseudo()) {
-            return;
-        }
-        if (!gene_ref.CanGetLocus_tag() || NStr::IsBlank(gene_ref.GetLocus_tag())) {
-            m_Objs["[n] gene[s] [has] no locus tag[s]."].Fatal().Add(*context.DiscrObj(obj));
-        }
-        else if (!m_Objs.Exist(kEmptyStr)) {
-            m_Objs[kEmptyStr].Incr();
+    if (!context.GetCurrentBioseq()->IsNa()) {
+        return;
+    }
+    for (auto feat: context.FeatGenes()) {
+        const CGene_ref& gene_ref = feat->GetData().GetGene();
+        if (!gene_ref.CanGetPseudo() || !gene_ref.GetPseudo()) {
+            if (!gene_ref.CanGetLocus_tag() || NStr::IsBlank(gene_ref.GetLocus_tag())) {
+                m_Objs["[n] gene[s] [has] no locus tag[s]."].Fatal().Add(*context.DiscrObj(*feat));
+            }
+            else if (!m_Objs.Exist(kEmptyStr)) {
+                m_Objs[kEmptyStr].Incr();
+            }
         }
     }
 }
