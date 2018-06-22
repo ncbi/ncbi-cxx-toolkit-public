@@ -144,6 +144,10 @@ BOOST_AUTO_TEST_CASE(TestUtf8)
             BOOST_CHECK_EQUAL(res, str_out[i]);
         }
     }
+    {
+        utf8::TUnicode uu;
+        BOOST_CHECK_EQUAL(0, utf8::UTF8ToUnicode( "\300\246", &uu));
+    }
 }
 
 
