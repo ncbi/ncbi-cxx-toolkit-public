@@ -3233,16 +3233,25 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list,
          MIN(hsp_list->hsp_array[0]->score, hit_list->low_score);
    } else {
       int evalue_order = 0;
+      if (!hit_list->heapified) {
+    	  /* make sure all hsp_list is sorted */
+          int index;
+          for (index =0; index < hit_list->hsplist_count; index++) {
+              Blast_HSPListSortByEvalue(hit_list->hsplist_array[index]);
+              hit_list->hsplist_array[index]->best_evalue = s_BlastGetBestEvalue(hit_list->hsplist_array[index]);
+          }
+          s_CreateHeap(hit_list->hsplist_array, hit_list->hsplist_count,
+                       sizeof(BlastHSPList*), s_EvalueCompareHSPLists);
+          hit_list->heapified = TRUE;
+      }
+
       /* make sure the hsp_list is sorted.  We actually do not need to sort
          the full list: all that we need is the best score.   However, the
          following code assumes hsp_list->hsp_array[0] has the best score. */
       Blast_HSPListSortByEvalue(hsp_list);
-      /* Compare e-values only with a certain precision */
-      evalue_order = s_EvalueComp(hsp_list->best_evalue,
-                                       hit_list->worst_evalue);
-      if (evalue_order > 0 ||
-          (evalue_order == 0 &&
-           (hsp_list->hsp_array[0]->score < hit_list->low_score))) {
+      hsp_list->best_evalue = s_BlastGetBestEvalue(hsp_list);
+      evalue_order = s_EvalueCompareHSPLists(&(hit_list->hsplist_array[0]), &hsp_list);
+      if (evalue_order < 0) {
          /* This hit list is less significant than any of those already saved;
             discard it. Note that newer hits with score and e-value both equal
             to the current worst will be saved, at the expense of some older
@@ -3250,16 +3259,6 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list,
          */
          Blast_HSPListFree(hsp_list);
       } else {
-         if (!hit_list->heapified) {
-            /* make sure all hsp_list is sorted */
-            int index;
-            for (index =0; index < hit_list->hsplist_count; index++)
-                Blast_HSPListSortByEvalue(hit_list->hsplist_array[index]);
-
-            s_CreateHeap(hit_list->hsplist_array, hit_list->hsplist_count,
-                       sizeof(BlastHSPList*), s_EvalueCompareHSPLists);
-            hit_list->heapified = TRUE;
-         }
          s_BlastHitListInsertHSPListInHeap(hit_list, hsp_list);
       }
    }
