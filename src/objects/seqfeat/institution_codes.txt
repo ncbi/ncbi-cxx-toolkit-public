@@ -7163,6 +7163,7 @@ WAIK	s	University of Waikato, Biological Sciences Department
 WAITE	c	Insect Pathology Pathogen Collection		
 WAL	c	Wadsworth Anaerobe Laboratory, Wadsworth Hospital Center		
 WAM	s	Western Australian Museum		
+WAM:Mamm	s	Western Australian Museum, Mammal Collection
 WAMP	s	Western Australian Museum		
 WAN	s	Forest Research Station		
 WANF	s	Wasatch-Cache National Forest		

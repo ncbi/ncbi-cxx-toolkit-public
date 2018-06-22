@@ -7196,6 +7196,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "WAITE\tc\tInsect Pathology Pathogen Collection\t\t",
 "WAL\tc\tWadsworth Anaerobe Laboratory, Wadsworth Hospital Center\t\t",
 "WAM\ts\tWestern Australian Museum\t\t",
+"WAM:Mamm\ts\tWestern Australian Museum, Mammal Collection",
 "WAMP\ts\tWestern Australian Museum\t\t",
 "WAN\ts\tForest Research Station\t\t",
 "WANF\ts\tWasatch-Cache National Forest\t\t",
