@@ -43,6 +43,54 @@
 
 BEGIN_NCBI_SCOPE
 
+static string s_EncodeMetadataName(const string& name)
+{
+    static const CTempString kLegalPunct("-_.");
+    if (NStr::StartsWith(name, "ncbi_")) {
+        if (name == "ncbi_dtab") {
+            return "l5d-dtab";
+        } else if (name == "ncbi_phid") {
+            return "ncbi-phid";
+        } else if (name == "ncbi_sid") {
+            return "ncbi-sid";
+        }
+    }
+    string result = name;
+    NStr::ToLower(result);
+    for (char& c : result) {
+        if ( !isalnum((unsigned char) c)  &&  kLegalPunct.find(c) == NPOS) {
+            c = '_';
+        }
+    }
+    return result;
+}
+
+static string s_DecodeMetadataName(const CTempString& name)
+{
+    if (name == "l5d-dtab") {
+        return "ncbi_dtab";
+    } else if (name == "ncbi-phid") {
+        return "ncbi_phid";
+    } else if (name == "ncbi-sid") {
+        return "ncbi_sid";
+    } else {
+        // NStr::ToUpper(name);
+        return name;
+    }
+}
+
+inline
+static string s_EncodeMetadataValue(const string& value)
+{
+    return NStr::CEncode(value, NStr::eNotQuoted);
+}
+
+inline
+static string s_DecodeMetadataValue(const CTempString& value)
+{
+    return NStr::CParse(value, NStr::eNotQuoted);
+}
+
 class CGRPCInitializer
 {
 public:
@@ -97,27 +145,22 @@ void CGRPCClientContext::AddStandardNCBIMetadata(grpc::ClientContext& cctx)
     CDiagContext&    dctx = GetDiagContext();
     CRequestContext& rctx = dctx.GetRequestContext();
     cctx.set_initial_metadata_corked(true);
+#if 1
+    // Respectively redundant with ncbi_sid, ncbi_phid, and ncbi_dtab,
+    // but kept for now for the sake of servers that only recognize
+    // these legacy names.
     if (rctx.IsSetSessionID()) {
         cctx.AddMetadata("sessionid", rctx.GetSessionID());
     }
     cctx.AddMetadata("ncbiphid", rctx.GetNextSubHitID());
     cctx.AddMetadata("dtab",     rctx.GetDtab());
+#endif
     cctx.AddMetadata("client",   dctx.GetAppName());
     
     CRequestContext_PassThrough pass_through;
-    CTempString legal_punct("-_.");
     pass_through.Enumerate([&](const string& name, const string& value) {
-                               string lc = name;
-                               NStr::ToLower(lc);
-                               for (char& c : lc) {
-                                   if ( !isalnum((unsigned char) c)
-                                       &&  legal_punct.find(c) == NPOS) {
-                                       c = '_';
-                                   }
-                               }
-                               cctx.AddMetadata
-                                   (lc,
-                                    NStr::CEncode(value, NStr::eNotQuoted));
+                               cctx.AddMetadata(s_EncodeMetadataName(name),
+                                                s_EncodeMetadataValue(value));
                                return true;
                            });
 }
@@ -169,6 +212,23 @@ grpc::StatusCode g_AsGRPCStatusCode(CRequestStatus::ECode status_code)
 }
 
 
+typedef void (CRequestContext::*FRCSetter)(const string&);
+typedef SStaticPair<const char*, FRCSetter> TRCSetterPair;
+// Explicitly handle all four standard fields, since some may come in via
+// legacy names and AddPassThroughProperty doesn't trigger interpretation
+// and may well filter some or all of these fields out altogether.
+static const TRCSetterPair sc_RCSetters[] = {
+    { "dtab",           &CRequestContext::SetDtab      }, // legacy name
+    { "ncbi_client_ip", &CRequestContext::SetClientIP  },
+    { "ncbi_dtab",      &CRequestContext::SetDtab      },
+    { "ncbi_phid",      &CRequestContext::SetHitID     },
+    { "ncbi_sid",       &CRequestContext::SetSessionID },
+    { "ncbiphid",       &CRequestContext::SetHitID     }, // legacy name
+    { "sessionid",      &CRequestContext::SetSessionID }  // legacy name
+};
+typedef CStaticArrayMap<const char*, FRCSetter, PCase_CStr> TRCSetterMap;
+DEFINE_STATIC_ARRAY_MAP(TRCSetterMap, sc_RCSetterMap, sc_RCSetters);
+
 // TODO - can either of these log any more information, such as the
 // service name, the status code, or the number of bytes in and/or out?
 // (Byte counts appear to be tracked internally but not exposed. :-/)
@@ -178,7 +238,7 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
     CDiagContext&    dctx = GetDiagContext();
     CRequestContext& rctx = dctx.GetRequestContext();
     char*            port = NULL;
-    string           client_name;
+    string           client_name, peer_ip;
     rctx.SetRequestID();
     if (sctx != NULL) {
         SIZE_TYPE pos = sctx->peer().find(':');
@@ -194,25 +254,31 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
             }
         }
         for (const auto& metadata : sctx->client_metadata()) {
-            string name (metadata.first .data(), metadata.first .size());
-            string value(metadata.second.data(), metadata.second.size());
-            // NStr::ToUpper(name);
-            rctx.AddPassThroughProperty(name,
-                                        NStr::CParse(value, NStr::eNotQuoted));
-            if (metadata.first == "sessionid") {
-                rctx.SetSessionID(value);
-            } else if (metadata.first == "ncbiphid") {
-                rctx.SetHitID(value);
-            } else if (metadata.first == "dtab") {
-                rctx.SetDtab(value);
+            CTempString nm(metadata.first .data(), metadata.first .size());
+            CTempString vl(metadata.second.data(), metadata.second.size());
+            string      name  = s_DecodeMetadataName (nm);
+            string      value = s_DecodeMetadataValue(vl);
+            rctx.AddPassThroughProperty(name, value);
+
+            TRCSetterMap::const_iterator it
+                = sc_RCSetterMap.find(name.c_str());
+            if (it != sc_RCSetterMap.end()) {
+                if (it->second == &CRequestContext::SetClientIP
+                    &&  peer_ip.empty()  &&  rctx.GetClientIP() != value) {
+                    peer_ip = rctx.GetClientIP();
+                }
+                (rctx.*(it->second))(value);
             } else if (metadata.first == "client") {
                 client_name = value;
             }
         }
     }
     CDiagContext_Extra extra = dctx.PrintRequestStart();
-    if (client_name != NULL) {
+    if ( !client_name.empty() ) {
         extra.Print("client_name", client_name);
+    }
+    if ( !peer_ip.empty() ) {
+        extra.Print("peer_ip", peer_ip);
     }
     if (port != NULL) {
         extra.Print("client_port", port);
