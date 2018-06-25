@@ -107,7 +107,7 @@ public:
 private:
     const EAction m_default_action;
 
-    typedef std::map<std::string, EAction, PNocase_Conditional> TFeatActionMap;
+    typedef std::map<std::string, EAction, PNocase> TFeatActionMap;
     // maps feature names to how they should be handled
     TFeatActionMap m_FeatActionMap;
 };

@@ -181,21 +181,28 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
     // no errors expected by default
      const TErrList & expected_errors = TErrList(),
      CFeature_table_reader::TFlags additional_flags = 0,
-     ILineErrorListener * pMessageListener = NULL );
+     ILineErrorListener * pMessageListener = NULL,
+     CSimpleTableFilter *p_tbl_filter = nullptr);
 
 static CRef<CSeq_annot> s_ReadOneTableFromString (
     const char * str,
     const TErrList & expected_errors,
     CFeature_table_reader::TFlags additional_flags,
-    ILineErrorListener * pMessageListener )
+    ILineErrorListener * pMessageListener,
+    CSimpleTableFilter *p_tbl_filter)
 {
     CNcbiIstrstream istr(str);
     CRef<ILineReader> reader = ILineReader::New(istr);
 
-    CSimpleTableFilter tbl_filter(ITableFilter::eAction_Okay);
-    tbl_filter.SetActionForFeat("source", ITableFilter::eAction_Disallowed );
+    unique_ptr<CSimpleTableFilter> tbl_filter;
+    if( ! p_tbl_filter ) {
+        tbl_filter.reset(new CSimpleTableFilter(ITableFilter::eAction_Okay));
+        p_tbl_filter = tbl_filter.get();
+        p_tbl_filter->SetActionForFeat(
+            "SOURCE", ITableFilter::eAction_Disallowed );
+    }
 
-    auto_ptr<ILineErrorListener> p_temp_err_container;
+    unique_ptr<ILineErrorListener> p_temp_err_container;
     if( ! pMessageListener ) {
         p_temp_err_container.reset( new CMessageListenerLenientIgnoreProgress );
         pMessageListener = p_temp_err_container.get();
@@ -205,7 +212,8 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
                    (*reader, // of type ILineReader, which is like istream but line-oriented
                     additional_flags | CFeature_table_reader::fReportBadKey, // flags also available: fKeepBadKey and fTranslateBadKey (to /standard_name=...)
                     pMessageListener, // holds errors found during reading
-                    &tbl_filter // used to make it act certain ways on certain feats.  In particular, in bankit we consider "source" and "REFERENCE" to be disallowed
+                    p_tbl_filter // used to make it act certain ways on
+                       // certain feats.  In particular, in bankit we consider "source" and "REFERENCE" to be disallowed
                     );
 
     s_CheckErrorsVersusExpected( pMessageListener, expected_errors );
@@ -2088,11 +2096,13 @@ BOOST_AUTO_TEST_CASE(TestBadTranslTable)
 
 // GB-7157
 static const char* sc_Table20 = 
-R"(>Feature gb|KY807921| )"
-R"(3200	3201	regulatory )"
-R"(			note	cobalamin riboswitch )"
-R"(			bound_moiety	cobalamin )"
-R"(			regulatory_class	riboswitch )";
+R"(
+>Feature gb|KY807921|
+3200	3201	regulatory 
+			note	cobalamin riboswitch 
+			bound_moiety	cobalamin 
+			regulatory_class	riboswitch
+)";
 
 BOOST_AUTO_TEST_CASE(TestRiboswitch)
 {
@@ -2103,3 +2113,32 @@ BOOST_AUTO_TEST_CASE(TestRiboswitch)
             expected_errors);
 }
 
+static const char * sc_Table21 =
+R"(
+>Feature lcl|seq1
+<1	32	rRNA
+		Product	18S ribosomal RNA
+33	170	misc_RNA
+		Product	internal transcribed spacer 1
+)";
+
+BOOST_AUTO_TEST_CASE(TestSimpleTableFilter)
+{
+    const TErrList expected_errors {
+        ILineError::eProblem_FeatureNameNotAllowed };
+
+    CSimpleTableFilter tbl_filter(ITableFilter::eAction_Okay);
+    // notice non-standard capitalization to make sure filter is case-insens
+    tbl_filter.SetActionForFeat("Rrna", ITableFilter::eAction_Disallowed );
+
+    CRef<CSeq_annot> annot = s_ReadOneTableFromString(
+            sc_Table21, expected_errors, 0, nullptr, &tbl_filter);
+
+    // make sure filter worked by filtering out rRNA but not misc_RNA
+    const auto & ftable = annot->GetData().GetFtable();
+    BOOST_CHECK_EQUAL(1, ftable.size());
+    const auto & feat = *ftable.front();
+    BOOST_CHECK_EQUAL("misc_RNA", feat.GetData().GetRna().GetExt().GetName());
+    BOOST_CHECK_EQUAL("internal transcribed spacer 1",
+                      feat.GetNamedQual("product"));
+}

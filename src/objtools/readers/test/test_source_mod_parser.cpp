@@ -147,7 +147,7 @@ int CSourceModParserTestApp::Run(void)
         CRef<CSeq_entry>  entry(reader.ReadSet());
 
         CSimpleTableFilter tbl_filter(ITableFilter::eAction_Okay);
-        tbl_filter.SetActionForFeat("source", ITableFilter::eAction_Disallowed );
+        tbl_filter.SetActionForFeat("Source", ITableFilter::eAction_Disallowed );
 
         CMessageListenerLenient err_container;
         CFeature_table_reader::ReadSequinFeatureTables( args["feattbl"].AsInputFile(), *entry, 
