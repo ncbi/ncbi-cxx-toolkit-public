@@ -203,9 +203,9 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
         
     CRef<CSeq_annot> annot = CFeature_table_reader::ReadSequinFeatureTable
                    (*reader, // of type ILineReader, which is like istream but line-oriented
-                    additional_flags | CFeature_table_reader::fReportBadKey, // flags also available: fKeepBadKey and fTranslateBadKey (to /standard_name=…)
+                    additional_flags | CFeature_table_reader::fReportBadKey, // flags also available: fKeepBadKey and fTranslateBadKey (to /standard_name=...)
                     pMessageListener, // holds errors found during reading
-                    &tbl_filter // used to make it act certain ways on certain feats.  In particular, in bankit we consider “source” and “REFERENCE” to be disallowed
+                    &tbl_filter // used to make it act certain ways on certain feats.  In particular, in bankit we consider "source" and "REFERENCE" to be disallowed
                     );
 
     s_CheckErrorsVersusExpected( pMessageListener, expected_errors );
