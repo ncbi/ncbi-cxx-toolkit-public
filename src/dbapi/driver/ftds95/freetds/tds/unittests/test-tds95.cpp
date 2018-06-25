@@ -125,6 +125,7 @@ int CRunTestApplication::Run(void)
 #endif
         cmdline += ' ';
     }
+    cmd = CDirEntry::ConcatPath(CDirEntry(GetProgramExecutablePath(eFollowLinks)).GetDir(), cmd);
     cmdline += CExec::QuoteArg(cmd);
     for (size_t n = 1;  n <= args.GetNExtra();  ++n) {
         cmdline += ' ' + CExec::QuoteArg(args[n].AsString());
