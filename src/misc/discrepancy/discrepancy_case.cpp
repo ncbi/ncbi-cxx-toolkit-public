@@ -429,7 +429,7 @@ static string GetProdName(const CSeq_feat* feat, map<const CSeq_feat*, string>& 
 
 DISCREPANCY_CASE(OVERLAPPING_CDS, COverlappingFeatures, eDisc, "Overlapping CDs")
 {
-    if (!context.GetCurrentBioseq()->CanGetInst() || !context.GetCurrentBioseq()->GetInst().IsNa()) {
+    if (!context.GetCurrentBioseq()->IsSetInst() || !context.GetCurrentBioseq()->GetInst().IsNa()) {
         return;
     }
     const vector<CConstRef<CSeq_feat> >& cds = context.FeatCDS();
@@ -656,7 +656,7 @@ static const char* kContainedOpps = "[n] coding region[s] [is] completely contai
 
 DISCREPANCY_CASE(CONTAINED_CDS, COverlappingFeatures, eDisc | eSubmitter | eSmart, "Contained CDs")
 {
-    if (!context.GetCurrentBioseq()->CanGetInst() || !context.GetCurrentBioseq()->GetInst().IsNa() || context.IsEukaryotic()) {
+    if (!context.GetCurrentBioseq()->IsSetInst() || !context.GetCurrentBioseq()->GetInst().IsNa() || context.IsEukaryotic()) {
         return;
     }
     const vector<CConstRef<CSeq_feat> >& cds = context.FeatCDS();
@@ -806,7 +806,7 @@ DISCREPANCY_SUMMARIZE(NO_ANNOTATION)
 DISCREPANCY_CASE(LONG_NO_ANNOTATION, CSeq_inst, eDisc | eOncaller | eSubmitter | eSmart | eBig, "No annotation for LONG sequence")
 {
     const int kSeqLength = 5000;
-    if (obj.IsAa() || context.HasFeatures() || !(obj.CanGetLength() && obj.GetLength() > kSeqLength)) {
+    if (obj.IsAa() || context.HasFeatures() || !(obj.IsSetLength() && obj.GetLength() > kSeqLength)) {
         return;
     }
     m_Objs["[n] bioseq[s] [is] longer than 5000nt and [has] no features"].Add(*context.BioseqObj());
@@ -1002,8 +1002,8 @@ DISCREPANCY_CASE(MISSING_LOCUS_TAGS, COverlappingFeatures, eDisc | eSubmitter | 
     }
     for (auto feat: context.FeatGenes()) {
         const CGene_ref& gene_ref = feat->GetData().GetGene();
-        if (!gene_ref.CanGetPseudo() || !gene_ref.GetPseudo()) {
-            if (!gene_ref.CanGetLocus_tag() || NStr::IsBlank(gene_ref.GetLocus_tag())) {
+        if (!gene_ref.IsSetPseudo() || !gene_ref.GetPseudo()) {
+            if (!gene_ref.IsSetLocus_tag() || NStr::IsBlank(gene_ref.GetLocus_tag())) {
                 m_Objs["[n] gene[s] [has] no locus tag[s]."].Fatal().Add(*context.DiscrObj(*feat));
             }
             else if (!m_Objs.Exist(kEmptyStr)) {
@@ -1029,10 +1029,10 @@ DISCREPANCY_CASE(NO_LOCUS_TAGS, CSeq_feat, eDisc | eSubmitter | eSmart, "No locu
 {
     if (obj.IsSetData() && obj.GetData().IsGene()) {
         const CGene_ref& gene_ref = obj.GetData().GetGene();
-        if (gene_ref.CanGetPseudo() && gene_ref.GetPseudo()) {
+        if (gene_ref.IsSetPseudo() && gene_ref.GetPseudo()) {
             return;
         }
-        if (!gene_ref.CanGetLocus_tag() || NStr::IsBlank(gene_ref.GetLocus_tag())) {
+        if (!gene_ref.IsSetLocus_tag() || NStr::IsBlank(gene_ref.GetLocus_tag())) {
             m_Objs["None of [n] gene[s] has locus tag."].Fatal().Add(*context.DiscrObj(obj));
         }
         else if (!m_Objs.Exist(kEmptyStr)) {
@@ -1061,12 +1061,12 @@ DISCREPANCY_CASE(INCONSISTENT_LOCUS_TAG_PREFIX, CSeqFeatData, eDisc | eSubmitter
     const CGene_ref& gene_ref = obj.GetGene();
 
     // Skip pseudo-genes
-    if (gene_ref.CanGetPseudo() && gene_ref.GetPseudo() == true) {
+    if (gene_ref.IsSetPseudo() && gene_ref.GetPseudo() == true) {
         return;
     }
 
     // Skip missing locus tags
-    if (!gene_ref.CanGetLocus_tag()) {
+    if (!gene_ref.IsSetLocus_tag()) {
         return;
     }
 
@@ -1107,7 +1107,7 @@ DISCREPANCY_CASE(INCONSISTENT_MOLTYPES, CSeq_inst, eDisc | eOncaller | eSmart, "
     // Initialize moltype string with MolInfo.biomol 
     string moltype;
     const CMolInfo * mol_info = context.GetCurrentMolInfo();
-    if( mol_info && mol_info->CanGetBiomol() ) {
+    if( mol_info && mol_info->IsSetBiomol() ) {
         CMolInfo::TBiomol biomol = mol_info->GetBiomol();
         moltype = CMolInfo::GetBiomolName(biomol);
     }
@@ -1118,8 +1118,8 @@ DISCREPANCY_CASE(INCONSISTENT_MOLTYPES, CSeq_inst, eDisc | eOncaller | eSmart, "
     }
 
     // Append Seq-inst.mol to moltype
-    if (context.GetCurrentBioseq()->CanGetInst() &&
-        context.GetCurrentBioseq()->GetInst().CanGetMol())
+    if (context.GetCurrentBioseq()->IsSetInst() &&
+        context.GetCurrentBioseq()->GetInst().IsSetMol())
     {
         CSeq_inst::TMol mol = context.GetCurrentBioseq()->GetInst().GetMol();
         moltype += string(" ") + CSeq_inst::GetMoleculeClass(mol);
@@ -1154,12 +1154,12 @@ DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, CSeqFeatData, eDisc | eSubmitter | eSmart
     const CGene_ref& gene_ref = obj.GetGene();
 
     // Skip pseudo-genes
-    if (gene_ref.CanGetPseudo() && gene_ref.GetPseudo() == true) {
+    if (gene_ref.IsSetPseudo() && gene_ref.GetPseudo() == true) {
         return;
     }
 
     // Skip missing locus tags
-    if (!gene_ref.CanGetLocus_tag()) {
+    if (!gene_ref.IsSetLocus_tag()) {
         return;
     }
 
@@ -1254,7 +1254,7 @@ DISCREPANCY_CASE(BAD_BGPIPE_QUALS, CSeq_feat, eDisc | eSmart, "Bad BGPIPE qualif
         return;
     }
     if(STRING_FIELD_NOT_EMPTY(obj, Except_text)) {
-        if (obj.GetExcept_text() == "ribosomal slippage" && obj.CanGetComment() && obj.GetComment().find("programmed frameshift") != string::npos) {
+        if (obj.GetExcept_text() == "ribosomal slippage" && obj.IsSetComment() && obj.GetComment().find("programmed frameshift") != string::npos) {
             return;
         }
         m_Objs[kDiscMessage].Add(*context.DiscrObj(*context.GetCurrentSeq_feat()), false);
