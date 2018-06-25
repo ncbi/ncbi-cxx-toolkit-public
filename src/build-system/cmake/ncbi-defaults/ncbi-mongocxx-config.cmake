@@ -24,6 +24,9 @@ set(_MONGO_C_DRIVER_VERSION "mongo-c-driver-1.9.3")
 get_filename_component(MONGOCXX_CMAKE_DIR "$ENV{NCBI}/${_MONGODB_VERSION}" REALPATH)
 string(REGEX REPLACE ".*-([0-9].*)" "\\1" MONGOCXX_VERSION_STRING "${MONGOCXX_CMAKE_DIR}")
 
+get_filename_component(MONGO_C_DRIVER_CMAKE_DIR "$ENV{NCBI}/${_MONGO_C_DRIVER_VERSION}" REALPATH)
+string(REGEX REPLACE ".*-([0-9].*)" "\\1" MONGO_C_DRIVER_VERSION_STRING "${MONGO_C_DRIVER_CMAKE_DIR}")
+
 set(MONGOCXX_FOUND True)
 set(MONGOCXX_INCLUDE_DIR
     ${MONGOCXX_CMAKE_DIR}/include/mongocxx/v_noabi
@@ -36,14 +39,14 @@ set(BSONCXX_INCLUDE_DIR
 
 # Choose the proper library path
 # For some libraries, we look in /opt/ncbi/64
-set(_libpath_mongocxx ${MONGOCXX_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64/lib)
+set(_libpath_mongocxx ${MONGOCXX_CMAKE_DIR}/lib)
 if (CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
     if (EXISTS /opt/ncbi/64/${_MONGODB_VERSION}/lib)
         set(_libpath_mongocxx /opt/ncbi/64/${_MONGODB_VERSION}/lib)
     endif()
 endif()
 
-set(_libpath_mongo_c_driver ${MONGOCXX_CMAKE_DIR}/${CMAKE_BUILD_TYPE}64/lib)
+set(_libpath_mongo_c_driver ${MONGO_C_DRIVER_CMAKE_DIR}/lib)
 if (CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
     if (EXISTS /opt/ncbi/64/${_MONGO_C_DRIVER_VERSION}/lib)
         set(_libpath_mongo_c_driver /opt/ncbi/64/${_MONGO_C_DRIVER_VERSION}/lib)
