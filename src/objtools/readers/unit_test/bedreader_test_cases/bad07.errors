@@ -1,4 +1,4 @@
-Line No    : 4
-Severity   : Error
-Message    : Invalid data line: Bad "SeqStop" value.
+Line No    : 0
+Severity   : Fatal
+Message    : Bad data line: Invalid chrom boundaries.
 

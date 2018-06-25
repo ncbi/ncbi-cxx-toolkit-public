@@ -194,7 +194,9 @@ CBedReader::CBedReader(
 //  ----------------------------------------------------------------------------
     CReaderBase(flags, annotName, annotTitle),
     m_currentId(""),
-    m_columncount(0),
+    mRealColumnCount(0),
+    mValidColumnCount(0),
+    mAssumeErrorsAreRecordLevel(true),
     m_CurrentFeatureCount(0),
     m_usescore(false),
     m_CurBatchSize(0),
@@ -298,17 +300,23 @@ bool CBedReader::xDetermineLikelyColumnCount(
 {
     using LineIt = CLinePreBuffer::LinePreIt;
 
-    AutoPtr<CObjReaderLineException> pErr(
+    AutoPtr<CObjReaderLineException> pErrColumnCount(
         CObjReaderLineException::Create(
             eDiag_Fatal,
             0,
             "Bad data line: Inconsistent column count." ) );
+    AutoPtr<CObjReaderLineException> pErrChromBounds(
+        CObjReaderLineException::Create(
+            eDiag_Fatal,
+            0,
+            "Bad data line: Invalid chrom boundaries." ) );
 
     const size_t MIN_SAMPLE_SIZE = 50;
     preBuffer.FillBuffer(MIN_SAMPLE_SIZE);
 
-    size_t realColumnCount = 0;
-    m_columncount = 0;
+    mRealColumnCount = mValidColumnCount = 0;
+    vector<string>::size_type realColumnCount = 0;
+    vector<string>::size_type validColumnCount = 0;
     for (LineIt lineIt = preBuffer.begin(); lineIt != preBuffer.end(); ++lineIt) {
         const auto& line = *lineIt;
         if (preBuffer.IsCommentLine(line)) {
@@ -327,10 +335,102 @@ bool CBedReader::xDetermineLikelyColumnCount(
             realColumnCount = columns.size();
         }
         if (realColumnCount != columns.size()) {
-            pErr->Throw();
+            pErrColumnCount->Throw();
         }
+        
+        if (validColumnCount == 0) {
+            validColumnCount = realColumnCount;
+            if (validColumnCount > 12) {
+                validColumnCount = 12;
+            }
+        }
+        unsigned long chromStart = 0, chromEnd = 0;
+        try {
+            chromStart = NStr::StringToULong(columns[1]);
+            chromEnd = NStr::StringToULong(columns[2]);
+        }
+        catch (CException&) {
+            pErrChromBounds->Throw();
+        }
+        if (validColumnCount >= 7) {
+            try {
+                auto thickStart = NStr::StringToULong(columns[6]);
+                if (thickStart < chromStart  ||  chromEnd < thickStart) {
+                    validColumnCount = 6;
+                }
+            }
+            catch(CException&) {
+                validColumnCount = 6;
+            }
+        }
+        if (validColumnCount >= 8) {
+            try {
+                auto thickEnd = NStr::StringToULong(columns[7]);
+                if (thickEnd < chromStart  ||  chromEnd < thickEnd) {
+                    validColumnCount = 6;
+                }
+            }
+            catch(CException&) {
+                validColumnCount = 6;
+            }
+        }
+
+        int blockCount;
+        if (validColumnCount >= 10) {
+            try {
+                blockCount = NStr::StringToInt(
+                    columns[9], NStr::fDS_ProhibitFractions);
+                if (blockCount < 1) {
+                    validColumnCount = 9;
+                }
+            }
+            catch(CException&) {
+                validColumnCount = 9;
+            }
+        }
+        if (validColumnCount >= 11) {
+            vector<string> blockSizes;
+            NStr::Split(columns[10], ",", blockSizes, NStr::fSplit_MergeDelimiters);
+            if (blockSizes.size() != blockCount) {
+                validColumnCount = 9;
+            }
+            else {
+                try {
+                    for (auto blockSize: blockSizes) {
+                        NStr::StringToULong(blockSize);
+                    }
+                }
+                catch(CException&) {
+                    validColumnCount = 9;
+                }
+            }
+        }
+        if (validColumnCount >= 12) {
+            vector<string> blockStarts;
+            NStr::Split(columns[11], ",", blockStarts, NStr::fSplit_MergeDelimiters);
+            if (blockStarts.size() != blockCount) {
+                validColumnCount = 9;
+            }
+            else {
+                try {
+                    for (auto blockStart: blockStarts) {
+                        NStr::StringToULong(blockStart);
+                    }
+                }
+                catch(CException&) {
+                    validColumnCount = 9;
+                }
+            }
+        }   
     } 
-    m_columncount = realColumnCount;
+    mRealColumnCount = realColumnCount;
+    mValidColumnCount = validColumnCount;
+    mAssumeErrorsAreRecordLevel = (
+        validColumnCount == realColumnCount  &&
+        validColumnCount != 7  &&
+        validColumnCount != 10  &&
+        validColumnCount != 11);
+        
     return true;
 }
 
@@ -442,14 +542,13 @@ bool CBedReader::xParseFeature(
     static int count = 0;
     count++;
 
-    if (fields.size() != m_columncount) {
+    if (fields.size()!= mRealColumnCount) {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
             "Bad data line: Inconsistent column count." ) );
-        ProcessError(*pErr, pEC );
-        return false;
+        pErr->Throw();
     }
 
     if (m_iFlags & CBedReader::fThreeFeatFormat) {
@@ -501,16 +600,16 @@ bool CBedReader::xParseFeatureGeneModelFormat(
     }
 
     CRef<CSeq_feat> pRna;
-    if (xContainsCdsFeature(fields)) {
-        pRna = xAppendFeatureCds(fields, annot, baseId, pEC);
+    if (xContainsRnaFeature(fields)) {
+        pRna = xAppendFeatureRna(fields, annot, baseId, pEC);
         if (!pRna) {
             return false;
         }
     }
 
     CRef<CSeq_feat> pCds;
-    if (xContainsRnaFeature(fields)) {
-        pCds = xAppendFeatureRna(fields, annot, baseId, pEC);
+    if (xContainsCdsFeature(fields)) {
+        pCds = xAppendFeatureCds(fields, annot, baseId, pEC);
         if (!pCds) {
             return false;
         }
@@ -717,7 +816,7 @@ void CBedReader::x_SetFeatureDisplayData(
 {
     CRef<CUser_object> display_data( new CUser_object );
     display_data->SetType().SetStr( "Display Data" );
-    if ( m_columncount >= 4 ) {
+    if (mValidColumnCount >= 4) {
         display_data->AddField( "name", fields[3] );
     }
     else {
@@ -725,7 +824,7 @@ void CBedReader::x_SetFeatureDisplayData(
         feature->SetData().SetUser( *display_data );
         return;
     }
-    if ( m_columncount >= 5 ) {
+    if (mValidColumnCount >= 5) {
         if ( !m_usescore ) {
             display_data->AddField( 
                 "score",
@@ -739,30 +838,30 @@ void CBedReader::x_SetFeatureDisplayData(
 				NStr::fConvErr_NoThrow|NStr::fAllowTrailingSymbols) );
         }
     }
-    if ( m_columncount >= 7 ) {
+    if (mValidColumnCount >= 7) {
         display_data->AddField( 
             "thickStart",
             NStr::StringToInt(fields[6], NStr::fDS_ProhibitFractions) );
     }
-    if ( m_columncount >= 8 ) {
+    if (mValidColumnCount >= 8) {
         display_data->AddField( 
             "thickEnd",
             NStr::StringToInt(fields[7], NStr::fDS_ProhibitFractions) - 1 );
     }
-    if ( m_columncount >= 9 ) {
+    if (mValidColumnCount >= 9) {
         display_data->AddField( 
             "itemRGB",
             fields[8]);
     }
-    if ( m_columncount >= 10 ) {
+    if (mValidColumnCount >= 10) {
         display_data->AddField( 
             "blockCount",
             NStr::StringToInt(fields[9], NStr::fDS_ProhibitFractions) );
     }
-    if ( m_columncount >= 11 ) {
+    if (mValidColumnCount >= 11) {
         display_data->AddField( "blockSizes", fields[10] );
     }
-    if ( m_columncount >= 12 ) {
+    if (mValidColumnCount >= 12) {
         display_data->AddField( "blockStarts", fields[11] );
     }
     feature->SetData().SetUser( *display_data );
@@ -1027,8 +1126,9 @@ void CBedReader::xSetFeatureLocationBlock(
     for (size_t i=0; i < blockCount; ++i) {
         CRef<CSeq_interval> pInterval(new CSeq_interval);
         pInterval->SetId(*pId);
-        pInterval->SetFrom(blockStarts[i]);
-        pInterval->SetTo(blockStarts[i] + blockSizes[i] - 1);
+        pInterval->SetFrom(static_cast<CSeq_interval::TFrom>(blockStarts[i]));
+        pInterval->SetTo(static_cast<CSeq_interval::TTo>(
+            blockStarts[i] + blockSizes[i] - 1));
         pInterval->SetStrand(strand);
         if (negative)
             blocks.insert(blocks.begin(), pInterval);
@@ -1125,8 +1225,9 @@ void CBedReader::xSetFeatureLocationRna(
     for (size_t i=0; i < blockCount; ++i) {
         CRef<CSeq_interval> pInterval(new CSeq_interval);
         pInterval->SetId(*pId);
-        pInterval->SetFrom(blockStarts[i]);
-        pInterval->SetTo(blockStarts[i] + blockSizes[i] -1);
+        pInterval->SetFrom(static_cast<CSeq_interval::TFrom>(blockStarts[i]));
+        pInterval->SetTo(static_cast<CSeq_interval::TTo>(
+            blockStarts[i] + blockSizes[i] -1));
         pInterval->SetStrand(strand);
         if (negative)
             blocks.insert(blocks.begin(), pInterval);
@@ -1226,6 +1327,13 @@ void CBedReader::xSetFeatureIdsCds(
         CRef<CSeqFeatXref> pXrefBlock(new CSeqFeatXref);
         pXrefBlock->SetId(*pIdBlock);  
         feature->SetXref().push_back(pXrefBlock);   
+    }
+    else {
+        CRef<CFeat_id> pIdChrom(new CFeat_id);
+        pIdChrom->SetLocal().SetId(baseId);
+        CRef<CSeqFeatXref> pXrefChrom(new CSeqFeatXref);
+        pXrefChrom->SetId(*pIdChrom);  
+        feature->SetXref().push_back(pXrefChrom);   
     }
 }
 
@@ -1705,7 +1813,7 @@ CBedReader::xReadBedRecordRaw(
         return false;
     }
 
-    if (columns.size() != m_columncount) {
+    if (columns.size() != mRealColumnCount) {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
@@ -1747,7 +1855,7 @@ CBedReader::xReadBedRecordRaw(
     }
 
     int score(-1);
-    if (m_columncount >= 5  &&  columns[4] != ".") {
+    if (mValidColumnCount >= 5  &&  columns[4] != ".") {
         try {
             score = NStr::StringToInt(columns[4], 
 			NStr::fConvErr_NoThrow|NStr::fAllowTrailingSymbols);
@@ -1763,7 +1871,7 @@ CBedReader::xReadBedRecordRaw(
         }
     }
     ENa_strand strand = eNa_strand_plus;
-    if (m_columncount >= 6) {
+    if (mValidColumnCount >= 6) {
         if (columns[5] == "-") {
             strand = eNa_strand_minus;
         }
@@ -1781,7 +1889,7 @@ CBedReader::xContainsThickFeature(
     const vector<string>& fields) const
 //  ----------------------------------------------------------------------------
 {
-    if (fields.size() < 8) {
+    if (fields.size() < 8  ||  mValidColumnCount < 8) {
         return false;
     }
 
@@ -1808,11 +1916,11 @@ CBedReader::xContainsThickFeature(
 
 //  ----------------------------------------------------------------------------
 bool
-CBedReader::xContainsCdsFeature(
+CBedReader::xContainsRnaFeature(
     const vector<string>& fields) const
 //  ----------------------------------------------------------------------------
 {
-    if (fields.size() < 8) {
+    if (fields.size() < 12  ||  mValidColumnCount < 12) {
         return false;
     }
 
@@ -1843,17 +1951,17 @@ CBedReader::xContainsBlockFeature(
     const vector<string>& fields) const
 //  ----------------------------------------------------------------------------
 {
-    return (fields.size() >= 12);
+    return (fields.size() >= 12  &&  mValidColumnCount >= 12);
 }
 
 
 //  ----------------------------------------------------------------------------
 bool
-CBedReader::xContainsRnaFeature(
+CBedReader::xContainsCdsFeature(
     const vector<string>& fields) const
 //  ----------------------------------------------------------------------------
 {
-    return (fields.size() >= 12);
+    return (fields.size() >= 8  &&  mValidColumnCount >= 8);
 }
 
 
@@ -1937,12 +2045,12 @@ CBedReader::xAssignBedColumnCount(
     CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
-    if(m_columncount < 3) {
+    if(mValidColumnCount < 3) {
         return;
     }
     CRef<CUser_object> columnCountUser(new CUser_object());
     columnCountUser->SetType().SetStr("NCBI_BED_COLUMN_COUNT");
-    columnCountUser->AddField("NCBI_BED_COLUMN_COUNT", int (m_columncount));
+    columnCountUser->AddField("NCBI_BED_COLUMN_COUNT", int (mValidColumnCount));
     
     CRef<CAnnotdesc> userDesc(new CAnnotdesc());
     userDesc->SetUser().Assign(*columnCountUser);

@@ -55,7 +55,7 @@ Seq-annot ::= {
       data {
         {
           label str "NCBI_BED_COLUMN_COUNT",
-          data int 7
+          data int 6
         }
       }
     }

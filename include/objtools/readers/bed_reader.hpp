@@ -411,7 +411,9 @@ protected:
     //
 protected:
     string m_currentId;
-    vector<string>::size_type m_columncount;
+    vector<string>::size_type mRealColumnCount;
+    vector<string>::size_type mValidColumnCount;
+    bool mAssumeErrorsAreRecordLevel;
     unsigned int m_CurrentFeatureCount;
     bool m_usescore;
     unsigned int m_CurBatchSize;
