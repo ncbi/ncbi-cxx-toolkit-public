@@ -59,37 +59,7 @@ bool CCleanup::CleanupUserObject( CUser_object &user_object )
     // clean fields
     if (user_object.IsSetData()) {
         for (auto field : user_object.SetData()) {
-            if (field->IsSetLabel() && field->GetLabel().IsStr()) {
-                any_change |= CleanVisString(field->SetLabel().SetStr());
-            }
-
-            if (field->IsSetData()) {
-                any_change |= s_AddNumToUserField(*field);
-                switch (field->GetData().Which()) {
-                case CUser_field::TData::e_Str:
-                    any_change |= Asn2gnbkCompressSpaces(field->SetData().SetStr());
-                    any_change |= CleanVisString(field->SetData().SetStr());
-                    break;
-                case CUser_field::TData::e_Object:
-                    any_change |= CleanupUserObject(field->SetData().SetObject());
-                    break;
-                case CUser_field::TData::e_Objects:
-                    for (auto sub_obj : field->SetData().SetObjects()) {
-                        any_change |= CleanupUserObject(*sub_obj);
-                    }
-                    break;
-                case CUser_field::TData::e_Strs:
-                    // NOTE: for some reason, using the auto range 
-                    // does not work here
-                    for (auto str = field->SetData().SetStrs().begin(); str != field->SetData().SetStrs().end(); str++) {
-                        any_change |= Asn2gnbkCompressSpaces(*str);
-                        any_change |= CleanVisString(*str);
-                    }
-                    break;
-                default:
-                    break;
-                }
-            }
+            any_change |= x_CleanupUserField(*field);
         }
     }
 
@@ -97,6 +67,49 @@ bool CCleanup::CleanupUserObject( CUser_object &user_object )
     any_change |= s_CleanupStructuredComment(user_object);
     any_change |= s_CleanupDBLink(user_object);
 
+    return any_change;
+}
+
+
+bool CCleanup::x_CleanupUserField(CUser_field& field)
+{
+    bool any_change = false;
+
+    if (field.IsSetLabel() && field.GetLabel().IsStr()) {
+        any_change |= CleanVisString(field.SetLabel().SetStr());
+    }
+
+    if (field.IsSetData()) {
+        any_change |= s_AddNumToUserField(field);
+        switch (field.GetData().Which()) {
+        case CUser_field::TData::e_Str:
+            any_change |= Asn2gnbkCompressSpaces(field.SetData().SetStr());
+            any_change |= CleanVisString(field.SetData().SetStr());
+            break;
+        case CUser_field::TData::e_Object:
+            any_change |= CleanupUserObject(field.SetData().SetObject());
+            break;
+        case CUser_field::TData::e_Objects:
+            for (auto sub_obj : field.SetData().SetObjects()) {
+                any_change |= CleanupUserObject(*sub_obj);
+            }
+            break;
+        case CUser_field::TData::e_Strs:
+            // NOTE: for some reason, using the auto range 
+            // does not work here
+            for (auto str = field.SetData().SetStrs().begin(); str != field.SetData().SetStrs().end(); str++) {
+                any_change |= Asn2gnbkCompressSpaces(*str);
+                any_change |= CleanVisString(*str);
+            }
+            break;
+        case CUser_field::TData::e_Fields:
+            for (auto sub_field : field.SetData().SetFields()) {
+                any_change |= x_CleanupUserField(*sub_field);
+            }
+        default:
+            break;
+        }
+    }
     return any_change;
 }
 

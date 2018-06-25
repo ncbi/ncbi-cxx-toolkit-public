@@ -585,6 +585,8 @@ private:
 
     CRef<CScope>            m_Scope;
 
+    static bool x_CleanupUserField(CUser_field& field);
+
     static bool x_MergeDupOrgNames(COrgName& on1, const COrgName& add);
     static bool x_MergeDupOrgRefs(COrg_ref& org1, const COrg_ref& add);
 
