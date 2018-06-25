@@ -13,7 +13,7 @@ Seq-annot ::= {
         },
         {
           label str "warnings",
-          data int 6
+          data int 3
         },
         {
           label str "notes",
@@ -56,11 +56,6 @@ Seq-annot ::= {
         strand minus,
         id local str "chr22"
       },
-      xref {
-        {
-          id local id 2
-        }
-      },
       exts {
         {
           type str "DisplaySettings",
@@ -81,45 +76,6 @@ Seq-annot ::= {
             {
               label str "location",
               data str "chrom"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local id 2,
-      data region "cloneB",
-      location int {
-        from 2000,
-        to 5999,
-        strand minus,
-        id local str "chr22"
-      },
-      xref {
-        {
-          id local id 1
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "score",
-              data int 900
-            },
-            {
-              label str "color",
-              data str "0 0 0"
-            }
-          }
-        },
-        {
-          type str "BED",
-          data {
-            {
-              label str "location",
-              data str "thick"
             }
           }
         }
@@ -134,11 +90,6 @@ Seq-annot ::= {
         strand minus,
         id local str "chr22"
       },
-      xref {
-        {
-          id local id 5
-        }
-      },
       exts {
         {
           type str "DisplaySettings",
@@ -159,45 +110,6 @@ Seq-annot ::= {
             {
               label str "location",
               data str "chrom"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local id 5,
-      data region "cloneB",
-      location int {
-        from 2000,
-        to 5999,
-        strand minus,
-        id local str "chr22"
-      },
-      xref {
-        {
-          id local id 4
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "score",
-              data int 900
-            },
-            {
-              label str "color",
-              data str "22 33 44"
-            }
-          }
-        },
-        {
-          type str "BED",
-          data {
-            {
-              label str "location",
-              data str "thick"
             }
           }
         }
@@ -212,11 +124,6 @@ Seq-annot ::= {
         strand minus,
         id local str "chr22"
       },
-      xref {
-        {
-          id local id 8
-        }
-      },
       exts {
         {
           type str "DisplaySettings",
@@ -237,45 +144,6 @@ Seq-annot ::= {
             {
               label str "location",
               data str "chrom"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local id 8,
-      data region "cloneB",
-      location int {
-        from 2000,
-        to 5999,
-        strand minus,
-        id local str "chr22"
-      },
-      xref {
-        {
-          id local id 7
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "score",
-              data int 900
-            },
-            {
-              label str "color",
-              data str "209 164 121"
-            }
-          }
-        },
-        {
-          type str "BED",
-          data {
-            {
-              label str "location",
-              data str "thick"
             }
           }
         }
@@ -290,11 +158,6 @@ Seq-annot ::= {
         strand minus,
         id local str "chr22"
       },
-      xref {
-        {
-          id local id 11
-        }
-      },
       exts {
         {
           type str "DisplaySettings",
@@ -315,45 +178,6 @@ Seq-annot ::= {
             {
               label str "location",
               data str "chrom"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local id 11,
-      data region "cloneB",
-      location int {
-        from 2000,
-        to 5999,
-        strand minus,
-        id local str "chr22"
-      },
-      xref {
-        {
-          id local id 10
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "score",
-              data int 900
-            },
-            {
-              label str "color",
-              data str "34 136 204"
-            }
-          }
-        },
-        {
-          type str "BED",
-          data {
-            {
-              label str "location",
-              data str "thick"
             }
           }
         }
@@ -368,11 +192,6 @@ Seq-annot ::= {
         strand minus,
         id local str "chr22"
       },
-      xref {
-        {
-          id local id 14
-        }
-      },
       exts {
         {
           type str "DisplaySettings",
@@ -393,45 +212,6 @@ Seq-annot ::= {
             {
               label str "location",
               data str "chrom"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local id 14,
-      data region "cloneB",
-      location int {
-        from 2000,
-        to 5999,
-        strand minus,
-        id local str "chr22"
-      },
-      xref {
-        {
-          id local id 13
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "score",
-              data int 900
-            },
-            {
-              label str "color",
-              data str "51 170 255"
-            }
-          }
-        },
-        {
-          type str "BED",
-          data {
-            {
-              label str "location",
-              data str "thick"
             }
           }
         }
@@ -446,11 +226,6 @@ Seq-annot ::= {
         strand minus,
         id local str "chr22"
       },
-      xref {
-        {
-          id local id 17
-        }
-      },
       exts {
         {
           type str "DisplaySettings",
@@ -471,45 +246,6 @@ Seq-annot ::= {
             {
               label str "location",
               data str "chrom"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local id 17,
-      data region "cloneB",
-      location int {
-        from 2000,
-        to 5999,
-        strand minus,
-        id local str "chr22"
-      },
-      xref {
-        {
-          id local id 16
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "score",
-              data int 900
-            },
-            {
-              label str "color",
-              data str "0 0 0"
-            }
-          }
-        },
-        {
-          type str "BED",
-          data {
-            {
-              label str "location",
-              data str "thick"
             }
           }
         }
@@ -524,11 +260,6 @@ Seq-annot ::= {
         strand minus,
         id local str "chr22"
       },
-      xref {
-        {
-          id local id 20
-        }
-      },
       exts {
         {
           type str "DisplaySettings",
@@ -549,45 +280,6 @@ Seq-annot ::= {
             {
               label str "location",
               data str "chrom"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local id 20,
-      data region "cloneB",
-      location int {
-        from 2000,
-        to 5999,
-        strand minus,
-        id local str "chr22"
-      },
-      xref {
-        {
-          id local id 19
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "score",
-              data int 900
-            },
-            {
-              label str "color",
-              data str "0 0 0"
-            }
-          }
-        },
-        {
-          type str "BED",
-          data {
-            {
-              label str "location",
-              data str "thick"
             }
           }
         }
@@ -602,11 +294,6 @@ Seq-annot ::= {
         strand minus,
         id local str "chr22"
       },
-      xref {
-        {
-          id local id 23
-        }
-      },
       exts {
         {
           type str "DisplaySettings",
@@ -627,45 +314,6 @@ Seq-annot ::= {
             {
               label str "location",
               data str "chrom"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local id 23,
-      data region "cloneB",
-      location int {
-        from 2000,
-        to 5999,
-        strand minus,
-        id local str "chr22"
-      },
-      xref {
-        {
-          id local id 22
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "score",
-              data int 900
-            },
-            {
-              label str "color",
-              data str "0 0 0"
-            }
-          }
-        },
-        {
-          type str "BED",
-          data {
-            {
-              label str "location",
-              data str "thick"
             }
           }
         }
