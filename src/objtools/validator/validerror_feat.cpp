@@ -867,10 +867,12 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
         PostErr (m_Imp.IsGpipe() ? eDiag_Info : eDiag_Warning, eErr_SEQ_FEAT_UndesiredGeneSynonym,
                  "gene synonym without gene locus or description", feat);
     }
-                 
+    
+#if 0
     if (gene.IsSetLocus()) {
         ValidateCharactersInField (gene.GetLocus(), "Gene locus", feat);
     }
+#endif
 
       // check for SGML
       if (gene.IsSetLocus() && ContainsSgml(gene.GetLocus())) {
@@ -1523,6 +1525,7 @@ DEFINE_STATIC_ARRAY_MAP(TBadProtNameSet, sc_BadProtName, sc_BadProtNameText);
 void CValidError_feat::ValidateProt(
     const CProt_ref& prot, const CSeq_feat& feat) 
 {
+#if 0
     CProt_ref::EProcessed processed = CProt_ref::eProcessed_not_set;
 
     if ( prot.CanGetProcessed() ) {
@@ -1555,10 +1558,13 @@ void CValidError_feat::ValidateProt(
                 "There is a protein feature where all fields are empty", feat);
         }
     }
+#endif
 
-    if (m_Imp.IsRefSeq()) {
-        x_ReportUninformativeNames (prot, feat);
-    }
+//    if (m_Imp.IsRefSeq()) {
+//        x_ReportUninformativeNames (prot, feat);
+//    }
+
+#if 0
 
     // only look for EC numbers in first protein name
     // only look for brackets and hypothetical protein XP_ in first protein name
@@ -1624,6 +1630,7 @@ void CValidError_feat::ValidateProt(
     }
     
     x_ValidateProtECNumbers (prot, feat);
+#endif
 }
 
 
@@ -1821,12 +1828,14 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
         rna_type = rna.GetType();
     }
 
+#if 0
     if ( rna_type != CRNA_ref::eType_tRNA ) {
         if ( rna.CanGetExt() && rna.GetExt().IsTRNA () ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidTRNAdata,
                 "tRNA data structure on non-tRNA feature", feat);
         }
     }
+#endif
 
     bool feat_pseudo = s_IsPseudo(feat);
     bool gene_pseudo = IsOverlappingGenePseudo(feat, m_Scope);
@@ -1857,6 +1866,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             }
         }
         
+#if 0
         if (rna.CanGetExt() && rna.GetExt().IsName()) {
             const string& rna_name = rna.GetExt().GetName();
             if (NStr::StartsWith (rna_name, "transfer RNA ") &&
@@ -1871,6 +1881,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
                     "mRNA name " + rna_name + " has SGML", feat);
             }
         }
+#endif
     }
 
     if ( rna_type == CRNA_ref::eType_tRNA ) {
@@ -1930,6 +1941,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             "RNA type 0 (unknown) not supported", feat);
     }
 
+#if 0
     if (rna_type == CRNA_ref::eType_rRNA) {
         if (rna.CanGetExt() && rna.GetExt().IsName()) {
             const string& rna_name = rna.GetExt().GetName();
@@ -1940,6 +1952,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             }
         }
     }
+#endif
 
     if (rna_type == CRNA_ref::eType_rRNA
         || rna_type == CRNA_ref::eType_snRNA
@@ -6755,6 +6768,24 @@ void CSingleFeatValidator::x_ValidateReplaceQual(const string& key, const string
 }
 
 
+void CSingleFeatValidator::ValidateCharactersInField (string value, string field_name)
+{
+    if (HasBadCharacter (value)) {
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadInternalCharacter, 
+                 field_name + " contains undesired character");
+    }
+    if (EndsWithBadCharacter (value)) {
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadTrailingCharacter, 
+                 field_name + " ends with undesired character");
+    }
+    if (NStr::EndsWith (value, "-")) {
+        if (!m_Imp.IsGpipe() || !m_Imp.BioSourceKind().IsOrganismEukaryote() )
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadTrailingHyphen, 
+                field_name + " ends with hyphen");
+    }
+}
+
+
 CCdregionValidator::CCdregionValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
 CSingleFeatValidator(feat, scope, imp) {
     CConstRef<CSeq_feat> m_Gene = m_Imp.GetGeneCache().GetGeneFromCache(&feat, m_Scope);
@@ -7516,6 +7547,19 @@ void CCdregionValidator::ReportShortIntrons()
 }
 
 
+void CGeneValidator::Validate()
+{
+    CSingleFeatValidator::Validate();
+
+    const CGene_ref& gene = m_Feat.GetData().GetGene();
+
+    if (gene.IsSetLocus()) {
+        ValidateCharactersInField (gene.GetLocus(), "Gene locus");
+    }
+
+}
+
+
 void CGeneValidator::x_ValidateExceptText(const string& text)
 {
     CSingleFeatValidator::x_ValidateExceptText(text);
@@ -7527,6 +7571,307 @@ void CGeneValidator::x_ValidateExceptText(const string& text)
 }
 
 
+void CProtValidator::Validate()
+{
+    CSingleFeatValidator::Validate();
+
+    x_CheckForEmpty();
+
+    const CProt_ref& prot = m_Feat.GetData().GetProt();
+    for (auto it : prot.GetName()) {        
+        if (prot.IsSetEc() && !prot.IsSetProcessed()
+            && (NStr::EqualCase (it, "Hypothetical protein")
+                || NStr::EqualCase (it, "hypothetical protein")
+                || NStr::EqualCase (it, "Unknown protein")
+                || NStr::EqualCase (it, "unknown protein"))) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadProteinName, 
+                     "Unknown or hypothetical protein should not have EC number");
+        }
+
+    }
+
+    if (prot.IsSetDesc() && ContainsSgml(prot.GetDesc())) {
+        PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+                 "protein description " + prot.GetDesc() + " has SGML");
+    }
+
+    if (prot.IsSetDesc() && m_Feat.IsSetComment() 
+        && NStr::EqualCase(prot.GetDesc(), m_Feat.GetComment())) {
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_RedundantFields, 
+                 "Comment has same value as protein description");
+    }
+
+    if (m_Feat.IsSetComment() && HasECnumberPattern(m_Feat.GetComment())) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberInProteinComment,
+                 "Apparent EC number in protein comment");
+    }
+
+    x_ReportUninformativeNames();
+
+    // only look for EC numbers in first protein name
+    // only look for brackets and hypothetical protein XP_ in first protein name
+    if (prot.IsSetName() && prot.GetName().size() > 0) {
+        if (HasECnumberPattern(prot.GetName().front())) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberInProteinName,
+                "Apparent EC number in protein title");
+        }
+        x_ValidateProteinName(prot.GetName().front());
+    }
+
+    if ( prot.CanGetDb () ) {
+        m_Imp.ValidateDbxref(prot.GetDb(), m_Feat);
+    }
+    if ( (!prot.IsSetName() || prot.GetName().empty()) && 
+         (!prot.IsSetProcessed() 
+          || (prot.GetProcessed() != CProt_ref::eProcessed_signal_peptide
+              && prot.GetProcessed() !=  CProt_ref::eProcessed_transit_peptide))) {
+        if (prot.IsSetDesc() && !NStr::IsBlank (prot.GetDesc())) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_NoNameForProtein,
+                "Protein feature has description but no name");
+        } else if (prot.IsSetActivity() && !prot.GetActivity().empty()) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_NoNameForProtein,
+                "Protein feature has function but no name");
+        } else if (prot.IsSetEc() && !prot.GetEc().empty()) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_NoNameForProtein,
+                "Protein feature has EC number but no name");
+        } else {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_NoNameForProtein,
+                "Protein feature has no name");
+        }
+    }
+
+    x_ValidateECNumbers();
+}
+
+
+void CProtValidator::x_CheckForEmpty()
+{
+    const CProt_ref& prot = m_Feat.GetData().GetProt();
+    CProt_ref::EProcessed processed = CProt_ref::eProcessed_not_set;
+
+    if ( prot.IsSetProcessed() ) {
+        processed = prot.GetProcessed();
+    }
+
+    bool empty = true;
+    if ( processed != CProt_ref::eProcessed_signal_peptide  &&
+         processed != CProt_ref::eProcessed_transit_peptide ) {
+        if ( prot.IsSetName()  &&
+            !prot.GetName().empty()  &&
+            !prot.GetName().front().empty() ) {
+            empty = false;
+        }
+        if ( prot.CanGetDesc()  &&  !prot.GetDesc().empty() ) {
+            empty = false;
+        }
+        if ( prot.CanGetEc()  &&  !prot.GetEc().empty() ) {
+            empty = false;
+        }
+        if ( prot.CanGetActivity()  &&  !prot.GetActivity().empty() ) {
+            empty = false;
+        }
+        if ( prot.CanGetDb()  &&  !prot.GetDb().empty() ) {
+            empty = false;
+        }
+
+        if ( empty ) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_ProtRefHasNoData,
+                "There is a protein feature where all fields are empty");
+        }
+    }
+}
+
+
+void CProtValidator::x_ReportUninformativeNames() 
+{
+    if (!m_Feat.GetData().GetProt().IsSetName()) {
+        return;
+    }
+    if (!m_Imp.IsRefSeq()) {
+        return;
+    }
+    for (auto it : m_Feat.GetData().GetProt().GetName()) {
+        string search = it;
+        search = NStr::ToLower(search);
+        if (sc_BadProtName.find (search.c_str()) != sc_BadProtName.end()
+            || NStr::Find(search, "=") != string::npos
+            || NStr::Find(search, "~") != string::npos
+            || NStr::FindNoCase(search, "uniprot") != string::npos
+            || NStr::FindNoCase(search, "uniprotkb") != string::npos
+            || NStr::FindNoCase(search, "pmid") != string::npos
+            || NStr::FindNoCase(search, "dbxref") != string::npos) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_UndesiredProteinName, 
+                     "Uninformative protein name '" + it + "'");
+        }
+    }
+}
+
+
+void CProtValidator::x_ValidateECNumbers() 
+{
+    if (!m_Feat.GetData().GetProt().IsSetEc()) {
+        return;
+    }
+    for (auto it : m_Feat.GetData().GetProt().GetEc()) {
+        if (NStr::IsBlank (it)) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_EcNumberEmpty, "EC number should not be empty");
+        } else if (!CProt_ref::IsValidECNumberFormat(it)) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
+                    (it) + " is not in proper EC_number format");
+        } else {
+            const string& ec_number = it;
+            CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
+            x_ReportECNumFileStatus();
+            switch (status) {
+                case CProt_ref::eEC_deleted:
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_DeletedEcNumber,
+                             "EC_number " + ec_number + " was deleted");
+                    break;
+                case CProt_ref::eEC_replaced:
+                    PostErr (eDiag_Warning, 
+                             CProt_ref::IsECNumberSplit(ec_number) ? eErr_SEQ_FEAT_SplitEcNumber : eErr_SEQ_FEAT_ReplacedEcNumber, 
+                             "EC_number " + ec_number + " was transferred and is no longer valid");
+                    break;
+                case CProt_ref::eEC_unknown:
+                  {
+                      size_t pos = NStr::Find (ec_number, "n");
+                      if (pos == string::npos || !isdigit (ec_number.c_str()[pos + 1])) {
+                            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+                                   ec_number + " is not a legal value for qualifier EC_number");
+                      } else {
+                            PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue, 
+                                   ec_number + " is not a legal preliminary value for qualifier EC_number");
+                      }
+                  }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+}
+
+
+void CProtValidator::x_ValidateProteinName(const string& prot_name)
+{
+    if (NStr::EndsWith(prot_name, "]")) {
+        bool report_name = true;
+        size_t pos = NStr::Find(prot_name, "[", NStr::eNocase, NStr::eReverseSearch);
+        if (pos == string::npos) {
+            // no disqualifying text
+        } else if (prot_name.length() - pos < 5) {
+            // no disqualifying text
+        } else if (NStr::EqualCase(prot_name, pos, 4, "[NAD")) {
+            report_name = false;
+        }
+        if (!m_Imp.IsEmbl() && !m_Imp.IsTPE()) {
+            if (report_name) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_ProteinNameEndsInBracket,
+                    "Protein name ends with bracket and may contain organism name");
+            }
+        }
+    }
+    if (NStr::StartsWith(prot_name, "hypothetical protein XP_") && m_LocationBioseq) {
+        for (auto id_it : m_LocationBioseq.GetCompleteBioseq()->GetId()) {
+            if (id_it->IsOther()
+                && id_it->GetOther().IsSetAccession()
+                && !NStr::EqualNocase(id_it->GetOther().GetAccession(),
+                prot_name.substr(21))) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_HypotheticalProteinMismatch,
+                    "Hypothetical protein reference does not match accession");
+            }
+        }
+    }
+    if (!m_Imp.IsRefSeq() && NStr::FindNoCase(prot_name, "RefSeq") != string::npos) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_RefSeqInText, "Protein name contains 'RefSeq'");
+    }
+    if (m_Feat.IsSetComment() && NStr::EqualCase(m_Feat.GetComment(), prot_name)) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_RedundantFields,
+            "Comment has same value as protein name");
+    }
+
+    if (s_StringHasPMID(prot_name)) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ProteinNameHasPMID,
+            "Protein name has internal PMID");
+    }
+
+    if (m_Imp.DoRubiscoTest()) {
+        if (NStr::FindCase(prot_name, "ribulose") != string::npos
+            && NStr::FindCase(prot_name, "bisphosphate") != string::npos
+            && NStr::FindCase(prot_name, "methyltransferase") == string::npos
+            && NStr::FindCase(prot_name, "activase") == string::npos) {
+            if (NStr::EqualNocase(prot_name, "ribulose-1,5-bisphosphate carboxylase/oxygenase")) {
+                // allow standard name without large or small subunit designation - later need kingdom test
+            } else if (!NStr::EqualNocase(prot_name, "ribulose-1,5-bisphosphate carboxylase/oxygenase large subunit")
+                && !NStr::EqualNocase(prot_name, "ribulose-1,5-bisphosphate carboxylase/oxygenase small subunit")) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_RubiscoProblem,
+                    "Nonstandard ribulose bisphosphate protein name");
+            }
+        }
+    }
+
+
+
+    ValidateCharactersInField(prot_name, "Protein name");
+    if (ContainsSgml(prot_name)) {
+        PostErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
+            "protein name " + prot_name + " has SGML");
+    }
+
+}
+
+
+void CRNAValidator::Validate()
+{
+    CSingleFeatValidator::Validate();
+
+    const CRNA_ref& rna = m_Feat.GetData().GetRna();
+
+    CRNA_ref::EType rna_type = CRNA_ref::eType_unknown;
+    if (rna.IsSetType()) {
+        rna_type = rna.GetType();
+    }
+
+    if ( rna_type != CRNA_ref::eType_tRNA ) {
+        if ( rna.CanGetExt() && rna.GetExt().IsTRNA () ) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidTRNAdata,
+                "tRNA data structure on non-tRNA feature");
+        }
+    }
+
+    if (rna_type == CRNA_ref::eType_mRNA) {
+        if (rna.IsSetExt() && rna.GetExt().IsName()) {
+            const string& rna_name = rna.GetExt().GetName();
+            if (NStr::StartsWith(rna_name, "transfer RNA ") &&
+                (!NStr::EqualNocase(rna_name, "transfer RNA nucleotidyltransferase")) &&
+                (!NStr::EqualNocase(rna_name, "transfer RNA methyltransferase"))) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_tRNAmRNAmixup,
+                    "mRNA feature product indicates it should be a tRNA feature");
+            }
+            ValidateCharactersInField(rna_name, "mRNA name");
+            if (ContainsSgml(rna_name)) {
+                PostErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
+                    "mRNA name " + rna_name + " has SGML");
+            }
+        }
+    }
+
+    if (rna_type == CRNA_ref::eType_rRNA) {
+        if (rna.CanGetExt() && rna.GetExt().IsName()) {
+            const string& rna_name = rna.GetExt().GetName();
+            ValidateCharactersInField (rna_name, "rRNA name");
+            if (ContainsSgml(rna_name)) {
+                PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+                    "rRNA name " + rna_name + " has SGML");
+            }
+        }
+    }
+
+
+}
+
+
 CSingleFeatValidator* FeatValidatorFactory(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp)
 {
     if (!feat.IsSetData()) {
@@ -7535,6 +7880,10 @@ CSingleFeatValidator* FeatValidatorFactory(const CSeq_feat& feat, CScope& scope,
         return new CCdregionValidator(feat, scope, imp);
     } else if (feat.GetData().IsGene()) {
         return new CGeneValidator(feat, scope, imp);
+    } else if (feat.GetData().IsProt()) {
+        return new CProtValidator(feat, scope, imp);
+    } else if (feat.GetData().IsRna()) {
+        return new CRNAValidator(feat, scope, imp);
     } else {
         return new CSingleFeatValidator(feat, scope, imp);
     }

@@ -318,6 +318,8 @@ protected:
     CBioseq_Handle x_GetFeatureProduct(bool look_far, bool& is_far);
     CBioseq_Handle x_GetFeatureProduct(bool& is_far);
 
+    void ValidateCharactersInField (string value, string field_name);
+
 };
 
 class CCdregionValidator : public CSingleFeatValidator
@@ -361,9 +363,39 @@ public:
     CGeneValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
         CSingleFeatValidator(feat, scope, imp) {}
 
+    virtual void Validate();
 
 protected:
     virtual void x_ValidateExceptText(const string& text);
+};
+
+
+class CProtValidator : public CSingleFeatValidator
+{
+public:
+    CProtValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+        CSingleFeatValidator(feat, scope, imp) {}
+
+    virtual void Validate();
+
+protected:
+    void x_CheckForEmpty();
+    void x_ReportUninformativeNames();
+    void x_ValidateECNumbers();
+    void x_ValidateProteinName(const string& prot_name);
+};
+
+
+class CRNAValidator : public CSingleFeatValidator
+{
+public:
+    CRNAValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+        CSingleFeatValidator(feat, scope, imp) {}
+
+    virtual void Validate();
+
+protected:
+
 };
 
 
