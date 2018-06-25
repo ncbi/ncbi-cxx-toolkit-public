@@ -201,6 +201,63 @@ bool CGC_Sequence::HasRole(int Role) const
 	return false;
 }
 
+void CGC_Sequence::GetChildren(TSequenceList& children,
+                               EChildrenSubset subset,
+                               CGC_TaggedSequences::TState state,
+                               int level) const
+{
+    x_GetChildren(children, subset, state, level);
+}
+
+void CGC_Sequence::x_GetChildren(TSequenceList& children,
+                       EChildrenSubset subset,
+                       CGC_TaggedSequences::TState state,
+                       int level) const
+{
+    for (const CRef<CGC_TaggedSequences> &tag: GetSequences()) {
+        if (state != 0 && tag->GetState() != state) {
+            /// Doesn't belong to required state
+            continue;
+        }
+        for (const CRef<CGC_Sequence> &child: tag->GetSeqs()) {
+             if (level == 0 || level == 1) {
+                /// Looking at either this specific level or all levels; add
+                /// this child to results, if it belongs to the requested subset
+                bool is_in_subset = false;
+                switch (subset) {
+                    case eScaffold:
+                        is_in_subset = child->HasRole(eGC_SequenceRole_scaffold);
+                        break;
+
+                    case eComponent:
+                        is_in_subset = child->HasRole(eGC_SequenceRole_component);
+                        break;
+
+                    case eAll:
+                        is_in_subset = true;
+                        break;
+
+                    default:
+                        NCBI_THROW(CException, eUnknown,
+                                   "Unrecogtnized subset specification");
+                }
+                if (is_in_subset) {
+                    children.push_back(child);
+                }
+            }
+            if (level != 1) {
+                /// If level is specified as 1, we're only looking at this level;
+                /// otherwise keep looking at next level
+                /// Subset selection applies at all levels; stats selection only
+                /// applies at the first level (e.g. if you're looking for
+                /// component children of a chromosome, and specify unplaced
+                /// status, include placed components of unplaced scaffolds
+                child->x_GetChildren(children, subset, 0, max(level-1,0));
+            }
+        }
+    }
+}
+
 string CGC_Sequence::GetChrName() const
 {
     if (GetTopLevelParent()->GetReplicon() &&

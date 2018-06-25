@@ -95,6 +95,22 @@ public:
 	
 	bool HasRole(int Role) const;
 
+    typedef list< CConstRef<CGC_Sequence> >     TSequenceList;
+    enum EChildrenSubset {
+        eScaffold,
+        eComponent,
+        eAll
+    };
+
+    /// Get sub-sequences
+    /// @param subset   subset of children to get; default is all children
+    /// @param stats    get only children with this state; default is all children
+    /// @param lebel    get children up to this level; default is all levels
+    void GetChildren(TSequenceList& children,
+                     EChildrenSubset subset = eAll,
+                     CGC_TaggedSequences::TState state = 0,
+                     int level = 0) const;
+
     /// Get name of chromosome that this sequence belongs to, if any
     string GetChrName() const;
 
@@ -121,6 +137,10 @@ protected:
     mutable TSeqPos  m_SeqLength;
     mutable bool     m_SeqLengthRetrieved;
     
+    void x_GetChildren(TSequenceList& children,
+                       EChildrenSubset subset,
+                       CGC_TaggedSequences::TState state,
+                       int level) const;
 
 private:
     // Prohibit copy constructor and assignment operator
