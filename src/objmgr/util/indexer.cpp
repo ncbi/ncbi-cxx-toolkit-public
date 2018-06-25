@@ -798,7 +798,9 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_IsPseudogene = false;
 
     m_HasOperon = false;
+    m_HasGene = false;
     m_HasMultiIntervalGenes = false;
+    m_HasSource = false;
 
     m_rEnzyme.clear();
 
@@ -1802,6 +1804,7 @@ void CBioseqIndex::x_InitFeats (void)
             CSeqFeatData::ESubtype subtype = sfx->GetSubtype();
 
             if (type == CSeqFeatData::e_Biosrc) {
+                m_HasSource = true;
                 if (! m_BioSource) {
                     if (! mf.IsSetData ()) continue;
                     const CSeqFeatData& sfdata = mf.GetData();
@@ -1812,6 +1815,7 @@ void CBioseqIndex::x_InitFeats (void)
             }
 
             if (type == CSeqFeatData::e_Gene) {
+                m_HasGene = true;
                 if (m_HasMultiIntervalGenes) {
                     continue;
                 }
@@ -2270,7 +2274,7 @@ CTempString CBioseqIndex::GetClone (void)
     return m_Clone;
 }
 
-bool CBioseqIndex::IsHasClone (void)
+bool CBioseqIndex::HasClone (void)
 
 {
     if (! m_SourcesInitialized) {
@@ -2540,6 +2544,16 @@ bool CBioseqIndex::HasOperon (void)
     return m_HasOperon;
 }
 
+bool CBioseqIndex::HasGene (void)
+
+{
+    if (! m_FeatsInitialized) {
+        x_InitFeats();
+    }
+
+    return m_HasGene;
+}
+
 bool CBioseqIndex::HasMultiIntervalGenes (void)
 
 {
@@ -2548,6 +2562,16 @@ bool CBioseqIndex::HasMultiIntervalGenes (void)
     }
 
     return m_HasMultiIntervalGenes;
+}
+
+bool CBioseqIndex::HasSource (void)
+
+{
+    if (! m_FeatsInitialized) {
+        x_InitFeats();
+    }
+
+    return m_HasSource;
 }
 
 string CBioseqIndex::GetrEnzyme (void)
@@ -2761,14 +2785,16 @@ CRef<CFeatureIndex> CFeatureIndex::GetOverlappingSource (void)
         CWeakRef<CBioseqIndex> bsx = GetBioseqIndex();
         auto bsxl = bsx.Lock();
         if (bsxl) {
-            feature::CFeatTree ft = bsxl->GetFeatTree();
-            try {
-                best = ft.GetParent(m_Mf, CSeqFeatData::eSubtype_biosrc);
-            } catch (CException& e) {
-                LOG_POST_X(9, Error << "Error in CFeatureIndex::GetOverlappingSource: " << e.what());
-            }
-            if (best) {
-                return bsxl->GetFeatIndex(best);
+            if (bsxl->HasSource()) {
+                feature::CFeatTree ft = bsxl->GetFeatTree();
+                try {
+                    best = ft.GetParent(m_Mf, CSeqFeatData::eSubtype_biosrc);
+                } catch (CException& e) {
+                    LOG_POST_X(9, Error << "Error in CFeatureIndex::GetOverlappingSource: " << e.what());
+                }
+                if (best) {
+                    return bsxl->GetFeatIndex(best);
+                }
             }
         }
     } catch (CException& e) {

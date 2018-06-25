@@ -495,7 +495,7 @@ public:
 
     CTempString GetChromosome (void);
     CTempString GetClone (void);
-    bool IsHasClone (void);
+    bool HasClone (void);
     CTempString GetMap (void);
     CTempString GetPlasmid (void);
     CTempString GetSegment (void);
@@ -530,7 +530,9 @@ public:
     bool IsPseudogene (void);
 
     bool HasOperon (void);
+    bool HasGene (void);
     bool HasMultiIntervalGenes (void);
+    bool HasSource (void);
 
     string GetrEnzyme (void);
 
@@ -709,7 +711,9 @@ private:
 
     // Feature fields
     bool m_HasOperon;
+    bool m_HasGene;
     bool m_HasMultiIntervalGenes;
+    bool m_HasSource;
 
     // Map fields
     string m_rEnzyme;

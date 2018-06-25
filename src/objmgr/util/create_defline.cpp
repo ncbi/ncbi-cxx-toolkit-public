@@ -513,7 +513,7 @@ void CDeflineGenerator::x_SetFlagsIdx (
 
     m_Chromosome = bsx->GetChromosome();
     m_Clone = bsx->GetClone();
-    m_has_clone = bsx->IsHasClone();
+    m_has_clone = bsx->HasClone();
     m_Map = bsx->GetMap();
     m_Plasmid = bsx->GetPlasmid();
     m_Segment = bsx->GetSegment();
@@ -1151,7 +1151,7 @@ void CDeflineGenerator::x_SetBioSrcIdx (
 
     m_Chromosome = bsx->GetChromosome();
     m_Clone = bsx->GetClone();
-    m_has_clone = bsx->IsHasClone();
+    m_has_clone = bsx->HasClone();
     m_Map = bsx->GetMap();
     m_Plasmid = bsx->GetPlasmid();
     m_Segment = bsx->GetSegment();
