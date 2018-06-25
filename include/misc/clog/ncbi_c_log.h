@@ -797,6 +797,8 @@ extern char* NcbiLog_GetHitID(void);
 /** Generate a sub-hit ID based on the currently effective
  *  (whether it's request-specific or application-wide) hit ID.
  *
+ *  @param prefix
+ *    Prefix for generated sub-hit ID string. Empty if NULL.
  *  @return
  *    Generated sub-hit ID.
  *  @attention
@@ -805,13 +807,16 @@ extern char* NcbiLog_GetHitID(void);
  *    The caller is responsible for freeing the returned sub-hit ID string!
  *    Use free() or NcbiLog_FreeMemory().
  *  @sa
-  *   NcbiLog_AppSetHitID, NcbiLog_SetHitID, NcbiLog_FreeMemory, NcbiLog_GetCurrentSubHitID
+ *   NcbiLog_AppSetHitID, NcbiLog_SetHitID, NcbiLog_FreeMemory, NcbiLog_GetCurrentSubHitID
  */
+extern char* NcbiLog_GetNextSubHitID_Prefix(const char* prefix);
 extern char* NcbiLog_GetNextSubHitID(void);
 
 
 /** Get the last generated sub-hit ID.
  *
+ *  @param prefix
+ *    Prefix for generated sub-hit ID string. Empty if NULL.
  *  @return
  *    Last generated sub-hit ID.
  *    if NcbiLog_GetNextSubHitID() has never been called, it returns subhit
@@ -822,8 +827,9 @@ extern char* NcbiLog_GetNextSubHitID(void);
  *    The caller is responsible for freeing the returned sub-hit ID string!
  *    Use free() or NcbiLog_FreeMemory().
  *  @sa
-  *   NcbiLog_AppSetHitID, NcbiLog_SetHitID, NcbiLog_FreeMemory, NcbiLog_GetNextSubHitID
+ *   NcbiLog_AppSetHitID, NcbiLog_SetHitID, NcbiLog_FreeMemory, NcbiLog_GetNextSubHitID
  */
+extern char* NcbiLog_GetCurrentSubHitID_Prefix(const char* prefix);
 extern char* NcbiLog_GetCurrentSubHitID(void);
 
 

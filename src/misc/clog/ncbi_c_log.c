@@ -2859,7 +2859,7 @@ extern char* NcbiLog_GetHitID(void)
 
 /* Log request/app-wide hit ID. See NcbiLog_GetNextSubHitID().
  */
-static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment)
+static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment, const char* prefix)
 {
     char*          hit_id = NULL;
     unsigned int*  sub_id = NULL;
@@ -2900,7 +2900,7 @@ static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment)
     s_LogSubHitID(ctx, buf);
 
     /* And return new sub hit ID */
-    n = sprintf(buf, "%s.%d", hit_id, *sub_id);
+    n = sprintf(buf, "%s%s.%d", prefix ? prefix : "", hit_id, *sub_id);
     if (n <= 0) {
         return NULL;  /* error */
     }
@@ -2909,6 +2909,12 @@ static char* s_GetSubHitID(TNcbiLog_Context ctx, int /*bool*/ need_increment)
 
 
 extern char* NcbiLog_GetCurrentSubHitID(void)
+{
+    return NcbiLog_GetCurrentSubHitID_Prefix(NULL);
+}
+    
+
+extern char* NcbiLog_GetCurrentSubHitID_Prefix(const char* prefix)
 {
     TNcbiLog_Context ctx = NULL;
     char* subhit_id = NULL;
@@ -2921,7 +2927,7 @@ extern char* NcbiLog_GetCurrentSubHitID(void)
         sx_Info->state == eNcbiLog_AppBegin) {
         TROUBLE_MSG("NcbiLog_GetCurrentSubHitID() can be used after NcbiLog_AppStart() only");
     }
-    subhit_id = s_GetSubHitID(ctx, 0);
+    subhit_id = s_GetSubHitID(ctx, 0, prefix);
 
     MT_UNLOCK;
     return subhit_id;
@@ -2929,6 +2935,12 @@ extern char* NcbiLog_GetCurrentSubHitID(void)
 
 
 extern char* NcbiLog_GetNextSubHitID(void)
+{
+    return NcbiLog_GetNextSubHitID_Prefix(NULL);
+}
+
+
+extern char* NcbiLog_GetNextSubHitID_Prefix(const char* prefix)
 {
     TNcbiLog_Context ctx = NULL;
     char* subhit_id = NULL;
@@ -2941,7 +2953,7 @@ extern char* NcbiLog_GetNextSubHitID(void)
         sx_Info->state == eNcbiLog_AppBegin) {
         TROUBLE_MSG("NcbiLog_GetNextSubHitID() can be used after NcbiLog_AppStart() only");
     }
-    subhit_id = s_GetSubHitID(ctx, 1);
+    subhit_id = s_GetSubHitID(ctx, 1, prefix);
 
     MT_UNLOCK;
     return subhit_id;
