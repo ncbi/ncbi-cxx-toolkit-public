@@ -391,8 +391,6 @@ int CAsn2FastaApp::Run(void)
     DBAPI_RegisterDriver_FTDS();
 #endif
 
-    const CArgs&   args = GetArgs();
-
     // create object manager
     m_Objmgr = CObjectManager::GetInstance();
     if ( !m_Objmgr ) {
@@ -408,50 +406,59 @@ int CAsn2FastaApp::Run(void)
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();
 
-    m_OnlyNucs = args["nucs-only"];
-    m_OnlyProts = args["prots-only"];
+    try {
+        const CArgs& args = GetArgs();
+        m_OnlyNucs = args["nucs-only"];
+        m_OnlyProts = args["prots-only"];
 
-    x_InitOStreams(args);
-
-    unique_ptr<CObjectIStream> is(x_OpenIStream(args));
-    if (is.get() == NULL) {
-        string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
+        x_InitOStreams(args);
+        unique_ptr<CObjectIStream> is(x_OpenIStream(args));
+        if (is.get() == nullptr) {
+            string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
                         "Unable to read data from stdin";
-        NCBI_THROW(CException, eUnknown, msg);
-    }
+            NCBI_THROW(CException, eUnknown, msg);
+        }
 
-    m_DeflineOnly = args["defline-only"];
-    // Default is not to look at features
-    m_AllFeats = m_CDS 
-               = m_TranslateCDS 
-               = m_Gene 
-               = m_RNA 
-               = m_OtherFeats
-               = false;
+        m_DeflineOnly = args["defline-only"];
+        // Default is not to look at features
+        m_AllFeats = m_CDS 
+                   = m_TranslateCDS 
+                   = m_Gene 
+                   = m_RNA 
+                   = m_OtherFeats
+                   = false;
 
-    if ( args["feats"] ) {
-        m_OnlyNucs = true; // feature only supported on nucleotide sequences
-        x_InitFeatDisplay(args["feats"].AsString());
-    }
+        if ( args["feats"] ) {
+            m_OnlyNucs = true; // feature only supported on nucleotide sequences
+            x_InitFeatDisplay(args["feats"].AsString());
+        }
 
-    m_ResolveAll = args["resolve-all"];
+        m_ResolveAll = args["resolve-all"];
 
-    if ( args["batch"] ) {
-        x_BatchProcess(*is.release());
+        if ( args["batch"] ) {
+            x_BatchProcess(*is.release());
+        }
+        else if ( args["id"] ) {
+            //
+            //  Implies gbload; otherwise this feature would be pretty  
+            //  useless...
+            //
+            m_Scope->AddDefaults();
+            string seqID = args["id"].AsString();
+            HandleSeqID( seqID );
+        } else {
+            string asn_type = args["type"].AsString();
+            x_ProcessIStream(asn_type, *is);
+        }
+        return 0;
     }
-    else if ( args["id"] ) {
-        //
-        //  Implies gbload; otherwise this feature would be pretty
-        //  useless...
-        //
-        m_Scope->AddDefaults();
-        string seqID = args["id"].AsString();
-        HandleSeqID( seqID );
-    } else {
-        string asn_type = args["type"].AsString();
-        x_ProcessIStream(asn_type, *is);
+    catch (CException& e) {
+        ERR_POST(Error << e);
     }
-    return 0;
+    catch (exception& e) {
+        ERR_POST(Error << e);
+    }
+    return 1;
 }
 
 
@@ -644,9 +651,6 @@ CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromSeqEntry(
     }
     catch (CEofException&) { // ignore
     }
-    catch (CException& e) {
-        ERR_POST(Error << e);
-    }
     return CSeq_entry_Handle();
 }
 
@@ -663,9 +667,6 @@ CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromBioseq(
     }
     catch (CEofException&) { // ignore
     }
-    catch (CException& e) {
-        ERR_POST(Error << e);
-    }
     return CSeq_entry_Handle();
 }
 
@@ -680,9 +681,6 @@ CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromBioseqSet(
         return m_Scope->AddTopLevelSeqEntry(*entry);
     }
     catch (CEofException&) { // ignore
-    }
-    catch (CException& e) {
-        ERR_POST(Error << e);
     }
     return CSeq_entry_Handle();
 }
@@ -700,9 +698,6 @@ CSeq_entry_Handle CAsn2FastaApp::ObtainSeqEntryFromSeqSubmit(
         return m_Scope->AddTopLevelSeqEntry(*se);
     }
     catch (CEofException&) { // ignore
-    }
-    catch (CException& e) {
-        ERR_POST(Error << e);
     }
     return CSeq_entry_Handle();
 }
