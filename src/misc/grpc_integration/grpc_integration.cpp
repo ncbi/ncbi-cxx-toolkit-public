@@ -36,10 +36,13 @@
 #include <ncbi_pch.hpp>
 #include <misc/grpc_integration/grpc_integration.hpp>
 #include <util/static_map.hpp>
+#include <misc/error_codes.hpp>
 #include <grpc++/server_context.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+
+#define NCBI_USE_ERRCODE_X Misc_GrpcIntegration
 
 BEGIN_NCBI_SCOPE
 
@@ -158,11 +161,22 @@ void CGRPCClientContext::AddStandardNCBIMetadata(grpc::ClientContext& cctx)
     cctx.AddMetadata("client",   dctx.GetAppName());
     
     CRequestContext_PassThrough pass_through;
-    pass_through.Enumerate([&](const string& name, const string& value) {
-                               cctx.AddMetadata(s_EncodeMetadataName(name),
-                                                s_EncodeMetadataValue(value));
-                               return true;
-                           });
+    bool need_filter = pass_through.IsSet("PATH");
+    if (need_filter) {
+        ERR_POST_X_ONCE(1, Warning
+                        << "No NCBI_CONTEXT_FIELDS or [Context] Fields"
+                        " setting; performing ad-hoc filtering.");
+    }
+    pass_through.Enumerate
+        ([&](const string& name, const string& value) {
+             if ( !need_filter  ||  name == "http_proxy"
+                 ||  NStr::StartsWith(name, "ncbi", NStr::eNocase)
+                 ||  NStr::StartsWith(name, "l5d", NStr::eNocase)) {
+                 cctx.AddMetadata(s_EncodeMetadataName(name),
+                                  s_EncodeMetadataValue(value));
+             }
+             return true;
+         });
 }
 
 
