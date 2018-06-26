@@ -652,6 +652,10 @@ protected:
     static CDiscrepancyAlias_##alias DiscrepancyAlias_##alias;
 
 
+// Unit test functions
+void UnitTest_FLATFILE_FIND();
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
 

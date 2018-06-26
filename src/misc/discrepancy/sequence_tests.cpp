@@ -2237,6 +2237,24 @@ static void FindFlatfileText(const unsigned char* p, bool *result)
 }
 
 
+/// Checking that FLATFILE_FIND.inc is in sync kSpellFixes
+/// If the array is changed, need to regenerate FLATFILE_FIND.inc:
+/// multipattern.exe -i FLATFILE_FIND.txt > FLATFILE_FIND.inc
+void UnitTest_FLATFILE_FIND()
+{
+    bool Found[kSpellFixesSize];
+    string error = "String not found: ";
+    for (size_t i = 0; i < kSpellFixesSize; i++) {
+        fill(Found, Found + kSpellFixesSize, 0);
+        FindFlatfileText((const unsigned char*)kSpellFixes[i].m_misspell, Found);
+        if (!Found[i]) {
+            error += kSpellFixes[i].m_misspell;
+            NCBI_THROW(CException, eUnknown, error);
+        }
+    }
+}
+
+
 DISCREPANCY_CASE(FLATFILE_FIND, COverlappingFeatures, eOncaller, "Flatfile representation of object contains suspect text")
 {
     bool Found[kSpellFixesSize];
