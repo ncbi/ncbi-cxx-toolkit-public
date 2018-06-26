@@ -99,6 +99,11 @@ private:
     CFastaOstreamEx* x_GetFastaOstream(CBioseq_Handle& handle);
     CObjectIStream* x_OpenIStream(const CArgs& args);
     bool x_IsOtherFeat(const CSeq_feat_Handle& feat) const;
+    void x_InitOStreams(const CArgs& args);
+    void x_BatchProcess(CObjectIStream& istr);
+    void x_InitFeatDisplay(const string& feats);
+    void x_ProcessIStream(const string& asn_type, CObjectIStream& istr);
+
 
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
@@ -297,7 +302,6 @@ void CAsn2FastaApp::Init(void)
 }
 
 
-
 //  --------------------------------------------------------------------------
 CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const string& strname, bool use_stdout)
 //  --------------------------------------------------------------------------
@@ -372,6 +376,7 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
     return fasta_os.release();
 }
 
+
 //  --------------------------------------------------------------------------
 int CAsn2FastaApp::Run(void)
 //  --------------------------------------------------------------------------
@@ -403,6 +408,57 @@ int CAsn2FastaApp::Run(void)
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();
 
+    m_OnlyNucs = args["nucs-only"];
+    m_OnlyProts = args["prots-only"];
+
+    x_InitOStreams(args);
+
+    unique_ptr<CObjectIStream> is(x_OpenIStream(args));
+    if (is.get() == NULL) {
+        string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
+                        "Unable to read data from stdin";
+        NCBI_THROW(CException, eUnknown, msg);
+    }
+
+    m_DeflineOnly = args["defline-only"];
+    // Default is not to look at features
+    m_AllFeats = m_CDS 
+               = m_TranslateCDS 
+               = m_Gene 
+               = m_RNA 
+               = m_OtherFeats
+               = false;
+
+    if ( args["feats"] ) {
+        m_OnlyNucs = true; // feature only supported on nucleotide sequences
+        x_InitFeatDisplay(args["feats"].AsString());
+    }
+
+    m_ResolveAll = args["resolve-all"];
+
+    if ( args["batch"] ) {
+        x_BatchProcess(*is.release());
+    }
+    else if ( args["id"] ) {
+        //
+        //  Implies gbload; otherwise this feature would be pretty
+        //  useless...
+        //
+        m_Scope->AddDefaults();
+        string seqID = args["id"].AsString();
+        HandleSeqID( seqID );
+    } else {
+        string asn_type = args["type"].AsString();
+        x_ProcessIStream(asn_type, *is);
+    }
+    return 0;
+}
+
+
+//  --------------------------------------------------------------------------
+void CAsn2FastaApp::x_InitOStreams(const CArgs& args)
+//  --------------------------------------------------------------------------
+{
     // open the output streams
     m_Os.reset( OpenFastaOstream ("o", "", false) );
     m_On.reset( OpenFastaOstream ("on", "", false) );
@@ -411,9 +467,6 @@ int CAsn2FastaApp::Run(void)
     m_Op.reset( OpenFastaOstream ("op", "", false) );
     m_Ou.reset( OpenFastaOstream ("ou", "", false) );
     m_Oq = args["oq"] ? &(args["oq"].AsOutputFile()) : NULL;
-
-    m_OnlyNucs = args["nucs-only"];
-    m_OnlyProts = args["prots-only"];
 
     m_OgHead = "";
     m_OgTail = "";
@@ -438,189 +491,141 @@ int CAsn2FastaApp::Run(void)
         // No output (-o*) argument given - default to stdout
         m_Os.reset( OpenFastaOstream ("", "", true) );
     }
-
-    auto_ptr<CObjectIStream> is;
-    is.reset( x_OpenIStream( args ) );
-    if (is.get() == NULL) {
-        string msg = args["i"]? "Unable to open input file" + args["i"].AsString() :
-                        "Unable to read data from stdin";
-        NCBI_THROW(CException, eUnknown, msg);
-    }
+}
 
 
-    m_DeflineOnly = args["defline-only"];
+//  --------------------------------------------------------------------------
+void CAsn2FastaApp::x_InitFeatDisplay(const string& feats)
+//  --------------------------------------------------------------------------
+{
+    list<string> feat_list;
+    NStr::Split(feats,
+                ",",
+                feat_list,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
-    // Default is not to look at features
-    m_AllFeats = m_CDS 
-               = m_TranslateCDS 
-               = m_Gene 
-               = m_RNA 
-               = m_OtherFeats
-               = false;
-
-    if ( args["feats"] ) {
-        m_OnlyNucs = true; // feature only supported on nucleotide sequences
-
-        list<string> feat_list;
-        NStr::Split(args["feats"].AsString(),
-                    ",",
-                    feat_list,
-                    NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-
-        if (feat_list.empty()) {
-            m_AllFeats = true;
-        } else{
-            for(const auto feat_name : feat_list) {
-                if (feat_name == "fasta_cds_na") {
-                    m_CDS = true;
-                } 
-                else
-                if (feat_name == "fasta_cds_aa") {
-                    m_CDS = true;
-                    m_TranslateCDS = true;
-                } 
-                else 
-                if (feat_name == "gene_fasta") {
-                    m_Gene = true;
-                } 
-                else 
-                if (feat_name == "rna_fasta") {
-                    m_RNA = true;
-                } 
-                else 
-                if (feat_name == "other_fasta") {
-                    m_OtherFeats = true;
-                }
-                else 
-                if (feat_name == "all") {
-                    m_AllFeats = true;
-                }
-                else {
-                    NCBI_THROW(CException, eUnknown,
-                        "Unrecognized feature type: "+feat_name );
-                }
+    if (feat_list.empty()) {
+        m_AllFeats = true;
+    } else{
+        for(const auto feat_name : feat_list) {
+            if (feat_name == "fasta_cds_na") {
+                m_CDS = true;
+            } 
+            else
+            if (feat_name == "fasta_cds_aa") {
+                m_CDS = true;
+                m_TranslateCDS = true;
+            } 
+            else 
+            if (feat_name == "gene_fasta") {
+                m_Gene = true;
+            } 
+            else 
+            if (feat_name == "rna_fasta") {
+                m_RNA = true;
+            } 
+            else 
+            if (feat_name == "other_fasta") {
+                m_OtherFeats = true;
             }
-        }
-        m_CDS   |= m_AllFeats;
-        m_Gene  |= m_AllFeats;
-        m_RNA   |= m_AllFeats;
-        m_OtherFeats |= m_AllFeats;
-    }
-
-    m_ResolveAll = args["resolve-all"];
-
-    if ( args["batch"] ) {
-        CGBReleaseFile in(*is.release());
-        in.RegisterHandler(this);
-        in.Read();  // HandleSeqEntry will be called from this function
-    }
-    else {
-
-        if ( args["id"] ) {
-
-            //
-            //  Implies gbload; otherwise this feature would be pretty
-            //  useless...
-            //
-            m_Scope->AddDefaults();
-            string seqID = args["id"].AsString();
-            HandleSeqID( seqID );
-
-        } else {
-            string asn_type = args["type"].AsString();
-            CSeq_entry_Handle seh;
-
-            if ( asn_type == "seq-entry" ) {
-                //
-                //  Straight through processing: Read a seq_entry, then process
-                //  a seq_entry:
-                //
-                seh = ObtainSeqEntryFromSeqEntry(*is);
-                while (seh) {
-                    HandleSeqEntry(seh);
-
-                    m_Scope->RemoveTopLevelSeqEntry(seh);
-                    m_Scope->ResetHistory();
-                    seh = ObtainSeqEntryFromSeqEntry(*is);
-                }
-                return 0;
+            else 
+            if (feat_name == "all") {
+                m_AllFeats = true;
             }
-            else if ( asn_type == "bioseq" ) {
-                //
-                //  Read object as a bioseq, wrap it into a seq_entry, then
-                //  process the wrapped bioseq as a seq_entry:
-                //
-                seh = ObtainSeqEntryFromBioseq(*is);
-                if ( !seh ) {
-                    NCBI_THROW(CException, eUnknown,
-                               "Unable to construct Seq-entry object" );
-                }
-                HandleSeqEntry(seh);
-            }
-            else if ( asn_type == "bioseq-set" ) {
-                //
-                //  Read object as a bioseq_set, wrap it into a seq_entry, then
-                //  process the wrapped bioseq_set as a seq_entry:
-                //
-                seh = ObtainSeqEntryFromBioseqSet(*is);
-                if ( !seh ) {
-                    NCBI_THROW(CException, eUnknown,
-                               "Unable to construct Seq-entry object" );
-                }
-                HandleSeqEntry(seh);
-            }
-            else if ( asn_type == "seq-submit" ) {
-                //
-                //  Read object as a seq_submit, then process the first seq_entry:
-                //
-                seh = ObtainSeqEntryFromSeqSubmit(*is);
-                if ( !seh ) {
-                    NCBI_THROW(CException, eUnknown,
-                               "Unable to construct Seq-entry object" );
-                }
-                HandleSeqEntry(seh);
-            }
-            else if ( asn_type == "any" ) {
-                //
-                //  Try the first three in turn:
-                //
-
-                set<TTypeInfo> known_types, matching_types;
-                known_types.insert(CSeq_entry::GetTypeInfo());
-                known_types.insert(CSeq_submit::GetTypeInfo());
-                known_types.insert(CBioseq_set::GetTypeInfo());
-                known_types.insert(CBioseq::GetTypeInfo());
-
-                while (!is->EndOfData()) {
-                    matching_types = is->GuessDataType(known_types);
-                    if (matching_types.empty()) {
-                        NCBI_THROW(CException, eUnknown,
-                            "Unidentifiable object" );
-                    } else if (matching_types.size() > 1) {
-                        NCBI_THROW(CException, eUnknown,
-                            "Ambiguous object" );
-                    } else if (*matching_types.begin() == CSeq_entry::GetTypeInfo()) {
-                        seh = ObtainSeqEntryFromSeqEntry(*is);
-                    } else if (*matching_types.begin() == CSeq_submit::GetTypeInfo()) {
-                        seh = ObtainSeqEntryFromSeqSubmit(*is);
-                    } else if (*matching_types.begin() == CBioseq_set::GetTypeInfo()) {
-                        seh = ObtainSeqEntryFromBioseqSet(*is);
-                    } else if (*matching_types.begin() == CBioseq::GetTypeInfo()) {
-                        seh = ObtainSeqEntryFromBioseq(*is);
-                    }
-                    if (!seh) {
-                        NCBI_THROW(CException, eUnknown,
-                            "Unable to construct Seq-entry object" );
-                    }
-                    HandleSeqEntry(seh);
-                    m_Scope->RemoveTopLevelSeqEntry(seh);
-                    m_Scope->ResetHistory();
-                }
+            else {
+                NCBI_THROW(CException, eUnknown,
+                    "Unrecognized feature type: "+feat_name );
             }
         }
     }
+    m_CDS   |= m_AllFeats;
+    m_Gene  |= m_AllFeats;
+    m_RNA   |= m_AllFeats;
+    m_OtherFeats |= m_AllFeats;
+}
 
-    return 0;
+
+//  --------------------------------------------------------------------------
+void CAsn2FastaApp::x_BatchProcess(CObjectIStream& istr)
+//  --------------------------------------------------------------------------
+{
+    CGBReleaseFile in(istr);
+    in.RegisterHandler(this);
+    in.Read();  // HandleSeqEntry will be called from this function
+}
+
+
+//  --------------------------------------------------------------------------
+void CAsn2FastaApp::x_ProcessIStream(const string& asn_type, CObjectIStream& istr)
+//  --------------------------------------------------------------------------
+{
+    CSeq_entry_Handle seh;
+
+    if ( asn_type == "seq-entry" ) {
+        //
+        //  Straight through processing: Read a seq_entry, then process
+        //  a seq_entry:
+        //
+        seh = ObtainSeqEntryFromSeqEntry(istr);
+        while (seh) {
+            HandleSeqEntry(seh);
+            m_Scope->RemoveTopLevelSeqEntry(seh);
+            m_Scope->ResetHistory();
+            seh = ObtainSeqEntryFromSeqEntry(istr);
+        }
+        return;
+    }
+
+    if ( asn_type == "any" ) {
+        set<TTypeInfo> known_types, matching_types;
+        known_types.insert(CSeq_entry::GetTypeInfo());
+        known_types.insert(CSeq_submit::GetTypeInfo());
+        known_types.insert(CBioseq_set::GetTypeInfo());
+        known_types.insert(CBioseq::GetTypeInfo());
+
+        while (!istr.EndOfData()) {
+            matching_types = istr.GuessDataType(known_types);
+            if (matching_types.empty()) {
+                NCBI_THROW(CException, eUnknown,
+                    "Unidentifiable object" );
+            } else if (matching_types.size() > 1) {
+                NCBI_THROW(CException, eUnknown,
+                    "Ambiguous object" );
+            } else if (*matching_types.begin() == CSeq_entry::GetTypeInfo()) {
+                seh = ObtainSeqEntryFromSeqEntry(istr);
+            } else if (*matching_types.begin() == CSeq_submit::GetTypeInfo()) {
+                seh = ObtainSeqEntryFromSeqSubmit(istr);
+            } else if (*matching_types.begin() == CBioseq_set::GetTypeInfo()) {
+                seh = ObtainSeqEntryFromBioseqSet(istr);
+            } else if (*matching_types.begin() == CBioseq::GetTypeInfo()) {
+                seh = ObtainSeqEntryFromBioseq(istr);
+            }
+            if (!seh) {
+                NCBI_THROW(CException, eUnknown,
+                    "Unable to construct Seq-entry object" );
+            }
+            HandleSeqEntry(seh);
+            m_Scope->RemoveTopLevelSeqEntry(seh);
+            m_Scope->ResetHistory();
+        }
+        return;
+    }
+
+    if ( asn_type == "bioseq" ) {
+        seh = ObtainSeqEntryFromBioseq(istr);
+    }
+    else if ( asn_type == "bioseq-set" ) {
+        seh = ObtainSeqEntryFromBioseqSet(istr);
+    }
+    else if ( asn_type == "seq-submit" ) {
+        seh = ObtainSeqEntryFromSeqSubmit(istr);
+    }
+    
+    if ( !seh ) {
+        NCBI_THROW(CException, eUnknown,
+        "Unable to construct Seq-entry object" );
+    }
+    HandleSeqEntry(seh);
 }
 
 //  --------------------------------------------------------------------------
