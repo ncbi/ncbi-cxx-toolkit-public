@@ -425,10 +425,10 @@ class CCassPrm
         switch (m_type) {
             case CASS_VALUE_TYPE_INT:
                 value = NStr::NumericToString(m_simpleval.i32);
-                // no break
+                break;
             case CASS_VALUE_TYPE_BIGINT:
                 value = NStr::NumericToString(m_simpleval.i64);
-                // no break
+                break;
             case CASS_VALUE_TYPE_VARCHAR:
                 value = m_bytes;
                 break;
