@@ -15,8 +15,76 @@
 
 
 #############################################################################
+set(NCBI_ALL_COMPONENTS "")
 set(NCBI_REQUIRE_MT_FOUND YES)
 
+#############################################################################
+# local_lbsm
+if(WIN32)
+  set(NCBI_COMPONENT_local_lbsm_FOUND NO)
+else()
+  if (EXISTS ${NCBI_SRC_ROOT}/src/connect/ncbi_lbsm.c)
+#    message("local_lbsm found at ${NCBI_SRC_ROOT}/src/connect")
+    set(NCBI_COMPONENT_local_lbsm_FOUND YES)
+    set(HAVE_LOCAL_LBSM 1)
+  else()
+#    message("Component local_lbsm ERROR: not found")
+    set(NCBI_COMPONENT_local_lbsm_FOUND NO)
+  endif()
+endif()
+
+#############################################################################
+# LocalPCRE
+if (EXISTS ${includedir}/util/regexp)
+  set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
+  set(NCBI_COMPONENT_LocalPCRE_INCLUDE ${includedir}/util/regexp)
+  set(NCBI_COMPONENT_LocalPCRE_LIBS regexp)
+else()
+  set(NCBI_COMPONENT_LocalPCRE_FOUND NO)
+endif()
+
+#############################################################################
+# LocalZ
+if (EXISTS ${includedir}/util/compress/zlib)
+  set(NCBI_COMPONENT_LocalZ_FOUND YES)
+  set(NCBI_COMPONENT_LocalZ_INCLUDE ${includedir}/util/compress/zlib)
+  set(NCBI_COMPONENT_LocalZ_LIBS z)
+else()
+  set(NCBI_COMPONENT_LocalZ_FOUND NO)
+endif()
+
+#############################################################################
+# LocalBZ2
+if (EXISTS ${includedir}/util/compress/bzip2)
+  set(NCBI_COMPONENT_LocalBZ2_FOUND YES)
+  set(NCBI_COMPONENT_LocalBZ2_INCLUDE ${includedir}/util/compress/bzip2)
+  set(NCBI_COMPONENT_LocalBZ2_LIBS bz2)
+else()
+  set(NCBI_COMPONENT_LocalBZ2_FOUND NO)
+endif()
+
+#############################################################################
+#LocalLMDB
+if (EXISTS ${includedir}/util/lmdb)
+  set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
+  set(NCBI_COMPONENT_LocalLMDB_INCLUDE ${includedir}//util/lmdb)
+  set(NCBI_COMPONENT_LocalLMDB_LIBS lmdb)
+else()
+  set(NCBI_COMPONENT_LocalLMDB_FOUND NO)
+endif()
+
+#############################################################################
+# FreeTDS
+set(FTDS64_INCLUDE  ${includedir}/dbapi/driver/ftds64  ${includedir}/dbapi/driver/ftds64/freetds)
+set(FTDS95_INCLUDE  ${includedir}/dbapi/driver/ftds95  ${includedir}/dbapi/driver/ftds95/freetds)
+set(FTDS100_INCLUDE ${includedir}/dbapi/driver/ftds100 ${includedir}/dbapi/driver/ftds100/freetds)
+
+set(NCBI_COMPONENT_FreeTDS_FOUND   YES)
+set(NCBI_COMPONENT_FreeTDS_INCLUDE ${FTDS95_INCLUDE})
+set(NCBI_COMPONENT_FreeTDS_LIBS    ct_ftds95)
+
+
+#############################################################################
 if (NCBI_EXPERIMENTAL_DISABLE_HUNTER)
 
 if (MSVC)
@@ -30,3 +98,9 @@ endif()
 else()
   include(${top_src_dir}/src/build-system/cmake/CMake.NCBIComponentsUNIX.cmake)
 endif()
+
+#############################################################################
+# FreeTDS
+set(FTDS64_INCLUDE  ${includedir}/dbapi/driver/ftds64  ${includedir}/dbapi/driver/ftds64/freetds)
+set(FTDS95_INCLUDE  ${includedir}/dbapi/driver/ftds95  ${includedir}/dbapi/driver/ftds95/freetds)
+set(FTDS100_INCLUDE ${includedir}/dbapi/driver/ftds100 ${includedir}/dbapi/driver/ftds100/freetds)

@@ -876,17 +876,6 @@ else()
 endif()
 
 #############################################################################
-# local_lbsm
-if (EXISTS ${NCBI_SRC_ROOT}/connect/ncbi_lbsm.c)
-  message("local_lbsm found at ${NCBI_SRC_ROOT}/connect")
-  set(NCBI_COMPONENT_local_lbsm_FOUND YES)
-  set(HAVE_LOCAL_LBSM 1)
-else()
-  message("Component local_lbsm ERROR: not found")
-  set(NCBI_COMPONENT_local_lbsm_FOUND NO)
-endif()
-
-#############################################################################
 # TLS
 if(GnuTLS_FOUND)
   message("TLS found at ${GNUTLS_INCLUDE}")
@@ -941,16 +930,6 @@ else()
 endif()
 
 #############################################################################
-#LocalPCRE
-if (EXISTS ${includedir}/util/regexp)
-  set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
-  set(NCBI_COMPONENT_LocalPCRE_INCLUDE ${includedir}/util/regexp)
-  set(NCBI_COMPONENT_LocalPCRE_LIBS regexp)
-else()
-  set(NCBI_COMPONENT_LocalPCRE_FOUND NO)
-endif()
-
-#############################################################################
 # PCRE
 if(PCRE_FOUND)
   set(NCBI_COMPONENT_PCRE_FOUND YES)
@@ -964,16 +943,6 @@ else()
 endif()
 
 #############################################################################
-#LocalZ
-if (EXISTS ${includedir}/util/compress/zlib)
-  set(NCBI_COMPONENT_LocalZ_FOUND YES)
-  set(NCBI_COMPONENT_LocalZ_INCLUDE ${includedir}/util/compress/zlib)
-  set(NCBI_COMPONENT_LocalZ_LIBS z)
-else()
-  set(NCBI_COMPONENT_LocalZ_FOUND NO)
-endif()
-
-#############################################################################
 # Z
 if(ZLIB_FOUND)
   set(NCBI_COMPONENT_Z_FOUND YES)
@@ -984,16 +953,6 @@ else()
   set(NCBI_COMPONENT_Z_FOUND ${NCBI_COMPONENT_LocalZ_FOUND})
   set(NCBI_COMPONENT_Z_INCLUDE ${NCBI_COMPONENT_LocalZ_INCLUDE})
   set(NCBI_COMPONENT_Z_LIBS ${NCBI_COMPONENT_LocalZ_LIBS})
-endif()
-
-#############################################################################
-#LocalBZ2
-if (EXISTS ${includedir}/util/compress/bzip2)
-  set(NCBI_COMPONENT_LocalBZ2_FOUND YES)
-  set(NCBI_COMPONENT_LocalBZ2_INCLUDE ${includedir}/util/compress/bzip2)
-  set(NCBI_COMPONENT_LocalBZ2_LIBS bz2)
-else()
-  set(NCBI_COMPONENT_LocalBZ2_FOUND NO)
 endif()
 
 #############################################################################
@@ -1029,16 +988,6 @@ if(BERKELEYDB_FOUND)
   set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} BerkeleyDB")
 else()
   set(NCBI_COMPONENT_BerkeleyDB_FOUND NO)
-endif()
-
-#############################################################################
-#LocalLMDB
-if (EXISTS ${includedir}/util/lmdb)
-  set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
-  set(NCBI_COMPONENT_LocalLMDB_INCLUDE ${includedir}//util/lmdb)
-  set(NCBI_COMPONENT_LocalLMDB_LIBS lmdb)
-else()
-  set(NCBI_COMPONENT_LocalLMDB_FOUND NO)
 endif()
 
 #############################################################################
@@ -1140,3 +1089,37 @@ if(LAPACK_FOUND)
 else()
   set(NCBI_COMPONENT_LAPACK_FOUND NO)
 endif()
+
+#############################################################################
+# Sybase
+if(SYBASE_FOUND)
+  set(NCBI_COMPONENT_Sybase_FOUND YES)
+  set(NCBI_COMPONENT_Sybase_INCLUDE ${SYBASE_INCLUDE})
+  set(NCBI_COMPONENT_Sybase_LIBS    ${SYBASE_LIBS})
+else()
+  set(NCBI_COMPONENT_Sybase_FOUND NO)
+endif()
+
+#############################################################################
+# MySQL
+if(MYSQL_FOUND)
+  set(NCBI_COMPONENT_MySQL_FOUND YES)
+  set(NCBI_COMPONENT_MySQL_INCLUDE ${MYSQL_INCLUDE})
+  set(NCBI_COMPONENT_MySQL_LIBS    ${MYSQL_LIBS})
+else()
+  set(NCBI_COMPONENT_MySQL_FOUND NO)
+endif()
+
+#############################################################################
+# ODBC
+if(ODBC_FOUND)
+  set(NCBI_COMPONENT_ODBC_FOUND YES)
+  set(NCBI_COMPONENT_ODBC_INCLUDE ${ODBC_INCLUDE})
+  set(NCBI_COMPONENT_ODBC_LIBS    ${ODBC_LIBS})
+else()
+  set(NCBI_COMPONENT_ODBC_FOUND NO)
+endif()
+
+#############################################################################
+# PYTHON
+set(NCBI_COMPONENT_PYTHON_FOUND NO)

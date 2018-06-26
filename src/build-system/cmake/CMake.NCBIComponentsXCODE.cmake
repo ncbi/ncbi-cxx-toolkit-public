@@ -15,7 +15,7 @@
 ##  HAVE_XXX
 
 
-set(NCBI_ALL_COMPONENTS "")
+set(NCBI_COMPONENT_XCODE_FOUND YES)
 #############################################################################
 # common settings
 set(NCBI_ThirdPartyBasePath /netopt/ncbi_tools)
@@ -37,7 +37,7 @@ set(NCBI_ThirdParty_XML        ${NCBI_ThirdPartyBasePath}/libxml-2.7.8
 set(NCBI_ThirdParty_XSLT       ${NCBI_ThirdPartyBasePath}/libxml-2.7.8
 set(NCBI_ThirdParty_EXSLT      ${NCBI_ThirdParty_XSLT})
 set(NCBI_ThirdParty_SQLITE3    ${NCBI_ThirdPartyBasePath}/sqlite-3.8.10.1-ncbi1)
-
+#set(NCBI_ThirdParty_Sybase
 
 #############################################################################
 macro(NCBI_define_component _name)
@@ -91,17 +91,6 @@ endmacro()
 set(NCBI_COMPONENT_NCBI_C_FOUND NO)
 
 #############################################################################
-# local_lbsm
-if (EXISTS ${NCBI_SRC_ROOT}/src/connect/ncbi_lbsm.c)
-  message("local_lbsm found at ${NCBI_SRC_ROOT}/src/connect")
-  set(NCBI_COMPONENT_local_lbsm_FOUND YES)
-  set(HAVE_LOCAL_LBSM 1)
-else()
-  message("Component local_lbsm ERROR: not found")
-  set(NCBI_COMPONENT_local_lbsm_FOUND NO)
-endif()
-
-#############################################################################
 # TLS
 if (EXISTS ${NCBI_ThirdParty_TLS}/include)
   message("TLS found at ${NCBI_ThirdParty_TLS}")
@@ -137,16 +126,6 @@ NCBI_define_component(Boost.Test libboost_unit_test_framework.a)
 NCBI_define_component(Boost.Spirit libboost_thread-mt.a)
 
 #############################################################################
-#LocalPCRE
-if (EXISTS ${includedir}/util/regexp)
-  set(NCBI_COMPONENT_LocalPCRE_FOUND YES)
-  set(NCBI_COMPONENT_LocalPCRE_INCLUDE ${includedir}/util/regexp)
-  set(NCBI_COMPONENT_LocalPCRE_LIBS regexp)
-else()
-  set(NCBI_COMPONENT_LocalPCRE_FOUND NO)
-endif()
-
-#############################################################################
 # PCRE
 if(NOT NCBI_COMPONENT_PCRE_FOUND)
   set(NCBI_COMPONENT_PCRE_FOUND ${NCBI_COMPONENT_LocalPCRE_FOUND})
@@ -155,30 +134,10 @@ if(NOT NCBI_COMPONENT_PCRE_FOUND)
 endif()
 
 #############################################################################
-#LocalZ
-if (EXISTS ${includedir}/util/compress/zlib)
-  set(NCBI_COMPONENT_LocalZ_FOUND YES)
-  set(NCBI_COMPONENT_LocalZ_INCLUDE ${includedir}/util/compress/zlib)
-  set(NCBI_COMPONENT_LocalZ_LIBS z)
-else()
-  set(NCBI_COMPONENT_LocalZ_FOUND NO)
-endif()
-
-#############################################################################
 # Z
 set(NCBI_COMPONENT_Z_FOUND YES)
 set(NCBI_COMPONENT_Z_LIBS -lz)
 set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} Z")
-
-#############################################################################
-#LocalBZ2
-if (EXISTS ${includedir}/util/compress/bzip2)
-  set(NCBI_COMPONENT_LocalBZ2_FOUND YES)
-  set(NCBI_COMPONENT_LocalBZ2_INCLUDE ${includedir}/util/compress/bzip2)
-  set(NCBI_COMPONENT_LocalBZ2_LIBS bz2)
-else()
-  set(NCBI_COMPONENT_LocalBZ2_FOUND NO)
-endif()
 
 #############################################################################
 #BZ2
@@ -197,16 +156,6 @@ if(NCBI_COMPONENT_BerkeleyDB_FOUND)
   set(HAVE_BERKELEY_DB 1)
   set(HAVE_BDB         1)
   set(HAVE_BDB_CACHE   1)
-endif()
-
-#############################################################################
-#LocalLMDB
-if (EXISTS ${includedir}/util/lmdb)
-  set(NCBI_COMPONENT_LocalLMDB_FOUND YES)
-  set(NCBI_COMPONENT_LocalLMDB_INCLUDE ${includedir}//util/lmdb)
-  set(NCBI_COMPONENT_LocalLMDB_LIBS lmdb)
-else()
-  set(NCBI_COMPONENT_LocalLMDB_FOUND NO)
 endif()
 
 #############################################################################
@@ -256,6 +205,24 @@ NCBI_define_component(SQLITE3 libsqlite3.a)
 
 #############################################################################
 #LAPACK
-set(NCBI_COMPONENT_LAPACK_FOUND NO)
+set(NCBI_COMPONENT_LAPACK_FOUND YES)
 set(NCBI_COMPONENT_LAPACK_LIBS -llapack)
 set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} LAPACK")
+
+#############################################################################
+# Sybase
+set(NCBI_COMPONENT_Sybase_FOUND NO)
+
+#############################################################################
+# MySQL
+set(NCBI_COMPONENT_MySQL_FOUND NO)
+
+#############################################################################
+# ODBC
+set(NCBI_COMPONENT_ODBC_FOUND YES)
+set(HAVE_ODBC 1)
+set(HAVE_ODBCSS_H 1)
+
+#############################################################################
+# PYTHON
+set(NCBI_COMPONENT_PYTHON_FOUND NO)
