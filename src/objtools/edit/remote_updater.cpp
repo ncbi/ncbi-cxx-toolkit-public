@@ -447,14 +447,17 @@ void CRemoteUpdater::UpdateOrgFromTaxon(objects::ILineErrorListener* logger, obj
         reflist.push_back(it->second.org_ref);
         CRef<CTaxon3_reply> reply = taxon.SendOrgRefList(reflist);
 
-        CTaxon3_reply::TReply::iterator reply_it = reply->SetReply().begin();
+        if (reply.NotNull())
         {
-            if ((*reply_it)->IsData() && (*reply_it)->SetData().IsSetOrg())
+            CTaxon3_reply::TReply::iterator reply_it = reply->SetReply().begin();
             {
-                (*reply_it)->SetData().SetOrg().ResetSyn();
-                (*reply_it)->SetData().SetOrg().SetOrgname().SetFormalNameFlag(false);
+                if ((*reply_it)->IsData() && (*reply_it)->SetData().IsSetOrg())
+                {
+                    (*reply_it)->SetData().SetOrg().ResetSyn();
+                    (*reply_it)->SetData().SetOrg().SetOrgname().SetFormalNameFlag(false);
 
-                xUpdate(it->second.owner, (*reply_it)->SetData().SetOrg());
+                    xUpdate(it->second.owner, (*reply_it)->SetData().SetOrg());
+                }
             }
         }
     }
