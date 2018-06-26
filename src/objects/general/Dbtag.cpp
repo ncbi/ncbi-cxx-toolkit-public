@@ -663,7 +663,6 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_RFAM, "http://rfam.xfam.org/family/" }, // https not available tested 7/13/2016                                                                                            
     { CDbtag::eDbtagType_RGD, "https://rgd.mcw.edu/rgdweb/search/search.html?term=" },
     { CDbtag::eDbtagType_RiceGenes, "http://ars-genome.cornell.edu/cgi-bin/WebAce/webace?db=ricegenes&class=Marker&object=" }, // http “page can’t be displayed” tested 7/13/2016  
-    { CDbtag::eDbtagType_SEED, "http://www.theseed.org/linkin.cgi?id=" }, // https not available, http Service Temporarily Unavailable tested 7/13/2016                                                                                            
     { CDbtag::eDbtagType_SGD, "https://www.yeastgenome.org/locus/" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_SGN, "http://www.sgn.cornell.edu/search/est.pl?request_type=7&request_id=" }, // https not available, http automatically redirects to https, then shows security cert issue, tested 7/13/2016
     { CDbtag::eDbtagType_SK_FST, "http://aafc-aac.usask.ca/fst/" }, // https not available tested 7/13/2016                                                                                            
