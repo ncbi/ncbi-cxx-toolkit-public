@@ -1750,7 +1750,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "EFH\ts\tForestry Commission\t\t",
 "EFM\ts\tEpping Forest Museum, Corporation of London\t\t",
 "EFWM\ts\tDepartment of Entomology\t\t",
-"EGE\ts\tEge University\t\t",
+"EGE\tsc\tEge University\t\t",
 "EGE-MACC\tc\tEge - Microalgae Culture Collection\t\t",
 "EGH\ts\tUniversity of Edinburgh\t\t",
 "EGHB\ts\tUniversity of Edinburgh\t\t",

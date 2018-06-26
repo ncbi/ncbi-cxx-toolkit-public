@@ -1717,7 +1717,7 @@ EFCC	s	Epping Forest Conservation Centre
 EFH	s	Forestry Commission		
 EFM	s	Epping Forest Museum, Corporation of London		
 EFWM	s	Department of Entomology		
-EGE	s	Ege University		
+EGE	sc	Ege University		
 EGE-MACC	c	Ege - Microalgae Culture Collection		
 EGH	s	University of Edinburgh		
 EGHB	s	University of Edinburgh		
