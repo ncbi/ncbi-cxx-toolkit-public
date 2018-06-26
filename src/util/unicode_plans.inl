@@ -132,9 +132,9 @@ static TUnicodePlan s_Plan_00h = {
     { "[", eString },  // old dictionary                           U+005B
     { "\\", eString },  // old dictionary                          U+005C
     { "]", eString },  // old dictionary                           U+005D
-    { ";", eString },  // old dictionary                           U+005E
+    { "^", eString },  // old dictionary                           U+005E
     { "_", eString },  // old dictionary                           U+005F
-    { ";", eString },  // old dictionary                           U+0060
+    { "`", eString },  // old dictionary                           U+0060
     { "a", eString },  //                                          U+0061
     { "b", eString },  //                                          U+0062
     { "c", eString },  //                                          U+0063
