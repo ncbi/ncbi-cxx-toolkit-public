@@ -2447,10 +2447,10 @@ BlastKarlinLHtoK(Blast_ScoreFreq* sfp, double lambda, double H)
  * Let phi(lambda) =  sum_{i=low}^{high} exp(i lambda) - 1. Then
  * phi(lambda) may be written
  *
- *     phi(lamdba) = exp(u lambda) f( exp(-lambda) )
+ *     phi(lambda) = exp(u lambda) f( exp(-lambda) )
  *
  * where f(x) is a polynomial that has exactly two zeros, one at x = 1
- * and one at x = exp(-lamdba).  It is simpler to solve this problem
+ * and one at x = exp(-lambda).  It is simpler to solve this problem
  * in x = exp(-lambda) than it is to solve it in lambda, because we
  * know that for x, a solution lies in [0,1], and because Newton's
  * method is generally more stable and efficient for polynomials than
