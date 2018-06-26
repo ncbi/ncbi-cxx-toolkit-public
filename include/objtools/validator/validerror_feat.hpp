@@ -194,17 +194,21 @@ private:
     void x_ValidateCdregionCodebreak(const CSeq_feat& feat);
 
     void ValidateProt(const CProt_ref& prot, const CSeq_feat& feat);
+#if 0
     void x_ValidateProteinName(const string& prot_name, const CSeq_feat& feat);
     void x_ReportUninformativeNames(const CProt_ref& prot, const CSeq_feat& feat);
     void x_ValidateProtECNumbers(const CProt_ref& prot, const CSeq_feat& feat);
+#endif
 
     void ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat);
+#if 0
     void ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_feat& feat);
     void ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat, bool mustbemethionine);
     void ValidateMrnaTrans(const CSeq_feat& feat);
     void ReportMRNATranslationProblems(size_t problems, const CSeq_feat& feat, size_t mismatches);
 
     void ValidateCommonMRNAProduct(const CSeq_feat& feat);
+#endif
     void ValidateRnaProductType(const CRNA_ref& rna, const CSeq_feat& feat);
     void ValidateIntron(const CSeq_feat& feat);
 
@@ -236,8 +240,10 @@ private:
     string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
         TSeqPos pos);
 
+#if 0
     void ValidateCharactersInField (string value, string field_name, const CSeq_feat& feat);
     void x_ReportECNumFileStatus(const CSeq_feat& feat);
+#endif
 
     void ReportSpliceProblems(const CSpliceProblems& problems, const string& label, const CSeq_feat& feat);
     void ReportDonorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label, const CSeq_feat& feat);
@@ -395,7 +401,20 @@ public:
     virtual void Validate();
 
 protected:
+    // for tRNAs
+    void x_ValidateAnticodon(const CSeq_loc& anticodon);
+    void x_ValidateTrnaCodons();
+    void x_ValidateTrnaType();
+    void x_ValidateTrnaData();
 
+    // for mRNAs
+    void x_ValidateMrna();
+    void x_ValidateCommonMRNAProduct();
+    void x_ReportMRNATranslationProblems(size_t problems, size_t mismatches);
+    void x_ValidateRnaTrans();
+    void x_ValidateRnaProduct(bool feat_pseudo, bool pseudo);
+    void x_ValidateRnaProductType();
+    void x_ValidateTrnaOverlap();
 };
 
 

@@ -15630,6 +15630,8 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_FEAT_FeatureProductInconsistency, CGenBankFixtu
 		"There are 16 mismatches out of 27 bases between the transcript and (far) product sequence"));
 	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
 		"Inconsistent: Product= partial, Location= complete, Feature.partial= FALSE"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "RnaProductMismatch",
+        "Type of RNA does not match MolInfo of product Bioseq"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -15641,18 +15643,25 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_FEAT_FeatureProductInconsistency, CGenBankFixtu
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "FeatureProductInconsistency",
                                 "mRNA products are not unique"));
+	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
+		"Inconsistent: Product= partial, Location= complete, Feature.partial= FALSE"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "IdenticalMRNAtranscriptIDs",
+                    "Identical transcript IDs found on multiple mRNAs"));
+	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "TranscriptLen",
+		"Transcript length [27] less than (far) product length [485], and tail < 95% polyA"));
+	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "TranscriptMismatches",
+		"There are 16 mismatches out of 27 bases between the transcript and (far) product sequence"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "RnaProductMismatch",
+        "Type of RNA does not match MolInfo of product Bioseq"));
 	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "TranscriptLen",
 		"Transcript length [27] less than (far) product length [485], and tail < 95% polyA"));
 	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "TranscriptMismatches",
 		"There are 16 mismatches out of 27 bases between the transcript and (far) product sequence"));
 	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
 		"Inconsistent: Product= partial, Location= complete, Feature.partial= FALSE"));
-	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "TranscriptLen",
-		"Transcript length [27] less than (far) product length [485], and tail < 95% polyA"));
-	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "TranscriptMismatches",
-		"There are 16 mismatches out of 27 bases between the transcript and (far) product sequence"));
-	expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "PartialsInconsistent",
-		"Inconsistent: Product= partial, Location= complete, Feature.partial= FALSE"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "RnaProductMismatch",
+        "Type of RNA does not match MolInfo of product Bioseq"));
+
 	eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -23096,6 +23105,9 @@ BOOST_FIXTURE_TEST_CASE(Test_VR_803, CGenBankFixture)
             "Transcript length [11] less than (far) product length [3132], and tail < 95% polyA"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TranscriptMismatches",
         "There are 7 mismatches out of 11 bases between the transcript and (far) product sequence"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "RnaProductMismatch",
+        "Type of RNA does not match MolInfo of product Bioseq"));
+
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
     CLEAR_ERRORS

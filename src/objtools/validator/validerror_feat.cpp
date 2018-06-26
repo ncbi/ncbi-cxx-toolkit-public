@@ -1634,6 +1634,7 @@ void CValidError_feat::ValidateProt(
 }
 
 
+#if 0
 void CValidError_feat::x_ValidateProteinName(const string& prot_name, const CSeq_feat& feat)
 {
     if (NStr::EndsWith(prot_name, "]")) {
@@ -1800,6 +1801,7 @@ void CValidError_feat::x_ValidateProtECNumbers(const CProt_ref& prot, const CSeq
     }
 
 }
+#endif
 
 
 static bool s_EqualGene_ref(const CGene_ref& genomic, const CGene_ref& mrna)
@@ -1842,14 +1844,17 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
     bool pseudo = feat_pseudo || gene_pseudo;
     bool mustbemethionine = false;
 
+#if 0
     if (!pseudo && feat.IsSetProduct()) {
         ValidateMrnaTrans(feat);      /* transcription check */
     }
+#endif
 
     if ( rna_type == CRNA_ref::eType_mRNA ) {        
         if ( !pseudo ) {
             ValidateSplice(feat);
         }
+#if 0
         ValidateCommonMRNAProduct(feat);
 
         FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
@@ -1866,7 +1871,6 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             }
         }
         
-#if 0
         if (rna.CanGetExt() && rna.GetExt().IsName()) {
             const string& rna_name = rna.GetExt().GetName();
             if (NStr::StartsWith (rna_name, "transfer RNA ") &&
@@ -1884,6 +1888,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
 #endif
     }
 
+#if 0
     if ( rna_type == CRNA_ref::eType_tRNA ) {
         FOR_EACH_GBQUAL_ON_FEATURE (gbqual, feat) {
             if ( NStr::CompareNocase((**gbqual).GetQual (), "anticodon") == 0 ) {
@@ -1941,7 +1946,6 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             "RNA type 0 (unknown) not supported", feat);
     }
 
-#if 0
     if (rna_type == CRNA_ref::eType_rRNA) {
         if (rna.CanGetExt() && rna.GetExt().IsName()) {
             const string& rna_name = rna.GetExt().GetName();
@@ -1952,7 +1956,6 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             }
         }
     }
-#endif
 
     if (rna_type == CRNA_ref::eType_rRNA
         || rna_type == CRNA_ref::eType_snRNA
@@ -1968,7 +1971,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
     }
 
     if ( feat.IsSetProduct() ) {
-        ValidateRnaProductType(rna, feat);
+       ValidateRnaProductType(rna, feat);
 
         if ((!feat.IsSetExcept_text() 
              || NStr::FindNoCase (feat.GetExcept_text(), "transcribed pseudogene") == string::npos)
@@ -2008,9 +2011,12 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
                 "tRNA-rRNA overlap", feat);
         }
     }
+#endif
+
 }
 
 
+#if 0
 void CValidError_feat::ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_feat& feat)
 {
     bool ordered = true;
@@ -2162,6 +2168,7 @@ void CValidError_feat::ValidateRnaProductType
     PostErr(eDiag_Error, eErr_SEQ_FEAT_RnaProductMismatch,
         "Type of RNA does not match MolInfo of product Bioseq", feat);
 }
+#endif
 
 
 int s_LegalNcbieaaValues[] = { 42, 65, 66, 67, 68, 69, 70, 71, 72, 73,
@@ -2205,6 +2212,7 @@ static string GetGeneticCodeName (int gcode)
     return "unknown";
 }
 
+#if 0
 void CValidError_feat::ValidateTrnaCodons(
     const CTrna_ext& trna, const CSeq_feat& feat, bool mustbemethionine)
 {
@@ -2461,6 +2469,7 @@ void CValidError_feat::ValidateTrnaCodons(
         }
     }
 }
+#endif
 
 
 void CValidError_feat::ValidateGapFeature (const CSeq_feat& feat)
@@ -3456,6 +3465,7 @@ static bool s_BioseqHasRefSeqThatStartsWithPrefix (CBioseq_Handle bsh, string pr
 }
 
 
+#if 0
 void CValidError_feat::ReportMRNATranslationProblems(size_t problems, const CSeq_feat& feat, size_t mismatches)
 {
     if (problems & eMRNAProblem_TransFail) {
@@ -3599,6 +3609,7 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
         }
     }
 }
+#endif
 
 
 // check that there is no conflict between the gene on the genomic 
@@ -5190,6 +5201,7 @@ bool CGapCache::IsUnknownGap(size_t pos)
 }
 
 
+#if 0
 void CValidError_feat::ValidateCharactersInField (string value, string field_name, const CSeq_feat& feat)
 {
     if (HasBadCharacter (value)) {
@@ -5206,6 +5218,7 @@ void CValidError_feat::ValidateCharactersInField (string value, string field_nam
                 field_name + " ends with hyphen", feat);
     }
 }
+#endif
 
 
 CSingleFeatValidator::CSingleFeatValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) 
@@ -6283,8 +6296,10 @@ CBioseq_Handle CSingleFeatValidator::x_GetFeatureProduct(bool& is_far)
     if (m_Feat.IsSetData()) {
         if (m_Feat.GetData().IsCdregion()) {
             look_far = m_Imp.IsFarFetchCDSproducts();
-        } else if (m_Feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+        } else if (m_Feat.GetData().IsRna()) {
             look_far = m_Imp.IsFarFetchMRNAproducts();
+        } else {
+            look_far = m_Imp.IsRemoteFetch();
         }
     }
 
@@ -7833,29 +7848,7 @@ void CRNAValidator::Validate()
         rna_type = rna.GetType();
     }
 
-    if ( rna_type != CRNA_ref::eType_tRNA ) {
-        if ( rna.CanGetExt() && rna.GetExt().IsTRNA () ) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidTRNAdata,
-                "tRNA data structure on non-tRNA feature");
-        }
-    }
-
-    if (rna_type == CRNA_ref::eType_mRNA) {
-        if (rna.IsSetExt() && rna.GetExt().IsName()) {
-            const string& rna_name = rna.GetExt().GetName();
-            if (NStr::StartsWith(rna_name, "transfer RNA ") &&
-                (!NStr::EqualNocase(rna_name, "transfer RNA nucleotidyltransferase")) &&
-                (!NStr::EqualNocase(rna_name, "transfer RNA methyltransferase"))) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_tRNAmRNAmixup,
-                    "mRNA feature product indicates it should be a tRNA feature");
-            }
-            ValidateCharactersInField(rna_name, "mRNA name");
-            if (ContainsSgml(rna_name)) {
-                PostErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
-                    "mRNA name " + rna_name + " has SGML");
-            }
-        }
-    }
+    x_ValidateMrna();
 
     if (rna_type == CRNA_ref::eType_rRNA) {
         if (rna.CanGetExt() && rna.GetExt().IsName()) {
@@ -7868,7 +7861,765 @@ void CRNAValidator::Validate()
         }
     }
 
+    x_ValidateTrnaData();
+    x_ValidateTrnaType();
 
+    bool feat_pseudo = s_IsPseudo(m_Feat);
+    bool pseudo = feat_pseudo;
+    if (!pseudo) {
+        CConstRef<CSeq_feat> gene = m_Imp.GetGeneCache().GetGeneFromCache(&m_Feat, m_Scope);
+        if (gene) {
+            pseudo = s_IsPseudo(*gene);
+        }
+    }
+
+    x_ValidateRnaProduct(feat_pseudo, pseudo);
+
+    if (rna_type == CRNA_ref::eType_rRNA
+        || rna_type == CRNA_ref::eType_snRNA
+        || rna_type == CRNA_ref::eType_scRNA
+        || rna_type == CRNA_ref::eType_snoRNA) {
+        if (!rna.IsSetExt() || !rna.GetExt().IsName() || NStr::IsBlank(rna.GetExt().GetName())) {
+            if (!pseudo) {
+                string rna_typename = CRNA_ref::GetRnaTypeName(rna_type);
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_rRNADoesNotHaveProduct,
+                         rna_typename + " has no name");
+            }
+        }
+    }
+
+
+    if ( rna_type == CRNA_ref::eType_unknown ) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_RNAtype0,
+            "RNA type 0 (unknown) not supported");
+    }
+
+
+}
+
+
+void CRNAValidator::x_ValidateRnaProduct(bool feat_pseudo, bool pseudo)
+{
+    if (!m_Feat.IsSetProduct()) {
+        return;
+    }
+
+    if (!pseudo) {
+        if (m_Feat.GetData().GetRna().IsSetType() &&
+            m_Feat.GetData().GetRna().GetType() == CRNA_ref::eType_mRNA) {
+            x_ValidateCommonMRNAProduct();
+        }
+        x_ValidateRnaTrans();
+    }
+
+    x_ValidateRnaProductType();
+
+    if ((!m_Feat.IsSetExcept_text() 
+         || NStr::FindNoCase (m_Feat.GetExcept_text(), "transcribed pseudogene") == string::npos)
+        && !m_Imp.IsRefSeq()) {
+        if (feat_pseudo) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_PseudoRnaHasProduct,
+                     "A pseudo RNA should not have a product");
+        } else if (pseudo) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_PseudoRnaViaGeneHasProduct,
+                     "An RNA overlapped by a pseudogene should not have a product");
+        }
+    }
+
+}
+
+
+void CRNAValidator::x_ValidateRnaProductType()
+{    
+    if ( !m_Feat.GetData().GetRna().IsSetType() || !m_ProductBioseq ) {
+        return;
+    }
+    CSeqdesc_CI di(m_ProductBioseq, CSeqdesc::e_Molinfo);
+    if ( !di ) {
+        return;
+    }
+    const CMolInfo& mol_info = di->GetMolinfo();
+    if ( !mol_info.CanGetBiomol() ) {
+        return;
+    }
+    int biomol = mol_info.GetBiomol();
+    
+    switch ( m_Feat.GetData().GetRna().GetType() ) {
+
+    case CRNA_ref::eType_mRNA:
+        if ( biomol == CMolInfo::eBiomol_mRNA ) {
+            return;
+        }        
+        break;
+
+    case CRNA_ref::eType_tRNA:
+        if ( biomol == CMolInfo::eBiomol_tRNA ) {
+            return;
+        }
+        break;
+
+    case CRNA_ref::eType_rRNA:
+        if ( biomol == CMolInfo::eBiomol_rRNA ) {
+            return;
+        }
+        break;
+
+    default:
+        return;
+    }
+
+    PostErr(eDiag_Error, eErr_SEQ_FEAT_RnaProductMismatch,
+        "Type of RNA does not match MolInfo of product Bioseq");
+}
+
+
+void CRNAValidator::x_ValidateMrna()
+{
+    if (!m_Feat.GetData().GetRna().IsSetType() ||
+        m_Feat.GetData().GetRna().GetType() != CRNA_ref::eType_mRNA) {
+        return;
+    }
+
+    const CRNA_ref& rna = m_Feat.GetData().GetRna();
+
+    if (m_Feat.IsSetQual()) {
+        for (auto it : m_Feat.GetQual()) {
+            const CGb_qual& qual = *it;
+            if (qual.CanGetQual()) {
+                const string& key = qual.GetQual();
+                if (NStr::EqualNocase(key, "protein_id")) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
+                        "protein_id should not be a gbqual on an mRNA feature");
+                }
+                else if (NStr::EqualNocase(key, "transcript_id")) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
+                        "transcript_id should not be a gbqual on an mRNA feature");
+                }
+            }
+        }
+    }
+
+    if (rna.IsSetExt() && rna.GetExt().IsName()) {
+        const string& rna_name = rna.GetExt().GetName();
+        if (NStr::StartsWith(rna_name, "transfer RNA ") &&
+            (!NStr::EqualNocase(rna_name, "transfer RNA nucleotidyltransferase")) &&
+            (!NStr::EqualNocase(rna_name, "transfer RNA methyltransferase"))) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_tRNAmRNAmixup,
+                "mRNA feature product indicates it should be a tRNA feature");
+        }
+        ValidateCharactersInField(rna_name, "mRNA name");
+        if (ContainsSgml(rna_name)) {
+            PostErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
+                "mRNA name " + rna_name + " has SGML");
+        }
+    }
+}
+
+
+void CRNAValidator::x_ValidateCommonMRNAProduct()
+{
+    if ( !m_ProductBioseq) {
+        if (m_LocationBioseq) {
+            CSeq_entry_Handle seh = m_LocationBioseq.GetTopLevelEntry();
+            if (seh.IsSet() && seh.GetSet().IsSetClass()
+                && (seh.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set
+                    || seh.GetSet().GetClass() == CBioseq_set::eClass_other)) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_MissingMRNAproduct,
+                    "Product Bioseq of mRNA feature is not "
+                    "packaged in the record");
+            }
+        }
+    } else {
+
+        CConstRef<CSeq_feat> mrna = m_Imp.GetmRNAGivenProduct (*(m_ProductBioseq.GetCompleteBioseq()));
+        if (mrna && mrna.GetPointer() != &m_Feat) {
+            PostErr(eDiag_Critical, eErr_SEQ_FEAT_IdenticalMRNAtranscriptIDs,
+                    "Identical transcript IDs found on multiple mRNAs");
+        }
+    }
+}
+
+
+void CRNAValidator::x_ReportMRNATranslationProblems(size_t problems, size_t mismatches)
+{
+    if (problems & eMRNAProblem_TransFail) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_MrnaTransFail,
+            "Unable to transcribe mRNA");
+    }
+    if (problems & eMRNAProblem_UnableToFetch) {
+        const CSeq_id& product_id = GetId(m_Feat.GetProduct(), &m_Scope);
+        string label = product_id.AsFastaString();
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_ProductFetchFailure,
+            "Unable to fetch mRNA transcript '" + label + "'");
+    }
+
+    bool is_refseq = m_Imp.IsRefSeqConventions();
+    if (m_LocationBioseq) {
+        FOR_EACH_SEQID_ON_BIOSEQ(it, *(m_LocationBioseq.GetCompleteBioseq())) {
+            if ((*it)->IsOther()) {
+                is_refseq = true;
+                break;
+            }
+        }
+    }
+
+    TSeqPos feat_len = sequence::GetLength(m_Feat.GetLocation(), &m_Scope);
+
+    string farstr;
+    EDiagSev sev = eDiag_Error;
+
+    // if not local bioseq product, lower severity (with the exception of Refseq)
+    if (m_ProductIsFar && !is_refseq) {
+        sev = eDiag_Warning;
+    }
+    if (m_ProductIsFar) {
+        farstr = "(far) ";
+        if (m_Feat.IsSetPartial()
+            && !s_IsBioseqPartial(m_ProductBioseq)
+            && s_BioseqHasRefSeqThatStartsWithPrefix(m_ProductBioseq, "NM_")) {
+            sev = eDiag_Warning;
+        }
+    }
+
+    if (problems & eMRNAProblem_TranscriptLenLess) {
+        PostErr(sev, eErr_SEQ_FEAT_TranscriptLen,
+            "Transcript length [" + NStr::SizetToString(feat_len) +
+            "] less than " + farstr + "product length [" +
+            NStr::SizetToString(m_ProductBioseq.GetInst_Length()) + "], and tail < 95% polyA");
+    }
+
+    if (problems & eMRNAProblem_PolyATail100) {
+        PostErr(eDiag_Info, eErr_SEQ_FEAT_PolyATail,
+            "Transcript length [" + NStr::SizetToString(feat_len)
+            + "] less than " + farstr + "product length ["
+            + NStr::SizetToString(m_ProductBioseq.GetInst_Length()) + "], but tail is 100% polyA");
+    }
+    if (problems & eMRNAProblem_PolyATail95) {
+        PostErr(eDiag_Info, eErr_SEQ_FEAT_PolyATail,
+            "Transcript length [" + NStr::SizetToString(feat_len) +
+            "] less than " + farstr + "product length [" +
+            NStr::SizetToString(m_ProductBioseq.GetInst_Length()) + "], but tail >= 95% polyA");
+    }
+    if (problems & eMRNAProblem_TranscriptLenMore) {
+        PostErr(sev, eErr_SEQ_FEAT_TranscriptLen,
+            "Transcript length [" + NStr::IntToString(feat_len) + "] " +
+            "greater than " + farstr + "product length [" +
+            NStr::IntToString(m_ProductBioseq.GetInst_Length()) + "]");
+    }
+    if ((problems & eMRNAProblem_Mismatch) && mismatches > 0) {
+        PostErr(sev, eErr_SEQ_FEAT_TranscriptMismatches,
+            "There are " + NStr::SizetToString(mismatches) +
+            " mismatches out of " + NStr::SizetToString(feat_len) +
+            " bases between the transcript and " + farstr + "product sequence");
+    }
+    if (problems & eMRNAProblem_UnnecessaryException) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryException,
+            "mRNA has exception but passes transcription test");
+    }
+    if (problems & eMRNAProblem_ErroneousException) {
+        size_t total = min(feat_len, m_ProductBioseq.GetInst_Length());
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ErroneousException,
+            "mRNA has unclassified exception but only difference is " + NStr::SizetToString(mismatches)
+            + " mismatches out of " + NStr::SizetToString(total) + " bases");
+    }
+    if (problems & eMRNAProblem_ProductReplaced) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_mRNAUnnecessaryException,
+            "mRNA has transcribed product replaced exception");
+    }
+}
+
+
+void CRNAValidator::x_ValidateRnaTrans()
+{
+    size_t mismatches = 0;
+    size_t problems = GetMRNATranslationProblems
+        (m_Feat, mismatches, m_Imp.IgnoreExceptions(),
+         m_LocationBioseq, m_ProductBioseq, 
+         m_Imp.IsFarFetchMRNAproducts(), m_Imp.IsGpipe(),
+         m_Imp.IsGenomic(), &m_Scope);
+    x_ReportMRNATranslationProblems(problems, mismatches);
+}
+
+
+void CRNAValidator::x_ValidateTrnaData()
+{
+    if (!m_Feat.GetData().GetRna().IsSetExt() || !m_Feat.GetData().GetRna().GetExt().IsTRNA()) {
+        return;
+    }
+    if ( !m_Feat.GetData().GetRna().IsSetType() ||
+          m_Feat.GetData().GetRna().GetType() != CRNA_ref::eType_tRNA ) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidTRNAdata,
+                "tRNA data structure on non-tRNA feature");
+    }
+
+    const CTrna_ext& trna = m_Feat.GetData().GetRna().GetExt ().GetTRNA ();
+    if ( trna.CanGetAnticodon () ) {
+        const CSeq_loc& anticodon = trna.GetAnticodon();
+        size_t anticodon_len = GetLength(anticodon, &m_Scope);
+        if ( anticodon_len != 3 ) {
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_tRNArange,
+                "Anticodon is not 3 bases in length");
+        }
+        ECompare comp = sequence::Compare(anticodon,
+                                            m_Feat.GetLocation(),
+                                            &m_Scope,
+                                            sequence::fCompareOverlapping);
+        if ( comp != eContained  &&  comp != eSame ) {
+            PostErr (eDiag_Error, eErr_SEQ_FEAT_tRNArange,
+                "Anticodon location not in tRNA");
+        }
+        x_ValidateAnticodon(anticodon);
+    }
+    x_ValidateTrnaCodons();
+
+}
+
+
+void CRNAValidator::x_ValidateTrnaType()
+{
+    if (!m_Feat.GetData().GetRna().IsSetType() ||
+        m_Feat.GetData().GetRna().GetType() != CRNA_ref::eType_tRNA) {
+        return;
+    }
+    const CRNA_ref& rna = m_Feat.GetData().GetRna();
+
+    // check for unparsed qualifiers
+    for (auto gbqual : m_Feat.GetQual()) {
+        if ( NStr::CompareNocase((*gbqual).GetQual (), "anticodon") == 0 ) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_UnparsedtRNAAnticodon,
+                "Unparsed anticodon qualifier in tRNA");
+        } else if (NStr::CompareNocase ((*gbqual).GetQual (), "product") == 0 ) {
+            if (NStr::CompareNocase ((*gbqual).GetVal (), "tRNA-fMet") != 0 &&
+                NStr::CompareNocase ((*gbqual).GetVal (), "tRNA-iMet") != 0) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_UnparsedtRNAProduct,
+                    "Unparsed product qualifier in tRNA");
+            }
+        }
+    }
+
+
+    /* tRNA with string extension */
+    if ( rna.IsSetExt()  &&  
+            rna.GetExt().Which () == CRNA_ref::C_Ext::e_Name ) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_UnparsedtRNAProduct,
+            "Unparsed product qualifier in tRNA");
+    } else if (!rna.IsSetExt() || rna.GetExt().Which() == CRNA_ref::C_Ext::e_not_set ) {
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_MissingTrnaAA,
+            "Missing encoded amino acid qualifier in tRNA");
+    }
+
+    x_ValidateTrnaOverlap();
+}
+
+
+void CRNAValidator::x_ValidateAnticodon(const CSeq_loc& anticodon)
+{
+    bool ordered = true;
+    bool adjacent = false;
+    bool unmarked_strand = false;
+    bool mixed_strand = false;
+
+    CSeq_loc_CI prev;
+    for (CSeq_loc_CI curr(anticodon); curr; ++curr) {
+        bool chk = true;
+        if (curr.GetEmbeddingSeq_loc().IsInt()) {
+            chk = sequence::IsValid(curr.GetEmbeddingSeq_loc().GetInt(), &m_Scope);
+        } else if (curr.GetEmbeddingSeq_loc().IsPnt()) {
+            chk = sequence::IsValid(curr.GetEmbeddingSeq_loc().GetPnt(), &m_Scope);
+        } else {
+            continue;
+        }
+
+        if ( !chk ) {
+            string lbl;
+            curr.GetEmbeddingSeq_loc().GetLabel(&lbl);
+            PostErr(eDiag_Critical, eErr_SEQ_FEAT_tRNArange,
+                "Anticodon location [" + lbl + "] out of range");
+        }
+
+        if ( prev  &&  curr  &&
+             IsSameBioseq(curr.GetSeq_id(), prev.GetSeq_id(), &m_Scope) ) {
+            CSeq_loc_CI::TRange prev_range = prev.GetRange();
+            CSeq_loc_CI::TRange curr_range = curr.GetRange();
+            if ( ordered ) {
+                if ( curr.GetStrand() == eNa_strand_minus ) {
+                    if (prev_range.GetTo() < curr_range.GetTo()) {
+                        ordered = false;
+                    }
+                    if (curr_range.GetTo() + 1 == prev_range.GetFrom()) {
+                        adjacent = true;
+                    }
+                } else {
+                    if (prev_range.GetTo() > curr_range.GetTo()) {
+                        ordered = false;
+                    }
+                    if (prev_range.GetTo() + 1 == curr_range.GetFrom()) {
+                        adjacent = true;
+                    }
+                }
+            }
+            ENa_strand curr_strand = curr.GetStrand();
+            ENa_strand prev_strand = prev.GetStrand();
+            if ( curr_range == prev_range  &&  curr_strand == prev_strand ) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_DuplicateAnticodonInterval,
+                    "Duplicate anticodon exons in location");
+            }
+            if ( curr_strand != prev_strand ) {
+                if (curr_strand == eNa_strand_plus  &&  prev_strand == eNa_strand_unknown) {
+                    unmarked_strand = true;
+                } else if (curr_strand == eNa_strand_unknown  &&  prev_strand == eNa_strand_plus) {
+                    unmarked_strand = true;
+                } else {
+                    mixed_strand = true;
+                }
+            }
+        }
+        prev = curr;
+    }
+    if (adjacent) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_AbuttingIntervals,
+            "Adjacent intervals in Anticodon");
+    }
+
+    ENa_strand loc_strand = m_Feat.GetLocation().GetStrand();
+    ENa_strand ac_strand = anticodon.GetStrand();
+    if (loc_strand == eNa_strand_minus && ac_strand != eNa_strand_minus) {
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_AnticodonStrandConflict, 
+                 "Anticodon strand and tRNA strand do not match.");
+    } else if (loc_strand != eNa_strand_minus && ac_strand == eNa_strand_minus) {
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_AnticodonStrandConflict, 
+                 "Anticodon strand and tRNA strand do not match.");
+    }
+
+    // trans splicing exception turns off both mixed_strand and out_of_order messages
+    bool trans_splice = false;
+    if (m_Feat.CanGetExcept()  &&  m_Feat.GetExcept()  && m_Feat.CanGetExcept_text()) {
+        if (NStr::FindNoCase(m_Feat.GetExcept_text(), "trans-splicing") != NPOS) {
+            trans_splice = true;
+        }
+    }
+    if (!trans_splice) {
+        string loc_lbl = "";
+        anticodon.GetLabel(&loc_lbl);
+        if (mixed_strand) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_AnticodonMixedStrand,
+                "Mixed strands in Anticodon [" + loc_lbl + "]");
+        }
+        if (unmarked_strand) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_AnticodonMixedStrand,
+                "Mixed plus and unknown strands in Anticodon [" + loc_lbl + "]");
+        }
+        if (!ordered) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqLocOrder,
+                "Intervals out of order in Anticodon [" + loc_lbl + "]");
+        }
+    }
+}
+
+
+void CRNAValidator::x_ValidateTrnaCodons()
+{
+    if (!m_Feat.IsSetData() || !m_Feat.GetData().IsRna() || 
+        !m_Feat.GetData().GetRna().IsSetExt() || 
+        !m_Feat.GetData().GetRna().GetExt().IsTRNA()) {
+        return;
+    }
+    const CTrna_ext& trna = m_Feat.GetData().GetRna().GetExt().GetTRNA();
+
+    if (!trna.IsSetAa()) {
+        PostErr (eDiag_Error, eErr_SEQ_FEAT_BadTrnaAA, "Missing tRNA amino acid");
+        return;
+    }
+
+    unsigned char aa = 0, orig_aa;
+    vector<char> seqData;
+    string str = "";
+    
+    switch (trna.GetAa().Which()) {
+        case CTrna_ext::C_Aa::e_Iupacaa:
+            str = trna.GetAa().GetIupacaa();
+            CSeqConvert::Convert(str, CSeqUtil::e_Iupacaa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+            aa = seqData[0];
+            break;
+        case CTrna_ext::C_Aa::e_Ncbi8aa:
+            str = trna.GetAa().GetNcbi8aa();
+            CSeqConvert::Convert(str, CSeqUtil::e_Ncbi8aa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+            aa = seqData[0];
+            break;
+        case CTrna_ext::C_Aa::e_Ncbistdaa:
+            str = trna.GetAa().GetNcbi8aa();
+            CSeqConvert::Convert(str, CSeqUtil::e_Ncbistdaa, 0, str.size(), seqData, CSeqUtil::e_Ncbieaa);
+            aa = seqData[0];
+            break;
+        case CTrna_ext::C_Aa::e_Ncbieaa:
+            seqData.push_back(trna.GetAa().GetNcbieaa());
+            aa = seqData[0];
+            break;
+        default:
+            NCBI_THROW (CCoreException, eCore, "Unrecognized tRNA aa coding");
+            break;
+    }
+
+    // make sure the amino acid is valid
+    bool found = false;
+    for ( unsigned int i = 0; i < sizeof (s_LegalNcbieaaValues) / sizeof (int); ++i ) {
+        if ( aa == s_LegalNcbieaaValues[i] ) {
+            found = true;
+            break;
+        }
+    }
+    orig_aa = aa;
+    if ( !found ) {
+        aa = ' ';
+    }
+
+    if (m_Feat.GetData().GetRna().IsSetType() &&
+        m_Feat.GetData().GetRna().GetType() == CRNA_ref::eType_tRNA) {
+        bool mustbemethionine = false;
+        for (auto gbqual : m_Feat.GetQual()) {
+            if (NStr::CompareNocase((*gbqual).GetQual(), "product") == 0 &&
+                (NStr::CompareNocase((*gbqual).GetVal(), "tRNA-fMet") == 0 ||
+                    NStr::CompareNocase((*gbqual).GetVal(), "tRNA-iMet") == 0)) {
+                mustbemethionine = true;
+                break;
+            }
+        }
+        if (mustbemethionine) {
+            if (aa != 'M') {
+                string aanm = GetAAName(aa, true);
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                    "Initiation tRNA claims to be tRNA-" + aanm +
+                    ", but should be tRNA-Met");
+            }
+        }
+    }
+
+    // Retrive the Genetic code id for the tRNA
+    int gcode = 1;
+    if ( m_LocationBioseq ) {
+        // need only the closest biosoure.
+        CSeqdesc_CI diter(m_LocationBioseq, CSeqdesc::e_Source);
+        if ( diter ) {
+            gcode = diter->GetSource().GetGenCode();
+        }
+    }
+    
+    const string& ncbieaa = CGen_code_table::GetNcbieaa(gcode);
+    if ( ncbieaa.length() != 64 ) {
+        return;
+    }
+
+    string codename = GetGeneticCodeName (gcode);
+    char buf[2];
+    buf[0] = aa;
+    buf[1] = 0;
+    string aaname = buf;
+    aaname += "/";
+    aaname += GetAAName (aa, true);
+        
+    EDiagSev sev = (aa == 'U' || aa == 'O') ? eDiag_Warning : eDiag_Error;
+
+    bool modified_codon_recognition = false;
+    bool rna_editing = false;
+    if ( m_Feat.IsSetExcept_text() ) {
+        string excpt_text = m_Feat.GetExcept_text();
+        if ( NStr::FindNoCase(excpt_text, "modified codon recognition") != NPOS ) {
+            modified_codon_recognition = true;
+        }
+        if ( NStr::FindNoCase(excpt_text, "RNA editing") != NPOS ) {
+            rna_editing = true;
+        }
+    }
+
+    vector<string> recognized_codon_values;
+    vector<unsigned char> recognized_taa_values;
+
+    ITERATE( CTrna_ext::TCodon, iter, trna.GetCodon() ) {
+        if (*iter == 255) continue;
+        // test that codon value is in range 0 - 63
+        if ( *iter > 63 ) {
+            PostErr(sev, eErr_SEQ_FEAT_BadTrnaCodon,
+                "tRNA codon value " + NStr::IntToString(*iter) + 
+                " is greater than maximum 63");
+            continue;
+        } else if (*iter < 0) {
+            PostErr(sev, eErr_SEQ_FEAT_BadTrnaCodon,
+                "tRNA codon value " + NStr::IntToString(*iter) +
+                " is less than 0");
+            continue;
+        }
+
+        if ( !modified_codon_recognition && !rna_editing ) {
+            unsigned char taa = ncbieaa[*iter];
+            string codon = CGen_code_table::IndexToCodon(*iter);
+            recognized_codon_values.push_back (codon);
+            recognized_taa_values.push_back (taa);
+
+            if ( taa != aa ) {
+                if ( (aa == 'U')  &&  (taa == '*')  &&  (*iter == 14) ) {
+                    // selenocysteine normally uses TGA (14), so ignore without requiring exception in record
+                    // TAG (11) is used for pyrrolysine in archaebacteria
+                    // TAA (10) is not yet known to be used for an exceptional amino acid
+                } else {
+                    NStr::ReplaceInPlace (codon, "T", "U");
+
+                    PostErr(sev, eErr_SEQ_FEAT_TrnaCodonWrong,
+                      "Codon recognized by tRNA (" + codon + ") does not match amino acid (" 
+                       + aaname + ") specified by genetic code ("
+                       + NStr::IntToString (gcode) + "/" + codename + ")");
+                }
+            }
+        }
+    }
+
+    // see if anticodon is compatible with codons recognized and amino acid
+    string anticodon = "?";
+    vector<string> codon_values;
+    vector<unsigned char> taa_values;
+
+    if (trna.IsSetAnticodon() && GetLength (trna.GetAnticodon(), &m_Scope) == 3) {
+        try {
+            anticodon = GetSequenceStringFromLoc(trna.GetAnticodon(), m_Scope);
+            // get reverse complement sequence for location
+            CRef<CSeq_loc> codon_loc(SeqLocRevCmpl(trna.GetAnticodon(), &m_Scope));
+            string codon = GetSequenceStringFromLoc(*codon_loc, m_Scope);
+            if (codon.length() > 3) {
+                codon = codon.substr (0, 3);
+            }
+
+            // expand wobble base to known binding partners
+            string wobble = "";
+
+
+            char ch = anticodon.c_str()[0];
+            switch (ch) {
+                case 'A' :
+                    wobble = "ACT";
+                    break;
+                case 'C' :
+                    wobble = "G";
+                    break;
+                case 'G' :
+                    wobble = "CT";
+                    break;
+                case 'T' :
+                    wobble = "AG";
+                    break;
+                default :
+                    break;
+            }
+            if (!NStr::IsBlank(wobble)) {
+                string::iterator str_it = wobble.begin();
+                while (str_it != wobble.end()) {
+                    codon[2] = *str_it;
+                    int index = CGen_code_table::CodonToIndex (codon);
+                    if (index < 64 && index > -1) {
+                        unsigned char taa = ncbieaa[index];
+                        taa_values.push_back(taa);
+                        codon_values.push_back(codon);
+                    }
+                    ++str_it;
+                }
+            }
+            NStr::ReplaceInPlace (anticodon, "T", "U");
+            if (anticodon.length() > 3) {
+                anticodon = anticodon.substr(0, 3);
+            }
+            } catch (CException ) {
+            } catch (std::exception ) {
+        }
+
+        if (codon_values.size() > 0) {
+            bool ok = false;
+            // check that codons predicted from anticodon can transfer indicated amino acid
+            for (size_t i = 0; i < codon_values.size(); i++) {
+                if (!NStr::IsBlank (codon_values[i]) && aa == taa_values[i]) {
+                    ok = true;
+                }
+            }
+            if (!ok) {
+                if (aa == 'U' && NStr::Equal (anticodon, "UCA")) {
+                    // ignore TGA codon for selenocysteine
+                } else if (aa == 'O' && NStr::Equal (anticodon, "CUA")) {
+                    // ignore TAG codon for pyrrolysine
+                } else if (!m_Feat.IsSetExcept_text()
+                          || (NStr::FindNoCase(m_Feat.GetExcept_text(), "modified codon recognition") == string::npos 
+                              &&NStr::FindNoCase(m_Feat.GetExcept_text(), "RNA editing") == string::npos)) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadAnticodonAA,
+                              "Codons predicted from anticodon (" + anticodon
+                              + ") cannot produce amino acid (" + aaname + ")");
+                }
+            }
+
+            // check that codons recognized match codons predicted from anticodon
+            if (recognized_codon_values.size() > 0) {
+                bool ok = false;
+                for (size_t i = 0; i < codon_values.size() && !ok; i++) {
+                    for (size_t j = 0; j < recognized_codon_values.size() && !ok; j++) {
+                        if (NStr::Equal (codon_values[i], recognized_codon_values[j])) {
+                            ok = true;
+                        }
+                    }
+                }
+                if (!ok 
+                    && (!m_Feat.IsSetExcept_text() 
+                        || NStr::FindNoCase (m_Feat.GetExcept_text(), "RNA editing") == string::npos)) {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadAnticodonCodon,
+                             "Codon recognized cannot be produced from anticodon ("
+                             + anticodon + ")");
+                }
+            }
+        }
+    }
+
+    if (!m_Feat.IsSetPseudo() || !m_Feat.GetPseudo()) {
+        if (orig_aa == 0 || orig_aa == 255) {
+            PostErr (sev, eErr_SEQ_FEAT_BadTrnaAA, "Missing tRNA amino acid");
+        } else {
+            // verify that legal amino acid is indicated
+            unsigned int idx;
+            if (aa != '*') {
+                idx = aa - 64;
+            } else {
+                idx = 25;
+            }
+            if (idx == 0 || idx >= 28) {
+                PostErr (sev, eErr_SEQ_FEAT_BadTrnaAA, "Invalid tRNA amino acid");
+            }
+        }
+    }
+}
+
+
+void CRNAValidator::x_ValidateTrnaOverlap()
+{
+    if (!m_Feat.GetData().GetRna().IsSetType() || 
+        m_Feat.GetData().GetRna().GetType() != CRNA_ref::eType_tRNA) {
+        return;
+    }
+    TFeatScores scores;
+    GetOverlappingFeatures(m_Feat.GetLocation(),
+                            CSeqFeatData::e_Rna,
+                            CSeqFeatData::eSubtype_rRNA,
+                            eOverlap_Interval,
+                            scores, m_Scope);
+    bool found_bad = false;
+    for (auto it : scores) {
+        CRef<CSeq_loc> intersection = it.second->GetLocation().Intersect(m_Feat.GetLocation(),
+            0 /* flags*/,
+            NULL /* synonym mapper */);
+        if (intersection) {
+            TSeqPos length = sequence::GetLength(*intersection, &m_Scope);
+            if (length >= 5) {
+                found_bad = true;
+                break;
+            }
+        }
+    }
+    if (found_bad) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlapTRNA,
+            "tRNA-rRNA overlap");
+    }
 }
 
 
