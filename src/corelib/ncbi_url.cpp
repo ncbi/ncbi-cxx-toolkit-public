@@ -471,6 +471,7 @@ void CUrl::SetUrl(const string& orig_url, const IUrlEncoder* encoder)
             x_SetService(host);
         }
         else if (NStr::EqualNocase(m_Scheme, NCBI_SCHEME_SERVICE)) {
+            m_Scheme.clear();
             x_SetService(host);
         }
         else {
@@ -527,11 +528,36 @@ string CUrl::ComposeUrl(CUrlArgs::EAmpEncoding amp_enc,
         encoder = GetDefaultEncoder();
     }
     string url;
+
+    // Host or service name only require some special processing.
+    bool host_only =  (!m_Host.empty() || !m_Service.empty())
+        && m_Scheme.empty()
+        && !m_IsGeneric
+        && m_User.empty()
+        && m_Password.empty()
+        && m_Port.empty()
+        && m_Path.empty()
+        && m_Fragment.empty() &&
+        !HaveArgs();
+    if (host_only && IsService()) {
+        // Do not add ncbilb:// if only service name is set.
+        return NStr::URLEncode(m_Service, NStr::eUrlEnc_ProcessMarkChars);
+    }
+
     if ( !m_Scheme.empty() ) {
         url += m_Scheme;
+    }
+    if (IsService() && m_Scheme != NCBI_SCHEME_SERVICE) {
+        if ( !m_Scheme.empty() ) {
+            url += "+";
+        }
+        url += NCBI_SCHEME_SERVICE;
+    }
+    if (IsService() || !m_Scheme.empty()) {
         url += ":";
     }
-    if (m_IsGeneric) {
+
+    if (host_only || m_IsGeneric || IsService()) {
         url += "//";
     }
     bool have_user_info = false;
@@ -563,6 +589,29 @@ string CUrl::ComposeUrl(CUrlArgs::EAmpEncoding amp_enc,
         url += "#" + encoder->EncodeFragment(m_Fragment);
     }
     return url;
+}
+
+
+void CUrl::SetScheme(const string& value)
+{
+    size_t pos = value.find(NCBI_SCHEME_SERVICE);
+    if (pos != NPOS
+        &&  (pos == 0 || value[pos - 1] == '+')
+        &&  value.substr(pos) == NCBI_SCHEME_SERVICE) {
+        // Strip "ncbilb" scheme, switch to service.
+        if (!IsService()) {
+            x_SetService(GetHost());
+        }
+        if (pos == 0) {
+            m_Scheme.clear();
+        }
+        else {
+            m_Scheme = value.substr(0, pos - 1);
+        }
+    }
+    else {
+        m_Scheme = value;
+    }
 }
 
 

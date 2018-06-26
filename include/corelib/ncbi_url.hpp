@@ -376,7 +376,7 @@ public:
     // Access parts of the URL
 
     string GetScheme(void) const            { return m_Scheme; }
-    void   SetScheme(const string& value)   { m_Scheme = value; }
+    void   SetScheme(const string& value);
 
     /// Generic schemes use '//' prefix (after optional scheme).
     bool GetIsGeneric(void) const           { return m_IsGeneric; }
@@ -556,6 +556,7 @@ void CUrl::SetService(const string& service)
 {
     m_Host.clear();
     m_Service = service;
+    m_IsGeneric = true; // services are always generic
 }
 
 inline

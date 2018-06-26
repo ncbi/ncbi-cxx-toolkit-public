@@ -43,7 +43,7 @@
 USING_NCBI_SCOPE;
 
 
-const char* kSchemeHttp = "http";
+const char* kScheme = "scheme";
 const char* kSchemeLB = NCBI_SCHEME_SERVICE;
 const char* kUser = "user";
 const char* kPassword = "password";
@@ -53,12 +53,10 @@ const char* kHostIPv6 = "[1:2:3:4]";
 const char* kServiceSimple = "servicename";
 const char* kServiceSpecial = "/service/name";
 const char* kPort = "1234";
-const char* kPath = "/path/file";
+const char* kPathAbs = "/path/file";
+const char* kPathRel = "rel/path/file";
 const char* kArgs = "arg1=val1&arg2=val2";
 const char* kFragment = "fragment";
-const char* kRelativePath = "relative/path/file";
-const char* kNonGenericScheme = "scheme";
-const char* kNonGenericPath = "nongeneric:path";
 
 
 enum EUrlParts {
@@ -79,13 +77,13 @@ enum EUrlParts {
 
     fPathNone       = 0,
     fPathRoot       = 0x0080,
-    fPathFull       = 0x0100,
+    fPathAbs        = 0x0100,
     fPathRel        = 0x0180,
     fPathMask       = 0x0180,
 
     fArgs           = 0x0200,
     fFragment       = 0x0400,
-    
+
     fMax            = 0x0800
 };
 
@@ -93,24 +91,15 @@ enum EUrlParts {
 void s_TestUrl(string url_str, int flags)
 {
     CUrl url(url_str);
+    if (url.GetIsGeneric()) {
+        BOOST_CHECK(url_str.find("//") != NPOS);
+    }
+    else {
+        BOOST_CHECK(url_str.find("//") == NPOS);
+    }
+
     if (flags & fScheme) {
-        if (url.GetScheme() == kNonGenericScheme) {
-            BOOST_CHECK_EQUAL(url.GetPath(), kNonGenericPath);
-            BOOST_CHECK(url.GetHost().empty());
-            BOOST_CHECK(url.GetService().empty());
-            BOOST_CHECK(url.GetUser().empty());
-            BOOST_CHECK(url.GetPassword().empty());
-            BOOST_CHECK(url.GetPort().empty());
-            BOOST_CHECK(url.GetArgs().GetArgs().empty());
-            BOOST_CHECK(url.GetFragment().empty());
-            return;
-        }
-        if (flags & fService) {
-            BOOST_CHECK_EQUAL(url.GetScheme(), kSchemeLB);
-        }
-        else {
-            BOOST_CHECK_EQUAL(url.GetScheme(), kSchemeHttp);
-        }
+        BOOST_CHECK_EQUAL(url.GetScheme(), kScheme);
     }
     else {
         BOOST_CHECK(url.GetScheme().empty());
@@ -118,6 +107,7 @@ void s_TestUrl(string url_str, int flags)
 
     if (flags & fService) {
         BOOST_CHECK(url.GetHost().empty());
+        BOOST_CHECK(url.IsService());
         switch (flags & fHostMask) {
         case fServiceSimple:
             BOOST_CHECK_EQUAL(url.GetService(), kServiceSimple);
@@ -178,11 +168,11 @@ void s_TestUrl(string url_str, int flags)
     case fPathRoot:
         BOOST_CHECK_EQUAL(url.GetPath(), "/");
         break;
-    case fPathFull:
-        BOOST_CHECK_EQUAL(url.GetPath(), kPath);
+    case fPathAbs:
+        BOOST_CHECK_EQUAL(url.GetPath(), kPathAbs);
         break;
     case fPathRel:
-        BOOST_CHECK_EQUAL(url.GetPath(), kRelativePath);
+        BOOST_CHECK_EQUAL(url.GetPath(), kPathRel);
         break;
     default:
         BOOST_ERROR("Invalid path type flag");
@@ -207,22 +197,34 @@ void s_TestUrl(string url_str, int flags)
 }
 
 
-BOOST_AUTO_TEST_CASE(s_UrlParseCompose)
+BOOST_AUTO_TEST_CASE(s_UrlTestParsed)
 {
+    cout << "*** Testing parsed URLs" << endl;
+    string surl;
     for (int flags = 0; flags < fMax; ++flags) {
-        string surl;
+        surl.clear();
         if (flags & fScheme) {
-            surl = ((flags & fService) ? kSchemeLB : kSchemeHttp);
-            surl += "://";
+            // Skip scheme-only URLs.
+            if (flags == fScheme) continue;
+            surl = ((flags & fService) ? string(kScheme) + "+" + kSchemeLB : kScheme);
+            // When testing relative path, do not include "//".
+            surl += !(flags & (fHostMask | fService)) ? ":" : "://";
         }
-        else if (!(flags & fService)) {
-            // Scheme-less non-service URLs start with //
+        else if (flags & fService) {
+            // Simple service URLs do not require ncbilb scheme.
+            if (flags != fService) {
+                surl = string(kSchemeLB) + "://";
+            }
+        }
+        else if ((flags & fHostMask) != fHostNone) {
+            // If host is present, the authority part must start with "//".
             surl = "//";
         }
 
         string authority;
         if (flags & fService) {
-            if (flags & fPort) continue; // no port for services
+            // Port is not allowed for services.
+            if (flags & fPort) continue;
             switch (flags & fHostMask) {
             case fServiceSimple:
                 authority = kServiceSimple;
@@ -231,14 +233,7 @@ BOOST_AUTO_TEST_CASE(s_UrlParseCompose)
                 authority = NStr::URLEncode(kServiceSpecial);
                 break;
             default:
-                continue; // unused service type
-            }
-            if (!(flags & fScheme)) {
-                // Without scheme only service name is allowed
-                if ((flags & fAuthorityMask) == flags) {
-                    s_TestUrl(authority, flags & fAuthorityMask);
-                }
-                continue;
+                continue; // invalid service type
             }
         }
         else {
@@ -262,11 +257,17 @@ BOOST_AUTO_TEST_CASE(s_UrlParseCompose)
             }
         }
 
+        // Do not test user info and port if host/service is missing
+        if (!(flags & fAuthorityMask)) {
+            if (flags & (fUser | fPassword | fPort)) continue;
+        }
+
         string user_info;
         if (flags & fUser) {
             user_info = kUser;
         }
         if (flags & fPassword) {
+            // TODO: Is password allowed without user?
             user_info += string(":") + kPassword;
         }
         if (!user_info.empty()) {
@@ -280,8 +281,13 @@ BOOST_AUTO_TEST_CASE(s_UrlParseCompose)
         case fPathRoot:
             surl += "/";
             break;
-        case fPathFull:
-            surl += kPath;
+        case fPathAbs:
+            surl += kPathAbs;
+            break;
+        case fPathRel:
+            // Relative path can be combined only with scheme
+            if (flags & ~(fScheme | fPathRel)) continue;
+            surl += kPathRel;
             break;
         default:
             continue;
@@ -299,11 +305,114 @@ BOOST_AUTO_TEST_CASE(s_UrlParseCompose)
         cout << "Testing: " << surl << endl;
         s_TestUrl(surl, flags);
     }
+}
 
-    // Absolute path only
-    s_TestUrl(kPath, fPathFull);
-    // Relative path only
-    s_TestUrl(kRelativePath, fPathRel);
-    // Other non-generic url
-    s_TestUrl(string(kNonGenericScheme) + string(":") + string(kNonGenericPath), fScheme | fPathFull);
+
+struct SCUrlTest {
+    string  m_Expected;
+    string  m_UrlString;
+    string  m_Scheme;
+    string  m_Service;
+    string  m_Host;
+    string  m_Path;
+    bool    m_Generic;
+
+    void Compare(const CUrl& url)
+    {
+        string result(url.ComposeUrl(CUrlArgs::eAmp_Char));
+        BOOST_CHECK_EQUAL(m_Expected, result);
+        BOOST_CHECK_EQUAL(m_Scheme, url.GetScheme());
+        BOOST_CHECK_EQUAL(!m_Service.empty(), url.IsService());
+        BOOST_CHECK_EQUAL(m_Service, url.GetService());
+        BOOST_CHECK_EQUAL(m_Host, url.GetHost());
+        BOOST_CHECK_EQUAL(m_Path, url.GetPath());
+        BOOST_CHECK_EQUAL(m_Generic, url.GetIsGeneric());
+    }
+};
+
+
+static SCUrlTest s_CUrlTests[] = {
+    { "service",                            "service",                              "",         "service",  "",     "",             false },
+    { "Some/path",                          "Some/path",                            "",         "",         "",     "Some/path",    false },
+    { "//host",                             "//host",                               "",         "",         "host", "",             true },
+    { "//host/Some/path",                   "//host/Some/path",                     "",         "",         "host", "/Some/path",   true },
+    { "http://host",                        "http://host",                          "http",     "",         "host", "",             true },
+    { "http://host/Some/path",              "http://host/Some/path",                "http",     "",         "host", "/Some/path",   true },
+
+    { "ncbilb://service",                   "ncbilb://service",                     "",         "service",  "",     "",             true },
+    { "ncbilb://service/Some/path",         "ncbilb://service/Some/path",           "",         "service",  "",     "/Some/path",   true },
+    { "http+ncbilb://service",              "http+ncbilb://service",                "http",     "service",  "",     "",             true },
+    { "http+ncbilb://service/Some/path",    "http+ncbilb://service/Some/path",      "http",     "service",  "",     "/Some/path",   true },
+
+    { "scheme:Some/path",                   "scheme:Some/path",                     "scheme",   "",         "",     "Some/path",    false },
+    { "scheme://host",                      "scheme://host",                        "scheme",   "",         "host", "",             true },
+    { "scheme://host/Some/path",            "scheme://host/Some/path",              "scheme",   "",         "host", "/Some/path",   true },
+    { "scheme+ncbilb://service",            "scheme+ncbilb://service",              "scheme",   "service",  "",     "",             true },
+    { "scheme+ncbilb://service/Some/path",  "scheme+ncbilb://service/Some/path",    "scheme",   "service",  "",     "/Some/path",   true }
+};
+
+
+BOOST_AUTO_TEST_CASE(s_UrlTestComposed)
+{
+    cout << "*** Testing composed URLs" << endl;
+    for (auto test : s_CUrlTests) {
+        cout << "Testing: " << test.m_UrlString << endl;
+        CUrl purl(test.m_UrlString);
+        test.Compare(purl);
+
+        CUrl curl;
+        if (!test.m_Scheme.empty())   curl.SetScheme(test.m_Scheme);
+        if (!test.m_Service.empty())  curl.SetService(test.m_Service);
+        if (!test.m_Host.empty())     curl.SetHost(test.m_Host);
+        if (!test.m_Path.empty())     curl.SetPath(test.m_Path);
+        curl.SetIsGeneric(test.m_Generic);
+        test.Compare(curl);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(s_UrlTestSpecial)
+{
+    cout << "*** Testing special cases" << endl;
+    // Service-only URL may include ncbilb scheme.
+    string surl = string(kSchemeLB) + "://" + kServiceSimple;
+    cout << "Testing: " << surl << endl;
+    s_TestUrl(surl, fService);
+
+    {
+        cout << "Testing: ignore ncbilb scheme"<< endl;
+        CUrl url;
+        url.SetService(kServiceSimple);
+        url.SetScheme(kSchemeLB);
+        BOOST_CHECK(url.IsService());
+        BOOST_CHECK_EQUAL(url.GetService(), kServiceSimple);
+        BOOST_CHECK(url.GetScheme().empty());
+    }
+    {
+        cout << "Testing: ignore ncbilb scheme / switch to service" << endl;
+        CUrl url;
+        url.SetHost(kServiceSimple);
+        url.SetScheme(kSchemeLB);
+        BOOST_CHECK(url.IsService());
+        BOOST_CHECK_EQUAL(url.GetService(), kServiceSimple);
+        BOOST_CHECK(url.GetScheme().empty());
+    }
+    {
+        cout << "Testing: strip +ncbilb scheme" << endl;
+        CUrl url;
+        url.SetService(kServiceSimple);
+        url.SetScheme(string(kScheme) + "+" + kSchemeLB);
+        BOOST_CHECK(url.IsService());
+        BOOST_CHECK_EQUAL(url.GetService(), kServiceSimple);
+        BOOST_CHECK_EQUAL(url.GetScheme(), kScheme);
+    }
+    {
+        cout << "Testing: strip ncbilb scheme / switch to service" << endl;
+        CUrl url;
+        url.SetHost(kServiceSimple);
+        url.SetScheme(string(kScheme) + "+" + kSchemeLB);
+        BOOST_CHECK(url.IsService());
+        BOOST_CHECK_EQUAL(url.GetService(), kServiceSimple);
+        BOOST_CHECK_EQUAL(url.GetScheme(), kScheme);
+    }
 }
