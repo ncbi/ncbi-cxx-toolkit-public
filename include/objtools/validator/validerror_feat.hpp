@@ -186,8 +186,10 @@ private:
     void ValidateCdsProductId(const CSeq_feat& feat);
     void ValidateCdConflict(const CCdregion& cdregion, const CSeq_feat& feat);
 
+#if 0
     EDiagSev x_SeverityForConsensusSplice(void);
     void ValidateSplice(const CSeq_feat& feat, bool check_all = false);
+#endif
     static void x_FeatLocHasBadStrandBoth(const CSeq_feat& feat, bool& both, bool& both_rev);
     void ValidateCommonCDSProduct(const CSeq_feat& feat);
 
@@ -208,8 +210,8 @@ private:
     void ReportMRNATranslationProblems(size_t problems, const CSeq_feat& feat, size_t mismatches);
 
     void ValidateCommonMRNAProduct(const CSeq_feat& feat);
-#endif
     void ValidateRnaProductType(const CRNA_ref& rna, const CSeq_feat& feat);
+#endif
     void ValidateIntron(const CSeq_feat& feat);
 
     void ValidateImp(const CImp_feat& imp, const CSeq_feat& feat);
@@ -243,11 +245,11 @@ private:
 #if 0
     void ValidateCharactersInField (string value, string field_name, const CSeq_feat& feat);
     void x_ReportECNumFileStatus(const CSeq_feat& feat);
-#endif
 
     void ReportSpliceProblems(const CSpliceProblems& problems, const string& label, const CSeq_feat& feat);
     void ReportDonorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label, const CSeq_feat& feat);
     void ReportAcceptorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label, const CSeq_feat& feat);
+#endif
 
     bool x_HasNonReciprocalXref(const CSeq_feat& feat, const CFeat_id& id, CSeqFeatData::ESubtype subtype);
     bool x_LocIsNmAccession(const CSeq_loc& loc);
@@ -325,7 +327,13 @@ protected:
     CBioseq_Handle x_GetFeatureProduct(bool& is_far);
 
     void ValidateCharactersInField (string value, string field_name);
+    void ValidateSplice(bool gene_pseudo, bool check_all);
+    EDiagSev x_SeverityForConsensusSplice(void);
+    void x_ReportSpliceProblems(const CSpliceProblems& problems, const string& label);
+    void x_ReportDonorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label);
+    void x_ReportAcceptorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label);
 
+    static bool x_BioseqHasNmAccession (CBioseq_Handle bsh);
 };
 
 class CCdregionValidator : public CSingleFeatValidator
@@ -357,6 +365,12 @@ protected:
     static string x_FormatIntronInterval(const TShortIntron& interval);
     void ReportShortIntrons();
 
+    void x_ValidateTrans();
+    void x_ValidateCodebreak();
+    void x_ReportTranslationProblems(const CCDSTranslationProblems& problems);
+    void x_ReportTranslExceptProblems(const CCDSTranslationProblems::TTranslExceptProblems& problems, bool has_exception);
+    void x_ReportTranslationMismatches(const CCDSTranslationProblems::TTranslationMismatches& mismatches);
+    string MapToNTCoords(TSeqPos pos);
 
     CConstRef<CSeq_feat> m_Gene;
     bool m_GeneIsPseudo;
@@ -408,13 +422,38 @@ protected:
     void x_ValidateTrnaData();
 
     // for mRNAs
-    void x_ValidateMrna();
+    void x_ValidateMrna(bool pseudo);
     void x_ValidateCommonMRNAProduct();
     void x_ReportMRNATranslationProblems(size_t problems, size_t mismatches);
     void x_ValidateRnaTrans();
     void x_ValidateRnaProduct(bool feat_pseudo, bool pseudo);
     void x_ValidateRnaProductType();
     void x_ValidateTrnaOverlap();
+};
+
+
+class CExonValidator : public CSingleFeatValidator
+{
+public:
+    CExonValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+        CSingleFeatValidator(feat, scope, imp) {}
+
+    virtual void Validate();
+
+protected:
+};
+
+
+class CIntronValidator : public CSingleFeatValidator
+{
+public:
+    CIntronValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+        CSingleFeatValidator(feat, scope, imp) {}
+
+    virtual void Validate();
+
+protected:
+    bool x_IsIntronShort(bool pseudo);
 };
 
 
