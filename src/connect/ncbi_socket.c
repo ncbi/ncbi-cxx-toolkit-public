@@ -151,7 +151,7 @@
 
 
 /* Minimal size of the data buffer chunk in the socket internal buffer(s) */
-#define SOCK_BUF_CHUNK_SIZE  4096
+#define SOCK_BUF_CHUNK_SIZE  16384
 
 /* Macros for platform-dependent constants, error codes and functions
  */
@@ -166,7 +166,7 @@
 #  define SOCK_EVENTS           (FD_CLOSE|FD_CONNECT|FD_OOB|FD_WRITE|FD_READ)
 #  define WIN_INT_CAST          (int)
 #  ifndef   WSA_INVALID_EVENT
-#    define WSA_INVALID_EVENT  ((WSAEVENT) 0)
+#    define WSA_INVALID_EVENT   ((WSAEVENT) 0)
 #  endif /*!WSA_INVALID_EVENT*/
 /* NCBI_OS_MSWIN */
 
@@ -195,9 +195,6 @@
 #define SESSION_INVALID       ((void*)(-1L))
 
 #define MAXIDLEN              80
-#if MAXIDLEN > SOCK_BUF_CHUNK_SIZE
-#  error "SOCK_BUF_CHUNK_SIZE too small"
-#endif /*MAXIDLEN<SOCK_BUF_CHUNK_SIZE*/
 
 #define SOCK_STRERROR(error)  s_StrError(0, (error))
 
@@ -2896,9 +2893,9 @@ static EIO_Status s_Read_(SOCK    sock,
                           size_t* n_read,
                           int     peek)
 {
-    char xx_buf[SOCK_BUF_CHUNK_SIZE];
     unsigned int rtv_set;
     struct timeval rtv;
+    char _id[MAXIDLEN];
     EIO_Status status;
     int/*bool*/ done;
 
@@ -2933,7 +2930,7 @@ static EIO_Status s_Read_(SOCK    sock,
         if (!sock->eof) {
             CORE_TRACEF(("%s[SOCK::Read] "
                          " Socket already shut down for reading",
-                         s_ID(sock, xx_buf)));
+                         s_ID(sock, _id)));
         }
         return eIO_Closed;
     }
@@ -2944,35 +2941,33 @@ static EIO_Status s_Read_(SOCK    sock,
     assert(!*n_read  ||  peek > 0);
     assert((peek >= 0  &&  size)  ||  (peek < 0  &&  !buf  &&  !size));
     do {
-        size_t x_read;
-        size_t n_todo;
-        char*  x_buf;
+        char   xx_buf[SOCK_BUF_CHUNK_SIZE / 4], *x_buf, *p_buf;
+        size_t x_todo, x_read, x_save;
 
-        if (!buf/*internal upread/skipping*/  &&  peek) {
-            n_todo = sizeof(xx_buf);
-            x_buf  = (char*) malloc(sizeof(xx_buf));
-            if (!x_buf)
-                x_buf = xx_buf;
-        } else if (!buf  ||  (n_todo = size - *n_read) < sizeof(xx_buf)) {
-            n_todo  = sizeof(xx_buf);
-            x_buf   =        xx_buf;
-        } else
-            x_buf   = (char*) buf + *n_read;
-
+        if (buf  &&  (x_todo = size - *n_read) >= SOCK_BUF_CHUNK_SIZE) {
+            x_buf  = (char*) buf + *n_read;
+            p_buf  = 0;
+        } else if (!(p_buf = (char*) malloc(SOCK_BUF_CHUNK_SIZE))) {
+            x_todo = sizeof(xx_buf);
+            x_buf  = xx_buf;
+        } else {
+            x_todo = SOCK_BUF_CHUNK_SIZE;
+            x_buf  = p_buf;
+        }
         if (sock->session) {
             int error;
             FSSLRead sslread = s_SSL ? s_SSL->Read : 0;
             assert(sock->session != SESSION_INVALID);
             if (!sslread) {
-                if (!buf  &&  x_buf != xx_buf)
-                    free(x_buf);
+                if (p_buf)
+                    free(p_buf);
                 status = eIO_NotSupported;
                 break/*error*/;
             }
-            status = sslread(sock->session, x_buf, n_todo, &x_read, &error);
+            status = sslread(sock->session, x_buf, x_todo, &x_read, &error);
             assert(status == eIO_Success  ||  !x_read);
             assert(status == eIO_Success  ||  error);
-            assert(x_read <= n_todo);
+            assert(x_read <= x_todo);
 
             /* statistics & logging */
             if ((status != eIO_Success  &&  sock->log != eOff)  ||
@@ -2986,71 +2981,74 @@ static EIO_Status s_Read_(SOCK    sock,
             }
 
             if (status == eIO_Closed  &&  !sock->eof) {
-                if (!buf  &&  x_buf != xx_buf)
-                    free(x_buf);
+                if (p_buf)
+                    free(p_buf);
                 sock->r_status = eIO_Closed;
                 sock->eof = 1/*true*/;
                 break/*bad error*/;
             }
         } else {
             x_read = 0;
-            status = s_Recv(sock, x_buf, n_todo, &x_read, 0);
+            status = s_Recv(sock, x_buf, x_todo, &x_read, 0);
             assert(status == eIO_Success  ||  !x_read);
+            assert(x_read <= x_todo);
         }
         if (status != eIO_Success) {
-            if (!buf  &&  x_buf != xx_buf)
-                free(x_buf);
+            if (p_buf)
+                free(p_buf);
             break/*error*/;
         }
         if (!x_read) {
-            if (!buf  &&  x_buf != xx_buf)
-                free(x_buf);
+            if (p_buf)
+                free(p_buf);
             status = eIO_Closed;
             break/*EOF*/;
         }
-        assert(status == eIO_Success  &&  0 < x_read  &&  x_read <= n_todo);
+        assert(status == eIO_Success  &&  0 < x_read  &&  x_read <= x_todo);
 
-        if (x_read < n_todo)
+        if (x_read < x_todo)
             done = 1/*true*/;
 
-        if (buf  ||  size) {
-            n_todo = size - *n_read;
-            if (n_todo > x_read)
-                n_todo = x_read;
-            if (buf  &&  x_buf == xx_buf)
-                memcpy((char*) buf + *n_read, x_buf, n_todo);
+        if (peek >= 0) {
+            assert(size > *n_read);  /* NB: subsumes size > 0 */
+            x_todo = size - *n_read;
+            if (x_todo > x_read)
+                x_todo = x_read;
+            if (buf  &&  (p_buf  ||  x_buf == xx_buf))
+                memcpy((char*) buf + *n_read, x_buf, x_todo);
+            x_save = peek ? x_read : x_read - x_todo;
         } else
-            assert(peek < 0);
-
-        if (peek  ||  x_read > n_todo) {
+            x_save = x_read;
+        if (x_save) {
             /* store the newly read/excess data in the internal input buffer */
-            if (buf  ||  x_buf == xx_buf  ||  x_read < sizeof(xx_buf)/2) {
-                sock->eof = !BUF_Write (&sock->r_buf,
-                                        peek ? x_buf  : x_buf  + n_todo,
-                                        peek ? x_read : x_read - n_todo);
-                if (!buf  &&  x_buf != xx_buf)
-                    free(x_buf);
+            if (!p_buf  ||  x_save < SOCK_BUF_CHUNK_SIZE / 2) {
+                sock->eof = !BUF_Write(&sock->r_buf,
+                                       peek ? x_buf : x_buf + x_todo,
+                                       x_save);
+                if (p_buf)
+                    free(p_buf);
             } else {
-                assert(peek);
-                sock->eof = !BUF_AppendEx(&sock->r_buf,
-                                          x_buf, sizeof(xx_buf),
-                                          x_buf, x_read);
+                sock->eof = !BUF_AppendEx(&sock->r_buf, p_buf, peek
+                                          ? SOCK_BUF_CHUNK_SIZE
+                                          : SOCK_BUF_CHUNK_SIZE - x_todo,
+                                          peek ? p_buf : p_buf + x_todo,
+                                          x_save);
                 if (sock->eof)
-                    free(x_buf);
+                    free(p_buf);
             }
             if (sock->eof) {
                 CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
                                   ("%s[SOCK::Read] "
-                                   " Cannot save unread data",
-                                   s_ID(sock, xx_buf)));
+                                   " Cannot save %lu byte%s of unread data",
+                                   s_ID(sock, _id), (unsigned long) x_save,
+                                   &"s"[x_save == 1]));
                 sock->r_status = eIO_Closed/*failure*/;
+                x_read = peek >= 0 ? x_todo : 0;
                 status = eIO_Unknown;
-                if (!buf  &&  peek)
-                    x_read = 0;
-            }
-            if (x_read > n_todo)
-                x_read = n_todo;
-        }
+            } else if (peek >= 0)
+                x_read = x_todo;
+        } else if (p_buf)
+            free(p_buf);
         *n_read += x_read;
 
         if (status != eIO_Success  ||  done)
@@ -3327,7 +3325,7 @@ static EIO_Status s_Send(SOCK        sock,
             /* special send()'s semantics of IO event recording reset */
             sock->writable = 0/*false*/;
             if (error == WSAENOBUFS) {
-                if (size < SOCK_BUF_CHUNK_SIZE) {
+                if (size < SOCK_BUF_CHUNK_SIZE / 4) {
                     s_AddTimeout(&waited, wait_buf_ms);
                     if (s_IsSmallerTimeout(SOCK_GET_TIMEOUT(sock, w),&waited)){
                         sock->w_status = eIO_Timeout;
@@ -4434,8 +4432,8 @@ static EIO_Status s_Create(const char*     hostpath,
 
     /* setup initial data */
     BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
-    if (size  &&  (BUF_SetChunkSize(&x_sock->w_buf, size) < size  ||
-                   !BUF_Write(&x_sock->w_buf, data, size))) {
+    if (size  &&  (BUF_SetChunkSize(&x_sock->w_buf, size) < size
+                   ||  !BUF_Write(&x_sock->w_buf, data, size))) {
         CORE_LOGF_ERRNO_X(27, eLOG_Error, errno,
                           ("%s[SOCK::Create] "
                            " Cannot store initial data",
@@ -4606,8 +4604,8 @@ static EIO_Status s_CreateOnTop(const void*   handle,
         x_orig->r_buf = 0;
     } else
         BUF_SetChunkSize(&r_buf, SOCK_BUF_CHUNK_SIZE);
-    if (size  &&  (BUF_SetChunkSize(&w_buf, size) < size  ||
-                   !BUF_Write(&w_buf, data, size))) {
+    if (size  &&  (BUF_SetChunkSize(&w_buf, size) < size
+                   ||  !BUF_Write(&w_buf, data, size))) {
         CORE_LOGF_ERRNO_X(49, eLOG_Error, errno,
                           ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
                            " Cannot store initial data",
