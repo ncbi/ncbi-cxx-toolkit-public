@@ -1716,7 +1716,7 @@ public:
     ///   Mask used to match string "str". And can contains next
     ///   wildcard characters: \n
     ///     ? - matches to any one symbol in the string. \n
-    ///     &#42; - matches to any number of symbols in the string. \n
+    ///     * - matches to any number of symbols in the string. \n
     /// @param use_case
     ///   Whether to do a case sensitive compare(eCase -- default), or a
     ///   case-insensitive compare (eNocase).
