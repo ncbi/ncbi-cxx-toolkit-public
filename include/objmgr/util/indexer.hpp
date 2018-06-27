@@ -165,6 +165,8 @@ public:
     // Check all Bioseqs for failure to fetch remote sequence components or feature annotation
     bool IsFetchFailure(void);
 
+    CRef<CSeqMasterIndex> GetMasterIndex(void) const { return m_Idx; }
+
 private:
     // Implementation details are in a separate CSeqMasterIndex object wrapped in a CRef
     CRef<CSeqMasterIndex> m_Idx;

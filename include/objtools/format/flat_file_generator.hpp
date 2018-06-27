@@ -79,6 +79,9 @@ public:
 
     void SetFeatTree(feature::CFeatTree* tree);
 
+    void SetSeqEntryIndex(CRef<CSeqEntryIndex> idx);
+    void ResetSeqEntryIndex(void);
+
     void Generate(const CSeq_submit& submit, CScope& scope, CNcbiOstream& os);
     void Generate(const CBioseq& bioseq, CScope& scope, CNcbiOstream& os);
     void Generate(const CSeq_loc& loc, CScope& scope, CNcbiOstream& os);

@@ -114,6 +114,16 @@ void CFlatFileGenerator::SetFeatTree(feature::CFeatTree* tree)
     m_Ctx->SetFeatTree(tree);
 }
 
+void CFlatFileGenerator::SetSeqEntryIndex(CRef<CSeqEntryIndex> idx)
+{
+    m_Ctx->SetSeqEntryIndex(idx);
+}
+
+void CFlatFileGenerator::ResetSeqEntryIndex(void)
+{
+    m_Ctx->ResetSeqEntryIndex();
+}
+
 
 
     /*
@@ -258,12 +268,25 @@ void CFlatFileGenerator::Generate
     if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
         // CSeq_entry& top = const_cast<CSeq_entry&> (*topent);
         CSeq_entry_Handle topseh = entry.GetTopLevelEntry();
-        try {
-            CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eAdaptive ));
-            m_Ctx->SetSeqEntryIndex(idx);
-        } catch(CException &) {
-            m_Failed = true;
-            return;
+        if (m_Ctx->UsingSeqEntryIndex()) {
+            const CRef<CSeqEntryIndex> idx = m_Ctx->GetSeqEntryIndex();
+            if (idx) {
+                const CRef<CSeqMasterIndex>& midx = idx->GetMasterIndex();
+                if (midx) {
+                    if (midx->GetTopSEH() != topseh) {
+                        m_Ctx->ResetSeqEntryIndex();
+                    }
+                }
+            }
+        }
+        if (! m_Ctx->UsingSeqEntryIndex()) {
+            try {
+                CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eAdaptive ));
+                m_Ctx->SetSeqEntryIndex(idx);
+            } catch(CException &) {
+                m_Failed = true;
+                return;
+            }
         }
     }
 
@@ -420,9 +443,11 @@ void CFlatFileGenerator::Generate
     m_Ctx->Reset();
     m_Ctx->SetAnnotSelector() = sel;
 
+    /*
     if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
         m_Ctx->ResetSeqEntryIndex();
     }
+    */
 }
 
 
