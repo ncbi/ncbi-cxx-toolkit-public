@@ -5977,7 +5977,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SMNH<UKR>\ts\tState Museum of Natural History\t\t",
 "SMNH<USA-KS>\ts\tSchmidt Museum of Natural History, Emporia State University\t\t",
 "SMNK\ts\tStaatliches Museum fuer Naturkunde Karlsruhe (State Museum of Natural History)\t\t",
-"SMNS\ts\tStaatliches Museum fuer Naturkund Stuttgart\t\t",
+"SMNS\ts\tStaatliches Museum fur Naturkunde Stuttgart\t\t",
 "SMOC\ts\tSlezske Muzeum Opava\t\t",
 "SMP<SUR>\ts\tSurinaams Museum\t\t",
 "SMP<USA-PA>\ts\tThe State Museum of Pennsylvania\t\t",

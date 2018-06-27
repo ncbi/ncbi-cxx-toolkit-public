@@ -5944,7 +5944,7 @@ SMNH<SWE>	s	Swedish Museum of Natural History	NRM
 SMNH<UKR>	s	State Museum of Natural History		
 SMNH<USA-KS>	s	Schmidt Museum of Natural History, Emporia State University		
 SMNK	s	Staatliches Museum fuer Naturkunde Karlsruhe (State Museum of Natural History)		
-SMNS	s	Staatliches Museum fuer Naturkund Stuttgart		
+SMNS	s	Staatliches Museum fur Naturkunde Stuttgart		
 SMOC	s	Slezske Muzeum Opava		
 SMP<SUR>	s	Surinaams Museum		
 SMP<USA-PA>	s	The State Museum of Pennsylvania		
