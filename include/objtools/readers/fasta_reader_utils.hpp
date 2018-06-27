@@ -128,6 +128,12 @@ private:
     static void x_PostError(ILineErrorListener* pMessageListener, 
         const TSeqPos lineNumber, 
         const string& errMessage,
+        const CObjReaderLineException::EProblem problem,
+        const CObjReaderParseException::EErrCode errCode);
+
+    static void x_PostError(ILineErrorListener* pMessageListener, 
+        const TSeqPos lineNumber, 
+        const string& errMessage,
         const CObjReaderParseException::EErrCode errCode);
 
     static bool x_ExcessiveSeqDataInTitle(const CTempString& title, 

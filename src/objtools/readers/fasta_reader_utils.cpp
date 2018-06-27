@@ -327,7 +327,7 @@ void CFastaDeflineReader::x_ProcessIDs(
     ILineErrorListener* pMessageListener)
 {
     x_CheckForExcessiveSeqDataInID(
-        id_string,
+            id_string,
             info,
             pMessageListener);
 
@@ -570,9 +570,24 @@ void CFastaDeflineReader::x_PostWarning(ILineErrorListener* pMessageListener,
 }
 
 
+
 void CFastaDeflineReader::x_PostError(ILineErrorListener* pMessageListener,
     const TSeqPos lineNumber,
     const string& errMessage,
+    const CObjReaderParseException::EErrCode errCode) 
+{
+    x_PostError(pMessageListener,
+                lineNumber,
+                errMessage,
+                ILineError::eProblem_GeneralParsingError, 
+                errCode);
+}
+
+
+void CFastaDeflineReader::x_PostError(ILineErrorListener* pMessageListener,
+    const TSeqPos lineNumber,
+    const string& errMessage,
+    const CObjReaderLineException::EProblem problem,
     const CObjReaderParseException::EErrCode errCode) 
 {
 
@@ -581,7 +596,7 @@ void CFastaDeflineReader::x_PostError(ILineErrorListener* pMessageListener,
         eDiag_Error,
         lineNumber,
         errMessage, 
-        ILineError::eProblem_GeneralParsingError,
+        problem,
         "", "", "", "",
         errCode));
 
@@ -627,6 +642,7 @@ CFastaDeflineReader::x_CheckForExcessiveSeqDataInID(
 {
     const TSeqPos kWarnNumNucCharsAtEnd = 20;
     const TSeqPos kWarnNumAminoAcidCharsAtEnd = 50;
+    const TSeqPos kErrNumNucCharsAtEnd = 25;
 
 
     const bool assume_prot = (info.fFastaFlags & CFastaReader::fAssumeProt);
@@ -641,18 +657,31 @@ CFastaDeflineReader::x_CheckForExcessiveSeqDataInID(
             }
             ++numNucChars;
         }
+
+
+
+
         if (numNucChars > kWarnNumNucCharsAtEnd) {
             const string err_message = 
             "Fasta Reader: sequence id ends with " +
             NStr::NumericToString(numNucChars) +
             " valid nucleotide characters. " +
             " Was the sequence accidentally placed in the definition line?";    
-        
-            x_PostWarning(pMessageListener,
-                info.lineNumber,
-                err_message,
-                ILineError::eProblem_UnexpectedNucResidues,
-                CObjReaderParseException::eFormat);
+       
+            if (numNucChars > kErrNumNucCharsAtEnd) {
+                x_PostError(pMessageListener,
+                            info.lineNumber,
+                            err_message,
+                   //         ILineError::eProblem_UnexpectedNucResidues,
+                            CObjReaderParseException::eFormat);
+            
+            } else{ 
+                x_PostWarning(pMessageListener,
+                              info.lineNumber,
+                              err_message,
+                              ILineError::eProblem_UnexpectedNucResidues,
+                              CObjReaderParseException::eFormat);
+            }
             
             return;        
         }
