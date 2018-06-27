@@ -79,7 +79,10 @@ bool CFixSuspectProductName::FixSuspectProductName(string& name)
     CMatchString match(name);
     for (const auto& rule : m_rules->Get()) {
         if (rule->ApplyToString(name, match)) {
-            return true;
+            if (rule->IsSetReplace() && rule->GetReplace().GetMove_to_note()) {
+                // need to copy the original name to CDS note
+            }
+            return true;  // what if several rules apply?
         }
     }
 
