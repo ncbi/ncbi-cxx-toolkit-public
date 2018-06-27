@@ -91,7 +91,7 @@ class CConn_Streambuf;  // Forward declaration
 class CSocket;          // Forward declaration
 
 
-const size_t kConn_DefaultBufSize = 4096;  ///< I/O buffer size per direction
+const size_t kConn_DefaultBufSize = 16384;  ///< I/O buffer size per direction
 
 
 
@@ -118,10 +118,10 @@ class NCBI_XCONNECT_EXPORT CConn_IOStream : public            CNcbiIostream,
 public:
     /// The values must be compatible with TCONN_Flags.
     enum {
-        fConn_Untie         = fCONN_Untie, ///< do not flush before reading
-        fConn_DelayOpen     = 2,           ///< do not force CONN open in ctor
-        fConn_ReadBuffered  = 4,           ///< read buffer is to be allocated
-        fConn_WriteBuffered = 8            ///< write buffer is to be allocated
+        fConn_Untie           = fCONN_Untie,///< do not flush before reading
+        fConn_DelayOpen       = 2,          ///< do not force CONN open in ctor
+        fConn_ReadUnbuffered  = 4,          ///< read buffer NOT to be alloc'd
+        fConn_WriteUnbuffered = 8           ///< write buffer NOT t.b. alloc'd
     } EConn_Flag;
     typedef unsigned int TConn_Flags;      ///< bitwise OR of EConn_Flag
 
@@ -153,7 +153,7 @@ public:
      bool            close    = false,
      const STimeout* timeout  = kDefaultTimeout,
      size_t          buf_size = kConn_DefaultBufSize,
-     TConn_Flags     flags    = fConn_ReadBuffered | fConn_WriteBuffered,
+     TConn_Flags     flags    = 0,
      CT_CHAR_TYPE*   ptr      = 0,
      size_t          size     = 0);
 
@@ -185,7 +185,7 @@ protected:
     (const TConn_Pair& connpair,
      const STimeout*   timeout  = kDefaultTimeout,
      size_t            buf_size = kConn_DefaultBufSize,
-     TConn_Flags       flags    = fConn_ReadBuffered | fConn_WriteBuffered,
+     TConn_Flags       flags    = 0,
      CT_CHAR_TYPE*     ptr      = 0,
      size_t            size     = 0);
 

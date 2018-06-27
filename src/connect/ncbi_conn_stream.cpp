@@ -90,7 +90,7 @@ CConn_IOStream::CConn_IOStream(CONN conn, bool close,
                                 timeout, buf_size, flgs, ptr, size));
     if (conn) {
         EIO_Status status;
-        if (!(flgs& fConn_DelayOpen)) {
+        if (!(flgs & fConn_DelayOpen)) {
             SOCK s/*dummy*/;
             // NB: CONN_Write(0 bytes) could have caused the same effect
             (void) CONN_GetSOCK(conn, &s);  // Prompt CONN to actually open
@@ -909,8 +909,7 @@ CConn_MemoryStream::CConn_MemoryStream(BUF        buf,
                                                          ? 1/*true*/
                                                          : 0/*false*/),
                                 eIO_Unknown),
-                     0, buf_size,
-                     fConn_ReadBuffered | fConn_WriteBuffered,
+                     0, buf_size, 0,
                      0, BUF_Size(buf)),
       m_Ptr(0)
 {
@@ -923,8 +922,7 @@ CConn_MemoryStream::CConn_MemoryStream(const void* ptr,
                                        EOwnership  owner,
                                        size_t      buf_size)
     : CConn_IOStream(TConn_Pair(MEMORY_CreateConnector(), eIO_Unknown),
-                     0, buf_size,
-                     fConn_ReadBuffered | fConn_WriteBuffered,
+                     0, buf_size, 0,
                      (CT_CHAR_TYPE*) ptr, size),
       m_Ptr(owner == eTakeOwnership ? ptr : 0)
 {
@@ -1093,7 +1091,7 @@ CConn_FtpStream::CConn_FtpStream(const string&        host,
                                                           cmcb),
                                 eIO_Unknown),
                      timeout, buf_size,
-                     fConn_Untie | fConn_ReadBuffered)
+                     fConn_Untie | fConn_WriteUnbuffered)
 {
     return;
 }
@@ -1109,7 +1107,7 @@ CConn_FtpStream::CConn_FtpStream(const SConnNetInfo&  net_info,
                                            cmcb,
                                            timeout),
                      timeout, buf_size,
-                     fConn_Untie | fConn_ReadBuffered)
+                     fConn_Untie | fConn_WriteUnbuffered)
 {
     return;
 }

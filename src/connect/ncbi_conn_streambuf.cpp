@@ -85,9 +85,8 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR                   connector,
         ERR_POST_X(2, x_Message("CConn_Streambuf():  NULL connector"));
         return;
     }
-    if ((flgs & (CConn_IOStream::fConn_Untie |
-                 CConn_IOStream::fConn_WriteBuffered))
-        == CConn_IOStream::fConn_WriteBuffered  &&  buf_size) {
+    if (!(flgs & (CConn_IOStream::fConn_Untie |
+                  CConn_IOStream::fConn_WriteUnbuffered))  &&  buf_size) {
         m_Tie = true;
     }
     if ((m_Status = CONN_CreateEx(connector, fCONN_Supplement
@@ -121,9 +120,8 @@ CConn_Streambuf::CConn_Streambuf(CONN                        conn,
         ERR_POST_X(1, x_Message("CConn_Streambuf():  NULL connection"));
         return;
     }
-    if ((flgs & (CConn_IOStream::fConn_Untie |
-                 CConn_IOStream::fConn_WriteBuffered))
-        == CConn_IOStream::fConn_WriteBuffered  &&  buf_size) {
+    if (!(flgs & (CConn_IOStream::fConn_Untie |
+                  CConn_IOStream::fConn_WriteUnbuffered))  &&  buf_size) {
         m_Tie = true;
     }
     x_Init(timeout, buf_size, flgs, ptr, size);
@@ -149,23 +147,22 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_Close,     timeout) ==eIO_Success);
     }
 
-    if (!(flgs & (CConn_IOStream::fConn_ReadBuffered |
-                  CConn_IOStream::fConn_WriteBuffered))) {
+    if ((flgs & (CConn_IOStream::fConn_ReadUnbuffered |
+                 CConn_IOStream::fConn_WriteUnbuffered))
+        == (CConn_IOStream::fConn_ReadUnbuffered |
+            CConn_IOStream::fConn_WriteUnbuffered)) {
         buf_size = 0;
     }
     if (buf_size) {
         m_WriteBuf = new
             CT_CHAR_TYPE[buf_size
-                         << ((flgs & (CConn_IOStream::fConn_ReadBuffered |
-                                      CConn_IOStream::fConn_WriteBuffered))
-                             ==      (CConn_IOStream::fConn_ReadBuffered |
-                                      CConn_IOStream::fConn_WriteBuffered)
-                             ? 1 : 0)];
-        if (flgs & CConn_IOStream::fConn_ReadBuffered)
+                         << !(flgs & (CConn_IOStream::fConn_ReadUnbuffered |
+                                      CConn_IOStream::fConn_WriteUnbuffered))];
+        if (!(flgs & CConn_IOStream::fConn_ReadUnbuffered))
             m_BufSize = buf_size;
-        if (!(flgs & CConn_IOStream::fConn_WriteBuffered))
+        if (flgs & CConn_IOStream::fConn_WriteUnbuffered)
             buf_size = 0;
-        if (flgs & CConn_IOStream::fConn_ReadBuffered)
+        if (!(flgs & CConn_IOStream::fConn_ReadUnbuffered))
             m_ReadBuf = m_WriteBuf + buf_size;
     } /* else see ctor */
 

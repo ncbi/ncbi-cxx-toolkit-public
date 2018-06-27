@@ -119,7 +119,7 @@ extern const char* g_RW_ResultToString(ERW_Result result)
     return kResultStr[result - eRW_NotImplemented];
 }
 
-static const streamsize kDefaultBufSize = 4096;
+static const streamsize kDefaultBufSize = 16384;
 
 
 static inline EOwnership x_IfToOwnReader(const IReader* r, const IWriter* w,
