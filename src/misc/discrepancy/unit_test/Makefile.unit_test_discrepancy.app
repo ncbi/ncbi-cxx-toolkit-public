@@ -15,4 +15,6 @@ LIBS = $(PCRE_LIBS)
 
 REQUIRES = Boost.Test.Included
 
+CHECK_CMD = unit_test_discrepancy
+
 WATCHERS = kachalos
