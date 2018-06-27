@@ -232,6 +232,7 @@ public:
     CConstRef<CSeq_entry> GetTopSEP (void) const { return m_Tsep; }
     CConstRef<CSubmit_block> GetSbtBlk (void) const { return m_SbtBlk; }
     CConstRef<CSeq_descr> GetTopDescr (void) const { return m_TopDescr; }
+    feature::CFeatTree& GetFeatTree (void) { return m_FeatTree; }
 
     const vector<CRef<CBioseqIndex>>& GetBioseqIndices(void);
 
@@ -263,6 +264,7 @@ private:
     CConstRef<CSeq_entry> m_Tsep;
     CConstRef<CSubmit_block> m_SbtBlk;
     CConstRef<CSeq_descr> m_TopDescr;
+    feature::CFeatTree m_FeatTree;
 
     CSeqEntryIndex::EPolicy m_Policy;
     CSeqEntryIndex::TFlags m_Flags;
@@ -384,7 +386,6 @@ public:
     CBioseq_Handle GetOrigBioseqHandle (void) const { return m_OrigBsh; }
     CRef<CSeqsetIndex> GetParent (void) const { return m_Prnt; }
     CRef<CScope> GetScope (void) const { return m_Scope; }
-    feature::CFeatTree& GetFeatTree (void) { return m_FeatTree; }
     CRef<CSeqVector> GetSeqVector (void) const { return m_SeqVec; }
 
     // Get master index
@@ -569,7 +570,6 @@ private:
 
     bool m_FeatsInitialized;
     vector<CRef<CFeatureIndex>> m_SfxList;
-    feature::CFeatTree m_FeatTree;
 
     bool m_SourcesInitialized;
 

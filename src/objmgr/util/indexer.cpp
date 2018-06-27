@@ -1786,104 +1786,110 @@ void CBioseqIndex::x_InitFeats (void)
             sgx = m_GapList[0];
         }
 
-        // iterate features on Bioseq
-        for (CFeat_CI feat_it(m_Bsh, sel); feat_it; ++feat_it) {
-            const CMappedFeat mf = *feat_it;
-            CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
+        CWeakRef<CSeqMasterIndex> idx = GetSeqMasterIndex();
+        auto idxl = idx.Lock();
+        if (idxl) {
+            feature::CFeatTree& ft = idxl->GetFeatTree();
 
-            CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, *this));
-            m_SfxList.push_back(sfx);
+            // iterate features on Bioseq
+            for (CFeat_CI feat_it(m_Bsh, sel); feat_it; ++feat_it) {
+                const CMappedFeat mf = *feat_it;
+                CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
 
-            m_FeatTree.AddFeature(mf);
+                CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, *this));
+                m_SfxList.push_back(sfx);
 
-            // CFeatureIndex from CMappedFeat for use with GetBestGene
-            m_FeatIndexMap[mf] = sfx;
+                ft.AddFeature(mf);
 
-            // set specific flags for various feature types
-            CSeqFeatData::E_Choice type = sfx->GetType();
-            CSeqFeatData::ESubtype subtype = sfx->GetSubtype();
+                // CFeatureIndex from CMappedFeat for use with GetBestGene
+                m_FeatIndexMap[mf] = sfx;
 
-            if (type == CSeqFeatData::e_Biosrc) {
-                m_HasSource = true;
-                if (! m_BioSource) {
-                    if (! mf.IsSetData ()) continue;
-                    const CSeqFeatData& sfdata = mf.GetData();
-                    const CBioSource& biosrc = sfdata.GetBiosrc();
-                    m_BioSource.Reset (&biosrc);
-                }
-                continue;
-            }
+                // set specific flags for various feature types
+                CSeqFeatData::E_Choice type = sfx->GetType();
+                CSeqFeatData::ESubtype subtype = sfx->GetSubtype();
 
-            if (type == CSeqFeatData::e_Gene) {
-                m_HasGene = true;
-                if (m_HasMultiIntervalGenes) {
+                if (type == CSeqFeatData::e_Biosrc) {
+                    m_HasSource = true;
+                    if (! m_BioSource) {
+                        if (! mf.IsSetData ()) continue;
+                        const CSeqFeatData& sfdata = mf.GetData();
+                        const CBioSource& biosrc = sfdata.GetBiosrc();
+                        m_BioSource.Reset (&biosrc);
+                    }
                     continue;
                 }
-                const CSeq_loc& loc = mf.GetLocation ();
-                switch (loc.Which()) {
-                    case CSeq_loc::e_Packed_int:
-                    case CSeq_loc::e_Packed_pnt:
-                    case CSeq_loc::e_Mix:
-                    case CSeq_loc::e_Equiv:
-                        m_HasMultiIntervalGenes = true;
-                        break;
-                    default:
-                        break;
-                }
-                continue;
-            }
 
-            if (subtype == CSeqFeatData::eSubtype_operon) {
-                m_HasOperon = true;
-                continue;
-            }
-
-            if (type == CSeqFeatData::e_Prot && IsAA()) {
-                if (! mf.IsSetData ()) continue;
-                const CSeqFeatData& sfdata = mf.GetData();
-                const CProt_ref& prp = sfdata.GetProt();
-                processed = CProt_ref::eProcessed_not_set;
-                if (prp.IsSetProcessed()) {
-                    processed = prp.GetProcessed();
+                if (type == CSeqFeatData::e_Gene) {
+                    m_HasGene = true;
+                    if (m_HasMultiIntervalGenes) {
+                        continue;
+                    }
+                    const CSeq_loc& loc = mf.GetLocation ();
+                    switch (loc.Which()) {
+                        case CSeq_loc::e_Packed_int:
+                        case CSeq_loc::e_Packed_pnt:
+                        case CSeq_loc::e_Mix:
+                        case CSeq_loc::e_Equiv:
+                            m_HasMultiIntervalGenes = true;
+                            break;
+                        default:
+                            break;
+                    }
+                    continue;
                 }
-                const CSeq_loc& loc = mf.GetLocation ();
-                TSeqPos prot_length = sequence::GetLength(loc, m_Scope);
-                if (prot_length > longest) {
-                    m_BestProtFeatInitialized = true;
-                    m_BestProteinFeature = sfx;
-                    longest = prot_length;
-                    bestprocessed = processed;
-                } else if (prot_length == longest) {
-                    // unprocessed 0 > preprotein 1 > mat peptide 2
-                    if (processed < bestprocessed) {
+
+                if (subtype == CSeqFeatData::eSubtype_operon) {
+                    m_HasOperon = true;
+                    continue;
+                }
+
+                if (type == CSeqFeatData::e_Prot && IsAA()) {
+                    if (! mf.IsSetData ()) continue;
+                    const CSeqFeatData& sfdata = mf.GetData();
+                    const CProt_ref& prp = sfdata.GetProt();
+                    processed = CProt_ref::eProcessed_not_set;
+                    if (prp.IsSetProcessed()) {
+                        processed = prp.GetProcessed();
+                    }
+                    const CSeq_loc& loc = mf.GetLocation ();
+                    TSeqPos prot_length = sequence::GetLength(loc, m_Scope);
+                    if (prot_length > longest) {
                         m_BestProtFeatInitialized = true;
                         m_BestProteinFeature = sfx;
                         longest = prot_length;
                         bestprocessed = processed;
+                    } else if (prot_length == longest) {
+                        // unprocessed 0 > preprotein 1 > mat peptide 2
+                        if (processed < bestprocessed) {
+                            m_BestProtFeatInitialized = true;
+                            m_BestProteinFeature = sfx;
+                            longest = prot_length;
+                            bestprocessed = processed;
+                        }
                     }
+                    continue;
                 }
-                continue;
-            }
 
-            if (type == CSeqFeatData::e_Cdregion && IsNA()) {
-            } else if (type == CSeqFeatData::e_Rna && IsNA()) {
-            } else if (type == CSeqFeatData::e_Prot && IsAA()) {
-            } else {
-                continue;
-            }
+                if (type == CSeqFeatData::e_Cdregion && IsNA()) {
+                } else if (type == CSeqFeatData::e_Rna && IsNA()) {
+                } else if (type == CSeqFeatData::e_Prot && IsAA()) {
+                } else {
+                    continue;
+                }
 
-            // index feature for product (CDS -> protein, mRNA -> cDNA, or Prot -> peptide)
-            CSeq_id_Handle idh = mf.GetProductId();
-            if (idh) {
-                CBioseq_Handle pbsh = m_Scope->GetBioseqHandle(idh);
-                if (pbsh) {
-                    CWeakRef<CSeqMasterIndex> idx = GetSeqMasterIndex();
-                    auto idxl = idx.Lock();
-                    if (idxl) {
-                        CRef<CBioseqIndex> bsxp = idxl->GetBioseqIndex(pbsh);
-                        if (bsxp) {
-                            m_FeatForProdInitialized = true;
-                            bsxp->m_FeatureForProduct = sfx;
+                // index feature for product (CDS -> protein, mRNA -> cDNA, or Prot -> peptide)
+                CSeq_id_Handle idh = mf.GetProductId();
+                if (idh) {
+                    CBioseq_Handle pbsh = m_Scope->GetBioseqHandle(idh);
+                    if (pbsh) {
+                        CWeakRef<CSeqMasterIndex> idx = GetSeqMasterIndex();
+                        auto idxl = idx.Lock();
+                        if (idxl) {
+                            CRef<CBioseqIndex> bsxp = idxl->GetBioseqIndex(pbsh);
+                            if (bsxp) {
+                                m_FeatForProdInitialized = true;
+                                bsxp->m_FeatureForProduct = sfx;
+                            }
                         }
                     }
                 }
@@ -2753,9 +2759,13 @@ CRef<CFeatureIndex> CFeatureIndex::GetBestGene (void)
         CWeakRef<CBioseqIndex> bsx = GetBioseqIndex();
         auto bsxl = bsx.Lock();
         if (bsxl) {
-            best = feature::GetBestGeneForFeat(m_Mf, &bsxl->GetFeatTree(), 0,
-                                               /* feature::CFeatTree::eBestGene_AllowOverlapped */
-                                               feature::CFeatTree::eBestGene_TreeOnly);
+            CWeakRef<CSeqMasterIndex> idx = bsxl->GetSeqMasterIndex();
+            auto idxl = idx.Lock();
+            if (idxl) {
+                 best = feature::GetBestGeneForFeat(m_Mf, &idxl->GetFeatTree(), 0,
+                                                   /* feature::CFeatTree::eBestGene_AllowOverlapped */
+                                                   feature::CFeatTree::eBestGene_TreeOnly);
+            }
             if (best) {
                 return bsxl->GetFeatIndex(best);
             }
@@ -2786,11 +2796,15 @@ CRef<CFeatureIndex> CFeatureIndex::GetOverlappingSource (void)
         auto bsxl = bsx.Lock();
         if (bsxl) {
             if (bsxl->HasSource()) {
-                feature::CFeatTree ft = bsxl->GetFeatTree();
-                try {
-                    best = ft.GetParent(m_Mf, CSeqFeatData::eSubtype_biosrc);
-                } catch (CException& e) {
-                    LOG_POST_X(9, Error << "Error in CFeatureIndex::GetOverlappingSource: " << e.what());
+                CWeakRef<CSeqMasterIndex> idx = bsxl->GetSeqMasterIndex();
+                auto idxl = idx.Lock();
+                if (idxl) {
+                    feature::CFeatTree& ft = idxl->GetFeatTree();
+                    try {
+                        best = ft.GetParent(m_Mf, CSeqFeatData::eSubtype_biosrc);
+                    } catch (CException& e) {
+                        LOG_POST_X(9, Error << "Error in CFeatureIndex::GetOverlappingSource: " << e.what());
+                    }
                 }
                 if (best) {
                     return bsxl->GetFeatIndex(best);
