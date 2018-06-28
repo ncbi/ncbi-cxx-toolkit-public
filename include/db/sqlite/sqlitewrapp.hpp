@@ -836,7 +836,7 @@ CSQLITE_Connection::SetPageSize(unsigned int size)
 inline unsigned int
 CSQLITE_Connection::GetCacheSize(void)
 {
-    return m_CacheSize;
+    return m_CacheSize == (unsigned int)(-1) ? 0 : m_CacheSize;
 }
 
 inline void

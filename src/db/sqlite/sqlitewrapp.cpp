@@ -466,7 +466,7 @@ CSQLITE_Connection::CSQLITE_Connection(CTempString     file_name,
     : m_FileName(file_name),
       m_Flags(flags),
       m_PageSize(kSQLITE_DefPageSize),
-      m_CacheSize(2000),
+      m_CacheSize((unsigned int)(-1)),
       m_HandlePool(CSQLITE_HandleFactory(this)),
       m_InMemory(0)
 {
@@ -502,9 +502,11 @@ CSQLITE_Connection::SetupNewConnection(sqlite3* handle)
     x_ExecuteSql(handle, "PRAGMA count_changes = 0");
     x_ExecuteSql(handle, "PRAGMA legacy_file_format = OFF");
     x_ExecuteSql(handle, "PRAGMA page_size = "
-                                            + NStr::IntToString(m_PageSize));
-    x_ExecuteSql(handle, "PRAGMA cache_size = "
-                                            + NStr::IntToString(m_CacheSize));
+        + NStr::IntToString(m_PageSize));
+    if (m_CacheSize != (unsigned int)(-1)) {
+        x_ExecuteSql(handle, "PRAGMA cache_size = "
+            + NStr::IntToString(m_CacheSize));
+    }
 
     switch (m_Flags & eAllTemp) {
     case fTempToMemory:
