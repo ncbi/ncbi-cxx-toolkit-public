@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(db95_t0019)
+  NCBI_sources(t0019 common)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -13,4 +23,4 @@ target_link_libraries(db95_t0019-app
     sybdb_ftds95 ${FTDS95_CTLIB_LIBS}
      ${RT_LIBS} ${C_LIBS} 
 )
-
+endif()

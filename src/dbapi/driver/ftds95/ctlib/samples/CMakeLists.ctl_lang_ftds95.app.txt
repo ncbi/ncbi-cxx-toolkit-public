@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(ctl_lang_ftds95)
+  NCBI_sources(ctl_lang_ftds95 dbapi_driver_sample_base_ftds95)
+  NCBI_add_definitions(FTDS_IN_USE)
+  NCBI_uses_toolkit_libraries(ncbi_xdbapi_ftds95 xconnext)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +24,5 @@ include_directories(SYSTEM ${FTDS95_INCLUDE})
 target_link_libraries(ctl_lang_ftds95-app
     ncbi_xdbapi_ftds95 xconnext
 )
+endif()
 

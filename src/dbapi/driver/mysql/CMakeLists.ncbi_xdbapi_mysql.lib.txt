@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(ncbi_xdbapi_mysql)
+  NCBI_sources(connection context lang_cmd result)
+  NCBI_uses_toolkit_libraries(dbapi_driver)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -12,3 +23,4 @@ if (MYSQL_FOUND)
        dbapi_driver ${MYSQL_LIBS} ${Z_LIBS}
    )
 endif (MYSQL_FOUND)
+endif()

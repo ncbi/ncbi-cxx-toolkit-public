@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(tds95_nulls)
+  NCBI_sources(nulls common)
+  NCBI_add_test(test-tds95 tds95_nulls)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +22,4 @@ include_directories(SYSTEM ${FTDS95_INCLUDE})
 target_link_libraries(tds95_nulls-app
     tds_ftds95
 )
-
+endif()

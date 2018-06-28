@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(odbc95_cursor1)
+  NCBI_sources(cursor1 common)
+  NCBI_add_test(test-odbc95 odbc95_cursor1)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +22,4 @@ include_directories(SYSTEM ${FTDS95_INCLUDE} ${ODBC_INCLUDE})
 target_link_libraries(odbc95_cursor1-app
     odbc_ftds95
 )
-
+endif()

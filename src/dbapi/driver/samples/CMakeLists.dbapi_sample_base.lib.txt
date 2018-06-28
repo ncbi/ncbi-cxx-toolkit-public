@@ -1,3 +1,18 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(dbapi_sample_base)
+  NCBI_sources(dbapi_sample_base)
+  NCBI_uses_toolkit_libraries(
+    ncbi_xdbapi_ftds
+    ncbi_xdbapi_ftds64 ncbi_xdbapi_ftds95 ncbi_xdbapi_ftds100
+    dbapi_driver xconnext xutil
+  )
+  NCBI_optional_components(Sybase ODBC)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -10,3 +25,4 @@ target_link_libraries(dbapi_sample_base
     ncbi_xdbapi_ftds ncbi_xdbapi_ftds64 ncbi_xdbapi_ftds95
     dbapi_driver xconnext xutil
 )
+endif()

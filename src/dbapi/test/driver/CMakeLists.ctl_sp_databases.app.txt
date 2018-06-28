@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(ctl_sp_databases)
+  NCBI_sources(ctl_sp_databases dbapi_driver_sample_base_driver)
+  NCBI_requires(Sybase)
+  NCBI_uses_toolkit_libraries(dbapi xconnext)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +24,4 @@ include_directories(SYSTEM ${SYBASE_INCLUDE})
 target_link_libraries(ctl_sp_databases-app
     dbapi ncbi_xdbapi_ctlib xconnext
 )
-
+endif()

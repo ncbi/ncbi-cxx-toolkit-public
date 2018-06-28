@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(python_ncbi_dbapi_test)
+  NCBI_sources(python_ncbi_dbapi_test)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(dbapi_driver test_boost)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_app()
+
+if(OFF)
+
 add_executable(python_ncbi_dbapi_test python_ncbi_dbapi_test)
 
 include_directories(SYSTEM ${PYTHON_INCLUDE})
@@ -6,4 +19,4 @@ target_link_libraries(python_ncbi_dbapi_test
     dbapi_driver test_boost
     ${PYTHON_LIBS}
 )
-
+endif()

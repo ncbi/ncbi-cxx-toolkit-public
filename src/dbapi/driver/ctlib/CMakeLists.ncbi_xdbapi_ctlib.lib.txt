@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(ncbi_xdbapi_ctlib)
+  NCBI_sources(bcp connection context cursor lang_cmd rpc result ctlib_utils)
+  NCBI_uses_toolkit_libraries(dbapi_driver)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -9,3 +20,4 @@ include_directories(SYSTEM ${SYBASE_INCLUDE})
 target_link_libraries(ncbi_xdbapi_ctlib
     dbapi_driver ${SYBASE_LIBS} ${SYBASE_DLLS}
 )
+endif()

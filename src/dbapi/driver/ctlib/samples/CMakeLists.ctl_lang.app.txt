@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(ctl_lang)
+  NCBI_sources(ctl_lang dbapi_driver_sample_base_ctl)
+  NCBI_uses_toolkit_libraries(xconnext)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +23,5 @@ include_directories(SYSTEM ${SYBASE_INCLUDE})
 target_link_libraries(ctl_lang-app
     ncbi_xdbapi_ctlib xconnext
 )
+endif()
 

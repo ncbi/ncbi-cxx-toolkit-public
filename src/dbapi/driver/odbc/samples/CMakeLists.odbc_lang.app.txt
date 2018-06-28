@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(odbc_lang)
+  NCBI_sources(odbc_lang)
+  NCBI_uses_toolkit_libraries(dbapi_driver xconnext xconnect)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -13,4 +24,4 @@ target_link_libraries(odbc_lang-app
     ncbi_xdbapi_odbc dbapi_driver xconnext xconnect ${ODBC_LIBS}
      
 )
-
+endif()

@@ -1,3 +1,19 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(tds_ftds64)
+  NCBI_sources(
+    challenge config convert data des getmac iconv locale login md4 md5 mem
+    net numeric query read tdsstring threadsafe token util vstrbuild write
+    tds_checks replacements hmac_md5 gssapi sspi
+  )
+  NCBI_add_definitions(_FREETDS_LIBRARY_SOURCE HAVE_CONFIG_H=1)
+  NCBI_uses_external_libraries(${KRB5_LIBS} ${ORIG_LIBS})
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -17,3 +33,4 @@ target_link_libraries(tds_ftds64
 if (APPLE)
    target_link_libraries(tds_ftds64 -Wl,-framework,ApplicationServices -liconv)
 endif (APPLE)
+endif()

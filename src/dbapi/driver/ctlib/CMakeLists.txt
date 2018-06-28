@@ -1,7 +1,13 @@
-##############################################################################
-# 
-#
+#############################################################################
+# $Id$
+#############################################################################
 
+NCBI_requires(Sybase)
+NCBI_add_library(ncbi_xdbapi_ctlib)
+NCBI_add_subdirectory(samples)
+
+
+if(OFF)
 if (SYBASE_FOUND)
 
   # Include projects from this directory
@@ -11,4 +17,5 @@ if (SYBASE_FOUND)
   add_subdirectory(samples)
 
 endif (SYBASE_FOUND)
+endif()
 

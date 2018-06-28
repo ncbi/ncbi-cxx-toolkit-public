@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(dbapi_send_data)
+  NCBI_sources(dbapi_send_data)
+  NCBI_uses_toolkit_libraries(dbapi_sample_base)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +20,4 @@ set_target_properties(dbapi_send_data-app PROPERTIES OUTPUT_NAME dbapi_send_data
 target_link_libraries(dbapi_send_data-app
     dbapi_sample_base
 )
-
+endif()

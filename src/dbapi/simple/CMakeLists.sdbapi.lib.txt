@@ -1,3 +1,17 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(sdbapi)
+  NCBI_sources(sdbapi)
+  NCBI_uses_toolkit_libraries(
+    dbapi dbapi_util_blobstore
+    ncbi_xdbapi_ftds ncbi_xdbapi_ftds95 ncbi_xdbapi_ftds100
+    xconnext xutil
+  )
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -16,3 +30,4 @@ if (SYBASE_FOUND)
     ncbi_xdbapi_ftds95 ncbi_xdbapi_ftds100 xconnext xutil
 )
 endif (SYBASE_FOUND)
+endif()

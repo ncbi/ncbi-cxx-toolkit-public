@@ -1,4 +1,14 @@
-##############################################################################
+#############################################################################
+# $Id$
+#############################################################################
+
+
+NCBI_add_library(dbapi_driver)
+NCBI_add_subdirectory(
+  util ctlib ftds64 ftds95 ftds100 ftds-default mysql odbc samples
+)
+
+if(OFF)
 # 
 #
 #link_directories( path/to/libs ) 
@@ -22,3 +32,4 @@ if (${ODBC_FOUND})
 add_subdirectory(odbc)
 endif (${ODBC_FOUND})
 add_subdirectory(samples)
+endif()

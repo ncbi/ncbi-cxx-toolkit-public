@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(ct_ftds100)
+  NCBI_sources(ct cs blk ctutil)
+  NCBI_headers(../*.h)
+  NCBI_add_definitions(_FREETDS_LIBRARY_SOURCE HAVE_CONFIG_H=1)
+  NCBI_uses_toolkit_libraries(tds_ftds100)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -11,3 +24,4 @@ add_definitions(-D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1)
 target_link_libraries(ct_ftds100
     tds_ftds100 ${FTDS100_CTLIB_LIBS} ${NETWORK_LIBS} ${RT_LIBS} ${C_LIBS}
 )
+endif()

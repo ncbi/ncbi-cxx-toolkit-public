@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(ct95_ct_diagall)
+  NCBI_sources(ct_diagall common)
+  NCBI_add_test(test-ct95 ct95_ct_diagall)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +22,4 @@ include_directories(SYSTEM ${FTDS95_INCLUDE})
 target_link_libraries(ct95_ct_diagall-app
     ct_ftds95
 )
-
+endif()

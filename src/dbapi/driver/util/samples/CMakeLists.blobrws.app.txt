@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(blobrws)
+  NCBI_sources(blobrws)
+  NCBI_uses_toolkit_libraries(dbapi_util_blobstore)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +23,4 @@ include_directories(SYSTEM ${CMPRS_INCLUDE})
 target_link_libraries(blobrws-app
     dbapi_util_blobstore
 )
-
+endif()

@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(mysql_lang)
+  NCBI_sources(mysql_lang)
+  NCBI_uses_toolkit_libraries(xconnext)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +23,4 @@ include_directories(SYSTEM ${MYSQL_INCLUDE} ${Z_INCLUDE})
 target_link_libraries(mysql_lang-app
     ncbi_xdbapi_mysql xconnext
 )
-
+endif()

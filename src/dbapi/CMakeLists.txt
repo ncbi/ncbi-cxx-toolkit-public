@@ -1,13 +1,19 @@
-##############################################################################
+#############################################################################
+# $Id$
+#############################################################################
 # 
 #
-if (APPLE)
+if (APPLE AND NOT XCODE)
   #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-framework,ApplicationServices -liconv")
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-framework,ApplicationServices -liconv")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-framework,ApplicationServices -liconv")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-framework,ApplicationServices -liconv -undefined dynamic_lookup")
-endif (APPLE)
+endif ()
 
+NCBI_add_library(dbapi)
+NCBI_add_subdirectory(driver simple cache lang_bind test)
+
+if(OFF)
 # Include projects from this directory
 include(CMakeLists.dbapi.lib.txt)
 
@@ -17,3 +23,4 @@ add_subdirectory(simple)
 add_subdirectory(cache)
 add_subdirectory(lang_bind)
 add_subdirectory(test)
+endif()

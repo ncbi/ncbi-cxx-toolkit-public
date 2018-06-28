@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(dbapi_driver_test_ctlib)
+  NCBI_sources(dbapi_driver_test_ctlib)
+  NCBI_requires(Boost.Test.Included Sybase)
+  NCBI_project_watchers(ucko satskyse)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +23,4 @@ include_directories(SYSTEM ${SYBASE_INCLUDE})
 target_link_libraries(dbapi_driver_test_ctlib-app
     ncbi_xdbapi_ctlib test_boost
 )
-
+endif()

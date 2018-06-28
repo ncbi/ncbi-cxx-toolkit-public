@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(mirror_test)
+  NCBI_sources(mirror_test)
+  NCBI_uses_toolkit_libraries(sdbapi)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +20,4 @@ set_target_properties(mirror_test-app PROPERTIES OUTPUT_NAME mirror_test)
 target_link_libraries(mirror_test-app
     sdbapi
 )
-
+endif()

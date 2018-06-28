@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(db95_pending)
+  NCBI_sources(pending common)
+  NCBI_add_test(test-db95 db95_pending)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -13,4 +23,4 @@ target_link_libraries(db95_pending-app
     sybdb_ftds95 ${FTDS95_CTLIB_LIBS}
      ${RT_LIBS} ${C_LIBS} 
 )
-
+endif()
