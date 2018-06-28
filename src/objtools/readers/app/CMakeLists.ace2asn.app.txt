@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(ace2asn)
+  NCBI_sources(ace2asn)
+  NCBI_uses_toolkit_libraries(xobjread)
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(ace2asn-app PROPERTIES OUTPUT_NAME ace2asn)
 target_link_libraries(ace2asn-app
     xobjread
 )
-
+endif()

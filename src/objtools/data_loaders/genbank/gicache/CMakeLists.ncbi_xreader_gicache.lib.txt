@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(ncbi_xreader_gicache)
+  NCBI_sources(reader_gicache gicache)
+  NCBI_requires(LMDB unix)
+  NCBI_uses_toolkit_libraries(ncbi_xreader)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -11,3 +23,4 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(ncbi_xreader_gicache
     ncbi_xreader ${LMDB_LIBS}
 )
+endif()

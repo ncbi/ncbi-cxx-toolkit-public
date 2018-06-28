@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(writedb_unit_test)
+  NCBI_sources(writedb_unit_test criteria_unit_test)
+  NCBI_add_definitions(NCBI_MODULE=BLASTDB)
+  NCBI_uses_toolkit_libraries(writedb)
+  NCBI_project_watchers(madden camacho fongah2 boratyng rackerst)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +25,4 @@ set_target_properties(writedb_unit_test-app PROPERTIES OUTPUT_NAME writedb_unit_
 target_link_libraries(writedb_unit_test-app
     test_boost writedb
 )
-
+endif()

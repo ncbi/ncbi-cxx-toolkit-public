@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(einfo)
+  NCBI_dataspecs(einfo.dtd)
+  NCBI_uses_toolkit_libraries(xser)
+  NCBI_project_watchers(grichenk)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -18,3 +29,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(einfo
     xser
 )
+endif()

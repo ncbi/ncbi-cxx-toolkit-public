@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xalntool)
+  NCBI_sources(alngraphic)
+  NCBI_uses_toolkit_libraries(align_format)
+  NCBI_project_watchers(jianye)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -11,3 +22,4 @@ add_dependencies(xalntool
 target_link_libraries(xalntool
     align_format
 )
+endif()

@@ -1,3 +1,17 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(seqdb_perf)
+  NCBI_sources(seqdb_perf)
+  NCBI_uses_toolkit_libraries(seqdb)
+  NCBI_project_watchers(madden camacho)
+  NCBI_add_test(seqdb_perf -db pataa -dbtype prot -scan_uncompressed -num_threads 4)
+  NCBI_add_test(seqdb_perf -db pataa -dbtype prot -scan_uncompressed -num_threads 1)
+  NCBI_add_test(seqdb_perf -db pataa -dbtype prot -get_metadata)
+NCBI_end_app()
+
+if(OFF)
 add_executable(seqdb_perf-app
     seqdb_perf  
 )
@@ -7,3 +21,4 @@ set_target_properties(seqdb_perf-app PROPERTIES OUTPUT_NAME seqdb_perf)
 target_link_libraries(seqdb_perf-app
     seqdb
 )
+endif()

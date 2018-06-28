@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(unit_test_bedreader)
+  NCBI_sources(unit_test_bedreader)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xobjread)
+  NCBI_project_watchers(ludwigf gotvyans foleyjp)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +25,4 @@ set_target_properties(unit_test_bedreader-app PROPERTIES OUTPUT_NAME unit_test_b
 target_link_libraries(unit_test_bedreader-app
     test_boost xobjread
 )
-
+endif()

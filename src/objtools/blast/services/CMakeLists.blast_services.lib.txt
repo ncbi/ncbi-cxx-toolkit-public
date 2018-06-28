@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(blast_services)
+  NCBI_sources(blast_services)
+  NCBI_uses_toolkit_libraries(xnetblastcli xnetblast)
+  NCBI_project_watchers(madden camacho)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -11,3 +22,4 @@ add_dependencies(blast_services
 target_link_libraries(blast_services
     xnetblastcli
 )
+endif()

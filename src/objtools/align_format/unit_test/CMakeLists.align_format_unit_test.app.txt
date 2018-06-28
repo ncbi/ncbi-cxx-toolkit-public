@@ -1,3 +1,18 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(align_format_unit_test)
+  NCBI_sources(
+    showdefline_unit_test showalign_unit_test blast_test_util
+    vectorscreen_unit_test tabularinof_unit_test aln_printer_unit_test
+  )
+  NCBI_uses_toolkit_libraries(align_format ncbi_xloader_blastdb_rmt)
+  NCBI_project_watchers(zaretska jianye madden camacho boratyng fongah2)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -13,4 +28,4 @@ set_target_properties(align_format_unit_test-app PROPERTIES OUTPUT_NAME align_fo
 target_link_libraries(align_format_unit_test-app
     align_format ncbi_xloader_blastdb_rmt test_boost
 )
-
+endif()

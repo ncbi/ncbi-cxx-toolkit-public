@@ -1,0 +1,11 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(id_unit_test_bad)
+  NCBI_sources(id_unit_test_bad)
+  NCBI_requires(FreeTDS Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank ncbi_xreader_pubseqos)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
+

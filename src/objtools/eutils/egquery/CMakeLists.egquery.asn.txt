@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(egquery)
+  NCBI_dataspecs(egquery.dtd)
+  NCBI_uses_toolkit_libraries(xser)
+  NCBI_project_watchers(grichenk)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -15,4 +26,5 @@ RunDatatool("${MODULE}" "${MODULE_IMPORT}")
 target_link_libraries(${MODULE}
     xser
 )
+endif()
     

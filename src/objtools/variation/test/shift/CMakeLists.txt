@@ -1,1 +1,6 @@
-include(CMakeLists.test-shift.app.txt)
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_add_app(test-shift)
+#include(CMakeLists.test-shift.app.txt)

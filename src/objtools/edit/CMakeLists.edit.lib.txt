@@ -1,3 +1,22 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xobjedit)
+  NCBI_sources(
+    gene_utils seq_entry_edit promote autodef_with_tax
+    field_handler apply_object string_constraint seqid_guesser dblink_field
+    struc_comm_field text_desc_field gb_block_field
+    link_cds_mrna cds_fix capitalization_string loc_edit mail_report
+    feattable_edit gaps_edit source_edit rna_edit
+    remote_updater parse_text_options publication_edit gap_trim
+    external_annots
+  )
+  NCBI_uses_toolkit_libraries(mlacli taxon3 valid xobjread xobjutil seqset )
+  NCBI_project_watchers(bollin gotvyans foleyjp)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -14,4 +33,5 @@ target_link_libraries(xobjedit
     mlacli taxon3 valid
     xobjread xobjutil
 )
+endif()
 

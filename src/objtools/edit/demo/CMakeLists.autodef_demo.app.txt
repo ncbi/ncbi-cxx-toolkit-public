@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(autodef_demo)
+  NCBI_sources(autodef_demo)
+  NCBI_uses_toolkit_libraries(xobjutil)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +20,4 @@ set_target_properties(autodef_demo-app PROPERTIES OUTPUT_NAME autodef_demo)
 target_link_libraries(autodef_demo-app
     xobjutil
 )
-
+endif()

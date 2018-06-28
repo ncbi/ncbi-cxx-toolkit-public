@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xcddalignview)
+  NCBI_sources(cav_alignset cav_alndisplay cav_function cav_seqset)
+  NCBI_uses_toolkit_libraries(seq cdd ncbimime)
+  NCBI_project_watchers(thiessen)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -11,5 +22,5 @@ add_dependencies(xcddalignview
 target_link_libraries(xcddalignview
     ncbimime
 )
-
+endif()
 

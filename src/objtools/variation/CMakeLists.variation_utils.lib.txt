@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(variation_utils)
+  NCBI_sources(variation_utils)
+  NCBI_uses_toolkit_libraries(variation xobjutil blastdb genome_collection submit)
+  NCBI_project_watchers(grichenk)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -11,4 +22,5 @@ add_dependencies(variation_utils
 target_link_libraries(variation_utils
     variation xobjutil
 )
+endif()
 

@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(gene_info_reader)
+  NCBI_sources(gene_info_reader_app)
+  NCBI_uses_toolkit_libraries(gene_info seq)
+  NCBI_project_watchers(camacho)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -14,4 +25,4 @@ target_link_libraries(gene_info_reader-app
 add_dependencies(gene_info_reader-app
     seq
 )
-
+endif()

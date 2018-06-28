@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(alnmrg)
+  NCBI_sources(alnmrg)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_blastdb ncbi_xloader_genbank xalnmgr xobjread)
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -11,4 +22,4 @@ target_link_libraries(alnmrg-app
     ncbi_xloader_blastdb ncbi_xloader_genbank xalnmgr
     xobjread
 )
-
+endif()

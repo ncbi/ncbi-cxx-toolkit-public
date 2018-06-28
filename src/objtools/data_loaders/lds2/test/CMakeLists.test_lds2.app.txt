@@ -1,3 +1,18 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(test_lds2)
+  NCBI_sources(test_lds2)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_lds2 xobjutil)
+  NCBI_project_watchers(grichenk)
+  NCBI_add_test(test_lds2 -id 5)
+  NCBI_add_test(test_lds2 -gzip -id 5)
+  NCBI_add_test(test_lds2 -stress)
+  NCBI_add_test(test_lds2 -stress -gzip -format fasta)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +25,4 @@ set_target_properties(test_lds2-app PROPERTIES OUTPUT_NAME test_lds2)
 target_link_libraries(test_lds2-app
     ncbi_xloader_lds2 xobjutil
 )
-
+endif()

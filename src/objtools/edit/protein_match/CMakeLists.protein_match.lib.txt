@@ -1,0 +1,9 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(protein_match)
+  NCBI_sources(setup_match generate_match_table)
+  NCBI_uses_toolkit_libraries(xobjutil genome_collection seqset)
+  NCBI_project_watchers(foleyjp)
+NCBI_end_lib()

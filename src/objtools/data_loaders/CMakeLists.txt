@@ -1,7 +1,12 @@
-##############################################################################
-# 
-#
+#############################################################################
+# $Id$
+#############################################################################
 
+NCBI_add_subdirectory(
+  genbank lds2 blastdb patcher asn_cache cdd
+)
+
+if(OFF)
 # Include projects from this directory
 
 # Recurse subdirectories
@@ -11,3 +16,4 @@ add_subdirectory(asn_cache)
 add_subdirectory(blastdb)
 add_subdirectory(patcher)
 add_subdirectory(cdd)
+endif()

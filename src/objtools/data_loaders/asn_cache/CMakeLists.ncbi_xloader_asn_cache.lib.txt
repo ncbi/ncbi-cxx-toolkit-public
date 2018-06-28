@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(ncbi_xloader_asn_cache)
+  NCBI_sources(asn_cache_loader)
+  NCBI_uses_toolkit_libraries(seqset general asn_cache)
+  NCBI_project_watchers(marksc2)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ target_link_libraries(ncbi_xloader_asn_cache
 add_dependencies(ncbi_xloader_asn_cache
     seq seqset general-lib cache_blob
 )
-
+endif()

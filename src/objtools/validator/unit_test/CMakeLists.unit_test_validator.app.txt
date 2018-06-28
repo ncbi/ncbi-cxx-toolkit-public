@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(unit_test_validator)
+  NCBI_sources(unit_test_validator wrong_qual)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xunittestutil xvalidate)
+  NCBI_add_test()
+  NCBI_project_watchers(bollin kans foleyjp asztalos gotvyans)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -13,4 +26,4 @@ target_link_libraries(unit_test_validator-app
     ncbi_xloader_genbank test_boost xunittestutil
     xvalidate
 )
-
+endif()

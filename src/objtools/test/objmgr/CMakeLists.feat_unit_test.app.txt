@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(feat_unit_test)
+  NCBI_sources(feat_unit_test)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xobjutil ncbi_xloader_genbank)
+  NCBI_project_watchers(vasilche)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +25,4 @@ set_target_properties(feat_unit_test-app PROPERTIES OUTPUT_NAME feat_unit_test)
 target_link_libraries(feat_unit_test-app
     xobjutil ncbi_xloader_genbank test_boost
 )
-
+endif()

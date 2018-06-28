@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(seqvec_bench)
+  NCBI_sources(seqvec_bench)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank)
+  NCBI_project_watchers(dicuccio)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(seqvec_bench-app PROPERTIES OUTPUT_NAME seqvec_bench)
 target_link_libraries(seqvec_bench-app
     ncbi_xloader_genbank
 )
-
+endif()

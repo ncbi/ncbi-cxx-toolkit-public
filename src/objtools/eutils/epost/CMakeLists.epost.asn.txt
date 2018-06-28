@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(epost)
+  NCBI_dataspecs(epost.dtd)
+  NCBI_uses_toolkit_libraries(xser)
+  NCBI_project_watchers(grichenk)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -19,3 +30,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(epost
     xser
 )
+endif()

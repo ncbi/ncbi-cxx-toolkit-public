@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(ncbi_xloader_lds2)
+  NCBI_sources(lds2_dataloader)
+  NCBI_uses_toolkit_libraries(lds2 xobjmgr seq)
+  NCBI_project_watchers(grichenk)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -13,3 +24,4 @@ add_dependencies(ncbi_xloader_lds2
 target_link_libraries(ncbi_xloader_lds2
     lds2 xobjmgr
 )
+endif()

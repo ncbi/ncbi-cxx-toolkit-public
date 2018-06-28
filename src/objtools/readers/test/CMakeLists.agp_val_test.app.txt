@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(agp_val_test)
+  NCBI_sources(agp_val_test)
+  NCBI_uses_toolkit_libraries(xobjread)
+  NCBI_project_watchers(sapojnik)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(agp_val_test-app PROPERTIES OUTPUT_NAME agp_val_test)
 target_link_libraries(agp_val_test-app
     xobjread
 )
-
+endif()

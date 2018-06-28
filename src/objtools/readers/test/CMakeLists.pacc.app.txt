@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(pacc)
+  NCBI_sources(pacc)
+  NCBI_uses_toolkit_libraries(xobjread)
+  NCBI_project_watchers(sapojnik)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(pacc-app PROPERTIES OUTPUT_NAME pacc)
 target_link_libraries(pacc-app
     xobjread
 )
-
+endif()

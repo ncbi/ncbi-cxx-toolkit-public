@@ -1,7 +1,14 @@
-##############################################################################
-# 
-#
+#############################################################################
+# $Id$
+#############################################################################
 
+NCBI_add_subdirectory(
+  unit_test_util readers blast lds2 data_loaders simple
+  alnmgr cddalignview test manip cleanup format edit validator
+  asniotest align seqmasks_io eutils
+  align_format snputil uudutil variation writers #pubseq_gateway
+)
+if(OFF)
 # Include projects from this directory
 
 # Recurse subdirectories
@@ -28,3 +35,4 @@ add_subdirectory(snputil)
 add_subdirectory(uudutil)
 add_subdirectory(variation)
 add_subdirectory(writers)
+endif()

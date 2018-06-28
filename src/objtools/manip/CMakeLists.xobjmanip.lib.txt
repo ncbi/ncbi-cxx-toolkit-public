@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xobjmanip)
+  NCBI_sources(sage_manip)
+  NCBI_uses_toolkit_libraries(general)
+  NCBI_project_watchers(dicuccio)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -11,4 +22,4 @@ add_dependencies(xobjmanip
 target_link_libraries(xobjmanip
     general-lib
 )
-
+endif()

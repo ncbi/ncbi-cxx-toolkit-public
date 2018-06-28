@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(unit_test_extended_cleanup)
+  NCBI_sources(unit_test_extended_cleanup)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xcleanup xunittestutil)
+  NCBI_project_watchers(bollin kans)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -13,4 +26,5 @@ target_link_libraries(unit_test_extended_cleanup-app
     ncbi_xloader_genbank test_boost xcleanup
     xunittestutil
 )
+endif()
 

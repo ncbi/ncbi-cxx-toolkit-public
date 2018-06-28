@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(unit_test_seq_trimmer)
+  NCBI_sources(unit_test_seq_trimmer)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xobjread xobjutil)
+  NCBI_project_watchers(vasilche dicuccio bollin foleyjp)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +25,5 @@ set_target_properties(unit_test_seq_trimmer-app PROPERTIES OUTPUT_NAME unit_test
 target_link_libraries(unit_test_seq_trimmer-app
     test_boost xobjread xobjutil
 )
+endif()
 

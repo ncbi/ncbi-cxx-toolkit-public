@@ -1,6 +1,15 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(gene_info_unit_test)
+  NCBI_sources(gene_info_test)
+  NCBI_uses_toolkit_libraries(gene_info)
+  NCBI_project_watchers(madden camacho)
+#  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 
 add_executable(gene_info_unit_test-app
     gene_info_test
@@ -13,4 +22,4 @@ set_target_properties(gene_info_unit_test-app PROPERTIES OUTPUT_NAME gene_info_u
 target_link_libraries(gene_info_unit_test-app
     gene_info test_boost
 )
-
+endif()

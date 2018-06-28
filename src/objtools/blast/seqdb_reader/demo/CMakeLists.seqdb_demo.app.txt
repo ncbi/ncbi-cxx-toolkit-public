@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(seqdb_demo)
+  NCBI_sources(seqdb_demo)
+  NCBI_uses_toolkit_libraries(seqdb)
+  NCBI_project_watchers(madden camacho)
+NCBI_end_app()
+
+if(OFF)
 add_executable(seqdb_demo-app
     seqdb_demo  
 )
@@ -7,3 +18,4 @@ set_target_properties(seqdb_demo-app PROPERTIES OUTPUT_NAME seqdb_demo)
 target_link_libraries(seqdb_demo-app
     seqdb
 )
+endif()

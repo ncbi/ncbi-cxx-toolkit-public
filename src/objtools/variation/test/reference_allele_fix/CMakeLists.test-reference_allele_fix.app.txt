@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(test-reference_allele_fix)
+  NCBI_sources(test-reference_allele_fix)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank variation_utils)
+NCBI_end_app()
+
+if(OFF)
 add_executable(test-reference_allele_fix
     test-reference_allele_fix
 )
@@ -5,4 +15,5 @@ add_executable(test-reference_allele_fix
 target_link_libraries(test-reference_allele_fix
     ncbi_xloader_genbank variation_utils
 )
+endif()
 

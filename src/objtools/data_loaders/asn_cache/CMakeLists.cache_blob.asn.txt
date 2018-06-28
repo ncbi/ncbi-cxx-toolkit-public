@@ -1,3 +1,18 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(asn_cache)
+  NCBI_dataspecs(cache_blob.asn)
+  NCBI_sources(
+    asn_cache asn_cache_store asn_cache_stats asn_cache_util
+    asn_index chunk_file dump_asn_index seq_id_chunk_file
+  )
+  NCBI_uses_toolkit_libraries(bdb seqset)
+  NCBI_project_watchers(marksc2)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -23,3 +38,4 @@ target_link_libraries(${MODULE}
 target_link_libraries(cache_blob
     xcompress xser
 )
+endif()

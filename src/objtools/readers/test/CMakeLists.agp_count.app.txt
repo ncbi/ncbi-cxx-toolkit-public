@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(agp_count)
+  NCBI_sources(agp_count)
+  NCBI_uses_toolkit_libraries(xobjread)
+  NCBI_project_watchers(sapojnik)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(agp_count-app PROPERTIES OUTPUT_NAME agp_count)
 target_link_libraries(agp_count-app
     xobjread
 )
-
+endif()

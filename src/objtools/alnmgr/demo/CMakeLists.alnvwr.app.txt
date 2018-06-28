@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(alnvwr)
+  NCBI_sources(alnvwrapp)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalnmgr)
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(alnvwr-app PROPERTIES OUTPUT_NAME alnvwr)
 target_link_libraries(alnvwr-app
     ncbi_xloader_genbank xalnmgr
 )
-
+endif()

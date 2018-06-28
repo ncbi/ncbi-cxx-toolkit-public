@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(unit_test_entry_edit)
+  NCBI_sources(unit_test_entry_edit)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xobjedit xunittestutil)
+  NCBI_add_test()
+  NCBI_project_watchers(bollin)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +25,4 @@ set_target_properties(unit_test_entry_edit-app PROPERTIES OUTPUT_NAME unit_test_
 target_link_libraries(unit_test_entry_edit-app
     test_boost xobjedit xunittestutil
 )
-
+endif()
