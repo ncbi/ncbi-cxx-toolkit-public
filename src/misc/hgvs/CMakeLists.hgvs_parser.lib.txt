@@ -7,7 +7,6 @@ NCBI_begin_lib(hgvs)
     hgvs_parser2 hgvs_writer2 variation_util2 seq_id_resolver objcoords
     sequtils hgvs_reader
   )
-  NCBI_add_definitions(BOOST_ERROR_CODE_HEADER_ONLY BOOST_SYSTEM_NO_DEPRECATED)
   NCBI_uses_toolkit_libraries(
     entrez2cli ncbi_xloader_genbank objcoords
     variation xobjread xobjutil
