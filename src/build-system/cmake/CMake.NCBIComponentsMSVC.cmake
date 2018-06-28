@@ -186,7 +186,7 @@ endif()
 
 #############################################################################
 # Boost.Spirit
-NCBI_define_component(Boost.Spirit libboost_thread.lib)
+NCBI_define_component(Boost.Spirit libboost_thread.lib boost_thread.lib boost_system.lib boost_date_time.lib boost_chrono.lib)
 if(NCBI_COMPONENT_Boost.Spirit_FOUND)
   set(NCBI_COMPONENT_Boost.Spirit_DEFINES BOOST_AUTO_LINK_NOMANGLE)
 endif()
