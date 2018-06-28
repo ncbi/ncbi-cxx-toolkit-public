@@ -221,9 +221,9 @@ protected:
 
     NCBI_DEPRECATED virtual CRef<CSeq_entry> x_ReadSegSet(ILineErrorListener * pMessageListener);
 
-    virtual void   ParseDefLine  (const TStr& s, ILineErrorListener * pMessageListener);
+    virtual void ParseDefLine  (const TStr& s, ILineErrorListener * pMessageListener);
 
-    virtual bool   ParseIDs(const TStr& s, ILineErrorListener * pMessageListener);
+    virtual bool ParseIDs(const TStr& s, ILineErrorListener * pMessageListener);
 
     virtual void PostProcessIDs(const CBioseq::TId& defline_ids, 
         const string& defline,
