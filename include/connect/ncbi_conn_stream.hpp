@@ -106,9 +106,9 @@ const size_t kConn_DefaultBufSize = 16384;  ///< I/O buffer size per direction
 /// that any input attempt first flushes any pending output from the internal
 /// buffers.  The fConn_Untie flag can be used to untie the I/O directions.
 ///
-/// @note CConn_IOStream implementation utilizes some connection callbacks
-///       on the underlying CONN object.  Care must be taken when intercepting
-///       the callbacks using the native CONN API.
+/// @note CConn_IOStream implementation utilizes some connection callbacks on
+///       the underlying CONN object.  Care must be taken when intercepting the
+///       callbacks using the native CONN API.
 /// @sa
 ///   CONN_SetCallback
 
@@ -121,7 +121,7 @@ public:
         fConn_Untie           = fCONN_Untie,///< do not flush before reading
         fConn_DelayOpen       = 2,          ///< do not force CONN open in ctor
         fConn_ReadUnbuffered  = 4,          ///< read buffer NOT to be alloc'd
-        fConn_WriteUnbuffered = 8           ///< write buffer NOT t.b. alloc'd
+        fConn_WriteUnbuffered = 8           ///< write buffer NOT 2.b. alloc'd
     } EConn_Flag;
     typedef unsigned int TConn_Flags;      ///< bitwise OR of EConn_Flag
 

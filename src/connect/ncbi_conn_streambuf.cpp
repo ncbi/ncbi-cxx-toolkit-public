@@ -567,19 +567,10 @@ streamsize CConn_Streambuf::showmanyc(void)
     } else
         tmo = timeout;
 
-    size_t x_read;
-    bool backup = false;
-    if (m_BufSize > 1  &&  eback() < gptr()) {
-        x_Buf = gptr()[-1];
-        backup = true;
-    }
     if (!tmo)
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, &kZeroTmo) == eIO_Success);
-    char temp;
-    m_Status = CONN_Read(m_Conn,
-                         m_BufSize > 1 ? m_ReadBuf + 1 : &temp,
-                         m_BufSize > 1 ? m_BufSize - 1 : 1, &x_read,
-                         m_BufSize > 1 ? eIO_ReadPlain : eIO_ReadPeek);
+    size_t x_read;
+    m_Status = CONN_Read(m_Conn, m_ReadBuf, m_BufSize, &x_read, eIO_ReadPlain);
     if (!tmo)
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_Read, timeout)   == eIO_Success);
     _ASSERT(x_read > 0  ||  m_Status != eIO_Success);
@@ -602,11 +593,8 @@ streamsize CConn_Streambuf::showmanyc(void)
     }
 
     m_Initial = false;
-    if (m_BufSize > 1) {
-        m_ReadBuf[0] = x_Buf;
-        setg(m_ReadBuf + !backup, m_ReadBuf + 1, m_ReadBuf + 1 + x_read);
-        x_GPos += x_read;
-    }
+    setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + x_read);
+    x_GPos += x_read;
     return x_read;
 }
 
