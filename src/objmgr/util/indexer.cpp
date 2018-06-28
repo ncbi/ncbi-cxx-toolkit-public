@@ -191,6 +191,8 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::E
     topsep.Parentize();
     m_Tsep.Reset(&topsep);
 
+    m_FeatTree = new feature::CFeatTree;
+
     try {
         // Code copied from x_Init, then modified to reuse existing scope from CSeq_entry_Handle
         m_Scope.Reset( &m_Tseh.GetScope() );
@@ -1789,7 +1791,7 @@ void CBioseqIndex::x_InitFeats (void)
         CWeakRef<CSeqMasterIndex> idx = GetSeqMasterIndex();
         auto idxl = idx.Lock();
         if (idxl) {
-            feature::CFeatTree& ft = idxl->GetFeatTree();
+            CRef<feature::CFeatTree> ft = idxl->GetFeatTree();
 
             // iterate features on Bioseq
             for (CFeat_CI feat_it(m_Bsh, sel); feat_it; ++feat_it) {
@@ -1799,7 +1801,7 @@ void CBioseqIndex::x_InitFeats (void)
                 CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, *this));
                 m_SfxList.push_back(sfx);
 
-                ft.AddFeature(mf);
+                ft->AddFeature(mf);
 
                 // CFeatureIndex from CMappedFeat for use with GetBestGene
                 m_FeatIndexMap[mf] = sfx;
@@ -2762,7 +2764,7 @@ CRef<CFeatureIndex> CFeatureIndex::GetBestGene (void)
             CWeakRef<CSeqMasterIndex> idx = bsxl->GetSeqMasterIndex();
             auto idxl = idx.Lock();
             if (idxl) {
-                 best = feature::GetBestGeneForFeat(m_Mf, &idxl->GetFeatTree(), 0,
+                 best = feature::GetBestGeneForFeat(m_Mf, idxl->GetFeatTree(), 0,
                                                    /* feature::CFeatTree::eBestGene_AllowOverlapped */
                                                    feature::CFeatTree::eBestGene_TreeOnly);
             }
@@ -2799,9 +2801,9 @@ CRef<CFeatureIndex> CFeatureIndex::GetOverlappingSource (void)
                 CWeakRef<CSeqMasterIndex> idx = bsxl->GetSeqMasterIndex();
                 auto idxl = idx.Lock();
                 if (idxl) {
-                    feature::CFeatTree& ft = idxl->GetFeatTree();
+                    CRef<feature::CFeatTree> ft = idxl->GetFeatTree();
                     try {
-                        best = ft.GetParent(m_Mf, CSeqFeatData::eSubtype_biosrc);
+                        best = ft->GetParent(m_Mf, CSeqFeatData::eSubtype_biosrc);
                     } catch (CException& e) {
                         LOG_POST_X(9, Error << "Error in CFeatureIndex::GetOverlappingSource: " << e.what());
                     }
