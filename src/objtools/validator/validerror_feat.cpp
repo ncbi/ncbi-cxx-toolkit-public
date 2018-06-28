@@ -161,6 +161,7 @@ void CValidError_feat::x_ValidateSeqFeatExceptXref(const CSeq_feat& feat)
         if (fval) {
             fval->Validate();
         }
+
     } catch (const exception& e) {
         PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
             string("Exception while validating feature. EXCEPTION: ") +
@@ -361,11 +362,9 @@ void CValidError_feat::ValidateSeqFeatData
 {
     switch ( data.Which () ) {
     case CSeqFeatData::e_Gene:
-#ifndef TEST_LONGTIME
         // Validate CGene_ref
         ValidateGene(data.GetGene (), feat);
-        ValidateOperon(feat);
-#endif
+        //ValidateOperon(feat);
         break;
     case CSeqFeatData::e_Cdregion:
         // Validate CCdregion
@@ -419,7 +418,7 @@ void CValidError_feat::ValidateSeqFeatData
         break;
     }
 
-#ifndef TEST_LONGTIME
+#if 0
     if ( !data.IsGene() ) {
         ValidateGeneXRef(feat);
 
@@ -920,6 +919,7 @@ void CValidError_feat::ValidateCdregion (
     const CSeq_feat& feat
 ) 
 {
+#if 0
     bool feat_is_pseudo = s_IsPseudo(feat);
     bool gene_is_pseudo = IsOverlappingGenePseudo(feat, m_Scope);
     bool pseudo = feat_is_pseudo  ||  gene_is_pseudo;
@@ -927,23 +927,22 @@ void CValidError_feat::ValidateCdregion (
     
     bool conflict = cdregion.CanGetConflict()  &&  cdregion.GetConflict();
     nonsense_intron = false;
-#ifndef TEST_LONGTIME
     if ( !pseudo  &&  !conflict ) {
-        //ValidateCdTrans(feat, nonsense_intron);
-        //ValidateSplice(feat);
+        ValidateCdTrans(feat, nonsense_intron);
+        ValidateSplice(feat);
     } else if ( conflict ) {
         ValidateCdConflict(cdregion, feat);
     }
-#endif
 
     if (!pseudo) {
         ValidateCdsProductId(feat);
         ValidateCommonCDSProduct(feat);
     }
-
+#endif
 }
 
 
+#if 0
 void CValidError_feat::x_ValidateCdregionCodebreak
 (const CSeq_feat& feat)
 {
@@ -1063,7 +1062,7 @@ void CValidError_feat::ValidateCdConflict
                 "Coding region conflict flag is set", feat);
     }
 }
-
+#endif
 
 
 void CValidError_feat::ValidateIntron (
@@ -2927,6 +2926,7 @@ void CValidError_feat::ValidateImp(
 }
 
 
+#if 0
 void CValidError_feat::ValidateNonImpFeat (
     const CSeq_feat& feat)
 {
@@ -2988,7 +2988,7 @@ void CValidError_feat::ValidateNonImpFeat (
         }
     }
 }
-
+#endif
 
 
 static bool s_RptUnitIsBaseRange (string str, TSeqPos& from, TSeqPos& to)
@@ -3700,6 +3700,7 @@ void CValidError_feat::x_ReportMisplacedCodingRegionProduct(const CSeq_feat& fea
 }
 
 
+#if 0
 // Precondition: feat is a coding region
 void CValidError_feat::ValidateCommonCDSProduct
 (const CSeq_feat& feat)
@@ -3750,6 +3751,7 @@ void CValidError_feat::ValidateCommonCDSProduct
             "Same product Bioseq from multiple CDS features", feat);
     }
 }
+#endif
 
 
 bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
@@ -4126,6 +4128,22 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryGeneXref,
                  "Gene feature has gene cross-reference",
                  feat);
+    }
+}
+
+
+void s_LocIdType(CBioseq_Handle bsh,
+    bool& is_nt, bool& is_ng, bool& is_nw, bool& is_nc)
+{
+    is_nt = is_ng = is_nw = is_nc = false;
+    if (bsh) {
+        FOR_EACH_SEQID_ON_BIOSEQ(it, *(bsh.GetBioseqCore())) {
+            CSeq_id::EAccessionInfo info = (*it)->IdentifyAccession();
+            is_nt |= (info == CSeq_id::eAcc_refseq_contig);
+            is_ng |= (info == CSeq_id::eAcc_refseq_genomic);
+            is_nw |= (info == CSeq_id::eAcc_refseq_wgs_intermed);
+            is_nc |= (info == CSeq_id::eAcc_refseq_chromosome);
+        }
     }
 }
 
@@ -4631,6 +4649,7 @@ void CValidError_feat::x_ReportTranslationMismatches(const CCDSTranslationProble
 }
 
 
+#if 0
 void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
     bool &nonsense_intron)
 {
@@ -4671,6 +4690,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
 
     x_ReportCDSTranslationProblems(feat, problems, is_far);
 }
+#endif
 
 
 void CValidError_feat::x_ReportTranslExceptProblems(const CCDSTranslationProblems::TTranslExceptProblems& problems, const CSeq_feat& feat, bool has_exception)
@@ -5007,6 +5027,7 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
 }
 
 
+#if 0
 void CValidError_feat::ValidateOperon(const CSeq_feat& gene)
 {
     if (!m_Scope) {
@@ -5036,8 +5057,10 @@ void CValidError_feat::ValidateOperon(const CSeq_feat& gene)
         }
     }
 }
+#endif
 
 
+#if 0
 void CValidError_feat::ValidateFeatCit
 (const CPub_set& cit,
  const CSeq_feat& feat)
@@ -5057,6 +5080,7 @@ void CValidError_feat::ValidateFeatCit
         }
     }
 }
+#endif
 
 
 void CValidError_feat::ValidateFeatBioSource
@@ -5282,6 +5306,9 @@ void CSingleFeatValidator::Validate()
 
     x_ValidateGbquals();
 
+    x_ValidateNonImpFeat();
+
+    x_ValidateNonGene();
 }
 
 void CSingleFeatValidator::PostErr(EDiagSev sv, EErrType et, const string& msg)
@@ -6890,6 +6917,334 @@ bool CSingleFeatValidator::x_BioseqHasNmAccession (CBioseq_Handle bsh)
 }
 
 
+void CSingleFeatValidator::x_ValidateNonImpFeat ()
+{
+    if (m_Feat.GetData().IsImp()) {
+        return;
+    }
+    string key = m_Feat.GetData().GetKey();
+
+    CSeqFeatData::ESubtype subtype = m_Feat.GetData().GetSubtype();
+
+    // look for mandatory qualifiers
+    EDiagSev sev = eDiag_Warning;
+
+    ITERATE (CSeqFeatData::TQualifiers, required, CSeqFeatData::GetMandatoryQualifiers(subtype)) {
+        bool found = false;
+        if (m_Feat.IsSetQual()) {
+            for (auto qual : m_Feat.GetQual()) {
+                if (qual->IsSetQual() && CSeqFeatData::GetQualifierType(qual->GetQual()) == *required) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if (!found) {
+            if (*required == CSeqFeatData::eQual_citation) {
+                if (m_Feat.IsSetCit()) {
+                    found = true;
+                } else if (m_Feat.IsSetComment() && NStr::EqualNocase (key, "conflict")) {
+                    // RefSeq allows conflict with accession in comment instead of sfp->cit
+                    FOR_EACH_SEQID_ON_BIOSEQ (it, *(m_LocationBioseq.GetCompleteBioseq())) {
+                        if ((*it)->IsOther()) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (!found && (NStr::EqualNocase (key, "conflict") || NStr::EqualNocase (key, "old_sequence"))) {
+            if (m_Feat.IsSetQual()) {
+                for (auto qual : m_Feat.GetQual()) {
+                    if (qual->IsSetQual() && NStr::EqualNocase(qual->GetQual(), "compare")
+                        && qual->IsSetVal() && !NStr::IsBlank(qual->GetVal())) {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (!found && *required == CSeqFeatData::eQual_ncRNA_class) {
+            sev = eDiag_Error;
+            if (m_Feat.GetData().IsRna() && m_Feat.GetData().GetRna().IsSetExt()
+                && m_Feat.GetData().GetRna().GetExt().IsGen()
+                && m_Feat.GetData().GetRna().GetExt().GetGen().IsSetClass()
+                && !NStr::IsBlank(m_Feat.GetData().GetRna().GetExt().GetGen().GetClass())) {
+                found = true;
+            }
+        }
+
+        if (!found) {
+            PostErr(sev, eErr_SEQ_FEAT_MissingQualOnFeature,
+                "Missing qualifier " + CSeqFeatData::GetQualifierAsString(*required) +
+                " for feature " + key);
+        }
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateGeneFeaturePair(const CSeq_feat& gene)
+{
+    bool bad_strand = s_LocationStrandsIncompatible(gene.GetLocation(), m_Feat.GetLocation(), &m_Scope);
+    if (bad_strand) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
+                "Gene cross-reference is not on expected strand");
+    }
+
+}
+
+
+// Check for redundant gene Xref
+// Do not call if feat is gene
+void CSingleFeatValidator::x_ValidateGeneXRef()
+{
+    if (m_Feat.IsSetData() && m_Feat.GetData().IsGene()) {
+        return;
+    }
+
+    // first, look for gene by feature id xref
+    bool has_gene_id_xref = false;
+    if (m_Feat.IsSetXref()) {
+        ITERATE(CSeq_feat::TXref, xref, m_Feat.GetXref()) {
+            if ((*xref)->IsSetId() && (*xref)->GetId().IsLocal()) {
+                CTSE_Handle::TSeq_feat_Handles gene_feats =
+                    m_Imp.GetTSE_Handle().GetFeaturesWithId(CSeqFeatData::eSubtype_gene, (*xref)->GetId().GetLocal());
+                if (gene_feats.size() > 0) {
+                    has_gene_id_xref = true;
+                    ITERATE(CTSE_Handle::TSeq_feat_Handles, gene, gene_feats) {
+                        x_ValidateGeneFeaturePair(*(gene->GetSeq_feat()));
+                    }
+                }
+            }
+        }
+    }
+    if (has_gene_id_xref) {
+        return;
+    }
+
+    // if we can't get the bioseq on which the gene is located, we can't check for 
+    // overlapping/ambiguous/redundant conditions
+    if (!m_LocationBioseq) {
+        return;
+    }
+
+    const CGene_ref* gene_xref = m_Feat.GetGeneXref();
+
+    size_t num_genes = 0;
+    size_t max = 0;
+    size_t num_trans_spliced = 0;
+    bool equivalent = false;
+    /*
+    CFeat_CI gene_it(bsh, CSeqFeatData::e_Gene);
+    */
+
+    //CFeat_CI gene_it(*m_Scope, feat.GetLocation(), SAnnotSelector (CSeqFeatData::e_Gene));
+    CFeat_CI gene_it(m_LocationBioseq, 
+                     CRange<TSeqPos>(m_Feat.GetLocation().GetStart(eExtreme_Positional),
+                                     m_Feat.GetLocation().GetStop(eExtreme_Positional)),
+                     SAnnotSelector(CSeqFeatData::e_Gene));
+    CFeat_CI prev_gene;
+    string label = "?";
+    size_t num_match_by_locus = 0;
+    size_t num_match_by_locus_tag = 0;
+
+    for ( ; gene_it; ++gene_it) {
+        if (gene_xref && gene_xref->IsSetLocus() &&
+            gene_it->GetData().GetGene().IsSetLocus() &&
+            NStr::Equal(gene_xref->GetLocus(), gene_it->GetData().GetGene().GetLocus())) {
+            num_match_by_locus++;
+            x_ValidateGeneFeaturePair(*(gene_it->GetSeq_feat()));
+        }
+        if (gene_xref && gene_xref->IsSetLocus_tag() &&
+            gene_it->GetData().GetGene().IsSetLocus_tag() &&
+            NStr::Equal(gene_xref->GetLocus_tag(), gene_it->GetData().GetGene().GetLocus_tag())) {
+            num_match_by_locus_tag++;
+            x_ValidateGeneFeaturePair(*(gene_it->GetSeq_feat()));
+            if ((!gene_xref->IsSetLocus() || NStr::IsBlank(gene_xref->GetLocus())) &&
+                gene_it->GetData().GetGene().IsSetLocus() &&
+                !NStr::IsBlank(gene_it->GetData().GetGene().GetLocus())) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutLocus,
+                    "Feature has Gene Xref with locus_tag but no locus, gene with locus_tag and locus exists");
+            }
+        }
+
+        if (TestForOverlapEx (gene_it->GetLocation(), m_Feat.GetLocation(), 
+          gene_it->GetLocation().IsInt() ? eOverlap_Contained : eOverlap_Subset, &m_Scope) >= 0) {
+            size_t len = GetLength(gene_it->GetLocation(), &m_Scope);
+            if (len < max || num_genes == 0) {
+                num_genes = 1;
+                max = len;
+                num_trans_spliced = 0;
+                if (gene_it->IsSetExcept() && gene_it->IsSetExcept_text() &&
+                    NStr::FindNoCase (gene_it->GetExcept_text(), "trans-splicing") != string::npos) {
+                    num_trans_spliced++;
+                }
+                equivalent = false;
+                prev_gene = gene_it;
+            } else if (len == max) {
+                equivalent |= s_GeneRefsAreEquivalent(gene_it->GetData().GetGene(), prev_gene->GetData().GetGene(), label);
+                num_genes++;
+                if (gene_it->IsSetExcept() && gene_it->IsSetExcept_text() &&
+                    NStr::FindNoCase (gene_it->GetExcept_text(), "trans-splicing") != string::npos) {
+                    num_trans_spliced++;
+                }
+            }
+        }
+    }
+
+    if ( gene_xref == 0) {
+        // if there is no gene xref, then there should be 0 or 1 overlapping genes
+        // so that mapping by overlap is unambiguous
+        if (num_genes > 1 &&
+            m_Feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_repeat_region &&
+            m_Feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_mobile_element) {
+            if (m_Imp.IsSmallGenomeSet() && num_genes == num_trans_spliced) {
+                /* suppress for trans-spliced genes on small genome set */
+            } else if (equivalent) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefNeeded,
+                         "Feature overlapped by "
+                         + NStr::SizetToString(num_genes)
+                         + " identical-length equivalent genes but has no cross-reference");
+            } else {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_MissingGeneXref,
+                         "Feature overlapped by "
+                         + NStr::SizetToString(num_genes)
+                         + " identical-length genes but has no cross-reference");
+            }
+        } else if (num_genes == 1 
+                   && prev_gene->GetData().GetGene().IsSetAllele()
+                   && !NStr::IsBlank(prev_gene->GetData().GetGene().GetAllele())) {
+            const string& allele = prev_gene->GetData().GetGene().GetAllele();
+            // overlapping gene should not conflict with allele qualifier
+            FOR_EACH_GBQUAL_ON_FEATURE (qual_iter, m_Feat) {
+                const CGb_qual& qual = **qual_iter;
+                if ( qual.IsSetQual()  &&
+                     NStr::Compare(qual.GetQual(), "allele") == 0 ) {
+                    if ( qual.CanGetVal()  &&
+                         NStr::CompareNocase(qual.GetVal(), allele) == 0 ) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidAlleleDuplicates,
+                            "Redundant allele qualifier (" + allele + 
+                            ") on gene and feature");
+                    } else if (m_Feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_variation) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_MismatchedAllele,
+                            "Mismatched allele qualifier on gene (" + allele + 
+                            ") and feature (" + qual.GetVal() +")");
+                    }
+                }
+            }
+        }
+    } else if ( !gene_xref->IsSuppressed() ) {
+        // we are counting features with gene xrefs
+        m_Imp.IncrementGeneXrefCount();
+
+        // make sure overlapping gene and gene xref do not conflict
+        if (gene_xref->IsSetAllele() && !NStr::IsBlank(gene_xref->GetAllele())) {
+            const string& allele = gene_xref->GetAllele();
+
+            FOR_EACH_GBQUAL_ON_FEATURE (qual_iter, m_Feat) {
+                const CGb_qual& qual = **qual_iter;
+                if ( qual.CanGetQual()  &&
+                     NStr::Compare(qual.GetQual(), "allele") == 0 ) {
+                    if ( qual.CanGetVal()  &&
+                         NStr::CompareNocase(qual.GetVal(), allele) == 0 ) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidAlleleDuplicates,
+                            "Redundant allele qualifier (" + allele + 
+                            ") on gene and feature");
+                    } else if (m_Feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_variation) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_MismatchedAllele,
+                            "Mismatched allele qualifier on gene (" + allele + 
+                            ") and feature (" + qual.GetVal() +")");
+                    }
+                }
+            }
+        }
+
+        if (num_match_by_locus == 0 && num_match_by_locus_tag == 0) {
+            // find gene on bioseq to match genexref
+            if (gene_xref->IsSetLocus_tag() &&
+                !NStr::IsBlank(gene_xref->GetLocus_tag()) &&
+                !CValidError_feat::x_FindGeneToMatchGeneXref(*gene_xref, m_LocationBioseq.GetSeq_entry_Handle()) &&
+                !CValidError_feat::x_FindProteinGeneXrefByKey(m_LocationBioseq, gene_xref->GetLocus_tag())) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
+                    "Feature has gene locus_tag cross-reference but no equivalent gene feature exists");
+            } else if (gene_xref->IsSetLocus() &&
+                !NStr::IsBlank(gene_xref->GetLocus()) &&
+                !CValidError_feat::x_FindGeneToMatchGeneXref(*gene_xref, m_LocationBioseq.GetSeq_entry_Handle()) &&
+                !CValidError_feat::x_FindProteinGeneXrefByKey(m_LocationBioseq, gene_xref->GetLocus())) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
+                    "Feature has gene locus cross-reference but no equivalent gene feature exists");
+            }
+        }
+    }
+
+}
+
+
+void CSingleFeatValidator::x_ValidateNonGene()
+{
+    if (m_Feat.GetData().IsGene()) {
+        return;
+    }
+    x_ValidateGeneXRef();
+
+    if (m_Feat.IsSetQual()) {
+        // check old locus tag on feature and overlapping gene
+        for (auto it : m_Feat.GetQual()) {
+            if (it->IsSetQual() && NStr::Equal(it->GetQual(), "old_locus_tag")
+                && it->IsSetVal() && !NStr::IsBlank(it->GetVal())) {
+                x_ValidateOldLocusTag(it->GetVal());
+            }
+        }
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateOldLocusTag(const string& old_locus_tag)
+{
+    if (NStr::IsBlank(old_locus_tag)) {
+        return;
+    }
+    bool pseudo = s_IsPseudo(m_Feat);
+    const CGene_ref* grp = m_Feat.GetGeneXref();
+    if ( !grp) {
+        // check overlapping gene
+        CConstRef<CSeq_feat> overlap = m_Imp.GetGeneCache().GetGeneFromCache(&m_Feat, m_Scope);
+        if ( overlap ) {
+            if (s_IsPseudo(*overlap)) {
+                pseudo = true;
+            }
+            string gene_old_locus_tag;
+
+            FOR_EACH_GBQUAL_ON_SEQFEAT (it, *overlap) {
+                if ((*it)->IsSetQual() && NStr::Equal ((*it)->GetQual(), "old_locus_tag")
+                    && (*it)->IsSetVal() && !NStr::IsBlank((*it)->GetVal())) {
+                    gene_old_locus_tag = (*it)->GetVal();
+                    break;
+                }
+            }
+            if (!NStr::IsBlank (gene_old_locus_tag)
+                && !NStr::EqualNocase (gene_old_locus_tag, old_locus_tag)) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_OldLocusTagMismtach,
+                            "Old locus tag on feature (" + old_locus_tag
+                            + ") does not match that on gene (" + gene_old_locus_tag + ")");
+            }
+            grp = &(overlap->GetData().GetGene());
+        }
+    }
+    if (grp && s_IsPseudo(*grp)) {
+        pseudo = true;
+    }
+    if (grp == 0 || ! grp->IsSetLocus_tag() || NStr::IsBlank (grp->GetLocus_tag())) {
+        if (! pseudo) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_OldLocusTagWithoutLocusTag,
+                    "old_locus_tag without inherited locus_tag");
+        }
+    }
+}
+
+
 CCdregionValidator::CCdregionValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
 CSingleFeatValidator(feat, scope, imp) {
     CConstRef<CSeq_feat> m_Gene = m_Imp.GetGeneCache().GetGeneFromCache(&feat, m_Scope);
@@ -6966,7 +7321,7 @@ void CCdregionValidator::x_ValidateTrans()
 {
     CCDSTranslationProblems problems;
     bool is_nt, is_ng, is_nw, is_nc;
-    s_LocIdType(m_Feat.GetLocation(), m_Scope, m_Imp.GetTSE(), is_nt, is_ng, is_nw, is_nc);
+    s_LocIdType(m_LocationBioseq, is_nt, is_ng, is_nw, is_nc);
 
     problems.CalculateTranslationProblems(m_Feat,
                                     m_LocationBioseq,
@@ -6981,7 +7336,6 @@ void CCdregionValidator::x_ValidateTrans()
                                     (is_nt||is_ng||is_nw),
                                     is_nc,
                                     &m_Scope);
-
     if (!problems.UnableToTranslate() && !problems.HasException()) {
         x_ValidateCodebreak();
     }
@@ -7431,6 +7785,8 @@ void CCdregionValidator::Validate()
         }
     } else {
         ReportShortIntrons();
+        x_ValidateProductId();
+        x_ValidateCommonProduct();
     }
 
     x_ValidateBadMRNAOverlap();
@@ -7453,6 +7809,9 @@ void CCdregionValidator::Validate()
         ValidateSplice(false, false);
     }
 
+    if (conflict) {
+        x_ValidateConflict();
+    }
 }
 
 
@@ -8095,6 +8454,115 @@ void CCdregionValidator::ReportShortIntrons()
 }
 
 
+// non-pseudo CDS must have product
+void CCdregionValidator::x_ValidateProductId()
+{
+    // bail if product exists
+    if ( m_Feat.IsSetProduct() ) {
+        return;
+    }
+    // bail if location has just stop
+    if ( m_Feat.IsSetLocation() ) {
+        const CSeq_loc& loc = m_Feat.GetLocation();
+        if ( loc.IsPartialStart(eExtreme_Biological)  &&  !loc.IsPartialStop(eExtreme_Biological) ) {
+            if ( GetLength(loc, &m_Scope) <= 5 ) {
+                return;
+            }
+        }
+    }
+    // supress in case of the appropriate exception
+    if ( m_Feat.IsSetExcept()  &&  m_Feat.IsSetExcept_text()  &&
+         !NStr::IsBlank(m_Feat.GetExcept_text()) ) {
+        if ( NStr::Find(m_Feat.GetExcept_text(),
+            "rearrangement required for product") != NPOS ) {
+           return;
+        }
+    }
+    
+    // non-pseudo CDS must have /product
+    PostErr(eDiag_Error, eErr_SEQ_FEAT_MissingCDSproduct,
+        "Expected CDS product absent");
+}
+
+
+void CCdregionValidator::x_ValidateConflict()
+{
+    if (!m_ProductBioseq) {
+        return;
+    }
+    // translate the coding region
+    string transl_prot;
+    try {
+        CSeqTranslator::Translate(m_Feat, m_Scope, transl_prot,
+                                  false,   // do not include stop codons
+                                  false);  // do not remove trailing X/B/Z
+
+    } catch ( const runtime_error& ) {
+    }
+
+    CSeqVector prot_vec = m_ProductBioseq.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+    prot_vec.SetCoding(CSeq_data::e_Ncbieaa);
+
+    string prot_seq;
+    prot_vec.GetSeqData(0, prot_vec.size(), prot_seq);
+
+    if ( transl_prot.empty()  ||  prot_seq.empty()  ||  NStr::Equal(transl_prot, prot_seq) ) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_BadConflictFlag,
+                "Coding region conflict flag should not be set");
+    } else {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ConflictFlagSet,
+                "Coding region conflict flag is set");
+    }
+}
+
+
+void CCdregionValidator::x_ValidateCommonProduct()
+{    
+    if ( !m_Feat.IsSetProduct() ) {
+        return;
+    }
+    
+    const CCdregion& cdr = m_Feat.GetData().GetCdregion();
+    if ( cdr.CanGetOrf() ) {
+        return;
+    }
+
+    bool is_far = false;
+    bool product_is_misplaced = false;
+
+    if ( !m_ProductBioseq  || m_ProductIsFar) {
+        const CSeq_id* sid = 0;
+        try {
+            sid = &(GetId(m_Feat.GetProduct(), &m_Scope));
+        } catch (const CObjmgrUtilException&) {}
+        if (m_Imp.RequireLocalProduct(sid)) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingCDSproduct,
+                "Unable to find product Bioseq from CDS feature");
+        }
+        return;
+    }
+
+    const CSeq_feat* sfp = GetCDSForProduct(m_ProductBioseq);
+    if ( sfp == 0 ) {
+        return;
+    }
+    
+    if ( &m_Feat != sfp ) {
+        // if genomic product set, with one cds on contig and one on cdna,
+        // do not report.
+        if ( m_Imp.IsGPS() ) {
+            // feature packaging test will do final contig vs. cdna check
+            CBioseq_Handle sfh = m_Scope.GetBioseqHandle(sfp->GetLocation());
+            if ( m_LocationBioseq != sfh ) {
+                return;
+            }
+        }
+        PostErr(eDiag_Critical, eErr_SEQ_FEAT_MultipleCDSproducts, 
+            "Same product Bioseq from multiple CDS features");
+    }
+}
+
+
 void CGeneValidator::Validate()
 {
     CSingleFeatValidator::Validate();
@@ -8195,31 +8663,31 @@ void CGeneValidator::Validate()
         ValidateCharactersInField (gene.GetLocus(), "Gene locus");
     }
 
-      // check for SGML
-      if (gene.IsSetLocus() && ContainsSgml(gene.GetLocus())) {
-          PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-                   "gene locus " + gene.GetLocus() + " has SGML");
-      }
-      if (gene.IsSetLocus_tag() && ContainsSgml(gene.GetLocus_tag())) {
-          PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-                   "gene locus_tag " + gene.GetLocus_tag() + " has SGML");
-      }
-      if (gene.IsSetDesc()) {
-            string desc = gene.GetDesc();
-            if (ContainsSgml(desc)) {
-                  PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-                           "gene description " + gene.GetDesc() + " has SGML");
+    // check for SGML
+    if (gene.IsSetLocus() && ContainsSgml(gene.GetLocus())) {
+        PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+                "gene locus " + gene.GetLocus() + " has SGML");
+    }
+    if (gene.IsSetLocus_tag() && ContainsSgml(gene.GetLocus_tag())) {
+        PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+                "gene locus_tag " + gene.GetLocus_tag() + " has SGML");
+    }
+    if (gene.IsSetDesc()) {
+        string desc = gene.GetDesc();
+        if (ContainsSgml(desc)) {
+                PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+                        "gene description " + gene.GetDesc() + " has SGML");
+        }
+    }
+    if (gene.IsSetSyn()) {
+        for (auto it : gene.GetSyn()) {
+            if (ContainsSgml(it)) {
+                PostErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
+                    "gene synonym " + it + " has SGML");
             }
-      }
-      if (gene.IsSetSyn()) {
-          for (auto it : gene.GetSyn()) {
-              if (ContainsSgml(it)) {
-                  PostErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
-                      "gene synonym " + it + " has SGML");
-              }
-          }
-      }
-
+        }
+    }
+    x_ValidateOperon();
 }
 
 
@@ -8230,6 +8698,33 @@ void CGeneValidator::x_ValidateExceptText(const string& text)
     if (NStr::Find(text, "gene split at ") != string::npos &&
         (!m_Feat.GetData().GetGene().IsSetLocus_tag() || NStr::IsBlank(m_Feat.GetData().GetGene().GetLocus_tag()))) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_ExceptionRequiresLocusTag, "Gene has split exception but no locus_tag");
+    }
+}
+
+
+void CGeneValidator::x_ValidateOperon()
+{
+    CConstRef<CSeq_feat> operon = 
+        GetOverlappingOperon(m_Feat.GetLocation(), m_Scope);
+    if ( !operon  ||  !operon->IsSetQual() ) {
+        return;
+    }
+
+    string label;
+    feature::GetLabel(m_Feat, &label, feature::fFGL_Content, &m_Scope);
+    if ( label.empty() ) {
+        return;
+    }
+    
+    for (auto qual_iter : operon->GetQual()) {
+        const CGb_qual& qual = *qual_iter;
+        if( qual.CanGetQual()  &&  qual.CanGetVal() ) {
+            if ( NStr::Compare(qual.GetQual(), "operon") == 0  &&
+                 NStr::CompareNocase(qual.GetVal(), label) == 0) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_InvalidOperonMatchesGene,
+                    "Operon is same as gene - " + qual.GetVal());
+            }
+        }
     }
 }
 

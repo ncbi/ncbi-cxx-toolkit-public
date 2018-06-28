@@ -151,6 +151,9 @@ public:
 
     static bool IsPlastid(int genome);
 
+    static bool x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const string& key);
+    static bool x_FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry_Handle seh);
+
 private:
 
     CSeq_entry_Handle  m_TSE;
@@ -163,13 +166,12 @@ private:
     void ValidateGene(const CGene_ref& gene, const CSeq_feat& feat);
     void ValidateGeneXRef(const CSeq_feat& feat);
     void ValidateGeneFeaturePair(const CSeq_feat& feat, const CSeq_feat& gene);
-    static bool x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const string& key);
-    static bool x_FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry_Handle seh);
-    void ValidateOperon(const CSeq_feat& feat);
+//    void ValidateOperon(const CSeq_feat& feat);
 
     void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
+#if 0
     void ValidateCdTrans(const CSeq_feat& feat, bool &nonsense_intron);
-
+#endif
 
 
 
@@ -183,17 +185,21 @@ private:
 
     void x_ReportTranslationMismatches(const CCDSTranslationProblems::TTranslationMismatches& mismatches, const CSeq_feat& feat, bool far_product);
 
+#if 0
     void ValidateCdsProductId(const CSeq_feat& feat);
     void ValidateCdConflict(const CCdregion& cdregion, const CSeq_feat& feat);
+#endif
 
 #if 0
     EDiagSev x_SeverityForConsensusSplice(void);
     void ValidateSplice(const CSeq_feat& feat, bool check_all = false);
 #endif
     static void x_FeatLocHasBadStrandBoth(const CSeq_feat& feat, bool& both, bool& both_rev);
+#if 0
     void ValidateCommonCDSProduct(const CSeq_feat& feat);
 
     void x_ValidateCdregionCodebreak(const CSeq_feat& feat);
+#endif
 
     void ValidateProt(const CProt_ref& prot, const CSeq_feat& feat);
 #if 0
@@ -215,7 +221,9 @@ private:
     void ValidateIntron(const CSeq_feat& feat);
 
     void ValidateImp(const CImp_feat& imp, const CSeq_feat& feat);
+#if 0
     void ValidateNonImpFeat (const CSeq_feat& feat);
+#endif
 
     void ValidateGapFeature (const CSeq_feat& feat);
 
@@ -234,7 +242,9 @@ private:
                                      const CTSE_Handle& tse);
     void ValidateOneFeatXrefPair(const CSeq_feat& feat, const CSeq_feat& far_feat, const CSeqFeatXref& xref);
 
+#if 0
     void ValidateFeatCit(const CPub_set& cit, const CSeq_feat& feat);
+#endif
     void ValidateFeatBioSource(const CBioSource& bsrc, const CSeq_feat& feat);
 
     bool IsOverlappingGenePseudo(const CSeq_feat& feat, CScope* scope);
@@ -334,6 +344,12 @@ protected:
     void x_ReportAcceptorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label);
 
     static bool x_BioseqHasNmAccession (CBioseq_Handle bsh);
+
+    void x_ValidateNonImpFeat();
+    void x_ValidateGeneXRef();
+    void x_ValidateGeneFeaturePair(const CSeq_feat& gene);
+    void x_ValidateNonGene();
+    void x_ValidateOldLocusTag(const string& old_locus_tag);
 };
 
 class CCdregionValidator : public CSingleFeatValidator
@@ -372,6 +388,10 @@ protected:
     void x_ReportTranslationMismatches(const CCDSTranslationProblems::TTranslationMismatches& mismatches);
     string MapToNTCoords(TSeqPos pos);
 
+    void x_ValidateProductId();
+    void x_ValidateConflict();
+    void x_ValidateCommonProduct();
+
     CConstRef<CSeq_feat> m_Gene;
     bool m_GeneIsPseudo;
 };
@@ -387,6 +407,7 @@ public:
 
 protected:
     virtual void x_ValidateExceptText(const string& text);
+    void x_ValidateOperon();
 };
 
 
