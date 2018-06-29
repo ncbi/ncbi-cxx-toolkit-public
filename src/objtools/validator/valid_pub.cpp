@@ -984,6 +984,38 @@ void CValidError_imp::ValidateSubAffil
 }
 
 
+bool CValidError_imp::x_DowngradeForMissingAffil(const CCit_sub& cs)
+{
+    if (IsRefSeq() || s_IsRefSeqInSep(GetTSE(), *m_Scope)  ||  
+        s_IsHtgInSep(GetTSE())  || s_IsPDBInSep(GetTSE(), *m_Scope)) {
+        return true;
+    }
+    if (IsEmbl() || IsTPE()) {
+        if (cs.IsSetDate() && cs.GetDate().IsStd() &&
+            cs.GetDate().GetStd().IsSetYear() &&
+            cs.GetDate().GetStd().GetYear() < 1995) {
+            return true;
+        }
+        CBioseq_CI bi(GetTSEH(), CSeq_inst::eMol_na);
+        while (bi) {
+            CSeqdesc_CI block_i(*bi, CSeqdesc::e_Embl);
+            while (block_i) {
+                if (block_i && block_i->GetEmbl().IsSetKeywords()) {
+                    for (auto keyword : block_i->GetEmbl().GetKeywords()) {
+                        if (NStr::EqualNocase(keyword, "TPA:specialist_db")) {
+                            return true;
+                        }
+                    }
+                }
+                ++block_i;
+            }
+            ++bi;
+        }
+    }
+
+    return false;
+}
+
 void CValidError_imp::ValidateCitSub
 (const CCit_sub& cs,
  const CSerialObject& obj,
@@ -1036,9 +1068,7 @@ void CValidError_imp::ValidateCitSub
             "Submission citation has no author names", obj, ctx);
     }
     if ( !has_affil ) {
-        EDiagSev sev = 
-            IsRefSeq() || s_IsRefSeqInSep(GetTSE(), *m_Scope)  ||  s_IsHtgInSep(GetTSE())  || s_IsPDBInSep(GetTSE(), *m_Scope) ?
-            eDiag_Warning : eDiag_Critical;
+        EDiagSev sev = x_DowngradeForMissingAffil(cs) ? eDiag_Warning : eDiag_Critical;
         PostObjErr(sev, eErr_GENERIC_MissingPubRequirement,
             "Submission citation has no affiliation", obj, ctx);
     }

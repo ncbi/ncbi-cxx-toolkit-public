@@ -491,6 +491,8 @@ private:
 
     void x_DoBarcodeTests(CSeq_entry_Handle seh);
 
+    bool x_DowngradeForMissingAffil(const CCit_sub& cs);
+
     CRef<CObjectManager>    m_ObjMgr;
     CRef<CScope>            m_Scope;
     CConstRef<CSeq_entry>   m_TSE;
