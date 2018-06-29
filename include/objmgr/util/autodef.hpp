@@ -164,6 +164,7 @@ private:
     void GetMasterLocation(CBioseq_Handle &bh, CRange<TSeqPos>& range);
     bool IsSegment(CBioseq_Handle bh);
     bool x_Is5SList(CFeat_CI feat_ci);
+    bool x_IsSingleMiscFeat(CFeat_CI feat_ci);
     string x_GetHumanSTRFeatureClauses(CBioseq_Handle bh, const CUser_object& comment);
     bool x_IsHumanSTR(const CUser_object& obj);
 

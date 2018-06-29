@@ -2373,6 +2373,22 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4451)
     AddTitle(entry, "Fusarium incarnatum internal transcribed spacer region, partial sequence.");
 
     CheckDeflineMatches(entry);
+}
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4529)
+{
+    CRef<CSeq_entry> entry = BuildSequence();
+    CRef<CSeqdesc> desc = AddSource(entry, "Fusarium incarnatum");
+    CRef<CSeq_feat> feat1(new CSeq_feat());
+    feat1->SetData().SetImp().SetKey("misc_feature");
+    feat1->SetComment("similar to beta-tubulin");
+    AddFeat(feat1, entry);
+    feat1->SetLocation().SetInt().SetFrom(0);
+    feat1->SetLocation().SetInt().SetTo(59);
+    feat1->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    feat1->SetLocation().SetPartialStop(true, eExtreme_Biological);
+
+    AddTitle(entry, "Fusarium incarnatum beta-tubulin-like gene, partial sequence.");
 
     CheckDeflineMatches(entry);
 }

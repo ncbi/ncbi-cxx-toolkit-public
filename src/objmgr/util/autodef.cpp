@@ -630,6 +630,23 @@ bool CAutoDef::x_Is5SList(CFeat_CI feat_ci)
 } 
 
 
+bool CAutoDef::x_IsSingleMiscFeat(CFeat_CI feat_ci)
+{
+    if (!feat_ci || 
+        feat_ci->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature ||
+        !feat_ci->IsSetComment()) {
+        return false;
+    }
+    bool is_single = true;
+    ++feat_ci;
+    if (feat_ci) {
+        is_single = false;
+    }
+    feat_ci.Rewind();
+    return is_single;
+}
+
+
 bool s_HasPromoter(CBioseq_Handle bh)
 {
     bool has_promoter = false;
@@ -690,6 +707,8 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
     if (x_Is5SList(feat_ci)) {
         return "5S ribosomal RNA gene region";
     }
+
+    bool is_single_misc_feat = x_IsSingleMiscFeat(feat_ci);
 
     while (feat_ci)
     { 
@@ -762,6 +781,18 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
             }
         }
         ++feat_ci;
+    }
+    if (main_clause.GetNumSubclauses() == 0 && is_single_misc_feat) {
+        feat_ci.Rewind();
+        const CSeq_feat& cf = feat_ci->GetOriginalFeature();
+        const CSeq_loc& mapped_loc = feat_ci->GetMappedFeature().GetLocation();
+
+        new_clause = new CAutoDefMiscCommentClause(bh, cf, mapped_loc);
+        if (new_clause->IsNoncodingProductFeat()) {
+            main_clause.AddSubclause(new_clause);
+        } else {
+            delete new_clause;
+        }
     }
 
     // optionally remove misc_feature subfeatures
