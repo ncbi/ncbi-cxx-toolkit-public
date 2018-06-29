@@ -162,35 +162,33 @@ private:
 
     CBioseq_Handle x_GetCachedBsh(const CSeq_loc& loc);
 
+#if 0
     void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat);
     void ValidateGene(const CGene_ref& gene, const CSeq_feat& feat);
     void ValidateGeneXRef(const CSeq_feat& feat);
     void ValidateGeneFeaturePair(const CSeq_feat& feat, const CSeq_feat& gene);
-//    void ValidateOperon(const CSeq_feat& feat);
+    void ValidateOperon(const CSeq_feat& feat);
 
     void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
-#if 0
     void ValidateCdTrans(const CSeq_feat& feat, bool &nonsense_intron);
-#endif
 
 
 
     void x_ReportTranslExceptProblems(const CCDSTranslationProblems::TTranslExceptProblems& problems, const CSeq_feat& feat, bool has_exception);
     void x_ReportCDSTranslationProblems(const CSeq_feat& feat, const CCDSTranslationProblems& problems, bool far_product);
+#endif
 
     CBioseq_Handle x_GetCDSProduct(const CSeq_feat& feat, bool& is_far);
     CBioseq_Handle x_GetRNAProduct(const CSeq_feat& feat, bool& is_far);
     CBioseq_Handle x_GetFeatureProduct(const CSeq_feat& feat, bool look_far, bool& is_far, bool& is_misplaced);
     CBioseq_Handle x_GetFeatureProduct(const CSeq_feat& feat, bool& is_far, bool& is_misplaced);
 
+#if 0
     void x_ReportTranslationMismatches(const CCDSTranslationProblems::TTranslationMismatches& mismatches, const CSeq_feat& feat, bool far_product);
 
-#if 0
     void ValidateCdsProductId(const CSeq_feat& feat);
     void ValidateCdConflict(const CCdregion& cdregion, const CSeq_feat& feat);
-#endif
 
-#if 0
     EDiagSev x_SeverityForConsensusSplice(void);
     void ValidateSplice(const CSeq_feat& feat, bool check_all = false);
 #endif
@@ -199,17 +197,13 @@ private:
     void ValidateCommonCDSProduct(const CSeq_feat& feat);
 
     void x_ValidateCdregionCodebreak(const CSeq_feat& feat);
-#endif
 
     void ValidateProt(const CProt_ref& prot, const CSeq_feat& feat);
-#if 0
     void x_ValidateProteinName(const string& prot_name, const CSeq_feat& feat);
     void x_ReportUninformativeNames(const CProt_ref& prot, const CSeq_feat& feat);
     void x_ValidateProtECNumbers(const CProt_ref& prot, const CSeq_feat& feat);
-#endif
 
     void ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat);
-#if 0
     void ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_feat& feat);
     void ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat, bool mustbemethionine);
     void ValidateMrnaTrans(const CSeq_feat& feat);
@@ -217,18 +211,16 @@ private:
 
     void ValidateCommonMRNAProduct(const CSeq_feat& feat);
     void ValidateRnaProductType(const CRNA_ref& rna, const CSeq_feat& feat);
-#endif
     void ValidateIntron(const CSeq_feat& feat);
 
     void ValidateImp(const CImp_feat& imp, const CSeq_feat& feat);
-#if 0
     void ValidateNonImpFeat (const CSeq_feat& feat);
-#endif
 
     void ValidateGapFeature (const CSeq_feat& feat);
 
     void ValidatePeptideOnCodonBoundry(const CSeq_feat& feat, 
         const string& key);
+#endif
 
     void ValidateSeqFeatXref(const CSeq_feat& feat);
     void ValidateSeqFeatXref(const CSeq_feat& feat, const CTSE_Handle& tse);
@@ -244,8 +236,8 @@ private:
 
 #if 0
     void ValidateFeatCit(const CPub_set& cit, const CSeq_feat& feat);
-#endif
     void ValidateFeatBioSource(const CBioSource& bsrc, const CSeq_feat& feat);
+#endif
 
     bool IsOverlappingGenePseudo(const CSeq_feat& feat, CScope* scope);
 
@@ -350,6 +342,10 @@ protected:
     void x_ValidateGeneFeaturePair(const CSeq_feat& gene);
     void x_ValidateNonGene();
     void x_ValidateOldLocusTag(const string& old_locus_tag);
+
+    void x_ValidateImpFeatLoc();
+    void x_ValidateImpFeatQuals();
+    void x_ValidateSeqFeatDataType();
 };
 
 class CCdregionValidator : public CSingleFeatValidator
@@ -453,6 +449,69 @@ protected:
 };
 
 
+class CPubFeatValidator : public CSingleFeatValidator
+{
+public:
+    CPubFeatValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+        CSingleFeatValidator(feat, scope, imp) {}
+
+    virtual void Validate();
+
+protected:
+};
+
+
+class CSrcFeatValidator : public CSingleFeatValidator
+{
+public:
+    CSrcFeatValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+        CSingleFeatValidator(feat, scope, imp) {}
+
+    virtual void Validate();
+
+protected:
+};
+
+
+class CPolyASiteValidator : public CSingleFeatValidator
+{
+public:
+    CPolyASiteValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+        CSingleFeatValidator(feat, scope, imp) {}
+
+    virtual void x_ValidateSeqFeatLoc();
+
+protected:
+};
+
+
+class CPolyASignalValidator : public CSingleFeatValidator
+{
+public:
+    CPolyASignalValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+        CSingleFeatValidator(feat, scope, imp) {}
+
+    virtual void x_ValidateSeqFeatLoc();
+
+protected:
+};
+
+
+class CPeptideValidator : public CSingleFeatValidator
+{
+public:
+    CPeptideValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp);
+
+    virtual void Validate();
+
+protected:
+    void x_ValidatePeptideOnCodonBoundary();
+
+    CConstRef<CSeq_feat> m_CDS;
+};
+
+
+
 class CExonValidator : public CSingleFeatValidator
 {
 public:
@@ -477,6 +536,51 @@ protected:
     bool x_IsIntronShort(bool pseudo);
 };
 
+
+class CMiscFeatValidator : public CSingleFeatValidator
+{
+public:
+    CMiscFeatValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+        CSingleFeatValidator(feat, scope, imp) {}
+
+    virtual void Validate();
+
+protected:
+};
+
+
+class CAssemblyGapValidator : public CSingleFeatValidator
+{
+public:
+    CAssemblyGapValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+        CSingleFeatValidator(feat, scope, imp) {}
+
+    virtual void Validate();
+
+protected:
+};
+
+
+class CGapFeatValidator : public CSingleFeatValidator
+{
+public:
+    CGapFeatValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+        CSingleFeatValidator(feat, scope, imp) {}
+
+    virtual void Validate();
+
+protected:
+};
+
+
+class CImpFeatValidator : public CSingleFeatValidator
+{
+public:
+    CImpFeatValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+        CSingleFeatValidator(feat, scope, imp) {};
+    virtual void Validate();
+protected:
+};
 
 CSingleFeatValidator* FeatValidatorFactory(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp);
 

@@ -155,7 +155,7 @@ void CValidError_feat::x_ValidateSeqFeatExceptXref(const CSeq_feat& feat)
 {
     try {
 
-        ValidateSeqFeatData(feat.GetData(), feat);
+//        ValidateSeqFeatData(feat.GetData(), feat);
 
         unique_ptr<CSingleFeatValidator> fval(FeatValidatorFactory(feat, *m_Scope, m_Imp));
         if (fval) {
@@ -355,6 +355,7 @@ static bool s_IsPseudo(const CSeq_feat& feat)
 // private member functions:
 
 //#define TEST_LONGTIME
+#if 0
 
 void CValidError_feat::ValidateSeqFeatData
 (const CSeqFeatData& data,
@@ -364,13 +365,12 @@ void CValidError_feat::ValidateSeqFeatData
     case CSeqFeatData::e_Gene:
         // Validate CGene_ref
         ValidateGene(data.GetGene (), feat);
-        //ValidateOperon(feat);
+        ValidateOperon(feat);
         break;
     case CSeqFeatData::e_Cdregion:
         // Validate CCdregion
         ValidateCdregion(data.GetCdregion (), feat);
         break;
-#ifndef TEST_LONGTIME
     case CSeqFeatData::e_Prot:
         // Validate CProt_ref
         ValidateProt(data.GetProt (), feat);
@@ -408,17 +408,13 @@ void CValidError_feat::ValidateSeqFeatData
     case CSeqFeatData::e_Clone:
     case CSeqFeatData::e_Variation:
         break;
-#endif
     default:
-#ifndef TEST_LONGTIME
         PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidType,
             "Invalid SeqFeat type [" + NStr::IntToString(data.Which()) + "]",
             feat);
-#endif
         break;
     }
 
-#if 0
     if ( !data.IsGene() ) {
         ValidateGeneXRef(feat);
 
@@ -483,8 +479,8 @@ void CValidError_feat::ValidateSeqFeatData
     if ( !data.IsImp() ) {
         ValidateNonImpFeat (feat);
     }
-#endif
 }
+#endif
 
 
 static const string kGoTermText = "text string";
@@ -774,9 +770,9 @@ typedef CStaticArraySet<const char*, PCase_CStr> TBadGeneSynSet;
 DEFINE_STATIC_ARRAY_MAP(TBadGeneSynSet, sc_BadGeneSyn, sc_BadGeneSynText);
 
 
+#if 0
 void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat)
 {
-#if 0
     m_Imp.IncrementGeneCount();
 
     if ( (! gene.IsSetLocus()      ||  gene.GetLocus().empty())   &&
@@ -894,8 +890,8 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat
                            "gene synonym " + *it + " has SGML", feat);
             }
       }
-#endif
 }
+#endif
 
 static bool IsGeneticCodeValid(int gcode)
 {
@@ -914,12 +910,12 @@ static bool IsGeneticCodeValid(int gcode)
 }
 
 
+#if 0
 void CValidError_feat::ValidateCdregion (
     const CCdregion& cdregion, 
     const CSeq_feat& feat
 ) 
 {
-#if 0
     bool feat_is_pseudo = s_IsPseudo(feat);
     bool gene_is_pseudo = IsOverlappingGenePseudo(feat, m_Scope);
     bool pseudo = feat_is_pseudo  ||  gene_is_pseudo;
@@ -938,11 +934,9 @@ void CValidError_feat::ValidateCdregion (
         ValidateCdsProductId(feat);
         ValidateCommonCDSProduct(feat);
     }
-#endif
 }
 
 
-#if 0
 void CValidError_feat::x_ValidateCdregionCodebreak
 (const CSeq_feat& feat)
 {
@@ -1062,13 +1056,11 @@ void CValidError_feat::ValidateCdConflict
                 "Coding region conflict flag is set", feat);
     }
 }
-#endif
 
 
 void CValidError_feat::ValidateIntron (
     const CSeq_feat& feat)
 {
-#if 0
     if (IsIntronShort(feat)) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_ShortIntron,
                  "Introns should be at least 10 nt long", feat);
@@ -1258,11 +1250,9 @@ void CValidError_feat::ValidateIntron (
             }
         }
     }
-#endif
 }
 
 
-#if 0
 EDiagSev CValidError_feat::x_SeverityForConsensusSplice(void)
 {
     EDiagSev sev = eDiag_Warning;
@@ -1523,10 +1513,10 @@ static const char* const sc_BadProtNameText [] = {
 typedef CStaticArraySet<const char*, PCase_CStr> TBadProtNameSet;
 DEFINE_STATIC_ARRAY_MAP(TBadProtNameSet, sc_BadProtName, sc_BadProtNameText);
 
+#if 0
 void CValidError_feat::ValidateProt(
     const CProt_ref& prot, const CSeq_feat& feat) 
 {
-#if 0
     CProt_ref::EProcessed processed = CProt_ref::eProcessed_not_set;
 
     if ( prot.CanGetProcessed() ) {
@@ -1559,13 +1549,10 @@ void CValidError_feat::ValidateProt(
                 "There is a protein feature where all fields are empty", feat);
         }
     }
-#endif
 
 //    if (m_Imp.IsRefSeq()) {
 //        x_ReportUninformativeNames (prot, feat);
 //    }
-
-#if 0
 
     // only look for EC numbers in first protein name
     // only look for brackets and hypothetical protein XP_ in first protein name
@@ -1631,11 +1618,9 @@ void CValidError_feat::ValidateProt(
     }
     
     x_ValidateProtECNumbers (prot, feat);
-#endif
 }
 
 
-#if 0
 void CValidError_feat::x_ValidateProteinName(const string& prot_name, const CSeq_feat& feat)
 {
     if (NStr::EndsWith(prot_name, "]")) {
@@ -1824,9 +1809,9 @@ static bool s_EqualGene_ref(const CGene_ref& genomic, const CGene_ref& mrna)
 }
 
 
+#if 0
 void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat) 
 {
-#if 0
     CRNA_ref::EType rna_type = CRNA_ref::eType_unknown;
     if (rna.IsSetType()) {
         rna_type = rna.GetType();
@@ -2006,12 +1991,10 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
                 "tRNA-rRNA overlap", feat);
         }
     }
-#endif
 
 }
 
 
-#if 0
 void CValidError_feat::ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_feat& feat)
 {
     bool ordered = true;
@@ -2464,7 +2447,6 @@ void CValidError_feat::ValidateTrnaCodons(
         }
     }
 }
-#endif
 
 
 void CValidError_feat::ValidateGapFeature (const CSeq_feat& feat)
@@ -2600,11 +2582,9 @@ void CValidError_feat::ValidateImp(
 
     switch ( subtype ) {
     case CSeqFeatData::eSubtype_exon:
-#if 0
         if ( m_Imp.IsValidateExons() ) {
             ValidateSplice(feat, true);
         }
-#endif
         break;
 
     case CSeqFeatData::eSubtype_bad:
@@ -2926,7 +2906,6 @@ void CValidError_feat::ValidateImp(
 }
 
 
-#if 0
 void CValidError_feat::ValidateNonImpFeat (
     const CSeq_feat& feat)
 {
@@ -3383,6 +3362,7 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string
 }
 
 
+#if 0
 void CValidError_feat::ValidatePeptideOnCodonBoundry
 (const CSeq_feat& feat, 
  const string& key)
@@ -3425,6 +3405,7 @@ void CValidError_feat::ValidatePeptideOnCodonBoundry
             break;
     }    
 }
+#endif
 
 
 static bool s_IsBioseqPartial (CBioseq_Handle bsh)
@@ -4289,6 +4270,7 @@ string GetInternalStopErrorMessage(const CSeq_feat& feat, const string& transl_p
 }
 
 
+#if 0
 void CValidError_feat::x_ReportCDSTranslationProblems(const CSeq_feat& feat, const CCDSTranslationProblems& problems, bool far_product)
 {
     size_t problem_flags = problems.GetTranslationProblemFlags();
@@ -4505,6 +4487,7 @@ void CValidError_feat::x_ReportCDSTranslationProblems(const CSeq_feat& feat, con
     }
 
 }
+#endif
 
 
 CBioseq_Handle CValidError_feat::x_GetFeatureProduct(const CSeq_feat& feat, bool look_far, bool& is_far, bool& is_misplaced)
@@ -4575,6 +4558,7 @@ CBioseq_Handle CValidError_feat::x_GetCDSProduct(const CSeq_feat& feat, bool& is
 }
 
 
+#if 0
 void CValidError_feat::x_ReportTranslationMismatches(const CCDSTranslationProblems::TTranslationMismatches& mismatches, const CSeq_feat& feat, bool far_product)
 {
     string nuclocstr;
@@ -4649,7 +4633,6 @@ void CValidError_feat::x_ReportTranslationMismatches(const CCDSTranslationProble
 }
 
 
-#if 0
 void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
     bool &nonsense_intron)
 {
@@ -4690,7 +4673,6 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat,
 
     x_ReportCDSTranslationProblems(feat, problems, is_far);
 }
-#endif
 
 
 void CValidError_feat::x_ReportTranslExceptProblems(const CCDSTranslationProblems::TTranslExceptProblems& problems, const CSeq_feat& feat, bool has_exception)
@@ -4730,6 +4712,7 @@ void CValidError_feat::x_ReportTranslExceptProblems(const CCDSTranslationProblem
         }
     }
 }
+#endif
 
 
 vector < CConstRef <CSeq_feat> > GetFeaturesWithLabel (CBioseq_Handle bsh, string label, CScope * scope)
@@ -4827,6 +4810,7 @@ bool CValidError_feat::x_FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_ent
 }
 
 
+#if 0
 void CValidError_feat::ValidateGeneFeaturePair(const CSeq_feat& feat, const CSeq_feat& gene)
 {
     bool bad_strand = s_LocationStrandsIncompatible(gene.GetLocation(), feat.GetLocation(), m_Scope);
@@ -5027,7 +5011,6 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
 }
 
 
-#if 0
 void CValidError_feat::ValidateOperon(const CSeq_feat& gene)
 {
     if (!m_Scope) {
@@ -5080,7 +5063,6 @@ void CValidError_feat::ValidateFeatCit
         }
     }
 }
-#endif
 
 
 void CValidError_feat::ValidateFeatBioSource
@@ -5123,6 +5105,7 @@ void CValidError_feat::ValidateFeatBioSource
     }
 
 }
+#endif
 
 
 static bool xf_IsDeltaLitOnly (CBioseq_Handle bsh)
@@ -5264,6 +5247,7 @@ void CSingleFeatValidator::Validate()
         "Location", m_Feat);
 
     x_ValidateSeqFeatLoc();
+    x_ValidateImpFeatLoc();
 
     if (m_Feat.IsSetProduct()) {
         m_ProductBioseq = x_GetFeatureProduct(m_ProductIsFar);
@@ -5305,6 +5289,9 @@ void CSingleFeatValidator::Validate()
     x_ValidateExcept();
 
     x_ValidateGbquals();
+    x_ValidateImpFeatQuals();
+
+    x_ValidateSeqFeatDataType();
 
     x_ValidateNonImpFeat();
 
@@ -6303,6 +6290,9 @@ CBioseq_Handle CSingleFeatValidator::x_GetFeatureProduct(bool look_far, bool& is
 
     // try "local" scope
     prot_handle = m_Scope.GetBioseqHandleFromTSE(*protid, m_LocationBioseq.GetTSE_Handle());
+    if (!prot_handle) {
+        prot_handle = m_Scope.GetBioseqHandleFromTSE(*protid, m_Imp.GetTSE_Handle());
+    }
     if (!prot_handle  &&  look_far) {
         prot_handle = m_Scope.GetBioseqHandle(*protid);
         if (prot_handle) {
@@ -7241,6 +7231,122 @@ void CSingleFeatValidator::x_ValidateOldLocusTag(const string& old_locus_tag)
             PostErr(eDiag_Error, eErr_SEQ_FEAT_OldLocusTagWithoutLocusTag,
                     "old_locus_tag without inherited locus_tag");
         }
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateImpFeatLoc()
+{
+    if (!m_Feat.GetData().IsImp()) {
+        return;
+    }
+    const string& key = m_Feat.GetData().GetImp().GetKey();
+    // validate the feature's location
+    if ( m_Feat.GetData().GetImp().IsSetLoc() ) {
+        const string& imp_loc = m_Feat.GetData().GetImp().GetLoc();
+        if ( imp_loc.find("one-of") != string::npos ) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_ImpFeatBadLoc,
+                "ImpFeat loc " + imp_loc + 
+                " has obsolete 'one-of' text for feature " + key);
+        } else if ( m_Feat.GetLocation().IsInt() ) {
+            const CSeq_interval& seq_int = m_Feat.GetLocation().GetInt();
+            string temp_loc = NStr::IntToString(seq_int.GetFrom() + 1) +
+                ".." + NStr::IntToString(seq_int.GetTo() + 1);
+            if ( imp_loc != temp_loc ) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_ImpFeatBadLoc,
+                    "ImpFeat loc " + imp_loc + " does not equal feature location " +
+                    temp_loc + " for feature " + key);
+            }
+        }
+    }
+
+}
+
+
+void CSingleFeatValidator::x_ValidateImpFeatQuals()
+{
+    if (!m_Feat.GetData().IsImp()) {
+        return;
+    }
+    const string& key = m_Feat.GetData().GetImp().GetKey();
+
+    // Make sure a feature has its mandatory qualifiers
+    for (auto required : CSeqFeatData::GetMandatoryQualifiers(m_Feat.GetData().GetSubtype())) {
+        bool found = false;
+        if (m_Feat.IsSetQual()) {
+            for (auto qual : m_Feat.GetQual()) {
+                if (qual->IsSetQual() && CSeqFeatData::GetQualifierType(qual->GetQual()) == required) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found && required == CSeqFeatData::eQual_citation) {
+                if (m_Feat.IsSetCit()) {
+                    found = true;
+                }
+                else if (m_Feat.IsSetComment() && !NStr::IsBlank(m_Feat.GetComment())) {
+                    // RefSeq allows conflict with accession in comment instead of sfp->cit
+                    if (m_LocationBioseq) {
+                        FOR_EACH_SEQID_ON_BIOSEQ(it, *(m_LocationBioseq.GetCompleteBioseq())) {
+                            if ((*it)->IsOther()) {
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (!found
+                    && (NStr::EqualNocase(key, "conflict")
+                        || NStr::EqualNocase(key, "old_sequence"))) {
+                    // compare qualifier can now substitute for citation qualifier for conflict and old_sequence
+                    FOR_EACH_GBQUAL_ON_FEATURE(qual, m_Feat) {
+                        if ((*qual)->IsSetQual() && CSeqFeatData::GetQualifierType((*qual)->GetQual()) == CSeqFeatData::eQual_compare) {
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if (!found) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingQualOnImpFeat,
+                "Missing qualifier " + CSeqFeatData::GetQualifierAsString(required) +
+                " for feature " + key);
+        }
+    }
+}
+
+
+void CSingleFeatValidator::x_ValidateSeqFeatDataType()
+{
+    switch ( m_Feat.GetData().Which () ) {
+    case CSeqFeatData::e_Gene:
+    case CSeqFeatData::e_Cdregion:
+    case CSeqFeatData::e_Prot:
+    case CSeqFeatData::e_Rna:
+    case CSeqFeatData::e_Pub:
+    case CSeqFeatData::e_Imp:
+    case CSeqFeatData::e_Biosrc:
+    case CSeqFeatData::e_Org:
+    case CSeqFeatData::e_Region:
+    case CSeqFeatData::e_Seq:
+    case CSeqFeatData::e_Comment:
+    case CSeqFeatData::e_Bond:
+    case CSeqFeatData::e_Site:
+    case CSeqFeatData::e_Rsite:
+    case CSeqFeatData::e_User:
+    case CSeqFeatData::e_Txinit:
+    case CSeqFeatData::e_Num:
+    case CSeqFeatData::e_Psec_str:
+    case CSeqFeatData::e_Non_std_residue:
+    case CSeqFeatData::e_Het:
+    case CSeqFeatData::e_Clone:
+    case CSeqFeatData::e_Variation:
+        break;
+    default:
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidType,
+            "Invalid SeqFeat type [" + NStr::IntToString(m_Feat.GetData().Which()) + "]");
+        break;
     }
 }
 
@@ -8527,9 +8633,6 @@ void CCdregionValidator::x_ValidateCommonProduct()
         return;
     }
 
-    bool is_far = false;
-    bool product_is_misplaced = false;
-
     if ( !m_ProductBioseq  || m_ProductIsFar) {
         const CSeq_id* sid = 0;
         try {
@@ -9768,6 +9871,141 @@ void CRNAValidator::x_ValidateTrnaOverlap()
 }
 
 
+void CPubFeatValidator::Validate()
+{
+    CSingleFeatValidator::Validate();
+    m_Imp.ValidatePubdesc(m_Feat.GetData().GetPub (), m_Feat);
+}
+
+
+void CSrcFeatValidator::Validate()
+{
+    CSingleFeatValidator::Validate();
+    const CBioSource& bsrc = m_Feat.GetData().GetBiosrc();
+    if ( bsrc.IsSetIs_focus() ) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_FocusOnBioSourceFeature,
+            "Focus must be on BioSource descriptor, not BioSource feature.");
+    }
+
+    m_Imp.ValidateBioSource(bsrc, m_Feat);
+
+    CSeqdesc_CI dbsrc_i(m_LocationBioseq, CSeqdesc::e_Source);
+    if ( !dbsrc_i ) {
+        return;
+    }
+    
+    const COrg_ref& org = bsrc.GetOrg();           
+    const CBioSource& dbsrc = dbsrc_i->GetSource();
+    const COrg_ref& dorg = dbsrc.GetOrg(); 
+
+    if ( org.CanGetTaxname()  &&  !org.GetTaxname().empty()  &&
+            dorg.CanGetTaxname() ) {
+        string taxname = org.GetTaxname();
+        string dtaxname = dorg.GetTaxname();
+        if ( NStr::CompareNocase(taxname, dtaxname) != 0 ) {
+            if ( !dbsrc.IsSetIs_focus()  &&  !m_Imp.IsTransgenic(dbsrc) ) {
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceNeedsFocus,
+                    "BioSource descriptor must have focus or transgenic "
+                    "when BioSource feature with different taxname is "
+                    "present.");
+            }
+        }
+    }
+}
+
+
+void CPolyASiteValidator::x_ValidateSeqFeatLoc()
+{
+    CSingleFeatValidator::x_ValidateSeqFeatLoc();
+    CSeq_loc::TRange range = m_Feat.GetLocation().GetTotalRange();
+    if ( range.GetFrom() != range.GetTo() ) {
+        EDiagSev sev = eDiag_Warning;
+        if (m_Imp.IsRefSeq()) {
+            sev = eDiag_Error;
+        }
+        PostErr(sev, eErr_SEQ_FEAT_PolyAsiteNotPoint,
+            "PolyA_site should be a single point");
+    }
+
+}
+
+
+void CPolyASignalValidator::x_ValidateSeqFeatLoc()
+{
+    CSeq_loc::TRange range = m_Feat.GetLocation().GetTotalRange();
+    if ( range.GetFrom() == range.GetTo() ) {
+        EDiagSev sev = eDiag_Warning;
+        if (m_Imp.IsRefSeq()) {
+            sev = eDiag_Error;
+        }
+        PostErr (sev, eErr_SEQ_FEAT_PolyAsignalNotRange, "PolyA_signal should be a range");
+    }
+}
+
+
+CPeptideValidator::CPeptideValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+        CSingleFeatValidator(feat, scope, imp) 
+{
+    m_CDS = GetOverlappingCDS(m_Feat.GetLocation(), m_Scope);
+}
+
+
+void CPeptideValidator::Validate()
+{
+    CSingleFeatValidator::Validate();
+
+    if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
+        PostErr(!m_CDS ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
+            "sig/mat/transit_peptide feature cannot be associated with a "
+            "protein product of a coding region feature");
+    } else {
+        PostErr(m_Imp.IsRefSeq() ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
+            "Peptide processing feature should be converted to the "
+            "appropriate protein feature subtype");
+    }
+    x_ValidatePeptideOnCodonBoundary();
+}
+
+
+void CPeptideValidator::x_ValidatePeptideOnCodonBoundary()
+{
+    if (!m_CDS) {
+        return;
+    }
+
+    const string& key = m_Feat.GetData().GetImp().GetKey();
+
+    feature::ELocationInFrame in_frame = feature::IsLocationInFrame(m_Scope.GetSeq_featHandle(*m_CDS), m_Feat.GetLocation());
+    if (NStr::Equal(key, "sig_peptide") && in_frame == feature::eLocationInFrame_NotIn) {
+        return;
+    }
+    switch (in_frame) {
+        case feature::eLocationInFrame_NotIn:
+            if (NStr::Equal(key, "sig_peptide")) {
+                // ignore
+            } else {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
+                    "Start and stop of " + key + " are out of frame with CDS codons");
+            }
+            break;
+        case feature::eLocationInFrame_BadStartAndStop:
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
+                "Start and stop of " + key + " are out of frame with CDS codons");
+            break;
+        case feature::eLocationInFrame_BadStart:
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame, 
+                "Start of " + key + " is out of frame with CDS codons");
+            break;
+        case feature::eLocationInFrame_BadStop:
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatOutOfFrame,
+                "Stop of " + key + " is out of frame with CDS codons");
+            break;
+        case feature::eLocationInFrame_InFrame:
+            break;
+    }    
+}
+
+
 void CExonValidator::Validate()
 {
     CSingleFeatValidator::Validate();
@@ -10022,6 +10260,352 @@ bool CIntronValidator::x_IsIntronShort(bool pseudo)
 }
 
 
+void CMiscFeatValidator::Validate()
+{
+    CSingleFeatValidator::Validate();
+    if ((!m_Feat.IsSetComment() || NStr::IsBlank (m_Feat.GetComment()))
+            && (!m_Feat.IsSetQual() || m_Feat.GetQual().empty())
+            && (!m_Feat.IsSetDbxref() || m_Feat.GetDbxref().empty())) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_MiscFeatureNeedsNote,
+                "A note or other qualifier is required for a misc_feature");
+    }
+    if (m_Feat.IsSetComment() && ! NStr::IsBlank (m_Feat.GetComment())) {
+        if (NStr::FindWord(m_Feat.GetComment(), "cspA") != NPOS) {
+            CConstRef<CSeq_feat> cds = GetBestOverlappingFeat(m_Feat.GetLocation(), CSeqFeatData::eSubtype_cdregion, eOverlap_Simple, m_Scope);
+            if (cds) {
+                string content_label;
+                feature::GetLabel(*cds, &content_label, feature::fFGL_Content, &m_Scope);
+                if (NStr::Equal(content_label, "cold-shock protein")) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_ColdShockProteinProblem,
+                            "cspA misc_feature overlapped by cold-shock protein CDS");
+                }
+            }
+        }
+    }
+
+}
+
+
+void CAssemblyGapValidator::Validate()
+{
+    CSingleFeatValidator::Validate();
+
+    bool is_far_delta = false;
+    if ( m_LocationBioseq.IsSetInst_Repr()) {
+        CBioseq_Handle::TInst::TRepr repr = m_LocationBioseq.GetInst_Repr();
+        if ( repr == CSeq_inst::eRepr_delta ) {
+            is_far_delta = true;
+            const CBioseq& seq = *(m_LocationBioseq.GetCompleteBioseq());
+            const CSeq_inst& inst = seq.GetInst();
+            ITERATE(CDelta_ext::Tdata, sg, inst.GetExt().GetDelta().Get()) {
+                if ( !(*sg) ) continue;
+                if (( (**sg).Which() == CDelta_seq::e_Loc )) continue;
+                is_far_delta = false;
+            }
+        }
+    }
+    if (! is_far_delta) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_AssemblyGapFeatureProblem,
+                "An assembly_gap feature should only be on a contig record");
+    }
+    if (m_Feat.GetLocation().IsInt()) {
+        TSeqPos from = m_Feat.GetLocation().GetInt().GetFrom();
+        TSeqPos to = m_Feat.GetLocation().GetInt().GetTo();
+        CSeqVector vec = m_LocationBioseq.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        string sequence;
+        bool is5 = false;
+        bool is3 = false;
+        long int count = 0;
+        vec.GetSeqData(from - 1, from, sequence);
+        if (NStr::Equal (sequence, "N")) {
+            is5 = true;
+        }
+        vec.GetSeqData(to + 1, to + 2, sequence);
+        if (NStr::Equal (sequence, "N")) {
+            is3 = true;
+        }
+        EDiagSev sv = eDiag_Warning;
+        if (m_Imp.IsGenomeSubmission()) {
+            sv = eDiag_Error;
+        }
+        if (is5 && is3) {
+            PostErr(sv, eErr_SEQ_FEAT_AssemblyGapAdjacentToNs,
+                    "Assembly_gap flanked by Ns on 5' and 3' sides");
+        } else if (is5) {
+            PostErr(sv, eErr_SEQ_FEAT_AssemblyGapAdjacentToNs,
+                    "Assembly_gap flanked by Ns on 5' side");
+        } else if (is3) {
+            PostErr(sv, eErr_SEQ_FEAT_AssemblyGapAdjacentToNs,
+                    "Assembly_gap flanked by Ns on 3' side");
+        }
+        vec.GetSeqData(from, to + 1, sequence);
+        for (size_t i = 0; i < sequence.size(); i++) {
+            if (sequence[i] != 'N') {
+                count++;
+            }
+        }
+        if (count > 0) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_AssemblyGapCoversSequence, "Assembly_gap extends into sequence");
+        }
+    }
+}
+
+
+void CGapFeatValidator::Validate()
+{
+    CSingleFeatValidator::Validate();
+    int loc_len = GetLength (m_Feat.GetLocation(), &m_Scope);
+    // look for estimated length qualifier
+    FOR_EACH_GBQUAL_ON_SEQFEAT (it, m_Feat) {
+        if ((*it)->IsSetQual() && NStr::EqualNocase ((*it)->GetQual(), "estimated_length")
+            && (*it)->IsSetVal() && !NStr::EqualNocase ((*it)->GetVal(), "unknown")) {
+            try {
+                int estimated_length = NStr::StringToInt ((*it)->GetVal());
+                if (estimated_length != loc_len) {
+                    PostErr (eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem, 
+                             "Gap feature estimated_length " + NStr::IntToString (estimated_length)
+                             + " does not match " + NStr::IntToString (loc_len) + " feature length");
+                    return;
+                }
+            } catch (CException ) {
+            } catch (std::exception ) {
+            }
+        }
+    }
+    try {
+        string s_data = GetSequenceStringFromLoc(m_Feat.GetLocation(), m_Scope);
+        CSeqVector vec = GetSequenceFromFeature(m_Feat, m_Scope);
+        if ( !vec.empty() ) {
+            string vec_data;
+            vec.GetSeqData(0, vec.size(), vec_data);
+            int num_n = 0;
+            int num_real = 0;
+            unsigned int num_gap = 0;
+            int pos = 0;
+            string::iterator it = vec_data.begin();
+            while (it != vec_data.end()) {
+                if (*it == 'N') {
+                    if (vec.IsInGap(pos)) {
+                        // gap not N
+                        num_gap++;
+                    } else {
+                        num_n++;
+                    }
+                } else if (*it != '-') {
+                    num_real++;
+                }
+                ++it;
+                ++pos;
+            }
+            if (num_real > 0 && num_n > 0) {
+                PostErr (eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem, 
+                         "Gap feature over " + NStr::IntToString (num_real)
+                         + " real bases and " + NStr::IntToString (num_n)
+                         + " Ns");
+            } else if (num_real > 0) {
+                PostErr (eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem, 
+                         "Gap feature over " + NStr::IntToString (num_real)
+                         + " real bases");
+            } else if (num_n > 0) {
+                PostErr (eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem, 
+                         "Gap feature over " + NStr::IntToString (num_n)
+                         + " Ns");
+            } else if (num_gap != GetLength (m_Feat.GetLocation(), &m_Scope)) {
+                PostErr (eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem, 
+                         "Gap feature estimated_length " + NStr::IntToString (loc_len)
+                         + " does not match " + NStr::IntToString (num_gap)
+                         + " gap characters");
+            }
+        }
+
+    } catch (CException ) {
+    } catch (std::exception ) {
+    }
+}
+
+
+void CImpFeatValidator::Validate()
+{
+    CSingleFeatValidator::Validate();
+    CSeqFeatData::ESubtype subtype = m_Feat.GetData().GetSubtype();
+
+    const string& key = m_Feat.GetData().GetImp().GetKey();
+    if (NStr::IsBlank(key)) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownImpFeatKey, 
+                "NULL feature key");
+        return;
+    }
+
+    if (subtype == CSeqFeatData::eSubtype_imp || subtype == CSeqFeatData::eSubtype_bad) {
+        if (NStr::Equal(key, "mRNA")) {
+            subtype = CSeqFeatData::eSubtype_mRNA;
+        } else if (NStr::Equal(key, "tRNA")) {
+            subtype = CSeqFeatData::eSubtype_tRNA;
+        } else if (NStr::Equal(key, "tRNA")) {
+            subtype = CSeqFeatData::eSubtype_tRNA;
+        } else if (NStr::Equal(key, "rRNA")) {
+            subtype = CSeqFeatData::eSubtype_rRNA;
+        } else if (NStr::Equal(key, "snRNA")) {
+            subtype = CSeqFeatData::eSubtype_snRNA;
+        } else if (NStr::Equal(key, "scRNA")) {
+            subtype = CSeqFeatData::eSubtype_scRNA;
+        } else if (NStr::Equal(key, "snoRNA")) {
+            subtype = CSeqFeatData::eSubtype_snoRNA;
+        } else if (NStr::Equal(key, "misc_RNA")) {
+            subtype = CSeqFeatData::eSubtype_misc_RNA;
+        } else if (NStr::Equal(key, "precursor_RNA")) {
+            subtype = CSeqFeatData::eSubtype_precursor_RNA;
+        } else if (NStr::EqualNocase (key, "mat_peptide")) {
+            subtype = CSeqFeatData::eSubtype_mat_peptide;
+        } else if (NStr::EqualNocase (key, "propeptide")) {
+            subtype = CSeqFeatData::eSubtype_propeptide;
+        } else if (NStr::EqualNocase (key, "sig_peptide")) {
+            subtype = CSeqFeatData::eSubtype_sig_peptide;
+        } else if (NStr::EqualNocase (key, "transit_peptide")) {
+            subtype = CSeqFeatData::eSubtype_transit_peptide;
+        } else if (NStr::EqualNocase (key, "preprotein")
+            || NStr::EqualNocase(key, "proprotein")) {
+            subtype = CSeqFeatData::eSubtype_preprotein;
+        } else if (NStr::EqualNocase (key, "virion")) {
+            subtype = CSeqFeatData::eSubtype_virion;
+        } else if (NStr::EqualNocase(key, "mutation")) {
+            subtype = CSeqFeatData::eSubtype_mutation;
+        } else if (NStr::EqualNocase(key, "allele")) {
+            subtype = CSeqFeatData::eSubtype_allele;
+        } else if (NStr::EqualNocase (key, "CDS")) {
+            subtype = CSeqFeatData::eSubtype_Imp_CDS;
+        } else if (NStr::EqualNocase(key, "Import")) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_UnknownImpFeatKey,
+                    "Feature key Import is no longer legal");
+            return;
+        }
+    }
+
+    switch ( subtype ) {
+
+    case CSeqFeatData::eSubtype_bad:
+    case CSeqFeatData::eSubtype_site_ref:
+    case CSeqFeatData::eSubtype_gene:
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownImpFeatKey, 
+            "Unknown feature key " + key);
+        break;
+
+    case CSeqFeatData::eSubtype_virion:
+    case CSeqFeatData::eSubtype_mutation:
+    case CSeqFeatData::eSubtype_allele:
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_UnknownImpFeatKey,
+            "Feature key " + key + " is no longer legal");
+        break;
+
+
+    case CSeqFeatData::eSubtype_preprotein:
+        if (m_Imp.IsEmbl() || m_Imp.IsDdbj()) {
+            const CSeq_loc& loc = m_Feat.GetLocation();
+            CConstRef<CSeq_feat> cds = GetOverlappingCDS(loc, m_Scope);
+            PostErr(!cds ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
+                "Pre/pro protein feature cannot be associated with a "
+                "protein product of a coding region feature");
+        } else {
+            PostErr(m_Imp.IsRefSeq() ? eDiag_Error : eDiag_Warning, eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
+                "Peptide processing feature should be converted to the "
+                "appropriate protein feature subtype");
+        }
+        break;
+        
+    case CSeqFeatData::eSubtype_mRNA:
+    case CSeqFeatData::eSubtype_tRNA:
+    case CSeqFeatData::eSubtype_rRNA:
+    case CSeqFeatData::eSubtype_snRNA:
+    case CSeqFeatData::eSubtype_scRNA:
+    case CSeqFeatData::eSubtype_snoRNA:
+    case CSeqFeatData::eSubtype_misc_RNA:
+    case CSeqFeatData::eSubtype_precursor_RNA:
+    // !!! what about other RNA types (preRNA, otherRNA)?
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidRNAFeature,
+              "RNA feature should be converted to the appropriate RNA feature "
+              "subtype, location should be converted manually");
+        break;
+
+    case CSeqFeatData::eSubtype_Imp_CDS:
+        {
+            // impfeat CDS must be pseudo; fail if not
+            bool pseudo = sequence::IsPseudo(m_Feat, m_Scope);
+            if ( !pseudo ) {
+                PostErr(eDiag_Info, eErr_SEQ_FEAT_ImpCDSnotPseudo,
+                    "ImpFeat CDS should be pseudo");
+            }
+
+            FOR_EACH_GBQUAL_ON_FEATURE (gbqual, m_Feat) {
+                if ( NStr::CompareNocase( (*gbqual)->GetQual(), "translation") == 0 ) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_ImpCDShasTranslation,
+                        "ImpFeat CDS with /translation found");
+                }
+            }
+        }
+        break;
+    case CSeqFeatData::eSubtype_imp:
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownImpFeatKey,
+            "Unknown feature key " + key);
+        break;
+    case CSeqFeatData::eSubtype_repeat_region:
+        if ((!m_Feat.IsSetComment() || NStr::IsBlank (m_Feat.GetComment()))
+            && (!m_Feat.IsSetQual() || m_Feat.GetQual().empty())
+            && (!m_Feat.IsSetDbxref() || m_Feat.GetDbxref().empty())) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_RepeatRegionNeedsNote,
+                    "repeat_region has no qualifiers");
+        }
+        break;
+    case CSeqFeatData::eSubtype_regulatory:
+        {
+            vector<string> valid_types = CSeqFeatData::GetRegulatoryClassList();
+            FOR_EACH_GBQUAL_ON_FEATURE (gbqual, m_Feat) {
+                if ( NStr::CompareNocase( (*gbqual)->GetQual(), "regulatory_class") != 0 ) continue;
+                const string& val = (*gbqual)->GetVal();
+                bool missing = true;
+                FOR_EACH_STRING_IN_VECTOR (itr, valid_types) {
+                    string str = *itr;
+                    if ( NStr::Equal (str, val) ) {
+                        missing = false;
+                    }
+                }
+                if ( missing ) {
+                    if ( NStr::Equal (val, "other") && !m_Feat.IsSetComment() ) {
+                        PostErr(eDiag_Error, eErr_SEQ_FEAT_RegulatoryClassOtherNeedsNote,
+                            "The regulatory_class 'other' is missing the required /note");
+                    }
+                }
+            }
+        }
+        break;
+    case CSeqFeatData::eSubtype_misc_recomb:
+        {
+            const CGb_qual::TLegalRecombinationClassSet recomb_values = CGb_qual::GetSetOfLegalRecombinationClassValues();
+            FOR_EACH_GBQUAL_ON_FEATURE (gbqual, m_Feat) {
+                if ( NStr::CompareNocase( (*gbqual)->GetQual(), "recombination_class") != 0 ) continue;
+                const string& val = (*gbqual)->GetVal();
+               if ( recomb_values.find(val.c_str()) == recomb_values.end() ) {
+                    if ( NStr::Equal (val, "other")) {
+                        if (!m_Feat.IsSetComment()) {
+                            PostErr(eDiag_Error, eErr_SEQ_FEAT_RecombinationClassOtherNeedsNote,
+                                "The recombination_class 'other' is missing the required /note");
+                        }
+                    } else {
+                        // Removed per VR-770. FlatFile will automatically
+                        // display the unrecognized recombination_class value
+                        // in the note and list the recombination_class as other
+//                        PostErr(eDiag_Info, eErr_SEQ_FEAT_InvalidQualifierValue,
+//                            "'" + val + "' is not a legal value for recombination_class", feat);
+                    }
+                }
+            }
+        }
+        break;
+    default:
+        break;
+    }// end of switch statement      
+}
+
+
 CSingleFeatValidator* FeatValidatorFactory(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp)
 {
     if (!feat.IsSetData()) {
@@ -10033,11 +10617,40 @@ CSingleFeatValidator* FeatValidatorFactory(const CSeq_feat& feat, CScope& scope,
     } else if (feat.GetData().IsProt()) {
         return new CProtValidator(feat, scope, imp);
     } else if (feat.GetData().IsRna()) {
-        return new CRNAValidator(feat, scope, imp); 
+        return new CRNAValidator(feat, scope, imp);
+    } else if (feat.GetData().IsPub()) {
+        return new CPubFeatValidator(feat, scope, imp);
+    } else if (feat.GetData().IsBiosrc()) {
+        return new CSrcFeatValidator(feat, scope, imp);
     } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon) {
         return new CExonValidator(feat, scope, imp);
     } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_intron) {
         return new CIntronValidator(feat, scope, imp);
+    } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
+        return new CMiscFeatValidator(feat, scope, imp);
+    } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_assembly_gap) {
+        return new CAssemblyGapValidator(feat, scope, imp);
+    } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_polyA_site) {
+        return new CPolyASiteValidator(feat, scope, imp);
+    }
+    else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_polyA_signal) {
+        return new CPolyASignalValidator(feat, scope, imp);
+    } else if (feat.GetData().IsImp()) {
+        CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
+        switch (subtype) {
+            case CSeqFeatData::eSubtype_mat_peptide:
+            case CSeqFeatData::eSubtype_propeptide:
+            case CSeqFeatData::eSubtype_sig_peptide:
+            case CSeqFeatData::eSubtype_transit_peptide:
+                return new CPeptideValidator(feat, scope, imp);
+                break;
+            case CSeqFeatData::eSubtype_gap:
+                return new CGapFeatValidator(feat, scope, imp);
+                break;
+            default:
+                return new CImpFeatValidator(feat, scope, imp);
+                break;
+        }
     } else {
         return new CSingleFeatValidator(feat, scope, imp);
     }
