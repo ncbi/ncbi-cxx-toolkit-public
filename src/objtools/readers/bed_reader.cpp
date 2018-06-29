@@ -527,9 +527,9 @@ CBedReader::xParseFeature(
     }
     if (xParseFeature(fields, pAnnot, pEC)) {
         ++m_CurrentFeatureCount;
-        return false;
+        return true;
     }
-    return true;
+    return false;
 }
 
 //  ----------------------------------------------------------------------------
