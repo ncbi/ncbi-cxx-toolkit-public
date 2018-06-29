@@ -1020,6 +1020,7 @@ string CAutoDef::x_GetNonFeatureListEnding()
             end = ", partial genome.";
             break;
         case CAutoDefOptions::eSequence:
+        case CAutoDefOptions::eListAllFeatures:
             end = " sequence.";
             break;
         default:
@@ -1055,59 +1056,70 @@ bool IsInGenProdSet(CBioseq_Handle bh)
 }
 
 
+string CAutoDef::x_GetOneNonFeatureClause(CBioseq_Handle bh, unsigned int genome_val)
+{
+    string feature_clauses = "";
+
+    string organelle = "";
+        
+    if (m_Options.GetFeatureListType() != CAutoDefOptions::eSequence
+        || genome_val == CBioSource::eGenome_apicoplast
+        || genome_val == CBioSource::eGenome_chloroplast
+        || genome_val == CBioSource::eGenome_kinetoplast
+        || genome_val == CBioSource::eGenome_leucoplast
+        || genome_val == CBioSource::eGenome_mitochondrion
+        || genome_val == CBioSource::eGenome_plastid) {
+        organelle = OrganelleByGenome(genome_val);
+    }
+    if (!NStr::IsBlank(organelle)) {
+        feature_clauses = " " + organelle;
+    } else if (NStr::IsBlank(organelle) && m_Options.GetFeatureListType() == CAutoDefOptions::eSequence) {
+        string biomol = "";
+        CSeqdesc_CI mi(bh, CSeqdesc::e_Molinfo);
+        if (mi && mi->GetMolinfo().IsSetBiomol()) {
+            if (mi->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
+                biomol = "mRNA";
+            } else {
+                biomol = CMolInfo::GetBiomolName(mi->GetMolinfo().GetBiomol());
+            }
+        }
+        if (!NStr::IsBlank(biomol)) {
+            feature_clauses = " " + biomol;
+        }
+    }
+
+    feature_clauses += x_GetNonFeatureListEnding();
+    return feature_clauses;
+}
+
+
 string CAutoDef::GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_val)
 {
     string feature_clauses = "";
     if (m_Options.GetFeatureListType() == CAutoDefOptions::eListAllFeatures ||
         (IsBioseqmRNA(bh) && IsInGenProdSet(bh))) {
         feature_clauses = x_GetFeatureClauses(bh);
-        if (!NStr::IsBlank(feature_clauses)) {
-            feature_clauses = " " + feature_clauses;
-        }
-        string ending = x_GetFeatureClauseProductEnding(feature_clauses, bh);
-        if (m_Options.GetAltSpliceFlag()) {
-            if (NStr::IsBlank(ending)) {
-                ending = "; alternatively spliced";
-            } else {
-                ending += ", alternatively spliced";
-            }
-        }
-        feature_clauses += ending;
         if (NStr::IsBlank(feature_clauses)) {
-            feature_clauses = ".";
+            feature_clauses = x_GetOneNonFeatureClause(bh, genome_val);
         } else {
-            feature_clauses += ".";
-        }
-    } else {
-        string organelle = "";
-        
-        if (m_Options.GetFeatureListType() != CAutoDefOptions::eSequence
-            || genome_val == CBioSource::eGenome_apicoplast
-            || genome_val == CBioSource::eGenome_chloroplast
-            || genome_val == CBioSource::eGenome_kinetoplast
-            || genome_val == CBioSource::eGenome_leucoplast
-            || genome_val == CBioSource::eGenome_mitochondrion
-            || genome_val == CBioSource::eGenome_plastid) {
-            organelle = OrganelleByGenome(genome_val);
-        }
-        if (!NStr::IsBlank(organelle)) {
-            feature_clauses = " " + organelle;
-        } else if (NStr::IsBlank(organelle) && m_Options.GetFeatureListType() == CAutoDefOptions::eSequence) {
-            string biomol = "";
-            CSeqdesc_CI mi(bh, CSeqdesc::e_Molinfo);
-            if (mi && mi->GetMolinfo().IsSetBiomol()) {
-                if (mi->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
-                    biomol = "mRNA";
+            feature_clauses = " " + feature_clauses;
+            string ending = x_GetFeatureClauseProductEnding(feature_clauses, bh);
+            if (m_Options.GetAltSpliceFlag()) {
+                if (NStr::IsBlank(ending)) {
+                    ending = "; alternatively spliced";
                 } else {
-                    biomol = CMolInfo::GetBiomolName(mi->GetMolinfo().GetBiomol());
+                    ending += ", alternatively spliced";
                 }
             }
-            if (!NStr::IsBlank(biomol)) {
-                feature_clauses = " " + biomol;
+            feature_clauses += ending;
+            if (NStr::IsBlank(feature_clauses)) {
+                feature_clauses = ".";
+            } else {
+                feature_clauses += ".";
             }
         }
-
-        feature_clauses += x_GetNonFeatureListEnding();
+    } else {
+        feature_clauses = x_GetOneNonFeatureClause(bh, genome_val);
     }
     return feature_clauses;
 }

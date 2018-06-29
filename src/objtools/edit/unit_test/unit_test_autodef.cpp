@@ -628,7 +628,7 @@ BOOST_AUTO_TEST_CASE(Test_SimpleAutodef)
     // prepare entry
     CRef<CSeq_entry> entry = BuildSequence();
     AddSource (entry, "Homo sapiens");
-    AddTitle(entry, "Homo sapiens.");
+    AddTitle(entry, "Homo sapiens sequence.");
 
     CheckDeflineMatches(entry);
 }
@@ -642,7 +642,7 @@ BOOST_AUTO_TEST_CASE(Test_UnnamedPlasmid)
     desc->SetSource().SetGenome(CBioSource::eGenome_plasmid);
     CRef<CSubSource> sub(new CSubSource("plasmid-name", "unnamed"));
     desc->SetSource().SetSubtype().push_back(sub);
-    AddTitle(entry, "Alcanivorax sp. HA03 plasmid.");
+    AddTitle(entry, "Alcanivorax sp. HA03 plasmid sequence.");
 
     CheckDeflineMatches(entry);
 }
@@ -723,7 +723,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_155)
     feat->SetComment("amplified with primers designed for 16S ribosomal RNA");
     AddFeat(feat, entry);
 
-    AddTitle(entry, "Clathrina aurea.");
+    AddTitle(entry, "Clathrina aurea sequence.");
 
     CheckDeflineMatches(entry);
 }
@@ -1188,7 +1188,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_1851)
     misc1->SetLocation().SetPartialStart(true, eExtreme_Biological);
     misc1->SetLocation().SetPartialStop(true, eExtreme_Biological);
 
-    AddTitle(seq, "Sebaea microphylla.");
+    AddTitle(seq, "Sebaea microphylla sequence.");
     CheckDeflineMatches(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
     AddTitle(seq, "Sebaea microphylla nonfunctional xyz gene, partial sequence.");
     CheckDeflineMatches(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eNoncodingProductFeat);
@@ -1430,7 +1430,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_4242)
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
     unit_test_util::SetTaxname(seq, "Trichoderma sp. FPZSP372");
     unit_test_util::SetOrgMod(seq, COrgMod::eSubtype_isolate, "FPZSP37");
-    AddTitle(seq, "Trichoderma sp. FPZSP372.");
+    AddTitle(seq, "Trichoderma sp. FPZSP372 sequence.");
 
     vector<CSubSource::ESubtype> subsrcs;
     vector<COrgMod::ESubtype> orgmods;
@@ -1439,7 +1439,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_4242)
     CheckDeflineMatches(seq, subsrcs, orgmods);
 
     // Try again, but deliberately allow modifier that includes taxname to be included
-    AddTitle(seq, "Trichoderma sp. FPZSP372 isolate FPZSP37.");
+    AddTitle(seq, "Trichoderma sp. FPZSP372 isolate FPZSP37 sequence.");
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
     CRef<CScope> scope(new CScope(*object_manager));
@@ -1925,10 +1925,10 @@ BOOST_AUTO_TEST_CASE(Test_GB_5758)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_other, "a; minicircle b; c");
-    AddTitle(entry, "Sebaea microphylla minicircle b.");
+    AddTitle(entry, "Sebaea microphylla minicircle b sequence.");
     CheckDeflineMatches(entry);
 
-    AddTitle(entry, "Sebaea microphylla a minicircle b.");
+    AddTitle(entry, "Sebaea microphylla a minicircle b sequence.");
 
     vector<CSubSource::ESubtype> subsrcs;
     subsrcs.push_back(CSubSource::eSubtype_other);
@@ -1960,7 +1960,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_5793)
     m->SetComment("GCC2-ALK translocation breakpoint junction; microhomology");
 
     // by default, misc_recomb not included
-    AddTitle(entry, "Sebaea microphylla.");
+    AddTitle(entry, "Sebaea microphylla sequence.");
     CheckDeflineMatches(entry);
 
     // use option to show misc_recomb
@@ -2142,12 +2142,12 @@ BOOST_AUTO_TEST_CASE(Test_GB_6690)
     vector<string> notes = { "a", "b", "c" };
     vector<string>::iterator nit = notes.begin();
     NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry->SetSet().SetSeq_set()) {
-        AddTitle(*it, "Sebaea microphylla.");
+        AddTitle(*it, "Sebaea microphylla sequence.");
         unit_test_util::SetOrgMod(*it, COrgMod::eSubtype_other, *nit);
         ++nit;
     }
     entry->SetSet().ResetDescr();
-    AddTitle(entry, "Sebaea microphylla.");
+    AddTitle(entry, "Sebaea microphylla sequence.");
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
@@ -2286,23 +2286,23 @@ void CheckInfluenzaDefline(const string& taxname, const string& strain, const st
 
 BOOST_AUTO_TEST_CASE(Test_GB_7485)
 {
-    CheckInfluenzaDefline("Influenza A virus", "", "", "", "", "Influenza A virus.");
-    CheckInfluenzaDefline("Influenza B virus", "", "", "", "", "Influenza B virus.");
-    CheckInfluenzaDefline("Influenza A virus", "x", "", "", "", "Influenza A virus (x()).");
-    CheckInfluenzaDefline("Influenza B virus", "x", "", "", "", "Influenza B virus (x).");
-    CheckInfluenzaDefline("Influenza A virus", "x", "y", "", "", "Influenza A virus (x(y)).");
-    CheckInfluenzaDefline("Influenza B virus", "x", "y", "", "", "Influenza B virus (x).");
-    CheckInfluenzaDefline("Influenza A virus", "", "y", "", "", "Influenza A virus ((y)).");
-    CheckInfluenzaDefline("Influenza B virus", "", "y", "", "", "Influenza B virus.");
-    CheckInfluenzaDefline("Influenza A virus", "x", "y", "c", "", "Influenza A virus (x(y)) clone c.");
-    CheckInfluenzaDefline("Influenza B virus", "x", "y", "c", "", "Influenza B virus (x) clone c.");
-    CheckInfluenzaDefline("Influenza A virus", "x", "y", "", "1", "Influenza A virus (x(y)) segment 1.");
-    CheckInfluenzaDefline("Influenza B virus", "x", "y", "", "1", "Influenza B virus (x) segment 1.");
-    CheckInfluenzaDefline("Influenza A virus", "x", "y", "c", "1", "Influenza A virus (x(y)) clone c segment 1.");
-    CheckInfluenzaDefline("Influenza B virus", "x", "y", "c", "1", "Influenza B virus (x) clone c segment 1.");
+    CheckInfluenzaDefline("Influenza A virus", "", "", "", "", "Influenza A virus sequence.");
+    CheckInfluenzaDefline("Influenza B virus", "", "", "", "", "Influenza B virus sequence.");
+    CheckInfluenzaDefline("Influenza A virus", "x", "", "", "", "Influenza A virus (x()) sequence.");
+    CheckInfluenzaDefline("Influenza B virus", "x", "", "", "", "Influenza B virus (x) sequence.");
+    CheckInfluenzaDefline("Influenza A virus", "x", "y", "", "", "Influenza A virus (x(y)) sequence.");
+    CheckInfluenzaDefline("Influenza B virus", "x", "y", "", "", "Influenza B virus (x) sequence.");
+    CheckInfluenzaDefline("Influenza A virus", "", "y", "", "", "Influenza A virus ((y)) sequence.");
+    CheckInfluenzaDefline("Influenza B virus", "", "y", "", "", "Influenza B virus sequence.");
+    CheckInfluenzaDefline("Influenza A virus", "x", "y", "c", "", "Influenza A virus (x(y)) clone c sequence.");
+    CheckInfluenzaDefline("Influenza B virus", "x", "y", "c", "", "Influenza B virus (x) clone c sequence.");
+    CheckInfluenzaDefline("Influenza A virus", "x", "y", "", "1", "Influenza A virus (x(y)) segment 1 sequence.");
+    CheckInfluenzaDefline("Influenza B virus", "x", "y", "", "1", "Influenza B virus (x) segment 1 sequence.");
+    CheckInfluenzaDefline("Influenza A virus", "x", "y", "c", "1", "Influenza A virus (x(y)) clone c segment 1 sequence.");
+    CheckInfluenzaDefline("Influenza B virus", "x", "y", "c", "1", "Influenza B virus (x) clone c segment 1 sequence.");
 
-    CheckInfluenzaDefline("Influenza A virus (x(y))", "x", "y", "c", "1", "Influenza A virus (x(y)) clone c segment 1.");
-    CheckInfluenzaDefline("Influenza C virus (x)", "x", "y", "c", "1", "Influenza C virus (x) clone c segment 1.");
+    CheckInfluenzaDefline("Influenza A virus (x(y))", "x", "y", "c", "1", "Influenza A virus (x(y)) clone c segment 1 sequence.");
+    CheckInfluenzaDefline("Influenza C virus (x)", "x", "y", "c", "1", "Influenza C virus (x) clone c segment 1 sequence.");
 
 }
 

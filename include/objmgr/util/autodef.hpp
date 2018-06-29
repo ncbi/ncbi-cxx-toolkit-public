@@ -140,6 +140,7 @@ private:
          CAutoDefSourceDescription::TAvailableModifierVector& modifier_list);
     
     string x_GetNonFeatureListEnding();
+
     string x_GetFeatureClauses(CBioseq_Handle bh);
     string x_GetFeatureClauseProductEnding(const string& feature_clauses,
                                            CBioseq_Handle bh);
@@ -165,6 +166,8 @@ private:
     bool x_Is5SList(CFeat_CI feat_ci);
     string x_GetHumanSTRFeatureClauses(CBioseq_Handle bh, const CUser_object& comment);
     bool x_IsHumanSTR(const CUser_object& obj);
+
+    string x_GetOneNonFeatureClause(CBioseq_Handle bh, unsigned int genome_val);
 
 };  //  end of CAutoDef
 
