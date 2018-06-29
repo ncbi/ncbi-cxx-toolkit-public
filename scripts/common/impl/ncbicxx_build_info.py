@@ -518,9 +518,11 @@ class CollectorCMake(Collector):
         target_type = command_info['target_type']
         target_name = command_info['target_name']
         self.target_fullpath = command_info['target_fullpath']
+        src_dir = re.sub('/[^/]*/build/', '/src/', os.getcwd())
 
         # order matters in some cases. Reorder these call at your own peril
-        self.collect_target_info(target_name, target_type, self.target_fullpath, top_src_dir, None)
+        self.collect_target_info(target_name, target_type,
+                                 self.target_fullpath, src_dir, None)
         self.collect_vcs_info()
         self.collect_tc_info()
         self.collect_env_info()
