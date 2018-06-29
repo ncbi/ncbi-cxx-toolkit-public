@@ -7081,6 +7081,7 @@ VFM	h	Forest Inventory and Planning Institute
 VFU	s	Vietnam Forestry University		
 VFWD	s	Vermont Fish and Wildlife Department		
 VFWO	h	U.S. Fish and Wildlife Service, Ventura Fish and Wildlife Office		
+VGBI	s	Botanical Garden-Institute Vladivostok		
 VGZ	s	Voronezh State Biosphere Reserve, Research Department		
 VH	h	Vivekanand Arts Sardar Dalipsingh Commerce and Science College		
 VHS<AUS>	c	Vegetation Health Service  ( Phytophthora cultures )		

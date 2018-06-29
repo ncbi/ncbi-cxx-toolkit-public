@@ -7114,6 +7114,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "VFU\ts\tVietnam Forestry University\t\t",
 "VFWD\ts\tVermont Fish and Wildlife Department\t\t",
 "VFWO\th\tU.S. Fish and Wildlife Service, Ventura Fish and Wildlife Office\t\t",
+"VGBI\ts\tBotanical Garden-Institute Vladivostok\t\t",
 "VGZ\ts\tVoronezh State Biosphere Reserve, Research Department\t\t",
 "VH\th\tVivekanand Arts Sardar Dalipsingh Commerce and Science College\t\t",
 "VHS<AUS>\tc\tVegetation Health Service  ( Phytophthora cultures )\t\t",
