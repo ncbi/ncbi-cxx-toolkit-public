@@ -695,13 +695,17 @@ void CSeqIdChecker::operator()(const list<CRef<CSeq_id>>& ids)
 
 bool CSeqIdChecker::x_IsValidLocalID(const CSeq_id& id)
 {
-    if (id.IsLocal() && id.GetLocal().IsStr()) {
-        auto id_string = id.GetLocal().GetStr();
-        auto string_to_check = (m_Info.fFastaFlags & CFastaReader::fQuickIDCheck) ?
-                                id_string.substr(0,1) :
-                                id_string;
-
-        return !(CSeq_id::CheckLocalID(string_to_check)&CSeq_id::fInvalidChar);
+    if (id.IsLocal()) {
+        if (id.GetLocal().IsId()) {
+            return true;
+        }
+        if (id.GetLocal().IsStr()) {
+            auto id_string = id.GetLocal().GetStr();
+            auto string_to_check = (m_Info.fFastaFlags & CFastaReader::fQuickIDCheck) ?
+                                    id_string.substr(0,1) :
+                                    id_string;
+            return !(CSeq_id::CheckLocalID(string_to_check)&CSeq_id::fInvalidChar);
+        }
     }
 
     return false;
