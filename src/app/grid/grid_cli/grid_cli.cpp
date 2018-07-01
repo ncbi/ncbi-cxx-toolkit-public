@@ -157,7 +157,7 @@ struct SOptionDefinition {
         "size|" SIZE_OPTION, "Length (in bytes) of the portion of data.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eTTL),
-        "ttl", "Override the default time-to-live value.", {-1}},
+        "ttl", "Override the default time-to-live value (in seconds).", {-1}},
 
     {OPT_DEF(eSwitch, eEnableMirroring),
         "enable-mirroring", "Enable NetCache mirroring functionality.", {-1}},
