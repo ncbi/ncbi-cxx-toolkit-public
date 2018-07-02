@@ -160,13 +160,6 @@ private:
 
     CBioseq_Handle x_GetCachedBsh(const CSeq_loc& loc);
 
-    CBioseq_Handle x_GetCDSProduct(const CSeq_feat& feat, bool& is_far);
-    CBioseq_Handle x_GetRNAProduct(const CSeq_feat& feat, bool& is_far);
-    CBioseq_Handle x_GetFeatureProduct(const CSeq_feat& feat, bool look_far, bool& is_far, bool& is_misplaced);
-    CBioseq_Handle x_GetFeatureProduct(const CSeq_feat& feat, bool& is_far, bool& is_misplaced);
-
-    static void x_FeatLocHasBadStrandBoth(const CSeq_feat& feat, bool& both, bool& both_rev);
-
     void ValidateSeqFeatXref(const CSeq_feat& feat);
     void ValidateSeqFeatXref(const CSeq_feat& feat, const CTSE_Handle& tse);
     void ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq_feat& feat);
@@ -181,12 +174,7 @@ private:
 
     bool IsOverlappingGenePseudo(const CSeq_feat& feat, CScope* scope);
 
-    string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
-        TSeqPos pos);
-
     bool x_HasNonReciprocalXref(const CSeq_feat& feat, const CFeat_id& id, CSeqFeatData::ESubtype subtype);
-    bool x_LocIsNmAccession(const CSeq_loc& loc);
-    void x_ReportMisplacedCodingRegionProduct(const CSeq_feat& feat);
 
 };
 

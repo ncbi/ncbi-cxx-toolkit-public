@@ -403,31 +403,6 @@ bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat, CScope *sc
 }
 
 
-string CValidError_feat::MapToNTCoords
-(const CSeq_feat& feat,
- const CSeq_loc& product,
- TSeqPos pos)
-{
-    string result;
-
-    CSeq_point pnt;
-    pnt.SetPoint(pos);
-    pnt.SetStrand( GetStrand(product, m_Scope) );
-
-    try {
-        pnt.SetId().Assign(GetId(product, m_Scope));
-    } catch (CObjmgrUtilException) {}
-
-    CSeq_loc tmp;
-    tmp.SetPnt(pnt);
-    CRef<CSeq_loc> loc = ProductToSource(feat, tmp, 0, m_Scope);
-    
-    result = GetValidatorLocationLabel(*loc, *m_Scope);
-
-    return result;
-}
-
-
 static int s_GetStrictGenCode(const CBioSource& src)
 {
     int gencode = 0;
@@ -1054,32 +1029,6 @@ void CValidError_feat::ValidatemRNAGene (const CSeq_feat &feat)
 }
 
 
-void CValidError_feat::x_FeatLocHasBadStrandBoth(const CSeq_feat& feat, bool& both, bool& both_rev)
-{
-    both = false;
-    both_rev = false;
-    if (!feat.IsSetLocation()) {
-        return;
-    }
-    if (!CSeqFeatData::AllowStrandBoth(feat.GetData().GetSubtype())) {
-        for (CSeq_loc_CI it(feat.GetLocation()); it; ++it) {
-            if (it.IsSetStrand()) {
-                ENa_strand s = it.GetStrand();
-                if (s == eNa_strand_both && !both) {
-                    both = true;
-                } else if (s == eNa_strand_both_rev && !both_rev) {
-                    both_rev = true;
-                }
-            }
-            if (both && both_rev) {
-                break;
-            }
-        }
-    }
-
-}
-
-
 bool HasGeneIdXref(const CMappedFeat& sf, const CObject_id& tag, bool& has_parent_gene_id)
 {
     has_parent_gene_id = false;
@@ -1095,20 +1044,6 @@ bool HasGeneIdXref(const CMappedFeat& sf, const CObject_id& tag, bool& has_paren
         }
     }
     return false;
-}
-
-
-void CValidError_feat::x_ReportMisplacedCodingRegionProduct(const CSeq_feat& feat)
-{
-    if (m_Imp.IsSmallGenomeSet()) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSproductPackagingProblem,
-            "Protein product not packaged in nuc-prot set with nucleotide in small genome set",
-            feat);
-    } else {
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_CDSproductPackagingProblem,
-            "Protein product not packaged in nuc-prot set with nucleotide",
-            feat);
-    }
 }
 
 
@@ -1527,22 +1462,6 @@ void s_LocIdType(const CSeq_loc& loc, CScope& scope, const CSeq_entry& tse,
 }
 
 
-bool CValidError_feat::x_LocIsNmAccession (const CSeq_loc& loc)
-{
-    CBioseq_Handle bsh = x_GetCachedBsh(loc);
-    if (bsh) {
-        FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetBioseqCore())) {
-            if ((*it)->IsOther() && (*it)->GetOther().IsSetAccession() 
-                && NStr::StartsWith ((*it)->GetOther().GetAccession(), "NM_")) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-
-
 int GetGcodeForName(const string& code_name)
 {
     const CGenetic_code_table& tbl = CGen_code_table::GetCodeTable();
@@ -1644,74 +1563,6 @@ string GetInternalStopErrorMessage(const CSeq_feat& feat, const string& transl_p
             " internal stops. Genetic code [" + gccode + "]";
     }
     return error_message;
-}
-
-
-CBioseq_Handle CValidError_feat::x_GetFeatureProduct(const CSeq_feat& feat, bool look_far, bool& is_far, bool& is_misplaced)
-{
-    CBioseq_Handle prot_handle;
-    is_far = false;
-    is_misplaced = false;
-    if (!feat.IsSetProduct()) {
-        return prot_handle;
-    }
-    const CSeq_id* protid = NULL;
-    try {
-        protid = &sequence::GetId(feat.GetProduct(), m_Scope);
-    } catch (CException&) {}
-
-    if (!protid) {
-        return prot_handle;
-    }
-
-    // try "local" scope
-    prot_handle = m_Scope->GetBioseqHandleFromTSE(*protid, m_TSE);
-    if (!prot_handle  &&  look_far) {
-        prot_handle = m_Scope->GetBioseqHandle(*protid);
-        if (prot_handle) {
-            is_far = true;
-        }
-    }
-    if (!prot_handle) {
-        // it might be packaged in the wrong set
-        // which will be reported in ValidateCommonCDSProduct
-        prot_handle = m_Imp.GetScope()->GetBioseqHandleFromTSE(*protid, m_Imp.GetTSE());
-        if (prot_handle) {
-            is_misplaced = true;
-        }
-    }
-
-    return prot_handle;
-}
-
-
-CBioseq_Handle CValidError_feat::x_GetFeatureProduct(const CSeq_feat& feat, bool& is_far, bool& is_misplaced)
-{
-    bool look_far = false;
-
-    if (feat.IsSetData()) {
-        if (feat.GetData().IsCdregion()) {
-            look_far = m_Imp.IsFarFetchCDSproducts();
-        } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
-            look_far = m_Imp.IsFarFetchMRNAproducts();
-        }
-    }
-
-    return x_GetFeatureProduct(feat, look_far, is_far, is_misplaced);
-}
-
-
-CBioseq_Handle CValidError_feat::x_GetRNAProduct(const CSeq_feat& feat, bool& is_far)
-{
-    bool is_misplaced = false;
-    return x_GetFeatureProduct(feat, m_Imp.IsFarFetchMRNAproducts(), is_far, is_misplaced);
-}
-
-
-CBioseq_Handle CValidError_feat::x_GetCDSProduct(const CSeq_feat& feat, bool& is_far)
-{
-    bool is_misplaced = false;
-    return x_GetFeatureProduct(feat, m_Imp.IsFarFetchCDSproducts(), is_far, is_misplaced);
 }
 
 
