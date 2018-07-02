@@ -149,8 +149,6 @@ public:
     void ValidatemRNAGene (const CSeq_feat &feat);
     bool GetTSACDSOnMinusStrandErrors(const CSeq_feat& feat, const CBioseq& seq);
 
-    static bool IsPlastid(int genome);
-
     static bool x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const string& key);
     static bool x_FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry_Handle seh);
 
@@ -162,65 +160,12 @@ private:
 
     CBioseq_Handle x_GetCachedBsh(const CSeq_loc& loc);
 
-#if 0
-    void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat);
-    void ValidateGene(const CGene_ref& gene, const CSeq_feat& feat);
-    void ValidateGeneXRef(const CSeq_feat& feat);
-    void ValidateGeneFeaturePair(const CSeq_feat& feat, const CSeq_feat& gene);
-    void ValidateOperon(const CSeq_feat& feat);
-
-    void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
-    void ValidateCdTrans(const CSeq_feat& feat, bool &nonsense_intron);
-
-
-
-    void x_ReportTranslExceptProblems(const CCDSTranslationProblems::TTranslExceptProblems& problems, const CSeq_feat& feat, bool has_exception);
-    void x_ReportCDSTranslationProblems(const CSeq_feat& feat, const CCDSTranslationProblems& problems, bool far_product);
-#endif
-
     CBioseq_Handle x_GetCDSProduct(const CSeq_feat& feat, bool& is_far);
     CBioseq_Handle x_GetRNAProduct(const CSeq_feat& feat, bool& is_far);
     CBioseq_Handle x_GetFeatureProduct(const CSeq_feat& feat, bool look_far, bool& is_far, bool& is_misplaced);
     CBioseq_Handle x_GetFeatureProduct(const CSeq_feat& feat, bool& is_far, bool& is_misplaced);
 
-#if 0
-    void x_ReportTranslationMismatches(const CCDSTranslationProblems::TTranslationMismatches& mismatches, const CSeq_feat& feat, bool far_product);
-
-    void ValidateCdsProductId(const CSeq_feat& feat);
-    void ValidateCdConflict(const CCdregion& cdregion, const CSeq_feat& feat);
-
-    EDiagSev x_SeverityForConsensusSplice(void);
-    void ValidateSplice(const CSeq_feat& feat, bool check_all = false);
-#endif
     static void x_FeatLocHasBadStrandBoth(const CSeq_feat& feat, bool& both, bool& both_rev);
-#if 0
-    void ValidateCommonCDSProduct(const CSeq_feat& feat);
-
-    void x_ValidateCdregionCodebreak(const CSeq_feat& feat);
-
-    void ValidateProt(const CProt_ref& prot, const CSeq_feat& feat);
-    void x_ValidateProteinName(const string& prot_name, const CSeq_feat& feat);
-    void x_ReportUninformativeNames(const CProt_ref& prot, const CSeq_feat& feat);
-    void x_ValidateProtECNumbers(const CProt_ref& prot, const CSeq_feat& feat);
-
-    void ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat);
-    void ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_feat& feat);
-    void ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat, bool mustbemethionine);
-    void ValidateMrnaTrans(const CSeq_feat& feat);
-    void ReportMRNATranslationProblems(size_t problems, const CSeq_feat& feat, size_t mismatches);
-
-    void ValidateCommonMRNAProduct(const CSeq_feat& feat);
-    void ValidateRnaProductType(const CRNA_ref& rna, const CSeq_feat& feat);
-    void ValidateIntron(const CSeq_feat& feat);
-
-    void ValidateImp(const CImp_feat& imp, const CSeq_feat& feat);
-    void ValidateNonImpFeat (const CSeq_feat& feat);
-
-    void ValidateGapFeature (const CSeq_feat& feat);
-
-    void ValidatePeptideOnCodonBoundry(const CSeq_feat& feat, 
-        const string& key);
-#endif
 
     void ValidateSeqFeatXref(const CSeq_feat& feat);
     void ValidateSeqFeatXref(const CSeq_feat& feat, const CTSE_Handle& tse);
@@ -234,24 +179,10 @@ private:
                                      const CTSE_Handle& tse);
     void ValidateOneFeatXrefPair(const CSeq_feat& feat, const CSeq_feat& far_feat, const CSeqFeatXref& xref);
 
-#if 0
-    void ValidateFeatCit(const CPub_set& cit, const CSeq_feat& feat);
-    void ValidateFeatBioSource(const CBioSource& bsrc, const CSeq_feat& feat);
-#endif
-
     bool IsOverlappingGenePseudo(const CSeq_feat& feat, CScope* scope);
 
     string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
         TSeqPos pos);
-
-#if 0
-    void ValidateCharactersInField (string value, string field_name, const CSeq_feat& feat);
-    void x_ReportECNumFileStatus(const CSeq_feat& feat);
-
-    void ReportSpliceProblems(const CSpliceProblems& problems, const string& label, const CSeq_feat& feat);
-    void ReportDonorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label, const CSeq_feat& feat);
-    void ReportAcceptorSpliceSiteReadErrors(const CSpliceProblems::TSpliceProblem& problem, const string& label, const CSeq_feat& feat);
-#endif
 
     bool x_HasNonReciprocalXref(const CSeq_feat& feat, const CFeat_id& id, CSeqFeatData::ESubtype subtype);
     bool x_LocIsNmAccession(const CSeq_loc& loc);
@@ -359,6 +290,7 @@ protected:
     virtual void x_ValidateFeatComment();
     virtual void x_ValidateExceptText(const string& text);
     void x_ValidateQuals();
+    static bool IsPlastid(int genome);
     void x_ValidateGeneticCode();
     void x_ValidateBadMRNAOverlap();
     bool x_HasGoodParent();
