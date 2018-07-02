@@ -47,7 +47,7 @@ CThreadPool_Controller_PID::CThreadPool_Controller_PID
     m_IntegrErr(0),
     m_Threshold(3),
     m_IntegrCoeff(0.2),
-    m_DerivCoeff(0.5),
+    m_DerivCoeff(0.05),
     m_DerivTime(0.3)
 {
     m_ErrHistory.push_back(SThreadPool_PID_ErrInfo(0, 0));
@@ -138,7 +138,7 @@ CThreadPool_Controller_PID::OnEvent(EEvent event)
              << ", intErr=" << m_IntegrErr << ", derivErr=" << deriv_err
              << ", final=" << final_val << ", hist_size=" << m_ErrHistory.size());
 */
-    if (final_val >= 1  ||  final_val <= -1) {
+    if (final_val >= 1  ||  final_val <= -2) {
         if (final_val < 0 && -final_val > threads_count)
             SetThreadsCount(GetMinThreads());
         else
