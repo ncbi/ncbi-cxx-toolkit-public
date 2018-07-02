@@ -706,18 +706,6 @@ bool TrimSpacesSemicolonsAndCommas(string& val)
 }
 
 
-bool OnlyPunctuation (string str)
-{
-    bool found_other = false;
-    for (unsigned int offset = 0; offset < str.length() && ! found_other; offset++) {
-        if (str[offset] > ' ' && str[offset] != '.' && str[offset] != ','
-            && str[offset] != '~' && str[offset] != ';') {
-            return false;
-        }
-    }
-    return true;
-}
-
 bool RemoveSpaces(string& str)
 {
     if (str.empty()) {
@@ -978,97 +966,6 @@ bool s_OrgrefSynEqual( const string & syn1, const string & syn2 )
 {
     return NStr::EqualNocase(syn1, syn2);
 }
-
-CRef<CSeq_loc> MakeFullLengthLocation(CBioseq_Handle bh, CScope* scope, CRef<CSeq_loc> new_loc, bool &first)
-{
-    bool is_master_seq = false;
-
-    // if this is the master sequence, add whole locations for each of the parts
-    CSeq_entry_Handle seh = bh.GetParentEntry();
-    if (seh) {
-        seh = seh.GetParentEntry();
-    }
-    if (seh && seh.IsSet()) {
-        CBioseq_set_Handle bsh = seh.GetSet();
-        if (bsh.CanGetClass() && bsh.GetClass() == CBioseq_set::eClass_segset) {
-            // this is the master sequence
-            is_master_seq = true;
-            // add whole loc for each part
-            FOR_EACH_SEQENTRY_ON_SEQSET (it, *(bsh.GetCompleteBioseq_set())) {
-                if ((*it)->IsSet()) {
-                    const CBioseq_set& parts_set = (*it)->GetSet();
-                    if (parts_set.CanGetClass() && parts_set.GetClass() == CBioseq_set::eClass_parts) {
-                        FOR_EACH_SEQENTRY_ON_SEQSET (it2, parts_set) {
-                            if ((*it2)->IsSeq()) {
-                                new_loc = MakeFullLengthLocation (scope->GetBioseqHandle((*it2)->GetSeq()), scope, new_loc, first);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    if (!is_master_seq) {
-        CRef <CSeq_loc> loc_part(new CSeq_loc);
-
-        // Get best ID for location
-        const CSeq_id* id = FindBestChoice(bh.GetBioseqCore()->GetId(), CSeq_id::BestRank);
-        CRef <CSeq_id> new_id(new CSeq_id);
-        new_id->Assign(*id);
-        loc_part->SetInt().SetId(*new_id);
-        loc_part->SetInt().SetFrom(0);
-        loc_part->SetInt().SetTo(bh.GetInst_Length() - 1);
-        if (first) {
-            new_loc = loc_part;
-            first = false;
-        } else {
-            CRef<CSeq_loc> tmp_loc;
-            tmp_loc = sequence::Seq_loc_Add(*new_loc, *loc_part, 
-                                            CSeq_loc::fMerge_Abutting, scope);
-            new_loc = tmp_loc;
-        }
-    }
-    return new_loc;
-}
-
-CRef<CSeq_loc> MakeFullLengthLocation(const CSeq_loc& loc, CScope* scope)
-{
-    // Create a location that covers the entire sequence.
-
-    // if on segmented set, create location for each segment
-    CRef<CSeq_loc> new_loc(new CSeq_loc);
-    CSeq_loc_CI loc_it (loc);
-    bool first = true;
-    CBioseq_Handle last_bh;
-    while (loc_it) {
-        CBioseq_Handle bh = scope->GetBioseqHandle(loc_it.GetSeq_id());
-        if (!first && bh == last_bh) {
-            // skip - only one location per sequence 
-        } else {
-            new_loc = MakeFullLengthLocation (bh, scope, new_loc, first);
-        }
-        last_bh = bh;
-        ++loc_it;
-    }
-    return new_loc;   
-}
-
-
-bool IsFeatureFullLength(const CSeq_feat& cf, CScope* scope)
-{
-    // Create a location that covers the entire sequence and do
-    // a comparison.  Can't just check for the location type 
-    // of the feature to be "whole" because an interval could
-    // start at 0 and end at the end of the Bioseq.
-    CRef<CSeq_loc> whole_loc = MakeFullLengthLocation (cf.GetLocation(), scope);
-
-    if (sequence::Compare(*whole_loc, cf.GetLocation(), scope, sequence::fCompareOverlapping) == sequence::eSame) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
 
 CBioSource::EGenome GenomeByOrganelle(string& organelle, bool strip, NStr::ECase use_case)
 {

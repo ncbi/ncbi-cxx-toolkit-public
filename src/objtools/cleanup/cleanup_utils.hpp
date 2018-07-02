@@ -98,8 +98,6 @@ bool TrimSpacesSemicolonsAndCommas (string& val);
 /// Change double to single quotes
 bool CleanDoubleQuote(string& str);
 
-bool OnlyPunctuation (string str);
-
 /// remove all spaces from a string
 bool RemoveSpaces(string& str);
 
@@ -441,10 +439,6 @@ bool is_sorted(Iter first, Iter last)
     
     return true;
 }
-
-CRef<CSeq_loc> MakeFullLengthLocation(const CSeq_loc& loc, CScope* scope);
-
-bool IsFeatureFullLength(const CSeq_feat& cf, CScope* scope);
 
 CBioSource::EGenome GenomeByOrganelle(string& organelle, bool strip, NStr::ECase use_case = NStr::eNocase);
 
