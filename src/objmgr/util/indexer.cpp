@@ -193,6 +193,8 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::E
 
     m_FeatTree = new feature::CFeatTree;
 
+    m_IsSmallGenomeSet = false;
+
     try {
         // Code copied from x_Init, then modified to reuse existing scope from CSeq_entry_Handle
         m_Scope.Reset( &m_Tseh.GetScope() );
@@ -401,6 +403,10 @@ void CSeqMasterIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt
         if (ssh) {
             // create CSeqsetIndex object for current Bioseq-set
             CRef<CSeqsetIndex> ssx(new CSeqsetIndex(ssh, bssp, prnt));
+
+            if (ssx->GetClass() ==  CBioseq_set::eClass_small_genome_set) {
+                m_IsSmallGenomeSet = true;
+            }
 
             // record CSeqsetIndex in vector
             m_SsxList.push_back(ssx);
@@ -1765,18 +1771,6 @@ void CBioseqIndex::x_InitFeats (void)
         // request exception to capture fetch failure
         sel.SetFailUnresolved();
 
-        // limit feature collection to immediate Bioseq-set parent
-        CRef<CSeqsetIndex> prnt = GetParent();
-        if (prnt) {
-            CBioseq_set_Handle bssh = prnt->GetSeqsetHandle();
-            if (bssh) {
-                CSeq_entry_Handle pseh = bssh.GetParentEntry();
-                if (pseh) {
-                    sel.SetLimitSeqEntry(pseh);
-                }
-            }
-        }
-
         // variables for setting m_BestProteinFeature
         TSeqPos longest = 0;
         CProt_ref::EProcessed bestprocessed = CProt_ref::eProcessed_not_set;
@@ -1791,6 +1785,20 @@ void CBioseqIndex::x_InitFeats (void)
         CWeakRef<CSeqMasterIndex> idx = GetSeqMasterIndex();
         auto idxl = idx.Lock();
         if (idxl) {
+            if (! idxl->IsSmallGenomeSet()) {
+                // limit feature collection to immediate Bioseq-set parent
+                CRef<CSeqsetIndex> prnt = GetParent();
+                if (prnt) {
+                    CBioseq_set_Handle bssh = prnt->GetSeqsetHandle();
+                    if (bssh) {
+                        CSeq_entry_Handle pseh = bssh.GetParentEntry();
+                        if (pseh) {
+                            sel.SetLimitSeqEntry(pseh);
+                        }
+                    }
+                }
+            }
+
             CRef<feature::CFeatTree> ft = idxl->GetFeatTree();
 
             // iterate features on Bioseq

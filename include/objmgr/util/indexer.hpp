@@ -238,6 +238,8 @@ public:
 
     const vector<CRef<CSeqsetIndex>>& GetSeqsetIndices(void);
 
+    bool IsSmallGenomeSet (void) const { return m_IsSmallGenomeSet; }
+
     // Check all Bioseqs for failure to fetch remote sequence components or remote feature annotation
     bool IsFetchFailure(void);
 
@@ -281,6 +283,8 @@ private:
     TBestIdIndexMap m_BestIdIndexMap;
 
     vector<CRef<CSeqsetIndex>> m_SsxList;
+
+    bool m_IsSmallGenomeSet;
 
     mutable CAtomicCounter m_Counter;
 };
