@@ -534,7 +534,7 @@ class CollectorCMake(Collector):
                     match_info = re.match(l)
                     if match_info is not None:
                         src_dir = os.path.join(match_info.group(1),
-                                               tail.rstrip('/')
+                                               tail.rstrip('/'))
 
         # order matters in some cases. Reorder these call at your own peril
         self.collect_target_info(target_name, target_type,
