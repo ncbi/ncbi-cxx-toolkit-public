@@ -518,7 +518,23 @@ class CollectorCMake(Collector):
         target_type = command_info['target_type']
         target_name = command_info['target_name']
         self.target_fullpath = command_info['target_fullpath']
-        src_dir = re.sub('/[^/]*/build/', '/src/', os.getcwd())
+        path = os.getcwd()
+        src_dir = re.sub('/[^/]*/build/', '/src/', path) # tentatively
+        tail = ''
+        while path != '/':
+            cache_name = os.path.join(path, 'CMakeCache.txt')
+            if os.path.exists(cache_name):
+                break
+            (path, child) = os.path.split(path)
+            tail = os.path.join(child, tail)
+        if os.path.exists(cache_name):
+            with open(cache_name, 'r', errors='ignore') as f:
+                src_dir_re = re.compile('^CPP_SOURCE_DIR:.+=(.+)')
+                for l in f:
+                    match_info = re.match(l)
+                    if match_info is not None:
+                        src_dir = os.path.join(match_info.group(1),
+                                               tail.rstrip('/')
 
         # order matters in some cases. Reorder these call at your own peril
         self.collect_target_info(target_name, target_type,
