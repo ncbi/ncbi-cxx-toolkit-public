@@ -41,6 +41,7 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <atomic>
+#include <functional>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -103,7 +104,8 @@ private:
         const CTempString& id_string,
         const SDeflineParseInfo& info,
         list<CRef<CSeq_id>>& ids,
-        ILineErrorListener* pMessageListener);
+        ILineErrorListener* pMessageListener,
+        function<void(const list<CRef<CSeq_id>>&)>);
 
     static bool x_IsValidLocalID(const CSeq_id& id, 
         TFastaFlags fasta_flags);
