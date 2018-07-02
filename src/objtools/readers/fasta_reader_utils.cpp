@@ -672,7 +672,7 @@ CFastaDeflineReader::x_CheckForExcessiveSeqDataInID(
                 x_PostError(pMessageListener,
                             info.lineNumber,
                             err_message,
-                   //         ILineError::eProblem_UnexpectedNucResidues,
+                            ILineError::eProblem_UnexpectedNucResidues,
                             CObjReaderParseException::eFormat);
             
             } else{ 
