@@ -51,24 +51,32 @@
 static TNCBI_BigCount s_FWPorts[1024 / sizeof(TNCBI_BigCount)] = { 0 };
 
 
-static char* x_StrcatCRLF(char* dst, const char* src)
+static int/*bool*/ x_StrcatCRLF(char** dstp, const char* src)
 {
+    char*  dst = *dstp;
     size_t dstlen = dst  &&  *dst ? strlen(dst) : 0;
     size_t srclen = src  &&  *src ? strlen(src) : 0;
+    if (dstlen  &&  dst[dstlen - 1] == '\n') {
+        if (--dstlen  &&  dst[dstlen - 1] == '\r')
+            --dstlen;
+    }
+    while (srclen) {
+        if (!isspace((unsigned char)(*src)))
+            break;
+        --srclen;
+        ++src;
+    }
+    while (srclen) {
+        if (!isspace((unsigned char) src[srclen - 1]))
+            break;
+        --srclen;
+    }
     if (dstlen  ||  srclen) {
         size_t len;
         char*  temp;
-        if (dstlen  &&  dst[dstlen - 1] == '\n') {
-            if (--dstlen  &&  dst[dstlen - 1] == '\r')
-                --dstlen;
-        }
-        if (srclen  &&  src[srclen - 1] == '\n') {
-            if (--srclen  &&  src[srclen - 1] == '\r')
-                --srclen;
-        }
         len = (dstlen ? dstlen + 2 : 0) + (srclen ? srclen + 2 : 0) + 1;
         if (!(temp = (char*)(dst ? realloc(dst, len) : malloc (len))))
-            return 0;
+            return 0/*failure*/;
         dst = temp;
         if (dstlen) {
             temp += dstlen;
@@ -81,7 +89,8 @@ static char* x_StrcatCRLF(char* dst, const char* src)
             memcpy(temp, "\r\n", 3);
         }
     }
-    return dst;
+    *dstp = dst;
+    return 1/*success*/;
 }
 
 
@@ -479,8 +488,12 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         info->timeout      = kInfiniteTimeout/*0*/;
 
     /* HTTP user header */
+    info->http_user_header = 0;
     REG_VALUE(REG_CONN_HTTP_USER_HEADER, str, DEF_CONN_HTTP_USER_HEADER);
-    info->http_user_header = *str ? x_StrcatCRLF(NULL, str) : 0;
+    if (!x_StrcatCRLF((char**) &info->http_user_header, str)) {
+        free(info);
+        goto out;
+    }
 
     /* default referer */
     ConnNetInfo_GetValue(0, REG_CONN_HTTP_REFERER, str, sizeof(str),
@@ -493,6 +506,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* magic */
     info->magic = CONN_NET_INFO_MAGIC;
 
+ out:
     if (len)
         free((void*) service);
 
@@ -700,33 +714,20 @@ extern int/*bool*/ ConnNetInfo_SetUserHeader(SConnNetInfo* info,
     if (!s_InfoIsValid(info))
         return 0/*failure*/;
 
-    if (info->http_user_header)
+    if (info->http_user_header) {
         free((void*) info->http_user_header);
-    if (!user_header  ||  !*user_header)
         info->http_user_header = 0;
-    else if (!(info->http_user_header = x_StrcatCRLF(NULL, user_header)))
-        return 0/*failure*/;
-    return 1/*success*/;
+    }
+    return x_StrcatCRLF((char**) &info->http_user_header, user_header);
 }
 
 
 extern int/*bool*/ ConnNetInfo_AppendUserHeader(SConnNetInfo* info,
                                                 const char*   user_header)
 {
-    char* new_header;
-
     if (!s_InfoIsValid(info))
         return 0/*failure*/;
-
-    if (!info->http_user_header  ||  !*info->http_user_header)
-        return ConnNetInfo_SetUserHeader(info, user_header);
-
-    new_header = (char*) info->http_user_header;
-    if (!(new_header = x_StrcatCRLF(new_header, user_header)))
-        return 0/*failure*/;
-
-    info->http_user_header = new_header;
-    return 1/*success*/;
+    return x_StrcatCRLF((char**) &info->http_user_header, user_header);
 }
 
 
@@ -780,13 +781,13 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
     if (!s_InfoIsValid(info))
         return 0/*failure*/;
 
-    if (!user_header || !(newhdrlen = strlen(user_header)))
+    if (!user_header  ||  !(newhdrlen = strlen(user_header)))
         return 1/*success*/;
 
-    if (!(hdr = (char*) info->http_user_header) || !(hdrlen = strlen(hdr))) {
+    if (!(hdr = (char*) info->http_user_header)  ||  !(hdrlen = strlen(hdr))) {
         if (op == eUserHeaderOp_Delete)
             return 1/*success*/;
-        if (!hdr && !(hdr = strdup("")))
+        if (!hdr  &&  !(hdr = strdup("")))
             return 0/*failure*/;
         hdrlen = 0;
     }
@@ -931,6 +932,12 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
         }
     }
 
+    assert(hdr);
+    if (!*hdr) {
+        assert(!hdrlen);
+        free(hdr);
+        hdr = 0;
+    }
     info->http_user_header = hdr;
     if (retval  &&  op != eUserHeaderOp_Delete)
         retval = ConnNetInfo_AppendUserHeader(info, newhdr);
@@ -1578,8 +1585,7 @@ extern int/*bool*/ ConnNetInfo_SetTimeout(SConnNetInfo*   info,
 extern void ConnNetInfo_Destroy(SConnNetInfo* info)
 {
     if (info) {
-        ConnNetInfo_SetUserHeader(info, 0);
-        if (info->http_referer) {
+        if (ConnNetInfo_SetUserHeader(info, 0)  &&  info->http_referer) {
             free((void*) info->http_referer);
             info->http_referer = 0;
         }
@@ -1635,8 +1641,7 @@ extern EIO_Status URL_ConnectEx
     size_t      user_hdr_len = user_hdr  &&  *user_hdr ? strlen(user_hdr) : 0;
 
     /* sanity check first */
-    if (!sock  ||  !host  ||  !*host  ||  !path  ||  !*path
-        ||  (user_hdr  &&  *user_hdr  &&  user_hdr[user_hdr_len - 1] != '\n')){
+    if (!sock  ||  !host  ||  !*host  ||  !path  ||  !*path) {
         CORE_LOG_X(2, eLOG_Critical, "[URL_Connect]  Bad argument(s)");
         if (sock) {
             s = *sock;
@@ -1666,8 +1671,8 @@ extern EIO_Status URL_ConnectEx
     while (user_hdr_len) {
         if (!isspace((unsigned char) user_hdr[0]))
             break;
-        ++user_hdr;
         --user_hdr_len;
+        ++user_hdr;
     }
     while (user_hdr_len) {
         if (!isspace((unsigned char) user_hdr[user_hdr_len - 1]))
@@ -1874,11 +1879,13 @@ extern SOCK URL_Connect
                     sprintf(x_host + x_len, ":%hu", port);
                 else
                     x_host[x_len] = '\0';
-                if (!(x_hdr = x_StrcatCRLF(x_host, user_hdr))) {
+                if (!x_StrcatCRLF(&x_host, user_hdr)) {
                     x_hdr = user_hdr;
                     free(x_host);
-                }
-            }
+                } else
+                    x_hdr = x_host;
+            } else
+                x_hdr = user_hdr;
         } else
             x_hdr = user_hdr;
 
