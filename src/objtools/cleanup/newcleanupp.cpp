@@ -12203,6 +12203,26 @@ void CNewCleanup_imp::x_MoveNpPub(CBioseq_set& np_set, CSeq_descr& descr)
 }
 
 
+bool s_HasRefSeqPGAPStructuredComment(CSeq_entry_Handle seh)
+{
+    CSeqdesc_CI di(seh, CSeqdesc::e_User);
+    while (di) {
+        if (di->GetUser().HasField("StructuredCommentPrefix") && di->GetUser().HasField("Annotation Provider")) {
+            const CUser_field& field = di->GetUser().GetField("StructuredCommentPrefix");
+            const CUser_field& provider = di->GetUser().GetField("Annotation Provider");
+            if (field.IsSetData() && field.GetData().IsStr() &&
+                NStr::EqualNocase(field.GetData().GetStr(), "##Genome-Annotation-Data-START##") &&
+                provider.IsSetData() && provider.GetData().IsStr() &&
+                NStr::EqualNocase(provider.GetData().GetStr(), "NCBI RefSeq")) {
+                return true;
+            }
+        }
+        ++di;
+    }
+    return false;
+}
+
+
 void CNewCleanup_imp::x_MoveNpPub(CBioseq_set& set)
 {
     if (!set.IsSetClass() || set.GetClass() != CBioseq_set::eClass_nuc_prot ||
@@ -12213,11 +12233,19 @@ void CNewCleanup_imp::x_MoveNpPub(CBioseq_set& set)
     NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, set.SetSeq_set()) {
         if ((*it)->IsSetDescr()) {
             if ((*it)->IsSeq() && (*it)->GetSeq().IsSetDescr() && CCleanup::OkToPromoteNpPub((*it)->GetSeq())) {
+                CSeq_entry_Handle seh = m_Scope->GetSeq_entryHandle(**it);
+                if (seh && s_HasRefSeqPGAPStructuredComment(seh)) {
+                    continue;
+                }
                 x_MoveNpPub(set, (*it)->SetSeq().SetDescr());
                 if ((*it)->SetSeq().SetDescr().Set().empty()) {
                     (*it)->SetSeq().ResetDescr();
                 }
             } else if ((*it)->IsSet() && (*it)->GetSet().IsSetDescr()) {
+                CSeq_entry_Handle seh = m_Scope->GetSeq_entryHandle(**it);
+                if (seh && s_HasRefSeqPGAPStructuredComment(seh)) {
+                    continue;
+                }
                 x_MoveNpPub(set, (*it)->SetSet().SetDescr());
                 if ((*it)->SetSet().SetDescr().Set().empty()) {
                     (*it)->SetSet().ResetDescr();
