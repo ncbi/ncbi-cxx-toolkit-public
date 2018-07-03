@@ -881,6 +881,8 @@ bool IsBioseqTSA (const CBioseq& seq, CScope* scope)
 }
 
 
+#if 0
+// disabled for now
 bool IsNCBIFILESeqId (const CSeq_id& id)
 {
     if (!id.IsGeneral() || !id.GetGeneral().IsSetDb()
@@ -890,6 +892,7 @@ bool IsNCBIFILESeqId (const CSeq_id& id)
         return true;
     }
 }
+#endif
 
 
 bool IsAccession(const CSeq_id& id)
@@ -2139,6 +2142,9 @@ bool IsLikelyTaxname(const string& val)
     }
 }
 
+
+//LCOV_EXCL_START
+//not used by asnvalidate but used by other applications
 bool IsSpecificHostValid(const string& val, string& error_msg)
 {
     bool is_valid = true;
@@ -2185,6 +2191,7 @@ bool IsSpecificHostValid(const string& val, string& error_msg)
 
     return is_valid;
 }
+
 
 string FixSpecificHost(const string& val)
 {
@@ -2233,6 +2240,7 @@ void ConvertToEntrezTerm(string& title)
     }
     NStr::TruncateSpacesInPlace(title);
 }
+//LCOV_EXCL_STOP
 
 
 void FixGeneticCode(CCdregion& cdr)
@@ -2355,6 +2363,8 @@ bool ReportTranslationErrors(const string& except_text)
 }
 
 
+//LCOV_EXCL_START
+//not used by asnvalidate but used by other applications
 bool HasBadStartCodon(const CSeq_feat& feat, CScope& scope, bool ignore_exceptions)
 {
     if (!feat.IsSetData() || !feat.GetData().IsCdregion()) {
@@ -2383,6 +2393,7 @@ bool HasBadStartCodon(const CSeq_feat& feat, CScope& scope, bool ignore_exceptio
     }
     return HasBadStartCodon(feat.GetLocation(), transl_prot);
 }
+//LCOV_EXCL_STOP
 
 
 size_t CountInternalStopCodons(const string& transl_prot)
@@ -2406,6 +2417,8 @@ size_t CountInternalStopCodons(const string& transl_prot)
 }
 
 
+//LCOV_EXCL_START
+//not used by asnvalidate but used by other applications
 bool HasInternalStop(const CSeq_feat& feat, CScope& scope, bool ignore_exceptions)
 {
     if (!feat.IsSetData() || !feat.GetData().IsCdregion()) {
@@ -2442,6 +2455,7 @@ bool HasInternalStop(const CSeq_feat& feat, CScope& scope, bool ignore_exception
         return false;
     }
 }
+//LCOV_EXCL_STOP
 
 
 CRef<CSeqVector> MakeSeqVectorForResidueCounting(CBioseq_Handle bsh)
@@ -2468,6 +2482,8 @@ bool HasBadProteinStart(const CSeqVector& sv)
 }
 
 
+//LCOV_EXCL_START
+//not used by asnvalidate but used by other applications
 bool HasBadProteinStart(const CSeq_feat& feat, CScope& scope)
 {
     if (!feat.IsSetData() || !feat.GetData().IsCdregion() ||
@@ -2488,6 +2504,7 @@ bool HasBadProteinStart(const CSeq_feat& feat, CScope& scope)
         return false;
     }
 }
+//LCOV_STOP
 
 
 size_t CountProteinStops(const CSeqVector& sv)
@@ -2503,6 +2520,8 @@ size_t CountProteinStops(const CSeqVector& sv)
 }
 
 
+//LCOV_EXCL_START
+//not used by asnvalidate but used by other applications
 bool HasStopInProtein(const CSeq_feat& feat, CScope& scope)
 {
     if (!feat.IsSetData() || !feat.GetData().IsCdregion() ||
@@ -2527,6 +2546,7 @@ bool HasStopInProtein(const CSeq_feat& feat, CScope& scope)
         return false;
     }
 }
+//LCOV_EXCL_STOP
 
 
 void FeatureHasEnds(const CSeq_feat& feat, CScope* scope, bool& no_beg, bool& no_end)
@@ -2555,6 +2575,8 @@ void FeatureHasEnds(const CSeq_feat& feat, CScope* scope, bool& no_beg, bool& no
 }
 
 
+//LCOV_EXCL_START
+// not used by asnvalidate but needed for other applications
 CBioseq_Handle GetCDSProductSequence(const CSeq_feat& feat, CScope* scope, const CTSE_Handle & tse, bool far_fetch, bool& is_far)
 {
     CBioseq_Handle prot_handle;
@@ -2575,6 +2597,7 @@ CBioseq_Handle GetCDSProductSequence(const CSeq_feat& feat, CScope* scope, const
     }
     return prot_handle;
 }
+//LCOV_EXCL_STOP
 
 
 void CalculateEffectiveTranslationLengths(const string& transl_prot, const CSeqVector& prot_vec, size_t &len, size_t& prot_len)
@@ -2604,6 +2627,8 @@ void CalculateEffectiveTranslationLengths(const string& transl_prot, const CSeqV
 }
 
 
+//LCOV_EXCL_START
+// not used by asnvalidate but needed for other applications
 vector<TSeqPos> GetMismatches(const CSeq_feat& feat, const CSeqVector& prot_vec, const string& transl_prot)
 {
     vector<TSeqPos> mismatches;
@@ -2689,6 +2714,7 @@ bool HasNoStop(const CSeq_feat& feat, CScope* scope)
 
     return show_stop;
 }
+//LCOV_EXCL_STOP
 
 
 bool IsSequenceFetchable(const CSeq_id& id)
