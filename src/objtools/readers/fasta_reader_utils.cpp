@@ -334,7 +334,7 @@ void CFastaDeflineReader::x_ProcessIDs(
     if (info.fBaseFlags & CReaderBase::fAllIdsAsLocal) 
     {
         if (!x_IsValidLocalID(id_string, info.fFastaFlags)) {
-            NCBI_THROW2(CObjReaderParseException, eFormat, 
+            NCBI_THROW2(CObjReaderParseException, eInvalidID, 
                 "'" + id_string + "' is not a valid local ID", 0);
         }
         CRef<CSeq_id> pSeqId(new CSeq_id(CSeq_id::e_Local, id_string));
