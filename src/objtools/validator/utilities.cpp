@@ -1668,6 +1668,8 @@ string s_ReplaceListFromQuals(const CSeq_feat::TQual quals)
 }
 
 
+//LCOV_EXCL_START
+// never used, because different variations generate different labels
 bool s_AreDifferentVariations(CSeq_feat_Handle f1, CSeq_feat_Handle f2)
 {
     if (f1.GetData().GetSubtype() != CSeqFeatData::eSubtype_variation
@@ -1686,6 +1688,7 @@ bool s_AreDifferentVariations(CSeq_feat_Handle f1, CSeq_feat_Handle f2)
         return false;
     }
 }
+//LCOV_EXCL_STOP
 
 
 typedef vector<CConstRef<CObject_id> > TFeatIdVec;
