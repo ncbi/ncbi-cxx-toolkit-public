@@ -531,7 +531,7 @@ class CollectorCMake(Collector):
             with open(cache_name, 'r', errors='ignore') as f:
                 src_dir_re = re.compile('^CPP_SOURCE_DIR:.+=(.+)')
                 for l in f:
-                    match_info = re.match(l)
+                    match_info = src_dir_re.match(l)
                     if match_info is not None:
                         src_dir = os.path.join(match_info.group(1),
                                                tail.rstrip('/'))
