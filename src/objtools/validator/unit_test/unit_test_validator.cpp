@@ -21866,6 +21866,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_742)
 
 BOOST_AUTO_TEST_CASE(Test_VR_751)
 {
+    BOOST_CHECK_EQUAL(IsLikelyTaxname("Convolvulus sindicus"), true);
     BOOST_CHECK_EQUAL(IsLikelyTaxname("Lasiurus scindicus"), true);
     BOOST_CHECK_EQUAL(IsLikelyTaxname("Atlantic white-sided dolphin"), false);
 }
