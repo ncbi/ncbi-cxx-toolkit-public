@@ -252,7 +252,9 @@ void CValidError_bioseq::ValidateBioseq (
             m_GeneIt = NULL;
             m_AllFeatIt = NULL;
         }
+#ifdef USE_MRNA_CDS_INDEX
         m_mRNACDSIndex.SetBioseq(m_AllFeatIt, &m_CurrentHandle.GetScope());
+#endif
         ValidateSeqIds(seq);
         ValidateInst(seq);
         ValidateBioseqContext(seq);
@@ -5482,7 +5484,8 @@ bool CValidError_bioseq::x_MatchesOverlappingFeaturePartial (const CMappedFeat& 
         bool look_for_gene = true;
         TSeqPos mrna_start = feat.GetLocation().GetStart(eExtreme_Biological);
         TSeqPos mrna_stop = feat.GetLocation().GetStop(eExtreme_Biological);
-#if 1
+#ifndef USE_MRNA_CDS_INDEX
+
         vector<CMappedFeat> cds_children = m_Imp.GetGeneCache().GetFeatTreeFromCache(m_CurrentHandle)->GetChildren(feat);
         if (cds_children.size() > 0) {
             look_for_gene = false;

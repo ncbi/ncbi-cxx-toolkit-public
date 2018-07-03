@@ -21,7 +21,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 //using namespace sequence;
-
+//LCOV_EXCL_START
+//not currently using
 bool CMatchFeat::operator < (const CMatchFeat& o) const
 {
     const CMatchFeat& l = *this;
@@ -377,6 +378,7 @@ bool CmRNAAndCDSIndex::MatchmRNAToCDSEnd(const CMappedFeat& mrna, unsigned int p
     return rval;
 }
 
+//LCOV_EXCL_STOP
 
 
 

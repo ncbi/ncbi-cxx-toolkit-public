@@ -349,7 +349,9 @@ private:
         TFeatList m_mRNAList;
     };
 
+#ifdef USE_MRNA_CDS_INDEX
     CmRNAAndCDSIndex m_mRNACDSIndex;
+#endif
 
 
 };
