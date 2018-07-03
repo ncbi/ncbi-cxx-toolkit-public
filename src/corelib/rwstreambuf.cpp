@@ -192,9 +192,7 @@ ERW_Result CRWStreambuf::x_Pushback(void)
     const CT_CHAR_TYPE* ptr = gptr();
     size_t count = (size_t)(egptr() - ptr);
     setg(0, 0, 0);
-    if ( !count )
-        result = eRW_Success;
-    else {
+    if ( count ) {
         RWSTREAMBUF_HANDLE_EXCEPTIONS(
             m_Reader->Pushback(ptr, count, m_pBuf),
             14, "CRWStreambuf::Pushback(): IReader::Pushback()",
@@ -204,7 +202,8 @@ ERW_Result CRWStreambuf::x_Pushback(void)
         if (result == eRW_Success)
             m_pBuf = 0;
         x_Eof = false;
-    }
+    } else
+        result = eRW_Success;
     return result;
 }
 
