@@ -1216,12 +1216,12 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                 NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
                         "Cannot execute ["  << cmd <<
                         "]: all NetSchedule servers are "
-                        "in REFUSESUBMITS mode.");
+                        "in REFUSESUBMITS mode for the " + m_ServiceName + " service.");
             }
             if (number_of_servers == servers_throttled) {
                 NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
                         "Cannot execute ["  << cmd <<
-                        "]: all servers are throttled.");
+                        "]: all servers are throttled for the " + m_ServiceName + " service.");
             }
             if (retry_count <= 0 || servers_to_retry.empty()) {
                 if (blob_not_found) {
@@ -1230,7 +1230,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                 }
                 NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
                         "Unable to execute [" << cmd <<
-                        "] on any of the discovered servers.");
+                        "] on any of the discovered servers for the " + m_ServiceName + " service.");
             }
 
             for (size_t i = 0; i < err_listener.Count(); ++i) {
