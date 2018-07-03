@@ -1104,7 +1104,7 @@ string CAutoDef::x_GetOneNonFeatureClause(CBioseq_Handle bh, unsigned int genome
     }
     if (!NStr::IsBlank(organelle)) {
         feature_clauses = " " + organelle;
-    } else if (NStr::IsBlank(organelle) && m_Options.GetFeatureListType() == CAutoDefOptions::eSequence) {
+    } else if (m_Options.GetFeatureListType() == CAutoDefOptions::eSequence) {
         string biomol = "";
         CSeqdesc_CI mi(bh, CSeqdesc::e_Molinfo);
         if (mi && mi->GetMolinfo().IsSetBiomol()) {
