@@ -45,15 +45,14 @@ static void s_SendData(FILE* fp, SOCK sock)
     char   buf[2048];
     size_t n_written;
 
-    while ( fgets(buf, sizeof(buf)-3, fp) ) {
+    while ( fgets(buf, sizeof(buf), fp) ) {
         size_t len = strlen(buf);
-        assert(buf[len - 1] == '\n');
-        assert(buf[len]     == '\0');
+        assert(buf[len-1] == '\n');
         assert(!feof(fp)  &&  !ferror(fp));
 
-        len--;
+        --len;
         if (buf[len-1] == '\\') {
-            len--;
+            --len;
         } else {
             buf[len++] = '\r';
             buf[len++] = '\n';
@@ -92,8 +91,9 @@ extern int main(int argc, char** argv)
     /* Cmd.-line args */
     if (argc != 4  ||
         (fp = fopen(argv[1], "r")) == 0  ||
-        (port = atoi(argv[3])) <= 0) {
-        perror("\nUSAGE:  test_fw <inp_file> <host> <port>\n");
+        ((port = atoi(argv[3])) & ~0xFFFF)) {
+        fputs("\nUSAGE:\n"
+              "test_fw <inp_file> <host> <port>\n\n", stderr);
         return 1;
     }
 
@@ -102,7 +102,7 @@ extern int main(int argc, char** argv)
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     {{
         FILE* log_fp = fopen("test_fw.log", "a");
-        if ( !fp ) {
+        if ( !log_fp ) {
             perror("Failed to open \"test_fw.log\" for writing");
             return 2;
         }
@@ -110,7 +110,7 @@ extern int main(int argc, char** argv)
     }}
     SOCK_SetDataLoggingAPI(eOn);
 
-    /* Connect to Web server */
+    /* Connect to server */
     status = SOCK_Create(argv[2], (unsigned short) port, 0, &sock);
     assert(status == eIO_Success);
 
