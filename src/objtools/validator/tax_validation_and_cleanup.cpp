@@ -357,7 +357,13 @@ bool CStrainRequest::Check(const COrg_ref& org)
     if (!org.IsSetOrgMod()) {
         return false;
     }
-    return true;
+    for (auto it : org.GetOrgname().GetMod()) {
+        if (it->IsSetSubtype() && it->IsSetSubname() &&
+            it->GetSubtype() == COrgMod::eSubtype_strain) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
