@@ -32,6 +32,17 @@
  *
  */
 
+/// @file json_over_uttp.hpp
+///
+/// @internal
+/// @attention
+///  This API is designed to be used for internal
+///  communication (mostly in GRID). It is not recommended for general use,
+///  and its support is narrowly limited.
+///  If you need a generic JSON serialization API please use
+/// "JsonWrapp" (https://ncbi.github.io/cxx-toolkit/pages/ch_jsonwrapp) or
+/// "SERIAL" (https://ncbi.github.io/cxx-toolkit/pages/ch_ser).
+
 #include "netcomponent.hpp"
 
 #include <util/uttp.hpp>
@@ -69,6 +80,14 @@ struct NCBI_XCONNECT_EXPORT SJsonIteratorImpl : public CObject
 };
 
 /// JSON node abstraction.
+
+/// @internal
+/// @attention
+///  The CJsonNode and related API is designed to be used for internal
+///  communication (mostly in GRID). It is not recommended for general use,
+///  and its support is narrowly limited.
+///  If you need a generic JSON serialization API please use
+/// "JsonWrapp" (https://ncbi.github.io/cxx-toolkit/pages/ch_jsonwrapp).
 class NCBI_XCONNECT_EXPORT CJsonNode
 {
     NCBI_NET_COMPONENT(JsonNode);
