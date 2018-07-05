@@ -38,98 +38,19 @@
 
 #include <objtools/validator/gene_cache.hpp>
 #include <objtools/validator/utilities.hpp>
-#include <objtools/validator/validator_barcode.hpp>
-#include <objtools/cleanup/cleanup.hpp>
-
-#include <serial/iterator.hpp>
-#include <serial/enumvalues.hpp>
-
-#include <objects/general/Dbtag.hpp>
-#include <objects/general/Person_id.hpp>
-#include <objects/general/Name_std.hpp>
-
-#include <objects/seqalign/Seq_align.hpp>
-
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Seq_descr.hpp>
-#include <objects/seq/Pubdesc.hpp>
-#include <objects/seq/MolInfo.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objects/seqfeat/OrgMod.hpp>
-#include <objects/seqfeat/OrgName.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqfeat/SubSource.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
-#include <objects/seqloc/Textseq_id.hpp>
-
-#include <objects/seqres/Seq_graph.hpp>
-
-#include <objects/submit/Seq_submit.hpp>
-#include <objects/submit/Submit_block.hpp>
 
 #include <objmgr/bioseq_ci.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/graph_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 
 #include <objmgr/feat_ci.hpp>
-#include <objmgr/align_ci.hpp>
-#include <objmgr/seq_vector.hpp>
 #include <objmgr/scope.hpp>
 
-#include <objects/pub/Pub.hpp>
-#include <objects/pub/Pub_equiv.hpp>
-
-#include <objects/biblio/Author.hpp>
-#include <objects/biblio/Auth_list.hpp>
-#include <objects/biblio/Cit_art.hpp>
-#include <objects/biblio/Cit_book.hpp>
-#include <objects/biblio/Cit_gen.hpp>
-#include <objects/biblio/Cit_jour.hpp>
-#include <objects/biblio/Cit_let.hpp>
-#include <objects/biblio/Cit_proc.hpp>
-#include <objects/biblio/Cit_sub.hpp>
-#include <objects/biblio/PubMedId.hpp>
-#include <objects/biblio/PubStatus.hpp>
-#include <objects/biblio/Title.hpp>
-#include <objects/biblio/Imprint.hpp>
-#include <objects/biblio/Affil.hpp>
-#include <objects/misc/sequence_macros.hpp>
-#include <objects/taxon3/itaxon3.hpp>
-#include <objects/taxon3/taxon3.hpp>
-#include <objects/taxon3/Taxon3_reply.hpp>
-
-#include <objects/valid/Comment_set.hpp>
-#include <objects/valid/Comment_rule.hpp>
-#include <objects/valid/Field_set.hpp>
-#include <objects/valid/Field_rule.hpp>
-#include <objects/valid/Dependent_field_set.hpp>
-#include <objects/valid/Dependent_field_rule.hpp>
-
-#include <objtools/error_codes.hpp>
-#include <objtools/validator/validerror_format.hpp>
-#include <objtools/validator/utilities.hpp>
-#include <objtools/edit/seq_entry_edit.hpp>
-#include <util/sgml_entity.hpp>
-#include <util/line_reader.hpp>
-#include <util/util_misc.hpp>
-#include <util/static_set.hpp>
-
-#include <algorithm>
-
-
-#include <serial/iterator.hpp>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Validator
 
