@@ -102,6 +102,9 @@ public:
         if ( options == "ignore_existing" ) {
             m_flags |= CDeflineGenerator::fIgnoreExisting;
         }
+        if ( options == "show_modifiers" ) {
+            m_flags |= CDeflineGenerator::fShowModifiers;
+        }
         if (m_gpipe_mode) {
             m_flags |= CDeflineGenerator::fIgnoreExisting;
             m_flags |= CDeflineGenerator::fGpipeMode;
