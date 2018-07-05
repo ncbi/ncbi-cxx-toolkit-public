@@ -312,6 +312,7 @@ public:
     inline bool IsXR(void) const { return m_IsXR; }
     inline bool IsGI(void) const { return m_IsGI; }
     inline bool IsGpipe(void) const { return m_IsGpipe; }
+    bool IsHtg(void) const;
     inline bool IsLocalGeneralOnly(void) const { return m_IsLocalGeneralOnly; }
     inline bool HasGiOrAccnVer(void) const { return m_HasGiOrAccnVer; }
     inline bool IsGenomic(void) const { return m_IsGenomic; }

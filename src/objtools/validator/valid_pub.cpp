@@ -913,6 +913,16 @@ static bool s_IsHtgInSep(const CSeq_entry& se)
 }
 
 
+bool CValidError_imp::IsHtg(void) const
+{
+    if (m_TSE) {
+        return s_IsHtgInSep(*m_TSE);
+    } else {
+        return false;
+    }
+}
+
+
 static bool s_IsPDBInSep(const CSeq_entry& se, CScope& scope)
 {
     for (CBioseq_CI it(scope, se); it; ++it) {
@@ -962,7 +972,7 @@ void CValidError_imp::ValidateSubAffil
 {
     EDiagSev sev = eDiag_Critical;
 
-    if (m_IsINSDInSep || IsRefSeq() || s_IsHtgInSep(GetTSE()) || IsPDB()) {
+    if (m_IsINSDInSep || IsRefSeq() || IsHtg() || IsPDB()) {
         sev = eDiag_Warning;
     }
     if (!std.IsSetCountry() || NStr::IsBlank(std.GetCountry())) {
@@ -987,7 +997,7 @@ void CValidError_imp::ValidateSubAffil
 bool CValidError_imp::x_DowngradeForMissingAffil(const CCit_sub& cs)
 {
     if (IsRefSeq() || s_IsRefSeqInSep(GetTSE(), *m_Scope)  ||  
-        s_IsHtgInSep(GetTSE())  || s_IsPDBInSep(GetTSE(), *m_Scope)) {
+        IsHtg()  || IsPDB()) {
         return true;
     }
     if (IsEmbl() || IsTPE()) {
