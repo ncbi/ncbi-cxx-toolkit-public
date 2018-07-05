@@ -3272,39 +3272,42 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
     string gcode; // should be in the same scope as joiner.Join() because joiner stores CTempString
 
     try {
-        const COrg_ref & org = sequence::GetOrg_ref(bsh);
-        if (org.IsSetTaxname()) {
-            joiner.Add("organism", org.GetTaxname());
-        }
-        if (org.IsSetOrgname()) {
-            const COrg_ref::TOrgname & orgname = org.GetOrgname();
-            if (orgname.IsSetMod()) {
-                ITERATE(COrgName::TMod, mod_iter, orgname.GetMod()) {
-                    const COrgMod & mod = **mod_iter;
-                    if (mod.IsSetSubtype()) {
-                        switch (mod.GetSubtype()) {
-                        case COrgMod::eSubtype_strain:
-                            if (mod.IsSetSubname()) {
-                                if (strain_seen) {
-                                    ERR_POST_X(9, Warning << __FUNCTION__ << ": "
-                                        << "key 'strain' would appear multiple times, but only using the first.");
+        const CBioSource* bios = sequence::GetBioSource(bsh);
+        if (bios && bios->IsSetOrg()) {
+            const COrg_ref & org = bios->GetOrg();
+            if (org.IsSetTaxname()) {
+                joiner.Add("organism", org.GetTaxname());
+            }
+            if (org.IsSetOrgname()) {
+                const COrg_ref::TOrgname & orgname = org.GetOrgname();
+                if (orgname.IsSetMod()) {
+                    ITERATE(COrgName::TMod, mod_iter, orgname.GetMod()) {
+                        const COrgMod & mod = **mod_iter;
+                        if (mod.IsSetSubtype()) {
+                            switch (mod.GetSubtype()) {
+                            case COrgMod::eSubtype_strain:
+                                if (mod.IsSetSubname()) {
+                                    if (strain_seen) {
+                                        ERR_POST_X(9, Warning << __FUNCTION__ << ": "
+                                            << "key 'strain' would appear multiple times, but only using the first.");
+                                    }
+                                    else {
+                                        strain_seen = true;
+                                        joiner.Add("strain", mod.GetSubname());
+                                    }
                                 }
-                                else {
-                                    strain_seen = true;
-                                    joiner.Add("strain", mod.GetSubname());
-                                }
+                                break;
+                            default:
+                                // ignore; do nothing
+                                break;
                             }
-                            break;
-                        default:
-                            // ignore; do nothing
-                            break;
                         }
                     }
                 }
-            }
-            if (orgname.IsSetGcode()) {
-                gcode = std::to_string(orgname.GetGcode());
-                joiner.Add("gcode", gcode);
+                // if (orgname.IsSetGcode()) {
+                    gcode = std::to_string(bios->GetGenCode());
+                    joiner.Add("gcode", gcode);
+                // }
             }
         }
     }
