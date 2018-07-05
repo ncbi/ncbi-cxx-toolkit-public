@@ -3304,10 +3304,46 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                         }
                     }
                 }
-                // if (orgname.IsSetGcode()) {
-                    gcode = std::to_string(bios->GetGenCode());
-                    joiner.Add("gcode", gcode);
-                // }
+                gcode = std::to_string(bios->GetGenCode());
+                CBioSource::TGenome genome = CBioSource::eGenome_unknown;
+                if (bios->CanGetGenome()) {
+                    genome = bios->GetGenome();
+                }
+                switch ( genome ) {
+                case CBioSource::eGenome_kinetoplast:
+                case CBioSource::eGenome_mitochondrion:
+                case CBioSource::eGenome_hydrogenosome:
+                case CBioSource::eGenome_plasmid_in_mitochondrion:
+                    {
+                        // mitochondrial code
+                        joiner.Add("mgcode", gcode);
+                    }
+                    break;
+                case CBioSource::eGenome_chloroplast:
+                case CBioSource::eGenome_chromoplast:
+                case CBioSource::eGenome_plastid:
+                case CBioSource::eGenome_cyanelle:
+                case CBioSource::eGenome_apicoplast:
+                case CBioSource::eGenome_leucoplast:
+                case CBioSource::eGenome_proplastid:
+                case CBioSource::eGenome_chromatophore:
+                case CBioSource::eGenome_plasmid_in_plastid:
+                    {
+                        if (orgname.IsSetPgcode() && orgname.GetPgcode() > 0) {
+                            // plant plastid code
+                            joiner.Add("pgcode", gcode);
+                        } else {
+                            // bacteria and plant plastids default to code 11.
+                            joiner.Add("gcode", gcode);
+                        }
+                        break;
+                    }
+                default:
+                    {
+                        joiner.Add("gcode", gcode);
+                        break;
+                    }
+                }
             }
         }
     }
