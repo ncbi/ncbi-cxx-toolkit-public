@@ -217,41 +217,29 @@ inline static bool s_ASCII_IsUnAmbigNuc(unsigned char c)
     }
 }
 
-CFastaReader::CFastaReader(ILineReader& reader, TFlags flags)
+CFastaReader::CFastaReader(ILineReader& reader, TFlags flags, FIdCheck f_idcheck)
     : m_LineReader(&reader), m_MaskVec(0), 
-      m_IDGenerator(new CSeqIdGenerator), 
+      m_IDGenerator(new CSeqIdGenerator()), 
       m_gapNmin(0), m_gap_Unknown_length(0),
-      m_MaxIDLength(kMax_UI4)
+      m_MaxIDLength(kMax_UI4),
+      m_fIdCheck(f_idcheck)
 {
     m_Flags.push(flags);
     m_IDHandler = Ref(new CFastaIdHandler());
 }
 
-CFastaReader::CFastaReader(CNcbiIstream& in, TFlags flags)
-    : m_LineReader(ILineReader::New(in)), m_MaskVec(0),
-      m_IDGenerator(new CSeqIdGenerator), 
-      m_gapNmin(0), m_gap_Unknown_length(0),
-      m_MaxIDLength(kMax_UI4)
-{
-    m_Flags.push(flags);
-    m_IDHandler = Ref(new CFastaIdHandler());
-}
+CFastaReader::CFastaReader(CNcbiIstream& in, TFlags flags, FIdCheck f_idcheck)
+    : CFastaReader(*(ILineReader::New(in)), flags, f_idcheck) {}
 
-CFastaReader::CFastaReader(const string& path, TFlags flags)
-    : m_LineReader(ILineReader::New(path)), m_MaskVec(0),
-      m_IDGenerator(new CSeqIdGenerator), 
-      m_gapNmin(0), m_gap_Unknown_length(0),
-      m_MaxIDLength(kMax_UI4)
-{
-    m_Flags.push(flags);
-    m_IDHandler = Ref(new CFastaIdHandler());
-}
+CFastaReader::CFastaReader(const string& path, TFlags flags, FIdCheck f_idcheck)
+    : CFastaReader(*(ILineReader::New(path)), flags, f_idcheck) {}
 
-CFastaReader::CFastaReader(CReaderBase::TReaderFlags fBaseFlags, TFlags flags)
+CFastaReader::CFastaReader(CReaderBase::TReaderFlags fBaseFlags, TFlags flags, FIdCheck f_idcheck)
     : CReaderBase(fBaseFlags), m_MaskVec(0), 
       m_IDGenerator(new CSeqIdGenerator), 
       m_gapNmin(0), m_gap_Unknown_length(0),
-      m_MaxIDLength(kMax_UI4)
+      m_MaxIDLength(kMax_UI4),
+      m_fIdCheck(f_idcheck)
 {
     m_Flags.push(flags);
     m_IDHandler = Ref(new CFastaIdHandler());
@@ -541,6 +529,19 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
                                 TSeqTitles& seqTitles, 
                                 ILineErrorListener* pMessageListener) 
 {
+    CFastaDeflineReader::SDeflineData data;
+    CFastaDeflineReader::ParseDefline(
+        defLine,
+        info,
+        data,
+        pMessageListener);
+
+    ids = move(data.ids);
+    hasRange   = data.has_range;
+    rangeStart = data.range_start;
+    rangeEnd   = data.range_end;
+    seqTitles  = move(data.titles);
+/*
     CFastaDeflineReader::ParseDefline(
         defLine, 
         info,
@@ -551,6 +552,7 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
         rangeEnd,
         seqTitles,
         pMessageListener);
+*/
 }
 
 
@@ -610,7 +612,7 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
     parseInfo.lineNumber = LineNumber();
 
     CBioseq::TId defline_ids;
-
+/*
     CFastaDeflineReader::ParseDefline(s,
                  parseInfo,
                  m_ignorable,
@@ -620,7 +622,16 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
                  range_end,
                  m_CurrentSeqTitles, 
                  pMessageListener);
+*/
 
+    CFastaDeflineReader::SDeflineData data;
+    CFastaDeflineReader::ParseDefline(s, parseInfo, data, pMessageListener, m_fIdCheck);
+
+    defline_ids = move(data.ids);
+    has_range   = data.has_range;
+    range_start = data.range_start;
+    range_end   = data.range_end;
+    m_CurrentSeqTitles = move(data.titles);
 
     if (defline_ids.empty()) {
         if (TestFlag(fRequireID)) {
@@ -760,7 +771,6 @@ bool CFastaReader::IsValidLocalID(const TStr& s) const
 {
     return IsValidLocalID(s, GetFlags());
 }
-
 
 bool CFastaReader::IsValidLocalID(const TStr& idString, 
     const TFlags fFastaFlags)

@@ -111,12 +111,19 @@ public:
         fDisableNoResidues    = 1<<26, ///< If no residues found do not raise an error
         fDisableParseRange    = 1<<27  ///< No ranges in seq-ids.  Ranges part of seq-id instead.
     };
-    typedef int TFlags; ///< binary OR of EFlags
+    using TFlags = long; ///< binary OR of EFlags
 
-    CFastaReader(ILineReader& reader, TFlags flags = 0);
-    CFastaReader(CNcbiIstream& in,    TFlags flags = 0);
-    CFastaReader(const string& path,  TFlags flags = 0);
-    CFastaReader(CReaderBase::TReaderFlags fBaseFlags,  TFlags flags = 0);
+    using SDefLineParseInfo = CFastaDeflineReader::SDeflineParseInfo;
+    using FIdCheck = CFastaDeflineReader::FIdCheck;
+
+
+    CFastaReader(ILineReader& reader, TFlags flags = 0, FIdCheck f_idcheck = CSeqIdCheck());
+    CFastaReader(CNcbiIstream& in,    TFlags flags = 0, FIdCheck f_idcheck = CSeqIdCheck());
+    CFastaReader(const string& path,  TFlags flags = 0, FIdCheck f_idcheck = CSeqIdCheck());
+    CFastaReader(CReaderBase::TReaderFlags fBaseFlags,  
+                 TFlags flags = 0, 
+                 FIdCheck f_idcheck = CSeqIdCheck()
+                 );
     virtual ~CFastaReader(void);
 
     /// CReaderBase overrides
@@ -199,8 +206,6 @@ public:
     using TIgnoredProblems = vector<ILineError::EProblem>;
     using TSeqTitles = vector<SLineTextAndLoc>;
     typedef CTempString TStr;
-
-    using SDefLineParseInfo = CFastaDeflineReader::SDeflineParseInfo;
 
     static void ParseDefLine(const TStr& defLine, 
         const SDefLineParseInfo& info,
@@ -400,6 +405,7 @@ protected:
     TSeqTitles m_CurrentSeqTitles;
     CRef<CSourceModParser::CModFilter> m_pModFilter;
     std::vector<ILineError::EProblem> m_ignorable;
+    FIdCheck m_fIdCheck;
 };
 
 

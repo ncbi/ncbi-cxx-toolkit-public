@@ -45,6 +45,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
+class CSeqIdCheck;
+
 class NCBI_XOBJREAD_EXPORT CFastaDeflineReader : public CReaderBase {
     
 public:
@@ -52,6 +55,7 @@ public:
     using TFastaFlags = int;
     using TBaseFlags = CReaderBase::TReaderFlags;
     using TIgnoredProblems = vector<ILineError::EProblem>;
+    using TIds = list<CRef<CSeq_id>>;
 
     static size_t s_MaxLocalIDLength;
     static size_t s_MaxGeneralTagLength;
@@ -76,22 +80,47 @@ public:
         TSeqPos lineNumber;
     };
 
+    using TInfo = SDeflineParseInfo;
+
+    struct SDeflineData {
+        TIds ids;
+        bool has_range;
+        TSeqPos range_start;
+        TSeqPos range_end;
+        TSeqTitles titles;
+    };
+
     static bool ParseIDs(
         const CTempString& id_string,
         const SDeflineParseInfo& info,
         const TIgnoredProblems& ignoredErrors,
-        list<CRef<CSeq_id>>& ids,
+        TIds& ids,
         ILineErrorListener* pMessageListener);
 
     static void ParseDefline(const CTempString& defline,
         const SDeflineParseInfo& info,
         const TIgnoredProblems& ignoredErrors, 
-        list<CRef<CSeq_id>>& ids,
+        TIds& ids,
         bool& hasRange,
         TSeqPos& rangeStart,
         TSeqPos& rangeEnd,
         TSeqTitles& seqTitles,
         ILineErrorListener* pMessageListener);
+
+    using FIdCheck = function<void(const TIds& id, 
+                                   const TInfo& info, 
+                                   ILineErrorListener* listener)>;
+
+    static void ParseDefline(const CTempString& defline,
+        const SDeflineParseInfo& info,
+        SDeflineData& data,
+        ILineErrorListener* pMessageListener);
+
+    static void ParseDefline(const CTempString& defline,
+        const SDeflineParseInfo& info,
+        SDeflineData& data,
+        ILineErrorListener* pMessageListener,
+        FIdCheck fn_id_check);
 
     static TSeqPos ParseRange(const CTempString& s,
         TSeqPos& start,
@@ -102,8 +131,9 @@ private:
     static void x_ProcessIDs(
         const CTempString& id_string,
         const SDeflineParseInfo& info,
-        list<CRef<CSeq_id>>& ids,
-        ILineErrorListener* pMessageListener);
+        TIds& ids,
+        ILineErrorListener* pMessageListener,
+        FIdCheck fn_id_check);
 
     static bool x_IsValidLocalID(const CSeq_id& id, 
         TFastaFlags fasta_flags);
@@ -112,7 +142,7 @@ private:
         TFastaFlags fasta_flags);
 
     static void x_ConvertNumericToLocal(
-        list<CRef<CSeq_id>>& ids);
+        TIds& ids);
 
     static void x_PostWarning(ILineErrorListener* pMessageListener, 
         const TSeqPos lineNumber,
@@ -157,6 +187,36 @@ private:
         const size_t max_length,
         const int line_number,
         ILineErrorListener* pMessageListener);
+
+};
+
+
+class NCBI_XOBJREAD_EXPORT CSeqIdCheck
+{
+public:
+    using TInfo = CFastaDeflineReader::SDeflineParseInfo;
+    using TIds = CFastaDeflineReader::TIds;
+
+    virtual void operator()(const TIds& ids, 
+                    const TInfo& info,
+                    ILineErrorListener* listener);
+
+private:
+    static bool x_IsValidLocalID(const CSeq_id& id, const TInfo& info);
+
+    static void x_CheckIDLength(const CSeq_id& id, 
+                                const TInfo& info,
+                                ILineErrorListener* listener);
+
+    static void x_CheckForExcessiveSeqData(const CSeq_id& id, 
+                                    const TInfo& info,
+                                    ILineErrorListener* listener);
+
+    static void x_PostIDLengthError(const size_t id_length,
+                                     const string& type_string,
+                                     const size_t max_length,
+                                     const TInfo& info,
+                                     ILineErrorListener* listener);
 
 };
 
