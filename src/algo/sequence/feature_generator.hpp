@@ -265,6 +265,11 @@ private:
 
 CMappedFeat GetCdsOnMrna(const objects::CSeq_id& rna_id, CScope& scope);
 
+namespace fg {
+int GetGeneticCode(const CBioseq_Handle& bsh);
+}
+
+
 END_NCBI_SCOPE
 
 #endif  // ALGO_SEQUENCE___FEAT_GEN__HPP

@@ -1301,4 +1301,19 @@ void CFeatureGenerator::SImplementation::TrimRightExon(int trim_amount, ETrimSid
         }
     }
 }
+
+namespace fg {
+int GetGeneticCode(const CBioseq_Handle& bsh)
+{
+    int gcode = 1;
+
+    auto source = sequence::GetBioSource(bsh);
+    if (source != nullptr) {
+        gcode = source->GetGenCode(gcode);
+    }
+
+    return gcode;
+}
+}
+
 END_NCBI_SCOPE

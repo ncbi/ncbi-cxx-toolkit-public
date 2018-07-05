@@ -126,11 +126,7 @@ pair<TStarts, set<TSeqRange> > CInternalStopFinder::FindStartStopRanges(const CS
         NCBI_USER_THROW("CDSNucleotideSequence not divisible by 3");
     }
 
-    int gcode = 1;
-    try {
-        gcode = sequence::GetOrg_ref(bsh).GetGcode();
-    } catch (CException&) {
-    }
+    int gcode = fg::GetGeneticCode(bsh);
 
     CRef<CGenetic_code::C_E> c_e(new CGenetic_code::C_E); c_e->SetId(gcode);
     CRef<CGenetic_code> code(new CGenetic_code);
