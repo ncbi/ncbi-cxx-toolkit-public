@@ -41,6 +41,7 @@ BEGIN_IDBLOB_SCOPE
 
 
 bool FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
+                         const string &  keyspace,
                          const string &  seq_id,
                          int  seq_id_type,
                          string &  accession,
@@ -49,8 +50,8 @@ bool FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
 {
     shared_ptr<CCassQuery>  query = conn->NewQuery();
 
-    query->SetSQL("SELECT accession, version, id_type FROM "
-                  "idmain.SI2CSI WHERE "
+    query->SetSQL("SELECT accession, version, id_type FROM " +
+                  keyspace + ".SI2CSI WHERE "
                   "seq_id = ? AND seq_id_type = ?", 2);
     query->BindStr(0, seq_id);
     query->BindInt32(1, seq_id_type);
@@ -67,6 +68,7 @@ bool FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
 
 
 bool FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
+                     const string &  keyspace,
                      SBioseqInfo &  bioseq_info)
 {
     shared_ptr<CCassQuery>  query = conn->NewQuery();
@@ -78,7 +80,8 @@ bool FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
                   "sat_key, "
                   "tax_id, "
                   "hash, "
-                  "seq_ids FROM idmain.BIOSEQ_INFO WHERE "
+                  "seq_ids FROM " +
+                  keyspace + ".BIOSEQ_INFO WHERE "
                   "accession = ? AND version = ? AND id_type = ?", 3);
     query->BindStr(0, bioseq_info.m_Accession);
     query->BindInt32(1, bioseq_info.m_Version);

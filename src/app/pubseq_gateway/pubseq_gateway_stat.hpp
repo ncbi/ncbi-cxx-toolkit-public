@@ -33,6 +33,9 @@
  */
 
 
+#include <connect/services/json_over_uttp.hpp>
+USING_NCBI_SCOPE;
+
 
 // The class is used to collect information about errors
 class CPubseqGatewayErrorCounters
@@ -74,36 +77,10 @@ public:
     void IncCanonicalSeqIdError(void)
     { ++m_CanonicalSeqIdError; }
 
+    void IncBioseqInfoError(void)
+    { ++m_BioseqInfoError; }
 
-    uint64_t GetBadUrlPath(void) const
-    { return m_BadUrlPath; }
-
-    uint64_t GetInsufficientArguments(void) const
-    { return m_InsufficientArguments; }
-
-    uint64_t GetMalformedArguments(void) const
-    { return m_MalformedArguments; }
-
-    uint64_t GetResolveNotFound(void) const
-    { return m_ResolveNotFound; }
-
-    uint64_t GetResolveError(void) const
-    { return m_ResolveError; }
-
-    uint64_t GetGetBlobNotFound(void) const
-    { return m_GetBlobNotFound; }
-
-    uint64_t GetGetBlobError(void) const
-    { return m_GetBlobError; }
-
-    uint64_t GetUnknownError(void) const
-    { return m_UnknownError; }
-
-    uint64_t GetSatToSatNameError(void) const
-    { return m_SatToSatNameError; }
-
-    uint64_t GetCanonicalSeqIdError(void) const
-    { return m_CanonicalSeqIdError; }
+    void PopulateDictionary(CJsonNode &  dict) const;
 
 private:
     atomic_uint_fast64_t        m_BadUrlPath;
@@ -116,6 +93,7 @@ private:
     atomic_uint_fast64_t        m_UnknownError;         // 503
     atomic_uint_fast64_t        m_SatToSatNameError;
     atomic_uint_fast64_t        m_CanonicalSeqIdError;
+    atomic_uint_fast64_t        m_BioseqInfoError;
 };
 
 
@@ -140,17 +118,7 @@ public:
     void IncGetBlobBySatSatKey(void)
     { ++m_GetBlobBySatSatKey; }
 
-    uint64_t GetAdmin(void) const
-    { return m_Admin; }
-
-    uint64_t GetResolve(void) const
-    { return m_Resolve; }
-
-    uint64_t GetGetBlobBySeqId(void) const
-    { return m_GetBlobBySeqId; }
-
-    uint64_t GetGetBlobBySatSatKey(void) const
-    { return m_GetBlobBySatSatKey; }
+    void PopulateDictionary(CJsonNode &  dict) const;
 
 private:
     atomic_uint_fast64_t        m_Admin;

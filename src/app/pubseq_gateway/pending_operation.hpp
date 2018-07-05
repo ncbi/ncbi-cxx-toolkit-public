@@ -223,6 +223,7 @@ private:
 
     void x_Peek(HST::CHttpReply<CPendingOperation>& resp, bool  need_wait,
                 unique_ptr<SBlobFetchDetails> &  fetch_details);
+
 private:
     HST::CHttpReply<CPendingOperation> *    m_Reply;
     shared_ptr<CCassConnection>             m_Conn;

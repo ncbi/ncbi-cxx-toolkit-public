@@ -36,8 +36,6 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbi_system.hpp>
 
-#include <connect/services/json_over_uttp.hpp>
-
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 
@@ -70,6 +68,11 @@ public:
     bool IsLog(void) const
     {
         return m_Log;
+    }
+
+    string GetBioseqKeyspace(void) const
+    {
+        return m_BioseqKeyspace;
     }
 
     template<typename P>
@@ -143,6 +146,7 @@ private:
 
     CTime                               m_StartTime;
     bool                                m_Log;
+    string                              m_BioseqKeyspace;
 
     unique_ptr<HST::CHttpDaemon<CPendingOperation>>
                                         m_TcpDaemon;
@@ -456,59 +460,8 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
     reply.SetInteger("NumberOfConnections",
                      m_TcpDaemon->NumOfConnections());
 
-    uint64_t                        err_count;
-    uint64_t                        err_sum(0);
-
-    err_count = m_ErrorCounters.GetBadUrlPath();
-    err_sum += err_count;
-    reply.SetInteger("BadUrlPathCount", err_count);
-    err_count = m_ErrorCounters.GetInsufficientArguments();
-    err_sum += err_count;
-    reply.SetInteger("InsufficientArgumentsCount", err_count);
-    err_count = m_ErrorCounters.GetMalformedArguments();
-    err_sum += err_count;
-    reply.SetInteger("MalformedArgumentsCount", err_count);
-    err_count = m_ErrorCounters.GetResolveNotFound();
-    err_sum += err_count;
-    reply.SetInteger("ResolveNotFoundCount", err_count);
-    err_count = m_ErrorCounters.GetResolveError();
-    err_sum += err_count;
-    reply.SetInteger("ResolveErrorCount", err_count);
-    err_count = m_ErrorCounters.GetGetBlobNotFound();
-    err_sum += err_count;
-    reply.SetInteger("GetBlobNotFoundCount", err_count);
-    err_count = m_ErrorCounters.GetGetBlobError();
-    err_sum += err_count;
-    reply.SetInteger("GetBlobErrorCount", err_count);
-    err_count = m_ErrorCounters.GetUnknownError();
-    err_sum += err_count;
-    reply.SetInteger("UnknownErrorCount", err_count);
-    err_count = m_ErrorCounters.GetSatToSatNameError();
-    err_sum += err_count;
-    reply.SetInteger("SatToSatNameErrorCount", err_count);
-    err_count = m_ErrorCounters.GetCanonicalSeqIdError();
-    err_sum += err_count;
-    reply.SetInteger("CanonicalSeqIdErrorCount", err_count);
-
-    reply.SetInteger("TotalErrorCount", err_sum);
-
-
-    uint64_t                        req_count;
-    uint64_t                        req_sum(0);
-
-    req_count = m_RequestCounters.GetAdmin();
-    req_sum += req_count;
-    reply.SetInteger("AdminRequestCount", req_count);
-    req_count = m_RequestCounters.GetResolve();
-    req_sum += req_count;
-    reply.SetInteger("ResolveRequestCount", req_count);
-    req_count = m_RequestCounters.GetGetBlobBySeqId();
-    req_sum += req_count;
-    reply.SetInteger("GetBlobBySeqIdRequestCount", req_count);
-    req_count = m_RequestCounters.GetGetBlobBySatSatKey();
-    req_sum += req_count;
-    reply.SetInteger("GetBlobBySatSatKeyRequestCount", req_count);
-    reply.SetInteger("TotalSucceededRequestCount", req_sum);
+    m_ErrorCounters.PopulateDictionary(reply);
+    m_RequestCounters.PopulateDictionary(reply);
 
     string      content = reply.Repr();
 

@@ -126,6 +126,7 @@ void CPubseqGatewayApp::ParseArgs(void)
                                    kMaxRetriesDefault);
     m_Log = registry.GetBool("SERVER", "log",
                              kDefaultLog);
+    m_BioseqKeyspace = registry.GetString("SERVER", "bioseqkeyspace", "");
 
     m_CassConnectionFactory->AppParseArgs(args);
     m_CassConnectionFactory->LoadConfig(registry, "");
@@ -138,8 +139,8 @@ void CPubseqGatewayApp::ParseArgs(void)
 
 void CPubseqGatewayApp::OpenDb(bool  initialize, bool  readonly)
 {
-    m_Db.reset(new CAccVerCacheDB());
-    m_Db->Open(m_DbPath, initialize, readonly);
+//    m_Db.reset(new CAccVerCacheDB());
+//    m_Db->Open(m_DbPath, initialize, readonly);
 }
 
 
@@ -284,6 +285,12 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
                    NStr::NumericToString(kHttpPortMin) + "..." +
                    NStr::NumericToString(kHttpPortMax) + ". Received: " +
                    NStr::NumericToString(m_HttpPort));
+    }
+
+    if (m_BioseqKeyspace.empty()) {
+        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                   "[SERVER]/bioseqkeyspace is not provided. It must "
+                   "be supplied for the server to start");
     }
 
     if (m_HttpWorkers < kWorkersMin || m_HttpWorkers > kWorkersMax) {

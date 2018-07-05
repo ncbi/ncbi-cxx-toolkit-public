@@ -434,11 +434,14 @@ bool CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
     string                  msg;
     CRequestStatus::ECode   status;
     try {
-        if (!FetchCanonicalSeqId(m_Conn, m_BlobRequest.m_SeqId,
-                                 m_BlobRequest.m_IdType,
-                                 bioseq_info.m_Accession,
-                                 bioseq_info.m_Version,
-                                 bioseq_info.m_IdType)) {
+        if (!FetchCanonicalSeqId(
+                    m_Conn,
+                    CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
+                    m_BlobRequest.m_SeqId,
+                    m_BlobRequest.m_IdType,
+                    bioseq_info.m_Accession,
+                    bioseq_info.m_Version,
+                    bioseq_info.m_IdType)) {
             // Failure: no translation to canonical
             msg = "No translation seq_id '" +
                   m_BlobRequest.m_SeqId + "' of type " +
@@ -495,7 +498,10 @@ bool CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info)
     string                  msg;
     CRequestStatus::ECode   status;
     try {
-        if (!FetchBioseqInfo(m_Conn, bioseq_info)) {
+        if (!FetchBioseqInfo(
+                    m_Conn,
+                    CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
+                    bioseq_info)) {
             // Failure: no bioseq info
             msg = "No bioseq info found for seq_id '" +
                   m_BlobRequest.m_SeqId + "' of type " +
@@ -518,6 +524,8 @@ bool CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info)
     if (!msg.empty()) {
         size_t      item_id = m_BlobRequest.m_ItemId;
 
+        CPubseqGatewayApp::GetInstance()->GetErrorCounters().
+                                                IncBioseqInfoError();
         ERR_POST(msg);
         string  header = GetBioseqMessageHeader(item_id, msg.size(),
                                                 status, status,

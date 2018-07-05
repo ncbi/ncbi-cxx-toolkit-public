@@ -63,6 +63,7 @@ struct SBioseqInfo
 // true => fetch succeeded
 // false => not found
 bool FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
+                         const string &  keyspace,
                          const string &  seq_id,
                          int  seq_id_type,
                          string &  accession,
@@ -72,6 +73,7 @@ bool FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
 // true => fetch succeeded
 // false => not found
 bool FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
+                     const string &  keyspace,
                      SBioseqInfo &  bioseq_info);
 
 END_IDBLOB_SCOPE
