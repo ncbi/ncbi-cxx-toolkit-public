@@ -116,6 +116,8 @@ CConstRef<CValidError> CValidator::Validate
 }
 
 
+//LCOV_EXCL_START
+// not used by asnvalidate, used by external progreams
 CConstRef<CValidError> CValidator::GetTSANStretchErrors(const CSeq_entry_Handle& se)
 {
     CRef<CValidError> errors(new CValidError(&*se.GetCompleteSeq_entry()));
@@ -193,6 +195,7 @@ CConstRef<CValidError> CValidator::GetTSAConflictingBiomolTechErrors (const CBio
     }
     return errors;
 }
+//LCOV_EXCL_STOP
 
 
 CConstRef<CValidError> CValidator::Validate
