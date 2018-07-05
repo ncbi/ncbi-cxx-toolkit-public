@@ -2,7 +2,7 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_lib(tds_ftds95)
+NCBI_begin_lib(tds_ftds95 STATIC)
   NCBI_sources(
     mem token util login read write convert numeric config query iconv
     locale threadsafe vstrbuild tdsstring getmac data net tls tds_checks
