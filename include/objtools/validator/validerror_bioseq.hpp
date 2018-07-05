@@ -248,21 +248,6 @@ private:
     void ValidateModifDescriptors (const CBioseq& seq);
     void ValidateMoltypeDescriptors (const CBioseq& seq);
 
-    void ValidateGraphsOnBioseq(const CBioseq& seq);
-    void ValidateGraphOrderOnBioseq (const CBioseq& seq, vector <CRef <CSeq_graph> > graph_list);
-    void ValidateByteGraphOnBioseq(const CSeq_graph& graph, const CBioseq& seq);
-    void ValidateGraphOnDeltaBioseq(const CBioseq& seq);
-    bool ValidateGraphLocation (
-        const CSeq_graph& graph);
-    void ValidateGraphValues(const CSeq_graph& graph, const CBioseq& seq,
-        int& first_N, int& first_ACGT, size_t& num_bases, size_t& Ns_with_score, size_t& gaps_with_score,
-        size_t& ACGTs_without_score, size_t& vals_below_min, size_t& vals_above_max);
-    void ValidateMinValues(const CByte_graph& bg, const CSeq_graph& graph);
-    void ValidateMaxValues(const CByte_graph& bg, const CSeq_graph& graph);
-    bool GetLitLength(const CDelta_seq& delta, TSeqPos& len);
-    bool IsSupportedGraphType(const CSeq_graph& graph) const;
-    SIZE_TYPE GetSeqLen(const CBioseq& seq);
-
     void ValidateSecondaryAccConflict(const string& primary_acc,
         const CBioseq& seq, int choice);
     void ValidateIDSetAgainstDb(const CBioseq& seq);

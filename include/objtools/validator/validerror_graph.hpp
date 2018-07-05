@@ -62,15 +62,26 @@ public:
     virtual ~CValidError_graph(void);
 
     void ValidateSeqGraph(const CSeq_graph& graph);
-    void ValidateSeqGraph(CSeq_entry_Handle seh);
-    void ValidateSeqGraph(const CBioseq& seq);
-    void ValidateSeqGraph(const CBioseq_set& set);
 
     void ValidateSeqGraphContext(const CSeq_graph& graph, const CBioseq_set& set);
     void ValidateSeqGraphContext(const CSeq_graph& graph, const CBioseq& seq);
+    void ValidateGraphsOnBioseq(const CBioseq& seq);
 
+    static bool IsSupportedGraphType(const CSeq_graph& graph);
 
 private:
+    void x_ValidateMinValues(const CByte_graph& bg, const CSeq_graph& graph);
+    void x_ValidateMaxValues(const CByte_graph& bg, const CSeq_graph& graph);
+    bool x_ValidateGraphLocation (const CSeq_graph& graph);
+    void x_ValidateGraphOrderOnBioseq (const CBioseq& seq, vector <CRef <CSeq_graph> > graph_list);
+    void x_ValidateGraphValues(const CSeq_graph& graph, const CBioseq& seq,
+        int& first_N, int& first_ACGT, size_t& num_bases, size_t& Ns_with_score, size_t& gaps_with_score,
+        size_t& ACGTs_without_score, size_t& vals_below_min, size_t& vals_above_max);
+    void x_ValidateGraphOnDeltaBioseq(const CBioseq& seq);
+
+    SIZE_TYPE GetUngappedSeqLen(const CBioseq& seq);
+
+    bool x_GetLitLength(const CDelta_seq& delta, TSeqPos& len);
 
 };
 
