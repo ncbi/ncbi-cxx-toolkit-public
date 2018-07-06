@@ -971,11 +971,11 @@ bool CSoMap::xMapMiscRecomb(
         {"meiotic_recombination", "meiotic_recombination_region"},
         {"mitotic_recombination", "mitotic_recombination_region"},
         {"non_allelic_homologous_recombination", "non_allelic_homologous_recombination_region"},
-        {"other", "recombination_region"},
+        {"other", "recombination_feature"},
     };
     string recomb_class = feature.GetNamedQual("recombination_class");
     if (recomb_class.empty()) {
-        so_type = "recombination_region";
+        so_type = "recombination_feature";
         return true;
     }
     auto cit = mapRecombClassToSoType.find(recomb_class);
@@ -983,7 +983,7 @@ bool CSoMap::xMapMiscRecomb(
         auto validClasses = CSeqFeatData::GetRecombinationClassList();
         auto valid = std::find(validClasses.begin(), validClasses.end(), recomb_class);
         if (valid == validClasses.end()) {
-            so_type = "recombination_region";
+            so_type = "recombination_feature";
         }
         else {
             so_type = recomb_class;
@@ -1073,7 +1073,7 @@ bool CSoMap::xMapRegulatory(
 //  ----------------------------------------------------------------------------
 {
     map<string, string> mapRegulatoryClassToSoType = {
-        {"DNase_I_hypersensitive_site", "DNaseI_hypersensitive_site"},
+        {"DNase_I_hypersensitive_site", "DNAseI_hypersensitive_site"},
         {"GC_signal", "GC_rich_promoter_region"},
         {"enhancer_blocking_element", "enhancer_blocking_element"},
         {"epigenetically_modified_region", "epigenetically_modified_region"},
