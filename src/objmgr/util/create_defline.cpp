@@ -2194,7 +2194,6 @@ void CDeflineGenerator::x_SetTitleFromProteinIdx (
     }
 
     // check for special taxname, go to overlapping source feature
-    /*
     if ((taxname.empty()  ||
          (!NStr::EqualNocase (taxname, "synthetic construct")  &&
           !NStr::EqualNocase (taxname, "artificial sequence")  &&
@@ -2204,7 +2203,7 @@ void CDeflineGenerator::x_SetTitleFromProteinIdx (
         CWeakRef<CBioseqIndex> bsxp = bsx->GetBioseqForProduct();
         auto nucx = bsxp.Lock();
         if (nucx) {
-            if (nucx->HasSourceFeats()) {
+            if (nucx->HasSource()) {
                 src = x_GetSourceFeatViaCDS (bsh);
                 if (src.NotEmpty()  &&  src->IsSetTaxname()) {
                     taxname = src->GetTaxname();
@@ -2212,7 +2211,6 @@ void CDeflineGenerator::x_SetTitleFromProteinIdx (
             }
         }
     }
-    */
 
     if (m_IsCrossKingdom && ! m_FirstSuperKingdom.empty() && ! m_SecondSuperKingdom.empty()) {
         m_MainTitle += " [" + string(m_FirstSuperKingdom) + "][" + string(m_SecondSuperKingdom) + "]";
@@ -3025,7 +3023,6 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffixIdx (
     }
 
     // check for special taxname, go to overlapping source feature
-    /*
     if ((taxname.empty()  ||
          (!NStr::EqualNocase (taxname, "synthetic construct")  &&
           !NStr::EqualNocase (taxname, "artificial sequence")  &&
@@ -3051,7 +3048,6 @@ void CDeflineGenerator::x_AdjustProteinTitleSuffixIdx (
             }
         }
     }
-    */
 
     if (m_IsCrossKingdom && ! m_FirstSuperKingdom.empty() && ! m_SecondSuperKingdom.empty()) {
         m_MainTitle += " [" + string(m_FirstSuperKingdom) + "][" + string(m_SecondSuperKingdom) + "]";
