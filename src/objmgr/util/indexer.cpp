@@ -1897,7 +1897,7 @@ void CBioseqIndex::x_InitFeats (void)
                         if (idxl) {
                             CRef<CBioseqIndex> bsxp = idxl->GetBioseqIndex(pbsh);
                             if (bsxp) {
-                                m_FeatForProdInitialized = true;
+                                bsxp->m_FeatForProdInitialized = true;
                                 bsxp->m_FeatureForProduct = sfx;
                             }
                         }
