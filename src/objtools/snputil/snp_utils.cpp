@@ -120,7 +120,13 @@ NSnp::TRsid NSnp::GetRsid(const CSeq_feat &feat)
 }
 NSnp::TRsid NSnp::GetRsid(const CDbtag& tag)
 {
-    return tag.GetTag().GetId8();
+    const auto& dbtag = tag.GetTag();
+    if (dbtag.IsStr() && (string::npos != dbtag.GetStr().find("rs"))) {
+        return NStr::StringToNumeric<NSnp::TRsid>(dbtag.GetStr().substr(2));
+    }
+    else {
+        return dbtag.GetId8();
+    }
 }
 
 int NSnp::GetLength(const CMappedFeat &mapped_feat)
