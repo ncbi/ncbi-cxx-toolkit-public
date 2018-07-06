@@ -2095,14 +2095,13 @@ BOOST_AUTO_TEST_CASE(TestBadTranslTable)
 }
 
 // GB-7157
-static const char* sc_Table20 = 
-R"(
->Feature gb|KY807921|
-3200	3201	regulatory 
-			note	cobalamin riboswitch 
-			bound_moiety	cobalamin 
-			regulatory_class	riboswitch
-)";
+static const char* sc_Table20 = "\
+>Feature gb|KY807921|\n\
+3200\t3201\tregulatory \n\
+\t\t\tnote\tcobalamin riboswitch \n\
+\t\t\tbound_moiety\tcobalamin \n\
+\t\t\tregulatory_class\triboswitch\n\
+";
 
 BOOST_AUTO_TEST_CASE(TestRiboswitch)
 {
@@ -2113,14 +2112,13 @@ BOOST_AUTO_TEST_CASE(TestRiboswitch)
             expected_errors);
 }
 
-static const char * sc_Table21 =
-R"(
->Feature lcl|seq1
-<1	32	rRNA
-		Product	18S ribosomal RNA
-33	170	misc_RNA
-		Product	internal transcribed spacer 1
-)";
+static const char * sc_Table21 = "\
+>Feature lcl|seq1\n\
+<1\t32\trRNA\n\
+\t\tProduct\t18S ribosomal RNA\n\
+33\t170\tmisc_RNA\n\
+\t\tProduct\tinternal transcribed spacer 1\n\
+";
 
 BOOST_AUTO_TEST_CASE(TestSimpleTableFilter)
 {
@@ -2142,3 +2140,4 @@ BOOST_AUTO_TEST_CASE(TestSimpleTableFilter)
     BOOST_CHECK_EQUAL("internal transcribed spacer 1",
                       feat.GetNamedQual("product"));
 }
+
