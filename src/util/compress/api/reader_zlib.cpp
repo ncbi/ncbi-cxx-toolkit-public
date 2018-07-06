@@ -278,7 +278,7 @@ CNlmZipReader::CNlmZipReader(IReader* reader,
 
 CNlmZipReader::~CNlmZipReader(void)
 {
-    if ( m_Own && fOwnReader ) {
+    if ( m_Own & fOwnReader ) {
         delete m_Reader;
     }
 }
