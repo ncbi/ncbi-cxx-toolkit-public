@@ -342,46 +342,6 @@ bool CleanVisStringJunk( string &str, bool allow_ellipses )
 }
 
 
-bool RemoveTrailingPeriod(string& str)
-{
-    if (str[str.length() - 1] == '.') {
-        bool remove = true;
-        size_t period = str.length() - 1;
-        size_t amp = str.find_last_of('&');
-        if (amp != NPOS) {
-            remove = false;
-            for (size_t i = amp + 1; i < period; ++i) {
-                if (isspace((unsigned char) str[i])) {
-                    remove = true;
-                    break;
-                }
-            }
-        }
-        if (remove) {
-            str.resize(period);
-            return true;
-        }
-    }
-    return false;
-}
-
-
-bool RemoveTrailingJunk(string& str)
-{
-    SIZE_TYPE end_str =  str.find_last_not_of(" \t\n\r,~;");
-    if (end_str == NPOS) {
-        end_str = 0; // everything is junk.
-    } else {
-        ++end_str; // indexes the first character to remove.
-    }
-    if (end_str >= str.length()) {
-        return false; // nothing to remove.
-    }
-    str.erase(end_str);
-    return true;
-}
-
-
 bool  RemoveSpacesBetweenTildes(string& str)
 {
     static string whites(" \t\n\r");
@@ -814,136 +774,6 @@ char ValidAminoAcid (string abbrev)
 }
 
 
-bool AuthListsMatch(const CAuth_list::TNames& list1, const CAuth_list::TNames& list2, bool all_authors_match)
-{
-    if (list1.Which() != list2.Which()) {
-        return false;
-    } else if (list1.Which() == CAuth_list::TNames::e_Std) {
-        if (all_authors_match) {
-            if (list1.GetStd().size() != list2.GetStd().size()) {
-                return false;
-            } else {
-                for ( CAuth_list::TNames::TStd::const_iterator it1 = (list1.GetStd()).begin(), 
-                                                               it1_end = (list1.GetStd()).end(),
-                                                               it2 = (list2.GetStd()).begin(),
-                                                               it2_end = list2.GetStd().end();
-                      it1 != it1_end && it2 != it2_end;
-                      ++it1, ++it2) {
-                    // each name must match, in order
-                    string name1, name2;
-                    name1.erase();
-                    name2.erase();
-                    (*it1)->GetName().GetLabel(&name1, CPerson_id::eGenbank);
-                    (*it2)->GetName().GetLabel(&name2, CPerson_id::eGenbank);
-                    if (!NStr::Equal(name1, name2)) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-        } else {
-            // first name must match
-            string name1, name2;
-            name1.erase();
-            name2.erase();
-            list1.GetStd().front()->GetName().GetLabel(&name1, CPerson_id::eGenbank);
-            list2.GetStd().front()->GetName().GetLabel(&name1, CPerson_id::eGenbank);
-            return NStr::Equal(name1, name2);
-        }
-    } else if (list1.Which() == CAuth_list::TNames::e_Ml) {
-        if (all_authors_match) {
-            if (list1.GetMl().size() != list2.GetMl().size()) {
-                return false;
-            } else {
-                for ( CAuth_list::TNames::TMl::const_iterator it1 = (list1.GetMl()).begin(), 
-                                                               it1_end = (list1.GetMl()).end(),
-                                                               it2 = (list2.GetMl()).begin(),
-                                                               it2_end = list2.GetMl().end();
-                      it1 != it1_end && it2 != it2_end;
-                      ++it1, ++it2) {
-                    // each name must match, in order
-                    if (!NStr::Equal((*it1), (*it2))) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-        } else {
-            // first name must match
-            return NStr::Equal(list1.GetMl().front(), list2.GetMl().front());
-        }
-        
-    } else if (list1.Which() == CAuth_list::TNames::e_Str) {
-        if (all_authors_match) {
-            if (list1.GetStr().size() != list2.GetStr().size()) {
-                return false;
-            } else {
-                for ( CAuth_list::TNames::TStr::const_iterator it1 = (list1.GetStr()).begin(), 
-                                                               it1_end = (list1.GetStr()).end(),
-                                                               it2 = (list2.GetStr()).begin(),
-                                                               it2_end = list2.GetStr().end();
-                      it1 != it1_end && it2 != it2_end;
-                      ++it1, ++it2) {
-                    // each name must match, in order
-                    if (!NStr::Equal((*it1), (*it2))) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-        } else {
-            // first name must match
-            return NStr::Equal(list1.GetStr().front(), list2.GetStr().front());
-        }
-    } else {
-        return false;
-    } 
-}
-
-
-bool CitSubsMatch(const CCit_sub& sub1, const CCit_sub& sub2)
-{
-    // dates must match
-    if (sub1.CanGetDate()) {
-        if (sub2.CanGetDate()) {
-            if (sub1.GetDate().Compare(sub2.GetDate()) != CDate::eCompare_same) {
-                return false;
-            }
-        } else {
-            return false;
-        }
-    } else if (sub2.CanGetDate()) {
-        return false;
-    }
-    
-    // descriptions must match
-    if (sub1.CanGetDescr() && sub2.CanGetDescr()) {
-        if (!NStr::Equal(sub1.GetDescr(), sub2.GetDescr())) {
-            return false;
-        }
-    } else if (sub1.CanGetDescr() || sub2.CanGetDescr()) {
-        // one has a description, the other does not
-        return false;
-    }
-    
-    // author lists must be set and must match
-    // if both affiliations set, must match
-    if (! sub1.IsSetAuthors() 
-        || ! sub2.IsSetAuthors()
-        || ! sub1.GetAuthors().IsSetNames()
-        || ! sub2.GetAuthors().IsSetNames()
-        || !AuthListsMatch (sub1.GetAuthors().GetNames(), sub2.GetAuthors().GetNames(), true)) {
-        return false;
-    } else if (sub1.GetAuthors().IsSetAffil() && sub2.GetAuthors().IsSetAffil()
-               && !sub1.GetAuthors().GetAffil().Equals(sub2.GetAuthors().GetAffil())) {
-        return false;
-    } else {
-        return true;
-    }
-    
-}
-
-
 bool s_DbtagCompare (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2)
 {
     // is dbt1 < dbt2
@@ -965,22 +795,6 @@ bool s_OrgrefSynCompare( const string & syn1, const string & syn2 )
 bool s_OrgrefSynEqual( const string & syn1, const string & syn2 )
 {
     return NStr::EqualNocase(syn1, syn2);
-}
-
-CBioSource::EGenome GenomeByOrganelle(string& organelle, bool strip, NStr::ECase use_case)
-{
-    string match = "";
-    
-    CBioSource::EGenome genome = CBioSource::GetGenomeByOrganelle (organelle, use_case, true);
-    if (genome != CBioSource::eGenome_unknown) {
-        match = CBioSource::GetOrganelleByGenome (genome);
-        if (strip && !NStr::IsBlank(match)) {
-            organelle = organelle.substr(match.length());
-            NStr::TruncateSpacesInPlace(organelle);
-        }
-    }
-        
-    return genome;
 }
 
 

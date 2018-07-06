@@ -75,12 +75,6 @@ bool CleanVisString( string &str );
 
 bool CleanVisStringJunk( string &str, bool allow_ellipses = false );
 
-/// remove a trailing period, 
-bool RemoveTrailingPeriod(string& str);
-
-/// remove trailing white space, commas, tildes and semicolons
-bool RemoveTrailingJunk(string& str);
-
 /// remove white space between pairs of tildes.
 /// "~ ~  ~ a~" -> "~~~ a~"
 bool  RemoveSpacesBetweenTildes(string& str);
@@ -393,9 +387,6 @@ CRef<CSeq_loc> ReadLocFromText(string text, const CSeq_id *id, CScope *scope);
 // for finding the correct amino acid letter given an abbreviation
 char ValidAminoAcid (string abbrev);
 
-// for matching equivalent cit-sub publications
-bool CitSubsMatch(const CCit_sub& sub1, const CCit_sub& sub2);
-
 // for sorting and uniquing dbtags
 bool s_DbtagCompare (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2);
 bool s_DbtagEqual (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2);
@@ -439,9 +430,6 @@ bool is_sorted(Iter first, Iter last)
     
     return true;
 }
-
-CBioSource::EGenome GenomeByOrganelle(string& organelle, bool strip, NStr::ECase use_case = NStr::eNocase);
-
 
 
 END_SCOPE(objects)
