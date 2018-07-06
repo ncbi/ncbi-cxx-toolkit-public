@@ -3312,7 +3312,8 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                 case CBioSource::eGenome_plasmid_in_mitochondrion:
                     {
                         // mitochondrial code
-                        joiner.Add("mgcode", gcode);
+                        // joiner.Add("mgcode", gcode);
+                        joiner.Add("gcode", gcode);
                     }
                     break;
                 case CBioSource::eGenome_chloroplast:
@@ -3327,7 +3328,8 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                     {
                         if (orgname.IsSetPgcode() && orgname.GetPgcode() > 0) {
                             // plant plastid code
-                            joiner.Add("pgcode", gcode);
+                            // joiner.Add("pgcode", gcode);
+                            joiner.Add("gcode", gcode);
                         } else {
                             // bacteria and plant plastids default to code 11.
                             joiner.Add("gcode", gcode);
