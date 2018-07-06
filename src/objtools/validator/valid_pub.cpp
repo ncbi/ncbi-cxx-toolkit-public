@@ -77,6 +77,11 @@ void CValidError_imp::ValidatePubdesc
  const CSerialObject& obj,
  const CSeq_entry *ctx)
 {
+    if (!pubdesc.IsSetPub() || pubdesc.GetPub().Get().empty()) {
+        PostObjErr(eDiag_Fatal, eErr_SEQ_DESCR_NoPubFound, 
+                "Empty publication descriptor", obj, ctx);
+        return;
+    }
     int uid = 0, pmid = 0, muid = 0;
     bool conflicting_pmids = false, redundant_pmids = false, conflicting_muids = false, redundant_muids = false;
 
