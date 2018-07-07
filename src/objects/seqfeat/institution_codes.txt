@@ -4611,6 +4611,7 @@ NHML	s	Natural History Museum, Tripoli
 NHMM	s	Natuurhistorische Museum Maastricht		
 NHMM-LS	s	Naturhistorisches Museum/Landessammlung fuer Naturkunde Rheinland-Pfalz		
 NHMN	s	Nottingham Natural History Museum (Wollaton Hall)		
+NHMO	s	The DNA Bank of the Natural History Museum of Oslo		
 NHMR<HRV>	s	Natural History Museum Rijeka		
 NHMR<ISL>	s	Natural History Museum, Reykjavik		
 NHMR<NLD>	s	Natuurhistorisch Museum Rotterdam		
@@ -7447,6 +7448,7 @@ ZAUC	s	Zhejian Agricultural University
 ZBMM	s	Maharaja's College, Zoology and Botany Museum		
 ZCA	s	Zhelimu College of Animal Husbandry, Range Science Department		
 ZCM	s	Shetland Museum		
+ZCU	s	The Genetic bank of the Department of Zoology, Charles University		
 ZDC	s	Zhejiang Institute for Drug Control		
 ZDEU	s	Zoology Department, Ege University		
 ZDKU	s	Kharkiv National University		
