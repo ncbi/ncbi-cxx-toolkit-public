@@ -234,19 +234,19 @@ TSeqPos ExtendLocationForTranslExcept(objects::CSeq_loc& loc, objects::CScope& s
             overhang->SetStrand(eNa_strand_minus);
         }
     } else {
-        len = bsh.GetBioseqLength() - stop;
+        len = bsh.GetBioseqLength() - stop - 1;
         if (len > 3) {
             len = 3;
         }
         if (len > 0) {
             overhang->SetInt().SetFrom(stop + 1);
-            overhang->SetInt().SetTo(stop + len);
+            overhang->SetInt().SetTo(bsh.GetBioseqLength() - 1);
         }
     }
     if (len > 0) {
         CSeqVector vec(*overhang, scope, CBioseq_Handle::eCoding_Iupac);
         string seq_string;
-        vec.GetSeqData(0, len - 1, seq_string);   
+        vec.GetSeqData(0, len, seq_string);   
         if (vec[0] == 'T') {
             except_len++;
             if (len > 1 && vec[1] == 'A') {
