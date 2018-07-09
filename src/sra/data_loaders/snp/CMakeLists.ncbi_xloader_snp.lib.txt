@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(ncbi_xloader_snp)
+  NCBI_sources(snploader snploader_impl)
+  NCBI_add_definitions(NCBI_XLOADER_SNP_EXPORTS)
+  NCBI_uses_toolkit_libraries(sraread seqset seq)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+
+if(OFF)
 add_library(ncbi_xloader_snp snploader snploader_impl)
 
 add_dependencies(ncbi_xloader_snp
@@ -10,3 +22,4 @@ target_link_libraries(ncbi_xloader_snp
 
 include_directories(SYSTEM ${SRA_INCLUDE})
 add_definitions(-DNCBI_XLOADER_SNP_EXPORTS)
+endif()

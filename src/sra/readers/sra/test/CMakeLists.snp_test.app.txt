@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(snp_test)
+  NCBI_sources(snp_test)
+  NCBI_uses_toolkit_libraries(sraread)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +23,4 @@ include_directories(SYSTEM ${SRA_INCLUDE})
 target_link_libraries(snp_test-app
     sraread
 )
-
+endif()

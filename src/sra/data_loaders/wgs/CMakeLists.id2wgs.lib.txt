@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(ncbi_id2proc_wgs)
+  NCBI_sources(id2wgs id2wgs_impl)
+  NCBI_add_definitions(NCBI_ID2PROC_WGS_EXPORTS)
+  NCBI_uses_toolkit_libraries(id2 sraread xcompress)
+  NCBI_project_tags(gbench)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+
+if(OFF)
 add_library(ncbi_id2proc_wgs
     id2wgs id2wgs_impl
 )
@@ -5,3 +18,4 @@ add_library(ncbi_id2proc_wgs
 target_link_libraries(ncbi_id2proc_wgs
     id2 sraread xcompress
 )
+endif()

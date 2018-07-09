@@ -1,3 +1,17 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(sraread)
+  NCBI_sources(
+    sraread vdbread kdbread csraread wgsresolver wgsresolver_impl wgsread
+    graphread snpread
+  )
+  NCBI_uses_toolkit_libraries(xobjmgr)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +24,4 @@ include_directories(SYSTEM ${SRA_INCLUDE})
 target_link_libraries(sraread
     xobjmgr ${SRAREAD_LDEP}
 )
-
+endif()

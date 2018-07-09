@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(bam_test)
+  NCBI_sources(bam_test bam_test_common)
+  NCBI_uses_toolkit_libraries(bamread xobjreadex xobjsimple)
+  NCBI_project_watchers(vasilche ucko)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +23,5 @@ include_directories(SYSTEM ${SRA_INCLUDE})
 target_link_libraries(bam_test-app
     bamread xobjreadex xobjsimple
 )
+endif()
 

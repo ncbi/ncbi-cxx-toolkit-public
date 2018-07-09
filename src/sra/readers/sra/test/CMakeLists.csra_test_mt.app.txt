@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(csra_test_mt)
+  NCBI_sources(csra_test_mt)
+  NCBI_uses_toolkit_libraries(sraread test_mt)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +23,4 @@ include_directories(SYSTEM ${SRA_INCLUDE})
 target_link_libraries(csra_test_mt-app
     sraread test_mt
 )
-
+endif()

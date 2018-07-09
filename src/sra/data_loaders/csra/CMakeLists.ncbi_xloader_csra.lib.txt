@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(ncbi_xloader_csra)
+  NCBI_sources(csraloader csraloader_impl)
+  NCBI_add_definitions(NCBI_XLOADER_CSRA_EXPORTS)
+  NCBI_uses_toolkit_libraries(sraread seqset)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +24,4 @@ target_link_libraries(ncbi_xloader_csra
 add_dependencies(ncbi_xloader_csra
     seqset 
 )
-
+endif()

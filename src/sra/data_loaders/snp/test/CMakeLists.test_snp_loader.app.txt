@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(test_snp_loader)
+  NCBI_sources(test_snp_loader)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_snp)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()
+
+if(OFF)
 add_executable(test_snp_loader
     test_snp_loader
 )
@@ -7,4 +19,4 @@ include_directories(SYSTEM ${BOOST_iNCLUDE})
 target_link_libraries(test_snp_loader
     ncbi_xloader_snp test_boost
 )
-
+endif()

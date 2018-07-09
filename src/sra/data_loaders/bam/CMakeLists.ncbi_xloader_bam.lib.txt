@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(ncbi_xloader_bam)
+  NCBI_sources(bamloader bamloader_impl)
+  NCBI_add_definitions(NCBI_XLOADER_BAM_EXPORTS)
+  NCBI_uses_toolkit_libraries(bamread xobjreadex seqset)
+  NCBI_project_watchers(vasilche)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -13,3 +25,4 @@ add_dependencies(ncbi_xloader_bam
 target_link_libraries(ncbi_xloader_bam
     bamread xobjreadex
 )
+endif()

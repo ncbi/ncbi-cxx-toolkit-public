@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(test_wgs_loader)
+  NCBI_sources(test_wgs_loader)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank ncbi_xloader_wgs xobjutil)
+  NCBI_project_watchers(vasilche ucko)
+NCBI_end_app()
+
+if(OFF)
 add_executable(test_wgs_loader
     test_wgs_loader
 )
@@ -7,3 +19,4 @@ include_directories(SYSTEM ${SRA_INCLUDE})
 target_link_libraries(test_wgs_loader
     ncbi_xloader_genbank ncbi_xloader_wgs test_boost
 )
+endif()

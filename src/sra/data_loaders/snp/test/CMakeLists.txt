@@ -1,1 +1,7 @@
-include(CMakeLists.test_snp_loader.app.txt)
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_add_app(test_snp_loader)
+
+#include(CMakeLists.test_snp_loader.app.txt)

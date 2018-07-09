@@ -1,9 +1,11 @@
-##############################################################################
-# 
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_add_subdirectory(sra bam)
 
 # Include projects from this directory
 
 # Recurse subdirectories
-add_subdirectory(sra)
-add_subdirectory(bam)
+#add_subdirectory(sra)
+#add_subdirectory(bam)

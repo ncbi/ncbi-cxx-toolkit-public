@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(vdb_test)
+  NCBI_sources(vdb_test)
+  NCBI_uses_toolkit_libraries(sraread)
+  NCBI_project_watchers(vasilche ucko)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +23,4 @@ include_directories(SYSTEM ${SRA_INCLUDE})
 target_link_libraries(vdb_test-app
     sraread
 )
-
+endif()
