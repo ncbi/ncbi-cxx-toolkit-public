@@ -76,41 +76,49 @@ static LinkedHSP * s_HSPFree(LinkedHSP *x) {
 }
 
 /** return true if p dominates y  */
-static Boolean s_DominateTest(LinkedHSP *p, LinkedHSP *y, Boolean drop_y_if_tie) {
+static Boolean s_DominateTest(LinkedHSP *p, LinkedHSP *y) {
     Int8 b1 = p->begin;
     Int8 b2 = y->begin;
     Int8 e1 = p->end;
     Int8 e2 = y->end;
     Int8 s1 = p->hsp->score;
     Int8 s2 = y->hsp->score;
+    double ev1 = p->hsp->evalue;
+    double ev2 = y->hsp->evalue;
     Int8 l1 = e1 - b1;
     Int8 l2 = e2 - b2;
+    Int8 overlap = MIN(e1,e2) - MAX(b1,b2);
+    Int8 d = 0;
+    Int4 evalue_cmp = 0;
+
+    // If not overlap by more than 50%
+    if(2 *overlap < l2) {
+    	return FALSE;
+    }
 
     /* the main criterion:
        2 * (%diff in score) + 1 * (%diff in length) */
-    Int8 d  = 3*s1*l1 + s1*l2 - s2*l1 - 3*s2*l2;
+    //Int8 d  = 3*s1*l1 + s1*l2 - s2*l1 - 3*s2*l2;
+    d  = 4*s1*l1 + 2*s1*l2 - 2*s2*l1 - 4*s2*l2;
+    // If identical, use oid as tie breaker
+    if(((s1 == s2) && (b1==b2) && (l1 == l2)) || (d == 0)) {
+    	if(s1 != s2) {
+    		return (s1>s2);
+    	}
+    	if(p->sid != y->sid) {
+    		return (p->sid < y->sid);
+    	}
 
-    if (d < 0 ||  
-         /* the following is the 50% overlap condition */
-        ((e1+b1-2*b2) * (e1+b1-2*e2) > 0
-      && (e2+b2-2*b1) * (e2+b2-2*e1) > 0)) return FALSE;
-
-    if (d > 0 || 
-         /* when two hsps are identical, drop the 2nd one */
-         (drop_y_if_tie && s1 == s2 && l1 == l2)) return TRUE;
-
-    /* non-identical case, use score as tie_break
-       note: when two hsps are identical, drop the 1st one */
-    return (s1 > s2);
-}
-
-/** test hsp y to see if it is dominated by lower merit hsps in list */
-static Boolean s_LowMeritPass(LinkedHSP *list, LinkedHSP *y) {
-    LinkedHSP *p = list;
-    while (p) {
-       if (p->merit == 1 && s_DominateTest(p, y, TRUE))  return FALSE;
-       p = p->next;
+    	if(p->hsp->subject.offset > y->hsp->subject.offset) {
+    		return FALSE;
+    	}
+    	return TRUE;
     }
+
+   	if (d < 0) {
+   		return FALSE;
+    }
+
     return TRUE;
 }
 
@@ -118,7 +126,7 @@ static Boolean s_LowMeritPass(LinkedHSP *list, LinkedHSP *y) {
 static Boolean s_FullPass(LinkedHSP *list, LinkedHSP *y) {
     LinkedHSP *p = list;
     while (p) {
-       if (s_DominateTest(p, y, TRUE)) { 
+       if (s_DominateTest(p, y)) {
           (y->merit)--;
           if (y->merit <= 0) return FALSE;
        }
@@ -136,7 +144,7 @@ static Int4 s_ProcessHSPList(LinkedHSP **list, LinkedHSP *y) {
        ++num;
        r = p;
        p = p->next;
-       if (r != y && s_DominateTest(y, r, FALSE)) {
+       if (r != y && s_DominateTest(y, r)) {
           (r->merit)--;
           if (r->merit <= 0) {
              if (r == *list) {
@@ -203,7 +211,7 @@ typedef struct CTreeNode {
 
 /*******Memory management layer (may be changed later)********/
 static CTreeNode * s_GetNode() {
-    return( (CTreeNode *) malloc(sizeof(CTreeNode)));
+    return( (CTreeNode *) calloc(1,sizeof(CTreeNode)));
 }
 
 static CTreeNode * s_RetNode(CTreeNode * node) {
@@ -324,7 +332,7 @@ static void s_MarkDownCTree(CTreeNode ** node) {
    return;
 }
 
-/** recursively search and update merit hsps in culling tree 
+/** recursively search and update merit hsps in culling tree
     due to addition of hsp x */
 static void s_ProcessCTree(CTreeNode ** node, LinkedHSP *x) {
    Int4 midpt;
@@ -342,7 +350,7 @@ static void s_ProcessCTree(CTreeNode ** node, LinkedHSP *x) {
       if (s_ProcessHSPList(&((*node)->hsplist), x) <= 0) {
           s_CTreeNodeFree(*node);
           *node = NULL;
-      } 
+      }
       return;
    }
 
@@ -417,30 +425,12 @@ static LinkedHSP * s_RipHSPOffCTree(CTreeNode *tree) {
     return q;
 }
 
-/** First pass to see if hsp A can be insert into the tree, will
-    only compare A to the low merit ones  */
-static Boolean s_FirstPass(CTreeNode *tree, LinkedHSP *A) {
-    Int4 midpt;
 
-    ASSERT(tree != NULL);
-    /* Descend the tree */
-    while (tree) {
-       ASSERT(tree->begin <= A->begin);
-       ASSERT(tree->end   >= A->end);
-       
-       if (! s_LowMeritPass(tree->hsplist, A)) return FALSE;
-       midpt = (tree->begin + tree->end) /2;
-       if      (A->end   < midpt) tree = tree->left;
-       else if (A->begin > midpt) tree = tree->right;
-       else return TRUE;
-    }
-    return TRUE;
-}
 
-/** Second pass, a full traverse to determine the merit of A,
+/** A full traverse to determine the merit of A,
     in addition, insert A to the proper place if A is valid,
     or return FALSE if A's merit decreases to zero */
-static Boolean s_SecondPass(CTreeNode *tree, LinkedHSP *A) {
+static Boolean s_SaveHSP(CTreeNode *tree, LinkedHSP *A) {
    Int4 midpt;
 
    LinkedHSP *x;
@@ -452,7 +442,7 @@ static Boolean s_SecondPass(CTreeNode *tree, LinkedHSP *A) {
    while (tree) {
       ASSERT(tree->begin <= A->begin);
       ASSERT(tree->end   >= A->end);
- 
+
       if (! s_FullPass(tree->hsplist, A)) return FALSE;
       midpt = (tree->begin + tree->end) /2;
       node = tree;  /* record the last valid position */
@@ -476,7 +466,9 @@ static Boolean s_SecondPass(CTreeNode *tree, LinkedHSP *A) {
    }
 
    /* check domination */
-   s_ProcessCTree(&node, x);
+   s_ProcessHSPList(&(node->hsplist), x);
+   s_ProcessCTree(&(node->left), x);
+   s_ProcessCTree(&(node->right), x);
    return TRUE;
 }
 
@@ -502,6 +494,7 @@ s_BlastHSPCullingInit(void* data, void* results)
     cull_data->c_tree = calloc(cull_data->num_contexts, sizeof(CTreeNode *));
     return 0;
 }
+
 
 /** Perform post-run clean-ups
  * @param data The buffered data structure [in]
@@ -642,10 +635,9 @@ s_BlastHSPCullingRun(void* data, BlastHSPList* hsp_list)
          c_tree[A.cid] = s_CTreeNew(qlen);
       }
 
-      if ( s_FirstPass(c_tree[A.cid], &A) && s_SecondPass(c_tree[A.cid], &A)) {
-         hsp_list->hsp_array[i] = NULL;
-      } 
-
+      if(s_SaveHSP(c_tree[A.cid], &A)){
+    	 hsp_list->hsp_array[i] = NULL;
+      }
    }
 
    /* now all good hits have moved to tree, we can remove hsp_list */
@@ -711,8 +703,19 @@ static int
 s_BlastHSPCullingPipeRun(void* data, BlastHSPResults* results)
 {
    int qid, sid, num_list;
-
+   BlastHSPList* hsp_list = NULL;
    s_BlastHSPCullingInit(data, results);
+   for (qid = 0; qid < results->num_queries; ++qid) {
+         if (!(results->hitlist_array[qid])) continue;
+         num_list = results->hitlist_array[qid]->hsplist_count;
+         for (sid = 0; sid < num_list; ++sid) {
+        	 hsp_list = results->hitlist_array[qid]->hsplist_array[sid];
+        	 Blast_HSPListSortByEvalue(hsp_list);
+        	 hsp_list->best_evalue = hsp_list->hsp_array[0]->evalue;
+         }
+         Blast_HitListSortByEvalue(results->hitlist_array[qid]);
+   }
+
    for (qid = 0; qid < results->num_queries; ++qid) {
       if (!(results->hitlist_array[qid])) continue;
       num_list = results->hitlist_array[qid]->hsplist_count;
@@ -770,6 +773,7 @@ s_BlastHSPCullingPipeNew(void* params, BlastQueryInfo* query_info)
    pipe->data = malloc(sizeof(BlastHSPCullingData));
    data.params = params;
    data.query_info = query_info;
+   data.num_contexts = query_info->last_context + 1;
    memcpy(pipe->data, &data, sizeof(data));
    pipe->next = NULL;
     

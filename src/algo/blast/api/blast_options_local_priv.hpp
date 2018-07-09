@@ -1316,7 +1316,7 @@ CBlastOptionsLocal::SetCullingLimit(int s)
         BlastHSPCullingOptions* culling = BlastHSPCullingOptionsNew(s);
         BlastHSPFilteringOptions_AddCulling(m_HitSaveOpts->hsp_filt_opt,
                                             &culling,
-                                            ePrelimSearch);
+                                            eBoth);
         _ASSERT(culling == NULL);
     } else {
         m_HitSaveOpts->hsp_filt_opt->culling_opts->max_hits = s;
