@@ -453,6 +453,7 @@ CWGSDataLoader_Impl::GetFileInfoByAcc(const string& acc)
     case CSeq_id::eAcc_wgs:
     case CSeq_id::eAcc_wgs_intermed:
     case CSeq_id::eAcc_tsa:
+    case CSeq_id::eAcc_targeted:
         break;
     case CSeq_id::eAcc_other:
         if ( type == CSeq_id::eAcc_embl_prot ) {
