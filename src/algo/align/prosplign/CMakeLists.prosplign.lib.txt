@@ -1,3 +1,17 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(prosplign)
+  NCBI_sources(
+    prosplign scoring PSeq NSeq Ali AliSeqAlign Info nucprot intron
+    AlignInfo compartments
+  )
+  NCBI_uses_toolkit_libraries(xalgoalignutil seqset)
+  NCBI_project_watchers(kiryutin chetvern)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -12,3 +26,4 @@ add_dependencies(prosplign
 target_link_libraries(prosplign
     xalgoalignutil
 )
+endif()

@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(blastinput_demo)
+  NCBI_sources(blastinput_demo)
+  NCBI_uses_toolkit_libraries(blastinput)
+  NCBI_project_watchers(madden camacho)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(blastinput_demo-app PROPERTIES OUTPUT_NAME blastinput_demo
 target_link_libraries(blastinput_demo-app
     blastinput
 )
-
+endif()

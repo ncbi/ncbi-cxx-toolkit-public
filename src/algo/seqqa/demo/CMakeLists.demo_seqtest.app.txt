@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(demo_seqtest)
+  NCBI_sources(demo_seqtest)
+  NCBI_requires(-Cygwin)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoseqqa seq)
+  NCBI_project_watchers(jcherry)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -14,4 +26,4 @@ target_link_libraries(demo_seqtest-app
 add_dependencies(demo_seqtest-app
     seq
 )
-
+endif()

@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(seqalign_util)
+  NCBI_sources(seqalign_cmp seqalign_set_convert)
+  NCBI_uses_toolkit_libraries(blastdb xnetblast seq)
+  NCBI_project_watchers(camacho madden fongah2)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -11,3 +22,4 @@ add_dependencies(seqalign_util
 target_link_libraries(seqalign_util
     seq
 )
+endif()

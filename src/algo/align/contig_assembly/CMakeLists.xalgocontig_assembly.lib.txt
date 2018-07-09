@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xalgocontig_assembly)
+  NCBI_sources(contig_assembly)
+  NCBI_uses_toolkit_libraries(xalgoalignnw xalnmgr xblast xnetblast)
+  NCBI_project_watchers(boukn dicuccio)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -11,3 +22,4 @@ add_dependencies(xalgocontig_assembly
 target_link_libraries(xalgocontig_assembly
     xalgoalignnw xalnmgr xblast
 )
+endif()

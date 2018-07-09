@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(unit_test_gene_model)
+  NCBI_sources(unit_test_gene_model)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoseq xvalidate)
+  NCBI_project_watchers(dicuccio chetvern mozese2)
+  NCBI_add_test(unit_test_gene_model -data-in alignments.asn -data-expected annotations.asn -seqdata-expected seqdata.asn -combined-data-expected combined_annot.asn -combined-with-omission-expected combined_with_omission.asn)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -13,4 +26,4 @@ target_link_libraries(unit_test_gene_model-app
     ncbi_xloader_genbank test_boost xalgoseq
     xvalidate
 )
-
+endif()

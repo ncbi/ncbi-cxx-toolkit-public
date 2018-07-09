@@ -1,5 +1,17 @@
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(proteinkmer)
+  NCBI_sources(
+    blastkmer blastkmerindex blastkmeroptions blastkmerresults 
+    blastkmerutils mhfile pearson kblastapi
+  )
+  NCBI_uses_toolkit_libraries(xblast)
+  NCBI_project_watchers(boratyng madden)
+NCBI_end_lib()
+
+if(OFF)
 
 
 add_library(proteinkmer
@@ -10,4 +22,4 @@ add_library(proteinkmer
 target_link_libraries(proteinkmer
     xblast
 )
-
+endif()

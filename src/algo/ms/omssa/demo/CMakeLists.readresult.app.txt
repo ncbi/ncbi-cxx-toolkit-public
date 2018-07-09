@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(readresult)
+  NCBI_sources(readresult)
+  NCBI_uses_toolkit_libraries(omssa)
+  NCBI_project_watchers(lewisg gorelenk)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(readresult-app PROPERTIES OUTPUT_NAME readresult)
 target_link_libraries(readresult-app
     omssa
 )
-
+endif()

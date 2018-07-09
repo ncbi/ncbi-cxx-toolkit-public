@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(ngalign_app)
+  NCBI_sources(ngalign_app)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_asn_cache xngalign seq)
+  NCBI_project_watchers(boukn)
+NCBI_end_lib()
+
+if(OFF)
 add_executable(ngalign_app ngalign_app)
 
 add_dependencies(ngalign_app seq)
@@ -5,3 +16,4 @@ add_dependencies(ngalign_app seq)
 target_link_libraries(ngalign_app
     ncbi_xloader_asn_cache xngalign
 )
+endif()

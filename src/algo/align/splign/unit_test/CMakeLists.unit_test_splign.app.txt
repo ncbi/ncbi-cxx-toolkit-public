@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(unit_test_splign)
+  NCBI_sources(unit_test_splign)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoalignsplign)
+  NCBI_project_watchers(kiryutin)
+  NCBI_add_test(unit_test_splign -mrna-data-in mrna_in.asn -est-data-in est_in.asn -mrna-expected mrna_expected.asn -est-expected est_expected.asn)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +25,4 @@ set_target_properties(unit_test_splign-app PROPERTIES OUTPUT_NAME unit_test_spli
 target_link_libraries(unit_test_splign-app
     ncbi_xloader_genbank test_boost xalgoalignsplign
 )
-
+endif()

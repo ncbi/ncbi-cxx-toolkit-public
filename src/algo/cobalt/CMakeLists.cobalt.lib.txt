@@ -1,3 +1,17 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(cobalt)
+  NCBI_sources(
+    blast cobalt dist hit hitlist phi prog resfreq rps seg seq seqalign
+    traceback tree kmercounts clusterer patterns options links
+  )
+  NCBI_uses_toolkit_libraries(xalgoalignnw xalgophytree xblast seqset biotree xnetblast blastdb)
+  NCBI_project_watchers(boratyng dicuccio )
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +26,4 @@ add_dependencies(cobalt
 target_link_libraries(cobalt
     xalgoalignnw xalgophytree xblast
 )
-
+endif()

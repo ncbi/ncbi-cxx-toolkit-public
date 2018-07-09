@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xid_mapper)
+  NCBI_sources(id_mapper)
+  NCBI_uses_toolkit_libraries(xobjmgr genome_collection seqset)
+  NCBI_project_watchers(boukn meric)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -11,3 +22,4 @@ add_dependencies(xid_mapper
 target_link_libraries(xid_mapper
     xobjmgr
 )
+endif()

@@ -1,0 +1,12 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(seqdb_lmdb_unit_test)
+  NCBI_sources(seqdb_lmdb_unit_test)
+  NCBI_requires(LMDB)
+  NCBI_add_definitions(NCBI_MODULE=BLASTDB)
+  NCBI_uses_toolkit_libraries(seqdb xobjutil)
+  NCBI_project_watchers(madden camacho fongah2)
+  NCBI_add_test()
+NCBI_end_app()

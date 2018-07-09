@@ -1,3 +1,17 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(igblast)
+  NCBI_sources(igblast)
+  NCBI_uses_toolkit_libraries(
+    blastdb xnetblast
+    xalnmgr xblast
+  )
+  NCBI_project_watchers(madden camacho)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +24,4 @@ target_link_libraries(igblast
 add_dependencies(igblast
     blastdb xnetblast
 )
-
+endif()

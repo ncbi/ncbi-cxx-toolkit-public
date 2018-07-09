@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(remote_blast_unit_test)
+  NCBI_sources(remote_blast_unit_test)
+  NCBI_uses_toolkit_libraries(blast_services blast_unit_test_util xblast)
+  NCBI_project_watchers(madden camacho merezhuk raytseli)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +24,4 @@ set_target_properties(remote_blast_unit_test-app PROPERTIES OUTPUT_NAME remote_b
 target_link_libraries(remote_blast_unit_test-app
     blast_services blast_unit_test_util xblast
 )
-
+endif()

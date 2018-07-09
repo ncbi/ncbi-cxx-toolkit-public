@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(srsearch)
+  NCBI_sources(main srsearch_app)
+  NCBI_uses_toolkit_libraries(xalgoblastdbindex xalgoblastdbindex_search)
+  NCBI_project_watchers(morgulis)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(srsearch-app PROPERTIES OUTPUT_NAME srsearch)
 target_link_libraries(srsearch-app
     xalgoblastdbindex xalgoblastdbindex_search
 )
-
+endif()

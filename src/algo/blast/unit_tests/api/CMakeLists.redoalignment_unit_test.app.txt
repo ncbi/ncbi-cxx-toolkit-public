@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(redoalignment_unit_test)
+  NCBI_sources(redoalignment_unit_test)
+  NCBI_add_include_directories(${NCBI_CURRENT_SOURCE_DIR}/../../core)
+  NCBI_uses_toolkit_libraries(blast_unit_test_util blastinput)
+  NCBI_project_watchers(boratyng madden)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +25,4 @@ set_target_properties(redoalignment_unit_test-app PROPERTIES OUTPUT_NAME redoali
 target_link_libraries(redoalignment_unit_test-app
     blast_unit_test_util blastinput
 )
-
+endif()

@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(demo_contig_assembly)
+  NCBI_sources(demo_contig_assembly)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgocontig_assembly seq)
+  NCBI_project_watchers(jcherry)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -14,4 +25,4 @@ target_link_libraries(demo_contig_assembly-app
 add_dependencies(demo_contig_assembly-app
     seq
 )
-
+endif()

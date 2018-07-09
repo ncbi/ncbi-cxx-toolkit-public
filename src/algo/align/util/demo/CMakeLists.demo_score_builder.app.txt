@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(demo_score_builder)
+  NCBI_sources(demo_score_builder)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoalignutil)
+  NCBI_project_watchers(dicuccio)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,5 @@ set_target_properties(demo_score_builder-app PROPERTIES OUTPUT_NAME demo_score_b
 target_link_libraries(demo_score_builder-app
     ncbi_xloader_genbank xalgoalignutil
 )
+endif()
 

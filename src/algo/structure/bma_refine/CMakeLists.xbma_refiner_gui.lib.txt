@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xbma_refiner_gui)
+  NCBI_sources(InterfaceGUI)
+  NCBI_requires(wxWidgets)
+  NCBI_uses_toolkit_libraries(xbma_refiner wx_tools cdd)
+  NCBI_project_watchers(thiessen)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -14,4 +26,4 @@ add_dependencies(xbma_refiner_gui
 target_link_libraries(xbma_refiner_gui
     xbma_refiner wx_tools
 )
-
+endif()

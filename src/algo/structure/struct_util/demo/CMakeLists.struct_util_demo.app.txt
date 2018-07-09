@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(struct_util_demo)
+  NCBI_sources(struct_util_demo)
+  NCBI_uses_toolkit_libraries(cdd xstruct_util)
+  NCBI_project_watchers(thiessen)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,5 @@ set_target_properties(struct_util_demo-app PROPERTIES OUTPUT_NAME struct_util_de
 target_link_libraries(struct_util_demo-app
     cdd xstruct_util
 )
+endif()
 

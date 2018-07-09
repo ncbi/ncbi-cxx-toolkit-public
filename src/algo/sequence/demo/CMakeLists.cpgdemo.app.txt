@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(cpgdemo)
+  NCBI_sources(cpgdemo)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoseq)
+  NCBI_project_watchers(kskatz)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(cpgdemo-app PROPERTIES OUTPUT_NAME cpgdemo)
 target_link_libraries(cpgdemo-app
     ncbi_xloader_genbank xalgoseq
 )
-
+endif()

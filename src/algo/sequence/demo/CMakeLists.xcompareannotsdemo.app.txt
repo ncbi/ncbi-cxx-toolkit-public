@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(xcompareannotsdemo)
+  NCBI_sources(xcompareannotsdemo)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoseq)
+  NCBI_project_watchers(astashya)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(xcompareannotsdemo-app PROPERTIES OUTPUT_NAME xcompareanno
 target_link_libraries(xcompareannotsdemo-app
     ncbi_xloader_genbank xalgoseq
 )
-
+endif()

@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(gumbelparams_app)
+  NCBI_sources(gumbelparams_app)
+  NCBI_uses_toolkit_libraries(gumbelparams)
+  NCBI_project_watchers(boratyng madden camacho)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(gumbelparams-app PROPERTIES OUTPUT_NAME gumbelparams)
 target_link_libraries(gumbelparams-app
     gumbelparams
 )
-
+endif()

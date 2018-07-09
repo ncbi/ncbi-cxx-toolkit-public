@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xalgotext)
+  NCBI_sources(text_util vector_serial)
+  NCBI_uses_toolkit_libraries(xcompress)
+  NCBI_project_watchers(dicuccio)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -8,3 +19,4 @@ add_library(xalgotext
 target_link_libraries(xalgotext
     xcompress
 )
+endif()

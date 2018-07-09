@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(blast_sra_input)
+  NCBI_sources(blast_sra_input)
+  NCBI_add_definitions(NCBI_MODULE=BLAST)
+  NCBI_requires(VDB)
+  NCBI_uses_toolkit_libraries(sraread)
+  NCBI_project_watchers(boratyng)
+NCBI_end_lib()
+
+if(OFF)
 add_library(blast_sra_input
     blast_sra_input
 )
@@ -7,4 +20,4 @@ include_directories(SYSTEM ${SRA_INCLUDE})
 target_link_libraries(blast_sra_input
     sraread
 )
-
+endif()

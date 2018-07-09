@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xprimer)
+  NCBI_sources(primercheck)
+  NCBI_uses_toolkit_libraries(gene_info ncbi_xloader_genbank xalgoalignnw xalnmgr)
+  NCBI_project_watchers(jianye)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -12,3 +23,4 @@ target_link_libraries(xprimer
     gene_info ncbi_xloader_genbank xalgoalignnw
     xalnmgr
 )
+endif()

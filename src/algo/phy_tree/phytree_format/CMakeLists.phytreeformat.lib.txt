@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(phytree_format)
+  NCBI_sources(phytree_format phytree_simplify)
+  NCBI_uses_toolkit_libraries(align_format xalgophytree biotree seqset taxon1 blastdb scoremat)
+  NCBI_project_watchers(boratyng)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -11,3 +22,4 @@ add_dependencies(phytree_format
 target_link_libraries(phytree_format
     align_format xalgophytree
 )
+endif()

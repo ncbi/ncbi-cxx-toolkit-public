@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(demo_genomic_compart)
+  NCBI_sources(demo_genomic_compart)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoalignutil)
+  NCBI_project_watchers(dicuccio)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(demo_genomic_compart-app PROPERTIES OUTPUT_NAME demo_genom
 target_link_libraries(demo_genomic_compart-app
     ncbi_xloader_genbank xalgoalignutil
 )
-
+endif()

@@ -1,3 +1,19 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(blast_format_unit_test)
+  NCBI_sources(
+    seqalignfilter_unit_test blastfmtutil_unit_test build_archive_unit_test
+    vecscreen_run_unit_test blast_format_unit_test
+  )
+  NCBI_add_definitions(NCBI_MODULE=BLASTFORMAT)
+  NCBI_uses_toolkit_libraries(blastinput xblastformat)
+  NCBI_project_watchers(jianye zaretska madden camacho)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -13,4 +29,4 @@ set_target_properties(blast_format_unit_test-app PROPERTIES OUTPUT_NAME blast_fo
 target_link_libraries(blast_format_unit_test-app
     blastinput test_boost xblastformat
 )
-
+endif()

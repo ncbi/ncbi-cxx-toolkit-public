@@ -1,3 +1,22 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_lib(xomssa)
+  NCBI_sources(
+    SpectrumSet msladder msms mspeak omssa Mod omssascore msmerge omssaapp
+    pepxml
+  )
+  NCBI_uses_toolkit_libraries(
+    blast omssa pepXML
+    seqdb xcompress xconnect
+    xregexp
+    blastdb pepXML omssa
+  )
+  NCBI_project_watchers(lewisg slottad)
+NCBI_end_lib()
+
+if(OFF)
 #
 #
 #
@@ -16,4 +35,4 @@ target_link_libraries(xomssa
     seqdb xcompress xconnect
     xregexp
 )
-
+endif()

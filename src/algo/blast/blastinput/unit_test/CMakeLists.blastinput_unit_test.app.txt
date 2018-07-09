@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(blastinput_unit_test)
+  NCBI_sources(blastinput_unit_test blast_scope_src_unit_test)
+  NCBI_uses_toolkit_libraries(blastinput entrez2cli)
+  NCBI_project_watchers(madden camacho fongah2)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +23,4 @@ set_target_properties(blastinput_unit_test-app PROPERTIES OUTPUT_NAME blastinput
 target_link_libraries(blastinput_unit_test-app
     blastinput entrez2cli test_boost
 )
-
+endif()

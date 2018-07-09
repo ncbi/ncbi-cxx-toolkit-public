@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(cobalt-app)
+  NCBI_sources(cobalt_app_util cobalt_app)
+  NCBI_requires(-Cygwin)
+  NCBI_uses_toolkit_libraries(align_format cobalt)
+  NCBI_project_watchers(boratyng)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +22,4 @@ set_target_properties(cobalt-app PROPERTIES OUTPUT_NAME cobalt)
 target_link_libraries(cobalt-app
     align_format cobalt
 )
-
+endif()

@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(gumbelparams_unit_test)
+  NCBI_sources(general_score_matrix_unit_test gumbel_params_unit_test)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(gumbelparams)
+  NCBI_add_test()
+  NCBI_project_watchers(boratyng madden camacho)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +25,4 @@ set_target_properties(gumbelparams_unit_test-app PROPERTIES OUTPUT_NAME gumbelpa
 target_link_libraries(gumbelparams_unit_test-app
     gumbelparams test_boost
 )
-
+endif()

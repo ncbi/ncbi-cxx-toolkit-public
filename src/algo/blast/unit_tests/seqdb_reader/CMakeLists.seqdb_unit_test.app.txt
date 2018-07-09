@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(seqdb_unit_test)
+  NCBI_sources(seqdb_unit_test)
+  NCBI_add_definitions(NCBI_MODULE=BLASTDB)
+  NCBI_uses_toolkit_libraries(seqdb xobjutil)
+  NCBI_project_watchers(madden camacho)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +25,4 @@ set_target_properties(seqdb_unit_test-app PROPERTIES OUTPUT_NAME seqdb_unit_test
 target_link_libraries(seqdb_unit_test-app
     seqdb test_boost xobjutil
 )
-
+endif()

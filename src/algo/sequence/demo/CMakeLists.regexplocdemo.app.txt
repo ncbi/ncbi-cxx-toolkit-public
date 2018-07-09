@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(regexplocdemo)
+  NCBI_sources(regexplocdemo)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoseq)
+  NCBI_project_watchers(clausen)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +23,4 @@ include_directories(SYSTEM ${PCRE_INCLUDE})
 target_link_libraries(regexplocdemo-app
     ncbi_xloader_genbank xalgoseq
 )
-
+endif()
