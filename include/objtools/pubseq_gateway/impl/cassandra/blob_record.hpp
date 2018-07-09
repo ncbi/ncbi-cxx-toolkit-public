@@ -32,6 +32,9 @@
 #include <corelib/ncbistd.hpp>
 #include "IdCassScope.hpp"
 
+#include <string>
+#include <vector>
+
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
@@ -47,15 +50,15 @@ enum class EBlobFlags : TBlobFlagBase {
 
 struct CBlobRecord {
 
-public:
+ public:
     using TSatKey = int32_t;
     using TSize = int64_t;
     using TTimestamp = int64_t;
     using TBlobChunk = vector<unsigned char>;
 
-public:
+ public:
     CBlobRecord();
-    CBlobRecord(TSatKey key);
+    explicit CBlobRecord(TSatKey key);
     CBlobRecord(CBlobRecord const &) = default;
     CBlobRecord(CBlobRecord &&) = default;
 
@@ -74,7 +77,7 @@ public:
 
     CBlobRecord& SetDiv(string value);
     CBlobRecord& SetId2Info(string const & value);
-    CBlobRecord& SetId2Info(int16_t sat, int32_t shell, int32_t info);
+    CBlobRecord& SetId2Info(int16_t sat, int32_t shell, int32_t info, int32_t chunks);
     CBlobRecord& SetUserName(string value);
 
     CBlobRecord& SetNChunks(int32_t value);
@@ -82,8 +85,8 @@ public:
     CBlobRecord& SetOwner(int32_t value);
     CBlobRecord& SetClass(int16_t value);
 
-    //@warning Flags for extended schema are not compatible with old one.
-    //DO NOT use these methods to work with old schema data
+    //  @warning Flags for extended schema are not compatible with old one.
+    //  DO NOT use these methods to work with old schema data
     CBlobRecord& SetGzip(bool value);
     CBlobRecord& SetNot4Gbu(bool value);
     CBlobRecord& SetSuppress(bool value);
@@ -93,7 +96,7 @@ public:
     CBlobRecord& AppendBlobChunk(TBlobChunk&& chunk);
     CBlobRecord& InsertBlobChunk(size_t index, TBlobChunk&& chunk);
 
-    //---------------Getters--------------------------
+    //  ---------------Getters--------------------------
 
     TSatKey GetKey() const;
     TTimestamp GetModified() const;
@@ -115,14 +118,14 @@ public:
 
     bool NoData() const;
 
-    //---------------Utils--------------------------
+    //  ---------------Utils--------------------------
 
     void VerifyBlobSize() const;
     bool IsDataEqual(CBlobRecord const & blob) const;
 
     string ToString() const;
-private:
 
+ private:
     CBlobRecord& SetFlag(bool set_flag, EBlobFlags flag_value);
     bool GetFlag(EBlobFlags flag_value) const;
 
@@ -140,7 +143,7 @@ private:
     TSatKey     m_SatKey;
     int32_t     m_NChunks;
     int32_t     m_Owner;
-    
+
     int16_t     m_Class;
 
     vector<TBlobChunk> m_BlobChunks;
@@ -148,4 +151,4 @@ private:
 
 END_IDBLOB_SCOPE
 
-#endif
+#endif  // OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__BLOB_RECORD_HPP

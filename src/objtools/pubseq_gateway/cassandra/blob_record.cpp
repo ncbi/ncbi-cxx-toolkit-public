@@ -36,6 +36,7 @@
 #include <corelib/ncbistr.hpp>
 #include <sstream>
 #include <utility>
+#include <string>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -114,12 +115,13 @@ CBlobRecord& CBlobRecord::SetId2Info(string const & value)
     return *this;
 }
 
-CBlobRecord& CBlobRecord::SetId2Info(int16_t sat, int32_t shell, int32_t info)
+CBlobRecord& CBlobRecord::SetId2Info(int16_t sat, int32_t shell, int32_t info, int32_t chunks)
 {
     if (sat > 0) {
         m_Id2Info = NStr::NumericToString(sat) + "." +
             NStr::NumericToString(shell) + "." +
-            NStr::NumericToString(info);
+            NStr::NumericToString(info) + "." +
+            NStr::NumericToString(chunks);
     }
     return *this;
 }
@@ -256,8 +258,7 @@ bool CBlobRecord::IsDataEqual(CBlobRecord const & blob) const
             }
             this_offset += compare_length;
             blob_offset += compare_length;
-        }
-        else {
+        } else {
             if (this_offset >= this->m_BlobChunks[this_chunk].size()) {
                 this_offset = 0;
                 ++this_chunk;
@@ -275,8 +276,7 @@ bool CBlobRecord::IsDataEqual(CBlobRecord const & blob) const
 CBlobRecord& CBlobRecord::SetFlag(bool set_flag, EBlobFlags flag_value) {
     if (set_flag) {
         m_Flags |= static_cast<TBlobFlagBase>(flag_value);
-    }
-    else {
+    } else {
         m_Flags &= ~(static_cast<TBlobFlagBase>(flag_value));
     }
     return *this;
@@ -384,8 +384,7 @@ string CBlobRecord::ToString() const
       << "\t\tSuppress - " << GetFlag(EBlobFlags::eSuppress) << endl
       << "\t\tWithdrawn - " << GetFlag(EBlobFlags::eWithdrawn) << endl
       << "\t\tNot4Gbu - " << GetFlag(EBlobFlags::eNot4Gbu) << endl
-      << "\t\tDead - " << GetFlag(EBlobFlags::eDead) << endl
-    ;
+      << "\t\tDead - " << GetFlag(EBlobFlags::eDead) << endl;
     return s.str();
 }
 
