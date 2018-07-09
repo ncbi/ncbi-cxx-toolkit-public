@@ -1024,6 +1024,7 @@ CID2WGSProcessor_Impl::ResolveAcc(const CTextseq_id& id,
     case CSeq_id::eAcc_wgs:
     case CSeq_id::eAcc_wgs_intermed:
     case CSeq_id::eAcc_tsa:
+    case CSeq_id::eAcc_targeted:
         if ( type & CSeq_id::fAcc_prot ) {
             if ( acc.size() <= 8 ) { // 3+5
                 return ResolveProtAcc(id, resolver);
