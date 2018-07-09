@@ -170,6 +170,7 @@ int CPubseqGatewayApp::OnBadURL(HST::CHttpRequest &  req,
     m_ErrorCounters.IncBadUrlPath();
     resp.Send400("Unknown Request", "The provided URL is not recognized");
 
+    ERR_POST("The provided URL is not recognized");
     x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
     return 0;
 }
@@ -186,8 +187,9 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
     SRequestParameter   seq_id_param = x_GetParam(req, "seq_id");
     if (!seq_id_param.m_Found) {
         m_ErrorCounters.IncInsufficientArguments();
-        resp.Send400("Missing Request Parameter",
-                     "Expected to have the 'seq_id' parameter");
+        static const char *  err_msg = "Expected to have the 'seq_id' parameter";
+        resp.Send400("Missing Request Parameter", err_msg);
+        ERR_POST(err_msg);
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
@@ -202,13 +204,15 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
             string      err_msg = "Error converting seq_id_type parameter "
                                   "to integer: " + string(exc.what());
             resp.Send400("Malformed Request Parameters", err_msg.c_str());
+            ERR_POST(err_msg);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
         } catch (...) {
             m_ErrorCounters.IncMalformedArguments();
-            resp.Send400("Malformed Request Parameters",
-                         "Unknown error converting "
-                         "seq_id_type parameter to integer");
+            static const char *  err_msg = "Unknown error converting "
+                                           "seq_id_type parameter to integer";
+            resp.Send400("Malformed Request Parameters", err_msg);
+            ERR_POST(err_msg);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
         }
@@ -254,6 +258,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                                     flag_param.second.first.m_Value, err_msg)) {
                 m_ErrorCounters.IncMalformedArguments();
                 resp.Send400("Malformed Request Parameters", err_msg.c_str());
+                ERR_POST(err_msg);
                 x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
                 return 0;
             }
@@ -290,10 +295,11 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
 
         if (!blob_id.IsValid()) {
             m_ErrorCounters.IncMalformedArguments();
-            resp.Send400("Malformed Request Parameters",
-                         "Malformed 'blob_id' parameter. "
-                         "Expected format 'sat.sat_key' where both "
-                         "'sat' and 'sat_key' are integers.");
+            const char *  err_msg = "Malformed 'blob_id' parameter. "
+                                    "Expected format 'sat.sat_key' where both "
+                                    "'sat' and 'sat_key' are integers.";
+            resp.Send400("Malformed Request Parameters", err_msg);
+            ERR_POST(err_msg);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
         }
@@ -312,13 +318,15 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
         string      msg = string("Unknown satellite number ") +
                           NStr::NumericToString(blob_id.m_Sat);
         x_SendUnknownSatelliteError(resp, blob_id, msg);
+        ERR_POST(msg);
         x_PrintRequestStop(context, CRequestStatus::e404_NotFound);
         return 0;
     }
 
     m_ErrorCounters.IncInsufficientArguments();
-    resp.Send400("Missing Request Parameters",
-                 "Mandatory parameter 'blob_id' is not found.");
+    const char *  err_msg = "Mandatory parameter 'blob_id' is not found.";
+    resp.Send400("Missing Request Parameters", err_msg);
+    ERR_POST(err_msg);
     x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
     return 0;
 }
@@ -330,6 +338,8 @@ int CPubseqGatewayApp::OnConfig(HST::CHttpRequest &  req,
 {
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
+    m_RequestCounters.IncAdmin();
 
     CNcbiOstrstream             conf;
     CNcbiOstrstreamToString     converter(conf);
@@ -345,7 +355,6 @@ int CPubseqGatewayApp::OnConfig(HST::CHttpRequest &  req,
     resp.SetJsonContentType();
     resp.SetContentLength(content.length());
     resp.SendOk(content.c_str(), content.length(), false);
-    m_RequestCounters.IncAdmin();
 
     x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     return 0;
@@ -358,6 +367,8 @@ int CPubseqGatewayApp::OnInfo(HST::CHttpRequest &  req,
 {
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
+    m_RequestCounters.IncAdmin();
 
     CJsonNode   reply(CJsonNode::NewObjectNode());
 
@@ -439,7 +450,6 @@ int CPubseqGatewayApp::OnInfo(HST::CHttpRequest &  req,
     resp.SetJsonContentType();
     resp.SetContentLength(content.length());
     resp.SendOk(content.c_str(), content.length(), false);
-    m_RequestCounters.IncAdmin();
 
     x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     return 0;
@@ -452,6 +462,8 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
 {
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
+    m_RequestCounters.IncAdmin();
 
     CJsonNode                       reply(CJsonNode::NewObjectNode());
 
@@ -468,8 +480,6 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
     resp.SetJsonContentType();
     resp.SetContentLength(content.size());
     resp.SendOk(content.c_str(), content.size(), false);
-
-    m_RequestCounters.IncAdmin();
 
     x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     return 0;

@@ -171,7 +171,16 @@ bool CPubseqGatewayApp::SatToSatName(size_t  sat, string &  sat_name)
 int CPubseqGatewayApp::Run(void)
 {
     srand(time(NULL));
-    ParseArgs();
+
+    try {
+        ParseArgs();
+    } catch (const exception &  exc) {
+        ERR_POST(exc.what());
+        return 1;
+    } catch (...) {
+        ERR_POST("Unknown argument parsing error");
+        return 1;
+    }
 
     if (!GetArgs()[kNodaemonArgName]) {
         bool    is_good = CProcess::Daemonize(kEmptyCStr,
@@ -181,8 +190,26 @@ int CPubseqGatewayApp::Run(void)
                        "Error during daemonization");
     }
 
-    OpenDb(false, true);
-    OpenCass();
+    try {
+        OpenDb(false, true);
+    } catch (const exception &  exc) {
+        ERR_POST(exc.what());
+        return 1;
+    } catch (...) {
+        ERR_POST("Unknown opening LMDB cache error");
+        return 1;
+    }
+
+    try {
+        OpenCass();
+    } catch (const exception &  exc) {
+        ERR_POST(exc.what());
+        return 1;
+    } catch (...) {
+        ERR_POST("Unknown opening Cassandra error");
+        return 1;
+    }
+
     int     ret = x_PopulateSatToKeyspaceMap();
     if (ret != 0)
         return ret;

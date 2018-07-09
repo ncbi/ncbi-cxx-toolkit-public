@@ -176,14 +176,19 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         SBioseqInfo     bioseq_info;
 
         // retrieve from SI2CSI
-        if (!x_FetchCanonicalSeqId(bioseq_info)) {
-            x_SendReplyCompletion();
+        CRequestStatus::ECode   status = CRequestStatus::e200_Ok;
+        if (!x_FetchCanonicalSeqId(bioseq_info, status)) {
+            x_SendReplyCompletion(true, status);
+            resp.Send(m_Chunks, true);
+            m_Chunks.clear();
             return;
         }
 
         // retrieve from BIOSEQ_INFO
-        if (!x_FetchBioseqInfo(bioseq_info)) {
-            x_SendReplyCompletion();
+        if (!x_FetchBioseqInfo(bioseq_info, status)) {
+            x_SendReplyCompletion(true, status);
+            resp.Send(m_Chunks, true);
+            m_Chunks.clear();
             return;
         }
 
@@ -197,7 +202,9 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         SBlobId     blob_id(bioseq_info.m_Sat, bioseq_info.m_SatKey);
 
         if (!x_SatToSatName(m_BlobRequest, blob_id)) {
-            x_SendReplyCompletion();
+            x_SendReplyCompletion(true, CRequestStatus::e404_NotFound);
+            resp.Send(m_Chunks, true);
+            m_Chunks.clear();
             return;
         }
 
@@ -392,10 +399,11 @@ bool CPendingOperation::x_AllFinishedRead(void) const
 }
 
 
-void CPendingOperation::x_SendReplyCompletion(void)
+void CPendingOperation::x_SendReplyCompletion(bool  forced,
+                                              CRequestStatus::ECode  status)
 {
     // Send the reply completion only if needed
-    if (x_AllFinishedRead()) {
+    if (x_AllFinishedRead() || forced) {
         ++m_TotalSentReplyChunks;   // +1 for the reply completion
         string  reply_completion = GetReplyCompletionHeader(
                                         m_TotalSentReplyChunks);
@@ -404,7 +412,7 @@ void CPendingOperation::x_SendReplyCompletion(void)
                 reply_completion.size()));
 
         // No need to set the context/engage context resetter: they set outside
-        x_PrintRequestStop(CRequestStatus::e200_Ok);
+        x_PrintRequestStop(status);
     }
 }
 
@@ -429,10 +437,10 @@ void CPendingOperation::x_PrintRequestStop(int  status)
 }
 
 
-bool CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
+bool CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info,
+                                              CRequestStatus::ECode &  status)
 {
     string                  msg;
-    CRequestStatus::ECode   status;
     try {
         if (!FetchCanonicalSeqId(
                     m_Conn,
@@ -489,14 +497,15 @@ bool CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
     }
 
     // No problems, resolved
+    status = CRequestStatus::e200_Ok;
     return true;
 }
 
 
-bool CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info)
+bool CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
+                                          CRequestStatus::ECode &  status)
 {
     string                  msg;
-    CRequestStatus::ECode   status;
     try {
         if (!FetchBioseqInfo(
                     m_Conn,
@@ -547,6 +556,7 @@ bool CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info)
     }
 
     // No problems, biseq info has been retrieved
+    status = CRequestStatus::e200_Ok;
     return true;
 }
 
@@ -623,13 +633,8 @@ void CPendingOperation::x_SendUnknownSatelliteError(
 }
 
 
-CBlobChunkCallback::CBlobChunkCallback(
-        CPendingOperation *  pending_op,
-        HST::CHttpReply<CPendingOperation> *  reply,
-        CPendingOperation::SBlobFetchDetails *  fetch_details) :
-    m_PendingOp(pending_op), m_Reply(reply), m_FetchDetails(fetch_details)
-{}
 
+// Blob operations callbacks: blob props, blob chunks, errors
 
 void CBlobChunkCallback::operator()(const unsigned char *  data,
                                     unsigned int  size,
@@ -695,14 +700,6 @@ void CBlobChunkCallback::operator()(const unsigned char *  data,
     if (m_Reply->IsOutputReady())
         m_PendingOp->Peek(*m_Reply, false);
 }
-
-
-CBlobPropCallback::CBlobPropCallback(
-        CPendingOperation *  pending_op,
-        HST::CHttpReply<CPendingOperation> *  reply,
-        CPendingOperation::SBlobFetchDetails *  fetch_details) :
-    m_PendingOp(pending_op), m_Reply(reply), m_FetchDetails(fetch_details)
-{}
 
 
 void CBlobPropCallback::operator()(CBlobRecord const &  blob, bool is_found)
@@ -1001,14 +998,6 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
                                m_PendingOp->m_Id2InfoFetchDetails.get()));
     m_PendingOp->m_Id2InfoFetchDetails->m_Loader->Wait();
 }
-
-
-CGetBlobErrorCallback::CGetBlobErrorCallback(
-        CPendingOperation *  pending_op,
-        HST::CHttpReply<CPendingOperation> *  reply,
-        CPendingOperation::SBlobFetchDetails *  fetch_details) :
-    m_PendingOp(pending_op), m_Reply(reply), m_FetchDetails(fetch_details)
-{}
 
 
 void CGetBlobErrorCallback::operator()(CRequestStatus::ECode  status,

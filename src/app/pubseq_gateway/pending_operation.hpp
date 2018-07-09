@@ -210,11 +210,14 @@ private:
 
     void x_StartMainBlobRequest(void);
     bool x_AllFinishedRead(void) const;
-    void x_SendReplyCompletion(void);
+    void x_SendReplyCompletion(bool  forced = false,
+                               CRequestStatus::ECode  status = CRequestStatus::e200_Ok);
     void x_SetRequestContext(void);
     void x_PrintRequestStop(int  status);
-    bool x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info);
-    bool x_FetchBioseqInfo(SBioseqInfo &  bioseq_info);
+    bool x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info,
+                               CRequestStatus::ECode &  status);
+    bool x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
+                           CRequestStatus::ECode &  status);
     bool x_SatToSatName(const SBlobRequest &  blob_request,
                         SBlobId &  blob_id);
     void x_SendUnknownSatelliteError(size_t  item_id,
@@ -242,7 +245,6 @@ private:
     unique_ptr<SBlobFetchDetails>           m_MainBlobFetchDetails;
     unique_ptr<SBlobFetchDetails>           m_Id2ShellFetchDetails;
     unique_ptr<SBlobFetchDetails>           m_Id2InfoFetchDetails;
-
     unique_ptr<SBlobFetchDetails>           m_OriginalBlobChunkFetch;
 
     size_t                                  m_NextItemId;
@@ -257,13 +259,16 @@ private:
 class CBlobChunkCallback
 {
     public:
-        CBlobChunkCallback(CPendingOperation *  pending_op,
-                           HST::CHttpReply<CPendingOperation> *  reply,
-                           CPendingOperation::SBlobFetchDetails *  fetch_details);
+        CBlobChunkCallback(
+                CPendingOperation *  pending_op,
+                HST::CHttpReply<CPendingOperation> *  reply,
+                CPendingOperation::SBlobFetchDetails *  fetch_details) :
+            m_PendingOp(pending_op), m_Reply(reply),
+            m_FetchDetails(fetch_details)
+        {}
 
         void operator()(const unsigned char *  data,
-                        unsigned int  size,
-                        int  chunk_no);
+                        unsigned int  size, int  chunk_no);
 
     private:
         CPendingOperation *                     m_PendingOp;
@@ -275,9 +280,13 @@ class CBlobChunkCallback
 class CBlobPropCallback
 {
     public:
-        CBlobPropCallback(CPendingOperation *  pending_op,
-                          HST::CHttpReply<CPendingOperation> *  reply,
-                          CPendingOperation::SBlobFetchDetails *  fetch_details);
+        CBlobPropCallback(
+                CPendingOperation *  pending_op,
+                HST::CHttpReply<CPendingOperation> *  reply,
+                CPendingOperation::SBlobFetchDetails *  fetch_details) :
+            m_PendingOp(pending_op), m_Reply(reply),
+            m_FetchDetails(fetch_details)
+        {}
 
         void operator()(CBlobRecord const &  blob, bool is_found);
 
@@ -296,9 +305,13 @@ class CBlobPropCallback
 class CGetBlobErrorCallback
 {
     public:
-        CGetBlobErrorCallback(CPendingOperation *  pending_op,
-                              HST::CHttpReply<CPendingOperation> *  reply,
-                              CPendingOperation::SBlobFetchDetails *  fetch_details);
+        CGetBlobErrorCallback(
+                CPendingOperation *  pending_op,
+                HST::CHttpReply<CPendingOperation> *  reply,
+                CPendingOperation::SBlobFetchDetails *  fetch_details) :
+            m_PendingOp(pending_op), m_Reply(reply),
+            m_FetchDetails(fetch_details)
+        {}
 
         void operator()(CRequestStatus::ECode  status,
                         int  code,
