@@ -335,6 +335,9 @@ CSetupFactory::CreateHspWriter(const CBlastOptionsMemento* opts_memento,
                      filt_opts->culling_opts,
                      opts_memento->m_ExtnOpts->compositionBasedStats,
                      opts_memento->m_ScoringOpts->gapped_calculation);
+            if(params->culling_max > 1){
+            	params->culling_max += 3;
+            }
             writer_info = BlastHSPCullingInfoNew(params);
         }
         else {
