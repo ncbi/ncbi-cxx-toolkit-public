@@ -987,7 +987,6 @@ bool CCleanup::RemoveOrphanLocus_tagGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh)
     }
     return any_removed;
 }
-//LCOV_EXCL_STOP
 
 
 bool CCleanup::SeqLocExtend(CSeq_loc& loc, size_t pos, CScope& scope)
@@ -1020,6 +1019,7 @@ bool CCleanup::SeqLocExtend(CSeq_loc& loc, size_t pos, CScope& scope)
     }
     return changed;
 }
+//LCOV_EXCL_STOP
 
 
 bool CCleanup::ExtendStopPosition(CSeq_feat& f, const CSeq_feat* cdregion, size_t extension)
@@ -1139,17 +1139,7 @@ bool CCleanup::ExtendToStopCodon(CSeq_feat& f, CBioseq_Handle bsh, size_t limit)
         }
     }
 
-    bool rval = false;
-    if (usable_size < 3 && limit == 0) {
-        if (loc.GetStrand() == eNa_strand_minus) {
-            rval = SeqLocExtend(f.SetLocation(), 0, bsh.GetScope());
-        } else {
-            rval = SeqLocExtend(f.SetLocation(), bsh.GetInst_Length() - 1, bsh.GetScope());
-        }
-        f.SetLocation().SetPartialStop(true, eExtreme_Biological);
-    }
-
-    return rval;
+    return false;
 }
 
 
