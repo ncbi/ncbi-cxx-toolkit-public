@@ -776,6 +776,9 @@ bool CCleanup::RemoveUnnecessaryGeneXrefs(CSeq_entry_Handle seh)
     return any_change;
 }
 
+
+//LCOV_EXCL_START
+//not used by asn_cleanup but used by other applications
 bool CCleanup::RemoveNonsuppressingGeneXrefs(CSeq_feat& f)
 {
     if (!f.IsSetXref()) {
@@ -799,6 +802,7 @@ bool CCleanup::RemoveNonsuppressingGeneXrefs(CSeq_feat& f)
     }
     return any_removed;
 }
+//LCOV_EXCL_STOP
 
 
 bool CCleanup::RepairXrefs(const CSeq_feat& src, CSeq_feat_Handle& dst, const CTSE_Handle& tse)
@@ -887,6 +891,8 @@ bool CCleanup::RepairXrefs(CSeq_entry_Handle seh)
 }
 
 
+//LCOV_EXCL_START
+//not used by asn_cleanup but used by other applications
 bool CCleanup::FindMatchingLocusGene(CSeq_feat& f, const CGene_ref& gene_xref, CBioseq_Handle bsh)
 {
     bool match = false;
@@ -934,6 +940,7 @@ bool CCleanup::RemoveOrphanLocusGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh)
     return any_removed;
 }
 
+
 bool CCleanup::FindMatchingLocus_tagGene(CSeq_feat& f, const CGene_ref& gene_xref, CBioseq_Handle bsh)
 {
     bool match = false;
@@ -980,6 +987,7 @@ bool CCleanup::RemoveOrphanLocus_tagGeneXrefs(CSeq_feat& f, CBioseq_Handle bsh)
     }
     return any_removed;
 }
+//LCOV_EXCL_STOP
 
 
 bool CCleanup::SeqLocExtend(CSeq_loc& loc, size_t pos, CScope& scope)
