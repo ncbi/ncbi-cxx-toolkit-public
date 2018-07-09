@@ -390,7 +390,11 @@ bool CBedReader::xDetermineLikelyColumnCount(
         }
         if (validColumnCount >= 11) {
             vector<string> blockSizes;
-            NStr::Split(columns[10], ",", blockSizes, NStr::fSplit_MergeDelimiters);
+            auto col10 = columns[10];
+            if (NStr::EndsWith(col10, ",")) {
+                col10 = col10.substr(0, col10.size()-1);
+            }
+            NStr::Split(col10, ",", blockSizes, NStr::fSplit_MergeDelimiters);
             if (blockSizes.size() != blockCount) {
                 validColumnCount = 9;
             }
@@ -407,7 +411,11 @@ bool CBedReader::xDetermineLikelyColumnCount(
         }
         if (validColumnCount >= 12) {
             vector<string> blockStarts;
-            NStr::Split(columns[11], ",", blockStarts, NStr::fSplit_MergeDelimiters);
+            auto col11 = columns[11];
+            if (NStr::EndsWith(col11, ",")) {
+                col11 = col11.substr(0, col11.size()-1);
+            }
+            NStr::Split(col11, ",", blockStarts, NStr::fSplit_MergeDelimiters);
             if (blockStarts.size() != blockCount) {
                 validColumnCount = 9;
             }
