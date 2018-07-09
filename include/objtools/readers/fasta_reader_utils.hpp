@@ -71,7 +71,7 @@ public:
         TSeqPos m_iLineNum;
     }; 
 
-    using TSeqTitles = vector<SLineTextAndLoc>; // No reason this couldn't just be a map
+    using TSeqTitles = vector<SLineTextAndLoc>; 
 
     struct SDeflineParseInfo {
         TBaseFlags fBaseFlags;
@@ -135,59 +135,14 @@ private:
         ILineErrorListener* pMessageListener,
         FIdCheck fn_id_check);
 
-    static bool x_IsValidLocalID(const CSeq_id& id, 
-        TFastaFlags fasta_flags);
-
-    static bool x_IsValidLocalID(const CTempString& id_string,
-        TFastaFlags fasta_flags);
-
     static void x_ConvertNumericToLocal(
         TIds& ids);
-
-    static void x_PostWarning(ILineErrorListener* pMessageListener, 
-        const TSeqPos lineNumber,
-        const string& errMessage, 
-        const CObjReaderLineException::EProblem problem,
-        const CObjReaderParseException::EErrCode errCode);
-
-    static void x_PostWarning(ILineErrorListener* pMessageListener, 
-        const TSeqPos lineNumber,
-        const string& errMessage, 
-        const CObjReaderParseException::EErrCode errCode);
-
-    static void x_PostError(ILineErrorListener* pMessageListener, 
-        const TSeqPos lineNumber, 
-        const string& errMessage,
-        const CObjReaderLineException::EProblem problem,
-        const CObjReaderParseException::EErrCode errCode);
-
-    static void x_PostError(ILineErrorListener* pMessageListener, 
-        const TSeqPos lineNumber, 
-        const string& errMessage,
-        const CObjReaderParseException::EErrCode errCode);
 
     static bool x_ExcessiveSeqDataInTitle(const CTempString& title, 
         TFastaFlags fasta_flags);
 
-    static void x_CheckForExcessiveSeqDataInID(
-        const CTempString& id_string,
-        const SDeflineParseInfo& info,
-        ILineErrorListener* pMessageListener);
-
     static bool x_ExceedsMaxLength(const CTempString& title, 
         TSeqPos max_length);
-
-    static void x_CheckIDLength(
-        const CSeq_id& seq_id,
-        const int line_number,
-        ILineErrorListener* pMessageListener);
-
-    static void x_PostIDLengthError(const size_t id_length,
-        const string& type_string,
-        const size_t max_length,
-        const int line_number,
-        ILineErrorListener* pMessageListener);
-
 };
 
 
@@ -201,9 +156,9 @@ public:
                     const TInfo& info,
                     ILineErrorListener* listener);
 
-private:
-    static bool x_IsValidLocalID(const CSeq_id& id, const TInfo& info);
+    static bool IsValidLocalID(const CSeq_id& id, const TInfo& info);
 
+private:
     static void x_CheckIDLength(const CSeq_id& id, 
                                 const TInfo& info,
                                 ILineErrorListener* listener);

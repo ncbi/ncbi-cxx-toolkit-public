@@ -335,17 +335,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(ILineErrorListener * pMessageListener)
                 }
             }
         }
-        /*
-        } else if (c == '[') {
-            return x_ReadSegSet(pMessageListener);
-        } else if (c == ']') {
-             if (need_defline) {
-                FASTA_ERROR(LineNumber(), 
-                            "CFastaReader: Reached unexpected end of segmented set around line " << LineNumber(),
-                            CObjReaderParseException::eEOF );
-            }
-        }
-        */
+
         CTempString line = NStr::TruncateSpaces_Unsafe(*++GetLineReader());
 
         if (line.empty()) {
@@ -541,18 +531,6 @@ void CFastaReader::ParseDefLine(const TStr& defLine,
     rangeStart = data.range_start;
     rangeEnd   = data.range_end;
     seqTitles  = move(data.titles);
-/*
-    CFastaDeflineReader::ParseDefline(
-        defLine, 
-        info,
-        ignoredErrors,
-        ids, 
-        hasRange,
-        rangeStart,
-        rangeEnd,
-        seqTitles,
-        pMessageListener);
-*/
 }
 
 
@@ -603,8 +581,8 @@ bool CFastaReader::xSetSeqMol(const list<CRef<CSeq_id>>& ids, CSeq_inst_Base::EM
 
 void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageListener)
 {
-    TSeqPos range_start = 0, range_end = 0;
-    bool has_range = false;
+//    TSeqPos range_start = 0, range_end = 0;
+//    bool has_range = false;
     SDefLineParseInfo parseInfo;
     parseInfo.fBaseFlags = m_iFlags;
     parseInfo.fFastaFlags = GetFlags();
@@ -612,25 +590,13 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
     parseInfo.lineNumber = LineNumber();
 
     CBioseq::TId defline_ids;
-/*
-    CFastaDeflineReader::ParseDefline(s,
-                 parseInfo,
-                 m_ignorable,
-                 defline_ids, 
-                 has_range,
-                 range_start,
-                 range_end,
-                 m_CurrentSeqTitles, 
-                 pMessageListener);
-*/
-
     CFastaDeflineReader::SDeflineData data;
     CFastaDeflineReader::ParseDefline(s, parseInfo, data, pMessageListener, m_fIdCheck);
 
-    defline_ids = move(data.ids);
-    has_range   = data.has_range;
-    range_start = data.range_start;
-    range_end   = data.range_end;
+ //   defline_ids = move(data.ids);
+ //   has_range   = data.has_range;
+ //   range_start = data.range_start;
+ //   range_end   = data.range_end;
     m_CurrentSeqTitles = move(data.titles);
 
     if (defline_ids.empty()) {
@@ -648,11 +614,11 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
         }
     }
 
-    PostProcessIDs(defline_ids, s, has_range, range_start, range_end);
+    PostProcessIDs(data.ids, s, data.has_range, data.range_start, data.range_end);
 
     m_BestID = FindBestChoice(GetIDs(), CSeq_id::BestRank);
-    if(has_range) {
-        m_ExpectedEnd = range_end - range_start;
+    if(data.has_range) {
+        m_ExpectedEnd = data.range_end - data.range_start;
     }
     FASTA_PROGRESS("Processing Seq-id: " <<
         ( m_BestID ? m_BestID->AsFastaString() : string("UNKNOWN") ) );
@@ -1948,7 +1914,10 @@ class CFastaMapper : public CFastaReader
 public:
     typedef CFastaReader TParent;
 
-    CFastaMapper(ILineReader& reader, SFastaFileMap* fasta_map, TFlags flags);
+    CFastaMapper(ILineReader& reader, 
+                 SFastaFileMap* fasta_map, 
+                 TFlags flags, 
+                 FIdCheck f_idcheck = CSeqIdCheck());
 
 protected:
     void ParseDefLine(const TStr& s, 
@@ -1962,9 +1931,11 @@ private:
     SFastaFileMap::SFastaEntry m_MapEntry;
 };
 
-CFastaMapper::CFastaMapper(ILineReader& reader, SFastaFileMap* fasta_map,
-                           TFlags flags)
-    : TParent(reader, flags), m_Map(fasta_map)
+CFastaMapper::CFastaMapper(ILineReader& reader, 
+                           SFastaFileMap* fasta_map,
+                           TFlags flags,
+                           FIdCheck f_idcheck)
+    : TParent(reader, flags, f_idcheck), m_Map(fasta_map)
 {
     _ASSERT(fasta_map);
     fasta_map->file_map.resize(0);
