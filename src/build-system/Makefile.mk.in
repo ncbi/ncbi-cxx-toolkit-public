@@ -810,7 +810,7 @@ QOBJMGR_LIBS = $(QOBJMGR_ONLY_LIBS) qall
 QOBJMGR_STATIC_LIBS = $(QOBJMGR_ONLY_LIBS:%=%$(STATIC)) qall
 
 # EUtils
-EUTILS_LIBS = eutils egquery elink epost esearch espell esummary linkout \
+EUTILS_LIBS = eutils egquery elink epost esearch espell esummary \
               einfo uilist ehistory
 
 # Object readers
