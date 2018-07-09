@@ -1096,6 +1096,7 @@ if(SYBASE_FOUND)
   set(NCBI_COMPONENT_Sybase_FOUND YES)
   set(NCBI_COMPONENT_Sybase_INCLUDE ${SYBASE_INCLUDE})
   set(NCBI_COMPONENT_Sybase_LIBS    ${SYBASE_LIBS})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} Sybase")
 else()
   set(NCBI_COMPONENT_Sybase_FOUND NO)
 endif()
@@ -1116,8 +1117,20 @@ if(ODBC_FOUND)
   set(NCBI_COMPONENT_ODBC_FOUND YES)
   set(NCBI_COMPONENT_ODBC_INCLUDE ${ODBC_INCLUDE})
   set(NCBI_COMPONENT_ODBC_LIBS    ${ODBC_LIBS})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} ODBC")
 else()
   set(NCBI_COMPONENT_ODBC_FOUND NO)
+endif()
+
+#############################################################################
+# VDB
+if(VDB_FOUND)
+  set(NCBI_COMPONENT_VDB_FOUND YES)
+  set(NCBI_COMPONENT_VDB_INCLUDE ${VDB_INCLUDE})
+  set(NCBI_COMPONENT_VDB_LIBS    ${VDB_LIBS})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} VDB")
+else()
+  set(NCBI_COMPONENT_VDB_FOUND NO)
 endif()
 
 #############################################################################

@@ -20,6 +20,7 @@ set(NCBI_COMPONENT_MSWin_FOUND YES)
 # common settings
 set(NCBI_ThirdPartyBasePath //snowman/win-coremake/Lib/ThirdParty)
 set(NCBI_ThirdPartyAppsPath //snowman/win-coremake/App/ThirdParty)
+set(NCBI_PlatformBits 64)
 
 if("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 15 2017 Win64")
   set(NCBI_ThirdPartyCompiler vs2015.64)
@@ -28,6 +29,7 @@ elseif("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 15 2017")
     set(NCBI_ThirdPartyCompiler vs2015.64)
   else()
     set(NCBI_ThirdPartyCompiler vs2015)
+    set(NCBI_PlatformBits 32)
   endif()
 elseif("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 14 2015 Win64")
   set(NCBI_ThirdPartyCompiler vs2015.64)
@@ -36,6 +38,7 @@ elseif("${CMAKE_GENERATOR}" STREQUAL "Visual Studio 14 2015")
     set(NCBI_ThirdPartyCompiler vs2015.64)
   else()
     set(NCBI_ThirdPartyCompiler vs2015)
+    set(NCBI_PlatformBits 32)
   endif()
 else()
   message(FATAL_ERROR "${CMAKE_GENERATOR} not supported")
@@ -62,6 +65,15 @@ set(NCBI_ThirdParty_XSLT       ${NCBI_ThirdPartyBasePath}/xslt/${NCBI_ThirdParty
 set(NCBI_ThirdParty_EXSLT      ${NCBI_ThirdParty_XSLT})
 set(NCBI_ThirdParty_SQLITE3    ${NCBI_ThirdPartyBasePath}/sqlite/${NCBI_ThirdPartyCompiler}/3.8.10.1)
 set(NCBI_ThirdParty_Sybase     ${NCBI_ThirdPartyBasePath}/sybase/${NCBI_ThirdPartyCompiler}/15.5)
+set(NCBI_ThirdParty_VDB        //snowman/trace_software/vdb/vdb-versions/2.9.0-1)
+if ("${NCBI_PlatformBits}" EQUAL "64")
+  set(NCBI_ThirdParty_VDB_ARCH_INC x86_64)
+  set(NCBI_ThirdParty_VDB_ARCH     x86_64/vs2013.64)
+else()
+  set(NCBI_ThirdParty_VDB_ARCH_INC i386)
+  set(NCBI_ThirdParty_VDB_ARCH     i386/vs2013.32)
+endif()
+
 set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python252)
 
 
@@ -293,6 +305,34 @@ set(NCBI_COMPONENT_ODBC_FOUND YES)
 set(NCBI_COMPONENT_ODBC_LIBS odbc32.lib odbccp32.lib odbcbcp.lib)
 set(HAVE_ODBC 1)
 set(HAVE_ODBCSS_H 1)
+
+#############################################################################
+# VDB
+set(NCBI_COMPONENT_VDB_INCLUDE
+  ${NCBI_ThirdParty_VDB}/interfaces
+  ${NCBI_ThirdParty_VDB}/interfaces/cc/vc++/${NCBI_ThirdParty_VDB_ARCH_INC}
+  ${NCBI_ThirdParty_VDB}/interfaces/cc/vc++
+  ${NCBI_ThirdParty_VDB}/interfaces/os/win)
+set(NCBI_COMPONENT_VDB_LIBS
+  ${NCBI_ThirdParty_VDB}/win/release/${NCBI_ThirdParty_VDB_ARCH}/bin/ncbi-vdb-md.lib)
+
+set(_found YES)
+foreach(_inc IN LISTS NCBI_COMPONENT_VDB_INCLUDE NCBI_COMPONENT_VDB_LIBS)
+  if(NOT EXISTS ${_inc})
+    message("Component VDB ERROR: ${_inc} not found")
+    set(_found NO)
+  endif()
+endforeach()
+if(_found)
+  message("VDB found at ${NCBI_ThirdParty_VDB}")
+  set(NCBI_COMPONENT_VDB_FOUND YES)
+  set(HAVE_NCBI_VDB 1)
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} VDB")
+else()
+  set(NCBI_COMPONENT_VDB_FOUND NO)
+  unset(NCBI_COMPONENT_VDB_INCLUDE)
+  unset(NCBI_COMPONENT_VDB_LIBS)
+endif()
 
 #############################################################################
 # PYTHON
