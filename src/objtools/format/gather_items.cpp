@@ -2765,6 +2765,36 @@ static bool s_IsExon(const CSeq_feat_Handle& feat)
     return (feat.GetAnnot().IsNamed() && feat.GetAnnot().GetName() == "Annot:Exon");
 }
 
+struct SGapIdxData {
+    string gap_type;
+    int num_gaps;
+    int next_gap;
+    TSeqPos gap_start;
+    TSeqPos gap_end;
+    TSeqPos gap_length;
+    vector<string> gap_evidence;
+    bool is_unknown_length;
+    bool is_assembly_gap;
+    bool has_gap;
+};
+
+static void s_SetGapIdxData (SGapIdxData& gapdat, const vector<CRef<CGapIndex>>& gaps)
+
+{
+    CRef<CGapIndex> sgr = gaps[gapdat.next_gap];
+
+    gapdat.gap_start = sgr->GetStart();
+    gapdat.gap_end = sgr->GetEnd();
+    gapdat.gap_length = sgr->GetLength();
+    gapdat.gap_type = sgr->GetGapType();
+    gapdat.gap_evidence = sgr->GetGapEvidence();
+    gapdat.is_unknown_length = sgr->IsUnknownLength();
+    gapdat.is_assembly_gap = sgr->IsAssemblyGap();
+    gapdat.has_gap = true;
+
+    gapdat.next_gap++;
+}
+
 void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
 (const CSeq_loc& loc,
  SAnnotSelector& sel,
@@ -2799,32 +2829,18 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
     if (! bsx) return;
 
     const vector<CRef<CGapIndex>>& gaps = bsx->GetGapIndices();
-    string gap_type = "";
-    int num_gaps = gaps.size();
-    int next_gap = 0;
-    TSeqPos gap_start = 0;
-    TSeqPos gap_end = 0;
-    TSeqPos gap_length = 0;
-    vector<string> gap_evidence;
-    bool is_unknown_length = false;
-    bool is_assembly_gap = false;
-    bool has_gap = false;
-    if (num_gaps > 0) {
-        CRef<CGapIndex> sgr = gaps[next_gap];
-        gap_start = sgr->GetStart();
-        gap_end = sgr->GetEnd();
-        gap_length = sgr->GetLength();
-        gap_type = sgr->GetGapType();
-        gap_evidence = sgr->GetGapEvidence();
-        is_unknown_length = sgr->IsUnknownLength();
-        is_assembly_gap = sgr->IsAssemblyGap();
-        has_gap = true;
-        next_gap++;
+
+    SGapIdxData gap_data{};
+
+    gap_data.num_gaps = gaps.size();
+    gap_data.next_gap = 0;
+
+    if (gap_data.num_gaps > 0) {
+        s_SetGapIdxData (gap_data, gaps);
     }
 
     bsx->IterateFeatures([this, &ctx, &scope, &prev_feat, &gap_it, &loc_len, &item, &out, &slice_mapper,
-                          gaps, num_gaps, &next_gap, &has_gap, &gap_start, &gap_end, &gap_length, &gap_type, &gap_evidence,
-                          &is_unknown_length, &is_assembly_gap, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
+                          gaps, &gap_data, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
         try {
             CMappedFeat mf = sfx.GetMappedFeat();
             CSeq_feat_Handle feat = sfx.GetSeqFeatHandle(); // it->GetSeq_feat_Handle();
@@ -2893,42 +2909,25 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
                 feat_start -= loc_len;
             }
 
-            while (has_gap && gap_start < feat_start) {
-                const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_start < gap_end) );
+            while (gap_data.has_gap && gap_data.gap_start < feat_start) {
+                const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_data.gap_start < gap_data.gap_end) );
                 if( noGapSizeProblem /* && ! s_CoincidingGapFeatures( it, gap_start, gap_end ) */ ) {
-                    item.Reset( s_NewGapItem(gap_start, gap_end, gap_length, gap_type, gap_evidence, is_unknown_length, is_assembly_gap, ctx) );
+                    item.Reset( s_NewGapItem(gap_data.gap_start, gap_data.gap_end, gap_data.gap_length, gap_data.gap_type,
+                                gap_data.gap_evidence, gap_data.is_unknown_length, gap_data.is_assembly_gap, ctx) );
                     out << item;
                 }
-                if (next_gap < num_gaps) {
-                    CRef<CGapIndex> sgr = gaps[next_gap];
-                    gap_start = sgr->GetStart();
-                    gap_end = sgr->GetEnd();
-                    gap_length = sgr->GetLength();
-                    gap_type = sgr->GetGapType();
-                    gap_evidence = sgr->GetGapEvidence();
-                    is_unknown_length = sgr->IsUnknownLength();
-                    is_assembly_gap = sgr->IsAssemblyGap();
-                    has_gap = true;
-                    next_gap++;
+                if (gap_data.next_gap < gap_data.num_gaps) {
+                    s_SetGapIdxData (gap_data, gaps);
                 } else {
-                    has_gap = false;
+                    gap_data.has_gap = false;
                 }
             }
 
-            if (has_gap && gap_start == feat_start && feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) {
-                if (next_gap < num_gaps) {
-                    CRef<CGapIndex> sgr = gaps[next_gap];
-                    gap_start = sgr->GetStart();
-                    gap_end = sgr->GetEnd();
-                    gap_length = sgr->GetLength();
-                    gap_type = sgr->GetGapType();
-                    gap_evidence = sgr->GetGapEvidence();
-                    is_unknown_length = sgr->IsUnknownLength();
-                    is_assembly_gap = sgr->IsAssemblyGap();
-                    has_gap = true;
-                    next_gap++;
+            if (gap_data.has_gap && gap_data.gap_start == feat_start && feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) {
+                if (gap_data.next_gap < gap_data.num_gaps) {
+                    s_SetGapIdxData (gap_data, gaps);
                 } else {
-                    has_gap = false;
+                    gap_data.has_gap = false;
                 }
                 // return; // continue;
             }
@@ -2986,25 +2985,17 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
     });  //  end of iterate loop
 
     // when all features are done, output remaining gaps
-    while (has_gap) {
-        const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_start < gap_end) );
+    while (gap_data.has_gap) {
+        const bool noGapSizeProblem = ( showGapsOfSizeZero || (gap_data.gap_start < gap_data.gap_end) );
         if( noGapSizeProblem /* && ! s_CoincidingGapFeatures( it, gap_start, gap_end ) */ ) {
-            item.Reset( s_NewGapItem(gap_start, gap_end, gap_length, gap_type, gap_evidence, is_unknown_length, is_assembly_gap, ctx) );
+            item.Reset( s_NewGapItem(gap_data.gap_start, gap_data.gap_end, gap_data.gap_length, gap_data.gap_type,
+                        gap_data.gap_evidence, gap_data.is_unknown_length, gap_data.is_assembly_gap, ctx) );
             out << item;
         }
-        if (next_gap < num_gaps) {
-            CRef<CGapIndex> sgr = gaps[next_gap];
-            gap_start = sgr->GetStart();
-            gap_end = sgr->GetEnd();
-            gap_length = sgr->GetLength();
-            gap_type = sgr->GetGapType();
-            gap_evidence = sgr->GetGapEvidence();
-            is_unknown_length = sgr->IsUnknownLength();
-            is_assembly_gap = sgr->IsAssemblyGap();
-            has_gap = true;
-            next_gap++;
+        if (gap_data.next_gap < gap_data.num_gaps) {
+            s_SetGapIdxData (gap_data, gaps);
         } else {
-            has_gap = false;
+            gap_data.has_gap = false;
         }
     }
 }
@@ -3294,32 +3285,18 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
     if (! bsx) return;
 
     const vector<CRef<CGapIndex>>& gaps = bsx->GetGapIndices();
-    string gap_type = "";
-    int num_gaps = gaps.size();
-    int next_gap = 0;
-    TSeqPos gap_start = 0;
-    TSeqPos gap_end = 0;
-    TSeqPos gap_length = 0;
-    vector<string> gap_evidence;
-    bool is_unknown_length = false;
-    bool is_assembly_gap = false;
-    bool has_gap = false;
-    if (num_gaps > 0) {
-        CRef<CGapIndex> sgr = gaps[next_gap];
-        gap_start = sgr->GetStart();
-        gap_end = sgr->GetEnd();
-        gap_length = sgr->GetLength();
-        gap_type = sgr->GetGapType();
-        gap_evidence = sgr->GetGapEvidence();
-        is_unknown_length = sgr->IsUnknownLength();
-        is_assembly_gap = sgr->IsAssemblyGap();
-        has_gap = true;
-        next_gap++;
+
+    SGapIdxData gap_data{};
+
+    gap_data.num_gaps = gaps.size();
+    gap_data.next_gap = 0;
+
+    if (gap_data.num_gaps > 0) {
+        s_SetGapIdxData (gap_data, gaps);
     }
 
     bsx->IterateFeatures([this, &ctx, &scope, &prev_feat, &gap_it, &loc_len, &item, &out, &slice_mapper,
-                          gaps, num_gaps, &next_gap, &has_gap, &gap_start, &gap_end, &gap_length, &gap_type, &gap_evidence,
-                          &is_unknown_length, &is_assembly_gap, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
+                          gaps, &gap_data, showGapsOfSizeZero, bsx](CFeatureIndex& sfx) {
         try {
             CMappedFeat mf = sfx.GetMappedFeat();
             CSeq_feat_Handle feat = sfx.GetSeqFeatHandle(); // it->GetSeq_feat_Handle();
