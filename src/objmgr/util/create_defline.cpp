@@ -3338,7 +3338,7 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                     }
                 default:
                     {
-                        joiner.Add("gcode", gcode);
+                        // joiner.Add("gcode", gcode);
                         break;
                     }
                 }
