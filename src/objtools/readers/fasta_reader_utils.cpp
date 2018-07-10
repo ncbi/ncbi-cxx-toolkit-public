@@ -49,6 +49,25 @@ size_t CFastaDeflineReader::s_MaxLocalIDLength = CSeq_id::kMaxLocalIDLength;
 size_t CFastaDeflineReader::s_MaxGeneralTagLength = CSeq_id::kMaxGeneralTagLength;
 size_t CFastaDeflineReader::s_MaxAccessionLength = CSeq_id::kMaxAccessionLength;
 
+static bool s_IsValidLocalID(const CSeq_id& id, const CSeqIdCheck::TInfo& info) 
+{
+    if (id.IsLocal()) {
+        if (id.GetLocal().IsId()) {
+            return true;
+        }
+        if (id.GetLocal().IsStr()) {
+            auto id_string = id.GetLocal().GetStr();
+            auto string_to_check = (info.fFastaFlags & CFastaReader::fQuickIDCheck) ?
+                                    id_string.substr(0,1) :
+                                    id_string;
+            return !(CSeq_id::CheckLocalID(string_to_check)&CSeq_id::fInvalidChar);
+        }
+    }
+
+    return false;
+}
+
+
 static void s_PostError(ILineErrorListener* pMessageListener,
     const TSeqPos lineNumber,
     const string& errMessage,
@@ -449,7 +468,7 @@ bool CFastaDeflineReader::ParseIDs(
     if (num_ids == 1) {
         if (ids.front()->IsLocal()) 
         {
-            if (!CSeqIdCheck::IsValidLocalID(*ids.front(), info)) {
+            if (!s_IsValidLocalID(*ids.front(), info)) {
                 ids.clear();
                 return false;
             }
@@ -533,7 +552,7 @@ void CSeqIdCheck::operator()(const TIds& ids,
 
     for (const auto& pId : ids) {
         if (pId->IsLocal() && 
-            !IsValidLocalID(*pId, info)) {
+            !x_IsValidLocalID(*pId, info)) {
             NCBI_THROW2(CObjReaderParseException, eInvalidID, 
                 "'" + pId->GetSeqIdString() + "' is not a valid local ID", 0);
         }
@@ -542,23 +561,10 @@ void CSeqIdCheck::operator()(const TIds& ids,
 }
 
 
-bool CSeqIdCheck::IsValidLocalID(const CSeq_id& id, 
+bool CSeqIdCheck::x_IsValidLocalID(const CSeq_id& id, 
                                  const TInfo& info)
 {
-    if (id.IsLocal()) {
-        if (id.GetLocal().IsId()) {
-            return true;
-        }
-        if (id.GetLocal().IsStr()) {
-            auto id_string = id.GetLocal().GetStr();
-            auto string_to_check = (info.fFastaFlags & CFastaReader::fQuickIDCheck) ?
-                                    id_string.substr(0,1) :
-                                    id_string;
-            return !(CSeq_id::CheckLocalID(string_to_check)&CSeq_id::fInvalidChar);
-        }
-    }
-
-    return false;
+    return s_IsValidLocalID(id, info);
 }
 
 

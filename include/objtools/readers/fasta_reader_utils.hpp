@@ -152,13 +152,13 @@ public:
     using TInfo = CFastaDeflineReader::SDeflineParseInfo;
     using TIds = CFastaDeflineReader::TIds;
 
-    virtual void operator()(const TIds& ids, 
+    void operator()(const TIds& ids, 
                     const TInfo& info,
                     ILineErrorListener* listener);
 
-    static bool IsValidLocalID(const CSeq_id& id, const TInfo& info);
-
 private:
+    static bool x_IsValidLocalID(const CSeq_id& id, const TInfo& info);
+
     static void x_CheckIDLength(const CSeq_id& id, 
                                 const TInfo& info,
                                 ILineErrorListener* listener);
@@ -172,7 +172,6 @@ private:
                                      const size_t max_length,
                                      const TInfo& info,
                                      ILineErrorListener* listener);
-
 };
 
 
