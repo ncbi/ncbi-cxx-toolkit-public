@@ -2492,7 +2492,7 @@ DISCREPANCY_CASE(MITO_RRNA, COverlappingFeatures, eOncaller, "Non-mitochondrial 
     if (context.IsEukaryotic()) {
         const vector<CConstRef<CSeq_feat> >& rnas = context.Feat_RNAs();
         for (size_t i = 0; i < rnas.size(); i++) {
-            if (rnas[i]->GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA) {
+            if (rnas[i]->GetData().GetSubtype() == CSeqFeatData::eSubtype_rRNA && rnas[i]->GetData().GetRna().IsSetExt() && rnas[i]->GetData().GetRna().GetExt().IsName()) {
                 const string& name = rnas[i]->GetData().GetRna().GetExt().GetName();
                 if (name.find("16S") != string::npos || name.find("12S") != string::npos) {
                     m_Objs["[n] non mitochondrial rRNA name[s] contain[S] 12S/16S"].Add(*context.DiscrObj(*rnas[i]));
