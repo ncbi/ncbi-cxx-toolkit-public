@@ -938,8 +938,8 @@ void CWriteDB_Impl::x_CookSequence()
              break;
 
         default:
-            msg = "Need to write conversion for data type [";
-            msg += NStr::IntToString((int) sd.Which());
+            msg = "Unable to process sequence for entry [";
+            msg += (m_Bioseq->GetId().front())->GetSeqIdString(false);
             msg += "].";
         }
 
