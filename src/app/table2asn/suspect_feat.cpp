@@ -38,6 +38,7 @@
 #include <objects/macro/String_constraint_set.hpp>
 #include <objects/macro/Suspect_rule_set.hpp>
 #include <objects/macro/Suspect_rule.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
 #include <serial/objistr.hpp>
 
 #include "suspect_feat.hpp"
@@ -123,6 +124,16 @@ bool CFixSuspectProductName::FixSuspectProductNames(objects::CSeq_feat& feature)
                     modified = true;
                 }
             }
+        }
+    } else if (feature.IsSetData() &&
+        feature.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA &&
+        feature.GetData().GetRna().IsSetExt() &&
+        feature.GetData().GetRna().GetExt().IsName()) {
+        string& name = feature.SetData().SetRna().SetExt().SetName();
+        string orig = name;
+        if (FixSuspectProductName(feature.SetData().SetRna().SetExt().SetName())) {
+            ReportFixedProduct(orig, name, feature.GetLocation(), kEmptyStr);
+            modified = true;
         }
     }
     return modified;

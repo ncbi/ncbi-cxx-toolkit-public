@@ -764,6 +764,7 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
     CProt_ref& prot_ref = prot_feat.SetData().SetProt();
 
     string protein_name;
+    bool fixed_protein_name = false;
     if (GetProteinName(protein_name, cd_feature))
     {
         if (NStr::CompareNocase(protein_name, "hypothetical protein") == 0)
@@ -781,6 +782,7 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
             if (m_context.m_suspect_rules.FixSuspectProductName(protein_name))
             {
                 m_context.m_suspect_rules.ReportFixedProduct(old, protein_name, cd_feature.GetLocation(), locustag);
+                fixed_protein_name = true;
             }
         }
     }
@@ -830,7 +832,8 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
         {
             auto& ext = mrna_feature.SetData().SetRna().SetExt();
             if (ext.Which() == CRNA_ref::C_Ext::e_not_set || 
-                (ext.IsName() && ext.SetName().empty()))
+                (ext.IsName() && ext.SetName().empty()) ||
+                fixed_protein_name)
                 ext.SetName() = protein_name;
         }
         mrna_feature.AddSeqFeatXref(cd_feature.GetId());
