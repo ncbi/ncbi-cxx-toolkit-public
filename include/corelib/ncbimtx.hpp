@@ -64,7 +64,6 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbitime.hpp>
 #include <memory>
-#include <deque>
 #ifdef NCBI_COMPILER_MSVC
 # include <intrin.h>
 # pragma intrinsic(_ReadWriteBarrier)

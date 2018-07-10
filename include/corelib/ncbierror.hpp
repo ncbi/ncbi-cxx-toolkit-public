@@ -34,8 +34,6 @@
 /// @file ncbierror.hpp
 /// Defines NCBI C++ Toolkit portable error codes.
 
-#include <corelib/ncbidiag.hpp>
-#include <corelib/ncbistl.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <errno.h>
 #include <corelib/impl/ncbierror_impl.hpp>
