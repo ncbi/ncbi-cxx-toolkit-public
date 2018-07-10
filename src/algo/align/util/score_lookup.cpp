@@ -291,8 +291,7 @@ public:
         if (!align.GetSegs().IsSpliced() || 
             !align.GetSegs().GetSpliced().IsSetPoly_a())
         {
-            NCBI_THROW(CSeqalignException, eNotImplemented,
-                       "Poly-a value not available");
+            return 0;
         }
         double product_length = 0;
         if (align.GetSegs().GetSpliced().IsSetProduct_length()) {
@@ -304,8 +303,7 @@ public:
             }
         }
         if (product_length == 0) {
-            NCBI_THROW(CSeqalignException, eNotImplemented,
-                       "Product length not available");
+            return 0;
         }
         return product_length - align.GetSegs().GetSpliced().GetPoly_a();
     }
