@@ -283,9 +283,9 @@ static void s_LoadLocalIPs(void)
         ConnNetInfo_Destroy(net_info);
         if (net_info) {
 #  ifdef NCBI_OS_LINUX
-            level = n ? eLOG_Trace : eLOG_Note;
+            level = n ? eLOG_Trace   : eLOG_Note;
 #  else
-            level = eLOG_Warning;
+            level = n ? eLOG_Warning : eLOG_Note;
 #  endif /*NCBI_OS_LINUX*/
         } else
             level = eLOG_Error;
