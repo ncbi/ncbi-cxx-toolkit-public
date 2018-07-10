@@ -581,25 +581,18 @@ bool CFastaReader::xSetSeqMol(const list<CRef<CSeq_id>>& ids, CSeq_inst_Base::EM
 
 void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageListener)
 {
-//    TSeqPos range_start = 0, range_end = 0;
-//    bool has_range = false;
     SDefLineParseInfo parseInfo;
     parseInfo.fBaseFlags = m_iFlags;
     parseInfo.fFastaFlags = GetFlags();
     parseInfo.maxIdLength = m_MaxIDLength;
     parseInfo.lineNumber = LineNumber();
 
-    CBioseq::TId defline_ids;
     CFastaDeflineReader::SDeflineData data;
     CFastaDeflineReader::ParseDefline(s, parseInfo, data, pMessageListener, m_fIdCheck);
 
- //   defline_ids = move(data.ids);
- //   has_range   = data.has_range;
- //   range_start = data.range_start;
- //   range_end   = data.range_end;
     m_CurrentSeqTitles = move(data.titles);
 
-    if (defline_ids.empty()) {
+    if (data.ids.empty()) {
         if (TestFlag(fRequireID)) {
             // No [usable] IDs
             FASTA_ERROR(LineNumber(),
@@ -609,7 +602,7 @@ void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageList
     }
     else if (!TestFlag(fForceType)) {
         CSeq_inst::EMol mol;
-        if (xSetSeqMol(defline_ids, mol)) { 
+        if (xSetSeqMol(data.ids, mol)) { 
             m_CurrentSeq->SetInst().SetMol(mol);
         }
     }

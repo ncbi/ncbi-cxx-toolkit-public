@@ -228,7 +228,7 @@ protected:
 
     virtual void ParseDefLine (const TStr& s, ILineErrorListener * pMessageListener);
 
-    NCBI_DEPRECATED virtual bool ParseIDs(const TStr& s, ILineErrorListener * pMessageListener);
+    virtual bool ParseIDs(const TStr& s, ILineErrorListener * pMessageListener);
 
     virtual void PostProcessIDs(const CBioseq::TId& defline_ids, 
         const string& defline,
