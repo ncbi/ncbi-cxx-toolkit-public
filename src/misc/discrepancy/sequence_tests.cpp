@@ -2237,7 +2237,7 @@ static void FindFlatfileText(const unsigned char* p, bool *result)
 }
 
 
-/// Checking that FLATFILE_FIND.inc is in sync kSpellFixes
+/// Checking that FLATFILE_FIND.inc is in sync with kSpellFixes
 /// If the array is changed, need to regenerate FLATFILE_FIND.inc:
 /// multipattern.exe -i FLATFILE_FIND.txt > FLATFILE_FIND.inc
 void UnitTest_FLATFILE_FIND()
