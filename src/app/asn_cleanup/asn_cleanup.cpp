@@ -232,6 +232,7 @@ void CCleanupApp::Init(void)
                                   CArgDescriptions::eString);
 
         arg_desc->AddOptionalKey("X", "Miscellaneous", "Other Cleaning Options\n"
+            "\td Automatic Definition Line\n"
             "\tw GFF/WGS Genome Cleanup\n"
             "\tr Regenerate Definition Lines\n"
             "\tb Batch Cleanup of Multireader Output\n"
@@ -834,6 +835,10 @@ bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh, Ui
         if (CCleanup::MakeIRDFeatsFromSourceXrefs(seh)) {
             any_changes = true;
         }
+    }
+    if (NStr::Find(opt, "d") != string::npos) {
+        CCleanup::AutodefId(seh);
+        any_changes = true;
     }
     return any_changes;
 }

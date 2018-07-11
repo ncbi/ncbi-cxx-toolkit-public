@@ -121,6 +121,8 @@ public:
     static bool RegenerateSequenceDefLines(CSeq_entry_Handle se);
     static string RegenerateDefLine(CBioseq_Handle bh);
     
+    static CRef<CUser_object> CreateIDOptions(CSeq_entry_Handle seh);
+
 private:
     typedef vector<unsigned int> TModifierIndexVector;
     typedef vector<CSeq_entry_Handle> TSeqEntryHandleVector;

@@ -1422,6 +1422,109 @@ string CAutoDef::x_GetHumanSTRFeatureClauses(CBioseq_Handle bh, const CUser_obje
 }
 
 
+bool s_ChooseModInModList(bool is_org_mod, int subtype, bool require_all, CAutoDefSourceDescription::TAvailableModifierVector& modifiers)
+{
+    bool rval = false;
+    for (size_t n = 0; n < modifiers.size(); n++) {
+        if (modifiers[n].IsOrgMod() && is_org_mod) {
+            if (modifiers[n].GetOrgModType() == subtype) {
+                if (modifiers[n].AllPresent()) {
+                    rval = true;
+                }
+                else if (modifiers[n].AnyPresent() && !require_all) {
+                    rval = true;
+                }
+                if (rval) {
+                    modifiers[n].SetRequested(true);
+                }
+                break;
+            }
+        }
+        else if (!modifiers[n].IsOrgMod() && !is_org_mod) {
+            if (modifiers[n].GetSubSourceType() == subtype) {
+                if (modifiers[n].AllPresent()) {
+                    rval = true;
+                }
+                else if (modifiers[n].AnyPresent() && !require_all) {
+                    rval = true;
+                }
+                if (rval) {
+                    modifiers[n].SetRequested(true);
+                }
+                break;
+            }
+        }
+    }
+    return rval;
+}
+
+
+CRef<CUser_object> CAutoDef::CreateIDOptions(CSeq_entry_Handle seh)
+{
+    CAutoDef ad;
+    ad.AddSources(seh);
+
+    CAutoDefModifierCombo* src_combo = ad.FindBestModifierCombo();
+    CAutoDefSourceDescription::TAvailableModifierVector modifiers;
+    src_combo->GetAvailableModifiers(modifiers);
+
+    static int subtypes[] = { COrgMod::eSubtype_strain,
+        CSubSource::eSubtype_clone,
+        COrgMod::eSubtype_isolate,
+        CSubSource::eSubtype_haplotype,
+        COrgMod::eSubtype_cultivar,
+        COrgMod::eSubtype_ecotype,
+        COrgMod::eSubtype_breed,
+        COrgMod::eSubtype_specimen_voucher,
+        COrgMod::eSubtype_culture_collection,
+        COrgMod::eSubtype_bio_material };
+    static bool is_orgmod[] = { true, false, true, false, true, true, true, true, true, true };
+    static int num_subtypes = sizeof(subtypes) / sizeof(int);
+
+
+    bool found = false;
+    // first look for best identifier found in all
+    for (int i = 0; i < num_subtypes && !found; i++) {
+        found = s_ChooseModInModList(is_orgmod[i], subtypes[i], true, modifiers);
+    }
+    if (!found) {
+        // if not found in all, use best identifier found in some
+        for (int i = 0; i < num_subtypes && !found; i++) {
+            found = s_ChooseModInModList(is_orgmod[i], subtypes[i], false, modifiers);
+        }
+    }
+    if (!src_combo->AreFeatureClausesUnique()) {
+        // use best
+        for (size_t n = 0; n < modifiers.size(); n++) {
+            if (modifiers[n].AnyPresent()) {
+                if (modifiers[n].IsOrgMod()) {
+                    if (src_combo->HasOrgMod(modifiers[n].GetOrgModType())) {
+                        modifiers[n].SetRequested(true);
+                    }
+                }
+                else if (src_combo->HasSubSource(modifiers[n].GetSubSourceType())) {
+                    modifiers[n].SetRequested(true);
+                }
+            }
+        }
+    }
+
+    CRef<CUser_object> user = ad.GetOptionsObject();
+    CAutoDefOptions options;
+    options.InitFromUserObject(*user);
+    for(auto it : modifiers) {
+        if (it.IsRequested()) {
+            if (it.IsOrgMod()) {
+                options.AddOrgMod(it.GetOrgModType());
+            } else {
+                options.AddSubSource(it.GetSubSourceType());
+            }
+        }
+    }
+    user = options.MakeUserObject();
+    return user;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

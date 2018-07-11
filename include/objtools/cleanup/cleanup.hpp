@@ -578,6 +578,8 @@ public:
     // for cleaning up collection-date subsource qualifiers
     static bool CleanupCollectionDates(CSeq_entry_Handle seh, bool month_first);
 
+    static void AutodefId(CSeq_entry_Handle seh);
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);

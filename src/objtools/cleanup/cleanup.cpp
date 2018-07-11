@@ -58,6 +58,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objmgr/util/autodef.hpp>
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -4875,6 +4876,31 @@ bool CCleanup::CleanupCollectionDates(CSeq_entry_Handle seh, bool month_first)
     return any_changes;    
 }
 
+
+void CCleanup::AutodefId(CSeq_entry_Handle seh)
+{
+    // remove existing options (TODO)
+    for (CBioseq_CI b(seh); b; ++b) {
+        CSeqdesc_CI ud(*b, CSeqdesc::e_User);
+        while (ud) {
+            if (ud->GetUser().IsAutodefOptions()) {
+                CSeq_entry_Handle s = ud.GetSeq_entry_Handle();
+                CSeq_entry_EditHandle se = s.GetEditHandle();
+                se.RemoveSeqdesc(*ud);
+            }
+            ++ud;
+        }
+    }
+
+    // create new options
+    CRef<CUser_object> auto_user = CAutoDef::CreateIDOptions(seh);
+    CRef<CSeqdesc> d(new CSeqdesc());
+    d->SetUser().Assign(*auto_user);
+    CSeq_entry_EditHandle eh = seh.GetEditHandle();
+    eh.AddSeqdesc(*d);
+
+    CAutoDef::RegenerateSequenceDefLines(seh);
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
