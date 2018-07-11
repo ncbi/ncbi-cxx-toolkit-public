@@ -112,7 +112,12 @@ public:
     bool Wait(void)
     {
         while (m_State != eDone && m_State != eError && !m_Cancelled) {
-            Wait1();
+            try {
+                Wait1();
+            } catch (const CCassandraException& e) {
+                Error(CRequestStatus::e502_BadGateway, e.GetErrCode(), eDiag_Error, e.what());
+                throw;
+            }
             if (m_Async)
                 break;
         }
