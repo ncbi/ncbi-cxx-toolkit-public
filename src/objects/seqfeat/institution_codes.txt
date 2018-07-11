@@ -1422,6 +1422,7 @@ DABZ	s	Department of Agriculture, Zimbabwe
 DACB	s	Bangladesh National Herbarium		
 DACL	s	London Research Centre		
 DACT	c	Dept. Agricult. Chem. Technol.		
+DAFE	c	Department of Agriculture, Food and Environment		
 DAFH	s	Department of Agriculture and Fisheries		
 DAG	h	Mountain Botanical Garden of the  Dagestan Scientific Centre		
 DAKAR	s	Universite Cheikh Anta Diop, Departement de Biologie Vegetale		
@@ -5175,7 +5176,7 @@ PHIL	s	University of the Sciences in Philadelphia, Biological Sciences Departmen
 PI<DEU>	s	Institut und Museum fuer Geologie und Palaeontologie		
 PI<ITA>	s	Universita di Pisa, Dipartimento di Scienze Botaniche		
 PI<RUS>	s	Paleontological Institute		
-PIAGR	h	University of Pisa		
+PIAGR	s	University of Pisa		
 PICRC	h	Palau International Coral Reef Center		
 PIHG	s	Florida Department of Agriculture and Consumer Services		
 PIHU	s	Paleontological Institut of Helsingfors		
