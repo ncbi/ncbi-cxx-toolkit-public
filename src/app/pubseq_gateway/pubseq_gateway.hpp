@@ -101,9 +101,13 @@ public:
 
 private:
     template<typename P>
-    void x_SendUnknownSatelliteError(HST::CHttpReply<P> &  resp,
-                                     const SBlobId &  blob_id,
-                                     const string &  message);
+    void x_SendUnknownClientSatelliteError(HST::CHttpReply<P> &  resp,
+                                           const SBlobId &  blob_id,
+                                           const string &  message);
+    template<typename P>
+    void x_SendMessageAndCompletionChunks(
+        HST::CHttpReply<P> &  resp,  const string &  message,
+        CRequestStatus::ECode  status, int  code, EDiagSev  severity);
 
 private:
     void x_ValidateArgs(void);
@@ -160,17 +164,51 @@ private:
 };
 
 
+// Prepares the chunks for the case when it is a client error so only two
+// chunks are required:
+// - a message chunk
+// - a reply completion chunk
+template<typename P>
+void  CPubseqGatewayApp::x_SendMessageAndCompletionChunks(
+        HST::CHttpReply<P> &  resp,  const string &  message,
+        CRequestStatus::ECode  status, int  code, EDiagSev  severity)
+{
+    vector<h2o_iovec_t>     chunks;
+    string                  header = GetReplyMessageHeader(message.size(),
+                                                           status, code,
+                                                           severity);
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+
+    // Add the error message
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(message.data()), message.size()));
+
+    // Add reply completion
+    string  reply_completion = GetReplyCompletionHeader(2);
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(reply_completion.data()),
+                reply_completion.size()));
+
+    resp.Send(chunks, true);
+}
+
 
 template<typename P>
 int CPubseqGatewayApp::OnBadURL(HST::CHttpRequest &  req,
                                 HST::CHttpReply<P> &  resp)
 {
+    CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    string                  message = "Unknown request, the provided URL "
+                                      "is not recognized";
 
     m_ErrorCounters.IncBadUrlPath();
-    resp.Send400("Unknown Request", "The provided URL is not recognized");
+    x_SendMessageAndCompletionChunks(resp, message,
+                                     CRequestStatus::e400_BadRequest, eBadURL,
+                                     eDiag_Error);
 
-    ERR_POST("The provided URL is not recognized");
+    ERR_POST(Warning << message);
     x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
     return 0;
 }
@@ -186,10 +224,14 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
     // Check the mandatory parameters presence
     SRequestParameter   seq_id_param = x_GetParam(req, "seq_id");
     if (!seq_id_param.m_Found) {
+        string      message = "Missing the 'seq_id' parameter";
+
         m_ErrorCounters.IncInsufficientArguments();
-        static const char *  err_msg = "Expected to have the 'seq_id' parameter";
-        resp.Send400("Missing Request Parameter", err_msg);
-        ERR_POST(err_msg);
+        x_SendMessageAndCompletionChunks(resp, message,
+                                         CRequestStatus::e400_BadRequest,
+                                         eMissingParameter, eDiag_Error);
+
+        ERR_POST(Warning << message);
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
@@ -200,19 +242,27 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
         try {
             seq_id_type = NStr::StringToInt(seq_id_type_param.m_Value);
         } catch (const exception &  exc) {
-            m_ErrorCounters.IncMalformedArguments();
-            string      err_msg = "Error converting seq_id_type parameter "
+            string      message = "Error converting seq_id_type parameter "
                                   "to integer: " + string(exc.what());
-            resp.Send400("Malformed Request Parameters", err_msg.c_str());
-            ERR_POST(err_msg);
+
+            m_ErrorCounters.IncMalformedArguments();
+            x_SendMessageAndCompletionChunks(resp, message,
+                                             CRequestStatus::e400_BadRequest,
+                                             eMalformedParameter, eDiag_Error);
+
+            ERR_POST(Warning << message);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
         } catch (...) {
+            string      message = "Unknown error converting "
+                                  "seq_id_type parameter to integer";
+
             m_ErrorCounters.IncMalformedArguments();
-            static const char *  err_msg = "Unknown error converting "
-                                           "seq_id_type parameter to integer";
-            resp.Send400("Malformed Request Parameters", err_msg);
-            ERR_POST(err_msg);
+            x_SendMessageAndCompletionChunks(resp, message,
+                                             CRequestStatus::e400_BadRequest,
+                                             eMalformedParameter, eDiag_Error);
+
+            ERR_POST(Warning << message);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
         }
@@ -257,8 +307,11 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
             if (!x_IsBoolParamValid(flag_param.first,
                                     flag_param.second.first.m_Value, err_msg)) {
                 m_ErrorCounters.IncMalformedArguments();
-                resp.Send400("Malformed Request Parameters", err_msg.c_str());
-                ERR_POST(err_msg);
+                x_SendMessageAndCompletionChunks(resp, err_msg,
+                                                 CRequestStatus::e400_BadRequest,
+                                                 eMalformedParameter, eDiag_Error);
+
+                ERR_POST(Warning << err_msg);
                 x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
                 return 0;
             }
@@ -294,12 +347,15 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
         SBlobId     blob_id(blob_id_param.m_Value);
 
         if (!blob_id.IsValid()) {
+            string  message = "Malformed 'blob_id' parameter. "
+                              "Expected format 'sat.sat_key' where both "
+                              "'sat' and 'sat_key' are integers.";
+
             m_ErrorCounters.IncMalformedArguments();
-            const char *  err_msg = "Malformed 'blob_id' parameter. "
-                                    "Expected format 'sat.sat_key' where both "
-                                    "'sat' and 'sat_key' are integers.";
-            resp.Send400("Malformed Request Parameters", err_msg);
-            ERR_POST(err_msg);
+            x_SendMessageAndCompletionChunks(resp, message,
+                                             CRequestStatus::e400_BadRequest,
+                                             eMalformedParameter, eDiag_Error);
+            ERR_POST(Warning << message);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
         }
@@ -314,19 +370,21 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
             return 0;
         }
 
-        m_ErrorCounters.IncSatToSatName();
-        string      msg = string("Unknown satellite number ") +
-                          NStr::NumericToString(blob_id.m_Sat);
-        x_SendUnknownSatelliteError(resp, blob_id, msg);
-        ERR_POST(msg);
+        m_ErrorCounters.IncClientSatToSatName();
+        string      message = string("Unknown satellite number ") +
+                              NStr::NumericToString(blob_id.m_Sat);
+        x_SendUnknownClientSatelliteError(resp, blob_id, message);
+        ERR_POST(Warning << message);
         x_PrintRequestStop(context, CRequestStatus::e404_NotFound);
         return 0;
     }
 
+    string  message = "Mandatory parameter 'blob_id' is not found.";
     m_ErrorCounters.IncInsufficientArguments();
-    const char *  err_msg = "Mandatory parameter 'blob_id' is not found.";
-    resp.Send400("Missing Request Parameters", err_msg);
-    ERR_POST(err_msg);
+    x_SendMessageAndCompletionChunks(resp, message,
+                                     CRequestStatus::e400_BadRequest,
+                                     eMalformedParameter, eDiag_Error);
+    ERR_POST(Warning << message);
     x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
     return 0;
 }
@@ -486,8 +544,11 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
 }
 
 
+// Sends an unknown satellite error for the case when the satellite is provided
+// by the user in the incoming URL. I.e. this error is treated as a client
+// error (opposite to a server data inconsistency)
 template<typename P>
-void CPubseqGatewayApp::x_SendUnknownSatelliteError(
+void CPubseqGatewayApp::x_SendUnknownClientSatelliteError(
         HST::CHttpReply<P> &  resp,
         const SBlobId &  blob_id,
         const string &  message)

@@ -139,6 +139,11 @@ void CPubseqGatewayApp::ParseArgs(void)
 
 void CPubseqGatewayApp::OpenDb(bool  initialize, bool  readonly)
 {
+    // NB. It was decided that the configuration may ommit the cache file path.
+    // In this case the server should not use cache at all.
+    if (m_DbPath.empty())
+        return;
+
 //    m_Db.reset(new CAccVerCacheDB());
 //    m_Db->Open(m_DbPath, initialize, readonly);
 }
@@ -175,7 +180,7 @@ int CPubseqGatewayApp::Run(void)
     try {
         ParseArgs();
     } catch (const exception &  exc) {
-        ERR_POST(exc.what());
+        ERR_POST(Critical << exc.what());
         return 1;
     } catch (...) {
         ERR_POST("Unknown argument parsing error");
@@ -193,20 +198,20 @@ int CPubseqGatewayApp::Run(void)
     try {
         OpenDb(false, true);
     } catch (const exception &  exc) {
-        ERR_POST(exc.what());
+        ERR_POST(Critical << exc.what());
         return 1;
     } catch (...) {
-        ERR_POST("Unknown opening LMDB cache error");
+        ERR_POST(Critical << "Unknown opening LMDB cache error");
         return 1;
     }
 
     try {
         OpenCass();
     } catch (const exception &  exc) {
-        ERR_POST(exc.what());
+        ERR_POST(Critical << exc.what());
         return 1;
     } catch (...) {
-        ERR_POST("Unknown opening Cassandra error");
+        ERR_POST(Critical << "Unknown opening Cassandra error");
         return 1;
     }
 
@@ -302,10 +307,6 @@ CPubseqGatewayRequestCounters &  CPubseqGatewayApp::GetRequestCounters(void)
 
 void CPubseqGatewayApp::x_ValidateArgs(void)
 {
-    if (m_DbPath.empty())
-        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                   "[LMDB_CACHE]/dbfile is not found in the ini file");
-
     if (m_HttpPort < kHttpPortMin || m_HttpPort > kHttpPortMax) {
         NCBI_THROW(CPubseqGatewayException, eConfigurationError,
                    "[SERVER]/port value is out of range. Allowed range: " +
@@ -319,6 +320,10 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
                    "[SERVER]/bioseqkeyspace is not provided. It must "
                    "be supplied for the server to start");
     }
+
+    if (m_DbPath.empty())
+        ERR_POST(Warning << "[LMDB_CACHE]/dbfile is not found in the ini file."
+                            " No cache will be used.");
 
     if (m_HttpWorkers < kWorkersMin || m_HttpWorkers > kWorkersMax) {
         string  err_msg =
@@ -495,19 +500,19 @@ int CPubseqGatewayApp::x_PopulateSatToKeyspaceMap(void)
     try {
         m_SatNames = FetchSatToKeyspaceMapping("sat_info", m_CassConnection);
     } catch (const exception &  exc) {
-        ERR_POST(exc);
-        ERR_POST("Cannot populate the sat to keyspace mapping. "
-                 "PSG server cannot start.");
+        ERR_POST(Critical << exc);
+        ERR_POST(Critical << "Cannot populate the sat to keyspace mapping. "
+                             "PSG server cannot start.");
         return 1;
     } catch (...) {
-        ERR_POST("Unknown error while populating the sat to keyspace mapping. "
-                 "PSG server cannot start.");
+        ERR_POST(Critical << "Unknown error while populating the sat to "
+                             "keyspace mapping. PSG server cannot start.");
         return 1;
     }
 
     if (m_SatNames.empty()) {
-        ERR_POST("No sat to keyspace resolutions found "
-                 "in the sat_info keyspace. PSG server cannot start.");
+        ERR_POST(Critical << "No sat to keyspace resolutions found in the "
+                             "sat_info keyspace. PSG server cannot start.");
         return 1;
     }
 

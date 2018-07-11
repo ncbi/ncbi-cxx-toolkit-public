@@ -48,6 +48,7 @@ CPendingOperation::CPendingOperation(const SBlobRequest &  blob_request,
     m_Conn(conn),
     m_Timeout(timeout),
     m_MaxRetries(max_retries),
+    m_OverallStatus(CRequestStatus::e200_Ok),
     m_BlobRequest(blob_request),
     m_TotalSentReplyChunks(initial_reply_chunks),
     m_Cancelled(false),
@@ -176,17 +177,20 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         SBioseqInfo     bioseq_info;
 
         // retrieve from SI2CSI
-        CRequestStatus::ECode   status = CRequestStatus::e200_Ok;
-        if (!x_FetchCanonicalSeqId(bioseq_info, status)) {
-            x_SendReplyCompletion(true, status);
+        CRequestStatus::ECode   status = x_FetchCanonicalSeqId(bioseq_info);
+        if (status != CRequestStatus::e200_Ok) {
+            UpdateOverallStatus(status);
+            x_SendReplyCompletion(true);
             resp.Send(m_Chunks, true);
             m_Chunks.clear();
             return;
         }
 
         // retrieve from BIOSEQ_INFO
-        if (!x_FetchBioseqInfo(bioseq_info, status)) {
-            x_SendReplyCompletion(true, status);
+        status = x_FetchBioseqInfo(bioseq_info);
+        if (status != CRequestStatus::e200_Ok) {
+            UpdateOverallStatus(status);
+            x_SendReplyCompletion(true);
             resp.Send(m_Chunks, true);
             m_Chunks.clear();
             return;
@@ -202,7 +206,9 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         SBlobId     blob_id(bioseq_info.m_Sat, bioseq_info.m_SatKey);
 
         if (!x_SatToSatName(m_BlobRequest, blob_id)) {
-            x_SendReplyCompletion(true, CRequestStatus::e404_NotFound);
+            // This is server data inconsistency error, so 500 (not 404)
+            UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
+            x_SendReplyCompletion(true);
             resp.Send(m_Chunks, true);
             m_Chunks.clear();
             return;
@@ -332,12 +338,12 @@ void CPendingOperation::x_Peek(HST::CHttpReply<CPendingOperation>& resp,
 
         ERR_POST(error);
         string  blob_reply = GetBlobMessageHeader(
-                                        fetch_details->m_ItemId,
-                                        fetch_details->m_BlobId,
-                                        error.size(),
-                                        CRequestStatus::e503_ServiceUnavailable,
-                                        CRequestStatus::e503_ServiceUnavailable,
-                                        eDiag_Error);
+                                    fetch_details->m_ItemId,
+                                    fetch_details->m_BlobId,
+                                    error.size(),
+                                    CRequestStatus::e500_InternalServerError,
+                                    eUnknownError,
+                                    eDiag_Error);
 
         m_Chunks.push_back(resp.PrepareChunk(
                 (const unsigned char *)(blob_reply.data()),
@@ -362,6 +368,7 @@ void CPendingOperation::x_Peek(HST::CHttpReply<CPendingOperation>& resp,
         // Mark finished
         fetch_details->m_FinishedRead = true;
 
+        UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
         x_SendReplyCompletion();
     }
 }
@@ -399,8 +406,7 @@ bool CPendingOperation::x_AllFinishedRead(void) const
 }
 
 
-void CPendingOperation::x_SendReplyCompletion(bool  forced,
-                                              CRequestStatus::ECode  status)
+void CPendingOperation::x_SendReplyCompletion(bool  forced)
 {
     // Send the reply completion only if needed
     if (x_AllFinishedRead() || forced) {
@@ -412,7 +418,7 @@ void CPendingOperation::x_SendReplyCompletion(bool  forced,
                 reply_completion.size()));
 
         // No need to set the context/engage context resetter: they set outside
-        x_PrintRequestStop(status);
+        x_PrintRequestStop(m_OverallStatus);
     }
 }
 
@@ -437,9 +443,10 @@ void CPendingOperation::x_PrintRequestStop(int  status)
 }
 
 
-bool CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info,
-                                              CRequestStatus::ECode &  status)
+CRequestStatus::ECode
+CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
 {
+    CRequestStatus::ECode   status = CRequestStatus::e200_Ok;
     string                  msg;
     try {
         if (!FetchCanonicalSeqId(
@@ -471,14 +478,20 @@ bool CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info,
         status = CRequestStatus::e500_InternalServerError;
     }
 
-    if (!msg.empty()) {
+    if (status != CRequestStatus::e200_Ok) {
         size_t      item_id = m_BlobRequest.m_ItemId;
 
-        CPubseqGatewayApp::GetInstance()->GetErrorCounters().
+        if (status == CRequestStatus::e404_NotFound) {
+            // It is a client error, no data for the request
+            ERR_POST(Warning << msg);
+        } else {
+            // It is a server error, data inconsistency or DB connectivity
+            ERR_POST(msg);
+            CPubseqGatewayApp::GetInstance()->GetErrorCounters().
                                                      IncCanonicalSeqIdError();
-        ERR_POST(msg);
-        string  header = GetBioseqMessageHeader(item_id, msg.size(),
-                                                status, status,
+        }
+        string  header = GetBioseqMessageHeader(item_id, msg.size(), status,
+                                                eNoCanonicalTranslation,
                                                 eDiag_Error);
         m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(header.data()),
@@ -493,18 +506,17 @@ bool CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info,
                     (const unsigned char *)(bioseq_meta.data()),
                     bioseq_meta.size()));
         ++m_TotalSentReplyChunks;
-        return false;
     }
 
     // No problems, resolved
-    status = CRequestStatus::e200_Ok;
-    return true;
+    return status;
 }
 
 
-bool CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
-                                          CRequestStatus::ECode &  status)
+CRequestStatus::ECode
+CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info)
 {
+    CRequestStatus::ECode   status = CRequestStatus::e200_Ok;
     string                  msg;
     try {
         if (!FetchBioseqInfo(
@@ -515,7 +527,10 @@ bool CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
             msg = "No bioseq info found for seq_id '" +
                   m_BlobRequest.m_SeqId + "' of type " +
                   NStr::NumericToString(m_BlobRequest.m_IdType);
-            status = CRequestStatus::e404_NotFound;
+
+            // Basically it is data inconsistency, so the status is 500 (not
+            // 404)
+            status = CRequestStatus::e500_InternalServerError;
         }
     } catch (const exception &  exc) {
         msg = "Error retrieving bioseq info for seq_id '" +
@@ -530,14 +545,14 @@ bool CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
         status = CRequestStatus::e500_InternalServerError;
     }
 
-    if (!msg.empty()) {
+    if (status != CRequestStatus::e200_Ok) {
         size_t      item_id = m_BlobRequest.m_ItemId;
 
         CPubseqGatewayApp::GetInstance()->GetErrorCounters().
                                                 IncBioseqInfoError();
-        ERR_POST(msg);
+        ERR_POST(msg);  // It is always a server error: data inconsistency
         string  header = GetBioseqMessageHeader(item_id, msg.size(),
-                                                status, status,
+                                                status, eNoBioseqInfo,
                                                 eDiag_Error);
         m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(header.data()),
@@ -552,12 +567,10 @@ bool CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
                     (const unsigned char *)(bioseq_meta.data()),
                     bioseq_meta.size()));
         ++m_TotalSentReplyChunks;
-        return false;
     }
 
     // No problems, biseq info has been retrieved
-    status = CRequestStatus::e200_Ok;
-    return true;
+    return status;
 }
 
 
@@ -601,24 +614,27 @@ bool CPendingOperation::x_SatToSatName(const SBlobRequest &  blob_request,
                NStr::NumericToString(blob_request.m_IdType);
     else
         msg += " for the blob " + GetBlobId(blob_id);
-    x_SendUnknownSatelliteError(blob_request.m_ItemId, msg,
-                                eUnknownResolvedSatellite);
 
-    app->GetErrorCounters().IncSatToSatName();
+    // It is a server error - data inconsistency
+    ERR_POST(msg);
+
+    x_SendUnknownServerSatelliteError(blob_request.m_ItemId, msg,
+                                      eUnknownResolvedSatellite);
+
+    app->GetErrorCounters().IncServerSatToSatName();
     return false;
 }
 
 
-void CPendingOperation::x_SendUnknownSatelliteError(
+void CPendingOperation::x_SendUnknownServerSatelliteError(
                                 size_t  item_id,
                                 const string &  msg,
                                 int  err_code)
 {
-    ERR_POST(msg);
-
-    string      header = GetBlobPropMessageHeader(item_id, msg.size(),
-                                                  CRequestStatus::e404_NotFound,
-                                                  err_code, eDiag_Error);
+    string      header = GetBlobPropMessageHeader(
+                                    item_id, msg.size(),
+                                    CRequestStatus::e500_InternalServerError,
+                                    err_code, eDiag_Error);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
@@ -763,18 +779,35 @@ void CBlobPropCallback::operator()(CBlobRecord const &  blob, bool is_found)
             }
         }
     } else {
-        // Not found, i.e. report 404
+        // Not found, report 500 because it is data inconsistency
+        // or 404 if it was requested via sat.sat_key
         CPubseqGatewayApp::GetInstance()->GetErrorCounters().
-                                                IncGetBlobNotFound();
+                                                IncBlobPropsNotFoundError();
 
-        string  message = "Blob properties are not found";
-        ERR_POST(message);
-        string  blob_prop_msg = GetBlobPropMessageHeader(
-                                    m_FetchDetails->m_ItemId,
-                                    message.size(),
-                                    CRequestStatus::e404_NotFound,
-                                    CRequestStatus::e404_NotFound,
-                                    eDiag_Error);
+        string      message = "Blob properties are not found";
+        string      blob_prop_msg;
+        if (m_FetchDetails->m_BlobIdType == eBySatAndSatKey) {
+            // User requested wrong sat_key, so it is a client error
+            ERR_POST(Warning << message);
+            m_PendingOp->UpdateOverallStatus(CRequestStatus::e404_NotFound);
+            blob_prop_msg = GetBlobPropMessageHeader(
+                                        m_FetchDetails->m_ItemId,
+                                        message.size(),
+                                        CRequestStatus::e404_NotFound,
+                                        eBlobPropsNotFound,
+                                        eDiag_Error);
+        } else {
+            // Server error, data inconsistency
+            ERR_POST(message);
+            m_PendingOp->UpdateOverallStatus(
+                                    CRequestStatus::e500_InternalServerError);
+            blob_prop_msg = GetBlobPropMessageHeader(
+                                        m_FetchDetails->m_ItemId,
+                                        message.size(),
+                                        CRequestStatus::e500_InternalServerError,
+                                        eBlobPropsNotFound,
+                                        eDiag_Error);
+        }
 
         m_PendingOp->m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(blob_prop_msg.data()),
@@ -851,8 +884,9 @@ void CBlobPropCallback::x_RequestOriginalBlobChunks(CBlobRecord const &  blob)
 void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
 {
     // id2_info: "sat.shell.info"
-    string              id2_info = blob.GetId2Info();
-    vector<string>      parts;
+    CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
+    string                  id2_info = blob.GetId2Info();
+    vector<string>          parts;
     NStr::Split(id2_info, ".", parts);
 
     if (parts.size() < 3) {
@@ -874,6 +908,10 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
                 message.size()));
         ++m_FetchDetails->m_TotalSentBlobChunks;
         ++m_PendingOp->m_TotalSentReplyChunks;
+
+        app->GetErrorCounters().IncBioseqID2Info();
+        m_PendingOp->UpdateOverallStatus(
+                                CRequestStatus::e500_InternalServerError);
         ERR_POST(message);
         return;
     }
@@ -903,6 +941,10 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
                 message.size()));
         ++m_FetchDetails->m_TotalSentBlobChunks;
         ++m_PendingOp->m_TotalSentReplyChunks;
+
+        app->GetErrorCounters().IncBioseqID2Info();
+        m_PendingOp->UpdateOverallStatus(
+                                CRequestStatus::e500_InternalServerError);
         ERR_POST(message);
         return;
     }
@@ -911,7 +953,6 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
     SBlobId     shell_blob_id(sat, shell);  // mandatory
     SBlobId     info_blob_id(sat, info);    // optional
 
-    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
     if (!app->SatToSatName(sat, shell_blob_id.m_SatName)) {
         // Error: send it in the context of the blob props
         string      message = "Error mapping id2 info sat (" +
@@ -932,7 +973,9 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
         ++m_FetchDetails->m_TotalSentBlobChunks;
         ++m_PendingOp->m_TotalSentReplyChunks;
 
-        app->GetErrorCounters().IncSatToSatName();
+        app->GetErrorCounters().IncServerSatToSatName();
+        m_PendingOp->UpdateOverallStatus(
+                                CRequestStatus::e500_InternalServerError);
         ERR_POST(message);
         return;
     }
@@ -1030,10 +1073,21 @@ void CGetBlobErrorCallback::operator()(CRequestStatus::ECode  status,
             app->GetErrorCounters().IncUnknownError();
     }
 
-    string  blob_reply = GetBlobMessageHeader(
+    string  blob_reply;
+    if (is_error) {
+        blob_reply = GetBlobMessageHeader(
                                 m_FetchDetails->m_ItemId,
                                 m_FetchDetails->m_BlobId,
-                                message.size(), status, code, severity);
+                                message.size(),
+                                CRequestStatus::e500_InternalServerError,
+                                code, severity);
+    } else {
+        blob_reply = GetBlobMessageHeader(
+                                m_FetchDetails->m_ItemId,
+                                m_FetchDetails->m_BlobId,
+                                message.size(),
+                                status, code, severity);
+    }
 
     m_PendingOp->m_Chunks.push_back(m_Reply->PrepareChunk(
             (const unsigned char *)(blob_reply.data()),
@@ -1046,6 +1100,9 @@ void CGetBlobErrorCallback::operator()(CRequestStatus::ECode  status,
     ++m_PendingOp->m_TotalSentReplyChunks;
 
     if (is_error) {
+        m_PendingOp->UpdateOverallStatus(
+                                    CRequestStatus::e500_InternalServerError);
+
         string  completion = GetBlobCompletionHeader(
                             m_FetchDetails->m_ItemId,
                             m_FetchDetails->m_BlobId,

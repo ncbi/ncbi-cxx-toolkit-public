@@ -55,12 +55,18 @@ void CPubseqGatewayErrorCounters::PopulateDictionary(CJsonNode &  dict) const
     dict.SetInteger("GetBlobErrorCount", m_GetBlobError);
     err_sum += m_UnknownError;
     dict.SetInteger("UnknownErrorCount", m_UnknownError);
-    err_sum += m_SatToSatNameError;
-    dict.SetInteger("SatToSatNameErrorCount", m_SatToSatNameError);
+    err_sum += m_ClientSatToSatNameError;
+    dict.SetInteger("ClientSatToSatNameErrorCount", m_ClientSatToSatNameError);
+    err_sum += m_ServerSatToSatNameError;
+    dict.SetInteger("ServerSatToSatNameErrorCount", m_ServerSatToSatNameError);
     err_sum += m_CanonicalSeqIdError;
     dict.SetInteger("CanonicalSeqIdErrorCount", m_CanonicalSeqIdError);
+    err_sum += m_BioseqID2InfoError;
+    dict.SetInteger("BioseqID2InfoErrorCount", m_BioseqID2InfoError);
     err_sum += m_BioseqInfoError;
     dict.SetInteger("BioseqInfoErrorCount", m_BioseqInfoError);
+    err_sum += m_BlobPropsNotFoundError;
+    dict.SetInteger("BlobPropsNotFoundErrorCount", m_BlobPropsNotFoundError);
 
     dict.SetInteger("TotalErrorCount", err_sum);
 }

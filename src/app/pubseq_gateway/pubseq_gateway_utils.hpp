@@ -81,10 +81,17 @@ CJsonNode  BioseqInfoToJSON(const SBioseqInfo &  bioseq_info);
 
 enum EPubseqGatewayErrorCode {
     eUnknownSatellite = 300,
+    eBadURL,
+    eMissingParameter,
+    eMalformedParameter,
     eUnknownResolvedSatellite,
+    eNoCanonicalTranslation,
+    eNoBioseqInfo,
     eBadID2Info,
     eResolutionNotFound,
-    eUnpackingError
+    eUnpackingError,
+    eUnknownError,
+    eBlobPropsNotFound
 };
 
 // Bioseq messages

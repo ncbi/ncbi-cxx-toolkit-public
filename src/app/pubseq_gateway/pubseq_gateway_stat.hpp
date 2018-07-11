@@ -44,7 +44,10 @@ public:
     CPubseqGatewayErrorCounters() :
         m_BadUrlPath(0), m_InsufficientArguments(0), m_MalformedArguments(0),
         m_ResolveNotFound(0), m_ResolveError(0), m_GetBlobNotFound(0),
-        m_GetBlobError(0), m_UnknownError(0)
+        m_GetBlobError(0), m_UnknownError(0), m_ClientSatToSatNameError(0),
+        m_ServerSatToSatNameError(0), m_CanonicalSeqIdError(0),
+        m_BioseqID2InfoError(0), m_BioseqInfoError(0),
+        m_BlobPropsNotFoundError(0)
     {}
 
     void IncBadUrlPath(void)
@@ -71,14 +74,23 @@ public:
     void IncUnknownError(void)
     { ++m_UnknownError; }
 
-    void IncSatToSatName(void)
-    { ++m_SatToSatNameError; }
+    void IncClientSatToSatName(void)
+    { ++m_ClientSatToSatNameError; }
+
+    void IncServerSatToSatName(void)
+    { ++m_ServerSatToSatNameError; }
 
     void IncCanonicalSeqIdError(void)
     { ++m_CanonicalSeqIdError; }
 
     void IncBioseqInfoError(void)
     { ++m_BioseqInfoError; }
+
+    void IncBioseqID2Info(void)
+    { ++m_BioseqID2InfoError; }
+
+    void IncBlobPropsNotFoundError(void)
+    { ++m_BlobPropsNotFoundError; }
 
     void PopulateDictionary(CJsonNode &  dict) const;
 
@@ -91,9 +103,12 @@ private:
     atomic_uint_fast64_t        m_GetBlobNotFound;      // 404
     atomic_uint_fast64_t        m_GetBlobError;         // 502
     atomic_uint_fast64_t        m_UnknownError;         // 503
-    atomic_uint_fast64_t        m_SatToSatNameError;
+    atomic_uint_fast64_t        m_ClientSatToSatNameError;
+    atomic_uint_fast64_t        m_ServerSatToSatNameError;
     atomic_uint_fast64_t        m_CanonicalSeqIdError;
+    atomic_uint_fast64_t        m_BioseqID2InfoError;
     atomic_uint_fast64_t        m_BioseqInfoError;
+    atomic_uint_fast64_t        m_BlobPropsNotFoundError;
 };
 
 

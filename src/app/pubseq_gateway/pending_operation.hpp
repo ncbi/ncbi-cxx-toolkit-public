@@ -160,6 +160,11 @@ public:
         return ++m_NextItemId;
     }
 
+    void UpdateOverallStatus(CRequestStatus::ECode  status)
+    {
+        m_OverallStatus = max(status, m_OverallStatus);
+    }
+
 public:
     CPendingOperation(const CPendingOperation&) = delete;
     CPendingOperation& operator=(const CPendingOperation&) = delete;
@@ -210,18 +215,16 @@ private:
 
     void x_StartMainBlobRequest(void);
     bool x_AllFinishedRead(void) const;
-    void x_SendReplyCompletion(bool  forced = false,
-                               CRequestStatus::ECode  status = CRequestStatus::e200_Ok);
+    void x_SendReplyCompletion(bool  forced = false);
     void x_SetRequestContext(void);
     void x_PrintRequestStop(int  status);
-    bool x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info,
-                               CRequestStatus::ECode &  status);
-    bool x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
-                           CRequestStatus::ECode &  status);
+    CRequestStatus::ECode x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info);
+    CRequestStatus::ECode x_FetchBioseqInfo(SBioseqInfo &  bioseq_info);
     bool x_SatToSatName(const SBlobRequest &  blob_request,
                         SBlobId &  blob_id);
-    void x_SendUnknownSatelliteError(size_t  item_id,
-                                     const string &  message, int  error_code);
+    void x_SendUnknownServerSatelliteError(size_t  item_id,
+                                           const string &  message,
+                                           int  error_code);
     void x_SendBioseqInfo(size_t  item_id, const SBioseqInfo &  bioseq_info);
 
     void x_Peek(HST::CHttpReply<CPendingOperation>& resp, bool  need_wait,
@@ -232,6 +235,7 @@ private:
     shared_ptr<CCassConnection>             m_Conn;
     unsigned int                            m_Timeout;
     unsigned int                            m_MaxRetries;
+    CRequestStatus::ECode                   m_OverallStatus;
 
     // Incoming request. It could be by sat/sat_key or by seq_id/id_type
     SBlobRequest                            m_BlobRequest;
