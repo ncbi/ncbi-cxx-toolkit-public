@@ -115,7 +115,14 @@ public:
             try {
                 Wait1();
             } catch (const CCassandraException& e) {
-                Error(CRequestStatus::e502_BadGateway, e.GetErrCode(), eDiag_Error, e.what());
+                Error(CRequestStatus::e500_InternalServerError, e.GetErrCode(), eDiag_Error, e.what());
+                throw;
+            } catch (const exception& e) {
+                Error(CRequestStatus::e500_InternalServerError, CCassandraException::eUnknown, eDiag_Error, e.what());
+                throw;
+            } catch (...) {
+                Error(CRequestStatus::e500_InternalServerError,
+                      CCassandraException::eUnknown, eDiag_Error, "Unknown exception");
                 throw;
             }
             if (m_Async)
