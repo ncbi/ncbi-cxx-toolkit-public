@@ -304,7 +304,7 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
 		"X12497	BAJ11606	interleukin 1 alpha [Syncerus caffer]",
 		"X12497	XP_010832415	PREDICTED: interleukin-1 alpha [Bison bison bison]",
 		"X12497	BAE76004	Interleukin-1 alpha [Bubalus carabanensis]",
-		"X12497	XP_006056051	PREDICTED: interleukin-1 alpha [Bubalus bubalis]",
+		"X12497	XP_006056051	interleukin-1 alpha isoform X1 [Bubalus bubalis]",
 		"X12497	NP_001277833	interleukin-1 alpha [Bubalus bubalis]"};
 
     	string output = CNcbiOstrstreamToString(output_stream);
@@ -336,7 +336,7 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
 	    "interleukin 1 alpha [Syncerus caffer]",
             "PREDICTED: interleukin-1 alpha [Bison bison bison]",
             "Interleukin-1 alpha [Bubalus carabanensis]",
-            "PREDICTED: interleukin-1 alpha [Bubalus bubalis]<>interleukin-1 alpha [Bubalus bubalis]<>Interleukin-1 alpha [Bubalus bubalis x Bubalus carabanensis]",
+            "interleukin-1 alpha isoform X1 [Bubalus bubalis]<>interleukin-1 alpha [Bubalus bubalis]<>Interleukin-1 alpha [Bubalus bubalis x Bubalus carabanensis]",
             "interleukin-1 alpha [Bubalus bubalis]<>Interleukin-1 alpha [Bubalus bubalis]"}; 
     	vector<string> results;
     	NStr::Split(output, "\n", results);
