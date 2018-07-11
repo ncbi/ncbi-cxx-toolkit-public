@@ -87,6 +87,9 @@ public:
     void AddPattern(const string& pattern, TFlags flags = 0)  { AddPattern(pattern.c_str(), flags); }
     ///@}
 
+    /// Quote special characters to insert string into regular expression
+    static string QuoteString(const string& str);
+
     /// Generate graphical representation of the FSM in DOT format.
     /// For more details, see http://www.graphviz.org/
     ///
