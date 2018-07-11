@@ -995,24 +995,27 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     template <typename K, typename V, typename F = int>
     void FieldGetMapValue(F ifld, map<K, V>& result) const
     {
-        const CassValue *   clm = GetColumn(ifld);
-        CassValueType       type = cass_value_type(clm);
+        const CassValue * clm = GetColumn(ifld);
+        CassValueType     type = cass_value_type(clm);
 
         switch (type) {
             case CASS_VALUE_TYPE_MAP: {
                 result.clear();
                 CassIterator* items_iterator = cass_iterator_from_map(clm);
-                unique_ptr<CassIterator,
-                           function<void(CassIterator*)> > items_iterator_ptr(
-                                   items_iterator,
-                                   [](CassIterator* itr)
-                                   {
-                                        cass_iterator_free(itr);
-                                   });
-                while (cass_iterator_next(items_iterator)) {
-                    const CassValue* key = cass_iterator_get_map_key(items_iterator);
-                    const CassValue* val = cass_iterator_get_map_value(items_iterator);
-                    result.emplace(CassValueConvert<K>(key), CassValueConvert<V>(val));
+                if (items_iterator != nullptr) {
+                    unique_ptr<CassIterator, function<void(CassIterator*)> >
+                        items_iterator_ptr(
+                            items_iterator,
+                            [](CassIterator* itr)
+                            {
+                                cass_iterator_free(itr);
+                            }
+                    );
+                    while (cass_iterator_next(items_iterator)) {
+                        const CassValue* key = cass_iterator_get_map_key(items_iterator);
+                        const CassValue* val = cass_iterator_get_map_value(items_iterator);
+                        result.emplace(CassValueConvert<K>(key), CassValueConvert<V>(val));
+                    }
                 }
                 break;
             }
