@@ -30,7 +30,7 @@ BufferSecurityCheck=true
 RuntimeTypeInfo=true
 DisableSpecificWarnings=
 UndefinePreprocessorDefinitions=
-AdditionalOptions=
+AdditionalOptions=/Zm150
 ProgramDataBaseFileName=$(IntDir)$(TargetName).pdb
 
 [Compiler.1200]
@@ -55,7 +55,7 @@ OmitFramePointers=false
 BasicRuntimeChecks=3
 BrowseInformation=0
 EnableFunctionLevelLinking=false
-AdditionalOptions=/bigobj
+AdditionalOptions=/bigobj /Zm150
 
 [Compiler.debug.DebugDLL]
 RuntimeLibrary=3
