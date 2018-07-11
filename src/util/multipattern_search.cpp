@@ -44,24 +44,56 @@ void CMultipatternSearch::GenerateDotGraph(ostream& out) const { m_FSM->Generate
 
 void CMultipatternSearch::GenerateSourceCode(ostream& out) const { m_FSM->GenerateSourceCode(out); }
 
+string CMultipatternSearch::QuoteString(const string& str)
+{
+    string out;
+    for (auto c : str) {
+        switch (c) {
+            case '^':
+            case '$':
+            case '(':
+            case ')':
+            case '[':
+            case ']':
+            case '\\':
+            case '/':
+            case '?':
+            case '*':
+            case '+':
+            case '.':
+                out += '\\';
+                // there is no break here!
+            default:
+                out += c;
+        }
+    }
+    return out;
+}
+
+
 void CMultipatternSearch::x_Parse(const char* input, CFoundCallback& report) const
 {
     const char* p = input;
     size_t state = 1;
+
+    set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
+    for (auto e : emit) {
+        if (report(e, p - input) == eStopSearch) {
+            return;
+        }
+    }
     while (true) {
+        state = m_FSM->m_States[state]->m_Trans[*p];
         set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
-        for (auto e: emit) {
+        for (auto e : emit) {
             if (report(e, p - input) == eStopSearch) {
                 return;
             }
         }
-        if (state) {
-            if (!*p) {
-                return;
-            }
-            ++p;
+        if (!*p) {
+            return;
         }
-        state = m_FSM->m_States[state]->m_Trans[*p];
+        ++p;
     }
 }
 
