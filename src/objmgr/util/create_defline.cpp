@@ -444,6 +444,7 @@ void CDeflineGenerator::x_SetFlagsIdx (
     m_Topology = bsx->GetTopology();
     m_Length = bsx->GetLength();
 
+    m_IsSeg = false;
     m_IsDelta = bsx->IsDelta();
     m_IsVirtual = bsx->IsVirtual();
     m_IsMap = bsx->IsMap();
