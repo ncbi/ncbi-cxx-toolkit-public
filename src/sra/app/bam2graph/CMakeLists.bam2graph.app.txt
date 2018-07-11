@@ -6,6 +6,7 @@ NCBI_begin_app(bam2graph)
   NCBI_sources(bam2graph)
   NCBI_uses_toolkit_libraries(bamread)
   NCBI_project_watchers(vasilche ucko)
+  NCBI_add_include_directories(${SRA_INCLUDE})
 NCBI_end_app()
 
 if(OFF)

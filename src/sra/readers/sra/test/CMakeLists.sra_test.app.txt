@@ -6,6 +6,7 @@ NCBI_begin_app(sra_test)
   NCBI_sources(sra_test)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank sraread)
   NCBI_project_watchers(vasilche ucko)
+  NCBI_add_include_directories(${SRA_INCLUDE})
 NCBI_end_app()
 
 if(OFF)
