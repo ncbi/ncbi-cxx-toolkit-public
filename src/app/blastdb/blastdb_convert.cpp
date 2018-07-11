@@ -282,7 +282,6 @@ void s_GetProfileDBsExt(vector<string> & extns)
 	extns.push_back("obsr");
 }
 
-
 int CBlastdbConvertApp::Run(void)
 {
     const CArgs& args = GetArgs();
@@ -364,15 +363,17 @@ int CBlastdbConvertApp::Run(void)
         for (unsigned int p=0; p < paths.size(); p++) {
         	string & vol_path = paths[p];
             _TRACE("Processing " << vol_path);
-            string vol_num = NStr::IntToString(p);;
-            if(p <= 9) {
-            	vol_num = "0" + NStr::IntToString(p);
-            }
+            string vol_num = NStr::UIntToString(p);;
             string kOutputVol = output_dir.GetName();
             if(use_index_in_filename) {
-            	kOutputVol +=+ "." + vol_num;
+            	string zero_padding = kEmptyStr;
+            	const string path_size_str = NStr::IntToString((int) paths.size());
+            	unsigned int l = (path_size_str.size() < 2) ? 2 : path_size_str.size();
+            	for (unsigned int x = vol_num.size(); x < l; x++){
+            		zero_padding +='0';
+            	}
+            	kOutputVol += "." + zero_padding + vol_num;
             }
-
             CRef<CSeqDB> vol(new CSeqDB(vol_path, seqtype));
             _ASSERT(vol);
 
