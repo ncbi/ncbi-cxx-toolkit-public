@@ -2279,14 +2279,19 @@ static list<string> s_GetLinkoutUrl(int linkout,
         url_link = CAlignFormatUtil::MapProtocol(url_link);
         linkout_list.push_back(url_link);        
     }    
-    if(linkout & eGenomeDataViewer){
+    if((linkout & eGenomeDataViewer) || (linkout & eTranscript)){
         string urlTag = linkoutInfo.is_na ? "GENOME_DATA_VIEWER_NUC" : "GENOME_DATA_VIEWER_PROT";
         url_link = CAlignFormatUtil::GetURLFromRegistry(urlTag);
         lnk_displ = textLink ? "Genome Data Viewer" : kGenomeDataViewerImg;
-        lnkTitleInfo = linkoutInfo.is_na ? 
+        if(linkout & eTranscript) {
+            lnkTitleInfo = "title=\"View the annotation of the transcript <@label@> within a genomic context in NCBI's Genome Data Viewer (GDV)- genome browser for RefSeq annotated assemblies. See other genomic features annotated at the same location as the protein annotation and browse to other regions.\"";
+        }
+        else {
+            lnkTitleInfo = linkoutInfo.is_na ? 
                          "title=\"View BLAST hits for <@label@> within a genomic context in NCBI's Genome Data Viewer (GDV)- genome browser for RefSeq annotated assemblies. See other genomic features annotated at the same location as hits and browse to other regions.\""
                          :
                          "title=\"View the annotation of the protein <@label@> within a genomic context in NCBI's Genome Data Viewer (GDV)- genome browser for RefSeq annotated assemblies. See other genomic features annotated at the same location as the protein annotation and browse to other regions.\"";
+        }
         url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,firstAcc,lnk_displ,"",lnkTitleInfo);
                 
         url_link = CAlignFormatUtil::MapTemplate(url_link,"queryID",linkoutInfo.queryID);
