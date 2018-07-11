@@ -8,6 +8,6 @@ add_executable(concat_seqentries-app
 set_target_properties(concat_seqentries-app PROPERTIES OUTPUT_NAME concat_seqentries)
 
 target_link_libraries(concat_seqentries-app
-    bdb cache_blob seqset
+    bdb asn_cache seqset
 )
 

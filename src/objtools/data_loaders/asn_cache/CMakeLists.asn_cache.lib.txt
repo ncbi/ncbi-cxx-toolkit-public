@@ -6,10 +6,7 @@ add_library(asn_cache
     asn_cache_store
     asn_cache_util asn_cache_stats
 )
-add_dependencies(asn_cache
-    seqset cache_blob
-)
 
 target_link_libraries(asn_cache
-    bdb cache_blob seqset
+    cache_blob seqset bdb xcompress
 )

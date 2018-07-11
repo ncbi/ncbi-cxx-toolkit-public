@@ -4,7 +4,7 @@
 
 NCBI_begin_lib(ncbi_xloader_asn_cache)
   NCBI_sources(asn_cache_loader)
-  NCBI_uses_toolkit_libraries(seqset general asn_cache)
+  NCBI_uses_toolkit_libraries(seqset general asn_cache xobjmgr)
   NCBI_project_watchers(marksc2)
 NCBI_end_lib()
 

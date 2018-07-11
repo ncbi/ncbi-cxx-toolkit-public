@@ -6,6 +6,7 @@ NCBI_begin_app(bam_compare)
   NCBI_sources(bam_compare samtools bam_test_common)
   NCBI_requires(Linux)
   NCBI_uses_toolkit_libraries(bamread xobjreadex xobjsimple)
+  NCBI_uses_external_libraries(${SAMTOOLS_LIBS})
   NCBI_project_watchers(vasilche ucko)
 NCBI_end_app()
 
