@@ -146,7 +146,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     cerr << "Creating new test case from " << input << " ..." << endl;
 
     CErrorLogger logger(errors);
-    CBedReader reader(CBedReader::fThreeFeatFormat);
+    CBedReader reader(CBedReader::fDirectedFeatureModel);
     CNcbiIfstream ifstr(input.c_str());
 
     typedef list<CRef<CSeq_annot> > ANNOTS;

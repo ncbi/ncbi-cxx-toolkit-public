@@ -70,11 +70,6 @@ Seq-annot ::= {
         strand plus,
         id local str "chr7"
       },
-      xref {
-        {
-          id local id 2
-        }
-      },
       exts {
         {
           type str "DisplaySettings",
@@ -147,11 +142,6 @@ Seq-annot ::= {
         to 127477030,
         strand minus,
         id local str "chr7"
-      },
-      xref {
-        {
-          id local id 5
-        }
       },
       exts {
         {
@@ -226,11 +216,6 @@ Seq-annot ::= {
         strand minus,
         id local str "chr7"
       },
-      xref {
-        {
-          id local id 8
-        }
-      },
       exts {
         {
           type str "DisplaySettings",
@@ -303,11 +288,6 @@ Seq-annot ::= {
         to 127479364,
         strand minus,
         id local str "chr7"
-      },
-      xref {
-        {
-          id local id 11
-        }
       },
       exts {
         {
@@ -382,11 +362,6 @@ Seq-annot ::= {
         strand plus,
         id local str "chr7"
       },
-      xref {
-        {
-          id local id 14
-        }
-      },
       exts {
         {
           type str "DisplaySettings",
@@ -459,11 +434,6 @@ Seq-annot ::= {
         to 127481698,
         strand minus,
         id local str "chr7"
-      },
-      xref {
-        {
-          id local id 17
-        }
       },
       exts {
         {

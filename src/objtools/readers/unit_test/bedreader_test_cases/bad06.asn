@@ -49,11 +49,6 @@ Seq-annot ::= {
         strand plus,
         id local str "chr7"
       },
-      xref {
-        {
-          id local id 2
-        }
-      },
       exts {
         {
           type str "DisplaySettings",
@@ -126,11 +121,6 @@ Seq-annot ::= {
         to 127473529,
         strand plus,
         id local str "chr7"
-      },
-      xref {
-        {
-          id local id 5
-        }
       },
       exts {
         {
