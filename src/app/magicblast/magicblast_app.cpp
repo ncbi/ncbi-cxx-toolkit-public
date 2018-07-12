@@ -1870,6 +1870,10 @@ int CMagicBlastApp::Run(void)
                               new CSearchDatabase(kDbName,
                                     CSearchDatabase::eBlastDbIsNucleotide));
 
+                        if (num_query_threads > 1) {
+                            search_db->GetSeqDb()->SetNumberOfThreads(1, true);
+                        }
+
                         CRef<CSeqDBGiList> gilist =
                             db_args->GetSearchDatabase()->GetGiList();
 
@@ -1882,10 +1886,6 @@ int CMagicBlastApp::Run(void)
                     }
                     else {
                         thread_db_adapter = db_adapter;
-                    }
-
-                    if (search_db.NotEmpty() && num_query_threads > 1) {
-                        search_db->GetSeqDb()->SetNumberOfThreads(1, true);
                     }
 
                     // do mapping
