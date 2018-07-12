@@ -131,7 +131,13 @@ public:
     virtual bool IsCommentLine(
         const CTempString& line)
     {
-        return NStr::StartsWith(line, "#");
+        if (NStr::StartsWith(line, "#")) {
+            return true;
+        }
+        if (NStr::IsBlank(line)) {
+            return true;
+        }
+        return false;
     };
 
     bool GetLine(
