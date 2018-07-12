@@ -631,8 +631,8 @@ bool CBedReader::xParseFeatureGeneModelFormat(
 
     if (pRna  &&  pCds) {
         CRef<CSeq_loc> pRnaLoc(new CSeq_loc);
-        pRnaLoc->Assign(pRna->GetLocation());
-        pCds->SetLocation(*pRnaLoc);
+        CRef<CSeq_loc> pClippedLoc = pRna->GetLocation().Intersect(pCds->GetLocation(), 0, 0);
+        pCds->SetLocation(*pClippedLoc);
     }
     return true;
 }
