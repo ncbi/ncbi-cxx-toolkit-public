@@ -246,7 +246,7 @@ public:
     }
     
 private:
-    unsigned m_Counter;
+    volatile unsigned m_Counter;
 
 private:
     CObjectWithNew(const CObjectWithNew&);
