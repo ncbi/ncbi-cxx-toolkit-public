@@ -83,13 +83,10 @@ static Boolean s_DominateTest(LinkedHSP *p, LinkedHSP *y) {
     Int8 e2 = y->end;
     Int8 s1 = p->hsp->score;
     Int8 s2 = y->hsp->score;
-    double ev1 = p->hsp->evalue;
-    double ev2 = y->hsp->evalue;
     Int8 l1 = e1 - b1;
     Int8 l2 = e2 - b2;
     Int8 overlap = MIN(e1,e2) - MAX(b1,b2);
     Int8 d = 0;
-    Int4 evalue_cmp = 0;
 
     // If not overlap by more than 50%
     if(2 *overlap < l2) {
