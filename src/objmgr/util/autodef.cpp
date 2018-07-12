@@ -1512,7 +1512,7 @@ CRef<CUser_object> CAutoDef::CreateIDOptions(CSeq_entry_Handle seh)
     CRef<CUser_object> user = ad.GetOptionsObject();
     CAutoDefOptions options;
     options.InitFromUserObject(*user);
-    for(auto it : modifiers) {
+    for(const auto &it : modifiers) {
         if (it.IsRequested()) {
             if (it.IsOrgMod()) {
                 options.AddOrgMod(it.GetOrgModType());
