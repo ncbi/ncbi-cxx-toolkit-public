@@ -104,9 +104,8 @@ CPendingOperation::~CPendingOperation()
                  m_Id2InfoFetchDetails->m_Loader.get());
 
     // Just in case if a request ended without a normal request stop,
-    // finish it here as a last resort. (is it Cancel() case?)
-    // e410_Gone is chosen for easier identification in the logs
-    x_PrintRequestStop(CRequestStatus::e410_Gone);
+    // finish it here as the last resort. (is it Cancel() case?)
+    x_PrintRequestStop(m_OverallStatus);
 }
 
 
@@ -1051,18 +1050,20 @@ void CGetBlobErrorCallback::operator()(CRequestStatus::ECode  status,
     CRequestContextResetter     context_resetter;
     m_PendingOp->x_SetRequestContext();
 
-    // If it was an optional blob then the retrieving errors are to be ignored
-    if (m_FetchDetails->m_Optional)
-        return;
-
+    // To avoid sending an error in Peek()
+    m_FetchDetails->m_Loader->ClearError();
 
     // It could be a message or an error
     bool    is_error = (severity == eDiag_Error ||
                         severity == eDiag_Critical ||
                         severity == eDiag_Fatal);
 
-    // To avoid sending an error in Peek()
-    m_FetchDetails->m_Loader->ClearError();
+    // If it was an optional blob then the retrieving errors are to be ignored
+    if (m_FetchDetails->m_Optional) {
+        if (is_error)
+            m_FetchDetails->m_FinishedRead = true;
+        return;
+    }
 
     CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
     ERR_POST(message);
@@ -1109,7 +1110,7 @@ void CGetBlobErrorCallback::operator()(CRequestStatus::ECode  status,
                             m_FetchDetails->m_TotalSentBlobChunks + 1);
         m_PendingOp->m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(completion.data()),
-                blob_reply.size()));
+                completion.size()));
         ++m_PendingOp->m_TotalSentReplyChunks;
         m_FetchDetails->m_FinishedRead = true;
     }
