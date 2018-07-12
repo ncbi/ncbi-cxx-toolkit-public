@@ -2820,6 +2820,9 @@ BLAST_GreedyGappedAlignment(const Uint1* query, const Uint1* subject,
                score_params->gap_open, score_params->gap_extend,
                &q_ext_l, &s_ext_l, gap_align->greedy_align_mem,
                rev_prelim_tback, rem, fence_hit, &rev_start_point);
+       if(fence_hit && *fence_hit) {
+    	   return;
+       }
        if (score1 >=0) {
            score += score1;
            break;
