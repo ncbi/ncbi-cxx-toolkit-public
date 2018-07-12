@@ -38,6 +38,11 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
+#include <vector>
+#include <memory>
+#include <utility>
+#include <string>
+
 #include <unistd.h>
 
 BEGIN_IDBLOB_SCOPE
@@ -152,14 +157,12 @@ void CCassBlobTaskLoadBlob::Wait1()
                     "   size,"
                     "   size_unpacked,"
                     "   username"
-                    " FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ?"
-                ;
+                    " FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ?";
                 if (m_Blob->GetModified() == kAnyModified) {
                     sql += " LIMIT 1";
                     qry->SetSQL(sql, 1);
                     qry->BindInt32(0, m_Key);
-                }
-                else {
+                } else {
                     sql += " and last_modified = ?";
                     qry->SetSQL(sql, 2);
                     qry->BindInt32(0, m_Key);
@@ -200,13 +203,11 @@ void CCassBlobTaskLoadBlob::Wait1()
                             .SetOwner(qry->FieldGetInt32Value(8))
                             .SetSize(qry->FieldGetInt64Value(9))
                             .SetSizeUnpacked(qry->FieldGetInt64Value(10))
-                            .SetUserName(qry->FieldGetStrValueDef(11, ""))
-                        ;
+                            .SetUserName(qry->FieldGetStrValueDef(11, ""));
                         m_RemainingSize = m_Blob->GetSize();
                         m_PropsFound = true;
                         qry->Close();
-                    }
-                    else if (wr == ar_wait) {
+                    } else if (wr == ar_wait) {
                         break;
                     }
                 }
@@ -222,21 +223,29 @@ void CCassBlobTaskLoadBlob::Wait1()
                             string msg = "Blob not found, key: " + m_Keyspace +
                                 "." + NStr::NumericToString(m_Key);
                             // Call a CB which tells that a 404 reply should be sent
-                            Error(CRequestStatus::e404_NotFound, CCassandraException::eNotFound, eDiag_Error, msg.c_str());
-                        }
-                        else {
+                            Error(CRequestStatus::e404_NotFound, CCassandraException::eNotFound,
+                                eDiag_Error, msg.c_str());
+                        } else {
                             m_State = eDone;
                         }
                         break;
+                    } else {
+                        if (m_Blob->GetNChunks() < 0) {
+                            string msg = "Inconsistent n_chunks value: " + NStr::NumericToString(m_Blob->GetNChunks());
+                            Error(
+                                CRequestStatus::e500_InternalServerError,
+                                CCassandraException::eInconsistentData,
+                                eDiag_Error,
+                                msg
+                            );
+                        } else {
+                            m_ProcessedChunks = vector<bool>(static_cast<size_t>(m_Blob->GetNChunks()), false);
+                            m_QueryArr.resize(static_cast<size_t>(m_Blob->GetNChunks()));
+                            m_State = eLoadingChunks;
+                            b_need_repeat = true;
+                        }
                     }
-                    else {
-                        m_ProcessedChunks = vector<bool>(static_cast<size_t>(m_Blob->GetNChunks()), false);
-                        m_QueryArr.resize(static_cast<size_t>(m_Blob->GetNChunks()));
-                        m_State = eLoadingChunks;
-                        b_need_repeat = true;
-                    }
-                }
-                else {
+                } else {
                     m_State = eDone;
                 }
                 break;
@@ -353,12 +362,10 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                             qry = nullptr;
                             --m_ActiveQueries;
                             need_repeat = true;
-                        }
-                        else if (wr == ar_wait) {
+                        } else if (wr == ar_wait) {
                             continue;
                         }
-                    }
-                    else {
+                    } else {
                         chunk_repeat = true;
                     }
                 }
@@ -370,8 +377,7 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                         need_repeat = true;
                         ERR_POST(Info << "Restart eLoadingChunks required for key=" <<
                                 m_Keyspace << "." << m_Key << ", chunk=" << chunk_no);
-                    }
-                    else {
+                    } else {
                         char msg[1024];
                         msg[0] = '\0';
                         snprintf(msg, sizeof(msg),
@@ -410,7 +416,8 @@ void CCassBlobTaskLoadBlob::x_RequestChunksAhead(void)
 
 void CCassBlobTaskLoadBlob::x_RequestChunk(CCassQuery& qry, int32_t chunk_no)
 {
-    string sql = "SELECT data FROM " + GetKeySpace() + ".blob_chunk WHERE sat_key = ? AND last_modified = ? AND chunk_no = ?";
+    string sql = "SELECT data FROM " + GetKeySpace() +
+        ".blob_chunk WHERE sat_key = ? AND last_modified = ? AND chunk_no = ?";
     qry.SetSQL(sql, 3);
     qry.BindInt32(0, m_Key);
     qry.BindInt64(1, m_Blob->GetModified());

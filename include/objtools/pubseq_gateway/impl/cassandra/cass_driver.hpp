@@ -388,13 +388,11 @@ class CCassPrm
                 if (NStr::StringToNumeric(m_bytes, &i32))
                     return i32;
                 else
-                    RAISE_DB_ERROR(eBindFailed,
-                                   string("Can't convert Param to int32"));
+                    RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int32");
             }
             // no break
             default:
-                RAISE_DB_ERROR(eBindFailed,
-                               string("Can't convert Param to int32"));
+                RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int32");
         }
     }
 
@@ -410,13 +408,11 @@ class CCassPrm
                 if (NStr::StringToNumeric(m_bytes, &i64))
                     return i64;
                 else
-                    RAISE_DB_ERROR(eBindFailed,
-                                   string("Can't convert Param to int64"));
+                    RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int64");
             }
             // no break
             default:
-                RAISE_DB_ERROR(eBindFailed,
-                               string("Can't convert Param to int64"));
+                RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int64");
         }
     }
 
@@ -899,7 +895,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     }
 
     template <typename I, typename F = int>
-    void FieldGetContainerValue(F  ifld, I  insert_iterator) const
+    void FieldGetContainerValue(F ifld, I  insert_iterator) const
     {
         const CassValue * clm = GetColumn(ifld);
         CassValueType type = cass_value_type(clm);
@@ -928,10 +924,9 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
             default:
                 if (!cass_value_is_null(clm)) {
                     RAISE_DB_ERROR(eFetchFailed,
-                                   string("failed to fetch: unsupported (") +
-                                   NStr::NumericToString(
-                                       static_cast<int>(type)) +
-                                   ") data type");
+                        "Failed to convert Cassandra value to collection: unsupported data type (Cassandra type - " +
+                        NStr::NumericToString(static_cast<int>(type)) + ")"
+                    );
                 }
         }
     }
@@ -985,9 +980,8 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
             }
             default:
                 RAISE_DB_ERROR(eFetchFailed,
-                    string("failed to fetch: unsupported (") +
-                    NStr::NumericToString(static_cast<int>(type)) +
-                    ") data type"
+                    "Failed to convert Cassandra value to set<>: unsupported data type (Cassandra type - " +
+                    NStr::NumericToString(static_cast<int>(type)) + ")"
                 );
         }
     }
@@ -1021,25 +1015,24 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
             }
             default:
                 RAISE_DB_ERROR(eFetchFailed,
-                               string("failed to fetch: unsupported (") +
-                               NStr::NumericToString(static_cast<int>(type)) +
-                               ") data type");
+                    "Failed to convert Cassandra value to map<>: unsupported data type (Cassandra type - " +
+                    NStr::NumericToString(static_cast<int>(type)) + ")"
+                );
         }
     }
 
     template<typename F = int>
     size_t FieldGetBlobValue(F ifld, unsigned char* buf, size_t len) const
     {
-        const CassValue *  clm = GetColumn(ifld);
+        const CassValue * clm = GetColumn(ifld);
         const unsigned char * output = nullptr;
         size_t outlen = 0;
-        if (cass_value_get_bytes(clm, &output, &outlen) != CASS_OK) {
-            RAISE_DB_ERROR(eFetchFailed, string("failed to fetch blob data"));
+        CassError err = cass_value_get_bytes(clm, &output, &outlen);
+        if (err != CASS_OK) {
+            RAISE_CASS_ERROR(err, eFetchFailed, "Failed to fetch blob data:");
         }
         if (len < outlen) {
-            RAISE_DB_ERROR(eFetchFailed,
-                string("failed to fetch blob data, insufficient buffer provided")
-           );
+            RAISE_DB_ERROR(eFetchFailed, "Failed to fetch blob data: insufficient buffer provided");
         }
         memcpy(buf, output, outlen);
         return outlen;
@@ -1056,13 +1049,12 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         const unsigned char * output = nullptr;
         size_t outlen = 0;
         CassError rc = cass_value_get_bytes(clm, &output, &outlen);
-
         if (rc == CASS_ERROR_LIB_NULL_VALUE) {
             return 0;
         }
 
         if (rc != CASS_OK) {
-            RAISE_DB_ERROR(eFetchFailed, string("failed to fetch blob data"));
+            RAISE_CASS_ERROR(rc, eFetchFailed, "Failed to fetch blob data:");
         }
         if (rawbuf) {
             *rawbuf = output;
@@ -1079,7 +1071,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         CassError rc = cass_value_get_bytes(clm, &output, &outlen);
         if (rc != CASS_ERROR_LIB_NULL_VALUE) {
             if (rc != CASS_OK) {
-                RAISE_DB_ERROR(eFetchFailed, string("failed to fetch blob data"));
+                RAISE_CASS_ERROR(rc, eFetchFailed, "Failed to fetch blob data:");
             }
         }
         return outlen;

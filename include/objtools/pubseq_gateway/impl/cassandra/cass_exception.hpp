@@ -139,11 +139,11 @@ protected:
 
 #define RAISE_CASS_ERROR(errc, dberr, comm)                                 \
     do {                                                                    \
-        string __msg;                                                       \
-        __msg.assign(comm);                                                 \
-        __msg.append(string(": ") +                                         \
-                     NStr::NumericToString(static_cast<int>(errc), 0, 16)); \
-        __msg.append(string(": ") + cass_error_desc(errc));                 \
+        string __msg = comm;                                                \
+        string __c = NStr::NumericToString(static_cast<int>(errc), 0, 16);  \
+        __msg.append(" Cassandra error - (code: " + __c);                   \
+        __msg.append(string(", description: '") +                           \
+            cass_error_desc(errc) + "')");                                  \
         ERR_POST("!Raising: " << __msg);                                    \
         NCBI_THROW(CCassandraException, dberr, __msg.c_str());              \
     } while (0)
@@ -158,7 +158,8 @@ protected:
         __msg.assign(__message);                                            \
         __msg.append(string(": ") +                                         \
                      NStr::NumericToString(static_cast<int>(rc), 0, 16));   \
-        ERR_POST("!Raising: " << #errc << " " << __msg << " " << comm);     \
+        ERR_POST("!Raising: CCassandraException::" << #errc << ". " <<      \
+            __msg << " " << comm);                                          \
         if (comm.empty())                                                   \
             NCBI_THROW(CCassandraException, errc, __msg);                   \
         else                                                                \
@@ -183,11 +184,12 @@ protected:
 #define RAISE_CASS_CONN_ERROR(future, comm)                                 \
     RAISE_CASS_FUT_ERROR(future, eFailedToConn, comm)
 
-#define RAISE_DB_ERROR(errc, comm)                          \
-    do {                                                    \
-        string ___msg = comm;                               \
-        ERR_POST("!Raising: " << #errc << " " << ___msg);   \
-        NCBI_THROW(CCassandraException, errc, comm);        \
+#define RAISE_DB_ERROR(errc, comm)                                          \
+    do {                                                                    \
+        string ___msg = comm;                                               \
+        ERR_POST("!Raising: CCassandraException::" << #errc <<              \
+            ". " << ___msg);                                                \
+        NCBI_THROW(CCassandraException, errc, comm);                        \
     } while(0)
 
 #define RAISE_DB_QRY_TIMEOUT(tspent, tmargin, msg)                          \
