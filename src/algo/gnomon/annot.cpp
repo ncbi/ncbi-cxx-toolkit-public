@@ -638,6 +638,26 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
 
         models.sort(s_AlignSeqOrder);
 
+        if(!models.empty()) {
+            for(auto it_loop = next(models.begin()); it_loop != models.end(); ) {
+                auto it = it_loop++;
+                if(it->RankInGene() != 1 || it->GoodEnoughToBeAnnotation() || it->Type()&CGeneModel::eNested)
+                    continue;
+                auto it_prev = prev(it);
+                if(it_prev->RankInGene() != 1 || it_prev->GoodEnoughToBeAnnotation() || it_prev->Type()&CGeneModel::eNested)
+                    continue;
+                
+                if(it->MaxCdsLimits().IntersectingWith(it_prev->MaxCdsLimits())) {
+                    cerr << "Intersecting alignments " << it->ID() << " " << it_prev->ID() << " " << it->Score() << " " << it_prev->Score() << endl;
+                    auto it_erase = (it->Score() < it_prev->Score()) ? it : it_prev;
+                    it_erase->Status() |= CGeneModel::eSkipped;
+                    it_erase->AddComment("Intersects with other partial");
+                    bad_aligns.push_back(*it_erase);
+                    models.erase(it_erase);
+                }
+            }
+        }
+
         TGeneModelList aligns;
 
         FindPartials(models, aligns, ePlus);
