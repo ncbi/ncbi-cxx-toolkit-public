@@ -1425,31 +1425,31 @@ string CAutoDef::x_GetHumanSTRFeatureClauses(CBioseq_Handle bh, const CUser_obje
 bool s_ChooseModInModList(bool is_org_mod, int subtype, bool require_all, CAutoDefSourceDescription::TAvailableModifierVector& modifiers)
 {
     bool rval = false;
-    for (size_t n = 0; n < modifiers.size(); n++) {
-        if (modifiers[n].IsOrgMod() && is_org_mod) {
-            if (modifiers[n].GetOrgModType() == subtype) {
-                if (modifiers[n].AllPresent()) {
+    for (auto & modifier : modifiers) {
+        if (modifier.IsOrgMod() && is_org_mod) {
+            if (modifier.GetOrgModType() == subtype) {
+                if (modifier.AllPresent()) {
                     rval = true;
                 }
-                else if (modifiers[n].AnyPresent() && !require_all) {
+                else if (modifier.AnyPresent() && !require_all) {
                     rval = true;
                 }
                 if (rval) {
-                    modifiers[n].SetRequested(true);
+                    modifier.SetRequested(true);
                 }
                 break;
             }
         }
-        else if (!modifiers[n].IsOrgMod() && !is_org_mod) {
-            if (modifiers[n].GetSubSourceType() == subtype) {
-                if (modifiers[n].AllPresent()) {
+        else if (!modifier.IsOrgMod() && !is_org_mod) {
+            if (modifier.GetSubSourceType() == subtype) {
+                if (modifier.AllPresent()) {
                     rval = true;
                 }
-                else if (modifiers[n].AnyPresent() && !require_all) {
+                else if (modifier.AnyPresent() && !require_all) {
                     rval = true;
                 }
                 if (rval) {
-                    modifiers[n].SetRequested(true);
+                    modifier.SetRequested(true);
                 }
                 break;
             }
@@ -1495,15 +1495,15 @@ CRef<CUser_object> CAutoDef::CreateIDOptions(CSeq_entry_Handle seh)
     }
     if (!src_combo->AreFeatureClausesUnique()) {
         // use best
-        for (size_t n = 0; n < modifiers.size(); n++) {
-            if (modifiers[n].AnyPresent()) {
-                if (modifiers[n].IsOrgMod()) {
-                    if (src_combo->HasOrgMod(modifiers[n].GetOrgModType())) {
-                        modifiers[n].SetRequested(true);
+        for (auto modifier : modifiers) {
+            if (modifier.AnyPresent()) {
+                if (modifier.IsOrgMod()) {
+                    if (src_combo->HasOrgMod(modifier.GetOrgModType())) {
+                        modifier.SetRequested(true);
                     }
                 }
-                else if (src_combo->HasSubSource(modifiers[n].GetSubSourceType())) {
-                    modifiers[n].SetRequested(true);
+                else if (src_combo->HasSubSource(modifier.GetSubSourceType())) {
+                    modifier.SetRequested(true);
                 }
             }
         }
