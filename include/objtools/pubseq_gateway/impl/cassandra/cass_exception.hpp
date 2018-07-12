@@ -144,7 +144,6 @@ protected:
         __msg.append(" Cassandra error - (code: " + __c);                   \
         __msg.append(string(", description: '") +                           \
             cass_error_desc(errc) + "')");                                  \
-        ERR_POST("!Raising: " << __msg);                                    \
         NCBI_THROW(CCassandraException, dberr, __msg.c_str());              \
     } while (0)
 
@@ -158,8 +157,6 @@ protected:
         __msg.assign(__message);                                            \
         __msg.append(string(": ") +                                         \
                      NStr::NumericToString(static_cast<int>(rc), 0, 16));   \
-        ERR_POST("!Raising: CCassandraException::" << #errc << ". " <<      \
-            __msg << " " << comm);                                          \
         if (comm.empty())                                                   \
             NCBI_THROW(CCassandraException, errc, __msg);                   \
         else                                                                \
@@ -187,8 +184,6 @@ protected:
 #define RAISE_DB_ERROR(errc, comm)                                          \
     do {                                                                    \
         string ___msg = comm;                                               \
-        ERR_POST("!Raising: CCassandraException::" << #errc <<              \
-            ". " << ___msg);                                                \
         NCBI_THROW(CCassandraException, errc, comm);                        \
     } while(0)
 
@@ -202,7 +197,6 @@ protected:
                           "ms)");                                           \
         NCBI_EXCEPTION_VAR(db_exception, CCassandraException, eQueryTimeout, ___msg); \
         db_exception.SetOpTime( (tspent) );                                 \
-        ERR_POST("!Raising: " << ___msg);                                   \
         NCBI_EXCEPTION_THROW(db_exception);                                 \
     } while(0)
 
