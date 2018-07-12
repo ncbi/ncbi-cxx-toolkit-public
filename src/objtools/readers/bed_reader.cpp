@@ -614,7 +614,7 @@ bool CBedReader::xParseFeatureGeneModelFormat(
     }
 
     CRef<CSeq_feat> pRna;
-    if (xContainsRnaFeature(fields)) {
+    if (xContainsRnaFeature(fields)) {//blocks
         pRna = xAppendFeatureRna(fields, annot, baseId, pEC);
         if (!pRna) {
             return false;
@@ -622,7 +622,7 @@ bool CBedReader::xParseFeatureGeneModelFormat(
     }
 
     CRef<CSeq_feat> pCds;
-    if (xContainsCdsFeature(fields)) {
+    if (xContainsCdsFeature(fields)) {//thick
         pCds = xAppendFeatureCds(fields, annot, baseId, pEC);
         if (!pCds) {
             return false;
@@ -630,9 +630,9 @@ bool CBedReader::xParseFeatureGeneModelFormat(
     }
 
     if (pRna  &&  pCds) {
-        CRef<CSeq_loc> pCdsLoc(new CSeq_loc);
-        pCdsLoc->Assign(pCds->GetLocation());
-        pRna->SetLocation(*pCdsLoc);
+        CRef<CSeq_loc> pRnaLoc(new CSeq_loc);
+        pRnaLoc->Assign(pRna->GetLocation());
+        pCds->SetLocation(*pRnaLoc);
     }
     return true;
 }
