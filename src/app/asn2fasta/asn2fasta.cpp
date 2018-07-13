@@ -215,6 +215,8 @@ void CAsn2FastaApp::Init(void)
 
         arg_desc->AddFlag("show-mods", "Show FASTA header mods (e.g. [strain=abc])");
 
+        arg_desc->AddFlag("auto-def", "Use AutoDef algorithm for nucleotides");
+
         arg_desc->AddOptionalKey("gap-mode", "GapMode", "\
  Gap mode:\n\
    letters:  letters will show gaps as runs of Ns (default mode)\n\
@@ -366,6 +368,9 @@ CFastaOstreamEx* CAsn2FastaApp::OpenFastaOstream(const string& argname, const st
 
     if( args["show-mods"] ) {
         fasta_os->SetFlag(CFastaOstreamEx::fShowModifiers);
+    }
+    if( args["auto-def"] ) {
+        fasta_os->SetFlag(CFastaOstreamEx::fUseAutoDef);
     }
     if( args["width"] ) {
         fasta_os->SetWidth( GetArgs()["width"].AsInteger() );
