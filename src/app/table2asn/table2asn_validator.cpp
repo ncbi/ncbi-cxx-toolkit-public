@@ -108,7 +108,7 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
 
     if (flags.find('f') != string::npos)
     {        
-        m_context->m_suspect_rules.FixSuspectProductNames((*(CSeq_entry*)h_entry.GetCompleteSeq_entry().GetPointer()));
+        m_context->m_suspect_rules.FixSuspectProductNames((*(CSeq_entry*)h_entry.GetCompleteSeq_entry().GetPointer()), h_entry.GetScope());
     }
 
     // SQD-4386

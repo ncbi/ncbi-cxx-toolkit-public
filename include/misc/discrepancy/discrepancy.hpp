@@ -226,7 +226,8 @@ NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyNames(TGroup group = 0);
 NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyAliases(const string&);
 NCBI_DISCREPANCY_EXPORT bool IsShortrRNA(const objects::CSeq_feat& f, objects::CScope* scope);
 
-pair<string, string> FixProductName(const objects::CSuspect_rule* rule, objects::CScope& scope, const objects::CSeq_feat* cds, const objects::CSeq_feat* prot, const objects::CSeq_feat* mrna);
+typedef std::function < CRef<objects::CSeq_feat>() > GetFeatureFunc;
+NCBI_DISCREPANCY_EXPORT string FixProductName(const objects::CSuspect_rule* rule, objects::CScope& scope, string& prot_name, GetFeatureFunc get_mrna, GetFeatureFunc get_cds);
 
 
 END_SCOPE(NDiscrepancy)

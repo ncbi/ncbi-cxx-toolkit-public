@@ -829,9 +829,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (!IsDryRun())
     {
-        m_context.m_suspect_rules.m_report_ostream.reset();
-        m_context.m_suspect_rules.m_fixed_product_report_filename = GenerateOutputFilename(".fixedproducts");
-        CFile(m_context.m_suspect_rules.m_fixed_product_report_filename).Remove();
+        m_context.m_suspect_rules.SetupOutput(GenerateOutputFilename(".fixedproducts"));
     }
     m_context.ApplyFileTracks(*entry);
 

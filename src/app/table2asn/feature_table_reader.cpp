@@ -83,6 +83,7 @@
 #include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
+
 USING_SCOPE(objects);
 
 namespace
@@ -776,6 +777,7 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
             }
         }
 
+#if 0
         if (NStr::CompareNocase(protein_name, "hypothetical protein") != 0)
         {
             string old = protein_name;
@@ -785,6 +787,7 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
                 fixed_protein_name = true;
             }
         }
+#endif
     }
     else
     if (m_context.m_use_hypothetic_protein)

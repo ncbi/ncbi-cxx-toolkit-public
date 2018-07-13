@@ -275,7 +275,7 @@ static string ReplaceNoCase(const string& input, const string& search, const str
 }
 
 
-const void GetProtAndRnaForCDS(const CSeq_feat& cds, CScope& scope, const CSeq_feat*& prot, const CSeq_feat*& mrna)
+const void GetProtAndRnaForCDS(const CSeq_feat& cds, CScope& scope, CSeq_feat*& prot, CSeq_feat*& mrna)
 {
     prot = 0;
     mrna = 0;
@@ -285,64 +285,51 @@ const void GetProtAndRnaForCDS(const CSeq_feat& cds, CScope& scope, const CSeq_f
     }
     CFeat_CI pr(bsh, CSeqFeatData::eSubtype_prot);
     if (pr) {
-        prot = &pr->GetMappedFeature();
+        prot = (CSeq_feat*)&pr->GetMappedFeature();
         string name = *prot->GetData().GetProt().GetName().begin();
         const CSeq_feat* rna = sequence::GetBestMrnaForCds(cds, scope);
         if (rna && rna->GetData().GetRna().CanGetExt() && rna->GetData().GetRna().GetExt().GetName() == name) {
-            mrna = rna;
+            mrna = (CSeq_feat*)rna;
         }
     }
 }
 
-
-pair<string, string> FixProductName(const CSuspect_rule* rule, CScope& scope, const CSeq_feat* cds, const CSeq_feat* prot, const CSeq_feat* mrna)
+typedef std::function < CRef<CSeq_feat>() > GetFeatureFunc;
+string FixProductName(const CSuspect_rule* rule, CScope& scope, string& prot_name, GetFeatureFunc get_mrna, GetFeatureFunc get_cds)
 {
     string newtext;
-    string newnote;
-    string prot_name = *prot->GetData().GetProt().GetName().begin();
+    string orig_prot_name;
+
     const CReplace_rule& rr = rule->GetReplace();
     const CReplace_func& rf = rr.GetReplace_func();
-    if (rr.GetMove_to_note()) {
-        newnote = prot_name;
-    }
     if (rf.IsSimple_replace()) {
         const CSimple_replace& repl = rf.GetSimple_replace();
         if (repl.GetWhole_string()) {
             newtext = repl.GetReplace();
         }
         else {
-            string find = rule->GetFind().GetString_constraint().GetMatch_text();
-            string subst = repl.GetReplace();
+            const string& find = rule->GetFind().GetString_constraint().GetMatch_text();
+            const string& subst = repl.GetReplace();
             newtext = ReplaceNoCase(prot_name, find, subst);
         }
     }
     else if (rf.IsHaem_replace()) {
         newtext = ReplaceNoCase(prot_name, "haem", "hem");
     }
-    CRef<CSeq_feat> new_prot(new CSeq_feat());
-    new_prot->Assign(*prot);
     if (!newtext.empty()) {
-        *new_prot->SetData().SetProt().SetName().begin() = newtext;
-    }
-    CSeq_feat_EditHandle prot_eh(scope.GetSeq_featHandle(*prot));
-    prot_eh.Replace(*new_prot);
-    if (mrna) {
-        CRef<CSeq_feat> new_mrna(new CSeq_feat());
-        new_mrna->Assign(*mrna);
-        if (!newtext.empty()) {
-            new_mrna->SetData().SetRna().SetExt().SetName() = newtext;
+        orig_prot_name = move(prot_name);
+        prot_name = move(newtext);
+        auto mrna = get_mrna();
+        if (mrna) {
+            mrna->SetData().SetRna().SetExt().SetName() = prot_name;
         }
-        CSeq_feat_EditHandle mrna_eh(scope.GetSeq_featHandle(*mrna));
-        mrna_eh.Replace(*new_mrna);
+        if (rr.GetMove_to_note()) {
+            auto cds = get_cds();
+            if (cds)
+                AddComment(*cds, orig_prot_name);
+        }
     }
-    if (!newnote.empty()) {
-        CRef<CSeq_feat> new_cds(new CSeq_feat());
-        new_cds->Assign(*cds);
-        AddComment(*new_cds, newnote);
-        CSeq_feat_EditHandle cds_eh(scope.GetSeq_featHandle(*cds));
-        cds_eh.Replace(*new_cds);
-    }
-    return { prot_name, newtext };
+    return orig_prot_name;
 }
 
 
@@ -357,60 +344,18 @@ static void AutofixProductNames(const CDiscrepancyItem* item, CScope& scope, vec
             if (!cds || !rule || !rule->CanGetReplace()) {
                 continue;
             }
-            const CSeq_feat* prot;
-            const CSeq_feat* mrna;
+            CSeq_feat* prot;
+            CSeq_feat* mrna;
             GetProtAndRnaForCDS(*cds, scope, prot, mrna);
             if (prot) {
-                /*
-                string newtext;
-                string newnote;
-                string prot_name = *prot->GetData().GetProt().GetName().begin();
-                const CReplace_rule& rr = rule->GetReplace();
-                const CReplace_func& rf = rr.GetReplace_func();
-                if (rr.GetMove_to_note()) {
-                    newnote = prot_name;
-                }
-                if (rf.IsSimple_replace()) {
-                    const CSimple_replace& repl = rf.GetSimple_replace();
-                    if (repl.GetWhole_string()) {
-                        newtext = repl.GetReplace();
-                    }
-                    else {
-                        string find = rule->GetFind().GetString_constraint().GetMatch_text();
-                        string subst = repl.GetReplace();
-                        newtext = ReplaceNoCase(prot_name, find, subst);
-                    }
-                }
-                else if (rf.IsHaem_replace()) {
-                    newtext = ReplaceNoCase(prot_name, "haem", "hem");
-                }
-                CRef<CSeq_feat> new_prot(new CSeq_feat());
-                new_prot->Assign(*prot);
-                if (!newtext.empty()) {
-                    *new_prot->SetData().SetProt().SetName().begin() = newtext;
-                }
-                CSeq_feat_EditHandle prot_eh(scope.GetSeq_featHandle(*prot));
-                prot_eh.Replace(*new_prot);
-                if (mrna) {
-                    CRef<CSeq_feat> new_mrna(new CSeq_feat());
-                    new_mrna->Assign(*mrna);
-                    if (!newtext.empty()) {
-                        new_mrna->SetData().SetRna().SetExt().SetName() = newtext;
-                    }
-                    CSeq_feat_EditHandle mrna_eh(scope.GetSeq_featHandle(*mrna));
-                    mrna_eh.Replace(*new_mrna);
-                }
-                if (!newnote.empty()) {
-                    CRef<CSeq_feat> new_cds(new CSeq_feat());
-                    new_cds->Assign(*cds);
-                    AddComment(*new_cds, newnote);
-                    CSeq_feat_EditHandle cds_eh(scope.GetSeq_featHandle(*cds));
-                    cds_eh.Replace(*new_cds);
-                }
-                */
-                pair<string, string> result = FixProductName(rule, scope, cds, prot, mrna);
-                if (result.second != result.first && !result.second.empty()) {
-                    string s = "Changed \'" + result.first + "\' to \'" + result.second + "\' at " + obj.GetLocation();
+                string& prot_name = prot->SetData().SetProt().SetName().front();
+                string old_prot_name = FixProductName(rule, scope, 
+                    prot_name,
+                    [&mrna] { return CRef<CSeq_feat>(mrna); }, 
+                    [&cds] { return CRef<CSeq_feat>((CSeq_feat*)cds); });
+
+                if (prot_name != old_prot_name && !prot_name.empty()) {
+                    string s = "Changed \'" + old_prot_name + "\' to \'" + prot_name + "\' at " + obj.GetLocation();
                     CRef<CAutofixReport> rep(new CAutofixReport(s));
                     report.push_back(rep);
                     dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->SetFixed();

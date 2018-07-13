@@ -11,6 +11,12 @@ namespace objects
 {
     class CSeq_loc;
     class CSuspect_rule_set;
+    class CSuspect_rule;
+    class CScope;
+    namespace feature
+    {
+        class CFeatTree;
+    };
 
     class CFixSuspectProductName
     {
@@ -19,17 +25,25 @@ namespace objects
         ~CFixSuspectProductName();
 
         void SetFilename(const string& filename);
-        void FixSuspectProductNames(objects::CSeq_entry& entry);
+        void SetupOutput(const string& filename);
+        void FixSuspectProductNames(objects::CSeq_entry& entry, CScope& scope);
         bool FixSuspectProductNames(objects::CSeq_feat& feature);
-        bool FixSuspectProductName(string& product_name);
+        CRef<feature::CFeatTree>& SetFeatTree()
+        {
+            return m_feattree;
+        }
 
         void ReportFixedProduct(const string& oldproduct, const string& newproduct, const objects::CSeq_loc& loc, const string& locustag);
 
+    protected:
+        CConstRef<CSuspect_rule> x_FixSuspectProductName(string& product_name);
         string m_fixed_product_report_filename;
         auto_ptr<CNcbiOfstream> m_report_ostream;
-    protected:
+
         string m_rules_filename;
         CConstRef<CSuspect_rule_set> m_rules;
+        CRef<feature::CFeatTree> m_feattree;
+        CRef<CScope> m_scope;
     };
 };
 
