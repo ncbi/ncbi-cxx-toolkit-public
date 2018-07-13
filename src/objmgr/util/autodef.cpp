@@ -1495,7 +1495,7 @@ CRef<CUser_object> CAutoDef::CreateIDOptions(CSeq_entry_Handle seh)
     }
     if (!src_combo->AreFeatureClausesUnique()) {
         // use best
-        for (auto modifier : modifiers) {
+        for (auto &modifier : modifiers) {
             if (modifier.AnyPresent()) {
                 if (modifier.IsOrgMod()) {
                     if (src_combo->HasOrgMod(modifier.GetOrgModType())) {
