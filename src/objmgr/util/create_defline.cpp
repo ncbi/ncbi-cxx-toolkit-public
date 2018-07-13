@@ -3301,11 +3301,11 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                         }
                     }
                 }
-                gcode = std::to_string(bios->GetGenCode());
                 CBioSource::TGenome genome = CBioSource::eGenome_unknown;
                 if (bios->CanGetGenome()) {
                     genome = bios->GetGenome();
                 }
+
                 switch ( genome ) {
                 case CBioSource::eGenome_kinetoplast:
                 case CBioSource::eGenome_mitochondrion:
@@ -3313,8 +3313,12 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                 case CBioSource::eGenome_plasmid_in_mitochondrion:
                     {
                         // mitochondrial code
-                        // joiner.Add("mgcode", gcode);
                         joiner.Add("gcode", gcode);
+                        if (orgname.IsSetMgcode()) {
+                            int icode = orgname.GetMgcode();
+                            gcode = std::to_string(icode);
+                            joiner.Add("gcode", gcode);
+                        }
                     }
                     break;
                 case CBioSource::eGenome_chloroplast:
@@ -3327,19 +3331,28 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                 case CBioSource::eGenome_chromatophore:
                 case CBioSource::eGenome_plasmid_in_plastid:
                     {
-                        if (orgname.IsSetPgcode() && orgname.GetPgcode() > 0) {
-                            // plant plastid code
-                            // joiner.Add("pgcode", gcode);
-                            joiner.Add("gcode", gcode);
+                        // specific plant plastid code
+                        if (orgname.IsSetPgcode()) {
+                            int icode = orgname.GetPgcode();
+                            if (icode > 0) {
+                                gcode = std::to_string(icode);
+                                joiner.Add("gcode", gcode);
+                            }
                         } else {
                             // bacteria and plant plastids default to code 11.
-                            joiner.Add("gcode", gcode);
+                            joiner.Add("gcode", "11");
                         }
                         break;
                     }
                 default:
                     {
-                        // joiner.Add("gcode", gcode);
+                        if (orgname.IsSetGcode()) {
+                            int icode = orgname.GetGcode();
+                            if (icode > 0) {
+                                gcode = std::to_string(icode);
+                                joiner.Add("gcode", gcode);
+                            }
+                        }
                         break;
                     }
                 }
