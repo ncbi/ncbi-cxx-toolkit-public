@@ -34,6 +34,9 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialbase.hpp>
 #include <objmgr/scope.hpp>
+#include <objects/macro/String_constraint.hpp>
+#include <objects/macro/Suspect_rule.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -222,6 +225,8 @@ NCBI_DISCREPANCY_EXPORT TGroup GetDiscrepancyGroup(const string&);
 NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyNames(TGroup group = 0);
 NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyAliases(const string&);
 NCBI_DISCREPANCY_EXPORT bool IsShortrRNA(const objects::CSeq_feat& f, objects::CScope* scope);
+
+pair<string, string> FixProductName(const objects::CSuspect_rule* rule, objects::CScope& scope, const objects::CSeq_feat* cds, const objects::CSeq_feat* prot, const objects::CSeq_feat* mrna);
 
 
 END_SCOPE(NDiscrepancy)
