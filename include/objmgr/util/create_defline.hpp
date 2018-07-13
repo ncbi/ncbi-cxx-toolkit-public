@@ -81,15 +81,16 @@ public:
 
     /// User-settable flags for tuning behavior
     enum EUserFlags {
-        fIgnoreExisting    = 1 << 0, ///< Generate fresh titles unconditionally.
-        fAllProteinNames   = 1 << 1, ///< List all relevant proteins, not just one.
-        fLocalAnnotsOnly   = 1 << 2, ///< Never use related sequences' annotations.
+        fIgnoreExisting    = 1 <<  0, ///< Generate fresh titles unconditionally.
+        fAllProteinNames   = 1 <<  1, ///< List all relevant proteins, not just one.
+        fLocalAnnotsOnly   = 1 <<  2, ///< Never use related sequences' annotations.
         /// Refrain from anything that could add substantial overhead.
         fNoExpensiveOps    = fLocalAnnotsOnly,
-        fGpipeMode         = 1 << 3, ///< Use GPipe defaults.
-        fOmitTaxonomicName = 1 << 4, ///< Do not add organism suffix to proteins.
-        fDevMode           = 1 << 5, ///< Development mode for testing new features.
-        fShowModifiers     = 1 << 8  ///< show key-value pair modifiers (e.g. "[organism=Homo sapiens]")
+        fGpipeMode         = 1 <<  3, ///< Use GPipe defaults.
+        fOmitTaxonomicName = 1 <<  4, ///< Do not add organism suffix to proteins.
+        fDevMode           = 1 <<  5, ///< Development mode for testing new features.
+        fShowModifiers     = 1 <<  8, ///< Show key-value pair modifiers (e.g. "[organism=Homo sapiens]")
+        fUseAutoDef        = 1 << 16  ///< Run auto-def for nucleotides if user object is present
     };
     typedef int TUserFlags; ///< Binary "OR" of EUserFlags
 

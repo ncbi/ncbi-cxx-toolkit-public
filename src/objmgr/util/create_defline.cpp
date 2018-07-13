@@ -51,6 +51,7 @@
 
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/util/autodef.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -3461,6 +3462,24 @@ string CDeflineGenerator::GenerateDefline (
 
     // use appropriate algorithm if title needs to be generated
     if (m_MainTitle.empty()) {
+
+        // use autodef user object, if present, to regenerate title
+        if (m_IsNA && (flags & fUseAutoDef)) {
+            CSeqdesc_CI desc(bsh, CSeqdesc::e_User);
+            while (desc && desc->GetUser().GetObjectType() != CUser_object::eObjectType_AutodefOptions) {
+                ++desc;
+            }
+            if (desc) {
+                CAutoDef autodef;
+                autodef.SetOptionsObject(desc->GetUser());
+                CAutoDefModifierCombo mod_combo;
+                CAutoDefOptions options;
+                options.InitFromUserObject(desc->GetUser());
+                mod_combo.SetOptions(options);
+                return autodef.GetOneDefLine(&mod_combo, bsh);
+            }
+        }
+
         // PDB and patent records do not normally need source data
         if (m_IsPDB) {
             x_SetTitleFromPDB ();
