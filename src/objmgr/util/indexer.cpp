@@ -338,6 +338,7 @@ static CSeq_id_Handle s_IdxFindBestIdChoice(const CBioseq_Handle::TId& ids)
 
     ITERATE( CBioseq_Handle::TId, it, ids ) {
         switch( (*it).Which() ) {
+            case CSeq_id::e_Local:
             case CSeq_id::e_Genbank:
             case CSeq_id::e_Embl:
             case CSeq_id::e_Ddbj:

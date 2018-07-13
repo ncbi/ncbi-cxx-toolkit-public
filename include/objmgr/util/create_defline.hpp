@@ -89,8 +89,8 @@ public:
         fGpipeMode         = 1 <<  3, ///< Use GPipe defaults.
         fOmitTaxonomicName = 1 <<  4, ///< Do not add organism suffix to proteins.
         fDevMode           = 1 <<  5, ///< Development mode for testing new features.
-        fShowModifiers     = 1 <<  8, ///< Show key-value pair modifiers (e.g. "[organism=Homo sapiens]")
-        fUseAutoDef        = 1 << 16  ///< Run auto-def for nucleotides if user object is present
+        fShowModifiers     = 1 <<  6, ///< Show key-value pair modifiers (e.g. "[organism=Homo sapiens]")
+        fUseAutoDef        = 1 <<  7  ///< Run auto-def for nucleotides if user object is present
     };
     typedef int TUserFlags; ///< Binary "OR" of EUserFlags
 
