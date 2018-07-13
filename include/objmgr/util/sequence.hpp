@@ -762,7 +762,8 @@ public:
         fIgnoreOriginalID   = 1 << 16, ///< Disregard original ID when constructing defline
         // historically misnamed as eFlagName
         eAssembleParts   = fAssembleParts,
-        eInstantiateGaps = fInstantiateGaps
+        eInstantiateGaps = fInstantiateGaps,
+        fUseAutoDef         = 1 << 17  ///< Disregard original ID when constructing defline
     };
     typedef long TFlags; ///< binary OR of EFlags
 
