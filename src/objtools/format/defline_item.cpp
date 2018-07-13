@@ -80,12 +80,16 @@ void CDeflineItem::x_GatherInfo(CBioseqContext& ctx)
     sequence::CDeflineGenerator Defliner;
     CConstRef<CBioseq> bioseq = ctx.GetHandle().GetBioseqCore();
     CScope& scope = ctx.GetScope();
+    sequence::CDeflineGenerator::TUserFlags flags = 0;
+    if ( ctx.Config().UseAutoDef() ) {
+        flags |= sequence::CDeflineGenerator::fUseAutoDef;
+    }
     if ( ctx.UsingSeqEntryIndex() ) {
         CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
         CBioseq_Handle bsh = scope.GetBioseqHandle(*bioseq);
-        m_Defline = Defliner.GenerateDefline( bsh, *idx );
+        m_Defline = Defliner.GenerateDefline( bsh, *idx, flags );
     } else {
-        m_Defline = Defliner.GenerateDefline( *bioseq, scope );
+        m_Defline = Defliner.GenerateDefline( *bioseq, scope, flags );
     }
     if (! Defliner.UsePDBCompoundForDefline()) {
         ctx.SetPDBCompoundForComment(true);
