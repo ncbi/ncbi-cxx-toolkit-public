@@ -660,7 +660,7 @@ EOF_launch
                                     -e 's/%$//'      \\
                                     -e 's/%/, /g'    \\
                                     -e 's/[ ] */ /g' \\
-                                    -e 's/.*\(Maximum execution .* is exceeded\).*$/\1/' \\
+                                    -e 's/^.*\(Maximum execution [0-9][0-9]* is exceeded\).*$/\1/' \\
                                     -e 's/^.*\(real [0-9][0-9]*[.][0-9][0-9]*\)/\1/' \\
                                     -e 's/\(sys [0-9][0-9]*[.][0-9][0-9]*\).*/\1/'\`
                 else
