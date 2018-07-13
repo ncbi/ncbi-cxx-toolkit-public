@@ -534,6 +534,8 @@ static const char *kInferenceDBChoices[] = {
     "INSD",
     "RefSeq",
     "UniProt",
+    "PDB",
+    "UniProtKB",
     "Other",
     "\0" };
 
