@@ -189,6 +189,7 @@ NCBI_UNIT_TEST_UTIL_EXPORT void AddToDeltaSeq(CRef<objects::CSeq_entry> entry, s
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildSegSetPart(string id_str);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodSegSet(void);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodEcoSet();
+NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_entry> BuildGoodEcoSetWithAlign(size_t front_insert = 5);
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_align> BuildGoodAlign();
 NCBI_UNIT_TEST_UTIL_EXPORT CRef<objects::CSeq_annot> BuildGoodGraphAnnot(string id);
 NCBI_UNIT_TEST_UTIL_EXPORT void RemoveDescriptorType (CRef<objects::CSeq_entry> entry, objects::CSeqdesc::E_Choice desc_choice);

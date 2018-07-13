@@ -1788,6 +1788,42 @@ CRef<objects::CSeq_entry> BuildGoodEcoSet()
 }
 
 
+CRef<objects::CSeq_entry> BuildGoodEcoSetWithAlign(size_t front_insert)
+{
+    CRef<CSeq_entry> entry = BuildGoodEcoSet();
+
+    CRef<objects::CSeq_align> align(new CSeq_align());
+    align->SetType(objects::CSeq_align::eType_global);
+    align->SetDim(entry->GetSet().GetSeq_set().size());
+    size_t offset = 0;
+    for (auto& s : entry->SetSet().SetSeq_set()) {
+        CRef<CSeq_id> id(new CSeq_id());
+        id->Assign(*(s->GetSeq().GetId().front()));
+        align->SetSegs().SetDenseg().SetIds().push_back(id);
+        if (offset > 0) {
+            const string& orig = s->SetSeq().SetInst().SetSeq_data().SetIupacna().Set();
+            size_t orig_len = s->GetSeq().GetInst().GetLength();
+            string add = "";
+            for (auto i = 0; i < offset; i++) {
+                add += "A";
+            }
+            s->SetSeq().SetInst().SetSeq_data().SetIupacna().Set(add + orig);
+            s->SetSeq().SetInst().SetLength(orig_len + offset);
+        }
+        align->SetSegs().SetDenseg().SetStarts().push_back(offset);
+        offset += front_insert;
+    }
+    align->SetSegs().SetDenseg().SetNumseg(1);
+    align->SetSegs().SetDenseg().SetLens().push_back(entry->GetSet().GetSeq_set().front()->GetSeq().GetInst().GetLength());
+    align->SetSegs().SetDenseg().SetDim(3);
+
+    CRef<CSeq_annot> annot(new CSeq_annot());
+    annot->SetData().SetAlign().push_back(align);
+    entry->SetSet().SetAnnot().push_back(annot);
+    return entry;
+}
+
+
 CRef<objects::CSeq_align> BuildGoodAlign()
 {
     CRef<objects::CSeq_align> align(new objects::CSeq_align());
