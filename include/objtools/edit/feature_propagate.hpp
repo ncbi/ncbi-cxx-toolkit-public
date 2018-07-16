@@ -51,7 +51,7 @@ class NCBI_XOBJEDIT_EXPORT CFeaturePropagator
 {
 public:
     CFeaturePropagator(CBioseq_Handle src, CBioseq_Handle target, const CSeq_align& align,
-        bool stop_at_stop = true, bool cleanup_partials = true, bool merge_abutting = false,
+        bool stop_at_stop = true, bool cleanup_partials = true, bool merge_abutting = true,
         CMessageListener_Basic* pMessageListener = 0);
     ~CFeaturePropagator() {}
 
