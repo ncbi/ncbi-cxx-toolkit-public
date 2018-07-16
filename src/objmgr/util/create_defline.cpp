@@ -3314,7 +3314,6 @@ string CDeflineGenerator::x_GetModifiers(const CBioseq_Handle & bsh)
                 case CBioSource::eGenome_plasmid_in_mitochondrion:
                     {
                         // mitochondrial code
-                        joiner.Add("gcode", gcode);
                         if (orgname.IsSetMgcode()) {
                             int icode = orgname.GetMgcode();
                             gcode = std::to_string(icode);
