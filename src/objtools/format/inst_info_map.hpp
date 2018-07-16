@@ -46,6 +46,7 @@ public:
         SVoucherInfo( 
             const string *links,
             bool          prependInstitute,
+            bool          prependCollection,
             int           pad_to,
             const string *pad_with,
             const string *prefix,
@@ -53,6 +54,7 @@ public:
             const char   *inst_full_name ): 
             m_Links(links),
             m_PrependInstitute(prependInstitute),
+            m_PrependCollection(prependCollection),
             m_PadTo(pad_to),
             m_PadWith(pad_with),
             m_Prefix(prefix),
@@ -61,6 +63,7 @@ public:
 
         const string *m_Links;
         bool          m_PrependInstitute;
+        bool          m_PrependCollection;
         int           m_PadTo;
         const string *m_PadWith;
         const string *m_Prefix;

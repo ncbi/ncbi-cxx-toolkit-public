@@ -5754,9 +5754,9 @@ static string s_GetSpecimenVoucherText(
     
     // doesn't COrgMod already have the code for this?
     string inst;
+    string coll;
     string id;
     {
-        string coll;
         if( ! COrgMod::ParseStructuredVoucher(strRawName, inst, coll, id) || NStr::IsBlank(inst)) {
             return strRawName;
         }
@@ -5777,6 +5777,9 @@ static string s_GetSpecimenVoucherText(
              << "<a href=\"" << *voucher_info_ref->m_Links;
         if( voucher_info_ref->m_PrependInstitute) {
             text << inst;
+        }
+        if( voucher_info_ref->m_PrependCollection) {
+            text << coll;
         }
         if( voucher_info_ref->m_Prefix != NULL ) {
             text << *voucher_info_ref->m_Prefix;
