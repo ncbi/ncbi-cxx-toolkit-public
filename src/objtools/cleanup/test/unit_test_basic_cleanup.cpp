@@ -2283,3 +2283,50 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4516)
     CSeqdesc_CI src(seh, CSeqdesc::e_Source);
     BOOST_CHECK_EQUAL(src->GetSource().GetSubtype().back()->GetName(), "a:b,c");
 }
+
+
+void CheckAuthNameSingleInitialFix(const string& first, const string& initials, const string& new_first, const string& new_init)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CAuthor> author(new CAuthor());
+    author->SetName().SetName().SetLast("Xyz");
+    author->SetName().SetName().SetInitials(initials);
+    if (!NStr::IsBlank(first)) {
+        author->SetName().SetName().SetFirst(first);
+    }
+
+    CRef<CPub> pub(new CPub());
+    pub->SetGen().SetCit("unpublished title");
+    pub->SetAuthors().SetNames().SetStd().push_back(author);
+    CRef<CSeqdesc> d(new CSeqdesc());
+    d->SetPub().SetPub().Set().push_back(pub);
+
+    entry->SetSeq().SetDescr().Set().push_back(d);
+
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope (scope);
+    changes = cleanup.BasicCleanup (*entry);
+
+    const CAuth_list& result = entry->GetDescr().Get().back()->GetPub().GetPub().Get().back()->GetGen().GetAuthors();
+
+    BOOST_CHECK_EQUAL(result.GetNames().GetStd().front()->GetName().GetName().GetFirst(), new_first);
+    BOOST_CHECK_EQUAL(result.GetNames().GetStd().front()->GetName().GetName().GetInitials(), new_init);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4536)
+{
+    CheckAuthNameSingleInitialFix("", "A", "A", "A.");
+    CheckAuthNameSingleInitialFix("", "A.", "A", "A.");
+
+    CheckAuthNameSingleInitialFix("B", "A", "B", "B.A.");
+    CheckAuthNameSingleInitialFix("B", "A.", "B", "B.A.");
+
+}
