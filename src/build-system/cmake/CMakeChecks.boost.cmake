@@ -25,8 +25,12 @@ if(WIN32)
 else()
     # preferentially set a specific NCBI version of Boost
     set(BOOST_ROOT ${NCBI_TOOLS_ROOT}/${_boost_version})
-    set(BOOST_LIBRARYDIR /opt/ncbi/64/${_boost_version}/lib)
-
+    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release" AND
+        EXISTS /opt/ncbi/64/${_boost_version}/lib/ )
+        set(BOOST_LIBRARYDIR /opt/ncbi/64/${_boost_version}/lib)
+    else()
+        set(BOOST_LIBRARYDIR ${NCBI_TOOLS_ROOT}/${_boost_version}/lib)
+    endif()
 endif()
 
 #set(Boost_DEBUG ON)
@@ -39,11 +43,8 @@ set(BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
 set(BOOST_LIBPATH -Wl,-rpath,${Boost_LIBRARY_DIRS} -L${Boost_LIBRARY_DIRS})
 
 message(STATUS "Boost libraries: ${Boost_LIBRARY_DIRS}")
+set(BOOST_LIBPATH -Wl,-rpath,${BOOST_LIBRARYDIR} -L${Boost_LIBRARY_DIRS})
 
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release" AND
-        EXISTS /opt/ncbi/64/${_boost_version}/lib/ )
-    set(BOOST_LIBPATH -Wl,-rpath,/opt/ncbi/64/${_boost_version}/lib/ -L${Boost_LIBRARY_DIRS})
-endif()
 #
 # As a blanket statement, we now include Boost everywhere
 # This avoids a serious insidious version skew if we have both the
