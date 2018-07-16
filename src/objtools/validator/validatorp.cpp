@@ -1213,7 +1213,7 @@ bool CValidError_imp::Validate
     // by Validate. Note, Validate is not doing anything other than
     // reporting an error if m_NonASCII is true;
     if (m_NonASCII) {
-        PostErr(eDiag_Error, eErr_GENERIC_NonAsciiAsn,
+        PostErr(eDiag_Fatal, eErr_GENERIC_NonAsciiAsn,
                   "Non-ascii chars in input ASN.1 strings", *seq);
         // Only report the error once
         m_NonASCII = false;
@@ -2696,8 +2696,8 @@ void CValidError_imp::FindNonAsciiText (const CSerialObject& obj)
         FOR_EACH_CHAR_IN_STRING(c_it, str) {
             const char& ch = *c_it;
             unsigned char chu = ch;
-            if (ch > 127 || (ch < 20 && ch != '\t' && ch != '\r' && ch != '\n')) {
-                PostErr (eDiag_Error, eErr_GENERIC_NonAsciiAsn,
+            if (ch > 127 || (ch < 32 && ch != '\t' && ch != '\r' && ch != '\n')) {
+                PostErr (eDiag_Fatal, eErr_GENERIC_NonAsciiAsn,
                          "Non-ASCII character '" + NStr::NumericToString(chu) + "' found in item", obj);
                 break;
             }
