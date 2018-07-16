@@ -82,7 +82,7 @@ CRef<CSeq_feat> CFeaturePropagator::Propagate(const objects::CSeq_feat& orig_fea
                                eDiag_Error,
                                eFeaturePropagationProblem_FeatureLocation));
         }
-        rval.Reset(NULL);
+        rval.Reset(nullptr);
         return rval;
     }
 
@@ -287,7 +287,7 @@ CRef<CSeq_loc> CFeaturePropagator::x_ExtendToStopCodon (CSeq_feat& feat)
     }
     const CSeq_loc& loc = feat.GetLocation();
 
-    const CGenetic_code* code = NULL;
+    const CGenetic_code* code = nullptr;
     if (feat.IsSetData() && feat.GetData().IsCdregion() && feat.GetData().GetCdregion().IsSetCode()) {
         code = &(feat.GetData().GetCdregion().GetCode());
     }
@@ -295,16 +295,16 @@ CRef<CSeq_loc> CFeaturePropagator::x_ExtendToStopCodon (CSeq_feat& feat)
     const TSeqPos stop = loc.GetStop(eExtreme_Biological);
     // figure out if we have a partial codon at the end
     size_t orig_len = sequence::GetLength(loc, &m_Scope);
-    size_t len = orig_len;
+    size_t nuc_len = orig_len;
     if (feat.IsSetData() && feat.GetData().IsCdregion() && feat.GetData().GetCdregion().IsSetFrame()) {
         CCdregion::EFrame frame = feat.GetData().GetCdregion().GetFrame();
         if (frame == CCdregion::eFrame_two) {
-            len -= 1;
+            nuc_len -= 1;
         } else if (frame == CCdregion::eFrame_three) {
-            len -= 2;
+            nuc_len -= 2;
         }
     }
-    unsigned int mod = len % 3;
+    unsigned int mod = nuc_len % 3;
     CRef<CSeq_loc> vector_loc(new CSeq_loc());
     vector_loc->SetInt().SetId().Assign(*(loc.GetId()));
 
@@ -329,13 +329,12 @@ CRef<CSeq_loc> CFeaturePropagator::x_ExtendToStopCodon (CSeq_feat& feat)
     // main loop through bases
     CSeqVector::const_iterator start = seq.begin();
 
-    size_t k;
     int state = 0;
-    unsigned int length = usable_size / 3;
+    unsigned int prot_len = usable_size / 3;
 
-    for (unsigned int i = 0;  i < length;  ++i) {
+    for (unsigned int i = 0;  i < prot_len;  ++i) {
         // loop through one codon at a time
-        for (k = 0;  k < 3;  ++k, ++start) {
+        for (size_t k = 0;  k < 3;  ++k, ++start) {
             state = tbl.NextCodonState(state, *start);
         }
 
