@@ -200,7 +200,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     string logName = CDirEntry::GetTmpName();
     CErrorLogger logger(logName);
 
-    CBedReader reader(CBedReader::fThreeFeatFormat);
+    CBedReader reader(CBedReader::fDirectedFeatureModel);
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
 
     typedef list<CRef<CSeq_annot> > ANNOTS;
