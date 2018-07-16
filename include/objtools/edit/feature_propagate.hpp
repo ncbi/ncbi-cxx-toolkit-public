@@ -51,11 +51,14 @@ class NCBI_XOBJEDIT_EXPORT CFeaturePropagator
 {
 public:
     CFeaturePropagator(CBioseq_Handle src, CBioseq_Handle target, const CSeq_align& align,
-        bool stop_at_stop = true, bool cleanup_partials = true, CMessageListener_Basic* pMessageListener = 0);
+        bool stop_at_stop = true, bool cleanup_partials = true, bool merge_abutting = false,
+        CMessageListener_Basic* pMessageListener = 0);
     ~CFeaturePropagator() {}
 
     CRef<CSeq_feat> Propagate(const objects::CSeq_feat& orig_feat);
     vector<CRef<CSeq_feat> > PropagateAll();
+
+    CRef<CSeq_feat> ConstructProteinFeatureForPropagatedCodingRegion(const CSeq_feat& orig_cds, const CSeq_feat& new_cds);
 
     typedef enum {
         eFeaturePropagationProblem_None = 0,

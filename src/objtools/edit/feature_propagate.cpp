@@ -53,7 +53,7 @@ BEGIN_SCOPE(edit)
 CFeaturePropagator::CFeaturePropagator
 (CBioseq_Handle src, CBioseq_Handle target,
  const CSeq_align& align, 
- bool stop_at_stop, bool cleanup_partials,
+ bool stop_at_stop, bool cleanup_partials, bool merge_abutting,
  CMessageListener_Basic* pMessageListener) : 
         m_Src(src), m_Target(target),
         m_Scope(m_Target.GetScope()),
@@ -62,6 +62,9 @@ CFeaturePropagator::CFeaturePropagator
         m_MessageListener(pMessageListener)
 {
     m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope());
+    if (merge_abutting) {
+        m_Mapper->SetMergeAll();
+    }
 }
 
 
@@ -555,6 +558,31 @@ void CFeaturePropagator::x_PropagatetRNA(objects::CSeq_feat& feat, const CSeq_id
     }
 }
 
+
+CRef<CSeq_feat> CFeaturePropagator::ConstructProteinFeatureForPropagatedCodingRegion(const CSeq_feat& orig_cds, const CSeq_feat& new_cds)
+{    
+    if (!orig_cds.IsSetProduct()) {
+        return CRef<CSeq_feat>(nullptr);
+    }
+    CRef<CSeq_feat> prot_feat;
+    CBioseq_Handle prot = m_Scope.GetBioseqHandle(orig_cds.GetProduct());
+    if (prot) {
+        CFeat_CI pf(prot, CSeqFeatData::eSubtype_prot);
+        if (pf) {
+            prot_feat.Reset(new CSeq_feat());
+            prot_feat->Assign(*(pf->GetOriginalSeq_feat()));
+            // fix partials
+            prot_feat->SetLocation().SetPartialStart(new_cds.GetLocation().IsPartialStart(eExtreme_Biological), eExtreme_Biological);
+            prot_feat->SetLocation().SetPartialStop(new_cds.GetLocation().IsPartialStop(eExtreme_Biological), eExtreme_Biological);
+            prot_feat->SetPartial(prot_feat->GetLocation().IsPartialStart(eExtreme_Biological) ||
+                                  prot_feat->GetLocation().IsPartialStop(eExtreme_Biological));
+            if (new_cds.IsSetProduct() && !new_cds.GetProduct().GetId()->Equals(*(orig_cds.GetProduct().GetId()))) {
+                prot_feat->SetLocation().SetId(new_cds.GetProduct().GetWhole());
+            }
+        }
+    }
+    return prot_feat;
+}
 
 END_SCOPE(edit)
 END_SCOPE(objects)
