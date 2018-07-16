@@ -2985,6 +2985,8 @@ public:
     /// Encode a string for HTML.
     ///
     /// Replace relevant characters by predefined entities.
+    /// @param str
+    ///   Original string in UTF8 encoding.
     static string HtmlEncode(const CTempString str,
                              THtmlEncode flags = fHtmlEnc_EncodeAll);
 
@@ -2997,6 +2999,13 @@ public:
     typedef int THtmlDecode;   //<  bitwise OR of "EHtmlDecode"
 
     /// Decode HTML entities and character references.
+    ///
+    /// @param str
+    ///   String to be decoded, which containes characted or numeric HTML entities
+    /// @param encoding
+    ///   Encoding of the input string
+    /// @return
+    ///   UTF8 encoded string
     static string HtmlDecode(const CTempString str,
                              EEncoding encoding = eEncoding_Unknown,
                              THtmlDecode* result_flags = NULL);

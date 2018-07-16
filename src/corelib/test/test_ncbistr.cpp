@@ -4927,6 +4927,45 @@ BOOST_AUTO_TEST_CASE(s_StringJoin)
     j = NStr::Join(begin(arr), end(arr), ",");
 }
 
+BOOST_AUTO_TEST_CASE(s_HtmlEncode)
+{
+    {
+        TStringUCS2 wstest = {1050, 1086, 1084, 1072, 1085, 1076, 1099};
+        string u8 = CUtf8::AsUTF8(wstest);
+        string u8enc = NStr::HtmlEncode(u8);
+        string u8dec = NStr::HtmlDecode(u8enc);
+        TStringUCS2 wsout = CUtf8::AsBasicString<TCharUCS2>(u8dec);
+        bool eq = wstest == wsout;
+        BOOST_CHECK(eq);
+    }
+    {
+        string stest = "&Aacute;&scaron;&Gamma;&thinsp;&rang;&#x960;&#x1225;";
+        string sdec = NStr::HtmlDecode(stest);
+        string senc = NStr::HtmlEncode(sdec);
+        BOOST_CHECK_EQUAL(senc, "¡&#x161;&#x393;&#x2009;&#x232A;&#x960;&#x1225;");
+        BOOST_CHECK( CUtf8::MatchEncoding(sdec, eEncoding_UTF8));
+        TStringUCS2    u2s = CUtf8::AsBasicString<TCharUCS2>(sdec);
+    }
+    {
+        string stest = "amp = &, preencoded = &Aacute;&#x960;, &;";
+        string senc1 = NStr::HtmlEncode(stest, NStr::fHtmlEnc_SkipEntities);
+        string sdec1 = NStr::HtmlDecode(senc1);
+        BOOST_CHECK_EQUAL(senc1, "amp = &amp;, preencoded = &Aacute;&amp;#x960;, &amp;;");
+        BOOST_CHECK_EQUAL(sdec1, "amp = &, preencoded = √Å&#x960;, &;");
+        string senc2 = NStr::HtmlEncode(stest, NStr::fHtmlEnc_EncodeAll);
+        string sdec2 = NStr::HtmlDecode(senc2);
+        BOOST_CHECK_EQUAL(senc2, "amp = &amp;, preencoded = &amp;Aacute;&amp;#x960;, &amp;;");
+        BOOST_CHECK_EQUAL(sdec2, stest);
+    }
+    {
+    string input = "this is &#32; but it's not &#33; a &#35; not &#38; a &#43; sign is different from a &#45; you can use &lt; but not &gt; &#63; &Agrave; &Aacute; &Aring; &Eacute; &Eumi; &Ntilde; &Uacute;";
+    string output = NStr::HtmlDecode(input);
+    cout << output << endl;
+    string inagain = NStr::HtmlEncode(output);
+    cout << inagain << endl;
+    }
+}
+
 
 NCBITEST_INIT_TREE()
 {

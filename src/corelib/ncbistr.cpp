@@ -4040,11 +4040,14 @@ string NStr::HtmlEncode(const CTempString str, THtmlEncode flags)
     // wild guess...
     result.reserve(str.size());
 
-    for (i = 0;  i < str.size();  i++) {
-        char c = str[i];
+    const char* begin = str.data();
+    const char* end = begin + str.size();
+    for ( const char* curr = begin; curr < end; ++curr ) {
+        TUnicodeSymbol c = CUtf8::Decode(curr);
         switch ( c ) {
         case '&':
             {{
+                i = curr - begin;
                 result.append("&");
                 // Check on HTML entity
                 bool is_entity = false;
@@ -4105,7 +4108,7 @@ string NStr::HtmlEncode(const CTempString str, THtmlEncode flags)
             result.append("&quot;");
             break;
         default:
-            if ((unsigned int)(c) < 0x20) {
+            if (c < 0x20) {
                 const char* charmap = "0123456789abcdef";
                 result.append("&#x");
                 Uint1 ch = c;
@@ -4115,6 +4118,8 @@ string NStr::HtmlEncode(const CTempString str, THtmlEncode flags)
                     result.append(1, charmap[hi]);
                 }
                 result.append(1, charmap[lo]).append(1, ';');
+            } else if (c > 0xFF) {
+                result.append("&#x").append( NStr::NumericToString(c, 0, 16)).append(1, ';');;
             } else {
                 result.append(1, c);
             }
