@@ -134,12 +134,16 @@ static CProt_ref::EECNumberFileStatus s_LoadECNumberTable(const string& dir, con
         rval = CProt_ref::eECFile_not_found;
     }
     if (lr.Empty()) {
-        LOG_POST("Reading " + name + " EC number data from built-in table");
+        if (getenv("NCBI_DEBUG")) {
+            LOG_POST("Reading " + name + " EC number data from built-in table");
+        }
         while (fallback_count--) {
             s_ProcessECNumberLine(*fallback++, status);
         }
     } else {
-        LOG_POST("Reading " + name + " EC number data from " + file);
+        if (getenv("NCBI_DEBUG")) {
+            LOG_POST("Reading " + name + " EC number data from " + file);
+        }
         rval = CProt_ref::eECFile_not_read;
         do {
             s_ProcessECNumberLine(*++*lr, status);
