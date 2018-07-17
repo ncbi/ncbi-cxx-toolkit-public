@@ -4881,14 +4881,20 @@ void CCleanup::AutodefId(CSeq_entry_Handle seh)
 {
     // remove existing options (TODO)
     for (CBioseq_CI b(seh); b; ++b) {
-        CSeqdesc_CI ud(*b, CSeqdesc::e_User);
-        while (ud) {
-            if (ud->GetUser().IsAutodefOptions()) {
-                CSeq_entry_Handle s = ud.GetSeq_entry_Handle();
-                CSeq_entry_EditHandle se = s.GetEditHandle();
-                se.RemoveSeqdesc(*ud);
+        bool removed = true;
+        while (removed) {
+            removed = false;
+            CSeqdesc_CI ud(*b, CSeqdesc::e_User);
+            while (ud) {
+                if (ud->GetUser().IsAutodefOptions()) {
+                    CSeq_entry_Handle s = ud.GetSeq_entry_Handle();
+                    CSeq_entry_EditHandle se = s.GetEditHandle();
+                    se.RemoveSeqdesc(*ud);
+                    removed = true;
+                    break;
+                }
+                ++ud;
             }
-            ++ud;
         }
     }
 
