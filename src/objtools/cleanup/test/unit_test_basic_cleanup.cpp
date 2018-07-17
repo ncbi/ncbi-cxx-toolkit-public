@@ -2316,8 +2316,14 @@ void CheckAuthNameSingleInitialFix(const string& first, const string& initials, 
 
     const CAuth_list& result = entry->GetDescr().Get().back()->GetPub().GetPub().Get().back()->GetGen().GetAuthors();
 
-    BOOST_CHECK_EQUAL(result.GetNames().GetStd().front()->GetName().GetName().GetFirst(), new_first);
-    BOOST_CHECK_EQUAL(result.GetNames().GetStd().front()->GetName().GetName().GetInitials(), new_init);
+    const CName_std& name_std = result.GetNames().GetStd().front()->GetName().GetName();
+    if (NStr::IsBlank(new_first)) {
+        BOOST_CHECK_EQUAL(name_std.IsSetFirst(), false);
+    }
+    else {
+        BOOST_CHECK_EQUAL(name_std.GetFirst(), new_first);
+    }
+    BOOST_CHECK_EQUAL(name_std.GetInitials(), new_init);
 }
 
 
@@ -2329,4 +2335,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4536)
     CheckAuthNameSingleInitialFix("B", "A", "B", "B.A.");
     CheckAuthNameSingleInitialFix("B", "A.", "B", "B.A.");
 
+    // do not fix if more than one initial
+    CheckAuthNameSingleInitialFix("", "M.E.", "", "M.E.");
+    
 }

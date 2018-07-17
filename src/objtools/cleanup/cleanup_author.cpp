@@ -341,7 +341,7 @@ bool CCleanup::s_CleanupNameStdBC ( CName_std& name, bool fix_initials )
             if (name.GetInitials().length() == 1) {
                 name.SetFirst(name.GetInitials());
             }
-        } else if (pos == 1) {
+        } else if (pos == 1 && name.GetInitials().length() == 2) {
             name.SetFirst(name.GetInitials().substr(0, 1));
         }
     }
