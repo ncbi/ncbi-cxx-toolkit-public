@@ -816,7 +816,7 @@ CB<CZE>	s	Jihoceske Muzeum
 CBAS	c	Bacteria Collection of Environmemt and Health (Colecao de Bacterias do Ambiente e Saude)		
 CBC	s	Centre for Biodiversity Conservation		
 CBD<ITA>	s	Collezione Ittiologica Balma-Delmastro		
-CBD<USA>	c	USF Center for Biological Defense		
+CBD<USA>	c	USF Center for Biological Defense	USF:CBD
 CBF	s	Coleccion Boliviana de Fauna	CBFC
 CBFS	s	University of South Bohemia, Department of Botany		
 CBG	s	Australian National Botanic Gardens		
@@ -6916,8 +6916,8 @@ USDA:NSGC	sb	United States Department of Agriculture, National Small Grains Coll
 USDA:PGRU	sb	United States Department of Agriculture, Plant Genetic Resources Unit
 USDA:USNPC	s	United States Department of Agriculture, US National Parasite Collection
 USDAK	s	W. H. Over State Museum		
-USF	s	University of South Florida, Biology Department		
-USF:CBD	c	University of South Florida, Biology Department, Center for Biological Defense
+USF	s	University of South Florida		
+USF:CBD	c	University of South Florida, Center for Biological Defense
 USFC	s	U. S. Fish Commission		
 USFS	s	Rocky Mountain Forest and Range Experiment Station		
 USGS	s	U.S. Geological Survey		
