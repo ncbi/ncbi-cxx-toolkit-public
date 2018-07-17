@@ -2318,6 +2318,7 @@ CNCMessageHandler::x_PrintRequestStart(CSrvDiagMsg& diag_msg)
     diag_msg.PrintParam("cmd", m_ParsedCmd.command->cmd);
     diag_msg.PrintParam("client", m_ClientParams["client"]);
     diag_msg.PrintParam("conn", m_ConnReqId);
+    diag_msg.PrintParam("phost", m_ClientParams["peer"]);
     ITERATE(TNSProtoParams, it, m_ParsedCmd.params) {
         diag_msg.PrintParam(it->first, it->second);
     }
