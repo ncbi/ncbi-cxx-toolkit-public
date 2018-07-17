@@ -1,0 +1,15 @@
+#
+#
+#
+add_executable(unit_test_feature_propagate-app
+    unit_test_feature_propagate
+)
+
+set_target_properties(unit_test_feature_propagate-app PROPERTIES OUTPUT_NAME unit_test_feature_propagate)
+
+
+
+target_link_libraries(unit_test_feature_propagate-app
+    test_boost xobjedit xunittestutil
+)
+
