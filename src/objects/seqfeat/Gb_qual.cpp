@@ -536,6 +536,9 @@ static const char *kInferenceDBChoices[] = {
     "UniProt",
     "PDB",
     "UniProtKB",
+    "SwissProt",
+    "KEGG",
+    "GeneDB",
     "Other",
     "\0" };
 
@@ -776,6 +779,18 @@ string CGb_qual::CleanupAndRepairInference( const string &orig_inference )
 
     return inference;
 }
+
+
+bool CGb_qual::IsLegalInferenceDatabase(const string& db)
+{
+    for (size_t i = 0; i < kNumInferenceDBChoices - 1; i++) {
+        if (NStr::Equal(db, kInferenceDBChoices[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

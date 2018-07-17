@@ -100,10 +100,13 @@ public:
 
     static bool IsIllegalQualName(const string& val);
 
+    // for inference qualifiers
     static void ParseInferenceString(string val, string &category, string &type_str, bool &is_same_species, string &database, 
                                      string &accession, string &program, string &version, string &acc_list);
 
     static string CleanupAndRepairInference( const string &orig_inference );
+
+    static bool IsLegalInferenceDatabase(const string& db);
 
 
 private:
