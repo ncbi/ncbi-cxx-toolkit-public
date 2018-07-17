@@ -266,6 +266,12 @@ void x_Assign(CPDB_seq_id& dst, const CPDB_seq_id& src)
     else {
         dst.ResetChain();
     }
+    if ( src.IsSetChain_id() ) {
+        dst.SetChain_id(src.GetChain_id());
+    }
+    else {
+        dst.ResetChain_id();
+    }
     if ( src.IsSetRel() ) {
         dst.SetRel().Assign(src.GetRel());
     }

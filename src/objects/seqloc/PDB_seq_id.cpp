@@ -52,16 +52,32 @@ CPDB_seq_id::~CPDB_seq_id(void)
 // comparison function
 bool CPDB_seq_id::Match(const CPDB_seq_id& psip2) const
 {
+    if (IsSetChain() && psip2.IsSetChain()) {
+        if (GetChain() != psip2.GetChain()) {
+            return false;
+        }
+    }
+    if (IsSetChain_id() && psip2.IsSetChain_id()) {
+        if (! PCase().Compare(GetChain_id(), psip2.GetChain_id())) {
+            return false;
+        }
+    }
     return
-        GetChain() == psip2.GetChain()  &&
         PCase().Equals(GetMol(), psip2.GetMol());
 }
 
 
 int CPDB_seq_id::Compare(const CPDB_seq_id& psip2) const
 {
-    if ( int diff = GetChain() - psip2.GetChain() ) {
-        return diff;
+    if (IsSetChain() && psip2.IsSetChain()) {
+        if ( int diff = GetChain() - psip2.GetChain() ) {
+            return diff;
+        }
+    }
+    if (IsSetChain_id() && psip2.IsSetChain_id()) {
+        if ( int diff = PCase().Compare(GetChain_id(), psip2.GetChain_id()) ) {
+            return diff;
+        }
     }
     return PCase().Compare(GetMol(), psip2.GetMol());
 }
@@ -73,17 +89,23 @@ ostream& CPDB_seq_id::AsFastaString(ostream& s) const
     // no Upcase per Ostell - Karl 7/2001 
     // Output "VB" when chain id is ASCII 124 ('|').
     // Output double upper case letter when chain is a lower case character.
-    char chain = (char) GetChain();
+    if (IsSetChain()) {
+        char chain = (char) GetChain();
 
-    if (chain == '|') {
-        return s << GetMol().Get() << "|VB";
-    } else if ( islower((unsigned char) chain) != 0 ) {
-        return s << GetMol().Get() << '|'
-                 << (char) toupper((unsigned char) chain) << (char) toupper((unsigned char) chain);
-    } else if ( chain == '\0' ) {
-        return s << GetMol().Get() << "| ";
-    } 
-    return s << GetMol().Get() << '|' << chain; 
+        if (chain == '|') {
+            return s << GetMol().Get() << "|VB";
+        } else if ( islower((unsigned char) chain) != 0 ) {
+            return s << GetMol().Get() << '|'
+                     << (char) toupper((unsigned char) chain) << (char) toupper((unsigned char) chain);
+        } else if ( chain == '\0' ) {
+            return s << GetMol().Get() << "| ";
+        }
+        return s << GetMol().Get() << '|' << chain;
+    }
+    if (IsSetChain_id()) {
+            return s << GetMol().Get() << '|' << GetChain_id();
+    }
+    return s << GetMol().Get();
 }
 
 

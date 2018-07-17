@@ -3141,18 +3141,24 @@ inline string CSeq_id_PDB_Tree::x_IdToStrKey(const CPDB_seq_id& id) const
 // this is an attempt to follow the undocumented rules of PDB
 // ("documented" as code written elsewhere)
     string skey = id.GetMol().Get();
-    switch (char chain = (char)id.GetChain()) {
-    case '\0': skey += " ";   break;
-    case '|':  skey += "VB";  break;
-    default:
-        if ( islower((unsigned char)chain) ) {
-            skey.append(2, (char)toupper((unsigned char)chain));
-            break;
+    if (id.IsSetChain()) {
+        switch (char chain = (char)id.GetChain()) {
+        case '\0': skey += " ";   break;
+        case '|':  skey += "VB";  break;
+        default:
+            if ( islower((unsigned char)chain) ) {
+                skey.append(2, (char)toupper((unsigned char)chain));
+                break;
+            }
+            else {
+                skey += chain;
+                break;
+            }
         }
-        else {
-            skey += chain;
-            break;
-        }
+    }
+    if (id.IsSetChain_id()) {
+        skey += "_";
+        skey += id.GetChain_id();
     }
     return skey;
 }
@@ -3193,7 +3199,7 @@ CSeq_id_Handle CSeq_id_PDB_Tree::FindOrCreate(const CSeq_id& id)
         info = CreateInfo(id);
         TSubMolList& sub = m_MolMap[x_IdToStrKey(id.GetPdb())];
         ITERATE(TSubMolList, sub_it, sub) {
-            _ASSERT(!info->GetSeqId()->GetPdb()
+           _ASSERT(!info->GetSeqId()->GetPdb()
                     .Equals((*sub_it)->GetSeqId()->GetPdb()));
         }
         sub.push_back(info);
