@@ -132,7 +132,7 @@ void CTable2AsnValidator::Validate(CRef<CSeq_submit> submit, CRef<CSeq_entry> en
     validator::CValidator validator(scope.GetObjectManager());
 
     Uint4 options = 0;
-    if (m_context->m_master_genome_flag == "M")
+    if (m_context->m_master_genome_flag == "n")
         options |= validator::CValidator::eVal_genome_submission;
 
     CConstRef<CValidError> errors;
