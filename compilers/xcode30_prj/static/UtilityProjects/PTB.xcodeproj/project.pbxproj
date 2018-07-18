@@ -4760,6 +4760,7 @@
           <string>ABCDABCDABCDABCD0000017A</string>
           <string>ABCDABCDABCDABCD0000017C</string>
           <string>ABCDABCDABCDABCD0000017E</string>
+          <string>ABCDABCDABCDABCD0100017E</string>
           <string>ABCDABCDABCDABCD00000180</string>
           <string>ABCDABCDABCDABCD00000182</string>
           <string>ABCDABCDABCDABCD00000184</string>
@@ -4977,9 +4978,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_info.c</string>
+        <string>pcre_byte_order.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_info.c</string>
+        <string>../../../../src/util/regexp/pcre_byte_order.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5117,9 +5118,9 @@
         <key>lastKnownFileType</key>
         <string>sourcecode.c.c</string>
         <key>name</key>
-        <string>pcre_try_flipped.c</string>
+        <string>pcre_jit_compile.c</string>
         <key>path</key>
-        <string>../../../../src/util/regexp/pcre_try_flipped.c</string>
+        <string>../../../../src/util/regexp/pcre_jit_compile.c</string>
         <key>sourceTree</key>
         <string>SOURCE_ROOT</string>
       </dict>
@@ -5127,6 +5128,26 @@
       <dict>
         <key>fileRef</key>
         <string>ABCDABCDABCDABCD0000017E</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>ABCDABCDABCDABCD0100017E</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.c.c</string>
+        <key>name</key>
+        <string>pcre_string_utils.c</string>
+        <key>path</key>
+        <string>../../../../src/util/regexp/pcre_string_utils.c</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD0100017F</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD0100017E</string>
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
@@ -5393,6 +5414,7 @@
           <string>ABCDABCDABCDABCD0000017B</string>
           <string>ABCDABCDABCDABCD0000017D</string>
           <string>ABCDABCDABCDABCD0000017F</string>
+          <string>ABCDABCDABCDABCD0100017F</string>
           <string>ABCDABCDABCDABCD00000181</string>
           <string>ABCDABCDABCDABCD00000183</string>
           <string>ABCDABCDABCDABCD00000185</string>
@@ -5471,6 +5493,8 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
+            <string>PCRE_NO_UTF16</string>
+            <string>PCRE_NO_UTF32</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -5517,6 +5541,8 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
+            <string>PCRE_NO_UTF16</string>
+            <string>PCRE_NO_UTF32</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -5563,6 +5589,8 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
+            <string>PCRE_NO_UTF16</string>
+            <string>PCRE_NO_UTF32</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>
@@ -5609,6 +5637,8 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
+            <string>PCRE_NO_UTF16</string>
+            <string>PCRE_NO_UTF32</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>
@@ -9453,6 +9483,8 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
+            <string>PCRE_NO_UTF16</string>
+            <string>PCRE_NO_UTF32</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -9504,6 +9536,8 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
+            <string>PCRE_NO_UTF16</string>
+            <string>PCRE_NO_UTF32</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>_DEBUG</string>
             <string>_MT</string>
@@ -9555,6 +9589,8 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
+            <string>PCRE_NO_UTF16</string>
+            <string>PCRE_NO_UTF32</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>
@@ -9606,6 +9642,8 @@
           <key>GCC_PREPROCESSOR_DEFINITIONS</key>
           <array>
             <string>HAVE_CONFIG_H</string>
+            <string>PCRE_NO_UTF16</string>
+            <string>PCRE_NO_UTF32</string>
             <string>NCBI_XCODE_BUILD</string>
             <string>NDEBUG</string>
             <string>_MT</string>
