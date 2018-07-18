@@ -130,6 +130,9 @@ public:
     ///  Search(str, [](size_t pattern, size_t position) -> CMultipatternSearch::EOnFind { cout << "Found " << pattern << " " << position << "\n";  return CMultipatternSearch::eContinueSearch; });
     /// @endcode
 
+    // forward declaration for Linux build
+    template<typename T> struct CFoundCallback_Impl;
+
     template <typename TFoundCallback> void Search(const char*   input, TFoundCallback found_callback) const
     { x_Parse(input, CFoundCallback_Impl<TFoundCallback>(found_callback)); }
     template <typename TFoundCallback> void Search(const string& input, TFoundCallback found_callback) const
