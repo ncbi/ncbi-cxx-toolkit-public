@@ -1792,5 +1792,22 @@ void CSourceModParser::AddMods(const CTempString& name, const CTempString& value
     m_Mods.insert(newmod);
 }
 
+void CSourceModParser::AddMod(const pair<string, string>& mod) 
+{
+    AddMods(mod.first, mod.second);
+}
+
+void CSourceModParser::AddMod(const pair<CTempString, CTempString>& mod) 
+{
+    AddMods(mod.first, mod.second);
+}
+
+void CSourceModParser::AddMods(const initializer_list<pair<string, string>>& mods)
+{
+    for (auto mod : mods) {
+        AddMod(mod);
+    }
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

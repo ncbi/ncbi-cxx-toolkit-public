@@ -52,6 +52,7 @@
 
 #include <set>
 #include <map>
+#include <initializer_list>
 
 /** @addtogroup Miscellaneous
  *
@@ -116,6 +117,12 @@ public:
         size_t iMaxModsToParse = std::numeric_limits<size_t>::max() );
 
     void AddMods(const CTempString& name, const CTempString& value);
+
+    void AddMod(const pair<CTempString, CTempString>& mod);
+
+    void AddMod(const pair<string, string>& mod);
+
+    void AddMods(const initializer_list<pair<string, string>>& mods);
 
     /// Apply previously extracted modifiers to the given object, marking all
     /// relevant ones as used.
