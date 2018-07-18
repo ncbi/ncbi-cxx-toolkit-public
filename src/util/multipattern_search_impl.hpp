@@ -249,7 +249,10 @@ class CRegExFSA
     void Trans(size_t x, unsigned char c, size_t y) { m_States[x]->Trans(c, y); };
     void Short(size_t x, size_t y) { m_States[x]->Short(y); }
     void Emit(size_t x, size_t n) { m_States[x]->Emit(n); }
+    void Create(const CRegEx& rx, size_t emit);
     void Add(const CRegEx& rx);
+    void Add(const vector<unique_ptr<CRegEx>>& v);
+    void Merge(unique_ptr<CRegExFSA> fsa); // fsa will be consumed
     void GenerateDotGraph(ostream& out) const;
     void GenerateSourceCode(ostream& out) const;
     void Refine();  // build DSA from NSA

@@ -74,7 +74,7 @@ static const pair<string, CMultipatternSearch::TFlags> FlagNames[] = {
 
 int CMultipatternApp::Run(void)
 {
-	vector<pair<string, unsigned int>> input;
+	vector<pair<string, CMultipatternSearch::TFlags>> input;
 	const CArgs& args = GetArgs();
     string fname;
     string params;
@@ -121,14 +121,12 @@ int CMultipatternApp::Run(void)
         input.push_back(pair<string, unsigned int>(param, 0));
 	}
     CMultipatternSearch FSM;
-	for (size_t i = 0; i < input.size(); i++) {
-        try {
-            FSM.AddPattern(input[i].first, input[i].second);
-        }
-        catch (string s) {
-            cerr << s << "\n";
-            return 1;
-        }
+    try {
+        FSM.AddPatterns(input);
+    }
+    catch (string s) {
+        cerr << s << "\n";
+        return 1;
     }
     if (args["D"]) {
         FSM.GenerateDotGraph(cout);

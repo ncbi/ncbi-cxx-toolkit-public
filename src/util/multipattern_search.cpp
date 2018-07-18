@@ -40,6 +40,24 @@ CMultipatternSearch::~CMultipatternSearch() {}
 
 void CMultipatternSearch::AddPattern(const char* s, TFlags f) { m_FSM->Add(CRegEx(s, f)); }
 
+void CMultipatternSearch::AddPatterns(const vector<string>& patterns)
+{
+    vector<unique_ptr<CRegEx>> v;
+    for (const string& s : patterns) {
+        v.push_back(unique_ptr<CRegEx>(new CRegEx(s)));
+    }
+    m_FSM->Add(v);
+}
+
+void CMultipatternSearch::AddPatterns(const vector<pair<string, TFlags>>& patterns)
+{
+    vector<unique_ptr<CRegEx>> v;
+    for (auto& p : patterns) {
+        v.push_back(unique_ptr<CRegEx>(new CRegEx(p.first, p.second)));
+    }
+    m_FSM->Add(v);
+}
+
 void CMultipatternSearch::GenerateDotGraph(ostream& out) const { m_FSM->GenerateDotGraph(out); }
 
 void CMultipatternSearch::GenerateSourceCode(ostream& out) const { m_FSM->GenerateSourceCode(out); }
@@ -49,6 +67,9 @@ string CMultipatternSearch::QuoteString(const string& str)
     string out;
     for (auto c : str) {
         switch (c) {
+            case ' ':
+                out += "\\s+";
+                break;
             case '^':
             case '$':
             case '(':
@@ -1032,8 +1053,53 @@ CRegExFSA::CRegExFSA()
 
 void CRegExFSA::Add(const CRegEx& rx)
 {
-    size_t emit = m_Str.size();
+    Create(rx, m_Str.size());
     m_Str.push_back(rx.m_Str);
+}
+
+
+void CRegExFSA::Add(const vector<unique_ptr<CRegEx>>& v)
+{
+    if (!v.size()) {
+        return;
+    }
+    vector<unique_ptr<CRegExFSA>> w;
+    for (auto& rx : v) {
+        unique_ptr<CRegExFSA> p(new CRegExFSA);
+        p->Create(*rx, m_Str.size());
+        m_Str.push_back(rx->m_Str);
+        w.push_back(move(p));
+    }
+    while (w.size() > 1) {
+        size_t h = (w.size() + 1) / 2;
+        for (size_t i = 0, j = h; j < w.size(); i++, j++) {
+            w[i]->Merge(move(w[j]));
+        }
+        w.resize(h);
+    }
+    Merge(move(w[0]));
+}
+
+
+void CRegExFSA::Merge(unique_ptr<CRegExFSA> fsa)
+{
+    size_t shift = m_States.size();
+    for (auto& state : fsa->m_States) {
+        for (auto& trans : state->m_Trans) {
+            trans += shift;
+        }
+        m_States.push_back(move(state));
+    }
+    Short(0, shift);
+    Short(shift, 0);
+    Short(1, shift + 1);
+    Short(shift + 1, 1);
+    Refine();
+}
+
+
+void CRegExFSA::Create(const CRegEx& rx, size_t emit)
+{
     if (!rx.m_RegX) {
         throw "Invalid Regular Expression: " + rx.m_Str + " -- " + rx.m_Err;
     }

@@ -84,7 +84,9 @@ public:
     ///   Additional search conditions.
     ///   If the first argument is a RegEx, then the flags are ignored.
     void AddPattern(const char*   pattern, TFlags flags = 0);
-    void AddPattern(const string& pattern, TFlags flags = 0)  { AddPattern(pattern.c_str(), flags); }
+    void AddPattern(const string& pattern, TFlags flags = 0) { AddPattern(pattern.c_str(), flags); }
+    void AddPatterns(const vector<string>& patterns);
+    void AddPatterns(const vector<pair<string, TFlags>>& patterns);
     ///@}
 
     /// Quote special characters to insert string into regular expression
