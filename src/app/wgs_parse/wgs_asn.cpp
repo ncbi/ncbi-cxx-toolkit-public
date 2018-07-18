@@ -634,8 +634,8 @@ static EIdProblem LookThroughObjectIds(const CBioseq::TId& ids, string& obj_id_s
 
 static bool ToBeReplaced(const string& db_name)
 {
-    return GetParams().IsChromosomal() && GetParams().GetProjAccStr() != db_name ||
-        !GetParams().IsChromosomal() && GetParams().GetProjAccVerStr() != db_name;
+    return (GetParams().IsChromosomal() && GetParams().GetProjAccStr() != db_name) ||
+        (!GetParams().IsChromosomal() && GetParams().GetProjAccVerStr() != db_name);
 }
 
 static void CheckDBName(const string& db_name, bool is_nuc, CSeqEntryInfo& info, CSeqEntryCommonInfo& common_info)
@@ -647,8 +647,8 @@ static void CheckDBName(const string& db_name, bool is_nuc, CSeqEntryInfo& info,
         NStr::StartsWith(db_name, "WGS:") && !NStr::StartsWith(db_name, "WGS:XXXX")
         && !GetParams().IsDblinkOverride()) {
 
-        if (!is_nuc && db_name != proj_acc_str ||
-            is_nuc && db_name != proj_acc_str && db_name != proj_acc_ver_str) {
+        if ((!is_nuc && db_name != proj_acc_str) ||
+            (is_nuc && db_name != proj_acc_str && db_name != proj_acc_ver_str)) {
 
             info.m_dbname = db_name;
             info.m_dbname_problem = is_nuc ? eDBNameBadNucDB : eDBNameBadProtDB;
@@ -679,9 +679,9 @@ static void CheckDBName(const string& db_name, bool is_nuc, CSeqEntryInfo& info,
 
 static bool IsBadTech(CMolInfo::TTech tech)
 {
-    return GetParams().IsWgs() && tech != CMolInfo::eTech_wgs ||
-        GetParams().IsTsa() && tech != CMolInfo::eTech_tsa ||
-        GetParams().IsTls() && tech != CMolInfo::eTech_targeted;
+    return (GetParams().IsWgs() && tech != CMolInfo::eTech_wgs) ||
+        (GetParams().IsTsa() && tech != CMolInfo::eTech_tsa) ||
+        (GetParams().IsTls() && tech != CMolInfo::eTech_targeted);
 }
 
 static bool IsBadBiomol(CMolInfo::TBiomol biomol)
@@ -693,8 +693,8 @@ static bool IsBadBiomol(CMolInfo::TBiomol biomol)
 
 static bool IsBadMol(CSeq_inst::EMol mol)
 {
-    return !GetParams().IsTsa() && mol != CSeq_inst::eMol_dna ||
-        GetParams().IsTsa() && mol != CSeq_inst::eMol_rna;
+    return (!GetParams().IsTsa() && mol != CSeq_inst::eMol_dna) ||
+        (GetParams().IsTsa() && mol != CSeq_inst::eMol_rna);
 }
 
 static void CheckMolecule(const CBioseq& bioseq, CSeqEntryInfo& info)
