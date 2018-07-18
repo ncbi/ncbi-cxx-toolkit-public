@@ -605,6 +605,8 @@ BOOST_AUTO_TEST_CASE(Test_PropagateAll)
 }
 
 
+#if 0
+// checked in by mistake
 BOOST_AUTO_TEST_CASE(Test_MergeIntervals)
 {
     size_t front_insert = 5;
@@ -663,6 +665,7 @@ BOOST_AUTO_TEST_CASE(Test_MergeIntervals)
     }
 
 }
+#endif
 
 
 END_SCOPE(objects)
