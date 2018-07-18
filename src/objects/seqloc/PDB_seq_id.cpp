@@ -86,26 +86,23 @@ int CPDB_seq_id::Compare(const CPDB_seq_id& psip2) const
 // format a FASTA style string
 ostream& CPDB_seq_id::AsFastaString(ostream& s) const
 {
-    // no Upcase per Ostell - Karl 7/2001 
-    // Output "VB" when chain id is ASCII 124 ('|').
-    // Output double upper case letter when chain is a lower case character.
-    if (IsSetChain()) {
-        char chain = (char) GetChain();
-
-        if (chain == '|') {
-            return s << GetMol().Get() << "|VB";
-        } else if ( islower((unsigned char) chain) != 0 ) {
-            return s << GetMol().Get() << '|'
-                     << (char) toupper((unsigned char) chain) << (char) toupper((unsigned char) chain);
-        } else if ( chain == '\0' ) {
-            return s << GetMol().Get() << "| ";
-        }
-        return s << GetMol().Get() << '|' << chain;
-    }
     if (IsSetChain_id()) {
             return s << GetMol().Get() << '|' << GetChain_id();
     }
-    return s << GetMol().Get();
+    // no Upcase per Ostell - Karl 7/2001 
+    // Output "VB" when chain id is ASCII 124 ('|').
+    // Output double upper case letter when chain is a lower case character.
+    char chain = (char) GetChain();
+
+    if (chain == '|') {
+        return s << GetMol().Get() << "|VB";
+    } else if ( islower((unsigned char) chain) != 0 ) {
+        return s << GetMol().Get() << '|'
+                 << (char) toupper((unsigned char) chain) << (char) toupper((unsigned char) chain);
+    } else if ( chain == '\0' ) {
+        return s << GetMol().Get() << "| ";
+    } 
+    return s << GetMol().Get() << '|' << chain; 
 }
 
 
