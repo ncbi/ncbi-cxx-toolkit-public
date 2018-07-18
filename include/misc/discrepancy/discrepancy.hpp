@@ -34,7 +34,6 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialbase.hpp>
 #include <objmgr/scope.hpp>
-#include <objects/macro/String_constraint.hpp>
 #include <objects/macro/Suspect_rule.hpp>
 
 

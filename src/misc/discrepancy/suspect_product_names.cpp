@@ -216,7 +216,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
         string prot_name = *prot.GetName().begin();
         vector<char> Hits(rules->Get().size());
         std::fill(Hits.begin(), Hits.end(), 0);
-//        rules->Screen(prot_name, Hits.data());
+        rules->Screen(prot_name, Hits.data());
 
         if (!ContainsLetters(prot_name)) {
             const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope()));
@@ -226,14 +226,11 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
         else {
             size_t rule_num = 0;
             for (auto rule: rules->Get()) {
-                if (1 /*Hits[rule_num]*/) {
+                if (Hits[rule_num]) {
                     if (!rule->StringMatchesSuspectProductRule(prot_name)) {
                         rule_num++;
                         continue;
                     }
-//if (!Hits[rule_num]) {
-//cout << "ERROR: " << rule->GetFind().GetRegex() << " -- " << prot_name << "\n";
-//}
                     string leading_space = "[*" + NStr::NumericToString(rule_num + 1) + "*]";
                     size_t rule_type = rule->GetRule_type();
                     string rule_name = "[*";
@@ -293,6 +290,7 @@ const void GetProtAndRnaForCDS(const CSeq_feat& cds, CScope& scope, CSeq_feat*& 
         }
     }
 }
+
 
 typedef std::function < CRef<CSeq_feat>() > GetFeatureFunc;
 string FixProductName(const CSuspect_rule* rule, CScope& scope, string& prot_name, GetFeatureFunc get_mrna, GetFeatureFunc get_cds)
