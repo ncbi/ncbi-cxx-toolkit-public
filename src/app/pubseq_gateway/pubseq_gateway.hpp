@@ -315,7 +315,6 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                 x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
                 return 0;
             }
-        } else {
             if (flag_param.second.first.m_Value == "yes") {
                 include_data_flags |= flag_param.second.second;
             }

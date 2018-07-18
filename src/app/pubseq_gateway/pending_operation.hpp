@@ -73,7 +73,6 @@ struct SBlobRequest
         m_NeedBlobProp(true),
         m_NeedChunks(true),
         m_Optional(false),
-        m_ItemId(0),
         m_BlobIdType(eBySatAndSatKey),
         m_BlobId(blob_id),
         m_LastModified(last_modified)
@@ -86,7 +85,6 @@ struct SBlobRequest
         m_NeedBlobProp(true),
         m_NeedChunks(false),
         m_Optional(false),
-        m_ItemId(0),
         m_BlobIdType(eBySeqId),
         m_SeqId(seq_id), m_IdType(id_type),
         m_IncludeDataFlags(include_data_flags)
@@ -102,7 +100,6 @@ public:
     bool                        m_NeedChunks;
     bool                        m_Optional;
 
-    size_t                      m_ItemId;
     EBlobIdentificationType     m_BlobIdType;
 
     // Fields in case of request by sat/sat_key
@@ -180,39 +177,108 @@ private:
             m_NeedBlobProp(blob_request.m_NeedBlobProp),
             m_NeedChunks(blob_request.m_NeedChunks),
             m_Optional(blob_request.m_Optional),
+            m_BlobPropSent(false),
             m_BlobIdType(blob_request.GetBlobIdentificationType()),
             m_TotalSentBlobChunks(0), m_FinishedRead(false),
-            m_ItemId(blob_request.m_ItemId),
-            m_IncludeDataFlags(blob_request.m_IncludeDataFlags)
+            m_IncludeDataFlags(blob_request.m_IncludeDataFlags),
+            m_BlobPropItemId(0),
+            m_BlobChunkItemId(0)
         {}
 
         SBlobFetchDetails() :
             m_NeedBlobProp(true),
             m_NeedChunks(true),
             m_Optional(false),
+            m_BlobPropSent(false),
             m_BlobIdType(eBySatAndSatKey),
             m_TotalSentBlobChunks(0),
             m_FinishedRead(false),
-            m_ItemId(0),
-            m_IncludeDataFlags(0)
+            m_IncludeDataFlags(0),
+            m_BlobPropItemId(0),
+            m_BlobChunkItemId(0)
         {}
 
+        bool IsBlobPropStage(void) const
+        {
+            // At the time of an error report it needs to be known to what the
+            // error message is associated - to blob properties or to blob
+            // chunks
+            if (m_NeedChunks == false)
+                return true;
+            if (m_NeedBlobProp == false)
+                return false;
+            return !m_BlobPropSent;
+        }
+
+        size_t GetBlobPropItemId(CPendingOperation *  pending_op)
+        {
+            if (m_BlobPropItemId == 0)
+                m_BlobPropItemId = pending_op->GetItemId();
+            return m_BlobPropItemId;
+        }
+
+        size_t GetBlobChunkItemId(CPendingOperation *  pending_op)
+        {
+            if (m_BlobChunkItemId == 0)
+                m_BlobChunkItemId = pending_op->GetItemId();
+            return m_BlobChunkItemId;
+        }
 
         SBlobId                             m_BlobId;
 
         bool                                m_NeedBlobProp;
         bool                                m_NeedChunks;
         bool                                m_Optional;
+        bool                                m_BlobPropSent;
 
         EBlobIdentificationType             m_BlobIdType;
         int32_t                             m_TotalSentBlobChunks;
         bool                                m_FinishedRead;
-        size_t                              m_ItemId;
         TServIncludeData                    m_IncludeDataFlags;
 
         unique_ptr<CCassBlobTaskLoadBlob>   m_Loader;
+
+        private:
+            size_t                          m_BlobPropItemId;
+            size_t                          m_BlobChunkItemId;
     };
 
+public:
+    void PrepareBioseqMessage(size_t  item_id, const string &  msg,
+                              CRequestStatus::ECode  status,
+                              int  err_code, EDiagSev  severity);
+    void PrepareBioseqData(size_t  item_id, const string &  content);
+    void PrepareBioseqCompletion(size_t  item_id, size_t  chunk_count);
+    void PrepareBlobPropMessage(size_t  item_id, const string &  msg,
+                                CRequestStatus::ECode  status,
+                                int  err_code, EDiagSev  severity);
+    void PrepareBlobPropMessage(
+                            SBlobFetchDetails *  fetch_details,
+                            const string &  msg,
+                            CRequestStatus::ECode  status, int  err_code,
+                            EDiagSev  severity);
+    void PrepareBlobPropData(SBlobFetchDetails *  fetch_details,
+                             const string &  content);
+    void PrepareBlobData(SBlobFetchDetails *  fetch_details,
+                         const unsigned char *  chunk_data,
+                         unsigned int  data_size, int  chunk_no);
+    void PrepareBlobPropCompletion(size_t  item_id, size_t  chunk_count);
+    void PrepareBlobPropCompletion(
+                            SBlobFetchDetails *  fetch_details);
+    void PrepareBlobMessage(size_t  item_id, const SBlobId &  blob_id,
+                            const string &  msg,
+                            CRequestStatus::ECode  status, int  err_code,
+                            EDiagSev  severity);
+    void PrepareBlobMessage(SBlobFetchDetails *  fetch_details,
+                            const string &  msg,
+                            CRequestStatus::ECode  status, int  err_code,
+                            EDiagSev  severity);
+    void PrepareBlobCompletion(size_t  item_id, const SBlobId &  blob_id,
+                               size_t  chunk_count);
+    void PrepareBlobCompletion(SBlobFetchDetails *  fetch_details);
+    void PrepareReplyCompletion(size_t  chunk_count);
+
+private:
     void x_StartMainBlobRequest(void);
     bool x_AllFinishedRead(void) const;
     void x_SendReplyCompletion(bool  forced = false);
@@ -250,6 +316,7 @@ private:
     unique_ptr<SBlobFetchDetails>           m_Id2ShellFetchDetails;
     unique_ptr<SBlobFetchDetails>           m_Id2InfoFetchDetails;
     unique_ptr<SBlobFetchDetails>           m_OriginalBlobChunkFetch;
+    vector<unique_ptr<SBlobFetchDetails>>   m_Id2ChunkFetchDetails;
 
     size_t                                  m_NextItemId;
 
@@ -289,7 +356,10 @@ class CBlobPropCallback
                 HST::CHttpReply<CPendingOperation> *  reply,
                 CPendingOperation::SBlobFetchDetails *  fetch_details) :
             m_PendingOp(pending_op), m_Reply(reply),
-            m_FetchDetails(fetch_details)
+            m_FetchDetails(fetch_details),
+            m_Id2InfoParsed(false), m_Id2InfoValid(false),
+            m_Id2InfoSat(-1), m_Id2InfoShell(-1),
+            m_Id2InfoInfo(-1), m_Id2InfoChunks(-1)
         {}
 
         void operator()(CBlobRecord const &  blob, bool is_found);
@@ -297,12 +367,21 @@ class CBlobPropCallback
     private:
         void x_RequestOriginalBlobChunks(CBlobRecord const &  blob);
         void x_RequestID2BlobChunks(CBlobRecord const &  blob);
-        void x_SendBlobPropCompletion(void);
+        void x_ParseId2Info(CBlobRecord const &  blob);
+        void x_RequestId2SplitBlobs(const string &  sat_name);
 
     private:
         CPendingOperation *                     m_PendingOp;
         HST::CHttpReply<CPendingOperation> *    m_Reply;
         CPendingOperation::SBlobFetchDetails *  m_FetchDetails;
+
+        // id2_info parsing support
+        bool            m_Id2InfoParsed;
+        bool            m_Id2InfoValid;
+        int             m_Id2InfoSat;
+        int             m_Id2InfoShell;
+        int             m_Id2InfoInfo;
+        int             m_Id2InfoChunks;
 };
 
 
