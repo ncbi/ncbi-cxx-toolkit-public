@@ -593,7 +593,6 @@ public:
     {
         if (temp_block_)
             alloc_.free_bit_block(temp_block_);
-        //deinit_tree();
         destroy_tree();
     }
     
@@ -784,6 +783,36 @@ public:
         const bm::word_t* ret = (blk_blk == 0) ? 0 : blk_blk[j];
         return (ret == FULL_BLOCK_FAKE_ADDR) ? FULL_BLOCK_REAL_ADDR : ret;
     }
+
+    /**
+        \brief Finds block in 2-level blocks array (unsinitized)
+        \param i - top level block index
+        \param j - second level block index
+        \return block adress or NULL if not yet allocated
+    */
+    const bm::word_t* get_block_ptr(unsigned i, unsigned j) const
+    {
+        if (!top_blocks_ || i >= top_block_size_) return 0;
+
+        const bm::word_t* const* blk_blk = top_blocks_[i];
+        const bm::word_t* ret = (blk_blk == 0) ? 0 : blk_blk[j];
+        return ret;
+    }
+    /**
+        \brief Finds block in 2-level blocks array (unsinitized)
+        \param i - top level block index
+        \param j - second level block index
+        \return block adress or NULL if not yet allocated
+    */
+    bm::word_t* get_block_ptr(unsigned i, unsigned j)
+    {
+        if (!top_blocks_ || i >= top_block_size_) return 0;
+
+        bm::word_t* const* blk_blk = top_blocks_[i];
+        bm::word_t* ret = (blk_blk == 0) ? 0 : blk_blk[j];
+        return ret;
+    }
+
 
     /**
         \brief Function returns top-level block in 2-level blocks array
@@ -1048,6 +1077,27 @@ public:
         for_each_block(top_blocks_, top_block_size_,
                                 bm::set_array_size, func);
     }
+    
+    
+    bm::word_t** alloc_top_subblock(unsigned nblk_blk)
+    {
+        BM_ASSERT(top_blocks_[nblk_blk] == 0);
+
+        bm::word_t** p = (bm::word_t**)alloc_.alloc_ptr();
+        ::memset(top_blocks_[nblk_blk] = p, 0,
+            bm::set_array_size * sizeof(bm::word_t*));
+        return p;
+    }
+    
+    bm::word_t** check_alloc_top_subblock(unsigned nblk_blk)
+    {
+        if(top_blocks_[nblk_blk] == 0)
+        {
+            return alloc_top_subblock(nblk_blk);
+        }
+        return top_blocks_[nblk_blk];
+    }
+
 
     /**
         Places new block into descriptors table, returns old block's address.
@@ -1073,10 +1123,12 @@ public:
         // assign block to it
         if (top_blocks_[nblk_blk] == 0)
         {
+            alloc_top_subblock(nblk_blk);
+            /*
             top_blocks_[nblk_blk] = (bm::word_t**)alloc_.alloc_ptr();
             ::memset(top_blocks_[nblk_blk], 0,
                 bm::set_array_size * sizeof(bm::word_t*));
-
+            */
             old_block = 0;
         }
         else
@@ -1124,9 +1176,6 @@ public:
     */
     bm::word_t* set_block(unsigned nb, bm::word_t* block, bool gap)
     {
-//        if (!is_init())
-//            init_tree();
-        
         unsigned i, j;
         get_block_coord(nb, i, j);
         reserve_top_blocks(i + 1);
@@ -1229,8 +1278,11 @@ public:
         
         if (!top_blocks_[i])
         {
+            alloc_top_subblock(i);
+            /*
             top_blocks_[i] = (bm::word_t**)alloc_.alloc_ptr();
             ::memset(top_blocks_[i], 0, bm::set_array_size * sizeof(void*));
+            */
         }
         bm::word_t* block = top_blocks_[i][j];
         gap_block = gap_block ? gap_block : BMGAP_PTR(block);
@@ -1629,17 +1681,29 @@ private:
     
     // ----------------------------------------------------------------
     
-    void copy(const blocks_manager& blockman)
+    void copy(const blocks_manager& blockman,
+              unsigned block_from = 0, unsigned block_to = 65535)
     {
-        BM_ASSERT(blockman.is_init());
-        
         unsigned arg_top_blocks = blockman.top_block_size();
         this->reserve_top_blocks(arg_top_blocks);
         
         bm::word_t*** blk_root = top_blocks_root();
         bm::word_t*** blk_root_arg = blockman.top_blocks_root();
+        
+        if (!blk_root_arg)
+            return;
+        
+        unsigned i_from, j_from, i_to, j_to;
+        get_block_coord(block_from, i_from, j_from);
+        get_block_coord(block_to, i_to, j_to);
+        
+        if (i_to >= arg_top_blocks-1)
+        {
+            i_to = arg_top_blocks-1;
+            j_to = bm::set_array_size-1;
+        }
 
-        for (unsigned i = 0; i < arg_top_blocks; ++i)
+        for (unsigned i = i_from; i <= i_to; ++i)
         {
             bm::word_t** blk_blk_arg = blk_root_arg[i];
             if (!blk_blk_arg)
@@ -1650,7 +1714,8 @@ private:
             bm::word_t** blk_blk = blk_root[i] = (bm::word_t**)alloc_.alloc_ptr();
             ::memset(blk_blk, 0, bm::set_array_size * sizeof(bm::word_t*));
             
-            unsigned j = 0;
+            unsigned j = (i == i_from) ? j_from : 0;
+            unsigned j_limit = (i == i_to) ? j_to+1 : bm::set_array_size;
             bm::word_t* blk;
             const bm::word_t* blk_arg;
             do
@@ -1667,10 +1732,11 @@ private:
                     }
                     else
                     {
-                        if (IS_FULL_BLOCK(blk_arg))
+                        if (blk_arg == FULL_BLOCK_FAKE_ADDR /*IS_FULL_BLOCK(blk_arg)*/)
                             blk = FULL_BLOCK_FAKE_ADDR;
                         else
                         {
+                            BM_ASSERT(!IS_FULL_BLOCK(blk_arg));
                             blk = alloc_.alloc_bit_block();
                             bm::bit_block_copy(blk, blk_arg);
                         }
@@ -1678,9 +1744,10 @@ private:
                     blk_blk[j] = blk;
                 }
                 ++j;
-            } while (j < bm::set_array_size);
+            } while (j < j_limit);
         } // for i
     }
+
 
 private:
     /// maximum addresable bits

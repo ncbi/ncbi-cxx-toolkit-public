@@ -1140,7 +1140,7 @@ void combine_or(BV& bv, It  first, It last)
     while (first < last)
     {
         unsigned nblock = unsigned((*first) >> bm::set_block_shift);     
-        It right = block_range_scan(first, last, nblock, &max_id);
+        It right = bm::block_range_scan(first, last, nblock, &max_id);
 
         if (max_id >= bv.size())
         {
@@ -1172,7 +1172,7 @@ void combine_or(BV& bv, It  first, It last)
                 unsigned nbit   = (*first) & bm::set_block_mask; 
                 
                 unsigned new_block_len =
-                    gap_set_value(true, gap_blk, nbit, &is_set);
+                    bm::gap_set_value(true, gap_blk, nbit, &is_set);
                 if (new_block_len > threshold) 
                 {
                     bman.extend_gap_block(nblock, gap_blk);
@@ -1274,7 +1274,7 @@ void combine_xor(BV& bv, It  first, It last)
                 unsigned nbit   = unsigned(*first & bm::set_block_mask); 
                 unsigned nword  = unsigned(nbit >> bm::set_word_shift); 
                 nbit &= bm::set_word_mask;
-                blk[nword] ^= (bm::word_t)1 << nbit;
+                blk[nword] ^= (1u << nbit);
             } // for
         }
     } // while
@@ -1649,17 +1649,15 @@ void for_each_bit_blk(const bm::word_t* block, bm::id_t offset,
 
     unsigned offs = offset;
     unsigned cnt;
-    
     const word_t* block_end = block + bm::set_block_size;
-    for ( ;block < block_end; )
+    do
     {
         cnt = bm::bitscan_wave(block, bits);
-        
-        bit_functor.add_bits(offs, bits, cnt);
-        
+        if (cnt)
+            bit_functor.add_bits(offs, bits, cnt);
         offs += bm::set_bitscan_wave_size * 32;
         block += bm::set_bitscan_wave_size;
-    } // for
+    } while (block < block_end);
 }
 
 
@@ -1691,10 +1689,6 @@ void for_each_gap_blk(const T* buf, bm::id_t offset,
         bit_functor.add_range(offset + prev + 1, *pcurr - prev);
     }
 }
-
-
-
-
 
 
 } // namespace bm

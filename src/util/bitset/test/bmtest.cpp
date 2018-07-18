@@ -1818,7 +1818,7 @@ void ptest()
 
 typedef bm::sparse_vector<unsigned, bvect> svect;
 
-// create a benchmark vector with a few dufferent distribution patterns
+// create a benchmark svector with a few dufferent distribution patterns
 //
 static
 void FillSparseIntervals(svect& sv)
@@ -1917,24 +1917,43 @@ void SparseVectorAccessTest()
     
 
     unsigned long long cnt = 0;
+    
+    unsigned gather_from = 256000;
+    unsigned gather_to = 190000000/2;
+    std::vector<unsigned> idx;
+    for (unsigned j = gather_from; j < gather_to; ++j)
+    {
+        idx.push_back(j);
+    }
+    std::vector<unsigned> target_v;
+    target_v.resize(idx.size());
 
     {
         TimeTaker tt("sparse_vector random element access test", REPEATS/10 );
         for (unsigned i = 0; i < REPEATS/10; ++i)
         {
-            for (unsigned j = 256000; j < 190000000/2; ++j)
+            unsigned k = 0;
+            for (unsigned j = gather_from; j < gather_to; ++j)
             {
-                unsigned v = sv1[j];
-                cnt += v;
+                target_v[k++] = sv1[j];
             }
         }
     }
 
     {
+        TimeTaker tt("sparse_vectot<>::gather() ", REPEATS/10 );
+        for (unsigned i = 0; i < REPEATS/10; ++i)
+        {
+            sv1.gather(target_v.data(), idx.data(), unsigned(idx.size()), bm::BM_UNSORTED);
+        }
+    }
+
+
+    {
         TimeTaker tt("sparse_vector extract test", REPEATS );
         for (unsigned i = 0; i < REPEATS/10; ++i)
         {
-            unsigned target_off = 190000000/2 - 256000;
+            unsigned target_off = gather_to - gather_from;
             sv1.extract(&target1[0], sv1.size());
             sv1.extract(&target[0], 256000, target_off);
         }
@@ -1972,6 +1991,124 @@ void SparseVectorAccessTest()
     char buf[256];
     sprintf(buf, "%i", (int)cnt); // to fool some smart compilers like ICC
     
+}
+
+static
+void Set2SetTransformTest()
+{
+    svect   sv;
+    
+    FillSparseIntervals(sv);
+    BM_DECLARE_TEMP_BLOCK(tb)
+    sv.optimize(tb);
+    
+    bvect bv_values;
+    bvect bv_non_values;
+    bvect bv_sample;
+    bvect bv_non_sample;
+
+
+    {
+    bm::sparse_vector_scanner<svect> scanner;
+    scanner.find_nonzero(sv, bv_values);
+    scanner.find_zero(sv, bv_non_values);
+    
+    unsigned non_v_count = bv_non_values.count() / 20;
+    if (non_v_count > 3000000)
+        non_v_count = 3000000;
+
+    if (non_v_count)
+    {
+        bm::random_subset<bvect> rand_sampler;
+        rand_sampler.sample(bv_sample, bv_values, 6000000);
+        rand_sampler.sample(bv_non_sample, bv_non_values, non_v_count);
+        //cout << "zero mix = " << bv_non_sample.count() << endl;
+        bv_sample |= bv_non_sample; // add some missing values
+    }
+    }
+    
+    //cout << bv_sample.count() << endl;
+    //cout << sv.size() << endl;
+
+    bm::set2set_11_transform<svect> set2set;
+
+    int cnt = 0;
+
+    {
+    TimeTaker tt("set2set_11_transform::by_one", REPEATS/10);
+
+        for (unsigned i = 0; i < REPEATS/10; ++i)
+        {
+            bvect bv_out;
+            set2set.run(bv_sample, sv, bv_out);
+
+            cnt += bv_out.any();
+            //cout << bv_out.count() << endl;
+
+        }
+    }
+
+    /*
+    {
+    TimeTaker tt("set2set_11_transform::one_pass_run", REPEATS/10);
+
+        for (unsigned i = 0; i < REPEATS/10; ++i)
+        {
+            bvect bv_out;
+            set2set.one_pass_run(bv_sample, sv, bv_out);
+
+            cnt += bv_out.any();
+        }
+    }
+    */
+
+    char buf[256];
+    sprintf(buf, "%i", (int)cnt); // to fool some smart compilers like ICC
+
+}
+
+static
+void RangeCopyTest()
+{
+    const unsigned vect_max = BSIZE;
+    bvect bv;
+    generate_bvector(bv, vect_max);
+
+    {
+        TimeTaker tt("bvector<>::copy_range()", REPEATS * 25);
+        for (unsigned i = 0; i < REPEATS * 25; ++i)
+        {
+            unsigned from = vect_max / 4;
+            from = from * (rand() % 3);
+            unsigned to = from + 1 + (65536 * rand() % 5);
+            bvect bv_cp;
+            bv_cp.copy_range(bv, from, to);
+        } // for
+    }
+    {
+        TimeTaker tt("bvector<>:: copy range constructor", REPEATS * 25);
+        for (unsigned i = 0; i < REPEATS * 25; ++i)
+        {
+            unsigned from = vect_max / 4;
+            from = from * (rand() % 3);
+            unsigned to = from + 1 + (65536 * rand() % 5);
+            bvect bv_cp(bv, from, to);
+        } // for
+    }
+
+    {
+        TimeTaker tt("copy range with AND", REPEATS * 25);
+        for (unsigned i = 0; i < REPEATS * 25; ++i)
+        {
+            unsigned from = vect_max / 4;
+            from = from * (rand() % 3);
+            unsigned to = from + 1 + (65536 * rand() % 5);
+            bvect bv_cp;
+            bv_cp.set_range(from, to);
+            bv_cp &= bv;
+        } // for
+    }
+
 }
 
 static
@@ -2082,6 +2219,8 @@ int main(void)
 
     EnumeratorGoToTest();
 
+    RangeCopyTest();
+
     AndTest();
     XorTest();
     SubTest();  
@@ -2098,6 +2237,8 @@ int main(void)
     SparseVectorAccessTest();
 
     RankCompressionTest();
+
+    Set2SetTransformTest();
 
     return 0;
 }

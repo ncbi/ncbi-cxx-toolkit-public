@@ -130,65 +130,6 @@ void dynamic_range_clip_low(SV& svect, unsigned low_bit)
 }
 
 
-/*!
-    \brief Integer set to set transformation (functional image in groups theory)
-    https://en.wikipedia.org/wiki/Image_(mathematics)
- 
-    Input sets gets translated through the function, which is defined as
-    "one to one (or NULL)" binary relation object (sparse_vector).
-    Also works for M:1 relationships.
- 
-    \ingroup svalgo
-    \ingroup setalgo
-*/
-template<typename SV>
-class set2set_11_transform
-{
-public:
-    typedef typename SV::bvector_type       bvector_type;
-public:
-    /** Perform transformation
-   
-     \param bv_in  - input set, defined as a bit-vector
-     \param sv_brel   - binary relation sparse vector
-     \param bv_out - output set as a bit-vector
-    */
-    void run(typename SV::bvector_type& bv_in,
-             const    SV&               sv_brel,
-             typename SV::bvector_type& bv_out)
-    {
-        if (sv_brel.empty())
-            return; // nothing to do
-        
-        bv_out.init(); // just in case to "fast set" later
-        
-        const typename SV::bvector_type * bv_non_null = sv_brel.get_null_bvector(); 
-        if (bv_non_null) // NULL-able association vector
-        {
-            bv_product_ = bv_in;
-            bv_product_.bit_and(*bv_non_null);
-        }
-        else
-        {
-            bv_product_.clear(true);
-            bv_product_.set_range(0, sv_brel.size()-1);
-            bv_product_.bit_and(bv_in);
-        }
-        
-        typename SV::bvector_type::enumerator en(bv_product_.first());
-        for (; en.valid(); ++en)
-        {
-            auto idx = *en;
-            idx = sv_brel.translate_address(idx);
-            typename SV::value_type translated_id = sv_brel.get(idx);
-            bv_out.set_bit_no_check(translated_id);
-        } // for en
-    }
-    
-protected:
-    bvector_type   bv_product_;
-};
-
 /**
     \brief algorithms for sparse_vector scan/seach
  
@@ -199,6 +140,7 @@ protected:
     This is NOT a brute force, direct scan.
  
     @ingroup svalgo
+    @ingroup setalgo
 */
 template<typename SV>
 class sparse_vector_scanner
@@ -309,6 +251,348 @@ protected:
 private:
     allocator_pool_type  pool_;
 };
+
+
+/*!
+    \brief Integer set to set transformation (functional image in groups theory)
+    https://en.wikipedia.org/wiki/Image_(mathematics)
+ 
+    Input sets gets translated through the function, which is defined as
+    "one to one (or NULL)" binary relation object (sparse_vector).
+    Also works for M:1 relationships.
+ 
+    \ingroup svalgo
+    \ingroup setalgo
+*/
+template<typename SV>
+class set2set_11_transform
+{
+public:
+    typedef typename SV::bvector_type       bvector_type;
+    typedef typename SV::value_type         value_type;
+    typedef typename SV::size_type          size_type;
+    typedef typename bvector_type::allocator_type::allocator_pool_type allocator_pool_type;
+public:
+
+    set2set_11_transform();
+    ~set2set_11_transform();
+
+
+    /**  Get read access to zero-elements vector
+         Zero vector gets populated after attach_sv() is called
+         or as a side-effect of remap() with immediate sv param
+    */
+    const bvector_type& get_bv_zero() const { return bv_zero_; }
+
+    /** Perform remapping (Image function) (based on attached translation table)
+
+    \param bv_in  - input set, defined as a bit-vector
+    \param bv_out - output set as a bit-vector
+
+    @sa attach_sv
+    */
+    void remap(const bvector_type&        bv_in,
+               bvector_type&              bv_out);
+
+    /** Perform remapping (Image function)
+   
+     \param bv_in  - input set, defined as a bit-vector
+     \param sv_brel   - binary relation (translation table) sparse vector
+     \param bv_out - output set as a bit-vector
+    */
+    void remap(const bvector_type&        bv_in,
+               const    SV&               sv_brel,
+               bvector_type&              bv_out);
+    
+    /** Remap single set element
+   
+     \param id_from  - input value
+     \param sv_brel  - translation table sparse vector
+     \param it_to    - out value
+     
+     \return - true if value was found and remapped
+    */
+    bool remap(size_type id_from, const SV& sv_brel, size_type& id_to);
+
+
+    /** Run remap transformation
+   
+     \param bv_in  - input set, defined as a bit-vector
+     \param sv_brel   - translation table sparse vector
+     \param bv_out - output set as a bit-vector
+     
+     @sa remap
+    */
+    void run(const bvector_type&        bv_in,
+             const    SV&               sv_brel,
+             bvector_type&              bv_out)
+    {
+        remap(bv_in, sv_brel, bv_out);
+    }
+    
+    /** Attach a translation table vector for remapping (Image function)
+
+        \param sv_brel   - binary relation sparse vector pointer
+                          (pass NULL to detach)
+        \param compute_stats - flag to perform computation of some statistics
+                               later used in remapping. This only make sense
+                               for series of remappings on the same translation
+                               vector.
+        @sa remap
+    */
+    void attach_sv(const SV* sv_brel, bool compute_stats = false);
+
+    
+protected:
+    void one_pass_run(const bvector_type&        bv_in,
+                      const    SV&               sv_brel,
+                      bvector_type&              bv_out);
+    
+    /// @internal
+    template<unsigned BSIZE>
+    struct gather_buffer
+    {
+        size_type   BM_VECT_ALIGN gather_idx_[BSIZE] BM_VECT_ALIGN_ATTR;
+        value_type  BM_VECT_ALIGN buffer_[BSIZE] BM_VECT_ALIGN_ATTR;
+    };
+    
+    enum gather_window_size
+    {
+        sv_g_size = 1024 * 8
+    };
+    typedef gather_buffer<sv_g_size>  gather_buffer_type;
+    
+
+protected:
+    set2set_11_transform(const set2set_11_transform&) = delete;
+    void operator=(const set2set_11_transform&) = delete;
+    
+protected:
+    const SV*              sv_ptr_;    ///< current translation table vector
+    gather_buffer_type*    gb_;        ///< intermediate buffers
+    bvector_type           bv_product_;///< temp vector
+    
+    bool                   have_stats_; ///< flag of statistics presense
+    bvector_type           bv_zero_;   ///< bit-vector for zero elements
+    
+    allocator_pool_type    pool_;
+};
+
+
+
+//----------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------
+
+template<typename SV>
+set2set_11_transform<SV>::set2set_11_transform()
+: sv_ptr_(0), gb_(0), have_stats_(false)
+{
+    gb_ = (gather_buffer_type*)::malloc(sizeof(gather_buffer_type));
+    if (!gb_)
+    {
+        SV::throw_bad_alloc();
+    }
+}
+
+//----------------------------------------------------------------------------
+
+template<typename SV>
+set2set_11_transform<SV>::~set2set_11_transform()
+{
+    if (gb_)
+        ::free(gb_);
+}
+
+
+//----------------------------------------------------------------------------
+
+template<typename SV>
+void set2set_11_transform<SV>::attach_sv(const SV*  sv_brel, bool compute_stats)
+{
+    sv_ptr_ = sv_brel;
+    if (!sv_ptr_)
+    {
+        have_stats_ = false;
+    }
+    else
+    {
+        if (sv_brel->empty() || !compute_stats)
+            return; // nothing to do
+        const bvector_type* bv_non_null = sv_brel->get_null_bvector();
+        if (bv_non_null)
+            return; // already have 0 elements vector
+        
+
+        typename bvector_type::mem_pool_guard mp_g_z;
+        mp_g_z.assign_if_not_set(pool_, bv_zero_);
+
+        bm::sparse_vector_scanner<SV> scanner;
+        scanner.find_zero(*sv_brel, bv_zero_);
+        have_stats_ = true;
+    }
+}
+
+//----------------------------------------------------------------------------
+
+template<typename SV>
+bool set2set_11_transform<SV>::remap(size_type  id_from,
+                                     const SV&  sv_brel,
+                                     size_type& id_to)
+{
+    if (sv_brel.empty())
+        return false; // nothing to do
+
+    const bvector_type* bv_non_null = sv_brel.get_null_bvector();
+    if (bv_non_null)
+    {
+        if (!bv_non_null->test(id_from))
+            return false;
+    }
+    size_type idx = sv_brel.translate_address(id_from);
+    id_to = sv_brel.get(idx);
+    return true;
+}
+
+//----------------------------------------------------------------------------
+
+template<typename SV>
+void set2set_11_transform<SV>::remap(const bvector_type&        bv_in,
+                                     const    SV&               sv_brel,
+                                     bvector_type&              bv_out)
+{
+    typename bvector_type::mem_pool_guard mp_g_out, mp_g_p, mp_g_z;
+    mp_g_out.assign_if_not_set(pool_, bv_out);
+    mp_g_p.assign_if_not_set(pool_, bv_product_);
+    mp_g_z.assign_if_not_set(pool_, bv_zero_);
+
+    attach_sv(&sv_brel);
+    
+    remap(bv_in, bv_out);
+
+    attach_sv(0); // detach translation table
+}
+
+template<typename SV>
+void set2set_11_transform<SV>::remap(const bvector_type&        bv_in,
+                                     bvector_type&              bv_out)
+{
+    BM_ASSERT(sv_ptr_);
+
+    bv_out.clear();
+
+    if (sv_ptr_ == 0 || sv_ptr_->empty())
+        return; // nothing to do
+
+    bv_out.init(); // just in case to "fast set" later
+
+    typename bvector_type::mem_pool_guard mp_g_out, mp_g_p, mp_g_z;
+    mp_g_out.assign_if_not_set(pool_, bv_out);
+    mp_g_p.assign_if_not_set(pool_, bv_product_);
+    mp_g_z.assign_if_not_set(pool_, bv_zero_);
+
+
+    const bvector_type* enum_bv;
+
+    const bvector_type * bv_non_null = sv_ptr_->get_null_bvector();
+    if (bv_non_null)
+    {
+        // TODO: optimize with 2-way ops
+        bv_product_ = bv_in;
+        bv_product_.bit_and(*bv_non_null);
+        enum_bv = &bv_product_;
+    }
+    else // non-NULL vector is not available
+    {
+        enum_bv = &bv_in;
+        // if we have any elements mapping into "0" on the other end
+        // we map it once (chances are there are many duplicates)
+        //
+        
+        if (have_stats_) // pre-attached translation statistics
+        {
+            bv_product_ = bv_in;
+            unsigned cnt1 = bv_product_.count();
+            bv_product_.bit_sub(bv_zero_);
+            unsigned cnt2 = bv_product_.count();
+            
+            BM_ASSERT(cnt2 <= cnt1);
+            
+            if (cnt1 != cnt2) // mapping included 0 elements
+                bv_out.set_bit_no_check(0);
+            
+            enum_bv = &bv_product_;
+        }
+    }
+
+    
+
+    unsigned buf_cnt, nb_old, nb;
+    buf_cnt = nb_old = 0;
+    
+    typename bvector_type::enumerator en(enum_bv->first());
+    for (; en.valid(); ++en)
+    {
+        typename SV::size_type idx = *en;
+        idx = sv_ptr_->translate_address(idx);
+        
+        nb = unsigned(idx >> bm::set_block_shift);
+        if (nb != nb_old) // new blocks
+        {
+            if (buf_cnt)
+            {
+                sv_ptr_->gather(&gb_->buffer_[0], &gb_->gather_idx_[0], buf_cnt, BM_SORTED_UNIFORM);
+                bm::combine_or(bv_out, &gb_->buffer_[0], &gb_->buffer_[buf_cnt]);
+                buf_cnt ^= buf_cnt;
+            }
+            nb_old = nb;
+            gb_->gather_idx_[buf_cnt++] = idx;
+        }
+        else
+        {
+            gb_->gather_idx_[buf_cnt++] = idx;
+        }
+        
+        if (buf_cnt == sv_g_size)
+        {
+            sv_ptr_->gather(&gb_->buffer_[0], &gb_->gather_idx_[0], buf_cnt, BM_SORTED_UNIFORM);
+            bm::combine_or(bv_out, &gb_->buffer_[0], &gb_->buffer_[buf_cnt]);
+            buf_cnt ^= buf_cnt;
+        }
+    } // for en
+    if (buf_cnt)
+    {
+        sv_ptr_->gather(&gb_->buffer_[0], &gb_->gather_idx_[0], buf_cnt, BM_SORTED_UNIFORM);
+        bm::combine_or(bv_out, &gb_->buffer_[0], &gb_->buffer_[buf_cnt]);
+    }
+
+}
+
+
+//----------------------------------------------------------------------------
+
+template<typename SV>
+void set2set_11_transform<SV>::one_pass_run(const bvector_type&        bv_in,
+                                            const    SV&               sv_brel,
+                                            bvector_type&              bv_out)
+{
+    if (sv_brel.empty())
+        return; // nothing to do
+
+    bv_out.init();
+
+    //const typename SV::bvector_type * bv_non_null = sv_brel.get_null_bvector();
+    typename SV::const_iterator it = sv_brel.begin();
+    for (; it.valid(); ++it)
+    {
+        typename SV::value_type t_id = *it;
+        bm::id_t idx = it.pos();
+        if (bv_in.test(idx))
+        {
+            bv_out.set_bit_no_check(t_id);
+        }
+    } // for
+}
 
 
 //----------------------------------------------------------------------------
@@ -470,25 +754,28 @@ template<typename SV>
 void sparse_vector_scanner<SV>::find_nonzero(const SV& sv, 
                                              typename SV::bvector_type& bv_out)
 {
-    bool first = true;
+    bvector_type* scan_list[SV::sv_plains];
+
+    unsigned cnt = 0;
     for (unsigned i = 0; i < sv.plains(); ++i)
     {
-        const typename SV::bvector_type* bv_plain = sv.get_plain(i);
-        if (bv_plain)
+        const bvector_type* bv = sv.get_plain(i);
+        if (bv)
         {
-            if (first) // first found plain - use simple assignment
-            {
-                bv_out = *bv_plain;
-                first = false;
-            }
-            else // for everything else - use OR
-            {
-                bv_out.bit_or(*bv_plain);
-            }
+            const typename bvector_type::blocks_manager_type& bman = bv->get_blocks_manager();
+            if (bman.is_init())
+                scan_list[cnt++] = sv.get_plain(i);
         }
-    } // for i
-    if (first) // no plains were found, just clear the result
-        bv_out.clear(true);
+    }
+    if (cnt)
+    {
+        bm::aggregator<typename SV::bvector_type> agg;
+        agg.combine_or(bv_out, scan_list, cnt);
+    }
+    else
+    {
+        bv_out.clear();
+    }
 }
 
 //----------------------------------------------------------------------------

@@ -215,6 +215,12 @@ bm::id_t sse2_bit_count_op(const __m128i* BMRESTRICT block,
 #define VECT_OR_ARR(dst, src, src_end) \
     sse2_or_arr((__m128i*) dst, (__m128i*) (src), (__m128i*) (src_end))
 
+#define VECT_OR_ARR_3WAY(dst, src1, src2, src1_end) \
+    sse2_or_arr_3way((__m128i*) (dst), (__m128i*) (src1), (__m128i*) (src2), (__m128i*) (src1_end))
+
+#define VECT_OR_ARR_5WAY(dst, src1, src2, src3, src4, src1_end) \
+    sse2_or_arr_5way((__m128i*) (dst), (__m128i*) (src1), (__m128i*) (src2), (__m128i*) (src3), (__m128i*) (src4), (__m128i*) (src1_end))
+
 #define VECT_SUB_ARR(dst, src, src_end) \
     sse2_sub_arr((__m128i*) dst, (__m128i*) (src), (__m128i*) (src_end))
 
@@ -329,7 +335,7 @@ bm::id_t sse2_bit_block_calc_count_change(const __m128i* BMRESTRICT block,
            }
            else
            {
-               if ((w0=blk[0]))
+               if (0!=(w0=blk[0]))
                {
                    BM_INCWORD_BITCOUNT(count, tcnt[0]);
                    count -= !(w_prev ^ (w0 & 1));
@@ -340,7 +346,7 @@ bm::id_t sse2_bit_block_calc_count_change(const __m128i* BMRESTRICT block,
                    count -= !w_prev; w_prev ^= w_prev;
                }  
            }
-           if ((w0=blk[1]))
+           if (0!=(w0=blk[1]))
            {
                BM_INCWORD_BITCOUNT(count, tcnt[1]);
                count -= !(w_prev ^ (w0 & 1));
@@ -350,7 +356,7 @@ bm::id_t sse2_bit_block_calc_count_change(const __m128i* BMRESTRICT block,
            {
                count -= !w_prev; w_prev ^= w_prev;
            }    
-           if ((w0=blk[2]))
+           if (0!=(w0=blk[2]))
            {
                BM_INCWORD_BITCOUNT(count, tcnt[2]);
                count -= !(w_prev ^ (w0 & 1));
@@ -360,7 +366,7 @@ bm::id_t sse2_bit_block_calc_count_change(const __m128i* BMRESTRICT block,
            {
                count -= !w_prev; w_prev ^= w_prev;
            }      
-           if ((w0=blk[3]))
+           if (0!=(w0=blk[3]))
            {
                BM_INCWORD_BITCOUNT(count, tcnt[3]);
                count -= !(w_prev ^ (w0 & 1));

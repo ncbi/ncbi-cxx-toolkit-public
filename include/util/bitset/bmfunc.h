@@ -799,8 +799,8 @@ unsigned gap_test_unr(const T* buf, const unsigned pos)
 
     BM_ASSERT(res == bm::gap_test(buf, pos));
     return res;
-#endif
-#if defined(BMSSE42OPT)
+//#endif
+#elif defined(BMSSE42OPT)
     unsigned start = 1;
     unsigned end = 1 + ((*buf) >> 3);
     unsigned dsize = end - start;
@@ -2751,25 +2751,25 @@ template<class T> void gap_set_all(T* buf,
     \param from - one block start
     \param to   - one block end
     \param value - (block value)1 or 0
-    \param set_max - max possible bitset length
-    
+ 
    @ingroup gapfunc
 */
 template<class T> 
 void gap_init_range_block(T* buf,
                           T  from,
                           T  to,
-                          T  value,
-                          unsigned set_max)
+                          T  value)
+                          //unsigned set_max)
 {
     BM_ASSERT(value == 0 || value == 1);
+    const unsigned set_max = bm::bits_in_block;
 
     unsigned gap_len;
     if (from == 0)
     {
         if (to == set_max - 1)
         {
-            gap_set_all(buf, set_max, value);
+            bm::gap_set_all(buf, set_max, value);
         }
         else
         {
@@ -3639,8 +3639,9 @@ template<typename T> void bit_invert(T* start, T* end)
 /*! @brief Returns "true" if all bits in the block are 1
     @ingroup bitfunc 
 */
-inline bool is_bits_one(const bm::wordop_t* start, 
-                        const bm::wordop_t* end)
+inline
+bool is_bits_one(const bm::wordop_t* start,
+                 const bm::wordop_t* end)
 {
 #if defined(BMSSE42OPT) || defined(BMAVX2OPT)
     return VECT_IS_ONE_BLOCK(start, end);
@@ -4554,29 +4555,121 @@ bm::id_t bit_operation_or_any(const bm::word_t* BMRESTRICT src1,
 
    @ingroup bitfunc
 */
-inline void bit_block_or(bm::word_t* BMRESTRICT dst, 
-                         const bm::word_t* BMRESTRICT src)
+inline 
+bool bit_block_or(bm::word_t* BMRESTRICT dst, 
+                  const bm::word_t* BMRESTRICT src)
 {
 #ifdef BMVECTOPT
-    VECT_OR_ARR(dst, src, src + bm::set_block_size);
+    return VECT_OR_ARR(dst, src, src + bm::set_block_size);
 #else
     const bm::wordop_t* BMRESTRICT wrd_ptr = (wordop_t*)src;
-    const bm::wordop_t* BMRESTRICT wrd_end = (wordop_t*)(src + set_block_size);
+    const bm::wordop_t* BMRESTRICT wrd_end = (wordop_t*)(src + bm::set_block_size);
     bm::wordop_t* BMRESTRICT dst_ptr = (wordop_t*)dst;
+
+    bm::wordop_t acc = 0;
+    const bm::wordop_t not_acc = acc = ~acc;
 
     do
     {
-        dst_ptr[0] |= wrd_ptr[0];
-        dst_ptr[1] |= wrd_ptr[1];
-        dst_ptr[2] |= wrd_ptr[2];
-        dst_ptr[3] |= wrd_ptr[3];
+        acc &= (dst_ptr[0] |= wrd_ptr[0]);
+        acc &= (dst_ptr[1] |= wrd_ptr[1]);
+        acc &= (dst_ptr[2] |= wrd_ptr[2]);
+        acc &= (dst_ptr[3] |= wrd_ptr[3]);
 
-        dst_ptr+=4;
-        wrd_ptr+=4;
+        dst_ptr+=4;wrd_ptr+=4;
 
     } while (wrd_ptr < wrd_end);
+    return acc == not_acc;
 #endif
 }
+
+/*!
+   \brief 3 way (target, source1, source2) bitblock OR operation.
+   Function does not analyse availability of source and destination blocks.
+
+   \param dst - destination block.
+   \param src - source block.
+ 
+   @return 1 if produced block of ALL ones
+
+   @ingroup bitfunc
+*/
+inline
+bool bit_block_or_3way(bm::word_t* BMRESTRICT dst,
+                        const bm::word_t* BMRESTRICT src1,
+                        const bm::word_t* BMRESTRICT src2)
+{
+#ifdef BMVECTOPT
+    return VECT_OR_ARR_3WAY(dst, src1, src2, src1 + bm::set_block_size);
+#else
+    const bm::wordop_t* BMRESTRICT wrd_ptr1 = (wordop_t*)src1;
+    const bm::wordop_t* BMRESTRICT wrd_end1 = (wordop_t*)(src1 + set_block_size);
+    const bm::wordop_t* BMRESTRICT wrd_ptr2 = (wordop_t*)src2;
+    bm::wordop_t* BMRESTRICT dst_ptr = (wordop_t*)dst;
+
+    bm::wordop_t acc = 0;
+    const bm::wordop_t not_acc = acc = ~acc;
+    do
+    {
+        acc &= (dst_ptr[0] |= wrd_ptr1[0] | wrd_ptr2[0]);
+        acc &= (dst_ptr[1] |= wrd_ptr1[1] | wrd_ptr2[1]);
+        acc &= (dst_ptr[2] |= wrd_ptr1[2] | wrd_ptr2[2]);
+        acc &= (dst_ptr[3] |= wrd_ptr1[3] | wrd_ptr2[3]);
+        
+        dst_ptr+=4; wrd_ptr1+=4;wrd_ptr2+=4;
+        
+    } while (wrd_ptr1 < wrd_end1);
+    return acc == not_acc;
+#endif
+}
+
+
+/*!
+   \brief 5 way (target, source1, source2) bitblock OR operation.
+   Function does not analyse availability of source and destination blocks.
+
+   \param dst - destination block.
+   \param src - source block.
+ 
+   @return 1 if produced block of ALL ones
+
+   @ingroup bitfunc
+*/
+inline
+bool bit_block_or_5way(bm::word_t* BMRESTRICT dst,
+                        const bm::word_t* BMRESTRICT src1,
+                        const bm::word_t* BMRESTRICT src2,
+                        const bm::word_t* BMRESTRICT src3,
+                        const bm::word_t* BMRESTRICT src4)
+{
+#ifdef BMVECTOPT
+    return VECT_OR_ARR_5WAY(dst, src1, src2, src3, src4, src1 + bm::set_block_size);
+#else
+    const bm::wordop_t* BMRESTRICT wrd_ptr1 = (wordop_t*)src1;
+    const bm::wordop_t* BMRESTRICT wrd_end1 = (wordop_t*)(src1 + set_block_size);
+    const bm::wordop_t* BMRESTRICT wrd_ptr2 = (wordop_t*)src2;
+    const bm::wordop_t* BMRESTRICT wrd_ptr3 = (wordop_t*)src3;
+    const bm::wordop_t* BMRESTRICT wrd_ptr4 = (wordop_t*)src4;
+    bm::wordop_t* BMRESTRICT dst_ptr = (wordop_t*)dst;
+
+    bm::wordop_t acc = 0;
+    const bm::wordop_t not_acc = acc = ~acc;
+    do
+    {
+        acc &= (dst_ptr[0] |= wrd_ptr1[0] | wrd_ptr2[0] | wrd_ptr3[0] | wrd_ptr4[0]);
+        acc &= (dst_ptr[1] |= wrd_ptr1[1] | wrd_ptr2[1] | wrd_ptr3[1] | wrd_ptr4[1]);
+        acc &= (dst_ptr[2] |= wrd_ptr1[2] | wrd_ptr2[2] | wrd_ptr3[2] | wrd_ptr4[2]);
+        acc &= (dst_ptr[3] |= wrd_ptr1[3] | wrd_ptr2[3] | wrd_ptr3[3] | wrd_ptr4[3]);
+        
+        dst_ptr+=4;
+        wrd_ptr1+=4;wrd_ptr2+=4;wrd_ptr3+=4;wrd_ptr4+=4;
+        
+    } while (wrd_ptr1 < wrd_end1);
+    return acc == not_acc;
+#endif
+}
+
+
 
 
 /*!
@@ -5936,7 +6029,7 @@ operation_functions<T>::bit_op_count_table_[bm::set_END] = {
 
 const unsigned short set_bitscan_wave_size = 2;
 /*!
-    \brief Unpacks word wave (2x 32-bit words)
+    \brief Unpacks word wave (Nx 32-bit words)
     \param w_ptr - pointer on wave start
     \param bits - pointer on the result array
     \return number of bits in the list
@@ -5965,6 +6058,99 @@ unsigned short bitscan_wave(const bm::word_t* w_ptr, unsigned char* bits)
     cnt0 = (unsigned short)(cnt0 + cnt1);
 #endif
     return cnt0;
+}
+
+
+/**
+    bit index to word gather-scatter algorithm
+    @ingroup bitfunc
+    @internal
+*/
+template<typename TRGW, typename IDX, typename SZ>
+void bit_block_gather_scatter(TRGW* arr, const bm::word_t* blk,
+                              const IDX* idx, SZ size, unsigned start, unsigned bit_idx)
+{
+#if defined(BM64_SSE4)
+    // optimized for unsigned
+    if (bm::conditional<sizeof(TRGW)==4 && sizeof(IDX)==4>::test())
+    {
+        sse4_bit_block_gather_scatter(arr, blk, idx, size, start, bit_idx);
+        return;
+    }
+#elif defined(BM64_AVX2)
+    if (bm::conditional<sizeof(TRGW)==4 && sizeof(IDX)==4>::test())
+    {
+        avx2_bit_block_gather_scatter(arr, blk, idx, size, start, bit_idx);
+        return;
+    }
+#endif
+
+    const unsigned len = (size - start);
+    const unsigned len_unr = len - (len % 2);
+    unsigned k;
+    for (k = 0; k < len_unr; k+=2)
+    {
+        const unsigned base = start + k;
+
+        const unsigned nbitA = unsigned(idx[base] & bm::set_block_mask);
+        arr[base]   |= TRGW(bool(blk[nbitA >> bm::set_word_shift] & (1u << (nbitA & bm::set_word_mask))) << bit_idx); 
+        const unsigned nbitB = unsigned(idx[base + 1] & bm::set_block_mask);
+        arr[base+1] |= TRGW(bool(blk[nbitB >> bm::set_word_shift] & (1u << (nbitB & bm::set_word_mask))) << bit_idx);
+    }
+    for (; k < len; ++k)
+    {
+        unsigned nbit = unsigned(idx[start + k] & bm::set_block_mask);
+        arr[start + k] |= TRGW(bool(blk[nbit >> bm::set_word_shift] & (1u << (nbit & bm::set_word_mask))) << bit_idx);
+    }
+}
+
+/**
+    block boundaries look ahead
+    @internal
+*/
+inline
+unsigned idx_arr_block_lookup(const unsigned* idx, unsigned size, unsigned nb, unsigned start)
+{
+    BM_ASSERT(idx);
+    
+    if (nb == unsigned(idx[size-1] >> bm::set_block_shift))
+        return size;
+    
+#if defined(BMAVX2OPT)
+    return avx2_idx_arr_block_lookup(idx, size, nb, start);
+#elif defined(BMSSE42OPT)
+    return sse4_idx_arr_block_lookup(idx, size, nb, start);
+#else
+    // use 64-bit variable for parallel compare (SIMD style)
+    if (bm::conditional< sizeof(void*)==8 >::test())
+    {
+        const unsigned len = (size - start);
+        const unsigned len_unr = len - (len % 2);
+        
+        idx += start;
+        bm::id64_t nb64 = (nb << 31) | nb;
+        
+        unsigned k;
+        for (k = 0; k < len_unr; k+=2)
+        {
+            bm::id64_t i64 =
+                ((idx[k] >> bm::set_block_shift) << 31) | (idx[k+1] >> bm::set_block_shift);
+            if (nb64 != i64)
+                break;
+        }
+        for (; k < len; ++k)
+        {
+            if (nb != unsigned(idx[k] >> bm::set_block_shift))
+                break;
+        }
+        return start + k;
+    }
+    
+    for (;(start < size) &&
+          (nb == unsigned(idx[start] >> bm::set_block_shift)); ++start)
+    {}
+    return start;
+#endif
 }
 
 
