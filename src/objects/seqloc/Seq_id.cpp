@@ -1553,15 +1553,21 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
             {{
                 const CPDB_seq_id& pid = id.GetPdb();
                 *label += pid.GetMol().Get();
-                unsigned char chain = static_cast<unsigned char>(pid.GetChain());
-                if (chain > ' ') {
-                    *label += '_';
-                    if (islower(chain)) {
-                        *label += string(SIZE_TYPE(2),
-                                         static_cast<char>(toupper(chain)));
-                    } else {
-                        *label += static_cast<char>(chain);
+                if (pid.IsSetChain()) {
+                    unsigned char chain = static_cast<unsigned char>(pid.GetChain());
+                    if (chain > ' ') {
+                        *label += '_';
+                        if (islower(chain)) {
+                            *label += string(SIZE_TYPE(2),
+                                             static_cast<char>(toupper(chain)));
+                        } else {
+                            *label += static_cast<char>(chain);
+                        }
                     }
+                }
+                if (pid.IsSetChain_id()) {
+                    *label += '_';
+                    *label += pid.GetChain_id();
                 }
             }}
             break;
