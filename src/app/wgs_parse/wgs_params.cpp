@@ -570,9 +570,9 @@ static bool IsValidBioProjectId(const string& id, char first_accession_char)
                                };
 
     bad_format = 
-        CheckAccFirstChar(ACCESSION_FIRST_LETTER_N, first_accession_char) && id[3] != 'N' ||
-        CheckAccFirstChar(ACCESSION_FIRST_LETTER_D, first_accession_char) && id[3] != 'D' ||
-        CheckAccFirstChar(ACCESSION_FIRST_LETTER_E, first_accession_char) && id[3] != 'E';
+        (CheckAccFirstChar(ACCESSION_FIRST_LETTER_N, first_accession_char) && id[3] != 'N') ||
+        (CheckAccFirstChar(ACCESSION_FIRST_LETTER_D, first_accession_char) && id[3] != 'D') ||
+        (CheckAccFirstChar(ACCESSION_FIRST_LETTER_E, first_accession_char) && id[3] != 'E');
 
     if (bad_format) {
         ERR_POST_EX(0, 0, "BioProject accession number provided in command line does not match the source of the record: \"" << id << "\".");
@@ -617,7 +617,7 @@ static bool IsValidBiosample(const string& id)
     static const size_t MIN_SAM_ID_SIZE = 5;
     static const size_t MIN_SAMEA_ID_SIZE = 6;
 
-    size_t offset = -1;
+    size_t offset = 0;
     
     if (NStr::StartsWith(id, "SRS")) {
         offset = 3;
@@ -630,7 +630,7 @@ static bool IsValidBiosample(const string& id)
     }
 
 
-    if (offset == -1) {
+    if (offset == 0) {
         return false;
     }
 
@@ -889,6 +889,8 @@ bool SetParams(const CArgs& args)
                 return false;
             }
             break;
+
+        default:; // do nothing
     }
 
     params_imp.m_trust_version = args["V"].AsBoolean();

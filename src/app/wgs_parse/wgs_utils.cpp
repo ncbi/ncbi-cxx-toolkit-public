@@ -55,8 +55,8 @@ CScope& GetScope()
     return scope;
 }
 
-static const size_t MAX_SEVEN_DIGITS_NUM = 9999999;
-static const size_t MAX_SIX_DIGITS_NUM = 999999;
+static const int MAX_SEVEN_DIGITS_NUM = 9999999;
+static const int MAX_SIX_DIGITS_NUM = 999999;
 
 size_t GetMaxAccessionLen(int accession_num)
 {

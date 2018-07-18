@@ -58,7 +58,6 @@ class CWGSParseApp : public CNcbiApplication
 public:
     CWGSParseApp()
     {
-        SetVersionByBuild(0);
     }
 
 private:
@@ -1292,8 +1291,8 @@ static bool ReplaceOldCitSub(CRef<CSeq_entry>& id_entry, const CCit_sub& new_cit
                 }
 
                 if (old_cit_sub == nullptr ||
-                    GetParams().GetUpdateMode() == eUpdateFull && !IsFirstCitSubDateEarlier(*old_cit_sub, *cur_cit_sub) ||
-                    GetParams().GetUpdateMode() != eUpdateFull && IsFirstCitSubDateEarlier(*old_cit_sub, *cur_cit_sub)) {
+                    (GetParams().GetUpdateMode() == eUpdateFull && !IsFirstCitSubDateEarlier(*old_cit_sub, *cur_cit_sub)) ||
+                    (GetParams().GetUpdateMode() != eUpdateFull && IsFirstCitSubDateEarlier(*old_cit_sub, *cur_cit_sub))) {
                     old_cit_sub = cur_cit_sub;
                     before_cit_sub = descr;
                 }

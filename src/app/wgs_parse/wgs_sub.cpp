@@ -84,8 +84,8 @@ static void RemoveDatesFromDescrs(CSeq_descr::Tdata& descrs, bool remove_creatio
 {
     for (auto descr = descrs.begin(); descr != descrs.end();) {
 
-        if ((*descr)->IsCreate_date() && remove_creation ||
-            (*descr)->IsUpdate_date() && remove_update) {
+        if (((*descr)->IsCreate_date() && remove_creation) ||
+            ((*descr)->IsUpdate_date() && remove_update)) {
             descr = descrs.erase(descr);
         }
         else
@@ -787,8 +787,8 @@ static void RemoveGbblockSource(CSeq_entry& entry, const TTaxNameInfo& info)
                         source_with_dot == source + ".";
                     }
 
-                    if (info.m_taxname && (source == *info.m_taxname || source_with_dot == *info.m_taxname) ||
-                        info.m_old_taxname && (source == *info.m_old_taxname || source_with_dot == *info.m_old_taxname)) {
+                    if ((info.m_taxname && (source == *info.m_taxname || source_with_dot == *info.m_taxname)) ||
+                        (info.m_old_taxname && (source == *info.m_old_taxname || source_with_dot == *info.m_old_taxname))) {
                         gb_block.ResetSource();
                     }
 
@@ -1378,7 +1378,7 @@ static void AddMasterToSecondary(CSeq_entry& entry, const CBlockAdaptor& block)
 
 static bool NeedToAddDbLink(const CSeq_entry& entry)
 {
-    return entry.IsSeq() || entry.IsSet() && entry.GetSet().IsSetClass() && entry.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot;
+    return entry.IsSeq() || (entry.IsSet() && entry.GetSet().IsSetClass() && entry.GetSet().GetClass() == CBioseq_set::eClass_nuc_prot);
 }
 
 static bool AddDblink(CSeq_entry& entry, const CUser_object& dblink, size_t dblink_order_num)
@@ -1445,11 +1445,10 @@ struct CTitleInfo
 
 static void ReplaceInTitle(string& title, const string& what, string& change)
 {
-    bool space_added = false;
     if (!change.empty()) {
         change += ' ';
-        space_added = true;
     }
+
     NStr::ReplaceInPlace(title, what, change);
 
     if (change.empty()) {

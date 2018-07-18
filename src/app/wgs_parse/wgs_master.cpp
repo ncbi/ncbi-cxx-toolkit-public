@@ -252,13 +252,13 @@ static void CheckComments(const CSeq_entry& entry, StringProcessFunc process, bo
 
 static bool IsBiosourcesSame(CBioSource& bio_src_master, const CBioSource& bio_src)
 {
-    if (bio_src_master.IsSetGenome() != bio_src.IsSetGenome() ||
-        bio_src_master.IsSetGenome() && bio_src_master.GetGenome() != bio_src.GetGenome()) {
+    if ((bio_src_master.IsSetGenome() != bio_src.IsSetGenome()) ||
+        (bio_src_master.IsSetGenome() && bio_src_master.GetGenome() != bio_src.GetGenome())) {
         return false;
     }
 
-    if (bio_src_master.IsSetOrigin() != bio_src.IsSetOrigin() ||
-        bio_src_master.IsSetOrigin() && bio_src_master.GetOrigin() != bio_src.GetOrigin()) {
+    if ((bio_src_master.IsSetOrigin() != bio_src.IsSetOrigin()) ||
+        (bio_src_master.IsSetOrigin() && bio_src_master.GetOrigin() != bio_src.GetOrigin())) {
         return false;
     }
 
@@ -832,9 +832,9 @@ static void CreatePub(CBioseq& bioseq, const CPubdesc& pubdescr)
 static bool IsResetGenome()
 {
     return GetParams().GetSource() == eNCBI ||
-        GetParams().GetUpdateMode() != eUpdateAssembly &&
+        (GetParams().GetUpdateMode() != eUpdateAssembly &&
         GetParams().GetUpdateMode() != eUpdateNew &&
-        GetParams().GetUpdateMode() != eUpdateFull;
+        GetParams().GetUpdateMode() != eUpdateFull);
 }
 
 static bool CreateBiosource(CBioseq& bioseq, CBioSource& biosource, const list<COrgRefInfo>& org_refs)
