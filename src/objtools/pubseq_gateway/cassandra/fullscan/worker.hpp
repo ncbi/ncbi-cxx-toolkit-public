@@ -93,6 +93,7 @@ class CCassandraFullscanWorker
     bool StartQuery(size_t index);
     bool ProcessQueryResult(size_t index);
     CCassandraFullscanPlan::TQueryPtr GetNextTask();
+    void ProcessError(string const & msg);
     void ProcessError(exception const & e);
 
     unique_ptr<ICassandraFullscanConsumer> m_RowConsumer;

@@ -99,6 +99,14 @@ CCassandraFullscanPlan::TQueryPtr CCassandraFullscanWorker::GetNextTask()
     return nullptr;
 }
 
+void CCassandraFullscanWorker::ProcessError(string const& msg)
+{
+    if (m_FirstError.empty()) {
+        m_FirstError = msg;
+    }
+    m_HadError = true;
+}
+
 void CCassandraFullscanWorker::ProcessError(exception const & e)
 {
     if (m_FirstError.empty()) {
@@ -233,7 +241,13 @@ void CCassandraFullscanWorker::operator()()
             ++i
         ) {
             if (*(m_Queries[i].data_ready)) {
-                contunue_processing = ProcessQueryResult(i);
+                if (m_Queries[i].query == nullptr) {
+                    string error_msg = "context.data_ready == true while context.query === nullptr";
+                    ERR_POST(Warning << error_msg);
+                    ProcessError(error_msg);
+                } else {
+                    contunue_processing = ProcessQueryResult(i);
+                }
             }
         }
         contunue_processing = contunue_processing && m_RowConsumer->Tick();
