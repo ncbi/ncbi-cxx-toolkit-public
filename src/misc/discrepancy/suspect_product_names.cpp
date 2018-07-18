@@ -226,7 +226,8 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
         else {
             size_t rule_num = 0;
             for (auto rule: rules->Get()) {
-                if (Hits[rule_num]) {
+                //if (Hits[rule_num]) {
+                if (1) {
                     if (!rule->StringMatchesSuspectProductRule(prot_name)) {
                         rule_num++;
                         continue;
