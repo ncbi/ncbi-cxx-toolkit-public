@@ -51,6 +51,12 @@ imported have to be identified as such. When building PCRE, the appropriate
 export setting is defined in pcre_internal.h, which includes this file. So we
 don't change existing definitions of PCRE_EXP_DECL and PCRECPP_EXP_DECL. */
 
+/* NCBI fix: force to link statically on Windows */
+#if defined(_WIN32)
+#  define PCRE_STATIC 1
+#endif
+
+
 #if defined(_WIN32) && !defined(PCRE_STATIC)
 #  ifndef PCRE_EXP_DECL
 #    define PCRE_EXP_DECL  extern __declspec(dllimport)
