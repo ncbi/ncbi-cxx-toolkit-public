@@ -41,6 +41,7 @@
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <atomic>
+#include <functional>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
