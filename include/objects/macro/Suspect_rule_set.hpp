@@ -42,6 +42,7 @@
 
 // generated includes
 #include <objects/macro/Suspect_rule_set_.hpp>
+#include <util/multipattern_search.hpp>
 
 // generated classes
 
@@ -62,11 +63,15 @@ public:
     static CConstRef<CSuspect_rule_set> GetOrganelleProductRules(const string& name = "");
     static CConstRef<CSuspect_rule_set> GetProductRules(const string& name = "");
 
+    void Screen(const char* input, char* output) const;
+    void Screen(const string& input, char* output) const { Screen(input.c_str(), output); }
+
 private:
     // Prohibit copy constructor and assignment operator
     CSuspect_rule_set(const CSuspect_rule_set& value);
     CSuspect_rule_set& operator=(const CSuspect_rule_set& value);
 
+    mutable unique_ptr<CMultipatternSearch> m_FSM;
 };
 
 /////////////////// CSuspect_rule_set inline methods

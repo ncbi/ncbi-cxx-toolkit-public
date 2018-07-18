@@ -36,6 +36,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/macro/Search_func.hpp>
+#include <util/multipattern_search.hpp>
 
 ///// This file is included in macro__.cpp (sic!), so these statics are visible elsewhere
 namespace
@@ -399,10 +400,10 @@ bool CSearch_func::x_StringContainsUnbalancedParentheses(const string& str) cons
     while (!sch_src.empty()) {
         pos = sch_src.find_first_of("()[]");
         if (pos == string::npos) {
-        if (strtmp.empty()) {
-            return false;
-        }
-        else return true;
+            if (strtmp.empty()) {
+                return false;
+            }
+            else return true;
         }
         else {
             ch_src = sch_src[pos];
@@ -463,17 +464,17 @@ bool CSearch_func::Match(const CMatchString& str) const
                 const CString_constraint& str_cons = GetString_constraint();
                 return str_cons.Match(str);
             }
-        case CSearch_func::e_Contains_plural:
+        case e_Contains_plural:
             return x_StringMayContainPlural(str);
-        case  CSearch_func::e_N_or_more_brackets_or_parentheses:
+        case e_N_or_more_brackets_or_parentheses:
             return x_ContainsNorMoreSetsOfBracketsOrParentheses(str, GetN_or_more_brackets_or_parentheses());
-        case CSearch_func::e_Three_numbers:
+        case e_Three_numbers:
             return x_ContainsThreeOrMoreNumbersTogether (str);
-        case CSearch_func::e_Underscore:
+        case e_Underscore:
             return x_StringContainsUnderscore (str);
-        case CSearch_func::e_Prefix_and_numbers:
+        case e_Prefix_and_numbers:
             return x_IsPrefixPlusNumbers (str, GetPrefix_and_numbers());
-        case CSearch_func::e_All_caps:
+        case e_All_caps:
             if (orig.find_first_not_of(alpha_str) != string::npos) {
                 return false;
             }
@@ -481,19 +482,71 @@ bool CSearch_func::Match(const CMatchString& str) const
                 return true;
             }
             else return false;
-        case CSearch_func::e_Unbalanced_paren:
+        case e_Unbalanced_paren:
             return x_StringContainsUnbalancedParentheses (str);
-        case CSearch_func::e_Too_long:
+        case e_Too_long:
             if (NStr::FindNoCase (orig, "bifunctional") == string::npos && NStr::FindNoCase (orig, "multifunctional") == string::npos && orig.size() > (unsigned) GetToo_long()) {
                 return true;
             }
             else return false;
-        case CSearch_func::e_Has_term:
+        case e_Has_term:
             return x_ProductContainsTerm(str, GetHas_term());
         default: break;
     }
     return false;
 };
+
+
+
+string CSearch_func::GetRegex() const
+{
+    switch (Which()) {
+        case e_String_constraint:
+            {
+                const CString_constraint& constr = GetString_constraint();
+                if (constr.IsSetMatch_text()) {
+                    if (constr.GetNot_present()) {
+                        NCBI_THROW(CException, eUnknown, "GetRegex is not implemented for NOT-PRESENT: " + constr.GetMatch_text());
+                    }
+                    string str = CMultipatternSearch::QuoteString(constr.GetMatch_text());
+                    if (constr.IsSetIgnore_words() && constr.GetIgnore_words().IsSet()) {
+                        for (auto words : constr.GetIgnore_words().Get()) {
+                            if (words->IsSetSynonyms()) {
+                                for (auto syn : words->GetSynonyms()) {
+                                    str += "|" + CMultipatternSearch::QuoteString(syn);
+                                }
+                            }
+                        }
+                    }
+                    str = "/" + str + "/i";
+                    return str;
+                }
+                else {
+                    NCBI_THROW(CException, eUnknown, "GetRegex Match text is not set");
+                }
+            }
+        case e_Contains_plural:
+            return "/[A-Za-hj-rtv-z]s\\b/";
+        //case e_N_or_more_brackets_or_parentheses:
+        case e_Three_numbers:
+            return "/\\d\\d\\d/";
+        case e_Underscore:
+            return "/_/";
+        case e_Prefix_and_numbers:
+            return "/^" + CMultipatternSearch::QuoteString(GetPrefix_and_numbers()) + "\\d+$/";
+        case e_All_caps:
+            return "/^[A-Z]+$/";
+        case e_Unbalanced_paren:
+            return "/[\\(\\)\\[\\]]/";
+        case e_Too_long:
+            return "/.$/";
+        //case e_Has_term:
+        default: break;
+    }
+    NCBI_THROW(CException, eUnknown, "GetRegex is not implemented for subtype: " + NStr::IntToString(Which()));
+    return "";
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

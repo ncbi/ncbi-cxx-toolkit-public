@@ -147,8 +147,22 @@ CConstRef<CSuspect_rule_set> CSuspect_rule_set::GetProductRules(const string& na
 }
 
 
-END_objects_SCOPE // namespace ncbi::objects::
+void CSuspect_rule_set::Screen(const char* input, char* output) const
+{
+    if (!m_FSM) {
+        m_FSM.reset(new CMultipatternSearch);
+        vector<string> patterns;
+        for (auto rule: Get()) {
+            const CSearch_func& find = rule->GetFind();
+            patterns.push_back(find.GetRegex());
+        }
+        m_FSM->AddPatterns(patterns);
+    }
+    m_FSM->Search(input, [&](size_t n){ output[n] = 1; });
+}
 
+
+END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
 /* Original file checksum: lines: 57, chars: 1741, CRC32: b1125738 */

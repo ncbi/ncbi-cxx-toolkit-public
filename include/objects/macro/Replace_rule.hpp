@@ -42,6 +42,8 @@
 
 // generated includes
 #include <objects/macro/Replace_rule_.hpp>
+#include <objects/macro/String_constraint.hpp>
+
 
 // generated classes
 

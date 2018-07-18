@@ -63,6 +63,7 @@ public:
 
     bool Empty() const;
     bool Match(const CMatchString& str) const;
+    string GetRegex() const;
 
 private:
     // Prohibit copy constructor and assignment operator
