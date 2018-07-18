@@ -57,6 +57,10 @@ class CRegExFSA;
 
 class NCBI_XUTIL_EXPORT CMultipatternSearch
 {
+private:
+    // Forward declaration required for Linux build
+    template<typename T> struct CFoundCallback_Impl;
+
 public:
     CMultipatternSearch();
     ~CMultipatternSearch();
@@ -129,9 +133,6 @@ public:
     ///  Search(str, [](size_t pattern, size_t position) { cout << "Found " << pattern << " " << position << "\n"; });
     ///  Search(str, [](size_t pattern, size_t position) -> CMultipatternSearch::EOnFind { cout << "Found " << pattern << " " << position << "\n";  return CMultipatternSearch::eContinueSearch; });
     /// @endcode
-
-    // forward declaration for Linux build
-    template<typename T> struct CFoundCallback_Impl;
 
     template <typename TFoundCallback> void Search(const char*   input, TFoundCallback found_callback) const
     { x_Parse(input, CFoundCallback_Impl<TFoundCallback>(found_callback)); }
