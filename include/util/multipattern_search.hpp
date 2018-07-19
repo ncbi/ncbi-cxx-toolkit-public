@@ -57,10 +57,6 @@ class CRegExFSA;
 
 class NCBI_XUTIL_EXPORT CMultipatternSearch
 {
-private:
-    // Forward declaration required for Linux build
-    template<typename T> struct CFoundCallback_Impl;
-
 public:
     CMultipatternSearch();
     ~CMultipatternSearch();
