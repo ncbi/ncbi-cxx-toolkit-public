@@ -71,21 +71,29 @@ static void GetFiles(const string& top_dir, const string& cur_dir, const string&
 
 bool GetFilesFromDir(const string& mask, list<string>& files)
 {
-    string top_dir = CDirEntry::GetNearestExistingParentDir(mask);
-    string pure_mask = mask.substr(top_dir.size() + 1);
+    string top_dir_str = CDirEntry::GetNearestExistingParentDir(mask);
+    CDirEntry top_dir(top_dir_str);
 
-    size_t slash = pure_mask.find_last_of('\\');
-    if (slash == string::npos) {
-        slash = pure_mask.find_last_of('/');
+    if (top_dir.IsDir()) {
+        string pure_mask = mask.substr(top_dir_str.size() + 1);
+
+        size_t slash = pure_mask.find_last_of('\\');
+        if (slash == string::npos) {
+            slash = pure_mask.find_last_of('/');
+        }
+
+        bool recursive = false;
+        if (slash != string::npos) {
+            recursive = true;
+            pure_mask = pure_mask.substr(slash + 1);
+        }
+
+        GetFiles(top_dir_str, "", pure_mask, recursive, files);
+    }
+    else {
+        files.push_back(top_dir_str); // the only file
     }
 
-    bool recursive = false;
-    if (slash != string::npos) {
-        recursive = true;
-        pure_mask = pure_mask.substr(slash + 1);
-    }
-
-    GetFiles(top_dir, "", pure_mask, recursive, files);
     return !files.empty();
 }
 
