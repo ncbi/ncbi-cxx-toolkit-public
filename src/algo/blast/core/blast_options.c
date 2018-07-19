@@ -1927,6 +1927,7 @@ BlastHSPFilteringOptionsFree(BlastHSPFilteringOptions* opts)
     }
     opts->best_hit = BlastHSPBestHitOptionsFree(opts->best_hit);
     opts->culling_opts = BlastHSPCullingOptionsFree(opts->culling_opts);
+    opts->subject_besthit_opts = BlastHSPSubjectBestHitOptionsFree(opts->subject_besthit_opts);
     sfree(opts);
     return opts;
 }
