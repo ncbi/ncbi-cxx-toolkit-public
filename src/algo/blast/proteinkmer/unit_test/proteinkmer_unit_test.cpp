@@ -84,7 +84,8 @@ BOOST_AUTO_TEST_CASE(KmerResults)
 {
 	const int kNumHits = 6;
 	// nr_test has GIs from array subjid in the order given.
-	const int subjid[kNumHits] = {129296, 385145541, 448824824, 510032768, 129295, 677974076};
+	const TGi subjid[kNumHits] = { GI_CONST(129296), GI_CONST(385145541), GI_CONST(448824824),
+		GI_CONST(510032768), GI_CONST(129295), GI_CONST(677974076)};
 	const double scores[kNumHits] = {0.359375, 0.710938, 0.242188, 0.234375, 0.28125, 0.234375};
 	TBlastKmerPrelimScoreVector prelim_vector;
 	for (int index=0; index<kNumHits; index++)
@@ -130,8 +131,9 @@ BOOST_AUTO_TEST_CASE(KmerResultsSet)
 	const int kNumHits1 = 6;
 	const int kNumHits2 = 2;
 	// nr_test has GIs from array subjid in the order given by subjid1.
-	const int subjid1[kNumHits1] = {129296, 385145541, 448824824, 510032768, 129295, 677974076};
-	const int subjid2[kNumHits2] = {129295, 677974076};
+	const TGi subjid1[kNumHits1] = { GI_CONST(129296), GI_CONST(385145541), GI_CONST(448824824),
+		GI_CONST(510032768), GI_CONST(129295), GI_CONST(677974076)};
+	const TGi subjid2[kNumHits2] = { GI_CONST(129295), GI_CONST(677974076)};
 	const double scores1[kNumHits1] = {0.359375, 0.710938, 0.242188, 0.234375, 0.28125, 0.234375};
 	const double scores2[kNumHits1] = {0.359375, 0.710938};
 	TBlastKmerPrelimScoreVector prelim_vector1;
@@ -215,8 +217,9 @@ BOOST_AUTO_TEST_CASE(KmerResultsSetPushBack)
 	const int kNumHits1 = 6;
 	const int kNumHits2 = 2;
 	// nr_test has GIs from array subjid in the order given by subjid1.
-	const int subjid1[kNumHits1] = {129296, 385145541, 448824824, 510032768, 129295, 677974076};
-	const int subjid2[kNumHits2] = {129295, 677974076};
+	const TGi subjid1[kNumHits1] = { GI_CONST(129296), GI_CONST(385145541), GI_CONST(448824824),
+		GI_CONST(510032768), GI_CONST(129295), GI_CONST(677974076)};
+	const TGi subjid2[kNumHits2] = { GI_CONST(129295), GI_CONST(677974076)};
 	const double scores1[kNumHits1] = {0.359375, 0.710938, 0.242188, 0.234375, 0.28125, 0.234375};
 	const double scores2[kNumHits1] = {0.359375, 0.710938};
 	TBlastKmerPrelimScoreVector prelim_vector1;
