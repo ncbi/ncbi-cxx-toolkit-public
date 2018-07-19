@@ -104,9 +104,9 @@ public:
                                   ///< fKeepOnClose takes the effect.
         fSigPipe_Restore = 0x040, ///< Restore SIGPIPE processing for child
                                   ///< process to system default.
-        fNewGroup        = 0x100  ///< UNIX: new process group will be
-                                  ///< created and child become the leader
-                                  ///< of the new process group.
+        fNewGroup        = 0x100  ///< UNIX: new process group will be created,
+                                  ///< and the child process will become the
+                                  ///< leader of the new process group.
     };
     typedef unsigned int TCreateFlags;  ///< bitwise OR of "ECreateFlag"
 
