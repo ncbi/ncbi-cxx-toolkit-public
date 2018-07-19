@@ -158,7 +158,7 @@ void CSuspect_rule_set::Screen(const char* input, char* output) const
         }
         m_FSM->AddPatterns(patterns);
     }
-    //m_FSM->Search(input, [&](size_t n){ output[n] = 1; });
+    m_FSM->Search(input, [&](size_t n){ output[n] = 1; });
 }
 
 

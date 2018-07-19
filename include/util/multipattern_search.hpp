@@ -130,10 +130,19 @@ public:
     ///  Search(str, [](size_t pattern, size_t position) -> CMultipatternSearch::EOnFind { cout << "Found " << pattern << " " << position << "\n";  return CMultipatternSearch::eContinueSearch; });
     /// @endcode
 
-    template <typename TFoundCallback> void Search(const char*   input, TFoundCallback found_callback) const
-    { x_Parse(input, CFoundCallback_Impl<TFoundCallback>(found_callback)); }
-    template <typename TFoundCallback> void Search(const string& input, TFoundCallback found_callback) const
-    { Search(input.c_str(), found_callback); }
+    typedef std::function<void(size_t)> VoidCall1;
+    typedef std::function<void(size_t, size_t)> VoidCall2;
+    typedef std::function<bool(size_t)> BoolCall1;
+    typedef std::function<bool(size_t, size_t)> BoolCall2;
+
+    void Search(const char* input,   VoidCall1 found_callback) const;
+    void Search(const string& input, VoidCall1 found_callback) const { Search(input.c_str(), found_callback); }
+
+    //template <typename TFoundCallback> void Search(const char*   input, TFoundCallback found_callback) const
+    //{ x_Parse(input, CFoundCallback_Impl<TFoundCallback>(found_callback)); }
+    //template <typename TFoundCallback> void Search(const string& input, TFoundCallback found_callback) const
+    //{ Search(input.c_str(), found_callback); }
+
     ///@}
 
 

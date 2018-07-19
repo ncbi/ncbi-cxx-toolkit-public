@@ -92,6 +92,31 @@ string CMultipatternSearch::QuoteString(const string& str)
 }
 
 
+/////////
+
+void CMultipatternSearch::Search(const char* input, VoidCall1 report) const
+{
+    const char* p = input;
+    size_t state = 1;
+
+    set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
+    for (auto e : emit) {
+        report(e);
+    }
+    while (true) {
+        state = m_FSM->m_States[state]->m_Trans[*p];
+        set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
+        for (auto e : emit) {
+            report(e);
+        }
+        if (!*p) {
+            return;
+        }
+        ++p;
+    }
+}
+
+
 void CMultipatternSearch::x_Parse(const char* input, CFoundCallback& report) const
 {
     const char* p = input;
