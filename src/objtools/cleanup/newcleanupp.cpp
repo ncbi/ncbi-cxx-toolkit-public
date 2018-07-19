@@ -3025,7 +3025,7 @@ void CNewCleanup_imp::ImprintBC( CImprint& imprint, EImprintBC is_status_change_
 
 typedef pair<string, CRef<CPub> >   TCit;
 struct TSortCit {
-    bool operator ()(const TCit& c1, const TCit& c2) {
+    bool operator ()(const TCit& c1, const TCit& c2) const {
 
         // First, try to compare case-insensitively
         // (We compare as if it were all-caps to match C's behavior )
@@ -3043,7 +3043,7 @@ struct TSortCit {
         // if they're still the same, fall back on cit-gen titles, if possible
         return CitGenTitlesLess(*c1.second, *c2.second);
     }
-    bool CitGenTitlesLess(const CPub& p1, const CPub& p2) {
+    bool CitGenTitlesLess(const CPub& p1, const CPub& p2) const {
         if ( ! p1.IsGen()  || ! p2.IsGen() ) {
             return false;
         }
@@ -4667,7 +4667,7 @@ public:
             inserter( char_set, char_set.begin() ) );
     }
 
-    bool operator()( const char ch ) {
+    bool operator()( const char ch ) const {
         return ( char_set.find(ch) != char_set.end() );
     }
 
@@ -5620,7 +5620,7 @@ public:
     const string &GetFwdName() const { return m_Fwd_name; }
     const string &GetRevName() const { return m_Rev_name; }
 
-    bool operator <( const CPCRParsedSet &rhs ) {
+    bool operator <( const CPCRParsedSet &rhs ) const {
         if ( int diff = NStr::CompareNocase( m_Fwd_seq, rhs.m_Fwd_seq ) )
             return diff < 0;
         if ( int diff = NStr::CompareNocase( m_Rev_seq, rhs.m_Rev_seq ) )
@@ -5779,7 +5779,7 @@ CRef<CPCRPrimerSet> s_ModernizePCRPrimerHalf (const string &seq, const string &n
 
 class CIsBadCRefPCRSubSource {
 public:
-    bool operator()( const CRef<CSubSource> &subsource ) {
+    bool operator()( const CRef<CSubSource> &subsource ) const {
         if( ! subsource ) {
             return true;
         }
