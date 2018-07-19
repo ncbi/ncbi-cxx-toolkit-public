@@ -215,7 +215,8 @@ extern char* SERV_WriteInfo(const SSERV_Info* info)
             s += sprintf(s, " S=%s", k_NY[info->mode & fSERV_Stateful]);
         if (info->type != fSERV_Dns  &&  (info->mode & fSERV_Secure))
             s += sprintf(s, " $=yes");
-        sprintf(s, " T=%lu", (unsigned long) info->time);
+        if (info->time)
+            sprintf(s, " T=%lu", (unsigned long) info->time);
         if (info->site & fSERV_Interzone)
             s += sprintf(s, " X=yes");
     }
