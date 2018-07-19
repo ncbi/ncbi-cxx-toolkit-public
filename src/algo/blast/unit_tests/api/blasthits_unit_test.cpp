@@ -1441,8 +1441,10 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         Blast_HSPListFree(hsp_list);
         BlastSequenceBlkFree(query_blk);
         BlastSequenceBlkFree(subject_blk);
+	BlastQuerySetUpOptionsFree(query_options);
         BlastHitSavingOptionsFree(hit_options);
         BlastQueryInfoFree(query_info);
+        BlastScoringOptionsFree(scoring_options);
     }
 
     BOOST_AUTO_TEST_CASE(testMaxHspsPerSubject)
@@ -1480,11 +1482,13 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         Blast_TrimHSPListByMaxHsps(hsp_list, hit_options);
         BOOST_REQUIRE_EQUAL(1, (int) hsp_list->hspcnt);
 
+	BlastQuerySetUpOptionsFree(query_options);
         Blast_HSPListFree(hsp_list);
         BlastSequenceBlkFree(query_blk);
         BlastSequenceBlkFree(subject_blk);
         BlastHitSavingOptionsFree(hit_options);
         BlastQueryInfoFree(query_info);
+	BlastScoringOptionsFree(scoring_options);
     }
 
     static void
@@ -1533,6 +1537,8 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         BlastSequenceBlkFree(query_blk);
         BlastSequenceBlkFree(subject_blk);
         BlastQueryInfoFree(query_info);
+	BlastHSPSubjectBestHitOptionsFree(subject_besthit);
+
     }
 
 BOOST_AUTO_TEST_SUITE_END()
