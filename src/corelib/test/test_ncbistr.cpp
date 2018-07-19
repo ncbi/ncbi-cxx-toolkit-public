@@ -4942,7 +4942,7 @@ BOOST_AUTO_TEST_CASE(s_HtmlEncode)
         string stest = "&Aacute;&scaron;&Gamma;&thinsp;&rang;&#x960;&#x1225;";
         string sdec = NStr::HtmlDecode(stest);
         string senc = NStr::HtmlEncode(sdec);
-        BOOST_CHECK_EQUAL(senc, "Á&#x161;&#x393;&#x2009;&#x232A;&#x960;&#x1225;");
+        BOOST_CHECK_EQUAL(senc, "&#xC1;&#x161;&#x393;&#x2009;&#x232A;&#x960;&#x1225;");
         BOOST_CHECK( CUtf8::MatchEncoding(sdec, eEncoding_UTF8));
         TStringUCS2    u2s = CUtf8::AsBasicString<TCharUCS2>(sdec);
     }
@@ -4957,6 +4957,7 @@ BOOST_AUTO_TEST_CASE(s_HtmlEncode)
         BOOST_CHECK_EQUAL(senc2, "amp = &amp;, preencoded = &amp;Aacute;&amp;#x960;, &amp;;");
         BOOST_CHECK_EQUAL(sdec2, stest);
     }
+#if 0
     {
     string input = "this is &#32; but it's not &#33; a &#35; not &#38; a &#43; sign is different from a &#45; you can use &lt; but not &gt; &#63; &Agrave; &Aacute; &Aring; &Eacute; &Eumi; &Ntilde; &Uacute;";
     string output = NStr::HtmlDecode(input);
@@ -4964,6 +4965,7 @@ BOOST_AUTO_TEST_CASE(s_HtmlEncode)
     string inagain = NStr::HtmlEncode(output);
     cout << inagain << endl;
     }
+#endif
 }
 
 
