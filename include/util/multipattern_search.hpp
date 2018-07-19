@@ -135,67 +135,19 @@ public:
     typedef std::function<bool(size_t)> BoolCall1;
     typedef std::function<bool(size_t, size_t)> BoolCall2;
 
-    void Search(const char* input,   VoidCall1 found_callback) const;
+    void Search(const char*   input, VoidCall1 found_callback) const;
     void Search(const string& input, VoidCall1 found_callback) const { Search(input.c_str(), found_callback); }
-
-    //template <typename TFoundCallback> void Search(const char*   input, TFoundCallback found_callback) const
-    //{ x_Parse(input, CFoundCallback_Impl<TFoundCallback>(found_callback)); }
-    //template <typename TFoundCallback> void Search(const string& input, TFoundCallback found_callback) const
-    //{ Search(input.c_str(), found_callback); }
-
+    void Search(const char*   input, VoidCall2 found_callback) const;
+    void Search(const string& input, VoidCall2 found_callback) const { Search(input.c_str(), found_callback); }
+    void Search(const char*   input, BoolCall1 found_callback) const;
+    void Search(const string& input, BoolCall1 found_callback) const { Search(input.c_str(), found_callback); }
+    void Search(const char*   input, BoolCall2 found_callback) const;
+    void Search(const string& input, BoolCall2 found_callback) const { Search(input.c_str(), found_callback); }
     ///@}
 
-
 private:
-    struct CFoundCallback
-    {
-        /// @param pattern
-        ///  The zero-based index of the found pattern (in the order in which it was AddPattern()ed).
-        ///  Note that this is the END position!
-        /// @param position
-        ///   The zero-based position in the input string where the pattern was found
-        ///     Note that this is not the beginning of the found match,
-        ///     this is a position on which FSM trigerred the report,
-        ///     normally, at the end of the match.
-        ///   e.g. given the input "abc",
-        ///     /abc/ will trigger at position 2 ('c'), and
-        ///     /abc\b/ will trigger at position 3 (end of string).
-        /// @return
-        ///   Whether to stop parsing; or to continue
-        virtual EOnFind operator()(size_t pattern, size_t position) const = 0;
-    };
-
-    /// Implementation of the Search() method
-    void x_Parse(const char* input, CFoundCallback& found_callback) const;
-
     /// Finit State Machine that does all work
     unique_ptr<CRegExFSA> m_FSM;
-
-    /// CFoundCallback_Impl - convert various function-like objects to the uniform CFoundCallback type
-    template<typename TFoundCallback>
-    struct CFoundCallback_Impl : public CFoundCallback
-    {
-        CFoundCallback_Impl(const TFoundCallback& f) : m_FoundCallback(f) {}
-        const TFoundCallback& m_FoundCallback;
-
-        EOnFind operator()(size_t pattern, size_t position) const { return Exec(m_FoundCallback, pattern, position); }
-
-    private:
-        template <typename F> EOnFind Exec(F& f, size_t pattern, size_t position, decltype(f(0))* = 0, typename enable_if<is_void<decltype(f(0))>::value>::type* = 0) const {
-            f(pattern);
-            return eContinueSearch;
-        }
-        template <typename F> EOnFind Exec(F& f, size_t pattern, size_t position, decltype(f(0))* = 0, typename enable_if<!is_void<decltype(f(0))>::value>::type* = 0) const {
-            return f(pattern);
-        }
-        template <typename F> EOnFind Exec(F& f, size_t pattern, size_t position, decltype(f(0, 0))* = 0, typename enable_if<is_void<decltype(f(0, 0))>::value>::type* = 0) const {
-            f(pattern, position);
-            return eContinueSearch;
-        }
-        template <typename F> EOnFind Exec(F& f, size_t pattern, size_t position, decltype(f(0, 0))* = 0, typename enable_if<!is_void<decltype(f(0, 0))>::value>::type* = 0) const {
-            return f(pattern, position);
-        }
-    };
 };
 
 

@@ -92,8 +92,6 @@ string CMultipatternSearch::QuoteString(const string& str)
 }
 
 
-/////////
-
 void CMultipatternSearch::Search(const char* input, VoidCall1 report) const
 {
     const char* p = input;
@@ -117,14 +115,37 @@ void CMultipatternSearch::Search(const char* input, VoidCall1 report) const
 }
 
 
-void CMultipatternSearch::x_Parse(const char* input, CFoundCallback& report) const
+void CMultipatternSearch::Search(const char* input, VoidCall2 report) const
 {
     const char* p = input;
     size_t state = 1;
 
     set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
     for (auto e : emit) {
-        if (report(e, p - input) == eStopSearch) {
+        report(e, p - input);
+    }
+    while (true) {
+        state = m_FSM->m_States[state]->m_Trans[*p];
+        set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
+        for (auto e : emit) {
+            report(e, p - input);
+        }
+        if (!*p) {
+            return;
+        }
+        ++p;
+    }
+}
+
+
+void CMultipatternSearch::Search(const char* input, BoolCall1 report) const
+{
+    const char* p = input;
+    size_t state = 1;
+
+    set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
+    for (auto e : emit) {
+        if (report(e)) {
             return;
         }
     }
@@ -132,7 +153,34 @@ void CMultipatternSearch::x_Parse(const char* input, CFoundCallback& report) con
         state = m_FSM->m_States[state]->m_Trans[*p];
         set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
         for (auto e : emit) {
-            if (report(e, p - input) == eStopSearch) {
+            if (report(e)) {
+                return;
+            }
+        }
+        if (!*p) {
+            return;
+        }
+        ++p;
+    }
+}
+
+
+void CMultipatternSearch::Search(const char* input, BoolCall2 report) const
+{
+    const char* p = input;
+    size_t state = 1;
+
+    set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
+    for (auto e : emit) {
+        if (report(e, p - input)) {
+            return;
+        }
+    }
+    while (true) {
+        state = m_FSM->m_States[state]->m_Trans[*p];
+        set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
+        for (auto e : emit) {
+            if (report(e, p - input)) {
                 return;
             }
         }
