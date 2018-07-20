@@ -495,6 +495,26 @@ bool CPubseqGatewayApp::x_IsBoolParamValid(const string &  param_name,
 }
 
 
+bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
+                                              const string &  param_value,
+                                              int &  converted,
+                                              string &  err_msg) const
+{
+    try {
+        converted = NStr::StringToInt(param_value);
+    } catch (const exception &  exc) {
+        err_msg = "Error converting " + param_name + " parameter "
+                  "to integer: " + string(exc.what());
+        return false;
+    } catch (...) {
+        err_msg = "Unknown error converting " + param_name + " parameter "
+                  "to integer";
+        return false;
+    }
+    return true;
+}
+
+
 int CPubseqGatewayApp::x_PopulateSatToKeyspaceMap(void)
 {
     try {

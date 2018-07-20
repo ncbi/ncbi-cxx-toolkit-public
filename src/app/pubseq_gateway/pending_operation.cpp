@@ -34,8 +34,10 @@
 #include "pending_operation.hpp"
 #include "pubseq_gateway_exception.hpp"
 
+#include <objects/seqloc/Seq_id.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info.hpp>
 USING_IDBLOB_SCOPE;
+USING_SCOPE(objects);
 
 
 CPendingOperation::CPendingOperation(const SBlobRequest &  blob_request,
@@ -194,14 +196,37 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         SBioseqInfo     bioseq_info;
 
         // retrieve from SI2CSI
-        CRequestStatus::ECode   status = x_FetchCanonicalSeqId(bioseq_info);
+        CRequestStatus::ECode   status = x_ResolveToCanonicalSeqId(bioseq_info);
         if (status != CRequestStatus::e200_Ok) {
-            UpdateOverallStatus(status);
+            if (status != CRequestStatus::e400_BadRequest)
+                UpdateOverallStatus(status);
             x_SendReplyCompletion(true);
             resp.Send(m_Chunks, true);
             m_Chunks.clear();
             return;
         }
+
+        // It could be that the id_info has been retrieved from the DB and also
+        // provided in the request. Check that they match if so.
+        if (bioseq_info.m_IdType != -1 && m_BlobRequest.m_IdTypeProvided) {
+            if (bioseq_info.m_IdType != m_BlobRequest.m_IdType) {
+                string  msg = "Non matching 'id_type' values. "
+                              "The DB has it set to " +
+                              NStr::NumericToString(bioseq_info.m_IdType) +
+                              " while the URL request has it set to " +
+                              NStr::NumericToString(m_BlobRequest.m_IdType) +
+                              ". The DB value is used for the retrieval.";
+                PrepareReplyMessage(msg, CRequestStatus::e100_Continue,
+                                    eMalformedParameter, eDiag_Warning);
+            }
+        }
+
+        if (bioseq_info.m_IdType == -1 && m_BlobRequest.m_IdTypeProvided) {
+            // This is the case when CSeq_id succeeded and the user explicitly
+            // provided the id_type
+            bioseq_info.m_IdType = m_BlobRequest.m_IdType;
+        }
+
 
         // retrieve from BIOSEQ_INFO
         status = x_FetchBioseqInfo(bioseq_info);
@@ -451,25 +476,70 @@ void CPendingOperation::x_PrintRequestStop(int  status)
 
 
 CRequestStatus::ECode
+CPendingOperation::x_ResolveToCanonicalSeqId(SBioseqInfo &  bioseq_info)
+{
+    // First, try to avoid going to the DB
+    try {
+        CSeq_id                 seq_id(m_BlobRequest.m_SeqId);
+        const CTextseq_id *     text_seq_id = seq_id.GetTextseq_Id();
+
+        if (text_seq_id != NULL) {
+            bioseq_info.m_Accession = text_seq_id->GetAccession();
+
+            // Signal that id_type is unknown - CSeq_id cannot provide the
+            // id_type
+            bioseq_info.m_IdType = -1;
+
+            if (text_seq_id->CanGetVersion()) {
+ERR_POST("SUCCESSFUL USAGE OF CSeq_id");
+                bioseq_info.m_Version = text_seq_id->GetVersion();
+                return CRequestStatus::e200_Ok;
+            }
+
+            // Here: accession and type are known but version is unknown.
+            //       So, the bioseq info needs to be resolved for the last
+            //       version. The m_Version == -1 signals that there is a need
+            //       of an alternative select.
+            bioseq_info.m_Version = -1;
+            return CRequestStatus::e200_Ok;
+        }
+        else {
+ERR_POST("NULL RETURNED");
+        }
+    } catch (const exception &  exc) {
+        // Choke the exceptions and fallback to the table
+ERR_POST("EXCEPTION WHILE USING CSeq_id: " << exc.what());
+    } catch (...) {
+        // Choke the exceptions and fallback to the table
+ERR_POST("EXCEPTION WHILE USING CSeq_id");
+    }
+
+    return x_FetchCanonicalSeqId(bioseq_info);
+}
+
+
+CRequestStatus::ECode
 CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
 {
     CRequestStatus::ECode   status = CRequestStatus::e200_Ok;
     string                  msg;
     try {
-        if (!FetchCanonicalSeqId(
-                    m_Conn,
-                    CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
-                    m_BlobRequest.m_SeqId,
-                    m_BlobRequest.m_IdType,
-                    bioseq_info.m_Accession,
-                    bioseq_info.m_Version,
-                    bioseq_info.m_IdType)) {
-            // Failure: no translation to canonical
-            msg = "No translation seq_id '" +
-                  m_BlobRequest.m_SeqId + "' of type " +
-                  NStr::NumericToString(m_BlobRequest.m_IdType) +
-                  " to canonical seq_id found";
-            status = CRequestStatus::e404_NotFound;
+        status = FetchCanonicalSeqId(
+                        m_Conn,
+                        CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
+                        m_BlobRequest.m_SeqId,
+                        m_BlobRequest.m_SeqIdType,
+                        m_BlobRequest.m_SeqIdTypeProvided,
+                        bioseq_info.m_Accession,
+                        bioseq_info.m_Version,
+                        bioseq_info.m_IdType);
+        if (status == CRequestStatus::e404_NotFound) {
+            msg = "No translation of the seq_id '" +
+                  m_BlobRequest.m_SeqId + "' to canonical seq_id found";
+        } else if (status == CRequestStatus::e300_MultipleChoices) {
+            msg = "More than one translation of the seq_id '" +
+                  m_BlobRequest.m_SeqId + "' to canonical seq_id found. "
+                  "Please provide the seq_id_type as well";
         }
     } catch (const exception &  exc) {
         msg = "Error translating seq_id '" +
@@ -491,6 +561,10 @@ CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
         if (status == CRequestStatus::e404_NotFound) {
             // It is a client error, no data for the request
             ERR_POST(Warning << msg);
+        } else if (status == CRequestStatus::e300_MultipleChoices) {
+            // It is a client error, too broad request
+            ERR_POST(Warning << msg);
+            status = CRequestStatus::e404_NotFound; // CXX-10046
         } else {
             // It is a server error, data inconsistency or DB connectivity
             ERR_POST(msg);
@@ -502,7 +576,6 @@ CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
         PrepareBioseqCompletion(item_id, 2);
     }
 
-    // No problems, resolved
     return status;
 }
 
@@ -513,9 +586,14 @@ CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info)
     CRequestStatus::ECode   status = CRequestStatus::e200_Ok;
     string                  msg;
     try {
+#if 0
+        // bioseq_info.m_Version == -1 means that the latest version should be
+        // retrieved
         if (!FetchBioseqInfo(
                     m_Conn,
                     CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
+                    bioseq_info.m_Version != -1,
+                    bioseq_info.m_IdType != -1,
                     bioseq_info)) {
             // Failure: no bioseq info
             msg = "No bioseq info found for seq_id '" +
@@ -526,6 +604,7 @@ CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info)
             // 404)
             status = CRequestStatus::e500_InternalServerError;
         }
+#endif
     } catch (const exception &  exc) {
         msg = "Error retrieving bioseq info for seq_id '" +
               m_BlobRequest.m_SeqId + "' of type " +
@@ -578,8 +657,7 @@ bool CPendingOperation::x_SatToSatName(const SBlobRequest &  blob_request,
                       NStr::NumericToString(blob_id.m_Sat);
     if (blob_request.GetBlobIdentificationType() == eBySeqId)
         msg += " for bioseq info with seq_id '" +
-               blob_request.m_SeqId + "' of type " +
-               NStr::NumericToString(blob_request.m_IdType);
+               blob_request.m_SeqId + "'";
     else
         msg += " for the blob " + GetBlobId(blob_id);
 
@@ -767,6 +845,21 @@ void CPendingOperation::PrepareBlobCompletion(
                           fetch_details->m_BlobId,
                           fetch_details->m_TotalSentBlobChunks + 1);
     ++fetch_details->m_TotalSentBlobChunks;
+}
+
+
+void CPendingOperation::PrepareReplyMessage(
+                            const string &  msg,
+                            CRequestStatus::ECode  status, int  err_code,
+                            EDiagSev  severity)
+{
+    string      header = GetReplyMessageHeader(msg.size(),
+                                               status, err_code, severity);
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(msg.data()), msg.size()));
+    ++m_TotalSentReplyChunks;
 }
 
 

@@ -35,6 +35,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/request_status.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include "IdCassScope.hpp"
 
@@ -45,6 +46,10 @@ USING_NCBI_SCOPE;
 
 struct SBioseqInfo
 {
+    SBioseqInfo() :
+        m_Version(0), m_IdType(0)
+    {}
+
     string              m_Accession;
     int                 m_Version;
     int                 m_IdType;
@@ -60,20 +65,27 @@ struct SBioseqInfo
 };
 
 
-// true => fetch succeeded
-// false => not found
-bool FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
-                         const string &  keyspace,
-                         const string &  seq_id,
-                         int  seq_id_type,
-                         string &  accession,
-                         int &  version,
-                         int &  id_type);
+// e200_Ok: exactly one record found
+// e404_NotFound: no records found
+// e300_MultipleChoices: more than one record found
+CRequestStatus::ECode
+FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
+                    const string &  keyspace,
+                    const string &  seq_id,
+                    int  seq_id_type,
+                    bool  seq_id_type_provided,
+                    string &  accession,
+                    int &  version,
+                    int &  id_type);
 
-// true => fetch succeeded
-// false => not found
-bool FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
+// e200_Ok: exactly one record found
+// e404_NotFound: no records found
+// e300_MultipleChoices: more than one record found
+CRequestStatus::ECode
+FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
                      const string &  keyspace,
+                     bool  version_provided,
+                     bool  id_type_provided,
                      SBioseqInfo &  bioseq_info);
 
 END_IDBLOB_SCOPE

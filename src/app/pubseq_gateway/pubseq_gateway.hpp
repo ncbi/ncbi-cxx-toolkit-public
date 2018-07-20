@@ -128,6 +128,10 @@ private:
     bool x_IsBoolParamValid(const string &  param_name,
                             const string &  param_value,
                             string &  err_msg) const;
+    bool x_ConvertIntParameter(const string &  param_name,
+                               const string &  param_value,
+                               int &  converted,
+                               string &  err_msg) const;
     bool x_IsResolutionParamValid(const string &  param_name,
                                   const string &  param_value,
                                   string &  err_msg) const;
@@ -236,33 +240,33 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
         return 0;
     }
 
-    int                 seq_id_type = 1;    // default
+    int                 seq_id_type = -1;
+    int                 id_type = -1;
+    string              err_msg;
     SRequestParameter   seq_id_type_param = x_GetParam(req, "seq_id_type");
+    SRequestParameter   id_type_param = x_GetParam(req, "id_type");
     if (seq_id_type_param.m_Found) {
-        try {
-            seq_id_type = NStr::StringToInt(seq_id_type_param.m_Value);
-        } catch (const exception &  exc) {
-            string      message = "Error converting seq_id_type parameter "
-                                  "to integer: " + string(exc.what());
-
+        if (!x_ConvertIntParameter("seq_id_type", seq_id_type_param.m_Value,
+                                   seq_id_type, err_msg)) {
             m_ErrorCounters.IncMalformedArguments();
-            x_SendMessageAndCompletionChunks(resp, message,
+            x_SendMessageAndCompletionChunks(resp, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              eMalformedParameter, eDiag_Error);
 
-            ERR_POST(Warning << message);
+            ERR_POST(Warning << err_msg);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
-        } catch (...) {
-            string      message = "Unknown error converting "
-                                  "seq_id_type parameter to integer";
-
+        }
+    }
+    if (id_type_param.m_Found) {
+        if (!x_ConvertIntParameter("id_type", id_type_param.m_Value,
+                                   id_type, err_msg)) {
             m_ErrorCounters.IncMalformedArguments();
-            x_SendMessageAndCompletionChunks(resp, message,
+            x_SendMessageAndCompletionChunks(resp, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              eMalformedParameter, eDiag_Error);
 
-            ERR_POST(Warning << message);
+            ERR_POST(Warning << err_msg);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
         }
@@ -302,8 +306,6 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
     for (auto &  flag_param: flag_params) {
         flag_param.second.first = x_GetParam(req, flag_param.first);
         if (flag_param.second.first.m_Found) {
-            string      err_msg;
-
             if (!x_IsBoolParamValid(flag_param.first,
                                     flag_param.second.first.m_Value, err_msg)) {
                 m_ErrorCounters.IncMalformedArguments();
@@ -321,11 +323,31 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
         }
     }
 
+    size_t      initial_chunks = 0;
+    if (seq_id_type_param.m_Found && id_type_param.m_Found) {
+        vector<h2o_iovec_t>     chunks;
+        string  message = "Too many parameters provided. "
+                          "Only one of 'seq_id_type' and 'id_type' will be used";
+        string  header = GetReplyMessageHeader(message.size(),
+                                               CRequestStatus::e100_Continue,
+                                               eMalformedParameter,
+                                               eDiag_Warning);
+        chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+        chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(message.data()), message.size()));
+
+        resp.Send(chunks, false);
+        ++initial_chunks;
+    }
+
     resp.Postpone(
             CPendingOperation(
                 SBlobRequest(seq_id_param.m_Value,
-                             seq_id_type, include_data_flags),
-                0, m_CassConnection, m_TimeoutMs,
+                             seq_id_type, seq_id_type_param.m_Found,
+                             id_type, id_type_param.m_Found,
+                             include_data_flags),
+                initial_chunks, m_CassConnection, m_TimeoutMs,
                 m_MaxRetries, context));
     return 0;
 }

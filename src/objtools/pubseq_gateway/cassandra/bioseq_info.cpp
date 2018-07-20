@@ -40,66 +40,157 @@
 BEGIN_IDBLOB_SCOPE
 
 
-bool FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
-                         const string &  keyspace,
-                         const string &  seq_id,
-                         int  seq_id_type,
-                         string &  accession,
-                         int &  version,
-                         int &  id_type)
+CRequestStatus::ECode
+FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
+                    const string &  keyspace,
+                    const string &  seq_id,
+                    int  seq_id_type,
+                    bool  seq_id_type_provided,
+                    string &  accession,
+                    int &  version,
+                    int &  id_type)
 {
     shared_ptr<CCassQuery>  query = conn->NewQuery();
 
-    query->SetSQL("SELECT accession, version, id_type FROM " +
-                  keyspace + ".SI2CSI WHERE "
-                  "seq_id = ? AND seq_id_type = ?", 2);
-    query->BindStr(0, seq_id);
-    query->BindInt32(1, seq_id_type);
+    if (seq_id_type_provided) {
+        query->SetSQL("SELECT accession, version, id_type FROM " +
+                      keyspace + ".SI2CSI WHERE "
+                      "seq_id = ? AND seq_id_type = ?", 2);
+        query->BindStr(0, seq_id);
+        query->BindInt32(1, seq_id_type);
+    } else {
+        query->SetSQL("SELECT accession, version, id_type FROM " +
+                      keyspace + ".SI2CSI WHERE "
+                      "seq_id = ?", 1);
+        query->BindStr(0, seq_id);
+    }
+
     query->Query(CANONICAL_SEQ_ID_CONSISTENCY, false, false);
 
-    if (query->NextRow() == ar_dataready) {
-        accession = query->FieldGetStrValue(0);
-        version = query->FieldGetInt32Value(1);
-        id_type = query->FieldGetInt32Value(2);
-        return true;
+    if (seq_id_type_provided) {
+        if (query->NextRow() == ar_dataready) {
+            accession = query->FieldGetStrValue(0);
+            version = query->FieldGetInt32Value(1);
+            id_type = query->FieldGetInt32Value(2);
+            return CRequestStatus::e200_Ok;
+        }
+    } else {
+        bool    found = false;
+        while (query->NextRow() == ar_dataready) {
+            if (found)
+                return CRequestStatus::e300_MultipleChoices;
+            accession = query->FieldGetStrValue(0);
+            version = query->FieldGetInt32Value(1);
+            id_type = query->FieldGetInt32Value(2);
+            found = true;
+        }
     }
-    return false;
+    return CRequestStatus::e404_NotFound;
 }
 
 
-bool FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
-                     const string &  keyspace,
-                     SBioseqInfo &  bioseq_info)
+CRequestStatus::ECode
+FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
+                const string &  keyspace,
+                bool  version_provided,
+                bool  id_type_provided,
+                SBioseqInfo &  bioseq_info)
 {
+    // if version is not provided then the latest version has to be taken.
+    // if id_type is not provided then the number of suitable records need to
+    // be checked. It must be exactly 1.
+
     shared_ptr<CCassQuery>  query = conn->NewQuery();
 
-    query->SetSQL("SELECT mol, "
-                  "length, "
-                  "state, "
-                  "sat, "
-                  "sat_key, "
-                  "tax_id, "
-                  "hash, "
-                  "seq_ids FROM " +
-                  keyspace + ".BIOSEQ_INFO WHERE "
-                  "accession = ? AND version = ? AND id_type = ?", 3);
-    query->BindStr(0, bioseq_info.m_Accession);
-    query->BindInt32(1, bioseq_info.m_Version);
-    query->BindInt32(2, bioseq_info.m_IdType);
+    if (version_provided && id_type_provided) {
+        query->SetSQL("SELECT mol, "
+                      "length, "
+                      "state, "
+                      "sat, "
+                      "sat_key, "
+                      "tax_id, "
+                      "hash, "
+                      "seq_ids FROM " +
+                      keyspace + ".BIOSEQ_INFO WHERE "
+                      "accession = ? AND version = ? AND id_type = ?", 3);
+        query->BindStr(0, bioseq_info.m_Accession);
+        query->BindInt32(1, bioseq_info.m_Version);
+        query->BindInt32(2, bioseq_info.m_IdType);
+    } else if (version_provided) {
+        query->SetSQL("SELECT mol, "
+                      "length, "
+                      "state, "
+                      "sat, "
+                      "sat_key, "
+                      "tax_id, "
+                      "hash, "
+                      "seq_ids FROM " +
+                      keyspace + ".BIOSEQ_INFO WHERE "
+                      "accession = ? AND version = ?", 2);
+        query->BindStr(0, bioseq_info.m_Accession);
+        query->BindInt32(1, bioseq_info.m_Version);
+    } else {
+        query->SetSQL("SELECT mol, "
+                      "length, "
+                      "state, "
+                      "sat, "
+                      "sat_key, "
+                      "tax_id, "
+                      "hash, "
+                      "seq_ids, "
+                      "version, "
+                      "id_type FROM " +
+                      keyspace + ".BIOSEQ_INFO WHERE "
+                      "accession = ?", 1);
+        query->BindStr(0, bioseq_info.m_Accession);
+    }
+
+
+#if 0
+    if (latest_version) {
+    } else {
+    }
+
     query->Query(BIOSEQ_INFO_CONSISTENCY, false, false);
 
-    if (query->NextRow() == ar_dataready) {
-        bioseq_info.m_Mol = query->FieldGetInt32Value(0);
-        bioseq_info.m_Length = query->FieldGetInt32Value(1);
-        bioseq_info.m_State = query->FieldGetInt32Value(2);
-        bioseq_info.m_Sat = query->FieldGetInt32Value(3);
-        bioseq_info.m_SatKey = query->FieldGetInt32Value(4);
-        bioseq_info.m_TaxId =query->FieldGetInt32Value(5);
-        bioseq_info.m_Hash = query->FieldGetInt32Value(6);
-        query->FieldGetMapValue(7, bioseq_info.m_SeqIds);
-        return true;
+    bool    found = false;
+    if (latest_version) {
+        int     selected_version = INT_MIN;
+        while (query->NextRow() == ar_dataready) {
+            int     id_type = query->FieldGetInt32Value(9);
+            if (id_type != bioseq_info.m_IdType)
+                continue;
+            int     version = query->FieldGetInt32Value(8);
+            if (!found || version > selected_version) {
+                bioseq_info.m_Mol = query->FieldGetInt32Value(0);
+                bioseq_info.m_Length = query->FieldGetInt32Value(1);
+                bioseq_info.m_State = query->FieldGetInt32Value(2);
+                bioseq_info.m_Sat = query->FieldGetInt32Value(3);
+                bioseq_info.m_SatKey = query->FieldGetInt32Value(4);
+                bioseq_info.m_TaxId =query->FieldGetInt32Value(5);
+                bioseq_info.m_Hash = query->FieldGetInt32Value(6);
+                query->FieldGetMapValue(7, bioseq_info.m_SeqIds);
+
+                found = true;
+                selected_version = version;
+            }
+        }
+    } else {
+        if (query->NextRow() == ar_dataready) {
+            bioseq_info.m_Mol = query->FieldGetInt32Value(0);
+            bioseq_info.m_Length = query->FieldGetInt32Value(1);
+            bioseq_info.m_State = query->FieldGetInt32Value(2);
+            bioseq_info.m_Sat = query->FieldGetInt32Value(3);
+            bioseq_info.m_SatKey = query->FieldGetInt32Value(4);
+            bioseq_info.m_TaxId =query->FieldGetInt32Value(5);
+            bioseq_info.m_Hash = query->FieldGetInt32Value(6);
+            query->FieldGetMapValue(7, bioseq_info.m_SeqIds);
+            return true;
+        }
     }
-    return false;
+    return found;
+#endif
+    return CRequestStatus::e404_NotFound;
 }
 
 

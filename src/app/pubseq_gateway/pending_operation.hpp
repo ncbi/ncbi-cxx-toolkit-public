@@ -80,13 +80,20 @@ struct SBlobRequest
 
     // Construct the request for the case of seq_id/id_type request
     SBlobRequest(const string &  seq_id,
+                 int  seq_id_type,
+                 bool  seq_id_type_provided,
                  int  id_type,
+                 bool  id_type_provided,
                  TServIncludeData  include_data_flags) :
         m_NeedBlobProp(true),
         m_NeedChunks(false),
         m_Optional(false),
         m_BlobIdType(eBySeqId),
-        m_SeqId(seq_id), m_IdType(id_type),
+        m_SeqId(seq_id),
+        m_SeqIdType(seq_id_type),
+        m_SeqIdTypeProvided(seq_id_type_provided),
+        m_IdType(id_type),
+        m_IdTypeProvided(id_type_provided),
         m_IncludeDataFlags(include_data_flags)
     {}
 
@@ -108,7 +115,10 @@ public:
 
     // Fields in case of request by seq_id/id_type
     string                      m_SeqId;
+    int                         m_SeqIdType;
+    bool                        m_SeqIdTypeProvided;
     int                         m_IdType;
+    bool                        m_IdTypeProvided;
     TServIncludeData            m_IncludeDataFlags;
 };
 
@@ -276,6 +286,9 @@ public:
     void PrepareBlobCompletion(size_t  item_id, const SBlobId &  blob_id,
                                size_t  chunk_count);
     void PrepareBlobCompletion(SBlobFetchDetails *  fetch_details);
+    void PrepareReplyMessage(const string &  msg,
+                             CRequestStatus::ECode  status, int  err_code,
+                             EDiagSev  severity);
     void PrepareReplyCompletion(size_t  chunk_count);
 
 private:
@@ -284,6 +297,7 @@ private:
     void x_SendReplyCompletion(bool  forced = false);
     void x_SetRequestContext(void);
     void x_PrintRequestStop(int  status);
+    CRequestStatus::ECode x_ResolveToCanonicalSeqId(SBioseqInfo &  bioseq_info);
     CRequestStatus::ECode x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info);
     CRequestStatus::ECode x_FetchBioseqInfo(SBioseqInfo &  bioseq_info);
     bool x_SatToSatName(const SBlobRequest &  blob_request,
