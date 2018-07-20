@@ -41,7 +41,6 @@
 
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
 
-#include "acc_ver_cache_db.hpp"
 #include "pending_operation.hpp"
 #include "http_server_transport.hpp"
 #include "pubseq_gateway_version.hpp"
@@ -146,7 +145,6 @@ private:
     unsigned int                        m_ListenerBacklog;
     unsigned short                      m_TcpMaxConn;
 
-    unique_ptr<CAccVerCacheDB>          m_Db;
     shared_ptr<CCassConnection>         m_CassConnection;
     shared_ptr<CCassConnectionFactory>  m_CassConnectionFactory;
     unsigned int                        m_TimeoutMs;

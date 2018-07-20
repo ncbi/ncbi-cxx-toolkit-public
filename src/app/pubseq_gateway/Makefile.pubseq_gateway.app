@@ -1,7 +1,7 @@
 # $Id$
 
 APP = pubseq_gateway
-SRC = pubseq_gateway acc_ver_cache_db acc_ver_cache_storage \
+SRC = pubseq_gateway  \
       pending_operation http_server_transport pubseq_gateway_exception \
       uv_extra pubseq_gateway_utils pubseq_gateway_stat
 
