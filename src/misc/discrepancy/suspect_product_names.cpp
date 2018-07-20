@@ -227,11 +227,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
         else {
             size_t rule_num = 0;
             for (auto rule: rules->Get()) {
-                if (Hits[rule_num]) {
-                    if (!rule->StringMatchesSuspectProductRule(prot_name)) {
-                        rule_num++;
-                        continue;
-                    }
+                if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(prot_name)) {
                     string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
                     size_t rule_type = rule->GetRule_type();
                     string rule_name = "[*";
@@ -402,16 +398,20 @@ DISCREPANCY_CASE(ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle product
         return;
     }
 
-    CConstRef<CSuspect_rule_set> rules = context.GetOrganelleProductRules();
     const CProt_ref& prot = obj.GetProt();
-
     if (prot.IsSetName() && !prot.GetName().empty()) {
-        string prot_name = *(prot.GetName().begin());
-        ITERATE(list<CRef<CSuspect_rule> >, rule, rules->Get()) {
-            if (!(*rule)->StringMatchesSuspectProductRule(prot_name)) {
-                continue;
+        string prot_name = *prot.GetName().begin();
+        CConstRef<CSuspect_rule_set> rules = context.GetOrganelleProductRules();
+        vector<char> Hits(rules->Get().size());
+        std::fill(Hits.begin(), Hits.end(), 0);
+        rules->Screen(prot_name, Hits.data());
+
+        size_t rule_num = 0;
+        for (auto rule : rules->Get()) {
+            if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(prot_name)) {
+                m_Objs["[n] suspect product[s] not organelle"].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), rule->CanGetReplace(), (CObject*)&*rule)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
             }
-            m_Objs["[n] suspect product[s] not organelle"].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), (*rule)->CanGetReplace(), (CObject*)&**rule)).Severity((*rule)->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+            rule_num++;
         }
     }
 }
@@ -549,28 +549,26 @@ static void s_SummarizeSuspectRule(
 
 DISCREPANCY_CASE(SUSPECT_RRNA_PRODUCTS, CSeq_feat, eDisc | eSubmitter | eSmart, "rRNA product names should not contain 'partial' or 'domain'")
 {
-    if( ! obj.IsSetData() ||
-        obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA )
-    {
+    if( ! obj.IsSetData() || obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA ) {
         return;
     }
+    static const string kMsg = "[n] rRNA product name[s] contain[S] suspect phrase";
 
-    static const string kMsg =
-        "[n] rRNA product name[s] contain[S] suspect phrase";
-
-    // build the product rules
     const string product = GetRNAProductString(obj);
-    CConstRef<CSuspect_rule_set> suspect_rule_set =
-        s_GetrRNAProductsSuspectRuleSet();
-    ITERATE(CSuspect_rule_set::Tdata, rule_it, suspect_rule_set->Get()) {
-        const CSuspect_rule & suspect_rule = **rule_it;
-        if( suspect_rule.StringMatchesSuspectProductRule(product) ) {
-            // build message for detaild report
+    CConstRef<CSuspect_rule_set> rules = s_GetrRNAProductsSuspectRuleSet();
+    vector<char> Hits(rules->Get().size());
+    std::fill(Hits.begin(), Hits.end(), 0);
+    rules->Screen(product, Hits.data());
+
+    size_t rule_num = 0;
+    for (auto rule : rules->Get()) {
+        if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(product)) {
             CNcbiOstrstream detailed_msg;
             detailed_msg << "[n] rRNA product name[s] ";
-            s_SummarizeSuspectRule(detailed_msg, suspect_rule);
+            s_SummarizeSuspectRule(detailed_msg, *rule);
             m_Objs[kMsg][(string)CNcbiOstrstreamToString(detailed_msg)].Ext().Add(*context.DiscrObj(*context.GetCurrentSeq_feat()), false);
         }
+        rule_num++;
     }
 }
 
@@ -596,11 +594,7 @@ DISCREPANCY_CASE(_SUSPECT_PRODUCT_NAMES, string, 0, "Suspect Product Names for a
     }
     size_t rule_num = 0;
     for (auto rule : rules->Get()) {
-        if (Hits[rule_num]) {
-            if (!rule->StringMatchesSuspectProductRule(obj)) {
-                rule_num++;
-                continue;
-            }
+        if (Hits[rule_num] && rule->StringMatchesSuspectProductRule(obj)) {
             string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
             size_t rule_type = rule->GetRule_type();
             string rule_name = "[*";
