@@ -58,6 +58,7 @@ class CWGSParseApp : public CNcbiApplication
 public:
     CWGSParseApp()
     {
+	SetDiagPostLevel(eDiag_Warning);
     }
 
 private:
