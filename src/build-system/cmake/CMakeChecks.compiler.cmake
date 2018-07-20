@@ -14,7 +14,11 @@ if (NCBI_EXPERIMENTAL_CFG)
 #----------------------------------------------------------------------------
 if (WIN32)
 
-  set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL DebugMT ReleaseMT)
+  if (NCBI_EXPERIMENTAL_DLL)
+    set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL)
+  else()
+    set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL DebugMT ReleaseMT)
+  endif()
   set(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}" CACHE STRING "Reset the configurations" FORCE)
 
   set(CMAKE_CXX_FLAGS_DEBUGDLL   "/MDd /Zi /Od /RTC1 /D_DEBUG")
@@ -44,7 +48,8 @@ if (WIN32)
 
   set(NCBI_DEFAULT_USEPCH ON)
   set(NCBI_DEFAULT_PCH_DEFINE "NCBI_USE_PCH")
-  set(NCBI_DEFAULT_RESOURCES "${NCBI_SRC_ROOT}//build-system/cmake/ncbi.rc")
+  set(NCBI_DEFAULT_RESOURCES "${NCBI_SRC_ROOT}/build-system/cmake/ncbi.rc")
+  set(NCBI_DEFAULT_DLLENTRY  "${NCBI_SRC_ROOT}/build-system/cmake/dll_main.cpp")
 
   set(ORIG_LIBS ws2_32.lib dbghelp.lib)
   return()
@@ -52,7 +57,11 @@ if (WIN32)
 #----------------------------------------------------------------------------
 elseif (XCODE)
 
-  set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL DebugMT ReleaseMT)
+  if (NCBI_EXPERIMENTAL_DLL)
+    set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL)
+  else()
+    set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL DebugMT ReleaseMT)
+  endif()
   set(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}" CACHE STRING "Reset the configurations" FORCE)
 
   set(CMAKE_CXX_FLAGS_DEBUGDLL   "-gdwarf-4 -ggdb3 -O0 -D_DEBUG")
