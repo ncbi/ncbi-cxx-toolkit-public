@@ -204,6 +204,7 @@ static bool ContainsLetters(const string& prod_name)
     return false;
 }
 
+
 DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmitter | eSmart, "Suspect Product Name")
 {
     if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot || context.IsPseudo(*context.GetCurrentSeq_feat())) {
@@ -231,7 +232,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
                         rule_num++;
                         continue;
                     }
-                    string leading_space = "[*" + NStr::NumericToString(rule_num + 1) + "*]";
+                    string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
                     size_t rule_type = rule->GetRule_type();
                     string rule_name = "[*";
                     if (rule_type < 10) {
@@ -585,26 +586,33 @@ DISCREPANCY_SUMMARIZE(SUSPECT_RRNA_PRODUCTS)
 DISCREPANCY_CASE(_SUSPECT_PRODUCT_NAMES, string, 0, "Suspect Product Names for asndisc -N option")
 {
     CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
+    vector<char> Hits(rules->Get().size());
+    std::fill(Hits.begin(), Hits.end(), 0);
+    rules->Screen(obj, Hits.data());
+
     if (!ContainsLetters(obj)) {
         CReportNode& node = m_Objs[kSuspectProductNames]["[*-1*]Product name does not contain letters"].Summ()["[n] feature[s] [does] not contain letters in product name"].Summ().Fatal();
         node.Add(*context.StringObj(obj)).Fatal();
     }
-    size_t rule_num = 1;
-    ITERATE(list<CRef<CSuspect_rule> >, rule, rules->Get()) {
-        string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
-        rule_num++;
-        if (!(*rule)->StringMatchesSuspectProductRule(obj)) {
-            continue;
+    size_t rule_num = 0;
+    for (auto rule : rules->Get()) {
+        if (Hits[rule_num]) {
+            if (!rule->StringMatchesSuspectProductRule(obj)) {
+                rule_num++;
+                continue;
+            }
+            string leading_space = "[*" + NStr::NumericToString(rule_num) + "*]";
+            size_t rule_type = rule->GetRule_type();
+            string rule_name = "[*";
+            if (rule_type < 10) {
+                rule_name += " ";
+            }
+            rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(*rule);
+            string rule_text = leading_space + GetRuleMatch(*rule);
+            CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
+            node.Add(*context.StringObj(obj)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
+            rule_num++;
         }
-        size_t rule_type = (*rule)->GetRule_type();
-        string rule_name = "[*";
-        if (rule_type < 10) {
-            rule_name += " ";
-        }
-        rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(**rule);
-        string rule_text = leading_space + GetRuleMatch(**rule);
-        CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
-        node.Add(*context.StringObj(obj)).Severity((*rule)->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
     }
 }
 
