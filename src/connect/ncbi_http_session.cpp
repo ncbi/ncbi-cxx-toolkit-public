@@ -38,6 +38,7 @@
 #include <corelib/ncbistr.hpp>
 #include <connect/ncbi_http_session.hpp>
 #include <stdlib.h>
+#include "ncbi_ansi_ext.h"
 
 
 BEGIN_NCBI_SCOPE
@@ -773,7 +774,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
         m_Headers->Merge(usr_hdr);
     }
 
-    x_AddCookieHeader(m_Url);
+    x_AddCookieHeader(m_Url, true);
     if (use_form_data) {
         m_Headers->SetValue(CHttpHeaders::eContentType,
             m_FormData->GetContentTypeStr());
@@ -807,6 +808,10 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     else {
         // Try to resolve service name.
         m_IsService = true;
+        const string& path = m_Url.GetPath();
+        if (!path.empty()) {
+            strncpy0(net_info->path, path.c_str(), sizeof(net_info->path) - 1);
+        }
         ConnNetInfo_SetUserHeader(net_info, headers.c_str());
         SSERVICE_Extra x_extra;
         memset(&x_extra, 0, sizeof(x_extra));
@@ -830,11 +835,11 @@ bool CHttpRequest::x_CanSendData(void) const
 }
 
 
-void CHttpRequest::x_AddCookieHeader(const CUrl& url)
+void CHttpRequest::x_AddCookieHeader(const CUrl& url, bool initial)
 {
     if ( !m_Session ) return;
     string cookies = m_Session->x_GetCookies(url);
-    if ( !cookies.empty() ) {
+    if ( !cookies.empty()  ||  !initial ) {
         m_Headers->SetValue(CHttpHeaders::eCookie, cookies);
     }
 }
@@ -911,9 +916,9 @@ int/*bool*/ CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
         free(loc);
     }
     // Discard old cookies, add those for the new location.
-    req->x_AddCookieHeader(resp->m_Location);
+    req->x_AddCookieHeader(resp->m_Location, false);
     string headers = req->m_Headers->GetHttpHeader();
-    ConnNetInfo_SetUserHeader(net_info, headers.c_str());
+    ConnNetInfo_OverrideUserHeader(net_info, headers.c_str());
     return 1; // true
 }
 

@@ -545,7 +545,7 @@ private:
 
     // Find cookies matching the url, add or replace 'Cookie' header with the
     // new values.
-    void x_AddCookieHeader(const CUrl& url);
+    void x_AddCookieHeader(const CUrl& url, bool initial);
 
     // CConn_HttpStream callback for parsing headers.
     // 'user_data' must point to a CHttpRequest object.
