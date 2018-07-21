@@ -551,7 +551,7 @@ CHttpRequest::CHttpRequest(CHttpSession& session,
                            EReqMethod    method)
     : m_Session(&session),
       m_Url(url),
-      m_IsService(false),
+      m_IsService(url.IsService()),
       m_Method(method),
       m_Headers(new CHttpHeaders),
       m_Timeout(CTimeout::eDefault),
