@@ -602,6 +602,7 @@ gui_objutils needs eutils_client
 gui_objutils needs gbproj
 gui_objutils needs gencoll_client
 gui_objutils needs gui_utils
+gui_objutils needs searchbyrsid
 gui_objutils needs snputil
 gui_objutils needs xalgoalignutil
 gui_objutils needs xcgi
@@ -1659,6 +1660,7 @@ xsvcgi needs ncbi_xloader_vdbgraph
 xsvcgi needs ncbi_xloader_wgs
 xsvcgi needs trackmgrcli
 xsvcgi needs uudutil
+xsvcgi needs xid_mapper
 xsvcgi needs3party $(SYBASE_DLLS)
 xsvcgi needs3party $(SYBASE_LIBS)
 xsvdata needs $(BLAST_INPUT_LIBS)
