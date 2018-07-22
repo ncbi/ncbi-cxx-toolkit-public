@@ -211,32 +211,33 @@ void CTarTest::Init(void)
 #endif // TEST_CONN_TAR
                   ";\nuse '-' for stdin/stdout",
                   CArgDescriptions::eString);
-    args->AddOptionalKey("C", "directory",
-                         "Set base directory", CArgDescriptions::eString);
     args->AddDefaultKey ("b", "blocking_factor",
                          "Archive block size in 512-byte units\n"
                          "(10K blocks in use by default)",
                          CArgDescriptions::eInteger, "20");
+    args->SetConstraint ("b", new CArgAllow_Integers(1, (1 << 22) - 1));
+    args->AddOptionalKey("C", "directory",
+                         "Set base directory", CArgDescriptions::eString);
+    args->AddFlag("h", "Follow links");
+    args->AddFlag("i", "Ignore zero blocks");
+    args->AddFlag("k", "Don't overwrite[keep] existing files when extracting");
+    args->AddFlag("m", "Don't extract modification times");
+    args->AddFlag("M", "Don't extract permission masks");
+    args->AddFlag("o", "Don't extract file ownerships");
+    args->AddFlag("p", "Preserve all permissions");
+    args->AddFlag("O", "Extract to stdout (rather than files) when streaming");
+    args->AddFlag("B", "Create backup copies of destinations when extracting");
+    args->AddFlag("E", "Maintain equal types of files and archive entries");
+    args->AddFlag("U", "Only existing files/entries in update/extract");
+    args->AddFlag("S", "Treat PAX GNU/1.0 sparse files as unsupported");
+    args->AddFlag("I", "Ignore unsupported entries (w/o extracting them)");
     args->AddOptionalKey("X", "exclude",
                          "Exclude pattern", CArgDescriptions::eString,
                          CArgDescriptions::fAllowMultiple);
-    args->SetConstraint ("b", new CArgAllow_Integers(1, (1 << 22) - 1));
-    args->AddFlag("i", "Ignore zero blocks");
-    args->AddFlag("h", "Follow links");
-    args->AddFlag("p", "Preserve all permissions");
-    args->AddFlag("m", "Don't extract modification times");
-    args->AddFlag("o", "Don't extract file ownerships");
-    args->AddFlag("M", "Don't extract permission masks");
-    args->AddFlag("O", "Extract to stdout (rather than files) when streaming");
-    args->AddFlag("U", "Only existing files/entries in update/extract");
-    args->AddFlag("B", "Create backup copies of destinations when extracting");
-    args->AddFlag("k", "Don't overwrite[keep] existing files when extracting");
-    args->AddFlag("E", "Maintain equal types of files and archive entries");
-    args->AddFlag("I", "Ignore unsupported entries (w/o extracting them)");
     args->AddFlag("z", "Use GZIP compression (aka tgz), subsumes NOT -r / -u");
     args->AddFlag("s", "Use stream operations with archive"
                   " [non-standard]");
-    args->AddFlag("S", "Stream archive through"
+    args->AddFlag("P", "Stream archive through"
                   " [non-standard]");
     args->AddFlag("G", "Supplement long names with addtl header"
                   " [non-stdandard]");
@@ -434,7 +435,7 @@ int CTarTest::Run(void)
     }
 
     size_t bfactor  = args["b"].AsInteger();
-    bool   pipethru = args["S"].HasValue();
+    bool   pipethru = args["P"].HasValue();
     bool   stream   = args["s"].HasValue();
     bool   verbose  = args["v"].HasValue();
     size_t n        = args.GetNExtra();
@@ -568,47 +569,50 @@ int CTarTest::Run(void)
     if (verbose) {
         m_Flags |=  fVerbose;
     }
-    if (args["i"].HasValue()) {
-        m_Flags |=  CTar::fIgnoreZeroBlocks;
-    }
     if (args["h"].HasValue()) {
         m_Flags |=  CTar::fFollowLinks;
     }
-    if (args["p"].HasValue()) {
-        m_Flags |=  CTar::fPreserveAll;
-    }
-    if (args["m"].HasValue()) {
-        m_Flags &= ~CTar::fPreserveTime;
-    }
-    if (args["o"].HasValue()) {
-        m_Flags &= ~CTar::fPreserveOwner;
-    }
-    if (args["M"].HasValue()) {
-        m_Flags &= ~CTar::fPreserveMode;
-    }
-    if (args["U"].HasValue()) {
-        m_Flags |=  CTar::fUpdate;
-    }
-    if (args["B"].HasValue()) {
-        m_Flags |=  CTar::fBackup;
+    if (args["i"].HasValue()) {
+        m_Flags |=  CTar::fIgnoreZeroBlocks;
     }
     if (args["k"].HasValue()) {
         m_Flags &= ~CTar::fOverwrite;
     }
+    if (args["m"].HasValue()) {
+        m_Flags &= ~CTar::fPreserveTime;
+    }
+    if (args["M"].HasValue()) {
+        m_Flags &= ~CTar::fPreserveMode;
+    }
+    if (args["o"].HasValue()) {
+        m_Flags &= ~CTar::fPreserveOwner;
+    }
+    if (args["p"].HasValue()) {
+        m_Flags |=  CTar::fPreserveAll;
+    }
+    if (args["B"].HasValue()) {
+        m_Flags |=  CTar::fBackup;
+    }
     if (args["E"].HasValue()) {
         m_Flags |=  CTar::fEqualTypes;
     }
+    if (args["U"].HasValue()) {
+        m_Flags |=  CTar::fUpdate;
+    }
+    if (args["S"].HasValue()) {
+        m_Flags |=  CTar::fPreserveSparse;
+    }
     if (args["I"].HasValue()) {
         m_Flags |=  CTar::fSkipUnsupported;
+    }
+    if (pipethru) {
+        m_Flags |=  CTar::fStreamPipeThrough;
     }
     if (args["G"].HasValue()) {
         m_Flags |=  CTar::fLongNameSupplement;
     }
     if (args["Z"].HasValue()) {
         m_Flags |=  CTar::fStandardHeaderOnly;
-    }
-    if (pipethru) {
-        m_Flags |=  CTar::fStreamPipeThrough;
     }
     unique_ptr<CMask> exclude;
     if (args["X"].HasValue()) {

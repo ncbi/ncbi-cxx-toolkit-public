@@ -41,23 +41,23 @@
 BEGIN_NCBI_SCOPE
 
 
-NCBI_DEFINE_ERRCODE_X(Util_Thread,       201, 17);
-NCBI_DEFINE_ERRCODE_X(Util_Cache,        202,  3);
-NCBI_DEFINE_ERRCODE_X(Util_LVector,      203,  2);
-NCBI_DEFINE_ERRCODE_X(Util_DNS,          204,  4);
-NCBI_DEFINE_ERRCODE_X(Util_Stream,       205,  2);
-NCBI_DEFINE_ERRCODE_X(Util_ByteSrc,      206,  1);
-NCBI_DEFINE_ERRCODE_X(Util_File,         207,  1);
-NCBI_DEFINE_ERRCODE_X(Util_QParse,       208,  2);
-NCBI_DEFINE_ERRCODE_X(Util_Image,        209, 29);
-NCBI_DEFINE_ERRCODE_X(Util_Compress,     210, 94);
-NCBI_DEFINE_ERRCODE_X(Util_BlobStore,    211,  2);
-NCBI_DEFINE_ERRCODE_X(Util_StaticArray,  212,  3);
-NCBI_DEFINE_ERRCODE_X(Util_Scheduler,    213,  1);
-NCBI_DEFINE_ERRCODE_X(Util_Unicode,      214,  3);
-NCBI_DEFINE_ERRCODE_X(Util_LineReader,   215,  1);
-NCBI_DEFINE_ERRCODE_X(Util_TextJoiner,   216,  1);
-NCBI_DEFINE_ERRCODE_X(Util_Diff,         217,  1);
+NCBI_DEFINE_ERRCODE_X(Util_Thread,      201,  17);
+NCBI_DEFINE_ERRCODE_X(Util_Cache,       202,   3);
+NCBI_DEFINE_ERRCODE_X(Util_LVector,     203,   2);
+NCBI_DEFINE_ERRCODE_X(Util_DNS,         204,   4);
+NCBI_DEFINE_ERRCODE_X(Util_Stream,      205,   2);
+NCBI_DEFINE_ERRCODE_X(Util_ByteSrc,     206,   1);
+NCBI_DEFINE_ERRCODE_X(Util_File,        207,   1);
+NCBI_DEFINE_ERRCODE_X(Util_QParse,      208,   2);
+NCBI_DEFINE_ERRCODE_X(Util_Image,       209,  29);
+NCBI_DEFINE_ERRCODE_X(Util_Compress,    210, 100);
+NCBI_DEFINE_ERRCODE_X(Util_BlobStore,   211,   2);
+NCBI_DEFINE_ERRCODE_X(Util_StaticArray, 212,   3);
+NCBI_DEFINE_ERRCODE_X(Util_Scheduler,   213,   1);
+NCBI_DEFINE_ERRCODE_X(Util_Unicode,     214,   3);
+NCBI_DEFINE_ERRCODE_X(Util_LineReader,  215,   1);
+NCBI_DEFINE_ERRCODE_X(Util_TextJoiner,  216,   1);
+NCBI_DEFINE_ERRCODE_X(Util_Diff,        217,   1);
 
 
 END_NCBI_SCOPE

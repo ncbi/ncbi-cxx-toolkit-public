@@ -295,11 +295,13 @@ public:
         fPreserveTime       = (1<<9),
         /// Preserve all file attributes
         fPreserveAll        = fPreserveOwner | fPreserveMode | fPreserveTime,
+        /// Do not extract PAX GNU/1.0 sparse files (treat 'em as unsupported)
+        fPreserveSparse     = (1<<10),
 
         // --- Extract/List ---
         /// Skip unsupported entries rather than making files out of them
         /// when extracting (the latter is the default POSIX requirement).
-        fSkipUnsupported    = (1<<15),
+        fSkipUnsupported    = (1<<14),
 
         // --- Append ---
         /// Always use OldGNU headers for long names (default:only when needed)
@@ -457,7 +459,7 @@ public:
     ///
     /// Read through the archive without actually extracting anything from it.
     /// Flag fDumpEntryHeaders causes most of archive headers to be dumped to
-    /// the log (as eDiag_Info) as the Test() advances through the archive.
+    /// the log (with eDiag_Info) as the Test() advances through the archive.
     /// @sa
     ///   SetFlags
     void Test(void);
@@ -646,7 +648,7 @@ private:
     void x_Skip(Uint8 blocks);         // NB: Can do by either skip or read
 
     // Parse in extended entry information (PAX) for the current entry.
-    EStatus x_ParsePAXData(const string& buffer);
+    EStatus x_ParsePAXData(const string& data);
 
     // Read information about current entry in the archive.
     EStatus x_ReadEntryInfo(bool dump, bool pax);
@@ -662,12 +664,17 @@ private:
 
     // Process current entry from the archive (the actual size passed in).
     // If "extract" is FALSE, then just skip the entry without any processing.
-    bool x_ProcessEntry(bool extract, Uint8 size, const TEntries* done);
+    bool x_ProcessEntry(EAction action, Uint8 size, const TEntries* done);
 
     // Extract current entry (the actual size passed in) from the archive into
     // the file system, and update the size still remaining in the archive.
-    bool x_ExtractEntry(Uint8& size,
-                        const CDirEntry* dst, const CDirEntry* src);
+    bool x_ExtractEntry(Uint8& size, const CDirEntry* dst,
+                        const CDirEntry* src);
+
+    // Extract file data from the archive.
+    void x_ExtractPlainFile (Uint8& size, const CDirEntry* dst);
+    bool x_ExtractSparseFile(Uint8& size, const CDirEntry* dst,
+                             bool dump = false);
 
     // Restore attributes of an entry in the file system.
     // If "path" is not specified, then the destination path will be
@@ -677,6 +684,8 @@ private:
                         TFlags               what,
                         const CDirEntry*     path = 0,
                         TTarMode             perm = 0/*override*/) const;
+
+    string x_ReadLine(Uint8& size, const char*& data, size_t& nread);
 
     // Read/write specified number of bytes from/to the archive.
     const char* x_ReadArchive (size_t& n);
