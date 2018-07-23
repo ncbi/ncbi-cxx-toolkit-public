@@ -26,7 +26,12 @@
  * Authors:  David McElhany
  *
  * File Description:
- *   Test LINKERD via C++ classes
+ *  Test LINKERD via C++.
+ *  Currently, the only C++ APIs supporting Linkerd are g_HttpGet/Post() and
+ *  CHttpSession::NewRequest().
+ *  Test other service mappers too, and also CHttpStream, to ensure that
+ *  changes made for Linkerd don't break other service mappers or other API
+ *  pathways.
  *
  */
 
@@ -37,7 +42,7 @@
 #include <corelib/ncbi_url.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbidiag.hpp>
-#include <misc/jsonwrapp/jsonwrapp.hpp>
+#include <util/xregexp/regexp.hpp>
 
 #include <stdlib.h>
 
@@ -53,28 +58,315 @@
 USING_NCBI_SCOPE;
 
 
-struct SServicePath
-{
-    string  service;
-    string  path;
+// Test functions
+enum { eHttpGet, eHttpPost, eHttpStreamGet, eHttpStreamPost, eNewRequestGet, eNewRequestPost };
+
+// Service mappers
+enum { eDispd, eLbsmd, eLinkerd, eLocal, eNamerd };
+
+// POST request data
+static const string s_kPostData_Def     = "hi there\n";
+static const string s_kPostData_Fcgi    = "message=hi%20there%0A";
+
+// POST expected response data
+static const string s_kExpData_GetTest      = R"(^.*?<title>NCBI Dispatcher Test Page</title>.*$)";
+static const string s_kExpData_GetFcgi      = R"(^.*?C\+\+ GIT FastCGI Sample.*?<p>Your previous message: +\n.*$)";
+static const string s_kExpData_PostBounce   = R"(^hi there\n$)";
+static const string s_kExpData_PostFcgi     = R"(^.*?C\+\+ GIT FastCGI Sample.*?<p>Your previous message: +'hi there\n'.*$)";
+
+// Test data structure
+struct STest {
+    STest(int f, int m, const string& u, const string& e, const string& p = s_kPostData_Def)
+        : func(f), mapper(m), url(u), expected(e), post(p)
+    {
+    }
+    int     func;
+    int     mapper;
+    string  url;
+    string  expected;
+    string  post;
 };
 
 
-struct SSchemeServicePath
-{
-    string  scheme;
-    string  service;
-    string  path;
+// The URL forms to be tested include:
+//      Form                                    Example
+//      -----------------------------------     -----------------------------------
+//      service-name-only URLs                  foo
+//      host-based URLs                         https://intrawebdev2.ncbi.nlm.nih.gov/Service/bounce.cgi
+//      special case (test domain) URLs         https://test.ncbi.nlm.nih.gov/Service/bar.cgi
+//      full service-based URLs                 ncbilb://foo/Service/bar.cgi
+//      full service-based URLs with scheme     http+ncbilb://foo/Service/bar.cgi
+
+// Simple service name URLs
+static const string s_UrlServiceGet_test("test");
+static const string s_UrlServiceGet_fcgi("cxx-fast-cgi-sample");
+static const string s_UrlServicePost_bounce("bouncehttp");
+static const string s_UrlServicePost_fcgi("cxx-fast-cgi-sample");
+
+// Host-based URLs - i.e. not load-balanced, therefore not using a service mapper,
+// but they should still be accessible via the service mappers (except Linkerd).
+static const string s_UrlHostGetHttp("http://intrawebdev2.ncbi.nlm.nih.gov/Service/test.cgi");
+static const string s_UrlHostGetHttps("https://intrawebdev2.ncbi.nlm.nih.gov/Service/test.cgi");
+static const string s_UrlHostPostHttp("http://intrawebdev2.ncbi.nlm.nih.gov/Service/bounce.cgi");
+static const string s_UrlHostPostHttps("https://intrawebdev2.ncbi.nlm.nih.gov/Service/bounce.cgi");
+
+// Special case: host-based URL that goes to frontend and gets load-balanced to backend
+static const string s_UrlFrontendGet("https://test.ncbi.nlm.nih.gov/Service/test.cgi");
+static const string s_UrlFrontendPost("https://test.ncbi.nlm.nih.gov/Service/bounce.cgi");
+
+// Full service-based URLs (as indicated by ncbilb in scheme)
+// TODO: Find some full service-based URLs like the following (ie including path):
+//static const string s_UrlNcbilbGetFull("ncbilb://foo/some/path.cgi?some=args");
+//static const string s_UrlNcbilbPostFull("ncbilb://foo/some/path.cgi?some=args");
+//static const string s_UrlNcbilbHttpGetFull("http+ncbilb://foo/some/path.cgi?some=args");
+//static const string s_UrlNcbilbHttpPostFull("http+ncbilb://foo/some/path.cgi?some=args");
+//static const string s_UrlNcbilbHttpsGetFull("https+ncbilb://foo/some/path.cgi?some=args");
+//static const string s_UrlNcbilbHttpsPostFull("https+ncbilb://foo/some/path.cgi?some=args");
+static const string s_UrlNcbilbGetTest("ncbilb://test");
+static const string s_UrlNcbilbGetFcgi("ncbilb://cxx-fast-cgi-sample");
+static const string s_UrlNcbilbPostBounce("ncbilb://bouncehttp");
+static const string s_UrlNcbilbPostFcgi("ncbilb://cxx-fast-cgi-sample");
+static const string s_UrlNcbilbHttpGetTest("http+ncbilb://test");
+static const string s_UrlNcbilbHttpGetFcgi("http+ncbilb://cxx-fast-cgi-sample");
+static const string s_UrlNcbilbHttpPostBounce("http+ncbilb://bouncehttp");
+static const string s_UrlNcbilbHttpPostFcgi("http+ncbilb://cxx-fast-cgi-sample");
+
+
+// Notes on why some combinations of test factors aren't run:
+//  LBSMD doesn't support service-based URLs on Windows (but it should work on Cygwin),
+//      but it's conditionally compiled out rather than removing test cases.
+//  Linkerd can only be used for service-based URLs (it's a service mesh technology).
+//  CHttpStream doesn't currently support service-based URLs.
+
+static STest s_Tests[] = {
+
+    // TODO: THESE ARE TEMPORARY AS EXAMPLES FOR DEBUGGING (FOR LACK OF BETTER EXAMPLES) - DO NOT USE IN PRODUCTION - THEY DON'T BELONG TO US.
+    // REPLACE THEM WITH OTHER LEGITIMATE TEST SERVICES HAVING SIMILAR URL AND POST DATA FORMATS.
+    // curl -H "Host: gi2accn.linkerd.ncbi.nlm.nih.gov" "http://linkerd:4140/sviewer/girevhist.cgi?cmd=seqid&seqid=fasta&val=1322283"
+    //STest(eHttpGet,  eLinkerd,      "ncbilb://gi2accn/sviewer/girevhist.cgi?cmd=seqid&seqid=fasta&val=1322283", R"(^gb\|U54469\.1\|DMU54469\n.*$)"),
+    //STest(eHttpGet,  eLinkerd, "http+ncbilb://gi2accn/sviewer/girevhist.cgi?cmd=seqid&seqid=fasta&val=1322283", R"(^gb\|U54469\.1\|DMU54469\n.*$)"),
+    //STest(eHttpPost, eLinkerd,      "ncbilb://gi2accn/sviewer/girevhist.cgi",                                   R"(^gb\|U54469\.1\|DMU54469\n.*$)", "cmd=seqid&seqid=fasta&val=1322283"),
+    //STest(eHttpPost, eLinkerd, "http+ncbilb://gi2accn/sviewer/girevhist.cgi",                                   R"(^gb\|U54469\.1\|DMU54469\n.*$)", "cmd=seqid&seqid=fasta&val=1322283"),
+
+    // Service-name-only URLs
+
+    STest(eHttpGet,  eDispd,   s_UrlServiceGet_test,    s_kExpData_GetTest),
+    STest(eHttpGet,  eLbsmd,   s_UrlServiceGet_test,    s_kExpData_GetTest),
+    STest(eHttpGet,  eLinkerd, s_UrlServiceGet_fcgi,    s_kExpData_GetFcgi),
+    STest(eHttpGet,  eLocal,   s_UrlServiceGet_test,    s_kExpData_GetTest),
+    STest(eHttpGet,  eNamerd,  s_UrlServiceGet_test,    s_kExpData_GetTest),
+    STest(eHttpGet,  eNamerd,  s_UrlServiceGet_fcgi,    s_kExpData_GetFcgi),
+    STest(eHttpPost, eDispd,   s_UrlServicePost_bounce, s_kExpData_PostBounce),
+    STest(eHttpPost, eLbsmd,   s_UrlServicePost_bounce, s_kExpData_PostBounce),
+    STest(eHttpPost, eLinkerd, s_UrlServicePost_fcgi,   s_kExpData_PostFcgi, s_kPostData_Fcgi),
+    STest(eHttpPost, eLocal,   s_UrlServicePost_bounce, s_kExpData_PostBounce),
+    STest(eHttpPost, eNamerd,  s_UrlServicePost_bounce, s_kExpData_PostBounce),
+    STest(eHttpPost, eNamerd,  s_UrlServicePost_fcgi,   s_kExpData_PostFcgi, s_kPostData_Fcgi),
+
+    STest(eNewRequestGet,  eDispd,   s_UrlServiceGet_test,  s_kExpData_GetTest),
+    STest(eNewRequestGet,  eLbsmd,   s_UrlServiceGet_test,  s_kExpData_GetTest),
+    STest(eNewRequestGet,  eLinkerd, s_UrlServiceGet_fcgi,  s_kExpData_GetFcgi),
+    STest(eNewRequestGet,  eLocal,   s_UrlServiceGet_test,  s_kExpData_GetTest),
+    STest(eNewRequestGet,  eNamerd,  s_UrlServiceGet_test,  s_kExpData_GetTest),
+    STest(eNewRequestGet,  eNamerd,  s_UrlServiceGet_fcgi,  s_kExpData_GetFcgi),
+    STest(eNewRequestPost, eDispd,   s_UrlServicePost_bounce,   s_kExpData_PostBounce),
+    STest(eNewRequestPost, eLbsmd,   s_UrlServicePost_bounce,   s_kExpData_PostBounce),
+    STest(eNewRequestPost, eLinkerd, s_UrlServicePost_fcgi,     s_kExpData_PostFcgi, s_kPostData_Fcgi),
+    STest(eNewRequestPost, eLocal,   s_UrlServicePost_bounce,   s_kExpData_PostBounce),
+    STest(eNewRequestPost, eNamerd,  s_UrlServicePost_bounce,   s_kExpData_PostBounce),
+    STest(eNewRequestPost, eNamerd,  s_UrlServicePost_fcgi,     s_kExpData_PostFcgi, s_kPostData_Fcgi),
+
+    // Host-based URLs
+
+    STest(eHttpGet,  eDispd,   s_UrlHostGetHttp,    s_kExpData_GetTest),
+    STest(eHttpGet,  eLbsmd,   s_UrlHostGetHttp,    s_kExpData_GetTest),
+    STest(eHttpGet,  eLocal,   s_UrlHostGetHttp,    s_kExpData_GetTest),
+    STest(eHttpGet,  eNamerd,  s_UrlHostGetHttp,    s_kExpData_GetTest),
+    STest(eHttpGet,  eDispd,   s_UrlHostGetHttps,   s_kExpData_GetTest),
+    STest(eHttpGet,  eLbsmd,   s_UrlHostGetHttps,   s_kExpData_GetTest),
+    STest(eHttpGet,  eLocal,   s_UrlHostGetHttps,   s_kExpData_GetTest),
+    STest(eHttpGet,  eNamerd,  s_UrlHostGetHttps,   s_kExpData_GetTest),
+    STest(eHttpPost, eDispd,   s_UrlHostPostHttp,   s_kExpData_PostBounce),
+    STest(eHttpPost, eLbsmd,   s_UrlHostPostHttp,   s_kExpData_PostBounce),
+    STest(eHttpPost, eLocal,   s_UrlHostPostHttp,   s_kExpData_PostBounce),
+    STest(eHttpPost, eNamerd,  s_UrlHostPostHttp,   s_kExpData_PostBounce),
+    STest(eHttpPost, eDispd,   s_UrlHostPostHttps,  s_kExpData_PostBounce),
+    STest(eHttpPost, eLbsmd,   s_UrlHostPostHttps,  s_kExpData_PostBounce),
+    STest(eHttpPost, eLocal,   s_UrlHostPostHttps,  s_kExpData_PostBounce),
+    STest(eHttpPost, eNamerd,  s_UrlHostPostHttps,  s_kExpData_PostBounce),
+
+    STest(eHttpStreamGet,  eDispd,   s_UrlHostGetHttp,  s_kExpData_GetTest),
+    STest(eHttpStreamGet,  eLbsmd,   s_UrlHostGetHttp,  s_kExpData_GetTest),
+    STest(eHttpStreamGet,  eLocal,   s_UrlHostGetHttp,  s_kExpData_GetTest),
+    STest(eHttpStreamGet,  eNamerd,  s_UrlHostGetHttp,  s_kExpData_GetTest),
+    STest(eHttpStreamGet,  eDispd,   s_UrlHostGetHttps, s_kExpData_GetTest),
+    STest(eHttpStreamGet,  eLbsmd,   s_UrlHostGetHttps, s_kExpData_GetTest),
+    STest(eHttpStreamGet,  eLocal,   s_UrlHostGetHttps, s_kExpData_GetTest),
+    STest(eHttpStreamGet,  eNamerd,  s_UrlHostGetHttps, s_kExpData_GetTest),
+    STest(eHttpStreamPost, eDispd,   s_UrlHostPostHttp,     s_kExpData_PostBounce),
+    STest(eHttpStreamPost, eLbsmd,   s_UrlHostPostHttp,     s_kExpData_PostBounce),
+    STest(eHttpStreamPost, eLocal,   s_UrlHostPostHttp,     s_kExpData_PostBounce),
+    STest(eHttpStreamPost, eNamerd,  s_UrlHostPostHttp,     s_kExpData_PostBounce),
+    STest(eHttpStreamPost, eDispd,   s_UrlHostPostHttps,    s_kExpData_PostBounce),
+    STest(eHttpStreamPost, eLbsmd,   s_UrlHostPostHttps,    s_kExpData_PostBounce),
+    STest(eHttpStreamPost, eLocal,   s_UrlHostPostHttps,    s_kExpData_PostBounce),
+    STest(eHttpStreamPost, eNamerd,  s_UrlHostPostHttps,    s_kExpData_PostBounce),
+
+    STest(eNewRequestGet,  eDispd,   s_UrlHostGetHttp,  s_kExpData_GetTest),
+    STest(eNewRequestGet,  eLbsmd,   s_UrlHostGetHttp,  s_kExpData_GetTest),
+    STest(eNewRequestGet,  eLocal,   s_UrlHostGetHttp,  s_kExpData_GetTest),
+    STest(eNewRequestGet,  eNamerd,  s_UrlHostGetHttp,  s_kExpData_GetTest),
+    STest(eNewRequestGet,  eDispd,   s_UrlHostGetHttps, s_kExpData_GetTest),
+    STest(eNewRequestGet,  eLbsmd,   s_UrlHostGetHttps, s_kExpData_GetTest),
+    STest(eNewRequestGet,  eLocal,   s_UrlHostGetHttps, s_kExpData_GetTest),
+    STest(eNewRequestGet,  eNamerd,  s_UrlHostGetHttps, s_kExpData_GetTest),
+    STest(eNewRequestPost, eDispd,   s_UrlHostPostHttp,     s_kExpData_PostBounce),
+    STest(eNewRequestPost, eLbsmd,   s_UrlHostPostHttp,     s_kExpData_PostBounce),
+    STest(eNewRequestPost, eLocal,   s_UrlHostPostHttp,     s_kExpData_PostBounce),
+    STest(eNewRequestPost, eNamerd,  s_UrlHostPostHttp,     s_kExpData_PostBounce),
+    STest(eNewRequestPost, eDispd,   s_UrlHostPostHttps,    s_kExpData_PostBounce),
+    STest(eNewRequestPost, eLbsmd,   s_UrlHostPostHttps,    s_kExpData_PostBounce),
+    STest(eNewRequestPost, eLocal,   s_UrlHostPostHttps,    s_kExpData_PostBounce),
+    STest(eNewRequestPost, eNamerd,  s_UrlHostPostHttps,    s_kExpData_PostBounce),
+
+    // Special case: test domain URLs
+
+    STest(eHttpGet,  eDispd,   s_UrlFrontendGet,    s_kExpData_GetTest),
+    STest(eHttpGet,  eLbsmd,   s_UrlFrontendGet,    s_kExpData_GetTest),
+    STest(eHttpGet,  eLocal,   s_UrlFrontendGet,    s_kExpData_GetTest),
+    STest(eHttpGet,  eNamerd,  s_UrlFrontendGet,    s_kExpData_GetTest),
+    STest(eHttpPost, eDispd,   s_UrlFrontendPost,   s_kExpData_PostBounce),
+    STest(eHttpPost, eLbsmd,   s_UrlFrontendPost,   s_kExpData_PostBounce),
+    STest(eHttpPost, eLocal,   s_UrlFrontendPost,   s_kExpData_PostBounce),
+    STest(eHttpPost, eNamerd,  s_UrlFrontendPost,   s_kExpData_PostBounce),
+
+    STest(eHttpStreamGet,  eDispd,   s_UrlFrontendGet,  s_kExpData_GetTest),
+    STest(eHttpStreamGet,  eLbsmd,   s_UrlFrontendGet,  s_kExpData_GetTest),
+    STest(eHttpStreamGet,  eLocal,   s_UrlFrontendGet,  s_kExpData_GetTest),
+    STest(eHttpStreamGet,  eNamerd,  s_UrlFrontendGet,  s_kExpData_GetTest),
+    STest(eHttpStreamPost, eDispd,   s_UrlFrontendPost, s_kExpData_PostBounce),
+    STest(eHttpStreamPost, eLbsmd,   s_UrlFrontendPost, s_kExpData_PostBounce),
+    STest(eHttpStreamPost, eLocal,   s_UrlFrontendPost, s_kExpData_PostBounce),
+    STest(eHttpStreamPost, eNamerd,  s_UrlFrontendPost, s_kExpData_PostBounce),
+
+    STest(eNewRequestGet,  eDispd,   s_UrlFrontendGet,  s_kExpData_GetTest),
+    STest(eNewRequestGet,  eLbsmd,   s_UrlFrontendGet,  s_kExpData_GetTest),
+    STest(eNewRequestGet,  eLocal,   s_UrlFrontendGet,  s_kExpData_GetTest),
+    STest(eNewRequestGet,  eNamerd,  s_UrlFrontendGet,  s_kExpData_GetTest),
+    STest(eNewRequestPost, eDispd,   s_UrlFrontendPost, s_kExpData_PostBounce),
+    STest(eNewRequestPost, eLbsmd,   s_UrlFrontendPost, s_kExpData_PostBounce),
+    STest(eNewRequestPost, eLocal,   s_UrlFrontendPost, s_kExpData_PostBounce),
+    STest(eNewRequestPost, eNamerd,  s_UrlFrontendPost, s_kExpData_PostBounce),
+
+    // Full service-based URLs, no scheme
+
+    STest(eHttpGet,  eDispd,   s_UrlNcbilbGetTest,  s_kExpData_GetTest),
+    STest(eHttpGet,  eLbsmd,   s_UrlNcbilbGetTest,  s_kExpData_GetTest),
+    STest(eHttpGet,  eLinkerd, s_UrlNcbilbGetFcgi,  s_kExpData_GetFcgi),
+    STest(eHttpGet,  eLocal,   s_UrlNcbilbGetTest,  s_kExpData_GetTest),
+    STest(eHttpGet,  eNamerd,  s_UrlNcbilbGetTest,  s_kExpData_GetTest),
+    STest(eHttpGet,  eNamerd,  s_UrlNcbilbGetFcgi,  s_kExpData_GetFcgi),
+    STest(eHttpPost, eDispd,   s_UrlNcbilbPostBounce,   s_kExpData_PostBounce),
+    STest(eHttpPost, eLbsmd,   s_UrlNcbilbPostBounce,   s_kExpData_PostBounce),
+    STest(eHttpPost, eLinkerd, s_UrlNcbilbPostFcgi,     s_kExpData_PostFcgi, s_kPostData_Fcgi),
+    STest(eHttpPost, eLocal,   s_UrlNcbilbPostBounce,   s_kExpData_PostBounce),
+    STest(eHttpPost, eNamerd,  s_UrlNcbilbPostBounce,   s_kExpData_PostBounce),
+    STest(eHttpPost, eNamerd,  s_UrlNcbilbPostFcgi,     s_kExpData_PostFcgi, s_kPostData_Fcgi),
+
+    STest(eNewRequestGet,  eDispd,   s_UrlNcbilbGetTest,    s_kExpData_GetTest),
+    STest(eNewRequestGet,  eLbsmd,   s_UrlNcbilbGetTest,    s_kExpData_GetTest),
+    STest(eNewRequestGet,  eLinkerd, s_UrlNcbilbGetFcgi,    s_kExpData_GetFcgi),
+    STest(eNewRequestGet,  eLocal,   s_UrlNcbilbGetTest,    s_kExpData_GetTest),
+    STest(eNewRequestGet,  eNamerd,  s_UrlNcbilbGetTest,    s_kExpData_GetTest),
+    STest(eNewRequestGet,  eNamerd,  s_UrlNcbilbGetFcgi,    s_kExpData_GetFcgi),
+    STest(eNewRequestPost, eDispd,   s_UrlNcbilbPostBounce, s_kExpData_PostBounce),
+    STest(eNewRequestPost, eLbsmd,   s_UrlNcbilbPostBounce, s_kExpData_PostBounce),
+    STest(eNewRequestPost, eLinkerd, s_UrlNcbilbPostFcgi,   s_kExpData_PostFcgi, s_kPostData_Fcgi),
+    STest(eNewRequestPost, eLocal,   s_UrlNcbilbPostBounce, s_kExpData_PostBounce),
+    STest(eNewRequestPost, eNamerd,  s_UrlNcbilbPostBounce, s_kExpData_PostBounce),
+    STest(eNewRequestPost, eNamerd,  s_UrlNcbilbPostFcgi,   s_kExpData_PostFcgi, s_kPostData_Fcgi),
+
+    // Full service-based URLs, http scheme
+
+    STest(eHttpGet,  eDispd,   s_UrlNcbilbHttpGetTest,  s_kExpData_GetTest),
+    STest(eHttpGet,  eLbsmd,   s_UrlNcbilbHttpGetTest,  s_kExpData_GetTest),
+    STest(eHttpGet,  eLinkerd, s_UrlNcbilbHttpGetFcgi,  s_kExpData_GetFcgi),
+    STest(eHttpGet,  eLocal,   s_UrlNcbilbHttpGetTest,  s_kExpData_GetTest),
+    STest(eHttpGet,  eNamerd,  s_UrlNcbilbHttpGetTest,  s_kExpData_GetTest),
+    STest(eHttpGet,  eNamerd,  s_UrlNcbilbHttpGetFcgi,  s_kExpData_GetFcgi),
+    STest(eHttpPost, eDispd,   s_UrlNcbilbHttpPostBounce,   s_kExpData_PostBounce),
+    STest(eHttpPost, eLbsmd,   s_UrlNcbilbHttpPostBounce,   s_kExpData_PostBounce),
+    STest(eHttpPost, eLinkerd, s_UrlNcbilbHttpPostFcgi,     s_kExpData_PostFcgi, s_kPostData_Fcgi),
+    STest(eHttpPost, eLocal,   s_UrlNcbilbHttpPostBounce,   s_kExpData_PostBounce),
+    STest(eHttpPost, eNamerd,  s_UrlNcbilbHttpPostBounce,   s_kExpData_PostBounce),
+    STest(eHttpPost, eNamerd,  s_UrlNcbilbHttpPostFcgi,     s_kExpData_PostFcgi, s_kPostData_Fcgi),
+
+    STest(eNewRequestGet,  eDispd,   s_UrlNcbilbHttpGetTest,    s_kExpData_GetTest),
+    STest(eNewRequestGet,  eLbsmd,   s_UrlNcbilbHttpGetTest,    s_kExpData_GetTest),
+    STest(eNewRequestGet,  eLinkerd, s_UrlNcbilbHttpGetFcgi,    s_kExpData_GetFcgi),
+    STest(eNewRequestGet,  eLocal,   s_UrlNcbilbHttpGetTest,    s_kExpData_GetTest),
+    STest(eNewRequestGet,  eNamerd,  s_UrlNcbilbHttpGetTest,    s_kExpData_GetTest),
+    STest(eNewRequestGet,  eNamerd,  s_UrlNcbilbHttpGetFcgi,    s_kExpData_GetFcgi),
+    STest(eNewRequestPost, eDispd,   s_UrlNcbilbHttpPostBounce, s_kExpData_PostBounce),
+    STest(eNewRequestPost, eLbsmd,   s_UrlNcbilbHttpPostBounce, s_kExpData_PostBounce),
+    STest(eNewRequestPost, eLinkerd, s_UrlNcbilbHttpPostFcgi,   s_kExpData_PostFcgi, s_kPostData_Fcgi),
+    STest(eNewRequestPost, eLocal,   s_UrlNcbilbHttpPostBounce, s_kExpData_PostBounce),
+    STest(eNewRequestPost, eNamerd,  s_UrlNcbilbHttpPostBounce, s_kExpData_PostBounce),
+    STest(eNewRequestPost, eNamerd,  s_UrlNcbilbHttpPostFcgi,   s_kExpData_PostFcgi, s_kPostData_Fcgi),
+
+    // Full service-based URLs, https scheme
+
+// TODO: Add the following when you find a service that can be used for regular testing via HTTPS.
+#if 0
+    STest(eHttpGet,  eDispd,   s_UrlNcbilbHttpsGetTest, s_kExpData_GetTest),
+    STest(eHttpGet,  eLbsmd,   s_UrlNcbilbHttpsGetTest, s_kExpData_GetTest),
+    STest(eHttpGet,  eLinkerd, s_UrlNcbilbHttpsGetFcgi, s_kExpData_GetFcgi),
+    STest(eHttpGet,  eLocal,   s_UrlNcbilbHttpsGetTest, s_kExpData_GetTest),
+    STest(eHttpGet,  eNamerd,  s_UrlNcbilbHttpsGetTest, s_kExpData_GetTest),
+    STest(eHttpGet,  eNamerd,  s_UrlNcbilbHttpsGetFcgi, s_kExpData_GetFcgi),
+    STest(eHttpPost, eDispd,   s_UrlNcbilbHttpsPostBounce,  s_kExpData_PostBounce),
+    STest(eHttpPost, eLbsmd,   s_UrlNcbilbHttpsPostBounce,  s_kExpData_PostBounce),
+    STest(eHttpPost, eLinkerd, s_UrlNcbilbHttpsPostFcgi,    s_kExpData_PostFcgi, s_kPostData_Fcgi),
+    STest(eHttpPost, eLocal,   s_UrlNcbilbHttpsPostBounce,  s_kExpData_PostBounce),
+    STest(eHttpPost, eNamerd,  s_UrlNcbilbHttpsPostBounce,  s_kExpData_PostBounce),
+    STest(eHttpPost, eNamerd,  s_UrlNcbilbHttpsPostFcgi,    s_kExpData_PostFcgi, s_kPostData_Fcgi),
+
+    STest(eNewRequestGet,  eDispd,   s_UrlNcbilbHttpsGetTest,   s_kExpData_GetTest),
+    STest(eNewRequestGet,  eLbsmd,   s_UrlNcbilbHttpsGetTest,   s_kExpData_GetTest),
+    STest(eNewRequestGet,  eLinkerd, s_UrlNcbilbHttpsGetFcgi,   s_kExpData_GetFcgi),
+    STest(eNewRequestGet,  eLocal,   s_UrlNcbilbHttpsGetTest,   s_kExpData_GetTest),
+    STest(eNewRequestGet,  eNamerd,  s_UrlNcbilbHttpsGetTest,   s_kExpData_GetTest),
+    STest(eNewRequestGet,  eNamerd,  s_UrlNcbilbHttpsGetFcgi,   s_kExpData_GetFcgi),
+    STest(eNewRequestPost, eDispd,   s_UrlNcbilbHttpsPostBounce,    s_kExpData_PostBounce),
+    STest(eNewRequestPost, eLbsmd,   s_UrlNcbilbHttpsPostBounce,    s_kExpData_PostBounce),
+    STest(eNewRequestPost, eLinkerd, s_UrlNcbilbHttpsPostFcgi,      s_kExpData_PostFcgi, s_kPostData_Fcgi),
+    STest(eNewRequestPost, eLocal,   s_UrlNcbilbHttpsPostBounce,    s_kExpData_PostBounce),
+    STest(eNewRequestPost, eNamerd,  s_UrlNcbilbHttpsPostBounce,    s_kExpData_PostBounce),
+    STest(eNewRequestPost, eNamerd,  s_UrlNcbilbHttpsPostFcgi,      s_kExpData_PostFcgi, s_kPostData_Fcgi),
+#endif
 };
 
 
-struct SMapper
+// Helper class to change service mappers
+class CMapper
 {
-    void Configure(CNcbiRegistry& config);
+public:
+    void Configure(void)
+    {
+        for (auto const& env : m_EnvSet) {
+            setenv(env.first.c_str(), env.second.c_str(), 1);
+        }
+        for (auto const& env : m_EnvUnset) {
+            unsetenv(env.c_str());
+        }
+    }
+    static void Init(vector<CMapper>& mappers);
 
-    string                  name;
-    bool                    enabled;
-    map<string, string>     env_vars;
+    int                     m_Id;
+    string                  m_Name;
+    bool                    m_Enabled;
+    map<string, string>     m_EnvSet;
+    list<string>            m_EnvUnset;
 };
 
 
@@ -85,204 +377,184 @@ public:
     virtual int  Run(void);
 
 private:
-    void ReadData(void);
+    void SelectMapper(int id);
 
-    void SetupRequest(CHttpRequest& request);
-    int  PrintResponse(const CHttpSession* session, CHttpResponse& resp);
+    int CompareResponse(const string& expected, const string& got);
+    int ProcessResponse(CHttpResponse& resp, const string& expected);
 
+    void TestCaseLine(
+        const string& header,
+        const string& footer,
+        const string& prefix,
+        const string& sep,
+        bool          show_result,
+        int           result,
+        const string& test_case,
+        const string& method,
+        const string& url);
     void TestCaseStart(
         const string& test_case,
         const string& method,
-        const string* url = 0,
-        const CUrl*   curl = 0,
-        const string* scheme = 0,
-        const string* service = 0,
-        const string* path = 0);
+        const string& url);
     void TestCaseEnd(
         const string& test_case,
         const string& method,
         int           result,
-        const string* url = 0,
-        const CUrl*   curl = 0,
-        const string* scheme = 0,
-        const string* service = 0,
-        const string* path = 0);
+        const string& url);
 
-    int TestGet_CUrl_Service(const string& service);
-    int TestGet_CUrl_ServicePath(const string& service, const string& path);
-    int TestGet_CUrl_SchemeServicePath(const string& scheme, const string& service, const string& path);
-    int TestGet_Http(const string& url);
-    int TestGet_HttpStream(const string& url);
-    int TestGet_NewRequest(const CUrl& curl, bool nested = false);
+    int TestGet_Http      (const STest& test);
+    int TestGet_HttpStream(const STest& test);
+    int TestGet_NewRequest(const STest& test);
 
-    int TestPost_CUrl_Service(const string& service);
-    int TestPost_CUrl_ServicePath(const string& service, const string& path);
-    int TestPost_CUrl_SchemeServicePath(const string& scheme, const string& service, const string& path);
-    int TestPost_Http(const string& url);
-    int TestPost_HttpStream(const string& url);
-    int TestPost_NewRequest(const CUrl& curl, bool nested = false);
-
-    int RunTests(SMapper& mapper);
+    int TestPost_Http      (const STest& test);
+    int TestPost_HttpStream(const STest& test);
+    int TestPost_NewRequest(const STest& test);
 
 private:
-    CTimeout            m_Timeout;
-    unsigned short      m_Retries;
     char                m_Hostname[300];
 
-    list<SMapper>       m_Mappers;
+    vector<CMapper>     m_Mappers;
     string              m_MapperName;
-    string              m_PostData;
-
-    list<string>                m_GetCurlService;
-    list<SServicePath>          m_GetCurlServicePath;
-    list<SSchemeServicePath>    m_GetCurlSchemeServicePath;
-    list<string>                m_GetHttp;
-    list<string>                m_GetHttpStream;
-    list<string>                m_GetNewRequest;
-
-    list<string>                m_PostCurlService;
-    list<SServicePath>          m_PostCurlServicePath;
-    list<SSchemeServicePath>    m_PostCurlSchemeServicePath;
-    list<string>                m_PostHttp;
-    list<string>                m_PostHttpStream;
-    list<string>                m_PostNewRequest;
 };
 
 
-void SMapper::Configure(CNcbiRegistry& config)
+void CMapper::Init(vector<CMapper>& mappers)
 {
-    for (auto env : this->env_vars) {
-        setenv(env.first.c_str(), env.second.c_str(), 1);
-    }
+    {{
+        CMapper mapper;
+        mapper.m_Id = eDispd;
+        mapper.m_Name = "dispd";
+        mapper.m_Enabled = true;
+        mapper.m_EnvSet["CONN_DISPD_DISABLE"] = "0";
+        mapper.m_EnvSet["CONN_LBSMD_DISABLE"] = "1";
+        mapper.m_EnvSet["CONN_LINKERD_ENABLE"] = "0";
+        mapper.m_EnvSet["CONN_LOCAL_ENABLE"] = "0";
+        mapper.m_EnvSet["CONN_NAMERD_ENABLE"] = "0";
+        mapper.m_EnvUnset.push_back("CONN_LOCAL_SERVICES");
+        mapper.m_EnvUnset.push_back("TEST_CONN_LOCAL_SERVER_1");
+        mapper.m_EnvUnset.push_back("BOUNCEHTTP_CONN_LOCAL_SERVER_1");
+        mappers.push_back(mapper);
+    }}
+
+    {{
+        CMapper mapper;
+        mapper.m_Id = eLbsmd;
+        mapper.m_Name = "lbsmd";
+        mapper.m_Enabled = true;
+        mapper.m_EnvSet["CONN_DISPD_DISABLE"] = "1";
+        mapper.m_EnvSet["CONN_LBSMD_DISABLE"] = "0";
+        mapper.m_EnvSet["CONN_LINKERD_ENABLE"] = "0";
+        mapper.m_EnvSet["CONN_LOCAL_ENABLE"] = "0";
+        mapper.m_EnvSet["CONN_NAMERD_ENABLE"] = "0";
+        mapper.m_EnvUnset.push_back("CONN_LOCAL_SERVICES");
+        mapper.m_EnvUnset.push_back("TEST_CONN_LOCAL_SERVER_1");
+        mapper.m_EnvUnset.push_back("BOUNCEHTTP_CONN_LOCAL_SERVER_1");
+        mappers.push_back(mapper);
+    }}
+
+    {{
+        CMapper mapper;
+        mapper.m_Id = eLinkerd;
+        mapper.m_Name = "linkerd";
+        mapper.m_Enabled = true;
+        mapper.m_EnvSet["CONN_DISPD_DISABLE"] = "1";
+        mapper.m_EnvSet["CONN_LBSMD_DISABLE"] = "1";
+        mapper.m_EnvSet["CONN_LINKERD_ENABLE"] = "1";
+        mapper.m_EnvSet["CONN_LOCAL_ENABLE"] = "0";
+        mapper.m_EnvSet["CONN_NAMERD_ENABLE"] = "0";
+        mapper.m_EnvUnset.push_back("CONN_LOCAL_SERVICES");
+        mapper.m_EnvUnset.push_back("TEST_CONN_LOCAL_SERVER_1");
+        mapper.m_EnvUnset.push_back("BOUNCEHTTP_CONN_LOCAL_SERVER_1");
+        mappers.push_back(mapper);
+    }}
+
+    {{
+        CMapper mapper;
+        mapper.m_Id = eLocal;
+        mapper.m_Name = "local";
+        mapper.m_Enabled = true;
+        mapper.m_EnvSet["CONN_DISPD_DISABLE"] = "1";
+        mapper.m_EnvSet["CONN_LBSMD_DISABLE"] = "1";
+        mapper.m_EnvSet["CONN_LINKERD_ENABLE"] = "0";
+        mapper.m_EnvSet["CONN_LOCAL_ENABLE"] = "1";
+        mapper.m_EnvSet["CONN_NAMERD_ENABLE"] = "0";
+        mapper.m_EnvSet["CONN_LOCAL_SERVICES"] = "TEST BOUNCEHTTP";
+        // TODO: do not hard-code sutils101 - look up bouncehttp with lbsmc and use the dynamic result
+        mapper.m_EnvSet["TEST_CONN_LOCAL_SERVER_1"] = "HTTP_GET sutils101:80 /Service/test.cgi";
+        mapper.m_EnvSet["BOUNCEHTTP_CONN_LOCAL_SERVER_1"] = "HTTP sutils101:80 /Service/bounce.cgi";
+        mappers.push_back(mapper);
+    }}
+
+    {{
+        CMapper mapper;
+        mapper.m_Id = eNamerd;
+        mapper.m_Name = "namerd";
+        mapper.m_Enabled = true;
+        mapper.m_EnvSet["CONN_DISPD_DISABLE"] = "1";
+        mapper.m_EnvSet["CONN_LBSMD_DISABLE"] = "1";
+        mapper.m_EnvSet["CONN_LINKERD_ENABLE"] = "0";
+        mapper.m_EnvSet["CONN_LOCAL_ENABLE"] = "0";
+        mapper.m_EnvSet["CONN_NAMERD_ENABLE"] = "1";
+        mapper.m_EnvUnset.push_back("CONN_LOCAL_SERVICES");
+        mapper.m_EnvUnset.push_back("TEST_CONN_LOCAL_SERVER_1");
+        mapper.m_EnvUnset.push_back("BOUNCEHTTP_CONN_LOCAL_SERVER_1");
+        mappers.push_back(mapper);
+    }}
 }
 
 
-void CTestNcbiLinkerdCxxApp::ReadData(void)
+void CTestNcbiLinkerdCxxApp::SelectMapper(int id)
 {
-    // Get config params as passed in.
-    m_Timeout.Set(GetArgs()["timeout"].AsDouble());
-    m_Retries = static_cast<unsigned short>(GetArgs()["retries"].AsInteger());
-
-    ERR_POST(Info << "Timeout:  " << m_Timeout.GetAsDouble());
-    ERR_POST(Info << "Retries:  " << m_Retries);
-
-    string test_file(GetArgs()["test_file"].AsString());
-    ERR_POST(Info << "Test file: " << test_file);
-
-    // Overall file stuff
-    CJson_Document doc;
-    if ( ! doc.Read(test_file)) {
-        NCBI_USER_THROW(string("Cannot read test file '") + test_file + "'.");
-    }
-    auto obj = doc.GetObject();
-
-    // Mapper specs
-    for (auto iter : obj["mappers"].GetObject()) {
-        SMapper                 mapper;
-        map<string, string>     env_vars;
-
-        mapper.name = iter.name;
-        auto namevals = iter.value.GetObject();
-        mapper.enabled = namevals["enabled"].GetValue().GetBool();
-        //cout << iter.name << "[\"enabled\"]=" << mapper.enabled << endl;
-        auto mapper_envs = namevals["env_set"].GetObject();
-        for (auto jenv : mapper_envs) {
-            mapper.env_vars[jenv.name] = jenv.value.GetValue().GetString();
-            //cout << jenv.name << "=" << mapper.env_vars[jenv.name] << endl;
+    for (auto& mapper : m_Mappers) {
+        if (mapper.m_Id == id) {
+            mapper.Configure();
+            m_MapperName = mapper.m_Name;
+            return;
         }
-
-        m_Mappers.push_back(mapper);
     }
-
-    // GET specs
-    auto get = obj["get"].GetObject();
-    for (auto iter : get["curl_service"].GetArray()) {
-        //cout << "GET curl_service   " << iter.GetValue().GetString() << endl;
-        m_GetCurlService.push_back(iter.GetValue().GetString());
-    }
-    for (auto iter : get["curl_service_path"].GetArray()) {
-        SServicePath    svc_path;
-        svc_path.service = iter.GetObject()["service"].GetValue().GetString();
-        svc_path.path    = iter.GetObject()["path"].GetValue().GetString();
-        //cout << "GET curl_service_path   " << svc_path.service << "   " << svc_path.path << endl;
-        m_GetCurlServicePath.push_back(svc_path);
-    }
-    for (auto iter : get["curl_scheme_service_path"].GetArray()) {
-        SSchemeServicePath  sch_svc_path;
-        sch_svc_path.scheme  = iter.GetObject()["scheme"].GetValue().GetString();
-        sch_svc_path.service = iter.GetObject()["service"].GetValue().GetString();
-        sch_svc_path.path    = iter.GetObject()["path"].GetValue().GetString();
-        //cout << "GET curl_scheme_service_path   " << sch_svc_path.scheme << "   " << sch_svc_path.service << "   " << sch_svc_path.path << endl;
-        m_GetCurlSchemeServicePath.push_back(sch_svc_path);
-    }
-    for (auto iter : get["http"].GetArray()) {
-        //cout << "GET m_GetHttp   " << iter.GetValue().GetString() << endl;
-        m_GetHttp.push_back(iter.GetValue().GetString());
-    }
-    for (auto iter : get["http_stream"].GetArray()) {
-        //cout << "GET m_GetHttpStream   " << iter.GetValue().GetString() << endl;
-        m_GetHttpStream.push_back(iter.GetValue().GetString());
-    }
-    for (auto iter : get["new_request"].GetArray()) {
-        //cout << "GET m_GetNewRequest   " << iter.GetValue().GetString() << endl;
-        m_GetNewRequest.push_back(iter.GetValue().GetString());
-    }
-
-    // POST specs
-    auto post = obj["post"].GetObject();
-    m_PostData = post["data"].GetValue().GetString();
-    for (auto iter : post["curl_service"].GetArray()) {
-        //cout << "POST curl_service   " << iter.GetValue().GetString() << endl;
-        m_PostCurlService.push_back(iter.GetValue().GetString());
-    }
-    for (auto iter : post["curl_service_path"].GetArray()) {
-        SServicePath    svc_path;
-        svc_path.service = iter.GetObject()["service"].GetValue().GetString();
-        svc_path.path    = iter.GetObject()["path"].GetValue().GetString();
-        //cout << "POST curl_service_path   " << svc_path.service << "   " << svc_path.path << endl;
-        m_PostCurlServicePath.push_back(svc_path);
-    }
-    for (auto iter : post["curl_scheme_service_path"].GetArray()) {
-        SSchemeServicePath  sch_svc_path;
-        sch_svc_path.scheme  = iter.GetObject()["scheme"].GetValue().GetString();
-        sch_svc_path.service = iter.GetObject()["service"].GetValue().GetString();
-        sch_svc_path.path    = iter.GetObject()["path"].GetValue().GetString();
-        //cout << "POST curl_scheme_service_path   " << sch_svc_path.scheme << "   " << sch_svc_path.service << "   " << sch_svc_path.path << endl;
-        m_PostCurlSchemeServicePath.push_back(sch_svc_path);
-    }
-    for (auto iter : post["http"].GetArray()) {
-        //cout << "POST m_PostHttp   " << iter.GetValue().GetString() << endl;
-        m_PostHttp.push_back(iter.GetValue().GetString());
-    }
-    for (auto iter : post["http_stream"].GetArray()) {
-        //cout << "POST m_PostHttpStream   " << iter.GetValue().GetString() << endl;
-        m_PostHttpStream.push_back(iter.GetValue().GetString());
-    }
-    for (auto iter : post["new_request"].GetArray()) {
-        //cout << "POST m_PostNewRequest   " << iter.GetValue().GetString() << endl;
-        m_PostNewRequest.push_back(iter.GetValue().GetString());
-    }
+    NCBI_USER_THROW(string("MAPPER ") + NStr::NumericToString<int>(id) + " NOT FOUND");
 }
 
 
-void CTestNcbiLinkerdCxxApp::SetupRequest(CHttpRequest& request)
+int CTestNcbiLinkerdCxxApp::CompareResponse(const string& expected, const string& got)
 {
-    if (m_Timeout.GetAsDouble() > 0.0) {
-        request.SetTimeout(CTimeout(m_Timeout.GetAsDouble()));
+    CRegexp re(expected, CRegexp::fCompile_dotall);
+    if (re.IsMatch(got)) {
+        ERR_POST(Info << "--- Response Body (STDOUT) ---");
+        ERR_POST(Info << got);
+        return 0;
+    } else {
+        ERR_POST(Error << "--- Response Body (STDOUT) ---  did not match expected value");
+        size_t pos = 0, len;
+        string escaped = expected;
+        len = escaped.length();
+        while ((pos = escaped.find("\\", pos)) != NPOS) { escaped.replace(pos, 1, "\\\\"); pos += 2; }
+        while ((pos = escaped.find("\r", pos)) != NPOS) { escaped.replace(pos, 1, "\\r");  pos += 2; }
+        while ((pos = escaped.find("\n", pos)) != NPOS) { escaped.replace(pos, 1, "\\n");  pos += 2; }
+        ERR_POST(Info << "Escaped exp string (length " << len << "): [" << escaped << "]");
+        escaped = got;
+        len = escaped.length();
+        while ((pos = escaped.find("\\", pos)) != NPOS) { escaped.replace(pos, 1, "\\\\"); pos += 2; }
+        while ((pos = escaped.find("\r", pos)) != NPOS) { escaped.replace(pos, 1, "\\r");  pos += 2; }
+        while ((pos = escaped.find("\n", pos)) != NPOS) { escaped.replace(pos, 1, "\\n");  pos += 2; }
+        ERR_POST(Info << "Escaped got string (length " << len << "): [" << escaped << "]");
     }
-    request.SetRetries(m_Retries);
+    return 1;
 }
 
 
-int CTestNcbiLinkerdCxxApp::PrintResponse(const CHttpSession* session, CHttpResponse& resp)
+int CTestNcbiLinkerdCxxApp::ProcessResponse(CHttpResponse& resp, const string& expected)
 {
-    ERR_POST(Info << "Status: " << resp.GetStatusCode() << " " << resp.GetStatusText());
-    ERR_POST(Info << "--- Body ---");
+    ERR_POST(Info << "HTTP Status: " << resp.GetStatusCode() << " " << resp.GetStatusText());
 
+    string  got;
     if (resp.CanGetContentStream()) {
         CNcbiIstream& in = resp.ContentStream();
         if ( in.good() ) {
-            NcbiStreamCopy(cerr, in);
+            CNcbiOstrstream out;
+            NcbiStreamCopy(out, in);
+            got = CNcbiOstrstreamToString(out);
+            return CompareResponse(expected, got);
         }
         else {
             ERR_POST(Error << "Bad content stream.");
@@ -291,299 +563,157 @@ int CTestNcbiLinkerdCxxApp::PrintResponse(const CHttpSession* session, CHttpResp
     else {
         CNcbiIstream& in = resp.ErrorStream();
         if (in.good()) {
-            NcbiStreamCopy(cerr, in);
+            ERR_POST(Info << "--- Response Body (STDERR) ---");
+            CNcbiOstrstream out;
+            NcbiStreamCopy(out, in);
+            got = CNcbiOstrstreamToString(out);
+            ERR_POST(Info << got);
         }
         else {
             ERR_POST(Error << "Bad error stream.");
         }
     }
-    return resp.GetStatusCode() == 200 ? 0 : 1;
+    return 1;
+}
+
+
+void CTestNcbiLinkerdCxxApp::TestCaseLine(
+    const string& header,
+    const string& footer,
+    const string& prefix,
+    const string& sep,
+    bool          show_result,
+    int           result,
+    const string& test_case,
+    const string& method,
+    const string& url)
+{
+    string msg("\n");
+    msg += header + prefix + sep + m_Hostname + sep + url + sep + test_case;
+    msg += sep + method + sep + m_MapperName;
+    if (show_result)
+        msg += sep + (result == 0 ? "PASS" : "FAIL");
+    msg += footer + "\n";
+    ERR_POST(Info << msg);
 }
 
 
 void CTestNcbiLinkerdCxxApp::TestCaseStart(
     const string& test_case,
     const string& method,
-    const string* url,
-    const CUrl*   curl,
-    const string* scheme,
-    const string* service,
-    const string* path)
+    const string& url)
 {
-    cout << "\n\n" << string(80, '=') << endl;
-    cout << "TestCaseStart  " << m_MapperName << "  " << test_case << "  " << method;
-    if (url) {
-        cout << "  " << *url << "  string";
-    } else if (curl) {
-        CUrl curl2(*curl);
-        cout << "  " << curl2.ComposeUrl(CUrlArgs::eAmp_Char) << "  CUrl";
-    } else {
-        cout << "  _na_  _na_";
-    }
-    cout << "  " << (scheme ? *scheme : "_na_");
-    cout << "  " << (service ? *service : "_na_");
-    cout << "  " << (path ? *path : "_na_") << endl;
+    TestCaseLine(
+        string(80, '=') + "\n", "",
+        "TestCaseStart", "\t",
+        false, -1,
+        test_case, method, url);
 }
 
 
-// Create a record that can be (a) easily found in the large log file, and (b)
-// easily transformed into a CSV.  For example:
-//      ./test_ncbi_linkerd_cxx >& testout.txt
-//      cat testout.txt | grep -P '^TestCaseEnd\t' | tr '\t' , > results.csv
+// Result records can easily be transformed into a CSV.  For example:
+//      ./test_ncbi_linkerd_cxx | grep -P '^TestCaseEnd\t' | tr '\t' ,
 void CTestNcbiLinkerdCxxApp::TestCaseEnd(
     const string& test_case,
     const string& method,
     int           result,
-    const string* url,
-    const CUrl*   curl,
-    const string* scheme,
-    const string* service,
-    const string* path)
+    const string& url)
 {
-    cout << "\nTestCaseEnd\t" << m_Hostname << "\t" << (result == 0 ? "PASS" : "FAIL");
-    cout << "\t" << test_case << "\t" << method << "\t";
-    if (url) {
-        cout << "string_url(" << *url << ")";
-    } else if (curl) {
-        CUrl curl2(*curl);
-        cout << "CUrl=" << curl2.ComposeUrl(CUrlArgs::eAmp_Char);
-    } else {
-        CUrl curl;
-        cout << "CUrl.Set(";
-        if (scheme) {
-            curl.SetScheme(*scheme);
-            cout << "scheme=" << *scheme << " ";
-        }
-        curl.SetService(*service);
-        cout << "service=" << *service;
-        if (path) {
-            curl.SetPath(*path);
-            cout << " path=" << *path;
-        }
-        cout << ")=" << curl.ComposeUrl(CUrlArgs::eAmp_Char);
-    }
-    cout << "\t" << m_MapperName;
-    cout << "\n" << string(80, '-') << "\n" << endl;
+    TestCaseLine(
+        "", string("\n") + string(80, '-') + "\n",
+        "TestCaseEnd", "\t",
+        true, result,
+        test_case, method, url);
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestGet_CUrl_Service(const string& service)
+int CTestNcbiLinkerdCxxApp::TestGet_Http(const STest& test)
 {
-    TestCaseStart("CUrl.Service", "GET", 0, 0, 0, &service);
-    CUrl curl;
-    curl.SetService(service);
-    int result = TestGet_NewRequest(curl, true);
-    TestCaseEnd("CUrl.Service", "GET", result, 0, 0, 0, &service);
+    TestCaseStart("g_HttpGet", "GET", test.url);
+    CHttpResponse resp = g_HttpGet(CUrl(test.url));
+    int result = ProcessResponse(resp, test.expected);
+    TestCaseEnd("g_HttpGet", "GET", result, test.url);
     return result;
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestGet_CUrl_ServicePath(const string& service, const string& path)
+int CTestNcbiLinkerdCxxApp::TestGet_HttpStream(const STest& test)
 {
-    TestCaseStart("CUrl.Service.Path", "GET", 0, 0, 0, &service, &path);
-    CUrl curl;
-    curl.SetService(service);
-    curl.SetPath(path);
-    int result = TestGet_NewRequest(curl, true);
-    TestCaseEnd("CUrl.Service.Path", "GET", result, 0, 0, 0, &service, &path);
-    return result;
-}
-
-
-int CTestNcbiLinkerdCxxApp::TestGet_CUrl_SchemeServicePath(const string& scheme, const string& service, const string& path)
-{
-    TestCaseStart("CUrl.Scheme.Service.Path", "GET", 0, 0, &scheme, &service, &path);
-    CUrl curl;
-    curl.SetScheme(scheme);
-    curl.SetService(service);
-    curl.SetPath(path);
-    int result = TestGet_NewRequest(curl, true);
-    TestCaseEnd("CUrl.Scheme.Service.Path", "GET", result, 0, 0, &scheme, &service, &path);
-    return result;
-}
-
-
-int CTestNcbiLinkerdCxxApp::TestGet_Http(const string& url)
-{
-    TestCaseStart("g_HttpGet", "GET", &url);
-    CHttpResponse resp = g_HttpGet(url);
-    int result = PrintResponse(0, resp);
-    TestCaseEnd("g_HttpGet", "GET", result, &url);
-    return result;
-}
-
-
-int CTestNcbiLinkerdCxxApp::TestGet_HttpStream(const string& url)
-{
-    TestCaseStart("CConn_HttpStream", "GET", &url);
+    int retval = 1;
+    TestCaseStart("CConn_HttpStream", "GET", test.url);
     try {
-        CConn_HttpStream httpstr(url);
+        CConn_HttpStream httpstr(test.url);
         CConn_MemoryStream mem_str;
         NcbiStreamCopy(mem_str, httpstr);
-        string resp;
-        mem_str.ToString(&resp);
-        cerr << resp;
+        string got;
+        mem_str.ToString(&got);
+        retval = CompareResponse(test.expected, got);
     }
     catch (CException& ex) {
         ERR_POST(Error << "HttpStream exception: " << ex.what());
-        TestCaseEnd("CConn_HttpStream", "GET", 1, &url);
-        return 1;
     }
-    TestCaseEnd("CConn_HttpStream", "GET", 0, &url);
-    return 0;
+    TestCaseEnd("CConn_HttpStream", "GET", retval, test.url);
+    return retval;
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestGet_NewRequest(const CUrl& curl, bool nested)
+int CTestNcbiLinkerdCxxApp::TestGet_NewRequest(const STest& test)
 {
-    if ( ! nested)
-        TestCaseStart("CHttpSession::NewRequest", "GET", 0, &curl);
+    TestCaseStart("CHttpSession::NewRequest", "GET", test.url);
     CHttpSession session;
-    CHttpRequest req = session.NewRequest(curl);
-    SetupRequest(req);
+    CHttpRequest req = session.NewRequest(CUrl(test.url));
+    req.SetTimeout(10);
+    req.SetRetries(3);
     CHttpResponse resp = req.Execute();
-    int result = PrintResponse(&session, resp);
-    if ( ! nested)
-        TestCaseEnd("CHttpSession::NewRequest", "GET", result, 0, &curl);
+    int result = ProcessResponse(resp, test.expected);
+    TestCaseEnd("CHttpSession::NewRequest", "GET", result, test.url);
     return result;
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestPost_CUrl_Service(const string& service)
+int CTestNcbiLinkerdCxxApp::TestPost_Http(const STest& test)
 {
-    TestCaseStart("CUrl.Service", "POST", 0, 0, 0, &service);
-    CUrl curl;
-    curl.SetService(service);
-    int result = TestPost_NewRequest(curl, true);
-    TestCaseEnd("CUrl.Service", "POST", result, 0, 0, 0, &service);
+    TestCaseStart("g_HttpPost", "POST", test.url);
+    CHttpResponse resp = g_HttpPost(CUrl(test.url), test.post);
+    int result = ProcessResponse(resp, test.expected);
+    TestCaseEnd("g_HttpPost", "POST", result, test.url);
     return result;
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestPost_CUrl_ServicePath(const string& service, const string& path)
+int CTestNcbiLinkerdCxxApp::TestPost_HttpStream(const STest& test)
 {
-    TestCaseStart("CUrl.Service.Path", "POST", 0, 0, 0, &service, &path);
-    CUrl curl;
-    curl.SetService(service);
-    curl.SetPath(path);
-    int result = TestPost_NewRequest(curl, true);
-    TestCaseEnd("CUrl.Service.Path", "POST", result, 0, 0, 0, &service, &path);
-    return result;
-}
-
-
-int CTestNcbiLinkerdCxxApp::TestPost_CUrl_SchemeServicePath(const string& scheme, const string& service, const string& path)
-{
-    TestCaseStart("CUrl.Scheme.Service.Path", "POST", 0, 0, &scheme, &service, &path);
-    CUrl curl;
-    curl.SetScheme(scheme);
-    curl.SetService(service);
-    curl.SetPath(path);
-    int result = TestPost_NewRequest(curl, true);
-    TestCaseEnd("CUrl.Scheme.Service.Path", "POST", result, 0, 0, &scheme, &service, &path);
-    return result;
-}
-
-
-int CTestNcbiLinkerdCxxApp::TestPost_Http(const string& url)
-{
-    TestCaseStart("g_HttpPost", "POST", &url);
-    CHttpResponse resp = g_HttpPost(url, m_PostData);
-    int result = PrintResponse(0, resp);
-    TestCaseEnd("g_HttpPost", "POST", result, &url);
-    return result;
-}
-
-
-int CTestNcbiLinkerdCxxApp::TestPost_HttpStream(const string& url)
-{
-    TestCaseStart("CConn_HttpStream", "POST", &url);
+    int retval = 1;
+    TestCaseStart("CConn_HttpStream", "POST", test.url);
     try {
-        CConn_HttpStream httpstr(url, eReqMethod_Post);
-        httpstr << m_PostData;
+        CConn_HttpStream httpstr(test.url, eReqMethod_Post);
+        httpstr << test.post;
         CConn_MemoryStream mem_str;
         NcbiStreamCopy(mem_str, httpstr);
-        string resp;
-        mem_str.ToString(&resp);
-        cerr << resp;
+        string got;
+        mem_str.ToString(&got);
+        retval = CompareResponse(test.expected, got);
     }
     catch (CException& ex) {
         ERR_POST(Error << "HttpStream exception: " << ex.what());
-        TestCaseEnd("CConn_HttpStream", "POST", 1, &url);
-        return 1;
     }
-    TestCaseEnd("CConn_HttpStream", "POST", 0, &url);
-    return 0;
+    TestCaseEnd("CConn_HttpStream", "POST", retval, test.url);
+    return retval;
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestPost_NewRequest(const CUrl& curl, bool nested)
+int CTestNcbiLinkerdCxxApp::TestPost_NewRequest(const STest& test)
 {
-    if ( ! nested)
-        TestCaseStart("CHttpSession::NewRequest", "POST", 0, &curl);
+    TestCaseStart("CHttpSession::NewRequest", "POST", test.url);
     CHttpSession session;
-    CHttpRequest req = session.NewRequest(curl, CHttpSession::ePost);
-    SetupRequest(req);
+    CHttpRequest req = session.NewRequest(CUrl(test.url), CHttpSession::ePost);
+    req.SetTimeout(10);
+    req.SetRetries(3);
+    req.ContentStream() << test.post;
     CHttpResponse resp = req.Execute();
-    int result = PrintResponse(&session, resp);
-    if ( ! nested)
-        TestCaseEnd("CHttpSession::NewRequest", "POST", result, 0, &curl);
+    int result = ProcessResponse(resp, test.expected);
+    TestCaseEnd("CHttpSession::NewRequest", "POST", result, test.url);
     return result;
-}
-
-
-int CTestNcbiLinkerdCxxApp::RunTests(SMapper& mapper)
-{
-    int num_errors = 0;
-
-    if ( ! mapper.enabled) {
-        ERR_POST(Info << string(30, '<') + "  Skipping disabled mapper: " << mapper.name << "  " << string(30, '>'));
-        return 0;
-    }
-    ERR_POST(Info << string(30, '<') + "  Testing mapper: " << mapper.name << "  " << string(30, '>'));
-
-    mapper.Configure(GetRWConfig());
-    m_MapperName = mapper.name;
-
-    for (string svc : m_GetCurlService) {
-        num_errors += TestGet_CUrl_Service(svc);
-    }
-    for (SServicePath svc_path : m_GetCurlServicePath) {
-        num_errors += TestGet_CUrl_ServicePath(svc_path.service, svc_path.path);
-    }
-    for (SSchemeServicePath sch_svc_path : m_GetCurlSchemeServicePath) {
-        num_errors += TestGet_CUrl_SchemeServicePath(sch_svc_path.scheme, sch_svc_path.service, sch_svc_path.path);
-    }
-    for (string url : m_GetHttp) {
-        num_errors += TestGet_Http(url);
-    }
-    for (string url : m_GetHttpStream) {
-        num_errors += TestGet_HttpStream(url);
-    }
-    for (string url : m_GetNewRequest) {
-        num_errors += TestGet_NewRequest(CUrl(url));
-    }
-
-    for (string svc : m_PostCurlService) {
-        num_errors += TestPost_CUrl_Service(svc);
-    }
-    for (SServicePath svc_path : m_PostCurlServicePath) {
-        num_errors += TestPost_CUrl_ServicePath(svc_path.service, svc_path.path);
-    }
-    for (SSchemeServicePath sch_svc_path : m_PostCurlSchemeServicePath) {
-        num_errors += TestPost_CUrl_SchemeServicePath(sch_svc_path.scheme, sch_svc_path.service, sch_svc_path.path);
-    }
-    for (string url : m_PostHttp) {
-        num_errors += TestPost_Http(url);
-    }
-    for (string url : m_PostHttpStream) {
-        num_errors += TestPost_HttpStream(url);
-    }
-    for (string url : m_PostNewRequest) {
-        num_errors += TestPost_NewRequest(CUrl(url));
-    }
-
-    return num_errors;
 }
 
 
@@ -593,41 +723,49 @@ void CTestNcbiLinkerdCxxApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Test Linkerd via C++ classes");
 
-    arg_desc->AddDefaultKey("timeout", "Timeout", "Timeout",
-       CArgDescriptions::eDouble, "60.0");
-
-    arg_desc->AddDefaultKey("retries", "Retries", "Max HTTP retries",
-           CArgDescriptions::eInteger, "0");
-
-    arg_desc->AddDefaultKey("test_file", "TestFile", "JSON test data file",
-           CArgDescriptions::eString, "test_ncbi_linkerd_cxx.json");
-
     SetupArgDescriptions(arg_desc.release());
 
     SOCK_gethostname(m_Hostname, sizeof(m_Hostname));
+
+    CMapper::Init(m_Mappers);
 }
 
 
 int CTestNcbiLinkerdCxxApp::Run(void)
 {
-    int num_errors = 0;
+    int num_tests = 0, num_errors = 0;
 
-    ReadData();
-
-    for (SMapper mapper : m_Mappers)
-        num_errors += RunTests(mapper);
+    for (auto test : s_Tests) {
+#ifdef _MSC_VER
+        if (test.mapper == eLbsmd) continue;
+#endif
+        //if (test.mapper != eLinkerd) continue;
+        SelectMapper(test.mapper);
+             if (test.func == eHttpGet)         num_errors += TestGet_Http(test);
+        else if (test.func == eHttpPost)        num_errors += TestPost_Http(test);
+        else if (test.func == eHttpStreamGet)   num_errors += TestGet_HttpStream(test);
+        else if (test.func == eHttpStreamPost)  num_errors += TestPost_HttpStream(test);
+        else if (test.func == eNewRequestGet)   num_errors += TestGet_NewRequest(test);
+        else if (test.func == eNewRequestPost)  num_errors += TestPost_NewRequest(test);
+        ++num_tests;
+    }
 
     if (num_errors == 0)
-        ERR_POST(Info << "All tests passed.");
+        if (num_tests == 0)
+            ERR_POST(Info << "No tests were run!");
+        else
+            ERR_POST(Info << "All " << num_tests << " tests passed.");
     else
-        ERR_POST(Info << num_errors << " tests failed.");
+        ERR_POST(Info << num_tests - num_errors << " tests passed; " << num_errors << " failed.");
 
-    return num_errors;
+    return num_tests > 0 ? num_errors : -1;
 }
 
 
 int main(int argc, char* argv[])
 {
+    int exit_code = 1;
+
     // Set error posting and tracing on maximum
     //SetDiagTrace(eDT_Enable);
     //SetDiagPostLevel(eDiag_Info);
@@ -639,11 +777,13 @@ int main(int argc, char* argv[])
     //UnsetDiagPostFlag(eDPF_Location);
     //UnsetDiagPostFlag(eDPF_LongFilename);
     //SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
-
     try {
-        return CTestNcbiLinkerdCxxApp().AppMain(argc, argv);
+        exit_code = CTestNcbiLinkerdCxxApp().AppMain(argc, argv);
     }
     catch (...) {
-        cout << "\n\nunhandled exception" << endl;
+        // ERR_POST may not work
+        cerr << "\n\nunhandled exception" << endl;
     }
+
+    return exit_code;
 }
