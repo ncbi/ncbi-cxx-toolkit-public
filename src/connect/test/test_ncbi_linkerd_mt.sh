@@ -30,14 +30,15 @@ fi
 #    'GC_GetAssembly_v3s'
 #shift `expr $$ '%' $#`
 #svc="$1"
-svc=bouncehttp
-path=/Service/bounce.cgi
+svc=cxx-fast-cgi-sample
+path="/"
 
 # Test the service using a pseudo-random number of threads (between 2 and 11).
 nthreads="`expr $$ % 10 + 2`"
 
 # Pick some arbitrary text for testing.
-test_text="param1%3Dval1%26param2%3D%22line+1%0Aline+2%0A%22"
+test_text="message=hi%20there%0A"
+expected_regex='^.*?C\+\+ GIT FastCGI Sample.*?<p>Your previous message: +'\''hi there\n'\''.*$'
 
 : ${CHECK_TIMEOUT:=600}
 if test -n "$CHECK_EXEC"; then
@@ -45,4 +46,4 @@ if test -n "$CHECK_EXEC"; then
 else
     dot_slash="./"
 fi
-$CHECK_EXEC ${dot_slash}test_ncbi_linkerd_mt -timeout $CHECK_TIMEOUT -threads $nthreads -service $svc -path $path -post "$test_text" -expected "$test_text"
+$CHECK_EXEC ${dot_slash}test_ncbi_linkerd_mt -timeout $CHECK_TIMEOUT -threads $nthreads -service $svc -path $path -post "$test_text" -expected "$expected_regex"

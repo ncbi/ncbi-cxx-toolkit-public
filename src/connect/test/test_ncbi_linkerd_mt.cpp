@@ -38,6 +38,7 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/test_mt.hpp>
+#include <util/xregexp/regexp.hpp>
 
 #include "test_assert.h"  // This header must go last
 
@@ -51,6 +52,7 @@ public:
     virtual bool Thread_Run(int idx);
 
 protected:
+    int CompareResponse(const string& expected, const string& got);
     virtual bool TestApp_Args(CArgDescriptions& args);
     virtual bool TestApp_Init(void);
 
@@ -86,6 +88,33 @@ string          CTestApp::sm_ThreadsFailed;
 CTimeout        CTestApp::sm_Timeout;
 unsigned short  CTestApp::sm_Retries;
 int             CTestApp::sm_CompleteThreads;
+
+
+int CTestApp::CompareResponse(const string& expected, const string& got)
+{
+    CRegexp re(expected, CRegexp::fCompile_dotall);
+    if (re.IsMatch(got)) {
+        ERR_POST(Info << "--- Response Body (STDOUT) ---");
+        ERR_POST(Info << got);
+        return 0;
+    } else {
+        ERR_POST(Error << "--- Response Body (STDOUT) ---  did not match expected value");
+        size_t pos = 0, len;
+        string escaped = expected;
+        len = escaped.length();
+        while ((pos = escaped.find("\\", pos)) != NPOS) { escaped.replace(pos, 1, "\\\\"); pos += 2; }
+        while ((pos = escaped.find("\r", pos)) != NPOS) { escaped.replace(pos, 1, "\\r");  pos += 2; }
+        while ((pos = escaped.find("\n", pos)) != NPOS) { escaped.replace(pos, 1, "\\n");  pos += 2; }
+        ERR_POST(Info << "Escaped exp string (length " << len << "): [" << escaped << "]");
+        escaped = got;
+        len = escaped.length();
+        while ((pos = escaped.find("\\", pos)) != NPOS) { escaped.replace(pos, 1, "\\\\"); pos += 2; }
+        while ((pos = escaped.find("\r", pos)) != NPOS) { escaped.replace(pos, 1, "\\r");  pos += 2; }
+        while ((pos = escaped.find("\n", pos)) != NPOS) { escaped.replace(pos, 1, "\\n");  pos += 2; }
+        ERR_POST(Info << "Escaped got string (length " << len << "): [" << escaped << "]");
+    }
+    return 1;
+}
 
 
 bool CTestApp::TestApp_Args(CArgDescriptions& args)
@@ -227,14 +256,7 @@ bool CTestApp::Thread_Run(int idx)
                 CNcbiOstrstream out;
                 NcbiStreamCopy(out, in);
                 got = CNcbiOstrstreamToString(out);
-                ERR_POST(Info << "Expected response: [" << sm_Expected << "]");
-                ERR_POST(Info << "Got      response: [" << got << "]");
-                if (got == sm_Expected) {
-                    ERR_POST(Info << "SUCCESS: Expected data matched got data.");
-                    retval = true;
-                } else {
-                    ERR_POST(Error << "FAIL: Response from POST matched the expected value.");
-                }
+                retval = (CompareResponse(sm_Expected, got) == 0);
             } else {
                 ERR_POST(Error << "FAIL: Bad content stream.");
             }

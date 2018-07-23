@@ -6,8 +6,8 @@ REQUIRES = -MSWin
 APP = test_ncbi_linkerd_mt
 SRC = test_ncbi_linkerd_mt
 
-LIB = xconnect test_mt xncbi
-LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
+LIB = test_mt xconnect xregexp $(PCRE_LIB) xncbi
+LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_REQUIRES = in-house-resources
 CHECK_CMD = test_ncbi_linkerd_mt.sh
