@@ -6406,13 +6406,6 @@ void CFileIO::Open(const string& filename,
 }
 
 
-#ifdef NCBI_NO_THREADS
-#  define GetCurrentTid()  CProcess::GetCurrentPid()
-#else
-#  define GetCurrentTid()  ((Uint8) GetCurrentThreadSystemID())
-#endif //NCBI_NO_THREADS
-
-
 void CFileIO::CreateTemporary(const string& dir,
                               const string& prefix,
                               EAutoRemove auto_remove)
@@ -6428,7 +6421,8 @@ void CFileIO::CreateTemporary(const string& dir,
     }
     string x_prefix = prefix
         + NStr::NumericToString(s_Count++)
-        + NStr::NumericToString(GetCurrentTid());
+        + NStr::NumericToString(CProcess::GetCurrentPid())
+        + NStr::NumericToString((unsigned int) GetCurrentThreadSystemID());
 
 #if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
     string pattern = x_dir + x_prefix;
