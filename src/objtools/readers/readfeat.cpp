@@ -89,12 +89,14 @@
 #include <objtools/error_codes.hpp>
 
 #include <algorithm>
+#include <unordered_set>
 
 #include <objtools/readers/message_listener.hpp>
 
 #include "best_feat_finder.hpp"
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Feature
+
 
 BEGIN_NCBI_SCOPE
 
@@ -466,6 +468,8 @@ private:
     ILineReader* m_reader;
     unsigned int m_line_num;
     ILineErrorListener* m_pMessageListener;
+    unordered_set<string> m_ProcessedTranscriptIds;
+    unordered_set<string> m_ProcessedProteinIds;
 };
 
 typedef SStaticPair<const char *, CFeature_table_reader_imp::EQual> TQualKey;
@@ -2463,7 +2467,6 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
             case eQual_rpt_unit_seq:
             case eQual_standard_name:
             case eQual_tag_peptide:
-            case eQual_transcript_id:
             case eQual_transposon:
             case eQual_usedin:
             case eQual_cyt_map:
@@ -2550,6 +2553,34 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     return x_AddGeneOntologyToFeature(sfp, qual, val);
                 }
                 return false;
+            case eQual_transcript_id:
+                {
+                    if (typ == CSeqFeatData::e_Rna &&
+                        sfdata.GetRna().GetType() == CRNA_ref::eType_mRNA) {
+                        try {
+                            CBioseq::TId ids;
+                            CSeq_id::ParseIDs(ids, val, 
+                                    CSeq_id::fParse_ValidLocal 
+                                    | CSeq_id::fParse_PartialOK);
+                            for (auto id : ids) {
+                                auto id_string = id->GetSeqIdString(true);
+                                auto res = m_ProcessedTranscriptIds.insert(id_string);
+                                if (res.second == false) { // Insertion failed because Seq-id already encountered
+                                    x_ProcessMsg(
+                                        ILineError::eProblem_DuplicateIDs, eDiag_Error, 
+                                        feat_name, qual, val, 
+                                        "Transcript ID " + id_string + " appears on preexisting mRNA feature"
+                                        );
+                                }
+                            }
+                        }
+                        catch (CException&) {
+                            return false;
+                        }
+                    }
+                    x_AddGBQualToFeature(sfp, qual, val);
+                    return true;
+                }
             case eQual_protein_id:
                 // see SQD-1535 and SQD-3496
                 if (typ == CSeqFeatData::e_Cdregion ||
@@ -2562,6 +2593,19 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                             | CSeq_id::fParse_PartialOK);
                     if (ids.size()>0) {
                         if (typ == CSeqFeatData::e_Cdregion) {
+
+                            for (auto id : ids) {
+                                auto id_string = id->GetSeqIdString(true);
+                                auto res = m_ProcessedProteinIds.insert(id_string);
+                                if (res.second == false) { // Insertion failed because Seq-id already encountered
+                                    x_ProcessMsg(
+                                        ILineError::eProblem_DuplicateIDs, eDiag_Error, 
+                                        feat_name, qual, val, 
+                                        "Protein ID " + id_string + " appears on preexisting CDS feature"
+                                        );
+                                }
+                            }
+
                             CRef<CSeq_id> best = GetBestId(ids);
                             if (!best.Empty())
                                 sfp->SetProduct().SetWhole(*best);
@@ -3031,7 +3075,10 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     Int4 start, stop;
     bool partial5, partial3, ispoint, isminus, ignore_until_next_feature_key = false;
     Int4 offset = 0;
+    m_ProcessedProteinIds.clear();
+    m_ProcessedTranscriptIds.clear();
     CRef<CSeq_annot> sap(new CSeq_annot);
+
     CSeq_annot::C_Data::TFtable& ftable = sap->SetData().SetFtable();
     const bool bIgnoreWebComments = 
         ( (flags & CFeature_table_reader::fIgnoreWebComments) != 0 );
