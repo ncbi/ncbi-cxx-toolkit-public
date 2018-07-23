@@ -3511,12 +3511,17 @@ public:
     /// Set file position from beginning of the file.
     void SetFilePos(Uint8 position) const;
 
-    /// Set file position using 'move_method'.
+    /// Set file position.
     ///
-    /// 'offset' parameter is a number of bytes to move the file pointer.
-    /// A positive value moves the pointer forward in the file and
-    ///  a negative value moves the file pointer backward.
-    void SetFilePos(Int8 offset, EPositionMoveMethod move_method) const;
+    /// @param offset
+    ///   Defines a number of bytes to move the file pointer.  A positive value
+    ///   moves the pointer from the position indicated by 'whence' forward in
+    ///   the file, and a negative value backspaces the file pointer towards
+    ///   the beginning of the file.
+    ///
+    /// @param whence
+    ///    Defines a pointer move origin.
+    void SetFilePos(Int8 offset, EPositionMoveMethod whence) const;
 
     /// Get file size.
     ///
@@ -3533,10 +3538,10 @@ public:
     /// @param length
     ///   New file size.
     ///   If the file was previously longer than length, bytes past "length"
-    ///   will no longer be accessible. If it was shorter, the contents of
+    ///   will no longer be accessible.  If it was shorter, the contents of
     ///   the file between the old EOF position and the new position are
-    ///   not defined. Usually it will be read in as zeros, but this depends
-    ///   from OS.
+    ///   not defined.  Usually it will be read in as zeros, but this depends
+    ///   on the OS.
     /// @param pos
     ///   Defines how to set current file position after changing file size.
     ///   eCurrent means that file position does not change, eBegin and eEnd

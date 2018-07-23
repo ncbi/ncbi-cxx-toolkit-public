@@ -132,7 +132,7 @@ public:
     /// Get stored process identifier (pid).
     /// @sa
     ///   GetCurrentPid
-    TPid GetPid(void) const { return (TPid)m_Process; }
+    TPid GetPid(void) const { return (TPid) m_Process; }
 
     /// Get process handle for the current process (esp. on Windows).
     /// @note
@@ -386,7 +386,7 @@ public:
 
 private:
 #if defined NCBI_THREAD_PID_WORKAROUND
-    // Flags for internal x_GetPid()
+    // Flags for internal sx_GetPid()
     enum EGetPidFlag {
         // get real or cached PID depending on thread ID
         ePID_GetCurrent,
