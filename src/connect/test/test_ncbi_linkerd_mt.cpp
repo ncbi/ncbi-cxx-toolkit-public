@@ -32,17 +32,12 @@
 
 #include <ncbi_pch.hpp>
 
-// LINKERD_TODO #include <cstdio>
-// LINKERD_TODO 
+#include <connect/ncbi_http_session.hpp>
+#include <corelib/ncbidbg.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/test_mt.hpp>
-
-// LINKERD_TODO #include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_http_session.hpp>
-
-#include "../ncbi_linkerd.h"
 
 #include "test_assert.h"  // This header must go last
 
@@ -100,6 +95,7 @@ bool CTestApp::TestApp_Args(CArgDescriptions& args)
 
     args.AddDefaultKey("scheme", "HttpScheme", "The HTTP scheme, e.g. 'https'",
                        CArgDescriptions::eString, "http");
+    args.SetConstraint("scheme", &(*new CArgAllow_Strings, "http", "https"));
 
     args.AddDefaultKey("user", "User", "The user name",
                        CArgDescriptions::eString, "");
@@ -135,7 +131,7 @@ bool CTestApp::TestApp_Args(CArgDescriptions& args)
 
 bool CTestApp::TestApp_Init(void)
 {
-    /* Get args as passed in. */
+    // Get args as passed in.
     sm_Service = GetArgs()["service"].AsString();
     if (sm_Service.empty()) {
         ERR_POST(Critical << "Missing service.");
@@ -155,14 +151,14 @@ bool CTestApp::TestApp_Init(void)
     sm_Retries  = static_cast<unsigned short>(GetArgs()["retries"].AsInteger());
     sm_Timeout.Set(GetArgs()["timeout"].AsDouble());
 
-    /* Set expected=posted if not given in args. */
+    // Set expected=posted if not given in args.
     if (sm_Expected.empty()) {
         sm_Expected = sm_ToPost;
     }
 
-    /* Construct a URL based on supplied fields. */
+    // Construct a URL based on supplied fields.
     string  url(sm_Scheme);
-    url += "+" NCBI_SCHEME_SERVICE "://";
+    url += "+ncbilb://";
     if ( ! sm_User.empty()  ||  ! sm_Password.empty()) {
         if ( ! sm_User.empty()) url += sm_User;
         url += ":";
@@ -178,8 +174,9 @@ bool CTestApp::TestApp_Init(void)
         if (sm_Args[0] != '?') url += '?';
         url += sm_Args;
     }
-    sm_Url.SetUrl(url);
 
+    sm_Url.SetUrl(url);
+    _ASSERT(sm_Url.IsService());
     ERR_POST(Info << "Service:  '" << sm_Service << "'");
     ERR_POST(Info << "Scheme:   '" << sm_Scheme << "'");
     ERR_POST(Info << "User:     '" << sm_User << "'");
@@ -188,10 +185,11 @@ bool CTestApp::TestApp_Init(void)
     ERR_POST(Info << "Args:     '" << sm_Args << "'");
     ERR_POST(Info << "ToPost:   '" << sm_ToPost << "'");
     ERR_POST(Info << "Expected: '" << sm_Expected << "'");
-    ERR_POST(Info << "Timeout:  " << sm_Timeout.GetAsDouble());
-    ERR_POST(Info << "Retries:  " << sm_Retries);
+    ERR_POST(Info << "Timeout:  "  << sm_Timeout.GetAsDouble());
+    ERR_POST(Info << "Retries:  "  << sm_Retries);
 
     ERR_POST(Info << "Calculated values:");
+    ERR_POST(Info << "URL in    " << url);
     ERR_POST(Info << "URL:      " << sm_Url.ComposeUrl(CUrlArgs::eAmp_Char));
     ERR_POST(Info << "Service:  " << sm_Url.GetService());
     ERR_POST(Info << "Scheme:   " << sm_Url.GetScheme());
@@ -203,12 +201,6 @@ bool CTestApp::TestApp_Init(void)
 }
 
 
-// LINKERD_TODO bool s_AdjustUrl(CUrl& url)
-// LINKERD_TODO {
-// LINKERD_TODO     return true;
-// LINKERD_TODO }
-// LINKERD_TODO 
-// LINKERD_TODO 
 bool CTestApp::Thread_Run(int idx)
 {
     bool    retval = false;
@@ -218,31 +210,36 @@ bool CTestApp::Thread_Run(int idx)
 
     // Send / Receive
     ERR_POST(Info << "Posting: '" << sm_ToPost << "'");
-    CHttpHeaders hdrs;
-    hdrs.AddValue(CHttpHeaders::eHost, sm_Service + LINKERD_HOST_HDR_SFX);
-    CHttpResponse   response = g_HttpPost(sm_Url, hdrs, sm_ToPost, "",
-                                          sm_Timeout, sm_Retries);
+    CHttpResponse   response = g_HttpPost(sm_Url, sm_ToPost, "", sm_Timeout, sm_Retries);
 
     // Check status
     if (response.GetStatusCode() != 200) {
         ERR_POST(Error << "FAIL: HTTP Status: " << response.GetStatusCode()
                        << " (" << response.GetStatusText() << ")");
     } else {
-        string              data_out;
-        CNcbiOstrstream     out;
-        NcbiStreamCopy(out, response.ContentStream());
-        data_out = CNcbiOstrstreamToString(out);
+        string          got;
+        CNcbiOstrstream out;
 
         // Process result
-        if (data_out.empty()) {
-            ERR_POST(Error << "FAIL: Did not receive any data.");
-        } else if (data_out != sm_Expected) {
-            ERR_POST(Error << "FAIL: Received data '" << data_out
-                           << "' didn't match expected data '"
-                           << sm_Expected << "'.");
+        if (response.CanGetContentStream()) {
+            CNcbiIstream& in = response.ContentStream();
+            if (in.good()) {
+                CNcbiOstrstream out;
+                NcbiStreamCopy(out, in);
+                got = CNcbiOstrstreamToString(out);
+                ERR_POST(Info << "Expected response: [" << sm_Expected << "]");
+                ERR_POST(Info << "Got      response: [" << got << "]");
+                if (got == sm_Expected) {
+                    ERR_POST(Info << "SUCCESS: Expected data matched got data.");
+                    retval = true;
+                } else {
+                    ERR_POST(Error << "FAIL: Response from POST matched the expected value.");
+                }
+            } else {
+                ERR_POST(Error << "FAIL: Bad content stream.");
+            }
         } else {
-            ERR_POST(Info << "SUCCESS: Received data matched sent data.");
-            retval = true;
+            ERR_POST(Error << "FAIL: Can't read content stream.");
         }
     }
 
