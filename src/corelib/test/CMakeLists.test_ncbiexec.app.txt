@@ -2,14 +2,13 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_API)
 NCBI_begin_app(test_ncbiexec)
   NCBI_sources(test_ncbiexec)
   NCBI_uses_toolkit_libraries(xncbi)
   NCBI_project_watchers(ivanov)
 NCBI_end_app()
 
-else()
+if(OFF)
 
 add_executable(test_ncbiexec-app
     test_ncbiexec

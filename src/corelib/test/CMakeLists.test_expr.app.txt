@@ -2,7 +2,6 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_API)
 NCBI_begin_app(test_expr)
   NCBI_sources(test_expr)
   NCBI_requires(Boost.Test.Included)
@@ -11,7 +10,7 @@ NCBI_begin_app(test_expr)
   NCBI_project_watchers(vakatov)
 NCBI_end_app()
 
-else()
+if(OFF)
 add_executable(test_expr-app
     test_expr
 )

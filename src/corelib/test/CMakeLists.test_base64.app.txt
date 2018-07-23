@@ -2,7 +2,6 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_API)
 NCBI_begin_app(test_base64)
   NCBI_sources(test_base64)
   NCBI_requires(Boost.Test.Included)
@@ -11,7 +10,7 @@ NCBI_begin_app(test_base64)
   NCBI_project_watchers(sadyrovr)
 NCBI_end_app()
 
-else()
+if(OFF)
 add_executable(test_base64-app
     test_base64
 )

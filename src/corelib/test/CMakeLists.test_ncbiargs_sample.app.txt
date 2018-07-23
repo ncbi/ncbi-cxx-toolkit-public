@@ -2,7 +2,6 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_API)
 NCBI_begin_app(test_ncbiargs_sample)
   NCBI_sources(test_ncbiargs_sample)
   NCBI_uses_toolkit_libraries(xncbi)
@@ -35,7 +34,7 @@ endif()
 NCBI_end_app()
 
 
-else()
+if(OFF)
 
 add_executable(test_ncbiargs_sample-app
     test_ncbiargs_sample

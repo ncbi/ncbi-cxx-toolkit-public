@@ -2,7 +2,6 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_API)
 NCBI_begin_app(test_ncbithr_native)
   NCBI_sources(test_ncbithr_native)
   NCBI_requires(MT)
@@ -13,7 +12,7 @@ NCBI_begin_app(test_ncbithr_native)
 NCBI_end_app()
 
 
-else()
+if(OFF)
 
 add_executable(test_ncbithr_native-app
     test_ncbithr_native

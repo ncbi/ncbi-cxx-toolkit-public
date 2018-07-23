@@ -2,7 +2,6 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_API)
 NCBI_begin_app(test_ncbidiag_p)
   NCBI_sources(test_ncbidiag_p.cpp test_ncbidiag_py test_ncbidiag_pn)
   NCBI_headers(test_ncbidiag_p.hpp)
@@ -12,7 +11,7 @@ NCBI_begin_app(test_ncbidiag_p)
 NCBI_end_app()
 
 
-else()
+if(OFF)
 
 add_executable(test_ncbidiag_p-app
     test_ncbidiag_p test_ncbidiag_py test_ncbidiag_pn

@@ -2,7 +2,6 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_API)
 NCBI_begin_app(test_tls_object)
   NCBI_sources(test_tls_object)
   NCBI_uses_toolkit_libraries(test_mt)
@@ -11,7 +10,7 @@ NCBI_begin_app(test_tls_object)
 NCBI_end_app()
 
 
-else()
+if(OFF)
 
 add_executable(test_tls_object-app
     test_tls_object

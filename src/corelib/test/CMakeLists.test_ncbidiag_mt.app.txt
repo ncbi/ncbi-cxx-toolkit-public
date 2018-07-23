@@ -2,7 +2,6 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_API)
 NCBI_begin_app(test_ncbidiag_mt)
   NCBI_sources(test_ncbidiag_mt)
   NCBI_add_definitions(NCBI_SHOW_FUNCTION_NAME)
@@ -10,7 +9,7 @@ NCBI_begin_app(test_ncbidiag_mt)
   NCBI_project_watchers(grichenk)
 NCBI_end_app()
 
-else()
+if(OFF)
 
 add_executable(test_ncbidiag_mt-app
     test_ncbidiag_mt

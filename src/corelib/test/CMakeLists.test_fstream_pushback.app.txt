@@ -2,7 +2,6 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_API)
 NCBI_begin_app(test_fstream_pushback)
   NCBI_sources(test_fstream_pushback)
   NCBI_uses_toolkit_libraries(test_mt xpbacktest)
@@ -10,7 +9,7 @@ NCBI_begin_app(test_fstream_pushback)
 NCBI_end_app()
 
 
-else()
+if(OFF)
 
 add_executable(test_fstream_pushback-app
     test_fstream_pushback

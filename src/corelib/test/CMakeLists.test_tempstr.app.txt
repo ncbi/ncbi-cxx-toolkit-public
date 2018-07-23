@@ -2,7 +2,6 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_API)
 NCBI_begin_app(test_tempstr)
   NCBI_sources(test_tempstr)
   NCBI_requires(Boost.Test.Included)
@@ -12,7 +11,7 @@ NCBI_begin_app(test_tempstr)
 NCBI_end_app()
 
 
-else()
+if(OFF)
 
 add_executable(test_tempstr-app
     test_tempstr

@@ -2,7 +2,6 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_API)
 NCBI_begin_app(test_message_mt)
   NCBI_sources(test_message_mt)
   NCBI_uses_toolkit_libraries(test_mt)
@@ -10,7 +9,7 @@ NCBI_begin_app(test_message_mt)
   NCBI_project_watchers(grichenk)
 NCBI_end_app()
 
-else()
+if(OFF)
 
 add_executable(test_message_mt-app
     test_message_mt

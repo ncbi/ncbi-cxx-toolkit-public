@@ -2,7 +2,6 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_API)
 NCBI_begin_app(test_interprocess_lock)
   NCBI_sources(test_interprocess_lock)
   NCBI_uses_toolkit_libraries(xncbi)
@@ -10,7 +9,7 @@ NCBI_begin_app(test_interprocess_lock)
   NCBI_project_watchers(ivanov)
 NCBI_end_app()
 
-else()
+if(OFF)
 
 add_executable(test_interprocess_lock-app
     test_interprocess_lock

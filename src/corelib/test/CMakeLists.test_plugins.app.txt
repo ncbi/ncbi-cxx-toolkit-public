@@ -2,7 +2,6 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_API)
 NCBI_begin_app(test_plugins)
   NCBI_sources(test_plugins)
   NCBI_uses_toolkit_libraries(xncbi)
@@ -11,7 +10,7 @@ NCBI_begin_app(test_plugins)
 NCBI_end_app()
 
 
-else()
+if(OFF)
 
 add_executable(test_plugins-app
     test_plugins
