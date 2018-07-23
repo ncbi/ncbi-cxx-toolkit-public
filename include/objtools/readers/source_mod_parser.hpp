@@ -189,11 +189,11 @@ public:
         // and such.
         explicit SMod(const CTempString & the_key) : key(the_key) { }
 
-        explicit SMod(const CTempString& key, const CTempString& value) :
-            key(key), value(value) {}
+        explicit SMod(const CTempString& _k, const CTempString& _v) :
+            key(_k), value(_v) {}
 
-        explicit SMod(const CTempString& key, const CTempString& value, TGroupId group_id) :
-            key(key), value(value), group_id(group_id) {}
+        explicit SMod(const CTempString& _k, const CTempString& _v, TGroupId _g) :
+            key(_k), value(_v), group_id(_g) {}
 
         bool operator < (const SMod& rhs) const;
         string ToString(void) const;
@@ -266,7 +266,7 @@ public:
 
     const SMod* FindMod(const CTempString& key, const CTempString& alt_key = CTempString());
 
-    const SMod* FindMod(const initializer_list<CTempString> names) { return nullptr; }
+    const SMod* FindMod(const initializer_list<CTempString> /*names*/) { return nullptr; }
 
     /// Return all modifiers with the given key (e.g., db_xref), marking them
     /// as used along the way.
