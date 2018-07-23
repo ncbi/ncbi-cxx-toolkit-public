@@ -2569,7 +2569,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                                     x_ProcessMsg(
                                         ILineError::eProblem_DuplicateIDs, eDiag_Error, 
                                         feat_name, qual, val, 
-                                        "Transcript ID " + id_string + " appears on preexisting mRNA feature"
+                                        "Transcript ID " + id_string + " appears on multiple mRNA features"
                                         );
                                 }
                             }
@@ -2601,7 +2601,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                                     x_ProcessMsg(
                                         ILineError::eProblem_DuplicateIDs, eDiag_Error, 
                                         feat_name, qual, val, 
-                                        "Protein ID " + id_string + " appears on preexisting CDS feature"
+                                        "Protein ID " + id_string + " appears on multiple CDS features"
                                         );
                                 }
                             }
