@@ -2479,7 +2479,7 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
     // dereference both source and destination as POSIX required, 
     // or not (Linux with kernel 2.0 and up behavior).
     // We need to rename symlink itself, if not dereferenced yet
-    // (see fRF_FollowLinks), and the destination should remains
+    // (see fRF_FollowLinks), and the destination should remain
     // a symlink. So just dont use link() in this case and,
     // fall back to regular rename() instead.
     
@@ -4764,7 +4764,7 @@ void s_GetDiskSpace_PANFS(const string&               path,
 
         case NCBI_PANFS_THROW:
              do_throw = true;
-             // fall through
+             /*FALLTHRU*/
              
         // Same processing for all errors codes, but could be detailed
         case NCBI_PANFS_ERR:
@@ -5912,7 +5912,7 @@ void CMemoryFileMap::x_Create(Uint8 size)
     int errcode = s_FExtend(fd, size);
     close(fd);
     if (errcode) {
-       string errmsg = _T_STDSTRING(NcbiSys_strerror(errcode));
+        string errmsg = _T_STDSTRING(NcbiSys_strerror(errcode));
         NCBI_THROW(CFileException, eMemoryMap, "CMemoryFileMap:"
                    " Cannot create file with specified size: " + errmsg);
     }
@@ -6410,7 +6410,7 @@ void CFileIO::CreateTemporary(const string& dir,
                               const string& prefix,
                               EAutoRemove auto_remove)
 {
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+    static volatile int s_Count = 0;
     string x_dir = dir;
     if (x_dir.empty()) {
         // Get application specific temporary directory name
@@ -6419,18 +6419,26 @@ void CFileIO::CreateTemporary(const string& dir,
     if (!x_dir.empty()) {
         x_dir = CDirEntry::AddTrailingPathSeparator(x_dir);
     }
+    string x_prefix = prefix
+        + NStr::NumericToString(s_Count++)
+        + NStr::NumericToString(GetCurrentThreadSystemID());
+
+#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+    string pattern = x_dir + x_prefix;
 
 #  if defined(NCBI_OS_UNIX)
-    string pattern = x_dir + prefix + "XXXXXX";
-    if (pattern.length() > PATH_MAX) {
-        NCBI_THROW(CFileErrnoException, eFileIO, "Too long pattern '" + pattern + "'");
+    pattern += "XXXXXX";
+    if (pattern.size() > PATH_MAX) {
+        NCBI_THROW(CFileErrnoException, eFileIO,
+                   "Pattern too long '" + pattern + "'");
     }
-    char filename[PATH_MAX+1];
-    memcpy(filename, pattern.c_str(), pattern.length()+1);
-    if ((m_Handle = mkstemp(filename)) == -1) {
-        NCBI_THROW(CFileErrnoException, eFileIO, "mkstemp() failed for '" + pattern + "'");
+    char pathname[PATH_MAX+1];
+    memcpy(pathname, pattern.c_str(), pattern.size()+1);
+    if ((m_Handle = mkstemp(pathname)) == -1) {
+        NCBI_THROW(CFileErrnoException, eFileIO,
+                   "mkstemp() failed for '" + pattern + "'");
     }
-    m_Pathname.assign(filename, pattern.length());
+    m_Pathname = pathname;
     if (auto_remove == eRemoveASAP) {
         NcbiSys_remove(_T_XCSTRING(m_Pathname));
     }
@@ -6441,32 +6449,36 @@ void CFileIO::CreateTemporary(const string& dir,
     DEFINE_STATIC_FAST_MUTEX(s_CreateTemporaryMutex);
     CFastMutexGuard LOCK(s_CreateTemporaryMutex);
 
-    char buffer[PATH_MAX+1];
-    srand((unsigned) (time(0) ^ ::GetCurrentThreadId()));
-    unsigned long ofs = rand();
-    DWORD lasterr = 0;
-
+    unsigned long ofs = (unsigned long) int(rand());
     while (ofs < numeric_limits<unsigned long>::max()) {
-        _ultoa((unsigned long)ofs, buffer, 24);
-        m_Pathname = x_dir + prefix + buffer;
-        m_Handle = CreateFile(_T_XCSTRING(m_Pathname),
+        char buffer[40];
+        _ultoa(ofs, buffer, 36);
+        string pathname = pattern + buffer;
+        m_Handle = CreateFile(_T_XCSTRING(pathname),
                               GENERIC_ALL, 0, NULL,
                               CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, NULL);
-        if (m_Handle != INVALID_HANDLE_VALUE || ::GetLastError() != ERROR_FILE_EXISTS)
+        if (m_Handle != INVALID_HANDLE_VALUE) {
+            m_Pathname.swap(pathname);
             break;
-        ofs++;
+        }
+        if (::GetLastError() != ERROR_FILE_EXISTS) {
+            break;
+        }
+        ++ofs;
     }
-    // Release adjust time mutex
+
     LOCK.Release();
 
     if (m_Handle == INVALID_HANDLE_VALUE) {
-        NCBI_THROW(CFileErrnoException, eFileIO, "Unable to create temporary file '" + m_Pathname + "'");
+        NCBI_THROW(CFileErrnoException, eFileIO,
+                   "Unable to create temporary file '" + pattern + "'");
     }
 
 #  endif
 
 #else // defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
-    Open(s_StdGetTmpName(dir.c_str(), prefix.c_str()), eCreateNew, eReadWrite);
+    Open(s_StdGetTmpName(x_dir.c_str(), x_prefix.c_str()),
+         eCreateNew, eReadWrite);
 #endif
 
     m_AutoClose = true;
@@ -6748,17 +6760,8 @@ void CFileIO::SetFileSize(Uint8 length, EPositionMoveMethod pos) const
     }
 #elif defined(NCBI_OS_UNIX)
     bool res = true;
-    int  errcode = 0;
-   
-    Uint8 current_size = GetFileSize();
-    
-    if (length < current_size) {
-        errcode = s_FTruncate(m_Handle, length);
-    } else if (length > current_size) {
-        // Extending file size
-        errcode = s_FExtend(m_Handle, length);
-    } 
-    if (!errcode  &&  (pos != eCurrent)) {
+    int errcode = s_FTruncate(m_Handle, length);
+    if (!errcode  &&  pos != eCurrent) {
         // Move file offset to the start/end of the file.
         SetFilePos(0, pos);
     }
