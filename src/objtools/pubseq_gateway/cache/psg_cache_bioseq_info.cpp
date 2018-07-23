@@ -31,7 +31,7 @@
 #include <ncbi_pch.hpp>
 #include <util/lmdbxx/lmdb++.h>
 
-#include "psg_cache_bioseq_info.hpp"
+#include "objtools/pubseq_gateway/cache/psg_cache_bioseq_info.hpp"
 
 USING_NCBI_SCOPE;
 

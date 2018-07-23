@@ -33,7 +33,7 @@
 #include <sys/stat.h>
 #include <util/lmdbxx/lmdb++.h>
 
-#include "psg_cache.hpp"
+#include "objtools/pubseq_gateway/cache/psg_cache.hpp"
 
 
 USING_NCBI_SCOPE;
