@@ -633,7 +633,7 @@ bool CAutoDef::x_Is5SList(CFeat_CI feat_ci)
 bool CAutoDef::x_IsSingleMiscFeat(CFeat_CI feat_ci)
 {
     if (!feat_ci || 
-        feat_ci->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature ||
+        feat_ci->GetData().GetSubtype() != CSeqFeatData::eSubtype_misc_feature ||
         !feat_ci->IsSetComment()) {
         return false;
     }
@@ -751,8 +751,9 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
             } else if (subtype == CSeqFeatData::eSubtype_misc_feature) {
 				// some misc-features may require more parsing
                 new_clause = new CAutoDefFeatureClause(bh, cf, mapped_loc);
-                if (m_Options.GetMiscFeatRule() == CAutoDefOptions::eDelete
-                    || (m_Options.GetMiscFeatRule() == CAutoDefOptions::eNoncodingProductFeat && !new_clause->IsNoncodingProductFeat())) {
+                if (!is_single_misc_feat &&
+                    (m_Options.GetMiscFeatRule() == CAutoDefOptions::eDelete
+                     || (m_Options.GetMiscFeatRule() == CAutoDefOptions::eNoncodingProductFeat && !new_clause->IsNoncodingProductFeat()))) {
                     delete new_clause;
                     new_clause = NULL;
                 } else if (m_Options.GetMiscFeatRule() == CAutoDefOptions::eCommentFeat) {
@@ -781,18 +782,6 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
             }
         }
         ++feat_ci;
-    }
-    if (main_clause.GetNumSubclauses() == 0 && is_single_misc_feat) {
-        feat_ci.Rewind();
-        const CSeq_feat& cf = feat_ci->GetOriginalFeature();
-        const CSeq_loc& mapped_loc = feat_ci->GetMappedFeature().GetLocation();
-
-        new_clause = new CAutoDefMiscCommentClause(bh, cf, mapped_loc);
-        if (new_clause->IsNoncodingProductFeat()) {
-            main_clause.AddSubclause(new_clause);
-        } else {
-            delete new_clause;
-        }
     }
 
     // optionally remove misc_feature subfeatures

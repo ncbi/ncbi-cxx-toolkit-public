@@ -1188,7 +1188,8 @@ BOOST_AUTO_TEST_CASE(Test_GB_1851)
     misc1->SetLocation().SetPartialStart(true, eExtreme_Biological);
     misc1->SetLocation().SetPartialStop(true, eExtreme_Biological);
 
-    AddTitle(seq, "Sebaea microphylla sequence.");
+    // kept because the misc_feature is alone
+    AddTitle(seq, "Sebaea microphylla nonfunctional xyz gene, partial sequence.");
     CheckDeflineMatches(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
     AddTitle(seq, "Sebaea microphylla nonfunctional xyz gene, partial sequence.");
     CheckDeflineMatches(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eNoncodingProductFeat);
@@ -2379,18 +2380,20 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4529)
 {
     CRef<CSeq_entry> entry = BuildSequence();
     CRef<CSeqdesc> desc = AddSource(entry, "Fusarium incarnatum");
-    CRef<CSeq_feat> feat1(new CSeq_feat());
-    feat1->SetData().SetImp().SetKey("misc_feature");
+    CRef<CSeq_feat> feat1 = unit_test_util::AddMiscFeature(entry);
     feat1->SetComment("similar to beta-tubulin");
-    AddFeat(feat1, entry);
-    feat1->SetLocation().SetInt().SetFrom(0);
-    feat1->SetLocation().SetInt().SetTo(59);
-    feat1->SetLocation().SetPartialStart(true, eExtreme_Biological);
-    feat1->SetLocation().SetPartialStop(true, eExtreme_Biological);
 
-    AddTitle(entry, "Fusarium incarnatum beta-tubulin-like gene, partial sequence.");
+    AddTitle(entry, "Fusarium incarnatum beta-tubulin-like gene, complete sequence.");
 
-    CheckDeflineMatches(entry);
+    CheckDeflineMatches(entry, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
+
+    CRef<objects::CSeq_feat> rrna1 = unit_test_util::AddMiscFeature(entry);
+    rrna1->ResetComment();
+    rrna1->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    rrna1->SetData().SetRna().SetExt().SetName("foo");
+    AddTitle(entry, "Fusarium incarnatum foo gene, complete sequence.");
+    CheckDeflineMatches(entry, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
+
 }
 
 
