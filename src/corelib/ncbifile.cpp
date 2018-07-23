@@ -6419,10 +6419,12 @@ void CFileIO::CreateTemporary(const string& dir,
     if (!x_dir.empty()) {
         x_dir = CDirEntry::AddTrailingPathSeparator(x_dir);
     }
+    Uint8 x_tid = (Uint8) GetCurrentThreadSystemID();
+    unsigned int tid = (unsigned int) x_tid;
     string x_prefix = prefix
-        + NStr::NumericToString(s_Count++)
         + NStr::NumericToString(CProcess::GetCurrentPid())
-        + NStr::NumericToString((unsigned int) GetCurrentThreadSystemID());
+        + NStr::NumericToString(s_Count++)
+        + NStr::NumericToString(tid);
 
 #if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
     string pattern = x_dir + x_prefix;
