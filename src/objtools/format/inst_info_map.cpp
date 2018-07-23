@@ -53,7 +53,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string  s_cas_base("http://collections.calacademy.org/herp/specimen/");
     static const string  s_cbs_base("http://www.cbs.knaw.nl/collections/BioloMICS.aspx?Fields=All&ExactMatch=T&Table=CBS+strain+database&Name=CBS+");
     static const string  s_ccap_base("http://www.ccap.ac.uk/strain_info.php?Strain_No=");
-    static const string  s_ccmp_base("https://ccmp.bigelow.org/node/1/strain/CCMP");
+    static const string  s_ccmp_base("https://ncma.bigelow.org/ccmp");
     static const string  s_ccug_base("http://www.ccug.se/default.cfm?page=search_record.cfm&db=mc&s_tests=1&ccugno=");
     static const string  s_cfmr_base("http://www.fpl.fs.fed.us/search/mycologysearch_action.php?sorting_rule=1u&phrasesAndKeywords02=");
     static const string  s_cori_base("http://ccr.coriell.org/Sections/Search/Search.aspx?q=");
