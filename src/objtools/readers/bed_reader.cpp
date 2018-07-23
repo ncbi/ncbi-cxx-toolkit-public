@@ -1551,7 +1551,7 @@ void CBedReader::xSetFeatureColorFromScore(
 {
     int score = 0;
     try {
-        score = NStr::StringToInt(featScore);
+        score = static_cast<int>(NStr::StringToDouble(featScore));
     }
     catch (const std::exception&) {
         AutoPtr<CObjReaderLineException> pErr(
@@ -1569,7 +1569,7 @@ void CBedReader::xSetFeatureColorFromScore(
             "Invalid data line: Bad score value to be used for color.") );
         pErr->Throw();
     }
-    string greyValue  = NStr::IntToString(255 - (score/4));
+    string greyValue  = NStr::DoubleToString(255 - (score/4));
     vector<string> srgb{ greyValue, greyValue, greyValue};
     string rgbValue = NStr::Join(srgb, " ");
     pDisplayData->AddField("color", rgbValue);
