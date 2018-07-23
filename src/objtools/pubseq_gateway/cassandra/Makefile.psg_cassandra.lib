@@ -15,3 +15,5 @@ REQUIRES = CASSANDRA MT Linux
 
 WATCHERS = satskyse dmitrie1 saprykin
 
+#user_homedir = $(shell readlink -e ~)
+#LOCAL_CPPFLAGS = -I$(user_homedir)/trunk/c++/include

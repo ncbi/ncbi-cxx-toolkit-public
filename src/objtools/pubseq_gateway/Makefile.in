@@ -1,6 +1,7 @@
 # $Id$
 
 SUB_PROJ = diag rpc cassandra client cassandra_old
+EXPENDABLE_SUB_PROJ = cache
 
 REQUIRES = MT LIBUV NGHTTP2 CASSANDRA
 

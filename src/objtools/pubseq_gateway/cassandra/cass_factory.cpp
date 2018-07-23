@@ -208,6 +208,10 @@ void CCassConnectionFactory::GetHostPort(string &  cass_hosts,
                                          short &  cass_port)
 {
     string  hosts = m_CassHosts;
+    if (hosts.empty())
+        NCBI_THROW(CCassandraException, eGeneric,
+                   "Cassandra connection point is not specified");
+
     bool    is_lbsm = (m_CassHosts.find(':') == string::npos) &&
                       (m_CassHosts.find(' ') == string::npos) &&
                       (m_CassHosts.find(',') == string::npos);

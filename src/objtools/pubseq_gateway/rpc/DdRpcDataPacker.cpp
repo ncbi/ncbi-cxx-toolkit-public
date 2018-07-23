@@ -84,6 +84,9 @@ string DateTimeToStr(time_t t) {
 
 /** DataColumn */
 
+const uint16_t DataColumn::INVALID_TAG;
+
+
 void DataColumn::AssignAsText(const string& Descr) {
     stringstream ss(Descr);
     string tok;
