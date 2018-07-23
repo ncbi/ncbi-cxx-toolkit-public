@@ -6444,18 +6444,12 @@ void CFileIO::CreateTemporary(const string& dir,
     }
 
 #  elif defined(NCBI_OS_MSWIN)
-    // MT-Safe protect
-    // To avoid to get access to the same temporary name/file from different threads
-    DEFINE_STATIC_FAST_MUTEX(s_CreateTemporaryMutex);
-    CFastMutexGuard LOCK(s_CreateTemporaryMutex);
-
     unsigned long ofs = (unsigned long) int(rand());
     while (ofs < numeric_limits<unsigned long>::max()) {
         char buffer[40];
         _ultoa(ofs, buffer, 36);
         string pathname = pattern + buffer;
-        m_Handle = CreateFile(_T_XCSTRING(pathname),
-                              GENERIC_ALL, 0, NULL,
+        m_Handle = CreateFile(_T_XCSTRING(pathname), GENERIC_ALL, 0, NULL,
                               CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, NULL);
         if (m_Handle != INVALID_HANDLE_VALUE) {
             m_Pathname.swap(pathname);
@@ -6466,8 +6460,6 @@ void CFileIO::CreateTemporary(const string& dir,
         }
         ++ofs;
     }
-
-    LOCK.Release();
 
     if (m_Handle == INVALID_HANDLE_VALUE) {
         NCBI_THROW(CFileErrnoException, eFileIO,
