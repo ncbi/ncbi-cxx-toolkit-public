@@ -1464,9 +1464,9 @@ void CTar::x_Close(bool truncate)
     if (m_FileStream  &&  m_FileStream->is_open()) {
         m_FileStream->close();
         if (!m_Bad  &&  !m_FileStream->good()) {
-            int x_error = errno;
+            int x_errno = errno;
             TAR_POST(104, Error,
-                     "Cannot close archive" + s_OSReason(x_error));
+                     "Cannot close archive" + s_OSReason(x_errno));
             m_Bad = true;
         }
         if (!m_Bad  &&  !(m_Flags & fTarfileNoTruncate)  &&  truncate) {
