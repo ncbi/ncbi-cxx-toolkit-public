@@ -31,7 +31,7 @@
 #include <ncbi_pch.hpp>
 #include <util/lmdbxx/lmdb++.h>
 
-#include "objtools/pubseq_gateway/cache/psg_cache_si2csi.hpp"
+#include <objtools/pubseq_gateway/cache/psg_cache_si2csi.hpp>
 
 USING_NCBI_SCOPE;
 

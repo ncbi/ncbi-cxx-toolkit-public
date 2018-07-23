@@ -31,7 +31,7 @@
 #include <ncbi_pch.hpp>
 #include <util/lmdbxx/lmdb++.h>
 
-#include "objtools/pubseq_gateway/cache/psg_cache_blob_prop.hpp"
+#include <objtools/pubseq_gateway/cache/psg_cache_blob_prop.hpp>
 
 USING_NCBI_SCOPE;
 
