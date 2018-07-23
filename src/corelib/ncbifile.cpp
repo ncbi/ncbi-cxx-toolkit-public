@@ -3489,7 +3489,7 @@ bool CFile::Compare(const string& filename, size_t buf_size) const
         }
         equal = (s1 == s);
     }
-    catch (CFileErrnoException& ex) {
+    catch (const CFileErrnoException& ex) {
         string msg = string("Error comparing file ") + GetPath() + " and " + filename + " : " + ex.what();
         LOG_ERROR(47, msg);
         CNcbiError::SetErrno(ex.GetErrno(), msg);
@@ -4907,7 +4907,8 @@ void s_GetDiskSpace_PANFS(const string&               path,
                 x_total = NStr::StringToUInt8(tokens[1]);
                 x_free  = NStr::StringToUInt8(tokens[2]);
                 x_used  = NStr::StringToUInt8(tokens[3]);
-            } catch (CException& e) {
+            }
+            catch (const CException& e) {
                 throw kParseError;
             }
             // Check
@@ -6410,6 +6411,10 @@ void CFileIO::CreateTemporary(const string& dir,
                               const string& prefix,
                               EAutoRemove auto_remove)
 {
+    if (m_Handle != kInvalidHandle) {
+       NCBI_THROW(CFileException, eFileIO,
+                  "Cannot create temporary: Handle already open");
+    }
     static volatile int s_Count = 0;
     string x_dir = dir;
     if (x_dir.empty()) {
@@ -6437,7 +6442,7 @@ void CFileIO::CreateTemporary(const string& dir,
     }
     char pathname[PATH_MAX+1];
     memcpy(pathname, pattern.c_str(), pattern.size()+1);
-    if ((m_Handle = mkstemp(pathname)) == -1) {
+    if ((m_Handle = mkstemp(pathname)) == kInvalidHandle) {
         NCBI_THROW(CFileErrnoException, eFileIO,
                    "mkstemp() failed for '" + pattern + "'");
     }
@@ -6454,7 +6459,7 @@ void CFileIO::CreateTemporary(const string& dir,
         string pathname = pattern + buffer;
         m_Handle = CreateFile(_T_XCSTRING(pathname), GENERIC_ALL, 0, NULL,
                               CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, NULL);
-        if (m_Handle != INVALID_HANDLE_VALUE) {
+        if (m_Handle != kInvalidHandle) {
             m_Pathname.swap(pathname);
             break;
         }
@@ -6464,7 +6469,7 @@ void CFileIO::CreateTemporary(const string& dir,
         ++ofs;
     }
 
-    if (m_Handle == INVALID_HANDLE_VALUE) {
+    if (m_Handle == kInvalidHandle) {
         NCBI_THROW(CFileErrnoException, eFileIO,
                    "Unable to create temporary file '" + pattern + "'");
     }
@@ -6829,7 +6834,7 @@ ERW_Result CFileReader::Read(void* buf, size_t count, size_t* bytes_read)
     try {
         n = m_File.Read(buf, count);
     }
-    catch (CFileErrnoException& ex) {
+    catch (const CFileErrnoException& ex) {
         CNcbiError::SetErrno(ex.GetErrno());
         return eRW_Error;
     }
@@ -6907,7 +6912,7 @@ ERW_Result CFileWriter::Write(const void* buf,
     try {
         n = m_File.Write(buf, count);
     }
-    catch (CFileErrnoException& ex) {
+    catch (const CFileErrnoException& ex) {
         CNcbiError::SetErrno(ex.GetErrno());
         return eRW_Error;
     }
@@ -6923,7 +6928,7 @@ ERW_Result CFileWriter::Flush(void)
     try {
         m_File.Flush();
     }
-    catch (CFileErrnoException& ex) {
+    catch (const CFileErrnoException& ex) {
         CNcbiError::SetErrno(ex.GetErrno());
         return eRW_Error;
     }
@@ -6980,7 +6985,7 @@ ERW_Result CFileReaderWriter::Read(void* buf,
     try {
         n = m_File.Read(buf, count);
     }
-    catch (CFileErrnoException& ex) {
+    catch (const CFileErrnoException& ex) {
         CNcbiError::SetErrno(ex.GetErrno());
         return eRW_Error;
     }
@@ -7010,7 +7015,7 @@ ERW_Result CFileReaderWriter::Write(const void* buf,
     try {
         n = m_File.Write(buf, count);
     }
-    catch (CFileErrnoException& ex) {
+    catch (const CFileErrnoException& ex) {
         CNcbiError::SetErrno(ex.GetErrno());
         return eRW_Error;
     }
@@ -7025,7 +7030,8 @@ ERW_Result CFileReaderWriter::Flush(void)
 {
     try {
         m_File.Flush();
-    } catch (CFileException&) { 
+    }
+    catch (const CFileException&) { 
        return eRW_Error;
     }
     return eRW_Success;
@@ -7149,7 +7155,8 @@ CFileLock::~CFileLock()
         if (F_ISSET(m_Flags, fAutoUnlock)) {
             Unlock();
         }
-    } catch(CException& e) {
+    }
+    catch (const CException& e) {
         NCBI_REPORT_EXCEPTION_X(4,
                                 "CFileLock::~CFileLock():"
                                 " Cannot unlock", e);
