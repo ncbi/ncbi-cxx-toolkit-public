@@ -2,7 +2,7 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_lib(ncbi_id2proc_cdd)
+NCBI_begin_lib(ncbi_id2proc_cdd SHARED)
   NCBI_sources(id2cdd id2cdd_impl)
   NCBI_add_definitions(NCBI_ID2PROC_CDD_EXPORTS)
   NCBI_uses_toolkit_libraries(cdd_access xcompress seq)

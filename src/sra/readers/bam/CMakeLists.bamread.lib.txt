@@ -2,7 +2,7 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_lib(bamread)
+NCBI_begin_lib(bamread SHARED)
   NCBI_sources(bamread bamgraph bgzf bamindex vdbfile)
   NCBI_add_definitions(NCBI_BAMREAD_EXPORTS)
   NCBI_uses_toolkit_libraries(seqset xcompress)

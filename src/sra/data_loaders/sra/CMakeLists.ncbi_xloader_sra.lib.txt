@@ -2,7 +2,7 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_lib(ncbi_xloader_sra)
+NCBI_begin_lib(ncbi_xloader_sra SHARED)
   NCBI_sources(sraloader)
   NCBI_add_definitions(NCBI_XLOADER_SRA_EXPORTS)
   NCBI_uses_toolkit_libraries(sraread seqset)

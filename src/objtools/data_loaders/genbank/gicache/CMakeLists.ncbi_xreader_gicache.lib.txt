@@ -2,7 +2,7 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_lib(ncbi_xreader_gicache)
+NCBI_begin_lib(ncbi_xreader_gicache SHARED)
   NCBI_sources(reader_gicache gicache)
   NCBI_optional_components(NCBI_C)
   NCBI_requires(LMDB unix)

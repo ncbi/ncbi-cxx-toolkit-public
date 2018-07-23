@@ -2,8 +2,9 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_lib(ncbi_xcache_dbapi)
+NCBI_begin_lib(ncbi_xcache_dbapi SHARED)
   NCBI_sources(dbapi_blob_cache dbapi_blob_cache_cf)
+  NCBI_add_definitions(NCBI_DBAPI_CACHE_EXPORTS)
   NCBI_uses_toolkit_libraries(dbapi)
   NCBI_project_watchers(kuznets)
 NCBI_end_lib()

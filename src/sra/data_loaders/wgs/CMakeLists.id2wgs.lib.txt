@@ -2,7 +2,7 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_lib(ncbi_id2proc_wgs)
+NCBI_begin_lib(ncbi_id2proc_wgs SHARED)
   NCBI_sources(id2wgs id2wgs_impl)
   NCBI_add_definitions(NCBI_ID2PROC_WGS_EXPORTS)
   NCBI_uses_toolkit_libraries(id2 sraread xcompress)

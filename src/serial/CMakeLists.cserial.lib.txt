@@ -2,7 +2,6 @@
 # $Id$
 #############################################################################
 
-if(NCBI_EXPERIMENTAL_CFG)
 NCBI_begin_lib(xcser)
   NCBI_sources(asntypes serialasn)
   NCBI_optional_components(NCBI_C)
@@ -11,7 +10,7 @@ NCBI_begin_lib(xcser)
 NCBI_end_lib()
 
 
-else()
+if(OFF)
 #
 #
 #
