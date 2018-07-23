@@ -6409,7 +6409,7 @@ void CFileIO::Open(const string& filename,
 #ifdef NCBI_NO_THREADS
 #  define GetCurrentTid()  CProcess::GetCurrentPid()
 #else
-#  define GetCurrentTid()  GetCurrentThreadSystemID()
+#  define GetCurrentTid()  ((Uint8) GetCurrentThreadSystemID())
 #endif //NCBI_NO_THREADS
 
 
