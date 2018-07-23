@@ -177,8 +177,8 @@ public:
         ePos_Data
     };
 
-    // No setters -- they are not needed for access by the user, and
-    // thus are done directly from CTar for the sake of performance.
+    // No setters -- they are not needed for access by the user, and thus are
+    // done directly from CTar for the sake of performance and code clarity.
 
     // Getters only!
     EType         GetType(void)             const { return m_Type;          }
@@ -258,11 +258,11 @@ struct STarHeader;
 /// (Throws exceptions on most errors.)
 /// Note that if stream constructor is used, then CTar can only perform one
 /// pass over the archive.  This means that only one full action will succeed
-/// (and if the action was to update (e.g. append) the archive, it has to be
-/// explicitly followed by Close() if no more appends are expected).  Before
-/// next read/update action, the stream position has to be explicitly reset to
-/// the beginning of the archive, or it also may remain at the end of the
-/// archive for a series of successive append operations.
+/// (and if the action was to update -- e.g. append -- the archive, it has to
+/// be explicitly followed by Close() when no more appends are expected).
+/// Before the next read/update action, the stream position has to be reset
+/// explicitly to the beginning of the archive, or it may also remain at the
+/// end of the archive for a series of successive append operations.
 
 class NCBI_XUTIL_EXPORT CTar
 {
@@ -296,7 +296,7 @@ public:
         /// Preserve all file attributes
         fPreserveAll        = fPreserveOwner | fPreserveMode | fPreserveTime,
         /// Do not extract PAX GNU/1.0 sparse files (treat 'em as unsupported)
-        fPreserveSparse     = (1<<10),
+        fSparseUnsupported  = (1<<10),
 
         // --- Extract/List ---
         /// Skip unsupported entries rather than making files out of them
@@ -304,6 +304,8 @@ public:
         fSkipUnsupported    = (1<<14),
 
         // --- Append ---
+        /// Ignore unreadable files/dirs (still warn them, but don't stop)
+        fIgnoreUnreadable   = (1<<17),
         /// Always use OldGNU headers for long names (default:only when needed)
         fLongNameSupplement = (1<<18),
 
@@ -507,7 +509,7 @@ public:
     /// the archive, and in the latter case used only for relative paths.
     /// @sa
     ///   GetBaseDir
-    void SetBaseDir(const string& dirname);
+    void          SetBaseDir(const string& dirname);
 
     /// Return archive size as if all specified input entries were put in it.
     /// Note that the return value is not the exact but the upper bound of
@@ -643,7 +645,7 @@ private:
     // Flush the archive (w/EOT);  return "true" if it is okay to truncate
     bool x_Flush(bool nothrow = false);
 
-    // Backspace and skip the archive.
+    // Backspace and fast-forward the archive.
     void x_Backspace(EAction action);  // NB: m_ZeroBlockCount blocks back
     void x_Skip(Uint8 blocks);         // NB: Can do by either skip or read
 
@@ -702,7 +704,7 @@ private:
     void x_AppendStream(const string& name, CNcbiIstream& is);
 
     // Append a regular file to the archive.
-    void x_AppendFile(const string& file);
+    bool x_AppendFile(const string& file);
 
 private:
     string        m_FileName;       ///< Tar archive file name (only if file)
