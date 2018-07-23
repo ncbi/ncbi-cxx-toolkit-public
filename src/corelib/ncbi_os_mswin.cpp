@@ -40,7 +40,11 @@
 #define MAX_ACCOUNT_LEN  256
 
 // Hopefully this makes UID/GID compatible with what CYGWIN reports
-#define CYGWIN_MAGIC_ID_OFFSET  10000
+#  ifdef PRIMARY_POSIX_OFFSET
+#    define CYGWIN_PRIMARY_ID_OFFSET  PRIMARY_POSIX_OFFSET
+#  else
+#    define CYGWIN_PRIMARY_ID_OFFSET  0x100000
+#  endif /*PRIMARY_POSIX_OFFSET*/
 
 // Security access info
 #define ACCOUNT_SECURITY_INFO  (OWNER_SECURITY_INFORMATION | \
@@ -123,11 +127,9 @@ static PSID x_GetAccountSidByName(const string& account, SID_NAME_USE type = (SI
 
 static bool x_GetAccountNameBySid(PSID sid, string* account, int* domatch = 0)
 {
-    _ASSERT(account);
-
     // Use predefined buffers for account/domain names to avoid additional
-    // step to get its sizes. According to MSDN max account/domain size
-    // do not exceed MAX_ACCOUNT_LEN symbols (char or wchar).
+    // step to get its sizes.  According to MSDN max account/domain size
+    // does not exceed MAX_ACCOUNT_LEN symbols (char or wchar).
 
     TXChar   account_name[MAX_ACCOUNT_LEN + 2];
     TXChar   domain_name [MAX_ACCOUNT_LEN + 2];
@@ -146,8 +148,10 @@ static bool x_GetAccountNameBySid(PSID sid, string* account, int* domatch = 0)
     }
 
     // Save account information
-    account_name[account_size] = _TX('\0');
-    account->assign(_T_STDSTRING(account_name));
+    if (account) {
+        account_name[account_size] = _TX('\0');
+        account->assign(_T_STDSTRING(account_name));
+    }
 
     if (domatch) {
         domain_name[domain_size] = _TX('\0');
@@ -179,7 +183,7 @@ static bool s_GetOwnerGroupFromSIDs(PSID owner_sid, PSID group_sid,
                 success = false;
             *uid = 0;
         } else {
-            *uid = match ? CYGWIN_MAGIC_ID_OFFSET : 0;
+            *uid = match ? CYGWIN_PRIMARY_ID_OFFSET : 0;
         }
         owner_name = NULL;
         *uid += *GetSidSubAuthority(owner_sid, *GetSidSubAuthorityCount(owner_sid) - 1);
@@ -190,7 +194,7 @@ static bool s_GetOwnerGroupFromSIDs(PSID owner_sid, PSID group_sid,
         if ( !x_GetAccountNameBySid(group_sid, group_name, &match) ) {
             *gid = 0;
         } else {
-            *gid = match ? CYGWIN_MAGIC_ID_OFFSET : 0;
+            *gid = match ? CYGWIN_PRIMARY_ID_OFFSET : 0;
         }
         group_name = NULL;
         *gid += *GetSidSubAuthority(group_sid, *GetSidSubAuthorityCount(group_sid) - 1);
@@ -317,7 +321,7 @@ bool CWinSecurity::SetFileOwner(const string& filename,
             goto cleanup;
         }
     }
-    if (uid || gid) {
+    if (uid  ||  gid) {
         s_GetOwnerGroupFromSIDs(owner_sid, group_sid, NULL, NULL, uid, gid);
     }
 
