@@ -2,7 +2,7 @@
 # $Id$
 
 # Default to a basic test service.
-: ${service:=bounce}
+: ${service:=bouncehttp}
 
 # Test the service using a pseudo-random number of threads (between 2 and 11).
 nthreads="`expr $$ % 10 + 2`"

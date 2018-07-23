@@ -41,8 +41,7 @@
             "scheme":           "https"
         },
         {
-            "title":            "bouncehttp with missing scheme",
-            "expect_error":     "yes"
+            "title":            "bouncehttp with missing scheme"
         },
         {
             "title":            "bouncehttp with endpoint in config",
