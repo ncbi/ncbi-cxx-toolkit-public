@@ -114,8 +114,8 @@ extern int/*bool*/ BASE64_Decode
  size_t      dst_size,
  size_t*     dst_written)
 {
-    unsigned char* src = (unsigned char*) src_buf;
-    unsigned char* dst = (unsigned char*) dst_buf;
+    const unsigned char* src = (const unsigned char*) src_buf;
+    unsigned char*       dst = (unsigned char*)       dst_buf;
     size_t i = 0, j = 0, k = 0, l;
     unsigned int temp = 0;
     if (src_size < 4  ||  dst_size < 3) {
@@ -172,10 +172,10 @@ extern int/*bool*/ BASE64_Decode
                     if (i >= src_size)
                         break;
                     if (src[i] == '=')
-                        l--;
+                        --l;
                     else if (src[i] != '\r'  &&  src[i] != '\n')
                         break;
-                    i++;
+                    ++i;
                 }
             } else {
                 k = 0;
@@ -288,15 +288,15 @@ static const unsigned char base64url_decode_table[256] =
     0200, 0200, 0200, 0200, 0200, 0200, 0200, 0200
 };
 
-#define XLAT_BASE64_CHAR(var) \
-    if ((signed char) (var = base64url_decode_table[*src++]) < 0) \
+#define XLAT_BASE64_CHAR(var)                                     \
+    if ((signed char)(var = base64url_decode_table[*src++]) < 0)  \
         return eBase64_InvalidInput;
 
 extern EBase64_Result base64url_decode(const void* src_buf, size_t src_size,
     void* dst_buf, size_t dst_size, size_t* output_len)
 {
-    const unsigned char* src;
     unsigned char* dst;
+    const unsigned char* src;
     unsigned char src_ch0, src_ch1;
 
     size_t result_len = (src_size * 3) >> 2;
@@ -308,7 +308,7 @@ extern EBase64_Result base64url_decode(const void* src_buf, size_t src_size,
         return eBase64_BufferTooSmall;
 
     src = (const unsigned char*) src_buf;
-    dst = (unsigned char*) dst_buf;
+    dst = (unsigned char*)       dst_buf;
 
     while (src_size > 3) {
         XLAT_BASE64_CHAR(src_ch0);
