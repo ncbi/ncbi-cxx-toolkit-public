@@ -193,7 +193,8 @@ public:
         fExpandGaps            = 1 << 3,
         fDisableAnnotRefs      = 1 << 10,
         fUseSeqEntryIndexer    = 1 << 11,
-        fUseAutoDef            = 1 << 12
+        fUseAutoDef            = 1 << 12,
+        fIgnoreExistingTitle   = 1 << 13
     };
 
     enum EView {
@@ -576,6 +577,7 @@ public:
     bool DisableAnnotRefs      (void) const;
     bool UseSeqEntryIndexer    (void) const;
     bool UseAutoDef            (void) const;
+    bool IgnoreExistingTitle   (void) const;
 
     // setters
     void SetCustom(const TCustom& custom) { m_Custom = custom; }
@@ -586,6 +588,7 @@ public:
     CFlatFileConfig& SetDisableAnnotRefs     (bool val = true);
     CFlatFileConfig& SetUseSeqEntryIndexer   (bool val = true);
     CFlatFileConfig& SetUseAutoDef           (bool val = true);
+    CFlatFileConfig& SetIgnoreExistingTitle  (bool val = true);
 
     // adjust mode dependant flags for RefSeq
     void SetRefSeqConventions(void);
@@ -769,6 +772,7 @@ CUSTOM_ARG_IMP(ExpandGaps)
 CUSTOM_ARG_IMP(DisableAnnotRefs)
 CUSTOM_ARG_IMP(UseSeqEntryIndexer)
 CUSTOM_ARG_IMP(UseAutoDef)
+CUSTOM_ARG_IMP(IgnoreExistingTitle)
 
 #undef FLAG_ARG_IMP
 #undef FLAG_ARG_GET

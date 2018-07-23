@@ -84,6 +84,9 @@ void CDeflineItem::x_GatherInfo(CBioseqContext& ctx)
     if ( ctx.Config().UseAutoDef() ) {
         flags |= sequence::CDeflineGenerator::fUseAutoDef;
     }
+    if ( ctx.Config().IgnoreExistingTitle() ) {
+        flags |= sequence::CDeflineGenerator::fIgnoreExisting;
+    }
     if ( ctx.UsingSeqEntryIndex() ) {
         CRef<CSeqEntryIndex> idx = ctx.GetSeqEntryIndex();
         CBioseq_Handle bsh = scope.GetBioseqHandle(*bioseq);
