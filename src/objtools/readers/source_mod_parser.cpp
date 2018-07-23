@@ -1462,6 +1462,28 @@ string CSourceModParser::CUnkModError::x_CalculateErrorString(
 
 CSourceModParser::TMods CSourceModParser::GetMods(TWhichMods which) const
 {
+
+    TMods result;
+/*
+    if (which == fAllMods) {
+        for (const auto& kv : m_ModNameMap) {
+            result.insert(kv.second);
+        }
+        return result;
+    }
+    // else
+    const bool used = (which == fUsedMods);
+    for (const auto& kv : m_ModNameMap) {
+        const auto& mod = kv.second;
+        if (mod.used == used) {
+            result.insert(mod);
+        }
+    }
+
+    return result;
+*/
+
+
     if (which == fAllMods) {
         // if caller gave this they probably should prefer calling GetAllMods
         // to avoid the struct copy.
@@ -1483,6 +1505,7 @@ const CSourceModParser::SMod* CSourceModParser::FindMod(
     //const SMod & smod, const SMod & alt_smod)
     const CTempString& key, const CTempString& alt_key)
 {
+
     // check against m_pModFilter, if any
     if( m_pModFilter ) {
         if( ! (*m_pModFilter)(key) || ! (*m_pModFilter)(alt_key) ) {
@@ -1490,8 +1513,22 @@ const CSourceModParser::SMod* CSourceModParser::FindMod(
         }
     }
 
-    SMod mod;
+/*
+    auto it = m_ModNameMap.find(key);
+    if (it == m_ModNameMap.end()) {
+        it = m_ModNameMap.find(alt_key);
+    }
 
+    if (it != m_ModNameMap.end()) {
+        const_cast<SMod&>(it->second).used = true;
+        return &(it->second);
+    }
+    return nullptr;
+*/
+
+
+
+    SMod mod;
     for (int tries = 0;  tries < 2;  ++tries) {
         const CTempString & modkey = ( tries == 0 ? key : alt_key );
         if( modkey.empty() ) {
@@ -1513,7 +1550,6 @@ const CSourceModParser::SMod* CSourceModParser::FindMod(
     return NULL;
 }
 
-
 CSourceModParser::TModsRange
 CSourceModParser::FindAllMods(const CTempString& key)
 {
@@ -1521,12 +1557,29 @@ CSourceModParser::FindAllMods(const CTempString& key)
     return FindAllMods(smod);
 }
 
+
 CSourceModParser::TModsRange
 CSourceModParser::FindAllMods(const CTempString& key, const CTempString& alt_key)
 {
     SMod smod(key);
     SMod alt_smod(alt_key);
     return FindAllMods(smod, alt_smod);
+}
+
+
+CSourceModParser::TModsRange
+CSourceModParser::x_FindAllMods(const CTempString& name) 
+{
+    auto range = m_ModNameMap.equal_range(name);
+    if (range.first == range.second) {
+        return TModsRange();
+    }
+
+    for (auto it = range.first; it != range.second; ++it) {
+        const_cast<SMod&>(it->second).used = true;
+    }
+
+    return TModsRange(); // Need to implement this
 }
 
 CSourceModParser::TModsRange
@@ -1783,29 +1836,28 @@ void CSourceModParser::SetAllUnused()
     }
 }
 
-void CSourceModParser::AddMods(const CTempString& name, const CTempString& value)
+void CSourceModParser::AddMods(const CTempString& name, const CTempString& value, TGroupId group_id)
 {
-    SMod newmod(name);
-    newmod.value = value;
-    newmod.used = false;
-
-    m_Mods.insert(newmod);
+    m_Mods.emplace(name, value, group_id);
+    auto ret = m_ModNameMap.emplace(name, SMod(name,value,group_id));
+    auto it = ret.first;
+    m_ModGroupMap.emplace(it->second.group_id, ref(it->second));
 }
 
-void CSourceModParser::AddMod(const pair<string, string>& mod) 
+void CSourceModParser::AddMod(const pair<string, string>& mod, TGroupId group_id) 
 {
-    AddMods(mod.first, mod.second);
+    AddMods(mod.first, mod.second, group_id);
 }
 
-void CSourceModParser::AddMod(const pair<CTempString, CTempString>& mod) 
+void CSourceModParser::AddMod(const pair<CTempString, CTempString>& mod, TGroupId group_id) 
 {
-    AddMods(mod.first, mod.second);
+    AddMods(mod.first, mod.second, group_id);
 }
 
-void CSourceModParser::AddMods(const initializer_list<pair<string, string>>& mods)
+void CSourceModParser::AddMods(const initializer_list<pair<string, string>>& mods, TGroupId group_id)
 {
     for (auto mod : mods) {
-        AddMod(mod);
+        AddMod(mod, group_id);
     }
 }
 

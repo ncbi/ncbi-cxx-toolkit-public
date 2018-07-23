@@ -53,6 +53,7 @@
 #include <set>
 #include <map>
 #include <initializer_list>
+#include <functional>
 
 /** @addtogroup Miscellaneous
  *
@@ -82,6 +83,23 @@ class ILineErrorListener;
 template<class _T>
 class CAutoInitDesc;
 class CAutoAddDBLink;
+
+
+template<typename TMapIterator>
+struct SMapIteratorAdapter
+{
+    using value_type = const typename TMapIterator::second_type;
+    typedef value_type* pointer;
+    typedef value_type& reference;
+
+    SMapIteratorAdapter() = default;
+    SMapIteratorAdapter(TMapIterator it) 
+       : TMapIterator(it) {}
+
+   reference operator* () const { return TMapIterator::operator* ().second; }
+   pointer operator->() const { return &TMapIterator::operator->()->second; } 
+};
+
 
 class NCBI_XOBJREAD_EXPORT CSourceModParser
 {
@@ -116,13 +134,15 @@ public:
     string ParseTitle(const CTempString& title, CConstRef<CSeq_id> seqid,
         size_t iMaxModsToParse = std::numeric_limits<size_t>::max() );
 
-    void AddMods(const CTempString& name, const CTempString& value);
+    using TGroupId = unsigned int;
 
-    void AddMod(const pair<CTempString, CTempString>& mod);
+    void AddMods(const CTempString& name, const CTempString& value, TGroupId group_id=0);
 
-    void AddMod(const pair<string, string>& mod);
+    void AddMod(const pair<CTempString, CTempString>& mod, TGroupId group_id=0);
 
-    void AddMods(const initializer_list<pair<string, string>>& mods);
+    void AddMod(const pair<string, string>& mod, TGroupId group_id=0);
+
+    void AddMods(const initializer_list<pair<string, string>>& mods, TGroupId group_id=0);
 
     /// Apply previously extracted modifiers to the given object, marking all
     /// relevant ones as used.
@@ -154,6 +174,7 @@ public:
     // more efficient than CompareKeys when you're just looking for equality.
     static bool EqualKeys(const CTempString& lhs, const CTempString& rhs);
 
+
     struct SMod {
 
         CConstRef<CSeq_id> seqid;
@@ -161,11 +182,18 @@ public:
         string value;
         size_t pos = 0;
         bool   used = false;
+        TGroupId group_id = 0;
 
         SMod(void) = default;
         // This is usually used for making SMods as keys for searching maps
         // and such.
         explicit SMod(const CTempString & the_key) : key(the_key) { }
+
+        explicit SMod(const CTempString& key, const CTempString& value) :
+            key(key), value(value) {}
+
+        explicit SMod(const CTempString& key, const CTempString& value, TGroupId group_id) :
+            key(key), value(value), group_id(group_id) {}
 
         bool operator < (const SMod& rhs) const;
         string ToString(void) const;
@@ -173,6 +201,14 @@ public:
     typedef set<SMod>              TMods;
     typedef TMods::const_iterator  TModsCI;
     typedef pair<TModsCI, TModsCI> TModsRange;
+
+
+   // using TModNameMap = multimap<CTempString, const SMod>;
+    using TModGroupMap = multimap<TGroupId, reference_wrapper<const SMod>>; 
+    using TModNameMap = map<CTempString, const SMod>;
+    using TIterator = SMapIteratorAdapter<TModNameMap::const_iterator>;
+    using TRange = pair<TIterator, TIterator>;
+ //   using TModGroupMap = map<TGroupId, reference_wrapper<const SMod>>; 
 
     enum EWhichMods {
         fUsedMods   = 0x1,
@@ -230,6 +266,8 @@ public:
 
     const SMod* FindMod(const CTempString& key, const CTempString& alt_key = CTempString());
 
+    const SMod* FindMod(const initializer_list<CTempString> names) { return nullptr; }
+
     /// Return all modifiers with the given key (e.g., db_xref), marking them
     /// as used along the way.
     TModsRange FindAllMods(const CTempString& key, const CTempString& alt_key);
@@ -272,6 +310,8 @@ public:
     static const string & GetModAllowedValuesAsOneString(const string &mod);
 
 private:
+    TModsRange x_FindAllMods(const CTempString& key);
+
     static const unsigned char kKeyCanonicalizationTable[257];
 
     EHandleBadMod m_HandleBadMod;
@@ -280,6 +320,8 @@ private:
 
     TMods m_Mods;
     TMods m_BadMods;
+    TModNameMap m_ModNameMap;
+    TModGroupMap m_ModGroupMap;
 
     CRef<CModFilter> m_pModFilter;
 
