@@ -790,7 +790,7 @@ void CWGSDb_Impl::x_InitIdParams(void)
         return;
     }
     CTempString acc = *seq->ACCESSION(1);
-    const SIZE_TYPE prefix_len = 4;
+    const SIZE_TYPE prefix_len = acc.find_first_of("0123456789");
     m_IdRowDigits = acc.size() - (prefix_len + 2);
     if ( m_IdRowDigits < 6 || m_IdRowDigits > 8 ) {
         NCBI_THROW_FMT(CSraException, eInitFailed,
@@ -979,7 +979,12 @@ CWGSDb_Impl::ParseRowType(CTempString acc,
 {
     pair<TVDBRowId, ERowType> ret(0, eRowType_contig);
     const SIZE_TYPE start = 0;
-    CTempString row = acc.substr(start+6);
+    SIZE_TYPE prefix_len = acc.find_first_of("0123456789");
+    if (prefix_len == NPOS || prefix_len >= acc.size() - 2)
+        return ret;
+    else prefix_len += 2;
+
+    CTempString row = acc.substr(start+prefix_len);
     if ( row[0] == 'S' ) {
         if ( !(allow_type & fAllowRowType_scaffold) ) {
             return ret;
