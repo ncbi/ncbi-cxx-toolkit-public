@@ -93,12 +93,11 @@ extern "C" {
 #endif /*__cplusplus*/
 
 static SSERV_Info*  s_GetNextInfo(SERV_ITER, HOST_INFO*);
-static int          s_Update     (SERV_ITER, const char*, int);
 static void         s_Reset      (SERV_ITER);
 static void         s_Close      (SERV_ITER);
 
 static const SSERV_VTable s_op = {
-    s_GetNextInfo, NULL/*Feedback*/, s_Update, s_Reset, s_Close, "LINKERD"
+    s_GetNextInfo, NULL/*Feedback*/, NULL, s_Reset, s_Close, "LINKERD"
 };
 
 #ifdef __cplusplus
@@ -183,53 +182,8 @@ static EEndpointStatus s_SetEndpoint(
 {
     if (scheme  &&  *scheme) {
         end->scheme = x_ParseScheme(scheme, strlen(scheme));
-        if (end->scheme != eURL_Http  &&  end->scheme != eURL_Https) {
-            CORE_LOGF_X(eLSub_BadData, eLOG_Error,
-                       ("Invalid scheme %s for linkerd.", scheme));
-            return eEndStat_Error;
-        }
-        if (user  &&  *user) {
-            if (strlen(user) >= sizeof(end->user)) {
-                CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                           "Configured linkerd user too long.");
-                return eEndStat_Error;
-            }
-            strcpy(end->user, user);
-        } else {
-            end->user[0] = NIL;
-        }
-        if (pass  &&  *pass) {
-            if (strlen(pass) >= sizeof(end->pass)) {
-                CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                           "Configured linkerd password too long.");
-                return eEndStat_Error;
-            }
-            strcpy(end->pass, pass);
-        } else {
-            end->pass[0] = NIL;
-        }
-        if (path  &&  *path) {
-            if (strlen(path) >= sizeof(end->path)) {
-                CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                           "Configured linkerd path too long.");
-                return eEndStat_Error;
-            }
-            strcpy(end->path, path);
-        } else {
-            end->path[0] = NIL;
-        }
-        if (args  &&  *args) {
-            if (strlen(args) >= sizeof(end->args)) {
-                CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                           "Configured linkerd args too long.");
-                return eEndStat_Error;
-            }
-            strcpy(end->args, args);
-        } else {
-            end->args[0] = NIL;
-        }
-        return eEndStat_Success;
-    } else {
+    }
+    if (end->scheme == eURL_Unspec) {
         if ((user  &&  *user)  ||  (pass  &&  *pass)  ||  (path  &&  *path)  ||
             (args  &&  *args))
         {
@@ -237,15 +191,71 @@ static EEndpointStatus s_SetEndpoint(
         }
         return eEndStat_NoData;
     }
+    if (end->scheme != eURL_Http  &&  end->scheme != eURL_Https) {
+        CORE_LOGF_X(eLSub_BadData, eLOG_Error,
+                   ("Invalid scheme %s for linkerd.", scheme));
+        return eEndStat_Error;
+    }
+
+    if (user  &&  *user) {
+        if (strlen(user) >= sizeof(end->user)) {
+            CORE_LOG_X(eLSub_BadData, eLOG_Error,
+                       "Configured linkerd user too long.");
+            return eEndStat_Error;
+        }
+        strcpy(end->user, user);
+    } else {
+        end->user[0] = NIL;
+    }
+
+    if (pass  &&  *pass) {
+        if (strlen(pass) >= sizeof(end->pass)) {
+            CORE_LOG_X(eLSub_BadData, eLOG_Error,
+                       "Configured linkerd password too long.");
+            return eEndStat_Error;
+        }
+        strcpy(end->pass, pass);
+    } else {
+        end->pass[0] = NIL;
+    }
+
+    if (path  &&  *path) {
+        if (strlen(path) >= sizeof(end->path)) {
+            CORE_LOG_X(eLSub_BadData, eLOG_Error,
+                       "Configured linkerd path too long.");
+            return eEndStat_Error;
+        }
+        strcpy(end->path, path);
+    } else {
+        end->path[0] = NIL;
+    }
+
+    if (args  &&  *args) {
+        if (strlen(args) >= sizeof(end->args)) {
+            CORE_LOG_X(eLSub_BadData, eLOG_Error,
+                       "Configured linkerd args too long.");
+            return eEndStat_Error;
+        }
+        strcpy(end->args, args);
+    } else {
+        end->args[0] = NIL;
+    }
+
+    return eEndStat_Success;
 }
 
 
 static EEndpointStatus s_EndpointFromNetInfo(SEndpoint *end,
-                                             const SConnNetInfo *net_info)
+                                             const SConnNetInfo *net_info,
+                                             int warn)
 {
-    const char      *scheme = x_Scheme(net_info->scheme);
-    SEndpoint       endpoint;
+    const char      *scheme;
+    SEndpoint       endpoint = {eURL_Unspec, "", "", "", ""};
     EEndpointStatus end_stat;
+
+    /* use the endpoint scheme if it's already been determined */
+    scheme = x_Scheme(end->scheme == eURL_Unspec ?
+                      net_info->scheme : end->scheme);
 
     end_stat = s_SetEndpoint(&endpoint, scheme, net_info->user,
                              net_info->pass, net_info->path, net_info->args);
@@ -256,10 +266,12 @@ static EEndpointStatus s_EndpointFromNetInfo(SEndpoint *end,
     case eEndStat_NoData:
         break;
     case eEndStat_NoScheme: {
-        static void* s_Once = 0;
-        if (CORE_Once(&s_Once)) {
-            CORE_LOG_X(eLSub_BadData, eLOG_Warning,
-                "Endpoint info in net_info is missing a scheme.");
+        if (warn) {
+            static void* s_Once = 0;
+            if (CORE_Once(&s_Once)) {
+                CORE_LOG_X(eLSub_BadData, eLOG_Warning,
+                    "Endpoint info in net_info is missing a scheme.");
+            }
         }
         break;
     }
@@ -326,7 +338,7 @@ static EEndpointStatus s_EndpointFromRegistry(SEndpoint *end)
         return eEndStat_Error;
     }
 
-    SEndpoint       endpoint_reg;
+    SEndpoint       endpoint_reg = {eURL_Unspec, "", "", "", ""};
     EEndpointStatus end_stat;
 
     end_stat = s_SetEndpoint(&endpoint_reg, scheme, user, pass, path, args);
@@ -436,43 +448,46 @@ static int s_Resolve(SERV_ITER iter)
     char ip4[16];
     SOCK_ntoa(SOCK_gethostbyname(dni->host), ip4, sizeof(ip4)-1);
 
-    /* Set resolution status */
+    /* Set vhost */
     char vhost[300];
+    if (strlen(iter->name) + sizeof(LINKERD_HOST_HDR_SFX) >= sizeof(vhost)) {
+        CORE_LOGF_X(eLSub_Alloc, eLOG_Critical,
+            ("vhost '%s.%s' is too long.", iter->name, LINKERD_HOST_HDR_SFX));
+        return 0;
+    }
     sprintf(vhost, "%s%s", iter->name, LINKERD_HOST_HDR_SFX);
 
     const char *secure = ( dni->scheme == eURL_Https ? "YES" : "NO" );
 
     /*  SSERV_Info member to format string mapping:
-        mode (secure) --------------------------------------------+
-        time (expires) --------------------------------------+    |
-        rate -----------------------------------------+      |    |
-        vhost -----------------------------------+    |      |    |
-        args -----------------------------+      |    |      |    |
-        path ---------------------------+ |      |    |      |    |
-        port ------------------------+  | |      |    |      |    |
-        host ---------------------+  |  | |      |    |      |    |
-        type ----------------+    |  |  | |      |    |      |    |
-                             [  ] [] [] [][  ]   []   []     []   [] */
-    const char* descr_fmt = "HTTP %s:%u %s%s%s H=%s R=1000 T=29 $=%s";
+        mode (secure) --------------------------------------+
+        time (expires) --------------------------------+    |
+        rate ------------------------------------+     |    |
+        vhost ------------------------------+    |     |    |
+        path ---------------------------+   |    |     |    |
+        port ------------------------+  |   |    |     |    |
+        host ---------------------+  |  |   |    |     |    |
+        type ----------------+    |  |  |   |    |     |    |
+                             [  ] [] [] |   []   [ ]   []   [] */
+    const char* descr_fmt = "HTTP %s:%u / H=%s R=%lf T=%u $=%s";
 
     /* Prepare description */
     size_t length;
     length = strlen(descr_fmt) + strlen(ip4) + 5 /*length of port*/ +
-             strlen(dni->path) + (*dni->args ? 1 : 0) +
-             strlen(dni->args) + strlen(vhost) + strlen(secure);
+             strlen(vhost) + 30 /*ample space for R,T*/ + strlen(secure);
     server_description = (char*)malloc(sizeof(char) * length);
     if ( ! server_description) {
         CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
             "Couldn't alloc for server description.");
         return 0;
     }
-    sprintf(server_description, descr_fmt, ip4, dni->port, dni->path,
-            dni->args[0] ? "?" : "", dni->args, vhost, secure);
+    sprintf(server_description, descr_fmt, ip4, dni->port, vhost,
+            LBSM_DEFAULT_RATE, LBSM_DEFAULT_TIME, secure);
 
     /* Parse description into SSERV_Info */
     CORE_TRACEF(
         ("Parsing candidate server description: '%s'", server_description));
-    SSERV_Info* cand_info = SERV_ReadInfoEx(server_description, iter->name, 0);
+    SSERV_Info* cand_info = SERV_ReadInfo(server_description);
 
     if ( ! cand_info) {
         CORE_LOGF_X(eLSub_BadData, eLOG_Warning,
@@ -486,20 +501,10 @@ static int s_Resolve(SERV_ITER iter)
     /* Populate candidate info */
     data->cand.info   = cand_info;
     data->cand.status = cand_info->rate;
-
-    /* Set resolution status */
     data->n_cand      = 1;
     data->done        = 0;
 
     return 1;
-}
-
-
-/* Because direct linkerd use involves a single static endpoint (linkerd),
-    there is never a need to update. */
-static int s_Update(SERV_ITER iter, const char* text, int code)
-{
-    return 0;
 }
 
 
@@ -585,19 +590,19 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
         assert(iter);
         assert(net_info);
 
-        /* Linkerd only supports http or https (or unknown to be set later) */
-        assert(net_info->scheme == eURL_Http   ||
-               net_info->scheme == eURL_Https  ||
-               net_info->scheme == eURL_Unspec);
-
-        /* Check that service name is provided - otherwise there is nothing to
-         * search for. */
+        /* Check that a service name is provided - Linkerd cannot operate
+           without a service name. */
         if (!iter->name  ||  !*iter->name) {
             CORE_LOG_X(eLSub_BadData, eLOG_Error,
                 "Service name is NULL or empty: not able to continue "
                 "SERV_LINKERD_Open");
             return NULL;
         }
+
+        /* Linkerd only supports http or https (or unknown to be set later) */
+        assert(net_info->scheme == eURL_Http   ||
+               net_info->scheme == eURL_Https  ||
+               net_info->scheme == eURL_Unspec);
 
         /* Prohibit catalog-prefixed services (e.g. "/lbsm/<svc>") */
         if (iter->name[0] == '/') {
@@ -635,7 +640,7 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
 
     /* Check for sufficient endpoint info in incoming net_info */
     SEndpoint endpoint = {eURL_Unspec, "", "", "", ""};
-    if (s_EndpointFromNetInfo(&endpoint, net_info) == eEndStat_Error) {
+    if (s_EndpointFromNetInfo(&endpoint, net_info, 0) == eEndStat_Error) {
         CORE_LOG_X(eLSub_BadData, eLOG_Error,
             "Failed to check incoming net_info for endpoint.");
         s_Close(iter);
@@ -655,6 +660,18 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
         if (s_EndpointFromNamerd(&endpoint, iter) == eEndStat_Error) {
             CORE_LOG_X(eLSub_BadData, eLOG_Error,
                 "Failed to check namerd for endpoint override.");
+            s_Close(iter);
+            return 0;
+        }
+    }
+
+    /* If still unset, try a default scheme */
+    if (endpoint.scheme == eURL_Unspec) {
+        endpoint.scheme = eURL_Http;
+        if (s_EndpointFromNetInfo(&endpoint, net_info, 1) == eEndStat_Error) {
+            CORE_LOG_X(eLSub_BadData, eLOG_Error,
+                "Failed to check incoming net_info for endpoint - "
+                "even with default scheme.");
             s_Close(iter);
             return 0;
         }
