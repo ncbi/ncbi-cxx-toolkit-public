@@ -551,6 +551,32 @@ void CFlatFileGenerator::Generate
 }
 
 
+// This version iterates Bioseqs within the Bioseq_set
+void CFlatFileGenerator::Generate
+(const CSeq_entry_Handle& entry,
+ CFlatItemOStream& item_os,
+ bool useSeqEntryIndexing)
+{
+    if (useSeqEntryIndexing) {
+        m_Ctx->SetConfig().SetUseSeqEntryIndexer(true);
+    } else {
+        SetFeatTree(new feature::CFeatTree(entry));
+    }
+
+    for (CBioseq_CI bioseq_it(entry);  bioseq_it;  ++bioseq_it) {
+        CBioseq_Handle bsh = *bioseq_it;
+        CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
+
+        try {
+            Generate( bsh, item_os);
+        }
+        catch (CException& e) {
+            ERR_POST(Error << e);
+        }
+    }
+}
+
+
 void CFlatFileGenerator::Generate
 (const CSeq_submit& submit,
  CScope& scope,
@@ -623,6 +649,18 @@ void CFlatFileGenerator::Generate
         item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
 
     Generate(id, range, strand, scope, *item_os);
+}
+
+
+void CFlatFileGenerator::Generate
+(const CSeq_entry_Handle& entry,
+ CNcbiOstream& os,
+ bool useSeqEntryIndexing)
+{
+    CRef<CFlatItemOStream> 
+        item_os(new CFormatItemOStream(new COStreamTextOStream(os)));
+
+    Generate(entry, *item_os, useSeqEntryIndexing);
 }
 
 
