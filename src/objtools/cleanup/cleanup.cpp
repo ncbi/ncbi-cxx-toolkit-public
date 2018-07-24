@@ -1218,16 +1218,6 @@ bool CCleanup::SetFrameFromLoc(CCdregion &cdregion, const CSeq_loc& loc, CScope&
 }
 
 
-bool IsTransSpliced(const CSeq_feat& feat)
-{
-    if (feat.IsSetExcept_text() && NStr::Find(feat.GetExcept_text(), "trans-splicing") != string::npos) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
 bool s_IsLocationEndAtOtherLocationInternalEndpoint(const CSeq_loc& loc, const CSeq_loc& other_loc)
 {
     size_t loc_end = loc.GetStop(eExtreme_Biological);
