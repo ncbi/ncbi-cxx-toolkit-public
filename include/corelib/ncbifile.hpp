@@ -381,8 +381,10 @@ public:
     /// Delete trailing path separator, if any.
     static string DeleteTrailingPathSeparator(const string& path);
 
-    /// Convert relative "path" on any OS to the current
-    /// OS-dependent relative path. 
+    /// Convert "path" on any OS to the current OS-dependent path.
+    /// Converts related paths, normalizes absolute.
+    /// @sa 
+    ///   IsAbsolutePath, NormalizePath
     static string ConvertToOSPath(const string& path);
 
     /// Check if a "path" is absolute for the current OS.

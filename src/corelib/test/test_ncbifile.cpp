@@ -335,22 +335,39 @@ static void s_TEST_CheckPath(void)
     // Convert path to OS dependent test
 
     assert( d.ConvertToOSPath("")               == "" );
-    assert( d.ConvertToOSPath("c:\\file")       == "c:\\file" );
-    assert( d.ConvertToOSPath("/dir/file")      == "/dir/file" );
+    assert( d.ConvertToOSPath("\\\\path\\file") == "\\\\path\\file" ); // UNC
+
 #if defined(NCBI_OS_MSWIN)
-    assert( d.ConvertToOSPath("dir")            == "dir" );
-    assert( d.ConvertToOSPath("dir\\file")      == "dir\\file" );
-    assert( d.ConvertToOSPath("dir/file")       == "dir\\file" );
-    assert( d.ConvertToOSPath("./dir/file")     == "dir\\file" );
-    assert( d.ConvertToOSPath("../file")        == "..\\file" );
-    assert( d.ConvertToOSPath("../../file")     == "..\\..\\file" );
+    // relative
+    assert( d.ConvertToOSPath("dir")            == "dir"            );
+    assert( d.ConvertToOSPath("dir\\file")      == "dir\\file"      );
+    assert( d.ConvertToOSPath("dir/file")       == "dir\\file"      );
+    assert( d.ConvertToOSPath("./dir/file")     == "dir\\file"      );
+    assert( d.ConvertToOSPath("../file")        == "..\\file"       );
+    assert( d.ConvertToOSPath("../../file")     == "..\\..\\file"   );
+    // absolute 
+    assert( d.ConvertToOSPath("c:\\file")       == "c:\\file"       );
+    assert( d.ConvertToOSPath("c:/file")        == "c:\\file"       );
+    assert( d.ConvertToOSPath("/dir/file")      == "\\dir\\file"    );
+    assert( d.ConvertToOSPath("//dir/file")     == "\\\\dir\\file"  );
+    assert( d.ConvertToOSPath("\\dir\\file")    == "\\dir\\file"    );
+    assert( d.ConvertToOSPath("//path/file")    == "\\\\path\\file" );
+
 #elif defined(NCBI_OS_UNIX)
-    assert( d.ConvertToOSPath("dir")            == "dir" );
-    assert( d.ConvertToOSPath("dir\\file")      == "dir/file" );
-    assert( d.ConvertToOSPath("dir/file")       == "dir/file" );
-    assert( d.ConvertToOSPath(".\\dir\\file")   == "dir/file" );
-    assert( d.ConvertToOSPath("..\\file")       == "../file" );
+    // relative
+    assert( d.ConvertToOSPath("dir")            == "dir"        );
+    assert( d.ConvertToOSPath("dir\\file")      == "dir/file"   );
+    assert( d.ConvertToOSPath("dir/file")       == "dir/file"   );
+    assert( d.ConvertToOSPath(".\\dir\\file")   == "dir/file"   );
+    assert( d.ConvertToOSPath("..\\file")       == "../file"    );
     assert( d.ConvertToOSPath("..\\..\\file")   == "../../file" );
+    // absolute 
+    assert( d.ConvertToOSPath("c:\\file")       == "c:\\file"   );
+    assert( d.ConvertToOSPath("c:/file")        == "c:/file"    );
+    assert( d.ConvertToOSPath("/dir/file")      == "/dir/file"  );
+    assert( d.ConvertToOSPath("//dir/file")     == "/dir/file"  );
+    assert( d.ConvertToOSPath("\\dir\\file")    == "/dir/file"  );
+    assert( d.ConvertToOSPath("//path/file")    == "/path/file" );
 #endif
 
     // ConcatPath() test

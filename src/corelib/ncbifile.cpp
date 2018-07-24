@@ -740,8 +740,8 @@ string CDirEntry::CreateAbsolutePath(const string& path, const string& rtw)
 string CDirEntry::ConvertToOSPath(const string& path)
 {
     // Not process empty or absolute path
-    if ( path.empty() || IsAbsolutePathEx(path) ) {
-        return path;
+    if ( path.empty()  ||  IsAbsolutePathEx(path)) {
+        return NormalizePath(path);
     }
     // Now we have relative "path"
     string xpath = path;
@@ -759,7 +759,7 @@ string CDirEntry::ConvertToOSPath(const string& path)
     // Replace each path separator with the current OS separator character
     for (size_t i = 0; i < xpath.length(); i++) {
         char c = xpath[i];
-        if ( c == '\\' || c == '/' || c == ':') {
+        if ( c == '\\' || c == '/' ) {
             xpath[i] = DIR_SEPARATOR;
         }
     }
