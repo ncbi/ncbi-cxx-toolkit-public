@@ -292,7 +292,7 @@ void CFlatFileGenerator::Generate
 
 
     bool onlyNearFeats = false;
-    bool nearFeatsSuppress = false;
+    // bool nearFeatsSuppress = false;
 
     bool isNc = false;
     bool isNgNtNwNz = false;
