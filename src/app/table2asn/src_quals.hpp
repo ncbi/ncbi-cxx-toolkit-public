@@ -56,9 +56,9 @@ public:
 
    bool LoadSourceQualifiers(const string& filename, const string& opt_map_filename);
    void ProcessSourceQualifiers(objects::CSeq_entry& container, const string& opt_map_filename);
-
+   static bool ApplyQualifiers(objects::CSourceModParser& mod, objects::CBioseq& bioseq, objects::ILineErrorListener* listener);
 private:
-   bool x_ParseAndAddTracks(objects::CBioseq& container,  const string& name, const string& value);
+   static bool x_ParseAndAddTracks(objects::CBioseq& container,  const string& name, const string& value);
 
    bool x_ApplyAllQualifiers(objects::CSourceModParser& mod, objects::CBioseq& bioseq);
    void x_AddQualifiers(objects::CSourceModParser& mod, const string& filename);

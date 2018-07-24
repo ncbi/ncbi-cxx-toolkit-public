@@ -57,6 +57,8 @@
 //#include <objects/biblio/Cit_sub.hpp>
 
 #include "table2asn_context.hpp"
+#include "src_quals.hpp"
+
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -65,73 +67,80 @@ USING_SCOPE(objects);
 
 
 CFastaReaderEx::CFastaReaderEx(CTable2AsnContext& context, ILineReader& reader, TFlags flags) :
-        objects::CFastaReader(reader, flags), m_context(context),
-        m_gap_editor((objects::CSeq_gap::EType)m_context.m_gap_type, m_context.m_gap_evidences, m_context.m_gapNmin, m_context.m_gap_Unknown_length)
-    {
-    };
+    objects::CFastaReader(reader, flags), m_context(context),
+    m_gap_editor((objects::CSeq_gap::EType)m_context.m_gap_type, m_context.m_gap_evidences, m_context.m_gapNmin, m_context.m_gap_Unknown_length)
+{
+};
 
 void CFastaReaderEx::AssignMolType(objects::ILineErrorListener * pMessageListener)
-    {
-        objects::CFastaReader::AssignMolType(pMessageListener);
-        CSeq_inst& inst = SetCurrentSeq().SetInst();
-        if (!inst.IsSetMol() || inst.GetMol() == CSeq_inst::eMol_na)
-            inst.SetMol(CSeq_inst::eMol_dna);
-    }
+{
+    objects::CFastaReader::AssignMolType(pMessageListener);
+    CSeq_inst& inst = SetCurrentSeq().SetInst();
+    if (!inst.IsSetMol() || inst.GetMol() == CSeq_inst::eMol_na)
+        inst.SetMol(CSeq_inst::eMol_dna);
+}
 CRef<objects::CSeq_entry> CFastaReaderEx::ReadDIFasta(objects::ILineErrorListener * pMessageListener)
+{
+    CRef<CSeq_entry> entry;
+    while (!GetLineReader().AtEOF())
     {
-        CRef<CSeq_entry> entry;
-        while (!GetLineReader().AtEOF())
-        {
-            try {
-                CRef<CSeq_entry> single(ReadOneSeq(pMessageListener));
-                if (single.Empty())
-                    break;
+        try {
+            CRef<CSeq_entry> single(ReadOneSeq(pMessageListener));
+            if (single.Empty())
+                break;
 
-                if (entry.Empty()) {
-                    entry = single;
-                }
-
-                else {
-                    if (!entry->GetSeq().GetInst().IsSetExt())
-                    {   //convert bioseq into delta
-                        m_gap_editor.ConvertBioseqToDelta(entry->SetSeq());
-                    }
-                    m_gap_editor.AppendGap(entry->SetSeq());
-                    m_gap_editor.AddBioseqAsLiteral(entry->SetSeq(), single->SetSeq());
-                }
+            if (entry.Empty()) {
+                entry = single;
             }
-            catch (CObjReaderParseException& e) {
-                if (e.GetErrCode() == CObjReaderParseException::eEOF) {
-                    break;
+
+            else {
+                if (!entry->GetSeq().GetInst().IsSetExt())
+                {   //convert bioseq into delta
+                    m_gap_editor.ConvertBioseqToDelta(entry->SetSeq());
                 }
-                else {
-                    throw;
-                }
+                m_gap_editor.AppendGap(entry->SetSeq());
+                m_gap_editor.AddBioseqAsLiteral(entry->SetSeq(), single->SetSeq());
             }
         }
-
-        entry->Parentize();
-        return entry;
+        catch (CObjReaderParseException& e) {
+            if (e.GetErrCode() == CObjReaderParseException::eEOF) {
+                break;
+            }
+            else {
+                throw;
+            }
+        }
     }
+
+    entry->Parentize();
+    return entry;
+}
 
 void CFastaReaderEx::AssembleSeq(objects::ILineErrorListener * pMessageListener)
+{
+    CFastaReader::AssembleSeq(pMessageListener);
+
+    CAutoAddDesc molinfo_desc(SetCurrentSeq().SetDescr(), CSeqdesc::e_Molinfo);
+
+    if (!molinfo_desc.Set().SetMolinfo().IsSetBiomol())
+        molinfo_desc.Set().SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
+
+    //if (!m_context.m_HandleAsSet)
     {
-        CFastaReader::AssembleSeq(pMessageListener);
-
-        CAutoAddDesc molinfo_desc(SetCurrentSeq().SetDescr(), CSeqdesc::e_Molinfo);
-
-        if (!molinfo_desc.Set().SetMolinfo().IsSetBiomol())
-            molinfo_desc.Set().SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
-
-        //if (!m_context.m_HandleAsSet)
+        CAutoAddDesc create_date_desc(SetCurrentSeq().SetDescr(), CSeqdesc::e_Create_date);
+        if (create_date_desc.IsNull())
         {
-            CAutoAddDesc create_date_desc(SetCurrentSeq().SetDescr(), CSeqdesc::e_Create_date);
-            if (create_date_desc.IsNull())
-            {
-                CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
-                create_date_desc.Set().SetCreate_date(*date);
-            }
+            CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
+            create_date_desc.Set().SetCreate_date(*date);
         }
-
     }
-};
+
+}
+
+void CFastaReaderEx::ApplySourceMods(CBioseq& bioseq, CSourceModParser& smp)
+{
+    CSourceQualifiersReader::ApplyQualifiers(smp, bioseq, m_context.m_logger);
+}
+
+END_NCBI_SCOPE
+

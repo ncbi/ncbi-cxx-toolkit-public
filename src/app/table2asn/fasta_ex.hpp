@@ -16,6 +16,7 @@ class ILineErrorListener;
 class CIdMapper;
 class CBioseq;
 class CSeq_annot;
+class CSourceModParser;
 };
 
 class CTable2AsnContext;
@@ -23,14 +24,15 @@ class CSerialObject;
 class CAnnotationLoader;
 
 class CFastaReaderEx : public objects::CFastaReader {
-protected:
-    CTable2AsnContext& m_context;
-    objects::CGapsEditor m_gap_editor;
 public:
     CFastaReaderEx(CTable2AsnContext& context, ILineReader& reader, TFlags flags);
     virtual void AssignMolType(objects::ILineErrorListener * pMessageListener) override;
     virtual void AssembleSeq(objects::ILineErrorListener * pMessageListener) override;
     virtual CRef<objects::CSeq_entry> ReadDIFasta(objects::ILineErrorListener * pMessageListener);
+protected:
+    virtual void ApplySourceMods(objects::CBioseq & bioseq, objects::CSourceModParser& smp) override;
+    CTable2AsnContext& m_context;
+    objects::CGapsEditor m_gap_editor;
 };
 
 

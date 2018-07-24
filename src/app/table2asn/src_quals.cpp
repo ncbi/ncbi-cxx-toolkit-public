@@ -53,6 +53,11 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+namespace
+{
+    static const CTempString g_dblink = "DBLink";
+};
+
 void TSrcQuals::AddQualifiers(CSourceModParser& mod, const vector<CTempString>& values)
 {
     // first is always skipped since it's an id 
@@ -105,6 +110,36 @@ CSourceQualifiersReader::~CSourceQualifiersReader()
 {
 }
 
+bool CSourceQualifiersReader::ApplyQualifiers(objects::CSourceModParser& mod, objects::CBioseq& bioseq, objects::ILineErrorListener* listener)
+{
+    CSourceModParser::TMods unused_mods = mod.GetMods(CSourceModParser::fUnusedMods);
+    for (auto mod : unused_mods)
+    {
+        if (NStr::CompareNocase(mod.key, "bioproject") == 0)
+        {
+            const string& v = mod.value;
+            edit::CDBLink::SetBioProject(
+                CTable2AsnContext::SetUserObject(CTable2AsnContext::SetBioseqOrParentDescr(bioseq), g_dblink),
+                mod.value);
+        }
+        else
+            if (NStr::CompareNocase(mod.key, "biosample") == 0)
+                edit::CDBLink::SetBioSample(
+                    CTable2AsnContext::SetUserObject(CTable2AsnContext::SetBioseqOrParentDescr(bioseq), g_dblink),
+                    mod.value);
+            else
+                if (!x_ParseAndAddTracks(bioseq, mod.key, mod.value))
+                {
+                    if (listener)
+                      listener->PutError(*auto_ptr<CLineError>(
+                        CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                            mod.key)));
+                    return false;
+                }
+    }
+    return true;
+}
+
 bool CSourceQualifiersReader::x_ApplyAllQualifiers(objects::CSourceModParser& mod, objects::CBioseq& bioseq)
 {
     // first is always skipped since it's an id 
@@ -121,32 +156,7 @@ bool CSourceQualifiersReader::x_ApplyAllQualifiers(objects::CSourceModParser& mo
     }
     mod.ApplyAllMods(bioseq);
 
-    CSourceModParser::TMods unused_mods = mod.GetMods(CSourceModParser::fUnusedMods);
-    static const string s_dblink = "DBLink";
-    for (auto mod: unused_mods)
-    {
-        if (NStr::CompareNocase(mod.key, "bioproject") == 0)
-        {
-            const string& v = mod.value;
-            edit::CDBLink::SetBioProject(
-                CTable2AsnContext::SetUserObject(CTable2AsnContext::SetBioseqOrParentDescr(bioseq), s_dblink), 
-                mod.value);
-        }
-        else
-        if (NStr::CompareNocase(mod.key, "biosample") == 0)
-            edit::CDBLink::SetBioSample(
-                CTable2AsnContext::SetUserObject(CTable2AsnContext::SetBioseqOrParentDescr(bioseq), s_dblink), 
-                mod.value);
-        else
-        if (!x_ParseAndAddTracks(bioseq, mod.key, mod.value))
-        {
-            m_context->m_logger->PutError(*auto_ptr<CLineError>(
-                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                mod.key)));               
-            return false;
-        }
-    }
-    return true;
+    return ApplyQualifiers(mod, bioseq, m_context->m_logger);
 }
 
 bool CSourceQualifiersReader::LoadSourceQualifiers(const string& filename, const string& opt_map_filename)
