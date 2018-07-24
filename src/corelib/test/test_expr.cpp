@@ -245,19 +245,19 @@ BOOST_AUTO_TEST_CASE(AddSymbol)
 {
     CExprParser parser;
 
-	parser.AddSymbol("1", Int8(1));
-	parser.AddSymbol("2", double(2.0));
-	parser.AddSymbol("3", false);
+    parser.AddSymbol("1", Int8(1));
+    parser.AddSymbol("2", double(2.0));
+    parser.AddSymbol("3", false);
 
-	// request for member 'invalid_data_type' in '* value', which is of
-	// non-class type 'const char'
-	// parser.AddSymbol("4", (const char*)4);
-	// Call is ambiguous
-	// parser.AddSymbol("5", 0);
-	// Call is ambiguous
-	// parser.AddSymbol("5", 1);
-	// 'void*' is not a pointer-to-object type
-	// parser.AddSymbol("4", (void*)0);
+    // request for member 'invalid_data_type' in '* value', which is of
+    // non-class type 'const char'
+    // parser.AddSymbol("4", (const char*)4);
+    // Call is ambiguous
+    // parser.AddSymbol("5", 0);
+    // Call is ambiguous
+    // parser.AddSymbol("5", 1);
+    // 'void*' is not a pointer-to-object type
+    // parser.AddSymbol("4", (void*)0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -309,7 +309,7 @@ BOOST_AUTO_TEST_CASE(ParseString)
 #ifndef NCBI_OS_MSWIN 
     parser.Parse("dir(\"/var/log\")");
 #else
-	parser.Parse("dir(\"c:\\\")");
+    parser.Parse("dir(\"c:\\\")");
 #endif
     BOOST_CHECK_EQUAL(CExprValue::eBOOL, parser.GetResult().GetType());
     BOOST_CHECK_EQUAL(true, parser.GetResult().GetBool());

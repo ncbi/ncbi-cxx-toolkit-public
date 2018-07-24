@@ -100,31 +100,31 @@ void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
         info.addr = trace.addr;
 
         if (!trace.source.filename.size()) {
-			/*os << "   Object \""
-			   << trace.object_filename
-			   << ", at "
-			   << trace.addr
-			   << ", in "
-			   << trace.object_function
-			   << "\n";*/
-		}
+            /*os << "   Object \""
+               << trace.object_filename
+               << ", at "
+               << trace.addr
+               << ", in "
+               << trace.object_function
+               << "\n";*/
+        }
 
-		for (size_t inliner_idx = 0; inliner_idx < trace.inliners.size(); ++inliner_idx) {
-			const backward::ResolvedTrace::SourceLoc& inliner_loc = trace.inliners[inliner_idx];
+        for (size_t inliner_idx = 0; inliner_idx < trace.inliners.size(); ++inliner_idx) {
+            const backward::ResolvedTrace::SourceLoc& inliner_loc = trace.inliners[inliner_idx];
             CStackTrace::SStackFrameInfo info2;
             info2.file = inliner_loc.filename;
             info2.line = inliner_loc.line;
             info2.func = inliner_loc.function;
             stack.push_back(move(info2));
-		}
+        }
 
-		if (trace.source.filename.size()) {
+        if (trace.source.filename.size()) {
             info.file = trace.source.filename;
             info.line = trace.source.line;
             //info.func = trace.source.function;
             info.func = trace.object_function;
             info.addr = trace.addr;
-		}
+        }
         stack.push_back(move(info));
     }
 }

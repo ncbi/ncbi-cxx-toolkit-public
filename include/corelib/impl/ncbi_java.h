@@ -42,30 +42,30 @@
 #define JAVA_CURRENT_VERSION JNI_VERSION_1_6
 
 #define JAVA_CHECK_EXCEPTION(env) \
-	{ \
-		if(env->ExceptionCheck()) \
+    { \
+        if(env->ExceptionCheck()) \
         { \
-		    env->ExceptionDescribe(); \
-		    env->ExceptionClear(); \
+            env->ExceptionDescribe(); \
+            env->ExceptionClear(); \
         } \
-	}
+    }
 
 #define JAVA_FATAL_ERROR(msg) \
-	{ \
+    { \
         CJniUtil::JavaFatalError(msg); \
-	}
+    }
 
 #define JAVA_VALIDATE(val, msg) \
-	{ \
-		if(!(val)) \
-			JAVA_FATAL_ERROR(msg) \
-	}
+    { \
+        if(!(val)) \
+            JAVA_FATAL_ERROR(msg) \
+    }
 
 #define JAVA_ABORT(msg) \
-	{ \
-		NcbiCerr << __FILE__ << ": " << NCBI_CURRENT_FUNCTION << ": " msg << endl; \
-		abort(); \
-	}
+    { \
+        NcbiCerr << __FILE__ << ": " << NCBI_CURRENT_FUNCTION << ": " msg << endl; \
+        abort(); \
+    }
 
 
 BEGIN_NCBI_SCOPE

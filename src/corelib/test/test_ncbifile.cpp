@@ -94,11 +94,11 @@ static void s_TEST_SplitPath(void)
     path = CFile::MakePath("c:\\", "file", ".ext");
     assert( path == "c:\\file.ext" );
 
-	CFile::SplitPath("\\dir\\file", &dir, &title, &ext);
-	assert(dir   == "\\dir\\");
-	assert(title == "file");
-	assert(ext   == "");
-	
+    CFile::SplitPath("\\dir\\file", &dir, &title, &ext);
+    assert(dir   == "\\dir\\");
+    assert(title == "file");
+    assert(ext   == "");
+    
     {{
         CFile f("c:\\dir\\subdir\\file.ext");
         assert( f.GetDir()  == "c:\\dir\\subdir\\" );

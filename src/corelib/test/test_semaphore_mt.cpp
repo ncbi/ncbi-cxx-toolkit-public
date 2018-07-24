@@ -31,8 +31,8 @@
  *
  *   the test is a very simple producer/consumer model
  *   one thread produces "items" (increments integer counter)
- *	 next thread consumes the same amount of items (decrements integer counter)
- *	 "Content" semaphore is used to notify consumers of how many items are
+ *     next thread consumes the same amount of items (decrements integer counter)
+ *     "Content" semaphore is used to notify consumers of how many items are
  *   available.
  *
  */
@@ -177,7 +177,7 @@ bool CTestSemaphoreApp::TestApp_Exit(void)
     assert( s_semStorage.TryWait() );
     // content must be empty
     assert( !s_semContent.TryWait() );
-	assert( s_Counter == 0 );
+    assert( s_Counter == 0 );
     return true;
 }
 

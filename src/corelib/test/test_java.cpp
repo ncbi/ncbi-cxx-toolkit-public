@@ -18,7 +18,7 @@ CNcbiStrstream *s_os = NULL;
 JNIEXPORT jobject JNICALL Java_org_ncbi_toolkit_JniTest_getCurThreadFromJni
   (JNIEnv *, jclass)
 {
-	return g_GetCurrJavaThread();
+    return g_GetCurrJavaThread();
 }
 
 /*
@@ -34,9 +34,9 @@ JNIEXPORT void JNICALL Java_org_ncbi_toolkit_JniTest_logPost
     if (s == NULL) {
        return; /* OutOfMemoryError already thrown */
     }
-	//printf("%s %s\n", "In logPost", s);
+    //printf("%s %s\n", "In logPost", s);
 
-	LOG_POST(s);
+    LOG_POST(s);
     env->ReleaseStringUTFChars(str, s);
 }
 
@@ -48,11 +48,11 @@ JNIEXPORT void JNICALL Java_org_ncbi_toolkit_JniTest_logPost
 JNIEXPORT void JNICALL Java_org_ncbi_toolkit_JniTest_initOutputBuffer
   (JNIEnv *env, jclass)
 {
-	delete s_os;
-	s_os = new CNcbiStrstream;
+    delete s_os;
+    s_os = new CNcbiStrstream;
 
-	// Redirect diag output to string
-	SetDiagStream(s_os);
+    // Redirect diag output to string
+    SetDiagStream(s_os);
 }
 
 /*
@@ -67,5 +67,5 @@ JNIEXPORT jstring JNICALL Java_org_ncbi_toolkit_JniTest_getOutputBuffer
     jstring js = env->NewStringUTF(s_os->str());
 
     s_os->freeze(false);
-	return js;
+    return js;
 }

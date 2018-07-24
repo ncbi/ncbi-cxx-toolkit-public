@@ -1080,7 +1080,7 @@ CPIDGuard::CPIDGuard(const string& filename)
     } else {
         m_Path = filename;
     }
-    // Create guard for MT-Safe protect	
+    // Create guard for MT-Safe protect    
     m_MTGuard.reset(new CInterProcessLock(m_Path + ".guard"));
     // Update PID
     UpdatePID();
@@ -1103,7 +1103,7 @@ CPIDGuard::CPIDGuard(const string& filename, const string& dir)
     } else {
         m_Path = filename;
     }
-    // Create guard for MT-Safe protect	
+    // Create guard for MT-Safe protect    
     m_MTGuard.reset(new CInterProcessLock(m_Path + ".guard"));
     // Update PID
     UpdatePID();

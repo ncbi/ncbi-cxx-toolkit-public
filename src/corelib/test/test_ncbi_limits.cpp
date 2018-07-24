@@ -67,9 +67,9 @@ void s_TestType(const char* type_name, T value)
     assert(maxval >= max_plus_1);
 
 
-	T v_max = get_limits(value).max();
-	T v_min = get_limits(value).min();
-	
+    T v_max = get_limits(value).max();
+    T v_min = get_limits(value).min();
+    
     assert(v_min <= min_minus_1);
     assert(v_max >= min_minus_1);
     assert(v_min <= max_plus_1);

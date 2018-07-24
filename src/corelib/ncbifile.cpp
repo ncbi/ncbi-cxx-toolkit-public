@@ -498,17 +498,17 @@ inline bool s_Win_IsNetworkPath(const string& path)
 
 bool CDirEntry::IsAbsolutePath(const string& path)
 {
-	if (path.empty()) {
-		return false;
-	}
+    if (path.empty()) {
+        return false;
+    }
 #if defined(NCBI_OS_MSWIN)
     if (s_Win_IsDiskPath(path) || s_Win_IsNetworkPath(path)) {
         return true;
-	}
+    }
 #elif defined(NCBI_OS_UNIX)
-	if ( path[0] == '/' ) {
-		return true;
-	}
+    if ( path[0] == '/' ) {
+        return true;
+    }
 #endif
     return false;
 }

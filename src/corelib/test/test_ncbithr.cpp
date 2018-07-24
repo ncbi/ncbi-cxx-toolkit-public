@@ -469,7 +469,7 @@ void* CTestThread::Main(void)
                 m_Res->BeginRead(m_Index);
                 m_Res->EndRead(m_Index);
                 m_RW->Unlock();
-	        }
+            }
 
             // W-after-R must be prohibited
             assert( !m_RW->TryWriteLock() );
