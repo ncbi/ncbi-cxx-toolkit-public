@@ -2884,7 +2884,7 @@ string CDirEntry::GetTmpName(ETmpFileCreationMode mode)
 #if !defined(NCBI_OS_UNIX)  &&  !defined(NCBI_OS_MSWIN)
 static string s_StdGetTmpName(const char* dir, const char* prefix)
 {
-    char* filename = tempnam(dir, prefix);
+    char* filename = NcbiSys_tempnam(dir, prefix);
     if ( !filename ) {
         return kEmptyStr;
     }
