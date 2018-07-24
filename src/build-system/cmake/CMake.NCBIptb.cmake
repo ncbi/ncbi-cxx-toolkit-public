@@ -17,6 +17,10 @@
 ##    NCBI_disable_pch() / NCBI_enable_pch()
 ##    NCBI_requires( list of components)
 ##    NCBI_optional_components(  list of components)
+##    NCBI_add_definitions(         list of compiler definitions)
+##    NCBI_add_include_directories( list of directories)
+##    NCBI_uses_toolkit_libraries(  list of libraries)
+##    NCBI_uses_external_libraries( list of libraries)
 ##    NCBI_project_tags(list of tags)
 ##    
 ##---------------------------------------------------------------------------
@@ -40,6 +44,8 @@
 ##      NCBI_uses_external_libraries( list of libraries)
 ##      NCBI_add_definitions(         list of compiler definitions)
 ##      NCBI_add_include_directories( list of directories)
+##
+##      NCBI_hosts_projects(list of parts) - used to assemble composite shared libraries
 ##
 ##      NCBI_project_tags(     list of tags)
 ##      NCBI_project_watchers( list of watchers)
@@ -470,8 +476,10 @@ function(NCBI_internal_collect_dependencies _project)
             list(APPEND _deps ${_host})
         endif()
     endforeach()
-    list(REMOVE_DUPLICATES _deps)
-    set_property(GLOBAL PROPERTY NCBI_PTBPROP_DEPS_${_project} ${_deps})
+    if (NOT "${_deps}" STREQUAL "")
+        list(REMOVE_DUPLICATES _deps)
+    endif()
+    set_property(GLOBAL PROPERTY NCBI_PTBPROP_DEPS_${_project} "${_deps}")
 endfunction()
 
 ##############################################################################
@@ -986,10 +994,8 @@ endfunction()
 function(NCBI_internal_process_project_filters _result)
     if(DEFINED NCBI_PROJECT_LIST)
         foreach(_dir IN LISTS NCBI_PROJECT_LIST)
-            string(REGEX MATCH ${NCBI_SRC_ROOT}/${_dir} _match ${NCBI_CURRENT_SOURCE_DIR})
-            if (NOT "${_match}" STREQUAL "")
+            if(${NCBI_CURRENT_SOURCE_DIR} MATCHES ${NCBI_SRC_ROOT}/${_dir})
                 set(${_result} TRUE PARENT_SCOPE)
-#message("${NCBI_CURRENT_SOURCE_DIR} is ok")
                 return()
             endif()
         endforeach()
