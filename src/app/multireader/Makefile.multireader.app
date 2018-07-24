@@ -16,5 +16,7 @@ LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects algo -Cygwin
 
+# proj_tag gbench allows to include multireader into sviwer build tree 
+PROJ_TAG = gbench
 
 WATCHERS = ludwigf gotvyans
