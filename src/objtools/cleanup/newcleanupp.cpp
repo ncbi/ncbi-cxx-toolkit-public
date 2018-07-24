@@ -13074,73 +13074,54 @@ void CNewCleanup_imp::x_RemoveUnseenTitles(CBioseq_set& set)
 }
 
 
+bool RemoveEarlierDates(CSeq_descr & seq_descr, CSeqdesc::E_Choice date_type)
+{
+    bool any_removed = false;
+    auto it = seq_descr.Set().begin();
+    while (it != seq_descr.Set().end() && (*it)->Which() != date_type) {
+        it++;
+    }
+    if (it == seq_descr.Set().end()) {
+        return any_removed;
+    }
+    auto prev_date = it;
+    it++;
+    while (it != seq_descr.Set().end()) {
+        if ((*it)->Which() == date_type) {
+            CDate::ECompare compare;
+            if (date_type == CSeqdesc::e_Create_date) {
+                compare = (*prev_date)->GetCreate_date().Compare((*it)->GetCreate_date());
+            } else {
+                compare = (*prev_date)->GetUpdate_date().Compare((*it)->GetUpdate_date());
+            }
+            if (compare == CDate::eCompare_after) {
+                // previous date is later, get rid of this one
+                it = seq_descr.Set().erase(it);
+            } else {
+                seq_descr.Set().erase(prev_date);
+                prev_date = it;
+                it++;
+                while (it != seq_descr.Set().end() && (*it)->Which() != date_type) {
+                    it++;
+                }
+            }
+            any_removed = true;
+        } else {
+            it++;
+        }
+    }
+
+    return any_removed;
+}
+
+
 void CNewCleanup_imp::KeepLatestDateDesc(CSeq_descr & seq_descr)
 {
-    const CSeqdesc::TCreate_date * best_create_date = NULL;
-    const CSeqdesc::TUpdate_date * best_update_date = NULL;
-
-    bool do_continue = true;
-    bool delete_equal_create = false;
-    bool delete_equal_update = false;
-    while (do_continue) {
-        do_continue = false;
-        CBioseq::TDescr::Tdata::iterator it = seq_descr.Set().begin();
-        while (it != seq_descr.Set().end()) {
-            bool remove = false;
-            if ((*it)->IsCreate_date()) {
-                if (best_create_date == NULL) {
-                    best_create_date = &((*it)->GetCreate_date());
-                    delete_equal_create = true;
-                } else {
-                    CDate::ECompare compare = best_create_date->Compare((*it)->GetCreate_date());
-                    if (compare == CDate::eCompare_after) {
-                        // previous date is later, get rid of this one
-                        remove = true;
-                    } else if (compare == CDate::eCompare_same) {
-                        if (delete_equal_create) {
-                            remove = true;
-                        } else {
-                            delete_equal_create = true;
-                        }
-                    } else {
-                        best_create_date = &((*it)->GetCreate_date());
-                        delete_equal_create = true;
-                        // need to loop through again to get rid of earlier dates
-                        do_continue = true;
-                    }
-                }
-            } else if ((*it)->IsUpdate_date()) {
-                if (best_update_date == NULL) {
-                    best_update_date = &((*it)->GetUpdate_date());
-                    delete_equal_update = true;
-                } else {
-                    CDate::ECompare compare = best_update_date->Compare((*it)->GetUpdate_date());
-                    if (compare == CDate::eCompare_after) {
-                        // previous date is later, get rid of this one
-                        remove = true;
-                    } else if (compare == CDate::eCompare_same) {
-                        if (delete_equal_update) {
-                            remove = true;
-                        } else {
-                            delete_equal_update = true;
-                        }
-                    } else {
-                        best_update_date = &((*it)->GetUpdate_date());
-                        delete_equal_update = true;
-                        // need to loop through again to get rid of earlier dates
-                        do_continue = true;
-                    }
-                }
-            }
-            if (remove) {
-                it = seq_descr.Set().erase(it);
-                ChangeMade(CCleanupChange::eRemoveDescriptor);
-            } else {
-                ++it;
-            }
-        }
-        delete_equal_create = false;
-        delete_equal_update = false;
+    if (RemoveEarlierDates(seq_descr, CSeqdesc::e_Create_date)) {
+        ChangeMade(CCleanupChange::eRemoveDescriptor);
+    }
+    if (RemoveEarlierDates(seq_descr, CSeqdesc::e_Update_date)) {
+        ChangeMade(CCleanupChange::eRemoveDescriptor);
     }
 }
 
