@@ -1741,6 +1741,8 @@ bool CCleanup::SetMolinfoTech(CBioseq_Handle bsh, CMolInfo::ETech tech)
 }
 
 
+//LCOV_EXCL_START
+//does not appear to be used
 bool CCleanup::SetMolinfoBiomol(CBioseq_Handle bsh, CMolInfo::EBiomol biomol)
 {
     CSeqdesc_CI di(bsh, CSeqdesc::e_Molinfo);
@@ -1760,6 +1762,7 @@ bool CCleanup::SetMolinfoBiomol(CBioseq_Handle bsh, CMolInfo::EBiomol biomol)
     eh.AddSeqdesc(*m);
     return true;
 }
+//LCOV_EXCL_STOP
 
 
 bool CCleanup::AddMissingMolInfo(CBioseq& seq, bool is_product)
@@ -1866,6 +1869,8 @@ bool CCleanup::RemoveNcbiCleanupObject(CSeq_entry &seq_entry)
 }
 
 
+//LCOV_EXCL_START
+//not used by asn_cleanup but used by functions used by other applications
 void GetSourceDescriptors(const CSeq_entry& se, vector<const CSeqdesc* >& src_descs)
 {
     if (se.IsSetDescr()) {
@@ -1882,8 +1887,11 @@ void GetSourceDescriptors(const CSeq_entry& se, vector<const CSeqdesc* >& src_de
         }
     }
 }
+//LCOV_EXCL_STOP
 
 
+//LCOV_EXCL_START
+//not used by asn_cleanup
 bool CCleanup::TaxonomyLookup(CSeq_entry_Handle seh)
 {
     bool any_changes = false;
@@ -1961,6 +1969,8 @@ bool CCleanup::TaxonomyLookup(CSeq_entry_Handle seh)
 
     return any_changes;
 }
+//LCOV_EXCL_STOP
+
 
 CRef<CSeq_entry> AddProtein(const CSeq_feat& cds, CScope& scope)
 {
@@ -2716,7 +2726,8 @@ bool CCleanup::x_HasShortIntron(const CSeq_loc& loc, size_t min_len)
     return false;
 }
 
-
+//LCOV_EXCL_START
+//not used by asn_cleanup but used by table2asn
 const string kLowQualitySequence = "low-quality sequence region";
 
 bool CCleanup::x_AddLowQualityException(CSeq_feat& feat)
@@ -2768,6 +2779,7 @@ bool CCleanup::AddLowQualityException(CSeq_entry_Handle entry)
     any_changes |= x_AddLowQualityException(entry, CSeqFeatData::eSubtype_mRNA);
     return any_changes;
 }
+//LCOV_EXCL_STOP
 
 
 // maps the type of seqdesc to the order it should be in 
@@ -4621,7 +4633,8 @@ bool CCleanup::MakeIRDFeatsFromSourceXrefs(CSeq_entry_Handle entry)
     return any;
 }
 
-
+//LCOV_EXCL_START
+//not used by asn_cleanup but used by other applications
 const unsigned int methionine_encoded = 'M' - 'A';
 
 bool CCleanup::IsMethionine(const CCode_break& cb)
@@ -4651,8 +4664,11 @@ bool CCleanup::IsMethionine(const CCode_break& cb)
     }
     return rval;
 }
+//LCOV_EXCL_STOP
 
 
+//LCOV_EXCL_START
+//not used by asn_cleanup but used by other applications
 CConstRef<CCode_break> CCleanup::GetCodeBreakForLocation(size_t pos, const CSeq_feat& cds)
 {
     if (!cds.IsSetData() || !cds.GetData().IsCdregion() ||
@@ -4686,8 +4702,10 @@ CConstRef<CCode_break> CCleanup::GetCodeBreakForLocation(size_t pos, const CSeq_
     }
     return CConstRef<CCode_break>(NULL);
 }
+//LCOV_EXCL_STOP
 
-
+//LCOV_EXCL_START
+//appears not to be used
 void CCleanup::SetCodeBreakLocation(CCode_break& cb, size_t pos, const CSeq_feat& cds)
 {
     int start = pos;
@@ -4775,9 +4793,11 @@ void CCleanup::SetCodeBreakLocation(CCode_break& cb, size_t pos, const CSeq_feat
         cb.SetLoc(*packed);
     }
 }
+//LCOV_EXCL_STOP
 
 
-
+//LCOV_EXCL_START
+//not used by asn_cleanup but used by other applications
 bool CCleanup::FixRNAEditingCodingRegion(CSeq_feat& cds)
 {
     if (!cds.IsSetData() || !cds.GetData().IsCdregion()) {
@@ -4807,8 +4827,11 @@ bool CCleanup::FixRNAEditingCodingRegion(CSeq_feat& cds)
     }
     return any_change;
 }
+//LCOV_EXCL_STOP
 
 
+//LCOV_EXCL_START
+//not used by asn_cleanup but used by other applications
 bool CCleanup::CleanupCollectionDates(CSeq_entry_Handle seh, bool month_first)
 {
     bool any_changes = false;
@@ -4865,6 +4888,7 @@ bool CCleanup::CleanupCollectionDates(CSeq_entry_Handle seh, bool month_first)
 
     return any_changes;    
 }
+//LCOV_EXCL_STOP
 
 
 void CCleanup::AutodefId(CSeq_entry_Handle seh)
