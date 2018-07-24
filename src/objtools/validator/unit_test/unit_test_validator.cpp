@@ -4174,7 +4174,7 @@ BOOST_AUTO_TEST_CASE(Test_BioSourceMissing)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "BioSourceMissing", "Nuc-prot set does not contain expected BioSource descriptor"));
-    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "NoOrgFound", "No organism name included in the source. Other qualifiers may exist."));
+    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Fatal, "NoOrgFound", "No organism name included in the source. Other qualifiers may exist."));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -4742,7 +4742,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoOrgFound)
     unit_test_util::AddGoodSource (entry->SetSet().SetSeq_set().front());
     seh = scope.AddTopLevelSeqEntry(*entry);
     SetErrorsAccessions(expected_errors, "lcl|nuc");
-    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "NoOrgFound",
+    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Fatal, "NoOrgFound",
                               "No organism name included in the source. Other qualifiers may exist."));
 
     eval = validator.Validate(seh, options);
@@ -4753,7 +4753,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoOrgFound)
     // if there is a source descriptor but no tax name, still produce error
     unit_test_util::AddGoodSource(entry->SetSet().SetSeq_set().back());
     unit_test_util::SetTaxname(entry->SetSet().SetSeq_set().back(), "");
-    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "NoOrgFound",
+    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Fatal, "NoOrgFound",
                               "No organism name included in the source. Other qualifiers may exist."));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "BioSourceOnProtein",
                                                  "Nuc-prot set has 1 protein with a BioSource descriptor"));

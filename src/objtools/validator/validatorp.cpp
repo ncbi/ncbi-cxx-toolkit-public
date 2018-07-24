@@ -2374,7 +2374,7 @@ void CValidError_imp::ReportMissingBiosource(const CSeq_entry& se)
     size_t num_no_source = m_BioseqWithNoSource.size();
     
     for ( size_t i = 0; i < num_no_source; ++i ) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
+        PostErr(eDiag_Fatal, eErr_SEQ_DESCR_NoOrgFound,
                 "No organism name included in the source. Other qualifiers may exist.",
                 *(m_BioseqWithNoSource[i]));
     }

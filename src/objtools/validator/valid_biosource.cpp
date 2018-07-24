@@ -1296,7 +1296,7 @@ const CSeq_entry *ctx)
     // Organism must have a name.
     if ((!orgref.IsSetTaxname() || orgref.GetTaxname().empty()) &&
         (!orgref.IsSetCommon() || orgref.GetCommon().empty())) {
-        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_NoOrgFound,
+        PostObjErr(eDiag_Fatal, eErr_SEQ_DESCR_NoOrgFound,
             "No organism name included in the source. Other qualifiers may exist.", obj, ctx);
     }
 
