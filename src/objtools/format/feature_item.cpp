@@ -1386,7 +1386,8 @@ void CFeatureItem::x_AddQualExceptions(
     }
 
     const bool bIsRefseq = ctx.IsRefSeq();
-    const bool bIsRelaxed = ( ! cfg.DropIllegalQuals() );
+    // const bool bIsRelaxed = ( ! cfg.DropIllegalQuals() );
+    const bool bIsRelaxed = ((! ctx.Config().IsModeRelease()) && (! ctx.Config().IsModeEntrez()));
 
     list<string> exceptions;
     NStr::Split( raw_exception, ",", exceptions, NStr::fSplit_Tokenize );
