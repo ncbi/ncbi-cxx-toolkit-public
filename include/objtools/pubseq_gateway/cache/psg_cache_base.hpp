@@ -1,5 +1,5 @@
-#ifndef PSG_CACHE__HPP
-#define PSG_CACHE__HPP
+#ifndef PSG_CACHE_BASE__HPP
+#define PSG_CACHE_BASE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -41,11 +41,11 @@ namespace lmdb {
 
 BEGIN_NCBI_SCOPE
 
-class CPubseqGatewayCache
+class CPubseqGatewayCacheBase
 {
 public:
-	CPubseqGatewayCache(const string& file_name);
-    virtual ~CPubseqGatewayCache();
+	CPubseqGatewayCacheBase(const string& file_name);
+    virtual ~CPubseqGatewayCacheBase();
     /**
      * throws lmdb::error
      */

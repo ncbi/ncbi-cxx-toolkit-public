@@ -32,11 +32,11 @@
  *
  */
 
-#include "psg_cache.hpp"
+#include "psg_cache_base.hpp"
  
 BEGIN_NCBI_SCOPE
 
-class CPubseqGatewayCacheSi2Csi : public CPubseqGatewayCache
+class CPubseqGatewayCacheSi2Csi : public CPubseqGatewayCacheBase
 {
 public:
 	CPubseqGatewayCacheSi2Csi(const string& file_name);

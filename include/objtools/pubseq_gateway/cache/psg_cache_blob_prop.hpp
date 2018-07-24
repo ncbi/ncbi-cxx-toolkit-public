@@ -32,11 +32,11 @@
  *
  */
 
-#include "psg_cache.hpp"
+#include "psg_cache_base.hpp"
  
 BEGIN_NCBI_SCOPE
 
-class CPubseqGatewayCacheBlobProp : public CPubseqGatewayCache
+class CPubseqGatewayCacheBlobProp : public CPubseqGatewayCacheBase
 {
 public:
 	CPubseqGatewayCacheBlobProp(const string& file_name);

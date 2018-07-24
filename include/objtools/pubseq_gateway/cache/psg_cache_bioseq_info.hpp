@@ -33,11 +33,11 @@
  */
 
 
-#include "psg_cache.hpp"
+#include "psg_cache_base.hpp"
  
 BEGIN_NCBI_SCOPE
 
-class CPubseqGatewayCacheBioseqInfo : public CPubseqGatewayCache
+class CPubseqGatewayCacheBioseqInfo : public CPubseqGatewayCacheBase
 {
 public:
 	CPubseqGatewayCacheBioseqInfo(const string& file_name);
