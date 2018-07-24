@@ -40,7 +40,7 @@ static const constexpr unsigned kPackedLastModifiedSize = 8;
 static const constexpr unsigned kPackedKeySize = (kPackedSatKeySize + kPackedLastModifiedSize);
 
 CPubseqGatewayCacheBlobProp::CPubseqGatewayCacheBlobProp(const string& file_name) :
-    CPubseqGatewayCache(file_name)
+    CPubseqGatewayCacheBase(file_name)
 {
 }
 
@@ -52,7 +52,7 @@ void CPubseqGatewayCacheBlobProp::Open(const vector<string>& sat_names) {
     if (sat_names.empty())
         lmdb::runtime_error::raise("List of satellites is empty", 0);
 
-    CPubseqGatewayCache::Open();
+    CPubseqGatewayCacheBase::Open();
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     int sat = 0;
     for (const auto & it : sat_names) {

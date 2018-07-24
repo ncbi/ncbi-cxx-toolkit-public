@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = psg_cache psg_cache_bioseq_info psg_cache_si2csi psg_cache_blob_prop
+SRC = psg_cache_base psg_cache_bioseq_info psg_cache_si2csi psg_cache_blob_prop
 
 LIB = psg_cache
 LIB_OR_DLL = both

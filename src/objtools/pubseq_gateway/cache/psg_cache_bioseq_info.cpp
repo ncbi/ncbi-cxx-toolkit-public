@@ -44,7 +44,7 @@ static size_t PackedKeySize(size_t acc_sz) {
 }
 
 CPubseqGatewayCacheBioseqInfo::CPubseqGatewayCacheBioseqInfo(const string& file_name) :
-    CPubseqGatewayCache(file_name)
+    CPubseqGatewayCacheBase(file_name)
 {
     m_Dbi.reset(new lmdb::dbi({0}));
 }
@@ -55,7 +55,7 @@ CPubseqGatewayCacheBioseqInfo::~CPubseqGatewayCacheBioseqInfo()
 
 void CPubseqGatewayCacheBioseqInfo::Open()
 {
-    CPubseqGatewayCache::Open();
+    CPubseqGatewayCacheBase::Open();
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     *m_Dbi = lmdb::dbi::open(rdtxn, "#DATA", 0);
     rdtxn.commit();

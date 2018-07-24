@@ -33,7 +33,7 @@
 #include <sys/stat.h>
 #include <util/lmdbxx/lmdb++.h>
 
-#include "objtools/pubseq_gateway/cache/psg_cache.hpp"
+#include "objtools/pubseq_gateway/cache/psg_cache_base.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -44,17 +44,17 @@ USING_NCBI_SCOPE;
 #define DBI_COUNT       6
 #define THREAD_COUNT    1024
 
-CPubseqGatewayCache::CPubseqGatewayCache(const string& file_name) :
+CPubseqGatewayCacheBase::CPubseqGatewayCacheBase(const string& file_name) :
     m_FileName(file_name)
 {
     m_Env.reset(new lmdb::env(lmdb::env::create()));
 }
 
-CPubseqGatewayCache::~CPubseqGatewayCache()
+CPubseqGatewayCacheBase::~CPubseqGatewayCacheBase()
 {
 }
 
-void CPubseqGatewayCache::Open()
+void CPubseqGatewayCacheBase::Open()
 {
     struct stat st;
     int stat_rv = stat(m_FileName.c_str(), &st);

@@ -43,7 +43,7 @@ static size_t PackedKeySize(size_t acc_sz) {
 }
 
 CPubseqGatewayCacheSi2Csi::CPubseqGatewayCacheSi2Csi(const string& file_name) :
-    CPubseqGatewayCache(file_name)
+    CPubseqGatewayCacheBase(file_name)
 {
     m_Dbi.reset(new lmdb::dbi({0}));
 }
@@ -53,7 +53,7 @@ CPubseqGatewayCacheSi2Csi::~CPubseqGatewayCacheSi2Csi()
 }
 
 void CPubseqGatewayCacheSi2Csi::Open() {
-    CPubseqGatewayCache::Open();
+    CPubseqGatewayCacheBase::Open();
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     *m_Dbi = lmdb::dbi::open(rdtxn, "#DATA", 0);
     rdtxn.commit();
