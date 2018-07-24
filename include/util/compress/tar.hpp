@@ -165,6 +165,7 @@ public:
         eBlockDev    = CDirEntry::eBlockSpecial, ///< Block device
         eUnknown     = CDirEntry::eUnknown,      ///< Unknown type
         eHardLink,                               ///< Hard link
+        eVolHeader,                              ///< Volume header
         ePAXHeader,                              ///< PAX extended header
         eSparseFile,                             ///< GNU/STAR sparse file 
         eGNULongName,                            ///< GNU long name

@@ -574,6 +574,10 @@ static char s_TypeAsChar(CTarEntryInfo::EType type)
         return 'c';
     case CTarEntryInfo::eBlockDev:
         return 'b';
+    case CTarEntryInfo::eVolHeader:
+        return 'V';
+    case CTarEntryInfo::eSparseFile:
+        return 'S';
     default:
         break;
     }
@@ -609,7 +613,9 @@ static string s_SizeOrMajorMinor(const CTarEntryInfo& info)
         unsigned int minor = info.GetMinor();
         return s_MajorMinor(major) + ',' + s_MajorMinor(minor);
     } else if (info.GetType() == CTarEntryInfo::eDir  ||
-               info.GetType() == CTarEntryInfo::eSymLink) {
+               info.GetType() == CTarEntryInfo::ePipe  ||
+               info.GetType() == CTarEntryInfo::eSymLink  ||
+               info.GetType() == CTarEntryInfo::eVolHeader) {
         return string("-");
     }
     return NStr::NumericToString(info.GetSize());
@@ -641,8 +647,26 @@ CNcbiOstream& operator << (CNcbiOstream& os, const CTarEntryInfo& info)
 
 static string s_OSReason(int x_errno)
 {
-    const char* strerr = x_errno ? strerror(x_errno) : 0;
-    return strerr  &&  *strerr ? string(": ") + strerr : kEmptyStr;
+    static const char kUnknownError[] = "Unknown error";
+    const char* strerr;
+    char errbuf[80];
+    if (!x_errno)
+        return kEmptyStr;
+    strerr = ::strerror(x_errno);
+    if (!strerr  ||  !*strerr
+        ||  !NStr::strncasecmp(strerr,
+                               kUnknownError, sizeof(kUnknownError) - 1)) {
+        if (x_errno > 0) {
+            ::sprintf(errbuf, "Error %d", x_errno);
+        } else if (x_errno != -1) {
+            ::sprintf(errbuf, "Error 0x%08X", (unsigned int) x_errno);
+        } else {
+            ::strcpy (errbuf, "Unknown error (-1)");
+        }
+        strerr = errbuf;
+    }
+    _ASSERT(strerr  &&  *strerr);
+    return string(": ") + strerr;
 }
 
 
@@ -2352,7 +2376,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
             case 'X':
                 if (pax) {
                     TAR_POST(78, Warning,
-                             "Repetitious PAX header encountered,"
+                             "Repetitious PAX headers,"
                              " archive may be corrupt");
                 }
                 fmt = eTar_Posix;  // upgrade
@@ -2410,6 +2434,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
             }
 
             // Read in the extended header information
+            val = ALIGN_SIZE(hsize);
             string data;
             while (hsize) {
                 nread = hsize;
@@ -2435,31 +2460,32 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                 data.resize(strlen(data.c_str()));
             }
             if (dump) {
-                string what(m_Current.GetType() == CTarEntryInfo::ePAXHeader
+                EDiagSev level = SetDiagPostLevel(eDiag_Info);
+                ERR_POST(Info << '\n' + s_PositionAsString(m_FileName,
+                                                           m_StreamPos - val,
+                                                           m_BufferSize,
+                                                           m_Current.GetName())
+                         + (m_Current.GetType() == CTarEntryInfo::ePAXHeader
                             ? "PAX data:\n" :
                             m_Current.GetType() == CTarEntryInfo::eGNULongName
-                            ? "Long name:         \""
-                            : "Long link name:    \"");
-                EDiagSev level = SetDiagPostLevel(eDiag_Info);
-                ERR_POST(Info << Message << '\n' + what
+                            ? "Long name:          \""
+                            : "Long link name:     \"")
                          + NStr::PrintableString(data,
                                                  m_Current.GetType()
                                                  == CTarEntryInfo::ePAXHeader
                                                  ? NStr::fNewLine_Passthru
-                                                 : NStr::fNewLine_Quote) +
-                         (m_Current.GetType() == CTarEntryInfo::ePAXHeader ?
-                          data.size()  &&  data[data.size() - 1] == '\n'
-                          ? kEmptyStr : "\n"
-                          : "\"\n"));
+                                                 : NStr::fNewLine_Quote)
+                         + (m_Current.GetType() == CTarEntryInfo::ePAXHeader
+                            ? data.size()  &&  data[data.size() - 1] == '\n'
+                            ? kEmptyStr : "\n" : "\"\n"));
                 SetDiagPostLevel(level);
             }
             // Reset size because the data blocks have been all read
-            hsize = (size_t) m_Current.GetSize();
-            m_Current.m_HeaderSize += ALIGN_SIZE(hsize);
+            m_Current.m_HeaderSize += val;
             m_Current.m_Stat.st_size = 0;
-            if (!hsize  ||  !data.size()) {
+            if (!val  ||  !data.size()) {
                 TAR_POST(79, Error,
-                         "Skipping " + string(hsize ? "empty" : "zero-sized")
+                         "Skipping " + string(val ? "empty" : "zero-sized")
                          + " extended header data");
                 return eFailure;
             }
@@ -2479,11 +2505,15 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
             return eFailure;
         }
         /*FALLTHRU*/
-    case 'I':
     case 'V':
-        if (h->typeflag[0] == 'I'  ||  h->typeflag[0] == 'V') {
+    case 'I':
+        if (h->typeflag[0] == 'V'  ||  h->typeflag[0] == 'I') {
             // Safety for no data to actually follow
             m_Current.m_Stat.st_size = 0;
+            if (h->typeflag[0] == 'V') {
+                m_Current.m_Type = CTarEntryInfo::eVolHeader;
+                break;
+            }
         }
         /*FALLTHRU*/
     default:
@@ -3206,7 +3236,7 @@ bool CTar::x_ProcessEntry(EAction action, Uint8 size,
                 } else if (type != CTarEntryInfo::eDir) {
                     // Do removal safely until extraction is confirmed
                     pending.reset(new CTarTempDirEntry(*dst));
-                    if (dst->Exists()) {
+                    if (!pending->Exists()  ||  dst->Exists()) {
                         // Security concern:  do not attempt data extraction
                         // into special files etc, which can harm the system.
                         int x_errno = errno ? errno : EEXIST;
@@ -3245,7 +3275,7 @@ bool CTar::x_ProcessEntry(EAction action, Uint8 size,
     } else if (m_Current.GetType() == CTarEntryInfo::eSparseFile
                &&  action == eTest  &&  (m_Flags & fDumpEntryHeaders)) {
         unique_ptr<CDirEntry> dst
-            (CDirEntry::CreateObject(CDirEntry::EType(type),
+            (CDirEntry::CreateObject(CDirEntry::eFile,
                                      CDirEntry::NormalizePath
                                      (CDirEntry::ConcatPath
                                       (m_BaseDir, m_Current.GetName()))));
@@ -3397,13 +3427,15 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
 
     case CTarEntryInfo::eSymLink:
         {{
-            CSymLink symlink(dst->GetPath());
-            if (!symlink.Create(m_Current.GetLinkName())) {
-                int x_errno = errno;
+            const CSymLink* symlink = dynamic_cast<const CSymLink*>(dst);
+            if (!symlink  ||  !symlink->Create(m_Current.GetLinkName())) {
+                int x_errno = !symlink ? 0 : CNcbiError::GetLast().Code();
                 TAR_POST(12, Error,
                          "Cannot create symlink '" + dst->GetPath()
                          + "' -> '" + m_Current.GetLinkName() + '\''
-                         + s_OSReason(x_errno));
+                         + (!symlink
+                            ? string(": Internal error")
+                            : s_OSReason(x_errno)));
                 result = false;
             }
             _ASSERT(size == 0);
@@ -3714,7 +3746,7 @@ bool CTar::x_ExtractSparseFile(Uint8& size, const CDirEntry* dst, bool dump)
         if (!x_error) {
             x_error = s_TruncateFile(dst->GetPath(), eof);
             if (x_error) {
-#ifdef NCBI_MSWIN
+#ifdef NCBI_OS_MSWIN
                 TCHAR* str = NULL;
                 DWORD  rv = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
                                           FORMAT_MESSAGE_FROM_SYSTEM     |
@@ -3725,10 +3757,14 @@ bool CTar::x_ExtractSparseFile(Uint8& size, const CDirEntry* dst, bool dump)
                                                      SUBLANG_DEFAULT),
                                           (LPTSTR) &str, 0, NULL);
                 if (str) {
-                    if (rv  &&  *str) {
+                    if (rv) {
+                        _ASSERT(*str);
                         reason = string(": ") + str;
                     }
                     ::LocalFree((HLOCAL) str);
+                }
+                if (reason.empty()) {
+                    reason = ": Error 0x" + NStr::UIntToString(x_error, 0, 16);
                 }
 #else
                 reason = s_OSReason(x_error);
@@ -3738,9 +3774,7 @@ bool CTar::x_ExtractSparseFile(Uint8& size, const CDirEntry* dst, bool dump)
             reason = s_OSReason(x_error);
         }
         if (x_error) {
-            if (reason.empty()) {
-                reason = ": Error " + NStr::IntToString(x_error);
-            }
+            _ASSERT(!reason.empty());
             TAR_POST(100, Error,
                      "Cannot write sparse file '" + dst->GetPath() + '\''
                      + reason);
@@ -3778,7 +3812,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
         time_t last_access(info.GetLastAccessTime());
         time_t creation(info.GetCreationTime());
         if (!path->SetTimeT(&modification, &last_access, &creation)) {
-            int x_errno = errno;
+            int x_errno = CNcbiError::GetLast().Code();
             TAR_THROW(this, eRestoreAttrs,
                       "Cannot restore date/time of '" + path->GetPath() + '\''
                       + s_OSReason(x_errno));
@@ -3829,6 +3863,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
                 } else {
                     failed = true;
                 }
+                CNcbiError::SetFromErrno();
             }
         }
 #else
@@ -3842,7 +3877,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
         failed = !path->SetMode(user, group, other, special_bits);
 #endif //NCBI_OS_UNIX
         if (failed) {
-            int x_errno = errno;
+            int x_errno = CNcbiError::GetLast().Code();
             TAR_THROW(this, eRestoreAttrs,
                       "Cannot " + string(perm ? "change" : "restore")
                       + " mode bits of '" + path->GetPath() + '\''
@@ -4083,7 +4118,7 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     case CDirEntry::eDir:
         dir.reset(CDir(path).GetEntriesPtr(kEmptyStr, CDir::eIgnoreRecursive));
         if (!dir.get()) {
-            int x_errno = errno;
+            int x_errno = CNcbiError::GetLast().Code();
             string error =
                 "Cannot list directory '" + path + '\'' + s_OSReason(x_errno);
             if (m_Flags & fIgnoreUnreadable) {
