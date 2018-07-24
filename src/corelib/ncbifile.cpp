@@ -6477,6 +6477,7 @@ void CFileIO::CreateTemporary(const string& dir,
 #  endif
 
 #else // defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+    x_prefix += NStr::NumericToString((unsigned int) rand());
     Open(s_StdGetTmpName(x_dir.c_str(), x_prefix.c_str()),
          eCreateNew, eReadWrite);
 #endif
