@@ -2182,6 +2182,11 @@ void CFastaReader::IgnoreProblem(ILineError::EProblem problem)
     m_ignorable.push_back(problem);
 }
 
+void CFastaReader::ApplySourceMods(CBioseq&, CSourceModParser&)
+{
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
