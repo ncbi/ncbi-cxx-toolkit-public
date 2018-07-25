@@ -300,9 +300,6 @@
 /* Define to 1 if libbackward is available. */
 #undef HAVE_LIBBACKWARD_CPP
 
-/* Define to allow backward-cpp to also handle signals. */
-#undef USE_LIBBACKWARD_SIG_HANDLING
-
 /* Define to 1 if libbz2 is available. */
 #undef HAVE_LIBBZ2
 
@@ -1132,6 +1129,9 @@
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
+
+/* Define to allow backward-cpp to also handle signals. */
+#undef USE_LIBBACKWARD_SIG_HANDLING
 
 /* Define to 1 if using a local copy of bzlib. */
 #undef USE_LOCAL_BZLIB
