@@ -1,3 +1,6 @@
+#ifndef PSG_CACHE_SI2CSI__HPP
+#define PSG_CACHE_SI2CSI__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -25,48 +28,30 @@
  *
  * Authors: Dmitri Dmitrienko
  *
- * File Description:
+ * File Description: si2csi table cache
  *
  */
 
-#include <ncbi_pch.hpp>
-#include <sys/stat.h>
-#include <util/lmdbxx/lmdb++.h>
-
 #include "psg_cache_base.hpp"
+ 
+BEGIN_NCBI_SCOPE
 
-
-USING_NCBI_SCOPE;
-
-
-#define MAP_SIZE_INIT   (256L * 1024 * 1024 * 1024)
-#define MAP_SIZE_DELTA  (16L * 1024 * 1024 * 1024)
-#define DBI_COUNT       6
-#define THREAD_COUNT    1024
-
-CPubseqGatewayCacheBase::CPubseqGatewayCacheBase(const string& file_name) :
-    m_FileName(file_name)
+class CPubseqGatewayCacheSi2Csi : public CPubseqGatewayCacheBase
 {
-    m_Env.reset(new lmdb::env(lmdb::env::create()));
-}
+public:
+	CPubseqGatewayCacheSi2Csi(const string& file_name);
+    virtual ~CPubseqGatewayCacheSi2Csi() override;
+    void Open();
+    bool LookupBySeqId(const string& seqid, int& id_type, string& data);
+    bool LookupBySeqIdIdType(const string& seqid, int id_type, string& data);
 
-CPubseqGatewayCacheBase::~CPubseqGatewayCacheBase()
-{
-}
+    static string PackKey(const string& seqid, int id_type);
+    static bool UnpackKey(const char* key, size_t key_sz, int& id_type);
+private:
+    unique_ptr<lmdb::dbi> m_Dbi;
+};
 
-void CPubseqGatewayCacheBase::Open()
-{
-    struct stat st;
-    int stat_rv = stat(m_FileName.c_str(), &st);
-    if (stat_rv < 0)
-        lmdb::runtime_error::raise(strerror(errno), errno);
-    
-    int64_t mapsize = MAP_SIZE_INIT;
-    if (st.st_size + MAP_SIZE_DELTA >  mapsize)
-        mapsize = st.st_size + MAP_SIZE_DELTA;
-        
-    m_Env->set_max_dbs(DBI_COUNT);
-    m_Env->set_max_readers(THREAD_COUNT);
-    m_Env->set_mapsize(mapsize);
-    m_Env->open(m_FileName.c_str(), MDB_RDONLY | MDB_NOSUBDIR | MDB_NOSYNC | MDB_NOMETASYNC, 0664);
-}
+END_NCBI_SCOPE
+
+
+#endif

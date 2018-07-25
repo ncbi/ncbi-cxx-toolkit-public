@@ -1,3 +1,6 @@
+#ifndef PSG_CACHE_BLOB_PROP__HPP
+#define PSG_CACHE_BLOB_PROP__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -25,48 +28,32 @@
  *
  * Authors: Dmitri Dmitrienko
  *
- * File Description:
+ * File Description: blob_prop table cache
  *
  */
 
-#include <ncbi_pch.hpp>
-#include <sys/stat.h>
-#include <util/lmdbxx/lmdb++.h>
-
 #include "psg_cache_base.hpp"
+ 
+BEGIN_NCBI_SCOPE
 
-
-USING_NCBI_SCOPE;
-
-
-#define MAP_SIZE_INIT   (256L * 1024 * 1024 * 1024)
-#define MAP_SIZE_DELTA  (16L * 1024 * 1024 * 1024)
-#define DBI_COUNT       6
-#define THREAD_COUNT    1024
-
-CPubseqGatewayCacheBase::CPubseqGatewayCacheBase(const string& file_name) :
-    m_FileName(file_name)
+class CPubseqGatewayCacheBlobProp : public CPubseqGatewayCacheBase
 {
-    m_Env.reset(new lmdb::env(lmdb::env::create()));
-}
+public:
+	CPubseqGatewayCacheBlobProp(const string& file_name);
+    virtual ~CPubseqGatewayCacheBlobProp() override;
+    void Open(const vector<string>& sat_names);
+    bool LookupBySatKey(int32_t sat, int32_t sat_key, int64_t& last_modified, string& data);
+    bool LookupBySatKeyLastModified(int32_t sat, int32_t sat_key, int64_t last_modified, string& data);
 
-CPubseqGatewayCacheBase::~CPubseqGatewayCacheBase()
-{
-}
+    static string PackKey(int32_t sat_key);
+    static string PackKey(int32_t sat_key, int64_t last_modified);
+    static bool UnpackKey(const char* key, size_t key_sz, int64_t& last_modified);
 
-void CPubseqGatewayCacheBase::Open()
-{
-    struct stat st;
-    int stat_rv = stat(m_FileName.c_str(), &st);
-    if (stat_rv < 0)
-        lmdb::runtime_error::raise(strerror(errno), errno);
-    
-    int64_t mapsize = MAP_SIZE_INIT;
-    if (st.st_size + MAP_SIZE_DELTA >  mapsize)
-        mapsize = st.st_size + MAP_SIZE_DELTA;
-        
-    m_Env->set_max_dbs(DBI_COUNT);
-    m_Env->set_max_readers(THREAD_COUNT);
-    m_Env->set_mapsize(mapsize);
-    m_Env->open(m_FileName.c_str(), MDB_RDONLY | MDB_NOSUBDIR | MDB_NOSYNC | MDB_NOMETASYNC, 0664);
-}
+private:
+    vector<unique_ptr<lmdb::dbi>> m_Dbis;
+};
+
+END_NCBI_SCOPE
+
+
+#endif
