@@ -19,9 +19,14 @@ PROTOC_FLAGS = $(IMPDIRS:%=-I%)
 comma = ,
 PROTO_PATH = .:$(subst $(comma),:,$(MODULE_SEARCH))
 
+PROTOBUF_BIN = @PROTOBUF_BIN@
 GRPC_BIN = @GRPC_BIN@
-PROTOC = $(GRPC_BIN)/protoc
+PROTOC = $(PROTOBUF_BIN)/protoc
 GRPC_CPP_PLUGIN = $(GRPC_BIN)/grpc_cpp_plugin
+
+ifneq "" "$(wildcard $(GRPC_CPP_PLUGIN))"
+  GRPC_FILES = $(MODULE).grpc.pb.cpp $(INCLUDEDIR)/$(MODULE).grpc.pb.hpp
+endif
 
 SED_SCRIPT = '/^\#include ".*pb.h"/ { s|"|<'$(MODULE_PATH)'/|; s/"/pp>/ }'
 DEPS = $(SPEC) $(PROTOC) $(MODULE).module $(IMPDEPS)
@@ -44,8 +49,7 @@ purge_all_sources:
 purge_all_files:
 	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.hpp
 
-$(FILES): $(MODULE).pb.cpp      $(INCLUDEDIR)/$(MODULE).pb.hpp      \
-          $(MODULE).grpc.pb.cpp $(INCLUDEDIR)/$(MODULE).grpc.pb.hpp
+$(FILES): $(MODULE).pb.cpp $(INCLUDEDIR)/$(MODULE).pb.hpp $(GRPC_FILES)
 	@$(TOUCH) $@
 
 $(MODULE).pb.cc $(MODULE).pb.h: $(DEPS)

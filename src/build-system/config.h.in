@@ -441,6 +441,9 @@
 /* Define to 1 if libpng is available. */
 #undef HAVE_LIBPNG
 
+/* Define to 1 if libprotobuf$D_SFX is available. */
+#undef HAVE_LIBPROTOBUF
+
 /* Define to 1 if RPCSVC is available, either in its own library or as part of
    the standard libraries. */
 #undef HAVE_LIBRPCSVC

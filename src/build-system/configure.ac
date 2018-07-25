@@ -75,7 +75,7 @@ case "$with_3psw" in
                      curl, gsoap, avro, cereal, sasl2,
                      mongodb, mongodb3, gmock, lapack,
                      libuv, libssh2, cassandra, nghttp2, h2o,
-                     libxlsxwriter, grpc, msgsl, aws-sdk],
+                     libxlsxwriter, protobuf, grpc, msgsl, aws-sdk],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -543,8 +543,12 @@ AC_ARG_WITH(libxlsxwriter,
    [ --with-libxlsxwriter=DIR use libxlsxwriter installation in DIR])
 AC_ARG_WITH(libxlsxwriter,
    [ --without-libxlsxwriter do not use libxlsxwriter])
+AC_ARG_WITH(protobuf,
+   [ --with-protobuf=DIR     use protocol buffers installation in DIR])
+AC_ARG_WITH(protobuf,
+   [ --without-protobuf      do not use protocol buffers])
 AC_ARG_WITH(grpc,
-   [ --with-grpc=DIR         use GRPC installation in DIR])
+   [ --with-grpc=DIR         use GRPC (and protobuf) installation in DIR])
 AC_ARG_WITH(grpc,
    [ --without-grpc          do not use GRPC])
 AC_ARG_WITH(msgsl,
@@ -619,8 +623,8 @@ sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
 gif jpeg tiff png xpm \
 magic curl mimetic gsoap avro cereal sasl2 mongodb mongodb3 gmock lapack lmdb \
-libuv libssh2 cassandra nghttp2 h2o libxlsxwriter grpc msgsl aws-sdk 3psw \
-local-lbsm ncbi-crypt connext \
+libuv libssh2 cassandra nghttp2 h2o libxlsxwriter protobuf grpc msgsl aws-sdk \
+3psw local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
 changequote(, )dnl
@@ -693,8 +697,8 @@ for x_arg in "$@" ; do
       | --with-mongodb=* | --with-mongodb3=* \
       | --with-gmock=* | --with-lapack=* | --with-lmdb=* | --with-libuv=* \
       | --with-libssh2=* | --with-cassandra=* | --with-nghttp2=* \
-      | --with-h2o=* | --with-libxlsxwriter=* | --with-grpc=* \
-      | --with-msgsl=* | --with-aws-sdk=* )
+      | --with-h2o=* | --with-libxlsxwriter=* \
+      | --with-protobuf=* | --with-grpc=* | --with-msgsl=* | --with-aws-sdk=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
@@ -7966,10 +7970,24 @@ if test -d "$GRPC_PATH"; then
       fi
    done
 fi
+
+: ${PROTOBUF_PATH=$GRPC_PATH}
+
+NCBI_CHECK_THIRD_PARTY_LIB_EX(protobuf, PROTOBUF, [protobuf$D_SFX],
+   [AC_LANG_PROGRAM([[#include <google/protobuf/type.pb.h>]],
+       [[google::protobuf::Type t;]])],
+   [], [$Z_LIBS])
+if test -n "$PROTOBUF_LIBS"; then
+   PROTOBUF_BIN=$PROTOBUF_PATH/bin
+else
+   NCBI_MISSING_PACKAGE(grpc)
+fi
+
 NCBI_CHECK_THIRD_PARTY_LIB_EX(grpc, GRPC, grpc++,
    [AC_LANG_PROGRAM([[#include <grpc++/grpc++.h>]],
        [[return grpc::Version().size();]])],
-   [-lgrpc -lgpr -lprotobuf$D_SFX -lcares], [$OPENSSL_LIBS $Z_LIBS])
+   [-lgrpc -lgpr $PROTOBUF_LIBS -lcares], [$OPENSSL_LIBS $Z_LIBS],
+   [$PROTOBUF_INCLUDE])
 if test -n "$GRPC_LIBS"; then
    GRPC_UNSECURE_LIBS=`echo $GRPC_LIBS | sed -e 's/\(-lgrpc+*\)/\1_unsecure/g'`
    GRPC_LIBS="$GRPC_LIBS $OPENSSL_LIBS"
@@ -8766,6 +8784,7 @@ AC_SUBST(CASSANDRA_STATIC_LIBS)
 AC_SUBST(NGHTTP2_STATIC_LIBS)
 AC_SUBST(H2O_STATIC_LIBS)
 AC_SUBST(LIBXLSXWRITER_STATIC_LIBS)
+AC_SUBST(PROTOBUF_BIN)
 AC_SUBST(GRPC_UNSECURE_LIBS)
 AC_SUBST(GRPC_REFLECTION_LIBS)
 AC_SUBST(GRPC_BIN)
