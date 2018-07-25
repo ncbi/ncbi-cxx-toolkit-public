@@ -996,7 +996,7 @@ void CBlastDeflineUtil::ProcessFastaDeflines(
     } else {
         out = '>';
         id = FindBestChoice(bioseq.GetId(), CSeq_id::Score);
-        out += GetBareId(*id);
+        out += GetBareId(*id) + ' ';
 
         string title = s_GetTitle(bioseq);
         out += s_ConfigureDeflineTitle(title, use_ctrla);
