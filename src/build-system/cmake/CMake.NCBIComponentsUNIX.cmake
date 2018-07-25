@@ -616,14 +616,14 @@ if (WIN32)
 	find_external_library(VDB
 		INCLUDES sra/sradb.h
 		LIBS ncbi-vdb
-		INCLUDE_HINTS "\\\\snowman\\trace_software\\vdb\\vdb-versions\\2.8.0\\interfaces"
-		LIBS_HINTS "\\\\snowman\\trace_software\\vdb\\vdb-versions\\2.8.0\\win\\release\\x86_64\\lib")
+		INCLUDE_HINTS "\\\\snowman\\trace_software\\vdb\\vdb-versions\\2.9.1-1\\interfaces"
+		LIBS_HINTS "\\\\snowman\\trace_software\\vdb\\vdb-versions\\2.9.1-1\\win\\release\\x86_64\\lib")
 else (WIN32)
 	find_external_library(VDB
 		INCLUDES sra/sradb.h
 		LIBS ncbi-vdb
-		INCLUDE_HINTS "/opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/interfaces"
-		LIBS_HINTS "/opt/ncbi/64/trace_software/vdb/vdb-versions/2.8.0/linux/release/x86_64/lib")
+		INCLUDE_HINTS "/opt/ncbi/64/trace_software/vdb/vdb-versions/2.9.1-1/interfaces"
+		LIBS_HINTS "/opt/ncbi/64/trace_software/vdb/vdb-versions/2.9.1-1/linux/release/x86_64/lib")
 endif (WIN32)
 
 if (${VDB_FOUND})

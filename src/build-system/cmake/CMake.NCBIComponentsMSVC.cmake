@@ -65,7 +65,7 @@ set(NCBI_ThirdParty_XSLT       ${NCBI_ThirdPartyBasePath}/xslt/${NCBI_ThirdParty
 set(NCBI_ThirdParty_EXSLT      ${NCBI_ThirdParty_XSLT})
 set(NCBI_ThirdParty_SQLITE3    ${NCBI_ThirdPartyBasePath}/sqlite/${NCBI_ThirdPartyCompiler}/3.8.10.1)
 set(NCBI_ThirdParty_Sybase     ${NCBI_ThirdPartyBasePath}/sybase/${NCBI_ThirdPartyCompiler}/15.5)
-set(NCBI_ThirdParty_VDB        //snowman/trace_software/vdb/vdb-versions/2.9.0-1)
+set(NCBI_ThirdParty_VDB        //snowman/trace_software/vdb/vdb-versions/2.9.1-1)
 if ("${NCBI_PlatformBits}" EQUAL "64")
   set(NCBI_ThirdParty_VDB_ARCH_INC x86_64)
   set(NCBI_ThirdParty_VDB_ARCH     x86_64/vs2013.64)
