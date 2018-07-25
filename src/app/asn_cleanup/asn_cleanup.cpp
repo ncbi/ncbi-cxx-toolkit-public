@@ -589,6 +589,9 @@ int CCleanupApp::Run(void)
     if (args["K"]) {
         x_KOptionsValid(args["K"].AsString());
     }
+    if (args["X"]) {
+        x_XOptionsValid(args["X"].AsString());
+    }
 
     // create object manager
     m_Objmgr = CObjectManager::GetInstance();
