@@ -532,7 +532,6 @@ string CSourceModParser::ParseTitle(const CTempString& title,
     size_t pos = 0;
 
     m_Mods.clear();
-    m_ModNameMap.clear();
 
     mod.seqid = seqid;
 
@@ -553,9 +552,8 @@ string CSourceModParser::ParseTitle(const CTempString& title,
                 mod.key = key;
                 mod.value = value;
                 mod.pos = lb_pos;
+                mod.used = false;
                 m_Mods.emplace(mod);
-
-                m_ModNameMap.emplace(key, mod);
             }
 
             x_AppendIfNonEmpty(stripped_title, skipped);
@@ -986,29 +984,27 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     }}
 
     // db_xref
-    //TModsRange db_xref_mods_range = FindAllMods( s_Mod_db_xref, s_Mod_dbxref );
-    auto db_xref_mods_range = FindAllMods( s_Mod_db_xref, s_Mod_dbxref );
+    TModsRange db_xref_mods_range = FindAllMods( s_Mod_db_xref, s_Mod_dbxref );
     for( TModsCI db_xref_iter = db_xref_mods_range.first; 
             db_xref_iter != db_xref_mods_range.second; 
             ++db_xref_iter ) {
-        CRef<CDbtag> new_db(new CDbtag());
+        CRef< CDbtag > new_db( new CDbtag );
 
         const CTempString db_xref_str = db_xref_iter->value;
-        //CRef<CObject_id> object_id(new CObject_id);
+        CRef<CObject_id> object_id(new CObject_id);
 
         size_t colon_location = db_xref_str.find(":");
         if (colon_location == string::npos) {
             // no colon: it's just tag, and db is unknown
             new_db->SetDb() = "?";
-            db_xref_str.Copy(new_db->SetTag().SetStr(), 0, CTempString::npos);
-            //db_xref_str.Copy(object_id->SetStr(), 0, CTempString::npos);
+            db_xref_str.Copy(object_id->SetStr(), 0, CTempString::npos);
         } else {
             // there's a colon, so db and tag are both known
             db_xref_str.Copy(new_db->SetDb(), 0, colon_location);
-            db_xref_str.Copy(new_db->SetTag().SetStr(), colon_location + 1, CTempString::npos);
-            //db_xref_str.Copy(object_id->SetStr(), colon_location + 1, CTempString::npos);
+            db_xref_str.Copy(object_id->SetStr(), colon_location + 1, CTempString::npos);
         }
-      //  new_db->SetTag( *object_id );
+        
+        new_db->SetTag( *object_id );
 
         bsrc->SetOrg().SetDb().push_back( new_db );
     }
@@ -1466,28 +1462,6 @@ string CSourceModParser::CUnkModError::x_CalculateErrorString(
 
 CSourceModParser::TMods CSourceModParser::GetMods(TWhichMods which) const
 {
-
-    TMods result;
-    if (which == fAllMods) {
-        for (const auto& kv : m_ModNameMap) {
-            result.insert(kv.second);
-        }
-        return result;
-    }
-    // else
-    const bool used = (which == fUsedMods);
-
-
-    for (const auto& kv : m_ModNameMap) {
-        const auto& mod = kv.second;
-        if (mod.used == used) {
-            result.insert(mod);
-        }
-    }
-
-    return result;
-
-/*
     if (which == fAllMods) {
         // if caller gave this they probably should prefer calling GetAllMods
         // to avoid the struct copy.
@@ -1503,7 +1477,6 @@ CSourceModParser::TMods CSourceModParser::GetMods(TWhichMods which) const
 
         return ret;
     }
-    */
 }
 
 const CSourceModParser::SMod* CSourceModParser::FindMod(
@@ -1517,20 +1490,8 @@ const CSourceModParser::SMod* CSourceModParser::FindMod(
         }
     }
 
-    auto it = m_ModNameMap.find(key);
-    if (it == m_ModNameMap.end()) {
-        it = m_ModNameMap.find(alt_key);
-    }
-
-    if (it != m_ModNameMap.end()) {
-        const_cast<SMod&>(it->second).used = true;
-        return &(it->second);
-    }
-    return nullptr;
-
-/*
-
     SMod mod;
+
     for (int tries = 0;  tries < 2;  ++tries) {
         const CTempString & modkey = ( tries == 0 ? key : alt_key );
         if( modkey.empty() ) {
@@ -1550,8 +1511,8 @@ const CSourceModParser::SMod* CSourceModParser::FindMod(
     }
 
     return NULL;
-    */
 }
+
 
 CSourceModParser::TModsRange
 CSourceModParser::FindAllMods(const CTempString& key)
@@ -1560,29 +1521,12 @@ CSourceModParser::FindAllMods(const CTempString& key)
     return FindAllMods(smod);
 }
 
-
 CSourceModParser::TModsRange
 CSourceModParser::FindAllMods(const CTempString& key, const CTempString& alt_key)
 {
     SMod smod(key);
     SMod alt_smod(alt_key);
     return FindAllMods(smod, alt_smod);
-}
-
-
-CSourceModParser::TRange
-CSourceModParser::x_FindAllMods(const CTempString& name) 
-{
-    auto range = m_ModNameMap.equal_range(name);
-    if (range.first == range.second) {
-        return TRange();
-    }
-
-    for (auto it = range.first; it != range.second; ++it) {
-        const_cast<SMod&>(it->second).used = true;
-    }
-
-    return TRange(TIterator(range.first), TIterator(range.second));
 }
 
 CSourceModParser::TModsRange
@@ -1615,20 +1559,10 @@ void CSourceModParser::GetLabel(string* s, TWhichMods which) const
     _ASSERT(s != NULL);
 
     string delim = s->empty() ? kEmptyStr : " ";
-/*
+
     ITERATE (TMods, it, m_Mods) {
         if ((which & (it->used ? fUsedMods : fUnusedMods)) != 0) {
             *s += delim + '[' + it->key + '=' + it->value + ']';
-            delim = " ";
-        }
-    }
-
-*/
-    const bool used = (which == fUsedMods);
-    for (const auto& kv : m_ModNameMap) {
-        const auto& mod = kv.second;
-        if (mod.used == used) {
-            *s += delim + '[' + mod.key + '=' + mod.value + ']';
             delim = " ";
         }
     }
@@ -1849,29 +1783,13 @@ void CSourceModParser::SetAllUnused()
     }
 }
 
-void CSourceModParser::AddMods(const CTempString& name, const CTempString& value, TGroupId group_id)
+void CSourceModParser::AddMods(const CTempString& name, const CTempString& value)
 {
-    m_Mods.emplace(name, value, group_id);
-    auto ret = m_ModNameMap.emplace(name, SMod(name,value,group_id));
-    auto it = ret.first;
-    m_ModGroupMap.emplace(it->second.group_id, ref(it->second));
-}
+    SMod newmod(name);
+    newmod.value = value;
+    newmod.used = false;
 
-void CSourceModParser::AddMod(const pair<string, string>& mod, TGroupId group_id) 
-{
-    AddMods(mod.first, mod.second, group_id);
-}
-
-void CSourceModParser::AddMod(const pair<CTempString, CTempString>& mod, TGroupId group_id) 
-{
-    AddMods(mod.first, mod.second, group_id);
-}
-
-void CSourceModParser::AddMods(const initializer_list<pair<string, string>>& mods, TGroupId group_id)
-{
-    for (auto mod : mods) {
-        AddMod(mod, group_id);
-    }
+    m_Mods.insert(newmod);
 }
 
 END_SCOPE(objects)
