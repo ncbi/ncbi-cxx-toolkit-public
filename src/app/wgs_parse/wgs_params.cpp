@@ -785,6 +785,10 @@ bool SetParams(const CArgs& args)
 
     if (args["e"].HasValue()) {
         params_imp.m_acc_file = args["e"].AsString();
+        if (params_imp.m_acc_file.find('/') == string::npos &&
+            params_imp.m_acc_file.find('\\') == string::npos) { // does not contain path, just a filename
+            params_imp.m_acc_file = params_imp.m_outdir + '/' + params_imp.m_acc_file;
+        }
     }
 
     if (!params_imp.m_acc_file.empty() && params_imp.m_update_mode != eUpdateAssembly) {
