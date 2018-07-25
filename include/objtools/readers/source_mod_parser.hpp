@@ -86,14 +86,14 @@ class CAutoAddDBLink;
 
 
 template<typename TMapIterator>
-struct SMapIteratorAdapter
+struct SMapIteratorAdaptor : TMapIterator
 {
-    using value_type = const typename TMapIterator::second_type;
+    using value_type = const typename TMapIterator::value_type::second_type;
     typedef value_type* pointer;
     typedef value_type& reference;
 
-    SMapIteratorAdapter() = default;
-    SMapIteratorAdapter(TMapIterator it) 
+    SMapIteratorAdaptor() = default;
+    SMapIteratorAdaptor(TMapIterator it) 
        : TMapIterator(it) {}
 
    reference operator* () const { return TMapIterator::operator* ().second; }
@@ -203,10 +203,10 @@ public:
     typedef pair<TModsCI, TModsCI> TModsRange;
 
 
-   // using TModNameMap = multimap<CTempString, const SMod>;
+   // using TModNameMap = multimap<string, const SMod>;
     using TModGroupMap = multimap<TGroupId, reference_wrapper<const SMod>>; 
-    using TModNameMap = map<CTempString, const SMod>;
-    using TIterator = SMapIteratorAdapter<TModNameMap::const_iterator>;
+    using TModNameMap = map<string, const SMod>;
+    using TIterator = SMapIteratorAdaptor<TModNameMap::const_iterator>;
     using TRange = pair<TIterator, TIterator>;
  //   using TModGroupMap = map<TGroupId, reference_wrapper<const SMod>>; 
 
@@ -310,7 +310,7 @@ public:
     static const string & GetModAllowedValuesAsOneString(const string &mod);
 
 private:
-    TModsRange x_FindAllMods(const CTempString& key);
+    TRange x_FindAllMods(const CTempString& key);
 
     static const unsigned char kKeyCanonicalizationTable[257];
 
