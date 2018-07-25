@@ -199,17 +199,17 @@ class CCdregionValidator : public CSingleFeatValidator
 public:
     CCdregionValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp);
 
-    virtual void Validate();
+    virtual void Validate() override;
 
 protected:
-    virtual void x_ValidateFeatComment();
-    virtual void x_ValidateExceptText(const string& text);
+    virtual void x_ValidateFeatComment() override;
+    virtual void x_ValidateExceptText(const string& text) override;
     void x_ValidateQuals();
     static bool IsPlastid(int genome);
     void x_ValidateGeneticCode();
     void x_ValidateBadMRNAOverlap();
     bool x_HasGoodParent();
-    virtual void x_ValidateSeqFeatLoc();
+    virtual void x_ValidateSeqFeatLoc() override;
     void x_ValidateFarProducts();
     void x_ValidateCDSPartial();
     bool x_BypassCDSPartialTest() const;
@@ -243,13 +243,12 @@ protected:
 class CGeneValidator : public CSingleFeatValidator
 {
 public:
-    CGeneValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
-        CSingleFeatValidator(feat, scope, imp) {}
+    using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate();
+    virtual void Validate() override;
 
 protected:
-    virtual void x_ValidateExceptText(const string& text);
+    virtual void x_ValidateExceptText(const string& text) override;
     void x_ValidateOperon();
 };
 
@@ -257,10 +256,9 @@ protected:
 class CProtValidator : public CSingleFeatValidator
 {
 public:
-    CProtValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
-        CSingleFeatValidator(feat, scope, imp) {}
+    using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate();
+    virtual void Validate() override;
 
 protected:
     void x_CheckForEmpty();
@@ -273,10 +271,9 @@ protected:
 class CRNAValidator : public CSingleFeatValidator
 {
 public:
-    CRNAValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
-        CSingleFeatValidator(feat, scope, imp) {}
+    using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate();
+    virtual void Validate() override;
 
 protected:
     // for tRNAs
@@ -299,10 +296,9 @@ protected:
 class CPubFeatValidator : public CSingleFeatValidator
 {
 public:
-    CPubFeatValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
-        CSingleFeatValidator(feat, scope, imp) {}
+    using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate();
+    virtual void Validate() override;
 
 protected:
 };
@@ -311,10 +307,9 @@ protected:
 class CSrcFeatValidator : public CSingleFeatValidator
 {
 public:
-    CSrcFeatValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
-        CSingleFeatValidator(feat, scope, imp) {}
+    using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate();
+    virtual void Validate() override;
 
 protected:
 };
@@ -323,10 +318,9 @@ protected:
 class CPolyASiteValidator : public CSingleFeatValidator
 {
 public:
-    CPolyASiteValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
-        CSingleFeatValidator(feat, scope, imp) {}
+    using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void x_ValidateSeqFeatLoc();
+    virtual void x_ValidateSeqFeatLoc() override;
 
 protected:
 };
@@ -335,10 +329,9 @@ protected:
 class CPolyASignalValidator : public CSingleFeatValidator
 {
 public:
-    CPolyASignalValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
-        CSingleFeatValidator(feat, scope, imp) {}
+    using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void x_ValidateSeqFeatLoc();
+    virtual void x_ValidateSeqFeatLoc() override;
 
 protected:
 };
@@ -349,7 +342,7 @@ class CPeptideValidator : public CSingleFeatValidator
 public:
     CPeptideValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp);
 
-    virtual void Validate();
+    virtual void Validate() override;
 
 protected:
     void x_ValidatePeptideOnCodonBoundary();
@@ -362,10 +355,9 @@ protected:
 class CExonValidator : public CSingleFeatValidator
 {
 public:
-    CExonValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
-        CSingleFeatValidator(feat, scope, imp) {}
+    using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate();
+    virtual void Validate() override;
 
 protected:
 };
@@ -374,10 +366,9 @@ protected:
 class CIntronValidator : public CSingleFeatValidator
 {
 public:
-    CIntronValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
-        CSingleFeatValidator(feat, scope, imp) {}
+    using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate();
+    virtual void Validate() override;
 
 protected:
     bool x_IsIntronShort(bool pseudo);
@@ -387,10 +378,9 @@ protected:
 class CMiscFeatValidator : public CSingleFeatValidator
 {
 public:
-    CMiscFeatValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
-        CSingleFeatValidator(feat, scope, imp) {}
+    using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate();
+    virtual void Validate() override;
 
 protected:
 };
@@ -399,10 +389,9 @@ protected:
 class CAssemblyGapValidator : public CSingleFeatValidator
 {
 public:
-    CAssemblyGapValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
-        CSingleFeatValidator(feat, scope, imp) {}
+    using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate();
+    virtual void Validate() override;
 
 protected:
 };
@@ -411,10 +400,9 @@ protected:
 class CGapFeatValidator : public CSingleFeatValidator
 {
 public:
-    CGapFeatValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
-        CSingleFeatValidator(feat, scope, imp) {}
+    using CSingleFeatValidator::CSingleFeatValidator;
 
-    virtual void Validate();
+    virtual void Validate() override;
 
 protected:
 };
@@ -423,9 +411,8 @@ protected:
 class CImpFeatValidator : public CSingleFeatValidator
 {
 public:
-    CImpFeatValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
-        CSingleFeatValidator(feat, scope, imp) {};
-    virtual void Validate();
+    using CSingleFeatValidator::CSingleFeatValidator;
+    virtual void Validate() override;
 protected:
 };
 
