@@ -31,9 +31,11 @@
 
 #include <ncbi_pch.hpp>
 
+#include <util/lmdbxx/lmdb++.h>
+
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
 
-#include "psg_cache_bioseq_info.cpp"
+#include "psg_cache_bioseq_info.hpp"
 #include "psg_cache_si2csi.hpp"
 #include "psg_cache_blob_prop.hpp"
 
