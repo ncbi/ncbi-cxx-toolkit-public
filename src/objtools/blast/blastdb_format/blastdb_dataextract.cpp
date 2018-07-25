@@ -992,7 +992,7 @@ void CBlastDeflineUtil::ProcessFastaDeflines(
     else if (id->IsLocal()) {
         string lcl_tmp = id->AsFastaString();
         lcl_tmp = lcl_tmp.erase(0,4);
-        out = ">" + lcl_tmp + s_GetTitle(bioseq) + '\n';
+        out = ">" + lcl_tmp + ' ' + s_GetTitle(bioseq) + '\n';
     } else {
         out = '>';
         id = FindBestChoice(bioseq.GetId(), CSeq_id::Score);
