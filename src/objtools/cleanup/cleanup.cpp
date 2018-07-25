@@ -1328,6 +1328,8 @@ void CCleanup::SetMrnaName(CSeq_feat& mrna, const string& protein_name)
 }
 
 
+//LCOV_EXCL_START
+//seems to be unused
 bool CCleanup::s_IsProductOnFeat(const CSeq_feat& cds)
 {
     if (cds.IsSetXref()) {
@@ -1346,6 +1348,7 @@ bool CCleanup::s_IsProductOnFeat(const CSeq_feat& cds)
     }
     return false;
 }
+//LCOV_EXCL_STOP
 
 
 void CCleanup::s_SetProductOnFeat(CSeq_feat& feat, const string& protein_name, bool append)
