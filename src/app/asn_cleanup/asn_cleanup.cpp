@@ -315,7 +315,8 @@ void CCleanupApp::x_XOptionsValid(const string& opt)
     string::const_iterator s = opt.begin();
     while (s != opt.end()) {
         if (!isspace(*s)) {
-            if (*s != 'w' && *s != 'r' && *s != 'b' && *s != 'a' && *s != 'i' && *s != 'f') {
+            if (*s != 'w' && *s != 'r' && *s != 'b' && *s != 'a' &&
+                *s != 'i' && *s != 'f' && *s != 'd') {
                 unrecognized += *s;
             }
         }
