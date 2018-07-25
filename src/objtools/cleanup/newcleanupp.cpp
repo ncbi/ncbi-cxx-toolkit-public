@@ -12399,16 +12399,6 @@ void CNewCleanup_imp::CreateMissingMolInfo( CBioseq& seq )
 }
 
 
-void CNewCleanup_imp::x_RemoveUnnecessaryGeneXrefs(CSeq_feat& f)
-{
-    if ( ! m_IsGpipe && !m_IsEmblOrDdbj) {
-        if (CCleanup::RemoveUnnecessaryGeneXrefs(f, *m_Scope)) {
-            ChangeMade(CCleanupChange::eRemoveGeneXref);
-        }
-    }
-}
-
-
 void CNewCleanup_imp::AddProteinTitles(CBioseq& seq)
 {
     if (!(m_Options & CCleanup::eClean_NoProteinTitles)) {
