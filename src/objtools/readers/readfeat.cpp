@@ -293,6 +293,9 @@ public:
         eOrgRef_mgcode
     };
 
+    using TFlags = CFeature_table_reader::TFlags;
+    using TFtable = CSeq_annot::C_Data::TFtable;
+
     // constructor
     CFeature_table_reader_imp(ILineReader* reader, unsigned int line_num, ILineErrorListener* pMessageListener);
     // destructor
@@ -301,13 +304,13 @@ public:
     // read 5-column feature table and return Seq-annot
     CRef<CSeq_annot> ReadSequinFeatureTable (const string& seqid,
                                              const string& annotname,
-                                             const CFeature_table_reader::TFlags flags, 
+                                             const TFlags flags, 
                                              ITableFilter *filter);
 
     // create single feature from key
     CRef<CSeq_feat> CreateSeqFeat (const string& feat,
                                    CSeq_loc& location,
-                                   const CFeature_table_reader::TFlags flags, 
+                                   const TFlags flags, 
                                    const string &seq_id,
                                    ITableFilter *filter);
 
@@ -316,7 +319,7 @@ public:
                       const string& feat_name,
                       const string& qual,
                       const string& val,
-                      const CFeature_table_reader::TFlags flags,
+                      const TFlags flags,
                       const string &seq_id );
 
     static bool ParseInitialFeatureLine (
@@ -333,7 +336,7 @@ private:
     CFeature_table_reader_imp(const CFeature_table_reader_imp& value);
     CFeature_table_reader_imp& operator=(const CFeature_table_reader_imp& value);
 
-    void x_InitId(const string& seq_id, const CFeature_table_reader::TFlags flags);
+    void x_InitId(const string& seq_id, const TFlags flags);
     // returns true if parsed (otherwise, out_offset is left unchanged)
     bool x_TryToParseOffset(const CTempString & sLine, Int4 & out_offset );
 
@@ -350,7 +353,7 @@ private:
     bool x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
         const string &feat_name,
         const string& qual, const string& val,
-        const CFeature_table_reader::TFlags flags);
+        const TFlags flags);
 
     bool x_AddQualifierToGene     (CSeqFeatData& sfdata,
                                    EQual qtype, const string& val);
@@ -413,7 +416,7 @@ private:
     void x_CreateGenesFromCDSs(
         CRef<CSeq_annot> sap,
         TChoiceToFeatMap & choiceToFeatMap, // an input param, but might get more items added
-        const CFeature_table_reader::TFlags flags);
+        const TFlags flags);
 
     bool x_StringIsJustQuotes (const string& str);
 
@@ -431,7 +434,7 @@ private:
     );
 
     bool x_SetupSeqFeat (CRef<CSeq_feat> sfp, const string& feat,
-                         const CFeature_table_reader::TFlags flags, 
+                         const TFlags flags, 
                          ITableFilter *filter);
 
     void  x_ProcessMsg (
@@ -457,7 +460,7 @@ private:
 
     void x_TokenizeStrict( const string &line, vector<string> &out_tokens );
     void x_TokenizeLenient( const string &line, vector<string> &out_tokens );
-    void x_FinishFeature(CRef<CSeq_feat>& feat);
+    void x_FinishFeature(CRef<CSeq_feat>& feat, TFtable& ftable);
     void x_ResetFeat(CRef<CSeq_feat>& feat, bool & curr_feat_intervals_done);
     void x_UpdatePointStrand(CSeq_feat& feat, CSeq_interval::TStrand strand) const;
     void x_GetPointStrand(const CSeq_feat& feat, CSeq_interval::TStrand& strand) const;
@@ -2006,7 +2009,7 @@ bool CFeature_table_reader_imp::x_AddGeneOntologyToFeature (
 void CFeature_table_reader_imp::x_CreateGenesFromCDSs(
     CRef<CSeq_annot> sap,
     TChoiceToFeatMap & choiceToFeatMap,
-    const CFeature_table_reader::TFlags flags)
+    const TFlags flags)
 {
     // load cds_equal_range to hold the CDSs
     typedef TChoiceToFeatMap::iterator TChoiceCI;
@@ -2179,7 +2182,7 @@ void CFeature_table_reader_imp::x_CreateGenesFromCDSs(
 
             // add gene the annot
             _ASSERT( sap->IsFtable() );
-            CSeq_annot::C_Data::TFtable & the_ftable = sap->SetData().SetFtable();
+            TFtable & the_ftable = sap->SetData().SetFtable();
             the_ftable.push_back(pNewGene);
 
             // add it to our local information for later CDSs
@@ -2270,7 +2273,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
     const string &feat_name,
     const string& qual,
     const string& val,
-    const CFeature_table_reader::TFlags flags
+    const TFlags flags
 )
 
 {
@@ -2780,7 +2783,7 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature(
 bool CFeature_table_reader_imp::x_SetupSeqFeat (
     CRef<CSeq_feat> sfp,
     const string& feat,
-    const CFeature_table_reader::TFlags flags,
+    const TFlags flags,
     ITableFilter *filter
 )
 
@@ -3032,7 +3035,7 @@ void CFeature_table_reader_imp::x_UpdatePointStrand(CSeq_feat& feat, CSeq_interv
     }    
 }
 
-void CFeature_table_reader_imp::x_FinishFeature(CRef<CSeq_feat>& feat)
+void CFeature_table_reader_imp::x_FinishFeature(CRef<CSeq_feat>& feat, TFtable& ftable)
 {
     if ( ! feat || feat.Empty())
         return;
@@ -3061,12 +3064,15 @@ void CFeature_table_reader_imp::x_FinishFeature(CRef<CSeq_feat>& feat)
             }
         }
     }
+
+    ftable.push_back(feat);
 }
+
 
 CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     const string& seqid,
     const string& annotname,
-    const CFeature_table_reader::TFlags flags,
+    const TFlags flags,
     ITableFilter *filter
 )
 {
@@ -3079,7 +3085,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     m_ProcessedTranscriptIds.clear();
     CRef<CSeq_annot> sap(new CSeq_annot);
 
-    CSeq_annot::C_Data::TFtable& ftable = sap->SetData().SetFtable();
+    TFtable& ftable = sap->SetData().SetFtable();
     const bool bIgnoreWebComments = 
         ( (flags & CFeature_table_reader::fIgnoreWebComments) != 0 );
 
@@ -3175,12 +3181,12 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
                 // process start - stop - feature line
 
-                x_FinishFeature(sfp);
+                x_FinishFeature(sfp, ftable);
                 x_ResetFeat( sfp, curr_feat_intervals_done );
 
                 if (x_SetupSeqFeat (sfp, feat, flags, filter)) {
 
-                    ftable.push_back (sfp);
+                   // ftable.push_back (sfp);
 
                     // figure out type of feat, and store in map for later use
                     CSeqFeatData::E_Choice eChoice = CSeqFeatData::e_not_set;
@@ -3305,7 +3311,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     }
 
     // make sure last feature is finished
-    x_FinishFeature(sfp);
+    x_FinishFeature(sfp, ftable);
     x_ResetFeat( sfp, curr_feat_intervals_done );
 
     if ((flags & CFeature_table_reader::fCreateGenesFromCDSs) != 0 ||
@@ -3321,7 +3327,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
     const string& feat,
     CSeq_loc& location,
-    const CFeature_table_reader::TFlags flags,
+    const TFlags flags,
     const string &seq_id,
     ITableFilter *filter
 )
@@ -3349,7 +3355,7 @@ CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
     return sfp;
 }
 
-void CFeature_table_reader_imp::x_InitId(const string& seq_id, const CFeature_table_reader::TFlags flags)
+void CFeature_table_reader_imp::x_InitId(const string& seq_id, const TFlags flags)
 {
     if (!NStr::IsBlank(seq_id)) {
         CBioseq::TId ids;
@@ -3366,7 +3372,7 @@ void CFeature_table_reader_imp::AddFeatQual (
     const string& feat_name,
     const string& qual,
     const string& val,
-    const CFeature_table_reader::TFlags flags,
+    const TFlags flags,
     const string &seq_id1 )
 
 {
