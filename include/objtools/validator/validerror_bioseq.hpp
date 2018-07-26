@@ -267,7 +267,6 @@ private:
     size_t GetDataLen(const CSeq_inst& inst);
     bool CdError(const CBioseq_Handle& bsh);
     bool IsMrna(const CBioseq_Handle& bsh);
-    bool IsPrerna(const CBioseq_Handle& bsh);
     size_t NumOfIntervals(const CSeq_loc& loc);
     //bool NotPeptideException(const CFeat_CI& curr, const CFeat_CI& prev);
     //bool IsSameSeqAnnot(const CFeat_CI& fi1, const CFeat_CI& fi2);

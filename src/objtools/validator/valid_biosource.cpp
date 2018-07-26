@@ -1715,21 +1715,6 @@ bool s_IsBioSample(const CBioseq_Handle& bsh)
 }
 
 
-// allow "unnamed" plus digits for plasmid name
-static bool s_IsUnnamed(const string& name)
-{
-    if (!NStr::StartsWith(name, "unnamed")) {
-        return false;
-    }
-    for (size_t i = 7; i < name.length(); i++) {
-        if (!isdigit(name.c_str()[i])) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
 void CValidError_imp::x_CheckSingleStrandedRNAViruses
 (const CBioSource& source,
 const CSerialObject& obj,

@@ -782,15 +782,12 @@ void CCdregionValidator::Validate()
 
 void CCdregionValidator::x_ValidateQuals()
 {
-    bool pseudo = false;
 
     FOR_EACH_GBQUAL_ON_FEATURE(it, m_Feat) {
         const CGb_qual& qual = **it;
         if (qual.CanGetQual()) {
             const string& key = qual.GetQual();
-            if (NStr::EqualNocase(key, "pseudo")) {
-                pseudo = true;
-            } else if (NStr::EqualNocase(key, "exception")) {
+            if (NStr::EqualNocase(key, "exception")) {
                 if (!m_Feat.IsSetExcept()) {
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingExceptionFlag,
                         "Exception flag should be set in coding region");
@@ -1173,7 +1170,6 @@ void CCdregionValidator::x_ValidateFarProducts()
     if (!mrna_sid) {
         return;
     }
-    bool is_far = false;
     CBioseq_Handle mrna_prod = m_Scope.GetBioseqHandleFromTSE(*mrna_sid, m_LocationBioseq.GetTSE_Handle());
     if (mrna_prod) {
         // mRNA product is not far
@@ -1397,7 +1393,6 @@ bool CCdregionValidator::x_IsProductMisplaced() const
     }
 
     
-    bool product_is_misplaced = false;
     bool found_match = false;
 
     CSeq_entry_Handle prod_nps =

@@ -2218,21 +2218,6 @@ bool CValidError_bioseq::IsMrna(const CBioseq_Handle& bsh)
 }
 
 
-bool CValidError_bioseq::IsPrerna(const CBioseq_Handle& bsh) 
-{
-    CSeqdesc_CI sd(bsh, CSeqdesc::e_Molinfo);
-
-    if ( sd ) {
-        const CMolInfo &mi = sd->GetMolinfo();
-        if ( mi.IsSetBiomol() ) {
-            return mi.GetBiomol() == CMolInfo::eBiomol_pre_RNA;
-        }
-    }
-
-    return false;
-}
-
-
 size_t CValidError_bioseq::NumOfIntervals(const CSeq_loc& loc) 
 {
     size_t counter = 0;
@@ -6120,22 +6105,17 @@ void CValidError_bioseq::ValidateSeqFeatContext(
         int num_full_length_prot_ref = 0;
 
         bool is_mrna = IsMrna(m_CurrentHandle);
-        bool is_prerna = IsPrerna(m_CurrentHandle);
         bool is_aa = CSeq_inst::IsAa(m_CurrentHandle.GetInst_Mol());
         bool is_virtual = (m_CurrentHandle.GetInst_Repr() == CSeq_inst::eRepr_virtual);
         TSeqPos len = m_CurrentHandle.IsSetInst_Length() ? m_CurrentHandle.GetInst_Length() : 0;
 
-        bool is_nc = false, is_emb = false, non_pseudo_16S_rRNA = false;
+        bool is_emb = false, non_pseudo_16S_rRNA = false;
         bool is_refseq = m_Imp.IsRefSeqConventions();
         FOR_EACH_SEQID_ON_BIOSEQ (seq_it, seq) {
             if ((*seq_it)->IsEmbl()) {
                 is_emb = true;
             } else if ((*seq_it)->IsOther()) {
                 is_refseq = true;
-                if ((*seq_it)->GetOther().IsSetAccession() 
-                    && NStr::StartsWith((*seq_it)->GetOther().GetAccession(), "NC_")) {
-                    is_nc = true;
-                }
             }
         }
 
