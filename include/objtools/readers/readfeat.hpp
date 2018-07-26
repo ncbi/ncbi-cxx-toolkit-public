@@ -163,6 +163,11 @@ private:
                                                const string& annot_name,
                                                const TFlags flags, 
                                                ITableFilter* filter);
+
+    static CRef<CSeq_annot> x_ReadFeatureTable(CFeatureTableReader_imp& reader, 
+                                               const TFlags flags,
+                                               ITableFilter* filter,
+                                               const string& seqid_prefix);
 };
 
 

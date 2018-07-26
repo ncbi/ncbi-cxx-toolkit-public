@@ -334,6 +334,11 @@ public:
     ILineReader* const GetLineReaderPtr(void)  {
         return m_reader;
     }
+
+    ILineErrorListener* const GetErrorListenerPtr(void) {
+        return m_pMessageListener;
+    }
+
 private:
 
     // Prohibit copy constructor and assignment operator
@@ -3536,6 +3541,44 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 }
 
 
+CRef<CSeq_annot> CFeature_table_reader::x_ReadFeatureTable(
+        CFeatureTableReader_imp& reader,
+        const TFlags flags,
+        ITableFilter* filter,
+        const string& seqid_prefix)
+{
+    auto pLineReader = reader.GetLineReaderPtr();
+    if (!pLineReader) {
+        return CRef<CSeq_annot>();
+    }
+
+
+    string fst, scd, seqid, annotname;
+    // first look for >Feature line, extract seqid and optional annotname
+    while (seqid.empty () && !pLineReader->AtEOF() ) {
+        CTempString line = *++(*pLineReader);
+        if( ParseInitialFeatureLine(line, seqid, annotname) ) {
+            CFeatureTableReader_imp::PutProgress(seqid, 
+                                                 pLineReader->GetLineNumber(), 
+                                                 reader.GetErrorListenerPtr());
+        }
+    }
+
+    if (!seqid_prefix.empty())
+    {
+        if (seqid.find('|') == string::npos)
+           seqid.insert(0, seqid_prefix);
+        else
+        if (NStr::StartsWith(seqid, "lcl|"))
+        {
+            seqid.erase(0, 4);
+            seqid.insert(0, seqid_prefix);
+        }
+    }
+    return x_ReadFeatureTable(reader, seqid, annotname, flags, filter);
+}
+
+
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     ILineReader& reader,
     const TFlags flags,
@@ -3544,6 +3587,11 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     const string& seqid_prefix
 )
 {
+
+    CFeatureTableReader_imp ftable_reader(&reader, 0, pMessageListener);
+    return x_ReadFeatureTable(ftable_reader, flags, filter, seqid_prefix);
+
+/*
     string fst, scd, seqid, annotname;
 
     // first look for >Feature line, extract seqid and optional annotname
@@ -3570,7 +3618,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 
     // then read features from 5-column table
     return ReadSequinFeatureTable (reader, seqid, annotname, flags, pMessageListener, filter);
-
+*/
 }
 
 
