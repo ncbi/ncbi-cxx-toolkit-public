@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CFeature_table_reader_imp;
+class CFeatureTableReader_imp;
 class ILineErrorListener;
 class ITableFilter;
 class CSeq_entry;
@@ -158,6 +158,11 @@ public:
         string & out_annotname );
 
 private:
+    static CRef<CSeq_annot> x_ReadFeatureTable(CFeatureTableReader_imp& reader, 
+                                               const string& seqid,
+                                               const string& annot_name,
+                                               const TFlags flags, 
+                                               ITableFilter* filter);
 };
 
 
