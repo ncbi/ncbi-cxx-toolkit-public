@@ -265,7 +265,7 @@ CDirEntry::~CDirEntry(void)
 
 CDirEntry* CDirEntry::CreateObject(EType type, const string& path)
 {
-    CDirEntry *ptr = 0;
+    CDirEntry *ptr;
     switch ( type ) {
         case eFile:
             ptr = new CFile(path);
@@ -1967,9 +1967,11 @@ bool CDirEntry::SetTime(const CTime* modification,
     // Change times
     struct timeval tvp[2];
     tvp[0].tv_sec  = last_access->GetTimeT();
-    tvp[0].tv_usec = last_access->NanoSecond() / 1000;
+    tvp[0].tv_usec = last_access->NanoSecond()
+        / (kNanoSecondsPerSecond / kMicroSecondsPerSecond);
     tvp[1].tv_sec  = modification->GetTimeT();
-    tvp[1].tv_usec = modification->NanoSecond() / 1000;
+    tvp[1].tv_usec = modification->NanoSecond()
+        / (kNanoSecondsPerSecond / kMicroSecondsPerSecond);
 
 #    ifdef HAVE_LUTIMES
     bool ut_res = lutimes(GetPath().c_str(), tvp) == 0;
@@ -3964,7 +3966,8 @@ inline bool s_DirCreate(const string&path, CDir::TCreateFlags flags, mode_t mode
     int res = NcbiSys_mkdir(_T_XCSTRING(path), mode);
 #endif
     if (res != 0) {
-        if (errno != EEXIST) {
+        int x_errno = errno;
+        if (x_errno != EEXIST) {
             LOG_ERROR_AND_RETURN_ERRNO(52, "CDir::Create(): Cannot create directory " + path);
         }
         // Entry with such name already exists, check its type
@@ -3973,10 +3976,10 @@ inline bool s_DirCreate(const string&path, CDir::TCreateFlags flags, mode_t mode
             LOG_ERROR_AND_RETURN(52, "CDir::Create(): Cannot create directory " + path);
         }
         if (type != CDirEntry::eDir) {
-            LOG_ERROR_AND_RETURN(53, "CDir::Create(): Path already exist and is not a directory " + path);
+            LOG_ERROR_AND_RETURN_NCBI(53, "CDir::Create(): Path already exist and is not a directory " + path, CNcbiError::eFileExists);
         }
         if (F_ISSET(flags, CDir::fCreate_ErrorIfExists)) {
-            LOG_ERROR_AND_RETURN(54, "CDir::Create(): Directory already exist " + path);
+            LOG_ERROR_AND_RETURN_NCBI(54, "CDir::Create(): Directory already exist " + path, CNcbiError::eNotADirectory);
         }
         if (!F_ISSET(flags, CDir::fCreate_UpdateIfExists)) {
             return true;
