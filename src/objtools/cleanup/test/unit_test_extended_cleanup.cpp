@@ -1568,7 +1568,6 @@ void LinkPair(CSeq_feat& f1, CSeq_feat& f2)
 void MakeMrnaGeneTripletForCDS(CRef<CSeq_entry> entry, CRef<CSeq_feat> cds)
 {
     CRef<CSeq_entry> nuc = GetNucleotideSequenceFromGoodNucProtSet(entry);
-    size_t num_cds = entry->GetSet().GetAnnot().front()->GetData().GetFtable().size();
     CRef<CSeq_entry> prot = entry->GetSet().GetSeq_set().back();
     CRef<CSeq_feat> pfeat = prot->GetAnnot().front()->GetData().GetFtable().front();
     // make mRNA
