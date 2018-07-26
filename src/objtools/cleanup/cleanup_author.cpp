@@ -94,7 +94,6 @@ bool CCleanup::CleanupAuthor(CAuthor& author, bool fix_initials)
 
 bool CCleanup::s_CleanupNameStdBC ( CName_std& name, bool fix_initials )
 {
-    bool any_change = false;
     // there's a lot of shuffling around (e.g. adding and removing
     // periods in initials), so we can't determine
     // if we've actually changed anything until we get to the end of 
@@ -116,7 +115,6 @@ bool CCleanup::s_CleanupNameStdBC ( CName_std& name, bool fix_initials )
     }
 
     if (name.IsSetFirst()) {
-        size_t n = name.GetFirst().size();
         NStr::TruncateSpacesInPlace(name.SetFirst());
         if (NStr::IsBlank(name.GetFirst())) {
             name.ResetFirst();
