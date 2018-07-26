@@ -355,6 +355,12 @@ private:
         const string& qual, const string& val,
         const TFlags flags);
 
+    void x_ProcessQualifier(const string& qual_name,
+                            const string& qual_val,
+                            const string& feat_name,
+                            CRef<CSeq_feat> feat,
+                            TFlags flags);
+
     bool x_AddQualifierToGene     (CSeqFeatData& sfdata,
                                    EQual qtype, const string& val);
     bool x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
@@ -474,6 +480,7 @@ private:
     unordered_set<string> m_ProcessedTranscriptIds;
     unordered_set<string> m_ProcessedProteinIds;
 };
+
 
 typedef SStaticPair<const char *, CFeature_table_reader_imp::EQual> TQualKey;
 
@@ -3035,38 +3042,92 @@ void CFeature_table_reader_imp::x_UpdatePointStrand(CSeq_feat& feat, CSeq_interv
     }    
 }
 
-void CFeature_table_reader_imp::x_FinishFeature(CRef<CSeq_feat>& feat, TFtable& ftable)
+
+void CFeature_table_reader_imp::x_FinishFeature(CRef<CSeq_feat>& feat, 
+                                                TFtable& ftable)
 {
     if ( ! feat || feat.Empty())
         return;
 
-    if (feat->IsSetLocation())
-    {
+    // Check for missing publication - RW-626
+    if (feat->GetData().GetSubtype() == CSeqFeatData::eSubtype_pub &&
+        (!feat->SetData().SetPub().IsSetPub() ||
+          feat->SetData().SetPub().GetPub().Get().empty())) {
+        const int line_number = m_reader->AtEOF() ?
+                                m_reader->GetLineNumber() :
+                                m_reader->GetLineNumber()-1;
+
+        string msg = "Reference feature is empty. Skipping feature.";
+
+        x_ProcessMsg(line_number,
+                     ILineError::eProblem_IncompleteFeature,
+                     eDiag_Warning, 
+                     "Reference",
+                     kEmptyStr,
+                     kEmptyStr,
+                     msg);
+            return;
+    }
         
-        if (feat->GetLocation().IsMix())
-        {
-            switch (feat->GetLocation().GetMix().Get().size())
-            {
-            case 0:
-                // turn empty seqlocmix into a null seq-loc
-                feat->SetLocation().SetNull();
-                break;
-            case 1:
-            {
-                // demote 1-part seqlocmixes to seq-loc with just that part
-                CRef<CSeq_loc> keep_loc = *feat->SetLocation().SetMix().Set().begin();
-                feat->SetLocation(*keep_loc);
-            }
-            break;
-            default:
-                // mixes with 2 or more parts can be left alone
-                break;
-            }
+    if (feat->IsSetLocation() && feat->GetLocation().IsMix())
+    {
+
+        if (feat->GetLocation().GetMix().Get().empty()) {
+            // turn empty seqlocmix into a null seq-loc
+            feat->SetLocation().SetNull();
+        }
+        else 
+        if (feat->GetLocation().GetMix().Get().size() == 1) {
+            // demote 1-part seqlocmixes to seq-loc with just that part
+            CRef<CSeq_loc> keep_loc = *feat->SetLocation().SetMix().Set().begin();
+            feat->SetLocation(*keep_loc);
         }
     }
-
     ftable.push_back(feat);
 }
+
+
+
+void CFeature_table_reader_imp::x_ProcessQualifier(const string& qual_name,
+                                                   const string& qual_val,
+                                                   const string& feat_name,
+                                                   CRef<CSeq_feat> feat, 
+                                                   TFlags flags) 
+{
+    if (NStr::IsBlank(qual_name)) {
+        return;
+    }
+
+    if (!feat) {
+        x_ProcessMsg(ILineError::eProblem_QualifierWithoutFeature, 
+                     eDiag_Warning, kEmptyStr, qual_name, qual_val);
+        return;
+    }
+
+    if (NStr::IsBlank(qual_val)) {
+        if (sc_SingleKeys.find(qual_name.c_str()) != sc_SingleKeys.end()) {
+            x_AddQualifierToFeature(feat, feat_name, qual_name, qual_val, flags);
+        }
+        else {
+            x_ProcessMsg(ILineError::eProblem_QualifierBadValue, 
+                         eDiag_Warning, kEmptyStr, qual_name);
+        }
+        return;
+    }
+
+    // else qual_name and qual_val are not blank
+    if (!x_AddQualifierToFeature(feat, feat_name, qual_name, qual_val, flags)) {
+        if (flags & CFeature_table_reader::fReportBadKey) {
+            x_ProcessMsg(ILineError::eProblem_UnrecognizedQualifierName,
+                         eDiag_Warning, feat_name, qual_name, qual_val);
+        }
+
+        if (flags & CFeature_table_reader::fKeepBadKey) {
+            x_AddGBQualToFeature(feat, qual_name, qual_val);
+        }
+    }
+}
+
 
 
 CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
@@ -3103,6 +3164,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     // This is true once this feature should not
     // have any more intervals.
     // This allows us to catch errors like the following:
+    //
     //
     //>Feature lcl|Seq1
     //1	1008	CDS
@@ -3179,14 +3241,13 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
             if ((! feat.empty ()) && start >= 0 && stop >= 0) {
 
+                // p
                 // process start - stop - feature line
 
                 x_FinishFeature(sfp, ftable);
                 x_ResetFeat( sfp, curr_feat_intervals_done );
 
                 if (x_SetupSeqFeat (sfp, feat, flags, filter)) {
-
-                   // ftable.push_back (sfp);
 
                     // figure out type of feat, and store in map for later use
                     CSeqFeatData::E_Choice eChoice = CSeqFeatData::e_not_set;
@@ -3242,11 +3303,13 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                     }
                 }
 
-            } else if ((!qual.empty())) {
-                    
-              if (!val.empty()) {
+            } else if (!NStr::IsBlank(qual)) {
+            
+              curr_feat_intervals_done = true;
+              x_ProcessQualifier(qual, val, curr_feat_name, sfp, flags);
+/*
+              if (!NStr::IsBlank(val)) {
                 // process qual - val qualifier line
-
                 // there should no more ranges for this feature
                 // (although there still can be ranges for quals, of course)
                 curr_feat_intervals_done = true;
@@ -3292,6 +3355,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                         }
                     }
                 } 
+*/
             }   
             else if (!feat.empty()) {
                 

@@ -61,6 +61,7 @@ public:
         eProblem_FeatureNameNotAllowed,
         eProblem_NoFeatureProvidedOnIntervals,
         eProblem_QualifierWithoutFeature,
+        eProblem_IncompleteFeature,
         eProblem_FeatureBadStartAndOrStop,
         eProblem_BadFeatureInterval,
         eProblem_QualifierBadValue,
