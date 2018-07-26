@@ -729,6 +729,9 @@ void CompareOldAndNew(const CAuthor& orig)
                 BOOST_CHECK(old_result.GetName().GetName().Equals(new_result->GetName().GetName())); 
                 CheckStd(old_result.GetName().GetName(), new_result->GetName().GetName());
                 break;
+            case CAuthor::TName::e_not_set:
+                BOOST_ASSERT("Author name was not set, it should be");
+                break;
         }
     } else {
         BOOST_CHECK(!old_result.IsSetName());
