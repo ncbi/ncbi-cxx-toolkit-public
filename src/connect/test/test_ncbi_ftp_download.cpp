@@ -668,6 +668,7 @@ int CTestFTPDownloadApp::Run(void)
         net_info->http_referer = 0;
     }
     ConnNetInfo_SetUserHeader(net_info, 0);
+    net_info->max_try = 0;
 
     if (!ConnNetInfo_ParseURL(net_info, url)) {
         ERR_POST(Fatal << "Cannot parse URL \"" << url << '"');
@@ -677,7 +678,6 @@ int CTestFTPDownloadApp::Run(void)
         if (NStr::strcasecmp(net_info->host, DEF_CONN_HOST) == 0) {
             strcpy(net_info->host, CONN_NCBI_FTP_HOST);
         }
-        net_info->scheme = eURL_Ftp;
     } else if (net_info->scheme != eURL_Ftp) {
         ERR_POST(Fatal << "URL scheme must be FTP (ftp://) if specified");
     }
