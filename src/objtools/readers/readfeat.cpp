@@ -3304,58 +3304,8 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
                 }
 
             } else if (!NStr::IsBlank(qual)) {
-            
               curr_feat_intervals_done = true;
               x_ProcessQualifier(qual, val, curr_feat_name, sfp, flags);
-/*
-              if (!NStr::IsBlank(val)) {
-                // process qual - val qualifier line
-                // there should no more ranges for this feature
-                // (although there still can be ranges for quals, of course)
-                curr_feat_intervals_done = true;
-                if ( !sfp ) {
-                    if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                        x_ProcessMsg( 
-                            ILineError::eProblem_QualifierWithoutFeature, 
-                            eDiag_Warning,
-                            kEmptyStr, qual, val );
-                    }
-                } else if ( !x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, flags) ) {
-
-                    // unrecognized qualifier key
-
-                    if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                        x_ProcessMsg(
-                            ILineError::eProblem_UnrecognizedQualifierName, 
-                            eDiag_Warning, curr_feat_name, qual, val );
-                    }
-
-                    if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
-                        x_AddGBQualToFeature (sfp, qual, val);
-                    }
-                }
-
-            } else { // val.empty()
-
-                // there should no more ranges for this feature
-                // (although there still can be ranges for quals, of course)
-                curr_feat_intervals_done = true;
-
-                // check for the few qualifiers that do not need a value
-                if ( !sfp ) {
-                        if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                            x_ProcessMsg(
-                                ILineError::eProblem_QualifierWithoutFeature, eDiag_Warning,
-                                kEmptyStr, qual );
-                        }
-                    } else {
-                        TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
-                        if (s_iter != sc_SingleKeys.end ()) {
-                            x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, flags);
-                        }
-                    }
-                } 
-*/
             }   
             else if (!feat.empty()) {
                 
