@@ -60,10 +60,8 @@ bool IsMappablePair(const CSeq_feat& cds, const CSeq_feat& gene)
 
     CTempString locus;
     CTempString locus_tag;
-    bool has_gene_xref = false;
     for (auto it : cds.GetXref()) {
         if (it->IsSetData() && it->GetData().IsGene()) {
-            has_gene_xref = true;
             if (it->GetData().GetGene().IsSetLocus()) {
                 if (NStr::IsBlank(locus)) {
                     locus = it->GetData().GetGene().GetLocus();
@@ -193,7 +191,6 @@ vector<CCleanup::TFeatGenePair> CCleanup::GetNormalizableGeneQualPairs(CBioseq_H
         ++f;
     }
 
-    bool any_change = false;
     for (auto copy_pair : gene_cds) {
         if (copy_pair.second.second) {
             rval.push_back({ copy_pair.second.first, copy_pair.first });
