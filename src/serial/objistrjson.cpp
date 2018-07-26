@@ -532,7 +532,7 @@ Uint8 CObjectIStreamJson::ReadUint8(void)
         if (str.empty() || !(isdigit(str[0]) || str[0] == '+')) {
             ThrowError(fFormatError, string("invalid number: ") + str);
         }
-        NStr::StringToUInt8(str);
+        return NStr::StringToUInt8(str);
     }
     return x_UseMemberDefault<Uint8>();
 }
@@ -556,6 +556,7 @@ double CObjectIStreamJson::ReadDouble(void)
         if ( *endptr != 0 ) {
             ThrowError(fFormatError, string("invalid number: ") + str);
         }
+        return result;
     }
     return x_UseMemberDefault<double>();
 }
