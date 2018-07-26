@@ -3660,8 +3660,10 @@ void CFeature_table_reader::ReadSequinFeatureTables(
         }
     }
 
+    CFeatureTableReader_imp ftable_reader(&reader, 0, pMessageListener);
     while ( !reader.AtEOF() ) {
-        CRef<CSeq_annot> annot = ReadSequinFeatureTable(reader, flags, pMessageListener, filter);
+        auto annot =  x_ReadFeatureTable(ftable_reader, flags, filter);
+        //CRef<CSeq_annot> annot = ReadSequinFeatureTable(reader, flags, pMessageListener, filter);
         if (entry.IsSeq()) { // only one place to go
             entry.SetSeq().SetAnnot().push_back(annot);
             continue;

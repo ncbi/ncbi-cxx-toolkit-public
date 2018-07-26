@@ -167,7 +167,7 @@ private:
     static CRef<CSeq_annot> x_ReadFeatureTable(CFeatureTableReader_imp& reader, 
                                                const TFlags flags,
                                                ITableFilter* filter,
-                                               const string& seqid_prefix);
+                                               const string& seqid_prefix=kEmptyStr);
 };
 
 
