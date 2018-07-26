@@ -3966,8 +3966,7 @@ inline bool s_DirCreate(const string&path, CDir::TCreateFlags flags, mode_t mode
     int res = NcbiSys_mkdir(_T_XCSTRING(path), mode);
 #endif
     if (res != 0) {
-        int x_errno = errno;
-        if (x_errno != EEXIST) {
+        if (errno != EEXIST) {
             LOG_ERROR_AND_RETURN_ERRNO(52, "CDir::Create(): Cannot create directory " + path);
         }
         // Entry with such name already exists, check its type
@@ -3976,10 +3975,10 @@ inline bool s_DirCreate(const string&path, CDir::TCreateFlags flags, mode_t mode
             LOG_ERROR_AND_RETURN(52, "CDir::Create(): Cannot create directory " + path);
         }
         if (type != CDirEntry::eDir) {
-            LOG_ERROR_AND_RETURN_NCBI(53, "CDir::Create(): Path already exist and is not a directory " + path, CNcbiError::eFileExists);
+            LOG_ERROR_AND_RETURN_NCBI(53, "CDir::Create(): Path already exist and is not a directory " + path, CNcbiError::eNotADirectory);
         }
         if (F_ISSET(flags, CDir::fCreate_ErrorIfExists)) {
-            LOG_ERROR_AND_RETURN_NCBI(54, "CDir::Create(): Directory already exist " + path, CNcbiError::eNotADirectory);
+            LOG_ERROR_AND_RETURN_NCBI(54, "CDir::Create(): Directory already exist " + path, CNcbiError::eFileExists);
         }
         if (!F_ISSET(flags, CDir::fCreate_UpdateIfExists)) {
             return true;
