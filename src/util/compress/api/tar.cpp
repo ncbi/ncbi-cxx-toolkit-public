@@ -3747,21 +3747,20 @@ bool CTar::x_ExtractSparseFile(Uint8& size, const CDirEntry* dst, bool dump)
             x_error = s_TruncateFile(dst->GetPath(), eof);
             if (x_error) {
 #ifdef NCBI_OS_MSWIN
-                TCHAR* str = NULL;
+                TCHAR* ptr = NULL;
                 DWORD  rv = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
                                           FORMAT_MESSAGE_FROM_SYSTEM     |
                                           FORMAT_MESSAGE_MAX_WIDTH_MASK  |
                                           FORMAT_MESSAGE_IGNORE_INSERTS,
                                           NULL, (DWORD) x_error,
-                                          MAKELANGID(LANG_NEUTRAL,
-                                                     SUBLANG_DEFAULT),
-                                          (LPTSTR) &str, 0, NULL);
-                if (str) {
-                    if (rv) {
-                        _ASSERT(*str);
-                        reason = string(": ") + str;
+                                          MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                                          (LPTSTR) &ptr, 0, NULL);
+                if (ptr) {
+					if (rv) {
+                        _ASSERT(*ptr);
+                        reason = string(": ") + _T_CSTRING(ptr);
                     }
-                    ::LocalFree((HLOCAL) str);
+                    ::LocalFree((HLOCAL) ptr);
                 }
                 if (reason.empty()) {
                     reason = ": Error 0x" + NStr::UIntToString(x_error, 0, 16);
