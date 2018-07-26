@@ -154,13 +154,17 @@ static bool x_GetAccountNameBySid(PSID sid, string* account, int* domatch = 0)
     }
 
     if (domatch) {
-        domain_name[domain_size] = _TX('\0');
-        string domain(_T_STDSTRING(domain_name));
-        if (*domatch != int(use)  ||  domain.empty()
-            ||  NStr::EqualNocase(domain, "builtin")
-            ||  NStr::FindNoCase(domain, " ") != NPOS
-            /*||  x_DomainIsLocalComputer(domain_name)*/) {
-            *domatch = 0;
+        if (*domatch != int(use)) {
+            *domatch  = 0;
+        } else {
+            domain_name[domain_size] = _TX('\0');
+            string domain(_T_STDSTRING(domain_name));
+            if (domain.empty()
+                ||  NStr::EqualNocase(domain, "builtin")
+                ||  NStr::FindNoCase(domain, " ") != NPOS
+                /*||  x_DomainIsLocalComputer(domain_name)*/) {
+                *domatch = 0;
+            }
         }
     }
     return true;
