@@ -1321,7 +1321,7 @@ void CCleanup::SetMrnaName(CSeq_feat& mrna, const string& protein_name)
             }
         }
     }
-    if (!used_qual || mrna.IsSetData() && mrna.GetData().IsRna() && mrna.GetData().GetRna().IsSetExt()) {
+    if (!used_qual || (mrna.IsSetData() && mrna.GetData().IsRna() && mrna.GetData().GetRna().IsSetExt())) {
         string remainder;
         mrna.SetData().SetRna().SetRnaProductName(protein_name, remainder);
     }
