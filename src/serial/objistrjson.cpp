@@ -516,13 +516,25 @@ void CObjectIStreamJson::SkipChar(void)
 Int8 CObjectIStreamJson::ReadInt8(void)
 {
     string str;
-    return x_ReadDataAndCheck(str) ? NStr::StringToInt8(str) : x_UseMemberDefault<Int8>();
+    if (x_ReadDataAndCheck(str)) {
+        if (str.empty() || !(isdigit(str[0]) || str[0] == '+' || str[0] == '-')) {
+            ThrowError(fFormatError, string("invalid number: ") + str);
+        }
+        return NStr::StringToInt8(str);
+    }
+    return x_UseMemberDefault<Int8>();
 }
 
 Uint8 CObjectIStreamJson::ReadUint8(void)
 {
     string str;
-    return x_ReadDataAndCheck(str) ? NStr::StringToUInt8(str) : x_UseMemberDefault<Uint8>();
+    if (x_ReadDataAndCheck(str)) {
+        if (str.empty() || !(isdigit(str[0]) || str[0] == '+')) {
+            ThrowError(fFormatError, string("invalid number: ") + str);
+        }
+        NStr::StringToUInt8(str);
+    }
+    return x_UseMemberDefault<Uint8>();
 }
 
 void CObjectIStreamJson::SkipSNumber(void)
@@ -537,9 +549,15 @@ void CObjectIStreamJson::SkipUNumber(void)
 
 double CObjectIStreamJson::ReadDouble(void)
 {
-    char* endptr;
     string str;
-    return x_ReadDataAndCheck(str) ? NStr::StringToDoublePosix( str.c_str(), &endptr, NStr::fDecimalPosixFinite) : x_UseMemberDefault<double>();
+    if (x_ReadDataAndCheck(str)) {
+        char* endptr = nullptr;
+        double result = NStr::StringToDoublePosix( str.c_str(), &endptr, NStr::fDecimalPosixFinite);
+        if ( *endptr != 0 ) {
+            ThrowError(fFormatError, string("invalid number: ") + str);
+        }
+    }
+    return x_UseMemberDefault<double>();
 }
 
 void CObjectIStreamJson::SkipFNumber(void)
@@ -724,7 +742,7 @@ TEnumValueType CObjectIStreamJson::ReadEnum(const CEnumeratedTypeValues& values)
     m_ExpectValue = false;
     TEnumValueType value;
     char c = SkipWhiteSpace();
-    if (c == '\"') {
+    if (c == '\"' && !values.IsInteger()) {
         value = values.FindValue( ReadValue());
     } else {
         value = (TEnumValueType)ReadInt8();
