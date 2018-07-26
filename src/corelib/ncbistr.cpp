@@ -451,15 +451,14 @@ int NStr::StringToNonNegativeInt(const CTempString str, TStringToNumFlags flags)
 class CS2N_Guard
 {
 public:
-    CS2N_Guard(NStr::TStringToNumFlags flags, bool skip_if_zero) :
+    CS2N_Guard(NStr::TStringToNumFlags, bool skip_if_zero) :
         m_NoErrno(false),     // m_NoErrno((flags & NStr::fConvErr_NoErrno) > 0),
-        m_NoThrow((flags & NStr::fConvErr_NoThrow) > 0), 
         m_SkipIfZero(skip_if_zero), 
         m_Errno(0)
-    {}
+    { }
     ~CS2N_Guard(void)  {
         if (!m_NoErrno) {
-            // Does the guard is used against the code that already set an errno?
+            // Is the guard used against the code that already set an errno?
             // If the error code is not defined here, do not even try to check/set it.
             if (!m_SkipIfZero  ||  m_Errno) {
                 errno = m_Errno;
@@ -467,10 +466,9 @@ public:
         }
     }
     void Set(int errcode)    { m_Errno = errcode; }
-    int  Errno(void) const   { return m_Errno;}
+    int  Errno(void) const   { return m_Errno;    }
     // Says that we want to throw an exception, do not set errno in this case
     void Throw(void)         { m_SkipIfZero = true; m_Errno = 0; }
-    bool ToThrow(void) const { return !m_NoThrow; }
     // Auxiliary function to create a message about conversion error 
     // to specified type. It doesn't have any relation to the guard itself,
     // but can help to save on the amount of code in calling macro.
@@ -478,7 +476,6 @@ public:
 
 private:
     bool m_NoErrno;    // do not set errno at all
-    bool m_NoThrow;    // do not throw an exception if TRUE
     bool m_SkipIfZero; // do not set errno if TRUE and m_Errno == 0
     int  m_Errno;      // errno value to set
 };
@@ -499,29 +496,29 @@ string CS2N_Guard::Message(const CTempString str, const char* to_type, const CTe
 }
 
 /// Regular guard
-#define S2N_CONVERT_GUARD(flags)   \
+#define S2N_CONVERT_GUARD(flags)                \
     CS2N_Guard err_guard(flags, false)
 
 // This guard can be used against the code that already set an errno.
 // If the error code is not defined, the guard not even try to check/set it (even to zero).
-#define S2N_CONVERT_GUARD_EX(flags)   \
+#define S2N_CONVERT_GUARD_EX(flags)             \
     CS2N_Guard err_guard(flags, true)
 
 #define S2N_CONVERT_ERROR(to_type, msg, errcode, pos)                 \
     do {                                                              \
         err_guard.Set(errcode);                                       \
-        if ( err_guard.ToThrow() ) {                                  \
+        if ( !(flags & NStr::fConvErr_NoThrow) ) {                    \
             err_guard.Throw();                                        \
             NCBI_THROW2(CStringException, eConvert,                   \
                         err_guard.Message(str, #to_type, msg), pos);  \
         } else {                                                      \
 /* \
             if (flags & NStr::fConvErr_NoErrno) {                     \
-                / Error, but forced to return 0 /                   \
+                / Error, but forced to return 0 /                     \
                 return 0;                                             \
             }                                                         \
 */ \
-            if (flags & NStr::fConvErr_NoErrMessage) {              \
+            if (flags & NStr::fConvErr_NoErrMessage) {                \
                 CNcbiError::SetErrno(err_guard.Errno());              \
             } else {                                                  \
                 CNcbiError::SetErrno(err_guard.Errno(),               \
@@ -539,7 +536,7 @@ string CS2N_Guard::Message(const CTempString str, const char* to_type, const CTe
     S2N_CONVERT_ERROR(to_type, msg, EINVAL, pos)
 
 #define S2N_CONVERT_ERROR_OVERFLOW(to_type)                           \
-    S2N_CONVERT_ERROR(to_type, "overflow",ERANGE, pos)
+    S2N_CONVERT_ERROR(to_type, "overflow", ERANGE, pos)
 
 #define CHECK_ENDPTR(to_type)                                         \
     if ( str[pos] ) {                                                 \
@@ -577,7 +574,7 @@ int NStr::StringToInt(const CTempString str, TStringToNumFlags flags, int base)
 {
     S2N_CONVERT_GUARD_EX(flags);
     Int8 value = StringToInt8(str, flags, base);
-    if ( value < kMin_Int  ||  value > kMax_Int) {
+    if ( value < kMin_Int  ||  value > kMax_Int ) {
         S2N_CONVERT_ERROR(int, "overflow", ERANGE, 0);
     }
     return (int) value;
@@ -600,7 +597,7 @@ long NStr::StringToLong(const CTempString str, TStringToNumFlags flags, int base
 {
     S2N_CONVERT_GUARD_EX(flags);
     Int8 value = StringToInt8(str, flags, base);
-    if ( value < kMin_Long  ||  value > kMax_Long) {
+    if ( value < kMin_Long  ||  value > kMax_Long ) {
         S2N_CONVERT_ERROR(long, "overflow", ERANGE, 0);
     }
     return (long) value;
@@ -643,7 +640,7 @@ bool s_IsGoodCharForRadix(char ch, int base, int* value = 0)
     if (isdigit((unsigned char) ch)) {
         delta = ch - '0';
     } else {
-        ch = (char)tolower((unsigned char) ch);
+        ch = (char) tolower((unsigned char) ch);
         delta = ch - 'a' + 10;
     }
     if ( value ) {
@@ -678,17 +675,17 @@ bool s_IsDecimalPoint(unsigned char ch, NStr::TStringToNumFlags  flags)
 }
 
 static inline
-void s_SkipAllowedSymbols(const CTempString  str,
-                          SIZE_TYPE&         pos,
-                          ESkipMode          skip_mode,
-                          NStr::TStringToNumFlags  flags)
+void s_SkipAllowedSymbols(const CTempString       str,
+                          SIZE_TYPE&              pos,
+                          ESkipMode               skip_mode,
+                          NStr::TStringToNumFlags flags)
 {
     if (skip_mode == eSkipAll) {
         pos = str.length();
         return;
     }
 
-    for ( SIZE_TYPE len = str.length(); pos < len; ++pos ) {
+    for ( SIZE_TYPE len = str.length();  pos < len;  ++pos ) {
         unsigned char ch = str[pos];
         if ( isdigit(ch)  ||  ch == '+' ||  ch == '-'  ||  s_IsDecimalPoint(ch,flags) ) {
             break;
@@ -706,7 +703,7 @@ void s_SkipAllowedSymbols(const CTempString  str,
 static inline
 bool s_CheckRadix(const CTempString str, SIZE_TYPE& pos, int& base)
 {
-    if ( base == 10 || base == 8 ) {
+    if ( base == 10  ||  base == 8 ) {
         // shortcut for most frequent case
         return true;
     }
