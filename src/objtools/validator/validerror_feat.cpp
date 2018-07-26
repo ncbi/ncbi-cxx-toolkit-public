@@ -164,14 +164,6 @@ void CValidError_feat::ValidateSeqFeat(
 }
 
 
-void CValidError_feat::ValidateSeqFeatWithParent(const CSeq_feat& feat, const CTSE_Handle& tse)
-{
-    x_ValidateSeqFeatExceptXref(feat);
-    ValidateSeqFeatXref(feat, tse);
-
-}
-
-
 bool CValidError_feat::GetTSACDSOnMinusStrandErrors(const CSeq_feat& feat, const CBioseq& seq)
 {
     bool rval = false;
@@ -248,23 +240,6 @@ void CValidError_feat::ValidateSeqFeatContext(const CSeq_feat& feat, const CBios
 // private member functions:
 
 //#define TEST_LONGTIME
-
-bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat, CScope *scope)
-{
-    const CGene_ref* grp = feat.GetGeneXref();
-    if ( grp  && CSingleFeatValidator::s_IsPseudo(*grp)) {
-        return true;
-    }
-
-    // check overlapping gene
-    CConstRef<CSeq_feat> overlap = m_GeneCache.GetGeneFromCache(&feat, *m_Scope);
-    if ( overlap ) {
-        return CSingleFeatValidator::s_IsPseudo(*overlap);
-    }
-
-    return false;
-}
-
 
 static bool s_EqualGene_ref(const CGene_ref& genomic, const CGene_ref& mrna)
 {
@@ -425,22 +400,6 @@ bool s_IsAllDigitsOrPeriods (string str)
 }
 
 
-bool s_IsAllDigits (string str)
-{
-    if (NStr::IsBlank(str)) {
-        return false;
-    }
-    bool rval = true;
-    ITERATE(string, it, str) {
-        if (!isdigit(*it)) {
-            rval = false;
-            break;
-        }
-    }
-    return rval;
-}
-
-
 CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccession (string accession, bool fetch_accession, bool is_similar_to)
 {
     if (NStr::IsBlank (accession)) {
@@ -474,7 +433,7 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
             } 
             if (s_IsSraPrefix (remainder) && s_IsAllDigitsOrPeriods(remainder.substr(3))) {
                 // SRA
-            } else if (NStr::StartsWith(remainder, "MAP_") && s_IsAllDigits(remainder.substr(4))) {
+            } else if (NStr::StartsWith(remainder, "MAP_") && s_IsAllDigitsOrPeriods(remainder.substr(4))) {
             } else {
                 string ver = "";
                 int acc_code = ValidateAccessionFormat (remainder);
@@ -657,6 +616,8 @@ void CValidError_feat::ValidatemRNAGene (const CSeq_feat &feat)
 }
 
 
+//LCOV_EXCL_START
+//not used by asn_validate but may be needed by other applications
 bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
 {
     if (!feat.IsSetData() || !feat.GetData().IsCdregion() 
@@ -705,6 +666,23 @@ bool CValidError_feat::DoesCDSHaveShortIntrons(const CSeq_feat& feat)
 }
 
 
+bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat, CScope *scope)
+{
+    const CGene_ref* grp = feat.GetGeneXref();
+    if ( grp  && CSingleFeatValidator::s_IsPseudo(*grp)) {
+        return true;
+    }
+
+    // check overlapping gene
+    CConstRef<CSeq_feat> overlap = m_GeneCache.GetGeneFromCache(&feat, *m_Scope);
+    if ( overlap ) {
+        return CSingleFeatValidator::s_IsPseudo(*overlap);
+    }
+
+    return false;
+}
+
+
 bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
 {
     if (!feat.IsSetData() 
@@ -742,6 +720,7 @@ bool CValidError_feat::IsIntronShort(const CSeq_feat& feat)
     }
     return is_short;
 }
+//LCOV_EXCL_STOP
 
 
 bool 
@@ -884,66 +863,6 @@ bool s_HasId(const CSeq_feat& feat, const CSeqFeatXref::TId::TLocal& id)
 }
 
 
-void CValidError_feat::ValidateSeqFeatXref(const CSeqFeatXref& xref, const CSeq_feat& feat, const CTSE_Handle& tse)
-{
-    if (!xref.IsSetId() && !xref.IsSetData()) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefProblem,
-            "SeqFeatXref with no id or data field", feat);
-    } else if (xref.IsSetId()) {
-        if (xref.GetId().IsLocal()) {
-            vector<CConstRef<CSeq_feat> > far_feats;
-            if (m_Imp.IsStandaloneAnnot()) {
-                for (auto it = m_Imp.GetSeqAnnot()->GetData().GetFtable().begin(); it != m_Imp.GetSeqAnnot()->GetData().GetFtable().end(); it++) {
-                    if (s_HasId(**it, xref.GetId().GetLocal())) {
-                        far_feats.push_back(*it);
-                    }
-                }
-            } else {
-                CTSE_Handle::TSeq_feat_Handles far_handles = tse.GetFeaturesWithId(CSeqFeatData::eSubtype_any, xref.GetId().GetLocal());
-                for (auto it = far_handles.begin(); it != far_handles.end(); it++) {
-                    far_feats.push_back(it->GetSeq_feat());
-                }
-            }
-            if (far_feats.empty()) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefFeatureMissing,
-                    "Cross-referenced feature cannot be found",
-                    feat);
-            } else {
-                for (auto ff = far_feats.begin(); ff != far_feats.end(); ff++) {
-                    ValidateOneFeatXrefPair(feat, **ff, xref);
-                    if (xref.IsSetData()) {
-                        // Check that feature with ID matches data
-                        if (xref.GetData().Which() != (*ff)->GetData().Which()) {
-                            PostErr(eDiag_Error, eErr_SEQ_FEAT_SeqFeatXrefProblem,
-                                "SeqFeatXref contains both id and data, data type conflicts with data on feature with id",
-                                feat);
-                        }
-                    }
-                }
-            }
-        } else {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefFeatureMissing,
-                "Cross-referenced feature cannot be found",
-                feat);
-        }
-    }
-    if (xref.IsSetData() && xref.GetData().IsGene() && feat.GetData().IsGene()) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryGeneXref,
-            "Gene feature has gene cross-reference",
-            feat);
-    }
-
-}
-
-
-void CValidError_feat::ValidateSeqFeatXref(const CSeq_feat& feat, const CTSE_Handle& tse)
-{
-    for (auto it = feat.GetXref().begin(); it != feat.GetXref().end(); it++) {
-        ValidateSeqFeatXref(**it, feat, tse);
-    }
-}
-
-
 void CValidError_feat::ValidateSeqFeatXref(const CSeq_feat& feat)
 {
     if (!feat.IsSetXref()) {
@@ -1008,23 +927,6 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
 
 // refactoring functions start
 // validator should not call if unclassified except
-
-vector < CConstRef <CSeq_feat> > GetFeaturesWithLabel (CBioseq_Handle bsh, string label, CScope * scope)
-{
-    vector < CConstRef <CSeq_feat> > feat_list;
-    string feat_label;
-
-    for (CFeat_CI it(bsh); it; ++it) {
-        feature::GetLabel(it->GetOriginalFeature(), &feat_label, feature::fFGL_Content, scope);
-        if (NStr::Equal(label, feat_label)) {
-            const CSeq_feat& f = it->GetOriginalFeature();
-            CConstRef <CSeq_feat> r(&f);
-            feat_list.push_back (r);
-        }
-    }
-    return feat_list;
-}
-
 
 bool CValidError_feat::x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const string& key)
 {

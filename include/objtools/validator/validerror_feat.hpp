@@ -116,7 +116,6 @@ public:
 
     void ValidateSeqFeat(
         const CSeq_feat& feat);
-    void ValidateSeqFeatWithParent(const CSeq_feat& feat, const CTSE_Handle& tse);
     void ValidateSeqFeatContext(const CSeq_feat& feat, const CBioseq& seq);
 
     enum EInferenceValidCode {
@@ -158,9 +157,7 @@ private:
     CBioseq_Handle x_GetCachedBsh(const CSeq_loc& loc);
 
     void ValidateSeqFeatXref(const CSeq_feat& feat);
-    void ValidateSeqFeatXref(const CSeq_feat& feat, const CTSE_Handle& tse);
     void ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq_feat& feat);
-    void ValidateSeqFeatXref(const CSeqFeatXref& xref, const CSeq_feat& feat, const CTSE_Handle& tse);
     void x_ValidateSeqFeatExceptXref(const CSeq_feat& feat);
 
     // does feat have an xref to a feature other than the one specified by id with the same subtype
