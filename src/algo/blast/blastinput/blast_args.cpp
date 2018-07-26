@@ -965,7 +965,7 @@ class CArgAllowGeneticCodeInteger : public CArgAllow
 protected:
      /// Overloaded method from CArgAllow
      virtual bool Verify(const string& value) const {
-         static int gcs[] = {1,2,3,4,5,6,9,10,11,12,13,14,15,16,21,22,23,24,25};
+         static int gcs[] = {1,2,3,4,5,6,9,10,11,12,13,14,15,16,21,22,23,24,25,26,27,28,29,30,31};
          static const set<int> genetic_codes(gcs, gcs+sizeof(gcs)/sizeof(*gcs));
          const int val = NStr::StringToInt(value);
          return (genetic_codes.find(val) != genetic_codes.end());
@@ -973,7 +973,7 @@ protected:
 
      /// Overloaded method from CArgAllow
      virtual string GetUsage(void) const {
-         return "values between: 1-6, 9-16, 21-25";
+         return "values between: 1-6, 9-16, 21-31";
      }
 };
 
