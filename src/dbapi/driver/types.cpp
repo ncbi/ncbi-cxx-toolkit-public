@@ -3077,7 +3077,8 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
         m_Body[0] = 1/*sign*/;
     }
     unsigned char* num = m_Body + s_NumericBytesPerPrec[precision - 1] - 1;
-    for (int i = 0;  *p[i];  i = 1 - i) {
+    for (int i = 0;  *p[i]  ||  p[i][1] != 10;  i = 1 - i) {
+        _ASSERT(num > m_Body);
         *num = s_Div256(p[i], p[1-i], 10);
         --num;
     }
