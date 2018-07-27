@@ -332,7 +332,8 @@ bool CCleanup::s_CleanupNameStdBC ( CName_std& name, bool fix_initials )
         }
     }
 
-    if (name.IsSetInitials() && !NStr::IsBlank(name.GetInitials()) &&
+    if (fix_initials &&
+        name.IsSetInitials() && !NStr::IsBlank(name.GetInitials()) &&
         (!name.IsSetFirst() || NStr::IsBlank(name.GetFirst()))) {
         size_t pos = NStr::Find(name.GetInitials(), ".");
         if (pos == NPOS) {
