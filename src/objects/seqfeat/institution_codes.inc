@@ -31,7 +31,6 @@
  */
 
 static const char* const kInstitutionCollectionCodeList[] = {
-"\tc\tNorwegian Culture Collection of Algae\tNIVA",
 " DZSJRP\ts\tDepartmento de Zoologia e Botanica, Universidade Estadual Paulista\t\t",
 "A\ts\tArnold Arboretum, Harvard University\t\t",
 "AA\ts\tMinistry of Science, Academy of Sciences\t\t",
@@ -758,6 +757,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BZF\ts\tForest Research and Development Center and Nature Conservation\t\t",
 "BZM\ts\tMuseum fur Naturkunde, Berlin\t\t",
 "BZT\ts\tBiological Institute Titograd\t\t",
+"c\tNorwegian Culture Collection of Algae\tNIVA",
 "C\ts\tNatural History Museum of Denmark\t\t",
 "CA\ts\tChicago Academy of Sciences\t\t",
 "CAB\tc\tYeast Collection of Department of Microbiology, Stellenbosch University\t\t",
