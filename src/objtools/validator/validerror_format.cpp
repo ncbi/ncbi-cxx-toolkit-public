@@ -62,6 +62,9 @@ USING_SCOPE(sequence);
 // *********************** CValidErrorFormat implementation **********************
 
 
+//LCOV_EXCL_START
+//used by Genome Workbench to create submitter report,
+//not used by asnvalidate
 CValidErrorFormat::CValidErrorFormat(CObjectManager& objmgr) :
     m_ObjMgr(&objmgr)
 {
@@ -567,6 +570,7 @@ vector<string> CValidErrorFormat::FormatCompleteSubmitterReport(const CValidErro
     }
     return list;
 }
+//LCOV_EXCL_STOP
 
 
 static string s_GetFeatureIdLabel (const CObject_id& object_id)
@@ -909,6 +913,8 @@ string CValidErrorFormat::GetFeatureLocationLabel(const CSeq_feat& ft, CRef<CSco
     return loc_label;
 }
 
+//LCOV_EXCL_START
+//not used
 string CValidErrorFormat::GetFeatureLabel(const CSeq_feat& ft, CRef<CScope> scope, bool suppress_context)
 {
     // Add feature part of label
@@ -941,6 +947,7 @@ string CValidErrorFormat::GetFeatureLabel(const CSeq_feat& ft, CRef<CScope> scop
     }
     return desc;
 }
+//LCOV_EXCL_STOP
 
 
 string CValidErrorFormat::GetDescriptorContent (const CSeqdesc& ds)
@@ -1093,6 +1100,8 @@ string CValidErrorFormat::GetBioseqSetLabel(const CBioseq_set& st, CRef<CScope> 
 }
 
 
+//LCOV_EXCL_START
+//not used
 string CValidErrorFormat::GetObjectLabel(const CObject& obj, const CSeq_entry& ctx, CRef<CScope> scope, bool suppress_context)
 {
     string label = "Unknown object";
@@ -1113,8 +1122,11 @@ string CValidErrorFormat::GetObjectLabel(const CObject& obj, const CSeq_entry& c
     }
     return label;
 }
+//LCOV_EXCL_STOP
 
 
+//LCOV_EXCL_START
+//added for GPIPE, not used for asnvalidate
 const string kSuppressFieldLabel = "Suppress";
 
 bool s_IsSuppressField (const CUser_field& field)
@@ -1253,8 +1265,11 @@ void CValidErrorFormat::SetSuppressionRules(const CBioseq& seq, CValidError& err
         }
     }
 }
+//LCOV_EXCL_STOP
 
 
+//LCOV_EXCL_START
+//not used by asnvalidate but may be useful for other clients of validator library
 void CValidErrorFormat::AddLocusTags(CValidError& errors, CScope& scope)
 {
     for (auto it : errors.SetErrs()) {
@@ -1295,6 +1310,7 @@ const string& CValidErrorFormat::x_GetLocusTag(const CSeq_feat& sf, CScope& scop
     }
     return *rval;
 }
+//LCOV_EXCL_STOP
 
 
 END_SCOPE(validator)
