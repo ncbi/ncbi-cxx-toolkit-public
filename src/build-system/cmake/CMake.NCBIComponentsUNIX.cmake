@@ -871,9 +871,14 @@ if(HAVE_NCBI_C)
   endforeach()
   set(NCBI_COMPONENT_NCBI_C_DEFINES HAVE_NCBI_C=1)
 else()
-  message("Component NCBI_C ERROR: ${NCBI_C_INCLUDE} not found")
   set(NCBI_COMPONENT_NCBI_C_FOUND NO)
 endif()
+
+#############################################################################
+# STACKTRACE
+set(NCBI_COMPONENT_STACKTRACE_FOUND YES)
+set(NCBI_COMPONENT_STACKTRACE_INCLUDE ${LIBBACKWARD_INCLUDE_DIR} ${LIBUNWIND_INCLUDE})
+set(NCBI_COMPONENT_STACKTRACE_LIBS ${LIBUNWIND_LIBS} ${LIBDW_LIBRARIES})
 
 #############################################################################
 # TLS

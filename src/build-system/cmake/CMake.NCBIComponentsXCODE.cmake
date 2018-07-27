@@ -91,6 +91,10 @@ endmacro()
 set(NCBI_COMPONENT_NCBI_C_FOUND NO)
 
 #############################################################################
+# STACKTRACE
+set(NCBI_COMPONENT_STACKTRACE_FOUND NO)
+
+#############################################################################
 # TLS
 if (EXISTS ${NCBI_ThirdParty_TLS}/include)
   message("TLS found at ${NCBI_ThirdParty_TLS}")

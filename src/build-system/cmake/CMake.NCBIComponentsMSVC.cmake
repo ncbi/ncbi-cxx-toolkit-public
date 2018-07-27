@@ -162,6 +162,11 @@ else()
 endif()
 
 #############################################################################
+# STACKTRACE
+set(NCBI_COMPONENT_STACKTRACE_FOUND YES)
+set(NCBI_COMPONENT_STACKTRACE_LIBS dbghelp.lib)
+
+#############################################################################
 # TLS
 if (EXISTS ${NCBI_ThirdParty_TLS}/include)
   message("TLS found at ${NCBI_ThirdParty_TLS}")
@@ -294,6 +299,10 @@ set(NCBI_COMPONENT_LAPACK_FOUND NO)
 #############################################################################
 # Sybase
 NCBI_define_component(Sybase libsybdb.lib libsybct.lib libsybblk.lib libsybcs.lib)
+if (NCBI_COMPONENT_Sybase_FOUND)
+  set(SYBASE_PATH ${NCBI_ThirdParty_Sybase}/Sybase)
+  set(SYBASE_LCL_PATH "")
+endif()
 
 #############################################################################
 # MySQL
