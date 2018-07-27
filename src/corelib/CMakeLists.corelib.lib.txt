@@ -26,7 +26,8 @@ NCBI_sources(
     ${os_src} ${cfgfile}
 )
 NCBI_disable_pch_for(ncbi_strings ${cfgfile})
-NCBI_uses_external_libraries(${ORIG_LIBS})
+NCBI_uses_external_libraries(${DL_LIBS} ${ORIG_LIBS})
+NCBI_optional_components(STACKTRACE)
 NCBI_project_watchers(vakatov)
 NCBI_end_lib()
 
