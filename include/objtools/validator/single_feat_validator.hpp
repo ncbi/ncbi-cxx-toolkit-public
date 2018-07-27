@@ -250,6 +250,8 @@ public:
 protected:
     virtual void x_ValidateExceptText(const string& text) override;
     void x_ValidateOperon();
+    void x_ValidateMultiIntervalGene();
+    bool x_AllIntervalGapsAreMobileElements();
 };
 
 

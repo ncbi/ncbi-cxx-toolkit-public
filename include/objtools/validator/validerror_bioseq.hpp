@@ -183,7 +183,6 @@ private:
     void ReportBadGenomeGap(const CBioseq& seq);
     void ValidateWGSMaster(CBioseq_Handle bsh);
     
-    void ValidateMultiIntervalGene (const CBioseq& seq);
     void ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh);
     void ValidateBadGeneOverlap(const CSeq_feat& feat);
     void x_ReportGeneOverlapError(const CSeq_feat& feat, const string& gene_label);
