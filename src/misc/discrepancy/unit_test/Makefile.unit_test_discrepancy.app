@@ -1,17 +1,17 @@
+# $Id$
 #
 # Makefile:  Makefile.unit_test_discrepancy.app
 #
-#
 
-###  BASIC PROJECT SETTINGS
+
 APP = unit_test_discrepancy
 SRC = unit_test_discrepancy
 
-CPPFLAGS = $(BOOST_INCLUDE)
+CPPFLAGS = $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
 
-LIB = xdiscrepancy test_boost
+LIB = xdiscrepancy test_boost macro xncbi
 
-LIBS = $(PCRE_LIBS)
+LIBS = $(PCRE_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 
