@@ -20,6 +20,10 @@
 #     debug
 #     sendonly
 #
+#  Checks on $NCBI_CHECK_SPEED_LEVEL environment variable during test stage.
+#  It defines maximum number of directories to run checks simultaneously.
+#  0 means no MT check, just a regualar check.
+#
 ###########################################################################
 
 
@@ -27,11 +31,18 @@
 
 # Allow to run checks in parallel
 use_mt_checks=true
-
 # Maximum number of directories to run checks simultaneously
 mt_max_dirs=3
 # Sleep timeout between checks on finished tasks (dirs)
 mt_sleeptime=30
+
+if [ -n "$NCBI_CHECK_SPEED_LEVEL" ]; then
+    if [ $NCBI_CHECK_SPEED_LEVEL -le 1 ]; then
+        use_mt_checks=false
+    else
+        mt_max_dirs=$NCBI_CHECK_SPEED_LEVEL
+    fi
+fi
 
 # The limit on the sending email size in Kbytes
 mail_limit=199
