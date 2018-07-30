@@ -35,7 +35,7 @@ endif()
 
 #set(Boost_DEBUG ON)
 find_package(Boost
-             COMPONENTS filesystem regex system
+             COMPONENTS filesystem date_time regex system
              REQUIRED)
 set(CMAKE_PREFIX_PATH ${_foo_CMAKE_PREFIX_PATH})
 
