@@ -222,7 +222,7 @@ public:
         }
 
         e = uv_tcp_bind(&m_tcp, reinterpret_cast<struct sockaddr*>(&addr_in), 0);
-        if (e != 0) {
+        if (e != 0 || errno == EADDRINUSE) {
             ss << "failed to bind socket to address/port: " << addr << ':' << port;
             EUvException::raise(ss.str(), e);
         }
