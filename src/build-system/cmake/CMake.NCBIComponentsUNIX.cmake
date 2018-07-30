@@ -118,13 +118,6 @@ include(${top_src_dir}/src/build-system/cmake/CMakeChecks.pcre.cmake)
 # Compression libraries
 include(${top_src_dir}/src/build-system/cmake/CMakeChecks.compress.cmake)
 
-
-
-############################################################################
-#
-# OS-specific settings
-include(${top_src_dir}/src/build-system/cmake/CMakeChecks.os.cmake)
-
 #################################
 # Some platform-specific system libs that can be linked eventually
 set(THREAD_LIBS   ${CMAKE_THREAD_LIBS_INIT})

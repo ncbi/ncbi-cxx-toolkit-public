@@ -9,85 +9,91 @@ set(NCBI_DEFAULT_PCH "ncbi_pch.hpp")
 
 if (NCBI_EXPERIMENTAL_CFG)
 
-  set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD 11)
  
 #----------------------------------------------------------------------------
 if (WIN32)
 
-  if (NCBI_EXPERIMENTAL_DLL)
-    set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL)
-  else()
-    set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL DebugMT ReleaseMT)
-  endif()
-  set(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}" CACHE STRING "Reset the configurations" FORCE)
+    set(NCBI_COMPILER_MSVC 1)
+    set(NCBI_COMPILER ${CMAKE_C_COMPILER_ID})
+    set(NCBI_COMPILER_VERSION ${MSVC_VERSION})
 
-  set(CMAKE_CXX_FLAGS_DEBUGDLL   "/MDd /Zi /Od /RTC1 /D_DEBUG")
-  set(CMAKE_CXX_FLAGS_DEBUGMT    "/MTd /Zi /Od /RTC1 /D_DEBUG")
-  set(CMAKE_CXX_FLAGS_RELEASEDLL "/MD  /Zi /O2 /Ob1 /DNDEBUG")
-  set(CMAKE_CXX_FLAGS_RELEASEMT  "/MT  /Zi /O2 /Ob1 /DNDEBUG")
+    if (NCBI_EXPERIMENTAL_DLL)
+        set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL)
+    else()
+        set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL DebugMT ReleaseMT)
+    endif()
+    set(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}" CACHE STRING "Reset the configurations" FORCE)
 
-  set(CMAKE_C_FLAGS_DEBUGDLL   "/MDd /Zi /Od /RTC1 /D_DEBUG")
-  set(CMAKE_C_FLAGS_DEBUGMT    "/MTd /Zi /Od /RTC1 /D_DEBUG")
-  set(CMAKE_C_FLAGS_RELEASEDLL "/MD  /Zi /O2 /Ob1 /DNDEBUG")
-  set(CMAKE_C_FLAGS_RELEASEMT  "/MT  /Zi /O2 /Ob1 /DNDEBUG")
+    set(CMAKE_CXX_FLAGS_DEBUGDLL   "/MDd /Zi /Od /RTC1 /D_DEBUG")
+    set(CMAKE_CXX_FLAGS_DEBUGMT    "/MTd /Zi /Od /RTC1 /D_DEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASEDLL "/MD  /Zi /O2 /Ob1 /DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASEMT  "/MT  /Zi /O2 /Ob1 /DNDEBUG")
 
-  set(CMAKE_EXE_LINKER_FLAGS_DEBUGDLL   "/DEBUG /INCREMENTAL:NO")
-  set(CMAKE_EXE_LINKER_FLAGS_DEBUGMT    "/DEBUG /INCREMENTAL:NO")
-  set(CMAKE_EXE_LINKER_FLAGS_RELEASEDLL "/INCREMENTAL:NO")
-  set(CMAKE_EXE_LINKER_FLAGS_RELEASEMT  "/INCREMENTAL:NO")
+    set(CMAKE_C_FLAGS_DEBUGDLL   "/MDd /Zi /Od /RTC1 /D_DEBUG")
+    set(CMAKE_C_FLAGS_DEBUGMT    "/MTd /Zi /Od /RTC1 /D_DEBUG")
+    set(CMAKE_C_FLAGS_RELEASEDLL "/MD  /Zi /O2 /Ob1 /DNDEBUG")
+    set(CMAKE_C_FLAGS_RELEASEMT  "/MT  /Zi /O2 /Ob1 /DNDEBUG")
 
-  set(CMAKE_SHARED_LINKER_FLAGS_DEBUGDLL   "/DEBUG /INCREMENTAL:NO")
-  set(CMAKE_SHARED_LINKER_FLAGS_DEBUGMT    "/DEBUG /INCREMENTAL:NO")
-  set(CMAKE_SHARED_LINKER_FLAGS_RELEASEDLL "/INCREMENTAL:NO")
-  set(CMAKE_SHARED_LINKER_FLAGS_RELEASEMT  "/INCREMENTAL:NO")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUGDLL   "/DEBUG /INCREMENTAL:NO")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUGMT    "/DEBUG /INCREMENTAL:NO")
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASEDLL "/INCREMENTAL:NO")
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASEMT  "/INCREMENTAL:NO")
 
-  add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
-  if(NCBI_EXPERIMENTAL_DLL)
-    add_definitions(-DNCBI_DLL_BUILD)
-  endif()
+    set(CMAKE_SHARED_LINKER_FLAGS_DEBUGDLL   "/DEBUG /INCREMENTAL:NO")
+    set(CMAKE_SHARED_LINKER_FLAGS_DEBUGMT    "/DEBUG /INCREMENTAL:NO")
+    set(CMAKE_SHARED_LINKER_FLAGS_RELEASEDLL "/INCREMENTAL:NO")
+    set(CMAKE_SHARED_LINKER_FLAGS_RELEASEMT  "/INCREMENTAL:NO")
 
-  set(NCBI_DEFAULT_USEPCH ON)
-  set(NCBI_DEFAULT_PCH_DEFINE "NCBI_USE_PCH")
-  set(NCBI_DEFAULT_RESOURCES "${NCBI_SRC_ROOT}/build-system/cmake/ncbi.rc")
-  set(NCBI_DEFAULT_DLLENTRY  "${NCBI_SRC_ROOT}/build-system/cmake/dll_main.cpp")
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
+    if(NCBI_EXPERIMENTAL_DLL)
+        add_definitions(-DNCBI_DLL_BUILD)
+    endif()
 
-  set(ORIG_LIBS ws2_32.lib dbghelp.lib)
-  return()
+    set(NCBI_DEFAULT_USEPCH ON)
+    set(NCBI_DEFAULT_PCH_DEFINE "NCBI_USE_PCH")
+    set(NCBI_DEFAULT_RESOURCES "${NCBI_SRC_ROOT}/build-system/cmake/ncbi.rc")
+    set(NCBI_DEFAULT_DLLENTRY  "${NCBI_SRC_ROOT}/build-system/cmake/dll_main.cpp")
+
+    set(ORIG_LIBS ws2_32.lib)
+    return()
 
 #----------------------------------------------------------------------------
 elseif (XCODE)
 
-  if (NCBI_EXPERIMENTAL_DLL)
-    set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL)
-  else()
-    set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL DebugMT ReleaseMT)
-  endif()
-  set(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}" CACHE STRING "Reset the configurations" FORCE)
+    set(NCBI_COMPILER ${CMAKE_C_COMPILER_ID})
+    set(NCBI_COMPILER_VERSION ${XCODE_VERSION})
+    if (NCBI_EXPERIMENTAL_DLL)
+        set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL)
+    else()
+        set(CMAKE_CONFIGURATION_TYPES DebugDLL ReleaseDLL DebugMT ReleaseMT)
+    endif()
+    set(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}" CACHE STRING "Reset the configurations" FORCE)
 
-  set(CMAKE_CXX_FLAGS_DEBUGDLL   "-gdwarf-4 -ggdb3 -O0 -D_DEBUG")
-  set(CMAKE_CXX_FLAGS_DEBUGMT    "-gdwarf-4 -ggdb3 -O0 -D_DEBUG")
-  set(CMAKE_CXX_FLAGS_RELEASEDLL "-gdwarf-4 -ggdb1 -O3 -DNDEBUG")
-  set(CMAKE_CXX_FLAGS_RELEASEMT  "-gdwarf-4 -ggdb1 -O3 -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_DEBUGDLL   "-gdwarf-4 -ggdb3 -O0 -D_DEBUG")
+    set(CMAKE_CXX_FLAGS_DEBUGMT    "-gdwarf-4 -ggdb3 -O0 -D_DEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASEDLL "-gdwarf-4 -ggdb1 -O3 -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASEMT  "-gdwarf-4 -ggdb1 -O3 -DNDEBUG")
 
-  set(CMAKE_C_FLAGS_DEBUGDLL   "-gdwarf-4 -ggdb3 -g -O0 -D_DEBUG")
-  set(CMAKE_C_FLAGS_DEBUGMT    "-gdwarf-4 -ggdb3 -g -O0 -D_DEBUG")
-  set(CMAKE_C_FLAGS_RELEASEDLL "-gdwarf-4 -ggdb1 -O3 -DNDEBUG")
-  set(CMAKE_C_FLAGS_RELEASEMT  "-gdwarf-4 -ggdb1 -O3 -DNDEBUG")
+    set(CMAKE_C_FLAGS_DEBUGDLL   "-gdwarf-4 -ggdb3 -g -O0 -D_DEBUG")
+    set(CMAKE_C_FLAGS_DEBUGMT    "-gdwarf-4 -ggdb3 -g -O0 -D_DEBUG")
+    set(CMAKE_C_FLAGS_RELEASEDLL "-gdwarf-4 -ggdb1 -O3 -DNDEBUG")
+    set(CMAKE_C_FLAGS_RELEASEMT  "-gdwarf-4 -ggdb1 -O3 -DNDEBUG")
 
-  set(CMAKE_EXE_LINKER_FLAGS_DEBUGDLL   "-stdlib=libc++ -framework CoreServices")
-  set(CMAKE_EXE_LINKER_FLAGS_DEBUGMT    "-stdlib=libc++ -framework CoreServices")
-  set(CMAKE_EXE_LINKER_FLAGS_RELEASEDLL "-stdlib=libc++ -framework CoreServices")
-  set(CMAKE_EXE_LINKER_FLAGS_RELEASEMT  "-stdlib=libc++ -framework CoreServices")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUGDLL   "-stdlib=libc++ -framework CoreServices")
+    set(CMAKE_EXE_LINKER_FLAGS_DEBUGMT    "-stdlib=libc++ -framework CoreServices")
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASEDLL "-stdlib=libc++ -framework CoreServices")
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASEMT  "-stdlib=libc++ -framework CoreServices")
 
-  add_definitions(-DNCBI_XCODE_BUILD)
+    add_definitions(-DNCBI_XCODE_BUILD -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64)
 
-  find_package(Threads REQUIRED)
-  if (CMAKE_USE_PTHREADS_INIT)
-    add_definitions(-D_MT -D_REENTRANT -D_THREAD_SAFE)
-    set(NCBI_POSIX_THREADS 1)
-  endif (CMAKE_USE_PTHREADS_INIT)
+    find_package(Threads REQUIRED)
+    if (CMAKE_USE_PTHREADS_INIT)
+        add_definitions(-D_MT -D_REENTRANT -D_THREAD_SAFE)
+        set(NCBI_POSIX_THREADS 1)
+    endif (CMAKE_USE_PTHREADS_INIT)
 
-  return()
+    return()
 
 #----------------------------------------------------------------------------
 else()
@@ -95,6 +101,45 @@ endif()
 
 endif()
 
+if (WIN32)
+    set(NCBI_COMPILER_MSVC 1)
+    set(NCBI_COMPILER ${CMAKE_C_COMPILER_ID})
+    set(NCBI_COMPILER_VERSION ${MSVC_VERSION})
+else()
+    set(NCBI_COMPILER ${CMAKE_C_COMPILER_ID})
+    set(NCBI_COMPILER_VERSION ${CMAKE_CXX_COMPILER_VERSION})
+    string(REPLACE "." "" NCBI_COMPILER_VERSION ${NCBI_COMPILER_VERSION})
+endif()
+
+if ("${NCBI_COMPILER}" STREQUAL "GNU")
+    set(NCBI_COMPILER_GCC 1)
+    set(NCBI_COMPILER "GCC")
+endif()
+
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+if ("${BUILD_SHARED_LIBS}" STREQUAL "")
+    set(BUILD_SHARED_LIBS OFF)
+endif()
+
+if (BUILD_SHARED_LIBS)
+    set(NCBI_DLL_BUILD 1)
+    set(NCBI_DLL_SUPPORT 1)
+endif()
+
+if (NOT buildconf)
+  set(buildconf "${CMAKE_BUILD_TYPE}MT64")
+  set(buildconf0 ${CMAKE_BUILD_TYPE})
+  set(NCBI_BUILD_TYPE "${CMAKE_BUILD_TYPE}MT64")
+endif (NOT buildconf)
+
+message(STATUS "CMake Build Type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Build shared libraries: ${BUILD_SHARED_LIBS}")
+
+# pass these back for ccache to pick up
+set(ENV{CCACHE_UMASK} 002)
+set(ENV{CCACHE_BASEDIR} ${top_src_dir})
 
 #
 # Threading libraries
@@ -207,15 +252,6 @@ set(CMAKE_C_COMPILE_OBJECT
 message(STATUS "NCBI_COMPILER_WRAPPER = ${NCBI_COMPILER_WRAPPER}")
 
 
-if ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
-    set(NCBI_COMPILER_GCC 1)
-    set(NCBI_COMPILER "GCC")
-elseif(MSVC)
-    set(NCBI_COMPILER "MSVC")
-    set(NCBI_COMPILER_GCC 0)
-endif()
-
-
 #
 # NOTE:
 # uncomment this for strict mode for library compilation
@@ -227,12 +263,6 @@ set(CMAKE_SHARED_LINKER_FLAGS_ALLOW_UNDEFINED "${CMAKE_SHARED_LINKER_FLAGS}")
 if ((NOT DEFINED ${APPLE}) OR (NOT ${APPLE}))
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
 endif ()
-
-
-if (BUILD_SHARED_LIBS)
-    set(NCBI_DLL_BUILD 1)
-    set(NCBI_DLL_SUPPORT 1)
-endif()
 
 
 # Establishing sane RPATH definitions

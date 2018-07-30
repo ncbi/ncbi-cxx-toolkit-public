@@ -91,47 +91,8 @@ endmacro(add_subdirectory_optional)
 
 ##############################################################################
 ##
-## Macros for woring with 'datatool'
+## Macros for working with 'datatool'
 ##
-
-##############################################################################
-##
-## Parse the module spec file, whcih includes definitions of how to build
-## datatool-derived code
-##
-
-
-if (WIN32)
-    set(NCBI_DATATOOL_BASE "//snowman/win-coremake/App/Ncbi/cppcore/datatool/msvc")
-else()
-    #FIXME: Not just Linux!
-    # However, we only use CMake on Linux for now, so ok to hard code
-    set(NCBI_DATATOOL_BASE "/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool/Linux64")
-endif()
-
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../src/build-system/datatool_version.txt")
-    FILE(READ "${CMAKE_CURRENT_SOURCE_DIR}/../src/build-system/datatool_version.txt" _datatool_version)
-    string(REGEX MATCH "[0-9][0-9.]*[0-9]" _datatool_version "${_datatool_version}")
-else()
-    set(_datatool_version "2.17.0")
-    message(WARNING "Failed to find spec file for datatool (${CMAKE_CURRENT_SOURCE_DIR}/../src/build-system/datatool_version.txt), defaulting to version ${_datatool_version})")
-endif()
-
-message(STATUS "Datatool version required by software: ${_datatool_version}")
-if (WIN32)
-    set(NCBI_DATATOOL_BIN "datatool.exe")
-else()
-    set(NCBI_DATATOOL_BIN "datatool")
-endif()
-
-if (EXISTS "${NCBI_DATATOOL_BASE}/${_datatool_version}/${NCBI_DATATOOL_BIN}")
-    set (NCBI_DATATOOL "${NCBI_DATATOOL_BASE}/${_datatool_version}/${NCBI_DATATOOL_BIN}")
-    message(STATUS "Datatool location: ${NCBI_DATATOOL}")
-else()
-    set (NCBI_DATATOOL $<TARGET_FILE:datatool-app>)
-    message(STATUS "Datatool location: <locally compiled>")
-endif()
-
 
 
 macro( ReadModuleSpec MODULE_DEFS_FILE )

@@ -44,3 +44,6 @@
 /* #undef USE_LOCAL_PCRE */
 /* #undef USE_LOCAL_ZLIB */
 
+#define NCBI_SIGNATURE \
+  "@NCBI_SIGNATURE@"
+

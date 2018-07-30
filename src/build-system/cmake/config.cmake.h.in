@@ -58,10 +58,10 @@
 #define HAVE_BOOST_REGEX 1
 
 /* Define to 1 if the `Boost.Spirit' headers are available. */
-#define HAVE_BOOST_SPIRIT 1
+#cmakedefine HAVE_BOOST_SPIRIT 1
 
 /* Define to 1 if the `Boost.Test' libraries are available. */
-#define HAVE_BOOST_TEST 1
+#cmakedefine HAVE_BOOST_TEST 1
 
 /* Define to 1 if the `Boost.Threads' library is available. */
 #define HAVE_BOOST_THREAD 1
@@ -274,10 +274,10 @@
 #define HAVE_LIBEXPAT 1
 
 /* Define to 1 if libexslt is available. */
-#define HAVE_LIBEXSLT 1
+#cmakedefine HAVE_LIBEXSLT 1
 
 /* Define to 1 if FastCGI libraries are available. */
-#define HAVE_LIBFASTCGI 1
+#cmakedefine HAVE_LIBFASTCGI 1
 
 /* Define to 1 if FreeTDS libraries are available. */
 #define HAVE_LIBFTDS 1
@@ -302,7 +302,7 @@
 /* #undef HAVE_LIBGLUT */
 
 /* Define to 1 if libgnutls is available. */
-#define HAVE_LIBGNUTLS 1
+#cmakedefine HAVE_LIBGNUTLS 1
 
 /* Define to 1 if libgsoapssl++ is available. */
 #undef HAVE_LIBGSOAP
@@ -325,7 +325,7 @@
 /* #undef HAVE_LIBKSTAT */
 
 /* Define to 1 if liblzo2 is available. */
-#define HAVE_LIBLZO 1
+#cmakedefine HAVE_LIBLZO 1
 
 /* Define to 1 if libmagic is available. */
 #define HAVE_LIBMAGIC 1
@@ -372,7 +372,7 @@
 #define HAVE_LIBSP 1
 
 /* Define to 1 if libsqlite3 is available. */
-#define HAVE_LIBSQLITE3 1
+#cmakedefine HAVE_LIBSQLITE3 1
 
 /* Define to 1 if the NCBI SSS DB library is available. */
 /* #undef HAVE_LIBSSSDB */
@@ -393,13 +393,13 @@
 #define HAVE_LIBUNGIF 1
 
 /* Define to 1 if libxml2 is available. */
-#define HAVE_LIBXML 1
+#cmakedefine HAVE_LIBXML 1
 
 /* Define to 1 if libXpm is available. */
 #define HAVE_LIBXPM 1
 
 /* Define to 1 if libxslt is available. */
-#define HAVE_LIBXSLT 1
+#cmakedefine HAVE_LIBXSLT 1
 
 /* Define to 1 if libz is available. */
 #define HAVE_LIBZ 1
@@ -514,7 +514,7 @@
 #cmakedefine HAVE_PUTENV 1
 
 /* Define to 1 if Python libraries are available. */
-#define HAVE_PYTHON 1
+#cmakedefine HAVE_PYTHON 1
 
 /* Define to 1 if Python 2.5 libraries are available. */
 #define HAVE_PYTHON25 1
@@ -829,7 +829,7 @@
 /* #undef NCBI_COMPILER_UNKNOWN */
 
 /* Compiler version as three-digit integer */
-#define NCBI_COMPILER_VERSION 401
+#cmakedefine NCBI_COMPILER_VERSION @NCBI_COMPILER_VERSION@
 
 /* Compiler name */
 /* #undef NCBI_COMPILER_VISUALAGE */
