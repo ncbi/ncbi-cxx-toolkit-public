@@ -96,6 +96,8 @@ const char *  CPubseqGatewayException::GetErrCodeString(void) const
             return "eIterNoPostIncrement";
         case eCannotUpdateDb:
             return "eCannotUpdateDb";
+        case eInvalidRequest:
+            return "eInvalidRequest";
         default:
             return CException::GetErrCodeString();
     }

@@ -69,7 +69,8 @@ public:
         eIterCannotForward,
         eIterAlreadyReachedEnd,
         eIterNoPostIncrement,
-        eCannotUpdateDb
+        eCannotUpdateDb,
+        eInvalidRequest
     };
 
     virtual const char *  GetErrCodeString(void) const;

@@ -40,12 +40,14 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
+#include <objtools/pubseq_gateway/cache/psg_cache.hpp>
 
 #include "pending_operation.hpp"
 #include "http_server_transport.hpp"
 #include "pubseq_gateway_version.hpp"
 #include "pubseq_gateway_stat.hpp"
 #include "pubseq_gateway_utils.hpp"
+#include "resolver_handler.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -59,7 +61,7 @@ public:
 
     virtual void Init(void);
     void ParseArgs(void);
-    void OpenDb(bool  initialize, bool  readonly);
+    void OpenCache();
     void OpenCass(void);
     void CloseCass(void);
     bool SatToSatName(size_t  sat, string &  sat_name);
@@ -76,6 +78,8 @@ public:
 
     template<typename P>
     int OnBadURL(HST::CHttpRequest &  req, HST::CHttpReply<P> &  resp);
+
+    int OnResolve(HST::CHttpRequest &  req, HST::CHttpReply<CPendingOperation> &  resp);
 
     template<typename P>
     int OnGet(HST::CHttpRequest &  req, HST::CHttpReply<P> &  resp);
@@ -137,13 +141,18 @@ private:
     int x_PopulateSatToKeyspaceMap(void);
 
 private:
-    string                              m_DbPath;
-    vector<string>                      m_SatNames;
-
     unsigned short                      m_HttpPort;
     unsigned short                      m_HttpWorkers;
     unsigned int                        m_ListenerBacklog;
     unsigned short                      m_TcpMaxConn;
+
+    string                              m_BioseqInfoCachePath;
+    string                              m_Si2CsiCachePath;
+    string                              m_BlobPropCachePath;
+
+    unique_ptr<CPubseqGatewayCache>     m_PsgCache;
+
+    vector<string>                      m_SatNames;
 
     shared_ptr<CCassConnection>         m_CassConnection;
     shared_ptr<CCassConnectionFactory>  m_CassConnectionFactory;
@@ -214,7 +223,6 @@ int CPubseqGatewayApp::OnBadURL(HST::CHttpRequest &  req,
     x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
     return 0;
 }
-
 
 template<typename P>
 int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,

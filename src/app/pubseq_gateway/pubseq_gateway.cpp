@@ -112,7 +112,6 @@ void CPubseqGatewayApp::ParseArgs(void)
                    "file. The port must be provided to run the server. "
                    "Exiting.");
 
-    m_DbPath = registry.GetString("LMDB_CACHE", "dbfile", "");
     m_HttpPort = registry.GetInt("SERVER", "port", 0);
     m_HttpWorkers = registry.GetInt("SERVER", "workers",
                                     kWorkersDefault);
@@ -132,20 +131,21 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_CassConnectionFactory->LoadConfig(registry, "");
     m_CassConnectionFactory->SetLogging(GetDiagPostLevel());
 
+    m_BioseqInfoCachePath = registry.GetString("LMDB_CACHE", "bioseq_info_file", "");
+    m_Si2CsiCachePath = registry.GetString("LMDB_CACHE", "si2csi_file", "");
+    m_BlobPropCachePath = registry.GetString("LMDB_CACHE", "blob_prop_file", "");
+
     // It throws an exception in case of inability to start
     x_ValidateArgs();
 }
 
 
-void CPubseqGatewayApp::OpenDb(bool  initialize, bool  readonly)
+void CPubseqGatewayApp::OpenCache()
 {
     // NB. It was decided that the configuration may ommit the cache file path.
     // In this case the server should not use cache at all.
-    if (m_DbPath.empty())
-        return;
-
-//    m_Db.reset(new CAccVerCacheDB());
-//    m_Db->Open(m_DbPath, initialize, readonly);
+    m_PsgCache.reset(new CPubseqGatewayCache(m_BioseqInfoCachePath, m_Si2CsiCachePath, m_BlobPropCachePath));
+    m_PsgCache->Open(m_SatNames);
 }
 
 
@@ -196,16 +196,6 @@ int CPubseqGatewayApp::Run(void)
     }
 
     try {
-        OpenDb(false, true);
-    } catch (const exception &  exc) {
-        ERR_POST(Critical << exc.what());
-        return 1;
-    } catch (...) {
-        ERR_POST(Critical << "Unknown opening LMDB cache error");
-        return 1;
-    }
-
-    try {
         OpenCass();
     } catch (const exception &  exc) {
         ERR_POST(Critical << exc.what());
@@ -219,9 +209,26 @@ int CPubseqGatewayApp::Run(void)
     if (ret != 0)
         return ret;
 
+    try {
+        OpenCache();
+    } catch (const exception &  exc) {
+        ERR_POST(Critical << exc.what());
+        return 1;
+    } catch (...) {
+        ERR_POST(Critical << "Unknown opening LMDB cache error");
+        return 1;
+    }
+
     vector<HST::CHttpHandler<CPendingOperation>>    http_handler;
     HST::CHttpGetParser                             get_parser;
 
+    http_handler.emplace_back(
+            "/ID/resolve/bioseq_info",
+            [this](HST::CHttpRequest &  req,
+                   HST::CHttpReply<CPendingOperation> &  resp)->int
+            {
+                return OnResolve(req, resp);
+            }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ID/getblob",
             [this](HST::CHttpRequest &  req,
@@ -235,7 +242,7 @@ int CPubseqGatewayApp::Run(void)
                    HST::CHttpReply<CPendingOperation> &  resp)->int
             {
                 return OnGet(req, resp);
-            }, &get_parser, nullptr);
+            }, &get_parser, nullptr);            
     http_handler.emplace_back(
             "/ADMIN/config",
             [this](HST::CHttpRequest &  req,
@@ -285,6 +292,70 @@ int CPubseqGatewayApp::Run(void)
     return 0;
 }
 
+int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req, HST::CHttpReply<CPendingOperation> &  resp)
+{
+    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+    SRequestParameter   seq_id_param = x_GetParam(req, "seq_id");
+    if (!seq_id_param.m_Found) {
+        string      message = "Missing the 'seq_id' parameter";
+
+        m_ErrorCounters.IncInsufficientArguments();
+        x_SendMessageAndCompletionChunks(resp, message,
+                                         CRequestStatus::e400_BadRequest,
+                                         eMissingParameter, eDiag_Error);
+
+        ERR_POST(Warning << message);
+        x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+        return 0;
+    }
+
+    SRequestParameter   seq_id_type_param = x_GetParam(req, "seq_id_type");
+    SRequestParameter   id_type_param     = x_GetParam(req, "id_type");
+    SRequestParameter   fmt_param         = x_GetParam(req, "fmt");
+    int                 seq_id_type = -1;
+    int                 id_type = -1;
+
+    if (seq_id_type_param.m_Found) {
+        string err_msg;
+        if (!x_ConvertIntParameter("seq_id_type", seq_id_type_param.m_Value,
+                                   seq_id_type, err_msg)) {
+            m_ErrorCounters.IncMalformedArguments();
+            x_SendMessageAndCompletionChunks(resp, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             eMalformedParameter, eDiag_Error);
+
+            ERR_POST(Warning << err_msg);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+    }
+    if (id_type_param.m_Found) {
+        string err_msg;
+        if (!x_ConvertIntParameter("id_type", id_type_param.m_Value,
+                                   id_type, err_msg)) {
+            m_ErrorCounters.IncMalformedArguments();
+            x_SendMessageAndCompletionChunks(resp, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             eMalformedParameter, eDiag_Error);
+
+            ERR_POST(Warning << err_msg);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+    }
+
+    TRslvIncludeData  include_data_flags = 0;
+
+    CResolverHandler(resp, SResolverRequst(seq_id_param.m_Value,
+                                           seq_id_type, seq_id_type_param.m_Found,
+                                           id_type, id_type_param.m_Found,
+                                           include_data_flags),
+                     m_CassConnection, m_TimeoutMs, m_MaxRetries,
+                     m_PsgCache.get(),
+                     context);
+
+    return 0;
+}
 
 
 CPubseqGatewayApp *  CPubseqGatewayApp::GetInstance(void)
@@ -321,9 +392,15 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
                    "be supplied for the server to start");
     }
 
-    if (m_DbPath.empty())
-        ERR_POST(Warning << "[LMDB_CACHE]/dbfile is not found in the ini file."
-                            " No cache will be used.");
+    if (m_BioseqInfoCachePath.empty())
+        ERR_POST(Warning << "[LMDB_CACHE]/bioseq_info_file is not found in the ini file."
+                            " Bioseq_info cache will not be used.");
+    if (m_Si2CsiCachePath.empty())
+        ERR_POST(Warning << "[LMDB_CACHE]/si2csi_file is not found in the ini file."
+                            " Si2csi cache will not be used.");
+    if (m_BlobPropCachePath.empty())
+        ERR_POST(Warning << "[LMDB_CACHE]/blob_prop_file is not found in the ini file."
+                            " Blob_prop cache will be used.");
 
     if (m_HttpWorkers < kWorkersMin || m_HttpWorkers > kWorkersMax) {
         string  err_msg =
