@@ -178,7 +178,7 @@ map<char, list<char>> s_IUPACmap
 }
 
 
-class /* NCBI_XOBJREAD_EXPORT */ CFeatureTableReader_imp
+class /* NCBI_XOBJREAD_EXPORT */ CFeatureTableReader_Imp
 {
 public:
     enum EQual {
@@ -297,9 +297,9 @@ public:
     using TFtable = CSeq_annot::C_Data::TFtable;
 
     // constructor
-    CFeatureTableReader_imp(ILineReader* reader, unsigned int line_num, ILineErrorListener* pMessageListener);
+    CFeatureTableReader_Imp(ILineReader* reader, unsigned int line_num, ILineErrorListener* pMessageListener);
     // destructor
-    ~CFeatureTableReader_imp(void);
+    ~CFeatureTableReader_Imp(void);
 
     // read 5-column feature table and return Seq-annot
     CRef<CSeq_annot> ReadSequinFeatureTable (const string& seqid,
@@ -342,8 +342,8 @@ public:
 private:
 
     // Prohibit copy constructor and assignment operator
-    CFeatureTableReader_imp(const CFeatureTableReader_imp& value);
-    CFeatureTableReader_imp& operator=(const CFeatureTableReader_imp& value);
+    CFeatureTableReader_Imp(const CFeatureTableReader_Imp& value);
+    CFeatureTableReader_Imp& operator=(const CFeatureTableReader_Imp& value);
 
     void x_InitId(const string& seq_id, const TFlags flags);
     // returns true if parsed (otherwise, out_offset is left unchanged)
@@ -491,126 +491,126 @@ private:
 };
 
 
-typedef SStaticPair<const char *, CFeatureTableReader_imp::EQual> TQualKey;
+typedef SStaticPair<const char *, CFeatureTableReader_Imp::EQual> TQualKey;
 
 static const TQualKey qual_key_to_subtype [] = {
-    {  "EC_number",            CFeatureTableReader_imp::eQual_EC_number             },
-    {  "PCR_conditions",       CFeatureTableReader_imp::eQual_PCR_conditions        },
-    {  "PubMed",               CFeatureTableReader_imp::eQual_PubMed                },
-    {  "STS",                  CFeatureTableReader_imp::eQual_STS                   },
-    {  "allele",               CFeatureTableReader_imp::eQual_allele                },
-    {  "anticodon",            CFeatureTableReader_imp::eQual_anticodon             },
-    {  "bac_ends",             CFeatureTableReader_imp::eQual_bac_ends              },
-    {  "bond_type",            CFeatureTableReader_imp::eQual_bond_type             },
-    {  "bound_moiety",         CFeatureTableReader_imp::eQual_bound_moiety          },
-    {  "chrcnt",               CFeatureTableReader_imp::eQual_chrcnt                },
-    {  "citation",             CFeatureTableReader_imp::eQual_citation              },
-    {  "clone",                CFeatureTableReader_imp::eQual_clone                 },
-    {  "clone_id",             CFeatureTableReader_imp::eQual_clone_id              },
-    {  "codon_recognized",     CFeatureTableReader_imp::eQual_codon_recognized      },
-    {  "codon_start",          CFeatureTableReader_imp::eQual_codon_start           },
-    {  "codons_recognized",    CFeatureTableReader_imp::eQual_codon_recognized      },
-    {  "compare",              CFeatureTableReader_imp::eQual_compare               },
-    {  "cons_splice",          CFeatureTableReader_imp::eQual_cons_splice           },
-    {  "ctgcnt",               CFeatureTableReader_imp::eQual_ctgcnt                },
-    {  "cyt_map",              CFeatureTableReader_imp::eQual_cyt_map               },
-    {  "db_xref",              CFeatureTableReader_imp::eQual_db_xref               },
-    {  "direction",            CFeatureTableReader_imp::eQual_direction             },
-    {  "estimated_length",     CFeatureTableReader_imp::eQual_estimated_length      },
-    {  "evidence",             CFeatureTableReader_imp::eQual_evidence              },
-    {  "exception",            CFeatureTableReader_imp::eQual_exception             },
-    {  "experiment",           CFeatureTableReader_imp::eQual_experiment            },
-    {  "frequency",            CFeatureTableReader_imp::eQual_frequency             },
-    {  "function",             CFeatureTableReader_imp::eQual_function              },
-    {  "gap_type",             CFeatureTableReader_imp::eQual_gap_type              },
-    {  "gen_map",              CFeatureTableReader_imp::eQual_gen_map               },
-    {  "gene",                 CFeatureTableReader_imp::eQual_gene                  },
-    {  "gene_desc",            CFeatureTableReader_imp::eQual_gene_desc             },
-    {  "gene_syn",             CFeatureTableReader_imp::eQual_gene_syn              },
-    {  "gene_synonym",         CFeatureTableReader_imp::eQual_gene_syn              },
-    {  "go_component",         CFeatureTableReader_imp::eQual_go_component          },
-    {  "go_function",          CFeatureTableReader_imp::eQual_go_function           },
-    {  "go_process",           CFeatureTableReader_imp::eQual_go_process            },
-    {  "heterogen",            CFeatureTableReader_imp::eQual_heterogen             },
-    {  "inference",            CFeatureTableReader_imp::eQual_inference             },
-    {  "insertion_seq",        CFeatureTableReader_imp::eQual_insertion_seq         },
-    {  "label",                CFeatureTableReader_imp::eQual_label                 },
-    {  "linkage_evidence",     CFeatureTableReader_imp::eQual_linkage_evidence      },
-    {  "loccnt",               CFeatureTableReader_imp::eQual_loccnt                },
-    {  "locus_tag",            CFeatureTableReader_imp::eQual_locus_tag             },
-    {  "macronuclear",         CFeatureTableReader_imp::eQual_macronuclear          },
-    {  "map",                  CFeatureTableReader_imp::eQual_map                   },
-    {  "method",               CFeatureTableReader_imp::eQual_method                },
-    {  "mobile_element_type",  CFeatureTableReader_imp::eQual_mobile_element_type   },
-    {  "mod_base",             CFeatureTableReader_imp::eQual_mod_base              },
-    {  "ncRNA_class",          CFeatureTableReader_imp::eQual_ncRNA_class           },
-    {  "nomenclature",         CFeatureTableReader_imp::eQual_nomenclature          },
-    {  "note",                 CFeatureTableReader_imp::eQual_note                  },
-    {  "number",               CFeatureTableReader_imp::eQual_number                },
-    {  "old_locus_tag",        CFeatureTableReader_imp::eQual_old_locus_tag         },
-    {  "operon",               CFeatureTableReader_imp::eQual_operon                },
-    {  "organism",             CFeatureTableReader_imp::eQual_organism              },
-    {  "partial",              CFeatureTableReader_imp::eQual_partial               },
-    {  "phenotype",            CFeatureTableReader_imp::eQual_phenotype             },
-    {  "product",              CFeatureTableReader_imp::eQual_product               },
-    {  "prot_desc",            CFeatureTableReader_imp::eQual_prot_desc             },
-    {  "prot_note",            CFeatureTableReader_imp::eQual_prot_note             },
-    {  "protein_id",           CFeatureTableReader_imp::eQual_protein_id            },
-    {  "pseudo",               CFeatureTableReader_imp::eQual_pseudo                },
-    {  "pseudogene",           CFeatureTableReader_imp::eQual_pseudogene            },
-    {  "rad_map",              CFeatureTableReader_imp::eQual_rad_map               },
-    {  "regulatory_class",     CFeatureTableReader_imp::eQual_regulatory_class      },
-    {  "replace",              CFeatureTableReader_imp::eQual_replace               },
-    {  "ribosomal_slippage",   CFeatureTableReader_imp::eQual_ribosomal_slippage    },
-    {  "rpt_family",           CFeatureTableReader_imp::eQual_rpt_family            },
-    {  "rpt_type",             CFeatureTableReader_imp::eQual_rpt_type              },
-    {  "rpt_unit",             CFeatureTableReader_imp::eQual_rpt_unit              },
-    {  "rpt_unit_range",       CFeatureTableReader_imp::eQual_rpt_unit_range        },
-    {  "rpt_unit_seq",         CFeatureTableReader_imp::eQual_rpt_unit_seq          },
-    {  "satellite",            CFeatureTableReader_imp::eQual_satellite             },
-    {  "sec_str_type",         CFeatureTableReader_imp::eQual_sec_str_type          },
-    {  "secondary_accession",  CFeatureTableReader_imp::eQual_secondary_accession   },
-    {  "secondary_accessions", CFeatureTableReader_imp::eQual_secondary_accession   },
-    {  "sequence",             CFeatureTableReader_imp::eQual_sequence              },
-    {  "site_type",            CFeatureTableReader_imp::eQual_site_type             },
-    {  "snp_class",            CFeatureTableReader_imp::eQual_snp_class             },
-    {  "snp_gtype",            CFeatureTableReader_imp::eQual_snp_gtype             },
-    {  "snp_het",              CFeatureTableReader_imp::eQual_snp_het               },
-    {  "snp_het_se",           CFeatureTableReader_imp::eQual_snp_het_se            },
-    {  "snp_linkout",          CFeatureTableReader_imp::eQual_snp_linkout           },
-    {  "snp_maxrate",          CFeatureTableReader_imp::eQual_snp_maxrate           },
-    {  "snp_valid",            CFeatureTableReader_imp::eQual_snp_valid             },
-    {  "standard_name",        CFeatureTableReader_imp::eQual_standard_name         },
-    {  "sts_aliases",          CFeatureTableReader_imp::eQual_sts_aliases           },
-    {  "sts_dsegs",            CFeatureTableReader_imp::eQual_sts_dsegs             },
-    {  "tag_peptide",          CFeatureTableReader_imp::eQual_tag_peptide           },
-    {  "trans_splicing",       CFeatureTableReader_imp::eQual_trans_splicing        },
-    {  "transcript_id",        CFeatureTableReader_imp::eQual_transcript_id         },
-    {  "transcription",        CFeatureTableReader_imp::eQual_transcription         },
-    {  "transl_except",        CFeatureTableReader_imp::eQual_transl_except         },
-    {  "transl_table",         CFeatureTableReader_imp::eQual_transl_table          },
-    {  "translation",          CFeatureTableReader_imp::eQual_translation           },
-    {  "transposon",           CFeatureTableReader_imp::eQual_transposon            },
-    {  "usedin",               CFeatureTableReader_imp::eQual_usedin                },
-    {  "weight",               CFeatureTableReader_imp::eQual_weight                }
+    {  "EC_number",            CFeatureTableReader_Imp::eQual_EC_number             },
+    {  "PCR_conditions",       CFeatureTableReader_Imp::eQual_PCR_conditions        },
+    {  "PubMed",               CFeatureTableReader_Imp::eQual_PubMed                },
+    {  "STS",                  CFeatureTableReader_Imp::eQual_STS                   },
+    {  "allele",               CFeatureTableReader_Imp::eQual_allele                },
+    {  "anticodon",            CFeatureTableReader_Imp::eQual_anticodon             },
+    {  "bac_ends",             CFeatureTableReader_Imp::eQual_bac_ends              },
+    {  "bond_type",            CFeatureTableReader_Imp::eQual_bond_type             },
+    {  "bound_moiety",         CFeatureTableReader_Imp::eQual_bound_moiety          },
+    {  "chrcnt",               CFeatureTableReader_Imp::eQual_chrcnt                },
+    {  "citation",             CFeatureTableReader_Imp::eQual_citation              },
+    {  "clone",                CFeatureTableReader_Imp::eQual_clone                 },
+    {  "clone_id",             CFeatureTableReader_Imp::eQual_clone_id              },
+    {  "codon_recognized",     CFeatureTableReader_Imp::eQual_codon_recognized      },
+    {  "codon_start",          CFeatureTableReader_Imp::eQual_codon_start           },
+    {  "codons_recognized",    CFeatureTableReader_Imp::eQual_codon_recognized      },
+    {  "compare",              CFeatureTableReader_Imp::eQual_compare               },
+    {  "cons_splice",          CFeatureTableReader_Imp::eQual_cons_splice           },
+    {  "ctgcnt",               CFeatureTableReader_Imp::eQual_ctgcnt                },
+    {  "cyt_map",              CFeatureTableReader_Imp::eQual_cyt_map               },
+    {  "db_xref",              CFeatureTableReader_Imp::eQual_db_xref               },
+    {  "direction",            CFeatureTableReader_Imp::eQual_direction             },
+    {  "estimated_length",     CFeatureTableReader_Imp::eQual_estimated_length      },
+    {  "evidence",             CFeatureTableReader_Imp::eQual_evidence              },
+    {  "exception",            CFeatureTableReader_Imp::eQual_exception             },
+    {  "experiment",           CFeatureTableReader_Imp::eQual_experiment            },
+    {  "frequency",            CFeatureTableReader_Imp::eQual_frequency             },
+    {  "function",             CFeatureTableReader_Imp::eQual_function              },
+    {  "gap_type",             CFeatureTableReader_Imp::eQual_gap_type              },
+    {  "gen_map",              CFeatureTableReader_Imp::eQual_gen_map               },
+    {  "gene",                 CFeatureTableReader_Imp::eQual_gene                  },
+    {  "gene_desc",            CFeatureTableReader_Imp::eQual_gene_desc             },
+    {  "gene_syn",             CFeatureTableReader_Imp::eQual_gene_syn              },
+    {  "gene_synonym",         CFeatureTableReader_Imp::eQual_gene_syn              },
+    {  "go_component",         CFeatureTableReader_Imp::eQual_go_component          },
+    {  "go_function",          CFeatureTableReader_Imp::eQual_go_function           },
+    {  "go_process",           CFeatureTableReader_Imp::eQual_go_process            },
+    {  "heterogen",            CFeatureTableReader_Imp::eQual_heterogen             },
+    {  "inference",            CFeatureTableReader_Imp::eQual_inference             },
+    {  "insertion_seq",        CFeatureTableReader_Imp::eQual_insertion_seq         },
+    {  "label",                CFeatureTableReader_Imp::eQual_label                 },
+    {  "linkage_evidence",     CFeatureTableReader_Imp::eQual_linkage_evidence      },
+    {  "loccnt",               CFeatureTableReader_Imp::eQual_loccnt                },
+    {  "locus_tag",            CFeatureTableReader_Imp::eQual_locus_tag             },
+    {  "macronuclear",         CFeatureTableReader_Imp::eQual_macronuclear          },
+    {  "map",                  CFeatureTableReader_Imp::eQual_map                   },
+    {  "method",               CFeatureTableReader_Imp::eQual_method                },
+    {  "mobile_element_type",  CFeatureTableReader_Imp::eQual_mobile_element_type   },
+    {  "mod_base",             CFeatureTableReader_Imp::eQual_mod_base              },
+    {  "ncRNA_class",          CFeatureTableReader_Imp::eQual_ncRNA_class           },
+    {  "nomenclature",         CFeatureTableReader_Imp::eQual_nomenclature          },
+    {  "note",                 CFeatureTableReader_Imp::eQual_note                  },
+    {  "number",               CFeatureTableReader_Imp::eQual_number                },
+    {  "old_locus_tag",        CFeatureTableReader_Imp::eQual_old_locus_tag         },
+    {  "operon",               CFeatureTableReader_Imp::eQual_operon                },
+    {  "organism",             CFeatureTableReader_Imp::eQual_organism              },
+    {  "partial",              CFeatureTableReader_Imp::eQual_partial               },
+    {  "phenotype",            CFeatureTableReader_Imp::eQual_phenotype             },
+    {  "product",              CFeatureTableReader_Imp::eQual_product               },
+    {  "prot_desc",            CFeatureTableReader_Imp::eQual_prot_desc             },
+    {  "prot_note",            CFeatureTableReader_Imp::eQual_prot_note             },
+    {  "protein_id",           CFeatureTableReader_Imp::eQual_protein_id            },
+    {  "pseudo",               CFeatureTableReader_Imp::eQual_pseudo                },
+    {  "pseudogene",           CFeatureTableReader_Imp::eQual_pseudogene            },
+    {  "rad_map",              CFeatureTableReader_Imp::eQual_rad_map               },
+    {  "regulatory_class",     CFeatureTableReader_Imp::eQual_regulatory_class      },
+    {  "replace",              CFeatureTableReader_Imp::eQual_replace               },
+    {  "ribosomal_slippage",   CFeatureTableReader_Imp::eQual_ribosomal_slippage    },
+    {  "rpt_family",           CFeatureTableReader_Imp::eQual_rpt_family            },
+    {  "rpt_type",             CFeatureTableReader_Imp::eQual_rpt_type              },
+    {  "rpt_unit",             CFeatureTableReader_Imp::eQual_rpt_unit              },
+    {  "rpt_unit_range",       CFeatureTableReader_Imp::eQual_rpt_unit_range        },
+    {  "rpt_unit_seq",         CFeatureTableReader_Imp::eQual_rpt_unit_seq          },
+    {  "satellite",            CFeatureTableReader_Imp::eQual_satellite             },
+    {  "sec_str_type",         CFeatureTableReader_Imp::eQual_sec_str_type          },
+    {  "secondary_accession",  CFeatureTableReader_Imp::eQual_secondary_accession   },
+    {  "secondary_accessions", CFeatureTableReader_Imp::eQual_secondary_accession   },
+    {  "sequence",             CFeatureTableReader_Imp::eQual_sequence              },
+    {  "site_type",            CFeatureTableReader_Imp::eQual_site_type             },
+    {  "snp_class",            CFeatureTableReader_Imp::eQual_snp_class             },
+    {  "snp_gtype",            CFeatureTableReader_Imp::eQual_snp_gtype             },
+    {  "snp_het",              CFeatureTableReader_Imp::eQual_snp_het               },
+    {  "snp_het_se",           CFeatureTableReader_Imp::eQual_snp_het_se            },
+    {  "snp_linkout",          CFeatureTableReader_Imp::eQual_snp_linkout           },
+    {  "snp_maxrate",          CFeatureTableReader_Imp::eQual_snp_maxrate           },
+    {  "snp_valid",            CFeatureTableReader_Imp::eQual_snp_valid             },
+    {  "standard_name",        CFeatureTableReader_Imp::eQual_standard_name         },
+    {  "sts_aliases",          CFeatureTableReader_Imp::eQual_sts_aliases           },
+    {  "sts_dsegs",            CFeatureTableReader_Imp::eQual_sts_dsegs             },
+    {  "tag_peptide",          CFeatureTableReader_Imp::eQual_tag_peptide           },
+    {  "trans_splicing",       CFeatureTableReader_Imp::eQual_trans_splicing        },
+    {  "transcript_id",        CFeatureTableReader_Imp::eQual_transcript_id         },
+    {  "transcription",        CFeatureTableReader_Imp::eQual_transcription         },
+    {  "transl_except",        CFeatureTableReader_Imp::eQual_transl_except         },
+    {  "transl_table",         CFeatureTableReader_Imp::eQual_transl_table          },
+    {  "translation",          CFeatureTableReader_Imp::eQual_translation           },
+    {  "transposon",           CFeatureTableReader_Imp::eQual_transposon            },
+    {  "usedin",               CFeatureTableReader_Imp::eQual_usedin                },
+    {  "weight",               CFeatureTableReader_Imp::eQual_weight                }
 };
 
-typedef CStaticPairArrayMap <const char*, CFeatureTableReader_imp::EQual, PCase_CStr> TQualMap;
+typedef CStaticPairArrayMap <const char*, CFeatureTableReader_Imp::EQual, PCase_CStr> TQualMap;
 DEFINE_STATIC_ARRAY_MAP(TQualMap, sm_QualKeys, qual_key_to_subtype);
 
 
-typedef SStaticPair<const char *, CFeatureTableReader_imp::EOrgRef> TOrgRefKey;
+typedef SStaticPair<const char *, CFeatureTableReader_Imp::EOrgRef> TOrgRefKey;
 
 static const TOrgRefKey orgref_key_to_subtype [] = {
-    {  "div",        CFeatureTableReader_imp::eOrgRef_div        },
-    {  "gcode",      CFeatureTableReader_imp::eOrgRef_gcode      },
-    {  "lineage",    CFeatureTableReader_imp::eOrgRef_lineage    },
-    {  "mgcode",     CFeatureTableReader_imp::eOrgRef_mgcode     },
-    {  "organelle",  CFeatureTableReader_imp::eOrgRef_organelle  },
-    {  "organism",   CFeatureTableReader_imp::eOrgRef_organism   }
+    {  "div",        CFeatureTableReader_Imp::eOrgRef_div        },
+    {  "gcode",      CFeatureTableReader_Imp::eOrgRef_gcode      },
+    {  "lineage",    CFeatureTableReader_Imp::eOrgRef_lineage    },
+    {  "mgcode",     CFeatureTableReader_Imp::eOrgRef_mgcode     },
+    {  "organelle",  CFeatureTableReader_Imp::eOrgRef_organelle  },
+    {  "organism",   CFeatureTableReader_Imp::eOrgRef_organism   }
 };
 
-typedef CStaticPairArrayMap <const char*, CFeatureTableReader_imp::EOrgRef, PCase_CStr> TOrgRefMap;
+typedef CStaticPairArrayMap <const char*, CFeatureTableReader_Imp::EOrgRef, PCase_CStr> TOrgRefMap;
 DEFINE_STATIC_ARRAY_MAP(TOrgRefMap, sm_OrgRefKeys, orgref_key_to_subtype);
 
 
@@ -839,17 +839,17 @@ DEFINE_STATIC_ARRAY_MAP(TSingleSet, sc_SingleKeys, single_key_list);
 
 
 // constructor
-CFeatureTableReader_imp::CFeatureTableReader_imp(ILineReader* reader, unsigned int line_num, ILineErrorListener* pMessageListener)
+CFeatureTableReader_Imp::CFeatureTableReader_Imp(ILineReader* reader, unsigned int line_num, ILineErrorListener* pMessageListener)
     : m_reader(reader), m_LineNumber(line_num), m_pMessageListener(pMessageListener)
 {
 }
 
 // destructor
-CFeatureTableReader_imp::~CFeatureTableReader_imp(void)
+CFeatureTableReader_Imp::~CFeatureTableReader_Imp(void)
 {
 }
 
-bool CFeatureTableReader_imp::x_TryToParseOffset(
+bool CFeatureTableReader_Imp::x_TryToParseOffset(
     const CTempString & sLine, Int4 & out_offset )
 {
     // offset strings are of the form [offset=SOME_NUMBER], but here we try 
@@ -897,7 +897,7 @@ bool CFeatureTableReader_imp::x_TryToParseOffset(
     }
 }
 
-bool CFeatureTableReader_imp::x_ParseFeatureTableLine (
+bool CFeatureTableReader_Imp::x_ParseFeatureTableLine (
     const string& line,
     Int4* startP,
     Int4* stopP,
@@ -1031,7 +1031,7 @@ bool CFeatureTableReader_imp::x_ParseFeatureTableLine (
     return true;
 }
 
-void CFeatureTableReader_imp::x_TokenizeStrict( 
+void CFeatureTableReader_Imp::x_TokenizeStrict( 
     const string &line, 
     vector<string> &out_tokens )
 {
@@ -1071,7 +1071,7 @@ public:
     bool operator()( char c ) { return ! isspace(c); }
 };
 
-void CFeatureTableReader_imp::x_TokenizeLenient( 
+void CFeatureTableReader_Imp::x_TokenizeLenient( 
     const string &line, 
     vector<string> &out_tokens )
 {
@@ -1150,7 +1150,7 @@ void CFeatureTableReader_imp::x_TokenizeLenient(
 }
 
 
-bool CFeatureTableReader_imp::x_AddQualifierToGene (
+bool CFeatureTableReader_Imp::x_AddQualifierToGene (
     CSeqFeatData& sfdata,
     EQual qtype,
     const string& val
@@ -1190,7 +1190,7 @@ bool CFeatureTableReader_imp::x_AddQualifierToGene (
 }
 
 
-bool CFeatureTableReader_imp::x_AddQualifierToCdregion (
+bool CFeatureTableReader_Imp::x_AddQualifierToCdregion (
     CRef<CSeq_feat> sfp,
     CSeqFeatData& sfdata,
     EQual qtype, const string& val
@@ -1286,7 +1286,7 @@ bool CFeatureTableReader_imp::x_AddQualifierToCdregion (
 }
 
 
-bool CFeatureTableReader_imp::x_StringIsJustQuotes (
+bool CFeatureTableReader_Imp::x_StringIsJustQuotes (
     const string& str
 )
 
@@ -1354,7 +1354,7 @@ s_LocationJoinToOrder( const CSeq_loc & loc )
 }
 
 
-int CFeatureTableReader_imp::x_ParseTrnaString (
+int CFeatureTableReader_Imp::x_ParseTrnaString (
     const string& val
 )
 
@@ -1380,7 +1380,7 @@ int CFeatureTableReader_imp::x_ParseTrnaString (
 }
 
 bool
-CFeatureTableReader_imp::x_ParseTrnaExtString(CTrna_ext & ext_trna, const string & str)
+CFeatureTableReader_Imp::x_ParseTrnaExtString(CTrna_ext & ext_trna, const string & str)
 {
     if (NStr::IsBlank (str)) return false;
 
@@ -1440,7 +1440,7 @@ CFeatureTableReader_imp::x_ParseTrnaExtString(CTrna_ext & ext_trna, const string
 }
 
 
-SIZE_TYPE CFeatureTableReader_imp::x_MatchingParenPos( 
+SIZE_TYPE CFeatureTableReader_Imp::x_MatchingParenPos( 
     const string &str, SIZE_TYPE open_paren_pos )
 {
     _ASSERT( str[open_paren_pos] == '(' );
@@ -1475,7 +1475,7 @@ SIZE_TYPE CFeatureTableReader_imp::x_MatchingParenPos(
     return NPOS;
 }
 
-long CFeatureTableReader_imp::x_StringToLongNoThrow (
+long CFeatureTableReader_Imp::x_StringToLongNoThrow (
     CTempString strToConvert,
     CTempString strFeatureName,
     CTempString strQualifierName,
@@ -1520,7 +1520,7 @@ long CFeatureTableReader_imp::x_StringToLongNoThrow (
 }
 
 
-bool CFeatureTableReader_imp::x_AddQualifierToRna (
+bool CFeatureTableReader_Imp::x_AddQualifierToRna (
     CRef<CSeq_feat> sfp,
     EQual qtype,
     const string& val
@@ -1641,7 +1641,7 @@ bool CFeatureTableReader_imp::x_AddQualifierToRna (
 }
 
 
-bool CFeatureTableReader_imp::x_AddCodons(
+bool CFeatureTableReader_Imp::x_AddCodons(
         const string& val,
         CTrna_ext& trna_ext
     ) const
@@ -1675,7 +1675,7 @@ bool CFeatureTableReader_imp::x_AddCodons(
 }
 
 
-bool CFeatureTableReader_imp::x_AddQualifierToImp (
+bool CFeatureTableReader_Imp::x_AddQualifierToImp (
     CRef<CSeq_feat> sfp,
     CSeqFeatData& sfdata,
     EQual qtype,
@@ -1790,7 +1790,7 @@ bool CFeatureTableReader_imp::x_AddQualifierToImp (
 }
 
 
-bool CFeatureTableReader_imp::x_AddQualifierToBioSrc (
+bool CFeatureTableReader_Imp::x_AddQualifierToBioSrc (
     CSeqFeatData& sfdata,
     const string &feat_name,
     EOrgRef rtype,
@@ -1856,7 +1856,7 @@ bool CFeatureTableReader_imp::x_AddQualifierToBioSrc (
 }
 
 
-bool CFeatureTableReader_imp::x_AddQualifierToBioSrc (
+bool CFeatureTableReader_Imp::x_AddQualifierToBioSrc (
     CSeqFeatData& sfdata,
     CSubSource::ESubtype stype,
     const string& val
@@ -1873,7 +1873,7 @@ bool CFeatureTableReader_imp::x_AddQualifierToBioSrc (
 }
 
 
-bool CFeatureTableReader_imp::x_AddQualifierToBioSrc (
+bool CFeatureTableReader_Imp::x_AddQualifierToBioSrc (
     CSeqFeatData& sfdata,
     COrgMod::ESubtype mtype,
     const string& val
@@ -1892,7 +1892,7 @@ bool CFeatureTableReader_imp::x_AddQualifierToBioSrc (
 }
 
 
-bool CFeatureTableReader_imp::x_AddGBQualToFeature (
+bool CFeatureTableReader_Imp::x_AddGBQualToFeature (
     CRef<CSeq_feat> sfp,
     const string& qual,
     const string& val
@@ -1934,7 +1934,7 @@ bool CFeatureTableReader_imp::x_AddGBQualToFeature (
 static const string k_GoQuals[] = { "go_process", "go_component", "go_function" };
 static const int k_NumGoQuals = sizeof (k_GoQuals) / sizeof (string);
 
-bool CFeatureTableReader_imp::x_AddGeneOntologyToFeature (
+bool CFeatureTableReader_Imp::x_AddGeneOntologyToFeature (
     CRef<CSeq_feat> sfp,
     const CTempString& qual,
     const CTempString& val
@@ -2022,7 +2022,7 @@ bool CFeatureTableReader_imp::x_AddGeneOntologyToFeature (
     return true;
 }
 
-void CFeatureTableReader_imp::x_CreateGenesFromCDSs(
+void CFeatureTableReader_Imp::x_CreateGenesFromCDSs(
     CRef<CSeq_annot> sap,
     TChoiceToFeatMap & choiceToFeatMap,
     const TFlags flags)
@@ -2244,7 +2244,7 @@ static string s_FixQualCapitalization (const string& qual)
 }
 
 
-bool CFeatureTableReader_imp::x_AddNoteToFeature(
+bool CFeatureTableReader_Imp::x_AddNoteToFeature(
         CRef<CSeq_feat> sfp,
         const string& note)
 {
@@ -2264,7 +2264,7 @@ bool CFeatureTableReader_imp::x_AddNoteToFeature(
 }
 
 
-bool CFeatureTableReader_imp::x_AddNoteToFeature(
+bool CFeatureTableReader_Imp::x_AddNoteToFeature(
     CRef<CSeq_feat> sfp,
     const string& feat_name,
     const string& qual,
@@ -2284,7 +2284,7 @@ bool CFeatureTableReader_imp::x_AddNoteToFeature(
     return true;
 }
 
-bool CFeatureTableReader_imp::x_AddQualifierToFeature (
+bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
     CRef<CSeq_feat> sfp,
     const string &feat_name,
     const string& qual,
@@ -2651,7 +2651,7 @@ bool CFeatureTableReader_imp::x_AddQualifierToFeature (
     return false;
 }
 
-bool CFeatureTableReader_imp::x_IsWebComment(CTempString line)
+bool CFeatureTableReader_Imp::x_IsWebComment(CTempString line)
 {
     // This function is testing for a match against the following regular
     // expression, but we avoid actual regexps for max speed:
@@ -2704,7 +2704,7 @@ bool CFeatureTableReader_imp::x_IsWebComment(CTempString line)
     return false;
 }
 
-bool CFeatureTableReader_imp::x_AddIntervalToFeature(
+bool CFeatureTableReader_Imp::x_AddIntervalToFeature(
     CTempString strFeatureName,
     CRef<CSeq_feat>& sfp,
     Int4 start,
@@ -2796,7 +2796,7 @@ bool CFeatureTableReader_imp::x_AddIntervalToFeature(
 }
 
 
-bool CFeatureTableReader_imp::x_SetupSeqFeat (
+bool CFeatureTableReader_Imp::x_SetupSeqFeat (
     CRef<CSeq_feat> sfp,
     const string& feat,
     const TFlags flags,
@@ -2946,7 +2946,7 @@ bool CFeatureTableReader_imp::x_SetupSeqFeat (
     return false;
 }
 
-void CFeatureTableReader_imp::x_ProcessMsg(
+void CFeatureTableReader_Imp::x_ProcessMsg(
     ILineError::EProblem eProblem,
     EDiagSev eSeverity,
     const string& strFeatureName,
@@ -2966,7 +2966,7 @@ void CFeatureTableReader_imp::x_ProcessMsg(
 }
 
 
-void CFeatureTableReader_imp::x_ProcessMsg(
+void CFeatureTableReader_Imp::x_ProcessMsg(
     int line_num,
     ILineError::EProblem eProblem,
     EDiagSev eSeverity,
@@ -2995,7 +2995,7 @@ void CFeatureTableReader_imp::x_ProcessMsg(
 }
 
 
-void CFeatureTableReader_imp::PutProgress(
+void CFeatureTableReader_Imp::PutProgress(
     const string& seq_id,
     const unsigned int line_number,
     ILineErrorListener* pListener) 
@@ -3009,10 +3009,10 @@ void CFeatureTableReader_imp::PutProgress(
 }
 
 
-// helper for CFeatureTableReader_imp::ReadSequinFeatureTable,
+// helper for CFeatureTableReader_Imp::ReadSequinFeatureTable,
 // just so we don't forget a step when we reset the feature
 // 
-void CFeatureTableReader_imp::x_ResetFeat(CRef<CSeq_feat> & sfp, bool & curr_feat_intervals_done)
+void CFeatureTableReader_Imp::x_ResetFeat(CRef<CSeq_feat> & sfp, bool & curr_feat_intervals_done)
 {
     m_need_check_strand = false;
     sfp.Reset(new CSeq_feat);
@@ -3020,7 +3020,7 @@ void CFeatureTableReader_imp::x_ResetFeat(CRef<CSeq_feat> & sfp, bool & curr_fea
     curr_feat_intervals_done = false;
 }
 
-void CFeatureTableReader_imp::x_GetPointStrand(const CSeq_feat& feat, CSeq_interval::TStrand& strand) const
+void CFeatureTableReader_Imp::x_GetPointStrand(const CSeq_feat& feat, CSeq_interval::TStrand& strand) const
 {
     if (feat.IsSetLocation() && feat.GetLocation().IsMix())
     {
@@ -3037,7 +3037,7 @@ void CFeatureTableReader_imp::x_GetPointStrand(const CSeq_feat& feat, CSeq_inter
     }
 }
 
-void CFeatureTableReader_imp::x_UpdatePointStrand(CSeq_feat& feat, CSeq_interval::TStrand strand) const
+void CFeatureTableReader_Imp::x_UpdatePointStrand(CSeq_feat& feat, CSeq_interval::TStrand strand) const
 {
     if (feat.IsSetLocation() && feat.GetLocation().IsMix())
     {
@@ -3052,7 +3052,7 @@ void CFeatureTableReader_imp::x_UpdatePointStrand(CSeq_feat& feat, CSeq_interval
 }
 
 
-void CFeatureTableReader_imp::x_FinishFeature(CRef<CSeq_feat>& feat, 
+void CFeatureTableReader_Imp::x_FinishFeature(CRef<CSeq_feat>& feat, 
                                                 TFtable& ftable)
 {
     if ( ! feat || feat.Empty())
@@ -3097,7 +3097,7 @@ void CFeatureTableReader_imp::x_FinishFeature(CRef<CSeq_feat>& feat,
 
 
 
-void CFeatureTableReader_imp::x_ProcessQualifier(const string& qual_name,
+void CFeatureTableReader_Imp::x_ProcessQualifier(const string& qual_name,
                                                    const string& qual_val,
                                                    const string& feat_name,
                                                    CRef<CSeq_feat> feat, 
@@ -3139,7 +3139,7 @@ void CFeatureTableReader_imp::x_ProcessQualifier(const string& qual_name,
 
 
 
-CRef<CSeq_annot> CFeatureTableReader_imp::ReadSequinFeatureTable (
+CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
     const string& seqid,
     const string& annotname,
     const TFlags flags,
@@ -3347,7 +3347,7 @@ CRef<CSeq_annot> CFeatureTableReader_imp::ReadSequinFeatureTable (
 }
 
 
-CRef<CSeq_feat> CFeatureTableReader_imp::CreateSeqFeat (
+CRef<CSeq_feat> CFeatureTableReader_Imp::CreateSeqFeat (
     const string& feat,
     CSeq_loc& location,
     const TFlags flags,
@@ -3370,7 +3370,7 @@ CRef<CSeq_feat> CFeatureTableReader_imp::CreateSeqFeat (
     return sfp;
 }
 
-void CFeatureTableReader_imp::x_InitId(const string& seq_id, const TFlags flags)
+void CFeatureTableReader_Imp::x_InitId(const string& seq_id, const TFlags flags)
 {
     if (!NStr::IsBlank(seq_id)) {
         CBioseq::TId ids;
@@ -3382,7 +3382,7 @@ void CFeatureTableReader_imp::x_InitId(const string& seq_id, const TFlags flags)
     }
 }
 
-void CFeatureTableReader_imp::AddFeatQual (
+void CFeatureTableReader_Imp::AddFeatQual (
     CRef<CSeq_feat> sfp,
     const string& feat_name,
     const string& qual,
@@ -3422,7 +3422,7 @@ void CFeatureTableReader_imp::AddFeatQual (
 }
 
 // static
-bool CFeatureTableReader_imp::ParseInitialFeatureLine (
+bool CFeatureTableReader_Imp::ParseInitialFeatureLine (
     const CTempString& line_arg,
     string & out_seqid,
     string & out_annotname )
@@ -3484,12 +3484,29 @@ CFeature_table_reader::ReadObject(
     return object;
 }
 
+
 CRef<CSeq_annot>
 CFeature_table_reader::ReadSeqAnnot(
     ILineReader &lr, ILineErrorListener *pMessageListener)
 {
     return ReadSequinFeatureTable(lr, 0, pMessageListener);
 }
+
+
+void CFeature_table_reader::ReadSeqAnnots(
+    TAnnots& annots, ILineReader& lr, TFlags flags, ILineErrorListener *pMessageListener, ITableFilter* pFilter)
+{
+    annots.clear();
+    CFeatureTableReader_Imp ftable_reader(&lr, 0, pMessageListener);
+    while (!lr.AtEOF()) {
+        auto pAnnot = x_ReadFeatureTable(ftable_reader, flags, pFilter);
+        _ASSERT(pAnnot->GetData().IsFtable());
+        if (!pAnnot->GetData().GetFtable().empty()) {
+            annots.push_back(pAnnot);
+        }
+    }
+}
+
 
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     CNcbiIstream& ifs,
@@ -3515,12 +3532,12 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 )
 {
     // just read features from 5-column table
-    CFeatureTableReader_imp impl(&reader, 0, pMessageListener);
+    CFeatureTableReader_Imp impl(&reader, 0, pMessageListener);
     return x_ReadFeatureTable(impl, seqid, annotname, flags, filter);
 }
 
 CRef<CSeq_annot> CFeature_table_reader::x_ReadFeatureTable(
-    CFeatureTableReader_imp& reader,
+    CFeatureTableReader_Imp& reader,
     const string& seqid,
     const string& annot_name, 
     TFlags flags,
@@ -3542,7 +3559,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 
 
 CRef<CSeq_annot> CFeature_table_reader::x_ReadFeatureTable(
-        CFeatureTableReader_imp& reader,
+        CFeatureTableReader_Imp& reader,
         const TFlags flags,
         ITableFilter* filter,
         const string& seqid_prefix)
@@ -3558,7 +3575,7 @@ CRef<CSeq_annot> CFeature_table_reader::x_ReadFeatureTable(
     while (seqid.empty () && !pLineReader->AtEOF() ) {
         CTempString line = *++(*pLineReader);
         if( ParseInitialFeatureLine(line, seqid, annotname) ) {
-            CFeatureTableReader_imp::PutProgress(seqid, 
+            CFeatureTableReader_Imp::PutProgress(seqid, 
                                                  pLineReader->GetLineNumber(), 
                                                  reader.GetErrorListenerPtr());
         }
@@ -3588,7 +3605,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 )
 {
 
-    CFeatureTableReader_imp ftable_reader(&reader, 0, pMessageListener);
+    CFeatureTableReader_Imp ftable_reader(&reader, 0, pMessageListener);
     return x_ReadFeatureTable(ftable_reader, flags, filter, seqid_prefix);
 
 /*
@@ -3600,7 +3617,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
         CTempString line = *++reader;
 
         if( ParseInitialFeatureLine(line, seqid, annotname) ) {
-            CFeatureTableReader_imp::PutProgress(seqid, reader.GetLineNumber(), pMessageListener);
+            CFeatureTableReader_Imp::PutProgress(seqid, reader.GetLineNumber(), pMessageListener);
         }
     }
 
@@ -3660,7 +3677,7 @@ void CFeature_table_reader::ReadSequinFeatureTables(
         }
     }
 
-    CFeatureTableReader_imp ftable_reader(&reader, 0, pMessageListener);
+    CFeatureTableReader_Imp ftable_reader(&reader, 0, pMessageListener);
     while ( !reader.AtEOF() ) {
         auto annot =  x_ReadFeatureTable(ftable_reader, flags, filter);
         //CRef<CSeq_annot> annot = ReadSequinFeatureTable(reader, flags, pMessageListener, filter);
@@ -3700,7 +3717,7 @@ CRef<CSeq_feat> CFeature_table_reader::CreateSeqFeat (
     ITableFilter *filter
 )
 {
-    CFeatureTableReader_imp impl(nullptr, line_number, pMessageListener);
+    CFeatureTableReader_Imp impl(nullptr, line_number, pMessageListener);
     return impl.CreateSeqFeat (feat, location, flags, (seq_id ? *seq_id : string() ), filter);
 }
 
@@ -3717,7 +3734,7 @@ void CFeature_table_reader::AddFeatQual (
 )
 
 {
-    CFeatureTableReader_imp impl(nullptr, line_number, pMessageListener);
+    CFeatureTableReader_Imp impl(nullptr, line_number, pMessageListener);
     impl.AddFeatQual (sfp, feat_name, qual, val, flags, seq_id) ;
 }
 
@@ -3727,7 +3744,7 @@ CFeature_table_reader::ParseInitialFeatureLine (
     string & out_seqid,
     string & out_annotname )
 {
-     return CFeatureTableReader_imp::ParseInitialFeatureLine(line_arg, out_seqid, out_annotname);
+     return CFeatureTableReader_Imp::ParseInitialFeatureLine(line_arg, out_seqid, out_annotname);
 }
 
 

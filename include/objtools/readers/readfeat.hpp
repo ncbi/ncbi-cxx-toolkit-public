@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CFeatureTableReader_imp;
+class CFeatureTableReader_Imp;
 class ILineErrorListener;
 class ITableFilter;
 class CSeq_entry;
@@ -76,9 +76,17 @@ public:
 
     CFeature_table_reader(TReaderFlags fReaderFlags = 0);
 
+
+    using TAnnots = CReaderBase::TAnnots;
+
     // For CReaderBase
-    CRef<CSerialObject> ReadObject   (ILineReader &lr, ILineErrorListener *pErrors);
-    CRef<CSeq_annot>    ReadSeqAnnot (ILineReader &lr, ILineErrorListener *pErrors);
+    CRef<CSerialObject> ReadObject   (ILineReader &lr, ILineErrorListener *pErrors) override;
+    CRef<CSeq_annot>    ReadSeqAnnot (ILineReader &lr, ILineErrorListener *pErrors) override;
+    void ReadSeqAnnots(TAnnots& annots, 
+                       ILineReader &lr, 
+                       const TFlags flags=0, 
+                       ILineErrorListener *pErrors=0,
+                       ITableFilter* pFilter=0);
 
     // read 5-column feature table and return Seq-annot
     static CRef<CSeq_annot> ReadSequinFeatureTable(ILineReader& reader,
@@ -158,13 +166,13 @@ public:
         string & out_annotname );
 
 private:
-    static CRef<CSeq_annot> x_ReadFeatureTable(CFeatureTableReader_imp& reader, 
+    static CRef<CSeq_annot> x_ReadFeatureTable(CFeatureTableReader_Imp& reader, 
                                                const string& seqid,
                                                const string& annot_name,
                                                const TFlags flags, 
                                                ITableFilter* filter);
 
-    static CRef<CSeq_annot> x_ReadFeatureTable(CFeatureTableReader_imp& reader, 
+    static CRef<CSeq_annot> x_ReadFeatureTable(CFeatureTableReader_Imp& reader, 
                                                const TFlags flags,
                                                ITableFilter* filter,
                                                const string& seqid_prefix=kEmptyStr);
