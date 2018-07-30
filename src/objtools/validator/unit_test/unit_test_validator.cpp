@@ -10420,6 +10420,8 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
     contig->SetSeq().SetAnnot().front()->SetData().SetFtable().pop_back();
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, "MissingMRNAproduct",
+                                                 "Product Bioseq of mRNA feature is not packaged in the record"));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "FeatureProductInconsistency",
                  "2 mRNA features have 1 product references"));
     expected_errors.push_back(new CExpectedError("lcl|nuc2", eDiag_Warning, "GenomicProductPackagingProblem",

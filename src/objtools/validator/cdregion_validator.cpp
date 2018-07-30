@@ -74,7 +74,7 @@ using namespace sequence;
 
 CCdregionValidator::CCdregionValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
 CSingleFeatValidator(feat, scope, imp) {
-    CConstRef<CSeq_feat> m_Gene = m_Imp.GetGeneCache().GetGeneFromCache(&feat, m_Scope);
+    m_Gene = m_Imp.GetGeneCache().GetGeneFromCache(&feat, m_Scope);
     if (m_Gene) {
         m_GeneIsPseudo = s_IsPseudo(*m_Gene);
     } else {
@@ -777,6 +777,8 @@ void CCdregionValidator::Validate()
     if (conflict) {
         x_ValidateConflict();
     }
+
+    x_ReportPseudogeneConflict(m_Gene);
 }
 
 

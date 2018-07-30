@@ -2548,6 +2548,58 @@ bool CSingleFeatValidator::s_BioseqHasRefSeqThatStartsWithPrefix (CBioseq_Handle
 }
 
 
+void CSingleFeatValidator::x_ReportPseudogeneConflict(CConstRef <CSeq_feat> gene)
+{
+    if (!m_Feat.IsSetData() ||
+        (m_Feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_mRNA &&
+        m_Feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_cdregion)) {
+        return;
+    }
+    string sfp_pseudo = kEmptyStr;
+    string gene_pseudo = kEmptyStr;
+    bool has_sfp_pseudo = false;
+    bool has_gene_pseudo = false;
+    if (m_Feat.IsSetQual()) {
+        for (auto it : m_Feat.GetQual()) {
+            if (it->IsSetQual() &&
+                NStr::EqualNocase(it->GetQual(), "pseudogene") &&
+                it->IsSetVal()) {
+                sfp_pseudo = it->GetVal();
+                has_sfp_pseudo = true;
+            }
+        }
+    }
+    if (gene && gene->IsSetQual()) {
+        for (auto it : gene->GetQual()) {
+            if (it->IsSetQual() &&
+                NStr::EqualNocase(it->GetQual(), "pseudogene") &&
+                it->IsSetVal()) {
+                gene_pseudo = it->GetVal();
+                has_gene_pseudo = true;
+            }
+        }
+    }
+
+    if (!has_sfp_pseudo && !has_gene_pseudo) {
+        return;
+    } else if (!has_sfp_pseudo) {
+        return;
+    } else if (has_sfp_pseudo && !has_gene_pseudo) {
+        string msg = m_Feat.GetData().IsCdregion() ? "CDS" : "mRNA";
+        msg += " has pseudogene qualifier, gene does not";
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InconsistentPseudogeneValue,
+                msg);
+    } else if (!NStr::EqualNocase(sfp_pseudo, gene_pseudo)) {
+        string msg = "Different pseudogene values on ";
+        msg += m_Feat.GetData().IsCdregion() ? "CDS" : "mRNA";
+        msg += " (" + sfp_pseudo + ") and gene (" + gene_pseudo + ")";
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_InconsistentPseudogeneValue,
+                msg);
+    }
+}
+
+
+
 void CProtValidator::Validate()
 {
     CSingleFeatValidator::Validate();
@@ -3006,7 +3058,9 @@ void CRNAValidator::Validate()
         }
     }
 
-    x_ValidateMrna(pseudo);
+    if (!pseudo) {
+        x_ValidateRnaTrans();
+    }
 
     x_ValidateRnaProduct(feat_pseudo, pseudo);
 
@@ -3037,14 +3091,6 @@ void CRNAValidator::x_ValidateRnaProduct(bool feat_pseudo, bool pseudo)
 {
     if (!m_Feat.IsSetProduct()) {
         return;
-    }
-
-    if (!pseudo) {
-        if (m_Feat.GetData().GetRna().IsSetType() &&
-            m_Feat.GetData().GetRna().GetType() == CRNA_ref::eType_mRNA) {
-            x_ValidateCommonMRNAProduct();
-        }
-        x_ValidateRnaTrans();
     }
 
     x_ValidateRnaProductType();
@@ -3108,75 +3154,6 @@ void CRNAValidator::x_ValidateRnaProductType()
 }
 
 
-void CRNAValidator::x_ValidateMrna(bool pseudo)
-{
-    if (!m_Feat.GetData().GetRna().IsSetType() ||
-        m_Feat.GetData().GetRna().GetType() != CRNA_ref::eType_mRNA) {
-        return;
-    }
-
-    ValidateSplice(pseudo, false);
-
-    const CRNA_ref& rna = m_Feat.GetData().GetRna();
-
-    if (m_Feat.IsSetQual()) {
-        for (auto it : m_Feat.GetQual()) {
-            const CGb_qual& qual = *it;
-            if (qual.CanGetQual()) {
-                const string& key = qual.GetQual();
-                if (NStr::EqualNocase(key, "protein_id")) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
-                        "protein_id should not be a gbqual on an mRNA feature");
-                }
-                else if (NStr::EqualNocase(key, "transcript_id")) {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
-                        "transcript_id should not be a gbqual on an mRNA feature");
-                }
-            }
-        }
-    }
-
-    if (rna.IsSetExt() && rna.GetExt().IsName()) {
-        const string& rna_name = rna.GetExt().GetName();
-        if (NStr::StartsWith(rna_name, "transfer RNA ") &&
-            (!NStr::EqualNocase(rna_name, "transfer RNA nucleotidyltransferase")) &&
-            (!NStr::EqualNocase(rna_name, "transfer RNA methyltransferase"))) {
-            PostErr(eDiag_Warning, eErr_SEQ_FEAT_tRNAmRNAmixup,
-                "mRNA feature product indicates it should be a tRNA feature");
-        }
-        ValidateCharactersInField(rna_name, "mRNA name");
-        if (ContainsSgml(rna_name)) {
-            PostErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
-                "mRNA name " + rna_name + " has SGML");
-        }
-    }
-}
-
-
-void CRNAValidator::x_ValidateCommonMRNAProduct()
-{
-    if ( !m_ProductBioseq) {
-        if (m_LocationBioseq) {
-            CSeq_entry_Handle seh = m_LocationBioseq.GetTopLevelEntry();
-            if (seh.IsSet() && seh.GetSet().IsSetClass()
-                && (seh.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set
-                    || seh.GetSet().GetClass() == CBioseq_set::eClass_other)) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_MissingMRNAproduct,
-                    "Product Bioseq of mRNA feature is not "
-                    "packaged in the record");
-            }
-        }
-    } else {
-
-        CConstRef<CSeq_feat> mrna = m_Imp.GetmRNAGivenProduct (*(m_ProductBioseq.GetCompleteBioseq()));
-        if (mrna && mrna.GetPointer() != &m_Feat) {
-            PostErr(eDiag_Critical, eErr_SEQ_FEAT_IdenticalMRNAtranscriptIDs,
-                    "Identical transcript IDs found on multiple mRNAs");
-        }
-    }
-}
-
-
 static bool s_IsBioseqPartial (CBioseq_Handle bsh)
 {
     CSeqdesc_CI sd(bsh, CSeqdesc::e_Molinfo);
@@ -3196,107 +3173,6 @@ static bool s_IsBioseqPartial (CBioseq_Handle bsh)
     } else {
         return false;
     }
-}
-
-
-void CRNAValidator::x_ReportMRNATranslationProblems(size_t problems, size_t mismatches)
-{
-    if (problems & eMRNAProblem_TransFail) {
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_MrnaTransFail,
-            "Unable to transcribe mRNA");
-    }
-    if (problems & eMRNAProblem_UnableToFetch) {
-        const CSeq_id& product_id = GetId(m_Feat.GetProduct(), &m_Scope);
-        string label = product_id.AsFastaString();
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_ProductFetchFailure,
-            "Unable to fetch mRNA transcript '" + label + "'");
-    }
-
-    bool is_refseq = m_Imp.IsRefSeqConventions();
-    if (m_LocationBioseq) {
-        FOR_EACH_SEQID_ON_BIOSEQ(it, *(m_LocationBioseq.GetCompleteBioseq())) {
-            if ((*it)->IsOther()) {
-                is_refseq = true;
-                break;
-            }
-        }
-    }
-
-    TSeqPos feat_len = sequence::GetLength(m_Feat.GetLocation(), &m_Scope);
-
-    string farstr;
-    EDiagSev sev = eDiag_Error;
-
-    // if not local bioseq product, lower severity (with the exception of Refseq)
-    if (m_ProductIsFar && !is_refseq) {
-        sev = eDiag_Warning;
-    }
-    if (m_ProductIsFar) {
-        farstr = "(far) ";
-        if (m_Feat.IsSetPartial()
-            && !s_IsBioseqPartial(m_ProductBioseq)
-            && s_BioseqHasRefSeqThatStartsWithPrefix(m_ProductBioseq, "NM_")) {
-            sev = eDiag_Warning;
-        }
-    }
-
-    if (problems & eMRNAProblem_TranscriptLenLess) {
-        PostErr(sev, eErr_SEQ_FEAT_TranscriptLen,
-            "Transcript length [" + NStr::SizetToString(feat_len) +
-            "] less than " + farstr + "product length [" +
-            NStr::SizetToString(m_ProductBioseq.GetInst_Length()) + "], and tail < 95% polyA");
-    }
-
-    if (problems & eMRNAProblem_PolyATail100) {
-        PostErr(eDiag_Info, eErr_SEQ_FEAT_PolyATail,
-            "Transcript length [" + NStr::SizetToString(feat_len)
-            + "] less than " + farstr + "product length ["
-            + NStr::SizetToString(m_ProductBioseq.GetInst_Length()) + "], but tail is 100% polyA");
-    }
-    if (problems & eMRNAProblem_PolyATail95) {
-        PostErr(eDiag_Info, eErr_SEQ_FEAT_PolyATail,
-            "Transcript length [" + NStr::SizetToString(feat_len) +
-            "] less than " + farstr + "product length [" +
-            NStr::SizetToString(m_ProductBioseq.GetInst_Length()) + "], but tail >= 95% polyA");
-    }
-    if (problems & eMRNAProblem_TranscriptLenMore) {
-        PostErr(sev, eErr_SEQ_FEAT_TranscriptLen,
-            "Transcript length [" + NStr::IntToString(feat_len) + "] " +
-            "greater than " + farstr + "product length [" +
-            NStr::IntToString(m_ProductBioseq.GetInst_Length()) + "]");
-    }
-    if ((problems & eMRNAProblem_Mismatch) && mismatches > 0) {
-        PostErr(sev, eErr_SEQ_FEAT_TranscriptMismatches,
-            "There are " + NStr::SizetToString(mismatches) +
-            " mismatches out of " + NStr::SizetToString(feat_len) +
-            " bases between the transcript and " + farstr + "product sequence");
-    }
-    if (problems & eMRNAProblem_UnnecessaryException) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryException,
-            "mRNA has exception but passes transcription test");
-    }
-    if (problems & eMRNAProblem_ErroneousException) {
-        size_t total = min(feat_len, m_ProductBioseq.GetInst_Length());
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ErroneousException,
-            "mRNA has unclassified exception but only difference is " + NStr::SizetToString(mismatches)
-            + " mismatches out of " + NStr::SizetToString(total) + " bases");
-    }
-    if (problems & eMRNAProblem_ProductReplaced) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_mRNAUnnecessaryException,
-            "mRNA has transcribed product replaced exception");
-    }
-}
-
-
-void CRNAValidator::x_ValidateRnaTrans()
-{
-    size_t mismatches = 0;
-    size_t problems = GetMRNATranslationProblems
-        (m_Feat, mismatches, m_Imp.IgnoreExceptions(),
-         m_LocationBioseq, m_ProductBioseq, 
-         m_Imp.IsFarFetchMRNAproducts(), m_Imp.IsGpipe(),
-         m_Imp.IsGenomic(), &m_Scope);
-    x_ReportMRNATranslationProblems(problems, mismatches);
 }
 
 
@@ -3819,6 +3695,202 @@ void CRNAValidator::x_ValidateTrnaOverlap()
     if (found_bad) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadRRNAcomponentOverlapTRNA,
             "tRNA-rRNA overlap");
+    }
+}
+
+
+void CRNAValidator::x_ValidateRnaTrans()
+{
+    size_t mismatches = 0;
+    size_t problems = GetMRNATranslationProblems
+        (m_Feat, mismatches, m_Imp.IgnoreExceptions(),
+         m_LocationBioseq, m_ProductBioseq, 
+         m_Imp.IsFarFetchMRNAproducts(), m_Imp.IsGpipe(),
+         m_Imp.IsGenomic(), &m_Scope);
+    x_ReportRNATranslationProblems(problems, mismatches);
+}
+
+
+void CRNAValidator::x_ReportRNATranslationProblems(size_t problems, size_t mismatches)
+{
+    if (problems & eMRNAProblem_TransFail) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_MrnaTransFail,
+            "Unable to transcribe mRNA");
+    }
+    if (problems & eMRNAProblem_UnableToFetch) {
+        const CSeq_id& product_id = GetId(m_Feat.GetProduct(), &m_Scope);
+        string label = product_id.AsFastaString();
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_ProductFetchFailure,
+            "Unable to fetch mRNA transcript '" + label + "'");
+    }
+
+    bool is_refseq = m_Imp.IsRefSeqConventions();
+    if (m_LocationBioseq) {
+        FOR_EACH_SEQID_ON_BIOSEQ(it, *(m_LocationBioseq.GetCompleteBioseq())) {
+            if ((*it)->IsOther()) {
+                is_refseq = true;
+                break;
+            }
+        }
+    }
+
+    TSeqPos feat_len = sequence::GetLength(m_Feat.GetLocation(), &m_Scope);
+
+    string farstr;
+    EDiagSev sev = eDiag_Error;
+
+    // if not local bioseq product, lower severity (with the exception of Refseq)
+    if (m_ProductIsFar && !is_refseq) {
+        sev = eDiag_Warning;
+    }
+    if (m_ProductIsFar) {
+        farstr = "(far) ";
+        if (m_Feat.IsSetPartial()
+            && !s_IsBioseqPartial(m_ProductBioseq)
+            && s_BioseqHasRefSeqThatStartsWithPrefix(m_ProductBioseq, "NM_")) {
+            sev = eDiag_Warning;
+        }
+    }
+
+    if (problems & eMRNAProblem_TranscriptLenLess) {
+        PostErr(sev, eErr_SEQ_FEAT_TranscriptLen,
+            "Transcript length [" + NStr::SizetToString(feat_len) +
+            "] less than " + farstr + "product length [" +
+            NStr::SizetToString(m_ProductBioseq.GetInst_Length()) + "], and tail < 95% polyA");
+    }
+
+    if (problems & eMRNAProblem_PolyATail100) {
+        PostErr(eDiag_Info, eErr_SEQ_FEAT_PolyATail,
+            "Transcript length [" + NStr::SizetToString(feat_len)
+            + "] less than " + farstr + "product length ["
+            + NStr::SizetToString(m_ProductBioseq.GetInst_Length()) + "], but tail is 100% polyA");
+    }
+    if (problems & eMRNAProblem_PolyATail95) {
+        PostErr(eDiag_Info, eErr_SEQ_FEAT_PolyATail,
+            "Transcript length [" + NStr::SizetToString(feat_len) +
+            "] less than " + farstr + "product length [" +
+            NStr::SizetToString(m_ProductBioseq.GetInst_Length()) + "], but tail >= 95% polyA");
+    }
+    if (problems & eMRNAProblem_TranscriptLenMore) {
+        PostErr(sev, eErr_SEQ_FEAT_TranscriptLen,
+            "Transcript length [" + NStr::IntToString(feat_len) + "] " +
+            "greater than " + farstr + "product length [" +
+            NStr::IntToString(m_ProductBioseq.GetInst_Length()) + "]");
+    }
+    if ((problems & eMRNAProblem_Mismatch) && mismatches > 0) {
+        PostErr(sev, eErr_SEQ_FEAT_TranscriptMismatches,
+            "There are " + NStr::SizetToString(mismatches) +
+            " mismatches out of " + NStr::SizetToString(feat_len) +
+            " bases between the transcript and " + farstr + "product sequence");
+    }
+    if (problems & eMRNAProblem_UnnecessaryException) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryException,
+            "mRNA has exception but passes transcription test");
+    }
+    if (problems & eMRNAProblem_ErroneousException) {
+        size_t total = min(feat_len, m_ProductBioseq.GetInst_Length());
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_ErroneousException,
+            "mRNA has unclassified exception but only difference is " + NStr::SizetToString(mismatches)
+            + " mismatches out of " + NStr::SizetToString(total) + " bases");
+    }
+    if (problems & eMRNAProblem_ProductReplaced) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_mRNAUnnecessaryException,
+            "mRNA has transcribed product replaced exception");
+    }
+}
+
+
+CMRNAValidator::CMRNAValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp) :
+CRNAValidator(feat, scope, imp) 
+{
+    m_Gene = m_Imp.GetGeneCache().GetGeneFromCache(&feat, m_Scope);
+    if (m_Gene) {
+        m_GeneIsPseudo = s_IsPseudo(*m_Gene);
+    } else {
+        m_GeneIsPseudo = false;
+    }
+    m_FeatIsPseudo = s_IsPseudo(m_Feat);
+}
+
+
+void CMRNAValidator::Validate()
+{
+    CRNAValidator::Validate();
+
+    x_ReportPseudogeneConflict(m_Gene);
+
+    x_ValidateMrna();
+
+    if (!m_GeneIsPseudo && !m_FeatIsPseudo) {
+        x_ValidateCommonMRNAProduct();
+    }
+}
+
+
+void CMRNAValidator::x_ValidateMrna()
+{
+    bool pseudo = m_GeneIsPseudo;
+    if (!pseudo) {
+        pseudo = s_IsPseudo(m_Feat);
+    }
+    ValidateSplice(pseudo, false);
+
+    const CRNA_ref& rna = m_Feat.GetData().GetRna();
+
+    if (m_Feat.IsSetQual()) {
+        for (auto it : m_Feat.GetQual()) {
+            const CGb_qual& qual = *it;
+            if (qual.CanGetQual()) {
+                const string& key = qual.GetQual();
+                if (NStr::EqualNocase(key, "protein_id")) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
+                        "protein_id should not be a gbqual on an mRNA feature");
+                }
+                else if (NStr::EqualNocase(key, "transcript_id")) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_WrongQualOnFeature,
+                        "transcript_id should not be a gbqual on an mRNA feature");
+                }
+            }
+        }
+    }
+
+    if (rna.IsSetExt() && rna.GetExt().IsName()) {
+        const string& rna_name = rna.GetExt().GetName();
+        if (NStr::StartsWith(rna_name, "transfer RNA ") &&
+            (!NStr::EqualNocase(rna_name, "transfer RNA nucleotidyltransferase")) &&
+            (!NStr::EqualNocase(rna_name, "transfer RNA methyltransferase"))) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_tRNAmRNAmixup,
+                "mRNA feature product indicates it should be a tRNA feature");
+        }
+        ValidateCharactersInField(rna_name, "mRNA name");
+        if (ContainsSgml(rna_name)) {
+            PostErr(eDiag_Warning, eErr_GENERIC_SgmlPresentInText,
+                "mRNA name " + rna_name + " has SGML");
+        }
+    }
+}
+
+
+void CMRNAValidator::x_ValidateCommonMRNAProduct()
+{
+    if ( !m_ProductBioseq) {
+        if (m_LocationBioseq) {
+            CSeq_entry_Handle seh = m_LocationBioseq.GetTopLevelEntry();
+            if (seh.IsSet() && seh.GetSet().IsSetClass()
+                && (seh.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set
+                    || seh.GetSet().GetClass() == CBioseq_set::eClass_other)) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_MissingMRNAproduct,
+                    "Product Bioseq of mRNA feature is not "
+                    "packaged in the record");
+            }
+        }
+    } else {
+
+        CConstRef<CSeq_feat> mrna = m_Imp.GetmRNAGivenProduct (*(m_ProductBioseq.GetCompleteBioseq()));
+        if (mrna && mrna.GetPointer() != &m_Feat) {
+            PostErr(eDiag_Critical, eErr_SEQ_FEAT_IdenticalMRNAtranscriptIDs,
+                    "Identical transcript IDs found on multiple mRNAs");
+        }
     }
 }
 
@@ -4568,6 +4640,8 @@ CSingleFeatValidator* FeatValidatorFactory(const CSeq_feat& feat, CScope& scope,
         return new CGeneValidator(feat, scope, imp);
     } else if (feat.GetData().IsProt()) {
         return new CProtValidator(feat, scope, imp);
+    } else if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+        return new CMRNAValidator(feat, scope, imp);
     } else if (feat.GetData().IsRna()) {
         return new CRNAValidator(feat, scope, imp);
     } else if (feat.GetData().IsPub()) {

@@ -192,6 +192,8 @@ protected:
     void x_ValidateImpFeatLoc();
     void x_ValidateImpFeatQuals();
     void x_ValidateSeqFeatDataType();
+
+    void x_ReportPseudogeneConflict(CConstRef <CSeq_feat> gene);
 };
 
 class CCdregionValidator : public CSingleFeatValidator
@@ -273,25 +275,43 @@ protected:
 class CRNAValidator : public CSingleFeatValidator
 {
 public:
+    CRNAValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp)
+        : CSingleFeatValidator(feat, scope, imp) {}
     using CSingleFeatValidator::CSingleFeatValidator;
 
     virtual void Validate() override;
 
 protected:
+    void x_ValidateRnaProduct(bool feat_pseudo, bool pseudo);
+    void x_ValidateRnaProductType();
+    void x_ReportRNATranslationProblems(size_t problems, size_t mismatches);
+    void x_ValidateRnaTrans();
+
     // for tRNAs
     void x_ValidateAnticodon(const CSeq_loc& anticodon);
     void x_ValidateTrnaCodons();
     void x_ValidateTrnaType();
     void x_ValidateTrnaData();
-
-    // for mRNAs
-    void x_ValidateMrna(bool pseudo);
-    void x_ValidateCommonMRNAProduct();
-    void x_ReportMRNATranslationProblems(size_t problems, size_t mismatches);
-    void x_ValidateRnaTrans();
-    void x_ValidateRnaProduct(bool feat_pseudo, bool pseudo);
-    void x_ValidateRnaProductType();
     void x_ValidateTrnaOverlap();
+
+};
+
+
+class CMRNAValidator : public CRNAValidator 
+{
+public:
+    CMRNAValidator(const CSeq_feat& feat, CScope& scope, CValidError_imp& imp);
+
+    virtual void Validate() override;
+
+protected:
+        // for mRNAs
+    void x_ValidateMrna();
+    void x_ValidateCommonMRNAProduct();
+
+    CConstRef<CSeq_feat> m_Gene;
+    bool m_GeneIsPseudo;
+    bool m_FeatIsPseudo;
 };
 
 
