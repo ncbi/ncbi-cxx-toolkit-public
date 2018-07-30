@@ -565,7 +565,7 @@ endfunction()
 ##############################################################################
 function(NCBI_internal_collect_headers)
 
-    file(RELATIVE_PATH _rel ${NCBI_SRC_ROOT} ${NCBI_CURRENT_SOURCE_DIR})
+    file(RELATIVE_PATH _rel "${NCBI_SRC_ROOT}" "${NCBI_CURRENT_SOURCE_DIR}")
     set(_inc_dir ${NCBI_INC_ROOT}/${_rel})
     if(NCBI_PTBMODE_PARTS)
         set(_prefix "Hosted Libraries\\${NCBI_PROJECT_PARTNAME}\\")
