@@ -1314,6 +1314,8 @@ static bool s_ValueOkForQual(const string& value)
 }
 
 
+//commented out per SQD-4359
+//LCOV_EXCL_START
 static CRef<CSubSource> s_StringToSubSource (
     const string& str
 )
@@ -1341,6 +1343,7 @@ static CRef<CSubSource> s_StringToSubSource (
 
     return result;
 }
+//LCOV_EXCL_STOP
 
 // is st1 < st2
 
@@ -1592,7 +1595,8 @@ void CNewCleanup_imp::BiosourceBC (
     }
 
     // note - move this 
-    x_ConvertOrgref_modToSubSource(biosrc);
+    // commented out as requested in SQD-4359 
+    //x_ConvertOrgref_modToSubSource(biosrc);
 
     // remove spaces and convert to lowercase in fwd_primer_seq and rev_primer_seq.
     if( FIELD_IS_SET(biosrc, Subtype) ) {
@@ -1872,6 +1876,8 @@ void CNewCleanup_imp::x_PostBiosource( CBioSource& biosrc )
 }
 
 
+// commented out as requested in SQD-4359 
+//LCOV_EXCL_START
 void CNewCleanup_imp::x_ConvertOrgref_modToSubSource( CBioSource& biosrc )
 {
     if (BIOSOURCE_HAS_ORGREF (biosrc)) {
@@ -1923,6 +1929,7 @@ static CRef<COrgMod> s_StringToOrgMod (
     return result;
 }
 
+//commented out per SQD-4359
 void CNewCleanup_imp::x_ConvertOrgref_modToOrgMod(COrg_ref& org)
 {
     EDIT_EACH_MOD_ON_ORGREF(it, org) {
@@ -1940,6 +1947,7 @@ void CNewCleanup_imp::x_ConvertOrgref_modToOrgMod(COrg_ref& org)
         ChangeMade(CCleanupChange::eChangeOrgmod);
     }
 }
+//LCOV_EXCL_STOP
 
 static bool s_DbtagIsBad (
     CDbtag& dbt
@@ -1982,7 +1990,8 @@ void CNewCleanup_imp::OrgrefBC (COrg_ref& org)
     CLEAN_STRING_MEMBER (org, Common);
     CLEAN_STRING_LIST (org, Syn);
 
-    x_ConvertOrgref_modToOrgMod(org);
+    //commented out per SQD-4359
+    //x_ConvertOrgref_modToOrgMod(org);
 
     if (FIELD_IS_SET (org, Orgname)) {
         COrgName& onm = GET_MUTABLE (org, Orgname);
@@ -8320,12 +8329,15 @@ void CNewCleanup_imp::x_GBQualToOrgRef( COrg_ref &org, CSeq_feat &seqfeat )
             }
         }
     }
+    // commented out as requested in SQD-4359 
+#if 0
     if (any_conversions) {
         if (seqfeat.GetData().IsBiosrc()) {
             x_ConvertOrgref_modToSubSource(seqfeat.SetData().SetBiosrc());
             x_ConvertOrgref_modToOrgMod(seqfeat.SetData().SetBiosrc().SetOrg());
         }        
     }
+#endif
 }
 
 void CNewCleanup_imp::x_MoveSeqdescOrgToSourceOrg( CSeqdesc &seqdesc )
@@ -8346,8 +8358,9 @@ void CNewCleanup_imp::x_MoveSeqfeatOrgToSourceOrg( CSeq_feat &seqfeat )
         CRef <COrg_ref> org ( &GET_MUTABLE(seqfeat.SetData(), Org) );
         seqfeat.SetData().SetBiosrc().SetOrg(*org);
         ChangeMade (CCleanupChange::eConvertFeature);
-        x_ConvertOrgref_modToSubSource(seqfeat.SetData().SetBiosrc());
-        x_ConvertOrgref_modToOrgMod(seqfeat.SetData().SetBiosrc().SetOrg());
+        // commented out as requested in SQD-4359 
+        //x_ConvertOrgref_modToSubSource(seqfeat.SetData().SetBiosrc());
+        //x_ConvertOrgref_modToOrgMod(seqfeat.SetData().SetBiosrc().SetOrg());
     }
 }
 
@@ -11500,8 +11513,9 @@ void CNewCleanup_imp::x_RemoveOldFeatures(CBioseq & bioseq)
                     // convert imp-source feature to biosource
                     CRef<CBioSource> bsrc = BioSourceFromImpFeat(*(f->GetSeq_feat()));
                     if (bsrc) {
-                        x_ConvertOrgref_modToSubSource(*bsrc);
-                        x_ConvertOrgref_modToOrgMod(bsrc->SetOrg());
+                        // commented out as requested in SQD-4359 
+                        //x_ConvertOrgref_modToSubSource(*bsrc);
+                        //x_ConvertOrgref_modToOrgMod(bsrc->SetOrg());
                         BiosourceBC(*bsrc);
                         CRef<CSeqdesc> d(new CSeqdesc());
                         d->SetSource().Assign(*bsrc);
