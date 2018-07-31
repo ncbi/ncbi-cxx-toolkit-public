@@ -8,31 +8,57 @@
 # We require at least cmake-3.0
 cmake_minimum_required(VERSION 3.0)
 
+if("${CMAKE_GENERATOR}" STREQUAL "Xcode")
+    if(NOT DEFINED XCODE)
+        set(XCODE ON)
+    endif()
+endif()
+
 ###############################################################################
 # must be set to OFF on trunk
-set(NCBI_EXPERIMENTAL OFF)
-# may be set to OFF in case of problems
-set(NCBI_EXPERIMENTAL_API ON)
+if(NOT DEFINED NCBI_EXPERIMENTAL)
+  set(NCBI_EXPERIMENTAL OFF)
+endif()
 
 if(NCBI_EXPERIMENTAL)
+  cmake_policy(SET CMP0054 NEW)
+
   set(NCBI_EXPERIMENTAL_CFG              ON)
+  set(NCBI_EXPERIMENTAL_SUBDIRS          ON)
   set(NCBI_EXPERIMENTAL_DISABLE_HUNTER   ON)
   set(NCBI_EXPERIMENTAL_DISABLE_EXTLIB   OFF)
   set(NCBI_EXPERIMENTAL_DLL              OFF)
+  if(NCBI_EXPERIMENTAL_DLL OR BUILD_SHARED_LIBS)
+    if(WIN32 OR XCODE)
+      set(NCBI_COMPOSITE_DLL dll)
+    endif()
+  endif()
+
+#  set(NCBI_PROJECT_LIST corelib serial build-system)
+#  set(NCBI_EXPERIMENTAL_PROJECTS project_tree_builder datatool)
 
   set(NCBI_EXPERIMENTAL_VERBOSE          OFF)
-#  set(NCBI_EXPERIMENTAL_VERBOSE_ximage   ON)
-#  set(NCBI_EXPERIMENTAL_PROJECTS project_tree_builder datatool)
-  if (DEFINED NCBI_EXPERIMENTAL_PROJECTS)
+  set(NCBI_EXPERIMENTAL_VERBOSE_variation_utils   OFF)
+  set(NCBI_EXPERIMENTAL_VERBOSE_xncbi          OFF)
+
+  if (DEFINED NCBI_COMPOSITE_DLL OR DEFINED NCBI_EXPERIMENTAL_PROJECTS OR DEFINED NCBI_PROJECT_LIST)
     set(NCBI_EXPERIMENTAL_ENABLE_COLLECTOR ON)
   endif()
+
 else()
+  cmake_policy(SET CMP0054 OLD)
+
   set(NCBI_EXPERIMENTAL_CFG              OFF)
+  set(NCBI_EXPERIMENTAL_SUBDIRS          OFF)
   set(NCBI_EXPERIMENTAL_DISABLE_HUNTER   OFF)
   set(NCBI_EXPERIMENTAL_DISABLE_EXTLIB   OFF)
   set(NCBI_EXPERIMENTAL_VERBOSE          OFF)
   set(NCBI_EXPERIMENTAL_DLL              OFF)
   set(NCBI_EXPERIMENTAL_ENABLE_COLLECTOR OFF)
+endif()
+
+if(EXISTS "${NCBI_PROJECT_LIST}")
+  file(STRINGS "${NCBI_PROJECT_LIST}" NCBI_PROJECT_LIST)
 endif()
 
 ###############################################################################
@@ -174,14 +200,30 @@ endif()
 ##############################################################################
 #
 
-
 # Recurse subdirectories
-if (NCBI_EXPERIMENTAL_CFG)
+if (NCBI_EXPERIMENTAL_SUBDIRS)
 
-NCBI_add_root_subdirectory(corelib util serial build-system objects)
-#NCBI_add_root_subdirectory(corelib util serial)
+NCBI_add_root_subdirectory(
+  ${NCBI_COMPOSITE_DLL}
+  corelib
+  util
+  connect
+  cgi
+  html
+  build-system
+  serial
+  db
+  dbapi
+  objects
+  objmgr
+  objtools
+  ctools
+  algo
+  misc
+  sra
+)
 
-else (NCBI_EXPERIMENTAL_CFG)
+else (NCBI_EXPERIMENTAL_SUBDIRS)
 
 add_subdirectory(corelib)
 add_subdirectory(util)
@@ -295,4 +337,4 @@ install(EXPORT ncbi-cpp-toolkit
     DESTINATION lib/cmake/ncbi-cpp-toolkit-${NCBI_CPP_TOOLKIT_VERSION}
     )
 
-endif (NCBI_EXPERIMENTAL_CFG)
+endif (NCBI_EXPERIMENTAL_SUBDIRS)
