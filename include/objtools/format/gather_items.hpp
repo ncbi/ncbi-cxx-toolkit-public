@@ -63,6 +63,8 @@ public:
     static CFlatGatherer* New(CFlatFileConfig::TFormat format);
 
     virtual void Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const;
+    virtual void Gather(CFlatFileContext& ctx, CFlatItemOStream& os,
+                        const CSeq_entry_Handle& entry, bool useSeqEntryIndexing) const;
 
     virtual void SetCanceledCallback(const ICanceled* pCanceledCallback) {
         m_pCanceledCallback = pCanceledCallback;
@@ -81,6 +83,10 @@ protected:
 
     virtual void x_GatherSeqEntry(CFlatFileContext& ctx,
         CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext = CRef<CTopLevelSeqEntryContext>() ) const;
+    virtual void x_GatherSeqEntry(CFlatFileContext& ctx,
+        const CSeq_entry_Handle& entry, bool useSeqEntryIndexing,
+        CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext = CRef<CTopLevelSeqEntryContext>() ) const;
+
     virtual void x_GatherBioseq(
         const CBioseq_Handle& prev_seq, const CBioseq_Handle& this_seq, const CBioseq_Handle& next_seq, 
         CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext = CRef<CTopLevelSeqEntryContext>() ) const;

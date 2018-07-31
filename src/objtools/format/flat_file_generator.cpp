@@ -563,17 +563,127 @@ void CFlatFileGenerator::Generate
         SetFeatTree(new feature::CFeatTree(entry));
     }
 
-    for (CBioseq_CI bioseq_it(entry);  bioseq_it;  ++bioseq_it) {
-        CBioseq_Handle bsh = *bioseq_it;
-        CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
+    _ASSERT(entry  &&  entry.Which() != CSeq_entry::e_not_set);
 
-        try {
-            Generate( bsh, item_os);
+    if ( m_Ctx->GetConfig().BasicCleanup() )
+    {
+
+        entry.GetTopLevelEntry().GetCompleteObject();
+        CSeq_entry_EditHandle tseh = entry.GetTopLevelEntry().GetEditHandle();
+        CBioseq_set_EditHandle bseth;
+        CBioseq_EditHandle bseqh;
+        CRef<CSeq_entry> tmp_se(new CSeq_entry);
+
+        if ( tseh.IsSet() ) {
+            bseth = tseh.SetSet();
+            CConstRef<CBioseq_set> bset = bseth.GetCompleteObject();
+            bseth.Remove(bseth.eKeepSeq_entry);
+            tmp_se->SetSet(const_cast<CBioseq_set&>(*bset));
         }
-        catch (CException& e) {
-            ERR_POST(Error << e);
+        else {
+            bseqh = tseh.SetSeq();
+            CConstRef<CBioseq> bseq = bseqh.GetCompleteObject();
+            bseqh.Remove(bseqh.eKeepSeq_entry);
+            tmp_se->SetSeq(const_cast<CBioseq&>(*bseq));
+        }
+
+        CCleanup cleanup;
+        cleanup.BasicCleanup( *tmp_se );
+
+        if ( tmp_se->IsSet() ) {
+            tseh.SelectSet(bseth);
+        }
+        else {
+            tseh.SelectSeq(bseqh);
         }
     }
+
+    m_Ctx->SetSGS(false);
+    CConstRef<CSeq_entry> topent = entry.GetTopLevelEntry().GetCompleteSeq_entry();
+    if (topent && topent->IsSet()) {
+        /*
+        const CBioseq_set& topset = topent->GetSet();
+        VISIT_ALL_SEQSETS_WITHIN_SEQSET (itr, topset) {
+            const CBioseq_set& bss = *itr;
+            if (bss.GetClass() == CBioseq_set::eClass_small_genome_set) {
+                    m_Ctx->SetSGS(true);
+            }
+        }
+        */
+        VisitAllSeqSets(*topent, [this](const CBioseq_set& bss){
+            if (bss.GetClass() == CBioseq_set::eClass_small_genome_set) {
+                m_Ctx->SetSGS(true);
+            }});
+    }
+
+    CRef<CFlatItemOStream> pItemOS( & item_os );
+    // If there is a ICancel callback, wrap the item_os so
+    // that every call checks it.
+    const ICanceled * pCanceled = 
+        m_Ctx->GetConfig().GetCanceledCallback();
+    if( pCanceled ) {
+        pItemOS.Reset( 
+            new CCancelableFlatItemOStreamWrapper(
+            item_os, pCanceled) );
+    }
+
+    /// archive a copy of the annot selector before we generate!
+    SAnnotSelector sel = m_Ctx->SetAnnotSelector();
+    m_Ctx->SetEntry(entry);
+
+    if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
+        // CSeq_entry& top = const_cast<CSeq_entry&> (*topent);
+        CSeq_entry_Handle topseh = entry.GetTopLevelEntry();
+        if (m_Ctx->UsingSeqEntryIndex()) {
+            const CRef<CSeqEntryIndex> idx = m_Ctx->GetSeqEntryIndex();
+            if (idx) {
+                const CRef<CSeqMasterIndex>& midx = idx->GetMasterIndex();
+                if (midx) {
+                    if (midx->GetTopSEH() != topseh) {
+                        m_Ctx->ResetSeqEntryIndex();
+                    }
+                }
+            }
+        }
+        if (! m_Ctx->UsingSeqEntryIndex()) {
+            try {
+                CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eAdaptive ));
+                m_Ctx->SetSeqEntryIndex(idx);
+            } catch(CException &) {
+                m_Failed = true;
+                return;
+            }
+        }
+    }
+
+    CFlatFileConfig::TFormat format = m_Ctx->GetConfig().GetFormat();
+    CRef<CFlatItemFormatter> formatter(CFlatItemFormatter::New(format));
+    if ( !formatter ) {
+        NCBI_THROW(CFlatException, eInternal, "Unable to initialize formatter");
+    }
+    formatter->SetContext(*m_Ctx);
+    pItemOS->SetFormatter(formatter);
+
+    CRef<CFlatGatherer> gatherer(CFlatGatherer::New(format));
+    if ( !gatherer ) {
+        NCBI_THROW(CFlatException, eInternal, "Unable to initialize gatherer");
+    }
+
+	// this version of Gather calls method with internal Bioseq iterator
+    gatherer->Gather(*m_Ctx, *pItemOS, entry, useSeqEntryIndexing);
+
+    /// reset the context, but preserve our selector
+    /// we do this a bit oddly since resetting the context erases the selector;
+    /// since the caller is reusing this object (most likely), we automatically
+    /// restore the selector to its former glory
+    m_Ctx->Reset();
+    m_Ctx->SetAnnotSelector() = sel;
+
+    /*
+    if ( m_Ctx->GetConfig().UseSeqEntryIndexer() ) {
+        m_Ctx->ResetSeqEntryIndex();
+    }
+    */
 }
 
 

@@ -228,6 +228,30 @@ void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const
 }
 
 
+void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os, const CSeq_entry_Handle& entry, bool useSeqEntryIndexing) const
+{
+    m_ItemOS.Reset(&os);
+    m_Context.Reset(&ctx);
+
+    CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext( new CTopLevelSeqEntryContext(ctx.GetEntry()) );
+
+    // See if there even are any Bioseqs to print
+    // (If we don't do this test, we might print a CStartItem
+    // and CEndItem with nothing in between )
+    CGather_Iter seq_iter(ctx.GetEntry(), Config());
+    if( ! seq_iter ) {
+        return;
+    }
+
+    CConstRef<IFlatItem> item;
+    item.Reset( new CStartItem() );
+    os << item;
+    x_GatherSeqEntry(ctx, entry, useSeqEntryIndexing, topLevelSeqEntryContext);
+    item.Reset( new CEndItem() );
+    os << item;
+}
+
+
 CFlatGatherer::~CFlatGatherer(void)
 {
 }
@@ -236,6 +260,49 @@ CFlatGatherer::~CFlatGatherer(void)
 /////////////////////////////////////////////////////////////////////////////
 //
 // Protected:
+
+void CFlatGatherer::x_GatherSeqEntry(CFlatFileContext& ctx,
+    const CSeq_entry_Handle& entry,
+    bool useSeqEntryIndexing,
+    CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext) const
+{
+    m_TopSEH = ctx.GetEntry();
+    m_Feat_Tree.Reset(ctx.GetFeatTree());
+    if (m_Feat_Tree.Empty() && ! useSeqEntryIndexing) {
+        CFeat_CI iter (m_TopSEH);
+        m_Feat_Tree.Reset (new feature::CFeatTree (iter));
+    }
+
+
+    // visit bioseqs in the entry (excluding segments)
+    // CGather_Iter seq_iter(m_TopSEH, Config());
+    CBioseq_Handle prev_seq;
+    CBioseq_Handle this_seq;
+    CBioseq_Handle next_seq;
+    CBioseq_Handle bsh;
+    for (CBioseq_CI bioseq_it(entry);  bioseq_it;  ++bioseq_it) {
+    // for ( ; seq_iter; ++seq_iter ) {
+        bsh = *bioseq_it;
+
+        if( this_seq ) {
+            x_GatherBioseq(prev_seq, this_seq, next_seq, topLevelSeqEntryContext);
+        }
+
+        // move everything over by one
+        prev_seq = this_seq;
+        this_seq = next_seq;
+        next_seq = bsh;
+    }
+
+    // we don't process the last ones, so we do that now
+    if( this_seq ) {
+        x_GatherBioseq(prev_seq, this_seq, next_seq, topLevelSeqEntryContext);
+    }
+    if( next_seq ) {
+        x_GatherBioseq(this_seq, next_seq, CBioseq_Handle(), topLevelSeqEntryContext);
+    }
+} 
+
 
 void CFlatGatherer::x_GatherSeqEntry(CFlatFileContext& ctx,
     CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext) const
