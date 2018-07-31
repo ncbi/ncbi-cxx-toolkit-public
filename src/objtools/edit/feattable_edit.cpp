@@ -331,6 +331,11 @@ void CFeatTableEdit::EliminateBadQualifiers()
                     continue;
                 }
             }
+            if (subtype != CSeqFeatData::eSubtype_gene  &&  qualKey == "gene") {
+                //rw-570: remove gene qualifiers fro non-gene features before cleanup sees them
+                badQuals.push_back(qualKey);
+                continue;
+            }
             CSeqFeatData::EQualifier qualType = CSeqFeatData::GetQualifierType(qualKey);
             if (CSeqFeatData::IsLegalQualifier(subtype, qualType)) {
                 continue;
