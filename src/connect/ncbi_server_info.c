@@ -370,7 +370,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                 if (algo)
                     break;
                 algo = 1/*true*/;
-                switch (*str) {
+                switch ((unsigned char)(*++str)) {
                 case 'B':
                     info->algo = eSERV_Blast;
                     ++str;
@@ -409,7 +409,7 @@ SSERV_Info* SERV_ReadInfoEx(const char* str,
                     info->mime_e = mime_e;
                     /* skip the entire token */
                     while (*str  &&  !isspace((unsigned char)(*str)))
-                        str++;
+                        ++str;
                 }
                 break;
             case 'H':
