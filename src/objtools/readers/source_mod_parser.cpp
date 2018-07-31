@@ -829,8 +829,8 @@ void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReaction>& pcr_reaction)
 
     using Tdata = CPCRPrimerSet::Tdata;
     Tdata fwd_primers;
-    if ((mod = FindMod("fwd_primer_name")) != NULL  ||
-        (mod = FindMod("fwd_pcr_primer_name")) != NULL) {
+    if ((mod = FindMod(s_Mod_fwd_primer_name)) != NULL  ||
+        (mod = FindMod(s_Mod_fwd_pcr_primer_name)) != NULL) {
         list<string> names;
         NStr::Split(mod->value, ",", names, NStr::fSplit_Tokenize);
         for (const string& name : names) {
@@ -840,8 +840,8 @@ void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReaction>& pcr_reaction)
         }
     }
     
-    if ((mod = FindMod("fwd_primer_seq")) != NULL  ||  
-        (mod = FindMod("fwd_pcr_primer_seq")) != NULL) {
+    if ((mod = FindMod(s_Mod_fwd_primer_seq)) != NULL  ||  
+        (mod = FindMod(s_Mod_fwd_pcr_primer_seq)) != NULL) {
         list<string> seqs;
         NStr::Split(mod->value, ",", seqs, NStr::fSplit_Tokenize);
 
@@ -881,8 +881,8 @@ void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReaction>& pcr_reaction)
     }
 
     Tdata rev_primers;
-    if ((mod = FindMod("rev_primer_name")) != NULL  ||
-        (mod = FindMod("rev_pcr_primer_name")) != NULL) {
+    if ((mod = FindMod(s_Mod_rev_primer_name)) != NULL  ||
+        (mod = FindMod(s_Mod_rev_pcr_primer_name)) != NULL) {
         list<string> names;
         NStr::Split(mod->value, ",", names, NStr::fSplit_Tokenize);
         for (const string& name : names) {
@@ -892,8 +892,8 @@ void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReaction>& pcr_reaction)
         }
     }
     
-    if ((mod = FindMod("rev_primer_seq")) != NULL  ||  
-        (mod = FindMod("rev_pcr_primer_seq")) != NULL) {
+    if ((mod = FindMod(s_Mod_rev_primer_seq)) != NULL  ||  
+        (mod = FindMod(s_Mod_rev_pcr_primer_seq)) != NULL) {
         list<string> seqs;
         NStr::Split(mod->value, ",", seqs, NStr::fSplit_Tokenize);
 
