@@ -2,7 +2,6 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_CFG)
 NCBI_begin_lib(general)
   NCBI_sources(uoconv)
   NCBI_dataspecs(general.asn)
@@ -11,7 +10,7 @@ NCBI_begin_lib(general)
 NCBI_end_lib()
 
 
-else()
+if(OFF)
 set(MODULE general)
 set(MODULE_IMPORT )
 set(MODULE_PATH )

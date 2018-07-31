@@ -2,13 +2,12 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_CFG)
 NCBI_begin_lib(access)
   NCBI_dataspecs(access.asn)
 NCBI_end_lib()
 
 
-else()
+if(OFF)
 
 set(MODULE access)
 set(MODULE_IMPORT )

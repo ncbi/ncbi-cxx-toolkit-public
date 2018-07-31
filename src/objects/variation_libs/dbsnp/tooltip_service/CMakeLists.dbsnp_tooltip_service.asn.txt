@@ -2,13 +2,12 @@
 # $Id$
 #############################################################################
 
-if (NCBI_EXPERIMENTAL_CFG)
 NCBI_begin_lib(dbsnp_tooltip_service)
   NCBI_dataspecs(dbsnp_tooltip_service.asn)
 NCBI_end_lib()
 
 
-else()
+if(OFF)
 
 set(MODULE dbsnp_tooltip_service)
 set(MODULE_IMPORT )

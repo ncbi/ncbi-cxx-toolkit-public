@@ -3,7 +3,6 @@
 #############################################################################
 
 
-if(NCBI_EXPERIMENTAL_CFG)
 NCBI_begin_lib(taxon3)
   NCBI_dataspecs(taxon3.asn)
   NCBI_sources(taxon3)
@@ -12,7 +11,7 @@ NCBI_begin_lib(taxon3)
 NCBI_end_lib()
 
 
-else()
+if(OFF)
 
 set(MODULE taxon3)
 set(MODULE_IMPORT objects/seqfeat/seqfeat)
