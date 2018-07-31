@@ -6185,10 +6185,6 @@ void CValidError_bioseq::ValidateSeqFeatContext(
         x_ValidateCDSmRNAmatch(
             m_CurrentHandle, numgene, numcds, nummrna);
 
-        if (m_Imp.IsLocusTagGeneralMatch()) {
-            x_ValidateLocusTagGeneralMatch(m_CurrentHandle);
-        }
-
         if (!SeqIsPatent(seq)) {
             ValidateMultipleGeneOverlap (m_CurrentHandle);
         }
@@ -6201,74 +6197,6 @@ void CValidError_bioseq::ValidateSeqFeatContext(
         }
     }
 
-}
-
-
-void CValidError_bioseq::x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& seq)
-{
-    if (!seq  ||  !CSeq_inst::IsNa(seq.GetInst_Mol())) {
-        return;
-    }
-
-    // iterate coding regions and mRNAs
-    if (!m_AllFeatIt) {
-        return;
-    }
-
-    ITERATE(CCacheImpl::TFeatValue, fi, *m_AllFeatIt) {
-        CSeqFeatData::ESubtype stype = fi->GetData().GetSubtype();
-        if (stype != CSeqFeatData::eSubtype_cdregion
-            && stype != CSeqFeatData::eSubtype_mRNA) {
-            continue;
-        }
-        const CSeq_feat& feat = fi->GetOriginalFeature();
-        if (!feat.IsSetProduct()) {
-            continue;
-        }
-        
-        // obtain the gene-ref from the feature or the overlapping gene
-        const CGene_ref* grp = feat.GetGeneXref();
-        if (grp == NULL) {
-            CConstRef<CSeq_feat> gene = m_Imp.GetCachedGene(&feat);
-            if (gene) {
-                grp = &gene->GetData().GetGene();
-            }
-        }
-
-        if (grp == NULL || grp->IsSuppressed() || !grp->IsSetLocus_tag() || grp->GetLocus_tag().empty()) {
-            continue;
-        }
-        const string& locus_tag = grp->GetLocus_tag();
-   
-        
-        CBioseq_Handle prod = m_Scope->GetBioseqHandleFromTSE
-            (GetId(feat.GetProduct(), m_Scope), m_Imp.GetTSEH());
-        if (!prod) {
-            continue;
-        }
-        FOR_EACH_SEQID_ON_BIOSEQ (it, *(prod.GetCompleteBioseq())) {
-            if (!(*it)->IsGeneral()) {
-                continue;
-            }
-            const CDbtag& dbt = (*it)->GetGeneral();
-            if (!dbt.IsSetDb()) {
-                continue;
-            }
-            if (s_IsSkippableDbtag (dbt)) {
-                continue;
-            }
-
-            if (dbt.IsSetTag()  &&  dbt.GetTag().IsStr()) {
-                SIZE_TYPE pos = dbt.GetTag().GetStr().find('-');
-                string str = dbt.GetTag().GetStr().substr(0, pos);
-                if (!NStr::EqualNocase(locus_tag, str)) {
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_LocusTagProductMismatch,
-                        "Gene locus_tag does not match general ID of product",
-                        feat);
-                }
-            }
-        }
-    }
 }
 
 

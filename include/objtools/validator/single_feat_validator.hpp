@@ -194,6 +194,7 @@ protected:
     void x_ValidateSeqFeatDataType();
 
     void x_ReportPseudogeneConflict(CConstRef <CSeq_feat> gene);
+    void x_ValidateLocusTagGeneralMatch(CConstRef <CSeq_feat> gene);
 };
 
 class CCdregionValidator : public CSingleFeatValidator

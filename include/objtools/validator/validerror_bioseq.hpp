@@ -227,7 +227,6 @@ private:
     void x_TranscriptIDsMatch(const string& protein_id, const CSeq_feat& cds);
     unsigned int x_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
     bool x_IdXrefsAreReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna);
-    void x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& seq);
 
     void ValidateSeqDescContext(const CBioseq& seq);
     void CheckForMissingChromosome(CBioseq_Handle bsh);

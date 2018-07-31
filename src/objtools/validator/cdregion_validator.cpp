@@ -779,6 +779,7 @@ void CCdregionValidator::Validate()
     }
 
     x_ReportPseudogeneConflict(m_Gene);
+    x_ValidateLocusTagGeneralMatch(m_Gene);
 }
 
 

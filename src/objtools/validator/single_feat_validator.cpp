@@ -2599,6 +2599,56 @@ void CSingleFeatValidator::x_ReportPseudogeneConflict(CConstRef <CSeq_feat> gene
 }
 
 
+// grp is from gene xref or from overlapping gene
+void CSingleFeatValidator::x_ValidateLocusTagGeneralMatch(CConstRef <CSeq_feat> gene)
+{
+    if (!m_Imp.IsLocusTagGeneralMatch()) {
+        return;
+    }
+    if (!m_Feat.IsSetProduct()) {
+        return;
+    }
+
+    CTempString locus_tag = kEmptyStr;
+    // obtain the gene-ref from the feature or the overlapping gene
+    const CGene_ref* grp = m_Feat.GetGeneXref();
+    if (grp && grp->IsSuppressed()) {
+        return;
+    } else if (grp && grp->IsSetLocus_tag() &&
+               !NStr::IsBlank(grp->GetLocus_tag())) {
+        locus_tag = grp->GetLocus_tag();
+    } else if (gene && gene->GetData().GetGene().IsSetLocus_tag() &&
+               !NStr::IsBlank(gene->GetData().GetGene().GetLocus_tag())) {
+        locus_tag = gene->GetData().GetGene().GetLocus_tag();
+    } else {
+        return;
+    }
+
+    if (!m_ProductBioseq) {
+        return;
+    }
+
+    for (auto id : m_ProductBioseq.GetId()) {
+        CConstRef<CSeq_id> seqid = id.GetSeqId();
+        if (!seqid || !seqid->IsGeneral()) {
+            continue;
+        }
+        const CDbtag& dbt = seqid->GetGeneral();
+        if (!dbt.IsSetDb() || dbt.IsSkippable()) {
+            continue;
+        }
+
+        if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
+            SIZE_TYPE pos = dbt.GetTag().GetStr().find('-');
+            string str = dbt.GetTag().GetStr().substr(0, pos);
+            if (!NStr::EqualNocase(locus_tag, str)) {
+                PostErr(eDiag_Error, eErr_SEQ_FEAT_LocusTagProductMismatch,
+                    "Gene locus_tag does not match general ID of product");
+            }
+        }
+    }
+}
+
 
 void CProtValidator::Validate()
 {
@@ -3818,6 +3868,7 @@ void CMRNAValidator::Validate()
     CRNAValidator::Validate();
 
     x_ReportPseudogeneConflict(m_Gene);
+    x_ValidateLocusTagGeneralMatch(m_Gene);
 
     x_ValidateMrna();
 
