@@ -67,5 +67,5 @@ int main(int argc, char* argv[])
 
     CORE_LOG(eLOG_Note, "TEST COMPLETED SUCCESSFULLY");
     CORE_SetLOG(0);
-    return 1;
+    return 0;
 }
