@@ -225,6 +225,8 @@ void CSpecificHostRequest::PostErrors(CValidError_imp& imp)
 }
 
 
+//LCOV_EXCL_START
+//only used by biosample
 bool CSpecificHostRequest::HasErrors() const
 {
     bool rval = false;
@@ -250,8 +252,11 @@ bool CSpecificHostRequest::HasErrors() const
     }
     return rval;
 }
+//LCOV_EXCL_STOP
 
 
+//LCOV_EXCL_START
+//used by cleanup
 const string& CSpecificHostRequest::SuggestFix() const
 {
     if (m_ValuesToTry.empty()) {
@@ -260,6 +265,7 @@ const string& CSpecificHostRequest::SuggestFix() const
         return m_SuggestedFix;
     }
 }
+//LCOV_EXCL_STOP
 
 
 bool CStrainRequest::x_IgnoreStrain(const string& str)
@@ -380,10 +386,13 @@ void CStrainRequest::PostErrors(CValidError_imp& imp)
 }
 
 
+//LCOV_EXCL_START
+//only used by biosample
 bool CStrainRequest::HasErrors() const 
 {
     return m_IsInvalid;
 }
+//LCOV_EXCL_STOP
 
 
 void CStrainRequest::AddReply(const CT3Reply& reply)
@@ -474,6 +483,8 @@ void CQualLookupMap::AddFeat(CConstRef<CSeq_feat> feat)
 }
 
 
+//LCOV_EXCL_START
+//only used by biosample
 void CQualLookupMap::AddString(const string& val)
 {
     m_Populated = true;
@@ -483,6 +494,7 @@ void CQualLookupMap::AddString(const string& val)
         m_Map[val] = x_MakeNewRequest(val, *org);
     }
 }
+//LCOV_EXCL_STOP
 
 
 vector<CRef<COrg_ref> > CQualLookupMap::GetRequestList()
@@ -537,6 +549,8 @@ string CQualLookupMap::IncrementalUpdate(const vector<CRef<COrg_ref> >& input, c
 }
 
 
+//LCOV_EXCL_START
+//only used for cleanup
 bool CQualLookupMap::IsUpdateComplete() const
 {
     TQualifierRequests::const_iterator rq_it = m_Map.cbegin();
@@ -549,6 +563,7 @@ bool CQualLookupMap::IsUpdateComplete() const
     }
     return true;
 }
+//LCOV_EXCL_STOP
 
 
 void CQualLookupMap::PostErrors(CValidError_imp& imp)
@@ -561,6 +576,8 @@ void CQualLookupMap::PostErrors(CValidError_imp& imp)
 }
 
 
+//LCOV_EXCL_START
+//only used by biosample
 bool CQualLookupMap::HasErrors() const
 {
     for (auto rq_it : m_Map) {
@@ -570,6 +587,7 @@ bool CQualLookupMap::HasErrors() const
     }
     return false;
 }
+//LCOV_EXCL_STOP
 
 
 CRef<CQualifierRequest> CSpecificHostMap::x_MakeNewRequest(const string& orig_val, const COrg_ref& org)
@@ -579,6 +597,8 @@ CRef<CQualifierRequest> CSpecificHostMap::x_MakeNewRequest(const string& orig_va
 }
 
 
+//LCOV_EXCL_START
+//used for cleanup
 CRef<CQualifierRequest> CSpecificHostMapForFix::x_MakeNewRequest(const string& orig_val, const COrg_ref& org)
 {
     CRef<CQualifierRequest> rq(new CSpecificHostRequest(orig_val, org, true));
@@ -623,6 +643,7 @@ bool CSpecificHostMapForFix::ApplyToOrg(COrg_ref& org_ref) const
 
     return changed;
 }
+//LCOV_EXCL_STOP
 
 
 CRef<CQualifierRequest> CStrainMap::x_MakeNewRequest(const string& orig_val, const COrg_ref& org)
@@ -865,6 +886,8 @@ void CTaxValidationAndCleanup::ReportTaxLookupErrors
 }
 
 
+//LCOV_EXCL_START
+//used by Genome Workbench
 bool CTaxValidationAndCleanup::AdjustOrgRefsWithTaxLookupReply
 ( const CTaxon3_reply& reply, 
  vector<CRef<COrg_ref> > org_refs, 
@@ -905,6 +928,7 @@ bool CTaxValidationAndCleanup::AdjustOrgRefsWithTaxLookupReply
     }
     return changed;
 }
+//LCOV_EXCL_STOP
 
 
 vector<CRef<COrg_ref> > CTaxValidationAndCleanup::GetSpecificHostLookupRequest(bool for_fix)
@@ -964,6 +988,8 @@ void CTaxValidationAndCleanup::ReportSpecificHostErrors(CValidError_imp& imp)
     m_HostMap.PostErrors(imp);
 }
 
+//LCOV_EXCL_START
+//appears to not be used
 void CTaxValidationAndCleanup::ReportSpecificHostErrors(const CTaxon3_reply& reply, CValidError_imp& imp)
 {
     string error_message;
@@ -978,8 +1004,11 @@ void CTaxValidationAndCleanup::ReportSpecificHostErrors(const CTaxon3_reply& rep
 
     m_HostMap.PostErrors(imp);
 }
+//LCOV_EXCL_STOP
 
 
+//LCOV_EXCL_START
+//only used by cleanup
 bool CTaxValidationAndCleanup::AdjustOrgRefsWithSpecificHostReply
 (vector<CRef<COrg_ref> > requests, 
  const CTaxon3_reply& reply,
@@ -1019,6 +1048,7 @@ TSpecificHostRequests::iterator CTaxValidationAndCleanup::x_FindHostFixRequest(c
     }
     return m_SpecificHostRequests.end();
 }
+//LCOV_EXCL_STOP
 
 
 string CTaxValidationAndCleanup::IncrementalSpecificHostMapUpdate(const vector<CRef<COrg_ref> >& input, const CTaxon3_reply& reply)
@@ -1036,6 +1066,8 @@ string CTaxValidationAndCleanup::IncrementalSpecificHostMapUpdate(const vector<C
 }
 
 
+//LCOV_EXCL_START
+//used only by cleanup
 bool CTaxValidationAndCleanup::IsSpecificHostMapUpdateComplete() const
 {
     if (m_HostMap.IsPopulated()) {
@@ -1118,6 +1150,7 @@ bool CTaxValidationAndCleanup::IsStrainMapUpdateComplete() const
 {
     return m_StrainMap.IsUpdateComplete();
 }
+//LCOV_EXCL_STOP
 
 
 void CTaxValidationAndCleanup::ReportStrainErrors(CValidError_imp& imp)
@@ -1126,6 +1159,8 @@ void CTaxValidationAndCleanup::ReportStrainErrors(CValidError_imp& imp)
 }
 
 
+//LCOV_EXCL_START
+//used by Genome Workbench, asn_cleanup, and table2asn but not asnvalidate
 bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with_host)
 {
     Init(*(seh.GetCompleteSeq_entry()));
@@ -1214,8 +1249,11 @@ bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with
     }
     return (num_updated_descs > 0 || num_updated_feats > 0);
 }
+//LCOV_EXCL_STOP
 
 
+//LCOV_EXCL_START
+//only used by biosample
 void CTaxValidationAndCleanup::FixOneSpecificHost(string& val)
 {
     val = x_DefaultSpecificHostAdjustments(val);
@@ -1257,8 +1295,11 @@ void CTaxValidationAndCleanup::FixOneSpecificHost(string& val)
     val = edited.front()->GetOrgname().GetMod().front()->GetSubname();
     m_HostMapForFix.Clear();
 }
+//LCOV_EXCL_STOP
 
 
+//LCOV_EXCL_START
+//only used by biosample
 bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val)
 {
     m_HostMap.Clear();
@@ -1298,6 +1339,7 @@ bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val)
     m_HostMap.Clear();
     return rval;
 }
+//LCOV_EXCL_STOP
 
 END_SCOPE(validator)
 END_SCOPE(objects)
