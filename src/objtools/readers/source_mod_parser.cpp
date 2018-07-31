@@ -823,6 +823,117 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
     }
 }
 
+void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReaction>& pcr_reaction)
+{
+    const SMod* mod = nullptr;
+
+    using Tdata = CPCRPrimerSet::Tdata;
+    Tdata fwd_primers;
+    if ((mod = FindMod("fwd_primer_name")) != NULL  ||
+        (mod = FindMod("fwd_pcr_primer_name")) != NULL) {
+        list<string> names;
+        NStr::Split(mod->value, ",", names, NStr::fSplit_Tokenize);
+        for (const string& name : names) {
+            CRef<CPCRPrimer> primer(new CPCRPrimer());
+            primer->SetName().Set(name);
+            fwd_primers.push_back(primer);
+        }
+    }
+    
+    if ((mod = FindMod("fwd_primer_seq")) != NULL  ||  
+        (mod = FindMod("fwd_pcr_primer_seq")) != NULL) {
+        list<string> seqs;
+        NStr::Split(mod->value, ",", seqs, NStr::fSplit_Tokenize);
+
+        if (seqs.size()>1) {
+            if (seqs.front().front() == '(') {
+                seqs.front().erase(0,1);
+            }
+            if (seqs.back().back() == ')') {
+                seqs.back().erase(seqs.back().size()-1, 1);
+            }
+        }
+
+        if (!fwd_primers.empty()) {
+            if (seqs.size() != fwd_primers.size()) {
+                // report an error
+            }
+            else {
+                auto primer_it = fwd_primers.begin();
+                for (auto seq : seqs) {
+                    (*primer_it)->SetSeq().Set(NStr::ToLower(seq));
+                    ++primer_it;
+                }
+            }
+        }
+        else {
+            for (auto& seq : seqs) {
+                CRef<CPCRPrimer> primer(new CPCRPrimer());
+                primer->SetSeq().Set(NStr::ToLower(seq));
+                fwd_primers.push_back(primer);
+            }
+        }
+        if (!fwd_primers.empty()) {
+            pcr_reaction->SetForward().Set().splice(
+                pcr_reaction->SetForward().Set().end(),
+                fwd_primers);
+        }
+    }
+
+    Tdata rev_primers;
+    if ((mod = FindMod("rev_primer_name")) != NULL  ||
+        (mod = FindMod("rev_pcr_primer_name")) != NULL) {
+        list<string> names;
+        NStr::Split(mod->value, ",", names, NStr::fSplit_Tokenize);
+        for (const string& name : names) {
+            CRef<CPCRPrimer> primer(new CPCRPrimer());
+            primer->SetName().Set(name);
+            rev_primers.push_back(primer);
+        }
+    }
+    
+    if ((mod = FindMod("rev_primer_seq")) != NULL  ||  
+        (mod = FindMod("rev_pcr_primer_seq")) != NULL) {
+        list<string> seqs;
+        NStr::Split(mod->value, ",", seqs, NStr::fSplit_Tokenize);
+
+        if (seqs.size()>1) {
+            if (seqs.front().front() == '(') {
+                seqs.front().erase(0,1);
+            }
+            if (seqs.back().back() == ')') {
+                seqs.back().erase(seqs.back().size()-1, 1);
+            }
+        }
+
+        if (!rev_primers.empty()) {
+            if (seqs.size() != rev_primers.size()) {
+                // report an error
+            }
+            else {
+                auto primer_it = rev_primers.begin();
+                for (auto seq : seqs) {
+                    (*primer_it)->SetSeq().Set(NStr::ToLower(seq));
+                    ++primer_it;
+                }
+            }
+        }
+        else {
+            for (auto& seq : seqs) {
+                CRef<CPCRPrimer> primer(new CPCRPrimer());
+                primer->SetSeq().Set(NStr::ToLower(seq));
+                rev_primers.push_back(primer);
+            }
+        }
+
+        if (!rev_primers.empty()) {
+            pcr_reaction->SetReverse().Set().splice(
+                pcr_reaction->SetReverse().Set().end(),
+                rev_primers);
+        }
+    }
+}
+
 void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
                                    CTempString organism)
 {
@@ -939,49 +1050,13 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
     // handle PCR Primers
     {{
         CAutoInitRef<CPCRReaction> pcr_reaction;
-        
-        CAutoInitRef<CPCRPrimer> fwd_primer;
-        CAutoInitRef<CPCRPrimer> rev_primer;
-
-        bool used_fwd = false;
-        bool used_rev = false; 
-
-        if ((mod = FindMod(s_Mod_fwd_primer_name)) != NULL  ||
-                (mod = FindMod(s_Mod_fwd_pcr_primer_name)) != NULL) {
-            fwd_primer->SetName().Set( mod->value );
-            used_fwd = true;
-        }
-        if ((mod = FindMod(s_Mod_fwd_primer_seq)) != NULL  ||  
-                (mod = FindMod(s_Mod_fwd_pcr_primer_seq)) != NULL) {
-            fwd_primer->SetSeq().Set( mod->value );
-            NStr::ToLower( fwd_primer->SetSeq().Set() );
-            used_fwd = true;
-        }
-        if ((mod = FindMod(s_Mod_rev_primer_name)) != NULL  ||  
-                (mod = FindMod(s_Mod_rev_pcr_primer_name)) != NULL) {
-            rev_primer->SetName().Set( mod->value );
-            used_rev = true;
-        }
-        if ((mod = FindMod(s_Mod_rev_primer_seq)) != NULL  ||  
-                (mod = FindMod(s_Mod_rev_pcr_primer_seq)) != NULL) {
-            rev_primer->SetSeq().Set( mod->value );
-            NStr::ToLower( rev_primer->SetSeq().Set() );
-            used_rev = true;
-        }
-
-        if( used_fwd ) {
-            pcr_reaction->SetForward().Set().push_back(
-                CRef<CPCRPrimer>(&*fwd_primer) );
-        }
-        if( used_rev ) {
-            pcr_reaction->SetReverse().Set().push_back(
-                CRef<CPCRPrimer>(&*rev_primer) );
-        }
-        if( used_fwd || used_rev ) {
+        x_AddPCRPrimers(pcr_reaction);
+        if (pcr_reaction.IsInitialized()) {
             bsrc->SetPcr_primers().Set().push_back(
-                CRef<CPCRReaction>(&*pcr_reaction) );
+                    CRef<CPCRReaction>(&*pcr_reaction) );
         }
-    }}
+     }}   
+
 
     // db_xref
     TModsRange db_xref_mods_range = FindAllMods( s_Mod_db_xref, s_Mod_dbxref );
