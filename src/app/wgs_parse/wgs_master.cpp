@@ -1198,11 +1198,6 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
         if (info.m_common_structured_comments.empty()) {
             ERR_POST_EX(0, 0, Info << "All contigs are missing both text and structured comments.");
         }
-
-        if (GetParams().GetUpdateMode() == eUpdateFull || GetParams().GetUpdateMode() == eUpdateExtraContigs ||
-            GetParams().GetUpdateMode() == eUpdatePartial || GetParams().GetUpdateMode() == eUpdateAssembly) {
-            ERR_POST_EX(0, 0, Warning << "All contigs are missing text comments. Master Bioseq will not receive a comment descriptor.");
-        }
     }
 
     for (auto& comment : info.m_common_comments) {
