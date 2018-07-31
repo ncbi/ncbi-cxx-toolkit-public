@@ -3873,6 +3873,9 @@ void CMRNAValidator::x_ValidateMrna()
 
 void CMRNAValidator::x_ValidateCommonMRNAProduct()
 {
+    if (!m_Feat.IsSetProduct()) {
+        return;
+    }
     if ( !m_ProductBioseq) {
         if (m_LocationBioseq) {
             CSeq_entry_Handle seh = m_LocationBioseq.GetTopLevelEntry();
