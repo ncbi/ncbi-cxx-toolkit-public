@@ -789,21 +789,26 @@ static void FixMasterDates(CMasterInfo& info, bool entry_from_id)
 
 typedef bool(*TDescrPredicat)(const CSeqdesc&);
 
-static void RemoveDescriptors(CSeq_entry& entry, TDescrPredicat to_remove)
+static bool RemoveDescriptors(CSeq_entry& entry, TDescrPredicat to_remove)
 {
     CSeq_descr* descrs = nullptr;
+    bool ret = false;
+
     if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
 
         auto& descr_cont = descrs->Set();
         for (auto descr = descr_cont.begin(); descr != descr_cont.end();) {
             if (to_remove(**descr)) {
                 descr = descr_cont.erase(descr);
+                ret = true;
             }
             else {
                 ++descr;
             }
         }
     }
+
+    return ret;
 }
 
 static bool HasOneCitArt(const CPubdesc& pub)
@@ -1503,7 +1508,9 @@ int CWGSParseApp::Run(void)
             if (GetParams().GetSource() != eNCBI &&
                 (GetParams().GetUpdateMode() == eUpdateAssembly || GetParams().GetUpdateMode() == eUpdateFull ||
                  GetParams().GetUpdateMode() == eUpdateExtraContigs || GetParams().GetUpdateMode() == eUpdatePartial)) {
-                RemoveDescriptors(*master_info.m_id_master_bioseq, [](const CSeqdesc& descr) { return descr.IsComment(); });
+                if(RemoveDescriptors(*master_info.m_id_master_bioseq, [](const CSeqdesc& descr) { return descr.IsComment(); }) &&
+                   master_info.m_common_comments.empty())
+                    ERR_POST_EX(0, 0, Warning << "All contigs are missing text comments. Master Bioseq will not receive a comment descriptor.");
             }
         }
 
