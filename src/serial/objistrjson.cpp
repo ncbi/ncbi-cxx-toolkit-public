@@ -743,7 +743,7 @@ TEnumValueType CObjectIStreamJson::ReadEnum(const CEnumeratedTypeValues& values)
     m_ExpectValue = false;
     TEnumValueType value;
     char c = SkipWhiteSpace();
-    if (c == '\"' && !values.IsInteger()) {
+    if (c == '\"') {
         value = values.FindValue( ReadValue());
     } else {
         value = (TEnumValueType)ReadInt8();
