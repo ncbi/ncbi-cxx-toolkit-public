@@ -60,7 +60,7 @@ CResolverHandler::CResolverHandler(HST::CHttpReply<CPendingOperation>& resp, SRe
     else {
         CSeq_id                 seq_id(request.m_SeqId);
         if (seq_id.Which() == CSeq_id::e_Gi) {
-            seq_id_str = to_string(seq_id.GetGi());
+            seq_id_str = NStr::NumericToString(seq_id.GetGi());
             id_type = kIdTypeGI;
         }
         else {
