@@ -115,6 +115,9 @@ public:
     void SetMaxReturn(int ret_max);
     void SetLinkName(const string& link_name);
 
+    void ClearAddedParameters();
+    void AddParameter(const string &name, const string &value);
+
     Uint8 Count(const string& db,
                 const string& term);
 
@@ -420,9 +423,12 @@ protected:
     Uint8 ParseSearchResults(const string& xml_file,
                              vector<TGi>& uids);
 
+    typedef map<string,string> TParamList;
+
     CRef<CMessageHandler> m_MessageHandler;
     string m_HostName;
     string m_UrlTag;
+    TParamList m_AdditionalParams;
     int    m_RetMax;
     string m_LinkName;
 

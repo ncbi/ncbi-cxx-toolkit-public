@@ -469,6 +469,16 @@ void CEutilsClient::SetUserTag(const string& tag)
     m_UrlTag = tag;
 }
 
+void CEutilsClient::ClearAddedParameters()
+{
+    m_AdditionalParams.clear();
+}
+
+void CEutilsClient::AddParameter(const string &name, const string &value)
+{
+    m_AdditionalParams[name] = value;
+}
+
 void CEutilsClient::SetLinkName(const string& link_name)
 {
     m_LinkName = link_name;
@@ -492,6 +502,9 @@ Uint8 CEutilsClient::Count(const string& db,
     params += "&retmode=xml&retmax=1";
     if ( !m_UrlTag.empty() ) {
         params += "&user=" + NStr::URLEncode(m_UrlTag);
+    }
+    for (const TParamList::value_type &param : m_AdditionalParams) {
+       params += "&" + param.first + "=" + param.second;
     }
 
     Uint8 count = 0;
@@ -688,6 +701,9 @@ Uint8 CEutilsClient::x_Search(const string& db,
         params += "&idtype=gi";
     } else {
         params += "&idtype=acc";
+    }
+    for (const TParamList::value_type &param : m_AdditionalParams) {
+       params += "&" + param.first + "=" + param.second;
     }
     
     Uint8 count = 0;
