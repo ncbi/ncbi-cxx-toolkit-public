@@ -1145,28 +1145,37 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_MOLTYPES)
 
 
 // BAD_LOCUS_TAG_FORMAT
-DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, CSeqFeatData, eDisc | eSubmitter | eSmart, "Bad locus tag format")
+DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, COverlappingFeatures, eDisc | eSubmitter | eSmart, "Bad locus tag format")
 {
-    if (obj.Which() != CSeqFeatData::e_Gene) {
-        return;
+    if (context.GetCurrentBioseq()->IsSetId()) {
+        for (auto id : context.GetCurrentBioseq()->GetId()) {
+            switch (id->Which()) {
+                case CSeq_id::e_Genbank:
+                case CSeq_id::e_Embl:
+                case CSeq_id::e_Pir:
+                case CSeq_id::e_Swissprot:
+                case CSeq_id::e_Other:
+                case CSeq_id::e_Ddbj:
+                case CSeq_id::e_Prf:
+                    return;
+                default:
+                    break;
+            }
+        }
     }
-
-    const CGene_ref& gene_ref = obj.GetGene();
-
-    // Skip pseudo-genes
-    if (gene_ref.IsSetPseudo() && gene_ref.GetPseudo() == true) {
-        return;
-    }
-
-    // Skip missing locus tags
-    if (!gene_ref.IsSetLocus_tag()) {
-        return;
-    }
-
-    // Report non-empty, bad-format locus tags
-    string locus_tag = gene_ref.GetLocus_tag();
-    if (!locus_tag.empty() && context.IsBadLocusTagFormat(locus_tag)) {
-        m_Objs["[n] locus tag[s] [is] incorrectly formatted."].Fatal().Add(*context.DiscrObj(*context.GetCurrentSeq_feat()));
+    const vector<CConstRef<CSeq_feat>>& genes = context.FeatGenes();
+    for (auto gene : genes) {
+        const CGene_ref& gene_ref = gene->GetData().GetGene();
+        if (gene_ref.IsSetPseudo() && gene_ref.GetPseudo() == true) {
+            continue;
+        }
+        if (!gene_ref.IsSetLocus_tag()) {
+            continue;
+        }
+        string locus_tag = gene_ref.GetLocus_tag();
+        if (!locus_tag.empty() && context.IsBadLocusTagFormat(locus_tag)) {
+            m_Objs["[n] locus tag[s] [is] incorrectly formatted."].Fatal().Add(*context.DiscrObj(*gene));
+        }
     }
 }
 
