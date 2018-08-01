@@ -780,6 +780,9 @@ void CCdregionValidator::Validate()
 
     x_ReportPseudogeneConflict(m_Gene);
     x_ValidateLocusTagGeneralMatch(m_Gene);
+
+    x_ValidateProductPartials();
+    x_ValidateParentPartialness();
 }
 
 
@@ -1627,6 +1630,106 @@ void CCdregionValidator::x_ValidateCommonProduct()
     }
 }
 
+
+void CCdregionValidator::x_ValidateProductPartials()
+{
+    if (!m_ProductBioseq || !m_LocationBioseq) {
+        return;
+    }
+
+    if (m_LocationBioseq.GetTopLevelEntry() != m_ProductBioseq.GetTopLevelEntry()) {
+        return;
+    }
+    CFeat_CI prot(m_ProductBioseq, CSeqFeatData::eSubtype_prot);
+    if (!prot) {
+        return;
+    }
+    if (!PartialsSame(m_Feat.GetLocation(), prot->GetLocation())) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialsInconsistentCDSProtein,
+            "Coding region and protein feature partials conflict");
+    }  
+}
+
+
+bool CCdregionValidator::x_CheckPosNOrGap(TSeqPos pos, const CSeqVector& vec)
+{
+    if (vec.IsInGap(pos) || vec[pos] == 'N') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+void CCdregionValidator::x_ValidateParentPartialness(const CSeq_loc& parent_loc, const string& parent_name)
+{
+    if (!m_LocationBioseq) {
+        return;
+    }
+    
+    bool check_gaps = false;
+    if (m_LocationBioseq.IsSetInst() && m_LocationBioseq.GetInst().IsSetRepr() &&
+        m_LocationBioseq.GetInst().GetRepr() == CSeq_inst::eRepr_delta) {
+        check_gaps = true;
+    }
+
+    bool has_abutting_gap = false;
+    bool is_minus_strand = m_Feat.GetLocation().IsSetStrand() && m_Feat.GetLocation().GetStrand() == eNa_strand_minus;
+
+    if (m_Feat.GetLocation().IsPartialStart(eExtreme_Biological) && !parent_loc.IsPartialStart(eExtreme_Biological)) {
+
+        if (check_gaps) {
+            CSeqVector seq_vec(m_LocationBioseq);
+            TSeqPos start = m_Feat.GetLocation().GetStart(eExtreme_Biological),
+                    pos = is_minus_strand ? start + 1 : start - 1;
+
+            if (pos < m_LocationBioseq.GetBioseqLength()) {
+                has_abutting_gap = x_CheckPosNOrGap(pos, seq_vec);
+            }
+        }
+
+        if (!has_abutting_gap) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemMismatch5Prime, parent_name + " should not be 5' complete if coding region is 5' partial");
+        }
+    }
+    if (m_Feat.GetLocation().IsPartialStop(eExtreme_Biological) && !parent_loc.IsPartialStop(eExtreme_Biological)) {
+
+        if (check_gaps) {
+
+            CSeqVector seq_vec(m_LocationBioseq);
+            TSeqPos stop = m_Feat.GetLocation().GetStop(eExtreme_Biological),
+                    pos = is_minus_strand ? stop - 1 : stop + 1;
+
+            if (pos < m_LocationBioseq.GetBioseqLength()) {
+                has_abutting_gap = x_CheckPosNOrGap(pos, seq_vec);
+            }
+        }
+
+        if (!has_abutting_gap) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_PartialProblemMismatch3Prime, parent_name + " should not be 3' complete if coding region is 3' partial");
+        }
+    }
+}
+
+
+void CCdregionValidator::x_ValidateParentPartialness()
+{
+    if (!m_Gene) {
+        return;
+    }
+    x_ValidateParentPartialness(m_Gene->GetLocation(), "gene");
+
+    CConstRef<CSeq_feat> mrna = GetmRNAforCDS(m_Feat, m_Scope);
+    if (mrna) {
+        TFeatScores contained_mrna;
+        GetOverlappingFeatures(m_Gene->GetLocation(), CSeqFeatData::e_Rna,
+            CSeqFeatData::eSubtype_mRNA, eOverlap_Contains, contained_mrna, m_Scope);
+        if (contained_mrna.size() == 1) {
+            // messy for alternate splicing, so only check if there is only one
+            x_ValidateParentPartialness(mrna->GetLocation(), "mRNA");
+        }
+    }
+}
 
 
 END_SCOPE(validator)

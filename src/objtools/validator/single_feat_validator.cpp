@@ -2720,6 +2720,8 @@ void CProtValidator::Validate()
     }
 
     x_ValidateECNumbers();
+
+    x_ValidateMolinfoPartials();
 }
 
 
@@ -3073,6 +3075,48 @@ void CProtValidator::x_ValidateProteinName(const string& prot_name)
 
 }
 
+
+void CProtValidator::x_ValidateMolinfoPartials()
+{
+    if (!m_LocationBioseq) {
+        return;
+    }
+    const CBioseq& pbioseq = *(m_LocationBioseq.GetCompleteBioseq());
+    // if there is a coding region for this bioseq, this type of error 
+    // will be handled there
+    const CSeq_feat* cds = m_Imp.GetCDSGivenProduct(pbioseq);
+    if (cds) return;
+    CFeat_CI prot(m_LocationBioseq, CSeqFeatData::eSubtype_prot);
+    if (! prot) return;
+        
+    CSeqdesc_CI mi_i(m_LocationBioseq, CSeqdesc::e_Molinfo);
+    if (! mi_i) return;
+    const CMolInfo& mi = mi_i->GetMolinfo();
+    if (! mi.IsSetCompleteness()) return;
+    int completeness = mi.GetCompleteness();
+        
+    const CSeq_loc& prot_loc = prot->GetLocation();
+    bool prot_partial5 = prot_loc.IsPartialStart(eExtreme_Biological);
+    bool prot_partial3 = prot_loc.IsPartialStop(eExtreme_Biological);
+        
+    bool conflict = false;
+    if (completeness == CMolInfo::eCompleteness_partial && ((! prot_partial5) && (! prot_partial3))) {
+        conflict = true;
+    } else if (completeness == CMolInfo::eCompleteness_no_left && ((! prot_partial5) || prot_partial3)) {
+        conflict = true;
+    } else if (completeness == CMolInfo::eCompleteness_no_right && (prot_partial5 || (! prot_partial3))) {
+        conflict = true;
+    } else if (completeness == CMolInfo::eCompleteness_no_ends && ((! prot_partial5) || (! prot_partial3))) {
+        conflict = true;
+    } else if ((completeness < CMolInfo::eCompleteness_partial || completeness > CMolInfo::eCompleteness_no_ends) && (prot_partial5 || prot_partial3)) {
+        conflict = true;
+    }
+        
+    if (conflict) {
+        PostErr (eDiag_Warning, eErr_SEQ_FEAT_PartialsInconsistent,
+            "Molinfo completeness and protein feature partials conflict");
+    }
+}
 
 void CRNAValidator::Validate()
 {

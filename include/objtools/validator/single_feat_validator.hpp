@@ -238,6 +238,11 @@ protected:
     void x_ValidateConflict();
     void x_ValidateCommonProduct();
 
+    void x_ValidateProductPartials();
+    void x_ValidateParentPartialness(const CSeq_loc& parent_loc, const string& parent_name);
+    void x_ValidateParentPartialness();
+    bool x_CheckPosNOrGap(TSeqPos pos, const CSeqVector& vec);
+
     CConstRef<CSeq_feat> m_Gene;
     bool m_GeneIsPseudo;
 };
@@ -270,6 +275,7 @@ protected:
     void x_ReportUninformativeNames();
     void x_ValidateECNumbers();
     void x_ValidateProteinName(const string& prot_name);
+    void x_ValidateMolinfoPartials();
 };
 
 
