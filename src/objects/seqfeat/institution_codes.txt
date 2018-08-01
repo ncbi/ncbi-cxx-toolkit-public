@@ -2691,12 +2691,12 @@ IBUNAM:CNAR	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Co
 IBUNAM:CNAV	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Aves		
 IBUNAM:CNCR	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Crustaceos		
 IBUNAM:CNHE	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Helmintos		
-IBUNAM:CNIN	s	Coleccion Nacional de Insectos, Universidad Nacional Autonoma de Mexico	IBUNAM:CNIN		
 IBUNAM:CNIN	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Insectos		
 IBUNAM:CNMA	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Mamiferos		
 IBUNAM:CNMO	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Moluscos		
 IBUNAM:CNPE	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Peces		
 IBUNAM:MEXU	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Herbario Nacional		
+IBUNAM<CNIN>	s	Coleccion Nacional de Insectos, Universidad Nacional Autonoma de Mexico	IBUNAM:CNIN		
 IBUP	s	Institute of Biology			
 IBUS	s	Universidade Federal do Rio de Janeiro			
 IBUT	s	Instituto Butanta			
