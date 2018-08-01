@@ -2381,16 +2381,6 @@ void CValidError_imp::ReportMissingBiosource(const CSeq_entry& se)
 }
 
 
-bool CValidError_imp::IsNucAcc(const string& acc)
-{
-    if ( isupper((unsigned char) acc[0])  &&  acc.find('_') != NPOS ) {
-        return true;
-    }
-
-    return false;
-}
-
-
 CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
 {
     CConstRef<CSeq_feat> feat;
@@ -2507,36 +2497,6 @@ bool CValidError_imp::IsSerialNumberInComment(const string& comment)
         pos = comment.find('[', pos);
     }
     return false;
-}
-
-
-bool CValidError_imp::CheckSeqVector(const CSeqVector& vec)
-{
-    if ( IsSequenceAvaliable(vec) ) {
-        return true;
-    }
-
-    if ( IsRemoteFetch() ) {
-        // issue some sort of error
-    }
-    return false;
-}
-
-
-bool CValidError_imp::IsSequenceAvaliable(const CSeqVector& vec)
-{
-    // IMPORTANT: This is a temporary implementation, due to (yet) restricted
-    // implementation of the Scope / object manager classes.
-    // if the first and last elements are accesible the sequence is available.
-    try {
-        vec[0]; 
-        vec[vec.size() - 1];
-    } catch ( const exception& ) {
-        // do something
-        return false;
-    }
-
-    return true;
 }
 
 

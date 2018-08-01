@@ -386,14 +386,10 @@ public:
     void ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs);
     void ReportMissingBiosource(const CSeq_entry& se);
 
-    bool IsNucAcc(const string& acc);
     CConstRef<CSeq_feat> GetCDSGivenProduct(const CBioseq& seq);
     CConstRef<CSeq_feat> GetmRNAGivenProduct(const CBioseq& seq);
     const CSeq_entry* GetAncestor(const CBioseq& seq, CBioseq_set::EClass clss);
     bool IsSerialNumberInComment(const string& comment);
-
-    bool CheckSeqVector(const CSeqVector& vec);
-    bool IsSequenceAvaliable(const CSeqVector& vec);
 
     bool IsTransgenic(const CBioSource& bsrc);
 
