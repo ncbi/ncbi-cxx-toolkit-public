@@ -44,6 +44,8 @@ USING_IDBLOB_SCOPE;
 
 #include "http_server_transport.hpp"
 #include "pubseq_gateway_utils.hpp"
+#include "pubseq_gateway_types.hpp"
+#include "pending_requests.hpp"
 
 
 class CBlobChunkCallback;
@@ -51,101 +53,16 @@ class CBlobPropCallback;
 class CGetBlobErrorCallback;
 
 
-// Bit-set of CPendingOperation::EServIncludeData flags
-typedef int TServIncludeData;
-
-
-// The user may come with an accession or with a pair sat/sat key
-// The requests are counted separately so the enumeration distinguish them.
-enum EBlobIdentificationType {
-    eBySeqId,
-    eBySatAndSatKey
-};
-
-
-// In case one many requested blobs a container of items is required.
-// Each item describes one requested blob. The structure is used for that.
-struct SBlobRequest
-{
-    // Construct the request for the case of sat/sat_key request
-    SBlobRequest(const SBlobId &  blob_id,
-                 const string &  last_modified) :
-        m_NeedBlobProp(true),
-        m_NeedChunks(true),
-        m_Optional(false),
-        m_BlobIdType(eBySatAndSatKey),
-        m_BlobId(blob_id),
-        m_LastModified(last_modified)
-    {}
-
-    // Construct the request for the case of seq_id/id_type request
-    SBlobRequest(const string &  seq_id,
-                 int  seq_id_type,
-                 bool  seq_id_type_provided,
-                 int  id_type,
-                 bool  id_type_provided,
-                 TServIncludeData  include_data_flags) :
-        m_NeedBlobProp(true),
-        m_NeedChunks(false),
-        m_Optional(false),
-        m_BlobIdType(eBySeqId),
-        m_SeqId(seq_id),
-        m_SeqIdType(seq_id_type),
-        m_SeqIdTypeProvided(seq_id_type_provided),
-        m_IdType(id_type),
-        m_IdTypeProvided(id_type_provided),
-        m_IncludeDataFlags(include_data_flags)
-    {}
-
-    EBlobIdentificationType  GetBlobIdentificationType(void) const
-    {
-        return m_BlobIdType;
-    }
-
-public:
-    bool                        m_NeedBlobProp;
-    bool                        m_NeedChunks;
-    bool                        m_Optional;
-
-    EBlobIdentificationType     m_BlobIdType;
-
-    // Fields in case of request by sat/sat_key
-    SBlobId                     m_BlobId;
-    string                      m_LastModified;
-
-    // Fields in case of request by seq_id/id_type
-    string                      m_SeqId;
-    int                         m_SeqIdType;
-    bool                        m_SeqIdTypeProvided;
-    int                         m_IdType;
-    bool                        m_IdTypeProvided;
-    TServIncludeData            m_IncludeDataFlags;
-};
-
-
-
 class CPendingOperation
 {
 public:
-    // Pretty much copied from the client; the justfication for copying is:
-    // "it will be decoupled with the client type"
-    enum EServIncludeData {
-        fServNoTSE = (1 << 0),
-        fServFastInfo = (1 << 1),
-        fServWholeTSE = (1 << 2),
-        fServOrigTSE = (1 << 3),
-        fServCanonicalId = (1 << 4),
-        fServOtherIds = (1 << 5),
-        fServMoleculeType = (1 << 6),
-        fServLength = (1 << 7),
-        fServState = (1 << 8),
-        fServBlobId = (1 << 9),
-        fServTaxId = (1 << 10),
-        fServHash = (1 << 11)
-    };
-
-public:
     CPendingOperation(const SBlobRequest &  blob_request,
+                      size_t  initial_reply_chunks,
+                      shared_ptr<CCassConnection>  conn,
+                      unsigned int  timeout,
+                      unsigned int  max_retries,
+                      CRef<CRequestContext>  request_context);
+    CPendingOperation(const SResolveRequest &  resolve_request,
                       size_t  initial_reply_chunks,
                       shared_ptr<CCassConnection>  conn,
                       unsigned int  timeout,
@@ -292,6 +209,7 @@ public:
     void PrepareReplyCompletion(size_t  chunk_count);
 
 private:
+    void x_ProcessResolveRequest(void);
     void x_StartMainBlobRequest(void);
     bool x_AllFinishedRead(void) const;
     void x_SendReplyCompletion(bool  forced = false);
@@ -318,7 +236,9 @@ private:
     CRequestStatus::ECode                   m_OverallStatus;
 
     // Incoming request. It could be by sat/sat_key or by seq_id/id_type
+    bool                                    m_IsResolveRequest;
     SBlobRequest                            m_BlobRequest;
+    SResolveRequest                         m_ResolveRequest;
 
     int32_t                                 m_TotalSentReplyChunks;
     bool                                    m_Cancelled;

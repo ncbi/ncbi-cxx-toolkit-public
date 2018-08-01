@@ -112,6 +112,9 @@ void CPubseqGatewayApp::ParseArgs(void)
                    "file. The port must be provided to run the server. "
                    "Exiting.");
 
+    m_Si2csiDbFile = registry.GetString("LMDB_CACHE", "dbfile_si2csi", "");
+    m_BioseqInfoDbFile = registry.GetString("LMDB_CACHE", "dbfile_bioseq_info", "");
+    m_BlobPropDbFile = registry.GetString("LMDB_CACHE", "dbfile_blob_prop", "");
     m_HttpPort = registry.GetInt("SERVER", "port", 0);
     m_HttpWorkers = registry.GetInt("SERVER", "workers",
                                     kWorkersDefault);
@@ -131,21 +134,19 @@ void CPubseqGatewayApp::ParseArgs(void)
     m_CassConnectionFactory->LoadConfig(registry, "");
     m_CassConnectionFactory->SetLogging(GetDiagPostLevel());
 
-    m_BioseqInfoCachePath = registry.GetString("LMDB_CACHE", "bioseq_info_file", "");
-    m_Si2CsiCachePath = registry.GetString("LMDB_CACHE", "si2csi_file", "");
-    m_BlobPropCachePath = registry.GetString("LMDB_CACHE", "blob_prop_file", "");
-
     // It throws an exception in case of inability to start
     x_ValidateArgs();
 }
 
 
-void CPubseqGatewayApp::OpenCache()
+void CPubseqGatewayApp::OpenCache(void)
 {
-    // NB. It was decided that the configuration may ommit the cache file path.
-    // In this case the server should not use cache at all.
-    m_PsgCache.reset(new CPubseqGatewayCache(m_BioseqInfoCachePath, m_Si2CsiCachePath, m_BlobPropCachePath));
-    m_PsgCache->Open(m_SatNames);
+    // NB. It was decided that the configuration may ommit the cache file paths.
+    // In this case the server should not use the corresponding cache at all.
+    m_LookupCache.reset(new CPubseqGatewayCache(m_BioseqInfoDbFile,
+                                                m_Si2csiDbFile,
+                                                m_BlobPropDbFile));
+    m_LookupCache->Open(m_SatNames);
 }
 
 
@@ -223,13 +224,6 @@ int CPubseqGatewayApp::Run(void)
     HST::CHttpGetParser                             get_parser;
 
     http_handler.emplace_back(
-            "/ID/resolve/bioseq_info",
-            [this](HST::CHttpRequest &  req,
-                   HST::CHttpReply<CPendingOperation> &  resp)->int
-            {
-                return OnResolve(req, resp);
-            }, &get_parser, nullptr);
-    http_handler.emplace_back(
             "/ID/getblob",
             [this](HST::CHttpRequest &  req,
                    HST::CHttpReply<CPendingOperation> &  resp)->int
@@ -242,7 +236,14 @@ int CPubseqGatewayApp::Run(void)
                    HST::CHttpReply<CPendingOperation> &  resp)->int
             {
                 return OnGet(req, resp);
-            }, &get_parser, nullptr);            
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
+            "/ID/resolve",
+            [this](HST::CHttpRequest &  req,
+                   HST::CHttpReply<CPendingOperation> &  resp)->int
+            {
+                return OnResolve(req, resp);
+            }, &get_parser, nullptr);
     http_handler.emplace_back(
             "/ADMIN/config",
             [this](HST::CHttpRequest &  req,
@@ -292,70 +293,6 @@ int CPubseqGatewayApp::Run(void)
     return 0;
 }
 
-int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req, HST::CHttpReply<CPendingOperation> &  resp)
-{
-    CRef<CRequestContext>   context = x_CreateRequestContext(req);
-    SRequestParameter   seq_id_param = x_GetParam(req, "seq_id");
-    if (!seq_id_param.m_Found) {
-        string      message = "Missing the 'seq_id' parameter";
-
-        m_ErrorCounters.IncInsufficientArguments();
-        x_SendMessageAndCompletionChunks(resp, message,
-                                         CRequestStatus::e400_BadRequest,
-                                         eMissingParameter, eDiag_Error);
-
-        ERR_POST(Warning << message);
-        x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
-        return 0;
-    }
-
-    SRequestParameter   seq_id_type_param = x_GetParam(req, "seq_id_type");
-    SRequestParameter   id_type_param     = x_GetParam(req, "id_type");
-    SRequestParameter   fmt_param         = x_GetParam(req, "fmt");
-    int                 seq_id_type = -1;
-    int                 id_type = -1;
-
-    if (seq_id_type_param.m_Found) {
-        string err_msg;
-        if (!x_ConvertIntParameter("seq_id_type", seq_id_type_param.m_Value,
-                                   seq_id_type, err_msg)) {
-            m_ErrorCounters.IncMalformedArguments();
-            x_SendMessageAndCompletionChunks(resp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             eMalformedParameter, eDiag_Error);
-
-            ERR_POST(Warning << err_msg);
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
-            return 0;
-        }
-    }
-    if (id_type_param.m_Found) {
-        string err_msg;
-        if (!x_ConvertIntParameter("id_type", id_type_param.m_Value,
-                                   id_type, err_msg)) {
-            m_ErrorCounters.IncMalformedArguments();
-            x_SendMessageAndCompletionChunks(resp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             eMalformedParameter, eDiag_Error);
-
-            ERR_POST(Warning << err_msg);
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
-            return 0;
-        }
-    }
-
-    TRslvIncludeData  include_data_flags = 0;
-
-    CResolverHandler(resp, SResolverRequst(seq_id_param.m_Value,
-                                           seq_id_type, seq_id_type_param.m_Found,
-                                           id_type, id_type_param.m_Found,
-                                           include_data_flags),
-                     m_CassConnection, m_TimeoutMs, m_MaxRetries,
-                     m_PsgCache.get(),
-                     context);
-
-    return 0;
-}
 
 
 CPubseqGatewayApp *  CPubseqGatewayApp::GetInstance(void)
@@ -392,15 +329,15 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
                    "be supplied for the server to start");
     }
 
-    if (m_BioseqInfoCachePath.empty())
-        ERR_POST(Warning << "[LMDB_CACHE]/bioseq_info_file is not found in the ini file."
-                            " Bioseq_info cache will not be used.");
-    if (m_Si2CsiCachePath.empty())
-        ERR_POST(Warning << "[LMDB_CACHE]/si2csi_file is not found in the ini file."
-                            " Si2csi cache will not be used.");
-    if (m_BlobPropCachePath.empty())
-        ERR_POST(Warning << "[LMDB_CACHE]/blob_prop_file is not found in the ini file."
-                            " Blob_prop cache will be used.");
+    if (m_Si2csiDbFile.empty())
+        ERR_POST(Warning << "[LMDB_CACHE]/dbfile_si2csi is not found "
+                            "in the ini file. No si2csi cache will be used.");
+    if (m_BioseqInfoDbFile.empty())
+        ERR_POST(Warning << "[LMDB_CACHE]/dbfile_bioseq_info is not found "
+                            "in the ini file. No bioseq_info cache will be used.");
+    if (m_BlobPropDbFile.empty())
+        ERR_POST(Warning << "[LMDB_CACHE]/dbfile_blob_prop is not found "
+                            "in the ini file. No blob_prop cache will be used.");
 
     if (m_HttpWorkers < kWorkersMin || m_HttpWorkers > kWorkersMax) {
         string  err_msg =
@@ -572,6 +509,31 @@ bool CPubseqGatewayApp::x_IsBoolParamValid(const string &  param_name,
 }
 
 
+EOutputFormat
+CPubseqGatewayApp::x_GetOutputFormat(const string &  param_name,
+                                     const string &  param_value,
+                                     string &  err_msg) const
+{
+    static string   protobuf = "protobuf";
+    static string   json = "json";
+    static string   native = "native";
+
+    if (param_value == protobuf)
+        return eProtobufFormat;
+    if (param_value == json)
+        return eJsonFormat;
+    if (param_value == native)
+        return eNativeFormat;
+
+    err_msg = "Malformed '" + param_name + "' parameter. "
+              "Acceptable values are '" +
+              protobuf + "' and '" +
+              json + "' and '" +
+              native + "'.";
+    return eUnknownFormat;
+}
+
+
 bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
                                               const string &  param_value,
                                               int &  converted,
@@ -633,6 +595,116 @@ bool CPubseqGatewayApp::x_IsResolutionParamValid(const string &  param_name,
 }
 
 
+// Prepares the chunks for the case when it is a client error so only two
+// chunks are required:
+// - a message chunk
+// - a reply completion chunk
+void  CPubseqGatewayApp::x_SendMessageAndCompletionChunks(
+        HST::CHttpReply<CPendingOperation> &  resp,  const string &  message,
+        CRequestStatus::ECode  status, int  code, EDiagSev  severity)
+{
+    vector<h2o_iovec_t>     chunks;
+    string                  header = GetReplyMessageHeader(message.size(),
+                                                           status, code,
+                                                           severity);
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+
+    // Add the error message
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(message.data()), message.size()));
+
+    // Add reply completion
+    string  reply_completion = GetReplyCompletionHeader(2);
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(reply_completion.data()),
+                reply_completion.size()));
+
+    resp.Send(chunks, true);
+}
+
+
+// Sends an unknown satellite error for the case when the satellite is provided
+// by the user in the incoming URL. I.e. this error is treated as a client
+// error (opposite to a server data inconsistency)
+void CPubseqGatewayApp::x_SendUnknownClientSatelliteError(
+        HST::CHttpReply<CPendingOperation> &  resp,
+        const SBlobId &  blob_id,
+        const string &  message)
+{
+    vector<h2o_iovec_t>     chunks;
+
+    // Add header
+    string      header = GetBlobMessageHeader(1, blob_id, message.size(),
+                                              CRequestStatus::e404_NotFound,
+                                              eUnknownResolvedSatellite,
+                                              eDiag_Error);
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+
+    // Add the error message
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(message.data()), message.size()));
+
+    // Add meta with n_chunks
+    string      meta = GetBlobCompletionHeader(1, blob_id, 2);
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(meta.data()), meta.size()));
+
+    // Add reply completion
+    string  reply_completion = GetReplyCompletionHeader(3);
+    chunks.push_back(resp.PrepareChunk(
+                (const unsigned char *)(reply_completion.data()),
+                reply_completion.size()));
+
+    resp.Send(chunks, true);
+}
+
+
+bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
+        HST::CHttpRequest &  req,
+        HST::CHttpReply<CPendingOperation> &  resp,
+        string &  seq_id,
+        int &  seq_id_type,
+        SRequestParameter &  seq_id_type_param)
+{
+    string  err_msg;
+
+    // Check the mandatory parameter presence
+    SRequestParameter   seq_id_param = x_GetParam(req, "seq_id");
+    if (!seq_id_param.m_Found) {
+        err_msg = "Missing the 'seq_id' parameter";
+
+        m_ErrorCounters.IncInsufficientArguments();
+        x_SendMessageAndCompletionChunks(resp, err_msg,
+                                         CRequestStatus::e400_BadRequest,
+                                         eMissingParameter, eDiag_Error);
+
+        ERR_POST(Warning << err_msg);
+        return false;
+    }
+    seq_id = seq_id_param.m_Value;
+
+    seq_id_type_param = x_GetParam(req, "seq_id_type");
+    if (seq_id_type_param.m_Found) {
+        if (!x_ConvertIntParameter("seq_id_type", seq_id_type_param.m_Value,
+                                   seq_id_type, err_msg)) {
+            m_ErrorCounters.IncMalformedArguments();
+            x_SendMessageAndCompletionChunks(resp, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             eMalformedParameter, eDiag_Error);
+
+            ERR_POST(Warning << err_msg);
+            return false;
+        }
+    } else {
+        seq_id_type = -1;
+    }
+
+    return true;
+}
+
+
 
 int main(int argc, const char* argv[])
 {
@@ -648,3 +720,4 @@ int main(int argc, const char* argv[])
 
     return CPubseqGatewayApp().AppMain(argc, argv, NULL, eDS_ToStdlog);
 }
+

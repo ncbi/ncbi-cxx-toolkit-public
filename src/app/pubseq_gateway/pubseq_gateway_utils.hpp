@@ -38,6 +38,8 @@
 #include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info.hpp>
 
+#include "pubseq_gateway_types.hpp"
+
 USING_NCBI_SCOPE;
 USING_IDBLOB_SCOPE;
 
@@ -76,23 +78,9 @@ SBlobId ParseBlobId(const string &  blob_id);
 
 // A few protocol utils
 CJsonNode  BlobPropToJSON(const CBlobRecord &  blob);
-CJsonNode  BioseqInfoToJSON(const SBioseqInfo &  bioseq_info);
+CJsonNode  BioseqInfoToJSON(const SBioseqInfo &  bioseq_info,
+                            TServIncludeData  include_data_flags);
 
-
-enum EPubseqGatewayErrorCode {
-    eUnknownSatellite = 300,
-    eBadURL,
-    eMissingParameter,
-    eMalformedParameter,
-    eUnknownResolvedSatellite,
-    eNoCanonicalTranslation,
-    eNoBioseqInfo,
-    eBadID2Info,
-    eResolutionNotFound,
-    eUnpackingError,
-    eUnknownError,
-    eBlobPropsNotFound
-};
 
 // Bioseq messages
 string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size);

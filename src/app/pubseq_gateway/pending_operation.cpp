@@ -51,6 +51,7 @@ CPendingOperation::CPendingOperation(const SBlobRequest &  blob_request,
     m_Timeout(timeout),
     m_MaxRetries(max_retries),
     m_OverallStatus(CRequestStatus::e200_Ok),
+    m_IsResolveRequest(false),
     m_BlobRequest(blob_request),
     m_TotalSentReplyChunks(initial_reply_chunks),
     m_Cancelled(false),
@@ -59,8 +60,8 @@ CPendingOperation::CPendingOperation(const SBlobRequest &  blob_request,
 {
     if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
         ERR_POST(Trace << "CPendingOperation::CPendingOperation: blob "
-                 "requested by seq_id/id_type: " <<
-                 m_BlobRequest.m_SeqId << "." << m_BlobRequest.m_IdType <<
+                 "requested by seq_id/seq_id_type: " <<
+                 m_BlobRequest.m_SeqId << "." << m_BlobRequest.m_SeqIdType <<
                  ", this: " << this);
     } else {
         ERR_POST(Trace << "CPendingOperation::CPendingOperation: blob "
@@ -72,6 +73,31 @@ CPendingOperation::CPendingOperation(const SBlobRequest &  blob_request,
 }
 
 
+CPendingOperation::CPendingOperation(const SResolveRequest &  resolve_request,
+                                     size_t  initial_reply_chunks,
+                                     shared_ptr<CCassConnection>  conn,
+                                     unsigned int  timeout,
+                                     unsigned int  max_retries,
+                                     CRef<CRequestContext>  request_context) :
+    m_Reply(nullptr),
+    m_Conn(conn),
+    m_Timeout(timeout),
+    m_MaxRetries(max_retries),
+    m_OverallStatus(CRequestStatus::e200_Ok),
+    m_IsResolveRequest(true),
+    m_ResolveRequest(resolve_request),
+    m_TotalSentReplyChunks(initial_reply_chunks),
+    m_Cancelled(false),
+    m_RequestContext(request_context),
+    m_NextItemId(0)
+{
+    ERR_POST(Trace << "CPendingOperation::CPendingOperation: resolution "
+             "request by seq_id/seq_id_type: " <<
+             m_ResolveRequest.m_SeqId << "." << m_ResolveRequest.m_SeqIdType <<
+             ", this: " << this);
+}
+
+
 CPendingOperation::~CPendingOperation()
 {
     CRequestContextResetter     context_resetter;
@@ -79,8 +105,8 @@ CPendingOperation::~CPendingOperation()
 
     if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
         ERR_POST(Trace << "CPendingOperation::~CPendingOperation: blob "
-                 "requested by seq_id/id_type: " <<
-                 m_BlobRequest.m_SeqId << "." << m_BlobRequest.m_IdType <<
+                 "requested by seq_id/seq_id_type: " <<
+                 m_BlobRequest.m_SeqId << "." << m_BlobRequest.m_SeqIdType <<
                  ", this: " << this);
     } else {
         ERR_POST(Trace << "CPendingOperation::~CPendingOperation: blob "
@@ -124,8 +150,8 @@ void CPendingOperation::Clear()
 
     if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
         ERR_POST(Trace << "CPendingOperation::Clear: blob "
-                 "requested by seq_id/id_type: " <<
-                 m_BlobRequest.m_SeqId << "." << m_BlobRequest.m_IdType <<
+                 "requested by seq_id/seq_id_type: " <<
+                 m_BlobRequest.m_SeqId << "." << m_BlobRequest.m_SeqIdType <<
                  ", this: " << this);
     } else {
         ERR_POST(Trace << "CPendingOperation::Clear: blob "
@@ -188,8 +214,14 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
     m_Reply = &resp;
 
     // There are two options here:
-    // - the blobs were requested by sat/sat_key, i.e. the requests are ready
-    // - the blob was requested by a seq_id, i.e. there is no request
+    // - this is a resolution request
+    // - the blobs were requested by sat/sat_key
+    // - the blob was requested by a seq_id/seq_id_type
+    if (m_IsResolveRequest) {
+        x_ProcessResolveRequest();
+        return;
+    }
+
     if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
         // By seq_id -> first part is synchronous
 
@@ -205,28 +237,6 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
             m_Chunks.clear();
             return;
         }
-
-        // It could be that the id_info has been retrieved from the DB and also
-        // provided in the request. Check that they match if so.
-        if (bioseq_info.m_IdType != -1 && m_BlobRequest.m_IdTypeProvided) {
-            if (bioseq_info.m_IdType != m_BlobRequest.m_IdType) {
-                string  msg = "Non matching 'id_type' values. "
-                              "The DB has it set to " +
-                              NStr::NumericToString(bioseq_info.m_IdType) +
-                              " while the URL request has it set to " +
-                              NStr::NumericToString(m_BlobRequest.m_IdType) +
-                              ". The DB value is used for the retrieval.";
-                PrepareReplyMessage(msg, CRequestStatus::e100_Continue,
-                                    eMalformedParameter, eDiag_Warning);
-            }
-        }
-
-        if (bioseq_info.m_IdType == -1 && m_BlobRequest.m_IdTypeProvided) {
-            // This is the case when CSeq_id succeeded and the user explicitly
-            // provided the id_type
-            bioseq_info.m_IdType = m_BlobRequest.m_IdType;
-        }
-
 
         // retrieve from BIOSEQ_INFO
         status = x_FetchBioseqInfo(bioseq_info);
@@ -257,16 +267,16 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         m_BlobRequest.m_BlobId = blob_id;
 
         // Calculate effective no_tse flag
-        if (m_BlobRequest.m_IncludeDataFlags & CPendingOperation::fServOrigTSE ||
-            m_BlobRequest.m_IncludeDataFlags & CPendingOperation::fServWholeTSE)
-            m_BlobRequest.m_IncludeDataFlags &= ~CPendingOperation::fServNoTSE;
+        if (m_BlobRequest.m_IncludeDataFlags & fServOrigTSE ||
+            m_BlobRequest.m_IncludeDataFlags & fServWholeTSE)
+            m_BlobRequest.m_IncludeDataFlags &= ~fServNoTSE;
 
-        if (m_BlobRequest.m_IncludeDataFlags & CPendingOperation::fServNoTSE) {
+        if (m_BlobRequest.m_IncludeDataFlags & fServNoTSE) {
             m_BlobRequest.m_NeedBlobProp = true;
             m_BlobRequest.m_NeedChunks = false;
             m_BlobRequest.m_Optional = false;
         } else {
-            if (m_BlobRequest.m_IncludeDataFlags & CPendingOperation::fServOrigTSE) {
+            if (m_BlobRequest.m_IncludeDataFlags & fServOrigTSE) {
                 m_BlobRequest.m_NeedBlobProp = true;
                 m_BlobRequest.m_NeedChunks = true;
                 m_BlobRequest.m_Optional = false;
@@ -279,6 +289,40 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
     }
 
     x_StartMainBlobRequest();
+}
+
+
+void CPendingOperation::x_ProcessResolveRequest(void)
+{
+    SBioseqInfo     bioseq_info;
+
+    // retrieve from SI2CSI
+    CRequestStatus::ECode   status = x_ResolveToCanonicalSeqId(bioseq_info);
+    if (status != CRequestStatus::e200_Ok) {
+        if (status != CRequestStatus::e400_BadRequest)
+            UpdateOverallStatus(status);
+        x_SendReplyCompletion(true);
+        m_Reply->Send(m_Chunks, true);
+        m_Chunks.clear();
+        return;
+    }
+
+    // retrieve from BIOSEQ_INFO
+    status = x_FetchBioseqInfo(bioseq_info);
+    if (status != CRequestStatus::e200_Ok) {
+        UpdateOverallStatus(status);
+        x_SendReplyCompletion(true);
+        m_Reply->Send(m_Chunks, true);
+        m_Chunks.clear();
+        return;
+    }
+
+    // Send BIOSEQ_INFO
+    x_SendBioseqInfo(GetItemId(), bioseq_info);
+
+    x_SendReplyCompletion(true);
+    m_Reply->Send(m_Chunks, true);
+    m_Chunks.clear();
 }
 
 
@@ -478,42 +522,82 @@ void CPendingOperation::x_PrintRequestStop(int  status)
 CRequestStatus::ECode
 CPendingOperation::x_ResolveToCanonicalSeqId(SBioseqInfo &  bioseq_info)
 {
+    string      seq_id = m_BlobRequest.m_SeqId;
+    int         seq_id_type = m_BlobRequest.m_SeqIdType;
+    bool        seq_id_type_provided = m_BlobRequest.m_SeqIdTypeProvided;
+    if (m_IsResolveRequest) {
+        seq_id = m_ResolveRequest.m_SeqId;
+        seq_id_type = m_ResolveRequest.m_SeqIdType;
+        seq_id_type_provided = m_ResolveRequest.m_SeqIdTypeProvided;
+    }
+
     // First, try to avoid going to the DB
     try {
-        CSeq_id                 seq_id(m_BlobRequest.m_SeqId);
-        const CTextseq_id *     text_seq_id = seq_id.GetTextseq_Id();
+        CSeq_id                 parsed_seq_id(seq_id);
+        const CTextseq_id *     text_seq_id = parsed_seq_id.GetTextseq_Id();
 
         if (text_seq_id != NULL) {
             bioseq_info.m_Accession = text_seq_id->GetAccession();
 
-            // Signal that id_type is unknown - CSeq_id cannot provide the
-            // id_type
-            bioseq_info.m_IdType = -1;
+            CSeq_id_Base::E_Choice      parsed_seq_id_type = parsed_seq_id.Which();
+            if (parsed_seq_id_type == CSeq_id_Base::e_not_set) {
+                if (seq_id_type_provided)
+                    bioseq_info.m_SeqIdType = seq_id_type;
+                else
+                    // Signal that seq_id_type is unknown
+                    bioseq_info.m_SeqIdType = -1;
+            } else {
+                if (seq_id_type_provided) {
+                    // Check that the seq_id_type matches with the URL provided
+                    if (seq_id_type != parsed_seq_id_type) {
+                        string  msg = 
+                            "Non matching 'seq_id_type' values. "
+                            "The CSeq_id class parses it as " +
+                            NStr::NumericToString(int(parsed_seq_id_type)) +
+                            " while the URL request has it set to " +
+                            NStr::NumericToString(seq_id_type) + ".";
+                        PrepareReplyMessage(msg, CRequestStatus::e400_BadRequest,
+                                            eMalformedParameter, eDiag_Error);
+                        return CRequestStatus::e400_BadRequest;
+                    }
+                }
 
-            if (text_seq_id->CanGetVersion()) {
-ERR_POST("SUCCESSFUL USAGE OF CSeq_id");
-                bioseq_info.m_Version = text_seq_id->GetVersion();
-                return CRequestStatus::e200_Ok;
+                bioseq_info.m_SeqIdType = parsed_seq_id_type;
             }
 
-            // Here: accession and type are known but version is unknown.
-            //       So, the bioseq info needs to be resolved for the last
-            //       version. The m_Version == -1 signals that there is a need
-            //       of an alternative select.
-            bioseq_info.m_Version = -1;
+            if (text_seq_id->CanGetVersion()) {
+                bioseq_info.m_Version = text_seq_id->GetVersion();
+            } else {
+                // Signal that the version is unknown
+                bioseq_info.m_Version = -1;
+            }
             return CRequestStatus::e200_Ok;
-        }
-        else {
-ERR_POST("NULL RETURNED");
         }
     } catch (const exception &  exc) {
         // Choke the exceptions and fallback to the table
-ERR_POST("EXCEPTION WHILE USING CSeq_id: " << exc.what());
     } catch (...) {
         // Choke the exceptions and fallback to the table
-ERR_POST("EXCEPTION WHILE USING CSeq_id");
     }
 
+    // Could not resolve using the CSeq_id class, so try cache now
+    CPubseqGatewayCache *   cache = CPubseqGatewayApp::GetInstance()->
+                                                        GetLookupCache();
+    string                  csi_data;
+    bool                    cache_hit = false;
+    if (seq_id_type_provided) {
+        cache_hit = cache->LookupCsiBySeqIdIdType(seq_id, seq_id_type, csi_data);
+    } else {
+        int     cache_seq_id_type = -1;
+        cache_hit = cache->LookupCsiBySeqId(seq_id, cache_seq_id_type, csi_data);
+    }
+
+    if (cache_hit) {
+        // Unpack data: retrieve accession, version, sec_id_type
+        // TODO
+        return CRequestStatus::e200_Ok;
+    }
+
+    // Fallback to DB
     return x_FetchCanonicalSeqId(bioseq_info);
 }
 
@@ -523,35 +607,38 @@ CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
 {
     CRequestStatus::ECode   status = CRequestStatus::e200_Ok;
     string                  msg;
+
+    string      seq_id = m_BlobRequest.m_SeqId;
+    int         seq_id_type = m_BlobRequest.m_SeqIdType;
+    bool        seq_id_type_provided = m_BlobRequest.m_SeqIdTypeProvided;
+    if (m_IsResolveRequest) {
+        seq_id = m_ResolveRequest.m_SeqId;
+        seq_id_type = m_ResolveRequest.m_SeqIdType;
+        seq_id_type_provided = m_ResolveRequest.m_SeqIdTypeProvided;
+    }
+
     try {
         status = FetchCanonicalSeqId(
                         m_Conn,
                         CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
-                        m_BlobRequest.m_SeqId,
-                        m_BlobRequest.m_SeqIdType,
-                        m_BlobRequest.m_SeqIdTypeProvided,
+                        seq_id, seq_id_type, seq_id_type_provided,
                         bioseq_info.m_Accession,
                         bioseq_info.m_Version,
-                        bioseq_info.m_IdType);
+                        bioseq_info.m_SeqIdType);
         if (status == CRequestStatus::e404_NotFound) {
             msg = "No translation of the seq_id '" +
                   m_BlobRequest.m_SeqId + "' to canonical seq_id found";
         } else if (status == CRequestStatus::e300_MultipleChoices) {
             msg = "More than one translation of the seq_id '" +
-                  m_BlobRequest.m_SeqId + "' to canonical seq_id found. "
-                  "Please provide the seq_id_type as well";
+                  m_BlobRequest.m_SeqId + "' to canonical seq_id found";
         }
     } catch (const exception &  exc) {
-        msg = "Error translating seq_id '" +
-              m_BlobRequest.m_SeqId + "' of type " +
-              NStr::NumericToString(m_BlobRequest.m_IdType) +
-              " to canonical seq_id: " + string(exc.what());
+        msg = "Error translating seq_id '" + seq_id +
+              "'  to canonical seq_id: " + string(exc.what());
         status = CRequestStatus::e500_InternalServerError;
     } catch (...) {
-        msg = "Unknown error translating seq_id '" +
-              m_BlobRequest.m_SeqId + "' of type " +
-              NStr::NumericToString(m_BlobRequest.m_IdType) +
-              " to canonical seq_id";
+        msg = "Unknown error translating seq_id '" + seq_id +
+              "' to canonical seq_id";
         status = CRequestStatus::e500_InternalServerError;
     }
 
@@ -586,35 +673,29 @@ CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info)
     CRequestStatus::ECode   status = CRequestStatus::e200_Ok;
     string                  msg;
     try {
-#if 0
-        // bioseq_info.m_Version == -1 means that the latest version should be
-        // retrieved
-        if (!FetchBioseqInfo(
-                    m_Conn,
-                    CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
-                    bioseq_info.m_Version != -1,
-                    bioseq_info.m_IdType != -1,
-                    bioseq_info)) {
-            // Failure: no bioseq info
+        // -1 means not provided (or not retrieved from si2csi)
+        status = FetchBioseqInfo(
+                        m_Conn,
+                        CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
+                        bioseq_info.m_Version != -1,
+                        bioseq_info.m_SeqIdType != -1,
+                        bioseq_info);
+        if (status == CRequestStatus::e404_NotFound) {
             msg = "No bioseq info found for seq_id '" +
-                  m_BlobRequest.m_SeqId + "' of type " +
-                  NStr::NumericToString(m_BlobRequest.m_IdType);
-
-            // Basically it is data inconsistency, so the status is 500 (not
-            // 404)
+                  m_BlobRequest.m_SeqId + "'";
+            status = CRequestStatus::e500_InternalServerError;
+        } else if (status == CRequestStatus::e300_MultipleChoices) {
+            msg = "More than one bioseq info found for seq_id '" +
+                  m_BlobRequest.m_SeqId + "'";
             status = CRequestStatus::e500_InternalServerError;
         }
-#endif
     } catch (const exception &  exc) {
         msg = "Error retrieving bioseq info for seq_id '" +
-              m_BlobRequest.m_SeqId + "' of type " +
-              NStr::NumericToString(m_BlobRequest.m_IdType) +
-              ": " + string(exc.what());
+              m_BlobRequest.m_SeqId + ": " + string(exc.what());
         status = CRequestStatus::e500_InternalServerError;
     } catch (...) {
         msg = "Unknown error retrieving bioseq info for seq_id '" +
-              m_BlobRequest.m_SeqId + "' of type " +
-              NStr::NumericToString(m_BlobRequest.m_IdType);
+              m_BlobRequest.m_SeqId;
         status = CRequestStatus::e500_InternalServerError;
     }
 
@@ -637,7 +718,8 @@ CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info)
 void CPendingOperation::x_SendBioseqInfo(size_t  item_id,
                                          const SBioseqInfo &  bioseq_info)
 {
-    CJsonNode   json = BioseqInfoToJSON(bioseq_info);
+    CJsonNode   json = BioseqInfoToJSON(bioseq_info,
+                                        m_BlobRequest.m_IncludeDataFlags);
 
     PrepareBioseqData(item_id, json.Repr());
     PrepareBioseqCompletion(item_id, 2);
@@ -956,7 +1038,7 @@ void CBlobPropCallback::operator()(CBlobRecord const &  blob, bool is_found)
 
         if (m_FetchDetails->m_NeedChunks == false) {
             m_FetchDetails->m_FinishedRead = true;
-            if (m_FetchDetails->m_IncludeDataFlags & CPendingOperation::fServNoTSE) {
+            if (m_FetchDetails->m_IncludeDataFlags & fServNoTSE) {
                 // Reply is finished, the only blob prop were needed
                 m_PendingOp->PrepareBlobPropCompletion(m_FetchDetails);
                 m_PendingOp->x_SendReplyCompletion();
@@ -1146,7 +1228,7 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
                                m_PendingOp->m_Id2InfoFetchDetails.get()));
 
     // We may need to request ID2 chunks
-    if (m_FetchDetails->m_IncludeDataFlags & CPendingOperation::fServWholeTSE) {
+    if (m_FetchDetails->m_IncludeDataFlags & fServWholeTSE) {
         // Sat name is the same
         x_RequestId2SplitBlobs(shell_blob_id.m_SatName);
     }

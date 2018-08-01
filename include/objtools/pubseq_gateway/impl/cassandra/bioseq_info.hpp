@@ -47,12 +47,12 @@ USING_NCBI_SCOPE;
 struct SBioseqInfo
 {
     SBioseqInfo() :
-        m_Version(0), m_IdType(0)
+        m_Version(0), m_SeqIdType(0)
     {}
 
     string              m_Accession;
     int                 m_Version;
-    int                 m_IdType;
+    int                 m_SeqIdType;
 
     int                 m_Mol;
     int                 m_Length;
@@ -71,12 +71,12 @@ struct SBioseqInfo
 CRequestStatus::ECode
 FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
                     const string &  keyspace,
-                    const string &  seq_id,
-                    int  seq_id_type,
-                    bool  seq_id_type_provided,
-                    string &  accession,
-                    int &  version,
-                    int &  id_type);
+                    const string &  sec_seq_id,
+                    int  sec_seq_id_type,
+                    bool  sec_seq_id_type_provided,
+                    string &  accession,                // output
+                    int &  version,                     // output
+                    int &  seq_id_type);                // output
 
 // e200_Ok: exactly one record found
 // e404_NotFound: no records found
@@ -85,7 +85,7 @@ CRequestStatus::ECode
 FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
                      const string &  keyspace,
                      bool  version_provided,
-                     bool  id_type_provided,
+                     bool  seq_id_type_provided,
                      SBioseqInfo &  bioseq_info);
 
 END_IDBLOB_SCOPE

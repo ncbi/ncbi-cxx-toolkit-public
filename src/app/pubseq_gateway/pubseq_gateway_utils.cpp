@@ -112,27 +112,39 @@ CJsonNode  BlobPropToJSON(const CBlobRecord &  blob_prop)
 }
 
 
-CJsonNode  BioseqInfoToJSON(const SBioseqInfo &  bioseq_info)
+CJsonNode  BioseqInfoToJSON(const SBioseqInfo &  bioseq_info,
+                            TServIncludeData  include_data_flags)
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
-    json.SetString("Accession", bioseq_info.m_Accession);
-    json.SetInteger("Version", bioseq_info.m_Version);
-    json.SetInteger("IdType", bioseq_info.m_IdType);
-    json.SetInteger("Mol", bioseq_info.m_Mol);
-    json.SetInteger("Length", bioseq_info.m_Length);
-    json.SetInteger("State", bioseq_info.m_State);
-    json.SetInteger("Sat", bioseq_info.m_Sat);
-    json.SetInteger("SatKey", bioseq_info.m_SatKey);
-    json.SetInteger("TaxId", bioseq_info.m_TaxId);
-    json.SetInteger("Hash", bioseq_info.m_Hash);
-
-    CJsonNode       seq_ids(CJsonNode::NewObjectNode());
-    for (map<int, string>::const_iterator  it = bioseq_info.m_SeqIds.begin();
-         it != bioseq_info.m_SeqIds.end(); ++it) {
-        seq_ids.SetString(NStr::NumericToString(it->first), it->second);
+    if (include_data_flags & fServCanonicalId) {
+        json.SetString("accession", bioseq_info.m_Accession);
+        json.SetInteger("version", bioseq_info.m_Version);
+        json.SetInteger("seq_id_type", bioseq_info.m_SeqIdType);
     }
-    json.SetByKey("SeqIds", seq_ids);
+    if (include_data_flags & fServMoleculeType)
+        json.SetInteger("mol", bioseq_info.m_Mol);
+    if (include_data_flags & fServLength)
+        json.SetInteger("length", bioseq_info.m_Length);
+    if (include_data_flags & fServState)
+        json.SetInteger("state", bioseq_info.m_State);
+    if (include_data_flags & fServBlobId) {
+        json.SetInteger("sat", bioseq_info.m_Sat);
+        json.SetInteger("sat_key", bioseq_info.m_SatKey);
+    }
+    if (include_data_flags & fServTaxId)
+        json.SetInteger("tax_id", bioseq_info.m_TaxId);
+    if (include_data_flags & fServHash)
+        json.SetInteger("hash", bioseq_info.m_Hash);
+
+    if (include_data_flags & fServSeqIds) {
+        CJsonNode       seq_ids(CJsonNode::NewObjectNode());
+        for (map<int, string>::const_iterator  it = bioseq_info.m_SeqIds.begin();
+             it != bioseq_info.m_SeqIds.end(); ++it) {
+            seq_ids.SetString(NStr::NumericToString(it->first), it->second);
+        }
+        json.SetByKey("seq_ids", seq_ids);
+    }
 
     return json;
 }
