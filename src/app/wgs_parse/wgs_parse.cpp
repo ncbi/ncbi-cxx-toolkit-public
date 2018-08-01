@@ -630,17 +630,30 @@ static void GetCurrentMasterPubsInfo(const CSeq_entry& entry, CRef<CDate>& cit_s
     }
 }
 
+static void GetUserObjectsInfo(const CSeq_entry& entry, int& first_contig, int& last_contig, size_t& num_len)
+{
+    vector<string> user_obj_tags;
+    string first_contig_field,
+           last_contig_field;
+
+    GetUserObjAndFieldNames(user_obj_tags, first_contig_field, last_contig_field);
+    GetDescriptorsInfo(entry, user_obj_tags, first_contig_field, last_contig_field, first_contig, last_contig, num_len);
+}
+
+static size_t GetOldNumberOfPieces(const CSeq_entry& entry)
+{
+    int first_contig = 0,
+        last_contig = 0;
+    size_t num_len = 0;
+    GetUserObjectsInfo(entry, first_contig, last_contig, num_len);
+    return last_contig;
+}
+
 static void GetCurrentMasterInfo(const CSeq_entry& entry, CCurrentMasterInfo& current_master)
 {
     GetAccessionInfo(entry, current_master.m_accession, current_master.m_version);
 
-    vector<string> user_obj_tags;
-    string first_contig,
-           last_contig;
-
-    GetUserObjAndFieldNames(user_obj_tags, first_contig, last_contig);
-    GetDescriptorsInfo(entry, user_obj_tags, first_contig, last_contig, current_master.m_first_contig, current_master.m_last_contig, current_master.m_num_len);
-
+    GetUserObjectsInfo(entry, current_master.m_first_contig, current_master.m_last_contig, current_master.m_num_len);
     GetCurrentMasterPubsInfo(entry, current_master.m_cit_sub_date, current_master.m_cit_sub, current_master.m_cit_arts);
 }
 
@@ -1499,6 +1512,10 @@ int CWGSParseApp::Run(void)
             return ERROR_RET;
         }
 
+        if (GetOldNumberOfPieces(*master_info.m_id_master_bioseq) <= master_info.m_num_of_entries) {
+            SetUpdateMode(eUpdateFull);
+        }
+
         if (master_info.m_id_master_bioseq.NotEmpty()) {
 
             if (GetParams().GetUpdateMode() == eUpdateAssembly || GetParams().GetUpdateMode() == eUpdateFull) {
@@ -1607,8 +1624,9 @@ int CWGSParseApp::Run(void)
             RemoveBioSourseDesc(master_info.m_master_bioseq->SetDescr());
         }
 
-        if (GetParams().IsTest() || GetParams().GetUpdateMode() == eUpdatePartial)
+        if (GetParams().IsTest() || GetParams().GetUpdateMode() == eUpdatePartial) {
             ; // do nothing
+        }
         else if (GetParams().GetUpdateMode() == eUpdateFull || GetParams().GetUpdateMode() == eUpdateExtraContigs ||
                  GetParams().GetUpdateMode() == eUpdateScaffoldsUpd) {
 

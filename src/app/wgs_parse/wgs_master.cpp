@@ -73,6 +73,60 @@
 namespace wgsparse
 {
 
+static void GetSeqIdStr(const CBioseq::TId& ids, string& id_str)
+{
+    for (auto& id : ids) {
+        if (id->IsGeneral()) {
+            id->GetGeneral().GetLabel(&id_str);
+            id_str = "general id " + id_str;
+            break;
+        }
+        else if (id->IsLocal()) {
+
+            if (id->GetLocal().IsStr()) {
+                id_str = id->GetLocal().GetStr();
+            }
+            else if (id->GetLocal().IsId()) {
+                id_str = NStr::IntToString(id->GetLocal().GetId());
+            }
+
+            if (!id_str.empty()) {
+                id_str = "local id " + id_str;
+                break;
+            }
+        }
+        else if (id->GetTextseq_Id() != nullptr) {
+
+            const CTextseq_id* text_id = id->GetTextseq_Id();
+            if (text_id->IsSetAccession()) {
+                id_str = "accession " + text_id->GetAccession();
+                break;
+            }
+        }
+    }
+}
+
+static void GetSeqIdStrFromEntry(const CSeq_entry& entry, string& id_str)
+{
+    if (id_str.empty()) {
+
+        if (entry.IsSeq()) {
+
+            if (entry.GetSeq().IsSetId()) {
+                GetSeqIdStr(entry.GetSeq().GetId(), id_str);
+            }
+        }
+        else if (entry.IsSet()) {
+
+            if (entry.GetSet().IsSetSeq_set()) {
+                for (auto& cur_entry : entry.GetSet().GetSeq_set()) {
+                    GetSeqIdStrFromEntry(*cur_entry, id_str);
+                }
+            }
+        }
+    }
+}
+
 static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDescriptionInfo>& common_pubs, bool& reject)
 {
     const CSeq_descr* descrs = nullptr;
@@ -170,9 +224,9 @@ static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDe
             else {
                 common_pub = common_pubs.erase(common_pub);
 
-                string entry_label;
-                entry.GetLabel(&entry_label, CSeq_entry::eBoth);
-                ERR_POST_EX(0, 0, Warning << "Inconsistent pubs other than Cit-sub found amongst the input data. First occurence is in record " << entry_label << " from file \"" << file << "\".");
+                string id_str;
+                GetSeqIdStrFromEntry(entry, id_str);
+                ERR_POST_EX(0, 0, Warning << "Inconsistent pubs other than Cit-sub found amongst the input data. First occurence is in record with " << id_str << " from file \"" << file << "\".");
             }
         }
     }
@@ -226,7 +280,19 @@ static void ProcessStructuredComment(const CSeqdesc& descr, list<string>& commen
     }
 }
 
-static void CheckComments(const CSeq_entry& entry, StringProcessFunc process, bool& comments_not_set, list<string>& comments)
+typedef function<void(const CSeq_entry&)> CommentErrorReportFunc;
+
+static void CommentErrorReport(const CSeq_entry& entry, const string& comment_type, const string& file)
+{
+    string id_str;
+    GetSeqIdStrFromEntry(entry, id_str);
+    if (id_str.empty()) {
+        id_str = "Unknown";
+    }
+    ERR_POST_EX(0, 0, Warning << comment_type << " descriptor differences were detected. First occurence is in record with " << id_str << " from file \"" << file << "\". Comments will not be removed from contigs, and the master Bioseq will not receive a comment descriptor.");
+}
+
+static void CheckComments(const CSeq_entry& entry, StringProcessFunc process, bool& comments_not_set, list<string>& comments, CommentErrorReportFunc report_error)
 {
     if (comments_not_set) {
 
@@ -245,6 +311,10 @@ static void CheckComments(const CSeq_entry& entry, StringProcessFunc process, bo
 
             if (common_comments.size() < comments.size()) {
                 comments.swap(common_comments);
+            }
+
+            if (comments.empty()) {
+                report_error(entry);
             }
         }
     }
@@ -2338,10 +2408,12 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                     if (!GetParams().IsKeepRefs()) {
 
                         master_info.m_num_of_pubs = max(CheckPubs(*entry, file, master_info.m_common_pubs, master_info.m_reject), master_info.m_num_of_pubs);
-                        CheckComments(*entry, ProcessComment, master_info.m_common_comments_not_set, master_info.m_common_comments);
+                        CheckComments(*entry, ProcessComment, master_info.m_common_comments_not_set, master_info.m_common_comments,
+                                      [&file](const CSeq_entry& cur_entry) { CommentErrorReport(cur_entry, "Comment", file); });
                     }
 
-                    CheckComments(*entry, ProcessStructuredComment, master_info.m_common_structured_comments_not_set, master_info.m_common_structured_comments);
+                    CheckComments(*entry, ProcessStructuredComment, master_info.m_common_structured_comments_not_set, master_info.m_common_structured_comments,
+                                  [&file](const CSeq_entry& cur_entry) { CommentErrorReport(cur_entry, "Structured comment", file); });
                 }
 
                 if (!CheckBioSource(*entry, master_info, file)) {

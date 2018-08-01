@@ -1107,4 +1107,10 @@ void SetAssemblyVersion(int version)
     params_imp.m_proj_acc_ver.clear();
 }
 
+void SetUpdateMode(EUpdateMode mode)
+{
+    CParams_imp& params_imp = *params->m_imp;
+    params_imp.m_update_mode = mode;
+}
+
 }
