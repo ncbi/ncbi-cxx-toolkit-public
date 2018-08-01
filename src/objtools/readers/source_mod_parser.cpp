@@ -823,12 +823,12 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
     }
 }
 
-void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReaction>& pcr_reaction)
+//void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReaction>& pcr_reaction)
+void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReactionSet>& pcr_reaction_set)
 {
     const SMod* mod = nullptr;
 
-    using Tdata = CPCRPrimerSet::Tdata;
-    Tdata fwd_primers;
+    list<CRef<CPCRPrimer>> fwd_primers;
     if ((mod = FindMod(s_Mod_fwd_primer_name)) != NULL  ||
         (mod = FindMod(s_Mod_fwd_pcr_primer_name)) != NULL) {
         list<string> names;
@@ -873,14 +873,9 @@ void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReaction>& pcr_reaction)
                 fwd_primers.push_back(primer);
             }
         }
-        if (!fwd_primers.empty()) {
-            pcr_reaction->SetForward().Set().splice(
-                pcr_reaction->SetForward().Set().end(),
-                fwd_primers);
-        }
     }
 
-    Tdata rev_primers;
+    list<CRef<CPCRPrimer>> rev_primers;
     if ((mod = FindMod(s_Mod_rev_primer_name)) != NULL  ||
         (mod = FindMod(s_Mod_rev_pcr_primer_name)) != NULL) {
         list<string> names;
@@ -925,12 +920,27 @@ void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReaction>& pcr_reaction)
                 rev_primers.push_back(primer);
             }
         }
+    }
 
-        if (!rev_primers.empty()) {
-            pcr_reaction->SetReverse().Set().splice(
-                pcr_reaction->SetReverse().Set().end(),
-                rev_primers);
+    if (fwd_primers.empty() &&
+        rev_primers.empty()) {
+        return;
+    }
+
+    auto fwd_rit = fwd_primers.rbegin();
+    auto rev_rit = rev_primers.rbegin();
+    while (fwd_rit != fwd_primers.rend() || 
+           rev_rit != rev_primers.rend()) {
+        CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
+        if (fwd_rit != fwd_primers.rend()) {
+            pcr_reaction->SetForward().Set().push_back(*fwd_rit);
+            ++fwd_rit;
         }
+        if (rev_rit != rev_primers.rend()) {
+            pcr_reaction->SetReverse().Set().push_back(*rev_rit);
+            ++rev_rit;
+        }
+        pcr_reaction_set->Set().push_front(pcr_reaction);
     }
 }
 
@@ -1049,11 +1059,17 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
 
     // handle PCR Primers
     {{
-        CAutoInitRef<CPCRReaction> pcr_reaction;
-        x_AddPCRPrimers(pcr_reaction);
-        if (pcr_reaction.IsInitialized()) {
-            bsrc->SetPcr_primers().Set().push_back(
-                    CRef<CPCRReaction>(&*pcr_reaction) );
+        CAutoInitRef<CPCRReactionSet> pcr_reaction_set;
+        x_AddPCRPrimers(pcr_reaction_set);
+        if (pcr_reaction_set.IsInitialized()) {
+            if (!bsrc->IsSetPcr_primers()) {
+                bsrc->SetPcr_primers(*pcr_reaction_set);
+            }
+            else {
+                bsrc->SetPcr_primers().Set().splice(
+                        bsrc->SetPcr_primers().Set().end(),
+                        pcr_reaction_set->Set());
+            }
         }
      }}   
 

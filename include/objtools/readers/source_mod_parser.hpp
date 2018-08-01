@@ -64,7 +64,7 @@ BEGIN_SCOPE(objects)
 
 class CBioseq;
 class ILineErrorListener;
-class CPCRReaction;
+class CPCRReactionSet;
 // class CSubmit_block;
 
 /////////////////////////////////////////////////////////////////////////////
@@ -287,7 +287,7 @@ private:
     void x_ApplyTPAMods(CAutoInitRef<CUser_object>& tpa);
     void x_ApplySRAMods(CAutoAddDBLink& sra);
     void x_ApplyGenomeProjectsDBMods(CAutoInitRef<CUser_object>& gpdb);
-    void x_AddPCRPrimers(CAutoInitRef<CPCRReaction>& pcr_reaction);
+    void x_AddPCRPrimers(CAutoInitRef<CPCRReactionSet>& pcr_reaction_set);
 
     // sAllowedValues, enum_values, etc. are combined to produce the final list of
     // allowed values.
