@@ -105,6 +105,7 @@ private:
     AutoPtr<CNcbiIstream>         m_PubSeqOSReply;
     CNcbiOstream*                 m_OutFile;  // ID2 reply output
     CNcbiOstream*                 m_DataFile; // ID2 data output
+    CNcbiOstream*                 m_RawFile;  // ID2 raw data output
     ESerialDataFormat             m_Format;
     bool                          m_SkipData;
     bool                          m_ParseData;
@@ -179,6 +180,12 @@ void CId2FetchApp::Init(void)
          "File to dump the resulting data to",
          CArgDescriptions::eOutputFile, "-", CArgDescriptions::fBinary);
 
+    // Raw ID2 data file
+    arg_desc->AddOptionalKey
+        ("raw", "RawFile",
+         "File to dump the raw ID2 data to",
+         CArgDescriptions::eOutputFile, CArgDescriptions::fBinary);
+
     // ID2 data file
     arg_desc->AddOptionalKey
         ("data", "DataFile",
@@ -203,6 +210,7 @@ void CId2FetchApp::Init(void)
         ("pubseqos", "PubSeqOS",
          "PubSeqOS server name",
          CArgDescriptions::eString);
+    arg_desc->AddFlag("HUP", "Set cubby_user");
 
     // Number of requests
     arg_desc->AddDefaultKey
@@ -264,6 +272,13 @@ void CId2FetchApp::x_InitPubSeqConnection(const string& server_name,
             cmd->DumpResults();
         }
     }}
+    if ( GetArgs()["HUP"] ) {
+        string user_name = GetProcessUserName();
+        LOG_POST("Setting cubby_user = "<<user_name);
+        AutoPtr<CDB_LangCmd> cmd(m_PubSeqOS->LangCmd("set cubby_user "+NStr::SQLEncode(user_name)));
+        cmd->Send();
+        cmd->DumpResults();
+    }
 
     x_InitConnection(show_init);
 }
@@ -716,10 +731,10 @@ void CId2FetchApp::x_ProcessRequest(CID2_Request_Packet& packet, bool dump)
         else {
             x_ReadReply(reply);
             if ( !time_first ) time_first = sw.Elapsed();
-            if ( m_ParseData || m_SkipData  ||  m_DataFile ) {
+            if ( m_ParseData || m_SkipData  || m_RawFile || m_DataFile ) {
                 CTypeIterator<CID2_Reply_Data> iter = Begin(reply);
                 if ( iter && iter->IsSetData() ) {
-                    if ( m_ParseData || m_DataFile ) {
+                    if ( m_ParseData || m_RawFile || m_DataFile ) {
                         x_ProcessData(*iter);
                     }
                     if ( m_SkipData ) {
@@ -783,6 +798,20 @@ void CId2FetchApp::x_ProcessData(const CID2_Reply_Data& data)
         ERR_FATAL("Unknown data format in ID2_Reply_Data");
     }
 
+    if ( m_RawFile ) {
+        COSSReader reader(data.GetData());
+        CRStream stream(&reader);
+        if ( data.GetData_compression() == CID2_Reply_Data::eData_compression_gzip ) {
+            CCompressionIStream stream2(stream,
+                                        new CZipStreamDecompressor,
+                                        CCompressionIStream::fOwnProcessor);
+            *m_RawFile << stream2.rdbuf();
+        }
+        else {
+            *m_RawFile << stream.rdbuf();
+        }
+    }
+    
     COSSReader reader(data.GetData());
     CRStream stream(&reader);
     AutoPtr<CObjectIStream> obj_stream;
@@ -861,6 +890,7 @@ int CId2FetchApp::Run(void)
 
     m_OutFile = 0;
     m_DataFile = 0;
+    m_RawFile = 0;
     if ( args["fmt"].AsString() != "none" ) {
         if ( args["data"] ) {
             m_DataFile = &args["data"].AsOutputFile();
@@ -868,6 +898,9 @@ int CId2FetchApp::Run(void)
         if ( !m_DataFile || args["out"].AsString() != "-" ) {
             m_OutFile = &args["out"].AsOutputFile();
         }
+    }
+    if ( args["raw"] ) {
+        m_RawFile = &args["raw"].AsOutputFile();
     }
     const string& fmt = args["fmt"].AsString();
     if        (fmt == "asn") {
