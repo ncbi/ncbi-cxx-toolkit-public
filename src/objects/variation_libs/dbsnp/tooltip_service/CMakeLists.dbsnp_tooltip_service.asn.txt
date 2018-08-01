@@ -4,6 +4,7 @@
 
 NCBI_begin_lib(dbsnp_tooltip_service)
   NCBI_dataspecs(dbsnp_tooltip_service.asn)
+  NCBI_uses_toolkit_libraries(general trackmgr)
 NCBI_end_lib()
 
 
