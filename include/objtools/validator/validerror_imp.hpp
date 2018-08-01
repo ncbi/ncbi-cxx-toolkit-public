@@ -234,6 +234,7 @@ public:
     bool IsOtherDNA(const CBioseq_Handle& bsh) const;
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq_Handle& seq, bool report_abutting,
                         const string& prefix, const CSerialObject& obj);
+
     void ValidateSeqLocIds(const CSeq_loc& loc, const CSerialObject& obj);
     static bool IsInOrganelleSmallGenomeSet(const CSeq_id& id, CScope& scope);
     static bool BadMultipleSequenceLocation(const CSeq_loc& loc, CScope& scope);
@@ -461,6 +462,23 @@ private:
 
     void GatherTentativeName (const CSeq_entry& se, vector<CConstRef<CSeqdesc> >& usr_descs, vector<CConstRef<CSeq_entry> >& desc_ctxs, vector<CConstRef<CSeq_feat> >& usr_feats);
 
+    typedef struct {
+        bool chk;
+        bool unmarked_strand;
+        bool mixed_strand;
+        bool has_other;
+        bool has_not_other;
+        const CSeq_id* id_cur;
+        const CSeq_id *id_prv;
+        const CSeq_interval *int_cur = 0;
+        const CSeq_interval *int_prv = 0;
+        ENa_strand strand_cur;
+        ENa_strand strand_prv;
+        string prefix;
+    } SLocCheck;
+
+    void x_InitLocCheck(SLocCheck& lc, const string& prefix);
+    void x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, SLocCheck& lc);
     bool x_CheckPackedInt(const CPacked_seqint& packed_int,
                           CConstRef<CSeq_id>& id_cur,
                           CConstRef<CSeq_id>& id_prv,

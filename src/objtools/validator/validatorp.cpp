@@ -1978,6 +1978,123 @@ unsigned int s_CountMix(const CSeq_loc& loc)
     return num_mix;
 }
 
+
+void CValidError_imp::x_InitLocCheck(SLocCheck& lc, const string& prefix)
+{
+    lc.chk = true;
+    lc.unmarked_strand = false;
+    lc.mixed_strand = false;
+    lc.has_other = false;
+    lc.has_not_other = false;
+    lc.id_cur = 0;
+    lc.id_prv = 0;
+    lc.int_cur = 0;
+    lc.int_prv = 0;
+    lc.strand_cur = eNa_strand_unknown;
+    lc.strand_prv = eNa_strand_unknown;
+    lc.prefix = prefix;
+}
+
+void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, SLocCheck& lc)
+{
+    try {
+        switch (loc.Which()) {
+            case CSeq_loc::e_Int:
+                {{
+                    CConstRef<CSeq_id> this_id_cur(lc.id_cur);
+                    lc.int_cur = &loc.GetInt();
+                    lc.chk = x_CheckSeqInt(this_id_cur, lc.int_cur, lc.strand_cur, obj);
+                    lc.id_cur = this_id_cur.GetPointer();
+                }}
+                break;
+            case CSeq_loc::e_Pnt:
+                lc.strand_cur = loc.GetPnt().IsSetStrand() ?
+                    loc.GetPnt().GetStrand() : eNa_strand_unknown;
+                lc.id_cur = &loc.GetPnt().GetId();
+                lc.chk = IsValid(loc.GetPnt(), m_Scope);
+                lc.int_prv = 0;
+                break;
+            case CSeq_loc::e_Packed_pnt:
+                lc.strand_cur = loc.GetPacked_pnt().IsSetStrand() ?
+                    loc.GetPacked_pnt().GetStrand() : eNa_strand_unknown;
+                lc.id_cur = &loc.GetPacked_pnt().GetId();
+                lc.chk = IsValid(loc.GetPacked_pnt(), m_Scope);
+                lc.int_prv = 0;
+                break;
+            case CSeq_loc::e_Packed_int:
+                {{
+                    CConstRef<CSeq_id> this_id_cur(lc.id_cur);
+                    CConstRef<CSeq_id> this_id_prv(lc.id_prv);
+                    CConstRef<CSeq_interval> this_int_cur(lc.int_cur);
+                    CConstRef<CSeq_interval> this_int_prv(lc.int_prv);
+                    lc.chk = x_CheckPackedInt(loc.GetPacked_int(), 
+                                        this_id_cur, this_id_prv,
+                                        lc.strand_cur, lc.strand_prv,
+                                        this_int_cur, this_int_prv,
+                                        obj);
+                    lc.id_cur = this_id_cur.GetPointer();
+                    lc.id_prv = this_id_prv.GetPointer();
+                }}
+                break;
+            case CSeq_loc::e_Null:
+                break;
+            case CSeq_loc::e_Mix:
+                for (auto l : loc.GetMix().Get()) {
+                    x_CheckLoc(*l, obj, lc);
+                }
+                break;
+            default:
+                lc.strand_cur = eNa_strand_other;
+                lc.id_cur = 0;
+                lc.int_prv = 0;
+                break;
+        }
+        if (!lc.chk) {
+            string lbl = GetValidatorLocationLabel (loc, *m_Scope);
+            PostErr(eDiag_Critical, eErr_SEQ_FEAT_Range,
+                lc.prefix + ": SeqLoc [" + lbl + "] out of range", obj);
+        }
+
+        if (loc.Which() != CSeq_loc::e_Null) {
+            if (lc.strand_prv != eNa_strand_other  &&
+                lc.strand_cur != eNa_strand_other) {
+                if (lc.id_cur  &&  lc.id_prv  &&
+                    IsSameBioseq(*lc.id_cur, *lc.id_prv, m_Scope)) {
+                    if (lc.strand_prv != lc.strand_cur) {
+                        if ((lc.strand_prv == eNa_strand_plus  &&
+                            lc.strand_cur == eNa_strand_unknown)  ||
+                            (lc.strand_prv == eNa_strand_unknown  &&
+                            lc.strand_cur == eNa_strand_plus)) {
+                            lc.unmarked_strand = true;
+                        } else {
+                            lc.mixed_strand = true;
+                        }
+                    }
+                }
+            }
+            if (lc.strand_cur == eNa_strand_other) {
+                lc.has_other = true;
+            } else if (lc.strand_cur == eNa_strand_minus || lc.strand_cur == eNa_strand_plus) {
+                lc.has_not_other = true;
+            }
+
+            lc.strand_prv = lc.strand_cur;
+            lc.id_prv = lc.id_cur;
+        }
+    } catch( const exception& e ) {
+        string label = GetValidatorLocationLabel(loc, *m_Scope);
+        PostErr(eDiag_Error, eErr_INTERNAL_Exception,  
+            "Exception caught while validating location " +
+            label + ". Exception: " + e.what(), obj);
+                
+        lc.strand_cur = eNa_strand_other;
+        lc.id_cur = 0;
+        lc.int_prv = 0;
+    }
+        
+
+}
+
 void CValidError_imp::ValidateSeqLoc
 (const CSeq_loc& loc,
  const CBioseq_Handle&  seq,
@@ -1985,110 +2102,13 @@ void CValidError_imp::ValidateSeqLoc
  const string&   prefix,
  const CSerialObject& obj)
 {
-    bool chk = true,
-        unmarked_strand = false, mixed_strand = false;
-    bool has_other = false, has_not_other = false;
-    const CSeq_id* id_cur = 0, *id_prv = 0;
-    const CSeq_interval *int_cur = 0, *int_prv = 0;
-    ENa_strand strand_cur = eNa_strand_unknown,
-        strand_prv = eNa_strand_unknown;
+    SLocCheck lc;
 
-    CSeq_loc_CI lit(loc);
-    for (; lit; ++lit) {
-        try {
-            CConstRef<CSeq_loc> l = lit.GetRangeAsSeq_loc();
-            CSeq_loc::E_Choice loc_choice = l->Which();
-            switch (loc_choice) {
-            case CSeq_loc::e_Int:
-                {{
-                    CConstRef<CSeq_id> this_id_cur(id_cur);
-                    int_cur = &l->GetInt();
-                    chk = x_CheckSeqInt(this_id_cur, int_cur, strand_cur, obj);
-                    id_cur = this_id_cur.GetPointer();
-                }}
-                break;
-            case CSeq_loc::e_Pnt:
-                strand_cur = l->GetPnt().IsSetStrand() ?
-                    l->GetPnt().GetStrand() : eNa_strand_unknown;
-                id_cur = &l->GetPnt().GetId();
-                chk = IsValid(l->GetPnt(), m_Scope);
-                int_prv = 0;
-                break;
-            case CSeq_loc::e_Packed_pnt:
-                strand_cur = l->GetPacked_pnt().IsSetStrand() ?
-                    l->GetPacked_pnt().GetStrand() : eNa_strand_unknown;
-                id_cur = &l->GetPacked_pnt().GetId();
-                chk = IsValid(l->GetPacked_pnt(), m_Scope);
-                int_prv = 0;
-                break;
-            case CSeq_loc::e_Packed_int:
-                {{
-                    CConstRef<CSeq_id> this_id_cur(id_cur);
-                    CConstRef<CSeq_id> this_id_prv(id_prv);
-                    CConstRef<CSeq_interval> this_int_cur(int_cur);
-                    CConstRef<CSeq_interval> this_int_prv(int_prv);
-                    chk = x_CheckPackedInt(l->GetPacked_int(), 
-                                     this_id_cur, this_id_prv,
-                                     strand_cur, strand_prv,
-                                     this_int_cur, this_int_prv,
-                                     obj);
-                    id_cur = this_id_cur.GetPointer();
-                    id_prv = this_id_prv.GetPointer();
-                }}
-                break;
-            case CSeq_loc::e_Null:
-                break;
-            default:
-                strand_cur = eNa_strand_other;
-                id_cur = 0;
-                int_prv = 0;
-                break;
-            }
-            if (!chk) {
-                string lbl = GetValidatorLocationLabel (*l, *m_Scope);
-                PostErr(eDiag_Critical, eErr_SEQ_FEAT_Range,
-                    prefix + ": SeqLoc [" + lbl + "] out of range", obj);
-            }
+    x_InitLocCheck(lc, prefix);
 
-            if (l->Which() != CSeq_loc::e_Null) {
-                if (strand_prv != eNa_strand_other  &&
-                    strand_cur != eNa_strand_other) {
-                    if (id_cur  &&  id_prv  &&
-                        IsSameBioseq(*id_cur, *id_prv, m_Scope)) {
-                        if (strand_prv != strand_cur) {
-                            if ((strand_prv == eNa_strand_plus  &&
-                                strand_cur == eNa_strand_unknown)  ||
-                                (strand_prv == eNa_strand_unknown  &&
-                                strand_cur == eNa_strand_plus)) {
-                                unmarked_strand = true;
-                            } else {
-                                mixed_strand = true;
-                            }
-                        }
-                    }
-                }
-                if (strand_cur == eNa_strand_other) {
-                    has_other = true;
-                } else if (strand_cur == eNa_strand_minus || strand_cur == eNa_strand_plus) {
-                    has_not_other = true;
-                }
+    x_CheckLoc(loc, obj, lc);
 
-                strand_prv = strand_cur;
-                id_prv = id_cur;
-            }
-        } catch( const exception& e ) {
-            string label = GetValidatorLocationLabel(loc, *m_Scope);
-            PostErr(eDiag_Error, eErr_INTERNAL_Exception,  
-                "Exception caught while validating location " +
-                label + ". Exception: " + e.what(), obj);
-                
-            strand_cur = eNa_strand_other;
-            id_cur = 0;
-            int_prv = 0;
-        }
-        
-    }
-    if (has_other && has_not_other) {
+    if (lc.has_other && lc.has_not_other) {
         string label = GetValidatorLocationLabel(loc, *m_Scope);
         PostErr(IsSmallGenomeSet() ? eDiag_Warning : eDiag_Error, eErr_SEQ_FEAT_MixedStrand,
             prefix + ": Inconsistent use of other strand SeqLoc [" + label + "]", obj);        
@@ -2122,8 +2142,8 @@ void CValidError_imp::ValidateSeqLoc
         // primer_bind intervals MAY be in on opposite strands
         
         if ( sfp->GetData().GetSubtype() == CSeqFeatData::eSubtype_primer_bind ) {
-            mixed_strand = false;
-            unmarked_strand = false;
+            lc.mixed_strand = false;
+            lc.unmarked_strand = false;
         }
         
         exception = sfp->IsSetExcept() ?  sfp->GetExcept() : false;
@@ -2175,11 +2195,11 @@ void CValidError_imp::ValidateSeqLoc
             label + ". Exception: " + ex.what(), obj);
     }
 
-    if (mixed_strand || unmarked_strand || !ordered) {
+    if (lc.mixed_strand || lc.unmarked_strand || !ordered) {
         if (loc_lbl.empty()) {
             loc_lbl = GetValidatorLocationLabel(loc, *m_Scope);
         }
-        if (mixed_strand) {
+        if (lc.mixed_strand) {
             if (IsSmallGenomeSet()) {
                 PostErr(eDiag_Warning, eErr_SEQ_FEAT_GenomeSetMixedStrand,
                     prefix + ": Mixed strands in SeqLoc ["
@@ -2193,7 +2213,7 @@ void CValidError_imp::ValidateSeqLoc
                     prefix + ": Mixed strands in SeqLoc ["
                     + loc_lbl + "]", obj);
             }
-        } else if (unmarked_strand) {
+        } else if (lc.unmarked_strand) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_MixedStrand,
                 prefix + ": Mixed plus and unknown strands in SeqLoc ["
                 + loc_lbl + "]", obj);
