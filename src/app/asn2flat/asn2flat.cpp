@@ -806,6 +806,20 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
         }
     }
 
+    if ( args["faster"] ) {
+
+		try {
+            CNcbiOstream* flatfile_os = m_Os;
+			m_FFGenerator->Generate( seh, *flatfile_os, true);
+		}
+		catch (CException& e) {
+			ERR_POST(Error << e);
+			m_Exception = true;
+		}
+
+        return true;
+    }
+
     m_FFGenerator->SetFeatTree(new feature::CFeatTree(seh));
     
     for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
