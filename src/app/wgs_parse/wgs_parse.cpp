@@ -161,7 +161,7 @@ static CRef<CSeq_entry> GetMasterEntryFromFile(const string& fname)
     try {
         CNcbiIfstream in(fname);
         entry.Reset(new CSeq_entry);
-        in >> *entry;
+        in >> MSerial_AsnText >> *entry;
     }
     catch (...) {
         entry.Reset();

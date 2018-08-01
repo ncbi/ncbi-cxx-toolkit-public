@@ -352,10 +352,6 @@ const string& CParams::GetTpaKeyword() const
 
 string CParams::GetIdPrefix() const
 {
-    if (IsMasterInFile()) {
-        return kEmptyStr;
-    }
-
     return m_imp->m_accession.substr(0, m_imp->m_accession.size() - 2);
 }
 
@@ -741,6 +737,14 @@ static bool ParseSubmissionDate(const string& str, CDate_std& date)
     return true;
 }
 
+static void BuildFilenameWithPath(const string& outdir, string& filename)
+{
+    if (filename.find('/') == string::npos &&
+        filename.find('\\') == string::npos) { // does not contain path, just a filename
+        filename = outdir + '/' + filename;
+    }
+}
+
 bool SetParams(const CArgs& args)
 {
     if (!params) {
@@ -785,10 +789,7 @@ bool SetParams(const CArgs& args)
 
     if (args["e"].HasValue()) {
         params_imp.m_acc_file = args["e"].AsString();
-        if (params_imp.m_acc_file.find('/') == string::npos &&
-            params_imp.m_acc_file.find('\\') == string::npos) { // does not contain path, just a filename
-            params_imp.m_acc_file = params_imp.m_outdir + '/' + params_imp.m_acc_file;
-        }
+        BuildFilenameWithPath(params_imp.m_outdir, params_imp.m_acc_file);
     }
 
     if (!params_imp.m_acc_file.empty() && params_imp.m_update_mode != eUpdateAssembly) {
@@ -1082,6 +1083,17 @@ bool SetParams(const CArgs& args)
 
     if (args["F"].HasValue()) {
         params_imp.m_master_file = args["F"].AsString();
+
+        if (!input_mask.empty()) {
+            auto slash = input_mask.find_last_of('/');
+            if (slash == string::npos) {
+                slash = input_mask.find_last_of('\\');
+            }
+
+            if (slash != string::npos) {
+                BuildFilenameWithPath(input_mask.substr(0, slash), params_imp.m_master_file);
+            }
+        }
     }
 
     params_imp.m_enforce_new = args["N"].AsBoolean();

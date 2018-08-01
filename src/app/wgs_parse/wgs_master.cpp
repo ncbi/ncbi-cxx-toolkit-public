@@ -99,7 +99,7 @@ static void GetSeqIdStr(const CBioseq::TId& ids, string& id_str)
 
             const CTextseq_id* text_id = id->GetTextseq_Id();
             if (text_id->IsSetAccession()) {
-                id_str = "accession " + text_id->GetAccession();
+                id_str = "accession \"" + text_id->GetAccession() + '\"';
                 break;
             }
         }
