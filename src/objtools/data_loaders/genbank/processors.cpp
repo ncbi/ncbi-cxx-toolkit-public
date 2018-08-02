@@ -2611,12 +2611,14 @@ void CProcessor_AnnotInfo::LoadBlob(CReaderRequestResult& result,
     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kDelayedMain_ChunkId));
     const CBlob_Annot_Info::TAnnotInfo& annot_infos =
         info.GetAnnotInfo()->GetAnnotInfo();
+    set<string> names;
     ITERATE ( CBlob_Annot_Info::TAnnotInfo, it, annot_infos ) {
         const CID2S_Seq_annot_Info& annot_info = **it;
         // create special external annotations blob
         CAnnotName name(annot_info.GetName());
         if ( name.IsNamed() && !ExtractZoomLevel(name.GetName(), 0, 0) ) {
-            setter.GetTSE_LoadLock()->SetName(name);
+            //setter.GetTSE_LoadLock()->SetName(name);
+            names.insert(name.GetName());
         }
 
         vector<SAnnotTypeSelector> types;
@@ -2654,6 +2656,9 @@ void CProcessor_AnnotInfo::LoadBlob(CReaderRequestResult& result,
         ITERATE ( vector<SAnnotTypeSelector>, it, types ) {
             chunk->x_AddAnnotType(name, *it, loc);
         }
+    }
+    if ( names.size() == 1 ) {
+        setter.GetTSE_LoadLock()->SetName(*names.begin());
     }
     setter.GetSplitInfo().AddChunk(*chunk);
     _ASSERT(setter.GetTSE_LoadLock()->x_NeedsDelayedMainChunk());
