@@ -3098,10 +3098,10 @@ void CFeatureTableReader_Imp::x_FinishFeature(CRef<CSeq_feat>& feat,
 
 
 void CFeatureTableReader_Imp::x_ProcessQualifier(const string& qual_name,
-                                                   const string& qual_val,
-                                                   const string& feat_name,
-                                                   CRef<CSeq_feat> feat, 
-                                                   TFlags flags) 
+                                                 const string& qual_val,
+                                                 const string& feat_name,
+                                                 CRef<CSeq_feat> feat, 
+                                                 TFlags flags) 
 {
     if (NStr::IsBlank(qual_name)) {
         return;
@@ -3119,7 +3119,7 @@ void CFeatureTableReader_Imp::x_ProcessQualifier(const string& qual_name,
         }
         else {
             x_ProcessMsg(ILineError::eProblem_QualifierBadValue, 
-                         eDiag_Warning, kEmptyStr, qual_name);
+                         eDiag_Warning, feat_name, qual_name);
         }
         return;
     }
