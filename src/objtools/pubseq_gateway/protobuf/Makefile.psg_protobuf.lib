@@ -1,0 +1,16 @@
+# $Id$
+
+WATCHERS = satskyse dmitrie1
+
+REQUIRES = MT PROTOBUF
+
+SRC = psg_protobuf.pb
+
+LIB = psg_protobuf
+LIB_OR_DLL = both
+
+CPPFLAGS = $(GRPC_INCLUDE) $(ORIG_CPPFLAGS)
+LIBS = $(GRPC_LIBS) $(ORIG_LIBS)
+
+#%.o: %.cc %.h
+#	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<

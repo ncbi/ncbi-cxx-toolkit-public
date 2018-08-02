@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package psg.retrieval;
+
+option optimize_for = LITE_RUNTIME;
+
+message bioseq_info_value {
+    int32     sat = 1;
+    int32     sat_key = 2;
+    uint32    state = 3;
+    int32     mol = 4;
+    int32     hash = 5;
+    int32     length = 6;
+    int64     date_changed = 7;
+    uint32    tax_id  = 8;
+    map<sint32, string> seq_ids = 9;
+}
+
+message si2csi_value {
+    string    accession = 1;
+    int32     version   = 2;
+    int32     seq_id_type = 3;
+}
+
+message blob_prop_value {
+    int32   class = 1;
+    int64   date_asn1 = 2;
+    string  div = 3;
+    int64   flags = 4;
+    int64   hup_date = 5;
+    string  id2_info = 6;
+    int32   n_chunks = 7;
+    int32   owner = 8;
+    int64   size = 9;
+    int64   size_unpacked = 10;
+    string  username = 11;
+}
+
