@@ -1512,7 +1512,7 @@ int CWGSParseApp::Run(void)
             return ERROR_RET;
         }
 
-        if (GetOldNumberOfPieces(*master_info.m_id_master_bioseq) <= master_info.m_num_of_entries) {
+        if (master_info.m_id_master_bioseq.NotEmpty() && GetOldNumberOfPieces(*master_info.m_id_master_bioseq) <= master_info.m_num_of_entries) {
             SetUpdateMode(eUpdateFull);
         }
 
