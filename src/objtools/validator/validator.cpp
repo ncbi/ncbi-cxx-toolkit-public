@@ -93,6 +93,9 @@ CConstRef<CValidError> CValidator::Validate
     return errors;
 }
 
+
+//LCOV_EXCL_START
+// not used by asnvalidate, used by external programs
 CConstRef<CValidError> CValidator::Validate
 (const CSeq_entry_Handle& seh,
  Uint4 options)
@@ -116,8 +119,6 @@ CConstRef<CValidError> CValidator::Validate
 }
 
 
-//LCOV_EXCL_START
-// not used by asnvalidate, used by external progreams
 CConstRef<CValidError> CValidator::GetTSANStretchErrors(const CSeq_entry_Handle& se)
 {
     CRef<CValidError> errors(new CValidError(&*se.GetCompleteSeq_entry()));
@@ -241,13 +242,16 @@ CConstRef<CValidError> CValidator::Validate
     return errors;
 }
 
+
+//LCOV_EXCL_START
+//not used by asnvalidate
 CConstRef<CValidError> CValidator::Validate
 (const CSeq_feat& feat, 
  Uint4 options)
 {
     return Validate(feat, NULL, options);
 }
-
+//LCOV_EXCL_STOP
 CConstRef<CValidError> CValidator::Validate
 (const CBioSource& src, 
  CScope *scope,
@@ -259,12 +263,15 @@ CConstRef<CValidError> CValidator::Validate
     return errors;
 }
 
+//LCOV_EXCL_START
+//not used by asnvalidate
 CConstRef<CValidError> CValidator::Validate
 (const CBioSource& src, 
  Uint4 options)
 {
     return Validate(src, NULL, options);
 }
+//LCOV_EXCL_STOP
 
 CConstRef<CValidError> CValidator::Validate
 (const CPubdesc& pubdesc, 
@@ -277,12 +284,15 @@ CConstRef<CValidError> CValidator::Validate
     return errors;
 }
 
+//LCOV_EXCL_START
+//not used by asnvalidate
 CConstRef<CValidError> CValidator::Validate
 (const CPubdesc& pubdesc, 
  Uint4 options)
 {
     return Validate(pubdesc, NULL, options);
 }
+//LCOV_EXCL_STOP
 
 void CValidator::SetProgressCallback(TProgressCallback callback, void* user_data)
 {
@@ -568,6 +578,8 @@ bool CValidator::DoesSeqLocContainDuplicateIntervals(const CSeq_loc& loc, CScope
 }
 
 
+//LCOV_EXCL_START
+//code is not used
 CCache::CCache(void)
 {
     m_impl.reset(new CCacheImpl);
@@ -578,6 +590,7 @@ CValidator::MakeEmptyCache(void)
 {
     return Ref(new CCache);
 }
+//LCOV_EXCL_STOP
 
 END_SCOPE(validator)
 END_SCOPE(objects)
