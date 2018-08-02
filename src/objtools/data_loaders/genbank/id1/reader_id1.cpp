@@ -339,7 +339,7 @@ bool CId1Reader::LoadSeq_idSeq_ids(CReaderRequestResult& result,
 
 
 bool CId1Reader::LoadGiSeq_ids(CReaderRequestResult& result,
-                              const CSeq_id_Handle& seq_id)
+                               const CSeq_id_Handle& seq_id)
 {
     CLoadLockSeqIds ids(result, seq_id);
     if ( ids.IsLoaded() ) {
@@ -383,6 +383,17 @@ bool CId1Reader::LoadGiSeq_ids(CReaderRequestResult& result,
 }
 
 
+static bool sx_IsSNPOnly(const SAnnotSelector::TNamedAnnotAccessions& accs)
+{
+    for ( auto& s : accs ) {
+        if ( s.first != "SNP" ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 bool CId1Reader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
                                     const CSeq_id_Handle& seq_id,
                                     const SAnnotSelector* sel)
@@ -391,12 +402,13 @@ bool CId1Reader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     if ( ids.IsLoaded() ) {
         return true;
     }
-    if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
+    if ( sel && sel->IsIncludedAnyNamedAnnotAccession() &&
+         !sx_IsSNPOnly(sel->GetNamedAnnotAccessions()) ) {
         return CReader::LoadSeq_idBlob_ids(result, seq_id, sel);
     }
 
     if ( seq_id.Which() == CSeq_id::e_Gi ) {
-        return LoadGiBlob_ids(result, seq_id);
+        return LoadGiBlob_ids(result, seq_id, sel);
     }
 
     if ( seq_id.Which() == CSeq_id::e_General ) {
@@ -438,9 +450,9 @@ bool CId1Reader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     }
 
     CSeq_id_Handle gi_handle = CSeq_id_Handle::GetGiHandle(gi);
-    CLoadLockBlobIds gi_ids_lock(result, gi_handle, 0);
+    CLoadLockBlobIds gi_ids_lock(result, gi_handle, sel);
     if ( !gi_ids_lock.IsLoaded() ) {
-        m_Dispatcher->LoadSeq_idBlob_ids(result, gi_handle, 0);
+        m_Dispatcher->LoadSeq_idBlob_ids(result, gi_handle, sel);
     }
     SetAndSaveSeq_idBlob_ids(result, seq_id, sel, ids, gi_ids_lock);
     return true;
@@ -448,9 +460,10 @@ bool CId1Reader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
 
 
 bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
-                                const CSeq_id_Handle& seq_id)
+                                const CSeq_id_Handle& seq_id,
+                                const SAnnotSelector* sel)
 {
-    CLoadLockBlobIds ids(result, seq_id, 0);
+    CLoadLockBlobIds ids(result, seq_id, sel);
     if ( ids.IsLoaded() ) {
         return true;
     }
@@ -481,7 +494,7 @@ bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
         if ( !state ) {
             state = CBioseq_Handle::fState_other_error;
         }
-        SetAndSaveNoSeq_idBlob_ids(result, seq_id, 0, ids, state);
+        SetAndSaveNoSeq_idBlob_ids(result, seq_id, sel, ids, state);
         return true;
     }
 
@@ -497,12 +510,12 @@ bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
     }
     if (info.GetWithdrawn() > 0) {
         state |= CBioseq_Handle::fState_withdrawn;
-        SetAndSaveNoSeq_idBlob_ids(result, seq_id, 0, ids, state);
+        SetAndSaveNoSeq_idBlob_ids(result, seq_id, sel, ids, state);
         return true;
     }
     if (info.GetConfidential() > 0) {
         state |= CBioseq_Handle::fState_confidential;
-        SetAndSaveNoSeq_idBlob_ids(result, seq_id, 0, ids, state);
+        SetAndSaveNoSeq_idBlob_ids(result, seq_id, sel, ids, state);
         return true;
     }
     if ( info.GetSat() < 0 || info.GetSat_key() < 0 ) {
@@ -510,7 +523,7 @@ bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
         if ( !state ) {
             state = CBioseq_Handle::fState_other_error;
         }
-        SetAndSaveNoSeq_idBlob_ids(result, seq_id, 0, ids, state);
+        SetAndSaveNoSeq_idBlob_ids(result, seq_id, sel, ids, state);
         return true;
     }
     TBlobIds blob_ids;
@@ -545,7 +558,7 @@ bool CId1Reader::LoadGiBlob_ids(CReaderRequestResult& result,
         }
         blob_ids.push_back(CBlob_Info(blob_id, fBlobHasAllLocal));
     }
-    SetAndSaveSeq_idBlob_ids(result, seq_id, 0, ids,
+    SetAndSaveSeq_idBlob_ids(result, seq_id, sel, ids,
                              CFixedBlob_ids(eTakeOwnership, blob_ids, state));
     return true;
 }

@@ -66,7 +66,8 @@ public:
                             const CSeq_id_Handle& id,
                             const SAnnotSelector* sel);
     bool LoadGiBlob_ids(CReaderRequestResult& result,
-                        const CSeq_id_Handle& seq_id);
+                        const CSeq_id_Handle& seq_id,
+                        const SAnnotSelector* sel);
 
     void GetBlobState(CReaderRequestResult& result,
                       const CBlob_id& blob_id);
