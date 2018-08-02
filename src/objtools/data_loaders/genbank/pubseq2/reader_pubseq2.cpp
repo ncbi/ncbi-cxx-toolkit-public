@@ -626,6 +626,9 @@ CPubseq2Reader::x_SendPacket(CDB_Connection& db_conn,
 void CPubseq2Reader::SetIncludeHUP(bool include_hup)
 {
     m_SetCubbyUser = include_hup;
+    if ( include_hup ) {
+        x_DisableProcessors();
+    }
 }
 
 

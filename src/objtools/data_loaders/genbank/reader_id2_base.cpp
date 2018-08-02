@@ -215,6 +215,12 @@ CId2ReaderBase::~CId2ReaderBase(void)
 }
 
 
+void CId2ReaderBase::x_DisableProcessors()
+{
+    m_Processors.clear();
+}
+
+
 #define MConnFormat MSerial_AsnBinary
 
 

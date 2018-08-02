@@ -282,6 +282,8 @@ protected:
                      int num,
                      const CID2_Reply& reply);
 
+    void x_DisableProcessors();
+
 private:
     CAtomicCounter_WithAutoInit m_RequestSerialNumber;
 
