@@ -360,41 +360,6 @@ static bool s_LocIntervalsSpanOrigin (const CSeq_loc& loc, CBioseq_Handle bsh)
 }
 
 
-static bool s_LocIntervalsCoverSegs (const CSeq_loc& loc)
-{
-    if (loc.GetStrand() == eNa_strand_minus) {
-        unsigned int start = loc.GetTotalRange().GetTo();
-        unsigned int stop = loc.GetTotalRange().GetFrom();
-        CSeq_loc_CI si(loc);
-        while (si) {
-            if (si.GetRange().GetTo() != start) {
-                return false;
-            }
-            start = si.GetRange().GetFrom() - 1;
-            ++si;
-        }
-        if (start != stop - 1) {
-            return false;
-        }
-    } else {
-        unsigned int start = loc.GetTotalRange().GetFrom();
-        unsigned int stop = loc.GetTotalRange().GetTo();
-        CSeq_loc_CI si(loc);
-        while (si) {
-            if (si.GetRange().GetFrom() != start) {
-                return false;
-            }
-            start = si.GetRange().GetTo() + 1;
-            ++si;
-        }
-        if (start != stop + 1) {
-            return false;
-        }
-    }
-    return true;
-}
-
-
 void CGeneValidator::x_ValidateMultiIntervalGene()
 {
     try {
