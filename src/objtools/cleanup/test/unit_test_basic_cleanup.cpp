@@ -732,6 +732,9 @@ void CompareOldAndNew(const CAuthor& orig)
             case CAuthor::TName::e_not_set:
                 BOOST_ASSERT("Author name was not set, it should be");
                 break;
+            case CAuthor::TName::e_Dbtag:
+                BOOST_ASSERT("Unexpected author name type dbtag");
+                break;
         }
     } else {
         BOOST_CHECK(!old_result.IsSetName());
