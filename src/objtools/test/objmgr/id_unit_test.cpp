@@ -368,6 +368,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP)
     LOG_POST("Checking ExtAnnot SNP");
     SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
     sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
     s_CheckFeat(sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
 }
@@ -411,6 +412,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP_Seq_feat)
     LOG_POST("Checking ExtAnnot SNP Seq-feat generation");
     SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
     sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
 
     s_CheckFeatData<CSeq_feat>
@@ -423,6 +425,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP_SeqFeatData)
     LOG_POST("Checking ExtAnnot SNP SeqFeatData generation");
     SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
     sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
 
     s_CheckFeatData<CSeqFeatData>
@@ -435,6 +438,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP_Imp_feat)
     LOG_POST("Checking ExtAnnot SNP Imp-feat generation");
     SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
     sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
 
     s_CheckFeatData<CImp_feat>
@@ -447,6 +451,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP_Seq_loc)
     LOG_POST("Checking ExtAnnot SNP Seq-loc generation");
     SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
     sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
 
     s_CheckFeatData<CSeq_loc>
@@ -459,6 +464,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP_Seq_id)
     LOG_POST("Checking ExtAnnot SNP Seq-id generation");
     SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
     sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
 
     s_CheckFeatData<CSeq_id>
@@ -471,6 +477,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP_Seq_point)
     LOG_POST("Checking ExtAnnot SNP Seq-point generation");
     SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
     sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
 
     s_CheckFeatData<CSeq_point>
@@ -483,6 +490,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP_Seq_interval)
     LOG_POST("Checking ExtAnnot SNP Seq-interval generation");
     SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
     sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
 
     s_CheckFeatData<CSeq_interval>
@@ -495,6 +503,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP_Gb_qual)
     LOG_POST("Checking ExtAnnot SNP Gb-qual generation");
     SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
     sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
 
     s_CheckFeatData<CGb_qual>
@@ -507,6 +516,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP_Dbtag)
     LOG_POST("Checking ExtAnnot SNP Dbtag generation");
     SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
     sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
 
     s_CheckFeatData<CDbtag>
@@ -519,6 +529,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP_Object_id)
     LOG_POST("Checking ExtAnnot SNP Object-id generation");
     SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
     sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
 
     s_CheckFeatData<CObject_id>
@@ -531,6 +542,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP_User_object)
     LOG_POST("Checking ExtAnnot SNP User-object generation");
     SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
     sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
 
     s_CheckFeatData<CUser_object>
@@ -543,6 +555,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNP_User_field)
     LOG_POST("Checking ExtAnnot SNP User-field generation");
     SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
     sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
 
     s_CheckFeatData<CUser_field>
@@ -555,6 +568,7 @@ BOOST_AUTO_TEST_CASE(CheckExtSNPGraph)
     LOG_POST("Checking ExtAnnot SNP graph");
     SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
     sel.SetResolveAll().SetAdaptiveDepth();
+    sel.IncludeNamedAnnotAccession("SNP");
     sel.AddNamedAnnots("SNP");
     s_CheckGraph(sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
 }
@@ -649,10 +663,7 @@ BOOST_AUTO_TEST_CASE(CheckExtExon)
 
 BOOST_AUTO_TEST_CASE(CheckNAZoom)
 {
-    if ( !s_HaveID2() ) {
-        LOG_POST("Skipping NA Tracks test without ID2");
-        return;
-    }
+    bool have_na = s_HaveID2();
     LOG_POST("Checking NA Tracks");
     string id = "NC_000022.11";
     string na_acc = "NA000000270.4";
@@ -674,6 +685,10 @@ BOOST_AUTO_TEST_CASE(CheckNAZoom)
         set<int> tracks;
         CRef<CScope> scope = s_InitScope();
         CGraph_CI it(*scope, *loc, sel);
+        if ( !have_na ) {
+            BOOST_CHECK(!it);
+            continue;
+        }
         ITERATE ( CGraph_CI::TAnnotNames, i, it.GetAnnotNames() ) {
             if ( !i->IsNamed() ) {
                 continue;
