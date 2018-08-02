@@ -34,6 +34,7 @@
 /// Simultaneous search of multiple RegEx patterns in the input string
 
 #include <corelib/ncbistd.hpp>
+#include <functional>
 
 BEGIN_NCBI_SCOPE
 
