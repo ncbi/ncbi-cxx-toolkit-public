@@ -14,20 +14,16 @@ set tree_root=%initial_dir%
 
 REM #########################################################################
 if "%CMAKE_CMD%"=="" (
-  set CMAKE_CMD=C:\Users\gouriano\Downloads\cmake-3.10.2-win64-x64\bin\cmake.exe
+  set CMAKE_CMD=C:\Program Files ^(x86^)\Microsoft Visual Studio\2017\Professional\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe
 )
 if not exist "%CMAKE_CMD%" (
   echo ERROR: CMake is not found
   goto :DONE
 )
-set CMAKE_ARGS=
 
 REM #########################################################################
 REM defaults
-set BUILD_TYPE=Debug
 set BUILD_SHARED_LIBS=OFF
-set USE_CCACHE=OFF
-set USE_DISTCC=OFF
 set VISUAL_STUDIO=2017
 
 goto :RUN
@@ -40,16 +36,16 @@ echo SYNOPSIS:
 echo   Configure NCBI C++ toolkit for Visual Studio using CMake build system.
 echo OPTIONS:
 echo   --help                  -- print Usage
-echo   --without-dll           -- build all libraries as static ones
-echo   --with-dll              -- build all libraries as shared ones,
-echo                              unless explicitely requested otherwise
+echo   --without-dll           -- build all libraries as static ones (default)
+echo   --with-dll              -- assemble toolkit libraries into DLLs
+echo                              where requested
 echo   --with-projects="FILE"  -- build projects listed in %tree_root%\FILE
 echo                              FILE can also be a list of subdirectories of
 echo                              %tree_root%\src
 echo                  examples:   --with-projects="corelib$;serial"
 echo                              --with-projects=scripts/projects/ncbi_cpp.lst
 echo   --with-vs=N             -- use Visual Studio N generator 
-echo                  examples:   --with-vs=2017
+echo                  examples:   --with-vs=2017  (default)
 echo                              --with-vs=2015
 echo   --with-generator="X"    -- use generator X
 echo:
@@ -124,18 +120,21 @@ if "%generator%"=="" (
   set generator_name=%generator%
 )
 
-if exist "%tree_root%\%project_list%" (
-  set project_list=%tree_root%\%project_list%
+if not "%project_list%"=="" (
+  if exist "%tree_root%\%project_list%" (
+    set project_list=%tree_root%\%project_list%
+  )
 )
 
 REM #########################################################################
 
-set CMAKE_ARGS=
+set CMAKE_ARGS=-DNCBI_EXPERIMENTAL=ON
+
 if not "%generator%"=="" (
   set CMAKE_ARGS=%CMAKE_ARGS% -G "%generator%"
 )
 if not "%project_list%"=="" (
-  set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PROJECT_LIST="%project_list%"
+  set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_LIST="%project_list%"
 )
 set CMAKE_ARGS=%CMAKE_ARGS% -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS%
 

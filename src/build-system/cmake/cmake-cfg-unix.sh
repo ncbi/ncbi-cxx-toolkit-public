@@ -1,7 +1,7 @@
 #!/bin/sh
 #############################################################################
 # $Id$
-#   Configure NCBI C++ toolkit for CMake build system.
+#   Configure NCBI C++ toolkit using CMake build system.
 #############################################################################
 initial_dir=`pwd`
 script_name=`basename $0`
@@ -11,9 +11,12 @@ tree_root=`pwd`
 
 ############################################################################# 
 if [ -z "${CMAKE_CMD}" ]; then
-    CMAKE_CMD="cmake"
+  CMAKE_CMD=`which cmake 2>/dev/null`
+  if test $? -ne 0; then
+    echo ERROR: CMake is not found
+    exit 1
+  fi
 fi
-CMAKE_ARGS=""
 if [ -z "$CC" ]; then
   CC=`which gcc 2>/dev/null`
   if test $? -ne 0; then
@@ -37,6 +40,7 @@ BUILD_TYPE="Debug"
 BUILD_SHARED_LIBS="OFF"
 USE_CCACHE="OFF"
 USE_DISTCC="OFF"
+NCBI_EXPERIMENTAL=ON
 
 ############################################################################# 
 Usage()
@@ -45,25 +49,34 @@ Usage()
 USAGE:
   $script_name [OPTION]...
 SYNOPSIS:
-  Configure NCBI C++ toolkit for CMake build system.
+  Configure NCBI C++ toolkit using CMake build system.
 OPTIONS:
   --help                     -- print Usage
   --without-debug            -- build release versions of libs and apps
-  --with-debug               -- build debug versions of libs and apps
-  --without-dll              -- build all libraries as static ones
+  --with-debug               -- build debug versions of libs and apps (default)
+  --without-dll              -- build all libraries as static ones (default)
   --with-dll                 -- build all libraries as shared ones,
                                 unless explicitely requested otherwise
   --with-ccache              -- use ccache if available
   --with-distcc              -- use distcc if available
+  --without-experimental     -- disable experimental configuration
   --with-projects='FILE'     -- build projects listed in ${tree_root}/FILE
                                 FILE can also be a list of subdirectories of ${tree_root}/src
                     examples:   --with-projects='corelib$;serial'
                                 --with-projects=scripts/projects/ncbi_cpp.lst
   --with-generator='X'       -- use generator X
 EOF
-  echo
-  echo The following generators are available on this platform:
-  $CMAKE_CMD --help | grep Generates
+
+  generatorfound=""
+  "${CMAKE_CMD}" --help | while IFS= read -r line; do
+    if [ -z $generatorfound ]; then
+      if [ "$line" = "Generators" ]; then
+        generatorfound=yes
+      fi
+    else
+      echo "$line"
+    fi
+  done
 }
 
 # has one optional argument: error message
@@ -114,7 +127,10 @@ while [ $# != 0 ]; do
       ;; 
     --without-distcc)
       USE_DISTCC="OFF"
-      ;; 
+      ;;
+    --without-experimental)
+      NCBI_EXPERIMENTAL=OFF
+      ;;
     --with-generator=*)
       generator=${1#*=}
       ;; 
@@ -133,6 +149,8 @@ done
 
 ############################################################################# 
 
+CMAKE_ARGS=-DNCBI_EXPERIMENTAL=${NCBI_EXPERIMENTAL}
+
 if [ -n "$CC" ]; then
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_C_COMPILER=$(Quote "$CC")"
 fi
@@ -143,7 +161,7 @@ if [ -n "$generator" ]; then
   CMAKE_ARGS="$CMAKE_ARGS -G $(Quote "$generator")"
 fi
 if [ -n "$project_list" ]; then
-  CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PROJECT_LIST=$(Quote "${project_list}")"
+  CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_LIST=$(Quote "${project_list}")"
 fi
 CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
 CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
@@ -165,6 +183,6 @@ if [ -e CMakeCache.txt ]; then
    rm CMakeCache.txt
 fi
 
-echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "../../src"
-eval "${CMAKE_CMD}" ${CMAKE_ARGS}  "../../src"
+echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "${tree_root}/src"
+eval "${CMAKE_CMD}" ${CMAKE_ARGS}  "${tree_root}/src"
 cd ${initial_dir}
