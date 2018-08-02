@@ -221,6 +221,10 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
     BOOST_REQUIRE(annot != NULL);
     BOOST_REQUIRE(annot->IsFtable());
 
+    // Make sure that annot can be serialized out
+    CNcbiOstrstream asn_text_str;
+    asn_text_str << MSerial_AsnText << *annot;
+
     return annot;
 }
 
