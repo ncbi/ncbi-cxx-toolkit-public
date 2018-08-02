@@ -5433,7 +5433,7 @@ bool CValidError_bioseq::x_PartialAdjacentToIntron(const CSeq_loc& loc)
 }
 
 
-void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, const CSeq_feat& feat)
+void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, bool at_splice_or_gap, const CSeq_feat& feat)
 {
     EDiagSev sev = eDiag_Warning;
     if (m_Imp.IsGenomeSubmission() && 
@@ -5447,16 +5447,21 @@ void CValidError_bioseq::x_ReportStartStopPartialProblem(int partial_type, const
 
     bool mrna = false;
     bool organelle = false;
-    if (feat.GetData().IsCdregion() || feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
-        if (m_CurrentHandle && IsMrna(m_CurrentHandle)) {
-            msg += "mRNA ";
-            mrna = true;
-        } else if (m_CurrentHandle && IsOrganelle(m_CurrentHandle)) {
-            msg += "organelle ";
-            organelle = true;
-        } else {
-            // do not report
-            return;
+    if (at_splice_or_gap) {
+        if (feat.GetData().IsCdregion() || feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+            if (m_CurrentHandle && IsMrna(m_CurrentHandle)) {
+                msg += "mRNA ";
+                mrna = true;
+            }
+            else if (m_CurrentHandle && IsOrganelle(m_CurrentHandle)) {
+                msg += "organelle ";
+                organelle = true;
+                sev = eDiag_Info;
+            }
+            else {
+                // do not report
+                return;
+            }
         }
     }
     msg += "sequence";
@@ -5559,7 +5564,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
                 if (is_gap || m_Imp.GetGeneCache().IsPseudo(*(feat.GetOriginalSeq_feat()), *m_Scope)) {
                     // suppress for everything
                 } else {
-                    x_ReportStartStopPartialProblem(j, *(feat.GetSeq_feat()));
+                    x_ReportStartStopPartialProblem(j, true, *(feat.GetSeq_feat()));
                 }
             } else if ( bad_seq) {                
                 PostErr(eDiag_Info, eErr_SEQ_FEAT_PartialProblem,
@@ -5610,7 +5615,7 @@ void CValidError_bioseq::ValidateFeatPartialInContext (
             } else if (m_Imp.IsGenomic() && m_Imp.IsGpipe()) {
                 // ignore start/stop not at end in genomic gpipe sequence
             } else {
-                x_ReportStartStopPartialProblem(j, *(feat.GetSeq_feat()));
+                x_ReportStartStopPartialProblem(j, false, *(feat.GetSeq_feat()));
             }
         }
         errtype <<= 1;

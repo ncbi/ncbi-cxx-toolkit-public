@@ -190,7 +190,7 @@ private:
     void x_ReportInternalPartial(const CSeq_feat& feat);
     bool x_PartialAdjacentToIntron(const CSeq_loc& loc);
     void ValidateFeatPartialInContext (const CMappedFeat& feat);
-    void x_ReportStartStopPartialProblem(int partial_type, const CSeq_feat& feat);
+    void x_ReportStartStopPartialProblem(int partial_type, bool at_splice_or_gap, const CSeq_feat& feat);
 
     bool x_IsPartialAtSpliceSiteOrGap (const CSeq_loc& loc, unsigned int tag, bool& bad_seq, bool& is_gap);
     bool x_SplicingNotExpected(const CMappedFeat& feat);
