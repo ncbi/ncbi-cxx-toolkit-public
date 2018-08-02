@@ -1188,9 +1188,9 @@ static int s_FindNumIdentical(Uint1* query_seq,
             num_identical += word_size;
 
             /* extend left from word match */
-            num_identical += s_ExtendLeft(query_seq + query_start - 1,
+            num_identical += s_ExtendLeft(query_seq + query_from,
                                           query_start - query_from,
-                                          subject_seq + subject_start - 1,
+                                          subject_seq + subject_from,
                                           subject_start - subject_from,
                                           max_shift,
                                           &query_left_len, &subject_left_len,
