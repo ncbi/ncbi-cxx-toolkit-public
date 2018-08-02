@@ -179,9 +179,9 @@ cd ${tree_root}/${build_root}/build
 #we need to do this because CMake caches configuration parameters,
 #and if you run ./cmake-configure for existing build directory
 #but with another parameters, CMake will use old values for paramers you omit (not default ones)
-if [ -e CMakeCache.txt ]; then
-   rm CMakeCache.txt
-fi
+#if [ -e CMakeCache.txt ]; then
+#   rm CMakeCache.txt
+#fi
 
 echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "${tree_root}/src"
 eval "${CMAKE_CMD}" ${CMAKE_ARGS}  "${tree_root}/src"

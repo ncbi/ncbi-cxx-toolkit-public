@@ -153,9 +153,9 @@ if not exist "%tree_root%\%build_root%\build" (
 )
 cd "%tree_root%\%build_root%\build"
 
-if exist "CMakeCache.txt" (
-  del CMakeCache.txt
-)
+REM if exist "CMakeCache.txt" (
+REM   del CMakeCache.txt
+REM )
 
 echo Running "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
 "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
