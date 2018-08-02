@@ -468,8 +468,8 @@ private:
         bool mixed_strand;
         bool has_other;
         bool has_not_other;
-        const CSeq_id* id_cur;
-        const CSeq_id *id_prv;
+        CConstRef<CSeq_id> id_cur;
+        CConstRef<CSeq_id> id_prv;
         const CSeq_interval *int_cur = 0;
         const CSeq_interval *int_prv = 0;
         ENa_strand strand_cur;
@@ -478,14 +478,10 @@ private:
     } SLocCheck;
 
     void x_InitLocCheck(SLocCheck& lc, const string& prefix);
+    void x_CheckForStrandChange(SLocCheck& lc);
     void x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, SLocCheck& lc);
-    bool x_CheckPackedInt(const CPacked_seqint& packed_int,
-                          CConstRef<CSeq_id>& id_cur,
-                          CConstRef<CSeq_id>& id_prv,
-                          ENa_strand& strand_cur,
-                          ENa_strand& strand_prv,
-                          CConstRef<CSeq_interval>& int_cur,
-                          CConstRef<CSeq_interval>& int_prv,
+    void x_CheckPackedInt(const CPacked_seqint& packed_int,
+                          SLocCheck& lc,
                           const CSerialObject& obj);
     bool x_CheckSeqInt(CConstRef<CSeq_id>& id_cur,
                        const CSeq_interval * int_cur,

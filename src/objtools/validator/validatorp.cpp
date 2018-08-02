@@ -1827,26 +1827,20 @@ void CValidError_imp::ValidateDbxref
 }
 
 
-bool CValidError_imp::x_CheckPackedInt
+void CValidError_imp::x_CheckPackedInt
 (const CPacked_seqint& packed_int,
- CConstRef<CSeq_id>& id_cur,
- CConstRef<CSeq_id>& id_prv,
- ENa_strand& strand_cur,
- ENa_strand& strand_prv,
- CConstRef<CSeq_interval>& int_cur,
- CConstRef<CSeq_interval>& int_prv,
+  SLocCheck& lc,
  const CSerialObject& obj)
 {
-    bool chk = true;
     ITERATE(CPacked_seqint::Tdata, it, packed_int.Get()) {
-        int_cur = (*it);
-        chk &= x_CheckSeqInt(id_cur, int_cur, strand_cur, obj);
+        lc.int_cur = (*it);
+        lc.chk &= x_CheckSeqInt(lc.id_cur, lc.int_cur, lc.strand_cur, obj);
 
-        id_prv = id_cur;
-        strand_prv = strand_cur;
-        int_prv = int_cur;
+        lc.id_prv = lc.id_cur;
+        x_CheckForStrandChange(lc);
+        lc.strand_prv = lc.strand_cur;
+        lc.int_prv = lc.int_cur;
     }
-    return chk;
 }
 
 
@@ -2000,17 +1994,39 @@ void CValidError_imp::x_InitLocCheck(SLocCheck& lc, const string& prefix)
     lc.prefix = prefix;
 }
 
+void CValidError_imp::x_CheckForStrandChange(SLocCheck& lc)
+{
+    if (lc.strand_prv != eNa_strand_other  &&
+        lc.strand_cur != eNa_strand_other) {
+        if (lc.id_cur  &&  lc.id_prv  &&
+            IsSameBioseq(*lc.id_cur, *lc.id_prv, m_Scope)) {
+            if (lc.strand_prv != lc.strand_cur) {
+                if ((lc.strand_prv == eNa_strand_plus  &&
+                    lc.strand_cur == eNa_strand_unknown)  ||
+                    (lc.strand_prv == eNa_strand_unknown  &&
+                    lc.strand_cur == eNa_strand_plus)) {
+                    lc.unmarked_strand = true;
+                } else {
+                    lc.mixed_strand = true;
+                }
+            }
+        }
+    }
+    if (lc.strand_cur == eNa_strand_other) {
+        lc.has_other = true;
+    } else if (lc.strand_cur == eNa_strand_minus || lc.strand_cur == eNa_strand_plus) {
+        lc.has_not_other = true;
+    }
+
+}
+
 void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, SLocCheck& lc)
 {
     try {
         switch (loc.Which()) {
             case CSeq_loc::e_Int:
-                {{
-                    CConstRef<CSeq_id> this_id_cur(lc.id_cur);
-                    lc.int_cur = &loc.GetInt();
-                    lc.chk = x_CheckSeqInt(this_id_cur, lc.int_cur, lc.strand_cur, obj);
-                    lc.id_cur = this_id_cur.GetPointer();
-                }}
+                lc.int_cur = &loc.GetInt();
+                lc.chk = x_CheckSeqInt(lc.id_cur, lc.int_cur, lc.strand_cur, obj);
                 break;
             case CSeq_loc::e_Pnt:
                 lc.strand_cur = loc.GetPnt().IsSetStrand() ?
@@ -2027,25 +2043,14 @@ void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, 
                 lc.int_prv = 0;
                 break;
             case CSeq_loc::e_Packed_int:
-                {{
-                    CConstRef<CSeq_id> this_id_cur(lc.id_cur);
-                    CConstRef<CSeq_id> this_id_prv(lc.id_prv);
-                    CConstRef<CSeq_interval> this_int_cur(lc.int_cur);
-                    CConstRef<CSeq_interval> this_int_prv(lc.int_prv);
-                    lc.chk = x_CheckPackedInt(loc.GetPacked_int(), 
-                                        this_id_cur, this_id_prv,
-                                        lc.strand_cur, lc.strand_prv,
-                                        this_int_cur, this_int_prv,
-                                        obj);
-                    lc.id_cur = this_id_cur.GetPointer();
-                    lc.id_prv = this_id_prv.GetPointer();
-                }}
+                x_CheckPackedInt(loc.GetPacked_int(), lc, obj);
                 break;
             case CSeq_loc::e_Null:
                 break;
             case CSeq_loc::e_Mix:
                 for (auto l : loc.GetMix().Get()) {
                     x_CheckLoc(*l, obj, lc);
+                    x_CheckForStrandChange(lc);
                 }
                 break;
             default:
@@ -2061,27 +2066,7 @@ void CValidError_imp::x_CheckLoc(const CSeq_loc& loc, const CSerialObject& obj, 
         }
 
         if (loc.Which() != CSeq_loc::e_Null) {
-            if (lc.strand_prv != eNa_strand_other  &&
-                lc.strand_cur != eNa_strand_other) {
-                if (lc.id_cur  &&  lc.id_prv  &&
-                    IsSameBioseq(*lc.id_cur, *lc.id_prv, m_Scope)) {
-                    if (lc.strand_prv != lc.strand_cur) {
-                        if ((lc.strand_prv == eNa_strand_plus  &&
-                            lc.strand_cur == eNa_strand_unknown)  ||
-                            (lc.strand_prv == eNa_strand_unknown  &&
-                            lc.strand_cur == eNa_strand_plus)) {
-                            lc.unmarked_strand = true;
-                        } else {
-                            lc.mixed_strand = true;
-                        }
-                    }
-                }
-            }
-            if (lc.strand_cur == eNa_strand_other) {
-                lc.has_other = true;
-            } else if (lc.strand_cur == eNa_strand_minus || lc.strand_cur == eNa_strand_plus) {
-                lc.has_not_other = true;
-            }
+            x_CheckForStrandChange(lc);
 
             lc.strand_prv = lc.strand_cur;
             lc.id_prv = lc.id_cur;
