@@ -264,9 +264,9 @@ extern int/*bool*/ MT_LOCK_DoInternal(MT_LOCK lk, EMT_Lock how)
  */
 
 /* Lock/unlock the logger */
-#define LOG_LOCK_WRITE  verify(MT_LOCK_Do(lg->lock, eMT_Lock))
-#define LOG_LOCK_READ   verify(MT_LOCK_Do(lg->lock, eMT_LockRead))
-#define LOG_UNLOCK      verify(MT_LOCK_Do(lg->lock, eMT_Unlock))
+#define LOG_LOCK_WRITE  verify(MT_LOCK_Do(lg->lock, eMT_Lock)     != 0)
+#define LOG_LOCK_READ   verify(MT_LOCK_Do(lg->lock, eMT_LockRead) != 0)
+#define LOG_UNLOCK      verify(MT_LOCK_Do(lg->lock, eMT_Unlock)   != 0)
 
 
 /* Check the validity of the logger */
@@ -451,9 +451,9 @@ extern void LOG_Write
  */
 
 /* Lock/unlock the registry  */
-#define REG_LOCK_WRITE  verify(MT_LOCK_Do(rg->lock, eMT_Lock))
-#define REG_LOCK_READ   verify(MT_LOCK_Do(rg->lock, eMT_LockRead))
-#define REG_UNLOCK      verify(MT_LOCK_Do(rg->lock, eMT_Unlock))
+#define REG_LOCK_WRITE  verify(MT_LOCK_Do(rg->lock, eMT_Lock)     != 0)
+#define REG_LOCK_READ   verify(MT_LOCK_Do(rg->lock, eMT_LockRead) != 0)
+#define REG_UNLOCK      verify(MT_LOCK_Do(rg->lock, eMT_Unlock)   != 0)
 
 
 /* Check the validity of the registry */

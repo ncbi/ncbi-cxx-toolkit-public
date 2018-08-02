@@ -170,10 +170,10 @@ static void TEST_CORE_Lock(void)
     verify(MT_LOCK_Delete(x_lock) == x_lock);
     assert(TEST_CORE_LockData == 111);
 
-    verify(MT_LOCK_Do(x_lock, eMT_LockRead));
-    verify(MT_LOCK_Do(x_lock, eMT_Lock));
-    verify(MT_LOCK_Do(x_lock, eMT_Unlock));
-    verify(MT_LOCK_Do(x_lock, eMT_Unlock));
+    verify(MT_LOCK_Do(x_lock, eMT_LockRead) != 0);
+    verify(MT_LOCK_Do(x_lock, eMT_Lock)     != 0);
+    verify(MT_LOCK_Do(x_lock, eMT_Unlock)   != 0);
+    verify(MT_LOCK_Do(x_lock, eMT_Unlock)   != 0);
 
     verify(MT_LOCK_Delete(x_lock) == x_lock);
     assert(TEST_CORE_LockData == 111);
@@ -186,20 +186,20 @@ static void TEST_CORE_Lock(void)
     assert(x_lock);
 
     /* NB: Write after read is not usually an allowed lock nesting */
-    verify(MT_LOCK_Do(x_lock, eMT_LockRead));
-    verify(MT_LOCK_Do(x_lock, eMT_Lock));
-    verify(MT_LOCK_Do(x_lock, eMT_Unlock));
-    verify(MT_LOCK_Do(x_lock, eMT_Unlock));
+    verify(MT_LOCK_Do(x_lock, eMT_LockRead)    != 0);
+    verify(MT_LOCK_Do(x_lock, eMT_Lock)        != 0);
+    verify(MT_LOCK_Do(x_lock, eMT_Unlock)      != 0);
+    verify(MT_LOCK_Do(x_lock, eMT_Unlock)      != 0);
     /* Read after write is usually okay */
-    verify(MT_LOCK_Do(x_lock, eMT_Lock));
-    verify(MT_LOCK_Do(x_lock, eMT_LockRead));
-    verify(MT_LOCK_Do(x_lock, eMT_Unlock));
-    verify(MT_LOCK_Do(x_lock, eMT_Unlock));
+    verify(MT_LOCK_Do(x_lock, eMT_Lock)        != 0);
+    verify(MT_LOCK_Do(x_lock, eMT_LockRead)    != 0);
+    verify(MT_LOCK_Do(x_lock, eMT_Unlock)      != 0);
+    verify(MT_LOCK_Do(x_lock, eMT_Unlock)      != 0);
     /* Try-locking sequence */
-    verify(MT_LOCK_Do(x_lock, eMT_TryLock));
-    verify(MT_LOCK_Do(x_lock, eMT_TryLockRead));
-    verify(MT_LOCK_Do(x_lock, eMT_Unlock));
-    verify(MT_LOCK_Do(x_lock, eMT_Unlock));
+    verify(MT_LOCK_Do(x_lock, eMT_TryLock)     != 0);
+    verify(MT_LOCK_Do(x_lock, eMT_TryLockRead) != 0);
+    verify(MT_LOCK_Do(x_lock, eMT_Unlock)      != 0);
+    verify(MT_LOCK_Do(x_lock, eMT_Unlock)      != 0);
 
     verify(MT_LOCK_Delete(x_lock) == 0);
 }
