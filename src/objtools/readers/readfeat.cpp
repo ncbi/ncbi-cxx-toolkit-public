@@ -3053,10 +3053,15 @@ void CFeatureTableReader_Imp::x_UpdatePointStrand(CSeq_feat& feat, CSeq_interval
 
 
 void CFeatureTableReader_Imp::x_FinishFeature(CRef<CSeq_feat>& feat, 
-                                                TFtable& ftable)
+                                              TFtable& ftable)
 {
-    if ( ! feat || feat.Empty())
+    if ( !feat || 
+         feat.Empty() ||
+         !feat->IsSetData() ||
+         (feat->GetData().Which() == CSeqFeatData::e_not_set) )
+    {
         return;
+    }
 
     // Check for missing publication - RW-626
     if (feat->GetData().GetSubtype() == CSeqFeatData::eSubtype_pub &&
@@ -3250,7 +3255,6 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
 
             if ((! feat.empty ()) && start >= 0 && stop >= 0) {
 
-                // p
                 // process start - stop - feature line
 
                 x_FinishFeature(sfp, ftable);
