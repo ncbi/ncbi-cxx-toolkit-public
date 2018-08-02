@@ -52,6 +52,7 @@
 //       CArg_Alnum       : CArg_String
 //       CArg_Int8        : CArg_String
 //          CArg_Integer  : CArg_Int8
+//          CArg_IntIds   : CArg_Int8
 //       CArg_DataSize    : CArg_String
 //       CArg_Double      : CArg_String
 //       CArg_Boolean     : CArg_String
@@ -72,6 +73,7 @@ public:
     virtual const string&  AsString (void) const;
     virtual Int8           AsInt8   (void) const;
     virtual int            AsInteger(void) const;
+    virtual TIntId         AsIntId  (void) const;
     virtual double         AsDouble (void) const;
     virtual bool           AsBoolean(void) const;
     virtual const CDir&    AsDirectory(void) const;
@@ -94,6 +96,7 @@ public:
     virtual const string&  AsString (void) const;
     virtual Int8           AsInt8   (void) const;
     virtual int            AsInteger(void) const;
+    virtual TIntId         AsIntId  (void) const;
     virtual double         AsDouble (void) const;
     virtual bool           AsBoolean(void) const;
     virtual const CDir&    AsDirectory(void) const;
@@ -115,6 +118,7 @@ public:
     virtual const string&  AsString (void) const;
     virtual Int8           AsInt8   (void) const;
     virtual int            AsInteger(void) const;
+    virtual TIntId         AsIntId  (void) const;
     virtual double         AsDouble (void) const;
     virtual bool           AsBoolean(void) const;
     virtual const CDir&    AsDirectory(void) const;
@@ -142,6 +146,8 @@ class CArg_Int8 : public CArg_String
 public:
     CArg_Int8(const string& name, const string& value);
     virtual Int8 AsInt8(void) const;
+    /// An Int8 argument can be used as an integer id only if NCBI_INT8_GI is defined.
+    virtual TIntId AsIntId(void) const;
 protected:
     Int8 m_Integer;
 };
@@ -153,8 +159,20 @@ class CArg_Integer : public CArg_Int8
 public:
     CArg_Integer(const string& name, const string& value);
     virtual int AsInteger(void) const;
+    /// An integer argument can also be used as an integer id.
+    virtual TIntId AsIntId(void) const;
 };
 
+
+class CArg_IntId : public CArg_Int8
+{
+public:
+    CArg_IntId(const string& name, const string& value);
+    /// An IntId argument can be used as an integer only if NCBI_INT8_GI is not defined.
+    /// Otherwise an exception will be thrown.
+    virtual int AsInteger(void) const;
+    virtual TIntId AsIntId(void) const;
+};
 
 
 class CArg_DataSize : public CArg_String

@@ -219,6 +219,17 @@ public:
     ///   AsInt8(), AsString(), AsDouble, AsBoolean()
     virtual int    AsInteger(void) const = 0;
 
+    /// Get the argument's value as an integer id (TIntId). The actual value is
+    /// Int4 or Int8 depending on the NCBI_INT8_GI definition.
+    ///
+    /// If you request a wrong value type, such as a call to "AsIntId()"
+    /// for a "boolean", an exception is thrown. Calling AsIntId() on an
+    /// integer argument is always allowed. For an Int8 argument it will
+    /// throw an exception if NCBI_INT8_GI is not defined.
+    /// @sa
+    ///   AsInteger(), AsInt8()
+    virtual TIntId AsIntId(void) const = 0;
+
     /// Get the argument's double value.
     ///
     /// If you request a wrong value type, such as a call to "AsDouble()"
@@ -564,6 +575,7 @@ public:
         eBoolean,    ///< {'true', 't', 'false', 'f'},  case-insensitive
         eInt8,       ///< Convertible into an integer number (Int8 only)
         eInteger,    ///< Convertible into an integer number (int or Int8)
+        eIntId,      ///< Convertible to TIntId (int or Int8 depending on NCBI_INT8_GI)
         eDouble,     ///< Convertible into a floating point number (double)
         eInputFile,  ///< Name of file (must exist and be readable)
         eOutputFile, ///< Name of file (must be writable)
@@ -1614,7 +1626,7 @@ protected:
 ///
 /// CArgAllow_Int8s --
 ///
-/// Define constraint to describe range of 8-byte integer values.
+/// Define constraint to describe range of 8-byte integer values and TIntIds.
 ///
 /// Argument to have only integer values falling within given interval.
 ///
@@ -1659,7 +1671,7 @@ protected:
 ///
 /// CArgAllow_Integers --
 ///
-/// Define constraint to describe range of integer values.
+/// Define constraint to describe range of integer id values.
 ///
 /// Argument to have only integer values falling within given interval.
 ///
@@ -1699,7 +1711,7 @@ protected:
 class NCBI_XNCBI_EXPORT CArgAllow_Doubles : public CArgAllow
 {
 public:
-    /// Constructor specifying an allowed integer value.
+    /// Constructor specifying an allowed double value.
     CArgAllow_Doubles(double x_value);
 
     /// Constructor specifying range of allowed double values.

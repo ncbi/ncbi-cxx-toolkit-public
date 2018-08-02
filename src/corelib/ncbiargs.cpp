@@ -127,6 +127,7 @@ Int8 s_StringToInt8(const string& value)
 //       CArg_String         : CArgValue
 //          CArg_Int8        : CArg_String
 //             CArg_Integer  : CArg_Int8
+//             CArg_IntId    : CArg_IntId
 //          CArg_Double      : CArg_String
 //          CArg_Boolean     : CArg_String
 //          CArg_InputFile   : CArg_String
@@ -208,6 +209,7 @@ bool CArg_NoValue::HasValue(void) const
 const string& CArg_NoValue::AsString    (void) const { THROW_CArg_NoValue; }
 Int8          CArg_NoValue::AsInt8      (void) const { THROW_CArg_NoValue; }
 int           CArg_NoValue::AsInteger   (void) const { THROW_CArg_NoValue; }
+TIntId        CArg_NoValue::AsIntId     (void) const { THROW_CArg_NoValue; }
 double        CArg_NoValue::AsDouble    (void) const { THROW_CArg_NoValue; }
 bool          CArg_NoValue::AsBoolean   (void) const { THROW_CArg_NoValue; }
 const CDir&   CArg_NoValue::AsDirectory (void) const { THROW_CArg_NoValue; }
@@ -241,6 +243,7 @@ bool CArg_ExcludedValue::HasValue(void) const
 const string& CArg_ExcludedValue::AsString    (void) const { THROW_CArg_ExcludedValue; }
 Int8          CArg_ExcludedValue::AsInt8      (void) const { THROW_CArg_ExcludedValue; }
 int           CArg_ExcludedValue::AsInteger   (void) const { THROW_CArg_ExcludedValue; }
+TIntId        CArg_ExcludedValue::AsIntId     (void) const { THROW_CArg_ExcludedValue; }
 double        CArg_ExcludedValue::AsDouble    (void) const { THROW_CArg_ExcludedValue; }
 bool          CArg_ExcludedValue::AsBoolean   (void) const { THROW_CArg_ExcludedValue; }
 const CDir&   CArg_ExcludedValue::AsDirectory (void) const { THROW_CArg_ExcludedValue; }
@@ -295,6 +298,12 @@ Int8 CArg_String::AsInt8(void) const
 int CArg_String::AsInteger(void) const
 { NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
     "Attempt to cast to a wrong (Integer) type", AsString()));}
+
+TIntId CArg_String::AsIntId(void) const
+{
+    NCBI_THROW(CArgException, eWrongCast, s_ArgExptMsg(GetName(),
+        "Attempt to cast to a wrong (TIntId) type", AsString()));
+}
 
 double CArg_String::AsDouble(void) const
 { NCBI_THROW(CArgException,eWrongCast,s_ArgExptMsg(GetName(),
@@ -351,6 +360,16 @@ Int8 CArg_Int8::AsInt8(void) const
 }
 
 
+TIntId CArg_Int8::AsIntId(void) const
+{
+#ifdef NCBI_INT8_GI
+    return m_Integer;
+#else
+    NCBI_THROW(CArgException, eWrongCast, s_ArgExptMsg(GetName(),
+        "Attempt to cast to a wrong (TIntId) type", AsString()));
+#endif
+}
+
 
 ///////////////////////////////////////////////////////
 //  CArg_Integer::
@@ -368,6 +387,44 @@ inline CArg_Integer::CArg_Integer(const string& name, const string& value)
 int CArg_Integer::AsInteger(void) const
 {
     return static_cast<int> (m_Integer);
+}
+
+
+TIntId CArg_Integer::AsIntId(void) const
+{
+    return AsInteger();
+}
+
+
+///////////////////////////////////////////////////////
+//  CArg_IntId::
+
+inline CArg_IntId::CArg_IntId(const string& name, const string& value)
+    : CArg_Int8(name, value)
+{
+#ifndef NCBI_INT8_GI
+    if (m_Integer < kMin_Int || m_Integer > kMax_Int) {
+        NCBI_THROW(CArgException, eConvert, s_ArgExptMsg(GetName(),
+            "IntId value is out of range", value));
+    }
+#endif
+}
+
+
+int CArg_IntId::AsInteger(void) const
+{
+#ifndef NCBI_INT8_GI
+    return static_cast<int> (m_Integer);
+#else
+    NCBI_THROW(CArgException, eWrongCast, s_ArgExptMsg(GetName(),
+        "Attempt to cast to a wrong (Integer) type", AsString()));
+#endif
+}
+
+
+TIntId CArg_IntId::AsIntId(void) const
+{
+    return static_cast<TIntId> (m_Integer);
 }
 
 
@@ -1127,6 +1184,9 @@ CArgValue* CArgDescMandatory::ProcessArgument(const string& value) const
         break;
     case CArgDescriptions::eInteger:
         arg_value = new CArg_Integer(GetName(), value);
+        break;
+    case CArgDescriptions::eIntId:
+        arg_value = new CArg_IntId(GetName(), value);
         break;
     case CArgDescriptions::eDouble:
         arg_value = new CArg_Double(GetName(), value);
@@ -2204,6 +2264,7 @@ const char* CArgDescriptions::GetTypeName(EType type)
         "Boolean",
         "Int8",
         "Integer",
+        "IntId",
         "Real",
         "File_In",
         "File_Out",
