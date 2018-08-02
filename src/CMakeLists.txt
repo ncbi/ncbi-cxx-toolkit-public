@@ -80,8 +80,10 @@ else()
   set(NCBI_PTBCFG_ENABLE_COLLECTOR       OFF)
 endif()
 
-if(EXISTS "${NCBI_PTBCFG_PROJECT_LIST}")
-  file(STRINGS "${NCBI_PTBCFG_PROJECT_LIST}" NCBI_PTBCFG_PROJECT_LIST)
+if(DEFINED NCBI_PTBCFG_PROJECT_LIST AND EXISTS "${NCBI_PTBCFG_PROJECT_LIST}")
+  if (NOT IS_DIRECTORY "${NCBI_PTBCFG_PROJECT_LIST}")
+    file(STRINGS "${NCBI_PTBCFG_PROJECT_LIST}" NCBI_PTBCFG_PROJECT_LIST)
+  endif()
 endif()
 
 ###############################################################################
