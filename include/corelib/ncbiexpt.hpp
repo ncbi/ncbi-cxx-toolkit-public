@@ -56,8 +56,10 @@
 
 BEGIN_NCBI_SCOPE
 
-#if (_MSC_VER >= 1200)
-#undef NCBI_USE_THROW_SPEC
+
+/// Do not use 'throw' dynamic exception specification for C++11 compilers 
+#if defined(NCBI_USE_THROW_SPEC)  &&  defined(NCBI_HAVE_CXX11)
+#  undef NCBI_USE_THROW_SPEC
 #endif
 
 /// Define THROWS macros for C++ exception specification.
