@@ -163,7 +163,8 @@ const CBioseq_Handle CCacheImpl::kEmptyBioseqHandle;
 const CTSE_Handle CCacheImpl::kEmptyTSEHandle;
 const CBioseq_Handle CCacheImpl::kAnyBioseq;
 
-
+//LCOV_EXCL_START
+//not used by asnvalidate
 // Constructor
 CValidError_imp::CValidError_imp
 (CObjectManager& objmgr,
@@ -175,6 +176,7 @@ m_taxon(NULL)
 {
     x_Init(options);
 }
+//LCOV_EXCL_STOP
 
 // Constructor
 CValidError_imp::CValidError_imp
@@ -236,10 +238,13 @@ void CValidError_imp::SetOptions(Uint4 options)
 }
 
 
+//LCOV_EXCL_START
+//not used by asnvalidate
 void CValidError_imp::SetErrorRepository(CValidError* errors)
 {
     m_ErrRepository = errors;
 }
+//LCOV_EXCL_STOP
 
 
 void CValidError_imp::Reset(void)
