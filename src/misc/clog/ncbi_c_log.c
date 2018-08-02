@@ -289,10 +289,10 @@ static int/*bool*/ s_MTLock_Do(ENcbiLog_MTLock_Action action)
 
 /* Init/Lock/unlock/destroy the MT logger lock 
  */
-#define MT_INIT    verify(MT_LOCK_Do(eNcbiLog_MT_Init))
-#define MT_LOCK    verify(MT_LOCK_Do(eNcbiLog_MT_Lock))
-#define MT_UNLOCK  verify(MT_LOCK_Do(eNcbiLog_MT_Unlock))
-#define MT_DESTROY verify(MT_LOCK_Do(eNcbiLog_MT_Destroy))
+#define MT_INIT    verify(MT_LOCK_Do(eNcbiLog_MT_Init) != 0)
+#define MT_LOCK    verify(MT_LOCK_Do(eNcbiLog_MT_Lock) != 0)
+#define MT_UNLOCK  verify(MT_LOCK_Do(eNcbiLog_MT_Unlock) != 0)
+#define MT_DESTROY verify(MT_LOCK_Do(eNcbiLog_MT_Destroy) != 0)
 
 
 extern TNcbiLog_MTLock NcbiLog_MTLock_Create
