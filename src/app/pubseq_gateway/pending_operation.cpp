@@ -249,7 +249,9 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         }
 
         // Send BIOSEQ_INFO
-        x_SendBioseqInfo(GetItemId(), bioseq_info);
+        string      cached_bioseq_info_data;
+        x_SendBioseqInfo(GetItemId(), cached_bioseq_info_data,
+                         bioseq_info, eJsonFormat);
 
         // Translate sat to keyspace
         SBlobId     blob_id(bioseq_info.m_Sat, bioseq_info.m_SatKey);
@@ -318,7 +320,9 @@ void CPendingOperation::x_ProcessResolveRequest(void)
     }
 
     // Send BIOSEQ_INFO
-    x_SendBioseqInfo(GetItemId(), bioseq_info);
+    string      cached_bioseq_info_data;
+    x_SendBioseqInfo(GetItemId(), cached_bioseq_info_data,
+                     bioseq_info, m_ResolveRequest.m_OutputFormat);
 
     x_SendReplyCompletion(true);
     m_Reply->Send(m_Chunks, true);
@@ -550,7 +554,7 @@ CPendingOperation::x_ResolveToCanonicalSeqId(SBioseqInfo &  bioseq_info)
                 if (seq_id_type_provided) {
                     // Check that the seq_id_type matches with the URL provided
                     if (seq_id_type != parsed_seq_id_type) {
-                        string  msg = 
+                        string  msg =
                             "Non matching 'seq_id_type' values. "
                             "The CSeq_id class parses it as " +
                             NStr::NumericToString(int(parsed_seq_id_type)) +
@@ -571,6 +575,7 @@ CPendingOperation::x_ResolveToCanonicalSeqId(SBioseqInfo &  bioseq_info)
                 // Signal that the version is unknown
                 bioseq_info.m_Version = -1;
             }
+
             return CRequestStatus::e200_Ok;
         }
     } catch (const exception &  exc) {
@@ -716,14 +721,60 @@ CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info)
 
 
 void CPendingOperation::x_SendBioseqInfo(size_t  item_id,
-                                         const SBioseqInfo &  bioseq_info)
+                                         string &  protobuf_bioseq_info,
+                                         SBioseqInfo &  bioseq_info,
+                                         EOutputFormat  output_format)
 {
-    CJsonNode   json = BioseqInfoToJSON(bioseq_info,
-                                        m_BlobRequest.m_IncludeDataFlags);
+    EOutputFormat       effective_output_format = output_format;
 
-    PrepareBioseqData(item_id, json.Repr());
-    PrepareBioseqCompletion(item_id, 2);
+    if (output_format == eNativeFormat || output_format == eUnknownFormat) {
+        if (protobuf_bioseq_info.empty())
+            effective_output_format = eJsonFormat;
+        else
+            effective_output_format = eProtobufFormat;
+    }
+
+    string              data_to_send;
+
+    if (effective_output_format == eJsonFormat) {
+        if (!protobuf_bioseq_info.empty())
+            x_ConvertProtobufToBioseqInfo(protobuf_bioseq_info, bioseq_info);
+
+        TServIncludeData    include_data = m_BlobRequest.m_IncludeDataFlags;
+        if (m_IsResolveRequest)
+            include_data = m_ResolveRequest.m_IncludeDataFlags;
+
+        CJsonNode   json = BioseqInfoToJSON(bioseq_info, include_data);
+        data_to_send = json.Repr();
+
+    } else {
+        if (protobuf_bioseq_info.empty())
+            x_ConvertBioseqInfoToProtobuf(bioseq_info, data_to_send);
+        else
+            data_to_send = protobuf_bioseq_info;
+    }
+
+    if (m_IsResolveRequest) {
+        // Send it as the HTTP data
+
+    } else {
+        // Send it as the PSG protocol
+        PrepareBioseqData(item_id, data_to_send);
+        PrepareBioseqCompletion(item_id, 2);
+    }
 }
+
+
+void CPendingOperation::x_ConvertBioseqInfoToProtobuf(
+                                    const SBioseqInfo &  bioseq_info,
+                                    string & data_to_send)
+{}
+
+
+void CPendingOperation::x_ConvertProtobufToBioseqInfo(
+                                    const string &  protobuf_bioseq_info,
+                                    SBioseqInfo &  bioseq_info)
+{}
 
 
 bool CPendingOperation::x_SatToSatName(const SBlobRequest &  blob_request,
@@ -1048,11 +1099,14 @@ void CBlobPropCallback::operator()(CBlobRecord const &  blob, bool is_found)
                 if (blob.GetId2Info().empty()) {
                     // Request original blob chunks
 
+ERR_POST("REQUEST ORIGINAL BLOB CHUNKS");
+
                     // It is important to send completion before: the new
                     // request overwrites the main one
                     m_PendingOp->PrepareBlobPropCompletion(m_FetchDetails);
                     x_RequestOriginalBlobChunks(blob);
                 } else {
+ERR_POST("REQUEST ID2 BLOB CHUNKS");
                     // Request chunks of two other ID2 blobs.
                     x_RequestID2BlobChunks(blob);
 

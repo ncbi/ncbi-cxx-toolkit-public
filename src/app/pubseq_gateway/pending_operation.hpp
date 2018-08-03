@@ -223,10 +223,18 @@ private:
     void x_SendUnknownServerSatelliteError(size_t  item_id,
                                            const string &  message,
                                            int  error_code);
-    void x_SendBioseqInfo(size_t  item_id, const SBioseqInfo &  bioseq_info);
+    void x_SendBioseqInfo(size_t  item_id,
+                          string &  protobuf_bioseq_info,
+                          SBioseqInfo &  bioseq_info,
+                          EOutputFormat  output_format);
 
     void x_Peek(HST::CHttpReply<CPendingOperation>& resp, bool  need_wait,
                 unique_ptr<SBlobFetchDetails> &  fetch_details);
+
+    void x_ConvertBioseqInfoToProtobuf(const SBioseqInfo &  bioseq_info,
+                                       string & data_to_send);
+    void x_ConvertProtobufToBioseqInfo(const string &  protobuf_bioseq_info,
+                                       SBioseqInfo &  bioseq_info);
 
 private:
     HST::CHttpReply<CPendingOperation> *    m_Reply;
