@@ -724,7 +724,6 @@ BZCM	s	Bozhou Vocational and Technical College
 BZF	s	Forest Research and Development Center and Nature Conservation			
 BZM	s	Museum fur Naturkunde, Berlin			
 BZT	s	Biological Institute Titograd			
-c	Norwegian Culture Collection of Algae	NIVA		
 C	s	Natural History Museum of Denmark			
 CA	s	Chicago Academy of Sciences			
 CAB	c	Yeast Collection of Department of Microbiology, Stellenbosch University			
@@ -4822,6 +4821,7 @@ NODCAR	c	marwa mokhtar Abd Rabo
 NoF	c	The Fungus Culture Collection of the Northern Forestry Centre			
 NOI	s	Nanhai Oceanographic Institute			
 NOLS	s	University of New Orleans, Biological Sciences Department			
+NORCCA	c	Norwegian Culture Collection of Algae	NIVA		
 NOSU	s	Northeastern State University, Natural Sciences and Mathematics Department			
 NOT	s	Nottingham City Natural History Museum			
 NOTM	s	University of Nottingham, Manuscript Department			
