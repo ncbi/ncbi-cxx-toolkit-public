@@ -48,21 +48,21 @@ public:
     void Open(const vector<string>& sat_names);
 
 /* bioseq_info */
-    bool LookupBioseqInfoByAccession(const string& accession, int& version, int& id_type, string& data);
-    bool LookupBioseqInfoByAccessionVersion(const string& accession, int version, int& id_type, string& data);
-    bool LookupBioseqInfoByAccessionVersionIdType(const string& accession, int version, int id_type, string& data);
+    bool LookupBioseqInfoByAccession(const string& accession, int& version, int& seq_id_type, string& data);
+    bool LookupBioseqInfoByAccessionVersion(const string& accession, int version, int& seq_id_type, string& data);
+    bool LookupBioseqInfoByAccessionVersionIdType(const string& accession, int version, int saq_id_type, string& data);
 
     static string PackBioseqInfoKey(const string& accession, int version);
-    static string PackBioseqInfoKey(const string& accession, int version, int id_type);
-    static bool UnpackBioseqInfoKey(const char* key, size_t key_sz, int& version, int& id_type);
-    static bool UnpackBioseqInfoKey(const char* key, size_t key_sz, string& accession, int& version, int& id_type);
+    static string PackBioseqInfoKey(const string& accession, int version, int seq_id_type);
+    static bool UnpackBioseqInfoKey(const char* key, size_t key_sz, int& version, int& seq_id_type);
+    static bool UnpackBioseqInfoKey(const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type);
 
 /* si2csi */
-    bool LookupCsiBySeqId(const string& seqid, int& id_type, string& data);
-    bool LookupCsiBySeqIdIdType(const string& seqid, int id_type, string& data);
+    bool LookupCsiBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data);
+    bool LookupCsiBySeqIdIdType(const string& sec_seqid, int sec_seq_id_type, string& data);
 
-    static string PackSiKey(const string& seqid, int id_type);
-    static bool UnpackSiKey(const char* key, size_t key_sz, int& id_type);
+    static string PackSiKey(const string& sec_seqid, int sec_seq_id_type);
+    static bool UnpackSiKey(const char* key, size_t key_sz, int& sec_seq_id_type);
 
 /* blob_prop */
     bool LookupBlobPropBySatKey(int32_t sat, int32_t sat_key, int64_t& last_modified, string& data);
