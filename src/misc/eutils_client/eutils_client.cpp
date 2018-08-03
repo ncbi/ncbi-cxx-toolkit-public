@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbistr.hpp>
 #include <misc/eutils_client/eutils_client.hpp>
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 #include <misc/xmlwrapp/event_parser.hpp>
@@ -476,7 +477,7 @@ void CEutilsClient::ClearAddedParameters()
 
 void CEutilsClient::AddParameter(const string &name, const string &value)
 {
-    m_AdditionalParams[name] = value;
+    m_AdditionalParams[name] = NStr::URLEncode(value);
 }
 
 void CEutilsClient::SetLinkName(const string& link_name)
@@ -503,9 +504,7 @@ Uint8 CEutilsClient::Count(const string& db,
     if ( !m_UrlTag.empty() ) {
         params += "&user=" + NStr::URLEncode(m_UrlTag);
     }
-    for (const TParamList::value_type &param : m_AdditionalParams) {
-       params += "&" + param.first + "=" + param.second;
-    }
+    x_AddAdditionalParameters(params);
 
     Uint8 count = 0;
     LOG_POST(Trace << "Executing: db=" << db << " query=" << term);
@@ -702,9 +701,7 @@ Uint8 CEutilsClient::x_Search(const string& db,
     } else {
         params += "&idtype=acc";
     }
-    for (const TParamList::value_type &param : m_AdditionalParams) {
-       params += "&" + param.first + "=" + param.second;
-    }
+    x_AddAdditionalParameters(params);
     
     Uint8 count = 0;
 
@@ -902,12 +899,14 @@ void CEutilsClient::x_Get(string const& path,
     bool success = false;
     m_Url.clear();
     m_Time.clear();
+    string extra_params{ params };
+    x_AddAdditionalParameters(extra_params);
     for (int retries = 0;  retries < 10;  ++retries) {
         try {
             string hostname = x_GetHostName();
             CConn_HttpStream istr(x_BuildUrl(hostname, path, kEmptyStr));
-            m_Url.push_back(x_BuildUrl(hostname, path, params));
-            istr << params;
+            m_Url.push_back(x_BuildUrl(hostname, path, extra_params));
+            istr << extra_params;
             m_Time.push_back(CTime(CTime::eCurrent));
             if (NcbiStreamCopy(ostr, istr)  &&  200 == istr.GetStatusCode()) {
                 success = true;
@@ -1039,6 +1038,7 @@ void CEutilsClient::x_Link(const string& db_from,
         << "&cmd=" << NStr::URLEncode(command);
     s_FormatIds(oss, uids_from);
     string params = oss.str();
+    x_AddAdditionalParameters(params);
 
     bool success = false;
     m_Url.clear();
@@ -1158,6 +1158,7 @@ void CEutilsClient::x_Link(const string& db_from,
         << "&cmd=" + NStr::URLEncode(command);
     s_FormatIds(oss, uids_from);
     string params = oss.str();
+    x_AddAdditionalParameters(params);
 
     bool success = false;
     m_Url.clear();
@@ -1291,6 +1292,7 @@ template<class T> void CEutilsClient::x_LinkOut(const string& db,
         << "&retmode=xml";
     s_FormatIds(oss, uids);
     string params = oss.str();
+    x_AddAdditionalParameters(params);
 
     bool success = false;
     m_Url.clear();
@@ -1393,6 +1395,7 @@ void CEutilsClient::x_Summary(const string& db,
     } 
     s_FormatIds(oss, uids);
     string params = oss.str();
+    x_AddAdditionalParameters(params);
 
     bool success = false;
     m_Url.clear();
@@ -1557,6 +1560,7 @@ void CEutilsClient::x_Fetch(const string& db,
 
     s_FormatIds(oss, uids);
     string params = oss.str();
+    x_AddAdditionalParameters(params);
 
     bool success = false;
     m_Url.clear();
@@ -1692,5 +1696,15 @@ string CEutilsClient::x_BuildUrl(const string& host, const string &path,
     return url;
 }
 
+inline void CEutilsClient::x_AddAdditionalParameters(string &params)
+{
+    if (m_AdditionalParams.empty())
+        return;
+    ostringstream oss;
+    for (const TParamList::value_type &param : m_AdditionalParams) {
+        oss << '&' << param.first << '=' << param.second;
+    }
+    params += oss.str();
+}
 
 END_NCBI_SCOPE

@@ -448,6 +448,7 @@ protected:
 
     static string x_BuildUrl(const string& host, const string &path,
                              const string &params);
+    void x_AddAdditionalParameters(string &params);
 
     template<class T> Uint8 x_Search(const string& db,
                                    const string& term,
