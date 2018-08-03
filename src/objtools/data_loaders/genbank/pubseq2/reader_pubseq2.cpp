@@ -59,6 +59,7 @@
 #include <objects/id2/id2__.hpp>
 
 #include <connect/ncbi_http_session.hpp>
+#define USE_XMLWRAP_LIB
 #ifdef USE_XMLWRAP_LIB
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 #endif
