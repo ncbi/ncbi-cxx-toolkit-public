@@ -82,6 +82,7 @@ string CMultipatternSearch::QuoteString(const string& str)
             case '*':
             case '+':
             case '.':
+            case '|':
                 out += '\\';
                 // there is no break here!
             default:
@@ -1557,7 +1558,7 @@ void CRegExFSA::GenerateSourceCode(ostream& out) const
                 for (auto p = A->second.begin(); p != A->second.end(); ++p) {
                     out << "        case ";
                     if (*p == '\'' || *p == '\"' || *p == '\\') {
-                        out << "\'\'" << *p << "\':\n";
+                        out << "\'\\" << *p << "\':\n";
                     }
                     else if (*p >= 32 && *p < 127) {
                         out << "\'" << *p << "\':\n";
