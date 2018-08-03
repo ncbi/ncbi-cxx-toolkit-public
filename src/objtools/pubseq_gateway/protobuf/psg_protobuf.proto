@@ -16,6 +16,14 @@ message bioseq_info_value {
     map<sint32, string> seq_ids = 9;
 }
 
+message bioseq_info {
+    string    accession = 1;
+    int32     version = 2;
+    int32     seq_id_type = 3;
+    bioseq_info_value value = 4;    
+}
+
+
 message si2csi_value {
     string    accession = 1;
     int32     version   = 2;
