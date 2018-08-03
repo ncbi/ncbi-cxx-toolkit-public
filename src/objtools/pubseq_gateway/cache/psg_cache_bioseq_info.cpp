@@ -61,14 +61,14 @@ void CPubseqGatewayCacheBioseqInfo::Open()
     rdtxn.commit();
 }
 
-bool CPubseqGatewayCacheBioseqInfo::LookupByAccession(const string& accession, int& version, int& id_type, string& data) {
+bool CPubseqGatewayCacheBioseqInfo::LookupByAccession(const string& accession, int& version, int& seq_id_type, string& data) {
     bool rv = false;
 
     if (!m_Env)
         return false;
 
     version = -1;
-    id_type = 0;
+    seq_id_type = 0;
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
@@ -78,7 +78,7 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccession(const string& accession, i
             rv = cursor.get(key, val, MDB_GET_CURRENT);
             rv = rv && key.size() == PackedKeySize(accession.size()) && accession.compare(key.data<const char>()) == 0;
             if (rv)
-                rv = UnpackKey(key.data<const char>(), key.size(), version, id_type);
+                rv = UnpackKey(key.data<const char>(), key.size(), version, seq_id_type);
             if (rv)
                 data.assign(val.data(), val.size());
         }
@@ -90,13 +90,13 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccession(const string& accession, i
     return rv;
 }
     
-bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(const string& accession, int version, int& id_type, string& data) {
+bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(const string& accession, int version, int& seq_id_type, string& data) {
     bool rv = false;
 
     if (!m_Env)
         return false;
 
-    id_type = 0;
+    seq_id_type = 0;
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
     
@@ -110,7 +110,7 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(const string& acces
             rv = rv && key.size() == PackedKeySize(accession.size()) && accession.compare(key.data<const char>()) == 0;
             if (rv) {
                 int ver;
-                rv = UnpackKey(key.data<const char>(), key.size(), ver, id_type) && (ver == version);
+                rv = UnpackKey(key.data<const char>(), key.size(), ver, seq_id_type) && (ver == version);
                 if (rv)
                     data.assign(val.data(), val.size());
             }
@@ -124,7 +124,7 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(const string& acces
 }
 
     
-bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionIdType(const string& accession, int version, int id_type, string& data) {
+bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionIdType(const string& accession, int version, int seq_id_type, string& data) {
     bool rv = false;
 
     if (!m_Env)
@@ -133,7 +133,7 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionIdType(const string&
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
     
-        string skey = PackKey(accession, version, id_type);
+        string skey = PackKey(accession, version, seq_id_type);
         lmdb::val val;
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
         rv = cursor.get(lmdb::val(skey), val, MDB_SET);
@@ -159,7 +159,7 @@ string CPubseqGatewayCacheBioseqInfo::PackKey(const string& accession, int versi
     return rv;
 }
 
-string CPubseqGatewayCacheBioseqInfo::PackKey(const string& accession, int version, int id_type) {
+string CPubseqGatewayCacheBioseqInfo::PackKey(const string& accession, int version, int seq_id_type) {
     string rv;
     rv.reserve(accession.size() + kPackedZeroSz + kPackedVersionSz + kPackedIdTypeSz);
     rv = accession;
@@ -168,12 +168,12 @@ string CPubseqGatewayCacheBioseqInfo::PackKey(const string& accession, int versi
     rv.append(1, (ver >> 16) & 0xFF);
     rv.append(1, (ver >>  8) & 0xFF);
     rv.append(1,  ver        & 0xFF);
-    rv.append(1, (id_type >> 8) & 0xFF);
-    rv.append(1,  id_type       & 0xFF);
+    rv.append(1, (seq_id_type >> 8) & 0xFF);
+    rv.append(1,  seq_id_type       & 0xFF);
     return rv;
 }
 
-bool CPubseqGatewayCacheBioseqInfo::UnpackKey(const char* key, size_t key_sz, int& version, int& id_type) {
+bool CPubseqGatewayCacheBioseqInfo::UnpackKey(const char* key, size_t key_sz, int& version, int& seq_id_type) {
     bool rv = key_sz > (kPackedZeroSz + kPackedVersionSz + kPackedIdTypeSz);
     if (rv) {
         size_t ofs = key_sz - (kPackedZeroSz + kPackedVersionSz + kPackedIdTypeSz);
@@ -185,19 +185,19 @@ bool CPubseqGatewayCacheBioseqInfo::UnpackKey(const char* key, size_t key_sz, in
                           (uint8_t(key[ofs + 1]) << 8) |
                            uint8_t(key[ofs + 2]);
             version = -ver;
-            id_type = (uint8_t(key[ofs + 3]) << 8) |
-                       uint8_t(key[ofs + 4]);
+            seq_id_type = (uint8_t(key[ofs + 3]) << 8) |
+                           uint8_t(key[ofs + 4]);
         }
     }
     return rv;
 }
 
-bool CPubseqGatewayCacheBioseqInfo::UnpackKey(const char* key, size_t key_sz, string& accession, int& version, int& id_type) {
+bool CPubseqGatewayCacheBioseqInfo::UnpackKey(const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type) {
     bool rv = key_sz > (kPackedZeroSz + kPackedVersionSz + kPackedIdTypeSz);
     if (rv) {
         size_t ofs = key_sz - (kPackedZeroSz + kPackedVersionSz + kPackedIdTypeSz);
         accession.assign(key, ofs);
-        rv = UnpackKey(key, key_sz, version, id_type);
+        rv = UnpackKey(key, key_sz, version, seq_id_type);
     }
     return rv;
 }

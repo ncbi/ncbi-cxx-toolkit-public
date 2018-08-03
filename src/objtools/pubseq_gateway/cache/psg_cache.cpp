@@ -92,19 +92,19 @@ void CPubseqGatewayCache::Open(const vector<string>& sat_names)
     }
 }
 
-bool CPubseqGatewayCache::LookupBioseqInfoByAccession(const string& accession, int& version, int& id_type, string& data)
+bool CPubseqGatewayCache::LookupBioseqInfoByAccession(const string& accession, int& version, int& seq_id_type, string& data)
 {
-    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccession(accession, version, id_type, data) : false;
+    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccession(accession, version, seq_id_type, data) : false;
 }
 
-bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersion(const string& accession, int version, int& id_type, string& data)
+bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersion(const string& accession, int version, int& seq_id_type, string& data)
 {
-    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccessionVersion(accession, version, id_type, data) : false;
+    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccessionVersion(accession, version, seq_id_type, data) : false;
 }
 
-bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionIdType(const string& accession, int version, int id_type, string& data)
+bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionIdType(const string& accession, int version, int seq_id_type, string& data)
 {
-    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccessionVersionIdType(accession, version, id_type, data) : false;
+    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccessionVersionIdType(accession, version, seq_id_type, data) : false;
 }
 
 string CPubseqGatewayCache::PackBioseqInfoKey(const string& accession, int version)
@@ -112,39 +112,39 @@ string CPubseqGatewayCache::PackBioseqInfoKey(const string& accession, int versi
     return CPubseqGatewayCacheBioseqInfo::PackKey(accession, version);
 }
 
-string CPubseqGatewayCache::PackBioseqInfoKey(const string& accession, int version, int id_type)
+string CPubseqGatewayCache::PackBioseqInfoKey(const string& accession, int version, int seq_id_type)
 {
-    return CPubseqGatewayCacheBioseqInfo::PackKey(accession, version, id_type);
+    return CPubseqGatewayCacheBioseqInfo::PackKey(accession, version, seq_id_type);
 }
 
-bool CPubseqGatewayCache::UnpackBioseqInfoKey(const char* key, size_t key_sz, int& version, int& id_type)
+bool CPubseqGatewayCache::UnpackBioseqInfoKey(const char* key, size_t key_sz, int& version, int& seq_id_type)
 {
-    return CPubseqGatewayCacheBioseqInfo::UnpackKey(key, key_sz, version, id_type);
+    return CPubseqGatewayCacheBioseqInfo::UnpackKey(key, key_sz, version, seq_id_type);
 }
 
-bool CPubseqGatewayCache::UnpackBioseqInfoKey(const char* key, size_t key_sz, string& accession, int& version, int& id_type)
+bool CPubseqGatewayCache::UnpackBioseqInfoKey(const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type)
 {
-    return CPubseqGatewayCacheBioseqInfo::UnpackKey(key, key_sz, accession, version, id_type);
+    return CPubseqGatewayCacheBioseqInfo::UnpackKey(key, key_sz, accession, version, seq_id_type);
 }
 
-bool CPubseqGatewayCache::LookupCsiBySeqId(const string& seqid, int& id_type, string& data)
+bool CPubseqGatewayCache::LookupCsiBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data)
 {
-    return m_Si2CsiCache ? m_Si2CsiCache->LookupBySeqId(seqid, id_type, data) : false;
+    return m_Si2CsiCache ? m_Si2CsiCache->LookupBySeqId(sec_seqid, sec_seq_id_type, data) : false;
 }
 
-bool CPubseqGatewayCache::LookupCsiBySeqIdIdType(const string& seqid, int id_type, string& data)
+bool CPubseqGatewayCache::LookupCsiBySeqIdIdType(const string& sec_seqid, int sec_seq_id_type, string& data)
 {
-    return m_Si2CsiCache ? m_Si2CsiCache->LookupBySeqIdIdType(seqid, id_type, data) : false;
+    return m_Si2CsiCache ? m_Si2CsiCache->LookupBySeqIdIdType(sec_seqid, sec_seq_id_type, data) : false;
 }
 
-string CPubseqGatewayCache::PackSiKey(const string& seqid, int id_type)
+string CPubseqGatewayCache::PackSiKey(const string& sec_seqid, int sec_seq_id_type)
 {
-    return CPubseqGatewayCacheSi2Csi::PackKey(seqid, id_type);
+    return CPubseqGatewayCacheSi2Csi::PackKey(sec_seqid, sec_seq_id_type);
 }
 
-bool CPubseqGatewayCache::UnpackSiKey(const char* key, size_t key_sz, int& id_type)
+bool CPubseqGatewayCache::UnpackSiKey(const char* key, size_t key_sz, int& sec_seq_id_type)
 {
-    return CPubseqGatewayCacheSi2Csi::UnpackKey(key, key_sz, id_type);
+    return CPubseqGatewayCacheSi2Csi::UnpackKey(key, key_sz, sec_seq_id_type);
 }
 
 bool CPubseqGatewayCache::LookupBlobPropBySatKey(int32_t sat, int32_t sat_key, int64_t& last_modified, string& data)
@@ -171,3 +171,4 @@ bool CPubseqGatewayCache::UnpackBlobPropKey(const char* key, size_t key_sz, int6
 {
     return CPubseqGatewayCacheBlobProp::UnpackKey(key, key_sz, last_modified);
 }
+

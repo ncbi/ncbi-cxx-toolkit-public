@@ -59,23 +59,23 @@ void CPubseqGatewayCacheSi2Csi::Open() {
     rdtxn.commit();
 }
 
-bool CPubseqGatewayCacheSi2Csi::LookupBySeqId(const string& seqid, int& id_type, string& data) {
+bool CPubseqGatewayCacheSi2Csi::LookupBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data) {
     bool rv = false;
 
     if (!m_Env)
         return false;
 
-    id_type = 0;
+    sec_seq_id_type = 0;
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
-        rv = cursor.get(lmdb::val(seqid), MDB_SET_RANGE);
+        rv = cursor.get(lmdb::val(sec_seqid), MDB_SET_RANGE);
         if (rv) {
             lmdb::val key, val;
             rv = cursor.get(key, val, MDB_GET_CURRENT);
-            rv = rv && key.size() == PackedKeySize(seqid.size()) && seqid.compare(key.data<const char>()) == 0;
+            rv = rv && key.size() == PackedKeySize(sec_seqid.size()) && sec_seqid.compare(key.data<const char>()) == 0;
             if (rv)
-                rv = UnpackKey(key.data<const char>(), key.size(), id_type);
+                rv = UnpackKey(key.data<const char>(), key.size(), sec_seq_id_type);
             if (rv)
                 data.assign(val.data(), val.size());
         }
@@ -87,7 +87,7 @@ bool CPubseqGatewayCacheSi2Csi::LookupBySeqId(const string& seqid, int& id_type,
     return rv;
 }
 
-bool CPubseqGatewayCacheSi2Csi::LookupBySeqIdIdType(const string& seqid, int id_type, string& data) {
+bool CPubseqGatewayCacheSi2Csi::LookupBySeqIdIdType(const string& sec_seqid, int sec_seq_id_type, string& data) {
     bool rv = false;
 
     if (!m_Env)
@@ -96,7 +96,7 @@ bool CPubseqGatewayCacheSi2Csi::LookupBySeqIdIdType(const string& seqid, int id_
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
 
-        string skey = PackKey(seqid, id_type);
+        string skey = PackKey(sec_seqid, sec_seq_id_type);
         lmdb::val val;
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
         rv = cursor.get(lmdb::val(skey), val, MDB_SET);
@@ -110,25 +110,25 @@ bool CPubseqGatewayCacheSi2Csi::LookupBySeqIdIdType(const string& seqid, int id_
     return rv;
 }
 
-string CPubseqGatewayCacheSi2Csi::PackKey(const string& seqid, int id_type) {
+string CPubseqGatewayCacheSi2Csi::PackKey(const string& sec_seqid, int sec_seq_id_type) {
     string rv;
-    rv.reserve(seqid.size() + kPackedKeyZero + kPackedIdTypeSz);
-    rv = seqid;
+    rv.reserve(sec_seqid.size() + kPackedKeyZero + kPackedIdTypeSz);
+    rv = sec_seqid;
     rv.append(1, 0);
-    rv.append(1, (id_type >> 8) & 0xFF);
-    rv.append(1, id_type        & 0xFF);
+    rv.append(1, (sec_seq_id_type >> 8) & 0xFF);
+    rv.append(1, sec_seq_id_type        & 0xFF);
     return rv;
 }
 
-bool CPubseqGatewayCacheSi2Csi::UnpackKey(const char* key, size_t key_sz, int& id_type) {
+bool CPubseqGatewayCacheSi2Csi::UnpackKey(const char* key, size_t key_sz, int& sec_seq_id_type) {
     bool rv = key_sz > (kPackedKeyZero + kPackedIdTypeSz);
     if (rv) {
         size_t ofs = key_sz - (kPackedKeyZero + kPackedIdTypeSz);
         rv = key[ofs] == 0;
         if (rv) {
             ++ofs;
-            id_type = (uint8_t(key[ofs]) << 8) |
-                       uint8_t(key[ofs + 1]);
+            sec_seq_id_type = (uint8_t(key[ofs]) << 8) |
+                               uint8_t(key[ofs + 1]);
         }
     }
     return rv;

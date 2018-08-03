@@ -42,11 +42,11 @@ public:
 	CPubseqGatewayCacheSi2Csi(const string& file_name);
     virtual ~CPubseqGatewayCacheSi2Csi() override;
     void Open();
-    bool LookupBySeqId(const string& seqid, int& id_type, string& data);
-    bool LookupBySeqIdIdType(const string& seqid, int id_type, string& data);
+    bool LookupBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data);
+    bool LookupBySeqIdIdType(const string& sec_seqid, int sec_seq_id_type, string& data);
 
-    static string PackKey(const string& seqid, int id_type);
-    static bool UnpackKey(const char* key, size_t key_sz, int& id_type);
+    static string PackKey(const string& sec_seqid, int sec_seq_id_type);
+    static bool UnpackKey(const char* key, size_t key_sz, int& sec_seq_id_type);
 private:
     unique_ptr<lmdb::dbi> m_Dbi;
 };

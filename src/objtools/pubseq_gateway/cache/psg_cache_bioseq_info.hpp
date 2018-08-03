@@ -43,14 +43,14 @@ public:
 	CPubseqGatewayCacheBioseqInfo(const string& file_name);
     virtual ~CPubseqGatewayCacheBioseqInfo() override;
     void Open();
-    bool LookupByAccession(const string& accession, int& version, int& id_type, string& data);
-    bool LookupByAccessionVersion(const string& accession, int version, int& id_type, string& data);
-    bool LookupByAccessionVersionIdType(const string& accession, int version, int id_type, string& data);
+    bool LookupByAccession(const string& accession, int& version, int& seq_id_type, string& data);
+    bool LookupByAccessionVersion(const string& accession, int version, int& seq_id_type, string& data);
+    bool LookupByAccessionVersionIdType(const string& accession, int version, int seq_id_type, string& data);
 
     static string PackKey(const string& accession, int version);
-    static string PackKey(const string& accession, int version, int id_type);
-    static bool UnpackKey(const char* key, size_t key_sz, int& version, int& id_type);
-    static bool UnpackKey(const char* key, size_t key_sz, string& accession, int& version, int& id_type);
+    static string PackKey(const string& accession, int version, int seq_id_type);
+    static bool UnpackKey(const char* key, size_t key_sz, int& version, int& seq_id_type);
+    static bool UnpackKey(const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type);
 
 private:
     unique_ptr<lmdb::dbi> m_Dbi;
