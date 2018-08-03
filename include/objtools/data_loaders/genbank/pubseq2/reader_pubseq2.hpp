@@ -61,7 +61,8 @@ public:
 
     void x_InitConnection(CDB_Connection& db_conn, TConn conn);
 
-    virtual void SetIncludeHUP(bool include_hup = true) override;
+    virtual void SetIncludeHUP(bool include_hup = true,
+                               const string& web_cookie = NcbiEmptyString) override;
 
 protected:
     virtual void x_AddConnectionSlot(TConn conn) override;
@@ -103,6 +104,7 @@ private:
 
     bool                      m_ExclWGSMaster;
     bool                      m_SetCubbyUser;
+    string                    m_WebCookie;
 };
 
 END_SCOPE(objects)

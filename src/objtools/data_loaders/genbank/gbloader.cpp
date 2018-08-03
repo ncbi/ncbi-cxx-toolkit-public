@@ -282,10 +282,11 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager& om,
     EIncludeHUP     /*include_hup*/,
     CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority  priority)
+    CObjectManager::TPriority  priority,
+    const string& web_cookie)
 {
     CGBLoaderParams params("PUBSEQOS2:PUBSEQOS");
-    params.SetHUPIncluded();
+    params.SetHUPIncluded(true, web_cookie);
     TGBMaker maker(params);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
@@ -303,10 +304,11 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     const string&   reader_name,
     EIncludeHUP     /*include_hup*/,
     CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority  priority)
+    CObjectManager::TPriority  priority,
+    const string& web_cookie)
 {
     CGBLoaderParams params(reader_name);
-    params.SetHUPIncluded();
+    params.SetHUPIncluded(true, web_cookie);
     TGBMaker maker(params);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
@@ -353,7 +355,15 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
 
 string CGBDataLoader::GetLoaderNameFromArgs(const CGBLoaderParams& params)
 {
-    return params.HasHUPIncluded()? GBLOADER_HUP_NAME: GBLOADER_NAME;
+    if (params.HasHUPIncluded()) {
+        const string& web_cookie = params.GetWebCookie();
+        if (web_cookie.empty())
+            return GBLOADER_HUP_NAME;
+        else
+            return GBLOADER_HUP_NAME + string("-") + web_cookie;
+    } else {
+        return GBLOADER_NAME;
+    }
 }
 
 
@@ -644,6 +654,9 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
     if ( !params.GetReaderName().empty() ) {
         string reader_name = params.GetReaderName();
         NStr::ToLower(reader_name);
+        if ( NStr::StartsWith(reader_name, "pubseqos") )
+            m_WebCookie = params.GetWebCookie();
+    
         if ( x_CreateReaders(reader_name, gb_params, preopen) ) {
             if ( reader_name == "cache" ||
                  NStr::StartsWith(reader_name, "cache;") ) {
@@ -707,7 +720,7 @@ bool CGBDataLoader::x_CreateReaders(const string& str,
         CRef<CReader> reader(x_CreateReader(str_list[i], params));
         if( reader ) {
             if ( HasHUPIncluded() ) {
-                reader->SetIncludeHUP();
+                reader->SetIncludeHUP(true, m_WebCookie);
             }
             if ( preopen != CGBLoaderParams::ePreopenNever ) {
                 reader->OpenInitialConnection(preopen == CGBLoaderParams::ePreopenAlways);

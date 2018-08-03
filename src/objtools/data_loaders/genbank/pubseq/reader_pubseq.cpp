@@ -1304,7 +1304,7 @@ void CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
 }
 
 
-void CPubseqReader::SetIncludeHUP(bool include_hup)
+void CPubseqReader::SetIncludeHUP(bool include_hup, const string& web_cookie)
 {
     m_SetCubbyUser = include_hup;
 }

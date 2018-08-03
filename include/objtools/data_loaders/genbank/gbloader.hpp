@@ -165,13 +165,21 @@ public:
         {
             return m_Preopen;
         }
-    void SetHUPIncluded(bool include_hup = true)
+    void SetHUPIncluded(bool include_hup = true, 
+                        const string& web_cookie = NcbiEmptyString)
         {
             m_HasHUPIncluded = include_hup;
+            if (include_hup && !web_cookie.empty())
+                m_WebCookie = web_cookie;
         }
     bool HasHUPIncluded(void) const
         {
             return m_HasHUPIncluded;
+        }
+
+    const string& GetWebCookie(void) const
+        {
+            return m_WebCookie;
         }
 
 private:
@@ -180,6 +188,7 @@ private:
     const TParamTree* m_ParamTree;
     EPreopenConnection m_Preopen;
     bool m_HasHUPIncluded;
+    string m_WebCookie;
 };
 
 class NCBI_XLOADER_GENBANK_EXPORT CGBDataLoader : public CDataLoader
@@ -275,14 +284,15 @@ public:
     static string GetLoaderNameFromArgs(const string& reader_name);
 
     // GBLoader with HUP data included.
-    // The reader will be chosed from default configuration,
+    // The reader will be chosen from default configuration,
     // either pubseqos or pubseqos2.
     // The default loader priority will be slightly lower than for main data.
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         EIncludeHUP     include_hup,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
+        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet,
+        const string& web_cookie = NcbiEmptyString);
     static string GetLoaderNameFromArgs(EIncludeHUP     include_hup);
 
     // GBLoader with HUP data included.
@@ -293,7 +303,8 @@ public:
         const string&   reader_name, // pubseqos or pubseqos2
         EIncludeHUP     include_hup,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
+        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet,
+        const string& web_cookie = NcbiEmptyString);
     static string GetLoaderNameFromArgs(const string&   reader_name, // pubseqos or pubseqos2
                                         EIncludeHUP     include_hup);
 
@@ -423,7 +434,7 @@ public:
         }
 
     virtual CObjectManager::TPriority GetDefaultPriority(void) const override;
-    
+
 protected:
     friend class CGBReaderRequestResult;
 
@@ -461,6 +472,7 @@ private:
     bool                    m_AlwaysLoadNamedAcc;
     bool                    m_AddWGSMasterDescr;
     bool                    m_HasHUPIncluded;
+    string                  m_WebCookie;
 
     //
     // private code

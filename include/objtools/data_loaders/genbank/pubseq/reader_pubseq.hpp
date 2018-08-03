@@ -89,7 +89,8 @@ public:
                          const TBlobId& blob_id,
                          TChunkId chunk_id) override;
 
-    virtual void SetIncludeHUP(bool include_hup = true) override;
+    virtual void SetIncludeHUP(bool include_hup = true,
+                               const string& web_cookie = NcbiEmptyString) override;
 
 protected:
     virtual void x_AddConnectionSlot(TConn conn) override;

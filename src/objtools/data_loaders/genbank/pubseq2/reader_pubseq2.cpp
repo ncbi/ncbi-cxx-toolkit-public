@@ -58,6 +58,10 @@
 
 #include <objects/id2/id2__.hpp>
 
+#include <connect/ncbi_http_session.hpp>
+#include <misc/xmlwrapp/xmlwrapp.hpp>
+
+
 #define BINARY_REQUESTS     1
 #define LONG_REQUESTS       1
 
@@ -373,6 +377,34 @@ namespace {
     };
 }
 
+static string s_GetCubbyUserName(const string& web_cookie)
+{
+    const string kEMyNCBIURL =
+        "https://www.ncbi.nlm.nih.gov/entrez/eutils/emyncbi.cgi?cmd=whoami&WebCubbyUser=";
+    string cubby_user;
+    if (web_cookie.empty()) {
+        cubby_user = NStr::SQLEncode(GetProcessUserName());
+    } else {
+        CHttpSession session;
+        int response_timeout = 40;
+         CHttpResponse response =
+            session.Get(CUrl(kEMyNCBIURL + web_cookie), CTimeout(response_timeout), 0);
+        if (response.GetStatusCode() == 200) {
+            xml::error_messages errors;
+            xml::document doc(response.ContentStream(), &errors);
+            xml::node_set nodes ( doc.get_root_node().run_xpath_query("//eMyNCBIResult") );
+            ITERATE(xml::node_set, it, nodes) {
+                xml::node::const_iterator it2 = it->find("UserName");
+                if (it2 != it->end()) {
+                    cubby_user = NStr::SQLEncode(it2->get_content());
+                    break;
+                }
+            }
+        }
+    }
+
+    return cubby_user;;
+}
 
 void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
 {
@@ -421,7 +453,8 @@ void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
     }
 
     if ( m_SetCubbyUser ) {
-        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set cubby_user "+NStr::SQLEncode(GetProcessUserName())));
+        string cubby_user = s_GetCubbyUserName(m_WebCookie);
+        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set cubby_user "+cubby_user));
         cmd->Send();
         cmd->DumpResults();
     }
@@ -623,9 +656,11 @@ CPubseq2Reader::x_SendPacket(CDB_Connection& db_conn,
 }
 
 
-void CPubseq2Reader::SetIncludeHUP(bool include_hup)
+void CPubseq2Reader::SetIncludeHUP(bool include_hup,
+                                   const string& web_cookie)
 {
     m_SetCubbyUser = include_hup;
+    m_WebCookie = web_cookie;
     if ( include_hup ) {
         x_DisableProcessors();
     }

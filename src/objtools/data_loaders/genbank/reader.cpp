@@ -1305,7 +1305,7 @@ void CReader::ResetCache(void)
 }
 
 
-void CReader::SetIncludeHUP(bool include_hup)
+void CReader::SetIncludeHUP(bool include_hup, const string& web_cookie)
 {
     NCBI_THROW(CObjMgrException, eRegisterError,
                "HUP is supported only by pubseqos or pubseqos2 readers");
