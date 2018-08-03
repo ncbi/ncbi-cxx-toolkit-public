@@ -487,7 +487,7 @@ static int s_Resolve(SERV_ITER iter)
     /* Parse description into SSERV_Info */
     CORE_TRACEF(
         ("Parsing candidate server description: '%s'", server_description));
-    SSERV_Info* cand_info = SERV_ReadInfo(server_description);
+    SSERV_Info* cand_info = SERV_ReadInfoEx(server_description, "", 0/*false*/);
 
     if ( ! cand_info) {
         CORE_LOGF_X(eLSub_BadData, eLOG_Warning,
