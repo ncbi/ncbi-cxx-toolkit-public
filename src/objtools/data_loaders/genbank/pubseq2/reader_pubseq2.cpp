@@ -59,8 +59,9 @@
 #include <objects/id2/id2__.hpp>
 
 #include <connect/ncbi_http_session.hpp>
+#ifdef USE_XMLWRAP_LIB
 #include <misc/xmlwrapp/xmlwrapp.hpp>
-
+#endif
 
 #define BINARY_REQUESTS     1
 #define LONG_REQUESTS       1
@@ -387,9 +388,10 @@ static string s_GetCubbyUserName(const string& web_cookie)
     } else {
         CHttpSession session;
         int response_timeout = 40;
-         CHttpResponse response =
+        CHttpResponse response =
             session.Get(CUrl(kEMyNCBIURL + web_cookie), CTimeout(response_timeout), 0);
         if (response.GetStatusCode() == 200) {
+#ifdef USE_XMLWRAP_LIB
             xml::error_messages errors;
             xml::document doc(response.ContentStream(), &errors);
             xml::node_set nodes ( doc.get_root_node().run_xpath_query("//eMyNCBIResult") );
@@ -400,10 +402,13 @@ static string s_GetCubbyUserName(const string& web_cookie)
                     break;
                 }
             }
+#else
+            cubby_user = NStr::SQLEncode(GetProcessUserName());  
+#endif
         }
     }
 
-    return cubby_user;;
+    return cubby_user;
 }
 
 void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
