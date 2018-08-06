@@ -175,6 +175,7 @@ static const string kReprMicrobialGenomesDispl =  "<div><@lnk@>-<span class=\"rl
 // .ncbirc alias: GENOME_DATA_VIEWER /genome/gdv/browser/?context=blast&id=NC_000019.10&alignid=<@label@>&rid=N9WGPH30015
 static const char kGenomeDataViewerNucUrl[] = "<span class=\"adNew\">New</span><a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/genome/gdv/browser/?context=blast&id=<@label@>&alignid=<@queryID@>&from=<@from@>&to=<@to@>&rid=<@rid@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 static const char kGenomeDataViewerProtUrl[] = "<span class=\"adNew\">New</span><a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/genome/gdv/browser/?context=Protein&acc=<@label@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
+static const char kGenomeDataViewerNuclTranscriptUrl[] = "<span class=\"adNew\">New</span><a href=\"<@protocol@>//www.ncbi.nlm.nih.gov/genome/gdv/browser/?context=nucleotide&acc=<@label@>\"<@lnkTitle@><@lnkTarget@>><@lnk_displ@></a>";
 //substitues <@lnk_displ@>
 static const char kGenomeDataViewerImg[] = "<div class=\"gdv\">V</div>";
 //For text link <@lnk@> is substituted by formatted url
@@ -215,7 +216,7 @@ static const char kEntrezSubseqTMUrl[] = "<@protocol@>//www.ncbi.nlm.nih.gov/<@d
 
 ///Default linkout order 
 //.ncbirc alias: LINKOUT_ORDER
-static const char kLinkoutOrderStr[] = "G,U,E,S,B,R,M,V"; 
+static const char kLinkoutOrderStr[] = "G,U,E,S,B,R,M,V,T"; 
 
 // .ncbirc alias: BL2SEQ
 //static const char kBl2seqUrl[] = "<a href=\"blast.ncbi.nlm.nih.gov/Blast.cgi?QUERY=<@query@>&SUBJECTS=<@subject@>&EXPECT=10&SHOW_OVERVIEW=on&OLD_BLAST=false&NEW_VIEW=on\">Get TBLASTX alignments</a>";
@@ -297,6 +298,7 @@ static const TTagUrl s_TagUrls [] = {
   { "GENOME_BTN",  kGenomeButton },
   { "GENOME_DATA_VIEWER_NUC",  kGenomeDataViewerNucUrl },
   { "GENOME_DATA_VIEWER_PROT", kGenomeDataViewerProtUrl },
+  { "GENOME_DATA_VIEWER_TRANSCR", kGenomeDataViewerNuclTranscriptUrl },  
   { "GEO",    kGeoUrl },
   { "GETSEQ_SEL_FRM",  k_GetSeqSelectForm },
   { "GETSEQ_SUB_FRM_0",  k_GetSeqSubmitForm_0 },
