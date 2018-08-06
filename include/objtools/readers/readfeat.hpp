@@ -84,7 +84,7 @@ public:
     CRef<CSeq_annot>    ReadSeqAnnot (ILineReader &lr, ILineErrorListener *pErrors) override;
     void ReadSeqAnnots(TAnnots& annots, 
                        ILineReader &lr, 
-                       const TFlags flags=0, 
+                       const TFlags flags, 
                        ILineErrorListener *pErrors=0,
                        ITableFilter* pFilter=0);
 
