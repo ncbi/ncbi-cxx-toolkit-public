@@ -823,239 +823,135 @@ void CSourceModParser::ApplyMods(CBioseq& seq)
     }
 }
 
-//void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReaction>& pcr_reaction)
+
+static void s_AddPrimers(const pair<string, string>& primer_info, CPCRPrimerSet& primer_set)
+{
+    vector<string> names;
+    NStr::Split(primer_info.first, ":", names, NStr::fSplit_Tokenize);
+    vector<string> seqs;
+    NStr::Split(primer_info.second, ":", seqs, NStr::fSplit_Tokenize);
+
+    const auto num_names = names.size();
+    const auto num_seqs = seqs.size();
+    const auto num_primers = max(num_names, num_seqs);
+
+    for(size_t i=0; i<num_primers; ++i) {
+        auto primer = Ref(new CPCRPrimer());
+
+        if (i<num_names && !NStr::IsBlank(names[i])) {
+            primer->SetName().Set(names[i]); 
+        }
+        if (i<num_seqs && !NStr::IsBlank(seqs[i])) {
+            primer->SetSeq().Set(seqs[i]);
+        }
+        primer_set.Set().push_back(primer);
+    }
+}
+
+
+static void s_GetPrimerInfo(const CSourceModParser::SMod* pNamesMod,
+                            const CSourceModParser::SMod* pSeqsMod,
+                            vector<pair<string, string>>& reaction_info)
+{
+    reaction_info.clear();
+    vector<string> names;
+    if (pNamesMod) {
+        NStr::Split(pNamesMod->value, ",", names, NStr::fSplit_Tokenize);
+    }
+
+    vector<string> seqs;
+    if (pSeqsMod) {
+        NStr::Split(pSeqsMod->value, ",", seqs, NStr::fSplit_Tokenize);
+        if (seqs.size()>1) {
+            if (seqs.front().front() == '(') {
+                seqs.front().erase(0,1);
+            }
+            if (seqs.back().back() == ')') {
+                seqs.back().erase(seqs.back().size()-1, 1);
+            }
+        }
+    }
+
+    const auto num_names = names.size();
+    const auto num_seqs = seqs.size();
+    const auto num_reactions = max(num_names, num_seqs);
+
+    for (int i=0; i<num_reactions; ++i) {
+        const string name = (i<num_names) ? names[i] : "";
+        const string seq  = (i<num_seqs) ? seqs[i] : "";
+        reaction_info.push_back(make_pair(name, seq));
+    }
+}
+
+
 void CSourceModParser::x_AddPCRPrimers(CAutoInitRef<CPCRReactionSet>& pcr_reaction_set)
 {
-    const SMod* mod = nullptr;
     using TNameSeqPair = pair<string, string>;
 
-    vector<TNameSeqPair> fwd_primers;
-    if ((mod = FindMod(s_Mod_fwd_primer_name)) != NULL  ||
-        (mod = FindMod(s_Mod_fwd_pcr_primer_name)) != NULL) {
-        list<string> names;
-        NStr::Split(mod->value, ",", names, NStr::fSplit_Tokenize);
-        for (const string& name : names) {
-           // CRef<CPCRPrimer> primer(new CPCRPrimer());
-          //  primer->SetName().Set(name);
-          //  fwd_primers.push_back(primer);
-            fwd_primers.push_back(make_pair(name, ""));
-        }
-    }
-    
-    if ((mod = FindMod(s_Mod_fwd_primer_seq)) != NULL  ||  
-        (mod = FindMod(s_Mod_fwd_pcr_primer_seq)) != NULL) {
-        list<string> seqs;
-        NStr::Split(mod->value, ",", seqs, NStr::fSplit_Tokenize);
+    const SMod* pNameMod = nullptr;
+    const SMod* pSeqMod = nullptr;
 
-        if (seqs.size()>1) {
-            if (seqs.front().front() == '(') {
-                seqs.front().erase(0,1);
-            }
-            if (seqs.back().back() == ')') {
-                seqs.back().erase(seqs.back().size()-1, 1);
-            }
-        }
+    pNameMod = FindMod(s_Mod_fwd_primer_name, s_Mod_fwd_pcr_primer_name);
+    pSeqMod = FindMod(s_Mod_fwd_primer_seq, s_Mod_fwd_pcr_primer_seq);
+    vector<TNameSeqPair> fwd_primer_info; 
+    s_GetPrimerInfo(pNameMod, pSeqMod, fwd_primer_info);
 
-        if (!fwd_primers.empty()) {
-            if (seqs.size() != fwd_primers.size()) {
-                // report an error
-            }
-            else {
-                auto primer_it = fwd_primers.begin();
-                for (auto seq : seqs) {
-                    primer_it->second = NStr::ToLower(seq);
-                    ++primer_it;
-                }
-            }
-        }
-        else {
-            for (auto& seq : seqs) {
-                fwd_primers.push_back(make_pair("", NStr::ToLower(seq)));
-            }
-        }
-    }
 
-    vector<TNameSeqPair> rev_primers;
-    if ((mod = FindMod(s_Mod_rev_primer_name)) != NULL  ||
-        (mod = FindMod(s_Mod_rev_pcr_primer_name)) != NULL) {
-        list<string> names;
-        NStr::Split(mod->value, ",", names, NStr::fSplit_Tokenize);
-        for (const string& name : names) {
-            rev_primers.push_back(make_pair(name, ""));
-        }
-    }
-    
-    if ((mod = FindMod(s_Mod_rev_primer_seq)) != NULL  ||  
-        (mod = FindMod(s_Mod_rev_pcr_primer_seq)) != NULL) {
-        list<string> seqs;
-        NStr::Split(mod->value, ",", seqs, NStr::fSplit_Tokenize);
+    pNameMod = FindMod(s_Mod_rev_primer_name, s_Mod_rev_pcr_primer_name);
+    pSeqMod = FindMod(s_Mod_rev_primer_seq, s_Mod_rev_pcr_primer_seq);
+    vector<TNameSeqPair> rev_primer_info; 
+    s_GetPrimerInfo(pNameMod, pSeqMod, rev_primer_info);
 
-        if (seqs.size()>1) {
-            if (seqs.front().front() == '(') {
-                seqs.front().erase(0,1);
-            }
-            if (seqs.back().back() == ')') {
-                seqs.back().erase(seqs.back().size()-1, 1);
-            }
-        }
-
-        if (!rev_primers.empty()) {
-            if (seqs.size() != rev_primers.size()) {
-                // report an error
-            }
-            else {
-                auto primer_it = rev_primers.begin();
-                for (auto seq : seqs) {
-                    primer_it->second = NStr::ToLower(seq);
-                    ++primer_it;
-                }
-            }
-        }
-        else {
-            for (auto& seq : seqs) {
-                rev_primers.push_back(make_pair("", NStr::ToLower(seq)));
-            }
-        }
-    }
-
-    if (fwd_primers.empty() &&
-        rev_primers.empty()) {
+    if (fwd_primer_info.empty() &&
+        rev_primer_info.empty()) {
         return;
     }
 
-    auto num_fwd_primers = fwd_primers.size();
-    auto num_rev_primers = rev_primers.size();
+    auto num_fwd_primer_info = fwd_primer_info.size();
+    auto num_rev_primer_info = rev_primer_info.size();
 
-    if (num_fwd_primers == num_rev_primers) {
+    if (num_fwd_primer_info == num_rev_primer_info) {
     
-        for (auto i=0; i<num_fwd_primers; ++i) {
+        for (auto i=0; i<num_fwd_primer_info; ++i) {
             CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
-            {
-                CRef<CPCRPrimer> primer(new CPCRPrimer());
-                const auto& name = fwd_primers[i].first;
-                if (!NStr::IsBlank(name)) {
-                    primer->SetName().Set(name); 
-                }
-                const auto& seq = fwd_primers[i].second;
-                if (!NStr::IsBlank(seq)) {
-                    primer->SetSeq().Set(seq);
-                }
-                pcr_reaction->SetForward().Set().push_back(primer);
-            }
-            {
-                CRef<CPCRPrimer> primer(new CPCRPrimer());
-                const auto& name = rev_primers[i].first;
-                if (!NStr::IsBlank(name)) {
-                    primer->SetName().Set(name); 
-                }
-                const auto& seq = rev_primers[i].second;
-                if (!NStr::IsBlank(seq)) {
-                    primer->SetSeq().Set(seq);
-                }
-                pcr_reaction->SetReverse().Set().push_back(primer);
-            }
+            s_AddPrimers(fwd_primer_info[i], pcr_reaction->SetForward());
+            s_AddPrimers(rev_primer_info[i], pcr_reaction->SetReverse());
             pcr_reaction_set->Set().push_back(pcr_reaction);
         }
     } 
     else 
-    if (num_fwd_primers > num_rev_primers) {
-        auto diff = num_fwd_primers - num_rev_primers;
+    if (num_fwd_primer_info > num_rev_primer_info) {
+        auto diff = num_fwd_primer_info - num_rev_primer_info;
         for (int i=0; i<diff; ++i) {
             CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
-            CRef<CPCRPrimer> primer(new CPCRPrimer());
-            const auto& name = fwd_primers[i].first;
-            if (!NStr::IsBlank(name)) {
-                primer->SetName().Set(name); 
-            }
-            const auto& seq = fwd_primers[i].second;
-            if (!NStr::IsBlank(seq)) {
-                primer->SetSeq().Set(seq);
-            }
-            pcr_reaction->SetForward().Set().push_back(primer);
+            s_AddPrimers(fwd_primer_info[i], pcr_reaction->SetForward());
             pcr_reaction_set->Set().push_back(pcr_reaction);
         }
 
-        for (int i=diff; i<num_fwd_primers; ++i) {
+        for (int i=diff; i<num_fwd_primer_info; ++i) {
             CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
-            {
-                CRef<CPCRPrimer> primer(new CPCRPrimer());
-                const auto& name = fwd_primers[i].first;
-                if (!NStr::IsBlank(name)) {
-                    primer->SetName().Set(name); 
-                }
-                const auto& seq = fwd_primers[i].second;
-                if (!NStr::IsBlank(seq)) {
-                    primer->SetSeq().Set(seq);
-                }
-                pcr_reaction->SetForward().Set().push_back(primer);
-            }
-
-            {
-                auto j = i-diff;
-                CRef<CPCRPrimer> primer(new CPCRPrimer());
-                const auto& name = rev_primers[j].first;
-                if (!NStr::IsBlank(name)) {
-                    primer->SetName().Set(name); 
-                }
-                const auto& seq = rev_primers[j].second;
-                if (!NStr::IsBlank(seq)) {
-                    primer->SetSeq().Set(seq);
-                }
-                pcr_reaction->SetReverse().Set().push_back(primer);
-            }
+            s_AddPrimers(fwd_primer_info[i], pcr_reaction->SetForward());
+            s_AddPrimers(rev_primer_info[i-diff], pcr_reaction->SetReverse());
             pcr_reaction_set->Set().push_back(pcr_reaction);
         }
     }
     else 
-    if (num_fwd_primers < num_rev_primers) {
-        auto diff = num_rev_primers - num_fwd_primers;
-        for (int i=0; i<diff; ++i) {
+    if (num_fwd_primer_info < num_rev_primer_info) {
+        for (int i=0; i<num_fwd_primer_info; ++i) {
             CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
-            {
-                CRef<CPCRPrimer> primer(new CPCRPrimer());
-                const auto& name = fwd_primers[i].first;
-                if (!NStr::IsBlank(name)) {
-                    primer->SetName().Set(name); 
-                }
-                const auto& seq = fwd_primers[i].second;
-                if (!NStr::IsBlank(seq)) {
-                    primer->SetSeq().Set(seq);
-                }
-                pcr_reaction->SetForward().Set().push_back(primer);
-            }
-
-            {
-                CRef<CPCRPrimer> primer(new CPCRPrimer());
-                const auto& name = rev_primers[i].first;
-                if (!NStr::IsBlank(name)) {
-                    primer->SetName().Set(name); 
-                }
-                const auto& seq = rev_primers[i].second;
-                if (!NStr::IsBlank(seq)) {
-                    primer->SetSeq().Set(seq);
-                }
-                pcr_reaction->SetForward().Set().push_back(primer);
-            }
-
+            s_AddPrimers(fwd_primer_info[i], pcr_reaction->SetForward());
+            s_AddPrimers(rev_primer_info[i], pcr_reaction->SetReverse());
             pcr_reaction_set->Set().push_back(pcr_reaction);
         }
 
-        for (int i=diff; i<num_rev_primers; ++i) {
+        for (int i=num_fwd_primer_info; i<num_rev_primer_info; ++i) {
             CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
-            CRef<CPCRPrimer> primer(new CPCRPrimer());
-            const auto& name = rev_primers[i].first;
-            if (!NStr::IsBlank(name)) {
-                primer->SetName().Set(name); 
-            }
-            const auto& seq = rev_primers[i].second;
-            if (!NStr::IsBlank(seq)) {
-                primer->SetSeq().Set(seq);
-            }
-            pcr_reaction->SetReverse().Set().push_back(primer);
+            s_AddPrimers(rev_primer_info[i], pcr_reaction->SetReverse());
             pcr_reaction_set->Set().push_back(pcr_reaction);
         }
     } 
 }
+
 
 void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
                                    CTempString organism)
