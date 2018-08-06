@@ -1,0 +1,25 @@
+<!--    
+                This is the Current DTD for eMyNCBI
+$Id$
+-->
+<!-- ================================================================= -->
+
+<!ELEMENT       UserId          (#PCDATA)>      <!-- \d+ -->
+<!ELEMENT       UserName        (#PCDATA)>      <!-- \S+ -->
+<!ELEMENT       EmailAddress    (#PCDATA)>      <!-- \S+ -->
+<!ELEMENT       SignInURL       (#PCDATA)>      <!-- \S+ -->
+<!ELEMENT       SignOutURL      (#PCDATA)>      <!-- \S+ -->
+<!ELEMENT       RegisterURL     (#PCDATA)>      <!-- \S+ -->
+<!ELEMENT       HomePageURL     (#PCDATA)>      <!-- \S+ -->
+
+<!-- Error message tags  -->
+<!ELEMENT       ERROR          (#PCDATA)>      <!-- .+ -->
+
+<!-- Response tags -->
+<!ELEMENT       eMyNCBIResult   ( ( (UserId,
+                                    UserName,
+                                    EmailAddress) | ERROR),
+                                    SignInURL,
+                                    SignOutURL,
+                                    RegisterURL,
+                                    HomePageURL)>
