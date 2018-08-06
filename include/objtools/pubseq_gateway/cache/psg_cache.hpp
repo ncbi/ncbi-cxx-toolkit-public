@@ -50,7 +50,7 @@ public:
 /* bioseq_info */
     bool LookupBioseqInfoByAccession(const string& accession, int& version, int& seq_id_type, string& data);
     bool LookupBioseqInfoByAccessionVersion(const string& accession, int version, int& seq_id_type, string& data);
-    bool LookupBioseqInfoByAccessionVersionIdType(const string& accession, int version, int saq_id_type, string& data);
+    bool LookupBioseqInfoByAccessionVersionSeqIdType(const string& accession, int version, int saq_id_type, string& data);
 
     static string PackBioseqInfoKey(const string& accession, int version);
     static string PackBioseqInfoKey(const string& accession, int version, int seq_id_type);
@@ -59,7 +59,7 @@ public:
 
 /* si2csi */
     bool LookupCsiBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data);
-    bool LookupCsiBySeqIdIdType(const string& sec_seqid, int sec_seq_id_type, string& data);
+    bool LookupCsiBySeqIdSeqIdType(const string& sec_seqid, int sec_seq_id_type, string& data);
 
     static string PackSiKey(const string& sec_seqid, int sec_seq_id_type);
     static bool UnpackSiKey(const char* key, size_t key_sz, int& sec_seq_id_type);
