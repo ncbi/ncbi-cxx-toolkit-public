@@ -328,3 +328,6 @@ May 31, 2018
 version 4.4.0, CXX-10052
 Added generation of build information macros.
 
+August 06, 2018
+version 4.5.0, CXX-10177
+Added support of PROTOBUF projects on Unix.
