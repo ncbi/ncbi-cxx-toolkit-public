@@ -54,6 +54,7 @@ struct SBioseqInfo
     int                 m_Version;
     int                 m_SeqIdType;
 
+    int64_t             m_DateChanged;
     int                 m_Mol;
     int                 m_Length;
     int                 m_State;

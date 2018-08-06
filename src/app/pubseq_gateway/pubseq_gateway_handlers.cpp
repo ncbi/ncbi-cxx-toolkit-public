@@ -93,7 +93,8 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
         {"state", make_pair(SRequestParameter(), fServState)},
         {"blob_id", make_pair(SRequestParameter(), fServBlobId)},
         {"tax_id", make_pair(SRequestParameter(), fServTaxId)},
-        {"hash", make_pair(SRequestParameter(), fServHash)}
+        {"hash", make_pair(SRequestParameter(), fServHash)},
+        {"date_changed", make_pair(SRequestParameter(), fServDateChanged)}
     };
 
 
@@ -228,7 +229,8 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
         {"state", make_pair(SRequestParameter(), fServState)},
         {"blob_id", make_pair(SRequestParameter(), fServBlobId)},
         {"tax_id", make_pair(SRequestParameter(), fServTaxId)},
-        {"hash", make_pair(SRequestParameter(), fServHash)}
+        {"hash", make_pair(SRequestParameter(), fServHash)},
+        {"date_changed", make_pair(SRequestParameter(), fServDateChanged)}
     };
 
     TServIncludeData        include_data_flags = 0;

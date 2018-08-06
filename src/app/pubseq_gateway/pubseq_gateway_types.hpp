@@ -71,7 +71,8 @@ enum EServIncludeData {
     fServState = (1 << 8),
     fServBlobId = (1 << 9),
     fServTaxId = (1 << 10),
-    fServHash = (1 << 11)
+    fServHash = (1 << 11),
+    fServDateChanged = (1 << 12)
 };
 
 // Bit-set of EServIncludeData flags

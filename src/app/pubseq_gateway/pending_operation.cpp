@@ -36,6 +36,7 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info.hpp>
+#include <objtools/pubseq_gateway/protobuf/psg_protobuf_data.hpp>
 USING_IDBLOB_SCOPE;
 USING_SCOPE(objects);
 
@@ -226,9 +227,11 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         // By seq_id -> first part is synchronous
 
         SBioseqInfo     bioseq_info;
+        string          si2csi_cache_data;
 
         // retrieve from SI2CSI
-        CRequestStatus::ECode   status = x_ResolveToCanonicalSeqId(bioseq_info);
+        CRequestStatus::ECode   status = x_ResolveToCanonicalSeqId(bioseq_info,
+                                                                   si2csi_cache_data);
         if (status != CRequestStatus::e200_Ok) {
             if (status != CRequestStatus::e400_BadRequest)
                 UpdateOverallStatus(status);
@@ -297,9 +300,11 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
 void CPendingOperation::x_ProcessResolveRequest(void)
 {
     SBioseqInfo     bioseq_info;
+    string          si2csi_cache_data;
 
     // retrieve from SI2CSI
-    CRequestStatus::ECode   status = x_ResolveToCanonicalSeqId(bioseq_info);
+    CRequestStatus::ECode   status = x_ResolveToCanonicalSeqId(bioseq_info,
+                                                               si2csi_cache_data);
     if (status != CRequestStatus::e200_Ok) {
         if (status != CRequestStatus::e400_BadRequest)
             UpdateOverallStatus(status);
@@ -524,7 +529,8 @@ void CPendingOperation::x_PrintRequestStop(int  status)
 
 
 CRequestStatus::ECode
-CPendingOperation::x_ResolveToCanonicalSeqId(SBioseqInfo &  bioseq_info)
+CPendingOperation::x_ResolveToCanonicalSeqId(SBioseqInfo &  bioseq_info,
+                                             string &  cache_data)
 {
     string      seq_id = m_BlobRequest.m_SeqId;
     int         seq_id_type = m_BlobRequest.m_SeqIdType;
@@ -587,18 +593,25 @@ CPendingOperation::x_ResolveToCanonicalSeqId(SBioseqInfo &  bioseq_info)
     // Could not resolve using the CSeq_id class, so try cache now
     CPubseqGatewayCache *   cache = CPubseqGatewayApp::GetInstance()->
                                                         GetLookupCache();
-    string                  csi_data;
     bool                    cache_hit = false;
     if (seq_id_type_provided) {
-        cache_hit = cache->LookupCsiBySeqIdIdType(seq_id, seq_id_type, csi_data);
+        cache_hit = cache->LookupCsiBySeqIdSeqIdType(seq_id, seq_id_type,
+                                                     cache_data);
     } else {
         int     cache_seq_id_type = -1;
-        cache_hit = cache->LookupCsiBySeqId(seq_id, cache_seq_id_type, csi_data);
+        cache_hit = cache->LookupCsiBySeqId(seq_id, cache_seq_id_type,
+                                            cache_data);
     }
 
     if (cache_hit) {
         // Unpack data: retrieve accession, version, sec_id_type
-        // TODO
+        psg::retrieval::si2csi_value    cache_values;
+
+        CPubseqGatewayData::UnpackSiInfo(cache_data, cache_values);
+        bioseq_info.m_Accession = cache_values.accession();
+        bioseq_info.m_Version = cache_values.version();
+        bioseq_info.m_SeqIdType = cache_values.seq_id_type();
+
         return CRequestStatus::e200_Ok;
     }
 
@@ -756,7 +769,12 @@ void CPendingOperation::x_SendBioseqInfo(size_t  item_id,
 
     if (m_IsResolveRequest) {
         // Send it as the HTTP data
-
+        if (effective_output_format == eJsonFormat)
+            m_Reply->SetJsonContentType();
+        else
+            m_Reply->SetProtobufContentType();
+        m_Reply->SetContentLength(data_to_send.length());
+        m_Reply->SendOk(data_to_send.data(), data_to_send.length(), false);
     } else {
         // Send it as the PSG protocol
         PrepareBioseqData(item_id, data_to_send);
@@ -767,14 +785,55 @@ void CPendingOperation::x_SendBioseqInfo(size_t  item_id,
 
 void CPendingOperation::x_ConvertBioseqInfoToProtobuf(
                                     const SBioseqInfo &  bioseq_info,
-                                    string & data_to_send)
-{}
+                                    string &  data_to_send)
+{
+    psg::retrieval::bioseq_info_value   protobuf_bioseq_info_value;
+    protobuf_bioseq_info_value.set_sat(bioseq_info.m_Sat);
+    protobuf_bioseq_info_value.set_sat_key(bioseq_info.m_SatKey);
+    protobuf_bioseq_info_value.set_state(bioseq_info.m_State);
+    protobuf_bioseq_info_value.set_mol(bioseq_info.m_Mol);
+    protobuf_bioseq_info_value.set_hash(bioseq_info.m_Hash);
+    protobuf_bioseq_info_value.set_length(bioseq_info.m_Length);
+    protobuf_bioseq_info_value.set_date_changed(bioseq_info.m_DateChanged);
+    protobuf_bioseq_info_value.set_tax_id(bioseq_info.m_TaxId);
+    protobuf_bioseq_info_value.mutable_seq_ids()->insert(bioseq_info.m_SeqIds.begin(),
+                                                         bioseq_info.m_SeqIds.end());
+
+    psg::retrieval::bioseq_info         protobuf_bioseq_info;
+    protobuf_bioseq_info.set_accession(bioseq_info.m_Accession);
+    protobuf_bioseq_info.set_version(bioseq_info.m_Version);
+    protobuf_bioseq_info.set_seq_id_type(bioseq_info.m_SeqIdType);
+    protobuf_bioseq_info.set_allocated_value(&protobuf_bioseq_info_value);
+
+    CPubseqGatewayData::PackBioseqInfo(protobuf_bioseq_info, data_to_send);
+}
 
 
 void CPendingOperation::x_ConvertProtobufToBioseqInfo(
                                     const string &  protobuf_bioseq_info,
                                     SBioseqInfo &  bioseq_info)
-{}
+{
+    psg::retrieval::bioseq_info_value       protobuf_bioseq_info_value;
+
+    CPubseqGatewayData::UnpackBioseqInfo(protobuf_bioseq_info,
+                                         protobuf_bioseq_info_value);
+
+    // These fields must be already populated in bioseq_info
+    //    bioseq_info.m_Accession
+    //    bioseq_info.m_Version
+    //    bioseq_info.m_SeqIdType
+
+    bioseq_info.m_DateChanged = protobuf_bioseq_info_value.date_changed();
+    bioseq_info.m_Mol = protobuf_bioseq_info_value.mol();
+    bioseq_info.m_Length = protobuf_bioseq_info_value.length();
+    bioseq_info.m_State = protobuf_bioseq_info_value.state();
+    bioseq_info.m_Sat = protobuf_bioseq_info_value.sat();
+    bioseq_info.m_SatKey = protobuf_bioseq_info_value.sat_key();
+    bioseq_info.m_TaxId = protobuf_bioseq_info_value.tax_id();
+    bioseq_info.m_Hash = protobuf_bioseq_info_value.hash();
+    bioseq_info.m_SeqIds.insert(protobuf_bioseq_info_value.seq_ids().begin(),
+                                protobuf_bioseq_info_value.seq_ids().end());
+}
 
 
 bool CPendingOperation::x_SatToSatName(const SBlobRequest &  blob_request,
@@ -1099,14 +1158,11 @@ void CBlobPropCallback::operator()(CBlobRecord const &  blob, bool is_found)
                 if (blob.GetId2Info().empty()) {
                     // Request original blob chunks
 
-ERR_POST("REQUEST ORIGINAL BLOB CHUNKS");
-
                     // It is important to send completion before: the new
                     // request overwrites the main one
                     m_PendingOp->PrepareBlobPropCompletion(m_FetchDetails);
                     x_RequestOriginalBlobChunks(blob);
                 } else {
-ERR_POST("REQUEST ID2 BLOB CHUNKS");
                     // Request chunks of two other ID2 blobs.
                     x_RequestID2BlobChunks(blob);
 

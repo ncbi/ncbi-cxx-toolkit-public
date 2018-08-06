@@ -136,6 +136,8 @@ CJsonNode  BioseqInfoToJSON(const SBioseqInfo &  bioseq_info,
         json.SetInteger("tax_id", bioseq_info.m_TaxId);
     if (include_data_flags & fServHash)
         json.SetInteger("hash", bioseq_info.m_Hash);
+    if (include_data_flags & fServDateChanged)
+        json.SetInteger("date_changed", bioseq_info.m_DateChanged);
 
     if (include_data_flags & fServSeqIds) {
         CJsonNode       seq_ids(CJsonNode::NewObjectNode());

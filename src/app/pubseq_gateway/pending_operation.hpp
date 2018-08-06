@@ -215,7 +215,8 @@ private:
     void x_SendReplyCompletion(bool  forced = false);
     void x_SetRequestContext(void);
     void x_PrintRequestStop(int  status);
-    CRequestStatus::ECode x_ResolveToCanonicalSeqId(SBioseqInfo &  bioseq_info);
+    CRequestStatus::ECode x_ResolveToCanonicalSeqId(SBioseqInfo &  bioseq_info,
+                                                    string &  cache_data);
     CRequestStatus::ECode x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info);
     CRequestStatus::ECode x_FetchBioseqInfo(SBioseqInfo &  bioseq_info);
     bool x_SatToSatName(const SBlobRequest &  blob_request,

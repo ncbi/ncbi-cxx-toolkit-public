@@ -108,14 +108,15 @@ static void
 s_GetBioseqValues(shared_ptr<CCassQuery> &  query,
                   SBioseqInfo &  bioseq_info)
 {
-    bioseq_info.m_Mol = query->FieldGetInt32Value(0);
-    bioseq_info.m_Length = query->FieldGetInt32Value(1);
-    bioseq_info.m_State = query->FieldGetInt32Value(2);
-    bioseq_info.m_Sat = query->FieldGetInt32Value(3);
-    bioseq_info.m_SatKey = query->FieldGetInt32Value(4);
-    bioseq_info.m_TaxId =query->FieldGetInt32Value(5);
-    bioseq_info.m_Hash = query->FieldGetInt32Value(6);
-    query->FieldGetMapValue(7, bioseq_info.m_SeqIds);
+    bioseq_info.m_DateChanged = query->FieldGetInt64Value(0);
+    bioseq_info.m_Mol = query->FieldGetInt32Value(1);
+    bioseq_info.m_Length = query->FieldGetInt32Value(2);
+    bioseq_info.m_State = query->FieldGetInt32Value(3);
+    bioseq_info.m_Sat = query->FieldGetInt32Value(4);
+    bioseq_info.m_SatKey = query->FieldGetInt32Value(5);
+    bioseq_info.m_TaxId =query->FieldGetInt32Value(6);
+    bioseq_info.m_Hash = query->FieldGetInt32Value(7);
+    query->FieldGetMapValue(8, bioseq_info.m_SeqIds);
 }
 
 
@@ -133,7 +134,9 @@ FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
     shared_ptr<CCassQuery>  query = conn->NewQuery();
 
     if (version_provided && seq_id_type_provided) {
-        query->SetSQL("SELECT mol, "
+        query->SetSQL("SELECT "
+                      "date_changed, "
+                      "mol, "
                       "length, "
                       "state, "
                       "sat, "
@@ -147,7 +150,9 @@ FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
         query->BindInt32(1, bioseq_info.m_Version);
         query->BindInt32(2, bioseq_info.m_SeqIdType);
     } else if (version_provided) {
-        query->SetSQL("SELECT mol, "
+        query->SetSQL("SELECT "
+                      "date_changed, "
+                      "mol, "
                       "length, "
                       "state, "
                       "sat, "
@@ -161,7 +166,9 @@ FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
         query->BindStr(0, bioseq_info.m_Accession);
         query->BindInt32(1, bioseq_info.m_Version);
     } else {
-        query->SetSQL("SELECT mol, "
+        query->SetSQL("SELECT "
+                      "date_changed, "
+                      "mol, "
                       "length, "
                       "state, "
                       "sat, "
