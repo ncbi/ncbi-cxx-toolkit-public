@@ -3,6 +3,10 @@
 
 #include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.hpp>
 
+#include <corelib/ncbistd.hpp>
+
+BEGIN_NCBI_SCOPE
+
 class CPubseqGatewayData
 {
 public:
@@ -35,5 +39,6 @@ public:
     }
 };
 
+END_NCBI_SCOPE
 
 #endif
