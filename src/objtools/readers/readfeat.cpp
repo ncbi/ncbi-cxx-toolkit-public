@@ -3113,8 +3113,10 @@ void CFeatureTableReader_Imp::x_ProcessQualifier(const string& qual_name,
     }
 
     if (!feat) {
-        x_ProcessMsg(ILineError::eProblem_QualifierWithoutFeature, 
-                     eDiag_Warning, kEmptyStr, qual_name, qual_val);
+        if ( flags & CFeature_table_reader::fReportBadKey ) {
+            x_ProcessMsg(ILineError::eProblem_QualifierWithoutFeature, 
+                        eDiag_Warning, kEmptyStr, qual_name, qual_val);
+        }
         return;
     }
 
