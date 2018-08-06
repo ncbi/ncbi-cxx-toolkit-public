@@ -142,7 +142,9 @@ static bool s_IsInsideDatatoolSourceDir(const string& src_path_abs)
         return false;
     if ( dir.GetEntries("*.asn").empty() &&
          dir.GetEntries("*.dtd").empty() &&
-         dir.GetEntries("*.xsd").empty() ) 
+         dir.GetEntries("*.xsd").empty() &&
+         dir.GetEntries("*.wsdl").empty() &&
+         dir.GetEntries("*.proto").empty()) 
         return false;
 
     return true;

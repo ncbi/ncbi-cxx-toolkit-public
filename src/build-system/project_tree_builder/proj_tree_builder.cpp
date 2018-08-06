@@ -683,6 +683,12 @@ void SMakeProjectT::AnalyzeMakeIn
         info->push_back(SMakeInInfo(SMakeInInfo::eWSDL, p->second,
             makein_contents.GetMakeType())); 
     }
+    p = makein_contents.m_Contents.find("PROTOBUF_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eProtobuf, p->second,
+            makein_contents.GetMakeType())); 
+    }
 
     if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
         p = makein_contents.m_Contents.find("UNIX_PROJ");
@@ -2059,6 +2065,10 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
         if ( CDirEntry(source_file_path + ".wsdl").Exists() )
             source_file_path += ".wsdl";
         break;
+    case SMakeProjectT::SMakeInInfo::eProtobuf:
+        if ( CDirEntry(source_file_path + ".proto").Exists() )
+            source_file_path += ".proto";
+        break;
     default:
         break;
     }
@@ -2071,9 +2081,9 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
 
     CDataToolGeneratedSrc data_tool_src;
     CDataToolGeneratedSrc::LoadFrom(source_file_path, &data_tool_src);
-    if ( !data_tool_src.IsEmpty() ) {
+    if ( !data_tool_src.IsEmpty()) {
         project.m_DatatoolSources.push_back(data_tool_src);
-        if (GetApp().m_Dtdep && !GetApp().GetDatatoolId().empty()) {   
+        if (GetApp().m_Dtdep && !GetApp().GetDatatoolId().empty() && makeinfo.m_Type != SMakeProjectT::SMakeInInfo::eProtobuf) {   
               project.m_Depends.push_back(CProjKey(CProjKey::eApp, GetApp().GetDatatoolId())); 
         }
     }
@@ -2950,7 +2960,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                 }
             }
         }
-        string libproj[] = {"ASN_PROJ","DTD_PROJ","XSD_PROJ","WSDL_PROJ",
+        string libproj[] = {"ASN_PROJ","DTD_PROJ","XSD_PROJ","WSDL_PROJ", "PROTOBUF_PROJ",
             "LIB_PROJ","EXPENDABLE_LIB_PROJ","POTENTIAL_LIB_PROJ",""};
         EMakeFileType libtype[] = {
             eMakeType_Undefined, eMakeType_Undefined, eMakeType_Undefined, eMakeType_Undefined,
