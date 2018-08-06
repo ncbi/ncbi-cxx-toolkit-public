@@ -2280,18 +2280,20 @@ static list<string> s_GetLinkoutUrl(int linkout,
         linkout_list.push_back(url_link);        
     }    
     if((linkout & eGenomeDataViewer) || (linkout & eTranscript)){
-        string urlTag = linkoutInfo.is_na ? "GENOME_DATA_VIEWER_NUC" : "GENOME_DATA_VIEWER_PROT";
-        url_link = CAlignFormatUtil::GetURLFromRegistry(urlTag);
+        string urlTag;        
         lnk_displ = textLink ? "Genome Data Viewer" : kGenomeDataViewerImg;
         if(linkout & eTranscript) {
+            urlTag = "GENOME_DATA_VIEWER_TRANSCR";
             lnkTitleInfo = "title=\"View the annotation of the transcript <@label@> within a genomic context in NCBI's Genome Data Viewer (GDV)- genome browser for RefSeq annotated assemblies. See other genomic features annotated at the same location as the protein annotation and browse to other regions.\"";
         }
         else {
+            urlTag = linkoutInfo.is_na ? "GENOME_DATA_VIEWER_NUC" : "GENOME_DATA_VIEWER_PROT";
             lnkTitleInfo = linkoutInfo.is_na ? 
                          "title=\"View BLAST hits for <@label@> within a genomic context in NCBI's Genome Data Viewer (GDV)- genome browser for RefSeq annotated assemblies. See other genomic features annotated at the same location as hits and browse to other regions.\""
                          :
                          "title=\"View the annotation of the protein <@label@> within a genomic context in NCBI's Genome Data Viewer (GDV)- genome browser for RefSeq annotated assemblies. See other genomic features annotated at the same location as the protein annotation and browse to other regions.\"";
         }
+        url_link = CAlignFormatUtil::GetURLFromRegistry(urlTag);
         url_link = s_MapLinkoutGenParam(url_link,linkoutInfo.rid,giList,linkoutInfo.for_alignment, linkoutInfo.cur_align,firstAcc,lnk_displ,"",lnkTitleInfo);
                 
         url_link = CAlignFormatUtil::MapTemplate(url_link,"queryID",linkoutInfo.queryID);
@@ -2393,6 +2395,10 @@ static int s_LinkLetterToType(string linkLetter)
     else if(linkLetter == "V") {
         linkType = eGenomeDataViewer;
     }                 
+    else if(linkLetter == "T") {
+        linkType = eTranscript;
+    }              
+     
     return linkType;
 }
 
@@ -2478,6 +2484,9 @@ CAlignFormatUtil::GetBdlLinkoutInfo(CBioseq::TId& cur_id,
         if(linkout & eGenomeDataViewer){        
             s_AddLinkoutInfo(linkout_map,eGenomeDataViewer,cur_id);            
         } 
+        if(linkout & eTranscript){        
+            s_AddLinkoutInfo(linkout_map,eTranscript,cur_id);            
+        } 
 	                   
 }
 
@@ -2553,7 +2562,7 @@ static list<string> s_GetFullLinkoutUrl(CBioseq::TId& cur_id,
     list<string> linkout_list;    
     
     vector<string> linkLetters;
-    NStr::Split(linkoutInfo.linkoutOrder,",",linkLetters); //linkoutOrder = "G,U,M,V,E,S,B,R"   
+    NStr::Split(linkoutInfo.linkoutOrder,",",linkLetters); //linkoutOrder = "G,U,M,V,E,S,B,R,T"   
 	for(size_t i = 0; i < linkLetters.size(); i++) {
         TGi first_gi = ZERO_GI;
         vector < CBioseq::TId > idList;
@@ -2569,7 +2578,7 @@ static list<string> s_GetFullLinkoutUrl(CBioseq::TId& cur_id,
         bool disableLink = (linkout == 0 || idList.size() == 0 || ( (linkout & eStructure) && (linkoutInfo.cdd_rid == "" || linkoutInfo.cdd_rid == "0")));
 
         string giList,labelList;                
-        int seqVersion = (linkout & eGenomeDataViewer) ? true : false; 
+        int seqVersion = ((linkout & eGenomeDataViewer) || (linkout & eTranscript)) ? true : false; 
         for (size_t i = 0; i < idList.size(); i++) {
             const CBioseq::TId& ids = idList[i];
             TGi gi = FindGi(ids);
