@@ -102,9 +102,9 @@ bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersion(const string& acces
     return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccessionVersion(accession, version, seq_id_type, data) : false;
 }
 
-bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionIdType(const string& accession, int version, int seq_id_type, string& data)
+bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionSeqIdType(const string& accession, int version, int seq_id_type, string& data)
 {
-    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccessionVersionIdType(accession, version, seq_id_type, data) : false;
+    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccessionVersionSeqIdType(accession, version, seq_id_type, data) : false;
 }
 
 string CPubseqGatewayCache::PackBioseqInfoKey(const string& accession, int version)
@@ -132,9 +132,9 @@ bool CPubseqGatewayCache::LookupCsiBySeqId(const string& sec_seqid, int& sec_seq
     return m_Si2CsiCache ? m_Si2CsiCache->LookupBySeqId(sec_seqid, sec_seq_id_type, data) : false;
 }
 
-bool CPubseqGatewayCache::LookupCsiBySeqIdIdType(const string& sec_seqid, int sec_seq_id_type, string& data)
+bool CPubseqGatewayCache::LookupCsiBySeqIdSeqIdType(const string& sec_seqid, int sec_seq_id_type, string& data)
 {
-    return m_Si2CsiCache ? m_Si2CsiCache->LookupBySeqIdIdType(sec_seqid, sec_seq_id_type, data) : false;
+    return m_Si2CsiCache ? m_Si2CsiCache->LookupBySeqIdSeqIdType(sec_seqid, sec_seq_id_type, data) : false;
 }
 
 string CPubseqGatewayCache::PackSiKey(const string& sec_seqid, int sec_seq_id_type)

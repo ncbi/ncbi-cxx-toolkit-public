@@ -35,11 +35,11 @@
 
 USING_NCBI_SCOPE;
 
-static const constexpr unsigned kPackedIdTypeSz = 2;
+static const constexpr unsigned kPackedSeqIdTypeSz = 2;
 static const constexpr unsigned kPackedKeyZero = 1;
 
 static size_t PackedKeySize(size_t acc_sz) {
-    return acc_sz + kPackedKeyZero + kPackedIdTypeSz;
+    return acc_sz + kPackedKeyZero + kPackedSeqIdTypeSz;
 }
 
 CPubseqGatewayCacheSi2Csi::CPubseqGatewayCacheSi2Csi(const string& file_name) :
@@ -87,7 +87,7 @@ bool CPubseqGatewayCacheSi2Csi::LookupBySeqId(const string& sec_seqid, int& sec_
     return rv;
 }
 
-bool CPubseqGatewayCacheSi2Csi::LookupBySeqIdIdType(const string& sec_seqid, int sec_seq_id_type, string& data) {
+bool CPubseqGatewayCacheSi2Csi::LookupBySeqIdSeqIdType(const string& sec_seqid, int sec_seq_id_type, string& data) {
     bool rv = false;
 
     if (!m_Env)
@@ -112,7 +112,7 @@ bool CPubseqGatewayCacheSi2Csi::LookupBySeqIdIdType(const string& sec_seqid, int
 
 string CPubseqGatewayCacheSi2Csi::PackKey(const string& sec_seqid, int sec_seq_id_type) {
     string rv;
-    rv.reserve(sec_seqid.size() + kPackedKeyZero + kPackedIdTypeSz);
+    rv.reserve(sec_seqid.size() + kPackedKeyZero + kPackedSeqIdTypeSz);
     rv = sec_seqid;
     rv.append(1, 0);
     rv.append(1, (sec_seq_id_type >> 8) & 0xFF);
@@ -121,9 +121,9 @@ string CPubseqGatewayCacheSi2Csi::PackKey(const string& sec_seqid, int sec_seq_i
 }
 
 bool CPubseqGatewayCacheSi2Csi::UnpackKey(const char* key, size_t key_sz, int& sec_seq_id_type) {
-    bool rv = key_sz > (kPackedKeyZero + kPackedIdTypeSz);
+    bool rv = key_sz > (kPackedKeyZero + kPackedSeqIdTypeSz);
     if (rv) {
-        size_t ofs = key_sz - (kPackedKeyZero + kPackedIdTypeSz);
+        size_t ofs = key_sz - (kPackedKeyZero + kPackedSeqIdTypeSz);
         rv = key[ofs] == 0;
         if (rv) {
             ++ofs;

@@ -43,7 +43,7 @@ public:
     virtual ~CPubseqGatewayCacheSi2Csi() override;
     void Open();
     bool LookupBySeqId(const string& sec_seqid, int& sec_seq_id_type, string& data);
-    bool LookupBySeqIdIdType(const string& sec_seqid, int sec_seq_id_type, string& data);
+    bool LookupBySeqIdSeqIdType(const string& sec_seqid, int sec_seq_id_type, string& data);
 
     static string PackKey(const string& sec_seqid, int sec_seq_id_type);
     static bool UnpackKey(const char* key, size_t key_sz, int& sec_seq_id_type);

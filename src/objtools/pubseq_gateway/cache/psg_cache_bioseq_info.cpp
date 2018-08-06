@@ -37,10 +37,10 @@ USING_NCBI_SCOPE;
 
 static const constexpr unsigned kPackedZeroSz = 1;
 static const constexpr unsigned kPackedVersionSz = 3;
-static const constexpr unsigned kPackedIdTypeSz = 2;
+static const constexpr unsigned kPackedSeqIdTypeSz = 2;
 
 static size_t PackedKeySize(size_t acc_sz) {
-    return acc_sz + (kPackedZeroSz + kPackedVersionSz + kPackedIdTypeSz);
+    return acc_sz + (kPackedZeroSz + kPackedVersionSz + kPackedSeqIdTypeSz);
 }
 
 CPubseqGatewayCacheBioseqInfo::CPubseqGatewayCacheBioseqInfo(const string& file_name) :
@@ -124,7 +124,7 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(const string& acces
 }
 
     
-bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionIdType(const string& accession, int version, int seq_id_type, string& data) {
+bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(const string& accession, int version, int seq_id_type, string& data) {
     bool rv = false;
 
     if (!m_Env)
@@ -161,7 +161,7 @@ string CPubseqGatewayCacheBioseqInfo::PackKey(const string& accession, int versi
 
 string CPubseqGatewayCacheBioseqInfo::PackKey(const string& accession, int version, int seq_id_type) {
     string rv;
-    rv.reserve(accession.size() + kPackedZeroSz + kPackedVersionSz + kPackedIdTypeSz);
+    rv.reserve(accession.size() + kPackedZeroSz + kPackedVersionSz + kPackedSeqIdTypeSz);
     rv = accession;
     rv.append(1, 0);
     int32_t ver = -version;
@@ -174,9 +174,9 @@ string CPubseqGatewayCacheBioseqInfo::PackKey(const string& accession, int versi
 }
 
 bool CPubseqGatewayCacheBioseqInfo::UnpackKey(const char* key, size_t key_sz, int& version, int& seq_id_type) {
-    bool rv = key_sz > (kPackedZeroSz + kPackedVersionSz + kPackedIdTypeSz);
+    bool rv = key_sz > (kPackedZeroSz + kPackedVersionSz + kPackedSeqIdTypeSz);
     if (rv) {
-        size_t ofs = key_sz - (kPackedZeroSz + kPackedVersionSz + kPackedIdTypeSz);
+        size_t ofs = key_sz - (kPackedZeroSz + kPackedVersionSz + kPackedSeqIdTypeSz);
         rv = key[ofs] == 0;
         if (rv) {
             ++ofs;
@@ -193,9 +193,9 @@ bool CPubseqGatewayCacheBioseqInfo::UnpackKey(const char* key, size_t key_sz, in
 }
 
 bool CPubseqGatewayCacheBioseqInfo::UnpackKey(const char* key, size_t key_sz, string& accession, int& version, int& seq_id_type) {
-    bool rv = key_sz > (kPackedZeroSz + kPackedVersionSz + kPackedIdTypeSz);
+    bool rv = key_sz > (kPackedZeroSz + kPackedVersionSz + kPackedSeqIdTypeSz);
     if (rv) {
-        size_t ofs = key_sz - (kPackedZeroSz + kPackedVersionSz + kPackedIdTypeSz);
+        size_t ofs = key_sz - (kPackedZeroSz + kPackedVersionSz + kPackedSeqIdTypeSz);
         accession.assign(key, ofs);
         rv = UnpackKey(key, key_sz, version, seq_id_type);
     }
