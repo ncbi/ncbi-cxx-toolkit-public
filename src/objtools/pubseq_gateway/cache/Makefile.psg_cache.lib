@@ -5,7 +5,8 @@ LIB = psg_cache
 SRC = psg_cache psg_cache_base psg_cache_bioseq_info psg_cache_si2csi psg_cache_blob_prop
 
 CPPFLAGS = $(LMDB_INCLUDE) $(PROTOBUF_INCLUDE) $(ORIG_CPPFLAGS)
-LIBS = $(LMDB_LIBS) $(PROTOBUF_LIBS) -lpsg_protobuf $(ORIG_LIBS)
+LIBS = $(LMDB_LIBS) $(PROTOBUF_LIBS) $(ORIG_LIBS)
+LIB = psg_protobuf
 
 WATCHERS = satskyse dmitrie1
 
