@@ -799,10 +799,6 @@ ncbiNacc includes3party ncbiacc
 ncbiNacc needs3party netentr
 ncbi_id2proc_cdd needs $(COMPRESS_LIBS)
 ncbi_id2proc_cdd needs cdd_access
-ncbi_id2proc_snp needs $(COMPRESS_LIBS)
-ncbi_id2proc_snp needs $(SOBJMGR_LIBS)
-ncbi_id2proc_snp needs $(SRAREAD_LIBS)
-ncbi_id2proc_snp needs id2
 ncbi_id2proc_wgs needs $(COMPRESS_LIBS)
 ncbi_id2proc_wgs needs $(SOBJMGR_LIBS)
 ncbi_id2proc_wgs needs $(SRAREAD_LIBS)
@@ -1024,6 +1020,7 @@ psg_client needs psg_diag
 psg_client needs psg_rpc
 psg_client needs xconnect
 psg_diag needs xncbi
+psg_protobuf needs3party $(ORIG_LIBS)
 psg_rpc needs3party $(ORIG_LIBS)
 psloader-internal needs $(Z_LIB)
 psloader-internal needs3party $(SYBASE_DLLS)
