@@ -20,6 +20,11 @@ NCBI_begin_app(datatool)
   )
   NCBI_uses_toolkit_libraries(xser)
   NCBI_project_watchers(gouriano)
+
+  NCBI_set_test_timeout(600)
+  NCBI_set_test_assets(testdata)
+  NCBI_add_test(datatool.sh)
+  NCBI_add_test(datatool_xml.sh)
 NCBI_end_app()
 
 if(OFF)

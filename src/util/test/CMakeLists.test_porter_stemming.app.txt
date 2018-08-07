@@ -6,8 +6,10 @@
 NCBI_begin_app(test_porter_stemming)
   NCBI_sources(test_porter_stemming)
   NCBI_requires(Boost.Test.Included)
-  NCBI_uses_toolkit_libraries(test_boost xutil)
+  NCBI_uses_toolkit_libraries(xutil)
   NCBI_project_watchers(dicuccio)
+  NCBI_set_test_assets(porter-data.txt)
+  NCBI_add_test(test_porter_stemming -data-in porter-data.txt)
 NCBI_end_app()
 
 if(OFF)

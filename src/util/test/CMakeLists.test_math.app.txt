@@ -6,7 +6,6 @@
 NCBI_begin_app(test_math)
   NCBI_sources(test_math)
   NCBI_requires(Boost.Test.Included)
-  NCBI_uses_toolkit_libraries(test_boost)
   NCBI_project_watchers(dicuccio)
 NCBI_end_app()
 
