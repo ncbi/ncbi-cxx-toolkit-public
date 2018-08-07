@@ -397,8 +397,25 @@ endmacro()
 #############################################################################
 #############################################################################
 #############################################################################
-macro(NCBI_begin_test _name)
-    set(NCBI_TEST "${_name}")
+macro(NCBI_begin_test)
+    if(DEFINED NCBI_TEST)
+        message(SEND_ERROR "${NCBI_CURRENT_SOURCE_DIR}/${NCBI_PROJECT}: Unexpected NCBI_begin_test call")
+    endif()
+    if (DEFINED NCBITEST_${NCBI_PROJECT}_NUM)
+        math(EXPR NCBITEST_${NCBI_PROJECT}_NUM "${NCBITEST_${NCBI_PROJECT}_NUM} + 1")
+    endif()
+    if ("${ARGC}" GREATER "0")
+        set(_testname "${ARGV}")
+        if ( "${_testname}" STREQUAL "")
+            set(_testname "${NCBI_PROJECT}${NCBITEST_${NCBI_PROJECT}_NUM}")
+        endif()
+    else()
+        set(_testname "${NCBI_PROJECT}${NCBITEST_${NCBI_PROJECT}_NUM}")
+    endif()
+    set(NCBI_TEST ${_testname})
+    if (NOT DEFINED NCBITEST_${NCBI_PROJECT}_NUM)
+        set(NCBITEST_${NCBI_PROJECT}_NUM "1")
+    endif()
 endmacro()
 
 ##############################################################################
@@ -407,23 +424,33 @@ macro(NCBI_set_test_command)
     list(GET _args 0 _cmd)
     list(REMOVE_AT _args 0) 
     if ( "${_cmd}" STREQUAL "${NCBI_PROJECT}")
-        set(_cmd ${NCBI_${NCBI_PROJECT}_OUTPUT})
+        set(_cmd "${NCBI_${NCBI_PROJECT}_OUTPUT}")
     endif()
     if (NOT NCBI_EXPERIMENTAL_CFG)
-        set(_cmd ${EXECUTABLE_OUTPUT_PATH}/${_cmd})
+        set(_cmd "${EXECUTABLE_OUTPUT_PATH}/${_cmd}")
     endif()
-    set(NCBI_${NCBI_TEST}_CMD "${_cmd}")
-    set(NCBI_${NCBI_TEST}_ARG "${_args}")
-    set(NCBI_${NCBI_TEST}_DIR "${NCBI_CURRENT_SOURCE_DIR}")
+    set(NCBITEST_${NCBI_TEST}_CMD "${_cmd}")
+    set(NCBITEST_${NCBI_TEST}_ARG "${_args}")
 endmacro()
 
 ##############################################################################
 macro(NCBI_set_test_arguments)
-    if( NOT DEFINED NCBI_${NCBI_TEST}_CMD)
-        set(NCBI_${NCBI_TEST}_CMD ${NCBI_PROJECT})
-    endif()
-    set(NCBI_${NCBI_TEST}_ARG "${ARGV}")
-    set(NCBI_${NCBI_TEST}_DIR "${NCBI_CURRENT_SOURCE_DIR}")
+    set(NCBITEST_${NCBI_TEST}_ARG "${ARGV}")
+endmacro()
+
+##############################################################################
+macro(NCBI_set_test_assets)
+    set(NCBITEST_${NCBI_TEST}_ASSETS "${ARGV}")
+endmacro()
+
+##############################################################################
+macro(NCBI_set_test_timeout)
+    set(NCBITEST_${NCBI_TEST}_TIMEOUT "${ARGV}")
+endmacro()
+
+##############################################################################
+macro(NCBI_set_test_requires)
+    set(NCBITEST_${NCBI_TEST}_REQUIRES "${ARGV}")
 endmacro()
 
 ##############################################################################
@@ -434,26 +461,17 @@ endmacro()
 
 ##############################################################################
 macro(NCBI_add_test)
-    if (DEFINED NCBI_${NCBI_PROJECT}_TESTNUM)
-        math(EXPR NCBI_${NCBI_PROJECT}_TESTNUM "${NCBI_${NCBI_PROJECT}_TESTNUM} + 1")
-    endif()
-
     if ("${ARGC}" GREATER "0")
         set(_cmd "${ARGV}")
         if ( "${_cmd}" STREQUAL "")
-            set(_cmd ${NCBI_${NCBI_PROJECT}_OUTPUT})
+            set(_cmd "${NCBI_PROJECT}")
         endif()
     else()
-        set(_cmd ${NCBI_${NCBI_PROJECT}_OUTPUT})
+        set(_cmd "${NCBI_PROJECT}")
     endif()
-
-    NCBI_begin_test(${NCBI_PROJECT}${NCBI_${NCBI_PROJECT}_TESTNUM})
+    NCBI_begin_test()
     NCBI_set_test_command(${_cmd})
     NCBI_end_test()
-
-    if (NOT DEFINED NCBI_${NCBI_PROJECT}_TESTNUM)
-        set(NCBI_${NCBI_PROJECT}_TESTNUM "1")
-    endif()
 endmacro()
 
 
@@ -817,7 +835,7 @@ macro(NCBI_internal_process_project_requires)
     foreach(_req IN LISTS _all)
         string(SUBSTRING ${_req} 0 1 _sign)
         if ("${_sign}" STREQUAL "-")
-            string(SUBSTRING ${_req} 0 1 _value)
+            string(SUBSTRING ${_req} 1 -1 _value)
             set(_negate ON)
         else()
             set(_value ${_req})
@@ -1008,6 +1026,79 @@ function(NCBI_internal_process_project_filters _result)
 endfunction()
 
 ##############################################################################
+macro(NCBI_internal_process_test_requires _test)
+    set(NCBITEST_REQUIRE_NOTFOUND "")
+    set(_all ${NCBITEST__REQUIRES} ${NCBITEST_${_test}_REQUIRES})
+    if (NOT "${_all}" STREQUAL "")
+        list(REMOVE_DUPLICATES _all)
+    endif()
+
+    foreach(_req IN LISTS _all)
+        string(SUBSTRING ${_req} 0 1 _sign)
+        if ("${_sign}" STREQUAL "-")
+            string(SUBSTRING ${_req} 1 -1 _value)
+            set(_negate ON)
+        else()
+            set(_value ${_req})
+            set(_negate OFF)
+        endif()
+        if (NCBI_REQUIRE_${_value}_FOUND OR NCBI_COMPONENT_${_value}_FOUND)
+            if (_negate)
+                set(NCBITEST_REQUIRE_NOTFOUND ${NCBITEST_REQUIRE_NOTFOUND} ${_req})
+            endif()
+        else()
+            if (NOT _negate)
+                set(NCBITEST_REQUIRE_NOTFOUND ${NCBITEST_REQUIRE_NOTFOUND} ${_req})
+            endif()
+        endif()     
+    endforeach()
+endmacro()
+
+##############################################################################
+function(NCBI_internal_add_test _test)
+    if( NOT DEFINED NCBITEST_${_test}_CMD)
+        set(NCBITEST_${_test}_CMD ${NCBI_${NCBI_PROJECT}_OUTPUT})
+    endif()
+    get_filename_component(_ext ${NCBITEST_${_test}_CMD} EXT)
+    if("${_ext}" STREQUAL ".sh")
+        set(NCBITEST_${_test}_REQUIRES ${NCBITEST_${_test}_REQUIRES} -MSWin)
+        set(NCBITEST_${_test}_ASSETS ${NCBITEST_${_test}_ASSETS} ${NCBITEST_${_test}_CMD})
+    endif()
+
+    NCBI_internal_process_test_requires(${_test})
+    if ( NOT "${NCBITEST_REQUIRE_NOTFOUND}" STREQUAL "")
+        message("${NCBI_CURRENT_SOURCE_DIR}/${NCBI_PROJECT}: Test ${_test} is excluded because of unmet requirements: ${NCBITEST_REQUIRE_NOTFOUND}")
+        return()
+    endif()
+
+    if (DEFINED NCBITEST_${_test}_ASSETS)
+        set(_assets ${NCBITEST_${_test}_ASSETS})
+    elseif(DEFINED NCBITEST__ASSETS)
+        set(_assets ${NCBITEST__ASSETS})
+    endif()
+    if (DEFINED NCBITEST_${_test}_TIMEOUT)
+        set(_timeout ${NCBITEST_${_test}_TIMEOUT})
+    elseif(DEFINED NCBITEST__TIMEOUT)
+        set(_timeout ${NCBITEST__TIMEOUT})
+    else()
+        set(_timeout 86400)
+    endif()
+    string(REPLACE ";" " " _args    "${NCBITEST_${_test}_ARG}")
+    string(REPLACE ";" " " _assets   "${_assets}")
+
+    add_test(NAME ${_test} COMMAND ${CMAKE_COMMAND}
+        -DNCBITEST_NAME=${_test}
+        -DNCBITEST_CONFIG=$<CONFIG>
+        -DNCBITEST_COMMAND=${NCBITEST_${_test}_CMD}
+        -DNCBITEST_ARGS=${_args}
+        -DNCBITEST_TIMEOUT=${_timeout}
+        -DNCBITEST_BINDIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+        -DNCBITEST_SOURCEDIR=${NCBI_CURRENT_SOURCE_DIR}
+        -DNCBITEST_ASSETS=${_assets}
+        -P "${NCBITEST_DRIVER}")
+endfunction()
+
+##############################################################################
 function(NCBI_internal_add_project)
 
     if (NOT NCBI_PTBMODE_PARTS AND NOT NCBI_PTBMODE_COLLECT_DEPS AND NCBI_PTBCFG_ENABLE_COLLECTOR)
@@ -1195,8 +1286,7 @@ endif()
 
     if (DEFINED NCBI_ALLTESTS)
         foreach(_test IN LISTS NCBI_ALLTESTS)
-#message("${NCBI_PROJECT} test = ${_test}, cmd = ${NCBI_${_test}_CMD}, arg = ${NCBI_${_test}_ARG}, dir = ${NCBI_${_test}_DIR}")
-            add_test(NAME ${_test} COMMAND ${NCBI_${_test}_CMD} ${NCBI_${_test}_ARG} WORKING_DIRECTORY ${NCBI_${_test}_DIR})
+            NCBI_internal_add_test(${_test})
         endforeach()
     endif()
 

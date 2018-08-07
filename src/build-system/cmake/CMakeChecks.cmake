@@ -107,6 +107,7 @@ endif()
 
 #############################################################################
 # Testing
+set(NCBITEST_DRIVER "${NCBI_SRC_ROOT}/build-system/cmake/TestDriver.cmake")
 enable_testing()
 
 ############################################################################
