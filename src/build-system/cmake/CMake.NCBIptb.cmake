@@ -50,10 +50,20 @@
 ##      NCBI_project_tags(     list of tags)
 ##      NCBI_project_watchers( list of watchers)
 ##
-##      NCBI_add_test( test command) - empty command means run the app with no arguments
+##      Testing:
+##      short form
+##          NCBI_add_test( test command) - empty command means run the app with no arguments
+##      long form
+##          NCBI_begin_test(name) - name is optional
+##              NCBI_set_test_command(command, maybe with arguments)
+##           OR NCBI_set_test_arguments(arguments only)
+##              NCBI_set_test_assets(list of assets) - required files and directories
+##              NCBI_set_test_timeout(seconds)
+##              NCBI_set_test_requires(list of components)
+##          NCBI_end_test()
+##
 ##    NCBI_end_lib(result) or NCBI_end_app(result) - argument 'result' is optional
 ##
-
 #############################################################################
 function(NCBI_add_root_subdirectory)
 
