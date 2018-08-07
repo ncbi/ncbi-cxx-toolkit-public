@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include <condition_variable>
 #include <mutex>
 #include <string>
 #include <chrono>
@@ -42,244 +43,143 @@
 
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcCommon.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
-#include "HttpClientTransportP.hpp"
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
+
+#include "psg_client_impl.hpp"
 
 BEGIN_NCBI_SCOPE
 
-
-static_assert(is_nothrow_move_constructible<CPSG_BioId>::value, "CPSG_BioId move constructor must be noexcept");
-static_assert(is_nothrow_move_constructible<CPSG_BlobId>::value, "CPSG_BlobId move constructor must be noexcept");
-static_assert(is_nothrow_move_constructible<CPSG_Blob>::value, "CPSG_Blob move constructor must be noexcept");
 
 namespace {
 
 long RemainingTimeMs(const CDeadline& deadline)
 {
+    if (deadline.IsInfinite()) return DDRPC::INDEFINITE;
+
     unsigned int sec, nanosec;
     deadline.GetRemainingTime().GetNano(&sec, &nanosec);
     return nanosec / 1000000L + sec * 1000L;
 }
 
-template <class TOutput>
-void s_UnpackData(TOutput& output, CPSG_BlobId::SBlobInfo& blob_info, string data)
-{
-    try {
-        DDRPC::DataRow rec;
-        DDRPC::AccVerResolverUnpackData(rec, data);
-        blob_info.gi               = rec[0].AsInt8;
-        blob_info.seq_length       = rec[1].AsUint4;
-        blob_info.sat              = rec[2].AsUint1;
-        blob_info.sat_key          = rec[3].AsUint4;
-        blob_info.tax_id           = rec[4].AsUint4;
-        blob_info.last_modified    = rec[5].AsDateTime;
-        blob_info.state            = rec[6].AsUint1;
-        output.SetSuccess();
-    }
-    catch (const DDRPC::EDdRpcException& e) {
-        output.SetUnknownError(e.what());
-    }
-}
-
 }
 
 
-using TPSG_IocValue = HCT::io_coordinator;
-using TPSG_Ioc = shared_ptr<TPSG_IocValue>;
-
-using TPSG_EndPointValue = HCT::http2_end_point;
-using TPSG_EndPoint = shared_ptr<TPSG_EndPointValue>;
-using TPSG_EndPoints = unordered_map<string, TPSG_EndPoint>;
-
-using TPSG_RequestValue = HCT::http2_request;
-using TPSG_Request = shared_ptr<TPSG_RequestValue>;
-
-using TPSG_FutureValue = HCT::io_future;
-using TPSG_Future = shared_ptr<TPSG_FutureValue>;
-
-struct SHCT
+SPSG_BlobReader::SPSG_BlobReader(SPSG_Reply::SItem::TTS* blob)
+    : m_Blob(blob)
 {
-    static TPSG_IocValue& GetIoc()
-    {
-        return *m_Ioc.second;
-    }
+    assert(blob);
+}
 
-    static TPSG_EndPoint GetEndPoint(const string& service)
-    {
-        auto result = m_LocalEndPoints.find(service);
-        return result != m_LocalEndPoints.end() ? result->second : x_GetEndPoint(service);
-    }
-
-private:
-    static TPSG_EndPoint x_GetEndPoint(const string& service);
-
-    static pair<once_flag, TPSG_Ioc> m_Ioc;
-    static thread_local TPSG_EndPoints m_LocalEndPoints;
-    static pair<mutex, TPSG_EndPoints> m_EndPoints;
-};
-
-template <class TOutput>
-struct SPSG_Result
+ERW_Result SPSG_BlobReader::x_Read(void* buf, size_t count, size_t* bytes_read)
 {
-    using TStatus = typename TOutput::EStatus;
+    assert(bytes_read);
 
-    TStatus& status;
-    string& message;
+    *bytes_read = 0;
 
-    SPSG_Result(TStatus& s, string& m) : status(s), message(m) {}
+    CheckForNewChunks();
 
-    void SetSuccess()               { status = TStatus::eSuccess;       message.clear();   }
-    void SetNotFound(string m)      { status = TStatus::eNotFound;      message = move(m); }
-    void SetCanceled(string m)      { status = TStatus::eCanceled;      message = move(m); }
-    void SetTimeout(string m)       { status = TStatus::eTimeout;       message = move(m); }
-    void SetUnknownError(string m)  { status = TStatus::eUnknownError;  message = move(m); }
-};
+    for (; m_Chunk < m_Data.size(); ++m_Chunk) {
+        auto& data = m_Data[m_Chunk].data;
 
-template <class TOutput>
-struct SPSG_Output : TOutput, SPSG_Result<TOutput>
-{
-    using TStatus = typename TOutput::EStatus;
+        // Chunk has not been received yet
+        if (data.empty()) return eRW_Success;
 
-    SPSG_Output(TOutput base, TStatus& s, string& m) :
-        TOutput(move(base)),
-        SPSG_Result<TOutput>(s, m)
-    {
-    }
-};
+        for (; m_Part < data.size(); ++m_Part) {
+            auto& part = data[m_Part];
+            auto available = part.size() - m_Index;
+            auto to_copy = min(count, available);
 
-template <class TBase>
-struct SPSG_Item : TBase
-{
-    using TInput = typename TBase::TInput;
-    using TOutput = typename TBase::TOutput;
-    using TOutputSet = typename TBase::TOutputSet;
+            memcpy(buf, part.data() + m_Index, to_copy);
+            buf = (char*)buf + to_copy;
+            count -= to_copy;
+            *bytes_read += to_copy;
+            m_Index += to_copy;
 
-    SPSG_Item(const string& service, TPSG_Future afuture, TInput input);
+            if (!count) return eRW_Success;
 
-    bool AddRequest(long wait_ms) { return SHCT::GetIoc().add_request(m_Request, wait_ms); }
-
-    void WaitFor(long timeout_ms) {        m_Request->get_result_data().wait_for(timeout_ms); }
-    bool IsDone() const           { return m_Request->get_result_data().get_finished(); }
-    void Cancel()                 {        m_Request->send_cancel(); }
-
-    void Process(TOutput& output);
-
-    TPSG_Request m_Request;
-    TInput m_Input;
-};
-
-template <class TItem>
-struct SPSG_Queue
-{
-    using TInput = typename TItem::TInput;
-    using TOutput = typename TItem::TOutput;
-
-    using TInputSet = vector<TInput>;
-    using TOutputSet = typename TItem::TOutputSet;
-
-    SPSG_Queue(const string& service);
-
-    void Push(TInputSet* input_set, const CDeadline& deadline);
-    TOutputSet Pop(const CDeadline& deadline, size_t max_results);
-    void Clear(TInputSet* input_set);
-    bool IsEmpty() const;
-
-    static TOutput Execute(const string& service, TInput input, const CDeadline& deadline);
-
-private:
-    mutable pair<vector<TItem>, mutex> m_Items;
-    shared_ptr<void> m_Future;
-    string m_Service;
-};
-
-struct CPSG_BioIdResolutionQueue::SImpl
-{
-    struct SOutput : SPSG_Output<CPSG_BlobId>
-    {
-        using TBase = SPSG_Output<CPSG_BlobId>;
-        SOutput(CPSG_BlobId base) : TBase(move(base), TBase::m_Status, TBase::m_Message) {}
-    };
-
-    struct SItem
-    {
-        using TInput = CPSG_BioId;
-        using TOutput = SOutput;
-        using TOutputSet = vector<CPSG_BlobId>;
-
-        TPSG_Request Request(const string& service, TPSG_Future afuture, TInput input);
-        void Complete(TOutput& output, TPSG_Request request);
-
-        static TOutput Output(TInput input) { return TOutput(move(input)); }
-    };
-
-    using TQueue = SPSG_Queue<SPSG_Item<SItem>>;
-
-    TQueue q;
-
-    SImpl(const string& service) : q(service) {}
-};
-
-struct CPSG_BlobRetrievalQueue::SImpl
-{
-    struct SAccOutput : SPSG_Output<CPSG_Blob>
-    {
-        using TBase = SPSG_Output<CPSG_Blob>;
-        using TBlobIdResult = SPSG_Result<CPSG_BlobId>;
-
-        TBlobIdResult blob_id_result;
-
-        SAccOutput(CPSG_Blob base) :
-            TBase(move(base), TBase::m_Status, TBase::m_Message),
-            blob_id_result(TBase::m_BlobId.m_Status, TBase::m_BlobId.m_Message)
-        {
+            m_Index = 0;
         }
-    };
 
-    struct SSatOutput : SPSG_Output<CPSG_Blob>
-    {
-        using TBase = SPSG_Output<CPSG_Blob>;
-        SSatOutput(CPSG_Blob base) : TBase(move(base), TBase::m_Status, TBase::m_Message) {}
-    };
+        m_Part = 0;
+    }
 
-    struct SItem
-    {
-        using TOutputSet = vector<CPSG_Blob>;
+    auto blob_locked = m_Blob->GetLock();
+    return blob_locked->expected.Cmp<equal_to>(blob_locked->received) ? eRW_Eof : eRW_Success;
+}
 
-        TPSG_Request Request(const string& service, TPSG_Future afuture, string query);
+const auto kDefaultReadTimeout = CTimeout(12, 0); // TODO: Make configurable
 
-        unique_ptr<stringstream> m_Stream;
-    };
+ERW_Result SPSG_BlobReader::Read(void* buf, size_t count, size_t* bytes_read)
+{
+    size_t read;
+    CDeadline deadline(kDefaultReadTimeout);
 
-    struct SAccItem : SItem
-    {
-        using TInput = CPSG_BioId;
-        using TOutput = SAccOutput;
+    while (!deadline.IsExpired()) {
+        auto rv = x_Read(buf, count, &read);
 
-        TPSG_Request Request(const string& service, TPSG_Future afuture, TInput input);
-        void Complete(TOutput& output, TPSG_Request request);
+        if ((rv != eRW_Success) || (read != 0)) {
+            if (bytes_read) *bytes_read = read;
+            return rv;
+        }
 
-        static TOutput Output(TInput input) { return TOutput(CPSG_BlobId(move(input))); }
-    };
+        auto wait_ms = chrono::milliseconds(RemainingTimeMs(deadline));
+        m_Blob->WaitFor(wait_ms);
+    }
 
-    struct SSatItem : SItem
-    {
-        using TInput = CPSG_BlobId;
-        using TOutput = SSatOutput;
+    throw runtime_error("TIMEOUT"); // TODO: CPSG_Exception
+    return eRW_Error;
+}
 
-        TPSG_Request Request(const string& service, TPSG_Future afuture, TInput input);
-        void Complete(TOutput& output, TPSG_Request request);
+ERW_Result SPSG_BlobReader::PendingCount(size_t* count)
+{
+    assert(count);
 
-        static TOutput Output(TInput input) { return TOutput(move(input)); }
-    };
+    *count = 0;
 
-    using TAccQueue = SPSG_Queue<SPSG_Item<SAccItem>>;
-    using TSatQueue = SPSG_Queue<SPSG_Item<SSatItem>>;
+    CheckForNewChunks();
 
-    TAccQueue acc_q;
-    TSatQueue sat_q;
+    auto j = m_Part;
+    auto k = m_Index;
 
-    SImpl(const string& service) : acc_q(service), sat_q(service) {}
-};
+    for (auto i = m_Chunk; i < m_Data.size(); ++i) {
+        auto& data = m_Data[i].data;
+
+        // Chunk has not been received yet
+        if (data.empty()) return eRW_Success;
+
+        for (; j < data.size(); ++j) {
+            auto& part = data[j];
+            *count += part.size() - k;
+            k = 0;
+        }
+
+        j = 0;
+    }
+
+    return eRW_Success;
+}
+
+void SPSG_BlobReader::CheckForNewChunks()
+{
+    auto blob_locked = m_Blob->GetLock();
+    auto& blob = *blob_locked;
+    auto& chunks = blob.chunks;
+
+    auto it = chunks.begin();
+
+    while (it != chunks.end()) {
+        auto& args = it->args;
+        auto blob_chunk = args.GetValue("blob_chunk");
+        auto index = stoul(blob_chunk);
+        if (m_Data.size() <= index) m_Data.resize(index + 1);
+        m_Data[index] = move(*it);
+        it = chunks.erase(it);
+    }
+}
+
+
+static_assert(is_nothrow_move_constructible<CPSG_BioId>::value, "CPSG_BioId move constructor must be noexcept");
+static_assert(is_nothrow_move_constructible<CPSG_BlobId>::value, "CPSG_BlobId move constructor must be noexcept");
 
 
 pair<once_flag, TPSG_Ioc> SHCT::m_Ioc;
@@ -326,309 +226,344 @@ TPSG_EndPoint SHCT::x_GetEndPoint(const string& service)
 }
 
 
-template <class TItem>
-typename TItem::TOutput SPSG_Queue<TItem>::Execute(const string& service, TInput input, const CDeadline& deadline)
+shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* item_ts)
 {
-    TOutput output(TItem::Output(input));
-    auto future = make_shared<TPSG_FutureValue>();
-    TItem item(service, future, move(input));
-    bool has_timeout = !deadline.IsInfinite();
-    long wait_ms = has_timeout ? RemainingTimeMs(deadline) : DDRPC::INDEFINITE;
-    bool rv = item.AddRequest(wait_ms);
-    if (!rv) {
-        output.SetTimeout("Timeout on adding request");
-        return output;
+    auto reply = user_reply.lock();
+
+    assert(reply);
+    assert(item_ts);
+
+    auto item_locked = item_ts->GetLock();
+
+    item_locked->state.SetReturned();
+
+    unique_ptr<CPSG_ReplyItem::SImpl> impl(new CPSG_ReplyItem::SImpl);
+    impl->item = item_ts;
+
+    shared_ptr<CPSG_ReplyItem> rv;
+
+    auto& chunk = item_locked->chunks.front();
+    auto& args = chunk.args;
+    auto item_type = args.GetValue("item_type");
+
+    if (item_type == "blob") {
+        auto blob_id = args.GetValue("blob_id");
+
+        unique_ptr<CPSG_Blob> blob(new CPSG_Blob(blob_id));
+        blob->m_Stream.reset(new SPSG_RStream(item_ts));
+        rv.reset(blob.release());
+
+    } else {
+        // TODO
+        rv.reset(new CPSG_ReplyItem(CPSG_ReplyItem::eBlobInfo));
     }
-    while (true) {
-        if (item.IsDone()) {
-            item.Process(output);
-            return output;
-        }
-        if (has_timeout) wait_ms = RemainingTimeMs(deadline);
-        if (wait_ms <= 0) {
-            item.Cancel();
-            output.SetTimeout("Timeout on waiting result");
-            return output;
-        }
-        item.WaitFor(wait_ms);
-    }
+
+    rv->m_Impl.reset(impl.release());
+    rv->m_Reply = reply;
+    return rv;
 }
 
 
-template <class TBase>
-SPSG_Item<TBase>::SPSG_Item(const string& service, TPSG_Future afuture, TInput input)
-    :   m_Request(TBase::Request(service, afuture, input)),
-        m_Input(move(input))
+CPSG_Queue::SImpl::SRequest::SRequest(shared_ptr<const CPSG_Request> user_request,
+        shared_ptr<HCT::http2_request> http_request,
+        shared_ptr<SPSG_Reply::TTS> reply) :
+    m_UserRequest(user_request),
+    m_HttpRequest(http_request),
+    m_Reply(reply)
 {
 }
 
-template <class TBase>
-void SPSG_Item<TBase>::Process(TOutput& output)
+shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SRequest::GetNextReply()
 {
-    if (m_Request->get_result_data().get_cancelled()) {
-        output.SetCanceled("Request was canceled");
-    }
-    else if (m_Request->has_error()) {
-        output.SetUnknownError(m_Request->get_error_description());
-    }
-    else switch (m_Request->get_result_data().get_http_status()) {
-        case 200: {
-            TBase::Complete(output, m_Request);
-            break;
-        }
-        case 404: {
-            output.SetNotFound("Not found");
-            break;
-        }
-        default: {
-            output.SetUnknownError("Unexpected result");
-        }
-    }
+    auto reply_locked = m_Reply->GetLock();
 
+    // A reply has already been returned
+    if (reply_locked->reply_item.GetLock()->state.Returned()) return {};
+
+    auto returned = [](SPSG_Reply::SItem::TTS& item) { return item.GetLock()->state.Returned(); };
+    auto& items = reply_locked->items;
+
+    // No reply items to return yet
+    if (all_of(items.begin(), items.end(), returned)) return {};
+
+    reply_locked->reply_item.GetLock()->state.SetReturned();
+    reply_locked.Unlock();
+
+    shared_ptr<CPSG_Reply> rv(new CPSG_Reply);
+    rv->m_Impl->reply = m_Reply;
+    rv->m_Impl->user_reply = rv;
+    rv->m_Request = move(m_UserRequest);
+
+    return rv;
+}
+
+void CPSG_Queue::SImpl::SRequest::Reset()
+{
+    assert(m_HttpRequest);
+
+    m_HttpRequest->send_cancel();
+}
+
+bool CPSG_Queue::SImpl::SRequest::IsEmpty() const
+{
+    auto reply_locked = m_Reply->GetLock();
+
+    if (reply_locked->reply_item.GetLock()->state.InProgress()) return false;
+
+    auto& items = reply_locked->items;
+    auto returned = [](SPSG_Reply::SItem::TTS& item) { return item.GetLock()->state.Returned(); };
+
+    return all_of(items.begin(), items.end(), returned);
 }
 
 
-template <class TItem>
-SPSG_Queue<TItem>::SPSG_Queue(const string& service) :
-    m_Future(make_shared<TPSG_FutureValue>()),
+CPSG_Queue::SImpl::SImpl(const string& service) :
+    m_Requests(new SPSG_ThreadSafe<TRequests>),
     m_Service(service)
 {
+    if (m_Service.empty()) {
+        throw invalid_argument("Service name is empty"); // TODO: CPSG_Exception
+    }
 }
 
-template <class TItem>
-void SPSG_Queue<TItem>::Push(TInputSet* input_set, const CDeadline& deadline)
+bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request, CDeadline deadline)
 {
-    if (!input_set)
-        return;
-    bool has_timeout = !deadline.IsInfinite();
-    unique_lock<mutex> lock(m_Items.second);
     long wait_ms = 0;
-    auto rev_it = input_set->rbegin();
-    while (rev_it != input_set->rend()) {
+    shared_ptr<HCT::http2_request> http_request;
+    auto reply = make_shared<SPSG_Reply::TTS>();
 
-        auto future = static_pointer_cast<TPSG_FutureValue>(m_Future);
-        TItem item(m_Service, future, *rev_it);
+    if (auto request_biodata = dynamic_cast<const CPSG_Request_Biodata*>(user_request.get())) {
+        string query("seq_id=" + request_biodata->GetBioId().Get());
 
-        while (true) {
-            bool rv = item.AddRequest(wait_ms);
+        // XXX: DEBUG
+        query.append("&seq_id_type=12&fast_info=yes&whole_tse=yes&orig_tse=yes&canon_id=yes&seq_ids=yes&mol_type=yes&length=yes&state=yes&blob_id=yes&tax_id=yes&hash=yes");
 
-            if (!rv) { // internal queue is full
-                if (has_timeout) {
-                    wait_ms = RemainingTimeMs(deadline);
-                    if (wait_ms < 0)
-                        break;
-                }
-                else
-                    wait_ms = DDRPC::INDEFINITE;
-            }
-            else {
-                m_Items.first.emplace_back(move(item));
-                input_set->erase(next(rev_it.base()));
-                ++rev_it;
-                break;
-            }
+        http_request = make_shared<TPSG_RequestValue>(reply, SHCT::GetEndPoint(m_Service), m_Requests, "/ID/get", query);
+
+    } else if (auto request_blob = dynamic_cast<const CPSG_Request_Blob*>(user_request.get())) {
+        string query("blob_id=" + request_blob->GetBlobId().Get());
+        http_request = make_shared<TPSG_RequestValue>(reply, SHCT::GetEndPoint(m_Service), m_Requests, "/ID/getblob", query);
+
+    } else {
+        throw invalid_argument("UNKNOWN REQUEST TYPE"); // TODO: CPSG_Exception
+    }
+
+    for (;;) {
+        if (SHCT::GetIoc().add_request(http_request, wait_ms)) {
+            auto requests_locked = m_Requests->GetLock();
+            requests_locked->emplace_back(user_request, http_request, move(reply));
+            return true;
         }
-        if (wait_ms < 0)
-            break;
+
+        // Internal queue is full
+        wait_ms = RemainingTimeMs(deadline);
+        if (wait_ms < 0)  return false;
     }
 }
 
-template <class TItem>
-typename TItem::TOutputSet SPSG_Queue<TItem>::Pop(const CDeadline& deadline, size_t max_results)
+shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::GetNextReply(CDeadline deadline)
 {
-    TOutputSet rv;
-    bool has_limit = max_results != 0;
-    unique_lock<mutex> lock(m_Items.second);
-    if (m_Items.first.size() > 0) {
-        bool has_timeout = !deadline.IsInfinite();
-        if (has_timeout) {
-            long wait_ms = RemainingTimeMs(deadline);
-            auto& last = m_Items.first.front();
-            last.WaitFor(wait_ms);
-        }
-        for (auto rev_it = m_Items.first.rbegin(); rev_it != m_Items.first.rend(); ++rev_it) {
-            if (has_limit && max_results-- == 0)
-                break;
-            if (rev_it->IsDone()) {
-                auto fw_it = next(rev_it).base();
-                auto output = TItem::Output(move(fw_it->m_Input));
-                rev_it->Process(output);
-                rv.push_back(move(output));
-                m_Items.first.erase(fw_it);
+    for (;;) {
+        auto requests_locked = m_Requests->GetLock();
+
+        auto it = requests_locked->begin();
+        
+        while (it != requests_locked->end()) {
+            if (auto rv = it->GetNextReply()) return rv;
+
+            if (it->IsEmpty()) {
+                it = requests_locked->erase(it);
+            } else {
+                ++it;
             }
         }
+
+        requests_locked.Unlock();
+
+        if (deadline.IsExpired()) return {};
+
+        auto wait_ms = chrono::milliseconds(RemainingTimeMs(deadline));
+        m_Requests->WaitFor(wait_ms);
     }
-    return rv;
 }
 
-template <class TItem>
-void SPSG_Queue<TItem>::Clear(TInputSet* input_set)
+void CPSG_Queue::SImpl::Reset()
 {
-    unique_lock<mutex> lock(m_Items.second);
-    if (input_set) {
-        input_set->clear();
-        input_set->reserve(m_Items.first.size());
+    auto requests_locked = m_Requests->GetLock();
+
+    for (auto& request : *requests_locked) {
+        request.Reset();
     }
-    for (auto& it : m_Items.first) {
-        it.Cancel();
-        if (input_set)
-            input_set->emplace_back(move(it.m_Input));
+
+    requests_locked->clear();
+}
+
+bool CPSG_Queue::SImpl::IsEmpty() const
+{
+    auto requests_locked = m_Requests->GetLock();
+
+    for (auto& request : *requests_locked) {
+        if (!request.IsEmpty()) return false;
     }
-    m_Items.first.clear();
+
+    return true;
 }
 
-template <class TItem>
-bool SPSG_Queue<TItem>::IsEmpty() const
+
+template <class TTsPtr>
+EPSG_Status s_GetStatus(TTsPtr ts, CDeadline deadline)
 {
-    unique_lock<mutex> lock(m_Items.second);
-    return m_Items.first.size() == 0;
+    assert(ts);
+
+    for (;;) {
+        switch (ts->GetLock()->state.GetState()) {
+            case SPSG_Reply::SState::eSuccess:  return EPSG_Status::eSuccess;
+            case SPSG_Reply::SState::eCanceled: return EPSG_Status::eCanceled;
+            case SPSG_Reply::SState::eNotFound: return EPSG_Status::eNotFound;
+            case SPSG_Reply::SState::eError:    return EPSG_Status::eError;
+
+            default: // SPSG_Reply::SState::eInProgress;
+                if (deadline.IsExpired()) return EPSG_Status::eInProgress;
+        }
+
+        auto wait_ms = chrono::milliseconds(RemainingTimeMs(deadline));
+        ts->WaitFor(wait_ms);
+    }
 }
 
-
-TPSG_Request CPSG_BioIdResolutionQueue::SImpl::SItem::Request(const string& service, TPSG_Future afuture, TInput input)
+EPSG_Status CPSG_ReplyItem::GetStatus(CDeadline deadline) const
 {
-    auto rv = make_shared<TPSG_RequestValue>();
-    rv->init_request(SHCT::GetEndPoint(service), afuture, "/ID/resolve", "accession=" + input.GetId());
-    return rv;
+    assert(m_Impl);
+
+    return s_GetStatus(m_Impl->item, deadline);
 }
 
-void CPSG_BioIdResolutionQueue::SImpl::SItem::Complete(TOutput& output, TPSG_Request request)
+string CPSG_ReplyItem::GetNextMessage() const
 {
-    s_UnpackData(output, output.m_BlobInfo, request->get_reply_data_move());
+    assert(m_Impl);
+    assert(m_Impl->item);
+
+    return m_Impl->item->GetLock()->state.GetError();
+}
+
+CPSG_ReplyItem::~CPSG_ReplyItem()
+{
+}
+
+CPSG_ReplyItem::CPSG_ReplyItem(EType type) :
+    m_Type(type)
+{
 }
 
 
-CPSG_BioIdResolutionQueue::CPSG_BioIdResolutionQueue(const string& service) :
+CPSG_Blob::CPSG_Blob(CPSG_BlobId id) :
+    CPSG_ReplyItem(eBlob),
+    m_Id(move(id))
+{
+}
+
+
+CPSG_BlobInfo::CPSG_BlobInfo()
+    : CPSG_ReplyItem(eBlobInfo)
+{
+}
+
+
+CPSG_BioseqInfo::CPSG_BioseqInfo()
+    : CPSG_ReplyItem(eBioseqInfo)
+{
+}
+
+
+CPSG_Reply::CPSG_Reply() :
+    m_Impl(new SImpl)
+{
+}
+
+EPSG_Status CPSG_Reply::GetStatus(CDeadline deadline) const
+{
+    assert(m_Impl);
+    auto reply_item = &m_Impl->reply->GetLock()->reply_item;
+
+    // Do not hold lock on reply around this call!
+    return s_GetStatus(reply_item, deadline);
+}
+
+string CPSG_Reply::GetNextMessage() const
+{
+    assert(m_Impl);
+    assert(m_Impl->reply);
+
+    return m_Impl->reply->GetLock()->reply_item.GetLock()->state.GetError();
+}
+
+shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
+{
+    assert(m_Impl);
+    assert(m_Impl->reply);
+
+    for (;;) {
+        auto reply_locked = m_Impl->reply->GetLock();
+
+        for (auto& item_ts : reply_locked->items) {
+            if (item_ts.GetLock()->state.Returned()) continue;
+
+            if (item_ts.GetLock()->chunks.empty()) continue;
+
+            // Do not hold lock on item_ts around this call!
+            return m_Impl->Create(&item_ts);
+        }
+
+        if (deadline.IsExpired()) return {};
+
+        auto reply_item = &reply_locked->reply_item;
+
+        // No more reply items
+        if (!reply_item->GetLock()->state.InProgress()) {
+            return shared_ptr<CPSG_ReplyItem>(new CPSG_ReplyItem(CPSG_ReplyItem::eEndOfReply));
+        }
+
+        reply_locked.Unlock();
+
+        auto wait_ms = chrono::milliseconds(RemainingTimeMs(deadline));
+        reply_item->WaitFor(wait_ms);
+    }
+
+    return {};
+}
+
+CPSG_Reply::~CPSG_Reply()
+{
+}
+
+
+CPSG_Queue::CPSG_Queue(const string& service) :
     m_Impl(new SImpl(service))
 {
 }
 
-CPSG_BioIdResolutionQueue::~CPSG_BioIdResolutionQueue()
+CPSG_Queue::~CPSG_Queue()
 {
 }
 
-void CPSG_BioIdResolutionQueue::Resolve(TPSG_BioIds* bio_ids, const CDeadline& deadline)
+bool CPSG_Queue::SendRequest(shared_ptr<CPSG_Request> request, CDeadline deadline)
 {
-    m_Impl->q.Push(bio_ids, deadline);
+    return m_Impl->SendRequest(const_pointer_cast<const CPSG_Request>(request), deadline);
 }
 
-CPSG_BlobId CPSG_BioIdResolutionQueue::Resolve(const string& service, CPSG_BioId bio_id, const CDeadline& deadline)
+shared_ptr<CPSG_Reply> CPSG_Queue::GetNextReply(CDeadline deadline)
 {
-    return SImpl::TQueue::Execute(service, bio_id, deadline);
+    return m_Impl->GetNextReply(deadline);
 }
 
-TPSG_BlobIds CPSG_BioIdResolutionQueue::GetBlobIds(const CDeadline& deadline, size_t max_results)
+void CPSG_Queue::Reset()
 {
-    return m_Impl->q.Pop(deadline, max_results);
+    m_Impl->Reset();
 }
 
-void CPSG_BioIdResolutionQueue::Clear(TPSG_BioIds* bio_ids)
+bool CPSG_Queue::IsEmpty() const
 {
-    m_Impl->q.Clear(bio_ids);
-}
-
-bool CPSG_BioIdResolutionQueue::IsEmpty() const
-{
-    return m_Impl->q.IsEmpty();
-}
-
-
-TPSG_Request CPSG_BlobRetrievalQueue::SImpl::SItem::Request(const string& service, TPSG_Future afuture, string query)
-{
-    m_Stream.reset(new stringstream);
-    auto rv = make_shared<TPSG_RequestValue>(m_Stream.get());
-    rv->init_request(SHCT::GetEndPoint(service), afuture, "/ID/getblob", move(query));
-    return rv;
-}
-
-
-TPSG_Request CPSG_BlobRetrievalQueue::SImpl::SAccItem::Request(const string& service, TPSG_Future afuture, TInput input)
-{
-    string query("accession=" + input.GetId());
-    return SItem::Request(service , afuture, move(query));
-}
-
-void CPSG_BlobRetrievalQueue::SImpl::SAccItem::Complete(TOutput& output, TPSG_Request)
-{
-    uint32_t data_size = 0;
-    m_Stream->read(reinterpret_cast<char*>(&data_size), sizeof(data_size));
-    data_size = ntohl(data_size);
-    
-    string data(data_size, 0);
-    m_Stream->read(&data.front(), data.size());
-    s_UnpackData(output.blob_id_result, output.m_BlobId.m_BlobInfo, data);
-
-    auto blob_size = m_Stream->str().size() - data_size - sizeof(data_size);
-    string blob(blob_size, 0);
-    m_Stream->read(&blob.front(), blob.size());
-    m_Stream->str(blob);
-
-    output.m_Stream = move(m_Stream);
-    output.SetSuccess();
-}
-
-
-TPSG_Request CPSG_BlobRetrievalQueue::SImpl::SSatItem::Request(const string& service, TPSG_Future afuture, TInput input)
-{
-    const auto& info = input.GetBlobInfo();
-    string query("sat=" + to_string(info.sat) + "&sat_key=" + to_string(info.sat_key));
-    return SItem::Request(service , afuture, move(query));
-}
-
-void CPSG_BlobRetrievalQueue::SImpl::SSatItem::Complete(TOutput& output, TPSG_Request)
-{
-    output.m_Stream = move(m_Stream);
-    output.SetSuccess();
-}
-
-
-CPSG_BlobRetrievalQueue::~CPSG_BlobRetrievalQueue()
-{
-}
-
-
-CPSG_BlobRetrievalQueue::CPSG_BlobRetrievalQueue(const string& service) :
-    m_Impl(new SImpl(service))
-{
-}
-
-void CPSG_BlobRetrievalQueue::Retrieve(TPSG_BioIds* bio_ids, const CDeadline& deadline)
-{
-    m_Impl->acc_q.Push(bio_ids, deadline);
-}
-
-CPSG_Blob CPSG_BlobRetrievalQueue::Retrieve(const string& service, CPSG_BioId bio_id, const CDeadline& deadline)
-{
-    return SImpl::TAccQueue::Execute(service, bio_id, deadline);
-}
-
-void CPSG_BlobRetrievalQueue::Retrieve(TPSG_BlobIds* blob_ids, const CDeadline& deadline)
-{
-    m_Impl->sat_q.Push(blob_ids, deadline);
-}
-
-CPSG_Blob CPSG_BlobRetrievalQueue::Retrieve(const string& service, CPSG_BlobId blob_id, const CDeadline& deadline)
-{
-    return SImpl::TSatQueue::Execute(service, blob_id, deadline);
-}
-
-TPSG_Blobs CPSG_BlobRetrievalQueue::GetBlobs(const CDeadline& deadline, size_t max_results)
-{
-    auto acc_rv = m_Impl->acc_q.Pop(deadline, max_results);
-    auto sat_rv = m_Impl->sat_q.Pop(deadline, max_results);
-    acc_rv.insert(acc_rv.end(), make_move_iterator(sat_rv.begin()), make_move_iterator(sat_rv.end()));
-    return acc_rv;
-}
-
-void CPSG_BlobRetrievalQueue::Clear(TPSG_BioIds* bio_ids, TPSG_BlobIds* blob_ids)
-{
-    m_Impl->acc_q.Clear(bio_ids);
-    m_Impl->sat_q.Clear(blob_ids);
-}
-
-bool CPSG_BlobRetrievalQueue::IsEmpty() const
-{
-    return m_Impl->acc_q.IsEmpty() && m_Impl->sat_q.IsEmpty();
+    return m_Impl->IsEmpty();
 }
 
 

@@ -26,333 +26,564 @@
  *
  * ===========================================================================
  *
- * Authors: Denis Vakatov, Rafael Sadyrov
+ * Authors: Denis Vakatov (design), Rafael Sadyrov (implementation)
  *
  */
 
-#include <objects/id2/ID2_Blob_Id.hpp>
-#include <objects/id2/ID2_Reply_Get_Blob_Id.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_url.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+
+#ifdef NCBI_NAMED_ANNOTS_IMPLEMENTED
+#include <objects/seqsplit/ID2S_Seq_annot_Info.hpp>
+#endif  /* NCBI_NAMED_ANNOTS_IMPLEMENTED */
 
 
 BEGIN_NCBI_SCOPE
 
 
-/// Bio-id (such as accession), plus optional user-provided context data
+/// Request to the PSG server (one of: CPSG_Request_Biodata, CPSG_Request_Blob)
+///
+
+class CPSG_Request
+{
+public:
+    /// Get the user-provided context
+    template<typename TUserContext>
+    shared_ptr<TUserContext> GetUserContext() const
+    { return static_pointer_cast<TUserContext>(m_UserContext.lock()); }
+
+protected:
+    CPSG_Request(weak_ptr<void> user_context = {})
+        : m_UserContext(user_context)
+    {}
+
+    virtual ~CPSG_Request() = default;
+
+private:
+    weak_ptr<void>  m_UserContext;
+};
+
+
+
+/// Bio-id (such as accession)
 ///
 class CPSG_BioId
 {
 public:
-    /// Base class for user-provided context data (optional)
-    struct IContext
-    {
-        virtual ~IContext()  {}
-    };
-
     /// @param id
     ///  Bio ID (like accession)
-    /// @param ctx
-    ///  User-provided context (owned by the caller)
-    CPSG_BioId(string id, IContext* ctx = nullptr)
-        : m_Id(move(id)), m_Context(ctx)  {}
+    CPSG_BioId(string id) : m_Id(move(id)) {}
 
-    const string&   GetId()      const  { return m_Id;      }
-    const IContext* GetContext() const  { return m_Context; }
+    const string& Get() const { return m_Id; }
 
 private:
-    string    m_Id;
-    IContext* m_Context;
+    string m_Id;
 };
 
 
-typedef vector<CPSG_BioId> TPSG_BioIds;
+
+/// Request to the PSG server (by bio-id, for a biodata specific info and data)
+///
+
+class CPSG_Request_Biodata : public CPSG_Request
+{
+public:
+    /// 
+    CPSG_Request_Biodata(CPSG_BioId      bio_id,
+                         weak_ptr<void>  user_context = {})
+        : CPSG_Request(user_context),
+          m_BioId(bio_id)
+    {}
+
+    const CPSG_BioId& GetBioId() const { return m_BioId; }
+
+    /// Specify which info and data is needed
+    enum EIncludeData {
+        /// Only the info
+        /// @NOTE  Incompatible with the "fWholeTSE" and "fOrigTSE")
+        fNoTSE     = (1 << 0),
+
+        /// Only the "fast" info
+        /// @note  Ignored if other flags require the "slow" info to be used
+        fFastInfo  = (1 << 1),
+
+        /// By default (unless "fNoTSE" flag is set):
+        /// - if the TSE blob is split, then only the blob containing its split
+        ///   info will be retrieved;
+        /// - if the blob is not split, then the whole original TSE will be
+        ///   retrieved.
+        /// This flag forces the retrieval of the whole TSE. If it is set then:
+        /// - if the TSE blob is split, then all its split info and split data
+        ///   info will be retrieved;
+        /// - if the blob is not split, then the whole original TSE will be
+        ///   retrieved.
+        fWholeTSE  = (1 << 2),
+
+        /// Retrieve the whole original(!) TSE blob
+        fOrigTSE   = (1 << 3),
+
+        // These flags correspond exactly to the CPSG_BioseqInfo's getters
+        fCanonicalId      = (1 <<  4),
+        fOtherIds         = (1 <<  5),
+        fMoleculeType     = (1 <<  6),
+        fLength           = (1 <<  7),
+        fState            = (1 <<  8),
+        fBlobId           = (1 <<  9),
+        fTaxId            = (1 << 10),
+        fHash             = (1 << 11)
+    };
+    typedef int TIncludeData;   // Bit-set of EIncludeData flags
+    void IncludeData(TIncludeData include);
+
+private:
+    CPSG_BioId    m_BioId;
+    TIncludeData  m_IncludeData;
+
+#ifdef NCBI_NAMED_ANNOTS_IMPLEMENTED
+public:
+    enum EAnnotTypes {
+        fGene       = (1 << 0),  ///<
+        fFeatTable  = (1 << 1),  ///< 
+        fAlign      = (1 << 2),  ///<
+        fGraph      = (1 << 3),  ///<
+        fSeqTable   = (1 << 4)   ///<
+    };
+    typedef int TAnnotTypes;  // Bitset of CSeq_annot::C_Data::E_Choice
+    void IncludeNamedAnnot(CTempString               annot_name,
+                           TAnnotTypes               types     = 0 /*all*/,
+                           vector<objects::CSeq_loc> locations = {});
+private:
+    struct SIncludeNamedAnnot {
+        string                     annot_name;
+        TAnnotTypes                types;
+        vector<objects::CSeq_loc>  locations;
+    };
+    typedef list<SIncludeNamedAnnot> TIncludeNamedAnnots;
+    TIncludeNamedAnnots m_IncludeNamedAnnots;
+#endif  /* NCBI_NAMED_ANNOTS_IMPLEMENTED */
+};
 
 
 
-/// The generic part of the results of id resolution
+/// Data blob unique ID
 ///
 class CPSG_BlobId
 {
 public:
-    /// Blob storage location and other attributes
-    struct SBlobInfo
-    {
-        objects::CID2_Blob_Id::TSat                   sat           = {};
-        objects::CID2_Blob_Id::TSat_key               sat_key       = {};
-        objects::CID2_Reply_Get_Blob_Id::TBlob_state  state         = {};
-        TGi                                           gi            = {};
-        time_t                                        last_modified = {};
-        TTaxId                                        tax_id        = {};
-        Uint8                                         seq_length    = {};
-    };
+    /// Mainstream blob ID ctor - from a string ID
+    /// @param id
+    ///  Blob ID
+    CPSG_BlobId(string id) : m_Id(move(id)) {}
 
-    /// Get info about the blob (obtained as a result of its id resolving)
-    /// @throw
-    ///  If not in "eResolved" state
-    const SBlobInfo& GetBlobInfo() const  { return m_BlobInfo; }
+    /// Historical blob ID system -- based on the "satellite" and the "key"
+    /// inside it. It'll be translated into "<sat>.<sat_key>" string.
+    /// @sa  objects::CID2_Blob_Id::TSat, objects::CID2_Blob_Id::TSat_key
+    CPSG_BlobId(int sat, int sat_key);
 
-    /// Resolution result
-    /// @sa GetStatus
-    enum EStatus {
-        eSuccess,       ///< Successfully resolved
-        eNotFound,      ///< Not found
-        eCanceled,      ///< Request canceled
-        eTimeout,       ///< Timeout
-        eUnknownError   ///< Unknown error
-    };
-
-    /// Get result of this id resolution
-    EStatus GetStatus() const  { return m_Status; }
-
-    /// Unstructured text containing auxiliary info about the result
-    const string& GetMessage() const  { return m_Message; };
-
-    /// Get the bio-blob id (such as an accession) which this result is for
-    const CPSG_BioId& GetBioId() const  { return m_BioId; }
+    /// Get the blob ID
+    const string& Get() const { return m_Id; }
 
 private:
-    CPSG_BlobId(CPSG_BioId bio_id) : m_BioId(move(bio_id))  {}
-
-    CPSG_BioId  m_BioId;
-    SBlobInfo   m_BlobInfo;
-    EStatus     m_Status = eUnknownError;
-    string      m_Message;
-
-    friend class CPSG_BioIdResolutionQueue;
-    friend class CPSG_BlobRetrievalQueue;
+    string m_Id;
 };
 
 
-typedef vector<CPSG_BlobId> TPSG_BlobIds;
 
+/// Request to the PSG server (by blob-id, for a particular blob of data)
+///
 
-
-/// A queue to resolve "biological" blob ids (such as accessions) into the
-/// storage specific blob ids.
-///
-/// Add more bio ids to resolve using Resolve(), then get the resolved
-/// blob ids using GetBlobIds().
-///
-/// All methods are MT-safe.
-///
-/// The queue object can be used from more than one thread, either to add ids
-/// or to retrieve the resolved ids, in any order thereof.
-/// Resolution results for the ids which were added to a given instance of
-/// the queue will be available for retrieval using this (and only this) queue
-/// instance regardless of which threads were used to add the ids to the queue.
-///
-class CPSG_BioIdResolutionQueue
+class CPSG_Request_Blob : public CPSG_Request
 {
 public:
-    /// @param service
-    ///  Either a name of service (which can be resolved into a set of PSG
-    ///  servers) or a single fixed PSG server (in format "host:port")
-    CPSG_BioIdResolutionQueue(const string& service);
-    ~CPSG_BioIdResolutionQueue();
+    /// 
+    CPSG_Request_Blob(CPSG_BlobId     blob_id,
+                      weak_ptr<void>  user_context = {})
+        : CPSG_Request(user_context),
+          m_BlobId(blob_id)
+    {}
 
-    /// Schedule more bio-ids for resolution
-    /// @note
-    ///  If more than one thread is blocked on adding new set of bio-ids to the
-    ///  queue, then (when the queue gets free slots) one of the threads gets
-    ///  to add all (or part) of its bio-ids to the queue. Other threads will
-    ///  continue waiting (unless there is more free space left).
-    /// @param bio_ids
-    ///  List of bio-blob ids (such as accessions) to resolve.
-    ///  Those bio-blob ids from the "bio_ids" container that make it
-    ///  into the queue will be removed from the "bio_ids" container.
-    /// @param deadline
-    ///  For how long to try to push the bio-ids into the queue.
-    void Resolve(TPSG_BioIds*     bio_ids,
-                 const CDeadline& deadline = 0);
+    const CPSG_BlobId& GetBlobId() const { return m_BlobId; }
 
-    /// Perform a single bio-id resolution, synchronously
-    static CPSG_BlobId Resolve(const string&    service,
-                               CPSG_BioId       bio_id,
-                               const CDeadline& deadline = CDeadline::eInfinite);
+private:
+    CPSG_BlobId m_BlobId;
+};
 
-    /// Retrieve results of the id resolution that are currently ready.
-    /// @note
-    ///  If more than one thread tries to retrieve id resolution results, then
-    ///  one of the threads gets the results as they become ready; other
-    ///  threads will continue waiting.
-    /// @param deadline
-    ///  Until when to wait for the results to get ready for retrieval.
-    ///  If no resolution results are ready by the deadline expiration time,
-    ///  then return empty container.
-    /// @param max_results
-    ///  Return no more than that number of results. Zero means no limit.
-    /// @return
-    ///  List of id resolution results
-    /// @throw
-    ///  If unrecoverable retrieval error has been detected.
-    TPSG_BlobIds GetBlobIds(const CDeadline& deadline = 0,
-                            size_t           max_results = 0);
 
-    /// Cancel all ongoing retrievals and return all not yet resolved bio-ids.
-    /// You can continue working with the queue after that in a usual manner.
-    /// If any of the bio-id resolution results are available they can
-    /// be subsequently retrieved by calling GetBlobIds() method.
-    /// @param bio_ids
-    ///  The not yet resolved bio-ids will be added to "bio_ids". If "bio_ids"
-    ///  is NULL, then they be discarded.
-    void Clear(TPSG_BioIds* bio_ids);
 
-    /// TRUE if there is nothing left in the queue (whether resolved or not)
-    bool IsEmpty() const;
+/// Retrieval result
+/// @sa GetStatus
+enum class EPSG_Status {
+    eSuccess,       ///< Successfully retrieved
+    eInProgress,    ///< Retrieval is not finalized yet, more info may come
+    eNotFound,      ///< Not found
+    eCanceled,      ///< Request canceled
+
+    /// An error was encountered while trying to send request or to read
+    /// and to process the reply.
+    /// If PSG server sends a message with severity:
+    /// - Error, Critical or Fatal -- this status will be set, and any data
+    ///   data in the reply item must be considered invalid; such messages
+    ///   will also be logged by the client API with severity Error.
+    /// - Trace, Info or Warning -- are considered to be informational, so
+    ///   these do NOT affect the status; such messages however will still
+    ///   be logged by the client API with the same (T, I or W) severity. 
+    eError
+};
+
+
+
+class CPSG_Reply;
+
+
+
+/// A self-containing part of the reply, e.g. a meta-data or a data blob.
+
+class CPSG_ReplyItem
+{
+public:
+    enum EType {
+        eBlob,
+        eBlobInfo,
+        eBioseqInfo,
+        eEndOfReply,    ///< No more items expected in the (overall!) reply
+    };
+
+    EType GetType() const { return m_Type; }
+
+    /// Get the final result of this blob's retrieval.
+    /// If the blob retrieval is not finalized by the deadline, then
+    /// "eInProgress" is returned.
+    EPSG_Status GetStatus(CDeadline deadline) const;
+
+    /// Unstructured text containing auxiliary info about the result --
+    /// such as messages and errors that came from the PSG server or occured
+    /// while trying to send request or to read and to process the reply.
+    string GetNextMessage() const;
+
+    /// Get the reply that contains this item
+    shared_ptr<CPSG_Reply> GetReply() const { return m_Reply; }
+
+    /// Get actual reply item
+    template <class TReplyItem>
+    TReplyItem* CastTo() { return dynamic_cast<TReplyItem*>(this); }
+    template <class TReplyItem>
+    const TReplyItem* CastTo() const { return dynamic_cast<const TReplyItem*>(this); }
+
+    virtual ~CPSG_ReplyItem();
+
+protected:
+    CPSG_ReplyItem(EType type);
 
 private:
     struct SImpl;
-    unique_ptr<SImpl> m_Impl;
+    unique_ptr<SImpl>      m_Impl;
+    shared_ptr<CPSG_Reply> m_Reply;
+    const EType            m_Type;
+
+    friend class CPSG_Reply;
 };
 
 
 
-/// Blob that is ready to get its data retrieved
-///
-class CPSG_Blob
+/// Data blob.
+
+class CPSG_Blob : public CPSG_ReplyItem
 {
 public:
-    /// Get retrieved data
-    istream& GetStream()  { return *m_Stream; }
+    /// Get blob ID
+    const CPSG_BlobId& GetId() const { return m_Id; }
 
-    /// Retrieval result
-    /// @sa GetStatus
-    enum EStatus {
-        eSuccess,       ///< Successfully retrieved
-        eNotFound,      ///< Not found
-        eCanceled,      ///< Request canceled
-        eTimeout,       ///< Timeout
-        eUnknownError   ///< Unknown error
-    };
-
-    /// Get result of this blob retrieval
-    EStatus GetStatus() const  { return m_Status; }
-
-    /// Unstructured text containing auxiliary info about the result
-    const string& GetMessage() const  { return m_Message; };
-
-    /// Get the blob id which this blob is for
-    const CPSG_BlobId& GetBlobId() const  { return m_BlobId; };
+    /// Get the stream from which to read the item's content.
+    /// @note  If no content, then reading from the stream will result in EOF.
+    istream& GetStream() const { return *m_Stream; }
 
 private:
-    CPSG_Blob(CPSG_BlobId blob_id) : m_BlobId(move(blob_id))  {}
+    CPSG_Blob(CPSG_BlobId id);
 
-    CPSG_BlobId         m_BlobId;
+    CPSG_BlobId         m_Id;
     unique_ptr<istream> m_Stream;
-    EStatus             m_Status = eUnknownError;
-    string              m_Message;
 
-    friend class CPSG_BlobRetrievalQueue;
+    friend class CPSG_Reply;
 };
 
 
-typedef vector<CPSG_Blob> TPSG_Blobs;
+
+/// Data blob meta information
+///
+/// @note  Most of the data comes from table "BIOSEQ_BLOB" or "ANNOT_BLOB".
+
+class CPSG_BlobInfo : public CPSG_ReplyItem
+{
+public:
+    /// Get blob ID
+    CPSG_BlobId GetId() const;
+
+    /// Get data compression algorithm: gzip, bzip2, zip, compress, nlmzip, ...
+    /// Return empty string if the blob is not compressed
+    string GetCompression() const;
+
+    /// Get data serialization format:  asn.1, asn1-text, json, xml, ...
+    string GetFormat() const;
+
+    /// Get content type:  seq-entry, seq-annot, id2s-split-info, id2s-chunk
+    string GetContentType() const;
+
+    /// Get blob version (the larger the version the fresher the blob data)
+    Uint8 GetVersion() const;
+
+    /// Get size of the blob (as it is stored)
+    Uint8 GetStorageSize() const;
+
+    /// Get size of the real (before any compression or encryption) blob data
+    Uint8 GetSize() const;
+
+    /// Return TRUE if the blob is "dead"
+    bool IsDead() const;
+
+    /// Return TRUE if the blob is "suppressed"
+    bool IsSuppressed() const;
+
+    /// Return TRUE if the blob is only temporarily "suppressed"
+    bool IsSuppressedTemporarily() const;
+
+    /// Return TRUE if the blob is "withdrawn"
+    bool IsWithdrawn() const;
+
+    /// Date when the blob will be released for public use.
+    /// If the blob is already released, then return "empty" (IsEmpty()) time
+    CTime GetHupReleaseDate() const;
+
+    /// Blob owner's ID
+    Uint8 GetOwner() const;
+
+    /// Date when the blob was first loaded into the database
+    CTime GetOriginalLoadDate() const;
+
+    /// Class of this blob
+    objects::CBioseq_set::EClass GetClass() const;
+
+    /// Internal division value (used by various dumpers)
+    string GetDivision() const;
+
+    /// Name of the user who loaded this blob
+    string GetUsername() const;
+
+    /// Types of the ID2 split info
+    enum ESplitInfo {
+        eSplitShell,  ///< Blob that contains shell (skeleton) of the bioseq
+        eSplitInfo    ///< Blob that contains split info for the bioseq
+    };
+
+    /// Get coordinates of the blob that contains the specified ID2 split info.
+    /// If the blob is not split, then return an empty blob id. Also return
+    /// empty blob id for the (newer) split blob's "info part" when the latter
+    /// is put into the "shell" blob.
+    CPSG_BlobId GetSplitInfoBlobId(ESplitInfo split_info_type) const;
+
+
+#ifdef NCBI_NAMED_ANNOTS_IMPLEMENTED
+    /// For the blobs containing (named) annotations, this gives a bird's eye
+    /// description about which types of annotations the blob contains,
+    /// and where they are located on the bio-sequence
+    vector<objects::CID2S_Seq_annot_Info> GetAnnotInfo() const;
+#endif  /* NCBI_NAMED_ANNOTS_IMPLEMENTED */
+
+private:
+    CPSG_BlobInfo();
+
+    friend class CPSG_Reply;
+};
 
 
 
-/// A queue to retrieve blob data from the storage.
+/// Bio-sequence metainfo -- result of the bio-id resolution.
 ///
-/// Call Retrieve() to schedule more blobs to retrieve (by their bio-ids or
-/// blob-ids). Then, call GetBlobs() to get the blobs that are ready for
-/// immediate retrieval.
+/// It can be used to identify which data blobs (related to the requested
+/// bio-id retrieval) server is sending right away. It also contains
+/// resolution information as well as the information about which
+/// other biodata-related blobs are also available on the server and how
+/// they can be explicitly requested for later retrieval, if needed.
 ///
-/// All methods are MT-safe.
+/// @note
+///  Most of the data comes from table "BIOSEQ_INFO" and from the named
+///  annotation tables.
+
+class CPSG_BioseqInfo : public CPSG_ReplyItem
+{
+public:
+    /// Get canonical bio-id for the bioseq (usually "accession.version")
+    CPSG_BioId GetCanonicalId() const;
+
+    /// Get non-canonical bio-ids (aliases) for the bioseq
+    vector<CPSG_BioId> GetOtherIds() const;
+
+    /// The bioseq's molecule type (DNA, RNA, protein, etc)
+    objects::CSeq_inst::TMol GetMoleculeType() const;
+
+    /// Length of bio-sequence
+    Uint8 GetLength() const;
+
+    /// State of bio-sequence
+    typedef int TBioseqState;
+    TBioseqState GetState() const;
+
+    /// Get coordinates of the TSE blob that contains the bioseq itself
+    CPSG_BlobId GetBlobId() const;
+
+    /// Get coordinates of a chunk blob -- from the chunk's serial number.
+    /// @throw  If the blob has not been splitted.
+    CPSG_BlobId GetChunkBlobId(unsigned split_chunk_no) const;
+
+#ifdef NCBI_NAMED_ANNOTS_IMPLEMENTED
+    /// Get list of blobs containing (named) annotations (only those matching
+    /// the request's parameters!) for the bioseq.
+    vector<CPSG_BlobInfo> GetAnnotBlobs() const;
+#endif  /* NCBI_NAMED_ANNOTS_IMPLEMENTED */
+
+    /// Get the bioseq's taxonomy ID
+    TTaxId GetTaxId() const;
+
+    /// Get the bioseq's (pre-calculated) hash
+    int GetHash() const;
+
+    /// What data is immediately available now. Other data will require
+    /// a separate hit to the server.
+    /// @sa CPSG_Request_Biodata::IncludeData()
+    CPSG_Request_Biodata::TIncludeData IncludedData() const;
+
+private:
+    CPSG_BioseqInfo();
+
+    friend class CPSG_Reply;
+};
+
+
+
+/// PSG reply -- corresponds to a PSG request. It is used to retrieve data 
+/// (accession resolution; bio-sequence; annotation blobs) from the storage.
+/// 
+/// Reply may contain:  
+///  - Reply items (CPSG_ReplyItem), each of which in turn may contain
+///    item-specific info and/or data blob
+///  - Server messages related to the whole reply  
+/// 
+
+class CPSG_Reply
+{
+public:
+    /// Get the final result of this whole reply's retrieval.
+    /// If the reply retrieval is not finalized by the deadline, then
+    /// "eInProgress" is returned.
+    EPSG_Status GetStatus(CDeadline deadline) const;
+
+    /// Unstructured text containing auxiliary info about the result --
+    /// such as messages and errors that came from the PSG server or occured
+    /// while trying to send request or to read and to process the reply.
+    string GetNextMessage() const;
+
+    /// Get the request that resulted in this reply
+    shared_ptr<const CPSG_Request> GetRequest() const { return m_Request; }
+
+    /// Get the next item which has started arriving from the server.
+    /// @note
+    ///  Some of the item's data may still be in transit or not even sent
+    ///  in by the server yet.
+    /// @param deadline
+    ///  Until what time to wait for the next item to start coming in.
+    /// @return
+    ///  - The item objects from which you can start reading data
+    ///  - If no more items expected in the reply, the returned item will have
+    ///    type eEndOfReply
+    ///  - On expired timeout, the returned pointer will be empty (nullptr)
+    /// @throw
+    ///  If an error has been detected.
+    shared_ptr<CPSG_ReplyItem> GetNextItem(CDeadline deadline);
+
+    virtual ~CPSG_Reply();
+
+private:
+    CPSG_Reply();
+
+    struct SImpl;
+    unique_ptr<SImpl>              m_Impl;
+    shared_ptr<const CPSG_Request> m_Request;
+
+    friend class CPSG_Queue;
+};
+
+
+
+/// A queue to retrieve data (accession resolution info; bio-sequence;
+/// annotation blobs) from the storage.
 ///
-/// The queue object can be used from more than one thread, either to add ids
-/// or to get the list of ready-to-be-retrieved blobs.
-/// Results for the ids which were added to a given instance of
+/// Call SendRequest() to schedule retrievals (by their bio-ids or
+/// blob-ids). Then, call GetNextReply() to get the next reply whose data
+/// has started coming in.
+///
+/// All methods are MT-safe.  Data from different replies can be read in
+/// parallel.
+///
+/// The queue object can be used from more than one thread, either to push
+/// requests or to get the incoming ready-to-be-retrieved replies.
+///
+/// Results for the requests which were pushed into a given instance of
 /// the queue will be available for retrieval using this (and only this) queue
-/// instance regardless of which threads were used to add the ids to the queue.
+/// instance regardless of which threads were used to push the request to the
+/// queue.
 ///
-class CPSG_BlobRetrievalQueue
+/// If more than one request was pushed into the queue, then the replies to all
+/// of the requests may come, in any order.
+///
+
+class CPSG_Queue
 {
 public:
     /// @param service
     ///  Either a name of service (which can be resolved into a set of PSG
     ///  servers) or a single fixed PSG server (in format "host:port")
-    CPSG_BlobRetrievalQueue(const string& service);
-    ~CPSG_BlobRetrievalQueue();
+    CPSG_Queue(const string& service);
+    ~CPSG_Queue();
 
-    /// Try to schedule more bio-ids for the blob retrieval.
-    /// @note
-    ///  If more than one thread is blocked on adding new set of bio-ids
-    ///  (or blob-ids) to the queue, then (when the queue gets free slots) one
-    ///  of the threads gets to add all or part of its bio-ids (or blob-ids) to
-    ///  the queue. Other threads will continue waiting (unless there is even 
-    ///  more free space left in the queue).
-    /// @param bio_ids
-    ///  List of bio ids.
-    ///  Those bio-ids from the "bio_ids" container that make it
-    ///  into the queue will be removed from the "bio_ids" container.
+    /// Push request into the queue.
+    /// @param request
+    ///  The request (containing either bio- or blob-id to retrieve) to send.
     /// @param deadline
-    ///  For how long to try to push the bio-ids into the queue. The function
-    ///  returns if either it succeeds to push ALL of the bio-ids into the
-    ///  queue; or if it hits the deadline.
-    void Retrieve(TPSG_BioIds*     bio_ids,
-                  const CDeadline& deadline = 0);
-
-
-    /// Perform single blob retrieval (by its bio-id), synchronously
-    static CPSG_Blob Retrieve(const string&    service,
-                              CPSG_BioId       bio_id,
-                              const CDeadline& deadline = CDeadline::eInfinite);
-
-    /// Try to schedule more blob-ids for the blob retrieval.
-    /// @note
-    ///  If more than one thread is blocked on adding new set of blob-ids
-    ///  (or bio-ids) to the queue, then (when the queue gets free slots) one
-    ///  of the threads gets to add all or part of its blob-ids (or bio-ids) to
-    ///  the queue. Other threads will continue waiting (unless there is even 
-    ///  more free space left in the queue).
-    /// @param blob_ids
-    ///  List of blob ids.
-    ///  Those blob ids from the "blob_ids" container that make it
-    ///  into the queue will be removed from the "blob_ids" container.
-    /// @param deadline
-    ///  For how long to try to push the blob-ids into the queue. The function
-    ///  returns if either it succeeds to push ALL of the blob-ids into the
-    ///  queue; or if it hits the deadline.
-    void Retrieve(TPSG_BlobIds*    blob_ids,
-                  const CDeadline& deadline = 0);
-
-    /// Perform single blob retrieval (by its blob-id), synchronously
-    static CPSG_Blob Retrieve(const string&    service,
-                              CPSG_BlobId      blob_id,
-                              const CDeadline& deadline = CDeadline::eInfinite);
-
-    /// Get blobs that are ready for the immediate retrieval (and/or those that
-    /// cannot be retrieved for whatever reason).
-    /// @note
-    ///  If more than one thread tries to retrieve list of the ready blobs,
-    ///  then one of the threads gets the results as they become ready; other
-    ///  threads will continue waiting.
-    /// @param deadline
-    ///  Until when to wait for the blobs to get ready for retrieval.
-    ///  If no blobs are ready for retrieval by the deadline expiration, then
-    ///  return empty container.
-    /// @param max_results
-    ///  Return no more than that number of results. Zero means no limit.
+    ///  For how long to try to push the request into the queue.
     /// @return
-    ///  List of blobs available for retrieval
+    ///  - TRUE if it succeeds in pushing the request into the queue
+    ///  - FALSE on timeout (ie. if cannot do it before the specified deadline)
+    /// @throw  CPSG_Exception
+    ///  If any (non-timeout) error condition occures.
+    /// @sa Get()
+    bool SendRequest(shared_ptr<CPSG_Request> request,
+                     CDeadline                deadline);
+
+
+    /// Get the next reply which has started arriving from the server.
+    /// @param deadline
+    ///  Until what time to wait for the next reply to start coming in.
+    /// @return
+    ///  - Reply object from which you can obtain particular items.
+    ///  - On expired timeout, the returned pointer will be empty (nullptr).
     /// @throw
-    ///  If unrecoverable retrieval error has been detected.
-    TPSG_Blobs GetBlobs(const CDeadline& deadline = 0,
-                        size_t           max_results = 0);
+    ///  If an error has been detected.
+    shared_ptr<CPSG_Reply> GetNextReply(CDeadline deadline);
 
-    /// Cancel all ongoing retrievals and return all blob-ids and bio-ids
-    /// for which there is no ready-to-retrieve blob obtained yet.
-    /// You can continue working with the queue after that in a usual manner.
-    /// If there are ready-to-be-retrieved blobs available in the queue
-    /// they can be subsequently retrieved by calling GetBlobs() method.
-    /// @param bio_ids
-    ///  The bio-ids for which no retrievable blobs have yet been obtained 'll
-    ///  be added to "bio_ids". If "bio_ids" is NULL, then they be discarded.
-    /// @param blob_ids
-    ///  The blob-ids for which no retrievable blobs have yet been obtained 'll
-    ///  be added to "blob_ids". If "blob_ids" is NULL, then they be discarded.
-    void Clear(TPSG_BioIds* bio_ids, TPSG_BlobIds* blob_ids);
 
-    /// TRUE if there is nothing left in the queue (whether retrieved or not)
+    /// Cancel all requests (not yet sent to the server; waiting for a reply
+    /// from the server; or in the middle of the reply data transmission).
+    /// Also invalidate all CPSG_ReplyItem objects that have not yet received
+    /// all of their data from the server.
+    void Reset();
+
+
+    /// Check whether the queue is empty -- i.e. that there are no:
+    ///  - pending requests
+    ///  - requests still waiting for a reply from the server
+    ///  - replies that still have not been completely retrieved
     bool IsEmpty() const;
 
 private:

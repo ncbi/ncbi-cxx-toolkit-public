@@ -67,16 +67,24 @@ private:
     string m_IniFile;
     unsigned int m_NumThreads;
     string m_HostPort;
-    string m_LookupRemote;
+    string m_BioId;
+    string m_BlobId;
     string m_LookupFileRemote;
+    string m_BlobIdFile;
     char m_Delimiter;
-    bool m_Direct;
     mutex m_CoutMutex;
     mutex m_CerrMutex;
+    shared_ptr<CPSG_Queue> m_Queue;
 
-    void RemoteLookup();
-    void RemoteLookupFile();
-    void PrintBlob(CPSG_Blob& blob);
+    template <class TRequest>
+    void ProcessId(const string& id);
+
+    template <class TRequest>
+    void ProcessFile(const string& filename);
+
+    void ProcessReply(shared_ptr<CPSG_Reply> reply);
+    void PrintErrors(EPSG_Status status, const CPSG_ReplyItem* item);
+    void PrintBlob(const CPSG_Blob*);
 public:
     CAccVerCacheApp() :
         m_NumThreads(1),
@@ -90,11 +98,12 @@ public:
         argdesc->AddOptionalKey( "o",   "log",      "Output log to",                        CArgDescriptions::eString);
         argdesc->AddOptionalKey( "l",   "loglevel", "Output verbosity level from 0 to 5",   CArgDescriptions::eInteger);
         argdesc->AddOptionalKey( "H",   "host",     "Host[:port] for remote lookups",       CArgDescriptions::eString);
-        argdesc->AddOptionalKey( "ra",  "rlookup",  "Lookup individual accession.version remotely",  CArgDescriptions::eString);
-        argdesc->AddOptionalKey( "fa",  "falookup", "Lookup accession.version from a file",  CArgDescriptions::eString);
+        argdesc->AddOptionalKey( "la",  "bio_id",   "Individual bio ID lookup and retrieval", CArgDescriptions::eString);
+        argdesc->AddOptionalKey( "gb",  "blob_id",  "Individual blob retrieval",            CArgDescriptions::eString);
+        argdesc->AddOptionalKey( "fa",  "bio_id_file", "Lookup Bio IDs from a file",        CArgDescriptions::eString);
+        argdesc->AddOptionalKey( "fb",  "blob_id_file", "Retrieval blobs from a file",      CArgDescriptions::eString);
         argdesc->AddOptionalKey( "t",   "threads",  "Number of threads",                    CArgDescriptions::eInteger);
         argdesc->SetConstraint(  "t",   new CArgAllow_Integers(1, 256));
-        argdesc->AddFlag(        "d",               "Direct blob retrieval");
         SetupArgDescriptions(argdesc.release());
     }
     void ParseArgs()
@@ -120,14 +129,19 @@ public:
 
         if (args["H"])
             m_HostPort = args["H"].AsString();
-        if (args["ra"])
-            m_LookupRemote = args["ra"].AsString();
+        if (args["la"])
+            m_BioId = args["la"].AsString();
+        if (args["gb"])
+            m_BlobId = args["gb"].AsString();
         if (args["fa"])
             m_LookupFileRemote = args["fa"].AsString();
+        if (args["fb"])
+            m_BlobIdFile = args["fb"].AsString();
         if (args["t"])
             m_NumThreads = args["t"].AsInteger();
 
-        m_Direct = args["d"];
+        if (m_HostPort.empty())
+            EAccVerException::raise("Host is not specified, use -H command line argument");
     }
 
     virtual int Run(void)
@@ -135,11 +149,19 @@ public:
         int rv = 0;
         try {
             ParseArgs();
-            if (!m_LookupRemote.empty()) {
-                RemoteLookup();
+            m_Queue = make_shared<CPSG_Queue>(m_HostPort);
+
+            if (!m_BioId.empty()) {
+                ProcessId<CPSG_Request_Biodata>(m_BioId);
+            }
+            else if (!m_BlobId.empty()) {
+                ProcessId<CPSG_Request_Blob>(m_BlobId);
             }
             else if (!m_LookupFileRemote.empty()) {
-                RemoteLookupFile();
+                ProcessFile<CPSG_Request_Biodata>(m_LookupFileRemote);
+            }
+            else if (!m_BlobIdFile.empty()) {
+                ProcessFile<CPSG_Request_Blob>(m_BlobIdFile);
             }
         }
         catch(const CException& e) {
@@ -158,263 +180,129 @@ public:
     }
 };
 
-void CAccVerCacheApp::RemoteLookup()
+void CAccVerCacheApp::ProcessReply(shared_ptr<CPSG_Reply> reply)
 {
-    if (m_Direct) {
-        auto blob = CPSG_BlobRetrievalQueue::Retrieve(m_HostPort, m_LookupRemote);
-        PrintBlob(blob);
-    } else {
-        auto blob_id = CPSG_BioIdResolutionQueue::Resolve(m_HostPort, m_LookupRemote);
-        auto blob = CPSG_BlobRetrievalQueue::Retrieve(m_HostPort, blob_id);
-        PrintBlob(blob);
+    assert(reply);
+
+    for (;;) {
+        auto reply_item = reply->GetNextItem(CDeadline::eInfinite);
+
+        switch (reply_item->GetType()) {
+        case CPSG_ReplyItem::eEndOfReply:
+            return;
+
+        case CPSG_ReplyItem::eBlob:
+            PrintBlob(reply_item->CastTo<CPSG_Blob>());
+            break;
+
+        case CPSG_ReplyItem::eBlobInfo:
+            // TODO
+            break;
+
+        case CPSG_ReplyItem::eBioseqInfo:
+            // TODO
+            break;
+        }
     }
 }
 
-void CAccVerCacheApp::RemoteLookupFile()
+template <class TRequest>
+void CAccVerCacheApp::ProcessId(const string& id)
 {
+    assert(m_Queue);
 
-    ifstream infile(m_LookupFileRemote);
-    TPSG_BioIds all_bio_ids;
+    auto request = make_shared<TRequest>(id);
+    m_Queue->SendRequest(request, CDeadline::eInfinite);
+    ProcessReply(m_Queue->GetNextReply(CDeadline::eInfinite));
+}
 
+template <class TRequest>
+void CAccVerCacheApp::ProcessFile(const string& filename)
+{
+    assert(m_Queue);
 
-    if (m_HostPort.empty())
-        EAccVerException::raise("Host is not specified, use -H command line argument");
+    ifstream infile(filename);
+    vector<string> ids;
+
     if (m_NumThreads == 0 || m_NumThreads > 1000)
         EAccVerException::raise("Invalid number of threads");
 
-    if (infile) {
-        string line;
-        size_t lineno = 0;
-        size_t line_count = 0;
-        while (!infile.eof()) {
-            lineno++;
-            getline(infile, line);
-            if (line == "")
-                continue;
+    if (!infile) {
+        EAccVerException::raise("Error on reading bio IDs");
+    }
 
-            auto delim = line.find('|');
-            all_bio_ids.emplace_back(string(line, 0, delim));
-            ++line_count;
+    while (!infile.eof()) {
+        string line;
+        getline(infile, line);
+        if (line.empty()) continue;
+
+        auto delim = line.find('|');
+        ids.emplace_back(string(line, 0, delim));
+    }
+
+    vector<thread> threads(m_NumThreads);
+    auto impl = [&](size_t begin, size_t end) {
+        for (size_t i = begin; i < end; ++i) {
+            auto request = make_shared<TRequest>(ids[i]);
+            m_Queue->SendRequest(request, CDeadline::eInfinite);
+
+            auto wait_ms = (kNanoSecondsPerSecond / kMilliSecondsPerSecond) * begin % 100;
+
+            if (auto reply = m_Queue->GetNextReply(CDeadline(0, wait_ms))) {
+                ProcessReply(reply);
+            }
         }
 
-        {{
-            CPSG_BioIdResolutionQueue res_queue(m_HostPort);
-            CPSG_BlobRetrievalQueue ret_queue(m_HostPort);
-            vector<unique_ptr<thread, function<void(thread*)>>> threads;
-            threads.resize(m_NumThreads);
-            size_t start_index = 0, next_index, i = 0;
+        const auto kWaitForReplySeconds = 3;
 
+        while (auto reply = m_Queue->GetNextReply(kWaitForReplySeconds)) {
+            ProcessReply(reply);
+            auto wait_ms = chrono::milliseconds(end % 100);
+            this_thread::sleep_for(wait_ms);
+        }
+    };
 
-            for (auto & it : threads) {
-                i++;
-                next_index = ((uint64_t)line_count * i) / m_NumThreads;
-                it = unique_ptr<thread, function<void(thread*)>>(new thread(
-                    [&res_queue, &ret_queue, start_index, next_index, line_count, &all_bio_ids, this]() {
-                        size_t max = next_index > line_count ? line_count : next_index;
+    size_t ids_per_thread = ids.size() / m_NumThreads;
 
-                        {
-                            TPSG_BioIds bio_ids;
-                            TPSG_BlobIds blob_ids;
+    for (size_t i = 0; i < m_NumThreads; ++i) {
+        size_t begin = i * ids_per_thread;
+        size_t end = i == m_NumThreads - 1 ? ids.size() :begin + ids_per_thread;
+        threads[i] = thread(impl, begin, end);
+    }
 
-                            const unsigned int MAX_SRC_AT_ONCE = 1024;
-                            const unsigned int PUSH_TIMEOUT_MS = 15000;
-                            const unsigned int POP_TIMEOUT_MS = 15000;
-                            size_t res_pushed = 0, res_popped = 0;
-                            size_t ret_pushed = 0, ret_popped = 0;
-
-                            if (m_Direct) {
-                                auto push = [&](const CDeadline& deadline) {
-                                    size_t cnt = bio_ids.size();
-                                    ret_queue.Retrieve(&bio_ids, deadline);
-                                    ret_pushed += cnt - bio_ids.size();
-                                };
-
-                                auto pop = [&](const CDeadline& deadline = CDeadline(0)) {
-                                    try {
-                                        TPSG_Blobs result = ret_queue.GetBlobs(deadline);
-                                        ret_popped += result.size();
-
-                                        for (auto& blob : result) {
-                                            PrintBlob(blob);
-                                        }
-                                    }
-                                    catch (const std::runtime_error& e) {
-                                        ERRLOG0((e.what()));
-                                    }
-                                };
-
-                                for (size_t i = start_index; i < max; ++i) {
-                                    try {
-                                        auto & it_data = all_bio_ids[i];
-                                        LOG3(("Adding [%lu](%s)", i, it_data.GetId().c_str()));
-
-                                        bio_ids.emplace_back(std::move(it_data));
-
-                                        if (bio_ids.size() >= MAX_SRC_AT_ONCE) {
-                                            push(PUSH_TIMEOUT_MS);
-                                            pop(0);
-                                        }
-                                    }
-                                    catch (const std::runtime_error& e) {
-                                        ERRLOG0((e.what()));
-                                    }
-                                }
-
-                                while (bio_ids.size() > 0) {
-                                    push(PUSH_TIMEOUT_MS);
-                                    pop(0);
-                                }
-
-                                while (!ret_queue.IsEmpty()) {
-                                    pop(POP_TIMEOUT_MS);
-                                }
-                            } else {
-                                auto res_push = [&](const CDeadline& deadline) {
-                                    size_t cnt = bio_ids.size();
-                                    res_queue.Resolve(&bio_ids, deadline);
-                                    res_pushed += cnt - bio_ids.size();
-                                };
-
-                                auto res_pop = [&](const CDeadline& deadline = CDeadline(0)) {
-                                    try {
-                                        TPSG_BlobIds result = res_queue.GetBlobIds(deadline);
-                                        res_popped += result.size();
-                                        blob_ids.insert(blob_ids.end(), result.begin(), result.end());
-                                    }
-                                    catch (const std::runtime_error& e) {
-                                        ERRLOG0((e.what()));
-                                    }
-                                };
-
-                                auto ret_push = [&](const CDeadline& deadline = CDeadline(0)) {
-                                    try {
-                                        size_t cnt = blob_ids.size();
-                                        ret_queue.Retrieve(&blob_ids, deadline);
-                                        ret_pushed += cnt - blob_ids.size();
-                                    }
-                                    catch (const std::runtime_error& e) {
-                                        ERRLOG0((e.what()));
-                                    }
-                                };
-
-                                auto ret_pop = [&](const CDeadline& deadline = CDeadline(0)) {
-                                    try {
-                                        TPSG_Blobs result = ret_queue.GetBlobs(deadline);
-                                        ret_popped += result.size();
-
-                                        for (auto& blob : result) {
-                                            PrintBlob(blob);
-                                        }
-                                    }
-                                    catch (const std::runtime_error& e) {
-                                        ERRLOG0((e.what()));
-                                    }
-                                };
-
-                                for (size_t i = start_index; i < max; ++i) {
-                                    try {
-                                        auto & it_data = all_bio_ids[i];
-                                        LOG3(("Adding [%lu](%s)", i, it_data.GetId().c_str()));
-
-                                        bio_ids.emplace_back(std::move(it_data));
-
-                                        if (bio_ids.size() >= MAX_SRC_AT_ONCE) {
-                                            res_push(PUSH_TIMEOUT_MS);
-                                            res_pop(0);
-                                            ret_push(0);
-                                            ret_pop(0);
-                                        }
-                                    }
-                                    catch (const std::runtime_error& e) {
-                                        ERRLOG0((e.what()));
-                                    }
-                                }
-
-                                while (bio_ids.size() > 0) {
-                                    res_push(PUSH_TIMEOUT_MS);
-                                    res_pop(0);
-                                    ret_push(0);
-                                    ret_pop(0);
-                                }
-
-                                while (!res_queue.IsEmpty()) {
-                                    res_pop(POP_TIMEOUT_MS);
-                                    ret_push(0);
-                                    ret_pop(0);
-                                }
-
-                                while (blob_ids.size() > 0) {
-                                    ret_push(PUSH_TIMEOUT_MS);
-                                    ret_pop(0);
-                                }
-
-                                while (!ret_queue.IsEmpty()) {
-                                    ret_pop(POP_TIMEOUT_MS);
-                                }
-                            }
-
-                            LOG3(("thread finished: start: %lu, max: %lu, count: %lu, res_pushed: %lu, res_popped: %lu, ret_pushed: %lu, ret_popped: %lu", start_index, max, max - start_index, res_pushed, res_popped, ret_pushed, ret_popped));
-                        }
-                    }),
-                    [](thread* thrd){
-                        thrd->join();
-                        delete thrd;
-                    });
-                start_index = next_index;
-            }
-        }}
+    for (auto& thread : threads) {
+        thread.join();
     }
 }
 
-void CAccVerCacheApp::PrintBlob(CPSG_Blob& blob)
+void CAccVerCacheApp::PrintErrors(EPSG_Status status, const CPSG_ReplyItem* item)
 {
-    const auto& blob_id = blob.GetBlobId();
-    const auto& name = blob_id.GetBioId().GetId();
+    cout << static_cast<int>(status) << "\n";
+
+    for (;;) {
+        auto message = item->GetNextMessage();
+        if (message.empty()) break;
+        cout << message << "\n";
+    }
+}
+
+void CAccVerCacheApp::PrintBlob(const CPSG_Blob* blob)
+{
+    assert(blob);
     lock_guard<mutex> lock(m_CoutMutex);
 
-    const auto blob_id_status = blob_id.GetStatus();
+    auto status = blob->GetStatus(CDeadline::eInfinite);
 
-    if (blob_id_status != CPSG_BlobId::eSuccess) {
-        cout << name << "||Failed to resolve: " << blob_id_status;
-
-        const auto message = blob_id.GetMessage();
-        if (!message.empty()) cout << "/'" << message << "'";
-       
-        cout << std::endl;
+    if (status != EPSG_Status::eSuccess) {
+        cout << "ERROR: Failed to retrieve blob '" << blob->GetId().Get() << "': ";
+        PrintErrors(status, blob);
         return;
     }
 
-    const auto& blob_info = blob_id.GetBlobInfo();
-    const string blob_info_date_queued = blob_info.last_modified ? CTime(blob_info.last_modified).AsString() : "";
-
-    cout
-        << name << "||"
-        << blob_info.gi << "|"
-        << blob_info.seq_length << "|"
-        << blob_info.sat << "|"
-        << blob_info.sat_key << "|"
-        << blob_info.tax_id << "|"
-        << blob_info_date_queued << "|"
-        << blob_info.state << "|";
-
-    const auto blob_status = blob.GetStatus();
-
-    if (blob_status != CPSG_Blob::eSuccess) {
-        cout << name << "||Failed to resolve: " << blob_status;
-
-        const auto message = blob.GetMessage();
-        if (!message.empty()) cout << "/'" << message << "'";
-       
-        cout << std::endl;
-        return;
-    }
-
-
-    auto& is = blob.GetStream();
     ostringstream os;
-    os << is.rdbuf();
+    os << blob->GetStream().rdbuf();
     hash<string> blob_hash;
-    cout << os.str().size() << "|" <<blob_hash(os.str()) << endl;
+    cout << blob->GetId().Get() << "|" << os.str().size() << "|" <<blob_hash(os.str()) << endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////

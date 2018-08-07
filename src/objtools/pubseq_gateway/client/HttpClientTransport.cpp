@@ -50,10 +50,11 @@
 
 #include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
-
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcCommon.hpp>
+
+#include <corelib/request_status.hpp>
+
 #include "HttpClientTransport.hpp"
-#include "HttpClientTransportP.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -64,6 +65,251 @@ NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_streams, 200);
 NCBI_PARAM_DEF(unsigned, PSG, num_io,                 16);
 NCBI_PARAM_DEF(unsigned, PSG, num_conn_per_io,        1);
 NCBI_PARAM_DEF(bool,     PSG, delayed_completion,     true);
+
+string SPSG_Error::Generic(int errc, const char* details)
+{
+    std::stringstream ss;
+    ss << "error: " << details << " (" << errc << ")";
+    return ss.str();
+}
+
+string SPSG_Error::NgHttp2(int errc)
+{
+    std::stringstream ss;
+    ss << "nghttp2 error: ";
+
+    try {
+        if (errc < 0) {
+            ss << nghttp2_strerror(errc);
+        } else {
+            ss << nghttp2_http2_strerror(errc);
+        }
+    } catch (...) {
+        ss << "Unknown error";
+    }
+
+    ss << " (" << errc << ")";
+    return ss.str();
+}
+
+string SPSG_Error::LibUv(int errc, const char* details)
+{
+    std::stringstream ss;
+    ss << "libuv error: " << details << " - ";
+
+    try {
+        ss << uv_strerror(errc);
+    } catch (...) {
+        ss << "Unknown error";
+    }
+
+    ss << " (" << errc << ")";
+    return ss.str();
+}
+
+void SPSG_Reply::SState::AddError(const string& message)
+{
+    switch (m_State) {
+        case eInProgress:
+            m_State = eError;
+            /* FALL THROUGH */
+
+        case eError:
+            m_Messages.push(message);
+            return;
+
+        default:
+            return;
+    }
+}
+
+string SPSG_Reply::SState::GetError()
+{
+    if (m_Messages.empty()) return {};
+
+    auto rv = m_Messages.back();
+    m_Messages.pop();
+    return rv;
+}
+
+void SPSG_Reply::SetState(SState::EState state)
+{
+    reply_item.GetLock()->state.SetState(state);
+
+    for (auto& item : items) {
+        item.GetLock()->state.SetState(state);
+    }
+}
+
+SPSG_Receiver::SPSG_Receiver(shared_ptr<SPSG_Reply::TTS> reply, shared_ptr<SPSG_Future> queue) :
+    m_Reply(reply),
+    m_Queue(queue)
+{
+}
+
+void SPSG_Receiver::StatePrefix(const char*& data, size_t& len)
+{
+    const auto& prefix = Prefix();
+
+    // Checking prefix
+    while (len) {
+        // Check failed
+        if (*data != prefix[m_Buffer.prefix_index]) {
+            const auto s = min(len, prefix.size() - m_Buffer.prefix_index);
+            throw logic_error("Unexpected prefix: " + string(data, s));
+        }
+
+        ++data;
+        --len;
+
+        if (++m_Buffer.prefix_index == prefix.size()) {
+            SetStateArgs();
+            return;
+        }
+    }
+}
+
+void SPSG_Receiver::StateArgs(const char*& data, size_t& len)
+{
+    // Accumulating args
+    while (*data != '\n') {
+        m_Buffer.args.push_back(*data++);
+        if (!--len) return;
+    }
+
+    ++data;
+    --len;
+
+    SPSG_Args args(m_Buffer.args);
+
+    auto size = args.GetValue("size");
+
+    m_Buffer.chunk.args = move(args);
+
+    if (!size.empty()) {
+        SetStateData(stoul(size));
+    } else {
+        SetStatePrefix();
+    }
+}
+
+void SPSG_Receiver::StateData(const char*& data, size_t& len)
+{
+    // Accumulating data
+    const auto data_size = min(m_Buffer.data_to_read, len);
+
+    // Do not add an empty part
+    if (!data_size) return;
+
+    auto& chunk = m_Buffer.chunk;
+    chunk.data.emplace_back(data, data + data_size);
+    data += data_size;
+    len -= data_size;
+    m_Buffer.data_to_read -= data_size;
+
+    if (!m_Buffer.data_to_read) {
+        SetStatePrefix();
+    }
+}
+
+void SPSG_Receiver::Add()
+{
+    assert(m_Reply);
+    assert(m_Queue);
+
+    auto& chunk = m_Buffer.chunk;
+    auto& args = chunk.args;
+
+    auto item_type = args.GetValue("item_type");
+    SPSG_Reply::SItem::TTS* item_ts = nullptr;
+
+    if (item_type.empty() || (item_type == "reply")) {
+        auto reply_locked = m_Reply->GetLock();
+        item_ts = &reply_locked->reply_item;
+
+    } else {
+        auto item_id = args.GetValue("item_id");
+        auto& item_by_id = m_ItemsByID[item_id];
+
+        if (!item_by_id) {
+            auto reply_locked = m_Reply->GetLock();
+            auto& items = reply_locked->items;
+            items.emplace_back();
+            item_by_id = &items.back();
+            auto reply_item_locked = reply_locked->reply_item.GetLock();
+            auto& reply_item = *reply_item_locked;
+            ++reply_item.received;
+
+            if (reply_item.expected.Cmp<less>(reply_item.received)) {
+                reply_item.state.AddError("Protocol error: received more than expected");
+            }
+
+            reply_item_locked.Unlock();
+            auto reply_item_ts = &reply_locked->reply_item;
+            reply_locked.Unlock();
+            reply_item_ts->NotifyOne();
+            m_Queue->NotifyOne();
+        }
+
+        item_ts = item_by_id;
+    }
+
+    auto item_locked = item_ts->GetLock();
+    auto& item = *item_locked;
+    ++item.received;
+
+    if (item.expected.Cmp<less>(item.received)) {
+        item.state.AddError("Protocol error: received more than expected");
+    }
+
+    auto chunk_type = args.GetValue("chunk_type");
+
+    if (chunk_type == "meta") {
+        auto n_chunks = args.GetValue("n_chunks");
+
+        if (!n_chunks.empty()) {
+            auto expected = stoul(n_chunks);
+
+            if (item.expected.Cmp<not_equal_to>(expected)) {
+                item.state.AddError("Protocol error: contradicting n_chunks");
+            } else {
+                item.expected = expected;
+
+                if (item.expected.Cmp<less>(item.received)) {
+                    item.state.AddError("Protocol error: received more than expected");
+                }
+            }
+        }
+
+    } else if (chunk_type == "message") {
+        ostringstream os;
+
+        for (auto& p : chunk.data) os.write(p.data(), p.size());
+
+        auto severity = args.GetValue("severity");
+
+        if (severity == "warning") {
+            LOG1(("Warning: %s", os.str().c_str()));
+        } else if (severity == "info") {
+            LOG2(("Info: %s", os.str().c_str()));
+        } else if (severity == "trace") {
+            LOG3(("Trace: %s", os.str().c_str()));
+        } else {
+            item.state.AddError(os.str());
+        }
+
+    } else if (chunk_type == "data") {
+        item.chunks.push_back(move(chunk));
+
+    } else {
+        item.state.AddError("Protocol error: unknown chunk type");
+    }
+
+    // Item must be unlocked before notifying
+    item_locked.Unlock();
+    item_ts->NotifyOne();
+}
+
 
 END_NCBI_SCOPE
 
@@ -76,27 +322,23 @@ namespace HCT {
 
 /** http2_request */
 
-void http2_request::init_request(shared_ptr<http2_end_point> endpoint, shared_ptr<io_future> afuture, string path, string query, TagHCT tag)
+http2_request::http2_request(shared_ptr<SPSG_Reply::TTS> reply, shared_ptr<http2_end_point> endpoint, shared_ptr<SPSG_Future> queue, string path, string query) :
+    m_id(55),
+    m_session_data(nullptr),
+    m_state(http2_request_state::rs_initial),
+    m_stream_id(-1),
+    m_reply(move(reply), move(queue))
 {
     if (m_stream_id >= 0)
         DDRPC::EDdRpcException::raise("Request has already been started");
 
     m_endpoint = std::move(endpoint);
     m_query = std::move(query);
-    m_tag = tag;
 
-    m_reply_data.init(std::move(afuture));
     m_full_path = path + "?" + m_query;
 
     if (!m_endpoint)
         DDRPC::EDdRpcException::raise("EndPoint is null");
-    if (m_endpoint->error.has_error())
-        error(m_endpoint->error);
-}
-
-bool http2_request::s_compare_future(const shared_ptr<http2_request>& a, const shared_ptr<http2_request>& b)
-{
-    return a->get_result_data().get_future_raw() < b->get_result_data().get_future_raw(); // intention to compare adddresses there, not values
 }
 
 string http2_request::get_host() const
@@ -119,9 +361,9 @@ uint16_t http2_request::get_port() const
 
 void http2_request::on_complete(uint32_t error_code)
 {
-    LOG4(("%p: on_complete: stream %d: result: %u, datalen: %lu", m_session_data, m_stream_id, error_code, m_reply_data.get_reply_data_size()));
+    LOG4(("%p: on_complete: stream %d: result: %u", m_session_data, m_stream_id, error_code));
     if (error_code)
-        error_nghttp2(error_code);
+        error(SPSG_Error::NgHttp2(error_code));
     else
         do_complete();
 }
@@ -130,7 +372,7 @@ void http2_request::do_complete()
 {
     assert(m_state < http2_request_state::rs_done);
     m_state = http2_request_state::rs_done;
-    m_reply_data.on_complete();
+    m_reply.on_complete();
     if (m_session_data) {
         http2_session *lsession_data = m_session_data;
         m_session_data = nullptr;
@@ -139,51 +381,56 @@ void http2_request::do_complete()
 }
 
 
-/** http2_reply_data */
+/** http2_reply */
 
-bool http2_reply_data::wait_for(long timeout_ms) const
+http2_reply::http2_reply(shared_ptr<SPSG_Reply::TTS> reply, shared_ptr<SPSG_Future> queue) :
+    m_Reply(reply),
+    m_Receiver(reply, queue),
+    m_Queue(queue),
+    m_session_data(nullptr)
 {
-    if (!m_future)
-        EException::raise("Future is not assigned");
-    bool has_timeout = timeout_ms < DDRPC::INDEFINITE;
-    if (has_timeout) {
-        auto target_time = chrono::system_clock::now() + chrono::milliseconds(timeout_ms);
-        while (!m_finished) {
-            auto timeout = target_time - chrono::system_clock::now();
-            if (timeout.count() < 0)
-                return false;
-            auto to = chrono::duration_cast<chrono::milliseconds>(timeout);
-            std::unique_lock<std::mutex> lock(m_future->second);
-            m_future->first.wait_for(lock, to);
-        }
-    }
-    else {
-        std::unique_lock<std::mutex> lock(m_future->second);
-        m_future->first.wait(lock, [&]{ return m_finished.load();});
-    }
-    return true;
+    assert(reply);
 }
 
-bool http2_reply_data::send_cancel()
+void http2_reply::send_cancel()
 {
+    assert(m_Reply);
     http2_session* session_data = m_session_data;
-    if (m_finished)
-        return true;
-    m_cancelled = true;
+    auto reply_locked = m_Reply->GetLock();
+    reply_locked->SetCanceled();
     if (session_data)
         session_data->notify_cancel();
-    return true;
 }
 
-void http2_reply_data::on_complete()
+void http2_reply::on_status(int status)
 {
-    assert(m_future);
-    m_finished = true;
-    if (m_session_data)
-        m_session_data->add_to_completion(m_future);
+    assert(m_Reply);
+
+    if (status == CRequestStatus::e200_Ok) return;
+
+    auto reply_locked = m_Reply->GetLock();
+    auto reply_item_locked = reply_locked->reply_item.GetLock();
+    auto& state = reply_item_locked->state;
+
+    if (status == CRequestStatus::e404_NotFound) {
+        state.SetState(SPSG_Reply::SState::eNotFound);
+    } else {
+        state.AddError(CRequestStatus::GetStdStatusMessage((CRequestStatus::ECode)status));
+    }
+}
+
+void http2_reply::on_complete()
+{
+    assert(m_Reply);
+    assert(m_Queue);
+
+    m_Reply->GetLock()->SetSuccess();
+    http2_session* session_data = m_session_data;
+    if (session_data && TPSG_DelayedCompletion::GetDefault())
+        session_data->add_to_completion(m_Reply, m_Queue);
     else {
-        std::lock_guard<std::mutex> lock(m_future->second);
-        m_future->first.notify_one();
+        m_Reply->GetLock()->reply_item.NotifyOne();
+        m_Queue->NotifyOne();
     }
 }
 
@@ -230,7 +477,7 @@ void http2_session::dump_requests()
 ssize_t http2_session::s_ng_send_cb(nghttp2_session *session, const uint8_t *data, size_t length, int flags, void *user_data)
 {
     http2_session *session_data = (http2_session *)user_data;
-    session_data->error(ERR_HCT_UNEXP_CB, "failed to send request, unexpected callback");
+    session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eUnexpCb, "failed to send request, unexpected callback"));
     ERRLOG0(("!ERROR: s_ng_send_cb"));
     return NGHTTP2_ERR_WOULDBLOCK;
 }
@@ -247,15 +494,13 @@ int http2_session::s_ng_frame_recv_cb(nghttp2_session *session, const nghttp2_fr
                     auto it = session_data->m_requests.find(frame->hd.stream_id);
                     if (it != session_data->m_requests.end())
                         it->second->on_header(frame);
-                    if (it->second->get_cancelled())
-                        it->second->on_complete(ERR_HCT_CANCELLED);
                 }
                 catch(const std::exception& e) {
-                    session_data->error(ERR_HCT_EXCEPT, e.what());
+                    session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
                     return NGHTTP2_ERR_CALLBACK_FAILURE;
                 }
                 catch(...) {
-                    session_data->error(ERR_HCT_EXCEPT, "unexpected exception");
+                    session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
                     return NGHTTP2_ERR_CALLBACK_FAILURE;
                 }
             }
@@ -276,18 +521,16 @@ int http2_session::s_ng_data_chunk_recv_cb(nghttp2_session *session, uint8_t fla
         auto it = session_data->m_requests.find(stream_id);
         if (it != session_data->m_requests.end()) {
             it->second->on_reply_data((const char*)data, len);
-            if (it->second->get_cancelled())
-                it->second->on_complete(ERR_HCT_CANCELLED);
         }
         else
             LOG2(("%p: s_ng_data_chunk_recv_cb: stream_id: %d not found", session_data, stream_id));
     }
     catch(const std::exception& e) {
-        session_data->error(ERR_HCT_EXCEPT, e.what());
+        session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
         return NGHTTP2_ERR_CALLBACK_FAILURE;
     }
     catch(...) {
-        session_data->error(ERR_HCT_EXCEPT, "unexpected exception");
+        session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
         return NGHTTP2_ERR_CALLBACK_FAILURE;
     }
     return 0;
@@ -312,11 +555,11 @@ int http2_session::ng_stream_close_cb(int32_t stream_id, uint32_t error_code)
         }
     }
     catch(const std::exception& e) {
-        error(ERR_HCT_EXCEPT, e.what());
+        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
         return NGHTTP2_ERR_CALLBACK_FAILURE;
     }
     catch(...) {
-        error(ERR_HCT_EXCEPT, "unexpected exception");
+        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
         return NGHTTP2_ERR_CALLBACK_FAILURE;
     }
 
@@ -349,11 +592,11 @@ int http2_session::s_ng_header_cb(nghttp2_session *session, const nghttp2_frame 
                     }
                 }
                 catch(const std::exception& e) {
-                    session_data->error(ERR_HCT_EXCEPT, e.what());
+                    session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
                     return NGHTTP2_ERR_CALLBACK_FAILURE;
                 }
                 catch(...) {
-                    session_data->error(ERR_HCT_EXCEPT, "unexpected exception");
+                    session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
                     return NGHTTP2_ERR_CALLBACK_FAILURE;
                 }
             }
@@ -384,7 +627,7 @@ int http2_session::s_ng_error_cb(nghttp2_session *session, const char *msg, size
     for (auto it = session_data->m_requests.begin(); it != session_data->m_requests.end();) {
         auto cur = it++;
         if (cur->second->get_state() >= http2_request_state::rs_sent && cur->second->get_state() < http2_request_state::rs_done)
-            cur->second->error(ERR_HCT_HTTP_CB, msg);
+            cur->second->error(SPSG_Error::Generic(SPSG_Error::eHttpCb, msg));
     }
     return 0;
 }
@@ -427,14 +670,14 @@ void http2_session::close_session()
             for (auto it = m_requests.begin(); it != m_requests.end(); ) {
                 auto cur = it++;
                 if (cur->second->get_state() < http2_request_state::rs_done)
-                    cur->second->error_nghttp2(NGHTTP2_ERR_SESSION_CLOSING);
+                    cur->second->error(SPSG_Error::NgHttp2(NGHTTP2_ERR_SESSION_CLOSING));
             }
         }
         catch(const std::exception& e) {
-            error(ERR_HCT_EXCEPT, e.what());
+            purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
         }
         catch(...) {
-            error(ERR_HCT_EXCEPT, "unexpected exception");
+            purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
         }
 
         nghttp2_session_del(_session);
@@ -513,9 +756,9 @@ int http2_session::write_ng_data()
     }
 
     if (m_wr.is_pending_wr) {
-        error(ERR_HCT_OVERLAP, "failed to send request, overlapped write requests");
+        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eOverlap, "failed to send request, overlapped write requests"));
 abort();
-        return ERR_HCT_OVERLAP;
+        return SPSG_Error::eOverlap;
     }
 
     if (!m_wr.is_pending_wr) {
@@ -529,7 +772,7 @@ abort();
             LOG2(("%p: write %lu", this, buf.len));
             if (rv != 0) {
                 m_wr.is_pending_wr = false;
-                error_libuv(rv, "failed to send request");
+                purge_pending_requests(SPSG_Error::LibUv(rv, "failed to send request"));
             }
         }
     }
@@ -552,7 +795,7 @@ bool http2_session::fetch_ng_data(bool commit)
             bytes = nghttp2_session_mem_send(m_session, &data);
             if (bytes < 0) {
                 LOG4(("%p: fetch_ng_data: nghttp2_session_mem_send returned error %ld", this, bytes));
-                error_nghttp2(bytes);
+                purge_pending_requests(SPSG_Error::NgHttp2(bytes));
                 rv = bytes;
                 break;
             }
@@ -629,7 +872,16 @@ void http2_session::connect_cb(uv_connect_t *req, int status)
         if (status < 0) {
             if (!try_next_addr()) {
                 m_connection_state = connection_state_t::cs_initial;
-                error_libuv(status, "failed to connect", true);
+                auto error = SPSG_Error::LibUv(status, "failed to connect");
+                purge_pending_requests(error);
+
+                shared_ptr<http2_request> http2_req;
+                while (m_req_queue.pop_move(http2_req)) {
+                    assert(http2_req.get());
+                    LOG1(("%p: drain_queue: req: %p", this, http2_req.get()));
+                    http2_req->error(error);
+                }
+
                 close_tcp();
                 process_completion_list();
             }
@@ -640,15 +892,14 @@ void http2_session::connect_cb(uv_connect_t *req, int status)
         if (m_connection_state == connection_state_t::cs_connecting)
             m_connection_state = connection_state_t::cs_connected;
         else {
-            error(ERR_HCT_UNEXP_CB, "connection is interrupted");
+            purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eUnexpCb, "connection is interrupted"));
             return;
         }
-        clear_error();
         m_tcp.NoDelay(true);
 
         int rv = uv_read_start((uv_stream_t*)m_tcp.Handle(), s_alloc_cb, s_read_cb);
         if (rv < 0) {
-            error_libuv(rv, "failed to start read");
+            purge_pending_requests(SPSG_Error::LibUv(rv, "failed to start read"));
             return;
         }
 
@@ -656,10 +907,10 @@ void http2_session::connect_cb(uv_connect_t *req, int status)
         process_requests();
     }
     catch(const std::exception& e) {
-        error(ERR_HCT_EXCEPT, e.what());
+        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
     }
     catch(...) {
-        error(ERR_HCT_EXCEPT, "unexpected exception");
+        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
     }
     return;
 }
@@ -682,7 +933,7 @@ void http2_session::write_cb(uv_write_t* req, int status)
 
     try {
         if (req != &m_wr.wr_req) {
-            error(ERR_HCT_UNEXP_CB, "Unexpected write_cb call");
+            purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eUnexpCb, "Unexpected write_cb call"));
             return;
         }
         LOG2(("%p: write_cb (%d), %lu", this, status, m_wr.write_buf.size()));
@@ -691,7 +942,7 @@ void http2_session::write_cb(uv_write_t* req, int status)
 
         if (status < 0) {
             if (m_connection_state != connection_state_t::cs_closing) {
-                error_libuv(status, "failed to submit request");
+                purge_pending_requests(SPSG_Error::LibUv(status, "failed to submit request"));
                 close_tcp();
                 process_completion_list();
             }
@@ -703,10 +954,10 @@ void http2_session::write_cb(uv_write_t* req, int status)
         check_next_request();
     }
     catch(const std::exception& e) {
-        error(ERR_HCT_EXCEPT, e.what());
+        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
     }
     catch(...) {
-        error(ERR_HCT_EXCEPT, "unexpected exception");
+        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
     }
 }
 
@@ -727,7 +978,7 @@ void http2_session::read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* bu
         ssize_t readlen;
 
         if (nread < 0) {
-            error_libuv(nread, nread == UV_EOF ? "server disconnected" : "failed to receive server reply");
+            purge_pending_requests(SPSG_Error::LibUv(nread, nread == UV_EOF ? "server disconnected" : "failed to receive server reply"));
             close_tcp();
         }
         else {
@@ -739,9 +990,9 @@ void http2_session::read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* bu
                         auto cur = it++;
                         auto state = cur->second->get_state();
                         if (state >= http2_request_state::rs_wait && state < http2_request_state::rs_done)
-                            cur->second->error_nghttp2((int)readlen);
+                            cur->second->error(SPSG_Error::NgHttp2((int)readlen));
                     }
-                    error_nghttp2((int)readlen);
+                    purge_pending_requests(SPSG_Error::NgHttp2((int)readlen));
                     break;
                 }
                 else {
@@ -755,10 +1006,10 @@ void http2_session::read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* bu
         process_requests();
     }
     catch(const std::exception& e) {
-        error(ERR_HCT_EXCEPT, e.what());
+        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
     }
     catch(...) {
-        error(ERR_HCT_EXCEPT, "unexpected exception");
+        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
     }
 }
 
@@ -769,7 +1020,7 @@ bool http2_session::try_connect(const struct sockaddr *addr)
     if (m_session_state >= session_state_t::ss_closing)
         return false;
     if (m_connection_state != connection_state_t::cs_connecting) {
-        error(ERR_HCT_UNEXP_CB, "connection is interrupted");
+        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eUnexpCb, "connection is interrupted"));
         return false;
     }
 
@@ -781,7 +1032,7 @@ bool http2_session::try_connect(const struct sockaddr *addr)
         m_is_pending_connect = false;
         if (m_connection_state <= connection_state_t::cs_connected)
             m_connection_state = connection_state_t::cs_initial;
-        error_libuv(rv, "failed to connect to server");
+        purge_pending_requests(SPSG_Error::LibUv(rv, "failed to connect to server"));
         return false;
     }
     return true;
@@ -820,14 +1071,14 @@ void http2_session::getaddrinfo_cb(uv_getaddrinfo_t *req, int status, struct add
                 if (m_connection_state == connection_state_t::cs_connecting)
                     m_connection_state = connection_state_t::cs_initial;
 
-                error(ERR_HCT_DNS_RESOLV, "failed to resolve host, invalid ai_family");
+                purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eDnsResolv, "failed to resolve host, invalid ai_family"));
                 return;
             }
         }
         else {
             if (m_connection_state == connection_state_t::cs_connecting)
                 m_connection_state = connection_state_t::cs_initial;
-            error_libuv(status, "failed to resolve host");
+            purge_pending_requests(SPSG_Error::LibUv(status, "failed to resolve host"));
             return;
         }
         if (m_is_pending_connect) {
@@ -838,10 +1089,10 @@ void http2_session::getaddrinfo_cb(uv_getaddrinfo_t *req, int status, struct add
         try_connect(&addr);
     }
     catch(const std::exception& e) {
-        error(ERR_HCT_EXCEPT, e.what());
+        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
     }
     catch(...) {
-        error(ERR_HCT_EXCEPT, "unexpected exception");
+        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
     }
 }
 
@@ -855,14 +1106,14 @@ bool http2_session::initiate_connection()
     if (m_connection_state == connection_state_t::cs_connected)
         close_tcp();
     else if (m_connection_state != connection_state_t::cs_initial) {
-        error(ERR_HCT_SHUTDOWN, "connection is in unexpected state");
+        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eShutdown, "connection is in unexpected state"));
         return false;
     }
     if (m_connection_state == connection_state_t::cs_connected || m_connection_state == connection_state_t::cs_initial) {
         m_connection_state = connection_state_t::cs_connecting;
     }
     else {
-        error(ERR_HCT_SHUTDOWN, "shutdown is in process");
+        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eShutdown, "shutdown is in process"));
         return false;
     }
 
@@ -886,7 +1137,7 @@ bool http2_session::initiate_connection()
     if (rv != 0) {
         if (m_connection_state <= connection_state_t::cs_connected)
             m_connection_state = connection_state_t::cs_initial;
-        error_libuv(rv, "failed to initiate resolving the address");
+        purge_pending_requests(SPSG_Error::LibUv(rv, "failed to initiate resolving the address"));
         return false;
     }
 
@@ -908,7 +1159,7 @@ bool http2_session::send_client_connection_header()
             m_max_streams = TPSG_MaxConcurrentStreams::GetDefault();
     }
     if (rv != 0)
-        error_nghttp2(rv);
+        purge_pending_requests(SPSG_Error::NgHttp2(rv));
 
     return rv == 0;
 }
@@ -929,8 +1180,8 @@ bool http2_session::check_connection()
 void http2_session::process_completion_list()
 {
     for (auto& it : m_completion_list) {
-        std::lock_guard<std::mutex> lock(it->second);
-        it->first.notify_one();
+        it.first->GetLock()->reply_item.NotifyOne();
+        it.second->NotifyOne();
     }
     m_completion_list.clear();
 }
@@ -946,16 +1197,11 @@ void http2_session::request_complete(http2_request* req)
         --m_num_requests;
     }
 }
-void http2_session::add_to_completion(shared_ptr<io_future>& future)
+void http2_session::add_to_completion(shared_ptr<SPSG_Reply::TTS>& reply, shared_ptr<SPSG_Future>& queue)
 {
-    if (TPSG_DelayedCompletion::GetDefault()) {
-        assert(future.use_count() > 1);
-        m_completion_list.insert(future);
-    }
-    else {
-        std::lock_guard<std::mutex> lock(future->second);
-        future->first.notify_one();
-    }
+    assert(reply.use_count() > 1);
+    assert(queue.use_count() > 1);
+    m_completion_list.emplace(reply, queue);
 }
 
 bool http2_session::add_request_move(shared_ptr<http2_request>& req)
@@ -964,14 +1210,12 @@ bool http2_session::add_request_move(shared_ptr<http2_request>& req)
         EException::raise("IO thread is dead");
 
     bool rv = true;
-    if (!req->get_result_data().get_finished()) {
-        req->on_queue(this);
-        rv = m_req_queue.push_move(req);
-        if (rv)
-            m_io->wake();
-        else
-            req->on_queue(nullptr);
-    }
+    req->on_queue(this);
+    rv = m_req_queue.push_move(req);
+    if (rv)
+        m_io->wake();
+    else
+        req->on_queue(nullptr);
     return rv;
 }
 
@@ -1000,15 +1244,6 @@ static void print_headers(FILE *f, nghttp2_nv *nva, size_t nvlen)
 */
 
 
-void http2_session::release_cancelled_requests()
-{
-    for (auto it = m_requests.begin(); it != m_requests.end(); ) {
-        auto cur = it++;
-        if (cur->second->get_cancelled())
-            cur->second->error(ERR_HCT_CANCELLED, "request cancelled");
-    }
-}
-
 #define MAKE_NV(NAME, VALUE, VALUELEN)                                         \
   {                                                                            \
     (uint8_t *)NAME, (uint8_t *)VALUE, sizeof(NAME) - 1, VALUELEN,             \
@@ -1026,10 +1261,9 @@ void http2_session::process_requests()
 {
     if (m_cancel_requested) {
         m_cancel_requested = false;
-        release_cancelled_requests();
     }
     if (m_session_state >= session_state_t::ss_closing) {
-        error(ERR_HCT_SHUTDOWN, "shutdown is in process");
+        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eShutdown, "shutdown is in process"));
         return;
     }
     if (m_connection_state != connection_state_t::cs_initial && m_connection_state != connection_state_t::cs_connected) { // transition state
@@ -1059,7 +1293,7 @@ void http2_session::process_requests()
                     break;
                 }
 
-                if (req->get_cancelled())
+                if (req->get_canceled())
                     continue;
 
                 if (m_connection_state != connection_state_t::cs_connected) {
@@ -1069,17 +1303,17 @@ void http2_session::process_requests()
                         }
                     }
                     else if (m_session_state >= session_state_t::ss_closing) {
-                        req->error(ERR_HCT_SHUTDOWN, "shutdown is in process");
-                        error(ERR_HCT_SHUTDOWN, "shutdown is in process");
+                        req->error(SPSG_Error::Generic(SPSG_Error::eShutdown, "shutdown is in process"));
+                        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eShutdown, "shutdown is in process"));
                         return;
                     }
                     if (!check_connection()) {
-                        req->error(ERR_HCT_SHUTDOWN, "connection is not established");
+                        req->error(SPSG_Error::Generic(SPSG_Error::eShutdown, "connection is not established"));
                         return;
                     }
                 }
                 if (!m_session) {
-                    req->error(ERR_HCT_SHUTDOWN, "http2 session is not established");
+                    req->error(SPSG_Error::Generic(SPSG_Error::eShutdown, "http2 session is not established"));
                     return;
                 }
 
@@ -1093,13 +1327,13 @@ void http2_session::process_requests()
                 //    print_headers(stderr, hdrs, countof(hdrs));
                 int32_t stream_id = nghttp2_submit_request(m_session, NULL, hdrs, DDRPC::countof(hdrs), NULL, req.get());
                 if (stream_id == NGHTTP2_ERR_STREAM_ID_NOT_AVAILABLE) {
-                    req->error_nghttp2(stream_id);
+                    req->error(SPSG_Error::NgHttp2(stream_id));
                     ERRLOG1(("%p: max_requests reached", this));
                     break;
                 }
                 else if (stream_id < 0) {
                     ERRLOG1(("%p: failed: %d", this, stream_id));
-                    req->error_nghttp2(stream_id);
+                    req->error(SPSG_Error::NgHttp2(stream_id));
                     break;
                 }
                 else {
@@ -1130,11 +1364,11 @@ void http2_session::process_requests()
                 }
             }
             catch(const exception& e) {
-                if (req) req->error(ERR_HCT_EXCEPT, e.what());
+                if (req) req->error(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
                 throw;
             }
             catch(...) {
-                if (req) req->error(ERR_HCT_EXCEPT, "unexpected exception");
+                if (req) req->error(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
                 throw;
             }
         }
@@ -1157,24 +1391,12 @@ void http2_session::on_timer()
         process_requests();
 }
 
-void http2_session::drain_queue()
+void http2_session::purge_pending_requests(const string& error)
 {
-    assert(has_error());
-    shared_ptr<http2_request> req;
-    while (m_req_queue.pop_move(req)) {
-        assert(req.get());
-        LOG1(("%p: drain_queue: req: %p", this, req.get()));
-        req->error(m_error);
-    }
-}
-
-void http2_session::purge_pending_requests()
-{
-    assert(has_error());
     for (auto it = m_requests.begin(); it != m_requests.end(); ) {
         auto cur = it++;
         if (cur->second->get_state() >= http2_request_state::rs_initial && cur->second->get_state() < http2_request_state::rs_done)
-            cur->second->error(m_error);
+            cur->second->error(error);
     }
 }
 
@@ -1212,10 +1434,10 @@ void io_thread::on_wake(uv_async_t* handle)
                 sess->process_requests();
             }
             catch(const std::exception& e) {
-                sess->error(ERR_HCT_EXCEPT, e.what());
+                sess->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
             }
             catch(...) {
-                sess->error(ERR_HCT_EXCEPT, "unexpected exception");
+                sess->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
             }
         }
     }
@@ -1264,7 +1486,7 @@ bool io_thread::add_request_move(shared_ptr<http2_request>& req)
     size_t idx = m_cur_idx.load();
     rv = (m_sessions[idx])->add_request_move(req);
 //        if (rv)
-//            LOG1(("%p: queued %p", m_sessions[m_cur_idx].get(), &m_reply_data));
+//            LOG1(("%p: queued %p", m_sessions[m_cur_idx].get(), &m_reply));
     if (!rv) {
         m_cur_idx.compare_exchange_weak(idx, (idx + 1) % m_sessions.size(),  memory_order_release, memory_order_relaxed);
         uv_async_send(&m_wake);

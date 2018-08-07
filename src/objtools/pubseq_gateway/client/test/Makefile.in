@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = AccVerCache
+APP_PROJ = AccVerCache test_psg psg_output
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
