@@ -2,8 +2,8 @@
 
 REQUIRES = PubSeqOS
 
+DTD_PROJ = eMyNCBI_131204
 LIB_PROJ = ncbi_xreader_pubseqos2
-SUB_PROJ =
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

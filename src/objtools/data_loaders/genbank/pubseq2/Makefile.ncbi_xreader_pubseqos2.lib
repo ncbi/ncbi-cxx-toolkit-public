@@ -1,10 +1,10 @@
 # $Id$
 
-SRC = reader_pubseq2
+SRC = reader_pubseq2 eMyNCBI_131204__ eMyNCBI_131204___
 
 LIB = ncbi_xreader_pubseqos2
 
-ASN_DEP = seq seqset id2
+ASN_DEP = seq seqset id2 eMyNCBI_131204
 
 # Build shared version when possible
 LIB_OR_DLL = both
