@@ -133,9 +133,7 @@ set CMAKE_ARGS=-DNCBI_EXPERIMENTAL=ON
 if not "%generator%"=="" (
   set CMAKE_ARGS=%CMAKE_ARGS% -G "%generator%"
 )
-if not "%project_list%"=="" (
-  set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_LIST="%project_list%"
-)
+set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_LIST="%project_list%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS%
 
 set build_root=compilers\CMake-%generator_name%
