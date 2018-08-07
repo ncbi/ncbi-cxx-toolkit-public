@@ -396,8 +396,10 @@ static string s_GetCubbyUserName(const string& web_cookie)
             CEMyNCBIResult result;
             response.ContentStream()
                 >> MSerial_Xml
+                /*
                 >> MSerial_SkipUnknownMembers(eSerialSkipUnknown_Yes)
                 >> MSerial_SkipUnknownVariants(eSerialSkipUnknown_Yes)
+                */
                 >> result;
             cubby_user = result.GetUE().GetUUE().GetUserName();
         }
