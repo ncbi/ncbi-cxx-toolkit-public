@@ -5,8 +5,7 @@
 NCBI_begin_app(test_base64)
   NCBI_sources(test_base64)
   NCBI_requires(Boost.Test.Included)
-  NCBI_uses_toolkit_libraries(test_boost)
-  NCBI_add_test("")
+  NCBI_add_test()
   NCBI_project_watchers(sadyrovr)
 NCBI_end_app()
 
