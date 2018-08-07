@@ -323,7 +323,7 @@ void CLDS2TestApplication::x_InitStressTest(void)
         }
 
         for (TIntId idx = 0; idx < kStressTestEntriesPerFile; idx++) {
-            TGi gi = GI_FROM(TIntId, idx + f*kStressTestEntriesPerFile);
+            TGi gi(idx + f*kStressTestEntriesPerFile);
             CSeq_id& id = *e.SetSeq().SetId().front();
             id.SetGi(gi);
             CSeq_feat& feat = *e.SetSeq().SetAnnot().front()->SetData().SetFtable().front();

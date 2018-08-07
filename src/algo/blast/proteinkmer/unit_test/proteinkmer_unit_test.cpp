@@ -32,6 +32,7 @@
 * ===========================================================================
 */
 
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbi_system.hpp>
@@ -84,8 +85,7 @@ BOOST_AUTO_TEST_CASE(KmerResults)
 {
 	const int kNumHits = 6;
 	// nr_test has GIs from array subjid in the order given.
-	const TGi subjid[kNumHits] = { GI_CONST(129296), GI_CONST(385145541), GI_CONST(448824824),
-		GI_CONST(510032768), GI_CONST(129295), GI_CONST(677974076)};
+	const TGi subjid[kNumHits] = { 129296, 385145541, 448824824, 510032768, 129295, 677974076};
 	const double scores[kNumHits] = {0.359375, 0.710938, 0.242188, 0.234375, 0.28125, 0.234375};
 	TBlastKmerPrelimScoreVector prelim_vector;
 	for (int index=0; index<kNumHits; index++)
@@ -131,9 +131,8 @@ BOOST_AUTO_TEST_CASE(KmerResultsSet)
 	const int kNumHits1 = 6;
 	const int kNumHits2 = 2;
 	// nr_test has GIs from array subjid in the order given by subjid1.
-	const TGi subjid1[kNumHits1] = { GI_CONST(129296), GI_CONST(385145541), GI_CONST(448824824),
-		GI_CONST(510032768), GI_CONST(129295), GI_CONST(677974076)};
-	const TGi subjid2[kNumHits2] = { GI_CONST(129295), GI_CONST(677974076)};
+	const TGi subjid1[kNumHits1] = { 129296, 385145541, 448824824, 510032768, 129295, 677974076};
+	const TGi subjid2[kNumHits2] = { 129295, 677974076};
 	const double scores1[kNumHits1] = {0.359375, 0.710938, 0.242188, 0.234375, 0.28125, 0.234375};
 	const double scores2[kNumHits1] = {0.359375, 0.710938};
 	TBlastKmerPrelimScoreVector prelim_vector1;
@@ -217,9 +216,8 @@ BOOST_AUTO_TEST_CASE(KmerResultsSetPushBack)
 	const int kNumHits1 = 6;
 	const int kNumHits2 = 2;
 	// nr_test has GIs from array subjid in the order given by subjid1.
-	const TGi subjid1[kNumHits1] = { GI_CONST(129296), GI_CONST(385145541), GI_CONST(448824824),
-		GI_CONST(510032768), GI_CONST(129295), GI_CONST(677974076)};
-	const TGi subjid2[kNumHits2] = { GI_CONST(129295), GI_CONST(677974076)};
+	const TGi subjid1[kNumHits1] = { 129296, 385145541, 448824824, 510032768, 129295, 677974076};
+    const TGi subjid2[kNumHits2] = { 129295, 677974076};
 	const double scores1[kNumHits1] = {0.359375, 0.710938, 0.242188, 0.234375, 0.28125, 0.234375};
 	const double scores2[kNumHits1] = {0.359375, 0.710938};
 	TBlastKmerPrelimScoreVector prelim_vector1;
@@ -508,9 +506,9 @@ BOOST_AUTO_TEST_CASE(GIListLimitSearch)
 
 	CBlastKmer kmersearch(query_vector, options, db);	
 	CRef<CSeqDBGiList> seqdb_gilist(new CSeqDBGiList());
-	seqdb_gilist->AddGi(GI_CONST(3091));
-	seqdb_gilist->AddGi(GI_CONST(129296));
-	seqdb_gilist->AddGi(GI_CONST(448824824));
+	seqdb_gilist->AddGi(3091);
+	seqdb_gilist->AddGi(129296);
+	seqdb_gilist->AddGi(448824824);
 	kmersearch.SetGiListLimit(seqdb_gilist);
 	CRef<CBlastKmerResultsSet> results = kmersearch.Run();
 
@@ -539,9 +537,9 @@ BOOST_AUTO_TEST_CASE(NegativeGIListLimitSearch)
 
 	CBlastKmer kmersearch(query_vector, options, db);	
 	CRef<CSeqDBNegativeList> seqdb_gilist(new CSeqDBNegativeList());
-	seqdb_gilist->AddGi(GI_CONST(3091));
-	seqdb_gilist->AddGi(GI_CONST(129296));
-	seqdb_gilist->AddGi(GI_CONST(448824824));
+	seqdb_gilist->AddGi(3091);
+	seqdb_gilist->AddGi(129296);
+	seqdb_gilist->AddGi(448824824);
 	kmersearch.SetGiListLimit(seqdb_gilist);
 	CRef<CBlastKmerResultsSet> resultSet = kmersearch.RunSearches();
 	CBlastKmerResults results = (*resultSet)[0];
@@ -570,7 +568,7 @@ BOOST_AUTO_TEST_CASE(GIListLimitSearch_NoMatches)
 
 	CBlastKmer kmersearch(query_vector, options, db);	
 	CRef<CSeqDBGiList> seqdb_gilist(new CSeqDBGiList());
-	seqdb_gilist->AddGi(GI_CONST(3091));
+	seqdb_gilist->AddGi(3091);
 	kmersearch.SetGiListLimit(seqdb_gilist);
 	CRef<CBlastKmerResultsSet> results = kmersearch.Run();
 
@@ -580,7 +578,7 @@ BOOST_AUTO_TEST_CASE(GIListLimitSearch_NoMatches)
 
 BOOST_AUTO_TEST_CASE(NoMatches)
 {
-	TGi query_gi(GI_CONST(1945387));
+	TGi query_gi(1945387);
 	CRef<CSeq_id> id(new CSeq_id(CSeq_id::e_Gi, query_gi));
 	CRef<CScope> scope(CSimpleOM::NewScope(true));
 	

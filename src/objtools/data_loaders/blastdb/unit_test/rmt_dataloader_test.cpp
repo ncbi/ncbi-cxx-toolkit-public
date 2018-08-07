@@ -236,16 +236,16 @@ BOOST_AUTO_TEST_CASE(RemoteFetchMultipleProteins_FixedSlice)
         scope->AddDataLoader(*name);
     }
 
-    typedef pair<int, CSeq_inst::TLength> TGiLengthPair;
+    typedef pair<TGi, CSeq_inst::TLength> TGiLengthPair;
     typedef vector<TGiLengthPair> TGiLengthVector;
     TGiLengthVector test_data;
-    test_data.push_back(TGiLengthPair(129295, 232));
-    test_data.push_back(TGiLengthPair(129296, 388));
-    test_data.push_back(TGiLengthPair(129295, 232));
+    test_data.push_back(TGiLengthPair(GI_CONST(129295), 232));
+    test_data.push_back(TGiLengthPair(GI_CONST(129296), 388));
+    test_data.push_back(TGiLengthPair(GI_CONST(129295), 232));
 
     CScope::TIds ids;
     ITERATE(TGiLengthVector, itr, test_data) {
-        ids.push_back(CSeq_id_Handle::GetHandle(GI_FROM(int, itr->first)));
+        ids.push_back(CSeq_id_Handle::GetHandle(itr->first));
     }
     BOOST_REQUIRE_EQUAL(ids.size(), test_data.size());
 

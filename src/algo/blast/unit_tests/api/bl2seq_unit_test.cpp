@@ -1113,7 +1113,7 @@ CRef<CBl2Seq> s_SetupWithMultipleQueriesAndSubjects(bool query_is_nucl,
     TSeqLocVector queries;
     ITERATE(vector<TIntId>, itr, q_gis) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+        loc->SetWhole().SetGi(*itr);
 
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
@@ -1123,7 +1123,7 @@ CRef<CBl2Seq> s_SetupWithMultipleQueriesAndSubjects(bool query_is_nucl,
     TSeqLocVector subjects;
     ITERATE(vector<TIntId>, itr, s_gis) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+        loc->SetWhole().SetGi(*itr);
 
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
@@ -1331,7 +1331,7 @@ BOOST_AUTO_TEST_CASE(ProteinBlastMultipleQueriesWithInvalidSeqId) {
     TSeqLocVector queries;
     ITERATE(vector<TIntId>, itr, q_gis) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+        loc->SetWhole().SetGi(*itr);
 
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
@@ -1341,7 +1341,7 @@ BOOST_AUTO_TEST_CASE(ProteinBlastMultipleQueriesWithInvalidSeqId) {
     TSeqLocVector subjects;
     ITERATE(vector<TIntId>, itr, s_gis) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+        loc->SetWhole().SetGi(*itr);
 
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
@@ -1391,7 +1391,7 @@ BOOST_AUTO_TEST_CASE(ProteinBlastMultipleQueriesWithBadQuery) {
     TSeqLocVector queries;
     ITERATE(vector<TIntId>, itr, q_gis) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+        loc->SetWhole().SetGi(*itr);
 
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
@@ -1401,7 +1401,7 @@ BOOST_AUTO_TEST_CASE(ProteinBlastMultipleQueriesWithBadQuery) {
     TSeqLocVector subjects;
     ITERATE(vector<TIntId>, itr, s_gis) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+        loc->SetWhole().SetGi(*itr);
 
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
@@ -1585,7 +1585,7 @@ BOOST_AUTO_TEST_CASE(InvalidMaskingAlgorithm) {
     TSeqLocVector queries;
     ITERATE(vector<TIntId>, itr, q_gis) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+        loc->SetWhole().SetGi(*itr);
 
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
@@ -2966,7 +2966,7 @@ BOOST_AUTO_TEST_CASE(BlastpMultipleQueries_MultipleSubjs) {
     TSeqLocVector queries;
     ITERATE(vector<TIntId>, itr, q_gis) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+        loc->SetWhole().SetGi(*itr);
 
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
@@ -2976,7 +2976,7 @@ BOOST_AUTO_TEST_CASE(BlastpMultipleQueries_MultipleSubjs) {
     TSeqLocVector subjects;
     ITERATE(vector<TIntId>, itr, s_gis) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+        loc->SetWhole().SetGi(*itr);
 
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
@@ -3016,7 +3016,7 @@ BOOST_AUTO_TEST_CASE(BlastpMultipleQueries_MultipleSubjs_RunEx) {
     TSeqLocVector queries;
     ITERATE(vector<TIntId>, itr, q_gis) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+        loc->SetWhole().SetGi(*itr);
 
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
@@ -3026,7 +3026,7 @@ BOOST_AUTO_TEST_CASE(BlastpMultipleQueries_MultipleSubjs_RunEx) {
     TSeqLocVector subjects;
     ITERATE(vector<TIntId>, itr, s_gis) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+        loc->SetWhole().SetGi(*itr);
 
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
@@ -3088,7 +3088,7 @@ BOOST_AUTO_TEST_CASE(BlastpMultipleQueries_MultipleSubjs_CLocalBlast) {
     TSeqLocVector query_vec;
     ITERATE(vector<TIntId>, itr, q_gis) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+        loc->SetWhole().SetGi(*itr);
 
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
@@ -3102,7 +3102,7 @@ BOOST_AUTO_TEST_CASE(BlastpMultipleQueries_MultipleSubjs_CLocalBlast) {
     TSeqLocVector subj_vec;
     ITERATE(vector<TIntId>, itr, s_gis) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+        loc->SetWhole().SetGi(*itr);
 
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
@@ -3179,7 +3179,7 @@ BOOST_AUTO_TEST_CASE(Blastp_MultipleSubjs_SearchAsSet) {
     TSeqLocVector query_vec;
     ITERATE(vector<TIntId>, itr, q_gis) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+        loc->SetWhole().SetGi(*itr);
 
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();
@@ -3193,7 +3193,7 @@ BOOST_AUTO_TEST_CASE(Blastp_MultipleSubjs_SearchAsSet) {
     TSeqLocVector subj_vec;
     ITERATE(vector<TIntId>, itr, s_gis) {
         CRef<CSeq_loc> loc(new CSeq_loc());
-        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+        loc->SetWhole().SetGi(*itr);
 
         CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
         scope->AddDefaults();

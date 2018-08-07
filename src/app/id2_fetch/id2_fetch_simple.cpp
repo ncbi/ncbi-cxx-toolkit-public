@@ -128,7 +128,7 @@ void CId2FetchApp::Init(void)
     arg_desc->AddOptionalKey
         ("gi", "SeqEntryID",
          "GI id of the Seq-Entry to fetch",
-         CArgDescriptions::eInteger);
+         CArgDescriptions::eIntId);
     // Seq-id
     arg_desc->AddOptionalKey
         ("id", "SeqEntryID",
@@ -929,7 +929,7 @@ int CId2FetchApp::Run(void)
     TReqs reqs;
 
     if ( args["gi"] ) {
-        TGi gi = GI_FROM(int, args["gi"].AsInteger());
+        TGi gi = args["gi"].AsIntId();
         CRef<CID2_Request_Packet> packet(new CID2_Request_Packet);
         reqs.push_back(packet);
         CRef<CID2_Request> req(new CID2_Request);

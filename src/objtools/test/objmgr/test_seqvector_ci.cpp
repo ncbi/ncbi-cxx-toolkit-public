@@ -96,7 +96,7 @@ void CTestApp::Init(void)
     // GI to fetch
     arg_desc->AddDefaultKey("gi", "SeqEntryID",
                             "GI id of the Seq-Entry to fetch",
-                            CArgDescriptions::eInteger,
+                            CArgDescriptions::eIntId,
                             "29791621");
     arg_desc->AddDefaultKey("cycles", "RandomCycles",
                             "repeat random test 'cycles' times",
@@ -288,7 +288,7 @@ int CTestApp::Run(void)
     const CArgs& args = GetArgs();
 
     // GI with many segments of different sizes.
-    TGi gi = GI_FROM(int, args["gi"].AsInteger()); // 29791621;
+    TGi gi = args["gi"].AsIntId(); // 29791621;
 
     m_OM = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*m_OM);

@@ -62,7 +62,7 @@ void CTitleTester::Init(void)
                               "Show a sequence's title", false);
 
     arg_desc->AddKey("gi", "SeqEntryID", "GI id of the Seq-Entry to examine",
-                     CArgDescriptions::eInteger);
+                     CArgDescriptions::eIntId);
     arg_desc->AddKey("in", "GIList", "File listing GIs to look up",
                      CArgDescriptions::eInputFile);
     arg_desc->SetDependency("gi", CArgDescriptions::eExcludes, "in");
@@ -98,14 +98,14 @@ int CTitleTester::Run(void)
     }
 
     if (args["gi"]) {
-        id.SetGi(GI_FROM(int, args["gi"].AsInteger()));
+        id.SetGi(args["gi"].AsIntId());
         CBioseq_Handle handle = scope.GetBioseqHandle(id);
         NcbiCout << gen.GenerateDefline(handle, flags) << NcbiEndl;
     } else {
         CNcbiIstream& in(args["in"].AsInputFile());
         TIntId int_gi;
         while (in >> int_gi) {
-            id.SetGi(GI_FROM(TIntId, int_gi));
+            id.SetGi(int_gi);
             string s;
             try {
                 CBioseq_Handle handle = scope.GetBioseqHandle(id);

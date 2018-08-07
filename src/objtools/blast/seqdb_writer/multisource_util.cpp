@@ -90,7 +90,7 @@ string AccessionToKey(const string & acc)
     if (CheckAccession(acc, gi, seqid, specific)) {
         if (seqid.Empty()) {
             if (gi != ZERO_GI) {
-                str = NStr::IntToString(GI_TO(int, gi));
+                str = NStr::NumericToString(gi);
             }
         } else {
             GetSeqIdKey(*seqid, str);
@@ -121,7 +121,7 @@ bool CheckAccession(const string  & acc,
     }
 
     if (digits) {
-        gi = GI_FROM(int, NStr::StringToInt(acc));
+        gi = NStr::StringToNumeric<TGi>(acc);
         return true;
     }
 

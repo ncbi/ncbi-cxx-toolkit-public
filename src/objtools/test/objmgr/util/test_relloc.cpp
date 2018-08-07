@@ -65,7 +65,7 @@ void CRelLocTester::Init(void)
                               "Test the use of SRelLoc", false);
 
     arg_desc->AddKey("gi", "SeqEntryID", "GI id of the Seq-Entry to examine",
-                     CArgDescriptions::eInteger);
+                     CArgDescriptions::eIntId);
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -78,7 +78,7 @@ int CRelLocTester::Run(void)
     CScope         scope(*objmgr);
     CSeq_id        id;
     
-    id.SetGi(GI_FROM(int, args["gi"].AsInteger()));
+    id.SetGi(args["gi"].AsIntId());
 
     CGBDataLoader::RegisterInObjectManager(*objmgr);
     scope.AddDefaults();

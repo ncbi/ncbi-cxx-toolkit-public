@@ -52,7 +52,7 @@ void CMemTestApp::Init(void)
 
     arg_desc->AddOptionalKey("gi", "SeqEntryID",
                              "GI id of the Seq-Entry to fetch",
-                             CArgDescriptions::eInteger);
+                             CArgDescriptions::eIntId);
     arg_desc->AddOptionalKey("count", "Count", "Repeat count",
                              CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("file", "File", "File with Seq-entry",
@@ -71,7 +71,7 @@ void CMemTestApp::Init(void)
 int CMemTestApp::Run(void)
 {
     const CArgs& args = GetArgs();
-    TGi gi = GI_FROM(int, args["gi"]? args["gi"].AsInteger(): -1);
+    TGi gi = args["gi"] ? TGi(args["gi"].AsIntId()) : INVALID_GI;
     string file = args["file"]? args["file"].AsString(): string();
     int repeat_count = args["count"]?args["count"].AsInteger():100;
     bool add_to_objmgr = args["objmgr"];

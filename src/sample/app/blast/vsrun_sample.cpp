@@ -80,7 +80,7 @@ void VSRunSampleApplication::Init(void)
     // Identifier for the query sequence
     arg_desc->AddKey("gi", "QuerySequenceID", 
                      "GI of the query sequence",
-                     CArgDescriptions::eInteger);
+                     CArgDescriptions::eIntId);
 
 
     // Output file
@@ -113,7 +113,7 @@ int VSRunSampleApplication::Run(void)
     scope->AddDefaults();
 
     CRef<CSeq_loc> query_loc(new CSeq_loc());
-    query_loc->SetWhole().SetGi(GI_FROM(int, args["gi"].AsInteger()));
+    query_loc->SetWhole().SetGi(args["gi"].AsIntId());
 
     CVecscreenRun vs_run(query_loc, scope);
 

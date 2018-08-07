@@ -30,6 +30,7 @@
 /** @file psiblast-cppunit.cpp
  * Unit test module for the PSI-BLAST class
  */
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 #include <corelib/test_boost.hpp>
 #include <serial/iterator.hpp>

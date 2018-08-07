@@ -86,7 +86,7 @@ void CId1FetchApp::Init(void)
     arg_desc->AddOptionalKey
         ("gi", "SeqEntryID",
          "GI id of the Seq-Entry to fetch",
-         CArgDescriptions::eInteger);
+         CArgDescriptions::eIntId);
     // Request
     arg_desc->AddOptionalKey
         ("req", "Request",
@@ -159,7 +159,7 @@ int CId1FetchApp::Run(void)
     typedef vector<CRef<CID1server_request> > TReqs;
     TReqs reqs;
     if ( args["gi"] ) {
-        TGi gi = GI_FROM(int, args["gi"].AsInteger());
+        TGi gi = args["gi"].AsIntId();
         //    id1_request.SetGetsefromgi().SetGi() = gi;
         CRef<CID1server_request> req(new CID1server_request);
         req->SetGetseqidsfromgi(gi);

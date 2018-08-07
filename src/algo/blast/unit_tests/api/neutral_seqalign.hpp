@@ -61,24 +61,22 @@ const double kInvalidDoubleValue = -1.0;
 class CAlignedGis {
 public:
 
-    enum { kUnassigned = -1 };
-
     CAlignedGis() 
-        : m_Gis(make_pair<int, int>(kUnassigned, kUnassigned)) {}
+        : m_Gis(make_pair<TGi, TGi>(INVALID_GI, INVALID_GI)) {}
 
-    CAlignedGis(int query_gi, int subj_gi) 
+    CAlignedGis(TGi query_gi, TGi subj_gi) 
         : m_Gis(make_pair(query_gi, subj_gi)) {}
 
-    CAlignedGis(std::pair<int, int> gis)
+    CAlignedGis(std::pair<TGi, TGi> gis)
         : m_Gis(gis) {}
 
-    int GetQuery() const { return m_Gis.first; }
-    int GetSubject() const { return m_Gis.second; }
-    void SetQuery(int gi) { m_Gis.first = gi; }
-    void SetSubject(int gi) { m_Gis.second = gi; }
+    TGi GetQuery() const { return m_Gis.first; }
+    TGi GetSubject() const { return m_Gis.second; }
+    void SetQuery(TGi gi) { m_Gis.first = gi; }
+    void SetSubject(TGi gi) { m_Gis.second = gi; }
 
 private:
-    std::pair<int, int> m_Gis;
+    std::pair<TGi, TGi> m_Gis;
 };
 
 /// Neutral sequence alignment (for representing an HSP in BLAST)

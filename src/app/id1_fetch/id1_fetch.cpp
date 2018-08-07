@@ -129,9 +129,9 @@ void CId1FetchApp::Init(void)
     arg_desc->AddOptionalKey
         ("gi", "SeqEntryID",
          "GI id of the Seq-Entry to fetch",
-         CArgDescriptions::eInteger);
+         CArgDescriptions::eIntId);
     arg_desc->SetConstraint
-        ("gi", new CArgAllow_Integers(0, kMax_Int));
+        ("gi", new CArgAllow_Int8s(0, kMax_I8));
 
     // Output format
     arg_desc->AddDefaultKey
@@ -338,7 +338,7 @@ int CId1FetchApp::Run(void)
     int repeat = args["repeat"].AsInteger();
     for ( int pass = 0; pass < repeat; ++pass ) {
     if (args["gi"]) {
-        if ( !LookUpGI(GI_FROM(int, args["gi"].AsInteger())) )
+        if ( !LookUpGI(args["gi"].AsIntId()) )
             return -1;
     }
 

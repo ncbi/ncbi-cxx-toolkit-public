@@ -388,7 +388,7 @@ void CAsn2Asn::Init(void)
                "Skip data without reading in memory");
     d->AddOptionalKey("Mgi", "MergeAnnotGi",
                       "Merge Seq-annot to GI",
-                      CArgDescriptions::eInteger);
+                      CArgDescriptions::eIntId);
     d->AddOptionalKey("Min", "MergeAnnotInput",
                       "Binary ASN.1 Seq-entry file with Seq-annot for merging",
                       CArgDescriptions::eInputFile);
@@ -994,13 +994,11 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                         NcbiCerr << "Merging Seq-annot..." << NcbiEndl;
 
                     if ( args["Min"] ) {
-                        merge_annot::MergeFromFile(*in, *out,
-                                                   GI_FROM(int, args["Mgi"].AsInteger()),
+                        merge_annot::MergeFromFile(*in, *out, args["Mgi"].AsIntId(),
                                                    args["Min"].AsString());
                     }
                     else {
-                        merge_annot::MergeExternal(*in, *out,
-                                                   GI_FROM(int, args["Mgi"].AsInteger()),
+                        merge_annot::MergeExternal(*in, *out, args["Mgi"].AsIntId(),
                                                    args["Mext"].AsInteger());
                     }
                 }

@@ -107,7 +107,7 @@ void CFeatTreeSampleApp::Init(void)
 
     arg_desc->AddDefaultKey("gi", "gi",
                             "The gi for the Bioseq of interest, e.g. 455025.",
-                            CArgDescriptions::eInteger, "455025");
+                            CArgDescriptions::eIntId, "455025");
 
     arg_desc->AddDefaultKey("from", "from",
                             "The starting position of the range.",
@@ -124,7 +124,7 @@ void CFeatTreeSampleApp::Init(void)
     const CArgs& args = GetArgs();
 
     // Get configuration.
-    m_gi = GI_FROM(int, args["gi"].AsInteger());
+    m_gi = args["gi"].AsIntId();
     m_range_from = args["from"].AsInteger();
     m_range_to = args["to"].AsInteger();
 }

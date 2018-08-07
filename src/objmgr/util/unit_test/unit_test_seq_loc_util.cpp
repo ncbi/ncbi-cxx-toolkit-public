@@ -81,13 +81,13 @@ CScope& GetScope()
 }
 
 
-CRef<CSeq_loc> MakeBond(TIntId giA, TSeqPos posA, int giB = 0, TSeqPos posB = 0)
+CRef<CSeq_loc> MakeBond(TIntId giA, TSeqPos posA, TIntId giB = 0, TSeqPos posB = 0)
 {
     CRef<CSeq_loc> ret(new CSeq_loc);
-    ret->SetBond().SetA().SetId().SetGi(GI_FROM(TIntId, giA));
+    ret->SetBond().SetA().SetId().SetGi(giA);
     ret->SetBond().SetA().SetPoint(posA);
     if (giB > 0) {
-        ret->SetBond().SetB().SetId().SetGi(GI_FROM(TIntId, giB));
+        ret->SetBond().SetB().SetId().SetGi(giB);
         ret->SetBond().SetB().SetPoint(posB);
     }
     return ret;
@@ -100,7 +100,7 @@ CRef<CSeq_loc> MakeInterval(TIntId        gi,
                             ENa_strand strand = eNa_strand_unknown)
 {
     CRef<CSeq_loc> ret(new CSeq_loc);
-    ret->SetInt().SetId().SetGi(GI_FROM(TIntId, gi));
+    ret->SetInt().SetId().SetGi(gi);
     ret->SetInt().SetFrom(from);
     ret->SetInt().SetTo(to);
     if (strand != eNa_strand_unknown) {
@@ -129,7 +129,7 @@ CRef<CSeq_loc> MakeInterval(CRef<CSeq_id> id,
 CRef<CSeq_loc> MakePoint(TIntId gi, TSeqPos pos)
 {
     CRef<CSeq_loc> ret(new CSeq_loc);
-    ret->SetPnt().SetId().SetGi(GI_FROM(TIntId, gi));
+    ret->SetPnt().SetId().SetGi(gi);
     ret->SetPnt().SetPoint(pos);
     return ret;
 }

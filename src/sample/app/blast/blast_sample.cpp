@@ -70,15 +70,15 @@ blast::SSeqLoc*
 CBlastSampleApplication::x_CreateSSeqLoc(CBlastSampleApplication::ESeqType st)
 {
     // Get the gi
-    int gi;
+    TGi gi;
     if (st == eQuery) {
-        gi = GetArgs()["query"].AsInteger();
+        gi = GetArgs()["query"].AsIntId();
     } else {
-        gi = GetArgs()["subject"].AsInteger();
+        gi = GetArgs()["subject"].AsIntId();
     }
 
     CRef<CSeq_loc> seqloc(new CSeq_loc);
-    seqloc->SetWhole().SetGi(GI_FROM(int, gi));
+    seqloc->SetWhole().SetGi(gi);
 
     // Setup the scope
     CRef<CScope> scope(CSimpleOM::NewScope());
@@ -111,12 +111,12 @@ void CBlastSampleApplication::Init(void)
     // Identifier for the query sequence
     arg_desc->AddKey("query", "QuerySequenceID", 
                      "GI of the query sequence",
-                     CArgDescriptions::eInteger);
+                     CArgDescriptions::eIntId);
 
     // Identifier for the subject sequence
     arg_desc->AddKey("subject", "SubjectSequenceID", 
                      "GI of the subject sequence",
-                     CArgDescriptions::eInteger);
+                     CArgDescriptions::eIntId);
 
     // Output file
     arg_desc->AddDefaultKey("out", "OutputFile", 

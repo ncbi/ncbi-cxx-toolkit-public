@@ -338,7 +338,7 @@ void CTestApp::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->AddKey("gi", "SeqEntryID", "GI id of the Seq-Entry to fetch",
-                     CArgDescriptions::eInteger);
+                     CArgDescriptions::eIntId);
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "test_editsaver", false);
@@ -436,7 +436,7 @@ static void s_RemoveAnnot(const CBioseq_Handle& handle)
 int CTestApp::Run(void)
 {
     const CArgs& args = GetArgs();
-    TGi gi = GI_FROM(int, args["gi"].AsInteger());
+    TGi gi = args["gi"].AsIntId();
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 

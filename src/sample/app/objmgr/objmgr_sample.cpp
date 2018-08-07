@@ -83,9 +83,9 @@ void CSampleObjmgrApplication::Init(void)
 
     // GI to fetch
     arg_desc->AddKey("gi", "SeqEntryID", "GI id of the Seq-Entry to fetch",
-                     CArgDescriptions::eInteger);
+                     CArgDescriptions::eIntId);
     arg_desc->SetConstraint
-        ("gi", new CArgAllow_Integers(2, 40000000));
+        ("gi", new CArgAllow_Int8s(2, 40000000));
 
     // Program description
     string prog_description = "Example of the C++ Object Manager usage\n";
@@ -106,7 +106,7 @@ int CSampleObjmgrApplication::Run(void)
 
     // Process command line args:  get GI to load
     const CArgs& args = GetArgs();
-    TGi gi = GI_FROM(int, args["gi"].AsInteger());
+    TGi gi = args["gi"].AsIntId();
 
     /////////////////////////////////////////////////////////////////////////
     // Create object manager

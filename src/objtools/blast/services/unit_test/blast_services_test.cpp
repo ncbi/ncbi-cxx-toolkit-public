@@ -31,6 +31,7 @@
 * ===========================================================================
 */
 
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 #include <objtools/blast/services/blast_services.hpp>
 #include <corelib/ncbienv.hpp>
@@ -328,7 +329,7 @@ BOOST_AUTO_TEST_CASE(FetchMultipleSequences)
     //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
     const string kDbName("ecoli");
     const char kSeqType('n');
-    int ecoli_gis[] = { 1786181, 1786192, 2367095, 1786217, 1786230, 1786240,
+    TGi ecoli_gis[] = { 1786181, 1786192, 2367095, 1786217, 1786230, 1786240,
         1786250, 1786262, 1786283, 1786298 };
 
     CBlastServices::TSeqIdVector queries;
@@ -352,7 +353,7 @@ BOOST_AUTO_TEST_CASE(FetchMultipleSequences)
         const CBioseq::TId& ids = (*bs)->GetId();
         ITERATE(CBioseq::TId, id, ids) {
             if ((*id)->IsGi()) {
-                BOOST_REQUIRE_EQUAL(ecoli_gis[i++], GI_TO(int, (*id)->GetGi()));
+                BOOST_REQUIRE_EQUAL(ecoli_gis[i++], (*id)->GetGi());
                 break;
             }
         }
@@ -474,8 +475,8 @@ BOOST_AUTO_TEST_CASE(FetchMultipleSequencesInfo)
     //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
     const string kDbName("ecoli");
     const char kSeqType('n');
-    int ecoli_gis[] = { 1786181, 1786192, 2367095, 1786217, 1786230, 1786240,
-        1786250, 1786262, 1786283, 1786298 };
+    TGi ecoli_gis[] = { 1786181, 1786192, 2367095, 1786217,
+        1786230, 1786240, 1786250, 1786262, 1786283, 1786298 };
 
     CBlastServices::TSeqIdVector queries;
     size_t i = 0;
@@ -498,7 +499,7 @@ BOOST_AUTO_TEST_CASE(FetchMultipleSequencesInfo)
         const CBioseq::TId& ids = (*bs)->GetId();
         ITERATE(CBioseq::TId, id, ids) {
             if ((*id)->IsGi()) {
-                BOOST_REQUIRE_EQUAL(ecoli_gis[i++], GI_TO(int, (*id)->GetGi()));
+                BOOST_REQUIRE_EQUAL(ecoli_gis[i++], (*id)->GetGi());
                 break;
             }
         }
@@ -628,8 +629,8 @@ BOOST_AUTO_TEST_CASE(FetchMultipleSequencesParts)
     //CAutoEnvironmentVariable autoenv("BLAST4_CONN_SERVICE_NAME", "blast4_test");
     const string kDbName("ecoli");
     const char kSeqType('p');
-    int ecoli_gis[] = { 1786182, 1786183, 1786184, 1786185, 1786186, 1786187,
-        1786188, 1786189, 1786190, 1786191
+    TGi ecoli_gis[] = { 1786182, 1786183, 1786184, 1786185,
+        1786186, 1786187, 1786188, 1786189, 1786190, 1786191
     };
     CBlastServices::TSeqIntervalVector queries;
     const TSeqRange range(0, 20); // all queries are at least 20 residues
@@ -661,7 +662,7 @@ BOOST_AUTO_TEST_CASE(FetchMultipleSequencesParts)
     i = 0;
     ITERATE(CBlastServices::TSeqIdVector, id, ids) {
         if ((*id)->IsGi()) {
-            BOOST_REQUIRE_EQUAL(ecoli_gis[i++], GI_TO(int, (*id)->GetGi()));
+            BOOST_REQUIRE_EQUAL(ecoli_gis[i++], (*id)->GetGi());
         }
     }
 }

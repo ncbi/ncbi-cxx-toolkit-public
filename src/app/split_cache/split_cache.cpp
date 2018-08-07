@@ -202,7 +202,7 @@ void CSplitCacheApp::Init(void)
     // set of entries to process
     arg_desc->AddOptionalKey("gi", "Gi",
                              "GI of the Seq-Entry to process",
-                             CArgDescriptions::eInteger);
+                             CArgDescriptions::eIntId);
     arg_desc->AddOptionalKey("gi_list", "GiList",
                              "file with list of GIs to process",
                              CArgDescriptions::eInputFile);
@@ -544,7 +544,7 @@ void CSplitCacheApp::Process(void)
     }
     if ( args["gi_list"] ) {
         CNcbiIstream& in = args["gi_list"].AsInputFile();
-        int gi;
+        TIntId gi;
         while ( in >> gi ) {
             ProcessGi(gi);
         }
@@ -599,10 +599,10 @@ void CSplitCacheApp::Process(void)
 }
 
 
-void CSplitCacheApp::ProcessGi(int gi)
+void CSplitCacheApp::ProcessGi(TIntId gi)
 {
     CSeq_id id;
-    id.SetGi(GI_FROM(int, gi));
+    id.SetGi(gi);
     ProcessSeqId(id);
 }
 
