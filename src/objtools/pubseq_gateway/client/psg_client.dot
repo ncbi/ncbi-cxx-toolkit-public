@@ -1,0 +1,100 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Rafael Sadyrov
+ *
+ * File Description:
+ * This is a diagram of PSG client related classes and their relations written in DOT language.
+ * Contents of this file can be rendered to the actual diagram image
+ * by any DOT compatible program (or website).
+ *
+ */
+
+digraph PSG {
+    node [shape="box"];
+    SQueueImpl [label="CPSG_Queue::SImpl"];
+    SReplyImpl [label="CPSG_Reply::SImpl"];
+    SReplyItemImpl [label="CPSG_ReplyItem::SImpl"];
+    SChunk [label="SPSG_Reply::SChunk"];
+    SItem [label="SPSG_Reply::SItem"];
+    SRequest [label="CPSG_Queue::SImpl::SRequest"];
+    istream_ireader [label="istream(IReader)" style="filled"];
+    CPSG_Queue [style="filled"];
+    CPSG_Reply [style="filled"];
+    CPSG_Request_Biodata [style="filled"];
+    CPSG_Request_Blob [style="filled"];
+    CPSG_Blob [style="filled"];
+    CPSG_BlobInfo [style="filled"];
+    CPSG_BioseqInfo [style="filled"];
+
+    subgraph cluster_REQUESTS {
+        style="dashed";
+        CPSG_Request;
+        CPSG_Request_Biodata;
+        CPSG_Request_Blob;
+    };
+
+    subgraph cluster_REPLY_ITEMS {
+        style="dashed";
+        CPSG_ReplyItem;
+        CPSG_Blob;
+        CPSG_BlobInfo;
+        CPSG_BioseqInfo;
+    };
+
+    subgraph cluster_DATA {
+        style="dashed";
+        SPSG_Reply;
+        SChunk;
+        SItem;
+    };
+
+    CPSG_Request_Biodata -> CPSG_Request [arrowhead="onormal"];
+    CPSG_Request_Blob -> CPSG_Request [arrowhead="onormal"];
+
+    CPSG_Blob -> CPSG_ReplyItem [arrowhead="onormal"];
+    CPSG_BlobInfo -> CPSG_ReplyItem [arrowhead="onormal"];
+    CPSG_BioseqInfo -> CPSG_ReplyItem [arrowhead="onormal"];
+
+    CPSG_Blob -> istream_ireader;
+    CPSG_ReplyItem -> CPSG_Reply;
+    CPSG_Reply -> CPSG_Request;
+
+    CPSG_Queue -> SQueueImpl [style="dashed" arrowhead="onormal"];
+    CPSG_Reply -> SReplyImpl [style="dashed" arrowhead="onormal"];
+    CPSG_ReplyItem -> SReplyItemImpl [style="dashed" arrowhead="onormal"];
+
+    SPSG_Reply -> SItem [arrowhead="diamond"];
+    SPSG_Reply -> SItem;
+    SItem -> SChunk [arrowhead="diamond"];
+
+    SQueueImpl -> SRequest [arrowhead="diamond"];
+    SRequest -> CPSG_Request;
+    SRequest -> SPSG_Reply;
+
+    SReplyImpl -> SPSG_Reply;
+    SReplyItemImpl -> SItem;
+    istream_ireader -> SItem;
+}
