@@ -267,12 +267,12 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK g_CORE_MT_Lock;
  * do not access/change it directly!
  */
 
-#define CORE_LOCK_WRITE  verify(CORE_CHECK_LOCK  &&                     \
-                                MT_LOCK_Do(g_CORE_MT_Lock, eMT_Lock    ))
-#define CORE_LOCK_READ   verify(CORE_CHECK_LOCK  &&                     \
-                                MT_LOCK_Do(g_CORE_MT_Lock, eMT_LockRead))
-#define CORE_UNLOCK      verify(CORE_CHECK_UNLOCK  &&                   \
-                                MT_LOCK_Do(g_CORE_MT_Lock, eMT_Unlock  ))
+#define CORE_LOCK_WRITE  verify(CORE_CHECK_LOCK   != 0  &&              \
+                                MT_LOCK_Do(g_CORE_MT_Lock, eMT_Lock    ) != 0)
+#define CORE_LOCK_READ   verify(CORE_CHECK_LOCK   != 0  &&              \
+                                MT_LOCK_Do(g_CORE_MT_Lock, eMT_LockRead) != 0)
+#define CORE_UNLOCK      verify(CORE_CHECK_UNLOCK != 0  &&              \
+                                MT_LOCK_Do(g_CORE_MT_Lock, eMT_Unlock  ) != 0)
 
 #ifdef _DEBUG
 extern NCBI_XCONNECT_EXPORT int g_NCBI_CoreCheckLock  (void);
@@ -326,8 +326,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ g_CORE_RegistrySET
 
 typedef enum {
     eCORE_SetSSL  = 1,
-    eCORE_SetREG  = 4,
     eCORE_SetLOG  = 2,
+    eCORE_SetREG  = 4,
     eCORE_SetLOCK = 8
 } ECORE_Set;
 typedef unsigned int TCORE_Set;
