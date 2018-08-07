@@ -59,9 +59,9 @@
 #include <objects/id2/id2__.hpp>
 
 #include <connect/ncbi_http_session.hpp>
-//#define USE_XMLWRAP_LIB
-#ifdef USE_XMLWRAP_LIB
-#include <misc/xmlwrapp/xmlwrapp.hpp>
+//#define USE_WEB_COOKIE
+#ifdef USE_WEB_COOKIE
+# include <objtools/data_loaders/genbank/pubseq2/EMyNCBIResult.hpp>
 #endif
 
 #define BINARY_REQUESTS     1
@@ -381,31 +381,32 @@ namespace {
 
 static string s_GetCubbyUserName(const string& web_cookie)
 {
-    const string kEMyNCBIURL =
+    static const char* kEMyNCBIURL =
         "https://www.ncbi.nlm.nih.gov/entrez/eutils/emyncbi.cgi?cmd=whoami&WebCubbyUser=";
     string cubby_user;
     if (web_cookie.empty()) {
-        cubby_user = NStr::SQLEncode(GetProcessUserName());
+        cubby_user = GetProcessUserName();
     } else {
+#ifdef USE_WEB_COOKIE
         CHttpSession session;
         int response_timeout = 40;
         CHttpResponse response =
             session.Get(CUrl(kEMyNCBIURL + web_cookie), CTimeout(response_timeout), 0);
         if (response.GetStatusCode() == 200) {
-#ifdef USE_XMLWRAP_LIB
-            xml::error_messages errors;
-            xml::document doc(response.ContentStream(), &errors);
-            xml::node_set nodes ( doc.get_root_node().run_xpath_query("//eMyNCBIResult") );
-            ITERATE(xml::node_set, it, nodes) {
-                xml::node::const_iterator it2 = it->find("UserName");
-                if (it2 != it->end()) {
-                    cubby_user = NStr::SQLEncode(it2->get_content());
-                    break;
-                }
-            }
-#else
-            cubby_user = NStr::SQLEncode(GetProcessUserName());  
+            CEMyNCBIResult result;
+            response.ContentStream()
+                >> MSerial_Xml
+                >> MSerial_SkipUnknownMembers(eSerialSkipUnknown_Yes)
+                >> MSerial_SkipUnknownVariants(eSerialSkipUnknown_Yes)
+                >> result;
+            cubby_user = result.GetUE().GetUUE().GetUserName();
+        }
+        else {
+            NCBI_THROW(CLoaderException, eConnectionFailed, "MyNCBI cubby user name timeout");
+        }
 #endif
+        if ( cubby_user.empty() ) {
+            NCBI_THROW(CLoaderException, eConnectionFailed, "MyNCBI cubby user name is empty");
         }
     }
 
@@ -460,7 +461,7 @@ void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
 
     if ( m_SetCubbyUser ) {
         string cubby_user = s_GetCubbyUserName(m_WebCookie);
-        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set cubby_user "+cubby_user));
+        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set cubby_user "+NStr::SQLEncode(cubby_user)));
         cmd->Send();
         cmd->DumpResults();
     }
