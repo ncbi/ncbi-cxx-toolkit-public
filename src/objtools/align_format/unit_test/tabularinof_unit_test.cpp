@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(TaxonomyOutput) {
     const string ref[8] = {
 	"9940	Ovis aries	sheep	even-toed ungulates	Eukaryota",
 	"9913	Bos taurus	cattle	even-toed ungulates	Eukaryota",
-	"72004	Bos mutus	Bos mutus	even-toed ungulates	Eukaryota",
+	"72004	Bos mutus	wild yak	even-toed ungulates	Eukaryota",
 	"9970	Syncerus caffer	African buffalo	even-toed ungulates	Eukaryota",
 	"43346	Bison bison bison	Bison bison bison	even-toed ungulates	Eukaryota",
 	"346063	Bubalus carabanensis	carabao	even-toed ungulates	Eukaryota",
