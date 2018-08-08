@@ -2243,10 +2243,12 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                     }
                 }
             } else {
+#if 0
                 if (CanSkipUnknownMembers() && NextIsTag()) {
                     SetFailFlags(fUnknownValue);
                     SkipAnyContent();
                 }
+#endif
                 return kInvalidMember;
             }
             if (!NextIsTag()) {
