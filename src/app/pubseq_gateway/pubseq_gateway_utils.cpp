@@ -90,68 +90,6 @@ SBlobId ParseBlobId(const string &  blob_id)
 }
 
 
-CJsonNode  BlobPropToJSON(const CBlobRecord &  blob_prop)
-{
-    CJsonNode       json(CJsonNode::NewObjectNode());
-
-    json.SetInteger("Key", blob_prop.GetKey());
-    json.SetInteger("LastModified", blob_prop.GetModified());
-    json.SetInteger("Flags", blob_prop.GetFlags());
-    json.SetInteger("Size", blob_prop.GetSize());
-    json.SetInteger("SizeUnpacked", blob_prop.GetSizeUnpacked());
-    json.SetInteger("Class", blob_prop.GetClass());
-    json.SetInteger("DateAsn1", blob_prop.GetDateAsn1());
-    json.SetInteger("HupDate", blob_prop.GetHupDate());
-    json.SetString("Div", blob_prop.GetDiv());
-    json.SetString("Id2Info", blob_prop.GetId2Info());
-    json.SetInteger("Owner", blob_prop.GetOwner());
-    json.SetString("UserName", blob_prop.GetUserName());
-    json.SetInteger("NChunks", blob_prop.GetNChunks());
-
-    return json;
-}
-
-
-CJsonNode  BioseqInfoToJSON(const SBioseqInfo &  bioseq_info,
-                            TServIncludeData  include_data_flags)
-{
-    CJsonNode       json(CJsonNode::NewObjectNode());
-
-    if (include_data_flags & fServCanonicalId) {
-        json.SetString("accession", bioseq_info.m_Accession);
-        json.SetInteger("version", bioseq_info.m_Version);
-        json.SetInteger("seq_id_type", bioseq_info.m_SeqIdType);
-    }
-    if (include_data_flags & fServMoleculeType)
-        json.SetInteger("mol", bioseq_info.m_Mol);
-    if (include_data_flags & fServLength)
-        json.SetInteger("length", bioseq_info.m_Length);
-    if (include_data_flags & fServState)
-        json.SetInteger("state", bioseq_info.m_State);
-    if (include_data_flags & fServBlobId) {
-        json.SetInteger("sat", bioseq_info.m_Sat);
-        json.SetInteger("sat_key", bioseq_info.m_SatKey);
-    }
-    if (include_data_flags & fServTaxId)
-        json.SetInteger("tax_id", bioseq_info.m_TaxId);
-    if (include_data_flags & fServHash)
-        json.SetInteger("hash", bioseq_info.m_Hash);
-    if (include_data_flags & fServDateChanged)
-        json.SetInteger("date_changed", bioseq_info.m_DateChanged);
-
-    if (include_data_flags & fServSeqIds) {
-        CJsonNode       seq_ids(CJsonNode::NewObjectNode());
-        for (map<int, string>::const_iterator  it = bioseq_info.m_SeqIds.begin();
-             it != bioseq_info.m_SeqIds.end(); ++it) {
-            seq_ids.SetString(NStr::NumericToString(it->first), it->second);
-        }
-        json.SetByKey("seq_ids", seq_ids);
-    }
-
-    return json;
-}
-
-
 static string   s_ProtocolPrefix = "\n\nPSG-Reply-Chunk: ";
 
 // Names

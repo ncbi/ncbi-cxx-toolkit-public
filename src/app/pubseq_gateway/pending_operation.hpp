@@ -218,24 +218,30 @@ private:
     CRequestStatus::ECode x_ResolveToCanonicalSeqId(SBioseqInfo &  bioseq_info,
                                                     string &  cache_data);
     CRequestStatus::ECode x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info);
-    CRequestStatus::ECode x_FetchBioseqInfo(SBioseqInfo &  bioseq_info);
+    CRequestStatus::ECode x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
+                                            const string &  si2csi_cache_data,
+                                            string &  bioseq_info_cache_data);
     bool x_SatToSatName(const SBlobRequest &  blob_request,
                         SBlobId &  blob_id);
     void x_SendUnknownServerSatelliteError(size_t  item_id,
                                            const string &  message,
                                            int  error_code);
-    void x_SendBioseqInfo(size_t  item_id,
-                          string &  protobuf_bioseq_info,
+    void x_SendBioseqInfo(string &  protobuf_bioseq_info,
                           SBioseqInfo &  bioseq_info,
                           EOutputFormat  output_format);
+    void x_SendCSIAsBioseqInfo(string &  si2csi_cache_data,
+                               SBioseqInfo &  bioseq_info,
+                               EOutputFormat  output_format);
 
     void x_Peek(HST::CHttpReply<CPendingOperation>& resp, bool  need_wait,
                 unique_ptr<SBlobFetchDetails> &  fetch_details);
 
-    void x_ConvertBioseqInfoToProtobuf(const SBioseqInfo &  bioseq_info,
-                                       string & data_to_send);
-    void x_ConvertProtobufToBioseqInfo(const string &  protobuf_bioseq_info,
-                                       SBioseqInfo &  bioseq_info);
+    CRequestStatus::ECode x_CSICacheOrDB(const string &  sec_seq_id,
+                                         int  sec_seq_id_type,
+                                         bool  sec_seq_id_type_provided,
+                                         string &  csi_cache_data,
+                                         SBioseqInfo &  bioseq_info);
+
 
 private:
     HST::CHttpReply<CPendingOperation> *    m_Reply;

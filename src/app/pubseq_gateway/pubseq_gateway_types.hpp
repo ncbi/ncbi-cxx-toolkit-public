@@ -72,7 +72,11 @@ enum EServIncludeData {
     fServBlobId = (1 << 9),
     fServTaxId = (1 << 10),
     fServHash = (1 << 11),
-    fServDateChanged = (1 << 12)
+    fServDateChanged = (1 << 12),
+
+    fServBioseqFields = fServCanonicalId | fServSeqIds | fServMoleculeType |
+                        fServLength | fServState | fServBlobId |
+                        fServTaxId | fServHash | fServDateChanged
 };
 
 // Bit-set of EServIncludeData flags

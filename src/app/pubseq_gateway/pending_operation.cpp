@@ -33,6 +33,7 @@
 #include "pubseq_gateway.hpp"
 #include "pending_operation.hpp"
 #include "pubseq_gateway_exception.hpp"
+#include "pubseq_gateway_convert_utils.hpp"
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info.hpp>
@@ -104,17 +105,20 @@ CPendingOperation::~CPendingOperation()
     CRequestContextResetter     context_resetter;
     x_SetRequestContext();
 
-    if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
-        ERR_POST(Trace << "CPendingOperation::~CPendingOperation: blob "
-                 "requested by seq_id/seq_id_type: " <<
-                 m_BlobRequest.m_SeqId << "." << m_BlobRequest.m_SeqIdType <<
-                 ", this: " << this);
-    } else {
-        ERR_POST(Trace << "CPendingOperation::~CPendingOperation: blob "
-                 "requested by sat/sat_key: " <<
-                 m_BlobRequest.m_BlobId.m_Sat << "." <<
-                 m_BlobRequest.m_BlobId.m_SatKey <<
-                 ", this: " << this);
+    if (!m_IsResolveRequest) {
+        if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
+            ERR_POST(Trace << "CPendingOperation::~CPendingOperation: blob "
+                     "requested by seq_id/seq_id_type: " <<
+                     m_BlobRequest.m_SeqId << "." <<
+                     m_BlobRequest.m_SeqIdType <<
+                     ", this: " << this);
+        } else {
+            ERR_POST(Trace << "CPendingOperation::~CPendingOperation: blob "
+                     "requested by sat/sat_key: " <<
+                     m_BlobRequest.m_BlobId.m_Sat << "." <<
+                     m_BlobRequest.m_BlobId.m_SatKey <<
+                     ", this: " << this);
+        }
     }
 
     if (m_MainBlobFetchDetails)
@@ -149,17 +153,20 @@ void CPendingOperation::Clear()
     CRequestContextResetter     context_resetter;
     x_SetRequestContext();
 
-    if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
-        ERR_POST(Trace << "CPendingOperation::Clear: blob "
-                 "requested by seq_id/seq_id_type: " <<
-                 m_BlobRequest.m_SeqId << "." << m_BlobRequest.m_SeqIdType <<
-                 ", this: " << this);
-    } else {
-        ERR_POST(Trace << "CPendingOperation::Clear: blob "
-                 "requested by sat/sat_key: " <<
-                 m_BlobRequest.m_BlobId.m_Sat << "." <<
-                 m_BlobRequest.m_BlobId.m_SatKey <<
-                 ", this: " << this);
+    if (!m_IsResolveRequest) {
+        if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
+            ERR_POST(Trace << "CPendingOperation::Clear: blob "
+                     "requested by seq_id/seq_id_type: " <<
+                     m_BlobRequest.m_SeqId << "." <<
+                     m_BlobRequest.m_SeqIdType <<
+                     ", this: " << this);
+        } else {
+            ERR_POST(Trace << "CPendingOperation::Clear: blob "
+                     "requested by sat/sat_key: " <<
+                     m_BlobRequest.m_BlobId.m_Sat << "." <<
+                     m_BlobRequest.m_BlobId.m_SatKey <<
+                     ", this: " << this);
+        }
     }
 
     if (m_MainBlobFetchDetails) {
@@ -230,8 +237,9 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         string          si2csi_cache_data;
 
         // retrieve from SI2CSI
-        CRequestStatus::ECode   status = x_ResolveToCanonicalSeqId(bioseq_info,
-                                                                   si2csi_cache_data);
+        CRequestStatus::ECode   status = x_ResolveToCanonicalSeqId(
+                                                            bioseq_info,
+                                                            si2csi_cache_data);
         if (status != CRequestStatus::e200_Ok) {
             if (status != CRequestStatus::e400_BadRequest)
                 UpdateOverallStatus(status);
@@ -242,7 +250,9 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         }
 
         // retrieve from BIOSEQ_INFO
-        status = x_FetchBioseqInfo(bioseq_info);
+        string      bioseq_info_cache_data;
+        status = x_FetchBioseqInfo(bioseq_info, si2csi_cache_data,
+                                   bioseq_info_cache_data);
         if (status != CRequestStatus::e200_Ok) {
             UpdateOverallStatus(status);
             x_SendReplyCompletion(true);
@@ -253,8 +263,12 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
 
         // Send BIOSEQ_INFO
         string      cached_bioseq_info_data;
-        x_SendBioseqInfo(GetItemId(), cached_bioseq_info_data,
+        x_SendBioseqInfo(cached_bioseq_info_data,
                          bioseq_info, eJsonFormat);
+
+        if (!cached_bioseq_info_data.empty())
+            ConvertBioseqProtobufToBioseqInfo(cached_bioseq_info_data,
+                                              bioseq_info);
 
         // Translate sat to keyspace
         SBlobId     blob_id(bioseq_info.m_Sat, bioseq_info.m_SatKey);
@@ -308,30 +322,34 @@ void CPendingOperation::x_ProcessResolveRequest(void)
     if (status != CRequestStatus::e200_Ok) {
         if (status != CRequestStatus::e400_BadRequest)
             UpdateOverallStatus(status);
-        x_SendReplyCompletion(true);
-        m_Reply->Send(m_Chunks, true);
-        m_Chunks.clear();
+        x_PrintRequestStop(m_OverallStatus);
         return;
     }
 
+    if ((m_ResolveRequest.m_IncludeDataFlags &
+            EServIncludeData::fServBioseqFields) ==
+                                    EServIncludeData::fServCanonicalId) {
+        // Only canonical ID was requested and it is already here, so send it
+        // away
+        x_SendCSIAsBioseqInfo(si2csi_cache_data, bioseq_info,
+                              m_ResolveRequest.m_OutputFormat);
+        return;
+    }
+
+
     // retrieve from BIOSEQ_INFO
-    status = x_FetchBioseqInfo(bioseq_info);
+    string      bioseq_info_cache_data;
+    status = x_FetchBioseqInfo(bioseq_info, si2csi_cache_data,
+                               bioseq_info_cache_data);
     if (status != CRequestStatus::e200_Ok) {
         UpdateOverallStatus(status);
-        x_SendReplyCompletion(true);
-        m_Reply->Send(m_Chunks, true);
-        m_Chunks.clear();
+        x_PrintRequestStop(m_OverallStatus);
         return;
     }
 
     // Send BIOSEQ_INFO
-    string      cached_bioseq_info_data;
-    x_SendBioseqInfo(GetItemId(), cached_bioseq_info_data,
+    x_SendBioseqInfo(bioseq_info_cache_data,
                      bioseq_info, m_ResolveRequest.m_OutputFormat);
-
-    x_SendReplyCompletion(true);
-    m_Reply->Send(m_Chunks, true);
-    m_Chunks.clear();
 }
 
 
@@ -585,38 +603,27 @@ CPendingOperation::x_ResolveToCanonicalSeqId(SBioseqInfo &  bioseq_info,
             return CRequestStatus::e200_Ok;
         }
     } catch (const exception &  exc) {
-        // Choke the exceptions and fallback to the table
+        // Choke the exceptions and fallback to the cache or DB
     } catch (...) {
-        // Choke the exceptions and fallback to the table
+        // Choke the exceptions and fallback to the cache or DB
     }
 
-    // Could not resolve using the CSeq_id class, so try cache now
-    CPubseqGatewayCache *   cache = CPubseqGatewayApp::GetInstance()->
-                                                        GetLookupCache();
-    bool                    cache_hit = false;
-    if (seq_id_type_provided) {
-        cache_hit = cache->LookupCsiBySeqIdSeqIdType(seq_id, seq_id_type,
-                                                     cache_data);
-    } else {
-        int     cache_seq_id_type = -1;
-        cache_hit = cache->LookupCsiBySeqId(seq_id, cache_seq_id_type,
-                                            cache_data);
-    }
-
-    if (cache_hit) {
-        // Unpack data: retrieve accession, version, sec_id_type
+    // Could not resolve using the CSeq_id class, so try cache and DB
+    CRequestStatus::ECode status = x_CSICacheOrDB(seq_id, seq_id_type,
+                                                  seq_id_type_provided,
+                                                  cache_data,
+                                                  bioseq_info);
+    if (status == CRequestStatus::e200_Ok && !cache_data.empty()) {
+        // Unpack cache data: accession, version, seq_id_type
         psg::retrieval::si2csi_value    cache_values;
 
         CPubseqGatewayData::UnpackSiInfo(cache_data, cache_values);
         bioseq_info.m_Accession = cache_values.accession();
         bioseq_info.m_Version = cache_values.version();
         bioseq_info.m_SeqIdType = cache_values.seq_id_type();
-
-        return CRequestStatus::e200_Ok;
     }
 
-    // Fallback to DB
-    return x_FetchCanonicalSeqId(bioseq_info);
+    return status;
 }
 
 
@@ -661,8 +668,6 @@ CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
     }
 
     if (status != CRequestStatus::e200_Ok) {
-        size_t      item_id = GetItemId();
-
         if (status == CRequestStatus::e404_NotFound) {
             // It is a client error, no data for the request
             ERR_POST(Warning << msg);
@@ -676,9 +681,26 @@ CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
             CPubseqGatewayApp::GetInstance()->GetErrorCounters().
                                                      IncCanonicalSeqIdError();
         }
-        PrepareBioseqMessage(item_id, msg, status,
-                             eNoCanonicalTranslation, eDiag_Error);
-        PrepareBioseqCompletion(item_id, 2);
+
+        if (m_IsResolveRequest) {
+            // Send it as an HTTP reply (not PSG protocol)
+            switch (status) {
+                case CRequestStatus::e300_MultipleChoices:
+                case CRequestStatus::e404_NotFound:
+                    m_Reply->Send404("Not Found", msg.c_str());
+                    break;
+                case CRequestStatus::e500_InternalServerError:
+                    m_Reply->Send500("Internal Server Error", msg.c_str());
+                    break;
+                default:
+                    m_Reply->Send404("Not Found", msg.c_str());
+            }
+        } else {
+            size_t      item_id = GetItemId();
+            PrepareBioseqMessage(item_id, msg, status,
+                                 eNoCanonicalTranslation, eDiag_Error);
+            PrepareBioseqCompletion(item_id, 2);
+        }
     }
 
     return status;
@@ -686,8 +708,58 @@ CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
 
 
 CRequestStatus::ECode
-CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info)
+CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
+                                     const string &  si2csi_cache_data,
+                                     string &  bioseq_info_cache_data)
 {
+    // Try cache first
+    CPubseqGatewayCache *   cache = CPubseqGatewayApp::GetInstance()->
+                                                        GetLookupCache();
+    if (!si2csi_cache_data.empty()) {
+        psg::retrieval::si2csi_value        protobuf_si2csi_value;
+        CPubseqGatewayData::UnpackSiInfo(si2csi_cache_data,
+                                         protobuf_si2csi_value);
+        bioseq_info.m_Accession = protobuf_si2csi_value.accession();
+        bioseq_info.m_Version = protobuf_si2csi_value.version();
+        bioseq_info.m_SeqIdType = protobuf_si2csi_value.seq_id_type();
+    }
+
+
+    bool        cache_hit = false;
+    if (bioseq_info.m_Version >= 0) {
+        if (bioseq_info.m_SeqIdType >= 0)
+            cache_hit = cache->LookupBioseqInfoByAccessionVersionSeqIdType(
+                                        bioseq_info.m_Accession,
+                                        bioseq_info.m_Version,
+                                        bioseq_info.m_SeqIdType,
+                                        bioseq_info_cache_data);
+        else
+            cache_hit = cache->LookupBioseqInfoByAccessionVersion(
+                                        bioseq_info.m_Accession,
+                                        bioseq_info.m_Version,
+                                        bioseq_info.m_SeqIdType,
+                                        bioseq_info_cache_data);
+    } else {
+        if (bioseq_info.m_SeqIdType >= 0)
+            cache_hit = cache->LookupBioseqInfoByAccessionVersionSeqIdType(
+                                        bioseq_info.m_Accession,
+                                        0,
+                                        bioseq_info.m_SeqIdType,
+                                        bioseq_info_cache_data);
+        else
+            cache_hit = cache->LookupBioseqInfoByAccession(
+                                        bioseq_info.m_Accession,
+                                        bioseq_info.m_Version,
+                                        bioseq_info.m_SeqIdType,
+                                        bioseq_info_cache_data);
+    }
+
+    if (cache_hit) {
+        return CRequestStatus::e200_Ok;
+    }
+
+
+    // Fallback to Cassandra
     CRequestStatus::ECode   status = CRequestStatus::e200_Ok;
     string                  msg;
     try {
@@ -718,14 +790,32 @@ CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info)
     }
 
     if (status != CRequestStatus::e200_Ok) {
-        size_t      item_id = GetItemId();
 
         CPubseqGatewayApp::GetInstance()->GetErrorCounters().
                                                 IncBioseqInfoError();
         ERR_POST(msg);  // It is always a server error: data inconsistency
 
-        PrepareBioseqMessage(item_id, msg, status, eNoBioseqInfo, eDiag_Error);
-        PrepareBioseqCompletion(item_id, 2);
+        if (m_IsResolveRequest) {
+            // Send it as an HTTP reply (not PSG protocol)
+            switch (status) {
+                case CRequestStatus::e400_BadRequest:
+                    m_Reply->Send400("Bad Request", msg.c_str());
+                    break;
+                case CRequestStatus::e404_NotFound:
+                    m_Reply->Send404("Not Found", msg.c_str());
+                    break;
+                case CRequestStatus::e500_InternalServerError:
+                    m_Reply->Send500("Internal Server Error", msg.c_str());
+                    break;
+                default:
+                    m_Reply->Send404("Not Found", msg.c_str());
+            }
+        } else {
+            size_t      item_id = GetItemId();
+            PrepareBioseqMessage(item_id, msg, status,
+                                 eNoBioseqInfo, eDiag_Error);
+            PrepareBioseqCompletion(item_id, 2);
+        }
     }
 
     // No problems, biseq info has been retrieved
@@ -733,8 +823,7 @@ CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info)
 }
 
 
-void CPendingOperation::x_SendBioseqInfo(size_t  item_id,
-                                         string &  protobuf_bioseq_info,
+void CPendingOperation::x_SendBioseqInfo(string &  protobuf_bioseq_info,
                                          SBioseqInfo &  bioseq_info,
                                          EOutputFormat  output_format)
 {
@@ -751,18 +840,17 @@ void CPendingOperation::x_SendBioseqInfo(size_t  item_id,
 
     if (effective_output_format == eJsonFormat) {
         if (!protobuf_bioseq_info.empty())
-            x_ConvertProtobufToBioseqInfo(protobuf_bioseq_info, bioseq_info);
+            ConvertBioseqProtobufToBioseqInfo(protobuf_bioseq_info,
+                                              bioseq_info);
 
-        TServIncludeData    include_data = m_BlobRequest.m_IncludeDataFlags;
-        if (m_IsResolveRequest)
-            include_data = m_ResolveRequest.m_IncludeDataFlags;
-
-        CJsonNode   json = BioseqInfoToJSON(bioseq_info, include_data);
-        data_to_send = json.Repr();
-
+        ConvertBioseqInfoToJson(
+                bioseq_info,
+                m_IsResolveRequest ? m_ResolveRequest.m_IncludeDataFlags :
+                                     m_BlobRequest.m_IncludeDataFlags,
+                data_to_send);
     } else {
         if (protobuf_bioseq_info.empty())
-            x_ConvertBioseqInfoToProtobuf(bioseq_info, data_to_send);
+            ConvertBioseqInfoToBioseqProtobuf(bioseq_info, data_to_send);
         else
             data_to_send = protobuf_bioseq_info;
     }
@@ -777,62 +865,78 @@ void CPendingOperation::x_SendBioseqInfo(size_t  item_id,
         m_Reply->SendOk(data_to_send.data(), data_to_send.length(), false);
     } else {
         // Send it as the PSG protocol
+        size_t              item_id = GetItemId();
         PrepareBioseqData(item_id, data_to_send);
         PrepareBioseqCompletion(item_id, 2);
     }
 }
 
 
-void CPendingOperation::x_ConvertBioseqInfoToProtobuf(
-                                    const SBioseqInfo &  bioseq_info,
-                                    string &  data_to_send)
+void CPendingOperation::x_SendCSIAsBioseqInfo(string &  si2csi_cache_data,
+                                              SBioseqInfo &  bioseq_info,
+                                              EOutputFormat  output_format)
 {
-    psg::retrieval::bioseq_info_value   protobuf_bioseq_info_value;
-    protobuf_bioseq_info_value.set_sat(bioseq_info.m_Sat);
-    protobuf_bioseq_info_value.set_sat_key(bioseq_info.m_SatKey);
-    protobuf_bioseq_info_value.set_state(bioseq_info.m_State);
-    protobuf_bioseq_info_value.set_mol(bioseq_info.m_Mol);
-    protobuf_bioseq_info_value.set_hash(bioseq_info.m_Hash);
-    protobuf_bioseq_info_value.set_length(bioseq_info.m_Length);
-    protobuf_bioseq_info_value.set_date_changed(bioseq_info.m_DateChanged);
-    protobuf_bioseq_info_value.set_tax_id(bioseq_info.m_TaxId);
-    protobuf_bioseq_info_value.mutable_seq_ids()->insert(bioseq_info.m_SeqIds.begin(),
-                                                         bioseq_info.m_SeqIds.end());
+    EOutputFormat       effective_output_format = output_format;
 
-    psg::retrieval::bioseq_info         protobuf_bioseq_info;
-    protobuf_bioseq_info.set_accession(bioseq_info.m_Accession);
-    protobuf_bioseq_info.set_version(bioseq_info.m_Version);
-    protobuf_bioseq_info.set_seq_id_type(bioseq_info.m_SeqIdType);
-    protobuf_bioseq_info.set_allocated_value(&protobuf_bioseq_info_value);
+    if (output_format == eNativeFormat || output_format == eUnknownFormat) {
+        if (si2csi_cache_data.empty())
+            effective_output_format = eJsonFormat;
+        else
+            effective_output_format = eProtobufFormat;
+    }
 
-    CPubseqGatewayData::PackBioseqInfo(protobuf_bioseq_info, data_to_send);
+    string              data_to_send;
+
+    if (effective_output_format == eJsonFormat) {
+        if (!si2csi_cache_data.empty())
+            ConvertSi2csiProtobufToBioseqJson(si2csi_cache_data, data_to_send);
+        else
+            ConvertSi2csiToBioseqJson(bioseq_info, data_to_send);
+    } else {
+        if (!si2csi_cache_data.empty())
+            ConvertSi2csiProtobufToBioseqProtobuf(si2csi_cache_data,
+                                                  data_to_send);
+        else
+            ConvertSi2sciToBioseqProtobuf(bioseq_info, data_to_send);
+    }
+
+    // It is used only in case of a resolve request so it is always HTTP data
+    if (effective_output_format == eJsonFormat)
+        m_Reply->SetJsonContentType();
+    else
+        m_Reply->SetProtobufContentType();
+    m_Reply->SetContentLength(data_to_send.length());
+    m_Reply->SendOk(data_to_send.data(), data_to_send.length(), false);
 }
 
 
-void CPendingOperation::x_ConvertProtobufToBioseqInfo(
-                                    const string &  protobuf_bioseq_info,
-                                    SBioseqInfo &  bioseq_info)
+CRequestStatus::ECode
+CPendingOperation::x_CSICacheOrDB(const string &  sec_seq_id,
+                                  int  sec_seq_id_type,
+                                  bool  sec_seq_id_type_provided,
+                                  string &  csi_cache_data,
+                                  SBioseqInfo &  bioseq_info)
 {
-    psg::retrieval::bioseq_info_value       protobuf_bioseq_info_value;
+    // Try cache first
+    CPubseqGatewayCache *   cache = CPubseqGatewayApp::GetInstance()->
+                                                        GetLookupCache();
+    bool                    cache_hit = false;
+    if (sec_seq_id_type_provided) {
+        cache_hit = cache->LookupCsiBySeqIdSeqIdType(sec_seq_id,
+                                                     sec_seq_id_type,
+                                                     csi_cache_data);
+    } else {
+        int     cache_sec_seq_id_type = -1;     // Not used
+        cache_hit = cache->LookupCsiBySeqId(sec_seq_id, cache_sec_seq_id_type,
+                                            csi_cache_data);
+    }
 
-    CPubseqGatewayData::UnpackBioseqInfo(protobuf_bioseq_info,
-                                         protobuf_bioseq_info_value);
+    if (cache_hit) {
+        return CRequestStatus::e200_Ok;
+    }
 
-    // These fields must be already populated in bioseq_info
-    //    bioseq_info.m_Accession
-    //    bioseq_info.m_Version
-    //    bioseq_info.m_SeqIdType
-
-    bioseq_info.m_DateChanged = protobuf_bioseq_info_value.date_changed();
-    bioseq_info.m_Mol = protobuf_bioseq_info_value.mol();
-    bioseq_info.m_Length = protobuf_bioseq_info_value.length();
-    bioseq_info.m_State = protobuf_bioseq_info_value.state();
-    bioseq_info.m_Sat = protobuf_bioseq_info_value.sat();
-    bioseq_info.m_SatKey = protobuf_bioseq_info_value.sat_key();
-    bioseq_info.m_TaxId = protobuf_bioseq_info_value.tax_id();
-    bioseq_info.m_Hash = protobuf_bioseq_info_value.hash();
-    bioseq_info.m_SeqIds.insert(protobuf_bioseq_info_value.seq_ids().begin(),
-                                protobuf_bioseq_info_value.seq_ids().end());
+    // Fallback to DB
+    return x_FetchCanonicalSeqId(bioseq_info);
 }
 
 
@@ -1143,7 +1247,7 @@ void CBlobPropCallback::operator()(CBlobRecord const &  blob, bool is_found)
 
     if (is_found) {
         // Found, send back as JSON
-        CJsonNode   json = BlobPropToJSON(blob);
+        CJsonNode   json = ConvertBlobPropToJson(blob);
         m_PendingOp->PrepareBlobPropData(m_FetchDetails, json.Repr());
 
         if (m_FetchDetails->m_NeedChunks == false) {

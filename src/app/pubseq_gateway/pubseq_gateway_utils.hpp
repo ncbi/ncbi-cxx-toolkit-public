@@ -76,12 +76,6 @@ string  GetBlobId(const SBlobId &  blob_id);
 SBlobId ParseBlobId(const string &  blob_id);
 
 
-// A few protocol utils
-CJsonNode  BlobPropToJSON(const CBlobRecord &  blob);
-CJsonNode  BioseqInfoToJSON(const SBioseqInfo &  bioseq_info,
-                            TServIncludeData  include_data_flags);
-
-
 // Bioseq messages
 string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size);
 string  GetBioseqMessageHeader(size_t  item_id, size_t  msg_size,

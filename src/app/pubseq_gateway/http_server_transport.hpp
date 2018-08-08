@@ -255,6 +255,28 @@ public:
         }
     }
 
+    void Send500(const char *  head, const char *  payload)
+    {
+        if (!m_OutputIsReady)
+            NCBI_THROW(CPubseqGatewayException, eOutputNotInReadyState,
+                       "Output is not in ready state");
+
+        if (m_State != eReplyFinished) {
+            if (m_HttpConn->IsClosed())
+                m_OutputFinished = true;
+            if (!m_OutputFinished) {
+                if (m_State == eReplyInitialized) {
+                    h2o_send_error_500(m_Req, head ?
+                        head : "Internal Server Error", payload, 0);
+                } else {
+                    h2o_send(m_Req, nullptr, 0, H2O_SEND_STATE_ERROR);
+                }
+                m_OutputFinished = true;
+            }
+            m_State = eReplyFinished;
+        }
+    }
+
     void Send502(const char *  head, const char *  payload)
     {
         if (!m_OutputIsReady)
