@@ -1587,7 +1587,7 @@ void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
 
     switch (type) {
     case eFasta:
-        *label = AsFastaString();
+        *label += AsFastaString();
         break;
 
     case eBoth:
