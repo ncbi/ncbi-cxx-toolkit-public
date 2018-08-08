@@ -463,6 +463,7 @@ public:
         eContent,
         eBoth,
         eFasta,
+        eFastaContent,
 
         /// default is to show type + content
         eDefault = eBoth
@@ -629,6 +630,8 @@ private:
     static EAccessionInfo x_IdentifyAccession(const CTempString& main_acc,
                                               TParseFlags flags,
                                               bool has_version);
+
+    void x_WriteContentAsFasta(ostream& out) const;
 
     //CRef<CAbstractObjectManager> m_ObjectManager;
 

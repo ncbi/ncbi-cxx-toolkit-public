@@ -1590,6 +1590,14 @@ void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
         *label += AsFastaString();
         break;
 
+    case eFastaContent:
+    {
+        CNcbiOstrstream oss;
+        x_WriteContentAsFasta(oss);
+        *label += CNcbiOstrstreamToString(oss);
+        break;
+    }
+        
     case eBoth:
         x_GetLabel_Type(*this, label, flags);
         *label += "|";
@@ -1672,6 +1680,15 @@ void CSeq_id::WriteAsFasta(ostream& out)
     } else {
         out << s_TextId[the_type] << '|';
     }
+
+    x_WriteContentAsFasta(out);
+}
+
+void CSeq_id::x_WriteContentAsFasta(ostream& out) const
+{
+    unsigned the_type = Which();
+    if (the_type >= e_MaxChoice)  // New SeqId type
+        the_type = e_not_set;
 
     switch (the_type) {
     case e_not_set:
