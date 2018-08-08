@@ -395,7 +395,7 @@ while [ $# != 0 ]; do
         "--gpipe-distrib")
             BUILD_TYPE="Release"
             BUILD_SHARED_LIBS=OFF
-            CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
+            CMAKE_ARGS="$CMAKE_ARGS -DUSE_LOCAL_PCRE=True -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
             GPIPEROOT="Distrib"
             add_gpipe_warnings
             ;;
