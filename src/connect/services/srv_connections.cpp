@@ -716,9 +716,15 @@ void SThrottleStats::CheckIfThrottled(const SThrottleParams& params, const SServ
 
     if (m_Throttled) {
         CTime current_time(GetFastLocalTime());
-        if (current_time >= m_ThrottledUntil &&
+        auto duration = current_time - m_ThrottledUntil;
+
+        if ((duration >= CTimeSpan(0, 0)) &&
                 (!params.m_ThrottleUntilDiscoverable || m_DiscoveredAfterThrottling)) {
+            duration += CTimeSpan(params.m_ServerThrottlePeriod, 0);
             ResetThrottlingParameters();
+            LOG_POST(Warning << "Disabling throttling for server " << address.AsString() <<
+                    " after " << duration.AsString() << " seconds wait" << 
+                    (params.m_ThrottleUntilDiscoverable ? " and rediscovery" : ""));
             return;
         }
         NCBI_THROW(CNetSrvConnException, eServerThrottle, m_ThrottleMessage);
