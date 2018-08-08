@@ -474,7 +474,7 @@ void http2_session::dump_requests()
 
 /* s_ng_send_cb. Here the |data|, |length| bytes would be transmitted to the network.
      we don't use this mechanism, so the callback is not expected at all */
-ssize_t http2_session::s_ng_send_cb(nghttp2_session *session, const uint8_t *data, size_t length, int flags, void *user_data)
+ssize_t http2_session::s_ng_send_cb(nghttp2_session*, const uint8_t*, size_t, int, void *user_data)
 {
     http2_session *session_data = (http2_session *)user_data;
     session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eUnexpCb, "failed to send request, unexpected callback"));
@@ -484,7 +484,7 @@ ssize_t http2_session::s_ng_send_cb(nghttp2_session *session, const uint8_t *dat
 
 /* s_ng_frame_recv_cb: Called when nghttp2 library
    received a complete frame from the remote peer. */
-int http2_session::s_ng_frame_recv_cb(nghttp2_session *session, const nghttp2_frame *frame, void *user_data)
+int http2_session::s_ng_frame_recv_cb(nghttp2_session*, const nghttp2_frame *frame, void *user_data)
 {
     http2_session *session_data = (http2_session *)user_data;
     switch (frame->hd.type) {
@@ -514,7 +514,7 @@ int http2_session::s_ng_frame_recv_cb(nghttp2_session *session, const nghttp2_fr
    is meant to the stream we initiated, print the received data in
    stdout, so that the user can redirect its output to the file
    easily. */
-int http2_session::s_ng_data_chunk_recv_cb(nghttp2_session *session, uint8_t flags, int32_t stream_id, const uint8_t *data, size_t len, void *user_data)
+int http2_session::s_ng_data_chunk_recv_cb(nghttp2_session*, uint8_t, int32_t stream_id, const uint8_t *data, size_t len, void *user_data)
 {
     http2_session *session_data = (http2_session *)user_data;
     try {
@@ -537,7 +537,7 @@ int http2_session::s_ng_data_chunk_recv_cb(nghttp2_session *session, uint8_t fla
 }
 
 /* s_ng_stream_close_cb: Called when a stream is about to closed */
-int http2_session::s_ng_stream_close_cb(nghttp2_session *session, int32_t stream_id, uint32_t error_code, void *user_data)
+int http2_session::s_ng_stream_close_cb(nghttp2_session*, int32_t stream_id, uint32_t error_code, void *user_data)
 {
     http2_session *session_data = (http2_session *)user_data;
     return session_data->ng_stream_close_cb(stream_id, error_code);
@@ -577,8 +577,8 @@ int http2_session::ng_stream_close_cb(int32_t stream_id, uint32_t error_code)
 
 /* s_ng_header_cb: Called when nghttp2 library emits
    single header name/value pair. */
-int http2_session::s_ng_header_cb(nghttp2_session *session, const nghttp2_frame *frame, const uint8_t *name, size_t namelen, const uint8_t *value,
-                              size_t valuelen, uint8_t flags, void *user_data)
+int http2_session::s_ng_header_cb(nghttp2_session*, const nghttp2_frame *frame, const uint8_t *name, size_t namelen, const uint8_t *value,
+                              size_t, uint8_t, void *user_data)
 {
     http2_session *session_data = (http2_session *)user_data;
     switch (frame->hd.type) {
@@ -607,7 +607,7 @@ int http2_session::s_ng_header_cb(nghttp2_session *session, const nghttp2_frame 
 
 /* s_ng_begin_headers_cb: Called when nghttp2 library gets
    started to receive header block. */
-int http2_session::s_ng_begin_headers_cb(nghttp2_session *session, const nghttp2_frame *frame, void *user_data)
+int http2_session::s_ng_begin_headers_cb(nghttp2_session*, const nghttp2_frame *frame, void*)
 {
 //    http2_session *session_data = (http2_session *)user_data;
     switch (frame->hd.type) {
@@ -620,7 +620,7 @@ int http2_session::s_ng_begin_headers_cb(nghttp2_session *session, const nghttp2
     return 0;
 }
 
-int http2_session::s_ng_error_cb(nghttp2_session *session, const char *msg, size_t len, void *user_data)
+int http2_session::s_ng_error_cb(nghttp2_session*, const char *msg, size_t, void *user_data)
 {
     http2_session *session_data = (http2_session *)user_data;
     ERRLOG0(("%p: !ERROR: %s", session_data,  msg));
@@ -632,7 +632,7 @@ int http2_session::s_ng_error_cb(nghttp2_session *session, const char *msg, size
     return 0;
 }
 
-void http2_session::s_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf)
+void http2_session::s_alloc_cb(uv_handle_t* handle, size_t, uv_buf_t* buf)
 {
     http2_session *session_data = (http2_session*)handle->data;
     buf->base = session_data->m_read_buf.data();
@@ -730,8 +730,8 @@ void http2_session::initialize_nghttp2_session()
 
     nghttp2_session_callbacks* _callbacks;
     nghttp2_session_callbacks_new(&_callbacks);
-    unique_ptr<nghttp2_session_callbacks, function<void(nghttp2_session_callbacks*)>> callbacks(_callbacks, [](nghttp2_session_callbacks* callbacks)->void {
-        nghttp2_session_callbacks_del(callbacks);
+    unique_ptr<nghttp2_session_callbacks, function<void(nghttp2_session_callbacks*)>> callbacks(_callbacks, [](nghttp2_session_callbacks* cb)->void {
+        nghttp2_session_callbacks_del(cb);
     });
 
     nghttp2_session_callbacks_set_send_callback(              callbacks.get(), s_ng_send_cb);
@@ -971,7 +971,7 @@ void http2_session::s_read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* 
     session_data->read_cb(strm, nread, buf);
 }
 
-void http2_session::read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* buf)
+void http2_session::read_cb(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 {
     try {
         LOG2(("%p: read_cb %ld", this, nread));
@@ -1056,12 +1056,12 @@ void http2_session::s_getaddrinfo_cb(uv_getaddrinfo_t *req, int status, struct a
     session_data->getaddrinfo_cb(req, status, ai);
 }
 
-void http2_session::getaddrinfo_cb(uv_getaddrinfo_t *req, int status, struct addrinfo *ai)
+void http2_session::getaddrinfo_cb(uv_getaddrinfo_t*, int status, struct addrinfo *ai)
 {
     try {
         struct sockaddr addr;
         LOG3(("%p: getaddrinfo_cb, status: %d", this, status));
-        unique_ptr<struct addrinfo, function<void(struct addrinfo*)>> lai(ai, [](struct addrinfo* ai) { uv_freeaddrinfo(ai); });
+        unique_ptr<struct addrinfo, function<void(struct addrinfo*)>> lai(ai, [](struct addrinfo* p) { uv_freeaddrinfo(p); });
         if (status == 0) {
             if (ai->ai_family == AF_INET) {
                 addr = *ai->ai_addr;
@@ -1422,7 +1422,7 @@ void io_thread::wake()
     }
 }
 
-void io_thread::on_wake(uv_async_t* handle)
+void io_thread::on_wake(uv_async_t*)
 {
     if (m_shutdown_req) {
         m_loop->Stop();
@@ -1443,7 +1443,7 @@ void io_thread::on_wake(uv_async_t* handle)
     }
 }
 
-void io_thread::on_timer(uv_timer_t* handle)
+void io_thread::on_timer(uv_timer_t*)
 {
     try {
         stringstream ss;
@@ -1514,8 +1514,8 @@ void io_thread::execute(uv_sem_t* sem)
     uv_timer_init(m_loop->Handle(), &m_timer);
     m_timer.data = this;
 
-    unique_ptr<uv_sem_t, function<void(uv_sem_t*)>> usem(sem, [](uv_sem_t* sem)->void {
-        uv_sem_post(sem);
+    unique_ptr<uv_sem_t, function<void(uv_sem_t*)>> usem(sem, [](uv_sem_t* p)->void {
+        uv_sem_post(p);
     });
 
     try {

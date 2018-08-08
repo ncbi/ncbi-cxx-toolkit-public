@@ -268,7 +268,7 @@ void SFixture::MtReading()
     // Reading
 
     auto reader_impl = [&](const vector<char>& src, SPSG_Reply::SItem::TTS* dst) {
-        SRandom r;
+        SRandom ts_r;
         TReadImpl read_impl(dst);
         array<char, kSizeMax> received;
         auto expected = src.data();
@@ -277,7 +277,7 @@ void SFixture::MtReading()
 
         while (!deadline.IsExpired()) {
             size_t read = 0;
-            auto reading_result = read_impl(r, received.data(), received.size(), expected_to_read, &read);
+            auto reading_result = read_impl(ts_r, received.data(), received.size(), expected_to_read, &read);
 
             if (reading_result < 0) return;
 
@@ -296,7 +296,7 @@ void SFixture::MtReading()
 
             if (reading_result == 0) break;
 
-            auto ms = chrono::milliseconds(r.Get(kSleepMin, kSleepMax));
+            auto ms = chrono::milliseconds(ts_r.Get(kSleepMin, kSleepMax));
             this_thread::sleep_for(ms);
         }
 
@@ -370,8 +370,8 @@ void SFixture::MtReading()
         do {
             chunk_stream.read(buf.data(), r.Get(kSizeMin, kSizeMax));
 
-            if (auto r = chunk_stream.gcount()) {
-                receiver(buf.data(), r);
+            if (auto read = chunk_stream.gcount()) {
+                receiver(buf.data(), read);
             }
 
             auto ms = chrono::milliseconds(r.Get(kSleepMin, kSleepMax));
@@ -406,8 +406,8 @@ BOOST_AUTO_TEST_CASE(Receiver)
         do {
             chunk_stream.read(buf.data(), r.Get(kSizeMin, kSizeMax));
 
-            if (auto r = chunk_stream.gcount()) {
-                receiver(buf.data(), r);
+            if (auto read = chunk_stream.gcount()) {
+                receiver(buf.data(), read);
             }
         } while (chunk_stream);
     }
@@ -442,9 +442,9 @@ BOOST_AUTO_TEST_CASE(Receiver)
             auto src_end = src_blob->second.end();
 
             // Reorder chunks according to 'blob_chunk'
-            chunks.sort([](const SPSG_Reply::SChunk& l, const SPSG_Reply::SChunk& r) {
-                    auto ln = stoul(l.args.GetValue("blob_chunk"));
-                    auto rn = stoul(r.args.GetValue("blob_chunk"));
+            chunks.sort([](const SPSG_Reply::SChunk& lhs, const SPSG_Reply::SChunk& rhs) {
+                    auto ln = stoul(lhs.args.GetValue("blob_chunk"));
+                    auto rn = stoul(rhs.args.GetValue("blob_chunk"));
                     return ln < rn;
                 });
 

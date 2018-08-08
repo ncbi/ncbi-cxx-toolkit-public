@@ -228,9 +228,9 @@ TPSG_EndPoint SHCT::x_GetEndPoint(const string& service)
 
 shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* item_ts)
 {
-    auto reply = user_reply.lock();
+    auto user_reply_locked = user_reply.lock();
 
-    assert(reply);
+    assert(user_reply_locked);
     assert(item_ts);
 
     auto item_locked = item_ts->GetLock();
@@ -259,7 +259,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
     }
 
     rv->m_Impl.reset(impl.release());
-    rv->m_Reply = reply;
+    rv->m_Reply = user_reply_locked;
     return rv;
 }
 

@@ -426,7 +426,7 @@ public:
         if (m_state == http2_request_state::rs_sent)
             m_state = http2_request_state::rs_wait;
     }
-    void on_header(const nghttp2_frame *frame)
+    void on_header(const nghttp2_frame*)
     {
         m_state = http2_request_state::rs_headers;
     }
