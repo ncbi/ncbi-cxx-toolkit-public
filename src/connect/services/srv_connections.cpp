@@ -313,7 +313,7 @@ SNetServerInPool::SNetServerInPool(unsigned host, unsigned short port,
     m_FreeConnectionListHead = NULL;
     m_FreeConnectionListSize = 0;
 
-    ResetThrottlingParameters();
+    m_ThrottleStats.ResetThrottlingParameters();
 
     m_RankBase = 1103515245 *
             // XOR the network prefix bytes of the IP address with the port
@@ -540,7 +540,7 @@ CNetServerConnection SNetServerInPool::Connect(SNetServerImpl* server, STimeout*
 
     SNetServiceXSiteAPI::ConnectXSite(socket, deadline, m_Address, server->m_Service->m_ServiceName);
 
-    AdjustThrottlingParameters(eCOR_Success);
+    AdjustThrottlingParameters(SThrottleStats::eCOR_Success);
 
     socket.SetDataLogging(TServConn_ConnDataLogging::GetDefault() ? eOn : eOff);
     socket.SetTimeout(eIO_ReadWrite, timeout ? timeout :
@@ -598,7 +598,7 @@ void SNetServerInPool::TryExec(SNetServerImpl* server, INetServerExecHandler& ha
             if (err_code != CNetSrvConnException::eWriteFailure &&
                 err_code != CNetSrvConnException::eConnClosedByServer)
             {
-                AdjustThrottlingParameters(eCOR_Failure);
+                AdjustThrottlingParameters(SThrottleStats::eCOR_Failure);
                 throw;
             }
         }
@@ -608,7 +608,7 @@ void SNetServerInPool::TryExec(SNetServerImpl* server, INetServerExecHandler& ha
         handler.Exec(Connect(server, timeout), timeout);
     }
     catch (CNetSrvConnException&) {
-        AdjustThrottlingParameters(eCOR_Failure);
+        AdjustThrottlingParameters(SThrottleStats::eCOR_Failure);
         throw;
     }
 }
@@ -665,13 +665,18 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
     TryExec(exec_handler, timeout);
 }
 
-void SNetServerInPool::AdjustThrottlingParameters(EConnOpResult op_result)
+void SNetServerInPool::AdjustThrottlingParameters(SThrottleStats::EConnOpResult op_result)
 {
     const auto& params = m_ServerPool->GetThrottleParams();
 
     if (params.m_ServerThrottlePeriod <= 0)
         return;
 
+    m_ThrottleStats.AdjustThrottlingParameters(params, op_result);
+}
+
+void SThrottleStats::AdjustThrottlingParameters(const SThrottleParams& params, EConnOpResult op_result)
+{
     CFastMutexGuard guard(m_ThrottleLock);
 
     if (params.m_MaxConsecutiveIOFailures > 0) {
@@ -702,6 +707,11 @@ void SNetServerInPool::CheckIfThrottled()
     if (params.m_ServerThrottlePeriod <= 0)
         return;
 
+    m_ThrottleStats.CheckIfThrottled(params, m_Address);
+}
+
+void SThrottleStats::CheckIfThrottled(const SThrottleParams& params, const SServerAddress& address)
+{
     CFastMutexGuard guard(m_ThrottleLock);
 
     if (m_Throttled) {
@@ -718,7 +728,7 @@ void SNetServerInPool::CheckIfThrottled()
         m_NumberOfConsecutiveIOFailures >= params.m_MaxConsecutiveIOFailures) {
         m_Throttled = true;
         m_DiscoveredAfterThrottling = false;
-        m_ThrottleMessage = "Server " + m_Address.AsString();
+        m_ThrottleMessage = "Server " + address.AsString();
         m_ThrottleMessage += " has reached the maximum number "
             "of connection failures in a row";
     }
@@ -727,7 +737,7 @@ void SNetServerInPool::CheckIfThrottled()
             m_IOFailureCounter >= params.m_IOFailureThresholdNumerator) {
         m_Throttled = true;
         m_DiscoveredAfterThrottling = false;
-        m_ThrottleMessage = "Connection to server " + m_Address.AsString();
+        m_ThrottleMessage = "Connection to server " + address.AsString();
         m_ThrottleMessage += " aborted as it is considered bad/overloaded";
     }
 
@@ -738,12 +748,18 @@ void SNetServerInPool::CheckIfThrottled()
     }
 }
 
-void SNetServerInPool::ResetThrottlingParameters()
+void SThrottleStats::ResetThrottlingParameters()
 {
     m_NumberOfConsecutiveIOFailures = 0;
     memset(m_IOFailureRegister, 0, sizeof(m_IOFailureRegister));
     m_IOFailureCounter = m_IOFailureRegisterIndex = 0;
     m_Throttled = false;
+}
+
+void SThrottleStats::DiscoveredAfterThrottling()
+{
+    CFastMutexGuard guard(m_ThrottleLock);
+    m_DiscoveredAfterThrottling = true;
 }
 
 CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,

@@ -218,6 +218,31 @@ struct SThrottleParams
     void Init(CSynRegistry& registry, const SRegSynonyms& sections);
 };
 
+struct SThrottleStats
+{
+    // Server throttling implementation.
+    enum EConnOpResult {
+        eCOR_Success,
+        eCOR_Failure
+    };
+
+    void AdjustThrottlingParameters(const SThrottleParams& params, EConnOpResult op_result);
+    void CheckIfThrottled(const SThrottleParams& params, const SServerAddress& address);
+    void ResetThrottlingParameters();
+    void DiscoveredAfterThrottling();
+
+private:
+    int m_NumberOfConsecutiveIOFailures;
+    EConnOpResult m_IOFailureRegister[CONNECTION_ERROR_HISTORY_MAX];
+    int m_IOFailureRegisterIndex;
+    int m_IOFailureCounter;
+    bool m_Throttled;
+    bool m_DiscoveredAfterThrottling;
+    string m_ThrottleMessage;
+    CTime m_ThrottledUntil;
+    CFastMutex m_ThrottleLock;
+};
+
 struct SNetServerInPool : public CObject
 {
     SNetServerInPool(unsigned host, unsigned short port,
@@ -233,17 +258,11 @@ struct SNetServerInPool : public CObject
     virtual ~SNetServerInPool();
 
     void TryExec(SNetServerImpl* server, INetServerExecHandler& handler, STimeout* timeout);
+    void DiscoveredAfterThrottling() { m_ThrottleStats.DiscoveredAfterThrottling(); }
 
 private:
-    // Server throttling implementation.
-    enum EConnOpResult {
-        eCOR_Success,
-        eCOR_Failure
-    };
-
-    void AdjustThrottlingParameters(EConnOpResult op_result);
+    void AdjustThrottlingParameters(SThrottleStats::EConnOpResult op_result);
     void CheckIfThrottled();
-    void ResetThrottlingParameters();
     CNetServerConnection GetConnectionFromPool(SNetServerImpl* server);
     CNetServerConnection Connect(SNetServerImpl* server, STimeout* timeout);
 
@@ -263,15 +282,7 @@ public:
     int m_FreeConnectionListSize;
     CFastMutex m_FreeConnectionListLock;
 
-    int m_NumberOfConsecutiveIOFailures;
-    EConnOpResult m_IOFailureRegister[CONNECTION_ERROR_HISTORY_MAX];
-    int m_IOFailureRegisterIndex;
-    int m_IOFailureCounter;
-    bool m_Throttled;
-    bool m_DiscoveredAfterThrottling;
-    string m_ThrottleMessage;
-    CTime m_ThrottledUntil;
-    CFastMutex m_ThrottleLock;
+    SThrottleStats m_ThrottleStats;
     Uint4 m_RankBase;
 };
 

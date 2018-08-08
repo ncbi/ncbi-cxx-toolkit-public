@@ -992,10 +992,7 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
                         sinfo->rate != 0.0) {
                     SNetServerInPool* server = m_ServerPool->
                             FindOrCreateServerImpl(SServerAddress(sinfo->host, sinfo->port));
-                    {{
-                        CFastMutexGuard guard(server->m_ThrottleLock);
-                        server->m_DiscoveredAfterThrottling = true;
-                    }}
+                    server->DiscoveredAfterThrottling();
 
                     TServerRate server_rate(server, sinfo->rate);
 
