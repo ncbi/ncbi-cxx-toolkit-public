@@ -65,7 +65,7 @@ ACOR	s	Universidad Nacional de Cordoba
 ACTC	s	Austin College			
 ACU	s	Abilene Christian University			
 ACUNHC	s	Abilene Christian University, Natural History Collection			
-AD	s	Plant Biodiversity Centre			
+AD	s	State Herbarium of South Australia			
 ADA	s	Herbarium, Department of Agriculture, South Australia			
 ADMONT	s	Benediktinerstift Admont			
 ADO	s	Kirikkale University, Biology Department			

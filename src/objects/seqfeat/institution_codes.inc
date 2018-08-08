@@ -98,7 +98,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ACTC\ts\tAustin College\t\t\t",
 "ACU\ts\tAbilene Christian University\t\t\t",
 "ACUNHC\ts\tAbilene Christian University, Natural History Collection\t\t\t",
-"AD\ts\tPlant Biodiversity Centre\t\t\t",
+"AD\ts\tState Herbarium of South Australia\t\t\t",
 "ADA\ts\tHerbarium, Department of Agriculture, South Australia\t\t\t",
 "ADMONT\ts\tBenediktinerstift Admont\t\t\t",
 "ADO\ts\tKirikkale University, Biology Department\t\t\t",
