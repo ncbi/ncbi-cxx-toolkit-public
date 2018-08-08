@@ -199,6 +199,25 @@ private:
     mutable SName name;
 };
 
+struct SThrottleParams
+{
+    // The parameters below describe different conditions that trigger server throttling.
+    int m_MaxConsecutiveIOFailures;
+
+    // Connection failure rate (numerator/denominator), which is when reached, triggers server throttling.
+    int m_IOFailureThresholdNumerator;
+    int m_IOFailureThresholdDenominator; // Cannot be greater than CONNECTION_ERROR_HISTORY_MAX
+
+    // How many seconds the API should wait before attempting to connect to a misbehaving server again.
+    // Throttling is off if period is less or equal to zero.
+    int m_ServerThrottlePeriod;
+
+    // Whether to check with LBSMD before re-enabling the server.
+    bool m_ThrottleUntilDiscoverable;
+
+    void Init(CSynRegistry& registry, const SRegSynonyms& sections);
+};
+
 struct SNetServerInPool : public CObject
 {
     SNetServerInPool(unsigned host, unsigned short port,

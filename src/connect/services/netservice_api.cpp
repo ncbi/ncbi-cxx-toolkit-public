@@ -679,49 +679,6 @@ void SNetServerPoolImpl::Init(CSynRegistry& registry, const SRegSynonyms& sectio
     m_RebalanceStrategy = new CSimpleRebalanceStrategy(max_requests, max_seconds);
 }
 
-void SNetServerPoolImpl::SThrottleParams::Init(CSynRegistry& registry, const SRegSynonyms& sections)
-{
-    m_ServerThrottlePeriod = registry.Get(sections, "throttle_relaxation_period", 0);
-
-    if (m_ServerThrottlePeriod <= 0) return;
-
-    m_MaxConsecutiveIOFailures = registry.Get(sections,
-            { "throttle_by_consecutive_connection_failures", "throttle_by_subsequent_connection_failures" }, 0);
-
-    m_ThrottleUntilDiscoverable = registry.Get(sections, "throttle_hold_until_active_in_lb", false);
-
-    // These values must correspond to each other
-    const auto default_error_rate = "0/1";
-    m_IOFailureThresholdNumerator = 0;
-    m_IOFailureThresholdDenominator = 1;
-
-    const string error_rate = registry.Get(sections, "throttle_by_connection_error_rate", default_error_rate);
-
-    if (error_rate == default_error_rate || error_rate.empty()) return;
-
-    string numerator_str, denominator_str;
-
-    if (!NStr::SplitInTwo(error_rate, "/", numerator_str, denominator_str)) return;
-
-    const auto flags = NStr::fConvErr_NoThrow | NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces;
-
-    int numerator = NStr::StringToInt(numerator_str, flags);
-    int denominator = NStr::StringToInt(denominator_str, flags);
-
-    if (numerator < 0) numerator = 0;
-
-    if (denominator < 1) {
-        denominator = 1;
-
-    } else if (denominator > CONNECTION_ERROR_HISTORY_MAX) {
-        numerator = (numerator * CONNECTION_ERROR_HISTORY_MAX) / denominator;
-        denominator = CONNECTION_ERROR_HISTORY_MAX;
-    }
-
-    m_IOFailureThresholdNumerator = numerator;
-    m_IOFailureThresholdDenominator = denominator;
-}
-
 SDiscoveredServers* SNetServiceImpl::AllocServerGroup(
     unsigned discovery_iteration)
 {
