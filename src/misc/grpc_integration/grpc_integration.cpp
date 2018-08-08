@@ -39,7 +39,6 @@
 #include <misc/error_codes.hpp>
 #include <grpc++/server_context.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 
 #define NCBI_USE_ERRCODE_X Misc_GrpcIntegration
@@ -251,20 +250,25 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
 {
     CDiagContext&    dctx = GetDiagContext();
     CRequestContext& rctx = dctx.GetRequestContext();
-    char*            port = NULL;
-    string           client_name, peer_ip;
+    string           client_name, peer_ip, port;
     rctx.SetRequestID();
     if (sctx != NULL) {
         SIZE_TYPE pos = sctx->peer().find(':');
         if (pos != NPOS) {
             string peer = sctx->peer().substr(pos + 1);
-            char *host  = NULL;
-            gpr_split_host_port(peer.c_str(), &host, &port);
-            if (host != NULL  &&  host[0] != '\0') {
-                rctx.SetClientIP(host);
+            CTempString host;
+            pos = peer.rfind(':');
+            if (pos == NPOS  ||  peer[peer.size() - 1] == ']') {
+                host = peer;
+            } else {
+                port = peer.substr(pos + 1);
+                host.assign(peer, 0, pos);
+                if (host[0] == '['  &&  host[pos - 1] == ']') {
+                    host = host.substr(1, pos - 2);
+                }
             }
-            if (host != NULL) {
-                gpr_free(host);
+            if ( !host.empty() ) {
+                rctx.SetClientIP(host);
             }
         }
         for (const auto& metadata : sctx->client_metadata()) {
@@ -294,9 +298,8 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
     if ( !peer_ip.empty() ) {
         extra.Print("peer_ip", peer_ip);
     }
-    if (port != NULL) {
+    if ( !port.empty() ) {
         extra.Print("client_port", port);
-        gpr_free(port);
     }
 }
 

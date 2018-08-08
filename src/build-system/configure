@@ -51467,6 +51467,89 @@ _ACEOF
 
 
 if test -n "$GRPC_LIBS"; then
+   LDFLAGS="$orig_LDFLAGS $GRPC_LIBPATH"
+   { echo "$as_me:$LINENO: checking for address_sorting_rfc_6724_sort in -laddress_sorting" >&5
+echo $ECHO_N "checking for address_sorting_rfc_6724_sort in -laddress_sorting... $ECHO_C" >&6; }
+if test "${ac_cv_lib_address_sorting_address_sorting_rfc_6724_sort+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-laddress_sorting  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char address_sorting_rfc_6724_sort ();
+int
+main ()
+{
+return address_sorting_rfc_6724_sort ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_address_sorting_address_sorting_rfc_6724_sort=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_address_sorting_address_sorting_rfc_6724_sort=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_address_sorting_address_sorting_rfc_6724_sort" >&5
+echo "${ECHO_T}$ac_cv_lib_address_sorting_address_sorting_rfc_6724_sort" >&6; }
+if test $ac_cv_lib_address_sorting_address_sorting_rfc_6724_sort = yes; then
+  GRPC_LIBS="$GRPC_LIBS -laddress_sorting"
+fi
+
+   LDFLAGS=$orig_LDFLAGS
    GRPC_UNSECURE_LIBS=`echo $GRPC_LIBS | sed -e 's/\(-lgrpc+*\)/\1_unsecure/g'`
    GRPC_LIBS="$GRPC_LIBS $OPENSSL_LIBS"
    GRPC_REFLECTION_LIBS="$WHOLE_ARCHIVE $NO_AS_NEEDED $GRPC_LIBPATH"
