@@ -1620,10 +1620,9 @@ void CFeatureItem::x_AddQualsIdx(
     const CGene_ref* gene_ref = 0;
     CConstRef<CSeq_feat> gene_feat;
     const CGene_ref* feat_gene_xref = 0;
-    if (parentFeatureItem) {
+    feat_gene_xref = m_Feat.GetGeneXref();
+    if (feat_gene_xref == 0 && parentFeatureItem) {
         feat_gene_xref = parentFeatureItem->GetFeat().GetGeneXref();
-    } else {
-        feat_gene_xref = m_Feat.GetGeneXref();
     }
     bool suppressed = false;
 
@@ -1658,12 +1657,23 @@ void CFeatureItem::x_AddQualsIdx(
                         subtype == CSeqFeatData::eSubtype_transit_peptide_aa     ||
                         subtype == CSeqFeatData::eSubtype_propeptide_aa) {
                         try {
-                            // e.g., check sig_peptide for gene overlapping parent CDS
-                            CSeq_feat_Handle parent_feat_handle;
-                            parent_feat_handle = parentFeatureItem->GetFeat();
-                            CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref,
-                                                                gene_feat, parent_feat_handle );
-                            is_mapped = true;
+                            CRef<CFeatureIndex> fsx = ft->GetBestGene();
+                            if (fsx) {
+                                const CMappedFeat mf = fsx->GetMappedFeat();
+                                if (mf) {
+                                    gene_feat = &(mf.GetMappedFeature());
+                                    gene_ref = &(mf.GetData().GetGene());
+                                    is_mapped = true;
+                                }
+                            }
+                            if (! is_mapped) {
+                                // e.g., check sig_peptide for gene overlapping parent CDS
+                                CSeq_feat_Handle parent_feat_handle;
+                                parent_feat_handle = parentFeatureItem->GetFeat();
+                                CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref,
+                                                                    gene_feat, parent_feat_handle );
+                                is_mapped = true;
+                            }
                         } catch (CException&) {}
                     }
                 }
