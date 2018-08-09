@@ -281,8 +281,14 @@ void CFlatFileGenerator::Generate
         }
         if (! m_Ctx->UsingSeqEntryIndex()) {
             try {
-                CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eAdaptive ));
-                m_Ctx->SetSeqEntryIndex(idx);
+                CFlatFileConfig::TFlags flgs =  m_Ctx->GetConfig().GetFlags();
+                if ( (flgs & CFlatFileConfig::fOnlyNearFeatures) != 0 ) {
+                    CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eInternal ));
+                    m_Ctx->SetSeqEntryIndex(idx);
+                } else {
+                    CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eAdaptive ));
+                    m_Ctx->SetSeqEntryIndex(idx);
+                }
             } catch(CException &) {
                 m_Failed = true;
                 return;
@@ -647,8 +653,14 @@ void CFlatFileGenerator::Generate
         }
         if (! m_Ctx->UsingSeqEntryIndex()) {
             try {
-                CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eAdaptive ));
-                m_Ctx->SetSeqEntryIndex(idx);
+                CFlatFileConfig::TFlags flgs =  m_Ctx->GetConfig().GetFlags();
+                if ( (flgs & CFlatFileConfig::fOnlyNearFeatures) != 0 ) {
+                    CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eInternal ));
+                    m_Ctx->SetSeqEntryIndex(idx);
+                } else {
+                    CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eAdaptive ));
+                    m_Ctx->SetSeqEntryIndex(idx);
+                }
             } catch(CException &) {
                 m_Failed = true;
                 return;
