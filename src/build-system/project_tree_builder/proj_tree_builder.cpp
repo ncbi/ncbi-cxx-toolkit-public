@@ -2086,6 +2086,11 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
         if (GetApp().m_Dtdep && !GetApp().GetDatatoolId().empty() && makeinfo.m_Type != SMakeProjectT::SMakeInInfo::eProtobuf) {   
               project.m_Depends.push_back(CProjKey(CProjKey::eApp, GetApp().GetDatatoolId())); 
         }
+        if (makeinfo.m_Type == SMakeProjectT::SMakeInInfo::eProtobuf) {
+            string rel_path = CDirEntry::CreateRelativePath(GetApp().GetProjectTreeInfo().m_Src, source_base_dir);
+            string incl_path = CDirEntry::NormalizePath( CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, rel_path));
+            project.m_IncludeDirs.push_back(incl_path);
+        }
     }
 
     return proj_id;
