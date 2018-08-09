@@ -2090,6 +2090,7 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
             string rel_path = CDirEntry::CreateRelativePath(GetApp().GetProjectTreeInfo().m_Src, source_base_dir);
             string incl_path = CDirEntry::NormalizePath( CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, rel_path));
             project.m_IncludeDirs.push_back(incl_path);
+            project.m_Pch = "FALSE";
         }
     }
 
