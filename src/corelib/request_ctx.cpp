@@ -747,6 +747,10 @@ const CMask& CRequestContext::sx_GetContextFieldsMask(void)
                     sm_ContextFields->Add(norm_field);
                 }
             }
+            else {
+                // By default exclude everything.
+                sm_ContextFields->AddExclusion("*");
+            }
         }
     }
     return *sm_ContextFields;
