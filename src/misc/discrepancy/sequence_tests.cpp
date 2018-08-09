@@ -2229,11 +2229,24 @@ static const string kFixable = "Fixable";
 static const string kNonFixable = "Non-fixable";
 
 
-static void FindFlatfileText(const unsigned char* p, bool *result)
+//static void FindFlatfileText(const unsigned char* p, bool *result)
+//{
+//#define _FSM_REPORT(x, y) result[x] = true, false
+//#include "FLATFILE_FIND.inc"
+//#undef _FSM_REPORT
+//}
+
+
+static void FindFlatfileText(const char* str, bool *result)
 {
-#define report(x, y) result[x] = true, false
+#define _FSM_EMIT static bool emit[]
+#define _FSM_HITS static map<size_t, vector<size_t>> hits
+#define _FSM_STATES static size_t states[]
 #include "FLATFILE_FIND.inc"
-#undef report
+#undef _FSM_EMIT
+#undef _FSM_HITS
+#undef _FSM_STATES
+    CMultipatternSearch::Search(str, states, emit, hits, [result](size_t n){ result[n] = true; });
 }
 
 
@@ -2246,7 +2259,7 @@ void UnitTest_FLATFILE_FIND()
     string error = "String not found: ";
     for (size_t i = 0; i < kSpellFixesSize; i++) {
         fill(Found, Found + kSpellFixesSize, 0);
-        FindFlatfileText((const unsigned char*)kSpellFixes[i].m_misspell, Found);
+        FindFlatfileText(kSpellFixes[i].m_misspell, Found);
         if (!Found[i]) {
             error += kSpellFixes[i].m_misspell;
             NCBI_THROW(CException, eUnknown, error);
@@ -2261,7 +2274,7 @@ DISCREPANCY_CASE(FLATFILE_FIND, COverlappingFeatures, eOncaller, "Flatfile repre
     for (CSeqdesc_CI descr(context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq())); descr; ++descr) {
         fill(Found, Found + kSpellFixesSize, 0);
         for (CStdTypeConstIterator<string> it(*descr); it; ++it) {
-            FindFlatfileText((const unsigned char*)it->c_str(), Found);
+            FindFlatfileText(it->c_str(), Found);
         }
         for (size_t i = 0; i < kSpellFixesSize; i++) {
             if (Found[i]) {
@@ -2275,7 +2288,7 @@ DISCREPANCY_CASE(FLATFILE_FIND, COverlappingFeatures, eOncaller, "Flatfile repre
     for (auto feat: context.FeatAll()) {
         fill(Found, Found + kSpellFixesSize, 0);
         for (CStdTypeConstIterator<string> it(*feat); it; ++it) {
-            FindFlatfileText((const unsigned char*)it->c_str(), Found);
+            FindFlatfileText(it->c_str(), Found);
         }
         for (size_t i = 0; i < kSpellFixesSize; i++) {
             if (Found[i]) {
@@ -2322,7 +2335,7 @@ DISCREPANCY_AUTOFIX(FLATFILE_FIND)
             if (feat) {
                 fill(Found, Found + kSpellFixesSize, 0);
                 for (CStdTypeConstIterator<string> it(*feat); it; ++it) {
-                    FindFlatfileText((const unsigned char*)it->c_str(), Found);
+                    FindFlatfileText(it->c_str(), Found);
                 }
                 for (size_t i = 0; i < kSpellFixesSize; i++) {
                     if (Found[i]) {
@@ -2336,7 +2349,7 @@ DISCREPANCY_AUTOFIX(FLATFILE_FIND)
             else if (descr) {
                 fill(Found, Found + kSpellFixesSize, 0);
                 for (CStdTypeConstIterator<string> it(*descr); it; ++it) {
-                    FindFlatfileText((const unsigned char*)it->c_str(), Found);
+                    FindFlatfileText(it->c_str(), Found);
                 }
                 for (size_t i = 0; i < kSpellFixesSize; i++) {
                     if (Found[i]) {
