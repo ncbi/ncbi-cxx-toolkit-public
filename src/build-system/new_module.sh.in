@@ -64,7 +64,7 @@ getvar () {
 }
 
 # detect command arguments
-suffixes='asn dtd xsd wsdl'
+suffixes='asn dtd xsd wsdl jsd'
 case "$1" in
     --dtd)
         ext="dtd"
@@ -79,6 +79,11 @@ case "$1" in
     --soap | --wsdl)
         ext="wsdl"
         EXT="WSDL"
+        shift
+	;;
+    --jsd)
+        ext="jsd"
+        EXT="JSD"
         shift
 	;;
     --protobuf | --proto)
