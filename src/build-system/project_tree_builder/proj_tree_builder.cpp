@@ -683,6 +683,12 @@ void SMakeProjectT::AnalyzeMakeIn
         info->push_back(SMakeInInfo(SMakeInInfo::eWSDL, p->second,
             makein_contents.GetMakeType())); 
     }
+    p = makein_contents.m_Contents.find("JSD_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eJSD, p->second,
+            makein_contents.GetMakeType())); 
+    }
     p = makein_contents.m_Contents.find("PROTOBUF_PROJ");
     if (p != makein_contents.m_Contents.end()) {
 
@@ -2065,6 +2071,10 @@ CProjKey SAsnProjectSingleT::DoCreate(const string& source_base_dir,
         if ( CDirEntry(source_file_path + ".wsdl").Exists() )
             source_file_path += ".wsdl";
         break;
+    case SMakeProjectT::SMakeInInfo::eJSD:
+        if ( CDirEntry(source_file_path + ".jsd").Exists() )
+            source_file_path += ".jsd";
+        break;
     case SMakeProjectT::SMakeInInfo::eProtobuf:
         if ( CDirEntry(source_file_path + ".proto").Exists() )
             source_file_path += ".proto";
@@ -2966,7 +2976,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                 }
             }
         }
-        string libproj[] = {"ASN_PROJ","DTD_PROJ","XSD_PROJ","WSDL_PROJ", "PROTOBUF_PROJ",
+        string libproj[] = {"ASN_PROJ","DTD_PROJ","XSD_PROJ","WSDL_PROJ","JSD_PROJ", "PROTOBUF_PROJ",
             "LIB_PROJ","EXPENDABLE_LIB_PROJ","POTENTIAL_LIB_PROJ",""};
         EMakeFileType libtype[] = {
             eMakeType_Undefined, eMakeType_Undefined, eMakeType_Undefined, eMakeType_Undefined,

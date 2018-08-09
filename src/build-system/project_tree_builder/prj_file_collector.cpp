@@ -348,6 +348,7 @@ bool CProjectFileCollector::IsProducedByDatatool(
     string dtd_name = asn_base + ".dtd";
     string xsd_name = asn_base + ".xsd";
     string wsdl_name = asn_base + ".wsdl";
+    string jsd_name = asn_base + ".jsd";
 
     // find this name in datatool generated sources container
     ITERATE(list<CDataToolGeneratedSrc>, p, projitem.m_DatatoolSources) {
@@ -355,7 +356,9 @@ bool CProjectFileCollector::IsProducedByDatatool(
         if ((asn.m_SourceFile == asn_name) ||
             (asn.m_SourceFile == dtd_name) ||
             (asn.m_SourceFile == xsd_name) ||
-            (asn.m_SourceFile == wsdl_name))
+            (asn.m_SourceFile == wsdl_name) ||
+            (asn.m_SourceFile == jsd_name)
+            )
             return true;
     }
     return false;
@@ -374,7 +377,9 @@ bool CProjectFileCollector::IsInsideDatatoolSourceDir(
     if ( !dir.GetEntries("*.asn").empty() ||
          !dir.GetEntries("*.dtd").empty() ||
          !dir.GetEntries("*.xsd").empty() ||
-         !dir.GetEntries("*.wsdl").empty()) {
+         !dir.GetEntries("*.wsdl").empty() ||
+         !dir.GetEntries("*.jsd").empty()
+         ) {
         ext = ".cpp";
         return true;
     }

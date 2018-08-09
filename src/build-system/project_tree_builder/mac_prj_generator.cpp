@@ -1482,6 +1482,8 @@ string CMacProjectGenerator::AddFile(CDict& dict, const string& name, bool style
         filetype = "text.xml";
     } else if (ext == ".wsdl") {
         filetype = "text.xml";
+    } else if (ext == ".jsd") {
+        filetype = "text.json";
     } else {
         filetype = "text";
     }

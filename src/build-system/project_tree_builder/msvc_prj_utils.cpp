@@ -1690,6 +1690,7 @@ IsProducedByDatatool(const string&    src_path_abs,
     string dtd_name = asn_base + ".dtd";
     string xsd_name = asn_base + ".xsd";
     string wsdl_name = asn_base + ".wsdl";
+    string jsd_name = asn_base + ".jsd";
 
     //try to find this name in datatool generated sources container
     ITERATE(list<CDataToolGeneratedSrc>, p, project.m_DatatoolSources) {
@@ -1697,7 +1698,9 @@ IsProducedByDatatool(const string&    src_path_abs,
         if ((asn.m_SourceFile == asn_name) ||
             (asn.m_SourceFile == dtd_name) ||
             (asn.m_SourceFile == xsd_name) ||
-            (asn.m_SourceFile == wsdl_name)) {
+            (asn.m_SourceFile == wsdl_name) ||
+            (asn.m_SourceFile == jsd_name)
+            ) {
             return &(*p);
         }
     }

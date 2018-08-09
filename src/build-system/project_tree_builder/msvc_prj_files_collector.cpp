@@ -143,7 +143,9 @@ static bool s_IsInsideDatatoolSourceDir(const string& src_path_abs, string& ext)
     if ( !dir.GetEntries("*.asn").empty() ||
          !dir.GetEntries("*.dtd").empty() ||
          !dir.GetEntries("*.xsd").empty() ||
-         !dir.GetEntries("*.wsdl").empty()) {
+         !dir.GetEntries("*.wsdl").empty() ||
+         !dir.GetEntries("*.jsd").empty()
+        ) {
         ext = ".cpp";
         return true;
     }

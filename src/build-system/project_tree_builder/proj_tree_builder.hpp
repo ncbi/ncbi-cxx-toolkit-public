@@ -66,6 +66,7 @@ struct SMakeProjectT
             eDTD,
             eXSD,
             eWSDL,
+            eJSD,
             eProtobuf,
             eMsvc
         } TMakeinType;
