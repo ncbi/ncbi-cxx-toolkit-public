@@ -255,6 +255,7 @@ class CRegExFSA
     void Merge(unique_ptr<CRegExFSA> fsa); // fsa will be consumed
     void GenerateDotGraph(ostream& out) const;
     void GenerateSourceCode(ostream& out) const;
+    void GenerateArrayMapData(ostream& out) const;
     void Refine();  // build DSA from NSA
     static size_t Collect(TScratch& VV, CRegEx::EType t, TStates& src, TStates& dest, TNodeSetMap& NM, TNodeSetList& NL, TNodeSet& NS, TScratch& HH);
     static void Extend(size_t x, unsigned char c, TStates& src, TStates& dest, TNodeSetMap& NM, TNodeSetList& NL, TNodeSet& NS, TScratch& VV, TScratch& HH);

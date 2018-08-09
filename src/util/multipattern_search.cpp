@@ -60,6 +60,8 @@ void CMultipatternSearch::AddPatterns(const vector<pair<string, TFlags>>& patter
 
 void CMultipatternSearch::GenerateDotGraph(ostream& out) const { m_FSM->GenerateDotGraph(out); }
 
+void CMultipatternSearch::GenerateArrayMapData(ostream& out) const { m_FSM->GenerateArrayMapData(out); }
+
 void CMultipatternSearch::GenerateSourceCode(ostream& out) const { m_FSM->GenerateSourceCode(out); }
 
 string CMultipatternSearch::QuoteString(const string& str)
@@ -95,7 +97,7 @@ string CMultipatternSearch::QuoteString(const string& str)
 
 void CMultipatternSearch::Search(const char* input, VoidCall1 report) const
 {
-    const char* p = input;
+    const unsigned char* p = (const unsigned char*)input;
     size_t state = 1;
 
     set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
@@ -118,18 +120,18 @@ void CMultipatternSearch::Search(const char* input, VoidCall1 report) const
 
 void CMultipatternSearch::Search(const char* input, VoidCall2 report) const
 {
-    const char* p = input;
+    const unsigned char* p = (const unsigned char*)input;
     size_t state = 1;
 
     set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
     for (auto e : emit) {
-        report(e, p - input);
+        report(e, p - (const unsigned char*)input);
     }
     while (true) {
         state = m_FSM->m_States[state]->m_Trans[*p];
         set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
         for (auto e : emit) {
-            report(e, p - input);
+            report(e, p - (const unsigned char*)input);
         }
         if (!*p) {
             return;
@@ -141,7 +143,7 @@ void CMultipatternSearch::Search(const char* input, VoidCall2 report) const
 
 void CMultipatternSearch::Search(const char* input, BoolCall1 report) const
 {
-    const char* p = input;
+    const unsigned char* p = (const unsigned char*)input;
     size_t state = 1;
 
     set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
@@ -168,12 +170,12 @@ void CMultipatternSearch::Search(const char* input, BoolCall1 report) const
 
 void CMultipatternSearch::Search(const char* input, BoolCall2 report) const
 {
-    const char* p = input;
+    const unsigned char* p = (const unsigned char*)input;
     size_t state = 1;
 
     set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
     for (auto e : emit) {
-        if (report(e, p - input)) {
+        if (report(e, p - (const unsigned char*)input)) {
             return;
         }
     }
@@ -181,8 +183,118 @@ void CMultipatternSearch::Search(const char* input, BoolCall2 report) const
         state = m_FSM->m_States[state]->m_Trans[*p];
         set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
         for (auto e : emit) {
-            if (report(e, p - input)) {
+            if (report(e, p - (const unsigned char*)input)) {
                 return;
+            }
+        }
+        if (!*p) {
+            return;
+        }
+        ++p;
+    }
+}
+
+
+////////////////////////////////////////////////////////////////
+
+void CMultipatternSearch::Search(const char* input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, VoidCall1 report)
+{
+    const unsigned char* p = (const unsigned char*)input;
+    size_t state = 0;
+
+    if (emit[state]) {
+        for (auto e : hits.at(state)) {
+            report(e);
+        }
+    }
+    while (true) {
+        state = states[state * 256 + *p];
+        if (emit[state]) {
+            for (auto e : hits.at(state)) {
+                report(e);
+            }
+        }
+        if (!*p) {
+            return;
+        }
+        ++p;
+    }
+}
+
+
+void CMultipatternSearch::Search(const char* input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, VoidCall2 report)
+{
+    const unsigned char* p = (const unsigned char*)input;
+    size_t state = 0;
+
+    if (emit[state]) {
+        for (auto e : hits.at(state)) {
+            report(e, p - (const unsigned char*)input);
+        }
+    }
+    while (true) {
+        state = states[state * 256 + *p];
+        if (emit[state]) {
+            for (auto e : hits.at(state)) {
+                report(e, p - (const unsigned char*)input);
+            }
+        }
+        if (!*p) {
+            return;
+        }
+        ++p;
+    }
+}
+
+
+void CMultipatternSearch::Search(const char* input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, BoolCall1 report)
+{
+    const unsigned char* p = (const unsigned char*)input;
+    size_t state = 0;
+
+    if (emit[state]) {
+        for (auto e : hits.at(state)) {
+            if (report(e)) {
+                return;
+            }
+        }
+    }
+    while (true) {
+        state = states[state * 256 + *p];
+        if (emit[state]) {
+            for (auto e : hits.at(state)) {
+                if (report(e)) {
+                    return;
+                }
+            }
+        }
+        if (!*p) {
+            return;
+        }
+        ++p;
+    }
+}
+
+
+void CMultipatternSearch::Search(const char* input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, BoolCall2 report)
+{
+    const unsigned char* p = (const unsigned char*)input;
+    size_t state = 0;
+
+    if (emit[state]) {
+        for (auto e : hits.at(state)) {
+            if (report(e, p - (const unsigned char*)input)) {
+                return;
+            }
+        }
+    }
+    while (true) {
+        state = states[state * 256 + *p];
+        if (emit[state]) {
+            for (auto e : hits.at(state)) {
+                if (report(e, p - (const unsigned char*)input)) {
+                    return;
+                }
             }
         }
         if (!*p) {
@@ -1530,8 +1642,8 @@ void CRegExFSA::GenerateSourceCode(ostream& out) const
         if (n > 1) {
             out << "_" << n << ":\n";
         }
-        for (auto E = m_States[n]->m_Emit.begin(); E != m_States[n]->m_Emit.end(); ++E) {
-            out << "    if (report(" << *E << ", p - _p)) return;  // " << m_Str[*E] << "\n";
+        for (auto e : m_States[n]->m_Emit) {
+            out << "    if (_FSM_REPORT(" << e << ", p - _p)) return;  // " << m_Str[e] << "\n";
         }
         if (m_States[n]->m_Type & CRegEx::eTypeStop) {
             out << "    return;\n";
@@ -1574,6 +1686,51 @@ void CRegExFSA::GenerateSourceCode(ostream& out) const
         out << "            goto _" << other << ";\n";
         out << "    }\n";
     }
+}
+
+
+void CRegExFSA::GenerateArrayMapData(ostream& out) const
+{
+    out << "_FSM_EMIT = {\n";   // #define _FSM_EMIT static bool emit[]
+    for (size_t n = 0; n < m_States.size() - 1; n++) {
+        cout << (n ? n % 32 ? ", " : ",\n" : "") << (m_States[n + 1]->m_Emit.size() ? "1" : "0");
+    }
+    out << "\n};\n";
+
+    out << "_FSM_HITS = {\n";   // #define _FSM_HITS static map<size_t, vector<size_t>> hits
+    size_t count = 0;
+    for (size_t n = 0; n < m_States.size(); n++) {
+        if (m_States[n]->m_Emit.size()) {
+            count++;
+        }
+    }
+    for (size_t n = 0; n < m_States.size(); n++) {
+        if (m_States[n]->m_Emit.size()) {
+            count--;
+            out << "{ " << (n - 1) << ", { ";
+            size_t i = 0;
+            for (auto e : m_States[n]->m_Emit) {
+                out << (i ? ", " : "") << e;
+                i++;
+            }
+            out << " }}" << (count ? ",  " : "  ");
+            for (auto e : m_States[n]->m_Emit) {
+                out << " // " << e << ": " << m_Str[e];
+                i++;
+            }
+            out << "\n";
+        }
+    }
+    out << "};\n";
+
+    out << "_FSM_STATES = {";   // #define _FSM_STATE static size_t[] states
+    for (size_t n = 1; n < m_States.size(); n++) {
+        out << "\n// " << (n - 1);
+        for (size_t i = 0; i < 256; i++) {
+            cout << (i % 32 ? ", " : "\n") << (m_States[n]->m_Trans[i] ? m_States[n]->m_Trans[i] - 1 : 0) << (i % 32 == 31 && (i != 255 || n < m_States.size() - 1) ? "," : "");
+        }
+    }
+    out << "\n};\n";
 }
 
 END_NCBI_SCOPE
