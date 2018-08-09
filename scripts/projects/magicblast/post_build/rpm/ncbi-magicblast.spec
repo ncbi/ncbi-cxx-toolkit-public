@@ -1,6 +1,6 @@
 Name:        ncbi-magicblast
 Version:     BLAST_VERSION
-Release:     2
+Release:     1
 Source0:     %{name}-%{version}.tgz
 Summary:     NCBI Magic-BLAST is a tool for mapping next-generation RNA or DNA sequencing runs against a genome or transcriptome. 
 Exclusiveos: linux
