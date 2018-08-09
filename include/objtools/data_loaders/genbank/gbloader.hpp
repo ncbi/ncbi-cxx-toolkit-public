@@ -295,7 +295,7 @@ public:
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         EIncludeHUP     include_hup,
-        const string& web_cookie = NcbiEmptyString,
+        const string& web_cookie,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(EIncludeHUP     include_hup);
@@ -313,7 +313,7 @@ public:
         CObjectManager& om,
         const string&   reader_name, // pubseqos or pubseqos2
         EIncludeHUP     include_hup,
-        const string& web_cookie = NcbiEmptyString,
+        const string& web_cookie,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(const string&   reader_name, // pubseqos or pubseqos2
