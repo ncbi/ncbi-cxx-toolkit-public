@@ -83,20 +83,30 @@ ifeq "" "$(OBJ_DIRS)"
 	$(make_cpp_dep)
   %.d: $(srcdir)/%.cpp
 	$(make_cpp_dep)
+  %.d: $(HERE)%.cc
+	$(make_cpp_dep)
+  %.d: $(srcdir)/%.cc
+	$(make_cpp_dep)
   %.d: $(HERE)%.c
 	$(make_c_dep)
   %.d: $(srcdir)/%.c
 	$(make_c_dep)
 else
   CPP_DEP_HERE = $(CPP_OBJ_HERE:%@obj_ext@=%.d)
+  CC_DEP_HERE  = $(CC_OBJ_HERE:%@obj_ext@=%.d)
   C_DEP_HERE   = $(C_OBJ_HERE:%@obj_ext@=%.d)
   ifneq "$(srcdir)" "."
     CPP_DEP_THERE = $(CPP_OBJ_THERE:%@obj_ext@=%.d)
+    CC_DEP_THERE  = $(CC_OBJ_THERE:%@obj_ext@=%.d)
     C_DEP_THERE   = $(C_OBJ_THERE:%@obj_ext@=%.d)
   endif
   $(CPP_DEP_HERE): %.d: $(HERE)%.cpp
 	$(make_cpp_dep)
   $(CPP_DEP_THERE): %.d: $(srcdir)/%.cpp $(OBJ_DIRS)
+	$(make_cpp_dep)
+  $(CPP_DEP_HERE): %.d: $(HERE)%.cc
+	$(make_cpp_dep)
+  $(CPP_DEP_THERE): %.d: $(srcdir)/%.cc $(OBJ_DIRS)
 	$(make_cpp_dep)
   $(C_DEP_HERE): %.d: $(HERE)%.c
 	$(make_c_dep)

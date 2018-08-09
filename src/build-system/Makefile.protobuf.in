@@ -25,10 +25,10 @@ PROTOC = $(PROTOBUF_BIN)/protoc
 GRPC_CPP_PLUGIN = $(GRPC_BIN)/grpc_cpp_plugin
 
 ifneq "" "$(wildcard $(GRPC_CPP_PLUGIN))"
-  GRPC_FILES = $(MODULE).grpc.pb.cpp $(INCLUDEDIR)/$(MODULE).grpc.pb.hpp
+  GRPC_FILES = $(MODULE).grpc.pb.cc $(INCLUDEDIR)/$(MODULE).grpc.pb.hpp \
+               $(INCLUDEDIR)/$(MODULE).grpc.pb.h
 endif
 
-SED_SCRIPT = '/^\#include ".*pb.h"/ { s|"|<'$(MODULE_PATH)'/|; s/"/pp>/ }'
 DEPS = $(SPEC) $(PROTOC) $(MODULE).module $(IMPDEPS)
 
 all: sources
@@ -38,18 +38,20 @@ all_files: sources
 sources: $(FILES)
 
 clean_sources:
-	-$(RM) $(FILES) *.pb.cc *.pb.h
+	-$(RM) $(FILES) *.pb.cpp
 
 purge_sources:
-	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.hpp
+	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.h*
 
 purge_all_sources:
-	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.hpp
+	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.h*
 
 purge_all_files:
-	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.hpp
+	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.h*
 
-$(FILES): $(MODULE).pb.cpp $(INCLUDEDIR)/$(MODULE).pb.hpp $(GRPC_FILES)
+$(FILES): $(MODULE).pb.cc $(INCLUDEDIR)/$(MODULE).pb.hpp \
+          $(INCLUDEDIR)/$(MODULE).pb.h $(GRPC_FILES)
+	$(RM) $(MODULE).pb.cpp $(MODULE).grpc.pb.cpp
 	@$(TOUCH) $@
 
 $(MODULE).pb.cc $(MODULE).pb.h: $(DEPS)
@@ -59,12 +61,12 @@ $(MODULE).grpc.pb.cc $(MODULE).grpc.pb.h: $(DEPS) $(GRPC_CPP_PLUGIN)
 	$(PROTOC) $(PROTOC_FLAGS) --grpc_out=. --proto_path=$(PROTO_PATH) \
 	    --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN) $(SPEC)
 
-%.pb.cpp: %.pb.cc
-	$(SED) -e $(SED_SCRIPT) $< > $@
-
-$(INCLUDEDIR)/%.pb.hpp: %.pb.cc # not .h, to avoid duplicate protoc runs
+$(INCLUDEDIR)/%.pb.h: %.pb.cc # not .h, to avoid duplicate protoc runs
 	$(MKDIR) -p $(INCLUDEDIR)
-	$(SED) -e $(SED_SCRIPT) $*.pb.h > $@
+	$(COPY) $*.pb.h $@
+
+$(INCLUDEDIR)/%.pb.hpp: $(INCLUDEDIR)/%.pb.h
+	echo '#include "$*.pb.h"' > $@
 
 $(MODULE).module:
 	@$(TOUCH) $@
