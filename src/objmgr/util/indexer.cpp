@@ -193,6 +193,7 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::E
 
     m_FeatTree = new feature::CFeatTree;
 
+    m_HasOperon = false;
     m_IsSmallGenomeSet = false;
 
     try {
@@ -806,7 +807,6 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_Comment.clear();
     m_IsPseudogene = false;
 
-    m_HasOperon = false;
     m_HasGene = false;
     m_HasMultiIntervalGenes = false;
     m_HasSource = false;
@@ -1850,7 +1850,7 @@ void CBioseqIndex::x_InitFeats (void)
                 }
 
                 if (subtype == CSeqFeatData::eSubtype_operon) {
-                    m_HasOperon = true;
+                    idxl->SetHasOperon(true);
                     continue;
                 }
 
@@ -2558,7 +2558,13 @@ bool CBioseqIndex::HasOperon (void)
         x_InitFeats();
     }
 
-    return m_HasOperon;
+    CWeakRef<CSeqMasterIndex> idx = GetSeqMasterIndex();
+    auto idxl = idx.Lock();
+    if (idxl) {
+        return idxl->HasOperon();
+    }
+
+    return false;
 }
 
 bool CBioseqIndex::HasGene (void)

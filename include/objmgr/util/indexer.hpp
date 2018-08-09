@@ -238,6 +238,9 @@ public:
 
     const vector<CRef<CSeqsetIndex>>& GetSeqsetIndices(void);
 
+    void SetHasOperon (bool hasOp) { m_HasOperon = hasOp; }
+    bool HasOperon (void) const { return m_HasOperon; }
+
     bool IsSmallGenomeSet (void) const { return m_IsSmallGenomeSet; }
 
     // Check all Bioseqs for failure to fetch remote sequence components or remote feature annotation
@@ -284,6 +287,7 @@ private:
 
     vector<CRef<CSeqsetIndex>> m_SsxList;
 
+    bool m_HasOperon;
     bool m_IsSmallGenomeSet;
 
     mutable CAtomicCounter m_Counter;
@@ -716,7 +720,6 @@ private:
     bool m_IsPseudogene;
 
     // Feature fields
-    bool m_HasOperon;
     bool m_HasGene;
     bool m_HasMultiIntervalGenes;
     bool m_HasSource;
