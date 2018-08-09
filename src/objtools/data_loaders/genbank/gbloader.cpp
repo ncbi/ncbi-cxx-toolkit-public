@@ -280,10 +280,21 @@ string CGBDataLoader::GetLoaderNameFromArgs(const string& /*reader_name*/)
 
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager& om,
-    EIncludeHUP     /*include_hup*/,
+    EIncludeHUP     include_hup,
     CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority  priority,
-    const string& web_cookie)
+    CObjectManager::TPriority  priority)
+{
+    return RegisterInObjectManager(om, include_hup, NcbiEmptyString, is_default,
+                                   priority);
+}
+
+
+CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    EIncludeHUP     /*include_hup*/,
+    const string& web_cookie,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority  priority)
 {
     CGBLoaderParams params("PUBSEQOS2:PUBSEQOS");
     params.SetHUPIncluded(true, web_cookie);
@@ -298,14 +309,24 @@ string CGBDataLoader::GetLoaderNameFromArgs(EIncludeHUP /*include_hup*/)
     return GBLOADER_HUP_NAME;
 }
 
+CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    const string&   reader_name,
+    EIncludeHUP     include_hup,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority  priority)
+{
+    return RegisterInObjectManager(om, reader_name, include_hup, NcbiEmptyString,
+                                   is_default, priority);
+}
 
 CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
     CObjectManager& om,
     const string&   reader_name,
     EIncludeHUP     /*include_hup*/,
+    const string& web_cookie,
     CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority  priority,
-    const string& web_cookie)
+    CObjectManager::TPriority  priority)
 {
     CGBLoaderParams params(reader_name);
     params.SetHUPIncluded(true, web_cookie);

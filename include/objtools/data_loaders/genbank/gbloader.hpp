@@ -291,8 +291,13 @@ public:
         CObjectManager& om,
         EIncludeHUP     include_hup,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet,
-        const string& web_cookie = NcbiEmptyString);
+        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
+    static TRegisterLoaderInfo RegisterInObjectManager(
+        CObjectManager& om,
+        EIncludeHUP     include_hup,
+        const string& web_cookie = NcbiEmptyString,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(EIncludeHUP     include_hup);
 
     // GBLoader with HUP data included.
@@ -303,8 +308,14 @@ public:
         const string&   reader_name, // pubseqos or pubseqos2
         EIncludeHUP     include_hup,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet,
-        const string& web_cookie = NcbiEmptyString);
+        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
+    static TRegisterLoaderInfo RegisterInObjectManager(
+        CObjectManager& om,
+        const string&   reader_name, // pubseqos or pubseqos2
+        EIncludeHUP     include_hup,
+        const string& web_cookie = NcbiEmptyString,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(const string&   reader_name, // pubseqos or pubseqos2
                                         EIncludeHUP     include_hup);
 

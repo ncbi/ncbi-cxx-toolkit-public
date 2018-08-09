@@ -1,0 +1,15 @@
+<!--    
+                This is the Current DTD for eMyNCBI
+$Id$
+-->
+<!-- ================================================================= -->
+
+<!ELEMENT       UserName        (#PCDATA)>      <!-- \S+ -->
+<!ELEMENT       HomePageURL     (#PCDATA)>      <!-- \S+ -->
+
+<!-- Error message tags  -->
+<!ELEMENT       ERROR          (#PCDATA)>      <!-- .+ -->
+
+<!-- Response tags -->
+<!ELEMENT       eMyNCBIResult   ( (UserName | ERROR),
+                                    HomePageURL)>

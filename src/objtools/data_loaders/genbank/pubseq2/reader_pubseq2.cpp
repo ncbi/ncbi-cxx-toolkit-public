@@ -59,10 +59,7 @@
 #include <objects/id2/id2__.hpp>
 
 #include <connect/ncbi_http_session.hpp>
-//#define USE_WEB_COOKIE
-#ifdef USE_WEB_COOKIE
-# include <objtools/data_loaders/genbank/pubseq2/EMyNCBIResult.hpp>
-#endif
+#include <objtools/data_loaders/genbank/pubseq2/EMyNCBIResult.hpp>
 
 #define BINARY_REQUESTS     1
 #define LONG_REQUESTS       1
@@ -384,33 +381,30 @@ static string s_GetCubbyUserName(const string& web_cookie)
     static const char* kEMyNCBIURL =
         "https://www.ncbi.nlm.nih.gov/entrez/eutils/emyncbi.cgi?cmd=whoami&WebCubbyUser=";
     string cubby_user;
-    if (web_cookie.empty()) {
-        cubby_user = GetProcessUserName();
-    } else {
-#ifdef USE_WEB_COOKIE
+    if (!web_cookie.empty()) {
         CHttpSession session;
         int response_timeout = 40;
         CHttpResponse response =
             session.Get(CUrl(kEMyNCBIURL + web_cookie), CTimeout(response_timeout), 0);
         if (response.GetStatusCode() == 200) {
             CEMyNCBIResult result;
-            response.ContentStream()
-                >> MSerial_Xml
-                /*
-                >> MSerial_SkipUnknownMembers(eSerialSkipUnknown_Yes)
-                >> MSerial_SkipUnknownVariants(eSerialSkipUnknown_Yes)
-                */
-                >> result;
-            cubby_user = result.GetUE().GetUUE().GetUserName();
-        }
-        else {
-            NCBI_THROW(CLoaderException, eConnectionFailed, "MyNCBI cubby user name timeout");
-        }
-#endif
-        if ( cubby_user.empty() ) {
-            NCBI_THROW(CLoaderException, eConnectionFailed, "MyNCBI cubby user name is empty");
+            try {
+                response.ContentStream()
+                    >> MSerial_Xml
+                    >> MSerial_SkipUnknownMembers(eSerialSkipUnknown_Yes)
+                    >> MSerial_SkipUnknownVariants(eSerialSkipUnknown_Yes)
+                    >> result;
+                if (result.CanGetUE() && result.GetUE().IsUserName())
+                    cubby_user = result.GetUE().GetUserName();
+            } catch(CException& e) {
+                string msg = e.what();
+                LOG_POST_X(1, Warning << "s_GetCubbyUserName: unable to read MyNCBI XML: "<< msg);
+            }
         }
     }
+
+    if (cubby_user.empty())
+        cubby_user = GetProcessUserName();
 
     return cubby_user;
 }
