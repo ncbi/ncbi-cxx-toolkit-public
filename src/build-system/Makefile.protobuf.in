@@ -66,7 +66,11 @@ $(INCLUDEDIR)/%.pb.h: %.pb.cc # not .h, to avoid duplicate protoc runs
 	/bin/mv -f $*.pb.h $@
 
 $(INCLUDEDIR)/%.pb.hpp: $(INCLUDEDIR)/%.pb.h
-	echo '#include "$*.pb.h"' > $@
+	@echo '#warning "*.pb.hpp headers are deprecated,"' > $@.tmp
+	@echo '#warning "and available only on Linux."' >> $@.tmp
+	@echo '#warning "Please substitute *.pb.h."' >> $@.tmp
+	echo '#include "$*.pb.h"' >> $@.tmp
+	mv $@.tmp $@
 
 $(MODULE).module:
 	@$(TOUCH) $@
