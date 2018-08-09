@@ -573,8 +573,12 @@ string CDBSourceItem::x_FormatDBSourceID(const CSeq_id_Handle& idh)
                 s += "molecule " + pdb.GetMol().Get();
                 sep = ", ";
             }
-            if (pdb.GetChain() > 0) {
+            if (pdb.IsSetChain() && pdb.GetChain() > 0) {
                 s += sep + "chain " + NStr::IntToString(pdb.GetChain());
+                sep = ", ";
+            }
+            if (pdb.IsSetChain_id()) {
+                s += sep + "chain " + pdb.GetChain_id();
                 sep = ", ";
             }
             if (pdb.CanGetRel()) {
