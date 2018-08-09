@@ -3505,21 +3505,6 @@ CFeature_table_reader::ReadSeqAnnot(
 }
 
 
-void CFeature_table_reader::ReadSeqAnnots(
-    TAnnots& annots, TFlags flags, ILineReader& lr, ILineErrorListener *pMessageListener, ITableFilter* pFilter)
-{
-    annots.clear();
-    CFeatureTableReader_Imp ftable_reader(&lr, 0, pMessageListener);
-    while (!lr.AtEOF()) {
-        auto pAnnot = x_ReadFeatureTable(ftable_reader, flags, pFilter);
-        _ASSERT(pAnnot->GetData().IsFtable());
-        if (!pAnnot->GetData().GetFtable().empty()) {
-            annots.push_back(pAnnot);
-        }
-    }
-}
-
-
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     CNcbiIstream& ifs,
     const string& seqid,

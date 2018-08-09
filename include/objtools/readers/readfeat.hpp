@@ -87,11 +87,6 @@ public:
     // For CReaderBase
     CRef<CSerialObject> ReadObject   (ILineReader &lr, ILineErrorListener *pErrors) override;
     CRef<CSeq_annot>    ReadSeqAnnot (ILineReader &lr, ILineErrorListener *pErrors) override;
-    void ReadSeqAnnots(TAnnots& annots, 
-                       const TFlags flags,
-                       ILineReader &lr, 
-                       ILineErrorListener *pErrors=0,
-                       ITableFilter* pFilter=0);
 
     CRef<CSeq_annot> ReadSequinFeatureTable(const TFlags flags=0,
                                             ITableFilter* filter=0,
