@@ -427,7 +427,7 @@ static bool GetAccessionIdInfo(const CSeq_id& id, string& accession, int& versio
                 if (version_str.size() >= 2) {
                     version = NStr::StringToInt(version_str.substr(0, 2), NStr::fAllowLeadingSymbols | NStr::fAllowTrailingSymbols);
                     if (version > 0) {
-                        accession = text_id->GetAccession();
+                        accession = cur_name;
                     }
                 }
             }
@@ -1512,7 +1512,7 @@ int CWGSParseApp::Run(void)
             return ERROR_RET;
         }
 
-        if (master_info.m_id_master_bioseq.NotEmpty() && GetOldNumberOfPieces(*master_info.m_id_master_bioseq) <= master_info.m_num_of_entries) {
+        if (GetParams().GetUpdateMode() == eUpdatePartial && master_info.m_id_master_bioseq.NotEmpty() && GetOldNumberOfPieces(*master_info.m_id_master_bioseq) <= master_info.m_num_of_entries) {
             SetUpdateMode(eUpdateFull);
         }
 
