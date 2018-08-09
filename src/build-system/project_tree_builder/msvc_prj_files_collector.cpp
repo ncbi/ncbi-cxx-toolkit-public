@@ -131,23 +131,27 @@ private:
     set<string> m_ExcludedSources;
 };
 
-static bool s_IsInsideDatatoolSourceDir(const string& src_path_abs)
+static bool s_IsInsideDatatoolSourceDir(const string& src_path_abs, string& ext)
 {
     string dir_name;
     CDirEntry::SplitPath(src_path_abs, &dir_name);
 
     //This files must be inside datatool src dir
     CDir dir(dir_name);
-    if ( dir.GetEntries("*.module").empty() ) 
-        return false;
-    if ( dir.GetEntries("*.asn").empty() &&
-         dir.GetEntries("*.dtd").empty() &&
-         dir.GetEntries("*.xsd").empty() &&
-         dir.GetEntries("*.wsdl").empty() &&
-         dir.GetEntries("*.proto").empty()) 
-        return false;
-
-    return true;
+//    if ( dir.GetEntries("*.module").empty() ) 
+//        return false;
+    if ( !dir.GetEntries("*.asn").empty() ||
+         !dir.GetEntries("*.dtd").empty() ||
+         !dir.GetEntries("*.xsd").empty() ||
+         !dir.GetEntries("*.wsdl").empty()) {
+        ext = ".cpp";
+        return true;
+    }
+    if (!dir.GetEntries("*.proto").empty()) {
+        ext = ".cc";
+        return true;
+    }
+    return false;
 }
 
 
@@ -253,12 +257,12 @@ CMsvcPrjFilesCollector::CollectSources(void)
             }
             m_SourceFiles.push_back(t);
         } 
-        else if ( IsProducedByDatatool(abs_path, *m_Project) ||
-                  s_IsInsideDatatoolSourceDir(abs_path) ) {
-            // .cpp file extension
+        else if ( /*IsProducedByDatatool(abs_path, *m_Project) ||*/
+                  s_IsInsideDatatoolSourceDir(abs_path, ext) ) {
+            // .cpp file extension                                                                    ;
             m_SourceFiles.push_back(
                 CDirEntry::CreateRelativePath(m_Context->ProjectDir(), 
-                                              abs_path + ".cpp"));
+                                              abs_path + ext));
         } else {
             if (m_Project->m_MakeType >= eMakeType_Excluded ||
                 SMakeProjectT::IsConfigurableDefine(CDirEntry(abs_path).GetBase()) ||

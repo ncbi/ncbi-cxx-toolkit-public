@@ -106,6 +106,10 @@ static bool s_SourceFileExists(const string& dir, const string& name)
 
     if ( CDirEntry(path + ".cpp").Exists() )
         return true;
+    if ( CDirEntry(path + ".cxx").Exists() )
+        return true;
+    if ( CDirEntry(path + ".cc").Exists() )
+        return true;
     if ( CDirEntry(path + ".c").Exists() )
         return true;
     

@@ -126,11 +126,17 @@ void CProjectFileCollector::CollectSources(void)
         string src_path = CDirEntry::NormalizePath(
             CDirEntry::ConcatPath(m_ProjItem.m_SourcesBaseDir, *p));
         string ext(GetFileExtension(src_path));
+#if 0
         if (ext.empty() && 
             (IsProducedByDatatool(m_ProjItem,src_path) ||
              IsInsideDatatoolSourceDir(src_path))) {
             ext = ".cpp";
         }
+#else
+        if (ext.empty()) {
+            IsInsideDatatoolSourceDir(src_path, ext);
+        }
+#endif
         if (!ext.empty()) {
             src_path += ext;
             sources.push_back(src_path);
@@ -356,21 +362,27 @@ bool CProjectFileCollector::IsProducedByDatatool(
 }
 
 bool CProjectFileCollector::IsInsideDatatoolSourceDir(
-    const string& file)
+    const string& file, string& ext)
 {
     string dir_name;
     CDirEntry::SplitPath(file, &dir_name);
 
     //This files must be inside datatool src dir
     CDir dir(dir_name);
-    if ( dir.GetEntries("*.module").empty() ) 
-        return false;
-    if ( dir.GetEntries("*.asn").empty() &&
-         dir.GetEntries("*.dtd").empty() &&
-         dir.GetEntries("*.xsd").empty() ) 
-        return false;
-
-    return true;
+//    if ( dir.GetEntries("*.module").empty() ) 
+//        return false;
+    if ( !dir.GetEntries("*.asn").empty() ||
+         !dir.GetEntries("*.dtd").empty() ||
+         !dir.GetEntries("*.xsd").empty() ||
+         !dir.GetEntries("*.wsdl").empty()) {
+        ext = ".cpp";
+        return true;
+    }
+    if (!dir.GetEntries("*.proto").empty()) {
+        ext = ".cc";
+        return true;
+    }
+    return false;
 }
 
 #endif

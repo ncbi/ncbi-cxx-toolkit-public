@@ -638,13 +638,19 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
         ITERATE ( list<string>, f, prj_files.GetDataSpecs()) {
             CDirEntry entry(*f);
             string spec_base( CDirEntry(GetRelativePath(*f)).GetDir() + entry.GetBase());
+            string spec_ext = entry.GetExt();
             AddString( *inputs, GetRelativePath(*f));
-            AddString( *inputs, spec_base + ".def");
-            AddString( *outputs, spec_base + ".files");
-            AddString( *outputs, spec_base + "__.cpp");
-            AddString( *outputs, spec_base + "___.cpp");
+            if (spec_ext == ".proto") {
+                AddString( *outputs, spec_base + ".pb.cc");
+                AddString( *outputs, spec_base + ".grpc.pb.cc");
+            } else {
+                AddString( *inputs, spec_base + ".def");
+                AddString( *outputs, spec_base + ".files");
+                AddString( *outputs, spec_base + "__.cpp");
+                AddString( *outputs, spec_base + "___.cpp");
+            }
 #if 0
-            script += "echo Using datatool to create a C++ objects from ASN/DTD/Schema " + entry.GetName() + "\n";
+            script += "echo Generating C++ classes from " + entry.GetName() + "\n";
             script += m_OutputDir + GetApp().GetDatatoolPathForApp();
 #else
             if (dataspec_first) {
@@ -659,7 +665,11 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
                         GetApp().GetRegSettings().m_CompilersSubdir)))) + "\n";
                 dataspec_first = false;
             }
-            script +=  "\"$BUILD_TREE_ROOT/datatool.sh\"";
+            if (spec_ext == ".proto") {
+                script +=  "\"$BUILD_TREE_ROOT/protoc.sh\"";
+            } else {
+                script +=  "\"$BUILD_TREE_ROOT/datatool.sh\"";
+            }
 #endif
             script += " " + GetApp().GetDatatoolCommandLine() + " -pch " + pch_name;
             script += " -m " + GetRelativePath( entry.GetPath(), &GetApp().GetProjectTreeInfo().m_Src);

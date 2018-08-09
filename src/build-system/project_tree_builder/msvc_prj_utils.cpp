@@ -423,9 +423,11 @@ string SourceFileExt(const string& file_path)
     if (explicit_c  &&  CFile(file_path).Exists()) {
         return ".c";
     }
-    bool explicit_cpp = NStr::CompareNocase(ext, ".cpp")== 0;
+    bool explicit_cpp = NStr::CompareNocase(ext, ".cpp")== 0
+                    ||  NStr::CompareNocase(ext, ".cxx")== 0
+                    ||  NStr::CompareNocase(ext, ".cc")== 0;
     if (explicit_cpp  &&  CFile(file_path).Exists()) {
-        return ".cpp";
+        return ext;
     }
     string file = file_path + ".cpp";
     if ( CFile(file).Exists() ) {

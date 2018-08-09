@@ -683,6 +683,8 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
     //SourceFile
     build_info->m_SourceFile = 
         CDirEntry::ConcatPath(src.m_SourceBaseDir, src.m_SourceFile);
+    string ext;
+    CDirEntry::SplitPath(build_info->m_SourceFile, nullptr, nullptr, &ext);
 
     CMsvc7RegSettings::EMsvcVersion eVer = CMsvc7RegSettings::GetMsvcVersion();
     if (eVer > CMsvc7RegSettings::eMsvc710 &&
@@ -738,20 +740,27 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
         build_info->m_CommandLine +=  "set TREE_ROOT=" + tree_root + "\n";
         build_info->m_CommandLine +=  "set PTB_PLATFORM=$(PlatformName)\n";
         build_info->m_CommandLine +=  "set BUILD_TREE_ROOT=" + build_root + "\n";
-        build_info->m_CommandLine +=  "call \"%BUILD_TREE_ROOT%\\datatool.bat\" " + tool_cmd + "\n";
+        if (ext == ".proto") {
+            build_info->m_CommandLine +=  "call \"%BUILD_TREE_ROOT%\\protoc.bat\" " + tool_cmd + "\n";
+        } else {
+            build_info->m_CommandLine +=  "call \"%BUILD_TREE_ROOT%\\datatool.bat\" " + tool_cmd + "\n";
+        }
         build_info->m_CommandLine +=  "if errorlevel 1 exit 1";
         string tool_exe_location("\"");
         tool_exe_location += dt_path + "datatool.exe" + "\"";
 
         //Description
         build_info->m_Description = 
-            "Using datatool to generate C++ classes from ASN/DTD/Schema $(InputPath)";
+            "Generating C++ classes from $(InputPath)";
 
         //Outputs
-        build_info->m_Outputs = "$(InputDir)$(InputName).files;$(InputDir)$(InputName)__.cpp;$(InputDir)$(InputName)___.cpp";
+        if (ext == ".proto") {
+            build_info->m_Outputs = "$(InputDir)$(InputName).pb.cc;$(InputDir)$(InputName).grpc.pb.cc";
+        } else {
+            build_info->m_Outputs = "$(InputDir)$(InputName).files;$(InputDir)$(InputName)__.cpp;$(InputDir)$(InputName)___.cpp";
+            build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def;";
+        }
 
-        //Additional Dependencies
-        build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def;";
     } else {
         //exe location - path is supposed to be relative encoded
         string tool_exe_location("\"");
@@ -1944,7 +1953,7 @@ void CMsvcProjectGenerator::GenerateMsbuildFilters(
     if (!collector.SourceFiles().empty()) {
         string tag_name("ClCompile");
         string filter_name("Source Files");
-        CMsbuildFileFilter filter( filters, filter_list, "cpp;c;cxx",
+        CMsbuildFileFilter filter( filters, filter_list, "cpp;c;cxx;cc",
             tag_name, filter_name, project_dir, collector, prj);
         ITERATE(list<string>, f, collector.SourceFiles()) {
             const string& rel_source_file = *f;

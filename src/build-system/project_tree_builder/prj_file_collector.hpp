@@ -80,7 +80,7 @@ public:
     static string GetFileExtension(const string& file);
     static bool IsProducedByDatatool(
         const CProjItem& projitem, const string& file);
-    static bool IsInsideDatatoolSourceDir(const string& file);
+    static bool IsInsideDatatoolSourceDir(const string& file, string& ext);
 
 private:
     void CollectSources(void);
