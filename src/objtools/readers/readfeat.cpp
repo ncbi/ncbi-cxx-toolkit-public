@@ -3160,6 +3160,7 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
     Int4 offset = 0;
     m_ProcessedProteinIds.clear();
     m_ProcessedTranscriptIds.clear();
+
     CRef<CSeq_annot> sap(new CSeq_annot);
 
     TFtable& ftable = sap->SetData().SetFtable();
@@ -3500,7 +3501,7 @@ CFeature_table_reader::ReadSeqAnnot(
 
 
 void CFeature_table_reader::ReadSeqAnnots(
-    TAnnots& annots, ILineReader& lr, TFlags flags, ILineErrorListener *pMessageListener, ITableFilter* pFilter)
+    TAnnots& annots, TFlags flags, ILineReader& lr, ILineErrorListener *pMessageListener, ITableFilter* pFilter)
 {
     annots.clear();
     CFeatureTableReader_Imp ftable_reader(&lr, 0, pMessageListener);
@@ -3526,7 +3527,6 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     CStreamLineReader reader(ifs);
     return ReadSequinFeatureTable(reader, seqid, annotname, flags, pMessageListener, filter);
 }
-
 
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     ILineReader& reader,
