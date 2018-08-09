@@ -199,17 +199,21 @@ FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
     //         check that there is exactly one record
     if (version_provided) {
         bool    found = false;
+        int     selected_seq_id_type = INT_MIN;
         while (query->NextRow() == ar_dataready) {
             if (!found) {
                 s_GetBioseqValues(query, bioseq_info);
+                selected_seq_id_type = query->FieldGetInt32Value(9);
                 found = true;
                 continue;
             }
             return CRequestStatus::e300_MultipleChoices;
         }
 
-        if (found)
+        if (found) {
+            bioseq_info.m_SeqIdType = selected_seq_id_type;
             return CRequestStatus::e200_Ok;
+        }
         return CRequestStatus::e404_NotFound;
     }
 
@@ -232,8 +236,10 @@ FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
             }
         }
 
-        if (found)
+        if (found) {
+            bioseq_info.m_Version = selected_version;
             return CRequestStatus::e200_Ok;
+        }
         return CRequestStatus::e404_NotFound;
     }
 
@@ -265,8 +271,11 @@ FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
         return CRequestStatus::e300_MultipleChoices;
     }
 
-    if (found)
+    if (found) {
+        bioseq_info.m_Version = selected_version;
+        bioseq_info.m_SeqIdType = selected_seq_id_type;
         return CRequestStatus::e200_Ok;
+    }
     return CRequestStatus::e404_NotFound;
 }
 
