@@ -251,6 +251,17 @@ unique_ptr<CCassBlobTaskLoadBlob> CCassBlobOp::GetBlobExtended(
     );
 }
 
+unique_ptr<CCassBlobTaskLoadBlob> CCassBlobOp::GetBlobExtended(
+    unsigned int timeout_ms,
+    unsigned int max_retries,
+    unique_ptr<CBlobRecord> blob_record,
+    TDataErrorCallback error_cb
+) {
+    return unique_ptr<CCassBlobTaskLoadBlob>(
+        new CCassBlobTaskLoadBlob(timeout_ms, max_retries, m_Conn, m_Keyspace, move(blob_record),move(error_cb))
+    );
+}
+
 
 struct SLoadKeysContext
 {

@@ -32,6 +32,8 @@
  *
  */
 
+#include <corelib/ncbistl.hpp>
+
 #define IDBLOB_NS_IDBLOB idblob
 
 #define BEGIN_IDBLOB_SCOPE BEGIN_SCOPE(IDBLOB_NS_IDBLOB)

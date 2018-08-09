@@ -444,6 +444,13 @@ public:
         TDataErrorCallback error_cb
     );
 
+    unique_ptr<CCassBlobTaskLoadBlob> GetBlobExtended(
+        unsigned int timeout_ms,
+        unsigned int max_retries,
+        unique_ptr<CBlobRecord> blob_record,
+        TDataErrorCallback error_cb
+    );
+
     void UpdateBlobFlags(
         unsigned int op_timeout_ms,
         int32_t key,

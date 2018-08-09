@@ -1,5 +1,5 @@
-#ifndef OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__BLOB_TASK__LOAD_BLOB_PROPS_HPP
-#define OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__BLOB_TASK__LOAD_BLOB_PROPS_HPP
+#ifndef OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__BLOB_TASK__LOAD_BLOB_PROPS_HPP_
+#define OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__BLOB_TASK__LOAD_BLOB_PROPS_HPP_
 
 /*  $Id$
  * ===========================================================================
@@ -39,6 +39,9 @@
 #include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
 
 #include <functional>
+#include <string>
+#include <memory>
+#include <vector>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -50,14 +53,15 @@ class CCassBlobTaskLoadBlob
     static const size_t kMaxChunksAhead = 4;
     enum EBlobInserterState {
         eInit = 0,
-        eWaitingForSelect,
+        eWaitingForPropsFetch,
+        eFinishedPropsFetch,
+        eBeforeLoadingChunks,
         eLoadingChunks,
         eDone = CCassBlobWaiter::eDone,
         eError = CCassBlobWaiter::eError
     };
 
-public:
-
+ public:
     using TBlobPropsCallback = function<void(CBlobRecord const & blob, bool isFound)>;
 
     CCassBlobTaskLoadBlob(
@@ -81,9 +85,18 @@ public:
         TDataErrorCallback data_error_cb
     );
 
+    CCassBlobTaskLoadBlob(
+        unsigned int op_timeout_ms,
+        unsigned int max_retries,
+        shared_ptr<CCassConnection> conn,
+        const string & keyspace,
+        unique_ptr<CBlobRecord> blob_record,
+        TDataErrorCallback data_error_cb
+    );
+
     virtual ~CCassBlobTaskLoadBlob()
     {
-        for (auto & it: m_QueryArr) {
+        for (auto & it : m_QueryArr) {
             if (it) {
                 it->Close();
             }
@@ -100,10 +113,10 @@ public:
     void Cancel(void);
     virtual bool Restart() override;
 
-protected:
+ protected:
     virtual void Wait1(void) override;
 
-private:
+ private:
     bool x_AreAllChunksProcessed(void) const;
     void x_CheckChunksFinished(bool& need_repeat);
     void x_RequestChunksAhead(void);
@@ -122,4 +135,4 @@ private:
 
 END_IDBLOB_SCOPE
 
-#endif
+#endif  // OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__BLOB_TASK__LOAD_BLOB_PROPS_HPP_
