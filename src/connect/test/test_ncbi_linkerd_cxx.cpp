@@ -811,17 +811,12 @@ int main(int argc, char* argv[])
 {
     int exit_code = 1;
 
-    // Set error posting and tracing on maximum
-    //SetDiagTrace(eDT_Enable);
-    //SetDiagPostLevel(eDiag_Info);
-    //SetDiagPostAllFlags(SetDiagPostAllFlags(eDPF_Default) | eDPF_All);
-    //SetDiagPostAllFlags(SetDiagPostAllFlags(eDPF_Default)
-    //                    | eDPF_All | eDPF_OmitInfoSev);
-    //UnsetDiagPostFlag(eDPF_Line);
-    //UnsetDiagPostFlag(eDPF_File);
-    //UnsetDiagPostFlag(eDPF_Location);
-    //UnsetDiagPostFlag(eDPF_LongFilename);
-    //SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
+    SetDiagTrace(eDT_Enable);
+    SetDiagPostLevel(eDiag_Info);
+    SetDiagPostAllFlags((SetDiagPostAllFlags(eDPF_Default) & ~eDPF_All)
+                        | eDPF_Severity | eDPF_ErrorID | eDPF_Prefix);
+    SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
+
     try {
         exit_code = CTestNcbiLinkerdCxxApp().AppMain(argc, argv);
     }
