@@ -38,7 +38,7 @@ all_files: sources
 sources: $(FILES)
 
 clean_sources:
-	-$(RM) $(FILES) *.pb.cpp
+	-$(RM) $(FILES) *.pb.cpp *.pb.h
 
 purge_sources:
 	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.h*
@@ -63,7 +63,7 @@ $(MODULE).grpc.pb.cc $(MODULE).grpc.pb.h: $(DEPS) $(GRPC_CPP_PLUGIN)
 
 $(INCLUDEDIR)/%.pb.h: %.pb.cc # not .h, to avoid duplicate protoc runs
 	$(MKDIR) -p $(INCLUDEDIR)
-	$(COPY) $*.pb.h $@
+	/bin/mv -f $*.pb.h $@
 
 $(INCLUDEDIR)/%.pb.hpp: $(INCLUDEDIR)/%.pb.h
 	echo '#include "$*.pb.h"' > $@
