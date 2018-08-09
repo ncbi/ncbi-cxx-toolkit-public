@@ -91,6 +91,7 @@ class CCassBlobTaskLoadBlob
         shared_ptr<CCassConnection> conn,
         const string & keyspace,
         unique_ptr<CBlobRecord> blob_record,
+        bool load_chunks,
         TDataErrorCallback data_error_cb
     );
 

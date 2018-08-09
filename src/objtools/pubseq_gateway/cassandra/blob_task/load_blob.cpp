@@ -102,6 +102,7 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     shared_ptr<CCassConnection> conn,
     const string & keyspace,
     unique_ptr<CBlobRecord> blob_record,
+    bool load_chunks,
     TDataErrorCallback data_error_cb
 )
     : CCassBlobWaiter(
@@ -112,7 +113,7 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     , m_PropsCallback(nullptr)
     , m_Blob(move(blob_record))
     , m_Modified(m_Blob->GetModified())
-    , m_LoadChunks(true)
+    , m_LoadChunks(load_chunks)
     , m_PropsFound(true)
     , m_ActiveQueries(0)
     , m_RemainingSize(0)

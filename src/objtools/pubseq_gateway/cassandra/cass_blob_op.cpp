@@ -255,10 +255,13 @@ unique_ptr<CCassBlobTaskLoadBlob> CCassBlobOp::GetBlobExtended(
     unsigned int timeout_ms,
     unsigned int max_retries,
     unique_ptr<CBlobRecord> blob_record,
+    bool load_chunks,
     TDataErrorCallback error_cb
 ) {
     return unique_ptr<CCassBlobTaskLoadBlob>(
-        new CCassBlobTaskLoadBlob(timeout_ms, max_retries, m_Conn, m_Keyspace, move(blob_record),move(error_cb))
+        new CCassBlobTaskLoadBlob(
+            timeout_ms, max_retries, m_Conn, m_Keyspace, move(blob_record), load_chunks, move(error_cb)
+        )
     );
 }
 

@@ -271,7 +271,7 @@ protected:
     bool CheckMaxActive(void);
     virtual void Wait1(void) = 0;
 
-protected:
+ protected:
     TDataErrorCallback              m_ErrorCb;
     TDataReadyCallback              m_DataReadyCb;
     void *                          m_DataReadyData;
@@ -292,7 +292,7 @@ protected:
 
 class CCassBlobLoader: public CCassBlobWaiter
 {
-public:
+ public:
     CCassBlobLoader(const CCassBlobLoader&) = delete;
     CCassBlobLoader(CCassBlobLoader&&) = delete;
     CCassBlobLoader& operator=(const CCassBlobLoader&) = delete;
@@ -448,6 +448,7 @@ public:
         unsigned int timeout_ms,
         unsigned int max_retries,
         unique_ptr<CBlobRecord> blob_record,
+        bool load_chunks,
         TDataErrorCallback error_cb
     );
 
