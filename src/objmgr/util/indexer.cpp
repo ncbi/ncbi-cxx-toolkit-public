@@ -1543,7 +1543,10 @@ void CBioseqIndex::x_InitDescs (void)
                 case CSeqdesc::e_Title:
                 {
                     if (m_Title.empty()) {
-                        m_Title = sd.GetTitle();
+                        // // for non-PDB proteins, title must be packaged on Bioseq
+                        if (m_IsNA  ||  m_IsPDB  ||  desc_it.GetSeq_entry_Handle().IsSeq()) {
+                            m_Title = sd.GetTitle();
+                        }
                     }
                     break;
                 }
