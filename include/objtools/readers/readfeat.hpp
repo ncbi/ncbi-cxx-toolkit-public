@@ -76,6 +76,11 @@ public:
 
     CFeature_table_reader(TReaderFlags fReaderFlags = 0);
 
+    CFeature_table_reader(ILineReader& lr, 
+                          ILineErrorListener* pErrors=0);
+
+    ~CFeature_table_reader();
+
 
     using TAnnots = CReaderBase::TAnnots;
 
@@ -87,6 +92,10 @@ public:
                        ILineReader &lr, 
                        ILineErrorListener *pErrors=0,
                        ITableFilter* pFilter=0);
+
+    CRef<CSeq_annot> ReadSequinFeatureTable(const TFlags flags=0,
+                                            ITableFilter* filter=0,
+                                            const string& seqid_prefix = kEmptyStr);
 
     // read 5-column feature table and return Seq-annot
     static CRef<CSeq_annot> ReadSequinFeatureTable(ILineReader& reader,
@@ -176,6 +185,8 @@ private:
                                                const TFlags flags,
                                                ITableFilter* filter,
                                                const string& seqid_prefix=kEmptyStr);
+
+    unique_ptr<CFeatureTableReader_Imp> m_pImpl;
 };
 
 

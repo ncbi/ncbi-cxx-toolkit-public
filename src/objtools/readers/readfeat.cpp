@@ -3158,8 +3158,6 @@ CRef<CSeq_annot> CFeatureTableReader_Imp::ReadSequinFeatureTable (
     Int4 start, stop;
     bool partial5, partial3, ispoint, isminus, ignore_until_next_feature_key = false;
     Int4 offset = 0;
-    m_ProcessedProteinIds.clear();
-    m_ProcessedTranscriptIds.clear();
 
     CRef<CSeq_annot> sap(new CSeq_annot);
 
@@ -3482,6 +3480,13 @@ CFeature_table_reader::CFeature_table_reader(
 {
 }
 
+CFeature_table_reader::CFeature_table_reader(
+    ILineReader& lr,
+    ILineErrorListener* pErrors) : 
+    CReaderBase(0), 
+    m_pImpl(new CFeatureTableReader_Imp(&lr, 0, pErrors))
+    {}
+
 CRef<CSerialObject> 
 CFeature_table_reader::ReadObject(
     ILineReader &lr, ILineErrorListener *pMessageListener)
@@ -3539,7 +3544,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 {
     // just read features from 5-column table
     CFeatureTableReader_Imp impl(&reader, 0, pMessageListener);
-    return x_ReadFeatureTable(impl, seqid, annotname, flags, filter);
+    return impl.ReadSequinFeatureTable(seqid, annotname, flags, filter);
 }
 
 CRef<CSeq_annot> CFeature_table_reader::x_ReadFeatureTable(
@@ -3606,42 +3611,22 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     ILineReader& reader,
     const TFlags flags,
     ILineErrorListener* pMessageListener,
-    ITableFilter *filter,
+    ITableFilter* pFilter,
     const string& seqid_prefix
 )
 {
-
     CFeatureTableReader_Imp ftable_reader(&reader, 0, pMessageListener);
-    return x_ReadFeatureTable(ftable_reader, flags, filter, seqid_prefix);
+    return x_ReadFeatureTable(ftable_reader, flags, pFilter, seqid_prefix);
+}
 
-/*
-    string fst, scd, seqid, annotname;
 
-    // first look for >Feature line, extract seqid and optional annotname
-    while (seqid.empty () && !reader.AtEOF() ) {
-
-        CTempString line = *++reader;
-
-        if( ParseInitialFeatureLine(line, seqid, annotname) ) {
-            CFeatureTableReader_Imp::PutProgress(seqid, reader.GetLineNumber(), pMessageListener);
-        }
-    }
-
-    if (!seqid_prefix.empty())
-    {
-        if (seqid.find('|') == string::npos)
-           seqid.insert(0, seqid_prefix);
-        else
-        if (NStr::StartsWith(seqid, "lcl|"))
-        {
-            seqid.erase(0, 4);
-            seqid.insert(0, seqid_prefix);
-        }
-    }
-
-    // then read features from 5-column table
-    return ReadSequinFeatureTable (reader, seqid, annotname, flags, pMessageListener, filter);
-*/
+CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable(
+    const TFlags flags,
+    ITableFilter* pFilter,
+    const string& seqid_prefix
+)
+{
+    return x_ReadFeatureTable(*m_pImpl, flags, pFilter, seqid_prefix);
 }
 
 
@@ -3753,6 +3738,8 @@ CFeature_table_reader::ParseInitialFeatureLine (
      return CFeatureTableReader_Imp::ParseInitialFeatureLine(line_arg, out_seqid, out_annotname);
 }
 
+
+CFeature_table_reader::~CFeature_table_reader() {}
 
 END_objects_SCOPE
 END_NCBI_SCOPE
