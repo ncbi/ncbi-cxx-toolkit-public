@@ -311,7 +311,7 @@ public:
 
         http2_session* previous_session_data = m_session_data;
         assert((previous_session_data == nullptr) != (session_data == nullptr));
-        assert(m_session_data.compare_exchange_strong(previous_session_data, session_data));
+        _VERIFY(m_session_data.compare_exchange_strong(previous_session_data, session_data));
     }
     void send_cancel();
     bool get_canceled() const

@@ -137,9 +137,12 @@ CCompoundIDField CCompoundIDField::GetNextHomogeneous()
 }
 
 #define CIF_GET_IMPL(ret_type, method, type, member) \
+    CIF_GET_IMPL_(ret_type, method, type, m_Impl->m_Type != type, member)
+
+#define CIF_GET_IMPL_(ret_type, method, type, cond, member) \
     ret_type CCompoundIDField::method() const \
     { \
-        if (m_Impl->m_Type != type) { \
+        if (cond) { \
             NCBI_THROW_FMT(CCompoundIDException, eInvalidType, \
                     "Compound ID field type mismatch (requested: " << \
                     s_TypeNames[type] << "; actual: " << \
@@ -154,10 +157,10 @@ CIF_GET_IMPL(string, GetServiceName, eCIT_ServiceName, m_StringValue);
 CIF_GET_IMPL(string, GetDatabaseName, eCIT_DatabaseName, m_StringValue);
 CIF_GET_IMPL(Int8, GetTimestamp, eCIT_Timestamp, m_Int8Value);
 CIF_GET_IMPL(Uint4, GetRandom, eCIT_Random, m_Uint4Value);
-CIF_GET_IMPL(Uint4, GetIPv4Address, eCIT_IPv4Address &&
+CIF_GET_IMPL_(Uint4, GetIPv4Address, eCIT_IPv4Address, m_Impl->m_Type != eCIT_IPv4Address &&
         m_Impl->m_Type != eCIT_IPv4SockAddr, m_IPv4SockAddr.m_IPv4Addr);
 CIF_GET_IMPL(string, GetHost, eCIT_Host, m_StringValue);
-CIF_GET_IMPL(Uint2, GetPort, eCIT_Port &&
+CIF_GET_IMPL_(Uint2, GetPort, eCIT_Port, m_Impl->m_Type != eCIT_Port &&
         m_Impl->m_Type != eCIT_IPv4SockAddr, m_IPv4SockAddr.m_Port);
 CIF_GET_IMPL(string, GetObjectRef, eCIT_ObjectRef, m_StringValue);
 CIF_GET_IMPL(string, GetString, eCIT_String, m_StringValue);

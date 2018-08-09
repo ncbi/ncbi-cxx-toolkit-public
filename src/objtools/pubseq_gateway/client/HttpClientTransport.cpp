@@ -649,7 +649,7 @@ void http2_session::s_on_close_cb(uv_handle_t *handle)
 
 void http2_session::close_tcp()
 {
-    LOG2(("%p: close_tcp, state: %d", this, m_connection_state));
+    LOG2(("%p: close_tcp, state: %d", this, (int)m_connection_state));
     if ((m_connection_state == connection_state_t::cs_connecting) ||
             (m_connection_state == connection_state_t::cs_connected))
         m_connection_state = connection_state_t::cs_closing;
