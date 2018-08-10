@@ -95,6 +95,7 @@ struct CBlobRecord {
 
     CBlobRecord& AppendBlobChunk(TBlobChunk&& chunk);
     CBlobRecord& InsertBlobChunk(size_t index, TBlobChunk&& chunk);
+    CBlobRecord& ClearBlobChunks();
 
     //  ---------------Getters--------------------------
 

@@ -205,6 +205,12 @@ CBlobRecord& CBlobRecord::InsertBlobChunk(size_t index, TBlobChunk&& chunk)
     return *this;
 }
 
+CBlobRecord& CBlobRecord::ClearBlobChunks()
+{
+    m_BlobChunks.clear();
+    return *this;
+}
+
 bool CBlobRecord::NoData() const
 {
     return m_Size == 0 || m_BlobChunks.empty();

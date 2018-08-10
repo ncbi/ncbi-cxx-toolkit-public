@@ -92,6 +92,7 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     , m_PropsFound(false)
     , m_ActiveQueries(0)
     , m_RemainingSize(0)
+    , m_ExplicitBlob(false)
 {
     m_Blob->SetModified(modified);
 }
@@ -117,6 +118,7 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     , m_PropsFound(true)
     , m_ActiveQueries(0)
     , m_RemainingSize(0)
+    , m_ExplicitBlob(true)
 {
 }
 
@@ -157,7 +159,7 @@ void CCassBlobTaskLoadBlob::Wait1()
 
             case eInit:
                 // m_Blob has already been provided explicitly so we can move to eFinishedPropsFetch
-                if (m_PropsFound) {
+                if (m_ExplicitBlob) {
                     m_State = eFinishedPropsFetch;
                     m_RemainingSize = m_Blob->GetSize();
                     b_need_repeat = true;
@@ -344,10 +346,14 @@ void CCassBlobTaskLoadBlob::Cancel(void)
 
 bool CCassBlobTaskLoadBlob::Restart()
 {
-    m_Blob.reset(new CBlobRecord(m_Key));
-    m_Blob->SetModified(m_Modified);
+    if (m_ExplicitBlob) {
+        m_Blob->ClearBlobChunks();
+    } else {
+        m_Blob.reset(new CBlobRecord(m_Key));
+        m_Blob->SetModified(m_Modified);
+        m_PropsFound = false;
+    }
     m_RemainingSize = 0;
-    m_PropsFound = false;
     m_ActiveQueries = 0;
     m_ProcessedChunks = vector<bool>(static_cast<size_t>(m_Blob->GetNChunks()), false);
     CloseAll();

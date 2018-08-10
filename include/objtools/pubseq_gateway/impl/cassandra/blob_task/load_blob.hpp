@@ -132,6 +132,7 @@ class CCassBlobTaskLoadBlob
     vector<bool> m_ProcessedChunks;
     size_t m_ActiveQueries;
     CBlobRecord::TSize m_RemainingSize;
+    bool m_ExplicitBlob;
 };
 
 END_IDBLOB_SCOPE
