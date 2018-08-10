@@ -159,6 +159,7 @@ void CCassBlobTaskLoadBlob::Wait1()
                 // m_Blob has already been provided explicitly so we can move to eFinishedPropsFetch
                 if (m_PropsFound) {
                     m_State = eFinishedPropsFetch;
+                    m_RemainingSize = m_Blob->GetSize();
                     b_need_repeat = true;
                 } else {
                     CloseAll();
