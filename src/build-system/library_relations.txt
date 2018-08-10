@@ -304,7 +304,7 @@ docsum needs xser
 drmaa needs3party $(ORIG_LIBS)
 dtd_sample_lib needs xser
 dummy_gpipe needs3party $(ORIG_LIBS)
-eMyNCBI_131204 needs xser
+eMyNCBI_result needs xser
 ec_hmm_relation_cd needs3party $(ORIG_LIBS)
 edirect needs eueid
 edirect needs ncqhst
@@ -907,7 +907,7 @@ ncbi_xreader_id2 needs ncbi_xreader
 ncbi_xreader_pubseqos needs $(XCONNEXT)
 ncbi_xreader_pubseqos needs dbapi_driver
 ncbi_xreader_pubseqos needs ncbi_xreader
-ncbi_xreader_pubseqos2 includes eMyNCBI_131204
+ncbi_xreader_pubseqos2 includes eMyNCBI_result
 ncbi_xreader_pubseqos2 needs $(XCONNEXT)
 ncbi_xreader_pubseqos2 needs dbapi_driver
 ncbi_xreader_pubseqos2 needs ncbi_xreader
