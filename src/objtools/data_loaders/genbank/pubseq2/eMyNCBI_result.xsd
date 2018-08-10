@@ -1,0 +1,21 @@
+<?xml version="1.1" ?>
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns="http://www.ncbi.nlm.nih.gov"
+  targetNamespace="http://www.ncbi.nlm.nih.gov">
+
+<xs:element name="eMyNCBIResult">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:choice>
+        <xs:sequence>
+          <xs:element name="UserId" type="xs:string"/>
+          <xs:element name="UserName" type="xs:string"/>
+        </xs:sequence>
+        <xs:element name="ERROR" type="xs:string"/>
+      </xs:choice>
+      <xs:any processContents="skip" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+</xs:schema>

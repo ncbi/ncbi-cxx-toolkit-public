@@ -391,11 +391,9 @@ static string s_GetCubbyUserName(const string& web_cookie)
             try {
                 response.ContentStream()
                     >> MSerial_Xml
-                    >> MSerial_SkipUnknownMembers(eSerialSkipUnknown_Yes)
-                    >> MSerial_SkipUnknownVariants(eSerialSkipUnknown_Yes)
                     >> result;
-                if (result.CanGetUE() && result.GetUE().IsUserName())
-                    cubby_user = result.GetUE().GetUserName();
+                if (result.GetUE().IsUU() && result.GetUE().GetUU().IsSetUserName())
+                    cubby_user = result.GetUE().GetUU().GetUserName();
             } catch(CException& e) {
                 string msg = e.what();
                 LOG_POST_X(1, Warning << "s_GetCubbyUserName: unable to read MyNCBI XML: "<< msg);
