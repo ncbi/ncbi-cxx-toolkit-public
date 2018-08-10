@@ -2263,7 +2263,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
     TMemberIndex ind = classType->GetMembers().Find(tagName);
     if (ind == kInvalidMember) {
         ind = classType->GetMembers().FindDeep(tagName);
-        if (ind != kInvalidMember) {
+        if (ind != kInvalidMember && ind >= pos) {
             TopFrame().SetNotag();
             UndoClassMember();
             return ind;
