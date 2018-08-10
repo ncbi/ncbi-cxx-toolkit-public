@@ -1072,7 +1072,7 @@ function(NCBI_internal_add_test _test)
     get_filename_component(_ext ${NCBITEST_${_test}_CMD} EXT)
     if("${_ext}" STREQUAL ".sh")
         set(NCBITEST_${_test}_REQUIRES ${NCBITEST_${_test}_REQUIRES} -MSWin)
-        set(NCBITEST_${_test}_ASSETS ${NCBITEST_${_test}_ASSETS} ${NCBITEST_${_test}_CMD})
+        set(NCBITEST_${_test}_ASSETS ${NCBITEST__ASSETS} ${NCBITEST_${_test}_ASSETS} ${NCBITEST_${_test}_CMD})
     endif()
 
     NCBI_internal_process_test_requires(${_test})
