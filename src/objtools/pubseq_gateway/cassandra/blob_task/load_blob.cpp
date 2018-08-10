@@ -118,7 +118,6 @@ CCassBlobTaskLoadBlob::CCassBlobTaskLoadBlob(
     , m_ActiveQueries(0)
     , m_RemainingSize(0)
 {
-    m_State = eFinishedPropsFetch;
 }
 
 bool CCassBlobTaskLoadBlob::IsBlobPropsFound() const
@@ -156,44 +155,49 @@ void CCassBlobTaskLoadBlob::Wait1()
             case eDone:
                 return;
 
-            case eInit: {
-                CloseAll();
-                m_QueryArr.clear();
-                m_QueryArr.emplace_back(m_Conn->NewQuery());
-                auto qry = m_QueryArr[0];
-                string sql = "SELECT "
-                    "   last_modified,"
-                    "   class,"
-                    "   date_asn1,"
-                    "   div,"
-                    "   flags,"
-                    "   hup_date,"
-                    "   id2_info,"
-                    "   n_chunks,"
-                    "   owner,"
-                    "   size,"
-                    "   size_unpacked,"
-                    "   username"
-                    " FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ?";
-                if (m_Blob->GetModified() == kAnyModified) {
-                    sql += " LIMIT 1";
-                    qry->SetSQL(sql, 1);
-                    qry->BindInt32(0, m_Key);
+            case eInit:
+                // m_Blob has already been provided explicitly so we can move to eFinishedPropsFetch
+                if (m_PropsFound) {
+                    m_State = eFinishedPropsFetch;
+                    b_need_repeat = true;
                 } else {
-                    sql += " and last_modified = ?";
-                    qry->SetSQL(sql, 2);
-                    qry->BindInt32(0, m_Key);
-                    qry->BindInt64(1, m_Blob->GetModified());
-                }
+                    CloseAll();
+                    m_QueryArr.clear();
+                    m_QueryArr.emplace_back(m_Conn->NewQuery());
+                    auto qry = m_QueryArr[0];
+                    string sql = "SELECT "
+                        "   last_modified,"
+                        "   class,"
+                        "   date_asn1,"
+                        "   div,"
+                        "   flags,"
+                        "   hup_date,"
+                        "   id2_info,"
+                        "   n_chunks,"
+                        "   owner,"
+                        "   size,"
+                        "   size_unpacked,"
+                        "   username"
+                        " FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ?";
+                    if (m_Blob->GetModified() == kAnyModified) {
+                        sql += " LIMIT 1";
+                        qry->SetSQL(sql, 1);
+                        qry->BindInt32(0, m_Key);
+                    } else {
+                        sql += " and last_modified = ?";
+                        qry->SetSQL(sql, 2);
+                        qry->BindInt32(0, m_Key);
+                        qry->BindInt64(1, m_Blob->GetModified());
+                    }
 
-                if (m_DataReadyCb) {
-                    qry->SetOnData2(m_DataReadyCb, m_DataReadyData);
+                    if (m_DataReadyCb) {
+                        qry->SetOnData2(m_DataReadyCb, m_DataReadyData);
+                    }
+                    UpdateLastActivity();
+                    qry->Query(GetQueryConsistency(), m_Async, true);
+                    m_State = eWaitingForPropsFetch;
                 }
-                UpdateLastActivity();
-                qry->Query(GetQueryConsistency(), m_Async, true);
-                m_State = eWaitingForPropsFetch;
-                break;
-            }
+            break;
 
             case eWaitingForPropsFetch: {
                 auto qry = m_QueryArr[0];
