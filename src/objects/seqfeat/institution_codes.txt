@@ -212,6 +212,7 @@ ANLW	s	Amt Der Niederosterreichischen Landsregierung
 ANMR	c	Asian Network on Microbial Researches			
 ANSM	s	Universidad Autonoma Agraria Antonio Narro, Departamento de Botanica			
 ANSP	s	Academy of Natural Sciences of Philadelphia			
+ANSP:Bird	s	Academy of Natural Sciences of Philadelphia, Bird collection	
 ANSP:Malacology	s	Academy of Natural Sciences of Philadelphia, Malacology Collection		
 ANTU	s	Changbai Mountain National Nature Reserve Administration Bureau			
 ANU<AUS>	s	Australian National University	ANU<AUS>,ANU<AUST>		
