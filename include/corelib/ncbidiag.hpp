@@ -668,10 +668,11 @@ enum EDiagSevChange {
 ///
 /// Generic appearance of the posted message is as follows:
 ///
-///   "<file>", line <line>: <severity>: (<err_code>.<err_subcode>)
-///    [<prefix1>::<prefix2>::<prefixN>] <message>\n
-///    <err_code_message>\n
-///    <err_code_explanation>
+///   [<date> <time> ][T<TID> ][["[<path>]/<file>", ][line <line>]: ]
+///   [<severity>: ][(<err_code>.<err_subcode>) ]
+///   [<module>[::<class>]::][<function>()] - [<prefix1>::<prefix2>::<prefixN>] <message>\n[
+///   [<err_code_message>\n]
+///   [<err_code_explanation>\n]
 ///
 /// Example:
 ///
@@ -683,32 +684,32 @@ enum EDiagSevChange {
 /// @sa
 ///   SDiagMessage::Compose()
 enum EDiagPostFlag {
-    eDPF_File               = 1 << 0,  ///< Set by default #if _DEBUG; else not set
-    eDPF_LongFilename       = 1 << 1,  ///< Set by default #if _DEBUG; else not set
-    eDPF_Line               = 1 << 2,  ///< Set by default #if _DEBUG; else not set
-    eDPF_Prefix             = 1 << 3,  ///< Set by default (always)
-    eDPF_Severity           = 1 << 4,  ///< Set by default (always)
-    eDPF_ErrorID            = 1 << 5,  ///< Module, error code and subcode
+    eDPF_File = 1 << 0,                 ///< File name (not full path)
+    eDPF_LongFilename = 1 << 1,         ///< Full file path
+    eDPF_Line = 1 << 2,                 ///< Source line
+    eDPF_Prefix = 1 << 3,               ///< Prefix (default)
+    eDPF_Severity = 1 << 4,             ///< Severity (default)
+    eDPF_ErrorID = 1 << 5,              ///< Error code and subcode (default)
 
-    eDPF_DateTime           = 1 << 7,  ///< Include date and time
-    eDPF_ErrCodeMessage     = 1 << 8,  ///< Set by default (always)
-    eDPF_ErrCodeExplanation = 1 << 9,  ///< Set by default (always)
-    eDPF_ErrCodeUseSeverity = 1 << 10, ///< Set by default (always)
-    eDPF_Location           = 1 << 11, ///< Include class and function
-                                       ///< if any, not set by default
-    eDPF_PID                = 1 << 12, ///< Process ID
-    eDPF_TID                = 1 << 13, ///< Thread ID
-    eDPF_SerialNo           = 1 << 14, ///< Serial # of the post, process-wide
-    eDPF_SerialNo_Thread    = 1 << 15, ///< Serial # of the post, in the thread
-    eDPF_RequestId          = 1 << 16, ///< fcgi iteration number or request ID
-    eDPF_Iteration          = eDPF_RequestId, ///< @deprecated
-    eDPF_UID                = 1 << 17, ///< UID of the log
+    eDPF_DateTime = 1 << 7,             ///< Include date and time
+    eDPF_ErrCodeMessage = 1 << 8,       ///< Error code message (default)
+    eDPF_ErrCodeExplanation = 1 << 9,   ///< Error explanation (default)
+    eDPF_ErrCodeUseSeverity = 1 << 10,  ///< Use severity from error code (default)
+    eDPF_Location = 1 << 11,            ///< Include class and function if any
+    eDPF_TID = 1 << 13,                 ///< Thread ID
 
-    eDPF_ErrCode            = eDPF_ErrorID,  ///< @deprecated
-    eDPF_ErrSubCode         = eDPF_ErrorID,  ///< @deprecated
+    eDPF_PID = 0,                       ///< @deprecated
+    eDPF_SerialNo = 0,                  ///< @deprecated
+    eDPF_SerialNo_Thread = 0,           ///< @deprecated
+    eDPF_RequestId = 0,                 ///< @deprecated
+    eDPF_Iteration = eDPF_RequestId,    ///< @deprecated
+    eDPF_UID = 0,                       ///< @deprecated
 
+    eDPF_ErrCode = eDPF_ErrorID,        ///< @deprecated
+    eDPF_ErrSubCode = eDPF_ErrorID,     ///< @deprecated
+    
     /// All flags (except for the "unusual" ones!)
-    eDPF_All                = 0x7FFFF,
+    eDPF_All = 0x7FFFF,
 
     /// Default flags to use when tracing.
 #if defined(NCBI_THREADS)
@@ -2410,6 +2411,43 @@ private:
 
 /// Get diag context instance
 NCBI_XNCBI_EXPORT CDiagContext& GetDiagContext(void);
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CNcbiLogFields --
+///
+/// Automatic logging of application/request meta-data.
+
+class NCBI_XNCBI_EXPORT CNcbiLogFields
+{
+public:
+    /// Load fields to be logged from NCBI_LOG_FIELDS environment variable.
+    CNcbiLogFields(const string& source);
+
+    ~CNcbiLogFields(void);
+
+    /// Log (as an extra) all names/values matching fields in NCBI_LOG_FIELDS.
+    /// If source passed to the constructor is not empty, all names are prefixed
+    /// with 'source.' string.
+    template<class TEntries>
+    void LogFields(const TEntries&   entries) const
+    {
+        CDiagContext_Extra extra = GetDiagContext().Extra();
+        for (typename TEntries::const_iterator it = entries.begin(); it != entries.end(); ++it) {
+            x_Match(it->first, it->second, extra);
+        }
+    }
+
+private:
+    // Check if the name matches any NCBI_LOG_FIELDS entry, print matching values to the extra.
+    void x_Match(const string& name, const string& value, CDiagContext_Extra& extra) const;
+
+    typedef list<string> TFields;
+
+    string m_Source;
+    TFields m_Fields;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////

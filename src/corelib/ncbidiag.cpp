@@ -2011,6 +2011,19 @@ void CDiagContext::PrintStart(const string& message)
 
     x_LogEnvironment();
 
+    // Log NCBI_LOG_FIELDS
+    map<string, string> env_map;
+    for (char **env = environ; *env; ++env) {
+        string n, v;
+        NStr::SplitInTwo(*env, "=", n, v, NStr::fSplit_Tokenize);
+        NStr::ToLower(n);
+        NStr::ReplaceInPlace(n, "_", "-");
+        env_map[n] = v;
+    }
+
+    CNcbiLogFields f("env");
+    f.LogFields(env_map);
+
     // Log hit id if already available.
     x_GetDefaultHitID(eHitID_NoCreate);
 }
@@ -3753,6 +3766,53 @@ CDiagContext& GetDiagContext(void)
         CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
 
     return s_DiagContext.Get();
+}
+
+
+///////////////////////////////////////////////////////
+//  CNcbiLogFields::
+
+#ifdef NCBI_LOG_FIELDS_CUSTOM
+NCBI_PARAM_DECL(string, Log, Ncbi_Log_Fields_Custom);
+NCBI_PARAM_DEF_EX(string, Log, Ncbi_Log_Fields_Custom, "",
+    eParam_NoThread, NCBI_LOG_FIELDS_CUSTOM);
+typedef NCBI_PARAM_TYPE(Log, Ncbi_Log_Fields_Custom) TCustomLogFields;
+#endif
+
+
+CNcbiLogFields::CNcbiLogFields(const string& source)
+    : m_Source(source)
+{
+    const TXChar* env_fields = NcbiSys_getenv(_TX("NCBI_LOG_FIELDS"));
+    if ( env_fields ) {
+        string fields = _T_CSTRING(env_fields);
+        NStr::ToLower(fields);
+        NStr::ReplaceInPlace(fields, "_", "-");
+        NStr::Split(fields, " ", m_Fields, NStr::fSplit_Tokenize);
+    }
+#ifdef NCBI_LOG_FIELDS_CUSTOM
+    string custom_fields = TCustomLogFields::GetDefault();
+    NStr::ToLower(custom_fields);
+    NStr::ReplaceInPlace(custom_fields, "_", "-");
+    NStr::Split(custom_fields, " ", m_Fields, NStr::fSplit_Tokenize);
+#endif
+}
+
+
+CNcbiLogFields::~CNcbiLogFields(void)
+{
+}
+
+
+void CNcbiLogFields::x_Match(const string& name, const string& value, CDiagContext_Extra& extra) const
+{
+    ITERATE(TFields, it, m_Fields) {
+        if ( it->empty() ) continue; // Skip empty entries since they match anything.
+        if (NStr::MatchesMask(name, *it, NStr::eNocase)) {
+            extra.Print((m_Source.empty() ? name : m_Source + "." + name), value);
+            break; // Stop if a match is found.
+        }
+    }
 }
 
 

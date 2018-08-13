@@ -748,6 +748,20 @@ void CCgiApplication::LogRequest(void) const
             GetDiagContext().Extra().Print("USER_AGENT", str);
         }
     }
+    // Print NCBI_LOG_FIELDS
+    CNcbiLogFields f("http");
+    map<string, string> env;
+    list<string> names;
+    const CNcbiEnvironment& rq_env = ctx.GetRequest().GetEnvironment();
+    rq_env.Enumerate(names);
+    ITERATE(list<string>, it, names) {
+        if (!NStr::StartsWith(*it, "HTTP_")) continue;
+        string name = it->substr(5);
+        NStr::ToLower(name);
+        NStr::ReplaceInPlace(name, "_", "-");
+        env[name] = rq_env.Get(*it);
+    }
+    f.LogFields(env);
 }
 
 
