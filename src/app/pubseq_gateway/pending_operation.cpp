@@ -261,14 +261,12 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
             return;
         }
 
-        // Send BIOSEQ_INFO
-        string      cached_bioseq_info_data;
-        x_SendBioseqInfo(cached_bioseq_info_data,
-                         bioseq_info, eJsonFormat);
-
-        if (!cached_bioseq_info_data.empty())
-            ConvertBioseqProtobufToBioseqInfo(cached_bioseq_info_data,
+        if (!bioseq_info_cache_data.empty())
+            ConvertBioseqProtobufToBioseqInfo(bioseq_info_cache_data,
                                               bioseq_info);
+
+        // Send BIOSEQ_INFO
+        x_SendBioseqInfo("", bioseq_info, eJsonFormat);
 
         // Translate sat to keyspace
         SBlobId     blob_id(bioseq_info.m_Sat, bioseq_info.m_SatKey);
@@ -322,7 +320,13 @@ void CPendingOperation::x_ProcessResolveRequest(void)
     if (status != CRequestStatus::e200_Ok) {
         if (status != CRequestStatus::e400_BadRequest)
             UpdateOverallStatus(status);
-        x_PrintRequestStop(m_OverallStatus);
+        if (x_UsePsgProtocol()) {
+            x_SendReplyCompletion(true);
+            m_Reply->Send(m_Chunks, true);
+            m_Chunks.clear();
+        } else {
+            x_PrintRequestStop(m_OverallStatus);
+        }
         return;
     }
 
@@ -332,7 +336,15 @@ void CPendingOperation::x_ProcessResolveRequest(void)
         // Only canonical ID was requested and it is already here, so send it
         // away
         x_SendCSIAsBioseqInfo(si2csi_cache_data, bioseq_info,
-                              m_ResolveRequest.m_OutputFormat);
+                              m_ResolveRequest.m_OutputFormat,
+                              m_ResolveRequest.m_UsePsgProtocol);
+        if (x_UsePsgProtocol()) {
+            x_SendReplyCompletion(true);
+            m_Reply->Send(m_Chunks, true);
+            m_Chunks.clear();
+        } else {
+            x_PrintRequestStop(m_OverallStatus);
+        }
         return;
     }
 
@@ -343,13 +355,26 @@ void CPendingOperation::x_ProcessResolveRequest(void)
                                bioseq_info_cache_data);
     if (status != CRequestStatus::e200_Ok) {
         UpdateOverallStatus(status);
-        x_PrintRequestStop(m_OverallStatus);
+        if (x_UsePsgProtocol()) {
+            x_SendReplyCompletion(true);
+            m_Reply->Send(m_Chunks, true);
+            m_Chunks.clear();
+        } else {
+            x_PrintRequestStop(m_OverallStatus);
+        }
         return;
     }
 
     // Send BIOSEQ_INFO
     x_SendBioseqInfo(bioseq_info_cache_data,
                      bioseq_info, m_ResolveRequest.m_OutputFormat);
+    if (x_UsePsgProtocol()) {
+        x_SendReplyCompletion(true);
+        m_Reply->Send(m_Chunks, true);
+        m_Chunks.clear();
+    } else {
+        x_PrintRequestStop(m_OverallStatus);
+    }
 }
 
 
@@ -359,7 +384,21 @@ void CPendingOperation::x_StartMainBlobRequest(void)
     //       how the blob was requested
     m_MainBlobFetchDetails.reset(new SBlobFetchDetails(m_BlobRequest));
 
-    if (m_BlobRequest.m_LastModified.empty()) {
+    unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
+    bool            cache_hit = x_LookupBlobPropCache(
+                                    m_BlobRequest.m_BlobId.m_Sat,
+                                    m_BlobRequest.m_BlobId.m_SatKey,
+                                    m_BlobRequest.m_LastModified,
+                                    *blob_record.get());
+    if (cache_hit) {
+        m_MainBlobFetchDetails->m_Loader.reset(
+            new CCassBlobTaskLoadBlob(
+                            m_Timeout, m_MaxRetries, m_Conn,
+                            m_BlobRequest.m_BlobId.m_SatName,
+                            std::move(blob_record),
+                            m_BlobRequest.m_NeedChunks,
+                            nullptr));
+    } else if (m_BlobRequest.m_LastModified == INT64_MIN) {
         m_MainBlobFetchDetails->m_Loader.reset(
             new CCassBlobTaskLoadBlob(
                             m_Timeout, m_MaxRetries, m_Conn,
@@ -373,7 +412,7 @@ void CPendingOperation::x_StartMainBlobRequest(void)
                             m_Timeout, m_MaxRetries, m_Conn,
                             m_BlobRequest.m_BlobId.m_SatName,
                             m_BlobRequest.m_BlobId.m_SatKey,
-                            NStr::StringToLong(m_BlobRequest.m_LastModified),
+                            m_BlobRequest.m_LastModified,
                             m_BlobRequest.m_NeedChunks,
                             nullptr));
     }
@@ -584,8 +623,13 @@ CPendingOperation::x_ResolveToCanonicalSeqId(SBioseqInfo &  bioseq_info,
                             NStr::NumericToString(int(parsed_seq_id_type)) +
                             " while the URL request has it set to " +
                             NStr::NumericToString(seq_id_type) + ".";
-                        PrepareReplyMessage(msg, CRequestStatus::e400_BadRequest,
-                                            eMalformedParameter, eDiag_Error);
+                        if (x_UsePsgProtocol())
+                            PrepareReplyMessage(msg,
+                                                CRequestStatus::e400_BadRequest,
+                                                eMalformedParameter,
+                                                eDiag_Error);
+                        else
+                            m_Reply->Send400("Bad Request", msg.c_str());
                         return CRequestStatus::e400_BadRequest;
                     }
                 }
@@ -682,7 +726,12 @@ CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
                                                      IncCanonicalSeqIdError();
         }
 
-        if (m_IsResolveRequest) {
+        if (x_UsePsgProtocol()) {
+            size_t      item_id = GetItemId();
+            PrepareBioseqMessage(item_id, msg, status,
+                                 eNoCanonicalTranslation, eDiag_Error);
+            PrepareBioseqCompletion(item_id, 2);
+        } else {
             // Send it as an HTTP reply (not PSG protocol)
             switch (status) {
                 case CRequestStatus::e300_MultipleChoices:
@@ -695,11 +744,6 @@ CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
                 default:
                     m_Reply->Send404("Not Found", msg.c_str());
             }
-        } else {
-            size_t      item_id = GetItemId();
-            PrepareBioseqMessage(item_id, msg, status,
-                                 eNoCanonicalTranslation, eDiag_Error);
-            PrepareBioseqCompletion(item_id, 2);
         }
     }
 
@@ -755,9 +799,13 @@ CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
     }
 
     if (cache_hit) {
+        CPubseqGatewayApp::GetInstance()->GetCacheCounters().
+                                                IncBioseqInfoCacheHit();
         return CRequestStatus::e200_Ok;
     }
 
+    CPubseqGatewayApp::GetInstance()->GetCacheCounters().
+                                                IncBioseqInfoCacheMiss();
 
     // Fallback to Cassandra
     CRequestStatus::ECode   status = CRequestStatus::e200_Ok;
@@ -795,7 +843,12 @@ CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
                                                 IncBioseqInfoError();
         ERR_POST(msg);  // It is always a server error: data inconsistency
 
-        if (m_IsResolveRequest) {
+        if (x_UsePsgProtocol()) {
+            size_t      item_id = GetItemId();
+            PrepareBioseqMessage(item_id, msg, status,
+                                 eNoBioseqInfo, eDiag_Error);
+            PrepareBioseqCompletion(item_id, 2);
+        } else {
             // Send it as an HTTP reply (not PSG protocol)
             switch (status) {
                 case CRequestStatus::e400_BadRequest:
@@ -810,11 +863,6 @@ CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
                 default:
                     m_Reply->Send404("Not Found", msg.c_str());
             }
-        } else {
-            size_t      item_id = GetItemId();
-            PrepareBioseqMessage(item_id, msg, status,
-                                 eNoBioseqInfo, eDiag_Error);
-            PrepareBioseqCompletion(item_id, 2);
         }
     }
 
@@ -823,7 +871,7 @@ CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
 }
 
 
-void CPendingOperation::x_SendBioseqInfo(string &  protobuf_bioseq_info,
+void CPendingOperation::x_SendBioseqInfo(const string &  protobuf_bioseq_info,
                                          SBioseqInfo &  bioseq_info,
                                          EOutputFormat  output_format)
 {
@@ -855,7 +903,12 @@ void CPendingOperation::x_SendBioseqInfo(string &  protobuf_bioseq_info,
             data_to_send = protobuf_bioseq_info;
     }
 
-    if (m_IsResolveRequest) {
+    if (x_UsePsgProtocol()) {
+        // Send it as the PSG protocol
+        size_t              item_id = GetItemId();
+        PrepareBioseqData(item_id, data_to_send);
+        PrepareBioseqCompletion(item_id, 2);
+    } else {
         // Send it as the HTTP data
         if (effective_output_format == eJsonFormat)
             m_Reply->SetJsonContentType();
@@ -863,18 +916,22 @@ void CPendingOperation::x_SendBioseqInfo(string &  protobuf_bioseq_info,
             m_Reply->SetProtobufContentType();
         m_Reply->SetContentLength(data_to_send.length());
         m_Reply->SendOk(data_to_send.data(), data_to_send.length(), false);
-    } else {
-        // Send it as the PSG protocol
-        size_t              item_id = GetItemId();
-        PrepareBioseqData(item_id, data_to_send);
-        PrepareBioseqCompletion(item_id, 2);
     }
+}
+
+
+bool CPendingOperation::x_UsePsgProtocol(void) const
+{
+    if (!m_IsResolveRequest)
+        return true;
+    return m_ResolveRequest.m_UsePsgProtocol;
 }
 
 
 void CPendingOperation::x_SendCSIAsBioseqInfo(string &  si2csi_cache_data,
                                               SBioseqInfo &  bioseq_info,
-                                              EOutputFormat  output_format)
+                                              EOutputFormat  output_format,
+                                              bool  use_psg_protocol)
 {
     EOutputFormat       effective_output_format = output_format;
 
@@ -900,13 +957,19 @@ void CPendingOperation::x_SendCSIAsBioseqInfo(string &  si2csi_cache_data,
             ConvertSi2sciToBioseqProtobuf(bioseq_info, data_to_send);
     }
 
-    // It is used only in case of a resolve request so it is always HTTP data
-    if (effective_output_format == eJsonFormat)
-        m_Reply->SetJsonContentType();
-    else
-        m_Reply->SetProtobufContentType();
-    m_Reply->SetContentLength(data_to_send.length());
-    m_Reply->SendOk(data_to_send.data(), data_to_send.length(), false);
+    if (use_psg_protocol) {
+        size_t              item_id = GetItemId();
+        PrepareBioseqData(item_id, data_to_send);
+        PrepareBioseqCompletion(item_id, 2);
+    } else {
+        // Send as HTTP data
+        if (effective_output_format == eJsonFormat)
+            m_Reply->SetJsonContentType();
+        else
+            m_Reply->SetProtobufContentType();
+        m_Reply->SetContentLength(data_to_send.length());
+        m_Reply->SendOk(data_to_send.data(), data_to_send.length(), false);
+    }
 }
 
 
@@ -932,11 +995,47 @@ CPendingOperation::x_CSICacheOrDB(const string &  sec_seq_id,
     }
 
     if (cache_hit) {
+        CPubseqGatewayApp::GetInstance()->GetCacheCounters().
+                                                IncSi2csiCacheHit();
         return CRequestStatus::e200_Ok;
     }
 
     // Fallback to DB
+    CPubseqGatewayApp::GetInstance()->GetCacheCounters().
+                                                IncSi2csiCacheMiss();
     return x_FetchCanonicalSeqId(bioseq_info);
+}
+
+
+bool CPendingOperation::x_LookupBlobPropCache(int  sat, int  sat_key,
+                                              int64_t &  last_modified,
+                                              CBlobRecord &  blob_record)
+{
+    CPubseqGatewayCache *   cache = CPubseqGatewayApp::GetInstance()->
+                                                        GetLookupCache();
+    bool                    cache_hit = false;
+    string                  blob_prop_cache_data;
+
+    if (last_modified == INT64_MIN) {
+        cache_hit = cache->LookupBlobPropBySatKey(
+                                    sat, sat_key, last_modified,
+                                    blob_prop_cache_data);
+    } else {
+        cache_hit = cache->LookupBlobPropBySatKeyLastModified(
+                                    sat, sat_key, last_modified,
+                                    blob_prop_cache_data);
+    }
+
+    if (cache_hit) {
+        CPubseqGatewayApp::GetInstance()->GetCacheCounters().
+                                                IncBlobPropCacheHit();
+        ConvertBlobPropProtobufToBlobRecord(sat_key, last_modified,
+                                            blob_prop_cache_data, blob_record);
+    }
+
+    CPubseqGatewayApp::GetInstance()->GetCacheCounters().
+                                                IncBlobPropCacheMiss();
+    return cache_hit;
 }
 
 
@@ -1214,13 +1313,6 @@ void CBlobChunkCallback::operator()(const unsigned char *  chunk_data,
         m_PendingOp->PrepareBlobCompletion(m_FetchDetails);
         m_FetchDetails->m_FinishedRead = true;
 
-        if (m_FetchDetails->m_BlobIdType == eBySeqId)
-            CPubseqGatewayApp::GetInstance()->GetRequestCounters().
-                                              IncGetBlobBySeqId();
-        else
-            CPubseqGatewayApp::GetInstance()->GetRequestCounters().
-                                              IncGetBlobBySatSatKey();
-
         m_PendingOp->x_SendReplyCompletion();
     }
 
@@ -1321,7 +1413,7 @@ void CBlobPropCallback::x_RequestOriginalBlobChunks(CBlobRecord const &  blob)
     // Cannot reuse the fetch details, it leads to a core dump
 
     SBlobRequest    orig_blob_request(m_FetchDetails->m_BlobId,
-                                      NStr::NumericToString(blob.GetModified()));
+                                      blob.GetModified());
 
     orig_blob_request.m_NeedBlobProp = false;
     orig_blob_request.m_NeedChunks = true;
@@ -1329,14 +1421,15 @@ void CBlobPropCallback::x_RequestOriginalBlobChunks(CBlobRecord const &  blob)
 
     m_PendingOp->m_OriginalBlobChunkFetch.reset(
             new CPendingOperation::SBlobFetchDetails(orig_blob_request));
+
+    unique_ptr<CBlobRecord>     blob_record(new CBlobRecord(blob));
     m_PendingOp->m_OriginalBlobChunkFetch->m_Loader.reset(
             new CCassBlobTaskLoadBlob(
                     m_PendingOp->m_Timeout,
                     m_PendingOp->m_MaxRetries,
                     m_PendingOp->m_Conn,
                     orig_blob_request.m_BlobId.m_SatName,
-                    orig_blob_request.m_BlobId.m_SatKey,
-                    blob.GetModified(),
+                    std::move(blob_record),
                     true, nullptr));
 
     m_PendingOp->m_OriginalBlobChunkFetch->m_Loader->SetDataReadyCB(
@@ -1386,8 +1479,8 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
     info_blob_id.m_SatName = shell_blob_id.m_SatName;
 
     // Create the Id2Shell and Id2Info requests
-    SBlobRequest    shell_blob_request(shell_blob_id, "");
-    SBlobRequest    info_blob_request(info_blob_id, "");
+    SBlobRequest    shell_blob_request(shell_blob_id, INT64_MIN);
+    SBlobRequest    info_blob_request(info_blob_id, INT64_MIN);
 
     shell_blob_request.m_NeedBlobProp = false;
     shell_blob_request.m_NeedChunks = true;
@@ -1401,14 +1494,33 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
     if (m_Id2InfoShell > 0) {
         m_PendingOp->m_Id2ShellFetchDetails.reset(
                 new CPendingOperation::SBlobFetchDetails(shell_blob_request));
-        m_PendingOp->m_Id2ShellFetchDetails->m_Loader.reset(
-                new CCassBlobTaskLoadBlob(
-                    m_PendingOp->m_Timeout, m_PendingOp->m_MaxRetries,
-                    m_PendingOp->m_Conn,
-                    shell_blob_request.m_BlobId.m_SatName,
-                    shell_blob_request.m_BlobId.m_SatKey,
-                    shell_blob_request.m_NeedChunks,
-                    nullptr));
+
+        unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
+        bool            cache_hit = m_PendingOp->x_LookupBlobPropCache(
+                                        shell_blob_request.m_BlobId.m_Sat,
+                                        shell_blob_request.m_BlobId.m_SatKey,
+                                        shell_blob_request.m_LastModified,
+                                        *blob_record.get());
+
+        if (cache_hit) {
+            m_PendingOp->m_Id2ShellFetchDetails->m_Loader.reset(
+                    new CCassBlobTaskLoadBlob(
+                        m_PendingOp->m_Timeout, m_PendingOp->m_MaxRetries,
+                        m_PendingOp->m_Conn,
+                        shell_blob_request.m_BlobId.m_SatName,
+                        std::move(blob_record),
+                        shell_blob_request.m_NeedChunks,
+                        nullptr));
+        } else {
+            m_PendingOp->m_Id2ShellFetchDetails->m_Loader.reset(
+                    new CCassBlobTaskLoadBlob(
+                        m_PendingOp->m_Timeout, m_PendingOp->m_MaxRetries,
+                        m_PendingOp->m_Conn,
+                        shell_blob_request.m_BlobId.m_SatName,
+                        shell_blob_request.m_BlobId.m_SatKey,
+                        shell_blob_request.m_NeedChunks,
+                        nullptr));
+        }
         m_PendingOp->m_Id2ShellFetchDetails->m_Loader->SetDataReadyCB(
                 HST::CHttpReply<CPendingOperation>::s_DataReady, m_Reply);
         m_PendingOp->m_Id2ShellFetchDetails->m_Loader->SetErrorCB(
@@ -1423,14 +1535,32 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
     // Prepare Id2Info retrieval
     m_PendingOp->m_Id2InfoFetchDetails.reset(
             new CPendingOperation::SBlobFetchDetails(info_blob_request));
-    m_PendingOp->m_Id2InfoFetchDetails->m_Loader.reset(
-            new CCassBlobTaskLoadBlob(
-                m_PendingOp->m_Timeout, m_PendingOp->m_MaxRetries,
-                m_PendingOp->m_Conn,
-                info_blob_request.m_BlobId.m_SatName,
-                info_blob_request.m_BlobId.m_SatKey,
-                info_blob_request.m_NeedChunks,
-                nullptr));
+
+    unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
+    bool            cache_hit = m_PendingOp->x_LookupBlobPropCache(
+                                    info_blob_request.m_BlobId.m_Sat,
+                                    info_blob_request.m_BlobId.m_SatKey,
+                                    info_blob_request.m_LastModified,
+                                    *blob_record.get());
+    if (cache_hit) {
+        m_PendingOp->m_Id2InfoFetchDetails->m_Loader.reset(
+                new CCassBlobTaskLoadBlob(
+                    m_PendingOp->m_Timeout, m_PendingOp->m_MaxRetries,
+                    m_PendingOp->m_Conn,
+                    info_blob_request.m_BlobId.m_SatName,
+                    std::move(blob_record),
+                    info_blob_request.m_NeedChunks,
+                    nullptr));
+    } else {
+        m_PendingOp->m_Id2InfoFetchDetails->m_Loader.reset(
+                new CCassBlobTaskLoadBlob(
+                    m_PendingOp->m_Timeout, m_PendingOp->m_MaxRetries,
+                    m_PendingOp->m_Conn,
+                    info_blob_request.m_BlobId.m_SatName,
+                    info_blob_request.m_BlobId.m_SatKey,
+                    info_blob_request.m_NeedChunks,
+                    nullptr));
+    }
     m_PendingOp->m_Id2InfoFetchDetails->m_Loader->SetDataReadyCB(
             HST::CHttpReply<CPendingOperation>::s_DataReady, m_Reply);
     m_PendingOp->m_Id2InfoFetchDetails->m_Loader->SetErrorCB(
@@ -1464,21 +1594,40 @@ void CBlobPropCallback::x_RequestId2SplitBlobs(const string &  sat_name)
         SBlobId     chunks_blob_id(m_Id2InfoSat, m_Id2InfoInfo + chunk_no);
         chunks_blob_id.m_SatName = sat_name;
 
-        SBlobRequest    chunk_request(chunks_blob_id, "");
+        SBlobRequest    chunk_request(chunks_blob_id, INT64_MIN);
         chunk_request.m_NeedBlobProp = false;
         chunk_request.m_NeedChunks = true;
         chunk_request.m_Optional = false;
 
         unique_ptr<CPendingOperation::SBlobFetchDetails>   details;
         details.reset(new CPendingOperation::SBlobFetchDetails(chunk_request));
-        details->m_Loader.reset(
-            new CCassBlobTaskLoadBlob(
-                m_PendingOp->m_Timeout, m_PendingOp->m_MaxRetries,
-                m_PendingOp->m_Conn,
-                chunk_request.m_BlobId.m_SatName,
-                chunk_request.m_BlobId.m_SatKey,
-                chunk_request.m_NeedChunks,
-                nullptr));
+
+        unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
+        bool            cache_hit = m_PendingOp->x_LookupBlobPropCache(
+                                        chunk_request.m_BlobId.m_Sat,
+                                        chunk_request.m_BlobId.m_SatKey,
+                                        chunk_request.m_LastModified,
+                                        *blob_record.get());
+
+        if (cache_hit) {
+            details->m_Loader.reset(
+                new CCassBlobTaskLoadBlob(
+                    m_PendingOp->m_Timeout, m_PendingOp->m_MaxRetries,
+                    m_PendingOp->m_Conn,
+                    chunk_request.m_BlobId.m_SatName,
+                    std::move(blob_record),
+                    chunk_request.m_NeedChunks,
+                    nullptr));
+        } else {
+            details->m_Loader.reset(
+                new CCassBlobTaskLoadBlob(
+                    m_PendingOp->m_Timeout, m_PendingOp->m_MaxRetries,
+                    m_PendingOp->m_Conn,
+                    chunk_request.m_BlobId.m_SatName,
+                    chunk_request.m_BlobId.m_SatKey,
+                    chunk_request.m_NeedChunks,
+                    nullptr));
+        }
         details->m_Loader->SetDataReadyCB(
             HST::CHttpReply<CPendingOperation>::s_DataReady, m_Reply);
         details->m_Loader->SetErrorCB(

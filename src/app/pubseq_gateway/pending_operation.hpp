@@ -226,12 +226,13 @@ private:
     void x_SendUnknownServerSatelliteError(size_t  item_id,
                                            const string &  message,
                                            int  error_code);
-    void x_SendBioseqInfo(string &  protobuf_bioseq_info,
+    void x_SendBioseqInfo(const string &  protobuf_bioseq_info,
                           SBioseqInfo &  bioseq_info,
                           EOutputFormat  output_format);
     void x_SendCSIAsBioseqInfo(string &  si2csi_cache_data,
                                SBioseqInfo &  bioseq_info,
-                               EOutputFormat  output_format);
+                               EOutputFormat  output_format,
+                               bool  use_psg_protocol);
 
     void x_Peek(HST::CHttpReply<CPendingOperation>& resp, bool  need_wait,
                 unique_ptr<SBlobFetchDetails> &  fetch_details);
@@ -242,6 +243,10 @@ private:
                                          string &  csi_cache_data,
                                          SBioseqInfo &  bioseq_info);
 
+    bool x_LookupBlobPropCache(int  sat, int  sat_key,
+                               int64_t &  last_modified,
+                               CBlobRecord &  blob_record);
+    bool x_UsePsgProtocol(void) const;
 
 private:
     HST::CHttpReply<CPendingOperation> *    m_Reply;

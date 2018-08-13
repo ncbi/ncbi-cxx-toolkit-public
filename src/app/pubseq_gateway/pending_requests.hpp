@@ -42,7 +42,7 @@ struct SBlobRequest
 {
     // Construct the request for the case of sat/sat_key request
     SBlobRequest(const SBlobId &  blob_id,
-                 const string &  last_modified) :
+                 int64_t  last_modified) :
         m_NeedBlobProp(true),
         m_NeedChunks(true),
         m_Optional(false),
@@ -62,6 +62,7 @@ struct SBlobRequest
         m_NeedChunks(false),
         m_Optional(false),
         m_BlobIdType(eBySeqId),
+        m_LastModified(INT64_MIN),
         m_SeqId(seq_id),
         m_SeqIdType(seq_id_type),
         m_SeqIdTypeProvided(seq_id_type_provided),
@@ -82,7 +83,7 @@ public:
 
     // Fields in case of request by sat/sat_key
     SBlobId                     m_BlobId;
-    string                      m_LastModified;
+    int64_t                     m_LastModified;
 
     // Fields in case of request by seq_id/seq_id_type
     string                      m_SeqId;
@@ -99,11 +100,13 @@ public:
                     int  seq_id_type,
                     bool  seq_id_type_provided,
                     TServIncludeData  include_data_flags,
-                    EOutputFormat  output_format) :
+                    EOutputFormat  output_format,
+                    bool  use_psg_protocol) :
         m_SeqId(seq_id), m_SeqIdType(seq_id_type),
         m_SeqIdTypeProvided(seq_id_type_provided),
         m_IncludeDataFlags(include_data_flags),
-        m_OutputFormat(output_format)
+        m_OutputFormat(output_format),
+        m_UsePsgProtocol(use_psg_protocol)
     {}
 
     SResolveRequest() = default;
@@ -114,6 +117,7 @@ public:
     bool                        m_SeqIdTypeProvided;
     TServIncludeData            m_IncludeDataFlags;
     EOutputFormat               m_OutputFormat;
+    bool                        m_UsePsgProtocol;
 };
 
 

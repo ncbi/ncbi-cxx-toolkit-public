@@ -105,6 +105,7 @@ public:
     static CPubseqGatewayApp *  GetInstance(void);
     CPubseqGatewayErrorCounters &  GetErrorCounters(void);
     CPubseqGatewayRequestCounters &  GetRequestCounters(void);
+    CPubseqGatewayCacheCounters &  GetCacheCounters(void);
 
 private:
     struct SRequestParameter
@@ -127,7 +128,8 @@ private:
         HST::CHttpRequest &  req,
         HST::CHttpReply<CPendingOperation> &  resp,
         string &  seq_id, int &  seq_id_type,
-        SRequestParameter &  seq_id_type_param);
+        SRequestParameter &  seq_id_type_param,
+        bool  use_psg_protocol);
 
 private:
     void x_ValidateArgs(void);
@@ -179,6 +181,7 @@ private:
     // The server counters
     CPubseqGatewayErrorCounters         m_ErrorCounters;
     CPubseqGatewayRequestCounters       m_RequestCounters;
+    CPubseqGatewayCacheCounters         m_CacheCounters;
 
 private:
     static CPubseqGatewayApp *          sm_PubseqApp;

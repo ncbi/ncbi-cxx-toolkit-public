@@ -85,6 +85,17 @@ void CPubseqGatewayRequestCounters::PopulateDictionary(CJsonNode &  dict) const
     req_sum += m_GetBlobBySatSatKey;
     dict.SetInteger("GetBlobBySatSatKeyRequestCount", m_GetBlobBySatSatKey);
 
-    dict.SetInteger("TotalSucceededRequestCount", req_sum);
+    dict.SetInteger("TotalRequestCount", req_sum);
+}
+
+
+void CPubseqGatewayCacheCounters::PopulateDictionary(CJsonNode &  dict) const
+{
+    dict.SetInteger("Si2csiCacheHit", m_Si2csiCacheHit);
+    dict.SetInteger("Si2csiCacheMiss", m_Si2csiCacheMiss);
+    dict.SetInteger("BioseqInfoCacheHit", m_BioseqInfoCacheHit);
+    dict.SetInteger("BioseqInfoCacheMiss", m_BioseqInfoCacheMiss);
+    dict.SetInteger("BlobPropCacheHit", m_BlobPropCacheHit);
+    dict.SetInteger("BlobPropCacheMiss", m_BlobPropCacheMiss);
 }
 

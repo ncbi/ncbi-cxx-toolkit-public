@@ -243,3 +243,28 @@ void ConvertSi2csiToBioseqJson(const SBioseqInfo &  bioseq_info,
     ConvertBioseqInfoToJson(bioseq_info, include_data_flags, bioseq_json);
 }
 
+
+void ConvertBlobPropProtobufToBlobRecord(int  sat_key,
+                                         int64_t  last_modified,
+                                         const string &  blob_prop_protobuf,
+                                         CBlobRecord &  blob_record)
+{
+    psg::retrieval::blob_prop_value     protobuf_blob_prop_value;
+    CPubseqGatewayData::UnpackBlobPropInfo(blob_prop_protobuf,
+                                           protobuf_blob_prop_value);
+
+    blob_record.SetModified(last_modified);
+    blob_record.SetFlags(protobuf_blob_prop_value.flags());
+    blob_record.SetSize(protobuf_blob_prop_value.size());
+    blob_record.SetSizeUnpacked(protobuf_blob_prop_value.size_unpacked());
+    blob_record.SetDateAsn1(protobuf_blob_prop_value.date_asn1());
+    blob_record.SetHupDate(protobuf_blob_prop_value.hup_date());
+    blob_record.SetDiv(protobuf_blob_prop_value.div());
+    blob_record.SetId2Info(protobuf_blob_prop_value.id2_info());
+    blob_record.SetUserName(protobuf_blob_prop_value.username());
+    blob_record.SetKey(sat_key);
+    blob_record.SetNChunks(protobuf_blob_prop_value.n_chunks());
+    blob_record.SetOwner(protobuf_blob_prop_value.owner());
+    blob_record.SetClass(protobuf_blob_prop_value.class_());
+}
+

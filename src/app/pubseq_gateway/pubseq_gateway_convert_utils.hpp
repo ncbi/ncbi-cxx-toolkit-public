@@ -61,6 +61,10 @@ void ConvertSi2csiProtobufToBioseqJson(const string &  si2csi_protobuf,
                                        string &  bioseq_json);
 void ConvertSi2csiToBioseqJson(const SBioseqInfo &  bioseq_info,
                                string &  bioseq_json);
+void ConvertBlobPropProtobufToBlobRecord(int  sat_key,
+                                         int64_t  last_modified,
+                                         const string &  blob_prop_protobuf,
+                                         CBlobRecord &  blob_record);
 
 CJsonNode ConvertBioseqInfoToJson(const SBioseqInfo &  bioseq_info,
                                   TServIncludeData  include_data_flags);

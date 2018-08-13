@@ -143,4 +143,43 @@ private:
 };
 
 
+class CPubseqGatewayCacheCounters
+{
+public:
+    CPubseqGatewayCacheCounters() :
+        m_Si2csiCacheHit(0), m_Si2csiCacheMiss(0),
+        m_BioseqInfoCacheHit(0), m_BioseqInfoCacheMiss(0),
+        m_BlobPropCacheHit(0), m_BlobPropCacheMiss(0)
+    {}
+
+    void IncSi2csiCacheHit(void)
+    { ++m_Si2csiCacheHit; }
+
+    void IncSi2csiCacheMiss(void)
+    { ++m_Si2csiCacheMiss; }
+
+    void IncBioseqInfoCacheHit(void)
+    { ++m_BioseqInfoCacheHit; }
+
+    void IncBioseqInfoCacheMiss(void)
+    { ++m_BioseqInfoCacheMiss; }
+
+    void IncBlobPropCacheHit(void)
+    { ++m_BlobPropCacheHit; }
+
+    void IncBlobPropCacheMiss(void)
+    { ++m_BlobPropCacheMiss; }
+
+    void PopulateDictionary(CJsonNode &  dict) const;
+
+private:
+    atomic_uint_fast64_t        m_Si2csiCacheHit;
+    atomic_uint_fast64_t        m_Si2csiCacheMiss;
+    atomic_uint_fast64_t        m_BioseqInfoCacheHit;
+    atomic_uint_fast64_t        m_BioseqInfoCacheMiss;
+    atomic_uint_fast64_t        m_BlobPropCacheHit;
+    atomic_uint_fast64_t        m_BlobPropCacheMiss;
+};
+
+
 #endif

@@ -75,7 +75,8 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
     SRequestParameter   seq_id_type_param;
 
     if (!x_ProcessCommonGetAndResolveParams(req, resp, seq_id,
-                                            seq_id_type, seq_id_type_param)) {
+                                            seq_id_type, seq_id_type_param,
+                                            true)) {
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
@@ -120,6 +121,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
         }
     }
 
+    m_RequestCounters.IncGetBlobBySeqId();
     resp.Postpone(
             CPendingOperation(
                 SBlobRequest(seq_id,
@@ -139,6 +141,24 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
 
     SRequestParameter   blob_id_param = x_GetParam(req, "blob_id");
     SRequestParameter   last_modified_param = x_GetParam(req, "last_modified");
+    int64_t             last_modified_value = INT64_MIN;
+
+    if (last_modified_param.m_Found) {
+        try {
+            last_modified_value = NStr::StringToLong(
+                                            last_modified_param.m_Value);
+        } catch (...) {
+            string  message = "Malformed 'last_modified' parameter. "
+                              "Expected an integer";
+            m_ErrorCounters.IncMalformedArguments();
+            x_SendMessageAndCompletionChunks(resp, message,
+                                             CRequestStatus::e400_BadRequest,
+                                             eMalformedParameter, eDiag_Error);
+            ERR_POST(Warning << message);
+            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            return 0;
+        }
+    }
 
     if (blob_id_param.m_Found)
     {
@@ -159,9 +179,10 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
         }
 
         if (SatToSatName(blob_id.m_Sat, blob_id.m_SatName)) {
+            m_RequestCounters.IncGetBlobBySatSatKey();
             resp.Postpone(
                     CPendingOperation(
-                        SBlobRequest(blob_id, last_modified_param.m_Value),
+                        SBlobRequest(blob_id, last_modified_value),
                         0, m_CassConnection, m_TimeoutMs,
                         m_MaxRetries, context));
 
@@ -194,12 +215,29 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
+    bool                use_psg_protocol = false;   // default
+    SRequestParameter   psg_protocol_param = x_GetParam(req, "psg_protocol");
+
+    if (psg_protocol_param.m_Found) {
+        string      err_msg;
+        if (!x_IsBoolParamValid("psg_protocol",
+                                psg_protocol_param.m_Value, err_msg)) {
+            m_ErrorCounters.IncMalformedArguments();
+            resp.Send400("Bad Request", err_msg.c_str());
+            ERR_POST(Warning << err_msg);
+            return 0;
+        }
+        use_psg_protocol = psg_protocol_param.m_Value == "yes";
+    }
+
+
     string              seq_id;
     int                 seq_id_type;
     SRequestParameter   seq_id_type_param;
 
     if (!x_ProcessCommonGetAndResolveParams(req, resp, seq_id,
-                                            seq_id_type, seq_id_type_param)) {
+                                            seq_id_type, seq_id_type_param,
+                                            use_psg_protocol)) {
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
@@ -211,12 +249,15 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
         output_format = x_GetOutputFormat("fmt", fmt_param.m_Value, err_msg);
         if (output_format == eUnknownFormat) {
             m_ErrorCounters.IncMalformedArguments();
-            x_SendMessageAndCompletionChunks(resp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             eMalformedParameter, eDiag_Error);
+            if (use_psg_protocol)
+                x_SendMessageAndCompletionChunks(resp, err_msg,
+                                                 CRequestStatus::e400_BadRequest,
+                                                 eMalformedParameter, eDiag_Error);
+            else
+                resp.Send400("Bad Request", err_msg.c_str());
 
             ERR_POST(Warning << err_msg);
-            return false;
+            return 0;
         }
     }
 
@@ -240,9 +281,12 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
             if (!x_IsBoolParamValid(flag_param.first,
                                     flag_param.second.first.m_Value, err_msg)) {
                 m_ErrorCounters.IncMalformedArguments();
-                x_SendMessageAndCompletionChunks(resp, err_msg,
-                                                 CRequestStatus::e400_BadRequest,
-                                                 eMalformedParameter, eDiag_Error);
+                if (use_psg_protocol)
+                    x_SendMessageAndCompletionChunks(resp, err_msg,
+                                                     CRequestStatus::e400_BadRequest,
+                                                     eMalformedParameter, eDiag_Error);
+                else
+                    resp.Send400("Bad Request", err_msg.c_str());
 
                 ERR_POST(Warning << err_msg);
                 x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
@@ -255,12 +299,14 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
     }
 
     // Parameters processing has finished
+    m_RequestCounters.IncResolve();
     resp.Postpone(
             CPendingOperation(
                 SResolveRequest(seq_id,
                                 seq_id_type, seq_id_type_param.m_Found,
                                 include_data_flags,
-                                output_format),
+                                output_format,
+                                use_psg_protocol),
                 0, m_CassConnection, m_TimeoutMs,
                 m_MaxRetries, context));
     return 0;
@@ -406,12 +452,13 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
 
     m_ErrorCounters.PopulateDictionary(reply);
     m_RequestCounters.PopulateDictionary(reply);
+    m_CacheCounters.PopulateDictionary(reply);
 
     string      content = reply.Repr();
 
     resp.SetJsonContentType();
-    resp.SetContentLength(content.size());
-    resp.SendOk(content.c_str(), content.size(), false);
+    resp.SetContentLength(content.length());
+    resp.SendOk(content.c_str(), content.length(), false);
 
     x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     return 0;

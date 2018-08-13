@@ -34,6 +34,8 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/request_ctx.hpp>
 
+#include <google/protobuf/stubs/common.h>
+
 #include <objtools/pubseq_gateway/impl/cassandra/blob_storage.hpp>
 
 #include "pubseq_gateway.hpp"
@@ -266,6 +268,15 @@ int CPubseqGatewayApp::Run(void)
                 return OnStatus(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
+            "/favicon.ico",
+            [this](HST::CHttpRequest &  req,
+                   HST::CHttpReply<CPendingOperation> &  resp)->int
+            {
+                // It's a browser, most probably admin request
+                resp.Send404("Not Found", "Not found");
+                return 0;
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
             "",
             [this](HST::CHttpRequest &  req,
                    HST::CHttpReply<CPendingOperation> &  resp)->int
@@ -310,6 +321,12 @@ CPubseqGatewayErrorCounters &  CPubseqGatewayApp::GetErrorCounters(void)
 CPubseqGatewayRequestCounters &  CPubseqGatewayApp::GetRequestCounters(void)
 {
     return m_RequestCounters;
+}
+
+
+CPubseqGatewayCacheCounters &  CPubseqGatewayApp::GetCacheCounters(void)
+{
+    return m_CacheCounters;
 }
 
 
@@ -666,7 +683,8 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
         HST::CHttpReply<CPendingOperation> &  resp,
         string &  seq_id,
         int &  seq_id_type,
-        SRequestParameter &  seq_id_type_param)
+        SRequestParameter &  seq_id_type_param,
+        bool  use_psg_protocol)
 {
     string  err_msg;
 
@@ -676,9 +694,12 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
         err_msg = "Missing the 'seq_id' parameter";
 
         m_ErrorCounters.IncInsufficientArguments();
-        x_SendMessageAndCompletionChunks(resp, err_msg,
-                                         CRequestStatus::e400_BadRequest,
-                                         eMissingParameter, eDiag_Error);
+        if (use_psg_protocol)
+            x_SendMessageAndCompletionChunks(resp, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             eMissingParameter, eDiag_Error);
+        else
+            resp.Send400("Bad Request", err_msg.c_str());
 
         ERR_POST(Warning << err_msg);
         return false;
@@ -690,9 +711,12 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
         if (!x_ConvertIntParameter("seq_id_type", seq_id_type_param.m_Value,
                                    seq_id_type, err_msg)) {
             m_ErrorCounters.IncMalformedArguments();
-            x_SendMessageAndCompletionChunks(resp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             eMalformedParameter, eDiag_Error);
+            if (use_psg_protocol)
+                x_SendMessageAndCompletionChunks(resp, err_msg,
+                                                 CRequestStatus::e400_BadRequest,
+                                                 eMalformedParameter, eDiag_Error);
+            else
+                resp.Send400("Bad Request", err_msg.c_str());
 
             ERR_POST(Warning << err_msg);
             return false;
@@ -718,6 +742,8 @@ int main(int argc, const char* argv[])
     CRequestContext::SetDefaultAutoIncRequestIDOnPost(true);
     CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
 
-    return CPubseqGatewayApp().AppMain(argc, argv, NULL, eDS_ToStdlog);
+    int ret = CPubseqGatewayApp().AppMain(argc, argv, NULL, eDS_ToStdlog);
+    google::protobuf::ShutdownProtobufLibrary();
+    return ret;
 }
 
