@@ -64,6 +64,9 @@ private:
     double x_Entropy(const TCounts &counts);
 };
 
+double ComputeNormalizedProteinEntropy(const CTempString& sequence,
+                                       size_t word_size);
+
 // Create virtual Bioseq for masking original sequence with gaps.
 // New sequence will has Seq-id 'new_id'
 // Its Seq-inst object will be of type delta, and has reference to

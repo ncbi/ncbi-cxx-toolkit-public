@@ -184,10 +184,22 @@ SeqLocToBioseq(const objects::CSeq_loc& loc, objects::CScope& scope)
 /// For large sequence sets, this caching makes a huge difference.  The
 /// notional normative function we are trying to reproduce is included inline
 /// below for reference.
+///
+/// Note that a separate implementation is provided here for protein sequences
+/// The impetus for this is that the alphabet size for proteins is different,
+/// and in general, we do no have so many computations to perform (fre millions
+/// vs. billions for short reads).  Also, the optimized class assumes a
+/// constant overall sequence size when computing the denominator values.
+///
 
 #if 0
 ///
 /// This is the normative copy of the function
+/// Note that this is specific to nucleotides - the code:
+///
+///     double denom = pow(4, word_size);
+///
+/// assumes that the span of the alphabet is 4 characters (A, C, G, T)
 ///
 double ComputeNormalizedEntropy(const CTempString& sequence,
                                size_t word_size)
@@ -216,6 +228,37 @@ double ComputeNormalizedEntropy(const CTempString& sequence,
     return max<double>(0.0, entropy);
 }
 #endif
+
+
+double ComputeNormalizedProteinEntropy(const CTempString& sequence,
+                                       size_t word_size)
+{
+    typedef map<CTempString, double> TCounts;
+    TCounts counts;
+    double total = double(sequence.size() - word_size);
+    for (size_t i = word_size;  i < sequence.size();  ++i) {
+        CTempString t(sequence, i - word_size, word_size);
+        TCounts::iterator it =
+            counts.insert(TCounts::value_type(t, 0)).first;
+        it->second += 1;
+    }
+
+    NON_CONST_ITERATE (TCounts, it, counts) {
+        it->second /= total;
+    }
+
+    double entropy = 0;
+    ITERATE (TCounts, it, counts) {
+        entropy += it->second * log(it->second);
+    }
+    // NOTE:
+    // 20 = count of amino acids
+    double denom = pow(20, word_size);
+    denom = min(denom, total);
+    entropy = -entropy / log(denom);
+    return max<double>(0.0, entropy);
+}
+
 
 
 CEntropyCalculator::CEntropyCalculator(size_t sequence_size, size_t word_size)
