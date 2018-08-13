@@ -2250,6 +2250,7 @@ START_SUBTYPE(source)
     ADD_QUAL(sex);
     ADD_QUAL(specimen_voucher);
     ADD_QUAL(strain);
+    ADD_QUAL(submitter_seqid);
     ADD_QUAL(sub_clone);
     ADD_QUAL(sub_species);
     ADD_QUAL(sub_strain);
@@ -2888,6 +2889,7 @@ START_SUBTYPE(biosrc)
     ADD_QUAL(sex);
     ADD_QUAL(specimen_voucher);
     ADD_QUAL(strain);
+    ADD_QUAL(submitter_seqid);
     ADD_QUAL(sub_clone);
     ADD_QUAL(sub_species);
     ADD_QUAL(sub_strain);
@@ -3198,6 +3200,7 @@ static const TQualPair kQualPairs[] = {
     { CSeqFeatData::eQual_specimen_voucher, "specimen_voucher" },
     { CSeqFeatData::eQual_standard_name, "standard_name" },
     { CSeqFeatData::eQual_strain, "strain" },
+    { CSeqFeatData::eQual_submitter_seqid, "submitter_seqid" },
     { CSeqFeatData::eQual_sub_clone, "sub_clone" },
     { CSeqFeatData::eQual_sub_species, "sub_species" },
     { CSeqFeatData::eQual_sub_strain, "sub_strain" },

@@ -436,6 +436,7 @@ public:
         eQual_specimen_voucher,
         eQual_standard_name,
         eQual_strain,
+        eQual_submitter_seqid,
         eQual_sub_clone,
         eQual_sub_species,
         eQual_sub_strain,
