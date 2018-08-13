@@ -245,6 +245,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ANMR\tc\tAsian Network on Microbial Researches\t\t\t",
 "ANSM\ts\tUniversidad Autonoma Agraria Antonio Narro, Departamento de Botanica\t\t\t",
 "ANSP\ts\tAcademy of Natural Sciences of Philadelphia\t\t\t",
+"ANSP:Bird\ts\tAcademy of Natural Sciences of Philadelphia, Bird collection\t",
 "ANSP:Malacology\ts\tAcademy of Natural Sciences of Philadelphia, Malacology Collection\t\t",
 "ANTU\ts\tChangbai Mountain National Nature Reserve Administration Bureau\t\t\t",
 "ANU<AUS>\ts\tAustralian National University\tANU<AUS>,ANU<AUST>\t\t",
