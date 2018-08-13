@@ -97,7 +97,7 @@ string CMultipatternSearch::QuoteString(const string& str)
 
 void CMultipatternSearch::Search(const char* input, VoidCall1 report) const
 {
-    const unsigned char* p = (const unsigned char*)input;
+    const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
     size_t state = 1;
 
     set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
@@ -120,7 +120,7 @@ void CMultipatternSearch::Search(const char* input, VoidCall1 report) const
 
 void CMultipatternSearch::Search(const char* input, VoidCall2 report) const
 {
-    const unsigned char* p = (const unsigned char*)input;
+    const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
     size_t state = 1;
 
     set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
@@ -143,7 +143,7 @@ void CMultipatternSearch::Search(const char* input, VoidCall2 report) const
 
 void CMultipatternSearch::Search(const char* input, BoolCall1 report) const
 {
-    const unsigned char* p = (const unsigned char*)input;
+    const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
     size_t state = 1;
 
     set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
@@ -170,7 +170,7 @@ void CMultipatternSearch::Search(const char* input, BoolCall1 report) const
 
 void CMultipatternSearch::Search(const char* input, BoolCall2 report) const
 {
-    const unsigned char* p = (const unsigned char*)input;
+    const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
     size_t state = 1;
 
     set<size_t>& emit = m_FSM->m_States[state]->m_Emit;
@@ -199,7 +199,7 @@ void CMultipatternSearch::Search(const char* input, BoolCall2 report) const
 
 void CMultipatternSearch::Search(const char* input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, VoidCall1 report)
 {
-    const unsigned char* p = (const unsigned char*)input;
+    const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
     size_t state = 0;
 
     if (emit[state]) {
@@ -224,7 +224,7 @@ void CMultipatternSearch::Search(const char* input, const size_t* states, const 
 
 void CMultipatternSearch::Search(const char* input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, VoidCall2 report)
 {
-    const unsigned char* p = (const unsigned char*)input;
+    const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
     size_t state = 0;
 
     if (emit[state]) {
@@ -249,7 +249,7 @@ void CMultipatternSearch::Search(const char* input, const size_t* states, const 
 
 void CMultipatternSearch::Search(const char* input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, BoolCall1 report)
 {
-    const unsigned char* p = (const unsigned char*)input;
+    const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
     size_t state = 0;
 
     if (emit[state]) {
@@ -278,7 +278,7 @@ void CMultipatternSearch::Search(const char* input, const size_t* states, const 
 
 void CMultipatternSearch::Search(const char* input, const size_t* states, const bool* emit, const map<size_t, vector<size_t>>& hits, BoolCall2 report)
 {
-    const unsigned char* p = (const unsigned char*)input;
+    const unsigned char* p = reinterpret_cast<const unsigned char*>(input);
     size_t state = 0;
 
     if (emit[state]) {
