@@ -57,7 +57,7 @@
 #  include <io.h>
 #elif defined (NCBI_OS_DARWIN)
 #  include <crt_externs.h>
-#  define environ(*_NSGetEnviron())
+#  define environ (*_NSGetEnviron())
 #endif
 
 #if defined(NCBI_OS_UNIX)
