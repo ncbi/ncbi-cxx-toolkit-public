@@ -692,8 +692,14 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
     SRequestParameter   seq_id_param = x_GetParam(req, "seq_id");
     if (!seq_id_param.m_Found) {
         err_msg = "Missing the 'seq_id' parameter";
-
         m_ErrorCounters.IncInsufficientArguments();
+    }
+    else if (seq_id_param.m_Value.empty()) {
+        err_msg = "Missing value of the 'seq_id' parameter";
+        m_ErrorCounters.IncMalformedArguments();
+    }
+
+    if (!err_msg.empty()) {
         if (use_psg_protocol)
             x_SendMessageAndCompletionChunks(resp, err_msg,
                                              CRequestStatus::e400_BadRequest,
