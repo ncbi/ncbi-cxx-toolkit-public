@@ -52,6 +52,8 @@
 
 #include <set>
 #include <map>
+#include <initializer_list>
+#include <functional>
 
 /** @addtogroup Miscellaneous
  *
@@ -79,9 +81,24 @@ class CPCRReactionSet;
 /// for allowing them to contain bracketed modifiers of the form [key=value],
 /// as documented at https://www.ncbi.nlm.nih.gov/Sequin/modifiers.html .
 
-template<class _T>
-class CAutoInitDesc;
 class CAutoAddDBLink;
+
+
+template<typename TMapIterator>
+struct SMapIteratorAdaptor : TMapIterator
+{
+    using value_type = const typename TMapIterator::value_type::second_type;
+    typedef value_type* pointer;
+    typedef value_type& reference;
+
+    SMapIteratorAdaptor() = default;
+    SMapIteratorAdaptor(TMapIterator it) 
+       : TMapIterator(it) {}
+
+   reference operator* () const { return TMapIterator::operator* ().second; }
+   pointer operator->() const { return &TMapIterator::operator->()->second; } 
+};
+
 
 class NCBI_XOBJREAD_EXPORT CSourceModParser
 {
@@ -116,7 +133,15 @@ public:
     string ParseTitle(const CTempString& title, CConstRef<CSeq_id> seqid,
         size_t iMaxModsToParse = std::numeric_limits<size_t>::max() );
 
-    void AddMods(const CTempString& name, const CTempString& value);
+    using TGroupId = unsigned int;
+
+    void AddMods(const CTempString& name, const CTempString& value, TGroupId group_id=0);
+
+    void AddMod(const pair<CTempString, CTempString>& mod, TGroupId group_id=0);
+
+    void AddMod(const pair<string, string>& mod, TGroupId group_id=0);
+
+    void AddMods(const initializer_list<pair<string, string>>& mods, TGroupId group_id=0);
 
     /// Apply previously extracted modifiers to the given object, marking all
     /// relevant ones as used.
@@ -148,6 +173,7 @@ public:
     // more efficient than CompareKeys when you're just looking for equality.
     static bool EqualKeys(const CTempString& lhs, const CTempString& rhs);
 
+
     struct SMod {
 
         CConstRef<CSeq_id> seqid;
@@ -155,11 +181,18 @@ public:
         string value;
         size_t pos = 0;
         bool   used = false;
+        TGroupId group_id = 0;
 
         SMod(void) = default;
         // This is usually used for making SMods as keys for searching maps
         // and such.
         explicit SMod(const CTempString & the_key) : key(the_key) { }
+
+        explicit SMod(const CTempString& _k, const CTempString& _v) :
+            key(_k), value(_v) {}
+
+        explicit SMod(const CTempString& _k, const CTempString& _v, TGroupId _g) :
+            key(_k), value(_v), group_id(_g) {}
 
         bool operator < (const SMod& rhs) const;
         string ToString(void) const;
@@ -167,6 +200,14 @@ public:
     typedef set<SMod>              TMods;
     typedef TMods::const_iterator  TModsCI;
     typedef pair<TModsCI, TModsCI> TModsRange;
+
+
+   // using TModNameMap = multimap<string, const SMod>;
+    using TModGroupMap = multimap<TGroupId, reference_wrapper<const SMod>>; 
+    using TModNameMap = map<string, const SMod, PKeyCompare>;
+    using TIterator = SMapIteratorAdaptor<TModNameMap::const_iterator>;
+    using TRange = pair<TIterator, TIterator>;
+ //   using TModGroupMap = map<TGroupId, reference_wrapper<const SMod>>; 
 
     enum EWhichMods {
         fUsedMods   = 0x1,
@@ -224,6 +265,8 @@ public:
 
     const SMod* FindMod(const CTempString& key, const CTempString& alt_key = CTempString());
 
+    const SMod* FindMod(const initializer_list<CTempString> /*names*/) { return nullptr; }
+
     /// Return all modifiers with the given key (e.g., db_xref), marking them
     /// as used along the way.
     TModsRange FindAllMods(const CTempString& key, const CTempString& alt_key);
@@ -266,6 +309,8 @@ public:
     static const string & GetModAllowedValuesAsOneString(const string &mod);
 
 private:
+    TRange x_FindAllMods(const CTempString& key);
+
     static const unsigned char kKeyCanonicalizationTable[257];
 
     EHandleBadMod m_HandleBadMod;
@@ -274,20 +319,33 @@ private:
 
     TMods m_Mods;
     TMods m_BadMods;
+    TModNameMap m_ModNameMap;
+    TModGroupMap m_ModGroupMap;
 
     CRef<CModFilter> m_pModFilter;
 
-    void x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc, CTempString organism);
-    void x_ApplyMods(CAutoInitDesc<CMolInfo>& mi);
+    void x_AddFeatures(const CSeq_loc& location, CBioseq& bioseq);
+    void x_ApplyOrgRefMods(CAutoInitRef<COrg_ref>& org_ref);
+    void x_ApplyMods(CAutoInitRef<CBioSource>& biosource, CTempString organism);
+    void x_ApplyMods(CAutoInitRef<CMolInfo>& mol_info);
     void x_ApplyMods(CAutoInitRef<CGene_ref>& gene);
     void x_ApplyMods(CAutoInitRef<CProt_ref>& prot);
-    void x_ApplyMods(CAutoInitDesc<CGB_block>& gbb);
+    void x_ApplyMods(CAutoInitRef<CGB_block>& gb_block);
     void x_ApplyMods(CAutoInitRef<CSeq_hist>& hist);
-    // void x_ApplyMods(CAutoInitRef<CSubmit_block>& sb);
     void x_ApplyTPAMods(CAutoInitRef<CUser_object>& tpa);
     void x_ApplySRAMods(CAutoAddDBLink& sra);
     void x_ApplyGenomeProjectsDBMods(CAutoInitRef<CUser_object>& gpdb);
+
+    void x_ApplySeqInstMods(CSeq_inst& seq_inst);
+    void x_AddTopology(CSeq_inst& seq_inst);
+    void x_AddMolType(CSeq_inst& seq_inst);
+    void x_AddStrand(CSeq_inst& seq_inst);
+
+    void x_AddDescriptors(CBioseq& bioseq);
+    void x_AddDbXrefs(CAutoInitRef<COrg_ref>& org_ref);
+    void x_AddNotes(CAutoInitRef<CBioSource>& biosource);
     void x_AddPCRPrimers(CAutoInitRef<CPCRReactionSet>& pcr_reaction_set);
+    void x_GetSubtype(CBioSource::TSubtype& subtype);
 
     // sAllowedValues, enum_values, etc. are combined to produce the final list of
     // allowed values.
@@ -329,9 +387,7 @@ void CSourceModParser::ApplyMods(CSeq_hist& hist)
     x_ApplyMods(ref);
 }
 
-
 // inline void CSourceModParser::ApplyMods(CSubmit_block& sb) { ... };
-
 
 inline
 void CSourceModParser::ApplyTPAMods(CUser_object& tpa)
@@ -369,6 +425,7 @@ int CSourceModParser::CompareKeys(const CTempString& lhs,
         return 1;
     }
 }
+
 
 inline
 bool CSourceModParser::EqualKeys(const CTempString& lhs,
