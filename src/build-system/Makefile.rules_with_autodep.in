@@ -104,9 +104,9 @@ else
 	$(make_cpp_dep)
   $(CPP_DEP_THERE): %.d: $(srcdir)/%.cpp $(OBJ_DIRS)
 	$(make_cpp_dep)
-  $(CPP_DEP_HERE): %.d: $(HERE)%.cc
+  $(CC_DEP_HERE): %.d: $(HERE)%.cc
 	$(make_cpp_dep)
-  $(CPP_DEP_THERE): %.d: $(srcdir)/%.cc $(OBJ_DIRS)
+  $(CC_DEP_THERE): %.d: $(srcdir)/%.cc $(OBJ_DIRS)
 	$(make_cpp_dep)
   $(C_DEP_HERE): %.d: $(HERE)%.c
 	$(make_c_dep)
