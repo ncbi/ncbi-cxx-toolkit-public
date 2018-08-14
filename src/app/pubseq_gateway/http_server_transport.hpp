@@ -695,11 +695,17 @@ public:
     void RegisterPending(P &&  pending_rec, CHttpReply<P> &  hresp)
     {
         if (m_Pending.size() < m_HttpMaxPending) {
-            CHttpReply<P>& req = RegisterPending(hresp, m_Pending);
+            auto req_it = RegisterPending(hresp, m_Pending);
+            CHttpReply<P>& req = *req_it;
             req.AssignPendingRec(std::move(pending_rec));
             req.PostponedStart();
+            if (req.GetState() >= CHttpReply<P>::eReplyFinished) {
+                ERR_POST(Info << "Pospone self-drained");
+                UnregisterPending(req_it);
+            }
         } else if (m_Backlog.size() < m_HttpMaxBacklog) {
-            CHttpReply<P>& req = RegisterPending(hresp, m_Backlog);
+            auto req_it = RegisterPending(hresp, m_Backlog);
+            CHttpReply<P>& req = *req_it;
             req.AssignPendingRec(std::move(pending_rec));
         } else {
             hresp.Send503("Malfunction", "Too many pending requests");
@@ -731,6 +737,7 @@ private:
     std::list<CHttpReply<P>>    m_Pending;
     std::list<CHttpReply<P>>    m_Finished;
 
+    using reply_list_iterator_t = typename std::list<CHttpReply<P>>::iterator;
     void CancelAll(void)
     {
         while (!m_Pending.empty()) {
@@ -746,13 +753,13 @@ private:
         }
     }
 
-    void UnregisterPending(typename std::list<CHttpReply<P>>::iterator &  it)
+    void UnregisterPending(reply_list_iterator_t &  it)
     {
         it->Clear();
         m_Finished.splice(m_Finished.cend(), m_Pending, it);
     }
 
-    CHttpReply<P> &  RegisterPending(CHttpReply<P> &  hresp,
+    reply_list_iterator_t RegisterPending(CHttpReply<P> &  hresp,
                                      std::list<CHttpReply<P>> &  list)
     {
         if (m_Finished.size() > 0) {
@@ -761,7 +768,9 @@ private:
         } else {
             list.emplace_back(hresp);
         }
-        return list.back();
+        auto it = list.end();
+        --it;
+        return it;
     }
 
     void MaintainFinished(void)
