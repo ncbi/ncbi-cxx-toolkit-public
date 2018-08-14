@@ -2581,7 +2581,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                             CSeq_id::ParseIDs(ids, val, 
                                     CSeq_id::fParse_ValidLocal 
                                     | CSeq_id::fParse_PartialOK);
-                            for (auto id : ids) {
+                            for (const auto& id : ids) {
                                 auto id_string = id->GetSeqIdString(true);
                                 auto res = m_ProcessedTranscriptIds.insert(id_string);
                                 if (res.second == false) { // Insertion failed because Seq-id already encountered
@@ -2612,8 +2612,7 @@ bool CFeatureTableReader_Imp::x_AddQualifierToFeature (
                             | CSeq_id::fParse_PartialOK);
                     if (ids.size()>0) {
                         if (typ == CSeqFeatData::e_Cdregion) {
-
-                            for (auto id : ids) {
+                            for (const auto& id : ids) {
                                 auto id_string = id->GetSeqIdString(true);
                                 auto res = m_ProcessedProteinIds.insert(id_string);
                                 if (res.second == false) { // Insertion failed because Seq-id already encountered
