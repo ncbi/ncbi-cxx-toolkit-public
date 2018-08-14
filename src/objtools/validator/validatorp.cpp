@@ -1835,9 +1835,10 @@ void CValidError_imp::x_CheckPackedInt
     ITERATE(CPacked_seqint::Tdata, it, packed_int.Get()) {
         lc.int_cur = (*it);
         lc.chk &= x_CheckSeqInt(lc.id_cur, lc.int_cur, lc.strand_cur, obj);
+        
+        x_CheckForStrandChange(lc);
 
         lc.id_prv = lc.id_cur;
-        x_CheckForStrandChange(lc);
         lc.strand_prv = lc.strand_cur;
         lc.int_prv = lc.int_cur;
     }
@@ -3263,42 +3264,42 @@ const string kStructuredVoucher = "Structured Voucher";
 void CValidError_imp::x_DoBarcodeTests(CSeq_entry_Handle seh)
 {
     TBarcodeResults results = GetBarcodeValues(seh);
-    ITERATE(TBarcodeResults, r, results) {
-        const CBioseq& sq = *(r->bsh.GetCompleteBioseq());
-        if (BarcodeTestFails(*r)){
+    for (auto r : results) {
+        const CBioseq& sq = *(r.bsh.GetCompleteBioseq());
+        if (BarcodeTestFails(r)){
             string msg = kEmptyStr;
-            if (r->length) {
+            if (r.length) {
                 ADD_BARCODE_ERR(TooShort)
             }
-            if (r->primers) {
+            if (r.primers) {
                 ADD_BARCODE_ERR(MissingPrimers)
             }
-            if (r->country) {
+            if (r.country) {
                 ADD_BARCODE_ERR(MissingCountry)
             }
-            if (r->voucher) {
+            if (r.voucher) {
                 ADD_BARCODE_ERR(MissingVoucher)
             }
-            if (!r->percent_n.empty()) {
-                PostErr(eDiag_Warning, eErr_GENERIC_BarcodeTooManyNs, kTooManyNs + ":" + r->percent_n, sq);
+            if (!r.percent_n.empty()) {
+                PostErr(eDiag_Warning, eErr_GENERIC_BarcodeTooManyNs, kTooManyNs + ":" + r.percent_n, sq);
                 if (!msg.empty()) {
                     msg += ",";
                 }
-                msg += kTooManyNs + ":" + r->percent_n;
+                msg += kTooManyNs + ":" + r.percent_n;
             }
-            if (r->collection_date) {
+            if (r.collection_date) {
                 ADD_BARCODE_ERR(BadCollectionDate)
             }
-            if (r->order_assignment) {
+            if (r.order_assignment) {
                 ADD_BARCODE_ERR(MissingOrderAssignment)
             }
-            if (r->low_trace) {
+            if (r.low_trace) {
                 ADD_BARCODE_ERR(LowTrace)
             }
-            if (r->frame_shift) {
+            if (r.frame_shift) {
                 ADD_BARCODE_ERR(FrameShift)
             }
-            if (!r->structured_voucher) {
+            if (!r.structured_voucher) {
                 ADD_BARCODE_ERR(StructuredVoucher)
             }
             PostErr(eDiag_Info, eErr_GENERIC_BarcodeTestFails, "FAIL (" + msg + ")", sq);
