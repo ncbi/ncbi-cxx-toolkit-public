@@ -819,21 +819,30 @@ CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
                         bioseq_info.m_SeqIdType != -1,
                         bioseq_info);
         if (status == CRequestStatus::e404_NotFound) {
-            msg = "No bioseq info found for seq_id '" +
-                  m_BlobRequest.m_SeqId + "'";
+            string      seq_id = m_BlobRequest.m_SeqId;
+            if (m_IsResolveRequest)
+                seq_id = m_ResolveRequest.m_SeqId;
+            msg = "No bioseq info found for seq_id '" + seq_id + "'";
             status = CRequestStatus::e500_InternalServerError;
         } else if (status == CRequestStatus::e300_MultipleChoices) {
-            msg = "More than one bioseq info found for seq_id '" +
-                  m_BlobRequest.m_SeqId + "'";
+            string      seq_id = m_BlobRequest.m_SeqId;
+            if (m_IsResolveRequest)
+                seq_id = m_ResolveRequest.m_SeqId;
+            msg = "More than one bioseq info found for seq_id '" + seq_id + "'";
             status = CRequestStatus::e500_InternalServerError;
         }
     } catch (const exception &  exc) {
-        msg = "Error retrieving bioseq info for seq_id '" +
-              m_BlobRequest.m_SeqId + ": " + string(exc.what());
+        string      seq_id = m_BlobRequest.m_SeqId;
+        if (m_IsResolveRequest)
+            seq_id = m_ResolveRequest.m_SeqId;
+        msg = "Error retrieving bioseq info for seq_id '" + seq_id +
+              "': " + string(exc.what());
         status = CRequestStatus::e500_InternalServerError;
     } catch (...) {
-        msg = "Unknown error retrieving bioseq info for seq_id '" +
-              m_BlobRequest.m_SeqId;
+        string      seq_id = m_BlobRequest.m_SeqId;
+        if (m_IsResolveRequest)
+            seq_id = m_ResolveRequest.m_SeqId;
+        msg = "Unknown error retrieving bioseq info for seq_id '" + seq_id + "'";
         status = CRequestStatus::e500_InternalServerError;
     }
 
