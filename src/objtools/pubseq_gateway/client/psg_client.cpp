@@ -326,6 +326,47 @@ CPSG_Queue::SImpl::SImpl(const string& service) :
     }
 }
 
+string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Biodata* request_biodata)
+{
+    ostringstream os;
+    const auto& bio_id = request_biodata->GetBioId();
+
+    os << "seq_id=" << bio_id.Get();
+
+    if (const auto type = bio_id.GetType()) os << "&seq_id_type=" << type;
+
+    const auto include_data = request_biodata->GetIncludeData();
+
+    if (include_data & CPSG_Request_Biodata::fNoTSE)        os << "&no_tse=yes";
+    if (include_data & CPSG_Request_Biodata::fFastInfo)     os << "&fast_info=yes";
+    if (include_data & CPSG_Request_Biodata::fWholeTSE)     os << "&whole_tse=yes";
+    if (include_data & CPSG_Request_Biodata::fOrigTSE)      os << "&orig_tse=yes";
+    if (include_data & CPSG_Request_Biodata::fCanonicalId)  os << "&canon_id=yes";
+    if (include_data & CPSG_Request_Biodata::fOtherIds)     os << "&seq_ids=yes";
+    if (include_data & CPSG_Request_Biodata::fMoleculeType) os << "&mol_type=yes";
+    if (include_data & CPSG_Request_Biodata::fLength)       os << "&length=yes";
+    if (include_data & CPSG_Request_Biodata::fState)        os << "&state=yes";
+    if (include_data & CPSG_Request_Biodata::fBlobId)       os << "&blob_id=yes";
+    if (include_data & CPSG_Request_Biodata::fTaxId)        os << "&tax_id=yes";
+    if (include_data & CPSG_Request_Biodata::fHash)         os << "&hash=yes";
+    if (include_data & CPSG_Request_Biodata::fDateChanged)  os << "&date_changed=yes";
+
+    return os.str();
+}
+
+string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Blob* request_blob)
+{
+    ostringstream os;
+
+    os << "blob_id=" << request_blob->GetBlobId().Get();
+
+    const auto& last_modified = request_blob->GetLastModified();
+
+    if (!last_modified.empty()) os << "&last_modified=" << last_modified;
+
+    return os.str();
+}
+
 bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request, CDeadline deadline)
 {
     long wait_ms = 0;
@@ -333,15 +374,11 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request,
     auto reply = make_shared<SPSG_Reply::TTS>();
 
     if (auto request_biodata = dynamic_cast<const CPSG_Request_Biodata*>(user_request.get())) {
-        string query("seq_id=" + request_biodata->GetBioId().Get());
-
-        // XXX: DEBUG
-        query.append("&seq_id_type=12&fast_info=yes&whole_tse=yes&orig_tse=yes&canon_id=yes&seq_ids=yes&mol_type=yes&length=yes&state=yes&blob_id=yes&tax_id=yes&hash=yes");
-
+        string query(GetQuery(request_biodata));
         http_request = make_shared<TPSG_RequestValue>(reply, SHCT::GetEndPoint(m_Service), m_Requests, "/ID/get", query);
 
     } else if (auto request_blob = dynamic_cast<const CPSG_Request_Blob*>(user_request.get())) {
-        string query("blob_id=" + request_blob->GetBlobId().Get());
+        string query(GetQuery(request_blob));
         http_request = make_shared<TPSG_RequestValue>(reply, SHCT::GetEndPoint(m_Service), m_Requests, "/ID/getblob", query);
 
     } else {

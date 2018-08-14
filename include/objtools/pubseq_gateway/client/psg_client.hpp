@@ -73,14 +73,18 @@ private:
 class CPSG_BioId
 {
 public:
+    using TType = objects::CSeq_id::E_Choice;
+
     /// @param id
     ///  Bio ID (like accession)
-    CPSG_BioId(string id) : m_Id(move(id)) {}
+    CPSG_BioId(string id, TType type = {}) : m_Id(move(id)), m_Type(type) {}
 
-    const string& Get() const { return m_Id; }
+    const string& Get()     const { return m_Id; }
+    TType         GetType() const { return m_Type; }
 
 private:
     string m_Id;
+    TType  m_Type;
 };
 
 
@@ -133,10 +137,13 @@ public:
         fState            = (1 <<  8),
         fBlobId           = (1 <<  9),
         fTaxId            = (1 << 10),
-        fHash             = (1 << 11)
+        fHash             = (1 << 11),
+        fDateChanged      = (1 << 12)
     };
     typedef int TIncludeData;   // Bit-set of EIncludeData flags
     void IncludeData(TIncludeData include);
+
+    TIncludeData      GetIncludeData() const { return m_IncludeData; }
 
 private:
     CPSG_BioId    m_BioId;
@@ -200,15 +207,19 @@ class CPSG_Request_Blob : public CPSG_Request
 public:
     /// 
     CPSG_Request_Blob(CPSG_BlobId     blob_id,
+                      string          last_modified = {},
                       weak_ptr<void>  user_context = {})
         : CPSG_Request(user_context),
-          m_BlobId(blob_id)
+          m_BlobId(blob_id),
+          m_LastModified(last_modified)
     {}
 
-    const CPSG_BlobId& GetBlobId() const { return m_BlobId; }
+    const CPSG_BlobId& GetBlobId()       const { return m_BlobId; }
+    const string&      GetLastModified() const { return m_LastModified; }
 
 private:
     CPSG_BlobId m_BlobId;
+    string      m_LastModified;
 };
 
 

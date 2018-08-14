@@ -258,9 +258,9 @@ private:
     void StateArgs(const char*& data, size_t& len);
     void StateData(const char*& data, size_t& len);
 
-    void SetStatePrefix() { Add();  m_State = &SPSG_Receiver::StatePrefix; m_Buffer.prefix_index = 0;   }
-    void SetStateArgs()           { m_State = &SPSG_Receiver::StateArgs;   m_Buffer.args.clear();       }
-    void SetStateData(size_t dtr) { m_State = &SPSG_Receiver::StateData;   m_Buffer.chunk.data.clear(); m_Buffer.data_to_read = dtr; }
+    void SetStatePrefix()  { Add(); m_State = &SPSG_Receiver::StatePrefix; }
+    void SetStateArgs()           { m_State = &SPSG_Receiver::StateArgs;   }
+    void SetStateData(size_t dtr) { m_State = &SPSG_Receiver::StateData;   m_Buffer.data_to_read = dtr; }
 
     void Add();
 

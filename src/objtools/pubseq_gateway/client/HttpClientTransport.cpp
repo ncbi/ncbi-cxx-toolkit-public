@@ -308,6 +308,8 @@ void SPSG_Receiver::Add()
     // Item must be unlocked before notifying
     item_locked.Unlock();
     item_ts->NotifyOne();
+
+    m_Buffer = SBuffer();
 }
 
 
