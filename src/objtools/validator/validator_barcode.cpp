@@ -507,11 +507,12 @@ TBarcodeResults GetBarcodeValues(CSeq_entry_Handle seh)
         SBarcode b;
         bool trace_present(false);
         BarcodeTestBioseq(*b_iter, b, trace_present);
-        if (!trace_present)
-        {
-            trace_lookup[b.genbank] = pair<SBarcode, int>(b, 0);
-        } else if (BarcodeTestFails(b)) {
-            BarcodeFailures.push_back(b);
+        if (b.bsh) {
+            if (!trace_present) {
+                trace_lookup[b.genbank] = pair<SBarcode, int>(b, 0);
+            } else if (BarcodeTestFails(b)) {
+                BarcodeFailures.push_back(b);
+            }
         }
     }
     RunLowTraceScript(trace_lookup, BarcodeFailures);
