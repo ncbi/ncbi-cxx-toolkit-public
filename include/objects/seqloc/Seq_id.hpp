@@ -112,6 +112,10 @@ public:
     };
     using TErrorFlags = int;
 
+    /// Tag for method variants that would otherwise be ambiguous.
+    enum EFastaAsTypeAndContent {
+        eFasta_AsTypeAndContent
+    };
 
     ///
     /// See also CSeq_id related functions in "util/sequence.hpp":
@@ -171,6 +175,15 @@ public:
             int                version    = 0,
             const CTempString& release_in = kEmptyStr);
 
+    /// Construct a Seq-id from a FASTA string with the leading (type)
+    /// component already parsed out.
+    /// @param the_type
+    ///   Type of Seq_id to construct
+    /// @param the_content
+    ///   FASTA-style content, with embedded vertical bars as appropriate.
+    CSeq_id(EFastaAsTypeAndContent, E_Choice the_type,
+            const CTempString& the_content);
+
     /// Reassign based on flat specifications; arguments interpreted
     /// as with constructors.  (Returns a reference to self.)
 
@@ -186,6 +199,9 @@ public:
                  const CTempString& name_in    = kEmptyStr,
                  int                version    = 0,
                  const CTempString& release_in = kEmptyStr);
+
+    CSeq_id& Set(EFastaAsTypeAndContent, E_Choice the_type,
+                 const CTempString& the_content);
 
     /// Destructor
     virtual ~CSeq_id(void);
@@ -621,7 +637,7 @@ public:
 
 private:
     // returns next type if determined along the way
-    E_Choice x_Init(list<CTempString>& fasta_pieces, E_Choice type);
+    E_Choice x_Init(list<CTempString>& fasta_pieces, int type);
 
     // Prohibit copy constructor & assignment operator
     CSeq_id(const CSeq_id&);

@@ -1925,6 +1925,14 @@ CSeq_id& CSeq_id::Set(const CDbtag& dbtag, bool set_as_general)
     return *this;
 }
 
+inline
+static void s_AdjustType(int* type, const CTempString& str)
+{
+    if ((*type == CSeq_id::e_Swissprot  &&  NStr::EqualNocase(str, "tr"))
+        ||  (*type == CSeq_id::e_Patent  &&  NStr::EqualNocase(str, "pgp"))) {
+        *type = -*type;
+    }
+}
 
 //SeqIdFastAConstructors
 CSeq_id::CSeq_id(const CTempString& the_id, TParseFlags flags)
@@ -1987,9 +1995,12 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
         }
         }
     } else {
+        int type2 = type;
         list<CTempString> fasta_pieces;
         NStr::Split(the_id, "|", fasta_pieces);
-        x_Init(fasta_pieces, type);
+        s_AdjustType(&type2, fasta_pieces.front());
+        fasta_pieces.pop_front();
+        x_Init(fasta_pieces, type2);
         if ( !fasta_pieces.empty() ) {
             // tolerate trailing parts if they're all empty.
             ITERATE(list<CTempString>, it, fasta_pieces) {
@@ -2008,6 +2019,21 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
         }
         return *this;
     }
+}
+
+
+CSeq_id::CSeq_id(EFastaAsTypeAndContent f, E_Choice the_type,
+                 const CTempString& the_content)
+{
+    Set(f, the_type, the_content);
+}
+
+CSeq_id& CSeq_id::Set(EFastaAsTypeAndContent f, E_Choice the_type,
+                      const CTempString& the_content)
+{
+    list<CTempString> fasta_pieces;
+    NStr::Split(the_content, "|", fasta_pieces);
+    x_Init(fasta_pieces, the_type);
 }
 
 
@@ -2075,17 +2101,34 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
     }
     else
     {
-        E_Choice type = WhichInverseSeqId(fasta_pieces.front());       
-        if (type == e_not_set)
-        {
+        int type = WhichInverseSeqId(fasta_pieces.front());       
+        if (type == e_not_set) {
             // unknown database are reported as 'general'
-            fasta_pieces.push_front("gnl");
             type = e_General;
+        } else {
+            s_AdjustType(&type, fasta_pieces.front());
+            fasta_pieces.pop_front();
         }
         while ( !fasta_pieces.empty() ) {
             try {
                 CRef<CSeq_id> id(new CSeq_id);
-                type = id->x_Init(fasta_pieces, type);
+                if (type != e_not_set) {
+                    type = id->x_Init(fasta_pieces, type);
+                }
+                if (type == e_not_set  &&  !fasta_pieces.empty() ) {
+                    type = WhichInverseSeqId(fasta_pieces.front());
+                    if (type == e_not_set) {
+                        CTempString typestr = fasta_pieces.front();
+                        fasta_pieces.pop_front();
+                        NCBI_THROW(CSeqIdException, eFormat,
+                                   "Unsupported ID type " + typestr);
+                    }
+                }
+                if (type != e_not_set) {
+                    _ASSERT( !fasta_pieces.empty() );
+                    s_AdjustType(&type, fasta_pieces.front());
+                    fasta_pieces.pop_front();
+                }
                 ids.push_back(id);
                 ++count;
             } catch (std::exception& e) {
@@ -2102,27 +2145,14 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
 
 
 CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
-                                  E_Choice type)
+                                  int type_in)
 {
     _ASSERT(!fasta_pieces.empty());
-    CTempString typestr = fasta_pieces.front();
-    fasta_pieces.pop_front();
-    if (type == e_not_set) {
-        NStr::TruncateSpacesInPlace(typestr, NStr::eTrunc_Both);
-        type = WhichInverseSeqId(typestr);
-    } else {
-        _ASSERT(NStr::EqualNocase(typestr, s_TextId[type])
-                ||  (type == e_Patent && NStr::EqualNocase(typestr, "pgp"))
-                ||  (type == e_Swissprot && NStr::EqualNocase(typestr, "tr")));
-    }
-    if (type == e_not_set  ||  typestr.size() > 3) {
-        NCBI_THROW(CSeqIdException, eFormat,
-                   "Unsupported ID type " + string(typestr));
-    }
+    _ASSERT(type_in != e_not_set);
 
     vector<CTempString> fields(3);
     SIZE_TYPE   min_fields, max_fields;
-    E_Choice    next_type = e_not_set;
+    E_Choice    type = (E_Choice) abs(type_in), next_type = e_not_set;
     switch (type) {
     case e_Local:
     case e_Gibbsq:
@@ -2156,7 +2186,7 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
             } else {
                 NCBI_THROW(CSeqIdException, eFormat,
                            "Not enough fields for ID of type "
-                           + string(typestr));
+                           + string(s_TextId[type]));
             }
         } else {
             if (i >= min_fields  &&  fasta_pieces.size() > 1
@@ -2201,10 +2231,9 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
     int ver = 0;
     switch (type) {
     case e_Swissprot:
-        if (NStr::EqualNocase(typestr, "tr")) {
+        if (type_in != type) {
             fields[2] = "unreviewed";
         } else {
-            _ASSERT(NStr::EqualNocase(typestr, "sp"));
             fields[2] = "reviewed";
         }
         break;
@@ -2219,7 +2248,7 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
         }
         // to distinguish applications from granted patents; the numeric
         // content has already made its way into ver.
-        fields[2] = typestr;
+        fields[2] = type_in == type ? "pat" : "pgp";
         break;
 
     case e_Pdb:
