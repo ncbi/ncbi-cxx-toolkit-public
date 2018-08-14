@@ -52,17 +52,18 @@
 #include <thread>
 #include <unordered_set>
 
+#if defined(NCBI_OS_UNIX)
+#  include <unistd.h>
+#  include <sys/utsname.h>
+#endif
 
 #if defined(NCBI_OS_MSWIN)
 #  include <io.h>
 #elif defined (NCBI_OS_DARWIN)
 #  include <crt_externs.h>
 #  define environ (*_NSGetEnviron())
-#endif
-
-#if defined(NCBI_OS_UNIX)
-#  include <unistd.h>
-#  include <sys/utsname.h>
+#else
+extern char** environ;
 #endif
 
 
@@ -7644,6 +7645,7 @@ const CNcbiDiag& CNcbiDiag::x_Put(const CException& ex) const
     }
     for (; !pile.empty(); pile.pop()) {
         pex = pile.top();
+        if (pex == main_pex) continue;
         string text(s_GetExceptionText(pex));
         const CStackTrace* stacktrace = pex->GetStackTrace();
         if ( stacktrace ) {
