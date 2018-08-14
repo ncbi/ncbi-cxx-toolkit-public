@@ -32,6 +32,7 @@
 #include <corelib/test_boost.hpp>
 
 #include <thread>
+#include <random>
 
 #include "../psg_client_impl.hpp"
 
