@@ -237,7 +237,7 @@ private:
     void x_Peek(HST::CHttpReply<CPendingOperation>& resp, bool  need_wait,
                 unique_ptr<SBlobFetchDetails> &  fetch_details);
 
-    CRequestStatus::ECode x_CSICacheOrDB(const string &  sec_seq_id,
+    CRequestStatus::ECode x_CSICacheOrDB(const CTempString &  sec_seq_id,
                                          int  sec_seq_id_type,
                                          bool  sec_seq_id_type_provided,
                                          string &  csi_cache_data,

@@ -67,6 +67,10 @@ const bool              kDefaultLog = true;
 static const string     kNodaemonArgName = "nodaemon";
 
 
+static string  kSeqIdParam = "seq_id";
+static string  kSeqIdTypeParam = "seq_id_type";
+
+
 CPubseqGatewayApp *     CPubseqGatewayApp::sm_PubseqApp = nullptr;
 
 
@@ -498,20 +502,20 @@ CPubseqGatewayApp::SRequestParameter
 CPubseqGatewayApp::x_GetParam(HST::CHttpRequest &  req,
                               const string &  name) const
 {
+    SRequestParameter       param;
     const char *            value;
     size_t                  value_size;
-    SRequestParameter       param;
 
     param.m_Found = req.GetParam(name.data(), name.size(),
                                  true, &value, &value_size);
     if (param.m_Found)
-        param.m_Value = string(value, value_size);
+        param.m_Value.assign(value, value_size);
     return param;
 }
 
 
 bool CPubseqGatewayApp::x_IsBoolParamValid(const string &  param_name,
-                                           const string &  param_value,
+                                           const CTempString &  param_value,
                                            string &  err_msg) const
 {
     static string   yes = "yes";
@@ -528,7 +532,7 @@ bool CPubseqGatewayApp::x_IsBoolParamValid(const string &  param_name,
 
 EOutputFormat
 CPubseqGatewayApp::x_GetOutputFormat(const string &  param_name,
-                                     const string &  param_value,
+                                     const CTempString &  param_value,
                                      string &  err_msg) const
 {
     static string   protobuf = "protobuf";
@@ -552,7 +556,7 @@ CPubseqGatewayApp::x_GetOutputFormat(const string &  param_name,
 
 
 bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
-                                              const string &  param_value,
+                                              const CTempString &  param_value,
                                               int &  converted,
                                               string &  err_msg) const
 {
@@ -597,7 +601,7 @@ int CPubseqGatewayApp::x_PopulateSatToKeyspaceMap(void)
 
 
 bool CPubseqGatewayApp::x_IsResolutionParamValid(const string &  param_name,
-                                                 const string &  param_value,
+                                                 const CTempString &  param_value,
                                                  string &  err_msg) const
 {
     static string   fast = "fast";
@@ -681,7 +685,7 @@ void CPubseqGatewayApp::x_SendUnknownClientSatelliteError(
 bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
         HST::CHttpRequest &  req,
         HST::CHttpReply<CPendingOperation> &  resp,
-        string &  seq_id,
+        CTempString &  seq_id,
         int &  seq_id_type,
         SRequestParameter &  seq_id_type_param,
         bool  use_psg_protocol)
@@ -689,7 +693,7 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
     string  err_msg;
 
     // Check the mandatory parameter presence
-    SRequestParameter   seq_id_param = x_GetParam(req, "seq_id");
+    SRequestParameter   seq_id_param = x_GetParam(req, kSeqIdParam);
     if (!seq_id_param.m_Found) {
         err_msg = "Missing the 'seq_id' parameter";
         m_ErrorCounters.IncInsufficientArguments();
@@ -712,9 +716,9 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
     }
     seq_id = seq_id_param.m_Value;
 
-    seq_id_type_param = x_GetParam(req, "seq_id_type");
+    seq_id_type_param = x_GetParam(req, kSeqIdTypeParam);
     if (seq_id_type_param.m_Found) {
-        if (!x_ConvertIntParameter("seq_id_type", seq_id_type_param.m_Value,
+        if (!x_ConvertIntParameter(kSeqIdTypeParam, seq_id_type_param.m_Value,
                                    seq_id_type, err_msg)) {
             m_ErrorCounters.IncMalformedArguments();
             if (use_psg_protocol)

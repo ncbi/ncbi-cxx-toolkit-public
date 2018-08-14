@@ -93,10 +93,10 @@ CPendingOperation::CPendingOperation(const SResolveRequest &  resolve_request,
     m_RequestContext(request_context),
     m_NextItemId(0)
 {
-    ERR_POST(Trace << "CPendingOperation::CPendingOperation: resolution "
-             "request by seq_id/seq_id_type: " <<
-             m_ResolveRequest.m_SeqId << "." << m_ResolveRequest.m_SeqIdType <<
-             ", this: " << this);
+    _TRACE("CPendingOperation::CPendingOperation: resolution "
+           "request by seq_id/seq_id_type: " <<
+           m_ResolveRequest.m_SeqId << "." << m_ResolveRequest.m_SeqIdType <<
+           ", this: " << this);
 }
 
 
@@ -589,7 +589,7 @@ CRequestStatus::ECode
 CPendingOperation::x_ResolveToCanonicalSeqId(SBioseqInfo &  bioseq_info,
                                              string &  cache_data)
 {
-    string      seq_id = m_BlobRequest.m_SeqId;
+    CTempString seq_id = m_BlobRequest.m_SeqId;
     int         seq_id_type = m_BlobRequest.m_SeqIdType;
     bool        seq_id_type_provided = m_BlobRequest.m_SeqIdTypeProvided;
     if (m_IsResolveRequest) {
@@ -677,7 +677,7 @@ CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
     CRequestStatus::ECode   status = CRequestStatus::e200_Ok;
     string                  msg;
 
-    string      seq_id = m_BlobRequest.m_SeqId;
+    CTempString seq_id = m_BlobRequest.m_SeqId;
     int         seq_id_type = m_BlobRequest.m_SeqIdType;
     bool        seq_id_type_provided = m_BlobRequest.m_SeqIdTypeProvided;
     if (m_IsResolveRequest) {
@@ -983,7 +983,7 @@ void CPendingOperation::x_SendCSIAsBioseqInfo(string &  si2csi_cache_data,
 
 
 CRequestStatus::ECode
-CPendingOperation::x_CSICacheOrDB(const string &  sec_seq_id,
+CPendingOperation::x_CSICacheOrDB(const CTempString &  sec_seq_id,
                                   int  sec_seq_id_type,
                                   bool  sec_seq_id_type_provided,
                                   string &  csi_cache_data,

@@ -96,7 +96,7 @@ public:
 struct SResolveRequest
 {
 public:
-    SResolveRequest(const string &  seq_id,
+    SResolveRequest(const CTempString &  seq_id,
                     int  seq_id_type,
                     bool  seq_id_type_provided,
                     TServIncludeData  include_data_flags,
@@ -112,7 +112,7 @@ public:
     SResolveRequest() = default;
 
 public:
-    string                      m_SeqId;
+    CTempString                 m_SeqId;
     int                         m_SeqIdType;
     bool                        m_SeqIdTypeProvided;
     TServIncludeData            m_IncludeDataFlags;

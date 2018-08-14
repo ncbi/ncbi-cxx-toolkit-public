@@ -110,8 +110,8 @@ public:
 private:
     struct SRequestParameter
     {
-        bool        m_Found;
-        string      m_Value;
+        bool            m_Found;
+        CTempString     m_Value;
 
         SRequestParameter() : m_Found(false)
         {}
@@ -127,7 +127,7 @@ private:
     bool x_ProcessCommonGetAndResolveParams(
         HST::CHttpRequest &  req,
         HST::CHttpReply<CPendingOperation> &  resp,
-        string &  seq_id, int &  seq_id_type,
+        CTempString &  seq_id, int &  seq_id_type,
         SRequestParameter &  seq_id_type_param,
         bool  use_psg_protocol);
 
@@ -140,17 +140,17 @@ private:
     SRequestParameter  x_GetParam(HST::CHttpRequest &  req,
                                   const string &  name) const;
     bool x_IsBoolParamValid(const string &  param_name,
-                            const string &  param_value,
+                            const CTempString &  param_value,
                             string &  err_msg) const;
     bool x_ConvertIntParameter(const string &  param_name,
-                               const string &  param_value,
+                               const CTempString &  param_value,
                                int &  converted,
                                string &  err_msg) const;
     bool x_IsResolutionParamValid(const string &  param_name,
-                                  const string &  param_value,
+                                  const CTempString &  param_value,
                                   string &  err_msg) const;
     EOutputFormat x_GetOutputFormat(const string &  param_name,
-                                    const string &  param_value,
+                                    const CTempString &  param_value,
                                     string &  err_msg) const;
     int x_PopulateSatToKeyspaceMap(void);
 
