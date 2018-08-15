@@ -937,18 +937,7 @@ public:
     const CNcbiDiag& GetRef(void) const { return *this; }
 
     /// Generic method to post to diagnostic stream.
-    // Some compilers need to see the body right away, but others need
-    // to meet CDiagBuffer first.
-    template<class X> const CNcbiDiag& Put(const volatile void*, const X& x) const
-#ifdef NCBI_COMPILER_MSVC
-    {
-        m_Buffer.Put(*this, x);
-        return *this;
-    }
-#else
-      ;
-#  define NCBIDIAG_DEFER_GENERIC_PUT
-#endif
+    template<class X> const CNcbiDiag& Put(const volatile void*, const X& x) const;
 
     /// Diagnostic stream manipulator
     /// @sa Reset(), Endm()

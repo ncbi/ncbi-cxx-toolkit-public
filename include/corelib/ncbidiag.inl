@@ -252,7 +252,6 @@ inline const string& CDiagCompileInfo::GetFunction(void) const
 ///////////////////////////////////////////////////////
 //  CNcbiDiag::
 
-#ifdef NCBIDIAG_DEFER_GENERIC_PUT
 template<class X>
 inline
 const CNcbiDiag& CNcbiDiag::Put(const volatile void*, const X& x) const
@@ -260,7 +259,6 @@ const CNcbiDiag& CNcbiDiag::Put(const volatile void*, const X& x) const
     m_Buffer.Put(*this, x);
     return *this;
 }
-#endif
 
 
 inline const CNcbiDiag& CNcbiDiag::operator<< (FIosbaseManip manip) const
