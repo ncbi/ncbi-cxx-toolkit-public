@@ -589,7 +589,7 @@ CDiagCompileInfo::CDiagCompileInfo(const char* file,
     }
     if (!module)
         return;
-    if ( x_NeedModule() && 0 != strcmp(module, "NCBI_MODULE") ) {
+    if ( 0 != strcmp(module, "NCBI_MODULE") && x_NeedModule() ) {
         m_Module = module;
     }
 }
