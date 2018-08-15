@@ -44,6 +44,7 @@
 
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
+#include <connect/ncbi_http_session.hpp>
 
 // Objects includes
 #include <objects/general/Object_id.hpp>
@@ -98,6 +99,7 @@
 #ifdef HAVE_NCBI_VDB
 #  include <sra/data_loaders/wgs/wgsloader.hpp>
 #endif
+#include <misc/jsonwrapp/jsonwrapp.hpp>
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 
 
@@ -124,7 +126,9 @@ class CBiosampleHandler
 public:
     CBiosampleHandler() : 
         m_ReportStream(0),
-        m_UseDevServer(false)
+        m_UseDevServer(false),
+        m_Username(""),
+        m_Password("")
         {}
 
     virtual ~CBiosampleHandler() {}
@@ -138,6 +142,8 @@ public:
 protected:
     CNcbiOstream* m_ReportStream;
     bool m_UseDevServer;
+    string m_Username;
+    string m_Password;
 };
 
 
@@ -162,9 +168,9 @@ void CBiosampleStatusReport::ProcessBioseq(CBioseq_Handle bsh)
         return;
     }
 
-    ITERATE(vector<string>, it, ids) {
-        if (m_Status.find(*it) == m_Status.end()) {
-            biosample_util::TStatus new_pair(*it, biosample_util::eStatus_Unknown);
+    for (const auto &it : ids) {
+        if (m_Status.find(it) == m_Status.end()) {
+            biosample_util::TStatus new_pair(it, biosample_util::eStatus_Unknown);
             m_Status.insert(new_pair);
         }
     }
@@ -172,7 +178,7 @@ void CBiosampleStatusReport::ProcessBioseq(CBioseq_Handle bsh)
 
 void CBiosampleStatusReport::AddSummary()
 {
-    if (m_Status.size() == 0) {
+    if (m_Status.empty()) {
         *m_ReportStream << "No BioSample IDs found" << endl;
     } else {
         biosample_util::GetBiosampleStatus(m_Status, m_UseDevServer);
@@ -223,6 +229,7 @@ private:
     CRef<CSeq_entry> ReadSeqEntry(void);
     CRef<CBioseq_set> ReadBioseqSet(void);
 
+    void CreateBiosampleUpdateWebService(biosample_util::TBiosampleFieldDiffList& diffs);
     void PrintResults(biosample_util::TBiosampleFieldDiffList& diffs);
     void PrintDiffs(biosample_util::TBiosampleFieldDiffList& diffs);
     void PrintTable(CRef<CSeq_table> table);
@@ -252,8 +259,9 @@ private:
                                 // and biosample data
         e_generate_biosample,
         e_push,
-        e_take_from_biosample,        // update with qualifiers from BioSample, stop if conflict
+        e_take_from_biosample,         // update with qualifiers from BioSample, stop if conflict
         e_take_from_biosample_force,   // update with qualifiers from BioSample, no stop on conflict
+        e_update,                      // use web API for update
         e_report_status                // make table with list of BioSample IDs and statuses
     };
 
@@ -270,6 +278,8 @@ private:
     bool m_CompareStructuredComments;
     bool m_UseDevServer;
     bool m_FirstSeqOnly;
+    string m_Username;
+    string m_Password;
     string m_IDPrefix;
     string m_HUPDate;
     string m_BioSampleAccession;
@@ -343,7 +353,13 @@ void CBiosampleChkApp::Init(void)
         CArgDescriptions::eOutputFile);
 
     arg_desc->AddDefaultKey(
-        "m", "mode", "Mode:\n\t1 create update file\n\t2 generate file for creating new biosample entries\n\t3 push source info from one file (-i) to others (-p)\n\t4 update with source qualifiers from BioSample unless conflict\n\t5 update with source qualifiers from BioSample (continue with conflict))",
+        "m", "mode", "Mode:\n"
+        "\t1 create update file\n"
+        "\t2 generate file for creating new biosample entries\n"
+        "\t3 push source info from one file (-i) to others (-p)\n"
+        "\t4 update with source qualifiers from BioSample unless conflict\n"
+        "\t5 update with source qualifiers from BioSample (continue with conflict))\n"
+        "\t6 use web API for update",
         CArgDescriptions::eInteger, "1");
     CArgAllow* constraint = new CArgAllow_Integers(e_report_diffs, e_report_status);
     arg_desc->SetConstraint("m", constraint);
@@ -356,6 +372,9 @@ void CBiosampleChkApp::Init(void)
     arg_desc->AddOptionalKey(
         "bioproject", "BioProjectAccession", "BioProject Accession to use for sequences in record. Report error if sequences contain a reference to a different BioProject accession.", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("comment", "BioSampleComment", "Comment to use for creating new BioSample xml", CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("username", "ApiUsername", "Username", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("password", "ApiPassword", "Password", CArgDescriptions::eString);
 
     // Program description
     string prog_description = "BioSample Checker\n";
@@ -472,7 +491,7 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
     bool need_to_close_asn = false;
 
     if (!m_ReportStream && 
-        (m_Mode == e_report_diffs || m_Mode == e_take_from_biosample || m_Mode == e_report_status ||
+        (m_Mode == e_report_diffs || m_Mode == e_update || m_Mode == e_take_from_biosample || m_Mode == e_report_status ||
          (m_Handler != NULL && m_Handler->NeedsReportStream()))) {
         string path = fname;
         size_t pos = NStr::Find(path, ".", NStr::eCase, NStr::eReverseSearch);
@@ -523,6 +542,9 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
 
     if (m_Mode == e_report_diffs) {
         PrintResults(m_Diffs);
+    }
+    if (m_Mode == e_update) {
+        CreateBiosampleUpdateWebService(m_Diffs);
     }
     if (m_Handler != NULL) {
         m_Handler->AddSummary();
@@ -588,7 +610,7 @@ vector<CRef<CSeqdesc> > CBiosampleChkApp::GetBiosampleDescriptorsFromSeqSubmit()
 
     // Validae Seq-submit
     CRef<CScope> scope = BuildScope();
-    if (ss->GetData().IsEntrys() && ss->GetData().GetEntrys().size() > 0) {
+    if (! ss->GetData().IsEntrys() && ss->GetData().GetEntrys().empty()) {
         descriptors = GetBiosampleDescriptorsFromSeqEntry(**(ss->GetData().GetEntrys().begin()));
     }
     return descriptors;
@@ -626,21 +648,21 @@ int CBiosampleChkApp::ProcessOneDirectory(const string& dir_name, const string& 
 
     CDir dir(dir_name);
     CDir::TEntries files (dir.GetEntries(file_mask, CDir::eFile));
-    ITERATE(CDir::TEntries, ii, files) {
-        string fname = (*ii)->GetName();
-        if ((*ii)->IsFile() &&
+    for (const auto &ii : files) {
+        string fname = ii->GetName();
+        if (ii->IsFile() &&
             (!file_suffix.empty() || NStr::Find (fname, file_suffix) != string::npos)) {
             ++num_of_files;
-            string fname = CDirEntry::MakePath(dir_name, (*ii)->GetName());
+            string fname = CDirEntry::MakePath(dir_name, ii->GetName());
             ProcessOneFile (fname);
         }
     }
     if (recurse) {
         CDir::TEntries subdirs (dir.GetEntries("", CDir::eDir));
-        ITERATE(CDir::TEntries, ii, subdirs) {
-            string subdir = (*ii)->GetName();
-            if ((*ii)->IsDir() && !NStr::Equal(subdir, ".") && !NStr::Equal(subdir, "..")) {
-                string subname = CDirEntry::MakePath(dir_name, (*ii)->GetName());
+        for (const auto &ii : subdirs) {
+            string subdir = ii->GetName();
+            if (ii->IsDir() && !NStr::Equal(subdir, ".") && !NStr::Equal(subdir, "..")) {
+                string subname = CDirEntry::MakePath(dir_name, ii->GetName());
                 num_of_files += ProcessOneDirectory (subname, file_suffix, file_mask, recurse);
             }
         }
@@ -689,6 +711,19 @@ int CBiosampleChkApp::Run(void)
         } else {
             SaveFile(args["o"].AsString(), args["b"]);
         }
+    } else if (m_Mode == e_update) {
+            m_ReportStream = &NcbiCout;
+            if (!m_ReportStream)
+            {
+                NCBI_THROW(CException, eUnknown, "Unable to open " + args["o"].AsString());
+            }
+            if (m_Handler) {
+                m_Handler->SetReportStream(m_ReportStream);
+            }
+            if (m_Mode == e_take_from_biosample) {
+                m_Table.Reset(new CSeq_table());
+                m_Table->SetNum_rows(0);
+            }
     }
             
     m_LogStream = args["L"] ? &(args["L"].AsOutputFile()) : &NcbiCout;
@@ -698,6 +733,9 @@ int CBiosampleChkApp::Run(void)
     }
 
     m_UseDevServer = args["d"].AsBoolean();
+
+    m_Username = args["username"] ? args["username"].AsString() : "";
+    m_Password = args["password"] ? args["password"].AsString() : "";
 
     if (!NStr::IsBlank(m_StructuredCommentPrefix) && m_Mode != e_generate_biosample) {
         // error
@@ -868,14 +906,14 @@ void CBiosampleChkApp::PrintTable(CRef<CSeq_table> table)
         return;
     }
 
-    ITERATE(CSeq_table::TColumns, it, table->GetColumns()) {
-        *m_ReportStream << (*it)->GetHeader().GetTitle() << "\t";
+    for (const auto &it : table->GetColumns()) {
+        *m_ReportStream << it->GetHeader().GetTitle() << "\t";
     }
     *m_ReportStream << endl;
     for (size_t row = 0; row < (size_t)table->GetNum_rows(); row++) {
-        ITERATE(CSeq_table::TColumns, it, table->GetColumns()) {
-            if (row < (*it)->GetData().GetString().size()) {
-                *m_ReportStream << (*it)->GetData().GetString()[row] << "\t";
+        for (const auto &it : table->GetColumns()) {
+            if (row < it->GetData().GetString().size()) {
+                *m_ReportStream << it->GetData().GetString()[row] << "\t";
             } else {
                 *m_ReportStream << "\t";
             }
@@ -887,7 +925,7 @@ void CBiosampleChkApp::PrintTable(CRef<CSeq_table> table)
 
 void CBiosampleChkApp::PrintDiffs(biosample_util::TBiosampleFieldDiffList & diffs)
 {
-    if (diffs.size() == 0) {
+    if (diffs.empty()) {
         if (m_Processed == 0) {
             *m_ReportStream << "No results processed" << endl;
         } else {
@@ -899,8 +937,8 @@ void CBiosampleChkApp::PrintDiffs(biosample_util::TBiosampleFieldDiffList & diff
             m_NeedReportHeader = false;
         }
 
-        ITERATE(biosample_util::TBiosampleFieldDiffList, it, diffs) {
-            (*it)->Print(*m_ReportStream, false);
+        for (const auto &it : diffs) {
+            it->Print(*m_ReportStream, false);
         }
     }
     if (m_Unprocessed > 0) {
@@ -912,6 +950,177 @@ void CBiosampleChkApp::PrintDiffs(biosample_util::TBiosampleFieldDiffList & diff
 void CBiosampleChkApp::PrintResults(biosample_util::TBiosampleFieldDiffList & diffs)
 {
     PrintDiffs(diffs);
+}
+
+
+void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampleFieldDiffList & diffs)
+{
+    if (diffs.empty()) {
+        return;
+    }
+
+    vector< CRef<biosample_util::CBiosampleFieldDiff> > add_item;
+    vector< CRef<biosample_util::CBiosampleFieldDiff> > change_item;
+    vector< CRef<biosample_util::CBiosampleFieldDiff> > delete_item;
+    vector< CRef<biosample_util::CBiosampleFieldDiff> > change_organism;
+
+    set<string> ids;
+
+    for (const auto &it : diffs) {
+        string id = it->GetBioSample();
+        string smp = it->GetSampleVal();
+        string src = it->GetSrcVal();
+        string fld = it->GetFieldName();
+        bool blank_smp = NStr::IsBlank(smp);
+        bool blank_src = NStr::IsBlank(src);
+        if (blank_smp && blank_src) {
+            continue;
+        }
+        if (smp == src) {
+            continue;
+        }
+        ids.insert(id);
+        if (fld == "Organism Name") {
+            change_organism.push_back(it);
+        } else if (blank_smp) {
+            add_item.push_back(it);
+        } else if (blank_src) {
+            delete_item.push_back(it);
+        } else {
+            change_item.push_back(it);
+        }
+    }
+
+    CJson_Document req;
+    CJson_Object top_obj = req.SetObject();
+    CJson_Array biosample_array = top_obj.insert_array("update");
+
+    for (auto& id : ids) {
+        CJson_Object obj1 = biosample_array.push_back_object();
+        obj1.insert("samples", id);
+
+        if (! add_item.empty()) {
+            CJson_Object add_obj = obj1.insert_object("add");
+            CJson_Array add_arr = add_obj.insert_array("attribute");
+            for (auto& itm : add_item) {
+                CJson_Object obj2 = add_arr.push_back_object();
+                obj2.insert("name", itm->GetFieldName());
+                obj2.insert("new_value", itm->GetSrcVal());
+            }
+        }
+
+        if (! delete_item.empty()) {
+            CJson_Object del_obj = obj1.insert_object("delete");
+            CJson_Array del_arr = del_obj.insert_array("attribute");
+            for (auto& itm : delete_item) {
+                CJson_Object obj2 = del_arr.push_back_object();
+                obj2.insert("name", itm->GetFieldName());
+                obj2.insert("old_value", itm->GetSampleVal());
+            }
+        }
+
+        if (! change_item.empty() || ! change_organism.empty()) {
+            CJson_Object chg_obj = obj1.insert_object("change");
+            if (! change_organism.empty()) {
+                CJson_Object chg_org = chg_obj.insert_object("organism");
+                for (auto& itm : change_organism) {
+                    chg_org.insert("new_value", itm->GetSrcVal());
+                }
+            }
+            if (! change_item.empty()) {
+                CJson_Array chg_arr = chg_obj.insert_array("attribute");
+                for (auto& itm : change_item) {
+                    string fld = itm->GetFieldName();
+                    if (fld == "Tax ID") {
+                        continue;
+                    }
+                    CJson_Object obj2 = chg_arr.push_back_object();
+                    obj2.insert("name", fld);
+                    obj2.insert("old_value", itm->GetSampleVal());
+                    obj2.insert("new_value", itm->GetSrcVal());
+                }
+            }
+        }
+    }
+
+    if ( ids.size() > 1 ) {
+        *m_LogStream << "ERROR: More than one BioSample ID is not supported by -m 6." << endl;
+        exit(6);
+    }
+
+    string sData = req.ToString();
+
+    NcbiCout << sData << endl;
+
+    CHttpSession session;
+
+    if (m_Username == "" || m_Password == "") {
+        *m_LogStream << "ERROR: Username and password are needed with -m 6." << endl;
+        exit(6);
+    }
+
+    // MyNCBI signin
+    string sUrl = "https://www.ncbi.nlm.nih.gov/portal/signin.cgi?js";
+    CHttpRequest request = session.NewRequest(sUrl, CHttpSession::ePost);
+    request.SetRetries(0);
+
+    CHttpFormData& data = request.FormData();
+    data.AddEntry("cmd", "signin");
+    data.AddEntry("surl", "dummy");
+    data.AddEntry("furl", "dummy");
+    data.AddEntry("rrme", "1");
+    data.AddEntry("uname", m_Username);
+    data.AddEntry("upasswd", m_Password);
+
+    // get authentication cookie
+    CHttpResponse response = request.Execute();
+
+    if (response.GetStatusCode() != 200) {
+        *m_LogStream << "ERROR: Unable to login to MyNCBI." << endl;
+        exit(6);
+    }
+
+    // BioSample update
+    if (m_UseDevServer) {
+        sUrl = "https://dev-api-int.ncbi.nlm.nih.gov/biosample/update/";
+    } else {
+        sUrl = "https://api-int.ncbi.nlm.nih.gov/biosample/update/";
+    }
+    string sContentType = "application/json; charset=utf-8";
+
+    CHttpCookie m_cookie;
+    m_cookie.Reset();
+
+    // Getting cookies - need WebCubbyUser
+    ITERATE(CHttpCookies, it, session.Cookies())
+    {
+        if ( it->GetName() == "WebCubbyUser")
+        {
+            m_cookie = *it;
+            break;
+        }
+    }
+
+    // send biosample request
+    session.Cookies().Add(m_cookie);
+    response = session.Post(sUrl, sData, sContentType);
+
+    if (response.GetStatusCode() != 200) {
+        stringstream ss;
+        NcbiStreamCopy(ss, response.ErrorStream());
+        string err = ss.str();
+        if (err.empty()) {
+            err = "Unable to connect - server down?";
+        }
+        cout << err << endl;
+    } else {
+        NcbiStreamCopy(cout, response.ContentStream());
+        cout << endl;
+    }
+
+    // MyNCBI signout
+    sUrl = "https://www.ncbi.nlm.nih.gov/account/signout/";
+    session.Get(sUrl);
 }
 
 
@@ -927,10 +1136,10 @@ void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
                                        m_CompareStructuredComments,
                                        m_StructuredCommentPrefix,
                                        &m_cache);
-    if (new_diffs.size() > 0) {
+    if (! new_diffs.empty()) {
         m_Diffs.insert(m_Diffs.end(), new_diffs.begin(), new_diffs.end());
-        ITERATE(vector<string>, id, unprocessed_ids) {
-            *m_LogStream << "Failed to retrieve BioSample data for  " << *id << endl;
+        for (const auto &id : unprocessed_ids) {
+            *m_LogStream << "Failed to retrieve BioSample data for  " << id << endl;
         }
         m_Unprocessed += unprocessed_ids.size();
     }
@@ -939,9 +1148,9 @@ void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
 
 void CBiosampleChkApp::PushToRecord(CBioseq_Handle bh)
 {
-    ITERATE(vector<CRef<CSeqdesc> >, it, m_Descriptors) {
-        if ((*it)->IsSource()) {
-            UpdateBioSource(bh, (*it)->GetSource());
+    for (const auto &it : m_Descriptors) {
+        if (it->IsSource()) {
+            UpdateBioSource(bh, it->GetSource());
         }
     }
 }
@@ -958,13 +1167,13 @@ void CBiosampleChkApp::ProcessBioseqForUpdate(CBioseq_Handle bh)
         return;
     }
 
-    if (biosample_ids.size() == 0) {
+    if (biosample_ids.empty()) {
         // for report mode, do not report if no biosample ID
         return;
     }
 
-    ITERATE(vector<string>, id, biosample_ids) {
-        CRef<CSeq_descr> descr = biosample_util::GetBiosampleData(*id, m_UseDevServer, &m_cache);
+    for (const auto &id : biosample_ids) {
+        CRef<CSeq_descr> descr = biosample_util::GetBiosampleData(id, m_UseDevServer, &m_cache);
         if (descr) {
             m_Descriptors.clear();
             copy(descr->Set().begin(), descr->Set().end(),
@@ -1026,6 +1235,9 @@ void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
         case e_take_from_biosample_force:
             ProcessBioseqForUpdate(bh);
             break;
+        case e_update:
+            GetBioseqDiffs(bh);
+            break;
         default:
             if (m_Handler != NULL) {
                 m_Handler->ProcessBioseq(bh);
@@ -1071,8 +1283,8 @@ void CBiosampleChkApp::ProcessSet(void)
     // Get Bioseq-set to process
     CRef<CBioseq_set> set(ReadBioseqSet());
     if (set && set->IsSetSeq_set()) {
-        ITERATE(CBioseq_set::TSeq_set, se, set->GetSeq_set()) {
-            ProcessSeqEntry(*se);
+        for (const auto &se : set->GetSeq_set()) {
+            ProcessSeqEntry(se);
         }
     }
 
@@ -1106,15 +1318,14 @@ void CBiosampleChkApp::ProcessSeqSubmit(void)
     // Process Seq-submit
     CRef<CScope> scope = BuildScope();
     if (ss->GetData().IsEntrys()) {
-        ITERATE(CSeq_submit::TData::TEntrys, se, ss->GetData().GetEntrys()) {
-            ProcessSeqEntry(*se);
+        for (const auto &se : ss->GetData().GetEntrys()) {
+            ProcessSeqEntry(se);
         }
     }
     // write out copy after processing, if requested
     if (m_AsnOut) {
         *m_AsnOut << *ss;
     }
-
 }
 
 static bool s_IsEmptyBioSource(const CSeqdesc& src)
