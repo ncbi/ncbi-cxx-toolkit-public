@@ -83,7 +83,7 @@ bool GetNonConstDescr(CSeq_entry& entry, CSeq_descr* &descrs);
 bool GetAnnot(const CSeq_entry& entry, const CBioseq::TAnnot* &annot);
 bool GetNonConstAnnot(CSeq_entry& entry, CBioseq::TAnnot* &annot);
 
-CRef<CSeqdesc> GetSeqdescr(CSeq_entry& entry, CSeqdesc::E_Choice type);
+CSeqdesc* GetSeqdescr(CSeq_entry& entry, CSeqdesc::E_Choice type);
 
 bool HasLineage(const string& lineage_str, const string& lineage);
 
@@ -93,6 +93,7 @@ string GetIdStr(const CObject_id& obj_id);
 
 bool IsUserObjectOfType(const CSeqdesc& descr, const string& type);
 string ToString(const CSerialObject& obj);
+string ToStringKey(const CSerialObject& obj);
 
 string::size_type GetLastSlashPos(const string& str);
 bool NeedToProcessId(const CSeq_id& id);

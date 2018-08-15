@@ -158,12 +158,12 @@ static void StripErRemarks(CPubdesc& pubdescr)
     }
 }
 
-int SinglePubLookup(CRef<CPubdesc>& pubdescr)
+int SinglePubLookup(CPubdesc& pubdescr)
 {
     int pmid = 0;
-    if (pubdescr->IsSetPub() && pubdescr->GetPub().IsSet()) {
+    if (pubdescr.IsSetPub() && pubdescr.GetPub().IsSet()) {
 
-        for (auto& pub : pubdescr->GetPub().Get()) {
+        for (auto& pub : pubdescr.GetPub().Get()) {
             if (pub->IsPmid()) {
                 pmid = pub->GetPmid();
                 break;
@@ -171,7 +171,7 @@ int SinglePubLookup(CRef<CPubdesc>& pubdescr)
         }
 
         if (pmid == 0) {
-            for (auto& pub : pubdescr->GetPub().Get()) {
+            for (auto& pub : pubdescr.GetPub().Get()) {
 
                 if (pub->IsArticle()) {
 
@@ -180,14 +180,20 @@ int SinglePubLookup(CRef<CPubdesc>& pubdescr)
                     if (pmid) {
                         CRef<CPub> pmid_pub(new CPub);
                         pmid_pub->SetPmid().Set(pmid);
-                        pubdescr->SetPub().Set().push_back(pmid_pub);
+                        pubdescr.SetPub().Set().push_back(pmid_pub);
                     }
                     break;
                 }
             }
         }
 
-        StripErRemarks(*pubdescr);
+        if (pmid) {
+            CRef<CPub> pub = GetMLA().AskGetpub(pmid);
+            if (pub.NotEmpty()) {
+            }
+        }
+
+        StripErRemarks(pubdescr);
     }
 
     return pmid;

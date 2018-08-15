@@ -7,6 +7,7 @@ SRC     = \
     wgs_med \
     wgs_params \
     wgs_parse \
+    wgs_pubs \
     wgs_sub \
     wgs_tax \
     wgs_text_accession \

@@ -176,11 +176,11 @@ bool GetNonConstAnnot(CSeq_entry& entry, CBioseq::TAnnot* &annot)
     return ret;
 }
 
-CRef<CSeqdesc> GetSeqdescr(CSeq_entry& entry, CSeqdesc::E_Choice type)
+CSeqdesc* GetSeqdescr(CSeq_entry& entry, CSeqdesc::E_Choice type)
 {
     CSeq_descr* descrs = nullptr;
 
-    CRef<CSeqdesc> ret;
+    CSeqdesc* ret = nullptr;
     if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
         for (auto descr : descrs->Set()) {
             if (descr->Which() == type) {
@@ -393,7 +393,18 @@ string ToString(const CSerialObject& obj)
 {
     CNcbiOstrstream stream;
     stream << MSerial_AsnText << obj << ends;
+
     return stream.str();
+}
+
+string ToStringKey(const CSerialObject& obj)
+{
+    string ret = ToString(obj);
+
+    ret.erase(remove_if(ret.begin(), ret.end(), [](char& c) { return c == ' '; }), ret.end());
+    ret.erase(remove_if(ret.begin(), ret.end(), [](char& c) { return c == '\n'; }), ret.end());
+
+    return ret;
 }
 
 string::size_type GetLastSlashPos(const string& str)

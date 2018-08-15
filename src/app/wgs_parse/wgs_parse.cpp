@@ -754,36 +754,36 @@ static void FixMasterDates(CMasterInfo& info, bool entry_from_id)
         return;
     }
 
-    CRef<CSeqdesc> creation_date = GetSeqdescr(*info.m_id_master_bioseq, CSeqdesc::e_Create_date);
+    CSeqdesc* creation_date = GetSeqdescr(*info.m_id_master_bioseq, CSeqdesc::e_Create_date);
 
-    if (creation_date.NotEmpty()) {
+    if (creation_date) {
         if (!entry_from_id) {
 
-            CRef<CSeqdesc> newer_creation_date = GetSeqdescr(*info.m_master_bioseq, CSeqdesc::e_Create_date);
-            if (newer_creation_date.NotEmpty()) {
+            CSeqdesc* newer_creation_date = GetSeqdescr(*info.m_master_bioseq, CSeqdesc::e_Create_date);
+            if (newer_creation_date) {
                 newer_creation_date->Assign(*creation_date);
             }
             else {
-                info.m_master_bioseq->SetDescr().Set().push_back(creation_date);
+                info.m_master_bioseq->SetDescr().Set().push_back(CRef<CSeqdesc>(creation_date));
             }
         }
     }
     else if (entry_from_id && info.m_creation_date_issues == eDateNoIssues && info.m_creation_date_present) {
-        creation_date.Reset(new CSeqdesc);
-        creation_date->SetCreate_date(*info.m_creation_date);
-        info.m_id_master_bioseq->SetDescr().Set().push_back(creation_date);
+        CRef<CSeqdesc> date(new CSeqdesc);
+        date->SetCreate_date(*info.m_creation_date);
+        info.m_id_master_bioseq->SetDescr().Set().push_back(date);
     }
 
     if (!entry_from_id || !info.m_update_date_present || info.m_update_date_issues != eDateNoIssues) {
         return;
     }
 
-    CRef<CSeqdesc> update_date = GetSeqdescr(*info.m_master_bioseq, CSeqdesc::e_Update_date);
+    CSeqdesc* update_date = GetSeqdescr(*info.m_id_master_bioseq, CSeqdesc::e_Update_date);
 
-    if (update_date.Empty()) {
-        update_date.Reset(new CSeqdesc);
-        update_date->SetUpdate_date(*info.m_update_date);
-        info.m_master_bioseq->SetDescr().Set().push_back(update_date);
+    if (update_date == nullptr) {
+        CRef<CSeqdesc> date(new CSeqdesc);
+        date->SetUpdate_date(*info.m_update_date);
+        info.m_master_bioseq->SetDescr().Set().push_back(date);
     }
     else {
         bool fix_update_date = true;
@@ -1165,7 +1165,7 @@ static void ReplaceSubmissionDate(CRef<CSeq_entry>& entry, const CDate_std& date
     }
 }
 
-static bool UpdateCommonPubs(const CRef<CSeq_entry>& id_entry, const CRef<CSeq_entry>& master_entry, list<CPubDescriptionInfo>& common_pubs)
+static bool UpdateCommonPubs(CRef<CSeq_entry>& id_entry, const CRef<CSeq_entry>& master_entry, list<string>& common_pubs, CPubCollection& all_pubs)
 {
     common_pubs.clear();
 
@@ -1187,7 +1187,7 @@ static bool UpdateCommonPubs(const CRef<CSeq_entry>& id_entry, const CRef<CSeq_e
     bool ret = false;
     if (id_entry->GetSeq().IsSetDescr() && id_entry->GetSeq().GetDescr().IsSet()) {
 
-        for (auto& descr : id_entry->GetSeq().GetDescr().Get()) {
+        for (auto& descr : id_entry->SetSeq().SetDescr().Set()) {
             
             if (descr->IsPub()) {
                 if (pubdesc && pubdesc->Equals(descr->GetPub())) {
@@ -1195,13 +1195,8 @@ static bool UpdateCommonPubs(const CRef<CSeq_entry>& id_entry, const CRef<CSeq_e
                     continue;
                 }
 
-                common_pubs.push_back(CPubDescriptionInfo());
-                CPubDescriptionInfo& pubdescr_info = common_pubs.back();
-
-                CRef<CPubdesc> pub(new CPubdesc);
-                pub->Assign(descr->GetPub());
-                pubdescr_info.m_pubdescr_synonyms.push_back(pub);
-                pubdescr_info.m_pubdescr_lookup = pub;
+                string pubdesc_key = all_pubs.AddPub(descr->SetPub());
+                common_pubs.push_back(pubdesc_key);
             }
         }
     }
@@ -1340,6 +1335,21 @@ static bool ReplaceOldCitSub(CRef<CSeq_entry>& id_entry, const CCit_sub& new_cit
     return true;
 }
 
+static void InsertOtherPubs(CSeq_descr::Tdata& descrs, CSeq_descr::Tdata& other_pubs)
+{
+    if (!other_pubs.empty()) {
+        CSeq_descr::Tdata::iterator insert_before = descrs.begin();
+        for (auto last_pub = descrs.begin(); last_pub != descrs.end(); ) {
+
+            ++last_pub;
+            insert_before = last_pub;
+            last_pub = find_if(last_pub, descrs.end(), [](const CRef<CSeqdesc>& cur_desc) { return cur_desc->IsPub(); });
+        }
+
+        descrs.splice(insert_before, other_pubs);
+    }
+}
+
 static bool AddNewPubsToOldMaster(CRef<CSeq_entry>& id_entry, const CRef<CSeq_entry>& master_entry, size_t num_of_pubs, bool got_cit_sub)
 {
     if (id_entry.Empty() || !id_entry->IsSeq() || !id_entry->GetSeq().IsNa() || !master_entry->IsSeq() || !master_entry->GetSeq().IsNa()) {
@@ -1375,11 +1385,7 @@ static bool AddNewPubsToOldMaster(CRef<CSeq_entry>& id_entry, const CRef<CSeq_en
     }
 
     if (new_cit_sub == nullptr) {
-        if (!other_pubs.empty()) {
-
-            auto& descrs = id_entry->SetSeq().SetDescr().Set();
-            descrs.splice(descrs.end(), other_pubs);
-        }
+        InsertOtherPubs(id_entry->SetSeq().SetDescr().Set(), other_pubs);
         return true;
     }
 
@@ -1388,8 +1394,7 @@ static bool AddNewPubsToOldMaster(CRef<CSeq_entry>& id_entry, const CRef<CSeq_en
     }
 
     if (GetParams().GetUpdateMode() == eUpdateFull) {
-        auto& descrs = id_entry->SetSeq().SetDescr().Set();
-        descrs.splice(descrs.end(), other_pubs);
+        InsertOtherPubs(id_entry->SetSeq().SetDescr().Set(), other_pubs);
     }
 
     return true;
@@ -1437,6 +1442,7 @@ static const int ERROR_RET = 1;
 int CWGSParseApp::Run(void)
 {
     int ret = 0;
+	// SetDiagPostPrefix("wgsparse"); // TODO for the future use
 
     if (SetParams(GetArgs())) {
 
@@ -1585,7 +1591,7 @@ int CWGSParseApp::Run(void)
                         ReplaceSubmissionDate(master_info.m_master_bioseq, GetParams().GetSubmissionDate());
                     }
 
-                    master_info.m_got_cit_sub = UpdateCommonPubs(master_info.m_id_master_bioseq, master_info.m_master_bioseq, master_info.m_common_pubs);
+                    master_info.m_got_cit_sub = UpdateCommonPubs(master_info.m_id_master_bioseq, master_info.m_master_bioseq, master_info.m_common_pubs, master_info.m_pubs);
                 }
 
                 if (!master_info.m_got_cit_sub) {

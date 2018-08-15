@@ -46,6 +46,7 @@
 
 #include "wgs_text_accession.hpp"
 #include "wgs_enums.hpp"
+#include "wgs_pubs.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -185,17 +186,6 @@ enum EDBLinkProblem
     eDblinkAllProblems = eDblinkNoDblink | eDblinkDifferentDblink
 };
 
-struct CPubDescriptionInfo
-{
-    list<CRef<CPubdesc>> m_pubdescr_synonyms;
-    CRef<CPubdesc> m_pubdescr_lookup;
-    int m_pmid;
-
-    CPubDescriptionInfo() :
-        m_pmid(0)
-    {}
-};
-
 struct COrgRefInfo
 {
     CRef<COrg_ref> m_org_ref,
@@ -283,7 +273,9 @@ struct CMasterInfo
     bool m_gpid;
     bool m_got_cit_sub;
 
-    list<CPubDescriptionInfo> m_common_pubs;
+    CPubCollection m_pubs;
+
+	list<string> m_common_pubs;
     list<string> m_common_comments;
     list<string> m_common_structured_comments;
     CRef<CBioSource> m_biosource;

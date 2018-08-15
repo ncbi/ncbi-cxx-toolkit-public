@@ -30,20 +30,45 @@
 * ===========================================================================
 */
 
-#ifndef WGS_MED_H
-#define WGS_MED_H
+#ifndef WGS_PUBS_HPP
+#define WGS_PUBS_HPP
+
+#include <unordered_map>
+#include <unordered_set>
 
 #include <objects/seq/Pubdesc.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+
 namespace wgsparse
 {
 
-bool PerformMedlineLookup(CSeq_entry& entry);
-int SinglePubLookup(CPubdesc& pub);
+struct CPubInfo
+{
+    CRef<CPubdesc> m_desc;
+    int m_pmid;
+    string m_pubdesc_key;
+
+    CPubInfo() :
+        m_pmid(0) {};
+};
+
+class CPubCollection
+{
+public:
+	CPubCollection() {};
+
+    string AddPub(CPubdesc& pubdesc);
+    CPubInfo& GetPubInfo(const string& pubdesc_key);
+
+    static string GetPubdescKeyForCitSub(CPubdesc& pubdesc, const CDate_std* submission_date);
+
+private:
+	unordered_map<string, CPubInfo> m_pubs;
+};
 
 }
 
-#endif // WGS_MED_H
+#endif // WGS_PUBS_HPP

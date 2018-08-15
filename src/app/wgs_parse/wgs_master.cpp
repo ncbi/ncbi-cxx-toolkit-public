@@ -127,94 +127,69 @@ static void GetSeqIdStrFromEntry(const CSeq_entry& entry, string& id_str)
     }
 }
 
-static size_t CheckPubs(const CSeq_entry& entry, const string& file, list<CPubDescriptionInfo>& common_pubs, bool& reject)
+static size_t CheckPubs(CSeq_entry& entry, const string& file, list<string>& common_pubs, bool& reject, CPubCollection& all_pubs)
 {
-    const CSeq_descr* descrs = nullptr;
-    if (!GetDescr(entry, descrs)) {
+    CSeq_descr* descrs = nullptr;
+    if (!GetNonConstDescr(entry, descrs)) {
         return 0;
     }
 
     size_t num_of_pubs = 0;
-    list<CRef<CPubdesc>> pubs;
+    list<string> pubs;
 
     if (descrs && descrs->IsSet()) {
 
-        for (auto& descr : descrs->Get()) {
+        for (auto& descr : descrs->Set()) {
             if (descr->IsPub()) {
                 if (!HasPubOfChoice(descr->GetPub(), CPub::e_Sub)) {
                     ++num_of_pubs;
                 }
 
-                CRef<CPubdesc> pubdesc(new CPubdesc);
-                pubdesc->Assign(descr->GetPub());
-                pubs.push_back(pubdesc);
+                string pubdesc_key = all_pubs.AddPub(descr->SetPub());;
+                
+                CRef<CPubdesc> pubdesc = all_pubs.GetPubInfo(pubdesc_key).m_desc;
+                _ASSERT(pubdesc.NotEmpty());
+
+                descr->SetPub(*pubdesc);
+                pubs.push_back(pubdesc_key);
             }
         }
     }
 
     if (pubs.empty()) {
         ERR_POST_EX(0, 0, Info << "Submission from file \"" << file << "\" is lacking publications.");
-        return num_of_pubs;
+        return 0;
     }
 
     if (common_pubs.empty()) {
-
-        for (auto& pub : pubs) {
-            common_pubs.push_back(CPubDescriptionInfo());
-            CPubDescriptionInfo& pubdescr_info = common_pubs.back();
-
-            pubdescr_info.m_pubdescr_synonyms.push_back(pub);
-            pubdescr_info.m_pubdescr_lookup = pub;
-
-            if (!HasPubOfChoice(*pub, CPub::e_Sub)) {
-                pubdescr_info.m_pmid = SinglePubLookup(pubdescr_info.m_pubdescr_lookup);
-            }
-
-            // TODO wpp
-        }
+        common_pubs.swap(pubs);
     }
     else {
 
         for (auto common_pub = common_pubs.begin(); common_pub != common_pubs.end();) {
 
             bool found = false;
-            for (auto pub = pubs.begin(); pub != pubs.end(); ++pub) {
-                auto synonym = find_if(common_pub->m_pubdescr_synonyms.begin(), common_pub->m_pubdescr_synonyms.end(),
-                                       [&pub](const CRef<CPubdesc>& synonym) { return (*pub)->Equals(*synonym); });
+            const CPubInfo& common_pub_info = all_pubs.GetPubInfo(*common_pub);
 
-                if (synonym != common_pub->m_pubdescr_synonyms.end()) {
+            for (auto pub = pubs.begin(); pub != pubs.end(); ++pub) {
+
+                const CPubInfo& pub_info = all_pubs.GetPubInfo(*pub);
+                if (pub_info.m_pubdesc_key == common_pub_info.m_pubdesc_key) {
                     pubs.erase(pub);
                     found = true;
                     break;
                 }
 
-                if (HasPubOfChoice(**pub, CPub::e_Sub)) {
+                if (HasPubOfChoice(*pub_info.m_desc, CPub::e_Sub)) {
                     continue;
                 }
 
-                // TODO wpp
+                if (pub_info.m_pmid > 0 && common_pub_info.m_pmid == pub_info.m_pmid) { // Same PMID in different pubs
 
-                bool same = (*pub)->Equals(*common_pub->m_pubdescr_lookup);
-                if (!same) {
-                    int pmid = SinglePubLookup(*pub);
-
-                    if (pmid > 0 && common_pub->m_pmid == pmid) { // Same PMID in different pubs
-
-                        if (GetParams().IsDblinkOverride()) {
-                            same = true;
-                        }
-                        else {
-                            ERR_POST_EX(0, 0, Error << "Varying results returned from PubMed for article with PMID " << pmid << ".");
-                            reject = true;
-                        }
+                    if (!GetParams().IsDblinkOverride()) {
+                        ERR_POST_EX(0, 0, Error << "Varying results returned from PubMed for article with PMID " << pub_info.m_pmid << ".");
+                        reject = true;
                     }
-                }
-
-                if (same) {
-                    common_pub->m_pubdescr_synonyms.push_back(*pub);
-                    pubs.erase(pub);
-                    found = true;
-                    break;
                 }
             }
 
@@ -1323,16 +1298,17 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
     const CPub_equiv* pub_article = nullptr;
     for (auto& pubdescr : info.m_common_pubs) {
 
-        CreatePub(*bioseq, *pubdescr.m_pubdescr_lookup);
+        const CPubInfo& pub_info = info.m_pubs.GetPubInfo(pubdescr);
+        CreatePub(*bioseq, *pub_info.m_desc);
 
-        size_t cur_num_of_arts = GetNumOfPubs(pubdescr.m_pubdescr_lookup->GetPub(), CPub::e_Article);
+        size_t cur_num_of_arts = GetNumOfPubs(pub_info.m_desc->GetPub(), CPub::e_Article);
 
         if (num_of_arts == 0 && cur_num_of_arts == 1) {
-            pub_article = &pubdescr.m_pubdescr_lookup->GetPub();
+            pub_article = &pub_info.m_desc->GetPub();
         }
 
         num_of_arts += cur_num_of_arts;
-        if (GetNumOfPubs(pubdescr.m_pubdescr_lookup->GetPub(), CPub::e_Sub)) {
+        if (GetNumOfPubs(pub_info.m_desc->GetPub(), CPub::e_Sub)) {
             ++num_of_subs;
         }
     }
@@ -1342,7 +1318,7 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
         bioseq->SetDescr().Set().erase(pub_to_be_removed);
     }
     
-    if (num_of_subs == info.m_num_of_pubs) {
+    if (num_of_subs < info.m_num_of_pubs && num_of_subs == 0) {
         info.m_num_of_pubs = 0;
     }
 
@@ -1371,6 +1347,7 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
 
     ret.Reset(new CSeq_entry);
     ret->SetSeq(*bioseq);
+
     return ret;
 }
 
@@ -1875,11 +1852,12 @@ static CRef<CDate> GetMostRelevantDate(const map<string, pair<CRef<CDate>, size_
     return ret;
 }
 
-static void ReplaceDatesInCitSub(list<CPubDescriptionInfo>& common_pubs, const CDate& date)
+static void ReplaceDatesInCitSub(list<string>& common_pubs, CPubCollection& pubs, const CDate& date)
 {
-    for (auto pub_info : common_pubs) {
+    for (auto& pub : common_pubs) {
 
-        CCit_sub* cit_sub = GetNonConstCitSub(*pub_info.m_pubdescr_lookup);
+        CPubInfo& pub_info = pubs.GetPubInfo(pub);
+        CCit_sub* cit_sub = GetNonConstCitSub(*pub_info.m_desc);
         if (cit_sub && cit_sub->IsSetDate()) {
             cit_sub->SetDate().Assign(date);
         }
@@ -2407,7 +2385,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
                     if (!GetParams().IsKeepRefs()) {
 
-                        master_info.m_num_of_pubs = max(CheckPubs(*entry, file, master_info.m_common_pubs, master_info.m_reject), master_info.m_num_of_pubs);
+                        master_info.m_num_of_pubs = max(CheckPubs(*entry, file, master_info.m_common_pubs, master_info.m_reject, master_info.m_pubs), master_info.m_num_of_pubs);
                         CheckComments(*entry, ProcessComment, master_info.m_common_comments_not_set, master_info.m_common_comments,
                                       [&file](const CSeq_entry& cur_entry) { CommentErrorReport(cur_entry, "Comment", file); });
                     }
@@ -2490,7 +2468,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
         }
         
         CRef<CDate> the_date = GetMostRelevantDate(master_info.m_cit_sub_info.m_dates);
-        ReplaceDatesInCitSub(master_info.m_common_pubs, *the_date);
+        ReplaceDatesInCitSub(master_info.m_common_pubs, master_info.m_pubs, *the_date);
     }
 
     master_info.m_reject = master_info.m_reject || DBLinkProblemReport(master_info);
