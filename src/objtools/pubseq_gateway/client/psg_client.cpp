@@ -253,6 +253,14 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
         blob->m_Stream.reset(new SPSG_RStream(item_ts));
         rv.reset(blob.release());
 
+    } else if (item_type == "bioseq_info") {
+        ostringstream os;
+        for (auto& v : chunk.data) os.write(v.data(), v.size());
+
+        unique_ptr<CPSG_BioseqInfo> bioseq_info(new CPSG_BioseqInfo);
+        bioseq_info->m_Data = CJsonNode::ParseJSON(os.str());
+        rv.reset(bioseq_info.release());
+
     } else {
         // TODO
         rv.reset(new CPSG_ReplyItem(CPSG_ReplyItem::eBlobInfo));
@@ -509,6 +517,82 @@ CPSG_BlobInfo::CPSG_BlobInfo()
 CPSG_BioseqInfo::CPSG_BioseqInfo()
     : CPSG_ReplyItem(eBioseqInfo)
 {
+}
+
+CPSG_BioId CPSG_BioseqInfo::GetCanonicalId() const
+{
+    auto accession = m_Data.GetString("accession");
+    auto type = static_cast<CPSG_BioId::TType>(m_Data.GetInteger("seq_id_type"));
+    auto version = static_cast<int>(m_Data.GetInteger("version"));
+    return objects::CSeq_id(type, accession, kEmptyStr, version).AsFastaString();
+}
+
+vector<CPSG_BioId> CPSG_BioseqInfo::GetOtherIds() const
+{
+    auto seq_ids = m_Data.GetByKey("seq_ids");
+    vector<CPSG_BioId> rv;
+
+    for (CJsonIterator it = seq_ids.Iterate(); it.IsValid(); it.Next()) {
+        auto accession = it.GetNode().AsString();
+        auto type = static_cast<CPSG_BioId::TType>(stoi(it.GetKey()));
+        rv.emplace_back(objects::CSeq_id(type, accession).AsFastaString());
+    }
+
+    return rv;
+}
+
+objects::CSeq_inst::TMol CPSG_BioseqInfo::GetMoleculeType() const
+{
+    return static_cast<objects::CSeq_inst::TMol>(m_Data.GetInteger("mol"));
+}
+
+Uint8 CPSG_BioseqInfo::GetLength() const
+{
+    return m_Data.GetInteger("length");
+}
+
+CPSG_BioseqInfo::TBioseqState CPSG_BioseqInfo::GetState() const
+{
+    return static_cast<TBioseqState>(m_Data.GetInteger("state"));
+}
+
+CPSG_BlobId CPSG_BioseqInfo::GetBlobId() const
+{
+    auto sat = static_cast<int>(m_Data.GetInteger("sat"));
+    auto sat_key = static_cast<int>(m_Data.GetInteger("sat_key"));
+    return CPSG_BlobId(sat, sat_key);
+}
+
+TTaxId CPSG_BioseqInfo::GetTaxId() const
+{
+    return static_cast<TTaxId>(m_Data.GetInteger("tax_id"));
+}
+
+int CPSG_BioseqInfo::GetHash() const
+{
+    return static_cast<int>(m_Data.GetInteger("hash"));
+}
+
+CTime CPSG_BioseqInfo::GetDateChanged() const
+{
+    return CTime(static_cast<time_t>(m_Data.GetInteger("date_changed")));
+}
+
+CPSG_Request_Biodata::TIncludeData CPSG_BioseqInfo::IncludedData() const
+{
+    CPSG_Request_Biodata::TIncludeData rv = {};
+
+    if (m_Data.HasKey("accession") && m_Data.HasKey("seq_id_type"))       rv |= CPSG_Request_Biodata::fCanonicalId;
+    if (m_Data.HasKey("seq_ids") && m_Data.GetByKey("seq_ids").GetSize()) rv |= CPSG_Request_Biodata::fOtherIds;
+    if (m_Data.HasKey("mol"))                                             rv |= CPSG_Request_Biodata::fMoleculeType;
+    if (m_Data.HasKey("length"))                                          rv |= CPSG_Request_Biodata::fLength;
+    if (m_Data.HasKey("state"))                                           rv |= CPSG_Request_Biodata::fState;
+    if (m_Data.HasKey("sat") && m_Data.HasKey("sat_key"))                 rv |= CPSG_Request_Biodata::fBlobId;
+    if (m_Data.HasKey("tax_id"))                                          rv |= CPSG_Request_Biodata::fTaxId;
+    if (m_Data.HasKey("hash"))                                            rv |= CPSG_Request_Biodata::fHash;
+    if (m_Data.HasKey("date_changed"))                                    rv |= CPSG_Request_Biodata::fDateChanged;
+
+    return rv;
 }
 
 

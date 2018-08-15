@@ -2,7 +2,7 @@
 
 APP = AccVerCacheApp
 SRC = AccVerCacheApp
-LIB = psg_client psg_rpc psg_diag xconnect xncbi
+LIB = psg_client psg_rpc psg_diag $(SEQ_LIBS) pub medline biblio general xser xconnserv xconnect xutil xncbi
 
 LIBS = $(PSG_RPC_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(PSG_RPC_INCLUDE) $(ORIG_CPPFLAGS)

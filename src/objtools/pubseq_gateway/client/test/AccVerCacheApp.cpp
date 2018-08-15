@@ -77,7 +77,7 @@ private:
     shared_ptr<CPSG_Queue> m_Queue;
 
     template <class TRequest>
-    void ProcessId(const string& id);
+    void ProcessId(shared_ptr<TRequest> id);
 
     template <class TRequest>
     void ProcessFile(const string& filename);
@@ -85,6 +85,8 @@ private:
     void ProcessReply(shared_ptr<CPSG_Reply> reply);
     void PrintErrors(EPSG_Status status, const CPSG_ReplyItem* item);
     void PrintBlob(const CPSG_Blob*);
+    void PrintBioseqInfo(const CPSG_BioseqInfo*);
+
 public:
     CAccVerCacheApp() :
         m_NumThreads(1),
@@ -152,10 +154,14 @@ public:
             m_Queue = make_shared<CPSG_Queue>(m_HostPort);
 
             if (!m_BioId.empty()) {
-                ProcessId<CPSG_Request_Biodata>(m_BioId);
+                auto id = CPSG_BioId(m_BioId, CSeq_id_Base::e_Gi);
+                auto request = make_shared<CPSG_Request_Biodata>(move(id));
+                request->IncludeData(CPSG_Request_Biodata::fAllData);
+                ProcessId<CPSG_Request_Biodata>(request);
             }
             else if (!m_BlobId.empty()) {
-                ProcessId<CPSG_Request_Blob>(m_BlobId);
+                auto request = make_shared<CPSG_Request_Blob>(m_BlobId);
+                ProcessId<CPSG_Request_Blob>(request);
             }
             else if (!m_LookupFileRemote.empty()) {
                 ProcessFile<CPSG_Request_Biodata>(m_LookupFileRemote);
@@ -189,6 +195,10 @@ void CAccVerCacheApp::ProcessReply(shared_ptr<CPSG_Reply> reply)
 
         switch (reply_item->GetType()) {
         case CPSG_ReplyItem::eEndOfReply:
+            {
+                lock_guard<mutex> lock(m_CoutMutex);
+                cout << endl;
+            }
             return;
 
         case CPSG_ReplyItem::eBlob:
@@ -200,18 +210,17 @@ void CAccVerCacheApp::ProcessReply(shared_ptr<CPSG_Reply> reply)
             break;
 
         case CPSG_ReplyItem::eBioseqInfo:
-            // TODO
+            PrintBioseqInfo(reply_item->CastTo<CPSG_BioseqInfo>());
             break;
         }
     }
 }
 
 template <class TRequest>
-void CAccVerCacheApp::ProcessId(const string& id)
+void CAccVerCacheApp::ProcessId(shared_ptr<TRequest> request)
 {
     assert(m_Queue);
 
-    auto request = make_shared<TRequest>(id);
     m_Queue->SendRequest(request, CDeadline::eInfinite);
     ProcessReply(m_Queue->GetNextReply(CDeadline::eInfinite));
 }
@@ -302,8 +311,41 @@ void CAccVerCacheApp::PrintBlob(const CPSG_Blob* blob)
     ostringstream os;
     os << blob->GetStream().rdbuf();
     hash<string> blob_hash;
-    cout << blob->GetId().Get() << "|" << os.str().size() << "|" <<blob_hash(os.str()) << endl;
+    cout << "Blob. ";
+    cout << "Id: " << blob->GetId().Get() << ";";
+    cout << "Size: " << os.str().size() << ";";
+    cout << "Hash: " <<blob_hash(os.str());
 }
+
+void CAccVerCacheApp::PrintBioseqInfo(const CPSG_BioseqInfo* bioseq_info)
+{
+    assert(bioseq_info);
+    lock_guard<mutex> lock(m_CoutMutex);
+
+    auto status = bioseq_info->GetStatus(CDeadline::eInfinite);
+
+    if (status != EPSG_Status::eSuccess) {
+        cout << "ERROR: Failed to retrieve bioseq_info '" << bioseq_info->GetCanonicalId().Get() << "': ";
+        PrintErrors(status, bioseq_info);
+        return;
+    }
+
+    const auto& id = bioseq_info->GetCanonicalId();
+    cout << "BioseqInfo. ";
+    cout << "CanonicalId: " << id.Get() << "-" << id.GetType() << ";";
+
+    cout << "OtherIds:";
+    for (auto& other_id : bioseq_info->GetOtherIds()) cout << " " << other_id.Get() << "-" << other_id.GetType();
+    cout << ";";
+
+    cout << "MoleculeType: " << bioseq_info->GetMoleculeType() << ";";
+    cout << "Length: " << bioseq_info->GetLength() << ";";
+    cout << "State: " << bioseq_info->GetState() << ";";
+    cout << "BlobId: " << bioseq_info->GetBlobId().Get() << ";";
+    cout << "TaxId: " << bioseq_info->GetTaxId() << ";";
+    cout << "Hash: " << bioseq_info->GetHash() << ";";
+    cout << "IncludedData: " << bioseq_info->IncludedData() << endl;
+};
 
 /////////////////////////////////////////////////////////////////////////////
 //  main

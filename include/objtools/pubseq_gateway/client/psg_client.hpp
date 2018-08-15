@@ -32,6 +32,7 @@
 
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_url.hpp>
+#include <connect/services/json_over_uttp.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -138,16 +139,20 @@ public:
         fBlobId           = (1 <<  9),
         fTaxId            = (1 << 10),
         fHash             = (1 << 11),
-        fDateChanged      = (1 << 12)
+        fDateChanged      = (1 << 12),
+
+        // These should be the last ones
+        fDoNotUseThisOne,
+        fAllData          = ((fDoNotUseThisOne - 1) << 1) - 1
     };
     typedef int TIncludeData;   // Bit-set of EIncludeData flags
-    void IncludeData(TIncludeData include);
+    void IncludeData(TIncludeData include) { m_IncludeData = include; }
 
     TIncludeData      GetIncludeData() const { return m_IncludeData; }
 
 private:
     CPSG_BioId    m_BioId;
-    TIncludeData  m_IncludeData;
+    TIncludeData  m_IncludeData = 0;
 
 #ifdef NCBI_NAMED_ANNOTS_IMPLEMENTED
 public:
@@ -188,7 +193,7 @@ public:
     /// Historical blob ID system -- based on the "satellite" and the "key"
     /// inside it. It'll be translated into "<sat>.<sat_key>" string.
     /// @sa  objects::CID2_Blob_Id::TSat, objects::CID2_Blob_Id::TSat_key
-    CPSG_BlobId(int sat, int sat_key);
+    CPSG_BlobId(int sat, int sat_key) : m_Id(to_string(sat) + "." + to_string(sat_key)) {}
 
     /// Get the blob ID
     const string& Get() const { return m_Id; }
@@ -394,6 +399,10 @@ public:
     /// is put into the "shell" blob.
     CPSG_BlobId GetSplitInfoBlobId(ESplitInfo split_info_type) const;
 
+    /// Get coordinates of a chunk blob -- from the chunk's serial number.
+    /// @throw  If the blob has not been splitted.
+    CPSG_BlobId GetChunkBlobId(unsigned split_chunk_no) const;
+
 
 #ifdef NCBI_NAMED_ANNOTS_IMPLEMENTED
     /// For the blobs containing (named) annotations, this gives a bird's eye
@@ -444,10 +453,6 @@ public:
     /// Get coordinates of the TSE blob that contains the bioseq itself
     CPSG_BlobId GetBlobId() const;
 
-    /// Get coordinates of a chunk blob -- from the chunk's serial number.
-    /// @throw  If the blob has not been splitted.
-    CPSG_BlobId GetChunkBlobId(unsigned split_chunk_no) const;
-
 #ifdef NCBI_NAMED_ANNOTS_IMPLEMENTED
     /// Get list of blobs containing (named) annotations (only those matching
     /// the request's parameters!) for the bioseq.
@@ -460,6 +465,9 @@ public:
     /// Get the bioseq's (pre-calculated) hash
     int GetHash() const;
 
+    /// Date when the bioseq was changed last time
+    CTime GetDateChanged() const;
+
     /// What data is immediately available now. Other data will require
     /// a separate hit to the server.
     /// @sa CPSG_Request_Biodata::IncludeData()
@@ -467,6 +475,8 @@ public:
 
 private:
     CPSG_BioseqInfo();
+
+    CJsonNode m_Data;
 
     friend class CPSG_Reply;
 };
