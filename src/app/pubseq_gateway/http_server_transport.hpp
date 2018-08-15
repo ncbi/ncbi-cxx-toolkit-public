@@ -107,7 +107,7 @@ public:
 
     ~CHttpReply()
     {
-        ERR_POST(Info << "~CHttpReply");
+        _TRACE("~CHttpReply");
         Clear();
         m_HttpProto = nullptr;
         m_HttpConn = nullptr;
@@ -568,8 +568,8 @@ private:
             NCBI_THROW(CPubseqGatewayException, eOutputNotInReadyState,
                        "Output is not in ready state");
 
-        ERR_POST(Trace << "DoSend: " << count << " chunks, "
-                 "is_last: " << is_last << ", state: " << m_State);
+        _TRACE("DoSend: " << count << " chunks, "
+               "is_last: " << is_last << ", state: " << m_State);
 
         switch (m_State) {
             case eReplyInitialized:
@@ -700,7 +700,7 @@ public:
             req.AssignPendingRec(std::move(pending_rec));
             req.PostponedStart();
             if (req.GetState() >= CHttpReply<P>::eReplyFinished) {
-                ERR_POST(Info << "Pospone self-drained");
+                _TRACE("Pospone self-drained");
                 UnregisterPending(req_it);
             }
         } else if (m_Backlog.size() < m_HttpMaxBacklog) {
