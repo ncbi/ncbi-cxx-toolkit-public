@@ -2034,6 +2034,7 @@ CSeq_id& CSeq_id::Set(EFastaAsTypeAndContent f, E_Choice the_type,
     list<CTempString> fasta_pieces;
     NStr::Split(the_content, "|", fasta_pieces);
     x_Init(fasta_pieces, the_type);
+    return *this;
 }
 
 
