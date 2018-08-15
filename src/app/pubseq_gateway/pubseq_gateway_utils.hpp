@@ -84,7 +84,7 @@ string  GetBioseqMessageHeader(size_t  item_id, size_t  msg_size,
 string  GetBioseqCompletionHeader(size_t  item_id, size_t  chunk_count);
 
 // Blob prop messages
-string  GetBlobPropHeader(size_t  item_id, size_t  blob_prop_size);
+string  GetBlobPropHeader(size_t  item_id, size_t  blob_prop_size, int  blob_sat);
 string  GetBlobPropMessageHeader(size_t  item_id, size_t  msg_size,
                                  CRequestStatus::ECode  status, int  code,
                                  EDiagSev  severity);

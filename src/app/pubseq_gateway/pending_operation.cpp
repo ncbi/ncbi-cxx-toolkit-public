@@ -1144,7 +1144,8 @@ void CPendingOperation::PrepareBlobPropData(
                             const string &  content)
 {
     string  header = GetBlobPropHeader(fetch_details->GetBlobPropItemId(this),
-                                       content.size());
+                                       content.size(),
+                                       fetch_details->m_BlobId.m_Sat);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                     (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(

@@ -103,6 +103,7 @@ static string   s_Status = "status=";
 static string   s_Code = "code=";
 static string   s_Severity = "severity=";
 static string   s_BlobId = "blob_id=";
+static string   s_Sat = "sat=";
 
 // Fixed values
 static string   s_BioseqInfo = "bioseq_info";
@@ -172,13 +173,15 @@ string  GetBioseqCompletionHeader(size_t  item_id, size_t  chunk_count)
 }
 
 
-string  GetBlobPropHeader(size_t  item_id, size_t  blob_prop_size)
+string  GetBlobPropHeader(size_t  item_id, size_t  blob_prop_size, int  blob_sat)
 {
-    // E.g. PSG-Reply-Chunk: item_id=2&item_type=blob_prop&chunk_type=data&size=550
+    // E.g. PSG-Reply-Chunk:
+    // item_id=2&item_type=blob_prop&chunk_type=data&size=550&sat=111
     return s_ReplyBegin + NStr::NumericToString(item_id) +
            "&" + s_BlobPropItem +
            "&" + s_DataChunk +
            "&" + s_Size + NStr::NumericToString(blob_prop_size) +
+           "&" + s_Sat + NStr::NumericToString(blob_sat) +
            "\n";
 }
 
