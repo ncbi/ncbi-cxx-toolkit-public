@@ -1106,13 +1106,8 @@ void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampl
     response = session.Post(sUrl, sData, sContentType);
 
     if (response.GetStatusCode() != 200) {
-        stringstream ss;
-        NcbiStreamCopy(ss, response.ErrorStream());
-        string err = ss.str();
-        if (err.empty()) {
-            err = "Unable to connect - server down?";
-        }
-        cout << err << endl;
+        NcbiStreamCopy(cout, response.ErrorStream());
+        cout << endl;
     } else {
         NcbiStreamCopy(cout, response.ContentStream());
         cout << endl;
