@@ -132,11 +132,31 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(const stri
 
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
-    
-        string skey = PackKey(accession, version, seq_id_type);
         lmdb::val val;
-        auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
-        rv = cursor.get(lmdb::val(skey), val, MDB_SET);
+        if (version <= 0) {
+            auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
+            rv = cursor.get(lmdb::val(accession), MDB_SET_RANGE);
+            if (rv) {
+                while (true) {
+                    int found_seq_id_type = -1;
+                    lmdb::val key;
+                    rv = cursor.get(key, val, MDB_GET_CURRENT);
+                    rv = key.size() == PackedKeySize(accession.size()) && accession.compare(key.data<const char>()) == 0;
+                    if (!rv)
+                        break;
+                    if (rv)
+                        rv = UnpackKey(key.data<const char>(), key.size(), version, found_seq_id_type);
+                    rv = rv && (seq_id_type <= 0 || seq_id_type == found_seq_id_type);
+                    if (rv)
+                        break;
+                }
+            }
+        }
+        else {
+            string skey = PackKey(accession, version, seq_id_type);
+            auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
+            rv = cursor.get(lmdb::val(skey), val, MDB_SET);
+        }
         if (rv)
             data.assign(val.data(), val.size());
     }
