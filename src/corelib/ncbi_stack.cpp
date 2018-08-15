@@ -96,9 +96,14 @@ CStackTrace::CStackTrace(const CStackTrace& stack_trace)
 CStackTrace& CStackTrace::operator=(const CStackTrace& stack_trace)
 {
     if (&stack_trace != this) {
-        const TStack& stack = stack_trace.GetStack();
-        m_Stack.clear();
-        m_Stack.insert(m_Stack.end(), stack.begin(), stack.end());
+        if ( stack_trace.m_Impl ) {
+            m_Impl.reset(new CStackTraceImpl(*stack_trace.m_Impl));
+        }
+        else {
+            const TStack& stack = stack_trace.GetStack();
+            m_Stack.clear();
+            m_Stack.insert(m_Stack.end(), stack.begin(), stack.end());
+        }
         m_Prefix = stack_trace.m_Prefix;
     }
     return *this;
