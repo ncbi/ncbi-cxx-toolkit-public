@@ -54,7 +54,7 @@ struct SBlobRequest
     SBlobRequest() = default;
 
     // Construct the request for the case of seq_id/id_type request
-    SBlobRequest(const string &  seq_id,
+    SBlobRequest(const CTempString &  seq_id,
                  int  seq_id_type,
                  bool  seq_id_type_provided,
                  TServIncludeData  include_data_flags) :
@@ -86,7 +86,7 @@ public:
     int64_t                     m_LastModified;
 
     // Fields in case of request by seq_id/seq_id_type
-    string                      m_SeqId;
+    CTempString                 m_SeqId;
     int                         m_SeqIdType;
     bool                        m_SeqIdTypeProvided;
     TServIncludeData            m_IncludeDataFlags;

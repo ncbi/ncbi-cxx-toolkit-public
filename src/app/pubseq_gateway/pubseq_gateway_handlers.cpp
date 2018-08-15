@@ -45,6 +45,10 @@ USING_NCBI_SCOPE;
 
 static string  kPsgProtocolParam = "psg_protocol";
 static string  kFmtParam = "fmt";
+static string  kBlobIdParam = "blob_id";
+static string  kLastModifiedParam = "last_modified";
+static string  kSeqIdParam = "seq_id";
+static string  kSeqIdTypeParam = "seq_id_type";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
     make_pair("canon_id", fServCanonicalId),
@@ -57,6 +61,24 @@ static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
     make_pair("hash", fServHash),
     make_pair("date_changed", fServDateChanged)
 };
+static vector<pair<string, EServIncludeData>>   kGetFlagParams =
+{
+    make_pair("no_tse", fServNoTSE),
+    make_pair("fast_info", fServFastInfo),
+    make_pair("whole_tse", fServWholeTSE),
+    make_pair("orig_tse", fServOrigTSE),
+    make_pair("canon_id", fServCanonicalId),
+    make_pair("seq_ids", fServSeqIds),
+    make_pair("mol_type", fServMoleculeType),
+    make_pair("length", fServLength),
+    make_pair("state", fServState),
+    make_pair("blob_id", fServBlobId),
+    make_pair("tax_id", fServTaxId),
+    make_pair("hash", fServHash),
+    make_pair("date_changed", fServDateChanged)
+};
+static string  kBadUrlMessage = "Unknown request, the provided URL "
+                                "is not recognized";
 
 
 int CPubseqGatewayApp::OnBadURL(HST::CHttpRequest &  req,
@@ -64,15 +86,13 @@ int CPubseqGatewayApp::OnBadURL(HST::CHttpRequest &  req,
 {
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
-    string                  message = "Unknown request, the provided URL "
-                                      "is not recognized";
 
     m_ErrorCounters.IncBadUrlPath();
-    x_SendMessageAndCompletionChunks(resp, message,
+    x_SendMessageAndCompletionChunks(resp, kBadUrlMessage,
                                      CRequestStatus::e400_BadRequest, eBadURL,
                                      eDiag_Error);
 
-    ERR_POST(Warning << message);
+    ERR_POST(Warning << kBadUrlMessage);
     x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
     return 0;
 }
@@ -95,31 +115,14 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
         return 0;
     }
 
-    map<string,
-        pair<SRequestParameter, EServIncludeData>>    flag_params = {
-        {"no_tse", make_pair(SRequestParameter(), fServNoTSE)},
-        {"fast_info", make_pair(SRequestParameter(), fServFastInfo)},
-        {"whole_tse", make_pair(SRequestParameter(), fServWholeTSE)},
-        {"orig_tse", make_pair(SRequestParameter(), fServOrigTSE)},
-        {"canon_id", make_pair(SRequestParameter(), fServCanonicalId)},
-        {"seq_ids", make_pair(SRequestParameter(), fServSeqIds)},
-        {"mol_type", make_pair(SRequestParameter(), fServMoleculeType)},
-        {"length", make_pair(SRequestParameter(), fServLength)},
-        {"state", make_pair(SRequestParameter(), fServState)},
-        {"blob_id", make_pair(SRequestParameter(), fServBlobId)},
-        {"tax_id", make_pair(SRequestParameter(), fServTaxId)},
-        {"hash", make_pair(SRequestParameter(), fServHash)},
-        {"date_changed", make_pair(SRequestParameter(), fServDateChanged)}
-    };
-
-
     string                  err_msg;
     TServIncludeData        include_data_flags = 0;
-    for (auto &  flag_param: flag_params) {
-        flag_param.second.first = x_GetParam(req, flag_param.first);
-        if (flag_param.second.first.m_Found) {
+    SRequestParameter       request_param;
+    for (const auto &  flag_param: kGetFlagParams) {
+        request_param = x_GetParam(req, flag_param.first);
+        if (request_param.m_Found) {
             if (!x_IsBoolParamValid(flag_param.first,
-                                    flag_param.second.first.m_Value, err_msg)) {
+                                    request_param.m_Value, err_msg)) {
                 m_ErrorCounters.IncMalformedArguments();
                 x_SendMessageAndCompletionChunks(resp, err_msg,
                                                  CRequestStatus::e400_BadRequest,
@@ -129,8 +132,8 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                 x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
                 return 0;
             }
-            if (flag_param.second.first.m_Value == "yes") {
-                include_data_flags |= flag_param.second.second;
+            if (request_param.m_Value == "yes") {
+                include_data_flags |= flag_param.second;
             }
         }
     }
@@ -153,8 +156,8 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    SRequestParameter   blob_id_param = x_GetParam(req, "blob_id");
-    SRequestParameter   last_modified_param = x_GetParam(req, "last_modified");
+    SRequestParameter   blob_id_param = x_GetParam(req, kBlobIdParam);
+    SRequestParameter   last_modified_param = x_GetParam(req, kLastModifiedParam);
     int64_t             last_modified_value = INT64_MIN;
 
     if (last_modified_param.m_Found) {
@@ -276,8 +279,9 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
     }
 
     TServIncludeData        include_data_flags = 0;
-    for (auto &  flag_param: kResolveFlagParams) {
-        SRequestParameter   request_param = x_GetParam(req, flag_param.first);
+    SRequestParameter       request_param;
+    for (const auto &  flag_param: kResolveFlagParams) {
+        request_param = x_GetParam(req, flag_param.first);
         if (request_param.m_Found) {
             if (!x_IsBoolParamValid(flag_param.first,
                                     request_param.m_Value, err_msg)) {
@@ -463,5 +467,62 @@ int CPubseqGatewayApp::OnStatus(HST::CHttpRequest &  req,
 
     x_PrintRequestStop(context, CRequestStatus::e200_Ok);
     return 0;
+}
+
+
+bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
+        HST::CHttpRequest &  req,
+        HST::CHttpReply<CPendingOperation> &  resp,
+        CTempString &  seq_id,
+        int &  seq_id_type,
+        SRequestParameter &  seq_id_type_param,
+        bool  use_psg_protocol)
+{
+    string  err_msg;
+
+    // Check the mandatory parameter presence
+    SRequestParameter   seq_id_param = x_GetParam(req, kSeqIdParam);
+    if (!seq_id_param.m_Found) {
+        err_msg = "Missing the 'seq_id' parameter";
+        m_ErrorCounters.IncInsufficientArguments();
+    }
+    else if (seq_id_param.m_Value.empty()) {
+        err_msg = "Missing value of the 'seq_id' parameter";
+        m_ErrorCounters.IncMalformedArguments();
+    }
+
+    if (!err_msg.empty()) {
+        if (use_psg_protocol)
+            x_SendMessageAndCompletionChunks(resp, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             eMissingParameter, eDiag_Error);
+        else
+            resp.Send400("Bad Request", err_msg.c_str());
+
+        ERR_POST(Warning << err_msg);
+        return false;
+    }
+    seq_id = seq_id_param.m_Value;
+
+    seq_id_type_param = x_GetParam(req, kSeqIdTypeParam);
+    if (seq_id_type_param.m_Found) {
+        if (!x_ConvertIntParameter(kSeqIdTypeParam, seq_id_type_param.m_Value,
+                                   seq_id_type, err_msg)) {
+            m_ErrorCounters.IncMalformedArguments();
+            if (use_psg_protocol)
+                x_SendMessageAndCompletionChunks(resp, err_msg,
+                                                 CRequestStatus::e400_BadRequest,
+                                                 eMalformedParameter, eDiag_Error);
+            else
+                resp.Send400("Bad Request", err_msg.c_str());
+
+            ERR_POST(Warning << err_msg);
+            return false;
+        }
+    } else {
+        seq_id_type = -1;
+    }
+
+    return true;
 }
 

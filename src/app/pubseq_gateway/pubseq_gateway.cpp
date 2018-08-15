@@ -67,10 +67,6 @@ const bool              kDefaultLog = true;
 static const string     kNodaemonArgName = "nodaemon";
 
 
-static string  kSeqIdParam = "seq_id";
-static string  kSeqIdTypeParam = "seq_id_type";
-
-
 CPubseqGatewayApp *     CPubseqGatewayApp::sm_PubseqApp = nullptr;
 
 
@@ -679,63 +675,6 @@ void CPubseqGatewayApp::x_SendUnknownClientSatelliteError(
                 reply_completion.size()));
 
     resp.Send(chunks, true);
-}
-
-
-bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
-        HST::CHttpRequest &  req,
-        HST::CHttpReply<CPendingOperation> &  resp,
-        CTempString &  seq_id,
-        int &  seq_id_type,
-        SRequestParameter &  seq_id_type_param,
-        bool  use_psg_protocol)
-{
-    string  err_msg;
-
-    // Check the mandatory parameter presence
-    SRequestParameter   seq_id_param = x_GetParam(req, kSeqIdParam);
-    if (!seq_id_param.m_Found) {
-        err_msg = "Missing the 'seq_id' parameter";
-        m_ErrorCounters.IncInsufficientArguments();
-    }
-    else if (seq_id_param.m_Value.empty()) {
-        err_msg = "Missing value of the 'seq_id' parameter";
-        m_ErrorCounters.IncMalformedArguments();
-    }
-
-    if (!err_msg.empty()) {
-        if (use_psg_protocol)
-            x_SendMessageAndCompletionChunks(resp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             eMissingParameter, eDiag_Error);
-        else
-            resp.Send400("Bad Request", err_msg.c_str());
-
-        ERR_POST(Warning << err_msg);
-        return false;
-    }
-    seq_id = seq_id_param.m_Value;
-
-    seq_id_type_param = x_GetParam(req, kSeqIdTypeParam);
-    if (seq_id_type_param.m_Found) {
-        if (!x_ConvertIntParameter(kSeqIdTypeParam, seq_id_type_param.m_Value,
-                                   seq_id_type, err_msg)) {
-            m_ErrorCounters.IncMalformedArguments();
-            if (use_psg_protocol)
-                x_SendMessageAndCompletionChunks(resp, err_msg,
-                                                 CRequestStatus::e400_BadRequest,
-                                                 eMalformedParameter, eDiag_Error);
-            else
-                resp.Send400("Bad Request", err_msg.c_str());
-
-            ERR_POST(Warning << err_msg);
-            return false;
-        }
-    } else {
-        seq_id_type = -1;
-    }
-
-    return true;
 }
 
 
