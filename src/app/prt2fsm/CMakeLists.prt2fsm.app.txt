@@ -1,0 +1,13 @@
+#
+#
+#
+add_executable(prt2fsm-app
+    prt2fsm
+)
+
+set_target_properties(prt2fsm-app PROPERTIES OUTPUT_NAME prt2fsm)
+
+target_link_libraries(prt2fsm-app
+    data_loaders_util
+)
+
