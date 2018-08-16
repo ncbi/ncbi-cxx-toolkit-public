@@ -51292,6 +51292,12 @@ echo "$as_me: error: --with-grpc explicitly specified, but no usable version fou
     fi
 fi
 
+if test -f "$GRPC_PATH/lib/libboringssl.a"; then
+   GRPC_SSL_LIBS="-lboringssl -lboringcrypto"
+else
+   GRPC_SSL_LIBS=$OPENSSL_LIBS
+fi
+
 if test "$with_grpc" != "no"; then
     case "$with_grpc" in
        yes | "" ) ;;
@@ -51379,7 +51385,7 @@ if test "${ncbi_cv_lib_grpc+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS="$PROTOBUF_INCLUDE $GRPC_INCLUDE $orig_CPPFLAGS"
-       LIBS="$GRPC_LIBS $OPENSSL_LIBS $Z_LIBS $orig_LIBS"
+       LIBS="$GRPC_LIBS $GRPC_SSL_LIBS $Z_LIBS $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -51551,7 +51557,7 @@ fi
 
    LDFLAGS=$orig_LDFLAGS
    GRPC_UNSECURE_LIBS=`echo $GRPC_LIBS | sed -e 's/\(-lgrpc+*\)/\1_unsecure/g'`
-   GRPC_LIBS="$GRPC_LIBS $OPENSSL_LIBS"
+   GRPC_LIBS="$GRPC_LIBS $GRPC_SSL_LIBS"
    GRPC_REFLECTION_LIBS="$WHOLE_ARCHIVE $NO_AS_NEEDED $GRPC_LIBPATH"
    GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS -lgrpc++_reflection"
    GRPC_REFLECTION_LIBS="$GRPC_REFLECTION_LIBS $NO_WHOLE_ARCHIVE $AS_NEEDED"
