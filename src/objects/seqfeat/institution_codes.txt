@@ -99,6 +99,7 @@ AHF	s	Allan Hancock Foundation, University of Southern California
 AHFH	s	University of Southern California			
 AHLDA	c	Animal Health Division Culture Collection			
 AHMA	s	Agharkar Research Institute, Maharashtra Association for the Cultivation of Science, Botany Group			
+AHN	c	Anaerobe Reference Laboratory, Helsinki Collection			
 AHNU	s	Anhui Normal University Conservation Genetics Lab			
 AHS	s	Austin High School			
 AHU	c	AHU Culture Collection			
@@ -429,6 +430,7 @@ BDLU	s	Laurentian University
 BDMU	s	McMaster University			
 BDPA	s	Arboretum, Bolestraszyce - Zamek, Department of Physiography			
 BDUC	s	University of Calgary			
+BDUN	c	Department of Botany, University of Nottingham			
 BDUW	s	University of Waterloo			
 BDUZ	c	Biological Sciences			
 BDWC	s	University of Windsor			
@@ -931,6 +933,7 @@ CDRS	s	Invertebrate Collection
 CDS	s	Charles Darwin Research Station, Botany Department			
 CEAM	s	Centro de Entomologica y Acarologia			
 CEB	s	Tadulako University			
+CEB<FRA>	c	Centre d'Etudes du Bouchet			
 CEBU	s	University of San Carlos, Biology Department			
 CECT	c	Coleccion Espanola de Cultivos Tipo			
 CEDD	s	International Center for Ethnomedicine and Drug Development			
@@ -1914,6 +1917,7 @@ FIOC:ColTryp	c	Fundacao Instituto Oswaldo Cruz, Collection of Trypanosoma from W
 FIP	s	Florida Institute of Paleontology			
 FIPF	s	Universita di Firenze			
 FIPIA	s	Institut Teknologi Bandung, Jurusan Biologi			
+FIRDI	c	Food Industry Research and Development Institute			
 FJFC	s	Fujian Forestry College			
 FJSI	s	Fujian Institute of Subtropical Botany			
 FKE	s	Folk Museum			
@@ -2007,6 +2011,7 @@ FTCC	c	Food Technology Culture Collection
 FTCMU	c	Department of Food Science and Technology, Faculty of Agriculture			
 FTG	sb	Fairchild Tropical Botanic Garden			
 FTI	c	Centro de Biotecnologia e Quimica-CEBIQ			
+FTK	c	Forintek Culture Collection of Wood-Inhabiting Fungi			
 FTOH	s	Forestry Training Institute, Olmotonyi			
 FTS	s	Fuzhou Teachers College, Biology Department			
 FTU	s	University of Central Florida, Biology Department			
@@ -2060,6 +2065,7 @@ GBFM	s	Universidad de Panama
 GBG<SWE>	b	Gotheburg Botanical Garden			
 GBH	s	Herbarium of Geo. B. Hinton			
 GBNM	s	Glacier Bay National Park and Preserve Museum			
+GBS	c	Ginseng Genetic Resource Bank			
 GBY	s	Grimsby Arts and Natural History			
 GC<GHN>	s	University of Ghana, Botany Department			
 GC<USA-MD>	s	Goucher College			
@@ -2258,6 +2264,7 @@ HABA	s	Academia de Ciencias Medicas, Fisicas y Naturales de La Habana
 HABAYC	s	University of Mary Hardin-Baylor, Biology Department			
 HABE	s	Instituto de Biologia, Departamento de Ecologia			
 HAC	s	Instituto de Ecologia y Sistematica			
+HACC	c	Research Laboratories of Hindustan Antibiotics, Ltd.			
 HACC	s	Academia de Ciencias Camaguey			
 HACW	s	Department of Fishery, Huazhong Agriculture Collection			
 HAF	s	Hainan Forestry Institute			
@@ -2712,6 +2719,7 @@ ICF	s	INIFAP
 ICFC	c	IIB-INTECH Collection of Fungal Cultures			
 ICGC	s	Istituto Calasanzio			
 ICHUM	s	Invertebrate Collection of the Hokkaido University Museum			
+ICI	c	Imperial Chemical Industries Ltd.			
 ICIS	s	Idaho Museum of Natural History			
 ICM	s	Instituto de Ciencias del Mar	ICMD		
 ICMP	c	International Collection of Microorganisms from Plants	PDDCC 	http://scd.landcareresearch.co.nz/Specimen/ICMP_&spec;	
@@ -2832,7 +2840,7 @@ IMDC	s	Inner Mongolia Institute for Drug Control
 IMDY	s	Chinese Academy of Medical Sciences, Yunnan Branch			
 IMET	c	National Kurturensammlung fuer Mikroorganismen			
 IMFA	s	Inner Mongolia Academy of Forestry			
-IMI	sc	CABI Genetic Resource Collection	CABI	http://www.herbimi.info/herbimi/specimen.htm?imi=&spec;	
+IMI	sc	CABI Genetic Resource Collection	CABI,CMI	http://www.herbimi.info/herbimi/specimen.htm?imi=&spec;	
 IML	s	Instituto Miguel Lillo			
 IMLA	s	Fundacion e Instituto Miguel Lillo			
 IMM<CHN-Bejing>	s	Chinese Academy of Medical Science			
