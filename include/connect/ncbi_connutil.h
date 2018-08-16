@@ -618,10 +618,6 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  * On success, return eIO_Success and non-NULL handle of a socket via the last
  * parameter.
  *
- * ATTENTION:  due to the very essence of the HTTP/1.x connection, you may
- *             perform only one { WRITE, ..., WRITE, READ, ..., READ } cycle,
- *             if using non-CONNECT request methods.
- *
  * The returned socket must be exipicitly closed by "SOCK_Close()" when no
  * longer needed.
  *

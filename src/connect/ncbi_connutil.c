@@ -71,7 +71,7 @@ static int/*bool*/ x_StrcatCRLF(char** dstp, const char* src)
             break;
         --srclen;
     }
-    if (dstlen  ||  srclen) {
+    if (dstlen | srclen) {
         size_t len;
         char*  temp;
         len = (dstlen ? dstlen + 2 : 0) + (srclen ? srclen + 2 : 0) + 1;
