@@ -1904,7 +1904,11 @@ s_FormatRegularSequencePiece
             for ( ; i < s_kChunkCount; ++i) {
                 ++linep;
                 for ( ; j < s_kChunkSize; ++j, ++iter, ++linep) {
-                    *linep = *iter;
+                    unsigned char ch = *iter;
+                    if (ch > 126) {
+                        ch = '?';
+                    }
+                    *linep = ch;
                 }
                 *linep = ' ';
                 j = 0;
@@ -1917,7 +1921,11 @@ s_FormatRegularSequencePiece
             for ( ; total > 0  &&  i < s_kChunkCount; ++i) {
                 ++linep;
                 for ( ; total > 0  &&  j < s_kChunkSize; ++j, ++iter, --total, ++linep) {
-                    *linep = *iter;
+                    unsigned char ch = *iter;
+                    if (ch > 126) {
+                        ch = '?';
+                    }
+                    *linep = ch;
                 }
                 *linep = ' ';
                 j = 0;
