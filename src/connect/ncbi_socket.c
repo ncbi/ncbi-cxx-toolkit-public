@@ -3817,9 +3817,18 @@ static EIO_Status s_Shutdown(SOCK                  sock,
 }
 
 
+enum {
+    fSOCK_KeepNone    = 0,
+    fSOCK_KeepEvent   = 1,
+    fSOCK_KeepSession = 2,
+    fSOCK_KeepPending = 4
+} ESOCK_Keep;
+typedef unsigned int TSOCK_Keep;
+
+
 /* Close the socket (either orderly or abruptly)
  */
-static EIO_Status s_Close_(SOCK sock, int abort)
+static EIO_Status s_Close_(SOCK sock, int abort, TSOCK_Keep keep)
 {
     int/*bool*/ linger = 0/*false*/;
     char       _id[MAXIDLEN];
@@ -3834,7 +3843,9 @@ static EIO_Status s_Close_(SOCK sock, int abort)
         status = eIO_Success;
         BUF_Erase(sock->r_buf);
         BUF_Erase(sock->w_buf);
+        keep = fSOCK_KeepNone;
     } else if (abort  ||  !sock->keep) {
+        keep = fSOCK_KeepNone;
 #if (defined(NCBI_OS_UNIX) && !defined(NCBI_OS_BEOS)) || defined(NCBI_OS_MSWIN)
         /* setsockopt() is not implemented for MAC (MIT socket emulation lib)*/
         if (sock->w_status != eIO_Closed
@@ -3911,13 +3922,14 @@ static EIO_Status s_Close_(SOCK sock, int abort)
                    sock->w_status == eIO_Closed);
             assert(sock->w_len == 0);
         }
-    } else {
+    } else if (!(keep & fSOCK_KeepPending)) {
         /* flush everything out */
         status = s_Shutdown(sock, eIO_Open, SOCK_GET_TIMEOUT(sock, c));
         assert(sock->w_len == 0);
     }
 
-    if (sock->session  &&  sock->session != SESSION_INVALID) {
+    if (!(keep & fSOCK_KeepSession)
+        &&  sock->session  &&  sock->session != SESSION_INVALID) {
         FSSLDelete ssldelete = s_SSL ? s_SSL->Delete : 0;
         assert(sock->type == eSocket);
         if (ssldelete)
@@ -3936,8 +3948,10 @@ static EIO_Status s_Close_(SOCK sock, int abort)
     }
 
 #ifdef NCBI_OS_MSWIN
-    WSAEventSelect(sock->sock, sock->event/*ignored*/, 0/*de-associate*/);
+    if (!(keep & fSOCK_KeepEvent)  &&  sock->event)
+        WSAEventSelect(sock->sock, sock->event/*ignored*/, 0/*de-associate*/);
 #endif /*NCBI_OS_MSWIN*/
+
     if (s_Initialized > 0  &&  !sock->keep
         /* set the socket back to blocking mode */
         &&  linger  &&  !s_SetNonblock(sock->sock, 0/*false*/)) {
@@ -4002,23 +4016,28 @@ static EIO_Status s_Close_(SOCK sock, int abort)
                     break;
                 }
                 if (abort)
-                    abort++;
+                    abort = 2;
             }
         }
     } else
         sock->sock = SOCK_INVALID;
 
-    /* return */
+#ifdef NCBI_OS_MSWIN
+    if (!(keep & fSOCK_KeepEvent)  &&  sock->event) {
+        WSACloseEvent(sock->event);
+        sock->event = 0;
+    }
+#endif /*NCBI_OS_MSWIN*/
     sock->myport = 0;
     return status;
 }
 
 
-static EIO_Status s_Close(SOCK sock)
+static EIO_Status s_Close(SOCK sock, TSOCK_Keep keep)
 {
     EIO_Status status;
 
-    status = s_Close_(sock, 0/*orderly*/);
+    status = s_Close_(sock, 0/*orderly*/, keep);
     if (s_ErrHook  &&  status != eIO_Success) {
         SSOCK_ErrInfo info;
         char          addr[40];
@@ -4192,7 +4211,7 @@ static EIO_Status s_Connect_(SOCK            sock,
                              " Failed to create IO event",
                              s_ID(sock, _id)));
         UTIL_ReleaseBufferOnHeap(strerr);
-        s_Close_(sock, -2/*silent abort*/);
+        s_Close_(sock, -2/*silent abort*/, fSOCK_KeepNone);
         return eIO_Unknown;
     }
     /* NB: WSAEventSelect() sets non-blocking automatically */
@@ -4204,7 +4223,7 @@ static EIO_Status s_Connect_(SOCK            sock,
                              " Failed to bind IO event",
                              s_ID(sock, _id)));
         UTIL_ReleaseBuffer(strerr);
-        s_Close_(sock, -2/*silent abort*/);
+        s_Close_(sock, -2/*silent abort*/, fSOCK_KeepNone);
         return eIO_Unknown;
     }
 #elif !defined(SOCK_NONBLOCK)
@@ -4217,7 +4236,7 @@ static EIO_Status s_Connect_(SOCK            sock,
                              " Cannot set socket to non-blocking mode",
                              s_ID(sock, _id)));
         UTIL_ReleaseBuffer(strerr);
-        s_Close_(sock, -2/*silent abort*/);
+        s_Close_(sock, -2/*silent abort*/, fSOCK_KeepNone);
         return eIO_Unknown;
     }
 #endif
@@ -4321,7 +4340,7 @@ static EIO_Status s_Connect_(SOCK            sock,
                     status = eIO_Unknown;
             } else
                 status = eIO_Interrupt;
-            s_Close_(sock, -1/*abort*/);
+            s_Close_(sock, -1/*abort*/, fSOCK_KeepNone);
             return status/*error*/;
         }
         sock->pending = 1;
@@ -4357,7 +4376,7 @@ static EIO_Status s_Connect_(SOCK            sock,
                                      reason));
                 UTIL_ReleaseBuffer(strerr);
             }
-            s_Close_(sock, -1/*abort*/);
+            s_Close_(sock, -1/*abort*/, fSOCK_KeepNone);
             return status;
         }
     }
@@ -4461,7 +4480,8 @@ static EIO_Status s_CreateOnTop(const void*   handle,
                                 size_t        size,
                                 NCBI_CRED     cred,
                                 TSOCK_Flags   flags,
-                                TSOCK_Handle* oldfd)
+                                TSOCK_Handle* oldfd,
+                                void**        oldssl)
 {
     union {
         struct sockaddr    sa;
@@ -4473,19 +4493,20 @@ static EIO_Status s_CreateOnTop(const void*   handle,
     TSOCK_Handle    fd;
     struct linger   lgr;
     unsigned int    host;
-#ifdef NCBI_OS_MSWIN
-    WSAEVENT        event = 0;
-#endif /*NCBI_OS_MSWIN*/
     int             error;
     TSOCK_socklen_t peerlen;
     size_t          socklen;
+    void*           session;
+#ifdef NCBI_OS_MSWIN
+    WSAEVENT        event = 0;
+#endif /*NCBI_OS_MSWIN*/
+    BUF             w_buf = 0;
     char            _id[MAXIDLEN];
     unsigned short  port, myport = 0;
     SOCK            x_sock, x_orig = 0;
-    BUF             w_buf = 0, r_buf = 0;
     unsigned int    x_id = ++s_ID_Counter * 1000;
 
-    assert(!*sock  &&  *oldfd == SOCK_INVALID);
+    assert(!*sock  &&  *oldfd == SOCK_INVALID  &&  !*oldssl);
     assert(!size  ||  data);
 
     if (!handle  ||  (handle_size  &&  handle_size != sizeof(fd))) {
@@ -4500,6 +4521,7 @@ static EIO_Status s_CreateOnTop(const void*   handle,
     }
 
     if (!handle_size) {
+        TSOCK_Keep keep = fSOCK_KeepEvent;
         x_orig = (SOCK) handle;
         if (x_orig->type != eSocket) {
             assert(0);
@@ -4512,10 +4534,20 @@ static EIO_Status s_CreateOnTop(const void*   handle,
             x_orig->keep = 1/*true*/;
             *oldfd = fd;
         }
+        if (!x_orig->session == !(flags & fSOCK_Secure)) {
+            keep |= fSOCK_KeepPending;
+            if (flags & fSOCK_Secure)
+                keep |= fSOCK_KeepSession;
+        }
         myport = x_orig->myport;
-        s_Close(x_orig);
+        s_Close(x_orig, keep);
     } else
         memcpy(&fd, handle, sizeof(fd));
+    if (!x_orig
+        ||  !(session = *oldssl = x_orig->session)
+        ||  session == SESSION_INVALID) {
+        session = flags & fSOCK_Secure ? SESSION_INVALID : 0;
+    }
 
     /* initialize internals */
     if (s_InitAPI(flags & fSOCK_Secure) != eIO_Success)
@@ -4598,54 +4630,34 @@ static EIO_Status s_CreateOnTop(const void*   handle,
 #endif /*NCBI_OS_UNIX*/
     }
 
-    /* setup initial data */
-    if (x_orig) {
-        r_buf = x_orig->r_buf;
-        x_orig->r_buf = 0;
-    } else
-        BUF_SetChunkSize(&r_buf, SOCK_BUF_CHUNK_SIZE);
-    if (size  &&  (BUF_SetChunkSize(&w_buf, size) < size
-                   ||  !BUF_Write(&w_buf, data, size))) {
-        CORE_LOGF_ERRNO_X(49, eLOG_Error, errno,
-                          ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
-                           " Cannot store initial data",
-                           x_id, (unsigned int) fd));
-        BUF_Destroy(r_buf);
-        BUF_Destroy(w_buf);
-        return eIO_Unknown;
-    }
-
 #ifdef NCBI_OS_MSWIN
-    if (x_orig  &&  (event = x_orig->event) != 0) {
+    if (!x_orig) {
+        if (!(event = WSACreateEvent())) {
+            DWORD err = GetLastError();
+            const char* strerr = s_WinStrerror(err);
+            CORE_LOGF_ERRNO_EXX(161, eLOG_Error,
+                                err, strerr ? strerr : "",
+                                ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
+                                 " Failed to create IO event",
+                                 x_id, (unsigned int) fd));
+            UTIL_ReleaseBufferOnHeap(strerr);
+            return eIO_Unknown;
+        }
+        /* NB: WSAEventSelect() sets non-blocking automatically */
+        if (WSAEventSelect(fd, event, SOCK_EVENTS) != 0) {
+            const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
+            CORE_LOGF_ERRNO_EXX(162, eLOG_Error,
+                                error, strerr ? strerr : "",
+                                ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
+                                 " Failed to bind IO event",
+                                 x_id, (unsigned int) fd));
+            UTIL_ReleaseBuffer(strerr);
+            return eIO_Unknown;
+        }
+    } else {
+        event = x_orig->event;
         x_orig->event = 0;
-        WSAResetEvent(event);
-    }
-    if (!event  &&  !(event = WSACreateEvent())) {
-        DWORD err = GetLastError();
-        const char* strerr = s_WinStrerror(err);
-        CORE_LOGF_ERRNO_EXX(161, eLOG_Error,
-                            err, strerr ? strerr : "",
-                            ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
-                             " Failed to create IO event",
-                             x_id, (unsigned int) fd));
-        UTIL_ReleaseBufferOnHeap(strerr);
-        BUF_Destroy(r_buf);
-        BUF_Destroy(w_buf);
-        return eIO_Unknown;
-    }
-    /* NB: WSAEventSelect() sets non-blocking automatically */
-    if (WSAEventSelect(fd, event, SOCK_EVENTS) != 0) {
-        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
-        CORE_LOGF_ERRNO_EXX(162, eLOG_Error,
-                            error, strerr ? strerr : "",
-                            ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
-                             " Failed to bind IO event",
-                             x_id, (unsigned int) fd));
-        UTIL_ReleaseBuffer(strerr);
-        WSACloseEvent(event);
-        BUF_Destroy(r_buf);
-        BUF_Destroy(w_buf);
-        return eIO_Unknown;
+        assert(event);
     }
 #else
     /* set to non-blocking mode */
@@ -4657,22 +4669,23 @@ static EIO_Status s_CreateOnTop(const void*   handle,
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) fd));
         UTIL_ReleaseBuffer(strerr);
-        BUF_Destroy(r_buf);
-        BUF_Destroy(w_buf);
         return eIO_Unknown;
     }
 #endif /*NCBI_OS_MSWIN*/
 
-    /* create and fill in a socket handle */
-    if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + socklen))) {
-#ifdef NCBI_OS_MSWIN
-        WSAEventSelect(fd, event, 0/*de-associate*/);
-        WSACloseEvent(event);
-#endif /*NCBI_OS_MSWIN*/
-        BUF_Destroy(r_buf);
-        BUF_Destroy(w_buf);
-        return eIO_Unknown;
+    /* setup initial data */
+    if (size  &&  (BUF_SetChunkSize(&w_buf, size) < size
+                   ||  !BUF_Write(&w_buf, data, size))) {
+        CORE_LOGF_ERRNO_X(49, eLOG_Error, errno,
+                          ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
+                           " Cannot store initial data",
+                           x_id, (unsigned int) fd));
+        goto errout;
     }
+
+    /* create and fill in a socket handle */
+    if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + socklen)))
+        goto errout;
     x_sock->sock      = fd;
     x_sock->id        = x_id;
 #ifdef NCBI_OS_UNIX
@@ -4689,7 +4702,7 @@ static EIO_Status s_CreateOnTop(const void*   handle,
     x_sock->type      = eSocket;
     x_sock->side      = eSOCK_Server;
     x_sock->log       = flags & (fSOCK_LogDefault | fSOCK_LogOn);
-    x_sock->session   = flags & fSOCK_Secure ? SESSION_INVALID : 0;
+    x_sock->session   = session;
     x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/  : 0/*false*/;
     x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
     x_sock->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
@@ -4701,11 +4714,9 @@ static EIO_Status s_CreateOnTop(const void*   handle,
     x_sock->crossexec = flags & fSOCK_KeepOnExec  ? 1/*true*/  : 0/*false*/;
     x_sock->keepalive = flags & fSOCK_KeepAlive   ? 1/*true*/  : 0/*false*/;
     /* all timeout bits zeroed - infinite */
-    x_sock->r_buf     = r_buf;
     x_sock->w_buf     = w_buf;
-    x_sock->w_len     = size;
 
-    if (x_sock->session) {
+    if (x_sock->session == SESSION_INVALID) {
         FSSLCreate sslcreate = s_SSL ? s_SSL->Create : 0;
         void* session;
         if (!sslcreate) {
@@ -4720,7 +4731,7 @@ static EIO_Status s_CreateOnTop(const void*   handle,
                                 ("%s[SOCK::CreateOnTop] "
                                  " %s to initialize secure session",
                                  s_ID(x_sock, _id),
-                                 sslcreate ? "Unable" : "Failed"));
+                                 sslcreate ? "Failed" : "Unable"));
             UTIL_ReleaseBuffer(strerr);
             x_sock->sock = SOCK_INVALID;
 #ifdef NCBI_OS_MSWIN
@@ -4733,6 +4744,17 @@ static EIO_Status s_CreateOnTop(const void*   handle,
         x_sock->session = session;
         x_sock->cred = cred;
     }
+
+    if (x_orig) {
+        x_sock->r_buf = x_orig->r_buf;
+        x_orig->r_buf = 0;
+        x_sock->w_buf = x_orig->w_buf;
+        x_orig->w_buf = 0;
+        x_orig->w_len = 0;
+        BUF_Splice(&x_sock->w_buf, w_buf);
+    } else
+        BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
+    x_sock->w_len = BUF_Size(x_sock->w_buf);
 
     if (x_sock->port) {
 #ifdef SO_KEEPALIVE
@@ -4799,6 +4821,14 @@ static EIO_Status s_CreateOnTop(const void*   handle,
     /* success */
     *sock = x_sock;
     return eIO_Success;
+
+ errout:
+#ifdef NCBI_OS_MSWIN
+    WSAEventSelect(fd, event, 0/*de-associate*/);
+    WSACloseEvent(event);
+#endif /*NCBI_OS_MSWIN*/
+    BUF_Destroy(w_buf);
+    return eIO_Unknown;
 }
 
 
@@ -5156,7 +5186,7 @@ static void SOCK_ABORT(TSOCK_Handle x_sock)
     temp.side = eSOCK_Server;
     temp.type = eSocket;
     temp.sock = x_sock;
-    s_Close_(&temp, -2/*silent abort*/);
+    s_Close_(&temp, -2/*silent abort*/, fSOCK_KeepNone);
 }
 
 
@@ -6265,14 +6295,22 @@ EIO_Status SOCK_CreateOnTopInternal(const void* handle,
     size_t        size = init ? init->size : 0;
     NCBI_CRED     cred = init ? init->cred : 0;
     TSOCK_Handle oldfd = SOCK_INVALID;
+    void*       oldssl = 0;
     EIO_Status  status;
 
     *sock = 0;
     status = s_CreateOnTop(handle, handle_size, sock,
-                           data, size, cred, flags, &oldfd);
+                           data, size, cred, flags, &oldfd, &oldssl);
     assert((status != eIO_Success) == !*sock);
-    if (status != eIO_Success  &&  oldfd != SOCK_INVALID)
-        SOCK_ABORT(oldfd);
+    if (status != eIO_Success) {
+        if (oldssl  &&  oldssl != SESSION_INVALID) {
+            FSSLDelete ssldelete = s_SSL ? s_SSL->Delete : 0;
+            if (ssldelete)
+                ssldelete(oldssl);
+        }
+        if (oldfd != SOCK_INVALID)
+            SOCK_ABORT(oldfd);
+    }
     return status;
 }
 
@@ -6344,13 +6382,7 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
 
     /* close the socket if necessary */
     if (sock->sock != SOCK_INVALID) {
-        s_Close(sock);
-#ifdef NCBI_OS_MSWIN
-        if (sock->event) {
-            WSACloseEvent(sock->event);
-            sock->event = 0;
-        }
-#endif /*NCBI_OS_MSWIN*/
+        s_Close(sock, fSOCK_KeepNone);
         /* likely NOOP */
         BUF_Erase(sock->r_buf);
         BUF_Erase(sock->w_buf);
@@ -6358,7 +6390,6 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
 
     /* connect */
     sock->id++;
-    sock->myport    = 0;
     sock->side      = eSOCK_Client;
     sock->n_read    = 0;
     sock->n_written = 0;
@@ -6434,7 +6465,7 @@ extern EIO_Status SOCK_CloseEx(SOCK sock, int/*bool*/ destroy)
     if (sock->sock == SOCK_INVALID)
         status = eIO_Closed;
     else if (s_Initialized > 0)
-        status = s_Close(sock);
+        status = s_Close(sock, fSOCK_KeepNone);
     else {
         sock->sock = SOCK_INVALID;
         status = eIO_Success;
@@ -7066,7 +7097,7 @@ extern EIO_Status SOCK_Abort(SOCK sock)
         return eIO_InvalidArg;
     }
 
-    return s_Close_(sock, 1/*abort*/);
+    return s_Close_(sock, 1/*abort*/, fSOCK_KeepNone);
 }
 
 
@@ -7227,7 +7258,7 @@ extern EIO_Status SOCK_GetOSHandleEx(SOCK       sock,
         status = eIO_Success;
     else {
         sock->keep = 1/*true*/;
-        status = s_Close(sock);
+        status = s_Close(sock, fSOCK_KeepNone);
     }
     return status;
 }

@@ -640,15 +640,18 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * When a socket is being created on top of a SOCK handle, the original SOCK
  * gets emptied (and the underlying OS handle removed from it) upon the call
  * returns (whether successfully or not), yet will still need SOCK_Destroy() in
- * the caller's code to free up the memory it  occupies.
+ * the caller's code to free up the memory it occupies.
  * Any secure session that may have existed in the original SOCK will have
- * been terminated (and new session may have been initiated in the new SOCK --
- * at this time the old session is not allowed to "migrate").
- * Any pending output will have been flushed, and any pending input still in
- * the original SOCK will migrate to the new socket object returned.  If the
- * latter is undesireable, one can use SOCK_GetOSHandleEx() on the original
- * socket, taking the ownership of the underlying OS handle, and then create a
- * SOCK on top of the bare "handle", specifying its (non-zero) "handle_size".
+ * been migrated to the new socket iff "flags" indicate fSOCK_Secure (if no
+ * session existed, it session may have been initiated in the new SOCK).
+ * Otherwise, the original secure session (if any) will have been closed.
+ * Any pending output will have been flushed (if switching secure / insecure
+ * contexts; otherwise, it will have simply migrated to the created SOCK), and
+ * any pending input still in the original SOCK will migrate to the new socket
+ * object returned.  If this behavior is undesireable, one can use
+ * SOCK_GetOSHandleEx() on the original socket, taking the ownership of the
+ * underlying OS handle, and then create a SOCK on top of the bare "handle",
+ * specifying its (non-zero) "handle_size".
  * @warning
  *  It is not recommended to use this call on not fully connected sockets
  *  (either bare OS handle or SOCK) in native MS-Windows builds (e.g. Cygwin is
@@ -659,7 +662,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * @note
  *  (SOCK_IsClientSide() | SOCK_IsServerSide()) can be used to determine if the
  *  original SOCK was stripped off the underlying handle:  the expression would
- *  evaluate to 0(false) iff the underlying object does not have the OS handle.
+ *  evaluate to 0(false) iff the SOCK object does not have the OS handle.
  * @param handle
  *  [in]  OS-dependent "handle" or SOCK to be converted
  * @param handle_size
