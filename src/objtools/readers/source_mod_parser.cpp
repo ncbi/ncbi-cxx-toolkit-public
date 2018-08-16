@@ -1928,6 +1928,12 @@ struct SModContainer
     TMods descr_mods;
 };
 
+
+static bool s_IsModNameMatch(const string& name, const unordered_set<string>& expected) 
+{   
+    return (expected.find(name) != expected.end());
+}
+
 class CModAdder {
 public:
 
@@ -1952,12 +1958,12 @@ private:
     bool x_CreateGene(const TMods& mods, CAutoInitRef<CSeqFeatData>& pFeatData);
     bool x_CreateProtein(const TMods& mods, CAutoInitRef<CSeqFeatData>& pFeatData);
     void x_AddNonBioSourceDescriptors(const TMods& mods, CBioseq& bioseq);
-    bool x_AddComment(const TMod& mod, CRef<CSeqdesc>& pDesc) {}
-    bool x_AddMolInfo(const TMod& mod, CRef<CSeqdesc>& pDesc) {}
-    bool x_AddGBblock(const TMod& mod, CRef<CSeqdesc>& pDesc) {}
-    bool x_AddPubMods(const TMod& mod, CRef<CSeqdesc>& pDesc) {}
-    bool x_AddTPAMods(const TMod& mod, CRef<CSeqdesc>& pDesc) {}
-    bool x_AddGenomeProjectsDBMods(const TMod& mod, CRef<CSeqdesc>& pDesc) {}
+    bool x_AddComment(const TMod& mod, CRef<CSeqdesc>& pDesc);
+    bool x_AddPubMods(const TMod& mod, CRef<CSeqdesc>& pDesc);
+    bool x_AddMolInfo(TMods& mods, CRef<CSeqdesc>& pDesc);
+    bool x_AddGBblock(TMods& mods, CRef<CSeqdesc>& pDesc);
+    bool x_AddGenomeProjectsDBMods(const TMod& mod, CRef<CSeqdesc>& pDesc) { return false; }
+    bool x_AddTPAMods(const TMod& mod, CRef<CSeqdesc>& pDesc);
     unique_ptr<SModContainer> m_pMods;
 };
 
@@ -1967,20 +1973,107 @@ CModAdder::~CModAdder() = default;
 
 void CModAdder::x_AddNonBioSourceDescriptors(const TMods& mods, CBioseq& bioseq)
 {
+    TMods remaining_mods;
     for (const auto& mod : mods) {
-
         // Need some other code to handle SRA mods
 
         CRef<CSeqdesc> pDesc(new CSeqdesc());
         if (x_AddComment(mod, pDesc) ||
-            x_AddMolInfo(mod, pDesc) ||
-            x_AddGBblock(mod, pDesc) ||
+         //   x_AddMolInfo(mod, pDesc) ||
+         //   x_AddGBblock(mod, pDesc) ||
             x_AddPubMods(mod, pDesc) ||
             x_AddTPAMods(mod, pDesc) ||
             x_AddGenomeProjectsDBMods(mod, pDesc)) {
             bioseq.SetDescr().Set().push_back(pDesc);
         }
+        else {
+            remaining_mods.insert(mod);
+        }
     }
+
+    if (!remaining_mods.empty()) {
+        CRef<CSeqdesc> pDesc;
+        if (x_AddMolInfo(remaining_mods, pDesc)) {
+            bioseq.SetDescr().Set().push_back(pDesc);
+        }
+    }
+
+    if (!remaining_mods.empty()) {
+        CRef<CSeqdesc> pDesc;
+        if (x_AddGBblock(remaining_mods, pDesc)) {
+            bioseq.SetDescr().Set().push_back(pDesc);
+        }
+    }
+}
+
+
+bool CModAdder::x_AddComment(const TMod& mod, CRef<CSeqdesc>& desc) 
+{
+    if (NStr::EqualNocase("comment", mod.first)) {
+        desc->SetComment(mod.second);
+        return true;
+    }
+    return false;
+}
+
+
+bool CModAdder::x_AddMolInfo(TMods& mods, CRef<CSeqdesc>& desc) 
+{
+/*
+    const auto& name = mod.first;
+    if (s_IsModNameMatch(name, {"moltype", "mol_type"})) {
+        auto it = sc_BiomolMap.find(mod.second.c_str());
+        if (it != sc_BiomolMap.end()) {
+            desc->SetMolinfo().SetBiomol(it->second.m_eBiomol);
+        }
+        else {
+            // x_HandleBadMod
+        }
+        return true;
+    }
+
+    if (NStr::EqualNocase(name, "tech")) {
+        auto it = sc_TechMap.find(mod.second.c_str());
+        if (it != sc_TechMap.end()) {
+            desc->SetMolinfo().SetTech(it->second);
+        }
+        else {
+            // x_HandleBadMod
+        }
+        return true;
+    }
+
+    if (s_IsModNameMatch(name, {"completeness", "completedness"})) {
+        auto it = sc_CompletenessMap.find(mod.second.c_str());
+        if (it != sc_CompletenessMap.end()) {
+            desc->SetMolinfo().SetCompleteness(it->second);
+        }
+        else {
+            // x_HandleBad Mod
+        }
+        return true;
+    }
+*/
+
+    return false;
+}
+
+
+bool CModAdder::x_AddGBblock(TMods& mods, CRef<CSeqdesc>& desc)
+{
+    return false;
+}
+
+
+bool CModAdder::x_AddPubMods(const TMod& mod, CRef<CSeqdesc>& desc)
+{
+    return false;
+}
+
+
+bool CModAdder::x_AddTPAMods(const TMod& mod, CRef<CSeqdesc>& desc)
+{
+    return false;
 }
 
 
@@ -1997,11 +2090,6 @@ void CModAdder::x_ApplySeqInstMods(const TMods& mods, CSeq_inst& seq_inst)
             // report an error - unrecognised modifier
         }
     }
-}
-
-bool s_IsModNameMatch(const string& name, const unordered_set<string>& expected) 
-{   
-    return (expected.find(name) != expected.end());
 }
 
 
