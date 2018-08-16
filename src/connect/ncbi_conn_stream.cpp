@@ -311,7 +311,7 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
             init.size = size;
             init.cred = net_info->credentials;
             SOCK s;
-            status  = SOCK_CreateOnTopInternal(sock, 0, &s, &init, flgs);
+            status = SOCK_CreateOnTopInternal(sock, 0, &s, &init, flgs);
             _ASSERT(!s ^ !(status != eIO_Success));
             SOCK_Destroy(sock);
             sock = s;
