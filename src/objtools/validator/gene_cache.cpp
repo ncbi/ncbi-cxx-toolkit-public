@@ -153,20 +153,6 @@ bool CGeneCache::x_IsPseudo(const CGene_ref& gref)
 }
 
 
-bool CGeneCache::x_IsFeatPseudo(const CSeq_feat& feat)
-{
-    if (feat.IsSetPseudo() && feat.GetPseudo()) {
-        return true;
-    } else if (x_HasNamedQual(feat, "pseudogene")) {
-        return true;
-    } else if (feat.GetData().IsGene() && x_IsPseudo(feat.GetData().GetGene())) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
 bool CGeneCache::IsPseudo(const CSeq_feat& feat, CScope& scope)
 {
     return (feat.IsSetPseudo() && feat.GetPseudo()) ||

@@ -131,7 +131,6 @@ private:
     TSeqTreeMap m_SeqTreeMap;
 
     static bool x_IsPseudo(const CGene_ref& gref);
-    static bool x_IsFeatPseudo(const CSeq_feat& feat);
     static bool x_HasNamedQual(const CSeq_feat& feat, const string& qual);
 };
 
