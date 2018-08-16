@@ -2147,6 +2147,8 @@ bool CValidError_bioseq::SuppressTrailingXMsg(const CBioseq& seq)
 }
 
 
+//LCOV_EXCL_START
+//part of segset validation, no longer used
 CRef<CSeq_loc> CValidError_bioseq::GetLocFromSeq(const CBioseq& seq)
 {
     CRef<CSeq_loc> loc;
@@ -2169,6 +2171,7 @@ CRef<CSeq_loc> CValidError_bioseq::GetLocFromSeq(const CBioseq& seq)
     }
     return loc;
 }
+//LCOV_EXCL_STOP
 
 
 // Check if CdRegion required but not found
@@ -3525,6 +3528,8 @@ void CValidError_bioseq::ValidateRawConst(
 }
 
 
+//LCOV_EXCL_START
+//part of segset validation, no longer used
 // Assumes seq is eRepr_seg or eRepr_ref
 void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
 {
@@ -3646,6 +3651,7 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
         }
     }
 }
+//LCOV_EXCL_STOP
 
 
 static int s_MaxNsInSeqLitForTech (CMolInfo::TTech tech)
