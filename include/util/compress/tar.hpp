@@ -36,17 +36,18 @@
 ///  @file
 ///  Tar archive API.
 ///
-///  Supports subsets of POSIX.1-1988 (ustar), POSIX 1003.1-2001 (posix),
-///  old GNU (POSIX 1003.1), and V7 formats (all partially but reasonably).
-///  New archives are created using POSIX (genuine ustar) format, using
-///  GNU extensions for long names/links only when unavoidable.  It cannot,
-///  however, handle all the exotics like sparse / contiguous files (yet still
-///  can work around them gracefully, if needed), multivolume / incremental
-///  archives, etc. but just regular files, devices (character or block),
-///  FIFOs, directories, and limited links:  can extract both hard- and
-///  symlinks, but can store symlinks only.  Also, this implementation is
-///  only minimally PAX(Portable Archive eXchange)-aware for file extractions
-///  (but cannot use PAX extensions to store the files).
+///  Supports subsets of POSIX.1-1988 (ustar), POSIX 1003.1-2001 (posix), old
+///  GNU (POSIX 1003.1), and V7 formats (all partially but reasonably).  New
+///  archives are created using POSIX (genuine ustar) format, using GNU
+///  extensions for long names/links only when unavoidable.  It cannot,
+///  however, handle all the exotics like sparse files (except for GNU/1.0
+///  sparse PAX extension) and contiguous files (yet still can work around both
+///  of them gracefully, if needed), multivolume / incremental archives, etc.
+///  but just regular files, devices (character or block), FIFOs, directories,
+///  and limited links:  can extract both hard- and symlinks, but can store
+///  symlinks only.  Also, this implementation is only minimally PAX(Portable
+///  Archive eXchange)-aware for file extractions (and does not yet use any PAX
+///  extensions to store the files).
 ///
 
 #include <corelib/ncbifile.hpp>
@@ -109,6 +110,7 @@ public:
     enum EErrCode {
         eUnsupportedTarFormat,
         eUnsupportedEntryType,
+        eUnsupportedSource,
         eNameTooLong,
         eChecksum,
         eBadName,
@@ -127,6 +129,7 @@ public:
         switch (GetErrCode()) {
         case eUnsupportedTarFormat: return "eUnsupportedTarFormat";
         case eUnsupportedEntryType: return "eUnsupportedEntryType";
+        case eUnsupportedSource:    return "eUnsupportedSource";
         case eNameTooLong:          return "eNameTooLong";
         case eChecksum:             return "eChecksum";
         case eBadName:              return "eBadName";
@@ -182,48 +185,72 @@ public:
     // done directly from CTar for the sake of performance and code clarity.
 
     // Getters only!
-    EType         GetType(void)             const { return m_Type;          }
-    const string& GetName(void)             const { return m_Name;          }
-    const string& GetLinkName(void)         const { return m_LinkName;      }
-    const string& GetUserName(void)         const { return m_UserName;      }
-    const string& GetGroupName(void)        const { return m_GroupName;     }
-    time_t        GetModificationTime(void) const { return m_Stat.st_mtime; }
-    time_t        GetLastAccessTime(void)   const { return m_Stat.st_atime; }
-    time_t        GetCreationTime(void)     const { return m_Stat.st_ctime; }
-    Uint8         GetSize(void)             const { return m_Stat.st_size;  }
-    TTarMode      GetMode(void)             const; // Raw mode as stored in tar
+    EType         GetType(void)              const { return m_Type;      }
+    const string& GetName(void)              const { return m_Name;      }
+    const string& GetLinkName(void)          const { return m_LinkName;  }
+    const string& GetUserName(void)          const { return m_UserName;  }
+    const string& GetGroupName(void)         const { return m_GroupName; }
+    time_t        GetModificationTime(void)  const
+    { return m_Stat.orig.st_mtime; }
+    CTime         GetModificationCTime(void) const
+    { CTime mtime(m_Stat.orig.st_mtime);
+      mtime.SetNanoSecond(m_Stat.mtime_nsec);
+      return mtime;                }
+    time_t        GetLastAccessTime(void)    const
+    { return m_Stat.orig.st_atime; }
+    CTime         GetLastAccessCTime(void)   const
+    { CTime atime(m_Stat.orig.st_atime);
+      atime.SetNanoSecond(m_Stat.atime_nsec);
+      return atime;                }
+    time_t        GetCreationTime(void)      const
+    { return m_Stat.orig.st_ctime; }
+    CTime         GetCreationCTime(void)     const
+    { CTime ctime(m_Stat.orig.st_ctime);
+      ctime.SetNanoSecond(m_Stat.ctime_nsec);
+      return ctime;                }
+    Uint8         GetSize(void)              const
+    { return m_Stat.orig.st_size;  }
+    TTarMode      GetMode(void)              const;// Raw mode as stored in tar
     void          GetMode(CDirEntry::TMode*            user_mode,
                           CDirEntry::TMode*            group_mode   = 0,
                           CDirEntry::TMode*            other_mode   = 0,
                           CDirEntry::TSpecialModeBits* special_bits = 0) const;
-    unsigned int  GetMajor(void)            const;
-    unsigned int  GetMinor(void)            const;
-    unsigned int  GetUserId(void)           const { return m_Stat.st_uid;   }
-    unsigned int  GetGroupId(void)          const { return m_Stat.st_gid;   }
-    Uint8         GetPosition(EPos which)   const
+    unsigned int  GetMajor(void)             const;
+    unsigned int  GetMinor(void)             const;
+    unsigned int  GetUserId(void)            const
+    { return m_Stat.orig.st_uid;   }
+    unsigned int  GetGroupId(void)           const
+    { return m_Stat.orig.st_gid;   }
+    Uint8         GetPosition(EPos which)    const
     { return which == ePos_Header ? m_Pos : m_Pos + m_HeaderSize; }
 
     // Comparison operator.
-    bool operator == (const CTarEntryInfo& info) const;
+    bool operator == (const CTarEntryInfo& info) const
+    { return (m_Type       == info.m_Type                        &&
+              m_Name       == info.m_Name                        &&
+              m_LinkName   == info.m_LinkName                    &&
+              m_UserName   == info.m_UserName                    &&
+              m_GroupName  == info.m_GroupName                   &&
+              m_HeaderSize == info.m_HeaderSize                  &&
+              memcmp(&m_Stat,&info.m_Stat, sizeof(m_Stat)) == 0  &&
+              m_Pos        == info.m_Pos ? true : false);         }
 
 protected:
     // Constructor.
     CTarEntryInfo(Uint8 pos = 0)
         : m_Type(eUnknown), m_HeaderSize(0), m_Pos(pos)
-    {
-        memset(&m_Stat, 0, sizeof(m_Stat));
-    }
+    { memset(&m_Stat, 0, sizeof(m_Stat));                         }
 
-    EType         m_Type;       ///< Type
-    string        m_Name;       ///< Entry name
-    string        m_LinkName;   ///< Link name if type is e{Sym|Hard}Link
-    string        m_UserName;   ///< User name
-    string        m_GroupName;  ///< Group name (empty string for MSWin)
-    streamsize    m_HeaderSize; ///< Total size of all headers for this entry
-    TNcbiSys_stat m_Stat;       ///< Direntry-compatible info (as applicable)
-    Uint8         m_Pos;        ///< Entry (not data!) position within archive
+    EType            m_Type;       ///< Type
+    string           m_Name;       ///< Entry name
+    string           m_LinkName;   ///< Link name if type is e{Sym|Hard}Link
+    string           m_UserName;   ///< User name
+    string           m_GroupName;  ///< Group name
+    streamsize       m_HeaderSize; ///< Total size of all headers for the entry
+    CDirEntry::SStat m_Stat;       ///< Direntry-compatible info
+    Uint8            m_Pos;        ///< Entry (not data!) position in archive
 
-    friend class CTar;          // Setter
+    friend class CTar;             // Setter
 };
 
 
@@ -236,11 +263,11 @@ class CTarUserEntryInfo : protected CTarEntryInfo
 public:
     CTarUserEntryInfo(const string& name, Uint8 size)
     {
-        m_Name         = name;
-        m_Stat.st_size = size;
+        m_Name              = name;
+        m_Stat.orig.st_size = size;
     }
 
-    friend class CTar;          // Accessor
+    friend class CTar;             // Accessor
 };
 
 
@@ -296,13 +323,15 @@ public:
         fPreserveTime       = (1<<9),
         /// Preserve all file attributes
         fPreserveAll        = fPreserveOwner | fPreserveMode | fPreserveTime,
+        /// Preserve absolute path instead of stripping the leadind slash('/')
+        fKeepAbsolutePath   = (1<<12),
         /// Do not extract PAX GNU/1.0 sparse files (treat 'em as unsupported)
-        fSparseUnsupported  = (1<<10),
+        fSparseUnsupported  = (1<<13),
 
         // --- Extract/List ---
-        /// Skip unsupported entries rather than making files out of them
-        /// when extracting (the latter is the default POSIX requirement).
-        fSkipUnsupported    = (1<<14),
+        /// Skip unsupported entries rather than make files out of them when
+        /// extracting (the latter is the default behavior required by POSIX)
+        fSkipUnsupported    = (1<<15),
 
         // --- Append ---
         /// Ignore unreadable files/dirs (still warn them, but don't stop)
@@ -377,8 +406,8 @@ public:
     /// Close the archive making sure all pending output is flushed.
     ///
     /// Normally, direct call of this method need _not_ intersperse successive
-    /// archive manipulations by other methods, as they open and close archive
-    /// automagically as necessary.  Rather, this call is to make sure the
+    /// archive manipulations by other methods, as they open and close the
+    /// archive automagically as needed.  Rather, this call is to make sure the
     /// archive is complete earlier than it otherwise usually be done
     /// automatically in the destructor of the CTar object.
     /// @sa
@@ -410,7 +439,7 @@ public:
 
     /// Append an entry from a stream (exactly entry.GetSize() bytes).
     /// @return
-    ///   A list (containing one entry) with full acrhive info filled in
+    ///   A list (containing this one entry) with full archive info filled in
     /// @sa
     ///   Append
     unique_ptr<TEntries> Append(const CTarUserEntryInfo& entry,
@@ -441,6 +470,12 @@ public:
 
     /// Extract the entire archive (into either current directory or
     /// a directory otherwise specified by SetBaseDir()).
+    ///
+    /// If the same-named files exist, they will be replaced (subject to
+    /// fOverwrite) or backed up (fBackup), unless fUpdate is set, which would
+    /// cause the replacement / backup only if the files are older than the
+    /// archive entries.  Note that if fOverwrite is stripped, no matching
+    /// files will be updated / backed up / overwritten, but skipped.
     ///
     /// Extract all archive entries, whose names match the pre-set mask.
     /// @return
@@ -666,11 +701,13 @@ private:
     unique_ptr<TEntries> x_ReadAndProcess(EAction action);
 
     // Process current entry from the archive (the actual size passed in).
-    // If "extract" is FALSE, then just skip the entry without any processing.
+    // If action != eExtract, then just skip the entry without any processing.
+    // Return true iff the entry was successfully extracted (ie with eExtract).
     bool x_ProcessEntry(EAction action, Uint8 size, const TEntries* done);
 
-    // Extract current entry (the actual size passed in) from the archive into
-    // the file system, and update the size still remaining in the archive.
+    // Extract current entry (archived size passed in) from the archive into
+    // the file system, and update the size still remaining in the archive, if
+    // any.  Return true if the extraction succeeded, false otherwise.
     bool x_ExtractEntry(Uint8& size, const CDirEntry* dst,
                         const CDirEntry* src);
 

@@ -225,6 +225,7 @@ void CTarTest::Init(void)
     args->AddFlag("M", "Don't extract permission masks");
     args->AddFlag("o", "Don't extract file ownerships");
     args->AddFlag("p", "Preserve all permissions");
+    args->AddFlag("P", "Preserve absolute paths when extracting");
     args->AddFlag("O", "Extract to stdout (rather than files) when streaming");
     args->AddFlag("B", "Create backup copies of destinations when extracting");
     args->AddFlag("E", "Maintain equal types of files and archive entries");
@@ -237,9 +238,9 @@ void CTarTest::Init(void)
     args->AddFlag("z", "Use GZIP compression (aka tgz), subsumes NOT -r / -u");
     args->AddFlag("s", "Use stream operations with archive"
                   " [non-standard]");
-    args->AddFlag("G", "Supplement long names with addtl header"
+    args->AddFlag("G", "Always upplement long names with additional GNU header"
                   " [non-stdandard]");
-    args->AddFlag("P", "Stream archive through"
+    args->AddFlag("F", "Pipe the archive through"
                   " [non-standard]");
     args->AddFlag("Q", "Ignore file open errors when adding to the archive"
                   " [non-standard]");
@@ -437,7 +438,7 @@ int CTarTest::Run(void)
     }
 
     size_t bfactor  = args["b"].AsInteger();
-    bool   pipethru = args["P"].HasValue();
+    bool   pipethru = args["F"].HasValue();
     bool   stream   = args["s"].HasValue();
     bool   verbose  = args["v"].HasValue();
     size_t n        = args.GetNExtra();
@@ -591,6 +592,9 @@ int CTarTest::Run(void)
     }
     if (args["p"].HasValue()) {
         m_Flags |=  CTar::fPreserveAll;
+    }
+    if (args["P"].HasValue()) {
+        m_Flags |=  CTar::fKeepAbsolutePath;
     }
     if (args["B"].HasValue()) {
         m_Flags |=  CTar::fBackup;

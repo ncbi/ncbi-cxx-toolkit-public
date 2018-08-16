@@ -29,17 +29,18 @@
  * File Description:
  *   Tar archive API.
  *
- *   Supports subsets of POSIX.1-1988 (ustar), POSIX 1003.1-2001 (posix),
- *   old GNU (POSIX 1003.1), and V7 formats (all partially but reasonably).
- *   New archives are created using POSIX (genuine ustar) format, using
- *   GNU extensions for long names/links only when unavoidable.  It cannot,
- *   however, handle all the exotics like sparse / contiguous files (yet still
- *   can work around them gracefully, if needed), multivolume / incremental
- *   archives, etc. but just regular files, devices (character or block),
- *   FIFOs, directories, and limited links:  can extract both hard- and
- *   symlinks, but can store symlinks only.  Also, this implementation is
- *   only minimally PAX(Portable Archive eXchange)-aware for file extractions
- *   (but cannot use PAX extensions to store the files).
+ *   Supports subsets of POSIX.1-1988 (ustar), POSIX 1003.1-2001 (posix), old
+ *   GNU (POSIX 1003.1), and V7 formats (all partially but reasonably).  New
+ *   archives are created using POSIX (genuine ustar) format, using GNU
+ *   extensions for long names/links only when unavoidable.  It cannot,
+ *   however, handle all the exotics like sparse files (except for GNU/1.0
+ *   sparse PAX extension) and contiguous files (yet still can work around both
+ *   of them gracefully, if needed), multivolume / incremental archives, etc.
+ *   but just regular files, devices (character or block), FIFOs, directories,
+ *   and limited links:  can extract both hard- and symlinks, but can store
+ *   symlinks only.  Also, this implementation is only minimally PAX(Portable
+ *   Archive eXchange)-aware for file extractions (and does not yet use any PAX
+ *   extensions to store the files).
  *
  */
 
@@ -455,7 +456,7 @@ static bool s_TarChecksum(TBlock* block, bool isgnu)
 TTarMode CTarEntryInfo::GetMode(void) const
 {
     // Raw tar mode gets returned here (as kept in the info)
-    return (TTarMode)(m_Stat.st_mode & 07777);
+    return (TTarMode)(m_Stat.orig.st_mode & 07777);
 }
 
 
@@ -472,11 +473,11 @@ unsigned int CTarEntryInfo::GetMajor(void) const
 {
 #ifdef major
     if (m_Type == eCharDev  ||  m_Type == eBlockDev) {
-        return major(m_Stat.st_rdev);
+        return major(m_Stat.orig.st_rdev);
     }
 #else
-    if (sizeof(int) >= 4  &&  sizeof(m_Stat.st_rdev) >= 4) {
-        return (*((unsigned int*) &m_Stat.st_rdev) >> 16) & 0xFFFF;
+    if (sizeof(int) >= 4  &&  sizeof(m_Stat.orig.st_rdev) >= 4) {
+        return (*((unsigned int*) &m_Stat.orig.st_rdev) >> 16) & 0xFFFF;
     }
 #endif //major
     return (unsigned int)(-1);
@@ -487,27 +488,14 @@ unsigned int CTarEntryInfo::GetMinor(void) const
 {
 #ifdef minor
     if (m_Type == eCharDev  ||  m_Type == eBlockDev) {
-        return minor(m_Stat.st_rdev);
+        return minor(m_Stat.orig.st_rdev);
     }
 #else
-    if (sizeof(int) >= 4  &&  sizeof(m_Stat.st_rdev) >= 4) {
-        return *((unsigned int*) &m_Stat.st_rdev) & 0xFFFF;
+    if (sizeof(int) >= 4  &&  sizeof(m_Stat.orig.st_rdev) >= 4) {
+        return *((unsigned int*) &m_Stat.orig.st_rdev) & 0xFFFF;
     }
 #endif //minor
     return (unsigned int)(-1);
-}
-
-
-bool CTarEntryInfo::operator == (const CTarEntryInfo& info) const
-{
-    return (m_Type       == info.m_Type                        &&
-            m_Name       == info.m_Name                        &&
-            m_LinkName   == info.m_LinkName                    &&
-            m_UserName   == info.m_UserName                    &&
-            m_GroupName  == info.m_GroupName                   &&
-            m_HeaderSize == info.m_HeaderSize                  &&
-            memcmp(&m_Stat,&info.m_Stat, sizeof(m_Stat)) == 0  &&
-            m_Pos        == info.m_Pos ? true : false);
 }
 
 
@@ -612,11 +600,14 @@ static string s_SizeOrMajorMinor(const CTarEntryInfo& info)
         unsigned int major = info.GetMajor();
         unsigned int minor = info.GetMinor();
         return s_MajorMinor(major) + ',' + s_MajorMinor(minor);
-    } else if (info.GetType() == CTarEntryInfo::eDir  ||
-               info.GetType() == CTarEntryInfo::ePipe  ||
+    } else if (info.GetType() == CTarEntryInfo::eDir      ||
+               info.GetType() == CTarEntryInfo::ePipe     ||
                info.GetType() == CTarEntryInfo::eSymLink  ||
                info.GetType() == CTarEntryInfo::eVolHeader) {
         return string("-");
+    } else if (info.GetType() == CTarEntryInfo::eSparseFile  &&
+               info.GetSize() == 0) {
+        return string("?");
     }
     return NStr::NumericToString(info.GetSize());
 }
@@ -1039,6 +1030,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt,
         }
         break;
     case 'V':
+        ok = true;
         tname = "Volume header";
         break;
     default:
@@ -1820,7 +1812,7 @@ void CTar::x_WriteArchive(size_t nwrite, const char* src)
 
 // PAX (Portable Archive Interchange) extraction support
 
-// Define bitmasks for extended numeric information
+// Define bitmasks for extended numeric information (must fit in perm mask)
 typedef enum {
     fPAXNone          = 0,
     fPAXSparseGNU_1_0 = 1 << 0,
@@ -1835,7 +1827,9 @@ typedef enum {
 typedef unsigned int TPAXBits;  // Bitwise-OR of EPAXBit(s)
 
 
-static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
+// Parse "len" bytes of "str" as numeric "valp[.fraq]"
+static bool s_ParsePAXNumeric(Uint8* valp, const char* str, size_t len,
+                              string* fraq, EPAXBit assign)
 {
     _ASSERT(str[len] == '\n');
     if (!isdigit((unsigned char)(*str))) {
@@ -1844,7 +1838,8 @@ static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
     const char* p = (const char*) memchr(str, '.', len);
     if (!p) {
         p = str + len;
-    } else if (!dot) {
+    } else if (fraq == (string*)(-1L)) {
+        // no decimal point allowed
         return false;
     }
     Uint8 val;
@@ -1853,19 +1848,21 @@ static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
     } catch (...) {
         return false;
     }
-    if (*p == '.') {
-        if (++p != str + len) {
-            if (!isdigit((unsigned char)(*p)))
-                return false;
-            len -= (size_t)(p - str);
-            try {
-                (void) NStr::StringToUInt8(CTempString(p, len));
-            } catch (...) {
+    if (*p == '.'  &&  ++p != str + len) {
+        len -= (size_t)(p - str);
+        _ASSERT(len);
+        for (size_t n = 0;  n < len;  ++n) {
+            if (!isdigit((unsigned char) p[n])) {
                 return false;
             }
         }
-    } // else (*p == '\n')
-    *valp = val;
+        if (assign) {
+            fraq->assign(p, len);
+        }
+    } // else (*p == '\n' || !*p)
+    if (assign) {
+        *valp = val;
+    }
     return true;
 }
 
@@ -1881,31 +1878,65 @@ static bool s_AllLowerCase(const char* str, size_t len)
 }
 
 
+// Raise 10 to the power of n
+static Uint8 ipow10(unsigned int n)
+{
+    _ASSERT(n < 10);
+    // for small n this is the fastest
+    return n ? 10 * ipow10(n - 1) : 1;
+}
+
+
+// NB: assumes fraq is all digits
+static long s_FraqToNanosec(const string& fraq)
+{
+    size_t len = fraq.size();
+    if (!len)
+        return 0;
+    long result;
+    if (len < 10) {
+        Uint8 temp = NStr::StringToUInt8(fraq,
+                                         NStr::fConvErr_NoThrow |
+                                         NStr::fConvErr_NoErrMessage);
+        result = (long)(temp * ipow10((unsigned int)(9 - len)));
+    } else {
+        Uint8 temp = NStr::StringToUInt8(CTempString(fraq, 0, 10),
+                                         NStr::fConvErr_NoThrow |
+                                         NStr::fConvErr_NoErrMessage);
+        result = (long)((temp + 5) / 10);
+    }
+    _ASSERT(0L <= result  &&  result < 1000000000L);
+    return result;
+}
+
+
 CTar::EStatus CTar::x_ParsePAXData(const string& data)
 {
     Uint8 major = 0, minor = 0, size = 0, sparse = 0, uid = 0, gid = 0;
     Uint8 mtime = 0, atime = 0, ctime = 0, dummy = 0;
+    string mtime_fraq, atime_fraq, ctime_fraq;
     string path, linkpath, name, uname, gname;
     string* nodot = (string*)(-1L);
     const struct SPAXParseTable {
         const char* key;
         Uint8*      val;  // non-null for numeric, else do as string
-        string*     str;  // null for check only (numeric: non-null for no '.')
+        string*     str;  // string or fraction part (if not -1)
         EPAXBit     bit;  // for numerics only
     } parser[] = {
-        { "mtime",    &mtime, 0,         fPAXMtime },  // numeric w/dot: assign
-        { "atime",    &atime, 0,         fPAXAtime },
-        { "ctime",    &ctime, 0,         fPAXCtime },
-        { "size",     &size,  nodot,     fPAXSize  },  // num.-no-dot: assign
-        { "uid",      &uid,   nodot,     fPAXUid   },
-        { "gid",      &gid,   nodot,     fPAXGid   },
-      /*{ "dummy",    &dummy, nodot,     fPAXNone  },*/// num.-no-dot: ck.only
-        { "path",     0,      &path,     fPAXNone  },  // string: assign
-        { "linkpath", 0,      &linkpath, fPAXNone  },
-        { "uname",    0,      &uname,    fPAXNone  },
-        { "gname",    0,      &gname,    fPAXNone  },
-        { "comment",  0,      0,         fPAXNone  },  // string: check only
-        { "charset",  0,      0,         fPAXNone  },  // string: check only
+        { "mtime",    &mtime, &mtime_fraq, fPAXMtime },  // num w/fraq: assign
+        { "atime",    &atime, &atime_fraq, fPAXAtime },
+        { "ctime",    &ctime, &ctime_fraq, fPAXCtime },
+      /*{ "dummy",    &dummy, &dummy_fraq, fPAXNone  },*/// num w/fraq: ck.only
+        { "size",     &size,  nodot,       fPAXSize  },  // number:     assign
+        { "uid",      &uid,   nodot,       fPAXUid   },
+        { "gid",      &gid,   nodot,       fPAXGid   },
+      /*{ "dummy",    &dummy, nodot,       fPAXNone  },*/// number:     ck.only
+        { "path",     0,      &path,       fPAXNone  },  // string:     assign
+        { "linkpath", 0,      &linkpath,   fPAXNone  },
+        { "uname",    0,      &uname,      fPAXNone  },
+        { "gname",    0,      &gname,      fPAXNone  },
+        { "comment",  0,      0,           fPAXNone  },  // string:     ck.only
+        { "charset",  0,      0,           fPAXNone  },
         // GNU sparse extensions (NB: .size and .realsize don't go together)
         { "GNU.sparse.realsize", &sparse, nodot, fPAXSparse },
         { "GNU.sparse.major",    &major,  nodot, fPAXNone   },
@@ -1913,21 +1944,26 @@ CTar::EStatus CTar::x_ParsePAXData(const string& data)
         { "GNU.sparse.size",     &dummy,  nodot, fPAXSparse },
         { "GNU.sparse.name",     0,       &name, fPAXNone   },
         // Other
-        { "SCHILY.realsize",     &size,   nodot, fPAXSize   }
+        { "SCHILY.realsize",     &sparse, nodot, fPAXSparse }
     };
-    const char* str = data.c_str();
+    const char* s = data.c_str();
     TPAXBits parsed = fPAXNone;
+    size_t l = data.size();
 
+    _ASSERT(l  &&  l == strlen(s));
     do {
         unsigned long len;
         size_t klen, vlen;
-        char *k, *e, *v;
+        const char* e;
+        char *k, *v;
 
+        if (!(e = (char*) memchr(s, '\n', l))) {
+            e = s + l;
+        }
         errno = 0;
-        if (!isdigit((unsigned char)(*str)) || !(e = (char*) strchr(str, '\n'))
-            ||  !(len = strtoul(str, &k, 10))  ||  errno  ||  str + len-1 != e
-            ||  (*k != ' '  &&  *k != '\t')
-            ||  !(v = (char*) memchr(k, '=', (size_t)(e - k)))
+        if (!isdigit((unsigned char)(*s))  ||  !(len = strtoul(s, &k, 10))
+            ||  errno  ||  s + len - 1 != e  ||  (*k != ' '  &&  *k != '\t')
+            ||  !(v = (char*) memchr(k, '=', (size_t)(e - k))) // NB: k < e
             ||  !(klen = (size_t)(v++ - ++k))
             ||  memchr(k, ' ', klen)  ||  memchr(k, '\t', klen)
             ||  !(vlen = (size_t)(e - v))) {
@@ -1938,12 +1974,13 @@ CTar::EStatus CTar::x_ParsePAXData(const string& data)
         bool done = false;
         for (size_t n = 0;  n < sizeof(parser) / sizeof(parser[0]);  ++n) {
             if (strlen(parser[n].key) == klen
-                &&  strncmp(parser[n].key, k, klen) == 0) {
+                &&  memcmp(parser[n].key, k, klen) == 0) {
                 if (!parser[n].val) {
-                    if (parser[n].str)
+                    if (parser[n].str) {
                         parser[n].str->assign(v, vlen);
-                } else if (!s_ParsePAXInt(parser[n].val, v, vlen,
-                                          !parser[n].str ? true : false)) {
+                    }
+                } else if (!s_ParsePAXNumeric(parser[n].val, v, vlen,
+                                              parser[n].str, parser[n].bit)) {
                     TAR_POST(75, Error,
                              "Ignoring bad numeric \""
                              + CTempString(v, vlen)
@@ -1961,8 +1998,13 @@ CTar::EStatus CTar::x_ParsePAXData(const string& data)
                      "Ignoring unrecognized PAX value \""
                      + CTempString(k, klen) + '"');
         }
-        str = ++e;
-    } while (*str);
+        if (!*e) {
+            break;
+        }
+        l -= len;
+        s  = ++e;
+        _ASSERT(l == strlen(s));
+    } while (l);
 
     if ((parsed & fPAXSparse)  &&  (sparse | dummy)) {
         if (sparse  &&  dummy  &&  sparse != dummy) {
@@ -1996,14 +2038,18 @@ CTar::EStatus CTar::x_ParsePAXData(const string& data)
     m_Current.m_LinkName.swap(linkpath);
     m_Current.m_UserName.swap(uname);
     m_Current.m_GroupName.swap(gname);
-    m_Current.m_Stat.st_mtime = (time_t) mtime;
-    m_Current.m_Stat.st_atime = (time_t) atime;
-    m_Current.m_Stat.st_ctime = (time_t) ctime;
-    m_Current.m_Stat.st_size  = (off_t)  size;
-    m_Current.m_Stat.st_uid   = (uid_t)  uid;
-    m_Current.m_Stat.st_gid   = (gid_t)  gid;
-    m_Current.m_Pos           = parsed;
+    m_Current.m_Stat.mtime_nsec    = s_FraqToNanosec(mtime_fraq);
+    m_Current.m_Stat.atime_nsec    = s_FraqToNanosec(atime_fraq);
+    m_Current.m_Stat.ctime_nsec    = s_FraqToNanosec(ctime_fraq);
+    m_Current.m_Stat.orig.st_mtime = (time_t) mtime;
+    m_Current.m_Stat.orig.st_atime = (time_t) atime;
+    m_Current.m_Stat.orig.st_ctime = (time_t) ctime;
+    m_Current.m_Stat.orig.st_size  = (off_t)  size;
+    m_Current.m_Stat.orig.st_uid   = (uid_t)  uid;
+    m_Current.m_Stat.orig.st_gid   = (gid_t)  gid;
+    m_Current.m_Pos                = sparse;  //  real (expanded) file size
 
+    m_Current.m_Stat.orig.st_mode  = (mode_t) parsed;
     return eContinue;
 }
 
@@ -2205,7 +2251,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad entry mode", h, fmt);
     }
-    m_Current.m_Stat.st_mode = (mode_t) val;
+    m_Current.m_Stat.orig.st_mode = (mode_t) val;
 
     // User Id
     if (!s_DecodeUint8(val, h->uid, sizeof(h->uid))
@@ -2213,7 +2259,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad user ID", h, fmt);
     }
-    m_Current.m_Stat.st_uid = (uid_t) val;
+    m_Current.m_Stat.orig.st_uid = (uid_t) val;
 
     // Group Id
     if (!s_DecodeUint8(val, h->gid, sizeof(h->gid))
@@ -2221,7 +2267,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad group ID", h, fmt);
     }
-    m_Current.m_Stat.st_gid = (gid_t) val;
+    m_Current.m_Stat.orig.st_gid = (gid_t) val;
 
     // Size
     if (!s_DecodeUint8(val, h->size, sizeof(h->size))
@@ -2229,7 +2275,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad entry size", h, fmt);
     }
-    m_Current.m_Stat.st_size = (off_t) val;
+    m_Current.m_Stat.orig.st_size = (off_t) val;
     if (m_Current.GetSize() != val) {
         ERR_POST_ONCE(Critical << "CAUTION:"
                       " ***"
@@ -2243,7 +2289,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         TAR_THROW_EX(this, eUnsupportedTarFormat,
                      "Bad modification time", h, fmt);
     }
-    m_Current.m_Stat.st_mtime = (time_t) val;
+    m_Current.m_Stat.orig.st_mtime = (time_t) val;
 
     if (fmt == eTar_OldGNU  ||  (fmt & eTar_Ustar)) {
         // User name
@@ -2266,7 +2312,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                              "Bad last access time", h, fmt);
             }
         } else {
-            m_Current.m_Stat.st_atime = (time_t) val;
+            m_Current.m_Stat.orig.st_atime = (time_t) val;
         }
         time = fmt == eTar_Star ?        h->star.ctime  :        h->gnu.ctime;
         tlen = fmt == eTar_Star ? sizeof(h->star.ctime) : sizeof(h->gnu.ctime);
@@ -2276,7 +2322,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                              "Bad creation time", h, fmt);
             }
         } else {
-            m_Current.m_Stat.st_ctime = (time_t) val;
+            m_Current.m_Stat.orig.st_ctime = (time_t) val;
         }
     }
 
@@ -2288,7 +2334,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
             size_t namelen = s_Length(h->name, sizeof(h->name));
             if (namelen  &&  h->name[namelen - 1] == '/') {
                 m_Current.m_Type = CTarEntryInfo::eDir;
-                m_Current.m_Stat.st_size = 0;
+                m_Current.m_Stat.orig.st_size = 0;
                 break;
             }
         }
@@ -2306,13 +2352,13 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         if (m_Current.GetSize()) {
             if (m_Current.GetType() == CTarEntryInfo::eSymLink) {
                 // Mandatory to ignore
-                m_Current.m_Stat.st_size = 0;
+                m_Current.m_Stat.orig.st_size = 0;
             } else if (fmt != eTar_Posix) {
                 TAR_POST(77, Warning,
                          "Non-zero hard-link size ("
                          + NStr::NumericToString(m_Current.GetSize())
                          + ") is ignored (non-PAX)");
-                m_Current.m_Stat.st_size = 0;
+                m_Current.m_Stat.orig.st_size = 0;
             } // else POSIX (re-)allowed hard links to be followed by file data
         }
         break;
@@ -2331,22 +2377,22 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                          "Bad device major number", h, fmt);            
         }
 #ifdef makedev
-        m_Current.m_Stat.st_rdev = makedev((unsigned int) val, usum);
+        m_Current.m_Stat.orig.st_rdev = makedev((unsigned int) val, usum);
 #else
-        if (sizeof(int) >= 4  &&  sizeof(m_Current.m_Stat.st_rdev) >= 4) {
-            *((unsigned int*) &m_Current.m_Stat.st_rdev) =
+        if (sizeof(int) >= 4  &&  sizeof(m_Current.m_Stat.orig.st_rdev) >= 4) {
+            *((unsigned int*) &m_Current.m_Stat.orig.st_rdev) =
                 (unsigned int)((val << 16) | usum);
         }
 #endif //makedev
-        m_Current.m_Stat.st_size = 0;
+        m_Current.m_Stat.orig.st_size = 0;
         break;
     case '5':
         m_Current.m_Type = CTarEntryInfo::eDir;
-        m_Current.m_Stat.st_size = 0;
+        m_Current.m_Stat.orig.st_size = 0;
         break;
     case '6':
         m_Current.m_Type = CTarEntryInfo::ePipe;
-        m_Current.m_Stat.st_size = 0;
+        m_Current.m_Stat.orig.st_size = 0;
         break;
     case '7':
         ERR_POST_ONCE(Critical << "CAUTION:"
@@ -2402,12 +2448,12 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                     ? sizeof(h->gnu.realsize) : 12;
                 // Real file size (if present)
                 if (!s_DecodeUint8(val, realsize, realsizelen)) {
-                    val = hsize;
+                    val = 0;
                 }
                 if (fmt == eTar_Star) {
                     // Archive file size includes sparse map, and already valid
-                    m_Current.m_Pos = val;  // NB: real file size
-                    return eContinue;
+                    m_Current.m_Pos = val;  // NB: real (expanded) file size
+                    return eSuccess;
                 }
                 // Skip all GNU sparse file headers (they are not counted
                 // towards the sparse file size in the archive ("hsize")!)
@@ -2429,8 +2475,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
                     m_Current.m_HeaderSize += BLOCK_SIZE;
                     m_StreamPos            += BLOCK_SIZE;  // NB: nread
                 }
-                m_Current.m_Pos = val;  // NB: real file size
-                return eContinue;
+                m_Current.m_Pos = val;  // NB: real (expanded) file size
+                return eSuccess;
             }
 
             // Read in the extended header information
@@ -2482,7 +2528,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
             }
             // Reset size because the data blocks have been all read
             m_Current.m_HeaderSize += val;
-            m_Current.m_Stat.st_size = 0;
+            m_Current.m_Stat.orig.st_size = 0;
             if (!val  ||  !data.size()) {
                 TAR_POST(79, Error,
                          "Skipping " + string(val ? "empty" : "zero-sized")
@@ -2509,7 +2555,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     case 'I':
         if (h->typeflag[0] == 'V'  ||  h->typeflag[0] == 'I') {
             // Safety for no data to actually follow
-            m_Current.m_Stat.st_size = 0;
+            m_Current.m_Stat.orig.st_size = 0;
             if (h->typeflag[0] == 'V') {
                 m_Current.m_Type = CTarEntryInfo::eVolHeader;
                 break;
@@ -2656,10 +2702,13 @@ void CTar::x_WriteEntryInfo(const string& name)
         h->typeflag[0] = '6';
         break;
     default:
+        _TROUBLE;
         TAR_THROW(this, eUnsupportedEntryType,
-                  "Do not know how to store entry '" + name
+                  "Do not know how to archive entry '" + name
                   + "' of type #" + NStr::IntToString(int(type))
-                  + " into archive: Internal error, please report!");
+                  + ": Internal error");
+        /*NOTREACHED*/
+        break;
     }
 
     // User and group
@@ -2945,7 +2994,7 @@ unique_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
 
             switch (m_Current.GetType()) {
             case CTarEntryInfo::ePAXHeader:
-                xinfo.m_Pos = m_Current.m_Pos;  // NB: parse mask, not pos!
+                xinfo.m_Pos = m_Current.m_Pos;  // NB: real (expanded) filesize
                 m_Current.m_Pos = pos;
                 if (xinfo.GetType() != CTarEntryInfo::eUnknown) {
                     TAR_POST(7, Error,
@@ -2983,15 +3032,8 @@ unique_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                 xinfo.m_LinkName.swap(m_Current.m_LinkName);
                 continue;
 
-            case CTarEntryInfo::eSparseFile:
-                xinfo.m_Pos = 0;  // NB: assure no spurious parse (PAX) bits
-                xinfo.m_Type = CTarEntryInfo::eSparseFile;
-                xinfo.m_Stat.st_size = (off_t) m_Current.m_Pos;
-                m_Current.m_Pos = pos;  // NB: real file size was stored there
-                status = eSuccess;
-                break;
-
             default:
+                _TROUBLE;
                 NCBI_THROW(CCoreException, eCore, "Internal error");
                 /*NOTREACHED*/
                 break;
@@ -3009,8 +3051,9 @@ unique_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
             xinfo.m_LinkName.swap(m_Current.m_LinkName);
             xinfo.m_LinkName.erase();
         }
+        TPAXBits parsed;
         if (xinfo.GetType() == CTarEntryInfo::ePAXHeader) {
-            TPAXBits parsed = (TPAXBits) xinfo.m_Pos;
+            parsed = (TPAXBits) xinfo.m_Stat.orig.st_mode;
             if (!xinfo.GetUserName().empty()) {
                 xinfo.m_UserName.swap(m_Current.m_UserName);
                 xinfo.m_UserName.erase();
@@ -3020,42 +3063,57 @@ unique_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                 xinfo.m_GroupName.erase();
             }
             if (parsed & fPAXMtime) {
-                m_Current.m_Stat.st_mtime = xinfo.m_Stat.st_mtime;
+                m_Current.m_Stat.orig.st_mtime = xinfo.m_Stat.orig.st_mtime;
+                m_Current.m_Stat.mtime_nsec    = xinfo.m_Stat.mtime_nsec;
             }
             if (parsed & fPAXAtime) {
-                m_Current.m_Stat.st_atime = xinfo.m_Stat.st_atime;
+                m_Current.m_Stat.orig.st_atime = xinfo.m_Stat.orig.st_atime;
+                m_Current.m_Stat.atime_nsec    = xinfo.m_Stat.atime_nsec;
             }
             if (parsed & fPAXCtime) {
-                m_Current.m_Stat.st_ctime = xinfo.m_Stat.st_ctime;
+                m_Current.m_Stat.orig.st_ctime = xinfo.m_Stat.orig.st_ctime;
+                m_Current.m_Stat.ctime_nsec    = xinfo.m_Stat.ctime_nsec;
             }
             if (parsed & fPAXSparse) {
-                // GTar does not store "size" correctly in PAX form in this
-                // case: there is a real size instead of the archived size.
+                // Mark to post-process below
                 xinfo.m_Type = CTarEntryInfo::eSparseFile;
-            } else if (parsed & fPAXSize) {
-                m_Current.m_Stat.st_size = xinfo.m_Stat.st_size;
+            }
+            if (parsed & fPAXSize) {
+                m_Current.m_Stat.orig.st_size = xinfo.m_Stat.orig.st_size;
             }
             if (parsed & fPAXUid) {
-                m_Current.m_Stat.st_uid = xinfo.m_Stat.st_uid;
+                m_Current.m_Stat.orig.st_uid = xinfo.m_Stat.orig.st_uid;
             }
             if (parsed & fPAXGid) {
-                m_Current.m_Stat.st_gid = xinfo.m_Stat.st_gid;
+                m_Current.m_Stat.orig.st_gid = xinfo.m_Stat.orig.st_gid;
             }
+        } else {
+            parsed = fPAXNone/*0*/;
         }
-        Uint8 size = m_Current.GetSize();  // NB: archive size of the entry
+        if (m_Current.GetType() == CTarEntryInfo::eSparseFile) {
+            xinfo.m_Type = CTarEntryInfo::eSparseFile;
+            if (xinfo.m_Pos < m_Current.m_Pos) {
+                xinfo.m_Pos = m_Current.m_Pos;  // NB: real (expanded) filesize
+            }
+            m_Current.m_Pos = pos;
+        }
+        Uint8 size = m_Current.GetSize();  // NB: archive size to read
         if (xinfo.GetType() == CTarEntryInfo::eSparseFile) {
-            if (m_Current.GetType() == CTarEntryInfo::eFile  ||
-                m_Current.GetType() == CTarEntryInfo::eSparseFile) {
-                // display size
-                m_Current.m_Stat.st_size = xinfo.m_Stat.st_size;
-                m_Current.m_Type = !size
-                    ||  !(((TPAXBits) xinfo.m_Pos) & fPAXSparseGNU_1_0)
-                    ? CTarEntryInfo::eUnknown : CTarEntryInfo::eSparseFile;
-            } else {
+            if (m_Current.GetType() != CTarEntryInfo::eFile  &&
+                m_Current.GetType() != CTarEntryInfo::eSparseFile) {
                 TAR_POST(103, Error,
                          "Ignoring sparse data for non-plain file");
+            } else if (parsed & fPAXSparseGNU_1_0) {
+                m_Current.m_Stat.orig.st_size = size ? (off_t) xinfo.m_Pos : 0;
+                m_Current.m_Type = CTarEntryInfo::eSparseFile;
+            } else {
+                m_Current.m_Type = CTarEntryInfo::eUnknown;
+                if (size < xinfo.m_Pos) {
+                    m_Current.m_Stat.orig.st_size = (off_t) xinfo.m_Pos;
+                }
             }
         }
+        xinfo.m_Pos = 0;
         xinfo.m_Type = CTarEntryInfo::eUnknown;
         _ASSERT(status == eFailure  ||  status == eSuccess);
 
@@ -3070,7 +3128,7 @@ unique_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         }
 
         // Match file name with the set of masks
-        bool match = (status == eFailure ? false
+        bool match = (status != eSuccess ? false
                       : m_Mask[eExtractMask].mask  &&  (action == eList     ||
                                                         action == eExtract  ||
                                                         action == eInternal)
@@ -3094,7 +3152,7 @@ unique_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                                action == eTest ? eTest : eUndefined,
                                size, done.get())
             ||  (match  &&  (action == eList  ||  action == eUpdate))) {
-            _ASSERT(status == eSuccess);
+            _ASSERT(status == eSuccess  &&  action != eTest);
             done->push_back(m_Current);
             if (action == eInternal) {
                 break;
@@ -3109,6 +3167,100 @@ unique_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
 }
 
 
+static string s_ToFilesystemPath(const string& base_dir, const string& name,
+                                 bool noabs = false)
+{
+    string path;
+    _ASSERT(!name.empty());
+    if (!base_dir.empty()) {
+        path = CDirEntry::ConcatPath(base_dir, name);
+    } else {
+        path = name;
+        if (CDirEntry::IsAbsolutePath(path)  &&  noabs) {
+#ifdef NCBI_OS_MSWIN
+            if (isalpha((unsigned char) path[0])  &&  path[1] == ':') {
+                // Drive
+                path.erase(0, 2);
+            } else if ((path[0] == '/'  ||  path[0] == '\\')  &&
+                       (path[1] == '/'  ||  path[1] == '\\')) {
+                // Network
+                path.erase(0, path.find_first_of("/\\", 2));
+            }
+#endif //NCBI_OS_MSWIN
+            if (path[0] == '/'  ||  path[0] == '\\') {
+                path.erase(0, 1);
+            }
+            if (path.empty()) {
+                path.assign(1, '.');
+            }
+        }
+    }
+    _ASSERT(!path.empty());
+    return CDirEntry::NormalizePath(path);
+}
+
+
+static string s_ToArchiveName(const string& base_dir, const string& path)
+{
+    // NB: Path assumed to have been normalized
+    string retval = CDirEntry::AddTrailingPathSeparator(path);
+
+#ifdef NCBI_OS_MSWIN
+    // Convert to Unix format with forward slashes
+    NStr::ReplaceInPlace(retval, "\\", "/");
+    const NStr::ECase how = NStr::eNocase;
+#else
+    const NStr::ECase how = NStr::eCase;
+#endif //NCBI_OS_MSWIN
+
+    bool absolute;
+    // Remove leading base dir from the path
+    if (!base_dir.empty()  &&  NStr::StartsWith(retval, base_dir, how)) {
+        if (retval.size() > base_dir.size()) {
+            retval.erase(0, base_dir.size()/*separator too*/);
+        } else {
+            retval.assign(1, '.');
+        }
+        absolute = false;
+    } else {
+        absolute = CDirEntry::IsAbsolutePath(retval);
+    }
+
+    SIZE_TYPE pos = 0;
+
+#ifdef NCBI_OS_MSWIN
+    if (isalpha((unsigned char) retval[0])  &&  retval[1] == ':') {
+        // Remove a disk name if present
+        pos = 2;
+    } else if (retval[0] == '/'  &&  retval[1] == '/') {
+        // Network name if present
+        pos = retval.find('/', 2);
+        absolute = true;
+    }
+#endif //NCBI_OS_MSWIN
+
+    // Remove any leading and trailing slashes
+    while (pos < retval.size()  &&  retval[pos] == '/') {
+        ++pos;
+    }
+    if (pos) {
+        retval.erase(0, pos);
+    }
+    pos = retval.size();
+    while (pos > 0  &&  retval[pos - 1] == '/') {
+        --pos;
+    }
+    if (pos < retval.size()) {
+        retval.erase(pos);
+    }
+
+    if (absolute) {
+        retval.insert((SIZE_TYPE) 0, 1, '/');
+    }
+    return retval;
+}
+
+
 class CTarTempDirEntry : public CDirEntry
 {
 public:
@@ -3116,16 +3268,17 @@ public:
         : CDirEntry(CDirEntry::GetTmpNameEx(entry.GetDir(), "xNCBItArX")),
           m_Entry(entry), m_Pending(false), m_Activated(false)
     {
-        errno = 0;
+        _ASSERT(!Exists()  &&  m_Entry.GetType() != CDirEntry::eDir);
         if (CDirEntry(m_Entry.GetPath()).Rename(GetPath())) {
             m_Activated = m_Pending = true;
+            errno = 0;
         }
     }
 
     virtual ~CTarTempDirEntry()
     {
         if (m_Activated) {
-            (void)(m_Pending ? Restore() : Remove());
+            (void)(m_Pending ? Restore() : RemoveEntry());
         }
     }
 
@@ -3160,16 +3313,17 @@ bool CTar::x_ProcessEntry(EAction action, Uint8 size,
     if (extract) {
         // Destination for extraction
         unique_ptr<CDirEntry> dst
-            (CDirEntry::CreateObject(CDirEntry::EType(type),
-                                     CDirEntry::NormalizePath
-                                     (CDirEntry::ConcatPath
-                                      (m_BaseDir, m_Current.GetName()))));
+            (CDirEntry::CreateObject(type == CTarEntryInfo::eSparseFile ?
+                                     CDirEntry::eFile : CDirEntry::EType(type),
+                                     s_ToFilesystemPath
+                                     (m_BaseDir, m_Current.GetName(),
+                                      !(m_Flags & fKeepAbsolutePath))));
         // Source for extraction
         unique_ptr<CDirEntry> src;
         // Direntry pending removal
         AutoPtr<CTarTempDirEntry> pending;
 
-        // Dereference sym.link if requested
+        // Dereference symlink if requested
         if (type != CTarEntryInfo::eSymLink  &&
             type != CTarEntryInfo::eHardLink  &&  (m_Flags & fFollowLinks)) {
             dst->DereferenceLink();
@@ -3180,66 +3334,72 @@ bool CTar::x_ProcessEntry(EAction action, Uint8 size,
 
         // Look if extraction is allowed (when the destination exists)
         if (dst_type != CDirEntry::eUnknown) {
-            bool found = false;  // check if ours (prev. revision extracted)
+            bool extracted = false; // check if ours (prev. revision extracted)
             if (entries) {
                 ITERATE(TEntries, e, *entries) {
                     if (e->GetName() == m_Current.GetName()  &&
                         e->GetType() == m_Current.GetType()) {
-                        found = true;
+                        extracted = true;
                         break;
                     }
                 }
             }
-            if (!found) {
+            if (!extracted) {
                 // Can overwrite it?
                 if (!(m_Flags & fOverwrite)) {
                     // File already exists, and cannot be changed
                     extract = false;
-                } else { // The fOverwrite flag is set
-                    // Can update?
-                    if ((m_Flags & fUpdate) == fUpdate
-                        &&  type != CTarEntryInfo::eDir) {
-                        // Update directories always, because the archive can
-                        // contain other subtree of this existing directory.
-                        time_t dst_time;
-                        // Make sure that dst is not older than the entry
-                        if (dst->GetTimeT(&dst_time)
-                            &&  m_Current.GetModificationTime() <= dst_time) {
+                }
+                // Can update?
+                else if ((m_Flags & fUpdate) == fUpdate  // NB: fOverwrite set
+                         &&  (type == CTarEntryInfo::eDir  ||
+                              // Make sure that dst is not newer than the entry
+                              dst->IsNewer(m_Current.GetModificationCTime(),
+                                           // NB: dst must exist
+                                           CDirEntry::eIfAbsent_Throw))) {
+                    extract = false;
+                }
+                // Have equal types?
+                else if (m_Flags & fEqualTypes) {
+                    if (type == CTarEntryInfo::eHardLink) {
+                        src.reset(new CDirEntry
+                                  (s_ToFilesystemPath
+                                   (m_BaseDir, m_Current.GetLinkName(),
+                                    !(m_Flags & fKeepAbsolutePath))));
+                        if (dst_type != src->GetType()) {
                             extract = false;
                         }
-                    }
-                    // Have equal types?
-                    if (extract  &&  (m_Flags & fEqualTypes)) {
-                        if (type == CTarEntryInfo::eHardLink) {
-                            src.reset
-                                (new CDirEntry(CDirEntry::NormalizePath
-                                               (CDirEntry::ConcatPath
-                                                (m_BaseDir,
-                                                 m_Current.GetLinkName()))));
-                            if (dst_type != src->GetType()) {
-                                extract = false;
-                            }
-                        } else if (dst_type != CDirEntry::EType(type)) {
-                            extract = false;
-                        }
+                    } else if (dst_type != CDirEntry::EType(type)) {
+                        extract = false;
                     }
                 }
             }
-            if (extract) {
-                if (!found  &&  (m_Flags & fBackup) == fBackup) {
+            if (extract  &&  (type != CTarEntryInfo::eDir  ||
+                              dst_type != CDirEntry::eDir)) {
+                if (!extracted  &&  (m_Flags & fBackup) == fBackup) {
                     // Need to backup the existing destination?
                     CDirEntry tmp(*dst);
                     if (!tmp.Backup(kEmptyStr, CDirEntry::eBackup_Rename)) {
+                        int x_errno = CNcbiError::GetLast().Code();
                         TAR_THROW(this, eBackup,
-                                  "Failed to backup '" + dst->GetPath() +'\'');
+                                  "Failed to backup '" + dst->GetPath() +'\''
+                                  + s_OSReason(x_errno));
                     }
-                } else if (type != CTarEntryInfo::eDir) {
+                } else {
                     // Do removal safely until extraction is confirmed
                     pending.reset(new CTarTempDirEntry(*dst));
-                    if (!pending->Exists()  ||  dst->Exists()) {
+                    if (/*!pending->Exists()  ||*/  dst->Exists()) {
                         // Security concern:  do not attempt data extraction
                         // into special files etc, which can harm the system.
-                        int x_errno = errno ? errno : EEXIST;
+#ifdef __GNUC__
+                        int x_errno = errno ?: EEXIST;
+#else
+                        int x_errno  = errno;
+                        if (x_errno == 0) {
+                            x_errno  = EEXIST;
+                        }
+#endif //__GNUC__
+                        extract = false;
                         TAR_THROW(this, eWrite,
                                   "Cannot extract '" + dst->GetPath() + '\''
                                   + s_OSReason(x_errno));
@@ -3249,7 +3409,8 @@ bool CTar::x_ProcessEntry(EAction action, Uint8 size,
         }
         if (extract) {
 #ifdef NCBI_OS_UNIX
-            mode_t u = umask(0);
+            mode_t u;
+            u = umask(022);
             umask(u & ~(S_IRUSR | S_IWUSR | S_IXUSR));
             try {
 #endif //NCBI_OS_UNIX
@@ -3272,14 +3433,14 @@ bool CTar::x_ProcessEntry(EAction action, Uint8 size,
                 }
             }
         }
-    } else if (m_Current.GetType() == CTarEntryInfo::eSparseFile
+    } else if (m_Current.GetType() == CTarEntryInfo::eSparseFile  &&  size
                &&  action == eTest  &&  (m_Flags & fDumpEntryHeaders)) {
         unique_ptr<CDirEntry> dst
             (CDirEntry::CreateObject(CDirEntry::eFile,
-                                     CDirEntry::NormalizePath
-                                     (CDirEntry::ConcatPath
-                                      (m_BaseDir, m_Current.GetName()))));
-        extract = x_ExtractSparseFile(size, dst.get(), true);
+                                     s_ToFilesystemPath
+                                     (m_BaseDir, m_Current.GetName(),
+                                      !(m_Flags & fKeepAbsolutePath))));
+        (void) x_ExtractSparseFile(size, dst.get(), true);
     }
 
     x_Skip(BLOCK_OF(ALIGN_SIZE(size)));
@@ -3337,7 +3498,7 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
 {
     CTarEntryInfo::EType type = m_Current.GetType();
     unique_ptr<CDirEntry> src_ptr;  // deleter
-    bool result = true;  // assume best
+    bool extracted = true;  // assume best
 
     if (type == CTarEntryInfo::eUnknown  &&  !(m_Flags & fSkipUnsupported)) {
         // Conform to POSIX-mandated behavior to extract as files
@@ -3345,8 +3506,6 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
     }
     switch (type) {
     case CTarEntryInfo::eSparseFile:  // NB: only PAX GNU/1.0 sparse file here
-        _ASSERT(size);
-        /*FALLTHRU*/
     case CTarEntryInfo::eHardLink:
     case CTarEntryInfo::eFile:
         {{
@@ -3362,10 +3521,10 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
 
             if (type == CTarEntryInfo::eHardLink) {
                 if (!src) {
-                    src_ptr.reset(new CDirEntry(CDirEntry::NormalizePath
-                                                (CDirEntry::ConcatPath
-                                                 (m_BaseDir,
-                                                  m_Current.GetLinkName()))));
+                    src_ptr.reset(new CDirEntry
+                                  (s_ToFilesystemPath
+                                   (m_BaseDir, m_Current.GetLinkName(),
+                                    !(m_Flags & fKeepAbsolutePath))));
                     src = src_ptr.get();
                 }
                 if (src->GetType() == CDirEntry::eUnknown  &&  size) {
@@ -3396,11 +3555,11 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
                     TAR_POST(11, Error,
                              "Cannot hard-link '" + src->GetPath()
                              + "' and '" + dst->GetPath() + "' via copy");
-                    result = false;
+                    extracted = false;
                     break;
                 }
-            } else if (type == CTarEntryInfo::eSparseFile) {
-                if (!(result = x_ExtractSparseFile(size, dst)))
+            } else if (type == CTarEntryInfo::eSparseFile  &&  size) {
+                if (!(extracted = x_ExtractSparseFile(size, dst)))
                     break;
             } else {
                 x_ExtractPlainFile(size, dst);
@@ -3414,15 +3573,20 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
         break;
 
     case CTarEntryInfo::eDir:
-        if (!CDir(dst->GetPath()).CreatePath()) {
-            int x_errno = errno;
-            TAR_THROW(this, eCreate,
-                      "Cannot create directory '" + dst->GetPath() + '\''
-                      + s_OSReason(x_errno));
-        }
-        // NB: Attributes for a directory must be set only after all of its
-        // files have been already extracted.
-        _ASSERT(size == 0);
+        {{
+            const CDir* dir = dynamic_cast<const CDir*>(dst);
+            if (!dir  ||  !dir->CreatePath()) {
+                int x_errno = !dir ? 0 : CNcbiError::GetLast().Code();
+                TAR_THROW(this, eCreate,
+                          "Cannot create directory '" + dst->GetPath() + '\''
+                          + (!dir
+                             ? string(": Internal error")
+                             : s_OSReason(x_errno)));
+            }
+            // NB: Attributes for a directory must be set only after all of its
+            // entries have been already extracted.
+            _ASSERT(size == 0);
+        }}
         break;
 
     case CTarEntryInfo::eSymLink:
@@ -3430,13 +3594,17 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
             const CSymLink* symlink = dynamic_cast<const CSymLink*>(dst);
             if (!symlink  ||  !symlink->Create(m_Current.GetLinkName())) {
                 int x_errno = !symlink ? 0 : CNcbiError::GetLast().Code();
-                TAR_POST(12, Error,
-                         "Cannot create symlink '" + dst->GetPath()
-                         + "' -> '" + m_Current.GetLinkName() + '\''
-                         + (!symlink
-                            ? string(": Internal error")
-                            : s_OSReason(x_errno)));
-                result = false;
+                string error = "Cannot create symlink '" + dst->GetPath()
+                    + "' -> '" + m_Current.GetLinkName() + '\''
+                    + (!symlink
+                       ? string(": Internal error")
+                       : s_OSReason(x_errno));
+                if (!symlink  ||  x_errno != ENOTSUP
+                    ||  !(m_Flags & fSkipUnsupported)) {
+                    TAR_THROW(this, eCreate, error);
+                }
+                TAR_POST(12, Error, error);
+                extracted = false;
             }
             _ASSERT(size == 0);
         }}
@@ -3447,19 +3615,26 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
             _ASSERT(size == 0);
 #ifdef NCBI_OS_UNIX
             umask(0);
+            int x_errno = 0;
             if (mkfifo(dst->GetPath().c_str(), m_Current.GetMode())/*!= 0*/) {
-                result = false;
+                x_errno = errno;
+                extracted = false;
             }
-            if (result) {
+            if (extracted) {
                 break;
             }
-            string reason = s_OSReason(errno);
+            string reason = s_OSReason(x_errno);
 #else
+            int x_errno = ENOTSUP;
             string reason = ": Feature not supported by host OS";
-            result = false;
+            extracted = false;
 #endif //NCBI_OS_UNIX
-            TAR_POST(81, Error,
-                     "Cannot create FIFO '" + dst->GetPath() + '\'' + reason);
+            string error
+                = "Cannot create FIFO '" + dst->GetPath() + '\'' + reason;
+            if (x_errno != ENOTSUP  ||  !(m_Flags & fSkipUnsupported)) {
+                TAR_THROW(this, eCreate, error);
+            }
+            TAR_POST(81, Error, error);
         }}
         break;
 
@@ -3469,24 +3644,36 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
             _ASSERT(size == 0);
 #ifdef NCBI_OS_UNIX
             umask(0);
+            int x_errno = 0;
             mode_t m = (m_Current.GetMode() |
                         (type == CTarEntryInfo::eCharDev ? S_IFCHR : S_IFBLK));
-            if (mknod(dst->GetPath().c_str(), m, m_Current.m_Stat.st_rdev)) {
-                result = false;
+            if (mknod(dst->GetPath().c_str(),m,m_Current.m_Stat.orig.st_rdev)){
+                x_errno = errno;
+                extracted = false;
             }
-            if (result) {
+            if (extracted) {
                 break;
             }
-            string reason = s_OSReason(errno);
+            string reason = s_OSReason(x_errno);
 #else
+            int x_errno = ENOTSUP;
             string reason = ": Feature not supported by host OS";
-            result = false;
+            extracted = false;
 #endif //NCBI_OS_UNIX
-            TAR_POST(82, Error,
-                     "Cannot create " + string(type == CTarEntryInfo::eCharDev
-                                               ? "character" : "block")
-                     + " device '" + dst->GetPath() + '\'' + reason);
+            string error
+                = "Cannot create " + string(type == CTarEntryInfo::eCharDev
+                                            ? "character" : "block")
+                + " device '" + dst->GetPath() + '\'' + reason;
+            if (x_errno != ENOTSUP  ||  !(m_Flags & fSkipUnsupported)) {
+                TAR_THROW(this, eCreate, error);
+            }
+            TAR_POST(82, Error, error);
         }}
+        break;
+
+    case CTarEntryInfo::eVolHeader:
+        _ASSERT(size == 0);
+        /*NOOP*/
         break;
 
     case CTarEntryInfo::ePAXHeader:
@@ -3500,11 +3687,11 @@ bool CTar::x_ExtractEntry(Uint8& size, const CDirEntry* dst,
         TAR_POST(13, Error,
                  "Skipping unsupported entry '" + m_Current.GetName()
                  + "' of type #" + NStr::IntToString(int(type)));
-        result = false;
+        extracted = false;
         break;
     }
 
-    return result;
+    return extracted;
 }
 
 
@@ -3630,10 +3817,10 @@ bool CTar::x_ExtractSparseFile(Uint8& size, const CDirEntry* dst, bool dump)
     }
 
     string num(x_ReadLine(size, data, nread));  // "numblocks"
-    Uint8 n;
-    try {
-        n = NStr::StringToUInt8(num);
-    } catch (...) {
+    Uint8 n = NStr::StringToUInt8(num,
+                                  NStr::fConvErr_NoThrow |
+                                  NStr::fConvErr_NoErrMessage);
+    if (!n) {
         TAR_POST(97, Error,
                  "Cannot expand sparse file '" + dst->GetPath()
                  + "': Region count is "
@@ -3666,7 +3853,8 @@ bool CTar::x_ExtractSparseFile(Uint8& size, const CDirEntry* dst, bool dump)
     }
     if (dump) {
         s_DumpSparse(m_FileName, pos, m_BufferSize, m_Current.GetName(), bmap);
-        return true;
+        /* dontcare */
+        return false;
     }
 
     // Write the file out
@@ -3736,54 +3924,50 @@ bool CTar::x_ExtractSparseFile(Uint8& size, const CDirEntry* dst, bool dump)
             break;
         }
     }
-    if (eof) {
-        // Finalize the file
-        bool closed = ::fclose(fp.release()) == 0 ? true : false;
-        if (!x_error  &&  !closed) {
-            x_error = errno;
-        }
-        string reason;
-        if (!x_error) {
-            x_error = s_TruncateFile(dst->GetPath(), eof);
-            if (x_error) {
-#ifdef NCBI_OS_MSWIN
-                TCHAR* ptr = NULL;
-                DWORD  rv = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                                          FORMAT_MESSAGE_FROM_SYSTEM     |
-                                          FORMAT_MESSAGE_MAX_WIDTH_MASK  |
-                                          FORMAT_MESSAGE_IGNORE_INSERTS,
-                                          NULL, (DWORD) x_error,
-                                          MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                                          (LPTSTR) &ptr, 0, NULL);
-                if (ptr) {
-					if (rv) {
-                        _ASSERT(*ptr);
-                        reason = string(": ") + _T_CSTRING(ptr);
-                    }
-                    ::LocalFree((HLOCAL) ptr);
-                }
-                if (reason.empty()) {
-                    reason = ": Error 0x" + NStr::UIntToString(x_error, 0, 16);
-                }
-#else
-                reason = s_OSReason(x_error);
-#endif //NCBI_OS_MSWIN
-            }
-        } else {
-            reason = s_OSReason(x_error);
-        }
+
+    // Finalize the file
+    bool closed = ::fclose(fp.release()) == 0 ? true : false;
+    if (!x_error  &&  !closed) {
+        x_error = errno;
+    }
+    string reason;
+    if (x_error) {
+        reason = s_OSReason(x_error);
+    } else if (eof) {
+        x_error = s_TruncateFile(dst->GetPath(), eof);
         if (x_error) {
-            _ASSERT(!reason.empty());
-            TAR_POST(100, Error,
-                     "Cannot write sparse file '" + dst->GetPath() + '\''
-                     + reason);
+#ifdef NCBI_OS_MSWIN
+            TCHAR* str = NULL;
+            DWORD  rv = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+                                      FORMAT_MESSAGE_FROM_SYSTEM     |
+                                      FORMAT_MESSAGE_MAX_WIDTH_MASK  |
+                                      FORMAT_MESSAGE_IGNORE_INSERTS,
+                                      NULL, (DWORD) x_error,
+                                      MAKELANGID(LANG_NEUTRAL,SUBLANG_DEFAULT),
+                                      (LPTSTR) &str, 0, NULL);
+            if (str) {
+                if (rv) {
+                    _ASSERT(*str);
+                    reason = string(": ") + _T_STDSTRING(str);
+                }
+                ::LocalFree((HLOCAL) str);
+            }
+            if (reason.empty()) {
+                reason = ": Error 0x" + NStr::UIntToString(x_error, 0, 16);
+            }
+#else
+            reason = s_OSReason(x_error);
+#endif //NCBI_OS_MSWIN
         }
     }
-
     if (x_error) {
+        _ASSERT(!reason.empty());
+        TAR_POST(100, Error,
+                 "Cannot write sparse file '" + dst->GetPath() + '\''+ reason);
         dst->Remove();
         return false;
     }
+
     return true;
 }
 
@@ -3795,22 +3979,23 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
 {
     unique_ptr<CDirEntry> path_ptr;  // deleter
     if (!path) {
-        path_ptr.reset(CDirEntry::CreateObject
-                       (CDirEntry::EType(info.GetType()),
-                        CDirEntry::NormalizePath
-                        (CDirEntry::ConcatPath
-                         (m_BaseDir, info.GetName()))));
+        path_ptr.reset(new CDirEntry(s_ToFilesystemPath
+                                     (m_BaseDir, info.GetName(),
+                                      !(m_Flags & fKeepAbsolutePath))));
         path = path_ptr.get();
     }
 
     // Date/time.
-    // Set the time before permissions because on some platforms
-    // this setting can also affect file permissions.
+    // Set the time before permissions because on some platforms this setting
+    // can also affect file permissions.
     if (what & fPreserveTime) {
-        time_t modification(info.GetModificationTime());
-        time_t last_access(info.GetLastAccessTime());
-        time_t creation(info.GetCreationTime());
-        if (!path->SetTimeT(&modification, &last_access, &creation)) {
+        CTime modification(info.GetModificationTime());
+        CTime last_access(info.GetLastAccessTime());
+        CTime creation(info.GetCreationTime());
+        modification.SetNanoSecond(info.m_Stat.mtime_nsec);
+        last_access.SetNanoSecond(info.m_Stat.atime_nsec);
+        creation.SetNanoSecond(info.m_Stat.ctime_nsec);
+        if (!path->SetTime(&modification, &last_access, &creation)) {
             int x_errno = CNcbiError::GetLast().Code();
             TAR_THROW(this, eRestoreAttrs,
                       "Cannot restore date/time of '" + path->GetPath() + '\''
@@ -3853,7 +4038,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
         // portable, and also is not implemented on majority of platforms.
         if (info.GetType() != CTarEntryInfo::eSymLink) {
             // Use raw mode here to restore most of the bits
-            mode_t mode = s_TarToMode(perm ? perm : info.m_Stat.st_mode);
+            mode_t mode = s_TarToMode(perm ? perm : info.m_Stat.orig.st_mode);
             if (chmod(path->GetPath().c_str(), mode) != 0) {
                 // May fail due to setuid/setgid bits -- strip'em and try again
                 if (mode &   (S_ISUID | S_ISGID)) {
@@ -3886,14 +4071,6 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
 }
 
 
-static string s_ToFilesystemPath(const string& base_dir, const string& name)
-{
-    string path(base_dir.empty()  ||  CDirEntry::IsAbsolutePath(name)
-                ? name : CDirEntry::ConcatPath(base_dir, name));
-    return CDirEntry::NormalizePath(path);
-}
-
-
 static string s_BaseDir(const string& dirname)
 {
     string path = s_ToFilesystemPath(kEmptyStr, dirname);
@@ -3903,64 +4080,6 @@ static string s_BaseDir(const string& dirname)
     NStr::ReplaceInPlace(path, "\\", "/");
 #endif //NCBI_OS_MSWIN
     return path;
-}
-
-
-static string s_ToArchiveName(const string& base_dir, const string& path)
-{
-    // NB: Path assumed to have been normalized
-    string retval = CDirEntry::AddTrailingPathSeparator(path);
-
-#ifdef NCBI_OS_MSWIN
-    // Convert to Unix format with forward slashes
-    NStr::ReplaceInPlace(retval, "\\", "/");
-    const NStr::ECase how = NStr::eNocase;
-#else
-    const NStr::ECase how = NStr::eCase;
-#endif //NCBI_OS_MSWIN
-
-    bool absolute;
-    // Remove leading base dir from the path
-    if (!base_dir.empty()  &&  NStr::StartsWith(retval, base_dir, how)) {
-        if (retval.size() > base_dir.size()) {
-            retval.erase(0, base_dir.size()/*separator too*/);
-        } else {
-            retval.assign(1, '.');
-        }
-        absolute = false;
-    } else {
-        absolute = CDirEntry::IsAbsolutePath(retval);
-    }
-
-    SIZE_TYPE pos = 0;
-
-#ifdef NCBI_OS_MSWIN
-    // Remove a disk name if present
-    if (retval.size() > 1
-        &&  isalpha((unsigned char) retval[0])  &&  retval[1] == ':') {
-        pos = 2;
-    }
-#endif //NCBI_OS_MSWIN
-
-    // Remove any leading and trailing slashes
-    while (pos < retval.size()  &&  retval[pos] == '/') {
-        ++pos;
-    }
-    if (pos) {
-        retval.erase(0, pos);
-    }
-    pos = retval.size();
-    while (pos > 0  &&  retval[pos - 1] == '/') {
-        --pos;
-    }
-    if (pos < retval.size()) {
-        retval.erase(pos);
-    }
-
-    if (absolute) {
-        retval.insert((SIZE_TYPE) 0, 1, '/');
-    }
-    return retval;
 }
 
 
@@ -4043,9 +4162,9 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     st.orig.st_gid = (gid_t) gid;
 #endif //NCBI_OS_MSWIN
 
-    m_Current.m_Stat = st.orig;
+    m_Current.m_Stat = st;
     // Fixup for mode bits
-    m_Current.m_Stat.st_mode = (mode_t) s_ModeToTar(st.orig.st_mode);
+    m_Current.m_Stat.orig.st_mode = (mode_t) s_ModeToTar(st.orig.st_mode);
 
     // Check if we need to update this entry in the archive
     if (toc) {
@@ -4078,8 +4197,8 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                            &&  m_Current.GetLinkName() == e->GetLinkName()) {
                     goto out;
                 }
-                if (m_Current.GetModificationTime() <=
-                    e->GetModificationTime()) {
+                if (m_Current.GetModificationCTime()
+                    <= e->GetModificationCTime()) {
                     update = false;  // same(or older), no update
                 }
                 break;
@@ -4109,7 +4228,7 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     case CDirEntry::eSymLink:
     case CDirEntry::ePipe:
         _ASSERT(update);
-        m_Current.m_Stat.st_size = 0;
+        m_Current.m_Stat.orig.st_size = 0;
         x_WriteEntryInfo(path);
         entries->push_back(m_Current);
         break;
@@ -4127,7 +4246,7 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
             TAR_THROW(this, eRead, error);
         }
         if (update) {
-            m_Current.m_Stat.st_size = 0;
+            m_Current.m_Stat.orig.st_size = 0;
             x_WriteEntryInfo(path);
             entries->push_back(m_Current);
         }
@@ -4145,23 +4264,24 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
             TAR_POST(3, Warning,
                      "Skipping non-archiveable "
                      + string(type == CDirEntry::eSocket ? "socket" : "door")
-                     + " entry '" + path + '\'');
+                     + " '" + path + '\'');
         }
         break;
 
     case CDirEntry::eUnknown:
         if (!(m_Flags & fSkipUnsupported)) {
-            TAR_THROW(this, eBadName,
-                      "Unable to handle '" + path + '\'');
+            TAR_THROW(this, eUnsupportedSource,
+                      "Unable to archive '" + path + '\'');
         }
         /*FALLTHRU*/
 
     default:
-        if (type == CDirEntry::eUnknown  ||  !(m_Flags & fSkipUnsupported)) {
-            TAR_POST(14, Error,
-                     "Skipping unsupported source '" + path
-                     + "' of type #" + NStr::IntToString(int(type)));
+        if (type != CDirEntry::eUnknown) {
+            _TROUBLE;
         }
+        TAR_POST(14, Error,
+                 "Skipping unsupported source '" + path
+                 + "' of type #" + NStr::IntToString(int(type)));
         break;
     }
 
@@ -4208,10 +4328,14 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
                   "Bad input file stream");
     }
 
-    m_Current.m_Stat.st_mtime
-        = m_Current.m_Stat.st_atime
-        = m_Current.m_Stat.st_ctime
-        = CTime(CTime::eCurrent).GetTimeT();
+    CTime::GetCurrentTimeT(&m_Current.m_Stat.orig.st_ctime,
+                           &m_Current.m_Stat.ctime_nsec);
+    m_Current.m_Stat.orig.st_mtime
+        = m_Current.m_Stat.orig.st_atime
+        = m_Current.m_Stat.orig.st_ctime;
+    m_Current.m_Stat.mtime_nsec
+        = m_Current.m_Stat.atime_nsec
+        = m_Current.m_Stat.ctime_nsec;
 
 #ifdef NCBI_OS_UNIX
     // use regular file mode, adjusted with umask()
@@ -4223,24 +4347,24 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
     // NB: thread-safe
     u = getumask();
 #  else
-    u = umask(0);
+    u = umask(022);
     umask(u);
 #  endif //HAVE_GETUMASK
     mode &= ~u;
-    m_Current.m_Stat.st_mode = (mode_t) s_ModeToTar(mode);
+    m_Current.m_Stat.orig.st_mode = (mode_t) s_ModeToTar(mode);
 
-    m_Current.m_Stat.st_uid = geteuid();
-    m_Current.m_Stat.st_gid = getegid();
+    m_Current.m_Stat.orig.st_uid = geteuid();
+    m_Current.m_Stat.orig.st_gid = getegid();
 
-    CUnixFeature::GetUserNameByUID(m_Current.m_Stat.st_uid)
+    CUnixFeature::GetUserNameByUID(m_Current.m_Stat.orig.st_uid)
         .swap(m_Current.m_UserName);
-    CUnixFeature::GetGroupNameByGID(m_Current.m_Stat.st_gid)
+    CUnixFeature::GetGroupNameByGID(m_Current.m_Stat.orig.st_gid)
         .swap(m_Current.m_GroupName);
 #endif //NCBI_OS_UNIX
 #ifdef NCBI_OS_MSWIN
     // safe file mode
-    m_Current.m_Stat.st_mode = (fTarURead | fTarUWrite |
-                                fTarGRead | fTarORead);
+    m_Current.m_Stat.orig.st_mode = (fTarURead | fTarUWrite |
+                                     fTarGRead | fTarORead);
 
     unsigned int uid = 0, gid = 0;
     CWinSecurity::GetObjectOwner(CProcess::GetCurrentHandle(),
@@ -4249,8 +4373,8 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
                                  &m_Current.m_GroupName,
                                  &uid, &gid);
     // these are fake but we don't want to leave plain 0 (Unix root) in there
-    m_Current.m_Stat.st_uid = (uid_t) uid;
-    m_Current.m_Stat.st_gid = (gid_t) gid;
+    m_Current.m_Stat.orig.st_uid = (uid_t) uid;
+    m_Current.m_Stat.orig.st_gid = (gid_t) gid;
 #endif //NCBI_OS_MSWIN
 
     x_AppendStream(entry.GetName(), is);
