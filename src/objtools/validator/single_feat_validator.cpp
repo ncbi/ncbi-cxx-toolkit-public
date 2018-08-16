@@ -3919,6 +3919,7 @@ void CMRNAValidator::Validate()
     if (!m_GeneIsPseudo && !m_FeatIsPseudo) {
         x_ValidateCommonMRNAProduct();
     }
+    x_ValidateMrnaGene();
 }
 
 
@@ -3990,6 +3991,54 @@ void CMRNAValidator::x_ValidateCommonMRNAProduct()
                     "Identical transcript IDs found on multiple mRNAs");
         }
     }
+}
+
+
+static bool s_EqualGene_ref(const CGene_ref& genomic, const CGene_ref& mrna)
+{
+    bool locus = (!genomic.CanGetLocus()  &&  !mrna.CanGetLocus())  ||
+        (genomic.CanGetLocus()  &&  mrna.CanGetLocus()  &&
+        genomic.GetLocus() == mrna.GetLocus());
+    bool allele = (!genomic.CanGetAllele()  &&  !mrna.CanGetAllele())  ||
+        (genomic.CanGetAllele()  &&  mrna.CanGetAllele()  &&
+        genomic.GetAllele() == mrna.GetAllele());
+    bool desc = (!genomic.CanGetDesc()  &&  !mrna.CanGetDesc())  ||
+        (genomic.CanGetDesc()  &&  mrna.CanGetDesc()  &&
+        genomic.GetDesc() == mrna.GetDesc());
+    bool locus_tag = (!genomic.CanGetLocus_tag()  &&  !mrna.CanGetLocus_tag())  ||
+        (genomic.CanGetLocus_tag()  &&  mrna.CanGetLocus_tag()  &&
+        genomic.GetLocus_tag() == mrna.GetLocus_tag());
+
+    return locus  &&  allele  &&  desc  && locus_tag;
+}
+
+
+// check that there is no conflict between the gene on the genomic 
+// and the gene on the mrna.
+void CMRNAValidator::x_ValidateMrnaGene()
+{
+    if (!m_ProductBioseq) {
+        return;
+    }
+    const CGene_ref* genomicgrp = NULL;
+    if (m_Gene) {
+        genomicgrp = &(m_Gene->GetData().GetGene());
+    } else {
+        genomicgrp = m_Feat.GetGeneXref();
+    }
+    if (!genomicgrp) {
+        return;
+    }
+    CFeat_CI mrna_gene(m_ProductBioseq, CSeqFeatData::e_Gene);
+    if ( mrna_gene ) {
+        const CGene_ref& mrnagrp = mrna_gene->GetData().GetGene();
+        if ( !s_EqualGene_ref(*genomicgrp, mrnagrp) ) {
+            m_Imp.PostErr(eDiag_Warning, eErr_SEQ_FEAT_GenesInconsistent,
+                "Gene on mRNA bioseq does not match gene on genomic bioseq",
+                mrna_gene->GetOriginalFeature());
+        }
+    }
+
 }
 
 

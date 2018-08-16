@@ -142,7 +142,6 @@ public:
     // functions expected to be used in Discrepancy Report
     bool DoesCDSHaveShortIntrons(const CSeq_feat& feat);
     bool IsIntronShort(const CSeq_feat& feat);
-    void ValidatemRNAGene (const CSeq_feat &feat);
     bool GetTSACDSOnMinusStrandErrors(const CSeq_feat& feat, const CBioseq& seq);
 
     static bool x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const string& key);

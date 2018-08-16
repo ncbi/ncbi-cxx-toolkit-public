@@ -312,9 +312,10 @@ public:
     virtual void Validate() override;
 
 protected:
-        // for mRNAs
+    // for mRNAs
     void x_ValidateMrna();
     void x_ValidateCommonMRNAProduct();
+    void x_ValidateMrnaGene();
 
     CConstRef<CSeq_feat> m_Gene;
     bool m_GeneIsPseudo;

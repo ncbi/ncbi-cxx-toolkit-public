@@ -284,7 +284,6 @@ private:
     static bool x_HasCitSub(const CPub_equiv& pub);
     static bool x_HasCitSub(const CPub& pub);
 
-    void ValidatemRNAGene (const CBioseq& seq);
     void ValidateCDSUTR(const CBioseq& seq);
     bool x_ReportUTRPair(const CSeq_feat& utr5, const CSeq_feat& utr3);
 

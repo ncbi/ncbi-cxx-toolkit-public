@@ -241,25 +241,6 @@ void CValidError_feat::ValidateSeqFeatContext(const CSeq_feat& feat, const CBios
 
 //#define TEST_LONGTIME
 
-static bool s_EqualGene_ref(const CGene_ref& genomic, const CGene_ref& mrna)
-{
-    bool locus = (!genomic.CanGetLocus()  &&  !mrna.CanGetLocus())  ||
-        (genomic.CanGetLocus()  &&  mrna.CanGetLocus()  &&
-        genomic.GetLocus() == mrna.GetLocus());
-    bool allele = (!genomic.CanGetAllele()  &&  !mrna.CanGetAllele())  ||
-        (genomic.CanGetAllele()  &&  mrna.CanGetAllele()  &&
-        genomic.GetAllele() == mrna.GetAllele());
-    bool desc = (!genomic.CanGetDesc()  &&  !mrna.CanGetDesc())  ||
-        (genomic.CanGetDesc()  &&  mrna.CanGetDesc()  &&
-        genomic.GetDesc() == mrna.GetDesc());
-    bool locus_tag = (!genomic.CanGetLocus_tag()  &&  !mrna.CanGetLocus_tag())  ||
-        (genomic.CanGetLocus_tag()  &&  mrna.CanGetLocus_tag()  &&
-        genomic.GetLocus_tag() == mrna.GetLocus_tag());
-
-    return locus  &&  allele  &&  desc  && locus_tag;
-}
-
-
 // in Ncbistdaa order
 /*
 Return values are:
@@ -581,38 +562,6 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string
         }
     }
     return rsult;
-}
-
-
-// check that there is no conflict between the gene on the genomic 
-// and the gene on the mrna.
-void CValidError_feat::ValidatemRNAGene (const CSeq_feat &feat)
-{
-    if (feat.IsSetProduct()) {
-        const CGene_ref* genomicgrp = NULL;
-        // get gene ref for mRNA feature
-        CConstRef<CSeq_feat> gene = m_GeneCache.GetGeneFromCache(&feat, *m_Scope);
-        if (gene) {
-            genomicgrp = &(gene->GetData().GetGene());
-        } else {
-            genomicgrp = feat.GetGeneXref();
-        }
-        if ( genomicgrp != 0 ) {
-            // get gene for mRNA product sequence
-            CBioseq_Handle seq = x_GetCachedBsh(feat.GetProduct());
-            if (seq) {
-                CFeat_CI mrna_gene(seq, CSeqFeatData::e_Gene);
-                if ( mrna_gene ) {
-                    const CGene_ref& mrnagrp = mrna_gene->GetData().GetGene();
-                    if ( !s_EqualGene_ref(*genomicgrp, mrnagrp) ) {
-                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_GenesInconsistent,
-                            "Gene on mRNA bioseq does not match gene on genomic bioseq",
-                            mrna_gene->GetOriginalFeature());
-                    }
-                }
-            }
-        }
-    }
 }
 
 
