@@ -68,6 +68,10 @@
 #include <objects/seqloc/Seq_loc.hpp>
 // #include <objects/submit/Submit_block.hpp>
 
+#include <unordered_set>
+#include <set>
+#include <map>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -183,6 +187,7 @@ namespace
 
 
 #undef STATIC_SMOD
+
 
     typedef set<const char*, CSourceModParser::PKeyCompare> TSModNameSet;
 
@@ -1890,6 +1895,281 @@ void CSourceModParser::AddMods(const CTempString& name, const CTempString& value
     newmod.used = false;
 
     m_Mods.insert(newmod);
+}
+
+#include "mod_info.hpp" 
+
+struct SModContainer
+{
+    using TMods = multimap<string, string>;
+    using TMod = TMods::value_type;
+
+    void AddMod(const string& name, const string& value) {
+        AddMod(TMod(name, value));
+    }
+
+    void AddMod(const TMod& name_value) {
+        const auto& mod_name = name_value.first;
+        if (SModNameInfo::IsDescrMod(mod_name)) {
+            descr_mods.insert(name_value);
+        }
+        else 
+        if (SModNameInfo::IsSeqInstMod(mod_name)) {
+            seq_inst_mods.insert(name_value);
+        }
+        else 
+        if (SModNameInfo::IsAnnotMod(mod_name)) {
+            annot_mods.insert(name_value);
+        }
+    }
+        
+    TMods seq_inst_mods;
+    TMods annot_mods;
+    TMods descr_mods;
+};
+
+class CModAdder {
+public:
+
+    using TMods = SModContainer::TMods;
+    using TMod = SModContainer::TMod;
+
+    CModAdder(void);
+    ~CModAdder(void);
+
+    void Apply(const CBioseq& bioseq) {};
+
+    void AddMod(const string& name, const string& value) {
+        m_pMods->AddMod(name, value);
+    }
+
+private:
+    void x_ApplySeqInstMods(const TMods& mods, CSeq_inst& inst);
+    bool x_AddTopology(const TMod& mod, CSeq_inst& inst);
+    bool x_AddMolType(const TMod& mod, CSeq_inst& inst);
+    bool x_AddStrand(const TMod& mod, CSeq_inst& inst);
+    bool x_AddHist(const TMod& mod, CSeq_inst& inst);
+    bool x_CreateGene(const TMods& mods, CAutoInitRef<CSeqFeatData>& pFeatData);
+    bool x_CreateProtein(const TMods& mods, CAutoInitRef<CSeqFeatData>& pFeatData);
+    void x_AddNonBioSourceDescriptors(const TMods& mods, CBioseq& bioseq);
+    bool x_AddComment(const TMod& mod, CRef<CSeqdesc>& pDesc) {}
+    bool x_AddMolInfo(const TMod& mod, CRef<CSeqdesc>& pDesc) {}
+    bool x_AddGBblock(const TMod& mod, CRef<CSeqdesc>& pDesc) {}
+    bool x_AddPubMods(const TMod& mod, CRef<CSeqdesc>& pDesc) {}
+    bool x_AddTPAMods(const TMod& mod, CRef<CSeqdesc>& pDesc) {}
+    bool x_AddGenomeProjectsDBMods(const TMod& mod, CRef<CSeqdesc>& pDesc) {}
+    unique_ptr<SModContainer> m_pMods;
+};
+
+CModAdder::CModAdder() : m_pMods(new SModContainer()) {}
+
+CModAdder::~CModAdder() = default;
+
+void CModAdder::x_AddNonBioSourceDescriptors(const TMods& mods, CBioseq& bioseq)
+{
+    for (const auto& mod : mods) {
+
+        // Need some other code to handle SRA mods
+
+        CRef<CSeqdesc> pDesc(new CSeqdesc());
+        if (x_AddComment(mod, pDesc) ||
+            x_AddMolInfo(mod, pDesc) ||
+            x_AddGBblock(mod, pDesc) ||
+            x_AddPubMods(mod, pDesc) ||
+            x_AddTPAMods(mod, pDesc) ||
+            x_AddGenomeProjectsDBMods(mod, pDesc)) {
+            bioseq.SetDescr().Set().push_back(pDesc);
+        }
+    }
+}
+
+
+void CModAdder::x_ApplySeqInstMods(const TMods& mods, CSeq_inst& seq_inst)
+{
+    for (const auto& mod : mods) {
+        if (x_AddTopology(mod, seq_inst) ||
+            x_AddMolType(mod, seq_inst) ||
+            x_AddStrand(mod, seq_inst) ||
+            x_AddHist(mod, seq_inst)) {
+            
+        }
+        else {
+            // report an error - unrecognised modifier
+        }
+    }
+}
+
+bool s_IsModNameMatch(const string& name, const unordered_set<string>& expected) 
+{   
+    return (expected.find(name) != expected.end());
+}
+
+
+bool CModAdder::x_AddTopology(const TMod& mod, CSeq_inst& seq_inst)
+{
+    if (!s_IsModNameMatch(mod.first, {"topology", "top"})) {
+        return false;
+    }
+
+    if (seq_inst.IsSetTopology()) {
+        // Attempting to modify topology. Post a warning or an error.
+    }
+
+    if (NStr::EqualNocase(mod.second, "linear")) {
+        seq_inst.SetTopology(CSeq_inst::eTopology_linear);
+    }
+    else 
+    if (NStr::EqualNocase(mod.second, "circular")) {
+        seq_inst.SetTopology(CSeq_inst::eTopology_circular);
+    }
+    else {
+        // Handle bad mod value
+    }
+    return true;
+}
+
+
+bool CModAdder::x_AddMolType(const TMod& mod, CSeq_inst& seq_inst)
+{
+    const auto& name = mod.first;
+
+    bool is_mol = s_IsModNameMatch(name, {"molecule", "mol"});
+    bool is_moltype;
+    if (!is_mol) {
+        is_moltype = s_IsModNameMatch(name, {"moltype", "mol_type"});
+    }
+
+    if (!is_mol && !is_moltype) {
+        return false;
+    }
+    
+    if (seq_inst.IsSetMol() &&
+        seq_inst.IsAa()) {
+        return true;        
+    }
+
+    const auto& value = mod.second;
+    if (is_mol) {
+        if (NStr::EqualNocase(value, "dna")) {
+            seq_inst.SetMol(CSeq_inst::eMol_dna);
+        }
+        else if (NStr::EqualNocase(value, "rna")) {
+            seq_inst.SetMol(CSeq_inst::eMol_rna);
+        }
+        else {
+            // x_HandleBadModValue
+        }
+    }
+    else { // is_moltype    
+    /*
+        const auto& it = sc_BiomolMap.find(value);
+        if (it == sc_BiomolMap.end()) {
+            // Handle Bad Mod
+        }
+        else {
+            seq_inst.SetMol(it->second.m_eMol);
+        }
+        */
+    }
+
+    return true;
+}
+
+
+bool CModAdder::x_AddStrand(const TMod& mod, CSeq_inst& seq_inst)
+{
+    if (!NStr::EqualNocase(mod.first,"strand")) {
+        return false;
+    }
+
+    const auto& value = mod.second;
+    if (NStr::EqualNocase(value, "single")) {
+        seq_inst.SetStrand( CSeq_inst::eStrand_ss );
+    } else if (NStr::EqualNocase(value, "double")) {
+        seq_inst.SetStrand( CSeq_inst::eStrand_ds );
+    } else if (NStr::EqualNocase(value, "mixed")) {
+        seq_inst.SetStrand( CSeq_inst::eStrand_mixed );
+    } else {
+        // x_HandleBadModValue(*mod);
+    }
+    return true;
+}
+
+
+bool CModAdder::x_AddHist(const TMod& mod, CSeq_inst& seq_inst)
+{
+    if (!s_IsModNameMatch(mod.first, {"secondary_accession", "secondary_accessions"})) {
+        return false;
+    }
+
+    list<CTempString> ranges;
+    NStr::Split(mod.second, ",", ranges, NStr::fSplit_MergeDelimiters);
+    for (const auto& range : ranges) {
+        string s = NStr::TruncateSpaces_Unsafe(range);
+        try {
+            SSeqIdRange idrange(s);
+            for (auto it = idrange.begin(); it != idrange.end(); ++it) {
+                seq_inst.SetHist().SetReplaces().SetIds().push_back(it.GetID());
+            }
+        }
+        catch (CSeqIdException&) {
+           NStr::ReplaceInPlace(s, "ref_seq|", "ref|", 0, 1);
+           seq_inst.SetHist().SetReplaces().SetIds().push_back(Ref(new CSeq_id(s))); 
+        }
+    }
+
+    return true;
+}
+
+
+bool CModAdder::x_CreateGene(const TMods& mods, CAutoInitRef<CSeqFeatData>& pFeatData)
+{
+    
+    for (const auto& mod : mods) {
+        const auto& name = mod.first;
+        if (NStr::EqualNocase(name, "gene")) {
+            pFeatData->SetGene().SetLocus(mod.second);
+        }
+        else 
+        if (NStr::EqualNocase(name, "allele")) {
+            pFeatData->SetGene().SetAllele(mod.second);
+        }
+        else
+        if (s_IsModNameMatch(name, {"gene_syn", "gene_synonym"})) {
+            pFeatData->SetGene().SetSyn().push_back(mod.second);
+        }
+        else
+        if (s_IsModNameMatch(name, {"locus_tag"})) { // Change s_IsModNameMatch
+            pFeatData->SetGene().SetLocus_tag(mod.second);
+        }
+    }
+    return pFeatData.IsInitialized();
+}
+
+
+bool CModAdder::x_CreateProtein(const TMods& mods, CAutoInitRef<CSeqFeatData>& pFeatData) 
+{
+
+    for (const auto& mod : mods) {
+        const auto& name = mod.first;
+        
+        if (s_IsModNameMatch(name, {"protein", "prot"})) {
+            pFeatData->SetProt().SetName().push_back(mod.second);
+        } 
+        else 
+        if (s_IsModNameMatch(name, {"prot_desc", "protein_desc"})) {
+            pFeatData->SetProt().SetDesc(mod.second);
+        }
+        else 
+        if (s_IsModNameMatch(name, {"EC_number"})) {
+            pFeatData->SetProt().SetEc().push_back(mod.second);
+        }
+        else 
+        if (s_IsModNameMatch(name, {"activity", "function"})) {
+            pFeatData->SetProt().SetActivity().push_back(mod.second);
+        }
+    }
+    return pFeatData.IsInitialized();
 }
 
 END_SCOPE(objects)
