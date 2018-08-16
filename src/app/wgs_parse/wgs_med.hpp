@@ -41,8 +41,7 @@ USING_SCOPE(objects);
 namespace wgsparse
 {
 
-bool PerformMedlineLookup(CSeq_entry& entry);
-int SinglePubLookup(CPubdesc& pub);
+void SinglePubLookup(CPubdesc& pub);
 
 }
 

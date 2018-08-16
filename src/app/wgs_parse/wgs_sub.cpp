@@ -1610,10 +1610,6 @@ bool ParseSubmissions(CMasterInfo& master_info)
                         break;
                     }
 
-                    if (GetParams().IsMedlineLookup() && !PerformMedlineLookup(*entry)) {
-                        break;
-                    }
-
                     if (GetParams().IsStripAuthors()) {
                         StripAuthors(*entry);
                     }

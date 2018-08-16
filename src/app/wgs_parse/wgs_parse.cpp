@@ -1195,7 +1195,7 @@ static bool UpdateCommonPubs(CRef<CSeq_entry>& id_entry, const CRef<CSeq_entry>&
                     continue;
                 }
 
-                string pubdesc_key = all_pubs.AddPub(descr->SetPub());
+                string pubdesc_key = all_pubs.AddPub(descr->SetPub(), GetParams().IsMedlineLookup());
                 common_pubs.push_back(pubdesc_key);
             }
         }

@@ -34,6 +34,8 @@
 
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
+#include <objects/pub/Pub_equiv.hpp>
+#include <objects/pub/Pub.hpp>
 
 #include "wgs_pubs.hpp"
 #include "wgs_utils.hpp"
@@ -42,19 +44,51 @@
 namespace wgsparse
 {
 
-string CPubCollection::AddPub(CPubdesc& pubdesc)
+static int GetPmid(const CPubdesc& pubdesc)
+{
+    int ret = 0;
+    if (pubdesc.IsSetPub() && pubdesc.GetPub().IsSet()) {
+
+        for (auto& pub : pubdesc.GetPub().Get()) {
+            if (pub->IsPmid()) {
+                ret = pub->GetPmid();
+                break;
+            }
+        }
+    }
+
+    return ret;
+}
+
+string CPubCollection::AddPub(CPubdesc& pubdesc, bool medline_lookup)
 {
 	string pubdesc_str = ToStringKey(pubdesc);
 	auto it = m_pubs.find(pubdesc_str);
 
     if (it == m_pubs.end()) {
         
-        // TODO here should be PubMed lookup
-        //int pmid = SinglePubLookup(pubdesc);
-        
         CPubInfo& pub_info = m_pubs[pubdesc_str];
-        pub_info.m_desc.Reset(&pubdesc);
-        pub_info.m_pubdesc_key = pubdesc_str;
+
+        if (medline_lookup) {
+
+            SinglePubLookup(pubdesc);
+            string lookup_pubdesc_str = ToStringKey(pubdesc);
+            auto lookup_it = m_pubs.find(lookup_pubdesc_str);
+
+            if (lookup_it != m_pubs.end()) {
+
+                pub_info.m_desc.Reset(lookup_it->second.m_desc);
+                pub_info.m_pubdesc_key = lookup_it->second.m_pubdesc_key;
+            }
+        }
+
+        if (pub_info.m_pubdesc_key.empty()) { // value is not set
+            pub_info.m_desc.Reset(&pubdesc);
+            pub_info.m_pubdesc_key = pubdesc_str;
+        }
+
+        pubdesc_str = pub_info.m_pubdesc_key;
+        pub_info.m_pmid = GetPmid(*pub_info.m_desc);
     }
     else {
         pubdesc_str = it->second.m_pubdesc_key;

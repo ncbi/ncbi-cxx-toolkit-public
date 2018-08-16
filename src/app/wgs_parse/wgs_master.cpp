@@ -145,7 +145,7 @@ static size_t CheckPubs(CSeq_entry& entry, const string& file, list<string>& com
                     ++num_of_pubs;
                 }
 
-                string pubdesc_key = all_pubs.AddPub(descr->SetPub());;
+                string pubdesc_key = all_pubs.AddPub(descr->SetPub(), GetParams().IsMedlineLookup());
                 
                 CRef<CPubdesc> pubdesc = all_pubs.GetPubInfo(pubdesc_key).m_desc;
                 _ASSERT(pubdesc.NotEmpty());

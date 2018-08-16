@@ -60,7 +60,7 @@ class CPubCollection
 public:
 	CPubCollection() {};
 
-    string AddPub(CPubdesc& pubdesc);
+    string AddPub(CPubdesc& pubdesc, bool medline_lookup);
     CPubInfo& GetPubInfo(const string& pubdesc_key);
 
     static string GetPubdescKeyForCitSub(CPubdesc& pubdesc, const CDate_std* submission_date);
