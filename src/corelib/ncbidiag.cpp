@@ -7525,8 +7525,6 @@ CNcbiDiag::CNcbiDiag(const CDiagCompileInfo &info,
       m_OmitStackTrace(false),
       m_CompileInfo(info)
 {
-    SetFile(   info.GetFile()   );
-    SetModule( info.GetModule() );
 }
 
 CNcbiDiag::~CNcbiDiag(void) 
