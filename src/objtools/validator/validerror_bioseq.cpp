@@ -5145,37 +5145,6 @@ bool CValidError_bioseq::x_IsPartialAtSpliceSiteOrGap
 }
 
 
-bool CValidError_bioseq::x_SplicingNotExpected(const CMappedFeat& feat)
-{
-    if (!m_CurrentHandle) {
-        return false;
-    }
-
-    CSeqdesc_CI diter (m_CurrentHandle, CSeqdesc::e_Source);
-    if (!diter) {
-        return false;
-    }
-    if (!diter->GetSource().IsSetOrg() || !diter->GetSource().GetOrg().IsSetOrgname()) {
-        return false;
-    }
-
-    if (diter->GetSource().GetOrg().GetOrgname().IsSetDiv()) {
-        string div = diter->GetSource().GetOrg().GetOrgname().GetDiv();
-        if (NStr::Equal(div, "BCT") || NStr::Equal(div, "VRL")) {
-            return true;
-        }
-    }
-    if (diter->GetSource().GetOrg().GetOrgname().IsSetLineage()) {
-        string lineage = diter->GetSource().GetOrg().GetOrgname().GetLineage();
-        if (NStr::StartsWith(lineage, "Bacteria; ", NStr::eNocase)
-            || NStr::StartsWith(lineage, "Archaea; ", NStr::eNocase)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
 static bool s_MatchPartialType (const CSeq_loc& loc1, const CSeq_loc& loc2, unsigned int partial_type)
 {
     bool rval = false;

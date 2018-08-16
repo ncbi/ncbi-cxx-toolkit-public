@@ -193,10 +193,8 @@ private:
     void x_ReportStartStopPartialProblem(int partial_type, bool at_splice_or_gap, const CSeq_feat& feat);
 
     bool x_IsPartialAtSpliceSiteOrGap (const CSeq_loc& loc, unsigned int tag, bool& bad_seq, bool& is_gap);
-    bool x_SplicingNotExpected(const CMappedFeat& feat);
     bool x_MatchesOverlappingFeaturePartial (const CMappedFeat& feat, unsigned int partial_type);
     bool x_IsSameAsCDS(const CMappedFeat& feat);
-    void x_ReportPseudogeneConflict(CConstRef <CSeq_feat> gene, const CSeq_feat& feat);
     void ValidateSeqFeatContext(const CBioseq& seq);
     static bool x_HasPGAPStructuredComment(CBioseq_Handle bsh);
     EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool viral, bool htgs, bool same_annot, bool same_label);
