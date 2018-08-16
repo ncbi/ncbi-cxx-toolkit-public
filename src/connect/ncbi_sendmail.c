@@ -335,11 +335,10 @@ extern const char* CORE_SendMail(const char* to,
 }
 
 
-/* In two macros below the smartest (or, weak-minded?) Sun
- * C compiler warns about unreachable end-of-loop condition
- * (well, it thinks "a condition" is there, dumb!).
+/* In two macros below the smartest (or, weak-minded?) Sun C compiler would
+ * have warned about unreachable end-of-loop condition (well, it thinks "a
+ * condition" is there, dumb!) -- so we had to add the "if (!sock)" thing.
  */
-
 #define SENDMAIL_RETURN(subcode, reason)                                \
     do {                                                                \
         if (sock) {                                                     \
@@ -367,15 +366,15 @@ extern const char* CORE_SendMail(const char* to,
                     ("[SendMail]  %s: %s", reason, explanation));       \
         if (!sock) {                                                    \
             if (info->mx_options & fSendMail_ExtendedErrInfo) {         \
-                size_t len = strlen(reason);                            \
-                char*  retval = (char*) malloc(len + 3                  \
-                                               + strlen(explanation));  \
+                size_t lenr = strlen(reason);                           \
+                size_t lene = strlen(explanation) + 1;                  \
+                char*  retval = (char*) malloc(lene + 2 + lenr);        \
                 if (!retval)                                            \
                     return "";                                          \
-                memcpy(retval, reason, len);                            \
-                retval[len++] = ':';                                    \
-                retval[len++] = ' ';                                    \
-                strcpy(retval + len, explanation);                      \
+                memcpy(retval, reason, lenr);                           \
+                retval[lenr++] = ':';                                   \
+                retval[lenr++] = ' ';                                   \
+                memcpy(retval + lenr, explanation, lene);               \
                 return retval;                                          \
             }                                                           \
             return reason;                                              \
