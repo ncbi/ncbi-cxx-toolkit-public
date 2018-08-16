@@ -25,8 +25,11 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/build-system/project_tree_builder/msvc71_project.dtd \
   src/build-system/project_tree_builder/property_list.xsd \
   src/build-system/project_tree_builder/msbuild/msbuild_dataobj.xsd \
+  src/objects/variation_libs/dbsnp/*/*.asn \
   src/objtools/data_loaders/asn_cache/cache_blob.asn \
   src/objtools/data_loaders/cdd/cdd_access/cdd_access.asn \
+  src/objtools/data_loaders/genbank/pubseq2/eMyNCBI_result.xsd \
+  src/objtools/pubseq_gateway/protobuf/psg_protobuf.proto \
   src/sample/app/asn/sample_asn.asn src/sample/app/soap/soap_dataobj.xsd \
   src/sample/lib/asn_lib/asn_sample_lib.asn \
   src/sample/lib/dtd/dtd_sample_lib.dtd \
@@ -35,6 +38,7 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/internal/stax/taxon/taxon.dtd \
   src/internal/ncbils2/asn/login.asn src/internal/ncbils2/auth/*xml/*.dtd \
   src/internal/geo/cgi/geo*/objects/geo*.asn \
+  src/internal/aligndb/aligndb_client.asn \
   src/internal/mapview/objects/*/*.asn \
   src/internal/gbench/packages/pkg_radar/*/*.asn \
   src/internal/gbench/app/sviewer/objects/*.asn \
@@ -50,13 +54,15 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/internal/gpipe/gpexec/queue/lib/gpxapi.asn \
   src/internal/peptides/objects/unimod/unimod.xsd \
   src/internal/variation/lib/objects/*/*.asn \
-  src/internal/variation/snp/objects/rsm/rsm.asn; do
+  src/internal/variation/snp/objects/rsm/rsm.asn \
+  src/internal/grpcapi/ncbi/grpcapi/dbsnp/primary_track/dbsnp.proto; do
     if test -f "$spec"; then
         case $spec in
             */seq_annot_ref.asn ) continue ;; # sample data, not a spec
             *.asn               ) ext=.asn; flag= ;;
             *.dtd               ) ext=.dtd; flag=--dtd ;;
             *.xsd               ) ext=.xsd; flag=--xsd ;;
+            *.proto             ) ext=.proto; flag=--protobuf ;;
         esac
         dir=`dirname $spec`
         base=`basename $spec $ext`
