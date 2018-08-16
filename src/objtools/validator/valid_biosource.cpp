@@ -1426,6 +1426,8 @@ const CSeq_entry *ctx)
 }
 
 
+//LCOV_EXCL_START
+//per VR-723, the call to this code is commented out
 static bool s_MatchOrgname(const string& taxname, const COrgName& orgname, string& mismatch)
 {
     mismatch = kEmptyStr;
@@ -1488,6 +1490,7 @@ void CValidError_imp::ValidateTaxNameOrgname
                     obj, ctx);
     }
 }
+//LCOV_EXCL_STOP
 
 
 void CValidError_imp::ValidateOrgName
