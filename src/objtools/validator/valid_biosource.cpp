@@ -2604,7 +2604,7 @@ void CValidError_imp::HandleTaxonomyError(const CT3Error& error,
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_OrganismNotFound,
             "Organism not found in taxonomy database",
             org);
-    } else if (NStr::Find(err_str, "ambiguous") != string::npos) {
+    } else if (NStr::FindNoCase(err_str, "ambiguous") != string::npos) {
         PostObjErr(eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost,
             "Specific host value is ambiguous: " + host, org);
     } else if (NStr::Equal(err_str, kInvalidReplyMsg)) {
