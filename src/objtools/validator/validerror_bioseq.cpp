@@ -2349,7 +2349,7 @@ bool CValidError_bioseq::IsTSAAccession(const CBioseq& seq)
         return false;
     }
     ITERATE(CBioseq::TId, id, seq.GetId()) {
-        if (IsWGSAccession(**id)) {
+        if (IsTSAAccession(**id)) {
             return true;
         }
     }
