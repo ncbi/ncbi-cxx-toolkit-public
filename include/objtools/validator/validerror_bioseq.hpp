@@ -264,7 +264,6 @@ private:
     size_t NumOfIntervals(const CSeq_loc& loc);
     //bool NotPeptideException(const CFeat_CI& curr, const CFeat_CI& prev);
     //bool IsSameSeqAnnot(const CFeat_CI& fi1, const CFeat_CI& fi2);
-    bool x_IsSameSeqAnnotDesc(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2);
     bool IsIdIn(const CSeq_id& id, const CBioseq& seq);
     bool SuppressTrailingXMsg(const CBioseq& seq);
     CRef<CSeq_loc> GetLocFromSeq(const CBioseq& seq);

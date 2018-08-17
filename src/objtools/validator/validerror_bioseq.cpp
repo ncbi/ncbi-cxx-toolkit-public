@@ -2243,46 +2243,6 @@ static bool s_NotPeptideException
 }
 
 
-bool CValidError_bioseq::x_IsSameSeqAnnotDesc
-(const CSeq_feat_Handle& f1,
- const CSeq_feat_Handle& f2)
-{
-    CSeq_annot_Handle ah1 = f1.GetAnnot();
-    CSeq_annot_Handle ah2 = f2.GetAnnot();
-
-    if (!ah1  ||  !ah2) {
-        return true;
-    }
-
-    CConstRef<CSeq_annot> sap1 = ah1.GetCompleteSeq_annot();
-    CConstRef<CSeq_annot> sap2 = ah2.GetCompleteSeq_annot();
-    if (!sap1  ||  !sap2) {
-        return true;
-    }
-
-    if (!sap1->IsSetDesc()  ||  !sap2->IsSetDesc()) {
-        return true;
-    }
-
-    CAnnot_descr::Tdata descr1 = sap1->GetDesc().Get();
-    CAnnot_descr::Tdata descr2 = sap2->GetDesc().Get();
-
-    // Check only on the first? (same as in C toolkit)
-    const CAnnotdesc& desc1 = descr1.front().GetObject();
-    const CAnnotdesc& desc2 = descr2.front().GetObject();
-
-    if ( desc1.Which() == desc2.Which() ) {
-        if ( desc1.IsName() ) {
-            return NStr::EqualNocase(desc1.GetName(), desc2.GetName());
-        } else if ( desc1.IsTitle() ) {
-            return NStr::EqualNocase(desc1.GetTitle(), desc2.GetTitle());
-        }
-    }
-
-    return false;
-}
-
-
 #define FOR_EACH_SEQID_ON_BIOSEQ_HANDLE(Itr, Var) \
 ITERATE (CBioseq_Handle::TId, Itr, Var.GetId())
 
