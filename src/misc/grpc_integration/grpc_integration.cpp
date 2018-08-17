@@ -224,20 +224,37 @@ grpc::StatusCode g_AsGRPCStatusCode(CRequestStatus::ECode status_code)
     }
 }
 
+// Work around inability to compare pointers to members.
+static void s_SetDtab(CRequestContext& r, const string& s)
+{
+    r.SetDtab(s);
+}
+static void s_SetClientIP(CRequestContext& r, const string& s)
+{
+    r.SetClientIP(s);
+}
+static void s_SetHitID(CRequestContext& r, const string& s)
+{
+    r.SetHitID(s);
+}
+static void s_SetSessionID(CRequestContext& r, const string& s)
+{
+    r.SetSessionID(s);
+}
 
-typedef void (CRequestContext::*FRCSetter)(const string&);
+typedef void (*FRCSetter)(CRequestContext&, const string&);
 typedef SStaticPair<const char*, FRCSetter> TRCSetterPair;
 // Explicitly handle all four standard fields, since some may come in via
 // legacy names and AddPassThroughProperty doesn't trigger interpretation
 // and may well filter some or all of these fields out altogether.
 static const TRCSetterPair sc_RCSetters[] = {
-    { "dtab",           &CRequestContext::SetDtab      }, // legacy name
-    { "ncbi_client_ip", &CRequestContext::SetClientIP  },
-    { "ncbi_dtab",      &CRequestContext::SetDtab      },
-    { "ncbi_phid",      &CRequestContext::SetHitID     },
-    { "ncbi_sid",       &CRequestContext::SetSessionID },
-    { "ncbiphid",       &CRequestContext::SetHitID     }, // legacy name
-    { "sessionid",      &CRequestContext::SetSessionID }  // legacy name
+    { "dtab",           &s_SetDtab      }, // legacy name
+    { "ncbi_client_ip", &s_SetClientIP  },
+    { "ncbi_dtab",      &s_SetDtab      },
+    { "ncbi_phid",      &s_SetHitID     },
+    { "ncbi_sid",       &s_SetSessionID },
+    { "ncbiphid",       &s_SetHitID     }, // legacy name
+    { "sessionid",      &s_SetSessionID }  // legacy name
 };
 typedef CStaticArrayMap<const char*, FRCSetter, PCase_CStr> TRCSetterMap;
 DEFINE_STATIC_ARRAY_MAP(TRCSetterMap, sc_RCSetterMap, sc_RCSetters);
@@ -271,6 +288,7 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
                 rctx.SetClientIP(host);
             }
         }
+        map<FRCSetter, map<string, string>> rcsettings;
         for (const auto& metadata : sctx->client_metadata()) {
             CTempString nm(metadata.first .data(), metadata.first .size());
             CTempString vl(metadata.second.data(), metadata.second.size());
@@ -281,14 +299,37 @@ void CGRPCServerCallbacks::BeginRequest(grpc::ServerContext* sctx)
             TRCSetterMap::const_iterator it
                 = sc_RCSetterMap.find(name.c_str());
             if (it != sc_RCSetterMap.end()) {
-                if (it->second == &CRequestContext::SetClientIP
+                if (it->second == &s_SetClientIP
                     &&  peer_ip.empty()  &&  rctx.GetClientIP() != value) {
                     peer_ip = rctx.GetClientIP();
                 }
-                (rctx.*(it->second))(value);
+                rcsettings[it->second][name] = value;
             } else if (metadata.first == "client") {
                 client_name = value;
             }
+        }
+        for (const auto& it : rcsettings) {
+            const string* value = nullptr;
+            if (it.second.size() == 1) {
+                value = &it.second.begin()->second;
+            } else {
+                _ASSERT(it.second.size() == 2);
+                const string *old_name, *new_name;
+                for (const auto& it2 : it.second) {
+                    if (NStr::StartsWith(it2.first, "ncbi_")) {
+                        new_name = &it2.first;
+                        value    = &it2.second;
+                    } else {
+                        old_name = &it2.first;
+                    }
+                }
+                _ASSERT(old_name != nullptr);
+                _ASSERT(new_name != nullptr  &&  value != nullptr);
+                ERR_POST_X_ONCE(2, Info
+                                << "Ignoring deprecated metadata field "
+                                << *old_name << " in favor of " << *new_name);
+            }
+            (*(it.first))(rctx, *value);
         }
     }
     CDiagContext_Extra extra = dctx.PrintRequestStart();
