@@ -305,6 +305,7 @@ private:
     // (This class does *not* own this)
     const CCacheImpl::TFeatValue * m_AllFeatIt;
 
+#if 0
     class CmRNACDSIndex 
     {
     public:
@@ -324,7 +325,7 @@ private:
         TFeatList m_CDSList;
         TFeatList m_mRNAList;
     };
-
+#endif
 };
 
 

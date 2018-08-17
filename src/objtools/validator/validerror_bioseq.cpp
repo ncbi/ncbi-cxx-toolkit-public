@@ -9700,6 +9700,7 @@ void CValidError_bioseq::ValidateCDSUTR(const CBioseq& seq)
 }
 
 
+#if 0
 CValidError_bioseq::CmRNACDSIndex::CmRNACDSIndex() 
 {
 }
@@ -9708,7 +9709,7 @@ CValidError_bioseq::CmRNACDSIndex::CmRNACDSIndex()
 CValidError_bioseq::CmRNACDSIndex::~CmRNACDSIndex()
 {
 }
-
+#endif
 
 bool s_IdXrefsAreReciprocal (const CMappedFeat &cds, const CMappedFeat &mrna)
 {
@@ -9803,6 +9804,7 @@ unsigned int s_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna
 }
 
 
+#if 0
 void CValidError_bioseq::CmRNACDSIndex::SetBioseq(
     const CCacheImpl::TFeatValue * feat_list,
     const CBioseq_Handle & bioseq)
@@ -9907,6 +9909,7 @@ CMappedFeat CValidError_bioseq::CmRNACDSIndex::GetCDSFormRNA(
     }
     return f;
 }
+#endif
 
 
 END_SCOPE(validator)
