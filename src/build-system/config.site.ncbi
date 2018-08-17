@@ -306,7 +306,7 @@ case "$ncbi_platform" in
             # with_vdb=$local_vdb_base/cxx_toolkit/2
             with_vdb=$net_vdb_base/cxx_toolkit/2-rc
         else
-            : ${VDB_PATH=$local_vdb_base/2.9.1-1}
+            : ${VDB_PATH=$local_vdb_base/2.9.2-1}
         fi
         : ${with_downloaded_vdb=no}
         ;;
