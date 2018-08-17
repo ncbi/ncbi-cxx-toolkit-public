@@ -356,17 +356,8 @@ CGapStatsApplication::CGapStatsApplication(void) :
         FR::fLetterGaps),
     m_eOutFormat(eOutFormat_ASCIITable)
 {
-    int build_num =
-#ifdef NCBI_PRODUCTION_VER
-    NCBI_PRODUCTION_VER
-#else
-    0
-#endif
-    ;
-
     m_IncludedGapTypes.insert(GA::eGapType_All);
-
-    SetVersion(CVersionInfo(4,1,build_num));
+    SetVersionByBuild(5);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -866,6 +857,15 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
         CRef<CSeq_entry> pSeqEntry;
 
         CFormatGuess format_guesser(in_file);
+        // prefer formats that we support
+        for( auto a_format : {CFormatGuess::eBinaryASN,
+                              CFormatGuess::eTextASN,
+                              CFormatGuess::eXml,
+                              CFormatGuess::eFasta} )
+        {
+            format_guesser.GetFormatHints().AddPreferredFormat(a_format);
+        }
+
         CFormatGuess::EFormat eFormat = format_guesser.GuessFormat();
         switch(eFormat) {
         case CFormatGuess::eBinaryASN:

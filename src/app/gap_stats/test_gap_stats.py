@@ -141,6 +141,19 @@ class TestGapStats(unittest.TestCase):
                 './test_data/'
                 'RW-449_dup_seq_id.expected_stdout.txt'))
 
+    def test_fasta_format_preferred(self):
+        """Input could look like BED format so ensure it's called FASTA"""
+        (returncode, stdout_str, stderr_str) = self._run_gap_stats(
+            ['-max-resolve-count', '0', '-show-hist',
+                '-show-seqs-for-gap-lengths',
+                './test_data/do_not_misconstrue_as_BED.fsa'])
+        self.assertEqual(returncode, 0)
+        self.assertEqual(
+            stdout_str,
+            self._file_contents(
+                './test_data/'
+                'do_not_misconstrue_as_BED.expected_stdout.txt'))
+
 if __name__ == '__main__':
     # make sure we get warnings even in Release mode
     os.environ['DIAG_POST_LEVEL'] = 'Warning'
