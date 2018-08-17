@@ -3172,7 +3172,7 @@ static string s_ToFilesystemPath(const string& base_dir, const string& name,
 {
     string path;
     _ASSERT(!name.empty());
-    if (!base_dir.empty()) {
+    if (!base_dir.empty()  &&  (!CDirEntry::IsAbsolutePath(name)  ||  noabs)) {
         path = CDirEntry::ConcatPath(base_dir, name);
     } else {
         path = name;
