@@ -382,20 +382,18 @@ CBioSourceKind& CBioSourceKind::operator=(const CBioSource& bsrc)
         default:
             break;
         }
-    } else
-        if (bsrc.IsSetLineage()) {
+    } 
+    if (bsrc.IsSetLineage()) {
         const string& lineage = bsrc.GetLineage();
         if (NStr::StartsWith(lineage, "Eukaryota"))
             m_eukaryote = true;
-        else
-            if (NStr::StartsWith(lineage, "Bacteria"))
-                m_bacteria = true;
-            else
-                if (NStr::StartsWith(lineage, "Archaea"))
-                    m_archaea = true;
+        else if (NStr::StartsWith(lineage, "Bacteria"))
+            m_bacteria = true;
+        else if (NStr::StartsWith(lineage, "Archaea"))
+            m_archaea = true;
         //else
         //    NCBI_ASSERT(0, "Not fully implemented switch statement");
-        }
+    }
 
     return *this;
 }
