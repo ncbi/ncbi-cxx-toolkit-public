@@ -4746,12 +4746,14 @@ static EIO_Status s_CreateOnTop(const void*   handle,
     }
 
     if (x_orig) {
+        size_t w_len = BUF_Size(x_orig->w_buf) - x_orig->w_len;
         x_sock->r_buf = x_orig->r_buf;
         x_orig->r_buf = 0;
         x_sock->w_buf = x_orig->w_buf;
         x_orig->w_buf = 0;
         x_orig->w_len = 0;
         BUF_Splice(&x_sock->w_buf, w_buf);
+        BUF_Read(x_sock->w_buf, 0, w_len);
     } else
         BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
     x_sock->w_len = BUF_Size(x_sock->w_buf);
