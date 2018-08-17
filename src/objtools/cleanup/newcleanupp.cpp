@@ -1296,6 +1296,9 @@ bool s_StringHasSubSourcePrefix(const string &str, string::size_type &out_val_st
     return false;
 }
 
+
+//commented out per SQD-4359
+//LCOV_EXCL_START
 static bool s_ValueOkForQual(const string& value)
 {
     if (NStr::Find(value, ",") != string::npos) {
@@ -1314,8 +1317,6 @@ static bool s_ValueOkForQual(const string& value)
 }
 
 
-//commented out per SQD-4359
-//LCOV_EXCL_START
 static CRef<CSubSource> s_StringToSubSource (
     const string& str
 )
@@ -4051,25 +4052,6 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
     return eAction_Nothing;
 }
 
-// This code is not used since we now erase cons_splice quals,
-// but I'm leaving it here in case we change our minds later.
-void CNewCleanup_imp::x_CleanupConsSplice(CGb_qual& gbq)
-
-{
-    string& val = GET_MUTABLE(gbq, Val);
-    
-    if (!NStr::StartsWith(val, "(5'site:")) {
-        return;
-    }
-    
-    size_t pos = val.find(",3'site:");
-    if (pos != NPOS) {
-        val.insert(pos + 1, " ");
-        ChangeMade(CCleanupChange::eChangeQualifiers);
-    }
-}
-
-
 bool CNewCleanup_imp::x_IsDotBaseRange(const string& val)
 {
     size_t pos = NStr::Find(val, "..");
@@ -5201,15 +5183,6 @@ void CNewCleanup_imp::BioSourceEC(CBioSource& biosrc)
         x_CleanupOldName(biosrc.SetOrg());
         x_CleanupOrgModNoteEC(biosrc.SetOrg());
     }
-    if (biosrc.IsSetSubtype()) {
-        x_CleanupSubTypeEC(biosrc.SetSubtype());
-    }
-}
-
-
-void CNewCleanup_imp::x_CleanupSubTypeEC(CBioSource::TSubtype& subtypes)
-{
-    // no longer reducing precision per SQD-4332
 }
 
 
@@ -6492,283 +6465,6 @@ void CNewCleanup_imp::x_CleanupAndRepairInference( string &inference )
         ChangeMade(CCleanupChange::eCleanQualifiers);
     }
 }
-
-// Yes, we copy dbname because we have to edit it.
-static
-void s_MatchesOfficialStructuredCommentDbname( string &tmp, string dbname )
-{
-    typedef SStaticPair<const char*, const char*>  TOfficialPrefixElem;
-    static const TOfficialPrefixElem sc_official_prefix_map[] = {
-        { "Assembly", "Assembly-Data" },
-        { "Epiflu", "EpifluData" },
-        { "Flu", "FluData" },
-        { "Genome-Assembly", "Genome-Assembly-Data" },
-        { "GISAID_EpiFlu(TM)", "GISAID_EpiFlu(TM)Data" },
-        { "HIV-DataBase", "HIVDatabase" },
-        { "HIVDataBase", "HIVDataBaseData" },
-        { "International Barcode of Life (iBOL)",  "International Barcode of Life (iBOL)Data" },
-        { "MIENS", "MIENS-Data" },
-        { "MIGS", "MIGS-Data" },
-        { "MIMARKS:3.0", "MIMARKS:3.0-Data" },
-        { "MIMS", "MIMS-Data" }
-    };
-    typedef CStaticArrayMap<string, string, PNocase> TOfficialPrefixMap;
-    DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TOfficialPrefixMap, sc_OfficialPrefixMap, sc_official_prefix_map);
-
-    tmp.clear();
-
-    s_RegexpReplace( dbname, "-?(Data)?$", "", 
-        s_RegexpReplace_UnlimitedReplacements, 
-        CRegexp::fCompile_ignore_case );
-
-    TOfficialPrefixMap::const_iterator iter = sc_OfficialPrefixMap.find(dbname);
-    if( iter != sc_OfficialPrefixMap.end() ) {
-        tmp = iter->second;
-    }
-}
-
-void s_StructuredCommentDbnameFromString( string &out_dbname, const string &field_str )
-{
-    out_dbname.clear();
-
-    if ( field_str.empty() ) {
-        return;
-    }
-
-    string::size_type after_hash_pos =  field_str.find_first_not_of("#");
-    if( after_hash_pos == string::npos ) {
-        // string is all hashes
-        return;
-    }
-
-    out_dbname = field_str.substr( after_hash_pos );
-    s_RegexpReplace( out_dbname, "(-END)?(-START)?#*$", "" );
-
-    // correct for weirdnesses with -data for recognizable prefixes
-    string tmp;
-    s_MatchesOfficialStructuredCommentDbname (tmp, out_dbname);
-    if ( ! tmp.empty() ) {
-        out_dbname = tmp;
-    }
-}
-
-static
-int s_GetBarcodeOrder( const CRef<CUser_field> &field )
-{
-    typedef SStaticPair<const char*, int>  TBarcodeOrderElem;
-    static const TBarcodeOrderElem sc_barcode_order_map[] = {
-        { "Barcode Index Number", 2 },
-        { "Order Assignment", 3 },
-        { "StructuredCommentPrefix", 1 }, // must be first
-        { "StructuredCommentSuffix", kMax_Int }, // must be last
-        { "Tentative Name", 6 },
-        { "iBOL Release Status", 5 },
-        { "iBOL Working Group", 4 }
-    };
-    typedef CStaticArrayMap<string, int, PCase> TBarcodeOrderMap;
-    DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TBarcodeOrderMap, sc_BarcodeOrderMap, sc_barcode_order_map);
-
-    if( ! field || ! field->IsSetLabel() || ! field->GetLabel().IsStr() ) {
-        // "-1" because we want the StructuredCommentSuffix to be last
-        return (kMax_Int - 1);
-    }
-
-    const string & label_str = field->GetLabel().GetStr();
-
-    TBarcodeOrderMap::const_iterator find_iter = sc_BarcodeOrderMap.find(label_str);
-    if( find_iter == sc_BarcodeOrderMap.end() ) {
-        // "-1" because we want the StructuredCommentSuffix to be last
-        return (kMax_Int - 1);
-    }
-
-    return find_iter->second;
-}
-
-static
-bool s_BarcodeCompare( 
-    const CRef<CUser_field> &field1, 
-    const CRef<CUser_field> &field2 ) 
-{
-    const int idx1 = s_GetBarcodeOrder( field1 );
-    const int idx2 = s_GetBarcodeOrder( field2 );
-    return idx1 < idx2;
-}
-
-
-void CNewCleanup_imp::x_RemoveEmptyFields(CUser_object& user_object)
-{
-    if (user_object.GetObjectType() != CUser_object::eObjectType_StructuredComment) {
-        return;
-    }
-    if (!user_object.IsSetData()) {
-        return;
-    }
-
-    CUser_object::TData::iterator it = user_object.SetData().begin();
-    while (it != user_object.SetData().end()) {
-        bool is_blank = false;
-        if ((*it)->IsSetData()) {
-            if ((*it)->GetData().IsStr()) {
-                const string& val = (*it)->GetData().GetStr();
-                if (NStr::IsBlank(val)) {
-                    is_blank = true;
-                }
-            } else if ((*it)->GetData().Which() == CUser_field::TData::e_not_set) {
-                is_blank = true;
-            }            
-        } else {
-            is_blank = true;
-        }
-
-        if (is_blank) {
-            it = user_object.SetData().erase(it);
-            ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-        } else {
-            ++it;
-        }
-    }
-}
-
-
-void CNewCleanup_imp::x_CleanStructuredComment( CUser_object &user_object )
-{
-    if (user_object.GetObjectType() != CUser_object::eObjectType_StructuredComment) {
-        return;
-    }
-
-    x_RemoveEmptyFields(user_object);
-
-    bool genome_assembly_data = false;
-    bool ibol_data = false;
-
-    EDIT_EACH_USERFIELD_ON_USEROBJECT( user_field_iter, user_object ) {
-        CUser_field &field = **user_field_iter;
-        if( FIELD_IS_SET_AND_IS(field, Label, Str) && FIELD_IS_SET_AND_IS(field, Data, Str) ) {
-            if( GET_FIELD(field.GetLabel(), Str) == "StructuredCommentPrefix" ) {
-                string core;
-                s_StructuredCommentDbnameFromString( core, GET_FIELD(field.GetData(), Str) );
-                const string new_data_str = "##" + core + "-START##";
-                if( ! FIELD_CHOICE_EQUALS(field, Data, Str, new_data_str) ) {
-                    SET_FIELD(field.SetData(), Str, CUtf8::AsUTF8(new_data_str, eEncoding_Ascii) );
-                    ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-                }
-                if (core == "Genome-Assembly-Data") {
-                    genome_assembly_data = true;
-                } else if( core == "International Barcode of Life (iBOL)Data" ) {
-                    ibol_data = true;
-                }
-            } else if ( GET_FIELD(field.GetLabel(), Str) == "StructuredCommentSuffix" ) {
-                string core;
-                s_StructuredCommentDbnameFromString( core, GET_FIELD(field.GetData(), Str) );
-                const string new_data_str = "##" + core + "-END##";
-                if( ! FIELD_CHOICE_EQUALS(field, Data, Str, new_data_str) ) {
-                    SET_FIELD(field.SetData(), Str, CUtf8::AsUTF8(new_data_str, eEncoding_Ascii));
-                    ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-                }
-                if (core == "Genome-Assembly-Data") {
-                    genome_assembly_data = true;
-                } else if( core == "International Barcode of Life (iBOL)Data" ) {
-                    ibol_data = true;
-                }
-            }
-        }
-    }
-
-    if( genome_assembly_data ) {
-        EDIT_EACH_USERFIELD_ON_USEROBJECT( user_field_iter, user_object ) {
-            CUser_field &field = **user_field_iter;
-            if( ! FIELD_IS_SET_AND_IS(field, Label, Str) ||
-                ! FIELD_IS_SET_AND_IS(field, Data, Str) ) 
-            {
-                continue;
-            }
-
-            if( GET_FIELD( field.GetLabel(), Str) == "Finishing Goal" ||
-                GET_FIELD( field.GetLabel(), Str) == "Current Finishing Status" )
-            {
-
-                string &field_str = GET_MUTABLE( field.SetData(), Str );
-                if( field_str == "High Quality Draft" ) {
-                    field_str = "High-Quality Draft";
-                    ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-                } else if( field_str == "Improved High Quality Draft" ) {
-                    field_str = "Improved High-Quality Draft";
-                    ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-                } else if( field_str == "Annotation Directed" ) {
-                    field_str = "Annotation-Directed Improvement";
-                    ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-                } else if( field_str == "Non-contiguous Finished" ) {
-                    field_str = "Noncontiguous Finished";
-                    ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-                }
-            }
-            else if( GET_FIELD( field.GetLabel(), Str) == "Assembly Date" ) {
-                string &field_str = GET_MUTABLE( field.SetData(), Str );
-                bool ambiguous = false;
-                string altered = CSubSource::FixDateFormat (field_str, true, ambiguous);
-                if (!NStr::IsBlank(altered)) {
-                    CRef<CDate> coll_date = CSubSource::DateFromCollectionDate (altered);
-                    if (coll_date && coll_date->IsStd() && coll_date->GetStd().IsSetYear()) {
-                        string day = "";
-                        string month = "";
-                        string year = "";
-                        string new_date = "";
-                        if (!ambiguous && coll_date->GetStd().IsSetDay()) {
-                            coll_date->GetDate(&day, "%2D");
-                        }
-                        if (!ambiguous && coll_date->GetStd().IsSetMonth()) {
-                            coll_date->GetDate(&month, "%N");
-                            month = month.substr(0, 3);
-                            month = NStr::ToUpper(month);
-                        }
-                        coll_date->GetDate(&year, "%Y");
-                        if (!NStr::IsBlank(day)) {
-                            new_date += day + "-";
-                        }
-                        if (!NStr::IsBlank(month)) {                           
-                            new_date += month + "-";
-                        }
-                        if (!NStr::IsBlank(year)) {
-                            new_date += year;
-                        }
-                        if (!NStr::Equal(field_str, new_date)) {
-                            field_str = new_date;
-                            ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if( ibol_data ) {
-        if( ! USERFIELD_ON_USEROBJECT_IS_SORTED(user_object, s_BarcodeCompare) ) {
-            SORT_USERFIELD_ON_USEROBJECT(user_object, s_BarcodeCompare);
-            ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-        }
-    }
-}
-
-
-bool CNewCleanup_imp::x_CleanDBLink(CUser_object& user_object)
-{
-    bool changed = false;
-    if (user_object.GetObjectType() != CUser_object::eObjectType_DBLink) {
-        return changed;
-    }
-    if (!user_object.IsSetData()) {
-        return changed;
-    }
-    for (auto& it : user_object.SetData()) {
-        if (it->IsSetData() && it->GetData().IsStr()) {
-            string val = it->GetData().GetStr();
-            it->SetData().SetStrs().push_back(val);
-            changed = true;
-        }
-    }
-    return changed;
-}
-
 
 void CNewCleanup_imp::x_MendSatelliteQualifier( string &val )
 {
@@ -9313,113 +9009,11 @@ void CNewCleanup_imp::DeltaExtBC( CDelta_ext & delta_ext, CSeq_inst &seq_inst )
     }
 }
 
-void CNewCleanup_imp::x_GeneOntologyTermsBC( vector< CRef< CUser_field > > &go_terms )
-{
-    static const char * const sc_bsecGoFieldType[] = {
-        "", "evidence", "go id", "go ref", "pubmed id", "text string"
-    };
-    typedef CStaticArraySet<const char*, PNocase_CStr> TGoFieldTypeSet;
-    DEFINE_STATIC_ARRAY_MAP( TGoFieldTypeSet, sc_GoFieldArray, sc_bsecGoFieldType );
-
-    NON_CONST_ITERATE( vector< CRef< CUser_field > >, term_iter, go_terms ) {
-        CUser_field &field = **term_iter;
-        if( TEST_FIELD_CHOICE( field, Data, NCBI_USERFIELD(Fields) ) ) {
-            NON_CONST_ITERATE( vector< CRef< CUser_field > >, inner_term_iter, field.SetData().SetFields() ) {
-                CUser_field &inner_field = **inner_term_iter;
-                if( FIELD_IS_SET_AND_IS(inner_field, Label, Str) && 
-                    TEST_FIELD_CHOICE( inner_field, Data, NCBI_USERFIELD(Str)) )
-                {
-                    const string &inner_label = inner_field.GetLabel().GetStr();
-                    if( sc_GoFieldArray.find(inner_label.c_str()) != sc_GoFieldArray.end() ) {
-                        if( NStr::EqualNocase(inner_label, "go id") ) {
-                            if( s_RemoveInitial( inner_field.SetData().SetStr(), "GO:", NStr::eNocase ) ) {
-                                ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-                            }
-                        } else if( NStr::EqualNocase(inner_label, "go ref") ) {
-                            if( s_RemoveInitial( inner_field.SetData().SetStr(), "GO_REF:", NStr::eNocase ) ) {
-                                ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 void CNewCleanup_imp::UserObjectBC( CUser_object &user_object )
 {    
-#if 1
     if (CCleanup::CleanupUserObject(user_object)) {
         ChangeMade(CCleanupChange::eCleanUserObjectOrField);
     }
-#else
-    static const char * const sc_bsecGoQualType[] = {
-        "", "Component", "Function", "Process"
-    };
-    typedef CStaticArraySet<const char*, PNocase_CStr> TGoQualTypeSet;
-    DEFINE_STATIC_ARRAY_MAP( TGoQualTypeSet, sc_GoQualArray, sc_bsecGoQualType );
-
-    if( FIELD_IS_SET_AND_IS( user_object, Type, Str) && 
-        "GeneOntology" == GET_FIELD(user_object.GetType(), Str) ) 
-    {
-        EDIT_EACH_USERFIELD_ON_USEROBJECT( user_field_iter, user_object ) {
-            CUser_field &field = **user_field_iter;
-            if( TEST_FIELD_CHOICE( field, Data, NCBI_USERFIELD(Fields) ) &&
-                FIELD_IS_SET_AND_IS(field, Label, Str) )
-            {
-                const string &label_str = GET_FIELD( field.GetLabel(), Str);
-                if( sc_GoQualArray.find(label_str.c_str()) != sc_GoQualArray.end() ) {
-                    x_GeneOntologyTermsBC( GET_MUTABLE(field.SetData(), Fields) );
-                }
-            }
-        }
-    }
-
-    // clean type str
-    if( FIELD_IS_SET_AND_IS(user_object, Type, Str) ) {
-        x_CleanupStringMarkChanged( user_object.SetType().SetStr() );
-    }
-
-    // clean fields
-    EDIT_EACH_USERFIELD_ON_USEROBJECT( user_field_iter, user_object ) {
-        CUser_field &user_field = **user_field_iter;
-
-        if( FIELD_IS_SET_AND_IS(user_field, Label, Str) ) {
-            x_CleanupStringMarkChanged( user_field.SetLabel().SetStr() );
-        }
-
-        SWITCH_ON_USERFIELD_CHOICE(user_field) {
-        case NCBI_USERFIELD(Str):
-            x_CompressStringSpacesMarkChanged( user_field.SetData().SetStr() );
-            x_CleanupStringMarkChanged( user_field.SetData().SetStr() );
-            break;
-        case NCBI_USERFIELD(Object):
-            UserObjectBC( user_field.SetData().SetObject() );
-            break;
-        case NCBI_USERFIELD(Objects):
-            NON_CONST_ITERATE( CUser_field::C_Data::TObjects, 
-                user_obj_iter, user_field.SetData().SetObjects() ) 
-            {
-                UserObjectBC( **user_obj_iter );
-            }
-            break;
-        case NCBI_USERFIELD(Strs):
-            NON_CONST_ITERATE( CUser_field::C_Data::TStrs, str_iter, user_field.SetData().SetStrs() ) {
-                x_CompressStringSpacesMarkChanged( *str_iter );
-                x_CleanupStringMarkChanged( *str_iter );
-            }
-            break;
-        default:
-            break;
-        }
-    }
-
-    x_CleanStructuredComment( user_object );
-    if (x_CleanDBLink(user_object)) {
-        ChangeMade(CCleanupChange::eCleanUserObjectOrField);
-    }
-#endif
 }
 
 static int s_PcrPrimerCompare( 
@@ -13130,22 +12724,6 @@ void CNewCleanup_imp::KeepLatestDateDesc(CSeq_descr & seq_descr)
 }
 
 
-void CNewCleanup_imp::x_RemoveOrphanedProteins(CBioseq_set& set)
-{
-    CBioseq_set_Handle bh;
-    objects::CBioseq_CI b_iter(bh, objects::CSeq_inst::eMol_aa);
-    for (; b_iter; ++b_iter)
-    {
-        CBioseq_Handle bsh = *b_iter;
-        if (sequence::GetCDSForProduct(bsh) == NULL && sequence::GetPROTForProduct(bsh) == NULL)
-        {
-            CBioseq_EditHandle eh(*b_iter);
-            eh.Remove();
-        }
-    }
-}
-
-
 void CNewCleanup_imp::x_SingleSeqSetToSeq(CBioseq_set& set)
 {
     if (set.IsSetSeq_set() && set.GetSeq_set().size() == 1 &&
@@ -13166,19 +12744,6 @@ void CNewCleanup_imp::x_MergeDupBioSources(CSeq_descr & seq_descr)
     if (CCleanup::MergeDupBioSources(seq_descr)) {
         ChangeMade(CCleanupChange::eRemoveDupBioSource);
     }
-}
-
-
-bool IsTransgenic(const CBioSource& src)
-{
-    if (src.IsSetSubtype()) {
-        ITERATE(CBioSource::TSubtype, it, src.GetSubtype()) {
-            if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == CSubSource::eSubtype_transgenic) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 

@@ -342,10 +342,8 @@ private:
     void x_RemoveUnseenTitles(CBioseq& seq);
     void x_RemoveUnseenTitles(CBioseq_set& set);
     void KeepLatestDateDesc(CSeq_descr & seq_descr);
-    void x_RemoveOrphanedProteins(CBioseq_set& set);
     void x_SingleSeqSetToSeq(CBioseq_set& set);
     void x_MergeDupBioSources(CSeq_descr & seq_descr);
-    void x_CleanupSubTypeEC(CBioSource::TSubtype& subtypes);
 
     // void XxxxxxBC (Cxxxxx& xxx);
 
@@ -391,7 +389,6 @@ private:
 
     void x_AddNcbiCleanupObject( CSeq_entry &seq_entry );
 
-    void x_CleanupConsSplice(CGb_qual& gbq);
 
     // for rpt_unit and replace GenBank qualifiers 
     bool x_CleanupRptUnit(CGb_qual& gbq);
@@ -455,11 +452,6 @@ private:
 
     void x_CleanupAndRepairInference( string &inference );
 
-    void x_CleanStructuredComment( CUser_object &user_object );
-    static bool x_CleanDBLink(CUser_object& user_object);
-
-    void x_RemoveEmptyFields(CUser_object& user_object);
-
     void x_MendSatelliteQualifier( string &val );
 
     // e.g. if ends with ",..", turn into "..."
@@ -507,8 +499,6 @@ private:
     void x_CopyGBBlockDivToOrgnameDiv( CSeq_entry &seq_entry);
 
     void x_AuthListBCWithFixInitials( CAuth_list& al );
-
-    void x_GeneOntologyTermsBC( vector< CRef< CUser_field > > &go_terms );
 
     // After we've traversed the hierarchy of objects, there may be some
     // processing that can only be done after the traversal is complete.
