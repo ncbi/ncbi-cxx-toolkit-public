@@ -393,12 +393,12 @@ BCB	s	Universitat Autonoma de Barcelona, Unitat de Botanica
 BCC<ESP>	s	Universitat de Barcelona, Departament de Biologia Vegetal (Unitat de Botanica)			
 BCC<THA>	c	BIOTEC Culture Collection			
 BCCDC	c	BC Centre for Disease Control			
-BCCM/DCG	c	The Belgian Co-ordinated Collections of Micro-organisms / DCG Diatoms Collection	DCG		
-BCCM/IHEM	c	The Belgian Co-ordinated Collections of Micro-organisms / IHEM Biomedical Fungi and Yeasts Collection	IHEM		
-BCCM/ITM	c	The Belgian Co-ordinated Collections of Micro-organisms / ITM Mycobacteria Collection	ITM		
-BCCM/LMBP	c	Belgian Coordinated Collections of Microorganisms / LMBP Plasmid Collection	LMBP		
-BCCM/MUCL	c	The Belgian Co-ordinated Collections of Micro-organisms / MUCL (Agro)Industrial Fungi & Yeasts Collection	MUCL		
-BCCM/ULC	c	The Belgian Co-ordinated Collections of Micro-organisms /Cyanobacteria Collection	UCL		
+BCCM/DCG	c	Belgian Co-ordinated Collections of Micro-organisms / DCG Diatoms Collection	DCG		
+BCCM/IHEM	c	Belgian Co-ordinated Collections of Micro-organisms / IHEM Fungi collection: Human & Animal Health	IHEM		
+BCCM/ITM	c	Belgian Co-ordinated Collections of Micro-organisms / ITM Mycobacteria Collection	ITM		
+BCCM/LMBP	c	Belgian Coordinated Collections of Microorganisms / GeneCorner Plasmid Collection	BCCM/LMBP,LMBP		
+BCCM/MUCL	c	Belgian Co-ordinated Collections of Micro-organisms / MUCL Agro-food & Environmental Fungal Collection	MUCL		
+BCCM/ULC	c	Belgian Co-ordinated Collections of Micro-organisms / ULC Cyanobacteria Collection	UCL		
 BCCN	c	Brucella Culture Collection			
 BCCUSP	c	Brazilian Cyanobacteria Collection - University of Sao Paulo			
 BCF	s	Universitat de Barcelona, Laboratori de Botanica			
@@ -2806,7 +2806,6 @@ IH	s	Instituto de Segunda Ensenanza de La Habana
 IHASW	s	Institute of Hydrobiology, Academia Sinica			
 IHB	s	Institute of Hydrobiology, Chinese Academy of Sciences			
 IHCAS	s	Museum of Institute of Hydrobiology, Chainese Academy of Sciences			
-IHEM	c	Scientific Institute of Public Health, Mycology Section	BCCM/IHEM 		
 IHUG	s	Institut fuer Hygiene der Iniversitaet			
 IIBM-UNAM	c	Industrial Culture Collection			
 IIBUV	s	Investigaciones Biologicas de la Universidad Veracruzana (Mexico)			
@@ -2857,10 +2856,12 @@ IMT<BRA>	c	Micoteca do Instituto de Medicina Tropical de Sao Paulo
 IMT<JPN>	s	Imperial Museum			
 IMTU	s	Institute of Medicine, Community Medicine Department			
 IMUFRJ	c	Instituto de Microbiologia of Universidade Federal do Rio de Janeiro			
+IMUR	c	Institute of Mycology, University of Recife, Recife			
 IMVS	c	IMVS Culture Collection			
 IMYZA	c	Instituto de Microbiologia y Zoologia Agricola			
 INA<PRT>	s	Instituto Nun'Alvres, Departamento de Biologia			
 INA<RUS>	c	Culture Collection of the Institute of New Antibiotics			
+InaCC	c	Indonesian Culture Collection, Research Center for Biology, Indonesian Institute of Sciences			
 INALI	s	Instituto Limnologia			
 INB	s	Instituto Nacional de Biodiversidad, Departamento de Botanica			
 INBC	s	Instituto Nacional de Biodiversidad (INBio)			
@@ -2919,6 +2920,7 @@ IORD	s	Takai University, Institute of Oceanic Research and Development
 IOS	s	Institute of Oceanographic Sciences			
 IOUSP	c	Marine Microalgae Culture Collection			
 IOWA	s	University of Iowa, Museum of Natural History			
+IP	c	Department of Insect Pathology, Institute of Entomology			
 IPA	s	Empresa Pernambucana de Pesquisa Agropecuaria, IPA			
 IPA:germplasm bank	b	Empresa Pernambucana de Pesquisa Agropecuaria, IPA, 		
 IPAE<RUS>	s	Institute of Plant and Animal Ecology Ural Branch of Russian Academy of Sciences			
@@ -3100,6 +3102,7 @@ JBG	s	Johannesburg Botanic Garden
 JBGP	s	Jardin Botanico Guillermo Pineres			
 JBL	s	Jardin Botanico Lankester, Universidad de Costa Rica			
 JBN	s	Jardin Botanico Nacional			
+JBRI	c	Jeju Biodiversity Research Institute			
 JBSD	s	Jardin Botanico Nacional Dr. Rafael M. Moscoso			
 JBVN	s	Jardin Botanique de la Ville de Nice, Service des Espaces Verts			
 JBVPF	sb	Jardin botanique de la Ville de Paris			
@@ -3220,7 +3223,7 @@ KEI	s	University of Transkei, Botany Department
 KEIB	s	Katedra Ekologii i Biogeografii			
 KEIU	s	Korea University			
 KEM	s	University of Kemerovo, Department of Botany			
-KEMC	c	Korea Environmental Microorganism Center, Kyonggi University			
+KEMC	c	Korea Environmental Microorganism Center, Kyonggi University	KEMB		
 KEMH	c	KEMH/PMH Culture collection			
 KEN	s	Longwood Gardens, Horticulture Department			
 KEND	s	Kendal Natural History Society			
@@ -3565,7 +3568,7 @@ LMAD	s	Lobbecke Museum und Aquazoo
 LMC	s	Instituto de Investigacao Cientifica de Mozambique			
 LMCH	c	Laboratoire de Microbiologie			
 LMD	c	Laboratorium voor Microbiologie der Landbouwhogeschool			
-LMG	c	Belgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection	BCCM/LMG		
+LMG	c	Belgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection	LMG		
 LMJ<MOZ>	s	Centro de Investigacao Cientifica Algodoeira, Botanical Department			
 LMKG	s	Landesmuseum fur Karnten			
 LMND	s	Landessammlungen fur Naturkunde	LNMD		
@@ -3833,7 +3836,6 @@ MCFS	s	Museo Civico di Storia Naturale, Ferrara
 MCG	s	Museo Civico DI Storia Naturale 'Giacomo Doria'			
 McGMK	s	McGregor Memorial Museum			
 MCGS	s	Museo Civico "Giuseppe Scarabelli"			
-MCITM	c	Bacterial Culture Collection			
 MCIZ	s	Museo Cambria, Istituto di Zoologia dell'Universita			
 MCJ	s	Missouri Southern State College, Biology Department			
 MCLSBB	s	Museo Colegio La Salle Bonanova de Barcelona			
@@ -4334,7 +4336,7 @@ MUB:HONGOS	s	Universidad de Murcia, Departamento de Biologia Vegetal, Botanica, 
 MUBI		Museo de Biodiversidad del Peru, Cusco			
 MUCC	c	Murdoch University Culture Collection			
 MUCC<JPN>	c	Mie University Culture Collection (Culture Collection, Laboratory of Plant Pathology)			
-MUCL	c	Mycotheque de l'Universite Catholique de Louvain	BCCM/MUCL		
+MUCL	c	Belgian Co-ordinated Collections of Micro-organisms / MUCL Agro-food & Environmental Fungal Collection	BCCM/MUCL		
 MUCPv	s	Museo de la Universidad Nacional del Comahue	MPCA		
 MUCR	s	Museo de Insectos			
 MUCV	s	Monash University, Biological Sciences Department			
@@ -4513,7 +4515,7 @@ NCB	c	National Culture Bank
 NCBS	s	Yale University, Connecticut Botanical Society			
 NCC<FRA>	c	Nantes Culture Collection			
 NCC<USA-CA>	s	Sonoma State University, Biology Department			
-NCCB	c	The Netherlands Culture Collection of Bacteria	NCCB<NLD>		
+NCCB	c	The Netherlands Culture Collection of Bacteria	LMD,NCCB<NLD>		
 NCCBH	s	Nature Conservancy Council, Balloch			
 NCCE	s	Nature Conservancy Council, Edinburgh			
 NCCH	s	Nature Conservancy Council			
@@ -4533,6 +4535,7 @@ NCIMB	c	National Collection of Industrial, Food and Marine Bacteria (incorporati
 NCIP	s	Pusat Penelitian dan Pengembangan Oseanologi			
 NCKU	s	National Cheng-Kung University, Biology Department			
 NCLN	s	New College			
+NCMA	c	National Center for Marine Algae and Microbiota			
 NCMA	s	Raleigh, North Carolina Department of Environmental Health and Natural Resources			
 NCMH	c	The North Carolina Memorial Hospital			
 NCMK	s	Norwich Castle Museum			
@@ -4668,6 +4671,7 @@ NIO	s	National Institute of Oceanography
 NIOCC	c	National Institute of Oceanography Culture Collection			
 NIPH	c	National Institute of Public Health, Collection A. Nemec			
 NIPR	s	National Institute of Polar Research, Biological Data Department			
+NISL	c	Noda Institute for Scientific Research			
 NIT	s	Jardim Botanico de Niteroi			
 NIWA	s	National Institute of Water and Atmospheric Research			
 NJ	s	Njala University College			
@@ -4948,6 +4952,7 @@ NZFRI	s	New Zealand Forest Research Institute Limited
 NZFS	c	Forest Research Culture Collection			
 NZG	s	National Zoological Gardens of South Africa			
 NZOI	s	New Zealand Oceanographic Institute			
+NZP	c	New Zealand Department of Scientific and Industrial Research			
 NZRD	c	New Zealand Reference Culture Collection of Microorganisms, Dairy Section			
 NZRM	c	New Zealand Reference Culture Collection, Medical Section			
 NZRP	c	New Zealand Reference Culture Collection and Soil Section			
@@ -5126,6 +5131,7 @@ PC	s	Museum National d'Histoire Naturelle
 PCC	c	Pasteur Culture Collection of Cyanobacteria			
 PCE	s	Hugh Nicholson and Tony Abbott Herbarium			
 PCH	s	Prestwich and Pilkington Botanical Society			
+PCI	c	Penicillin Control and Immunology Section			
 PCM<IND>	s	Presidency College, Botany Department			
 PCM<POL>	c	Polish Collection of Microorganisms			
 PCMB	b	The Pacific Center for Molecular Biodiversity	BPBM:PCMB		
@@ -5590,6 +5596,7 @@ RSM<CAN>	s	Royal Saskatchewan Museum	SMNH<CAN>
 RSM<GBR>	s	Royal Scottish Museum	NMSZ,RSME		
 RSU	s	Ryazan State University			
 RSY	s	Buteshire Natural History Society, The Museum			
+RTCI	c	Research Laboratory, Takeda Chemical Industry			
 RTE	s	Holmesdale Natural History Club Museum			
 RTHM	s	Munidipal Museum and Art Gallery			
 RTMP	s	Royal Tyrell Museum of Paleontology			
@@ -6245,6 +6252,7 @@ TBGT	s	Tropical Botanic Garden and Research Institute
 TBI	s	Georgian Academy of Sciences			
 TBIP	s	Research Institute of Plant Protection			
 TBPH	s	Iovel Kutateladze Institute of Pharmacochemistry			
+TBRC	c	Thailand Bioresource Research			
 TBY	s	Tenby Museum			
 TCB	s	National Chung Hsing University, Botany Department			
 TCC/USP	c	Trypanosomatid Culture Collection, University of Sao Paulo	TRYCC		
@@ -6327,6 +6335,7 @@ TJMP	s	Tianjin Institute of Medical and Pharmaceutical Sciences
 TK	s	Tomsk State University			
 TK<MEX>	s	Coleccion de mamiferos del Centro Interdisciplinario de Investigacion para el Desarrollo Integral Regional Unidad Durango			
 TKB	s	University of Tsukuba			
+TKBC	Institute of Biological Sciences, University of Tsukuba	c	Institute of Biological Sciences, University of Tsukuba			
 TKNM	s	Twickenham Girls' School			
 TKPM	s	Tokushima Prefectural Museum			
 TKU	s	Tokyo Kyoiku University			
@@ -6363,6 +6372,7 @@ TMRC	s	Shahid Beheshti University of Medical Sciences
 TMS	s	Toleco Museum of Health and Natural History			
 TMSA	s	Transvaal Museum	TM<ZAF>		
 TMTC	s	Taiwan Provincial Museum			
+TMW	c	Technische Mikrobiologie Weihenstephan			
 TNAU	s	Tamil Nadu Agricultural University			
 TNFC	s	Tynside Naturalists' Field Club			
 TNFS	s	USDA Forest Service, Alaska Region			
@@ -6571,7 +6581,6 @@ UCH	s	Universidad Autonoma de Chiriqui
 UCHT	s	University of Tennessee, Chattanooga, Department of Biological and Environmental Sciences			
 UCI	s	University of Ibadan, Botany and Microbiology Department			
 UCJ	s	Universite d'Abidjan, Departemente de Botanique			
-UCL<BEL>	c	Catholic University of Louvain			
 UCL<GBR>	s	University College London			
 UCLA	s	University of California at Los Angeles			
 UCLAF	c	HMR/Romainville			
@@ -6911,6 +6920,7 @@ USBCF	s	U. S. Bureau of Commercial Fisheries
 USBS	s	School of Biological Sciences, University of Science			
 USC	s	University of Southern California, Biological Sciences Department			
 USCC	s	University of Southern Colorado			
+USCC<UK>	c	University of Surrey Culture Collection			
 USCG	s	Universidad de San Carlos de Guatemala			
 USCH	s	University of South Carolina, Department of Biological Sciences			
 USCP	s	University of San Carlos			
@@ -7224,6 +7234,7 @@ WET	s	Wartburg College, Biology Department
 WFBM	s	W.F. Barr Entomological Collection			
 WFBVA	s	Federal Forest Research Centre Vienna, Department of Vegetation Science			
 WFIS	s	Wagner Free Institute of Science			
+WFPL	c	Western Forest Products Laboratory			
 WFU	s	Wake Forest University, Biology Department			
 WFUVC	s	Wake Forest University, Vertebrate Collection			
 WGC	s	State University of West Georgia, Biology Department			
