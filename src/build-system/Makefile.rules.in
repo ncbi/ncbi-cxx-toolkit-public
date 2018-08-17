@@ -60,8 +60,13 @@ ifneq "" "$(CC_WRAPPER)$(CXX_WRAPPER)"
   endif
 endif
 
-%.pb@obj_ext@ %.pb.d: \
+ifdef import_root
+  %.pb@obj_ext@ %.pb.d: \
+    CPPFLAGS += -I$(import_root)/../include/$(project_path)
+else
+  %.pb@obj_ext@ %.pb.d: \
     CPPFLAGS += -I$(srcdir:$(top_srcdir)/src/%=$(includedir)/%)
+endif
 
 ###  C++ compilation
 make_cpp = $(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
