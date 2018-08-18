@@ -172,7 +172,7 @@ CConstRef<CSuspect_rule_set> CSuspect_rule_set::GetProductRules(const string& na
 
 void CSuspect_rule_set::Screen(const char* input, char* output) const
 {
-    auto& callback = [&](size_t n) { output[n] = 1; };
+    const auto& callback = [&](size_t n) { output[n] = 1; };
     if (m_Precompiled_states) {
         CMultipatternSearch::Search(input, m_Precompiled_states, m_Precompiled_emit, *m_Precompiled_hits, callback);
         return;
