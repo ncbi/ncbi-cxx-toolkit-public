@@ -65,18 +65,8 @@ void CPrt2FsmApp::Init(void)
 
 string QuoteString(const string& s)
 {
-    string str;
-    size_t i;
-    for (i = 0; i < s.length(); i++) {
-        if (s[i] == ' ') {
-            str += " ";
-        }
-        else {
-            break;
-        }
-    }
-    str += "\"";
-    for (; i < s.length(); i++) {
+    string str = "\"";
+    for (size_t i = 0; i < s.length(); i++) {
         switch (s[i]) {
             case '\"':
             case '\'':
