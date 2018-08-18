@@ -88,7 +88,7 @@ private:
 
 // constructor
 inline
-CSuspect_rule_set::CSuspect_rule_set(void)
+CSuspect_rule_set::CSuspect_rule_set(void) : m_Precompiled_emit(0), m_Precompiled_hits(0), m_Precompiled_states(0)
 {
 }
 
