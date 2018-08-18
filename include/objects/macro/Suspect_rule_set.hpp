@@ -63,6 +63,13 @@ public:
     static CConstRef<CSuspect_rule_set> GetOrganelleProductRules(const string& name = "");
     static CConstRef<CSuspect_rule_set> GetProductRules(const string& name = "");
 
+    void SetPrecompiledData(const bool* emit, const map<size_t, vector<size_t>>* hits, const size_t* states)
+    {
+        m_Precompiled_emit = emit;
+        m_Precompiled_hits = hits;
+        m_Precompiled_states = states;
+    }
+
     void Screen(const char* input, char* output) const;
     void Screen(const string& input, char* output) const { Screen(input.c_str(), output); }
 
@@ -72,6 +79,9 @@ private:
     CSuspect_rule_set& operator=(const CSuspect_rule_set& value);
 
     mutable unique_ptr<CMultipatternSearch> m_FSM;
+    const bool* m_Precompiled_emit;
+    const map<size_t, vector<size_t>>* m_Precompiled_hits;
+    const size_t* m_Precompiled_states;
 };
 
 /////////////////// CSuspect_rule_set inline methods

@@ -40,10 +40,7 @@
 // generated includes
 #include <objects/macro/Suspect_rule_set.hpp>
 
-// for default organelle and product rules files
-#include "organelle_products.inc"
-#include "product_rules.inc"
-#include <util/util_misc.hpp>
+//#include <util/util_misc.hpp>
 #include <util/line_reader.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/serialimpl.hpp>
@@ -70,6 +67,17 @@ CSuspect_rule_set::~CSuspect_rule_set(void)
 }
 
 
+#define _FSM_RULES static const char* const s_Defaultorganelleproducts[]
+#define _FSM_EMIT static bool s_Defaultorganelleproducts_emit[]
+#define _FSM_HITS static map<size_t, vector<size_t>> s_Defaultorganelleproducts_hits
+#define _FSM_STATES static size_t s_Defaultorganelleproducts_states[]
+#include "organelle_products.inc"
+#undef _FSM_EMIT
+#undef _FSM_HITS
+#undef _FSM_STATES
+#undef _FSM_RULES
+
+
 static void s_InitializeOrganelleProductRules(const string& name)
 {
     CFastMutexGuard GUARD(s_OrganelleProductRulesMutex);
@@ -77,17 +85,18 @@ static void s_InitializeOrganelleProductRules(const string& name)
         return;
     }
     s_OrganelleProductRules.Reset(new CSuspect_rule_set());
-    string file = name.empty() ? g_FindDataFile("organelle_products.prt") : name;
+    //string file = name.empty() ? g_FindDataFile("organelle_products.prt") : name;
 
-    if ( !file.empty() ) {
-        LOG_POST("Reading from " + file + " for organelle products");
+    if ( !name.empty() ) {
+        LOG_POST("Reading from " + name + " for organelle products");
         auto_ptr<CObjectIStream> in;
-        in.reset(CObjectIStream::Open(file, eSerial_AsnText));
+        in.reset(CObjectIStream::Open(name, eSerial_AsnText));
         string header = in->ReadFileHeader();
         in->Read(ObjectInfo(*s_OrganelleProductRules), CObjectIStream::eNoFileHeader);    
+        s_OrganelleProductRules->SetPrecompiledData(0, 0, 0);
     }
     if (!s_OrganelleProductRules->IsSet()) {
-        LOG_POST("Falling back on built-in data for organelle products");
+        //LOG_POST("Falling back on built-in data for organelle products");
         size_t num_lines = sizeof (s_Defaultorganelleproducts) / sizeof (char *);     
         string all_rules = "";
         for (size_t i = 0; i < num_lines; i++) {
@@ -95,10 +104,22 @@ static void s_InitializeOrganelleProductRules(const string& name)
         }
         CNcbiIstrstream istr(all_rules.c_str());
         istr >> MSerial_AsnText >> *s_OrganelleProductRules;
+        s_OrganelleProductRules->SetPrecompiledData(s_Defaultorganelleproducts_emit, &s_Defaultorganelleproducts_hits, s_Defaultorganelleproducts_states);
     }
 
     s_OrganelleProductRulesInitialized = true;
 }
+
+
+#define _FSM_RULES static const char* const s_Defaultproductrules[]
+#define _FSM_EMIT static bool s_Defaultproductrules_emit[]
+#define _FSM_HITS static map<size_t, vector<size_t>> s_Defaultproductrules_hits
+#define _FSM_STATES static size_t s_Defaultproductrules_states[]
+#include "product_rules.inc"
+#undef _FSM_EMIT
+#undef _FSM_HITS
+#undef _FSM_STATES
+#undef _FSM_RULES
 
 
 static void s_InitializeProductRules(const string& name)
@@ -109,17 +130,18 @@ static void s_InitializeProductRules(const string& name)
     }
     s_ProductRules.Reset(new CSuspect_rule_set());
     s_ProductRulesFileName = name;
-    string file = name.empty() ? g_FindDataFile("product_rules.prt") : name;
+    //string file = name.empty() ? g_FindDataFile("product_rules.prt") : name;
 
-    if ( !file.empty() ) {
-        LOG_POST("Reading from " + file + " for suspect product rules");
+    if (!name.empty()) {
+        LOG_POST("Reading from " + name + " for suspect product rules");
         auto_ptr<CObjectIStream> in;
-        in.reset(CObjectIStream::Open(file, eSerial_AsnText));
+        in.reset(CObjectIStream::Open(name, eSerial_AsnText));
         string header = in->ReadFileHeader();
         in->Read(ObjectInfo(*s_ProductRules), CObjectIStream::eNoFileHeader);    
+        s_ProductRules->SetPrecompiledData(0, 0, 0);
     }
     if (!s_ProductRules->IsSet()) {
-        LOG_POST("Falling back on built-in data for suspect product rules");
+        //LOG_POST("Falling back on built-in data for suspect product rules");
         size_t num_lines = sizeof (s_Defaultproductrules) / sizeof (char *);     
         string all_rules = "";
         for (size_t i = 0; i < num_lines; i++) {
@@ -127,6 +149,7 @@ static void s_InitializeProductRules(const string& name)
         }
         CNcbiIstrstream istr(all_rules.c_str());
         istr >> MSerial_AsnText >> *s_ProductRules;
+        s_ProductRules->SetPrecompiledData(s_Defaultproductrules_emit, &s_Defaultproductrules_hits, s_Defaultproductrules_states);
     }
 
     s_ProductRulesInitialized = true;
@@ -149,6 +172,12 @@ CConstRef<CSuspect_rule_set> CSuspect_rule_set::GetProductRules(const string& na
 
 void CSuspect_rule_set::Screen(const char* input, char* output) const
 {
+    auto& callback = [&](size_t n) { output[n] = 1; };
+    if (m_Precompiled_states) {
+        CMultipatternSearch::Search(input, m_Precompiled_states, m_Precompiled_emit, *m_Precompiled_hits, callback);
+        return;
+    }
+
     if (!m_FSM) {
         m_FSM.reset(new CMultipatternSearch);
         vector<string> patterns;
@@ -158,7 +187,7 @@ void CSuspect_rule_set::Screen(const char* input, char* output) const
         }
         m_FSM->AddPatterns(patterns);
     }
-    m_FSM->Search(input, [&](size_t n){ output[n] = 1; });
+    m_FSM->Search(input, callback);
 }
 
 
