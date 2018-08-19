@@ -357,7 +357,7 @@ CGapStatsApplication::CGapStatsApplication(void) :
     m_eOutFormat(eOutFormat_ASCIITable)
 {
     m_IncludedGapTypes.insert(GA::eGapType_All);
-    SetVersionByBuild(5);
+    NCBI_APP_SET_VERSION_AUTO(4, 2);
 }
 
 /////////////////////////////////////////////////////////////////////////////
