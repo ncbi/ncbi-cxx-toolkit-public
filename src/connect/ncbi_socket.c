@@ -4119,7 +4119,7 @@ static EIO_Status s_Connect_(SOCK            sock,
                                 ("%s[SOCK::Connect] "
                                  " %s to initialize secure session%s%s",
                                  s_ID(sock, _id),
-                                 sslcreate ? "Unable" : "Failed",
+                                 sslcreate ? "Failed" : "Unable",
                                  *hostname ? " with " : "", hostname));
             UTIL_ReleaseBuffer(strerr);
             return eIO_NotSupported;
