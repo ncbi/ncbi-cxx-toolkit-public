@@ -309,6 +309,9 @@ void s_CalculateMatchingColumns(const CDense_seg& denseg, TSeqPos &col, size_t &
     if (dim != s_GetNumIdsToUse(denseg)) {
         return;
     }
+    if (denseg.GetStarts().size() != denseg.GetNumseg() * dim) {
+        return;
+    }
 
     try {
         CRef<CAlnVec> av(new CAlnVec(denseg, scope));
@@ -876,13 +879,21 @@ void CValidError_align::x_ValidateStrand
 
             // strands should be same for a given seq-id
             if ( strand1 != strand2 ) {
+                string sid = "?";
+                size_t pos = 0;
+                if (denseg.GetIds().size() > id && denseg.GetIds()[id]) {
+                    sid = denseg.GetIds()[id]->AsFastaString();
+                }
+                if (denseg.GetStarts().size() > id + (seg * dim)) {
+                    pos = denseg.GetStarts()[id + (seg * dim)];
+                }
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_StrandRev,
                     "Strand: The strand labels for SeqId " + 
-                    denseg.GetIds()[id]->AsFastaString() +
+                    sid +
                     " are inconsistent across the alignment. "
                     "The first inconsistent region is the " + 
                     NStr::SizetToString(seg + 1) + "(th) region, near sequence position "
-                    + NStr::SizetToString(denseg.GetStarts()[id + (seg * dim)]), align);
+                    + NStr::SizetToString(pos), align);
                     break;
             }
         }
@@ -1056,7 +1067,7 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TDenseg
 
     for (size_t seg = 0; seg < numseg; ++seg) {
         bool seggap = true;
-        for (int id = 0; id < dim; ++id) {
+        for (int id = 0; id < dim && seg * dim + id < starts.size(); ++id) {
             if (starts[seg * dim + id] != -1) {
                 seggap = false;
                 break;
@@ -1426,6 +1437,9 @@ void CValidError_align::x_ValidateSeqLength
         for ( int seg = 0; seg < numseg; ++seg ) {
             size_t curr_index = 
                 id + (minus ? numseg - seg - 1 : seg) * dim;
+            if (curr_index >= starts.size()) {
+                break;
+            }
             // no need to verify if segment is not present
             if ( starts[curr_index] == -1 ) {
                 continue;
