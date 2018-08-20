@@ -2339,7 +2339,6 @@ public:
 private:
 
     using TMap = unordered_map<string, CRef<CSeqdesc>>;
-    using TConstIterator = unordered_map<string, CRef<CSeqdesc>>::const_iterator;
     TMap m_Cache;
     CBioseq& m_Bioseq;
 };
@@ -2351,9 +2350,9 @@ CDescriptorCache::CDescriptorCache(CBioseq& bioseq) : m_Bioseq(bioseq) {}
 template<typename TFindFunction>
 CRef<CSeqdesc> CDescriptorCache::GetDescriptor(const string& descr_name) {
 
-    TConstIterator it = m_Cache.find(descr_name);
+    auto it = m_Cache.find(descr_name);
     if (it != m_Cache.end()) {
-        return *it;
+        return it->second;
     }
 
     // Search for descriptor on Bioseq
