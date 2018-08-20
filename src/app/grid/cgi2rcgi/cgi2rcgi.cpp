@@ -45,6 +45,7 @@
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/grid_app_version_info.hpp>
+#include <connect/services/ns_output_parser.hpp>
 
 #include <connect/email_diag_handler.hpp>
 
@@ -107,6 +108,7 @@ public:
     void DefinePersistentEntry(const string& entry_name, const string& value);
     const TPersistentEntries& GetPersistentEntries() const
         { return m_PersistentEntries; }
+    bool HasCtgTime() const { return m_PersistentEntries.find(kSinceTime) != m_PersistentEntries.end(); }
 
     void LoadQueryStringTags(CHTMLPlainText::EEncodeMode encode_mode);
 
@@ -303,7 +305,8 @@ private:
     void SubmitJob(CCgiRequest& request, CGridCgiContext& grid_ctx);
     void PopulatePage(CGridCgiContext& grid_ctx);
     int RenderPage();
-    bool CheckIfJobDone(CGridCgiContext&);
+    CNetScheduleAPI::EJobStatus GetStatus(CGridCgiContext&);
+    CNetScheduleAPI::EJobStatus GetStatusAndCtgTime(CGridCgiContext& grid_ctx);
     bool CheckIfJobDone(CGridCgiContext&, CNetScheduleAPI::EJobStatus);
 
     int m_RefreshDelay;
@@ -839,20 +842,28 @@ void CCgi2RCgiApp::CheckJob(CGridCgiContext& grid_ctx)
     GetDiagContext().Extra().Print("ctg_poll", "true");
     m_GridClient->SetJobKey(grid_ctx.GetJobKey());
 
+    CNetScheduleAPI::EJobStatus status = CNetScheduleAPI::eJobNotFound;
+
     if (m_RefreshWait) {
         CDeadline wait_deadline(m_RefreshWait);
 
-        CNetScheduleAPI::EJobStatus status =
+        status =
             CNetScheduleNotificationHandler().WaitForJobEvent(
                     grid_ctx.GetJobKey(),
                     wait_deadline,
                     m_NetScheduleAPI,
                     ~(CNetScheduleNotificationHandler::fJSM_Pending |
                     CNetScheduleNotificationHandler::fJSM_Running));
-        done = CheckIfJobDone(grid_ctx, status);
-    } else {
-        done = CheckIfJobDone(grid_ctx);
     }
+
+    if (!grid_ctx.HasCtgTime()) {
+        status = GetStatusAndCtgTime(grid_ctx);
+
+    } else if (!m_RefreshWait) {
+        status = GetStatus(grid_ctx);
+    }
+
+    done = CheckIfJobDone(grid_ctx, status);
 
     if (done)
         grid_ctx.Clear();
@@ -1104,7 +1115,7 @@ void CCgi2RCgiApp::DefineRefreshTags(CGridCgiContext& grid_ctx,
 }
 
 
-bool CCgi2RCgiApp::CheckIfJobDone(
+CNetScheduleAPI::EJobStatus CCgi2RCgiApp::GetStatus(
         CGridCgiContext& grid_ctx)
 {
     CNetScheduleAPI::EJobStatus status;
@@ -1146,7 +1157,46 @@ bool CCgi2RCgiApp::CheckIfJobDone(
         }
     }
 
-    return CheckIfJobDone(grid_ctx, status);
+    return status;
+}
+
+void s_GetCtgTime(CGridCgiContext& grid_ctx, string event)
+{
+    const CTempString kTimestamp = "timestamp";
+    const string kFormat = "M/D/Y h:m:G";
+
+    CAttrListParser parser;
+    parser.Reset(event);
+    CTempString name;
+    string value;
+    size_t column;
+
+    do {
+        if (parser.NextAttribute(&name, &value, &column) == CAttrListParser::eNoMoreAttributes) return;
+    } while (name != kTimestamp);
+
+    grid_ctx.DefinePersistentEntry(kSinceTime, NStr::NumericToString(CTime(value, kFormat).GetTimeT()));
+}
+
+CNetScheduleAPI::EJobStatus CCgi2RCgiApp::GetStatusAndCtgTime(CGridCgiContext& grid_ctx)
+{
+    const string kStatus = "status: ";
+    const string kEvent1 = "event1: ";
+
+    auto rv = CNetScheduleAPI::eJobNotFound;
+    auto output = m_NetScheduleAPI.GetAdmin().DumpJob(grid_ctx.GetJobKey());
+    string line;
+
+    while (output.ReadLine(line)) {
+        if (NStr::StartsWith(line, kStatus)) {
+            rv = CNetScheduleAPI::StringToStatus(line.substr(kStatus.size()));
+
+        } else if (NStr::StartsWith(line, kEvent1)) {
+            s_GetCtgTime(grid_ctx, line.substr(kEvent1.size()));
+        }
+    }
+
+    return rv;
 }
 
 bool CCgi2RCgiApp::CheckIfJobDone(
