@@ -1831,7 +1831,7 @@ typedef unsigned int TPAXBits;  // Bitwise-OR of EPAXBit(s)
 static bool s_ParsePAXNumeric(Uint8* valp, const char* str, size_t len,
                               string* fraq, EPAXBit assign)
 {
-    _ASSERT(str[len] == '\n');
+    _ASSERT(valp  &&  str[len] == '\n');
     if (!isdigit((unsigned char)(*str))) {
         return false;
     }
@@ -1856,7 +1856,7 @@ static bool s_ParsePAXNumeric(Uint8* valp, const char* str, size_t len,
                 return false;
             }
         }
-        if (assign) {
+        if (assign  &&  fraq) {
             fraq->assign(p, len);
         }
     } // else (*p == '\n' || !*p)
@@ -1926,7 +1926,8 @@ CTar::EStatus CTar::x_ParsePAXData(const string& data)
         { "mtime",    &mtime, &mtime_fraq, fPAXMtime },  // num w/fraq: assign
         { "atime",    &atime, &atime_fraq, fPAXAtime },
         { "ctime",    &ctime, &ctime_fraq, fPAXCtime },
-      /*{ "dummy",    &dummy, &dummy_fraq, fPAXNone  },*/// num w/fraq: ck.only
+      /*{ "dummy",    &dummy, 0,           fPAXSome  },*/// num w/fraq: asg int
+      /*{ "dummy",    &dummy, &fraq or 0,  fPAXNone  },*/// num w/fraq: ck.only
         { "size",     &size,  nodot,       fPAXSize  },  // number:     assign
         { "uid",      &uid,   nodot,       fPAXUid   },
         { "gid",      &gid,   nodot,       fPAXGid   },
@@ -1939,8 +1940,8 @@ CTar::EStatus CTar::x_ParsePAXData(const string& data)
         { "charset",  0,      0,           fPAXNone  },
         // GNU sparse extensions (NB: .size and .realsize don't go together)
         { "GNU.sparse.realsize", &sparse, nodot, fPAXSparse },
-        { "GNU.sparse.major",    &major,  nodot, fPAXNone   },
-        { "GNU.sparse.minor",    &minor,  nodot, fPAXNone   },
+        { "GNU.sparse.major",    &major,  nodot, fPAXSparse },
+        { "GNU.sparse.minor",    &minor,  nodot, fPAXSparse },
         { "GNU.sparse.size",     &dummy,  nodot, fPAXSparse },
         { "GNU.sparse.name",     0,       &name, fPAXNone   },
         // Other
@@ -3265,10 +3266,10 @@ class CTarTempDirEntry : public CDirEntry
 {
 public:
     CTarTempDirEntry(const CDirEntry& entry)
-        : CDirEntry(CDirEntry::GetTmpNameEx(entry.GetDir(), "xNCBItArX")),
+        : CDirEntry(GetTmpNameEx(entry.GetDir(), "xNCBItArX")),
           m_Entry(entry), m_Pending(false), m_Activated(false)
     {
-        _ASSERT(!Exists()  &&  m_Entry.GetType() != CDirEntry::eDir);
+        _ASSERT(!Exists()  &&  m_Entry.GetType() != eDir);
         if (CDirEntry(m_Entry.GetPath()).Rename(GetPath())) {
             m_Activated = m_Pending = true;
             errno = 0;
