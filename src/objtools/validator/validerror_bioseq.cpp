@@ -3263,8 +3263,11 @@ void CValidError_bioseq::ValidateRawConst(
                 if ( !IsResidue(n_res) ) {
                     if (res == 'U' && bsh.IsSetInst_Mol() && bsh.GetInst_Mol() == CSeq_inst::eMol_rna) {
                         // U is ok for RNA
-                    } else if (res == '*' && bsh.IsAa()) {
+                    }
+                    else if (res == '*' && bsh.IsAa()) {
                         trailingX = 0;
+                    } else if (res == '-' && bsh.IsAa()) {
+                        dashes++;
                     } else {
                         if ( ! IsResidue(res)) {
                             if ( ++bad_cnt > 10 ) {
