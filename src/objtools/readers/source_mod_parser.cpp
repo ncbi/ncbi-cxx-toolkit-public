@@ -2094,7 +2094,8 @@ bool CModAdder::x_AddGBblock_RemoveUsedMods(TMods& mods, CRef<CSeqdesc>& pDesc)
                 catch (CSeqIdException&) {
                     pDesc->SetGenbank().SetExtra_accessions().push_back(s); 
                 }
-            }
+            } 
+            // need to add support for keyword(s) modifiers
             mod_it = mods.erase(mod_it);
         }
         else {
@@ -2336,17 +2337,21 @@ public:
     template<typename TFindFunction> 
     CRef<CSeqdesc> GetDescriptor(const string& descr_name);
 private:
-    unordered_map<string, CRef<CSeqdesc>> m_Cache;
+
+    using TMap = unordered_map<string, CRef<CSeqdesc>>;
+    using TConstIterator = unordered_map<string, CRef<CSeqdesc>>::const_iterator;
+    TMap m_Cache;
     CBioseq& m_Bioseq;
 };
 
 
 CDescriptorCache::CDescriptorCache(CBioseq& bioseq) : m_Bioseq(bioseq) {}
 
+
 template<typename TFindFunction>
 CRef<CSeqdesc> CDescriptorCache::GetDescriptor(const string& descr_name) {
 
-    auto it = m_Cache.find(descr_name);
+    TConstIterator it = m_Cache.find(descr_name);
     if (it != m_Cache.end()) {
         return *it;
     }
@@ -2354,7 +2359,7 @@ CRef<CSeqdesc> CDescriptorCache::GetDescriptor(const string& descr_name) {
     // Search for descriptor on Bioseq
     if (m_Bioseq.IsSetDescr()) {
         for (auto& pDesc : m_Bioseq.SetDescr().Set()) {
-            if (TFindFunction(pDesc)) {
+            if (pDesc.NotEmpty() && TFindFunction(*pDesc)) {
                 m_Cache.insert(make_pair(descr_name, pDesc));
                 return pDesc;
             }
@@ -2365,6 +2370,7 @@ CRef<CSeqdesc> CDescriptorCache::GetDescriptor(const string& descr_name) {
     auto pDesc = Ref(new CSeqdesc());
     m_Cache.insert(make_pair(descr_name, pDesc));
     m_Bioseq.SetDescr().Set().push_back(pDesc);
+    return pDesc;
 }
 
 
