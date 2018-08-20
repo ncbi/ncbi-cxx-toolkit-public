@@ -9133,24 +9133,6 @@ static bool s_ReportableCollision (const CGene_ref& g1, const CGene_ref& g2)
 }
 
 
-bool s_HastRNAXref(const CSeq_feat& feat)
-{
-    if (!feat.IsSetXref()) {
-        return false;
-    }
-    bool rval = false;
-    ITERATE(CSeq_feat::TXref, x, feat.GetXref()) {
-        if ((*x)->IsSetData() && (*x)->GetData().IsRna()
-            && (*x)->GetData().GetRna().IsSetType()
-            && (*x)->GetData().GetRna().GetType() == CRNA_ref::eType_tRNA) {
-            rval = true;
-            break;
-        }
-    }
-    return rval;
-}
-
-
 void CValidError_bioseq::x_CompareStrings
 (const TStrFeatMap& str_feat_map,
  const string& type)
@@ -9318,7 +9300,7 @@ void CValidError_bioseq::ValidateCompleteGenome(const CBioseq& seq)
     // Completness check
     bool complete_genome = false;
     CSeqdesc_CI ti(m_CurrentHandle, CSeqdesc::e_Title);
-    complete_genome = (ti && NStr::Find(ti->GetTitle(), "complete genome") == string::npos);
+    complete_genome = (ti && NStr::Find(ti->GetTitle(), "complete genome") != string::npos);
 
     if (!complete_genome) {
 
