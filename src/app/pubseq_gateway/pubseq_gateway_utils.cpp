@@ -290,7 +290,9 @@ CRequestContextResetter::CRequestContextResetter()
 {}
 
 
+extern bool  g_Log;
 CRequestContextResetter::~CRequestContextResetter()
 {
-    CDiagContext::SetRequestContext(NULL);
+    if (g_Log)
+        CDiagContext::SetRequestContext(NULL);
 }

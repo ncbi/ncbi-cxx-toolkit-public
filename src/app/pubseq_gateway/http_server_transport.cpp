@@ -273,8 +273,8 @@ TNCBI_IPv6Addr CHttpRequest::GetClientIP(void)
                                     m_Req->headers.entries[index].value.len +
                                     2;  // '=' and '\0'
         if (pos + name_val_size > buf_size) {
-            ERR_POST(Warning << "The buffer for request headers is too small ("
-                             << buf_size << " bytes)");
+            PSG_WARNING("The buffer for request headers is too small (" <<
+                        buf_size << " bytes)");
             return TNCBI_IPv6Addr{0};
         }
 

@@ -40,10 +40,10 @@
 
 #include "pubseq_gateway.hpp"
 #include "pubseq_gateway_exception.hpp"
+#include "pubseq_gateway_logging.hpp"
 
 
 USING_NCBI_SCOPE;
-
 
 const unsigned short    kWorkersMin = 1;
 const unsigned short    kWorkersMax = 100;
@@ -64,6 +64,15 @@ const unsigned int      kMaxRetriesMin = 0;
 const unsigned int      kMaxRetriesMax = UINT_MAX;
 const bool              kDefaultLog = true;
 
+// Memorize the configured severity level to check before using ERR_POST.
+// Otherwise some expensive operations are executed without a real need.
+EDiagSev    g_ConfiguredSeverity = eDiag_Critical;
+
+// Memorize the configured log on/off flag.
+// It is used in the context resetter to avoid unnecessary context resets
+bool        g_Log = kDefaultLog;
+
+
 static const string     kNodaemonArgName = "nodaemon";
 
 
@@ -78,8 +87,7 @@ CPubseqGatewayApp::CPubseqGatewayApp() :
     m_CassConnectionFactory(CCassConnectionFactory::s_Create()),
     m_TimeoutMs(kTimeoutDefault),
     m_MaxRetries(kMaxRetriesDefault),
-    m_StartTime(GetFastLocalTime()),
-    m_Log(kDefaultLog)
+    m_StartTime(GetFastLocalTime())
 {
     sm_PubseqApp = this;
 }
@@ -100,6 +108,9 @@ void CPubseqGatewayApp::Init(void)
         GetArguments().GetProgramBasename(),
         "Daemon to service Accession.Version Cache requests");
     SetupArgDescriptions(argdesc.release());
+
+    // Memorize the configured severity
+    g_ConfiguredSeverity = GetDiagPostLevel();
 }
 
 
@@ -128,7 +139,7 @@ void CPubseqGatewayApp::ParseArgs(void)
                                   kTimeoutDefault);
     m_MaxRetries = registry.GetInt("SERVER", "maxretries",
                                    kMaxRetriesDefault);
-    m_Log = registry.GetBool("SERVER", "log",
+    g_Log = registry.GetBool("SERVER", "log",
                              kDefaultLog);
     m_BioseqKeyspace = registry.GetString("SERVER", "bioseqkeyspace", "");
 
@@ -183,10 +194,10 @@ int CPubseqGatewayApp::Run(void)
     try {
         ParseArgs();
     } catch (const exception &  exc) {
-        ERR_POST(Critical << exc.what());
+        PSG_CRITICAL(exc.what());
         return 1;
     } catch (...) {
-        ERR_POST("Unknown argument parsing error");
+        PSG_CRITICAL("Unknown argument parsing error");
         return 1;
     }
 
@@ -201,10 +212,10 @@ int CPubseqGatewayApp::Run(void)
     try {
         OpenCass();
     } catch (const exception &  exc) {
-        ERR_POST(Critical << exc.what());
+        PSG_CRITICAL(exc.what());
         return 1;
     } catch (...) {
-        ERR_POST(Critical << "Unknown opening Cassandra error");
+        PSG_CRITICAL("Unknown opening Cassandra error");
         return 1;
     }
 
@@ -215,10 +226,10 @@ int CPubseqGatewayApp::Run(void)
     try {
         OpenCache();
     } catch (const exception &  exc) {
-        ERR_POST(Critical << exc.what());
+        PSG_CRITICAL(exc.what());
         return 1;
     } catch (...) {
-        ERR_POST(Critical << "Unknown opening LMDB cache error");
+        PSG_CRITICAL("Unknown opening LMDB cache error");
         return 1;
     }
 
@@ -347,14 +358,14 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
     }
 
     if (m_Si2csiDbFile.empty())
-        ERR_POST(Warning << "[LMDB_CACHE]/dbfile_si2csi is not found "
-                            "in the ini file. No si2csi cache will be used.");
+        PSG_WARNING("[LMDB_CACHE]/dbfile_si2csi is not found "
+                    "in the ini file. No si2csi cache will be used.");
     if (m_BioseqInfoDbFile.empty())
-        ERR_POST(Warning << "[LMDB_CACHE]/dbfile_bioseq_info is not found "
-                            "in the ini file. No bioseq_info cache will be used.");
+        PSG_WARNING("[LMDB_CACHE]/dbfile_bioseq_info is not found "
+                    "in the ini file. No bioseq_info cache will be used.");
     if (m_BlobPropDbFile.empty())
-        ERR_POST(Warning << "[LMDB_CACHE]/dbfile_blob_prop is not found "
-                            "in the ini file. No blob_prop cache will be used.");
+        PSG_WARNING("[LMDB_CACHE]/dbfile_blob_prop is not found "
+                    "in the ini file. No blob_prop cache will be used.");
 
     if (m_HttpWorkers < kWorkersMin || m_HttpWorkers > kWorkersMax) {
         string  err_msg =
@@ -363,7 +374,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             NStr::NumericToString(kWorkersMax) + ". Received: " +
             NStr::NumericToString(m_HttpWorkers) + ". Reset to "
             "default: " + NStr::NumericToString(kWorkersDefault);
-        ERR_POST(err_msg);
+        PSG_ERROR(err_msg);
         m_HttpWorkers = kWorkersDefault;
     }
 
@@ -375,7 +386,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             NStr::NumericToString(kListenerBacklogMax) + ". Received: " +
             NStr::NumericToString(m_ListenerBacklog) + ". Reset to "
             "default: " + NStr::NumericToString(kListenerBacklogDefault);
-        ERR_POST(err_msg);
+        PSG_ERROR(err_msg);
         m_ListenerBacklog = kListenerBacklogDefault;
     }
 
@@ -386,7 +397,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             NStr::NumericToString(kTcpMaxConnMax) + ". Received: " +
             NStr::NumericToString(m_TcpMaxConn) + ". Reset to "
             "default: " + NStr::NumericToString(kTcpMaxConnDefault);
-        ERR_POST(err_msg);
+        PSG_ERROR(err_msg);
         m_TcpMaxConn = kTcpMaxConnDefault;
     }
 
@@ -397,7 +408,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             NStr::NumericToString(kTimeoutMsMax) + ". Received: " +
             NStr::NumericToString(m_TimeoutMs) + ". Reset to "
             "default: " + NStr::NumericToString(kTimeoutDefault);
-        ERR_POST(err_msg);
+        PSG_ERROR(err_msg);
         m_TimeoutMs = kTimeoutDefault;
     }
 
@@ -408,7 +419,7 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
             NStr::NumericToString(kMaxRetriesMax) + ". Received: " +
             NStr::NumericToString(m_MaxRetries) + ". Reset to "
             "default: " + NStr::NumericToString(kMaxRetriesDefault);
-        ERR_POST(err_msg);
+        PSG_ERROR(err_msg);
         m_MaxRetries = kMaxRetriesDefault;
     }
 }
@@ -434,7 +445,7 @@ CRef<CRequestContext> CPubseqGatewayApp::x_CreateRequestContext(
                                                 HST::CHttpRequest &  req) const
 {
     CRef<CRequestContext>   context;
-    if (IsLog()) {
+    if (g_Log) {
         context.Reset(new CRequestContext());
         context->SetRequestID();
 
@@ -576,19 +587,19 @@ int CPubseqGatewayApp::x_PopulateSatToKeyspaceMap(void)
     try {
         m_SatNames = FetchSatToKeyspaceMapping("sat_info", m_CassConnection);
     } catch (const exception &  exc) {
-        ERR_POST(Critical << exc);
-        ERR_POST(Critical << "Cannot populate the sat to keyspace mapping. "
-                             "PSG server cannot start.");
+        PSG_CRITICAL(exc);
+        PSG_CRITICAL("Cannot populate the sat to keyspace mapping. "
+                     "PSG server cannot start.");
         return 1;
     } catch (...) {
-        ERR_POST(Critical << "Unknown error while populating the sat to "
-                             "keyspace mapping. PSG server cannot start.");
+        PSG_CRITICAL("Unknown error while populating the sat to "
+                     "keyspace mapping. PSG server cannot start.");
         return 1;
     }
 
     if (m_SatNames.empty()) {
-        ERR_POST(Critical << "No sat to keyspace resolutions found in the "
-                             "sat_info keyspace. PSG server cannot start.");
+        PSG_CRITICAL("No sat to keyspace resolutions found in the "
+                     "sat_info keyspace. PSG server cannot start.");
         return 1;
     }
 
@@ -690,6 +701,7 @@ int main(int argc, const char* argv[])
     CRequestContext::SetAllowedSessionIDFormat(CRequestContext::eSID_Other);
     CRequestContext::SetDefaultAutoIncRequestIDOnPost(true);
     CDiagContext::GetRequestContext().SetAutoIncRequestIDOnPost(true);
+
 
     int ret = CPubseqGatewayApp().AppMain(argc, argv, NULL, eDS_ToStdlog);
     google::protobuf::ShutdownProtobufLibrary();

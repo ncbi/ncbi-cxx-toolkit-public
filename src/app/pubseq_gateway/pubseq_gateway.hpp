@@ -64,11 +64,6 @@ public:
     void CloseCass(void);
     bool SatToSatName(size_t  sat, string &  sat_name);
 
-    bool IsLog(void) const
-    {
-        return m_Log;
-    }
-
     string GetBioseqKeyspace(void) const
     {
         return m_BioseqKeyspace;
@@ -171,7 +166,6 @@ private:
     unsigned int                        m_MaxRetries;
 
     CTime                               m_StartTime;
-    bool                                m_Log;
     string                              m_BioseqKeyspace;
 
     unique_ptr<CPubseqGatewayCache>     m_LookupCache;

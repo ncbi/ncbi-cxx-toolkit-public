@@ -45,6 +45,7 @@
 
 #include "pubseq_gateway_exception.hpp"
 #include "tcp_daemon.hpp"
+#include "pubseq_gateway_logging.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -107,7 +108,7 @@ public:
 
     ~CHttpReply()
     {
-        _TRACE("~CHttpReply");
+        PSG_TRACE("~CHttpReply");
         Clear();
         m_HttpProto = nullptr;
         m_HttpConn = nullptr;
@@ -498,7 +499,7 @@ private:
     void NeedOutput(void)
     {
         if (m_State == eReplyFinished) {
-            ERR_POST(Info << "NeedOutput -> finished -> wake");
+            PSG_INFO("NeedOutput -> finished -> wake");
             m_HttpProto->WakeWorker();
         } else {
             PeekPending();
@@ -509,11 +510,11 @@ private:
     // using this connection
     void StopCB(void)
     {
-        ERR_POST(Info << "CHttpReply::Stop");
+        PSG_INFO("CHttpReply::Stop");
         m_OutputIsReady = true;
         m_OutputFinished = true;
         if (m_State != eReplyFinished) {
-            ERR_POST(Info << "CHttpReply::Stop: need cancel");
+            PSG_INFO("CHttpReply::Stop: need cancel");
             DoCancel();
             NeedOutput();
         }
@@ -526,7 +527,7 @@ private:
     // it is ready for the next portion
     void ProceedCB(void)
     {
-        ERR_POST(Info << "CHttpReply::Proceed");
+        PSG_INFO("CHttpReply::Proceed");
         m_OutputIsReady = true;
         NeedOutput();
     }
@@ -554,8 +555,8 @@ private:
         if (m_HttpConn->IsClosed()) {
             m_OutputFinished = true;
             if (count > 0)
-                ERR_POST("attempt to send " << count << " chunks (islast=" <<
-                         is_last << ") to a closed connection");
+                PSG_ERROR("attempt to send " << count << " chunks (islast=" <<
+                          is_last << ") to a closed connection");
             if (is_last) {
                 m_State = eReplyFinished;
             } else {
@@ -568,8 +569,8 @@ private:
             NCBI_THROW(CPubseqGatewayException, eOutputNotInReadyState,
                        "Output is not in ready state");
 
-        _TRACE("DoSend: " << count << " chunks, "
-               "is_last: " << is_last << ", state: " << m_State);
+        PSG_TRACE("DoSend: " << count << " chunks, "
+                  "is_last: " << is_last << ", state: " << m_State);
 
         switch (m_State) {
             case eReplyInitialized:
@@ -670,7 +671,7 @@ public:
 
     void OnBeforeClosedConnection(void)
     {
-        ERR_POST(Info << "OnBeforeClosedConnection:");
+        PSG_INFO("OnBeforeClosedConnection:");
         m_IsClosed = true;
         CancelAll();
     }
@@ -700,7 +701,7 @@ public:
             req.AssignPendingRec(std::move(pending_rec));
             req.PostponedStart();
             if (req.GetState() >= CHttpReply<P>::eReplyFinished) {
-                _TRACE("Pospone self-drained");
+                PSG_TRACE("Pospone self-drained");
                 UnregisterPending(req_it);
             }
         } else if (m_Backlog.size() < m_HttpMaxBacklog) {
@@ -940,12 +941,12 @@ public:
         m_H2oCtxInitialized(false),
         m_HttpAcceptCtx({0})
     {
-        ERR_POST(Info << "CHttpProto::CHttpProto");
+        PSG_INFO("CHttpProto::CHttpProto");
     }
 
     ~CHttpProto()
     {
-        ERR_POST(Info << "~CHttpProto");
+        PSG_INFO("~CHttpProto");
     }
 
     void BeforeStart(void)
@@ -977,7 +978,7 @@ public:
         h2o_socket_t *      sock = h2o_uv_socket_create(conn, close_cb);
 
         if (!sock) {
-            ERR_POST("h2o layer failed to create socket");
+            PSG_ERROR("h2o layer failed to create socket");
             uv_close((uv_handle_t*)conn, close_cb);
             return;
         }

@@ -45,6 +45,7 @@
 #include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
 
 #include "pubseq_gateway_exception.hpp"
+#include "pubseq_gateway_logging.hpp"
 USING_NCBI_SCOPE;
 
 namespace TSL {
@@ -83,7 +84,7 @@ protected:
         CTcpWorker<P, U, D> *   worker =
                                     static_cast<CTcpWorker<P, U, D>*>(_worker);
         worker->Execute();
-        ERR_POST(Info << "worker " << worker->m_id << " finished");
+        PSG_INFO("worker " << worker->m_id << " finished");
     }
 
 public:
@@ -95,9 +96,9 @@ public:
 
     ~CTcpWorkersList()
     {
-        ERR_POST(Info << "CTcpWorkersList::~()>>");
+        PSG_INFO("CTcpWorkersList::~()>>");
         JoinWorkers();
-        ERR_POST(Info << "CTcpWorkersList::~()<<");
+        PSG_INFO("CTcpWorkersList::~()<<");
         m_daemon->m_workers = nullptr;
     }
 
@@ -169,7 +170,7 @@ public:
                         worker->m_thread = 0;
                         break;
                     } else if (-err_code != EAGAIN) {
-                        ERR_POST("uv_thread_join failed: " << err_code);
+                        PSG_ERROR("uv_thread_join failed: " << err_code);
                         break;
                     }
                 }
@@ -263,7 +264,7 @@ struct CTcpWorker
             err_code = uv_import(m_internal->m_loop.Handle(),
                                  reinterpret_cast<uv_stream_t*>(&m_internal->m_listener),
                                  m_exp);
-            // ERR_POST("worker " << worker->m_id << " uv_import: " << err_code);
+            // PSG_ERROR("worker " << worker->m_id << " uv_import: " << err_code);
             if (err_code != 0)
                 NCBI_THROW2(CPubseqGatewayUVException, eUvImportFailure,
                             "uv_import failed", err_code);
@@ -304,7 +305,7 @@ struct CTcpWorker
             m_protocol.ThreadStart(m_internal->m_loop.Handle(), this);
 
             err_code = uv_run(m_internal->m_loop.Handle(), UV_RUN_DEFAULT);
-            ERR_POST(Info << "uv_run (1) worker " << m_id <<
+            PSG_INFO("uv_run (1) worker " << m_id <<
                      " returned " <<  err_code);
         } catch (const CPubseqGatewayUVException &  exc) {
             m_error = exc.GetUVLibraryErrorCode();
@@ -315,7 +316,7 @@ struct CTcpWorker
         }
 
         m_shuttingdown = true;
-        ERR_POST(Info << "worker " << m_id << " is closing");
+        PSG_INFO("worker " << m_id << " is closing");
         if (m_internal) {
             try {
                 int         err_code;
@@ -345,21 +346,21 @@ struct CTcpWorker
                 err_code = uv_run(m_internal->m_loop.Handle(), UV_RUN_DEFAULT);
 
                 if (err_code != 0)
-                    ERR_POST(Info << "worker " << m_id <<
+                    PSG_INFO("worker " << m_id <<
                              ", uv_run (2) returned " << err_code <<
                              ", st: " << m_started.load());
                 // uv_walk(m_internal->m_loop.Handle(), s_LoopWalk, this);
                 err_code = m_internal->m_loop.Close();
                 if (err_code != 0) {
-                    ERR_POST(Info << "worker " << m_id <<
+                    PSG_INFO("worker " << m_id <<
                              ", uv_loop_close returned " << err_code <<
                              ", st: " << m_started.load());
                     uv_walk(m_internal->m_loop.Handle(), s_LoopWalk, this);
                 }
                 m_internal.reset(nullptr);
             } catch(...) {
-                ERR_POST("unexpected exception while shutting down worker " <<
-                         m_id);
+                PSG_ERROR("unexpected exception while shutting down worker " <<
+                          m_id);
             }
         }
     }
@@ -416,7 +417,7 @@ private:
 
     static void s_OnAsyncWork(uv_async_t *  handle)
     {
-        ERR_POST(Info << "Worker async work requested");
+        PSG_INFO("Worker async work requested");
         CTcpWorker<P, U, D> *       worker =
             static_cast<CTcpWorker<P, U, D>*>(
                     uv_key_get(&CTcpWorkersList<P, U, D>::s_thread_worker_key));
@@ -438,7 +439,7 @@ private:
 
     static void s_OnAsyncStop(uv_async_t *  handle)
     {
-        ERR_POST(Info << "Worker async stop requested");
+        PSG_INFO("Worker async stop requested");
         uv_stop(handle->loop);
     }
 
@@ -463,7 +464,7 @@ private:
     {
         CTcpWorker<P, U, D> *           worker = arg ?
                                 static_cast<CTcpWorker<P, U, D>*>(arg) : NULL;
-        ERR_POST(Info << "Handle " << handle <<
+        PSG_INFO("Handle " << handle <<
                  " (" << handle->type <<
                  ") @ worker " << (worker ? worker->m_id : -1) <<
                  " (" << worker << ")");
@@ -471,7 +472,7 @@ private:
 
     static void s_OnWorkerSigInt(uv_signal_t *  req, int  signum)
     {
-        ERR_POST(Info << "Worker SIGINT delivered");
+        PSG_INFO("Worker SIGINT delivered");
         uv_stop(req->loop);
     }
 
@@ -523,7 +524,7 @@ private:
 private:
     static void s_OnMainSigInt(uv_signal_t *  req, int  signum)
     {
-        ERR_POST(Info << "Main SIGINT delivered");
+        PSG_INFO("Main SIGINT delivered");
         uv_stop(req->loop);
     }
 

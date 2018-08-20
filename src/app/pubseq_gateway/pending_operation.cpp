@@ -34,6 +34,7 @@
 #include "pending_operation.hpp"
 #include "pubseq_gateway_exception.hpp"
 #include "pubseq_gateway_convert_utils.hpp"
+#include "pubseq_gateway_logging.hpp"
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info.hpp>
@@ -61,12 +62,12 @@ CPendingOperation::CPendingOperation(const SBlobRequest &  blob_request,
     m_NextItemId(0)
 {
     if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
-        ERR_POST(Trace << "CPendingOperation::CPendingOperation: blob "
+        PSG_TRACE("CPendingOperation::CPendingOperation: blob "
                  "requested by seq_id/seq_id_type: " <<
                  m_BlobRequest.m_SeqId << "." << m_BlobRequest.m_SeqIdType <<
                  ", this: " << this);
     } else {
-        ERR_POST(Trace << "CPendingOperation::CPendingOperation: blob "
+        PSG_TRACE("CPendingOperation::CPendingOperation: blob "
                  "requested by sat/sat_key: " <<
                  m_BlobRequest.m_BlobId.m_Sat << "." <<
                  m_BlobRequest.m_BlobId.m_SatKey <<
@@ -93,10 +94,10 @@ CPendingOperation::CPendingOperation(const SResolveRequest &  resolve_request,
     m_RequestContext(request_context),
     m_NextItemId(0)
 {
-    _TRACE("CPendingOperation::CPendingOperation: resolution "
-           "request by seq_id/seq_id_type: " <<
-           m_ResolveRequest.m_SeqId << "." << m_ResolveRequest.m_SeqIdType <<
-           ", this: " << this);
+    PSG_TRACE("CPendingOperation::CPendingOperation: resolution "
+              "request by seq_id/seq_id_type: " <<
+              m_ResolveRequest.m_SeqId << "." << m_ResolveRequest.m_SeqIdType <<
+              ", this: " << this);
 }
 
 
@@ -107,38 +108,38 @@ CPendingOperation::~CPendingOperation()
 
     if (!m_IsResolveRequest) {
         if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
-            ERR_POST(Trace << "CPendingOperation::~CPendingOperation: blob "
-                     "requested by seq_id/seq_id_type: " <<
-                     m_BlobRequest.m_SeqId << "." <<
-                     m_BlobRequest.m_SeqIdType <<
-                     ", this: " << this);
+            PSG_TRACE("CPendingOperation::~CPendingOperation: blob "
+                      "requested by seq_id/seq_id_type: " <<
+                      m_BlobRequest.m_SeqId << "." <<
+                      m_BlobRequest.m_SeqIdType <<
+                      ", this: " << this);
         } else {
-            ERR_POST(Trace << "CPendingOperation::~CPendingOperation: blob "
-                     "requested by sat/sat_key: " <<
-                     m_BlobRequest.m_BlobId.m_Sat << "." <<
-                     m_BlobRequest.m_BlobId.m_SatKey <<
-                     ", this: " << this);
+            PSG_TRACE("CPendingOperation::~CPendingOperation: blob "
+                      "requested by sat/sat_key: " <<
+                      m_BlobRequest.m_BlobId.m_Sat << "." <<
+                      m_BlobRequest.m_BlobId.m_SatKey <<
+                      ", this: " << this);
         }
     }
 
     if (m_MainBlobFetchDetails)
-        ERR_POST(Trace << "CPendingOperation::~CPendingOperation: "
-                 "main blob loader: " <<
-                 m_MainBlobFetchDetails->m_Loader.get());
+        PSG_TRACE("CPendingOperation::~CPendingOperation: "
+                  "main blob loader: " <<
+                  m_MainBlobFetchDetails->m_Loader.get());
     if (m_Id2ShellFetchDetails)
-        ERR_POST(Trace << "CPendingOperation::~CPendingOperation: "
-                 "Id2Shell blob loader: " <<
-                 m_Id2ShellFetchDetails->m_Loader.get());
+        PSG_TRACE("CPendingOperation::~CPendingOperation: "
+                  "Id2Shell blob loader: " <<
+                  m_Id2ShellFetchDetails->m_Loader.get());
     if (m_Id2InfoFetchDetails)
-        ERR_POST(Trace << "CPendingOperation::~CPendingOperation: "
-                 "Id2Info blob loader: " <<
-                 m_Id2InfoFetchDetails->m_Loader.get());
+        PSG_TRACE("CPendingOperation::~CPendingOperation: "
+                  "Id2Info blob loader: " <<
+                  m_Id2InfoFetchDetails->m_Loader.get());
 
     for (auto &  details: m_Id2ChunkFetchDetails) {
         if (details) {
-            ERR_POST(Trace << "CPendingOperation::~CPendingOperation: "
-                     "Id2SplibChunks blob loader: " <<
-                     details->m_Loader.get());
+            PSG_TRACE("CPendingOperation::~CPendingOperation: "
+                      "Id2SplibChunks blob loader: " <<
+                      details->m_Loader.get());
         }
     }
 
@@ -155,42 +156,42 @@ void CPendingOperation::Clear()
 
     if (!m_IsResolveRequest) {
         if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
-            ERR_POST(Trace << "CPendingOperation::Clear: blob "
-                     "requested by seq_id/seq_id_type: " <<
-                     m_BlobRequest.m_SeqId << "." <<
-                     m_BlobRequest.m_SeqIdType <<
-                     ", this: " << this);
+            PSG_TRACE("CPendingOperation::Clear: blob "
+                      "requested by seq_id/seq_id_type: " <<
+                      m_BlobRequest.m_SeqId << "." <<
+                      m_BlobRequest.m_SeqIdType <<
+                      ", this: " << this);
         } else {
-            ERR_POST(Trace << "CPendingOperation::Clear: blob "
-                     "requested by sat/sat_key: " <<
-                     m_BlobRequest.m_BlobId.m_Sat << "." <<
-                     m_BlobRequest.m_BlobId.m_SatKey <<
-                     ", this: " << this);
+            PSG_TRACE("CPendingOperation::Clear: blob "
+                      "requested by sat/sat_key: " <<
+                      m_BlobRequest.m_BlobId.m_Sat << "." <<
+                      m_BlobRequest.m_BlobId.m_SatKey <<
+                      ", this: " << this);
         }
     }
 
     if (m_MainBlobFetchDetails) {
-        ERR_POST(Trace << "CPendingOperation::Clear: "
-                 "main blob loader: " <<
-                 m_MainBlobFetchDetails->m_Loader.get());
+        PSG_TRACE("CPendingOperation::Clear: "
+                  "main blob loader: " <<
+                  m_MainBlobFetchDetails->m_Loader.get());
         m_MainBlobFetchDetails->m_Loader->SetDataReadyCB(nullptr, nullptr);
         m_MainBlobFetchDetails->m_Loader->SetErrorCB(nullptr);
         m_MainBlobFetchDetails->m_Loader->SetChunkCallback(nullptr);
         m_MainBlobFetchDetails = nullptr;
     }
     if (m_Id2ShellFetchDetails) {
-        ERR_POST(Trace << "CPendingOperation::Clear: "
-                 "Id2Shell blob loader: " <<
-                 m_Id2ShellFetchDetails->m_Loader.get());
+        PSG_TRACE("CPendingOperation::Clear: "
+                  "Id2Shell blob loader: " <<
+                  m_Id2ShellFetchDetails->m_Loader.get());
         m_Id2ShellFetchDetails->m_Loader->SetDataReadyCB(nullptr, nullptr);
         m_Id2ShellFetchDetails->m_Loader->SetErrorCB(nullptr);
         m_Id2ShellFetchDetails->m_Loader->SetChunkCallback(nullptr);
         m_Id2ShellFetchDetails = nullptr;
     }
     if (m_Id2InfoFetchDetails) {
-        ERR_POST(Trace << "CPendingOperation::Clear: "
-                 "Id2Info blob loader: " <<
-                 m_Id2InfoFetchDetails->m_Loader.get());
+        PSG_TRACE("CPendingOperation::Clear: "
+                  "Id2Info blob loader: " <<
+                  m_Id2InfoFetchDetails->m_Loader.get());
         m_Id2InfoFetchDetails->m_Loader->SetDataReadyCB(nullptr, nullptr);
         m_Id2InfoFetchDetails->m_Loader->SetErrorCB(nullptr);
         m_Id2InfoFetchDetails->m_Loader->SetChunkCallback(nullptr);
@@ -199,9 +200,9 @@ void CPendingOperation::Clear()
 
     for (auto &  details: m_Id2ChunkFetchDetails) {
         if (details) {
-            ERR_POST(Trace << "CPendingOperation::Clear: "
-                     "Id2SplibChunks blob loader: " <<
-                     details->m_Loader.get());
+            PSG_TRACE("CPendingOperation::Clear: "
+                      "Id2SplibChunks blob loader: " <<
+                      details->m_Loader.get());
             details->m_Loader->SetDataReadyCB(nullptr, nullptr);
             details->m_Loader->SetErrorCB(nullptr);
             details->m_Loader->SetChunkCallback(nullptr);
@@ -489,7 +490,7 @@ void CPendingOperation::x_Peek(HST::CHttpReply<CPendingOperation>& resp,
         CPubseqGatewayApp *  app = CPubseqGatewayApp::GetInstance();
         app->GetErrorCounters().IncUnknownError();
 
-        ERR_POST(error);
+        PSG_ERROR(error);
 
         if (fetch_details->IsBlobPropStage()) {
             PrepareBlobPropMessage(fetch_details.get(), error,
@@ -714,14 +715,14 @@ CPendingOperation::x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info)
     if (status != CRequestStatus::e200_Ok) {
         if (status == CRequestStatus::e404_NotFound) {
             // It is a client error, no data for the request
-            ERR_POST(Warning << msg);
+            PSG_WARNING(msg);
         } else if (status == CRequestStatus::e300_MultipleChoices) {
             // It is a client error, too broad request
-            ERR_POST(Warning << msg);
+            PSG_WARNING(msg);
             status = CRequestStatus::e404_NotFound; // CXX-10046
         } else {
             // It is a server error, data inconsistency or DB connectivity
-            ERR_POST(msg);
+            PSG_ERROR(msg);
             CPubseqGatewayApp::GetInstance()->GetErrorCounters().
                                                      IncCanonicalSeqIdError();
         }
@@ -850,7 +851,7 @@ CPendingOperation::x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
 
         CPubseqGatewayApp::GetInstance()->GetErrorCounters().
                                                 IncBioseqInfoError();
-        ERR_POST(msg);  // It is always a server error: data inconsistency
+        PSG_ERROR(msg);  // It is always a server error: data inconsistency
 
         if (x_UsePsgProtocol()) {
             size_t      item_id = GetItemId();
@@ -1066,7 +1067,7 @@ bool CPendingOperation::x_SatToSatName(const SBlobRequest &  blob_request,
         msg += " for the blob " + GetBlobId(blob_id);
 
     // It is a server error - data inconsistency
-    ERR_POST(msg);
+    PSG_ERROR(msg);
 
     x_SendUnknownServerSatelliteError(GetItemId(), msg,
                                       eUnknownResolvedSatellite);
@@ -1309,8 +1310,8 @@ void CBlobChunkCallback::operator()(const unsigned char *  chunk_data,
     if (m_Reply->IsFinished()) {
         CPubseqGatewayApp::GetInstance()->GetErrorCounters().
                                                      IncUnknownError();
-        ERR_POST("Unexpected data received "
-                 "while the output has finished, ignoring");
+        PSG_ERROR("Unexpected data received "
+                  "while the output has finished, ignoring");
         return;
     }
 
@@ -1390,7 +1391,7 @@ void CBlobPropCallback::operator()(CBlobRecord const &  blob, bool is_found)
         string      blob_prop_msg;
         if (m_FetchDetails->m_BlobIdType == eBySatAndSatKey) {
             // User requested wrong sat_key, so it is a client error
-            ERR_POST(Warning << message);
+            PSG_WARNING(message);
             m_PendingOp->UpdateOverallStatus(CRequestStatus::e404_NotFound);
             m_PendingOp->PrepareBlobPropMessage(
                                     m_FetchDetails, message,
@@ -1398,7 +1399,7 @@ void CBlobPropCallback::operator()(CBlobRecord const &  blob, bool is_found)
                                     eBlobPropsNotFound, eDiag_Error);
         } else {
             // Server error, data inconsistency
-            ERR_POST(message);
+            PSG_ERROR(message);
             m_PendingOp->UpdateOverallStatus(
                                     CRequestStatus::e500_InternalServerError);
             m_PendingOp->PrepareBlobPropMessage(
@@ -1481,7 +1482,7 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
         app->GetErrorCounters().IncServerSatToSatName();
         m_PendingOp->UpdateOverallStatus(
                                 CRequestStatus::e500_InternalServerError);
-        ERR_POST(message);
+        PSG_ERROR(message);
         return;
     }
 
@@ -1678,7 +1679,7 @@ void CBlobPropCallback::x_ParseId2Info(CBlobRecord const &  blob)
         app->GetErrorCounters().IncBioseqID2Info();
         m_PendingOp->UpdateOverallStatus(
                                 CRequestStatus::e500_InternalServerError);
-        ERR_POST(message);
+        PSG_ERROR(message);
         return;
     }
 
@@ -1698,7 +1699,7 @@ void CBlobPropCallback::x_ParseId2Info(CBlobRecord const &  blob)
         app->GetErrorCounters().IncBioseqID2Info();
         m_PendingOp->UpdateOverallStatus(
                                 CRequestStatus::e500_InternalServerError);
-        ERR_POST(message);
+        PSG_ERROR(message);
         return;
     }
 
@@ -1737,7 +1738,7 @@ void CBlobPropCallback::x_ParseId2Info(CBlobRecord const &  blob)
         app->GetErrorCounters().IncBioseqID2Info();
         m_PendingOp->UpdateOverallStatus(
                                 CRequestStatus::e500_InternalServerError);
-        ERR_POST(validate_message);
+        PSG_ERROR(validate_message);
         return;
     }
 
@@ -1769,7 +1770,7 @@ void CGetBlobErrorCallback::operator()(CRequestStatus::ECode  status,
     }
 
     CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
-    ERR_POST(message);
+    PSG_ERROR(message);
     if (status == CRequestStatus::e404_NotFound) {
         app->GetErrorCounters().IncGetBlobNotFound();
     } else {

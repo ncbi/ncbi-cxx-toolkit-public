@@ -92,7 +92,7 @@ int CPubseqGatewayApp::OnBadURL(HST::CHttpRequest &  req,
                                      CRequestStatus::e400_BadRequest, eBadURL,
                                      eDiag_Error);
 
-    ERR_POST(Warning << kBadUrlMessage);
+    PSG_WARNING(kBadUrlMessage);
     x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
     return 0;
 }
@@ -128,7 +128,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
                                                  CRequestStatus::e400_BadRequest,
                                                  eMalformedParameter, eDiag_Error);
 
-                ERR_POST(Warning << err_msg);
+                PSG_WARNING(err_msg);
                 x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
                 return 0;
             }
@@ -171,7 +171,7 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
             x_SendMessageAndCompletionChunks(resp, message,
                                              CRequestStatus::e400_BadRequest,
                                              eMalformedParameter, eDiag_Error);
-            ERR_POST(Warning << message);
+            PSG_WARNING(message);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
         }
@@ -190,7 +190,7 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
             x_SendMessageAndCompletionChunks(resp, message,
                                              CRequestStatus::e400_BadRequest,
                                              eMalformedParameter, eDiag_Error);
-            ERR_POST(Warning << message);
+            PSG_WARNING(message);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
         }
@@ -210,7 +210,7 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
         string      message = string("Unknown satellite number ") +
                               NStr::NumericToString(blob_id.m_Sat);
         x_SendUnknownClientSatelliteError(resp, blob_id, message);
-        ERR_POST(Warning << message);
+        PSG_WARNING(message);
         x_PrintRequestStop(context, CRequestStatus::e404_NotFound);
         return 0;
     }
@@ -220,7 +220,7 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
     x_SendMessageAndCompletionChunks(resp, message,
                                      CRequestStatus::e400_BadRequest,
                                      eMalformedParameter, eDiag_Error);
-    ERR_POST(Warning << message);
+    PSG_WARNING(message);
     x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
     return 0;
 }
@@ -241,7 +241,7 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
                                 psg_protocol_param.m_Value, err_msg)) {
             m_ErrorCounters.IncMalformedArguments();
             resp.Send400("Bad Request", err_msg.c_str());
-            ERR_POST(Warning << err_msg);
+            PSG_WARNING(err_msg);
             return 0;
         }
         use_psg_protocol = psg_protocol_param.m_Value == "yes";
@@ -273,7 +273,7 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
             else
                 resp.Send400("Bad Request", err_msg.c_str());
 
-            ERR_POST(Warning << err_msg);
+            PSG_WARNING(err_msg);
             return 0;
         }
     }
@@ -293,7 +293,7 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
                 else
                     resp.Send400("Bad Request", err_msg.c_str());
 
-                ERR_POST(Warning << err_msg);
+                PSG_WARNING(err_msg);
                 x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
                 return 0;
             }
@@ -499,7 +499,7 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
         else
             resp.Send400("Bad Request", err_msg.c_str());
 
-        ERR_POST(Warning << err_msg);
+        PSG_WARNING(err_msg);
         return false;
     }
     seq_id = seq_id_param.m_Value;
@@ -516,7 +516,7 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
             else
                 resp.Send400("Bad Request", err_msg.c_str());
 
-            ERR_POST(Warning << err_msg);
+            PSG_WARNING(err_msg);
             return false;
         }
     } else {
