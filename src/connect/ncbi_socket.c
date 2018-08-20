@@ -3926,7 +3926,8 @@ static EIO_Status s_Close_(SOCK sock, int abort, TSOCK_Keep keep)
         /* flush everything out */
         status = s_Shutdown(sock, eIO_Open, SOCK_GET_TIMEOUT(sock, c));
         assert(sock->w_len == 0);
-    }
+    } else
+        status = eIO_Success;
 
     if (!(keep & fSOCK_KeepSession)
         &&  sock->session  &&  sock->session != SESSION_INVALID) {
