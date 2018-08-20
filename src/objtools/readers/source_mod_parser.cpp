@@ -69,6 +69,7 @@
 // #include <objects/submit/Submit_block.hpp>
 
 #include <unordered_set>
+#include <unordered_map>
 #include <set>
 #include <map>
 
@@ -1960,8 +1961,8 @@ private:
     void x_AddNonBioSourceDescriptors(const TMods& mods, CBioseq& bioseq);
     bool x_AddComment(const TMod& mod, CRef<CSeqdesc>& pDesc);
     bool x_AddPubMods(const TMod& mod, CRef<CSeqdesc>& pDesc);
-    bool x_AddMolInfo(TMods& mods, CRef<CSeqdesc>& pDesc);
-    bool x_AddGBblock(TMods& mods, CRef<CSeqdesc>& pDesc);
+    bool x_AddMolInfo_RemoveUsedMods(TMods& mods, CRef<CSeqdesc>& pDesc);
+    bool x_AddGBblock_RemoveUsedMods(TMods& mods, CRef<CSeqdesc>& pDesc);
     bool x_AddGenomeProjectsDBMods(const TMod& mod, CRef<CSeqdesc>& pDesc) { return false; }
     bool x_AddTPAMods(const TMod& mod, CRef<CSeqdesc>& pDesc);
     unique_ptr<SModContainer> m_pMods;
@@ -1971,16 +1972,19 @@ CModAdder::CModAdder() : m_pMods(new SModContainer()) {}
 
 CModAdder::~CModAdder() = default;
 
+
 void CModAdder::x_AddNonBioSourceDescriptors(const TMods& mods, CBioseq& bioseq)
 {
+    // Another approach might be to pass an iterator to these methods 
+    // and advance the iterator 
+    // within the method - I need to think a bit more about this approach
+
+
     TMods remaining_mods;
     for (const auto& mod : mods) {
         // Need some other code to handle SRA mods
-
         CRef<CSeqdesc> pDesc(new CSeqdesc());
         if (x_AddComment(mod, pDesc) ||
-         //   x_AddMolInfo(mod, pDesc) ||
-         //   x_AddGBblock(mod, pDesc) ||
             x_AddPubMods(mod, pDesc) ||
             x_AddTPAMods(mod, pDesc) ||
             x_AddGenomeProjectsDBMods(mod, pDesc)) {
@@ -1993,86 +1997,150 @@ void CModAdder::x_AddNonBioSourceDescriptors(const TMods& mods, CBioseq& bioseq)
 
     if (!remaining_mods.empty()) {
         CRef<CSeqdesc> pDesc;
-        if (x_AddMolInfo(remaining_mods, pDesc)) {
+        if (x_AddMolInfo_RemoveUsedMods(remaining_mods, pDesc)) {
             bioseq.SetDescr().Set().push_back(pDesc);
         }
     }
 
     if (!remaining_mods.empty()) {
         CRef<CSeqdesc> pDesc;
-        if (x_AddGBblock(remaining_mods, pDesc)) {
+        if (x_AddGBblock_RemoveUsedMods(remaining_mods, pDesc)) {
             bioseq.SetDescr().Set().push_back(pDesc);
         }
     }
 }
 
-
-bool CModAdder::x_AddComment(const TMod& mod, CRef<CSeqdesc>& desc) 
+bool CModAdder::x_AddComment(const TMod& mod, CRef<CSeqdesc>& pDesc) 
 {
     if (NStr::EqualNocase("comment", mod.first)) {
-        desc->SetComment(mod.second);
+        pDesc->SetComment(mod.second);
         return true;
     }
     return false;
 }
 
 
-bool CModAdder::x_AddMolInfo(TMods& mods, CRef<CSeqdesc>& desc) 
+bool CModAdder::x_AddMolInfo_RemoveUsedMods(TMods& mods, CRef<CSeqdesc>& pDesc) 
 {
-/*
+    bool has_molinfo = false;
+
+    auto mod_it = mods.begin();
+    while (mod_it!=mods.end()) {
+        const auto& name = mod_it->first;
+        const auto& value = mod_it->second;
+        if (s_IsModNameMatch(name, {"moltype", "mol_type"})) {
+            has_molinfo = true;
+            mods.erase(mod_it);
+            auto it = sc_BiomolMap.find(value.c_str());
+            if (it != sc_BiomolMap.end()) {
+                pDesc->SetMolinfo().SetBiomol(it->second.m_eBiomol);
+            }
+            else {
+                // x_HandleBadMod
+            }
+        }
+        else 
+        if (NStr::EqualNocase(name, "tech")) {
+            has_molinfo = true;
+            mods.erase(mod_it);
+            auto it = sc_TechMap.find(value.c_str());
+            if (it != sc_TechMap.end()) {
+                pDesc->SetMolinfo().SetTech(it->second);
+            }
+            else {
+            // x_HandleBadMod
+            }
+        }
+        else
+        if (s_IsModNameMatch(name, {"completeness", "completedness"})) {
+            has_molinfo = true;
+            mods.erase(mod_it);
+            auto it = sc_CompletenessMap.find(value.c_str());
+            if (it != sc_CompletenessMap.end()) {
+                pDesc->SetMolinfo().SetCompleteness(it->second);
+            }
+            else {
+                // x_HandleBad Mod
+            }
+        }
+        else {
+          ++mod_it;
+        }
+    }
+    return has_molinfo;
+}
+
+
+bool CModAdder::x_AddGBblock_RemoveUsedMods(TMods& mods, CRef<CSeqdesc>& pDesc)
+{
+    bool has_gbblock = false;
+
+    auto mod_it = mods.begin();
+    while (mod_it!=mods.end()) { // Need to refactor this to avoid duplication
+        const auto& name = mod_it->first;
+        const auto& value = mod_it->second;
+        if (s_IsModNameMatch(name, {"secondary_accession", "secondary_accessions"})) {
+            has_gbblock = true;
+            list<CTempString> ranges;
+            NStr::Split(value, ",", ranges, NStr::fSplit_MergeDelimiters);
+            for (const auto& range : ranges) {
+                string s = NStr::TruncateSpaces_Unsafe(range);
+                try {
+                    SSeqIdRange idrange(s);
+                    for (auto it = idrange.begin(); it != idrange.end(); ++it) {
+                        pDesc->SetGenbank().SetExtra_accessions().push_back(*it);
+                    }
+                }
+                catch (CSeqIdException&) {
+                    pDesc->SetGenbank().SetExtra_accessions().push_back(s); 
+                }
+            }
+            mod_it = mods.erase(mod_it);
+        }
+        else {
+            ++mod_it;
+        }
+    }
+    return has_gbblock;
+}
+
+
+bool CModAdder::x_AddPubMods(const TMod& mod, CRef<CSeqdesc>& pDesc)
+{
     const auto& name = mod.first;
-    if (s_IsModNameMatch(name, {"moltype", "mol_type"})) {
-        auto it = sc_BiomolMap.find(mod.second.c_str());
-        if (it != sc_BiomolMap.end()) {
-            desc->SetMolinfo().SetBiomol(it->second.m_eBiomol);
-        }
-        else {
-            // x_HandleBadMod
-        }
+    if (s_IsModNameMatch(name, {"PubMed", "PMID"})) {
+        auto pmid = NStr::StringToNumeric<int>(mod.second, NStr::fConvErr_NoThrow); 
+        // Need to add proper error handling here
+        auto pPub = Ref(new CPub());
+        pPub->SetPmid().Set(pmid);
+        pDesc->SetPub().SetPub().Set().push_back(pPub);
         return true;
     }
-
-    if (NStr::EqualNocase(name, "tech")) {
-        auto it = sc_TechMap.find(mod.second.c_str());
-        if (it != sc_TechMap.end()) {
-            desc->SetMolinfo().SetTech(it->second);
-        }
-        else {
-            // x_HandleBadMod
-        }
-        return true;
-    }
-
-    if (s_IsModNameMatch(name, {"completeness", "completedness"})) {
-        auto it = sc_CompletenessMap.find(mod.second.c_str());
-        if (it != sc_CompletenessMap.end()) {
-            desc->SetMolinfo().SetCompleteness(it->second);
-        }
-        else {
-            // x_HandleBad Mod
-        }
-        return true;
-    }
-*/
-
     return false;
 }
 
 
-bool CModAdder::x_AddGBblock(TMods& mods, CRef<CSeqdesc>& desc)
+bool CModAdder::x_AddTPAMods(const TMod& mod, CRef<CSeqdesc>& pDesc)
 {
-    return false;
-}
+    const auto& name = mod.first;
+    if (s_IsModNameMatch(name, {"primary", "primary_accessions"})) {
+        list<string> accession_list;
+        NStr::Split(mod.second, ",", accession_list, NStr::fSplit_MergeDelimiters);
 
-
-bool CModAdder::x_AddPubMods(const TMod& mod, CRef<CSeqdesc>& desc)
-{
-    return false;
-}
-
-
-bool CModAdder::x_AddTPAMods(const TMod& mod, CRef<CSeqdesc>& desc)
-{
+        auto pUserObject = Ref(new CUser_object());
+        pUserObject->SetType().SetStr("TpaAssembly");
+        for (const auto& accession : accession_list) {
+            auto pField = Ref(new CUser_field());
+            pField->SetLabel().SetId(0);
+            auto pSubfield  = Ref(new CUser_field());
+            pSubfield->SetLabel().SetStr("accession");
+            pSubfield->SetData().SetStr(CUtf8::AsUTF8(accession, eEncoding_UTF8));
+            pField->SetData().SetFields().push_back(move(pSubfield));
+            pUserObject->SetData().push_back(move(pField));
+        }
+        pDesc->SetUser(*pUserObject);
+        return true;
+    }
     return false;
 }
 
@@ -2259,6 +2327,46 @@ bool CModAdder::x_CreateProtein(const TMods& mods, CAutoInitRef<CSeqFeatData>& p
     }
     return pFeatData.IsInitialized();
 }
+
+class CDescriptorCache 
+{
+public:
+    CDescriptorCache(CBioseq& bioseq);
+
+    template<typename TFindFunction> 
+    CRef<CSeqdesc> GetDescriptor(const string& descr_name);
+private:
+    unordered_map<string, CRef<CSeqdesc>> m_Cache;
+    CBioseq& m_Bioseq;
+};
+
+
+CDescriptorCache::CDescriptorCache(CBioseq& bioseq) : m_Bioseq(bioseq) {}
+
+template<typename TFindFunction>
+CRef<CSeqdesc> CDescriptorCache::GetDescriptor(const string& descr_name) {
+
+    auto it = m_Cache.find(descr_name);
+    if (it != m_Cache.end()) {
+        return *it;
+    }
+
+    // Search for descriptor on Bioseq
+    if (m_Bioseq.IsSetDescr()) {
+        for (auto& pDesc : m_Bioseq.SetDescr().Set()) {
+            if (TFindFunction(pDesc)) {
+                m_Cache.insert(make_pair(descr_name, pDesc));
+                return pDesc;
+            }
+        }
+    }
+
+    // else create Descr - Need a method to initialise the descriptor
+    auto pDesc = Ref(new CSeqdesc());
+    m_Cache.insert(make_pair(descr_name, pDesc));
+    m_Bioseq.SetDescr().Set().push_back(pDesc);
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
