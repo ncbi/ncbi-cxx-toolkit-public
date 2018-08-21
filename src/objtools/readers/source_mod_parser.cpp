@@ -72,6 +72,7 @@
 #include <unordered_map>
 #include <set>
 #include <map>
+#include <functional>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1891,7 +1892,7 @@ void CSourceModParser::SetAllUnused()
 
 void CSourceModParser::AddMods(const CTempString& name, const CTempString& value)
 {
-    SMod newmod(name);
+    SMod newmod(NStr::TruncateSpaces_Unsafe(name));
     newmod.value = value;
     newmod.used = false;
 
@@ -1929,6 +1930,52 @@ struct SModContainer
     TMods descr_mods;
 };
 
+class CDescriptorCache 
+{
+public:
+    CDescriptorCache(CBioseq& bioseq);
+
+    CRef<CSeqdesc> SetDescriptor(const string& descr_name,
+                                 function<bool(const CSeqdesc&)> f_verify,
+                                 function<CRef<CSeqdesc>(void)> f_create);
+private:
+
+    using TMap = unordered_map<string, CRef<CSeqdesc>>;
+    TMap m_Cache;
+    CBioseq& m_Bioseq;
+};
+
+
+CDescriptorCache::CDescriptorCache(CBioseq& bioseq) : m_Bioseq(bioseq) {}
+
+
+CRef<CSeqdesc> CDescriptorCache::SetDescriptor(const string& descr_name, 
+                                               function<bool(const CSeqdesc&)> f_verify,
+                                               function<CRef<CSeqdesc>(void)> f_create)
+{
+
+    auto it = m_Cache.find(descr_name);
+    if (it != m_Cache.end()) {
+        return it->second;
+    }
+
+    // Search for descriptor on Bioseq
+    if (m_Bioseq.IsSetDescr()) {
+        for (auto& pDesc : m_Bioseq.SetDescr().Set()) {
+            if (pDesc.NotEmpty() && f_verify(*pDesc)) {
+                m_Cache.insert(make_pair(descr_name, pDesc));
+                return pDesc;
+            }
+        }
+    }
+
+    // else create Descr - Need a method to initialise the descriptor
+    auto pDesc = f_create();
+    m_Cache.insert(make_pair(descr_name, pDesc));
+    m_Bioseq.SetDescr().Set().push_back(pDesc);
+    return pDesc;
+}
+
 
 static bool s_IsModNameMatch(const string& name, const unordered_set<string>& expected) 
 {   
@@ -1964,7 +2011,7 @@ private:
     bool x_AddMolInfo_RemoveUsedMods(TMods& mods, CRef<CSeqdesc>& pDesc);
     bool x_AddGBblock_RemoveUsedMods(TMods& mods, CRef<CSeqdesc>& pDesc);
     bool x_AddGenomeProjectsDBMods(const TMod& mod, CRef<CSeqdesc>& pDesc) { return false; }
-    bool x_AddTPAMods(const TMod& mod, CRef<CSeqdesc>& pDesc);
+    bool x_AddTPAMods(const TMod& mod, CDescriptorCache& desc_cache);
     unique_ptr<SModContainer> m_pMods;
 };
 
@@ -1979,14 +2026,18 @@ void CModAdder::x_AddNonBioSourceDescriptors(const TMods& mods, CBioseq& bioseq)
     // and advance the iterator 
     // within the method - I need to think a bit more about this approach
 
+    CDescriptorCache descriptor_cache(bioseq);
 
     TMods remaining_mods;
     for (const auto& mod : mods) {
+        if (x_AddTPAMods(mod, descriptor_cache)) {
+            continue;
+        }
+
         // Need some other code to handle SRA mods
         CRef<CSeqdesc> pDesc(new CSeqdesc());
         if (x_AddComment(mod, pDesc) ||
             x_AddPubMods(mod, pDesc) ||
-            x_AddTPAMods(mod, pDesc) ||
             x_AddGenomeProjectsDBMods(mod, pDesc)) {
             bioseq.SetDescr().Set().push_back(pDesc);
         }
@@ -2115,31 +2166,6 @@ bool CModAdder::x_AddPubMods(const TMod& mod, CRef<CSeqdesc>& pDesc)
         auto pPub = Ref(new CPub());
         pPub->SetPmid().Set(pmid);
         pDesc->SetPub().SetPub().Set().push_back(pPub);
-        return true;
-    }
-    return false;
-}
-
-
-bool CModAdder::x_AddTPAMods(const TMod& mod, CRef<CSeqdesc>& pDesc)
-{
-    const auto& name = mod.first;
-    if (s_IsModNameMatch(name, {"primary", "primary_accessions"})) {
-        list<string> accession_list;
-        NStr::Split(mod.second, ",", accession_list, NStr::fSplit_MergeDelimiters);
-
-        auto pUserObject = Ref(new CUser_object());
-        pUserObject->SetType().SetStr("TpaAssembly");
-        for (const auto& accession : accession_list) {
-            auto pField = Ref(new CUser_field());
-            pField->SetLabel().SetId(0);
-            auto pSubfield  = Ref(new CUser_field());
-            pSubfield->SetLabel().SetStr("accession");
-            pSubfield->SetData().SetStr(CUtf8::AsUTF8(accession, eEncoding_UTF8));
-            pField->SetData().SetFields().push_back(move(pSubfield));
-            pUserObject->SetData().push_back(move(pField));
-        }
-        pDesc->SetUser(*pUserObject);
         return true;
     }
     return false;
@@ -2329,47 +2355,46 @@ bool CModAdder::x_CreateProtein(const TMods& mods, CAutoInitRef<CSeqFeatData>& p
     return pFeatData.IsInitialized();
 }
 
-class CDescriptorCache 
+
+
+static bool s_IsCGBlock(const CSeqdesc& desc) {
+    return desc.IsGenbank();
+}
+
+
+bool CModAdder::x_AddTPAMods(const TMod& mod, CDescriptorCache& descriptor_cache)
 {
-public:
-    CDescriptorCache(CBioseq& bioseq);
-
-    template<typename TFindFunction> 
-    CRef<CSeqdesc> GetDescriptor(const string& descr_name);
-private:
-
-    using TMap = unordered_map<string, CRef<CSeqdesc>>;
-    TMap m_Cache;
-    CBioseq& m_Bioseq;
-};
-
-
-CDescriptorCache::CDescriptorCache(CBioseq& bioseq) : m_Bioseq(bioseq) {}
-
-
-template<typename TFindFunction>
-CRef<CSeqdesc> CDescriptorCache::GetDescriptor(const string& descr_name) {
-
-    auto it = m_Cache.find(descr_name);
-    if (it != m_Cache.end()) {
-        return it->second;
-    }
-
-    // Search for descriptor on Bioseq
-    if (m_Bioseq.IsSetDescr()) {
-        for (auto& pDesc : m_Bioseq.SetDescr().Set()) {
-            if (pDesc.NotEmpty() && TFindFunction(*pDesc)) {
-                m_Cache.insert(make_pair(descr_name, pDesc));
-                return pDesc;
-            }
+    const auto& name = mod.first;
+    if (s_IsModNameMatch(name, {"primary", "primary_accessions"})) {
+        list<string> accession_list;
+        NStr::Split(mod.second, ",", accession_list, NStr::fSplit_MergeDelimiters);
+       
+        auto pDesc = descriptor_cache.SetDescriptor("TPA", 
+                [](const CSeqdesc& desc) {
+                    return (desc.IsUser() &&
+                            desc.GetUser().IsSetType() &&
+                            desc.GetUser().GetType().IsStr() &&
+                            desc.GetUser().GetType().GetStr() == "TpaAssembly"); 
+                    },
+                [](){ auto pDesc = Ref(new CSeqdesc()); 
+                      pDesc->SetUser().SetType().SetStr("TpaAssembly");
+                      return pDesc;
+                    }
+                );
+        auto& user = pDesc->SetUser();
+            
+        for (const auto& accession : accession_list) {
+            auto pField = Ref(new CUser_field());
+            pField->SetLabel().SetId(0);
+            auto pSubfield  = Ref(new CUser_field());
+            pSubfield->SetLabel().SetStr("accession");
+            pSubfield->SetData().SetStr(CUtf8::AsUTF8(accession, eEncoding_UTF8));
+            pField->SetData().SetFields().push_back(move(pSubfield));
+            user.SetData().push_back(move(pField));
         }
+        return true;
     }
-
-    // else create Descr - Need a method to initialise the descriptor
-    auto pDesc = Ref(new CSeqdesc());
-    m_Cache.insert(make_pair(descr_name, pDesc));
-    m_Bioseq.SetDescr().Set().push_back(pDesc);
-    return pDesc;
+    return false;
 }
 
 
