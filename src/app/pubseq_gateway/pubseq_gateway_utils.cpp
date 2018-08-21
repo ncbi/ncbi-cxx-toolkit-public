@@ -103,6 +103,7 @@ static string   s_Status = "status=";
 static string   s_Code = "code=";
 static string   s_Severity = "severity=";
 static string   s_BlobId = "blob_id=";
+static string   s_Fmt = "fmt=";
 
 // Fixed values
 static string   s_BioseqInfo = "bioseq_info";
@@ -112,6 +113,8 @@ static string   s_Reply = "reply";
 static string   s_Blob = "blob";
 static string   s_Meta = "meta";
 static string   s_Message = "message";
+static string   s_Protobuf = "protobuf";
+static string   s_Json = "json";
 
 // Combinations
 static string   s_BioseqInfoItem = s_ItemType + s_BioseqInfo;
@@ -122,6 +125,8 @@ static string   s_ReplyItem = s_ItemType + s_Reply;
 static string   s_DataChunk = s_ChunkType + s_Data;
 static string   s_MetaChunk = s_ChunkType + s_Meta;
 static string   s_MessageChunk = s_ChunkType + s_Message;
+static string   s_FmtJson = s_Fmt + s_Json;
+static string   s_FmtProtobuf = s_Fmt + s_Protobuf;
 
 static string   s_ReplyBegin = s_ProtocolPrefix + s_ItemId;
 
@@ -135,13 +140,22 @@ static string SeverityToLowerString(EDiagSev  severity)
 }
 
 
-string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size)
+string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size,
+                            EOutputFormat  output_format)
 {
-    // E.g. PSG-Reply-Chunk: item_id=1&item_type=bioseq_info&chunk_type=data&size=450
+    // E.g. PSG-Reply-Chunk: item_id=1&item_type=bioseq_info&chunk_type=data&size=450&fmt=protobuf
+    if (output_format == eJsonFormat)
+        return s_ReplyBegin + NStr::NumericToString(item_id) +
+               "&" + s_BioseqInfoItem +
+               "&" + s_DataChunk +
+               "&" + s_Size + NStr::NumericToString(bioseq_info_size) +
+               "&" + s_FmtJson +
+               "\n";
     return s_ReplyBegin + NStr::NumericToString(item_id) +
            "&" + s_BioseqInfoItem +
            "&" + s_DataChunk +
            "&" + s_Size + NStr::NumericToString(bioseq_info_size) +
+           "&" + s_FmtProtobuf +
            "\n";
 }
 

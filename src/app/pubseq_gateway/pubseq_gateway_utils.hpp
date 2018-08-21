@@ -77,7 +77,8 @@ SBlobId ParseBlobId(const string &  blob_id);
 
 
 // Bioseq messages
-string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size);
+string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size,
+                            EOutputFormat  output_format);
 string  GetBioseqMessageHeader(size_t  item_id, size_t  msg_size,
                                CRequestStatus::ECode  status, int  code,
                                EDiagSev  severity);

@@ -174,7 +174,8 @@ public:
     void PrepareBioseqMessage(size_t  item_id, const string &  msg,
                               CRequestStatus::ECode  status,
                               int  err_code, EDiagSev  severity);
-    void PrepareBioseqData(size_t  item_id, const string &  content);
+    void PrepareBioseqData(size_t  item_id, const string &  content,
+                           EOutputFormat  output_format);
     void PrepareBioseqCompletion(size_t  item_id, size_t  chunk_count);
     void PrepareBlobPropMessage(size_t  item_id, const string &  msg,
                                 CRequestStatus::ECode  status,

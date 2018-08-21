@@ -916,7 +916,7 @@ void CPendingOperation::x_SendBioseqInfo(const string &  protobuf_bioseq_info,
     if (x_UsePsgProtocol()) {
         // Send it as the PSG protocol
         size_t              item_id = GetItemId();
-        PrepareBioseqData(item_id, data_to_send);
+        PrepareBioseqData(item_id, data_to_send, effective_output_format);
         PrepareBioseqCompletion(item_id, 2);
     } else {
         // Send it as the HTTP data
@@ -969,7 +969,7 @@ void CPendingOperation::x_SendCSIAsBioseqInfo(string &  si2csi_cache_data,
 
     if (use_psg_protocol) {
         size_t              item_id = GetItemId();
-        PrepareBioseqData(item_id, data_to_send);
+        PrepareBioseqData(item_id, data_to_send, effective_output_format);
         PrepareBioseqCompletion(item_id, 2);
     } else {
         // Send as HTTP data
@@ -1092,9 +1092,11 @@ void CPendingOperation::PrepareBioseqMessage(
 
 
 void CPendingOperation::PrepareBioseqData(size_t  item_id,
-                                          const string &  content)
+                                          const string &  content,
+                                          EOutputFormat  output_format)
 {
-    string      header = GetBioseqInfoHeader(item_id, content.size());
+    string      header = GetBioseqInfoHeader(item_id, content.size(),
+                                             output_format);
     m_Chunks.push_back(m_Reply->PrepareChunk(
                 (const unsigned char *)(header.data()), header.size()));
     m_Chunks.push_back(m_Reply->PrepareChunk(
