@@ -43,22 +43,6 @@ class CTSE_ScopeInfo;
 class CTSE_ScopeInternalLocker;
 class CTSE_ScopeUserLocker;
 
-class CTSE_ScopeInfo_Base : public CObject
-{
-protected:
-    mutable CAtomicCounter_WithAutoInit m_TSE_LockCounter;
-    mutable CAtomicCounter_WithAutoInit m_UserLockCounter;
-
-    void x_InternalLockTSE(void);
-    void x_InternalUnlockTSE(void);
-    void x_UserLockTSE(void);
-    void x_UserUnlockTSE(void);
-
-    friend class CTSE_ScopeInternalLocker;
-    friend class CTSE_ScopeUserLocker;
-};
-
-
 class NCBI_XOBJMGR_EXPORT CTSE_ScopeInternalLocker : public CObjectCounterLocker
 {
 public:

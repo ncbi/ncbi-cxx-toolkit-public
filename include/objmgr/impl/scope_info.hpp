@@ -343,7 +343,7 @@ private:
 };
 
     
-class NCBI_XOBJMGR_EXPORT CTSE_ScopeInfo : public CTSE_ScopeInfo_Base
+class NCBI_XOBJMGR_EXPORT CTSE_ScopeInfo : public CObject
 {
 public:
     typedef CBlobIdKey                                    TBlobId;
@@ -446,9 +446,17 @@ protected:
     void x_ResetTSE_Lock(void);
     void x_DetachDS(void);
 
+    friend class CTSE_ScopeInternalLocker;
+    friend class CTSE_ScopeUserLocker;
+    
     // Number of internal locks, not related to handles
     int x_GetDSLocksCount(void) const;
 
+    void x_InternalLockTSE(void);
+    void x_InternalUnlockTSE(void);
+    void x_UserLockTSE(void);
+    void x_UserUnlockTSE(void);
+    
     CRef<CBioseq_ScopeInfo> x_FindBioseqInfo(const TSeqIds& ids) const;
     CRef<CBioseq_ScopeInfo> x_CreateBioseqInfo(const TSeqIds& ids);
     void x_IndexBioseq(const CSeq_id_Handle& id,
@@ -482,6 +490,8 @@ private: // members
     TBioseqById                 m_BioseqById;
     // TSE locking support
     mutable CMutex              m_TSE_LockMutex;
+    mutable CAtomicCounter_WithAutoInit m_TSE_LockCounter;
+    mutable CAtomicCounter_WithAutoInit m_UserLockCounter;
     mutable CTSE_Lock           m_TSE_Lock;
     // Used by TSE support
     mutable const CTSE_ScopeInfo*   m_UsedByTSE;

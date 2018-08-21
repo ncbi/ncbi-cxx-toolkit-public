@@ -1011,43 +1011,40 @@ const CTSE_ScopeInfo::TSeqIds& CTSE_ScopeInfo::GetBioseqsIds(void) const
 /////////////////////////////////////////////////////////////////////////////
 // TSE locking support classes
 
-void CTSE_ScopeInfo_Base::x_InternalLockTSE(void)
+void CTSE_ScopeInfo::x_InternalLockTSE(void)
 {
     _VERIFY(m_TSE_LockCounter.Add(1) > 0);
 }
 
 
-void CTSE_ScopeInfo_Base::x_InternalUnlockTSE(void)
+void CTSE_ScopeInfo::x_InternalUnlockTSE(void)
 {
     if ( m_TSE_LockCounter.Add(-1) == 0 ) {
-        CTSE_ScopeInfo* tse = static_cast<CTSE_ScopeInfo*>(this);
-        _ASSERT(tse->CanBeUnloaded());
-        if ( tse->IsAttached() ) {
-            tse->GetDSInfo().ForgetTSELock(*tse);
+        _ASSERT(CanBeUnloaded());
+        if ( IsAttached() ) {
+            GetDSInfo().ForgetTSELock(*this);
         }
     }
 }
 
 
-void CTSE_ScopeInfo_Base::x_UserLockTSE(void)
+void CTSE_ScopeInfo::x_UserLockTSE(void)
 {
-    if ( m_UserLockCounter.Add(1) == 1 ) {
-        CTSE_ScopeInfo* tse = static_cast<CTSE_ScopeInfo*>(this);
-        //_ASSERT(tse->CanBeUnloaded());
-        if ( tse->IsAttached() ) {
-            tse->GetDSInfo().AcquireTSEUserLock(*tse);
+    if ( m_UserLockCounter.Add(1) == 1 || !GetTSE_Lock() ) {
+        //_ASSERT(CanBeUnloaded());
+        if ( IsAttached() ) {
+            GetDSInfo().AcquireTSEUserLock(*this);
         }
     }
 }
 
 
-void CTSE_ScopeInfo_Base::x_UserUnlockTSE(void)
+void CTSE_ScopeInfo::x_UserUnlockTSE(void)
 {
     if ( m_UserLockCounter.Add(-1) == 0 ) {
-        CTSE_ScopeInfo* tse = static_cast<CTSE_ScopeInfo*>(this);
-        //_ASSERT(tse->CanBeUnloaded());
-        if ( tse->IsAttached() ) {
-            tse->GetDSInfo().ReleaseTSEUserLock(*tse);
+        //_ASSERT(CanBeUnloaded());
+        if ( IsAttached() ) {
+            GetDSInfo().ReleaseTSEUserLock(*this);
         }
     }
 }
@@ -1055,39 +1052,31 @@ void CTSE_ScopeInfo_Base::x_UserUnlockTSE(void)
 
 void CTSE_ScopeInternalLocker::Lock(CTSE_ScopeInfo* tse) const
 {
-    CTSE_ScopeInfo_Base* base =
-        reinterpret_cast<CTSE_ScopeInfo_Base*>(tse);
-    CObjectCounterLocker::Lock(base);
-    base->x_InternalLockTSE();
+    CObjectCounterLocker::Lock(tse);
+    tse->x_InternalLockTSE();
 }
 
 
 void CTSE_ScopeInternalLocker::Unlock(CTSE_ScopeInfo* tse) const
 {
-    CTSE_ScopeInfo_Base* base =
-        reinterpret_cast<CTSE_ScopeInfo_Base*>(tse);
-    base->x_InternalUnlockTSE();
-    CObjectCounterLocker::Unlock(base);
+    tse->x_InternalUnlockTSE();
+    CObjectCounterLocker::Unlock(tse);
 }
 
 
 void CTSE_ScopeUserLocker::Lock(CTSE_ScopeInfo* tse) const
 {
-    CTSE_ScopeInfo_Base* base =
-        reinterpret_cast<CTSE_ScopeInfo_Base*>(tse);
-    CObjectCounterLocker::Lock(base);
-    base->x_InternalLockTSE();
-    base->x_UserLockTSE();
+    CObjectCounterLocker::Lock(tse);
+    tse->x_InternalLockTSE();
+    tse->x_UserLockTSE();
 }
 
 
 void CTSE_ScopeUserLocker::Unlock(CTSE_ScopeInfo* tse) const
 {
-    CTSE_ScopeInfo_Base* base =
-        reinterpret_cast<CTSE_ScopeInfo_Base*>(tse);
-    base->x_UserUnlockTSE();
-    base->x_InternalUnlockTSE();
-    CObjectCounterLocker::Unlock(base);
+    tse->x_UserUnlockTSE();
+    tse->x_InternalUnlockTSE();
+    CObjectCounterLocker::Unlock(tse);
 }
 
 // end of TSE locking support classes
