@@ -50,6 +50,7 @@
 #include <set>
 #include <vector>
 #include <memory>
+#include <utility>
 
 BEGIN_NCBI_SCOPE
 
