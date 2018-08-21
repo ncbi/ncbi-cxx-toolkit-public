@@ -59,6 +59,12 @@
 #include <sra/readers/sra/impl/wgs-contig.h>
 #include <vdb/vdb-priv.h>
 
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/bioseq_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/util/sequence.hpp>
+
 //#define COLLECT_PROFILE
 //#define TEST_ACC_VERSION
 
@@ -1642,14 +1648,27 @@ void CWGSDb_Impl::SetMasterDescr(const TMasterDescr& descr,
 }
 
 
-void CWGSDb_Impl::AddMasterDescr(CSeq_descr& descr) const
+void CWGSDb_Impl::AddMasterDescr(CSeq_descr& descr, const CSeq_entry* entry) const
 {
     if ( !GetMasterDescr().empty() ) {
         unsigned type_mask = 0;
+        
         ITERATE ( CSeq_descr::Tdata, it, descr.Get() ) {
             const CSeqdesc& desc = **it;
             type_mask |= 1 << desc.Which();
         }
+
+        if (entry) {
+            CScope scope(*CObjectManager::GetInstance());
+            CSeq_entry_Handle se_handle = scope.AddTopLevelSeqEntry(*entry);
+            for (CBioseq_CI bs_it(scope, *entry); bs_it; ++bs_it) {
+                for (CSeqdesc_CI desc_it(*bs_it); desc_it; ++desc_it) {
+                    type_mask |= 1 << desc_it->Which();
+                }
+            }
+            scope.RemoveTopLevelSeqEntry(se_handle.GetTSE_Handle());
+        }
+
         ITERATE ( TMasterDescr, it, GetMasterDescr() ) {
             const CSeqdesc& desc = **it;
             if ( CWGSDb::GetMasterDescrType(desc) == CWGSDb::eDescr_default &&
@@ -4136,7 +4155,7 @@ static
 void sx_AddMasterDescr(const CWGSDb& db, CSeq_entry& entry)
 {
     if ( !db->GetMasterDescr().empty() ) {
-        db->AddMasterDescr(entry.SetDescr());
+        db->AddMasterDescr(entry.SetDescr(), &entry);
     }
 }
 

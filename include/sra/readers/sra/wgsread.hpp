@@ -291,7 +291,7 @@ public:
     size_t GetMasterDescrBytes(TMasterDescrBytes& buffer);
     // return entry or null if absent
     CRef<CSeq_entry> GetMasterDescrEntry(void);
-    void AddMasterDescr(CSeq_descr& descr) const;
+    void AddMasterDescr(CSeq_descr& descr, const CSeq_entry* entry=0) const;
 
     void ResetMasterDescr(void);
     void SetMasterDescr(const TMasterDescr& descr, int filter);
