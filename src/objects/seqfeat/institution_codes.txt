@@ -2264,8 +2264,8 @@ HABA	s	Academia de Ciencias Medicas, Fisicas y Naturales de La Habana
 HABAYC	s	University of Mary Hardin-Baylor, Biology Department			
 HABE	s	Instituto de Biologia, Departamento de Ecologia			
 HAC	s	Instituto de Ecologia y Sistematica			
-HACC	c	Research Laboratories of Hindustan Antibiotics, Ltd.			
-HACC	s	Academia de Ciencias Camaguey			
+HACC<CUB>	s	Academia de Ciencias Camaguey			
+HACC<IND>	c	Research Laboratories of Hindustan Antibiotics, Ltd.			
 HACW	s	Department of Fishery, Huazhong Agriculture Collection			
 HAF	s	Hainan Forestry Institute			
 HAH	s	Hoyt Arboretum			
@@ -4535,8 +4535,8 @@ NCIMB	c	National Collection of Industrial, Food and Marine Bacteria (incorporati
 NCIP	s	Pusat Penelitian dan Pengembangan Oseanologi			
 NCKU	s	National Cheng-Kung University, Biology Department			
 NCLN	s	New College			
-NCMA	c	National Center for Marine Algae and Microbiota			
-NCMA	s	Raleigh, North Carolina Department of Environmental Health and Natural Resources			
+NCMA<USA-ME>	c	National Center for Marine Algae and Microbiota			
+NCMA<USA-NC>	s	Raleigh, North Carolina Department of Environmental Health and Natural Resources			
 NCMH	c	The North Carolina Memorial Hospital			
 NCMK	s	Norwich Castle Museum			
 NCP	s	National  Collection of Passiflora			
