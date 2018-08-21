@@ -305,6 +305,18 @@ bool IsElectronicJournal(const CCit_jour& journal)
 }
 
 
+static bool IsInpress(const CCit_jour& jour)
+{
+    if (jour.IsSetImp() && 
+        jour.GetImp().IsSetPrepub() && 
+        jour.GetImp().GetPrepub() == CImprint::ePrepub_in_press) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 void CValidError_imp::ValidatePubArticle
 (const CCit_art& art,
  int uid,
@@ -331,7 +343,8 @@ void CValidError_imp::ValidatePubArticle
             ValidatePubArticleNoPMID(art, obj, ctx);
         }
 
-        if ( !has_iso_jta && !is_electronic_journal ) {
+        if ( !has_iso_jta && !is_electronic_journal  &&
+            (uid > 0 || IsRequireISOJTA() || IsInpress(jour))) {
             PostObjErr(eDiag_Warning, eErr_GENERIC_MissingISOJTA,
                 "ISO journal title abbreviation missing", obj, ctx);
         }
