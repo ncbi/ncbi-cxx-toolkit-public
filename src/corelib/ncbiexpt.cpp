@@ -477,7 +477,7 @@ void CException::x_ReportToDebugger(void) const
 {
 #if defined(NCBI_OS_MSWIN)  &&  defined(_DEBUG)
     // On MS Windows print out reported information into debug output window
-    ostrstream os;
+    CNcbiOstrstream os;
     os << "NCBI C++ Exception:" << '\n';
     os <<
         GetFile() << "(" << GetLine() << ") : " <<

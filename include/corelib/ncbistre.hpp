@@ -618,18 +618,18 @@ CT_POS_TYPE NcbiInt8ToStreampos(Int8 pos)
 }
 
 
-// CNcbiOstrstreamToString class helps to convert CNcbiOstream buffer to string
-// Sample usage:
+/// CNcbiOstrstreamToString class helps convert CNcbiOstrstream to a string
+/// Sample usage:
 /*
 string GetString(void)
 {
-    CNcbiOstrstream buffer;
-    buffer << "some text";
-    return CNcbiOstrstreamToString(buffer);
+    CNcbiOstrstream out;
+    out << "some text";
+    return CNcbiOstrstreamToString(out);
 }
 */
-// Note: there is no requirement to put '\0' char at the end of buffer;
-//       there is no need to explicitly "unfreeze" the "out" stream.
+/// Note: there is no need to terminate with '\0' char ("ends");
+///       there is no need to explicitly "unfreeze" the "out" stream.
 
 class NCBI_XNCBI_EXPORT CNcbiOstrstreamToString
 {
