@@ -3268,6 +3268,10 @@ void CValidError_bioseq::ValidateRawConst(
                         trailingX = 0;
                     } else if (res == '-' && bsh.IsAa()) {
                         dashes++;
+                        PostErr(eDiag_Critical, eErr_SEQ_INST_InvalidResidue,
+                                "Invalid residue [" + NStr::UIntToString(res) 
+                                + "] at position [" + NStr::UIntToString(pos) + "]",
+                                seq);
                     } else {
                         if ( ! IsResidue(res)) {
                             if ( ++bad_cnt > 10 ) {
