@@ -237,7 +237,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc | eOncaller | eSubmi
                     rule_name += NStr::NumericToString(rule_type) + "*]" + GetRuleText(*rule);
                     string rule_text = leading_space + GetRuleMatch(*rule);
                     CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
-                    const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope()));
+                    const CSeq_feat* cds = sequence::GetCDSForProduct(*(context.GetCurrentBioseq()), &(context.GetScope())); // needs to optimize
                     node.Add(*context.DiscrObj(cds ? *cds : *context.GetCurrentSeq_feat(), rule->CanGetReplace(), (CObject*)&*rule)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
                 }
                 rule_num++;
@@ -605,8 +605,8 @@ DISCREPANCY_CASE(_SUSPECT_PRODUCT_NAMES, string, 0, "Suspect Product Names for a
             string rule_text = leading_space + GetRuleMatch(*rule);
             CReportNode& node = m_Objs[kSuspectProductNames][rule_name].Summ()[rule_text].Summ();
             node.Add(*context.StringObj(obj)).Severity(rule->IsFatal() ? CReportItem::eSeverity_error : CReportItem::eSeverity_warning);
-            rule_num++;
         }
+        rule_num++;
     }
 }
 
