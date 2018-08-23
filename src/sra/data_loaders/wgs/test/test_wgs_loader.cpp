@@ -2165,10 +2165,10 @@ BOOST_AUTO_TEST_CASE(FetchMinorVer1)
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
     CBioseq_Handle bh = scope.GetBioseqHandle(idh);
     BOOST_REQUIRE(bh);
-    CSeqdesc_CI it(bh, CSeqdesc::e_Source);
+    CSeqdesc_CI it(bh, CSeqdesc::e_Source, 1);
     BOOST_REQUIRE(it);
     ++it;
-    BOOST_REQUIRE(it);
+    BOOST_CHECK(!it);
 }
 
 
@@ -2190,10 +2190,11 @@ BOOST_AUTO_TEST_CASE(FetchMinorVer2)
     CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
     CBioseq_Handle bh = scope.GetBioseqHandle(idh);
     BOOST_REQUIRE(bh);
+    BOOST_CHECK(!CSeqdesc_CI(bh, CSeqdesc::e_Source, 1));
     CSeqdesc_CI it(bh, CSeqdesc::e_Source);
     BOOST_REQUIRE(it);
     ++it;
-    BOOST_REQUIRE(!it);
+    BOOST_CHECK(!it);
 }
 
 
