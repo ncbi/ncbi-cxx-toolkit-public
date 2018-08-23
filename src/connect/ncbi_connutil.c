@@ -352,7 +352,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         if (!(service = SERV_ServiceName(service)))
             return 0;
         assert(*service);
-        len = strlen(service);
+        len = strlen(service);  /*NB: len > 0*/
     } else {
         len = 0;
         service = 0;
@@ -363,7 +363,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         return 0/*failure*/;
     info->reserved = 0/*MBZ*/;
 
-    /* store the service name, which this structure has been created for */
+    /* store the service name, which this structure is being created for */
     memcpy((char*) info->svc, service ? service : "", len + 1);
 
     /* client host: default */
@@ -1044,9 +1044,9 @@ extern int/*bool*/ ConnNetInfo_DeleteArg(SConnNetInfo* info,
         return 0/*false*/;
     
     deleted = 0/*false*/;
-    for (a = info->args; *a; a += arglen) {
+    for (a = info->args;  *a;  a += arglen) {
         if (*a == '&')
-            a++;
+            ++a;
         arglen = strcspn(a, "&");
         if (arglen < argnamelen || strncasecmp(a, arg, argnamelen) != 0 ||
             (a[argnamelen] && a[argnamelen] != '=' && a[argnamelen] != '&')) {
@@ -1059,7 +1059,7 @@ extern int/*bool*/ ConnNetInfo_DeleteArg(SConnNetInfo* info,
                 *--a = '\0';  /* last argument: also remove trailing '&' */
             return 1/*true*/;
         }
-        arglen++;  /* for intermediary args, eat the following '&' separator */
+        ++arglen;  /* for inner args, eat the following '&' separator */
         memmove(a, a + arglen, strlen(a + arglen) + 1);
         deleted = 1/*true*/;
         arglen = 0;
@@ -1079,7 +1079,7 @@ extern void ConnNetInfo_DeleteAllArgs(SConnNetInfo* info,
         if (!a)
             a = args + strlen(args);
         else
-            a++;
+            ++a;
         ConnNetInfo_DeleteArg(info, args);
         args = a;
     }
@@ -1343,7 +1343,7 @@ static const char* x_CredInfo(NCBI_CRED cred, char buf[])
         case 0:
             return "(GNUTLS X.509 Cert)";
         default:
-            sprintf(buf, "(GNUTLS #%u)", what);
+            sprintf(buf, "(#%u)", what);
             return buf;
         }
      default:
