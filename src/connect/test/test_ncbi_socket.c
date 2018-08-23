@@ -116,7 +116,7 @@ static void TEST__client_1(SOCK sock)
     {{
         size_t i;
         unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
-        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char) i, i++)
+        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char)(i++))
             continue;
         for (i = 0;  i < 10;  i++) {
             status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
@@ -134,21 +134,21 @@ static void TEST__client_1(SOCK sock)
 
         SOCK_SetReadOnWrite(sock, eOn);
 
-        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char) i, i++)
+        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char)(i++))
             continue;
-        for (i = 0;  i < 10;  i++) {
+        for (i = 0;  i < 10;  ++i) {
             status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
                                 &n_io_done, eIO_WritePersist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
         }
         /* Receive back a very big binary blob, and check its content */
         memset(blob,0,BIG_BLOB_SIZE);
-        for (i = 0;  i < 10;  i++) {
+        for (i = 0;  i < 10;  ++i) {
             status = SOCK_Read(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
                                &n_io_done, eIO_ReadPersist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
         }
-        for (n_io = 0;  n_io < BIG_BLOB_SIZE;  n_io++)
+        for (n_io = 0;  n_io < BIG_BLOB_SIZE;  ++n_io)
             assert(blob[n_io] == (unsigned char) n_io);
         free(blob);
     }}
@@ -240,7 +240,7 @@ static void TEST__server_1(SOCK sock)
     {{
         unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
         int i;
-        for (i = 0;  i < 10;  i++) {
+        for (i = 0;  i < 10;  ++i) {
             /*            X_SLEEP(1);*/
             status = SOCK_Read(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
                                &n_io_done, eIO_ReadPersist);
@@ -249,7 +249,7 @@ static void TEST__server_1(SOCK sock)
                                 &n_io_done, eIO_WritePersist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
         }
-        for (n_io = 0;  n_io < BIG_BLOB_SIZE;  n_io++)
+        for (n_io = 0;  n_io < BIG_BLOB_SIZE;  ++n_io)
             assert(blob[n_io] == (unsigned char) n_io);
         free(blob);
     }}
@@ -304,16 +304,16 @@ static void TEST__client_2(SOCK sock)
 
     /* fill out a buffer to send to server */
     memset(buf, 0, sizeof(buf));
-    for (i = 0;  i < N_FIELD;  i++) {
-        sprintf(buf + i * W_FIELD, "%10lu", (unsigned long)i);
+    for (i = 0;  i < N_FIELD;  ++i) {
+        sprintf(buf + i * W_FIELD, "%10lu", (unsigned long) i);
     }
 
     /* send the buffer to server, then get it back */
-    for (i = 0;  i < N_REPEAT;  i++) {
+    for (i = 0;  i < N_REPEAT;  ++i) {
         char        buf1[sizeof(buf)];
         STimeout    w_to, r_to;
-        int/*bool*/ w_timeout_on = (int)(i%2); /* if to start from     */
-        int/*bool*/ r_timeout_on = (int)(i%2); /* zero or inf. timeout */
+        int/*bool*/ w_timeout_on = (int)(i & 1);  /* if to start from     */
+        int/*bool*/ r_timeout_on = (int)(i & 1);  /* zero or inf. timeout */
         char*       x_buf;
 
         /* set timeout */
@@ -386,7 +386,7 @@ static void TEST__client_2(SOCK sock)
         x_buf = buf1;
         n_io = sizeof(buf1);
         do {
-            if (i%2 == 0) {
+            if (i & 1) {
                 /* peek a little piece twice and compare */
                 char   xx_buf1[128], xx_buf2[128];
                 size_t xx_io_done1, xx_io_done2;
@@ -459,7 +459,7 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
     status = SOCK_SetTimeout(sock, eIO_Write, &w_to);
     assert(status == eIO_Success);
 
-    for (i = 0;  ;  i++) {
+    for (i = 0;  ;  ++i) {
         char* x_buf;
 
         /* read data from socket */
@@ -470,8 +470,8 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
             CORE_LOGF(eLOG_Note,
                       ("TS2::read:"
                        " [%lu], status=%7s, n_io=%5lu, n_io_done=%5lu",
-                       (unsigned long)i, IO_StatusStr(status),
-                       (unsigned long)n_io, (unsigned long)n_io_done));
+                       (unsigned long) i, IO_StatusStr(status),
+                       (unsigned long) n_io, (unsigned long) n_io_done));
             assert(n_io_done > 0);
             break;
 
@@ -496,7 +496,7 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
             CORE_LOGF(eLOG_Note,
                       ("TS2::read:"
                        " [%lu] timeout expired: %5u sec, %6u usec",
-                       (unsigned long)i, r_to.sec, r_to.usec));
+                       (unsigned long) i, r_to.sec, r_to.usec));
             assert(n_io_done == 0);
             s_DoubleTimeout(&r_to);
             status = SOCK_SetTimeout(sock, eIO_Read, &r_to);
@@ -519,8 +519,8 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
                 CORE_LOGF(eLOG_Note,
                           ("TS2::write:"
                            " [%lu], status=%7s, n_io=%5lu, n_io_done=%5lu",
-                           (unsigned long)i, IO_StatusStr(status),
-                           (unsigned long)n_io, (unsigned long)n_io_done));
+                           (unsigned long) i, IO_StatusStr(status),
+                           (unsigned long) n_io, (unsigned long) n_io_done));
                 assert(n_io_done > 0);
                 break;
             case eIO_Closed:
@@ -530,7 +530,7 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
                 CORE_LOGF(eLOG_Note,
                           ("TS2::write:"
                            " [%lu] timeout expired: %5u sec, %6u usec",
-                           (unsigned long)i, w_to.sec, w_to.usec));
+                           (unsigned long) i, w_to.sec, w_to.usec));
                 assert(n_io_done == 0);
                 s_DoubleTimeout(&w_to);
                 status = SOCK_SetTimeout(sock, eIO_Write, &w_to);
