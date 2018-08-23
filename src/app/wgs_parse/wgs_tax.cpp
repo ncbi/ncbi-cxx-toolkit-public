@@ -61,7 +61,7 @@ static bool AddOrgRef(const COrg_ref& org_ref, list<COrgRefInfo>& org_refs)
     COrgRefInfo org_ref_info;
     org_ref_info.m_org_ref.Reset(new COrg_ref);
     org_ref_info.m_org_ref->Assign(org_ref);
-    org_refs.push_back(org_ref_info);
+    org_refs.push_front(org_ref_info);
 
     return true;
 }
@@ -69,7 +69,7 @@ static bool AddOrgRef(const COrg_ref& org_ref, list<COrgRefInfo>& org_refs)
 void CollectOrgRefs(const CSeq_entry& entry, list<COrgRefInfo>& org_refs)
 {
     static const size_t MAX_ORG_REF_NUM = 10;
-    if (org_refs.size() > MAX_ORG_REF_NUM) {
+    if (org_refs.size() >= MAX_ORG_REF_NUM) {
         return;
     }
 
@@ -79,7 +79,7 @@ void CollectOrgRefs(const CSeq_entry& entry, list<COrgRefInfo>& org_refs)
         if (descrs && descrs->IsSet()) {
             for (auto& descr : descrs->Get()) {
                 if (descr->IsSource() && descr->GetSource().IsSetOrg()) {
-                    if (AddOrgRef(descr->GetSource().GetOrg(), org_refs) && org_refs.size() > MAX_ORG_REF_NUM) {
+                    if (AddOrgRef(descr->GetSource().GetOrg(), org_refs) && org_refs.size() >= MAX_ORG_REF_NUM) {
                         return;
                     }
                 }
@@ -96,7 +96,7 @@ void CollectOrgRefs(const CSeq_entry& entry, list<COrgRefInfo>& org_refs)
 
                     for (auto& feat : annot->GetData().GetFtable()) {
                         if (feat->IsSetData() && feat->GetData().IsBiosrc() && feat->GetData().GetBiosrc().IsSetOrg()) {
-                            if (AddOrgRef(feat->GetData().GetBiosrc().GetOrg(), org_refs) && org_refs.size() > MAX_ORG_REF_NUM) {
+                            if (AddOrgRef(feat->GetData().GetBiosrc().GetOrg(), org_refs) && org_refs.size() >= MAX_ORG_REF_NUM) {
                                 return;
                             }
                         }
@@ -271,10 +271,37 @@ bool PerformTaxLookup(CBioSource& biosource, const list<COrgRefInfo>& org_refs, 
         }
     }
 
-    // TODO figure out how it is possible to reach this point
+    bool ret = true;
     if (is_tax_lookup) {
+
+        string taxname = org_ref.IsSetTaxname() ? org_ref.GetTaxname() : kEmptyStr;
+
+        int pgcode = 0;
+        bool pgcode_set = org_ref.IsSetPgcode();
+        if (pgcode_set) {
+            pgcode = org_ref.GetPgcode();
+            org_ref.SetOrgname().ResetPgcode();
+        }
+
+        CRef<COrg_ref> cur_org_ref = PerformLookup(org_ref, taxname);
+
+        if (cur_org_ref.NotEmpty()) {
+            
+            ERR_POST_EX(0, 0, Info << "Taxon Id _was_ found for [" << taxname << "].");
+            org_ref.Assign(*cur_org_ref);
+        }
+        else {
+            ret = false;
+        }
+
+        if (pgcode_set) {
+            org_ref.SetOrgname().SetPgcode(pgcode);
+        }
     }
-    return false;
+    else {
+        CheckMetagenomes(biosource, true);
+    }
+    return ret;
 }
 
 }

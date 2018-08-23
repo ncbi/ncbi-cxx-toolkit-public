@@ -529,16 +529,16 @@ static void SortOrgRef(COrg_ref& org_ref)
 
 static bool CheckSameOrgRefs(list<COrgRefInfo>& org_refs)
 {
-    if (org_refs.empty()) {
+    if (org_refs.empty() || !GetParams().IsTaxonomyLookup()) {
         return true;
     }
 
     auto cur_org_ref = org_refs.begin();
-    CRef<COrg_ref>& first_org_ref = cur_org_ref->m_org_ref;
+    CRef<COrg_ref>& first_org_ref = cur_org_ref->m_org_ref_after_lookup;
     SortOrgRef(*first_org_ref);
 
     for (++cur_org_ref; cur_org_ref != org_refs.end(); ++cur_org_ref) {
-        CRef<COrg_ref>& next_org_ref = cur_org_ref->m_org_ref;
+        CRef<COrg_ref>& next_org_ref = cur_org_ref->m_org_ref_after_lookup;
         SortOrgRef(*next_org_ref);
 
         if (!first_org_ref->Equals(*next_org_ref)) {
