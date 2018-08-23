@@ -37,6 +37,7 @@ ARGUMENTS:
      lib/asn            to build a library from an ASN.1 spec
      lib/dtd            to build a library from an XML DTD
      lib/xsd            to build a library from an XML Schema
+     lib/jsd            to build a library from a JSON Schema
      app[/basic]        to build a simple application
      app/multicmd       to build a simple command-based application
      app/alnmgr         to build an application using the alignment manager
@@ -341,6 +342,9 @@ EOF
               ;;
           lib/xsd )
               echo "XSD_PROJ = $proj_name"
+              ;;
+          lib/jsd )
+              echo "JSD_PROJ = $proj_name"
               ;;
           lib/* )
               echo "LIB_PROJ = $proj_name"

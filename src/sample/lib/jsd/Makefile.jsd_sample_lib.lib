@@ -1,0 +1,8 @@
+LIB = jsd_sample_lib
+SRC = jsd_sample_lib__ jsd_sample_lib___
+
+WATCHERS = gouriano ucko
+
+
+USES_LIBRARIES =  \
+    xser

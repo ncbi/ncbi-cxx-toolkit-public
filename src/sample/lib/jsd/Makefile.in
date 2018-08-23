@@ -1,6 +1,4 @@
-# $Id$
-
-SUB_PROJ = basic asn_lib dtd xsd jsd
-
+JSD_PROJ = jsd_sample_lib
+REQUIRES = serial
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
