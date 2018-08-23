@@ -96,7 +96,7 @@ CID2CDDProcessor_Impl::CID2CDDProcessor_Impl(const CConfig::TParamTree* params,
         CConfig::eErr_NoThrow,
         DEFAULT_CDD_SERVICE_NAME);
 
-    m_Compress = conf.GetBool(driver_name,
+    m_InitialContext.m_Compress = conf.GetBool(driver_name,
         NCBI_ID2PROC_CDD_PARAM_COMPRESS_DATA,
         CConfig::eErr_NoThrow,
         false);
@@ -110,13 +110,52 @@ CID2CDDProcessor_Impl::~CID2CDDProcessor_Impl(void)
 }
 
 
+CRef<CID2CDDProcessorContext>
+CID2CDDProcessor_Impl::CreateContext(void)
+{
+    CRef<CID2CDDProcessorContext> context(new CID2CDDProcessorContext);
+    context->m_Context = m_InitialContext;
+    return context;
+}
+
+
+void CID2CDDProcessor_Impl::InitContext(CID2CDDContext& context,
+    const CID2_Request& request)
+{
+    context = GetInitialContext();
+    if (request.IsSetParams()) {
+        ITERATE(CID2_Request::TParams::Tdata, it, request.GetParams().Get()) {
+            const CID2_Param& param = **it;
+            if (param.GetName() == "id2:allow" && param.IsSetValue()) {
+                ITERATE(CID2_Param::TValue, it2, param.GetValue()) {
+                    if (*it2 == "vdb-cdd") {
+                        context.m_AllowVDB = true;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 CRef<CID2ProcessorPacketContext> CID2CDDProcessor_Impl::ProcessPacket(
+    CID2CDDProcessorContext* context,
     CID2_Request_Packet& packet,
-    CID2CDDProcessor::TReplies& replies)
+    TReplies& replies)
 {
     CRef<CID2CDDProcessorPacketContext> packet_context;
     ERASE_ITERATE(CID2_Request_Packet::Tdata, it, packet.Set()) {
         const CID2_Request& req = **it;
+
+        // init request can come without serial number
+        if ((*it)->GetRequest().IsInit()) {
+            InitContext(context->m_Context, **it);
+            continue;
+        }
+        if (!context->m_Context.m_AllowVDB) {
+            continue;
+        }
+
         CConstRef<CID2_Seq_id> req_id; // Can be in get-blob-id or get-blob-info
         CConstRef<CID2_Blob_Id> blob_id;
         switch (req.GetRequest().Which()) {
@@ -133,6 +172,7 @@ CRef<CID2ProcessorPacketContext> CID2CDDProcessor_Impl::ProcessPacket(
                     req_get_info.GetBlob_id().GetBlob_id().GetSat() == kCDD_Sat) {
                     blob_id.Reset(&req_get_info.GetBlob_id().GetBlob_id());
                 }
+                break;
             }
         default:
             break;
@@ -143,13 +183,13 @@ CRef<CID2ProcessorPacketContext> CID2CDDProcessor_Impl::ProcessPacket(
             if ( !packet_context ) {
                 packet_context.Reset(new CID2CDDProcessorPacketContext);
             }
-            CRef<CID2_Reply> cdd_reply(x_GetBlobId(serial_number, *req_id));
+            CRef<CID2_Reply> cdd_reply(x_GetBlobId(context->m_Context, serial_number, *req_id));
             if (cdd_reply) {
                 packet_context->m_Replies[serial_number] = cdd_reply;
             }
         }
         if ( blob_id ) {
-            CRef<CID2_Reply> cdd_reply(x_GetBlob(serial_number, *blob_id));
+            CRef<CID2_Reply> cdd_reply(x_GetBlob(context->m_Context, serial_number, *blob_id));
             if (cdd_reply) {
                 replies.push_back(cdd_reply);
                 packet.Set().erase(it);
@@ -196,7 +236,10 @@ void CID2CDDProcessor_Impl::ProcessReply(
 }
 
 
-CRef<CID2_Reply> CID2CDDProcessor_Impl::x_GetBlobId(int serial_number, const CID2_Seq_id& req_id)
+CRef<CID2_Reply> CID2CDDProcessor_Impl::x_GetBlobId(
+    const CID2CDDContext& /*context*/,
+    int serial_number,
+    const CID2_Seq_id& req_id)
 {
     CConstRef<CSeq_id> id = ID2_id_To_Seq_id(req_id);
     CRef<CCDD_Reply> cdd_reply = m_Client->AskBlobId(serial_number, *id);
@@ -246,7 +289,10 @@ CRef<CID2_Reply> CID2CDDProcessor_Impl::x_GetBlobId(int serial_number, const CID
 }
 
 
-CRef<CID2_Reply> CID2CDDProcessor_Impl::x_GetBlob(int serial_number, const CID2_Blob_Id& blob_id)
+CRef<CID2_Reply> CID2CDDProcessor_Impl::x_GetBlob(
+    const CID2CDDContext& context,
+    int serial_number,
+    const CID2_Blob_Id& blob_id)
 {
     CRef<CCDD_Reply> cdd_reply = m_Client->AskBlob(serial_number, blob_id);
     CRef<CID2_Reply> id2_reply = x_CreateID2_Reply(serial_number, *cdd_reply);
@@ -267,7 +313,7 @@ CRef<CID2_Reply> CID2CDDProcessor_Impl::x_GetBlob(int serial_number, const CID2_
     COctetStringSequenceWriter writer(data.SetData());
     CWStream writer_stream(&writer);
     AutoPtr<CNcbiOstream> str;
-    if (m_Compress) {
+    if (context.m_Compress) {
         data.SetData_compression(CID2_Reply_Data::eData_compression_gzip);
         str.reset(new CCompressionOStream(writer_stream,
             new CZipStreamCompressor(ICompression::eLevel_Lowest),

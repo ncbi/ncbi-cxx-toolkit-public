@@ -44,6 +44,13 @@ BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(objects);
 
 
+class CID2CDDProcessorContext : public CID2ProcessorContext
+{
+public:
+    CID2CDDContext m_Context;
+};
+
+
 class NCBI_ID2PROC_CDD_EXPORT CID2CDDProcessorPacketContext : public CID2ProcessorPacketContext
 {
 public:
@@ -63,16 +70,27 @@ public:
 
     typedef CID2CDDProcessor::TReplies TReplies;
 
-    CRef<CID2ProcessorPacketContext> ProcessPacket(CID2_Request_Packet& packet,
-                                                   CID2CDDProcessor::TReplies& replies);
+    CRef<CID2ProcessorPacketContext> ProcessPacket(CID2CDDProcessorContext* context,
+                                                   CID2_Request_Packet& packet,
+                                                   TReplies& replies);
 
     void ProcessReply(CID2_Reply& reply,
                       TReplies& replies,
                       CID2ProcessorPacketContext* packet_context);
 
+    CRef<CID2CDDProcessorContext> CreateContext(void);
+    const CID2CDDContext& GetInitialContext(void) const {
+        return m_InitialContext;
+    }
+    void InitContext(CID2CDDContext& context, const CID2_Request& main_request);
+
 private:
-    CRef<CID2_Reply> x_GetBlobId(int serial_number, const CID2_Seq_id& req_id);
-    CRef<CID2_Reply> x_GetBlob(int serial_number, const CID2_Blob_Id& blob_id);
+    CRef<CID2_Reply> x_GetBlobId(const CID2CDDContext& context,
+                                 int serial_number,
+                                 const CID2_Seq_id& req_id);
+    CRef<CID2_Reply> x_GetBlob(const CID2CDDContext& context,
+                               int serial_number,
+                               const CID2_Blob_Id& blob_id);
     CRef<CID2_Reply> x_CreateID2_Reply(int serial_number,
                                        CCDD_Reply& cdd_reply);
     void x_CreateBlobIdReply(const CCDD_Request::TRequest& cdd_request,
@@ -82,7 +100,7 @@ private:
                            CCDD_Reply::TReply& cdd_reply,
                            CID2_Reply::TReply& id2_reply);
 
-    bool m_Compress;
+    CID2CDDContext m_InitialContext;
     CRef<CCDDClient> m_Client;
 };
 

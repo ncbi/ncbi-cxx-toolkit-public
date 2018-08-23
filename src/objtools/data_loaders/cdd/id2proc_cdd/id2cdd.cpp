@@ -84,7 +84,7 @@ bool CID2CDDProcessor::NeedToProcessReplies(void) const
 
 CRef<CID2ProcessorContext> CID2CDDProcessor::CreateContext(void)
 {
-    return null;
+    return CRef<CID2ProcessorContext>(m_Impl->CreateContext());
 }
 
 
@@ -93,7 +93,8 @@ CID2CDDProcessor::ProcessPacket(CID2ProcessorContext* context,
                                 CID2_Request_Packet& packet,
                                 TReplies& replies)
 {
-    return m_Impl->ProcessPacket(packet, replies);
+    return m_Impl->ProcessPacket(
+        dynamic_cast<CID2CDDProcessorContext*>(context), packet, replies);
 }
 
     

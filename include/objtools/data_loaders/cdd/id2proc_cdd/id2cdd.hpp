@@ -46,6 +46,16 @@ class CID2_Blob_Id;
 class CID2CDDProcessor_Impl;
 
 
+class NCBI_ID2PROC_CDD_EXPORT CID2CDDContext
+{
+public:
+    CID2CDDContext(void) : m_AllowVDB(false), m_Compress(false) {}
+
+    bool m_AllowVDB;
+    bool m_Compress;
+};
+
+
 class NCBI_ID2PROC_CDD_EXPORT CID2CDDProcessor : public CID2Processor
 {
 public:
