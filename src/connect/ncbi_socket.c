@@ -127,10 +127,6 @@
 #  endif /*IN_CLASSA_MAX<=IN_LOOPBACKNET*/
 #endif /*IN_CLASSA_MAX*/
 
-#ifndef   MAXHOSTNAMELEN
-#  define MAXHOSTNAMELEN  255
-#endif /* MAXHOSTNAMELEN */
-
 
 #ifdef NCBI_MONKEY
 /* A hack - we assume that SOCK variable is named "sock" in the code.
@@ -1066,7 +1062,7 @@ static unsigned int s_gethostbyname_(const char* hostname,
                                      int/*bool*/ not_ip,
                                      ESwitch     log)
 {
-    char buf[MAXHOSTNAMELEN + 1];
+    char buf[CONN_HOST_LEN + 1];
     unsigned int host;
 
     if (!hostname  ||  !*hostname) {
@@ -1119,7 +1115,7 @@ static unsigned int s_gethostbyname_(const char* hostname,
                                     error, strerr ? strerr : "",
                                     ("[SOCK_gethostbyname] "
                                      " Failed getaddrinfo(\"%.*s\")",
-                                     MAXHOSTNAMELEN, hostname));
+                                     CONN_HOST_LEN, hostname));
                 UTIL_ReleaseBuffer(strerr);
             }
             host = 0;
@@ -1189,7 +1185,7 @@ static unsigned int s_gethostbyname_(const char* hostname,
                                     error, strerr ? strerr : "",
                                     ("[SOCK_gethostbyname] "
                                      " Failed gethostbyname%s(\"%.*s\")",
-                                     suffix, MAXHOSTNAMELEN, hostname));
+                                     suffix, CONN_HOST_LEN, hostname));
                 UTIL_ReleaseBuffer(strerr);
             }
         }
@@ -1419,7 +1415,7 @@ static const char* s_gethostbyaddr(unsigned int host, char* name,
         &&  CORE_Once(&s_Once)) {
         CORE_LOGF_X(10, eLOG_Warning,
                     ("[SOCK::gethostbyaddr] "
-                     " Got \"%.*s\" for %s address", MAXHOSTNAMELEN,
+                     " Got \"%.*s\" for %s address", CONN_HOST_LEN,
                      retval, host ? "loopback" : "local host"));
     }
     return retval;
@@ -4161,7 +4157,7 @@ static EIO_Status s_Connect_(SOCK            sock,
             CORE_LOGF_X(22, eLOG_Error,
                         ("%s[SOCK::Connect] "
                          " Failed SOCK_gethostbyname(\"%.*s\")",
-                         s_ID(sock, _id), MAXHOSTNAMELEN, host));
+                         s_ID(sock, _id), CONN_HOST_LEN, host));
             return eIO_Unknown;
         }
         addrlen = (TSOCK_socklen_t) sizeof(addr.in);
@@ -5703,7 +5699,7 @@ static EIO_Status s_SendMsg(SOCK           sock,
         CORE_LOGF_X(88, eLOG_Error,
                     ("%s[DSOCK::SendMsg] "
                      " Failed SOCK_gethostbyname(\"%.*s\")",
-                     s_ID(sock, w), MAXHOSTNAMELEN, host));
+                     s_ID(sock, w), CONN_HOST_LEN, host));
         return eIO_Unknown;
     }
 
@@ -7628,7 +7624,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
         CORE_LOGF_X(83, eLOG_Error,
                     ("%s[DSOCK::Connect] "
                      " Failed SOCK_gethostbyname(\"%.*s\")",
-                     s_ID(sock, _id), MAXHOSTNAMELEN, hostname));
+                     s_ID(sock, _id), CONN_HOST_LEN, hostname));
         return eIO_Unknown;
     }
 
@@ -7641,7 +7637,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
         CORE_LOGF_X(84, eLOG_Error,
                     ("%s[DSOCK::Connect] "
                      " Address \"%.*s%s\" incomplete, missing %s",
-                     s_ID(sock, _id), MAXHOSTNAMELEN, host ? hostname : "",
+                     s_ID(sock, _id), CONN_HOST_LEN, host ? hostname : "",
                      addr, port ? "host" : "port"));
         return eIO_InvalidArg;
     }
@@ -8329,7 +8325,7 @@ const char* SOCK_StringToHostPortEx(const char*     str,
                                     unsigned short* port,
                                     int/*bool*/     flag)
 {
-    char x_buf[MAXHOSTNAMELEN + 1];
+    char x_buf[CONN_HOST_LEN + 1];
     unsigned short p;
     unsigned int h;
     const char* s;

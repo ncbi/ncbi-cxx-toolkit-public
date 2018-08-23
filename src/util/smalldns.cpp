@@ -26,7 +26,7 @@
  * Author: Anton Golikov
  *
  * File Description:
- *   Resolve host name to ip address and back using preset ini-file
+ *   Resolve host name to IP address and back using preset ini-file
  *
  */
 
@@ -49,6 +49,8 @@
 
 
 #define NCBI_USE_ERRCODE_X   Util_DNS
+
+#define X_MAXHOSTNAMELEN  255
 
 
 BEGIN_NCBI_SCOPE
@@ -120,14 +122,11 @@ string CSmallDNS::GetLocalHost(void)
     static CSafeStatic<string> s_LocalHostName;
 
     if ( s_LocalHostName->empty() ) {
-#if !defined(MAXHOSTNAMELEN)
-#  define MAXHOSTNAMELEN 256
-#endif
-        char buffer[MAXHOSTNAMELEN];
-        buffer[0] = buffer[MAXHOSTNAMELEN-1] = '\0';
+        char buffer[X_MAXHOSTNAMELEN + 1];
+        buffer[0] = buffer[X_MAXHOSTNAMELEN] = '\0';
         errno = 0;
-        if ( gethostname(buffer, (int)sizeof(buffer)) == 0 ) {
-            if ( buffer[MAXHOSTNAMELEN - 1] ) {
+        if ( gethostname(buffer, (int) sizeof(buffer)) == 0 ) {
+            if ( buffer[X_MAXHOSTNAMELEN] ) {
                 ERR_POST_X(3, Warning <<
                     "CSmallDNS: Host name buffer too small");
             } else {
