@@ -89,6 +89,9 @@
 #define CONN_PORT_HTTP   80
 #define CONN_PORT_HTTPS  443
 
+/* How long a host name can be */
+#define CONN_HOST_LEN    255
+
 
 /** @addtogroup UtilityFunc
  *
@@ -160,7 +163,7 @@ typedef unsigned EBDebugPrintout;
  *             Instead, use ConnNetInfo_Create() described below to create it,
  *             and then fix (hard-code) some fields, if really necessary.
  * NOTE1:      Not every field may be fully utilized throughout the library.
- * NOTE2:      HTTP passwords can be either clear text or Base64 encoded values
+ * NOTE2:      HTTP password can be either clear text or Base-64 encoded value
  *             enclosed in square brackets [] (which are not Base-64 charset).
  *             For encoding / decoding, one can use command line open ssl:
  *             echo "password|base64value" | openssl enc {-e|-d} -base64
@@ -181,11 +184,11 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     unsigned        reserved:14;      /* MBZ                                 */
     char            user[64];         /* username (if specified or required) */
     char            pass[64];         /* password (if any for non-empty user)*/
-    char            host[256];        /* host to connect to                  */
+    char            host[CONN_HOST_LEN + 1];  /* host name to connect to     */
     unsigned short  port;             /* port to connect to, host byte order */
     char            path[2048];       /* path (e.g. to  a CGI script or page)*/
     char            args[2048];       /* args (e.g. for a CGI script)        */
-    char            http_proxy_host[256]; /* hostname of HTTP proxy server   */
+    char            http_proxy_host[CONN_HOST_LEN + 1]; /* HTTP proxy server */
     unsigned short  http_proxy_port;      /* port #   of HTTP proxy server   */
     char            http_proxy_user[64];  /* http proxy username (if req'd)  */
     char            http_proxy_pass[64];  /* http proxy password             */
