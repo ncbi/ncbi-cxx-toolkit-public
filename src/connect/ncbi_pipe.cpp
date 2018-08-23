@@ -372,7 +372,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         attr.lpSecurityDescriptor = NULL;
 
         // Create pipe for child's stdin
-        _ASSERT(CPipe::fStdIn_Close);
+        _ASSERT(CPipe::fStdIn_Close != 0);
         if ( !IS_SET(create_flags, CPipe::fStdIn_Close) ) {
             if ( !::CreatePipe(&child_stdin, &m_ChildStdIn,
                                &attr, (DWORD) pipe_size) ) {
@@ -383,7 +383,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
 
         // Create pipe for child's stdout
-        _ASSERT(CPipe::fStdOut_Close);
+        _ASSERT(CPipe::fStdOut_Close != 0);
         if ( !IS_SET(create_flags, CPipe::fStdOut_Close) ) {
             if ( !::CreatePipe(&m_ChildStdOut, &child_stdout, &attr, 0)) {
                 PIPE_THROW(::GetLastError(), "Failed CreatePipe(stdout)");
@@ -393,7 +393,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
 
         // Create pipe for child's stderr
-        _ASSERT(CPipe::fStdErr_Open);
+        _ASSERT(CPipe::fStdErr_Open != 0);
         if        ( IS_SET(create_flags, CPipe::fStdErr_Open) ) {
             if ( !::CreatePipe(&m_ChildStdErr, &child_stderr, &attr, 0)) {
                 PIPE_THROW(::GetLastError(), "Failed CreatePipe(stderr)");
@@ -1144,7 +1144,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         ::fflush(NULL);
 
         // Create pipe for child's stdin
-        _ASSERT(CPipe::fStdIn_Close);
+        _ASSERT(CPipe::fStdIn_Close != 0);
         if ( !IS_SET(create_flags, CPipe::fStdIn_Close) ) {
             if (::pipe(pipe_in) < 0
                 ||  !x_SafePipe(pipe_in, 0, STDIN_FILENO)) {
@@ -1156,7 +1156,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
 
         // Create pipe for child's stdout
-        _ASSERT(CPipe::fStdOut_Close);
+        _ASSERT(CPipe::fStdOut_Close != 0);
         if ( !IS_SET(create_flags, CPipe::fStdOut_Close) ) {
             if (::pipe(pipe_out) < 0
                 ||  !x_SafePipe(pipe_out, 1, STDOUT_FILENO)) {
@@ -1168,7 +1168,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         }
 
         // Create pipe for child's stderr
-        _ASSERT(CPipe::fStdErr_Open);
+        _ASSERT(CPipe::fStdErr_Open != 0);
         if ( IS_SET(create_flags, CPipe::fStdErr_Open) ) {
             if (::pipe(pipe_err) < 0
                 ||  !x_SafePipe(pipe_err, 1, STDERR_FILENO)) {
