@@ -68,8 +68,10 @@ private:
     unsigned int m_NumThreads;
     string m_HostPort;
     string m_BioId;
+    string m_ResolveId;
     string m_BlobId;
     string m_LookupFileRemote;
+    string m_ResolveIdFile;
     string m_BlobIdFile;
     char m_Delimiter;
     mutex m_CoutMutex;
@@ -102,8 +104,10 @@ public:
         argdesc->AddOptionalKey( "l",   "loglevel", "Output verbosity level from 0 to 5",   CArgDescriptions::eInteger);
         argdesc->AddOptionalKey( "H",   "host",     "Host[:port] for remote lookups",       CArgDescriptions::eString);
         argdesc->AddOptionalKey( "la",  "bio_id",   "Individual bio ID lookup and retrieval", CArgDescriptions::eString);
+        argdesc->AddOptionalKey( "rv",  "bio_id",   "Individual bio ID resolve",            CArgDescriptions::eString);
         argdesc->AddOptionalKey( "gb",  "blob_id",  "Individual blob retrieval",            CArgDescriptions::eString);
         argdesc->AddOptionalKey( "fa",  "bio_id_file", "Lookup Bio IDs from a file",        CArgDescriptions::eString);
+        argdesc->AddOptionalKey( "fv",  "resolve_id_file", "Resolve Bio IDs from a file",   CArgDescriptions::eString);
         argdesc->AddOptionalKey( "fb",  "blob_id_file", "Retrieval blobs from a file",      CArgDescriptions::eString);
         argdesc->AddOptionalKey( "t",   "threads",  "Number of threads",                    CArgDescriptions::eInteger);
         argdesc->SetConstraint(  "t",   new CArgAllow_Integers(1, 256));
@@ -134,10 +138,14 @@ public:
             m_HostPort = args["H"].AsString();
         if (args["la"])
             m_BioId = args["la"].AsString();
+        if (args["rv"])
+            m_ResolveId = args["rv"].AsString();
         if (args["gb"])
             m_BlobId = args["gb"].AsString();
         if (args["fa"])
             m_LookupFileRemote = args["fa"].AsString();
+        if (args["fv"])
+            m_ResolveIdFile = args["fv"].AsString();
         if (args["fb"])
             m_BlobIdFile = args["fb"].AsString();
         if (args["t"])
@@ -157,8 +165,13 @@ public:
             if (!m_BioId.empty()) {
                 auto id = CPSG_BioId(m_BioId, CSeq_id_Base::e_Gi);
                 auto request = make_shared<CPSG_Request_Biodata>(move(id));
-                request->IncludeData(CPSG_Request_Biodata::fAllData);
                 ProcessId<CPSG_Request_Biodata>(request);
+            }
+            else if (!m_ResolveId.empty()) {
+                auto id = CPSG_BioId(m_ResolveId, CSeq_id_Base::e_Gi);
+                auto request = make_shared<CPSG_Request_Resolve>(move(id));
+                request->IncludeData(CPSG_Request_Resolve::fAllData);
+                ProcessId<CPSG_Request_Resolve>(request);
             }
             else if (!m_BlobId.empty()) {
                 auto request = make_shared<CPSG_Request_Blob>(m_BlobId);
@@ -166,6 +179,9 @@ public:
             }
             else if (!m_LookupFileRemote.empty()) {
                 ProcessFile<CPSG_Request_Biodata>(m_LookupFileRemote);
+            }
+            else if (!m_ResolveIdFile.empty()) {
+                ProcessFile<CPSG_Request_Resolve>(m_ResolveIdFile);
             }
             else if (!m_BlobIdFile.empty()) {
                 ProcessFile<CPSG_Request_Blob>(m_BlobIdFile);

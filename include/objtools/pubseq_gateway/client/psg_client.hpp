@@ -111,10 +111,6 @@ public:
         /// @NOTE  Incompatible with the "fWholeTSE" and "fOrigTSE")
         fNoTSE     = (1 << 0),
 
-        /// Only the "fast" info
-        /// @note  Ignored if other flags require the "slow" info to be used
-        fFastInfo  = (1 << 1),
-
         /// By default (unless "fNoTSE" flag is set):
         /// - if the TSE blob is split, then only the blob containing its split
         ///   info will be retrieved;
@@ -129,7 +125,36 @@ public:
 
         /// Retrieve the whole original(!) TSE blob
         fOrigTSE   = (1 << 3),
+    };
+    typedef int TIncludeData;   // Bit-set of EIncludeData flags
+    void IncludeData(TIncludeData include) { m_IncludeData = include; }
 
+    TIncludeData      GetIncludeData() const { return m_IncludeData; }
+
+private:
+    CPSG_BioId    m_BioId;
+    TIncludeData  m_IncludeData = 0;
+};
+
+
+
+/// Request to the PSG server (by bio-id, for a biodata specific info and data)
+///
+
+class CPSG_Request_Resolve : public CPSG_Request
+{
+public:
+    /// 
+    CPSG_Request_Resolve(CPSG_BioId      bio_id,
+                         weak_ptr<void>  user_context = {})
+        : CPSG_Request(user_context),
+          m_BioId(bio_id)
+    {}
+
+    const CPSG_BioId& GetBioId() const { return m_BioId; }
+
+    /// Specify which info and data is needed
+    enum EIncludeData {
         // These flags correspond exactly to the CPSG_BioseqInfo's getters
         fCanonicalId      = (1 <<  4),
         fOtherIds         = (1 <<  5),
@@ -467,8 +492,8 @@ public:
 
     /// What data is immediately available now. Other data will require
     /// a separate hit to the server.
-    /// @sa CPSG_Request_Biodata::IncludeData()
-    CPSG_Request_Biodata::TIncludeData IncludedData() const;
+    /// @sa CPSG_Request_Resolve::IncludeData()
+    CPSG_Request_Resolve::TIncludeData IncludedData() const;
 
 private:
     CPSG_BioseqInfo();

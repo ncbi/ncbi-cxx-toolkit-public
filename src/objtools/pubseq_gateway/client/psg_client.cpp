@@ -354,18 +354,32 @@ string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Biodata* request_biodata)
     const auto include_data = request_biodata->GetIncludeData();
 
     if (include_data & CPSG_Request_Biodata::fNoTSE)        os << "&no_tse=yes";
-    if (include_data & CPSG_Request_Biodata::fFastInfo)     os << "&fast_info=yes";
     if (include_data & CPSG_Request_Biodata::fWholeTSE)     os << "&whole_tse=yes";
     if (include_data & CPSG_Request_Biodata::fOrigTSE)      os << "&orig_tse=yes";
-    if (include_data & CPSG_Request_Biodata::fCanonicalId)  os << "&canon_id=yes";
-    if (include_data & CPSG_Request_Biodata::fOtherIds)     os << "&seq_ids=yes";
-    if (include_data & CPSG_Request_Biodata::fMoleculeType) os << "&mol_type=yes";
-    if (include_data & CPSG_Request_Biodata::fLength)       os << "&length=yes";
-    if (include_data & CPSG_Request_Biodata::fState)        os << "&state=yes";
-    if (include_data & CPSG_Request_Biodata::fBlobId)       os << "&blob_id=yes";
-    if (include_data & CPSG_Request_Biodata::fTaxId)        os << "&tax_id=yes";
-    if (include_data & CPSG_Request_Biodata::fHash)         os << "&hash=yes";
-    if (include_data & CPSG_Request_Biodata::fDateChanged)  os << "&date_changed=yes";
+
+    return os.str();
+}
+
+string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Resolve* request_resolve)
+{
+    ostringstream os;
+    const auto& bio_id = request_resolve->GetBioId();
+
+    os << "seq_id=" << bio_id.Get() << "&fmt=json&psg_protocol=yes";
+
+    if (const auto type = bio_id.GetType()) os << "&seq_id_type=" << type;
+
+    const auto include_data = request_resolve->GetIncludeData();
+
+    if (include_data & CPSG_Request_Resolve::fCanonicalId)  os << "&canon_id=yes";
+    if (include_data & CPSG_Request_Resolve::fOtherIds)     os << "&seq_ids=yes";
+    if (include_data & CPSG_Request_Resolve::fMoleculeType) os << "&mol_type=yes";
+    if (include_data & CPSG_Request_Resolve::fLength)       os << "&length=yes";
+    if (include_data & CPSG_Request_Resolve::fState)        os << "&state=yes";
+    if (include_data & CPSG_Request_Resolve::fBlobId)       os << "&blob_id=yes";
+    if (include_data & CPSG_Request_Resolve::fTaxId)        os << "&tax_id=yes";
+    if (include_data & CPSG_Request_Resolve::fHash)         os << "&hash=yes";
+    if (include_data & CPSG_Request_Resolve::fDateChanged)  os << "&date_changed=yes";
 
     return os.str();
 }
@@ -392,6 +406,10 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request,
     if (auto request_biodata = dynamic_cast<const CPSG_Request_Biodata*>(user_request.get())) {
         string query(GetQuery(request_biodata));
         http_request = make_shared<TPSG_RequestValue>(reply, SHCT::GetEndPoint(m_Service), m_Requests, "/ID/get", query);
+
+    } else if (auto request_resolve = dynamic_cast<const CPSG_Request_Resolve*>(user_request.get())) {
+        string query(GetQuery(request_resolve));
+        http_request = make_shared<TPSG_RequestValue>(reply, SHCT::GetEndPoint(m_Service), m_Requests, "/ID/resolve", query);
 
     } else if (auto request_blob = dynamic_cast<const CPSG_Request_Blob*>(user_request.get())) {
         string query(GetQuery(request_blob));
@@ -746,19 +764,19 @@ CTime CPSG_BioseqInfo::GetDateChanged() const
     return s_GetTime(m_Data.GetInteger("date_changed"));
 }
 
-CPSG_Request_Biodata::TIncludeData CPSG_BioseqInfo::IncludedData() const
+CPSG_Request_Resolve::TIncludeData CPSG_BioseqInfo::IncludedData() const
 {
-    CPSG_Request_Biodata::TIncludeData rv = {};
+    CPSG_Request_Resolve::TIncludeData rv = {};
 
-    if (m_Data.HasKey("accession") && m_Data.HasKey("seq_id_type"))       rv |= CPSG_Request_Biodata::fCanonicalId;
-    if (m_Data.HasKey("seq_ids") && m_Data.GetByKey("seq_ids").GetSize()) rv |= CPSG_Request_Biodata::fOtherIds;
-    if (m_Data.HasKey("mol"))                                             rv |= CPSG_Request_Biodata::fMoleculeType;
-    if (m_Data.HasKey("length"))                                          rv |= CPSG_Request_Biodata::fLength;
-    if (m_Data.HasKey("state"))                                           rv |= CPSG_Request_Biodata::fState;
-    if (m_Data.HasKey("sat") && m_Data.HasKey("sat_key"))                 rv |= CPSG_Request_Biodata::fBlobId;
-    if (m_Data.HasKey("tax_id"))                                          rv |= CPSG_Request_Biodata::fTaxId;
-    if (m_Data.HasKey("hash"))                                            rv |= CPSG_Request_Biodata::fHash;
-    if (m_Data.HasKey("date_changed"))                                    rv |= CPSG_Request_Biodata::fDateChanged;
+    if (m_Data.HasKey("accession") && m_Data.HasKey("seq_id_type"))       rv |= CPSG_Request_Resolve::fCanonicalId;
+    if (m_Data.HasKey("seq_ids") && m_Data.GetByKey("seq_ids").GetSize()) rv |= CPSG_Request_Resolve::fOtherIds;
+    if (m_Data.HasKey("mol"))                                             rv |= CPSG_Request_Resolve::fMoleculeType;
+    if (m_Data.HasKey("length"))                                          rv |= CPSG_Request_Resolve::fLength;
+    if (m_Data.HasKey("state"))                                           rv |= CPSG_Request_Resolve::fState;
+    if (m_Data.HasKey("sat") && m_Data.HasKey("sat_key"))                 rv |= CPSG_Request_Resolve::fBlobId;
+    if (m_Data.HasKey("tax_id"))                                          rv |= CPSG_Request_Resolve::fTaxId;
+    if (m_Data.HasKey("hash"))                                            rv |= CPSG_Request_Resolve::fHash;
+    if (m_Data.HasKey("date_changed"))                                    rv |= CPSG_Request_Resolve::fDateChanged;
 
     return rv;
 }
