@@ -40982,6 +40982,20 @@ else
    : ${WXWIDGETS_GL_STATIC_LIBS:=$WXWIDGETS_GL_LIBS}
    WXWIDGETS_POST_LINK=`"$wxconf" $wxcfflags --rezflags 2>/dev/null`
    test -n "$WXWIDGETS_POST_LINK"  ||  WXWIDGETS_POST_LINK=:
+   wxpnglib=$WXWIDGETS_ARCH_PATH/lib/libpng.so
+   defpnglib=${PNG_PATH-/usr}/lib${bit64_sfx}/libpng.so
+   if test -f $wxpnglib  &&  \
+       (test ! -f $defpnglib  ||  ! cmp -s $wxpnglib $defpnglib); then
+      PNG_PATH=$WXWIDGETS_ARCH_PATH
+      PNG_INCLUDE=$WXWIDGETS_INCLUDE
+   fi
+   wxtifflib=$WXWIDGETS_ARCH_PATH/lib/libtiff.so
+   deftifflib=${TIFF_PATH-/usr}/lib${bit64_sfx}/libtiff.so
+   if test -f $wxtifflib  &&  \
+       (test ! -f $deftifflib  ||  ! cmp -s $wxtifflib $deftifflib); then
+      TIFF_PATH=$WXWIDGETS_ARCH_PATH
+      TIFF_INCLUDE=$WXWIDGETS_INCLUDE
+   fi
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_WXWIDGETS 1
