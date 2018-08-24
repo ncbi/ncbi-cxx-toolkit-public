@@ -261,9 +261,17 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
         bioseq_info->m_Data = CJsonNode::ParseJSON(os.str());
         rv.reset(bioseq_info.release());
 
+    } else if (item_type == "blob_prop") {
+        auto blob_id = args.GetValue("blob_id");
+        ostringstream os;
+        for (auto& v : chunk.data) os.write(v.data(), v.size());
+
+        unique_ptr<CPSG_BlobInfo> blob_info(new CPSG_BlobInfo(blob_id));
+        blob_info->m_Data = CJsonNode::ParseJSON(os.str());
+        rv.reset(blob_info.release());
+
     } else {
-        // TODO
-        rv.reset(new CPSG_ReplyItem(CPSG_ReplyItem::eBlobInfo));
+        throw runtime_error("UNKNOWN TYPE: " + item_type); // TODO: CPSG_Exception
     }
 
     rv->m_Impl.reset(impl.release());
@@ -508,9 +516,169 @@ CPSG_Blob::CPSG_Blob(CPSG_BlobId id) :
 }
 
 
-CPSG_BlobInfo::CPSG_BlobInfo()
-    : CPSG_ReplyItem(eBlobInfo)
+CPSG_BlobInfo::CPSG_BlobInfo(CPSG_BlobId id) :
+    CPSG_ReplyItem(eBlobInfo),
+    m_Id(move(id))
 {
+}
+
+enum EPSG_BlobInfo_Flags
+{
+    fPSGBI_CheckFailed = 1 << 0,
+    fPSGBI_Gzip        = 1 << 1,
+    fPSGBI_Not4Gbu     = 1 << 2,
+    fPSGBI_Withdrawn   = 1 << 3,
+    fPSGBI_Suppress    = 1 << 4,
+    fPSGBI_Dead        = 1 << 5,
+};
+
+string CPSG_BlobInfo::GetCompression() const
+{
+    return m_Data.GetInteger("Flags") & fPSGBI_Gzip ? "gzip" : "";
+}
+
+string CPSG_BlobInfo::GetFormat() const
+{
+    return "asn.1";
+}
+
+Uint8 CPSG_BlobInfo::GetVersion() const
+{
+    return static_cast<Uint8>(m_Data.GetInteger("LastModified"));
+}
+
+Uint8 CPSG_BlobInfo::GetStorageSize() const
+{
+    return static_cast<Uint8>(m_Data.GetInteger("Size"));
+}
+
+Uint8 CPSG_BlobInfo::GetSize() const
+{
+    return static_cast<Uint8>(m_Data.GetInteger("SizeUnpacked"));
+}
+
+bool CPSG_BlobInfo::IsDead() const
+{
+    return m_Data.GetInteger("Flags") & fPSGBI_Dead;
+}
+
+bool CPSG_BlobInfo::IsSuppressed() const
+{
+    return m_Data.GetInteger("Flags") & fPSGBI_Suppress;
+}
+
+bool CPSG_BlobInfo::IsWithdrawn() const
+{
+    return m_Data.GetInteger("Flags") & fPSGBI_Withdrawn;
+}
+
+CTime s_GetTime(Int8 seconds)
+{
+    return seconds > 0 ? CTime(static_cast<time_t>(seconds)) : CTime();
+}
+
+CTime CPSG_BlobInfo::GetHupReleaseDate() const
+{
+    return s_GetTime(m_Data.GetInteger("HupDate"));
+}
+
+Uint8 CPSG_BlobInfo::GetOwner() const
+{
+    return static_cast<Uint8>(m_Data.GetInteger("Owner"));
+}
+
+CTime CPSG_BlobInfo::GetOriginalLoadDate() const
+{
+    return s_GetTime(m_Data.GetInteger("DateAsn1"));
+}
+
+objects::CBioseq_set::EClass CPSG_BlobInfo::GetClass() const
+{
+    return static_cast<objects::CBioseq_set::EClass>(m_Data.GetInteger("Class"));
+}
+
+string CPSG_BlobInfo::GetDivision() const
+{
+    return m_Data.GetString("Div");
+}
+
+string CPSG_BlobInfo::GetUsername() const
+{
+    return m_Data.GetString("UserName");
+}
+
+struct SId2Info
+{
+    using TSatKeys = vector<CTempString>;
+    using TGetSatKey = function<int(const TSatKeys&)>;
+
+    enum : size_t { eSat, eShell, eInfo, eNChunks, eSize };
+
+    static CPSG_BlobId GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key);
+};
+
+CPSG_BlobId SId2Info::GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key)
+{
+    if (!data.HasKey("Id2Info")) return kEmptyStr;
+
+    auto id2_info = data.GetString("Id2Info");
+
+    if (id2_info.empty()) return kEmptyStr;
+
+    vector<CTempString> sat_keys;
+    NStr::Split(id2_info, ".", sat_keys);
+
+    if (sat_keys.size() != eSize ) return kEmptyStr;
+
+    auto sat_str = sat_keys[eSat];
+
+    if (sat_str.empty()) return kEmptyStr;
+
+    auto sat = stoi(sat_str);
+
+    if (sat == 0) return kEmptyStr;
+
+    auto sat_key = get_sat_key(sat_keys);
+
+    if (sat_key == 0) return kEmptyStr;
+
+    return CPSG_BlobId(sat, sat_key);
+}
+
+CPSG_BlobId CPSG_BlobInfo::GetSplitInfoBlobId(ESplitInfo split_info_type) const
+{
+    auto l = [&](const vector<CTempString>& sat_keys)
+    {
+        auto index = split_info_type == eSplitShell ? SId2Info::eShell : SId2Info::eInfo;
+        auto sat_key = sat_keys[index];
+
+        return stoi(sat_key);
+    };
+
+    return SId2Info::GetBlobId(m_Data, l);
+}
+
+CPSG_BlobId CPSG_BlobInfo::GetChunkBlobId(unsigned split_chunk_no) const
+{
+    if (split_chunk_no == 0) return kEmptyStr;
+
+    int index = static_cast<int>(split_chunk_no);
+
+    auto l = [&](const vector<CTempString>& sat_keys)
+    {
+        auto info = stoi(sat_keys[SId2Info::eInfo]);
+
+        if (info <= 0) return 0;
+
+        auto nchunks = stoi(sat_keys[SId2Info::eNChunks]);
+
+        if (nchunks <= 0) return 0;
+        if (nchunks < index) return 0;
+
+        return info + index;
+    };
+
+    return SId2Info::GetBlobId(m_Data, l);
 }
 
 
@@ -575,7 +743,7 @@ int CPSG_BioseqInfo::GetHash() const
 
 CTime CPSG_BioseqInfo::GetDateChanged() const
 {
-    return CTime(static_cast<time_t>(m_Data.GetInteger("date_changed")));
+    return s_GetTime(m_Data.GetInteger("date_changed"));
 }
 
 CPSG_Request_Biodata::TIncludeData CPSG_BioseqInfo::IncludedData() const

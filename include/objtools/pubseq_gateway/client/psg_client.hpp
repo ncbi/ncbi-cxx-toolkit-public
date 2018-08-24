@@ -335,7 +335,7 @@ class CPSG_BlobInfo : public CPSG_ReplyItem
 {
 public:
     /// Get blob ID
-    CPSG_BlobId GetId() const;
+    const CPSG_BlobId& GetId() const { return m_Id; }
 
     /// Get data compression algorithm: gzip, bzip2, zip, compress, nlmzip, ...
     /// Return empty string if the blob is not compressed
@@ -343,9 +343,6 @@ public:
 
     /// Get data serialization format:  asn.1, asn1-text, json, xml, ...
     string GetFormat() const;
-
-    /// Get content type:  seq-entry, seq-annot, id2s-split-info, id2s-chunk
-    string GetContentType() const;
 
     /// Get blob version (the larger the version the fresher the blob data)
     Uint8 GetVersion() const;
@@ -361,9 +358,6 @@ public:
 
     /// Return TRUE if the blob is "suppressed"
     bool IsSuppressed() const;
-
-    /// Return TRUE if the blob is only temporarily "suppressed"
-    bool IsSuppressedTemporarily() const;
 
     /// Return TRUE if the blob is "withdrawn"
     bool IsWithdrawn() const;
@@ -412,7 +406,10 @@ public:
 #endif  /* NCBI_NAMED_ANNOTS_IMPLEMENTED */
 
 private:
-    CPSG_BlobInfo();
+    CPSG_BlobInfo(CPSG_BlobId id);
+
+    CPSG_BlobId m_Id;
+    CJsonNode m_Data;
 
     friend class CPSG_Reply;
 };

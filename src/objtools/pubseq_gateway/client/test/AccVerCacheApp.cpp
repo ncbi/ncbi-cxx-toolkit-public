@@ -85,6 +85,7 @@ private:
     void ProcessReply(shared_ptr<CPSG_Reply> reply);
     void PrintErrors(EPSG_Status status, const CPSG_ReplyItem* item);
     void PrintBlob(const CPSG_Blob*);
+    void PrintBlobInfo(const CPSG_BlobInfo*);
     void PrintBioseqInfo(const CPSG_BioseqInfo*);
 
 public:
@@ -206,7 +207,7 @@ void CAccVerCacheApp::ProcessReply(shared_ptr<CPSG_Reply> reply)
             break;
 
         case CPSG_ReplyItem::eBlobInfo:
-            // TODO
+            PrintBlobInfo(reply_item->CastTo<CPSG_BlobInfo>());
             break;
 
         case CPSG_ReplyItem::eBioseqInfo:
@@ -315,6 +316,47 @@ void CAccVerCacheApp::PrintBlob(const CPSG_Blob* blob)
     cout << "Id: " << blob->GetId().Get() << ";";
     cout << "Size: " << os.str().size() << ";";
     cout << "Hash: " <<blob_hash(os.str());
+}
+
+void CAccVerCacheApp::PrintBlobInfo(const CPSG_BlobInfo* blob_info)
+{
+    assert(blob_info);
+    lock_guard<mutex> lock(m_CoutMutex);
+
+    auto status = blob_info->GetStatus(CDeadline::eInfinite);
+
+    if (status != EPSG_Status::eSuccess) {
+        cout << "ERROR: Failed to retrieve blob_info '" << blob_info->GetId().Get() << "': ";
+        PrintErrors(status, blob_info);
+        return;
+    }
+
+    cout << "BlobInfo. ";
+    cout << "GetId: " << blob_info->GetId().Get() << ";";
+    cout << "GetCompression: " << blob_info->GetCompression() << ";";
+    cout << "GetFormat: " << blob_info->GetFormat() << ";";
+    cout << "GetVersion: " << blob_info->GetVersion() << ";";
+    cout << "GetStorageSize: " << blob_info->GetStorageSize() << ";";
+    cout << "GetSize: " << blob_info->GetSize() << ";";
+    cout << "IsDead: " << blob_info->IsDead() << ";";
+    cout << "IsSuppressed: " << blob_info->IsSuppressed() << ";";
+    cout << "IsWithdrawn: " << blob_info->IsWithdrawn() << ";";
+    cout << "GetHupReleaseDate: " << blob_info->GetHupReleaseDate() << ";";
+    cout << "GetOwner: " << blob_info->GetOwner() << ";";
+    cout << "GetOriginalLoadDate: " << blob_info->GetOriginalLoadDate() << ";";
+    cout << "GetClass: " << blob_info->GetClass() << ";";
+    cout << "GetDivision: " << blob_info->GetDivision() << ";";
+    cout << "GetUsername: " << blob_info->GetUsername() << ";";
+    cout << "GetSplitInfoBlobId(eSplitShell): " << blob_info->GetSplitInfoBlobId(CPSG_BlobInfo::eSplitShell).Get() << ";";
+    cout << "GetSplitInfoBlobId(eSplitInfo): " << blob_info->GetSplitInfoBlobId(CPSG_BlobInfo::eSplitInfo).Get() << ";";
+
+    for (int i = 1; ; ++i) {
+        auto blob_id = blob_info->GetChunkBlobId(i).Get();
+        if (blob_id.empty()) break;
+        cout << "GetChunkBlobId(" << i << "): " << blob_id << ";";
+    }
+
+    cout << endl;
 }
 
 void CAccVerCacheApp::PrintBioseqInfo(const CPSG_BioseqInfo* bioseq_info)
