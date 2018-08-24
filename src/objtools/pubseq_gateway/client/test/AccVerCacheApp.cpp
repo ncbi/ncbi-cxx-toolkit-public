@@ -386,6 +386,7 @@ void CAccVerCacheApp::PrintBioseqInfo(const CPSG_BioseqInfo* bioseq_info)
     cout << "BlobId: " << bioseq_info->GetBlobId().Get() << ";";
     cout << "TaxId: " << bioseq_info->GetTaxId() << ";";
     cout << "Hash: " << bioseq_info->GetHash() << ";";
+    cout << "GetDateChanged: " << bioseq_info->GetDateChanged() << ";";
     cout << "IncludedData: " << bioseq_info->IncludedData() << endl;
 };
 

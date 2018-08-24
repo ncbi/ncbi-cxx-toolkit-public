@@ -572,9 +572,9 @@ bool CPSG_BlobInfo::IsWithdrawn() const
     return m_Data.GetInteger("Flags") & fPSGBI_Withdrawn;
 }
 
-CTime s_GetTime(Int8 seconds)
+CTime s_GetTime(Int8 milliseconds)
 {
-    return seconds > 0 ? CTime(static_cast<time_t>(seconds)) : CTime();
+    return milliseconds > 0 ? CTime(static_cast<time_t>(milliseconds / kMilliSecondsPerSecond)) : CTime();
 }
 
 CTime CPSG_BlobInfo::GetHupReleaseDate() const
