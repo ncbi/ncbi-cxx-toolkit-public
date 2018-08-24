@@ -440,7 +440,7 @@ void* CIgBlastnApp::CIgFormatter::Main(void)
 	if( !next_batch_ready  )
 	{
 	    // OK, some threads are rinning, wait on semaphore
-	    thm_new_batch_done.Wait();
+	    thm_new_batch_done.TryWait(1U);
 	    continue; // TO STEP A
 	}
 	waiting_batch_number++; // got a batch 
