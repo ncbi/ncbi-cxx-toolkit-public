@@ -851,84 +851,36 @@ DISCREPANCY_SUMMARIZE(SP_NOT_UNCULTURED)
 
 // FIND_STRAND_TRNAS
 
-const string kMinusStrand = "[n] tRNA[s] on minus strand";
-const string kPlusStrand = "[n] tRNA[s] on plus strand";
-
-//  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(FIND_STRAND_TRNAS, CBioSource, eDisc, "Find tRNAs on the same strand")
-//  ----------------------------------------------------------------------------
+DISCREPANCY_CASE(FIND_STRAND_TRNAS, COverlappingFeatures, eDisc, "Find tRNAs on the same strand")
 {
-    if (!obj.IsSetGenome()) {
+    const CBioSource* biosrc = context.GetCurrentBiosource();
+    if (!biosrc || !biosrc->IsSetGenome()) {
         return;
     }
-
-    CBioSource::TGenome genome = obj.GetGenome();
+    CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
     if (genome != CBioSource::eGenome_mitochondrion && genome != CBioSource::eGenome_chloroplast && genome != CBioSource::eGenome_plastid) {
         return;
     }
-
-    CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
-    if (!bioseq || !bioseq->IsSetAnnot()) {
-        return;
-    }
-
-    const CSeq_annot* annot = nullptr;
-    ITERATE (CBioseq::TAnnot, annot_it, bioseq->GetAnnot()) {
-        if ((*annot_it)->IsFtable()) {
-            annot = *annot_it;
-            break;
+    bool strand_plus = false;
+    bool strand_minus = false;
+    for (auto feat : context.FeatTRNAs()) {
+        if (feat->GetLocation().GetStrand() == eNa_strand_minus) {
+            strand_minus = true;
+        }
+        else {
+            strand_plus = true;
+        }
+        if (strand_plus && strand_minus) {
+            return;
         }
     }
-
-    if (annot) {
-        bool mixed_strand = false,
-            first = true;
-
-        ENa_strand strand = eNa_strand_unknown;
-
-        list< CConstRef< CSeq_feat > > trnas;
-        ITERATE (CSeq_annot::TData::TFtable, feat, annot->GetData().GetFtable()) {
-
-            if ((*feat)->IsSetLocation() && (*feat)->IsSetData() && (*feat)->GetData().IsRna()) {
-
-                const CSeqFeatData::TRna& rna = (*feat)->GetData().GetRna();
-
-                if (rna.IsSetType() && rna.GetType() == CRNA_ref::eType_tRNA) {
-
-                    if (first) {
-                        strand = (*feat)->GetLocation().GetStrand();
-                        first = false;
-                    }
-                    else {
-                        ENa_strand cur_strand = (*feat)->GetLocation().GetStrand();
-                        if ((strand == eNa_strand_minus && cur_strand != eNa_strand_minus)
-                            || (strand != eNa_strand_minus && cur_strand == eNa_strand_minus))
-                            mixed_strand = true;
-                    }
-
-                    trnas.push_back(CConstRef<CSeq_feat>(*feat));
-                }
-            }
-
-            if (mixed_strand) {
-                break;
-            }
-        }
-
-        if (!mixed_strand && !trnas.empty()) {
-            const string& msg = (strand == eNa_strand_minus) ? kMinusStrand : kPlusStrand;
-
-            for (auto trna = trnas.begin(); trna != trnas.end(); ++trna) {
-                m_Objs[msg].Add(*context.DiscrObj(**trna), false);
-            }
-        }
+    for (auto feat : context.FeatTRNAs()) {
+        m_Objs[strand_plus ? "[n] tRNA[s] on plus strand" : "[n] tRNA[s] on minus strand"].Add(*context.DiscrObj(*feat), false);
     }
 }
 
 
-//  ----------------------------------------------------------------------------
 DISCREPANCY_SUMMARIZE(FIND_STRAND_TRNAS)
-//  ----------------------------------------------------------------------------
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
