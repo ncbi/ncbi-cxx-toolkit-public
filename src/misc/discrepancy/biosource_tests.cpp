@@ -857,7 +857,7 @@ DISCREPANCY_CASE(FIND_STRAND_TRNAS, COverlappingFeatures, eDisc, "Find tRNAs on 
     if (!biosrc || !biosrc->IsSetGenome()) {
         return;
     }
-    CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
+    CBioSource::EGenome genome = static_cast<CBioSource::EGenome>(biosrc->GetGenome());
     if (genome != CBioSource::eGenome_mitochondrion && genome != CBioSource::eGenome_chloroplast && genome != CBioSource::eGenome_plastid) {
         return;
     }
