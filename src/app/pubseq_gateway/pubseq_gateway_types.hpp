@@ -39,13 +39,12 @@ enum EPubseqGatewayErrorCode {
     eMissingParameter,
     eMalformedParameter,
     eUnknownResolvedSatellite,
-    eNoCanonicalTranslation,
     eNoBioseqInfo,
     eBadID2Info,
-    eResolutionNotFound,
     eUnpackingError,
     eUnknownError,
-    eBlobPropsNotFound
+    eBlobPropsNotFound,
+    eUnresolvedSeqId
 };
 
 

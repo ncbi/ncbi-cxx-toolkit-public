@@ -66,16 +66,19 @@ static vector<pair<string, EServIncludeData>>   kGetFlagParams =
     make_pair("no_tse", fServNoTSE),
     make_pair("fast_info", fServFastInfo),
     make_pair("whole_tse", fServWholeTSE),
-    make_pair("orig_tse", fServOrigTSE),
-    make_pair("canon_id", fServCanonicalId),
-    make_pair("seq_ids", fServSeqIds),
-    make_pair("mol_type", fServMoleculeType),
-    make_pair("length", fServLength),
-    make_pair("state", fServState),
-    make_pair("blob_id", fServBlobId),
-    make_pair("tax_id", fServTaxId),
-    make_pair("hash", fServHash),
-    make_pair("date_changed", fServDateChanged)
+    make_pair("orig_tse", fServOrigTSE)
+
+// Commented out: it was decided (temporary?) that all the parts will always be
+// supplied
+//    make_pair("canon_id", fServCanonicalId),
+//    make_pair("seq_ids", fServSeqIds),
+//    make_pair("mol_type", fServMoleculeType),
+//    make_pair("length", fServLength),
+//    make_pair("state", fServState),
+//    make_pair("blob_id", fServBlobId),
+//    make_pair("tax_id", fServTaxId),
+//    make_pair("hash", fServHash),
+//    make_pair("date_changed", fServDateChanged)
 };
 static string  kBadUrlMessage = "Unknown request, the provided URL "
                                 "is not recognized";
@@ -116,7 +119,9 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
     }
 
     string                  err_msg;
-    TServIncludeData        include_data_flags = 0;
+
+    // It was decided (temorary?) that all parts are supplied
+    TServIncludeData        include_data_flags = fServBioseqFields;
     SRequestParameter       request_param;
     for (const auto &  flag_param: kGetFlagParams) {
         request_param = x_GetParam(req, flag_param.first);

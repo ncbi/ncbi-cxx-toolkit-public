@@ -76,6 +76,30 @@ string  GetBlobId(const SBlobId &  blob_id);
 SBlobId ParseBlobId(const string &  blob_id);
 
 
+
+// At the resolution stage there is complicated process of resolving an
+// incoming seq_id and possibly seq_id_type into a set of values which
+// uniquely identify a bioseq_info key.
+struct SBioseqKey
+{
+    SBioseqKey() :
+        m_Version(-1), m_SeqIdType(-1)
+    {}
+
+    string      m_Accession;    // if resolved, then it is a non-empty string
+    int         m_Version;      // -1 if not identified
+    int         m_SeqIdType;    // -1 if not identified
+
+    string      m_BioseqInfo;   // some resolution branches may lead to the
+                                // already found bioseq_info record
+
+    bool IsValid(void) const
+    {
+        return !m_Accession.empty();
+    }
+};
+
+
 // Bioseq messages
 string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size,
                             EOutputFormat  output_format);

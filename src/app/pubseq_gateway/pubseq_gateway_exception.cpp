@@ -98,6 +98,12 @@ const char *  CPubseqGatewayException::GetErrCodeString(void) const
             return "eCannotUpdateDb";
         case eInvalidRequest:
             return "eInvalidRequest";
+        case eAccessionMismatch:
+            return "eAccessionMismatch";
+        case eVersionMismatch:
+            return "eVersionMismatch";
+        case eSeqIdMismatch:
+            return "eSeqIdMismatch";
         default:
             return CException::GetErrCodeString();
     }

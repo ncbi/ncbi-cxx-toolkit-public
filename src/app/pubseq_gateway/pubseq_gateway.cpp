@@ -33,6 +33,7 @@
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/request_ctx.hpp>
+#include <corelib/ncbifile.hpp>
 
 #include <google/protobuf/stubs/common.h>
 
@@ -358,14 +359,31 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
     }
 
     if (m_Si2csiDbFile.empty())
-        PSG_WARNING("[LMDB_CACHE]/dbfile_si2csi is not found "
-                    "in the ini file. No si2csi cache will be used.");
+        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                   "[LMDB_CACHE]/dbfile_si2csi is not found. It must "
+                   "be supplied for the server to start");
+    else if (!CFile(m_Si2csiDbFile).Exists())
+        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                   "dbfile_si2csi is not found on the disk. It must "
+                   "be supplied for the server to start");
+
     if (m_BioseqInfoDbFile.empty())
-        PSG_WARNING("[LMDB_CACHE]/dbfile_bioseq_info is not found "
-                    "in the ini file. No bioseq_info cache will be used.");
+        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                   "[LMDB_CACHE]/dbfile_bioseq_info is not found. It must "
+                   "be supplied for the server to start");
+    else if (!CFile(m_BioseqInfoDbFile).Exists())
+        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                   "dbfile_bioseq_info is not found on the disk. It must "
+                   "be supplied for the server to start");
+
     if (m_BlobPropDbFile.empty())
-        PSG_WARNING("[LMDB_CACHE]/dbfile_blob_prop is not found "
-                    "in the ini file. No blob_prop cache will be used.");
+        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                   "[LMDB_CACHE]/dbfile_blob_prop is not found. It must "
+                   "be supplied for the server to start");
+    else if (!CFile(m_BlobPropDbFile).Exists())
+        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+                   "dbfile_blob_prop is not found on the disk. It must "
+                   "be supplied for the server to start");
 
     if (m_HttpWorkers < kWorkersMin || m_HttpWorkers > kWorkersMax) {
         string  err_msg =

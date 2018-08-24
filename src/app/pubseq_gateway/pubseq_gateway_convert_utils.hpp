@@ -45,6 +45,9 @@ USING_IDBLOB_SCOPE;
 #include <string>
 using namespace std;
 
+// Forward declaration
+struct SBioseqKey;
+
 
 void ConvertBioseqInfoToBioseqProtobuf(const SBioseqInfo &  bioseq_info,
                                        string &  bioseq_protobuf);
@@ -53,14 +56,8 @@ void ConvertBioseqProtobufToBioseqInfo(const string &  bioseq_protobuf,
 void ConvertBioseqInfoToJson(const SBioseqInfo &  bioseq_info,
                              TServIncludeData  include_data_flags,
                              string &  bioseq_json);
-void ConvertSi2csiProtobufToBioseqProtobuf(const string &  si2csi_protobuf,
-                                           string &  bioseq_protobuf);
-void ConvertSi2sciToBioseqProtobuf(const SBioseqInfo &  bioseq_info,
-                                   string &  bioseq_protobuf);
-void ConvertSi2csiProtobufToBioseqJson(const string &  si2csi_protobuf,
-                                       string &  bioseq_json);
-void ConvertSi2csiToBioseqJson(const SBioseqInfo &  bioseq_info,
-                               string &  bioseq_json);
+void ConvertSi2csiToBioseqKey(const string &  si2csi_protobuf,
+                              SBioseqKey &  bioseq_key);
 void ConvertBlobPropProtobufToBlobRecord(int  sat_key,
                                          int64_t  last_modified,
                                          const string &  blob_prop_protobuf,

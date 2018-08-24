@@ -34,6 +34,7 @@
 #include <objtools/pubseq_gateway/protobuf/psg_protobuf_data.hpp>
 
 #include "pubseq_gateway_convert_utils.hpp"
+#include "pubseq_gateway_utils.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -161,86 +162,15 @@ CJsonNode  ConvertBlobPropToJson(const CBlobRecord &  blob_prop)
 }
 
 
-
-void ConvertSi2csiProtobufToBioseqProtobuf(const string &  si2csi_protobuf,
-                                           string &  bioseq_protobuf)
+void ConvertSi2csiToBioseqKey(const string &  si2csi_protobuf,
+                              SBioseqKey &  bioseq_key)
 {
     psg::retrieval::si2csi_value    protobuf_si2csi_value;
     CPubseqGatewayData::UnpackSiInfo(si2csi_protobuf, protobuf_si2csi_value);
 
-    // The only available fields here are accession/version/seq_id_type
-    // All the others must be set to -1
-    psg::retrieval::bioseq_info         protobuf_bioseq_info;
-    protobuf_bioseq_info.set_accession(protobuf_si2csi_value.accession());
-    protobuf_bioseq_info.set_version(protobuf_si2csi_value.version());
-    protobuf_bioseq_info.set_seq_id_type(protobuf_si2csi_value.seq_id_type());
-
-
-    psg::retrieval::bioseq_info_value *  protobuf_bioseq_info_value =
-            protobuf_bioseq_info.mutable_value();
-
-    protobuf_bioseq_info_value->set_sat(-1);
-    protobuf_bioseq_info_value->set_sat_key(-1);
-    protobuf_bioseq_info_value->set_state(-1);
-    protobuf_bioseq_info_value->set_mol(-1);
-    protobuf_bioseq_info_value->set_hash(-1);
-    protobuf_bioseq_info_value->set_length(-1);
-    protobuf_bioseq_info_value->set_date_changed(-1);
-    protobuf_bioseq_info_value->set_tax_id(-1);
-    // protobuf_bioseq_info_value->mutable_seq_ids()->clear();
-
-    CPubseqGatewayData::PackBioseqInfo(protobuf_bioseq_info, bioseq_protobuf);
-}
-
-
-void ConvertSi2sciToBioseqProtobuf(const SBioseqInfo &  bioseq_info,
-                                   string &  bioseq_protobuf)
-{
-    // The only available fields here are accession/version/seq_id_type
-    // All the others must be set to -1
-    psg::retrieval::bioseq_info         protobuf_bioseq_info;
-    protobuf_bioseq_info.set_accession(bioseq_info.m_Accession);
-    protobuf_bioseq_info.set_version(bioseq_info.m_Version);
-    protobuf_bioseq_info.set_seq_id_type(bioseq_info.m_SeqIdType);
-
-
-    psg::retrieval::bioseq_info_value *  protobuf_bioseq_info_value =
-            protobuf_bioseq_info.mutable_value();
-
-    protobuf_bioseq_info_value->set_sat(-1);
-    protobuf_bioseq_info_value->set_sat_key(-1);
-    protobuf_bioseq_info_value->set_state(-1);
-    protobuf_bioseq_info_value->set_mol(-1);
-    protobuf_bioseq_info_value->set_hash(-1);
-    protobuf_bioseq_info_value->set_length(-1);
-    protobuf_bioseq_info_value->set_date_changed(-1);
-    protobuf_bioseq_info_value->set_tax_id(-1);
-    // protobuf_bioseq_info_value->mutable_seq_ids()->clear();
-
-    CPubseqGatewayData::PackBioseqInfo(protobuf_bioseq_info, bioseq_protobuf);
-}
-
-
-void ConvertSi2csiProtobufToBioseqJson(const string &  si2csi_protobuf,
-                                       string &  bioseq_json)
-{
-    psg::retrieval::si2csi_value    protobuf_si2csi_value;
-    CPubseqGatewayData::UnpackSiInfo(si2csi_protobuf, protobuf_si2csi_value);
-
-    SBioseqInfo                     bioseq_info;
-    bioseq_info.m_Accession = protobuf_si2csi_value.accession();
-    bioseq_info.m_Version = protobuf_si2csi_value.version();
-    bioseq_info.m_SeqIdType = protobuf_si2csi_value.seq_id_type();
-
-    ConvertSi2csiToBioseqJson(bioseq_info, bioseq_json);
-}
-
-
-void ConvertSi2csiToBioseqJson(const SBioseqInfo &  bioseq_info,
-                               string &  bioseq_json)
-{
-    TServIncludeData    include_data_flags = fServCanonicalId;
-    ConvertBioseqInfoToJson(bioseq_info, include_data_flags, bioseq_json);
+    bioseq_key.m_Accession = protobuf_si2csi_value.accession();
+    bioseq_key.m_Version = protobuf_si2csi_value.version();
+    bioseq_key.m_SeqIdType = protobuf_si2csi_value.seq_id_type();
 }
 
 

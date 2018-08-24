@@ -38,9 +38,11 @@ using namespace std;
 
 #include <corelib/request_ctx.hpp>
 
+#include <objects/seqloc/Seq_id.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_factory.hpp>
 USING_IDBLOB_SCOPE;
+USING_SCOPE(objects);
 
 #include "http_server_transport.hpp"
 #include "pubseq_gateway_utils.hpp"
@@ -216,12 +218,6 @@ private:
     void x_SendReplyCompletion(bool  forced = false);
     void x_SetRequestContext(void);
     void x_PrintRequestStop(int  status);
-    CRequestStatus::ECode x_ResolveToCanonicalSeqId(SBioseqInfo &  bioseq_info,
-                                                    string &  cache_data);
-    CRequestStatus::ECode x_FetchCanonicalSeqId(SBioseqInfo &  bioseq_info);
-    CRequestStatus::ECode x_FetchBioseqInfo(SBioseqInfo &  bioseq_info,
-                                            const string &  si2csi_cache_data,
-                                            string &  bioseq_info_cache_data);
     bool x_SatToSatName(const SBlobRequest &  blob_request,
                         SBlobId &  blob_id);
     void x_SendUnknownServerSatelliteError(size_t  item_id,
@@ -230,24 +226,33 @@ private:
     void x_SendBioseqInfo(const string &  protobuf_bioseq_info,
                           SBioseqInfo &  bioseq_info,
                           EOutputFormat  output_format);
-    void x_SendCSIAsBioseqInfo(string &  si2csi_cache_data,
-                               SBioseqInfo &  bioseq_info,
-                               EOutputFormat  output_format,
-                               bool  use_psg_protocol);
-
     void x_Peek(HST::CHttpReply<CPendingOperation>& resp, bool  need_wait,
                 unique_ptr<SBlobFetchDetails> &  fetch_details);
 
-    CRequestStatus::ECode x_CSICacheOrDB(const CTempString &  sec_seq_id,
-                                         int  sec_seq_id_type,
-                                         bool  sec_seq_id_type_provided,
-                                         string &  csi_cache_data,
-                                         SBioseqInfo &  bioseq_info);
+    bool x_UsePsgProtocol(void) const;
 
+private:
+    SBioseqKey x_ResolveInputSeqId(string &  err_msg);
+    void x_ResolveInputSeqId(const CSeq_id &  parsed_seq_id,
+                             const CTextseq_id *  text_seq_id,
+                             SBioseqKey &  bioseq_key);
+    SBioseqKey x_ResolveInputSeqIdPath1(const CSeq_id &  parsed_seq_id,
+                                        const CTextseq_id *  text_seq_id);
+    SBioseqKey x_ResolveInputSeqIdPath2(const CSeq_id &  parsed_seq_id,
+                                        const CTextseq_id *  text_seq_id);
+    SBioseqKey x_ResolveInputSeqIdAsIs(void);
+    int x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id);
+    bool x_LookupCachedBioseqInfo(const string &  accession,
+                                  int &  version,
+                                  int  seq_id_type,
+                                  string &  bioseq_info_cache_data);
+    bool x_LookupCachedCsi(const string &  seq_id,
+                           int &  seq_id_type,
+                           bool  seq_id_type_provided,
+                           string &  csi_cache_data);
     bool x_LookupBlobPropCache(int  sat, int  sat_key,
                                int64_t &  last_modified,
                                CBlobRecord &  blob_record);
-    bool x_UsePsgProtocol(void) const;
 
 private:
     HST::CHttpReply<CPendingOperation> *    m_Reply;

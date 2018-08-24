@@ -70,7 +70,11 @@ public:
         eIterAlreadyReachedEnd,
         eIterNoPostIncrement,
         eCannotUpdateDb,
-        eInvalidRequest
+        eInvalidRequest,
+
+        eAccessionMismatch,
+        eVersionMismatch,
+        eSeqIdMismatch
     };
 
     virtual const char *  GetErrCodeString(void) const;
