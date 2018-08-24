@@ -75,7 +75,7 @@ private:
 
 struct SPSG_BlobReader : IReader
 {
-    SPSG_BlobReader(SPSG_Reply::SItem::TTS* blob);
+    SPSG_BlobReader(SPSG_Reply::SItem::TTS* src);
 
     ERW_Result Read(void* buf, size_t count, size_t* bytes_read = 0);
     ERW_Result PendingCount(size_t* count);
@@ -84,7 +84,7 @@ private:
     void CheckForNewChunks();
     ERW_Result x_Read(void* buf, size_t count, size_t* bytes_read);
 
-    SPSG_Reply::SItem::TTS* m_Blob;
+    SPSG_Reply::SItem::TTS* m_Src;
     deque<SPSG_Reply::SChunk> m_Data;
     size_t m_Chunk = 0;
     size_t m_Part = 0;
@@ -93,8 +93,8 @@ private:
 
 struct SPSG_RStream : private SPSG_BlobReader, private array<char, 64 * 1024>, public CRStream
 {
-    SPSG_RStream(SPSG_Reply::SItem::TTS* blob) :
-        SPSG_BlobReader(blob),
+    SPSG_RStream(SPSG_Reply::SItem::TTS* src) :
+        SPSG_BlobReader(src),
         CRStream(this, size(), data())
     {}
 };

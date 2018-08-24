@@ -64,10 +64,10 @@ long RemainingTimeMs(const CDeadline& deadline)
 }
 
 
-SPSG_BlobReader::SPSG_BlobReader(SPSG_Reply::SItem::TTS* blob)
-    : m_Blob(blob)
+SPSG_BlobReader::SPSG_BlobReader(SPSG_Reply::SItem::TTS* src)
+    : m_Src(src)
 {
-    assert(blob);
+    assert(src);
 }
 
 ERW_Result SPSG_BlobReader::x_Read(void* buf, size_t count, size_t* bytes_read)
@@ -103,8 +103,8 @@ ERW_Result SPSG_BlobReader::x_Read(void* buf, size_t count, size_t* bytes_read)
         m_Part = 0;
     }
 
-    auto blob_locked = m_Blob->GetLock();
-    return blob_locked->expected.Cmp<equal_to>(blob_locked->received) ? eRW_Eof : eRW_Success;
+    auto src_locked = m_Src->GetLock();
+    return src_locked->expected.Cmp<equal_to>(src_locked->received) ? eRW_Eof : eRW_Success;
 }
 
 const auto kDefaultReadTimeout = CTimeout(12, 0); // TODO: Make configurable
@@ -123,7 +123,7 @@ ERW_Result SPSG_BlobReader::Read(void* buf, size_t count, size_t* bytes_read)
         }
 
         auto wait_ms = chrono::milliseconds(RemainingTimeMs(deadline));
-        m_Blob->WaitFor(wait_ms);
+        m_Src->WaitFor(wait_ms);
     }
 
     throw runtime_error("TIMEOUT"); // TODO: CPSG_Exception
@@ -161,9 +161,9 @@ ERW_Result SPSG_BlobReader::PendingCount(size_t* count)
 
 void SPSG_BlobReader::CheckForNewChunks()
 {
-    auto blob_locked = m_Blob->GetLock();
-    auto& blob = *blob_locked;
-    auto& chunks = blob.chunks;
+    auto src_locked = m_Src->GetLock();
+    auto& src = *src_locked;
+    auto& chunks = src.chunks;
 
     auto it = chunks.begin();
 
@@ -249,9 +249,9 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
     if (item_type == "blob") {
         auto blob_id = args.GetValue("blob_id");
 
-        unique_ptr<CPSG_Blob> blob(new CPSG_Blob(blob_id));
-        blob->m_Stream.reset(new SPSG_RStream(item_ts));
-        rv.reset(blob.release());
+        unique_ptr<CPSG_BlobData> blob_data(new CPSG_BlobData(blob_id));
+        blob_data->m_Stream.reset(new SPSG_RStream(item_ts));
+        rv.reset(blob_data.release());
 
     } else if (item_type == "bioseq_info") {
         ostringstream os;
@@ -509,8 +509,8 @@ CPSG_ReplyItem::CPSG_ReplyItem(EType type) :
 }
 
 
-CPSG_Blob::CPSG_Blob(CPSG_BlobId id) :
-    CPSG_ReplyItem(eBlob),
+CPSG_BlobData::CPSG_BlobData(CPSG_BlobId id) :
+    CPSG_ReplyItem(eBlobData),
     m_Id(move(id))
 {
 }

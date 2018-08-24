@@ -261,7 +261,7 @@ class CPSG_ReplyItem
 {
 public:
     enum EType {
-        eBlob,
+        eBlobData,
         eBlobInfo,
         eBioseqInfo,
         eEndOfReply,    ///< No more items expected in the (overall!) reply
@@ -306,7 +306,7 @@ private:
 
 /// Data blob.
 
-class CPSG_Blob : public CPSG_ReplyItem
+class CPSG_BlobData : public CPSG_ReplyItem
 {
 public:
     /// Get blob ID
@@ -317,7 +317,7 @@ public:
     istream& GetStream() const { return *m_Stream; }
 
 private:
-    CPSG_Blob(CPSG_BlobId id);
+    CPSG_BlobData(CPSG_BlobId id);
 
     CPSG_BlobId         m_Id;
     unique_ptr<istream> m_Stream;

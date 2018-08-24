@@ -84,7 +84,7 @@ private:
 
     void ProcessReply(shared_ptr<CPSG_Reply> reply);
     void PrintErrors(EPSG_Status status, const CPSG_ReplyItem* item);
-    void PrintBlob(const CPSG_Blob*);
+    void PrintBlobData(const CPSG_BlobData*);
     void PrintBlobInfo(const CPSG_BlobInfo*);
     void PrintBioseqInfo(const CPSG_BioseqInfo*);
 
@@ -202,8 +202,8 @@ void CAccVerCacheApp::ProcessReply(shared_ptr<CPSG_Reply> reply)
             }
             return;
 
-        case CPSG_ReplyItem::eBlob:
-            PrintBlob(reply_item->CastTo<CPSG_Blob>());
+        case CPSG_ReplyItem::eBlobData:
+            PrintBlobData(reply_item->CastTo<CPSG_BlobData>());
             break;
 
         case CPSG_ReplyItem::eBlobInfo:
@@ -296,24 +296,24 @@ void CAccVerCacheApp::PrintErrors(EPSG_Status status, const CPSG_ReplyItem* item
     }
 }
 
-void CAccVerCacheApp::PrintBlob(const CPSG_Blob* blob)
+void CAccVerCacheApp::PrintBlobData(const CPSG_BlobData* blob_data)
 {
-    assert(blob);
+    assert(blob_data);
     lock_guard<mutex> lock(m_CoutMutex);
 
-    auto status = blob->GetStatus(CDeadline::eInfinite);
+    auto status = blob_data->GetStatus(CDeadline::eInfinite);
 
     if (status != EPSG_Status::eSuccess) {
-        cout << "ERROR: Failed to retrieve blob '" << blob->GetId().Get() << "': ";
-        PrintErrors(status, blob);
+        cout << "ERROR: Failed to retrieve blob data'" << blob_data->GetId().Get() << "': ";
+        PrintErrors(status, blob_data);
         return;
     }
 
     ostringstream os;
-    os << blob->GetStream().rdbuf();
+    os << blob_data->GetStream().rdbuf();
     hash<string> blob_hash;
-    cout << "Blob. ";
-    cout << "Id: " << blob->GetId().Get() << ";";
+    cout << "BlobData. ";
+    cout << "Id: " << blob_data->GetId().Get() << ";";
     cout << "Size: " << os.str().size() << ";";
     cout << "Hash: " <<blob_hash(os.str());
 }
