@@ -116,9 +116,9 @@ static void TEST__client_1(SOCK sock)
     {{
         size_t i;
         unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
-        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char)(i++))
+        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char) i++)
             continue;
-        for (i = 0;  i < 10;  i++) {
+        for (i = 0;  i < N_SUB_BLOB;  ++i) {
             status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
                                 &n_io_done, eIO_WritePersist);
             assert(status == eIO_Success  &&  n_io_done==SUB_BLOB_SIZE);
@@ -134,16 +134,16 @@ static void TEST__client_1(SOCK sock)
 
         SOCK_SetReadOnWrite(sock, eOn);
 
-        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char)(i++))
+        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char) i++)
             continue;
-        for (i = 0;  i < 10;  ++i) {
+        for (i = 0;  i < N_SUB_BLOB;  ++i) {
             status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
                                 &n_io_done, eIO_WritePersist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
         }
         /* Receive back a very big binary blob, and check its content */
         memset(blob,0,BIG_BLOB_SIZE);
-        for (i = 0;  i < 10;  ++i) {
+        for (i = 0;  i < N_SUB_BLOB;  ++i) {
             status = SOCK_Read(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
                                &n_io_done, eIO_ReadPersist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
@@ -231,7 +231,7 @@ static void TEST__server_1(SOCK sock)
         assert(status == eIO_Success  &&  n_io_done == DO_LOG_SIZE);
         SOCK_SetDataLogging(sock, eDefault);
 
-        for (n_io = 0;  n_io < BIG_BLOB_SIZE;  n_io++)
+        for (n_io = 0;  n_io < BIG_BLOB_SIZE;  ++n_io)
             assert(blob[n_io] == (unsigned char) n_io);
         free(blob);
     }}
@@ -240,7 +240,7 @@ static void TEST__server_1(SOCK sock)
     {{
         unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
         int i;
-        for (i = 0;  i < 10;  ++i) {
+        for (i = 0;  i < N_SUB_BLOB;  ++i) {
             /*            X_SLEEP(1);*/
             status = SOCK_Read(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
                                &n_io_done, eIO_ReadPersist);
