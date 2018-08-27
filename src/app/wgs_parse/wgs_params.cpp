@@ -1022,22 +1022,66 @@ bool SetParams(const CArgs& args)
 
     if (!tsa_biomol.empty()) {
 
-        if (!params->IsTsa()) {
-            ERR_POST_EX(0, 0, "Supplying a Biomol value (mRNA, ncRNA, etc) via the \"-T\" command line switch is not supported for WGS projects.");
+        if (!params->IsTsa() && !params->IsWgs()) {
+            ERR_POST_EX(0, 0, "Supplying a Biomol value (mRNA, ncRNA, etc) via the \"-T\" command line switch is supported for TSA and WGS projects only.");
             return false;
         }
 
-        if (NStr::EqualNocase(tsa_biomol, "mRNA")) {
-            params_imp.m_fix_tech |= eFixBiomol_mRNA;
+        if(params->IsTsa())
+        {
+            if(NStr::EqualNocase(tsa_biomol, "mRNA"))
+            {
+                params_imp.m_fix_tech |= eFixBiomol_mRNA;
+            }
+            else if(NStr::EqualNocase(tsa_biomol, "rRNA"))
+            {
+                params_imp.m_fix_tech |= eFixBiomol_rRNA;
+            }
+            else if(NStr::EqualNocase(tsa_biomol, "ncRNA"))
+            {
+                params_imp.m_fix_tech |= eFixBiomol_ncRNA;
+            }
+            else
+            {
+                ERR_POST_EX(0, 0, "Incorrect biomol type for TSA project provided via \"-T\" command line switch. Valid ones are (case insensitive): \"mRNA\", \"rRNA\" and \"ncRNA\".");
+                return false;
+            }
         }
-        else if (NStr::EqualNocase(tsa_biomol, "rRNA")) {
-            params_imp.m_fix_tech |= eFixBiomol_rRNA;
+        else
+        {
+            if(NStr::EqualNocase(tsa_biomol, "cRNA"))
+            {
+                params_imp.m_fix_tech |= eFixBiomol_cRNA;
+            }
+            else
+            {
+                ERR_POST_EX(0, 0, "Incorrect biomol type for WGS project provided via \"-T\" command line switch. Valid one is (case insensitive): \"cRNA\".");
+                return false;
+            }
         }
-        else if (NStr::EqualNocase(tsa_biomol, "ncRNA")) {
-            params_imp.m_fix_tech |= eFixBiomol_ncRNA;
+    }
+
+    string moltype;
+    
+    if(args["E"].HasValue())
+    {
+        moltype = args["E"].AsString();
+    }
+
+    if(!moltype.empty())
+    {
+        if(!params->IsWgs())
+        {
+            ERR_POST_EX(0, 0, "Supplying a Biomol value (cRNA) via the \"-E\" command line switch is supported for WGS projects only.");
+            return false;
         }
-        else {
-            ERR_POST_EX(0, 0, "Incorrect biomol type for TSA project provided via \"-T\" command line switch. Valid ones are (case insensitive): \"mRNA\", \"rRNA\" and \"ncRNA\".");
+        if(NStr::EqualNocase(moltype, "rna"))
+        {
+            params_imp.m_fix_tech |= eFixInstMolRNA;
+        }
+        else
+        {
+            ERR_POST_EX(0, 0, "Incorrect Seq-inst.mol type for WGS project provided via \"-E\" command line switch. Valid one is (case sensitive): \"rna\".");
             return false;
         }
     }
