@@ -7,6 +7,7 @@ NCBI_begin_app(cgitest)
   NCBI_sources(cgitest)
   NCBI_uses_toolkit_libraries(xcgi)
   NCBI_project_watchers(grichenk)
+  NCBI_add_test(cgitest.sh)
 NCBI_end_app()
 
 if(OFF)

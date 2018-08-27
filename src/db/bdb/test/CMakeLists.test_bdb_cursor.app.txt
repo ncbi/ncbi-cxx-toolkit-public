@@ -6,8 +6,9 @@
 NCBI_begin_app(test_bdb_cursor)
   NCBI_sources(test_bdb_cursor)
   NCBI_requires(Boost.Test.Included)
-  NCBI_uses_toolkit_libraries(bdb test_boost)
+  NCBI_uses_toolkit_libraries(bdb)
   NCBI_project_watchers(satskyse)
+  NCBI_add_test()
 NCBI_end_app()
 
 if(OFF)
