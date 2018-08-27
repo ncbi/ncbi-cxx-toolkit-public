@@ -116,7 +116,7 @@ static void TEST__client_1(SOCK sock)
     {{
         size_t i;
         unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
-        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char) i++)
+        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char) i, ++i)
             continue;
         for (i = 0;  i < N_SUB_BLOB;  ++i) {
             status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
@@ -134,7 +134,7 @@ static void TEST__client_1(SOCK sock)
 
         SOCK_SetReadOnWrite(sock, eOn);
 
-        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char) i++)
+        for (i = 0;  i < BIG_BLOB_SIZE;  blob[i] = (unsigned char) i, ++i)
             continue;
         for (i = 0;  i < N_SUB_BLOB;  ++i) {
             status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
