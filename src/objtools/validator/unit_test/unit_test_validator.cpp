@@ -113,6 +113,7 @@
 #include <objtools/validator/utilities.hpp>
 #include <objtools/validator/validerror_format.hpp>
 #include <objtools/validator/translation_problems.hpp>
+#include <objtools/validator/go_term_validation_and_cleanup.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <common/ncbi_export.h>
 #include <objtools/unit_test_util/unit_test_util.hpp>
@@ -15972,40 +15973,22 @@ static CRef<CUser_field> MakeGoTerm (string text = "something", string evidence 
     CRef<CUser_field> go_term (new CUser_field());
     go_term->SetLabel().SetStr("a go term");
 
-    CRef<CUser_field> go_id(new CUser_field());
-    go_id->SetLabel().SetStr("go id");
-    go_id->SetData().SetStr("123");
-    go_term->SetData().SetFields().push_back (go_id);
+    SetGoTermId(*go_term, "123");
 
-    CRef<CUser_field> pmid(new CUser_field());
-    pmid->SetLabel().SetStr("pubmed id");
-    pmid->SetData().SetInt(4);
-    go_term->SetData().SetFields().push_back (pmid);
+    SetGoTermPMID(*go_term, 4);
 
-    CRef<CUser_field> term(new CUser_field());
-    term->SetLabel().SetStr("text string");
-    term->SetData().SetStr(text);
-    go_term->SetData().SetFields().push_back (term);
+    SetGoTermText(*go_term, text);
 
-    CRef<CUser_field> ev(new CUser_field());
-    ev->SetLabel().SetStr("evidence");
-    ev->SetData().SetStr(evidence);
-    go_term->SetData().SetFields().push_back (ev);
+    AddGoTermEvidence(*go_term, evidence);
 
     return go_term;
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateGeneOntologyTerm)
+void CheckGeneOntologyTermDuplicate(CRef<CSeq_feat> feat)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    CRef<CSeq_feat> feat = unit_test_util::AddMiscFeature(entry);
-    feat->SetExt().SetType().SetStr("GeneOntology");
-    CRef<CUser_field> go_list(new CUser_field());
-    go_list->SetLabel().SetStr("Process");
-    go_list->SetData().SetFields().push_back(MakeGoTerm());
-    go_list->SetData().SetFields().push_back(MakeGoTerm());
-    feat->SetExt().SetData().push_back(go_list);
+    AddFeat(feat, entry);
 
     STANDARD_SETUP
 
@@ -16014,7 +15997,91 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateGeneOntologyTerm)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    CLEAR_ERRORS    
+    CLEAR_ERRORS
+
+    BOOST_CHECK_EQUAL(CountProcessGoTerms(*feat), 2);
+    RemoveDuplicateGoTerms(*feat);
+    BOOST_CHECK_EQUAL(CountProcessGoTerms(*feat), 1);
+    RemoveDuplicateGoTerms(*feat);
+    BOOST_CHECK_EQUAL(CountProcessGoTerms(*feat), 1);
+
+}
+
+
+void CheckGeneOntologyTermNotDuplicate(CRef<CSeq_feat> feat)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    AddFeat(feat, entry);
+
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    BOOST_CHECK_EQUAL(CountProcessGoTerms(*feat), 2);
+    RemoveDuplicateGoTerms(*feat);
+    BOOST_CHECK_EQUAL(CountProcessGoTerms(*feat), 2);
+}
+
+
+CRef<CSeq_feat> MakeGeneOntologyFeat(CRef<CUser_field> term1, CRef<CUser_field> term2)
+{
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetLocation().SetInt().SetFrom(0);
+    feat->SetLocation().SetInt().SetTo(10);
+    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
+    feat->SetData().SetImp().SetKey("misc_feature");
+    feat->SetComment("comment is required");
+
+    AddProcessGoTerm(*feat, term1);
+    AddProcessGoTerm(*feat, term2);
+
+    return feat;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_DuplicateGeneOntologyTerm)
+{
+
+    CRef<CUser_field> term1 = MakeGoTerm();
+    CRef<CUser_field> term2 = MakeGoTerm();
+    CRef<CSeq_feat> feat = MakeGeneOntologyFeat(term1, term2);
+
+    CheckGeneOntologyTermDuplicate(feat);
+    
+    SetGoTermId(*term2, "234");
+    feat = MakeGeneOntologyFeat(term1, term2);
+    CheckGeneOntologyTermNotDuplicate(feat);
+
+    term2 = MakeGoTerm();
+    ClearGoTermEvidence(*term1);
+    feat = MakeGeneOntologyFeat(term1, term2);
+    CheckGeneOntologyTermNotDuplicate(feat);
+
+    ClearGoTermEvidence(*term2);
+    feat = MakeGeneOntologyFeat(term1, term2);
+    CheckGeneOntologyTermDuplicate(feat);
+
+    AddGoTermEvidence(*term1, "A");
+    AddGoTermEvidence(*term1, "B");
+
+    AddGoTermEvidence(*term2, "C");
+    AddGoTermEvidence(*term2, "B");
+    feat = MakeGeneOntologyFeat(term1, term2);
+    CheckGeneOntologyTermNotDuplicate(feat);
+
+    ClearGoTermEvidence(*term1);
+    ClearGoTermEvidence(*term2);
+    ClearGoTermPMID(*term2);
+    feat = MakeGeneOntologyFeat(term1, term2);
+    CheckGeneOntologyTermNotDuplicate(feat);
+
+    ClearGoTermPMID(*term1);
+    feat = MakeGeneOntologyFeat(term1, term2);
+    CheckGeneOntologyTermDuplicate(feat);
+
 }
 
 
@@ -17941,12 +18008,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InconsistentGeneOntologyTermAndId)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_feat> feat = unit_test_util::AddMiscFeature(entry);
-    feat->SetExt().SetType().SetStr("GeneOntology");
-    CRef<CUser_field> go_list(new CUser_field());
-    go_list->SetLabel().SetStr("Process");
-    go_list->SetData().SetFields().push_back(MakeGoTerm("a1", "evidence 1"));
-    go_list->SetData().SetFields().push_back(MakeGoTerm("a2", "evidence 2"));
-    feat->SetExt().SetData().push_back(go_list);
+    CRef<CUser_field> term1 = MakeGoTerm("a1", "evidence 1");
+    AddProcessGoTerm(*feat, term1);
+    CRef<CUser_field> term2 = MakeGoTerm("a2", "evidence 2");
+    AddProcessGoTerm(*feat, term2);
 
     STANDARD_SETUP
     expected_errors.push_back (new CExpectedError("lcl|good", eDiag_Warning, "InconsistentGeneOntologyTermAndId", 

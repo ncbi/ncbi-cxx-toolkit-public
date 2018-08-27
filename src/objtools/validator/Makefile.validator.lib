@@ -9,7 +9,7 @@ SRC = validator validatorp valid_biosource valid_pub \
       validerror_feat validerror_graph utilities valid_cmdargs validerror_format \
       validator_barcode feature_match tax_validation_and_cleanup gene_cache \
       translation_problems splice_problems single_feat_validator cdregion_validator \
-      gene_validator
+      gene_validator go_term_validation_and_cleanup
 
 LIB = xvalidate
 

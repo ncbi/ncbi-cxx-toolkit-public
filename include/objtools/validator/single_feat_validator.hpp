@@ -88,15 +88,10 @@ class CSeq_feat_Handle;
 class CCountries;
 class CInferencePrefixList;
 class CComment_set;
-//class CTaxon3_reply;
-//class ITaxon3;
-//class CT3Error;
 
 BEGIN_SCOPE(validator)
 
 class CValidError_imp;
-//class CTaxValidationAndCleanup;
-//class CGeneCache;
 class CValidError_base;
 
 // =============================  Validate SeqFeat  ============================
@@ -115,7 +110,8 @@ public:
     static bool s_IsPseudo(const CGene_ref& ref);
     static bool s_BioseqHasRefSeqThatStartsWithPrefix(CBioseq_Handle bsh, string prefix);
     static bool s_GeneRefsAreEquivalent(const CGene_ref& g1, const CGene_ref& g2, string& label);
-
+    static void s_RemoveDuplicateGoTerms(CUser_object::TData& field_list);
+    static void s_RemoveDuplicateGoTerms(CSeq_feat& feat);
 protected:
     const CSeq_feat& m_Feat;
     CScope& m_Scope;
@@ -137,7 +133,6 @@ protected:
     void x_ReportECNumFileStatus();
 
     void x_ValidateExtUserObject();
-    void x_ValidateGoTerms(CUser_object::TData field_list, vector<pair<string, string> >& id_terms);
 
     bool x_HasNamedQual(const string& qual_name);
 
