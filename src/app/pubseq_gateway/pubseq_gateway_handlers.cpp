@@ -51,6 +51,8 @@ static string  kSeqIdParam = "seq_id";
 static string  kSeqIdTypeParam = "seq_id_type";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
+    make_pair("all_info", fServBioseqFields),   // must be first
+
     make_pair("canon_id", fServCanonicalId),
     make_pair("seq_ids", fServSeqIds),
     make_pair("mol_type", fServMoleculeType),
@@ -304,6 +306,8 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
             }
             if (request_param.m_Value == "yes") {
                 include_data_flags |= flag_param.second;
+            } else {
+                include_data_flags &= ~flag_param.second;
             }
         }
     }
