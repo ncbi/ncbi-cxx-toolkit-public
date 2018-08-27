@@ -117,12 +117,12 @@ public:
         ///   info will be retrieved;
         /// - if the blob is not split, then the whole original TSE will be
         ///   retrieved.
-        fWholeTSE  = (1 << 2),
+        fWholeTSE  = (1 << 1),
 
         /// Retrieve the whole original(!) TSE blob
-        fOrigTSE   = (1 << 3),
+        fOrigTSE   = (1 << 2),
     };
-    typedef int TIncludeData;   // Bit-set of EIncludeData flags
+    DECLARE_SAFE_FLAGS_TYPE(EIncludeData, TIncludeData);
     void IncludeData(TIncludeData include) { m_IncludeData = include; }
 
     TIncludeData      GetIncludeData() const { return m_IncludeData; }
@@ -150,30 +150,27 @@ public:
     const CPSG_BioId& GetBioId() const { return m_BioId; }
 
     /// Specify which info and data is needed
-    enum EIncludeData {
+    enum EIncludeInfo : unsigned {
         // These flags correspond exactly to the CPSG_BioseqInfo's getters
-        fCanonicalId      = (1 <<  4),
-        fOtherIds         = (1 <<  5),
-        fMoleculeType     = (1 <<  6),
-        fLength           = (1 <<  7),
-        fState            = (1 <<  8),
-        fBlobId           = (1 <<  9),
-        fTaxId            = (1 << 10),
-        fHash             = (1 << 11),
-        fDateChanged      = (1 << 12),
-
-        // These should be the last ones
-        fDoNotUseThisOne,
-        fAllData          = ((fDoNotUseThisOne - 1) << 1) - 1
+        fCanonicalId      = (1 << 1),
+        fOtherIds         = (1 << 2),
+        fMoleculeType     = (1 << 3),
+        fLength           = (1 << 4),
+        fState            = (1 << 5),
+        fBlobId           = (1 << 6),
+        fTaxId            = (1 << 7),
+        fHash             = (1 << 8),
+        fDateChanged      = (1 << 9),
+        fAllInfo          = numeric_limits<unsigned>::max()
     };
-    typedef int TIncludeData;   // Bit-set of EIncludeData flags
-    void IncludeData(TIncludeData include) { m_IncludeData = include; }
+    DECLARE_SAFE_FLAGS_TYPE(EIncludeInfo, TIncludeInfo);
+    void IncludeInfo(TIncludeInfo include) { m_IncludeInfo = include; }
 
-    TIncludeData      GetIncludeData() const { return m_IncludeData; }
+    TIncludeInfo      GetIncludeInfo() const { return m_IncludeInfo; }
 
 private:
     CPSG_BioId    m_BioId;
-    TIncludeData  m_IncludeData = 0;
+    TIncludeInfo  m_IncludeInfo = 0;
 };
 
 
@@ -451,8 +448,8 @@ public:
 
     /// What data is immediately available now. Other data will require
     /// a separate hit to the server.
-    /// @sa CPSG_Request_Resolve::IncludeData()
-    CPSG_Request_Resolve::TIncludeData IncludedData() const;
+    /// @sa CPSG_Request_Resolve::IncludeInfo()
+    CPSG_Request_Resolve::TIncludeInfo IncludedInfo() const;
 
 private:
     CPSG_BioseqInfo();
@@ -593,6 +590,9 @@ private:
     unique_ptr<SImpl> m_Impl;
 };
 
+
+DECLARE_SAFE_FLAGS(CPSG_Request_Biodata::EIncludeData);
+DECLARE_SAFE_FLAGS(CPSG_Request_Resolve::EIncludeInfo);
 
 END_NCBI_SCOPE
 

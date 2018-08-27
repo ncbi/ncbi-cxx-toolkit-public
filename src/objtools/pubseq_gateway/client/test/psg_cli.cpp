@@ -181,7 +181,7 @@ public:
             else if (!m_ResolveId.empty()) {
                 auto id = CPSG_BioId(m_ResolveId, CSeq_id_Base::e_Gi);
                 auto request = make_shared<CPSG_Request_Resolve>(move(id));
-                request->IncludeData(CPSG_Request_Resolve::fAllData);
+                request->IncludeInfo(CPSG_Request_Resolve::fAllInfo);
                 ProcessId<CPSG_Request_Resolve>(request);
             }
             else if (!m_BlobId.empty()) {
@@ -414,7 +414,7 @@ void CPsgCliApp::PrintBioseqInfo(const CPSG_BioseqInfo* bioseq_info)
     cout << "TaxId: " << bioseq_info->GetTaxId() << ";";
     cout << "Hash: " << bioseq_info->GetHash() << ";";
     cout << "GetDateChanged: " << bioseq_info->GetDateChanged() << ";";
-    cout << "IncludedData: " << bioseq_info->IncludedData() << endl;
+    cout << "IncludedData: " << bioseq_info->IncludedInfo() << endl;
 };
 
 /////////////////////////////////////////////////////////////////////////////

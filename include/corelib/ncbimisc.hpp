@@ -1145,7 +1145,7 @@ private:
 ///       DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
 ///   };
 /// and then outside the class, or at the same level if it's not a class definition:
-///   DECLARE_SAFE_FLAGS(EMyFlags::EFlags);
+///   DECLARE_SAFE_FLAGS(CMyClass::EFlags);
 /// The first macro DECLARE_SAFE_FLAGS_TYPE() declares a typedef for safe-flags.
 /// The second macro DECLARE_SAFE_FLAGS() marks the enum as a safe-flags enum, so that
 /// bit-wise operations on its values will preserve the safe-flags type.
