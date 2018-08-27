@@ -219,14 +219,14 @@ void CDataMemberContainerType::PrintJSONSchema(CNcbiOstream& out, int indent, li
     if (!contents_only) {
         PrintASNNewLine(out, --indent) << "}";
         if (!req.empty()) {
-            cout << ',';
+            out << ',';
             PrintASNNewLine(out, indent) << "\"required\": [";
-            transform(req.begin(), req.end(), Dt_ostream_iterator<string>(cout, ", "),
+            transform(req.begin(), req.end(), Dt_ostream_iterator<string>(out, ", "),
                 [](const string& e) {
                     return string("\"").append(e).append("\"");
                 });
             req.clear();
-            cout << "]";
+            out << "]";
         }
         out << ",";
         PrintASNNewLine(out, indent) << "\"additionalProperties\": false";

@@ -233,7 +233,7 @@ void CDataTypeModule::PrintJSONSchema(CNcbiOstream& out) const
                 first = false;
                 PrintASNNewLine(out, indent++) << "\"definitions\": {";
             } else {
-                cout << ',';
+                out << ',';
             }
             PrintASNNewLine(out, indent++) << "\"" << i->first << "\": {";
             i->second->PrintJSONSchema(out,indent, req);
@@ -248,14 +248,14 @@ void CDataTypeModule::PrintJSONSchema(CNcbiOstream& out) const
         ITERATE ( TDefinitions, i, m_Definitions ) {
             if (i->second->GetGlobalType() == CDataType::eElement) {
                 if (!first) {
-                    cout << ',';
+                    out << ',';
                 }
                 i->second->PrintJSONSchema(out,indent, req);
             }
         }
     } else if (!m_Definitions.empty()) {
 // as an example
-        cout << ',';
+        out << ',';
         PrintASNNewLine(out, indent) << "\"type\": \"object\",";
         PrintASNNewLine(out, indent++) << "\"properties\": {";
         PrintASNNewLine(out, indent++) << "\"" << m_Definitions.front().first << "\": {";

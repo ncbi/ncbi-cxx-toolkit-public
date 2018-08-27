@@ -150,7 +150,7 @@ void CChoiceDataType::PrintJSONSchema(CNcbiOstream& out, int indent, list<string
             first = false;
             PrintASNNewLine(out, indent++) << "\"definitions\": {";
         } else {
-            cout << ',';
+            out << ',';
         }
         PrintASNNewLine(out, indent++) << "\"" << "attributes" << "\": {";
         (*att)->PrintJSONSchema(out,indent);
@@ -223,11 +223,11 @@ I get valid schema, but instance validation fails
                 PrintASNNewLine(out, --indent) << "},";
                 if (!req.empty()) {
                     PrintASNNewLine(out, indent) << "\"required\": [";
-                    transform(req.begin(), req.end(), Dt_ostream_iterator<string>(cout, ", "),
+                    transform(req.begin(), req.end(), Dt_ostream_iterator<string>(out, ", "),
                         [](const string& e) {
                             return string("\"").append(e).append("\"");
                         });
-                    cout << "],";
+                    out << "],";
                 }
                 PrintASNNewLine(out, indent) << "\"additionalProperties\": false";
                 PrintASNNewLine(out, --indent) << "}";
