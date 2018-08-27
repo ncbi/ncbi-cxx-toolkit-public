@@ -142,7 +142,7 @@ void CWGSParseApp::Init(void)
     arg_desc->AddDefaultKey("X", "DBLinkOverride", "Override any/all REJECT-level DBLink and scaffolds far pointer related data problems that are detected. Do not provide this switch unless those problems have been reviewed and deemed ok.", CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("V", "CmdLineVersion", "Trust command line assembly version.", CArgDescriptions::eBoolean, "F");
 
-    arg_desc->AddOptionalKey("T", "BioMolType", "Specific biomol type to be used for a TSA project. Possible values (case insensitive): mRNA, rRNA, ncRNA.", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("T", "BioMolType", "Specific biomol type (case sensitive) to be used for the project. Allowed values for TSA: mRNA, rRNA, ncRNA. Allowed values for WGS: cRNA.", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("C", "BioSampleSRA", "BioSample and/or SRA identifier(s) associated with the WGS/TSA project. Multiple ids must be separated by commas, no blanks allowed.", CArgDescriptions::eString);
 
     arg_desc->AddDefaultKey("Z", "Test", "Test mode: works same way as regular run except no files/directories will be created/modified.", CArgDescriptions::eBoolean, "F");
@@ -150,6 +150,8 @@ void CWGSParseApp::Init(void)
 
     arg_desc->AddDefaultKey("U", "VDB", "VDB mode: no accession assignment, protein counts, descriptors moved to the master.", CArgDescriptions::eBoolean, "F");
     arg_desc->AddOptionalKey("K", "TPA", "TPA keyword for TPA projects only: \"TPA:assembly\" or \"TPA:experimental\". Case sensitive.", CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("E", "MolType", "Specific Seq-inst.mol type (case sensitive) to be used for the project. Allowed values for WGS: rna.", CArgDescriptions::eString);
 
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
 }
