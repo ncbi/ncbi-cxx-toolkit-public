@@ -861,6 +861,18 @@ static void SetMolInfo(CBioseq& bioseq, CMolInfo::TBiomol biomol)
         CMolInfo::ETech tech = GetParams().IsTls() ? CMolInfo::eTech_targeted : CMolInfo::eTech_wgs;
         mol_info.SetTech(tech);
         mol_info.SetBiomol(CMolInfo::eBiomol_genomic);
+
+        if(GetParams().IsWgs())
+        {
+            if(GetParams().GetFixTech() & eFixBiomol_cRNA)
+            {
+                mol_info.SetBiomol(CMolInfo::eBiomol_cRNA);
+            }
+            if(GetParams().GetFixTech() & eFixInstMolRNA)
+            {
+                bioseq.SetInst().SetMol(CSeq_inst::eMol_rna);
+            }
+        }
     }
 
     bioseq.SetDescr().Set().push_back(descr);
