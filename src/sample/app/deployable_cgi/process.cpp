@@ -122,8 +122,6 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     response.SetStatus(200);
     response.WriteHeader();
 
-    ERR_POST("Processing request");
-
     // Try to retrieve the message ('message=...') from the HTTP request.
     // NOTE:  the case sensitivity was turned off in Init().
     bool is_message = false;
@@ -139,7 +137,6 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     // For more info:
     //  http://ncbi.github.io/cxx-toolkit/pages/ch_xmlwrapp
     //  http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/doxyhtml/namespacexml.html
-    ERR_POST("Before page reading");
 
     // Create a HTML page (using template HTML file "deployable_cgi.html")
     auto_ptr<CHTMLPage> page;
@@ -150,7 +147,6 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
         return 2;
     }
 
-    ERR_POST("Before template substitutions");
 #ifdef NEED_SET_DEPLOYMENT_UID
     CHTMLPlainText *depuid_text = new CHTMLPlainText(deployment_uid);
     page->AddTagMap("DEPUID", depuid_text);
@@ -169,7 +165,6 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
         ERR_POST("Failed to populate Sample CGI HTML page: " << e.what());
         return 3;
     }
-    ERR_POST("final html page flushing");
 
     // Compose and flush the resultant HTML page
     try {
