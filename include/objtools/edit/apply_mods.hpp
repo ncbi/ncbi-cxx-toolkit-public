@@ -44,6 +44,7 @@ public:
     CModApply();
     virtual ~CModApply();
 
+    void AddMod(const string& name, const string& value);
     void Apply(CBioseq& bioseq);
 
 protected:
