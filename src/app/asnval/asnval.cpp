@@ -114,7 +114,6 @@ private:
     void Setup(const CArgs& args);
     void x_AliasLogFile();
 
-    auto_ptr<CObjectIStream> OpenFile(const CArgs& args);
     auto_ptr<CObjectIStream> OpenFile(const string& fname);
 
     CConstRef<CValidError> ProcessCatenated(void);
@@ -136,7 +135,6 @@ private:
     void ConstructOutputStreams();
     void DestroyOutputStreams();
 
-    CRef<CSeq_entry> ReadSeqEntry(void);
     CRef<CSeq_feat> ReadSeqFeat(void);
     CRef<CBioSource> ReadBioSource(void);
     CRef<CPubdesc> ReadPubdesc(void);
@@ -471,6 +469,8 @@ void CAsnvalApp::ValidateOneFile(const string& fname)
 }
 
 
+//LCOV_EXCL_START
+//unable to exercise with our test framework
 void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
 {
     const CArgs& args = GetArgs();
@@ -503,6 +503,7 @@ void CAsnvalApp::ValidateOneDirectory(string dir_name, bool recurse)
         }
     }
 }
+//LCOV_EXCL_STOP
 
 
 int CAsnvalApp::Run(void)
@@ -704,14 +705,6 @@ CRef<CValidError> CAsnvalApp::ReportReadFailure(const CException *p_exception)
     return errors;
 }
 
-
-CRef<CSeq_entry> CAsnvalApp::ReadSeqEntry(void)
-{
-    CRef<CSeq_entry> se(new CSeq_entry);
-    m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
-
-    return se;
-}
 
 CConstRef<CValidError> CAsnvalApp::ProcessCatenated(void)
 {
@@ -993,13 +986,6 @@ void CAsnvalApp::Setup(const CArgs& args)
 }
 
 
-auto_ptr<CObjectIStream> CAsnvalApp::OpenFile(const CArgs& args)
-{
-    // file name
-    return OpenFile(args["i"].AsString());
-}
-
-
 auto_ptr<CObjectIStream> OpenUncompressedStream(const string& fname)
 {
     ENcbiOwnership own = fname.empty() ? eNoOwnership :eTakeOwnership;
@@ -1231,12 +1217,3 @@ int main(int argc, const char* argv[])
     return CAsnvalApp().AppMain(argc, argv);
 }
 
-// don't commit this
-void mk(const CSerialObject *obj)
-{
-    if( obj ) {
-        cerr << MSerial_AsnText << *obj << endl;
-    } else {
-        cerr << "(NULL)" << endl;
-    }
-}
