@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author: Dmitri Dmitrienko
+ * Authors: Dmitri Dmitrienko, Rafael Sadyrov
  *
  */
 
@@ -61,7 +61,18 @@ USING_SCOPE(objects);
 
 //////////////////////////////////
 
-class CAccVerCacheApp: public CNcbiApplication
+class CPsgCliException: public EException {
+public:
+    CPsgCliException(const char * const msg, const int code) noexcept : EException(msg, code) {}
+    [[noreturn]] static inline void raise(const char* msg, int code = 0) {
+        throw CPsgCliException{msg, code};
+    }
+    [[noreturn]] static inline void raise(const std::string& msg, int code = 0) {
+        raise(msg.c_str(), code);
+    }
+};
+
+class CPsgCliApp: public CNcbiApplication
 {
 private:
     string m_IniFile;
@@ -91,15 +102,15 @@ private:
     void PrintBioseqInfo(const CPSG_BioseqInfo*);
 
 public:
-    CAccVerCacheApp() :
+    CPsgCliApp() :
         m_NumThreads(1),
         m_Delimiter('|')
     {}
     virtual void Init()
     {
         unique_ptr<CArgDescriptions> argdesc(new CArgDescriptions());
-        argdesc->SetUsageContext(GetArguments().GetProgramBasename(), "AccVerCache -- Application to maintain Accession.Version Cache");
-        argdesc->AddDefaultKey ( "ini", "IniFile",  "File with configuration information",  CArgDescriptions::eString, "AccVerCache.ini");
+        argdesc->SetUsageContext(GetArguments().GetProgramBasename(), "psg_cli -- Application to maintain Accession.Version Cache");
+        argdesc->AddDefaultKey ( "ini", "IniFile",  "File with configuration information",  CArgDescriptions::eString, "psg_cli.ini");
         argdesc->AddOptionalKey( "o",   "log",      "Output log to",                        CArgDescriptions::eString);
         argdesc->AddOptionalKey( "l",   "loglevel", "Output verbosity level from 0 to 5",   CArgDescriptions::eInteger);
         argdesc->AddOptionalKey( "H",   "host",     "Host[:port] for remote lookups",       CArgDescriptions::eString);
@@ -152,7 +163,7 @@ public:
             m_NumThreads = args["t"].AsInteger();
 
         if (m_HostPort.empty())
-            EAccVerException::raise("Host is not specified, use -H command line argument");
+            CPsgCliException::raise("Host is not specified, use -H command line argument");
     }
 
     virtual int Run(void)
@@ -203,7 +214,7 @@ public:
     }
 };
 
-void CAccVerCacheApp::ProcessReply(shared_ptr<CPSG_Reply> reply)
+void CPsgCliApp::ProcessReply(shared_ptr<CPSG_Reply> reply)
 {
     assert(reply);
 
@@ -234,7 +245,7 @@ void CAccVerCacheApp::ProcessReply(shared_ptr<CPSG_Reply> reply)
 }
 
 template <class TRequest>
-void CAccVerCacheApp::ProcessId(shared_ptr<TRequest> request)
+void CPsgCliApp::ProcessId(shared_ptr<TRequest> request)
 {
     assert(m_Queue);
 
@@ -243,7 +254,7 @@ void CAccVerCacheApp::ProcessId(shared_ptr<TRequest> request)
 }
 
 template <class TRequest>
-void CAccVerCacheApp::ProcessFile(const string& filename)
+void CPsgCliApp::ProcessFile(const string& filename)
 {
     assert(m_Queue);
 
@@ -251,10 +262,10 @@ void CAccVerCacheApp::ProcessFile(const string& filename)
     vector<string> ids;
 
     if (m_NumThreads == 0 || m_NumThreads > 1000)
-        EAccVerException::raise("Invalid number of threads");
+        CPsgCliException::raise("Invalid number of threads");
 
     if (!infile) {
-        EAccVerException::raise("Error on reading bio IDs");
+        CPsgCliException::raise("Error on reading bio IDs");
     }
 
     while (!infile.eof()) {
@@ -301,7 +312,7 @@ void CAccVerCacheApp::ProcessFile(const string& filename)
     }
 }
 
-void CAccVerCacheApp::PrintErrors(EPSG_Status status, const CPSG_ReplyItem* item)
+void CPsgCliApp::PrintErrors(EPSG_Status status, const CPSG_ReplyItem* item)
 {
     cout << static_cast<int>(status) << "\n";
 
@@ -312,7 +323,7 @@ void CAccVerCacheApp::PrintErrors(EPSG_Status status, const CPSG_ReplyItem* item
     }
 }
 
-void CAccVerCacheApp::PrintBlobData(const CPSG_BlobData* blob_data)
+void CPsgCliApp::PrintBlobData(const CPSG_BlobData* blob_data)
 {
     assert(blob_data);
     lock_guard<mutex> lock(m_CoutMutex);
@@ -334,7 +345,7 @@ void CAccVerCacheApp::PrintBlobData(const CPSG_BlobData* blob_data)
     cout << "Hash: " <<blob_hash(os.str());
 }
 
-void CAccVerCacheApp::PrintBlobInfo(const CPSG_BlobInfo* blob_info)
+void CPsgCliApp::PrintBlobInfo(const CPSG_BlobInfo* blob_info)
 {
     assert(blob_info);
     lock_guard<mutex> lock(m_CoutMutex);
@@ -375,7 +386,7 @@ void CAccVerCacheApp::PrintBlobInfo(const CPSG_BlobInfo* blob_info)
     cout << endl;
 }
 
-void CAccVerCacheApp::PrintBioseqInfo(const CPSG_BioseqInfo* bioseq_info)
+void CPsgCliApp::PrintBioseqInfo(const CPSG_BioseqInfo* bioseq_info)
 {
     assert(bioseq_info);
     lock_guard<mutex> lock(m_CoutMutex);
@@ -415,5 +426,5 @@ int main(int argc, const char* argv[])
 
     IdLogUtil::CAppLog::SetLogLevelFile(0);
     IdLogUtil::CAppLog::SetLogLevel(0);
-    return CAccVerCacheApp().AppMain(argc, argv);
+    return CPsgCliApp().AppMain(argc, argv);
 }

@@ -56,17 +56,6 @@ public:
     }
 };
 
-class EAccVerException: public EException {
-public:
-    EAccVerException(const char * const msg, const int code) noexcept : EException(msg, code) {}
-    [[noreturn]] static inline void raise(const char* msg, int code = 0) {
-        throw EAccVerException{msg, code};
-    }
-    [[noreturn]] static inline void raise(const std::string& msg, int code = 0) {
-        raise(msg.c_str(), code);
-    }
-};
-
 class EUvException: public EException {
 public:
     EUvException(const char * const msg, const int code) noexcept : EException(msg, code) {}
