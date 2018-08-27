@@ -454,7 +454,7 @@ CConstRef<CSeq_entry_Info> CBioseq_set_Info::GetFirstEntry(void) const
 }
 
 
-void CBioseq_set_Info::x_SetChunkBioseqs(const list< CRef<CBioseq> >& bioseqs, int chunk_id)
+void CBioseq_set_Info::x_SetChunkBioseqs2(const list< CRef<CBioseq> >& bioseqs, TChunkSeqSetsKey chunk_id)
 {
     CBioseq_set::TSeq_set& obj_seq_set = m_Object->SetSeq_set();
     CBioseq_set::TSeq_set::iterator insert_iter = obj_seq_set.end();
@@ -488,6 +488,41 @@ void CBioseq_set_Info::x_SetChunkBioseqs(const list< CRef<CBioseq> >& bioseqs, i
         _ASSERT(!m_Seq_set[seq_index]);
         m_Seq_set[seq_index++] = info;
         x_AttachEntry(info);
+    }
+}
+
+
+void CBioseq_set_Info::x_SetChunkBioseqs(const list< CRef<CBioseq> >& bioseqs, int chunk_id)
+{
+    const int kOrderNa = 0;
+    const int kOrderNonNa = 1;
+    bool has_na = false;
+    bool has_non_na = false;
+    for ( auto& i : bioseqs ) {
+        if ( i->GetInst().IsNa() ) {
+            has_na = true;
+            if ( has_non_na ) {
+                break;
+            }
+        }
+        else {
+            has_non_na = true;
+            if ( has_na ) {
+                break;
+            }
+        }
+    }
+    if ( has_na && has_non_na ) {
+        // split na and non-na
+        list< CRef<CBioseq> > na_bioseqs, non_na_bioseqs;
+        for ( auto& i : bioseqs ) {
+            (i->GetInst().IsNa()? na_bioseqs: non_na_bioseqs).push_back(i);
+        }
+        x_SetChunkBioseqs2(na_bioseqs, TChunkSeqSetsKey(kOrderNa, chunk_id));
+        x_SetChunkBioseqs2(non_na_bioseqs, TChunkSeqSetsKey(kOrderNonNa, chunk_id));
+    }
+    else {
+        x_SetChunkBioseqs2(bioseqs, TChunkSeqSetsKey(has_na? kOrderNa: kOrderNonNa, chunk_id));
     }
 }
 

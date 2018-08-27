@@ -201,6 +201,9 @@ protected:
 
     static CRef<TObject> sx_ShallowCopy(const TObject& obj);
 
+    typedef pair<int, TChunkId> TChunkSeqSetsKey; // nucleotides first
+    void x_SetChunkBioseqs2(const list< CRef<CBioseq> >& bioseqs, TChunkSeqSetsKey key);
+    
 private:
     // core object
     CRef<TObject>       m_Object;
@@ -214,7 +217,7 @@ private:
         size_t count;
         CBioseq_set::TSeq_set::iterator first_iter;
     };
-    typedef map<TChunkId, SChunkSeqSet> TChunkSeqSets;
+    typedef map<TChunkSeqSetsKey, SChunkSeqSet> TChunkSeqSets;
     TChunkSeqSets m_ChunkSeqSets;
 
     //
