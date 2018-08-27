@@ -37,10 +37,6 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
-#ifdef NCBI_NAMED_ANNOTS_IMPLEMENTED
-#include <objects/seqsplit/ID2S_Seq_annot_Info.hpp>
-#endif  /* NCBI_NAMED_ANNOTS_IMPLEMENTED */
-
 
 BEGIN_NCBI_SCOPE
 
@@ -178,29 +174,6 @@ public:
 private:
     CPSG_BioId    m_BioId;
     TIncludeData  m_IncludeData = 0;
-
-#ifdef NCBI_NAMED_ANNOTS_IMPLEMENTED
-public:
-    enum EAnnotTypes {
-        fGene       = (1 << 0),  ///<
-        fFeatTable  = (1 << 1),  ///< 
-        fAlign      = (1 << 2),  ///<
-        fGraph      = (1 << 3),  ///<
-        fSeqTable   = (1 << 4)   ///<
-    };
-    typedef int TAnnotTypes;  // Bitset of CSeq_annot::C_Data::E_Choice
-    void IncludeNamedAnnot(CTempString               annot_name,
-                           TAnnotTypes               types     = 0 /*all*/,
-                           vector<objects::CSeq_loc> locations = {});
-private:
-    struct SIncludeNamedAnnot {
-        string                     annot_name;
-        TAnnotTypes                types;
-        vector<objects::CSeq_loc>  locations;
-    };
-    typedef list<SIncludeNamedAnnot> TIncludeNamedAnnots;
-    TIncludeNamedAnnots m_IncludeNamedAnnots;
-#endif  /* NCBI_NAMED_ANNOTS_IMPLEMENTED */
 };
 
 
@@ -422,14 +395,6 @@ public:
     /// @throw  If the blob has not been splitted.
     CPSG_BlobId GetChunkBlobId(unsigned split_chunk_no) const;
 
-
-#ifdef NCBI_NAMED_ANNOTS_IMPLEMENTED
-    /// For the blobs containing (named) annotations, this gives a bird's eye
-    /// description about which types of annotations the blob contains,
-    /// and where they are located on the bio-sequence
-    vector<objects::CID2S_Seq_annot_Info> GetAnnotInfo() const;
-#endif  /* NCBI_NAMED_ANNOTS_IMPLEMENTED */
-
 private:
     CPSG_BlobInfo(CPSG_BlobId id);
 
@@ -474,12 +439,6 @@ public:
 
     /// Get coordinates of the TSE blob that contains the bioseq itself
     CPSG_BlobId GetBlobId() const;
-
-#ifdef NCBI_NAMED_ANNOTS_IMPLEMENTED
-    /// Get list of blobs containing (named) annotations (only those matching
-    /// the request's parameters!) for the bioseq.
-    vector<CPSG_BlobInfo> GetAnnotBlobs() const;
-#endif  /* NCBI_NAMED_ANNOTS_IMPLEMENTED */
 
     /// Get the bioseq's taxonomy ID
     TTaxId GetTaxId() const;
