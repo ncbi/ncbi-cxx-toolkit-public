@@ -291,6 +291,9 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
         }
 
         SBioseqInfo     bioseq_info;
+        bioseq_info.m_Accession = bioseq_key.m_Accession;
+        bioseq_info.m_Version = bioseq_key.m_Version;
+        bioseq_info.m_SeqIdType = bioseq_key.m_SeqIdType;
         ConvertBioseqProtobufToBioseqInfo(bioseq_key.m_BioseqInfo,
                                           bioseq_info);
 
@@ -379,7 +382,6 @@ void CPendingOperation::x_ProcessResolveRequest(void)
         return;
     }
 
-
     // Resolved; may be bioseq info is already at hand
     if (bioseq_key.m_BioseqInfo.empty()) {
         // Try to get bioseq info from the cache
@@ -415,6 +417,9 @@ void CPendingOperation::x_ProcessResolveRequest(void)
 
     // Bioseq info is found, send it to the client
     SBioseqInfo     bioseq_info;
+    bioseq_info.m_Accession = bioseq_key.m_Accession;
+    bioseq_info.m_Version = bioseq_key.m_Version;
+    bioseq_info.m_SeqIdType = bioseq_key.m_SeqIdType;
     x_SendBioseqInfo(bioseq_key.m_BioseqInfo,
                      bioseq_info, m_ResolveRequest.m_OutputFormat);
     if (x_UsePsgProtocol()) {
