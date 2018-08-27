@@ -40813,7 +40813,7 @@ if test "${ncbi_cv_lib_wxwidgets+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   if test -x "$wxconf" ; then
-          WXWIDGETS_INCLUDE="$baseflags `"$wxconf" $wxcfflags --cflags`"
+          WXWIDGETS_INCLUDE="`"$wxconf" $wxcfflags --cflags` $baseflags"
           if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     WXWIDGETS_LIBS=`"$wxconf" $wxcfflags --libs $wxlibs | sed -e "$libsed; s/ -lm / /g;"`
  else
@@ -40937,7 +40937,7 @@ else
    esac
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIDGETS_INCLUDE"; then
-      WXWIDGETS_INCLUDE="$baseflags `"$wxconf" $wxcfflags --cflags`"
+      WXWIDGETS_INCLUDE="`"$wxconf" $wxcfflags --cflags` $baseflags"
    fi
    if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     WXWIDGETS_LIBS=`$wxconf $wxcfflags --libs $wxlibs | sed -e "$libsed; s/ -lm / /g;"`

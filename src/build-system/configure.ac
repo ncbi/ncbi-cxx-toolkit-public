@@ -6350,7 +6350,7 @@ if test "$with_wxwidgets" != "no" ; then
       [for wxWidgets${WXWIDGETS_ARCH_PATH:+ in $WXWIDGETS_ARCH_PATH}],
       ncbi_cv_lib_wxwidgets,
       [if test -x "$wxconf" ; then
-          WXWIDGETS_INCLUDE="$baseflags `"$wxconf" $wxcfflags --cflags`"
+          WXWIDGETS_INCLUDE="`"$wxconf" $wxcfflags --cflags` $baseflags"
           NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS,
              ["$wxconf" $wxcfflags --libs $wxlibs],
              [$libsed; s/ -lm / /g;])
@@ -6386,7 +6386,7 @@ else
    esac
    # The "yes" may have been cached; get the actual settings again if needed
    if test -z "$WXWIDGETS_INCLUDE"; then
-      WXWIDGETS_INCLUDE="$baseflags `"$wxconf" $wxcfflags --cflags`"
+      WXWIDGETS_INCLUDE="`"$wxconf" $wxcfflags --cflags` $baseflags"
    fi
    NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, [$wxconf $wxcfflags --libs $wxlibs],
       [$libsed; s/ -lm / /g;])
