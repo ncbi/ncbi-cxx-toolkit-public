@@ -32,8 +32,8 @@ REM DO NOT ATTEMPT to run this bat file manually
 REM
 REM ===========================================================================
 
-set DEFPROTOC_LOCATION=\\snowman\win-coremake\Lib\ThirdParty\grpc\vs2017.64\1.14.0\bin\protoc.exe
-set DEFGRPC_LOCATION=\\snowman\win-coremake\Lib\ThirdParty\grpc\vs2017.64\1.14.0\bin\grpc_cpp_plugin.exe
+set DEFPROTOC_LOCATION=\\snowman\win-coremake\Lib\ThirdParty\grpc\vs2015.64\1.14.0\bin\protoc.exe
+set DEFGRPC_LOCATION=\\snowman\win-coremake\Lib\ThirdParty\grpc\vs2015.64\1.14.0\bin\grpc_cpp_plugin.exe
 
 for %%v in ("%DATATOOL_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PLATFORM%") do (
   if %%v=="" (
