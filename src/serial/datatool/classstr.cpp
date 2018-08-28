@@ -1153,8 +1153,10 @@ mem_simple = false;
                     if (i->dataType) {
                         loc = i->dataType->LocationString();
                     }
-                    NCBI_THROW(CDatatoolException,eInvalidData,
-                        loc + ": the only member of adaptor class is optional");
+                    if (CDataType::IsASNDataSpec()) {
+                        NCBI_THROW(CDatatoolException,eInvalidData,
+                            loc + ": the only member of adaptor class is optional");
+                    }
                 }
                 code.ClassPublic() << "\n"
                     "    /// Conversion operator to \'const "<<i->tName<<"\' type.\n"
