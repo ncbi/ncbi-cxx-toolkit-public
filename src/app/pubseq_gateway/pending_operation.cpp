@@ -746,18 +746,6 @@ CPendingOperation::x_ResolveInputSeqIdPath1(const CSeq_id &  parsed_seq_id,
                                  bioseq_key.m_BioseqInfo))
         return bioseq_key;
 
-
-    // Another try via Fasta
-    string      csi_cache_data;
-    string      seq_id_content;
-    parsed_seq_id.GetLabel(&seq_id_content, CSeq_id::eFastaContent);
-
-    if (x_LookupCachedCsi(seq_id_content, bioseq_key.m_SeqIdType,
-                          bioseq_key.m_SeqIdType >= 0, csi_cache_data)) {
-        ConvertSi2csiToBioseqKey(csi_cache_data, bioseq_key);
-        return bioseq_key;
-    }
-
     // Another try with what has come from url
     return x_ResolveInputSeqIdAsIs();
 }
@@ -832,8 +820,9 @@ CPendingOperation::x_LookupCachedCsi(const string &  seq_id,
 SBioseqKey CPendingOperation::x_ResolveInputSeqIdAsIs(void)
 {
     SBioseqKey  bioseq_key;
+    string      csi_cache_data;
 
-    string      url_seq_id = m_BlobRequest.m_SeqId;
+    CTempString url_seq_id = m_BlobRequest.m_SeqId;
     int         url_seq_id_type = m_BlobRequest.m_SeqIdType;
     bool        url_seq_id_type_provided = m_BlobRequest.m_SeqIdTypeProvided;
     if (m_IsResolveRequest) {
@@ -842,9 +831,25 @@ SBioseqKey CPendingOperation::x_ResolveInputSeqIdAsIs(void)
         url_seq_id_type_provided = m_ResolveRequest.m_SeqIdTypeProvided;
     }
 
-    string      csi_cache_data;
-    if (x_LookupCachedCsi(url_seq_id, url_seq_id_type,
-                          url_seq_id_type_provided, csi_cache_data))
+
+    // Try as fasta content
+    bool        cache_hit = false;
+    try {
+        CSeq_id     parsed_seq_id(url_seq_id);
+        string      seq_id_content;
+        parsed_seq_id.GetLabel(&seq_id_content, CSeq_id::eFastaContent);
+
+        cache_hit = x_LookupCachedCsi(seq_id_content, url_seq_id_type,
+                                      url_seq_id_type_provided, csi_cache_data);
+    } catch (...) {
+    }
+
+    // Try as it came from the URL
+    if (!cache_hit)
+        cache_hit = x_LookupCachedCsi(url_seq_id, url_seq_id_type,
+                                      url_seq_id_type_provided, csi_cache_data);
+
+    if (cache_hit)
         ConvertSi2csiToBioseqKey(csi_cache_data, bioseq_key);
 
     return bioseq_key;
