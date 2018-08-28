@@ -345,7 +345,13 @@ static CRef<CSeq_id> CreateNewAccession(int num)
 
     CRef<CTextseq_id> text_id(new CTextseq_id);
     int ver = GetParams().GetAssemblyVersion();
-    text_id->SetAccession(GetParams().GetIdPrefix() + ToStringLeadZeroes(ver, 2) + ToStringLeadZeroes(num, GetMaxAccessionLen(num)));
+    string prefix = GetParams().GetUpdateMode() == eUpdateScaffoldsNew ? GetParams().GetScaffoldPrefix() : GetParams().GetIdPrefix() + ToStringLeadZeroes(ver, 2);
+
+    if (GetParams().GetUpdateMode() == eUpdateScaffoldsNew) {
+        --num;
+    }
+
+    text_id->SetAccession(prefix + ToStringLeadZeroes(num, GetMaxAccessionLen(num)));
 
     auto set_fun = FindSetTextSeqIdFunc(GetParams().GetIdChoice());
     _ASSERT(set_fun != nullptr && "There should be a valid SetTextId function. Validate the ID choice.");
@@ -1276,12 +1282,13 @@ static void AddMasterToSecondary(CSeq_entry& entry, const CBlockAdaptor& block)
             }
         }
 
-        if (!block_descr.Empty()) {
+        if (block_descr.Empty()) {
             block_descr.Reset(new CSeqdesc);
+            block_descr->SetGenbank();
             entry.SetDescr().Set().push_back(block_descr);
         }
 
-        const string& accession = GetParams().GetAccession();
+        string accession = GetParams().GetAccession() + ToStringLeadZeroes(0, GetMaxAccessionLen(0));
         if (block.IsSetExtraAccessions(block_descr)) {
             auto same = find_if(block.SetExtraAccessions(block_descr).begin(), block.SetExtraAccessions(block_descr).end(),
                                 [&accession](const string& cur_accession) { return accession == cur_accession; });

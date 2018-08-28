@@ -2123,7 +2123,6 @@ static CRef<CSeqdesc> CreateScaffoldsUserObject(const TAccessionRange& range)
 
 static void CreateScaffoldsUserObjects(const list<TAccessionRange>& ranges, CSeq_descr::Tdata& descrs)
 {
-    // CR lambda assignment?
     typedef bool(*TFindPredicat)(const CRef<CSeqdesc>&);
 
     TFindPredicat predicat = nullptr;
@@ -2140,6 +2139,10 @@ static void CreateScaffoldsUserObjects(const list<TAccessionRange>& ranges, CSeq
     _ASSERT(predicat != nullptr && "predicat should have a valid function pointer");
 
     CSeq_descr::Tdata::iterator insertion_point = find_if(descrs.begin(), descrs.end(), predicat);
+
+    if (insertion_point != descrs.end()) {
+        ++insertion_point;
+    }
 
     for (auto range : ranges) {
         CRef<CSeqdesc> descr = CreateScaffoldsUserObject(range);
@@ -2169,7 +2172,7 @@ static bool CheckScaffoldsOrganism(const CSeq_descr::Tdata& descrs, const CBioSo
 static CRef<CSeq_entry> AddScaffoldsToMaster(CMasterInfo& master_info, list<TAccessionRange>& ranges)
 {
     CRef<CSeq_entry> ret;
-    if (master_info.m_id_master_bioseq.Empty() || !master_info.m_id_master_bioseq->IsSeq() || ranges.empty()) {
+    if (master_info.m_id_master_bioseq.Empty() || !master_info.m_id_master_bioseq->IsSeq()) {
         master_info.m_reject = true;
         return ret;
     }
@@ -2569,12 +2572,12 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     else {
         master_info.m_master_bioseq = CreateMasterBioseq(master_info, master_cit_sub, master_contact_info, biomol);
 
-        if (GetParams().IsStripAuthors() && GetParams().GetUpdateMode() != eUpdateScaffoldsNew) {
+        if (master_info.m_master_bioseq.NotEmpty() && GetParams().IsStripAuthors() && GetParams().GetUpdateMode() != eUpdateScaffoldsNew) {
             StripAuthors(*master_info.m_master_bioseq);
         }
     }
 
-    return ret;
+    return ret && master_info.m_master_bioseq.NotEmpty();
 }
 
 }

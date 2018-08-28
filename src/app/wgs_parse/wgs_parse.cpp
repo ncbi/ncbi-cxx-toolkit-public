@@ -66,8 +66,6 @@ private:
     virtual int  Run(void);
 
     CRef<CSeq_entry> GetMasterEntry() const;
-
-    CNcbiOstream* GetOutputStream();
 };
 
 
