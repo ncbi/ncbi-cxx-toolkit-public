@@ -276,15 +276,15 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromStdAcc)
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("MAP_1234567")));
 
     // New, longer formats
-    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("ADDEDE00000000"),
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("ADDEDE000000000"),
                       CSeq_id::eAcc_gb_wgsm_nuc);
-    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("ADDEDE01000000"),
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("ADDEDE010000000"),
                       CSeq_id::eAcc_gb_wgsm_nuc);
-    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("ADDEDE01000001"),
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("ADDEDE010000001"),
                       CSeq_id::eAcc_gb_wgs_nuc);
-    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("ADDEDE01S000001"),
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("ADDEDE01S0000001"),
                       CSeq_id::eAcc_gb_wgs_nuc);
-    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("ADDEDE01P000001"),
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("ADDEDE01P0000001"),
                       CSeq_id::eAcc_gb_wgs_prot);
     BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("KJ01234522"),
                       CSeq_id::eAcc_gb_dirsub);
