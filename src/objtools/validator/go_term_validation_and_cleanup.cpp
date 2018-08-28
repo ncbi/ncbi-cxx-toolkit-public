@@ -272,6 +272,8 @@ vector<TGoTermError> GetGoTermErrors(const CSeq_feat& feat)
 }
 
 
+//LCOV_EXCL_START
+//not used by validation, will be used by Genome Workbench menu item
 bool RemoveDuplicateGoTerms(CUser_object::TData& field_list)
 {
     bool rval = false;
@@ -533,6 +535,7 @@ size_t CountFunctionGoTerms(const CSeq_feat& feat)
 {
     return CountGoTerms(feat, kGoTermFunction);
 }
+//LCOV_EXCL_STOP
 
 
 END_SCOPE(validator)
