@@ -61,9 +61,7 @@ class CGoTermSortStruct
 {
 public:
     CGoTermSortStruct (const CUser_object::TData& sublist); // parse from field list
-    int Compare(const CGoTermSortStruct& g2) const;
-    bool Duplicates (const CGoTermSortStruct& g2) const;
-    bool Contains(const CGoTermSortStruct& g2) const;
+
 
     static bool IsLegalGoTermType(const string& val);
 
@@ -78,7 +76,6 @@ public:
     const vector<string>& GetErrors() const { return m_Errors; }
 
 protected:
-    int x_CompareEvidence(const CGoTermSortStruct& g2) const;
     string m_Term;
     string m_Goid;
     int m_Pmid;
@@ -95,7 +92,7 @@ CGoTermSortStruct::CGoTermSortStruct(const CUser_object::TData& sublist) :
     m_Evidence.clear();
     m_Errors.clear();
     ITERATE(CUser_object::TData, sub_it, sublist) {
-        string label = kEmptyStr;
+        string label;
         if ((*sub_it)->IsSetLabel() && (*sub_it)->GetLabel().IsStr()) {
             label = (*sub_it)->GetLabel().GetStr();
         }
@@ -138,70 +135,37 @@ CGoTermSortStruct::CGoTermSortStruct(const CUser_object::TData& sublist) :
 }
 
 
-int CGoTermSortStruct::Compare(const CGoTermSortStruct& g2) const
+bool operator<(const CGoTermSortStruct& l, const CGoTermSortStruct& r)
 {
-    int compare = NStr::Compare (m_Term, g2.m_Term);
+    int compare = NStr::Compare (l.GetTerm(), r.GetTerm());
     if (compare == 0) {
-        compare = NStr::Compare (m_Goid, g2.m_Goid);
+        compare = NStr::Compare (l.GetGoid(), r.GetGoid());
     }
-    if (compare > 0) return 1;
-    if (compare < 0) return -1;
+    if (compare > 0) return false;
+    if (compare < 0) return true;
 
-    if (m_Pmid > g2.m_Pmid) {
-        return 1;
-    } else if (m_Pmid < g2.m_Pmid) {
-        return -1;
+    if (l.GetPmid() > r.GetPmid()) {
+        return false;
+    } else if (l.GetPmid() < r.GetPmid()) {
+        return true;
     }
 
-    return x_CompareEvidence(g2);
-}
-
-
-int CGoTermSortStruct::x_CompareEvidence(const CGoTermSortStruct& g2) const
-{
-    if (m_Evidence.size() > g2.GetEvidence().size()) {
-        return 1;
-    } else if (m_Evidence.size() < g2.GetEvidence().size()) {
-        return -1;
+    auto ev1 = l.GetEvidence();
+    auto ev2 = r.GetEvidence();
+    if (ev1.size() > ev2.size()) {
+        return false;
+    } else if (ev1.size() < ev2.size()) {
+        return true;
     }
-    int compare = 0;
-    auto it1 = m_Evidence.begin();
-    auto it2 = g2.GetEvidence().begin();
-    while (it1 != m_Evidence.end() && it2 != g2.GetEvidence().end() && compare == 0) {
+    auto it1 = ev1.begin();
+    auto it2 = ev2.begin();
+    while (it1 != ev1.end() && it2 != ev2.end() && compare == 0) {
         compare = NStr::Compare(*it1, *it2);
         it1++;
         it2++;
     }
 
-    return compare;
-}
-
-
-bool CGoTermSortStruct::Duplicates (const CGoTermSortStruct& g2) const
-{
-    return Compare(g2) == 0;
-}
-
-
-bool CGoTermSortStruct::Contains(const CGoTermSortStruct& g2) const
-{
-    if (Compare(g2) == 0) {
-        return false;
-    }
-    if (!NStr::Equal(m_Term, g2.GetTerm()) && !NStr::IsBlank(g2.GetTerm())) {
-        return false;
-    }
-    if (!NStr::Equal(m_Goid, g2.GetGoid()) && !NStr::IsBlank(g2.GetGoid())) {
-        return false;
-    }
-    if (m_Pmid != g2.GetPmid() && g2.GetPmid() != 0) {
-        return false;
-    }
-    if (!g2.GetEvidence().empty() && x_CompareEvidence(g2) != 0) {
-        return false;
-    }
-
-    return true;
+    return (compare < 0);
 }
 
 
@@ -217,22 +181,6 @@ bool CGoTermSortStruct::IsLegalGoTermType(const string& val)
     }
 }
 
-static bool s_GoTermSortStructCompare (const CGoTermSortStruct& q1, const CGoTermSortStruct& q2)
-{
-    // is q1 < q2
-    return (q1.Compare(q2) < 0);
-}
-
-
-static bool s_GoTermPairCompare (const pair<string, string>& p1, const pair<string, string>& p2)
-{
-    int compare = NStr::Compare (p1.first, p2.first);
-    if (compare == 0) {
-        compare = NStr::Compare (p1.second, p2.second);
-    }
-    return (compare < 0);
-}
-
 
 bool IsGeneOntology(const CUser_object& user_object)
 {
@@ -245,10 +193,11 @@ bool IsGeneOntology(const CUser_object& user_object)
 }
 
 
-void GetGoTermErrors(CUser_object::TData field_list, vector<pair<string, string> >& id_terms, vector<TGoTermError>& errors)
+void GetGoTermErrors(CUser_object::TData field_list, map<string, string>& id_terms, vector<TGoTermError>& errors)
 {
-    vector < CGoTermSortStruct > sorted_list;
+    set<CGoTermSortStruct> terms;
 
+    size_t num_terms = 0;
     ITERATE(CUser_object::TData, it, field_list) {
         if (!(*it)->IsSetData() || !(*it)->GetData().IsFields()) {
             errors.push_back(TGoTermError(eErr_SEQ_FEAT_BadGeneOntologyFormat, "Bad GO term format"));
@@ -256,33 +205,32 @@ void GetGoTermErrors(CUser_object::TData field_list, vector<pair<string, string>
         }
 
         CUser_object::TData sublist = (*it)->GetData().GetFields();
-        // create sort structure and add to list
-        sorted_list.push_back(CGoTermSortStruct((*it)->GetData().GetFields()));
+        // create sort structure and add to set
+        CGoTermSortStruct a((*it)->GetData().GetFields());
+        if (terms.find(a) == terms.end()) {
+            terms.insert(a);
+        } else {
+            errors.push_back(TGoTermError(eErr_SEQ_FEAT_DuplicateGeneOntologyTerm, "Duplicate GO term on feature"));
+        }
         // report errors
-        for (auto msg : sorted_list.back().GetErrors()) {
+        for (auto msg : a.GetErrors()) {
             errors.push_back(TGoTermError(eErr_SEQ_FEAT_BadGeneOntologyFormat, msg));
         }
-        if (NStr::IsBlank(sorted_list.back().GetGoid())) {
+        if (NStr::IsBlank(a.GetGoid())) {
             errors.push_back(TGoTermError(eErr_SEQ_FEAT_GeneOntologyTermMissingGOID, "GO term does not have GO identifier"));
         }
 
         // add id/term pair
-        pair<string, string> p(sorted_list.back().GetGoid(), sorted_list.back().GetTerm());
-        id_terms.push_back(p);
-    }
-    stable_sort(sorted_list.begin(), sorted_list.end(), s_GoTermSortStructCompare);
+        pair<string, string> p(a.GetGoid(), a.GetTerm());
+        auto s = id_terms.find(a.GetGoid());
+        if (s == id_terms.end()) {
+            id_terms[a.GetGoid()] = a.GetTerm();
+        } else if (!NStr::Equal(a.GetTerm(), s->second)) {
+            errors.push_back(TGoTermError(eErr_SEQ_FEAT_InconsistentGeneOntologyTermAndId,
+                    "Inconsistent GO terms for GO ID " + a.GetGoid()));
 
-    vector < CGoTermSortStruct >::iterator it1 = sorted_list.begin();
-    if (it1 != sorted_list.end()) {
-        vector < CGoTermSortStruct >::iterator it2 = it1;
-        ++it2;
-        while (it2 != sorted_list.end()) {
-            if ((*it2).Duplicates(*it1)) {
-                errors.push_back(TGoTermError(eErr_SEQ_FEAT_DuplicateGeneOntologyTerm, "Duplicate GO term on feature"));
-            }
-            it1 = it2;
-            ++it2;
         }
+        num_terms++;
     }
 }
 
@@ -300,7 +248,7 @@ vector<TGoTermError> GetGoTermErrors(const CSeq_feat& feat)
         return rval;
     }
 
-    vector<pair<string, string> > id_terms;
+    map<string, string> id_terms;
     // iterate through fields
     ITERATE(CUser_object::TData, it, user_object.GetData()) {
         // validate terms if match accepted type
@@ -320,20 +268,6 @@ vector<TGoTermError> GetGoTermErrors(const CSeq_feat& feat)
             }
         }
     }
-    if (id_terms.size() > 1) {
-        stable_sort(id_terms.begin(), id_terms.end(), s_GoTermPairCompare);
-        vector<pair <string, string> >::iterator id_it1 = id_terms.begin();
-        vector<pair <string, string> >::iterator id_it2 = id_it1;
-        ++id_it2;
-        while (id_it2 != id_terms.end()) {
-            if (NStr::Equal((*id_it1).first, (*id_it2).first) && !NStr::Equal((*id_it1).second, (*id_it2).second)) {
-                rval.push_back(TGoTermError(eErr_SEQ_FEAT_InconsistentGeneOntologyTermAndId,
-                    "Inconsistent GO terms for GO ID " + (*id_it1).first));
-            }
-            id_it1 = id_it2;
-            id_it2++;
-        }
-    }
     return rval;
 }
 
@@ -341,45 +275,27 @@ vector<TGoTermError> GetGoTermErrors(const CSeq_feat& feat)
 bool RemoveDuplicateGoTerms(CUser_object::TData& field_list)
 {
     bool rval = false;
-    vector < CGoTermSortStruct > sorted_list;
+    
+    set<CGoTermSortStruct > terms;
 
-    ITERATE(CUser_object::TData, it, field_list) {
+    auto it = field_list.begin();
+    while (it != field_list.end()) {
         if (!(*it)->IsSetData() || !(*it)->GetData().IsFields()) {
+            ++it;
             continue;
         }
 
-        // create sort structure and add to list
-        sorted_list.push_back(CGoTermSortStruct((*it)->GetData().GetFields()));
-    }
-    stable_sort(sorted_list.begin(), sorted_list.end(), s_GoTermSortStructCompare);
-
-    vector < CGoTermSortStruct >::iterator it1 = sorted_list.begin();
-    if (it1 != sorted_list.end()) {
-        vector < CGoTermSortStruct >::iterator it2 = it1;
-        ++it2;
-        while (it2 != sorted_list.end()) {
-            if ((*it2).Duplicates(*it1)) {
-                auto r = field_list.begin();
-                while (r != field_list.end()) {
-                    if (!(*r)->IsSetData() || !(*r)->GetData().IsFields()) {
-                        r++;
-                        continue;
-                    }
-                    CGoTermSortStruct cmp((*r)->GetData().GetFields());
-                    if (cmp.Duplicates(*it2)) {
-                        r = field_list.erase(r);
-                        rval = true;
-                        break;
-                    }
-                    r++;
-                }
-                it2 = sorted_list.erase(it2);
-            } else {
-                it1 = it2;
-                ++it2;
-            }
+        // create sort structure and add to list if not already found
+        CGoTermSortStruct a((*it)->GetData().GetFields());
+        if (terms.find(a) != terms.end()) {
+            it = field_list.erase(it);
+            rval = true;
+        } else {
+            terms.insert(a);
+            ++it;
         }
     }
+
     return rval;
 }
 
