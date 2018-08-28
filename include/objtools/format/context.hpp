@@ -429,7 +429,7 @@ public:
     typedef vector< CRef<CBioseqContext> >  TSections;
 
     // constructor
-    CFlatFileContext(const CFlatFileConfig& cfg) : m_Cfg(cfg) { }
+    CFlatFileContext(const CFlatFileConfig& cfg) : m_Cfg(cfg), m_SmallGenomeSet(false) { }
     // destructor
     ~CFlatFileContext(void) {}
 
