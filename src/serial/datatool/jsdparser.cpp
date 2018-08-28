@@ -208,6 +208,9 @@ void JSDParser::ParseNode(DTDElement& node)
                     excl_max = true;
                 } else if (key == "multipleOf") {
                     node.AddFacet( CMemberFacet( ESerialFacet::eMultipleOf, Value()));
+                } else if (key == "default") {
+                    node.SetDefault(Value());
+                    AdjustMinOccurence(node, 0);
                 } else {
                     ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
                 }
@@ -222,6 +225,9 @@ void JSDParser::ParseNode(DTDElement& node)
                 } else if (key == "exclusiveMaximum") {
                     max_value = Value();
                     excl_max = true;
+                } else if (key == "default") {
+                    node.SetDefault(Value());
+                    AdjustMinOccurence(node, 0);
                 } else {
                     ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
                 }
@@ -271,6 +277,8 @@ void JSDParser::ParseNode(DTDElement& node)
                     ParseError("type arrays not supported", "string");
                 } else if (key == "items") {
                     ParseError("tuple validation not supported", "{");
+                } else if (key == "examples") {
+                    SkipUnknown(K_END_ARRAY);
                 } else {
                     ERR_POST_X(8, Warning << GetLocation() << "Unsupported property: " << key);
                     SkipUnknown(K_END_ARRAY);
