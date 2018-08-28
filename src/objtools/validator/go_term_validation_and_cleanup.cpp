@@ -250,18 +250,18 @@ vector<TGoTermError> GetGoTermErrors(const CSeq_feat& feat)
 
     map<string, string> id_terms;
     // iterate through fields
-    ITERATE(CUser_object::TData, it, user_object.GetData()) {
+    for (auto it : user_object.GetData()) {
         // validate terms if match accepted type
-        if (!(*it)->GetData().IsFields()) {
+        if (!it->GetData().IsFields()) {
             rval.push_back(TGoTermError(eErr_SEQ_FEAT_BadGeneOntologyFormat, "Bad data format for GO term"));
-        } else if (!(*it)->IsSetLabel() || !(*it)->GetLabel().IsStr() || !(*it)->IsSetData()) {
+        } else if (!it->IsSetLabel() || !it->GetLabel().IsStr() || !it->IsSetData()) {
             rval.push_back(TGoTermError(eErr_SEQ_FEAT_BadGeneOntologyFormat, "Unrecognized GO term label [blank]"));
         } else {
-            string qualtype = (*it)->GetLabel().GetStr();
+            string qualtype = it->GetLabel().GetStr();
             if (CGoTermSortStruct::IsLegalGoTermType(qualtype)) {
-                if ((*it)->IsSetData()
-                    && (*it)->GetData().IsFields()) {
-                    GetGoTermErrors((*it)->GetData().GetFields(), id_terms, rval);
+                if (it->IsSetData()
+                    && it->GetData().IsFields()) {
+                    GetGoTermErrors(it->GetData().GetFields(), id_terms, rval);
                 }
             } else {
                 rval.push_back(TGoTermError(eErr_SEQ_FEAT_BadGeneOntologyFormat, "Unrecognized GO term label " + qualtype));
