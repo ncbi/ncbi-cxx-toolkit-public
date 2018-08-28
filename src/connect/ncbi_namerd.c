@@ -921,12 +921,17 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
 
             /* Make sure the service type matches an allowed type. */
             ESERV_Type  type;
-            if ( ! SERV_ReadType(svc_type, &type)  ||
-                 ! (iter->types & type))
+            if ( ! SERV_ReadType(svc_type, &type))
+            {
+                CORE_LOGF_X(eNSub_Json, eLOG_Error,
+                    ("Unrecognized service type '%s'.", svc_type));
+                goto out;
+            }
+            if (iter->types != fSERV_Any  &&  !(iter->types & type))
             {
                 CORE_TRACEF((
-                    "Ignoring endpoint %s:%d with unallowed svc_type '%s'.",
-                    host, port, svc_type));
+                    "Ignoring endpoint %s:%d with unallowed svc_type '%s' - allowed types = 0x%lx.",
+                    host, port, svc_type, (unsigned long)iter->types));
                 continue;
             }
             CORE_TRACEF((
