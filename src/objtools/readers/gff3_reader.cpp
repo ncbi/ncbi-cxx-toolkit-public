@@ -293,36 +293,29 @@ bool CGff3Reader::xUpdateAnnotExon(
 {
     list<string> parents;
     if (record.GetAttribute("Parent", parents)) {
-        if (!parents.empty()  &&  parents.front() == "ENST00000367927") {
-            cerr << "";
-        }
         for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
                 ++it) {
             const string& parentId = *it; 
-            if (!xVerifyExonLocation(parentId, record, pEC)) {
-                //create a free agent "exon" feature
-                if (!record.InitializeFeature(m_iFlags, pFeature)) {
-                    return false;
-                }
-                CRef<CSeq_feat> pParent;
-                if (!xGetParentFeature(*pFeature, pParent)) {
-                //Note: The below does not quite cut it as there are types of RNA that come
-                // as Imps.
-                //if (!xGetParentFeature(*pFeature, pParent)  ||  
-                //        (!pParent->GetData().IsGene()  &&  !pParent->GetData().IsRna())) {
-                    AutoPtr<CObjReaderLineException> pErr(
-                        CObjReaderLineException::Create(
+            CRef<CSeq_feat> pParent;
+            if (!x_GetFeatureById(parentId, pParent)) {
+                xAddPendingExon(parentId, record);
+                return true;
+            }
+            if (pParent->GetData().IsRna()  &&  !xVerifyExonLocation(parentId, record, pEC)) {
+                AutoPtr<CObjReaderLineException> pErr(
+                    CObjReaderLineException::Create(
                         eDiag_Error,
                         0,
                         "Bad data line: Exon record referring to non-existing mRNA or gene parent.",
                         ILineError::eProblem_FeatureBadStartAndOrStop));
-                    ProcessError(*pErr, pEC);
+                ProcessError(*pErr, pEC);
+                return false;
+            }
+            if (pParent->GetData().IsGene()) {
+                if  (!record.InitializeFeature(m_iFlags, pFeature)) {
                     return false;
                 }
-                if (! xAddFeatureToAnnot(pFeature, pAnnot)) {
-                    return false;
-                }
-                return true;
+                return xAddFeatureToAnnot(pFeature, pAnnot);            
             }
             IdToFeatureMap::iterator fit = m_MapIdToFeature.find(parentId);
             if (fit != m_MapIdToFeature.end()) {
@@ -663,6 +656,12 @@ bool CGff3Reader::xUpdateAnnotMrna(
     if ( record.GetAttribute("ID", strId)) {
         m_MapIdToFeature[strId] = pFeature;
     }
+    list<CGff2Record> pendingExons;
+    xGetPendingExons(id, pendingExons);
+    for (auto exonRecord: pendingExons) {
+        CRef< CSeq_feat > pFeature(new CSeq_feat);
+        xUpdateAnnotExon(exonRecord, pFeature, pAnnot, pEC);
+    }
     return true;
 }
 
@@ -810,6 +809,53 @@ bool CGff3Reader::xIsIgnoredFeatureType(
 
     return false;
 }
+
+//  ----------------------------------------------------------------------------
+void
+CGff3Reader::xAddPendingExon(
+    const string& rnaId,
+    const CGff2Record& exonRecord)
+//  ----------------------------------------------------------------------------
+{
+    PENDING_EXONS::iterator it = mPendingExons.find(rnaId);
+    if (it == mPendingExons.end()) {
+        mPendingExons[rnaId] = list<CGff2Record>();
+    }
+    mPendingExons[rnaId].push_back(exonRecord);
+}
+
+//  ----------------------------------------------------------------------------
+void
+CGff3Reader::xGetPendingExons(
+    const string& rnaId,
+    list<CGff2Record>& pendingExons)
+//  ----------------------------------------------------------------------------
+{
+    PENDING_EXONS::iterator it = mPendingExons.find(rnaId);
+    if (it == mPendingExons.end()) {
+        return;
+    }
+    pendingExons.swap(mPendingExons[rnaId]);
+    mPendingExons.erase(rnaId);
+}
+
+//  ----------------------------------------------------------------------------
+void CGff3Reader::xPostProcessAnnot(
+    CRef<CSeq_annot>& pAnnot,
+    ILineErrorListener *pEC)
+    //  ----------------------------------------------------------------------------
+{
+    for (const auto& it: mPendingExons) {
+        AutoPtr<CObjReaderLineException> pErr(CObjReaderLineException::Create(
+            eDiag_Warning,
+            0,
+            "Bad data line: Record references non-existant Parent=" + it.first,
+            ILineError::eProblem_MissingContext) );
+        ProcessError(*pErr, pEC);
+    }
+    return CGff2Reader::xPostProcessAnnot(pAnnot, pEC);
+}
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE

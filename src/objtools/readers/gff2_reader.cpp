@@ -232,11 +232,9 @@ CGff2Reader::ReadSeqAnnot(
         }
     }
 
-
     if (!mCurrentFeatureCount) {
         return CRef<CSeq_annot>();
     }
-
 
     if (!alignments.empty()) {
         x_ProcessAlignmentsGff(id_list, alignments, pAnnot);
@@ -471,7 +469,7 @@ CGff2Reader::xParseFeature(
     }
 
     //parse record:
-    auto_ptr<CGff2Record> pRecord(x_CreateRecord());
+    shared_ptr<CGff2Record> pRecord(x_CreateRecord());
     try {
         if (!pRecord->AssignFromGff(line)) {
 			return false;

@@ -50,6 +50,29 @@ public:
 
 public:
     CGff2Record();
+    CGff2Record(
+            const CGff2Record& rhs):
+        m_strId(rhs.m_strId),
+        m_uSeqStart(rhs.m_uSeqStart),
+        m_uSeqStop(rhs.m_uSeqStop),
+        m_strSource(rhs.m_strSource),
+        m_strType(rhs.m_strType),
+        m_pdScore(nullptr),
+        m_peStrand(nullptr),
+        m_pePhase(nullptr)
+    {
+        if (rhs.m_pdScore) {
+            m_pdScore = new double(rhs.Score());
+        }
+        if (rhs.m_peStrand) {
+            m_peStrand = new ENa_strand(rhs.Strand());
+        }
+        if (rhs.m_pePhase) {
+            m_pePhase = new TFrame(rhs.Phase());
+        }
+        m_Attributes.insert(rhs.m_Attributes.begin(), rhs.m_Attributes.end());
+    };
+
     virtual ~CGff2Record();
 
     static unsigned int NextId();

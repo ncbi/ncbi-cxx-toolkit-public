@@ -40,7 +40,7 @@
 
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/gff2_reader.hpp>
-//#include <objtools/readers/gff3_data.hpp>
+#include <objtools/readers/gff2_data.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -162,9 +162,24 @@ protected:
     virtual bool xIsIgnoredFeatureType(
         const string&);
 
+    virtual void xAddPendingExon(
+        const string&,
+        const CGff2Record&);
+    virtual void xGetPendingExons(
+        const string&,
+        list<CGff2Record>&);
+    virtual void xPostProcessAnnot(
+        CRef<CSeq_annot>&,
+        ILineErrorListener*);
+
+
     // Data:
     map<string, string> mCdsParentMap;
     map<string, CRef<CSeq_interval> > mMrnaLocs;
+
+    using PENDING_EXONS = map<string, list<CGff2Record> >;
+    PENDING_EXONS mPendingExons;
+
     static unsigned int msGenericIdCounter;
 };
 
