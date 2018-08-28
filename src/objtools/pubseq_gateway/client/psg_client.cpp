@@ -107,12 +107,10 @@ ERW_Result SPSG_BlobReader::x_Read(void* buf, size_t count, size_t* bytes_read)
     return src_locked->expected.Cmp<equal_to>(src_locked->received) ? eRW_Eof : eRW_Success;
 }
 
-const auto kDefaultReadTimeout = CTimeout(12, 0); // TODO: Make configurable
-
 ERW_Result SPSG_BlobReader::Read(void* buf, size_t count, size_t* bytes_read)
 {
     size_t read;
-    CDeadline deadline(kDefaultReadTimeout);
+    CDeadline deadline(TPSG_ReaderTimeout::GetDefault());
 
     while (!deadline.IsExpired()) {
         auto rv = x_Read(buf, count, &read);

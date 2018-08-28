@@ -65,6 +65,7 @@ NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_streams, 200);
 NCBI_PARAM_DEF(unsigned, PSG, num_io,                 16);
 NCBI_PARAM_DEF(unsigned, PSG, num_conn_per_io,        1);
 NCBI_PARAM_DEF(bool,     PSG, delayed_completion,     true);
+NCBI_PARAM_DEF(unsigned, PSG, reader_timeout,         12);
 
 string SPSG_Error::Generic(int errc, const char* details)
 {

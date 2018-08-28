@@ -85,6 +85,9 @@ typedef NCBI_PARAM_TYPE(PSG, num_conn_per_io) TPSG_NumConnPerIo;
 NCBI_PARAM_DECL(bool, PSG, delayed_completion);
 typedef NCBI_PARAM_TYPE(PSG, delayed_completion) TPSG_DelayedCompletion;
 
+NCBI_PARAM_DECL(unsigned, PSG, reader_timeout);
+typedef NCBI_PARAM_TYPE(PSG, reader_timeout) TPSG_ReaderTimeout;
+
 struct SPSG_Future
 {
     void NotifyOne()
