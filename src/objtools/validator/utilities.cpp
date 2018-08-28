@@ -2894,6 +2894,9 @@ bool ConsistentWithT(Char ch)
 }
 
 
+//LCOV_EXCL_START
+//not used by validator, but used by Genome Workbench menu item for
+//removing unneccessary exceptions
 bool DoesCodingRegionHaveUnnecessaryException(const CSeq_feat& feat, CBioseq_Handle loc_handle, CScope& scope)
 {
     CCDSTranslationProblems problems;
@@ -2958,6 +2961,7 @@ bool DoesFeatureHaveUnnecessaryException(const CSeq_feat& feat, CScope& scope)
         return false;
     }
 }
+//LCOV_EXCL_STOP
 
 
 END_SCOPE(validator)
