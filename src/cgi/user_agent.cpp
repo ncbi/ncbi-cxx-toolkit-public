@@ -648,6 +648,7 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eCrawler,      "yacy",                     "yacy.net",                 CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eCrawler,      "Yahoo! Slurp",             "Yahoo! Slurp",             CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppComment },
     { CCgiUserAgent::eCrawler,      "YahooSeeker",              "YahooSeeker",              CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
+    { CCgiUserAgent::eCrawler,      "Yandex",                   "yandex",                   CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAny },
     { CCgiUserAgent::eCrawler,      "Zao",                      "www.kototoi.org/zao/",     CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppComment },
     { CCgiUserAgent::eCrawler,      "zspider",                  "zspider",                  CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fAppProduct },
     { CCgiUserAgent::eCrawler,      "ZyBorg",                   "ZyBorg",                   CCgiUserAgent::eEngine_Bot,     CCgiUserAgent::ePlatform_Unknown,      fApp },
