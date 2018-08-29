@@ -1474,6 +1474,8 @@ string CMacProjectGenerator::AddFile(CDict& dict, const string& name, bool style
         } else {
             filetype = string("sourcecode") + ext + ext;
         }
+    } else if (ext == ".cc" || ext == ".cxx") {
+        filetype = "sourcecode.cpp.cpp";
     } else if (ext == ".hpp" || ext == ".inl") {
         filetype = "sourcecode.cpp.h";
     } else if (ext == ".h") {
