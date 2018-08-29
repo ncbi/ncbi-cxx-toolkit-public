@@ -39,6 +39,34 @@
 USING_NCBI_SCOPE;
 
 
+static const string     kAccession = "accession";
+static const string     kVersion = "version";
+static const string     kSeqIdType = "seq_id_type";
+static const string     kMol = "mol";
+static const string     kLength = "length";
+static const string     kState = "state";
+static const string     kSat = "sat";
+static const string     kSatKey = "sat_key";
+static const string     kTaxId = "tax_id";
+static const string     kHash = "hash";
+static const string     kDateChanged = "date_changed";
+static const string     kSeqIds = "seq_ids";
+
+static const string     kKey = "Key";
+static const string     kLastModified = "LastModified";
+static const string     kFlags = "Flags";
+static const string     kSize = "Size";
+static const string     kSizeUnpacked = "SizeUnpacked";
+static const string     kClass = "Class";
+static const string     kDateAsn1 = "DateAsn1";
+static const string     kHupDate = "HupDate";
+static const string     kDiv = "Div";
+static const string     kId2Info = "Id2Info";
+static const string     kOwner = "Owner";
+static const string     kUserName = "UserName";
+static const string     kNChunks = "NChunks";
+
+
 void ConvertBioseqInfoToBioseqProtobuf(const SBioseqInfo &  bioseq_info,
                                        string &  bioseq_protobuf)
 {
@@ -106,26 +134,26 @@ CJsonNode  ConvertBioseqInfoToJson(const SBioseqInfo &  bioseq_info,
     CJsonNode       json(CJsonNode::NewObjectNode());
 
     if (include_data_flags & fServCanonicalId) {
-        json.SetString("accession", bioseq_info.m_Accession);
-        json.SetInteger("version", bioseq_info.m_Version);
-        json.SetInteger("seq_id_type", bioseq_info.m_SeqIdType);
+        json.SetString(kAccession, bioseq_info.m_Accession);
+        json.SetInteger(kVersion, bioseq_info.m_Version);
+        json.SetInteger(kSeqIdType, bioseq_info.m_SeqIdType);
     }
     if (include_data_flags & fServMoleculeType)
-        json.SetInteger("mol", bioseq_info.m_Mol);
+        json.SetInteger(kMol, bioseq_info.m_Mol);
     if (include_data_flags & fServLength)
-        json.SetInteger("length", bioseq_info.m_Length);
+        json.SetInteger(kLength, bioseq_info.m_Length);
     if (include_data_flags & fServState)
-        json.SetInteger("state", bioseq_info.m_State);
+        json.SetInteger(kState, bioseq_info.m_State);
     if (include_data_flags & fServBlobId) {
-        json.SetInteger("sat", bioseq_info.m_Sat);
-        json.SetInteger("sat_key", bioseq_info.m_SatKey);
+        json.SetInteger(kSat, bioseq_info.m_Sat);
+        json.SetInteger(kSatKey, bioseq_info.m_SatKey);
     }
     if (include_data_flags & fServTaxId)
-        json.SetInteger("tax_id", bioseq_info.m_TaxId);
+        json.SetInteger(kTaxId, bioseq_info.m_TaxId);
     if (include_data_flags & fServHash)
-        json.SetInteger("hash", bioseq_info.m_Hash);
+        json.SetInteger(kHash, bioseq_info.m_Hash);
     if (include_data_flags & fServDateChanged)
-        json.SetInteger("date_changed", bioseq_info.m_DateChanged);
+        json.SetInteger(kDateChanged, bioseq_info.m_DateChanged);
 
     if (include_data_flags & fServSeqIds) {
         CJsonNode       seq_ids(CJsonNode::NewObjectNode());
@@ -133,7 +161,7 @@ CJsonNode  ConvertBioseqInfoToJson(const SBioseqInfo &  bioseq_info,
              it != bioseq_info.m_SeqIds.end(); ++it) {
             seq_ids.SetString(NStr::NumericToString(it->first), it->second);
         }
-        json.SetByKey("seq_ids", seq_ids);
+        json.SetByKey(kSeqIds, seq_ids);
     }
 
     return json;
@@ -144,19 +172,19 @@ CJsonNode  ConvertBlobPropToJson(const CBlobRecord &  blob_prop)
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
-    json.SetInteger("Key", blob_prop.GetKey());
-    json.SetInteger("LastModified", blob_prop.GetModified());
-    json.SetInteger("Flags", blob_prop.GetFlags());
-    json.SetInteger("Size", blob_prop.GetSize());
-    json.SetInteger("SizeUnpacked", blob_prop.GetSizeUnpacked());
-    json.SetInteger("Class", blob_prop.GetClass());
-    json.SetInteger("DateAsn1", blob_prop.GetDateAsn1());
-    json.SetInteger("HupDate", blob_prop.GetHupDate());
-    json.SetString("Div", blob_prop.GetDiv());
-    json.SetString("Id2Info", blob_prop.GetId2Info());
-    json.SetInteger("Owner", blob_prop.GetOwner());
-    json.SetString("UserName", blob_prop.GetUserName());
-    json.SetInteger("NChunks", blob_prop.GetNChunks());
+    json.SetInteger(kKey, blob_prop.GetKey());
+    json.SetInteger(kLastModified, blob_prop.GetModified());
+    json.SetInteger(kFlags, blob_prop.GetFlags());
+    json.SetInteger(kSize, blob_prop.GetSize());
+    json.SetInteger(kSizeUnpacked, blob_prop.GetSizeUnpacked());
+    json.SetInteger(kClass, blob_prop.GetClass());
+    json.SetInteger(kDateAsn1, blob_prop.GetDateAsn1());
+    json.SetInteger(kHupDate, blob_prop.GetHupDate());
+    json.SetString(kDiv, blob_prop.GetDiv());
+    json.SetString(kId2Info, blob_prop.GetId2Info());
+    json.SetInteger(kOwner, blob_prop.GetOwner());
+    json.SetString(kUserName, blob_prop.GetUserName());
+    json.SetInteger(kNChunks, blob_prop.GetNChunks());
 
     return json;
 }
