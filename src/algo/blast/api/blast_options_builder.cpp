@@ -89,6 +89,9 @@ CBlastOptionsBuilder::ComputeProgram(const string & program,
             p = "deltablast";
             found = true;
         }
+        else if (s == "indexed") {
+            found = true;
+        }
     } else if (p == "blastn") {
         if (s == "megablast") {
             p = "megablast";
