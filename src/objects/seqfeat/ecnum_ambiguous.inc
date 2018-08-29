@@ -471,6 +471,8 @@ static const char* const kECNum_ambiguous[] = {
     "2.8.3.n\tCoA-transferases",
     "2.8.4.-\tTransferring alkylthio groups",
     "2.8.4.n\tTransferring alkylthio groups",
+    "2.8.5.-\tThiosulfotransferases",
+    "2.8.5.n\tThiosulfotransferases",
     "2.9.-.-\tTransferring selenium-containing groups",
     "2.9.n.n\tTransferring selenium-containing groups",
     "2.9.1.-\tSelenotransferases",

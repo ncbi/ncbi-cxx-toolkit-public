@@ -438,6 +438,8 @@
 2.8.3.n	CoA-transferases
 2.8.4.-	Transferring alkylthio groups
 2.8.4.n	Transferring alkylthio groups
+2.8.5.-	Thiosulfotransferases
+2.8.5.n	Thiosulfotransferases
 2.9.-.-	Transferring selenium-containing groups
 2.9.n.n	Transferring selenium-containing groups
 2.9.1.-	Selenotransferases
