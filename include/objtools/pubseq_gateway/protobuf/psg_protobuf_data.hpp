@@ -1,7 +1,7 @@
 #ifndef PSG_PROTOBUF_DATA_HPP
 #define PSG_PROTOBUF_DATA_HPP
 
-#include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.hpp>
+#include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
 #include <corelib/ncbistd.hpp>
 
