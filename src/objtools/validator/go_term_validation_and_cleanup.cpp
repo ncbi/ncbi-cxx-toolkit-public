@@ -91,37 +91,37 @@ CGoTermSortStruct::CGoTermSortStruct(const CUser_object::TData& sublist) :
 {
     m_Evidence.clear();
     m_Errors.clear();
-    ITERATE(CUser_object::TData, sub_it, sublist) {
+    for (auto sub_it : sublist) {
         string label;
-        if ((*sub_it)->IsSetLabel() && (*sub_it)->GetLabel().IsStr()) {
-            label = (*sub_it)->GetLabel().GetStr();
+        if (sub_it->IsSetLabel() && sub_it->GetLabel().IsStr()) {
+            label = sub_it->GetLabel().GetStr();
         }
         if (NStr::IsBlank(label)) {
             label = "[blank]";
         }
         if (NStr::Equal(label, kGoTermText)) {
-            if ((*sub_it)->GetData().IsStr()) {
-                m_Term = (*sub_it)->GetData().GetStr();
+            if (sub_it->GetData().IsStr()) {
+                m_Term = sub_it->GetData().GetStr();
             } else {
                 m_Errors.push_back("Bad data format for GO term qualifier term");
             }
         } else if (NStr::Equal(label, kGoTermID)) {
-            if ((*sub_it)->GetData().IsInt()) {
-                m_Goid = NStr::IntToString((*sub_it)->GetData().GetInt());
-            } else if ((*sub_it)->GetData().IsStr()) {
-                m_Goid = (*sub_it)->GetData().GetStr();
+            if (sub_it->GetData().IsInt()) {
+                m_Goid = NStr::IntToString(sub_it->GetData().GetInt());
+            } else if (sub_it->GetData().IsStr()) {
+                m_Goid = sub_it->GetData().GetStr();
             } else {
                 m_Errors.push_back("Bad data format for GO term qualifier GO ID");
             }
         } else if (NStr::Equal(label, kGoTermPubMedID)) {
-            if ((*sub_it)->GetData().IsInt()) {
-                m_Pmid = (*sub_it)->GetData().GetInt();
+            if (sub_it->GetData().IsInt()) {
+                m_Pmid = sub_it->GetData().GetInt();
             } else {
                 m_Errors.push_back("Bad data format for GO term qualifier PMID");
             }
         } else if (NStr::Equal(label, kGoTermEvidence)) {
-            if ((*sub_it)->GetData().IsStr()) {
-                m_Evidence.insert((*sub_it)->GetData().GetStr());
+            if (sub_it->GetData().IsStr()) {
+                m_Evidence.insert(sub_it->GetData().GetStr());
             } else {
                 m_Errors.push_back("Bad data format for GO term qualifier evidence");
             }
@@ -198,20 +198,16 @@ void GetGoTermErrors(CUser_object::TData field_list, map<string, string>& id_ter
     set<CGoTermSortStruct> terms;
 
     size_t num_terms = 0;
-    ITERATE(CUser_object::TData, it, field_list) {
-        if (!(*it)->IsSetData() || !(*it)->GetData().IsFields()) {
+    for (auto  it : field_list) {
+        if (!it->IsSetData() || !it->GetData().IsFields()) {
             errors.push_back(TGoTermError(eErr_SEQ_FEAT_BadGeneOntologyFormat, "Bad GO term format"));
             continue;
         }
 
-        CUser_object::TData sublist = (*it)->GetData().GetFields();
+        CUser_object::TData sublist = it->GetData().GetFields();
         // create sort structure and add to set
-        CGoTermSortStruct a((*it)->GetData().GetFields());
-        if (terms.find(a) == terms.end()) {
-            terms.insert(a);
-        } else {
-            errors.push_back(TGoTermError(eErr_SEQ_FEAT_DuplicateGeneOntologyTerm, "Duplicate GO term on feature"));
-        }
+        CGoTermSortStruct a(it->GetData().GetFields());
+        terms.insert(a);
         // report errors
         for (auto msg : a.GetErrors()) {
             errors.push_back(TGoTermError(eErr_SEQ_FEAT_BadGeneOntologyFormat, msg));
@@ -231,6 +227,9 @@ void GetGoTermErrors(CUser_object::TData field_list, map<string, string>& id_ter
 
         }
         num_terms++;
+    }
+    if (num_terms > terms.size()) {
+        errors.push_back(TGoTermError(eErr_SEQ_FEAT_DuplicateGeneOntologyTerm, "Duplicate GO term on feature"));
     }
 }
 
