@@ -650,7 +650,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_PBR, "https://www.poxvirus.org/query.asp?web_id=" },
     { CDbtag::eDbtagType_PBmice, "http://www.idmshanghai.cn/PBmice/DetailedSearch.do?type=insert&id=" }, // https not available tested 7/13/2016
     { CDbtag::eDbtagType_PDB, "http://www.rcsb.org/pdb/cgi/explore.cgi?pdbId=" }, // https “page can’t be displayed” tested 7/13/2016
-    { CDbtag::eDbtagType_PFAM, "http://pfam.sanger.ac.uk/family?acc=" }, // http page states info no longer avail at this website, includes links to look for a new location tested 7/13/2016
+    { CDbtag::eDbtagType_PFAM, "https://pfam.xfam.org/ncbiseq/" },
     { CDbtag::eDbtagType_PGN, "http://pgn.cornell.edu/cgi-bin/search/seq_search_result.pl?identifier=" }, // http page states info no longer avail at this website, includes links to look for a new location tested 7/13/2016
     { CDbtag::eDbtagType_Phytozome, "https://phytozome.jgi.doe.gov/pz/portal.html#!results?search=0&crown=1&star=1&method=0&searchText=" },
     { CDbtag::eDbtagType_PomBase, "http://www.pombase.org/spombe/result/" }, // https not available tested 7/13/2016
