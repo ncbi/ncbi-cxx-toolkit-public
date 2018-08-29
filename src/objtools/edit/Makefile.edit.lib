@@ -13,7 +13,7 @@ SRC = gene_utils seq_entry_edit promote autodef_with_tax \
 
 LIB    = xobjedit
 
-DLL_LIB = xobjutil taxon3 valid mlacli xregexp $(PCRE_LIB) $(SOBJMGR_LIBS)
+DLL_LIB = xobjutil taxon3 valid mlacli xregexp $(PCRE_LIB) $(OBJREAD_LIBS) $(SOBJMGR_LIBS)
 
 ASN_DEP = seqset valid
 
@@ -21,4 +21,4 @@ WATCHERS = bollin gotvyans foleyjp
 
 
 USES_LIBRARIES =  \
-    taxon3 xobjutil
+    taxon3 xobjread xobjutil
