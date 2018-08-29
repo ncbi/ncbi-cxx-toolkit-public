@@ -844,7 +844,17 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (m_context.m_RemoteTaxonomyLookup)
     {
-        m_context.m_remote_updater->UpdateOrgFromTaxon(m_context.m_logger, *entry);
+        //m_context.m_remote_updater->UpdateOrgFromTaxon(m_context.m_logger, *entry);
+    
+        m_context.m_remote_updater->UpdateOrgFromTaxon(
+                [this](const string& error_message) {    
+                    if(m_context.m_logger) {
+                        m_context.m_logger->PutError(*unique_ptr<CLineError>(CLineError::Create(ILineError::eProblem_Unset, 
+                                                    eDiag_Warning, "", 0,
+                                                    error_message)));
+                    } 
+                }, 
+                *entry);
     }
     else
     {

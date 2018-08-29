@@ -140,17 +140,24 @@ public:
         }
     }
 
-    CRef<COrg_ref> GetOrg(const COrg_ref& org, objects::ILineErrorListener* logger)
+    CRef<COrg_ref> GetOrg(const COrg_ref& org, CRemoteUpdater::FLogger f_logger)
     {
         CRef<COrg_ref> result;
         CRef<CT3Reply> reply = GetOrgReply(org);
-        if (reply->IsError() && logger)
+        if (reply->IsError() && f_logger)
         {
+            const string& error_message = 
+                "Taxon update: " +
+                (org.IsSetTaxname() ? org.GetTaxname() : NStr::IntToString(org.GetTaxId())) + ": " +
+                reply->GetError().GetMessage();
+
+/*
             logger->PutError(*auto_ptr<CLineError>(
                 CLineError::Create(ILineError::eProblem_Unset, eDiag_Warning, "", 0,
                 string("Taxon update: ") + 
                 (org.IsSetTaxname() ? org.GetTaxname() : NStr::IntToString(org.GetTaxId())) + ": " +
                 reply->GetError().GetMessage())));
+            */
         }
         else
         if (reply->IsData() && reply->SetData().IsSetOrg())
@@ -220,7 +227,7 @@ protected:
     auto_ptr<CCachedReplyMap> m_cache;
 };
 
-void CRemoteUpdater::UpdateOrgFromTaxon(objects::ILineErrorListener* logger, objects::CSeqdesc& obj)
+void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, objects::CSeqdesc& obj)
 {
     if (obj.IsOrg())
     {
@@ -233,7 +240,7 @@ void CRemoteUpdater::UpdateOrgFromTaxon(objects::ILineErrorListener* logger, obj
     }
 }
 
-void CRemoteUpdater::xUpdateOrgTaxname(objects::ILineErrorListener* logger, COrg_ref& org)
+void CRemoteUpdater::xUpdateOrgTaxname(FLogger logger, COrg_ref& org)
 {
     CMutexGuard guard(m_Mutex);
 
@@ -372,7 +379,7 @@ namespace
     typedef set<CRef< CSeqdesc >* > TOwnerSet;
     typedef struct { TOwnerSet owner; CRef<COrg_ref> org_ref; } TOwner;
     typedef map<string, TOwner > TOrgMap;
-    void _UpdateOrgFromTaxon(objects::ILineErrorListener* logger, objects::CSeq_entry& entry, TOrgMap& m)
+    void _UpdateOrgFromTaxon(CRemoteUpdater::FLogger logger, objects::CSeq_entry& entry, TOrgMap& m)
     {
         if (entry.IsSet())
         {
@@ -430,7 +437,7 @@ namespace
         }
     }
 }
-void CRemoteUpdater::UpdateOrgFromTaxon(objects::ILineErrorListener* logger, objects::CSeq_entry& entry)
+void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, objects::CSeq_entry& entry)
 {   
     TOrgMap org_to_update;
 
@@ -463,7 +470,7 @@ void CRemoteUpdater::UpdateOrgFromTaxon(objects::ILineErrorListener* logger, obj
     }
 }
 
-void CRemoteUpdater::UpdateOrgFromTaxon(objects::ILineErrorListener* logger, objects::CSeq_entry_EditHandle& obj)
+void CRemoteUpdater::UpdateOrgFromTaxon(FLogger logger, objects::CSeq_entry_EditHandle& obj)
 {
     for (CBioseq_CI bioseq_it(obj); bioseq_it; ++bioseq_it)
     {
