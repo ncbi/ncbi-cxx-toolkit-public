@@ -137,10 +137,10 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(const stri
             auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
             rv = cursor.get(lmdb::val(accession), MDB_SET_RANGE);
             if (rv) {
-                while (true) {
+                lmdb::val key;
+                rv = cursor.get(key, val, MDB_GET_CURRENT);
+                while (rv) {
                     int found_seq_id_type = -1;
-                    lmdb::val key;
-                    rv = cursor.get(key, val, MDB_GET_CURRENT);
                     rv = key.size() == PackedKeySize(accession.size()) && accession.compare(key.data<const char>()) == 0;
                     if (!rv)
                         break;
@@ -149,6 +149,7 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(const stri
                     rv = rv && (seq_id_type <= 0 || seq_id_type == found_seq_id_type);
                     if (rv)
                         break;
+                    rv = cursor.get(key, val, MDB_NEXT);
                 }
             }
         }
