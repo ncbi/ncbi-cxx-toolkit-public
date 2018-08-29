@@ -35,6 +35,10 @@ version  1 # of file format
 3+7  G??  ddbj_wgs_prot
 3+9  G??  ddbj_wgs_prot
 3+11 G??  ddbj_wgs_prot
+3+5  H??  gb_tpa_wgs_prot
+3+7  H??  gb_tpa_wgs_prot
+3+9  H??  gb_tpa_wgs_prot
+3+11 H??  gb_tpa_wgs_prot
 3+5  I??  ddbj_tpa_prot # fallback to placate older clients
 3+7  I??  ddbj_tpa_prot # fallback to placate older clients
 3+9  I??  ddbj_tpa_prot # fallback to placate older clients
