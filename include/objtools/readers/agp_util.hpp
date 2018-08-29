@@ -147,12 +147,12 @@ public:
     }
 
     //// Parsed columns
-    int object_beg, object_end, part_number;
+    TSeqPos object_beg, object_end, part_number;
     char component_type;
 
     bool is_gap;
 
-    int component_beg, component_end;
+    TSeqPos component_beg, component_end;
     enum EOrientation {
         // numeric values of the enum are equal to ASCII values of
         // AGP 1.1's values for
@@ -167,7 +167,7 @@ public:
     };
     EOrientation orientation;
 
-    int gap_length;
+    TSeqPos gap_length;
     // if you update this enum, make sure to update CAgpRow::gap_types
     enum EGap{
         eGapClone          , // AGP 1.1 only
@@ -251,9 +251,9 @@ public:
     }
 
 
-    static bool CheckComponentEnd(const string& comp_id, int comp_end, int comp_len,
+    static bool CheckComponentEnd(const string& comp_id, TSeqPos comp_end, TSeqPos comp_len,
         CAgpErr& agp_err);
-    bool CheckComponentEnd(int comp_len) {
+    bool CheckComponentEnd(TSeqPos comp_len) {
         return CheckComponentEnd(GetComponentId(), component_end, comp_len, *m_AgpErr);
     }
 
@@ -277,6 +277,8 @@ public:
     virtual void SetVersion(EAgpVersion ver);
 
 protected:
+    TSeqPos ReadSeqPos(const CTempString seq_pos_str, const string& details, 
+        int *perror_code, bool log_errors = true);
     int ParseComponentCols(bool log_errors=true);
     int ParseGapCols(bool log_errors=true);
 
@@ -514,6 +516,7 @@ public:
         E_InvalidLinkage    ,
 
         E_MustBePositive,
+        E_MustFitSeqPosType,
         E_ObjEndLtBeg   ,
         E_CompEndLtBeg  ,
         E_ObjRangeNeGap ,

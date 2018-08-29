@@ -35,7 +35,7 @@
 
 #ifndef i2s
 #define i2s(x) NStr::NumericToString(x)
-#define s2i(x) NStr::StringToNonNegativeInt(x)
+#define s2i(x) NStr::StringToLong(x) // StringToNonNegativeInt(x)
 #endif
 
 BEGIN_NCBI_SCOPE
@@ -53,7 +53,8 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "invalid value for X",
     "invalid linkage",
 
-    "X must be a positive integer not exceeding 2e+9",
+    "negative numbers or zero cannot be used for object coordinates",
+    "X must be a positive integer not exceeding 4294967294", // std::numeric_limits<TSeqPos>::max()
     "object_end is less than object_beg",
     "component_end is less than component_beg",
     "object range length not equal to the gap length",
@@ -77,7 +78,6 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "same gap_length=X in all gap lines, and component_type='N' ('U' is required for gaps of unknown size)",
     // "'|' character can only follow a recognized Seq-id type",
     "invalid use of \"|\" character",
-    kEmptyCStr,
 
     kEmptyCStr,
     kEmptyCStr,
@@ -161,6 +161,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "object X not found in FASTA file(s)",
     "final object_end (column 3) not equal to object length in FASTA file(s)",
     "run(s) of Ns within the component span",
+
     kEmptyCStr  // G_Last
 };
 
@@ -285,6 +286,31 @@ CAgpRow::~CAgpRow()
 {
 }
 
+TSeqPos CAgpRow::ReadSeqPos(const CTempString seq_pos_str, const string& details, 
+    int *perror_code, bool log_errors)
+{
+    long long pos = s2i( seq_pos_str );
+    TSeqPos ret_value = 0;
+    int error_code = 0;
+    if(pos<=0) {
+        error_code = CAgpErr::E_MustBePositive;
+    } else if (pos > std::numeric_limits<TSeqPos>::max()) {
+        error_code = CAgpErr::E_MustFitSeqPosType;
+    }
+    if (error_code) {
+        if (perror_code && 0==*perror_code) {
+            *perror_code = error_code;
+        }
+        if (log_errors) {
+            m_AgpErr->Msg(error_code, details);
+        }
+    }
+    else {
+        ret_value = static_cast<TSeqPos>(pos);
+    }
+    return ret_value;
+}
+
 int CAgpRow::FromString(const string& line)
 {
     // Comments
@@ -330,7 +356,7 @@ int CAgpRow::FromString(const string& line)
     else if( cols.size() < 8 || cols.size() > 9 ) {
         // skip this entire line, report an error
         m_AgpErr->Msg(CAgpErr::E_ColumnCount,
-            string(", found ") + NStr::IntToString((unsigned)(cols.size())) );
+            string(", found ") + i2s(cols.size()) );
         return CAgpErr::E_ColumnCount;
     }
 
@@ -346,30 +372,24 @@ int CAgpRow::FromString(const string& line)
     // Empty columns
     for(int i=0; i<8; i++) {
         if(cols[i].size()==0) {
-            m_AgpErr->Msg(CAgpErr::E_EmptyColumn, NStr::IntToString(i+1) );
+            m_AgpErr->Msg(CAgpErr::E_EmptyColumn, i2s(i+1) );
             return CAgpErr::E_EmptyColumn;
         }
     }
 
     // object_beg, object_end, part_number
-    object_beg = s2i( GetObjectBeg() );
-    if(object_beg<=0) m_AgpErr->Msg(CAgpErr::E_MustBePositive, "object_beg (column 2)");
-    object_end = s2i( GetObjectEnd() );
-    if(object_end<=0) {
-        m_AgpErr->Msg(CAgpErr::E_MustBePositive, "object_end (column 3)");
-    }
-    part_number = s2i( GetPartNumber() );
-    if(part_number<=0) {
-        m_AgpErr->Msg(CAgpErr::E_MustBePositive, "part_number (column 4)");
-        // may return this code later; (try to) parse other columns first
+    int error_code = 0;
+    object_beg = ReadSeqPos(GetObjectBeg(), "object_beg (column 2)", &error_code);
+    object_end = ReadSeqPos(GetObjectEnd(), "object_end (column 3)", &error_code);
+    part_number = ReadSeqPos(GetPartNumber(), "part_number (column 4)", &error_code);
+        // may return error later; (try to) parse other columns first
         // return CAgpErr::E_MustBePositive;
-    }
-    if(object_beg<=0 || object_end<=0) return CAgpErr::E_MustBePositive;
+    if(error_code) return error_code;
     if(object_end < object_beg) {
         m_AgpErr->Msg(CAgpErr::E_ObjEndLtBeg);
         return CAgpErr::E_ObjEndLtBeg;
     }
-    int object_range_len = object_end - object_beg + 1;
+    auto object_range_len = object_end - object_beg + 1;
 
     // component_type, type-specific columns
     if(GetComponentType().size()!=1) {
@@ -400,11 +420,11 @@ int CAgpRow::FromString(const string& line)
 
             int code=ParseComponentCols();
             if(code==0) {
-                int component_range_len=component_end-component_beg+1;
+                TSeqPos component_range_len=component_end-component_beg+1;
                 if(component_range_len != object_range_len) {
                     m_AgpErr->Msg( CAgpErr::E_ObjRangeNeComp, string(": ") +
-                        NStr::IntToString(object_range_len   ) + " != " +
-                        NStr::IntToString(component_range_len)
+                        i2s(object_range_len   ) + " != " +
+                        i2s(component_range_len)
                     );
                     return CAgpErr::E_ObjRangeNeComp;
                 }
@@ -449,8 +469,8 @@ int CAgpRow::FromString(const string& line)
             if(code==0) {
                 if(gap_length != object_range_len) {
                     m_AgpErr->Msg( CAgpErr::E_ObjRangeNeGap, string(": ") +
-                        NStr::IntToString(object_range_len   ) + " != " +
-                        NStr::IntToString(gap_length)
+                        i2s(object_range_len   ) + " != " +
+                        i2s(gap_length)
                     );
                     return CAgpErr::E_ObjRangeNeGap;
                 }
@@ -473,15 +493,10 @@ int CAgpRow::FromString(const string& line)
 int CAgpRow::ParseComponentCols(bool log_errors)
 {
     // component_beg, component_end
-    component_beg = s2i( GetComponentBeg() );
-    if(component_beg<=0 && log_errors) {
-        m_AgpErr->Msg(CAgpErr::E_MustBePositive, "component_beg (column 7)" );
-    }
-    component_end = s2i( GetComponentEnd() );
-    if(component_end<=0 && log_errors) {
-        m_AgpErr->Msg(CAgpErr::E_MustBePositive, "component_end (column 8)" );
-    }
-    if(component_beg<=0 || component_end<=0) return CAgpErr::E_MustBePositive;
+    int error_code = 0;
+    component_beg = ReadSeqPos(GetComponentBeg(), "component_beg (column 7)", &error_code, log_errors);
+    component_end = ReadSeqPos(GetComponentEnd(), "component_end (column 8)", &error_code, log_errors);
+    if(error_code) return error_code;
 
     if( component_end < component_beg ) {
         if(log_errors) {
@@ -547,10 +562,10 @@ int CAgpRow::ParseGapCols(bool log_errors)
     linkage_evidences.clear();
     linkage_evidence_flags = 0;
 
-    gap_length = s2i( GetGapLength() );
-    if(gap_length<=0) {
-        if(log_errors) m_AgpErr->Msg(CAgpErr::E_MustBePositive, "gap_length (column 6)" );
-        return CAgpErr::E_MustBePositive;
+    int error_code = 0;
+    gap_length = ReadSeqPos(GetGapLength(), "gap_length (column 6)", &error_code, log_errors);
+    if(error_code) {
+        return error_code;
     }
     if(component_type=='U' && gap_length!=100) {
         m_AgpErr->Msg(CAgpErr::W_GapSizeNot100);
@@ -610,7 +625,6 @@ int CAgpRow::ParseGapCols(bool log_errors)
             if(log_errors) m_AgpErr->Msg(CAgpErr::E_InvalidLinkage, " \"no\" for gap_type "+GetGapType() );
             return CAgpErr::E_InvalidLinkage;
         }
-
     }
     if(m_agp_version == eAgpVersion_1_1){
         // gap-type not in AGP 1.1
@@ -680,16 +694,16 @@ string CAgpRow::ToString(bool reorder_linkage_evidences)
 {
     string res=
         GetObject() + "\t" +
-        NStr::IntToString(object_beg ) + "\t" +
-        NStr::IntToString(object_end ) + "\t" +
-        NStr::IntToString(part_number) + "\t";
+        i2s(object_beg ) + "\t" +
+        i2s(object_end ) + "\t" +
+        i2s(part_number) + "\t";
 
     res+=component_type;
     res+='\t';
 
     if(is_gap) {
         res +=
-            NStr::IntToString(gap_length) + "\t" +
+            i2s(gap_length) + "\t" +
             gap_types[gap_type] + "\t" +
             (linkage?"yes":"no") + "\t";
         if(eAgpVersion_1_1!=m_agp_version) {
@@ -699,8 +713,8 @@ string CAgpRow::ToString(bool reorder_linkage_evidences)
     else{
         res +=
             GetComponentId  () + "\t" +
-            NStr::IntToString(component_beg) + "\t" +
-            NStr::IntToString(component_end) + "\t" +
+            i2s(component_beg) + "\t" +
+            i2s(component_end) + "\t" +
             OrientationToString(orientation);
     }
 
@@ -717,16 +731,16 @@ void CAgpRow::SetErrorHandler(CAgpErr* arg)
     m_AgpErr=arg;
 }
 
-bool CAgpRow::CheckComponentEnd( const string& comp_id, int comp_end, int comp_len,
+bool CAgpRow::CheckComponentEnd( const string& comp_id, TSeqPos comp_end, TSeqPos comp_len,
   CAgpErr& agp_err)
 {
     if( comp_end > comp_len) {
         string details=": ";
-        details += NStr::IntToString(comp_end);
+        details += i2s(comp_end);
         details += " > ";
         details += comp_id;
         details += " length = ";
-        details += NStr::IntToString(comp_len);
+        details += i2s(comp_len);
         details += " bp";
 
         agp_err.Msg(CAgpErr::G_CompEndGtLength, details);
@@ -752,7 +766,7 @@ const char* CAgpRow::le_str(CAgpRow::ELinkageEvidence le)
         case fLinkageEvidence_INVALID      : return "INVALID_LINKAGE_EVIDENCE";
         default:;
     }
-    //return "ERROR:UNKNOWN_LINKAGE_EVIDENCE_TYPE:" +  NStr::IntToString( le );
+    //return "ERROR:UNKNOWN_LINKAGE_EVIDENCE_TYPE:" +  i2s( le );
     return NcbiEmptyCStr;
 }
 
@@ -779,7 +793,7 @@ string CAgpRow::LinkageEvidencesToString(void)
         }
         const char* le = le_str( *evid_iter );
         if(*le!='\0') result += le;
-        else result += "ERROR:UNKNOWN_LINKAGE_EVIDENCE_TYPE:" + NStr::IntToString( (int)*evid_iter );
+        else result += "ERROR:UNKNOWN_LINKAGE_EVIDENCE_TYPE:" + i2s( (int)*evid_iter );
     }
 
     if(result.size()) return result;
@@ -799,7 +813,7 @@ string CAgpRow::OrientationToString( EOrientation orientation )
             return "na";
         default:
             return "ERROR:UNKNOWN_ORIENTATION:" +
-                NStr::IntToString( (int)orientation );
+                i2s( (int)orientation );
     }
 }
 
@@ -1064,7 +1078,7 @@ string CAgpReader::GetErrorMessage(const string& filename)
             msg+=filename;
             msg+=":";
         }
-        msg+= NStr::IntToString(m_prev_line_num);
+        msg+= i2s(m_prev_line_num);
         msg+=":";
 
         msg+=m_prev_row->ToString();
@@ -1077,7 +1091,7 @@ string CAgpReader::GetErrorMessage(const string& filename)
             msg+=filename;
             msg+=":";
         }
-        msg+= NStr::IntToString(m_line_num);
+        msg+= i2s(m_line_num);
         msg+=":";
 
         msg+=m_line;
@@ -1205,7 +1219,7 @@ string CAgpErrEx::GetPrintableCode(int code, bool strict)
         (code<G_Last) ? "g" : "x";
     if( res[0]=='w' && strict && !IsStrictModeWarning(code) ) res = "e";
     if(code<10) res += "0";
-    res += NStr::IntToString(code);
+    res += i2s(code);
     return res;
 }
 
@@ -1346,8 +1360,8 @@ CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml, EOwnership eOwnsOut) :
     //cerr << G_Last+1 << "\n";
     NCBI_ASSERT( sizeof(s_msg)/sizeof(s_msg[0])==G_Last+1,
         "s_msg[] size != G_Last+1");
-        //(string("s_msg[] size ")+NStr::IntToString(sizeof(s_msg)/sizeof(s_msg[0])) +
-        //" != G_Last+1 "+NStr::IntToString(G_Last+1)).c_str() );
+        //(string("s_msg[] size ")+i2s(sizeof(s_msg)/sizeof(s_msg[0])) +
+        //" != G_Last+1 "+i2s(G_Last+1)).c_str() );
     NCBI_ASSERT( string(GetMsg(E_Last))=="",
         "CAgpErrEx -- GetMsg(E_Last) not empty" );
     NCBI_ASSERT( string(GetMsg( (E_Last-1) ))!="",
@@ -1670,4 +1684,3 @@ void CAgpErrEx::PrintTotals(CNcbiOstream& ostr, int e_count, int w_count, int no
 
 
 END_NCBI_SCOPE
-
