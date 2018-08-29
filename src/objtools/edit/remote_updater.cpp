@@ -36,8 +36,6 @@
 #include <objects/taxon3/taxon3.hpp>
 #include <objects/mla/mla_client.hpp>
 
-#include <objtools/readers/message_listener.hpp>
-
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/seq/Pubdesc.hpp>
