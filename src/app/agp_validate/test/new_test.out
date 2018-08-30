@@ -40,7 +40,7 @@
 
 1 error, 12 warnings, 1 note.
   Count Code  Description
-      1  e19  in "Scaffold from component" file, invalid scaffold-breaking gap
+      1  e20  in "Scaffold from component" file, invalid scaffold-breaking gap
       1  w37  duplicate component with non-draft type
       6  w47  object name (column 1) is the same as component_id (column 6)
       1  w48  gap length (column 6) is not 100 for a gap of unknown size (an INSDC standard)

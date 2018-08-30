@@ -230,13 +230,13 @@
       1  w58  assuming AGP version X
       1  w64  component_id X is not an HTG accession, but is used with component_type A, D, or F
 
-NOTE: 36 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
+NOTE: 37 invalid lines were skipped (not subjected to all the checks, not included in most of the counts below).
 
 
 Objects                :  8
 - with single component:  2
 
-Scaffolds              : 19
+Scaffolds              : 18
 - with single component:  5
 ***no components, gaps only: 2
 
@@ -246,18 +246,18 @@ Components                   : 103 (W:89, F:10, D:2, O:1, P:1)
   orientation ? (formerly 0) :  1
   orientation na             :  1
 
-Gaps                   : 91 (N)
+Gaps                   : 90 (N)
 - do not break scaffold: 79
   clone   , linkage yes:  1
   fragment, linkage yes: 77 (26 or 33.8% of N gaps have length=100)
   repeat  , linkage yes:  1
-- break it, linkage no : 12
+- break it, linkage no : 11
 	clone          :  1
 	repeat         :  1
-	contig         :  9 (100% of N gaps have length=50000)
+	contig         :  8 (100% of N gaps have length=50000)
 	telomere       :  1
 
-Most frequent N gap_length (28.6% or 26 lines): 100
+Most frequent N gap_length (28.9% or 26 lines): 100
 
 Object names:  6
   chrZ      :  1
