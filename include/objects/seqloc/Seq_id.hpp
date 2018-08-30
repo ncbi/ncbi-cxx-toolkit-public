@@ -490,6 +490,7 @@ public:
         /// For type general, use the database name as the tag
         /// and the (text or numeric) key as the content.
         fLabel_GeneralDbIsContent = 0x20,
+        fLabel_Trimmed            = 0x40, ///< Trim trailing FASTA delimeters.
 
         /// default options - always show the version
         fLabel_Default = fLabel_Version
