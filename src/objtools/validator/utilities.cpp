@@ -1478,7 +1478,8 @@ bool s_IsSameSeqAnnot(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2, bo
     bool rval = f1.GetAnnot() == f2.GetAnnot();
     diff_descriptions = false;
     if (!rval) {
-        if (!f1.GetAnnot().Seq_annot_IsSetDesc() && !f2.GetAnnot().Seq_annot_IsSetDesc()) {
+        if ((!f1.GetAnnot().Seq_annot_IsSetDesc() || f1.GetAnnot().Seq_annot_GetDesc().Get().empty()) &&
+            (!f2.GetAnnot().Seq_annot_IsSetDesc() || f2.GetAnnot().Seq_annot_GetDesc().Get().empty())) {
             // neither is set
             diff_descriptions = false;
         } else if (f1.GetAnnot().Seq_annot_IsSetDesc() && f2.GetAnnot().Seq_annot_IsSetDesc()) {
