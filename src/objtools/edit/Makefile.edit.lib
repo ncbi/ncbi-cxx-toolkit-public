@@ -6,14 +6,14 @@
 SRC = gene_utils seq_entry_edit promote autodef_with_tax \
       field_handler apply_object string_constraint seqid_guesser dblink_field \
       struc_comm_field text_desc_field gb_block_field \
-      link_cds_mrna cds_fix loc_edit mail_report \
+      link_cds_mrna cds_fix capitalization_string loc_edit mail_report \
       feattable_edit gaps_edit source_edit rna_edit \
       remote_updater parse_text_options publication_edit gap_trim \
       external_annots feature_propagate apply_mods
 
 LIB    = xobjedit
 
-DLL_LIB = xobjutil taxon3 valid mlacli $(OBJREAD_LIBS) $(SOBJMGR_LIBS)
+DLL_LIB = xobjutil taxon3 valid mlacli xregexp $(PCRE_LIB) $(OBJREAD_LIBS) $(SOBJMGR_LIBS)
 
 ASN_DEP = seqset valid
 

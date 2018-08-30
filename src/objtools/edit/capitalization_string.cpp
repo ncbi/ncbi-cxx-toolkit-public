@@ -37,10 +37,11 @@
 #include <objects/biblio/Auth_list.hpp>
 
 #include <util/xregexp/regexp.hpp>
-#include <objtools/cleanup/capitalization_string.hpp>
+#include <objtools/edit/capitalization_string.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+BEGIN_SCOPE(edit)
 
 static const SStaticPair<const char*, const char*> set_abbreviation_list[] = 
 {
@@ -812,7 +813,7 @@ bool FixStateAbbreviationsInAffil(CAffil& affil)
         if (std.IsSetCountry() && NStr::EqualCase(std.GetCountry(), "USA")) {
             if (std.IsSetSub() && !NStr::IsBlank(std.GetSub())) {
                 string state = std.GetSub();
-                GetStateAbbreviation(state); // update the state abbreviation
+                edit::GetStateAbbreviation(state); // update the state abbreviation
                 if (!NStr::IsBlank(state) && !NStr::EqualCase(std.GetSub(), state)) {
                     std.SetSub(state);
                     return true;
@@ -1063,6 +1064,7 @@ void FixCountryCapitalization(string& result)
     }
 }
 
+END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
