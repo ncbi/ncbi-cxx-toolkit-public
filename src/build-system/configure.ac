@@ -7711,12 +7711,23 @@ fi
 
 
 # MongoDB 3.x
-case "$with_mongodb3" in
-   yes | no | '' ) ;;
-   *             ) MONGODB3_PATH=$with_mongodb3 ;;
-esac
-if test -d "$MONGODB3_PATH"; then
-   NCBI_FIX_DIR(MONGODB3_PATH)
+if test "$with_mongodb3" != no; then
+   case "$with_mongodb3" in
+      yes | '' ) ;;
+      *        ) MONGODB3_PATH=$with_mongodb3 ;;
+   esac
+   for d in "$MONGODB3_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
+            "$MONGODB3_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}" \
+            "$MONGODB3_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}" \
+            "$MONGODB3_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}"; do
+      if test -d "$d"; then
+         MONGODB3_PATH=$d
+         break
+      fi
+   done
+   if test -d "$MONGODB3_PATH"; then
+      NCBI_FIX_DIR(MONGODB3_PATH)
+   fi
 fi
 if test -d $MONGODB3_PATH/lib${bit64_sfx}; then
    MONGODB3_LIBDIR=$MONGODB3_PATH/lib${bit64_sfx}
