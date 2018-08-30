@@ -1615,7 +1615,7 @@ void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
 
     if ((flags & fLabel_Trimmed) != 0
         &&  (type == eFasta  ||  type == eFastaContent)) {
-        while ((*label)[label->size()] == '|') {
+        while ((*label)[label->size() - 1] == '|') {
             label->resize(label->size() - 1);
         }
     }
