@@ -130,6 +130,14 @@ protected:
 ///////////////////////////////////////////////////////////////////////////
 // Inline methods
 
+template<>
+struct Deleter<SConnNetInfo>
+{
+    static void Delete(SConnNetInfo* net_info)
+    { ConnNetInfo_Destroy(net_info); }
+};
+
+
 template<class TRequest, class TReply>
 inline
 void CRPCClient<TRequest, TReply>::x_Connect(void)
@@ -139,21 +147,21 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
         return;
     }
     _ASSERT( !m_Service.empty() );
-    SConnNetInfo* net_info = ConnNetInfo_Create(m_Service.c_str());
+    AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(m_Service.c_str()));
     if ( !m_Args.empty() ) {
-        if ( !ConnNetInfo_AppendArg(net_info, m_Args.c_str(), 0) ) {
+        if ( !ConnNetInfo_AppendArg(net_info.get(), m_Args.c_str(), 0) ) {
             NCBI_THROW(CRPCClientException, eArgs,
                 "Error sending additional request arguments");
         }
     }
     if ( m_RetryCtx.IsSetArgs() ) {
-        if ( !ConnNetInfo_AppendArg(net_info, m_RetryCtx.GetArgs().c_str(), 0) ) {
+        if ( !ConnNetInfo_AppendArg(net_info.get(), m_RetryCtx.GetArgs().c_str(), 0) ) {
             NCBI_THROW(CRPCClientException, eArgs,
                 "Error sending retry context arguments");
         }
     }
     else if (!m_Affinity.empty()) {
-        if ( !ConnNetInfo_PostOverrideArg(net_info, m_Affinity.c_str(), 0) ) {
+        if ( !ConnNetInfo_PostOverrideArg(net_info.get(), m_Affinity.c_str(), 0) ) {
             NCBI_THROW(CRPCClientException, eArgs,
                 "Error sending request affinity");
         }
@@ -166,13 +174,13 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
     x_extra.parse_header = sx_ParseHeader;
     x_extra.flags = fHTTP_NoAutoRetry;
 
-    unique_ptr<CConn_ServiceStream> stream(new CConn_ServiceStream(
-        m_Service, fSERV_Any | fSERV_DelayOpen, net_info, &x_extra, m_Timeout));
+    unique_ptr<CConn_ServiceStream> stream
+        (new CConn_ServiceStream
+         (m_Service, fSERV_Any | fSERV_DelayOpen, net_info.get.get(), &x_extra, m_Timeout));
     if ( m_Canceler.NotNull() ) {
         stream->SetCanceledCallback(m_Canceler.GetNonNullPointer());
     }
     x_SetStream(stream.release());
-    ConnNetInfo_Destroy(net_info);
 }
 
 
@@ -180,21 +188,21 @@ template<class TRequest, class TReply>
 inline
 void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
 {
-    SConnNetInfo* net_info = ConnNetInfo_Create(0);
-    ConnNetInfo_ParseURL(net_info, url.c_str());
+    AutoPtr<SConnNetInfo> net_info(ConnNetInfo_Create(0));
+    ConnNetInfo_ParseURL(net_info.get(), url.c_str());
     if ( !m_Args.empty() ) {
-        if ( !ConnNetInfo_PostOverrideArg(net_info, m_Args.c_str(), 0) ) {
+        if ( !ConnNetInfo_PostOverrideArg(net_info.get(), m_Args.c_str(), 0) ) {
             NCBI_THROW(CRPCClientException, eArgs,
                 "Error sending additional request arguments");
         }
     }
     if ( m_RetryCtx.IsSetArgs() ) {
-        if ( !ConnNetInfo_PostOverrideArg(net_info, m_RetryCtx.GetArgs().c_str(), 0) ) {
+        if ( !ConnNetInfo_PostOverrideArg(net_info.get(), m_RetryCtx.GetArgs().c_str(), 0) ) {
             NCBI_THROW(CRPCClientException, eArgs,
                 "Error sending retry context arguments");
         }
     }
-    unique_ptr<CConn_HttpStream> stream(new CConn_HttpStream(net_info,
+    unique_ptr<CConn_HttpStream> stream(new CConn_HttpStream(net_info.get(),
         kEmptyStr, // user_header
         sx_ParseHeader, // callback
         &m_RetryCtx,    // user data for the callback
