@@ -1626,6 +1626,14 @@ void CSeq_id::GetLabel(string* label, int* version, ELabelType type) const
         *label += AsFastaString();
         break;
 
+    case eFastaContent:
+    {
+        CNcbiOstrstream oss;
+        x_WriteContentAsFasta(oss);
+        *label += CNcbiOstrstreamToString(oss);
+        break;
+    }
+        
     case eBoth:
         x_GetLabel_Type(*this, label, 0);
         *label += "|";
