@@ -396,7 +396,7 @@ void CPendingOperation::x_ProcessResolveRequest(void)
         UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
 
         err_msg = "Data inconsistency: the bioseq key info was resolved "
-                  "for seq_id " + m_ResolveRequest.m_SeqId + 
+                  "for seq_id " + m_ResolveRequest.m_SeqId +
                   " but the bioseq info is not in cache";
 
         if (x_UsePsgProtocol()) {
@@ -745,6 +745,7 @@ CPendingOperation::x_ResolveInputSeqIdPath1(const CSeq_id &  parsed_seq_id,
         return bioseq_key;
 
     // Another try with what has come from url
+    bioseq_key.Reset();
     x_ResolveInputSeqIdAsIs(bioseq_key);
     return bioseq_key;
 }

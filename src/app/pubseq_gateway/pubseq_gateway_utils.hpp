@@ -97,6 +97,14 @@ struct SBioseqKey
     {
         return !m_Accession.empty();
     }
+
+    void Reset(void)
+    {
+        m_Accession.clear();
+        m_Version = -1;
+        m_SeqIdType = -1;
+        m_BioseqInfo.clear();
+    }
 };
 
 
