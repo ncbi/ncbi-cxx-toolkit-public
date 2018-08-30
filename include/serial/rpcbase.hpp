@@ -176,7 +176,7 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
 
     unique_ptr<CConn_ServiceStream> stream
         (new CConn_ServiceStream
-         (m_Service, fSERV_Any | fSERV_DelayOpen, net_info.get.get(), &x_extra, m_Timeout));
+         (m_Service, fSERV_Any | fSERV_DelayOpen, net_info.get(), &x_extra, m_Timeout));
     if ( m_Canceler.NotNull() ) {
         stream->SetCanceledCallback(m_Canceler.GetNonNullPointer());
     }
