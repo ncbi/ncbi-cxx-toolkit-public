@@ -44,6 +44,7 @@
 
 #include <objmgr/impl/split_parser.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
+#include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/annot_selector.hpp>
 
 #include <objects/id1/id1__.hpp>
@@ -911,6 +912,11 @@ void CProcessor::AddWGSMaster(CLoadLockSetter& blob)
             if ( kAddMasterDescrToTSE ) {
                 // exclude existing descr types except User
                 mask &= ~lock->x_GetBaseInfo().x_GetExistingDescrMask() | (1<<CSeqdesc::e_User);
+                if ( lock->IsSet() ) {
+                    if ( auto first_entry = lock->GetSet().GetFirstEntry() ) {
+                        mask &= ~first_entry->x_GetBaseInfo().x_GetExistingDescrMask() | (1<<CSeqdesc::e_User);
+                    }
+                }
             }
             CRef<CTSE_Chunk_Info> chunk(new CWGSMasterChunkInfo(id, mask));
             lock->GetSplitInfo().AddChunk(*chunk);
