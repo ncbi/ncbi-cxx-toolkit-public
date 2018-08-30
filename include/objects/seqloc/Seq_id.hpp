@@ -475,27 +475,49 @@ public:
 
     /// return the label for a given string
     enum ELabelType {
-        eType,
-        eContent,
-        eBoth,
-        eFasta,
-        eFastaContent,
+        eType, ///< FASTA-style type, or database in GeneralDbIsContent mode.
+        eContent, ///< Untagged human-readable accession or the like.
+        eBoth, ///< Type and content, delimited by a vertical bar.
+        eFasta, ///< Tagged ID in NCBI's traditional FASTA style.
+        eFastaContent, ///< Like eFasta, but without any tag.
 
         /// default is to show type + content
         eDefault = eBoth
     };
 
     enum ELabelFlags {
-        fLabel_Version            = 0x10,
+        fLabel_Version            = 0x10, ///< Show the version
+        /// For type general, use the database name as the tag
+        /// and the (text or numeric) key as the content.
         fLabel_GeneralDbIsContent = 0x20,
 
         /// default options - always show the version
         fLabel_Default = fLabel_Version
     };
     typedef int TLabelFlags;
+    /// Append a label for this Seq-id to the supplied string.
+    /// @param label
+    ///   String to append to.
+    /// @param type
+    ///   Type of label (human-readable type-tagged content, by default).
+    /// @param flags
+    ///   Flags fine-tuning behavior for human-readable output (ignored
+    ///   in eFasta and eFastaContent mode).
+    /// @sa ELabelType, ELabelFlags
     void GetLabel(string*     label,
                   ELabelType  type  = eDefault,
                   TLabelFlags flags = fLabel_Default) const;
+    /// Append a label for this Seq-id to the supplied string, splitting
+    /// out the version to a separate output parameter.
+    /// @note In eFasta and eFastaContent mode, this method includes the
+    /// version (if any) in the label and does not touch *version.
+    /// @param label
+    ///   String to append to.
+    /// @param version
+    ///   Pointer to hold the returned version.
+    /// @param type
+    ///   Type of label (human-readable type-tagged content, by default).
+    /// @sa ELabelType
     void GetLabel(string*     label,
                   int*        version,
                   ELabelType  type  = eDefault) const;
