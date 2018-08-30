@@ -284,6 +284,10 @@ BOOST_AUTO_TEST_CASE(s_StringToNum)
         // verify that compiler properly distinguishes overloads
         string str_value;
         NStr::NumericToString(str_value, (char)1); 
+        TIntId id = 123;
+        TGi gi(id);
+        NStr::NumericToString(str_value, id);
+        NStr::NumericToString(str_value, gi);
     }}
 
     for (size_t i = 0;  i < count;  ++i) {

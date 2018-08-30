@@ -661,7 +661,7 @@ public:
     ///     converted string value.
     ///   - Otherwise, set errno to non-zero and return empty string.
     template<typename TNumeric>
-    static typename enable_if< is_arithmetic<TNumeric>::value, string>::type
+    static typename enable_if< is_arithmetic<TNumeric>::value || is_convertible<TNumeric, Int8>::value, string>::type
     NumericToString(TNumeric value, TNumToStringFlags flags = 0, int base = 10)
     {
         string ret;
