@@ -280,6 +280,11 @@ static const SStringNumericValues s_Str2NumTests[] = {
 BOOST_AUTO_TEST_CASE(s_StringToNum)
 {
     const size_t count = sizeof(s_Str2NumTests) / sizeof(s_Str2NumTests[0]);
+    {{
+        // verify that compiler properly distinguishes overloads
+        string str_value;
+        NStr::NumericToString(str_value, (char)1); 
+    }}
 
     for (size_t i = 0;  i < count;  ++i) {
       for (int extra = 0;  extra < 4;  ++extra) {
