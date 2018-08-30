@@ -736,7 +736,12 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
             }
         }
 
-        build_info->m_CommandLine  =  "set DATATOOL_PATH=" + dt_path + "\n";
+        if (ext == ".proto") {
+            dt_path = GetApp().GetSite().GetConfigureEntry("CustomCodeGenerator" + ext);
+            build_info->m_CommandLine  =  "set GENERATOR_PATH=" + dt_path + "\n";
+        } else {
+            build_info->m_CommandLine  =  "set DATATOOL_PATH=" + dt_path + "\n";
+        }
         build_info->m_CommandLine +=  "set TREE_ROOT=" + tree_root + "\n";
         build_info->m_CommandLine +=  "set PTB_PLATFORM=$(PlatformName)\n";
         build_info->m_CommandLine +=  "set BUILD_TREE_ROOT=" + build_root + "\n";
@@ -746,8 +751,6 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
             build_info->m_CommandLine +=  "call \"%BUILD_TREE_ROOT%\\datatool.bat\" " + tool_cmd + "\n";
         }
         build_info->m_CommandLine +=  "if errorlevel 1 exit 1";
-        string tool_exe_location("\"");
-        tool_exe_location += dt_path + "datatool.exe" + "\"";
 
         //Description
         build_info->m_Description = 

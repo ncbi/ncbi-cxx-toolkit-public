@@ -655,7 +655,11 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
 #else
             if (dataspec_first) {
                 script += "export PTB_PLATFORM=\"$ARCHS\"\n";
-                script += "export DATATOOL_PATH=" + m_OutputDir + "../static/bin/ReleaseDLL\n";
+                if (spec_ext == ".proto") {
+                    script += "export GENERATOR_PATH=" + GetApp().GetSite().GetConfigureEntry("XCode_CustomCodeGenerator" + ext) + "\n";
+                } else {
+                    script += "export DATATOOL_PATH=" + m_OutputDir + "../static/bin/ReleaseDLL\n";
+                }
                 script += "export TREE_ROOT=" +
                     CDirEntry::DeleteTrailingPathSeparator( GetRelativePath( GetApp().m_Root)) + "\n";
                 script += "export BUILD_TREE_ROOT=" +
