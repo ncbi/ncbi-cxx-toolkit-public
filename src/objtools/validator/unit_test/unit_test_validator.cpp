@@ -19867,6 +19867,8 @@ BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("south sudan"), "South Sudan");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("UK: Whiteford Burrows, Gower, Wales"), "United Kingdom: Whiteford Burrows, Gower, Wales");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Whiteford Burrows, Gower, Wales"), "United Kingdom: Wales, Whiteford Burrows, Gower");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Burma"), "Myanmar");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Siam"), "Thailand");
 }
 
 
