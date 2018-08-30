@@ -48,22 +48,22 @@ test/bad_test.agp:72:chrY	3678683	3728682	66	N	50000	heterochromatin	yes
 	ERROR, line skipped: invalid linkage "yes" for gap_type heterochromatin
 
 test/bad_test.agp:107:chrY	6997598	7000631	101	W	AADB02037601.1	0	3034	+
-	ERROR, line skipped: component_beg (column 7) must be a positive integer not exceeding 2e+9
+	ERROR, line skipped: component_beg (column 7) must be a positive integer
 
 test/bad_test.agp:108:chrY	7000632	7050631	102	N	0	contig	no	
-	ERROR, line skipped: gap_length (column 6) must be a positive integer not exceeding 2e+9
+	ERROR, line skipped: gap_length (column 6) must be a positive integer
 
 test/bad_test.agp:109:chrY	7050632	7053381	103	W	AADB02037602.1	1	0	+
-	ERROR, line skipped: component_end (column 8) must be a positive integer not exceeding 2e+9
+	ERROR, line skipped: component_end (column 8) must be a positive integer
 
 test/bad_test.agp:110:chrY	7053382	7103381	0	N	50000	contig	no	
-	ERROR, line skipped: part_number (column 4) must be a positive integer not exceeding 2e+9
+	ERROR, line skipped: part_number (column 4) must be a positive integer
 
 test/bad_test.agp:111:chrY	0	7107650	105	W	AADB02037603.1	1	4269	+
-	ERROR, line skipped: object_beg (column 2) must be a positive integer not exceeding 2e+9
+	ERROR, line skipped: object_beg (column 2) must be a positive integer
 
 test/bad_test.agp:112:chrY	7107651	0	106	N	50000	contig	no	
-	ERROR, line skipped: object_end (column 3) must be a positive integer not exceeding 2e+9
+	ERROR, line skipped: object_end (column 3) must be a positive integer
 
 test/bad_test.agp:121:chrY	18336154	8409082	115	W	AADB02037608.1	1	72929	+
 	ERROR, line skipped: object_end is less than object_beg
@@ -212,7 +212,7 @@ test/alt_bad_test.agp:20:scaffold_0	62232	62557	20	N	326	fragment	yes
       1  e03  empty line
      11  e04  invalid value for X
       5  e05  invalid linkage
-      6  e06  X must be a positive integer not exceeding 2e+9
+      6  e06  X must be a positive integer
       1  e07  object_end is less than object_beg
       1  e08  component_end is less than component_beg
       1  e09  object range length not equal to the gap length

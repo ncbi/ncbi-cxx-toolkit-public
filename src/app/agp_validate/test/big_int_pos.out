@@ -1,0 +1,14 @@
+
+5:chr1	2521256	2521355	2	U	100	scaffold	yes	map
+	NOTE: assuming AGP version 2.0 since linkage evidence (column 9) is NOT empty
+
+10:chr1	4294967300	4294967306	7	W	PGSH01018958.1	1	6	+
+	ERROR, line skipped: object_beg (column 2) must not exceed 4294967294
+	ERROR, line skipped: object_end (column 3) must not exceed 4294967294
+
+11:chr1	2147385906	-2146453863	4221	W	PGSH01000058.1	1	1127528	+
+	ERROR, line skipped: object_end (column 3) must be a positive integer
+
+12:chr1	-2146453862	-2146453763	4222	U	100	scaffold	yes	map
+	ERROR, line skipped: object_beg (column 2) must be a positive integer
+	ERROR, line skipped: object_end (column 3) must be a positive integer

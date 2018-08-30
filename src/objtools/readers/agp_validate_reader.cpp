@@ -40,6 +40,11 @@
 
 using namespace ncbi;
 using namespace objects;
+
+#ifndef i2s
+#define i2s(x) NStr::NumericToString(x)
+#endif
+
 BEGIN_NCBI_SCOPE
 
 //// class CAgpValidateReader
@@ -303,7 +308,7 @@ void CAgpValidateReader::OnGapOrComponent()
         else {
           sameComId_otherScaf+="line ";
         }
-        sameComId_otherScaf+=NStr::IntToString(prev_comp_line);
+        sameComId_otherScaf+=i2s(prev_comp_line);
 
         if(m_last_scaf_start_is_obj) {
           sameComId_otherScaf+=", in another object";
@@ -320,7 +325,7 @@ void CAgpValidateReader::OnGapOrComponent()
           else {
             sameComId_otherScaf+="line ";
           }
-          sameComId_otherScaf+=NStr::IntToString(m_last_scaf_start_line);
+          sameComId_otherScaf+=i2s(m_last_scaf_start_line);
         }
       }
 
@@ -401,8 +406,8 @@ void CAgpValidateReader::OnGapOrComponent()
           if(m_explicit_scaf && m_is_chr) {
             if(it->second > m_this_row->component_end || m_this_row->component_beg>1) {
               m_AgpErr->Msg(CAgpErrEx::W_ScafNotInFull,
-                " (" + NStr::IntToString(m_this_row->component_end-m_this_row->component_beg+1) +
-                " out of " + NStr::IntToString(it->second)+ " bp)"
+                " (" + i2s(m_this_row->component_end-m_this_row->component_beg+1) +
+                " out of " + i2s(it->second)+ " bp)"
               );
             }
           }
@@ -437,7 +442,7 @@ void CAgpValidateReader::OnGapOrComponent()
           TRangeColl::const_iterator it = intersection.begin();
           for(; it != intersection.end() && masked_spans.size() < 80; ++it) {
               if(masked_spans.size()) masked_spans += ", ";
-              masked_spans +=  NStr::IntToString(it->GetFrom()) + ".." + NStr::IntToString(it->GetTo());
+              masked_spans +=  i2s(it->GetFrom()) + ".." + i2s(it->GetTo());
           }
           if(it != intersection.end()) masked_spans += ", ...";
 
@@ -483,7 +488,7 @@ void CAgpValidateReader::OnScaffoldEnd()
         int len = it->second;
         if(m_prev_component_beg!=1 || m_prev_component_end<len ) {
           m_AgpErr->Msg( CAgpErrEx::W_UnSingleCompNotInFull,
-            " (" + NStr::IntToString(m_prev_component_end-m_prev_component_beg+1) + " out of " + NStr::IntToString(len)+ " bp)",
+            " (" + i2s(m_prev_component_end-m_prev_component_beg+1) + " out of " + i2s(len)+ " bp)",
             CAgpErr::fAtPrevLine );
         }
       }
@@ -517,9 +522,9 @@ void CAgpValidateReader::OnObjectChange()
     if(m_expected_obj_len) {
       if(m_expected_obj_len!=m_prev_row->object_end) {
         string details=": ";
-        details += NStr::IntToString(m_prev_row->object_end);
+        details += i2s(m_prev_row->object_end);
         details += " != ";
-        details += NStr::IntToString(m_expected_obj_len);
+        details += i2s(m_expected_obj_len);
 
         m_AgpErr->Msg(CAgpErr::G_BadObjLen, details, CAgpErr::fAtPrevLine);
       }
@@ -809,12 +814,12 @@ void CAgpValidateReader::x_GetMostFreqGapsText(int gap_type, string& eol_text, s
 
   if(pct.size()) {
     eol_text = " (";
-    if(pct!="100") eol_text += NStr::IntToString(mf_len_cnt) + " or ";
-    //eol_text += pct +"% with length="+ NStr::IntToString(mf_len)+")\n";
-    eol_text += pct +"% of N gaps have length="+ NStr::IntToString(mf_len)+")\n";
+    if(pct!="100") eol_text += i2s(mf_len_cnt) + " or ";
+    //eol_text += pct +"% with length="+ i2s(mf_len)+")\n";
+    eol_text += pct +"% of N gaps have length="+ i2s(mf_len)+")\n";
 
-    attrs =" mf_len=\""+NStr::IntToString(mf_len)+"\"";
-    attrs+=" cnt=\""+NStr::IntToString(mf_len_cnt)+"\"";
+    attrs =" mf_len=\""+i2s(mf_len)+"\"";
+    attrs+=" cnt=\""+i2s(mf_len_cnt)+"\"";
     attrs+=" pct=\""+pct+"\"";
   }
 }
@@ -909,7 +914,7 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
   }
 
   // w: width for right alignment
-  int w = NStr::IntToString((unsigned)(m_CompId2Spans.size())).size(); // +1;
+  int w = i2s((unsigned)(m_CompId2Spans.size())).size(); // +1;
   XPrintTotalsItem xprint(out, use_xml, w);
   if(not_in_agp_msg.size() && !use_xml) {
     out << "      -   -   " << not_in_agp_msg << "\n";
@@ -935,7 +940,7 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
     if( s->size() ) *s+= ", ";
     *s+= (*it)->first;
     *s+= ":";
-    *s+= NStr::IntToString((*it)->second);
+    *s+= i2s((*it)->second);
   }
 
   //// Various counts of AGP elements
@@ -1071,10 +1076,10 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
         xprint.line();
 
         string label = "Most frequent N gap_length (" + pct + "% or " +
-          NStr::IntToString(mf_len_cnt) + " lines): ";
+          i2s(mf_len_cnt) + " lines): ";
 
         string tag = "MostFrequentNGapLen pct=\"" + pct + "\" cnt=\"" +
-          NStr::IntToString(mf_len_cnt) + "\"";
+          i2s(mf_len_cnt) + "\"";
 
         xprint.line(label, mf_len, tag);
       }
@@ -1336,7 +1341,7 @@ bool CAgpValidateReader::x_PrintPatterns(
   //out << "\n";
 
   // Calculate widths of columns 1 (wPattern) and 2 (w)
-  int w = NStr::IntToString(
+  int w = i2s(
       cnt_pat.rbegin()->first // the biggest count
     ).size()+1;
   XPrintTotalsItem xprint(out, use_xml, w);
@@ -1467,7 +1472,7 @@ bool CAgpValidateReader::x_PrintPatterns(
 
     if(accessionsSkipped) {
       string s = "other ";
-      s+=NStr::IntToString(patternsSkipped);
+      s+=i2s(patternsSkipped);
       s+=" patterns";
       xprint.line( "  " + s + SPACES.substr(0, wPattern - s.size()) + ": ",
           accessionsSkipped,

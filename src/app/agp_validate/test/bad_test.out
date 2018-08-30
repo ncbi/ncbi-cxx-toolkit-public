@@ -48,22 +48,22 @@
 	ERROR, line skipped: invalid linkage "yes" for gap_type heterochromatin
 
 107:chrY	6997598	7000631	101	W	AADB02037601.1	0	3034	+
-	ERROR, line skipped: component_beg (column 7) must be a positive integer not exceeding 2e+9
+	ERROR, line skipped: component_beg (column 7) must be a positive integer
 
 108:chrY	7000632	7050631	102	N	0	contig	no	
-	ERROR, line skipped: gap_length (column 6) must be a positive integer not exceeding 2e+9
+	ERROR, line skipped: gap_length (column 6) must be a positive integer
 
 109:chrY	7050632	7053381	103	W	AADB02037602.1	1	0	+
-	ERROR, line skipped: component_end (column 8) must be a positive integer not exceeding 2e+9
+	ERROR, line skipped: component_end (column 8) must be a positive integer
 
 110:chrY	7053382	7103381	0	N	50000	contig	no	
-	ERROR, line skipped: part_number (column 4) must be a positive integer not exceeding 2e+9
+	ERROR, line skipped: part_number (column 4) must be a positive integer
 
 111:chrY	0	7107650	105	W	AADB02037603.1	1	4269	+
-	ERROR, line skipped: object_beg (column 2) must be a positive integer not exceeding 2e+9
+	ERROR, line skipped: object_beg (column 2) must be a positive integer
 
 112:chrY	7107651	0	106	N	50000	contig	no	
-	ERROR, line skipped: object_end (column 3) must be a positive integer not exceeding 2e+9
+	ERROR, line skipped: object_end (column 3) must be a positive integer
 
 121:chrY	18336154	8409082	115	W	AADB02037608.1	1	72929	+
 	ERROR, line skipped: object_end is less than object_beg
@@ -206,18 +206,18 @@
       1  e03  empty line
      11  e04  invalid value for X
       5  e05  invalid linkage
-      6  e06  X must be a positive integer not exceeding 2e+9
-      1  e07  object_end is less than object_beg
-      1  e08  component_end is less than component_beg
-      1  e09  object range length not equal to the gap length
-      1  e10  object range length not equal to component range length
-      2  e11  duplicate object 
-      1  e12  first line of an object must have object_beg=1
-      1  e13  first line of an object must have part_number=1
-      1  e14  part number (column 4) != previous part number + 1
-      1  e15  'na' or ? (formerly 0) component orientation may only be used in a singleton scaffold
-      5  e16  object_beg != previous object_end + 1
-      2  e18  consequtive gaps lines with the same type and linkage
+      6  e06  X must be a positive integer
+      1  e08  object_end is less than object_beg
+      1  e09  component_end is less than component_beg
+      1  e10  object range length not equal to the gap length
+      1  e11  object range length not equal to component range length
+      2  e12  duplicate object 
+      1  e13  first line of an object must have object_beg=1
+      1  e14  first line of an object must have part_number=1
+      1  e15  part number (column 4) != previous part number + 1
+      1  e16  'na' or ? (formerly 0) component orientation may only be used in a singleton scaffold
+      5  e17  object_beg != previous object_end + 1
+      2  e19  consequtive gaps lines with the same type and linkage
       1  w31  gap at the end of object (OK if X is the circular chromosome/plasmid)
       1  w34  no components in object
       4  w35  the span overlaps a previous span for this component

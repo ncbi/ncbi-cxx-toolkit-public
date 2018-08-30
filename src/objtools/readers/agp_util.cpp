@@ -35,7 +35,6 @@
 
 #ifndef i2s
 #define i2s(x) NStr::NumericToString(x)
-#define s2i(x) NStr::StringToLong(x) // StringToNonNegativeInt(x)
 #endif
 
 BEGIN_NCBI_SCOPE
@@ -53,8 +52,8 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "invalid value for X",
     "invalid linkage",
 
-    "negative numbers or zero cannot be used for object coordinates",
-    "X must be a positive integer not exceeding 4294967294", // std::numeric_limits<TSeqPos>::max()
+    "X must be a positive integer",
+    "X must not exceed 4294967294", // std::numeric_limits<TSeqPos>::max()
     "object_end is less than object_beg",
     "component_end is less than component_beg",
     "object range length not equal to the gap length",
@@ -289,7 +288,7 @@ CAgpRow::~CAgpRow()
 TSeqPos CAgpRow::ReadSeqPos(const CTempString seq_pos_str, const string& details, 
     int *perror_code, bool log_errors)
 {
-    long long pos = s2i( seq_pos_str );
+    Int8 pos = NStr::StringToInt8( seq_pos_str, NStr::fConvErr_NoThrow );
     TSeqPos ret_value = 0;
     int error_code = 0;
     if(pos<=0) {
