@@ -657,21 +657,19 @@ SBioseqKey CPendingOperation::x_ResolveInputSeqId(string &  err_msg)
                 // The only possible problem is a mismatch between
                 // acc/ver/seq_id_type
                 x_ResolveInputSeqId(parsed_seq_id, text_seq_id, bioseq_key);
-                if (bioseq_key.IsValid())
-                    return bioseq_key;
             } catch (const exception &  ex) {
                 err_msg = ex.what();
-                return bioseq_key;
             } catch (...) {
                 err_msg = "Unknown error while resolving input seq_id";
-                return bioseq_key;
             }
+            return bioseq_key;
         }
     } catch (...) {
         // Choke and resolve it as is below
     }
 
-    return x_ResolveInputSeqIdAsIs();
+    x_ResolveInputSeqIdAsIs(bioseq_key);
+    return bioseq_key;
 }
 
 
@@ -747,7 +745,8 @@ CPendingOperation::x_ResolveInputSeqIdPath1(const CSeq_id &  parsed_seq_id,
         return bioseq_key;
 
     // Another try with what has come from url
-    return x_ResolveInputSeqIdAsIs();
+    x_ResolveInputSeqIdAsIs(bioseq_key);
+    return bioseq_key;
 }
 
 
@@ -817,9 +816,8 @@ CPendingOperation::x_LookupCachedCsi(const string &  seq_id,
 }
 
 
-SBioseqKey CPendingOperation::x_ResolveInputSeqIdAsIs(void)
+void CPendingOperation::x_ResolveInputSeqIdAsIs(SBioseqKey &  bioseq_key)
 {
-    SBioseqKey  bioseq_key;
     string      csi_cache_data;
 
     CTempString url_seq_id = m_BlobRequest.m_SeqId;
@@ -851,8 +849,6 @@ SBioseqKey CPendingOperation::x_ResolveInputSeqIdAsIs(void)
 
     if (cache_hit)
         ConvertSi2csiToBioseqKey(csi_cache_data, bioseq_key);
-
-    return bioseq_key;
 }
 
 

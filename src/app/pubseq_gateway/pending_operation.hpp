@@ -240,7 +240,7 @@ private:
                                         const CTextseq_id *  text_seq_id);
     SBioseqKey x_ResolveInputSeqIdPath2(const CSeq_id &  parsed_seq_id,
                                         const CTextseq_id *  text_seq_id);
-    SBioseqKey x_ResolveInputSeqIdAsIs(void);
+    void x_ResolveInputSeqIdAsIs(SBioseqKey &  bioseq_key);
     int x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id);
     bool x_LookupCachedBioseqInfo(const string &  accession,
                                   int &  version,
