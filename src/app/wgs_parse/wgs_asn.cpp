@@ -782,11 +782,11 @@ static bool IsBadHistSeqId(const CSeq_id& id)
     if (ALLOWED_CHOICE.find(id.Which()) != ALLOWED_CHOICE.end()) {
         const CTextseq_id* text_id = id.GetTextseq_Id();
         if (text_id && text_id->IsSetAccession()) {
-            return true;
+            return false;
         }
     }
 
-    return false;
+    return true;
 }
 
 static void CheckSecondaries(const CBioseq& bioseq, CSeqEntryInfo& info)
