@@ -5,7 +5,7 @@ APP_PROJ = agp_validate agp_renumber
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 
-TESTS=bad_test test2 acc_test fa_test un_test obj_len_test order_test overlap_test new_test space_test runs_of_ns\
+TESTS=bad_test big_int_pos test2 acc_test fa_test un_test obj_len_test order_test overlap_test new_test space_test runs_of_ns\
   chr_scaf_test chr_scaf_test2 chr_scaf_test_bad ver2.0 ver2.0_bad comp_test sub_test unplaced_singleton
 
 .PHONY : noalt test $(TESTS) alt_test
@@ -19,6 +19,10 @@ test: $(TESTS) alt_test
 bad_test : agp_validate
 	-sh -c "./agp_validate $(srcdir)/test/bad_test.agp >bad_test.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/bad_test.out bad_test.out
+
+big_int_pos : agp_validate
+	-sh -c "./agp_validate $(srcdir)/test/big_int_pos.agp >big_int_pos.out 2>&1"
+	diff ${DOPT} -u $(srcdir)/test/big_int_pos.out big_int_pos.out
 
 alt_test : agp_validate
 	-sh -c "./agp_validate -alt $(srcdir)/test/alt_bad_test.agp >alt_bad_test.out 2>&1"
