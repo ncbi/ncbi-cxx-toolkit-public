@@ -3362,6 +3362,13 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 
 DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_country_name_fixes, s_map_country_name_fixes);
 
+// for GP-24841
+static const SStaticPair<const char*, const char*> s_map_old_country_name_fixes[] = {
+{"Burma", "Myanmar"},
+{"Siam", "Thailand"}
+};
+DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_old_country_name_fixes, s_map_old_country_name_fixes);
+
 // for GB-7408
 static const SStaticPair<const char*, const char*> s_map_subregion_fixes[] = {
 {"Antigua", "Antigua and Barbuda: Antigua"},
@@ -3693,6 +3700,11 @@ string CCountries::NewFixCountry (const string& test)
         NStr::TruncateSpacesInPlace(input);
     }
 
+    auto old_name_fix = k_old_country_name_fixes.find(input.c_str());
+    if (old_name_fix != k_old_country_name_fixes.end()) {
+        input = old_name_fix->second;
+        return input;
+    }
     if (IsValid(input)) {
         return input;
     }
