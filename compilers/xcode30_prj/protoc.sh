@@ -33,11 +33,15 @@
 #
 # ===========================================================================
 
-NCBI=/netopt/ncbi_tools
-DEFPROTOC_LOCATION=$NCBI/grpc-1.14.0-ncbi1/Release/bin/protoc
-DEFGRPC_LOCATION=$NCBI/grpc-1.14.0-ncbi1/Release/bin/grpc_cpp_plugin
+PROTOC_APP=protoc
+GRPC_APP=grpc_cpp_plugin
 
-case ":$DATATOOL_PATH:$TREE_ROOT:$BUILD_TREE_ROOT:$PTB_PLATFORM:" in
+# remove the following after the transition period!
+if test -z "$GENERATOR_PATH"; then
+  GENERATOR_PATH=/netopt/ncbi_tools/grpc-1.14.0-ncbi1/Release/bin
+fi
+
+case ":$GENERATOR_PATH:$TREE_ROOT:$BUILD_TREE_ROOT:$PTB_PLATFORM:" in
     *::* )
         echo '$0: ERROR: required environment variable is missing.' >&2
         echo 'DO NOT ATTEMPT to run this script manually.' >&2
@@ -45,8 +49,8 @@ case ":$DATATOOL_PATH:$TREE_ROOT:$BUILD_TREE_ROOT:$PTB_PLATFORM:" in
         ;;
 esac
 
-PROTOC=$DEFPROTOC_LOCATION
-GRPC_PLUGIN=$DEFGRPC_LOCATION
+PROTOC=$GENERATOR_PATH/$PROTOC_APP
+GRPC_PLUGIN=$GENERATOR_PATH/$GRPC_APP
 
 for x in "$PROTOC" "$GRPC_PLUGIN"; do
     if [ ! -x "$x" ]; then

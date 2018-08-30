@@ -32,10 +32,15 @@ REM DO NOT ATTEMPT to run this bat file manually
 REM
 REM ===========================================================================
 
-set DEFPROTOC_LOCATION=\\snowman\win-coremake\Lib\ThirdParty\grpc\vs2015.64\1.14.0\bin\protoc.exe
-set DEFGRPC_LOCATION=\\snowman\win-coremake\Lib\ThirdParty\grpc\vs2015.64\1.14.0\bin\grpc_cpp_plugin.exe
+set PROTOC_APP=protoc.exe
+set GRPC_APP=grpc_cpp_plugin.exe
 
-for %%v in ("%DATATOOL_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PLATFORM%") do (
+REM remove the following after the transition period!
+if "%GENERATOR_PATH%"=="" (
+  set GENERATOR_PATH=\\snowman\win-coremake\Lib\ThirdParty\grpc\vs2015.64\1.14.0\bin
+)
+
+for %%v in ("%GENERATOR_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PLATFORM%") do (
   if %%v=="" (
     echo ERROR: required environment variable is missing
     echo DO NOT ATTEMPT to run this bat file manually
@@ -43,8 +48,8 @@ for %%v in ("%DATATOOL_PATH%" "%TREE_ROOT%" "%BUILD_TREE_ROOT%" "%PTB_PLATFORM%"
   )
 )
 
-set PROTOC_EXE=%DEFPROTOC_LOCATION%
-set GRPC_PLUGIN=%DEFGRPC_LOCATION%
+set PROTOC_EXE=%GENERATOR_PATH%\%PROTOC_APP%
+set GRPC_PLUGIN=%GENERATOR_PATH%\%GRPC_APP%
 
 if not exist "%PROTOC_EXE%" (
   echo ERROR: "%PROTOC_EXE%" not found
