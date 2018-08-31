@@ -2151,49 +2151,8 @@ bool IsLikelyTaxname(const string& val)
 //not used by asnvalidate but used by other applications
 bool IsSpecificHostValid(const string& val, string& error_msg)
 {
-    bool is_valid = true;
-    error_msg = kEmptyStr;
-    
-    // only check host values that start with a capital letter and have at least two words
-    string host = SpecificHostValueToCheck(val);
-    if (!NStr::IsBlank(host)) {
-        vector<CRef<COrg_ref> > org_req_list;
-        CRef<COrg_ref> req(new COrg_ref());
-        req->SetTaxname(host);
-        org_req_list.push_back(req);
-        if (!NStr::Equal(host, val)) {
-            CRef<COrg_ref> req2(new COrg_ref());
-            req2->SetTaxname(val);
-            org_req_list.push_back(req2);
-        }
-    
-        CTaxon3 taxon3;
-        taxon3.Init();
-        is_valid = false;
-        CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_req_list);
-        if (reply && reply->GetReply().size() > 0) {
-            CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
-            while (reply_it != reply->GetReply().end()) {
-                string this_error_msg = InterpretSpecificHostResult(host, **reply_it);
-                if (NStr::IsBlank(this_error_msg)) {
-                    is_valid = true;
-                    error_msg = kEmptyStr;
-                    break;
-                } else if (NStr::IsBlank(error_msg)) {
-                    error_msg = this_error_msg;
-                }
-                ++reply_it;
-            }
-        } else {
-            error_msg = "Invalid value for specific host: " + host;
-        }
-    }
-    if (NStr::StartsWith(error_msg, "Invalid value for specific host") && !IsLikelyTaxname(host)) {
-        is_valid = true;
-        error_msg = kEmptyStr;
-    }
-
-    return is_valid;
+    CTaxValidationAndCleanup tval;
+    return tval.IsOneSpecificHostValid(val, error_msg);
 }
 
 

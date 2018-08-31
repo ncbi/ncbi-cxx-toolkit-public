@@ -106,7 +106,7 @@ public:
 
     virtual void AddReply(const CT3Reply& reply) = 0;
     virtual void PostErrors(CValidError_imp& imp) = 0;
-    virtual bool HasErrors() const = 0;
+    virtual void ListErrors(vector<string>& errs) const = 0;
 
 protected:
     void x_Init();
@@ -137,7 +137,7 @@ public:
 
     virtual void AddReply(const CT3Reply& reply);
     virtual void PostErrors(CValidError_imp& imp);
-    virtual bool HasErrors() const;
+    virtual void ListErrors(vector<string>& errs) const;
 
     const string& SuggestFix() const;
 
@@ -159,7 +159,7 @@ public:
 
     virtual void AddReply(const CT3Reply& reply);
     virtual void PostErrors(CValidError_imp& imp);
-    virtual bool HasErrors() const;
+    virtual void ListErrors(vector<string>& errs) const;
 
     static string MakeKey(const string& strain, const string& taxname);
     static bool RequireTaxname(const string& taxname);
@@ -224,7 +224,8 @@ public:
 
     // Posts errors to the validator based on responses
     void PostErrors(CValidError_imp& imp);
-    bool HasErrors() const;
+
+    virtual void ListErrors(vector<string>& errs) const;
 
     // Applies the change to an Org-ref. Note that there might be multiple
     // qualifiers of the same subtype on the Org-ref, and we need to be sure
@@ -343,7 +344,7 @@ public:
     bool DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with_host);
 
     void FixOneSpecificHost(string& val);
-    bool IsOneSpecificHostValid(const string& val);
+    bool IsOneSpecificHostValid(const string& val, string& err_msg);
 
 protected:
     void x_GatherSources(const CSeq_entry& se);

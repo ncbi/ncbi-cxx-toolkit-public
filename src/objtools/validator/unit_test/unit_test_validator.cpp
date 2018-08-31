@@ -7408,7 +7408,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     TestSpecificHostNoError("Snake");
     TestSpecificHostNoError("Turtle");
     TestSpecificHostNoError("mallard duck");
-
+    TestSpecificHostNoError("Guinea pig");
 }
 
 BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
@@ -7450,7 +7450,7 @@ BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
 	
 	host = "Pinus sp.";
 	BOOST_CHECK_EQUAL(false, IsSpecificHostValid(host, error_msg));
-	BOOST_CHECK_EQUAL(error_msg, string("Specific host value is ambiguous: Pinus"));
+	BOOST_CHECK_EQUAL(error_msg, string("Specific host value is ambiguous: Pinus sp."));
 	
 	host = "Gallus Gallus";
 	BOOST_CHECK_EQUAL(false, IsSpecificHostValid(host, error_msg));
@@ -7481,6 +7481,10 @@ BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
 	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
 
     host = "Homo sapiens; sex: female";
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
+
+    host = "Guinea pig";
 	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
 	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
 

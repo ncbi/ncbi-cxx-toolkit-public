@@ -227,33 +227,26 @@ void CSpecificHostRequest::PostErrors(CValidError_imp& imp)
 
 //LCOV_EXCL_START
 //only used by biosample
-bool CSpecificHostRequest::HasErrors() const
+void CSpecificHostRequest::ListErrors(vector<string>& errs) const
 {
-    bool rval = false;
     switch (m_Response) {
         case eNormal:
             break;
         case eAmbiguous:
-            rval = true;
-            break;
         case eUnrecognized:
-            rval = true;
-            break;        
         case eAlternateName:
-            rval = true;
+            errs.push_back(m_Error);
             break;
     }
 
     if (!NStr::IsBlank(m_HostLineage) && !NStr::IsBlank(m_OrgLineage) &&
         (NStr::Find(m_OrgLineage, "Streptophyta") != NPOS || NStr::Find(m_OrgLineage, "Metazoa") != NPOS) &&
-        (NStr::Find(m_HostLineage, "Fungi") != NPOS || NStr::Find(m_HostLineage, "Bacteria") != NPOS ||
+        (NStr::Find(m_HostLineage, "Fungi;") != NPOS || NStr::Find(m_HostLineage, "Bacteria") != NPOS ||
         NStr::Find(m_HostLineage, "Archaea") != NPOS || NStr::Find(m_HostLineage, "Viruses") != NPOS)) {
-        rval = true;
+        errs.push_back("Suspect Host Value - a prokaryote, fungus or virus is suspect as a host for a plant or animal");
     }
-    return rval;
 }
 //LCOV_EXCL_STOP
-
 
 //LCOV_EXCL_START
 //used by cleanup
@@ -375,24 +368,25 @@ bool CStrainRequest::Check(const COrg_ref& org)
 
 void CStrainRequest::PostErrors(CValidError_imp& imp)
 {
-    if (m_IsInvalid) {
+    vector<string> errs;
+    ListErrors(errs);
+    for (auto s : errs) {
         for (auto it = m_Descs.begin(); it != m_Descs.end(); it++) {
-            imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_StrainContainsTaxInfo, "Strain '" + m_Strain + "' contains taxonomic name information", *(it->first), it->second);
+            imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_StrainContainsTaxInfo, s, *(it->first), it->second);
         }
         for (auto it = m_Feats.begin(); it != m_Feats.end(); it++) {
-            imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_StrainContainsTaxInfo, "Strain '" + m_Strain + "' contains taxonomic name information", **it);
+            imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_StrainContainsTaxInfo, s, **it);
         }
     }
 }
 
 
-//LCOV_EXCL_START
-//only used by biosample
-bool CStrainRequest::HasErrors() const 
+void CStrainRequest::ListErrors(vector<string>& errs) const 
 {
-    return m_IsInvalid;
+    if (m_IsInvalid) {
+        errs.push_back("Strain '" + m_Strain + "' contains taxonomic name information");
+    }
 }
-//LCOV_EXCL_STOP
 
 
 void CStrainRequest::AddReply(const CT3Reply& reply)
@@ -578,15 +572,14 @@ void CQualLookupMap::PostErrors(CValidError_imp& imp)
 
 //LCOV_EXCL_START
 //only used by biosample
-bool CQualLookupMap::HasErrors() const
+void CQualLookupMap::ListErrors(vector<string>& errs) const
 {
     for (auto rq_it : m_Map) {
-        if (rq_it.second->HasErrors()) {
-            return true;
-        }
+        rq_it.second->ListErrors(errs);
     }
-    return false;
 }
+
+
 //LCOV_EXCL_STOP
 
 
@@ -1257,7 +1250,8 @@ bool CTaxValidationAndCleanup::DoTaxonomyUpdate(CSeq_entry_Handle seh, bool with
 void CTaxValidationAndCleanup::FixOneSpecificHost(string& val)
 {
     val = x_DefaultSpecificHostAdjustments(val);
-    if(IsOneSpecificHostValid(val)) {
+    string err_msg;
+    if(IsOneSpecificHostValid(val, err_msg)) {
         return;
     }
     m_HostMapForFix.Clear();
@@ -1300,8 +1294,9 @@ void CTaxValidationAndCleanup::FixOneSpecificHost(string& val)
 
 //LCOV_EXCL_START
 //only used by biosample
-bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val)
+bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val, string& error_msg)
 {
+    error_msg = kEmptyStr;
     m_HostMap.Clear();
 
     m_HostMap.AddString(val);
@@ -1328,13 +1323,19 @@ bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val)
         err_msg = "Connection to taxonomy failed";
     }
     bool rval = true;
+    error_msg = err_msg;
 
     if (!NStr::IsBlank(err_msg)) {
         LOG_POST(Error << err_msg);
         m_HostMap.Clear();
         rval = false;
-    } else if (m_HostMap.HasErrors()) {
-        rval = false;
+    } else {
+        vector<string> errs;
+        m_HostMap.ListErrors(errs);
+        if (errs.size() > 0) {
+            error_msg = errs.front();
+            rval = false;
+        }
     }
     m_HostMap.Clear();
     return rval;
