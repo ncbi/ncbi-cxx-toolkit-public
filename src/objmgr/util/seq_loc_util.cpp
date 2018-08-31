@@ -545,8 +545,12 @@ void ChangeSeqId(CSeq_id* id, bool best, CScope* scope)
     }
 
     // Get CBioseq represented by *id
+    CBioseq_Handle bsh = scope->GetBioseqHandle(*id);
+    if (!bsh) {
+        return;
+    }
     CBioseq_Handle::TBioseqCore seq =
-        scope->GetBioseqHandle(*id).GetBioseqCore();
+        bsh.GetBioseqCore();
 
     // Get pointer to the best/worst id of *seq
     const CSeq_id* tmp_id;
