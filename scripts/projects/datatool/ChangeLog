@@ -171,3 +171,7 @@ Fixed problem in RPC client generator.
 February 15, 2018
 version 2.18.1, CXX-9904
 Fixed SOAP code generation
+
+August 31, 2018
+version 2.18.2, CXX-10216
+Fixed bugs in handling JSON schema.
