@@ -78,7 +78,7 @@ static void GetSeqIdStr(const CBioseq::TId& ids, string& id_str)
     for (auto& id : ids) {
         if (id->IsGeneral()) {
             id->GetGeneral().GetLabel(&id_str);
-            id_str = "general id " + id_str;
+            id_str = "general id \"" + id_str + '\"';
             break;
         }
         else if (id->IsLocal()) {
@@ -91,7 +91,7 @@ static void GetSeqIdStr(const CBioseq::TId& ids, string& id_str)
             }
 
             if (!id_str.empty()) {
-                id_str = "local id " + id_str;
+                id_str = "local id \"" + id_str + '\"';
                 break;
             }
         }
