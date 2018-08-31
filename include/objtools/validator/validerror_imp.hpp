@@ -381,9 +381,7 @@ public:
     void AddBioseqWithNoBiosource(const CBioseq& seq);
     void AddProtWithoutFullRef(const CBioseq_Handle& seq);
     static bool IsWGSIntermediate(const CBioseq& seq);
-    static bool IsWGSIntermediate(const CSeq_entry& se);
     static bool IsTSAIntermediate(const CBioseq& seq);
-    static bool IsTSAIntermediate(const CSeq_entry& se);
     void ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs);
     void ReportMissingBiosource(const CSeq_entry& se);
 
@@ -441,12 +439,6 @@ private:
     bool HasName(const CAuth_list& authors);
     bool HasTitle(const CTitle& title);
     bool HasIsoJTA(const CTitle& title);
-
-    bool ValidateDescriptorInSeqEntry (const CSeq_entry& se, CValidError_desc * descval);
-    bool ValidateDescriptorInSeqEntry (const CSeq_entry& se);
-
-    bool ValidateSeqDescrInSeqEntry (const CSeq_entry& se, CValidError_descr *descr_val);
-    bool ValidateSeqDescrInSeqEntry (const CSeq_entry& se);
 
     void x_CheckSingleStrandedRNAViruses
         (const CBioSource& source,

@@ -1050,82 +1050,6 @@ bool CValidError_imp::Validate
     return Validate(seh, cs);
 }
 
-bool CValidError_imp::ValidateDescriptorInSeqEntry (const CSeq_entry& se, CValidError_desc *descval)
-{
-    FOR_EACH_DESCRIPTOR_ON_SEQENTRY (it, se) {
-        try {
-            descval->ValidateSeqDesc(**it, se);
-            if ( m_PrgCallback ) {
-                m_PrgInfo.m_CurrentDone++;
-                m_PrgInfo.m_TotalDone++;
-                if ( m_PrgCallback(&m_PrgInfo) ) {
-                    return false;
-                }
-            }
-        } catch ( const exception& e ) {
-            PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
-                string("Exeption while validating descriptor. EXCEPTION: ") +
-                e.what(), se, **it);
-            return true;
-        }
-    }
-    if (se.Which() == CSeq_entry::e_Set) {
-        FOR_EACH_SEQENTRY_ON_SEQSET (it, se.GetSet()) {
-            if (!ValidateDescriptorInSeqEntry (**it, descval)) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-       
-
-bool CValidError_imp::ValidateDescriptorInSeqEntry (const CSeq_entry& se)
-{
-    if ( m_PrgCallback ) {
-        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Desc;
-        m_PrgInfo.m_Current = m_NumDesc;
-        m_PrgInfo.m_CurrentDone = 0;
-        m_PrgCallback(&m_PrgInfo);
-    }
-
-    //CRef<CValidError_desc> desc_validator(new CValidError_desc(*this)); 
-    CValidError_desc desc_validator(*this);
-    return ValidateDescriptorInSeqEntry (se, &desc_validator);        
-}
-
-
-bool CValidError_imp::ValidateSeqDescrInSeqEntry (const CSeq_entry& se, CValidError_descr *descr_val)
-{
-    if (se.IsSetDescr()) {
-        descr_val->ValidateSeqDescr (se.GetDescr(), se);
-    }
-    if (se.Which() == CSeq_entry::e_Set) {
-        FOR_EACH_SEQENTRY_ON_SEQSET (it, se.GetSet()) {
-            if (!ValidateSeqDescrInSeqEntry (**it, descr_val)) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-       
-
-bool CValidError_imp::ValidateSeqDescrInSeqEntry (const CSeq_entry& se)
-{
-    if ( m_PrgCallback ) {
-        m_PrgInfo.m_State = CValidator::CProgressInfo::eState_Desc;
-        m_PrgInfo.m_Current = m_NumDesc;
-        m_PrgInfo.m_CurrentDone = 0;
-        m_PrgCallback(&m_PrgInfo);
-    }
-
-    //CRef<CValidError_desc> desc_validator(new CValidError_desc(*this)); 
-    CValidError_descr desc_validator(*this);
-    return ValidateSeqDescrInSeqEntry (se, &desc_validator);        
-}
-
-
 static bool s_IsPhage(const COrg_ref& org)
 {
     if (org.IsSetDivision() && NStr::Equal(org.GetDivision(), "PHG")) {
@@ -2303,24 +2227,6 @@ bool CValidError_imp::IsWGSIntermediate(const CBioseq& seq)
 }
 
 
-bool CValidError_imp::IsWGSIntermediate(const CSeq_entry& se)
-{
-    if (se.IsSeq()) {
-        return IsWGSIntermediate(se.GetSeq());
-    } else if (se.IsSet()) {
-        const CBioseq_set& set = se.GetSet();
-        FOR_EACH_SEQENTRY_ON_SEQSET (it, set) {
-            if ((*it)->IsSet()) {
-                return IsWGSIntermediate(**it);
-            } else if ((*it)->IsSeq() && (*it)->GetSeq().IsNa()) {
-                return IsWGSIntermediate((*it)->GetSeq());
-            }
-        }
-    }
-    return false;
-}
-
-
 bool CValidError_imp::IsTSAIntermediate(const CBioseq& seq)
 {
     bool tsa = false;
@@ -2353,24 +2259,6 @@ bool CValidError_imp::IsTSAIntermediate(const CBioseq& seq)
     }
 
     return true;
-}
-
-
-bool CValidError_imp::IsTSAIntermediate(const CSeq_entry& se)
-{
-    if (se.IsSeq()) {
-        return IsTSAIntermediate(se.GetSeq());
-    } else if (se.IsSet()) {
-        const CBioseq_set& set = se.GetSet();
-        FOR_EACH_SEQENTRY_ON_SEQSET (it, set) {
-            if ((*it)->IsSet()) {
-                return IsTSAIntermediate(**it);
-            } else if ((*it)->IsSeq() && (*it)->GetSeq().IsNa()) {
-                return IsTSAIntermediate((*it)->GetSeq());
-            }
-        }
-    }
-    return false;
 }
 
 
