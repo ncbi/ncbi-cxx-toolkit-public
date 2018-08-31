@@ -525,4 +525,29 @@ bool IsDigits(string::const_iterator start, string::const_iterator end)
     return true;
 }
 
+bool IsValidBiosample(const string& id)
+{
+    static const size_t MIN_SAM_ID_SIZE = 5;
+    static const size_t MIN_SAMEA_ID_SIZE = 6;
+
+    size_t offset = 0;
+
+    if (NStr::StartsWith(id, "SRS")) {
+        offset = 3;
+    }
+    else if (NStr::StartsWith(id, "SAM") && id.size() >= MIN_SAM_ID_SIZE && (id[3] == 'N' || id[3] == 'D')) {
+        offset = 4;
+    }
+    else if (NStr::StartsWith(id, "SAMEA") && id.size() >= MIN_SAMEA_ID_SIZE) {
+        offset = 5;
+    }
+
+
+    if (offset == 0) {
+        return false;
+    }
+
+    return IsDigits(id.begin() + offset, id.end());
+}
+
 }

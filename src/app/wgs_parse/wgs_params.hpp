@@ -137,6 +137,7 @@ public:
     bool IsCitArtFromMaster() const;
     bool IsStripAuthors() const;
     bool IsDiffCitSubAllowed() const;
+    bool IsDiffBioSamplesAllowed() const;
 
     const string& GetNewNucTitle() const;
 
@@ -187,6 +188,7 @@ private:
     friend void SetScaffoldPrefix(const string& scaffold_prefix);
     friend void SetAssemblyVersion(int version);
     friend void SetUpdateMode(EUpdateMode mode);
+    friend void AddBioSample(const string& biosample);
 
     CParams();
     CParams(const CParams&) = delete;
@@ -197,6 +199,7 @@ bool SetParams(const CArgs& args);
 void SetScaffoldPrefix(const string& scaffold_prefix);
 void SetAssemblyVersion(int version);
 void SetUpdateMode(EUpdateMode mode);
+void AddBioSample(const string& biosample);
 
 }
 

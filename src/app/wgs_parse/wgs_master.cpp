@@ -391,7 +391,30 @@ struct CDBLinkInfo
     }
 };
 
-static void CollectDblink(const CSeq_entry& entry, CDBLinkInfo& info)
+static bool ExtractBiosamplesFromDblink(CUser_object& user_obj, bool& reject)
+{
+    bool ret = false;
+
+    CConstRef<CUser_field> biosample_field = user_obj.GetFieldRef("BioSample");
+    if (biosample_field.NotEmpty() && biosample_field->IsSetData() && biosample_field->GetData().IsStrs()) {
+
+        for (auto& cur_id : biosample_field->GetData().GetStrs()) {
+
+            if (!IsValidBiosample(cur_id)) {
+                reject = true;
+            }
+
+            ret = true;
+            AddBioSample(cur_id);
+        }
+
+        user_obj.RemoveNamedField("BioSample");
+    }
+
+    return ret;
+}
+
+static void CollectDblink(CSeq_entry& entry, CDBLinkInfo& info, bool& reject)
 {
     if (info.m_dblink_state == eDblinkDifferentDblink) {
         return;
@@ -401,13 +424,22 @@ static void CollectDblink(const CSeq_entry& entry, CDBLinkInfo& info)
         info.m_cur_bioseq_id = GetSeqIdStr(entry.GetSeq());
     }
 
-    const CSeq_descr* descrs = nullptr;
-    if (GetDescr(entry, descrs) && descrs && descrs->IsSet()) {
+    CSeq_descr* descrs = nullptr;
+    if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
 
-        for (auto& descr : descrs->Get()) {
+        for (auto& descr : descrs->Set()) {
             if (IsUserObjectOfType(*descr, "DBLink")) {
 
-                const CUser_object& user_obj = descr->GetUser();
+                CUser_object& user_obj = descr->SetUser();
+
+                if (GetParams().IsDiffBioSamplesAllowed()) {
+                    if (!ExtractBiosamplesFromDblink(user_obj, reject)) {
+
+                        ERR_POST_EX(0, 0, Critical << "The files being processed contain some records with DBLink User-objects lacking required BioSamples. Rejecting the whole project.");
+                        reject = true;
+                    }
+                }
+
                 if (info.m_dblink.Empty()) {
                     info.m_dblink.Reset(new CUser_object);
                     info.m_dblink->Assign(user_obj);
@@ -423,16 +455,16 @@ static void CollectDblink(const CSeq_entry& entry, CDBLinkInfo& info)
 
     if (entry.IsSet()) {
         if (entry.GetSet().IsSetSeq_set()) {
-            for_each(entry.GetSet().GetSeq_set().begin(), entry.GetSet().GetSeq_set().end(),
-                     [&info](const CRef<CSeq_entry>& cur_entry) { CollectDblink(*cur_entry, info); });
+            for_each(entry.SetSet().SetSeq_set().begin(), entry.SetSet().SetSeq_set().end(),
+                     [&info, &reject](CRef<CSeq_entry>& cur_entry) { CollectDblink(*cur_entry, info, reject); });
         }
     }
 }
 
-static void CheckDblink(const CSeq_entry& entry, CMasterInfo& info, const string& file)
+static void CheckDblink(CSeq_entry& entry, CMasterInfo& info, const string& file)
 {
     CDBLinkInfo dblink_info;
-    CollectDblink(entry, dblink_info);
+    CollectDblink(entry, dblink_info, info.m_reject);
 
     if (dblink_info.m_cur_bioseq_id.empty()) {
         dblink_info.m_cur_bioseq_id = "Unknown";
@@ -552,6 +584,12 @@ static bool CheckSameOrgRefs(list<COrgRefInfo>& org_refs)
 static bool DBLinkProblemReport(const CMasterInfo& info)
 {
     bool reject = false;
+
+    if (info.m_dblink.Empty() && GetParams().IsDiffBioSamplesAllowed()) {
+        ERR_POST_EX(0, 0, Critical << "All records from the files being processed are missing required DBLink User-objects. Rejecting the whole project.");
+        reject = true;
+    }
+
     if (info.m_dblink.NotEmpty() && info.m_dblink_state != eDblinkNoProblem) {
         if (info.m_dblink_state & eDblinkDifferentDblink) {
             ERR_POST_EX(0, 0, Critical << "The files being processed contain DBLink User-objects that are not identical in content. The first difference was encountered at sequence \"" <<

@@ -105,6 +105,7 @@ CRef<CSeqdesc> CreateCitSub(const CCit_sub& cit_sub, const CContact_info* contac
 
 CRef<CSeqdesc> BuildStructuredComment(const string& comment);
 bool IsDigits(string::const_iterator start, string::const_iterator end);
+bool IsValidBiosample(const string& id);
 
 CScope& GetScope();
 

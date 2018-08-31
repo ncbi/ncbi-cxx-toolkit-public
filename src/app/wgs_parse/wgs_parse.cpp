@@ -151,6 +151,8 @@ void CWGSParseApp::Init(void)
 
     arg_desc->AddOptionalKey("E", "MolType", "Specific Seq-inst.mol type (case sensitive) to be used for the project. Allowed values for WGS: rna.", CArgDescriptions::eString);
 
+    arg_desc->AddDefaultKey("D", "DiffBioSamples", "For brand new TLS projects only: allows DBLinks with different BioSamples among contigs. DBLinks won't be removed from contigs.", CArgDescriptions::eBoolean, "F");
+
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
 }
 

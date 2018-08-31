@@ -67,6 +67,7 @@ struct CParams_imp
     bool m_dblink_override;
     bool m_medline_lookup;
     bool m_enforce_new;
+    bool m_different_biosamples;
 
     string m_outdir;
     string m_id_acc_file;
@@ -122,6 +123,7 @@ struct CParams_imp
         m_dblink_override(false),
         m_medline_lookup(false),
         m_enforce_new(false),
+        m_different_biosamples(false),
         m_update_mode(eUpdateNew),
         m_scaffold_type(eRegularGenomic),
         m_sort_order(eUnsorted),
@@ -323,6 +325,11 @@ bool CParams::IsStripAuthors() const
 bool CParams::IsDiffCitSubAllowed() const
 {
     return m_imp->m_allow_diff_citsubs;
+}
+
+bool CParams::IsDiffBioSamplesAllowed() const
+{
+    return m_imp->m_different_biosamples;
 }
 
 const string& CParams::GetNewNucTitle() const
@@ -608,31 +615,6 @@ static bool IsValidSRA(const string& sra)
            IsDigits(sra.begin() + 3, sra.end());
 }
 
-static bool IsValidBiosample(const string& id)
-{
-    static const size_t MIN_SAM_ID_SIZE = 5;
-    static const size_t MIN_SAMEA_ID_SIZE = 6;
-
-    size_t offset = 0;
-    
-    if (NStr::StartsWith(id, "SRS")) {
-        offset = 3;
-    }
-    else if (NStr::StartsWith(id, "SAM") && id.size() >= MIN_SAM_ID_SIZE && (id[3] == 'N' || id[3] == 'D')) {
-        offset = 4;
-    }
-    else if (NStr::StartsWith(id, "SAMEA") && id.size() >= MIN_SAMEA_ID_SIZE) {
-        offset = 5;
-    }
-
-
-    if (offset == 0) {
-        return false;
-    }
-
-    return IsDigits(id.begin() + offset, id.end());
-}
-
 static bool SetBioSampleSRAIds(const list<string>& ids, TIdContainer& biosample_ids, TIdContainer& sra_ids)
 {
     static const size_t MIN_ID_SIZE = 4;
@@ -857,7 +839,7 @@ bool SetParams(const CArgs& args)
     if (!biosample_ids.empty()) {
 
         if (!IsValidIdParam(biosample_ids)) {
-            ERR_POST_EX(0, 0, "One or more BioSample/SRA id numbers for this WGS/TSA project, provided in command line, is incorrect: \"" << biosample_ids << "\".");
+            ERR_POST_EX(0, 0, Error << "One or more BioSample/SRA id numbers for this WGS/TSA project, provided in command line, is incorrect: \"" << biosample_ids << "\".");
         }
         else {
             list<string> ids;
@@ -867,6 +849,22 @@ bool SetParams(const CArgs& args)
                 (params_imp.m_biosample_ids.empty() && params_imp.m_sra_ids.empty())) {
                 return false;
             }
+        }
+    }
+
+    params_imp.m_different_biosamples = args["D"].AsBoolean();
+
+    if (params_imp.m_different_biosamples) {
+
+        if (!params_imp.m_biosample_ids.empty()) {
+            ERR_POST_EX(0, 0, Warning << "Ignoring Biosample ids entered via \"-C\" command line switch because \"-D T\" is set.");
+        }
+        params_imp.m_biosample_ids.clear();
+
+        if (!params->IsTls() && params->GetUpdateMode() != eUpdateNew) {
+
+            ERR_POST_EX(0, 0, Critical << "Different DBLinks (switch \"-D\") are allowed for brand new TLS projects only.");
+            return false;
         }
     }
 
@@ -1167,6 +1165,12 @@ void SetUpdateMode(EUpdateMode mode)
 {
     CParams_imp& params_imp = *params->m_imp;
     params_imp.m_update_mode = mode;
+}
+
+void AddBioSample(const string& biosample)
+{
+    CParams_imp& params_imp = *params->m_imp;
+    params_imp.m_biosample_ids.insert(biosample);
 }
 
 }

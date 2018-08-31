@@ -1604,7 +1604,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     bool lookup_succeed = FixBioSources(*entry, master_info);
 
                     size_t dblink_order_num = 0;
-                    if (master_info.m_gpid || master_info.m_dblink_state == eDblinkNoProblem) {
+                    if ((master_info.m_gpid || master_info.m_dblink_state == eDblinkNoProblem) && !GetParams().IsDiffBioSamplesAllowed()) {
                         RemoveDblinkGPID(*entry, dblink_order_num);
                     }
 
