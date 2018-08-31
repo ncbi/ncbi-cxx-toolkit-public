@@ -3051,6 +3051,8 @@ bool CValidError_imp::x_IsFarFetchFailure (const CSeq_loc& loc)
 }
 
 
+//LCOV_EXCL_START
+// not used by asnvalidate, used by external programs
 bool CValidError_imp::GetTSANStretchErrors(const CSeq_entry_Handle& se)
 {
     bool rval = false;
@@ -3119,6 +3121,7 @@ bool CValidError_imp::GetTSAConflictingBiomolTechErrors (const CBioseq& seq)
     CValidError_bioseq bioseq_validator(*this);
     return bioseq_validator.GetTSAConflictingBiomolTechErrors(*(seh.GetSeq().GetCompleteBioseq()));
 }
+//LCOV_EXCL_STOP
 
 
 ITaxon3* CValidError_imp::x_GetTaxonService()
@@ -3531,6 +3534,9 @@ CCacheImpl::GetFeatFromCacheMulti(
     return answer;
 }
 
+
+//LCOV_EXCL_START
+//not used
 bool
 CCacheImpl::SFeatStrKey::operator<(const SFeatStrKey & rhs) const
 {
@@ -3543,6 +3549,7 @@ CCacheImpl::SFeatStrKey::operator<(const SFeatStrKey & rhs) const
     return s_QuickStringLess(m_feat_str, rhs.m_feat_str);
 }
 
+
 bool
 CCacheImpl::SFeatStrKey::operator==(const SFeatStrKey & rhs) const
 {
@@ -3554,6 +3561,7 @@ CCacheImpl::SFeatStrKey::operator==(const SFeatStrKey & rhs) const
     }
     return (m_feat_str == rhs.m_feat_str);
 }
+
 
 const CCacheImpl::TFeatValue &
 CCacheImpl::GetFeatStrKeyToFeats(
@@ -3649,6 +3657,7 @@ CCacheImpl::GetBioseqsOfFeatCache(
         return kEmptyFeatToBioseqCache;
     }
 }
+//LCOV_EXCL_STOP
 
 const CCacheImpl::TIdToBioseqValue &
 CCacheImpl::GetIdToBioseq(
