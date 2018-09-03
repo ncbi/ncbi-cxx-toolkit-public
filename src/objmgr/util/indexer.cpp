@@ -1740,9 +1740,11 @@ void CBioseqIndex::x_InitFeats (void)
 
         if (m_Policy != CSeqEntryIndex::eExternal) {
             // unless explicitly desired, exclude external annots
-            sel.ExcludeNamedAnnots("CDD")
-               .ExcludeNamedAnnots("SNP")
-               .ExcludeNamedAnnots("STS");
+            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0) {
+                sel.ExcludeNamedAnnots("SNP");
+            }
+            sel.ExcludeNamedAnnots("CDD");
+            sel.ExcludeNamedAnnots("STS");
         }
 
         if (m_Policy == CSeqEntryIndex::eExhaustive) {
@@ -1784,6 +1786,13 @@ void CBioseqIndex::x_InitFeats (void)
             // normal situation uses adaptive depth for feature collection,
             // includes barrier between RefSeq and INSD accession types
             sel.SetAdaptiveDepth(true);
+
+            // allow external SNPs - testing for now, probably needs to be in external policy
+            sel.AddUnnamedAnnots();
+            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0) {
+                sel.IncludeNamedAnnotAccession("SNP");
+                sel.AddNamedAnnots("SNP");
+            }
         }
 
         // bit flags exclude specific features
