@@ -11,7 +11,7 @@ CPPFLAGS = $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
 
 LIB = xdiscrepancy test_boost macro xncbi
 
-LIBS = $(PCRE_LIBS) $(ORIG_LIBS)
+LIBS = $(SEQ_LIBS) $(OBJMGR_LIBS) $(OBJREAD_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 
