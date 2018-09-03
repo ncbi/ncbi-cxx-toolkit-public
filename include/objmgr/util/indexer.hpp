@@ -111,6 +111,7 @@ public:
 
     // The primary constructor uses an existing CScope created by the application
     CSeqEntryIndex (CSeq_entry_Handle& topseh, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
+    CSeqEntryIndex (CBioseq_Handle& bsh, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
 
     // Alternative constructors take an object and create a new local default CScope
     CSeqEntryIndex (CSeq_entry& topsep, EPolicy policy = eAdaptive, TFlags flags = fDefault, int depth = -1);
@@ -186,6 +187,7 @@ public:
 public:
     // Initializers take the top-level sequence object
     void x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth);
+    void x_Initialize (CBioseq_Handle& bsh, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth);
 
     void x_Initialize (CSeq_entry& topsep, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth);
     void x_Initialize (CBioseq_set& seqset, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth);

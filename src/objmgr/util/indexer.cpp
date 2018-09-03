@@ -60,6 +60,13 @@ CSeqEntryIndex::CSeqEntryIndex (CSeq_entry_Handle& topseh, EPolicy policy, TFlag
     m_Idx->x_Initialize(topseh, policy, flags, depth);
 }
 
+CSeqEntryIndex::CSeqEntryIndex (CBioseq_Handle& bsh, EPolicy policy, TFlags flags, int depth)
+
+{
+    m_Idx.Reset(new CSeqMasterIndex);
+    m_Idx->x_Initialize(bsh, policy, flags, depth);
+}
+
 CSeqEntryIndex::CSeqEntryIndex (CSeq_entry& topsep, EPolicy policy, TFlags flags, int depth)
 
 {
@@ -186,6 +193,41 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::E
     m_Depth = depth;
 
     m_Tseh = topseh.GetTopLevelEntry();
+    CConstRef<CSeq_entry> tcsep = m_Tseh.GetCompleteSeq_entry();
+    CSeq_entry& topsep = const_cast<CSeq_entry&>(*tcsep);
+    topsep.Parentize();
+    m_Tsep.Reset(&topsep);
+
+    m_FeatTree = new feature::CFeatTree;
+
+    m_HasOperon = false;
+    m_IsSmallGenomeSet = false;
+
+    try {
+        // Code copied from x_Init, then modified to reuse existing scope from CSeq_entry_Handle
+        m_Scope.Reset( &m_Tseh.GetScope() );
+        if ( !m_Scope ) {
+            /* raise hell */;
+        }
+
+        m_Counter.Set(0);
+
+        // Populate vector of CBioseqIndex objects representing local Bioseqs in blob
+        CRef<CSeqsetIndex> noparent;
+        x_InitSeqs( *m_Tsep, noparent );
+    }
+    catch (CException& e) {
+        LOG_POST_X(1, Error << "Error in CSeqMasterIndex::x_Init: " << e.what());
+    }
+}
+
+void CSeqMasterIndex::x_Initialize (CBioseq_Handle& bsh, CSeqEntryIndex::EPolicy policy, CSeqEntryIndex::TFlags flags, int depth)
+{
+    m_Policy = policy;
+    m_Flags = flags;
+    m_Depth = depth;
+
+    m_Tseh = bsh.GetTopLevelEntry();
     CConstRef<CSeq_entry> tcsep = m_Tseh.GetCompleteSeq_entry();
     CSeq_entry& topsep = const_cast<CSeq_entry&>(*tcsep);
     topsep.Parentize();
