@@ -281,14 +281,16 @@ void CFlatFileGenerator::Generate
         }
         if (! m_Ctx->UsingSeqEntryIndex()) {
             try {
-                CFlatFileConfig::TFlags flgs =  m_Ctx->GetConfig().GetFlags();
-                if ( (flgs & CFlatFileConfig::fOnlyNearFeatures) != 0 ) {
-                    CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eInternal ));
-                    m_Ctx->SetSeqEntryIndex(idx);
-                } else {
-                    CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eAdaptive ));
-                    m_Ctx->SetSeqEntryIndex(idx);
+                CSeqEntryIndex::EPolicy policy = CSeqEntryIndex::eAdaptive;
+                CSeqEntryIndex::TFlags flags = CSeqEntryIndex::fDefault;
+                if ( m_Ctx->GetConfig().OnlyNearFeatures() ) {
+                    policy = CSeqEntryIndex::eInternal;
                 }
+                if ( m_Ctx->GetConfig().HideSNPFeatures() ) {
+                    flags |= CSeqEntryIndex::fHideSNPFeats;
+                }
+                CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags ));
+                m_Ctx->SetSeqEntryIndex(idx);
             } catch(CException &) {
                 m_Failed = true;
                 return;
@@ -653,14 +655,16 @@ void CFlatFileGenerator::Generate
         }
         if (! m_Ctx->UsingSeqEntryIndex()) {
             try {
-                CFlatFileConfig::TFlags flgs =  m_Ctx->GetConfig().GetFlags();
-                if ( (flgs & CFlatFileConfig::fOnlyNearFeatures) != 0 ) {
-                    CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eInternal ));
-                    m_Ctx->SetSeqEntryIndex(idx);
-                } else {
-                    CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, CSeqEntryIndex::eAdaptive ));
-                    m_Ctx->SetSeqEntryIndex(idx);
+                CSeqEntryIndex::EPolicy policy = CSeqEntryIndex::eAdaptive;
+                CSeqEntryIndex::TFlags flags = CSeqEntryIndex::fDefault;
+                if ( m_Ctx->GetConfig().OnlyNearFeatures() ) {
+                    policy = CSeqEntryIndex::eInternal;
                 }
+                if ( m_Ctx->GetConfig().HideSNPFeatures() ) {
+                    flags |= CSeqEntryIndex::fHideSNPFeats;
+                }
+                CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags ));
+                m_Ctx->SetSeqEntryIndex(idx);
             } catch(CException &) {
                 m_Failed = true;
                 return;
@@ -681,7 +685,7 @@ void CFlatFileGenerator::Generate
         NCBI_THROW(CFlatException, eInternal, "Unable to initialize gatherer");
     }
 
-	// this version of Gather calls method with internal Bioseq iterator
+    // this version of Gather calls method with internal Bioseq iterator
     gatherer->Gather(*m_Ctx, *pItemOS, entry, useSeqEntryIndexing);
 
     /// reset the context, but preserve our selector
