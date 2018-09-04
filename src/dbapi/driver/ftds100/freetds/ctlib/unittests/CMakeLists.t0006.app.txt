@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(ct100_t0006)
+  NCBI_sources(t0006)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +22,4 @@ include_directories(SYSTEM ${FTDS100_INCLUDE})
 target_link_libraries(ct100_t0006-app
     ct_ftds100
 )
-
+endif()

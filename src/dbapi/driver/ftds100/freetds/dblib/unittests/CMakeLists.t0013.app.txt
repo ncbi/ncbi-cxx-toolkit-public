@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(db100_t0013)
+  NCBI_sources(t0013 common)
+  NCBI_set_test_assets(t0013.sql data.bin)
+  NCBI_add_test(test-db100 --ms-ver 7.1 --no-auto db100_t0013)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -13,4 +24,4 @@ target_link_libraries(db100_t0013-app
     sybdb_ftds100 ${FTDS100_CTLIB_LIBS}
      ${RT_LIBS} ${C_LIBS} 
 )
-
+endif()

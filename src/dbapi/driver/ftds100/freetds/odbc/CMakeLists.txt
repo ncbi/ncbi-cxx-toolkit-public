@@ -3,6 +3,7 @@
 #############################################################################
 
 NCBI_add_library(odbc100)
+NCBI_add_subdirectory(unittests)
 
 # Include projects from this directory
 #include(CMakeLists.odbc100.lib.txt)

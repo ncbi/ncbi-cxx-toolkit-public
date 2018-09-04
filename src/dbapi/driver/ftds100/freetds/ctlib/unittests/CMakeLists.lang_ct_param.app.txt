@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(ct100_lang_ct_param)
+  NCBI_sources(lang_ct_param common)
+  NCBI_add_test(test-ct100 ct100_lang_ct_param)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +22,4 @@ include_directories(SYSTEM ${FTDS100_INCLUDE})
 target_link_libraries(ct100_lang_ct_param-app
     ct_ftds100
 )
-
+endif()

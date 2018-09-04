@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(tds100_t0007)
+  NCBI_sources(t0007)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +22,4 @@ include_directories(SYSTEM ${FTDS100_INCLUDE})
 target_link_libraries(tds100_t0007-app
     tds_ftds100
 )
-
+endif()

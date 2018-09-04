@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(ct100_row_count)
+  NCBI_sources(row_count common)
+  NCBI_add_test(test-ct100 ct100_row_count)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +22,4 @@ include_directories(SYSTEM ${FTDS100_INCLUDE})
 target_link_libraries(ct100_row_count-app
     ct_ftds100
 )
-
+endif()

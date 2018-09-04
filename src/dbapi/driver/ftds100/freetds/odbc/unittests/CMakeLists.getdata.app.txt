@@ -1,3 +1,13 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(odbc100_getdata)
+  NCBI_sources(getdata common)
+  NCBI_add_test(test-odbc100 odbc100_getdata)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +22,4 @@ include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
 target_link_libraries(odbc100_getdata-app
     odbc_ftds100
 )
-
+endif()

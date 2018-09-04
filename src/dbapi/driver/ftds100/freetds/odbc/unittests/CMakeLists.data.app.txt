@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(odbc100_data)
+  NCBI_sources(data common c2string parser)
+  NCBI_add_definitions(NEED_FREETDS_SRCDIR)
+  NCBI_set_test_assets(data.in odbc.ini)
+  NCBI_add_test(test-odbc100 --no-auto odbc100_data)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -12,4 +24,4 @@ include_directories(SYSTEM ${FTDS100_INCLUDE} ${ODBC_INCLUDE})
 target_link_libraries(odbc100_data-app
     odbc_ftds100
 )
-
+endif()

@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(db100_t0006)
+  NCBI_sources(t0006 common)
+  NCBI_set_test_assets(t0006.sql)
+  NCBI_add_test(test-db100 db100_t0006)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -13,4 +24,4 @@ target_link_libraries(db100_t0006-app
     sybdb_ftds100 ${FTDS100_CTLIB_LIBS}
      ${RT_LIBS} ${C_LIBS} 
 )
-
+endif()

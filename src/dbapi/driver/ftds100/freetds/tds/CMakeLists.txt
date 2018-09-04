@@ -3,6 +3,7 @@
 #############################################################################
 
 NCBI_add_library(tds100)
+NCBI_add_subdirectory(unittests)
 
 if(OFF)
 # Include projects from this directory
