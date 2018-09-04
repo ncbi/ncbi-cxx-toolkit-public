@@ -7,6 +7,7 @@ NCBI_begin_app(unit_test_gtfwriter)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xobjwrite)
   NCBI_project_watchers(ludwigf)
+  NCBI_set_test_assets( gtfwriter_test_cases )
   NCBI_add_test()
 NCBI_end_app()
 

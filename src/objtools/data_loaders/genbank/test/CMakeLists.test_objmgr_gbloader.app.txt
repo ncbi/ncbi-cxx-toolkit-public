@@ -6,6 +6,7 @@ NCBI_begin_app(test_objmgr_gbloader)
   NCBI_sources(test_objmgr_gbloader)
   NCBI_uses_toolkit_libraries(ncbi_xdbapi_ftds ncbi_xloader_genbank ncbi_xreader_pubseqos)
   NCBI_project_watchers(vasilche)
+  NCBI_add_test(all_readers.sh test_objmgr_gbloader)
 NCBI_end_app()
 
 if(OFF)

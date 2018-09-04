@@ -5,8 +5,10 @@
 NCBI_begin_app(asniotest)
   NCBI_sources(asniotest)
   NCBI_uses_toolkit_libraries(id1cli ncbimime pcsubstance)
-  NCBI_add_test()
   NCBI_project_watchers(gouriano)
+  NCBI_set_test_assets(data asniotest.ini)
+  NCBI_set_test_timeout(500)
+  NCBI_add_test()
 NCBI_end_app()
 
 if(OFF)

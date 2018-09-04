@@ -10,6 +10,12 @@ NCBI_begin_app(test_objmgr_data_mt)
     ncbi_xreader_pubseqos test_mt xobjutil
   )
   NCBI_project_watchers(vasilche)
+  NCBI_set_test_assets(test_objmgr_data.id1 test_objmgr_data.id2 test_objmgr_data.id_wgs1 test_objmgr_data.id_wgs2)
+  NCBI_set_test_timeout(1800)
+  NCBI_add_test(test_objmgr_data_ids.sh id2 test_objmgr_data_mt)
+  NCBI_add_test(test_objmgr_data_mt.sh id1)
+  NCBI_add_test(test_objmgr_data_mt.sh id2)
+  NCBI_add_test(test_objmgr_data_mt.sh pubseqos)
 NCBI_end_app()
 
 if(OFF)
