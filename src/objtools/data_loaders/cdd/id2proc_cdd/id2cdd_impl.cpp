@@ -244,7 +244,8 @@ CRef<CID2_Reply> CID2CDDProcessor_Impl::x_GetBlobId(
     CConstRef<CSeq_id> id = ID2_id_To_Seq_id(req_id);
     CRef<CCDD_Reply> cdd_reply = m_Client->AskBlobId(serial_number, *id);
     CRef<CID2_Reply> id2_reply = x_CreateID2_Reply(serial_number, *cdd_reply);
-    if (!id2_reply->IsSetReply() || !id2_reply->GetReply().IsGet_blob_id()) {
+    if (id2_reply == nullptr  ||  !id2_reply->IsSetReply()
+        ||  !id2_reply->GetReply().IsGet_blob_id()) {
         // Not a blob-id reply.
         return id2_reply;
     }
@@ -297,7 +298,8 @@ CRef<CID2_Reply> CID2CDDProcessor_Impl::x_GetBlob(
     CRef<CCDD_Reply> cdd_reply = m_Client->AskBlob(serial_number, blob_id);
     CRef<CID2_Reply> id2_reply = x_CreateID2_Reply(serial_number, *cdd_reply);
     CID2_Reply::TReply& reply = id2_reply->SetReply();
-    if (!id2_reply->IsSetReply() || !id2_reply->GetReply().IsGet_blob()) {
+    if (id2_reply == nullptr  ||  !id2_reply->IsSetReply()
+        ||  !id2_reply->GetReply().IsGet_blob()) {
         // Not a blob reply.
         return id2_reply;
     }
