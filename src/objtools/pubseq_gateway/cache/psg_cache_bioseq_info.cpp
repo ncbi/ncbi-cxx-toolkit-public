@@ -61,6 +61,9 @@ void CPubseqGatewayCacheBioseqInfo::Open()
     rdtxn.commit();
 }
 
+// LOOKUPS data for accession. Picks record with maximum version and minimum seq_id_type
+// (latter two would appear first according to built-in sorting order)
+
 bool CPubseqGatewayCacheBioseqInfo::LookupByAccession(const string& accession, int& version, int& seq_id_type, string& data) {
     bool rv = false;
 
@@ -90,6 +93,9 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccession(const string& accession, i
     return rv;
 }
     
+// LOOKUPS data for accession and version. Picks record with minimum seq_id_type
+// (latter would appear first according to built-in sorting order)
+
 bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(const string& accession, int version, int& seq_id_type, string& data) {
     bool rv = false;
 
@@ -124,11 +130,16 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(const string& acces
 }
 
     
-bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(const string& accession, int version, int seq_id_type, string& data) {
+// LOOKUPS data for accession, potentially version (if > 0) and potentially seq_id_type (if > 0). Picks record with matched version (or maximum version if <= 0) and matched seq_id_type
+// or minimum seq_id_type (if <= 0)
+
+bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(const string& accession, int version, int seq_id_type, string& data, int& found_version, int& found_saq_id_type) {
     bool rv = false;
 
-    if (!m_Env)
+    if (!m_Env) {        
         return false;
+        data.clear();
+    }
 
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
@@ -140,15 +151,21 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(const stri
                 lmdb::val key;
                 rv = cursor.get(key, val, MDB_GET_CURRENT);
                 while (rv) {
-                    int found_seq_id_type = -1;
+                    int _found_seq_id_type = -1;
+                    int _found_version = -1;
                     rv = key.size() == PackedKeySize(accession.size()) && accession.compare(key.data<const char>()) == 0;
                     if (!rv)
                         break;
                     if (rv)
-                        rv = UnpackKey(key.data<const char>(), key.size(), version, found_seq_id_type);
-                    rv = rv && (seq_id_type <= 0 || seq_id_type == found_seq_id_type);
-                    if (rv)
+                        rv = UnpackKey(key.data<const char>(), key.size(), _found_version, _found_seq_id_type);
+                    rv = rv && 
+                        (seq_id_type <= 0 || seq_id_type == _found_seq_id_type) &&
+                        (version <= 0 || version == _found_version);
+                    if (rv) {
+                        found_version = _found_version;
+                        found_saq_id_type = _found_seq_id_type;
                         break;
+                    }
                     rv = cursor.get(key, val, MDB_NEXT);
                 }
             }

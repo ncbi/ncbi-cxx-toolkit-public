@@ -45,7 +45,7 @@ public:
     void Open();
     bool LookupByAccession(const string& accession, int& version, int& seq_id_type, string& data);
     bool LookupByAccessionVersion(const string& accession, int version, int& seq_id_type, string& data);
-    bool LookupByAccessionVersionSeqIdType(const string& accession, int version, int seq_id_type, string& data);
+    bool LookupByAccessionVersionSeqIdType(const string& accession, int version, int seq_id_type, string& data, int& found_version, int& found_saq_id_type);
 
     static string PackKey(const string& accession, int version);
     static string PackKey(const string& accession, int version, int seq_id_type);
