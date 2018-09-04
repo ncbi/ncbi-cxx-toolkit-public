@@ -9,9 +9,9 @@ SRC = unit_test_discrepancy
 
 CPPFLAGS = $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
 
-LIB = xdiscrepancy test_boost macro xncbi
+LIB = xdiscrepancy test_boost macro $(SEQ_LIBS) $(OBJMGR_LIBS) $(OBJREAD_LIBS) xncbi
 
-LIBS = $(SEQ_LIBS) $(OBJMGR_LIBS) $(OBJREAD_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
+LIBS = $(PCRE_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 
