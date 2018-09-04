@@ -1242,6 +1242,9 @@ CPluginManager<TClass>::~CPluginManager(void)
     ITERATE ( typename TDllResolvers, it, m_Resolvers ) {
         delete *it;
     }
+    NON_CONST_ITERATE ( TResolvedEntries, it, m_RegisteredEntries ) {
+        delete it->dll; 	 
+    }
 }
 
 
