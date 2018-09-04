@@ -610,7 +610,7 @@ vector<CRef<CSeqdesc> > CBiosampleChkApp::GetBiosampleDescriptorsFromSeqSubmit()
 
     // Validae Seq-submit
     CRef<CScope> scope = BuildScope();
-    if (! ss->GetData().IsEntrys() && ! ss->GetData().GetEntrys().empty()) {
+    if (ss->GetData().IsEntrys() && ! ss->GetData().GetEntrys().empty()) {
         descriptors = GetBiosampleDescriptorsFromSeqEntry(**(ss->GetData().GetEntrys().begin()));
     }
     return descriptors;
