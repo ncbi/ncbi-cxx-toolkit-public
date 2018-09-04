@@ -7,6 +7,16 @@ NCBI_begin_app(bam_test)
   NCBI_uses_toolkit_libraries(bamread xobjreadex xobjsimple)
   NCBI_project_watchers(vasilche ucko)
   NCBI_add_include_directories(${SRA_INCLUDE})
+
+  NCBI_add_test(bam_test -file NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam -no_index)
+  NCBI_add_test(bam_test -file NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam)
+  NCBI_add_test(bam_test -file NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam -refseq 20)
+  NCBI_add_test(bam_test -refseq GL000207.1 -refwindow 1)
+  NCBI_add_test(bam_test -file 1k.unaligned.bam)
+  NCBI_add_test(bam_test -file header-only.bam)
+  NCBI_add_test(bam_test -file 1k.unaligned.bam -refseq GL000207.1 -refwindow 1)
+  NCBI_add_test(bam_test -file header-only.bam -refseq GL000207.1 -refwindow 1)
+
 NCBI_end_app()
 
 if(OFF)

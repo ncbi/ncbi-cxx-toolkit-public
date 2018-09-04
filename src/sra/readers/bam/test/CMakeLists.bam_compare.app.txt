@@ -9,6 +9,14 @@ NCBI_begin_app(bam_compare)
   NCBI_uses_external_libraries(${SAMTOOLS_LIBS})
   NCBI_add_include_directories(${SRA_INCLUDE} ${SAMTOOLS_INCLUDE})
   NCBI_project_watchers(vasilche ucko)
+
+  NCBI_add_test(bam_compare -raw -q MT:10000-20000)
+  NCBI_add_test(bam_compare -raw -q GL000207.1:1-2)
+  NCBI_add_test(bam_compare -file 1k.unaligned.bam)
+  NCBI_add_test(bam_compare -file header-only.bam)
+  NCBI_add_test(bam_compare -file 1k.unaligned.bam -q GL000207.1:1-2)
+  NCBI_add_test(bam_compare -file header-only.bam -q GL000207.1:1-2)
+
 NCBI_end_app()
 
 if(OFF)
