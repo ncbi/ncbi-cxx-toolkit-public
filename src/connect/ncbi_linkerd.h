@@ -41,19 +41,16 @@
 extern "C" {
 #endif
 
-/*  LINKERD_TODO - "temporarily" support plain "linkerd" on Unix only */
-#if defined(NCBI_OS_UNIX)  &&  ! defined(NCBI_OS_CYGWIN)
-#define LINKERD_HOST            "linkerd"
-#else
-#define LINKERD_HOST            \
-    "pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov"
-#endif
+typedef enum {
+    eLGHP_NotSet,
+    eLGHP_Success,
+    eLGHP_Fail
+} ELGHP_Status;
 
-#define LINKERD_PORT            4140
+/* this is meant to be used by the linkerd and namerd service mappers */
+extern ELGHP_Status LINKERD_GetHttpProxy(char* host, size_t len, unsigned short* port_p);
 
-#define LINKERD_HOST_HDR_SFX    ".linkerd.ncbi.nlm.nih.gov"
-
-
+/* this is meant to be used by the service mapping API */
 extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
                                              const SConnNetInfo* net_info,
                                              SSERV_Info**        info);

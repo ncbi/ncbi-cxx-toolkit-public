@@ -19,6 +19,7 @@ NCBI_add_app(
   test_server test_threaded_server test_threaded_client
   test_ncbi_conn_stream_mt test_ncbi_http_upload
   test_ncbi_linkerd test_ncbi_linkerd_cxx test_ncbi_linkerd_mt
+  test_ncbi_linkerd_proxy
   test_ncbi_namerd test_ncbi_namerd_mt
   test_server_listeners test_ncbi_ipv6 test_ncbi_iprange
   test_ncbi_service_cxx_mt
@@ -69,6 +70,7 @@ include(CMakeLists.test_ncbi_lbos_mt.app.txt)
 include(CMakeLists.test_ncbi_linkerd.app.txt)
 include(CMakeLists.test_ncbi_linkerd_cxx.app.txt)
 include(CMakeLists.test_ncbi_linkerd_mt.app.txt)
+include(CMakeLists.test_ncbi_linkerd_proxy.app.txt)
 include(CMakeLists.test_ncbi_namerd.app.txt)
 include(CMakeLists.test_ncbi_namerd_mt.app.txt)
 include(CMakeLists.test_ncbi_http_upload.app.txt)

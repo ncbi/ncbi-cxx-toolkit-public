@@ -34,6 +34,7 @@
 #include "ncbi_ansi_ext.h"
 #include "ncbi_comm.h"
 #include "ncbi_lb.h"
+#include "ncbi_linkerd.h"
 #include "ncbi_namerd.h"
 #include "ncbi_once.h"
 #include "ncbi_priv.h"
@@ -433,27 +434,60 @@ static EBURLScheme s_GetScheme()
 }
 
 
-static unsigned short s_GetProxyPort()
+static int s_GetHttpProxy(char* client_host, size_t host_size,
+    unsigned short* client_port_p)
 {
-    char val[24];
-    char reg_def_port[24];
-    unsigned short port;
+    char port_str[24];
+    char def_port[24];
+    static char host[2048];
+    static unsigned short port = 0;
 
-    sprintf(reg_def_port, "%d", REG_NAMERD_PROXY_PORT_DEF);
+    /*if (port) {
+        strcpy(client_host, host);
+        *client_port_p = port;
+        return 1;
+    }*/
+
+    if (host_size > sizeof(host))
+        host_size = sizeof(host);
+
+    /* Highest precedence is $http_proxy environment variable */
+    switch (LINKERD_GetHttpProxy(host, host_size, &port)) {
+        case eLGHP_Success:
+            strcpy(client_host, host);
+            *client_port_p = port;
+            return 1;
+        case eLGHP_Fail:
+            CORE_LOG_X(eNSub_BadData, eLOG_Critical,
+                       "Couldn't get Linkerd http_proxy.");
+            return 0;
+        case eLGHP_NotSet:
+            break;
+    }
+
     if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
-        REG_NAMERD_PROXY_PORT_KEY, val, sizeof(val)-1,
-        reg_def_port))
+        REG_NAMERD_PROXY_HOST_KEY, host, host_size - 1,
+        REG_NAMERD_PROXY_HOST_DEF)  ||  ! *host)
     {
         CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
-                   "Couldn't alloc for proxy port.");
+                   "Couldn't set default http proxy host.");
         return 0;
     }
-    if ( ! *val)
-        return 0;
-    if (sscanf(val, "%hu", &port) == 1)
-        return port;
 
-    return 0;
+    sprintf(def_port, "%d", REG_NAMERD_PROXY_PORT_DEF);
+    if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
+        REG_NAMERD_PROXY_PORT_KEY, port_str, sizeof(port_str) - 1,
+        def_port)  ||  ! *port_str  ||  sscanf(port_str, "%hu", &port) != 1  ||
+        ! port)
+    {
+        CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
+                   "Couldn't set default http proxy port.");
+        return 0;
+    }
+
+    strcpy(client_host, host);
+    *client_port_p = port;
+    return 1;
 }
 
 
@@ -1548,21 +1582,22 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
         srand(g_NCBI_ConnectRandomSeed);
     }
 
-    data->net_info->http_proxy_port = s_GetProxyPort();
-    data->net_info->req_method      = s_GetReqMethod();
-    data->net_info->scheme          = s_GetScheme();
-    data->net_info->port            = 0; /* namerd doesn't support a port */
-    data->net_info->host[0]         = NIL;
-    data->net_info->path[0]         = NIL;
-    data->net_info->args[0]         = NIL;
+    data->net_info->req_method  = s_GetReqMethod();
+    data->net_info->scheme      = s_GetScheme();
+    data->net_info->port        = 0; /* namerd doesn't support a port */
+    data->net_info->host[0]     = NIL;
+    data->net_info->path[0]     = NIL;
+    data->net_info->args[0]     = NIL;
 
-    if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
-        REG_NAMERD_PROXY_HOST_KEY, data->net_info->http_proxy_host,
-        sizeof(data->net_info->http_proxy_host) - 1,
-        REG_NAMERD_PROXY_HOST_DEF))
+    if ( ! s_GetHttpProxy(data->net_info->http_proxy_host,
+        sizeof(data->net_info->http_proxy_host),
+        &data->net_info->http_proxy_port))
     {
-        data->net_info->http_proxy_host[0] = NIL;
+        s_Close(iter);
+        TOUT("SERV_NAMERD_Open() -- fail");
+        return NULL;
     }
+
     if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
         REG_NAMERD_API_HOST_KEY, data->net_info->host, sizeof(net_info->host)-1,
         REG_NAMERD_API_HOST_DEF))

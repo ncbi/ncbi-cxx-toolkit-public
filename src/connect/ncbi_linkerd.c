@@ -84,6 +84,19 @@ enum ELINKERD_Subcodes {
 #define REG_NAMERD_FOR_LINKERD_DEF  ""
 
 
+/*  LINKERD_TODO - "temporarily" support plain "linkerd" on Unix only */
+#if defined(NCBI_OS_UNIX)  &&  ! defined(NCBI_OS_CYGWIN)
+#define LINKERD_HOST            "linkerd"
+#else
+#define LINKERD_HOST            \
+    "pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov"
+#endif
+
+#define LINKERD_PORT            4140
+
+#define LINKERD_HOST_HDR_SFX    ".linkerd.ncbi.nlm.nih.gov"
+
+
 /* Misc. */
 #define NIL                         '\0'
 
@@ -579,6 +592,57 @@ static void s_Close(SERV_ITER iter)
  *  EXTERNAL
  ***********************************************************************/
 
+extern ELGHP_Status LINKERD_GetHttpProxy(char* host, size_t len,
+    unsigned short* port_p)
+{
+    char* http_proxy;
+    char* colon;
+    unsigned short port;
+
+    http_proxy = getenv("http_proxy");
+    if ( ! http_proxy)
+        return eLGHP_NotSet;
+
+    colon = strchr(http_proxy, (int)':');
+    if ( ! colon) {
+        CORE_LOG_X(eLSub_BadData, eLOG_Critical,
+                   "http_proxy didn't include colon.");
+        return eLGHP_Fail;
+    }
+
+    if (colon == http_proxy)
+    {
+        CORE_LOG_X(eLSub_BadData, eLOG_Critical,
+                   "http_proxy has no host part.");
+        return eLGHP_Fail;
+    }
+
+    if (http_proxy + len < colon + 1)
+    {
+        CORE_LOG_X(eLSub_BadData, eLOG_Critical,
+                   "http_proxy host too long.");
+        return eLGHP_Fail;
+    }
+
+    if (sscanf(colon + 1, "%hu", &port) != 1)
+    {
+        CORE_LOG_X(eLSub_BadData, eLOG_Critical,
+                   "http_proxy port not an unsigned short.");
+        return eLGHP_Fail;
+    }
+
+    strncpy(host, http_proxy, colon - http_proxy);
+    host[colon-http_proxy] = NIL;
+    *port_p = port;
+
+    CORE_LOGF_X(eLSub_Message, eLOG_Info,
+        ("Setting Linkerd host:port to %s:%hu from 'http_proxy' environment.",
+         host, port));
+
+    return eLGHP_Success;
+}
+
+
 extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
                                              const SConnNetInfo* net_info,
                                              SSERV_Info**        info)
@@ -685,17 +749,46 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
     }
 
     /* Populate linkerd endpoint */
-    SConnNetInfo* dni = data->net_info;
-    strcpy(dni->host, LINKERD_HOST);
-    dni->port   = LINKERD_PORT;
-    dni->scheme = endpoint.scheme;
-    strcpy(dni->user, endpoint.user);
-    strcpy(dni->pass, endpoint.pass);
-    strcpy(dni->path, endpoint.path);
-    strcpy(dni->args, endpoint.args);
+    {{
+        static char host[2048];
+        static unsigned short port = 0;
+        size_t host_size = sizeof(host);
+        SConnNetInfo* dni = data->net_info;
 
+        /*if (port) {
+            strcpy(dni->host, host);
+            dni->port = port;
+        } else {*/
+            if (host_size > sizeof(dni->host))
+                host_size = sizeof(dni->host);
 
-    assert(dni->scheme == eURL_Http  ||  dni->scheme == eURL_Https);
+            /* Highest precedence is $http_proxy environment variable;
+                fallback to defaults */
+            switch (LINKERD_GetHttpProxy(host, host_size, &port)) {
+                case eLGHP_Success:
+                    break;
+                case eLGHP_Fail:
+                    CORE_LOG_X(eLSub_BadData, eLOG_Error,
+                               "Couldn't get Linkerd http_proxy.");
+                    s_Close(iter);
+                    return 0;
+                case eLGHP_NotSet:
+                    strcpy(host, LINKERD_HOST);
+                    port = LINKERD_PORT;
+                    break;
+            }
+            strcpy(dni->host, host);
+            dni->port = port;
+        /*}*/
+
+        dni->scheme = endpoint.scheme;
+        strcpy(dni->user, endpoint.user);
+        strcpy(dni->pass, endpoint.pass);
+        strcpy(dni->path, endpoint.path);
+        strcpy(dni->args, endpoint.args);
+
+        assert(dni->scheme == eURL_Http  ||  dni->scheme == eURL_Https);
+    }}
 
     if ( ! s_Resolve(iter)) {
         CORE_LOG_X(eLSub_BadData, eLOG_Warning, "Unable to resolve endpoint.");
