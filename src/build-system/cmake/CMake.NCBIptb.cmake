@@ -1077,7 +1077,9 @@ function(NCBI_internal_add_test _test)
 
     NCBI_internal_process_test_requires(${_test})
     if ( NOT "${NCBITEST_REQUIRE_NOTFOUND}" STREQUAL "")
-        message("${NCBI_CURRENT_SOURCE_DIR}/${NCBI_PROJECT}: Test ${_test} is excluded because of unmet requirements: ${NCBITEST_REQUIRE_NOTFOUND}")
+        if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
+            message("${NCBI_CURRENT_SOURCE_DIR}/${NCBI_PROJECT}: Test ${_test} is excluded because of unmet requirements: ${NCBITEST_REQUIRE_NOTFOUND}")
+        endif()
         return()
     endif()
 
