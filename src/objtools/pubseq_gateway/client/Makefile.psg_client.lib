@@ -2,7 +2,7 @@
 
 ASN_DEP = id2
 
-SRC = psg_client HttpClientTransport
+SRC = psg_client psg_client_transport
 
 LIB = psg_client
 

@@ -1,5 +1,5 @@
-#ifndef HTTPCLIENTTRANSPORTP__HPP
-#define HTTPCLIENTTRANSPORTP__HPP
+#ifndef OBJTOOLS__PUBSEQ_GATEWAY__PSG_CLIENT_TRANSPORT__HPP
+#define OBJTOOLS__PUBSEQ_GATEWAY__PSG_CLIENT_TRANSPORT__HPP
 
 /*  $Id$
  * ===========================================================================

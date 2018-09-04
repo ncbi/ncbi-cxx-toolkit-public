@@ -53,7 +53,7 @@
 
 #include <corelib/request_status.hpp>
 
-#include "HttpClientTransport.hpp"
+#include "psg_client_transport.hpp"
 
 BEGIN_NCBI_SCOPE
 

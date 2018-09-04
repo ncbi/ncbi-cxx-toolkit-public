@@ -32,7 +32,7 @@
 
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 
-#include "HttpClientTransport.hpp"
+#include "psg_client_transport.hpp"
 
 #include <corelib/reader_writer.hpp>
 #include <corelib/rwstream.hpp>
