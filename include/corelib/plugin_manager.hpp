@@ -202,6 +202,7 @@ public:
         static const CVersionInfo vi(TDefaultDriverVersion::eMajor,
                                      TDefaultDriverVersion::eMinor,
                                      TDefaultDriverVersion::ePatchLevel);
+
         return vi;
     }
 
@@ -304,6 +305,7 @@ public:
         static const CVersionInfo vi(TDefaultDriverVersion::eMajor,
                                      TDefaultDriverVersion::eMinor,
                                      TDefaultDriverVersion::ePatchLevel);
+
         return vi;
     }
 
@@ -311,12 +313,14 @@ public:
     /// @return
     ///  Never returns NULL -- always throw exception on error.
     /// @sa GetFactory()
-    TClass* CreateInstance(const string&       driver  = kEmptyStr,
-                           const CVersionInfo& version = GetDefaultDrvVers(),
-                           const TPluginManagerParamTree* params = 0)
+    TClass* CreateInstance
+    (const string&       driver  = kEmptyStr,
+     const CVersionInfo& version = GetDefaultDrvVers(),
+     const TPluginManagerParamTree* params = 0)
     {
         string driver_name = driver;
-        TSubstituteMap::const_iterator subst_it = m_SubstituteMap.find(driver_name);
+        TSubstituteMap::const_iterator subst_it =
+            m_SubstituteMap.find(driver_name);
 
         if (subst_it != m_SubstituteMap.end()) {
             driver_name = subst_it->second;
@@ -328,7 +332,7 @@ public:
             string msg = "Cannot create a driver instance (driver: ";
             msg += driver;
             msg += ").";
-            NCBI_THROW(CPluginManagerException, eNullInstance, msg);
+            NCBI_THROW(CPluginManagerException, eNullInstance,msg);
         }
         return drv;
     }
@@ -359,8 +363,9 @@ public:
     ///  with the requested version.
     /// @return
     ///  Never return NULL -- always throw exception on error.
-    TClassFactory* GetFactory(const string&       driver  = kEmptyStr,
-                              const CVersionInfo& version = GetDefaultDrvVers());
+    TClassFactory* GetFactory
+    (const string&       driver  = kEmptyStr,
+     const CVersionInfo& version = GetDefaultDrvVers());
 
     #ifndef NCBI_SWIG
     /// Information about a driver, with maybe a pointer to an instantiated
@@ -529,8 +534,11 @@ protected:
 
     typedef set<FNCBI_EntryPoint>                TEntryPoints;
     typedef set<TClassFactory*>                  TFactories;
+
     typedef vector<CDllResolver::SResolvedEntry> TResolvedEntries;
+
     typedef vector<CPluginManager_DllResolver*>  TDllResolvers;
+
     typedef set<string>                          TStringSet;
     typedef map<string, string>                  TSubstituteMap;
 
@@ -585,10 +593,11 @@ public:
     ///   Interface version
     /// @param unload_dll
     ///   Whether to unload drivers DLL in the destructor
-    CPluginManager_DllResolver(const string&       interface_name,
-                               const string&       driver_name = kEmptyStr,
-                               const CVersionInfo& version     = CVersionInfo::kAny,
-                               CDll::EAutoUnload   unload_dll  = CDll::eNoAutoUnload);
+    CPluginManager_DllResolver
+    (const string&       interface_name,
+     const string&       driver_name = kEmptyStr,
+     const CVersionInfo& version     = CVersionInfo::kAny,
+     CDll::EAutoUnload unload_dll = CDll::eNoAutoUnload);
 
     //
     virtual ~CPluginManager_DllResolver(void);
@@ -605,9 +614,13 @@ public:
     ///   Reference on DLL resolver holding all entry points
     // Former "Resolve"
     CDllResolver& ResolveFile(const TSearchPaths&   paths,
-                              const string&         driver_name = kEmptyStr,
-                              const CVersionInfo&   version     = CVersionInfo::kAny,
-                              CDllResolver::TExtraDllPath std_path = CDllResolver::fDefaultDllPath);
+                              const string&         driver_name
+                                = kEmptyStr,
+                              const CVersionInfo&   version
+                                = CVersionInfo::kAny,
+                              CDllResolver::TExtraDllPath std_path
+                                = CDllResolver::fDefaultDllPath
+                              );
 
     /// Search for plugin DLLs, resolve entry points.
     ///
@@ -632,8 +645,9 @@ public:
     ///    Requested version of the driver
     virtual
     string GetDllName(const string&       interface_name,
-                      const string&       driver_name = kEmptyStr,
-                      const CVersionInfo& version     = CVersionInfo::kAny) const;
+                      const string&       driver_name  = kEmptyStr,
+                      const CVersionInfo& version      = CVersionInfo::kAny)
+        const;
 
     enum EVersionLocation { eBeforeSuffix, eAfterSuffix };
 
@@ -648,7 +662,8 @@ public:
     string GetDllNameMask(const string&       interface_name,
                           const string&       driver_name = kEmptyStr,
                           const CVersionInfo& version     = CVersionInfo::kAny,
-                          EVersionLocation    ver_lct     = eBeforeSuffix)  const;
+                          EVersionLocation    ver_lct     = eBeforeSuffix)
+        const;
 
     /// Return DLL entry point name:
     ///
@@ -714,13 +729,15 @@ protected:
 inline
 bool operator==(const SDriverInfo& i1, const SDriverInfo& i2)
 {
-    return i1.name == i2.name  &&  i1.version == i2.version;
+    return i1.name == i2.name && i1.version == i2.version;
 }
 
 inline
 bool operator<(const SDriverInfo& i1, const SDriverInfo& i2)
 {
-    return (i1.name < i2.name  || (i1.name == i2.name && (i1.version < i2.version)));
+    return (i1.name < i2.name ||
+            (i1.name == i2.name &&
+             (i1.version < i2.version)));
 }
 
 
@@ -734,7 +751,6 @@ TClass* CPluginManager<TClass>::CreateInstanceFromList(
 
     _TRACE("Creating an instance of a driver having version " <<
            version << " from a list " << driver_list);
-
     list<string> drivers;
     NStr::Split(driver_list, ":", drivers, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE ( list<string>, it, drivers ) {
@@ -791,7 +807,6 @@ CPluginManager<TClass>::GetFactory(const string&       driver,
     // Search among already registered factories
     _TRACE("Looking for an already loaded factory for driver " <<
            driver << " having version " << version);
-
     cf = FindClassFactory(driver, version);
     if (cf) {
         return cf;
@@ -997,13 +1012,15 @@ public:
     typedef typename CPluginManager<TClass>::SDriverInfo TValue;
 
     CInvalidDrvVer(const string& driver_name, const CVersionInfo& vi)
-        : m_DriverName(driver_name), m_VersionInfo(vi)
-    {}
+    : m_DriverName(driver_name)
+    , m_VersionInfo(vi)
+    {
+    }
 
-    bool operator() (const TValue& val)
+    bool operator() ( const TValue& val )
     {
         return m_DriverName != val.name ||
-               val.version.Match(m_VersionInfo) == CVersionInfo::eNonCompatible;
+            val.version.Match(m_VersionInfo) == CVersionInfo::eNonCompatible;
     }
 
 private:
@@ -1011,12 +1028,12 @@ private:
     const CVersionInfo m_VersionInfo;
 };
 
-
 template <class TClass>
 template <typename TEntryPoint>
-bool CPluginManager<TClass>::RegisterWithEntryPoint(TEntryPoint         plugin_entry_point,
-                                                    const string&       driver_name,
-                                                    const CVersionInfo& driver_version)
+bool CPluginManager<TClass>::RegisterWithEntryPoint
+(TEntryPoint         plugin_entry_point,
+ const string&       driver_name,
+ const CVersionInfo& driver_version)
 {
     CMutexGuard guard(m_Mutex);
     if ( !m_EntryPoints.insert(
@@ -1066,14 +1083,13 @@ bool CPluginManager<TClass>::RegisterWithEntryPoint(TEntryPoint         plugin_e
     return false;
 }
 
-
 template <class TClass>
-void CPluginManager<TClass>::AddResolver(CPluginManager_DllResolver* resolver)
+void CPluginManager<TClass>::AddResolver
+(CPluginManager_DllResolver* resolver)
 {
     _ASSERT(resolver);
     m_Resolvers.push_back(resolver);
 }
-
 
 template <class TClass>
 CPluginManager_DllResolver*
@@ -1088,13 +1104,11 @@ CPluginManager<TClass>::DetachResolver(CPluginManager_DllResolver* resolver)
     return 0;
 }
 
-
 template <class TClass>
 void CPluginManager<TClass>::AddDllSearchPath(const string& path)
 {
     m_DllSearchPaths.push_back(path);
 }
-
 
 template <class TClass>
 void CPluginManager<TClass>::ResetDllSearchPath(TSearchPaths* previous_paths)
@@ -1107,17 +1121,16 @@ void CPluginManager<TClass>::ResetDllSearchPath(TSearchPaths* previous_paths)
     }
 }
 
-
 template <class TClass>
 CDllResolver::TExtraDllPath
-CPluginManager<TClass>::SetDllStdSearchPath(CDllResolver::TExtraDllPath standard_paths)
+CPluginManager<TClass>::SetDllStdSearchPath
+(CDllResolver::TExtraDllPath standard_paths)
 {
     CDllResolver::TExtraDllPath tmp_path = m_StdDllPath;
 
     m_StdDllPath = standard_paths;
     return tmp_path;
 }
-
 
 template <class TClass>
 CDllResolver::TExtraDllPath
@@ -1126,9 +1139,9 @@ CPluginManager<TClass>::GetDllStdSearchPath(void) const
     return m_StdDllPath;
 }
 
-
 template <class TClass>
-void CPluginManager<TClass>::FreezeResolution(const string& driver, bool value)
+void CPluginManager<TClass>::FreezeResolution(const string& driver,
+                                              bool          value)
 {
     if (value) {
         m_FreezeResolutionDrivers.insert(driver);
@@ -1136,7 +1149,6 @@ void CPluginManager<TClass>::FreezeResolution(const string& driver, bool value)
         m_FreezeResolutionDrivers.erase(driver);
     }
 }
-
 
 template <class TClass>
 void CPluginManager<TClass>::ResolveFile(const string&       driver,
@@ -1148,19 +1160,26 @@ void CPluginManager<TClass>::ResolveFile(const string&       driver,
     ITERATE(vector<CPluginManager_DllResolver*>, it, m_Resolvers) {
         // Try to get an exact match.
         CDllResolver* dll_resolver =
-            &(*it)->ResolveFile(m_DllSearchPaths, driver, version, m_StdDllPath);
+            &(*it)->ResolveFile(m_DllSearchPaths,
+                                driver,
+                                version,
+                                m_StdDllPath);
 
         if ( !version.IsAny() && !version.IsLatest() &&
             dll_resolver->GetResolvedEntries().empty() ) {
 
             // Try to get at least something (ignore version).
             dll_resolver =
-                &(*it)->ResolveFile(m_DllSearchPaths, driver, CVersionInfo::kAny, m_StdDllPath);
+                &(*it)->ResolveFile(m_DllSearchPaths,
+                                    driver,
+                                    CVersionInfo::kAny,
+                                    m_StdDllPath);
 
             if ( dll_resolver->GetResolvedEntries().empty() ) {
                 dll_resolver = 0;
             }
         }
+
         if ( dll_resolver ) {
             resolvers.push_back(dll_resolver);
         }
@@ -1182,7 +1201,8 @@ void CPluginManager<TClass>::ResolveFile(const string&       driver,
             const CDllResolver::SNamedEntryPoint& epoint = entry.entry_points.front();
 
             if (epoint.entry_point.func) {
-                FNCBI_EntryPoint ep =  (FNCBI_EntryPoint)(void*)epoint.entry_point.func;
+                FNCBI_EntryPoint ep =
+                   (FNCBI_EntryPoint)(void*)epoint.entry_point.func;
 
                 if ( RegisterWithEntryPoint(ep, driver, version) ) {
                     m_RegisteredEntries.push_back(entry);
@@ -1195,6 +1215,7 @@ void CPluginManager<TClass>::ResolveFile(const string&       driver,
                 }
             }
         }
+        entry_points.clear();
     }
 }
 
@@ -1217,10 +1238,15 @@ CPluginManager<TClass>::CPluginManager(void)
 
     if (registry) {
         list<string> entries;
+
         registry->EnumerateEntries(section_name, &entries);
         ITERATE(list<string>, cit, entries) {
             string driver_name = *cit;
-            string substitute_name = registry->GetString(section_name, driver_name, driver_name);
+
+            string substitute_name = registry->GetString(section_name,
+                                                         driver_name,
+                                                         driver_name);
+
             m_SubstituteMap[driver_name] = substitute_name;
         }
     }
@@ -1239,13 +1265,16 @@ CPluginManager<TClass>::~CPluginManager(void)
     ITERATE ( typename TFactories, it, m_Factories ) {
         delete *it;
     }
+
     ITERATE ( typename TDllResolvers, it, m_Resolvers ) {
         delete *it;
     }
-    NON_CONST_ITERATE ( TResolvedEntries, it, m_RegisteredEntries ) {
-        delete it->dll; 	 
+
+    NON_CONST_ITERATE(TResolvedEntries, it, m_RegisteredEntries) {
+        delete it->dll;
     }
 }
+
 
 
 template <class TClass>
@@ -1264,7 +1293,6 @@ IClassFactory<TClass>::GetParam(
                             CConfig::eErr_Throw : CConfig::eErr_NoThrow,
                           default_value);
 }
-
 
 template <class TClass>
 const string&

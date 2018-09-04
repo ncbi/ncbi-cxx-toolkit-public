@@ -42,26 +42,26 @@ BEGIN_NCBI_SCOPE
 //
 
 CPluginManager_DllResolver::CPluginManager_DllResolver(void)
-    : m_DllNamePrefix("ncbi_plugin"),
-      m_EntryPointPrefix("NCBI_EntryPoint"),
-      m_Version(CVersionInfo::kAny),
-      m_DllResolver(0)
+ : m_DllNamePrefix("ncbi_plugin"),
+   m_EntryPointPrefix("NCBI_EntryPoint"),
+   m_Version(CVersionInfo::kAny),
+   m_DllResolver(0)
 {}
-
 
 CPluginManager_DllResolver::CPluginManager_DllResolver(
                     const string& interface_name,
                     const string& driver_name,
                     const CVersionInfo& version,
                     CDll::EAutoUnload unload_dll)
-    : m_DllNamePrefix("ncbi_plugin"),
-      m_EntryPointPrefix("NCBI_EntryPoint"),
-      m_InterfaceName(interface_name),
-      m_DriverName(driver_name),
-      m_Version(version),
-      m_DllResolver(0),
-      m_AutoUnloadDll(unload_dll)
-{}
+ : m_DllNamePrefix("ncbi_plugin"),
+   m_EntryPointPrefix("NCBI_EntryPoint"),
+   m_InterfaceName(interface_name),
+   m_DriverName(driver_name),
+   m_Version(version),
+   m_DllResolver(0),
+   m_AutoUnloadDll(unload_dll)
+{
+}
 
 
 CPluginManager_DllResolver::~CPluginManager_DllResolver(void)
@@ -73,7 +73,8 @@ CDllResolver&
 CPluginManager_DllResolver::ResolveFile(const TSearchPaths&   paths,
                                         const string&         driver_name,
                                         const CVersionInfo&   version,
-                                        CDllResolver::TExtraDllPath std_path)
+                                        CDllResolver::TExtraDllPath
+                                                              std_path)
 {
     CDllResolver* resolver = GetCreateDllResolver();
     _ASSERT(resolver);
@@ -91,12 +92,16 @@ CPluginManager_DllResolver::ResolveFile(const TSearchPaths&   paths,
     if ( version == CVersionInfo::kAny ) {
         mask = GetDllNameMask(m_InterfaceName, drv, CVersionInfo::kLatest);
         masks.push_back(mask);
+        
 #if defined(NCBI_OS_UNIX)
-        mask = GetDllNameMask(m_InterfaceName, drv, CVersionInfo::kLatest, eAfterSuffix);
+        mask = GetDllNameMask(m_InterfaceName, drv, CVersionInfo::kLatest, 
+                              eAfterSuffix);
         masks.push_back(mask);
 #endif        
     }
+    
     resolver->FindCandidates(paths, masks, std_path, drv);
+    
     return *resolver;
 }
 
@@ -120,6 +125,7 @@ CPluginManager_DllResolver::GetDllName(const string&       interface_name,
         name.append("_");
         name.append(interface_name);
     }
+
     if (!driver_name.empty()) {
         name.append("_");
         name.append(driver_name);
@@ -131,10 +137,12 @@ CPluginManager_DllResolver::GetDllName(const string&       interface_name,
         
 #if defined(NCBI_OS_MSWIN)
         string delimiter = "_";
+
 #elif defined(NCBI_OS_UNIX)
         string delimiter = ".";
         name.append(NCBI_PLUGIN_SUFFIX);
 #endif
+
         name.append(delimiter);
         name.append(NStr::IntToString(version.GetMajor()));
         name.append(delimiter);
@@ -142,11 +150,12 @@ CPluginManager_DllResolver::GetDllName(const string&       interface_name,
         name.append(delimiter);
         name.append(NStr::IntToString(version.GetPatchLevel()));
     }
+
     return name;
 }
 
 string 
-CPluginManager_DllResolver::GetDllNameMask (
+CPluginManager_DllResolver::GetDllNameMask(
         const string&       interface_name,
         const string&       driver_name,
         const CVersionInfo& version,
@@ -162,6 +171,7 @@ CPluginManager_DllResolver::GetDllNameMask (
     } else {
         name.append(interface_name);
     }
+
     name.append("_");
 
     if (driver_name.empty()) {
@@ -169,6 +179,7 @@ CPluginManager_DllResolver::GetDllNameMask (
     } else {
         name.append(driver_name);
     } 
+
     if (version.IsAny()) {
         name.append(NCBI_PLUGIN_SUFFIX);
     } else {
@@ -177,6 +188,7 @@ CPluginManager_DllResolver::GetDllNameMask (
         
 #if defined(NCBI_OS_MSWIN)
         delimiter = "_";
+
 #elif defined(NCBI_OS_UNIX)
         if ( ver_lct != eAfterSuffix ) {
             delimiter = "_";
@@ -188,12 +200,14 @@ CPluginManager_DllResolver::GetDllNameMask (
         if ( ver_lct == eAfterSuffix ) {
             name.append(NCBI_PLUGIN_SUFFIX);
         }
+        
         name.append(delimiter);
         if (version.GetMajor() <= 0) {
             name.append("*");
         } else {
             name.append(NStr::IntToString(version.GetMajor()));
         }
+
         name.append(delimiter);
 
         if (version.GetMinor() <= 0) {
@@ -201,6 +215,7 @@ CPluginManager_DllResolver::GetDllNameMask (
         } else {
             name.append(NStr::IntToString(version.GetMinor()));
         }
+
         name.append(delimiter);
         name.append("*");  // always get the best patch level
         
@@ -223,10 +238,12 @@ CPluginManager_DllResolver::GetEntryPointName(
         name.append("_");
         name.append(interface_name);
     }
+
     if (!driver_name.empty()) {
         name.append("_");
         name.append(driver_name);
     }
+
     return name;
 }
 
@@ -236,23 +253,21 @@ string CPluginManager_DllResolver::GetEntryPointPrefix() const
     return m_EntryPointPrefix; 
 }
 
-
 string CPluginManager_DllResolver::GetDllNamePrefix() const 
 { 
     return NCBI_PLUGIN_PREFIX + m_DllNamePrefix; 
 }
-
 
 void CPluginManager_DllResolver::SetDllNamePrefix(const string& prefix)
 { 
     m_DllNamePrefix = prefix; 
 }
 
-
 CDllResolver* CPluginManager_DllResolver::CreateDllResolver() const
 {
     vector<string> entry_point_names;
     string entry_name;
+    
 
     // Generate all variants of entry point names
     // some of them can duplicate, and that's legal. Resolver stops trying
@@ -300,7 +315,9 @@ CDllResolver* CPluginManager_DllResolver::CreateDllResolver() const
         entry_point_names.push_back(entry_name);
     }
 
-    CDllResolver* resolver = new CDllResolver(entry_point_names, m_AutoUnloadDll);
+    CDllResolver* resolver = new CDllResolver(entry_point_names, 
+                                              m_AutoUnloadDll);
+
     return resolver;
  }
 
@@ -324,7 +341,6 @@ NCBI_PARAM_DEF_EX(bool, NCBI, Load_Plugins_From_DLLs,
                   eParam_NoThread, NCBI_LOAD_PLUGINS_FROM_DLLS);
 typedef NCBI_PARAM_TYPE(NCBI, Load_Plugins_From_DLLs) TLoadPluginsFromDLLsParam;
 
-
 bool CPluginManager_DllResolver::IsEnabledGlobally()
 {
     return TLoadPluginsFromDLLsParam::GetDefault();
@@ -343,9 +359,9 @@ void CPluginManager_DllResolver::EnableGlobally(bool enable)
 const char* CPluginManagerException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
-        case eResolveFailure:   return "eResolveFailure";
-        case eParameterMissing: return "eParameterMissing";
-        default:                return CException::GetErrCodeString();
+    case eResolveFailure:   return "eResolveFailure";
+    case eParameterMissing: return "eParameterMissing";
+    default:    return CException::GetErrCodeString();
     }
 }
 
