@@ -1598,8 +1598,9 @@ void io_coordinator::create_io()
         EException::raise("Failed to run IO thread");
 }
 
-bool io_coordinator::add_request(shared_ptr<http2_request> req, long timeout_ms)
+bool io_coordinator::add_request(shared_ptr<http2_request> req, chrono::milliseconds timeout)
 {
+    auto deadline = chrono::system_clock::now() + timeout;
     if (m_io.size() == 0)
         EException::raise("IO is not open");
     size_t iteration = 0;
@@ -1611,18 +1612,16 @@ bool io_coordinator::add_request(shared_ptr<http2_request> req, long timeout_ms)
 
         ERR_POST("io failed to queue " << req.get() << ", keep trying");
         if (++iteration > TPSG_NumIo::GetDefault() * TPSG_NumConnPerIo::GetDefault()) {
-            if (timeout_ms < 0) {
+            auto wait_ms = deadline - chrono::system_clock::now();
+            if (wait_ms <= chrono::milliseconds::zero()) {
                 ERR_POST("io failed to queue " << req.get() << ", timeout");
                 return false;
             }
 
             ERR_POST(Trace << "SLEEP");
-            long wait_time_ms = 10L;
-            if (timeout_ms > 0 && timeout_ms < wait_time_ms)
-                wait_time_ms = timeout_ms;
-            this_thread::sleep_for(chrono::milliseconds(wait_time_ms));
-            if (timeout_ms > 0)
-                timeout_ms -= wait_time_ms;
+            chrono::milliseconds max_wait_ms(10);
+            if (wait_ms > max_wait_ms) wait_ms = max_wait_ms;
+            this_thread::sleep_for(wait_ms);
             iteration = 0;
         }
 

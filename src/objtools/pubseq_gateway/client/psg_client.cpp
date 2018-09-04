@@ -32,7 +32,6 @@
 #include <condition_variable>
 #include <mutex>
 #include <string>
-#include <chrono>
 #include <thread>
 #include <type_traits>
 
@@ -52,13 +51,15 @@ BEGIN_NCBI_SCOPE
 
 namespace {
 
-long RemainingTimeMs(const CDeadline& deadline)
+chrono::milliseconds RemainingTimeMs(const CDeadline& deadline)
 {
-    if (deadline.IsInfinite()) return DDRPC::INDEFINITE;
+    using namespace chrono;
+
+    if (deadline.IsInfinite()) return milliseconds::max();
 
     unsigned int sec, nanosec;
     deadline.GetRemainingTime().GetNano(&sec, &nanosec);
-    return nanosec / 1000000L + sec * 1000L;
+    return duration_cast<milliseconds>(nanoseconds(nanosec)) + seconds(sec);
 }
 
 }
@@ -120,7 +121,7 @@ ERW_Result SPSG_BlobReader::Read(void* buf, size_t count, size_t* bytes_read)
             return rv;
         }
 
-        auto wait_ms = chrono::milliseconds(RemainingTimeMs(deadline));
+        auto wait_ms = RemainingTimeMs(deadline);
         m_Src->WaitFor(wait_ms);
     }
 
@@ -405,7 +406,7 @@ string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Blob* request_blob)
 
 bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request, CDeadline deadline)
 {
-    long wait_ms = 0;
+    chrono::milliseconds wait_ms{};
     shared_ptr<HCT::http2_request> http_request;
     auto reply = make_shared<SPSG_Reply::TTS>();
 
@@ -434,7 +435,7 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request,
 
         // Internal queue is full
         wait_ms = RemainingTimeMs(deadline);
-        if (wait_ms < 0)  return false;
+        if (wait_ms < chrono::milliseconds::zero())  return false;
     }
 }
 
@@ -459,7 +460,7 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::GetNextReply(CDeadline deadline)
 
         if (deadline.IsExpired()) return {};
 
-        auto wait_ms = chrono::milliseconds(RemainingTimeMs(deadline));
+        auto wait_ms = RemainingTimeMs(deadline);
         m_Requests->WaitFor(wait_ms);
     }
 }
@@ -503,7 +504,7 @@ EPSG_Status s_GetStatus(TTsPtr ts, CDeadline deadline)
                 if (deadline.IsExpired()) return EPSG_Status::eInProgress;
         }
 
-        auto wait_ms = chrono::milliseconds(RemainingTimeMs(deadline));
+        auto wait_ms = RemainingTimeMs(deadline);
         ts->WaitFor(wait_ms);
     }
 }
@@ -838,7 +839,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
 
         reply_locked.Unlock();
 
-        auto wait_ms = chrono::milliseconds(RemainingTimeMs(deadline));
+        auto wait_ms = RemainingTimeMs(deadline);
         reply_item->WaitFor(wait_ms);
     }
 

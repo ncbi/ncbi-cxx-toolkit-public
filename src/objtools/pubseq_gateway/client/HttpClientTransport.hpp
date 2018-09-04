@@ -50,6 +50,7 @@
 #include <utility>
 #include <condition_variable>
 #include <mutex>
+#include <chrono>
 
 #include <nghttp2/nghttp2.h>
 #include <uv.h>
@@ -58,8 +59,6 @@
 #include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbi_url.hpp>
-
-#include "HttpClientTransport.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -666,7 +665,7 @@ private:
 public:
     io_coordinator();
     void create_io();
-    bool add_request(std::shared_ptr<http2_request> req, long timeout_ms);
+    bool add_request(std::shared_ptr<http2_request> req, chrono::milliseconds timeout);
 };
 
 };
