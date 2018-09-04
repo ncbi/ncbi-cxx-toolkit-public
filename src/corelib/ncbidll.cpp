@@ -98,7 +98,6 @@ CDll::CDll(const string& name, ELoad when_to_load, EAutoUnload auto_unload,
            TFlags(when_to_load) | TFlags(auto_unload) | TFlags(treate_as));
 }
 
-
 CDll::CDll(const string& path, const string& name, ELoad when_to_load,
            EAutoUnload auto_unload, EBasename treate_as)
 {
@@ -109,7 +108,7 @@ CDll::CDll(const string& path, const string& name, ELoad when_to_load,
 
 CDll::~CDll()
 {
-    // Unload DLL automaticaly
+    // Unload DLL automatically
     if ( F_ISSET(fAutoUnload) ) {
         try {
             Unload();
@@ -142,8 +141,7 @@ void CDll::x_Init(const string& path, const string& name, TFlags flags)
     if (F_ISSET(fBaseName)  &&
         name.find_first_of(":/\\") == NPOS  &&
         !CDirEntry::MatchesMask(name.c_str(),
-                                NCBI_PLUGIN_PREFIX "*" NCBI_PLUGIN_MIN_SUFFIX
-                                "*")
+                                NCBI_PLUGIN_PREFIX "*" NCBI_PLUGIN_MIN_SUFFIX "*")
         ) {
         // "name" is basename
         x_name = NCBI_PLUGIN_PREFIX + x_name + NCBI_PLUGIN_SUFFIX;
@@ -305,12 +303,9 @@ bool CDllResolver::TryCandidate(const string& file_name,
             if ( !dll_name.empty() ) {
                 string base_name;
                 CDirEntry::SplitPath(dll_name, 0, &base_name, 0);
-                NStr::Replace(*it,
-                              "${basename}", base_name, entry_point_name);
-
+                NStr::Replace(*it, "${basename}", base_name, entry_point_name);
                 if (!driver_name.empty()) {
-                    NStr::Replace(*it,
-                            "${driver}", driver_name, entry_point_name);
+                    NStr::Replace(*it, "${driver}", driver_name, entry_point_name);
                 }
             }
 
@@ -329,7 +324,6 @@ bool CDllResolver::TryCandidate(const string& file_name,
             delete dll;
             return false;
         }
-
         m_ResolvedEntries.push_back(entry_point);
     }
     catch (CCoreException& ex)
@@ -355,9 +349,8 @@ string s_GetProgramPath(void)
 
 void CDllResolver::x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
 {
-    // Nothing to do
-
     if (which == fNoExtraDllPath) {
+        // Nothing to do
         return;
     }
 
@@ -399,7 +392,7 @@ void CDllResolver::x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
 #endif
     }
 
-    // Add hardcoded runpath
+    // Add hard coded runpath
 
     if ((which & fToolkitDllPath) != 0) {
         const char* runpath = NCBI_GetRunpath();
