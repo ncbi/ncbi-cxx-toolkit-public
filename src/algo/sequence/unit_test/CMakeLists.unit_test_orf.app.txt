@@ -7,6 +7,7 @@ NCBI_begin_app(unit_test_orf)
   NCBI_requires(Boost.Test.Included)
   NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalgoseq)
   NCBI_project_watchers(astashya)
+  NCBI_set_test_assets(orf.annot.asn)
   NCBI_add_test(unit_test_orf -in orf.annot.asn)
 NCBI_end_app()
 

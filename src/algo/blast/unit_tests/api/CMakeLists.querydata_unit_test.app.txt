@@ -6,6 +6,7 @@ NCBI_begin_app(querydata_unit_test)
   NCBI_sources(querydata_unit_test)
   NCBI_uses_toolkit_libraries(blast_unit_test_util xblast xobjsimple)
   NCBI_project_watchers(boratyng madden camacho fongah2)
+  NCBI_set_test_assets(querydata_unit_test.ini)
   NCBI_add_test()
 NCBI_end_app()
 

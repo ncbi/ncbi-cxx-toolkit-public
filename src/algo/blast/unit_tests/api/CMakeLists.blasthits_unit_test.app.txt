@@ -7,6 +7,7 @@ NCBI_begin_app(blasthits_unit_test)
   NCBI_add_include_directories(${NCBI_CURRENT_SOURCE_DIR}/../../core)
   NCBI_uses_toolkit_libraries(blast_unit_test_util xblast)
   NCBI_project_watchers(boratyng madden camacho fongah2)
+  NCBI_set_test_assets(blasthits_unit_test.ini)
   NCBI_add_test()
 NCBI_end_app()
 

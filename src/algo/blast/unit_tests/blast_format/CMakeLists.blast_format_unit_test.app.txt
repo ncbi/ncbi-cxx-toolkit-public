@@ -10,6 +10,8 @@ NCBI_begin_app(blast_format_unit_test)
   NCBI_add_definitions(NCBI_MODULE=BLASTFORMAT)
   NCBI_uses_toolkit_libraries(blastinput xblastformat)
   NCBI_project_watchers(jianye zaretska madden camacho)
+  NCBI_set_test_assets(data)
+  NCBI_set_test_timeout(300)
   NCBI_add_test()
 NCBI_end_app()
 

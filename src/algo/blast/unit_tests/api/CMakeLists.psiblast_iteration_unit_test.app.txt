@@ -6,6 +6,7 @@ NCBI_begin_app(psiblast_iteration_unit_test)
   NCBI_sources(psiblast_iteration_unit_test)
   NCBI_uses_toolkit_libraries(xblast)
   NCBI_project_watchers(boratyng madden camacho)
+  NCBI_set_test_assets(psiblast_iteration_unit_test.ini)
   NCBI_add_test()
 NCBI_end_app()
 

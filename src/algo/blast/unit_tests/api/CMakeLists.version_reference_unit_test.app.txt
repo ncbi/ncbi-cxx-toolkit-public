@@ -6,6 +6,7 @@ NCBI_begin_app(version_reference_unit_test)
   NCBI_sources(version_reference_unit_test)
   NCBI_uses_toolkit_libraries(xblast)
   NCBI_project_watchers(madden camacho)
+  NCBI_set_test_assets(version_reference_unit_test.ini)
   NCBI_add_test()
 NCBI_end_app()
 

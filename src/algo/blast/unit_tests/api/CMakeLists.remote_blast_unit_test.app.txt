@@ -6,6 +6,7 @@ NCBI_begin_app(remote_blast_unit_test)
   NCBI_sources(remote_blast_unit_test)
   NCBI_uses_toolkit_libraries(blast_services blast_unit_test_util xblast)
   NCBI_project_watchers(madden camacho merezhuk raytseli)
+  NCBI_set_test_assets(remote_blast_unit_test.ini data)
   NCBI_add_test()
 NCBI_end_app()
 

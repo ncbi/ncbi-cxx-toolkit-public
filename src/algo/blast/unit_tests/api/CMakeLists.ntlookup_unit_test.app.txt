@@ -6,6 +6,7 @@ NCBI_begin_app(ntlookup_unit_test)
   NCBI_sources(ntlookup_unit_test)
   NCBI_uses_toolkit_libraries(blast_unit_test_util xblast)
   NCBI_project_watchers(boratyng morgulis madden camacho fongah2)
+  NCBI_set_test_assets(data ntlookup_unit_test.ini)
   NCBI_add_test()
 NCBI_end_app()
 

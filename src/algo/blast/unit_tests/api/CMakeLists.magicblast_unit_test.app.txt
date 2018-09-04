@@ -6,6 +6,7 @@ NCBI_begin_app(magicblast_unit_test)
   NCBI_sources(magicblast_unit_test)
   NCBI_uses_toolkit_libraries(xblast)
   NCBI_project_watchers(boratyng)
+  NCBI_set_test_assets(data magicblast_unit_test.ini)
   NCBI_add_test()
 NCBI_end_app()
 

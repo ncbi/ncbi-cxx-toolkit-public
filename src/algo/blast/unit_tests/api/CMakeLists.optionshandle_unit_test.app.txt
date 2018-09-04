@@ -6,6 +6,7 @@ NCBI_begin_app(optionshandle_unit_test)
   NCBI_sources(optionshandle_unit_test)
   NCBI_uses_toolkit_libraries(xblast)
   NCBI_project_watchers(boratyng madden camacho fongah2)
+  NCBI_set_test_assets(optionshandle_unit_test.ini)
   NCBI_add_test()
 NCBI_end_app()
 

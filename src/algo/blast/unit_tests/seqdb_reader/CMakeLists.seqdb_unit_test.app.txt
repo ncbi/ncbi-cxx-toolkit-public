@@ -7,6 +7,8 @@ NCBI_begin_app(seqdb_unit_test)
   NCBI_add_definitions(NCBI_MODULE=BLASTDB)
   NCBI_uses_toolkit_libraries(seqdb xobjutil)
   NCBI_project_watchers(madden camacho)
+  NCBI_set_test_assets(seqdb_unit_test.ini data)
+  NCBI_set_test_timeout(600)
   NCBI_add_test()
 NCBI_end_app()
 

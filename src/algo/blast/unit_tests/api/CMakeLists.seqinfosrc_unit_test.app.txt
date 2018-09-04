@@ -6,6 +6,7 @@ NCBI_begin_app(seqinfosrc_unit_test)
   NCBI_sources(seqinfosrc_unit_test)
   NCBI_uses_toolkit_libraries(blast_unit_test_util xblast)
   NCBI_project_watchers(boratyng madden camacho fongah2)
+  NCBI_set_test_assets(seqinfosrc_unit_test.ini data)
   NCBI_add_test()
 NCBI_end_app()
 

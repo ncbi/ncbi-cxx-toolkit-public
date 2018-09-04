@@ -7,6 +7,7 @@ NCBI_begin_app(pssmcreate_unit_test)
   NCBI_add_include_directories(${NCBI_CURRENT_SOURCE_DIR}/../../core)
   NCBI_uses_toolkit_libraries(blast_unit_test_util xblast)
   NCBI_project_watchers(boratyng madden camacho)
+  NCBI_set_test_assets(pssmcreate_unit_test.ini data)
   NCBI_add_test()
 NCBI_end_app()
 
