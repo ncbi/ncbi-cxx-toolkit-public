@@ -50,11 +50,8 @@
 
 #include <corelib/ncbiapp.hpp>
 
-#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/UtilException.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
-
-#define DFLT_LOG_LEVEL 1
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -75,7 +72,6 @@ public:
 class CPsgCliApp: public CNcbiApplication
 {
 private:
-    string m_IniFile;
     unsigned int m_NumThreads;
     string m_HostPort;
     string m_BioId;
@@ -110,9 +106,6 @@ public:
     {
         unique_ptr<CArgDescriptions> argdesc(new CArgDescriptions());
         argdesc->SetUsageContext(GetArguments().GetProgramBasename(), "psg_cli -- Application to maintain Accession.Version Cache");
-        argdesc->AddDefaultKey ( "ini", "IniFile",  "File with configuration information",  CArgDescriptions::eString, "psg_cli.ini");
-        argdesc->AddOptionalKey( "o",   "log",      "Output log to",                        CArgDescriptions::eString);
-        argdesc->AddOptionalKey( "l",   "loglevel", "Output verbosity level from 0 to 5",   CArgDescriptions::eInteger);
         argdesc->AddOptionalKey( "H",   "host",     "Host[:port] for remote lookups",       CArgDescriptions::eString);
         argdesc->AddOptionalKey( "la",  "bio_id",   "Individual bio ID lookup and retrieval", CArgDescriptions::eString);
         argdesc->AddOptionalKey( "rv",  "bio_id",   "Individual bio ID resolve",            CArgDescriptions::eString);
@@ -127,23 +120,6 @@ public:
     void ParseArgs()
     {
         const CArgs& args = GetArgs();
-        m_IniFile = args[ "ini" ].AsString();
-        string logfile;
-
-        filebuf fb;
-        fb.open(m_IniFile.c_str(), ios::in | ios::binary);
-        CNcbiIstream is( &fb);
-        CNcbiRegistry Registry( is, 0);
-        fb.close();
-
-        if (!Registry.Empty() ) {
-            IdLogUtil::CAppLog::SetLogFile(Registry.GetString("COMMON", "LOGFILE", ""));
-            IdLogUtil::CAppLog::SetLogLevel(Registry.GetInt("COMMON", "LOGLEVEL", DFLT_LOG_LEVEL));
-        }
-        if (args["o"])
-            IdLogUtil::CAppLog::SetLogFile(args["o"].AsString());
-        if (args["l"])
-            IdLogUtil::CAppLog::SetLogLevel(args["l"].AsInteger());
 
         if (args["H"])
             m_HostPort = args["H"].AsString();
@@ -223,10 +199,6 @@ void CPsgCliApp::ProcessReply(shared_ptr<CPSG_Reply> reply)
 
         switch (reply_item->GetType()) {
         case CPSG_ReplyItem::eEndOfReply:
-            {
-                lock_guard<mutex> lock(m_CoutMutex);
-                cout << endl;
-            }
             return;
 
         case CPSG_ReplyItem::eBlobData:
@@ -342,7 +314,7 @@ void CPsgCliApp::PrintBlobData(const CPSG_BlobData* blob_data)
     cout << "BlobData. ";
     cout << "Id: " << blob_data->GetId().Get() << ";";
     cout << "Size: " << os.str().size() << ";";
-    cout << "Hash: " <<blob_hash(os.str());
+    cout << "Hash: " << blob_hash(os.str()) << endl;
 }
 
 void CPsgCliApp::PrintBlobInfo(const CPSG_BlobInfo* blob_info)
@@ -424,7 +396,5 @@ int main(int argc, const char* argv[])
 {
     srand(time(NULL));
 
-    IdLogUtil::CAppLog::SetLogLevelFile(0);
-    IdLogUtil::CAppLog::SetLogLevel(0);
     return CPsgCliApp().AppMain(argc, argv);
 }

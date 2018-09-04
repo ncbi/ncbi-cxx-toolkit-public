@@ -48,7 +48,6 @@
 #define __STDC_FORMAT_MACROS
 #include <nghttp2/nghttp2.h>
 
-#include <objtools/pubseq_gateway/impl/diag/AppLog.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/DdRpcCommon.hpp>
 
@@ -290,11 +289,11 @@ void SPSG_Receiver::Add()
         auto severity = args.GetValue("severity");
 
         if (severity == "warning") {
-            LOG1(("Warning: %s", os.str().c_str()));
+            ERR_POST(Warning << os.str());
         } else if (severity == "info") {
-            LOG2(("Info: %s", os.str().c_str()));
+            ERR_POST(Info << os.str());
         } else if (severity == "trace") {
-            LOG3(("Trace: %s", os.str().c_str()));
+            ERR_POST(Trace << os.str());
         } else {
             item.state.AddError(os.str());
         }
@@ -364,7 +363,7 @@ uint16_t http2_request::get_port() const
 
 void http2_request::on_complete(uint32_t error_code)
 {
-    LOG4(("%p: on_complete: stream %d: result: %u", m_session_data, m_stream_id, error_code));
+    ERR_POST(Trace << m_session_data << ": on_complete: stream " << m_stream_id << ": result: " << error_code);
     if (error_code)
         error(SPSG_Error::NgHttp2(error_code));
     else
@@ -458,7 +457,7 @@ http2_session::http2_session(io_thread* aio) noexcept :
     m_read_buf(TPSG_RdBufSize::GetDefault(), '\0'),
     m_cancel_requested(false)
 {
-    LOG2(("%p: created", this));
+    ERR_POST(Trace << this << ": created");
     m_tcp.Handle()->data = this;
     m_wr.wr_req.data = this;
     m_ai_req.data = this;
@@ -469,9 +468,9 @@ http2_session::http2_session(io_thread* aio) noexcept :
 
 void http2_session::dump_requests()
 {
-    LOG1(("DUMP REQ: [%lu]", m_requests.size()));
+    ERR_POST(Trace << "DUMP REQ: [" << m_requests.size() << "]");
     for (const auto& it : m_requests) {
-        LOG1(("%d => %s", it.first, it.second->get_full_path().c_str()));
+        ERR_POST(Trace << it.first << " => " << it.second->get_full_path().c_str());
     }
 }
 
@@ -481,7 +480,7 @@ ssize_t http2_session::s_ng_send_cb(nghttp2_session*, const uint8_t*, size_t, in
 {
     http2_session *session_data = (http2_session *)user_data;
     session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eUnexpCb, "failed to send request, unexpected callback"));
-    ERRLOG0(("!ERROR: s_ng_send_cb"));
+    ERR_POST("!ERROR: s_ng_send_cb");
     return NGHTTP2_ERR_WOULDBLOCK;
 }
 
@@ -526,7 +525,7 @@ int http2_session::s_ng_data_chunk_recv_cb(nghttp2_session*, uint8_t, int32_t st
             it->second->on_reply_data((const char*)data, len);
         }
         else
-            LOG2(("%p: s_ng_data_chunk_recv_cb: stream_id: %d not found", session_data, stream_id));
+            ERR_POST(session_data << ": s_ng_data_chunk_recv_cb: stream_id: " << stream_id << " not found");
     }
     catch(const std::exception& e) {
         session_data->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
@@ -549,7 +548,7 @@ int http2_session::s_ng_stream_close_cb(nghttp2_session*, int32_t stream_id, uin
 int http2_session::ng_stream_close_cb(int32_t stream_id, uint32_t error_code)
 {
 //    int rv;
-    LOG4(("%p: ng_stream_close_cb: id: %d, code %d", this,  stream_id, error_code));
+    ERR_POST(Trace << this << ": ng_stream_close_cb: id: " << stream_id << ", code " << error_code);
 
     try {
         auto it = m_requests.find(stream_id);
@@ -626,7 +625,7 @@ int http2_session::s_ng_begin_headers_cb(nghttp2_session*, const nghttp2_frame *
 int http2_session::s_ng_error_cb(nghttp2_session*, const char *msg, size_t, void *user_data)
 {
     http2_session *session_data = (http2_session *)user_data;
-    ERRLOG0(("%p: !ERROR: %s", session_data,  msg));
+    ERR_POST(session_data << ": !ERROR: " << msg);
     for (auto it = session_data->m_requests.begin(); it != session_data->m_requests.end();) {
         auto cur = it++;
         if (cur->second->get_state() >= http2_request_state::rs_sent && cur->second->get_state() < http2_request_state::rs_done)
@@ -645,14 +644,25 @@ void http2_session::s_alloc_cb(uv_handle_t* handle, size_t, uv_buf_t* buf)
 void http2_session::s_on_close_cb(uv_handle_t *handle)
 {
     http2_session *session_data = static_cast<http2_session*>(handle->data);
-    LOG2(("%p: on_close_cb", session_data));
+    ERR_POST(Trace << session_data << ": on_close_cb" << session_data);
     if (session_data->m_connection_state == connection_state_t::cs_closing)
         session_data->m_connection_state = connection_state_t::cs_initial;
 }
 
+const char* s_GetStateName(connection_state_t state)
+{
+    switch (state) {
+    case connection_state_t::cs_initial:    return "cs_initial";
+    case connection_state_t::cs_connecting: return "cs_connecting";
+    case connection_state_t::cs_connected:  return "cs_connected";
+    case connection_state_t::cs_closing:    return "cs_closing";
+    }
+    return "unknown state";
+}
+
 void http2_session::close_tcp()
 {
-    LOG2(("%p: close_tcp, state: %d", this, (int)m_connection_state));
+    ERR_POST(Trace << this << ": close_tcp, state: " << s_GetStateName(m_connection_state));
     if ((m_connection_state == connection_state_t::cs_connecting) ||
             (m_connection_state == connection_state_t::cs_connected))
         m_connection_state = connection_state_t::cs_closing;
@@ -686,7 +696,7 @@ void http2_session::close_session()
         nghttp2_session_del(_session);
         if (m_num_requests.load() != 0) {
             size_t sz = m_requests.size();
-            ERRLOG0(("unexpected m_num_requests=%lu, requests=%lu", m_num_requests.load(), sz));
+            ERR_POST("unexpected m_num_requests=" << m_num_requests.load() << ", requests=" << sz);
             assert(m_num_requests.load() == 0);
         }
 
@@ -695,10 +705,10 @@ void http2_session::close_session()
 
 void http2_session::start_close()
 {
-    LOG2(("%p: start_close", this));
+    ERR_POST(Trace << this << ": start_close");
     if (m_session_state < session_state_t::ss_closing) {
         if (m_connection_state == connection_state_t::cs_connected && m_session) {
-            LOG1(("%p: nghttp2_session_terminate_session", this));
+            ERR_POST(Trace << this << ": nghttp2_session_terminate_session");
             nghttp2_session_terminate_session(m_session, NGHTTP2_NO_ERROR);
             m_session_state = session_state_t::ss_closing;
             check_next_request();
@@ -713,7 +723,7 @@ void http2_session::start_close()
 
 void http2_session::finalize_close()
 {
-    LOG1(("%p: finalize_close", this));
+    ERR_POST(Trace << this << ": finalize_close");
     assert(m_session_state == session_state_t::ss_closing);
     assert(m_connection_state == connection_state_t::cs_initial);
     m_session_state = session_state_t::ss_closed;
@@ -754,7 +764,7 @@ int http2_session::write_ng_data()
     int rv = 0;
 
     if (m_connection_state != connection_state_t::cs_connected) {
-        LOG4(("%p: write_ng_data: connection is not open", this));
+        ERR_POST(this << ": write_ng_data: connection is not open");
         return 0;
     }
 
@@ -772,7 +782,7 @@ abort();
             m_wr.is_pending_wr = true;
 
             rv = uv_write(&m_wr.wr_req, (uv_stream_t*)m_tcp.Handle(), &buf, 1, s_write_cb);
-            LOG2(("%p: write %lu", this, buf.len));
+            ERR_POST(Trace << this << ": write " << buf.len);
             if (rv != 0) {
                 m_wr.is_pending_wr = false;
                 purge_pending_requests(SPSG_Error::LibUv(rv, "failed to send request"));
@@ -797,20 +807,20 @@ bool http2_session::fetch_ng_data(bool commit)
             const uint8_t *data;
             bytes = nghttp2_session_mem_send(m_session, &data);
             if (bytes < 0) {
-                LOG4(("%p: fetch_ng_data: nghttp2_session_mem_send returned error %ld", this, bytes));
+                ERR_POST(this << ": fetch_ng_data: nghttp2_session_mem_send returned error " << bytes);
                 purge_pending_requests(SPSG_Error::NgHttp2(bytes));
                 rv = bytes;
                 break;
             }
             else if (bytes > 0) {
-                LOG4(("%p: fetch_ng_data: nghttp2_session_mem_send returned %ld to write", this, bytes));
+                ERR_POST(Trace << this << ": fetch_ng_data: nghttp2_session_mem_send returned " << bytes << " to write");
                 rv = 0;
                 m_wr.write_buf.append((const char*)data, bytes);
                 tot_len += bytes;
             }
             else {
                 if (tot_len == 0)
-                    LOG4(("%p: fetch_ng_data: nothing fetched, buffered: %ld", this, m_wr.write_buf.size()));
+                    ERR_POST(Trace << this << ": fetch_ng_data: nothing fetched, buffered: " << m_wr.write_buf.size());
                 break;
             }
         }
@@ -828,20 +838,20 @@ void http2_session::check_next_request()
         bool want_write = nghttp2_session_want_write(m_session) != 0;
         bool write_pending = m_wr.is_pending_wr;
         if (!want_read && !want_write && !write_pending && m_session_state == session_state_t::ss_closing && m_wr.write_buf.empty()) {
-            LOG1(("CLOSE"));
+            ERR_POST(Trace << "CLOSE");
             close_tcp();
             process_completion_list();
         }
         else if (!write_pending) {
-            LOG4(("%p: check_next_request: check if we need write", this));
+            ERR_POST(Trace << this << ": check_next_request: check if we need write");
             fetch_ng_data();
         }
         else {
-            LOG4(("%p: check_next_request: want_read: %d, want_write: %d, write_pending: %d", this, want_read, want_write, write_pending));
+            ERR_POST(Trace << this << ": check_next_request: want_read: " << want_read << ", want_write: " << want_write << ", write_pending: " << write_pending);
         }
     }
     else {
-        LOG1(("%p: check_next_request: session has been closed", this));
+        ERR_POST(Trace << this << ": check_next_request: session has been closed");
     }
 }
 
@@ -853,7 +863,7 @@ void http2_session::debug_print_counts()
         if (v >= 0 && v < 6)
             counts[v]++;
     }
-    LOG3(("%p: process_requests list=%lu (%lu, %lu, %lu, %lu, %lu, %lu)", this, m_requests.size(), counts[0], counts[1], counts[2], counts[3], counts[4], counts[5]));
+    ERR_POST(Trace << this << ": process_requests list=" << m_requests.size() << " (" << counts[0] << ", " << counts[1] << ", " << counts[2] << ", " << counts[3] << ", " << counts[4] << ", " << counts[5] << ")");
 }
 
 /* s_connect_cb for libuv.
@@ -869,7 +879,7 @@ void http2_session::connect_cb(uv_connect_t *req, int status)
 {
     assert(req == &m_conn_req);
     assert(req->handle == (uv_stream_t*)m_tcp.Handle());
-    LOG2(("%p: connect_cb %d", this, status));
+    ERR_POST(Trace << this << ": connect_cb " << status);
     try {
         m_is_pending_connect = false;
         if (status < 0) {
@@ -881,7 +891,7 @@ void http2_session::connect_cb(uv_connect_t *req, int status)
                 shared_ptr<http2_request> http2_req;
                 while (m_req_queue.pop_move(http2_req)) {
                     assert(http2_req.get());
-                    LOG1(("%p: drain_queue: req: %p", this, http2_req.get()));
+                    ERR_POST(Trace << this << ": drain_queue: req: " << http2_req.get());
                     http2_req->error(error);
                 }
 
@@ -906,7 +916,7 @@ void http2_session::connect_cb(uv_connect_t *req, int status)
             return;
         }
 
-        LOG1(("%p: connected", this));
+        ERR_POST(Trace << this << ": connected");
         process_requests();
     }
     catch(const std::exception& e) {
@@ -939,7 +949,7 @@ void http2_session::write_cb(uv_write_t* req, int status)
             purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eUnexpCb, "Unexpected write_cb call"));
             return;
         }
-        LOG2(("%p: write_cb (%d), %lu", this, status, m_wr.write_buf.size()));
+        ERR_POST(Trace << this << ": write_cb (" << status << "), " << m_wr.write_buf.size());
         m_wr.is_pending_wr = false;
         m_wr.write_buf.resize(0);
 
@@ -977,7 +987,7 @@ void http2_session::s_read_cb(uv_stream_t *strm, ssize_t nread, const uv_buf_t* 
 void http2_session::read_cb(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 {
     try {
-        LOG2(("%p: read_cb %ld", this, nread));
+        ERR_POST(Trace << this << ": read_cb " << nread);
         ssize_t readlen;
 
         if (nread < 0) {
@@ -1044,7 +1054,7 @@ bool http2_session::try_connect(const struct sockaddr *addr)
 bool http2_session::try_next_addr()
 {
     if (m_other_addr.empty()) {
-        LOG2(("%p: try_next_addr: no more addresses to try", this));
+        ERR_POST(this << ": try_next_addr: no more addresses to try");
         return false;
     }
     const struct sockaddr& addr = m_other_addr.front();
@@ -1063,7 +1073,7 @@ void http2_session::getaddrinfo_cb(uv_getaddrinfo_t*, int status, struct addrinf
 {
     try {
         struct sockaddr addr;
-        LOG3(("%p: getaddrinfo_cb, status: %d", this, status));
+        ERR_POST(Trace << this << ": getaddrinfo_cb, status: " << status);
         unique_ptr<struct addrinfo, function<void(struct addrinfo*)>> lai(ai, [](struct addrinfo* p) { uv_freeaddrinfo(p); });
         if (status == 0) {
             if (ai->ai_family == AF_INET) {
@@ -1270,13 +1280,13 @@ void http2_session::process_requests()
         return;
     }
     if (m_connection_state != connection_state_t::cs_initial && m_connection_state != connection_state_t::cs_connected) { // transition state
-        LOG5(("%p: process_requests: leaving out", this));
+        ERR_POST(Trace << this << ": process_requests: leaving out");
         return;
     }
 
     if (m_num_requests > 0) {
         if (!check_connection()) {
-            ERRLOG1(("%p: process_requests: not connected", this));
+            ERR_POST(this << ": process_requests: not connected");
             return;
         }
     }
@@ -1287,12 +1297,12 @@ void http2_session::process_requests()
 //requests_at_once = m_requests.size();
     if (m_num_requests < m_max_streams && m_wr.write_buf.size() < TPSG_WriteHiwater::GetDefault()) {
         shared_ptr<http2_request> req;
-        LOG5(("%p: process_requests: fetch loop>>", this));
+        ERR_POST(Trace << this << ": process_requests: fetch loop>>");
         while (m_num_requests < m_max_streams + 16) {
             req = nullptr;
             try {
                 if (!m_req_queue.pop_move(req)) {
-                    LOG1(("%p: process_requests: no more req in queue", this));
+                    ERR_POST(Trace << this << ": process_requests: no more req in queue");
                     break;
                 }
 
@@ -1331,16 +1341,16 @@ void http2_session::process_requests()
                 int32_t stream_id = nghttp2_submit_request(m_session, NULL, hdrs, DDRPC::countof(hdrs), NULL, req.get());
                 if (stream_id == NGHTTP2_ERR_STREAM_ID_NOT_AVAILABLE) {
                     req->error(SPSG_Error::NgHttp2(stream_id));
-                    ERRLOG1(("%p: max_requests reached", this));
+                    ERR_POST(this << ": max_requests reached");
                     break;
                 }
                 else if (stream_id < 0) {
-                    ERRLOG1(("%p: failed: %d", this, stream_id));
+                    ERR_POST(this << ": failed: " << stream_id);
                     req->error(SPSG_Error::NgHttp2(stream_id));
                     break;
                 }
                 else {
-                    LOG3(("%p: req: %p, stream_id: %d (%s)", this, req.get(), stream_id, req->get_full_path().c_str()));
+                    ERR_POST(Trace << this << ": req: " << req.get() << ", stream_id: " << stream_id << " (" << req->get_full_path().c_str() << ")");
 
                     req->on_fetched(this, stream_id);
                     m_requests.emplace(stream_id, std::move(req));
@@ -1352,7 +1362,7 @@ void http2_session::process_requests()
 
                     bool want_write = nghttp2_session_want_write(m_session) != 0;
                     if (!want_write) {
-                        LOG2(("reached max_requests %lu", m_num_requests.load()));
+                        ERR_POST(Warning << "reached max_requests " << m_num_requests.load());
                         break;
                     }
                     if (!fetch_ng_data(false)) {
@@ -1360,7 +1370,7 @@ void http2_session::process_requests()
                     }
 
                     if (m_wr.write_buf.size() >= TPSG_WriteHiwater::GetDefault()) {
-                        LOG1(("reached hiwater %lu", m_wr.write_buf.size()));
+                        ERR_POST(Warning << "reached hiwater " << m_wr.write_buf.size());
                         break;
                     }
 
@@ -1375,7 +1385,7 @@ void http2_session::process_requests()
                 throw;
             }
         }
-        LOG3(("%p: submitted %lu", this, count));
+        ERR_POST(Trace << this << ": submitted " << count);
 
         m_requests_at_once = count;
     //    debug_print_counts();
@@ -1455,10 +1465,10 @@ void io_thread::on_timer(uv_timer_t*)
             (*it)->on_timer();
             ss << " " << dec << (*it)->get_num_requests() << " " << (*it)->get_requests_at_once();
         }
-        LOG1(("TIMER: %s", ss.str().c_str()));
+        ERR_POST(Trace << "TIMER: " << ss.str());
     }
     catch(...) {
-        cerr << "failure in timer";
+        ERR_POST("failure in timer");
     }
 
 }
@@ -1485,11 +1495,8 @@ bool io_thread::add_request_move(shared_ptr<http2_request>& req)
 
 
     bool rv = false;
-//LOG1(("sz: %lu, %p, idx: %lu", m_sessions.size(), m_sessions[m_cur_idx].get(), m_cur_idx));
     size_t idx = m_cur_idx.load();
     rv = (m_sessions[idx])->add_request_move(req);
-//        if (rv)
-//            LOG1(("%p: queued %p", m_sessions[m_cur_idx].get(), &m_reply));
     if (!rv) {
         m_cur_idx.compare_exchange_weak(idx, (idx + 1) % m_sessions.size(),  memory_order_release, memory_order_relaxed);
         uv_async_send(&m_wake);
@@ -1536,7 +1543,7 @@ void io_thread::execute(uv_sem_t* sem)
         run();
     }
     m_loop->Walk([this](uv_handle_t* handle){
-        LOG4(("walk handle: %p, type: %d", handle, handle->type));
+        ERR_POST(Trace << "walk handle: " << handle << ", type: " << handle->type);
     });
     st = io_thread_state_t::started;
     m_state.compare_exchange_weak(st, io_thread_state_t::stopped,  memory_order_release, memory_order_relaxed);
@@ -1602,18 +1609,18 @@ bool io_coordinator::add_request(shared_ptr<http2_request> req, long timeout_ms)
         if (rv)
             return true;
 
-        ERRLOG1(("io failed to queue %p, keep trying", req.get()));
+        ERR_POST("io failed to queue " << req.get() << ", keep trying");
         if (++iteration > TPSG_NumIo::GetDefault() * TPSG_NumConnPerIo::GetDefault()) {
             if (timeout_ms < 0) {
-                ERRLOG1(("io failed to queue %p, timeout", req.get()));
+                ERR_POST("io failed to queue " << req.get() << ", timeout");
                 return false;
             }
 
-            LOG3(("SLEEP"));
+            ERR_POST(Trace << "SLEEP");
             long wait_time_ms = 10L;
             if (timeout_ms > 0 && timeout_ms < wait_time_ms)
                 wait_time_ms = timeout_ms;
-            usleep(wait_time_ms * 1000L);
+            this_thread::sleep_for(chrono::milliseconds(wait_time_ms));
             if (timeout_ms > 0)
                 timeout_ms -= wait_time_ms;
             iteration = 0;
