@@ -51,6 +51,7 @@ public:
     bool LookupBioseqInfoByAccession(const string& accession, int& version, int& seq_id_type, string& data);
     bool LookupBioseqInfoByAccessionVersion(const string& accession, int version, int& seq_id_type, string& data);
     bool LookupBioseqInfoByAccessionVersionSeqIdType(const string& accession, int version, int saq_id_type, string& data);
+    bool LookupBioseqInfoByAccessionVersionSeqIdType(const string& accession, int version, int saq_id_type, string& data, int& found_version, int& found_saq_id_type);
 
     static string PackBioseqInfoKey(const string& accession, int version);
     static string PackBioseqInfoKey(const string& accession, int version, int seq_id_type);
