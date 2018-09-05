@@ -220,20 +220,6 @@ bool CGff3Reader::IsInGenbankMode() const
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Reader::x_UpdateFeatureCds(
-    const CGff2Record& gff,
-    CRef<CSeq_feat> pFeature)
-//  ----------------------------------------------------------------------------
-{
-    CRef<CSeq_feat> pAdd = CRef<CSeq_feat>(new CSeq_feat);
-    if (!x_FeatureSetLocation(gff, pAdd)) {
-        return false;
-    }
-    pFeature->SetLocation().Add(pAdd->GetLocation());
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff3Reader::x_UpdateAnnotFeature(
     const CGff2Record& record,
     CRef< CSeq_annot > pAnnot,
@@ -320,7 +306,7 @@ bool CGff3Reader::xUpdateAnnotExon(
             IdToFeatureMap::iterator fit = m_MapIdToFeature.find(parentId);
             if (fit != m_MapIdToFeature.end()) {
                 CRef<CSeq_feat> pParent = fit->second;
-                if (!record.UpdateFeature(m_iFlags, pParent)) {
+                if (!record.UpdateParent(m_iFlags, pParent)) {
                     return false;
                 }
             }
@@ -385,7 +371,7 @@ bool CGff3Reader::xUpdateAnnotCds(
             if (pParent->GetData().IsGene()) {
                 parentIsGene = true;
             }
-            if (!record.UpdateFeature(m_iFlags, pParent)) {
+            if (!record.UpdateParent(m_iFlags, pParent)) {
                 return false;
             }
             //rw-143:
@@ -529,6 +515,10 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
+    auto rtype = record.Type();
+    if (rtype == "rRNA") {
+        cout << "";
+    } 
     string id;
     if (record.GetAttribute("ID", id)) {
         IdToFeatureMap::iterator it = m_MapIdToFeature.find(id);

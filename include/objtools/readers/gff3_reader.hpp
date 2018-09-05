@@ -101,10 +101,6 @@ protected:
         CRef< CSeq_annot >,
         ILineErrorListener*);
 
-    virtual bool x_UpdateFeatureCds(
-        const CGff2Record&,
-        CRef<CSeq_feat>);
-
     virtual bool xAddFeatureToAnnot(
         CRef< CSeq_feat >,
         CRef< CSeq_annot > );

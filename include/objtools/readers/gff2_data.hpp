@@ -160,6 +160,11 @@ public:
         CRef<CSeq_feat>,
         SeqIdResolver = nullptr ) const;
 
+    virtual bool UpdateParent(
+        int,
+        CRef<CSeq_feat>,
+        SeqIdResolver = nullptr ) const;
+
     static void TokenizeGFF(vector<CTempStringEx>& columns, const CTempStringEx& line);
 protected:
     virtual bool x_AssignAttributesFromGff(
