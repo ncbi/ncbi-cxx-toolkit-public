@@ -117,7 +117,7 @@ bool s_AnnotId(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfReadRecord::x_AssignAttributesFromGff(
+bool CGtfReadRecord::xAssignAttributesFromGff(
     const string& strGtfType,
     const string& strRawAttributes )
 //  ----------------------------------------------------------------------------

@@ -50,7 +50,7 @@ public:
     ~CGtfReadRecord() {};
 
 protected:
-    bool x_AssignAttributesFromGff(
+    bool xAssignAttributesFromGff(
         const string&,
         const string& );
 };

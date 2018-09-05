@@ -70,7 +70,7 @@ public:
     bool SanityCheck() const;
 
 protected:
-    virtual bool x_AssignAttributesFromGff(
+    virtual bool xAssignAttributesFromGff(
         const string&,
         const string& );
     void xTraceError(
