@@ -52,7 +52,7 @@ CSimple_replace::~CSimple_replace(void)
 {
 }
 
-
+#if 0
 const string sm_WeaselWords[] = {
   "candidate",
   "hypothetical",
@@ -103,7 +103,7 @@ bool SkipWeasel(string& str)
     }
     return rval;
 }
-
+#endif
 
 bool CSimple_replace::ApplyToString(string& result, const CMatchString& str, CConstRef<CString_constraint> find) const
 {
