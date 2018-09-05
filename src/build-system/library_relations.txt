@@ -1060,7 +1060,6 @@ psg_cassandra needs3party $(KRB5_LIBS)
 psg_cassandra needs3party $(OPENSSL_LIBS)
 psg_cassandra needs3party $(Z_LIBS)
 psg_client needs $(SEQ_LIBS)
-psg_client needs psg_diag
 psg_client needs pub
 psg_client needs xconnserv
 psg_client needs3party $(LIBUV_LIBS)
