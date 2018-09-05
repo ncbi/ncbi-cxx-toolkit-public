@@ -160,7 +160,7 @@ public:
         CRef<CSeq_feat>,
         SeqIdResolver = nullptr ) const;
 
-    virtual bool UpdateParent(
+    virtual bool MergeRecordData(
         int,
         CRef<CSeq_feat>,
         SeqIdResolver = nullptr ) const;

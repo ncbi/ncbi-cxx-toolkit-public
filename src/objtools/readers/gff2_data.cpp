@@ -621,52 +621,11 @@ bool CGff2Record::UpdateFeature(
             pErr->Throw();
         }
     }
-
-    // mss-582:
-    //  if the parent feature is a gene then don't mess with the gene's location
-    //
-    if (subtype == CSeqFeatData::eSubtype_gene) {
-        return true;
-    }
-    auto recType = Type();
-    NStr::ToLower(recType);
-    const CSeq_loc& target = pFeature->GetLocation();
-    CRef<CSeq_loc> pAddLoc = GetSeqLoc(flags, seqidresolve);
-
-    if (target.IsInt()  &&  target.GetInt().GetFrom() <= SeqStart()  &&
-            target.GetInt().GetTo() >= SeqStop() ) {
-        if (recType == "start_codon"  ||  recType == "stop_codon") {
-            return true;
-        }
-        // indicates current feature location is a placeholder interval to be
-        //  totally overwritten by the constituent sub-intervals
-        pFeature->SetLocation().SetMix().AddSeqLoc(*pAddLoc);
-    }
-    else {
-        // indicates the feature location is already under construction
-        pFeature->SetLocation(*pFeature->SetLocation().Add(
-            *pAddLoc, CSeq_loc::fSort | CSeq_loc::fMerge_Abutting, 0));
-        if (pFeature->GetLocation().IsInt()) {
-            CRef<CSeq_loc> pOld(new CSeq_loc);
-            pOld->Assign(pFeature->GetLocation());
-            pFeature->SetLocation().SetMix().AddSeqLoc(*pOld);
-        }
-    }
-    if (!xUpdateFeatureData(flags, pFeature)) {
-        return false;
-    }
-    if (subtype == CSeqFeatData::eSubtype_cdregion  &&  recType == "cds") {
-        string cdsId;
-        GetAttribute("ID", cdsId);
-        if (!cdsId.empty()) {
-            pFeature->AddOrReplaceQualifier("ID", cdsId);
-        }
-    }
-    return true;
+    return MergeRecordData(flags, pFeature, seqidresolve);
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::UpdateParent(
+bool CGff2Record::MergeRecordData(
     int flags,
     CRef<CSeq_feat> pFeature,
     SeqIdResolver seqidresolve ) const
