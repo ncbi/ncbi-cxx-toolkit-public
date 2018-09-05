@@ -81,7 +81,7 @@ struct SDllHandle;
 /// '/', '\', or ':' symbols. Also, in this case, if the DLL name does not
 /// start with NCBI_PLUGIN_PREFIX and contain NCBI_PLUGIN_MIN_SUFFIX (and if
 /// eExactName flag not passed to the constructor), then it will be
-/// automagically transformed according to the following rule:
+/// automatically transformed according to the following rule:
 ///   <name>  --->  NCBI_PLUGIN_PREFIX + <name> + NCBI_PLUGIN_SUFFIX
 ///
 ///  If the DLL is specified by its basename, then it will be searched
@@ -159,7 +159,7 @@ public:
     /// @param name
     ///   Can be either DLL basename or an absolute file path.
     /// @param flags
-    ///   Define how to load/unload DLL and interprete passed name.
+    ///   Define how to load/unload DLL and interpret passed name.
     /// @sa
     ///   Basename discussion in CDll header, EFlags
     NCBI_XNCBI_EXPORT
@@ -197,7 +197,7 @@ public:
     /// @param name
     ///   Name of DLL.
     /// @param flags
-    ///   Define how to load/unload DLL and interprete passed name.
+    ///   Define how to load/unload DLL and interpret passed name.
     /// @sa
     ///   Basename discussion in CDll header, EFlags
     NCBI_XNCBI_EXPORT
@@ -367,7 +367,7 @@ private:
 ///
 /// If Dll resolver finds DLL with the specified entry point it is
 /// stored in the internal list (provided by GetResolvedEntries method).
-/// All DLL libraries are unloaded upon resolver's destruction
+/// All DLL libraries are unloaded upon resolver's destruction.
 ///
 class CDllResolver
 {
@@ -376,25 +376,25 @@ public:
     /// DLL entry point name -> function pair
     struct SNamedEntryPoint
     {
-        string               name;          ///< Entry point name
-        CDll::TEntryPoint    entry_point;   ///< DLL entry point
+        string             name;          ///< Entry point name
+        CDll::TEntryPoint  entry_point;   ///< DLL entry point
 
-        SNamedEntryPoint(const string&       x_name,
-                         CDll::TEntryPoint   x_entry_point)
-        : name(x_name)
+        SNamedEntryPoint(const string& x_name, CDll::TEntryPoint x_entry_point)
+            : name(x_name)
         {
             entry_point.data = x_entry_point.data;
         }
     };
 
     /// DLL resolution descriptor.
+    /// Storage only. DLLs will be unloaded in the ~CDLLRelolver(), and memory freed.
     struct SResolvedEntry
     {
         CDll*                     dll;           ///< Loaded DLL instance
         vector<SNamedEntryPoint>  entry_points;  ///< list of DLL entry points
 
         SResolvedEntry(CDll* dll_ptr = 0)
-        : dll(dll_ptr)
+            : dll(dll_ptr)
         {}
     };
 
@@ -425,7 +425,7 @@ public:
 
     /// Try to load DLL from the specified file and resolve the entry point.
     ///
-    /// If DLL resolution successfull loaded entry point is registered in the
+    /// If DLL resolution successfully loaded entry point is registered in the
     /// internal list of resolved entries.
     ///
     /// @param file_name
@@ -433,7 +433,7 @@ public:
     /// @param driver_name
     ///   Name of the driver (substitute for ${driver} macro)
     /// @return
-    ///   TRUE if DLL is succesfully loaded and entry point resolved.
+    ///   TRUE if DLL is successfully loaded and entry point resolved.
     /// @sa
     ///   GetResolvedEntries
     NCBI_XNCBI_EXPORT 
