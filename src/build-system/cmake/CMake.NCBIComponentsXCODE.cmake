@@ -20,7 +20,7 @@ set(NCBI_COMPONENT_XCODE_FOUND YES)
 # common settings
 set(NCBI_ThirdPartyBasePath /netopt/ncbi_tools)
 
-set(NCBI_ThirdParty_TLS        ${NCBI_ThirdPartyBasePath}/gnutls-3.4.0
+set(NCBI_ThirdParty_TLS        ${NCBI_ThirdPartyBasePath}/gnutls-3.4.0)
 #set(NCBI_ThirdParty_FASTCGI 
 set(NCBI_ThirdParty_Boost      ${NCBI_ThirdPartyBasePath}/boost-1.62.0-ncbi1)
 #set(NCBI_ThirdParty_PCRE
@@ -33,8 +33,8 @@ set(NCBI_ThirdParty_JPEG       ${NCBI_ThirdPartyBasePath}/safe-sw)
 set(NCBI_ThirdParty_PNG        /opt/X11)
 #set(NCBI_ThirdParty_GIF
 set(NCBI_ThirdParty_TIFF       ${NCBI_ThirdPartyBasePath}/safe-sw)
-set(NCBI_ThirdParty_XML        ${NCBI_ThirdPartyBasePath}/libxml-2.7.8
-set(NCBI_ThirdParty_XSLT       ${NCBI_ThirdPartyBasePath}/libxml-2.7.8
+set(NCBI_ThirdParty_XML        ${NCBI_ThirdPartyBasePath}/libxml-2.7.8)
+set(NCBI_ThirdParty_XSLT       ${NCBI_ThirdPartyBasePath}/libxml-2.7.8)
 set(NCBI_ThirdParty_EXSLT      ${NCBI_ThirdParty_XSLT})
 set(NCBI_ThirdParty_SQLITE3    ${NCBI_ThirdPartyBasePath}/sqlite-3.8.10.1-ncbi1)
 #set(NCBI_ThirdParty_Sybase
