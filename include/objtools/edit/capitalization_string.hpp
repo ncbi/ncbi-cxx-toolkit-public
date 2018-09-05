@@ -49,7 +49,7 @@ BEGIN_SCOPE(edit)
 
 using ECapChange = objects::ECapChange;
 CAPITALIZATION_STRING_ALIAS_FUNCTION(FixCapitalizationInString)
-CAPITALIZATION_STRING_ALIAS_FUNCTION(FixAbbreviationsInElement)
+//CAPITALIZATION_STRING_ALIAS_FUNCTION(FixAbbreviationsInElement)
 CAPITALIZATION_STRING_ALIAS_FUNCTION(FixOrgNames)
 CAPITALIZATION_STRING_ALIAS_FUNCTION(FindOrgNames)
 CAPITALIZATION_STRING_ALIAS_FUNCTION(RemoveFieldNameFromString)
@@ -70,6 +70,12 @@ CAPITALIZATION_STRING_ALIAS_FUNCTION(FixKnownAbbreviationsInElement)
 CAPITALIZATION_STRING_ALIAS_FUNCTION(CapitalizeSAfterNumber)
 CAPITALIZATION_STRING_ALIAS_FUNCTION(ResetCapitalization)
 CAPITALIZATION_STRING_ALIAS_FUNCTION(FixCountryCapitalization)
+
+// Special case due to default parameter
+NCBI_DEPRECATED static void FixAbbreviationsInElement(string& result, bool fix_end_of_sentence=true) 
+{
+    objects::FixAbbreviationsInElement(result, fix_end_of_sentence);
+}
 
 END_SCOPE(edit)  
 END_SCOPE(objects)
