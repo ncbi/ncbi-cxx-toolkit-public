@@ -155,7 +155,7 @@ bool CGvfReadRecord::x_AssignAttributesFromGff(
 //  ----------------------------------------------------------------------------
 {
     vector< string > attributes;
-    x_SplitGffAttributes(strRawAttributes, attributes);
+    xSplitGffAttributes(strRawAttributes, attributes);
 	for ( size_t u=0; u < attributes.size(); ++u ) {
         string strKey;
         string strValue;

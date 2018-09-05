@@ -306,7 +306,7 @@ bool CGff3Reader::xUpdateAnnotExon(
             IdToFeatureMap::iterator fit = m_MapIdToFeature.find(parentId);
             if (fit != m_MapIdToFeature.end()) {
                 CRef<CSeq_feat> pParent = fit->second;
-                if (!record.UpdateParent(m_iFlags, pParent)) {
+                if (!record.MergeRecordData(m_iFlags, pParent)) {
                     return false;
                 }
             }
@@ -371,7 +371,7 @@ bool CGff3Reader::xUpdateAnnotCds(
             if (pParent->GetData().IsGene()) {
                 parentIsGene = true;
             }
-            if (!record.UpdateParent(m_iFlags, pParent)) {
+            if (!record.MergeRecordData(m_iFlags, pParent)) {
                 return false;
             }
             //rw-143:
@@ -515,10 +515,6 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    auto rtype = record.Type();
-    if (rtype == "rRNA") {
-        cout << "";
-    } 
     string id;
     if (record.GetAttribute("ID", id)) {
         IdToFeatureMap::iterator it = m_MapIdToFeature.find(id);

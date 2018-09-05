@@ -167,34 +167,34 @@ public:
 
     static void TokenizeGFF(vector<CTempStringEx>& columns, const CTempStringEx& line);
 protected:
-    virtual bool x_AssignAttributesFromGff(
+    virtual bool xAssignAttributesFromGff(
         const string&,
         const string& );
 
-	bool x_SplitGffAttributes(
+	bool xSplitGffAttributes(
 		const string&,
 		vector< string >& ) const;
 
-    virtual bool x_MigrateId(
+    virtual bool xMigrateId(
         CRef<CSeq_feat> ) const;
 
-    virtual bool x_MigrateStartStopStrand(
+    virtual bool xMigrateStartStopStrand(
         CRef<CSeq_feat> ) const;
 
-    virtual bool x_MigrateType(
+    virtual bool xMigrateType(
         CRef<CSeq_feat> ) const;
 
-    virtual bool x_MigrateScore(
+    virtual bool xMigrateScore(
         CRef<CSeq_feat> ) const;
 
-    virtual bool x_MigratePhase(
+    virtual bool xMigratePhase(
         CRef<CSeq_feat> ) const;
 
-    virtual bool x_MigrateAttributes(
+    virtual bool xMigrateAttributes(
         int,
         CRef<CSeq_feat> ) const;
 
-    virtual bool x_InitFeatureLocation(
+    virtual bool xInitFeatureLocation(
         int,
         CRef<CSeq_feat>,
         SeqIdResolver = nullptr ) const;
@@ -208,12 +208,12 @@ protected:
         CRef<CSeq_feat>,
         SeqIdResolver = nullptr ) const;
 
-    virtual bool x_MigrateAttributesSubSource(
+    virtual bool xMigrateAttributesSubSource(
         int,
         CRef<CSeq_feat>,
         TAttributes& ) const;
 
-    virtual bool x_MigrateAttributesOrgName(
+    virtual bool xMigrateAttributesOrgName(
         int,
         CRef<CSeq_feat>,
         TAttributes& ) const;

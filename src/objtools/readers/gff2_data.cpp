@@ -343,7 +343,7 @@ bool CGff2Record::AssignFromGff(
 
     columns[8].Copy(m_strAttributes, 0, CTempString::npos);
     
-    return x_AssignAttributesFromGff(m_strType, columns[8]);
+    return xAssignAttributesFromGff(m_strType, columns[8]);
 }
 
 //  ----------------------------------------------------------------------------
@@ -522,7 +522,7 @@ bool x_GetNextAttribute(CTempString& input, CTempString& key, CTempString& value
     return !key.empty();
 }
 
-bool CGff2Record::x_AssignAttributesFromGff(
+bool CGff2Record::xAssignAttributesFromGff(
     const string& strType,
     const string& strRawAttributes )
 //  ----------------------------------------------------------------------------
@@ -541,7 +541,7 @@ bool CGff2Record::x_AssignAttributesFromGff(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::x_SplitGffAttributes(
+bool CGff2Record::xSplitGffAttributes(
     const string& strRawAttributes,
 	vector< string >& attributes) const
 //  ----------------------------------------------------------------------------
@@ -585,14 +585,14 @@ bool CGff2Record::InitializeFeature(
 //  ----------------------------------------------------------------------------
 {
     return (
-        x_InitFeatureLocation(flags, pFeature, seqidresolve)  &&
+        xInitFeatureLocation(flags, pFeature, seqidresolve)  &&
         xInitFeatureData(flags, pFeature)  &&
-        x_MigrateId(pFeature)  &&
-        x_MigrateStartStopStrand(pFeature)  &&
-        x_MigrateType(pFeature)  &&
-        x_MigrateScore(pFeature)  &&
-        x_MigratePhase(pFeature)  &&
-        x_MigrateAttributes(flags, pFeature) );
+        xMigrateId(pFeature)  &&
+        xMigrateStartStopStrand(pFeature)  &&
+        xMigrateType(pFeature)  &&
+        xMigrateScore(pFeature)  &&
+        xMigratePhase(pFeature)  &&
+        xMigrateAttributes(flags, pFeature) );
 }
 
 //  ----------------------------------------------------------------------------
@@ -722,7 +722,7 @@ bool CGff2Record::xUpdateFeatureData(
     
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::x_MigrateId(
+bool CGff2Record::xMigrateId(
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
@@ -734,7 +734,7 @@ bool CGff2Record::x_MigrateId(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::x_MigrateStartStopStrand(
+bool CGff2Record::xMigrateStartStopStrand(
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
@@ -742,7 +742,7 @@ bool CGff2Record::x_MigrateStartStopStrand(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::x_MigrateType(
+bool CGff2Record::xMigrateType(
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
@@ -751,7 +751,7 @@ bool CGff2Record::x_MigrateType(
 
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::x_MigrateScore(
+bool CGff2Record::xMigrateScore(
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
@@ -759,7 +759,7 @@ bool CGff2Record::x_MigrateScore(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::x_MigratePhase(
+bool CGff2Record::xMigratePhase(
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
@@ -767,7 +767,7 @@ bool CGff2Record::x_MigratePhase(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::x_MigrateAttributes(
+bool CGff2Record::xMigrateAttributes(
     int flags,
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
@@ -1025,10 +1025,10 @@ bool CGff2Record::x_MigrateAttributes(
     }
 
     if (pFeature->GetData().IsBiosrc()) { 
-        if (!x_MigrateAttributesSubSource(flags, pFeature, attrs_left)) {
+        if (!xMigrateAttributesSubSource(flags, pFeature, attrs_left)) {
             return false;
         }
-        if (!x_MigrateAttributesOrgName(flags, pFeature, attrs_left)) {
+        if (!xMigrateAttributesOrgName(flags, pFeature, attrs_left)) {
             return false;
         }
     }
@@ -1095,7 +1095,7 @@ bool CGff2Record::xMigrateAttributeDefault(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::x_MigrateAttributesOrgName(
+bool CGff2Record::xMigrateAttributesOrgName(
     int flags,
     CRef<CSeq_feat> pFeature,
     TAttributes& attrs_left) const
@@ -1162,7 +1162,7 @@ bool CGff2Record::x_MigrateAttributesOrgName(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::x_MigrateAttributesSubSource(
+bool CGff2Record::xMigrateAttributesSubSource(
     int flags,
     CRef<CSeq_feat> pFeature,
     TAttributes& attrs_left) const
@@ -1236,7 +1236,7 @@ bool CGff2Record::x_MigrateAttributesSubSource(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::x_InitFeatureLocation(
+bool CGff2Record::xInitFeatureLocation(
     int flags,
     CRef<CSeq_feat> pFeature,
     SeqIdResolver seqidresolve ) const
