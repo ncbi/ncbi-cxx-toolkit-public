@@ -157,19 +157,16 @@ public:
     CTempString GetNoweasel() const
     {
         x_GetNoweasel();
-//cout << "GetNoweasel: " << m_noweasel->original() << "\n";
         return CTempString(m_noweasel->original());
     }
     CTempString GetNoweaselLC() const
     {
         x_GetNoweasel();
-//cout << "GetNoweasel_LC: " << m_noweasel->original() << "\n";
         return CTempString(m_noweasel->lowercase());
     }
     CTempString GetNoweaselUC() const
     {
         x_GetNoweasel();
-//cout << "GetNoweasel_UC: " << m_noweasel->original() << "\n";
         return CTempString(m_noweasel->uppercase());
     }
 
@@ -177,19 +174,16 @@ public:
     CTempString GetSelfweasel() const
     {
         x_GetSelfweasel();
-//cout << "GetSelfweasel: " << m_noweasel->original() << "\n";
         return CTempString(m_noweasel->original());
     }
     CTempString GetSelfweaselLC() const
     {
         x_GetSelfweasel();
-//cout << "GetSelfweasel_LC: " << m_noweasel->original() << "\n";
         return CTempString(m_noweasel->lowercase());
     }
     CTempString GetSelfweaselUC() const
     {
         x_GetSelfweasel();
-//cout << "GetSelfweasel_UC: " << m_noweasel->original() << "\n";
         return CTempString(m_noweasel->uppercase());
     }
 
@@ -275,15 +269,6 @@ private:
                               size_t match_len,
                               bool disallow_slash = false) const;
     bool x_MatchFound(CTempString& search, CTempString& pattern) const;
-    bool x_GetSpanFromHyphenInString(const string& str,
-                                     size_t hyphen, 
-                                     string& first, 
-                                     string& second) const;
-    bool x_StringIsPositiveAllDigits(const string& str) const;
-    bool x_IsStringInSpanInList (const string& str, const string& list) const;
-    bool x_IsStringInSpan(const string& str, 
-                          const string& first, 
-                          const string& second) const;
 
     bool x_ReplaceContains(string& val, const string& replace) const;
 

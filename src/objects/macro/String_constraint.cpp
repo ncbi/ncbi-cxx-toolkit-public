@@ -117,62 +117,6 @@ namespace
         return s;
     }
 
-#if 0
-    CTempString x_SkipWeasel(const string& s)
-    {
-        if (str.empty()) {
-            return 0;
-        }
-
-        bool found = false;
-
-        string::size_type start;
-        string::size_type word_end = 0;
-        bool word_found;
-        do
-        {
-            if ((start = str.find_first_not_of(' ', word_end)) == string::npos)
-            {
-                start = str.length();
-                break;
-            }
-
-            if ((word_end = str.find(' ', start)) == string::npos)
-                word_end = str.size();
-
-            CTempString word(str, start, word_end - start);
-
-            word_found = find(std::begin(s_weasels), std::end(s_weasels), word) != std::end(s_weasels);
-
-            if (word_found)
-                found = true;
-
-        } while (word_found);
-
-        if (found)
-        {
-            return start;
-        }
-        else
-            return 0;
-    }
-
-    class T
-    {
-    public:
-        T()
-        {
-            string r;
-            r = x_SkipWeasel("check the word");
-            r = x_SkipWeasel(" novel check the word");
-            r = x_SkipWeasel("novel check the word");
-            r = x_SkipWeasel("novel novel");
-            r = x_SkipWeasel("novel novel ");
-        };
-    };
-
-    T test;
-#endif
 
     // El sueno de la razon produce monstruos
     CTempString x_StripUnimportantCharacters(string& storage, const CTempString& str, bool strip_space, bool strip_punct)
@@ -518,197 +462,6 @@ bool CString_constraint::x_AdvancedStringMatch(const string& str, const string& 
     return rval;
 };
 
-bool CString_constraint :: x_GetSpanFromHyphenInString(const string& str, size_t hyphen, string& first, string& second) const
-{
-   if (!hyphen) return false;
-
-   /* find range start */
-   size_t cp = str.substr(0, hyphen-1).find_last_not_of(' ');   
-   if (cp != string::npos) {
-      cp = str.substr(0, cp).find_last_not_of(" ,;"); 
-   }
-   if (cp == string::npos) {
-     cp = 0;
-   }
-
-   size_t len = hyphen - cp;
-   first = CTempString(str).substr(cp, len);
-   NStr::TruncateSpacesInPlace(first);
- 
-   /* find range end */
-   cp = str.find_first_not_of(' ', hyphen+1);
-   if (cp != string::npos) {
-      cp = str.find_first_not_of(" ,;");
-   }
-   if (cp == string::npos) {
-      cp = str.size() -1;   
-   }
-
-   len = cp - hyphen;
-   if (!isspace (Uint1(str[cp]))) {
-     len--;
-   }
-   second = CTempString(str).substr(hyphen+1, len);
-   NStr::TruncateSpacesInPlace(second);
-
-   bool rval = true;
-   if (first.empty() || second.empty()) {
-      rval = false;
-   }
-   else if (!isdigit (Uint1(first[first.size() - 1])) 
-                 || !isdigit (Uint1(second[second.size() - 1]))) {
-      /* if this is a span, then neither end point can end with anything other than a number */
-      rval = false;
-   }
-   if (!rval) {
-      first = second = kEmptyStr;
-   }
-   return rval;
-};
-
-bool CString_constraint :: x_StringIsPositiveAllDigits(const string& str) const
-{
-   if (str.find_first_not_of(digit_str) != string::npos) {
-      return false;
-   }
-
-   return true;
-}
-
-bool CString_constraint :: x_IsStringInSpan(const string& str, const string& first, const string& second) const
-{
-  string new_first, new_second, new_str;
-  if (str.empty()) return false;
-  else if (str == first || str == second) return true;
-  else if (first.empty() || second.empty()) return false;
-
-  int str_num, first_num, second_num;
-  str_num = first_num = second_num = 0;
-  bool rval = false;
-  size_t prefix_len;
-  string comp_str1, comp_str2;
-  if (x_StringIsPositiveAllDigits (first)) {
-    if (x_StringIsPositiveAllDigits (str) 
-             && x_StringIsPositiveAllDigits (second)) {
-      str_num = NStr::StringToUInt (str);
-      first_num = NStr::StringToUInt (first);
-      second_num = NStr::StringToUInt (second);
-      if ( (str_num > first_num && str_num < second_num)
-               || (str_num > second_num && str_num < first_num) ) {
-          rval = true;
-      }
-    }
-  } 
-  else if (x_StringIsPositiveAllDigits(second)) {
-    prefix_len = first.find_first_of(digit_str) + 1;
-
-    new_str = CTempString(str).substr(prefix_len - 1);
-    new_first = CTempString(first).substr(prefix_len - 1);
-    comp_str1 = CTempString(str).substr(0, prefix_len);
-    comp_str2 = CTempString(first).substr(0, prefix_len);
-    if (comp_str1 == comp_str2
-          && x_StringIsPositiveAllDigits (new_str)
-          && x_StringIsPositiveAllDigits (new_first)) {
-      first_num = NStr::StringToUInt(new_first);
-      second_num = NStr::StringToUInt (second);
-      str_num = NStr::StringToUInt (str);
-      if ( (str_num > first_num && str_num < second_num)
-               || (str_num > second_num && str_num < first_num) ) {
-        rval = true;
-      }
-    }
-  } 
-  else {
-    /* determine length of prefix */
-    prefix_len = 0;
-    while ( prefix_len < first.size() 
-               && prefix_len < second.size() 
-               && first[prefix_len] == second[prefix_len]) {
-       prefix_len ++;
-    }
-    prefix_len ++;
-
-    comp_str1 = CTempString(str).substr(0, prefix_len);
-    comp_str2 = CTempString(first).substr(0, prefix_len);
-    if (prefix_len <= first.size() 
-           && prefix_len <= second.size()
-           && isdigit (Uint1(first[prefix_len-1])) 
-           && isdigit (Uint1(second[prefix_len-1]))
-           && comp_str1 == comp_str2) {
-      new_first = CTempString(first).substr(prefix_len);
-      new_second = CTempString(second).substr(prefix_len);
-      new_str = CTempString(str).substr(prefix_len);
-      if (x_StringIsPositiveAllDigits (new_first) 
-            && x_StringIsPositiveAllDigits (new_second) 
-            && x_StringIsPositiveAllDigits (new_str)) {
-        first_num = NStr::StringToUInt(new_first);
-        second_num = NStr::StringToUInt (new_second);
-        str_num = NStr::StringToUInt (new_str);
-        if ( (str_num > first_num && str_num < second_num)
-                || (str_num > second_num && str_num < first_num) ) {
-          rval = true;
-        }
-      } else {
-        /* determine whether there is a suffix */
-        size_t idx1, idx2, idx_str;
-        string suf1, suf2, sub_str;
-        idx1 = first.find_first_not_of(digit_str);
-        suf1 = CTempString(first).substr(prefix_len + idx1);
-        idx2 = second.find_first_not_of(digit_str);
-        suf2 = CTempString(second).substr(prefix_len + idx2);
-        idx_str = str.find_first_not_of(digit_str);
-        sub_str = CTempString(str).substr(prefix_len + idx_str);
-        if (suf1 == suf2 && suf1 == sub_str) {
-          /* suffixes match */
-          first_num 
-            = NStr::StringToUInt(CTempString(first).substr(prefix_len, idx1));
-          second_num 
-            =NStr::StringToUInt(CTempString(second).substr(prefix_len, idx2));
-          str_num 
-            =NStr::StringToUInt(CTempString(str).substr(prefix_len, idx_str));
-          if ( (str_num > first_num && str_num < second_num)
-                   || (str_num > second_num && str_num < first_num) ) {
-            rval = true;
-          }
-        }
-      }
-    }
-  }
-  return rval;
-};
-
-
-bool CString_constraint :: x_IsStringInSpanInList (const string& str, const string& list) const
-{
-  if (list.empty() || str.empty()) {
-      return false;
-  }
-
-  size_t idx = str.find_first_not_of(alpha_str);
-  if (idx == string::npos) {
-     return false;
-  }
-
-  idx = CTempString(str).substr(idx).find_first_not_of(digit_str);
-
-  /* find ranges */
-  size_t hyphen = list.find('-');
-  bool rval = false;
-  string range_start, range_end;
-  while (hyphen != string::npos && !rval) {
-    if (!hyphen) {
-       hyphen = CTempString(list).substr(1).find('-');
-    }
-    else {
-      if (x_GetSpanFromHyphenInString (list, hyphen, range_start, range_end)){
-        if (x_IsStringInSpan (str, range_start, range_end)) rval = true;
-      }
-      hyphen = list.find('-', hyphen + 1);
-    }
-  }
-  return rval;
-};
-
 
 CTempString CString_constraint::x_GetConstraintString(ECase e_case) const
 {
@@ -859,8 +612,6 @@ bool CString_constraint::x_DoesSingleStringMatchConstraint(const CMatchString& s
             string s_search;
             if ( GetMatch_location() != eString_location_inlist && (GetIgnore_space() || GetIgnore_punct())) {
                 search = x_StripUnimportantCharacters(s_search, search, GetIgnore_space(), GetIgnore_punct());
-                // This one is supposed to be clean when the rule is created
-                //pattern = x_StripUnimportantCharacters(s_pattern, pattern, GetIgnore_space(), GetIgnore_punct());
             }
 
             if (!mask) { // no self-weasel
@@ -868,7 +619,6 @@ bool CString_constraint::x_DoesSingleStringMatchConstraint(const CMatchString& s
             }
 
             // clinical case
-//cout << "S-W: [" << pattern << "] in [" << search << "]\n";
             vector<string> v;
             x_Split(search, v);
             vector<bool> skip(v.size(), false);
@@ -892,7 +642,6 @@ bool CString_constraint::x_DoesSingleStringMatchConstraint(const CMatchString& s
             while (true) {
                 string guess = x_Assemble(v, skip);
                 if (x_MatchFound(CTempString(guess), pattern)) {
-//cout << "F O U N D ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !\n";
                     return true;
                 }
                 for (size_t i = 0; i < test.size(); i++) {
@@ -908,74 +657,6 @@ bool CString_constraint::x_DoesSingleStringMatchConstraint(const CMatchString& s
                     }
                 }
             }
-
-#if 0
-            SIZE_TYPE pFound;
-            if (pattern.empty()) {
-                pFound = 0;
-            }
-            else {
-                pFound = search.find(pattern); // NStr::Find(search, pattern, 0, NPOS, NStr::eFirst);
-            }
-
-            switch (GetMatch_location()) {
-                case eString_location_contains:
-                    if (pFound == NPOS) {
-                        rval = false;
-                    }
-                    else if (GetWhole_word()) {
-                        rval = x_IsWholeWordMatch (search, pFound, pattern.size());
-                        while (!rval && pFound != NPOS) {
-                            pFound = search.find(pattern, pFound+1); // NStr::Find(search, pattern, pFound + 1, NPOS, NStr::eFirst);
-                            rval = (pFound != NPOS) ? x_IsWholeWordMatch(search, pFound, pattern.size()) : false;
-                        }
-                    }
-                    else {
-                        rval = true;
-                    }
-                    break;
-                case eString_location_starts:
-                    if (pFound == 0) {
-                        rval = GetWhole_word() ? x_IsWholeWordMatch (search, pFound, pattern.size()) : true;
-                    }
-                    break;
-                case eString_location_ends:
-                    while (pFound != NPOS && !rval) {
-                        if ( (pFound + pattern.size()) == search.size()) {
-                            rval = GetWhole_word() ? x_IsWholeWordMatch (search, pFound, pattern.size()) : true;
-                            /* stop the search, we're at the end of the string */
-                            pFound = NPOS;
-                        }
-                        else {
-                            pFound = search.find(pattern, pFound + 1); // NStr::Find(search, pattern, pFound + 1, NPOS, NStr::eFirst);
-                        }
-                    }
-                    break;
-                case eString_location_equals:
-                    rval = (search == pattern);
-                    break;
-                case eString_location_inlist:
-cout << "INLIST FOUND: " << search << "\n";
-                    pFound = NStr::Find(pattern, search, 0, NPOS, NStr::eFirst);
-                    if (pFound == NPOS) {
-                        rval = false;
-                    }
-                    else {
-                        rval = x_IsWholeWordMatch(pattern, pFound, search.size(), true);
-                        while (!rval && pFound != NPOS) {
-                            pFound = NStr::Find(pattern.substr(pFound + 1), search, 0, NPOS, NStr::eFirst);
-                            if (pFound != NPOS) {
-                                rval = x_IsWholeWordMatch(pattern, pFound, str.original().original().size(), true);
-                            }
-                        }
-                    }
-                    if (!rval) {
-                    /* look for spans */
-                        rval = x_IsStringInSpanInList (search, pattern);
-                    }
-                break;
-            }
-#endif
         }
     }
     return false;
