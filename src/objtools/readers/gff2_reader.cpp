@@ -272,66 +272,6 @@ CGff2Reader::ReadSeqAnnots(
         }
     }
     return;
-
-    string line;
-    while (xGetLine(lr, line)) {
-        if (IsCanceled()) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
-                eDiag_Info,
-                0,
-                "Reader stopped by user.",
-                ILineError::eProblem_ProgressInfo));
-            ProcessError(*pErr, pEC);
-            annots.clear();
-            return;
-        }
-        xReportProgress(pEC);
-        if ( xParseStructuredComment(line) ) {
-            continue;
-        }
-
-        try {
-            if (xIsTrackTerminator(line)) {
-                continue;
-            }
-            if (x_ParseBrowserLineGff(line, m_CurrentBrowserInfo)) {
-                continue;
-            }
-            if (xIsTrackLine(line)) {
-                //completely ignore in Genbank mode
-                if (m_iFlags & CGff2Reader::fGenbankMode) {
-                    continue;
-                }
-                if (!annots.empty()) {
-                    xPostProcessAnnot(annots.back(), pEC);
-                }
-                xParseTrackLine(line, pEC);
-                CRef< CSeq_annot > pAnnot( new CSeq_annot );
-                annots.push_back(pAnnot);
-                continue;
-            }
-            if (xNeedsNewSeqAnnot(line)) {
-                if (!annots.empty()) {
-                    xPostProcessAnnot(annots.back(), pEC);
-                }
-                mCurrentFeatureCount = 0;
-                mParsingAlignment = false;
-                CRef< CSeq_annot > pAnnot( new CSeq_annot );
-                annots.push_back(pAnnot);
-                continue;
-            }                
-            if (x_ParseFeatureGff(line, annots, pEC)) {
-                continue;
-            }
-        }
-        catch(CObjReaderLineException& err) {
-            err.SetLineNumber(m_uLineNumber);
-        }
-    }
-    if (!annots.empty()) {
-        xPostProcessAnnot(annots.back(), pEC);
-    }
 }
 
 //  ----------------------------------------------------------------------------                
@@ -841,39 +781,6 @@ CGff2Reader::xIsCurrentDataType(
     }
     return (!mParsingAlignment  ||  !mCurrentFeatureCount);
 }
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_ParseFeatureGff(
-    const string& strLine,
-    TAnnots& annots,
-    ILineErrorListener* pEC)
-//  ----------------------------------------------------------------------------
-{
-    auto_ptr<CGff2Record> pRecord(x_CreateRecord());
-    try {
-        if (!pRecord->AssignFromGff(strLine)) {
-			return false;
-		}
-    }
-    catch(CObjReaderLineException& err) {
-        ProcessError(err, pEC);
-        return false;
-    }
-    string ftype = pRecord->Type();
-    if (xIsIgnoredFeatureType(ftype)) {
-        return true;
-    }
-
-    if (annots.empty()) {
-        CRef< CSeq_annot > pAnnot( new CSeq_annot );
-        if ( ! x_InitAnnot( *pRecord, pAnnot, pEC ) ) {
-            return false;
-        }
-        annots.push_back(pAnnot);
-        return true;
-    }
-    return x_UpdateAnnotFeature(*pRecord, annots.back(), pEC); 
-};
 
 
 

@@ -159,11 +159,6 @@ public:
         CRef<CSeq_annot>&,
         const string& = "");
 
-    virtual bool x_ParseFeatureGff(
-        const string&,
-        TAnnots&,
-        ILineErrorListener*);
-
     virtual bool x_ParseAlignmentGff(
         const string& strLine, 
         list<string>& id_list,
