@@ -40,14 +40,30 @@
 // Please update your code accordingly.
 //
 
-#define CAPITALIZATION_STRING_ALIAS_FUNCTION(function_name) \
-    NCBI_DEPRECATED static auto& function_name = objects::function_name; \
-
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
 using ECapChange = objects::ECapChange;
+
+#define CAPITALIZATION_STRING_ALIAS_ENUM_VALUE(enum_name) \
+    static const auto enum_name = objects::enum_name;
+
+CAPITALIZATION_STRING_ALIAS_ENUM_VALUE(eCapChange_none)
+CAPITALIZATION_STRING_ALIAS_ENUM_VALUE(eCapChange_tolower)
+CAPITALIZATION_STRING_ALIAS_ENUM_VALUE(eCapChange_toupper)
+CAPITALIZATION_STRING_ALIAS_ENUM_VALUE(eCapChange_firstcap_restlower)
+CAPITALIZATION_STRING_ALIAS_ENUM_VALUE(eCapChange_firstcap_restnochange)
+CAPITALIZATION_STRING_ALIAS_ENUM_VALUE(eCapChange_firstlower_restnochange)
+CAPITALIZATION_STRING_ALIAS_ENUM_VALUE(eCapChange_capword_afterspace)
+CAPITALIZATION_STRING_ALIAS_ENUM_VALUE(eCapChange_capword_afterspacepunc)
+
+#undef CAPITALIZATION_STRING_ALIAS_ENUM_VALUE
+
+
+#define CAPITALIZATION_STRING_ALIAS_FUNCTION(function_name) \
+    NCBI_DEPRECATED static auto& function_name = objects::function_name; 
+
 CAPITALIZATION_STRING_ALIAS_FUNCTION(FixCapitalizationInString)
 //CAPITALIZATION_STRING_ALIAS_FUNCTION(FixAbbreviationsInElement)
 CAPITALIZATION_STRING_ALIAS_FUNCTION(FixOrgNames)
@@ -71,6 +87,8 @@ CAPITALIZATION_STRING_ALIAS_FUNCTION(CapitalizeSAfterNumber)
 CAPITALIZATION_STRING_ALIAS_FUNCTION(ResetCapitalization)
 CAPITALIZATION_STRING_ALIAS_FUNCTION(FixCountryCapitalization)
 
+#undef CAPITALIZATION_STRING_ALIAS_FUNCTION
+
 // Special case due to default parameter
 NCBI_DEPRECATED static void FixAbbreviationsInElement(string& result, bool fix_end_of_sentence=true) 
 {
@@ -81,5 +99,4 @@ END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#undef CAPITALIZATION_STRING_ALIAS_FUNCTION
 #endif // _OBJTOOLS_EDIT_CAPITALIZATION_STRING_HPP_
