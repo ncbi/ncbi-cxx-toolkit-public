@@ -1098,6 +1098,10 @@ function(NCBI_internal_add_test _test)
     string(REPLACE ";" " " _args    "${NCBITEST_${_test}_ARG}")
     string(REPLACE ";" " " _assets   "${_assets}")
 
+    if (XCODE)
+        set(_extra -DXCODE=TRUE)
+    endif()
+
     add_test(NAME ${_test} COMMAND ${CMAKE_COMMAND}
         -DNCBITEST_NAME=${_test}
         -DNCBITEST_CONFIG=$<CONFIG>
@@ -1107,6 +1111,7 @@ function(NCBI_internal_add_test _test)
         -DNCBITEST_BINDIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
         -DNCBITEST_SOURCEDIR=${NCBI_CURRENT_SOURCE_DIR}
         -DNCBITEST_ASSETS=${_assets}
+        ${_extra}
         -P "${NCBITEST_DRIVER}")
 endfunction()
 
@@ -1239,7 +1244,9 @@ endif()
 
     if (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "STATIC")
 
-        set(NCBITMP_DEFINES  ${NCBITMP_DEFINES} "_LIB")
+        if (WIN32)
+            set(NCBITMP_DEFINES  ${NCBITMP_DEFINES} "_LIB")
+        endif()
 #message("add static library(${NCBI_PROJECT} STATIC ${NCBITMP_PROJECT_SOURCES} ${NCBITMP_PROJECT_HEADERS} ${NCBITMP_PROJECT_RESOURCES} ${NCBITMP_PROJECT_DATASPEC})")
 #message("add static library ${NCBI_PROJECT}")
         add_library(${NCBI_PROJECT} STATIC ${NCBITMP_PROJECT_SOURCES} ${NCBITMP_PROJECT_HEADERS} ${NCBITMP_PROJECT_RESOURCES} ${NCBITMP_PROJECT_DATASPEC})
@@ -1247,7 +1254,9 @@ endif()
 
     elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "SHARED")
 
-        set(NCBITMP_DEFINES  ${NCBITMP_DEFINES} "_USRDLL")
+        if (WIN32)
+            set(NCBITMP_DEFINES  ${NCBITMP_DEFINES} "_USRDLL")
+        endif()
 #message("add shared library(${NCBI_PROJECT} SHARED ${NCBITMP_PROJECT_SOURCES} ${NCBITMP_PROJECT_HEADERS} ${NCBITMP_PROJECT_RESOURCES} ${NCBITMP_PROJECT_DATASPEC})")
 #message("add shared library ${NCBI_PROJECT}")
         add_library(${NCBI_PROJECT} SHARED ${NCBITMP_PROJECT_SOURCES} ${NCBITMP_PROJECT_HEADERS} ${NCBITMP_PROJECT_RESOURCES} ${NCBITMP_PROJECT_DATASPEC})
@@ -1256,7 +1265,9 @@ endif()
     elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "CONSOLEAPP")
 
         if(NCBI_EXPERIMENTAL_CFG)
-            set(NCBITMP_DEFINES  ${NCBITMP_DEFINES} "_CONSOLE")
+            if (WIN32)
+                set(NCBITMP_DEFINES  ${NCBITMP_DEFINES} "_CONSOLE")
+            endif()
 #message("add_executable(${NCBI_PROJECT} ${NCBITMP_PROJECT_SOURCES} ${NCBITMP_PROJECT_HEADERS} ${NCBITMP_PROJECT_RESOURCES} ${NCBITMP_PROJECT_DATASPEC})")
 #message("add executable ${NCBI_PROJECT}")
             add_executable(${NCBI_PROJECT} ${NCBITMP_PROJECT_SOURCES} ${NCBITMP_PROJECT_HEADERS} ${NCBITMP_PROJECT_RESOURCES} ${NCBITMP_PROJECT_DATASPEC})
