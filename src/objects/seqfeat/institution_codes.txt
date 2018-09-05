@@ -394,9 +394,10 @@ BCC<ESP>	s	Universitat de Barcelona, Departament de Biologia Vegetal (Unitat de 
 BCC<THA>	c	BIOTEC Culture Collection			
 BCCDC	c	BC Centre for Disease Control			
 BCCM/DCG	c	Belgian Co-ordinated Collections of Micro-organisms / DCG Diatoms Collection	DCG		
+BCCM/GENECORNER	c	Belgian Coordinated Collections of Microorganisms / GeneCorner Plasmid Collection	BCCM/LMBP,LMBP		
 BCCM/IHEM	c	Belgian Co-ordinated Collections of Micro-organisms / IHEM Fungi collection: Human & Animal Health	IHEM		
 BCCM/ITM	c	Belgian Co-ordinated Collections of Micro-organisms / ITM Mycobacteria Collection	ITM		
-BCCM/LMBP	c	Belgian Coordinated Collections of Microorganisms / GeneCorner Plasmid Collection	BCCM/LMBP,LMBP		
+BCCM/LMG	c	Belgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection	LMG		
 BCCM/MUCL	c	Belgian Co-ordinated Collections of Micro-organisms / MUCL Agro-food & Environmental Fungal Collection	MUCL		
 BCCM/ULC	c	Belgian Co-ordinated Collections of Micro-organisms / ULC Cyanobacteria Collection	UCL		
 BCCN	c	Brucella Culture Collection			
@@ -3568,7 +3569,6 @@ LMAD	s	Lobbecke Museum und Aquazoo
 LMC	s	Instituto de Investigacao Cientifica de Mozambique			
 LMCH	c	Laboratoire de Microbiologie			
 LMD	c	Laboratorium voor Microbiologie der Landbouwhogeschool			
-LMG	c	Belgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection	LMG		
 LMJ<MOZ>	s	Centro de Investigacao Cientifica Algodoeira, Botanical Department			
 LMKG	s	Landesmuseum fur Karnten			
 LMND	s	Landessammlungen fur Naturkunde	LNMD		
@@ -7085,6 +7085,7 @@ VALPL	s	Universidad de Playa Ancha, Departamento de Biologia y Quimica
 VAN	s	Societe Polymathique du Morbihan			
 VANF	s	Yuezuencue Yil University, Biology Section			
 VAS	s	Vassar College, Biology Department			
+VBCCA	c	Visva-Bharati Culture Collection of Algae			
 VBCM	s	Universidad Complutense de Madrid			
 VBGI	s	Botanical Garden-Institute			
 VBI	s	Institute of Ecology and Botany of the Hungarian Academy of Sciences, Botanical Department			
