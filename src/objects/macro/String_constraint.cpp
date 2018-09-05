@@ -550,10 +550,12 @@ bool CString_constraint::x_MatchFound(CTempString& search, CTempString& pattern)
         return found == 0 && (!GetWhole_word() || x_IsWholeWordMatch(search, found, pattern.size()));
     }
     else if (loc == eString_location_contains) {
-        return (!GetWhole_word() || x_IsWholeWordMatch(search, found, pattern.size())) ? true : x_MatchFound(search.substr(found + 1), pattern);
+        CTempString next_guess = search.substr(found + 1); // Using CTempString everywhere was a bad idea...
+        return (!GetWhole_word() || x_IsWholeWordMatch(search, found, pattern.size())) ? true : x_MatchFound(next_guess, pattern);
     }
     else if (loc == eString_location_ends) {
-        return found + pattern.size() == search.size() && (!GetWhole_word() || x_IsWholeWordMatch(search, found, pattern.size())) ? true : x_MatchFound(search.substr(found + 1), pattern);
+        CTempString next_guess = search.substr(found + 1); // Using CTempString everywhere was a bad idea...
+        return found + pattern.size() == search.size() && (!GetWhole_word() || x_IsWholeWordMatch(search, found, pattern.size())) ? true : x_MatchFound(next_guess, pattern);
     }
     return false;
 }
@@ -641,7 +643,8 @@ bool CString_constraint::x_DoesSingleStringMatchConstraint(const CMatchString& s
             // combinatorics
             while (true) {
                 string guess = x_Assemble(v, skip);
-                if (x_MatchFound(CTempString(guess), pattern)) {
+                CTempString next_guess = guess; // Using CTempString everywhere was a bad idea...
+                if (x_MatchFound(next_guess, pattern)) {
                     return true;
                 }
                 for (size_t i = 0; i < test.size(); i++) {
