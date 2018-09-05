@@ -59,7 +59,6 @@
 #include <objtools/unit_test_util/unit_test_util.hpp>
 
 #include <objtools/edit/source_edit.hpp>
-#include <objtools/edit/capitalization_string.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
