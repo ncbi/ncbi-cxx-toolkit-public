@@ -82,7 +82,7 @@ CInstInfoMap::GetInstitutionVoucherInfo(
     static const string  s_sag_base("http://sagdb.uni-goettingen.de/detailedList.php?str_number=");
     static const string  s_tgrc_base("http://tgrc.ucdavis.edu/Data/Acc/AccDetail.aspx?AccessionNum=");
     static const string  s_uam_base("https://arctos.database.museum/guid/");
-    static const string  s_uamh_base("https://secure.devonian.ualberta.ca/uamh/details.php?id=");
+    static const string  s_uamh_base("https://www.uamh.ca/details.php?id=");
     static const string  s_usnm_base("https://collections.nmnh.si.edu/services/resolver/resolver.php?voucher=");
     static const string  s_ypm_base("http://collections.peabody.yale.edu/search/Record/");
 
