@@ -221,6 +221,9 @@ void CNewCleanup_imp::BasicCleanupSeqEntry (
     }
 }
 
+//LCOV_EXCL_START
+//not used by asn_cleanup because we clean the submit block separately
+//and use read hooks for the seq-entries
 void CNewCleanup_imp::BasicCleanupSeqSubmit (
     CSeq_submit& ss
 )
@@ -239,6 +242,7 @@ void CNewCleanup_imp::BasicCleanupSeqSubmit (
         }
     }
 }
+//LCOV_EXCL_STOP
 
 
 void CNewCleanup_imp::BasicCleanupSubmitblock(CSubmit_block& block)
@@ -12805,6 +12809,9 @@ void CNewCleanup_imp::ExtendedCleanupSeqEntry (
     // TODO: implement more of ExtendedCleanup
 }
 
+//LCOV_EXCL_START
+//not used by asn_cleanup because we clean the submit block separately
+//and use read hooks for the seq-entries
 void CNewCleanup_imp::ExtendedCleanupSeqSubmit (
     CSeq_submit& ss
 )
@@ -12829,6 +12836,7 @@ void CNewCleanup_imp::ExtendedCleanupSeqSubmit (
 
     // TODO: implement more of ExtendedCleanup
 }
+//LCOV_EXCL_STOP
 
 void CNewCleanup_imp::ExtendedCleanupSeqAnnot (
     CSeq_annot& sa
