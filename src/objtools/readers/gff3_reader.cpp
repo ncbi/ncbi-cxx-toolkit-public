@@ -306,7 +306,7 @@ bool CGff3Reader::xUpdateAnnotExon(
             IdToFeatureMap::iterator fit = m_MapIdToFeature.find(parentId);
             if (fit != m_MapIdToFeature.end()) {
                 CRef<CSeq_feat> pParent = fit->second;
-                if (!record.MergeRecordData(m_iFlags, pParent)) {
+                if (!record.UpdateFeature(m_iFlags, pParent)) {
                     return false;
                 }
             }
@@ -371,7 +371,7 @@ bool CGff3Reader::xUpdateAnnotCds(
             if (pParent->GetData().IsGene()) {
                 parentIsGene = true;
             }
-            if (!record.MergeRecordData(m_iFlags, pParent)) {
+            if (!record.UpdateFeature(m_iFlags, pParent)) {
                 return false;
             }
             //rw-143:
@@ -508,6 +508,39 @@ bool CGff3Reader::xFeatureSetXrefParent(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff3Reader::xFindFeatureUnderConstruction(
+    const CGff2Record& record,
+    CRef<CSeq_feat>& underConstruction)
+//  ----------------------------------------------------------------------------
+{
+    AutoPtr<CObjReaderLineException> pErr(CObjReaderLineException::Create(
+        eDiag_Fatal,
+        0,
+        string("Bad data line: Duplicate feature ID \"") + record.Id() + "\"",
+        ILineError::eProblem_DuplicateIDs) );
+
+    string id;
+    if (!record.GetAttribute("ID", id)) {
+        return false;
+    }
+    IdToFeatureMap::iterator it = m_MapIdToFeature.find(id);
+    if (it == m_MapIdToFeature.end()) {
+        return false;
+    }
+    if (it->second->GetData().IsRna()) {
+        pErr->Throw();
+    }
+    CSeq_feat tempFeat;
+    if (CSoMap::SoTypeToFeature(record.Type(), tempFeat)) {
+        if (it->second->GetData().GetSubtype() != tempFeat.GetData().GetSubtype()) {
+            pErr->Throw();
+        }
+    }
+    underConstruction = it->second;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3Reader::xUpdateAnnotGeneric(
     const CGff2Record& record,
     CRef<CSeq_feat> pFeature,
@@ -515,12 +548,9 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    string id;
-    if (record.GetAttribute("ID", id)) {
-        IdToFeatureMap::iterator it = m_MapIdToFeature.find(id);
-        if (it != m_MapIdToFeature.end()) {
-            return record.UpdateFeature(m_iFlags, it->second);
-        }
+    CRef<CSeq_feat> pUnderConstruction(new CSeq_feat);
+    if (xFindFeatureUnderConstruction(record, pUnderConstruction)) {
+        return record.UpdateFeature(m_iFlags, pUnderConstruction);
     }
 
     string featType = record.Type();
@@ -575,7 +605,6 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     if ( record.GetAttribute("ID", strId)) {
         m_MapIdToFeature[strId] = pFeature;
     }
-    auto st = pFeature->GetData().GetSubtype();
     if (pFeature->GetData().IsRna()  ||  pFeature->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_RNA) {
         CRef<CSeq_interval> rnaLoc(new CSeq_interval);
         rnaLoc->Assign(pFeature->GetLocation().GetInt());
@@ -592,30 +621,14 @@ bool CGff3Reader::xUpdateAnnotMrna(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    string id;
-    if (record.GetAttribute("ID", id)) {
-        IdToFeatureMap::iterator it = m_MapIdToFeature.find(id);
-        if (it != m_MapIdToFeature.end()) {
-            return record.UpdateFeature(m_iFlags, it->second);
-        }
+    CRef<CSeq_feat> pUnderConstruction(new CSeq_feat);
+    if (xFindFeatureUnderConstruction(record, pUnderConstruction)) {
+        return record.UpdateFeature(m_iFlags, pUnderConstruction);
     }
 
     if (!record.InitializeFeature(m_iFlags, pFeature)) {
         return false;
     }
-    CRef<CSeq_interval> mrnaLoc(new CSeq_interval);
-    CSeq_loc::E_Choice choice = pFeature->GetLocation().Which();
-    if (choice != CSeq_loc::e_Int) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Error,
-            0,
-            "Internal error: Unexpected location type.",
-            ILineError::eProblem_BadFeatureInterval));
-    }
-    mrnaLoc->Assign(pFeature->GetLocation().GetInt());
-    mMrnaLocs[id] = mrnaLoc;
-
     string parentsStr;
     if ((m_iFlags & fGeneXrefs)  &&  record.GetAttribute("Parent", parentsStr)) {
         list<string> parents;
@@ -635,18 +648,31 @@ bool CGff3Reader::xUpdateAnnotMrna(
         }
     }
 
-    if (! xAddFeatureToAnnot(pFeature, pAnnot)) {
-        return false;
-    }
     string strId;
     if ( record.GetAttribute("ID", strId)) {
         m_MapIdToFeature[strId] = pFeature;
     }
+    CRef<CSeq_interval> mrnaLoc(new CSeq_interval);
+    CSeq_loc::E_Choice choice = pFeature->GetLocation().Which();
+    if (choice != CSeq_loc::e_Int) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                "Internal error: Unexpected location type.",
+                ILineError::eProblem_BadFeatureInterval));
+    }
+    mrnaLoc->Assign(pFeature->GetLocation().GetInt());
+    mMrnaLocs[strId] = mrnaLoc;
+
     list<CGff2Record> pendingExons;
-    xGetPendingExons(id, pendingExons);
+    xGetPendingExons(strId, pendingExons);
     for (auto exonRecord: pendingExons) {
         CRef< CSeq_feat > pFeature(new CSeq_feat);
         xUpdateAnnotExon(exonRecord, pFeature, pAnnot, pEC);
+    }
+    if (! xAddFeatureToAnnot(pFeature, pAnnot)) {
+        return false;
     }
     return true;
 }

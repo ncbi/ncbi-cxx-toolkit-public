@@ -600,35 +600,6 @@ bool CGff2Record::UpdateFeature(
     int flags,
     CRef<CSeq_feat> pFeature,
     SeqIdResolver seqidresolve ) const
-//  ----------------------------------------------------------------------------
-{
-    auto subtype = pFeature->GetData().GetSubtype();
-
-    // rw-680: guard against duplicate IDs
-    //  at a minimum, the incoming record should indicate the same feature type 
-    //   as the feature it will be added to
-    //
-    CSeq_feat tempFeat;
-    if (CSoMap::SoTypeToFeature(Type(), tempFeat)) {
-        auto tempType = tempFeat.GetData().GetSubtype();
-        if (subtype != tempType) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
-                    eDiag_Fatal,
-                    0,
-                    string("Bad data line: Duplicate feature ID \"") + this->Id() + "\"",
-                    ILineError::eProblem_DuplicateIDs) );
-            pErr->Throw();
-        }
-    }
-    return MergeRecordData(flags, pFeature, seqidresolve);
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Record::MergeRecordData(
-    int flags,
-    CRef<CSeq_feat> pFeature,
-    SeqIdResolver seqidresolve ) const
     //  ----------------------------------------------------------------------------
 {
     auto subtype = pFeature->GetData().GetSubtype();

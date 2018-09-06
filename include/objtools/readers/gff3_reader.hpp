@@ -135,6 +135,10 @@ protected:
         CRef<CSeq_annot>,
         ILineErrorListener*);
 
+    virtual bool xFindFeatureUnderConstruction(
+        const CGff2Record&,
+        CRef<CSeq_feat>&);
+
     virtual bool xVerifyCdsParents(
         const CGff2Record&);
 
