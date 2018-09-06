@@ -178,7 +178,7 @@ void CSeqDBImpl::SetIterationRange(int oid_begin, int oid_end)
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
-    m_Atlas.Lock(locked);
+    if(m_NumThreads > 1) m_Atlas.Lock(locked);
 
     m_RestrictBegin = (oid_begin < 0) ? 0 : oid_begin;
     m_RestrictEnd   = (oid_end   < 0) ? 0 : oid_end;
@@ -296,7 +296,7 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
 
     int cacheID = (m_NumThreads) ? x_GetCacheID(locked) : 0;
 
-    m_Atlas.Lock(locked);
+    if(m_NumThreads > 1) m_Atlas.Lock(locked);
 
     if (! m_OidListSetup) {
         x_GetOidList(locked);
@@ -400,7 +400,7 @@ int CSeqDBImpl::GetSeqLength(int oid) const
 
 int CSeqDBImpl::x_GetSeqLength(int oid, CSeqDBLockHold & locked) const
 {
-    m_Atlas.Lock(locked);
+    if(m_NumThreads > 1) m_Atlas.Lock(locked);
 
     int vol_oid = 0;
 
@@ -664,7 +664,7 @@ void CSeqDBImpl::x_RetSeqBuffer(SSeqResBuffer * buffer,
 
     buffer->checked_out = 0;
 
-    m_Atlas.Lock(locked);
+    if(m_NumThreads > 1) m_Atlas.Lock(locked);
 /*
     for(Uint4 index = 0; index < buffer->results.size(); ++index) {
         m_Atlas.RetRegion(buffer->results[index].address);
@@ -686,7 +686,7 @@ int CSeqDBImpl::x_GetSeqBuffer(SSeqResBuffer * buffer, int oid,
 
     // Not in cache, fill the cache
     CSeqDBLockHold locked(m_Atlas);
-    m_Atlas.Lock(locked);
+    if(m_NumThreads > 1) m_Atlas.Lock(locked);
     x_FillSeqBuffer(buffer, oid, locked);
     (buffer->checked_out)++;
     *seq = buffer->results[0].address;
@@ -698,7 +698,7 @@ void CSeqDBImpl::x_FillSeqBuffer(SSeqResBuffer  *buffer,
                                  CSeqDBLockHold &locked) const
 {
     // Must lock the atlas
-    m_Atlas.Lock(locked);
+    if(m_NumThreads > 1) m_Atlas.Lock(locked);
 
     // clear the buffer first
     x_RetSeqBuffer(buffer, locked);
@@ -2535,7 +2535,7 @@ void CSeqDBImpl::GetMaskData(int                       oid,
 void CSeqDBImpl::SetNumberOfThreads(int num_threads, bool force_mt)
 {
     CSeqDBLockHold locked(m_Atlas);
-    m_Atlas.Lock(locked);
+    if((num_threads > 1) || (m_NumThreads > 1)) m_Atlas.Lock(locked);
 
     if (num_threads < 1) {
         num_threads = 0;
@@ -2577,7 +2577,7 @@ int CSeqDBImpl::x_GetCacheID(CSeqDBLockHold &locked) const
         return m_CacheID[threadID];
 
     int retval;
-    m_Atlas.Lock(locked);
+    if(m_NumThreads > 1) m_Atlas.Lock(locked);
 
     if (m_CacheID.find(threadID) == m_CacheID.end()) {
         m_CacheID[threadID] = m_NextCacheID++;
