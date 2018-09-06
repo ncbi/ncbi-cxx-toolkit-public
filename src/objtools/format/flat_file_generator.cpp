@@ -291,6 +291,10 @@ void CFlatFileGenerator::Generate
                 }
                 CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags ));
                 m_Ctx->SetSeqEntryIndex(idx);
+                if (idx->IsIndexFailure()) {
+                    m_Failed = true;
+                    return;
+                }
             } catch(CException &) {
                 m_Failed = true;
                 return;
@@ -665,6 +669,10 @@ void CFlatFileGenerator::Generate
                 }
                 CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags ));
                 m_Ctx->SetSeqEntryIndex(idx);
+                if (idx->IsIndexFailure()) {
+                    m_Failed = true;
+                    return;
+                }
             } catch(CException &) {
                 m_Failed = true;
                 return;
