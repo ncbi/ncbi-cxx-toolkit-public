@@ -323,13 +323,13 @@ void CTestPsgCache::LookupBioseqInfoByPrimary(const string& accession, int versi
         if (seq_id_type >= 0) 
             res = m_LookupCache->LookupBioseqInfoByAccessionVersionSeqIdType(accession, version, seq_id_type, data, version, seq_id_type);
         else
-            res = m_LookupCache->LookupBioseqInfoByAccessionVersion(accession, version, seq_id_type, data);
+            res = m_LookupCache->LookupBioseqInfoByAccessionVersion(accession, version, data, seq_id_type);
     }
     else {
         if (seq_id_type >= 0)
-            res = m_LookupCache->LookupBioseqInfoByAccessionVersionSeqIdType(accession, 0, seq_id_type, data, version, seq_id_type);
+            res = m_LookupCache->LookupBioseqInfoByAccessionVersionSeqIdType(accession, -1, seq_id_type, data, version, seq_id_type);
         else
-            res = m_LookupCache->LookupBioseqInfoByAccession(accession, version, seq_id_type, data);
+            res = m_LookupCache->LookupBioseqInfoByAccession(accession, data, version, seq_id_type);
     }
     PrintBioseqInfo(res, accession, version, seq_id_type, data);
 }

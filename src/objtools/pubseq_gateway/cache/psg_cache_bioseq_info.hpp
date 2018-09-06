@@ -43,8 +43,8 @@ public:
 	CPubseqGatewayCacheBioseqInfo(const string& file_name);
     virtual ~CPubseqGatewayCacheBioseqInfo() override;
     void Open();
-    bool LookupByAccession(const string& accession, int& version, int& seq_id_type, string& data);
-    bool LookupByAccessionVersion(const string& accession, int version, int& seq_id_type, string& data);
+    bool LookupByAccession(const string& accession, string& data, int& found_version, int& found_seq_id_type);
+    bool LookupByAccessionVersion(const string& accession, int version, string& data, int& found_seq_id_type);
     bool LookupByAccessionVersionSeqIdType(const string& accession, int version, int seq_id_type, string& data, int& found_version, int& found_saq_id_type);
 
     static string PackKey(const string& accession, int version);

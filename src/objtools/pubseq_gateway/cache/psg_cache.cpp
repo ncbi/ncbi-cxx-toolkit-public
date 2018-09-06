@@ -92,14 +92,14 @@ void CPubseqGatewayCache::Open(const vector<string>& sat_names)
     }
 }
 
-bool CPubseqGatewayCache::LookupBioseqInfoByAccession(const string& accession, int& version, int& seq_id_type, string& data)
+bool CPubseqGatewayCache::LookupBioseqInfoByAccession(const string& accession, string& data, int& found_version, int& found_seq_id_type)
 {
-    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccession(accession, version, seq_id_type, data) : false;
+    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccession(accession, data, found_version, found_seq_id_type) : false;
 }
 
-bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersion(const string& accession, int version, int& seq_id_type, string& data)
+bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersion(const string& accession, int version, string& data, int& found_seq_id_type)
 {
-    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccessionVersion(accession, version, seq_id_type, data) : false;
+    return m_BioseqInfoCache ? m_BioseqInfoCache->LookupByAccessionVersion(accession, version, data, found_seq_id_type) : false;
 }
 
 bool CPubseqGatewayCache::LookupBioseqInfoByAccessionVersionSeqIdType(const string& accession, int version, int seq_id_type, string& data)

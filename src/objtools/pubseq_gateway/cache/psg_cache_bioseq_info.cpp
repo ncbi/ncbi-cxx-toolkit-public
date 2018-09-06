@@ -64,14 +64,12 @@ void CPubseqGatewayCacheBioseqInfo::Open()
 // LOOKUPS data for accession. Picks record with maximum version and minimum seq_id_type
 // (latter two would appear first according to built-in sorting order)
 
-bool CPubseqGatewayCacheBioseqInfo::LookupByAccession(const string& accession, int& version, int& seq_id_type, string& data) {
+bool CPubseqGatewayCacheBioseqInfo::LookupByAccession(const string& accession, string& data, int& found_version, int& found_seq_id_type) {
     bool rv = false;
 
     if (!m_Env)
         return false;
 
-    version = -1;
-    seq_id_type = 0;
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
         auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
@@ -80,8 +78,11 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccession(const string& accession, i
             lmdb::val key, val;
             rv = cursor.get(key, val, MDB_GET_CURRENT);
             rv = rv && key.size() == PackedKeySize(accession.size()) && accession.compare(key.data<const char>()) == 0;
-            if (rv)
-                rv = UnpackKey(key.data<const char>(), key.size(), version, seq_id_type);
+            if (rv) {
+                found_version = -1;
+                found_seq_id_type = 0;
+                rv = UnpackKey(key.data<const char>(), key.size(), found_version, found_seq_id_type);
+            }
             if (rv)
                 data.assign(val.data(), val.size());
         }
@@ -96,13 +97,17 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccession(const string& accession, i
 // LOOKUPS data for accession and version. Picks record with minimum seq_id_type
 // (latter would appear first according to built-in sorting order)
 
-bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(const string& accession, int version, int& seq_id_type, string& data) {
+bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(const string& accession, int version, string& data, int& found_seq_id_type) {
     bool rv = false;
 
     if (!m_Env)
         return false;
 
-    seq_id_type = 0;
+    if (version < 0) {
+        int _found_version;
+        return LookupByAccessionVersionSeqIdType(accession, version, 0, data, _found_version, found_seq_id_type);
+    }
+
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
     
@@ -115,8 +120,8 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(const string& acces
             rv = cursor.get(key, val, MDB_GET_CURRENT);
             rv = rv && key.size() == PackedKeySize(accession.size()) && accession.compare(key.data<const char>()) == 0;
             if (rv) {
-                int ver;
-                rv = UnpackKey(key.data<const char>(), key.size(), ver, seq_id_type) && (ver == version);
+                int _found_version;
+                rv = UnpackKey(key.data<const char>(), key.size(), _found_version, found_seq_id_type) && (_found_version == version);
                 if (rv)
                     data.assign(val.data(), val.size());
             }
@@ -130,7 +135,7 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersion(const string& acces
 }
 
     
-// LOOKUPS data for accession, potentially version (if > 0) and potentially seq_id_type (if > 0). Picks record with matched version (or maximum version if <= 0) and matched seq_id_type
+// LOOKUPS data for accession, potentially version (if >= 0) and potentially seq_id_type (if > 0). Picks record with matched version (or maximum version if < 0) and matched seq_id_type
 // or minimum seq_id_type (if <= 0)
 
 bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(const string& accession, int version, int seq_id_type, string& data, int& found_version, int& found_saq_id_type) {
@@ -141,10 +146,19 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(const stri
         data.clear();
     }
 
+    if (version >= 0 && seq_id_type <= 0) {
+        bool rv = LookupByAccessionVersion(accession, version, data, found_saq_id_type);
+        if (rv)
+            found_version = version;
+        return rv;
+    }
+        
+
+
     auto rdtxn = lmdb::txn::begin(*m_Env, nullptr, MDB_RDONLY);
     {
         lmdb::val val;
-        if (version <= 0) {
+        if (version < 0) { // Request for MAX version or unkown seq_id_type
             auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
             rv = cursor.get(lmdb::val(accession), MDB_SET_RANGE);
             if (rv) {
@@ -159,8 +173,7 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(const stri
                     if (rv)
                         rv = UnpackKey(key.data<const char>(), key.size(), _found_version, _found_seq_id_type);
                     rv = rv && 
-                        (seq_id_type <= 0 || seq_id_type == _found_seq_id_type) &&
-                        (version <= 0 || version == _found_version);
+                        (seq_id_type <= 0 || seq_id_type == _found_seq_id_type);
                     if (rv) {
                         found_version = _found_version;
                         found_saq_id_type = _found_seq_id_type;
@@ -174,6 +187,10 @@ bool CPubseqGatewayCacheBioseqInfo::LookupByAccessionVersionSeqIdType(const stri
             string skey = PackKey(accession, version, seq_id_type);
             auto cursor = lmdb::cursor::open(rdtxn, *m_Dbi);
             rv = cursor.get(lmdb::val(skey), val, MDB_SET);
+            if (rv) {
+                found_version = version;
+                found_saq_id_type = seq_id_type;
+            }
         }
         if (rv)
             data.assign(val.data(), val.size());
@@ -218,10 +235,11 @@ bool CPubseqGatewayCacheBioseqInfo::UnpackKey(const char* key, size_t key_sz, in
         rv = key[ofs] == 0;
         if (rv) {
             ++ofs;
-            int32_t ver = 0xFF000000 |
-                          (uint8_t(key[ofs]) << 16) |
+            int32_t ver = (uint8_t(key[ofs]) << 16) |
                           (uint8_t(key[ofs + 1]) << 8) |
                            uint8_t(key[ofs + 2]);
+            if (ver != 0)
+                ver |= 0xFF000000;
             version = -ver;
             seq_id_type = (uint8_t(key[ofs + 3]) << 8) |
                            uint8_t(key[ofs + 4]);
