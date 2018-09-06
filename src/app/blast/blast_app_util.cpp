@@ -54,8 +54,6 @@
 #include <algo/blast/format/blast_format.hpp>
 #include <objtools/align_format/format_flags.hpp>
 
-#include <malloc.h>
-
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(blast);
@@ -942,11 +940,6 @@ void PrintErrorArchive(const CArgs & a, const list<CRef<CBlast4_error> > & msg)
 			CBlastFormat::PrintArchive(archive, a[kArgOutput].AsOutputFile());
 		}
 	} catch (...) {}
-}
-
-void QueryBatchCleanup()
-{
-    malloc_trim(0);
 }
 
 END_NCBI_SCOPE

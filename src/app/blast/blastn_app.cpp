@@ -179,7 +179,7 @@ int CBlastnApp::Run(void)
             }
             input.SetBatchSize(mixer.GetBatchSize());
         }
-        for (; !input.End(); formatter.ResetScopeHistory(), QueryBatchCleanup()) {
+        for (; !input.End(); formatter.ResetScopeHistory()) {
 
             CRef<CBlastQueryVector> query_batch(input.GetNextSeqBatch(*scope));
             CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(*query_batch));
