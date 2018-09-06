@@ -5875,14 +5875,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TransgenicProblem)
 
     scope.RemoveTopLevelSeqEntry(seh);
     // adding source feature turns off warning
-    CRef<CSeq_feat> feat(new CSeq_feat());
-    feat->SetData().SetBiosrc().SetOrg().SetTaxname("Trichechus manatus");
-    unit_test_util::SetTaxon (feat->SetData().SetBiosrc(), 127582);
-    feat->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("some lineage");
-    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
-    feat->SetLocation().SetInt().SetFrom(0);
-    feat->SetLocation().SetInt().SetTo(5);
-    unit_test_util::AddFeat(feat, entry);
+    AddGoodSourceFeature(entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
     eval = validator.Validate(seh, options);
@@ -6087,14 +6080,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_transgenic, "a");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "a");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_metagenomic, "a");
-    CRef<CSeq_feat> feat(new CSeq_feat());
-    feat->SetData().SetBiosrc().SetOrg().SetTaxname("Trichechus manatus");
-    unit_test_util::SetTaxon (feat->SetData().SetBiosrc(), 127582);
-    feat->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("some lineage");
-    feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
-    feat->SetLocation().SetInt().SetFrom(0);
-    feat->SetLocation().SetInt().SetTo(5);
-    unit_test_util::AddFeat (feat, entry);
+    AddGoodSourceFeature(entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadTextInSourceQualifier",
@@ -7369,14 +7355,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "");
-    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Aedes sp.");
-    expected_errors[0]->SetErrCode("AmbiguousSpecificHost");
-    expected_errors[0]->SetSeverity(eDiag_Info);
-    expected_errors[0]->SetErrMsg("Specific host value is ambiguous: Aedes sp.");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
     CLEAR_ERRORS
     // should not generate an error
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "");
@@ -7488,6 +7466,13 @@ BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
 	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
 	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
 
+    host = "Equus sp.";
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
+
+    host = "Ficus sp.";
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
 }
 
 

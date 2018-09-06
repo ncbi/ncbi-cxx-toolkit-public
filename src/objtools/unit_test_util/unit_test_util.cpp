@@ -393,7 +393,7 @@ CRef<objects::CSeq_feat> AddGoodSourceFeature(CRef<objects::CSeq_entry> entry)
 {
     CRef<objects::CSeq_feat> feat(new objects::CSeq_feat());
     feat->SetData().SetBiosrc().SetOrg().SetTaxname("Trichechus manatus");
-    SetTaxon (feat->SetData().SetBiosrc(), 127582);
+    SetTaxon (feat->SetData().SetBiosrc(), 9778);
     feat->SetData().SetBiosrc().SetOrg().SetOrgname().SetLineage("some lineage");
     feat->SetLocation().SetInt().SetId().SetLocal().SetStr("good");
     feat->SetLocation().SetInt().SetFrom(0);

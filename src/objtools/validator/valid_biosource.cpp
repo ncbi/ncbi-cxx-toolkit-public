@@ -2046,7 +2046,7 @@ const CBioseq_Handle& bsh)
                     + ") is conflicting.",
                     obj, ctx);
             }
-            if (NStr::Find(lineage, " dsRNA viruses; ") != string::npos
+            if (NStr::Find(lineage, " dsRNA viruses") != string::npos
                 && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_rna)) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
                     "Taxonomy indicates double-stranded RNA, molecule type (" +
@@ -2054,7 +2054,7 @@ const CBioseq_Handle& bsh)
                     + ") is conflicting.",
                     obj, ctx);
             }
-            if (NStr::Find(lineage, " ssDNA viruses; ") != string::npos
+            if (NStr::Find(lineage, " ssDNA viruses") != string::npos
                 && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_dna)) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
                     "Taxonomy indicates single-stranded DNA, molecule type (" +
@@ -2676,6 +2676,10 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 
 void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
 {
+#if 1
+    CTaxValidationAndCleanup tval;
+    tval.CheckOneOrg(org, genome, *this);
+#else
     // request list for taxon3
     vector< CRef<COrg_ref> > org_rq_list;
     CRef<COrg_ref> rq(new COrg_ref);
@@ -2816,7 +2820,7 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
             }
         }
     }
-
+#endif
 }
 
 

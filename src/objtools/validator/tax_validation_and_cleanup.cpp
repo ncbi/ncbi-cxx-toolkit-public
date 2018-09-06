@@ -117,6 +117,21 @@ bool CQualifierRequest::MatchTryValue(const string& val) const
 }
 
 
+void CQualifierRequest::PostErrors(CValidError_imp& imp)
+{
+    vector<TTaxError> errs;
+    ListErrors(errs);
+    for (auto e : errs) {
+        for (auto it = m_Descs.begin(); it != m_Descs.end(); it++) {
+            imp.PostObjErr(e.severity, e.err_type, e.err_msg, *(it->first), it->second);
+        }
+        for (auto it = m_Feats.begin(); it != m_Feats.end(); it++) {
+            imp.PostObjErr(e.severity, e.err_type, e.err_msg, **it);
+        }
+    }
+}
+
+
 CSpecificHostRequest::CSpecificHostRequest(const string& host, const COrg_ref& org, bool for_fix) :
     CQualifierRequest(), 
     m_Host(host), 
@@ -144,7 +159,15 @@ CSpecificHostRequest::CSpecificHostRequest(const string& host, const COrg_ref& o
 
 void CSpecificHostRequest::AddReply(const CT3Reply& reply)
 {
-    if (m_Response == eUnrecognized) {
+    if (m_Response == eAmbiguous) {
+        string new_error = InterpretSpecificHostResult(m_ValuesToTry[m_RepliesProcessed], reply, m_Host);
+        if (NStr::IsBlank(new_error)) {
+            m_Response = eNormal;
+            m_SuggestedFix = m_Host;
+            m_HostLineage = reply.GetData().GetOrg().GetLineage();
+            m_Error = kEmptyStr;
+        }
+    } else if (m_Response == eUnrecognized) {
         m_Error = InterpretSpecificHostResult(m_ValuesToTry[m_RepliesProcessed], reply, m_Host);
         if (NStr::IsBlank(m_Error)) {
             m_Response = eNormal;
@@ -177,34 +200,19 @@ void CSpecificHostRequest::AddReply(const CT3Reply& reply)
 }
 
 
-void CSpecificHostRequest::PostErrors(CValidError_imp& imp)
+void CSpecificHostRequest::ListErrors(vector<TTaxError>& errs) const
 {
     switch (m_Response) {
         case eNormal:
             break;
         case eAmbiguous:
-            for (auto it = m_Descs.begin(); it != m_Descs.end(); it++) {
-                imp.PostObjErr(eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost, m_Error, *(it->first), it->second);
-            }
-            for (auto it = m_Feats.begin(); it != m_Feats.end(); it++) {
-                imp.PostObjErr(eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost, m_Error, **it);
-            }
+            errs.push_back(TTaxError{ eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost, m_Error });
             break;
         case eUnrecognized:
-            for (auto it = m_Descs.begin(); it != m_Descs.end(); it++) {
-                imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error, *(it->first), it->second);
-            }
-            for (auto it = m_Feats.begin(); it != m_Feats.end(); it++) {
-                imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error, **it);
-            }
+            errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error });
             break;        
         case eAlternateName:
-            for (auto it = m_Descs.begin(); it != m_Descs.end(); it++) {
-                imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error, *(it->first), it->second);
-            }
-            for (auto it = m_Feats.begin(); it != m_Feats.end(); it++) {
-                imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error, **it);
-            }
+            errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, m_Error });
             break;
     }
 
@@ -212,41 +220,11 @@ void CSpecificHostRequest::PostErrors(CValidError_imp& imp)
         (NStr::Find(m_OrgLineage, "Streptophyta") != NPOS || NStr::Find(m_OrgLineage, "Metazoa") != NPOS) &&
         (NStr::Find(m_HostLineage, "Fungi;") != NPOS || NStr::Find(m_HostLineage, "Bacteria") != NPOS ||
         NStr::Find(m_HostLineage, "Archaea") != NPOS || NStr::Find(m_HostLineage, "Viruses") != NPOS)) {
-        for (auto it = m_Descs.begin(); it != m_Descs.end(); it++) {
-            imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
-                "Suspect Host Value - a prokaryote, fungus or virus is suspect as a host for a plant or animal",
-                *(it->first), it->second);
-        }
-        for (auto it = m_Feats.begin(); it != m_Feats.end(); it++) {
-            imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
-                "Suspect Host Value - a prokaryote, fungus or virus is suspect as a host for a plant or animal", **it);
-        }
+        errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
+            "Suspect Host Value - a prokaryote, fungus or virus is suspect as a host for a plant or animal" });
     }
 }
 
-
-//LCOV_EXCL_START
-//only used by biosample
-void CSpecificHostRequest::ListErrors(vector<string>& errs) const
-{
-    switch (m_Response) {
-        case eNormal:
-            break;
-        case eAmbiguous:
-        case eUnrecognized:
-        case eAlternateName:
-            errs.push_back(m_Error);
-            break;
-    }
-
-    if (!NStr::IsBlank(m_HostLineage) && !NStr::IsBlank(m_OrgLineage) &&
-        (NStr::Find(m_OrgLineage, "Streptophyta") != NPOS || NStr::Find(m_OrgLineage, "Metazoa") != NPOS) &&
-        (NStr::Find(m_HostLineage, "Fungi;") != NPOS || NStr::Find(m_HostLineage, "Bacteria") != NPOS ||
-        NStr::Find(m_HostLineage, "Archaea") != NPOS || NStr::Find(m_HostLineage, "Viruses") != NPOS)) {
-        errs.push_back("Suspect Host Value - a prokaryote, fungus or virus is suspect as a host for a plant or animal");
-    }
-}
-//LCOV_EXCL_STOP
 
 //LCOV_EXCL_START
 //used by cleanup
@@ -366,25 +344,11 @@ bool CStrainRequest::Check(const COrg_ref& org)
 }
 
 
-void CStrainRequest::PostErrors(CValidError_imp& imp)
-{
-    vector<string> errs;
-    ListErrors(errs);
-    for (auto s : errs) {
-        for (auto it = m_Descs.begin(); it != m_Descs.end(); it++) {
-            imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_StrainContainsTaxInfo, s, *(it->first), it->second);
-        }
-        for (auto it = m_Feats.begin(); it != m_Feats.end(); it++) {
-            imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_StrainContainsTaxInfo, s, **it);
-        }
-    }
-}
-
-
-void CStrainRequest::ListErrors(vector<string>& errs) const 
+void CStrainRequest::ListErrors(vector<TTaxError>& errs) const
 {
     if (m_IsInvalid) {
-        errs.push_back("Strain '" + m_Strain + "' contains taxonomic name information");
+        errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_StrainContainsTaxInfo,
+            "Strain '" + m_Strain + "' contains taxonomic name information" });
     }
 }
 
@@ -472,6 +436,28 @@ void CQualLookupMap::AddFeat(CConstRef<CSeq_feat> feat)
             } else {
                 find->second->AddParent(feat);
             }
+        }
+    }
+}
+
+
+void CQualLookupMap::AddOrg(const COrg_ref& org)
+{
+    m_Populated = true;
+    if (!org.IsSetOrgMod()) {
+        return;
+    }
+    if (!Check(org)) {
+        return;
+    }
+    for (auto mod_it = org.GetOrgname().GetMod().begin(); mod_it != org.GetOrgname().GetMod().end(); mod_it++) {
+        if ((*mod_it)->IsSetSubtype()
+            && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
+            && (*mod_it)->IsSetSubname()) {
+            string qual = (*mod_it)->GetSubname();
+            string key = GetKey(qual, org);
+            TQualifierRequests::iterator find = m_Map.find(key);
+            m_Map[key] = x_MakeNewRequest(qual, org);
         }
     }
 }
@@ -572,7 +558,7 @@ void CQualLookupMap::PostErrors(CValidError_imp& imp)
 
 //LCOV_EXCL_START
 //only used by biosample
-void CQualLookupMap::ListErrors(vector<string>& errs) const
+void CQualLookupMap::ListErrors(vector<TTaxError>& errs) const
 {
     for (auto rq_it : m_Map) {
         rq_it.second->ListErrors(errs);
@@ -751,6 +737,87 @@ vector< CRef<COrg_ref> > CTaxValidationAndCleanup::GetTaxonomyLookupRequest() co
 }
 
 
+void CTaxValidationAndCleanup::x_InterpretTaxonomyError(const CT3Error& error, const COrg_ref& org, const EErrType type, vector<TTaxError>& errs) const
+{
+    const string err_str = error.IsSetMessage() ? error.GetMessage() : "?";
+
+    if (NStr::Equal(err_str, "Organism not found")) {
+        string msg = "Organism not found in taxonomy database";
+        if (error.IsSetOrg() && error.GetOrg().IsSetTaxname() &&
+            !NStr::Equal(error.GetOrg().GetTaxname(), "Not valid") &&
+            (!org.IsSetTaxname() ||
+             !NStr::Equal(org.GetTaxname(), error.GetOrg().GetTaxname()))) {
+            msg += " (suggested:" + error.GetOrg().GetTaxname() + ")";
+        }
+        errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_OrganismNotFound, msg });
+    } else if (NStr::Equal(err_str, kInvalidReplyMsg)) {
+        errs.push_back(TTaxError{ eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem, err_str });
+    } else if (NStr::Find(err_str, "ambiguous name") != NPOS) {
+        errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_TaxonomyAmbiguousName, 
+            "Taxonomy lookup failed with message '" + err_str + "'"});
+    } else {
+        errs.push_back(TTaxError{ eDiag_Warning, type,
+            "Taxonomy lookup failed with message '" + err_str + "'" });
+    }
+}
+
+
+void CTaxValidationAndCleanup::ListTaxLookupErrors
+(const CT3Reply& reply, const COrg_ref& org, CBioSource::TGenome genome, bool is_insd_patent, bool is_wp, vector<TTaxError>& errs) const
+{
+    if (reply.IsError()) {
+        x_InterpretTaxonomyError(reply.GetError(), org, eErr_SEQ_DESCR_TaxonomyLookupProblem, errs);
+    } else if (reply.IsData()) {
+        bool is_species_level = true;
+        bool is_unidentified = false;
+        bool force_consult = false;
+        bool has_nucleomorphs = false;
+        if (reply.GetData().IsSetOrg()) {
+            const COrg_ref& orp_rep = reply.GetData().GetOrg();
+            if (org.IsSetTaxname() && orp_rep.IsSetTaxname()) {
+                const string& taxname_req = org.GetTaxname();
+                const string& taxname_rep = orp_rep.GetTaxname();
+                if (NStr::Equal(taxname_rep, "unidentified")) {
+                    is_unidentified = true;
+                }
+                int taxid_request = org.GetTaxId();
+                int taxid_reply = orp_rep.GetTaxId();
+
+                if (taxid_request != 0 && taxid_reply != 0 && taxid_request != taxid_reply) {
+                    errs.push_back(TTaxError{ eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
+                        "Organism name is '" + taxname_req
+                        + "', taxonomy ID should be '" + NStr::IntToString(taxid_reply)
+                        + "' but is '" + NStr::IntToString(taxid_request) + "'" });
+                }
+            }
+        }
+        reply.GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
+        if (!is_species_level && !is_wp) {
+            errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_TaxonomyIsSpeciesProblem,
+                "Taxonomy lookup reports is_species_level FALSE"});
+        }
+        if (force_consult) {
+            if (is_insd_patent && is_unidentified) {
+                force_consult = false;
+            }
+        }
+        if (force_consult) {
+            errs.push_back(TTaxError{eDiag_Warning, eErr_SEQ_DESCR_TaxonomyConsultRequired,
+                "Taxonomy lookup reports taxonomy consultation needed"});
+        }
+        if (genome == CBioSource::eGenome_nucleomorph
+            && !has_nucleomorphs) {
+            errs.push_back(TTaxError{eDiag_Warning, eErr_SEQ_DESCR_TaxonomyNucleomorphProblem,
+                    "Taxonomy lookup does not have expected nucleomorph flag"});
+        } else if (genome == CBioSource::eGenome_plastid
+            && (!reply.GetData().HasPlastids())) {
+            errs.push_back(TTaxError{eDiag_Warning, eErr_SEQ_DESCR_TaxonomyPlastidsProblem,
+                    "Taxonomy lookup does not have expected plastid flag"});
+        }
+    }
+
+}
+
 void CTaxValidationAndCleanup::ReportTaxLookupErrors
 (const CTaxon3_reply& reply, 
  CValidError_imp& imp, 
@@ -765,68 +832,13 @@ void CTaxValidationAndCleanup::ReportTaxLookupErrors
     while (reply_it != reply.GetReply().end()
         && desc_it != m_SrcDescs.cend()
         && ctx_it != m_DescCtxs.cend()) {
-        if ((*reply_it)->IsError()) {
-            imp.HandleTaxonomyError(
-                (*reply_it)->GetError(), eErr_SEQ_DESCR_TaxonomyLookupProblem,
-                **desc_it, *ctx_it);
-
-        } else if ((*reply_it)->IsData()) {
-            bool is_species_level = true;
-            bool is_unidentified = false;
-            bool force_consult = false;
-            bool has_nucleomorphs = false;
-            if ((*reply_it)->GetData().IsSetOrg()) {
-                const COrg_ref& orp_req = (*desc_it)->GetSource().GetOrg();
-                const COrg_ref& orp_rep = (*reply_it)->GetData().GetOrg();
-                if (orp_req.IsSetTaxname() && orp_rep.IsSetTaxname()) {
-                    const string& taxname_req = orp_req.GetTaxname();
-                    const string& taxname_rep = orp_rep.GetTaxname();
-                    if (NStr::Equal(taxname_rep, "unidentified")) {
-                        is_unidentified = true;
-                    }
-                    int taxid_request = orp_req.GetTaxId();
-                    int taxid_reply = orp_rep.GetTaxId();
-
-                    if (taxid_request != 0 && taxid_reply != 0 && taxid_request != taxid_reply) {
-                        imp.PostObjErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
-                            "Organism name is '" + taxname_req
-                            + "', taxonomy ID should be '" + NStr::IntToString(taxid_reply)
-                            + "' but is '" + NStr::IntToString(taxid_request) + "'",
-                            **desc_it, *ctx_it);
-                    }
-                }
-            }
-            (*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
-            if (!is_species_level && !imp.IsWP()) {
-                imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyIsSpeciesProblem,
-                    "Taxonomy lookup reports is_species_level FALSE",
-                    **desc_it, *ctx_it);
-            }
-            if (force_consult) {
-                if (is_insd_patent && is_unidentified) {
-                    force_consult = false;
-                }
-            }
-            if (force_consult) {
-                imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyConsultRequired,
-                    "Taxonomy lookup reports taxonomy consultation needed",
-                    **desc_it, *ctx_it);
-            }
-            if ((*desc_it)->GetSource().IsSetGenome()) {
-                CBioSource::TGenome genome = (*desc_it)->GetSource().GetGenome();
-                if (genome == CBioSource::eGenome_nucleomorph
-                    && !has_nucleomorphs) {
-                    imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyNucleomorphProblem,
-                        "Taxonomy lookup does not have expected nucleomorph flag",
-                        **desc_it, *ctx_it);
-                } else if (genome == CBioSource::eGenome_plastid
-                    && (!(*reply_it)->GetData().HasPlastids())) {
-                    imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyPlastidsProblem,
-                        "Taxonomy lookup does not have expected plastid flag",
-                        **desc_it, *ctx_it);
-                }
-            }
-
+        vector<TTaxError> errs;
+        const COrg_ref& orp_req = (*desc_it)->GetSource().GetOrg();
+        ListTaxLookupErrors(**reply_it, orp_req,
+            (*desc_it)->GetSource().IsSetGenome() ? (*desc_it)->GetSource().GetGenome() : CBioSource::eGenome_unknown,
+            is_insd_patent, imp.IsWP(), errs);
+        for (auto it : errs) {
+            imp.PostObjErr(it.severity, it.err_type, it.err_msg, **desc_it, *ctx_it);
         }
         ++reply_it;
         ++desc_it;
@@ -836,41 +848,13 @@ void CTaxValidationAndCleanup::ReportTaxLookupErrors
     vector<CConstRef<CSeq_feat> >::const_iterator feat_it = m_SrcFeats.cbegin();
     while (reply_it != reply.GetReply().cend()
         && feat_it != m_SrcFeats.end()) {
-        if ((*reply_it)->IsError()) {
-            imp.HandleTaxonomyError(
-                (*reply_it)->GetError(),
-                eErr_SEQ_DESCR_TaxonomyLookupProblem, **feat_it);
-
-        } else if ((*reply_it)->IsData()) {
-            bool is_species_level = true;
-            bool force_consult = false;
-            bool has_nucleomorphs = false;
-            (*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
-            if (!is_species_level && !imp.IsWP()) {
-                imp.PostErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem,
-                    "Taxonomy lookup reports is_species_level FALSE",
-                    **feat_it);
-            }
-            if (force_consult) {
-                imp.PostErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem,
-                    "Taxonomy lookup reports taxonomy consultation needed",
-                    **feat_it);
-            }
-            if ((*feat_it)->GetData().GetBiosrc().IsSetGenome()) {
-                CBioSource::TGenome genome = (*feat_it)->GetData().GetBiosrc().GetGenome();
-                if (genome == CBioSource::eGenome_nucleomorph
-                    && !has_nucleomorphs) {
-                    imp.PostErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyNucleomorphProblem,
-                        "Taxonomy lookup does not have expected nucleomorph flag",
-                        **feat_it);
-                } else if (genome == CBioSource::eGenome_plastid
-                    && (!(*reply_it)->GetData().HasPlastids())) {
-                    imp.PostErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyPlastidsProblem,
-                        "Taxonomy lookup does not have expected plastid flag",
-                        **feat_it);
-                }
-
-            }
+        vector<TTaxError> errs;
+        const COrg_ref& orp_req = (*feat_it)->GetData().GetBiosrc().GetOrg();
+        ListTaxLookupErrors(**reply_it, orp_req,
+            (*feat_it)->GetData().GetBiosrc().IsSetGenome() ? (*feat_it)->GetData().GetBiosrc().GetGenome() : CBioSource::eGenome_unknown,
+            is_insd_patent, imp.IsWP(), errs);
+        for (auto it : errs) {
+            imp.PostErr(it.severity, it.err_type, it.err_msg,* *feat_it);
         }
         ++reply_it;
         ++feat_it;
@@ -968,6 +952,7 @@ void CTaxValidationAndCleanup::x_CreateQualifierMap(CQualLookupMap& lookup)
     }
 
 }
+
 
 void CTaxValidationAndCleanup::x_CreateStrainMap()
 {
@@ -1330,10 +1315,10 @@ bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val, string&
         m_HostMap.Clear();
         rval = false;
     } else {
-        vector<string> errs;
+        vector<TTaxError> errs;
         m_HostMap.ListErrors(errs);
         if (errs.size() > 0) {
-            error_msg = errs.front();
+            error_msg = errs.front().err_msg;
             rval = false;
         }
     }
@@ -1341,6 +1326,70 @@ bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val, string&
     return rval;
 }
 //LCOV_EXCL_STOP
+
+
+void CTaxValidationAndCleanup::CheckOneOrg(const COrg_ref& org, int genome, CValidError_imp& imp)
+{
+    x_ClearMaps();
+
+    vector<TTaxError> errs;
+    CTaxon3 taxon3;
+    taxon3.Init();
+
+    // lookup of whole org
+    vector< CRef<COrg_ref> > org_rq_list;
+    CRef<COrg_ref> rq(new COrg_ref);
+    rq->Assign(org);
+    org_rq_list.push_back(rq);
+
+    CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_rq_list);
+
+    if (!reply || !reply->IsSetReply()) {
+        imp.PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyServiceProblem,
+                "Taxonomy service connection failure", org);
+    } else {
+        ListTaxLookupErrors(*(reply->GetReply().front()), org, genome,
+            false, false, errs);
+    }
+
+    // Now look at specific-host values
+    m_HostMap.AddOrg(org);
+    org_rq_list = GetSpecificHostLookupRequest(false);
+
+    if (!org_rq_list.empty()) {
+        reply = taxon3.SendOrgRefList(org_rq_list);
+        string err_msg = kEmptyStr;
+        if (reply) {
+            err_msg = IncrementalSpecificHostMapUpdate(org_rq_list, *reply);
+        } else {
+            err_msg = "Connection to taxonomy failed";
+        }
+        if (!NStr::IsBlank(err_msg)) {
+            imp.PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem, err_msg, org);
+        } else {
+            m_HostMap.ListErrors(errs);
+        }
+    }
+
+
+    // validate strain
+    m_StrainMap.AddOrg(org);
+    org_rq_list = GetStrainLookupRequest();
+    if (!org_rq_list.empty()) {
+        reply = taxon3.SendOrgRefList(org_rq_list);
+        string err_msg = IncrementalStrainMapUpdate(org_rq_list, *reply);
+        if (!NStr::IsBlank(err_msg)) {
+            imp.PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem, err_msg, org);
+        } else {
+            m_StrainMap.ListErrors(errs);
+        }
+    }
+
+    for (auto it : errs) {
+        imp.PostObjErr(it.severity, it.err_type, it.err_msg, org);
+    }
+}
+
 
 END_SCOPE(validator)
 END_SCOPE(objects)

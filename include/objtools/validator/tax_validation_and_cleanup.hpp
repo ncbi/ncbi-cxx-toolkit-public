@@ -39,6 +39,7 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/taxon3/T3Reply.hpp>
 #include <objects/taxon3/Taxon3_reply.hpp>
+#include <objects/valerr/ValidErrItem.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -85,6 +86,13 @@ class CValidError_imp;
 // and/or clean them.
 //
 
+typedef struct {
+    EDiagSev severity;
+    EErrType err_type;
+    string err_msg;
+} TTaxError;
+
+
 // This base class represents a request for a qualifier value.
 // The same qualifier value will be found in multiple Org-refs, which will
 // be represented in the parents (m_Descs and m_Feats).
@@ -105,8 +113,8 @@ public:
     size_t NumRemainingReplies() const { return m_ValuesToTry.size() - m_RepliesProcessed; }
 
     virtual void AddReply(const CT3Reply& reply) = 0;
-    virtual void PostErrors(CValidError_imp& imp) = 0;
-    virtual void ListErrors(vector<string>& errs) const = 0;
+    void PostErrors(CValidError_imp& imp);
+    virtual void ListErrors(vector<TTaxError>& errs) const = 0;
 
 protected:
     void x_Init();
@@ -136,8 +144,7 @@ public:
     typedef int TResponseFlags;
 
     virtual void AddReply(const CT3Reply& reply);
-    virtual void PostErrors(CValidError_imp& imp);
-    virtual void ListErrors(vector<string>& errs) const;
+    virtual void ListErrors(vector<TTaxError>& errs) const;
 
     const string& SuggestFix() const;
 
@@ -158,8 +165,7 @@ public:
     ~CStrainRequest() {};
 
     virtual void AddReply(const CT3Reply& reply);
-    virtual void PostErrors(CValidError_imp& imp);
-    virtual void ListErrors(vector<string>& errs) const;
+    virtual void ListErrors(vector<TTaxError>& errs) const;
 
     static string MakeKey(const string& strain, const string& taxname);
     static bool RequireTaxname(const string& taxname);
@@ -205,6 +211,7 @@ public:
     // descriptor or feature
     void AddDesc(CConstRef<CSeqdesc> desc, CConstRef<CSeq_entry> ctx);
     void AddFeat(CConstRef<CSeq_feat> feat);
+    void AddOrg(const COrg_ref& org);
 
     // add an item to be looked up independently of a feature or descriptor
     void AddString(const string& val);
@@ -225,7 +232,7 @@ public:
     // Posts errors to the validator based on responses
     void PostErrors(CValidError_imp& imp);
 
-    virtual void ListErrors(vector<string>& errs) const;
+    virtual void ListErrors(vector<TTaxError>& errs) const;
 
     // Applies the change to an Org-ref. Note that there might be multiple
     // qualifiers of the same subtype on the Org-ref, and we need to be sure
@@ -306,6 +313,7 @@ public:
 
     // for complete Org-ref validation/replacement
     vector< CRef<COrg_ref> > GetTaxonomyLookupRequest() const;
+    void ListTaxLookupErrors(const CT3Reply& reply, const COrg_ref& org, CBioSource::TGenome genome, bool is_insd_patent, bool is_wp, vector<TTaxError>& errs) const;
     void ReportTaxLookupErrors(const CTaxon3_reply& reply, CValidError_imp& imp, bool is_insd_patent) const;
     bool AdjustOrgRefsWithTaxLookupReply(const CTaxon3_reply& reply, 
                                          vector<CRef<COrg_ref> > org_refs, 
@@ -346,7 +354,10 @@ public:
     void FixOneSpecificHost(string& val);
     bool IsOneSpecificHostValid(const string& val, string& err_msg);
 
+    void CheckOneOrg(const COrg_ref& org, int genome, CValidError_imp& imp);
+
 protected:
+    void x_InterpretTaxonomyError(const CT3Error& error, const COrg_ref& org, const EErrType type, vector<TTaxError>& errs) const;
     void x_GatherSources(const CSeq_entry& se);
     void x_CreateSpecificHostMap(bool for_fix);
     void x_UpdateSpecificHostMapWithReply(const CTaxon3_reply& reply, string& error_message);
@@ -356,6 +367,8 @@ protected:
 
     void x_CreateStrainMap();
     void x_CreateQualifierMap(CQualLookupMap& lookup);
+
+    void x_ClearMaps() { m_HostMap.Clear(); m_HostMapForFix.Clear(); m_StrainMap.Clear(); }
 
     vector<CConstRef<CSeqdesc> > m_SrcDescs;
     vector<CConstRef<CSeq_entry> > m_DescCtxs;
