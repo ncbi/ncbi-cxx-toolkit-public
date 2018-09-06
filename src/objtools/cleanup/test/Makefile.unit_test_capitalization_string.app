@@ -5,7 +5,7 @@ SRC = unit_test_capitalization_string
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = xcleanup xunittestutil xobjutil \
+LIB = xcleanup xunittestutil xobjutil valid taxon3 xconnect \
       xregexp $(PCRE_LIB) $(COMPRESS_LIBS) test_boost $(SOBJMGR_LIBS)
 
 LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
