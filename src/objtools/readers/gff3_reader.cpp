@@ -306,7 +306,7 @@ bool CGff3Reader::xUpdateAnnotExon(
             IdToFeatureMap::iterator fit = m_MapIdToFeature.find(parentId);
             if (fit != m_MapIdToFeature.end()) {
                 CRef<CSeq_feat> pParent = fit->second;
-                if (!record.UpdateFeature(m_iFlags, pParent)) {
+                if (!pParent->GetData().IsGene()  &&  !record.UpdateFeature(m_iFlags, pParent)) {
                     return false;
                 }
             }
@@ -368,10 +368,8 @@ bool CGff3Reader::xUpdateAnnotCds(
         IdToFeatureMap::iterator featIt = m_MapIdToFeature.find(parentId);
         if (featIt != m_MapIdToFeature.end()) {
             CRef<CSeq_feat> pParent = featIt->second;
-            if (pParent->GetData().IsGene()) {
-                parentIsGene = true;
-            }
-            if (!record.UpdateFeature(m_iFlags, pParent)) {
+            parentIsGene = pParent->GetData().IsGene();
+            if (!parentIsGene  &&  !record.UpdateFeature(m_iFlags, pParent)) {
                 return false;
             }
             //rw-143:
