@@ -343,6 +343,7 @@ int CNCBITestConnStreamApp::Run(void)
 
     LOG_POST(Info << "Test 3 of 10: FTP upload");
 
+    EIO_Status status;
     string ftpuser, ftppass, ftpfile;
     if (s_GetFtpCreds(ftpuser, ftppass)) {
         CTime start(CTime::eCurrent);
@@ -416,8 +417,11 @@ int CNCBITestConnStreamApp::Run(void)
         upload.clear();
         upload << "REN " << ftpfile << '\t'
                << '"' << ftpfile << "~\"" << NcbiEndl;
-        if (!upload  ||  upload.Status(eIO_Write) != eIO_Success)
-            LOG_POST("REN failed");
+        status = upload.Status(eIO_Write); 
+        if (!upload  ||  status != eIO_Success) {
+            string reason = status ? IO_StatusStr(status) : "I/O error";
+            LOG_POST("REN failed: " + reason);
+        }
         upload << "DELE " << ftpfile        << NcbiEndl;
         upload << "DELE " << ftpfile << '~' << NcbiEndl;
         if (val != (unsigned long) size) {
@@ -451,31 +455,44 @@ int CNCBITestConnStreamApp::Run(void)
         LOG_POST(Info << "SYST command returned: '" << temp << '\'');
         _ASSERT(ftp.Drain() == eIO_Success);
         ftp << "CWD \"dir\"ect\"ory\"" << NcbiEndl;
-        if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
-            ERR_POST(Fatal << "Test 4 failed in CWD");
+        status = ftp.Status(eIO_Write);
+        if (!ftp  ||  status != eIO_Success) {
+            string reason = status ? IO_StatusStr(status) : "I/O error";
+            ERR_POST(Fatal << "Test 4 failed in CWD: " + reason);
+        }
         getline(ftp, temp);  // better: does not leave putback behind
         LOG_POST(Info << "CWD command returned: '" << temp << '\'');
         _ASSERT(temp == "250");
         _ASSERT(ftp.eof());
         ftp.clear();
         ftp << "PWD" << NcbiEndl;
-        if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
-            ERR_POST(Fatal << "Test 4 failed in PWD");
+        status = ftp.Status(eIO_Write);
+        if (!ftp  ||  status != eIO_Success) {
+            string reason = status ? IO_StatusStr(status) : "I/O error";
+            ERR_POST(Fatal << "Test 4 failed in PWD: " + reason);
+        }
         ftp >> temp;
         LOG_POST(Info << "PWD command returned: '" << temp << '\'');
         if (temp != "/test_download/\"dir\"ect\"ory\"")
             ERR_POST(Fatal << "Test 4 failed in PWD response");
         ftp.clear();
         ftp << "XCUP" << NcbiEndl;
-        if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
-            ERR_POST(Fatal << "Test 4 failed in XCUP");
+        status = ftp.Status(eIO_Write);
+        if (!ftp  ||  status != eIO_Success) {
+            string reason = status ? IO_StatusStr(status) : "I/O error";
+            ERR_POST(Fatal << "Test 4 failed in XCUP: " + reason);
+        }
         //ftp.clear();
         ftp << "RETR \377\377 special file downloadable" << NcbiEndl;
-        if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success) {
+        status = ftp.Status(eIO_Write);
+        if (!ftp  ||  status != eIO_Success) {
             ftp.clear();
             ftp << "RETR \377 special file downloadable" << NcbiEndl;
-            if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
-                ERR_POST(Fatal << "Test 4 failed in RETR IAC");
+            status = ftp.Status(eIO_Write);
+            if (!ftp  ||  status != eIO_Success) {
+                string reason = status ? IO_StatusStr(status) : "I/O error";
+                ERR_POST(Fatal << "Test 4 failed in RETR IAC: " + reason);
+            }
             ERR_POST(Critical << "\n\n***"
                      " BUGGY FTP (UNCLEAN IAC) SERVER DETECTED!!! "
                      "***\n");
@@ -483,11 +500,17 @@ int CNCBITestConnStreamApp::Run(void)
         ftp << "RETR "
             << "\320\237\321\200\320\270"
             << "\320\262\320\265\321\202" << NcbiEndl;
-        if (!ftp  ||  ftp.Status (eIO_Write) != eIO_Success)
-            ERR_POST(Fatal << "Test 4 failed in RETR UTF-8");
+        status = ftp.Status (eIO_Write);
+        if (!ftp  ||  status != eIO_Success) {
+            string reason = status ? IO_StatusStr(status) : "I/O error";
+            ERR_POST(Fatal << "Test 4 failed in RETR UTF-8: " + reason);
+        }
         ftp << "STOR " << "../test_upload/" << ftpfile << ".0" << NcbiEndl;
-        if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
+        status = ftp.Status(eIO_Write);
+        if (!ftp  ||  status != eIO_Success) {
+            string reason = status ? IO_StatusStr(status) : "I/O error";
             ERR_POST(Fatal << "Test 4 failed in STOR");
+        }
         if (ftp.Close() == eIO_Success)
             ERR_POST(Fatal << "Test 4 failed");
         LOG_POST(Info << "Test 4 done\n");
