@@ -298,7 +298,7 @@ bool CGff3Reader::xUpdateAnnotExon(
                 return false;
             }
             if (pParent->GetData().IsGene()) {
-                if  (!record.InitializeFeature(m_iFlags, pFeature)) {
+                if  (!xInitializeFeature(record, pFeature)) {
                     return false;
                 }
                 return xAddFeatureToAnnot(pFeature, pAnnot);            
@@ -424,7 +424,7 @@ bool CGff3Reader::xUpdateAnnotCds(
         else {
             //didn't find feature with that ID: create new one
             pFeature.Reset(new CSeq_feat);
-            record.InitializeFeature(m_iFlags, pFeature);
+            xInitializeFeature(record, pFeature);
             if (!parentId.empty()) {
                 xFeatureSetQualifier("Parent", parentId, pFeature);
                 xFeatureSetXrefParent(parentId, pFeature);
@@ -527,6 +527,10 @@ bool CGff3Reader::xFindFeatureUnderConstruction(
     if (it == m_MapIdToFeature.end()) {
         return false;
     }
+
+    if (record.Id() != mIdToSeqIdMap[id]) {
+        pErr->Throw();
+    }
     if (it->second->GetData().IsRna()) {
         pErr->Throw();
     }
@@ -536,6 +540,7 @@ bool CGff3Reader::xFindFeatureUnderConstruction(
             pErr->Throw();
         }
     }
+
     underConstruction = it->second;
     return true;
 }
@@ -595,7 +600,7 @@ bool CGff3Reader::xUpdateAnnotGeneric(
         codeBreaks.push_back(pCodeBreak);
         return true;
     }
-    if (!record.InitializeFeature(m_iFlags, pFeature)) {
+    if (!xInitializeFeature(record, pFeature)) {
         return false;
     }
     if (! xAddFeatureToAnnot(pFeature, pAnnot)) {
@@ -626,7 +631,7 @@ bool CGff3Reader::xUpdateAnnotMrna(
         return record.UpdateFeature(m_iFlags, pUnderConstruction);
     }
 
-    if (!record.InitializeFeature(m_iFlags, pFeature)) {
+    if (!xInitializeFeature(record, pFeature)) {
         return false;
     }
     string parentsStr;
@@ -820,6 +825,24 @@ bool CGff3Reader::xIsIgnoredFeatureType(
     }
 
     return false;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CGff3Reader::xInitializeFeature(
+    const CGff2Record& record,
+    CRef<CSeq_feat> pFeature)
+//  ----------------------------------------------------------------------------
+{
+    if (!record.InitializeFeature(m_iFlags, pFeature)) {
+        return false;
+    }
+    const auto& attrs = record.Attributes();
+    const auto it = attrs.find("ID");
+    if (it != attrs.end()) {
+        mIdToSeqIdMap[it->second] = record.Id();
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------

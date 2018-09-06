@@ -96,6 +96,10 @@ public:
 protected:
     virtual CGff2Record* x_CreateRecord() { return new CGff3ReadRecord(); };    
 
+    virtual bool xInitializeFeature(
+        const CGff2Record&,
+        CRef<CSeq_feat> );
+
     virtual bool x_UpdateAnnotFeature(
         const CGff2Record&,
         CRef< CSeq_annot >,
@@ -176,6 +180,7 @@ protected:
     // Data:
     map<string, string> mCdsParentMap;
     map<string, CRef<CSeq_interval> > mMrnaLocs;
+    map<string, string> mIdToSeqIdMap;
 
     using PENDING_EXONS = map<string, list<CGff2Record> >;
     PENDING_EXONS mPendingExons;
