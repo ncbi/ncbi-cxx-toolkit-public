@@ -111,7 +111,7 @@ enum ENAMERD_Subcodes {
 #endif
 
 #define REG_NAMERD_PROXY_PORT_KEY   "PROXY_PORT"
-#define REG_NAMERD_PROXY_PORT_DEF   4140
+#define REG_NAMERD_PROXY_PORT_DEF   "4140"
 
 #define REG_NAMERD_API_HOST_KEY     "API_HOST"
 #define REG_NAMERD_API_HOST_DEF     "namerd-api.linkerd.ncbi.nlm.nih.gov"
@@ -434,28 +434,13 @@ static EBURLScheme s_GetScheme()
 }
 
 
-static int s_GetHttpProxy(char* client_host, size_t host_size,
-    unsigned short* client_port_p)
+static int s_GetHttpProxy(char* host, size_t host_size, unsigned short* port_p)
 {
     char port_str[24];
-    char def_port[24];
-    static char host[2048];
-    static unsigned short port = 0;
-
-    /*if (port) {
-        strcpy(client_host, host);
-        *client_port_p = port;
-        return 1;
-    }*/
-
-    if (host_size > sizeof(host))
-        host_size = sizeof(host);
 
     /* Highest precedence is $http_proxy environment variable */
-    switch (LINKERD_GetHttpProxy(host, host_size, &port)) {
+    switch (LINKERD_GetHttpProxy(host, host_size, port_p)) {
         case eLGHP_Success:
-            strcpy(client_host, host);
-            *client_port_p = port;
             return 1;
         case eLGHP_Fail:
             CORE_LOG_X(eNSub_BadData, eLOG_Critical,
@@ -474,19 +459,17 @@ static int s_GetHttpProxy(char* client_host, size_t host_size,
         return 0;
     }
 
-    sprintf(def_port, "%d", REG_NAMERD_PROXY_PORT_DEF);
     if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
-        REG_NAMERD_PROXY_PORT_KEY, port_str, sizeof(port_str) - 1,
-        def_port)  ||  ! *port_str  ||  sscanf(port_str, "%hu", &port) != 1  ||
-        ! port)
+            REG_NAMERD_PROXY_PORT_KEY, port_str, sizeof(port_str) - 1,
+            REG_NAMERD_PROXY_PORT_DEF)  ||
+         ! *port_str  ||
+         sscanf(port_str, "%hu", port_p) != 1)
     {
         CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
                    "Couldn't set default http proxy port.");
         return 0;
     }
 
-    strcpy(client_host, host);
-    *client_port_p = port;
     return 1;
 }
 
@@ -964,7 +947,8 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
             if (iter->types != fSERV_Any  &&  !(iter->types & type))
             {
                 CORE_TRACEF((
-                    "Ignoring endpoint %s:%d with unallowed svc_type '%s' - allowed types = 0x%lx.",
+                    "Ignoring endpoint %s:%d with unallowed svc_type '%s'"
+                    " - allowed types = 0x%lx.",
                     host, port, svc_type, (unsigned long)iter->types));
                 continue;
             }

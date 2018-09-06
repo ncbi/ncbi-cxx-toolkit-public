@@ -283,26 +283,6 @@ void CProxy::Init(vector<CProxy>& proxies)
         proxy.m_EnvSet["http_proxy"] = "pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov:4140";
         proxies.push_back(proxy);
     }}
-
-    {{
-        CProxy proxy;
-        proxy.m_Id = eProxy_pass_localhost;
-        proxy.m_Name = "pass_localhost";
-        proxy.m_Enabled = true;
-        proxy.m_PassExpected = true;
-        proxy.m_EnvSet["http_proxy"] = "localhost:4140";
-        proxies.push_back(proxy);
-    }}
-
-    {{
-        CProxy proxy;
-        proxy.m_Id = eProxy_pass_127_0_0_1;
-        proxy.m_Name = "pass_127_0_0_1";
-        proxy.m_Enabled = true;
-        proxy.m_PassExpected = true;
-        proxy.m_EnvSet["http_proxy"] = "127.0.0.1:4140";
-        proxies.push_back(proxy);
-    }}
 }
 
 

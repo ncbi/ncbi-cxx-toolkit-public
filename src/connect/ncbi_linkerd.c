@@ -750,36 +750,36 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
 
     /* Populate linkerd endpoint */
     {{
-        static char host[2048];
-        static unsigned short port = 0;
-        size_t host_size = sizeof(host);
         SConnNetInfo* dni = data->net_info;
 
-        /*if (port) {
-            strcpy(dni->host, host);
-            dni->port = port;
-        } else {*/
-            if (host_size > sizeof(dni->host))
-                host_size = sizeof(dni->host);
-
-            /* Highest precedence is $http_proxy environment variable;
-                fallback to defaults */
-            switch (LINKERD_GetHttpProxy(host, host_size, &port)) {
-                case eLGHP_Success:
-                    break;
-                case eLGHP_Fail:
-                    CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                               "Couldn't get Linkerd http_proxy.");
-                    s_Close(iter);
-                    return 0;
-                case eLGHP_NotSet:
-                    strcpy(host, LINKERD_HOST);
-                    port = LINKERD_PORT;
-                    break;
-            }
-            strcpy(dni->host, host);
-            dni->port = port;
-        /*}*/
+        /* Highest precedence is $http_proxy environment variable;
+            fallback to defaults */
+        /* N.B. the 'http_proxy' env var (detected by LINKERD_GetHttpProxy)
+            may be used to override the default host:port for Linkerd.  But
+            connections via Linkerd should be made directly to the Linkerd
+            host:port as the authority part of the URL, not by using the proxy
+            settings.  Therefore, this code sets 'dni->host', not
+            'dni->http_proxy_host' (same for port). */
+        switch (LINKERD_GetHttpProxy(dni->host, sizeof(dni->host), &dni->port))
+        {
+            case eLGHP_Success:
+                CORE_LOG_X(eLSub_Message, eLOG_Info,
+                           "LINKERD_GetHttpProxy() result: eLGHP_Success");
+                break;
+            case eLGHP_NotSet:
+                CORE_LOG_X(eLSub_Message, eLOG_Info,
+                           "LINKERD_GetHttpProxy() result: eLGHP_NotSet");
+                strcpy(dni->host, LINKERD_HOST);
+                dni->port = LINKERD_PORT;
+                break;
+            case eLGHP_Fail:
+                CORE_LOG_X(eLSub_Message, eLOG_Info,
+                           "LINKERD_GetHttpProxy() result: eLGHP_Fail");
+                CORE_LOG_X(eLSub_BadData, eLOG_Error,
+                           "Couldn't get Linkerd http_proxy.");
+                s_Close(iter);
+                return 0;
+        }
 
         dni->scheme = endpoint.scheme;
         strcpy(dni->user, endpoint.user);

@@ -48,7 +48,8 @@ typedef enum {
 } ELGHP_Status;
 
 /* this is meant to be used by the linkerd and namerd service mappers */
-extern ELGHP_Status LINKERD_GetHttpProxy(char* host, size_t len, unsigned short* port_p);
+extern ELGHP_Status LINKERD_GetHttpProxy(char* host, size_t len,
+    unsigned short* port_p);
 
 /* this is meant to be used by the service mapping API */
 extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
