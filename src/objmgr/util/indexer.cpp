@@ -182,6 +182,12 @@ bool CSeqEntryIndex::IsFetchFailure(void)
     return m_Idx->IsFetchFailure();
 }
 
+bool CSeqEntryIndex::IsIndexFailure(void)
+
+{
+    return m_Idx->IsIndexFailure();
+}
+
 
 // CSeqMasterIndex
 
@@ -202,12 +208,20 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::E
 
     m_HasOperon = false;
     m_IsSmallGenomeSet = false;
+    m_IndexFailure = false;
 
     try {
         // Code copied from x_Init, then modified to reuse existing scope from CSeq_entry_Handle
+        m_Objmgr = CObjectManager::GetInstance();
+        if ( !m_Objmgr ) {
+            /* raise hell */;
+            m_IndexFailure = true;
+        }
+
         m_Scope.Reset( &m_Tseh.GetScope() );
         if ( !m_Scope ) {
             /* raise hell */;
+            m_IndexFailure = true;
         }
 
         m_Counter.Set(0);
@@ -237,12 +251,20 @@ void CSeqMasterIndex::x_Initialize (CBioseq_Handle& bsh, CSeqEntryIndex::EPolicy
 
     m_HasOperon = false;
     m_IsSmallGenomeSet = false;
+    m_IndexFailure = false;
 
     try {
         // Code copied from x_Init, then modified to reuse existing scope from CSeq_entry_Handle
+        m_Objmgr = CObjectManager::GetInstance();
+        if ( !m_Objmgr ) {
+            /* raise hell */;
+            m_IndexFailure = true;
+        }
+
         m_Scope.Reset( &m_Tseh.GetScope() );
         if ( !m_Scope ) {
             /* raise hell */;
+            m_IndexFailure = true;
         }
 
         m_Counter.Set(0);
@@ -469,15 +491,23 @@ void CSeqMasterIndex::x_InitSeqs (const CSeq_entry& sep, CRef<CSeqsetIndex> prnt
 void CSeqMasterIndex::x_Init (void)
 
 {
+    m_FeatTree = new feature::CFeatTree;
+
+    m_HasOperon = false;
+    m_IsSmallGenomeSet = false;
+    m_IndexFailure = false;
+
     try {
         m_Objmgr = CObjectManager::GetInstance();
         if ( !m_Objmgr ) {
             /* raise hell */;
+            m_IndexFailure = true;
         }
 
         m_Scope.Reset( new CScope( *m_Objmgr ) );
         if ( !m_Scope ) {
             /* raise hell */;
+            m_IndexFailure = true;
         }
 
         m_Counter.Set(0);

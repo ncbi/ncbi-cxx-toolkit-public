@@ -166,6 +166,9 @@ public:
     // Check all Bioseqs for failure to fetch remote sequence components or feature annotation
     bool IsFetchFailure(void);
 
+    // Check for failure to create scope
+    bool IsIndexFailure (void);
+
     CRef<CSeqMasterIndex> GetMasterIndex(void) const { return m_Idx; }
 
 private:
@@ -248,6 +251,10 @@ public:
     // Check all Bioseqs for failure to fetch remote sequence components or remote feature annotation
     bool IsFetchFailure(void);
 
+    // Check for failure to create scope
+    bool IsIndexFailure (void) const { return m_IndexFailure; }
+    void SetIndexFailure (bool fails) { m_IndexFailure = fails; }
+
 private:
     // Common initialization function called by each Initialize variant
     void x_Init (void);
@@ -293,6 +300,8 @@ private:
     bool m_IsSmallGenomeSet;
 
     mutable CAtomicCounter m_Counter;
+
+    bool m_IndexFailure;
 };
 
 
