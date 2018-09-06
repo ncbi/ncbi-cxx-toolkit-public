@@ -9,6 +9,10 @@ script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`
 tree_root=`pwd`
 
+host_os=`uname`
+if test $host_os = "Darwin"; then
+  CMAKE_CMD=/Applications/CMake.app/Contents/bin/cmake
+fi
 ############################################################################# 
 if [ -z "${CMAKE_CMD}" ]; then
   CMAKE_CMD=`which cmake 2>/dev/null`
@@ -30,8 +34,13 @@ if [ -z "$CXX" ]; then
   fi
 fi
 if [ -n "$CC" ]; then
-  CC_NAME=`$CC --version | awk 'NR==1{print $2}' | sed 's/[()]//g'`
-  CC_VERSION=`$CC --version | awk 'NR==1{print $3}' | sed 's/[.]//g'`
+  if test $host_os = "Darwin"; then
+    CC_NAME=`$CC --version 2>/dev/null | awk 'NR==1{print $2}'`
+    CC_VERSION=`$CC --version 2>/dev/null | awk 'NR==1{print $4}' | sed 's/[.]//g'`
+  else
+    CC_NAME=`$CC --version | awk 'NR==1{print $2}' | sed 's/[()]//g'`
+    CC_VERSION=`$CC --version | awk 'NR==1{print $3}' | sed 's/[.]//g'`
+  fi
 fi
 
 ############################################################################# 
@@ -148,6 +157,18 @@ while [ $# != 0 ]; do
 done 
 
 ############################################################################# 
+if test "$generator" = "Xcode"; then
+  XC=`which xcodebuild 2>/dev/null`
+  if test $? -ne 0; then
+    echo ERROR: xcodebuild is not found
+    exit 1
+  fi
+  CC_NAME=Xcode
+  CC_VERSION=`xcodebuild -version | awk 'NR==1{print $2}'`
+  CC=
+  CXX=
+fi
+############################################################################# 
 
 CMAKE_ARGS=-DNCBI_EXPERIMENTAL=${NCBI_EXPERIMENTAL}
 
@@ -163,13 +184,25 @@ fi
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_LIST=$(Quote "${project_list}")"
 CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
 CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
-CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_CCACHE=$USE_CCACHE"
-CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_DISTCC=$USE_DISTCC"
-build_root=CMake-${CC_NAME}${CC_VERSION}-${BUILD_TYPE}
-if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
-  build_root="$build_root"DLL
-fi
+if test "$generator" = "Xcode"; then
+  build_root=compilers/CMake-${CC_NAME}${CC_VERSION}
+  if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
+    build_root="$build_root"/dll
+    project_name=ncbi_cpp_dll
+  else
+    build_root="$build_root"/static
+    project_name=ncbi_cpp
+  fi
+  CMAKE_ARGS="$CMAKE_ARGS -DNCBI_CMAKEPROJECT_NAME=$project_name"
+else
+  CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_CCACHE=$USE_CCACHE"
+  CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_DISTCC=$USE_DISTCC"
+  build_root=CMake-${CC_NAME}${CC_VERSION}-${BUILD_TYPE}
+  if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
+    build_root="$build_root"DLL
+  fi
 #build_root="$build_root"64
+fi
 
 mkdir -p ${tree_root}/${build_root}/build 
 cd ${tree_root}/${build_root}/build 
