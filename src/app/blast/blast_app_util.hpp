@@ -330,6 +330,9 @@ private :
 /// @param msg list of errors and warning to be added to blast4 archive for printing
 void PrintErrorArchive(const CArgs & a, const list<CRef<CBlast4_error> > & msg);
 
+/// Clean up formatter scope and release
+void QueryBatchCleanup();
+
 END_NCBI_SCOPE
 
 #endif /* APP__BLAST_APP_UTIL__HPP */
