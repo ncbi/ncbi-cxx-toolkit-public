@@ -222,6 +222,9 @@ const size_t kDfltArgNumAlignments = 250;
 const string kArgProduceHtml("html");
 const bool kDfltArgProduceHtml = false;
 const size_t kDfltLineLength = 60;
+const string kArgAlignSeqList("alignseqlist");
+const string kArgMetadata("searchmetadata");
+const string kArgQueryIndex("queryindex");
 
 const size_t kNumSAMOutputFormatSpecifiers = 2;
 const SSAMFormatSpec sc_SAMFormatSpecifiers[kNumSAMOutputFormatSpecifiers] = {

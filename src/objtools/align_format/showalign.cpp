@@ -3412,7 +3412,7 @@ string CDisplaySeqalign::x_FormatAlignSortInfo()
     alignSort = CAlignFormatUtil::MapTemplate(alignSort,"id_label",m_CurrAlnID_DbLbl);
     alignSort = CAlignFormatUtil::MapTemplate(alignSort,"alnSeqGi",m_CurrAlnID_Lbl);
     
-    string hsp_sort_value = m_Ctx->GetRequestValue("HSP_SORT").GetValue();
+    string hsp_sort_value =  m_Ctx ?  m_Ctx->GetRequestValue("HSP_SORT").GetValue() : kEmptyStr;
     int hsp_sort = hsp_sort_value == NcbiEmptyString ?  0 : NStr::StringToInt(hsp_sort_value);
     for(int i = 0; i < 5; i++) {
         if(hsp_sort == i) {
@@ -3666,9 +3666,9 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
 		alnDefLine = CAlignFormatUtil::MapTemplate(alnDefLine,"seq_info",alnGi + seqid); 
 	}
     string hspNum,isFirstDflAttr;
-    if(isFirst) {
-        string totalHsps = m_Ctx->GetRequestValue("TOTAL_HSPS").GetValue(); //Future use
-        m_TotalHSPNum = totalHsps.empty() ? m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber : NStr::StringToInt(totalHsps);
+    if(isFirst) {        
+        string totalHsps = m_Ctx ?  m_Ctx->GetRequestValue("TOTAL_HSPS").GetValue() : kEmptyStr; //Future use
+        m_TotalHSPNum =  totalHsps.empty() ? m_AlnLinksParams[m_AV->GetSeqId(1).GetSeqIdString()].hspNumber : NStr::StringToInt(totalHsps);
         hspNum = (m_TotalHSPNum != 0) ? NStr::IntToString(m_TotalHSPNum) : "";        
     }
     else {
@@ -3910,7 +3910,7 @@ void CDisplaySeqalign::x_ShowAlnvecInfoTemplate(CNcbiOstream& out,
 
         }
 		//start counting hsp
-		string currHsp = m_Ctx->GetRequestValue("HSP_START").GetValue();
+		string currHsp = m_Ctx ? m_Ctx->GetRequestValue("HSP_START").GetValue() : kEmptyStr;
 		m_currAlignHsp = currHsp.empty() ? 0: NStr::StringToInt(currHsp);        
     }    
     if (m_AlignOption&eShowBlastInfo) {
