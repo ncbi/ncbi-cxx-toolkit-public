@@ -207,7 +207,7 @@ string CPubseqGatewayCacheBioseqInfo::PackKey(const string& accession, int versi
     rv.reserve(accession.size() + 4);
     rv = accession;
     rv.append(1, 0);
-    int32_t ver = -version;
+    int32_t ver = ~version;
     rv.append(1, (ver >> 16) & 0xFF);
     rv.append(1, (ver >>  8) & 0xFF);
     rv.append(1,  ver        & 0xFF);
@@ -219,7 +219,7 @@ string CPubseqGatewayCacheBioseqInfo::PackKey(const string& accession, int versi
     rv.reserve(accession.size() + kPackedZeroSz + kPackedVersionSz + kPackedSeqIdTypeSz);
     rv = accession;
     rv.append(1, 0);
-    int32_t ver = -version;
+    int32_t ver = ~version;
     rv.append(1, (ver >> 16) & 0xFF);
     rv.append(1, (ver >>  8) & 0xFF);
     rv.append(1,  ver        & 0xFF);
@@ -238,9 +238,7 @@ bool CPubseqGatewayCacheBioseqInfo::UnpackKey(const char* key, size_t key_sz, in
             int32_t ver = (uint8_t(key[ofs]) << 16) |
                           (uint8_t(key[ofs + 1]) << 8) |
                            uint8_t(key[ofs + 2]);
-            if (ver != 0)
-                ver |= 0xFF000000;
-            version = -ver;
+            version = ~(ver | 0xFF000000);
             seq_id_type = (uint8_t(key[ofs + 3]) << 8) |
                            uint8_t(key[ofs + 4]);
         }

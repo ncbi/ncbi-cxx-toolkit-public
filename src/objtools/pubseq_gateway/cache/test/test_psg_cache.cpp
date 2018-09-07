@@ -11,6 +11,7 @@
 #include <objtools/pubseq_gateway/protobuf/psg_protobuf_data.hpp>
 
 #include <sstream>
+#include <climits>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -37,10 +38,10 @@ private:
     void PrintBioseqInfo(bool lookup_res, const string& accession, int version, int seq_id_type, const string& data);
     void PrintPrimaryId(bool lookup_res, const string& seq_id, int seq_id_type, const string& data);
     void PrintBlobProp(bool lookup_res, int sat, int sat_key, int64_t last_modified, const string& data);
-    void LookupBioseqInfoByPrimary(const string& fasta_seqid);
-    void LookupBioseqInfoByPrimary(const string& accession, int version, int seq_id_type);
-    void LookupBioseqInfoBySecondary(const string& fasta_seqid);
-    void LookupPrimaryBySecondary(const string& fasta_seqid);
+    void LookupBioseqInfoByPrimary(const string& fasta_seqid, int force_version, int force_seq_id_type);
+    void LookupBioseqInfoByPrimaryAVT(const string& accession, int version, int seq_id_type);
+    void LookupBioseqInfoBySecondary(const string& fasta_seqid, int force_seq_id_type);
+    void LookupPrimaryBySecondary(const string& fasta_seqid, int force_seq_id_type);
     void LookupBlobProp(int sat, int sat_key, int64_t last_modified = -1);
     vector<string> m_SatNames;
     string m_BioseqInfoDbFile;
@@ -49,6 +50,8 @@ private:
     unique_ptr<CPubseqGatewayCache> m_LookupCache;
     job_t m_job;
     string m_query;
+    int m_force_version;
+    int m_force_seq_id_type;
 };
 
 void CTestPsgCache::Init() {
@@ -56,9 +59,11 @@ void CTestPsgCache::Init() {
 	argdesc->SetUsageContext(GetArguments().GetProgramBasename(),
                              "test PSG cache");
 
-	argdesc->AddDefaultKey( "ini", "IniFile", "File with configuration information", CArgDescriptions::eString, "test_psg_cache.ini");
-    argdesc->AddOptionalKey( "j", "job", "Job type (bi_pri|bi_sec|si2csi|blob_prop)", CArgDescriptions::eString);
-    argdesc->AddKey( "q", "query", "Query string (depends on job type)", CArgDescriptions::eString);
+	argdesc->AddDefaultKey("ini", "IniFile", "File with configuration information", CArgDescriptions::eString, "test_psg_cache.ini");
+    argdesc->AddOptionalKey("j", "job", "Job type (bi_pri|bi_sec|si2csi|blob_prop)", CArgDescriptions::eString);
+    argdesc->AddKey("q", "query", "Query string (depends on job type)", CArgDescriptions::eString);
+    argdesc->AddDefaultKey("v", "ver", "Force version", CArgDescriptions::eInteger, to_string(INT_MIN));
+    argdesc->AddDefaultKey("t", "seqidtype", "Force seq_id_type", CArgDescriptions::eInteger, to_string(INT_MIN));
     SetupArgDescriptions(argdesc.release());
 }
 
@@ -84,6 +89,8 @@ void CTestPsgCache::ParseArgs() {
         m_job = it->second;
     }
     m_query = args["q"].AsString();
+    m_force_version = args["v"].AsInteger();
+    m_force_seq_id_type = args["t"].AsInteger();
 
 }
 
@@ -116,15 +123,15 @@ int CTestPsgCache::Run() {
 
     switch (m_job) {
         case job_t::jb_lookup_bi_primary: {
-            LookupBioseqInfoByPrimary(m_query);
+            LookupBioseqInfoByPrimary(m_query, m_force_version, m_force_seq_id_type);
             break;
         }
         case job_t::jb_lookup_bi_secondary: {
-            LookupBioseqInfoBySecondary(m_query);
+            LookupBioseqInfoBySecondary(m_query, m_force_seq_id_type);
             break;
         }
         case job_t::jb_lookup_primary_secondary: {
-            LookupPrimaryBySecondary(m_query);
+            LookupPrimaryBySecondary(m_query, m_force_seq_id_type);
             break;
         }
         case job_t::jb_lookup_blob_prop: {
@@ -166,6 +173,8 @@ bool CTestPsgCache::ParsePrimarySeqId(const string& fasta_seqid, string& accessi
                     accession = tx_id->GetAccession();
                     if (tx_id->IsSetVersion())
                         version = tx_id->GetVersion();
+                    else
+                        version = -1;
                 }
                 else if (tx_id->IsSetName()) {
                     accession = tx_id->GetName();
@@ -304,7 +313,7 @@ void CTestPsgCache::PrintBlobProp(bool lookup_res, int sat, int sat_key, int64_t
     }
 }
 
-void CTestPsgCache::LookupBioseqInfoByPrimary(const string& fasta_seqid) {
+void CTestPsgCache::LookupBioseqInfoByPrimary(const string& fasta_seqid, int force_version, int force_seq_id_type) {
     int version = -1;
     int seq_id_type = -1;
     string accession;
@@ -313,10 +322,16 @@ void CTestPsgCache::LookupBioseqInfoByPrimary(const string& fasta_seqid) {
     if (!res) 
         return;
 
-    LookupBioseqInfoByPrimary(accession, version, seq_id_type);
+    if (force_version != INT_MIN)
+        version = force_version;
+
+    if (force_seq_id_type != INT_MIN)
+        seq_id_type = force_seq_id_type;
+
+    LookupBioseqInfoByPrimaryAVT(accession, version, seq_id_type);
 }
 
-void CTestPsgCache::LookupBioseqInfoByPrimary(const string& accession, int version, int seq_id_type) {
+void CTestPsgCache::LookupBioseqInfoByPrimaryAVT(const string& accession, int version, int seq_id_type) {
     string data;
     bool res = false;
     if (version >= 0) {
@@ -334,7 +349,7 @@ void CTestPsgCache::LookupBioseqInfoByPrimary(const string& accession, int versi
     PrintBioseqInfo(res, accession, version, seq_id_type, data);
 }
 
-void CTestPsgCache::LookupBioseqInfoBySecondary(const string& fasta_seqid) {
+void CTestPsgCache::LookupBioseqInfoBySecondary(const string& fasta_seqid, int force_seq_id_type) {
     int seq_id_type = -1;
     string seq_id;
     string data;
@@ -345,6 +360,9 @@ void CTestPsgCache::LookupBioseqInfoBySecondary(const string& fasta_seqid) {
         seq_id = fasta_seqid;
         seq_id_type = -1;
     }
+
+    if (force_seq_id_type != INT_MIN)
+        seq_id_type = force_seq_id_type;
 
     if (seq_id_type >= 0)
         res = m_LookupCache->LookupCsiBySeqIdSeqIdType(seq_id, seq_id_type, data);
@@ -356,12 +374,12 @@ void CTestPsgCache::LookupBioseqInfoBySecondary(const string& fasta_seqid) {
     else {
         ::psg::retrieval::si2csi_value value;
         CPubseqGatewayData::UnpackSiInfo(data, value);
-        LookupBioseqInfoByPrimary(value.accession(), value.version(), value.seq_id_type());
+        LookupBioseqInfoByPrimaryAVT(value.accession(), value.version(), value.seq_id_type());
     }
     
 }
 
-void CTestPsgCache::LookupPrimaryBySecondary(const string& fasta_seqid) {
+void CTestPsgCache::LookupPrimaryBySecondary(const string& fasta_seqid, int force_seq_id_type) {
     int seq_id_type = -1;
     string seq_id;
     string data;
@@ -372,6 +390,10 @@ void CTestPsgCache::LookupPrimaryBySecondary(const string& fasta_seqid) {
         seq_id = fasta_seqid;
         seq_id_type = -1;
     }
+
+    if (force_seq_id_type != INT_MIN)
+        seq_id_type = force_seq_id_type;
+
 
     if (seq_id_type >= 0)
         res = m_LookupCache->LookupCsiBySeqIdSeqIdType(seq_id, seq_id_type, data);
