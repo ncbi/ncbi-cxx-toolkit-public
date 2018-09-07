@@ -50,6 +50,7 @@ Author: Jason Papadopoulos
 #include <algo/blast/format/blastxml2_format.hpp>
 #include <algo/blast/format/data4xml2format.hpp>       /* NCBI_FAKE_WARNING */
 #include <algo/blast/format/build_archive.hpp>
+#include <misc/jsonwrapp/jsonwrapp.hpp>
 #include <serial/objostrxml.hpp>
 
 #include <corelib/ncbistre.hpp>
@@ -517,7 +518,7 @@ CBlastFormat::x_SplitSeqAlign(CConstRef<CSeq_align_set> full_alignment,
             new_seqs.Set().push_back(*alignment);
         }
         count++;
-        if(count >= m_NumSummary)
+        if(count >= (unsigned int)m_NumSummary)
         	break;
     }
 }
@@ -1079,6 +1080,172 @@ CBlastFormat::WriteArchive(objects::CPssmWithParameters & pssm,
     PrintArchive(archive, m_Outfile);
 }
 
+
+void CBlastFormat::x_DisplayDeflinesWithTemplates(CConstRef<CSeq_align_set> aln_set)
+{
+    x_InitDeflineTemplates();
+    _ASSERT(m_DeflineTemplates);
+
+    int delineFormatOption = 0;
+    CShowBlastDefline deflines(*aln_set, *m_Scope,kFormatLineLength,m_NumSummary);
+         
+    deflines.SetQueryNumber(1);//m_Query_number
+    deflines.SetDbType (!m_DbIsAA);
+    deflines.SetDbName(m_DbName);    
+    delineFormatOption |= CShowBlastDefline::eHtml;
+    delineFormatOption |= CShowBlastDefline::eShowPercentIdent;        
+    deflines.SetOption(delineFormatOption); //m_defline_option
+    deflines.SetDeflineTemplates (m_DeflineTemplates);    
+      
+    deflines.Init();    
+    deflines.Display(m_Outfile);        
+}
+
+
+void CBlastFormat::x_DisplayAlignsWithTemplates(CConstRef<CSeq_align_set> aln_set,const blast::CSearchResults& results)
+{
+    x_InitAlignTemplates();
+    _ASSERT(m_AlignTemplates);
+
+    TMaskedQueryRegions masklocs;
+    results.GetMaskedQueryRegions(masklocs);
+
+    CSeq_align_set copy_aln_set;        
+    CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, m_NumAlignments);
+
+    CRef<CSeq_align_set> seqAlnSet(const_cast<CSeq_align_set*>(&copy_aln_set));      
+    if(!m_AlignSeqList.empty()) {                    
+        CAlignFormatUtil::ExtractSeqAlignForSeqList(seqAlnSet, m_AlignSeqList);
+    }                          
+
+    CDisplaySeqalign display(*seqAlnSet, *m_Scope, &masklocs, NULL, m_MatrixName);
+    x_SetAlignParameters(display);
+    display.SetAlignTemplates(m_AlignTemplates);    
+         
+    display.DisplaySeqalign(m_Outfile);    
+}
+
+void CBlastFormat::x_InitDeflineTemplates(void)
+{
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if(!app) return;
+    const CNcbiRegistry& reg = app->GetConfig();
+        
+      
+    m_DeflineTemplates = new CShowBlastDefline::SDeflineTemplates;      
+    string defLineTmpl;
+    
+    m_DeflineTemplates->defLineTmpl = reg.Get("Templates", "DFL_TABLE_ROW");    
+    m_DeflineTemplates->scoreInfoTmpl = reg.Get("Templates", "DFL_TABLE_SCORE_INFO");    
+    m_DeflineTemplates->seqInfoTmpl = reg.Get("Templates", "DFL_TABLE_SEQ_INFO");      
+    m_DeflineTemplates->advancedView = true;
+}
+
+void CBlastFormat::x_InitAlignTemplates(void)
+{
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if(!app) return;
+    const CNcbiRegistry& reg = app->GetConfig();
+
+    m_AlignTemplates = new CDisplaySeqalign::SAlignTemplates;
+    
+    m_AlignTemplates->alignHeaderTmpl = reg.Get("Templates", "BLAST_ALIGN_HEADER");           
+    string blastAlignParamsTemplData = reg.Get("Templates", "BLAST_ALIGN_PARAMS");     
+    string blastAlignParamsTag = (m_Program == "blastn") ? "ALIGN_PARAMS_NUC" : "ALIGN_PARAMS_PROT";     
+    string blastAlignProtParamsTable = reg.Get("Templates", blastAlignParamsTag);     
+    m_AlignTemplates->alignInfoTmpl = CAlignFormatUtil::MapTemplate(blastAlignParamsTemplData,"align_params",blastAlignProtParamsTable);    
+    m_AlignTemplates->sortInfoTmpl = reg.Get("Templates", "SORT_ALIGNS_SEQ");    
+    m_AlignTemplates->alignFeatureTmpl = reg.Get("Templates", "ALN_FEATURES");     
+    m_AlignTemplates->alignFeatureLinkTmpl = reg.Get("Templates", "ALN_FEATURES_LINK");
+
+	m_AlignTemplates->alnDefLineTmpl = reg.Get("Templates", "ALN_DEFLINE_ROW");     
+    m_AlignTemplates->alnTitlesLinkTmpl = reg.Get("Templates", "ALN_DEFLINE_TITLES_LNK");    
+    m_AlignTemplates->alnTitlesTmpl = reg.Get("Templates", "ALN_DEFLINE_TITLES");   
+    m_AlignTemplates->alnSeqInfoTmpl = reg.Get("Templates", "ALN_DEFLINE_SEQ_INFO");         
+    m_AlignTemplates->alignRowTmpl = reg.Get("Templates", "BLAST_ALIGN_ROWS");
+    m_AlignTemplates->alignRowTmplLast = reg.Get("Templates", "BLAST_ALIGN_ROWS_LST");
+}
+
+
+
+void CBlastFormat::x_SetAlignParameters(CDisplaySeqalign& cds)
+{
+ 
+    int AlignOption = 0;
+    
+    AlignOption += CDisplaySeqalign::eShowMiddleLine;
+            
+    if (m_Program == "tblastx") {
+        AlignOption += CDisplaySeqalign::eTranslateNucToNucAlignment;
+    }
+    AlignOption += CDisplaySeqalign::eShowBlastInfo;
+    AlignOption += CDisplaySeqalign::eShowBlastStyleId;    
+    AlignOption += CDisplaySeqalign::eHtml;
+    AlignOption += CDisplaySeqalign::eShowSortControls;//*******????    
+    AlignOption += CDisplaySeqalign::eDynamicFeature;
+    cds.SetAlignOption(AlignOption);
+
+    cds.SetDbName(m_DbName);
+    cds.SetDbType(!m_DbIsAA);
+    cds.SetLineLen(m_LineLength);
+
+    if (m_Program == "blastn" || m_Program == "megablast") {
+        cds.SetMiddleLineStyle (CDisplaySeqalign::eBar);
+        cds.SetAlignType(CDisplaySeqalign::eNuc);
+    } else {
+        cds.SetMiddleLineStyle (CDisplaySeqalign::eChar);
+        cds.SetAlignType(CDisplaySeqalign::eProt);
+    }
+    cds.SetQueryNumber(1); //m_Query_number    
+    cds.SetSeqLocChar (CDisplaySeqalign::eLowerCase);
+    cds.SetSeqLocColor ( CDisplaySeqalign::eGrey);    
+    cds.SetMasterGeneticCode(m_QueryGenCode);
+    cds.SetSlaveGeneticCode(m_DbGenCode);
+}
+
+
+
+void
+CBlastFormat::PrintReport(const blast::CSearchResults& results,
+                          CBlastFormat::DisplayOption displayOption)                        
+{
+    CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
+    _ASSERT(results.HasAlignments());
+    if (m_IsUngappedSearch) {
+        aln_set.Reset(CDisplaySeqalign::PrepareBlastUngappedSeqalign(*aln_set));
+    }
+        
+    if (displayOption == eMetadata) {//Metadata in json format
+        CBioseq_Handle bhandle = m_Scope->GetBioseqHandle(*results.GetSeqId(), CScope::eGetBioseq_All);
+        CConstRef<CBioseq> bioseq = bhandle.GetBioseqCore();
+        string all_id_str = CAlignFormatUtil::GetSeqIdString(*bioseq, m_BelieveQuery);
+        int length = 0;
+        if(bioseq->IsSetInst() && bioseq->GetInst().CanGetLength()){            
+            length = bioseq->GetInst().GetLength();
+        }
+        
+        CJson_Document doc;
+        CJson_Object obj = doc.SetObject();
+        obj.insert("Query",all_id_str);
+        obj.insert("Length",NStr::IntToString(length));
+        obj.insert("Database",m_DbName);
+        obj.insert("Program",m_Program);        
+        //CBlastFormatUtil::GetBlastDbInfo(m_DbInfo, m_DbName, m_DbIsAA);
+        if (results.HasErrors()) {     
+            obj.insert("Error",results.GetErrorStrings());            
+        }
+        if (results.HasWarnings()) {
+            obj.insert("Warning",results.GetWarningStrings());            
+        }
+        doc.Write(m_Outfile);
+    }
+    else if (displayOption == eDescriptions) {//Descriptions with html templates
+        x_DisplayDeflinesWithTemplates(aln_set);
+    }            
+    else if (displayOption == eAlignments) {// print the alignments with html templates
+        x_DisplayAlignsWithTemplates(aln_set,results);
+    }     
+}
 
 void
 CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
