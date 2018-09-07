@@ -139,6 +139,7 @@ bdb2ez needs xser
 bdbasncli needs bdb2ez
 bdbasncli needs xconnect
 biblio needs general
+binary_quality_profile needs xncbi
 biocollect needs ncbi_xdbapi_ftds
 biosample needs $(SDBAPI_LIB)
 biosample needs xmlwrapp
