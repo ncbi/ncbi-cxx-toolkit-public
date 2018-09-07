@@ -180,6 +180,7 @@ AMNH	sb	American Museum of Natural History
 AMNH:Fish	s	American Museum of Natural History, Ichthyology Collection		
 AMNH:FM	s	American Museum of Natural History, Fossil Mammal Collection	http://www.amnh.org/our-research/paleontology/collections/fossil-mammals/
 AMNH:Herp	s	American Museum of Natural History, Herpetology collection		
+AMNH:M	s	American Museum of Natural History, Mammal collection	
 AMNH:ORN	s	American Museum of Natural History, Ornithology Collection		
 AMNH:R	s	American Museum of Natural History, Reptile Collection		
 AMNH<ISL>	s	Icelandic Institute of Natural History, Akureyri Division			
@@ -188,6 +189,7 @@ AMO	s	Herbario AMO
 AMP<AUS>	c	Australian Mycological Panel			
 AMP<GBR>	s	Ampleforth College			
 AMS	s	Australian Museum	AM		
+AMS:R	s	Australian Museum, Reptile collection	
 AMUZ	s	Aligarh Muslim University			
 ANA	s	Orange County Department of Agriculture			
 ANACC<AUS>	c	Australian National Algae Culture Collection	CS		
@@ -4009,6 +4011,7 @@ MHU	s	Makerere University, Botany Department
 MHUA	s	Museo de Herpetologia de la Universidad de Antioquia			
 MHV	s	Musee de Haute Volta			
 MHWK	s	Much Wenlock Museum			
+MHYAU	s	Yunnan Agricultural University			
 MI	s	Universita degli Studi di Milano, Dipartimento di Biologia			
 MIB	s	University of Milano - Bicocca, Department of Biotechnology and Biosciences			
 MIB:ZPL	s	University of Milano - Bicocca, Department of Biotechnology and Biosciences, ZooPlantLab		
