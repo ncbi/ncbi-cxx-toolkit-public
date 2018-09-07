@@ -9,7 +9,7 @@ SRC = unit_test_discrepancy
 
 CPPFLAGS = $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
 
-LIB = xdiscrepancy test_boost macro $(SEQ_LIBS) $(OBJMGR_LIBS) $(OBJREAD_LIBS) xncbi
+LIB = xdiscrepancy xobjutil valid test_boost macro $(SEQ_LIBS) $(OBJMGR_LIBS) $(OBJREAD_LIBS) xregexp xncbi
 
 LIBS = $(PCRE_LIBS) $(ORIG_LIBS)
 
