@@ -78,14 +78,19 @@ public:
         double identity;
         string productive;
     };
-
-    
+        
     enum {
         /// The line length of pairwise blast output
         kFormatLineLength = 68,
         kMinTaxFormatLineLength = 100
     };
 
+    ///Display options for blast_report
+    enum DisplayOption {
+        eDescriptions,
+        eAlignments,
+        eMetadata
+    };
     /// Constructor
     /// @param opts BLAST options used in the search [in]
     /// @param db_adapter Adapter object representing a BLAST database or
@@ -249,6 +254,15 @@ public:
                            blast::CPsiBlastIterationState::TSeqIds prev_seqids =
                            blast::CPsiBlastIterationState::TSeqIds());
 
+    ///Print Metadata in json format or descriptions in html format or alignments in html format
+    ///app.ini file with template info must be present
+    /// @param results Object containing alignments, mask regions, and
+    ///                ancillary data to be output [in]
+    /// @param displayOption indicates what info to display
+    void PrintReport(const blast::CSearchResults& results,              
+                        CBlastFormat::DisplayOption displayOption);
+
+
     /// Writes out the query and results as an "archive" format
     /// @param queries Query factory to provide queries
     /// @param options_handle BLAST options
@@ -298,7 +312,10 @@ public:
     void SetBaseFile(string base) {m_BaseFile = base;}
 
     /// Set Alignment Length
-    void SetLineLength(size_t len) {m_LineLength = len;}
+    void SetLineLength(size_t len) {m_LineLength = len;}    
+    void SetAlignSeqList(string alignSeqList) {m_AlignSeqList = alignSeqList;}
+    
+    
 
     static void PrintArchive(CRef<objects::CBlast4_archive> archive,
             					  CNcbiOstream& out);
@@ -389,6 +406,11 @@ private:
 
     /// If true, print long sequence ids (database|accession)
     bool m_LongSeqId;
+    
+    
+    CShowBlastDefline::SDeflineTemplates *m_DeflineTemplates;
+    CDisplaySeqalign::SAlignTemplates *m_AlignTemplates;
+    string m_AlignSeqList;
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]
@@ -492,6 +514,11 @@ private:
 
    void x_InitSAMFormatter();
    void x_PrintTaxReport(const blast::CSearchResults& results);
+   void x_InitDeflineTemplates(void);
+   void x_InitAlignTemplates(void);
+   void x_DisplayDeflinesWithTemplates(CConstRef<CSeq_align_set> aln_set);
+   void x_SetAlignParameters(CDisplaySeqalign& cds);
+   void x_DisplayAlignsWithTemplates(CConstRef<CSeq_align_set> aln_set,const blast::CSearchResults& results);
 };
 
 END_NCBI_SCOPE
