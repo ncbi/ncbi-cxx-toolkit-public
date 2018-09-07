@@ -93,6 +93,8 @@ elseif (XCODE)
         set(NCBI_POSIX_THREADS 1)
     endif (CMAKE_USE_PTHREADS_INIT)
 
+    set(NCBI_DEFAULT_USEPCH ON)
+
     return()
 
 #----------------------------------------------------------------------------
