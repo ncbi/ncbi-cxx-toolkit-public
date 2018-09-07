@@ -124,6 +124,9 @@ macro(NCBI_define_component _name)
     foreach(_lib IN LISTS _args)
       set(NCBI_COMPONENT_${_name}_LIBS ${NCBI_COMPONENT_${_name}_LIBS} ${_root}/${_libtype}/\$\(Configuration\)/${_lib})
     endforeach()
+    if (EXISTS ${_root}/bin)
+      set(NCBI_COMPONENT_${_name}_BINPATH ${_root}/bin)
+    endif()
 #message("NCBI_COMPONENT_${_name}_INCLUDE ${NCBI_COMPONENT_${_name}_INCLUDE}")
 #message("NCBI_COMPONENT_${_name}_LIBS ${NCBI_COMPONENT_${_name}_LIBS}")
 
@@ -324,6 +327,8 @@ set(NCBI_COMPONENT_VDB_INCLUDE
   ${NCBI_ThirdParty_VDB}/interfaces/os/win)
 set(NCBI_COMPONENT_VDB_LIBS
   ${NCBI_ThirdParty_VDB}/win/release/${NCBI_ThirdParty_VDB_ARCH}/bin/ncbi-vdb-md.lib)
+set(NCBI_COMPONENT_VDB_BINPATH
+  ${NCBI_ThirdParty_VDB}/win/release/${NCBI_ThirdParty_VDB_ARCH}/bin)
 
 set(_found YES)
 foreach(_inc IN LISTS NCBI_COMPONENT_VDB_INCLUDE NCBI_COMPONENT_VDB_LIBS)

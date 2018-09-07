@@ -66,13 +66,17 @@ OPTIONS:
   --without-dll              -- build all libraries as static ones (default)
   --with-dll                 -- build all libraries as shared ones,
                                 unless explicitely requested otherwise
-  --with-ccache              -- use ccache if available
-  --with-distcc              -- use distcc if available
-  --without-experimental     -- disable experimental configuration
   --with-projects='FILE'     -- build projects listed in ${tree_root}/FILE
                                 FILE can also be a list of subdirectories of ${tree_root}/src
                     examples:   --with-projects='corelib$;serial'
                                 --with-projects=scripts/projects/ncbi_cpp.lst
+  --with-tags='tags'         -- build projects which have allowed tags only
+                    examples:   --with-tags='*;-test'
+  --with-targets='names'     -- build projects which have allowed names only
+                    examples:   --with-targets='datatool;xcgi$'
+  --with-ccache              -- use ccache if available
+  --with-distcc              -- use distcc if available
+  --without-experimental     -- disable experimental configuration
   --with-generator='X'       -- use generator X
 EOF
 
@@ -149,6 +153,18 @@ while [ $# != 0 ]; do
         project_list="${tree_root}/$project_list"
       fi
       ;; 
+    --with-tags=*)
+      project_tags=${1#*=}
+      if [ -e "${tree_root}/$project_tags" ]; then
+        project_tags="${tree_root}/$project_tags"
+      fi
+      ;; 
+    --with-targets=*)
+      project_targets=${1#*=}
+      if [ -e "${tree_root}/$project_targets" ]; then
+        project_targets="${tree_root}/$project_targets"
+      fi
+      ;; 
     *) 
       Error "unknown option: $1" 
       ;; 
@@ -182,6 +198,8 @@ if [ -n "$generator" ]; then
   CMAKE_ARGS="$CMAKE_ARGS -G $(Quote "$generator")"
 fi
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_LIST=$(Quote "${project_list}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TAGS=$(Quote "${project_tags}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TARGETS=$(Quote "${project_targets}")"
 CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
 CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
 if test "$generator" = "Xcode"; then

@@ -44,6 +44,10 @@ echo                              FILE can also be a list of subdirectories of
 echo                              %tree_root%\src
 echo                  examples:   --with-projects="corelib$;serial"
 echo                              --with-projects=scripts/projects/ncbi_cpp.lst
+echo   --with-tags="tags"      -- build projects which have allowed tags only
+echo                  examples:   --with-tags="*;-test"
+echo   --with-targets="names"  -- build projects which have allowed names only
+echo                  examples:   --with-targets="datatool;xcgi$"
 echo   --with-vs=N             -- use Visual Studio N generator 
 echo                  examples:   --with-vs=2017  (default)
 echo                              --with-vs=2015
@@ -88,12 +92,16 @@ set dest=
 :PARSEARGS
 if "%~1"=="" goto :ENDPARSEARGS
 if "%dest%"=="lst"                      (set project_list=%~1&  set dest=& goto :CONTINUEPARSEARGS)
+if "%dest%"=="tag"                      (set project_tags=%~1&  set dest=& goto :CONTINUEPARSEARGS)
+if "%dest%"=="nam"                      (set project_targets=%~1&  set dest=& goto :CONTINUEPARSEARGS)
 if "%dest%"=="vs"                       (set VISUAL_STUDIO=%~1& set dest=& goto :CONTINUEPARSEARGS)
 if "%dest%"=="gen"                      (set generator=%~1&     set dest=& goto :CONTINUEPARSEARGS)
 if "%1"=="--help"                       (call :USAGE&       exit /b 0)
 if "%1"=="--without-dll"                (set BUILD_SHARED_LIBS=OFF&  goto :CONTINUEPARSEARGS)
 if "%1"=="--with-dll"                   (set BUILD_SHARED_LIBS=ON&   goto :CONTINUEPARSEARGS)
 if "%1"=="--with-projects"              (set dest=lst&               goto :CONTINUEPARSEARGS)
+if "%1"=="--with-tags"                  (set dest=tag&               goto :CONTINUEPARSEARGS)
+if "%1"=="--with-targets"               (set dest=nam&               goto :CONTINUEPARSEARGS)
 if "%1"=="--with-vs"                    (set dest=vs&                goto :CONTINUEPARSEARGS)
 if "%1"=="--with-generator"             (set dest=gen&               goto :CONTINUEPARSEARGS)
 set unknown=%unknown% %1
@@ -125,6 +133,16 @@ if not "%project_list%"=="" (
     set project_list=%tree_root%\%project_list%
   )
 )
+if not "%project_tags%"=="" (
+  if exist "%tree_root%\%project_tags%" (
+    set project_tags=%tree_root%\%project_tags%
+  )
+)
+if not "%project_targets%"=="" (
+  if exist "%tree_root%\%project_targets%" (
+    set project_targets=%tree_root%\%project_targets%
+  )
+)
 
 REM #########################################################################
 
@@ -134,6 +152,8 @@ if not "%generator%"=="" (
   set CMAKE_ARGS=%CMAKE_ARGS% -G "%generator%"
 )
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_LIST="%project_list%"
+set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TAGS="%project_tags%"
+set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TARGETS="%project_targets%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS%
 
 set build_root=compilers\CMake-%generator_name%
