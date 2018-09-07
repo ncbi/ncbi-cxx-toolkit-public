@@ -518,9 +518,6 @@ string CSearch_func::GetRegex() const
                             }
                         }
                     }
-                    if (constr.IsSetIgnore_weasel()) {
-                        str += "|candidate|hypothetical|novel|possible|potential|predicted|probable|putative|candidate|uncharacterized|unique";
-                    }
                     str = "/" + str + "/i";
                     return str;
                 }
