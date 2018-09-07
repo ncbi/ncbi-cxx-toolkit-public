@@ -1,0 +1,19 @@
+##gff-version 3.2.1
+##sequence-region LG01_ordered_scaffold_0 1 464521
+LG01_ordered_scaffold_0	maker	gene	9979	28456	.	+	.	ID=C3L33_00001;Name=C3L33_00001;Alias=maker-LG01_ordered_scaffold_0-augustus-gene-0.5;
+LG01_ordered_scaffold_0	maker	five_prime_UTR	9979	10401	.	+	.	ID=C3L33_00001-RA:five_prime_utr;Parent=C3L33_00001-RA;
+LG01_ordered_scaffold_0	maker	five_prime_UTR	10497	10917	.	+	.	ID=C3L33_00001-RA:five_prime_utr;Parent=C3L33_00001-RA;
+LG01_ordered_scaffold_0	maker	five_prime_UTR	17860	17876	.	+	.	ID=C3L33_00001-RA:five_prime_utr;Parent=C3L33_00001-RA;
+LG01_ordered_scaffold_0	maker	mRNA	9979	28456	.	+	.	ID=C3L33_00001-RA;Parent=C3L33_00001;Name=C3L33_00001-RA;Alias=maker-LG01_ordered_scaffold_0-augustus-gene-0.5-mRNA-1;_AED=0.22;_QI=861|0|0|0.85|0|0|14|0|1452;_eAED=0.22;
+#LG01_ordered_scaffold_0	maker	CDS	17877	18070	.	+	0	ID=C3L33_00001-RA:cds;Parent=C3L33_00001-RA;
+#LG01_ordered_scaffold_0	maker	CDS	18719	18830	.	+	1	ID=C3L33_00001-RA:cds;Parent=C3L33_00001-RA;
+#LG01_ordered_scaffold_0	maker	CDS	19034	19349	.	+	0	ID=C3L33_00001-RA:cds;Parent=C3L33_00001-RA;
+#LG01_ordered_scaffold_0	maker	CDS	19432	19908	.	+	2	ID=C3L33_00001-RA:cds;Parent=C3L33_00001-RA;
+#LG01_ordered_scaffold_0	maker	CDS	19988	21807	.	+	2	ID=C3L33_00001-RA:cds;Parent=C3L33_00001-RA;
+#LG01_ordered_scaffold_0	maker	CDS	23492	23788	.	+	0	ID=C3L33_00001-RA:cds;Parent=C3L33_00001-RA;
+#LG01_ordered_scaffold_0	maker	CDS	23875	24153	.	+	0	ID=C3L33_00001-RA:cds;Parent=C3L33_00001-RA;
+#LG01_ordered_scaffold_0	maker	CDS	26478	26606	.	+	0	ID=C3L33_00001-RA:cds;Parent=C3L33_00001-RA;
+#LG01_ordered_scaffold_0	maker	CDS	26771	26975	.	+	0	ID=C3L33_00001-RA:cds;Parent=C3L33_00001-RA;
+#LG01_ordered_scaffold_0	maker	CDS	27114	27186	.	+	2	ID=C3L33_00001-RA:cds;Parent=C3L33_00001-RA;
+#LG01_ordered_scaffold_0	maker	CDS	27362	27674	.	+	1	ID=C3L33_00001-RA:cds;Parent=C3L33_00001-RA;
+#LG01_ordered_scaffold_0	maker	CDS	28313	28456	.	+	0	ID=C3L33_00001-RA:cds;Parent=C3L33_00001-RA;
