@@ -111,9 +111,6 @@ public:
     TFrame Phase() const {
         return IsSetPhase() ? *m_pePhase : CCdregion::eFrame_not_set; 
     };
-    const string& AttributesLiteral() const { 
-        return m_strAttributes; 
-    };
 
     bool IsSetScore() const { 
         return m_pdScore != 0; 

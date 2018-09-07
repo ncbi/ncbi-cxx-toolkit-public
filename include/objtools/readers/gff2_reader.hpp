@@ -127,14 +127,6 @@ public:
     //
     //  new stuff: 
     //
-    bool x_ParseBrowserLineGff(
-        const string&,
-        CRef< CAnnotdesc >& );
-        
-    virtual bool x_ParseTrackLineGff(
-        const string&,
-        CRef< CAnnotdesc >& );
-                                
     virtual bool xParseStructuredComment(
         const string&);
     
@@ -203,7 +195,7 @@ public:
         CRef< CSeq_annot >,
         ILineErrorListener* =0);
 
-    virtual bool x_UpdateAnnotFeature(
+    virtual bool xUpdateAnnotFeature(
         const CGff2Record&,
         CRef< CSeq_annot >,
         ILineErrorListener* =0);

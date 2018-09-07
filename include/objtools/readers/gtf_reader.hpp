@@ -76,7 +76,7 @@ public:
 protected:
     virtual CGff2Record* x_CreateRecord() { return new CGtfReadRecord(); };    
 
-    virtual bool x_UpdateAnnotFeature(
+    virtual bool xUpdateAnnotFeature(
         const CGff2Record&,
         CRef< CSeq_annot >,
         ILineErrorListener* =0);

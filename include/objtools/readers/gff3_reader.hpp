@@ -100,7 +100,7 @@ protected:
         const CGff2Record&,
         CRef<CSeq_feat> );
 
-    virtual bool x_UpdateAnnotFeature(
+    virtual bool xUpdateAnnotFeature(
         const CGff2Record&,
         CRef< CSeq_annot >,
         ILineErrorListener*);
