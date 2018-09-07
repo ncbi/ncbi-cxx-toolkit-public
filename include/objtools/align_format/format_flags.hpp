@@ -76,6 +76,12 @@ NCBI_ALIGN_FORMAT_EXPORT extern string kDfltArgTabularOutputFmt;
 NCBI_ALIGN_FORMAT_EXPORT extern const string kDfltArgTabularOutputFmtTag;
 
 NCBI_ALIGN_FORMAT_EXPORT extern const size_t kDfltLineLength;
+NCBI_ALIGN_FORMAT_EXPORT extern const string kArgAlignSeqList;
+NCBI_ALIGN_FORMAT_EXPORT extern const string kArgMetadata;
+NCBI_ALIGN_FORMAT_EXPORT extern const string kArgQueryIndex;
+
+
+
 
 /// Enumeration for all fields that are supported in the tabular output
 enum ETabularField {
