@@ -429,7 +429,7 @@ CGff2Reader::xParseFeature(
     }
 
     //append feature to annot:
-    if (!x_UpdateAnnotFeature(*pRecord, pAnnot, pEC)) {
+    if (!xUpdateAnnotFeature(*pRecord, pAnnot, pEC)) {
         return false;
     }
 
@@ -839,86 +839,7 @@ bool CGff2Reader::x_ParseAlignmentGff(
     return true; 
 };
 
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_ParseBrowserLineGff(
-    const string& strRawInput,
-    CRef< CAnnotdesc >& pAnnotDesc )
-//  ----------------------------------------------------------------------------
-{ 
-    if ( ! NStr::StartsWith( strRawInput, "browser" ) ) {
-        return false;
-    }
-    vector< string > columns;
-    NStr::Split( strRawInput, " \t", columns, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate );
 
-    if ( columns.size() <= 1 || 1 != ( columns.size() % 2 ) ) {
-        // don't know how to unwrap this
-        pAnnotDesc.Reset();
-        return true;
-    }    
-    pAnnotDesc.Reset( new CAnnotdesc );
-    CUser_object& user = pAnnotDesc->SetUser();
-    user.SetType().SetStr( "browser" );
-
-    for ( size_t u = 1 /* skip "browser" */; u < columns.size(); u += 2 ) {
-        user.AddField( columns[ u ], columns[ u+1 ] );
-    }
-    return true; 
-};
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_ParseTrackLineGff(
-    const string& strRawInput,
-    CRef< CAnnotdesc >& pAnnotDesc )
-//  ----------------------------------------------------------------------------
-{ 
-    const char cBlankReplace( '+' );
-
-    if ( ! NStr::StartsWith( strRawInput, "track" ) ) {
-        return false;
-    }
-
-    string strCookedInput( strRawInput );
-    bool bInString = false;
-    for ( size_t u=0; u < strCookedInput.length(); ++u ) {
-        if ( strCookedInput[u] == ' ' && bInString ) {
-            strCookedInput[u] = cBlankReplace;
-        }
-        if ( strCookedInput[u] == '\"' ) {
-            bInString = !bInString;
-        }
-    }
-    vector< string > columns;
-    NStr::Split( strCookedInput, " \t", columns, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate );
-
-    if ( columns.size() <= 1 ) {
-        pAnnotDesc.Reset();
-        return true;
-    } 
-    pAnnotDesc.Reset( new CAnnotdesc );
-    CUser_object& user = pAnnotDesc->SetUser();
-    user.SetType().SetStr( "track" );
-
-    for ( size_t u = 1 /* skip "track" */; u < columns.size(); ++u ) {
-        string strKey;
-        string strValue;
-        NStr::SplitInTwo( columns[u], "=", strKey, strValue );
-        NStr::TruncateSpacesInPlace( strKey, NStr::eTrunc_End );
-        if ( NStr::StartsWith( strValue, "\"" ) && NStr::EndsWith( strValue, "\"" ) ) {
-            strValue = strValue.substr( 1, strValue.length() - 2 );
-        }
-        for ( unsigned u = 0; u < strValue.length(); ++u ) {
-            if ( strValue[u] == cBlankReplace ) {
-                strValue[u] = ' ';
-            }
-        } 
-        NStr::TruncateSpacesInPlace( strValue, NStr::eTrunc_Begin );
-        user.AddField( strKey, strValue );
-    }
-       
-    return true; 
-};
- 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_InitAnnot(
     const CGff2Record& gff,
@@ -954,12 +875,12 @@ bool CGff2Reader::x_InitAnnot(
     }
     else {
         pAnnot->SetData().SetFtable();
-        return x_UpdateAnnotFeature( gff, pAnnot, pEC );
+        return xUpdateAnnotFeature( gff, pAnnot, pEC );
     }
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Reader::x_UpdateAnnotFeature(
+bool CGff2Reader::xUpdateAnnotFeature(
     const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot,
     ILineErrorListener* pEC)
@@ -1064,8 +985,8 @@ bool CGff2Reader::xSetSplicedExon(
     }
 
 
-    pExon->SetGenomic_start(gff.SeqStart()-1);
-    pExon->SetGenomic_end(gff.SeqStop()-1);
+    pExon->SetGenomic_start(static_cast<TSeqPos>(gff.SeqStart()-1));
+    pExon->SetGenomic_end(static_cast<TSeqPos>(gff.SeqStop()-1));
     if (gff.IsSetStrand()) {
         pExon->SetGenomic_strand(gff.Strand());
     }
@@ -1234,7 +1155,8 @@ bool CGff2Reader::xSetDensegStarts(const vector<string>& gapParts,
 
     if (identStrand == eNa_strand_minus) {
 
-        if ( !xGetStartsOnMinusStrand(gff.SeqStop(),
+        if ( !xGetStartsOnMinusStrand(
+            static_cast<TSeqPos>(gff.SeqStop()),
             gapParts,
             isIdent,
             identStarts)) {
@@ -1242,7 +1164,8 @@ bool CGff2Reader::xSetDensegStarts(const vector<string>& gapParts,
         }
     }
     else {
-        if ( !xGetStartsOnPlusStrand(gff.SeqStart(),
+        if ( !xGetStartsOnPlusStrand(
+            static_cast<TSeqPos>(gff.SeqStart()),
             gapParts,
             isIdent,
             identStarts)) {
@@ -1321,10 +1244,8 @@ bool CGff2Reader::xAlignmentSetSpliced_seg(
     exon->SetProduct_start().SetNucpos(NStr::StringToInt(targetParts[1])-1);
     exon->SetProduct_end().SetNucpos(NStr::StringToInt(targetParts[2])-1);
 
-    const auto genomic_start = gff.SeqStart();
-    const auto genomic_end = gff.SeqStop();
-    exon->SetGenomic_start(genomic_start);
-    exon->SetGenomic_end(genomic_end);
+    exon->SetGenomic_start(static_cast<TSeqPos>(gff.SeqStart()));
+    exon->SetGenomic_end(static_cast<TSeqPos>(gff.SeqStop()));
 
     string gapInfo;
     vector<string> gapParts;
@@ -1398,7 +1319,7 @@ bool CGff2Reader::xAlignmentSetDenseg(
         gapParts.push_back(string("M") + NStr::NumericToString(gff.SeqStop()-gff.SeqStart()+1));
     }
 
-    int gapCount = gapParts.size();
+    int gapCount = static_cast<int>(gapParts.size());
 
     //meta
     CSeq_align::TSegs& segs = pAlign->SetSegs();
@@ -1519,8 +1440,8 @@ bool CGff2Reader::x_FeatureSetLocation(
     CRef< CSeq_id > pId = mSeqIdResolve(record.Id(), m_iFlags, true);
     CRef< CSeq_loc > pLocation( new CSeq_loc );
     pLocation->SetInt().SetId( *pId );
-    pLocation->SetInt().SetFrom( record.SeqStart() );
-    pLocation->SetInt().SetTo( record.SeqStop() );
+    pLocation->SetInt().SetFrom(static_cast<TSeqPos>(record.SeqStart()));
+    pLocation->SetInt().SetTo(static_cast<TSeqPos>(record.SeqStop()));
     if ( record.IsSetStrand() ) {
         pLocation->SetInt().SetStrand( record.Strand() );
     }

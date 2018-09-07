@@ -213,7 +213,7 @@ CGtfReader::~CGtfReader()
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfReader::x_UpdateAnnotFeature(
+bool CGtfReader::xUpdateAnnotFeature(
     const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot,
     ILineErrorListener* pEC)

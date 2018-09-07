@@ -220,7 +220,7 @@ bool CGff3Reader::IsInGenbankMode() const
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Reader::x_UpdateAnnotFeature(
+bool CGff3Reader::xUpdateAnnotFeature(
     const CGff2Record& record,
     CRef< CSeq_annot > pAnnot,
     ILineErrorListener* pEC)
@@ -511,12 +511,6 @@ bool CGff3Reader::xFindFeatureUnderConstruction(
     CRef<CSeq_feat>& underConstruction)
 //  ----------------------------------------------------------------------------
 {
-    AutoPtr<CObjReaderLineException> pErr(CObjReaderLineException::Create(
-        eDiag_Fatal,
-        0,
-        string("Bad data line: Duplicate feature ID \"") + record.Id() + "\"",
-        ILineError::eProblem_DuplicateIDs) );
-
     string id;
     if (!record.GetAttribute("ID", id)) {
         return false;
@@ -526,6 +520,11 @@ bool CGff3Reader::xFindFeatureUnderConstruction(
         return false;
     }
 
+    AutoPtr<CObjReaderLineException> pErr(CObjReaderLineException::Create(
+        eDiag_Fatal,
+        0,
+        string("Bad data line: Duplicate feature ID \"") + id + "\"",
+        ILineError::eProblem_DuplicateIDs) );
     if (record.Id() != mIdToSeqIdMap[id]) {
         pErr->Throw();
     }
@@ -585,8 +584,8 @@ bool CGff3Reader::xUpdateAnnotGeneric(
         CSeq_interval& cbLoc = pCodeBreak->SetLoc().SetInt();        
         CRef< CSeq_id > pId = mSeqIdResolve(record.Id(), m_iFlags, true);
         cbLoc.SetId(*pId);
-        cbLoc.SetFrom(record.SeqStart());
-        cbLoc.SetTo(record.SeqStop());
+        cbLoc.SetFrom(static_cast<TSeqPos>(record.SeqStart()));
+        cbLoc.SetTo(static_cast<TSeqPos>(record.SeqStop()));
         if (record.IsSetStrand()) {
             cbLoc.SetStrand(record.Strand());
         }
