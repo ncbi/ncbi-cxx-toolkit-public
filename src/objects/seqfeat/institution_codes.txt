@@ -2583,6 +2583,7 @@ HUIC	s	Hacettepe University Ichthyological Collection
 HUIF	s	Hunan Forestry Institute			
 HUJ	s	Hebrew University of Jerusalem			
 HUJ:INV	s	Hebrew University of Jerusalem, Invertebrate collection		
+HUJ:R	s	Hebrew University of Jerusalem, Reptie collection	
 HUKUK	c	Culture Collection of Animal Cells			
 HUL	s	Fine Arts Museum			
 HULE	s	Universidad Nacional Autonoma de Nicaragua, Departamento de Biologia			
@@ -3889,6 +3890,7 @@ MCZ:IZ	s	Museum of Comparative Zoology, Harvard University, Invertebrate Zoology
 MCZ:Mala	s	Museum of Comparative Zoology, Harvard University, Malacology Collection	http://mczbase.mcz.harvard.edu/guid/MCZ:Mala:
 MCZ:Mamm	s	Museum of Comparative Zoology, Harvard University, Mammalogy Collection	http://mczbase.mcz.harvard.edu/guid/MCZ:Mamm:
 MCZ:Orn	s	Museum of Comparative Zoology, Harvard University, Ornithology Collection	http://mczbase.mcz.harvard.edu/guid/MCZ:Bird:
+MCZ:PORa	s	Museum of Comparative Zoology, Harvard University, Porifera collection	
 MCZR	s	Museo Civico di Zoologia			
 MD<AGO>	s	Museu Regional do Dundo			
 MD<DEU>	s	Museum Donaueschingen			
