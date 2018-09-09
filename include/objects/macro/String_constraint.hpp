@@ -124,10 +124,10 @@ class CMatchString
 public:
     CMatchString() {};
 
-    CMatchString(const string& v) : m_original(v), m_weaselmask(0)
+    CMatchString(const string& v) : m_original(v), m_noweasel_start(CTempString::npos), m_weaselmask(0)
     {
     }
-    CMatchString(const char* v) : m_original(v), m_weaselmask(0)
+    CMatchString(const char* v) : m_original(v), m_noweasel_start(CTempString::npos), m_weaselmask(0)
     {
     }
     const CAutoLowerCase& original() const
@@ -136,8 +136,8 @@ public:
     }
     CMatchString& operator=(const string&s)
     {
-        m_original = s; 
-        m_noweasel.reset(0);
+        m_original = s;
+        m_noweasel_start = CTempString::npos;
         m_weaselmask = 0;
         return *this;
     };
@@ -147,54 +147,30 @@ public:
         return m_original;
     }
 
-    bool HasWeasel() const
-    {
-        x_GetNoweasel();
-        return m_weaselmask;
-    }
+    void PopWeasel() const { if (m_noweasel_start == CTempString::npos) x_PopWeasel(); }
 
-    // to use with the query string
     CTempString GetNoweasel() const
     {
-        x_GetNoweasel();
-        return CTempString(m_noweasel->original());
+        PopWeasel();
+        return CTempString(m_original.original(), m_noweasel_start, m_original.original().length() - m_noweasel_start);
     }
     CTempString GetNoweaselLC() const
     {
-        x_GetNoweasel();
-        return CTempString(m_noweasel->lowercase());
+        PopWeasel();
+        return CTempString(m_original.lowercase(), m_noweasel_start, m_original.lowercase().length() - m_noweasel_start);
     }
     CTempString GetNoweaselUC() const
     {
-        x_GetNoweasel();
-        return CTempString(m_noweasel->uppercase());
+        PopWeasel();
+        return CTempString(m_original.uppercase(), m_noweasel_start, m_original.uppercase().length() - m_noweasel_start);
     }
 
-    // to use with the constraint string
-    CTempString GetSelfweasel() const
-    {
-        x_GetSelfweasel();
-        return CTempString(m_noweasel->original());
-    }
-    CTempString GetSelfweaselLC() const
-    {
-        x_GetSelfweasel();
-        return CTempString(m_noweasel->lowercase());
-    }
-    CTempString GetSelfweaselUC() const
-    {
-        x_GetSelfweasel();
-        return CTempString(m_noweasel->uppercase());
-    }
-
-    unsigned GetWeaselMask() const { return m_weaselmask; }
+    unsigned GetWeaselMask() const { PopWeasel(); return m_weaselmask; }
 
 private:
-    string x_SkipWeasel(const string& s) const;
-    void x_GetNoweasel() const;
-    void x_GetSelfweasel() const;
+    void x_PopWeasel() const;
     CAutoLowerCase m_original;
-    mutable unique_ptr<CAutoLowerCase> m_noweasel;
+    mutable CTempString::size_type m_noweasel_start;
     mutable unsigned m_weaselmask;
 };
 
@@ -230,6 +206,8 @@ public:
         m_match = kEmptyStr;
         return CString_constraint_Base::SetMatch_text();
     }
+
+    static const vector<string> s_WeaselWords;
 
 private:
     // Prohibit copy constructor and assignment operator

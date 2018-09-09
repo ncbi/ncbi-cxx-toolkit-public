@@ -42,26 +42,23 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+
+const vector<string> CString_constraint::s_WeaselWords = {
+    "candidate",
+    "hypothetical",
+    "novel",
+    "possible",
+    "potential",
+    "predicted",
+    "probable",
+    "putative",
+    "uncharacterized",
+    "unique"
+};
+
+
 namespace
 {
-    static const char digit_str[] = "0123456789";
-    static const char alpha_str[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-    static const CTempString s_weasels[] = {
-        "candidate",
-        "hypothetical",
-        "novel",
-        "possible",
-        "potential",
-        "predicted",
-        "probable",
-        "putative",
-        "candidate",
-        "uncharacterized",
-        "unique"
-    };
-    static size_t s_weasels_sz = sizeof(s_weasels) / sizeof(s_weasels[0]);
-
     bool x_IsWordCharacter(char c) {
         return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || c == '-';
     }
@@ -166,39 +163,33 @@ namespace
 };
 
 
-string CMatchString::x_SkipWeasel(const string& s) const
+// Including state machine
+#define _FSM_EMIT static bool s_Weasel_emit[]
+#define _FSM_HITS static map<size_t, vector<size_t>> s_Weasel_hits
+#define _FSM_STATES static size_t s_Weasel_states[]
+#include "weasel.inc"
+#undef _FSM_EMIT
+#undef _FSM_HITS
+#undef _FSM_STATES
+
+
+void CMatchString::x_PopWeasel() const
 {
-    vector<string> v;
-    x_Split(s, v);
-    vector<bool> skip(v.size(), false);
-    for (size_t i = 0; i < v.size(); i++) {
-        for (size_t k = 0; k < s_weasels_sz; k++) {
-            string lower = v[i];
-            NStr::ToLower(lower);
-            if (lower == s_weasels[k]) {
-                skip[i] = true;
-                m_weaselmask |= (1 << k);
+    m_noweasel_start = 0;
+    const auto& callback = [&](size_t n, size_t p) {
+        if (n < CString_constraint::s_WeaselWords.size()) {
+            if (p - m_noweasel_start == CString_constraint::s_WeaselWords[n].length()) {
+                m_noweasel_start = p;
+                m_weaselmask |= (1 << n);
             }
         }
-    }
-    return x_Assemble(v, skip);
-}
-
-
-void CMatchString::x_GetNoweasel() const
-{
-    if (!m_noweasel) {
-        m_noweasel.reset(new CAutoLowerCase(x_SkipWeasel(m_original.original())));
-    }
-}
-
-
-void CMatchString::x_GetSelfweasel() const
-{
-    if (!m_noweasel) {
-        x_SkipWeasel(m_original.original());
-        m_noweasel.reset(new CAutoLowerCase(m_original.original()));
-    }
+        else { // space
+            if (p == m_noweasel_start) {
+                m_noweasel_start = p + 1;
+            }
+        }
+    };
+    CMultipatternSearch::Search(this->m_original, s_Weasel_states, s_Weasel_emit, s_Weasel_hits, callback);
 }
 
 
@@ -206,9 +197,11 @@ CString_constraint::CString_constraint()
 {
 }
 
+
 CString_constraint::~CString_constraint()
 {
 }
+
 
 bool CString_constraint :: Empty() const
 {
@@ -474,27 +467,14 @@ CTempString CString_constraint::x_GetConstraintString(ECase e_case) const
     if (e_case == e_automatic) {
         e_case = GetCase_sensitive() ? e_original : e_lowercase;
     }
-    if (GetIgnore_weasel()) {
-        switch (e_case) {
-            case e_automatic:
-            case e_original:
-                return m_match.GetSelfweasel();
-            case e_lowercase:
-                return m_match.GetSelfweaselLC();
-            case e_uppercase:
-                return m_match.GetSelfweaselUC();
-        }
-    }
-    else {
-        switch (e_case) {
-            case e_automatic:
-            case e_original:
-                return m_match.original().original();
-            case e_lowercase:
-                return m_match.original().lowercase();
-            case e_uppercase:
-                return m_match.original().uppercase();
-        }
+    switch (e_case) {
+        case e_automatic:
+        case e_original:
+            return m_match.original().original();
+        case e_lowercase:
+            return m_match.original().lowercase();
+        case e_uppercase:
+            return m_match.original().uppercase();
     }
 }
 
@@ -507,9 +487,6 @@ CTempString CString_constraint::x_GetCompareString(const CMatchString& s, ECase 
 
     if (e_case == e_automatic) {
         e_case = GetCase_sensitive() ? e_original : e_lowercase;
-    }
-    if (GetIgnore_weasel()) {
-        s.GetNoweasel();
     }
     if (GetIgnore_weasel() && !(m_match.GetWeaselMask() & s.GetWeaselMask())) {
         switch (e_case) {
@@ -550,11 +527,11 @@ bool CString_constraint::x_MatchFound(CTempString& search, CTempString& pattern)
         return found == 0 && (!GetWhole_word() || x_IsWholeWordMatch(search, found, pattern.size()));
     }
     else if (loc == eString_location_contains) {
-        CTempString next_guess = search.substr(found + 1); // Using CTempString everywhere was a bad idea...
+        CTempString next_guess = search.substr(found + 1);
         return (!GetWhole_word() || x_IsWholeWordMatch(search, found, pattern.size())) ? true : x_MatchFound(next_guess, pattern);
     }
     else if (loc == eString_location_ends) {
-        CTempString next_guess = search.substr(found + 1); // Using CTempString everywhere was a bad idea...
+        CTempString next_guess = search.substr(found + 1);
         return found + pattern.size() == search.size() && (!GetWhole_word() || x_IsWholeWordMatch(search, found, pattern.size())) ? true : x_MatchFound(next_guess, pattern);
     }
     return false;
@@ -596,8 +573,8 @@ bool CString_constraint::x_DoesSingleStringMatchConstraint(const CMatchString& s
         CTempString pattern = x_GetConstraintString();
         CTempString search = x_GetCompareString(str);
 
-        unsigned mask = m_match.GetWeaselMask();
-        unsigned str_mask = str.GetWeaselMask();
+        unsigned mask = GetIgnore_weasel() ? m_match.GetWeaselMask() : 0;
+        unsigned str_mask = GetIgnore_weasel() ? str.GetWeaselMask() : 0;
 
         if ((mask & str_mask) != mask) {
             return false; // shortcut
@@ -605,7 +582,7 @@ bool CString_constraint::x_DoesSingleStringMatchConstraint(const CMatchString& s
 
         if (GetMatch_location() != eString_location_inlist && CanGetIgnore_words()){
             if (mask) {
-                cout << "Self-weasel case with ignored words is not supported!\n";
+                cout << pattern << " <===> " << search << "\nSelf-weasel case with ignored words is not supported!\n";
                 return false;
             }
             return x_AdvancedStringMatch(search, pattern);
@@ -626,12 +603,12 @@ bool CString_constraint::x_DoesSingleStringMatchConstraint(const CMatchString& s
             vector<bool> skip(v.size(), false);
             vector<size_t> test;
             for (size_t i = 0; i < v.size(); i++) {
-                for (size_t k = 0; k < s_weasels_sz; k++) {
+                for (size_t k = 0; k < CString_constraint::s_WeaselWords.size(); k++) {
                     unsigned m = (1 << k);
                     if (m & str_mask) {
                         string lower = v[i];
                         NStr::ToLower(lower);
-                        if (lower == s_weasels[k]) {
+                        if (lower == CString_constraint::s_WeaselWords[k]) {
                             if (m & mask) {
                                 test.push_back(i);
                             }

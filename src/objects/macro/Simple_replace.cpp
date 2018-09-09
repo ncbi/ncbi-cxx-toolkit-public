@@ -52,64 +52,12 @@ CSimple_replace::~CSimple_replace(void)
 {
 }
 
-#if 0
-const string sm_WeaselWords[] = {
-  "candidate",
-  "hypothetical",
-  "novel",
-  "possible",
-  "potential",
-  "predicted", 
-  "probable", 
-  "putative",
-  "candidate",  
-  "uncharacterized",  
-  "unique",
-};
-
-
-bool s_IsWeaselWord(const string& value)
-{
-    size_t max = sizeof(sm_WeaselWords) / sizeof(const string);
-
-    const string *begin = sm_WeaselWords;
-    const string *end = &(sm_WeaselWords[max]);
-
-    if (find(begin, end, value) != end) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
-bool SkipWeasel(string& str)
-{
-    if (str.empty()) {
-        return false;
-    }
-  
-    vector<string> tokens;
-    NStr::Split(str, " ", tokens, 0);
-    bool rval = false;
-    
-    while (tokens.size() > 0 && s_IsWeaselWord(tokens[0])) {
-        tokens.erase(tokens.begin());
-        rval = true;
-    }
-
-    if (rval) {
-        str = NStr::Join(tokens, " ");
-    }
-    return rval;
-}
-#endif
 
 bool CSimple_replace::ApplyToString(string& result, const CMatchString& str, CConstRef<CString_constraint> find) const
 {
     bool use_putative = false;
     if (IsSetWeasel_to_putative() && GetWeasel_to_putative()) {
-        use_putative = str.HasWeasel();
+        use_putative = !!str.GetWeaselMask();
     }
 
     bool rval = false;
