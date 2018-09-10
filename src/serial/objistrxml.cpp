@@ -1148,6 +1148,8 @@ void CObjectIStreamXml::SkipAnyContentObject(void)
     string tagName;
     if (!m_RejectedTag.empty()) {
         tagName = RejectedName();
+    } else if (OutsideTag()) {
+        tagName = ReadName(BeginOpeningTag());
     }
     if (SkipAnyContent() && !tagName.empty()) {
         CloseTag(tagName);
@@ -2243,12 +2245,17 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                     }
                 }
             } else {
-#if 0
-                if (CanSkipUnknownMembers() && NextIsTag()) {
-                    SetFailFlags(fUnknownValue);
-                    SkipAnyContent();
+                if (CanSkipUnknownMembers()) {
+                    while (NextIsTag()) {
+                        tagName = ReadName(BeginOpeningTag());
+                        UndoClassMember();
+                        if (IsKnownElement(tagName)) {
+                            break;
+                        }
+                        SetFailFlags(fUnknownValue);
+                        SkipAnyContentObject();
+                    }
                 }
-#endif
                 return kInvalidMember;
             }
             if (!NextIsTag()) {

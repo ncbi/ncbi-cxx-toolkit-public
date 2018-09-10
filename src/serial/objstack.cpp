@@ -34,6 +34,7 @@
 #include <serial/impl/objstack.hpp>
 #include <serial/impl/ptrinfo.hpp>
 #include <serial/impl/continfo.hpp>
+#include <serial/impl/classinfob.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -302,6 +303,29 @@ void CObjectStack::PopErrorFrame(void)
         throw;
     }
     PopFrame();
+}
+
+bool CObjectStack::IsKnownElement(const CTempString& name) const
+{
+    size_t s, depth = GetStackDepth();
+    for (s=1; s < depth; ++s) {
+        const TFrame& frame = FetchFrameFromTop(s);
+        if (frame.GetFrameType() == CObjectStackFrame::eFrameClass ||
+            frame.GetFrameType() == CObjectStackFrame::eFrameChoice) {
+            const CClassTypeInfoBase* type = dynamic_cast<const CClassTypeInfoBase*>(frame.GetTypeInfo());
+            TMemberIndex i = type->GetItems().FindDeep(name);
+            if (i != kInvalidMember) {
+                return true;
+            }
+        }
+        else if (frame.HasTypeInfo() && !frame.GetTypeInfo()->GetName().empty()) {
+            break;
+        }
+        else if (!frame.GetNotag()) {
+            break;
+        }
+    }
+    return false;
 }
 
 TTypeInfo CObjectStack::GetRealTypeInfo(TTypeInfo typeInfo)

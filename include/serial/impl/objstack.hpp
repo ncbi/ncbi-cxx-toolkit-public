@@ -157,6 +157,7 @@ public:
     const TFrame& FetchFrameFromTop(size_t index) const;
     const TFrame& FetchFrameFromBottom(size_t index) const;
     TTypeInfo GetRecentTypeInfo(void) const;
+    bool IsKnownElement(const CTempString& name) const;
 
     static TTypeInfo GetRealTypeInfo(TTypeInfo typeInfo);
     static ETypeFamily GetRealTypeFamily(TTypeInfo typeInfo);
