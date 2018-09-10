@@ -47,8 +47,6 @@
 
 #include <objtools/edit/loc_edit.hpp>
 #include <objtools/edit/feattable_edit.hpp>
-#include <corelib/ncbi_message.hpp>
-#include <objtools/edit/edit_error.hpp>
 
 #include <sstream>
 
@@ -108,7 +106,7 @@ CFeatTableEdit::CFeatTableEdit(
     const string& locusTagPrefix,
     unsigned int locusTagNumber,
     unsigned int startingFeatId,
-    ncbi::IMessageListener* pMessageListener) :
+    ILineErrorListener* pMessageListener) :
     //  -------------------------------------------------------------------------
     mAnnot(annot),
     mpMessageListener(pMessageListener),
@@ -125,8 +123,10 @@ CFeatTableEdit::CFeatTableEdit(
 
 
 //  -------------------------------------------------------------------------
-CFeatTableEdit::~CFeatTableEdit() = default;
+CFeatTableEdit::~CFeatTableEdit()
 //  -------------------------------------------------------------------------
+{
+};
 
 //  -------------------------------------------------------------------------
 void CFeatTableEdit::GenerateMissingGeneForCds()
@@ -1003,6 +1003,7 @@ string CFeatTableEdit::xGenerateTranscriptOrProteinId(
     //weed out badly formatted original tags:
      if (string::npos != rawId.find("|")) {
         xPutError(
+            ILineError::eProblem_InvalidQualifier,
             "Feature " + xGetIdStr(mf) + 
                 " does not have a usable transcript_ or protein_id.");
         return "";
@@ -1012,6 +1013,7 @@ string CFeatTableEdit::xGenerateTranscriptOrProteinId(
     auto locusTagPrefix = xGetCurrentLocusTagPrefix(mf);
     if (locusTagPrefix.empty()) {
         xPutError(
+            ILineError::eProblem_InvalidQualifier,
             "Cannot generate transcript_/protein_id for feature " + xGetIdStr(mf) +
             " without a locus tag.");
         return "";
@@ -1057,6 +1059,7 @@ string CFeatTableEdit::xGenerateTranscriptOrProteinId(
 
 
     xPutError(
+        ILineError::eProblem_InvalidQualifier,
         "Cannot generate transcript_/protein_id for feature " + xGetIdStr(mf) +
         " - insufficient context.");
     return "";
@@ -1490,21 +1493,22 @@ CRef<CSeq_feat> CFeatTableEdit::xMakeGeneForFeature(
     return pGene;
 }
 
-
 //  ----------------------------------------------------------------------------
 void
 CFeatTableEdit::xPutError(
+    ILineError::EProblem problem,
     const string& message)
 //  ----------------------------------------------------------------------------
-{   
-    if (!mpMessageListener) {
-        return;
-    }
-
-    mpMessageListener->PostMessage(
-        CObjEditMessage(message, eDiag_Error));
+{
+    AutoPtr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+        eDiag_Error,
+        0,
+        message,
+        problem));
+    pErr->SetLineNumber(0);
+    mpMessageListener->PutError(*pErr);
 }
-
 
 //  ----------------------------------------------------------------------------
 void
@@ -1523,9 +1527,14 @@ CFeatTableEdit::xPutErrorMissingLocustag(
     subName = NStr::IntToString(lower) + ".." + NStr::IntToString(upper) + " " +
         subName;
 
-    string message = subName + " feature is missing locus tag.";
-
-    xPutError(message);
+    AutoPtr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+        eDiag_Error,
+        0,
+        subName + " feature is missing locus tag.",
+        ILineError::eProblem_Missing));
+    pErr->SetLineNumber(0);
+    mpMessageListener->PutError(*pErr);
 }
 
 //  ----------------------------------------------------------------------------
@@ -1545,9 +1554,14 @@ CFeatTableEdit::xPutErrorMissingTranscriptId(
     subName = NStr::IntToString(lower) + ".." + NStr::IntToString(upper) + " " +
         subName;
 
-    string message = subName + " feature is missing transcript ID.";
-
-    xPutError(message);
+    AutoPtr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+        eDiag_Error,
+        0,
+        subName + " feature is missing transcript ID.",
+        ILineError::eProblem_Missing));
+    pErr->SetLineNumber(0);
+    mpMessageListener->PutError(*pErr);
 }
 
 //  ----------------------------------------------------------------------------
@@ -1566,9 +1580,15 @@ CMappedFeat mf)
     unsigned int upper = mf.GetLocation().GetStop(eExtreme_Positional);
     subName = NStr::IntToString(lower) + ".." + NStr::IntToString(upper) + " " +
         subName;
-        
-    string message = subName + " feature is missing protein ID.";
-    xPutError(message);
+
+    AutoPtr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+        eDiag_Error,
+        0,
+        subName + " feature is missing protein ID.",
+        ILineError::eProblem_Missing));
+    pErr->SetLineNumber(0);
+    mpMessageListener->PutError(*pErr);
 }
 
 
@@ -1585,10 +1605,15 @@ const CMappedFeat& mrna)
     if (mrna.GetFeatSubtype() != CSeqFeatData::eSubtype_mRNA) {
         return;
     }
-    xPutError("Protein ID on mRNA feature differs from protein ID on child CDS.");
 
-//    xPutError(ILineError::eProblem_InconsistentQualifiers,
-//        "Protein ID on mRNA feature differs from protein ID on child CDS.");
+    unique_ptr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+        eDiag_Error,
+        0,
+        "Protein ID on mRNA feature differs from protein ID on child CDS.",
+        ILineError::eProblem_InconsistentQualifiers));
+    pErr->SetLineNumber(0);
+    mpMessageListener->PutError(*pErr);
 }
 
 void
@@ -1603,8 +1628,15 @@ const CMappedFeat& mrna)
     if (mrna.GetFeatSubtype() != CSeqFeatData::eSubtype_mRNA) {
         return;
     }
-   
-    xPutError("Transcript ID on mRNA feature differs from transcript ID on child CDS.");
+
+    unique_ptr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+        eDiag_Error,
+        0,
+        "Transcript ID on mRNA feature differs from transcript ID on child CDS.",
+        ILineError::eProblem_InconsistentQualifiers));
+    pErr->SetLineNumber(0);
+    mpMessageListener->PutError(*pErr);
 }
 
 

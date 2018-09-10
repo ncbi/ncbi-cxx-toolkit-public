@@ -52,19 +52,9 @@ public:
     // IListener::Post() implementation
     virtual void Post(const IMessage& message)
     {
-        const auto* objtools_message = 
-            dynamic_cast<const IObjtoolsMessage*>(&message);
-        if (!objtools_message) return;
-        PutError(*objtools_message);
-    }
-
-    // PutError(const ILineError&) 
-    // ultimately calls PutError(const IObjtoolsMessage&)
-    // via x_PostMessage(const IObjtoolsMessage&)
-    virtual bool 
-    PutError(const ILineError& err) 
-    {
-        return x_PostMessage(err);
+        const ILineError* le = dynamic_cast<const ILineError*>(&message);
+        if (!le) return;
+        PutError(*le);
     }
 
     /// Store error in the container, and 
@@ -73,8 +63,8 @@ public:
     ///
     virtual bool
     PutError(
-        const IObjtoolsMessage& ) = 0;
-
+        const ILineError& ) = 0;
+    
     // IListener::Get() implementation
     virtual const IMessage& Get(size_t index) const
     { return const_cast<ILineErrorListener*>(this)->GetError(index); }
@@ -108,23 +98,17 @@ public:
         const Uint8 iNumTotal = 0 ) = 0;
 
     // IMessageListener proxy methods
-    virtual EPostResult PostMessage(const IMessage& message) override
+    virtual EPostResult PostMessage(const IMessage& message)
     { Post(message); return eHandled; }
     
-    virtual EPostResult PostProgress(const IProgressMessage& p) override
+    virtual EPostResult PostProgress(const IProgressMessage& p)
     { Progress(p.GetText(), p.GetCurrent(), p.GetTotal()); return eHandled; }
 
-    virtual const IMessage& GetMessage(size_t index) const override
+    virtual const IMessage& GetMessage(size_t index) const
     { return Get(index); }
 
-    virtual void Clear(void) override
+    virtual void Clear(void)
     { ClearAll(); }
-
-private:
-    bool x_PostMessage(const IObjtoolsMessage& message) 
-    {
-        PutError(message);
-    }
 };
 
 
@@ -155,7 +139,7 @@ public:
         
         size_t uCount( 0 );
         for ( size_t u=0; u < Count(); ++u ) {
-            if ( m_Errors[u]->GetSeverity() == eSev ) ++uCount;
+            if ( m_Errors[u]->Severity() == eSev ) ++uCount;
         }
         return uCount;
     };
@@ -164,8 +148,9 @@ public:
     ClearAll() { m_Errors.clear(); };
     
     const ILineError&
-    GetError(size_t uPos ); 
-
+    GetError(
+        size_t uPos ) { 
+            return  *m_Errors[ uPos ]; }
     
     virtual void Dump()
     {
@@ -235,7 +220,7 @@ private:
     // private so later we can change the structure if
     // necessary (e.g. to have indexing and such to speed up
     // level-counting)
-    typedef std::vector< AutoPtr<IObjtoolsMessage> > TLineErrVec;
+    typedef std::vector< AutoPtr<ILineError> > TLineErrVec;
     TLineErrVec m_Errors;
 
     // The stream to which progress messages are written.
@@ -250,11 +235,11 @@ protected:
 
     // Child classes should use this to store errors
     // into m_Errors
-    void StoreError(const IObjtoolsMessage& err)
+    void StoreError(const ILineError& err)
     {
         m_Errors.resize( m_Errors.size() + 1);
-        AutoPtr<IObjtoolsMessage> & pLineError = m_Errors.back();
-        pLineError.reset( dynamic_cast<IObjtoolsMessage*>(err.Clone()) );
+        AutoPtr<ILineError> & pLineError = m_Errors.back();
+        pLineError.reset( err.Clone() );
     }
 };
 
@@ -271,7 +256,7 @@ public:
     
     bool
     PutError(
-        const IObjtoolsMessage& err ) 
+        const ILineError& err ) 
     {
         StoreError(err);
         return true;
@@ -291,7 +276,7 @@ public:
     
     bool
     PutError(
-        const IObjtoolsMessage& err ) 
+        const ILineError& err ) 
     {
         StoreError(err);
         return false;
@@ -312,7 +297,7 @@ public:
     
     bool
     PutError(
-        const IObjtoolsMessage& err ) 
+        const ILineError& err ) 
     {
         StoreError(err);
         return (Count() < m_uMaxCount);
@@ -335,10 +320,10 @@ public:
     
     bool
     PutError(
-        const IObjtoolsMessage& err ) 
+        const ILineError& err ) 
     {
         StoreError(err);
-        return (err.GetSeverity() <= m_iAcceptLevel);
+        return (err.Severity() <= m_iAcceptLevel);
     };    
 protected:
     int m_iAcceptLevel;
@@ -358,12 +343,11 @@ public:
 
     bool
     PutError(
-        const IObjtoolsMessage& err )
+        const ILineError& err )
     {
-        CNcbiDiag(m_Info, err.GetSeverity(),
+        CNcbiDiag(m_Info, err.Severity(),
                   eDPF_Log | eDPF_IsMessage).GetRef()
-           << err.Compose() << Endm;
-         //  << err.GetText() << Endm;
+           << err.Message() << Endm;
 
         StoreError(err);
         return true;

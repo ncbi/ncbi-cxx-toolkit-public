@@ -38,10 +38,9 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/feature.hpp>
-//#include <objtools/readers/line_error.hpp>
+#include <objtools/readers/message_listener.hpp>
 
 BEGIN_NCBI_SCOPE
-class IMessageListener;
 
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
@@ -58,7 +57,7 @@ public:
 		const string& = "",
         unsigned int = 1, //starting locus tag
         unsigned int = 1, //starting feature id
-        ncbi::IMessageListener* =nullptr);
+        ILineErrorListener* =0);
     ~CFeatTableEdit();
 
 	void GenerateLocusTags();
@@ -96,12 +95,9 @@ protected:
 	string xNextTranscriptId(
 		const CMappedFeat&);
 
-    void xPutError(const string& message);
-/*
     void xPutError(
         ILineError::EProblem,
         const std::string&);
-*/
     void xPutErrorMissingLocustag(
         CMappedFeat);
     void xPutErrorMissingTranscriptId(
@@ -176,7 +172,7 @@ protected:
     CSeq_annot_Handle mHandle;
     feature::CFeatTree mTree;
     CSeq_annot_EditHandle mEditHandle;
-    ncbi::IMessageListener* mpMessageListener;
+    ILineErrorListener* mpMessageListener;
     unsigned int mNextFeatId;
 	unsigned int mLocusTagNumber;
 	string mLocusTagPrefix;

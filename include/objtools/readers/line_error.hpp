@@ -36,8 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbiobj.hpp>
-//#include <corelib/ncbi_message.hpp>
-#include<objtools/logging/objtools_message.hpp>
+#include <corelib/ncbi_message.hpp>
 #include <objtools/readers/reader_exception.hpp>
 
 
@@ -46,7 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ============================================================================
-class NCBI_XOBJUTIL_EXPORT ILineError : public IObjtoolsMessage
+class NCBI_XOBJUTIL_EXPORT ILineError : public IMessage
 //  ============================================================================
 {
 public:
@@ -163,7 +162,6 @@ public:
         return (string)CNcbiOstrstreamToString(result);
     }
 
-
     std::string
     SeverityStr(void) const
     {
@@ -270,8 +268,8 @@ public:
         }
     }
 
-    virtual void Write( 
-        CNcbiOstream& out ) const
+    virtual void Dump( 
+        std::ostream& out ) const
     {
         out << "                " << SeverityStr() << ":" << endl;
         out << "Problem:        " << ProblemStr() << endl;
@@ -304,8 +302,8 @@ public:
     };
 
     // dump the XML on one line since some tools assume that
-    virtual void WriteAsXML(
-        CNcbiOstream& out ) const
+    virtual void DumpAsXML(
+        std::ostream& out ) const
     {
         out << "<message severity=\"" << NStr::XmlEncode(SeverityStr()) << "\" "
             << "problem=\"" << NStr::XmlEncode(ProblemStr()) << "\" ";
@@ -342,21 +340,17 @@ public:
     virtual EDiagSev GetSeverity(void) const { return Severity(); }
     virtual int GetCode(void) const { return 0; }
     virtual int GetSubCode(void) const { return 0; }
-    //virtual void Dump(CNcbiOstream& out) const { Write(out); }
+    virtual void Write(CNcbiOstream& out) const { Dump(out); }
     virtual std::string Compose(void) const
     {
-        return Message();
-  //      CNcbiOstrstream out;
-  //      Write(out);
-  //      return CNcbiOstrstreamToString(out);
+        CNcbiOstrstream out;
+        Write(out);
+        return CNcbiOstrstreamToString(out);
     }
 
     // This is required to disambiguate IMessage::GetSeverity() and
     // CException::GetSeverity() in CObjReaderLineException
     virtual EDiagSev Severity(void) const { return eDiag_Error; }
-
-    // IObjtoolsMessage methods 
-    //virtual void DumpAsXML(CNcbiOstream& out) const { WriteAsXML(out); }
 };
 
 //  ============================================================================

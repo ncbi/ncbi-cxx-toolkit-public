@@ -78,7 +78,6 @@
 #include <objects/biotree/BioTreeContainer.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
-#include <objtools/edit/edit_error.hpp>
 
 #include "multifile_source.hpp"
 #include "multifile_destination.hpp"
@@ -197,15 +196,14 @@ public:
     
     bool
     PutError(
-        const IObjtoolsMessage& err ) 
+        const ILineError& err ) 
     {
-        auto line_error_p = dynamic_cast<const ILineError*>(&err);
-        if (line_error_p && line_error_p->Problem() == ILineError::eProblem_ProgressInfo) {
-            m_multi_reader_app.WriteMessageImmediately(cerr, *line_error_p);
+        if (err.Problem() == ILineError::eProblem_ProgressInfo) {
+            m_multi_reader_app.WriteMessageImmediately(cerr, err);
             return true;
         }
         StoreError(err);
-        return (err.GetSeverity() <= m_iMaxLevel) && (Count() < m_iMaxCount);
+        return (err.Severity() <= m_iMaxLevel) && (Count() < m_iMaxCount);
     };
     
     void
@@ -1397,9 +1395,9 @@ void CMultiReaderApp::WriteMessageImmediately(
     // For example, progress messages and fatal errors should be written
     // immediately.
     if( m_bXmlMessages ) {
-        line_error.WriteAsXML(ostr);
+        line_error.DumpAsXML(ostr);
     } else {
-        line_error.Write(ostr);
+        line_error.Dump(ostr);
     }
     ostr.flush();
 }

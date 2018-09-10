@@ -37,8 +37,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
-
-
 void
 CMessageListenerBase::PutProgress(
     const string & sMessage,
@@ -94,17 +92,6 @@ CMessageListenerBase::PutProgress(
     }
 
     m_pProgressOstrm->flush();
-}
-
-
-const ILineError& 
-CMessageListenerBase::GetError(size_t uPos) 
-{
-    const ILineError* line_error_p = dynamic_cast<ILineError*>(m_Errors[uPos].get());
-    if (!line_error_p) {
-        NCBI_THROW(CException, eUnknown, "Message is not of type ILineError");
-    }
-    return *line_error_p;
 }
 
 END_SCOPE(objects)
