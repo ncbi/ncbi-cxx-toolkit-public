@@ -99,10 +99,11 @@ public:
         fDefault =          0,
         fHideImpFeats =     1,
         fHideSNPFeats =     2,
-        fHideSTSFeats =     4,
-        fHideExonFeats =    8,
-        fHideIntronFeats = 16,
-        fHideMiscFeats =   32
+        fHideCDDFeats =     4,
+        fHideSTSFeats =     8,
+        fHideExonFeats =   16,
+        fHideIntronFeats = 32,
+        fHideMiscFeats =   64
     };
     typedef int TFlags; // Binary "OR" of EFlags
 
