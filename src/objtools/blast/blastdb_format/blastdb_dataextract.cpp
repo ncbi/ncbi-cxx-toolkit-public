@@ -1022,11 +1022,11 @@ void CBlastDeflineUtil::ProcessFastaDeflines(
         TSeqPos start = location->GetStart(eExtreme_Biological) + 1;
         TSeqPos stop = location->GetStop(eExtreme_Biological) + 1;
         if (strand == eNa_strand_minus) {
-            range = "|:c"
+            range = ":c"
                     + NStr::IntToString(stop) + "-" + NStr::IntToString(start)
                     + " ";
         } else {
-            range = "|:"
+            range = ":"
                     + NStr::IntToString(start) + "-" + NStr::IntToString(stop)
                     + " ";
         }
