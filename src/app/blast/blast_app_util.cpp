@@ -54,10 +54,6 @@
 #include <algo/blast/format/blast_format.hpp>
 #include <objtools/align_format/format_flags.hpp>
 
-#if HAVE_MALLOC_H
-#include <malloc.h>
-#endif /* HAVE_MALLOC_H */
-
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(blast);
@@ -948,9 +944,6 @@ void PrintErrorArchive(const CArgs & a, const list<CRef<CBlast4_error> > & msg)
 
 void QueryBatchCleanup()
 {
-#if HAVE_MALLOC_H
-    malloc_trim(0);
-#endif
     return;
 
 }
