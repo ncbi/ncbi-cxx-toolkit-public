@@ -489,8 +489,6 @@ private:
     void x_PostSeqFeat( CSeq_feat& seq_feat );
     void x_PostOrgRef( COrg_ref& org );
     void x_PostBiosource( CBioSource& biosrc );
-    void x_ConvertOrgref_modToSubSource( CBioSource& biosrc );
-    void x_ConvertOrgref_modToOrgMod(COrg_ref& org);
 
     void x_TranslateITSNameAndFlag( string &in_out_name ) ;
 

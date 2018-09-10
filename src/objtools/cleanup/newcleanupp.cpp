@@ -1301,55 +1301,6 @@ bool s_StringHasSubSourcePrefix(const string &str, string::size_type &out_val_st
 }
 
 
-//commented out per SQD-4359
-//LCOV_EXCL_START
-static bool s_ValueOkForQual(const string& value)
-{
-    if (NStr::Find(value, ",") != string::npos) {
-        return false;
-    }
-    size_t num_space = 0;
-    ITERATE(string, it, value) {
-        if (isspace(*it)) {
-            num_space++;
-        }
-    }
-    if (num_space > 4) {
-        return false;
-    }
-    return true;
-}
-
-
-static CRef<CSubSource> s_StringToSubSource (
-    const string& str
-)
-
-{
-    string::size_type val_start_pos;
-    TSUBSOURCE_SUBTYPE subtype = -1;
-    if( ! s_StringHasSubSourcePrefix( str, val_start_pos, subtype ) ) {
-        return CRef<CSubSource>(NULL);
-    }
-
-    // we should have split on something non-alphanumeric
-    // (equals sign, colon, or whatever)
-    if( (val_start_pos < 1) || 
-        ( val_start_pos < str.length() && isalnum( str[val_start_pos-1] ) ) ) {
-        return CRef<CSubSource>(NULL);
-    }
-
-    string value = str.substr(val_start_pos);
-    if (!s_ValueOkForQual(value)) {
-        return CRef<CSubSource>(NULL);
-    }
-
-    CRef<CSubSource> result(new CSubSource(subtype, value));
-
-    return result;
-}
-//LCOV_EXCL_STOP
-
 // is st1 < st2
 
 static bool s_SubsourceCompare (
@@ -1598,10 +1549,6 @@ void CNewCleanup_imp::BiosourceBC (
         RESET_FIELD(biosrc, Origin);
         ChangeMade ( CCleanupChange::eChangeBioSourceOrigin );
     }
-
-    // note - move this 
-    // commented out as requested in SQD-4359 
-    //x_ConvertOrgref_modToSubSource(biosrc);
 
     // remove spaces and convert to lowercase in fwd_primer_seq and rev_primer_seq.
     if( FIELD_IS_SET(biosrc, Subtype) ) {
@@ -1881,78 +1828,7 @@ void CNewCleanup_imp::x_PostBiosource( CBioSource& biosrc )
 }
 
 
-// commented out as requested in SQD-4359 
-//LCOV_EXCL_START
-void CNewCleanup_imp::x_ConvertOrgref_modToSubSource( CBioSource& biosrc )
-{
-    if (BIOSOURCE_HAS_ORGREF (biosrc)) {
-        COrg_ref& org = GET_MUTABLE (biosrc, Org);
 
-        // convert COrg_reg.TMod string to SubSource objects
-        EDIT_EACH_MOD_ON_ORGREF (it, org) {
-            string str = *it;
-            NStr::TruncateSpacesInPlace(str);
-            CRef<CSubSource> sbs = s_StringToSubSource (str);
-            if (! sbs) continue;
-            ADD_SUBSOURCE_TO_BIOSOURCE (biosrc, sbs);
-            ERASE_MOD_ON_ORGREF (it, org);
-            ChangeMade (CCleanupChange::eChangeSubsource);
-            ChangeMade(CCleanupChange::eConvertUnstructuredOrgrefModifier);
-        }
-
-        if( MOD_ON_ORGREF_IS_EMPTY(org) ) {
-            RESET_FIELD(org, Mod);
-            ChangeMade (CCleanupChange::eRemoveOrgmod);
-        }
-    }
-}
-
-static CRef<COrgMod> s_StringToOrgMod (
-    const string& str
-)
-
-{
-    string::size_type val_start_pos;
-    TORGMOD_SUBTYPE subtype = -1;
-    if( ! s_StringHasOrgModPrefix( str, val_start_pos, subtype) ) {
-        return CRef<COrgMod>(NULL);
-    }
-
-    // we should have split on something non-alphanumeric
-    // (equals sign, colon, or whatever)
-    if( (val_start_pos < 1) || isalnum( str[val_start_pos-1] ) ) {
-        return CRef<COrgMod>(NULL);
-    }
-
-    string value = str.substr(val_start_pos);
-    if (!s_ValueOkForQual(value)) {
-        return CRef<COrgMod>(NULL);
-    }
-
-    CRef<COrgMod> result(new COrgMod(subtype, value));
-
-    return result;
-}
-
-//commented out per SQD-4359
-void CNewCleanup_imp::x_ConvertOrgref_modToOrgMod(COrg_ref& org)
-{
-    EDIT_EACH_MOD_ON_ORGREF(it, org) {
-        string str = *it;
-        NStr::TruncateSpacesInPlace(str);
-        CRef<COrgMod> omd = s_StringToOrgMod(str);
-        if (!omd) continue;
-        ADD_ORGMOD_TO_ORGREF(org, omd);
-        ERASE_MOD_ON_ORGREF(it, org);
-        ChangeMade(CCleanupChange::eChangeOrgmod);
-        ChangeMade(CCleanupChange::eConvertUnstructuredOrgrefModifier);
-    }
-    if (RAW_FIELD_IS_EMPTY(org, Mod)) {
-        RESET_FIELD(org, Mod);
-        ChangeMade(CCleanupChange::eChangeOrgmod);
-    }
-}
-//LCOV_EXCL_STOP
 
 static bool s_DbtagIsBad (
     CDbtag& dbt
@@ -1994,9 +1870,6 @@ void CNewCleanup_imp::OrgrefBC (COrg_ref& org)
     CLEAN_STRING_MEMBER (org, Taxname);
     CLEAN_STRING_MEMBER (org, Common);
     CLEAN_STRING_LIST (org, Syn);
-
-    //commented out per SQD-4359
-    //x_ConvertOrgref_modToOrgMod(org);
 
     if (FIELD_IS_SET (org, Orgname)) {
         COrgName& onm = GET_MUTABLE (org, Orgname);
@@ -8029,15 +7902,6 @@ void CNewCleanup_imp::x_GBQualToOrgRef( COrg_ref &org, CSeq_feat &seqfeat )
             }
         }
     }
-    // commented out as requested in SQD-4359 
-#if 0
-    if (any_conversions) {
-        if (seqfeat.GetData().IsBiosrc()) {
-            x_ConvertOrgref_modToSubSource(seqfeat.SetData().SetBiosrc());
-            x_ConvertOrgref_modToOrgMod(seqfeat.SetData().SetBiosrc().SetOrg());
-        }        
-    }
-#endif
 }
 
 void CNewCleanup_imp::x_MoveSeqdescOrgToSourceOrg( CSeqdesc &seqdesc )
@@ -8058,9 +7922,6 @@ void CNewCleanup_imp::x_MoveSeqfeatOrgToSourceOrg( CSeq_feat &seqfeat )
         CRef <COrg_ref> org ( &GET_MUTABLE(seqfeat.SetData(), Org) );
         seqfeat.SetData().SetBiosrc().SetOrg(*org);
         ChangeMade (CCleanupChange::eConvertFeature);
-        // commented out as requested in SQD-4359 
-        //x_ConvertOrgref_modToSubSource(seqfeat.SetData().SetBiosrc());
-        //x_ConvertOrgref_modToOrgMod(seqfeat.SetData().SetBiosrc().SetOrg());
     }
 }
 
@@ -11111,27 +10972,12 @@ void CNewCleanup_imp::x_RemoveOldFeatures(CBioseq & bioseq)
                     // convert imp-source feature to biosource
                     CRef<CBioSource> bsrc = BioSourceFromImpFeat(*(f->GetSeq_feat()));
                     if (bsrc) {
-                        // commented out as requested in SQD-4359 
-                        //x_ConvertOrgref_modToSubSource(*bsrc);
-                        //x_ConvertOrgref_modToOrgMod(bsrc->SetOrg());
                         BiosourceBC(*bsrc);
                         CRef<CSeqdesc> d(new CSeqdesc());
                         d->SetSource().Assign(*bsrc);
                         CBioseq_EditHandle eh(bh);
                         eh.SetDescr().Set().push_back(d);
                         ChangeMade(CCleanupChange::eAddDescriptor);
-#if 0
-                        // and remove feature if whole location
-                        if (f->GetLocation().IsInt() &&
-                            f->GetLocation().GetStart(eExtreme_Positional) == 0 &&
-                            f->GetLocation().GetStop(eExtreme_Positional) == bh.GetBioseqLength() - 1) {
-                            CSeq_feat_Handle fh(*f);
-                            CSeq_feat_EditHandle eh(fh);
-                            eh.Remove();
-                            ChangeMade(CCleanupChange::eRemoveFeat);
-                            any_erasures = true;
-                        }
-#endif
                     }
                 }
             }
@@ -12863,6 +12709,9 @@ void CNewCleanup_imp::ExtendedCleanupSeqEntryHandle (
 }
 
 
+//LCOV_EXCL_START
+//not used by asn_cleanup because we clean the submit block separately
+//and then clean the seq-entries separately
 void CNewCleanup_imp::SetGlobalFlags(const CSeq_submit& ss)
 {
     ResetGlobalFlags();
@@ -12872,7 +12721,7 @@ void CNewCleanup_imp::SetGlobalFlags(const CSeq_submit& ss)
         }
     }
 }
-
+//LCOV_EXCL_STOP
 
 
 
