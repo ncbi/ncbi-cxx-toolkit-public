@@ -49,7 +49,6 @@
 #include <nghttp2/nghttp2.h>
 
 #include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
-#include <objtools/pubseq_gateway/impl/rpc/DdRpcCommon.hpp>
 
 #include <corelib/request_status.hpp>
 
@@ -332,7 +331,7 @@ http2_request::http2_request(shared_ptr<SPSG_Reply::TTS> reply, shared_ptr<http2
     m_reply(move(reply), move(queue))
 {
     if (m_stream_id >= 0)
-        DDRPC::EDdRpcException::raise("Request has already been started");
+        throw runtime_error("Request has already been started");
 
     m_endpoint = std::move(endpoint);
     m_query = std::move(query);
@@ -340,7 +339,7 @@ http2_request::http2_request(shared_ptr<SPSG_Reply::TTS> reply, shared_ptr<http2
     m_full_path = path + "?" + m_query;
 
     if (!m_endpoint)
-        DDRPC::EDdRpcException::raise("EndPoint is null");
+        throw runtime_error("EndPoint is null");
 }
 
 string http2_request::get_host() const
@@ -1165,7 +1164,7 @@ bool http2_session::send_client_connection_header()
     int rv;
 
     /* client 24 bytes magic string will be sent by nghttp2 library */
-    rv = nghttp2_submit_settings(m_session, NGHTTP2_FLAG_NONE, iv, DDRPC::countof(iv));
+    rv = nghttp2_submit_settings(m_session, NGHTTP2_FLAG_NONE, iv, sizeof(iv) / sizeof(iv[0]));
     if (rv == 0) {
         m_max_streams = nghttp2_session_get_remote_settings(m_session, NGHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS);
         if (m_max_streams > TPSG_MaxConcurrentStreams::GetDefault())
@@ -1337,8 +1336,7 @@ void http2_session::process_requests()
                     MAKE_NV (":authority", req->get_authority().c_str(), req->get_authority().length()),
                     MAKE_NV (":path",      path.c_str(), path.length())
                 };
-                //    print_headers(stderr, hdrs, countof(hdrs));
-                int32_t stream_id = nghttp2_submit_request(m_session, NULL, hdrs, DDRPC::countof(hdrs), NULL, req.get());
+                int32_t stream_id = nghttp2_submit_request(m_session, NULL, hdrs, sizeof(hdrs) / sizeof(hdrs[0]), NULL, req.get());
                 if (stream_id == NGHTTP2_ERR_STREAM_ID_NOT_AVAILABLE) {
                     req->error(SPSG_Error::NgHttp2(stream_id));
                     ERR_POST(this << ": max_requests reached");

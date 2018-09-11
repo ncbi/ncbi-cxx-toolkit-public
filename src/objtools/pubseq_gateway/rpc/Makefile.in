@@ -1,6 +1,0 @@
-# $Id$
-
-LIB_PROJ = psg_rpc
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta

@@ -2,9 +2,8 @@
 
 APP = psg_cli
 SRC = psg_cli
-LIB = psg_client psg_rpc psg_diag $(SEQ_LIBS) pub medline biblio general xser xconnserv xconnect xutil xncbi
+LIB = psg_client $(SEQ_LIBS) pub medline biblio general xser xconnserv xconnect xutil xncbi
 
-LIBS = $(PSG_RPC_LIBS) $(ORIG_LIBS)
-CPPFLAGS = $(PSG_RPC_INCLUDE) $(ORIG_CPPFLAGS)
+LIBS = $(PSG_CLIENT_LIBS) $(ORIG_LIBS)
 
 WATCHERS = sadyrovr dmitrie1

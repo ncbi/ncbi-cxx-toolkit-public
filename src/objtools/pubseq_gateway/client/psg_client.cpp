@@ -40,8 +40,6 @@
 #include <connect/ncbi_service.h>
 #include <connect/ncbi_connutil.h>
 
-#include <objtools/pubseq_gateway/impl/rpc/DdRpcCommon.hpp>
-#include <objtools/pubseq_gateway/impl/rpc/DdRpcDataPacker.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 
 #include "psg_client_impl.hpp"

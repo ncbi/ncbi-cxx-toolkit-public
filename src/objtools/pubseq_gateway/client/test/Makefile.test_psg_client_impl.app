@@ -2,10 +2,10 @@
 
 APP = test_psg_client_impl
 SRC = test_psg_client_impl
-LIB = psg_client psg_rpc psg_diag $(SEQ_LIBS) pub medline biblio general xser xconnserv xconnect test_boost xutil xncbi
+LIB = psg_client $(SEQ_LIBS) pub medline biblio general xser xconnserv xconnect test_boost xutil xncbi
 
-LIBS = $(PSG_RPC_LIBS) $(ORIG_LIBS)
-CPPFLAGS = $(PSG_RPC_INCLUDE) $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
+LIBS = $(PSG_CLIENT_LIBS) $(ORIG_LIBS)
+CPPFLAGS = $(LIBUV_INCLUDE) $(NGHTTP2_INCLUDE) $(BOOST_INCLUDE) $(ORIG_CPPFLAGS)
 
 REQUIRES = Boost.Test.Included
 

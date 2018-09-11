@@ -6,9 +6,9 @@ SRC = psg_client psg_client_transport
 
 LIB = psg_client
 
-LIBS = $(PSG_RPC_LIBS)
-CPPFLAGS= $(ORIG_CPPFLAGS) $(PSG_RPC_INCLUDE)
+LIBS = $(PSG_CLIENT_LIBS)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(LIBUV_INCLUDE) $(NGHTTP2_INCLUDE)
+
+REQUIRES = NGHTTP2 LIBUV MT Linux
 
 WATCHERS = sadyrovr dmitrie1
-
-USES_LIBRARIES = psg_rpc
