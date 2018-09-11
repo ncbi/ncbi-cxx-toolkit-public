@@ -289,6 +289,9 @@ void CFlatFileGenerator::Generate
                 if ( m_Ctx->GetConfig().HideSNPFeatures() ) {
                     flags |= CSeqEntryIndex::fHideSNPFeats;
                 }
+                if ( m_Ctx->GetConfig().HideCDDFeatures() ) {
+                    flags |= CSeqEntryIndex::fHideCDDFeats;
+                }
                 CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags ));
                 m_Ctx->SetSeqEntryIndex(idx);
                 if (idx->IsIndexFailure()) {
@@ -666,6 +669,9 @@ void CFlatFileGenerator::Generate
                 }
                 if ( m_Ctx->GetConfig().HideSNPFeatures() ) {
                     flags |= CSeqEntryIndex::fHideSNPFeats;
+                }
+                if ( m_Ctx->GetConfig().HideCDDFeatures() ) {
+                    flags |= CSeqEntryIndex::fHideCDDFeats;
                 }
                 CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags ));
                 m_Ctx->SetSeqEntryIndex(idx);
