@@ -277,12 +277,6 @@ public:
     /// Get the reply that contains this item
     shared_ptr<CPSG_Reply> GetReply() const { return m_Reply; }
 
-    /// Get actual reply item
-    template <class TReplyItem>
-    TReplyItem* CastTo() { return dynamic_cast<TReplyItem*>(this); }
-    template <class TReplyItem>
-    const TReplyItem* CastTo() const { return dynamic_cast<const TReplyItem*>(this); }
-
     virtual ~CPSG_ReplyItem();
 
 protected:

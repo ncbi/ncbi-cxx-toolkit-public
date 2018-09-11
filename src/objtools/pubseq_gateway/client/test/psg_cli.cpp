@@ -91,10 +91,10 @@ private:
     void ProcessFile(const string& filename, TFactory factory);
 
     void ProcessReply(shared_ptr<CPSG_Reply> reply);
-    void PrintErrors(EPSG_Status status, const CPSG_ReplyItem* item);
-    void PrintBlobData(const CPSG_BlobData*);
-    void PrintBlobInfo(const CPSG_BlobInfo*);
-    void PrintBioseqInfo(const CPSG_BioseqInfo*);
+    void PrintErrors(EPSG_Status status, shared_ptr<CPSG_ReplyItem> item);
+    void PrintBlobData(shared_ptr<CPSG_BlobData>);
+    void PrintBlobInfo(shared_ptr<CPSG_BlobInfo>);
+    void PrintBioseqInfo(shared_ptr<CPSG_BioseqInfo>);
 
     static shared_ptr<CPSG_Request> CreateBioRequest(const string& id)
     {
@@ -214,15 +214,15 @@ void CPsgCliApp::ProcessReply(shared_ptr<CPSG_Reply> reply)
             return;
 
         case CPSG_ReplyItem::eBlobData:
-            PrintBlobData(reply_item->CastTo<CPSG_BlobData>());
+            PrintBlobData(static_pointer_cast<CPSG_BlobData>(reply_item));
             break;
 
         case CPSG_ReplyItem::eBlobInfo:
-            PrintBlobInfo(reply_item->CastTo<CPSG_BlobInfo>());
+            PrintBlobInfo(static_pointer_cast<CPSG_BlobInfo>(reply_item));
             break;
 
         case CPSG_ReplyItem::eBioseqInfo:
-            PrintBioseqInfo(reply_item->CastTo<CPSG_BioseqInfo>());
+            PrintBioseqInfo(static_pointer_cast<CPSG_BioseqInfo>(reply_item));
             break;
         }
     }
@@ -295,7 +295,7 @@ void CPsgCliApp::ProcessFile(const string& filename, TFactory factory)
     }
 }
 
-void CPsgCliApp::PrintErrors(EPSG_Status status, const CPSG_ReplyItem* item)
+void CPsgCliApp::PrintErrors(EPSG_Status status, shared_ptr<CPSG_ReplyItem> item)
 {
     cout << static_cast<int>(status) << "\n";
 
@@ -306,7 +306,7 @@ void CPsgCliApp::PrintErrors(EPSG_Status status, const CPSG_ReplyItem* item)
     }
 }
 
-void CPsgCliApp::PrintBlobData(const CPSG_BlobData* blob_data)
+void CPsgCliApp::PrintBlobData(shared_ptr<CPSG_BlobData> blob_data)
 {
     assert(blob_data);
     lock_guard<mutex> lock(m_CoutMutex);
@@ -328,7 +328,7 @@ void CPsgCliApp::PrintBlobData(const CPSG_BlobData* blob_data)
     cout << "Hash: " << blob_hash(os.str()) << endl;
 }
 
-void CPsgCliApp::PrintBlobInfo(const CPSG_BlobInfo* blob_info)
+void CPsgCliApp::PrintBlobInfo(shared_ptr<CPSG_BlobInfo> blob_info)
 {
     assert(blob_info);
     lock_guard<mutex> lock(m_CoutMutex);
@@ -369,7 +369,7 @@ void CPsgCliApp::PrintBlobInfo(const CPSG_BlobInfo* blob_info)
     cout << endl;
 }
 
-void CPsgCliApp::PrintBioseqInfo(const CPSG_BioseqInfo* bioseq_info)
+void CPsgCliApp::PrintBioseqInfo(shared_ptr<CPSG_BioseqInfo> bioseq_info)
 {
     assert(bioseq_info);
     lock_guard<mutex> lock(m_CoutMutex);
