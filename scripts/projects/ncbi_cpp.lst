@@ -19,6 +19,7 @@ internal/test/misc/xmlwrapp
 internal/demo/misc/xmlwrapp
 internal/ctoolkit
 internal/util/flat2asn
+internal/grpcapi/ncbi/grpcapi/dbsnp
 misc
 objects
 objmgr
