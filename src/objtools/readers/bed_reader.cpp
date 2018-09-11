@@ -200,6 +200,8 @@ CBedReader::CBedReader(
 //  ----------------------------------------------------------------------------
     CReaderBase(flags, annotName, annotTitle),
     m_currentId(""),
+    mColumnSeparator(""),
+    mColumnSplitFlags(0),
     mRealColumnCount(0),
     mValidColumnCount(0),
     mAssumeErrorsAreRecordLevel(true),
@@ -299,6 +301,48 @@ CBedReader::ReadSeqAnnot(
 }
 
 //  ----------------------------------------------------------------------------
+bool CBedReader::xAddDefaultColumns(
+    vector<string>& columns)
+//  ----------------------------------------------------------------------------
+{
+    if (mValidColumnCount > 4  &&  columns[4].empty()  &&  m_usescore) {
+        columns[4] = "0";
+    }
+    if (mValidColumnCount > 5  &&  columns[5].empty()) {
+        columns[5] = ".";
+    }
+    if (mValidColumnCount > 6  &&  columns[6].empty()) {
+        columns[6] = columns[1];
+    }
+    if (mValidColumnCount > 7  &&  columns[7].empty()) {
+    columns[7] = columns[2];
+    }
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedReader::xSplitColumns(
+    const string& line,
+    vector<string>& columns)
+//  ----------------------------------------------------------------------------
+{
+    if (mColumnSeparator.empty()) {
+        columns.clear();
+        mColumnSeparator = "\t";
+        NStr::Split(line, mColumnSeparator, columns, mColumnSplitFlags);
+        if (columns.size() > 2) {
+            return true;
+        }
+        mColumnSeparator = " \t";
+        mColumnSplitFlags = NStr::fSplit_MergeDelimiters;
+    }
+    columns.clear();
+    NStr::Split(line, mColumnSeparator, columns, mColumnSplitFlags);
+    return (columns.size() > 2);
+}
+
+//  ----------------------------------------------------------------------------
 bool CBedReader::xDetermineLikelyColumnCount(
     CLinePreBuffer& preBuffer,
     ILineErrorListener* pEc)
@@ -334,9 +378,15 @@ bool CBedReader::xDetermineLikelyColumnCount(
         if (this->xIsBrowserLine(line)) {
             continue;
         }
+
+
         vector<string> columns;
-        NStr::Split(line, " \t", columns, NStr::fSplit_MergeDelimiters);
+        if (!xSplitColumns(line, columns)) {
+            pErrColumnCount->Throw();
+        }
         xCleanColumnValues(columns);
+
+
         if (realColumnCount == 0 ) {
             realColumnCount = columns.size();
         }
@@ -531,9 +581,10 @@ CBedReader::xParseFeature(
 
     //  parse
     vector<string> fields;
-    NStr::Split(record_copy, " \t", fields, NStr::fSplit_MergeDelimiters);
+    xSplitColumns(line, fields);
     try {
         xCleanColumnValues(fields);
+        xAddDefaultColumns(fields);
     }
     catch(CObjReaderLineException& err) {
         ProcessError(err, pEC);

@@ -213,6 +213,13 @@ protected:
         CLinePreBuffer&,
         ILineErrorListener*);
 
+    virtual bool xSplitColumns(
+        const string&,
+        vector<string>&);
+
+    virtual bool xAddDefaultColumns(
+        vector<string>&);
+
     virtual bool xParseTrackLine(
         const string&,
         ILineErrorListener*);
@@ -411,6 +418,8 @@ protected:
     //
 protected:
     string m_currentId;
+    string mColumnSeparator;
+    NStr::TSplitFlags mColumnSplitFlags;
     vector<string>::size_type mRealColumnCount;
     vector<string>::size_type mValidColumnCount;
     bool mAssumeErrorsAreRecordLevel;
