@@ -72,6 +72,8 @@ public:
 class CPsgCliApp: public CNcbiApplication
 {
 private:
+    using TFactory = function<shared_ptr<CPSG_Request>(const string&)>;
+
     unsigned int m_NumThreads;
     string m_HostPort;
     string m_BioId;
@@ -85,17 +87,33 @@ private:
     mutex m_CerrMutex;
     shared_ptr<CPSG_Queue> m_Queue;
 
-    template <class TRequest>
-    void ProcessId(shared_ptr<TRequest> id);
-
-    template <class TRequest>
-    void ProcessFile(const string& filename);
+    void ProcessId(const string& id, TFactory factory);
+    void ProcessFile(const string& filename, TFactory factory);
 
     void ProcessReply(shared_ptr<CPSG_Reply> reply);
     void PrintErrors(EPSG_Status status, const CPSG_ReplyItem* item);
     void PrintBlobData(const CPSG_BlobData*);
     void PrintBlobInfo(const CPSG_BlobInfo*);
     void PrintBioseqInfo(const CPSG_BioseqInfo*);
+
+    static shared_ptr<CPSG_Request> CreateBioRequest(const string& id)
+    {
+        auto bio_id = CPSG_BioId(id, CSeq_id_Base::e_Gi);
+        return make_shared<CPSG_Request_Biodata>(move(bio_id));
+    }
+
+    static shared_ptr<CPSG_Request> CreateResolveRequest(const string& id)
+    {
+        auto bio_id = CPSG_BioId(id, CSeq_id_Base::e_Gi);
+        auto request = make_shared<CPSG_Request_Resolve>(move(bio_id));
+        request->IncludeInfo(CPSG_Request_Resolve::fAllInfo);
+        return request;
+    }
+
+    static shared_ptr<CPSG_Request> CreateBlobRequest(const string& id)
+    {
+        return make_shared<CPSG_Request_Blob>(id);
+    }
 
 public:
     CPsgCliApp() :
@@ -150,28 +168,22 @@ public:
             m_Queue = make_shared<CPSG_Queue>(m_HostPort);
 
             if (!m_BioId.empty()) {
-                auto id = CPSG_BioId(m_BioId, CSeq_id_Base::e_Gi);
-                auto request = make_shared<CPSG_Request_Biodata>(move(id));
-                ProcessId<CPSG_Request_Biodata>(request);
+                ProcessId(m_BioId, CreateBioRequest);
             }
             else if (!m_ResolveId.empty()) {
-                auto id = CPSG_BioId(m_ResolveId, CSeq_id_Base::e_Gi);
-                auto request = make_shared<CPSG_Request_Resolve>(move(id));
-                request->IncludeInfo(CPSG_Request_Resolve::fAllInfo);
-                ProcessId<CPSG_Request_Resolve>(request);
+                ProcessId(m_ResolveId, CreateResolveRequest);
             }
             else if (!m_BlobId.empty()) {
-                auto request = make_shared<CPSG_Request_Blob>(m_BlobId);
-                ProcessId<CPSG_Request_Blob>(request);
+                ProcessId(m_BlobId, CreateBlobRequest);
             }
             else if (!m_LookupFileRemote.empty()) {
-                ProcessFile<CPSG_Request_Biodata>(m_LookupFileRemote);
+                ProcessFile(m_LookupFileRemote, CreateBioRequest);
             }
             else if (!m_ResolveIdFile.empty()) {
-                ProcessFile<CPSG_Request_Resolve>(m_ResolveIdFile);
+                ProcessFile(m_ResolveIdFile, CreateResolveRequest);
             }
             else if (!m_BlobIdFile.empty()) {
-                ProcessFile<CPSG_Request_Blob>(m_BlobIdFile);
+                ProcessFile(m_BlobIdFile, CreateBlobRequest);
             }
         }
         catch(const CException& e) {
@@ -216,17 +228,16 @@ void CPsgCliApp::ProcessReply(shared_ptr<CPSG_Reply> reply)
     }
 }
 
-template <class TRequest>
-void CPsgCliApp::ProcessId(shared_ptr<TRequest> request)
+void CPsgCliApp::ProcessId(const string& id, TFactory factory)
 {
     assert(m_Queue);
 
+    auto request = factory(id);
     m_Queue->SendRequest(request, CDeadline::eInfinite);
     ProcessReply(m_Queue->GetNextReply(CDeadline::eInfinite));
 }
 
-template <class TRequest>
-void CPsgCliApp::ProcessFile(const string& filename)
+void CPsgCliApp::ProcessFile(const string& filename, TFactory factory)
 {
     assert(m_Queue);
 
@@ -252,7 +263,7 @@ void CPsgCliApp::ProcessFile(const string& filename)
     vector<thread> threads(m_NumThreads);
     auto impl = [&](size_t begin, size_t end) {
         for (size_t i = begin; i < end; ++i) {
-            auto request = make_shared<TRequest>(ids[i]);
+            auto request = factory(ids[i]);
             m_Queue->SendRequest(request, CDeadline::eInfinite);
 
             auto wait_ms = (kNanoSecondsPerSecond / kMilliSecondsPerSecond) * begin % 100;
