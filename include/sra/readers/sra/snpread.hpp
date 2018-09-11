@@ -182,17 +182,13 @@ public:
 
     // SSeqInfo holds cached refseq information - ids, len, rows
     struct SSeqInfo {
-        string m_SeqId;
-        CBioseq::TId m_Seq_ids;
+        CRef<CSeq_id> m_Seq_id;
         CSeq_id_Handle m_Seq_id_Handle;
         TSeqPos m_SeqLength;
         TVDBRowId m_GraphRowId;
 
-        CRef<CSeq_id>& GetMainSeq_id(void) {
-            return m_Seq_ids.front();
-        }
         const CRef<CSeq_id>& GetMainSeq_id(void) const {
-            return m_Seq_ids.front();
+            return m_Seq_id;
         }
         const CSeq_id_Handle& GetMainSeq_id_Handle(void) const {
             return m_Seq_id_Handle;
@@ -249,7 +245,8 @@ public:
     }
 
     TTrackInfoList::const_iterator FindTrack(const string& name) const;
-    TSeqInfoList::const_iterator FindSeq(const CSeq_id_Handle& seq_id) const;
+    TSeqInfoList::const_iterator FindSeq(const string& accession, int version);
+    TSeqInfoList::const_iterator FindSeq(const CSeq_id_Handle& seq_id);
 
     TSeqPos GetPageSize(void) const;
     TSeqPos GetOverviewZoom(void) const;
@@ -280,6 +277,10 @@ protected:
                    const char* table_name,
                    volatile bool& table_is_opened);
 
+    const CVDBTable& SeqTable(void) {
+        return m_SeqTable;
+    }
+
     const CVDBTable& GraphTable(void) {
         return m_GraphTable;
     }
@@ -295,6 +296,11 @@ protected:
     const CVDBTable& ExtraTable(void) {
         return m_ExtraTable;
     }
+
+    // get table accessor object for exclusive access
+    CRef<SSeqTableCursor> Seq(TVDBRowId row = 0);
+    // return table accessor object for reuse
+    void Put(CRef<SSeqTableCursor>& curs, TVDBRowId row = 0);
 
     // get table accessor object for exclusive access
     CRef<SGraphTableCursor> Graph(TVDBRowId row = 0);
@@ -329,6 +335,7 @@ protected:
         return TVDBRowId(x_GetTrackVDBIndex(track) + 1);
     }
 
+    void x_Update(TSeqInfoList::const_iterator seq);
     CRange<TVDBRowId>
     x_GetPageVDBRowRange(TSeqInfoList::const_iterator seq);
     TVDBRowId x_GetGraphVDBRowId(TSeqInfoList::const_iterator seq,
@@ -337,11 +344,14 @@ private:
     CVDBMgr m_Mgr;
     string m_DbPath;
     CVDB m_Db;
+    CVDBTable m_SeqTable;
     CVDBTable m_GraphTable;
     CVDBTable m_PageTable;
     CVDBTable m_FeatTable;
     CVDBTable m_ExtraTable;
 
+    CVDBObjectCache<SSeqTableCursor> m_Seq;
+    CVDBTableIndex m_SeqAccIndex;
     CVDBObjectCache<SGraphTableCursor> m_Graph;
     CVDBObjectCache<SPageTableCursor> m_Page;
     CVDBObjectCache<SFeatTableCursor> m_Feat;
@@ -349,6 +359,8 @@ private:
 
     TSeqInfoList m_SeqList; // list of cached refseqs' information
     TSeqInfoMapBySeq_id m_SeqMapBySeq_id; // index for refseq info lookup
+    typedef map<TVDBRowId, TVDBRowId> TSeq2PageMap;
+    TSeq2PageMap m_Seq2PageMap;
 
     TTrackInfoList m_TrackList; // list of cached filter track information
     TTrackInfoMapByName m_TrackMapByName; // index for track lookup
@@ -469,6 +481,7 @@ public:
         }
     explicit CSNPDbSeqIterator(const CSNPDb& db);
     CSNPDbSeqIterator(const CSNPDb& db, size_t seq_index);
+    CSNPDbSeqIterator(const CSNPDb& db, const string& accession, int version);
     CSNPDbSeqIterator(const CSNPDb& db, const CSeq_id_Handle& seq_id);
 
     void Reset(void);
@@ -482,22 +495,13 @@ public:
         return &GetInfo();
     }
 
-    CSNPDbSeqIterator& operator++(void) {
-        ++m_Iter;
-        return *this;
-    }
+    CSNPDbSeqIterator& operator++(void);
 
-    const string& GetAccession(void) const {
-        return m_Iter->m_SeqId;
-    }
     CRef<CSeq_id> GetSeqId(void) const {
         return m_Iter->GetMainSeq_id();
     }
     const CSeq_id_Handle& GetSeqIdHandle(void) const {
         return m_Iter->GetMainSeq_id_Handle();
-    }
-    const CBioseq::TId& GetSeqIds(void) const {
-        return m_Iter->m_Seq_ids;
     }
 
     TSeqPos GetSeqLength(void) const {
@@ -661,9 +665,6 @@ public:
         return m_SearchMode;
     }
 
-    const string& GetAccession(void) const {
-        return GetRefIter().GetAccession();
-    }
     CRef<CSeq_id> GetSeqId(void) const {
         return GetRefIter().GetSeqId();
     }
@@ -883,9 +884,6 @@ public:
         return GetPageIter().GetRefIter();
     }
 
-    const string& GetAccession(void) const {
-        return GetPageIter().GetAccession();
-    }
     CRef<CSeq_id> GetSeqId(void) const {
         return GetPageIter().GetSeqId();
     }

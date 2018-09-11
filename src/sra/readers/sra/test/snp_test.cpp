@@ -376,7 +376,7 @@ int CSNPTestApp::Run(void)
     if ( args["seq_table"] ) {
         sw.Restart();
         for ( CSNPDbSeqIterator it(snp_db); it; ++it ) {
-            cout << it.GetAccession()
+            cout << it.GetSeqIdHandle()
                  << " range: "<<it.GetSNPRange()
                  << " @(" << it.GetPageVDBRowRange() << ")"
                  << NcbiEndl;
@@ -506,7 +506,7 @@ int CSNPTestApp::Run(void)
         }
         for ( CSNPDbFeatIterator it(snp_db, query_idh, query_range, filter); it; ++it ) {
             if ( verbose ) {
-                cout << it.GetAccession();
+                cout << it.GetSeqIdHandle();
                 cout << " pos: "<<it.GetSNPPosition();
                 cout << " len: "<<it.GetSNPLength();
                 cout << '\n';

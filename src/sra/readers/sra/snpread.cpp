@@ -87,6 +87,10 @@ static const char kDefaultAnnotName[] = "SNP";
 
 static const char kFeatSubtypesToChars[] = "U-VSMLDIR";
 
+static const bool kPreloadSeqList = false;
+static const bool kPage2FeatErrorWorkaround = true;
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CSNPDb_Impl
 /////////////////////////////////////////////////////////////////////////////
@@ -226,6 +230,16 @@ CSNPDb_Impl::SExtraTableCursor::SExtraTableCursor(const CVDBTable& table)
 }
 
 
+CRef<CSNPDb_Impl::SSeqTableCursor> CSNPDb_Impl::Seq(TVDBRowId row)
+{
+    CRef<SSeqTableCursor> curs = m_Seq.Get(row);
+    if ( !curs ) {
+        curs = new SSeqTableCursor(SeqTable());
+    }
+    return curs;
+}
+
+
 CRef<CSNPDb_Impl::SGraphTableCursor> CSNPDb_Impl::Graph(TVDBRowId row)
 {
     CRef<SGraphTableCursor> curs = m_Graph.Get(row);
@@ -265,6 +279,12 @@ CRef<CSNPDb_Impl::SExtraTableCursor> CSNPDb_Impl::Extra(TVDBRowId row)
         }
     }
     return curs;
+}
+
+
+void CSNPDb_Impl::Put(CRef<SSeqTableCursor>& curs, TVDBRowId row)
+{
+    m_Seq.Put(curs, row);
 }
 
 
@@ -350,31 +370,38 @@ CSNPDb_Impl::CSNPDb_Impl(CVDBMgr& mgr,
         m_TrackMapByName[""] = 0;
     }
 
+    // open tables
+    m_SeqTable = CVDBTable(m_Db, "SEQUENCE");
+    m_SeqAccIndex = CVDBTableIndex(m_SeqTable, "acc");
+    m_PageTable = CVDBTable(m_Db, "PAGE");
+    m_GraphTable = CVDBTable(m_Db, "COVERAGE_GRAPH");
+    m_FeatTable = CVDBTable(m_Db, "FEAT");
+    m_ExtraTable = CVDBTable(m_Db, "EXTRA");
+
     {
         // load sequence list
-        CVDBTable seq_table(m_Db, "SEQUENCE");
-        SSeqTableCursor cur(seq_table);
-        size_t seq_count = cur.m_Cursor.GetMaxRowId();
+        CRef<SSeqTableCursor> cur = Seq();
+
+        size_t seq_count = cur->m_Cursor.GetMaxRowId();
         m_SeqList.resize(seq_count);
-        for ( size_t i = 0; i < seq_count; ++i ) {
-            SSeqInfo& info = m_SeqList[i];
-            TVDBRowId row = i+1;
-            CTempString ref_id = *cur.ACCESSION(row);
-            info.m_SeqId = ref_id;
-            info.m_Seq_ids.assign(1, Ref(new CSeq_id(ref_id)));
-            info.m_Seq_id_Handle =
-                CSeq_id_Handle::GetHandle(*info.GetMainSeq_id());
-            info.m_SeqLength = *cur.LEN(row);
-            info.m_Circular = false;
-            // index
-            for ( auto& id : info.m_Seq_ids ) {
-                m_SeqMapBySeq_id[CSeq_id_Handle::GetHandle(*id)] = i;
+        if ( kPreloadSeqList ) {
+            for ( size_t i = 0; i < seq_count; ++i ) {
+                SSeqInfo& info = m_SeqList[i];
+                TVDBRowId row = i+1;
+                CTempString ref_id = *cur->ACCESSION(row);
+                info.m_Seq_id = new CSeq_id(ref_id);
+                info.m_Seq_id_Handle = CSeq_id_Handle::GetHandle(*info.m_Seq_id);
+                info.m_SeqLength = *cur->LEN(row);
+                info.m_Circular = false;
+                // index
+                m_SeqMapBySeq_id[info.m_Seq_id_Handle] = i;
             }
         }
+        
+        Put(cur);
     }
 
-    m_PageTable = CVDBTable(m_Db, "PAGE");
-    {
+    if ( kPreloadSeqList ) {
         // prepare page index
         CRef<SPageTableCursor> cur = Page();
         
@@ -400,7 +427,7 @@ CSNPDb_Impl::CSNPDb_Impl(CVDBMgr& mgr,
     }
 
     // update length and graph positions
-    {
+    if ( kPreloadSeqList ) {
         size_t track_count = m_TrackList.size();
         TVDBRowId graph_row = 1;
         for ( auto& info : m_SeqList ) {
@@ -412,11 +439,6 @@ CSNPDb_Impl::CSNPDb_Impl(CVDBMgr& mgr,
             graph_row += pages * track_count;
         }
     }
-
-    // open other tables
-    m_GraphTable = CVDBTable(m_Db, "COVERAGE_GRAPH");
-    m_FeatTable = CVDBTable(m_Db, "FEAT");
-    m_ExtraTable = CVDBTable(m_Db, "EXTRA");
 }
 
 
@@ -457,14 +479,141 @@ CSNPDb_Impl::FindTrack(const string& name) const
 
 
 CSNPDb_Impl::TSeqInfoList::const_iterator
-CSNPDb_Impl::FindSeq(const CSeq_id_Handle& seq_id) const
+CSNPDb_Impl::FindSeq(const string& accession, int version)
 {
+    string key = accession;
+    NStr::ToUpper(key);
+    key += ".000";
+    SIZE_TYPE ver_pos = key.size()-3;
+    key[ver_pos] += version/100;
+    key[ver_pos+1] += (version/10)%10;
+    key[ver_pos+2] += version%10;
+    TVDBRowIdRange range = m_SeqAccIndex.Find(key);
+    if ( !range.second ) {
+        return m_SeqList.end();
+    }
+    size_t index = size_t(range.first-1);
+    if ( index >= m_SeqList.size() ) {
+        return m_SeqList.end();
+    }
+    TSeqInfoList::const_iterator iter = m_SeqList.begin()+index;
+    x_Update(iter);
+    return iter;
+}
+
+
+CSNPDb_Impl::TSeqInfoList::const_iterator
+CSNPDb_Impl::FindSeq(const CSeq_id_Handle& seq_id)
+{
+    if ( 1 ) {
+        CConstRef<CSeq_id> id = seq_id.GetSeqId();
+        if ( const CTextseq_id* text_id = id->GetTextseq_Id() ) {
+            if ( text_id->IsSetAccession() && text_id->IsSetVersion() &&
+                 !text_id->IsSetName() && !text_id->IsSetRelease() ) {
+                return FindSeq(text_id->GetAccession(), text_id->GetVersion());
+            }
+        }
+        return m_SeqList.end();
+    }
     TSeqInfoMapBySeq_id::const_iterator it = m_SeqMapBySeq_id.find(seq_id);
     if ( it == m_SeqMapBySeq_id.end() ) {
         return m_SeqList.end();
     }
     else {
         return m_SeqList.begin()+it->second;
+    }
+}
+
+
+void
+CSNPDb_Impl::x_Update(TSeqInfoList::const_iterator seq)
+{
+    _ASSERT(seq >= m_SeqList.begin() && seq < m_SeqList.end());
+    if ( seq->GetMainSeq_id() ) {
+        // already updated
+        return;
+    }
+    size_t seq_index = seq-m_SeqList.begin();
+    SSeqInfo& info = m_SeqList[seq_index];
+    TVDBRowId seq_row = TVDBRowId(seq_index+1);
+
+    // update id and length
+    {
+        CRef<SSeqTableCursor> cur = Seq();
+        
+        CTempString ref_id = *cur->ACCESSION(seq_row);
+        info.m_Seq_id = new CSeq_id(ref_id);
+        info.m_Seq_id_Handle = CSeq_id_Handle::GetHandle(*info.m_Seq_id);
+        info.m_SeqLength = *cur->LEN(seq_row);
+        info.m_Circular = false;
+
+        Put(cur);
+    }
+
+    // update page range
+    {
+        CRef<SPageTableCursor> cur = Page();
+
+        TVDBRowId max_row = cur->m_Cursor.GetMaxRowId();
+        TVDBRowId row_before = 0; // < seq_row
+
+        // binary search
+        {
+            // look for better bounds
+            auto iter = m_Seq2PageMap.lower_bound(seq_row);
+            if ( iter != m_Seq2PageMap.end() ) {
+                max_row = iter->second;
+            }
+            if ( iter != m_Seq2PageMap.begin() ) {
+                --iter;
+                auto& slot = *iter;
+                row_before = slot.second;
+            }
+        }
+        LOG_POST("SNP PAGE lookup: seq["<<seq_row<<"] = "<<info.m_Seq_id_Handle<<" in "<<row_before<<"-"<<max_row);
+
+        TVDBRowId row = max_row; // >= seq_row
+        while ( row_before+1 < row ) {
+            TVDBRowId mid_row = row_before+(row-row_before)/2;
+            if ( *cur->SEQ_ID_ROW_NUM(mid_row) < seq_row ) {
+                row_before = mid_row;
+            }
+            else {
+                row = mid_row;
+            }
+        }
+        LOG_POST("SNP PAGE lookup: seq["<<seq_row<<"] = "<<info.m_Seq_id_Handle<<" at "<<row);
+        m_Seq2PageMap[seq_row] = row;
+        
+        for ( ; row <= max_row; ++row ) {
+            if ( *cur->SEQ_ID_ROW_NUM(row) != seq_row ) {
+                break;
+            }
+
+            SSeqInfo::SPageSet pset;
+            pset.m_SeqPos = *cur->PAGE_FROM(row);
+            pset.m_PageCount = 1;
+            pset.m_RowId = row;
+            if ( !info.m_PageSets.empty() ) {
+                SSeqInfo::SPageSet& prev_pset = info.m_PageSets.back();
+                if ( prev_pset.GetSeqPosEnd(kPageSize) == pset.m_SeqPos &&
+                     prev_pset.GetRowIdEnd() == pset.m_RowId ) {
+                    prev_pset.m_PageCount += 1;
+                    continue;
+                }
+            }
+            info.m_PageSets.push_back(pset);
+        }
+        
+        Put(cur);
+    }
+
+    // update graph range
+    {
+        if ( !info.m_SeqLength ) {
+            info.m_SeqLength = info.m_PageSets.back().GetSeqPosEnd(kPageSize);
+        }
+        info.m_GraphRowId = (info.m_PageSets.front().m_RowId-1) * m_TrackList.size() + 1;
     }
 }
 
@@ -562,6 +711,9 @@ CSNPDbSeqIterator::CSNPDbSeqIterator(const CSNPDb& db)
       m_Iter(db->GetSeqInfoList().begin()),
       m_TrackIter(db->GetTrackInfoList().begin())
 {
+    if ( *this ) {
+        GetDb().x_Update(m_Iter);
+    }
 }
 
 
@@ -582,7 +734,17 @@ CSNPDbSeqIterator::CSNPDbSeqIterator(const CSNPDb& db,
 CSNPDbSeqIterator::CSNPDbSeqIterator(const CSNPDb& db,
                                      const CSeq_id_Handle& seq_id)
     : m_Db(db),
-      m_Iter(db->FindSeq(seq_id)),
+      m_Iter(db.GetNCObject().FindSeq(seq_id)),
+      m_TrackIter(db->GetTrackInfoList().begin())
+{
+}
+
+
+CSNPDbSeqIterator::CSNPDbSeqIterator(const CSNPDb& db,
+                                     const string& accession,
+                                     int version)
+    : m_Db(db),
+      m_Iter(db.GetNCObject().FindSeq(accession, version)),
       m_TrackIter(db->GetTrackInfoList().begin())
 {
 }
@@ -609,6 +771,16 @@ void CSNPDbSeqIterator::Reset(void)
     m_Iter = CSNPDb_Impl::TSeqInfoList::const_iterator();
     m_TrackIter = CSNPDb_Impl::TTrackInfoList::const_iterator();
     m_Db.Reset();
+}
+
+
+CSNPDbSeqIterator& CSNPDbSeqIterator::operator++(void)
+{
+    ++m_Iter;
+    if ( *this ) {
+        GetDb().x_Update(m_Iter);
+    }
+    return *this;
 }
 
 
@@ -1492,6 +1664,7 @@ CRef<CSeq_annot> SSeqTableContent::GetAnnot(const string& annot_name,
                    "variation");
 
     if ( 1 ) {
+        _ASSERT(is_sorted(col_from.values->begin(), col_from.values->end()));
         TSeqPos total_from = col_from.values->front();
         TSeqPos total_to = col_from.values->back();
         TSeqPos max_len = 1;
@@ -1865,10 +2038,6 @@ CSNPDbPageIterator::Select(COpenRange<TSeqPos> ref_range,
         return *this;
     }
     
-    if ( !m_Cur ) {
-        m_Cur = GetDb().Page(m_CurrPageRowId);
-    }
-
     TSeqPos pos = ref_range.GetFrom();
     if ( m_SearchMode == eSearchByOverlap ) {
         // SNP may start before requested position
@@ -1882,6 +2051,9 @@ CSNPDbPageIterator::Select(COpenRange<TSeqPos> ref_range,
         if ( skip < pset.m_PageCount ) {
             m_CurrPageRowId = pset.m_RowId + skip;
             m_CurrPagePos = pset.m_SeqPos + skip * kPageSize;
+            if ( !m_Cur ) {
+                m_Cur = GetDb().Page(m_CurrPageRowId);
+            }
             return *this;
         }
     }
@@ -2010,13 +2182,12 @@ CSNPDbGraphIterator::Select(const CSNPDbSeqIterator& iter,
         return *this;
     }
     
-    if ( !m_Cur ) {
-        m_Cur = GetDb().Graph(m_CurrPageRowId);
-    }
-
     TSeqPos page = ref_range.GetFrom()/kPageSize;
     m_CurrPageRowId = iter.GetGraphVDBRowId() + page;
     m_CurrPagePos = page*kPageSize;
+    if ( !m_Cur ) {
+        m_Cur = GetDb().Graph(m_CurrPageRowId);
+    }
     return *this;
 }
 
@@ -2100,6 +2271,15 @@ void CSNPDbFeatIterator::x_InitPage(void)
                 m_Feat = GetDb().Feat();
             }
             TVDBRowId first = GetPageIter().GetFirstFeatRowId();
+            if ( kPage2FeatErrorWorkaround ) {
+                if ( GetPageIter().GetPagePos() == 0 ) {
+                    TVDBRowId seq_row = GetRefIter().GetVDBRowId();
+                    TVDBRowId max_row = m_Feat->m_Cursor.GetMaxRowId();
+                    while ( first < max_row && *m_Feat->SEQ_ID_ROW_NUM(first) < seq_row ) {
+                        ++first;
+                    }
+                }
+            }
             m_CurrFeatId = first;
             m_FirstBadFeatId = first + count;
         }
