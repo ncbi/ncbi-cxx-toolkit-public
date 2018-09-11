@@ -56,7 +56,6 @@ struct SBlobRequest
     // Construct the request for the case of seq_id/id_type request
     SBlobRequest(const CTempString &  seq_id,
                  int  seq_id_type,
-                 bool  seq_id_type_provided,
                  TServIncludeData  include_data_flags) :
         m_NeedBlobProp(true),
         m_NeedChunks(false),
@@ -65,7 +64,6 @@ struct SBlobRequest
         m_LastModified(INT64_MIN),
         m_SeqId(seq_id),
         m_SeqIdType(seq_id_type),
-        m_SeqIdTypeProvided(seq_id_type_provided),
         m_IncludeDataFlags(include_data_flags)
     {}
 
@@ -88,7 +86,6 @@ public:
     // Fields in case of request by seq_id/seq_id_type
     CTempString                 m_SeqId;
     int                         m_SeqIdType;
-    bool                        m_SeqIdTypeProvided;
     TServIncludeData            m_IncludeDataFlags;
 };
 
@@ -98,12 +95,10 @@ struct SResolveRequest
 public:
     SResolveRequest(const CTempString &  seq_id,
                     int  seq_id_type,
-                    bool  seq_id_type_provided,
                     TServIncludeData  include_data_flags,
                     EOutputFormat  output_format,
                     bool  use_psg_protocol) :
         m_SeqId(seq_id), m_SeqIdType(seq_id_type),
-        m_SeqIdTypeProvided(seq_id_type_provided),
         m_IncludeDataFlags(include_data_flags),
         m_OutputFormat(output_format),
         m_UsePsgProtocol(use_psg_protocol)
@@ -114,7 +109,6 @@ public:
 public:
     CTempString                 m_SeqId;
     int                         m_SeqIdType;
-    bool                        m_SeqIdTypeProvided;
     TServIncludeData            m_IncludeDataFlags;
     EOutputFormat               m_OutputFormat;
     bool                        m_UsePsgProtocol;

@@ -111,11 +111,9 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
 
     CTempString         seq_id;
     int                 seq_id_type;
-    SRequestParameter   seq_id_type_param;
 
     if (!x_ProcessCommonGetAndResolveParams(req, resp, seq_id,
-                                            seq_id_type, seq_id_type_param,
-                                            true)) {
+                                            seq_id_type, true)) {
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
@@ -148,9 +146,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
     m_RequestCounters.IncGetBlobBySeqId();
     resp.Postpone(
             CPendingOperation(
-                SBlobRequest(seq_id,
-                             seq_id_type, seq_id_type_param.m_Found,
-                             include_data_flags),
+                SBlobRequest(seq_id, seq_id_type, include_data_flags),
                 0, m_CassConnection, m_TimeoutMs,
                 m_MaxRetries, context));
     return 0;
@@ -257,11 +253,9 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
 
     CTempString         seq_id;
     int                 seq_id_type;
-    SRequestParameter   seq_id_type_param;
 
     if (!x_ProcessCommonGetAndResolveParams(req, resp, seq_id,
-                                            seq_id_type, seq_id_type_param,
-                                            use_psg_protocol)) {
+                                            seq_id_type, use_psg_protocol)) {
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
@@ -316,11 +310,8 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
     m_RequestCounters.IncResolve();
     resp.Postpone(
             CPendingOperation(
-                SResolveRequest(seq_id,
-                                seq_id_type, seq_id_type_param.m_Found,
-                                include_data_flags,
-                                output_format,
-                                use_psg_protocol),
+                SResolveRequest(seq_id, seq_id_type, include_data_flags,
+                                output_format, use_psg_protocol),
                 0, m_CassConnection, m_TimeoutMs,
                 m_MaxRetries, context));
     return 0;
@@ -484,10 +475,10 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
         HST::CHttpReply<CPendingOperation> &  resp,
         CTempString &  seq_id,
         int &  seq_id_type,
-        SRequestParameter &  seq_id_type_param,
         bool  use_psg_protocol)
 {
-    string  err_msg;
+    SRequestParameter   seq_id_type_param;
+    string              err_msg;
 
     // Check the mandatory parameter presence
     SRequestParameter   seq_id_param = x_GetParam(req, kSeqIdParam);
@@ -522,6 +513,20 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
                 x_SendMessageAndCompletionChunks(resp, err_msg,
                                                  CRequestStatus::e400_BadRequest,
                                                  eMalformedParameter, eDiag_Error);
+            else
+                resp.Send400("Bad Request", err_msg.c_str());
+
+            PSG_WARNING(err_msg);
+            return false;
+        }
+
+        if (seq_id_type < 0) {
+            err_msg = "seq_id_type value must be >= 0";
+            m_ErrorCounters.IncMalformedArguments();
+            if (use_psg_protocol)
+                x_SendMessageAndCompletionChunks(resp, err_msg,
+                                                CRequestStatus::e400_BadRequest,
+                                                eMalformedParameter, eDiag_Error);
             else
                 resp.Send400("Bad Request", err_msg.c_str());
 

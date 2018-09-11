@@ -244,11 +244,10 @@ private:
     int x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id);
     bool x_LookupCachedBioseqInfo(const string &  accession,
                                   int &  version,
-                                  int  seq_id_type,
+                                  int &  seq_id_type,
                                   string &  bioseq_info_cache_data);
     bool x_LookupCachedCsi(const string &  seq_id,
                            int &  seq_id_type,
-                           bool  seq_id_type_provided,
                            string &  csi_cache_data);
     bool x_LookupBlobPropCache(int  sat, int  sat_key,
                                int64_t &  last_modified,
@@ -265,6 +264,8 @@ private:
     bool                                    m_IsResolveRequest;
     SBlobRequest                            m_BlobRequest;
     SResolveRequest                         m_ResolveRequest;
+    CTempString                             m_UrlSeqId;
+    int                                     m_UrlSeqIdType;
 
     int32_t                                 m_TotalSentReplyChunks;
     bool                                    m_Cancelled;

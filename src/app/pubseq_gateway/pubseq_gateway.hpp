@@ -123,7 +123,6 @@ private:
         HST::CHttpRequest &  req,
         HST::CHttpReply<CPendingOperation> &  resp,
         CTempString &  seq_id, int &  seq_id_type,
-        SRequestParameter &  seq_id_type_param,
         bool  use_psg_protocol);
 
 private:

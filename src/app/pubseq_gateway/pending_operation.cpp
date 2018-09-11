@@ -37,6 +37,8 @@
 #include "pubseq_gateway_logging.hpp"
 
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info.hpp>
 #include <objtools/pubseq_gateway/protobuf/psg_protobuf_data.hpp>
 USING_IDBLOB_SCOPE;
@@ -641,18 +643,34 @@ void CPendingOperation::x_PrintRequestStop(int  status)
 
 SBioseqKey CPendingOperation::x_ResolveInputSeqId(string &  err_msg)
 {
-    SBioseqKey      bioseq_key;
-    CTempString     url_seq_id = m_BlobRequest.m_SeqId;
-
+    m_UrlSeqId = m_BlobRequest.m_SeqId;
+    m_UrlSeqIdType = m_BlobRequest.m_SeqIdType;
     if (m_IsResolveRequest) {
-        url_seq_id = m_ResolveRequest.m_SeqId;
+        m_UrlSeqId = m_ResolveRequest.m_SeqId;
+        m_UrlSeqIdType = m_ResolveRequest.m_SeqIdType;
     }
 
+    SBioseqKey      bioseq_key;
     try {
-        CSeq_id                 parsed_seq_id(url_seq_id);
+        CSeq_id     parsed_seq_id;
+
+        try {
+            parsed_seq_id.Set(m_UrlSeqId);
+        } catch (...) {
+            if (m_UrlSeqIdType >= 0)
+                parsed_seq_id.Set(CSeq_id::eFasta_AsTypeAndContent,
+                                  (CSeq_id_Base::E_Choice)(m_UrlSeqIdType),
+                                  m_UrlSeqId);
+            else
+                throw;
+        }
+
+
+//        CSeq_id                 parsed_seq_id(url_seq_id);
         const CTextseq_id *     text_seq_id = parsed_seq_id.GetTextseq_Id();
 
-        if (text_seq_id != NULL) {
+        if (text_seq_id != NULL ||
+            x_GetEffectiveSeqIdType(parsed_seq_id) == 11) {
             try {
                 // The only possible problem is a mismatch between
                 // acc/ver/seq_id_type
@@ -730,22 +748,59 @@ SBioseqKey
 CPendingOperation::x_ResolveInputSeqIdPath1(const CSeq_id &  parsed_seq_id,
                                             const CTextseq_id *  text_seq_id)
 {
-    SBioseqKey              bioseq_key;
+    SBioseqKey          bioseq_key;
+    int                 seq_id_type = x_GetEffectiveSeqIdType(parsed_seq_id);
 
-    bioseq_key.m_Accession = text_seq_id->GetAccession();
-    bioseq_key.m_SeqIdType = x_GetEffectiveSeqIdType(parsed_seq_id);
+    if (seq_id_type == CSeq_id_Base::e_General) {
+        // Try it as fasta content
+        string      csi_cache_data;
+        bool        cache_hit = false;
 
-    if (text_seq_id->CanGetVersion())
-        bioseq_key.m_Version = text_seq_id->GetVersion();
+        try {
+            string      seq_id_content;
+            parsed_seq_id.GetLabel(&seq_id_content, CSeq_id::eFastaContent,
+                                   CSeq_id::fLabel_Trimmed);
 
-    if (x_LookupCachedBioseqInfo(bioseq_key.m_Accession,
-                                 bioseq_key.m_Version,
-                                 bioseq_key.m_SeqIdType,
-                                 bioseq_key.m_BioseqInfo))
-        return bioseq_key;
+            cache_hit = x_LookupCachedCsi(seq_id_content, seq_id_type,
+                                          csi_cache_data);
+        } catch (...) {
+        }
 
-    // Another try with what has come from url
-    bioseq_key.Reset();
+
+        // Try it as Tag
+        if (!cache_hit) {
+            const CObject_id &  obj_id = parsed_seq_id.GetGeneral().GetTag();
+            if (obj_id.Which() == CObject_id::e_Str)
+                cache_hit = x_LookupCachedCsi(obj_id.GetStr(),
+                                              seq_id_type, csi_cache_data);
+            else
+                cache_hit = x_LookupCachedCsi(NStr::NumericToString(obj_id.GetId()),
+                                              seq_id_type, csi_cache_data);
+        }
+
+        if (cache_hit) {
+            ConvertSi2csiToBioseqKey(csi_cache_data, bioseq_key);
+            return bioseq_key;
+        }
+    }
+
+    if (text_seq_id && text_seq_id->CanGetAccession()) {
+        bioseq_key.m_SeqIdType = seq_id_type;
+        bioseq_key.m_Accession = text_seq_id->GetAccession();
+
+        if (text_seq_id->CanGetVersion())
+            bioseq_key.m_Version = text_seq_id->GetVersion();
+
+        if (x_LookupCachedBioseqInfo(bioseq_key.m_Accession,
+                                     bioseq_key.m_Version,
+                                     bioseq_key.m_SeqIdType,
+                                     bioseq_key.m_BioseqInfo))
+            return bioseq_key;
+
+        // Another try with what has come from url
+        bioseq_key.Reset();
+    }
+
     x_ResolveInputSeqIdAsIs(bioseq_key);
     return bioseq_key;
 }
@@ -754,7 +809,7 @@ CPendingOperation::x_ResolveInputSeqIdPath1(const CSeq_id &  parsed_seq_id,
 bool
 CPendingOperation::x_LookupCachedBioseqInfo(const string &  accession,
                                             int &  version,
-                                            int  seq_id_type,
+                                            int &  seq_id_type,
                                             string &  bioseq_info_cache_data)
 {
     bool                    cache_hit = false;
@@ -767,18 +822,20 @@ CPendingOperation::x_LookupCachedBioseqInfo(const string &  accession,
                                         bioseq_info_cache_data);
         else
             cache_hit = cache->LookupBioseqInfoByAccessionVersion(
-                                        accession, version, seq_id_type,
-                                        bioseq_info_cache_data);
+                                        accession, version,
+                                        bioseq_info_cache_data,
+                                        seq_id_type);
     } else {
-        if (seq_id_type >= 0) {
-            version = 0;
+        if (seq_id_type >= 0)
             cache_hit = cache->LookupBioseqInfoByAccessionVersionSeqIdType(
-                                        accession, version, seq_id_type,
-                                        bioseq_info_cache_data);
-        } else
+                                        accession, -1, seq_id_type,
+                                        bioseq_info_cache_data,
+                                        version, seq_id_type);
+        else
             cache_hit = cache->LookupBioseqInfoByAccession(
-                                        accession, version, seq_id_type,
-                                        bioseq_info_cache_data);
+                                        accession,
+                                        bioseq_info_cache_data,
+                                        version, seq_id_type);
     }
 
     if (cache_hit)
@@ -794,13 +851,12 @@ CPendingOperation::x_LookupCachedBioseqInfo(const string &  accession,
 bool
 CPendingOperation::x_LookupCachedCsi(const string &  seq_id,
                                      int &  seq_id_type,
-                                     bool  seq_id_type_provided,
                                      string &  csi_cache_data)
 {
     bool                    cache_hit = false;
     CPubseqGatewayCache *   cache = CPubseqGatewayApp::GetInstance()->
                                                             GetLookupCache();
-    if (!seq_id_type_provided)
+    if (seq_id_type < 0)
         cache_hit = cache->LookupCsiBySeqId(seq_id, seq_id_type,
                                             csi_cache_data);
     else
@@ -821,32 +877,45 @@ void CPendingOperation::x_ResolveInputSeqIdAsIs(SBioseqKey &  bioseq_key)
 {
     string      csi_cache_data;
 
-    CTempString url_seq_id = m_BlobRequest.m_SeqId;
-    int         url_seq_id_type = m_BlobRequest.m_SeqIdType;
-    bool        url_seq_id_type_provided = m_BlobRequest.m_SeqIdTypeProvided;
-    if (m_IsResolveRequest) {
-        url_seq_id = m_ResolveRequest.m_SeqId;
-        url_seq_id_type = m_ResolveRequest.m_SeqIdType;
-        url_seq_id_type_provided = m_ResolveRequest.m_SeqIdTypeProvided;
-    }
-
-
     // Try as fasta content
     bool        cache_hit = false;
     try {
-        CSeq_id     parsed_seq_id(url_seq_id);
+        CSeq_id     parsed_seq_id(m_UrlSeqId);
+        int         eff_seq_id_type = x_GetEffectiveSeqIdType(parsed_seq_id);
         string      seq_id_content;
-        parsed_seq_id.GetLabel(&seq_id_content, CSeq_id::eFastaContent);
+        parsed_seq_id.GetLabel(&seq_id_content, CSeq_id::eFastaContent,
+                               CSeq_id::fLabel_Trimmed);
 
-        cache_hit = x_LookupCachedCsi(seq_id_content, url_seq_id_type,
-                                      url_seq_id_type_provided, csi_cache_data);
+        cache_hit = x_LookupCachedCsi(seq_id_content, eff_seq_id_type,
+                                      csi_cache_data);
     } catch (...) {
     }
 
     // Try as it came from the URL
-    if (!cache_hit)
-        cache_hit = x_LookupCachedCsi(url_seq_id, url_seq_id_type,
-                                      url_seq_id_type_provided, csi_cache_data);
+    if (!cache_hit) {
+        // Strip the trailing '|' from the url_seq_id if there are any
+        while (m_UrlSeqId[m_UrlSeqId.size() - 1] == '|')
+            m_UrlSeqId.erase(m_UrlSeqId.size() - 1);
+
+        cache_hit = x_LookupCachedCsi(m_UrlSeqId, m_UrlSeqIdType,
+                                      csi_cache_data);
+    }
+
+    if (!cache_hit) {
+        // Try bioseq_info cache as it came from URL
+        bioseq_key.m_Accession = m_UrlSeqId;
+        bioseq_key.m_Version = -1;
+        bioseq_key.m_SeqIdType = m_UrlSeqIdType;
+
+        if (x_LookupCachedBioseqInfo(bioseq_key.m_Accession,
+                                     bioseq_key.m_Version,
+                                     bioseq_key.m_SeqIdType,
+                                     bioseq_key.m_BioseqInfo))
+            return; // found
+
+        // Not found, so bioseq_key must be cleared
+        bioseq_key.Reset();
+    }
 
     if (cache_hit)
         ConvertSi2csiToBioseqKey(csi_cache_data, bioseq_key);
@@ -859,15 +928,17 @@ CPendingOperation::x_ResolveInputSeqIdPath2(const CSeq_id &  parsed_seq_id,
 {
     SBioseqKey      bioseq_key;
 
-    if (text_seq_id->CanGetName()) {
-        string      name = text_seq_id->GetName();
-        int         eff_seq_id_type = x_GetEffectiveSeqIdType(parsed_seq_id);
+    if (text_seq_id) {
+        if (text_seq_id->CanGetName()) {
+            string      name = text_seq_id->GetName();
+            int         eff_seq_id_type = x_GetEffectiveSeqIdType(parsed_seq_id);
 
-        string      csi_cache_data;
-        if (x_LookupCachedCsi(name, eff_seq_id_type, eff_seq_id_type >= 0,
-                              csi_cache_data))
-            ConvertSi2csiToBioseqKey(csi_cache_data, bioseq_key);
+            string      csi_cache_data;
+            if (x_LookupCachedCsi(name, eff_seq_id_type, csi_cache_data))
+                ConvertSi2csiToBioseqKey(csi_cache_data, bioseq_key);
+        }
     }
+
     return bioseq_key;
 }
 
@@ -878,30 +949,23 @@ int CPendingOperation::x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id)
     bool                    parsed_seq_id_type_found = (parsed_seq_id_type !=
                                                         CSeq_id_Base::e_not_set);
 
-    int         seq_id_type = m_BlobRequest.m_SeqIdType;
-    bool        seq_id_type_provided = m_BlobRequest.m_SeqIdTypeProvided;
-    if (m_IsResolveRequest) {
-        seq_id_type = m_ResolveRequest.m_SeqIdType;
-        seq_id_type_provided = m_ResolveRequest.m_SeqIdTypeProvided;
-    }
-
-    if (!parsed_seq_id_type_found && !seq_id_type_provided)
+    if (!parsed_seq_id_type_found && m_UrlSeqIdType < 0)
         return -1;
     if (!parsed_seq_id_type_found)
-        return seq_id_type;
-    if (!seq_id_type_provided)
+        return m_UrlSeqIdType;
+    if (m_UrlSeqIdType < 0)
         return parsed_seq_id_type;
 
     // Both found
-    if (parsed_seq_id_type != seq_id_type)
+    if (parsed_seq_id_type != m_UrlSeqIdType)
         NCBI_THROW(CPubseqGatewayException, eSeqIdMismatch,
                    "Resolving input seq_id failure: seq_id_type mismatch. "
                    "URL provided is " +
-                   NStr::NumericToString(seq_id_type) +
+                   NStr::NumericToString(m_UrlSeqIdType) +
                    " while the parsed one is " +
                    NStr::NumericToString(int(parsed_seq_id_type)));
 
-    return seq_id_type;
+    return m_UrlSeqIdType;
 }
 
 
