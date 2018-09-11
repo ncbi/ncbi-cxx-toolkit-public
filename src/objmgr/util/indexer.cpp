@@ -1769,11 +1769,13 @@ void CBioseqIndex::x_InitFeats (void)
         SAnnotSelector sel;
 
         if (m_Policy != CSeqEntryIndex::eExternal) {
-            // unless explicitly desired, exclude external annots
-            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0) {
+            // unless explicitly desired, exclude external annots - need explicit show flags
+            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) != 0) {
                 sel.ExcludeNamedAnnots("SNP");
             }
-            sel.ExcludeNamedAnnots("CDD");
+            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) != 0) {
+                sel.ExcludeNamedAnnots("CDD");
+            }
             sel.ExcludeNamedAnnots("STS");
         }
 
@@ -1822,6 +1824,10 @@ void CBioseqIndex::x_InitFeats (void)
             if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0) {
                 sel.IncludeNamedAnnotAccession("SNP");
                 sel.AddNamedAnnots("SNP");
+            }
+            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) == 0) {
+                sel.IncludeNamedAnnotAccession("CDD");
+                sel.AddNamedAnnots("CDD");
             }
         }
 
