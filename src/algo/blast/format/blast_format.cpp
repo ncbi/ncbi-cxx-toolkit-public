@@ -51,6 +51,7 @@ Author: Jason Papadopoulos
 #include <algo/blast/format/data4xml2format.hpp>       /* NCBI_FAKE_WARNING */
 #include <algo/blast/format/build_archive.hpp>
 #include <misc/jsonwrapp/jsonwrapp.hpp>
+#include <objtools/blast/seqdb_reader/seqdb.hpp>   // for CSeqDB
 #include <serial/objostrxml.hpp>
 
 #include <corelib/ncbistre.hpp>
@@ -1219,6 +1220,7 @@ CBlastFormat::PrintReport(const blast::CSearchResults& results,
         CBioseq_Handle bhandle = m_Scope->GetBioseqHandle(*results.GetSeqId(), CScope::eGetBioseq_All);
         CConstRef<CBioseq> bioseq = bhandle.GetBioseqCore();
         string all_id_str = CAlignFormatUtil::GetSeqIdString(*bioseq, m_BelieveQuery);
+        string seqDescr = CBlastFormatUtil::GetSeqDescrString(*bioseq);
         int length = 0;
         if(bioseq->IsSetInst() && bioseq->GetInst().CanGetLength()){            
             length = bioseq->GetInst().GetLength();
@@ -1227,10 +1229,21 @@ CBlastFormat::PrintReport(const blast::CSearchResults& results,
         CJson_Document doc;
         CJson_Object obj = doc.SetObject();
         obj.insert("Query",all_id_str);
+        obj.insert("Query_descr",seqDescr);
         obj.insert("Length",NStr::IntToString(length));
         obj.insert("Database",m_DbName);
+        string dbTitle;
+        try {
+            CRef<CSeqDB> seqdb;    
+            seqdb = new CSeqDB(m_DbName, m_DbIsAA ? CSeqDB::eProtein : CSeqDB::eNucleotide);        
+            dbTitle = seqdb->GetTitle();    
+        }
+        catch (...) {/*ignore exceptions for now*/}
+        obj.insert("Database_descr",dbTitle);
+        obj.insert("IsDBProtein",m_DbIsAA);
         obj.insert("Program",m_Program);        
-        //CBlastFormatUtil::GetBlastDbInfo(m_DbInfo, m_DbName, m_DbIsAA);
+        
+        
         if (results.HasErrors()) {     
             obj.insert("Error",results.GetErrorStrings());            
         }
