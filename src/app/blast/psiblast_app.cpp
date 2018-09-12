@@ -499,7 +499,7 @@ int CPsiBlastApp::Run(void)
         {   // Value may be modified for 2nd (PSSM) iteration, so save to reset for next query.
             ECompoAdjustModes comp_stats_original = opts_hndl->GetOptions().GetCompositionBasedStats();
 
-            for (; !input->End(); formatter.ResetScopeHistory()) {
+            for (; !input->End(); formatter.ResetScopeHistory(), QueryBatchCleanup()) {
 
 		CRef<CBlastQueryVector> query_batch(input->GetNextSeqBatch(*scope));
 

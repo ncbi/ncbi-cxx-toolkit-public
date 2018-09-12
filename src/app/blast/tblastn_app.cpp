@@ -183,7 +183,7 @@ int CTblastnApp::Run(void)
         /*** Process the input ***/
         CRef<CSearchResultSet> results;
         if (pssm.Empty()) {
-            for (; !input->End(); formatter.ResetScopeHistory()) {
+            for (; !input->End(); formatter.ResetScopeHistory(), QueryBatchCleanup()) {
 
                 query =  input->GetNextSeqBatch(*scope);
                 query_factory.Reset(new CObjMgr_QueryFactory(*query));

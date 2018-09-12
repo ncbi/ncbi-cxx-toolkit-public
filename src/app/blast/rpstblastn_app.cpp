@@ -160,7 +160,7 @@ int CRPSTBlastnApp::Run(void)
         formatter.PrintProlog();
 
         /*** Process the input ***/
-        for (; !input.End(); formatter.ResetScopeHistory()) {
+        for (; !input.End(); formatter.ResetScopeHistory(), QueryBatchCleanup()) {
 
             CRef<CBlastQueryVector> query_batch(input.GetNextSeqBatch(*scope));
             CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(*query_batch));

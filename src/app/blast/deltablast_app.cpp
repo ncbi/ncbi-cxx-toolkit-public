@@ -279,7 +279,7 @@ int CDeltaBlastApp::Run(void)
         formatter.PrintProlog();
 
         /*** Process the input ***/
-        for (; !input.End(); formatter.ResetScopeHistory()) {
+        for (; !input.End(); formatter.ResetScopeHistory(), QueryBatchCleanup()) {
 
             CRef<CBlastQueryVector> query_batch(input.GetNextSeqBatch(*scope));
             CRef<blast::IQueryFactory> queries(
