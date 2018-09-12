@@ -481,14 +481,21 @@ CSNPDb_Impl::FindTrack(const string& name) const
 CSNPDb_Impl::TSeqInfoList::const_iterator
 CSNPDb_Impl::FindSeq(const string& accession, int version)
 {
-    string key = accession;
-    NStr::ToUpper(key);
-    key += ".000";
-    SIZE_TYPE ver_pos = key.size()-3;
-    key[ver_pos] += version/100;
-    key[ver_pos+1] += (version/10)%10;
-    key[ver_pos+2] += version%10;
-    TVDBRowIdRange range = m_SeqAccIndex.Find(key);
+    TVDBRowIdRange range(0, 0);
+    if ( 1 ) { // try to find NC_000001.011 format
+        string key = accession;
+        NStr::ToUpper(key);
+        key += ".000";
+        SIZE_TYPE ver_pos = key.size()-3;
+        key[ver_pos] += version/100;
+        key[ver_pos+1] += (version/10)%10;
+        key[ver_pos+2] += version%10;
+        range = m_SeqAccIndex.Find(key);
+    }
+    if ( 1 && !range.second ) {
+        string key = accession + '.' + NStr::NumericToString(version);
+        range = m_SeqAccIndex.Find(key);
+    }
     if ( !range.second ) {
         return m_SeqList.end();
     }
