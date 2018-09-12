@@ -234,7 +234,7 @@ static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
                          ::framework::current_test_case().p_name        \
                  << "\"" << ex);                                        \
         char* msg = strdup(ex.what());                                  \
-        CNcbiTestMemoryCleanupList::GetInstance()->Add(msg);            \
+        NCBI_NS_NCBI::CNcbiTestMemoryCleanupList::GetInstance()->Add(msg); \
         throw boost::execution_exception(                               \
                 boost::execution_exception::cpp_exception_error,        \
                 msg                                                     \
@@ -277,7 +277,7 @@ static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
                          ::framework::current_test_case().p_name        \
                  << "\"" << ex);                                        \
         char* msg = strdup(ex.what());                                  \
-        CNcbiTestMemoryCleanupList::GetInstance()->Add(msg);            \
+        NCBI_NS_NCBI::CNcbiTestMemoryCleanupList::GetInstance()->Add(msg); \
         throw boost::execution_exception(                               \
                 boost::execution_exception::cpp_exception_error,        \
                 msg                                                     \
