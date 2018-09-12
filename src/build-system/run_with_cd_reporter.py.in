@@ -14,7 +14,7 @@ wanted      = frozenset(('name', 'type', 'contact', 'start_time', 'end_time',
                          'succeeded', 'build_type', 'source_directory',
                          'vcs_type', 'vcs_path', 'vcs_branch',
                          'artifact_name', 'artifact_version', 'artifact_hash',
-                         'libs', 'command_line'))
+                         'libs', 'command_line', 'tech_stack'))
 
 cmake_ver = '@CMAKE_VERSION@'
 ## XXX - favor the real PyYAML installation accompanying cd_reporter?

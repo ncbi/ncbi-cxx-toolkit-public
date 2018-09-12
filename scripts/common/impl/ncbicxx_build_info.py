@@ -16,7 +16,7 @@ class IrrelevantCommandError(Exception):
 
 class Collector(object):
     def init(self, wanted):
-        self.info    = { }
+        self.info    = { 'tech_stack': 'cxx' }
         self.wanted  = wanted
 
     def in_want_list(self, key):
