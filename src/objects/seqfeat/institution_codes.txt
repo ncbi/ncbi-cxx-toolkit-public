@@ -5902,7 +5902,6 @@ SJCRY	s	St. John's College of Ripon and York
 SJER	s	United States Forest Service, San Joaquin Experimental Range			
 SJFM	s	Fairbanks Museum and Planetarium			
 SJNM	s	San Juan College			
-SJPC	s	Sergei J. Paramonov personal collection -- destroyed			
 SJRP	s	UNESP, Campus Sao Jose Rio Preto, Departamento Zoologia e Botanica			
 SJSC	s	San Jose State University, J. Gordon Edwards Museum of Entomology			
 SJSU	s	San Jose State University, Biological Sciences Department			
@@ -7193,6 +7192,7 @@ WAITE	c	Insect Pathology Pathogen Collection
 WAL	c	Wadsworth Anaerobe Laboratory, Wadsworth Hospital Center			
 WAM	s	Western Australian Museum			
 WAM:Mamm	s	Western Australian Museum, Mammal Collection		
+WAM:R	s	Western Australian Museum, Reptile Collection	
 WAMP	s	Western Australian Museum			
 WAN	s	Forest Research Station			
 WANF	s	Wasatch-Cache National Forest			
@@ -7349,7 +7349,7 @@ WTR	s	Winchester College, Biology Department
 WTS	s	West Texas A&M University, Department of Life, Earth and Environmental Sciences			
 WTSU	s	West Texas A&M University, Natural History Collection			
 WTU	s	University of Washington			
-WTU:Fungal Collection	s	University of Washington, F		
+WTU:F	s	University of Washington, Fungal Collection	
 WTUH	s	University of Washington Botanic Gardens, College of Forest Resources			
 WU	s	Universitaet Wien			
 WU<USA-TX>	s	Wayland University			
