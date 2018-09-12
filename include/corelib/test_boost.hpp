@@ -944,14 +944,14 @@ NcbiTestGenTestCases(void (*test_func)(ParamType),
 /// Not really necessary for tests, but used to avoid memory leaks and 
 /// corresponding reports by memory checkers like Valgrind.
 
-class NCBI_XNCBI_EXPORT CNcbiTestMemoryCleanupList
+class CNcbiTestMemoryCleanupList
 {
 public:
     static CNcbiTestMemoryCleanupList* GetInstance();
     ~CNcbiTestMemoryCleanupList();
     void Add(void* ptr);
 private:
-    list<void*> m_List;
+    std::list<void*> m_List;
 };
 
 
