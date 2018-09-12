@@ -1210,12 +1210,6 @@ void
 CBlastFormat::PrintReport(const blast::CSearchResults& results,
                           CBlastFormat::DisplayOption displayOption)                        
 {
-    CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
-    _ASSERT(results.HasAlignments());
-    if (m_IsUngappedSearch) {
-        aln_set.Reset(CDisplaySeqalign::PrepareBlastUngappedSeqalign(*aln_set));
-    }
-        
     if (displayOption == eMetadata) {//Metadata in json format
         CBioseq_Handle bhandle = m_Scope->GetBioseqHandle(*results.GetSeqId(), CScope::eGetBioseq_All);
         CConstRef<CBioseq> bioseq = bhandle.GetBioseqCore();
@@ -1252,12 +1246,20 @@ CBlastFormat::PrintReport(const blast::CSearchResults& results,
         }
         doc.Write(m_Outfile);
     }
-    else if (displayOption == eDescriptions) {//Descriptions with html templates
-        x_DisplayDeflinesWithTemplates(aln_set);
-    }            
-    else if (displayOption == eAlignments) {// print the alignments with html templates
-        x_DisplayAlignsWithTemplates(aln_set,results);
-    }     
+    else {
+        CConstRef<CSeq_align_set> aln_set = results.GetSeqAlign();
+        _ASSERT(results.HasAlignments());
+        if (m_IsUngappedSearch) {
+            aln_set.Reset(CDisplaySeqalign::PrepareBlastUngappedSeqalign(*aln_set));
+        }
+        
+        if (displayOption == eDescriptions) {//Descriptions with html templates
+            x_DisplayDeflinesWithTemplates(aln_set);
+        }            
+        else if (displayOption == eAlignments) {// print the alignments with html templates
+            x_DisplayAlignsWithTemplates(aln_set,results);
+        }     
+    }
 }
 
 void
