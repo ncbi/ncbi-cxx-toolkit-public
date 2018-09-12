@@ -922,6 +922,30 @@ CNcbiTestsTreeBuilder::FixUnitsOrder(void)
     }
 }
 
+// List of memory chunks to delete at exit
+static CNcbiTestMemoryCleanupList* s_TestMemoryCleanupList = NULL;
+
+CNcbiTestMemoryCleanupList* CNcbiTestMemoryCleanupList::GetInstance(void)
+{
+    if (!s_TestMemoryCleanupList) {
+        s_TestMemoryCleanupList = new CNcbiTestMemoryCleanupList();
+    }
+    return s_TestMemoryCleanupList;
+}
+
+CNcbiTestMemoryCleanupList::~CNcbiTestMemoryCleanupList()
+{
+    for (auto& x : s_TestMemoryCleanupList->m_List) {
+        free(x);
+    }
+    m_List.clear();
+}
+
+void CNcbiTestMemoryCleanupList::Add(void* ptr) {
+    m_List.push_back(ptr);
+}
+
+
 
 static CNcbiTestApplication* s_TestApp = NULL;
 
@@ -951,8 +975,9 @@ CNcbiTestApplication::~CNcbiTestApplication(void)
 static CNcbiTestApplication&
 s_GetTestApp(void)
 {
-    if (!s_TestApp)
+    if (!s_TestApp) {
         s_TestApp = new CNcbiTestApplication();
+    }
     return *s_TestApp;
 }
 
@@ -2414,6 +2439,8 @@ main(int argc, char* argv[])
 #endif
 
     delete NCBI_NS_NCBI::s_TestApp;
+    delete NCBI_NS_NCBI::s_TestMemoryCleanupList;
+
     NCBI_NS_NCBI::GetDiagContext().SetExitCode(result_code);
     return result_code;
 }

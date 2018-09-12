@@ -232,8 +232,11 @@ static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
                  << boost::unit_test                                    \
                          ::framework::current_test_case().p_name        \
                  << "\"" << ex);                                        \
+        char* msg = strdup(ex.what());                                  \
+        CNcbiTestMemoryCleanupList::GetInstance()->Add(msg);            \
         throw boost::execution_exception(                               \
-                boost::execution_exception::cpp_exception_error, ""     \
+                boost::execution_exception::cpp_exception_error,        \
+                msg                                                     \
                 NCBI_BOOST_LOCATION() );                                \
     }                                                                   \
     BOOST_TEST_CHECKPOINT('"' << #test_name << "\" exit.");             \
@@ -272,8 +275,11 @@ static void BOOST_AUTO_TC_INVOKER( test_name )()                        \
                  << boost::unit_test                                    \
                          ::framework::current_test_case().p_name        \
                  << "\"" << ex);                                        \
+        char* msg = strdup(ex.what());                                  \
+        CNcbiTestMemoryCleanupList::GetInstance()->Add(msg);            \
         throw boost::execution_exception(                               \
-                boost::execution_exception::cpp_exception_error, ""     \
+                boost::execution_exception::cpp_exception_error,        \
+                msg                                                     \
                 NCBI_BOOST_LOCATION() );                                \
     }                                                                   \
 }                                                                       \
@@ -930,6 +936,23 @@ NcbiTestGenTestCases(void (*test_func)(ParamType),
                                         test_func, name, par_begin, par_end);
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CNcbiTestMemoryCleanupList -- Define a list of pointers to free at exit.
+///
+/// Not really necessary for tests, but used to avoid memory leaks and 
+/// corresponding reports by memory checkers like Valgrind.
+
+class NCBI_XNCBI_EXPORT CNcbiTestMemoryCleanupList
+{
+public:
+    static CNcbiTestMemoryCleanupList* GetInstance();
+    ~CNcbiTestMemoryCleanupList();
+    void Add(void* ptr);
+private:
+    list<void*> m_List;
+};
 
 
 END_NCBI_SCOPE
