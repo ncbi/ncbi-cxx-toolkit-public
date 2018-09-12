@@ -112,22 +112,24 @@ BOOST_AUTO_TEST_CASE(Test_SimpleConstraints)
     BOOST_CHECK_EQUAL(s.Match("dog"), false);
     BOOST_CHECK_EQUAL(s.Match("dog, cat, cow"), false);
 
-    s.SetMatch_location(eString_location_inlist);
-    BOOST_CHECK_EQUAL(s.Match("cat"), true);
-    BOOST_CHECK_EQUAL(s.Match("catalog"), false);
-    BOOST_CHECK_EQUAL(s.Match("the catalog"), false);
-    BOOST_CHECK_EQUAL(s.Match("ducat"), false);
-    BOOST_CHECK_EQUAL(s.Match("dog"), false);
-    BOOST_CHECK_EQUAL(s.Match("dog,cat,cow"), false); // because list is in constraint
+	// eString_location_inlist - no longer supported
+	//s.SetMatch_location(eString_location_inlist);
+    //BOOST_CHECK_EQUAL(s.Match("cat"), true);
+    //BOOST_CHECK_EQUAL(s.Match("catalog"), false);
+    //BOOST_CHECK_EQUAL(s.Match("the catalog"), false);
+    //BOOST_CHECK_EQUAL(s.Match("ducat"), false);
+    //BOOST_CHECK_EQUAL(s.Match("dog"), false);
+    //BOOST_CHECK_EQUAL(s.Match("dog,cat,cow"), false); // because list is in constraint
 
-    s.SetMatch_text("dog, cat, cow");
-    BOOST_CHECK_EQUAL(s.Match("cat"), true);
-    BOOST_CHECK_EQUAL(s.Match("catalog"), false);
-    BOOST_CHECK_EQUAL(s.Match("the catalog"), false);
-    BOOST_CHECK_EQUAL(s.Match("ducat"), false);
-    BOOST_CHECK_EQUAL(s.Match("dog"), true);
+    //s.SetMatch_text("dog, cat, cow");
+    //BOOST_CHECK_EQUAL(s.Match("cat"), true);
+    //BOOST_CHECK_EQUAL(s.Match("catalog"), false);
+    //BOOST_CHECK_EQUAL(s.Match("the catalog"), false);
+    //BOOST_CHECK_EQUAL(s.Match("ducat"), false);
+    //BOOST_CHECK_EQUAL(s.Match("dog"), true);
 
-    s.SetMatch_location(eString_location_contains);
+	s.SetMatch_text("dog, cat, cow");
+	s.SetMatch_location(eString_location_contains);
     s.SetIgnore_punct(true);
     BOOST_CHECK_EQUAL(s.Match("dog cat cow"), true);
     BOOST_CHECK_EQUAL(s.Match("dog  cat cow"), false);

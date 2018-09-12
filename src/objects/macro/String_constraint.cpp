@@ -590,8 +590,9 @@ bool CString_constraint::x_DoesSingleStringMatchConstraint(const CMatchString& s
         else {
             string s_search;
             if ( GetMatch_location() != eString_location_inlist && (GetIgnore_space() || GetIgnore_punct())) {
-                search = x_StripUnimportantCharacters(s_search, search, GetIgnore_space(), GetIgnore_punct());
-            }
+				search = x_StripUnimportantCharacters(s_search, search, GetIgnore_space(), GetIgnore_punct());
+				pattern = x_StripUnimportantCharacters(s_search, pattern, GetIgnore_space(), GetIgnore_punct());
+			}
 
             if (!mask) { // no self-weasel
                 return x_MatchFound(search, pattern);
