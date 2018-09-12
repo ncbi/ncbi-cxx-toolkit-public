@@ -1067,7 +1067,6 @@ psg_client needs3party $(LIBUV_LIBS)
 psg_client needs3party $(NGHTTP2_LIBS)
 psg_diag needs xncbi
 psg_protobuf needs3party $(ORIG_LIBS)
-psg_rpc needs3party $(ORIG_LIBS)
 psloader-internal needs $(Z_LIB)
 psloader-internal needs3party $(SYBASE_DLLS)
 psloader-internal needs3party $(SYBASE_LIBS)
