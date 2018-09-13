@@ -130,10 +130,11 @@ static const string s_UrlNcbilbHttpPostFcgi("http+ncbilb://cxx-fast-cgi-sample")
 
 
 // Notes on why some combinations of test factors aren't run:
-//  LBSMD doesn't support service-based URLs on Windows (but it should work on Cygwin),
+//  * LBSMD doesn't support service-based URLs on Windows (but it should work on Cygwin),
 //      but it's conditionally compiled out rather than removing test cases.
-//  Linkerd can only be used for service-based URLs (it's a service mesh technology).
-//  CHttpStream doesn't currently support service-based URLs.
+//  * LBSMD is also not available on some testsuite hosts.
+//  * Linkerd can only be used for service-based URLs (it's a service mesh technology).
+//  * CHttpStream doesn't currently support service-based URLs.
 
 static STest s_Tests[] = {
 
@@ -781,7 +782,7 @@ int CTestNcbiLinkerdCxxApp::Run(void)
     int num_tests = 0, num_errors = 0;
 
     for (auto test : s_Tests) {
-#ifdef _MSC_VER
+#if defined(_MSC_VER)  ||  !defined(HAVE_LOCAL_LBSM)
         if (test.mapper == eLbsmd) continue;
 #endif
         //if (test.mapper != eLinkerd) continue;
