@@ -1461,8 +1461,7 @@ CJsonNode g_ExecToJson(IExecToJson& exec_to_json, CNetService service,
     return result;
 }
 
-CNetService g_DiscoverService(const string& service_name,
-        const string& client_name)
+CNetService CNetService::Create(const string& api_name, const string& service_name, const string& client_name)
 {
     struct SNoOpConnectionListener : public INetServerConnectionListener
     {
@@ -1475,9 +1474,9 @@ CNetService g_DiscoverService(const string& service_name,
     };
 
     CSynRegistryBuilder registry_builder;
-    SRegSynonyms sections("discovery");
+    SRegSynonyms sections(api_name);
 
-    return SNetServiceImpl::Create("Discovery", service_name, client_name, new SNoOpConnectionListener,
+    return SNetServiceImpl::Create(api_name, service_name, client_name, new SNoOpConnectionListener,
             registry_builder, sections);
 }
 

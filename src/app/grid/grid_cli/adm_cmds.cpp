@@ -637,7 +637,7 @@ namespace {
 
 int CGridCommandLineInterfaceApp::Cmd_Discover()
 {
-    CNetService service = g_DiscoverService(m_Opts.service_name, m_Opts.auth);
+    CNetService service = CNetService::Create("discovery", m_Opts.service_name, m_Opts.auth);
 
     CAdjustableTableColumn ipv4_column(0, 2);
     ipv4_column.AddCell("IPv4 Address");

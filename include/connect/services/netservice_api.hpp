@@ -139,6 +139,8 @@ class NCBI_XCONNECT_EXPORT CNetService
     static void AllowXSiteConnections();
     static bool IsUsingXSiteProxy();
 #endif
+
+    static CNetService Create(const string& api_name, const string& service_name, const string& client_name);
 };
 
 /// This class is for use by the grid_cli utility only.
@@ -158,11 +160,9 @@ CJsonNode g_ExecToJson(IExecToJson& exec_to_json,
         CNetService service,
         CNetService::EIterationMode iteration_mode = CNetService::eSortByLoad);
 
-/// This function is for use by the grid_cli utility only.
-/// @internal
-extern NCBI_XCONNECT_EXPORT
-CNetService g_DiscoverService(const string& service_name,
-        const string& client_name);
+/// @deprecated, use CNetService::Create()
+NCBI_DEPRECATED inline
+CNetService g_DiscoverService(const string& s, const string& c) { return CNetService::Create("discovery", s, c); }
 
 /// @internal
 extern NCBI_XCONNECT_EXPORT
