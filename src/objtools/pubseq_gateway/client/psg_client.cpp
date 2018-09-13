@@ -179,47 +179,29 @@ static_assert(is_nothrow_move_constructible<CPSG_BioId>::value, "CPSG_BioId move
 static_assert(is_nothrow_move_constructible<CPSG_BlobId>::value, "CPSG_BlobId move constructor must be noexcept");
 
 
-pair<once_flag, TPSG_Ioc> SHCT::m_Ioc;
-thread_local TPSG_EndPoints SHCT::m_LocalEndPoints;
-pair<mutex, TPSG_EndPoints> SHCT::m_EndPoints;
+pair<mutex, SHCT::TServiceMap> SHCT::m_ServiceMap;
 
-string s_Resolve(const string& service)
+shared_ptr<HCT::http2_end_point> SHCT::GetEndPoint(const string& service_name)
 {
-    const auto s = service.c_str();
-    auto net_info = make_c_unique(ConnNetInfo_Create(s), ConnNetInfo_Destroy);
-    auto it = make_c_unique(SERV_Open(s, fSERV_All, SERV_LOCALHOST, net_info.get()), SERV_Close);
+    auto service = GetService(service_name);
+    auto server = service.Iterate(CNetService::eRandomize).GetServer();
 
-    // The service was not found
-    if (!it) return service;
-
-    for (;;) {
-        // No need to free info after, it is done by SERV_Close
-        const auto info = SERV_GetNextInfo(it.get());
-
-        // No more servers
-        if (!info) return service;
-
-        if (info->time > 0 && info->time != NCBI_TIME_INFINITE && info->rate > 0) {
-            return CSocketAPI::ntoa(info->host) + ":" + to_string(info->port);
-        }
-    }
+    return shared_ptr<HCT::http2_end_point>(new HCT::http2_end_point{"http", server.GetServerAddress()});
 }
 
-TPSG_EndPoint SHCT::x_GetEndPoint(const string& service)
+CNetService SHCT::GetService(const string& service_name)
 {
-    call_once(m_Ioc.first, [&]() { m_Ioc.second = make_shared<TPSG_IocValue>(); });
+    lock_guard<mutex> lock(m_ServiceMap.first);
 
-    lock_guard<mutex> lock(m_EndPoints.first);
-    auto result = m_EndPoints.second.emplace(service, nullptr);
-    auto& pair = *result.first;
+    auto result = m_ServiceMap.second.emplace(service_name, eVoid);
+    auto& service = result.first->second;
 
     // If actually added, initialize
     if (result.second) {
-        pair.second.reset(new TPSG_EndPointValue{"http", s_Resolve(service)});
+        service = CNetService::Create("psg", service_name, kEmptyStr);
     }
 
-    m_LocalEndPoints.insert(pair);
-    return pair.second;
+    return service;
 }
 
 
@@ -410,15 +392,15 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request,
 
     if (auto request_biodata = dynamic_cast<const CPSG_Request_Biodata*>(user_request.get())) {
         string query(GetQuery(request_biodata));
-        http_request = make_shared<TPSG_RequestValue>(reply, SHCT::GetEndPoint(m_Service), m_Requests, "/ID/get", query);
+        http_request = make_shared<HCT::http2_request>(reply, SHCT::GetEndPoint(m_Service), m_Requests, "/ID/get", query);
 
     } else if (auto request_resolve = dynamic_cast<const CPSG_Request_Resolve*>(user_request.get())) {
         string query(GetQuery(request_resolve));
-        http_request = make_shared<TPSG_RequestValue>(reply, SHCT::GetEndPoint(m_Service), m_Requests, "/ID/resolve", query);
+        http_request = make_shared<HCT::http2_request>(reply, SHCT::GetEndPoint(m_Service), m_Requests, "/ID/resolve", query);
 
     } else if (auto request_blob = dynamic_cast<const CPSG_Request_Blob*>(user_request.get())) {
         string query(GetQuery(request_blob));
-        http_request = make_shared<TPSG_RequestValue>(reply, SHCT::GetEndPoint(m_Service), m_Requests, "/ID/getblob", query);
+        http_request = make_shared<HCT::http2_request>(reply, SHCT::GetEndPoint(m_Service), m_Requests, "/ID/getblob", query);
 
     } else {
         throw invalid_argument("UNKNOWN REQUEST TYPE"); // TODO: CPSG_Exception

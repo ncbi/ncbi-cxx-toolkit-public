@@ -37,40 +37,29 @@
 #include <corelib/reader_writer.hpp>
 #include <corelib/rwstream.hpp>
 
+#include <connect/services/netservice_api.hpp>
+
 #include <unordered_map>
 #include <mutex>
 
 BEGIN_NCBI_SCOPE
 
-using TPSG_IocValue = HCT::io_coordinator;
-using TPSG_Ioc = shared_ptr<TPSG_IocValue>;
-
-using TPSG_EndPointValue = HCT::http2_end_point;
-using TPSG_EndPoint = shared_ptr<TPSG_EndPointValue>;
-using TPSG_EndPoints = unordered_map<string, TPSG_EndPoint>;
-
-using TPSG_RequestValue = HCT::http2_request;
-using TPSG_Request = shared_ptr<TPSG_RequestValue>;
-
 struct SHCT
 {
-    static TPSG_IocValue& GetIoc()
+    static HCT::io_coordinator& GetIoc()
     {
-        return *m_Ioc.second;
+        static HCT::io_coordinator rv;
+        return rv;
     }
 
-    static TPSG_EndPoint GetEndPoint(const string& service)
-    {
-        auto result = m_LocalEndPoints.find(service);
-        return result != m_LocalEndPoints.end() ? result->second : x_GetEndPoint(service);
-    }
+    static shared_ptr<HCT::http2_end_point> GetEndPoint(const string& service_name);
 
 private:
-    static TPSG_EndPoint x_GetEndPoint(const string& service);
+    using TServiceMap = unordered_map<string, CNetService>;
 
-    static pair<once_flag, TPSG_Ioc> m_Ioc;
-    static thread_local TPSG_EndPoints m_LocalEndPoints;
-    static pair<mutex, TPSG_EndPoints> m_EndPoints;
+    static CNetService GetService(const string& service_name);
+
+    static pair<mutex, TServiceMap> m_ServiceMap;
 };
 
 struct SPSG_BlobReader : IReader
