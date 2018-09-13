@@ -317,9 +317,9 @@ int CBlastReportApp::PrintFormattedOutput(void)
         if(hasAlignments || displayOption == CBlastFormat::eMetadata) {
             formatter.PrintReport((*results)[queryIndex], displayOption);        
         }
-        else {
+        if(!hasAlignments) {
             retval = EXIT_CODE__NO_RESULTS_FOUND;
-        }        
+        }           
     }catch (const CException & e) {
        cerr << e.GetMsg() << endl;              
     }    
@@ -361,8 +361,8 @@ int CBlastReportApp::Run(void)
         }                
     } 
     
-    cerr << "****retval:" << status << endl;         
-    cerr << "****msg:" << msg << endl;         
+    //cerr << "****retval:" << status << endl;         
+    cerr << msg << endl;         
     return status;
 }
 
