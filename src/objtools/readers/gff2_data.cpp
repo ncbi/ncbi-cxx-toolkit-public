@@ -174,27 +174,6 @@ CBioSource::EGenome s_StringToGenome(
     return CBioSource::eGenome_unknown;
 }
     
-//  ----------------------------------------------------------------------------
-CGff2Record::CGff2Record():
-    m_uSeqStart( 0 ),
-    m_uSeqStop( 0 ),
-    m_pdScore( 0 ),
-    m_peStrand( 0 ),
-    m_pePhase( 0 )
-//  ----------------------------------------------------------------------------
-{
-};
-
-//  ----------------------------------------------------------------------------
-CGff2Record::~CGff2Record()
-//  ----------------------------------------------------------------------------
-{
-    delete m_pdScore;
-    delete m_peStrand;
-    delete m_pePhase; 
-};
-
-
 unsigned int CGff2Record::m_nextId(0);
 //  -----------------------------------------------------------------------------
 unsigned int CGff2Record::NextId()

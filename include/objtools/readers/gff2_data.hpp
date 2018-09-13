@@ -33,15 +33,18 @@
 #ifndef OBJTOOLS_READERS___GFF2DATA__HPP
 #define OBJTOOLS_READERS___GFF2DATA__HPP
 
+#include <objtools/readers/gff_base_columns.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-class CGff2Record
+class CGff2Record:
 //  ----------------------------------------------------------------------------
+    public CGffBaseColumns
 {
 public:
-    typedef CCdregion::EFrame TFrame;
+    //typedef CCdregion::EFrame TFrame;
     typedef map<string, string> TAttributes;
     typedef TAttributes::iterator TAttrIt;
     typedef TAttributes::const_iterator TAttrCit;
@@ -49,31 +52,15 @@ public:
 
 
 public:
-    CGff2Record();
+    CGff2Record(): CGffBaseColumns() {};
     CGff2Record(
             const CGff2Record& rhs):
-        m_strId(rhs.m_strId),
-        m_uSeqStart(rhs.m_uSeqStart),
-        m_uSeqStop(rhs.m_uSeqStop),
-        m_strSource(rhs.m_strSource),
-        m_strType(rhs.m_strType),
-        m_pdScore(nullptr),
-        m_peStrand(nullptr),
-        m_pePhase(nullptr)
+        CGffBaseColumns(rhs)
     {
-        if (rhs.m_pdScore) {
-            m_pdScore = new double(rhs.Score());
-        }
-        if (rhs.m_peStrand) {
-            m_peStrand = new ENa_strand(rhs.Strand());
-        }
-        if (rhs.m_pePhase) {
-            m_pePhase = new TFrame(rhs.Phase());
-        }
         m_Attributes.insert(rhs.m_Attributes.begin(), rhs.m_Attributes.end());
     };
 
-    virtual ~CGff2Record();
+    virtual ~CGff2Record() {};
 
     static unsigned int NextId();
     static void ResetId();
@@ -87,40 +74,6 @@ public:
     //
     // Accessors:
     //        
-    const string& Id() const { 
-        return m_strId; 
-    };
-    size_t SeqStart() const { 
-        return m_uSeqStart; 
-    };
-    size_t SeqStop() const { 
-        return m_uSeqStop; 
-    };
-    const string& Source() const {
-        return m_strSource; 
-    };
-    const string& Type() const {
-        return m_strType; 
-    };
-    double Score() const { 
-        return IsSetScore() ? *m_pdScore : 0.0; 
-    };
-    ENa_strand Strand() const { 
-        return IsSetStrand() ? *m_peStrand : eNa_strand_unknown; 
-    };
-    TFrame Phase() const {
-        return IsSetPhase() ? *m_pePhase : CCdregion::eFrame_not_set; 
-    };
-
-    bool IsSetScore() const { 
-        return m_pdScore != 0; 
-    };
-    bool IsSetStrand() const { 
-        return m_peStrand != 0; 
-    };
-    bool IsSetPhase() const { 
-        return m_pePhase != 0; 
-    };
     bool IsAlignmentRecord() const {
         if (NStr::StartsWith(Type(), "match") ||
             NStr::EndsWith(Type(), "_match")) {
@@ -238,14 +191,6 @@ protected:
     //
     // Data:
     //
-    string m_strId;
-    size_t m_uSeqStart;
-    size_t m_uSeqStop;
-    string m_strSource;
-    string m_strType;
-    double* m_pdScore;
-    ENa_strand* m_peStrand;
-    TFrame* m_pePhase;
     string m_strAttributes;    
     TAttributes m_Attributes;
     static unsigned int m_nextId;
