@@ -131,7 +131,7 @@ bool CGtfReadRecord::xAssignAttributesFromGff(
         if (!NStr::SplitInTwo(attribute, "=", key, value)) {
             if (!NStr::SplitInTwo(attribute, " ", key, value)) {
                 if (strGtfType == "gene") {
-                    xAddMultiAttribute(
+                    mAttributes.AddValue(
                         "gene_id", xNormalizedAttributeValue(attribute));
                     continue;
                 }
@@ -140,9 +140,9 @@ bool CGtfReadRecord::xAssignAttributesFromGff(
                     if (!NStr::SplitInTwo(attribute, ".", gid, tid)) {
                         return false;
                     }
-                    xAddMultiAttribute(
+                    mAttributes.AddValue(
                         "gene_id", xNormalizedAttributeValue(gid));
-                    xAddMultiAttribute(
+                    mAttributes.AddValue(
                         "transcript_id", xNormalizedAttributeValue(attribute));
                     continue;
                 }
@@ -161,7 +161,7 @@ bool CGtfReadRecord::xAssignAttributesFromGff(
         if (NStr::EndsWith(value, "\"")) {
             value = value.substr(0, value.length() - 1);
         }
-        xAddMultiAttribute(key, value);
+        mAttributes.AddValue(key, value);
     }
     return true;
 }
@@ -570,7 +570,7 @@ bool CGtfReader::xFeatureSetQualifiersGene(
     //  Create GB qualifiers for the record attributes:
     //
 
-    const auto& attrs = record.GetMultiAttributes();
+    const auto& attrs = record.GtfAttributes().Get();
     auto it = attrs.begin();
     for (/*NOOP*/; it != attrs.end(); ++it) {
         auto cit = std::find(ignoredAttrs.begin(), ignoredAttrs.end(), it->first);
@@ -598,7 +598,7 @@ bool CGtfReader::xFeatureSetQualifiersRna(
         "locus_tag"
     };
 
-    const auto& attrs = record.GetMultiAttributes();
+    const auto& attrs = record.GtfAttributes().Get();
     auto it = attrs.begin();
     for (/*NOOP*/; it != attrs.end(); ++it) {
         auto cit = std::find(ignoredAttrs.begin(), ignoredAttrs.end(), it->first);
@@ -626,7 +626,7 @@ bool CGtfReader::xFeatureSetQualifiersCds(
         "locus_tag"
     };
 
-    const auto& attrs = record.GetMultiAttributes();
+    const auto& attrs = record.GtfAttributes().Get();
     auto it = attrs.begin();
     for (/*NOOP*/; it != attrs.end(); ++it) {
         auto cit = std::find(ignoredAttrs.begin(), ignoredAttrs.end(), it->first);
@@ -774,11 +774,12 @@ bool CGtfReader::x_FeatureSetDataGene(
 {
     CGene_ref& gene = pFeature->SetData().SetGene();
 
-    string geneSynonym = record.AttributeValue("gene_synonym");
+    const auto& attributes = record.GtfAttributes();
+    string geneSynonym = attributes.ValueOf("gene_synonym");
     if (!geneSynonym.empty()) {
         gene.SetSyn().push_back(geneSynonym);
     }
-    string locusTag = record.AttributeValue("locus_tag");
+    string locusTag = attributes.ValueOf("locus_tag");
     if (!locusTag.empty()) {
         gene.SetLocus_tag(locusTag);
     }
@@ -796,7 +797,7 @@ bool CGtfReader::x_FeatureSetDataMRNA(
     }    
     CRNA_ref& rna = pFeature->SetData().SetRna();
 
-    string product = record.AttributeValue("product");
+    string product = record.GtfAttributes().ValueOf("product");
     if (!product.empty()) {
         rna.SetExt().SetName(product);
     }
@@ -832,19 +833,21 @@ bool CGtfReader::x_FeatureSetDataCDS(
 //  ----------------------------------------------------------------------------
 {
     CCdregion& cdr = pFeature->SetData().SetCdregion();
-    string proteinId = record.AttributeValue("protein_id");
+    const auto& attributes = record.GtfAttributes();
+
+    string proteinId = attributes.ValueOf("protein_id");
     if (!proteinId.empty()) {
         CRef<CSeq_id> pId = mSeqIdResolve(proteinId, m_iFlags, true);
         if (pId->IsGenbank()) {
             pFeature->SetProduct().SetWhole(*pId);
         }
     }
-    string ribosomalSlippage = record.AttributeValue("ribosomal_slippage");
+    string ribosomalSlippage = attributes.ValueOf("ribosomal_slippage");
     if (!ribosomalSlippage.empty()) {
         pFeature->SetExcept( true );
         pFeature->SetExcept_text("ribosomal slippage");
     }
-    string transTable = record.AttributeValue("transl_table");
+    string transTable = attributes.ValueOf("transl_table");
     if (!transTable.empty()) {
         CRef< CGenetic_code::C_E > pGc( new CGenetic_code::C_E );
         pGc->SetId(NStr::StringToUInt(transTable));
@@ -889,7 +892,7 @@ bool CGtfReader::x_FeatureTrimQualifiers(
             continue;
         }
         const string& qualVal = (*it)->GetVal();
-        if (!record.HasAttribute(qualKey, qualVal)) {
+        if (!record.GtfAttributes().HasValue(qualKey, qualVal)) {
             //superfluous qualifier- squish
             it = quals.erase(it);
             continue;
@@ -904,7 +907,7 @@ bool CGtfReader::x_CdsIsPartial(
     const CGtfReadRecord& record )
 //  ----------------------------------------------------------------------------
 {
-    if (record.HasAttribute("partial")) {
+    if (record.GtfAttributes().HasValue("partial")) {
         return true;
     }
     CRef< CSeq_feat > mRna;

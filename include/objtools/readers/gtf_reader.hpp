@@ -41,60 +41,25 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ============================================================================
-class CGtfReadRecord
+class CGtfAttributes
 //  ============================================================================
-    : public CGff2Record
 {
 public:
     using MultiValue = vector<string>;
     using MultiAttributes = map<string, MultiValue>;
-    MultiAttributes mAttributes;
-
-    CGtfReadRecord(): CGff2Record() {};
-    ~CGtfReadRecord() {};
 
     const MultiAttributes&
-    GetMultiAttributes() const 
+    Get() const
     {
         return mAttributes;
     };
 
     string
-    GeneKey() const
-    {
-        auto it = mAttributes.find("gene_id");
-        if (it == mAttributes.end()  ||  it->second.empty()) {
-            cerr << "Unexpected: GTF feature without a gene_id." << endl;
-            return "";
-        }
-        return it->second.front();
-    };
-        
-    string
-    FeatureKey() const
-    {
-        static unsigned int tidCounter(1);
-        if (Type() == "gene") {
-            return GeneKey();
-        }
-
-        string transcriptId;
-        auto it = mAttributes.find("transcript_id");
-        if (it == mAttributes.end()  ||  it->second.empty()) {
-            transcriptId = "t" + NStr::IntToString(tidCounter++);
-        }
-        else {
-            transcriptId = it->second.front();
-        }
-        return GeneKey() + "_" + transcriptId;
-    }
-
-    string
-    AttributeValue(
+    ValueOf(
         const string& key) const
     {
         MultiValue values;
-        xGetMultiAttribute(key, values);
+        GetValues(key, values);
         if (values.size() == 1) {
             return values.front();
         }
@@ -102,7 +67,7 @@ public:
     }
 
     bool
-    HasAttribute(
+    HasValue(
         const string& key,
         const string& value = "") const
     {
@@ -120,13 +85,21 @@ public:
         return (find(values.begin(), values.end(), value) != values.end());
     };
 
-protected:
-    bool xAssignAttributesFromGff(
-        const string&,
-        const string& );
+    void
+    GetValues(
+        const string& key,
+        MultiValue& values) const
+    {
+        const MultiValue empty;
+        values = empty;
+        auto it = mAttributes.find(key);
+        if (it != mAttributes.end()) {
+            values = it->second;
+        }
+    };
 
     void
-    xAddMultiAttribute(
+    AddValue(
         const string& key,
         const string& value)
     {
@@ -140,18 +113,56 @@ protected:
         }
     };
 
-    void
-    xGetMultiAttribute(
-        const string& key,
-        MultiValue& values) const
+protected:
+    MultiAttributes mAttributes;
+};
+
+//  ============================================================================
+class CGtfReadRecord
+//  ============================================================================
+    : public CGff2Record
+{
+public:
+    CGtfReadRecord(): CGff2Record() {};
+    ~CGtfReadRecord() {};
+
+    const CGtfAttributes&
+    GtfAttributes() const 
     {
-        const MultiValue empty;
-        values = empty;
-        auto it = mAttributes.find(key);
-        if (it != mAttributes.end()) {
-            values = it->second;
-        }
+        return mAttributes;
     };
+
+    string
+    GeneKey() const
+    {
+        string geneId = mAttributes.ValueOf("gene_id");
+        if (geneId.empty()) {
+            cerr << "Unexpected: GTF feature without a gene_id." << endl;
+        }
+        return geneId;
+    };
+
+    string
+    FeatureKey() const
+    {
+        static unsigned int tidCounter(1);
+        if (Type() == "gene") {
+            return GeneKey();
+        }
+
+        string transcriptId = mAttributes.ValueOf("transcript_id");
+        if (transcriptId.empty()) {
+            transcriptId = "t" + NStr::IntToString(tidCounter++);
+        }
+        return GeneKey() + "_" + transcriptId;
+    }
+
+protected:
+    bool xAssignAttributesFromGff(
+        const string&,
+        const string& );
+
+    CGtfAttributes mAttributes;
 };
 
 //  ----------------------------------------------------------------------------
@@ -285,13 +296,13 @@ protected:
 
     virtual bool xProcessQualifierSpecialCase(
         const string&,
-        const CGtfReadRecord::MultiValue&,
+        const CGtfAttributes::MultiValue&,
         CRef< CSeq_feat > );
 
     virtual void
         xFeatureAddQualifiers(
             const string& key,
-            const CGtfReadRecord::MultiValue& values,
+            const CGtfAttributes::MultiValue& values,
             CRef<CSeq_feat> pFeature)
     {
         for (auto value: values) {
