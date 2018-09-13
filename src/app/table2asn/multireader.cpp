@@ -563,6 +563,17 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
             if  (context.m_entry_template.Empty())
                 context.m_entry_template.Reset(new CSeq_entry);
 
+            {
+                if (desc->IsUser() && desc->GetUser().IsDBLink())
+                {
+                    CUser_object& user_obj = desc->SetUser();
+                    if (user_obj.IsDBLink())
+                    {
+                        user_obj.SetData();
+                    }
+                }
+            }
+
             context.m_entry_template->SetSeq().SetDescr().Set().push_back(desc);
 
             if (pObjIstrm->EndOfData())
@@ -731,7 +742,7 @@ void CMultiReader::x_PostProcessAnnot(objects::CSeq_entry& entry)
 
         edit::CFeatTableEdit fte(
             **it, m_context.m_locus_tag_prefix, startingLocusTagNumber, startingFeatureId, m_context.m_logger);
-        fte.InferPartials();
+        //fte.InferPartials();
         fte.GenerateMissingParentFeatures(m_context.m_eukariote);
         fte.GenerateLocusTags();
         fte.GenerateProteinAndTranscriptIds();
@@ -756,6 +767,7 @@ auto_ptr<CObjectIStream> CMultiReader::xCreateASNStream(CFormatGuess::EFormat fo
         case CFormatGuess::eBinaryASN:
             eSerialDataFormat = eSerial_AsnBinary;
             break;
+        case CFormatGuess::eUnknown:
         case CFormatGuess::eTextASN:
             eSerialDataFormat = eSerial_AsnText;
             break;
@@ -991,7 +1003,7 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
                 if (matching_id.Empty())
                     matching_id = ids.front();
 
-                if (matching_id && annot_id->Compare(*matching_id) != CSeq_id::e_YES)
+                if (matching_id && !annot_id->Equals(*matching_id))
                 {
                     x_ModifySeqIds(*annot_it, annot_id, matching_id);                    
                 }
@@ -1016,7 +1028,7 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& entry, const string& filename)
             {
                 cerr << MSerial_AsnText << "Found unmatched annot: " << *annot_id << endl;
             }
-            if (true)
+            if (false)
             {
                 CNcbiOfstream debug_annot("annot.sqn");
                 debug_annot << MSerial_AsnText

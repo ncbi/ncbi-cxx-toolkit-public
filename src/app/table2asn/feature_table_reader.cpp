@@ -453,7 +453,8 @@ CRef<feature::CFeatTree> CFeatureTableReader::_GetFeatTree()
 {
     if (m_Feat_Tree.Empty())
     {
-        m_Feat_Tree.Reset(new feature::CFeatTree(m_scope->GetSeq_entryHandle(*m_bioseq->GetParentEntry())));
+        m_Feat_Tree.Reset(new feature::CFeatTree());
+        m_Feat_Tree->AddFeatures(CFeat_CI(m_scope->GetBioseqHandle(*m_bioseq)));
     }
 
     return m_Feat_Tree;
@@ -769,9 +770,9 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
     if (GetProteinName(protein_name, cd_feature))
     {
         if (NStr::CompareNocase(protein_name, "hypothetical protein") == 0)
-        { 
+        {
             if (!mrna.Empty() && mrna->IsSetData() && mrna->GetData().GetRna().IsSetExt() &&
-                mrna->GetData().GetRna().GetExt().IsName() )
+                mrna->GetData().GetRna().GetExt().IsName())
             {
                 protein_name = mrna->GetData().GetRna().GetExt().GetName();
             }
@@ -790,10 +791,10 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
 #endif
     }
     else
-    if (m_context.m_use_hypothetic_protein)
-    {
-        protein_name = "hypothetical protein";
-    }
+        if (m_context.m_use_hypothetic_protein)
+        {
+            protein_name = "hypothetical protein";
+        }
 
     if (!protein_name.empty())
     {
@@ -809,7 +810,7 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
     feature::CopyFeaturePartials(prot_feat, cd_feature);
 
     if (!cd_feature.IsSetProduct())
-       cd_feature.SetProduct().SetWhole().Assign(*GetAccessionId(protein->GetId()));
+        cd_feature.SetProduct().SetWhole().Assign(*GetAccessionId(protein->GetId()));
 
     CBioseq_Handle protein_handle = m_scope->AddBioseq(*protein);
 
@@ -834,7 +835,7 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
         if (protein_name != kEmptyStr)
         {
             auto& ext = mrna_feature.SetData().SetRna().SetExt();
-            if (ext.Which() == CRNA_ref::C_Ext::e_not_set || 
+            if (ext.Which() == CRNA_ref::C_Ext::e_not_set ||
                 (ext.IsName() && ext.SetName().empty()) ||
                 fixed_protein_name)
                 ext.SetName() = protein_name;
@@ -978,11 +979,6 @@ void CFeatureTableReader::_MoveCdRegions(CSeq_entry_Handle entry_h, const CBiose
                 continue; // avoid iterator increment
             }
         }
-        else
-        if (data.IsRna() && data.GetRna().IsSetType() && data.GetRna().GetType() == CRNA_ref::eType_mRNA)
-        {
-            //CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(scope, feature.GetProduct(), m_Imp.GetTSE_Handle());
-        }
         ++feat_it;
     }
 }
@@ -1013,31 +1009,43 @@ void CFeatureTableReader::_ParseCdregions(CSeq_entry& entry)
 
         m_bioseq.Reset(&seq->SetSeq());
 
-        _AddFeatures();
+        CRef<CSeq_annot> main_ftable;
 
         for (CBioseq::TAnnot::iterator annot_it = seq->SetSeq().SetAnnot().begin();
             seq->SetSeq().SetAnnot().end() != annot_it;)
         {
             CRef<CSeq_annot> seq_annot(*annot_it);
 
-            if (!seq_annot->IsFtable())
+            if (seq_annot->IsFtable())
             {
-                ++annot_it;
-                continue;
-            }
-            CSeq_annot::TData::TFtable& seq_ftable = seq_annot->SetData().SetFtable();
-            
-            _MoveCdRegions(entry_h, seq->GetSeq(), seq_ftable, set_ftable);
 
-            if (seq_ftable.empty())
-            {
-                seq->SetSeq().SetAnnot().erase(annot_it++);
-                continue;
+                if (main_ftable.IsNull())
+                    main_ftable = seq_annot;
+                else {
+                    main_ftable->SetData().SetFtable().merge(
+                        seq_annot->SetData().SetFtable());
+                    annot_it = seq->SetSeq().SetAnnot().erase(annot_it++);
+                    continue;
+                }
             }
+
             ++annot_it;
         }
 
+        _AddFeatures();
+
+        //copy sequence feature table to edit it
+        auto seq_ftable = main_ftable->SetData().SetFtable();
+
+        _MoveCdRegions(entry_h, seq->GetSeq(), seq_ftable, set_ftable);
+
         _ClearTrees();
+
+        if (seq_ftable.empty()) {
+            seq->SetSeq().SetAnnot().remove(main_ftable);
+        } else {
+            main_ftable->SetData().SetFtable() = move(seq_ftable);
+        }
 
         if (seq->GetSeq().GetAnnot().empty())
         {
