@@ -126,73 +126,44 @@ bool CGtfReadRecord::xAssignAttributesFromGff(
     xSplitGffAttributes(strRawAttributes, attributes);
 
 	for ( size_t u=0; u < attributes.size(); ++u ) {
-        string strKey;
-        string strValue;
-        string strAttr(attributes[u]);
-        if (!NStr::SplitInTwo(strAttr, "=", strKey, strValue)) {
-            if (!NStr::SplitInTwo(strAttr, " ", strKey, strValue)) {
+        string key, value;
+        string attribute(attributes[u]);
+        if (!NStr::SplitInTwo(attribute, "=", key, value)) {
+            if (!NStr::SplitInTwo(attribute, " ", key, value)) {
                 if (strGtfType == "gene") {
-                    m_Attributes["gene_id"] = xNormalizedAttributeValue(strAttr);
+                    xAddMultiAttribute(
+                        "gene_id", xNormalizedAttributeValue(attribute));
                     continue;
                 }
                 if (strGtfType == "transcript") {
-                    if (!NStr::SplitInTwo(strAttr, ".", strKey, strValue)) {
+                    string gid, tid;
+                    if (!NStr::SplitInTwo(attribute, ".", gid, tid)) {
                         return false;
                     }
-                    m_Attributes["gene_id"] = xNormalizedAttributeValue(strKey);
-                    m_Attributes["transcript_id"] = xNormalizedAttributeValue(strAttr);
+                    xAddMultiAttribute(
+                        "gene_id", xNormalizedAttributeValue(gid));
+                    xAddMultiAttribute(
+                        "transcript_id", xNormalizedAttributeValue(attribute));
                     continue;
                 }
             }
         }
-        strKey = xNormalizedAttributeKey( strKey );
-        strValue = xNormalizedAttributeValue( strValue );
-		if ( strKey.empty() && strValue.empty() ) {
+        key = xNormalizedAttributeKey(key);
+        value = xNormalizedAttributeValue(value);
+		if ( key.empty()  &&  value.empty() ) {
             // Probably due to trailing "; ". Sequence Ontology generates such
             // things. 
             continue;
         }
-        if ( NStr::StartsWith( strValue, "\"" ) ) {
-            strValue = strValue.substr( 1, string::npos );
+        if (NStr::StartsWith(value, "\"")) {
+            value = value.substr(1, string::npos);
         }
-        if ( NStr::EndsWith( strValue, "\"" ) ) {
-            strValue = strValue.substr( 0, strValue.length() - 1 );
+        if (NStr::EndsWith(value, "\"")) {
+            value = value.substr(0, value.length() - 1);
         }
-        m_Attributes[ strKey ] = strValue;        
+        xAddMultiAttribute(key, value);
     }
     return true;
-}
-
-//  ----------------------------------------------------------------------------
-string s_GeneKey(
-    const CGff2Record& gff )
-//  ----------------------------------------------------------------------------
-{
-    string strGeneId;
-    if ( ! gff.GetAttribute( "gene_id", strGeneId ) ) {
-        cerr << "Unexpected: GTF feature without a gene_id." << endl;
-        return "gene_id";
-    }
-    return strGeneId;
-}
-
-//  ----------------------------------------------------------------------------
-string s_FeatureKey(
-    const CGff2Record& gff )
-//  ----------------------------------------------------------------------------
-{
-    static unsigned int tidCounter(1);
-    string strGeneId = s_GeneKey( gff );
-    if ( gff.Type() == "gene" ) {
-        return strGeneId;
-    }
-
-    string strTranscriptId;
-    if ( ! gff.GetAttribute( "transcript_id", strTranscriptId ) ) {
-        strTranscriptId = "t"+NStr::IntToString(tidCounter++);
-    }
-
-    return strGeneId + "_" + strTranscriptId;
 }
 
 //  ----------------------------------------------------------------------------
@@ -214,14 +185,15 @@ CGtfReader::~CGtfReader()
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::xUpdateAnnotFeature(
-    const CGff2Record& gff,
+    const CGff2Record& record,
     CRef< CSeq_annot > pAnnot,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
+    const CGtfReadRecord& gff = dynamic_cast<const CGtfReadRecord&>(record);
     string strType = gff.Type();
 
-    using TYPEHANDLER = bool (CGtfReader::*)(const CGff2Record&, CRef< CSeq_annot >);
+    using TYPEHANDLER = bool (CGtfReader::*)(const CGtfReadRecord&, CRef< CSeq_annot >);
     using HANDLERMAP = map<string, TYPEHANDLER>;
 
     HANDLERMAP typeHandlers = {
@@ -262,7 +234,7 @@ bool CGtfReader::xUpdateAnnotFeature(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnotCds(
-    const CGff2Record& gff,
+    const CGtfReadRecord& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
@@ -335,7 +307,7 @@ bool CGtfReader::x_UpdateAnnotCds(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnotTranscript(
-    const CGff2Record& gff,
+    const CGtfReadRecord& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
@@ -388,7 +360,7 @@ bool CGtfReader::x_UpdateAnnotTranscript(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_CreateFeatureId(
-    const CGff2Record& record,
+    const CGtfReadRecord& record,
     const string& prefix,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
@@ -407,7 +379,7 @@ bool CGtfReader::x_CreateFeatureId(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_CreateFeatureLocation(
-    const CGff2Record& record,
+    const CGtfReadRecord& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -435,7 +407,7 @@ bool CGtfReader::x_CreateFeatureLocation(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_CreateGeneXrefs(
-    const CGff2Record& record,
+    const CGtfReadRecord& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -459,7 +431,7 @@ bool CGtfReader::x_CreateGeneXrefs(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_CreateMrnaXrefs(
-    const CGff2Record& record,
+    const CGtfReadRecord& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -481,7 +453,7 @@ bool CGtfReader::x_CreateMrnaXrefs(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_CreateCdsXrefs(
-    const CGff2Record& record,
+    const CGtfReadRecord& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -505,7 +477,7 @@ bool CGtfReader::x_CreateCdsXrefs(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_MergeFeatureLocationSingleInterval(
-    const CGff2Record& record,
+    const CGtfReadRecord& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -524,7 +496,7 @@ bool CGtfReader::x_MergeFeatureLocationSingleInterval(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_MergeFeatureLocationMultiInterval(
-    const CGff2Record& record,
+    const CGtfReadRecord& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -546,7 +518,7 @@ bool CGtfReader::x_MergeFeatureLocationMultiInterval(
 
 //  -----------------------------------------------------------------------------
 bool CGtfReader::x_CreateParentGene(
-    const CGff2Record& gff,
+    const CGtfReadRecord& gff,
     CRef< CSeq_annot > pAnnot )
 //  -----------------------------------------------------------------------------
 {
@@ -567,7 +539,7 @@ bool CGtfReader::x_CreateParentGene(
     if ( ! xFeatureSetQualifiersGene( gff, pFeature ) ) {
         return false;
     }
-    m_GeneMap[ s_GeneKey( gff ) ] = pFeature;
+    m_GeneMap[gff.GeneKey()] = pFeature;
 
     xAddFeatureToAnnot( pFeature, pAnnot );
     return true;
@@ -575,7 +547,7 @@ bool CGtfReader::x_CreateParentGene(
     
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_MergeParentGene(
-    const CGff2Record& record,
+    const CGtfReadRecord& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -587,7 +559,7 @@ bool CGtfReader::x_MergeParentGene(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::xFeatureSetQualifiersGene(
-    const CGff2Record& record,
+    const CGtfReadRecord& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -597,31 +569,28 @@ bool CGtfReader::xFeatureSetQualifiersGene(
     //
     //  Create GB qualifiers for the record attributes:
     //
-    CRef< CGb_qual > pQual(0);
-    const CGff2Record::TAttributes& attrs = record.Attributes();
-    CGff2Record::TAttrCit it = attrs.begin();
+
+    const auto& attrs = record.GetMultiAttributes();
+    auto it = attrs.begin();
     for (/*NOOP*/; it != attrs.end(); ++it) {
         auto cit = std::find(ignoredAttrs.begin(), ignoredAttrs.end(), it->first);
         if (cit != ignoredAttrs.end()) {
             continue;
         }
         // special case some well-known attributes
-        if (x_ProcessQualifierSpecialCase(it, pFeature)) {
+        if (xProcessQualifierSpecialCase(it->first, it->second, pFeature)) {
             continue;
         }
 
         // turn everything else into a qualifier
-        pQual.Reset(new CGb_qual);
-        pQual->SetQual(it->first);
-        pQual->SetVal(it->second);
-        pFeature->SetQual().push_back(pQual);
+        xFeatureAddQualifiers(it->first, it->second, pFeature);
     } 
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::xFeatureSetQualifiersRna(
-    const CGff2Record& record,
+    const CGtfReadRecord& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -629,27 +598,27 @@ bool CGtfReader::xFeatureSetQualifiersRna(
         "locus_tag"
     };
 
-    const CGff2Record::TAttributes& attrs = record.Attributes();
-    CGff2Record::TAttrCit it = attrs.begin();
+    const auto& attrs = record.GetMultiAttributes();
+    auto it = attrs.begin();
     for (/*NOOP*/; it != attrs.end(); ++it) {
         auto cit = std::find(ignoredAttrs.begin(), ignoredAttrs.end(), it->first);
         if (cit != ignoredAttrs.end()) {
             continue;
         }
         // special case some well-known attributes
-        if (x_ProcessQualifierSpecialCase(it, pFeature)) {
+        if (xProcessQualifierSpecialCase(it->first, it->second, pFeature)) {
             continue;
         }
 
         // turn everything else into a qualifier
-        pFeature->AddQualifier(it->first, it->second);
+        xFeatureAddQualifiers(it->first, it->second, pFeature);
     } 
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::xFeatureSetQualifiersCds(
-    const CGff2Record& record,
+    const CGtfReadRecord& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
@@ -657,31 +626,27 @@ bool CGtfReader::xFeatureSetQualifiersCds(
         "locus_tag"
     };
 
-    CRef< CGb_qual > pQual(0);
-    const CGff2Record::TAttributes& attrs = record.Attributes();
-    CGff2Record::TAttrCit it = attrs.begin();
+    const auto& attrs = record.GetMultiAttributes();
+    auto it = attrs.begin();
     for (/*NOOP*/; it != attrs.end(); ++it) {
         auto cit = std::find(ignoredAttrs.begin(), ignoredAttrs.end(), it->first);
         if (cit != ignoredAttrs.end()) {
             continue;
         }
         // special case some well-known attributes
-        if (x_ProcessQualifierSpecialCase(it, pFeature)) {
+        if (xProcessQualifierSpecialCase(it->first, it->second, pFeature)) {
             continue;
         }
 
         // turn everything else into a qualifier
-        pQual.Reset(new CGb_qual);
-        pQual->SetQual(it->first);
-        pQual->SetVal(it->second);
-        pFeature->SetQual().push_back(pQual);
+        xFeatureAddQualifiers(it->first, it->second, pFeature);
     } 
     return true;
 }
 
 //  -----------------------------------------------------------------------------
 bool CGtfReader::x_CreateParentCds(
-    const CGff2Record& gff,
+    const CGtfReadRecord& gff,
     CRef< CSeq_annot > pAnnot )
 //  -----------------------------------------------------------------------------
 {
@@ -700,7 +665,7 @@ bool CGtfReader::x_CreateParentCds(
         return false;
     }
 
-    m_CdsMap[ s_FeatureKey( gff ) ] = pFeature;
+    m_CdsMap[gff.FeatureKey()] = pFeature;
 
     if ( ! x_FeatureSetDataCDS( gff, pFeature ) ) {
         return false;
@@ -726,7 +691,7 @@ bool CGtfReader::x_CreateParentCds(
 
 //  -----------------------------------------------------------------------------
 bool CGtfReader::x_CreateParentMrna(
-    const CGff2Record& gff,
+    const CGtfReadRecord& gff,
     CRef< CSeq_annot > pAnnot )
 //  -----------------------------------------------------------------------------
 {
@@ -754,18 +719,18 @@ bool CGtfReader::x_CreateParentMrna(
         return false;
     }
 
-    m_MrnaMap[ s_FeatureKey( gff ) ] = pFeature;
+    m_MrnaMap[gff.FeatureKey()] = pFeature;
 
     return xAddFeatureToAnnot( pFeature, pAnnot );
 }
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_FindParentGene(
-    const CGff2Record& gff,
+    const CGtfReadRecord& gff,
     CRef< CSeq_feat >& pFeature )
 //  ----------------------------------------------------------------------------
 {
-    TIdToFeature::iterator gene_it = m_GeneMap.find( s_GeneKey( gff ) );
+    TIdToFeature::iterator gene_it = m_GeneMap.find(gff.GeneKey());
     if ( gene_it == m_GeneMap.end() ) {
         return false;
     }
@@ -775,11 +740,11 @@ bool CGtfReader::x_FindParentGene(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_FindParentCds(
-    const CGff2Record& gff,
+    const CGtfReadRecord& gff,
     CRef< CSeq_feat >& pFeature )
 //  ----------------------------------------------------------------------------
 {
-    TIdToFeature::iterator cds_it = m_CdsMap.find( s_FeatureKey( gff ) );
+    TIdToFeature::iterator cds_it = m_CdsMap.find(gff.FeatureKey());
     if ( cds_it == m_CdsMap.end() ) {
         return false;
     }
@@ -789,11 +754,11 @@ bool CGtfReader::x_FindParentCds(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_FindParentMrna(
-    const CGff2Record& gff,
+    const CGtfReadRecord& gff,
     CRef< CSeq_feat >& pFeature )
 //  ----------------------------------------------------------------------------
 {
-    TIdToFeature::iterator rna_it = m_MrnaMap.find( s_FeatureKey( gff ) );
+    TIdToFeature::iterator rna_it = m_MrnaMap.find(gff.FeatureKey());
     if ( rna_it == m_MrnaMap.end() ) {
         return false;
     }
@@ -803,49 +768,44 @@ bool CGtfReader::x_FindParentMrna(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_FeatureSetDataGene(
-    const CGff2Record& record,
+    const CGtfReadRecord& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
     CGene_ref& gene = pFeature->SetData().SetGene();
 
-    string strValue;
-    if (record.GetAttribute( "gene_synonym", strValue)) {
-        gene.SetSyn().push_back( strValue );
+    string geneSynonym = record.AttributeValue("gene_synonym");
+    if (!geneSynonym.empty()) {
+        gene.SetSyn().push_back(geneSynonym);
     }
-    if (record.GetAttribute("locus_tag", strValue)) {
-        gene.SetLocus_tag(strValue);
+    string locusTag = record.AttributeValue("locus_tag");
+    if (!locusTag.empty()) {
+        gene.SetLocus_tag(locusTag);
     }
-    //  mss-399: do -not- use gene_id for /gene_syn or /gene:
-    //if ( record.GetAttribute( "gene_id", strValue ) ) {
-    //    gene.SetSyn().push_front( strValue );
-    //}
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_FeatureSetDataMRNA(
-    const CGff2Record& record,
+    const CGtfReadRecord& record,
     CRef<CSeq_feat> pFeature)
 //  ----------------------------------------------------------------------------
 {
     if ( !x_FeatureSetDataRna( record, pFeature, CSeqFeatData::eSubtype_mRNA)) {
         return false;
-    }
-    
+    }    
     CRNA_ref& rna = pFeature->SetData().SetRna();
 
-    string strValue;
-    if (record.GetAttribute("product", strValue)) {
-        rna.SetExt().SetName(strValue);
+    string product = record.AttributeValue("product");
+    if (!product.empty()) {
+        rna.SetExt().SetName(product);
     }
-
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_FeatureSetDataRna(
-    const CGff2Record& record,
+    const CGtfReadRecord& record,
     CRef< CSeq_feat > pFeature,
     CSeqFeatData::ESubtype subType)
 //  ----------------------------------------------------------------------------
@@ -867,93 +827,133 @@ bool CGtfReader::x_FeatureSetDataRna(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_FeatureSetDataCDS(
-    const CGff2Record& record,
+    const CGtfReadRecord& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
     CCdregion& cdr = pFeature->SetData().SetCdregion();
-    string strValue;
-    if ( record.GetAttribute( "protein_id", strValue ) ) {
-        CRef<CSeq_id> pId = mSeqIdResolve(strValue,m_iFlags, true);
+    string proteinId = record.AttributeValue("protein_id");
+    if (!proteinId.empty()) {
+        CRef<CSeq_id> pId = mSeqIdResolve(proteinId, m_iFlags, true);
         if (pId->IsGenbank()) {
             pFeature->SetProduct().SetWhole(*pId);
         }
     }
-    if ( record.GetAttribute( "ribosomal_slippage", strValue ) ) {
+    string ribosomalSlippage = record.AttributeValue("ribosomal_slippage");
+    if (!ribosomalSlippage.empty()) {
         pFeature->SetExcept( true );
-        pFeature->SetExcept_text( "ribosomal slippage" );
+        pFeature->SetExcept_text("ribosomal slippage");
     }
-    if ( record.GetAttribute( "transl_table", strValue ) ) {
+    string transTable = record.AttributeValue("transl_table");
+    if (!transTable.empty()) {
         CRef< CGenetic_code::C_E > pGc( new CGenetic_code::C_E );
-        pGc->SetId( NStr::StringToUInt( strValue ) );
-        cdr.SetCode().Set().push_back( pGc );
+        pGc->SetId(NStr::StringToUInt(transTable));
+        cdr.SetCode().Set().push_back(pGc);
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGtfReader::x_FeatureTrimQualifiers(
+    const CGtfReadRecord& record,
+    CRef< CSeq_feat > pFeature )
+    //  ----------------------------------------------------------------------------
+{
+    typedef CSeq_feat::TQual TQual;
+    //task:
+    // for each attribute of the new piece check if we already got a feature 
+    //  qualifier
+    // if so, and with the same value, then the qualifier is allowed to live
+    // otherwise it is subfeature specific and hence removed from the feature
+    TQual& quals = pFeature->SetQual();
+    for (TQual::iterator it = quals.begin(); it != quals.end(); /**/) {
+        const string& qualKey = (*it)->GetQual();
+        if (NStr::StartsWith(qualKey, "gff_")) {
+            it++;
+            continue;
+        }
+        if (qualKey == "locus_tag") {
+            it++;
+            continue;
+        }
+        if (qualKey == "old_locus_tag") {
+            it++;
+            continue;
+        }
+        if (qualKey == "product") {
+            it++;
+            continue;
+        }
+        if (qualKey == "protein_id") {
+            it++;
+            continue;
+        }
+        const string& qualVal = (*it)->GetVal();
+        if (!record.HasAttribute(qualKey, qualVal)) {
+            //superfluous qualifier- squish
+            it = quals.erase(it);
+            continue;
+        }
+        it++;
     }
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_CdsIsPartial(
-    const CGff2Record& record )
+    const CGtfReadRecord& record )
 //  ----------------------------------------------------------------------------
 {
-    string strPartial;
-//    if ( record.Type() != "CDS" ) {
-//        return false;
-//    }
-    if ( record.GetAttribute( "partial", strPartial ) ) {
+    if (record.HasAttribute("partial")) {
         return true;
     }
     CRef< CSeq_feat > mRna;
-    if ( ! x_FindParentMrna( record, mRna ) ) {
+    if (!x_FindParentMrna(record, mRna)) {
         return false;
     }
-    return ( mRna->IsSetPartial() && mRna->GetPartial() );
+    return (mRna->IsSetPartial()  &&  mRna->GetPartial());
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfReader::x_ProcessQualifierSpecialCase(
-    CGff2Record::TAttrCit it,
+bool CGtfReader::xProcessQualifierSpecialCase(
+    const string& key,
+    const vector<string>& values,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
     CRef<CGb_qual> pQual(0);
 
-    if (0 == NStr::CompareNocase(it->first, "exon_id")) {
+    if (0 == NStr::CompareNocase(key, "exon_id")) {
         return true;
     }
-    if (0 == NStr::CompareNocase(it->first, "exon_number")) {
+    if (0 == NStr::CompareNocase(key, "exon_number")) {
         return true;
     }
-    if ( 0 == NStr::CompareNocase( it->first, "note" ) ) {
-        pFeature->SetComment( it->second );
+    if ( 0 == NStr::CompareNocase(key, "note") ) {
+        pFeature->SetComment(NStr::Join(values, ";"));
         return true;
     }
-    if ( 0 == NStr::CompareNocase( it->first, "dbxref" ) || 
-        0 == NStr::CompareNocase( it->first, "db_xref" ) ) 
+    if ( 0 == NStr::CompareNocase(key, "dbxref") || 
+        0 == NStr::CompareNocase(key, "db_xref")) 
     {
-        vector< string > tags;
-        NStr::Split( it->second, ";", tags );
-        for ( vector<string>::iterator it = tags.begin(); 
-            it != tags.end(); ++it ) {
-            pFeature->SetDbxref().push_back( x_ParseDbtag( *it ) );
+        for (auto value: values) {
+            vector< string > tags;
+            NStr::Split(value, ";", tags );
+            for (auto it = tags.begin(); it != tags.end(); ++it ) {
+                pFeature->SetDbxref().push_back(x_ParseDbtag(*it));
+            }
         }
         return true;
     }
 
-    if ( 0 == NStr::CompareNocase( it->first, "pseudo" ) ) {
+    if ( 0 == NStr::CompareNocase(key, "pseudo")) {
         pFeature->SetPseudo( true );
         return true;
     }
-    if ( 0 == NStr::CompareNocase( it->first, "partial" ) ) {
+    if ( 0 == NStr::CompareNocase(key, "partial")) {
         pFeature->SetPartial( true );
         return true;
     }
-    //if (0 == NStr::CompareNocase(it->first, "protein_id")) {
-    //    if (pFeature->IsSetProduct()) {
-    //        return true;
-    //    }
-    //}
-
     return false;
 }  
 

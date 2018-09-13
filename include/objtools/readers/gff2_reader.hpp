@@ -213,10 +213,6 @@ public:
         const CGff2Record&,
         CRef< CSeq_feat > );
 
-    bool x_FeatureTrimQualifiers(
-        const CGff2Record&,
-        CRef< CSeq_feat > );
-
     bool xFeatureSetQualifier(
         const string&,
         const string&,

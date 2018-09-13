@@ -46,13 +46,112 @@ class CGtfReadRecord
     : public CGff2Record
 {
 public:
+    using MultiValue = vector<string>;
+    using MultiAttributes = map<string, MultiValue>;
+    MultiAttributes mAttributes;
+
     CGtfReadRecord(): CGff2Record() {};
     ~CGtfReadRecord() {};
+
+    const MultiAttributes&
+    GetMultiAttributes() const 
+    {
+        return mAttributes;
+    };
+
+    string
+    GeneKey() const
+    {
+        auto it = mAttributes.find("gene_id");
+        if (it == mAttributes.end()  ||  it->second.empty()) {
+            cerr << "Unexpected: GTF feature without a gene_id." << endl;
+            return "";
+        }
+        return it->second.front();
+    };
+        
+    string
+    FeatureKey() const
+    {
+        static unsigned int tidCounter(1);
+        if (Type() == "gene") {
+            return GeneKey();
+        }
+
+        string transcriptId;
+        auto it = mAttributes.find("transcript_id");
+        if (it == mAttributes.end()  ||  it->second.empty()) {
+            transcriptId = "t" + NStr::IntToString(tidCounter++);
+        }
+        else {
+            transcriptId = it->second.front();
+        }
+        return GeneKey() + "_" + transcriptId;
+    }
+
+    string
+    AttributeValue(
+        const string& key) const
+    {
+        MultiValue values;
+        xGetMultiAttribute(key, values);
+        if (values.size() == 1) {
+            return values.front();
+        }
+        return "";
+    }
+
+    bool
+    HasAttribute(
+        const string& key,
+        const string& value = "") const
+    {
+        auto it = mAttributes.find(key);
+        if (it == mAttributes.end()) {
+            return false;
+        }
+        const auto& values = it->second;
+        if (values.empty()) {
+            return false;
+        }
+        if (value.empty()) {
+            return true;
+        }
+        return (find(values.begin(), values.end(), value) != values.end());
+    };
 
 protected:
     bool xAssignAttributesFromGff(
         const string&,
         const string& );
+
+    void
+    xAddMultiAttribute(
+        const string& key,
+        const string& value)
+    {
+        auto kit = mAttributes.find(key);
+        if (kit == mAttributes.end()) {
+            kit = mAttributes.insert(make_pair(key, MultiValue())).first;
+        }
+        auto vit = find(kit->second.begin(), kit->second.end(), value);
+        if (vit == kit->second.end()) {
+            kit->second.push_back(value);
+        }
+    };
+
+    void
+    xGetMultiAttribute(
+        const string& key,
+        MultiValue& values) const
+    {
+        const MultiValue empty;
+        values = empty;
+        auto it = mAttributes.find(key);
+        if (it != mAttributes.end()) {
+            values = it->second;
+        }
+    };
 };
 
 //  ----------------------------------------------------------------------------
@@ -82,110 +181,126 @@ protected:
         ILineErrorListener* =0);
 
     virtual bool x_UpdateAnnotCds(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_annot > );
 
     virtual bool x_UpdateAnnotTranscript(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_annot > );
 
     bool x_CreateFeatureId(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         const string&,
         CRef< CSeq_feat > );
 
     bool x_CreateFeatureLocation(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_feat > );
     
     bool x_CreateGeneXrefs(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_feat > );
     
     bool x_CreateMrnaXrefs(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_feat > );
     
     bool x_CreateCdsXrefs(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_feat > );
     
     bool x_MergeFeatureLocationSingleInterval(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_feat > );
     
     bool x_MergeFeatureLocationMultiInterval(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_feat > );
 
     bool x_CreateParentGene(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_annot > );
         
     bool x_MergeParentGene(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_feat > );
             
     bool xFeatureSetQualifiersGene(
-        const CGff2Record& record,
+        const CGtfReadRecord& record,
         CRef<CSeq_feat>);
 
     bool xFeatureSetQualifiersRna(
-        const CGff2Record& record,
+        const CGtfReadRecord& record,
         CRef<CSeq_feat>);
 
     bool xFeatureSetQualifiersCds(
-        const CGff2Record& record,
+        const CGtfReadRecord& record,
         CRef<CSeq_feat>);
 
     bool x_CreateParentCds(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_annot > );
         
     bool x_CreateParentMrna(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_annot > );
         
     bool x_MergeParentCds(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_feat > );
             
     bool x_FeatureSetDataGene(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_feat > );
 
     virtual bool x_FeatureSetDataRna(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_feat >,
         CSeqFeatData::ESubtype );
 
     bool x_FeatureSetDataMRNA(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_feat > );
 
     bool x_FeatureSetDataCDS(
-        const CGff2Record&,
+        const CGtfReadRecord&,
+        CRef< CSeq_feat > );
+
+    bool x_FeatureTrimQualifiers(
+        const CGtfReadRecord&,
         CRef< CSeq_feat > );
 
 protected:
     bool x_FindParentGene(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_feat >& );
 
     bool x_FindParentCds(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_feat >& );
 
     bool x_FindParentMrna(
-        const CGff2Record&,
+        const CGtfReadRecord&,
         CRef< CSeq_feat >& );
 
-    virtual bool x_ProcessQualifierSpecialCase(
-        CGff2Record::TAttrCit,
+    virtual bool xProcessQualifierSpecialCase(
+        const string&,
+        const CGtfReadRecord::MultiValue&,
         CRef< CSeq_feat > );
-  
+
+    virtual void
+        xFeatureAddQualifiers(
+            const string& key,
+            const CGtfReadRecord::MultiValue& values,
+            CRef<CSeq_feat> pFeature)
+    {
+        for (auto value: values) {
+            pFeature->AddQualifier(key, value);
+        }
+    };
+
     bool x_CdsIsPartial(
-        const CGff2Record& );
+        const CGtfReadRecord& );
 
     typedef map< string, CRef< CSeq_feat > > TIdToFeature;
     TIdToFeature m_GeneMap;
