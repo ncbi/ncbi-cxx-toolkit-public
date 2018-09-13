@@ -563,17 +563,6 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
             if  (context.m_entry_template.Empty())
                 context.m_entry_template.Reset(new CSeq_entry);
 
-            {
-                if (desc->IsUser() && desc->GetUser().IsDBLink())
-                {
-                    CUser_object& user_obj = desc->SetUser();
-                    if (user_obj.IsDBLink())
-                    {
-                        user_obj.SetData();
-                    }
-                }
-            }
-
             context.m_entry_template->SetSeq().SetDescr().Set().push_back(desc);
 
             if (pObjIstrm->EndOfData())
