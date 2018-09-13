@@ -256,10 +256,6 @@ protected:
         const CGtfReadRecord&,
         CRef< CSeq_annot > );
         
-    bool x_MergeParentCds(
-        const CGtfReadRecord&,
-        CRef< CSeq_feat > );
-            
     bool x_FeatureSetDataGene(
         const CGtfReadRecord&,
         CRef< CSeq_feat > );
@@ -281,7 +277,6 @@ protected:
         const CGtfReadRecord&,
         CRef< CSeq_feat > );
 
-protected:
     bool x_FindParentGene(
         const CGtfReadRecord&,
         CRef< CSeq_feat >& );
@@ -294,23 +289,17 @@ protected:
         const CGtfReadRecord&,
         CRef< CSeq_feat >& );
 
-    virtual bool xProcessQualifierSpecialCase(
+    bool xProcessQualifierSpecialCase(
         const string&,
         const CGtfAttributes::MultiValue&,
         CRef< CSeq_feat > );
 
-    virtual void
-        xFeatureAddQualifiers(
-            const string& key,
-            const CGtfAttributes::MultiValue& values,
-            CRef<CSeq_feat> pFeature)
-    {
-        for (auto value: values) {
-            pFeature->AddQualifier(key, value);
-        }
-    };
+    void xFeatureAddQualifiers(
+        const string& key,
+        const CGtfAttributes::MultiValue&,
+        CRef<CSeq_feat>);
 
-    bool x_CdsIsPartial(
+    bool xCdsIsPartial(
         const CGtfReadRecord& );
 
     typedef map< string, CRef< CSeq_feat > > TIdToFeature;

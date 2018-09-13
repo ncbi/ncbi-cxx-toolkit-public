@@ -283,7 +283,7 @@ bool CGtfReader::x_UpdateAnnotCds(
         }
     }
         
-    if ( x_CdsIsPartial( gff ) ) {
+    if ( xCdsIsPartial( gff ) ) {
         CRef<CSeq_feat> pParent;
         if ( x_FindParentMrna( gff, pParent ) ) {
             CSeq_loc& loc = pCds->SetLocation();
@@ -903,7 +903,7 @@ bool CGtfReader::x_FeatureTrimQualifiers(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfReader::x_CdsIsPartial(
+bool CGtfReader::xCdsIsPartial(
     const CGtfReadRecord& record )
 //  ----------------------------------------------------------------------------
 {
@@ -960,6 +960,17 @@ bool CGtfReader::xProcessQualifierSpecialCase(
     return false;
 }  
 
+//  ----------------------------------------------------------------------------
+void CGtfReader::xFeatureAddQualifiers(
+    const string& key,
+    const CGtfAttributes::MultiValue& values,
+    CRef<CSeq_feat> pFeature)
+    //  ----------------------------------------------------------------------------
+{
+    for (auto value: values) {
+        pFeature->AddQualifier(key, value);
+    }
+};
 
 END_objects_SCOPE
 END_NCBI_SCOPE
