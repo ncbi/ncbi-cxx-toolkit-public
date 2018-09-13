@@ -261,8 +261,8 @@ private:
         e_push,
         e_take_from_biosample,         // update with qualifiers from BioSample, stop if conflict
         e_take_from_biosample_force,   // update with qualifiers from BioSample, no stop on conflict
-        e_update,                      // use web API for update
-        e_report_status                // make table with list of BioSample IDs and statuses
+        e_report_status,               // make table with list of BioSample IDs and statuses
+        e_update                       // use web API for update
     };
 
     enum E_ListType {
@@ -359,9 +359,10 @@ void CBiosampleChkApp::Init(void)
         "\t3 push source info from one file (-i) to others (-p)\n"
         "\t4 update with source qualifiers from BioSample unless conflict\n"
         "\t5 update with source qualifiers from BioSample (continue with conflict))\n"
-        "\t6 use web API for update",
+        "\t6 report transaction status\n"
+        "\t7 use web API for update\n",
         CArgDescriptions::eInteger, "1");
-    CArgAllow* constraint = new CArgAllow_Integers(e_report_diffs, e_report_status);
+    CArgAllow* constraint = new CArgAllow_Integers(e_report_diffs, e_update);
     arg_desc->SetConstraint("m", constraint);
     
     arg_desc->AddOptionalKey(
@@ -1044,7 +1045,7 @@ void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampl
     }
 
     if ( ids.size() > 1 ) {
-        *m_LogStream << "ERROR: More than one BioSample ID is not supported by -m 6." << endl;
+        *m_LogStream << "ERROR: More than one BioSample ID is not supported by -m 7." << endl;
         exit(6);
     }
 
@@ -1055,7 +1056,7 @@ void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampl
     CHttpSession session;
 
     if (m_Username == "" || m_Password == "") {
-        *m_LogStream << "ERROR: Username and password are needed with -m 6." << endl;
+        *m_LogStream << "ERROR: Username and password are needed with -m 7." << endl;
         exit(6);
     }
 
