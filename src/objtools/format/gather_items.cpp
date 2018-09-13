@@ -2927,6 +2927,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
 
             /// we may need to assert proper product resolution
 
+            /*
             if (original_feat.GetData().IsRna()  &&  original_feat.IsSetProduct()) {
                 vector<CMappedFeat> children =
                     ctx.GetFeatTree().GetChildren(mf);
@@ -2947,8 +2948,9 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocationIdx
                                     rna_bsh, prot_bsh);
                 }
             }
+            */
 
-            // supress dupliacte features
+            // supress duplicate features
             if (prev_feat  &&  s_IsDuplicateFeatures(prev_feat, feat)) {
                 return; // continue;
             }
@@ -3132,7 +3134,7 @@ void CFlatGatherer::x_GatherFeaturesOnWholeLocation
                 }
             }
 
-            // supress dupliacte features
+            // supress duplicate features
             if (prev_feat  &&  s_IsDuplicateFeatures(prev_feat, feat)) {
                 continue;
             }
@@ -3381,8 +3383,6 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
                 return;
             }
 
-            /// we may need to assert proper product resolution
-
             if( (feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) && ! feat.IsPlainFeat() ) {
                 // skip gaps when we take slices (i.e. "-from" and "-to" command-line args),
                 // unless they're a plain feature.
@@ -3390,6 +3390,9 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
                 return;
             }
 
+            /// we may need to assert proper product resolution
+
+            /*
             if (original_feat.GetData().IsRna()  &&  original_feat.IsSetProduct()) {
                 vector<CMappedFeat> children =
                     ctx.GetFeatTree().GetChildren(mf);
@@ -3410,8 +3413,9 @@ void CFlatGatherer::x_GatherFeaturesOnRangeIdx
                                     rna_bsh, prot_bsh);
                 }
             }
+            */
 
-            // supress dupliacte features
+            // supress duplicate features
             if (prev_feat  &&  s_IsDuplicateFeatures(prev_feat, feat)) {
                 return;
             }
@@ -3543,14 +3547,14 @@ void CFlatGatherer::x_GatherFeaturesOnRange
                 continue;
             }
 
-            /// we may need to assert proper product resolution
-
             if( (feat.GetFeatSubtype() == CSeqFeatData::eSubtype_gap) && ! feat.IsPlainFeat() ) {
                 // skip gaps when we take slices (i.e. "-from" and "-to" command-line args),
                 // unless they're a plain feature.
                 // (compare NW_001468136 (100 to 200000) and AC185591 (100 to 100000) )
                 continue;
             }
+
+            /// we may need to assert proper product resolution
 
             if (it->GetData().IsRna()  &&  it->IsSetProduct()) {
                 vector<CMappedFeat> children =
@@ -3573,7 +3577,7 @@ void CFlatGatherer::x_GatherFeaturesOnRange
                 }
             }
 
-            // supress dupliacte features
+            // supress duplicate features
             if (prev_feat  &&  s_IsDuplicateFeatures(prev_feat, feat)) {
                 continue;
             }
