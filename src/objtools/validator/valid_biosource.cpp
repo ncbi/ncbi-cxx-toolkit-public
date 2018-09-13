@@ -965,13 +965,17 @@ const CSeq_entry *ctx)
 
     // get taxname from object
     string taxname = kEmptyStr;
-    const CSeqdesc* desc = dynamic_cast < const CSeqdesc* > (&obj);
-    const CSeq_feat* feat = dynamic_cast < const CSeq_feat* > (&obj);
-    if (desc && desc->IsSource() && desc->GetSource().IsSetTaxname()) {
-        taxname = desc->GetSource().GetOrg().GetTaxname();
-    } else if (feat && feat->IsSetData() && feat->GetData().IsBiosrc() &&
-        feat->GetData().GetBiosrc().IsSetTaxname()) {
-        taxname = feat->GetData().GetBiosrc().GetOrg().GetTaxname();
+	if (obj.GetThisTypeInfo() == CSeqdesc::GetTypeInfo()) {
+		const CSeqdesc* desc = dynamic_cast <const CSeqdesc*> (&obj);
+		if (desc && desc->IsSource() && desc->GetSource().IsSetTaxname()) {
+			taxname = desc->GetSource().GetOrg().GetTaxname();
+		}
+	} else if (obj.GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
+        const CSeq_feat* feat = dynamic_cast < const CSeq_feat* > (&obj);
+		if (feat && feat->IsSetData() && feat->GetData().IsBiosrc() &&
+			feat->GetData().GetBiosrc().IsSetTaxname()) {
+			taxname = feat->GetData().GetBiosrc().GetOrg().GetTaxname();
+		}
     }
     string sname = kEmptyStr;
     if (subsrc.IsSetName()) {

@@ -319,67 +319,47 @@ void CValidError_imp::PostErr
  const string&  msg,
  const CSerialObject& obj)
 {
-    const CSeqdesc* desc = dynamic_cast < const CSeqdesc* > (&obj);
-    if (desc != 0) {
+	const CTypeInfo* type_info = obj.GetThisTypeInfo();
+	if (type_info == CSeqdesc::GetTypeInfo()) {
+        const CSeqdesc* desc = dynamic_cast < const CSeqdesc* > (&obj);
         LOG_POST_X(1, Warning << "Seqdesc validation error using default context.");
         PostErr (sv, et, msg, GetTSE(), *desc);
-        return;
-    }
-    const CSeq_feat* feat = dynamic_cast < const CSeq_feat* > (&obj);
-    if (feat != 0) {
+    } else if (type_info == CSeq_feat::GetTypeInfo()) {
+        const CSeq_feat* feat = dynamic_cast < const CSeq_feat* > (&obj);
         PostErr (sv, et, msg, *feat);
-        return;
-    }
-    const CBioseq* seq = dynamic_cast < const CBioseq* > (&obj);
-    if (seq != 0) {
+    } else if (type_info == CBioseq::GetTypeInfo()) {
+        const CBioseq* seq = dynamic_cast < const CBioseq* > (&obj);
         PostErr (sv, et, msg, *seq);
-        return;
-    }
-    const CBioseq_set* set = dynamic_cast < const CBioseq_set* > (&obj);
-    if (set != 0) {
+    } else if (type_info == CBioseq_set::GetTypeInfo()) {
+        const CBioseq_set* set = dynamic_cast < const CBioseq_set* > (&obj);
         PostErr (sv, et, msg, *set);
-        return;
-    }
-    const CSeq_annot* annot = dynamic_cast < const CSeq_annot* > (&obj);
-    if (annot != 0) {
+    } else if (type_info == CSeq_annot::GetTypeInfo()) {
+        const CSeq_annot* annot = dynamic_cast < const CSeq_annot* > (&obj);
         PostErr (sv, et, msg, *annot);
-        return;
-    }
-    const CSeq_graph* graph = dynamic_cast < const CSeq_graph* > (&obj);
-    if (graph != 0) {
+    } else if (type_info == CSeq_graph::GetTypeInfo()) {
+        const CSeq_graph* graph = dynamic_cast < const CSeq_graph* > (&obj);
         PostErr (sv, et, msg, *graph);
-        return;
-    }
-    const CSeq_align* align = dynamic_cast < const CSeq_align* > (&obj);
-    if (align != 0) {
+    } else if (type_info == CSeq_align::GetTypeInfo()) {
+        const CSeq_align* align = dynamic_cast < const CSeq_align* > (&obj);
         PostErr (sv, et, msg, *align);
-        return;
-    }
-    const CSeq_entry* entry = dynamic_cast < const CSeq_entry* > (&obj);
-    if (entry != 0) {
+    } else if (type_info == CSeq_entry::GetTypeInfo()) {
+        const CSeq_entry* entry = dynamic_cast < const CSeq_entry* > (&obj);
         PostErr (sv, et, msg, *entry);
-        return;
-    }
-    const CBioSource* src = dynamic_cast < const CBioSource* > (&obj);
-    if (src != 0) {
+    } else if (type_info == CBioSource::GetTypeInfo()) {
+        const CBioSource* src = dynamic_cast < const CBioSource* > (&obj);
         PostErr (sv, et, msg, *src);
-        return;
-    }
-    const COrg_ref* org = dynamic_cast < const COrg_ref* > (&obj);
-    if (org != 0) {
+    } else if (type_info == COrg_ref::GetTypeInfo()) {
+        const COrg_ref* org = dynamic_cast < const COrg_ref* > (&obj);
         PostErr (sv, et, msg, *org);
-        return;
-    }
-    const CPubdesc* pd = dynamic_cast < const CPubdesc* > (&obj);
-    if (pd != 0) {
+    } else if (type_info == CPubdesc::GetTypeInfo()) {
+        const CPubdesc* pd = dynamic_cast < const CPubdesc* > (&obj);
         PostErr (sv, et, msg, *pd);
-        return;
-    }
-    const CSeq_submit* ss = dynamic_cast < const CSeq_submit* > (&obj);
-    if (ss != 0) {
+    } else if (type_info == CSeq_submit::GetTypeInfo()) {
+        const CSeq_submit* ss = dynamic_cast < const CSeq_submit* > (&obj);
         PostErr (sv, et, msg, *ss);
-        return;
-    }
+    } else {
+		LOG_POST_X(1, Warning << "Unknown data type in PostErr.");
+	}
 }
 
 
@@ -1004,14 +984,12 @@ void CValidError_imp::PostObjErr
 {
     if (ctx == 0) {
         PostErr (sv, et, msg, obj);
-    } else {
-        const CSeqdesc* desc = dynamic_cast < const CSeqdesc* > (&obj);
-        if (desc == 0) {
-            PostErr (sv, et, msg, obj);
-        } else {
-            PostErr (sv, et, msg, *ctx, *desc);
-        }
-    }
+	} else if (obj.GetThisTypeInfo() == CSeqdesc::GetTypeInfo()) {
+		PostErr(sv, et, msg, *ctx, *(dynamic_cast <const CSeqdesc*> (&obj)));
+	} else {
+		PostErr(sv, et, msg, obj);
+	}
+
 }
 
 
@@ -2051,7 +2029,10 @@ void CValidError_imp::ValidateSeqLoc
     
     bool trans_splice = false;
     bool exception = false;
-    const CSeq_feat* sfp = dynamic_cast<const CSeq_feat*>(&obj);
+	const CSeq_feat* sfp = NULL;
+	if (obj.GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
+		sfp = dynamic_cast<const CSeq_feat*>(&obj);
+	}
     if (sfp != 0) {
                 
         // primer_bind intervals MAY be in on opposite strands
