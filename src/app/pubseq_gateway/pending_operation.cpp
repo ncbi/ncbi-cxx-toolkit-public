@@ -641,6 +641,32 @@ void CPendingOperation::x_PrintRequestStop(int  status)
 }
 
 
+bool CPendingOperation::x_ParseUrlSeqIdAsIs(CSeq_id &  seq_id)
+{
+    try {
+        seq_id.Set(m_UrlSeqId);
+        return true;
+    } catch (...) {
+    }
+    return false;
+}
+
+
+bool CPendingOperation::x_ParseUrlSeqIdAsFastaTypeAndContent(CSeq_id &  seq_id)
+{
+    if (m_UrlSeqIdType >= 0) {
+        try {
+            seq_id.Set(CSeq_id::eFasta_AsTypeAndContent,
+                       (CSeq_id_Base::E_Choice)(m_UrlSeqIdType),
+                       m_UrlSeqId);
+            return true;
+        } catch (...) {
+        }
+    }
+    return false;
+}
+
+
 SBioseqKey CPendingOperation::x_ResolveInputSeqId(string &  err_msg)
 {
     m_UrlSeqId = m_BlobRequest.m_SeqId;
@@ -651,30 +677,24 @@ SBioseqKey CPendingOperation::x_ResolveInputSeqId(string &  err_msg)
     }
 
     SBioseqKey      bioseq_key;
-    try {
-        CSeq_id     parsed_seq_id;
+    CSeq_id         parsed_seq_id;
+    bool            parsed_as_is_ok = false;
+    bool            parsed_as_fasta_ok = false;
 
-        try {
-            parsed_seq_id.Set(m_UrlSeqId);
-        } catch (...) {
-            if (m_UrlSeqIdType >= 0)
-                parsed_seq_id.Set(CSeq_id::eFasta_AsTypeAndContent,
-                                  (CSeq_id_Base::E_Choice)(m_UrlSeqIdType),
-                                  m_UrlSeqId);
-            else
-                throw;
-        }
+    parsed_as_is_ok = x_ParseUrlSeqIdAsIs(parsed_seq_id);
+    if (!parsed_as_is_ok)
+        parsed_as_fasta_ok = x_ParseUrlSeqIdAsFastaTypeAndContent(parsed_seq_id);
 
-
-//        CSeq_id                 parsed_seq_id(url_seq_id);
+    if (parsed_as_is_ok || parsed_as_fasta_ok) {
         const CTextseq_id *     text_seq_id = parsed_seq_id.GetTextseq_Id();
-
+        int         eff_seq_id_type;
+        bool        eff_seq_id_ok = x_GetEffectiveSeqIdType(parsed_seq_id,
+                                                            eff_seq_id_type);
         if (text_seq_id != NULL ||
-            x_GetEffectiveSeqIdType(parsed_seq_id) == 11) {
+            (eff_seq_id_ok && eff_seq_id_type == CSeq_id_Base::e_General)) {
             try {
-                // The only possible problem is a mismatch between
-                // acc/ver/seq_id_type
-                x_ResolveInputSeqId(parsed_seq_id, text_seq_id, bioseq_key);
+                x_ResolveInputSeqId(parsed_seq_id, parsed_as_is_ok,
+                                    text_seq_id, bioseq_key);
             } catch (const exception &  ex) {
                 err_msg = ex.what();
             } catch (...) {
@@ -682,16 +702,16 @@ SBioseqKey CPendingOperation::x_ResolveInputSeqId(string &  err_msg)
             }
             return bioseq_key;
         }
-    } catch (...) {
-        // Choke and resolve it as is below
     }
 
-    x_ResolveInputSeqIdAsIs(bioseq_key);
+    // false: not tried as fasta content
+    x_ResolveInputSeqIdAsIs(parsed_seq_id, parsed_as_is_ok, false, bioseq_key);
     return bioseq_key;
 }
 
 
-void CPendingOperation::x_ResolveInputSeqId(const CSeq_id &  parsed_seq_id,
+void CPendingOperation::x_ResolveInputSeqId(CSeq_id &  parsed_seq_id,
+                                            bool  seq_id_parsed_as_is,
                                             const CTextseq_id *  text_seq_id,
                                             SBioseqKey &  bioseq_key)
 {
@@ -700,6 +720,7 @@ void CPendingOperation::x_ResolveInputSeqId(const CSeq_id &  parsed_seq_id,
     // - Path 2: using name
     // Then the paths need to be compared
     SBioseqKey  bioseq_info_path1 = x_ResolveInputSeqIdPath1(parsed_seq_id,
+                                                             seq_id_parsed_as_is,
                                                              text_seq_id);
     SBioseqKey  bioseq_info_path2 = x_ResolveInputSeqIdPath2(parsed_seq_id,
                                                              text_seq_id);
@@ -745,63 +766,69 @@ void CPendingOperation::x_ResolveInputSeqId(const CSeq_id &  parsed_seq_id,
 
 
 SBioseqKey
-CPendingOperation::x_ResolveInputSeqIdPath1(const CSeq_id &  parsed_seq_id,
+CPendingOperation::x_ResolveInputSeqIdPath1(CSeq_id &  parsed_seq_id,
+                                            bool  seq_id_parsed_as_is,
                                             const CTextseq_id *  text_seq_id)
 {
     SBioseqKey          bioseq_key;
-    int                 seq_id_type = x_GetEffectiveSeqIdType(parsed_seq_id);
+    int                 eff_seq_id_type;
+    bool                tried_as_fasta = false;
 
-    if (seq_id_type == CSeq_id_Base::e_General) {
-        // Try it as fasta content
-        string      csi_cache_data;
-        bool        cache_hit = false;
+    if (x_GetEffectiveSeqIdType(parsed_seq_id, eff_seq_id_type)) {
+        if (eff_seq_id_type == CSeq_id_Base::e_General) {
+            // Try it as fasta content
+            string      csi_cache_data;
+            bool        cache_hit = false;
 
-        try {
-            string      seq_id_content;
-            parsed_seq_id.GetLabel(&seq_id_content, CSeq_id::eFastaContent,
-                                   CSeq_id::fLabel_Trimmed);
+            try {
+                tried_as_fasta = true;
 
-            cache_hit = x_LookupCachedCsi(seq_id_content, seq_id_type,
-                                          csi_cache_data);
-        } catch (...) {
+                string      seq_id_content;
+                parsed_seq_id.GetLabel(&seq_id_content, CSeq_id::eFastaContent,
+                                       CSeq_id::fLabel_Trimmed);
+
+                cache_hit = x_LookupCachedCsi(seq_id_content, eff_seq_id_type,
+                                              csi_cache_data);
+            } catch (...) {
+            }
+
+            // Try it as Tag
+            if (!cache_hit) {
+                const CObject_id &  obj_id = parsed_seq_id.GetGeneral().GetTag();
+                if (obj_id.Which() == CObject_id::e_Str)
+                    cache_hit = x_LookupCachedCsi(obj_id.GetStr(),
+                                                  eff_seq_id_type, csi_cache_data);
+                else
+                    cache_hit = x_LookupCachedCsi(NStr::NumericToString(obj_id.GetId()),
+                                                  eff_seq_id_type, csi_cache_data);
+            }
+
+            if (cache_hit) {
+                ConvertSi2csiToBioseqKey(csi_cache_data, bioseq_key);
+                return bioseq_key;
+            }
         }
 
+        if (text_seq_id && text_seq_id->CanGetAccession()) {
+            bioseq_key.m_SeqIdType = eff_seq_id_type;
+            bioseq_key.m_Accession = text_seq_id->GetAccession();
 
-        // Try it as Tag
-        if (!cache_hit) {
-            const CObject_id &  obj_id = parsed_seq_id.GetGeneral().GetTag();
-            if (obj_id.Which() == CObject_id::e_Str)
-                cache_hit = x_LookupCachedCsi(obj_id.GetStr(),
-                                              seq_id_type, csi_cache_data);
-            else
-                cache_hit = x_LookupCachedCsi(NStr::NumericToString(obj_id.GetId()),
-                                              seq_id_type, csi_cache_data);
-        }
+            if (text_seq_id->CanGetVersion())
+                bioseq_key.m_Version = text_seq_id->GetVersion();
 
-        if (cache_hit) {
-            ConvertSi2csiToBioseqKey(csi_cache_data, bioseq_key);
-            return bioseq_key;
+            if (x_LookupCachedBioseqInfo(bioseq_key.m_Accession,
+                                         bioseq_key.m_Version,
+                                         bioseq_key.m_SeqIdType,
+                                         bioseq_key.m_BioseqInfo))
+                return bioseq_key;
+
+            // Another try with what has come from url
+            bioseq_key.Reset();
         }
     }
 
-    if (text_seq_id && text_seq_id->CanGetAccession()) {
-        bioseq_key.m_SeqIdType = seq_id_type;
-        bioseq_key.m_Accession = text_seq_id->GetAccession();
-
-        if (text_seq_id->CanGetVersion())
-            bioseq_key.m_Version = text_seq_id->GetVersion();
-
-        if (x_LookupCachedBioseqInfo(bioseq_key.m_Accession,
-                                     bioseq_key.m_Version,
-                                     bioseq_key.m_SeqIdType,
-                                     bioseq_key.m_BioseqInfo))
-            return bioseq_key;
-
-        // Another try with what has come from url
-        bioseq_key.Reset();
-    }
-
-    x_ResolveInputSeqIdAsIs(bioseq_key);
+    x_ResolveInputSeqIdAsIs(parsed_seq_id, seq_id_parsed_as_is,
+                            tried_as_fasta, bioseq_key);
     return bioseq_key;
 }
 
@@ -873,22 +900,32 @@ CPendingOperation::x_LookupCachedCsi(const string &  seq_id,
 }
 
 
-void CPendingOperation::x_ResolveInputSeqIdAsIs(SBioseqKey &  bioseq_key)
+void CPendingOperation::x_ResolveInputSeqIdAsIs(CSeq_id &  parsed_seq_id,
+                                                bool  seq_id_parsed_as_is,
+                                                bool  tried_as_fasta_content,
+                                                SBioseqKey &  bioseq_key)
 {
     string      csi_cache_data;
-
-    // Try as fasta content
     bool        cache_hit = false;
-    try {
-        CSeq_id     parsed_seq_id(m_UrlSeqId);
-        int         eff_seq_id_type = x_GetEffectiveSeqIdType(parsed_seq_id);
-        string      seq_id_content;
-        parsed_seq_id.GetLabel(&seq_id_content, CSeq_id::eFastaContent,
-                               CSeq_id::fLabel_Trimmed);
 
-        cache_hit = x_LookupCachedCsi(seq_id_content, eff_seq_id_type,
-                                      csi_cache_data);
-    } catch (...) {
+    bool        fasta_tried = seq_id_parsed_as_is && tried_as_fasta_content;
+    if (!fasta_tried) {
+        // Try as fasta content
+        try {
+            if (!seq_id_parsed_as_is)
+                parsed_seq_id.Set(m_UrlSeqId);
+
+            int         eff_seq_id_type;
+            if (x_GetEffectiveSeqIdType(parsed_seq_id, eff_seq_id_type)) {
+                string      seq_id_content;
+                parsed_seq_id.GetLabel(&seq_id_content, CSeq_id::eFastaContent,
+                                       CSeq_id::fLabel_Trimmed);
+
+                cache_hit = x_LookupCachedCsi(seq_id_content, eff_seq_id_type,
+                                              csi_cache_data);
+            }
+        } catch (...) {
+        }
     }
 
     // Try as it came from the URL
@@ -931,11 +968,13 @@ CPendingOperation::x_ResolveInputSeqIdPath2(const CSeq_id &  parsed_seq_id,
     if (text_seq_id) {
         if (text_seq_id->CanGetName()) {
             string      name = text_seq_id->GetName();
-            int         eff_seq_id_type = x_GetEffectiveSeqIdType(parsed_seq_id);
+            int         eff_seq_id_type;
 
-            string      csi_cache_data;
-            if (x_LookupCachedCsi(name, eff_seq_id_type, csi_cache_data))
-                ConvertSi2csiToBioseqKey(csi_cache_data, bioseq_key);
+            if (x_GetEffectiveSeqIdType(parsed_seq_id, eff_seq_id_type)) {
+                string      csi_cache_data;
+                if (x_LookupCachedCsi(name, eff_seq_id_type, csi_cache_data))
+                    ConvertSi2csiToBioseqKey(csi_cache_data, bioseq_key);
+            }
         }
     }
 
@@ -943,29 +982,36 @@ CPendingOperation::x_ResolveInputSeqIdPath2(const CSeq_id &  parsed_seq_id,
 }
 
 
-int CPendingOperation::x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id)
+bool CPendingOperation::x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id,
+                                                int &  eff_seq_id_type)
 {
     CSeq_id_Base::E_Choice  parsed_seq_id_type = parsed_seq_id.Which();
     bool                    parsed_seq_id_type_found = (parsed_seq_id_type !=
                                                         CSeq_id_Base::e_not_set);
 
-    if (!parsed_seq_id_type_found && m_UrlSeqIdType < 0)
-        return -1;
-    if (!parsed_seq_id_type_found)
-        return m_UrlSeqIdType;
-    if (m_UrlSeqIdType < 0)
-        return parsed_seq_id_type;
+    if (!parsed_seq_id_type_found && m_UrlSeqIdType < 0) {
+        eff_seq_id_type = -1;
+        return true;
+    }
+
+    if (!parsed_seq_id_type_found) {
+        eff_seq_id_type = m_UrlSeqIdType;
+        return true;
+    }
+
+    if (m_UrlSeqIdType < 0) {
+        eff_seq_id_type = parsed_seq_id_type;
+        return true;
+    }
 
     // Both found
-    if (parsed_seq_id_type != m_UrlSeqIdType)
-        NCBI_THROW(CPubseqGatewayException, eSeqIdMismatch,
-                   "Resolving input seq_id failure: seq_id_type mismatch. "
-                   "URL provided is " +
-                   NStr::NumericToString(m_UrlSeqIdType) +
-                   " while the parsed one is " +
-                   NStr::NumericToString(int(parsed_seq_id_type)));
+    if (parsed_seq_id_type == m_UrlSeqIdType) {
+        eff_seq_id_type = m_UrlSeqIdType;
+        return true;
+    }
 
-    return m_UrlSeqIdType;
+    // The parsed and url explicit seq_id_type do not match
+    return false;
 }
 
 

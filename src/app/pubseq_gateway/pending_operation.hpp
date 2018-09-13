@@ -233,15 +233,21 @@ private:
 
 private:
     SBioseqKey x_ResolveInputSeqId(string &  err_msg);
-    void x_ResolveInputSeqId(const CSeq_id &  parsed_seq_id,
+    void x_ResolveInputSeqId(CSeq_id &  parsed_seq_id,
+                             bool  seq_id_parsed_as_is,
                              const CTextseq_id *  text_seq_id,
                              SBioseqKey &  bioseq_key);
-    SBioseqKey x_ResolveInputSeqIdPath1(const CSeq_id &  parsed_seq_id,
+    SBioseqKey x_ResolveInputSeqIdPath1(CSeq_id &  parsed_seq_id,
+                                        bool  seq_id_parsed_as_is,
                                         const CTextseq_id *  text_seq_id);
     SBioseqKey x_ResolveInputSeqIdPath2(const CSeq_id &  parsed_seq_id,
                                         const CTextseq_id *  text_seq_id);
-    void x_ResolveInputSeqIdAsIs(SBioseqKey &  bioseq_key);
-    int x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id);
+    void x_ResolveInputSeqIdAsIs(CSeq_id &  parsed_seq_id,
+                                 bool  seq_id_parsed_as_is,
+                                 bool tried_as_fasta_content,
+                                 SBioseqKey &  bioseq_key);
+    bool x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id,
+                                 int &  eff_seq_id_type);
     bool x_LookupCachedBioseqInfo(const string &  accession,
                                   int &  version,
                                   int &  seq_id_type,
@@ -252,6 +258,8 @@ private:
     bool x_LookupBlobPropCache(int  sat, int  sat_key,
                                int64_t &  last_modified,
                                CBlobRecord &  blob_record);
+    bool x_ParseUrlSeqIdAsIs(CSeq_id &  seq_id);
+    bool x_ParseUrlSeqIdAsFastaTypeAndContent(CSeq_id &  seq_id);
 
 private:
     HST::CHttpReply<CPendingOperation> *    m_Reply;
