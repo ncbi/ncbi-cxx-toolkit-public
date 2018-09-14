@@ -179,32 +179,6 @@ static_assert(is_nothrow_move_constructible<CPSG_BioId>::value, "CPSG_BioId move
 static_assert(is_nothrow_move_constructible<CPSG_BlobId>::value, "CPSG_BlobId move constructor must be noexcept");
 
 
-pair<mutex, SHCT::TServiceMap> SHCT::m_ServiceMap;
-
-shared_ptr<HCT::http2_end_point> SHCT::GetEndPoint(const string& service_name)
-{
-    auto service = GetService(service_name);
-    auto server = service.Iterate(CNetService::eRandomize).GetServer();
-
-    return shared_ptr<HCT::http2_end_point>(new HCT::http2_end_point{"http", server.GetServerAddress()});
-}
-
-CNetService SHCT::GetService(const string& service_name)
-{
-    lock_guard<mutex> lock(m_ServiceMap.first);
-
-    auto result = m_ServiceMap.second.emplace(service_name, eVoid);
-    auto& service = result.first->second;
-
-    // If actually added, initialize
-    if (result.second) {
-        service = CNetService::Create("psg", service_name, kEmptyStr);
-    }
-
-    return service;
-}
-
-
 shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* item_ts)
 {
     auto user_reply_locked = user_reply.lock();
@@ -386,28 +360,30 @@ string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Blob* request_blob)
 
 bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request, CDeadline deadline)
 {
+    static HCT::io_coordinator ioc(m_Service);
+
     chrono::milliseconds wait_ms{};
     shared_ptr<HCT::http2_request> http_request;
     auto reply = make_shared<SPSG_Reply::TTS>();
 
     if (auto request_biodata = dynamic_cast<const CPSG_Request_Biodata*>(user_request.get())) {
         string query(GetQuery(request_biodata));
-        http_request = make_shared<HCT::http2_request>(reply, SHCT::GetEndPoint(m_Service), m_Requests, "/ID/get", query);
+        http_request = make_shared<HCT::http2_request>(reply, m_Requests, "/ID/get", query);
 
     } else if (auto request_resolve = dynamic_cast<const CPSG_Request_Resolve*>(user_request.get())) {
         string query(GetQuery(request_resolve));
-        http_request = make_shared<HCT::http2_request>(reply, SHCT::GetEndPoint(m_Service), m_Requests, "/ID/resolve", query);
+        http_request = make_shared<HCT::http2_request>(reply, m_Requests, "/ID/resolve", query);
 
     } else if (auto request_blob = dynamic_cast<const CPSG_Request_Blob*>(user_request.get())) {
         string query(GetQuery(request_blob));
-        http_request = make_shared<HCT::http2_request>(reply, SHCT::GetEndPoint(m_Service), m_Requests, "/ID/getblob", query);
+        http_request = make_shared<HCT::http2_request>(reply, m_Requests, "/ID/getblob", query);
 
     } else {
         throw invalid_argument("UNKNOWN REQUEST TYPE"); // TODO: CPSG_Exception
     }
 
     for (;;) {
-        if (SHCT::GetIoc().add_request(http_request, wait_ms)) {
+        if (ioc.add_request(http_request, wait_ms)) {
             auto requests_locked = m_Requests->GetLock();
             requests_locked->emplace_back(user_request, http_request, move(reply));
             return true;

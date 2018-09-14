@@ -57,6 +57,7 @@
 
 #include "mpmc_nw.hpp"
 #include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
+#include <connect/services/netservice_api.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <corelib/ncbi_url.hpp>
 
@@ -77,9 +78,6 @@ typedef NCBI_PARAM_TYPE(PSG, max_concurrent_streams) TPSG_MaxConcurrentStreams;
 
 NCBI_PARAM_DECL(unsigned, PSG, num_io);
 typedef NCBI_PARAM_TYPE(PSG, num_io) TPSG_NumIo;
-
-NCBI_PARAM_DECL(unsigned, PSG, num_conn_per_io);
-typedef NCBI_PARAM_TYPE(PSG, num_conn_per_io) TPSG_NumConnPerIo;
 
 NCBI_PARAM_DECL(bool, PSG, delayed_completion);
 typedef NCBI_PARAM_TYPE(PSG, delayed_completion) TPSG_DelayedCompletion;
@@ -337,12 +335,6 @@ public:
     }
 };
 
-struct http2_end_point
-{
-    std::string schema;
-    std::string authority;
-};
-
 enum class http2_request_state {
     rs_initial,
     rs_sent,
@@ -360,30 +352,18 @@ private:
     /* The stream ID of this stream */
     int32_t m_stream_id;
 
-    std::shared_ptr<http2_end_point> m_endpoint;
     std::string m_query;
 
     std::string m_full_path;
     void do_complete();
     http2_reply m_reply;
 public:
-    http2_request(shared_ptr<SPSG_Reply::TTS> reply, std::shared_ptr<http2_end_point> endpoint, std::shared_ptr<SPSG_Future> queue, std::string path, std::string query);
+    http2_request(shared_ptr<SPSG_Reply::TTS> reply, std::shared_ptr<SPSG_Future> queue, std::string path, std::string query);
 
     ~http2_request()
     {
         assert(m_stream_id <= 0);
     }
-
-    const std::string& get_schema() const
-    {
-        return m_endpoint->schema;
-    }
-    const std::string& get_authority() const
-    {
-        return m_endpoint->authority;
-    }
-    std::string get_host() const;
-    uint16_t get_port() const;
     const std::string& get_full_path() const
     {
         return m_full_path;
@@ -499,8 +479,7 @@ private:
 
     std::unordered_map<int32_t, std::shared_ptr<http2_request>> m_requests;
 
-    unsigned short m_port;
-    std::string m_host;
+    std::string m_Address;
     std::vector<char> m_read_buf;
     std::atomic<bool> m_cancel_requested;
     std::set<pair<shared_ptr<SPSG_Reply::TTS>, std::shared_ptr<SPSG_Future>>> m_completion_list;
@@ -538,17 +517,13 @@ private:
     bool send_client_connection_header();
     bool check_connection();
     void process_completion_list();
-    void assign_endpoint(std::string&& ahost, unsigned short aport)
-    {
-        m_host = std::move(ahost);
-        m_port = aport;
-    }
+
 public:
     http2_session(const http2_session&) = delete;
     http2_session& operator =(const http2_session&) = delete;
     http2_session(http2_session&&) = default;
     http2_session& operator =(http2_session&&) = default;
-    http2_session(io_thread* aio) noexcept;
+    http2_session(io_thread* aio, const string& address) noexcept;
 
     ~http2_session()
     {
@@ -599,6 +574,7 @@ private:
     CUvLoop *m_loop;
     uv_async_t m_wake;
     uv_timer_t m_timer;
+    CNetService m_Service;
     std::thread m_thrd;
 
     static void s_on_wake(uv_async_t* handle)
@@ -621,13 +597,14 @@ private:
     }
     void execute(uv_sem_t* sem);
 public:
-    io_thread(uv_sem_t &sem) :
+    io_thread(uv_sem_t &sem, CNetService service) :
         m_state(io_thread_state_t::initialized),
         m_shutdown_req(false),
         m_cur_idx(0),
         m_loop(nullptr),
         m_wake({0}),
         m_timer({0}),
+        m_Service(service),
         m_thrd(s_execute, this, &sem)
     {}
     ~io_thread();
@@ -653,8 +630,8 @@ private:
     std::vector<std::unique_ptr<io_thread>> m_io;
     std::atomic<std::size_t> m_cur_idx;
 public:
-    io_coordinator();
-    void create_io();
+    io_coordinator(const string& service_name);
+    void create_io(CNetService service);
     bool add_request(std::shared_ptr<http2_request> req, chrono::milliseconds timeout);
 };
 

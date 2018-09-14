@@ -37,30 +37,10 @@
 #include <corelib/reader_writer.hpp>
 #include <corelib/rwstream.hpp>
 
-#include <connect/services/netservice_api.hpp>
-
 #include <unordered_map>
 #include <mutex>
 
 BEGIN_NCBI_SCOPE
-
-struct SHCT
-{
-    static HCT::io_coordinator& GetIoc()
-    {
-        static HCT::io_coordinator rv;
-        return rv;
-    }
-
-    static shared_ptr<HCT::http2_end_point> GetEndPoint(const string& service_name);
-
-private:
-    using TServiceMap = unordered_map<string, CNetService>;
-
-    static CNetService GetService(const string& service_name);
-
-    static pair<mutex, TServiceMap> m_ServiceMap;
-};
 
 struct SPSG_BlobReader : IReader
 {

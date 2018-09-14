@@ -61,7 +61,6 @@ NCBI_PARAM_DEF(unsigned, PSG, write_buf_size,         8 * 1024);
 NCBI_PARAM_DEF(unsigned, PSG, write_hiwater,          8 * 1024);
 NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_streams, 200);
 NCBI_PARAM_DEF(unsigned, PSG, num_io,                 16);
-NCBI_PARAM_DEF(unsigned, PSG, num_conn_per_io,        1);
 NCBI_PARAM_DEF(bool,     PSG, delayed_completion,     true);
 NCBI_PARAM_DEF(unsigned, PSG, reader_timeout,         12);
 
@@ -323,7 +322,7 @@ namespace HCT {
 
 /** http2_request */
 
-http2_request::http2_request(shared_ptr<SPSG_Reply::TTS> reply, shared_ptr<http2_end_point> endpoint, shared_ptr<SPSG_Future> queue, string path, string query) :
+http2_request::http2_request(shared_ptr<SPSG_Reply::TTS> reply, shared_ptr<SPSG_Future> queue, string path, string query) :
     m_session_data(nullptr),
     m_state(http2_request_state::rs_initial),
     m_stream_id(-1),
@@ -332,31 +331,9 @@ http2_request::http2_request(shared_ptr<SPSG_Reply::TTS> reply, shared_ptr<http2
     if (m_stream_id >= 0)
         throw runtime_error("Request has already been started");
 
-    m_endpoint = std::move(endpoint);
     m_query = std::move(query);
 
     m_full_path = path + "?" + m_query;
-
-    if (!m_endpoint)
-        throw runtime_error("EndPoint is null");
-}
-
-string http2_request::get_host() const
-{
-    auto pos = m_endpoint->authority.find(':');
-    if (pos == string::npos)
-        return m_endpoint->authority;
-    else
-        return m_endpoint->authority.substr(0, pos);
-}
-
-uint16_t http2_request::get_port() const
-{
-    auto pos = m_endpoint->authority.find(':');
-    if (pos == string::npos)
-        return 80;
-    else
-        return std::stoi(m_endpoint->authority.substr(pos + 1));
 }
 
 void http2_request::on_complete(uint32_t error_code)
@@ -437,7 +414,7 @@ void http2_reply::on_complete()
 
 /** http2_session */
 
-http2_session::http2_session(io_thread* aio) noexcept :
+http2_session::http2_session(io_thread* aio, const string& address) noexcept :
     m_io(aio),
     m_tcp(aio->get_loop_handle()),
     m_connection_state(connection_state_t::cs_initial),
@@ -449,7 +426,7 @@ http2_session::http2_session(io_thread* aio) noexcept :
     m_requests_at_once(0),
     m_num_requests(0),
     m_max_streams(TPSG_MaxConcurrentStreams::GetDefault()),
-    m_port(0),
+    m_Address(address),
     m_read_buf(TPSG_RdBufSize::GetDefault(), '\0'),
     m_cancel_requested(false)
 {
@@ -1061,7 +1038,6 @@ bool http2_session::initiate_connection()
 {
     int rv;
     struct addrinfo hints;
-    char sport[16];
 
     if (m_connection_state == connection_state_t::cs_connected)
         close_tcp();
@@ -1082,17 +1058,20 @@ bool http2_session::initiate_connection()
         initialize_nghttp2_session();
     }
 
+    auto pos = m_Address.find(':');
+    auto host = m_Address.substr(0, pos);
+    auto port = m_Address.substr(pos + 1);
+
     memset(&hints, 0, sizeof(hints));
     hints.ai_flags = AI_ALL;
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
-    snprintf(sport, sizeof(sport), "%u", m_port);
     rv = uv_getaddrinfo(m_io->loop_handle(),
                         &m_ai_req,
                         s_getaddrinfo_cb,
-                        m_host.c_str(),
-                        sport,
+                        host.c_str(),
+                        port.c_str(),
                         &hints);
     if (rv != 0) {
         if (m_connection_state <= connection_state_t::cs_connected)
@@ -1230,12 +1209,7 @@ void http2_session::process_requests()
                     continue;
 
                 if (m_connection_state != connection_state_t::cs_connected) {
-                    if (m_connection_state == connection_state_t::cs_initial) {
-                        if (m_host.empty() || m_port == 0) {
-                            assign_endpoint(req->get_host(), req->get_port());
-                        }
-                    }
-                    else if (m_session_state >= session_state_t::ss_closing) {
+                    if (m_session_state >= session_state_t::ss_closing) {
                         req->error(SPSG_Error::Generic(SPSG_Error::eShutdown, "shutdown is in process"));
                         purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eShutdown, "shutdown is in process"));
                         return;
@@ -1253,8 +1227,8 @@ void http2_session::process_requests()
                 const auto& path = req->get_full_path();
                 nghttp2_nv hdrs[] = {
                     MAKE_NV2(":method",    "GET"),
-                    MAKE_NV (":scheme",    req->get_schema().c_str(), req->get_schema().length()),
-                    MAKE_NV (":authority", req->get_authority().c_str(), req->get_authority().length()),
+                    MAKE_NV2(":scheme",    "http"),
+                    MAKE_NV (":authority", m_Address.c_str(), m_Address.length()),
                     MAKE_NV (":path",      path.c_str(), path.length())
                 };
                 int32_t stream_id = nghttp2_submit_request(m_session, NULL, hdrs, sizeof(hdrs) / sizeof(hdrs[0]), NULL, req.get());
@@ -1396,15 +1370,18 @@ bool io_thread::add_request_move(shared_ptr<http2_request>& req)
     if (m_sessions.size() == 0 || m_state != io_thread_state_t::started)
         EException::raise("No sessions started");
 
+    const auto max = m_sessions.size();
 
-    bool rv = false;
-    size_t idx = m_cur_idx.load();
-    rv = (m_sessions[idx])->add_request_move(req);
-    if (!rv) {
-        m_cur_idx.compare_exchange_weak(idx, (idx + 1) % m_sessions.size(),  memory_order_release, memory_order_relaxed);
-        uv_async_send(&m_wake);
+    for (auto i = max; i; --i) {
+        auto idx = m_cur_idx.load();
+        auto rv = m_sessions[idx]->add_request_move(req);
+        m_cur_idx.compare_exchange_weak(idx, (idx + 1) % max, memory_order_release, memory_order_relaxed);
+
+        if (rv) return true;
     }
-    return rv;
+
+    uv_async_send(&m_wake);
+    return false;
 }
 
 void io_thread::run()
@@ -1430,8 +1407,9 @@ void io_thread::execute(uv_sem_t* sem)
     auto usem = make_c_unique(sem, uv_sem_post);
 
     try {
-        for (unsigned j = 0; j < TPSG_NumConnPerIo::GetDefault(); j++)
-            m_sessions.emplace_back(new http2_session(this));
+        for (auto it = m_Service.Iterate(CNetService::eSortByLoad); it; ++it) {
+            m_sessions.emplace_back(new http2_session(this, (*it).GetServerAddress()));
+        }
     }
     catch(...) {
         io_thread_state_t st = io_thread_state_t::initialized;
@@ -1472,21 +1450,23 @@ void io_thread::execute(uv_sem_t* sem)
 
 /** io_coordinator */
 
-io_coordinator::io_coordinator() : m_cur_idx(0)
+io_coordinator::io_coordinator(const string& service_name) : m_cur_idx(0)
 {
+    auto service = CNetService::Create("psg", service_name, kEmptyStr);
+
     for (unsigned i = 0; i < TPSG_NumIo::GetDefault(); i++) {
-        create_io();
+        create_io(service);
     }
 }
 
-void io_coordinator::create_io()
+void io_coordinator::create_io(CNetService service)
 {
     uv_sem_t sem;
     int rv;
     rv = uv_sem_init(&sem, 0);
     if (rv != 0)
         EUvException::raise("Failed to init semaphore", rv);
-    m_io.emplace_back(new io_thread(sem));
+    m_io.emplace_back(new io_thread(sem, service));
     uv_sem_wait(&sem);
     uv_sem_destroy(&sem);
     auto & it = m_io.back();
@@ -1499,15 +1479,14 @@ bool io_coordinator::add_request(shared_ptr<http2_request> req, chrono::millisec
     auto deadline = chrono::system_clock::now() + timeout;
     if (m_io.size() == 0)
         EException::raise("IO is not open");
-    size_t iteration = 0;
     while(true) {
         size_t idx = m_cur_idx.load();
-        bool rv = m_io[idx]->add_request_move(req);
-        if (rv)
-            return true;
+        if (m_io[idx]->add_request_move(req)) return true;
 
+        m_cur_idx.compare_exchange_weak(idx, (idx + 1) % m_io.size(),  memory_order_release, memory_order_relaxed);
         ERR_POST("io failed to queue " << req.get() << ", keep trying");
-        if (++iteration > TPSG_NumIo::GetDefault() * TPSG_NumConnPerIo::GetDefault()) {
+
+        if (m_cur_idx.load() == 0) {
             auto wait_ms = deadline - chrono::system_clock::now();
             if (wait_ms <= chrono::milliseconds::zero()) {
                 ERR_POST("io failed to queue " << req.get() << ", timeout");
@@ -1518,10 +1497,7 @@ bool io_coordinator::add_request(shared_ptr<http2_request> req, chrono::millisec
             chrono::milliseconds max_wait_ms(10);
             if (wait_ms > max_wait_ms) wait_ms = max_wait_ms;
             this_thread::sleep_for(wait_ms);
-            iteration = 0;
         }
-
-        m_cur_idx.compare_exchange_weak(idx, (idx + 1) % m_io.size(),  memory_order_release, memory_order_relaxed);
     };
     return false;
 }
