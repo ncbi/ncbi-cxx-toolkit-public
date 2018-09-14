@@ -297,19 +297,28 @@ void CPsgCliApp::ProcessFile(const string& filename, TFactory factory)
 
 void CPsgCliApp::PrintErrors(EPSG_Status status, shared_ptr<CPSG_ReplyItem> item)
 {
-    cout << static_cast<int>(status) << "\n";
+    cout << static_cast<int>(status);
 
     for (;;) {
         auto message = item->GetNextMessage();
-        if (message.empty()) break;
-        cout << message << "\n";
+
+        if (message.empty()) {
+            break;
+        } else {
+            cout << "|";
+        }
+
+        cout << "'" << message << "'";
     }
+
+    cout << endl;
 }
 
 void CPsgCliApp::PrintBlobData(shared_ptr<CPSG_BlobData> blob_data)
 {
     assert(blob_data);
     lock_guard<mutex> lock(m_CoutMutex);
+    cout << "BlobData. ";
 
     auto status = blob_data->GetStatus(CDeadline::eInfinite);
 
@@ -322,7 +331,6 @@ void CPsgCliApp::PrintBlobData(shared_ptr<CPSG_BlobData> blob_data)
     ostringstream os;
     os << blob_data->GetStream().rdbuf();
     hash<string> blob_hash;
-    cout << "BlobData. ";
     cout << "Id: " << blob_data->GetId().Get() << ";";
     cout << "Size: " << os.str().size() << ";";
     cout << "Hash: " << blob_hash(os.str()) << endl;
@@ -332,6 +340,7 @@ void CPsgCliApp::PrintBlobInfo(shared_ptr<CPSG_BlobInfo> blob_info)
 {
     assert(blob_info);
     lock_guard<mutex> lock(m_CoutMutex);
+    cout << "BlobInfo. ";
 
     auto status = blob_info->GetStatus(CDeadline::eInfinite);
 
@@ -341,7 +350,6 @@ void CPsgCliApp::PrintBlobInfo(shared_ptr<CPSG_BlobInfo> blob_info)
         return;
     }
 
-    cout << "BlobInfo. ";
     cout << "GetId: " << blob_info->GetId().Get() << ";";
     cout << "GetCompression: " << blob_info->GetCompression() << ";";
     cout << "GetFormat: " << blob_info->GetFormat() << ";";
@@ -373,6 +381,7 @@ void CPsgCliApp::PrintBioseqInfo(shared_ptr<CPSG_BioseqInfo> bioseq_info)
 {
     assert(bioseq_info);
     lock_guard<mutex> lock(m_CoutMutex);
+    cout << "BioseqInfo. ";
 
     auto status = bioseq_info->GetStatus(CDeadline::eInfinite);
 
@@ -393,7 +402,6 @@ void CPsgCliApp::PrintBioseqInfo(shared_ptr<CPSG_BioseqInfo> bioseq_info)
     }
 
     const auto& id = bioseq_info->GetCanonicalId();
-    cout << "BioseqInfo. ";
     cout << "CanonicalId: " << id.Get() << "-" << id.GetType() << ";";
 
     cout << "OtherIds:";
