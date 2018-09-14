@@ -311,7 +311,7 @@ static void s_LoadLocalIPs(void)
 #else
 
 
-#define s_LoadLocalIPs()  /*void*/
+#  define s_LoadLocalIPs()  /*void*/
 
 
 #endif /*HAVE_LIBCONNEXT*/
