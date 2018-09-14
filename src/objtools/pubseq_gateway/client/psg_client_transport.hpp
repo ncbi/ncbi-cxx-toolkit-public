@@ -355,7 +355,6 @@ enum class http2_request_state {
 class http2_request
 {
 private:
-    int m_id;
     http2_session *m_session_data;
     http2_request_state m_state;
     /* The stream ID of this stream */
@@ -482,7 +481,6 @@ struct http2_write
 class http2_session
 {
 private:
-    int m_id;
     io_thread* m_io;
     mpmc_bounded_queue<std::shared_ptr<http2_request>> m_req_queue;
     CUvTcp m_tcp;
@@ -494,7 +492,6 @@ private:
 
     uv_getaddrinfo_t m_ai_req;
     uv_connect_t m_conn_req;
-    bool m_is_pending_connect;
     nghttp2_session *m_session;
     size_t m_requests_at_once;
     std::atomic<size_t> m_num_requests;
@@ -504,7 +501,6 @@ private:
 
     unsigned short m_port;
     std::string m_host;
-    std::queue<struct sockaddr> m_other_addr;
     std::vector<char> m_read_buf;
     std::atomic<bool> m_cancel_requested;
     std::set<pair<shared_ptr<SPSG_Reply::TTS>, std::shared_ptr<SPSG_Future>>> m_completion_list;
@@ -518,7 +514,6 @@ private:
     int ng_stream_close_cb(int32_t stream_id, uint32_t error_code);
     static int s_ng_header_cb(nghttp2_session *session, const nghttp2_frame *frame, const uint8_t *name, size_t namelen, const uint8_t *value,
                               size_t valuelen, uint8_t flags, void *user_data);
-    static int s_ng_begin_headers_cb(nghttp2_session *session, const nghttp2_frame *frame, void *user_data);
     static int s_ng_error_cb(nghttp2_session *session, const char *msg, size_t len, void *user_data);
 
     static void s_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
@@ -538,7 +533,6 @@ private:
     bool fetch_ng_data(bool commit = true);
     void check_next_request();
     bool try_connect(const struct sockaddr *addr);
-    bool try_next_addr();
     bool initiate_connection();
     void initialize_nghttp2_session();
     bool send_client_connection_header();
@@ -598,7 +592,6 @@ enum class io_thread_state_t {
 class io_thread
 {
 private:
-    int m_id;
     std::atomic<io_thread_state_t> m_state;
     std::atomic_bool m_shutdown_req;
     std::vector<std::unique_ptr<http2_session>> m_sessions;
@@ -629,7 +622,6 @@ private:
     void execute(uv_sem_t* sem);
 public:
     io_thread(uv_sem_t &sem) :
-        m_id(56),
         m_state(io_thread_state_t::initialized),
         m_shutdown_req(false),
         m_cur_idx(0),
@@ -652,8 +644,6 @@ public:
         return m_loop->Handle();
     }
     void wake();
-    void attach(http2_session* sess);
-    void detach(http2_session* sess);
     bool add_request_move(std::shared_ptr<http2_request>& req);
 };
 

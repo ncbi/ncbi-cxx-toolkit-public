@@ -324,7 +324,6 @@ namespace HCT {
 /** http2_request */
 
 http2_request::http2_request(shared_ptr<SPSG_Reply::TTS> reply, shared_ptr<http2_end_point> endpoint, shared_ptr<SPSG_Future> queue, string path, string query) :
-    m_id(55),
     m_session_data(nullptr),
     m_state(http2_request_state::rs_initial),
     m_stream_id(-1),
@@ -439,7 +438,6 @@ void http2_reply::on_complete()
 /** http2_session */
 
 http2_session::http2_session(io_thread* aio) noexcept :
-    m_id(57),
     m_io(aio),
     m_tcp(aio->get_loop_handle()),
     m_connection_state(connection_state_t::cs_initial),
@@ -447,7 +445,6 @@ http2_session::http2_session(io_thread* aio) noexcept :
     m_wake_enabled(true),
     m_ai_req({0}),
     m_conn_req({0}),
-    m_is_pending_connect(false),
     m_session(nullptr),
     m_requests_at_once(0),
     m_num_requests(0),
@@ -546,7 +543,6 @@ int http2_session::s_ng_stream_close_cb(nghttp2_session*, int32_t stream_id, uin
 
 int http2_session::ng_stream_close_cb(int32_t stream_id, uint32_t error_code)
 {
-//    int rv;
     ERR_POST(Trace << this << ": ng_stream_close_cb: id: " << stream_id << ", code " << error_code);
 
     try {
@@ -564,15 +560,6 @@ int http2_session::ng_stream_close_cb(int32_t stream_id, uint32_t error_code)
         return NGHTTP2_ERR_CALLBACK_FAILURE;
     }
 
-/*
-    if (session_data->stream_data->m_stream_id == stream_id) {
-//        fprintf(stderr, "Stream %d closed with error_code=%u\n", stream_id, error_code);
-        rv = nghttp2_session_terminate_session(session, NGHTTP2_NO_ERROR);
-        if (rv != 0) {
-            return NGHTTP2_ERR_CALLBACK_FAILURE;
-        }
-    }
-*/
     return 0;
 }
 
@@ -601,21 +588,6 @@ int http2_session::s_ng_header_cb(nghttp2_session*, const nghttp2_frame *frame, 
                     return NGHTTP2_ERR_CALLBACK_FAILURE;
                 }
             }
-            break;
-    }
-    return 0;
-}
-
-/* s_ng_begin_headers_cb: Called when nghttp2 library gets
-   started to receive header block. */
-int http2_session::s_ng_begin_headers_cb(nghttp2_session*, const nghttp2_frame *frame, void*)
-{
-//    http2_session *session_data = (http2_session *)user_data;
-    switch (frame->hd.type) {
-        case NGHTTP2_HEADERS:
-//            if (frame->headers.cat == NGHTTP2_HCAT_RESPONSE && session_data->stream_data->m_stream_id == frame->hd.stream_id) {
-//                fprintf(stderr, "Response headers for stream ID=%d:\n", frame->hd.stream_id);
-//            }
             break;
     }
     return 0;
@@ -742,16 +714,13 @@ void http2_session::initialize_nghttp2_session()
 
     nghttp2_session_callbacks* _callbacks;
     nghttp2_session_callbacks_new(&_callbacks);
-    unique_ptr<nghttp2_session_callbacks, function<void(nghttp2_session_callbacks*)>> callbacks(_callbacks, [](nghttp2_session_callbacks* cb)->void {
-        nghttp2_session_callbacks_del(cb);
-    });
+    auto callbacks = make_c_unique(_callbacks, nghttp2_session_callbacks_del);
 
     nghttp2_session_callbacks_set_send_callback(              callbacks.get(), s_ng_send_cb);
     nghttp2_session_callbacks_set_on_frame_recv_callback(     callbacks.get(), s_ng_frame_recv_cb);
     nghttp2_session_callbacks_set_on_data_chunk_recv_callback(callbacks.get(), s_ng_data_chunk_recv_cb);
     nghttp2_session_callbacks_set_on_stream_close_callback(   callbacks.get(), s_ng_stream_close_cb);
     nghttp2_session_callbacks_set_on_header_callback(         callbacks.get(), s_ng_header_cb);
-    nghttp2_session_callbacks_set_on_begin_headers_callback(  callbacks.get(), s_ng_begin_headers_cb);
     nghttp2_session_callbacks_set_error_callback(             callbacks.get(), s_ng_error_cb);
 
     nghttp2_session_client_new(&m_session, callbacks.get(), this);
@@ -880,23 +849,20 @@ void http2_session::connect_cb(uv_connect_t *req, int status)
     assert(req->handle == (uv_stream_t*)m_tcp.Handle());
     ERR_POST(Trace << this << ": connect_cb " << status);
     try {
-        m_is_pending_connect = false;
         if (status < 0) {
-            if (!try_next_addr()) {
-                m_connection_state = connection_state_t::cs_initial;
-                auto error = SPSG_Error::LibUv(status, "failed to connect");
-                purge_pending_requests(error);
+            m_connection_state = connection_state_t::cs_initial;
+            auto error = SPSG_Error::LibUv(status, "failed to connect");
+            purge_pending_requests(error);
 
-                shared_ptr<http2_request> http2_req;
-                while (m_req_queue.pop_move(http2_req)) {
-                    assert(http2_req.get());
-                    ERR_POST(Trace << this << ": drain_queue: req: " << http2_req.get());
-                    http2_req->error(error);
-                }
-
-                close_tcp();
-                process_completion_list();
+            shared_ptr<http2_request> http2_req;
+            while (m_req_queue.pop_move(http2_req)) {
+                assert(http2_req.get());
+                ERR_POST(Trace << this << ": drain_queue: req: " << http2_req.get());
+                http2_req->error(error);
             }
+
+            close_tcp();
+            process_completion_list();
             return;
         }
 
@@ -1028,7 +994,6 @@ void http2_session::read_cb(uv_stream_t*, ssize_t nread, const uv_buf_t* buf)
 
 bool http2_session::try_connect(const struct sockaddr *addr)
 {
-    m_is_pending_connect = true;
     if (m_session_state >= session_state_t::ss_closing)
         return false;
     if (m_connection_state != connection_state_t::cs_connecting) {
@@ -1041,25 +1006,12 @@ bool http2_session::try_connect(const struct sockaddr *addr)
 
     int rv = uv_tcp_connect(&m_conn_req, m_tcp.Handle(), addr, s_connect_cb);
     if (rv != 0) {
-        m_is_pending_connect = false;
         if (m_connection_state <= connection_state_t::cs_connected)
             m_connection_state = connection_state_t::cs_initial;
         purge_pending_requests(SPSG_Error::LibUv(rv, "failed to connect to server"));
         return false;
     }
     return true;
-}
-
-bool http2_session::try_next_addr()
-{
-    if (m_other_addr.empty()) {
-        ERR_POST(this << ": try_next_addr: no more addresses to try");
-        return false;
-    }
-    const struct sockaddr& addr = m_other_addr.front();
-    bool rv = try_connect(&addr);
-    m_other_addr.pop();
-    return rv;
 }
 
 void http2_session::s_getaddrinfo_cb(uv_getaddrinfo_t *req, int status, struct addrinfo *ai)
@@ -1073,7 +1025,7 @@ void http2_session::getaddrinfo_cb(uv_getaddrinfo_t*, int status, struct addrinf
     try {
         struct sockaddr addr;
         ERR_POST(Trace << this << ": getaddrinfo_cb, status: " << status);
-        unique_ptr<struct addrinfo, function<void(struct addrinfo*)>> lai(ai, [](struct addrinfo* p) { uv_freeaddrinfo(p); });
+        auto lai = make_c_unique(ai, uv_freeaddrinfo);
         if (status == 0) {
             if (ai->ai_family == AF_INET) {
                 addr = *ai->ai_addr;
@@ -1091,10 +1043,6 @@ void http2_session::getaddrinfo_cb(uv_getaddrinfo_t*, int status, struct addrinf
             if (m_connection_state == connection_state_t::cs_connecting)
                 m_connection_state = connection_state_t::cs_initial;
             purge_pending_requests(SPSG_Error::LibUv(status, "failed to resolve host"));
-            return;
-        }
-        if (m_is_pending_connect) {
-            m_other_addr.push(addr);
             return;
         }
 
@@ -1231,31 +1179,6 @@ bool http2_session::add_request_move(shared_ptr<http2_request>& req)
     return rv;
 }
 
-/*
-static void print_header(FILE *f, const uint8_t *name, size_t namelen, const uint8_t *value, size_t valuelen)
-{
-    fwrite(name, 1, namelen, f);
-    fprintf(f, ": ");
-    fwrite(value, 1, valuelen, f);
-    fprintf(f, "\n");
-}
-*/
-
-/* Print HTTP headers to |f|. Please note that this function does not
-   take into account that header name and value are sequence of
-   octets, therefore they may contain non-printable characters. */
-/*
-static void print_headers(FILE *f, nghttp2_nv *nva, size_t nvlen)
-{
-    size_t i;
-    for (i = 0; i < nvlen; ++i) {
-        print_header(f, nva[i].name, nva[i].namelen, nva[i].value, nva[i].valuelen);
-    }
-    fprintf(f, "\n");
-}
-*/
-
-
 #define MAKE_NV(NAME, VALUE, VALUELEN)                                         \
   {                                                                            \
     (uint8_t *)NAME, (uint8_t *)VALUE, sizeof(NAME) - 1, VALUELEN,             \
@@ -1292,8 +1215,6 @@ void http2_session::process_requests()
 
     size_t count = 0;
     size_t unsent_count = 0;
-//    debug_print_counts();
-//requests_at_once = m_requests.size();
     if (m_num_requests < m_max_streams && m_wr.write_buf.size() < TPSG_WriteHiwater::GetDefault()) {
         shared_ptr<http2_request> req;
         ERR_POST(Trace << this << ": process_requests: fetch loop>>");
@@ -1386,7 +1307,6 @@ void http2_session::process_requests()
         ERR_POST(Trace << this << ": submitted " << count);
 
         m_requests_at_once = count;
-    //    debug_print_counts();
     }
     m_wake_enabled = (m_num_requests < m_max_streams);
 
@@ -1471,21 +1391,6 @@ void io_thread::on_timer(uv_timer_t*)
 
 }
 
-void io_thread::attach(http2_session* sess)
-{
-    m_sessions.emplace_back(sess);
-}
-
-void io_thread::detach(http2_session* sess)
-{
-    auto it = find_if(m_sessions.begin(), m_sessions.end(), [&sess](unique_ptr<http2_session>& asess)->bool {
-        return asess.get() == sess;
-    });
-    assert(it != m_sessions.end());
-    if (it != m_sessions.end())
-        m_sessions.erase(it);
-}
-
 bool io_thread::add_request_move(shared_ptr<http2_request>& req)
 {
     if (m_sessions.size() == 0 || m_state != io_thread_state_t::started)
@@ -1522,13 +1427,11 @@ void io_thread::execute(uv_sem_t* sem)
     uv_timer_init(m_loop->Handle(), &m_timer);
     m_timer.data = this;
 
-    unique_ptr<uv_sem_t, function<void(uv_sem_t*)>> usem(sem, [](uv_sem_t* p)->void {
-        uv_sem_post(p);
-    });
+    auto usem = make_c_unique(sem, uv_sem_post);
 
     try {
         for (unsigned j = 0; j < TPSG_NumConnPerIo::GetDefault(); j++)
-            attach(new http2_session(this));
+            m_sessions.emplace_back(new http2_session(this));
     }
     catch(...) {
         io_thread_state_t st = io_thread_state_t::initialized;
@@ -1562,12 +1465,7 @@ void io_thread::execute(uv_sem_t* sem)
     }
 
     m_loop->Close();
-
-    while (m_sessions.size() > 0) {
-        auto & it = m_sessions.back();
-        detach(it.get());
-    }
-
+    m_sessions.clear();
     m_loop = nullptr;
 }
 
