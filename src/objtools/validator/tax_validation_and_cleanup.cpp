@@ -741,15 +741,17 @@ void CTaxValidationAndCleanup::x_InterpretTaxonomyError(const CT3Error& error, c
 {
     const string err_str = error.IsSetMessage() ? error.GetMessage() : "?";
 
-    if (NStr::Equal(err_str, "Organism not found")) {
-        string msg = "Organism not found in taxonomy database";
-        if (error.IsSetOrg() && error.GetOrg().IsSetTaxname() &&
-            !NStr::Equal(error.GetOrg().GetTaxname(), "Not valid") &&
-            (!org.IsSetTaxname() ||
-             !NStr::Equal(org.GetTaxname(), error.GetOrg().GetTaxname()))) {
-            msg += " (suggested:" + error.GetOrg().GetTaxname() + ")";
-        }
-        errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_OrganismNotFound, msg });
+	if (NStr::Equal(err_str, "Organism not found")) {
+		string msg = "Organism not found in taxonomy database";
+		if (error.IsSetOrg() && error.GetOrg().IsSetTaxname() &&
+			!NStr::Equal(error.GetOrg().GetTaxname(), "Not valid") &&
+			(!org.IsSetTaxname() ||
+				!NStr::Equal(org.GetTaxname(), error.GetOrg().GetTaxname()))) {
+			msg += " (suggested:" + error.GetOrg().GetTaxname() + ")";
+		}
+		errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_OrganismNotFound, msg });
+	} else if (NStr::StartsWith(err_str, "Organism not found. Possible matches")) {
+		errs.push_back(TTaxError{ eDiag_Warning, eErr_SEQ_DESCR_OrganismNotFound, err_str });
     } else if (NStr::Equal(err_str, kInvalidReplyMsg)) {
         errs.push_back(TTaxError{ eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem, err_str });
     } else if (NStr::Find(err_str, "ambiguous name") != NPOS) {
