@@ -1171,6 +1171,11 @@ CAsnSubCacheCreateApplication::x_FetchMissingBlobs(TIndexMapById& index_map,
                                is_withdrawn ? "bioseq withdrawn"
                                             : "empty bioseq handle");
                 }
+                if (find(bsh.GetId().begin(), bsh.GetId().end(), idh) == bsh.GetId().end())
+                {
+                    NCBI_THROW(CException, eUnknown,
+                               "Retrieved bioseq does not have this Seq-id");
+                }
             }
             catch (CException& e) {
                 LOG_POST(Error << "failed to retrieve sequence: "
