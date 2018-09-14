@@ -179,6 +179,19 @@ static_assert(is_nothrow_move_constructible<CPSG_BioId>::value, "CPSG_BioId move
 static_assert(is_nothrow_move_constructible<CPSG_BlobId>::value, "CPSG_BlobId move constructor must be noexcept");
 
 
+template <class TReplyItem>
+TReplyItem* CPSG_Reply::SImpl::CreateImpl(TReplyItem* item, list<SPSG_Reply::SChunk>& chunks)
+{
+    if (chunks.empty()) return item;
+
+    unique_ptr<TReplyItem> rv(item);
+    ostringstream os;
+    for (auto& v : chunks.front().data) os.write(v.data(), v.size());
+    rv->m_Data = CJsonNode::ParseJSON(os.str());
+
+    return rv.release();
+}
+
 shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* item_ts)
 {
     auto user_reply_locked = user_reply.lock();
@@ -195,8 +208,8 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
 
     shared_ptr<CPSG_ReplyItem> rv;
 
-    auto& chunk = item_locked->chunks.front();
-    auto& args = chunk.args;
+    auto& chunks = item_locked->chunks;
+    auto& args = item_locked->args;
     auto item_type = args.GetValue("item_type");
 
     if (item_type == "blob") {
@@ -207,21 +220,11 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
         rv.reset(blob_data.release());
 
     } else if (item_type == "bioseq_info") {
-        ostringstream os;
-        for (auto& v : chunk.data) os.write(v.data(), v.size());
-
-        unique_ptr<CPSG_BioseqInfo> bioseq_info(new CPSG_BioseqInfo);
-        bioseq_info->m_Data = CJsonNode::ParseJSON(os.str());
-        rv.reset(bioseq_info.release());
+        rv.reset(CreateImpl(new CPSG_BioseqInfo, chunks));
 
     } else if (item_type == "blob_prop") {
         auto blob_id = args.GetValue("blob_id");
-        ostringstream os;
-        for (auto& v : chunk.data) os.write(v.data(), v.size());
-
-        unique_ptr<CPSG_BlobInfo> blob_info(new CPSG_BlobInfo(blob_id));
-        blob_info->m_Data = CJsonNode::ParseJSON(os.str());
-        rv.reset(blob_info.release());
+        rv.reset(CreateImpl(new CPSG_BlobInfo(blob_id), chunks));
 
     } else {
         throw runtime_error("UNKNOWN TYPE: " + item_type); // TODO: CPSG_Exception
@@ -776,9 +779,15 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
         auto reply_locked = m_Impl->reply->GetLock();
 
         for (auto& item_ts : reply_locked->items) {
-            if (item_ts.GetLock()->state.Returned()) continue;
+            auto item_locked = item_ts.GetLock();
+            auto& item = *item_locked;
 
-            if (item_ts.GetLock()->chunks.empty()) continue;
+            if (item.state.Returned()) continue;
+
+            // Wait for more chunks on this item
+            if (item.chunks.empty() && !item.expected.Cmp<less_equal>(item.received)) continue;
+
+            item_locked.Unlock();
 
             // Do not hold lock on item_ts around this call!
             return m_Impl->Create(&item_ts);

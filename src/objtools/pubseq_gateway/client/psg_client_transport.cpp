@@ -234,6 +234,7 @@ void SPSG_Receiver::Add()
             auto& items = reply_locked->items;
             items.emplace_back();
             item_by_id = &items.back();
+            item_by_id->GetLock()->args = args;
             auto reply_item_locked = reply_locked->reply_item.GetLock();
             auto& reply_item = *reply_item_locked;
             ++reply_item.received;

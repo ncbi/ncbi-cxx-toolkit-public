@@ -377,7 +377,17 @@ void CPsgCliApp::PrintBioseqInfo(shared_ptr<CPSG_BioseqInfo> bioseq_info)
     auto status = bioseq_info->GetStatus(CDeadline::eInfinite);
 
     if (status != EPSG_Status::eSuccess) {
-        cout << "ERROR: Failed to retrieve bioseq_info '" << bioseq_info->GetCanonicalId().Get() << "': ";
+        auto request = bioseq_info->GetReply()->GetRequest();
+        string id;
+        if (auto request_biodata = dynamic_cast<const CPSG_Request_Biodata*>(request.get())) {
+            id = request_biodata->GetBioId().Get();
+        } else if (auto request_resolve = dynamic_cast<const CPSG_Request_Resolve*>(request.get())) {
+            id = request_resolve->GetBioId().Get();
+        } else {
+            id = "UNKNOWN_REQUEST";
+        }
+
+        cout << "ERROR: Failed to retrieve bioseq_info '" << id << "': ";
         PrintErrors(status, bioseq_info);
         return;
     }

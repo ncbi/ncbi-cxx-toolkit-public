@@ -223,6 +223,7 @@ struct SPSG_Reply
         using TTS = SPSG_ThreadSafe<SItem>;
 
         list<SChunk> chunks;
+        SPSG_Args args;
         SPSG_Nullable<size_t> expected;
         size_t received = 0;
         SState state;

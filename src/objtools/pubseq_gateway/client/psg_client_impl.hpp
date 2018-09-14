@@ -79,6 +79,10 @@ struct CPSG_Reply::SImpl
     weak_ptr<CPSG_Reply> user_reply;
 
     shared_ptr<CPSG_ReplyItem> Create(SPSG_Reply::SItem::TTS* item_ts);
+
+private:
+    template <class TReplyItem>
+    TReplyItem* CreateImpl(TReplyItem* item, list<SPSG_Reply::SChunk>& chunks);
 };
 
 struct CPSG_Queue::SImpl
