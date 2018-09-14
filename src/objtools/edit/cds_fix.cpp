@@ -51,6 +51,7 @@
 #include <util/sequtil/sequtil_convert.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objects/general/Dbtag.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1216,6 +1217,132 @@ ApplyCDSFrame::ECdsFrame ApplyCDSFrame::s_GetFrameFromName(const string& name)
     return frame;
 }
 
+CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label)
+{
+    objects::CSeq_id_Handle hid;
+    ITERATE(objects::CBioseq_Handle::TId, it, bsh.GetId()) 
+    {
+        if (it->GetSeqIdOrNull() && it->GetSeqIdOrNull()->IsGeneral())
+        {
+            hid = *it;
+            break;
+        }
+    }
+    if (!hid)
+        NCBI_THROW(CException, eUnknown, "Seq-id type general not found");
+
+    CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
+    new_id->Assign(*hid.GetSeqId());
+    string id_base;
+    if (new_id->GetGeneral().IsSetTag())
+    {
+        if (new_id->GetGeneral().GetTag().IsId())
+        {
+            id_base =  NStr::NumericToString(new_id->GetGeneral().GetTag().GetId());
+            new_id->SetGeneral().ResetTag();
+        }
+        else
+        {
+            id_base = new_id->GetGeneral().GetTag().GetStr();
+        }
+    }
+    new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
+    objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
+    while (b_found) 
+    {
+        offset++;
+        new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
+        b_found = bsh.GetScope().GetBioseqHandle(*new_id);
+    }
+
+    new_id->GetLabel(&id_label, objects::CSeq_id::eBoth);
+    return new_id;
+}
+
+vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Handle bsh, int &offset, string& id_label)
+{
+    vector<CRef<objects::CSeq_id> > ids;
+
+
+    ITERATE(objects::CBioseq_Handle::TId, it, bsh.GetId()) 
+    {
+        if (it->GetSeqIdOrNull())
+        {
+            objects::CSeq_id_Handle hid = *it;
+            string id_base;
+            if (hid.GetSeqId()->IsLocal())
+            {
+                if (hid.GetSeqId()->GetLocal().IsId())
+                {
+                    id_base =  NStr::NumericToString(hid.GetSeqId()->GetLocal().GetId());
+                }
+                else
+                {
+                    id_base = hid.GetSeqId()->GetLocal().GetStr();
+                }
+                CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
+                new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
+                objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
+                while (b_found) 
+                {
+                    offset++;
+                    new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
+                    b_found = bsh.GetScope().GetBioseqHandle(*new_id);
+                }
+                ids.push_back(new_id);
+            }
+            else if (hid.GetSeqId()->IsGeneral() && hid.GetSeqId()->GetGeneral().IsSetTag()
+                     && (!hid.GetSeqId()->GetGeneral().IsSetDb() || hid.GetSeqId()->GetGeneral().GetDb() != "TMSMART"))
+            {
+                CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
+                new_id->Assign(*hid.GetSeqId());
+                if (hid.GetSeqId()->GetGeneral().GetTag().IsId())
+                {
+                    id_base =  NStr::NumericToString(hid.GetSeqId()->GetGeneral().GetTag().GetId());
+                    new_id->SetGeneral().ResetTag();
+                }
+                else
+                {
+                    id_base = hid.GetSeqId()->GetGeneral().GetTag().GetStr();
+                }
+                new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
+                objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
+                while (b_found) 
+                {
+                    offset++;
+                    new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
+                    b_found = bsh.GetScope().GetBioseqHandle(*new_id);
+                }
+                ids.push_back(new_id);
+            }
+            
+        }
+    }
+
+    
+
+    if (ids.empty() && !bsh.GetId().empty())
+    {
+        string id_base;
+        bsh.GetId().front().GetSeqId()->GetLabel(&id_base, objects::CSeq_id::eContent);
+        CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
+        new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
+        objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
+        while (b_found) 
+        {
+            offset++;
+            new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
+            b_found = bsh.GetScope().GetBioseqHandle(*new_id);
+        }
+        ids.push_back(new_id);
+    }
+
+    if (ids.empty())
+        NCBI_THROW(CException, eUnknown, "Seq-id not found");
+    
+    ids.front()->GetLabel(&id_label, objects::CSeq_id::eBoth);
+    return ids;
+}
 
 END_SCOPE(edit)
 END_SCOPE(objects)

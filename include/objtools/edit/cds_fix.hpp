@@ -56,6 +56,8 @@ NCBI_XOBJEDIT_EXPORT bool TruncateCDSAtStop(CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT void AdjustCDSFrameForStartChange(CCdregion& cds, int change);
 NCBI_XOBJEDIT_EXPORT bool DemoteCDSToNucSeq(objects::CSeq_feat_Handle& orig_feat);
+NCBI_XOBJEDIT_EXPORT CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label);
+NCBI_XOBJEDIT_EXPORT vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Handle bsh, int &offset, string& id_label);
 
 // these methods are being moved to ncbi::feature namespace 
 // please modify your usage of them

@@ -877,6 +877,42 @@ BOOST_AUTO_TEST_CASE(Test_PromoteCDSToNucProtSet_And_DemoteCDSToNucSeq)
     BOOST_CHECK_EQUAL(edit::DemoteCDSToNucSeq(fh), false);
 }
 
+BOOST_AUTO_TEST_CASE(Test_GetNewProtId)
+{
+    CScope scope(*CObjectManager::GetInstance());
+
+    CRef<CSeq_entry> nuc = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_id> nuc_id(new CSeq_id());
+    nuc_id->SetGeneral().SetDb("TEST");
+    nuc_id->SetGeneral().SetTag().SetStr("nuc");
+    unit_test_util::ChangeId(nuc, nuc_id);
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*nuc);
+    objects::CBioseq_Handle bsh = seh.GetSeq();
+    int offset = 1;
+    string id_label;
+    CRef<objects::CSeq_id> new_prot_id = edit::GetNewProtId(bsh, offset, id_label);
+    BOOST_CHECK_EQUAL(id_label, "gnl|TEST:nuc_1");
+    BOOST_CHECK_EQUAL(offset, 1);
+}
+
+BOOST_AUTO_TEST_CASE(Test_GetNewProtIdFromExistingProt)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+
+    CRef<CSeq_entry> prot = unit_test_util::GetProteinSequenceFromGoodNucProtSet (entry);
+    CRef<CSeq_id> prot_id(new CSeq_id());
+    prot_id->SetLocal().SetStr("prot");
+    unit_test_util::ChangeId(prot, prot_id);
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*prot);
+    objects::CBioseq_Handle bsh = seh.GetSeq();
+    int offset = 1;
+    string id_label;
+    vector<CRef<objects::CSeq_id> > new_prot_ids = edit::GetNewProtIdFromExistingProt(bsh, offset, id_label);
+    BOOST_CHECK_EQUAL(id_label, "lcl|prot_1");
+    BOOST_CHECK_EQUAL(offset, 1);
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////
 const char* sc_TestEntry ="\
