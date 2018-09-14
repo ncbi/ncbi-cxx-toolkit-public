@@ -1467,7 +1467,7 @@ void CShowBlastDefline::x_DisplayDeflineTableTemplate(CNcbiOstream & out)
     bool is_first = true;
 
     // Mixed db is genomic + transcript and this does not apply to proteins.        
-    bool is_mixed_database = (m_IsDbNa == true)? CAlignFormatUtil::IsMixedDatabase(*m_Ctx): false;    
+    bool is_mixed_database = (m_Ctx && m_IsDbNa == true)? CAlignFormatUtil::IsMixedDatabase(*m_Ctx): false;    
     string rowType = "odd";
     string subHeaderID;  
     ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
