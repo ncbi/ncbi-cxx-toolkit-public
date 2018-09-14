@@ -62,9 +62,6 @@ public:
 
     virtual ~CGff2Record() {};
 
-    static unsigned int NextId();
-    static void ResetId();
-
     //
     //  Input/output:
     //
@@ -81,12 +78,6 @@ public:
         }
         return false;
     };
-    CRef<CSeq_id> GetSeqId(
-        int,
-        SeqIdResolver = nullptr ) const;
-    CRef<CSeq_loc> GetSeqLoc(
-        int,
-        SeqIdResolver seqidresolve = nullptr) const;
 
     const TAttributes& Attributes() const { 
         return m_Attributes; 
@@ -123,29 +114,9 @@ protected:
 		const string&,
 		vector< string >& ) const;
 
-    virtual bool xMigrateId(
-        CRef<CSeq_feat> ) const;
-
-    virtual bool xMigrateStartStopStrand(
-        CRef<CSeq_feat> ) const;
-
-    virtual bool xMigrateType(
-        CRef<CSeq_feat> ) const;
-
-    virtual bool xMigrateScore(
-        CRef<CSeq_feat> ) const;
-
-    virtual bool xMigratePhase(
-        CRef<CSeq_feat> ) const;
-
     virtual bool xMigrateAttributes(
         int,
         CRef<CSeq_feat> ) const;
-
-    virtual bool xInitFeatureLocation(
-        int,
-        CRef<CSeq_feat>,
-        SeqIdResolver = nullptr ) const;
 
     virtual bool xInitFeatureData(
         int,
@@ -193,7 +164,6 @@ protected:
     //
     string m_strAttributes;    
     TAttributes m_Attributes;
-    static unsigned int m_nextId;
 };
 
 END_objects_SCOPE

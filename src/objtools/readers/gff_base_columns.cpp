@@ -32,39 +32,29 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
-#include <objects/general/Object_id.hpp>
-#include <objects/general/Dbtag.hpp>
 #include <objects/seq/so_map.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seq/Seq_annot.hpp>
-#include <objects/seq/Annot_id.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objects/seqfeat/Org_ref.hpp>
-#include <objects/seqfeat/OrgName.hpp>
-#include <objects/seqfeat/OrgMod.hpp>
-#include <objects/seqfeat/SubSource.hpp>
-#include <objects/seqfeat/Gb_qual.hpp>
-#include <objects/seqfeat/SeqFeatXref.hpp>
-#include <objects/seqfeat/Code_break.hpp>
-#include <objects/seqfeat/Genetic_code.hpp>
-#include <objects/seqfeat/Variation_ref.hpp>
 
+#include <objtools/readers/read_util.hpp>
 #include <objtools/readers/gff_base_columns.hpp>
+#include <objtools/readers/gff2_reader.hpp>
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+unsigned int CGffBaseColumns::msNextId = 0;
+
 //  ============================================================================
 CGffBaseColumns::CGffBaseColumns():
 //  ============================================================================
-    m_strId(""),
+    mSeqId(""),
     m_uSeqStart(0),
     m_uSeqStop(0),
     m_strSource(""),
@@ -79,7 +69,7 @@ CGffBaseColumns::CGffBaseColumns():
 CGffBaseColumns::CGffBaseColumns(
 //  ============================================================================
     const CGffBaseColumns& rhs):
-    m_strId(rhs.m_strId),
+    mSeqId(rhs.mSeqId),
     m_uSeqStart(rhs.m_uSeqStart),
     m_uSeqStop(rhs.m_uSeqStop),
     m_strSource(rhs.m_strSource),
@@ -108,7 +98,89 @@ CGffBaseColumns::~CGffBaseColumns()
     delete m_pePhase; 
 };
 
+//  ============================================================================
+CRef<CSeq_id> CGffBaseColumns::GetSeqId(
+    int flags,
+    SeqIdResolver seqidresolve ) const
+//  ============================================================================
+{
+    if (!seqidresolve) {
+        seqidresolve = CReadUtil::AsSeqId;
+    }
+    return seqidresolve(Id(), flags, true);
+}
+
+//  ============================================================================
+CRef<CSeq_loc> CGffBaseColumns::GetSeqLoc(
+    int flags,
+    SeqIdResolver seqidresolve ) const
+//  ============================================================================
+{
+    CRef<CSeq_loc> pLocation(new CSeq_loc);
+    pLocation->SetInt().SetId(*GetSeqId(flags, seqidresolve));
+    pLocation->SetInt().SetFrom(static_cast<TSeqPos>(SeqStart()));
+    pLocation->SetInt().SetTo(static_cast<TSeqPos>(SeqStop()));
+    if (IsSetStrand()) {
+        pLocation->SetInt().SetStrand(Strand());
+    }
+    return pLocation;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffBaseColumns::InitializeFeature(
+    int flags,
+    CRef<CSeq_feat> pFeature,
+    SeqIdResolver seqidresolve ) const
+    //  ----------------------------------------------------------------------------
+{
+    return (
+        xInitFeatureLocation(flags, pFeature, seqidresolve)  &&
+        xInitFeatureData(flags, pFeature)  &&
+        xInitFeatureId(flags, pFeature));
+}
+
+//  ============================================================================
+bool CGffBaseColumns::xInitFeatureId(
+    int,
+    CRef<CSeq_feat> pFeature ) const
+//  ============================================================================
+{
+    unsigned int featId = NextId();
+    CRef<CFeat_id> pFeatId(new CFeat_id);
+    pFeatId->SetLocal().SetId(featId);
+    pFeature->SetId(*pFeatId);
+    return true;
+}
+
+//  ============================================================================
+bool CGffBaseColumns::xInitFeatureLocation(
+    int flags,
+    CRef<CSeq_feat> pFeature,
+    SeqIdResolver seqidresolve ) const
+//  ============================================================================
+{
+    pFeature->SetLocation(*GetSeqLoc(flags, seqidresolve));
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffBaseColumns::xInitFeatureData(
+    int flags,
+    CRef<CSeq_feat> pFeature ) const
+    //  ----------------------------------------------------------------------------
+{
+    CSeqFeatData::ESubtype subtype = pFeature->GetData().GetSubtype();
+    if (subtype == CSeqFeatData::eSubtype_cdregion) {
+        CCdregion::EFrame frame = Phase();
+        if (frame == CCdregion::eFrame_not_set) {
+            frame = CCdregion::eFrame_one;
+        }
+        pFeature->SetData().SetCdregion().SetFrame(frame);
+        return true;
+    }
+
+    return true;
+}
 
 END_objects_SCOPE
-
 END_NCBI_SCOPE

@@ -66,21 +66,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-CCdregion::EFrame FramePlusToMinus(
-    CCdregion::EFrame frame)
-//  ----------------------------------------------------------------------------
-{
-    static map<CCdregion::EFrame, CCdregion::EFrame> mFramePlusToMinus;
-    if (mFramePlusToMinus.empty()) {
-        mFramePlusToMinus[CCdregion::eFrame_not_set] = CCdregion::eFrame_not_set;
-        mFramePlusToMinus[CCdregion::eFrame_one] = CCdregion::eFrame_three;
-        mFramePlusToMinus[CCdregion::eFrame_two] = CCdregion::eFrame_two;
-        mFramePlusToMinus[CCdregion::eFrame_three] = CCdregion::eFrame_one;
-    }
-    return mFramePlusToMinus[frame];
-}
-
-//  ----------------------------------------------------------------------------
 CRef<CCode_break> s_StringToCodeBreak(
     const string& str,
     CSeq_id& id,
@@ -174,22 +159,11 @@ CBioSource::EGenome s_StringToGenome(
     return CBioSource::eGenome_unknown;
 }
     
-unsigned int CGff2Record::m_nextId(0);
 //  -----------------------------------------------------------------------------
-unsigned int CGff2Record::NextId()
+void CGff2Record::TokenizeGFF(
+    vector<CTempStringEx>& columns, 
+    const CTempStringEx& in_line)
 //  -----------------------------------------------------------------------------
-{
-    return ++m_nextId;
-}
-
-//  -----------------------------------------------------------------------------
-void CGff2Record::ResetId()
-//  -----------------------------------------------------------------------------
-{
-    m_nextId = 0;
-}
-
-void CGff2Record::TokenizeGFF(vector<CTempStringEx>& columns, const CTempStringEx& in_line)
 {
     columns.clear();
     columns.reserve(9);
@@ -253,7 +227,7 @@ bool CGff2Record::AssignFromGff(
     }
     //  to do: more sanity checks
 
-    columns[0].Copy(m_strId, 0, CTempString::npos);
+    columns[0].Copy(mSeqId, 0, CTempString::npos);
     columns[1].Copy(m_strSource, 0, CTempString::npos);
     columns[2].Copy(m_strType, 0, CTempString::npos);
 
@@ -353,34 +327,6 @@ bool CGff2Record::GetAttribute(
     }
     NStr::Split(it->second, ",", values, 0);
     return !values.empty();
-}
-
-//  ----------------------------------------------------------------------------
-CRef<CSeq_id> CGff2Record::GetSeqId(
-    int flags,
-    SeqIdResolver seqidresolve ) const
-//  ----------------------------------------------------------------------------
-{
-    if (!seqidresolve) {
-        seqidresolve = CReadUtil::AsSeqId;
-    }
-    return seqidresolve(Id(), flags, true);
-}
-
-//  ----------------------------------------------------------------------------
-CRef<CSeq_loc> CGff2Record::GetSeqLoc(
-    int flags,
-    SeqIdResolver seqidresolve ) const
-//  ----------------------------------------------------------------------------
-{
-    CRef<CSeq_loc> pLocation(new CSeq_loc);
-    pLocation->SetInt().SetId(*GetSeqId(flags, seqidresolve));
-    pLocation->SetInt().SetFrom(static_cast<TSeqPos>(SeqStart()));
-    pLocation->SetInt().SetTo(static_cast<TSeqPos>(SeqStop()));
-    if (IsSetStrand()) {
-        pLocation->SetInt().SetStrand(Strand());
-    }
-    return pLocation;
 }
 
 //  ----------------------------------------------------------------------------
@@ -561,17 +507,12 @@ bool CGff2Record::InitializeFeature(
     int flags,
     CRef<CSeq_feat> pFeature,
     SeqIdResolver seqidresolve ) const
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
-    return (
-        xInitFeatureLocation(flags, pFeature, seqidresolve)  &&
-        xInitFeatureData(flags, pFeature)  &&
-        xMigrateId(pFeature)  &&
-        xMigrateStartStopStrand(pFeature)  &&
-        xMigrateType(pFeature)  &&
-        xMigrateScore(pFeature)  &&
-        xMigratePhase(pFeature)  &&
-        xMigrateAttributes(flags, pFeature) );
+    if (!CGffBaseColumns::InitializeFeature(flags, pFeature, seqidresolve)) {
+        return false;
+    }
+    return xMigrateAttributes(flags, pFeature);
 }
 
 //  ----------------------------------------------------------------------------
@@ -663,52 +604,6 @@ bool CGff2Record::xUpdateFeatureData(
     return true;
 }
     
-
-//  ----------------------------------------------------------------------------
-bool CGff2Record::xMigrateId(
-    CRef<CSeq_feat> pFeature ) const
-//  ----------------------------------------------------------------------------
-{
-    unsigned int featId = NextId();
-    CRef<CFeat_id> pFeatId(new CFeat_id);
-    pFeatId->SetLocal().SetId(featId);
-    pFeature->SetId(*pFeatId);
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Record::xMigrateStartStopStrand(
-    CRef<CSeq_feat> pFeature ) const
-//  ----------------------------------------------------------------------------
-{
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Record::xMigrateType(
-    CRef<CSeq_feat> pFeature ) const
-//  ----------------------------------------------------------------------------
-{
-    return true;
-}
-
-
-//  ----------------------------------------------------------------------------
-bool CGff2Record::xMigrateScore(
-    CRef<CSeq_feat> pFeature ) const
-//  ----------------------------------------------------------------------------
-{
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Record::xMigratePhase(
-    CRef<CSeq_feat> pFeature ) const
-//  ----------------------------------------------------------------------------
-{
-    return true;
-}
-
 //  ----------------------------------------------------------------------------
 bool CGff2Record::xMigrateAttributes(
     int flags,
@@ -1179,17 +1074,6 @@ bool CGff2Record::xMigrateAttributesSubSource(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::xInitFeatureLocation(
-    int flags,
-    CRef<CSeq_feat> pFeature,
-    SeqIdResolver seqidresolve ) const
-//  ----------------------------------------------------------------------------
-{
-    pFeature->SetLocation(*GetSeqLoc(flags, seqidresolve));
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff2Record::xInitFeatureData(
     int flags,
     CRef<CSeq_feat> pFeature ) const
@@ -1212,17 +1096,18 @@ bool CGff2Record::xInitFeatureData(
                 qual_type = "ncRNA";
             }
             if (CSoMap::SoTypeToFeature(
-                    qual_type, *pFeature, invalidFeaturesToRegion)) {
+                qual_type, *pFeature, invalidFeaturesToRegion)) {
                 return true;
             }
         }
     }
+
     auto recognizedType = Type();
     if (recognizedType == "start_codon"  || recognizedType == "stop_codon") {
         recognizedType = "cds";
     }
     if (!CSoMap::SoTypeToFeature(
-            recognizedType, *pFeature, invalidFeaturesToRegion)) {
+        recognizedType, *pFeature, invalidFeaturesToRegion)) {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
                 eDiag_Error,
@@ -1232,18 +1117,8 @@ bool CGff2Record::xInitFeatureData(
         pErr->Throw();
     }
 
-    CSeqFeatData::ESubtype subtype = pFeature->GetData().GetSubtype();
-    if (subtype == CSeqFeatData::eSubtype_cdregion) {
-        CCdregion::EFrame frame = Phase();
-        if (frame == CCdregion::eFrame_not_set) {
-            frame = CCdregion::eFrame_one;
-        }
-        pFeature->SetData().SetCdregion().SetFrame(frame);
-        return true;
-    }
-    return true;
+    return CGffBaseColumns::xInitFeatureData(flags, pFeature);
 }
 
 END_objects_SCOPE
-
 END_NCBI_SCOPE

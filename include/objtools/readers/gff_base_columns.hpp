@@ -36,12 +36,13 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-//  ----------------------------------------------------------------------------
+//  ============================================================================
 class CGffBaseColumns
-//  ----------------------------------------------------------------------------
+//  ============================================================================
 {
 public:
-    typedef CCdregion::EFrame TFrame;
+    using TFrame = CCdregion::EFrame;
+    using SeqIdResolver = CRef<CSeq_id> (*)(const string&, unsigned int, bool);
 
     CGffBaseColumns();
 
@@ -50,15 +51,17 @@ public:
 
     virtual ~CGffBaseColumns();
 
+    //
+    // accessors:
     const string& Id() const { 
-        return m_strId; 
+        return mSeqId; 
     };
 
-    size_t SeqStart() const { 
+    TSeqPos SeqStart() const { 
         return m_uSeqStart; 
     };
 
-    size_t SeqStop() const { 
+    TSeqPos SeqStop() const { 
         return m_uSeqStop; 
     };
 
@@ -85,22 +88,63 @@ public:
     bool IsSetScore() const { 
         return m_pdScore != 0; 
     };
+
     bool IsSetStrand() const { 
         return m_peStrand != 0; 
     };
+
     bool IsSetPhase() const { 
         return m_pePhase != 0; 
     };
 
+    CRef<CSeq_id> GetSeqId(
+        int,
+        SeqIdResolver = nullptr ) const;
+
+    CRef<CSeq_loc> GetSeqLoc(
+        int,
+        SeqIdResolver seqidresolve = nullptr) const;
+
+    // feature initialization:
+    virtual bool InitializeFeature(
+        int,
+        CRef<CSeq_feat>,
+        SeqIdResolver = nullptr ) const; 
+
+    virtual bool xInitFeatureId(
+        int, //flags
+        CRef<CSeq_feat> ) const;
+
+    virtual bool xInitFeatureLocation(
+        int,
+        CRef<CSeq_feat>,
+        SeqIdResolver = nullptr ) const;
+
+    virtual bool xInitFeatureData(
+        int,
+        CRef<CSeq_feat>) const;
+
+    // utility:
+    static unsigned int NextId() {
+        return ++msNextId;
+    };
+
+    static void ResetId() {
+        msNextId = 0;
+    };
+
+
 protected:
-    string m_strId;
-    size_t m_uSeqStart;
-    size_t m_uSeqStop;
+    string mSeqId;
+    TSeqPos m_uSeqStart;
+    TSeqPos m_uSeqStop;
     string m_strSource;
     string m_strType;
     double* m_pdScore;
     ENa_strand* m_peStrand;
     TFrame* m_pePhase;
+
+    static unsigned int msNextId;
 };
 
 
