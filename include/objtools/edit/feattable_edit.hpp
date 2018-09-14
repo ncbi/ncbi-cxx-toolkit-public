@@ -39,10 +39,9 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/util/feature.hpp>
 //#include <objtools/readers/line_error.hpp>
+#include <objtools/readers/message_listener.hpp>
 
 BEGIN_NCBI_SCOPE
-class IMessageListener;
-
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
@@ -58,7 +57,7 @@ public:
 		const string& = "",
         unsigned int = 1, //starting locus tag
         unsigned int = 1, //starting feature id
-        ncbi::IMessageListener* =nullptr);
+        ILineErrorListener* =nullptr);
     ~CFeatTableEdit();
 
 	void GenerateLocusTags();
@@ -172,7 +171,7 @@ protected:
     CSeq_annot_Handle mHandle;
     feature::CFeatTree mTree;
     CSeq_annot_EditHandle mEditHandle;
-    ncbi::IMessageListener* mpMessageListener;
+    ILineErrorListener* mpMessageListener;
     unsigned int mNextFeatId;
 	unsigned int mLocusTagNumber;
 	string mLocusTagPrefix;
