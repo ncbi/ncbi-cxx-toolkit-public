@@ -130,7 +130,7 @@ ALBA	s	Universidad de Castilla, La Mancha, Departamento de Ciencia y Tecnologia 
 ALBC	s	Albion College, Biology Department			
 ALBU	s	Rocky Mountain Forest and Range Experiment Station			
 ALCB	s	Universidade Federal da Bahia, Campus Universitario de Ondina			
-ALCP	c	Algotheque du Laboratoire de Cryptogamie			
+ALCP	c	Algotheque du Laboratoire de Cryptogamie	MNHN:ALCP		
 ALD	s	Alderney Society and Museum			
 ALEX	s	University of Alexandria, Department of Botany			
 ALF	s	Campus International de Baillarguet, Departement d'Elevage et de Medecine Veterinaire			
@@ -4127,14 +4127,41 @@ MNHCI	s	Museu de Historia Natural Capao da Imbuia	MNHCI
 MNHM<DEU>	s	Naturhistorisches Museum Mainz/Landessammlung fuer Naturkunde Rheinland-Pfalz			
 MNHM<USA-CO>	s	John May Museum of Natural History			
 MNHN	s	Museum National d'Histoire Naturelle			
-MNHN:IA	s	Museum National d'Histoire Naturelle,  Annelids, Polychaetes and Sipuncula Collection		
-MNHN:IC	s	Museum National d'Histoire Naturelle, Ichtyologie collection		
-MNHN:IE	s	Museum National d'Histoire Naturelle, Echinoderm collection		
-MNHN:IK	s	Museum National d'Histoire Naturelle,  Cnidarians Collection		
-MNHN:IM	s	Museum National d'Histoire Naturelle, Marine Invertebrate Collection		
-MNHN:IU	s	Museum National d'Histoire Naturelle, Crustacean collection		
-MNHN:M	s	Museum National d'Histoire Naturelle, Mammal collection		
-MNHN:P	s	Museum National d'Histoire Naturelle, Paleontology Collection	
+MNHN:ALCP	sc	Museum National d'Histoire Naturelle, Microalgae	
+MNHN:AR	s	Museum National d'Histoire Naturelle, Arachnids: Spiders	
+MNHN:CEU	s	Museum National d'Histoire Naturelle, Unicellular eukaryotes	
+MNHN:CH	s	Museum National d'Histoire Naturelle, Chimiotheque	
+MNHN:CX	s	Museum National d'Histoire Naturelle, Extractotheque	
+MNHN:EA	s	Museum National d'Histoire Naturelle, Apterygota and springtails	
+MNHN:EC	s	Museum National d'Histoire Naturelle, Insects - Coleoptera	
+MNHN:ED	s	Museum National d'Histoire Naturelle, Insects - Diptera	
+MNHN:EH	s	Museum National d'Histoire Naturelle, Insects - Hemiptera	
+MNHN:EL	s	Museum National d'Histoire Naturelle, Insects - Lepidoptera	
+MNHN:EO	s	Museum National d'Histoire Naturelle, Insects - Orthoptera	
+MNHN:EP	s	Museum National d'Histoire Naturelle, Insects - Small orders & Odonates	
+MNHN:EY	s	Museum National d'Histoire Naturelle, Insects - Hymenoptera	
+MNHN:IA	s	Museum National d'Histoire Naturelle, Annelids, Polychaetes and Sipuncula	
+MNHN:IB	s	Museum National d'Histoire Naturelle, Bryozoans Brachiopods	
+MNHN:IC	s	Museum National d'Histoire Naturelle, Ichtyologie	
+MNHN:IE	s	Museum National d'Histoire Naturelle, Echinoderms	
+MNHN:IK	s	Museum National d'Histoire Naturelle, Cnidarians	
+MNHN:IM	s	Museum National d'Histoire Naturelle, Molluscs	
+MNHN:IN	s	Museum National d'Histoire Naturelle, Nematodes	
+MNHN:IP	s	Museum National d'Histoire Naturelle, Porifera	
+MNHN:IR	s	Museum National d'Histoire Naturelle, Protists	
+MNHN:IT	s	Museum National d'Histoire Naturelle, Tunicates/ascidians	
+MNHN:IU	s	Museum National d'Histoire Naturelle, Crustaceans	
+MNHN:M	s	Museum National d'Histoire Naturelle, Mammal	
+MNHN:MY	s	Museum National d'Histoire Naturelle, Myriapods	
+MNHN:P	s	Museum National d'Histoire Naturelle, Paleontology	
+MNHN:PMC	c	Museum National d'Histoire Naturelle, Cyanobacteria	
+MNHN:RA	s	Museum National d'Histoire Naturelle, Reptiles and amphibians	
+MNHN:RA	s	Museum National d'Histoire Naturelle, Reptiles and amphibians	
+MNHN:RF	sc	Museum National d'Histoire Naturelle, Fungal strains	
+MNHN:RS	s	Museum National d'Histoire Naturelle, Arachnids : Scorpions	
+MNHN:TCCV	s	Museum National d'Histoire Naturelle, Frozen vertebrates tissues & cells	
+MNHN:ZA	s	Museum National d'Histoire Naturelle, Vertebrates - Others	
+MNHN:ZO	s	Museum National d'Histoire Naturelle, Birds	
 MNHN<CUB>	s	Museo Nacional de Historia Natural, Departamento de Colecciones			
 MNHN<URY>	s	Museo Nacional de Historia  Natural de Montevideo			
 MNHNCH	s	Museo Nacional de Historia Natural de Chile	MNHN ,MNHNC		
