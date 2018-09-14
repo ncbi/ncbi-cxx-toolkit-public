@@ -91,7 +91,10 @@ private:
     void ProcessFile(const string& filename, TFactory factory);
 
     void ProcessReply(shared_ptr<CPSG_Reply> reply);
-    void PrintErrors(EPSG_Status status, shared_ptr<CPSG_ReplyItem> item);
+
+    template <class TReply>
+    void PrintErrors(EPSG_Status status, shared_ptr<TReply> item);
+
     void PrintBlobData(shared_ptr<CPSG_BlobData>);
     void PrintBlobInfo(shared_ptr<CPSG_BlobInfo>);
     void PrintBioseqInfo(shared_ptr<CPSG_BioseqInfo>);
@@ -206,6 +209,15 @@ void CPsgCliApp::ProcessReply(shared_ptr<CPSG_Reply> reply)
 {
     assert(reply);
 
+    auto status = reply->GetStatus(CDeadline::eInfinite);
+
+    if (status != EPSG_Status::eSuccess) {
+        lock_guard<mutex> lock(m_CoutMutex);
+        cout << "Reply. ERROR: ";
+        PrintErrors(status, reply);
+        return;
+    }
+
     for (;;) {
         auto reply_item = reply->GetNextItem(CDeadline::eInfinite);
 
@@ -295,7 +307,8 @@ void CPsgCliApp::ProcessFile(const string& filename, TFactory factory)
     }
 }
 
-void CPsgCliApp::PrintErrors(EPSG_Status status, shared_ptr<CPSG_ReplyItem> item)
+template <class TReply>
+void CPsgCliApp::PrintErrors(EPSG_Status status, shared_ptr<TReply> item)
 {
     cout << static_cast<int>(status);
 
