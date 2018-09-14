@@ -791,17 +791,17 @@ CAS:BOT	s	California Academy of Sciences, Botany Collection
 CAS:DIA	s	California Academy of Sciences, Diatom collection		
 CAS:DS	s	California Academy of Sciences, Dudley Stanford Collection		
 CAS:EGG	s	California Academy of Sciences, Egg & Nest Collection		
-CAS:ENT	s	California Academy of Sciences, Entomology collection		
+CAS:ENT	s	California Academy of Sciences, Entomology collection	
 CAS:HERP	s	California Academy of Sciences, Herpetology collection	http://collections.calacademy.org/herp/specimen/CAS:HERP:&spec;
 CAS:ICH	s	California Academy of Sciences, Ichthyology collection		
 CAS:IU	s	California Academy of Sciences, Indiana University fish collection		
-CAS:IZ	s	California Academy of Sciences, Invertebrate Zoology collection		
+CAS:IZ	s	California Academy of Sciences, Invertebrate Zoology collection	
 CAS:MAM	s	California Academy of Sciences, Mammalogy Collection		
 CAS:ORN	s	California Academy of Sciences, Ornithology Collection		
 CAS:SU	s	California Academy of Sciences, Stanford University Collection of fish		
 CAS:SUA	s	California Academy of Sciences, Stanford University Collection of amphibians		
 CAS:SUR	s	California Academy of Sciences, Stanford University Collection of reptiles		
-CAS:TYPE	s	California Academy of Sciences, Entomology Type Collection		
+CAS:TYPE	s	California Academy of Sciences, Entomology Type Collection	
 CASM	s	Chicago Academy of Sciences, Museum of Natural History			
 CASMB	s	Centre of Advanced Study in Marine Biology			
 CASS	s	Chinese Academy of Sciences, Shenyang			
@@ -1153,7 +1153,7 @@ CMN:Herp	s	Canadian Museum of Nature, Amphibian and Reptile Collection
 CMN:Insect	s	Canadian Museum of Nature, Insect Collection		
 CMN:Mammal	s	Canadian Museum of Nature, Mammal Collection		
 CMN:Mollusc	s	Canadian Museum of Nature, Mollusc Collection		
-CMN:Parasite	s	Canadian Museum of Nature, Parasite Collection		
+CMN:Parasite	s	Canadian Museum of Nature, Parasite Collection	
 CMNAR	s	Canadian Museum of Nature, Amphibian and Reptile Collection			
 CMNC	s	Canadian Museum of Nature, Neotropical Cerambycidae Collection			
 CMNFI	s	Canadian Museum of Nature, Fish Collection			
@@ -1377,15 +1377,15 @@ CUHK	sc	Biology Department, Chinese University of Hong Kong
 CUI	s	Central College, Iowa			
 CUIC	s	Cornell University, Invertebrate Collections			
 CUMV	s	Cornell University Museum of Vertebrates	CUVC<USA-NY>		
-CUMV:Amph	s	Cornell University Museum of Vertebrates, Amphibian Collection		
-CUMV:Bird	s	Cornell University Museum of Vertebrates, Bird Collection		
-CUMV:Fish	s	Cornell University Museum of Vertebrates, Fish Collection		
-CUMV:Mamm	s	Cornell University Museum of Vertebrates, Mammal Collection		
-CUMV:Rept	s	Cornell University Museum of Vertebrates, Reptile Collection		
+CUMV:Amph	s	Cornell University Museum of Vertebrates, Amphibian Collection	
+CUMV:Bird	s	Cornell University Museum of Vertebrates, Bird Collection	
+CUMV:Fish	s	Cornell University Museum of Vertebrates, Fish Collection	
+CUMV:Mamm	s	Cornell University Museum of Vertebrates, Mammal Collection	
+CUMV:Rept	s	Cornell University Museum of Vertebrates, Reptile Collection	
 CUMZ<CAN>	s	Carleton University, Museum of Zoology			
 CUMZ<CMR>	s	Cameroon University, Museum of Zoology			
 CUMZ<THA>	s	Chulalongkorn University Museum of Natural History	CUB		
-CUMZ<THA>:R	s	Chulalongkorn University Museum of Natural History, Reptile Collection		
+CUMZ<THA>:R	s	Chulalongkorn University Museum of Natural History, Reptile Collection	
 CUMZ<UK>	s	Cambridge University, Museum of Zoology			
 CUNRC	s	Universidad Nacional de Rio Cuarto, Coleccion de Mamiferos (Argentina)			
 CUP	s	Cornell University, Plant Pathology Herbarium			
@@ -2707,7 +2707,7 @@ IBUNAM:CNIN	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Co
 IBUNAM:CNMA	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Mamiferos		
 IBUNAM:CNMO	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Moluscos		
 IBUNAM:CNPE	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Coleccion Nacional de Peces		
-IBUNAM:MEXU	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Herbario Nacional		
+IBUNAM:MEXU	s	Instituto de Biologia, Universidad Nacional Autonoma de Mexico, Herbario Nacional	
 IBUNAM<CNIN>	s	Coleccion Nacional de Insectos, Universidad Nacional Autonoma de Mexico	IBUNAM:CNIN		
 IBUP	s	Institute of Biology			
 IBUS	s	Universidade Federal do Rio de Janeiro			
@@ -2903,7 +2903,7 @@ INMI	c	Institute of Microbiology, Russian Academy of Sciences
 INPA	s	Instituto Nacional de Pesquisas da Amazonia			
 INPA:CR	s	Instituto Nacional de Pesquisas da Amazonia, Crustacea Collection		
 INPA:H	s	Instituto Nacional de Pesquisas da Amazonia, Collection of Amphibians and Reptiles		
-INPA:LMM	c	Instituto Nacional de Pesquisas da Amazonia, Laboratorio de Micologia Medica Divisao de Microbiologia e Nutricao		
+INPA:LMM	c	Instituto Nacional de Pesquisas da Amazonia, Laboratorio de Micologia Medica Divisao de Microbiologia e Nutricao	
 INPC	s	National Pusa Collections			
 INRA	b	Institut National de la Recherche Agronomique			
 INRA:CGAB	cb	Institut National de la Recherche Agronomique, Collection of Germplasms of Agaricus bisporus		
@@ -3203,7 +3203,7 @@ KATH	s	Department of Plant Resources
 KATO	s	Karadeniz Technical University, Department of Forest Botany			
 KATO:Fungi	s	Karadeniz Technical University, Department of Forest Botany, Fungi collection		
 KAUM	s	Kagoshima University Museum			
-KAUM:I	s	Kagoshima University Museum, Ichthyology Collection		
+KAUM:I	s	Kagoshima University Museum, Ichthyology Collection	
 KAW	s	Kawanda Research Station, Department of Agriculture			
 KAZ	s	Kazan State University			
 KB	s	National Biological Resources Center, Department of Biological Sciences			
@@ -3360,8 +3360,8 @@ KU	s	University of Kansas Natural History Museum	KUMNA,KUVP,UK
 KU-MACC	c	Kobe University Macroalgal Culture Collection			
 KU:H	s	University of Kansas Natural History Museum, Herpetology Collection		
 KU:I	s	University of Kansas Natural History Museum, Ichthyology collection	https://ichthyology.specify.ku.edu/specify/bycatalog/KUI/&spec;/
-KU:IP	s	University of Kansas Natural History Museum, Invertebrate Paleontology Collection		
-KU:IT	sb	University of Kansas Natural History Museum, Ichthyology tissue collection		
+KU:IP	s	University of Kansas Natural History Museum, Invertebrate Paleontology Collection	
+KU:IT	sb	University of Kansas Natural History Museum, Ichthyology tissue collection	
 KU:IZ	s	University of Kansas Natural History Museum, Invertebrate Zoology Collection		
 KU:M	s	University of Kansas Natural History Museum, Mammology Collection		
 KU:O	s	University of Kansas Natural History Museum, Ornithology Collection		
@@ -3882,7 +3882,7 @@ MCVE	s	Museo di Storia Naturale di Venezia
 MCVM	s	Museo Civico, Villa Mirabello			
 MCW	s	Milton College, Biology Department			
 MCZ	s	Museum of Comparative Zoology, Harvard University	MCZC		
-MCZ:Cryo	s	Museum of Comparative Zoology, Harvard University, Cryogenic Collection		
+MCZ:Cryo	s	Museum of Comparative Zoology, Harvard University, Cryogenic Collection	
 MCZ:Ent	s	Museum of Comparative Zoology, Harvard University, Entomology Collection	http://mczbase.mcz.harvard.edu/guid/MCZ:Ent:
 MCZ:Herp	s	Museum of Comparative Zoology, Harvard University, Herpetology Collection	http://mczbase.mcz.harvard.edu/guid/MCZ:Herp:
 MCZ:Ich	s	Museum of Comparative Zoology, Harvard University, Ichthyology Collection	http://mczbase.mcz.harvard.edu/guid/MCZ:Fish:
@@ -4134,7 +4134,7 @@ MNHN:IK	s	Museum National d'Histoire Naturelle,  Cnidarians Collection
 MNHN:IM	s	Museum National d'Histoire Naturelle, Marine Invertebrate Collection		
 MNHN:IU	s	Museum National d'Histoire Naturelle, Crustacean collection		
 MNHN:M	s	Museum National d'Histoire Naturelle, Mammal collection		
-MNHN:P	s	Museum National d'Histoire Naturelle, Paleontology Collection		
+MNHN:P	s	Museum National d'Histoire Naturelle, Paleontology Collection	
 MNHN<CUB>	s	Museo Nacional de Historia Natural, Departamento de Colecciones			
 MNHN<URY>	s	Museo Nacional de Historia  Natural de Montevideo			
 MNHNCH	s	Museo Nacional de Historia Natural de Chile	MNHN ,MNHNC		
@@ -4148,8 +4148,8 @@ MNHNUL	s	Museu Nacional de Historia Natural de Universidade de Lisboa
 MNHP	s	Princeton University			
 MNHS	s	Manchester Natural History Society			
 MNK	s	Museo de Historia Natural "Noel Kempff Mercado"			
-MNK:A	s	Museo de Historia Natural "Noel Kempff Mercado", Amphibian Collection		
-MNK:R	s	Museo de Historia Natural "Noel Kempff Mercado", Reptile Collection		
+MNK:A	s	Museo de Historia Natural "Noel Kempff Mercado", Amphibian Collection	
+MNK:R	s	Museo de Historia Natural "Noel Kempff Mercado", Reptile Collection	
 MNKNU	s	Museum of Nature, V.N. Karazin Kharkiv National University			
 MNKS	s	Milton Keynes Development Corporation			
 MNMB	s	Magyar Nenzeti Museum			
@@ -4535,7 +4535,7 @@ NCF	s	Department of Forest Insects, Northwest College of Forestry
 NCFB	c	National Collection of Food Bacteria			
 NCH	s	Norwich Botanical Society			
 NCHU	s	National Chung Hsing University			
-NCHU:ZOOL	s	National Chung Hsing University, Department of Life Science		
+NCHU:ZOOL	s	National Chung Hsing University, Department of Life Science	
 NCIM	c	National Collection of Industrial Microorganisms			
 NCIMB	c	National Collection of Industrial, Food and Marine Bacteria (incorporating the NCFB)	NCIB,NCMB		
 NCIP	s	Pusat Penelitian dan Pengembangan Oseanologi			
@@ -5387,8 +5387,8 @@ QBG	s	Queen Sirikit Botanic Garden
 QC	s	National Museum of Natural History, Bulawayo			
 QCA	s	Pontificia Universidad Catolica del Ecuador, Departamento de Biologia			
 QCAZ	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador			
-QCAZ:A	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador, Amphibian Collection		
-QCAZ:R	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador, Reptile Collection		
+QCAZ:A	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador, Amphibian Collection	
+QCAZ:R	s	Museo de Zoologia, Pontifica Universidad Catolica del Ecuador, Reptile Collection	
 QCC	c	 Qatari Culture Collection			
 QCNE	s	Herbario Nacional del Ecuador			
 QD	s	Ocean University of China			
@@ -5569,7 +5569,7 @@ ROM:ENT	s	Royal Ontario Museum, Entomology collection
 ROM:HERP	s	Royal Ontario Museum, Herpetology collection		
 ROM:ICH	s	Royal Ontario Museum, Fish collection		
 ROM:IZ	s	Royal Ontario Museum, Invertebrate Zoology Collection		
-ROM:MAM	s	Royal Ontario Museum, Mammal Collection		
+ROM:MAM	s	Royal Ontario Museum, Mammal Collection	
 ROM:ORN	s	Royal Ontario Museum, Ornithology Collection		
 ROME	s	Royal Ontario Museum, Entomology Collection	ROM:ENT		
 ROML	s	National University of Lesotho, Biology Department			
@@ -5769,6 +5769,10 @@ SDN	s	Borough of Thamesdown Museum and Art Gallery
 SDNCU	cb	The Specimen Depository of the Graduate School of Natural Sciences, Nagoya City University			
 SDNH<SWZ>	s	Malkerns Agricultural Research Station			
 SDNHM	s	San Diego Natural History Museum	SDMC,SDNH,SDSNH		
+SDNHM:Birds	s	San Diego Natural History Museum, Bird collection	
+SDNHM:ENT	s	San Diego Natural History Museum, Entomology collection	
+SDNHM:HERP	s	San Diego Natural History Museum, Herpetology collection	
+SDNHM:Mamm	s	San Diego Natural History Museum, Mammal collection	
 SDNU	s	Shandong Normal  University, College of Life Sciences			
 SDSM	s	South Dakota School of Mines and Technology			
 SDSU<USA-CA>	s	San Diego State University			
@@ -6200,7 +6204,7 @@ SYPC	s	Shenyang College of Pharmacy, Pharmaceutical Botany Department
 SYR	s	Syracuse University, Plant Sciences Department			
 SYRF	s	State University of New York			
 SYS	s	Sun Yatsen University, Biology Department			
-SYS:Z	s	Sun Yatsen University, Biology Department, Zoology Collection		
+SYS:Z	s	Sun Yatsen University, Biology Department, Zoology Collection	
 SYSBM	s	The Museum of Biology Sun Yat-sen University			
 SYSU	s	National Sun Yat-Sen University, Department of Biological Sciences			
 SYT	s	Stonyhurst College			
@@ -6709,7 +6713,7 @@ UKKY	s	University of Kunming
 UKM<DEU>	s	Universitaetsklinikum Muenster			
 UKMB	s	Universiti Kebangsaan Malaysia, Botany Department			
 UKMHC	s	Universiti Kebangsaan Malaysia			
-UKMHC:HC	s	Universiti Kebangsaan Malaysia, Herpetological Collection		
+UKMHC:HC	s	Universiti Kebangsaan Malaysia, Herpetological Collection	
 UKMS<MYS>	s	Universiti Kebangsaan Malaysia, Kampus Sabah			
 UKMS<SDN>	s	Sudan Natural History Museum	SNHM		
 UKS	s	University of Khartoum			
@@ -6794,7 +6798,7 @@ UNAM:CNAR	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologi
 UNAM:CNAV	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Aves		
 UNAM:CNCR	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Crustaceos		
 UNAM:CNHE	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Helmintos		
-UNAM:CNIN	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Insectos		
+UNAM:CNIN	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Insectos	
 UNAM:CNMA	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Mamiferos		
 UNAM:CNMO	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Moluscos		
 UNAM:CNNE	s	Universidad Nacional Autonoma de Mexico Facultad de Ciencias/Biologia, Coleccion Nacional de Nematodos		
@@ -6855,7 +6859,7 @@ UO	s	University of Oklahoma
 UO<CZE>	s	University of Ostrava			
 UOA/HCPF<GRC>	c	UOA/HCPF University of Athens/Hellenic Collection of Pathogenic Fungi			
 UOG	s	University of Guelph			
-UOG:BIO	b	University of Guelph, Biodiversity Institute of Ontario		
+UOG:BIO	b	University of Guelph, Biodiversity Institute of Ontario	
 UOG:DEBU	s	University of Guelph, Ontario Insect Collection		
 UOIC	s	University of Oregon			
 UOJ	s	Universidad del Oriente, Departamento de Agronomia			
@@ -6942,7 +6946,7 @@ USDA:PGRU	sb	United States Department of Agriculture, Plant Genetic Resources Un
 USDA:USNPC	s	United States Department of Agriculture, US National Parasite Collection		
 USDAK	s	W. H. Over State Museum			
 USF	s	University of South Florida			
-USF:CBD	c	University of South Florida, Center for Biological Defense		
+USF:CBD	c	University of South Florida, Center for Biological Defense	
 USFC	s	U. S. Fish Commission			
 USFS	s	Rocky Mountain Forest and Range Experiment Station			
 USGS	s	U.S. Geological Survey			
@@ -6963,7 +6967,7 @@ USNM:Birds	s	National Museum of Natural History, Smithsonian Institution, Divisi
 USNM:ENT	s	National Museum of Natural History, Smithsonian Institution, Entomology Collection		
 USNM:FISH	s	National Museum of Natural History, Smithsonian Institution, National Fish Collection		
 USNM:Herp	s	National Museum of Natural History, Smithsonian Institution, Division of Amphibians and Reptiles		
-USNM:IZ	s	National Museum of Natural History, Smithsonian Institution, Department of Invertebrate Zoology		
+USNM:IZ	s	National Museum of Natural History, Smithsonian Institution, Department of Invertebrate Zoology	
 USNM:LAB	b	National Museum of Natural History, Smithsonian Institution, Laboratories of Analytical Biology		
 USNM:MAMM	s	National Museum of Natural History, Smithsonian Institution, Division of Mammals		
 USNTC	s	U.S. National Tick Collection			
