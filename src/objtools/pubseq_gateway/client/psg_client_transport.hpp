@@ -463,7 +463,6 @@ class http2_session
 {
 private:
     io_thread* m_io;
-    mpmc_bounded_queue<std::shared_ptr<http2_request>> m_req_queue;
     CUvTcp m_tcp;
     connection_state_t m_connection_state;
     session_state_t m_session_state;
@@ -552,7 +551,6 @@ public:
     }
     void debug_print_counts();
 
-    bool add_request_move(std::shared_ptr<http2_request>& req);
     void process_requests();
     void on_timer();
 
@@ -571,7 +569,6 @@ private:
     std::atomic<io_thread_state_t> m_state;
     std::atomic_bool m_shutdown_req;
     std::vector<std::unique_ptr<http2_session>> m_sessions;
-    std::atomic<size_t> m_cur_idx;
     CUvLoop *m_loop;
     uv_async_t m_wake;
     uv_timer_t m_timer;
@@ -598,10 +595,11 @@ private:
     }
     void execute(uv_sem_t* sem);
 public:
+    mpmc_bounded_queue<std::shared_ptr<http2_request>> m_req_queue;
+
     io_thread(uv_sem_t &sem, CNetService service) :
         m_state(io_thread_state_t::initialized),
         m_shutdown_req(false),
-        m_cur_idx(0),
         m_loop(nullptr),
         m_wake({0}),
         m_timer({0}),

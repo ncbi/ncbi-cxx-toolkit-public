@@ -832,13 +832,6 @@ void http2_session::connect_cb(uv_connect_t *req, int status)
             auto error = SPSG_Error::LibUv(status, "failed to connect");
             purge_pending_requests(error);
 
-            shared_ptr<http2_request> http2_req;
-            while (m_req_queue.pop_move(http2_req)) {
-                assert(http2_req.get());
-                ERR_POST(Trace << this << ": drain_queue: req: " << http2_req.get());
-                http2_req->error(error);
-            }
-
             close_tcp();
             process_completion_list();
             return;
@@ -1144,21 +1137,6 @@ void http2_session::add_to_completion(shared_ptr<SPSG_Reply::TTS>& reply, shared
     m_completion_list.emplace(reply, queue);
 }
 
-bool http2_session::add_request_move(shared_ptr<http2_request>& req)
-{
-    if (!m_io || m_io->get_state() != io_thread_state_t::started)
-        EException::raise("IO thread is dead");
-
-    bool rv = true;
-    req->on_queue(this);
-    rv = m_req_queue.push_move(req);
-    if (rv)
-        m_io->wake();
-    else
-        req->on_queue(nullptr);
-    return rv;
-}
-
 #define MAKE_NV(NAME, VALUE, VALUELEN)                                         \
   {                                                                            \
     (uint8_t *)NAME, (uint8_t *)VALUE, sizeof(NAME) - 1, VALUELEN,             \
@@ -1201,10 +1179,12 @@ void http2_session::process_requests()
         while (m_num_requests < m_max_streams + 16) {
             req = nullptr;
             try {
-                if (!m_req_queue.pop_move(req)) {
+                if (!m_io->m_req_queue.pop_move(req)) {
                     ERR_POST(Trace << this << ": process_requests: no more req in queue");
                     break;
                 }
+
+                req->on_queue(this);
 
                 if (req->get_canceled())
                     continue;
@@ -1368,21 +1348,18 @@ void io_thread::on_timer(uv_timer_t*)
 
 bool io_thread::add_request_move(shared_ptr<http2_request>& req)
 {
-    if (m_sessions.size() == 0 || m_state != io_thread_state_t::started)
-        EException::raise("No sessions started");
+    if (m_state != io_thread_state_t::started)
+        EException::raise("IO thread is dead");
 
-    const auto max = m_sessions.size();
+    auto rv = m_req_queue.push_move(req);
 
-    for (auto i = max; i; --i) {
-        auto idx = m_cur_idx.load();
-        auto rv = m_sessions[idx]->add_request_move(req);
-        m_cur_idx.compare_exchange_weak(idx, (idx + 1) % max, memory_order_release, memory_order_relaxed);
-
-        if (rv) return true;
+    if (rv) {
+        wake();
+    } else {
+        uv_async_send(&m_wake);
     }
 
-    uv_async_send(&m_wake);
-    return false;
+    return rv;
 }
 
 void io_thread::run()
