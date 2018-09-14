@@ -86,19 +86,41 @@ extern "C" {
 
 /** Set the MT critical section lock/unlock handler -- to be used by the core
  * internals for protection of internal static variables and other MT-sensitive
- * code from being accessed/changed by several threads simultaneously.
- * It is also to fully protect the core log handler, including its setting up,
- * and its callback and cleanup functions.
- * @li <b>NOTES:</b>  This function itself is NOT MT-safe!
- * @li <b>NOTES:</b>  If there is an active CORE MT-lock set already, which
- *     is different from the new one, then MT_LOCK_Delete() is called for
- *     the old lock (i.e. the one being replaced).
+ * code from being accessed/changed by several threads simultaneously. It is
+ * also to fully protect the core log handler and core regirsty, including
+ * their setup, as well as callback and cleanup functions.
+ * @warning This function itself is NOT MT-safe!
+ * @warning If there is an active CORE MT-lock set already, which is different
+ *          from the new one, then MT_LOCK_Delete() is called for the old lock
+ *          (i.e. the one being replaced).
+ * @note The following are the minimal requirements for the lock that is to be
+ * used as a CORE MT_LOCK in the CONNECT library:
+ * - if locking for read is available, then the lock must allow one nested lock
+ * for read when it has been already locked for write (naturally, by the same
+ * thread);
+ * - if locking for read is not available (i.e. the read lock is implemented as
+ * a (write) lock), the lock must allow recursive locking (by the same thread)
+ * to the depth of 2.
  * @param lk
  *  MT-Lock as created by MT_LOCK_Create
  * @sa
- *  MT_LOCK_Create, CORE_SetLOG
+ *  MT_LOCK_Create, MT_LOCK_Delete, CORE_SetLOG, CORE_SetREG
  */
 extern NCBI_XCONNECT_EXPORT void    CORE_SetLOCK(MT_LOCK lk);
+
+
+/** Get the lock handle that is to be used by the core internals.
+ * @return
+ *  MT_LOCK handle of an active lock, or NULL if no lock is currently set
+ * @warning
+ *  You may not delete the handle with MT_LOCK_Delete();  use CORE_SetLOCK(0)
+ *  instead (or replace it with a different MT_LOCK).
+ * @note
+ *  CONNECT may provide a default lock implementation on most platforms, so the
+ *  returned lock may be non-NULL even without a prior call to CORE_SetLOCK().
+ * @sa
+ *  CORE_SetLOCK
+ */
 extern NCBI_XCONNECT_EXPORT MT_LOCK CORE_GetLOCK(void);
 
 
@@ -156,23 +178,26 @@ extern NCBI_XCONNECT_EXPORT MT_LOCK CORE_GetLOCK(void);
 
 /** Set the log handle (no logging if "lg" is passed zero) -- to be used by
  * the core internals.
- * If there is an active log handler set already, and it is different from
- * the new one, then LOG_Delete is called for the old logger (that is,
- * the one being replaced).
+ * If there is an active log handler set already, and it is different from the
+ * new one, then LOG_Delete is called for the old logger (that is, the one
+ * being replaced).
  * @param lg
  *  LOG handle as returned by LOG_Create, or NULL to stop logging
  * @sa
- *  LOG_Create, LOG_Delete, CORE_GetLOG
+ *  LOG_Create, LOG_Delete, CORE_GetLOG, CORE_SetLOCK
  */
 extern NCBI_XCONNECT_EXPORT void CORE_SetLOG(LOG lg);
 
 
-/** Get the log handle which is be used by the core internals.
+/** Get the log handle that is to be used by the core internals.
  * @return
- *  LOG handle as set by CORE_SetLOG or NULL if no logging is currently active
- *  @li <b>NOTE:</b>  You may not delete the handle (by means of LOG_Delete).
+ *  LOG handle as previously set by CORE_SetLOG() or NULL if no logging is
+ *  currently active
+ * @warning
+ *  You may not delete the handle by means of LOG_Delete();  use CORE_SetLOG(0)
+ *  instead (or replace it with a different LOG).
  * @sa
- *  CORE_SetLOG, LOG_Create, LOG_Delete
+ *  CORE_SetLOG
  */
 extern NCBI_XCONNECT_EXPORT LOG  CORE_GetLOG(void);
 
@@ -266,8 +291,8 @@ extern NCBI_XCONNECT_EXPORT TLOG_FormatFlags CORE_SetLOGFormatFlags
  *     <raw_data>
  *     \n----- [END] Raw Data -----\n
  *
- * @note The returned string must be deallocated using "free()".
- *
+ * @note
+ *  The returned string must be deallocated using "free()".
  * @param mess
  *  Broken down message
  * @param flags
@@ -327,9 +352,10 @@ extern NCBI_XCONNECT_EXPORT void LOG_ToFILE
  *  [in]    error description (if NULL, then use "strerror(error)" if error!=0)
  * @return
  *  Always non-NULL message (perhaps, "") and re-set "*dynamic" as appropriate.
- * @li <b>NOTE:</b>  this routine may call "free(message)" if it had
- * to reallocate the original message that had been allocated dynamically
- * before the call (and "*dynamic" thus had been passed non-zero).
+ * @warning
+ *  This routine may call "free(message)" if it had to reallocate the original
+ *  message that had been allocated dynamically before the call (and "*dynamic"
+ *  thus had been passed non-zero).
  * @sa
  *  LOG_ComposeMessage
  */
@@ -348,20 +374,22 @@ extern NCBI_XCONNECT_EXPORT const char* NcbiMessagePlusError
 
 /** Set the registry (no registry if "rg" is passed zero) -- to be used by
  * the core internals.
- * If there is an active registry set already, and it is different from
- * the new one, then REG_Delete() is called for the old(replaced) registry.
+ * If there is an active registry set already, and it is different from the new
+ * one, then REG_Delete() is called for the old(replaced) registry.
  * @param rg
  *  Registry handle as returned by REG_Create()
  * @sa
- *  REG_Create, CORE_GetREG
+ *  REG_Create, REG_Delete, CORE_GetREG, CORE_SetLOCK
  */
 extern NCBI_XCONNECT_EXPORT void CORE_SetREG(REG rg);
 
 
-/** Get the registry previously set by CORE_SetREG().
+/** Get the registry that is to be used by the core internals.
  * @return
- *  Registry handle.
- *  <li>NOTE:</li> You may not delete the handle with REG_Delete().
+ *  Registry handle as previously set by CORE_SetREG() or NULL if none
+ * @warning
+ *  You may not delete the handle with REG_Delete();  use CORE_SetREG(0)
+ *  instead (or replace it with a different REG).
  * @sa
  *  CORE_SetREG
  */

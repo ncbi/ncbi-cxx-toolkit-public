@@ -164,13 +164,8 @@ extern NCBI_XCONNECT_EXPORT const char* IO_StatusStr(EIO_Status status);
 
 
 /** Lock handle -- keeps all data needed for the locking and for the cleanup.
- * The following are the minimal requirements for the lock:
- * - if lock for read is available, then the lock must allow one nested lock
- * for read when it has been already locked for write (naturally, by the
- * same thread);
- * - if lock for read is not available (i.e. the read lock is implemented
- * as a write lock), the lock must allow recursive locking (by the same
- * thread) of the depth of 2.
+ * @sa
+ *   CORE_SetLOCK
  */
 struct MT_LOCK_tag;
 typedef struct MT_LOCK_tag* MT_LOCK;
@@ -199,10 +194,10 @@ typedef enum {
  * @return
  *  Non-zero value if the requested operation was successful.
  * @note
- *  The "-1" value is reserved for unset handler;  you also may want to
- *  return "-1" if your locking function does no locking, and you don't
- *  consider it as an error, but still want the caller to be aware of this
- *  "rightful non-doing" as opposed to the "rightful doing".
+ *  The "-1" value is reserved for unset handler;  you also may want to return
+ *  "-1" if your locking function does no locking, and you don't consider it as
+ *  an error, but still want the caller to be aware of this "rightful
+ *  non-doing" as opposed to the "rightful doing".
  * @sa
  *   MT_LOCK_Create, MT_LOCK_Delete
  */
@@ -285,6 +280,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ MT_LOCK_DoInternal
 
 
 /** Log handle -- keeps all data needed for the logging and for the cleanup.
+ * @sa
+ *   CORE_SetLOG
  */
 struct LOG_tag;
 typedef struct LOG_tag* LOG;
@@ -511,6 +508,8 @@ extern NCBI_XCONNECT_EXPORT void LOG_WriteInternal
 
 
 /** Registry handle (keeps all data needed for the registry get/set/cleanup).
+ * @sa
+ *   CORE_SetReg
  */
 struct REG_tag;
 typedef struct REG_tag* REG;
