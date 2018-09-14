@@ -45,7 +45,7 @@ typedef intr::set_base_hook<intr::tag<SPrtyExecMap_tag>,
 
 struct SPrtyExecQueue : public TPrtyExecMapHook
 {
-    Uint1 priority;
+    Uint4 priority;
     Uint4 exec_time;
     TSrvTaskList tasks;
 
@@ -105,6 +105,7 @@ struct SSchedInfo
 static Uint4 s_MaxTasksCoef = 1;
 static Uint4 s_MaxTaskLatency = 500;
 static int s_IdleStopTimeout = 300;
+static Uint4 s_TaskPriorityDefault = 1;
 
 
 extern SSrvThread** s_Threads;
@@ -114,7 +115,7 @@ extern CSrvTime s_JiffyTime;
 
 
 static SPrtyExecQueue*
-s_GetExecQueue(TPrtyExecMap& prty_map, Uint1 priority)
+s_GetExecQueue(TPrtyExecMap& prty_map, Uint4 priority)
 {
     TPrtyExecMap::iterator it = prty_map.find(priority, SPrtyExecCompare());
     if (it != prty_map.end())
@@ -566,10 +567,12 @@ ConfigureScheduler(const CNcbiRegistry* reg, CTempString section)
 {
     s_MaxTaskLatency = Uint4(reg->GetInt(section, "max_task_delay", 500));
     s_IdleStopTimeout = reg->GetInt(section, "idle_thread_stop_timeout", 300);
+    s_TaskPriorityDefault = reg->GetInt(section, "task_priority_default", 1);
 }
 
-bool ReConfig_Scheduler(const CTempString&, const CNcbiRegistry&, string&)
+bool ReConfig_Scheduler(const CTempString& section, const CNcbiRegistry& reg, string&)
 {
+    s_TaskPriorityDefault = reg.GetInt(section, "task_priority_default", 1);
     return true;
 }
 
@@ -578,6 +581,12 @@ void WriteSetup_Scheduler(CSrvSocketTask& task)
     string is("\": "), eol(",\n\"");
     task.WriteText(eol).WriteText("max_task_delay").WriteText(is ).WriteNumber( s_MaxTaskLatency);
     task.WriteText(eol).WriteText("idle_thread_stop_timeout").WriteText(is ).WriteNumber( s_IdleStopTimeout);
+    task.WriteText(eol).WriteText("task_priority_default").WriteText(is).WriteNumber(s_TaskPriorityDefault);
+}
+
+Uint4 GetDefaultTaskPriority(void)
+{
+    return s_TaskPriorityDefault;
 }
 
 void

@@ -337,14 +337,14 @@ CSrvDiagMsg::PrintParam(CTempString name, Uint4 value)
 }
 
 
-inline Uint1
+inline Uint4
 CSrvTask::GetPriority(void)
 {
     return m_Priority;
 }
 
 inline void
-CSrvTask::SetPriority(Uint1 prty)
+CSrvTask::SetPriority(Uint4 prty)
 {
     m_Priority = prty;
 }

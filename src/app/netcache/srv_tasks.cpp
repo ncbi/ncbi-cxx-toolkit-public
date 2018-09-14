@@ -61,7 +61,7 @@ CSrvTask::CSrvTask(void)
     : m_LastThread(0),
       m_TaskFlags(0),
       m_LastActive(CSrvTime::CurSecs()),
-      m_Priority(1),
+      m_Priority(GetDefaultTaskPriority()),
       m_DiagCtx(NULL),
       m_DiagChain(NULL),
       m_DiagChainSize(0),

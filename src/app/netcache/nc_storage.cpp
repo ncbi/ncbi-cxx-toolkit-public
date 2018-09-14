@@ -86,6 +86,7 @@ static const char* kNCStorage_DiskCriticalParam = "critical_disk_free_limit";
 static const char* kNCStorage_MinRecNoSaveParam = "min_rec_no_save_period";
 static const char* kNCStorage_FailedWriteSize   = "failed_write_blob_key_count";
 static const char* kNCStorage_MaxBlobSizeStore  = "max_blob_size_store";
+static const char* kNCStorage_WbMemRelease      = "task_priority_wb_memrelease";
 
 
 // storage file type signatures
@@ -284,6 +285,7 @@ static CDiskFlusher* s_DiskFlusher = nullptr;
 static CRecNoSaver* s_RecNoSaver = nullptr;
 static CSpaceShrinker* s_SpaceShrinker = nullptr;
 static CExpiredCleaner* s_ExpiredCleaner = nullptr;
+Uint4 s_TaskPriorityWbMemRelease = 10;
 
 
 
@@ -581,6 +583,7 @@ s_ReadVariableParams(const CNcbiRegistry& reg)
     int to1 = reg.GetInt(kNCStorage_RegSection, "write_back_timeout_startup", to2);
     SetWBWriteTimeout( CNCServer::IsInitiallySynced() ? to2 : to1, to2);
     SetWBFailedWriteDelay(reg.GetInt(kNCStorage_RegSection, "write_back_failed_delay", 2));
+    s_TaskPriorityWbMemRelease = reg.GetInt(kNCStorage_RegSection, kNCStorage_WbMemRelease, 10);
 
     int failed_write = reg.GetInt(kNCStorage_RegSection, kNCStorage_FailedWriteSize, 0);
     CNCBlobAccessor::SetFailedWriteCount((Uint4)failed_write);
@@ -1383,6 +1386,7 @@ void CNCBlobStorage::WriteSetup(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("write_back_hard_size_limit").WriteText(is ).WriteNumber( GetWBHardSizeLimit());
     task.WriteText(eol).WriteText("write_back_timeout"        ).WriteText(is ).WriteNumber( GetWBWriteTimeout());
     task.WriteText(eol).WriteText("write_back_failed_delay"   ).WriteText(is ).WriteNumber( GetWBFailedWriteDelay());
+    task.WriteText(eol).WriteText(kNCStorage_WbMemRelease).WriteText(is).WriteNumber(s_TaskPriorityWbMemRelease);
     task.WriteText(eol).WriteText(kNCStorage_FailedWriteSize  ).WriteText(is ).WriteNumber( CNCBlobAccessor::GetFailedWriteCount());
 }
 

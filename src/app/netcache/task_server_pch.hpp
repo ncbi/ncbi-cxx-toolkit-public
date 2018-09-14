@@ -85,3 +85,4 @@
 #include "srv_tasks.hpp"
 #include "srv_sockets.hpp"
 #include "srv_inlines.hpp"
+#include "scheduler.hpp"

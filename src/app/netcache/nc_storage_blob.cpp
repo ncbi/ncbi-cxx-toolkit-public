@@ -51,6 +51,7 @@ struct SWriteBackData
     SWriteBackData(void);
 };
 
+extern Uint4 s_TaskPriorityWbMemRelease;
 static size_t s_WBSoftSizeLimit = NCBI_CONST_UINT8(2000000000);
 static size_t s_WBHardSizeLimit = NCBI_CONST_UINT8(3000000000);
 static int s_WBWriteTimeout = 1000;
@@ -1168,6 +1169,7 @@ SNCBlobVerData::RequestMemRelease(void)
     need_mem_release = true;
     wb_mem_lock.Unlock();
 
+    SetPriority(s_TaskPriorityWbMemRelease);
     SetRunnable();
     return mem_size;
 }

@@ -108,7 +108,7 @@ static string   s_CopyDelayLogFile;
 static FILE*    s_CopyDelayLog = NULL;
 static Uint1    s_CntActiveSyncs = 4;
 static Uint1    s_MaxSyncsOneServer = 2;
-static Uint1    s_SyncPriority = 10;
+static Uint4    s_TaskPrioritySync = 10;
 static Uint2    s_MaxPeerTotalConns = 100;
 static Uint2    s_MaxPeerBGConns = 50;
 static Uint2    s_CntErrorsToThrottle = 10;
@@ -188,7 +188,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         s_TimeRndShare = s_SlotRndShare / s_CntSlotBuckets + 1;
         s_CntActiveSyncs = reg.GetInt(kNCReg_NCPoolSection, "max_active_syncs", 4);
         s_MaxSyncsOneServer = reg.GetInt(kNCReg_NCPoolSection, "max_syncs_one_server", 2);
-        s_SyncPriority = reg.GetInt(kNCReg_NCPoolSection, "deferred_priority", 10);
+        s_TaskPrioritySync = reg.GetInt(kNCReg_NCPoolSection, "task_priority_sync", 10);
         s_MaxPeerTotalConns = reg.GetInt(kNCReg_NCPoolSection, "max_peer_connections", 100);
         s_MaxPeerBGConns = reg.GetInt(kNCReg_NCPoolSection, "max_peer_bg_connections", 50);
         s_CntErrorsToThrottle = reg.GetInt(kNCReg_NCPoolSection, "peer_errors_for_throttle", 10);
@@ -551,7 +551,7 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("cnt_slot_buckets"           ).WriteText(is).WriteNumber(s_CntSlotBuckets);
     task.WriteText(eol).WriteText("max_active_syncs"           ).WriteText(is).WriteNumber(s_CntActiveSyncs);
     task.WriteText(eol).WriteText("max_syncs_one_server"       ).WriteText(is).WriteNumber(s_MaxSyncsOneServer);
-    task.WriteText(eol).WriteText("deferred_priority"          ).WriteText(is).WriteNumber(s_SyncPriority);
+    task.WriteText(eol).WriteText("task_priority_sync"         ).WriteText(is).WriteNumber(s_TaskPrioritySync);
     task.WriteText(eol).WriteText("max_peer_connections"       ).WriteText(is).WriteNumber(s_MaxPeerTotalConns);
     task.WriteText(eol).WriteText("max_peer_bg_connections"    ).WriteText(is).WriteNumber(s_MaxPeerBGConns);
     task.WriteText(eol).WriteText("peer_errors_for_throttle"   ).WriteText(is).WriteNumber(s_CntErrorsToThrottle);
@@ -943,10 +943,10 @@ CNCDistributionConf::GetMaxSyncsOneServer(void)
     return s_MaxSyncsOneServer;
 }
 
-Uint1
+Uint4
 CNCDistributionConf::GetSyncPriority(void)
 {
-    return CNCServer::IsInitiallySynced()? s_SyncPriority: 1;
+    return CNCServer::IsInitiallySynced()? s_TaskPrioritySync : GetDefaultTaskPriority();
 }
 
 Uint2

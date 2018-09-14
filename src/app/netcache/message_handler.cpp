@@ -3039,7 +3039,7 @@ CNCMessageHandler::x_CleanCmdResources(void)
     ++m_CntCmds;
 
     if (x_IsFlagSet(fNeedsLowerPriority))
-        SetPriority(1);
+        SetPriority(GetDefaultTaskPriority());
 
     m_SendBuff.reset();
     ReleaseDiagCtx();

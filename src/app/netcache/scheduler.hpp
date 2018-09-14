@@ -43,6 +43,7 @@ struct SSrvThread;
 void ConfigureScheduler(const CNcbiRegistry* reg, CTempString section);
 bool ReConfig_Scheduler(const CTempString& section, const CNcbiRegistry& new_reg, string& err_message);
 void WriteSetup_Scheduler(CSrvSocketTask& task);
+Uint4 GetDefaultTaskPriority(void);
 void AssignThreadSched(SSrvThread* thr);
 void ReleaseThreadSched(SSrvThread* thr);
 void SchedCheckOverloads(void);

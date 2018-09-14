@@ -145,8 +145,8 @@ public:
     /// things like priority inheritance from one task to the one created
     /// by it, priority combination in CSrvTransitionTask and probably some
     /// other mechanisms to work exactly as expected.
-    void SetPriority(Uint1 prty);
-    Uint1 GetPriority(void);
+    void SetPriority(Uint4 prty);
+    Uint4 GetPriority(void);
 
     /// Create new diagnostic context for this task to work in. See comments
     /// to SetDiagCtx() on the effect of that.
@@ -211,7 +211,7 @@ public:
     /// InternalRunSlice() was called last time.
     int m_LastActive;
     /// Task's priority.
-    Uint1 m_Priority;
+    Uint4 m_Priority;
     /// Current diagnostic context for this task.
     CRequestContext* m_DiagCtx;
     /// Nested diagnostic contexts of this task. This variable is not NULL

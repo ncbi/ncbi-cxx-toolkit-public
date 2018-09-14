@@ -108,7 +108,7 @@ public:
     static const vector<Uint2>& GetSelfSlots(void);
     static Uint1 GetCntActiveSyncs(void);
     static Uint1 GetMaxSyncsOneServer(void);
-    static Uint1 GetSyncPriority(void);
+    static Uint4 GetSyncPriority(void);
     static Uint2 GetMaxPeerTotalConns(void);
     static Uint2 GetMaxPeerBGConns(void);
     static Uint2 GetCntErrorsToThrottle(void);

@@ -256,7 +256,7 @@ void
 CNCActiveHandler::SetReservedForBG(bool value)
 {
     m_ReservedForBG = value;
-    SetPriority(value? CNCDistributionConf::GetSyncPriority(): 1);
+    SetPriority(value? CNCDistributionConf::GetSyncPriority(): GetDefaultTaskPriority());
 }
 
 bool
