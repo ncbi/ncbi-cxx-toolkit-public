@@ -1626,6 +1626,7 @@ xid_wgsdb needs xid_utils
 ximage needs xncbi
 ximage needs3party $(IMAGE_LIBS)
 xlinear_prog needs xncbi
+xlogging needs xncbi
 xlsxwriter needs $(Z_LIB)
 xlsxwriter needs3party $(ORIG_LIBS)
 xlsxwriter needs3party $(Z_LIBS)
@@ -1649,7 +1650,6 @@ xngalign needs $(BLAST_INPUT_LIBS)
 xngalign needs xalgoalignnw
 xngalign needs xalgoalignutil
 xngalign needs xmergetree
-xobjedit needs $(OBJREAD_LIBS)
 xobjedit needs mlacli
 xobjedit needs taxon3
 xobjedit needs valid
