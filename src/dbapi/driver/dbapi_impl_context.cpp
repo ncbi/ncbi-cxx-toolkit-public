@@ -394,7 +394,7 @@ void CDriverContext::CloseUnusedConnections(const string&   srv_name,
     TConnPool::value_type con;
 
     // close all connections first
-    NON_CONST_ITERATE(TConnPool, it, m_NotInUse) {
+    ERASE_ITERATE(TConnPool, it, m_NotInUse) {
         con = *it;
 
         if ( !srv_name.empty()  && srv_name != con->ServerName()
@@ -403,7 +403,6 @@ void CDriverContext::CloseUnusedConnections(const string&   srv_name,
         if((!pool_name.empty()) && pool_name.compare(con->PoolName())) continue;
 
         it = m_NotInUse.erase(it);
-        --it;
         x_AdjustCounts(con, -1);
         delete con;
         if (--max_closings == 0) {
