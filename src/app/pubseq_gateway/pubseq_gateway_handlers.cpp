@@ -66,7 +66,6 @@ static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 static vector<pair<string, EServIncludeData>>   kGetFlagParams =
 {
     make_pair("no_tse", fServNoTSE),
-    make_pair("fast_info", fServFastInfo),
     make_pair("whole_tse", fServWholeTSE),
     make_pair("orig_tse", fServOrigTSE)
 
