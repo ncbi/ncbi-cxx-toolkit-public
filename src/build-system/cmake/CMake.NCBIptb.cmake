@@ -92,6 +92,10 @@ function(NCBI_add_root_subdirectory)
 
         if(NOT "${_allowedprojects}" STREQUAL "")
             message("Collecting projects...")
+            if (NOT IS_ABSOLUTE ${NCBI_DATATOOL})
+                list(APPEND _allowedprojects ${NCBI_DATATOOL})
+            endif()
+            list(REMOVE_DUPLICATES _allowedprojects)
             foreach(_prj IN LISTS _allowedprojects)
                 NCBI_internal_collect_dependencies(${_prj})
                 get_property(_prjdeps GLOBAL PROPERTY NCBI_PTBPROP_DEPS_${_prj})
@@ -1393,6 +1397,15 @@ endif()
 
     target_include_directories(${NCBI_PROJECT} PRIVATE ${NCBITMP_INCLUDES})
     target_compile_definitions(${NCBI_PROJECT} PRIVATE ${NCBITMP_DEFINES})
+
+if(OFF)
+# this does not seem to have any effect
+    if (XCODE AND NOT BUILD_SHARED_LIBS)
+        set_target_properties(${NCBI_PROJECT} PROPERTIES XCODE_ATTRIBUTE_STANDARD_C_PLUS_PLUS_LIBRARY_TYPE "static")
+        set_target_properties(${NCBI_PROJECT} PROPERTIES XCODE_ATTRIBUTE_GCC_SYMBOLS_PRIVATE_EXTERN "YES")
+    endif()
+endif()
+
 #message("target_link_libraries: ${NCBI_PROJECT}     ${NCBITMP_NCBILIB} ${NCBITMP_EXTLIB}")
     target_link_libraries(     ${NCBI_PROJECT}         ${NCBITMP_NCBILIB} ${NCBITMP_EXTLIB})
 
