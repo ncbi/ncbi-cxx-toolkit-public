@@ -50,6 +50,7 @@ public:
         eRequestAlreadyPostponed,
         eRequestCannotBePostponed,
         eRequestNotPostponed,
+        eConnectionClosed,
         eRequestAlreadyFinished,
         eConnectionNotAssigned,
         ePendingRecNotAssigned,

@@ -356,6 +356,9 @@ public:
         if (!m_Postponed)
             NCBI_THROW(CPubseqGatewayException, eRequestNotPostponed,
                        "Request has not been postponed");
+        if (m_HttpConn->IsClosed())
+            NCBI_THROW(CPubseqGatewayException, eConnectionClosed,
+                       "Request handling can not be started after connection was closed");
         m_PendingRec->Start(*this);
     }
 
@@ -741,6 +744,7 @@ private:
     using reply_list_iterator_t = typename std::list<CHttpReply<P>>::iterator;
     void CancelAll(void)
     {
+        CancelBacklog();
         while (!m_Pending.empty()) {
             MaintainFinished();
             for (auto &  it: m_Pending) {
@@ -750,7 +754,6 @@ private:
                 }
             }
             MaintainFinished();
-            MaintainBacklog();
         }
     }
 
@@ -796,6 +799,13 @@ private:
             m_Pending.splice(m_Pending.cend(), m_Backlog, it);
             it->PostponedStart();
         }
+    }
+
+    void CancelBacklog(void)
+    {
+        for (auto& it : m_Backlog)
+            it.CancelPending();
+        m_Finished.splice(m_Finished.cend(), m_Backlog);
     }
 };
 
