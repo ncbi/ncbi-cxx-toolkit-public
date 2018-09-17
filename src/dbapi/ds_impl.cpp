@@ -66,7 +66,9 @@ CDataSource::~CDataSource()
 
         // We won't delete context unless all connections are closed.
         // This will cause a memory leak but it also will prevent from
-        // accessing an already freed memory.
+        // accessing an already freed memory.  Closing unused connections
+        // before checking is fair game, though!
+        m_context->CloseUnusedConnections();
         if (m_context->NofConnections() == 0) {
             delete m_context;
         }
