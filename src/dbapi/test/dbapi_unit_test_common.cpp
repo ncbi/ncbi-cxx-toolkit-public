@@ -147,7 +147,8 @@ GetDS(void)
     return *s_DS;
 }
 
-bool CommonInit(void)
+static
+bool s_CommonInit(void)
 {
     // Using old log format ...
     // Show time (no msec.) ...
@@ -220,8 +221,8 @@ bool CommonInit(void)
     return true;
 }
 
-void
-CommonFini(void)
+static
+void s_CommonFini(void)
 {
     if (s_DS) {
         GetDM().DestroyDs(s_DS);
@@ -247,7 +248,7 @@ GetConnection(void)
 ///////////////////////////////////////////////////////////////////////////////
 NCBITEST_AUTO_INIT()
 {
-    if (!CommonInit())
+    if (!s_CommonInit())
         return;
 
     s_ResetConnection();
@@ -313,7 +314,7 @@ NCBITEST_AUTO_FINI()
 //     drv_context->PopCntxMsgHandler( m_ErrHandler.get() );
 
     s_Conn.reset(NULL);
-    CommonFini();
+    s_CommonFini();
 }
 
 

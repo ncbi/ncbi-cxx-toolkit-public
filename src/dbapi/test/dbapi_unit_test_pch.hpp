@@ -240,10 +240,6 @@ size_t GetNumOfRecords(const unique_ptr<ICallableStatement>& auto_stmt);
 Int8 GetIdentity(const unique_ptr<IStatement>& auto_stmt);
 
 
-bool CommonInit(void);
-void CommonFini(void);
-
-
 ///////////////////////////////////////////////////////////////////////////
 class CDBSetConnParams : public CDBConnParamsDelegate
 {
