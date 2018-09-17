@@ -122,7 +122,6 @@
 #include <objtools/unit_test_util/unit_test_util.hpp>
 #include <objtools/edit/cds_fix.hpp>
 
-
 #include <common/test_assert.h>  /* This header must go last */
 
 
@@ -893,6 +892,18 @@ BOOST_AUTO_TEST_CASE(Test_GetNewProtId)
     CRef<objects::CSeq_id> new_prot_id = edit::GetNewProtId(bsh, offset, id_label);
     BOOST_CHECK_EQUAL(id_label, "gnl|TEST:nuc_1");
     BOOST_CHECK_EQUAL(offset, 1);
+
+    CRef<CSeq_entry> nuc2 = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_id> nuc_id2(new CSeq_id());
+    nuc_id2->SetGeneral().SetDb("TEST2");
+    nuc_id2->SetGeneral().SetTag().SetStr(string(50, 'A'));
+    unit_test_util::ChangeId(nuc2, nuc_id2);
+    CSeq_entry_Handle seh2 = scope.AddTopLevelSeqEntry(*nuc2);
+    objects::CBioseq_Handle bsh2 = seh2.GetSeq();
+    id_label.clear();
+    CRef<objects::CSeq_id> new_prot_id2 = edit::GetNewProtId(bsh2, offset, id_label);
+    BOOST_CHECK_EQUAL(id_label, "gnl|TEST2:C8EA47E0_1");
+    BOOST_CHECK_EQUAL(offset, 1);
 }
 
 BOOST_AUTO_TEST_CASE(Test_GetNewProtIdFromExistingProt)
@@ -910,6 +921,16 @@ BOOST_AUTO_TEST_CASE(Test_GetNewProtIdFromExistingProt)
     string id_label;
     vector<CRef<objects::CSeq_id> > new_prot_ids = edit::GetNewProtIdFromExistingProt(bsh, offset, id_label);
     BOOST_CHECK_EQUAL(id_label, "lcl|prot_1");
+    BOOST_CHECK_EQUAL(offset, 1);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    id_label.clear();
+    prot_id->SetLocal().SetStr(string(50, 'A'));
+    unit_test_util::ChangeId(prot, prot_id);
+    seh = scope.AddTopLevelSeqEntry(*prot);
+    bsh = seh.GetSeq();
+    new_prot_ids = edit::GetNewProtIdFromExistingProt(bsh, offset, id_label);
+    BOOST_CHECK_EQUAL(id_label, "lcl|C8EA47E0_1");
     BOOST_CHECK_EQUAL(offset, 1);
 }
 
@@ -1624,6 +1645,7 @@ Seq-loc ::= packed-int {\
     }\
   }\
 }";
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

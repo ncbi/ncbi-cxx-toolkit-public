@@ -31,6 +31,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <util/checksum.hpp>
 #include <objtools/edit/cds_fix.hpp>
 #include <objtools/edit/loc_edit.hpp>
 #include <objects/seq/Seq_descr.hpp>
@@ -1217,8 +1218,11 @@ ApplyCDSFrame::ECdsFrame ApplyCDSFrame::s_GetFrameFromName(const string& name)
     return frame;
 }
 
+#define MAX_ID_LENGTH 50
+
 CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label)
 {
+    CChecksum chksum(CChecksum::eCRC32);
     objects::CSeq_id_Handle hid;
     ITERATE(objects::CBioseq_Handle::TId, it, bsh.GetId()) 
     {
@@ -1233,6 +1237,8 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
 
     CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
     new_id->Assign(*hid.GetSeqId());
+    CRef<objects::CSeq_id> new_id_hash(new objects::CSeq_id());
+    new_id_hash->Assign(*hid.GetSeqId());
     string id_base;
     if (new_id->GetGeneral().IsSetTag())
     {
@@ -1246,23 +1252,36 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
             id_base = new_id->GetGeneral().GetTag().GetStr();
         }
     }
+    chksum.AddLine(id_base);
+    string id_base_hash = chksum.GetHexSum();
+    chksum.Reset();
     new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
+    new_id_hash->SetGeneral().SetTag().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
     objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
-    while (b_found) 
+    objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
+    while (b_found || b_found_hash) 
     {
         offset++;
         new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
         b_found = bsh.GetScope().GetBioseqHandle(*new_id);
+        new_id_hash->SetGeneral().SetTag().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
+        b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
     }
 
     new_id->GetLabel(&id_label, objects::CSeq_id::eBoth);
+    if (new_id->GetGeneral().GetTag().GetStr().size() > MAX_ID_LENGTH)
+    {
+        id_label.clear();
+        new_id_hash->GetLabel(&id_label, objects::CSeq_id::eBoth);
+        return new_id_hash;
+    }
     return new_id;
 }
 
 vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Handle bsh, int &offset, string& id_label)
 {
     vector<CRef<objects::CSeq_id> > ids;
-
+    CChecksum chksum(CChecksum::eCRC32);
 
     ITERATE(objects::CBioseq_Handle::TId, it, bsh.GetId()) 
     {
@@ -1280,22 +1299,35 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
                 {
                     id_base = hid.GetSeqId()->GetLocal().GetStr();
                 }
+                chksum.AddLine(id_base);
+                string id_base_hash = chksum.GetHexSum();
+                chksum.Reset();
                 CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
                 new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
+                CRef<objects::CSeq_id> new_id_hash(new objects::CSeq_id());
+                new_id_hash->SetLocal().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
                 objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
-                while (b_found) 
+                objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
+                while (b_found || b_found_hash) 
                 {
                     offset++;
                     new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
                     b_found = bsh.GetScope().GetBioseqHandle(*new_id);
+                    new_id_hash->SetLocal().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
+                    b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
                 }
-                ids.push_back(new_id);
+                if (new_id->GetLocal().GetStr().size() <= MAX_ID_LENGTH)
+                    ids.push_back(new_id);
+                else
+                    ids.push_back(new_id_hash);
             }
             else if (hid.GetSeqId()->IsGeneral() && hid.GetSeqId()->GetGeneral().IsSetTag()
                      && (!hid.GetSeqId()->GetGeneral().IsSetDb() || hid.GetSeqId()->GetGeneral().GetDb() != "TMSMART"))
             {
                 CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
                 new_id->Assign(*hid.GetSeqId());
+                CRef<objects::CSeq_id> new_id_hash(new objects::CSeq_id());
+                new_id_hash->Assign(*hid.GetSeqId());
                 if (hid.GetSeqId()->GetGeneral().GetTag().IsId())
                 {
                     id_base =  NStr::NumericToString(hid.GetSeqId()->GetGeneral().GetTag().GetId());
@@ -1305,36 +1337,57 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
                 {
                     id_base = hid.GetSeqId()->GetGeneral().GetTag().GetStr();
                 }
+                chksum.AddLine(id_base);
+                string id_base_hash = chksum.GetHexSum();
+                chksum.Reset();
                 new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
                 objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
-                while (b_found) 
+                new_id_hash->SetGeneral().SetTag().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
+                objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
+                while (b_found || b_found_hash) 
                 {
                     offset++;
                     new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
                     b_found = bsh.GetScope().GetBioseqHandle(*new_id);
+                    new_id_hash->SetGeneral().SetTag().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
+                    b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
                 }
-                ids.push_back(new_id);
+                if (new_id->GetGeneral().GetTag().GetStr().size() <= MAX_ID_LENGTH)
+                    ids.push_back(new_id);
+                else
+                    ids.push_back(new_id_hash);
             }
             
         }
     }
-
+    
     
 
     if (ids.empty() && !bsh.GetId().empty())
     {
         string id_base;
         bsh.GetId().front().GetSeqId()->GetLabel(&id_base, objects::CSeq_id::eContent);
+        chksum.AddLine(id_base);
+        string id_base_hash = chksum.GetHexSum();
+        chksum.Reset();
         CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
         new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
         objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
-        while (b_found) 
+        CRef<objects::CSeq_id> new_id_hash(new objects::CSeq_id());
+        new_id_hash->SetLocal().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
+        objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
+        while (b_found || b_found_hash) 
         {
             offset++;
             new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
             b_found = bsh.GetScope().GetBioseqHandle(*new_id);
+            new_id_hash->SetLocal().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
+            b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
         }
-        ids.push_back(new_id);
+        if (new_id->GetLocal().GetStr().size() <= MAX_ID_LENGTH)
+            ids.push_back(new_id);
+        else
+            ids.push_back(new_id_hash);
     }
 
     if (ids.empty())
