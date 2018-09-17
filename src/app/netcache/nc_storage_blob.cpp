@@ -666,6 +666,7 @@ CNCAlerts::Register(CNCAlerts::eDebugCacheFailedMgrAttach,"CNCBlobVerManager cto
 #if __NC_TASKS_MONITOR
     m_TaskName = "CNCBlobVerManager";
 #endif
+    SetPriority(s_TaskPriorityWbMemRelease);
 }
 
 CNCBlobVerManager::~CNCBlobVerManager(void)
@@ -1106,6 +1107,7 @@ SNCBlobVerData::SNCBlobVerData(CNCBlobVerManager* mgr)
 #if __NC_TASKS_MONITOR
     m_TaskName = "SNCBlobVerData";
 #endif
+    SetPriority(s_TaskPriorityWbMemRelease);
 }
 
 SNCBlobVerData::~SNCBlobVerData(void)
@@ -1169,7 +1171,6 @@ SNCBlobVerData::RequestMemRelease(void)
     need_mem_release = true;
     wb_mem_lock.Unlock();
 
-    SetPriority(s_TaskPriorityWbMemRelease);
     SetRunnable();
     return mem_size;
 }
