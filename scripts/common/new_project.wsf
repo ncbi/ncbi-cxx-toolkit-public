@@ -370,7 +370,7 @@
 	                    } else if (oTask.ProjectType == "lib/xsd") {
 	                        cmd += " -fxs " + file_out + ".xsd";
 	                    } else {
-	                        cmd += " -fjs - >" + file_out + ".jsd";
+	                        cmd += " -fjs " + file_out + ".jsd";
 			    }
                         execute(oShell,cmd);
 	                }
