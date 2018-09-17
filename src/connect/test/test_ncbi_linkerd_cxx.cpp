@@ -782,7 +782,7 @@ int CTestNcbiLinkerdCxxApp::Run(void)
     int num_tests = 0, num_errors = 0;
 
     for (auto test : s_Tests) {
-#if defined(_MSC_VER)  ||  !defined(HAVE_LOCAL_LBSM)
+#if !defined(NCBI_OS_LINUX)  ||  !defined(HAVE_LOCAL_LBSM)
         if (test.mapper == eLbsmd) continue;
 #endif
         //if (test.mapper != eLinkerd) continue;
