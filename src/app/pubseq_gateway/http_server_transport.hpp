@@ -803,8 +803,10 @@ private:
 
     void CancelBacklog(void)
     {
-        for (auto& it : m_Backlog)
+        for (auto& it : m_Backlog) {
             it.CancelPending();
+            it.Clear();
+        }
         m_Finished.splice(m_Finished.cend(), m_Backlog);
     }
 };
