@@ -255,4 +255,7 @@ Added missing optional arguments into some commands
 Added extraction from HTTP header and logging of ip,sid, phid parameters.
 Fixed problem in handling consequent POST commands.
 
-
+September 17, 2018
+version 6.14.5 (CXX-10242)
+Added printing immediate client IP on request start.
+Lowered priorities of blob maintenance tasks, made them configurable.
