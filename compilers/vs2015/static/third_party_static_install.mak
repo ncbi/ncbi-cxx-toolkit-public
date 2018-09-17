@@ -20,6 +20,7 @@ THIRD_PARTY_LIBS = \
 	install_lzo        \
 	install_mssql      \
 	install_mysql      \
+	install_nghttp2    \
 	install_openssl    \
 	install_sqlite     \
 	install_sqlite3    \

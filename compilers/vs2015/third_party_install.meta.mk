@@ -73,6 +73,16 @@ MYSQL_SRC = $(MYSQL_BINPATH)\$(INTDIR)
 MYSQL_SRC = $(MYSQL_BINPATH)\$(ALTDIR)
 !ENDIF
 
+NGHTTP2_SRC = $(NGHTTP2_BINPATH)\$(INTDIR)
+!IF !EXIST($(NGHTTP2_SRC))
+NGHTTP2_SRC = $(NGHTTP2_BINPATH)\$(ALTDIR)
+!ENDIF
+
+UV_SRC = $(UV_BINPATH)\$(INTDIR)
+!IF !EXIST($(UV_SRC))
+UV_SRC = $(UV_BINPATH)\$(ALTDIR)
+!ENDIF
+
 OPENSSL_SRC = $(OPENSSL_BINPATH)\$(INTDIR)
 !IF !EXIST($(OPENSSL_SRC))
 OPENSSL_SRC = $(OPENSSL_BINPATH)\$(ALTDIR)
@@ -126,6 +136,7 @@ LIBXSLT_SRC = $(LIBXSLT_BINPATH)\$(INTDIR)
 !IF !EXIST($(LIBXSLT_SRC))
 LIBXSLT_SRC = $(LIBXSLT_BINPATH)\$(ALTDIR)
 !ENDIF
+
 
 VDB_SRC = $(VDB_BINPATH)
 
@@ -207,6 +218,22 @@ $(MSSQL_SRC).mssql_clean :
 install_mssql : $(MSSQL_SRC).mssql_install
 clean_mssql : $(MSSQL_SRC).mssql_clean
 
+
+
+$(NGHTTP2_SRC).nghttp2_install :
+	@echo ---- & echo Copying NGHTTP2 DLLs & $(INSTALL_CMD)
+$(NGHTTP2_SRC).nghttp2_clean :
+	@echo ---- & echo Deleting NGHTTP2 DLLs & $(CLEAN_CMD)
+install_nghttp2 : $(NGHTTP2_SRC).nghttp2_install
+clean_nghttp2 : $(NGHTTP2_SRC).nghttp2_clean
+
+
+$(UV_SRC).uv_install :
+	@echo ---- & echo Copying UV DLLs & $(INSTALL_CMD)
+$(UV_SRC).uv_clean :
+	@echo ---- & echo Deleting UV DLLs & $(CLEAN_CMD)
+install_uv : $(UV_SRC).uv_install
+clean_uv : $(UV_SRC).uv_clean
 
 
 $(OPENSSL_SRC).openssl_install :
@@ -327,4 +354,4 @@ $(MSVCRT_SRC).msvc_install :
 	@echo ---- & echo Copying MSVC DLLs & $(INSTALL_CMD)
 $(MSVCRT_SRC).msvc_clean :
 	@echo ---- & echo Deleting MSVC DLLs & $(CLEAN_CMD)
-	
+

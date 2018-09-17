@@ -20,6 +20,8 @@ THIRD_PARTY_LIBS = \
 	install_lzo        \
 	install_mssql      \
 	install_mysql      \
+	install_nghttp2    \
+	install_uv         \
 	install_openssl    \
 	install_sqlite     \
 	install_sqlite3    \
@@ -38,6 +40,8 @@ CLEAN_THIRD_PARTY_LIBS = \
 	clean_lzo        \
 	clean_mssql      \
 	clean_mysql      \
+	clean_nghttp2    \
+	clean_uv         \
 	clean_openssl    \
 	clean_sqlite     \
 	clean_sqlite3    \
