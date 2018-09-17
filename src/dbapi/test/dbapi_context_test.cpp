@@ -100,11 +100,6 @@ void  CContextThread::OnExit(void)
 }
 
 
-NCBITEST_AUTO_INIT()
-{
-    CommonInit();
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(Test_DriverContext_One)
 {
