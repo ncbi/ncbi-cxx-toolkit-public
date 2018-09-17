@@ -1791,6 +1791,7 @@ void CBioseqIndex::x_InitFeats (void)
             // same as eAdaptive, except also allows external annots
             sel.SetResolveAll();
             sel.SetAdaptiveDepth(true);
+            m_Scope->SetKeepExternalAnnotsForEdit();
 
         } else if (m_Policy == CSeqEntryIndex::eInternal || m_ForceOnlyNearFeats) {
 
@@ -1829,6 +1830,7 @@ void CBioseqIndex::x_InitFeats (void)
                 sel.IncludeNamedAnnotAccession("CDD");
                 sel.AddNamedAnnots("CDD");
             }
+            m_Scope->SetKeepExternalAnnotsForEdit();
         }
 
         // bit flags exclude specific features
