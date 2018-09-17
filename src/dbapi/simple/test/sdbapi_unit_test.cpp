@@ -588,8 +588,8 @@ BOOST_AUTO_TEST_CASE(Test_RequireRowCount)
         query->SetSql("select 1");
         query->Execute();
         query->RequireRowCount(2, kMax_Auto);
-        ERR_POST(Warning
-                 << "Set bad minimum count; expect a library warning.");
+        CQuery::CRowIterator it = query->SingleSet().begin();
+        BOOST_CHECK_THROW(++it, CSDB_Exception);
         BOOST_CHECK_NO_THROW(query.reset());
     } catch (const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -696,6 +696,11 @@ BOOST_AUTO_TEST_CASE(Test_GetTheOnlyRow)
             query->RequireRowCount(10);
 
             BOOST_CHECK_THROW(query->GetTheOnlyRow(), CSDB_Exception);
+            // avoid a "Critical" error
+            try {
+                query->PurgeResults();
+            } catch (CSDB_Exception&) {
+            }
         }}
 
         {{

@@ -60,10 +60,8 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
 
             // Same as before but do not retrieve data ...
             query.Execute();
+            BOOST_CHECK_THROW(query.VerifyDone(), CSDB_Exception);
             query.PurgeResults();
-            query.Execute();
-            ERR_POST(Warning
-                     << "Skipped retrieving data; expect a library warning.");
         }
 
         {
@@ -84,10 +82,8 @@ BOOST_AUTO_TEST_CASE(Test_Procedure)
 
             // Same as before but do not retrieve data ...
             query.ExecuteSP("sp_databases");
+            BOOST_CHECK_THROW(query.VerifyDone(), CSDB_Exception);
             query.PurgeResults();
-            query.ExecuteSP("sp_databases");
-            ERR_POST(Warning
-                     << "Skipped retrieving data; expect a library warning.");
         }
 
         // Test returned recordset ...
@@ -249,8 +245,8 @@ BOOST_AUTO_TEST_CASE(Test_Procedure3)
             }
 
             BOOST_CHECK(query.HasMoreResultSets());
-            ERR_POST(Warning
-                     << "Skipped retrieving data; expect a library warning.");
+            BOOST_CHECK_THROW(query.VerifyDone(), CSDB_Exception);
+            query.PurgeResults();
         }
     }
     catch(const CException& ex) {
