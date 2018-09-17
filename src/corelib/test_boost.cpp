@@ -2444,3 +2444,17 @@ main(int argc, char* argv[])
     NCBI_NS_NCBI::GetDiagContext().SetExitCode(result_code);
     return result_code;
 }
+
+// Provide 'wmain()' too, and convert cmdline args from UNICODE to UTF-8.
+#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
+{
+    std::vector<std::string>  args_storage(argc);
+    std::vector<char*>        args(argc);
+    for (int i = 0; i < argc; ++i) {
+        args_storage[i] = ncbi::CUtf8::AsUTF8(argv[i]);
+        args[i] = const_cast<char*>(args_storage[i].c_str());
+    }
+    return main(argc, args.data());
+}
+#endif
