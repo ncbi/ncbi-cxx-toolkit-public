@@ -86,6 +86,7 @@
 --   }
 -- }
 --
+-- For limitations please check: https://confluence.ncbi.nlm.nih.gov/display/VAR/SViewer+Tooltips
 
 NCBI-dbsnp-tooltips DEFINITIONS ::=
 BEGIN
@@ -111,6 +112,8 @@ DbsnpTooltipSectionValue ::= SEQUENCE {
 DbsnpTooltipSection ::= SEQUENCE {
 
     -- Section name.
+    -- Some of section have predefined names
+    -- for details please check https://confluence.ncbi.nlm.nih.gov/display/VAR/SViewer+Tooltips
     section VisibleString OPTIONAL,
 
     -- A list of values pertaining to this section.
