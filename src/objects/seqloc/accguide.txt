@@ -1206,9 +1206,9 @@ version  1 # of file format
 2+6  MK  gb_dirsub
 2+8  MK  gb_dirsub
 2+10 MK  gb_dirsub
-2+6  ML  gb_other_nuc
-2+8  ML  gb_other_nuc
-2+10 ML  gb_other_nuc
+2+6  ML  gb_con
+2+8  ML  gb_con
+2+10 ML  gb_con
 2+6  MM  gb_other_nuc
 2+8  MM  gb_other_nuc
 2+10 MM  gb_other_nuc
