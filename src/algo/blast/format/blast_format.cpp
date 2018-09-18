@@ -1203,8 +1203,35 @@ void CBlastFormat::x_SetAlignParameters(CDisplaySeqalign& cds)
     cds.SetMasterGeneticCode(m_QueryGenCode);
     cds.SetSlaveGeneticCode(m_DbGenCode);
 }
+         
+                    
 
+static string s_GetMolType(const CBioseq_Handle& bioseqHandle)
+{
+    int molType = bioseqHandle.GetBioseqMolType();    
+    string molTypeString;
 
+    switch(molType) {
+        case CSeq_inst::eMol_not_set:
+            molTypeString = "cdna";
+            break;
+        case CSeq_inst::eMol_dna:   
+            molTypeString = "dna";
+            break;
+        case CSeq_inst::eMol_rna:   
+            molTypeString = "rna";
+            break;
+        case CSeq_inst::eMol_aa:   
+            molTypeString = "amino acid";
+            break;
+        case CSeq_inst::eMol_na:
+            molTypeString = "nucleic acid";
+            break;
+        default:
+            molTypeString = "Unknown";
+    }        
+    return  molTypeString;
+}
 
 void
 CBlastFormat::PrintReport(const blast::CSearchResults& results,
@@ -1213,8 +1240,19 @@ CBlastFormat::PrintReport(const blast::CSearchResults& results,
     if (displayOption == eMetadata) {//Metadata in json format
         CBioseq_Handle bhandle = m_Scope->GetBioseqHandle(*results.GetSeqId(), CScope::eGetBioseq_All);
         CConstRef<CBioseq> bioseq = bhandle.GetBioseqCore();
-        string all_id_str = CAlignFormatUtil::GetSeqIdString(*bioseq, m_BelieveQuery);
+
+        //string seqID = CAlignFormatUtil::GetSeqIdString(*bioseq, m_BelieveQuery);
+        string seqID;
+        CConstRef <CSeq_id> queryID = sequence::GetId(bhandle).GetSeqId();                          
+        CSeq_id::ELabelType labelType = (queryID->IsLocal()) ? CSeq_id::eDefault : CSeq_id::eContent;
+        queryID->GetLabel(&seqID,labelType);
+        
+        
         string seqDescr = CBlastFormatUtil::GetSeqDescrString(*bioseq);
+        seqDescr = seqDescr.empty() ? "None" : seqDescr;
+
+        string molType = s_GetMolType(bhandle);  
+
         int length = 0;
         if(bioseq->IsSetInst() && bioseq->GetInst().CanGetLength()){            
             length = bioseq->GetInst().GetLength();
@@ -1222,9 +1260,11 @@ CBlastFormat::PrintReport(const blast::CSearchResults& results,
         
         CJson_Document doc;
         CJson_Object obj = doc.SetObject();
-        obj.insert("Query",all_id_str);
+        obj.insert("Query",seqID);
         obj.insert("Query_descr",seqDescr);
+        obj.insert("IsQueryLocal",queryID->IsLocal());
         obj.insert("Length",NStr::IntToString(length));
+        obj.insert("Moltype",molType);
         obj.insert("Database",m_DbName);
         string dbTitle;
         try {
