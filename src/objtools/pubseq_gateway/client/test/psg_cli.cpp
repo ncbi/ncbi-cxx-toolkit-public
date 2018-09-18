@@ -69,6 +69,11 @@ public:
     }
 };
 
+struct SAtomicCout : stringstream
+{
+    ~SAtomicCout() { cout << str(); }
+};
+
 class CPsgCliApp: public CNcbiApplication
 {
 private:
@@ -83,8 +88,6 @@ private:
     string m_ResolveIdFile;
     string m_BlobIdFile;
     char m_Delimiter;
-    mutex m_CoutMutex;
-    mutex m_CerrMutex;
     shared_ptr<CPSG_Queue> m_Queue;
 
     void ProcessId(const string& id, TFactory factory);
@@ -93,7 +96,7 @@ private:
     void ProcessReply(shared_ptr<CPSG_Reply> reply);
 
     template <class TReply>
-    void PrintErrors(EPSG_Status status, shared_ptr<TReply> item);
+    void PrintErrors(SAtomicCout& atomic_cout, EPSG_Status status, shared_ptr<TReply> item);
 
     void PrintBlobData(shared_ptr<CPSG_BlobData>);
     void PrintBlobInfo(shared_ptr<CPSG_BlobInfo>);
@@ -212,9 +215,9 @@ void CPsgCliApp::ProcessReply(shared_ptr<CPSG_Reply> reply)
     auto status = reply->GetStatus(CDeadline::eInfinite);
 
     if (status != EPSG_Status::eSuccess) {
-        lock_guard<mutex> lock(m_CoutMutex);
-        cout << "Reply. ERROR: ";
-        PrintErrors(status, reply);
+        SAtomicCout atomic_cout;
+        atomic_cout << "Reply. ERROR: ";
+        PrintErrors(atomic_cout, status, reply);
         return;
     }
 
@@ -308,9 +311,9 @@ void CPsgCliApp::ProcessFile(const string& filename, TFactory factory)
 }
 
 template <class TReply>
-void CPsgCliApp::PrintErrors(EPSG_Status status, shared_ptr<TReply> item)
+void CPsgCliApp::PrintErrors(SAtomicCout& atomic_cout, EPSG_Status status, shared_ptr<TReply> item)
 {
-    cout << static_cast<int>(status);
+    atomic_cout << static_cast<int>(status);
 
     for (;;) {
         auto message = item->GetNextMessage();
@@ -318,83 +321,83 @@ void CPsgCliApp::PrintErrors(EPSG_Status status, shared_ptr<TReply> item)
         if (message.empty()) {
             break;
         } else {
-            cout << "|";
+            atomic_cout << "|";
         }
 
-        cout << "'" << message << "'";
+        atomic_cout << "'" << message << "'";
     }
 
-    cout << endl;
+    atomic_cout << endl;
 }
 
 void CPsgCliApp::PrintBlobData(shared_ptr<CPSG_BlobData> blob_data)
 {
     assert(blob_data);
-    lock_guard<mutex> lock(m_CoutMutex);
-    cout << "BlobData. ";
+    SAtomicCout atomic_cout;
+    atomic_cout << "BlobData. ";
 
     auto status = blob_data->GetStatus(CDeadline::eInfinite);
 
     if (status != EPSG_Status::eSuccess) {
-        cout << "ERROR: Failed to retrieve blob data'" << blob_data->GetId().Get() << "': ";
-        PrintErrors(status, blob_data);
+        atomic_cout << "ERROR: Failed to retrieve blob data'" << blob_data->GetId().Get() << "': ";
+        PrintErrors(atomic_cout, status, blob_data);
         return;
     }
 
     ostringstream os;
     os << blob_data->GetStream().rdbuf();
     hash<string> blob_hash;
-    cout << "Id: " << blob_data->GetId().Get() << ";";
-    cout << "Size: " << os.str().size() << ";";
-    cout << "Hash: " << blob_hash(os.str()) << endl;
+    atomic_cout << "Id: " << blob_data->GetId().Get() << ";";
+    atomic_cout << "Size: " << os.str().size() << ";";
+    atomic_cout << "Hash: " << blob_hash(os.str()) << endl;
 }
 
 void CPsgCliApp::PrintBlobInfo(shared_ptr<CPSG_BlobInfo> blob_info)
 {
     assert(blob_info);
-    lock_guard<mutex> lock(m_CoutMutex);
-    cout << "BlobInfo. ";
+    SAtomicCout atomic_cout;
+    atomic_cout << "BlobInfo. ";
 
     auto status = blob_info->GetStatus(CDeadline::eInfinite);
 
     if (status != EPSG_Status::eSuccess) {
-        cout << "ERROR: Failed to retrieve blob_info '" << blob_info->GetId().Get() << "': ";
-        PrintErrors(status, blob_info);
+        atomic_cout << "ERROR: Failed to retrieve blob_info '" << blob_info->GetId().Get() << "': ";
+        PrintErrors(atomic_cout, status, blob_info);
         return;
     }
 
-    cout << "GetId: " << blob_info->GetId().Get() << ";";
-    cout << "GetCompression: " << blob_info->GetCompression() << ";";
-    cout << "GetFormat: " << blob_info->GetFormat() << ";";
-    cout << "GetVersion: " << blob_info->GetVersion() << ";";
-    cout << "GetStorageSize: " << blob_info->GetStorageSize() << ";";
-    cout << "GetSize: " << blob_info->GetSize() << ";";
-    cout << "IsDead: " << blob_info->IsDead() << ";";
-    cout << "IsSuppressed: " << blob_info->IsSuppressed() << ";";
-    cout << "IsWithdrawn: " << blob_info->IsWithdrawn() << ";";
-    cout << "GetHupReleaseDate: " << blob_info->GetHupReleaseDate() << ";";
-    cout << "GetOwner: " << blob_info->GetOwner() << ";";
-    cout << "GetOriginalLoadDate: " << blob_info->GetOriginalLoadDate() << ";";
-    cout << "GetClass: " << blob_info->GetClass() << ";";
-    cout << "GetDivision: " << blob_info->GetDivision() << ";";
-    cout << "GetUsername: " << blob_info->GetUsername() << ";";
-    cout << "GetSplitInfoBlobId(eSplitShell): " << blob_info->GetSplitInfoBlobId(CPSG_BlobInfo::eSplitShell).Get() << ";";
-    cout << "GetSplitInfoBlobId(eSplitInfo): " << blob_info->GetSplitInfoBlobId(CPSG_BlobInfo::eSplitInfo).Get() << ";";
+    atomic_cout << "GetId: " << blob_info->GetId().Get() << ";";
+    atomic_cout << "GetCompression: " << blob_info->GetCompression() << ";";
+    atomic_cout << "GetFormat: " << blob_info->GetFormat() << ";";
+    atomic_cout << "GetVersion: " << blob_info->GetVersion() << ";";
+    atomic_cout << "GetStorageSize: " << blob_info->GetStorageSize() << ";";
+    atomic_cout << "GetSize: " << blob_info->GetSize() << ";";
+    atomic_cout << "IsDead: " << blob_info->IsDead() << ";";
+    atomic_cout << "IsSuppressed: " << blob_info->IsSuppressed() << ";";
+    atomic_cout << "IsWithdrawn: " << blob_info->IsWithdrawn() << ";";
+    atomic_cout << "GetHupReleaseDate: " << blob_info->GetHupReleaseDate() << ";";
+    atomic_cout << "GetOwner: " << blob_info->GetOwner() << ";";
+    atomic_cout << "GetOriginalLoadDate: " << blob_info->GetOriginalLoadDate() << ";";
+    atomic_cout << "GetClass: " << blob_info->GetClass() << ";";
+    atomic_cout << "GetDivision: " << blob_info->GetDivision() << ";";
+    atomic_cout << "GetUsername: " << blob_info->GetUsername() << ";";
+    atomic_cout << "GetSplitInfoBlobId(eSplitShell): " << blob_info->GetSplitInfoBlobId(CPSG_BlobInfo::eSplitShell).Get() << ";";
+    atomic_cout << "GetSplitInfoBlobId(eSplitInfo): " << blob_info->GetSplitInfoBlobId(CPSG_BlobInfo::eSplitInfo).Get() << ";";
 
     for (int i = 1; ; ++i) {
         auto blob_id = blob_info->GetChunkBlobId(i).Get();
         if (blob_id.empty()) break;
-        cout << "GetChunkBlobId(" << i << "): " << blob_id << ";";
+        atomic_cout << "GetChunkBlobId(" << i << "): " << blob_id << ";";
     }
 
-    cout << endl;
+    atomic_cout << endl;
 }
 
 void CPsgCliApp::PrintBioseqInfo(shared_ptr<CPSG_BioseqInfo> bioseq_info)
 {
     assert(bioseq_info);
-    lock_guard<mutex> lock(m_CoutMutex);
-    cout << "BioseqInfo. ";
+    SAtomicCout atomic_cout;
+    atomic_cout << "BioseqInfo. ";
 
     auto status = bioseq_info->GetStatus(CDeadline::eInfinite);
 
@@ -409,26 +412,26 @@ void CPsgCliApp::PrintBioseqInfo(shared_ptr<CPSG_BioseqInfo> bioseq_info)
             id = "UNKNOWN_REQUEST";
         }
 
-        cout << "ERROR: Failed to retrieve bioseq_info '" << id << "': ";
-        PrintErrors(status, bioseq_info);
+        atomic_cout << "ERROR: Failed to retrieve bioseq_info '" << id << "': ";
+        PrintErrors(atomic_cout, status, bioseq_info);
         return;
     }
 
     const auto& id = bioseq_info->GetCanonicalId();
-    cout << "CanonicalId: " << id.Get() << "-" << id.GetType() << ";";
+    atomic_cout << "CanonicalId: " << id.Get() << "-" << id.GetType() << ";";
 
-    cout << "OtherIds:";
-    for (auto& other_id : bioseq_info->GetOtherIds()) cout << " " << other_id.Get() << "-" << other_id.GetType();
-    cout << ";";
+    atomic_cout << "OtherIds:";
+    for (auto& other_id : bioseq_info->GetOtherIds()) atomic_cout << " " << other_id.Get() << "-" << other_id.GetType();
+    atomic_cout << ";";
 
-    cout << "MoleculeType: " << bioseq_info->GetMoleculeType() << ";";
-    cout << "Length: " << bioseq_info->GetLength() << ";";
-    cout << "State: " << bioseq_info->GetState() << ";";
-    cout << "BlobId: " << bioseq_info->GetBlobId().Get() << ";";
-    cout << "TaxId: " << bioseq_info->GetTaxId() << ";";
-    cout << "Hash: " << bioseq_info->GetHash() << ";";
-    cout << "GetDateChanged: " << bioseq_info->GetDateChanged() << ";";
-    cout << "IncludedData: " << bioseq_info->IncludedInfo() << endl;
+    atomic_cout << "MoleculeType: " << bioseq_info->GetMoleculeType() << ";";
+    atomic_cout << "Length: " << bioseq_info->GetLength() << ";";
+    atomic_cout << "State: " << bioseq_info->GetState() << ";";
+    atomic_cout << "BlobId: " << bioseq_info->GetBlobId().Get() << ";";
+    atomic_cout << "TaxId: " << bioseq_info->GetTaxId() << ";";
+    atomic_cout << "Hash: " << bioseq_info->GetHash() << ";";
+    atomic_cout << "GetDateChanged: " << bioseq_info->GetDateChanged() << ";";
+    atomic_cout << "IncludedData: " << bioseq_info->IncludedInfo() << endl;
 };
 
 /////////////////////////////////////////////////////////////////////////////
