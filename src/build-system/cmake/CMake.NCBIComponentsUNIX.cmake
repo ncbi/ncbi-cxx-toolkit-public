@@ -615,8 +615,8 @@ else (WIN32)
 	find_external_library(VDB
 		INCLUDES sra/sradb.h
 		LIBS ncbi-vdb
-		INCLUDE_HINTS "/opt/ncbi/64/trace_software/vdb/vdb-versions/2.9.2-1/interfaces"
-		LIBS_HINTS "/opt/ncbi/64/trace_software/vdb/vdb-versions/2.9.2-1/linux/release/x86_64/lib")
+ 	    INCLUDE_HINTS "/opt/ncbi/64/trace_software/vdb/vdb-versions/cxx_toolkit/2/interfaces"
+ 	    LIBS_HINTS "/opt/ncbi/64/trace_software/vdb/vdb-versions/cxx_toolkit/2/linux/release/x86_64/lib/")
 endif (WIN32)
 
 if (${VDB_FOUND})
