@@ -214,13 +214,13 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::E
         // Code copied from x_Init, then modified to reuse existing scope from CSeq_entry_Handle
         m_Objmgr = CObjectManager::GetInstance();
         if ( !m_Objmgr ) {
-            /* raise hell */;
+            // raise hell
             m_IndexFailure = true;
         }
 
         m_Scope.Reset( &m_Tseh.GetScope() );
         if ( !m_Scope ) {
-            /* raise hell */;
+            // raise hell
             m_IndexFailure = true;
         }
 
@@ -231,6 +231,7 @@ void CSeqMasterIndex::x_Initialize (CSeq_entry_Handle& topseh, CSeqEntryIndex::E
         x_InitSeqs( *m_Tsep, noparent );
     }
     catch (CException& e) {
+        m_IndexFailure = true;
         LOG_POST_X(1, Error << "Error in CSeqMasterIndex::x_Init: " << e.what());
     }
 }
@@ -257,13 +258,13 @@ void CSeqMasterIndex::x_Initialize (CBioseq_Handle& bsh, CSeqEntryIndex::EPolicy
         // Code copied from x_Init, then modified to reuse existing scope from CSeq_entry_Handle
         m_Objmgr = CObjectManager::GetInstance();
         if ( !m_Objmgr ) {
-            /* raise hell */;
+            // raise hell
             m_IndexFailure = true;
         }
 
         m_Scope.Reset( &m_Tseh.GetScope() );
         if ( !m_Scope ) {
-            /* raise hell */;
+            // raise hell
             m_IndexFailure = true;
         }
 
@@ -274,6 +275,7 @@ void CSeqMasterIndex::x_Initialize (CBioseq_Handle& bsh, CSeqEntryIndex::EPolicy
         x_InitSeqs( *m_Tsep, noparent );
     }
     catch (CException& e) {
+        m_IndexFailure = true;
         LOG_POST_X(1, Error << "Error in CSeqMasterIndex::x_Init: " << e.what());
     }
 }
@@ -500,13 +502,13 @@ void CSeqMasterIndex::x_Init (void)
     try {
         m_Objmgr = CObjectManager::GetInstance();
         if ( !m_Objmgr ) {
-            /* raise hell */;
+            // raise hell
             m_IndexFailure = true;
         }
 
         m_Scope.Reset( new CScope( *m_Objmgr ) );
         if ( !m_Scope ) {
-            /* raise hell */;
+            // raise hell
             m_IndexFailure = true;
         }
 
@@ -521,6 +523,7 @@ void CSeqMasterIndex::x_Init (void)
         x_InitSeqs( *m_Tsep, noparent );
     }
     catch (CException& e) {
+        m_IndexFailure = true;
         LOG_POST_X(1, Error << "Error in CSeqMasterIndex::x_Init: " << e.what());
     }
 }
