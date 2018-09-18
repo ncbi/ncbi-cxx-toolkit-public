@@ -4,7 +4,7 @@ Author: fongah2
 
 ----- Seq ID to Oid File ------------
 
-File Extension (p/ndb and p/ndb-lock)
+File Extension (p/ndb)
     Following the same 3 letters convention used in blastdb:-
     p    protein
     n    nucl
@@ -68,7 +68,7 @@ Format
     
 ----- Tax ID To Oid List Offset Lookup File -----
 
-File Extension (p/ntf p/ntf-lock)
+File Extension (p/ntf)
     Following the same 3 letters convention used in blastdb:-
     p    protein
     n    nucl
