@@ -52,11 +52,11 @@ USING_SCOPE(blast);
 #define EXIT_CODE__FORMAT_SUCCESS 0
 #define EXIT_CODE__NO_RESULTS_FOUND 1
 #define EXIT_CODE__INVALID_INPUT_FORMAT 2
-#define EXIT_CODE__QUERY_INDEX_INVALID 3
+#define EXIT_CODE__BLAST_ARCHIVE_ERROR 3
 #define EXIT_CODE__CANNOT_ACCESS_FILE 4
-#define EXIT_CODE__FORMATTING_FAILED 5
+#define EXIT_CODE__QUERY_INDEX_INVALID 5
+#define EXIT_CODE__NETWORK_CONNECTION_ERROR 5
 
-/// The application class
 class CBlastReportApp : public CNcbiApplication
 {
 public:
@@ -219,6 +219,32 @@ CBlastReportApp::x_ExtractQueries(bool query_is_protein)
     return retval;
 }
 
+static int s_GetError(string errorName, string defaultMessage, int defaultErrCode, string &errorMsg,string blastArchName = "")
+{
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    string message = defaultMessage;
+    int status = 0;
+    if (app)  {
+        const CNcbiRegistry& registry = app->GetConfig();
+        string errorCode;
+        string errorInfo = registry.Get("Errors", errorName);
+        if(!errorInfo.empty()) {
+            NStr::SplitInTwo(errorInfo, ":", errorCode, message);
+            status = NStr::StringToInt(errorCode,NStr::fConvErr_NoThrow);
+            message = NStr::Replace(message,"#filename",blastArchName);            
+        }        
+    }
+    if(!status || message.empty()) {
+        errorMsg = defaultMessage;
+        status = defaultErrCode;
+    }                    
+    else {
+        errorMsg = message;
+    }
+    return status;
+}
+
+
 
 int CBlastReportApp::PrintFormattedOutput(void)
 {
@@ -296,10 +322,9 @@ int CBlastReportApp::PrintFormattedOutput(void)
 
     try {
         if(queryIndex > results->GetNumQueries() - 1) {
-            retval = EXIT_CODE__QUERY_INDEX_INVALID;            
-            //NCBI_THROW(CInputException, 0,"Invalid query index.");
-            NCBI_THROW(CInputException, eInvalidInput,
-                                 "Invalid query index.");
+            string msg;
+            retval  = s_GetError("InvalidQueryIndex", "Invalid query index.", EXIT_CODE__QUERY_INDEX_INVALID, msg);                                                            
+            NCBI_THROW(CInputException, eInvalidInput,msg);                                 
         }
             
         bool hasAlignments = (*results)[queryIndex].HasAlignments();
@@ -328,36 +353,37 @@ int CBlastReportApp::PrintFormattedOutput(void)
 }
 
 
+
 int CBlastReportApp::Run(void)
 {
     int status = EXIT_CODE__FORMAT_SUCCESS;
     const CArgs& args = GetArgs();
     string msg;
     try {
-        SetDiagPostLevel(eDiag_Warning);
+        SetDiagPostLevel(eDiag_Warning);        
         if (args[kArgArchive].HasValue()) {    
             CNcbiIstream& istr = args[kArgArchive].AsInputFile();
             m_RmtBlast.Reset(new CRemoteBlast(istr)); 
-            while (m_RmtBlast->LoadFromArchive()) {
+            if (m_RmtBlast->LoadFromArchive()) {
                 if(!m_RmtBlast->IsErrMsgArchive()) {
                     status = PrintFormattedOutput();                    
                     return status;
                 }    
+                else {
+                    status = s_GetError("NetConError", "Network connection error", EXIT_CODE__NETWORK_CONNECTION_ERROR, msg);                    
+                }
             }
         }    	    
     }        
     catch (const CSerialException& e) {
-        status = EXIT_CODE__INVALID_INPUT_FORMAT;
-        msg = "Invalid input format for BLAST Archive.";                
+        status = s_GetError("InvailInputFormat", "Invalid input format for BLAST Archive.", EXIT_CODE__INVALID_INPUT_FORMAT, msg);                            
     }        
     catch (const CException& e) {        
         if (e.GetErrCode() == CBlastException::eInvalidArgument) {
-                status = EXIT_CODE__INVALID_INPUT_FORMAT;               
-                msg = "Invalid input format for BLAST Archive.";
+            status = s_GetError("ErrorBlastArchive", "Error processing BLAST Archive.", EXIT_CODE__BLAST_ARCHIVE_ERROR, msg);                                    
         }
         else {
-            status = EXIT_CODE__CANNOT_ACCESS_FILE;
-            msg = e.GetMsg();
+            status = s_GetError("ErrorAccessingFile", e.GetMsg(), EXIT_CODE__CANNOT_ACCESS_FILE, msg,args[kArgArchive].AsString());            
         }                
     } 
     
