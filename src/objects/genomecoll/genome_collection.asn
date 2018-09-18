@@ -131,6 +131,8 @@ GC-AssemblySet ::= SEQUENCE {
         -- assembly represents a diploid assembly; we expect at least two
         -- haploid-unit assemblies contained herein
         diploid(3),
+        -- unresolved-diploid: single unit which includes the diploid sequences
+        unresolved-diploid(4),
         -- assembly is a collection for annotation
         annotation-target-set(101),
         -- analysis set used for sequencing by alignments
