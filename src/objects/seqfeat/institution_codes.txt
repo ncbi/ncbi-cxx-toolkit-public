@@ -6301,12 +6301,12 @@ TCFB	c	Tasmanian Collection of Fish Bacteria
 TCMM	c	Thai Collection of Medical Microorganism, Department of Pathology, Faculty of Veterinary Science			
 TCNM	s	Timpanogos Cave National Monument			
 TCSW	s	Texas Women's University, Biology Department			
-TCWC	s	Texas Cooperative Wildlife Collection			
-TCWC:Birds	s	Texas Cooperative Wildlife Collection, Collection of Birds		
-TCWC:Fish	s	Texas Cooperative Wildlife Collection, Collection of Fishes		
-TCWC:Herp	s	Texas Cooperative Wildlife Collection, Collection of Amphibians and Reptiles		
-TCWC:Invrt	s	Texas Cooperative Wildlife Collection, Collection of Marine Invertebrate		
-TCWC:Mamm	s	Texas Cooperative Wildlife Collection,  Mammal collection		
+TCWC	s	Biodiversity Research and Teaching Collections (formerly the Texas Cooperative Wildlife Collection)			
+TCWC:Birds	s	Biodiversity Research and Teaching Collections (formerly the Texas Cooperative Wildlife Collection), Collection of Birds		
+TCWC:Fish	s	Biodiversity Research and Teaching Collections (formerly the Texas Cooperative Wildlife Collection), Collection of Fishes		
+TCWC:Herp	s	Biodiversity Research and Teaching Collections (formerly the Texas Cooperative Wildlife Collection), Collection of Amphibians and Reptiles		
+TCWC:Invrt	s	Biodiversity Research and Teaching Collections (formerly the Texas Cooperative Wildlife Collection), Collection of Marine Invertebrate	
+TCWC:Mamm	s	Biodiversity Research and Teaching Collections (formerly the Texas Cooperative Wildlife Collection),  Mammal collection		
 TDA	s	Department of Agriculture, Tasmania			
 TDAH	s	Tasmanian Department of Agriculture			
 TDMP	s	Ta-Dzong Museum			
