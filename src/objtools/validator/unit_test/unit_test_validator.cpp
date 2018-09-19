@@ -22735,19 +22735,19 @@ BOOST_AUTO_TEST_CASE(Test_BADRRNAcomponentOverlapTRNA)
 
 BOOST_AUTO_TEST_CASE(Test_VR_796)
 {
-    const string cMitoMezoMsg = "Mitochondrial Metozoan sequences should be less than 20000 bp (50000 bp for Mollusca, Cnidaria, and Placozoa)";
+    const string cMitoMezoMsg = "Mitochondrial Metozoan sequences should be less than 25000 bp (50000 bp for Mollusca, Cnidaria, and Placozoa)";
 
     CRef<CSeq_entry> entry = BuildGoodSeq();
     SetLineage(entry, "Metazoan");
     SetGenome(entry, CBioSource::eGenome_mitochondrion);
     entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
-    entry->SetSeq().SetInst().SetLength(21000);
+    entry->SetSeq().SetInst().SetLength(26000);
     SetCompleteness(entry, CMolInfo::eCompleteness_complete);
     STANDARD_SETUP
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, 
         "MitoMetazoanTooLong", cMitoMezoMsg));
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical,
-        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [21000]"));
+        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [26000]"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
@@ -22757,7 +22757,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_796)
     SetLineage(entry, "Metazoan; Mollusca");
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical,
-        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [21000]"));
+        "SeqDataLenWrong", "Bioseq.seq_data too short [60] for given length [26000]"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
@@ -23547,3 +23547,23 @@ BOOST_AUTO_TEST_CASE(Test_VR_824)
     CheckErrors(*eval, expected_errors);
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_TM_897)
+{
+	CNcbiEnvironment env;
+	env.Set("NI_SERVICE_NAME_TAXON3", "TaxService3v4test");
+
+	CRef<CSeq_entry> entry = BuildGoodSeq();
+	SetTaxname(entry, "Salmonela enterica");
+	STANDARD_SETUP
+
+		expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
+			"OrganismNotFound",
+			"Organism not found. Possible matches|Salmonella enterica|Salmonella enterica V|Salmonella enterica subsp. V"));
+
+    eval = validator.Validate(seh, options);
+	CheckErrors(*eval, expected_errors);
+
+
+	CLEAR_ERRORS
+}
