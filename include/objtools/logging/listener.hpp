@@ -102,7 +102,7 @@ public:
         using pointer = value_type*;
         using reference = value_type&;
 
-        CConstIterator(const TBaseIterator& base) : TBaseIterator(base) {}
+        CConstIterator(const TBaseIterator& base_it) : TBaseIterator(base_it) {}
 
         reference operator*() const { return *(this->TBaseIterator::operator*()); }
         pointer operator->() const { return this->TBaseIterator::operator*().get(); }
