@@ -22941,9 +22941,7 @@ BOOST_AUTO_TEST_CASE(Test_BINDoesNotMatch)
     
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Error, 
-        "BINDoesNotMatch",
-        "Organism name should end with sp. plus Barcode Index Number (xxx)"));
+    // error was removed per VR-843
     expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning,
         "OrganismNotFound", "Organism not found in taxonomy database"));
 

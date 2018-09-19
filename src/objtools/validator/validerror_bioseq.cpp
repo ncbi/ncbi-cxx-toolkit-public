@@ -8392,7 +8392,6 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                             }
                         }
                     }
-                    x_ValidateStructuredCommentContext(desc, seq);
                 } else if (oi.IsStr() && NStr::EqualCase(oi.GetStr(), "DBLink")) {
                     m_dblink_count++;
                     FOR_EACH_USERFIELD_ON_USEROBJECT (ufd_it, usr) {
@@ -8564,39 +8563,6 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 
     CheckForMultipleStructuredComments(seq);
     x_CheckForMultipleComments(bsh);
-}
-
-
-void CValidError_bioseq::x_ValidateStructuredCommentContext(const CSeqdesc& desc, const CBioseq& seq)
-{
-    if (!desc.IsUser() || !desc.GetUser().IsSetType() || !desc.GetUser().GetType().IsStr()
-        || !NStr::EqualCase(desc.GetUser().GetType().GetStr(), "StructuredComment")) {
-        return;
-    }
-
-    // Is a Barcode index number present?
-    ITERATE (CUser_object::TData, field, desc.GetUser().GetData()) {
-        if ((*field)->IsSetLabel() && (*field)->GetLabel().IsStr()
-            && NStr::Equal((*field)->GetLabel().GetStr(), "Barcode Index Number")
-            && (*field)->IsSetData() && (*field)->GetData().IsStr()) {
-            string bin = (*field)->GetData().GetStr();
-
-            // only check if name contains "sp." or "bacterium", and also BOLD
-            CSeqdesc_CI di(m_CurrentHandle, CSeqdesc::e_Source);
-            if (di && di->GetSource().IsSetTaxname()) {
-                string taxname = di->GetSource().GetTaxname();
-                if (NStr::Find(taxname, "BOLD") != string::npos
-                    && (NStr::Find(taxname, "sp. ") != string::npos
-                        || NStr::Find(taxname, "bacterium ") != string::npos)
-                    && !NStr::EndsWith(taxname, " " + bin)) {
-                    const CSeq_entry& ctx = *seq.GetParentEntry();
-                    PostErr(eDiag_Error, eErr_SEQ_DESCR_BINDoesNotMatch,
-                        "Organism name should end with sp. plus Barcode Index Number (" + bin + ")",
-                        ctx, desc);
-                }
-            }
-        }
-    }
 }
 
 
