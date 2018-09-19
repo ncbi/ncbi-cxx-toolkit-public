@@ -23,10 +23,10 @@
  *
  * ===========================================================================
  *
- * Author: Frank Ludwig
+ * Author: Justin Foley
  *
  * File Description:
- *   Basic reader interface
+ *  objtools/edit message class
  *
  */
 
@@ -69,6 +69,12 @@ public:
         out << endl;
     };
 
+    virtual void Dump(
+        CNcbiOstream& out) const
+    {
+        Write(out);
+    };
+
     // dump the XML on one line since some tools assume that
     virtual void WriteAsXML(
         CNcbiOstream& out ) const
@@ -76,6 +82,12 @@ public:
         out << "<message severity=\"" << NStr::XmlEncode(x_GetSeverityString()) << "\" "
             << "problem=\"" << NStr::XmlEncode(GetText()) << "\" ";
         out << "</message>" << endl;
+    };
+
+    virtual void DumpAsXML(
+        CNcbiOstream& out) const
+    {
+        WriteAsXML(out);
     };
 
     virtual string GetText(void) const { return m_Text; }

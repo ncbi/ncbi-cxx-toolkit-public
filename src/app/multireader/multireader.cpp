@@ -71,6 +71,7 @@
 #include <objtools/readers/read_util.hpp>
 //#include <misc/hgvs/hgvs_reader.hpp>
 
+#include <objtools/logging/listener.hpp>
 #include <objtools/edit/feattable_edit.hpp>
 
 #include <algo/phy_tree/phy_node.hpp>
@@ -120,7 +121,7 @@ class CMultiReaderApp
      : public CNcbiApplication
 {
 public:
-    CMultiReaderApp(): m_uFormat(CFormatGuess::eUnknown), m_pErrors( 0 )
+    CMultiReaderApp(): m_uFormat(CFormatGuess::eUnknown), m_pErrors(nullptr)
     {
         SetVersion(CVersionInfo(1, 0, 2));
     }
@@ -175,8 +176,12 @@ private:
     bool m_bXmlMessages;
 
     auto_ptr<CIdMapper> m_pMapper;
-    CRef<CMessageListenerBase> m_pErrors;
+    //unique_ptr<CMessageListenerBase> m_pErrors;
+    unique_ptr<CMessageListenerBase> m_pErrors;
+    unique_ptr<CObjtoolsListener> m_pEditErrors;
 };
+
+
 
 //  ============================================================================
 class CMessageListenerCustom:
@@ -193,10 +198,18 @@ public:
     {};
 
     ~CMessageListenerCustom() {};
-    
+
     bool
+    PutMessage(
+        const IObjtoolsMessage& message) 
+    {
+        StoreMessage(message);
+        return (message.GetSeverity() <= m_iMaxLevel) && (Count() < m_iMaxCount);
+    };
+
+    bool 
     PutError(
-        const ILineError& err ) 
+        const ILineError& err)
     {
         if (err.Problem() == ILineError::eProblem_ProgressInfo) {
             m_multi_reader_app.WriteMessageImmediately(cerr, err);
@@ -204,7 +217,8 @@ public:
         }
         StoreError(err);
         return (err.Severity() <= m_iMaxLevel) && (Count() < m_iMaxCount);
-    };
+    }
+
     
     void
     PutProgress(
@@ -802,7 +816,7 @@ void CMultiReaderApp::xProcessDefault(
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not supported", 0);
     }
-    CRef<CSerialObject> object = pReader->ReadObject(istr, m_pErrors);
+    CRef<CSerialObject> object = pReader->ReadObject(istr, m_pErrors.get());
     xWriteObject(args, *object, ostr);
 }
 
@@ -822,7 +836,7 @@ void CMultiReaderApp::xProcessWiggle(
     }
     //TestCanceler canceler;
     //reader.SetCanceler(&canceler);
-    reader.ReadSeqAnnots(annots, istr, m_pErrors);
+    reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         //xDumpTrack(args, **cit, cerr);
         xWriteObject(args, **cit, ostr);
@@ -853,7 +867,7 @@ void CMultiReaderApp::xProcessUCSCRegion(
     //  Use ReadSeqAnnot() over ReadSeqAnnots() to keep memory footprint down.
     CUCSCRegionReader reader(m_iFlags);
     CStreamLineReader lr(istr);
-    CRef<CSerialObject> pAnnot = reader.ReadObject(lr, m_pErrors);
+    CRef<CSerialObject> pAnnot = reader.ReadObject(lr, m_pErrors.get());
     if (pAnnot) {
         xWriteObject(args, *pAnnot, ostr);
     }
@@ -873,11 +887,11 @@ void CMultiReaderApp::xProcessBed(
     //TestCanceler canceler;
     //reader.SetCanceler(&canceler);
     CStreamLineReader lr( istr );
-    CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
+    CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors.get());
     while(pAnnot) {
         xWriteObject(args, *pAnnot, ostr);
         pAnnot.Reset();
-        pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
+        pAnnot = reader.ReadSeqAnnot(lr, m_pErrors.get());
     }
 }
 
@@ -915,7 +929,7 @@ void CMultiReaderApp::xProcessGtf(
     }
     //TestCanceler canceler;
     //reader.SetCanceler(&canceler);
-    reader.ReadSeqAnnots(annots, istr, m_pErrors);
+    reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
     for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it){
 		xPostProcessAnnot(args, **it);
         xWriteObject(args, **it, ostr);
@@ -941,7 +955,7 @@ void CMultiReaderApp::xProcessGff3(
     }
     //TestCanceler canceler;
     //reader.SetCanceler(&canceler);
-    reader.ReadSeqAnnots(annots, istr, m_pErrors);
+    reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
     for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it){
 		xPostProcessAnnot(args, **it);
         xWriteObject(args, **it, ostr);
@@ -959,7 +973,7 @@ void CMultiReaderApp::xProcessGff2(
     ANNOTS annots;
     
     CGff2Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
-    reader.ReadSeqAnnots(annots, istr, m_pErrors);
+    reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         xWriteObject(args, **cit, ostr);
     }
@@ -1004,7 +1018,7 @@ void CMultiReaderApp::xProcessGvf(
     }
     //TestCanceler canceler;
     //reader.SetCanceler(&canceler);
-    reader.ReadSeqAnnots(annots, istr, m_pErrors);
+    reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         xWriteObject(args, **cit, ostr);
     }
@@ -1026,7 +1040,7 @@ void CMultiReaderApp::xProcessVcf(
     }
    //TestCanceler canceler;
    //reader.SetCanceler(&canceler);
-    reader.ReadSeqAnnots(annots, istr, m_pErrors);
+    reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         xWriteObject(args, **cit, ostr);
     }
@@ -1080,7 +1094,7 @@ void CMultiReaderApp::xProcess5ColFeatTable(
     CRef<ILineReader> pLineReader = ILineReader::New(istr);
     while(istr) {
         CRef<CSeq_annot> pSeqAnnot =
-            reader.ReadSeqAnnot(*pLineReader, m_pErrors.GetPointerOrNull() );
+            reader.ReadSeqAnnot(*pLineReader, m_pErrors.get());
         if( ! pSeqAnnot || ! pSeqAnnot->IsFtable() || 
             pSeqAnnot->GetData().GetFtable().empty() ) 
         {
@@ -1110,7 +1124,7 @@ void CMultiReaderApp::xProcessFasta(
     CStreamLineReader line_reader(istr);
 
     CFastaReader reader(line_reader, fFlags);
-    CRef<CSeq_entry> pSeqEntry = reader.ReadSeqEntry(line_reader, m_pErrors);
+    CRef<CSeq_entry> pSeqEntry = reader.ReadSeqEntry(line_reader, m_pErrors.get());
     xWriteObject(args, *pSeqEntry, ostr);
 }
 
@@ -1320,7 +1334,7 @@ void CMultiReaderApp::xPostProcessAnnot(
     }
 
     edit::CFeatTableEdit fte(
-        annot, prefix, startingLocusTagNumber, startingFeatureId, m_pErrors);
+        annot, prefix, startingLocusTagNumber, startingFeatureId, m_pErrors.get());
     fte.InferPartials();
     fte.GenerateMissingParentFeatures(args["euk"].AsBoolean());
     fte.GenerateLocusTags();
@@ -1447,10 +1461,10 @@ CMultiReaderApp::xSetMapper(
     if (!strMapFile.empty()) {
         CNcbiIfstream* pMapFile = new CNcbiIfstream(strMapFile.c_str());
         m_pMapper.reset(
-            new CIdMapperConfig(*pMapFile, strBuild, false, m_pErrors));
+            new CIdMapperConfig(*pMapFile, strBuild, false, m_pErrors.get()));
     }
     else {
-        m_pMapper.reset(new CIdMapperBuiltin(strBuild, false, m_pErrors));
+        m_pMapper.reset(new CIdMapperBuiltin(strBuild, false, m_pErrors.get()));
     }
 }        
 
@@ -1460,6 +1474,7 @@ CMultiReaderApp::xSetMessageListener(
     const CArgs& args )
 //  ----------------------------------------------------------------------------
 {
+
     //
     //  By default, allow all errors up to the level of "warning" but nothing
     //  more serious. -strict trumps everything else, -lenient is the second
@@ -1467,13 +1482,12 @@ CMultiReaderApp::xSetMessageListener(
     //  -max-error-level become additive, i.e. both are enforced.
     //
     if ( args["noerrors"] ) {   // not using error policy at all
-        m_pErrors = 0;
         return;
     }
     if ( args["strict"] ) {
-        m_pErrors = new CMessageListenerStrict;
+        m_pErrors.reset(new CMessageListenerStrict());
     } else if ( args["lenient"] ) {
-        m_pErrors = new CMessageListenerLenient;
+        m_pErrors.reset(new CMessageListenerLenient());
     } else {    
         int iMaxErrorCount = args["max-error-count"].AsInteger();
         int iMaxErrorLevel = eDiag_Error;
@@ -1486,15 +1500,14 @@ CMultiReaderApp::xSetMessageListener(
         }
 
         if ( iMaxErrorCount == -1 ) {
-            m_pErrors.Reset(
+            m_pErrors.reset(
                 new CMessageListenerCustomLevel(iMaxErrorLevel, *this));
         } else {
-            m_pErrors.Reset(
+            m_pErrors.reset(
                 new CMessageListenerCustom(
                     iMaxErrorCount, iMaxErrorLevel, *this));
         }
     }
-
     // if progress requested, wrap the m_pErrors so that progress is shown
     if( args["show-progress"] ) {
         m_pErrors->SetProgressOstream( &cerr );

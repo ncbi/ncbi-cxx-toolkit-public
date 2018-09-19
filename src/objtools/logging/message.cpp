@@ -35,9 +35,7 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-IObjtoolsMessage::~IObjtoolsMessage() = default;
-
+/*
 void IObjtoolsMessage::Dump(CNcbiOstream& out) const 
 {
     Write(out);
@@ -47,7 +45,7 @@ void IObjtoolsMessage::DumpAsXML(CNcbiOstream& out) const
 {
     WriteAsXML(out);
 }
-
+*/
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

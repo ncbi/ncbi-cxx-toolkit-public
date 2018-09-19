@@ -109,7 +109,7 @@ CFeatTableEdit::CFeatTableEdit(
     const string& locusTagPrefix,
     unsigned int locusTagNumber,
     unsigned int startingFeatId,
-    ILineErrorListener* pMessageListener) :
+    IObjtoolsListener* pMessageListener) :
     //  -------------------------------------------------------------------------
     mAnnot(annot),
     mpMessageListener(pMessageListener),
@@ -1502,11 +1502,8 @@ CFeatTableEdit::xPutError(
         return;
     }
 
-
-/*
-    mpMessageListener->PostMessage(
+    mpMessageListener->PutMessage(
         CObjEditMessage(message, eDiag_Error));
-        */
 }
 
 

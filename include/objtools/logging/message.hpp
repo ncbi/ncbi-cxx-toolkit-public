@@ -43,13 +43,13 @@ class NCBI_XOBJUTIL_EXPORT IObjtoolsMessage : public IMessage
 //  ============================================================================
 {
 public:
-    virtual ~IObjtoolsMessage(void);
+    virtual ~IObjtoolsMessage(void) = default;
 
     virtual void WriteAsXML(CNcbiOstream& out) const = 0;
 
-    virtual void Dump(CNcbiOstream& out) const; 
+    virtual void Dump(CNcbiOstream& out) const = 0;
 
-    virtual void DumpAsXML(CNcbiOstream& out) const;
+    virtual void DumpAsXML(CNcbiOstream& out) const = 0;
 };
 
 END_SCOPE(objects)

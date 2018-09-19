@@ -42,24 +42,111 @@ BEGIN_SCOPE(objects)
 class IObjtoolsMessage;
 
 //  ============================================================================
-class NCBI_XOBJUTIL_EXPORT IObjtoolsListener 
+class IObjtoolsListener
 //  ============================================================================
 {
 public:
-    virtual ~IObjtoolsListener(void);
+    virtual ~IObjtoolsListener(void) = default;
 
-    virtual bool PostMessage(const IObjtoolsMessage& message);
+    virtual bool PutMessage(const IObjtoolsMessage& message) = 0;
+
+    virtual bool PutError(const IObjtoolsMessage& error) = 0;
+
+    virtual void PutProgress(const string& message,
+            const Uint8 num_done=0,
+            const Uint8 num_total=0) = 0;
+
+    virtual size_t Count(void) const = 0;
+
+    virtual size_t LevelCount(EDiagSev severity) const = 0;
+};
+
+
+//  ============================================================================
+class NCBI_XOBJUTIL_EXPORT CObjtoolsListener : public IObjtoolsListener
+//  ============================================================================
+{
+protected:
+    using TMessages = vector<unique_ptr<IObjtoolsMessage>>;
+private:
+    using TBaseIterator = TMessages::const_iterator;
+
+public:
+    virtual ~CObjtoolsListener(void);
+
+    virtual bool PutMessage(const IObjtoolsMessage& message);
+
+    virtual bool PutError(const IObjtoolsMessage& message);
+
+    virtual void PutProgress(const string& message,
+        const Uint8 iNumDone,
+        const Uint8 iNumTotal);
 
     virtual const IObjtoolsMessage& GetMessage(size_t index) const;
 
     virtual size_t Count(void) const;
 
-    virtual void Clear(void);
+    virtual void ClearAll(void);
 
-private:
-    CMessageListener_Basic mMessageListener;
+    virtual size_t LevelCount(EDiagSev severity) const;
+
+    virtual void Dump(CNcbiOstream& ostr) const;
+
+    virtual void DumpAsXML(CNcbiOstream& ostr) const;
+
+    virtual void SetProgressOstream(CNcbiOstream* pProgressOstream);
+
+    class CConstIterator : public TBaseIterator {
+    public:
+        using value_type = TBaseIterator::value_type::element_type;
+        using pointer = value_type*;
+        using reference = value_type&;
+
+        CConstIterator(const TBaseIterator& base) : TBaseIterator(base) {}
+
+        reference operator*() const { return *(this->TBaseIterator::operator*()); }
+        pointer operator->() const { return this->TBaseIterator::operator*().get(); }
+    };    
+
+    using TConstIterator = CConstIterator;
+    TConstIterator begin(void) const;
+    TConstIterator end(void) const;
+protected:
+    TMessages m_Messages;
+    CNcbiOstream* m_pProgressOstrm = nullptr;
 };
 
+
+//  ============================================================================
+class NCBI_XOBJUTIL_EXPORT CObjtoolsListenerLevel : public CObjtoolsListener
+//  ============================================================================
+{
+public:
+    CObjtoolsListenerLevel(int accept_level);
+    virtual ~CObjtoolsListenerLevel(void);
+
+    bool PutMessage(const IObjtoolsMessage& message) override;
+private:
+    int m_AcceptLevel;
+};
+
+
+//  =================================================================================
+class NCBI_XOBJUTIL_EXPORT CObjtoolsListenerLenient final : public CObjtoolsListenerLevel
+//  =================================================================================
+{
+public:
+    CObjtoolsListenerLenient(void);
+};
+
+
+//  =================================================================================
+class NCBI_XOBJUTIL_EXPORT CObjtoolsListenerStrict final : public CObjtoolsListenerLevel
+//  =================================================================================
+{
+public:
+    CObjtoolsListenerStrict(void);
+};
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

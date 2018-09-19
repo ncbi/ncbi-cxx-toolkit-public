@@ -37,13 +37,14 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_message.hpp>
 #include <objtools/readers/line_error.hpp>
+#include <objtools/logging/listener.hpp>
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ============================================================================
-class ILineErrorListener : public ncbi::IMessageListener
+class ILineErrorListener : public CObject, public IObjtoolsListener
 //  ============================================================================
 {
 public:
@@ -64,6 +65,21 @@ public:
     virtual bool
     PutError(
         const ILineError& ) = 0;
+
+    virtual bool
+    PutError(
+        const IObjtoolsMessage& message) {
+        const ILineError* pError = dynamic_cast<const ILineError*>(&message);
+        if (!pError) {
+            return true;
+        }
+        return PutError(*pError);
+    }
+
+    virtual bool 
+    PutMessage(const IObjtoolsMessage& message) {
+        return PutError(message);
+    }
     
     // IListener::Get() implementation
     virtual const IMessage& Get(size_t index) const
@@ -79,7 +95,7 @@ public:
     /// Returns the number of errors seen so far at the given severity.
     virtual size_t
     LevelCount(
-        EDiagSev ) =0;
+        EDiagSev ) const =0;
 
     /// Clear all accumulated messages.
     virtual void
@@ -96,13 +112,6 @@ public:
         const string & sMessage,
         const Uint8 iNumDone = 0,
         const Uint8 iNumTotal = 0 ) = 0;
-
-    // IMessageListener proxy methods
-    virtual EPostResult PostMessage(const IMessage& message)
-    { Post(message); return eHandled; }
-    
-    virtual EPostResult PostProgress(const IProgressMessage& p)
-    { Progress(p.GetText(), p.GetCurrent(), p.GetTotal()); return eHandled; }
 
     virtual const IMessage& GetMessage(size_t index) const
     { return Get(index); }
@@ -135,11 +144,11 @@ public:
     
     virtual size_t
     LevelCount(
-        EDiagSev eSev ) {
+        EDiagSev eSev ) const {
         
         size_t uCount( 0 );
         for ( size_t u=0; u < Count(); ++u ) {
-            if ( m_Errors[u]->Severity() == eSev ) ++uCount;
+            if ( m_Errors[u]->GetSeverity() == eSev ) ++uCount;
         }
         return uCount;
     };
@@ -150,7 +159,7 @@ public:
     const ILineError&
     GetError(
         size_t uPos ) { 
-            return  *m_Errors[ uPos ]; }
+            return *dynamic_cast<ILineError*>(m_Errors[ uPos ].get()); }
     
     virtual void Dump()
     {
@@ -220,8 +229,11 @@ private:
     // private so later we can change the structure if
     // necessary (e.g. to have indexing and such to speed up
     // level-counting)
-    typedef std::vector< AutoPtr<ILineError> > TLineErrVec;
+    // typedef std::vector< AutoPtr<ILineError> > TLineErrVec;
+
+    using TLineErrVec = vector<unique_ptr<IObjtoolsMessage>>;
     TLineErrVec m_Errors;
+
 
     // The stream to which progress messages are written.
     // If NULL, progress messages are not written.
@@ -237,9 +249,12 @@ protected:
     // into m_Errors
     void StoreError(const ILineError& err)
     {
-        m_Errors.resize( m_Errors.size() + 1);
-        AutoPtr<ILineError> & pLineError = m_Errors.back();
-        pLineError.reset( err.Clone() );
+        m_Errors.emplace_back(err.Clone());
+    }
+
+    void StoreMessage(const IObjtoolsMessage& message)
+    {
+        m_Errors.emplace_back(dynamic_cast<IObjtoolsMessage*>(message.Clone()));
     }
 };
 
@@ -253,13 +268,20 @@ class CMessageListenerLenient:
 public:
     CMessageListenerLenient() {};
     ~CMessageListenerLenient() {};
+
+    bool
+    PutMessage(
+        const IObjtoolsMessage& message)
+    {
+        StoreMessage(message);
+        return true;
+    }
     
     bool
     PutError(
         const ILineError& err ) 
     {
-        StoreError(err);
-        return true;
+        return PutMessage(err);
     };
 };        
 
@@ -274,12 +296,19 @@ public:
     CMessageListenerStrict() {};
     ~CMessageListenerStrict() {};
     
+    bool 
+    PutMessage(
+        const IObjtoolsMessage& message)
+    {
+        StoreMessage(message);
+        return false;
+    }
+
     bool
     PutError(
         const ILineError& err ) 
     {
-        StoreError(err);
-        return false;
+        return PutMessage(err);
     };
 };        
 
@@ -294,13 +323,20 @@ public:
     CMessageListenerCount(
         size_t uMaxCount ): m_uMaxCount( uMaxCount ) {};
     ~CMessageListenerCount() {};
-    
+   
+    bool PutMessage(
+        const IObjtoolsMessage& message)
+    {
+        StoreMessage(message);
+        return (Count() < m_uMaxCount);
+    }
+
+
     bool
     PutError(
         const ILineError& err ) 
     {
-        StoreError(err);
-        return (Count() < m_uMaxCount);
+        return PutMessage(err);
     };    
 protected:
     size_t m_uMaxCount;
@@ -317,22 +353,29 @@ public:
     CMessageListenerLevel(
         int iLevel ): m_iAcceptLevel( iLevel ) {};
     ~CMessageListenerLevel() {};
-    
+   
+    bool 
+    PutMessage(
+        const IObjtoolsMessage& message) 
+    {
+        StoreMessage(message);
+        return (message.GetSeverity() <= m_iAcceptLevel);
+    }
+
     bool
     PutError(
         const ILineError& err ) 
     {
-        StoreError(err);
-        return (err.Severity() <= m_iAcceptLevel);
+        return PutMessage(err);
     };    
-protected:
-    int m_iAcceptLevel;
-};
+    protected:
+        int m_iAcceptLevel;
+    };
 
-//  ===========================================================================
-class CMessageListenerWithLog:
-//
-//  Accept everything, and besides storing all errors, post them.
+    //  ===========================================================================
+    class CMessageListenerWithLog:
+    //
+    //  Accept everything, and besides storing all errors, post them.
 //  ===========================================================================
     public CMessageListenerBase
 {

@@ -40,36 +40,178 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-IObjtoolsListener::~IObjtoolsListener() = default;
+CObjtoolsListener::~CObjtoolsListener() = default;
 
 
 bool 
-IObjtoolsListener::PostMessage(const IObjtoolsMessage& message)
+CObjtoolsListener::PutError(const IObjtoolsMessage& message)
 {
-    return (mMessageListener.PostMessage(message) 
-            == IMessageListener::eHandled);
+    return PutMessage(message);
 }
 
 
-const IObjtoolsMessage&
-IObjtoolsListener::GetMessage(size_t index) const
+bool 
+CObjtoolsListener::PutMessage(const IObjtoolsMessage& message)
 {
-    const auto& message = mMessageListener.GetMessage(index);
-    return dynamic_cast<const IObjtoolsMessage&>(message);
-}
-
-
-size_t
-IObjtoolsListener::Count() const
-{
-    return mMessageListener.Count();
+    m_Messages.emplace_back(dynamic_cast<IObjtoolsMessage*>(message.Clone()));
+    return true;
 }
 
 
 void
-IObjtoolsListener::Clear() {
-    mMessageListener.Clear();
+CObjtoolsListener::PutProgress(
+    const string& message,
+    const Uint8 num_done,
+    const Uint8 num_total)
+{
+    // NB: Some other classes rely on the message fitting in one line.
+
+    // NB: New attributes or inner elements could be added to the resulting
+    //     message at any time, so make no assumptions.
+
+    if( ! m_pProgressOstrm ) {
+        // no stream to write to
+        return;
+    }
+
+    *m_pProgressOstrm << "<message severity=\"INFO\" ";
+
+    if( num_done > 0 ) {
+        *m_pProgressOstrm << "num_done=\"" << num_done << "\" ";
+    }
+
+    if( num_total > 0 ) {
+        *m_pProgressOstrm << "num_total=\"" << num_total << "\" ";
+    }
+
+    if( message.empty() ) {
+        *m_pProgressOstrm  << " />";
+    } else {
+        *m_pProgressOstrm  << " >";
+
+        string sXMLEncodedMessage = NStr::XmlEncode(message);
+
+        // some functionality relies on progress messages fitting into 
+        // one line, so we escape newlines (just in case) while
+        // we write it.
+        ITERATE( string, msg_it, sXMLEncodedMessage ) {
+            const char ch = *msg_it;
+            switch(ch) {
+            case '\r':
+                *m_pProgressOstrm << "&#xD;";
+                break;
+            case '\n':
+                *m_pProgressOstrm << "&#xA;";
+                break;
+            default:
+                *m_pProgressOstrm << ch;
+                break;
+            }
+        }
+
+        *m_pProgressOstrm << "</message>" << NcbiEndl;
+    }
+
+    m_pProgressOstrm->flush();
 }
+
+
+void CObjtoolsListener::SetProgressOstream(CNcbiOstream* pProgressOstream)
+{
+    m_pProgressOstrm = pProgressOstream;
+}
+
+
+const IObjtoolsMessage&
+CObjtoolsListener::GetMessage(size_t index) const
+{
+    return *m_Messages[index].get();
+}
+
+
+size_t
+CObjtoolsListener::Count() const
+{
+    return m_Messages.size();
+}
+
+
+void
+CObjtoolsListener::ClearAll() {
+    m_Messages.clear();
+}
+
+
+size_t CObjtoolsListener::LevelCount(EDiagSev severity) const {
+    size_t uCount = 0;
+    for (const auto& pMessage : m_Messages) {
+        if (pMessage->GetSeverity() == severity) {
+            ++uCount;
+        }
+    }
+    return uCount; 
+}
+
+
+void CObjtoolsListener::Dump(CNcbiOstream& ostr) const 
+{
+    if (m_Messages.empty()) {
+        ostr << "(( No messages ))" << endl;
+        return;
+    }
+    for (const auto& pMessage : m_Messages) {
+        pMessage->Dump(ostr);
+    }
+}
+
+
+void CObjtoolsListener::DumpAsXML(CNcbiOstream& ostr) const 
+{
+
+    if (m_Messages.empty()) {
+        ostr << "(( No messages ))" << endl;
+        return;
+    }
+
+    for (const auto& pMessage : m_Messages) {
+        pMessage->DumpAsXML(ostr);
+    }
+}
+
+
+CObjtoolsListener::TConstIterator 
+CObjtoolsListener::begin() const {
+    return TConstIterator(m_Messages.cbegin());
+}
+
+
+CObjtoolsListener::TConstIterator 
+CObjtoolsListener::end() const {
+    return TConstIterator(m_Messages.cend());
+}
+
+
+CObjtoolsListenerLevel::CObjtoolsListenerLevel(int accept_level) 
+    : m_AcceptLevel(accept_level) {}
+
+
+CObjtoolsListenerLevel::~CObjtoolsListenerLevel() = default;
+
+
+bool CObjtoolsListenerLevel::PutMessage(const IObjtoolsMessage& message) 
+{
+    CObjtoolsListener::PutMessage(message);
+    return (static_cast<int>(message.GetSeverity()) <= m_AcceptLevel);
+}
+
+
+CObjtoolsListenerLenient::CObjtoolsListenerLenient() 
+    : CObjtoolsListenerLevel(eDiag_Info) {}
+
+
+CObjtoolsListenerStrict::CObjtoolsListenerStrict()
+   : CObjtoolsListenerLevel(eDiagSevMax+1) {}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
