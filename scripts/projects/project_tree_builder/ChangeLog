@@ -337,3 +337,6 @@ version 4.6.0, CXX-10179
 Added support of PROTOBUF code generation on Windows and XCode
 Added support of JSON schema projects.
 
+September 19, 2018
+version 4.6.1, CXX-10244
+Fixed bugs in PROTOBUF code generation support
