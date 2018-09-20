@@ -1526,12 +1526,13 @@ static bool EqualNoDate(CCit_sub& a, CCit_sub& b)
     return ret;
 }
 
-static bool CheckCitSubsInBioseqSet(CCitSubInfo& cit_sub_info, CSeq_submit& submit)
+static bool CheckCitSubsInBioseqSet(CMasterInfo& master_info, CSeq_submit& submit)
 {
     _ASSERT(submit.IsEntrys() && "Should be entries");
 
     bool ret = true;
 
+    CCitSubInfo &cit_sub_info = master_info.m_cit_sub_info;
     CCit_sub* first_cit_sub = nullptr;
 
     for (auto entry : submit.GetData().GetEntrys()) {
@@ -1609,6 +1610,7 @@ static bool CheckCitSubsInBioseqSet(CCitSubInfo& cit_sub_info, CSeq_submit& subm
             if (first_cit_sub) {
                 if (!EqualNoDate(*first_cit_sub, *cit_sub)) {
                     ReportMissingOrDiffCitSub(*entry, false);
+                    master_info.m_reject = true;
                     ret = false;
                     break;
                 }
@@ -2331,7 +2333,12 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                     ERR_POST_EX(0, 0, "Submission \"" << file << "\" is missing Submit-block.");
                 }
                 else if (same_submit) {
-                    same_submit = CheckCitSubsInBioseqSet(master_info.m_cit_sub_info, *seq_submit);
+                    same_submit = CheckCitSubsInBioseqSet(master_info, *seq_submit);
+                    if(master_info.m_reject == true)
+                    {
+                        ret = false;
+                        break;
+                    }
                 }
             }
             else if (master_info.m_input_type != eSeqSubmit || GetParams().GetSource() == eNCBI) {
