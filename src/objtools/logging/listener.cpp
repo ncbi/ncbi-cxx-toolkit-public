@@ -44,13 +44,6 @@ CObjtoolsListener::~CObjtoolsListener() = default;
 
 
 bool 
-CObjtoolsListener::PutError(const IObjtoolsMessage& message)
-{
-    return PutMessage(message);
-}
-
-
-bool 
 CObjtoolsListener::PutMessage(const IObjtoolsMessage& message)
 {
     m_Messages.emplace_back(dynamic_cast<IObjtoolsMessage*>(message.Clone()));

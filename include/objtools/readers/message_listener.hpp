@@ -66,19 +66,11 @@ public:
     PutError(
         const ILineError& ) = 0;
 
-    virtual bool
-    PutError(
-        const IObjtoolsMessage& message) {
-        const ILineError* pError = dynamic_cast<const ILineError*>(&message);
-        if (!pError) {
-            return true;
-        }
-        return PutError(*pError);
-    }
-
     virtual bool 
     PutMessage(const IObjtoolsMessage& message) {
-        return PutError(message);
+        const ILineError* le = dynamic_cast<const ILineError*>(&message);
+        if (!le) return true;
+        return PutError(*le);
     }
     
     // IListener::Get() implementation

@@ -50,8 +50,6 @@ public:
 
     virtual bool PutMessage(const IObjtoolsMessage& message) = 0;
 
-    virtual bool PutError(const IObjtoolsMessage& error) = 0;
-
     virtual void PutProgress(const string& message,
             const Uint8 num_done=0,
             const Uint8 num_total=0) = 0;
@@ -79,8 +77,6 @@ public:
     virtual ~CObjtoolsListener(void);
 
     virtual bool PutMessage(const IObjtoolsMessage& message);
-
-    virtual bool PutError(const IObjtoolsMessage& message);
 
     virtual void PutProgress(const string& message,
         const Uint8 iNumDone,
