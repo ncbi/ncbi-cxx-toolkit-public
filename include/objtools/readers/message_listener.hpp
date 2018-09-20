@@ -231,7 +231,7 @@ private:
     // level-counting)
     // typedef std::vector< AutoPtr<ILineError> > TLineErrVec;
 
-    using TLineErrVec = vector<unique_ptr<IObjtoolsMessage>>;
+    using TLineErrVec = vector<AutoPtr<IObjtoolsMessage>>;
     TLineErrVec m_Errors;
 
 
