@@ -146,58 +146,21 @@ public:
 };
 
 // A host:port pair.
-struct SServerAddress {
-    SServerAddress(unsigned h, unsigned short p) : host(h), port(p), name(h) {}
-    SServerAddress(const string &n, unsigned short p)
-        : host(g_NetService_gethostbyname(n)), port(p), name(n, host) {}
-
-    bool operator ==(const SServerAddress& h) const
-    {
-        return host == h.host && port == h.port;
-    }
-
-    bool operator <(const SServerAddress& right) const
-    {
-        int cmp = int(host) - int(right.host);
-        return cmp < 0 || (cmp == 0 && port < right.port);
-    }
-
-    string AsString() const
-    {
-        string address(name.get(host));
-        address += ':';
-        address += NStr::UIntToString(port);
-
-        return address;
-    }
-
+struct SServerAddress
+{
     unsigned host;
     unsigned short port;
 
+    SServerAddress(unsigned h, unsigned short p);
+    SServerAddress(string n, unsigned short p);
+    string AsString() const;
+
 private:
-    struct SName
-    {
-        SName() : host(0) {}
-        SName(unsigned h) : host(h) {}
-        SName(const string &n, unsigned h) : name(n), host(h) {}
-
-        string get(unsigned h)
-        {
-            // Name was not looked up yet or host changed
-            if (name.empty() || host != h) {
-                host = h;
-                name = g_NetService_gethostnamebyaddr(h);
-            }
-
-            return name;
-        }
-
-        string name;
-        unsigned host;
-    };
-
-    mutable SName name;
+    mutable pair<unsigned, string> name;
 };
+
+bool operator==(const SServerAddress& lhs, const SServerAddress& rhs);
+bool operator< (const SServerAddress& lhs, const SServerAddress& rhs);
 
 struct SThrottleParams
 {

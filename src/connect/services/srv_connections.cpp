@@ -888,4 +888,41 @@ void SThrottleParams::Init(CSynRegistry& registry, const SRegSynonyms& sections)
     m_IOFailureThresholdDenominator = denominator;
 }
 
+SServerAddress::SServerAddress(unsigned h, unsigned short p) :
+    host(h),
+    port(p),
+    name(host, {})
+{
+}
+
+SServerAddress::SServerAddress(string n, unsigned short p) :
+    host(g_NetService_gethostbyname(n)),
+    port(p),
+    name(host, move(n))
+{
+}
+
+bool operator==(const SServerAddress& lhs, const SServerAddress& rhs)
+{
+    return lhs.host == rhs.host && lhs.port == rhs.port;
+}
+
+bool operator< (const SServerAddress& lhs, const SServerAddress& rhs)
+{
+    if (lhs.host != rhs.host) return lhs.host < rhs.host;
+
+    return lhs.port < rhs.port;
+}
+
+string SServerAddress::AsString() const
+{
+    // Name was not looked up yet or host changed
+    if (name.second.empty() || name.first != host) {
+        name.first = host;
+        name.second = g_NetService_gethostnamebyaddr(host);
+    }
+
+    return name.second + ':' + NStr::UIntToString(port);
+}
+
 END_NCBI_SCOPE
