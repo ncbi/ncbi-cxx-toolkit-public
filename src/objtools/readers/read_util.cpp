@@ -95,12 +95,17 @@ CRef<CSeq_id> CReadUtil::AsSeqId(
 
     if (flags & CReaderBase::fAllIdsAsLocal) {
         CRef<CSeq_id> pId(new CSeq_id);
+        bool idSet = false;
         if (string::npos == rawId.find_first_not_of("0987654321")  &&
                 localInts) {
-            pId->SetLocal().SetId(
-                NStr::StringToInt(rawId));
+            // GEO-1239 : if id is numeric but doesn't fit into an integer, use
+            // string representation.
+            try {
+                pId->SetLocal().SetId(NStr::StringToInt(rawId));
+                idSet = true;
+            } catch(CException&) {}
         }
-        else {   
+        if (!idSet) {   
             pId->SetLocal().SetStr(rawId);
         }
         return pId;
