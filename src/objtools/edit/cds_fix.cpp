@@ -1224,11 +1224,11 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
 {
     CChecksum chksum(CChecksum::eCRC32);
     objects::CSeq_id_Handle hid;
-    ITERATE(objects::CBioseq_Handle::TId, it, bsh.GetId()) 
+    for (auto it : bsh.GetId()) 
     {
-        if (it->GetSeqIdOrNull() && it->GetSeqIdOrNull()->IsGeneral())
+        if (it.GetSeqIdOrNull() && it.GetSeqIdOrNull()->IsGeneral())
         {
-            hid = *it;
+            hid = it;
             break;
         }
     }
@@ -1258,7 +1258,8 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
     new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
     new_id_hash->SetGeneral().SetTag().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
     objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
-    objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
+    objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time 
+                                                                                         // to avoid a situation where ID_1 and HASH_1 are both created
     while (b_found || b_found_hash) 
     {
         offset++;
@@ -1283,11 +1284,11 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
     vector<CRef<objects::CSeq_id> > ids;
     CChecksum chksum(CChecksum::eCRC32);
 
-    ITERATE(objects::CBioseq_Handle::TId, it, bsh.GetId()) 
+    for(auto it : bsh.GetId()) 
     {
-        if (it->GetSeqIdOrNull())
+        if (it.GetSeqIdOrNull())
         {
-            objects::CSeq_id_Handle hid = *it;
+            objects::CSeq_id_Handle hid = it;
             string id_base;
             if (hid.GetSeqId()->IsLocal())
             {
@@ -1307,7 +1308,8 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
                 CRef<objects::CSeq_id> new_id_hash(new objects::CSeq_id());
                 new_id_hash->SetLocal().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
                 objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
-                objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
+                objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time 
+                                                                                                     // to avoid a situation where ID_1 and HASH_1 are both created
                 while (b_found || b_found_hash) 
                 {
                     offset++;
@@ -1343,7 +1345,8 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
                 new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
                 objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
                 new_id_hash->SetGeneral().SetTag().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
-                objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
+                objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time 
+                                                                                                     // to avoid a situation where ID_1 and HASH_1 are both created
                 while (b_found || b_found_hash) 
                 {
                     offset++;
@@ -1375,7 +1378,8 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
         objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
         CRef<objects::CSeq_id> new_id_hash(new objects::CSeq_id());
         new_id_hash->SetLocal().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
-        objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
+        objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time 
+                                                                                             // to avoid a situation where ID_1 and HASH_1 are both created
         while (b_found || b_found_hash) 
         {
             offset++;
