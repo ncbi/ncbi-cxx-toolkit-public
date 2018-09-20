@@ -208,7 +208,7 @@ private:
 
 struct SNetServerInPool : public CObject
 {
-    SNetServerInPool(unsigned host, unsigned short port,
+    SNetServerInPool(SServerAddress address,
             INetServerProperties* server_properties);
 
     // Releases a reference to the parent service object,

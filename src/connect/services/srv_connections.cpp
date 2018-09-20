@@ -303,9 +303,9 @@ CNetServerMultilineCmdOutput::CNetServerMultilineCmdOutput(
 }
 
 /*************************************************************************/
-SNetServerInPool::SNetServerInPool(unsigned host, unsigned short port,
+SNetServerInPool::SNetServerInPool(SServerAddress address,
         INetServerProperties* server_properties) :
-    m_Address(host, port),
+    m_Address(move(address)),
     m_ServerProperties(server_properties)
 {
     m_CurrentConnectionGeneration.Set(0);
@@ -319,7 +319,7 @@ SNetServerInPool::SNetServerInPool(unsigned host, unsigned short port,
             // XOR the network prefix bytes of the IP address with the port
             // number (in network byte order) and convert the result
             // to host order so that it can be used in arithmetic operations.
-            CSocketAPI::NetToHostLong(host ^ CSocketAPI::HostToNetShort(port)) +
+            CSocketAPI::NetToHostLong(m_Address.host ^ CSocketAPI::HostToNetShort(m_Address.port)) +
             12345;
 }
 

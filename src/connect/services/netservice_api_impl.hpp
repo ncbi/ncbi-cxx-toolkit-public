@@ -96,9 +96,9 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
 
     void Init(CSynRegistry& registry, const SRegSynonyms& sections);
 
-    SNetServerInPool* FindOrCreateServerImpl(const SServerAddress& server_address);
+    SNetServerInPool* FindOrCreateServerImpl(SServerAddress server_address);
     CRef<SNetServerInPool> ReturnServer(SNetServerInPool* server_impl);
-    CNetServer GetServer(SNetServiceImpl* service, const SServerAddress& server_address);
+    CNetServer GetServer(SNetServiceImpl* service, SServerAddress server_address);
 
     void ResetServerConnections();
     const SThrottleParams& GetThrottleParams() const { return m_ThrottleParams; }
@@ -324,7 +324,7 @@ public:
         EServerErrorHandling error_handling);
 
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
-    CNetServer GetServer(const SServerAddress& server_address);
+    CNetServer GetServer(SServerAddress server_address);
 
     const string& GetClientName() const { return m_ClientName; }
 
