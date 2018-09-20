@@ -57,8 +57,6 @@ public:
             const Uint8 num_total=0) = 0;
 
     virtual size_t Count(void) const = 0;
-
-    virtual size_t LevelCount(EDiagSev severity) const = 0;
 };
 
 
@@ -72,6 +70,12 @@ private:
     using TBaseIterator = TMessages::const_iterator;
 
 public:
+    CObjtoolsListener() = default;
+
+    CObjtoolsListener(const CObjtoolsListener&) = delete;
+
+    CObjtoolsListener& operator=(const CObjtoolsListener&) = delete;
+
     virtual ~CObjtoolsListener(void);
 
     virtual bool PutMessage(const IObjtoolsMessage& message);

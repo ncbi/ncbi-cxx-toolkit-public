@@ -95,7 +95,7 @@ public:
     /// Returns the number of errors seen so far at the given severity.
     virtual size_t
     LevelCount(
-        EDiagSev ) const =0;
+        EDiagSev )=0;
 
     /// Clear all accumulated messages.
     virtual void
@@ -144,7 +144,7 @@ public:
     
     virtual size_t
     LevelCount(
-        EDiagSev eSev ) const {
+        EDiagSev eSev ) {
         
         size_t uCount( 0 );
         for ( size_t u=0; u < Count(); ++u ) {
