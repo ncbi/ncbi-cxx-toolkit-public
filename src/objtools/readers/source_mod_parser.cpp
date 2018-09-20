@@ -66,7 +66,9 @@
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
-// #include <objects/submit/Submit_block.hpp>
+
+#include <objtools/edit/dblink_field.hpp>
+#include <objects/general/User_object.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -167,6 +169,8 @@ namespace
     STATIC_SMOD(keyword);
     STATIC_SMOD(keywords);
 
+    STATIC_SMOD(biosample);
+    STATIC_SMOD(bioproject);
     // For TPA Mods (CUser_object)
     STATIC_SMOD(primary);
     STATIC_SMOD(primary_accessions);
@@ -688,6 +692,9 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism, CConstRe
         CAutoAddDBLink sra(seq, "Sequence Read Archive");
         x_ApplySRAMods(sra);
     }}
+
+    x_ApplyDBLinkMods(seq);
+
 
     {{
         CAutoInitRef<CUser_object> gpdb;
@@ -1439,6 +1446,42 @@ void CSourceModParser::x_ApplyTPAMods(CAutoInitRef<CUser_object>& tpa)
         }
     }
 }
+
+
+static CRef<CSeqdesc> s_SetDBLinkDesc(CBioseq& bioseq) 
+{
+    for (auto pDesc : bioseq.SetDescr().Set()) {
+        if (pDesc->IsUser() && pDesc->GetUser().IsDBLink()) {
+            return pDesc;
+        }
+    }
+
+    auto pDBLinkDesc = Ref(new CSeqdesc());
+    pDBLinkDesc->SetUser().SetObjectType(CUser_object::eObjectType_DBLink);
+    bioseq.SetDescr().Set().push_back(pDBLinkDesc);
+    return pDBLinkDesc;
+}
+
+
+void CSourceModParser::x_ApplyDBLinkMods(CBioseq& bioseq) 
+{
+/*
+    CRef<CSeqdesc> pDBLinkDesc;
+    const SMod* mod = NULL;
+    if ((mod = FindMod(s_Mod_biosample)) != NULL) {
+        pDBLinkDesc = s_SetDBLinkDesc(bioseq);
+        edit::CDBLink::SetBioSample(pDBLinkDesc->SetUser(), mod->value, edit::eExistingText_add_qual);
+    }
+
+    if ((mod = FindMod(s_Mod_bioproject)) != NULL) {
+        if (!pDBLinkDesc) {
+            pDBLinkDesc = s_SetDBLinkDesc(bioseq);
+        }
+        edit::CDBLink::SetBioProject(pDBLinkDesc->SetUser(), mod->value, edit::eExistingText_add_qual);
+    }
+    */
+}
+
 
 void CSourceModParser::x_ApplySRAMods(CAutoAddDBLink& sra_obj)
 {

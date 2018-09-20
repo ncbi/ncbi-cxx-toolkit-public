@@ -132,6 +132,7 @@ public:
     void ApplyTPAMods(CUser_object& tpa);
     void ApplyGenomeProjectsDBMods(CUser_object& gpdb);
     void ApplyPubMods(CBioseq& seq);
+    
 
     static int CompareKeys(const CTempString& lhs, const CTempString& rhs);
 
@@ -288,6 +289,7 @@ private:
     void x_ApplySRAMods(CAutoAddDBLink& sra);
     void x_ApplyGenomeProjectsDBMods(CAutoInitRef<CUser_object>& gpdb);
     void x_AddPCRPrimers(CAutoInitRef<CPCRReactionSet>& pcr_reaction_set);
+    void x_ApplyDBLinkMods(CBioseq& bioseq);
 
     // sAllowedValues, enum_values, etc. are combined to produce the final list of
     // allowed values.
