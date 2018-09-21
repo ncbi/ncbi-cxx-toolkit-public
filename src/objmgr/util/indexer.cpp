@@ -1881,6 +1881,7 @@ void CBioseqIndex::x_InitFeats (void)
         CWeakRef<CSeqMasterIndex> idx = GetSeqMasterIndex();
         auto idxl = idx.Lock();
         if (idxl) {
+            /*
             if (! idxl->IsSmallGenomeSet()) {
                 // limit feature collection to immediate Bioseq-set parent
                 CRef<CSeqsetIndex> prnt = GetParent();
@@ -1894,6 +1895,7 @@ void CBioseqIndex::x_InitFeats (void)
                     }
                 }
             }
+            */
 
             CRef<feature::CFeatTree> ft = idxl->GetFeatTree();
 
