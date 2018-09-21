@@ -111,7 +111,7 @@ AIM	s	Auckland Institute and Museum	AMNZ
 AIMS	s	Australian Institute of Marine Science			
 AIS	s	Academie imperial des Sciences			
 AISIY	s	Armenian Institute for the Scientific Investigation of Cattle Breeding and Veterinary, Department of Meadows and Pastures			
-AIX	s	Museum d'Histoire Naturelle d'Aix-en-Provence			
+AIX	s	Museum d'Histoire Naturelle d'Aix-en-Provence	MHNAIX		
 AJ	c	Central Research Laboratories			
 AJBC	s	Atkins Jardin Botanico de Cienfuegos			
 AJOU	s	Ajou University, Biological Sciences Department			
@@ -216,7 +216,11 @@ ANMR	c	Asian Network on Microbial Researches
 ANSM	s	Universidad Autonoma Agraria Antonio Narro, Departamento de Botanica			
 ANSP	s	Academy of Natural Sciences of Philadelphia			
 ANSP:Bird	s	Academy of Natural Sciences of Philadelphia, Bird collection	
+ANSP:Herpetology	s	Academy of Natural Sciences of Philadelphia, Herpetology collection	
+ANSP:Ichthyology		Academy of Natural Sciences of Philadelphia, 	
 ANSP:Malacology	s	Academy of Natural Sciences of Philadelphia, Malacology Collection		
+ANSP:Mammalogy	 	Academy of Natural Sciences of Philadelphia, 	
+ANSP:Ornithology	s	Academy of Natural Sciences of Philadelphia, Ornithology collection	
 ANTU	s	Changbai Mountain National Nature Reserve Administration Bureau			
 ANU<AUS>	s	Australian National University	ANU<AUS>,ANU<AUST>		
 ANU<CHN>	s	Anhui University, Biology Department			
@@ -293,7 +297,7 @@ ASUT	s	Frank M. Hasbrouck Insect Collection
 ASW	s	South Valley University, Botany Department			
 ASW<AUT>	c	Culture Collection of Algae at the University of Vienna			
 ATA	s	Atatuerk Ueniversitesi			
-ATCC	cb	American Type Culture Collection			
+ATCC	cb	American Type Culture Collection		https://www.atcc.org/Products/All/&spec;.aspx	
 ATH	s	Goulandris Natural History Museum			
 ATHU	s	National and Kapodistrian University of Athens, Biology Department			
 ATHUM	c	ATHUM Culture Collection of Fungi			
@@ -311,6 +315,7 @@ AUG	s	Augustana College, Biology Department
 AUGD	s	Department of Geology and Petroleum Geology			
 AUH	s	Agriculture University Herbarium			
 AUM	s	Auburn University Museum			
+AUM:Fish	s	Auburn University Museum, Fish collection	
 AUMC<EGY>	c	Assiut University Mycological Centre Culture Collection			
 AURO	s	Auroville Foundation			
 AUSPGRIS	b	Australian Plant Genetic Resource Information Service			
@@ -399,7 +404,7 @@ BCCM/DCG	c	Belgian Co-ordinated Collections of Micro-organisms / DCG Diatoms Col
 BCCM/GENECORNER	c	Belgian Coordinated Collections of Microorganisms / GeneCorner Plasmid Collection	BCCM/LMBP,LMBP		
 BCCM/IHEM	c	Belgian Co-ordinated Collections of Micro-organisms / IHEM Fungi collection: Human & Animal Health	IHEM		
 BCCM/ITM	c	Belgian Co-ordinated Collections of Micro-organisms / ITM Mycobacteria Collection	ITM		
-BCCM/LMG	c	Belgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection	LMG		
+BCCM/LMG	c	Belgian Coordinated Collections of Microorganisms/ LMG Bacteria Collection	LMG	http://bccm.belspo.be/catalogues/lmg-strain-details?NUM=	
 BCCM/MUCL	c	Belgian Co-ordinated Collections of Micro-organisms / MUCL Agro-food & Environmental Fungal Collection	MUCL		
 BCCM/ULC	c	Belgian Co-ordinated Collections of Micro-organisms / ULC Cyanobacteria Collection	UCL		
 BCCN	c	Brucella Culture Collection			
@@ -679,6 +684,8 @@ BSMP	s	Department of Agriculture, Bureau of Science
 BSN	s	Boston University, Biology Department			
 BSNH	s	Boston Society of Natural History			
 BSNS	s	Buffalo Society of Natural Sciences			
+BSNS:Herpetology	s	Buffalo Society of Natural Sciences, Herpetology collection	
+BSNS:Ornithology	s	Buffalo Society of Natural Sciences, Ornithology collection	
 BSPG	s	Bayerische Staatssammlung fur Palaontologie und  Geologie	BS,BSP		
 BSRA	s	University of Basrah, Biology Department			
 BSRM	s	Biological Station Reference Museum at Porto Novo			
@@ -1620,7 +1627,7 @@ DSC<USA-MS>	s	Delta State University, Biological Sciences Department
 DSC<USA-NY>	c	Dicty Stock Center			
 DSEC	s	Universidade Federal da Paraiba			
 DSIR	s	Department of Scientific and Industrial Research			
-DSM	c	Deutsche Sammlung von Mikroorganismen und Zellkulturen GmbH	DSMZ		
+DSM	c	Deutsche Sammlung von Mikroorganismen und Zellkulturen GmbH	DSMZ	https://www.dsmz.de/catalogues/details/culture/DSM-&spec;.html	
 DSM<TZA>	s	University of Dar es Salaam, Botany Department			
 DSMZ	c	Deutsche Sammlung von Mikroorganismen und Zellkulture			
 DSP	s	Fitzsimon's Snake Park			
@@ -3219,7 +3226,7 @@ KCK	s	Dick Institute
 KCLB	c	Korean Cell Line Bank			
 KCOM	c	Korean Collection for Oral Microbiology			
 KCS	s	University of London, King's College, Botany Department			
-KCTC	c	Korean Collection for Type Cultures			
+KCTC	c	Korean Collection for Type Cultures		https://kctc.kribb.re.kr/En/jsearch/j_sview.aspx?sn=	
 KDL	s	Kendal Museum			
 KDR	s	Bewdley Museum			
 KE	s	Kent State University, Biological Sciences Department			
@@ -4092,6 +4099,7 @@ MMMN	s	Manitoba Museum of Man and Nature, Botany Department
 MMMZ	s	Mutare Museum			
 MMNH<MNG>	s	Mongolian Museum of Natural History			
 MMNH<USA-MN>	s	Bell Museum of Natural History			
+MMNH<USA-MN>:Bird	s	Bell Museum of Natural History, Bird collection	
 MMNHS	s	Macedonian Museum of Natural History			
 MMNS	s	Mississippi Museum of Natural Science			
 MMP	s	Museo de Mar del Plata (Argentina)			
@@ -4153,7 +4161,7 @@ MNHN:IT	s	Museum National d'Histoire Naturelle, Tunicates/ascidians
 MNHN:IU	s	Museum National d'Histoire Naturelle, Crustaceans	
 MNHN:M	s	Museum National d'Histoire Naturelle, Mammal	
 MNHN:MY	s	Museum National d'Histoire Naturelle, Myriapods	
-MNHN:P	s	Museum National d'Histoire Naturelle, Paleontology	
+MNHN:P	s	Museum National d'Histoire Naturelle, Vascular plants	
 MNHN:PMC	c	Museum National d'Histoire Naturelle, Cyanobacteria	
 MNHN:RA	s	Museum National d'Histoire Naturelle, Reptiles and amphibians	
 MNHN:RA	s	Museum National d'Histoire Naturelle, Reptiles and amphibians	
@@ -7159,7 +7167,7 @@ VIMS	s	Virginia Institute of Marine Science
 VIST	s	University of the Virgin Islands, Natural Resources Program			
 VIT	s	Museo de Ciencias Naturales de Alava, Departamento de Botanica			
 VIZR	c	Collection for plant protection, All-Russian Institute of Plant Protection			
-VKM	c	All-Russian Collection of Microorganisms			
+VKM	c	All-Russian Collection of Microorganisms		http://www.vkm.ru/strains.php?vkm=	
 VKPM	c	Russian National Collection of Industrial Microorganisms			
 VLA	s	Far Eastern Branch, Russian Academy of Sciences, Botany Department			
 VM	s	Okresni vlastivedne muzeum (Museum of the Moravian Wallachia region, state funded organisation)			
