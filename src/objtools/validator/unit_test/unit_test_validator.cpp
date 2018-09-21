@@ -23546,6 +23546,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_824)
 }
 
 
+#if 0
 BOOST_AUTO_TEST_CASE(Test_TM_897)
 {
 	CNcbiEnvironment env;
@@ -23565,3 +23566,4 @@ BOOST_AUTO_TEST_CASE(Test_TM_897)
 
 	CLEAR_ERRORS
 }
+#endif
