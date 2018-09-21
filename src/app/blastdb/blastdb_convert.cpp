@@ -190,8 +190,7 @@ static void s_ConvertV4toV5(const string& input_idx_fname,
                             const string& lmdb_base,
                             bool is_prot,
                             int vol_num,
-                            CDirEntry::TCopyFlags copy_flags,
-                            bool use_index_in_filename)
+                            CDirEntry::TCopyFlags copy_flags)
 {
     const Uint4 kFileSize = CFile(input_idx_fname).GetLength();
     CMemoryFileMap memfile(input_idx_fname);
@@ -202,8 +201,7 @@ static void s_ConvertV4toV5(const string& input_idx_fname,
     memfile.MemMapAdvise((void*)data, CMemoryFileMap::eMMA_Sequential);
     const string lmdb_fname =BuildLMDBFileName(lmdb_base, is_prot);
     const string idx_ext = is_prot?"pin":"nin";
-    int index_num = use_index_in_filename ? vol_num : -1;
-    CWriteDB_FileAutoFlush out(output_idx_basename, idx_ext , index_num, 0, true);
+    CWriteDB_FileAutoFlush out(output_idx_basename, idx_ext ,-1, 0, true);
     Uint4 read_offset = 0;
 
     // BLASTDB version
@@ -401,9 +399,8 @@ int CBlastdbConvertApp::Run(void)
                  }
                  const string kOutputFile = output_dir.GetDir() + kOutputVol + "." + ext;
                  if (ext == "pin" || ext == "nin") {
-                	 s_ConvertV4toV5(de.GetPath(), output_dir.GetPath(),
-                			         output_dir.GetName(), kIsProt, p, copy_flags,
-                			         use_index_in_filename);
+                	 s_ConvertV4toV5(de.GetPath(), output_dir.GetDir() + kOutputVol,
+                			         output_dir.GetName(), kIsProt, p, copy_flags);
                  } else {
                 	 _TRACE("cp -p " << de.GetPath() << " " << kOutputFile);
                 	 if (!de.Copy(kOutputFile, copy_flags)) {
