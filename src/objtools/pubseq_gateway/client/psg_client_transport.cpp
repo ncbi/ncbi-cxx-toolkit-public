@@ -416,6 +416,7 @@ void http2_reply::on_complete()
 /** http2_session */
 
 http2_session::http2_session(io_thread* aio, CNetServer::SAddress address) noexcept :
+    discovered(true),
     m_io(aio),
     m_tcp(aio->get_loop_handle()),
     m_connection_state(connection_state_t::cs_initial),
@@ -1243,8 +1244,8 @@ io_thread::~io_thread()
 
 void io_thread::wake()
 {
-    for (const auto& it : m_sessions) {
-        if (it->get_wake_enabled()) {
+    for (const auto& session : m_Sessions) {
+        if (session.get_wake_enabled()) {
             uv_async_send(&m_wake);
             break;
         }
@@ -1257,16 +1258,17 @@ void io_thread::on_wake(uv_async_t*)
         m_loop->Stop();
     }
     else {
-        for (auto it = m_sessions.begin(); it != m_sessions.end() && m_state == io_thread_state_t::started; ++it) {
-            http2_session *sess = it->get();
+        for (auto& session : m_Sessions) {
+            if (m_state != io_thread_state_t::started) break;
+
             try {
-                sess->process_requests();
+                if (session.discovered) session.process_requests();
             }
             catch(const std::exception& e) {
-                sess->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
+                session.purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
             }
             catch(...) {
-                sess->purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
+                session.purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
             }
         }
     }
@@ -1275,13 +1277,28 @@ void io_thread::on_wake(uv_async_t*)
 void io_thread::on_timer(uv_timer_t*)
 {
     try {
-        stringstream ss;
-        ss << hex << (uint64_t)this;
-        for (auto it = m_sessions.begin(); it != m_sessions.end() && m_state == io_thread_state_t::started; ++it) {
-            (*it)->on_timer();
-            ss << " " << dec << (*it)->get_num_requests() << " " << (*it)->get_requests_at_once();
+        set<CNetServer::SAddress> discovered;
+
+        // Gather all discovered addresses
+        for (auto it = m_Service.Iterate(CNetService::eSortByLoad); it; ++it) {
+            discovered.insert((*it).GetAddress());
         }
-        ERR_POST(Trace << "TIMER: " << ss.str());
+
+        // Update existing sessions
+        for (auto& session : m_Sessions) {
+            session.discovered = discovered.erase(session.GetAddress()) == 1;
+        }
+
+        // Add sessions for newly discovered addresses
+        for (auto& address : discovered) {
+            m_Sessions.emplace_back(this, address);
+        }
+
+        for (auto& session : m_Sessions) {
+            if (m_state != io_thread_state_t::started) break;
+
+            if (session.discovered) session.on_timer();
+        }
     }
     catch(...) {
         ERR_POST("failure in timer");
@@ -1329,7 +1346,7 @@ void io_thread::execute(uv_sem_t* sem)
 
     try {
         for (auto it = m_Service.Iterate(CNetService::eSortByLoad); it; ++it) {
-            m_sessions.emplace_back(new http2_session(this, (*it).GetAddress()));
+            m_Sessions.emplace_back(this, (*it).GetAddress());
         }
     }
     catch(...) {
@@ -1348,9 +1365,8 @@ void io_thread::execute(uv_sem_t* sem)
     st = io_thread_state_t::started;
     m_state.compare_exchange_weak(st, io_thread_state_t::stopped,  memory_order_release, memory_order_relaxed);
 
-    for (auto it = m_sessions.begin(); it != m_sessions.end(); ++it) {
-        http2_session *sess = it->get();
-        sess->start_close();
+    for (auto& session : m_Sessions) {
+        session.start_close();
     }
 
     uv_close((uv_handle_t*)&m_wake, nullptr);
@@ -1358,13 +1374,12 @@ void io_thread::execute(uv_sem_t* sem)
 
     uv_run(m_loop->Handle(), UV_RUN_DEFAULT);
 
-    for (auto it = m_sessions.begin(); it != m_sessions.end(); ++it) {
-        http2_session *sess = it->get();
-        sess->finalize_close();
+    for (auto& session : m_Sessions) {
+        session.finalize_close();
     }
 
     m_loop->Close();
-    m_sessions.clear();
+    m_Sessions.clear();
     m_loop = nullptr;
 }
 

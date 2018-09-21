@@ -460,6 +460,9 @@ struct http2_write
 
 class http2_session
 {
+public:
+    atomic_bool discovered;
+
 private:
     io_thread* m_io;
     CUvTcp m_tcp;
@@ -552,6 +555,8 @@ public:
     void on_timer();
 
     void purge_pending_requests(const std::string& err);
+
+    const CNetServer::SAddress& GetAddress() const { return m_Address; }
 };
 
 enum class io_thread_state_t {
@@ -565,7 +570,7 @@ class io_thread
 private:
     std::atomic<io_thread_state_t> m_state;
     std::atomic_bool m_shutdown_req;
-    std::vector<std::unique_ptr<http2_session>> m_sessions;
+    list<http2_session> m_Sessions;
     CUvLoop *m_loop;
     uv_async_t m_wake;
     uv_timer_t m_timer;
