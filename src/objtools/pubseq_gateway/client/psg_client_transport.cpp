@@ -415,7 +415,7 @@ void http2_reply::on_complete()
 
 /** http2_session */
 
-http2_session::http2_session(io_thread* aio, const string& address) noexcept :
+http2_session::http2_session(io_thread* aio, CNetServer::SAddress address) noexcept :
     m_io(aio),
     m_tcp(aio->get_loop_handle()),
     m_connection_state(connection_state_t::cs_initial),
@@ -427,7 +427,7 @@ http2_session::http2_session(io_thread* aio, const string& address) noexcept :
     m_requests_at_once(0),
     m_num_requests(0),
     m_max_streams(TPSG_MaxConcurrentStreams::GetDefault()),
-    m_Address(address),
+    m_Address(move(address)),
     m_read_buf(TPSG_RdBufSize::GetDefault(), '\0'),
     m_cancel_requested(false)
 {
@@ -985,54 +985,9 @@ bool http2_session::try_connect(const struct sockaddr *addr)
     return true;
 }
 
-void http2_session::s_getaddrinfo_cb(uv_getaddrinfo_t *req, int status, struct addrinfo *ai)
-{
-    http2_session *session_data = (http2_session*)req->data;
-    session_data->getaddrinfo_cb(req, status, ai);
-}
-
-void http2_session::getaddrinfo_cb(uv_getaddrinfo_t*, int status, struct addrinfo *ai)
-{
-    try {
-        struct sockaddr addr;
-        ERR_POST(Trace << this << ": getaddrinfo_cb, status: " << status);
-        auto lai = make_c_unique(ai, uv_freeaddrinfo);
-        if (status == 0) {
-            if (ai->ai_family == AF_INET) {
-                addr = *ai->ai_addr;
-            } else if (ai->ai_family == AF_INET6) {
-                addr = *ai->ai_addr;
-            } else {
-                if (m_connection_state == connection_state_t::cs_connecting)
-                    m_connection_state = connection_state_t::cs_initial;
-
-                purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eDnsResolv, "failed to resolve host, invalid ai_family"));
-                return;
-            }
-        }
-        else {
-            if (m_connection_state == connection_state_t::cs_connecting)
-                m_connection_state = connection_state_t::cs_initial;
-            purge_pending_requests(SPSG_Error::LibUv(status, "failed to resolve host"));
-            return;
-        }
-
-        try_connect(&addr);
-    }
-    catch(const std::exception& e) {
-        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
-    }
-    catch(...) {
-        purge_pending_requests(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
-    }
-}
-
 /* Start resolving the remote peer |host| */
 bool http2_session::initiate_connection()
 {
-    int rv;
-    struct addrinfo hints;
-
     if (m_connection_state == connection_state_t::cs_connected)
         close_tcp();
     else if (m_connection_state != connection_state_t::cs_initial) {
@@ -1052,29 +1007,16 @@ bool http2_session::initiate_connection()
         initialize_nghttp2_session();
     }
 
-    auto pos = m_Address.find(':');
-    auto host = m_Address.substr(0, pos);
-    auto port = m_Address.substr(pos + 1);
+    struct sockaddr_in addr;
 
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_flags = AI_ALL;
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    rv = uv_getaddrinfo(m_io->loop_handle(),
-                        &m_ai_req,
-                        s_getaddrinfo_cb,
-                        host.c_str(),
-                        port.c_str(),
-                        &hints);
-    if (rv != 0) {
-        if (m_connection_state <= connection_state_t::cs_connected)
-            m_connection_state = connection_state_t::cs_initial;
-        purge_pending_requests(SPSG_Error::LibUv(rv, "failed to initiate resolving the address"));
-        return false;
-    }
-
-    return true;
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = m_Address.host;
+    addr.sin_port = CSocketAPI::HostToNetShort(m_Address.port);
+#ifdef HAVE_SIN_LEN
+    addr.sin_len = sizeof(addr);
+#endif
+ 
+    return try_connect(reinterpret_cast<sockaddr*>(&addr));
 }
 
 bool http2_session::send_client_connection_header()
@@ -1205,11 +1147,12 @@ void http2_session::process_requests()
                     return;
                 }
 
+                const auto authority = m_Address.AsString();
                 const auto& path = req->get_full_path();
                 nghttp2_nv hdrs[] = {
                     MAKE_NV2(":method",    "GET"),
                     MAKE_NV2(":scheme",    "http"),
-                    MAKE_NV (":authority", m_Address.c_str(), m_Address.length()),
+                    MAKE_NV (":authority", authority.c_str(), authority.length()),
                     MAKE_NV (":path",      path.c_str(), path.length())
                 };
                 int32_t stream_id = nghttp2_submit_request(m_session, NULL, hdrs, sizeof(hdrs) / sizeof(hdrs[0]), NULL, req.get());
@@ -1386,7 +1329,7 @@ void io_thread::execute(uv_sem_t* sem)
 
     try {
         for (auto it = m_Service.Iterate(CNetService::eSortByLoad); it; ++it) {
-            m_sessions.emplace_back(new http2_session(this, (*it).GetServerAddress()));
+            m_sessions.emplace_back(new http2_session(this, (*it).GetAddress()));
         }
     }
     catch(...) {

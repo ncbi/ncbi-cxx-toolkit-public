@@ -143,8 +143,7 @@ private:
 struct SPSG_Error
 {
     enum {
-        eDnsResolv = 1,
-        eHttpCb,
+        eHttpCb = 1,
         eUnexpCb,
         eOverlap,
         eShutdown,
@@ -479,7 +478,7 @@ private:
 
     std::unordered_map<int32_t, std::shared_ptr<http2_request>> m_requests;
 
-    std::string m_Address;
+    CNetServer::SAddress m_Address;
     std::vector<char> m_read_buf;
     std::atomic<bool> m_cancel_requested;
     std::set<pair<shared_ptr<SPSG_Reply::TTS>, std::shared_ptr<SPSG_Future>>> m_completion_list;
@@ -496,8 +495,6 @@ private:
     static int s_ng_error_cb(nghttp2_session *session, const char *msg, size_t len, void *user_data);
 
     static void s_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf);
-    static void s_getaddrinfo_cb(uv_getaddrinfo_t *req, int status, struct addrinfo *ai);
-    void getaddrinfo_cb(uv_getaddrinfo_t *req, int status, struct addrinfo *ai);
     static void s_connect_cb(uv_connect_t *req, int status);
     void connect_cb(uv_connect_t *req, int status);
     static void s_write_cb(uv_write_t* req, int status);
@@ -523,7 +520,7 @@ public:
     http2_session& operator =(const http2_session&) = delete;
     http2_session(http2_session&&) = default;
     http2_session& operator =(http2_session&&) = default;
-    http2_session(io_thread* aio, const string& address) noexcept;
+    http2_session(io_thread* aio, CNetServer::SAddress address) noexcept;
 
     ~http2_session()
     {
