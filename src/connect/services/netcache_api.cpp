@@ -64,9 +64,9 @@
 BEGIN_NCBI_SCOPE
 
 static bool s_FallbackServer_Initialized = false;
-static CSafeStatic<auto_ptr<SServerAddress> > s_FallbackServer;
+static CSafeStatic<auto_ptr<CNetServer::SAddress> > s_FallbackServer;
 
-static SServerAddress* s_GetFallbackServer()
+static CNetServer::SAddress* s_GetFallbackServer()
 {
     if (s_FallbackServer_Initialized)
         return s_FallbackServer->get();
@@ -74,7 +74,7 @@ static SServerAddress* s_GetFallbackServer()
         string host, port;
         if (NStr::SplitInTwo(TCGI_NetCacheFallbackServer::GetDefault(),
                 ":", host, port)) {
-            s_FallbackServer->reset(new SServerAddress(host,
+            s_FallbackServer->reset(new CNetServer::SAddress(host,
                             (unsigned short) NStr::StringToInt(port)));
         }
     } catch (...) {
@@ -533,7 +533,7 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
         try {
             exec_result = m_Service.FindServerAndExec(cmd, false);
         } catch (CNetSrvConnException& e) {
-            SServerAddress* backup = s_GetFallbackServer();
+            CNetServer::SAddress* backup = s_GetFallbackServer();
 
             if (backup == NULL) {
                 LOG_POST(Info << "Fallback server address is not configured.");

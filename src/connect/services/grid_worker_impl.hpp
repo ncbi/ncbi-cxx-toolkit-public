@@ -243,7 +243,7 @@ struct SGridWorkerNodeImpl : public CObject, IWorkerNodeInitContext
     void x_NotifyJobWatchers(const CWorkerNodeJobContext& job_context,
                             IWorkerNodeJobWatcher::EEvent event);
 
-    set<SServerAddress> m_Masters;
+    set<CNetServer::SAddress> m_Masters;
     set<unsigned int> m_AdminHosts;
 
     void* volatile m_SuspendResumeEvent;

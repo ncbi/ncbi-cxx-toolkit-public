@@ -584,7 +584,7 @@ int SGridWorkerNodeImpl::Run(
         string host, port;
         NStr::SplitInTwo(NStr::TruncateSpaces(*it), ":", host, port);
         if (!host.empty() && !port.empty())
-            m_Masters.insert(SServerAddress(host,
+            m_Masters.insert(CNetServer::SAddress(host,
                     (unsigned short) NStr::StringToUInt(port)));
     }
 
@@ -965,7 +965,7 @@ bool CGridWorkerNode::IsHostInAdminHostsList(const string& host) const
 
 bool SGridWorkerNodeImpl::x_AreMastersBusy() const
 {
-    ITERATE(set<SServerAddress>, it, m_Masters) {
+    ITERATE(set<CNetServer::SAddress>, it, m_Masters) {
         STimeout tmo = {0, 500};
         CSocket socket(it->host, it->port, &tmo, eOff);
         if (socket.GetStatus(eIO_Open) != eIO_Success)

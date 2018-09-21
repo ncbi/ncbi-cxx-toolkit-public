@@ -303,7 +303,7 @@ CNetServerMultilineCmdOutput::CNetServerMultilineCmdOutput(
 }
 
 /*************************************************************************/
-SNetServerInPool::SNetServerInPool(SServerAddress address,
+SNetServerInPool::SNetServerInPool(CNetServer::SAddress address,
         INetServerProperties* server_properties) :
     m_Address(move(address)),
     m_ServerProperties(server_properties)
@@ -433,19 +433,9 @@ bool CNetServerInfo::GetNextAttribute(string& attr_name, string& attr_value)
     return m_Impl->GetNextAttribute(attr_name, attr_value);
 }
 
-unsigned CNetServer::GetHost() const
+const CNetServer::SAddress& CNetServer::GetAddress() const
 {
-    return m_Impl->m_ServerInPool->m_Address.host;
-}
-
-unsigned short CNetServer::GetPort() const
-{
-    return m_Impl->m_ServerInPool->m_Address.port;
-}
-
-string CNetServer::GetServerAddress() const
-{
-    return m_Impl->m_ServerInPool->m_Address.AsString();
+    return m_Impl->m_ServerInPool->m_Address;
 }
 
 
@@ -556,7 +546,7 @@ CNetServerConnection SNetServerInPool::Connect(SNetServerImpl* server, STimeout*
 }
 
 void SNetServerImpl::ConnectImpl(CSocket& socket, SConnectDeadline& deadline,
-        const SServerAddress& actual, const SServerAddress& original)
+        const CNetServer::SAddress& actual, const CNetServer::SAddress& original)
 {
     EIO_Status io_st;
 
@@ -710,7 +700,7 @@ void SNetServerInPool::CheckIfThrottled()
     m_ThrottleStats.CheckIfThrottled(params, m_Address);
 }
 
-void SThrottleStats::CheckIfThrottled(const SThrottleParams& params, const SServerAddress& address)
+void SThrottleStats::CheckIfThrottled(const SThrottleParams& params, const CNetServer::SAddress& address)
 {
     CFastMutexGuard guard(m_ThrottleLock);
 
@@ -888,33 +878,33 @@ void SThrottleParams::Init(CSynRegistry& registry, const SRegSynonyms& sections)
     m_IOFailureThresholdDenominator = denominator;
 }
 
-SServerAddress::SServerAddress(unsigned h, unsigned short p) :
+CNetServer::SAddress::SAddress(unsigned h, unsigned short p) :
     host(h),
     port(p),
     name(host, {})
 {
 }
 
-SServerAddress::SServerAddress(string n, unsigned short p) :
+CNetServer::SAddress::SAddress(string n, unsigned short p) :
     host(g_NetService_gethostbyname(n)),
     port(p),
     name(host, move(n))
 {
 }
 
-bool operator==(const SServerAddress& lhs, const SServerAddress& rhs)
+bool operator==(const CNetServer::SAddress& lhs, const CNetServer::SAddress& rhs)
 {
     return lhs.host == rhs.host && lhs.port == rhs.port;
 }
 
-bool operator< (const SServerAddress& lhs, const SServerAddress& rhs)
+bool operator< (const CNetServer::SAddress& lhs, const CNetServer::SAddress& rhs)
 {
     if (lhs.host != rhs.host) return lhs.host < rhs.host;
 
     return lhs.port < rhs.port;
 }
 
-string SServerAddress::AsString() const
+string CNetServer::SAddress::AsString() const
 {
     // Name was not looked up yet or host changed
     if (name.second.empty() || name.first != host) {

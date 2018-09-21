@@ -145,23 +145,6 @@ public:
             const string& cmd) = 0;
 };
 
-// A host:port pair.
-struct SServerAddress
-{
-    unsigned host;
-    unsigned short port;
-
-    SServerAddress(unsigned h, unsigned short p);
-    SServerAddress(string n, unsigned short p);
-    string AsString() const;
-
-private:
-    mutable pair<unsigned, string> name;
-};
-
-bool operator==(const SServerAddress& lhs, const SServerAddress& rhs);
-bool operator< (const SServerAddress& lhs, const SServerAddress& rhs);
-
 struct SThrottleParams
 {
     // The parameters below describe different conditions that trigger server throttling.
@@ -190,7 +173,7 @@ struct SThrottleStats
     };
 
     void AdjustThrottlingParameters(const SThrottleParams& params, EConnOpResult op_result);
-    void CheckIfThrottled(const SThrottleParams& params, const SServerAddress& address);
+    void CheckIfThrottled(const SThrottleParams& params, const CNetServer::SAddress& address);
     void ResetThrottlingParameters();
     void DiscoveredAfterThrottling();
 
@@ -208,7 +191,7 @@ private:
 
 struct SNetServerInPool : public CObject
 {
-    SNetServerInPool(SServerAddress address,
+    SNetServerInPool(CNetServer::SAddress address,
             INetServerProperties* server_properties);
 
     // Releases a reference to the parent service object,
@@ -235,7 +218,7 @@ public:
     // to an outside caller via ReturnServer() or GetServer().
     CNetServerPool m_ServerPool;
 
-    SServerAddress m_Address;
+    CNetServer::SAddress m_Address;
 
     // API-specific server properties.
     CRef<INetServerProperties> m_ServerProperties;
@@ -285,8 +268,8 @@ struct SNetServerImpl : public CObject
             STimeout* timeout = NULL,
             INetServerExecListener* exec_listener = NULL);
 
-    static void ConnectImpl(CSocket&, SConnectDeadline&, const SServerAddress&,
-            const SServerAddress&);
+    static void ConnectImpl(CSocket&, SConnectDeadline&, const CNetServer::SAddress&,
+            const CNetServer::SAddress&);
 
     template <class TProperties>
     CRef<TProperties> Get()

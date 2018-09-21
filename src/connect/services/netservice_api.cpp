@@ -375,7 +375,7 @@ void SNetServiceImpl::Construct()
         if (!NStr::SplitInTwo(m_ServiceName, ":", host, port))
             m_ServiceType = eLoadBalancedService;
         else
-            Construct(m_ServerPool->FindOrCreateServerImpl(SServerAddress(host,
+            Construct(m_ServerPool->FindOrCreateServerImpl(CNetServer::SAddress(host,
                     (unsigned short) NStr::StringToInt(port))));
     }
 }
@@ -435,9 +435,9 @@ void SNetServiceXSiteAPI::InitXSite(CSynRegistry& registry, const SRegSynonyms& 
 
 void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
         SNetServerImpl::SConnectDeadline& deadline,
-        const SServerAddress& original, const string& service)
+        const CNetServer::SAddress& original, const string& service)
 {
-    SServerAddress actual(original);
+    CNetServer::SAddress actual(original);
     _ASSERT(actual.port);
     ticket_t ticket = 0;
 
@@ -564,7 +564,7 @@ void SNetServiceXSiteAPI::InitXSite(CSynRegistry&, const SRegSynonyms&)
 
 void SNetServiceXSiteAPI::ConnectXSite(CSocket& socket,
         SNetServerImpl::SConnectDeadline& deadline,
-        const SServerAddress& original, const string&)
+        const CNetServer::SAddress& original, const string&)
 {
     SNetServerImpl::ConnectImpl(socket, deadline, original, original);
 }
@@ -739,7 +739,7 @@ bool CNetService::IsLoadBalanced() const
 
 void CNetServerPool::StickToServer(const string& host, unsigned short port)
 {
-    m_Impl->m_EnforcedServer = SServerAddress(host, port);
+    m_Impl->m_EnforcedServer = CNetServer::SAddress(host, port);
 }
 
 void CNetService::PrintCmdOutput(const string& cmd,
@@ -790,7 +790,7 @@ void CNetService::PrintCmdOutput(const string& cmd,
 }
 
 SNetServerInPool* SNetServerPoolImpl::FindOrCreateServerImpl(
-        SServerAddress server_address)
+        CNetServer::SAddress server_address)
 {
     pair<TNetServerByAddress::iterator, bool> loc(m_Servers.insert(
             TNetServerByAddress::value_type(server_address,
@@ -817,7 +817,7 @@ CRef<SNetServerInPool> SNetServerPoolImpl::ReturnServer(
     return CRef<SNetServerInPool>(server_impl);
 }
 
-CNetServer SNetServerPoolImpl::GetServer(SNetServiceImpl* service, SServerAddress server_address)
+CNetServer SNetServerPoolImpl::GetServer(SNetServiceImpl* service, CNetServer::SAddress server_address)
 {
     m_RebalanceStrategy->OnResourceRequested();
 
@@ -829,7 +829,7 @@ CNetServer SNetServerPoolImpl::GetServer(SNetServiceImpl* service, SServerAddres
     return new SNetServerImpl(service, server);
 }
 
-CNetServer SNetServiceImpl::GetServer(SServerAddress server_address)
+CNetServer SNetServiceImpl::GetServer(CNetServer::SAddress server_address)
 {
     return m_ServerPool->GetServer(this, move(server_address));
 }
@@ -837,12 +837,12 @@ CNetServer SNetServiceImpl::GetServer(SServerAddress server_address)
 CNetServer CNetService::GetServer(const string& host,
         unsigned short port)
 {
-    return m_Impl->GetServer(SServerAddress(host, port));
+    return m_Impl->GetServer(CNetServer::SAddress(host, port));
 }
 
 CNetServer CNetService::GetServer(unsigned host, unsigned short port)
 {
-    return m_Impl->GetServer(SServerAddress(host, port));
+    return m_Impl->GetServer(CNetServer::SAddress(host, port));
 }
 
 class SRandomServiceTraversal : public IServiceTraversal
@@ -990,7 +990,7 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
                 if (sinfo->time > 0 && sinfo->time != NCBI_TIME_INFINITE &&
                         sinfo->rate != 0.0) {
                     SNetServerInPool* server = m_ServerPool->
-                            FindOrCreateServerImpl(SServerAddress(sinfo->host, sinfo->port));
+                            FindOrCreateServerImpl(CNetServer::SAddress(sinfo->host, sinfo->port));
                     server->DiscoveredAfterThrottling();
 
                     TServerRate server_rate(server, sinfo->rate);

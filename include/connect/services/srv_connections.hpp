@@ -99,9 +99,25 @@ class NCBI_XCONNECT_EXPORT CNetServer
 {
     NCBI_NET_COMPONENT(NetServer);
 
-    unsigned GetHost() const;
-    unsigned short GetPort() const;
-    string GetServerAddress() const;
+    struct SAddress
+    {
+        unsigned host;
+        unsigned short port;
+
+        SAddress(unsigned h, unsigned short p);
+        SAddress(string n, unsigned short p);
+        string AsString() const;
+
+    private:
+        mutable pair<unsigned, string> name;
+    };
+
+    const SAddress& GetAddress() const;
+
+    // Shortcuts
+    unsigned       GetHost()          const { return GetAddress().host;       }
+    unsigned short GetPort()          const { return GetAddress().port;       }
+    string         GetServerAddress() const { return GetAddress().AsString(); }
 
     struct SExecResult {
         string response;
@@ -121,6 +137,9 @@ class NCBI_XCONNECT_EXPORT CNetServer
     /// attribute name-value pairs.
     CNetServerInfo GetServerInfo();
 };
+
+NCBI_XCONNECT_EXPORT bool operator==(const CNetServer::SAddress& lhs, const CNetServer::SAddress& rhs);
+NCBI_XCONNECT_EXPORT bool operator< (const CNetServer::SAddress& lhs, const CNetServer::SAddress& rhs);
 
 ///////////////////////////////////////////////////////////////////////////
 //
