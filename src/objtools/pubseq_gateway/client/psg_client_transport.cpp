@@ -42,6 +42,7 @@
 #include <type_traits>
 #include <utility>
 #include <functional>
+#include <numeric>
 
 #include <uv.h>
 
@@ -63,6 +64,55 @@ NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_streams, 200);
 NCBI_PARAM_DEF(unsigned, PSG, num_io,                 16);
 NCBI_PARAM_DEF(bool,     PSG, delayed_completion,     true);
 NCBI_PARAM_DEF(unsigned, PSG, reader_timeout,         12);
+NCBI_PARAM_DEF(string,   PSG, debug_printout,         "none");
+
+struct SDebugPrintout
+{
+    SDebugPrintout() : m_Level(GetLevel()) {}
+
+    explicit operator bool() { return m_Level != eNone; }
+    string Print(SPSG_Reply::SChunk& chunk) { return m_Level == eNone ? "" : PrintImpl(chunk); }
+
+    static SDebugPrintout& GetInstance() { static SDebugPrintout instance; return instance; }
+
+private:
+    enum ELevel { eNone, eSome, eAll };
+
+    string PrintImpl(SPSG_Reply::SChunk& chunk);
+
+    static ELevel GetLevel();
+
+    const ELevel m_Level;
+};
+
+string SDebugPrintout::PrintImpl(SPSG_Reply::SChunk& chunk)
+{
+    auto& args = chunk.args;
+    ostringstream os;
+    os << args.GetQueryString(CUrlArgs::eAmp_Char) << '\n';
+
+    if ((m_Level == eAll) || (args.GetValue("item_type") != "blob") || (args.GetValue("chunk_type") != "data")) {
+        for (auto& v : chunk.data) {
+            os.write(v.data(), v.size());
+        }
+    } else {
+        auto l = [](size_t sum, const vector<char>& v) { return sum + v.size(); };
+        os << "<BINARY DATA OF " << accumulate(chunk.data.begin(), chunk.data.end(), 0ul, l) << " BYTES>";
+    }
+
+    return NStr::PrintableString(os.str());
+}
+
+SDebugPrintout::ELevel SDebugPrintout::GetLevel()
+{
+    const auto& value = TPSG_DebugPrintout::GetDefault();
+
+    for (auto all : { "all", "data" }) {
+        if (NStr::CompareNocase(value, all) == 0) return eAll;
+    }
+
+    return NStr::CompareNocase(value, "some") == 0 ? eSome : eNone;
+}
 
 string SPSG_Error::Generic(int errc, const char* details)
 {
@@ -214,6 +264,10 @@ void SPSG_Receiver::Add()
 {
     assert(m_Reply);
     assert(m_Queue);
+
+    if (auto& printout = SDebugPrintout::GetInstance()) {
+        ERR_POST(Warning << printout.Print(m_Buffer.chunk));
+    }
 
     auto& chunk = m_Buffer.chunk;
     auto& args = chunk.args;
@@ -1156,6 +1210,11 @@ void http2_session::process_requests()
                     MAKE_NV (":authority", authority.c_str(), authority.length()),
                     MAKE_NV (":path",      path.c_str(), path.length())
                 };
+
+                if (SDebugPrintout::GetInstance()) {
+                    ERR_POST(Warning << "Host '" << authority << "' to get request '" << path << '\'');
+                }
+
                 int32_t stream_id = nghttp2_submit_request(m_session, NULL, hdrs, sizeof(hdrs) / sizeof(hdrs[0]), NULL, req.get());
                 if (stream_id == NGHTTP2_ERR_STREAM_ID_NOT_AVAILABLE) {
                     req->error(SPSG_Error::NgHttp2(stream_id));
@@ -1277,6 +1336,7 @@ void io_thread::on_wake(uv_async_t*)
 void io_thread::on_timer(uv_timer_t*)
 {
     try {
+        const auto& service_name = m_Service.GetServiceName();
         set<CNetServer::SAddress> discovered;
 
         // Gather all discovered addresses
@@ -1286,12 +1346,20 @@ void io_thread::on_timer(uv_timer_t*)
 
         // Update existing sessions
         for (auto& session : m_Sessions) {
-            session.discovered = discovered.erase(session.GetAddress()) == 1;
+            const auto& address = session.GetAddress();
+            auto in_service = discovered.erase(address) == 1;
+
+            if (session.discovered != in_service) {
+                session.discovered = in_service;
+                ERR_POST(Trace << "Host '" << address.AsString() << "' " <<
+                        (in_service ? "added to" : "removed from") << " service '" << service_name << '\'');
+            }
         }
 
         // Add sessions for newly discovered addresses
         for (auto& address : discovered) {
             m_Sessions.emplace_back(this, address);
+            ERR_POST(Trace << "Host '" << address.AsString() << "' added to service '" << service_name << '\'');
         }
 
         for (auto& session : m_Sessions) {
