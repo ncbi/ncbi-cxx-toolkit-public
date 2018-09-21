@@ -4,7 +4,7 @@ DLL = ncbi_seqext
 
 HOSTED_LIBS    = xalnmgr   \
                  xobjmgr   \
-				 xlogging  \
+                 xlogging  \
                  xobjread  \
                  xobjreadex\
                  xobjwrite \

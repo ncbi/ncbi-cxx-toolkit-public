@@ -28,6 +28,7 @@ NCBI_begin_lib(ncbi_seqext SHARED)
     objects/valid/valid
     objtools/blast/services/blast_services
     objtools/blast/blastdb_format/blastdb_format
+    objtools/logging
     objtools/snputil/snputil
     objtools/uudutil/uudutil
     objtools/unit_test_util/unit_test_util
