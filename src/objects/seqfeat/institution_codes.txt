@@ -151,7 +151,7 @@ ALUH	s	Alzahra University
 AM	sb		AMS		
 AM:Arachnology	s	, Invertebrate Collections: Arachnology	
 AM:EBU	sb	, Evolutionary Biology Unit Tissue Collection		
-AM:Entomology	s	, Invertebrate Collections: Entomology		
+AM:Entomology	s	, Invertebrate Collections: Entomology	
 AM:Herpetology	s	, Vertebrate Collections: Herpetology		
 AM:Ichthyology	s	, Vertebrate Collections: Ichthyology		
 AM:Malacology	s	, Invertebrate Collections: Malacology		
@@ -179,9 +179,9 @@ AMMS	s	Academy of Military Medical Sciences
 AMNH	sb	American Museum of Natural History			
 AMNH:Fish	s	American Museum of Natural History, Ichthyology Collection		
 AMNH:FM	s	American Museum of Natural History, Fossil Mammal Collection	http://www.amnh.org/our-research/paleontology/collections/fossil-mammals/
-AMNH:Herp	s	American Museum of Natural History, Herpetology collection		
+AMNH:Herp	s	American Museum of Natural History, Herpetology collection	
 AMNH:M	s	American Museum of Natural History, Mammal collection	
-AMNH:ORN	s	American Museum of Natural History, Ornithology Collection		
+AMNH:ORN	s	American Museum of Natural History, Ornithology Collection	
 AMNH:R	s	American Museum of Natural History, Reptile Collection		
 AMNH<ISL>	s	Icelandic Institute of Natural History, Akureyri Division			
 AMNZ	s	Auckland Institute and Museum	AIM		
@@ -215,12 +215,11 @@ ANLW	s	Amt Der Niederosterreichischen Landsregierung
 ANMR	c	Asian Network on Microbial Researches			
 ANSM	s	Universidad Autonoma Agraria Antonio Narro, Departamento de Botanica			
 ANSP	s	Academy of Natural Sciences of Philadelphia			
-ANSP:Bird	s	Academy of Natural Sciences of Philadelphia, Bird collection	
-ANSP:Herpetology	s	Academy of Natural Sciences of Philadelphia, Herpetology collection	
-ANSP:Ichthyology		Academy of Natural Sciences of Philadelphia, 	
+ANSP:FISH	s	Academy of Natural Sciences of Philadelphia, Ichthyology Collection	
+ANSP:HRP	s	Academy of Natural Sciences of Philadelphia, Herpetology collection	
 ANSP:Malacology	s	Academy of Natural Sciences of Philadelphia, Malacology Collection		
-ANSP:Mammalogy	 	Academy of Natural Sciences of Philadelphia, 	
-ANSP:Ornithology	s	Academy of Natural Sciences of Philadelphia, Ornithology collection	
+ANSP:MAM	s	Academy of Natural Sciences of Philadelphia, Mammal collection	
+ANSP:ORN	s	Academy of Natural Sciences of Philadelphia, Ornithology collection	
 ANTU	s	Changbai Mountain National Nature Reserve Administration Bureau			
 ANU<AUS>	s	Australian National University	ANU<AUS>,ANU<AUST>		
 ANU<CHN>	s	Anhui University, Biology Department			
@@ -282,6 +281,9 @@ ASIZP	s	Academia Sinica Institute of Zoology, Ichthyology Collection	ASIZP<TWN>
 ASIZT	s	Academia Sinica Institute of Zoology, Taipei			
 ASM	s	Arts and Science University			
 ASNHC	s	Angelo State Natural History Collection			
+ASNHC:Birds	s	Angelo State Natural History Collection, Ornithology Collection	
+ASNHC:Mammals	s	Angelo State Natural History Collection, Mammalogy Collection	
+ASNHC:Reptiles	s	Angelo State Natural History Collection, Herpetology Collection	
 ASSAM	s	Botanical Survey of India, Eastern Circle			
 ASSL	s	Academy of Sciences			
 AST	s	University of Aston			
@@ -5989,7 +5991,7 @@ SMCW	s	Saint Michael's College, Biology Department
 SMDB	s	Universidade Federal de Santa Maria, Departamento de Biologia			
 SME<FRA>	s	Station Marine d'Endoume			
 SME<GBR>	s	Sedgwick Museum of Geology			
-SMF<DEU>	s	Forschungsinstitut und Natur-Museum Senckenberg			
+SMF<DEU>	s	Forschungsinstitut und NaturMuseum Senckenberg			
 SMF<PER>	s	Universidad Nacional Mayor de San Marcos			
 SMH	s	Saint Meinrad College of Liberal Arts, Biology Department			
 SMI	s	Prince Rupert Forest Region, Research Section			
@@ -6951,7 +6953,7 @@ URO	s	University of the Ryukyus
 URP	s	Museo de Historia Natural, Universidad Ricardo Palma			
 URT	s	Universita degli Studi di Roma Tre, Dipartimento di Biologia			
 URV	s	University of Richmond, Biology Department			
-US	s	Smithsonian Institution, Department of Botany	USNM:US		
+US	s	Smithsonian Institution, Department of Botany	US:Botany,USNM:US		
 US<ZAF>	s	University of Stellenbosch			
 USA	s	University of South Alabama			
 USAC<AUS>	s	University of Western Australia			
@@ -6999,12 +7001,12 @@ USMS	s	University of Southern Mississippi, Department of Biological Sciences
 USNC	s	Smithsonian Institution, Paleobiology Department			
 USNM	sb	National Museum of Natural History, Smithsonian Institution	NMNH		
 USNM:Birds	s	National Museum of Natural History, Smithsonian Institution, Division of Birds		
-USNM:ENT	s	National Museum of Natural History, Smithsonian Institution, Entomology Collection		
-USNM:FISH	s	National Museum of Natural History, Smithsonian Institution, National Fish Collection		
-USNM:Herp	s	National Museum of Natural History, Smithsonian Institution, Division of Amphibians and Reptiles		
+USNM:ENT	s	National Museum of Natural History, Smithsonian Institution, Entomology Collection	
+USNM:FISH	s	National Museum of Natural History, Smithsonian Institution, National Fish Collection	
+USNM:Herp	s	National Museum of Natural History, Smithsonian Institution, Division of Amphibians and Reptiles	
 USNM:IZ	s	National Museum of Natural History, Smithsonian Institution, Department of Invertebrate Zoology	
 USNM:LAB	b	National Museum of Natural History, Smithsonian Institution, Laboratories of Analytical Biology		
-USNM:MAMM	s	National Museum of Natural History, Smithsonian Institution, Division of Mammals		
+USNM:MAMM	s	National Museum of Natural History, Smithsonian Institution, Division of Mammals	
 USNTC	s	U.S. National Tick Collection			
 USON	s	Universidad de Sonora, Departamento de Investigaciones Cientificas y Technologicas			
 USP<BRA>	s	Universidade de Sao Paulo			
