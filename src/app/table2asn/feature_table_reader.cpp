@@ -666,6 +666,47 @@ CConstRef<CSeq_feat> CFeatureTableReader::_GetLinkedFeature(const CSeq_feat& cd_
     return feature;
 }
 
+
+static void s_AppendProtRefInfo(CProt_ref& current_ref, const CProt_ref& other_ref)
+{
+    if (other_ref.IsSetName()) {
+        for (const auto& name : other_ref.GetName()) {
+            current_ref.SetName().push_back(name);
+        }
+    }
+
+    if (other_ref.IsSetDesc() &&
+        !current_ref.IsSetDesc()) {
+        current_ref.SetDesc(other_ref.GetDesc());
+    }
+
+    if (other_ref.IsSetEc()) {
+        for (const auto& ec : other_ref.GetEc()) {
+            current_ref.SetEc().push_back(ec);
+        }
+    }
+
+    if (other_ref.IsSetActivity()) {
+        for (const auto& activity : other_ref.GetActivity()) {
+            current_ref.SetActivity().push_back(activity);
+        }
+    }
+
+    if (other_ref.IsSetDb()) {
+        for (const auto pDBtag : other_ref.GetDb()) {
+            current_ref.SetDb().push_back(pDBtag);
+        }
+    }
+
+    if (current_ref.GetProcessed() == CProt_ref::eProcessed_not_set) {
+        const auto processed = other_ref.GetProcessed();
+        if (processed != CProt_ref::eProcessed_not_set) {
+            current_ref.SetProcessed(processed);
+        }
+    }
+}
+
+
 CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_entry_h, const CBioseq& bioseq, CSeq_feat& cd_feature)
 {
     if (sequence::IsPseudo(cd_feature, *m_scope))
@@ -764,6 +805,11 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
     CSeq_feat& prot_feat = CreateOrSetFTable(*protein);
 
     CProt_ref& prot_ref = prot_feat.SetData().SetProt();
+    const CProt_ref* pProtXref=cd_feature.GetProtXref();
+    if (pProtXref) {
+        s_AppendProtRefInfo(prot_ref, *pProtXref);
+    }
+
 
     string protein_name;
     bool fixed_protein_name = false;
@@ -791,10 +837,10 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
 #endif
     }
     else
-        if (m_context.m_use_hypothetic_protein)
-        {
+    if (m_context.m_use_hypothetic_protein)
+    {
             protein_name = "hypothetical protein";
-        }
+    }
 
     if (!protein_name.empty())
     {
