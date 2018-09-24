@@ -127,6 +127,30 @@ public:
         bool   advancedView;
     };
 
+    //Defline info for formatting 
+    struct SDeflineFormattingInfo {
+        string dfln_url;            
+        string dfln_rid;
+        string dfln_gi;            
+        string dfln_seqid;
+        string full_dfln_defline;
+        string dfln_defline;
+        string dfln_id;
+        string dflnFrm_id;
+        string dflnFASTA_id;
+        string dflnAccs;
+            
+        string score_info;            
+        string dfln_hspnum; 
+        string dfln_alnLen;
+        string dfln_blast_rank;     
+	    string total_bit_string;      
+        string percent_coverage;
+        string evalue_string;
+        string percent_identity;    
+    };
+
+
     //data represnting info to record in applog amd metadata
     struct SAppLogInfo {
         int     topMatchesNum;
@@ -346,6 +370,10 @@ public:
     ///Initialize defline params
     void Init(void);
 
+    ///Get  deflines formatting info
+    ///@return vector of SDeflineFormattingInfo structs for defilens
+    vector <CShowBlastDefline::SDeflineFormattingInfo *> GetFormattingInfo(void);
+    
     ///Display defline
     ///@param out: stream to output
     ///
@@ -487,6 +515,7 @@ protected:
     //info to record in applog amd metadata
     SAppLogInfo *m_AppLogInfo;
     
+    vector <SDeflineFormattingInfo *> m_SdlFormatInfoVec;
 
     ///Internal function to return score info
     ///@param aln seq-align we are working with [in]
@@ -564,6 +593,7 @@ protected:
     ///
     void x_DisplayDeflineTableTemplate(CNcbiOstream & out);
 
+    void x_InitFormattingInfo(SScoreInfo* sci);    
     //For internal test
     friend struct ::CShowBlastDeflineTest;    
 };
