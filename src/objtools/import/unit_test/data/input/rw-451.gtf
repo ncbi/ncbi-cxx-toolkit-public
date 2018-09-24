@@ -1,0 +1,10 @@
+#test set 1: both mRNA and CDS come with both transcript_id and protein_id, in non-canonical form:
+chr1	FINAL_GENE_SET	start_codon	11499	11501	.	-	0	gene_id "CNAG_00001"; locus_tag "XNAG_00001";  transcript_id "CNAG_00001T0"; protein_id "CNAG_00001T0";
+chr1	FINAL_GENE_SET	stop_codon	11060	11062	.	-	0	gene_id "CNAG_00001"; locus_tag "XNAG_00001";  transcript_id "CNAG_00001T0"; protein_id "CNAG_00001T0";
+chr1	FINAL_GENE_SET	exon	11638	11664	.	-	.	gene_id "CNAG_00001"; locus_tag "XNAG_00001";  transcript_id "CNAG_00001T0"; protein_id "CNAG_00001T0";
+chr1	FINAL_GENE_SET	exon	11638	11664	.	-	.	gene_id "CNAG_00001"; locus_tag "XNAG_00001";  transcript_id "CNAG_00001T0"; protein_id "CNAG_00001T0";
+chr1	FINAL_GENE_SET	exon	11423	11573	.	-	.	gene_id "CNAG_00001"; locus_tag "XNAG_00001";  transcript_id "CNAG_00001T0"; protein_id "CNAG_00001T0";
+chr1	FINAL_GENE_SET	CDS	11423	11501	.	-	0	gene_id "CNAG_00001"; locus_tag "XNAG_00001";  transcript_id "CNAG_00001T0"; protein_id "CNAG_00001T0";
+chr1	FINAL_GENE_SET	exon	11007	11307	.	-	.	gene_id "CNAG_00001"; locus_tag "XNAG_00001";  transcript_id "CNAG_00001T0"; protein_id "CNAG_00001T0";
+chr1	FINAL_GENE_SET	CDS	11063	11307	.	-	2	gene_id "CNAG_00001"; locus_tag "XNAG_00001";  transcript_id "CNAG_00001T0"; protein_id "CNAG_00001T0";
+chr1	FINAL_GENE_SET	exon	10835	10923	.	-	.	gene_id "CNAG_00001"; locus_tag "XNAG_00001";  transcript_id "CNAG_00001T0"; protein_id "CNAG_00001T0";

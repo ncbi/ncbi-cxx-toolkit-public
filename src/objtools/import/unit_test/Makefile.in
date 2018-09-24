@@ -1,0 +1,12 @@
+# $Id$
+
+# Meta-makefile ("objtools/readers" project)
+############################################
+
+APP_PROJ = \
+    unit_test_import
+
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
