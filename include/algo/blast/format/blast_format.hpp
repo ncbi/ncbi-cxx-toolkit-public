@@ -89,7 +89,8 @@ public:
     enum DisplayOption {
         eDescriptions,
         eAlignments,
-        eMetadata
+        eMetadata,
+        eDescriptionsWithTemplates // this option is not implemented in blast_report
     };
     /// Constructor
     /// @param opts BLAST options used in the search [in]
@@ -519,6 +520,8 @@ private:
    void x_DisplayDeflinesWithTemplates(CConstRef<CSeq_align_set> aln_set);
    void x_SetAlignParameters(CDisplaySeqalign& cds);
    void x_DisplayAlignsWithTemplates(CConstRef<CSeq_align_set> aln_set,const blast::CSearchResults& results);
+   //Creates json object array of info for each defline to display
+   void x_CreateDeflinesJson(CConstRef<CSeq_align_set> aln_set);
 };
 
 END_NCBI_SCOPE
