@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile (object utilities)
+##################################
+
+LIB_PROJ = import
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
