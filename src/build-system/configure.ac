@@ -3222,8 +3222,9 @@ if test "$compiler" != "MSVC" ; then
       case "$compiler" in
          GCC )
             CPPFLAGS="-D_GLIBCXX_DEBUG $CPPFLAGS"
-            CFLAGS="-fstack-check $CFLAGS"
-            CXXFLAGS="-fstack-check $CXXFLAGS"
+            CFLAGS="-fstack-check -fsanitize=address $CFLAGS"
+            CXXFLAGS="-fstack-check -fsanitize=address $CXXFLAGS"
+            LDFLAGS="-fsanitize=address $LDFLAGS"
             ;;
          ICC ) 
             CPPFLAGS="-D_GLIBCXX_DEBUG $CPPFLAGS"
