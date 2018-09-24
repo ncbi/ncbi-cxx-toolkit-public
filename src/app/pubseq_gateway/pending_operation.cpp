@@ -1659,7 +1659,8 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
 void CBlobPropCallback::x_RequestId2SplitBlobs(const string &  sat_name)
 {
     for (int  chunk_no = 1; chunk_no <= m_Id2InfoChunks; ++chunk_no) {
-        SBlobId     chunks_blob_id(m_Id2InfoSat, m_Id2InfoInfo + chunk_no);
+        SBlobId     chunks_blob_id(m_Id2InfoSat,
+                                   m_Id2InfoInfo - m_Id2InfoChunks - 1 + chunk_no);
         chunks_blob_id.m_SatName = sat_name;
 
         SBlobRequest    chunk_request(chunks_blob_id, INT64_MIN);
