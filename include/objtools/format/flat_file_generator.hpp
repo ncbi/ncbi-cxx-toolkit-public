@@ -109,6 +109,10 @@ public:
     static string GetSeqFeatText(const CMappedFeat& feat, CScope& scope,
         const CFlatFileConfig& cfg);
 
+    void x_GetLocation(const CSeq_entry_Handle& entry,
+         TSeqPos from, TSeqPos to, ENa_strand strand, CSeq_loc& loc);
+    CBioseq_Handle x_DeduceTarget(const CSeq_entry_Handle& entry);
+
     bool Failed() { return m_Failed; }
 
     //void Reset(void);

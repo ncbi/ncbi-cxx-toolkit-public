@@ -850,6 +850,94 @@ string CFlatFileGenerator::GetSeqFeatText
     return text;
 }
 
+void CFlatFileGenerator::x_GetLocation
+(const CSeq_entry_Handle& entry,
+ TSeqPos from,
+ TSeqPos to,
+ ENa_strand strand,
+ CSeq_loc& loc)
+{
+    _ASSERT(entry);
+
+    CBioseq_Handle h = x_DeduceTarget(entry);
+    if ( !h ) {
+        NCBI_THROW(CFlatException, eInvalidParam,
+            "Cannot deduce target bioseq.");
+    }
+    TSeqPos length = h.GetInst_Length();
+
+    if ( from == CRange<TSeqPos>::GetWholeFrom()  &&  to == length ) {
+        // whole
+        loc.SetWhole().Assign(*h.GetSeqId());
+    } else {
+        // interval
+        loc.SetInt().SetId().Assign(*h.GetSeqId());
+        loc.SetInt().SetFrom(from);
+        loc.SetInt().SetTo(to);
+        if ( strand > 0 ) {
+            loc.SetInt().SetStrand(strand);
+        }
+    }
+}
+
+// if the 'from' or 'to' flags are specified try to guess the bioseq.
+CBioseq_Handle CFlatFileGenerator::x_DeduceTarget(const CSeq_entry_Handle& entry)
+{
+    if ( entry.IsSeq() ) {
+        return entry.GetSeq();
+    }
+
+    _ASSERT(entry.IsSet());
+    CBioseq_set_Handle bsst = entry.GetSet();
+    if ( !bsst.IsSetClass() ) {
+        NCBI_THROW(CFlatException, eInvalidParam,
+            "Cannot deduce target bioseq.");
+    }
+    _ASSERT(bsst.IsSetClass());
+    switch ( bsst.GetClass() ) {
+    case CBioseq_set::eClass_nuc_prot:
+        // return the nucleotide
+        for ( CSeq_entry_CI it(entry); it; ++it ) {
+            if ( it->IsSeq() ) {
+                CBioseq_Handle h = it->GetSeq();
+                if ( h  &&  CSeq_inst::IsNa(h.GetInst_Mol()) ) {
+                    return h;
+                }
+            }
+        }
+        break;
+    case CBioseq_set::eClass_gen_prod_set:
+        // return the genomic
+        for ( CSeq_entry_CI it(bsst); it; ++it ) {
+            if ( it->IsSeq()  &&
+                 it->GetSeq().GetInst_Mol() == CSeq_inst::eMol_dna ) {
+                 return it->GetSeq();
+            }
+        }
+        break;
+    case CBioseq_set::eClass_segset:
+        // return the segmented bioseq
+        for ( CSeq_entry_CI it(bsst); it; ++it ) {
+            if ( it->IsSeq() ) {
+                return it->GetSeq();
+            }
+        }
+        break;
+    case CBioseq_set::eClass_genbank:
+        {
+            CBioseq_CI bi(bsst, CSeq_inst::eMol_na);
+            if (bi) {
+                return *bi;
+            }
+        }
+        break;
+    default:
+        break;
+    }
+    NCBI_THROW(CFlatException, eInvalidParam,
+            "Cannot deduce target bioseq.");
+}
+
 void 
 CFlatFileGenerator::CCancelableFlatItemOStreamWrapper::SetFormatter(
     IFormatter* formatter)
