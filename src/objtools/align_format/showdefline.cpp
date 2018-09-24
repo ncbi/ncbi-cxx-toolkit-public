@@ -538,6 +538,11 @@ CShowBlastDefline::~CShowBlastDefline()
     ITERATE(vector<SScoreInfo*>, iter, m_ScoreList){
         delete *iter;
     }
+    
+    ITERATE(vector<SDeflineFormattingInfo*>, iter, m_SdlFormatInfoVec){
+        delete *iter;
+    }
+    
 }
 
 
@@ -1623,6 +1628,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     return defLine;
 }
 
+
 string CShowBlastDefline::x_FormatPsi(SDeflineInfo* sdl, bool &first_new)
 {
     string defline = m_DeflineTemplates->defLineTmpl;
@@ -1663,6 +1669,125 @@ string CShowBlastDefline::x_FormatPsi(SDeflineInfo* sdl, bool &first_new)
     
     return defline;
 }
+
+
+
+
+void CShowBlastDefline::x_InitFormattingInfo(SScoreInfo* sci) 
+{
+    SDeflineFormattingInfo* sdlFormatInfo = new SDeflineFormattingInfo;
+    SDeflineInfo* sdl = x_GetDeflineInfo(sci->id, sci->use_this_seqid, sci->blast_rank);
+
+                string dflGi = (m_Option & eShowGi) && (sdl->gi > ZERO_GI) ? "gi|" + NStr::NumericToString(sdl->gi) + "|" : "";
+                string seqid;
+                if(!sdl->id.Empty()){
+                    if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos || sdl->id->AsFastaString().find("lcl|Subject_") != string::npos)) {
+                        sdl->id->GetLabel(&seqid, CSeq_id::eContent);            
+                    }
+                }	
+                                     
+		        sdlFormatInfo->dfln_url = sdl->id_url;            
+
+                sdlFormatInfo->dfln_rid = m_Rid;
+                sdlFormatInfo->dfln_gi = dflGi;            
+                sdlFormatInfo->dfln_seqid = seqid;
+            
+            
+                string descr = (!sdl->defline.empty()) ? sdl->defline : "None provided";    
+	            s_LimitDescrLength(descr);
+	        
+                sdlFormatInfo->dfln_defline = CHTMLHelper::HTMLEncode(descr);
+                    
+	            descr = (!sdl->fullDefline.empty()) ? sdl->fullDefline : seqid;    
+	            s_LimitDescrLength(descr);	        
+                sdlFormatInfo->full_dfln_defline = CHTMLHelper::HTMLEncode(descr);
+
+
+            
+                string deflId,deflFrmID,deflFastaSeq,deflAccs; 
+                if(sdl->gi == ZERO_GI) {        
+                    sdl->id->GetLabel(& deflId, CSeq_id::eContent);
+                    deflFrmID =  CAlignFormatUtil::GetLabel(sdl->id);//Just accession without db part like GNOMON: or ti:        
+                    deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);
+                    deflAccs = sdl->id->AsFastaString();
+                }
+                else {        
+                    deflFrmID = deflId = NStr::NumericToString(sdl->gi);        
+                    deflFastaSeq = "gi|" + NStr::NumericToString(sdl->gi);
+                    deflFastaSeq = NStr::TruncateSpaces(sdl->alnIDFasta);         
+                    sdl->id->GetLabel(&deflAccs, CSeq_id::eContent);
+                }
+    
+                sdlFormatInfo->dfln_id = deflId;
+                sdlFormatInfo->dflnFrm_id = deflFrmID;
+                sdlFormatInfo->dflnFASTA_id = deflFastaSeq;
+                sdlFormatInfo->dflnAccs =deflAccs;
+            
+                sdlFormatInfo->score_info = sci->bit_string;            
+                sdlFormatInfo->dfln_hspnum =  NStr::IntToString(sci->hspNum); 
+                sdlFormatInfo->dfln_alnLen =  NStr::NumericToString(sci->totalLen);
+                sdlFormatInfo->dfln_blast_rank =  NStr::IntToString(m_StartIndex + sci->blast_rank);     
+	            sdlFormatInfo->total_bit_string = sci->total_bit_string;      
+                sdlFormatInfo->percent_coverage = NStr::IntToString(sci->percent_coverage);
+                sdlFormatInfo->evalue_string = sci->evalue_string;      
+                sdlFormatInfo->percent_identity = NStr::IntToString(sci->percent_identity);
+                m_SdlFormatInfoVec.push_back(sdlFormatInfo);
+}
+
+
+vector <CShowBlastDefline::SDeflineFormattingInfo *> CShowBlastDefline::GetFormattingInfo(void)
+{
+    /*Note we can't just show each alnment as we go because we will 
+      need to show defline only once for all hsp's with the same id*/
+    
+    bool is_first_aln = true;
+    size_t num_align = 0;
+    CConstRef<CSeq_id> previous_id, subid;    
+    
+    CSeq_align_set hit;
+    m_QueryLength = 1;
+    
+    //prepare defline
+    
+    
+    for (CSeq_align_set::Tdata::const_iterator iter = m_AlnSetRef->Get().begin();
+         iter != m_AlnSetRef->Get().end() && num_align < m_NumToShow; 
+         iter++)
+    {
+                
+        if (is_first_aln) {
+            m_QueryLength = m_MasterRange ? m_MasterRange->GetLength() : m_ScopeRef->GetBioseqHandle((*iter)->GetSeq_id(0)).GetBioseqLength();            
+        }
+
+        subid = &((*iter)->GetSeq_id(1));
+      
+        if(!is_first_aln && !(subid->Match(*previous_id))) {
+            
+            SScoreInfo* sci = x_GetScoreInfoForTable(hit, num_align);
+            if(sci) {
+                x_InitFormattingInfo(sci);
+                hit.Set().clear();
+            }
+          
+            num_align++; // Only increment if new subject ID found.        
+        }
+        if (num_align < m_NumToShow) { //no adding if number to show already reached
+            hit.Set().push_back(*iter);
+        }
+        is_first_aln = false;
+        previous_id = subid;
+    }
+    //the last hit
+    SScoreInfo* sci = x_GetScoreInfoForTable(hit, num_align);
+    
+    if(sci) {
+        x_InitFormattingInfo(sci);
+        hit.Set().clear();
+    }
+    
+    return m_SdlFormatInfoVec;
+}
+
 
 END_SCOPE(align_format)
 END_NCBI_SCOPE
