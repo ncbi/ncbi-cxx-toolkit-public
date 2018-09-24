@@ -152,6 +152,7 @@ public:
     /// @param logfile file to write the log to [in]
     /// @param long_seqids if true, requires long sequence ids
     /// (database|accession) when parsing fasta sequences [in]
+    /// @param dbver version of BLAST database to generate [in]
     CBuildDatabase(const string         & dbname,
                    const string         & title,
                    bool                   is_protein,

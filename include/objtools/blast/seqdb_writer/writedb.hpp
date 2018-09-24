@@ -150,6 +150,8 @@ public:
     ///   string ids [in]
     /// @param use_gi_mask
     ///   If true, generate GI-based mask files [in]
+    /// @param dbver
+    ///   version of BLAST database to generate [in]
     CWriteDB(const string & dbname,
              ESeqType       seqtype,
              const string & title,
