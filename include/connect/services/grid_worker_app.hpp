@@ -157,8 +157,9 @@ inline void CGridWorkerApp::SetListener(IGridWorkerNodeApp_Listener* listener)
     int main(int argc, const char* argv[])                                  \
     {                                                                       \
         GetDiagContext().SetOldPostFormat(false);                           \
-        CGridWorkerApp app(new TFactory, CVersionInfo(#Version),            \
-            SBuildInfo(__DATE__ " " __TIME__,  GRID_WORKER_APP_BUILD_TAG)); \
+        CGridWorkerApp app(new TFactory,                                    \
+                CVersionInfo(#Version, NCBI_TEAMCITY_PROJECT_NAME_PROXY),   \
+                NCBI_APP_SBUILDINFO_DEFAULT());                             \
         SetListener;                                                        \
         return app.AppMain(argc, argv, NULL, eDS_ToStdlog,                  \
                 NcbiEmptyCStr, GRID_WORKER_APP_NAME);                       \

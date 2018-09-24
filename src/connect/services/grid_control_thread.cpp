@@ -173,6 +173,10 @@ public:
                 "\nBuild date: " << version.second.date <<
                 "\nBuild tag: " << version.second.tag << "\n";
 
+        for (const auto& p : version.second.m_extra) {
+            os << SBuildInfo::ExtraName(p.first) << ": " << p.second << '\n';
+        }
+
         {{
             CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
             CNcbiApplication* app = CNcbiApplication::Instance();
