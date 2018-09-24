@@ -1800,6 +1800,8 @@ bool CCleanup::AddMissingMolInfo(CBioseq& seq, bool is_product)
             m->SetMolinfo().SetBiomol(CMolInfo::eBiomol_mRNA);
             m->SetMolinfo().SetTech(CMolInfo::eTech_standard);
             seq.SetDescr().Set().push_back(m);
+        } else {
+            needs_molinfo = false;
         }
     }
 
