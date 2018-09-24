@@ -1082,6 +1082,57 @@ CBlastFormat::WriteArchive(objects::CPssmWithParameters & pssm,
 }
 
 
+void CBlastFormat::x_CreateDeflinesJson(CConstRef<CSeq_align_set> aln_set)
+{
+    
+    int delineFormatOption = 0;
+    CShowBlastDefline deflines(*aln_set, *m_Scope,kFormatLineLength,m_NumSummary);
+         
+    deflines.SetQueryNumber(1);//m_Query_number
+    deflines.SetDbType (!m_DbIsAA);
+    deflines.SetDbName(m_DbName);    
+    delineFormatOption |= CShowBlastDefline::eHtml;
+    delineFormatOption |= CShowBlastDefline::eShowPercentIdent;        
+    deflines.SetOption(delineFormatOption); //m_defline_option
+
+    //Next three lines are for proper initialization in formatting of defline
+    CShowBlastDefline::SDeflineTemplates *deflineTemplates = new CShowBlastDefline::SDeflineTemplates;      
+    deflineTemplates->advancedView = true;
+    deflines.SetDeflineTemplates (deflineTemplates);    
+    
+
+    vector <CShowBlastDefline::SDeflineFormattingInfo *> sdlFortInfoVec = deflines.GetFormattingInfo();
+    CJson_Document doc;
+    CJson_Object top_obj = doc.SetObject();
+    CJson_Array defline_array = top_obj.insert_array("deflines");
+
+    for(size_t i = 0; i < sdlFortInfoVec.size(); i++) {
+        CJson_Object obj = defline_array.push_back_object();
+        
+        obj.insert("dfln_url",sdlFortInfoVec[i]->dfln_url);
+        obj.insert("dfln_rid",sdlFortInfoVec[i]->dfln_rid);
+        obj.insert("dfln_gi",sdlFortInfoVec[i]->dfln_gi);    
+        obj.insert("dfln_seqid",sdlFortInfoVec[i]->dfln_seqid);
+        obj.insert("full_dfln_defline",sdlFortInfoVec[i]->full_dfln_defline);
+        obj.insert("dfln_defline",sdlFortInfoVec[i]->dfln_defline);
+        obj.insert("dfln_id",sdlFortInfoVec[i]->dfln_id);
+        obj.insert("dflnFrm_id",sdlFortInfoVec[i]->dflnFrm_id);
+        obj.insert("dflnFASTA_id",sdlFortInfoVec[i]->dflnFASTA_id);
+        obj.insert("dflnAccs",sdlFortInfoVec[i]->dflnAccs);
+            
+        obj.insert("score_info",sdlFortInfoVec[i]->score_info);
+        obj.insert("dfln_hspnum",sdlFortInfoVec[i]->dfln_hspnum);
+        obj.insert("dfln_alnLen",sdlFortInfoVec[i]->dfln_alnLen);
+        obj.insert("dfln_blast_rank",sdlFortInfoVec[i]->dfln_blast_rank);
+	    obj.insert("total_bit_string",sdlFortInfoVec[i]->total_bit_string);
+        obj.insert("percent_coverage",sdlFortInfoVec[i]->percent_coverage);
+        obj.insert("evalue_string",sdlFortInfoVec[i]->evalue_string);
+        obj.insert("percent_identity",sdlFortInfoVec[i]->percent_identity);
+    }
+    doc.Write(m_Outfile);    
+}
+
+
 void CBlastFormat::x_DisplayDeflinesWithTemplates(CConstRef<CSeq_align_set> aln_set)
 {
     x_InitDeflineTemplates();
@@ -1293,8 +1344,11 @@ CBlastFormat::PrintReport(const blast::CSearchResults& results,
             aln_set.Reset(CDisplaySeqalign::PrepareBlastUngappedSeqalign(*aln_set));
         }
         
-        if (displayOption == eDescriptions) {//Descriptions with html templates
+        if (displayOption == eDescriptionsWithTemplates) {//Descriptions with html templates
             x_DisplayDeflinesWithTemplates(aln_set);
+        }            
+        if (displayOption == eDescriptions) {//Descriptions with html templates
+            x_CreateDeflinesJson(aln_set);
         }            
         else if (displayOption == eAlignments) {// print the alignments with html templates
             x_DisplayAlignsWithTemplates(aln_set,results);
