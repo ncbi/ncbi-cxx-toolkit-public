@@ -76,12 +76,19 @@
 #include <util/compress/stream.hpp>
 
 #include "read_hooks.hpp"
+#include "bigfile_processing.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+enum EProcessingMode
+{
+    eModeRegular,
+    eModeBatch,
+    eModeBigfile
+};
 
-class CCleanupApp : public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler, public ISubmitBlockHandler
+class CCleanupApp : public CNcbiApplication, public CGBReleaseFile::ISeqEntryHandler, public ISubmitBlockHandler, IProcessorCallback
 {
 public:
     CCleanupApp();
@@ -92,6 +99,14 @@ public:
     bool HandleSeqEntry(CRef<CSeq_entry>& se);
     bool HandleSeqEntry(CSeq_entry_Handle entry);
     bool HandleSeqID( const string& seqID );
+
+    // IProcessorCallback interface functionality
+    virtual void Process(CSubmit_block& obj);
+    virtual void Process(CBioseq& obj);
+    virtual void Process(CBioseq_set& obj);
+    virtual void Process(CSeq_descr& obj);
+    virtual void Process(CSeq_annot& obj);
+
     
     bool ObtainSeqEntryFromSeqEntry( 
         auto_ptr<CObjectIStream>& is, 
@@ -110,7 +125,8 @@ private:
     void x_OpenOStream(const string& filename, const string& dir = kEmptyStr, bool remove_orig_dir = true);
     void x_CloseOStream();
     bool x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is);
-    void x_ProcessOneFile(auto_ptr<CObjectIStream> is, bool batch, const string& asn_type, bool first_only);
+    bool x_ProcessBigFile(auto_ptr<CObjectIStream>& is, const string& asn_type);
+    void x_ProcessOneFile(auto_ptr<CObjectIStream> is, EProcessingMode mode, const string& asn_type, bool first_only);
     void x_ProcessOneFile(const string& filename);
     void x_ProcessOneDirectory(const string& dirname, const string& suffix);
 
@@ -196,6 +212,11 @@ void CCleanupApp::Init(void)
         arg_desc->AddFlag("firstonly", "Process only first element");
     }}
     
+    // big file processing
+    {{
+        arg_desc->AddFlag("bigfile", "Process big files containing many bioseqs");
+    }}
+
     // output
     {{ 
         // name
@@ -424,14 +445,41 @@ bool CCleanupApp::x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is)
     return true;
 }
 
-
-void CCleanupApp::x_ProcessOneFile(auto_ptr<CObjectIStream> is, bool batch, const string& asn_type, bool first_only)
+bool CCleanupApp::x_ProcessBigFile(auto_ptr<CObjectIStream>& is, const string& asn_type)
 {
-    if (batch) {
+    _ASSERT(asn_type != "bioseq" && asn_type != "any");
+
+    bool ret = false;
+    EBigFileContentType content_type = eContentUndefined;
+    if (asn_type == "seq-entry") {
+        content_type = eContentSeqEntry;
+    }
+    else if (asn_type == "bioseq-set") {
+        content_type = eContentBioseqSet;
+    }
+    else if (asn_type == "seq-submit") {
+        content_type = eContentSeqSubmit;
+    }
+
+    if (content_type != eContentUndefined) {
+        ret = ProcessBigFile(*is, *m_Out, *this, content_type);
+    }
+
+    return ret;
+}
+
+void CCleanupApp::x_ProcessOneFile(auto_ptr<CObjectIStream> is, EProcessingMode mode, const string& asn_type, bool first_only)
+{
+    if (mode == eModeBatch) {
         CGBReleaseFile in(*is.release());
         in.RegisterHandler(this);
         in.Read();  // HandleSeqEntry will be called from this function
-    } else {
+    }
+    else if (mode == eModeBigfile) {
+        NCBI_THROW(CFlatException, eInternal, "\"bigfile\" option is not implemented yet");
+        //x_ProcessBigFile(is, asn_type);
+    }
+    else {
         if (asn_type == "seq-submit") {  // submission
             if (!x_ProcessSeqSubmit(is)) {
                 NCBI_THROW(CFlatException, eInternal, "Unable to read Seq-submit");
@@ -520,7 +568,6 @@ void CCleanupApp::x_ProcessOneFile(auto_ptr<CObjectIStream> is, bool batch, cons
 
 }
 
-
 void CCleanupApp::x_ProcessOneFile(const string& filename)
 {
     const CArgs&   args = GetArgs();
@@ -542,7 +589,20 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
         opened_output = true;
     }
 
-    x_ProcessOneFile(is, args["batch"], args["type"].AsString(), args["firstonly"]);
+    EProcessingMode mode = eModeRegular;
+    string asn_type = args["type"].AsString();
+
+    if (args["batch"]) {
+        mode = eModeBatch;
+    }
+    else if (args["bigfile"]) {
+
+        if (asn_type != "any" && asn_type != "bioseq") {
+            mode = eModeBigfile;
+        }
+    }
+
+    x_ProcessOneFile(is, mode, asn_type, args["firstonly"]);
 
     is.reset();
     if (opened_output) {
@@ -590,6 +650,9 @@ int CCleanupApp::Run(void)
     }
     if (args["X"]) {
         x_XOptionsValid(args["X"].AsString());
+    }
+    if (args["batch"] && args["bigfile"]) {
+        NCBI_THROW(CFlatException, eInternal, "\"batch\" and \"bigfile\" arguments are incompatible. Only one of them may be used.");
     }
 
     // create object manager
@@ -1132,6 +1195,7 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
     CNcbiIstream* pInputStream = &NcbiCin;
     bool bDeleteOnClose = false;
     if ( !NStr::IsBlank(filename)) {
+        
         pInputStream = new CNcbiIfstream(filename.c_str(), ios::binary  );
         bDeleteOnClose = true;
     }
@@ -1188,6 +1252,31 @@ void CCleanupApp::x_CloseOStream()
     m_Out.reset(NULL);
 }
 
+// IProcessorCallback interface functionality
+void CCleanupApp::Process(CSubmit_block& obj)
+{
+    // TODO here should be the cleanup processing
+}
+
+void CCleanupApp::Process(CBioseq& obj)
+{
+    // TODO here should be the cleanup processing
+}
+
+void CCleanupApp::Process(CBioseq_set& obj)
+{
+    // TODO here should be the cleanup processing
+}
+
+void CCleanupApp::Process(CSeq_descr& obj)
+{
+    // TODO here should be the cleanup processing
+}
+
+void CCleanupApp::Process(CSeq_annot& obj)
+{
+    // TODO here should be the cleanup processing
+}
 
 END_NCBI_SCOPE
 
