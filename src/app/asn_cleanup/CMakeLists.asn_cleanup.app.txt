@@ -2,7 +2,7 @@
 #
 #
 add_executable(asn_cleanup-app
-    asn_cleanup read_hooks
+    asn_cleanup read_hooks bigfile_processing
 )
 
 set_target_properties(asn_cleanup-app PROPERTIES OUTPUT_NAME asn_cleanup)

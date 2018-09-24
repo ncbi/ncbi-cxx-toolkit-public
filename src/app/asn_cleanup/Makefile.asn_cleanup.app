@@ -7,7 +7,7 @@
 #################################
 
 APP = asn_cleanup
-SRC = asn_cleanup read_hooks
+SRC = asn_cleanup read_hooks bigfile_processing
 LIB =  xvalidate $(OBJEDIT_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil \
        valerr taxon1 entrez2cli entrez2 tables xregexp \
 	  ncbi_xdbapi_ftds dbapi $(ncbi_xreader_pubseqos2) $(FTDS_LIB) \
