@@ -63,9 +63,9 @@ public:
         CGridWorkerNode node(control_server->GetWorkerNode());
         const CGridWorkerNode::TVersion version(node.GetAppVersion());
 
-        os << "OK:version=" << NStr::URLEncode(version[0]) <<
-                "&build_date=" << NStr::URLEncode(version[1]) <<
-                "&build_tag=" << NStr::URLEncode(version[2]) << "\n";
+        os << "OK:version=" << NStr::URLEncode(version.first) <<
+                "&build_date=" << NStr::URLEncode(version.second.date) <<
+                "&build_tag=" << NStr::URLEncode(version.second.tag) << "\n";
     }
 };
 
@@ -169,9 +169,9 @@ public:
         const CGridWorkerNode::TVersion version(node.GetAppVersion());
 
         os << "OK:Application: " << node.GetAppName() <<
-                "\nVersion: " << version[0] <<
-                "\nBuild date: " << version[1] <<
-                "\nBuild tag: " << version[2] << "\n";
+                "\nVersion: " << version.first <<
+                "\nBuild date: " << version.second.date <<
+                "\nBuild tag: " << version.second.tag << "\n";
 
         {{
             CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
