@@ -663,7 +663,7 @@ CPSG_BlobId CPSG_BlobInfo::GetChunkBlobId(unsigned split_chunk_no) const
         if (nchunks <= 0) return 0;
         if (nchunks < index) return 0;
 
-        return info + index;
+        return info + index - nchunks - 1;
     };
 
     return SId2Info::GetBlobId(m_Data, l);
