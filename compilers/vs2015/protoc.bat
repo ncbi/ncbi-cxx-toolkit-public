@@ -86,7 +86,7 @@ goto PARSEARGS
 set initial_dir=%CD%
 cd %input_spec_path%\..
 set input_spec_dir=%CD%
-cd %initial_dir%\..
+cd %initial_dir%
 for %%i in ("%input_spec_path%") do set input_spec_spec=%%~nxi
 
 %PROTOC_EXE% --version
