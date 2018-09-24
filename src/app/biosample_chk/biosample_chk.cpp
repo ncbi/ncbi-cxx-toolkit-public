@@ -374,6 +374,10 @@ void CBiosampleChkApp::Init(void)
         "bioproject", "BioProjectAccession", "BioProject Accession to use for sequences in record. Report error if sequences contain a reference to a different BioProject accession.", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("comment", "BioSampleComment", "Comment to use for creating new BioSample xml", CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey
+        ("authorize", "AuthorizeFile", "Username and Password File",
+        CArgDescriptions::eInputFile);
+
     arg_desc->AddOptionalKey("username", "ApiUsername", "Username", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("password", "ApiPassword", "Password", CArgDescriptions::eString);
 
@@ -735,8 +739,22 @@ int CBiosampleChkApp::Run(void)
 
     m_UseDevServer = args["d"].AsBoolean();
 
-    m_Username = args["username"] ? args["username"].AsString() : "";
-    m_Password = args["password"] ? args["password"].AsString() : "";
+    if (args["authorize"]) {
+        CNcbiIfstream infile(args["authorize"].AsString());
+        string line;
+        while (NcbiGetlineEOL(infile, line)) {
+            if (m_Username.empty()) {
+                m_Username = line;
+            } else if (m_Password.empty()) {
+                m_Password = line;
+            } else {
+                break;
+            }
+        }
+    } else {
+      m_Username = args["username"] ? args["username"].AsString() : "";
+      m_Password = args["password"] ? args["password"].AsString() : "";
+    }
 
     if (!NStr::IsBlank(m_StructuredCommentPrefix) && m_Mode != e_generate_biosample) {
         // error
