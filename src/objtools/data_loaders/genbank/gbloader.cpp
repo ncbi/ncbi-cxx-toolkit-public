@@ -383,7 +383,10 @@ string CGBDataLoader::GetLoaderNameFromArgs(const CGBLoaderParams& params)
         else
             return GBLOADER_HUP_NAME + string("-") + web_cookie;
     } else {
-        return GBLOADER_NAME;
+        if (params.GetReaderName().empty())
+            return GBLOADER_NAME;
+        else
+            return GBLOADER_NAME + string("-") + params.GetReaderName();
     }
 }
 
