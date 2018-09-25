@@ -706,6 +706,45 @@ static void s_AppendProtRefInfo(CProt_ref& current_ref, const CProt_ref& other_r
     }
 }
 
+static void s_SetProtRef(const CSeq_feat& cds,
+                         CConstRef<CSeq_feat> pMrna,
+                         CProt_ref& prot_ref) 
+{
+   const CProt_ref* pProtXref = cds.GetProtXref();
+   if (pProtXref) {
+        s_AppendProtRefInfo(prot_ref, *pProtXref);
+   } 
+   if (!prot_ref.IsSetName()) {
+        const string& product_name = cds.GetNamedQual("product");
+        if (product_name != kEmptyStr) {
+            prot_ref.SetName().push_back(product_name);
+        }
+   }
+
+   if (pMrna.Empty()) { // Nothing more we can do here
+        return;
+   }
+
+   bool hypothetical=false;
+   if (prot_ref.IsSetName()) {
+        for (const auto& prot_name : prot_ref.GetName()) {
+            if (NStr::CompareNocase(prot_name, "hypothetical protein")==0) {
+                hypothetical=true; 
+                break;
+            }
+        }
+   }
+
+   if (hypothetical && 
+       pMrna->GetData().GetRna().IsSetExt() &&
+       pMrna->GetData().GetRna().GetExt().IsName()) {
+       const string& prot_name = pMrna->GetData().GetRna().GetExt().GetName();
+       prot_ref.SetName().push_back(prot_name);
+   }
+}
+
+
+
 
 CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_entry_h, const CBioseq& bioseq, CSeq_feat& cd_feature)
 {
