@@ -4165,6 +4165,25 @@ else
    AES_FLAG=
 fi
 
+AC_CACHE_CHECK([whether $CXX supports __builtin_bswap32],
+   ncbi_cv_cxx_builtin_bswap32,
+   [AC_LINK_IFELSE([AC_LANG_PROGRAM([],
+                       [[int i = 0x01234567; return __builtin_bswap32(i);]])],
+       [ncbi_cv_cxx_builtin_bswap32=yes], [ncbi_cv_cxx_builtin_bswap32=no])])
+if test $ncbi_cv_cxx_builtin_bswap32 = yes; then
+   AC_DEFINE(HAVE_BUILTIN_BSWAP, 1,
+      [Define to 1 if the C++ compiler supports __builtin_bswap32.])
+fi
+
+AC_CACHE_CHECK([whether $CXX supports __builtin_expect],
+   ncbi_cv_cxx_builtin_expect,
+   [AC_LINK_IFELSE([AC_LANG_PROGRAM([],
+                       [[int i = 0;  return __builtin_expect(i, 0);]])],
+       [ncbi_cv_cxx_builtin_expect=yes], [ncbi_cv_cxx_builtin_expect=no])])
+if test $ncbi_cv_cxx_builtin_expect = yes; then
+   AC_DEFINE(HAVE_BUILTIN_EXPECT, 1,
+      [Define to 1 if the C++ compiler supports __builtin_expect.])
+fi
 
 ### Check for the availability of other packages
 ### --------------------------------------------

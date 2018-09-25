@@ -74,6 +74,12 @@
 /* Define to 1 if the `Boost.Thread' library is available. */
 #undef HAVE_BOOST_THREAD
 
+/* Define to 1 if the C++ compiler supports __builtin_bswap32. */
+#undef HAVE_BUILTIN_BSWAP
+
+/* Define to 1 if the C++ compiler supports __builtin_expect. */
+#undef HAVE_BUILTIN_EXPECT
+
 /* Define to 1 if you have the <clapack.h> header file. */
 #undef HAVE_CLAPACK_H
 
