@@ -87,7 +87,6 @@ private:
     string m_LookupFileRemote;
     string m_ResolveIdFile;
     string m_BlobIdFile;
-    char m_Delimiter;
     shared_ptr<CPSG_Queue> m_Queue;
 
     void ProcessId(const string& id, TFactory factory);
@@ -123,8 +122,7 @@ private:
 
 public:
     CPsgCliApp() :
-        m_NumThreads(1),
-        m_Delimiter('|')
+        m_NumThreads(2)
     {}
     virtual void Init()
     {

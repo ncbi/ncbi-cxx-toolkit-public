@@ -92,10 +92,10 @@ struct SStream : stringstream
     SStream() {}
 
     SStream(const SStream& src) : stringstream(src.str()) {}
-    SStream(SStream&&) noexcept = default;
+    SStream(SStream&&) = default;
 
     SStream& operator=(const SStream& src) { str(src.str()); return *this; }
-    SStream& operator=(SStream&&) noexcept = default;
+    SStream& operator=(SStream&&) = default;
 };
 
 struct SFixture

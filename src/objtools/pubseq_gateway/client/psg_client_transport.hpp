@@ -130,7 +130,7 @@ struct SPSG_ThreadSafe : SPSG_Future
 
         T* m_Object;
 
-        friend class SPSG_ThreadSafe;
+        friend struct SPSG_ThreadSafe;
     };
 
     template <class... TArgs>
