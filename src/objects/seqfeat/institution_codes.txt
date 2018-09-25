@@ -740,7 +740,11 @@ BZF	s	Forest Research and Development Center and Nature Conservation
 BZM	s	Museum fur Naturkunde, Berlin			
 BZT	s	Biological Institute Titograd			
 C	s	Natural History Museum of Denmark			
-CA	s	Chicago Academy of Sciences			
+CA	s	Chicago Academy of Sciences	CA		
+CA: Mammal	s	Chicago Academy of Sciences,  Mammalogy Collection	
+CA:Bird	s	Chicago Academy of Sciences, Ornithology Collection	
+CA:Fish	s	Chicago Academy of Sciences,  Ichthyology collection	
+CA:HERP	s	Chicago Academy of Sciences, Herpetology collection	
 CAB	c	Yeast Collection of Department of Microbiology, Stellenbosch University			
 CABI	c	CABI Genetic Resource Collection	IMI	http://194.203.77.76/grc/DisplayResults.asp?strGRCNumber=#S#	
 CACA	s	Carlsbad Caverns National Park			
@@ -967,6 +971,7 @@ CEPH	b	Foundation Jean Dausset (CEPH)
 CEPIM	c	Centro per gli Enterobatteri Patogeni per l'Italia Meridionale			
 CEPM	c	CEPM- Centre d'Etudes sur le Polymorphisme des Micro-organismes			
 CERL/BIC	s	United States Army, Biological Inventory Collection			
+CERMES	s	Centre for Resource Management and Environmental Studies, University of the West Indies			
 CES	s	The Centre for Ecological Sciences,  Indian Institute of Science			
 CESJ	s	Universidade Federal de Juiz de Fora, Departamento de Botanica			
 CESK	s	Muzeum Teainska			
@@ -1008,7 +1013,6 @@ CHAM	s	I.N.T.A., E.E.A. La Rioja
 CHAP	s	Universidad Autonoma Chapingo			
 CHAPA	s	Colegio de Postgraduados, Botanica, IRENAT			
 CHARL	s	Charleston Museum			
-CHAS<USA-SC>	s	Southern Research Station			
 CHBG	s	Christchurch Botanic Gardens			
 CHE	s	Societe Nationale des Sciences Naturelles et Mathematiques de Cherbourg			
 CHEB	s	Regional Museum Cheb			
@@ -1122,8 +1126,10 @@ CM	s	Carnegie Museum of Natural History	CMNH<USA-PA>
 CM-IEA	s	Universidad Autonoma de Tamaulipas (Mexico)			
 CM-MBM-UAC	s	Coleccion Mastozoologica Universidad  Autonoma de Campeche	CM-MBM-UAC,CMMBMUAC		
 CM-UMSNH	s	Universidad de Michoacan (Mexico)			
+CM:Herps	s	Carnegie Museum of Natural History, Herpetology Collection	
 CM:M	s	Carnegie Museum of Natural History, Section of Mammals		
-CM:O	s	Carnegie Museum of Natural History, Section of Birds		
+CM:O	s	Carnegie Museum of Natural History, Section of Birds	
+CM:VertPaleo	s	Carnegie Museum of Natural History, Vertebrate Paleontology Collection	
 CM<CHN>	s	Chongqing Museum			
 CMA	s	Crayford Manor House Adult Education Centre			
 CMAA	c	Culture Collection of Agriculture and Environmental Importance			
@@ -1154,19 +1160,20 @@ CMMI	s	Chinese Academy of Traditional Medicine
 CMML	s	Center for Environmental Management of Military Lands (CEMML)			
 CMN	s	Canadian Museum of Nature	NMC<CAN>		
 CMN:Annelid	s	Canadian Museum of Nature, Annelid Collection		
-CMN:Bird	s	Canadian Museum of Nature, Bird Collection		
+CMN:Bird	s	Canadian Museum of Nature, Bird Collection	
 CMN:Crustacean	s	Canadian Museum of Nature, Crustacean Collection		
-CMN:Fish	s	Canadian Museum of Nature, Fish Collection		
+CMN:Fish	s	Canadian Museum of Nature, Fish Collection	
 CMN:GenInvert	s	Canadian Museum of Nature, General Invertebrate Collextion		
-CMN:Herp	s	Canadian Museum of Nature, Amphibian and Reptile Collection		
+CMN:Herp	s	Canadian Museum of Nature, Amphibian and Reptile Collection	
 CMN:Insect	s	Canadian Museum of Nature, Insect Collection		
-CMN:Mammal	s	Canadian Museum of Nature, Mammal Collection		
+CMN:Mammal	s	Canadian Museum of Nature, Mammal Collection	
 CMN:Mollusc	s	Canadian Museum of Nature, Mollusc Collection		
 CMN:Parasite	s	Canadian Museum of Nature, Parasite Collection	
 CMNAR	s	Canadian Museum of Nature, Amphibian and Reptile Collection			
 CMNC	s	Canadian Museum of Nature, Neotropical Cerambycidae Collection			
 CMNFI	s	Canadian Museum of Nature, Fish Collection			
 CMNH	s	The Cleveland Museum of Natural History			
+CMNH:Birds	s	The Cleveland Museum of Natural History, Birds Collection	
 CMNS	s	Museum of Natural History, Shanghai			
 CMNZ	s	Canterbury Museum			
 CMPH	s	Colegio de Postgraduados			
@@ -1353,10 +1360,12 @@ CSTIU	s	Faculty of Science, University of Tokyo
 CSU<USA-CO>	s	Colorado State University	CSUC		
 CSU<USA-OK>	s	University of Central Oklahoma, Biology Department			
 CSUC	s	California State University, Chico, Vertebrate Museum			
+CSUC:Birds	s	California State University, Chico, Vertebrate Museum, Ornithology Collection	
 CSUCI	s	California State University Channel Islands			
 CSUF	s	California State University, Fresno			
 CSUH	s	Chelyabinsk State University			
 CSULB	s	California State University, Long Beach			
+CSULB:Mammals	s	California State University, Long Beach, Mammala collection	
 CSUN	s	California State University, Northridge			
 CSUNIV	s	Charleston Southern University			
 CSUR	c	Collection de Souches de l'Unite des Rickettsies			
@@ -1571,6 +1580,7 @@ DMKU	c	Department of Microbiology Kasetsart University
 DMMU3	c	Department of Microbiology, Faculty of Medicine Siriraj Hospital	DMMU3		
 DMMZ	c	Department of Medical Microbiology, University of Zurich			
 DMNH<USA-DE>	s	Delaware Museum of Natural History			
+DMNH<USA-DE>:Bird	s	Delaware Museum of Natural History, Birds collection	
 DMNH<USA-OH>	s	Dayton Museum of Natural History, Biology Department			
 DMNS	s	Denver Museum of Nature and Science	DMNH<USA-CO>,DNHC		
 DMNS:Bird	s	Denver Museum of Nature and Science, Ornithology Collections		
@@ -1920,6 +1930,9 @@ FHKSC	s	Fort Hays State University
 FHL	s	Friday Harbor Laboratories, University of Washington			
 FHO	s	University of Oxford, Daubeny Herbarium			
 FHSM	s	Fort Hays Sternberg Museum			
+FHSM:HERP	s	Fort Hays Sternberg Museum, Herps Collection	
+FHSM:I	s	Fort Hays Sternberg Museum, Fish collection	
+FHSM:M	s	Fort Hays Sternberg Museum, Mammals Collection	
 FI	s	Museo di Storia Naturale dell'Universita			
 FIAF	s	Universita degli Studi di Firenze, Dipartimento di Biologia Vegetale			
 FICB	s	Forest Research Centre			
@@ -3009,6 +3022,10 @@ ISIS	s	Naturforschende Gesellschaft Isis
 ISKW	s	Ishikawa Museum of Natural History			
 ISL	s	Quaid-I-Azam University, Biological Sciences Department			
 ISM	s	Illinois State Museum	ISMS		
+ISM:Aves	s	Illinois State Museum, Ornithology collection	
+ISM:Fish	s	Illinois State Museum, Ichthyology Collection	
+ISM:HERP	s	Illinois State Museum, Herpetology collection	
+ISM:Mammals	s	Illinois State Museum, Mammalogy Collection	
 ISMAR	s	Consiglio Nazionale delle Ricerche, Istituto di Scienze  Marine			
 ISMC	s	Indiana Department of Natural Resources			
 ISNHC	s	State Historical Society of Iowa			
@@ -4467,7 +4484,7 @@ MZH	s	Zoolgical Museum, Finnish Museum of Natural History
 MZKI	c	Microbial Culture Collection of National Institute of Chemistry			
 MZL	s	Musee Zoologique	MZLS		
 MZLS	s	Musee Zoologique	MZL		
-MZLU	s	Lund University			
+MZLU	s	Lund University Museum			
 MZN	s	Musee Zoologie			
 MZNA	s	Universidad de Navarra, Museum of Zoology			
 MZNC	s	Universidad Nacional de Cordoba, Museo de Zoolog&iacutea			
@@ -4536,7 +4553,7 @@ NBG	s	National Botanical Institute
 NBGB<BEL>	sb	National Botanical Garden, Belgium			
 NBIMCC	c	National Bank for Industrial Microorganisms and Cell Cultures			
 NBM	s	New Brunswick Museum			
-NBMB	s	St. John's, New Brunswick Museum			
+NBMB	s	New Brunswick Museum			
 NBME	s	National Butterfly Museum (Saruman Museum)			
 NBPC	s	National Birds of Prey Centre			
 NBPGR	b	National Bureau of Plant Genetic Resources			
@@ -4591,6 +4608,10 @@ NCSC<THA>	c	National Center of Streptococcus Collection, Department of Microbiol
 NCSC<USA-NC>	s	North Carolina State University, Botany Department			
 NCSLG	s	North Carolina State University (Larry F. Grand Mycological Herbarium)			
 NCSM	s	North Carolina Museum of Natural Sciences	NCSMNS		
+NCSM:Birds	s	North Carolina Museum of Natural Sciences, Birds collection	
+NCSM:Fishes	s	North Carolina Museum of Natural Sciences, Fish collection	
+NCSM:Herp	s	North Carolina Museum of Natural Sciences, Herpetology Collection	
+NCSM:Mammals	s	North Carolina Museum of Natural Sciences, Mammal collection	
 NCSU	s	North Carolina State University Collections			
 NCTC	c	National Collection of Type Cultures			
 NCU	s	University of North Carolina, North Carolina Botanical Garden			
@@ -4667,7 +4688,11 @@ NHML	s	Natural History Museum, Tripoli
 NHMM	s	Natuurhistorische Museum Maastricht			
 NHMM-LS	s	Naturhistorisches Museum/Landessammlung fuer Naturkunde Rheinland-Pfalz			
 NHMN	s	Nottingham Natural History Museum (Wollaton Hall)			
-NHMO	s	The DNA Bank of the Natural History Museum of Oslo			
+NHMO	s	Natural History Museum of Oslo			
+NHMO:BI	s	Natural History Museum of Oslo, The avian collection	
+NHMO:Herp	s	Natural History Museum of Oslo, Herpetile collection	
+NHMO:Mam	s	Natural History Museum of Oslo, Mammal collection	
+NHMO:Pisc	s	Natural History Museum of Oslo, Fish collection	
 NHMR<HRV>	s	Natural History Museum Rijeka			
 NHMR<ISL>	s	Natural History Museum, Reykjavik			
 NHMR<NLD>	s	Natuurhistorisch Museum Rotterdam			
@@ -4988,6 +5013,8 @@ NYAS	s	Silvicultural Research Station
 NYBG	s	New York Botanical Garden			
 NYS	s	New York State Museum			
 NYSM	s	New York State Museum			
+NYSM:ZM	s	New York State Museum, Mammal collection	
+NYSM:ZO	s	New York State Museum, Birds collection	
 NYZS	s	New York Zoological Society			
 NZAC	s	New Zealand Arthropod Collection	LCR:NZAC	http://scd.landcareresearch.co.nz/Specimen/NZAC_&spec;	
 NZCS	s	University, National Zoological Collection of Suriname			
@@ -5088,6 +5115,8 @@ ORTN	s	Orton Hall
 ORU	s	Oral Roberts University, Biology Department			
 OS<USA-OH>	s	Ohio State University			
 OS<USA-OR>	s	Oregon State University	OSUC,SU		
+OS<USA-OR>:Fishes	s	Oregon State University, Icthyology collection	
+OS<USA-OR>:Herps	s	Oregon State University, Herpetological collection	
 OSA	s	Osaka Museum of Natural History			
 OSAC	s	Oregon State Arthropod Collection			
 OSAL	s	Ohio State University Acarology Laboratory			
@@ -5098,16 +5127,14 @@ OSEC	s	K.C Emerson Museum
 OSH	s	University of Wisconsin Oshkosh, Biology and Microbiology Department			
 OSI	s	Ordnance Survey of Ireland			
 OSM<CZE>	s	Ostravske muzeum			
-OSM<USA-OH>	s	Ohio State University Museum			
 OSMC	s	St. Martin's College, Biology Department			
 OSN	s	Museum am Schoelerberg, Natur und Umwelt			
 OSTR	s	University of Ostrava			
-OSU<USA-OH>	s	Ohio State University			
 OSU<USA-OK>	s	Oklahoma State University, Collection of Vertebrates			
 OSUC	s	Oregon State University	OS,SU		
 OSUF	s	Oregon State University, Department of Wood Science and Engineering			
 OSUFW	s	Oregon State University, Department of Fisheries and Wildlife Mammal Collection			
-OSUMZ	s	Ohio State University, Museum of Biological Diversity			
+OSUMZ	s	Ohio State University Museum	OSU,OSUMZ		
 OSUO	s	Oregon State University, School of Oceanography			
 OSUS	s	Oklahoma State University			
 OSW	s	State University of New York at Oswego			
@@ -5362,7 +5389,7 @@ PRV	s	Porvoo Museum of Natural History
 PSAE	s	Alberta Environmental Centre			
 PSGB	s	University of Bradford, Pharmacy Department			
 PSK	s	Pskov State University			
-PSM	s	University of Puget Sound, James R. Slater Museum of Natural History			
+PSM	s	James R. Slater Museum of Natural History			
 PSO	s	Universidad de Narino			
 PSP	s	Parasitic Seed Plants			
 PSS<GBR>	s	Philosophical Society of Southampton			
@@ -6802,6 +6829,8 @@ UMMP	s	University of Michigan
 UMMZ	s	University of Michigan, Museum of Zoology			
 UMMZ:MC	s	University of Michigan, Museum of Zoology, Mollusk Collection		
 UMNH	s	Utah Museum of Natural History			
+UMNH:Bird	s	Utah Museum of Natural History, Birds collection	
+UMNH:HERP	s	Utah Museum of Natural History, 	
 UMNH:Mamm	s	Utah Museum of Natural History, Mammal collection		
 UMO<GBR>	s	University Museum of Natural History			
 UMO<USA-ME>	s	University of Maine	UMDE		
@@ -7656,6 +7685,11 @@ ZTS	s	Institute of Nature Conservation, Polish Academy of Sciences, Tatra Field 
 ZUAB	s	Zoologia--Universidad Autonoma de Barcelona			
 ZUAC	s	University of Antananarivo			
 ZUEC	s	Museu de Zoologia da Universidade Estadual de Campinas			
+ZUEC:AMP	s	Museu de Zoologia da Universidade Estadual de Campinas, Amphibian collection	
+ZUEC:AVE	s	Museu de Zoologia da Universidade Estadual de Campinas, Birds collection	
+ZUEC:MAM	s	Museu de Zoologia da Universidade Estadual de Campinas, Mammal collection	
+ZUEC:PIS	s	Museu de Zoologia da Universidade Estadual de Campinas, Fish collection	
+ZUEC:REP	s	Museu de Zoologia da Universidade Estadual de Campinas, 	
 ZUFES	s	Universidad Federal do Espirito Santo			
 ZUFRJ	s	Departamento de Zoolgia, Instituto de Biologia			
 ZUFSM<BRA>	s	Universidade Federal de Santa Maria, Laboratorio de Herpetologia			
