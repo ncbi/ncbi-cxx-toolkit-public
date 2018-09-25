@@ -740,7 +740,7 @@ int CBiosampleChkApp::Run(void)
     m_UseDevServer = args["d"].AsBoolean();
 
     if (args["authorize"]) {
-        CNcbiIfstream infile(args["authorize"].AsString());
+        CNcbiIfstream infile(args["authorize"].AsString().c_str());
         string line;
         while (NcbiGetlineEOL(infile, line)) {
             if (m_Username.empty()) {
