@@ -8,22 +8,24 @@ if echo "$FEATURES" | grep -E '(^| )MSWin( |$)' > /dev/null  &&  \
     exit 0
 fi
 
-# Use standard location, if operating from inside automated build.
+# Set up prioritized list of locations in which to look for the test data file.
+# 1. standard location used for CONNECT library test data
+# 2. pwd
+# 3. automount
 if test -r ./ncbi_test_data; then
     . ./ncbi_test_data
-    base_std=$NCBI_TEST_DATA/connect
+    test_data_dirs=$NCBI_TEST_DATA/connect
 fi
-# Use pwd for direct invocations.
-bases=". $base_std"
+test_data_dirs="$test_data_dirs . /am/ncbiapdata/test_data/connect"
 
 # Find a directory containing the test file.
 test_file_name="test_ncbi_namerd_tests.json"
-for base in $bases; do
-    if test ! -d $base; then
-        echo "INFO: Candidate test data dir not found: $base"
+for data_dir in $test_data_dirs; do
+    if test ! -d $data_dir; then
+        echo "INFO: Candidate test data dir not found: $data_dir"
         continue
     fi
-    test_file="$base/$test_file_name"
+    test_file="$data_dir/$test_file_name"
     if test ! -r $test_file; then
         echo "INFO: Candidate test data file not found: $test_file"
         continue
@@ -31,7 +33,7 @@ for base in $bases; do
     break;
 done
 if test ! -r "$test_file"; then
-    echo "ERROR: Test file '$test_file_name' not found in any base directory ($bases)."
+    echo "ERROR: Test file '$test_file_name' not found in any standard test data directory ($test_data_dirs)."
     exit 1
 fi
 
