@@ -67,7 +67,6 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
-#include <objtools/edit/dblink_field.hpp>
 #include <objects/general/User_object.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -1463,23 +1462,76 @@ static CRef<CSeqdesc> s_SetDBLinkDesc(CBioseq& bioseq)
 }
 
 
+static void s_SetDBLinkFieldVals(const string& label, 
+                                const list<CTempString>& vals,
+                                CSeqdesc& dblink_desc)
+{
+    if (vals.empty()) {
+        return;
+    }
+
+    auto& user_obj = dblink_desc.SetUser();
+    CRef<CUser_field> pField;
+    if (user_obj.IsSetData()) {
+        for (auto pUserField : user_obj.SetData()) {
+            if (pUserField->IsSetLabel() &&
+                pUserField->GetLabel().IsStr() &&
+                NStr::EqualNocase(pUserField->GetLabel().GetStr(), label)) {
+                pField = pUserField;
+                break;
+            }
+        }
+    }
+
+    if (!pField) {
+        pField = Ref(new CUser_field());
+        pField->SetLabel().SetStr() = label;
+        user_obj.SetData().push_back(pField);
+    }
+
+    for (const auto& val : vals) {
+        pField->SetData().SetStrs().push_back(val);
+    }
+    pField->SetNum(pField->GetData().GetStrs().size());
+}
+
+
+static void s_SetDBLinkField(const string& label,
+                             const string& vals,
+                             CRef<CSeqdesc>& pDBLinkDesc,
+                             CBioseq& bioseq) 
+{
+    list<CTempString> value_list;
+    NStr::Split(vals, ",", value_list, NStr::fSplit_MergeDelimiters);
+    for (auto& val : value_list) {
+        val = NStr::TruncateSpaces_Unsafe(val);
+    }
+    value_list.remove_if([](const CTempString& val){ return val.empty(); });
+    if (value_list.empty()) { // nothing to do
+        return;
+    }
+
+    if (!pDBLinkDesc) {
+        pDBLinkDesc =  s_SetDBLinkDesc(bioseq);
+    }
+
+    s_SetDBLinkFieldVals(label,
+                         value_list,
+                         *pDBLinkDesc);
+}
+
+
 void CSourceModParser::x_ApplyDBLinkMods(CBioseq& bioseq) 
 {
-/*
     CRef<CSeqdesc> pDBLinkDesc;
     const SMod* mod = NULL;
     if ((mod = FindMod(s_Mod_biosample)) != NULL) {
-        pDBLinkDesc = s_SetDBLinkDesc(bioseq);
-        edit::CDBLink::SetBioSample(pDBLinkDesc->SetUser(), mod->value, edit::eExistingText_add_qual);
+        s_SetDBLinkField("BioSample", mod->value, pDBLinkDesc, bioseq);
     }
 
     if ((mod = FindMod(s_Mod_bioproject)) != NULL) {
-        if (!pDBLinkDesc) {
-            pDBLinkDesc = s_SetDBLinkDesc(bioseq);
-        }
-        edit::CDBLink::SetBioProject(pDBLinkDesc->SetUser(), mod->value, edit::eExistingText_add_qual);
+        s_SetDBLinkField("BioProject", mod->value, pDBLinkDesc, bioseq);
     }
-    */
 }
 
 
