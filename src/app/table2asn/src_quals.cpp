@@ -115,27 +115,14 @@ bool CSourceQualifiersReader::ApplyQualifiers(objects::CSourceModParser& mod, ob
     CSourceModParser::TMods unused_mods = mod.GetMods(CSourceModParser::fUnusedMods);
     for (auto mod : unused_mods)
     {
-        if (NStr::CompareNocase(mod.key, "bioproject") == 0)
+        if (!x_ParseAndAddTracks(bioseq, mod.key, mod.value))
         {
-            const string& v = mod.value;
-            edit::CDBLink::SetBioProject(
-                CTable2AsnContext::SetUserObject(CTable2AsnContext::SetBioseqOrParentDescr(bioseq), g_dblink),
-                mod.value);
+            if (listener)
+                listener->PutError(*auto_ptr<CLineError>(
+                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                    mod.key)));
+            return false;
         }
-        else
-            if (NStr::CompareNocase(mod.key, "biosample") == 0)
-                edit::CDBLink::SetBioSample(
-                    CTable2AsnContext::SetUserObject(CTable2AsnContext::SetBioseqOrParentDescr(bioseq), g_dblink),
-                    mod.value);
-            else
-                if (!x_ParseAndAddTracks(bioseq, mod.key, mod.value))
-                {
-                    if (listener)
-                      listener->PutError(*auto_ptr<CLineError>(
-                        CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                            mod.key)));
-                    return false;
-                }
     }
     return true;
 }
