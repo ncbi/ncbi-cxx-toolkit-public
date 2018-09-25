@@ -588,10 +588,10 @@ bool CString_constraint::x_DoesSingleStringMatchConstraint(const CMatchString& s
             return x_AdvancedStringMatch(search, pattern);
         }
         else {
-            string s_search;
+            string s_search, p_search;
             if ( GetMatch_location() != eString_location_inlist && (GetIgnore_space() || GetIgnore_punct())) {
 				search = x_StripUnimportantCharacters(s_search, search, GetIgnore_space(), GetIgnore_punct());
-				pattern = x_StripUnimportantCharacters(s_search, pattern, GetIgnore_space(), GetIgnore_punct());
+				pattern = x_StripUnimportantCharacters(p_search, pattern, GetIgnore_space(), GetIgnore_punct());
 			}
 
             if (!mask) { // no self-weasel
