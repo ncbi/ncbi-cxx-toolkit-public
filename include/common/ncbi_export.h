@@ -143,6 +143,7 @@
 #  define NCBI_XOBJMGR_EXPORTS
 #  define NCBI_XOBJREAD_EXPORTS
 #  define NCBI_XOBJWRITE_EXPORTS
+#  define NCBI_XOBJIMPORT_EXPORTS
 #  define NCBI_XOBJRWUTIL_EXPORTS
 #  define NCBI_XOBJUTIL_EXPORTS
 #  define NCBI_XOBJMANIP_EXPORTS
@@ -1298,7 +1299,15 @@
 #  define NCBI_XOBJREAD_EXPORT NCBI_DLL_IMPORT
 #endif
 
-/* Export specifier for library xobjsimple
+ /* Export specifier for library xobjimport
+ */
+#ifdef NCBI_XOBJIMPORT_EXPORTS
+#  define NCBI_XOBJIMPORT_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_XOBJIMPORT_EXPORT NCBI_DLL_IMPORT
+#endif
+
+ /* Export specifier for library xobjsimple
  */
 #ifdef NCBI_XOBJSIMPLE_EXPORTS
 #  define NCBI_XOBJSIMPLE_EXPORT NCBI_DLL_EXPORT

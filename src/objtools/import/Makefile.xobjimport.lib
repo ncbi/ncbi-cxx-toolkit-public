@@ -5,7 +5,7 @@
 
 SRC =	feat_importer feat_import_error feat_error_handler \
 		id_resolver id_resolver_canonical id_resolver_prefix \
-		gtf_importer gtf_record gtf_line_reader gtf_annot_assembler		
+		gtf_importer gtf_import_data gtf_line_reader gtf_annot_assembler		
 
 LIB =	xobjimport
 
@@ -14,6 +14,5 @@ DLL_LIB = xobjutil $(SOBJMGR_LIBS)
 ASN_DEP = seqset valid
 
 WATCHERS = ludwigf
-
 
 USES_LIBRARIES = xobjutil

@@ -40,7 +40,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CIdResolver
+class NCBI_XOBJIMPORT_EXPORT CIdResolver 
 //  ============================================================================
 {
 public:

@@ -49,19 +49,19 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CGtfRecord
+class CGtfImportData
 //  ============================================================================
 {
 public:
     using ATTRIBUTES = std::map<std::string, std::vector<std::string> >;
 
-    CGtfRecord(
+    CGtfImportData(
         const CIdResolver&);
 
-    CGtfRecord(
-        const CGtfRecord& rhs);
+    CGtfImportData(
+        const CGtfImportData& rhs);
 
-    virtual ~CGtfRecord() {
+    virtual ~CGtfImportData() {
         delete mpScore; };
 
     virtual void InitializeFrom(

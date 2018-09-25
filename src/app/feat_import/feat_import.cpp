@@ -179,8 +179,19 @@ CFeatImportApp::xGetInputFormat(
     if (!format.empty()) {
         return format;
     }
-    // eventually, invoke format guesser
-    return "";
+
+    CFormatGuess fg(istr);
+    fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eGtf);
+    fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eGffAugustus);
+    fg.GetFormatHints().DisableAllNonpreferred();
+
+    switch(fg.GuessFormat()) {
+    default:
+        return "";
+    case CFormatGuess::eGtf:
+    case CFormatGuess::eGffAugustus:
+        return "gtf";
+    }
 }
   
 //  ============================================================================

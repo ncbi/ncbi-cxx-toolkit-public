@@ -38,7 +38,7 @@ USING_NCBI_SCOPE;
 //  ============================================================================
 CFeatureImportError::CFeatureImportError(
     ErrorLevel severity,
-    const std::string message,
+    const std::string& message,
     unsigned int lineNumber): 
 //  ============================================================================
     mSeverity(severity),

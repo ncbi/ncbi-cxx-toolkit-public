@@ -38,7 +38,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 
-#include "gtf_record.hpp"
+#include "gtf_import_data.hpp"
 
 class CFeatureMap;
 class CFeatureIdGenerator;
@@ -58,67 +58,67 @@ public:
 
     void
     ProcessRecord(
-        const CGtfRecord&);
+        const CGtfImportData&);
 
     void
     FinalizeAnnot();
 
 protected:
     void xProcessRecordGene(
-        const CGtfRecord&);
+        const CGtfImportData&);
     void xProcessRecordMrna(
-        const CGtfRecord&);
+        const CGtfImportData&);
     void xProcessRecordCds(
-        const CGtfRecord&);
+        const CGtfImportData&);
 
     void xCreateGene(
-        const CGtfRecord&,
+        const CGtfImportData&,
         CRef<CSeq_feat>&);
     void xCreateMrna(
-        const CGtfRecord&,
+        const CGtfImportData&,
         CRef<CSeq_feat>&);
     void xCreateCds(
-        const CGtfRecord&,
+        const CGtfImportData&,
         CRef<CSeq_feat>&);
 
     void xUpdateGene(
-        const CGtfRecord&,
+        const CGtfImportData&,
         CRef<CSeq_feat>&);
     void xUpdateMrna(
-        const CGtfRecord&,
+        const CGtfImportData&,
         CRef<CSeq_feat>&);
     void xUpdateCds(
-        const CGtfRecord&,
+        const CGtfImportData&,
         CRef<CSeq_feat>&);
 
     void xFeatureSetGene(
-        const CGtfRecord&,
+        const CGtfImportData&,
         CRef<CSeq_feat>&);
     void xFeatureSetMrna(
-        const CGtfRecord&,
+        const CGtfImportData&,
         CRef<CSeq_feat>&);
     void xFeatureSetCds(
-        const CGtfRecord&,
+        const CGtfImportData&,
         CRef<CSeq_feat>&);
 
     void xFeatureSetLocation(
-        const CGtfRecord&,
+        const CGtfImportData&,
         CRef<CSeq_feat>&);
 
     void xFeatureSetFeatId(
-        const CGtfRecord&,
+        const CGtfImportData&,
         CRef<CSeq_feat>&);
 
     void xFeatureUpdateLocation(
-        const CGtfRecord&,
+        const CGtfImportData&,
         CRef<CSeq_feat>&);
 
     void xFeatureSetQualifiers(
-        const CGtfRecord&,
+        const CGtfImportData&,
         CRef<CSeq_feat>&);
 
     void xAnnotAddFeature(
-        const CGtfRecord&,
+        const CGtfImportData&,
         CRef<CSeq_feat>&);
 
     void xAnnotGenerateXrefs();

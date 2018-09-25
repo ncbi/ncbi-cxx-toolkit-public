@@ -34,13 +34,13 @@
 #include <objects/general/Object_id.hpp>
 
 #include <objtools/import/feat_import_error.hpp>
-#include "gtf_record.hpp"
+#include "gtf_import_data.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 //  ============================================================================
-CGtfRecord::CGtfRecord(
+CGtfImportData::CGtfImportData(
     const CIdResolver& idResolver):
 //  ============================================================================
     mIdResolver(idResolver),
@@ -50,8 +50,8 @@ CGtfRecord::CGtfRecord(
 }
 
 //  ============================================================================
-CGtfRecord::CGtfRecord(
-    const CGtfRecord& rhs):
+CGtfImportData::CGtfImportData(
+    const CGtfImportData& rhs):
 //  ============================================================================
     mIdResolver(rhs.mIdResolver),
     mSeqId(rhs.mSeqId),
@@ -69,7 +69,7 @@ CGtfRecord::CGtfRecord(
 
 //  ============================================================================
 void
-CGtfRecord::InitializeFrom(
+CGtfImportData::InitializeFrom(
     const vector<string>& columns)
     //  ============================================================================
 {
@@ -86,14 +86,14 @@ CGtfRecord::InitializeFrom(
 
 //  ============================================================================
 void
-CGtfRecord::Serialize(
+CGtfImportData::Serialize(
     CNcbiOstream& out)
 //  ============================================================================
 {
     auto seqStrand = (mSeqStrand == eNa_strand_minus ? "minus" : "plus");
     auto score = (mpScore ? NStr::DoubleToString(*mpScore) : "(not set)");
     auto frame = (mpFrame ? NStr::IntToString(*mpFrame) : "(not set)");
-    out << "CGtfRecord:\n";
+    out << "CGtfImportData:\n";
     out << "  SeqId = \"" << mSeqId << "\"\n";
     out << "  Source = \"" << mSource << "\"\n";
     out << "  Type = \"" << mType << "\"\n";
@@ -110,7 +110,7 @@ CGtfRecord::Serialize(
 
 //  ============================================================================
 CRef<CSeq_id>
-CGtfRecord::SeqIdRef() const
+CGtfImportData::SeqIdRef() const
 //  ============================================================================
 {
     return mIdResolver(SeqId());
@@ -118,7 +118,7 @@ CGtfRecord::SeqIdRef() const
 
 //  ============================================================================
 CRef<CSeq_loc>
-CGtfRecord::LocationRef() const
+CGtfImportData::LocationRef() const
 //  ============================================================================
 {
     CRef<CSeq_loc> pLocation(new CSeq_loc);
@@ -133,7 +133,7 @@ CGtfRecord::LocationRef() const
 
 //  ============================================================================
 string 
-CGtfRecord::AttributeValueOf(
+CGtfImportData::AttributeValueOf(
     const string& key) const
 //  ============================================================================
 {
@@ -146,7 +146,7 @@ CGtfRecord::AttributeValueOf(
     
 //  ============================================================================
 void
-CGtfRecord::xSetSeqId(
+CGtfImportData::xSetSeqId(
     const string& seqId)
 //  ============================================================================
 {
@@ -155,7 +155,7 @@ CGtfRecord::xSetSeqId(
 
 //  ============================================================================
 void
-CGtfRecord::xSetSource(
+CGtfImportData::xSetSource(
     const string& source)
 //  ============================================================================
 {
@@ -164,7 +164,7 @@ CGtfRecord::xSetSource(
 
 //  ============================================================================
 void
-CGtfRecord::xSetType(
+CGtfImportData::xSetType(
     const string& type)
 //  ============================================================================
 {
@@ -192,7 +192,7 @@ CGtfRecord::xSetType(
 
 //  ============================================================================
 void
-CGtfRecord::xSetSeqStart(
+CGtfImportData::xSetSeqStart(
     const string& seqStart)
 //  ============================================================================
 {
@@ -209,7 +209,7 @@ CGtfRecord::xSetSeqStart(
 
 //  ============================================================================
 void
-CGtfRecord::xSetSeqStop(
+CGtfImportData::xSetSeqStop(
     const string& seqStop)
 //  ============================================================================
 {
@@ -226,7 +226,7 @@ CGtfRecord::xSetSeqStop(
 
 //  ============================================================================
 void
-CGtfRecord::xSetSeqStrand(
+CGtfImportData::xSetSeqStrand(
     const string& seqStrand)
 //  ============================================================================
 {
@@ -248,7 +248,7 @@ CGtfRecord::xSetSeqStrand(
 
 //  ============================================================================
 void
-CGtfRecord::xSetScore(
+CGtfImportData::xSetScore(
     const string& score)
 //  ============================================================================
 {
@@ -271,7 +271,7 @@ CGtfRecord::xSetScore(
 
 //  ============================================================================
 void
-CGtfRecord::xSetFrame(
+CGtfImportData::xSetFrame(
     const string& frame)
 //  ============================================================================
 {
@@ -294,7 +294,7 @@ CGtfRecord::xSetFrame(
 
 //  ============================================================================
 void
-CGtfRecord::xSetAttributes(
+CGtfImportData::xSetAttributes(
     const string& attributes)
 //  ============================================================================
 {
@@ -320,7 +320,7 @@ CGtfRecord::xSetAttributes(
 
 //  ============================================================================
 void
-CGtfRecord::xSplitAttributeString(
+CGtfImportData::xSplitAttributeString(
     const string& attrString,
     vector<string>& splitAttributes)
 //  ============================================================================
@@ -357,7 +357,7 @@ CGtfRecord::xSplitAttributeString(
 
 //  ============================================================================
 void
-CGtfRecord::xImportSplitAttribute(
+CGtfImportData::xImportSplitAttribute(
     const string& splitAttr)
 //  ============================================================================
 {

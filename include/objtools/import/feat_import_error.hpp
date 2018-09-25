@@ -42,7 +42,7 @@
 BEGIN_NCBI_SCOPE
 
 //  ============================================================================
-class CFeatureImportError:
+class NCBI_XOBJIMPORT_EXPORT CFeatureImportError:
     public CException
 //  ============================================================================
 {
@@ -59,8 +59,17 @@ public:
 public:
     CFeatureImportError(
         ErrorLevel,
-        const std::string,
+        const std::string &,
         unsigned int =0); //line number
+
+    CFeatureImportError&
+    operator =(
+        const CFeatureImportError& rhs) {
+        mSeverity = rhs.mSeverity;
+        mMessage = rhs.mMessage;
+        mLineNumber = rhs.mLineNumber;
+        return *this;
+    };
 
     virtual ~CFeatureImportError() {};
 

@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
@@ -37,7 +38,7 @@
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-
+ 
 //  ============================================================================
 CIdResolver::CIdResolver()
 //  ============================================================================
@@ -51,7 +52,7 @@ CIdResolver::~CIdResolver()
 }
 
 //  ============================================================================
-CRef<CSeq_id>
+CRef<CSeq_id> 
 CIdResolver::operator() (
     const string& rawId) const
 //  ============================================================================

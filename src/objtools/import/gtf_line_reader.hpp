@@ -37,7 +37,7 @@
 #include <corelib/ncbifile.hpp>
 #include <util/line_reader.hpp>
 
-#include "gtf_record.hpp"
+#include "gtf_import_data.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -53,7 +53,7 @@ public:
 
     virtual bool
     GetNextRecord(
-        CGtfRecord&);
+        CGtfImportData&);
 
     unsigned int LineCount() const { return mLineNumber; };
     unsigned int RecordCount() const { return mRecordNumber; };

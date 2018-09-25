@@ -41,9 +41,6 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-unique_ptr<CIdResolver> CFeatImporter::mpIdResolver(
-    new CIdResolverCanonical(false, false));
-
 //  ============================================================================
 CFeatImporter*
 CFeatImporter::Get(
@@ -65,10 +62,7 @@ CFeatImporter::CFeatImporter(
 {
     bool allIdsAsLocal = (mFlags & CFeatImporter::fAllIdsAsLocal);
     bool numericIdsAsLocal = (mFlags & CFeatImporter::fNumericIdsAsLocal);
-    if (allIdsAsLocal  ||  numericIdsAsLocal) {
-        SetIdResolver(new CIdResolverCanonical(allIdsAsLocal, numericIdsAsLocal));
-    }
-
+    SetIdResolver(new CIdResolverCanonical(allIdsAsLocal, numericIdsAsLocal));
 };
 
 

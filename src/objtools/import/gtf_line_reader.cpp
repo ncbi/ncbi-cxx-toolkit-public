@@ -53,7 +53,7 @@ CGtfLineReader::CGtfLineReader(
 //  ============================================================================
 bool
 CGtfLineReader::GetNextRecord(
-    CGtfRecord& record)
+    CGtfImportData& record)
 //  ============================================================================
 {
     string nextLine = "";

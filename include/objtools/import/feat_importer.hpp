@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CFeatImporter
+class NCBI_XOBJIMPORT_EXPORT CFeatImporter
 //  ============================================================================
 {
 public:
@@ -62,6 +62,7 @@ public:
 public:
     CFeatImporter(
         unsigned int);
+
     virtual ~CFeatImporter();
 
     virtual void
@@ -70,14 +71,14 @@ public:
         CSeq_annot&,
         CFeatErrorHandler&)  =0;
 
-    static void
-        SetIdResolver(
-            CIdResolver*);
+    void
+    SetIdResolver(
+        CIdResolver*);
 
 protected:
     unsigned int mFlags;
 
-    static unique_ptr<CIdResolver> mpIdResolver; 
+    unique_ptr<CIdResolver> mpIdResolver; 
 };
 
 END_objects_SCOPE

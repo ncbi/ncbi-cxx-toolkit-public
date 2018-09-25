@@ -63,7 +63,7 @@ public:
 
     void
     AddFeature(
-        const CGtfRecord& record,
+        const CGtfImportData& record,
         CRef<CSeq_feat>& pFeat)
     {
         auto recType = xGetCookedFeatureType(record);
@@ -86,7 +86,7 @@ public:
 
     CRef<CSeq_feat>
     FindFeature(
-        const CGtfRecord& record) const
+        const CGtfImportData& record) const
     {
         auto recType = xGetCookedFeatureType(record);
         auto featKey = FeatKeyOf(record);
@@ -105,7 +105,7 @@ public:
 
     CRef<CSeq_feat>
     FindGeneParent(
-        const CGtfRecord& record) const
+        const CGtfImportData& record) const
     {
         auto geneKey = FeatKeyOf(record);
         geneKey.second = "";
@@ -122,7 +122,7 @@ public:
 
     CRef<CSeq_feat>
         FindMrnaParent(
-            const CGtfRecord& record) const
+            const CGtfImportData& record) const
     {
         auto mrnaKey = FeatKeyOf(record);
         auto mrnaEntries = mFeatMap.find("mrna");
@@ -150,7 +150,7 @@ public:
 
     static FEATKEY
     FeatKeyOf(
-        const CGtfRecord& record)
+        const CGtfImportData& record)
     {
         if (record.Type() == "gene") {
             return FEATKEY(record.GeneId(), "");
@@ -160,7 +160,7 @@ public:
 
     static string
     xGetCookedFeatureType(
-        const CGtfRecord& record)
+        const CGtfImportData& record)
     {
         map<string, string> typeMap = {
             {"exon", "mrna"},
@@ -193,7 +193,7 @@ public:
     //  ------------------------------------------------------------------------
     CRef<CFeat_id>
     GetIdFor(
-        const CGtfRecord& record)
+        const CGtfImportData& record)
     //  ------------------------------------------------------------------------
     {
         return GetIdFor(record.Type());
@@ -252,7 +252,7 @@ CGtfAnnotAssembler::~CGtfAnnotAssembler()
 //  ============================================================================
 void
 CGtfAnnotAssembler::ProcessRecord(
-    const CGtfRecord& record)
+    const CGtfImportData& record)
 //  ============================================================================
 {
     CFeatureImportError errorUnknownFeatureType(
@@ -266,7 +266,7 @@ CGtfAnnotAssembler::ProcessRecord(
         return;
     }
  
-    typedef void (CGtfAnnotAssembler::*HANDLER)(const CGtfRecord&);
+    typedef void (CGtfAnnotAssembler::*HANDLER)(const CGtfImportData&);
     static map<string, HANDLER> handlerMap = {
         {"gene", &CGtfAnnotAssembler::xProcessRecordGene},
         {"mrna", &CGtfAnnotAssembler::xProcessRecordMrna},
@@ -288,7 +288,7 @@ CGtfAnnotAssembler::ProcessRecord(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xProcessRecordGene(
-    const CGtfRecord& record)
+    const CGtfImportData& record)
 //  ============================================================================
 {
     CRef<CSeq_feat> pGene = mpFeatureMap->FindFeature(record);
@@ -298,7 +298,7 @@ CGtfAnnotAssembler::xProcessRecordGene(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xProcessRecordMrna(
-    const CGtfRecord& record)
+    const CGtfImportData& record)
     //  ============================================================================
 {
     CRef<CSeq_feat> pGene = mpFeatureMap->FindGeneParent(record);
@@ -311,7 +311,7 @@ CGtfAnnotAssembler::xProcessRecordMrna(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xProcessRecordCds(
-    const CGtfRecord& record)
+    const CGtfImportData& record)
 //  ============================================================================
 {
     CRef<CSeq_feat> pGene = mpFeatureMap->FindGeneParent(record);
@@ -327,7 +327,7 @@ CGtfAnnotAssembler::xProcessRecordCds(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xCreateGene(
-    const CGtfRecord& record,
+    const CGtfImportData& record,
     CRef<CSeq_feat>& pGene)
     //  ============================================================================
 {
@@ -336,7 +336,7 @@ CGtfAnnotAssembler::xCreateGene(
     xFeatureSetLocation(record, pGene);
     xFeatureSetQualifiers(record, pGene);
 
-    CGtfRecord impliedRecord(record);
+    CGtfImportData impliedRecord(record);
     impliedRecord.AdjustFeatureType("gene");
     xFeatureSetFeatId(impliedRecord, pGene);
     xAnnotAddFeature(impliedRecord, pGene);
@@ -345,7 +345,7 @@ CGtfAnnotAssembler::xCreateGene(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xUpdateGene(
-    const CGtfRecord& record,
+    const CGtfImportData& record,
     CRef<CSeq_feat>& pGene)
     //  ============================================================================
 {
@@ -363,7 +363,7 @@ CGtfAnnotAssembler::xUpdateGene(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xCreateMrna(
-    const CGtfRecord& record,
+    const CGtfImportData& record,
     CRef<CSeq_feat>& pRna)
     //  ============================================================================
 {
@@ -372,7 +372,7 @@ CGtfAnnotAssembler::xCreateMrna(
     xFeatureSetLocation(record, pRna);
     xFeatureSetQualifiers(record, pRna);
 
-    CGtfRecord impliedRecord(record);
+    CGtfImportData impliedRecord(record);
     impliedRecord.AdjustFeatureType("exon");
     xFeatureSetFeatId(impliedRecord, pRna);
     xAnnotAddFeature(impliedRecord, pRna);
@@ -381,7 +381,7 @@ CGtfAnnotAssembler::xCreateMrna(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xUpdateMrna(
-    const CGtfRecord& record,
+    const CGtfImportData& record,
     CRef<CSeq_feat>& pRna)
     //  ============================================================================
 {
@@ -391,7 +391,7 @@ CGtfAnnotAssembler::xUpdateMrna(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xCreateCds(
-    const CGtfRecord& record,
+    const CGtfImportData& record,
     CRef<CSeq_feat>& pCds)
     //  ============================================================================
 {
@@ -400,7 +400,7 @@ CGtfAnnotAssembler::xCreateCds(
     xFeatureSetLocation(record, pCds);
     xFeatureSetQualifiers(record, pCds);
 
-    CGtfRecord impliedRecord(record);
+    CGtfImportData impliedRecord(record);
     impliedRecord.AdjustFeatureType("cds");
     xFeatureSetFeatId(impliedRecord, pCds);
     xAnnotAddFeature(impliedRecord, pCds);
@@ -409,7 +409,7 @@ CGtfAnnotAssembler::xCreateCds(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xUpdateCds(
-    const CGtfRecord& record,
+    const CGtfImportData& record,
     CRef<CSeq_feat>& pCds)
     //  ============================================================================
 {
@@ -419,7 +419,7 @@ CGtfAnnotAssembler::xUpdateCds(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xAnnotAddFeature(
-    const CGtfRecord& record,
+    const CGtfImportData& record,
     CRef<CSeq_feat>& pFeature)
 //  ============================================================================
 {
@@ -438,7 +438,7 @@ CGtfAnnotAssembler::FinalizeAnnot()
 //  ============================================================================
 void
 CGtfAnnotAssembler::xFeatureSetGene(
-    const CGtfRecord& record,
+    const CGtfImportData& record,
     CRef<CSeq_feat>& pFeature)
 //  ============================================================================
 {
@@ -452,7 +452,7 @@ CGtfAnnotAssembler::xFeatureSetGene(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xFeatureSetMrna(
-    const CGtfRecord& record,
+    const CGtfImportData& record,
     CRef<CSeq_feat>& pFeature)
     //  ============================================================================
 {
@@ -462,7 +462,7 @@ CGtfAnnotAssembler::xFeatureSetMrna(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xFeatureSetCds(
-    const CGtfRecord& record,
+    const CGtfImportData& record,
     CRef<CSeq_feat>& pFeature)
     //  ============================================================================
 {
@@ -472,7 +472,7 @@ CGtfAnnotAssembler::xFeatureSetCds(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xFeatureSetFeatId(
-    const CGtfRecord& record,
+    const CGtfImportData& record,
     CRef<CSeq_feat>& pFeature)
 //  ============================================================================
 {
@@ -482,7 +482,7 @@ CGtfAnnotAssembler::xFeatureSetFeatId(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xFeatureSetLocation(
-    const CGtfRecord& record,
+    const CGtfImportData& record,
     CRef<CSeq_feat>& pFeature)
 //  ============================================================================
 {
@@ -494,7 +494,7 @@ CGtfAnnotAssembler::xFeatureSetLocation(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xFeatureUpdateLocation(
-    const CGtfRecord& record,
+    const CGtfImportData& record,
     CRef<CSeq_feat>& pFeature)
 //  ============================================================================
 {
@@ -512,7 +512,7 @@ CGtfAnnotAssembler::xFeatureUpdateLocation(
 //  ============================================================================
 void
 CGtfAnnotAssembler::xFeatureSetQualifiers(
-    const CGtfRecord& record,
+    const CGtfImportData& record,
     CRef<CSeq_feat>& pFeature)
 //  ============================================================================
 {

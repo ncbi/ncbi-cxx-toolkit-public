@@ -34,7 +34,7 @@
 #include <objtools/import/feat_import_error.hpp>
 
 #include "gtf_importer.hpp"
-#include "gtf_record.hpp"
+#include "gtf_import_data.hpp"
 #include "gtf_line_reader.hpp"
 #include "gtf_annot_assembler.hpp"
 #include "id_resolver_canonical.hpp"
@@ -68,7 +68,7 @@ CGtfImporter::ReadSeqAnnot(
     CGtfLineReader lineReader(istr);
     CGtfAnnotAssembler annotAssembler(annot);
 
-    CGtfRecord record(*mpIdResolver);
+    CGtfImportData record(*mpIdResolver);
     while (lineReader.GetNextRecord(record)) {
         try {
             annotAssembler.ProcessRecord(record);

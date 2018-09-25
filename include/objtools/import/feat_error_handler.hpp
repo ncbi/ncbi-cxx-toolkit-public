@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 
 //  ============================================================================
-class CFeatErrorHandler
+class NCBI_XOBJIMPORT_EXPORT CFeatErrorHandler
 //  ============================================================================
 {
 public:
