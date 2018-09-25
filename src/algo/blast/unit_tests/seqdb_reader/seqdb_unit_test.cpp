@@ -4441,6 +4441,52 @@ BOOST_AUTO_TEST_CASE(Test_Mix_User_SeqIdList_AliasFile)
 }
 
 
+BOOST_AUTO_TEST_CASE(PigListSwissprot)
+{
+	// 2 is not founc in swissprot
+	const unsigned int num_pigs = 5;
+    const int pigs[num_pigs] = {4377482, 1287445, 2, 6066974, 5303747};
+    const unsigned int num_valid_pig = 4;
+
+    CRef<CSeqDBGiList> pig_list(new CSeqDBGiList());
+    CRef<CSeqDBNegativeList> neg_pig_list(new CSeqDBNegativeList());
+
+    for (unsigned int i =0; i < num_pigs; i++) {
+    	pig_list->AddPig(pigs[i]);
+    }
+
+    vector<TPig> p;
+    pig_list->GetPigList(p);
+   	neg_pig_list->SetPigList(p);
+
+    string db_name = "swissprot";
+
+    CSeqDB db(db_name, CSeqDB::eProtein);
+    CSeqDB pig_db(db_name, CSeqDB::eProtein, &* pig_list);
+    CSeqDB negative_pig_db(db_name, CSeqDB::eProtein, &* neg_pig_list);
+
+    int total_num_seqs = db.GetNumSeqs();
+    BOOST_REQUIRE_EQUAL(pig_db.GetNumSeqs(), 4);
+    BOOST_REQUIRE_EQUAL(negative_pig_db.GetNumSeqs(), (int) (total_num_seqs - num_valid_pig));
+
+    vector<string>  seq_ids;
+    for(int oid=0; pig_db.CheckOrFindOID(oid); oid++) {
+    	int oid_found = -1;
+    	list< CRef<CSeq_id> > ids = pig_db.GetSeqIDs(oid);
+    	db.SeqidToOid(*(ids.front()), oid_found);
+    	seq_ids.push_back(ids.front()->GetSeqIdString());
+    	BOOST_REQUIRE_EQUAL(oid_found, oid);
+    }
+    BOOST_REQUIRE_EQUAL(seq_ids.size(), num_valid_pig);
+
+    for(unsigned int i=0; i < seq_ids.size(); i ++){
+    	vector<int>  not_found;
+    	negative_pig_db.AccessionToOids(seq_ids[i], not_found);
+    	BOOST_REQUIRE_EQUAL(not_found.size(), (unsigned int) 0);
+    }
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
 

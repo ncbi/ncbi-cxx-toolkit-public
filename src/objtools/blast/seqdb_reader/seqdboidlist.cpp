@@ -311,6 +311,14 @@ void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis)
         }
     }
     
+    for(j = 0; j < gis.GetNumPigs(); j++) {
+        int oid = gis.GetPigOid(j).oid;
+
+        if ((oid != -1) && (oid < m_NumOIDs)) {
+            gilist_oids->SetBit(oid);
+        }
+    }
+
     const vector<blastdb::TOid> & oids_tax = gis.GetOidsForTaxIdsList();
     for(unsigned int k = 0; k < oids_tax.size(); k++) {
         if (oids_tax[k] < m_NumOIDs) {
@@ -326,18 +334,13 @@ void CSeqDBOIDList::x_ApplyNegativeList(CSeqDBNegativeList & nlist, bool is_v5)
                                         
 {
     // We require a normalized list in order to turn bits off.
-	 m_AllBits->Normalize();
-	 if(is_v5 && ((nlist.GetNumSis() > 0 )|| (nlist.GetNumTaxIds() > 0))){
-	   	const vector<blastdb::TOid> & excluded_oids = nlist.GetExcludedOids();
-	   	for(unsigned int i=0; i < excluded_oids.size(); i++) {
-	   		m_AllBits->ClearBit(excluded_oids[i]);
-	   	}
-
-	   	if(nlist.GetNumGis() == 0 && nlist.GetNumTis() == 0) {
-	   		return;
-	   	}
+	m_AllBits->Normalize();
+    const vector<blastdb::TOid> & excluded_oids = nlist.GetExcludedOids();
+	for(unsigned int i=0; i < excluded_oids.size(); i++) {
+	    m_AllBits->ClearBit(excluded_oids[i]);
 	}
-    //m_Atlas.Lock(locked);
+
+	if((!is_v5 && nlist.GetNumSis() > 0) || nlist.GetNumGis() > 0 || nlist.GetNumTis() >  0) {
     
     // Intersect the user GI list with the OID bit map.
     
@@ -363,6 +366,7 @@ void CSeqDBOIDList::x_ApplyNegativeList(CSeqDBNegativeList & nlist, bool is_v5)
             m_AllBits->ClearBit(oid);
         }
     }
+	}
 
 
 }

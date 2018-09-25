@@ -62,6 +62,10 @@ const string kArgNegativeSeqidList("negative_seqidlist");
 const string kArgDbSoftMask("db_soft_mask");
 const string kArgDbHardMask("db_hard_mask");
 
+const string kArgIpgList("ipglist");
+const string kArgNegativeIpgList("negative_ipglist");
+
+
 const string kTask("task");
 
 const string kArgQueryGeneticCode("query_gencode");

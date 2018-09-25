@@ -934,9 +934,9 @@ private:
                        bool          & have_vol) const
     {
         if (! have_user) {
-            if (m_UserGiList.NotEmpty() && m_UserGiList->GetNumTaxIds() == 0) {
+            if (m_UserGiList.NotEmpty() && m_UserGiList->GetNumTaxIds() == 0 && m_UserGiList->GetNumPigs() == 0 ) {
                 have_user |= x_ListIncludesId(*m_UserGiList, id);
-            } else if (m_NegativeList.NotEmpty() && m_NegativeList->GetNumTaxIds() == 0) {
+            } else if (m_NegativeList.NotEmpty() && m_NegativeList->GetNumTaxIds() == 0 && m_NegativeList->GetNumPigs() == 0 ) {
                 have_user |= x_ListIncludesId(*m_NegativeList, id);
             } else {
                 have_user = true;

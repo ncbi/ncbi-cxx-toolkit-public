@@ -126,6 +126,7 @@ private:
 
     void x_PrintBlastDatabaseTaxInformation();
 
+    int x_ProcessBatchPig(CBlastDB_Formatter & fmt);
 };
 
 string s_PreProcessAccessionsForDBv5(const string & id)
@@ -188,9 +189,9 @@ CBlastDBCmdApp::x_ProcessEntry(CBlastDB_Formatter & fmt)
     const CArgs& args = GetArgs();
     _ASSERT(m_BlastDb.NotEmpty());
 
-   	if (args["pig"].HasValue()) {
+   	if (args["ipg"].HasValue()) {
     	CSeqDB::TOID oid;
-    	m_BlastDb->PigToOid(args["pig"].AsInteger(),oid);
+    	m_BlastDb->PigToOid(args["ipg"].AsInteger(),oid);
    		fmt.Write(oid, m_Config);
     } else if (args["entry"].HasValue()) {
     	static const string kDelim(",");
@@ -430,6 +431,42 @@ CBlastDBCmdApp::x_ProcessBatchEntry(CBlastDB_Formatter & fmt)
     return (err_found) ? 1 : 0;
 }
 
+
+int
+CBlastDBCmdApp::x_ProcessBatchPig(CBlastDB_Formatter & fmt)
+{
+	int err_found = 0;
+   	const CArgs& args = GetArgs();
+    CNcbiIstream& input = args["ipg_batch"].AsInputFile();
+
+    while (input) {
+        string line;
+        NcbiGetlineEOL(input, line);
+        if ( !line.empty() ) {
+        	string id, format;
+        	NStr::SplitInTwo(line, " \t", id, format, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+        	if(id.empty()) {
+        		continue;
+        	}
+        	if(x_ModifyConfigForBatchEntry(format))  {
+        		err_found ++;
+        		ERR_POST (Error << "Skipped IPG : " << id);
+        		continue;
+        	}
+   			int oid;
+   			int pig = NStr::StringToInt(id, NStr::fConvErr_NoThrow );
+   			m_BlastDb->PigToOid(pig,oid);
+   			if (oid == -1) {
+         		err_found ++;
+        		ERR_POST (Error << "Skipped IPG: " << id);
+        		continue;
+         	}
+
+   			fmt.Write(oid, m_Config);
+        }
+    }
+    return (err_found) ? 1 : 0;
+}
 
 void
 CBlastDBCmdApp::x_InitBlastDB()
@@ -707,8 +744,11 @@ CBlastDBCmdApp::x_ProcessSearchType(CBlastDB_Formatter & fmt)
 			return x_ProcessBatchEntry_NoDup(fmt);
 		}
 	}
-	else if (args["entry"].HasValue() || args["pig"].HasValue()) {
+	else if (args["entry"].HasValue() || args["ipg"].HasValue()) {
 		return x_ProcessEntry(fmt);
+	}
+	else if (args["ipg_batch"].HasValue()) {
+		return x_ProcessBatchPig(fmt);
 	}
 	else if(args[kArgTaxIdList].HasValue()||
 			args[kArgTaxIdListFile].HasValue()) {
@@ -806,12 +846,23 @@ void CBlastDBCmdApp::Init()
     arg_desc->SetDependency("entry_batch", CArgDescriptions::eExcludes, "strand");
     arg_desc->SetDependency("entry_batch", CArgDescriptions::eExcludes, "mask_sequence_with");
 
-    arg_desc->AddOptionalKey("pig", "PIG", "PIG to retrieve",
+    arg_desc->AddOptionalKey("ipg", "IPG", "IPG to retrieve",
                              CArgDescriptions::eInteger);
-    arg_desc->SetConstraint("pig", new CArgAllowValuesGreaterThanOrEqual(0));
-    arg_desc->SetDependency("pig", CArgDescriptions::eExcludes, "entry");
-    arg_desc->SetDependency("pig", CArgDescriptions::eExcludes, "entry_batch");
-    arg_desc->SetDependency("pig", CArgDescriptions::eExcludes, "target_only");
+    arg_desc->SetConstraint("ipg", new CArgAllowValuesGreaterThanOrEqual(0));
+    arg_desc->SetDependency("ipg", CArgDescriptions::eExcludes, "entry");
+    arg_desc->SetDependency("ipg", CArgDescriptions::eExcludes, "entry_batch");
+    arg_desc->SetDependency("ipg", CArgDescriptions::eExcludes, "target_only");
+    arg_desc->SetDependency("ipg", CArgDescriptions::eExcludes, "ipg_batch");
+
+    arg_desc->AddOptionalKey("ipg_batch", "input_file",
+                     "Input file for batch processing (Format: one entry per line, IPG \n"
+    		         "followed by optional space-delimited specifier(s) [range|strand|mask_algo_id]",
+                     CArgDescriptions::eInputFile);
+        arg_desc->SetDependency("ipg_batch", CArgDescriptions::eExcludes, "entry");
+        arg_desc->SetDependency("ipg_batch", CArgDescriptions::eExcludes, "entry_batch");
+        arg_desc->SetDependency("ipg_batch", CArgDescriptions::eExcludes, "range");
+        arg_desc->SetDependency("ipg_batch", CArgDescriptions::eExcludes, "strand");
+        arg_desc->SetDependency("ipg_batch", CArgDescriptions::eExcludes, "mask_sequence_with");
 
     arg_desc->AddOptionalKey(kArgTaxIdList, "taxonomy_ids",
     						"Comma-delimited taxonomy identifiers", CArgDescriptions::eString);

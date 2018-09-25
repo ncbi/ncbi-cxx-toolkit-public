@@ -110,6 +110,10 @@ public:
                 break;
             case CSeqDBGiListSet::eSiList:
                 SeqDB_ReadMemorySiList(fbeginp, fendp, m_SisOids, & in_order);
+                break;
+            case CSeqDBGiListSet::ePigList:
+                SeqDB_ReadMemoryPigList(fbeginp, fendp, m_PigsOids, & in_order);
+                break;
             }
 
             if (in_order) {
@@ -196,7 +200,8 @@ CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas            & atlas,
     			set<Int4> &  tax_ids = user_list->GetTaxIdsList();
     			lmdb_set.TaxIdsToOids(tax_ids, oids);
     		}
-    		if((user_list->GetNumGis() == 0) && (user_list->GetNumTis() == 0)) {
+    		if((user_list->GetNumGis() == 0) && (user_list->GetNumTis() == 0) &&
+    		   (user_list->GetNumPigs() == 0)) {
     			return;
     		}
     	}
@@ -261,13 +266,35 @@ CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas            & atlas,
     			lmdb_set.NegativeTaxIdsToOids(tax_ids, oids);
     		}
 
-    		if((m_NegativeList->GetNumGis() == 0) && (m_NegativeList->GetNumTis() == 0)) {
+    		if((m_NegativeList->GetNumGis() == 0) && (m_NegativeList->GetNumTis() == 0) &&
+    		   (m_NegativeList->GetNumPigs() == 0)) {
     			return;
     		}
     	}
 
     	if((m_NegativeList->GetNumSis() > 0) && !(lmdb_set.IsBlastDBVersion5())) {
     		m_NegativeList->PreprocessIdsForISAMSiLookup();
+    	}
+
+    	if (m_NegativeList->GetNumPigs() > 0) {
+    		CSeqDBGiList pigs;
+    		pigs.ReservePigs(m_NegativeList->GetNumPigs());
+    		ITERATE(vector<TPig>, p, m_NegativeList->GetPigList()){
+    			pigs.AddPig(*p);
+    		}
+    		for(int v = 0; v < volset.GetNumVols(); v++) {
+    		    const CSeqDBVolEntry * vol = volset.GetVolEntry(v);
+    		    vol->Vol()->IdsToOids(pigs, locked);
+    		}
+
+    		vector<blastdb::TOid> &  exclude_oid_list = m_NegativeList->SetExcludedOids();
+    		for(int o=0; o < pigs.GetNumPigs(); o++) {
+    			const CSeqDBGiList::SPigOid &  pig = pigs.GetPigOid(o);
+    			if(pig.oid != -1) {
+    				exclude_oid_list.push_back(pig.oid);
+    			}
+    		}
+
     	}
         for(int i = 0; i < volset.GetNumVols(); i++) {
             const CSeqDBVolEntry * vol = volset.GetVolEntry(i);

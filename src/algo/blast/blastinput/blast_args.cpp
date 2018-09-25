@@ -2048,7 +2048,8 @@ CBlastDatabaseArgs::CBlastDatabaseArgs(bool request_mol_type /* = false */,
       m_IsProtein(true),
       m_IsMapper(is_mapper),
       m_IsKBlast(is_kblast),
-      m_SupportsDatabaseMasking(false)
+      m_SupportsDatabaseMasking(false),
+      m_SupportIPGFiltering(false)
 {}
 
 bool
@@ -2088,6 +2089,10 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     database_args.push_back(kArgTaxIdListFile);
     database_args.push_back(kArgNegativeTaxIdList);
     database_args.push_back(kArgNegativeTaxIdListFile);
+    if (m_SupportIPGFiltering) {
+    	database_args.push_back(kArgIpgList);
+    	database_args.push_back(kArgNegativeIpgList);
+    }
     if (m_SupportsDatabaseMasking) {
         database_args.push_back(kArgDbSoftMask);
         database_args.push_back(kArgDbHardMask);
@@ -2146,7 +2151,17 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                 "except the specified taxonomy IDs",
                                 CArgDescriptions::eString);
         }
+        if (m_SupportIPGFiltering) {
+            arg_desc.AddOptionalKey(kArgIpgList, "filename",
+                                "Restrict search of database to list of IPGs",
+                                CArgDescriptions::eString);
 
+            // Negative IPG list
+            arg_desc.AddOptionalKey(kArgNegativeIpgList, "filename",
+                                "Restrict search of database to everything"
+                                " except the specified IPGs",
+                                CArgDescriptions::eString);
+        }
         // N.B.: all restricting options are mutually exclusive
         const vector<string> kBlastDBFilteringOptions = {
             kArgGiList, 
@@ -2157,7 +2172,8 @@ CBlastDatabaseArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
             kArgNegativeGiList, 
             kArgNegativeSeqidList,
             kArgNegativeTaxIdList,
-            kArgNegativeTaxIdListFile
+            kArgNegativeTaxIdListFile,
+
         };
         for (size_t i = 0; i < kBlastDBFilteringOptions.size(); i++) {
             for (size_t j = i+1; j < kBlastDBFilteringOptions.size(); j++) {
@@ -2316,6 +2332,13 @@ CBlastDatabaseArgs::ExtractAlgorithmOptions(const CArgs& args,
 
         } else if (args.Exist(kArgNegativeTaxIdListFile) && args[kArgNegativeTaxIdListFile]) {
         	s_GetTaxIDList(args[kArgNegativeTaxIdListFile].AsString(), true, true, m_SearchDb);
+
+        } else if (args.Exist(kArgIpgList) && args[kArgIpgList]) {
+            string fn(SeqDB_ResolveDbPath(args[kArgIpgList].AsString()));
+            m_SearchDb->SetGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn, CSeqDBFileGiList::ePigList)));
+        }  else if (args.Exist(kArgNegativeIpgList) && args[kArgNegativeIpgList]) {
+            string fn(SeqDB_ResolveDbPath(args[kArgNegativeIpgList].AsString()));
+            m_SearchDb->SetNegativeGiList(CRef<CSeqDBGiList> (new CSeqDBFileGiList(fn, CSeqDBFileGiList::ePigList)));
 
         }
 

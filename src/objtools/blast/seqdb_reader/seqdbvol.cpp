@@ -2194,6 +2194,17 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
         }
     }
 
+    if (ids.GetNumPigs()) {
+        if (!m_PigFileOpened) x_OpenPigFile();
+        if (m_IsamPig.NotEmpty()) {
+            m_IsamPig->IdsToOids(m_VolStart, m_VolEnd, ids);
+        } else {
+            NCBI_THROW(CSeqDBException,
+                       eArgErr,
+                       "IPG list specified but no ISAM file found for IPG in " + m_VolName);
+        }
+    }
+
     if (ids.GetNumSis() && (GetLMDBFileName() == kEmptyStr)) {
         if (!m_StrFileOpened) x_OpenStrFile();
         if (m_IsamStr.NotEmpty()) {

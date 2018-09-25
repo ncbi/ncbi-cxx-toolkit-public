@@ -545,6 +545,20 @@ public:
     }
 };
 
+class CSeqDB_SortPigLessThan {
+public:
+    /// Test whether lhs is less than (occurs before) rhs.
+    /// @param lhs Left hand side of less-than operator. [in]
+    /// @param rhs Right hand side of less-than operator. [in]
+    /// @return True if lhs has a lower GI than rhs.
+    int operator()(const CSeqDBGiList::SPigOid & lhs,
+                   const CSeqDBGiList::SPigOid & rhs)
+    {
+        return lhs.pig < rhs.pig;
+    }
+};
+
+
 
 /// Compare SGiOid structs by GI.
 class CSeqDB_SortTiLessThan {
@@ -627,6 +641,7 @@ void CSeqDBGiList::InsureOrder(ESortOrder order)
             s_InsureOrder<CSeqDB_SortGiLessThan>(m_GisOids);
             s_InsureOrder<CSeqDB_SortTiLessThan>(m_TisOids);
             s_InsureOrder<CSeqDB_SortSiLessThan>(m_SisOids);
+            s_InsureOrder<CSeqDB_SortPigLessThan>(m_PigsOids);
             break;
 
         default:
@@ -767,6 +782,16 @@ CSeqDBGiList::GetGiList(vector<TGi>& gis) const
     }
 }
 
+void
+CSeqDBGiList::GetPigList(vector<TPig>& pigs) const
+{
+    pigs.clear();
+    pigs.reserve(GetNumPigs());
+
+    ITERATE(vector<SPigOid>, itr, m_PigsOids) {
+        pigs.push_back(itr->pig);
+    }
+}
 
 void
 CSeqDBGiList::GetTiList(vector<TTi>& tis) const
@@ -865,6 +890,41 @@ bool s_SeqDB_IsBinaryNumericList(const char* fbeginp, const char* fendp,
     return retval;
 }
 
+int s_ReadDigit(const char d, const string & list_type)
+{
+    switch(d) {
+	    case '0':
+	        return 0;
+	    case '1':
+	        return 1;
+	    case '2':
+	        return 2;
+	    case '3':
+	        return 3;
+	    case '4':
+	        return 4;
+	    case '5':
+            return 5;
+        case '6':
+            return 6;
+        case '7':
+            return 7;
+        case '8':
+            return 8;
+        case '9':
+            return 9;
+        case ' ':
+        case '\n':
+        case '\r':
+    	    return -1;
+        default:
+        {
+             string msg = string("Invalid byte in text" +  list_type + " list [") +
+            		 	  NStr::UIntToString((unsigned char) d) + "].";
+             NCBI_THROW(CSeqDBException, eFileErr, msg);
+        }
+    }
+}
 
 void SeqDB_ReadMemoryGiList(const char * fbeginp,
                             const char * fendp,
@@ -930,75 +990,98 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
         gis.reserve((int) (file_size / 7));
 
         Uint4 elem(0);
+        const string list_type("GI");
 
         for(const char * p = fbeginp; p < fendp; p ++) {
-            Uint4 dig = 0;
-
-            switch(*p) {
-            case '0':
-                dig = 0;
-                break;
-
-            case '1':
-                dig = 1;
-                break;
-
-            case '2':
-                dig = 2;
-                break;
-
-            case '3':
-                dig = 3;
-                break;
-
-            case '4':
-                dig = 4;
-                break;
-
-            case '5':
-                dig = 5;
-                break;
-
-            case '6':
-                dig = 6;
-                break;
-
-            case '7':
-                dig = 7;
-                break;
-
-            case '8':
-                dig = 8;
-                break;
-
-            case '9':
-                dig = 9;
-                break;
-
-            case '#':
-            case '\n':
-            case '\r':
-                // Skip blank lines or comments by ignoring zero.
+            int dig = s_ReadDigit(*p, list_type);
+            if (dig == -1) {
                 if (elem != 0) {
                     gis.push_back(GI_FROM(Uint4, elem));
                 }
                 elem = 0;
                 continue;
-
-            default:
-                {
-                    string msg = string("Invalid byte in text GI list [") +
-                        NStr::UIntToString((unsigned char)(*p)) + " at location " +
-                        NStr::NumericToString(p-fbeginp) + "].";
-                    NCBI_THROW(CSeqDBException, eFileErr, msg);
-                }
             }
-
             elem *= 10;
             elem += dig;
         }
     }
 }
+
+void SeqDB_ReadMemoryPigList(const char * fbeginp,
+                             const char * fendp,
+                             vector<CSeqDBGiList::SPigOid> & pigs,
+                             bool * in_order)
+{
+    bool long_ids = false;
+    Int8 file_size = fendp - fbeginp;
+
+    if (s_SeqDB_IsBinaryNumericList(fbeginp, fendp, long_ids)) {
+        Uint4* bbeginp = (Uint4*) fbeginp;
+        Uint4* bendp = (Uint4*) fendp;
+
+        Int4 num_pigs = (Int4) (bendp - bbeginp) - 2;
+
+        pigs.clear();
+
+        if (((bendp - bbeginp) < 2U)
+                ||  (bbeginp[0] != 0xFFFFFFFFU)
+                ||  (SeqDB_GetStdOrd(bbeginp + 1) != (Uint4) num_pigs)) {
+            NCBI_THROW(CSeqDBException,
+                       eFileErr,
+                       "Specified file is not a valid binary IPG file.");
+        }
+
+        pigs.reserve(num_pigs);
+
+        if (in_order) {
+            TPig prev_pig = 0;
+            bool sorted = true;
+
+            Uint4* elem = bbeginp + 2;
+            while(elem < bendp) {
+                TPig this_pig = SeqDB_GetStdOrd(elem);
+                pigs.push_back(this_pig);
+
+                if (prev_pig > this_pig) {
+                    sorted = false;
+                    break;
+                }
+                prev_pig = this_pig;
+                elem++;
+            }
+
+            while(elem < bendp) {
+                pigs.push_back(SeqDB_GetStdOrd(elem++));
+            }
+
+            *in_order = sorted;
+        } else {
+            for(Uint4 * elem = (bbeginp + 2); elem < bendp; ++elem) {
+                pigs.push_back(SeqDB_GetStdOrd(elem));
+            }
+        }
+    } else {
+        pigs.reserve((int) (file_size / 7));
+
+        Uint4 elem(0);
+        const string list_type("IPG");
+
+        for(const char * p = fbeginp; p < fendp; p ++) {
+            int dig = s_ReadDigit(*p, list_type);
+            if (dig == -1) {
+                // Skip blank lines or comments by ignoring zero.
+                if (elem != 0) {
+                    pigs.push_back(elem);
+                }
+                elem = 0;
+                continue;
+            }
+            elem *= 10;
+            elem += dig;
+        }
+    }
+}
+
 
 // [ NOTE: The 8 byte versions described here are not yet
 // implemented. ]
@@ -1144,71 +1227,17 @@ void SeqDB_ReadMemoryTiList(const char * fbeginp,
         tis.reserve(int(file_size / 7));
 
         Int8 elem(0);
+        const string list_type("TI");
 
         for(const char * p = fbeginp; p < fendp; p ++) {
-            Uint4 dig = 0;
-
-            switch(*p) {
-            case '0':
-                dig = 0;
-                break;
-
-            case '1':
-                dig = 1;
-                break;
-
-            case '2':
-                dig = 2;
-                break;
-
-            case '3':
-                dig = 3;
-                break;
-
-            case '4':
-                dig = 4;
-                break;
-
-            case '5':
-                dig = 5;
-                break;
-
-            case '6':
-                dig = 6;
-                break;
-
-            case '7':
-                dig = 7;
-                break;
-
-            case '8':
-                dig = 8;
-                break;
-
-            case '9':
-                dig = 9;
-                break;
-
-            case '#':
-            case '\n':
-            case '\r':
-                // Skip blank lines and comments by ignoring zero.
+            int dig = s_ReadDigit(*p, list_type);
+            if (dig == -1) {
                 if (elem != 0) {
                     tis.push_back(elem);
                 }
                 elem = 0;
                 continue;
-
-            default:
-                {
-                    string msg = string("Invalid byte in text TI list [") +
-                        NStr::UIntToString((unsigned char)(*p)) + " at location " +
-                        NStr::NumericToString(p-fbeginp) + "].";
-
-                    NCBI_THROW(CSeqDBException, eFileErr, msg);
-                }
             }
-
             elem *= 10;
             elem += dig;
         }
@@ -1369,6 +1398,17 @@ void SeqDB_ReadMixList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis,
     const char *fendp   = fbeginp + file_size;
 
     SeqDB_ReadMemoryMixList(fbeginp, fendp, gis, tis, sis, in_order);
+}
+
+void SeqDB_ReadPigList(const string & fname, vector<CSeqDBGiList::SPigOid> & pigs, bool * in_order)
+{
+    CMemoryFile mfile(SeqDB_MakeOSPath(fname));
+
+    Int8 file_size = mfile.GetSize();
+    const char * fbeginp = (char*) mfile.GetPtr();
+    const char * fendp   = fbeginp + file_size;
+
+    SeqDB_ReadMemoryPigList(fbeginp, fendp, pigs, in_order);
 }
 
 void SeqDB_ReadGiList(const string & fname, vector<TGi> & gis, bool * in_order)
@@ -1591,6 +1631,9 @@ CSeqDBFileGiList::CSeqDBFileGiList(const string & fname, EIdType idtype)
             break;
         case eMixList:
         	SeqDB_ReadMixList(fname, m_GisOids, m_TisOids, m_SisOids, & in_order);
+        	break;
+        case ePigList:
+        	SeqDB_ReadPigList(fname, m_PigsOids, & in_order);
         	break;
     }
     m_CurrentOrder = in_order ? eGi : eNone;

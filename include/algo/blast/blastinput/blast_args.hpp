@@ -942,6 +942,10 @@ public:
         return m_Subjects;
     }
 
+    void SetIPGFilteringSupport(bool val) {
+        m_SupportIPGFiltering = val;
+    }
+
 protected:
     CRef<CSearchDatabase> m_SearchDb;/**< Description of the BLAST database */
     bool m_RequestMoleculeType;     /**< Determines whether the database's
@@ -958,6 +962,7 @@ protected:
     CRef<objects::CScope> m_Scope;  /**< CScope object in which all subject
                                       sequences read are kept */
     bool m_SupportsDatabaseMasking; /**< true if it's supported */
+    bool m_SupportIPGFiltering;     /**< true if IPG filtering is supported */
 };
 
 /// Argument class to collect options specific to igBLAST

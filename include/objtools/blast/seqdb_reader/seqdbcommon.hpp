@@ -131,6 +131,8 @@ enum ESeqDBAllocType {
 
 typedef Uint8 TTi;
 
+typedef Int4 TPig;
+
 
 /// Blast DB v5 seqid list info
 struct NCBI_XOBJREAD_EXPORT SBlastSeqIdListInfo {
@@ -214,6 +216,23 @@ public:
     	vector<blastdb::TOid> oids;
     };
 
+    struct SPigOid {
+            /// Constuct an SPigOid element from the given pig and oid.
+            /// @param pig_in A PIG, or 0 if none is available.
+            /// @param oid_in An OID, or -1 if none is available.
+            SPigOid(TPig pig_in = 0, int oid_in = -1)
+                : pig(pig_in), oid(oid_in)
+            {
+            }
+
+            /// The PIG or 0 if unknown.
+            TPig pig;
+
+            /// The OID or -1 if unknown.
+            int oid;
+    };
+
+
     /// Possible sorting states
     enum ESortOrder {
         /// The array is unsorted or the sortedness is unknown.
@@ -273,6 +292,11 @@ public:
     bool SiToOid(const string &si, int & oid);
     bool SiToOid(const string &si, int & oid, int & index);
 
+
+    bool FindPig(TPig pig) const;
+    bool PigToOid(TPig pig, int & oid);
+    bool PigToOid(TPig pig, int & oid, int & index);
+
     /// Test for existence of a Seq-id by type.
     ///
     /// This method uses FindGi or FindTi if the input ID is a GI or
@@ -309,6 +333,11 @@ public:
         return m_SisOids[index];
     }
 
+    const SPigOid & GetPigOid(int index) const
+    {
+        return m_PigsOids[index];
+    }
+
     /// Get the number of GIs in the array.
     int GetNumGis() const
     {
@@ -337,10 +366,15 @@ public:
     	return (int) m_TaxIdsOids.oids.size();
     }
 
+    int GetNumPigs() const
+    {
+        return (int) m_PigsOids.size();
+    }
+
     /// Return false if there are elements present.
     bool Empty() const
     {
-        return ! (GetNumGis() || GetNumSis() || GetNumTis() || GetNumTaxIds());
+        return ! (GetNumGis() || GetNumSis() || GetNumTis() || GetNumTaxIds() || GetNumPigs());
     }
 
     /// Return true if there are elements present.
@@ -391,6 +425,11 @@ public:
         m_SisOids[index].oid = oid;
     }
 
+    void SetPigTranslation(int index, int oid)
+    {
+        m_PigsOids[index].oid = oid;
+    }
+
     int Size() const
     {
         return (int) m_GisOids.size();
@@ -428,6 +467,8 @@ public:
 
     /// TODO Get the seqid list?
     void GetSiList(vector<string>& sis) const;
+
+    void GetPigList(vector<TPig>& pigs) const;
 
 
     set<Int4> & GetTaxIdsList()
@@ -470,6 +511,11 @@ public:
     	tids.insert(tax_ids.begin(), tax_ids.end());
     }
 
+    void AddPig(TPig pig)
+    {
+        m_PigsOids.push_back(pig);
+    }
+
     /// Reserve space for GIs.
     void ReserveGis(size_t n)
     {
@@ -485,6 +531,11 @@ public:
     void ReserveSis(size_t n)
     {
         m_SisOids.reserve(n);
+    }
+
+    void ReservePigs(size_t n)
+    {
+        m_PigsOids.reserve(n);
     }
 
     /// Preprocess ids for ISAM string id lookup
@@ -512,6 +563,8 @@ protected:
 
     /// Pairs of Seq-ids and OIDs.
     vector<SSiOid> m_SisOids;
+
+    vector<SPigOid> m_PigsOids;
 
     STaxIdsOids m_TaxIdsOids;
 
@@ -580,6 +633,31 @@ inline void CSeqDBGiList::SetValue<string>(int index, int oid)
 {
     m_SisOids[index].oid = oid;
 }
+
+template < >
+inline int CSeqDBGiList::GetSize<TPig>() const
+{
+    return (int) m_PigsOids.size();
+}
+
+template < >
+inline TPig CSeqDBGiList::GetKey<TPig>(int index) const
+{
+    return m_PigsOids[index].pig;
+}
+
+template < >
+inline bool CSeqDBGiList::IsValueSet<TPig>(int index) const
+{
+    return (m_PigsOids[index].oid != -1);
+}
+
+template < >
+inline void CSeqDBGiList::SetValue<TPig>(int index, int oid)
+{
+    m_PigsOids[index].oid = oid;
+}
+
 
 /// CSeqDBBitVector
 ///
@@ -810,6 +888,11 @@ public:
         return (int) m_Sis.size();
     }
 
+    int GetNumPigs() const
+    {
+        return (int) m_Pigs.size();
+    }
+
     bool IsGiList() const
     {
         return(GetNumGis() > 0);
@@ -834,13 +917,18 @@ public:
         if(size == 0) {
             size = GetNumTis();
         }
+
+        if(size == 0) {
+            size = GetNumPigs();
+        }
+
         return size;
     }
 
     /// Return false if there are elements present.
     bool Empty() const
     {
-        return ! (GetNumGis() || GetNumTis() || GetNumSis()|| GetNumTaxIds());
+        return ! (GetNumGis() || GetNumTis() || GetNumSis()|| GetNumTaxIds() || GetNumPigs());
     }
 
     /// Return true if there are elements present.
@@ -919,10 +1007,23 @@ public:
 	m_Gis.reserve( new_list.size() );
         m_Gis = new_list;
     }
+
+    void SetPigList( const vector<TPig> & new_list )
+    {
+        m_Pigs.clear();
+    	m_Pigs.reserve( new_list.size() );
+        m_Pigs = new_list;
+    }
+
     /// Build ID set for this negative list.
     const vector<TTi> & GetTiList()
     {
         return m_Tis;
+    }
+
+    const vector<TPig> & GetPigList()
+    {
+        return m_Pigs;
     }
 
     const vector<string> & GetSiList()
@@ -974,6 +1075,8 @@ protected:
 
     /// TIs to exclude from the SeqDB instance.
     vector<TTi> m_Tis;
+
+    vector<TPig> m_Pigs;
 
     /// SeqIds to exclude from the SeqDB instance.
     vector<string> m_Sis;
@@ -1087,6 +1190,12 @@ void SeqDB_ReadMemoryMixList(const char * fbeginp,
                             vector<CSeqDBGiList::STiOid> & tis,
                             vector<CSeqDBGiList::SSiOid> & sis,
                             bool * in_order);
+
+NCBI_XOBJREAD_EXPORT
+void SeqDB_ReadMemoryPigList(const char                    * fbeginp,
+                             const char                    * fendp,
+                             vector<CSeqDBGiList::SPigOid> & pigs,
+                             bool                          * in_order = 0);
 
 /// Combine and quote a list of database names.
 ///
@@ -1204,6 +1313,12 @@ void SeqDB_ReadMixList(const string & fname,
 		               vector<CSeqDBGiList::SSiOid> & sis,
 		               bool * in_order);
 
+NCBI_XOBJREAD_EXPORT
+void SeqDB_ReadPigList(const string                 & fname,
+                      vector<CSeqDBGiList::SPigOid> & pigs,
+                      bool                          * in_order = 0);
+
+
 /// Read a text or binary GI list from a file.
 ///
 /// The GIs in a file are read into the provided vector<int>.  If the
@@ -1262,7 +1377,8 @@ public:
         eGiList,
         eTiList,
         eSiList,
-        eMixList
+        eMixList,
+        ePigList
     };
 
     /// Build a GI list from a file.

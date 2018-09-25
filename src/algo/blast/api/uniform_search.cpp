@@ -274,6 +274,12 @@ CSearchDatabase::x_InitializeDb() const
             CRef<CSeqDBNegativeList> taxIds(new CSeqDBNegativeList);
             taxIds->AddTaxIds(m_NegativeGiList->GetTaxIdsList());
             m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type, taxIds.GetPointer()));
+        } else if(m_NegativeGiList->GetNumPigs() > 0) {
+            CRef<CSeqDBNegativeList> pigs(new CSeqDBNegativeList);
+            vector<TPig> pig_list;
+            m_NegativeGiList->GetPigList(pig_list);
+            pigs->SetPigList(pig_list);
+            m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type, pigs.GetPointer()));
         }
 
     } 

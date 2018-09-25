@@ -60,6 +60,7 @@ CBlastpAppArgs::CBlastpAppArgs()
 
     m_BlastDbArgs.Reset(new CBlastDatabaseArgs);
     m_BlastDbArgs->SetDatabaseMaskingSupport(true);
+    m_BlastDbArgs->SetIPGFilteringSupport(true);
     arg.Reset(m_BlastDbArgs);
     m_Args.push_back(arg);
 

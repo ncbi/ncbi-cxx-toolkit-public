@@ -61,7 +61,8 @@ public:
     enum EGiListType {
         eGiList,
         eTiList,
-        eSiList
+        eSiList,
+        ePigList
     };
 
     /// Constructor
@@ -153,6 +154,8 @@ private:
     /// @param gilist The volume GI list.
     void x_TranslateTisFromUserList(CSeqDBGiList & gilist);
     
+    void x_TranslatePigsFromUserList(CSeqDBGiList & gilist);
+
     /// Memory management layer object.
     CSeqDBAtlas & m_Atlas;
     
@@ -173,6 +176,8 @@ private:
 
     /// Map of filenames to alias node specified SI lists.
     TNodeListMap m_SINodeListMap;
+
+    TNodeListMap m_PIGNodeListMap;
 };
 
 END_NCBI_SCOPE

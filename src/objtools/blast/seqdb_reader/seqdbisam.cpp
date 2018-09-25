@@ -1436,6 +1436,10 @@ void CSeqDBIsam::IdsToOids(int              vol_start,
         x_TranslateGiList<string>(vol_start, ids);
         break;
 
+    case ePigId:
+        x_TranslateGiList<TPig>(vol_start, ids);
+        break;
+
     default:
         NCBI_THROW(CSeqDBException,
                        eArgErr,
