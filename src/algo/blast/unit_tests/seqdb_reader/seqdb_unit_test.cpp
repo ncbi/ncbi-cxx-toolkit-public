@@ -4439,7 +4439,6 @@ BOOST_AUTO_TEST_CASE(Test_Mix_User_SeqIdList_AliasFile)
     }
     BOOST_REQUIRE_EQUAL(2, found);
 }
-/*
 
 BOOST_AUTO_TEST_CASE(PigListSwissprot)
 {
@@ -4486,7 +4485,7 @@ BOOST_AUTO_TEST_CASE(PigListSwissprot)
     }
 
 }
-*/
+
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
 

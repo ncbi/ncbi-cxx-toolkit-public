@@ -146,7 +146,7 @@ public:
     typedef int TOid;
 
     /// PIG identifiers for numeric indices over protein volumes.
-    typedef int TPig;
+    //typedef int TPig;
 
     /// Genomic IDs, the most common numerical identifier.
 //    typedef int TGi;
