@@ -131,7 +131,7 @@ enum ESeqDBAllocType {
 
 typedef Uint8 TTi;
 
-typedef Int4 TPig;
+typedef Uint4 TPig;
 
 
 /// Blast DB v5 seqid list info
