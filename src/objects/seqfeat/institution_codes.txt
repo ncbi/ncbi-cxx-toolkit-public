@@ -3384,15 +3384,15 @@ KTU	s	University of Silesia, Department of Plant Systematics
 KTUH	s	Kuwait University, Botany and Microbiology Department			
 KU	s	University of Kansas Natural History Museum	KUMNA,KUVP,UK		
 KU-MACC	c	Kobe University Macroalgal Culture Collection			
-KU:H	s	University of Kansas Natural History Museum, Herpetology Collection		
+KU:H	s	University of Kansas Natural History Museum, Herpetology Collection	
 KU:I	s	University of Kansas Natural History Museum, Ichthyology collection	https://ichthyology.specify.ku.edu/specify/bycatalog/KUI/&spec;/
 KU:IP	s	University of Kansas Natural History Museum, Invertebrate Paleontology Collection	
 KU:IT	sb	University of Kansas Natural History Museum, Ichthyology tissue collection	
 KU:IZ	s	University of Kansas Natural History Museum, Invertebrate Zoology Collection		
-KU:M	s	University of Kansas Natural History Museum, Mammology Collection		
-KU:O	s	University of Kansas Natural History Museum, Ornithology Collection		
+KU:M	s	University of Kansas Natural History Museum, Mammology Collection	
+KU:O	s	University of Kansas Natural History Museum, Ornithology Collection	
 KU:PB	s	University of Kansas Natural History Museum, Paleobotany Collection		
-KU:VP	s	University of Kansas Natural History Museum, Vertebrate Paleontology Collection		
+KU:VP	s	University of Kansas Natural History Museum, Vertebrate Paleontology Collection	
 KU<CHN>	s	Kwangsi University			
 KUBL	s	Yoshida College, Biological Laboratory			
 KUEC	s	Kyushu University Entomology Collection			
@@ -6583,15 +6583,15 @@ UAIC<USA-AL>	s	University of Alabama, Ichthyological Collection
 UAIC<USA-AZ>	s	University of Arizona			
 UALRVC	s	University of Arkansas at Little Rock, Vertebrate Collection			
 UAM	s	University of Alaska, Museum of the North	UAF	http://arctos.database.museum/SpecimenDetail.cfm?GUID=	
-UAM:Bird	s	University of Alaska, Museum of the North, Bird Collection		
+UAM:Bird	s	University of Alaska, Museum of the North, Bird Collection	
 UAM:Bryo	s	University of Alaska, Museum of the North, Bryozoan Collection		
 UAM:Crus	s	University of Alaska, Museum of the North, Marine Arthropod Collection		
 UAM:Ento	s	University of Alaska, Museum of the North, Insect Collection		
 UAM:ES	s	University of Alaska, Museum of the North, Earth Science		
-UAM:Fish	s	University of Alaska, Museum of the North, Fish Collection		
+UAM:Fish	s	University of Alaska, Museum of the North, Fish Collection	
 UAM:Herb	s	University of Alaska, Museum of the North, UAM Herbarium		
-UAM:Herp	s	University of Alaska, Museum of the North, Amphibian and Reptile Collection		
-UAM:Mamm	s	University of Alaska, Museum of the North, Mammal Collection		
+UAM:Herp	s	University of Alaska, Museum of the North, Amphibian and Reptile Collection	
+UAM:Mamm	s	University of Alaska, Museum of the North, Mammal Collection	
 UAM:Moll	s	University of Alaska, Museum of the North, Mollusc Collection		
 UAM:Paleo	s	University of Alaska, Museum of the North, paleontology collection		
 UAM<ESP>	c	Universidad Autonoma De Madrid culture collection of cyanobacteria			
@@ -6662,10 +6662,10 @@ UCLZ	s	University College London
 UCM<ESP>	s	Universidad Complutense Madrid			
 UCM<UKR>	c	Ukrainian Collection of Microorganisms, Zabolotny Institute of Microbiology and Virology			
 UCM<USA-CO>	s	University of Colorado Museum of Natural History			
-UCM<USA-CO>:Bird	s	University of Colorado Museum of Natural History, University of Colorado Museum Bird Collection		
-UCM<USA-CO>:Fish	s	University of Colorado Museum of Natural History, University of Colorado Museum Fish collection		
-UCM<USA-CO>:Herp	s	University of Colorado Museum of Natural History, University of Colorado Museum Amplibian and Reptile collection		
-UCM<USA-CO>:Mamm	s	University of Colorado Museum of Natural History, University of Colorado Museum Mammal Collection		
+UCM<USA-CO>:Bird	s	University of Colorado Museum of Natural History, University of Colorado Museum Bird Collection	
+UCM<USA-CO>:Fish	s	University of Colorado Museum of Natural History, University of Colorado Museum Fish collection	
+UCM<USA-CO>:Herp	s	University of Colorado Museum of Natural History, University of Colorado Museum Amplibian and Reptile collection	
+UCM<USA-CO>:Mamm	s	University of Colorado Museum of Natural History, University of Colorado Museum Mammal Collection	
 UCMC	s	University of Colorado Museum	UCM		
 UCME	s	Faculdad de Biologia, Departamento de Zoologia			
 UCMM	s	Pontificia Universidad Catolica Madre y Maestra			
@@ -6827,6 +6827,9 @@ UMM	s	University of Maine at Machias
 UMML	s	University of Miami Marine Laboratory			
 UMMP	s	University of Michigan			
 UMMZ	s	University of Michigan, Museum of Zoology			
+UMMZ:Birds	s	University of Michigan, Museum of Zoology, Birds Collection	
+UMMZ:Herpetology	s	University of Michigan, Museum of Zoology, Herpetology Collection	
+UMMZ:Mammal	s	University of Michigan, Museum of Zoology, Mammal collection	
 UMMZ:MC	s	University of Michigan, Museum of Zoology, Mollusk Collection		
 UMNH	s	Utah Museum of Natural History			
 UMNH:Bird	s	Utah Museum of Natural History, Birds collection	
@@ -6913,6 +6916,8 @@ UNOVC	s	University of New Orleans
 UNPSJB-Pv	s	Universidad Nacional de la Patagonia			
 UNR<ARG>	s	Universidad Nacional de Rosario, Botanica y Ecologia Vegetal			
 UNR<USA-NV>	s	University of Nevada, Museum of Biology			
+UNR<USA-NV>:Herpetology	s	University of Nevada, Museum of Biology, Herpetology Collection	
+UNR<USA-NV>:Mammal	s	University of Nevada, Museum of Biology, Mammalogy collection	
 UNS	s	University of Science, Ho Chi Minh City, Vietnam			
 UNSA	s	University of Natal			
 UNSL	s	Universidad Nacional de San Luis			
@@ -7061,13 +7066,14 @@ UTCI	s	University of Tennessee at Chattanooga Insect Collection
 UTD	s	University of Texas, Plant Resources Center			
 UTE	s	University of Tartu			
 UTEP	s	University of Texas at El Paso Biodiversity Collections			
-UTEP:Bird	s	University of Texas at El Paso Biodiversity Collections, Ornithology Collection		
+UTEP:Bird	s	University of Texas at El Paso Biodiversity Collections, Ornithology Collection	
 UTEP:Ento	s	University of Texas at El Paso Biodiversity Collections, Entomology Collection		
 UTEP:ES	s	University of Texas at El Paso Biodiversity Collections, Earth Science  fossils Collections		
-UTEP:Fish	s	University of Texas at El Paso Biodiversity Collections, Ichthyology collection		
+UTEP:Fish	s	University of Texas at El Paso Biodiversity Collections, Ichthyology collection	
 UTEP:Herb	s	University of Texas at El Paso Biodiversity Collections, Herbarium		
-UTEP:Herp	s	University of Texas at El Paso Biodiversity Collections, Herpetology Collection		
+UTEP:Herps	s	University of Texas at El Paso Biodiversity Collections, Herpetology collection	
 UTEP:INV	s	University of Texas at El Paso Biodiversity Collections, Invertebrates - Molluscs Collections		
+UTEP:Mammal	s	University of Texas at El Paso Biodiversity Collections, Mammal collection	
 UTEP:Zoo	s	University of Texas at El Paso Biodiversity Collections, Zooplankton collections		
 UTEX	c	The Culture Collection of Algae at the University of Texas Austin			
 UTG	s	University of Tuebingen			
@@ -7110,12 +7116,14 @@ UW	s	University of Washington Fish Collection
 UWA	s	University of Western Australia, Botany Department			
 UWAL	s	University of West Alabama			
 UWBM	s	University of Washington, Burke Museum			
-UWBM:Mamm	s	University of Washington, Burke Museum, Burke Museum's mammal collection		
-UWBM:ORN	s	University of Washington, Burke Museum, Ornithology Collection		
+UWBM:HERP	s	University of Washington, Burke Museum, Herpetology Collection	
+UWBM:Mamm	s	University of Washington, Burke Museum, Burke Museum's mammal collection	
+UWBM:ORN	s	University of Washington, Burke Museum, Ornithology Collection	
 UWC	s	University of the Western Cape, Botany Department			
 UWCC<USA-WA>	c	University of Washington Culture Collection			
 UWCP	s	University of Wroclaw			
 UWEC	s	University of Wisconsin, Department of Biology			
+UWFC	s	University of Washington Burke Museum Fish			
 UWFP	s	University of West Florida, Department of Biology			
 UWGB	s	University of Wisconsin-Green Bay, MAC 212			
 UWI	s	University of the West Indies (Trinidad and Tobago)			
@@ -7135,10 +7143,10 @@ UWPG	s	University of Winnipeg, Biology Department
 UWSP	s	University of Wisconsin-Stevens Point,			
 UWW	s	University of Wisconsin - Whitewater, Biological Sciences Department			
 UWYMV	s	University of Wyoming Museum of Vertebrates			
-UWYMV:Bird	s	University of Wyoming Museum of Vertebrates, Bird Collection		
+UWYMV:Bird	s	University of Wyoming Museum of Vertebrates, Bird Collection	
 UWYMV:Fish	s	University of Wyoming Museum of Vertebrates, Fish Collection		
-UWYMV:Herp	s	University of Wyoming Museum of Vertebrates, Herpetology Collection		
-UWYMV:Mamm	s	University of Wyoming Museum of Vertebrates, Mammal Collection		
+UWYMV:Herp	s	University of Wyoming Museum of Vertebrates, Herpetology Collection	
+UWYMV:Mamm	s	University of Wyoming Museum of Vertebrates, Mammal Collection	
 UWZM	s	University of Wisconsin, Zoological Museum			
 UYIC	s	Instituto de Biologia			
 UZ	s	Herbario de la Universidad de Zaragoza			
@@ -7373,9 +7381,9 @@ WNC	s	University of North Carolina Wilmington, Department of Biology and Marine 
 WNHM	s	Oklahoma Baptist University, Webster Natural History Museum			
 WNLM	s	Niederoesterreichisches Landesmuseum			
 WNMU	s	Western New Mexico University Museum			
-WNMU:Bird	s	Western New Mexico University Museum, bird collection		
-WNMU:Fish	s	Western New Mexico University Museum, fish collection		
-WNMU:Mamm	s	Western New Mexico University Museum, mammal collection		
+WNMU:Bird	s	Western New Mexico University Museum, bird collection	
+WNMU:Fish	s	Western New Mexico University Museum, fish collection	
+WNMU:Mamm	s	Western New Mexico University Museum, mammal collection	
 WNRE	s	Whiteshell Nuclear Research Establishment			
 WNS	s	Wiesbaden Naturwissenschaftliche Sammlung der Stadt			
 WNU	s	Northwest University, Biology Department			
@@ -7525,6 +7533,7 @@ YPM:ICH	s	Yale Peabody Museum of Natural History, Ichthyology Collection	http://
 YPM:IZ	s	Yale Peabody Museum of Natural History, Invertebrate Zoology Collection	http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=iz&ID=
 YPM:MAM	s	Yale Peabody Museum of Natural History, Mammology Collection	http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=mam&ID=
 YPM:ORN	s	Yale Peabody Museum of Natural History, Ornithology Collection	http://peabody.research.yale.edu/cgi-bin/Query.Ledger?LE=orn&ID=
+YPM:VP	s	Yale Peabody Museum of Natural History, Vertebrate Paleontology	
 YPMC	s	Yellowstone National Park			
 YRK	s	Yorkshire Museum, Biology Department			
 YU<CHN>	s	Yunnan University			
@@ -7602,6 +7611,7 @@ ZMBN	s	Museum of Zoology at the University of Bergen, Invertebrate Collection	BM
 ZMC	s	Deptment of Biology, Zunyi Medical College			
 ZMFMIB	s	Zoologial Museum Fan Memorial Institute of Biology			
 ZMG<DEU-Gottingen>	s	Zoologisches Museum der Universitat Gottingen			
+ZMG<DEU-Gottingen>:Crustacea	s	Zoologisches Museum der Universitat Gottingen, Crustacea Collection	
 ZMG<DEU-Greifswald>	s	Zoologischen Museums Greifswald			
 ZMH	s	Zoologisches Museum Hamburg			
 ZMHB	s	Museum fur Naturkunde der Humboldt-Universitat	MNB		
@@ -7641,6 +7651,9 @@ ZMUB:HERP	s	Museum of Zoology at the University of Bergen, Herptile collection
 ZMUB:ICHT	s	Museum of Zoology at the University of Bergen, Fish Collections		
 ZMUB:MAMM	s	Museum of Zoology at the University of Bergen, Mammal collection		
 ZMUC	sb	Zoological Museum, University of Copenhagen			
+ZMUC:AVES	s	Zoological Museum, University of Copenhagen, Aves collection	
+ZMUC:Fisk	s	Zoological Museum, University of Copenhagen, Fish Collection	
+ZMUC:R	s	Zoological Museum, University of Copenhagen, Amphibians and Reptiles collection	
 ZMUD	s	University of Dhaka, Zoology Museum			
 ZMUH<DEU>	s	Zoologisches Institut und Zoologisches Museum, Universitat Hamburg			
 ZMUH<VNM>	s	Zoological Museum, University of Hanoi			
