@@ -114,11 +114,7 @@ CChecksum::CChecksum(const CChecksum& checksum)
     if ( GetMethod() == eMD5 ) {
         m_Checksum.MD5 = new CMD5(*checksum.m_Checksum.MD5);
     } else {
-        if (checksum.GetChecksumSize() == 4) {
-            m_Checksum.CRC32 = checksum.m_Checksum.CRC32;
-        } else {
-            m_Checksum.CRC64 = checksum.m_Checksum.CRC64;
-        }
+        m_Checksum.CRC64 = checksum.m_Checksum.CRC64;
     }
 }
 
@@ -149,11 +145,7 @@ CChecksum& CChecksum::operator= (const CChecksum& checksum)
     if ( GetMethod() == eMD5 ) {
         m_Checksum.MD5 = new CMD5(*checksum.m_Checksum.MD5);
     } else {
-        if (checksum.GetChecksumSize() == 4) {
-            m_Checksum.CRC32 = checksum.m_Checksum.CRC32;
-        } else {
-            m_Checksum.CRC64 = checksum.m_Checksum.CRC64;
-        }
+        m_Checksum.CRC64 = checksum.m_Checksum.CRC64;
     }
     return *this;
 }
@@ -165,14 +157,16 @@ void CChecksum::Reset(EMethod method)
 
     m_LineCount = 0;
     m_CharCount = 0;
+
     if (method != eNone) {
         m_Method = method;
     }
 
+    m_Checksum.CRC64 = 0;
+
     switch ( GetMethod() ) {
     case eCRC32:
     case eCRC32CKSUM:
-        m_Checksum.CRC32 = 0;
         s_InitTableCRC32Forward();
         break;
     case eCRC32ZIP:
@@ -196,12 +190,8 @@ void CChecksum::Reset(EMethod method)
         m_Checksum.CRC32 = 1;
         break;
     case eFarmHash32:
-        m_Checksum.CRC32 = 0;
-        break;
     case eFarmHash64:
     case eCityHash64:
-        m_Checksum.CRC64 = 0;
-        break;
     default:
         break;
     }
