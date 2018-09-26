@@ -63,6 +63,20 @@ chrono::milliseconds RemainingTimeMs(const CDeadline& deadline)
 }
 
 
+const char* CPSG_Exception::GetErrCodeString(void) const
+{
+    switch (GetErrCode())
+    {
+        case eTimeout:          return "eTimeout";
+        case eServerError:      return "eServerError";
+        case eUnknownRequest:   return "eUnknownRequest";
+        case eInternalError:    return "eInternalError";
+        case eParameterMissing: return "eParameterMissing";
+        default:                return CException::GetErrCodeString();
+    }
+}
+
+
 SPSG_BlobReader::SPSG_BlobReader(SPSG_Reply::SItem::TTS* src)
     : m_Src(src)
 {
@@ -109,7 +123,8 @@ ERW_Result SPSG_BlobReader::x_Read(void* buf, size_t count, size_t* bytes_read)
 ERW_Result SPSG_BlobReader::Read(void* buf, size_t count, size_t* bytes_read)
 {
     size_t read;
-    CDeadline deadline(TPSG_ReaderTimeout::GetDefault());
+    const auto kSeconds = TPSG_ReaderTimeout::GetDefault();
+    CDeadline deadline(kSeconds);
 
     while (!deadline.IsExpired()) {
         auto rv = x_Read(buf, count, &read);
@@ -123,7 +138,7 @@ ERW_Result SPSG_BlobReader::Read(void* buf, size_t count, size_t* bytes_read)
         m_Src->WaitFor(wait_ms);
     }
 
-    throw runtime_error("TIMEOUT"); // TODO: CPSG_Exception
+    NCBI_THROW_FMT(CPSG_Exception, eTimeout, "Timeout on reading (after " << kSeconds << " seconds)");
     return eRW_Error;
 }
 
@@ -227,7 +242,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
         rv.reset(CreateImpl(new CPSG_BlobInfo(blob_id), chunks));
 
     } else {
-        throw runtime_error("UNKNOWN TYPE: " + item_type); // TODO: CPSG_Exception
+        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Received unknown item type: " << item_type);
     }
 
     rv->m_Impl.reset(impl.release());
@@ -298,7 +313,7 @@ CPSG_Queue::SImpl::SImpl(const string& service) :
     m_Service(service)
 {
     if (m_Service.empty()) {
-        throw invalid_argument("Service name is empty"); // TODO: CPSG_Exception
+        NCBI_THROW(CPSG_Exception, eParameterMissing, "Service name is empty");
     }
 }
 
@@ -386,7 +401,7 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request,
         http_request = make_shared<HCT::http2_request>(reply, m_Requests, "/ID/getblob", query);
 
     } else {
-        throw invalid_argument("UNKNOWN REQUEST TYPE"); // TODO: CPSG_Exception
+        NCBI_THROW(CPSG_Exception, eUnknownRequest, "Unknown request type");
     }
 
     for (;;) {

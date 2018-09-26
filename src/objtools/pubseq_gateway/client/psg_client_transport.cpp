@@ -49,6 +49,7 @@
 #define __STDC_FORMAT_MACROS
 #include <nghttp2/nghttp2.h>
 
+#include <objtools/pubseq_gateway/client/psg_client.hpp>
 #include <objtools/pubseq_gateway/impl/rpc/UvHelper.hpp>
 
 #include <corelib/request_status.hpp>
@@ -204,7 +205,7 @@ void SPSG_Receiver::StatePrefix(const char*& data, size_t& len)
         // Check failed
         if (*data != prefix[m_Buffer.prefix_index]) {
             const auto s = min(len, prefix.size() - m_Buffer.prefix_index);
-            throw logic_error("Unexpected prefix: " + string(data, s));
+            NCBI_THROW_FMT(CPSG_Exception, eServerError, "Unexpected prefix: " << string(data, s));
         }
 
         ++data;
@@ -383,9 +384,6 @@ http2_request::http2_request(shared_ptr<SPSG_Reply::TTS> reply, shared_ptr<SPSG_
     m_stream_id(-1),
     m_reply(move(reply), move(queue))
 {
-    if (m_stream_id >= 0)
-        throw runtime_error("Request has already been started");
-
     m_query = std::move(query);
 
     m_full_path = path + "?" + m_query;
@@ -1255,11 +1253,11 @@ void http2_session::process_requests()
             }
             catch(const exception& e) {
                 if (req) req->error(SPSG_Error::Generic(SPSG_Error::eExcept, e.what()));
-                throw;
+                NCBI_THROW(CPSG_Exception, eInternalError, e.what());
             }
             catch(...) {
                 if (req) req->error(SPSG_Error::Generic(SPSG_Error::eExcept, "unexpected exception"));
-                throw;
+                NCBI_THROW(CPSG_Exception, eInternalError, "unexpected exception");
             }
         }
         ERR_POST(Trace << this << ": submitted " << count);
@@ -1376,8 +1374,9 @@ void io_thread::on_timer(uv_timer_t*)
 
 bool io_thread::add_request_move(shared_ptr<http2_request>& req)
 {
-    if (m_state != io_thread_state_t::started)
-        EException::raise("IO thread is dead");
+    if (m_state != io_thread_state_t::started) {
+        NCBI_THROW_FMT(CPSG_Exception, eInternalError, "IO thread is dead: " << static_cast<int>(m_state.load()));
+    }
 
     auto rv = m_req_queue.push_move(req);
 
@@ -1474,15 +1473,16 @@ void io_coordinator::create_io(CNetService service)
     uv_sem_wait(&sem);
     uv_sem_destroy(&sem);
     auto & it = m_io.back();
-    if (it->get_state() != io_thread_state_t::started)
-        EException::raise("Failed to run IO thread");
+    auto state = it->get_state();
+    if (state != io_thread_state_t::started)
+        NCBI_THROW_FMT(CPSG_Exception, eInternalError, "Failed to run IO thread: " << static_cast<int>(state));
 }
 
 bool io_coordinator::add_request(shared_ptr<http2_request> req, chrono::milliseconds timeout)
 {
     auto deadline = chrono::system_clock::now() + timeout;
     if (m_io.size() == 0)
-        EException::raise("IO is not open");
+        NCBI_THROW(CPSG_Exception, eInternalError, "IO is not open");
     while(true) {
         size_t idx = m_cur_idx.load();
         if (m_io[idx]->add_request_move(req)) return true;

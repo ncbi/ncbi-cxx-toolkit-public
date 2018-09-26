@@ -41,6 +41,25 @@
 BEGIN_NCBI_SCOPE
 
 
+
+class CPSG_Exception : public CException
+{
+public:
+    enum EErrCode {
+        eTimeout,
+        eServerError,
+        eUnknownRequest,
+        eInternalError,
+        eParameterMissing
+    };
+
+    virtual const char* GetErrCodeString(void) const;
+
+    NCBI_EXCEPTION_DEFAULT(CPSG_Exception, CException);
+};
+
+
+
 /// Request to the PSG server (one of: CPSG_Request_Biodata, CPSG_Request_Blob)
 ///
 
