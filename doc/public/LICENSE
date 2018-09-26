@@ -69,6 +69,14 @@ Location: {include,src}/util/bitset
 Author:   Anatoliy Kuznetsov
 License:  Apache License v2.0 [include/util/bitset/license.txt]
 
+Location: src/util/checksum/cityhash
+Author:   Geoff Pike and Jyrki Alakuijala, Google Inc.
+License:  BSDish [src/util/checksum/cityhash/COPYING]
+
+Location: src/util/checksum/farmhash
+Author:   Geoff Pike, Google Inc.
+License:  BSDish [src/util/checksum/farmhash/COPYING]
+
 Location: {src,include}/util/compress/bzip2
 Author:   Julian R Seward
 License:  BSDish [src/util/compress/bzip2/LICENSE]

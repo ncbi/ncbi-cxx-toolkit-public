@@ -34,6 +34,12 @@
 #include <corelib/ncbifile.hpp>
 #include <util/checksum.hpp>
 
+// Use builtin versions of CityHash and FarmHash libraries.
+#include "checksum/cityhash/city.h"
+#include "checksum/farmhash/config.h" // farmhash doesn't include it automatically
+#include "checksum/farmhash/farmhash.h"
+
+
 #define USE_CRC32C_INTEL // try to use Intel CRC32C instructions
 
 #ifdef USE_CRC32C_INTEL
@@ -58,6 +64,7 @@
 #  endif
 # endif
 #endif
+
 
 BEGIN_NCBI_SCOPE
 
@@ -99,15 +106,19 @@ CChecksum::CChecksum(EMethod method)
 }
 
 
-CChecksum::CChecksum(const CChecksum& cks)
-    : m_LineCount(cks.m_LineCount),
-      m_CharCount(cks.m_CharCount),
-      m_Method(cks.m_Method)
+CChecksum::CChecksum(const CChecksum& checksum)
+    : m_LineCount(checksum.m_LineCount),
+      m_CharCount(checksum.m_CharCount),
+      m_Method(checksum.m_Method)
 {
     if ( GetMethod() == eMD5 ) {
-        m_Checksum.m_MD5 = new CMD5(*cks.m_Checksum.m_MD5);
+        m_Checksum.MD5 = new CMD5(*checksum.m_Checksum.MD5);
     } else {
-        m_Checksum.m_CRC32 = cks.m_Checksum.m_CRC32;
+        if (checksum.GetChecksumSize() == 4) {
+            m_Checksum.CRC32 = checksum.m_Checksum.CRC32;
+        } else {
+            m_Checksum.CRC64 = checksum.m_Checksum.CRC64;
+        }
     }
 }
 
@@ -121,24 +132,28 @@ CChecksum::~CChecksum()
 void CChecksum::x_Free(void)
 {
     if ( GetMethod() == eMD5 ) {
-        delete m_Checksum.m_MD5;
-        m_Checksum.m_MD5 = NULL;
+        delete m_Checksum.MD5;
+        m_Checksum.MD5 = NULL;
     }
 }
 
 
-CChecksum& CChecksum::operator= (const CChecksum& cks)
+CChecksum& CChecksum::operator= (const CChecksum& checksum)
 {
     x_Free();
 
-    m_LineCount = cks.m_LineCount;
-    m_CharCount = cks.m_CharCount;
-    m_Method    = cks.m_Method;
+    m_LineCount = checksum.m_LineCount;
+    m_CharCount = checksum.m_CharCount;
+    m_Method    = checksum.m_Method;
 
     if ( GetMethod() == eMD5 ) {
-        m_Checksum.m_MD5 = new CMD5(*cks.m_Checksum.m_MD5);
+        m_Checksum.MD5 = new CMD5(*checksum.m_Checksum.MD5);
     } else {
-        m_Checksum.m_CRC32 = cks.m_Checksum.m_CRC32;
+        if (checksum.GetChecksumSize() == 4) {
+            m_Checksum.CRC32 = checksum.m_Checksum.CRC32;
+        } else {
+            m_Checksum.CRC64 = checksum.m_Checksum.CRC64;
+        }
     }
     return *this;
 }
@@ -157,16 +172,16 @@ void CChecksum::Reset(EMethod method)
     switch ( GetMethod() ) {
     case eCRC32:
     case eCRC32CKSUM:
-        m_Checksum.m_CRC32 = 0;
+        m_Checksum.CRC32 = 0;
         s_InitTableCRC32Forward();
         break;
     case eCRC32ZIP:
     case eCRC32INSD:
-        m_Checksum.m_CRC32 = ~0;
+        m_Checksum.CRC32 = ~0;
         s_InitTableCRC32Reverse();
         break;
     case eCRC32C:
-        m_Checksum.m_CRC32 = ~0;
+        m_Checksum.CRC32 = ~0;
 #ifdef USE_CRC32C_INTEL
         if ( s_IsCRC32CIntelEnabled() ) {
             break;
@@ -175,10 +190,17 @@ void CChecksum::Reset(EMethod method)
         s_InitTableCRC32CReverse();
         break;
     case eMD5:
-        m_Checksum.m_MD5 = new CMD5;
+        m_Checksum.MD5 = new CMD5;
         break;
     case eAdler32:
-        m_Checksum.m_CRC32 = 1;
+        m_Checksum.CRC32 = 1;
+        break;
+    case eFarmHash32:
+        m_Checksum.CRC32 = 0;
+        break;
+    case eFarmHash64:
+    case eCityHash64:
+        m_Checksum.CRC64 = 0;
         break;
     default:
         break;
@@ -189,18 +211,22 @@ void CChecksum::Reset(EMethod method)
 size_t CChecksum::GetChecksumSize(void) const
 {
     switch ( GetMethod() ) {
-    case eMD5:  return 16;
-    case eNone: return 0;
-    default:    return 4;
+    case eNone:
+        return 0;
+    case eMD5:  
+        return 16;
+    case eFarmHash64:
+    case eCityHash64:
+        return 8;
+    default:
+        return 4;
     }
 }
 
 
-Uint4 CChecksum::GetChecksum(void) const
+Uint4 CChecksum::GetChecksum32(void) const
 {
     switch ( GetMethod() ) {
-    case eCRC32:
-        return m_Checksum.m_CRC32;
     case eCRC32CKSUM:
     {
         // POSIX checksum includes length of data
@@ -211,16 +237,29 @@ Uint4 CChecksum::GetChecksum(void) const
         }
         CChecksum extra(*this);
         extra.AddChars(extra_bytes, extra_len);
-        return ~extra.m_Checksum.m_CRC32;
+        return ~extra.m_Checksum.CRC32;
     }
-    case eCRC32ZIP:
-        return ~m_Checksum.m_CRC32;
+    case eCRC32:
     case eCRC32INSD:
-        return m_Checksum.m_CRC32;
-    case eCRC32C:
-        return ~m_Checksum.m_CRC32;
     case eAdler32:
-        return m_Checksum.m_CRC32;
+    case eFarmHash32:
+        return m_Checksum.CRC32;
+    case eCRC32ZIP:
+    case eCRC32C:
+        return ~m_Checksum.CRC32;
+    default:
+        _ASSERT(0);
+        return 0;
+    }
+}
+
+
+Uint8 CChecksum::GetChecksum64(void) const
+{
+    switch ( GetMethod() ) {
+    case eFarmHash64:
+    case eCityHash64:
+        return m_Checksum.CRC64;
     default:
         _ASSERT(0);
         return 0;
@@ -241,7 +280,7 @@ CNcbiOstream& CChecksum::WriteChecksum(CNcbiOstream& out) const
 }
 
 
-bool CChecksum::ValidChecksumLineLong(const char* line, size_t length) const
+bool CChecksum::ValidChecksumLineLong(const char* line, size_t len) const
 {
     if ( !Valid() ) {
         return false;
@@ -249,22 +288,29 @@ bool CChecksum::ValidChecksumLineLong(const char* line, size_t length) const
     CNcbiOstrstream buffer;
     WriteChecksum(buffer);
     string buffer_str = CNcbiOstrstreamToString(buffer);
-    if ( buffer_str.size() != length + 1 ) { // account for '\n'
+    if ( buffer_str.size() != len + 1 ) { // account for '\n'
         return false;
     }
-    return memcmp(line, buffer_str.data(), length) == 0;
+    return memcmp(line, buffer_str.data(), len) == 0;
 }
 
 
 string CChecksum::GetHexSum(void) const
 {
     switch ( GetMethod() ) {
-    case eMD5:
-        return m_Checksum.m_MD5->GetHexSum();
     case eNone:
         return kEmptyStr;
+    case eMD5:
+        return m_Checksum.MD5->GetHexSum();
     default:
-        return NStr::NumericToString(GetChecksum(), 0, 16);
+        if (GetChecksumBits() == 32) {
+            return NStr::NumericToString(GetChecksum32(), 0, 16);
+        }
+        if (GetChecksumBits() == 64) {
+            return NStr::NumericToString(GetChecksum64(), 0, 16);
+        }
+        _ASSERT(0);
+        return kEmptyStr;
     }
 }
 
@@ -272,10 +318,16 @@ string CChecksum::GetHexSum(void) const
 CNcbiOstream& CChecksum::WriteHexSum(CNcbiOstream& out) const
 {
     if ( GetMethod() == eMD5 ) {
-        out << m_Checksum.m_MD5->GetHexSum();
+        out << m_Checksum.MD5->GetHexSum();
     } else {
         IOS_BASE::fmtflags flags = out.setf(IOS_BASE::hex, IOS_BASE::basefield);
-        out << setprecision(8) << GetChecksum();
+        out << setprecision(8);
+        if (GetChecksumBits() == 32) {
+            out << GetChecksum32();
+        }
+        if (GetChecksumBits() == 64) {
+            out << GetChecksum64();
+        }
         out.flags(flags);
     }
     return out;
@@ -285,26 +337,33 @@ CNcbiOstream& CChecksum::WriteHexSum(CNcbiOstream& out) const
 CNcbiOstream& CChecksum::WriteChecksumData(CNcbiOstream& out) const
 {
     switch ( GetMethod() ) {
+    case eMD5:
+        out << "MD5: ";
+        break;
+    case eAdler32:
+        out << "Adler32: ";
+        break;
     case eCRC32:
     case eCRC32ZIP:
     case eCRC32INSD:
     case eCRC32CKSUM:
     case eCRC32C:
         out << "CRC32: ";
-        WriteHexSum(out);
         break;
-    case eMD5:
-        out << "MD5: ";
-        WriteHexSum(out);
+    case eFarmHash32:
+        out << "FarmHash32: ";
         break;
-    case eAdler32:
-        out << "Adler32: ";
-        WriteHexSum(out);
+    case eFarmHash64:
+        out << "FarmHash64: ";
+        break;
+    case eCityHash64:
+        out << "CityHash64: ";
         break;
     default:
         out << "none";
-        break;
+        return out;
     }
+    WriteHexSum(out);
     return out;
 }
 
@@ -346,8 +405,7 @@ void CChecksum::AddStream(CNcbiIstream& is)
         return;
     }
     if ( !is.good() ) {
-        NCBI_THROW(CChecksumException, eStreamIO,
-                   "Input stream is not good()");
+        NCBI_THROW(CChecksumException, eStreamIO, "Input stream is not good()");
         return;
     }
     CChecksum tmp(*this);
@@ -360,8 +418,7 @@ void CChecksum::AddStream(CNcbiIstream& is)
             tmp.AddChars(buf, n);
         } else {
             if (is.fail()  &&  !is.eof()) {
-                NCBI_THROW(CChecksumException, eStreamIO,
-                           "Error reading from input stream");
+                NCBI_THROW(CChecksumException, eStreamIO, "Error reading from input stream");
                 return;
             }
         }
@@ -392,8 +449,8 @@ CChecksum& ComputeFileChecksum_deprecated(const string& path, CChecksum& checksu
 // @deprecated
 CChecksum ComputeFileChecksum(const string& path, CChecksum::EMethod method)
 {
-    CChecksum cks(method);
-    return ComputeFileChecksum_deprecated(path, cks);
+    CChecksum checksum(method);
+    return ComputeFileChecksum_deprecated(path, checksum);
 }
 
 // @deprecated
@@ -405,8 +462,8 @@ CChecksum& ComputeFileChecksum(const string& path, CChecksum& checksum)
 // @deprecated
 Uint4 ComputeFileCRC32(const string& path)
 {
-    CChecksum cks(CChecksum::eCRC32);
-    return ComputeFileChecksum_deprecated(path, cks).GetChecksum();
+    CChecksum checksum(CChecksum::eCRC32);
+    return ComputeFileChecksum_deprecated(path, checksum).GetChecksum();
 }
 
 
@@ -1111,32 +1168,50 @@ void CChecksum::x_Update(const char* str, size_t count)
     switch ( GetMethod() ) {
     case eCRC32:
     case eCRC32CKSUM:
-        m_Checksum.m_CRC32 =
-            s_UpdateCRC32Forward(m_Checksum.m_CRC32, str, count, s_CRC32TableForward);
+        m_Checksum.CRC32 = s_UpdateCRC32Forward(m_Checksum.CRC32, str, count, s_CRC32TableForward);
         break;
     case eCRC32ZIP:
     case eCRC32INSD:
-        m_Checksum.m_CRC32 =
-            s_UpdateCRC32Reverse(m_Checksum.m_CRC32, str, count, s_CRC32TableReverse);
+        m_Checksum.CRC32 = s_UpdateCRC32Reverse(m_Checksum.CRC32, str, count, s_CRC32TableReverse);
         break;
     case eCRC32C:
 #ifdef USE_CRC32C_INTEL
         if ( s_IsCRC32CIntelEnabled() ) {
-            m_Checksum.m_CRC32 =
-                s_UpdateCRC32CIntel(m_Checksum.m_CRC32, str, count);
+            m_Checksum.CRC32 = s_UpdateCRC32CIntel(m_Checksum.CRC32, str, count);
             break;
         }
 #endif
-        m_Checksum.m_CRC32 =
-            s_UpdateCRC32Reverse(m_Checksum.m_CRC32, str, count, s_CRC32CTableReverse);
+        m_Checksum.CRC32 = s_UpdateCRC32Reverse(m_Checksum.CRC32, str, count, s_CRC32CTableReverse);
         break;
     case eAdler32:
-        m_Checksum.m_CRC32 = s_UpdateAdler32(m_Checksum.m_CRC32, str, count);
+        m_Checksum.CRC32 = s_UpdateAdler32(m_Checksum.CRC32, str, count);
         break;
     case eMD5:
-        m_Checksum.m_MD5->Update(str, count);
+        m_Checksum.MD5->Update(str, count);
+        break;
+    case eFarmHash32:
+        if (m_Checksum.CRC32 == 0) {
+            m_Checksum.CRC32 = farmhash::Hash32(str, count);
+        } else {
+            m_Checksum.CRC32 = farmhash::Hash32WithSeed(str, count, m_Checksum.CRC32);
+        }
+        break;
+    case eFarmHash64:
+        if (m_Checksum.CRC64 == 0) {
+            m_Checksum.CRC64 = farmhash::Hash64(str, count);
+        } else {
+            m_Checksum.CRC64 = farmhash::Hash64WithSeed(str, count, m_Checksum.CRC64);
+        }
+        break;
+    case eCityHash64:
+        if (m_Checksum.CRC64 == 0) {
+            m_Checksum.CRC64 = CityHash64(str, count);
+        } else {
+            m_Checksum.CRC64 = CityHash64WithSeed(str, count, m_Checksum.CRC64);
+        }
         break;
     default:
+        _ASSERT(0);
         break;
     }
 }

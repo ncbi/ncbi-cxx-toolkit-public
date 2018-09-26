@@ -75,11 +75,13 @@ public:
         eCRC32CKSUM,       ///< CRC32 implemented by cksum utility.
                            ///< Same as eCRC32, but with data length included
                            ///< in CRC, and extra inversion at the end.
-        eCRC32C,           ///< CRC32C (Castagnoli). Better polynomial used
-                           ///< in some places (iSCSI). This method has
-                           ///< hardware support in new Intel processors.
-                           ///< Least significant bits are processed first,
+        eCRC32C,           ///< CRC32C (Castagnoli). Better polynomial used in some
+                           ///< places (iSCSI). This method has hardware support in new
+                           ///< Intel processors. Least significant bits are processed first,
                            ///< extra inversions at the beginning and the end.
+        eFarmHash32,       ///< FarmHash CRC 32-bit.
+        eFarmHash64,       ///< FarmHash CRC 64-bit.
+        eCityHash64,       ///< CityHash CRC 64-bit.
         eDefault = eCRC32
     };
     enum {
@@ -89,11 +91,11 @@ public:
     /// Default constructor.
     CChecksum(EMethod method = eDefault);
     /// Copy constructor.
-    CChecksum(const CChecksum& cks);
+    CChecksum(const CChecksum& checksum);
     /// Destructor.
     ~CChecksum();
     /// Assignment operator.
-    CChecksum& operator=(const CChecksum& cks);
+    CChecksum& operator=(const CChecksum& checksum);
 
     /// Get current method used to compute control sum.
     EMethod GetMethod(void) const;
@@ -104,9 +106,24 @@ public:
     /// Return size of checksum in bytes.
     size_t GetChecksumSize(void) const;
 
+    /// Return size of checksum in bits (32, 64).
+    size_t GetChecksumBits(void) const {
+        return GetChecksumSize()*8;
+    };
+
+    /// Return calculated checksum (legacy 32-bit version).
+    // @sa GetChecksum32, GetChecksum64
+    Uint4 GetChecksum(void) const {
+        return GetChecksum32();
+    }
+
     /// Return calculated checksum.
-    /// Only valid in CRC32/CRC32ZIP/Adler32 modes!
-    Uint4 GetChecksum(void) const;
+    /// Only valid in 32-bit modes, like: CRC32*, Adler32, FarmHash32.
+    Uint4 GetChecksum32(void) const;
+
+    /// Return calculated checksum.
+    /// Only valid in 64-bit modes, like: CityHash64, FarmHash64.
+    Uint8 GetChecksum64(void) const;
 
     /// Return string with checksum in hexadecimal form.
     string GetHexSum(void) const;
@@ -122,9 +139,9 @@ public:
     // Methods used for file/stream operations
 
     /// Update current control sum with data provided.
-    void AddLine(const char* line, size_t length);
+    void AddLine(const char* line, size_t len);
     void AddLine(const string& line);
-    void AddChars(const char* str, size_t length);
+    void AddChars(const char* str, size_t len);
     void NextLine(void);
 
     /// Compute checksum for the file, add it to this checksum.
@@ -135,14 +152,14 @@ public:
     /// Compute checksum for the stream, add it to this checksum.
     /// On any error an exception will be thrown, and the checksum
     /// will not change.
-    /// @is
+    /// @param is
     ///   Input stream to read data from.
     ///   Please use ios_base::binary flag for the input stream
     ///   if you want to count all symbols there, including end of lines.
     void AddStream(CNcbiIstream& is);
 
     /// Check for checksum line.
-    bool ValidChecksumLine(const char* line, size_t length) const;
+    bool ValidChecksumLine(const char* line, size_t len) const;
     bool ValidChecksumLine(const string& line) const;
 
     /// Write checksum calculation results into output stream
@@ -166,14 +183,15 @@ private:
 
     /// Checksum computation results
     union {
-        Uint4 m_CRC32; ///< Used to store CRC32/CRC32ZIP/Adler32 checksums
-        CMD5* m_MD5;   ///< Used for MD5 calculation
+        Uint4 CRC32;  ///< Used to store 32-bit checksums
+        Uint8 CRC64;  ///< Used to store 64-bit checksums
+        CMD5* MD5;    ///< Used for MD5 calculation
     } m_Checksum;
 
     /// Check for checksum line.
-    bool ValidChecksumLineLong(const char* line, size_t length) const;
+    bool ValidChecksumLineLong(const char* line, size_t len) const;
     /// Update current control sum with data provided.
-    void x_Update(const char* str, size_t length);
+    void x_Update(const char* str, size_t len);
     /// Cleanup (used in destructor and assignment operator).
     void x_Free(void);
 };
@@ -289,9 +307,9 @@ void CChecksum::AddChars(const char* str, size_t count)
 }
 
 inline
-void CChecksum::AddLine(const char* line, size_t length)
+void CChecksum::AddLine(const char* line, size_t len)
 {
-    AddChars(line, length);
+    AddChars(line, len);
     NextLine();
 }
 
@@ -302,12 +320,12 @@ void CChecksum::AddLine(const string& line)
 }
 
 inline
-bool CChecksum::ValidChecksumLine(const char* line, size_t length) const
+bool CChecksum::ValidChecksumLine(const char* line, size_t len) const
 {
-    return length > kMinimumChecksumLength &&
+    return len > kMinimumChecksumLength &&
         line[0] == '/' && line[1] == '*' &&  // first four letters of checksum
         line[2] == ' ' && line[3] == 'O' &&  // see sx_Start in checksum.cpp
-        ValidChecksumLineLong(line, length); // complete check
+        ValidChecksumLineLong(line, len);    // complete check
 }
 
 inline
@@ -320,14 +338,14 @@ inline
 void CChecksum::GetMD5Digest(unsigned char digest[16]) const
 {
     _ASSERT(GetMethod() == eMD5);
-    m_Checksum.m_MD5->Finalize(digest);
+    m_Checksum.MD5->Finalize(digest);
 }
 
 inline
 void CChecksum::GetMD5Digest(string& str) const
 {
     unsigned char buf[16];
-    m_Checksum.m_MD5->Finalize(buf);
+    m_Checksum.MD5->Finalize(buf);
     str.clear();
     str.insert(str.end(), (const char*)buf, (const char*)buf + 16);
 }
