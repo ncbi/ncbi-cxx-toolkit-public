@@ -48,9 +48,10 @@ template <class TImpl>
 CNetScheduleGetJob::EResult CNetScheduleGetJobImpl<TImpl>::GetJob(
         const CDeadline& deadline,
         CNetScheduleJob& job,
-        CNetScheduleAPI::EJobStatus* job_status)
+        CNetScheduleAPI::EJobStatus* job_status,
+        bool any_affinity)
 {
-    if (m_Impl.m_API->m_AffinityLadder.empty()) {
+    if (any_affinity) {
         CAnyAffinityJob<TImpl> holder(job, job_status, m_ImmediateActions);
         return GetJobImpl(deadline, holder);
     } else {

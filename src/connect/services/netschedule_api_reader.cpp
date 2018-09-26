@@ -222,7 +222,16 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
     x_StartNotificationThread();
     CDeadline deadline(timeout ? *timeout : CTimeout(0, 0));
 
-    switch (m_Timeline.GetJob(deadline, *job, job_status)) {
+    // Use affinity ladder only if there is no explicit affinity provided
+    const bool explicit_affinity = !m_Impl.m_Affinity.empty();
+    const bool affinity_ladder = !m_Impl.m_API->m_AffinityLadder.empty();
+    const bool any_affinity = explicit_affinity || !affinity_ladder;
+
+    if (explicit_affinity && affinity_ladder) {
+        LOG_POST(Warning << "Both explicit affinity and affinity ladder are provided, the latter will be ignored");
+    }
+
+    switch (m_Timeline.GetJob(deadline, *job, job_status, any_affinity)) {
     case CNetScheduleGetJob::eJob:
         return CNetScheduleJobReader::eRNJ_JobReady;
 

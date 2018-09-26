@@ -102,7 +102,8 @@ public:
     CNetScheduleGetJob::EResult GetJob(
             const CDeadline& deadline,
             CNetScheduleJob& job,
-            CNetScheduleAPI::EJobStatus* job_status);
+            CNetScheduleAPI::EJobStatus* job_status,
+            bool any_affinity);
 
 private:
     template <class TJobHolder>

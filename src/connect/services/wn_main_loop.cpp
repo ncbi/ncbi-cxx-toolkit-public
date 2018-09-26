@@ -724,7 +724,9 @@ bool CMainLoopThread::x_GetNextJob(CNetScheduleJob& job)
     if (!m_WorkerNode->WaitForExclusiveJobToFinish())
         return false;
 
-    if (m_Timeline.GetJob(CDeadline::eInfinite, job, NULL) != CNetScheduleGetJob::eJob) {
+    const bool any_affinity = m_Impl.m_API->m_AffinityLadder.empty();
+
+    if (m_Timeline.GetJob(CDeadline::eInfinite, job, NULL, any_affinity) != CNetScheduleGetJob::eJob) {
         return false;
     }
 
