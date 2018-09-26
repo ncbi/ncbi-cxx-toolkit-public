@@ -75,7 +75,7 @@ function(NCBI_add_root_subdirectory)
         set_property(GLOBAL PROPERTY NCBI_PTBPROP_ALL_PROJECTS "")
         set_property(GLOBAL PROPERTY NCBI_PTBPROP_ALLOWED_PROJECTS "")
 
-        NCBI_add_subdirectory(${ARGV})
+        NCBI_add_subdirectory(${NCBI_PTBCFG_COMPOSITE_DLL} ${ARGV})
 
         set(NCBI_PTBMODE_COLLECT_DEPS OFF)
         get_property(_allprojects     GLOBAL PROPERTY NCBI_PTBPROP_ALL_PROJECTS)
@@ -111,7 +111,10 @@ function(NCBI_add_root_subdirectory)
         message("Configuring projects...")
     endif()
 
-    NCBI_add_subdirectory(${ARGV})
+    NCBI_add_subdirectory(${NCBI_PTBCFG_COMPOSITE_DLL} ${ARGV})
+    if (NCBI_PTBCFG_DOINSTALL)
+        NCBI_internal_install_root(${NCBI_PTBCFG_COMPOSITE_DLL} ${ARGV})
+    endif()
 endfunction()
 
 #############################################################################
@@ -357,7 +360,7 @@ endmacro()
 
 #############################################################################
 macro(NCBI_enable_pch)
-    set(NCBI_${NCBI_PROJECT}_USEPCH ON)
+    set(NCBI_${NCBI_PROJECT}_USEPCH ${NCBI_DEFAULT_USEPCH})
 endmacro()
 macro(NCBI_disable_pch)
     set(NCBI_${NCBI_PROJECT}_USEPCH OFF)
@@ -1214,6 +1217,103 @@ function(NCBI_internal_add_test _test)
 endfunction()
 
 ##############################################################################
+function(NCBI_internal_install_root)
+
+    file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${NCBI_BUILD_ROOT}")
+    foreach(_cfg ${CMAKE_CONFIGURATION_TYPES})
+        install(EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
+            CONFIGURATIONS ${_cfg}
+            DESTINATION ${_dest}/cmake
+            FILE ${NCBI_PTBCFG_INSTALL_EXPORT}.cmake
+        )
+    endforeach()
+
+# install headers
+    get_property(_all_subdirs GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR)
+    list(APPEND _all_subdirs ${NCBI_DIRNAME_COMMON_INCLUDE})
+    foreach(_dir IN LISTS _all_subdirs)
+        install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION include)
+    endforeach()
+    file(GLOB _files LIST_DIRECTORIES false "${NCBI_INC_ROOT}/*")
+    install( FILES ${_files} DESTINATION include)
+
+# install sources?
+    # TODO
+
+    file(GLOB _files LIST_DIRECTORIES false "${NCBI_TREE_BUILDCFG}/*")
+    install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_BUILDCFG})
+    install( DIRECTORY ${NCBI_TREE_CMAKECFG} DESTINATION ${NCBI_DIRNAME_BUILDCFG})
+
+    file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${NCBI_BUILD_ROOT}")
+    install( DIRECTORY ${NCBI_CFGINC_ROOT} DESTINATION "${_dest}")
+endfunction()
+
+##############################################################################
+function(NCBI_internal_install_target)
+
+    if (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "STATIC")
+        file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
+    elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "SHARED")
+        file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+    elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "CONSOLEAPP")
+        file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+        if (DEFINED NCBI_PTBCFG_INSTALL_TAGS)
+            set(_alltags ${NCBI__PROJTAG} ${NCBI_${NCBI_PROJECT}_PROJTAG})
+            foreach(_tag IN LISTS _alltags)
+                list(FIND NCBI_PTBCFG_INSTALL_TAGS "-${_tag}" _found)
+                if (${_found} GREATER_EQUAL "0")
+                    if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
+                        message("${NCBI_PROJECT} will not be installed because of tag ${_tag}")
+                    endif()
+                    return()
+                endif()
+                list(FIND NCBI_PTBCFG_INSTALL_TAGS "${_tag}" _found)
+                if (${_found} LESS "0")
+                    list(FIND NCBI_PTBCFG_INSTALL_TAGS "*" _found)
+                    if (${_found} LESS "0")
+                        if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
+                            message("${NCBI_PROJECT} will not be installed because of tag ${_tag}")
+                        endif()
+                        return()
+                    endif()
+                endif()
+            endforeach()
+        endif()
+    else()
+        return()
+    endif()
+    if ("${_dest}" STREQUAL "")
+        return()
+    endif()
+
+# not sure about this part
+    file(RELATIVE_PATH _rel "${NCBI_SRC_ROOT}" "${NCBI_CURRENT_SOURCE_DIR}")
+    string(REPLACE "/" ";" _rel ${_rel})
+    list(GET _rel 0 _dir)
+    get_property(_all_subdirs GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR)
+    list(APPEND _all_subdirs ${_dir})
+    list(REMOVE_DUPLICATES _all_subdirs)
+    set_property(GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR ${_all_subdirs})
+
+    if (WIN32 OR XCODE)
+        foreach(_cfg ${CMAKE_CONFIGURATION_TYPES})
+            install(
+                TARGETS ${NCBI_PROJECT}
+                CONFIGURATIONS ${_cfg}
+                DESTINATION ${_dest}/${_cfg}
+                EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
+            )
+        endforeach()
+    else()
+        install(
+            TARGETS ${NCBI_PROJECT}
+            DESTINATION ${_dest}/${NCBI_BUILD_TYPE}
+            EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}
+        )
+    endif()
+endfunction()
+
+##############################################################################
 function(NCBI_internal_add_project)
 
     if (NOT NCBI_PTBMODE_PARTS AND NOT NCBI_PTBMODE_COLLECT_DEPS AND NCBI_PTBCFG_ENABLE_COLLECTOR)
@@ -1418,6 +1518,10 @@ endif()
         foreach(_test IN LISTS NCBI_ALLTESTS)
             NCBI_internal_add_test(${_test})
         endforeach()
+    endif()
+
+    if (NCBI_PTBCFG_DOINSTALL)
+        NCBI_internal_install_target()
     endif()
 
 if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})

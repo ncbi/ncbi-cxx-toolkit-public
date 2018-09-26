@@ -16,21 +16,50 @@ endif()
 #############################################################################
 # Source tree description
 #
+set(NCBI_DIRNAME_RUNTIME bin)
+set(NCBI_DIRNAME_ARCHIVE lib)
+if (WIN32)
+    set(NCBI_DIRNAME_SHARED ${NCBI_DIRNAME_RUNTIME})
+else()
+    set(NCBI_DIRNAME_SHARED ${NCBI_DIRNAME_ARCHIVE})
+endif()
+set(NCBI_DIRNAME_SRC             src)
+set(NCBI_DIRNAME_INCLUDE         include)
+set(NCBI_DIRNAME_COMMON_INCLUDE  common)
+set(NCBI_DIRNAME_CFGINC          inc)
+set(NCBI_DIRNAME_INTERNAL        internal)
+set(NCBI_DIRNAME_BUILD           build)
+set(NCBI_DIRNAME_BUILDCFG ${NCBI_DIRNAME_SRC}/build-system)
+set(NCBI_DIRNAME_CMAKECFG ${NCBI_DIRNAME_SRC}/build-system/cmake)
+
+
 set(top_src_dir     ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set(abs_top_src_dir ${CMAKE_CURRENT_SOURCE_DIR}/..)
-
 get_filename_component(top_src_dir     "${top_src_dir}"     ABSOLUTE)
 get_filename_component(abs_top_src_dir "${abs_top_src_dir}" ABSOLUTE)
 
 set(build_root      ${CMAKE_BINARY_DIR})
 set(builddir        ${CMAKE_BINARY_DIR})
-set(includedir0     ${top_src_dir}/include)
+set(includedir0     ${top_src_dir}/${NCBI_DIRNAME_INCLUDE})
 set(includedir      ${includedir0})
-set(incdir          ${build_root}/inc)
-set(incinternal     ${includedir0}/internal)
+set(incdir          ${build_root}/${NCBI_DIRNAME_CFGINC})
+set(incinternal     ${includedir0}/${NCBI_DIRNAME_INTERNAL})
+
+set(NCBI_TREE_ROOT    ${top_src_dir})
+set(NCBI_SRC_ROOT      ${CMAKE_CURRENT_SOURCE_DIR})
+set(NCBI_INC_ROOT      ${includedir0})
+
+string(FIND ${CMAKE_BINARY_DIR} ${NCBI_TREE_ROOT} _pos_root)
+string(FIND ${CMAKE_BINARY_DIR} ${NCBI_SRC_ROOT}  _pos_src)
+if("${_pos_root}" GREATER_EQUAL "0" AND "${_pos_src}" LESS "0" AND NOT "${CMAKE_BINARY_DIR}" STREQUAL "${NCBI_TREE_ROOT}")
+    get_filename_component(NCBI_BUILD_ROOT "${CMAKE_BINARY_DIR}/.." ABSOLUTE)
+else()
+    get_filename_component(NCBI_BUILD_ROOT "${CMAKE_BINARY_DIR}" ABSOLUTE)
+endif()
+set(NCBI_CFGINC_ROOT   ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_CFGINC})
 
 if (NCBI_EXPERIMENTAL_CFG)
-    get_filename_component(incdir "${build_root}/../inc" REALPATH)
+    get_filename_component(incdir "${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_CFGINC}" ABSOLUTE)
     if (WIN32)
         set(incdir          ${incdir}/\$\(Configuration\))
     elseif (XCODE)
@@ -40,31 +69,63 @@ endif()
 if (NOT IS_DIRECTORY ${incinternal})
     set(incinternal     "")
 endif()
-set(NCBI_BUILD_ROOT ${CMAKE_BINARY_DIR})
-set(NCBI_SRC_ROOT   ${CMAKE_CURRENT_SOURCE_DIR})
-set(NCBI_INC_ROOT   ${includedir0})
-
-get_filename_component(top_src_dir "${top_src_dir}" REALPATH)
-get_filename_component(abs_top_src_dir "${abs_top_src_dir}" REALPATH)
-get_filename_component(build_root "${build_root}" REALPATH)
-get_filename_component(includedir "${includedir}" REALPATH)
 
 if (NCBI_EXPERIMENTAL_CFG)
-    get_filename_component(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${NCBI_BUILD_ROOT}/../bin" REALPATH)
-    if (WIN32)
-        get_filename_component(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${NCBI_BUILD_ROOT}/../bin" REALPATH)
-    else()
-        get_filename_component(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${NCBI_BUILD_ROOT}/../lib" REALPATH)
-    endif()
-    get_filename_component(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${NCBI_BUILD_ROOT}/../lib" REALPATH)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_RUNTIME}")
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_SHARED}")
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_ARCHIVE}")
 else()
-    get_filename_component(EXECUTABLE_OUTPUT_PATH "${NCBI_BUILD_ROOT}/../bin" REALPATH)
-    get_filename_component(LIBRARY_OUTPUT_PATH "${NCBI_BUILD_ROOT}/../lib" REALPATH)
+    get_filename_component(EXECUTABLE_OUTPUT_PATH "${NCBI_BUILD_ROOT}/bin" ABSOLUTE)
+    get_filename_component(LIBRARY_OUTPUT_PATH "${NCBI_BUILD_ROOT}/lib" ABSOLUTE)
 endif()
 
-include_directories(${incdir} ${includedir0} ${incinternal})
+if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
+    set(NCBI_TREE_BUILDCFG "${NCBI_EXTERNAL_TREE_ROOT}/${NCBI_DIRNAME_BUILDCFG}")
+    set(NCBI_TREE_CMAKECFG "${NCBI_EXTERNAL_TREE_ROOT}/${NCBI_DIRNAME_CMAKECFG}")
+else()
+    set(NCBI_TREE_BUILDCFG "${NCBI_TREE_ROOT}/${NCBI_DIRNAME_BUILDCFG}")
+    set(NCBI_TREE_CMAKECFG "${NCBI_TREE_ROOT}/${NCBI_DIRNAME_CMAKECFG}")
+endif()
 
-set(CMAKE_MODULE_PATH "${NCBI_SRC_ROOT}/build-system/cmake/" ${CMAKE_MODULE_PATH})
+############################################################################
+# OS-specific settings
+include(${NCBI_TREE_CMAKECFG}/CMakeChecks.os.cmake)
+
+#############################################################################
+# Build configurations and compiler definitions
+include(${NCBI_TREE_CMAKECFG}/CMakeChecks.compiler.cmake)
+
+#############################################################################
+if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
+    set(_prebuilt_loc)
+    if ("${NCBI_COMPILER}" STREQUAL "MSVC")
+        set(_prebuilt_loc "CMake-vs")
+        if ("${NCBI_COMPILER_VERSION}" LESS "1900")
+            set(_prebuilt_loc ${_prebuilt_loc}2015)
+        else()
+            set(_prebuilt_loc ${_prebuilt_loc}2017)
+        endif()
+        if (BUILD_SHARED_LIBS)
+            set(_prebuilt_loc ${_prebuilt_loc}/dll)
+        else()
+            set(_prebuilt_loc ${_prebuilt_loc}/static)
+        endif()
+    endif()
+    set(NCBI_EXTERNAL_BUILD_ROOT  ${NCBI_EXTERNAL_TREE_ROOT}/${_prebuilt_loc}/cmake)
+
+    if (IS_DIRECTORY ${NCBI_EXTERNAL_TREE_ROOT}/${NCBI_DIRNAME_INCLUDE})
+        set(_ext_includedir0 ${NCBI_EXTERNAL_TREE_ROOT}/${NCBI_DIRNAME_INCLUDE})
+        if (IS_DIRECTORY ${NCBI_EXTERNAL_TREE_ROOT}/${NCBI_DIRNAME_INCLUDE}/${NCBI_DIRNAME_INTERNAL})
+            set(_ext_incinternal ${NCBI_EXTERNAL_TREE_ROOT}/${NCBI_DIRNAME_INCLUDE}/${NCBI_DIRNAME_INTERNAL})
+        endif()
+    endif()
+    include_directories(${incdir} ${includedir0} ${incinternal} ${_ext_includedir0} ${_ext_incinternal})
+else()
+    include_directories(${incdir} ${includedir0} ${incinternal})
+endif()
+
+#set(CMAKE_MODULE_PATH "${NCBI_SRC_ROOT}/build-system/cmake/" ${CMAKE_MODULE_PATH})
+list(APPEND CMAKE_MODULE_PATH "${NCBI_TREE_CMAKECFG}")
 
 ##############################################################################
 # Find datatool app
@@ -78,8 +139,8 @@ else()
     set(NCBI_DATATOOL_BASE "/net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/datatool/Linux64")
 endif()
 
-if (EXISTS "${NCBI_SRC_ROOT}/build-system/datatool_version.txt")
-    FILE(STRINGS "${NCBI_SRC_ROOT}/build-system/datatool_version.txt" _datatool_version)
+if (EXISTS "${NCBI_TREE_BUILDCFG}/datatool_version.txt")
+    FILE(STRINGS "${NCBI_TREE_BUILDCFG}/datatool_version.txt" _datatool_version)
 else()
     set(_datatool_version "2.18.2")
     message(WARNING "Failed to find datatool_version.txt, defaulting to version ${_datatool_version})")
@@ -106,20 +167,12 @@ endif()
 
 #############################################################################
 # Testing
-set(NCBITEST_DRIVER "${NCBI_SRC_ROOT}/build-system/cmake/TestDriver.cmake")
+set(NCBITEST_DRIVER "${NCBI_TREE_CMAKECFG}/TestDriver.cmake")
 enable_testing()
-
-############################################################################
-# OS-specific settings
-include(${top_src_dir}/src/build-system/cmake/CMakeChecks.os.cmake)
-
-#############################################################################
-# Build configurations and compiler definitions
-include(${top_src_dir}/src/build-system/cmake/CMakeChecks.compiler.cmake)
 
 #############################################################################
 # Basic checks
-include(${top_src_dir}/src/build-system/cmake/CMakeChecks.basic-checks.cmake)
+include(${NCBI_TREE_CMAKECFG}/CMakeChecks.basic-checks.cmake)
 
 #############################################################################
 # Hunter packages for Windows
@@ -140,7 +193,7 @@ endif()
 
 #############################################################################
 # External libraries
-include(${top_src_dir}/src/build-system/cmake/CMake.NCBIComponents.cmake)
+include(${NCBI_TREE_CMAKECFG}/CMake.NCBIComponents.cmake)
 
 #############################################################################
 # Generation of configuration files
@@ -216,14 +269,16 @@ if (NCBI_EXPERIMENTAL_CFG)
 
             set(NCBI_SIGNATURE "${NCBI_COMPILER}_${NCBI_COMPILER_VERSION}-${_cfg}--${HOST}-${_local_host_name}")
             if (WIN32)
-                configure_file(${NCBI_SRC_ROOT}/build-system/cmake/ncbiconf_msvc_site.h.in ${NCBI_BUILD_ROOT}/../inc/${_cfg}/common/config/ncbiconf_msvc_site.h)
+                configure_file(${NCBI_TREE_CMAKECFG}/ncbiconf_msvc_site.h.in ${NCBI_CFGINC_ROOT}/${_cfg}/common/config/ncbiconf_msvc_site.h)
             elseif (XCODE)
-                configure_file(${NCBI_SRC_ROOT}/build-system/cmake/ncbiconf_msvc_site.h.in ${NCBI_BUILD_ROOT}/../inc/${_cfg}/common/config/ncbiconf_xcode_site.h)
+                configure_file(${NCBI_TREE_CMAKECFG}/ncbiconf_msvc_site.h.in ${NCBI_CFGINC_ROOT}/${_cfg}/common/config/ncbiconf_xcode_site.h)
             endif()
-            configure_file(${NCBI_SRC_ROOT}/corelib/ncbicfg.c.in ${NCBI_BUILD_ROOT}/../inc/${_cfg}/common/config/ncbicfg.cfg.c)
+            if (EXISTS ${NCBI_SRC_ROOT}/corelib/ncbicfg.c.in)
+                configure_file(${NCBI_SRC_ROOT}/corelib/ncbicfg.c.in ${NCBI_CFGINC_ROOT}/${_cfg}/common/config/ncbicfg.cfg.c)
+            endif()
         endforeach()
-        if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/corelib/ncbicfg.c)
-            file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/corelib/ncbicfg.c "#include <common/config/ncbicfg.cfg.c>\n")
+        if(NOT EXISTS ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/corelib/ncbicfg.c)
+            file(WRITE ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/corelib/ncbicfg.c "#include <common/config/ncbicfg.cfg.c>\n")
         endif()
         return()
     else()
@@ -233,8 +288,8 @@ if (NCBI_EXPERIMENTAL_CFG)
         set(SYBASE_PATH "")
 
         set(NCBI_SIGNATURE "${NCBI_COMPILER}_${NCBI_COMPILER_VERSION}-${NCBI_BUILD_TYPE}--${HOST_CPU}-${HOST_OS_WITH_VERSION}-${_local_host_name}")
-        configure_file(${NCBI_SRC_ROOT}/build-system/cmake/config.cmake.h.in ${NCBI_BUILD_ROOT}/../inc/ncbiconf_unix.h)
-        configure_file(${NCBI_SRC_ROOT}/corelib/ncbicfg.c.in ${NCBI_BUILD_ROOT}/corelib/ncbicfg.c)
+        configure_file(${NCBI_SRC_ROOT}/build-system/cmake/config.cmake.h.in ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_CFGINC}/ncbiconf_unix.h)
+        configure_file(${NCBI_SRC_ROOT}/corelib/ncbicfg.c.in ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/corelib/ncbicfg.c)
     endif()
 
 else (NCBI_EXPERIMENTAL_CFG)

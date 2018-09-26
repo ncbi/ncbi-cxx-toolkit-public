@@ -6,43 +6,8 @@
 # We require at least cmake-3.0
 cmake_minimum_required(VERSION 3.0)
 
-if("${CMAKE_GENERATOR}" STREQUAL "Xcode")
-    if(NOT DEFINED XCODE)
-        set(XCODE ON)
-    endif()
-endif()
-
-###############################################################################
-# must be set to OFF on trunk
-if(NOT DEFINED NCBI_EXPERIMENTAL)
-  set(NCBI_EXPERIMENTAL OFF)
-endif()
-
 if (NOT DEFINED NCBI_CMAKEPROJECT_NAME)
   set(NCBI_CMAKEPROJECT_NAME CPP)
-endif()
-
-if("${NCBI_PTBCFG_PROJECT_LIST}" STREQUAL "")
-    unset(NCBI_PTBCFG_PROJECT_LIST)
-endif()
-if("${NCBI_PTBCFG_PROJECT_TAGS}" STREQUAL "")
-    unset(NCBI_PTBCFG_PROJECT_TAGS)
-endif()
-if("${NCBI_PTBCFG_PROJECT_TARGETS}" STREQUAL "")
-    unset(NCBI_PTBCFG_PROJECT_TARGETS)
-endif()
-
-#  set(NCBI_PTBCFG_PROJECT_TAGS    *;-test)
-#  set(NCBI_PTBCFG_PROJECT_TARGETS   datatool;xcgi$)
-#  set(NCBI_PTBCFG_PROJECT_LIST     corelib serial build-system)
-#  set(NCBI_PTBCFG_ALLOWED_PROJECTS project_tree_builder datatool)
-#  set(NCBI_VERBOSE_ALLPROJECTS OFF)
-#  set(NCBI_VERBOSE_PROJECTS xncbi variation_utils)
-
-if(DEFINED NCBI_VERBOSE_PROJECTS)
-  foreach(_prj IN LISTS NCBI_VERBOSE_PROJECTS)
-    set(NCBI_VERBOSE_PROJECT_${_prj}   ON)
-  endforeach()
 endif()
 
 set(NCBI_PTBCFG_KNOWN_FOLDERS
@@ -64,127 +29,9 @@ set(NCBI_PTBCFG_KNOWN_FOLDERS
   sra
 )
 
-
-if(NCBI_EXPERIMENTAL)
-  cmake_policy(SET CMP0054 NEW)
-
-  set(NCBI_EXPERIMENTAL_CFG              ON)
-  set(NCBI_EXPERIMENTAL_SUBDIRS          ON)
-  set(NCBI_EXPERIMENTAL_DISABLE_HUNTER   ON)
-  set(NCBI_VERBOSE_ALLPROJECTS           OFF)
-
-  if(BUILD_SHARED_LIBS)
-    if(WIN32 OR XCODE)
-      set(NCBI_PTBCFG_COMPOSITE_DLL dll)
-    endif()
-  endif()
-
-  if (DEFINED NCBI_PTBCFG_COMPOSITE_DLL
-      OR DEFINED NCBI_PTBCFG_ALLOWED_PROJECTS
-      OR DEFINED NCBI_PTBCFG_PROJECT_LIST
-      OR DEFINED NCBI_PTBCFG_PROJECT_TAGS
-      OR DEFINED NCBI_PTBCFG_PROJECT_TARGETS)
-    set(NCBI_PTBCFG_ENABLE_COLLECTOR ON)
-  endif()
-
-else()
-  cmake_policy(SET CMP0054 OLD)
-
-  set(NCBI_EXPERIMENTAL_CFG              OFF)
-  set(NCBI_EXPERIMENTAL_SUBDIRS          OFF)
-  set(NCBI_EXPERIMENTAL_DISABLE_HUNTER   OFF)
-  set(NCBI_VERBOSE_ALLPROJECTS           OFF)
-  set(NCBI_PTBCFG_ENABLE_COLLECTOR       OFF)
-endif()
-
-if(DEFINED NCBI_PTBCFG_PROJECT_LIST AND EXISTS "${NCBI_PTBCFG_PROJECT_LIST}")
-  if (NOT IS_DIRECTORY "${NCBI_PTBCFG_PROJECT_LIST}")
-    file(STRINGS "${NCBI_PTBCFG_PROJECT_LIST}" NCBI_PTBCFG_PROJECT_LIST)
-  endif()
-endif()
-
-if(DEFINED NCBI_PTBCFG_PROJECT_TAGS AND EXISTS "${NCBI_PTBCFG_PROJECT_TAGS}")
-  if (NOT IS_DIRECTORY "${NCBI_PTBCFG_PROJECT_TAGS}")
-    file(STRINGS "${NCBI_PTBCFG_PROJECT_TAGS}" NCBI_PTBCFG_PROJECT_TAGS)
-  endif()
-endif()
-
-if(DEFINED NCBI_PTBCFG_PROJECT_TARGETS AND EXISTS "${NCBI_PTBCFG_PROJECT_TARGETS}")
-  if (NOT IS_DIRECTORY "${NCBI_PTBCFG_PROJECT_TARGETS}")
-    file(STRINGS "${NCBI_PTBCFG_PROJECT_TARGETS}" NCBI_PTBCFG_PROJECT_TARGETS)
-  endif()
-endif()
-
-###############################################################################
-if (OFF)
-message("CMAKE_CONFIGURATION_TYPES: ${CMAKE_CONFIGURATION_TYPES}")
-set(_cfg_types Debug Release MinSizeRel RelWithDebInfo)
-
-message("")
-message("CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
-foreach(_cfg ${_cfg_types})
-  string(TOUPPER ${_cfg} _upname)
-  message("CMAKE_C_FLAGS_${_upname}: ${CMAKE_C_FLAGS_${_upname}}")
-endforeach()
-
-message("")
-message("CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
-foreach(_cfg ${_cfg_types})
-  string(TOUPPER ${_cfg} _upname)
-  message("CMAKE_CXX_FLAGS_${_upname}: ${CMAKE_CXX_FLAGS_${_upname}}")
-endforeach()
-
-message("")
-message("CMAKE_STATIC_LINKER_FLAGS: ${CMAKE_STATIC_LINKER_FLAGS}")
-foreach(_cfg ${_cfg_types})
-  string(TOUPPER ${_cfg} _upname)
-  message("CMAKE_STATIC_LINKER_FLAGS_${_upname}: ${CMAKE_STATIC_LINKER_FLAGS_${_upname}}")
-endforeach()
-
-message("")
-message("CMAKE_EXE_LINKER_FLAGS: ${CMAKE_EXE_LINKER_FLAGS}")
-foreach(_cfg ${_cfg_types})
-  string(TOUPPER ${_cfg} _upname)
-  message("CMAKE_EXE_LINKER_FLAGS_${_upname}: ${CMAKE_EXE_LINKER_FLAGS_${_upname}}")
-endforeach()
-
-message("")
-message("CMAKE_MODULE_LINKER_FLAGS: ${CMAKE_MODULE_LINKER_FLAGS}")
-foreach(_cfg ${_cfg_types})
-  string(TOUPPER ${_cfg} _upname)
-  message("CMAKE_MODULE_LINKER_FLAGS_${_upname}: ${CMAKE_MODULE_LINKER_FLAGS_${_upname}}")
-endforeach()
-
-message("")
-message("CMAKE_SHARED_LINKER_FLAGS: ${CMAKE_SHARED_LINKER_FLAGS}")
-foreach(_cfg ${_cfg_types})
-  string(TOUPPER ${_cfg} _upname)
-  message("CMAKE_SHARED_LINKER_FLAGS_${_upname}: ${CMAKE_SHARED_LINKER_FLAGS_${_upname}}")
-endforeach()
-#return()
-endif()
-###############################################################################
-## Initialize Hunter
-##
-if (NOT NCBI_EXPERIMENTAL_DISABLE_HUNTER)
-if (WIN32)
-    if (NOT HUNTER_ROOT)
-        set(HUNTER_ROOT ${CMAKE_SOURCE_DIR}/../HunterPackages)
-    endif()
-    include(build-system/cmake/HunterGate.cmake)
-    HunterGate(
-        URL "https://github.com/ruslo/hunter/archive/v0.18.39.tar.gz"
-        SHA1 "a6fbc056c3d9d7acdaa0a07c575c9352951c2f6c"
-    )
-endif()
-endif()
-
-
 project(${NCBI_CMAKEPROJECT_NAME})
 
-include(build-system/cmake/CMakeMacros.cmake)
-include(build-system/cmake/CMake.NCBIptb.cmake)
-include(build-system/cmake/CMakeChecks.cmake)
+include(build-system/cmake/CMake.NCBItoolkit.cmake)
 
 if (NOT NCBI_EXPERIMENTAL_CFG)
 #
@@ -257,7 +104,7 @@ endif()
 # Recurse subdirectories
 if (NCBI_EXPERIMENTAL_SUBDIRS)
 
-NCBI_add_root_subdirectory( ${NCBI_PTBCFG_COMPOSITE_DLL}  ${NCBI_PTBCFG_KNOWN_FOLDERS})
+NCBI_add_root_subdirectory( ${NCBI_PTBCFG_KNOWN_FOLDERS})
 
 else (NCBI_EXPERIMENTAL_SUBDIRS)
 

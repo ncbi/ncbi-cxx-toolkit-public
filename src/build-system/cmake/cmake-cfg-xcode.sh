@@ -135,7 +135,7 @@ CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TAGS=$(Quote "${project_tags}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TARGETS=$(Quote "${project_targets}")"
 CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
 
-build_root=compilers/CMake-${CC_NAME}${CC_VERSION}
+build_root=CMake-${CC_NAME}${CC_VERSION}
 if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
   build_root="$build_root"/dll
   project_name=ncbi_cpp_dll

@@ -51,6 +51,8 @@ echo                  examples:   --with-targets="datatool;xcgi$"
 echo   --with-vs=N             -- use Visual Studio N generator 
 echo                  examples:   --with-vs=2017  (default)
 echo                              --with-vs=2015
+echo   --with-install="DIR"    -- generate rules for installation into "DIR" directory
+echo                  examples:   --with-install="D:\CPP toolkit"
 echo   --with-generator="X"    -- use generator X
 echo:
 
@@ -95,6 +97,7 @@ if "%dest%"=="lst"                      (set project_list=%~1&  set dest=& goto 
 if "%dest%"=="tag"                      (set project_tags=%~1&  set dest=& goto :CONTINUEPARSEARGS)
 if "%dest%"=="nam"                      (set project_targets=%~1&  set dest=& goto :CONTINUEPARSEARGS)
 if "%dest%"=="vs"                       (set VISUAL_STUDIO=%~1& set dest=& goto :CONTINUEPARSEARGS)
+if "%dest%"=="ins"                      (set INSTALL_PATH=%~1&  set dest=& goto :CONTINUEPARSEARGS)
 if "%dest%"=="gen"                      (set generator=%~1&     set dest=& goto :CONTINUEPARSEARGS)
 if "%1"=="--help"                       (call :USAGE&       exit /b 0)
 if "%1"=="--without-dll"                (set BUILD_SHARED_LIBS=OFF&  goto :CONTINUEPARSEARGS)
@@ -103,6 +106,7 @@ if "%1"=="--with-projects"              (set dest=lst&               goto :CONTI
 if "%1"=="--with-tags"                  (set dest=tag&               goto :CONTINUEPARSEARGS)
 if "%1"=="--with-targets"               (set dest=nam&               goto :CONTINUEPARSEARGS)
 if "%1"=="--with-vs"                    (set dest=vs&                goto :CONTINUEPARSEARGS)
+if "%1"=="--with-install"               (set dest=ins&               goto :CONTINUEPARSEARGS)
 if "%1"=="--with-generator"             (set dest=gen&               goto :CONTINUEPARSEARGS)
 set unknown=%unknown% %1
 :CONTINUEPARSEARGS
@@ -154,9 +158,12 @@ if not "%generator%"=="" (
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_LIST="%project_list%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TAGS="%project_tags%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TARGETS="%project_targets%"
+if not "%INSTALL_PATH%"=="" (
+  set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_INSTALL_PATH="%INSTALL_PATH%"
+)
 set CMAKE_ARGS=%CMAKE_ARGS% -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS%
 
-set build_root=compilers\CMake-%generator_name%
+set build_root=CMake-%generator_name%
 if "%BUILD_SHARED_LIBS%"=="ON" (
   set build_root=%build_root%\dll
   set project_name=ncbi_cpp_dll
