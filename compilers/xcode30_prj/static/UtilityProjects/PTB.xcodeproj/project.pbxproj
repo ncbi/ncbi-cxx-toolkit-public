@@ -17552,6 +17552,8 @@
           <string>ABCDABCDABCDABCD000004E4</string>
           <string>ABCDABCDABCDABCD000004E6</string>
           <string>ABCDABCDABCDABCD000004E8</string>
+          <string>ABCDABCDABCDABCD010004E8</string>
+          <string>ABCDABCDABCDABCD020004E8</string>
           <string>ABCDABCDABCDABCD000004EA</string>
           <string>ABCDABCDABCDABCD000004EC</string>
           <string>ABCDABCDABCDABCD000004EE</string>
@@ -17754,6 +17756,46 @@
       <dict>
         <key>fileRef</key>
         <string>ABCDABCDABCDABCD000004E8</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>ABCDABCDABCDABCD010004E8</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.cpp.cpp</string>
+        <key>name</key>
+        <string>checksum_cityhash.cpp</string>
+        <key>path</key>
+        <string>../../../../src/util/checksum_cityhash.cpp</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD010004E9</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD010004E8</string>
+        <key>isa</key>
+        <string>PBXBuildFile</string>
+      </dict>
+      <key>ABCDABCDABCDABCD020004E8</key>
+      <dict>
+        <key>isa</key>
+        <string>PBXFileReference</string>
+        <key>lastKnownFileType</key>
+        <string>sourcecode.cpp.cpp</string>
+        <key>name</key>
+        <string>checksum_farmhash.cpp</string>
+        <key>path</key>
+        <string>../../../../src/util/checksum_farmhash.cpp</string>
+        <key>sourceTree</key>
+        <string>SOURCE_ROOT</string>
+      </dict>
+      <key>ABCDABCDABCDABCD020004E9</key>
+      <dict>
+        <key>fileRef</key>
+        <string>ABCDABCDABCDABCD020004E8</string>
         <key>isa</key>
         <string>PBXBuildFile</string>
       </dict>
