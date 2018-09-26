@@ -49,62 +49,6 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-/*class CCleanupBioseqSetCopyHook : public CCopyObjectHook
-{
-private:
-    bool m_is_nuc_prot;
-    IProcessorCallback& m_callback;
-
-public:
-
-    CCleanupBioseqSetCopyHook(IProcessorCallback& callback) :
-        m_is_nuc_prot(false),
-        m_callback(callback)
-    {
-    }
-
-    virtual void CopyObject(CObjectStreamCopier& copier, const CObjectTypeInfo& type) override
-    {
-        bool processed = false;
-
-        if (!m_is_nuc_prot) {
-
-            CNcbiStreampos cur_pos = copier.In().GetStreamPos();
-
-            CObjectInfo obj_info(type);
-
-            for (CIStreamClassMemberIterator it(copier.In(), type); it; ++it) {
-                it.ReadClassMember(obj_info);
-                if ((*it).GetAlias() == "class") {
-                    TMemberIndex mem_idx = (*it).GetMemberIndex();
-                    CObjectInfoMI mi_info(obj_info, mem_idx);
-                    CObjectInfo member_info = mi_info.GetMember();
-
-                    CBioseq_set::EClass e_class = *CTypeConverter<CBioseq_set::EClass>::SafeCast(member_info.GetObjectPtr());
-                    m_is_nuc_prot = e_class == CBioseq_set::eClass_nuc_prot;
-                    break;
-                }
-            }
-
-            copier.In().SetStreamPos(cur_pos);
-            if (m_is_nuc_prot) {
-                CBioseq_set nuc_prot_set;
-                copier.In().ReadObject(&nuc_prot_set, type.GetTypeInfo());
-
-                m_callback.Process(nuc_prot_set);
-
-                copier.Out().WriteObject(&nuc_prot_set, type.GetTypeInfo());
-                processed = true;
-                m_is_nuc_prot = false;
-            }
-        }
-
-        if (!processed) {
-            DefaultCopy(copier, type);
-        }
-    }
-};*/
-
 
 template <typename T> class CCleanupCopyHook : public CCopyObjectHook
 {
@@ -119,69 +63,106 @@ public:
 
     virtual void CopyObject(CObjectStreamCopier& copier, const CObjectTypeInfo& type) override
     {
-        T object;
-        copier.In().ReadObject(&object, type.GetTypeInfo());
+        CRef<CSerialObject> object(new T);
+        copier.In().ReadObject(object, type.GetTypeInfo());
 
         m_callback.Process(object);
-        copier.Out().WriteObject(&object, type.GetTypeInfo());
+        copier.Out().WriteObject(object, object->GetThisTypeInfo());
     }
 };
 
-template <> class CCleanupCopyHook<CBioseq_set> : public CCopyObjectHook
+class CProcessWholeObjectException
+{
+    bool m_process_whole_obj;
+
+public:
+
+    CProcessWholeObjectException(bool process_whole_obj) :
+        m_process_whole_obj(process_whole_obj) {}
+
+    bool IsProcessWholeObject() const { return m_process_whole_obj; }
+};
+
+class CCleanupReadBioseqHook : public CReadObjectHook
+{
+public:
+    void ReadObject(CObjectIStream&, const CObjectInfo&)
+    {
+        throw CProcessWholeObjectException(true);
+    }
+};
+
+class CCleanupReadBioseqSetHook : public CReadObjectHook
+{
+public:
+    void ReadObject(CObjectIStream& in, const CObjectInfo& object)
+    {
+        CObjectInfo obj_info(object.GetTypeInfo());
+        bool process_whole_object = false;
+        for (CIStreamClassMemberIterator it(in, object.GetTypeInfo()); it; ++it) {
+
+            it.ReadClassMember(obj_info);
+            if ((*it).GetAlias() == "class") {
+                TMemberIndex mem_idx = (*it).GetMemberIndex();
+                CObjectInfoMI mi_info(obj_info, mem_idx);
+                CObjectInfo member_info = mi_info.GetMember();
+
+                CBioseq_set::EClass e_class = *CTypeConverter<CBioseq_set::EClass>::SafeCast(member_info.GetObjectPtr());
+                process_whole_object = e_class == CBioseq_set::eClass_nuc_prot;
+                break;
+            }
+        }
+
+        throw CProcessWholeObjectException(process_whole_object);
+    }
+};
+
+class CCleanupSeqEntryCopyHook : public CCopyObjectHook
 {
 private:
-    bool m_is_nuc_prot;
     IProcessorCallback& m_callback;
 
 public:
 
-    CCleanupCopyHook(IProcessorCallback& callback) :
-        m_is_nuc_prot(false),
+    CCleanupSeqEntryCopyHook(IProcessorCallback& callback) :
         m_callback(callback)
-    {
-    }
+    {}
 
     virtual void CopyObject(CObjectStreamCopier& copier, const CObjectTypeInfo& type) override
     {
-        bool processed = false;
+        CNcbiStreampos cur_pos = copier.In().GetStreamPos();
 
-        if (!m_is_nuc_prot) {
+        CObjectTypeInfo(CType<CBioseq_set>()).SetLocalReadHook(copier.In(), new CCleanupReadBioseqSetHook);
+        CObjectTypeInfo(CType<CBioseq>()).SetLocalReadHook(copier.In(), new CCleanupReadBioseqHook);
 
-            CNcbiStreampos cur_pos = copier.In().GetStreamPos();
+        CObjectInfo obj_info(type);
+        CRef<CSerialObject> entry(new CSeq_entry);
 
-            CObjectInfo obj_info(type);
-
-            for (CIStreamClassMemberIterator it(copier.In(), type); it; ++it) {
-                it.ReadClassMember(obj_info);
-                if ((*it).GetAlias() == "class") {
-                    TMemberIndex mem_idx = (*it).GetMemberIndex();
-                    CObjectInfoMI mi_info(obj_info, mem_idx);
-                    CObjectInfo member_info = mi_info.GetMember();
-
-                    CBioseq_set::EClass e_class = *CTypeConverter<CBioseq_set::EClass>::SafeCast(member_info.GetObjectPtr());
-                    m_is_nuc_prot = e_class == CBioseq_set::eClass_nuc_prot;
-                    break;
-                }
-            }
-
-            copier.In().SetStreamPos(cur_pos);
-            if (m_is_nuc_prot) {
-                CBioseq_set nuc_prot_set;
-                copier.In().ReadObject(&nuc_prot_set, type.GetTypeInfo());
-
-                m_callback.Process(nuc_prot_set);
-
-                copier.Out().WriteObject(&nuc_prot_set, type.GetTypeInfo());
-                processed = true;
-                m_is_nuc_prot = false;
-            }
+        bool process_whole_object = false;
+        try {
+            copier.In().ReadObject(entry, type.GetTypeInfo());
+        }
+        catch (CProcessWholeObjectException& e) {
+            process_whole_object = e.IsProcessWholeObject();
         }
 
-        if (!processed) {
+        CObjectTypeInfo(CType<CBioseq_set>()).ResetLocalReadHook(copier.In());
+        CObjectTypeInfo(CType<CBioseq>()).ResetLocalReadHook(copier.In());
+
+        copier.In().SetStreamPos(cur_pos);
+
+        if (process_whole_object) {
+
+            copier.In().ReadObject(entry, type.GetTypeInfo());
+            m_callback.Process(entry);
+            copier.Out().WriteObject(entry, entry->GetThisTypeInfo());
+        }
+        else {
             DefaultCopy(copier, type);
         }
     }
 };
+
 
 bool ProcessBigFile(CObjectIStream& in, CObjectOStream& out, IProcessorCallback& callback, EBigFileContentType content_type)
 {
@@ -193,9 +174,10 @@ bool ProcessBigFile(CObjectIStream& in, CObjectOStream& out, IProcessorCallback&
         CObjectTypeInfo(CType<CSubmit_block>()).SetLocalCopyHook(copier, new CCleanupCopyHook<CSubmit_block>(callback));
     }
 
-    CObjectTypeInfo(CType<CBioseq_set>()).SetLocalCopyHook(copier, new CCleanupCopyHook<CBioseq_set>(callback));
-    CObjectTypeInfo(CType<CBioseq>()).SetLocalCopyHook(copier, new CCleanupCopyHook<CBioseq>(callback));
-
+    //CObjectTypeInfo(CType<CBioseq_set>()).SetLocalCopyHook(copier, new CCleanupCopyHook<CBioseq_set>(callback));
+    //CObjectTypeInfo(CType<CBioseq>()).SetLocalCopyHook(copier, new CCleanupCopyHook<CBioseq>(callback));
+    
+    CObjectTypeInfo(CType<CSeq_entry>()).SetLocalCopyHook(copier, new CCleanupSeqEntryCopyHook(callback));
 
     CObjectTypeInfo(CType<CSeq_descr>()).SetLocalCopyHook(copier, new CCleanupCopyHook<CSeq_descr>(callback));
     CObjectTypeInfo(CType<CSeq_annot>()).SetLocalCopyHook(copier, new CCleanupCopyHook<CSeq_annot>(callback));
@@ -216,7 +198,12 @@ bool ProcessBigFile(CObjectIStream& in, CObjectOStream& out, IProcessorCallback&
                 ret = false;
         }
     }
+    catch (CException& e) {
+        cerr << "Exception: " << e.what() << '\n';
+        ret = false;
+    }
     catch (...) {
+        cerr << "Other exception caught\n";
         ret = false;
     }
 

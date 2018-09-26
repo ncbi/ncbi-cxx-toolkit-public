@@ -17,11 +17,7 @@ class IProcessorCallback
 {
 public:
 
-    virtual void Process(CSubmit_block& obj) = 0;
-    virtual void Process(CBioseq& obj) = 0;
-    virtual void Process(CBioseq_set& obj) = 0;
-    virtual void Process(CSeq_descr& obj) = 0;
-    virtual void Process(CSeq_annot& obj) = 0;
+    virtual void Process(CRef<CSerialObject>& obj) = 0;
 };
 
 enum EBigFileContentType

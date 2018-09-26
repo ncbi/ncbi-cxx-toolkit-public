@@ -101,11 +101,7 @@ public:
     bool HandleSeqID( const string& seqID );
 
     // IProcessorCallback interface functionality
-    virtual void Process(CSubmit_block& obj);
-    virtual void Process(CBioseq& obj);
-    virtual void Process(CBioseq_set& obj);
-    virtual void Process(CSeq_descr& obj);
-    virtual void Process(CSeq_annot& obj);
+    virtual void Process(CRef<CSerialObject>& obj);
 
     
     bool ObtainSeqEntryFromSeqEntry( 
@@ -1253,30 +1249,12 @@ void CCleanupApp::x_CloseOStream()
 }
 
 // IProcessorCallback interface functionality
-void CCleanupApp::Process(CSubmit_block& obj)
+void CCleanupApp::Process(CRef<CSerialObject>& obj)
 {
-    // TODO here should be the cleanup processing
+    static long long cnt;
+    cerr << ++cnt << ' ' << obj->GetThisTypeInfo()->GetName() << '\n';
 }
 
-void CCleanupApp::Process(CBioseq& obj)
-{
-    // TODO here should be the cleanup processing
-}
-
-void CCleanupApp::Process(CBioseq_set& obj)
-{
-    // TODO here should be the cleanup processing
-}
-
-void CCleanupApp::Process(CSeq_descr& obj)
-{
-    // TODO here should be the cleanup processing
-}
-
-void CCleanupApp::Process(CSeq_annot& obj)
-{
-    // TODO here should be the cleanup processing
-}
 
 END_NCBI_SCOPE
 
