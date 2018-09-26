@@ -16960,8 +16960,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefNotReciprocal)
     STANDARD_SETUP
 //    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
 //                               "CDS/mRNA unambiguous pair have erroneous cross-references"));
-    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "SeqFeatXrefProblem",
-                               "Cross-referenced feature does not have its own cross-reference"));
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
                                "Cross-referenced feature does not link reciprocally"));
 

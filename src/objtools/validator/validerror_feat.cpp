@@ -795,7 +795,7 @@ void CValidError_feat::ValidateOneFeatXrefPair(const CSeq_feat& feat, const CSeq
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefNotReciprocal,
                 "Cross-referenced feature does not link reciprocally",
                 feat);
-        } else {
+        } else if (!far_feat.GetData().IsGene()) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefProblem,
                 "Cross-referenced feature does not have its own cross-reference", feat);
         }
