@@ -386,6 +386,15 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                     PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat,
                            "Bad character '" + string(1, badch) + "' in accession '" + acc + "'", ctx);
                 }
+#if 1
+                CSeq_id::EAccessionInfo info = CSeq_id::IdentifyAccession(acc);
+                if (info == CSeq_id::eAcc_unknown || 
+                    (ctx.IsNa() && (info & CSeq_id::fAcc_prot)) ||
+                    (ctx.IsAa() && (info & CSeq_id::fAcc_nuc))) {
+                    PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
+                        "Bad accession " + acc, ctx);
+                }
+#else
                 unsigned int num_digits = 0;
                 unsigned int num_letters = 0;
                 size_t num_underscores = 0;
@@ -442,6 +451,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                     PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
                         "Bad accession " + acc, ctx);
                 }
+#endif
                 // Check for secondary conflicts
                 ValidateSecondaryAccConflict(acc, ctx, CSeqdesc::e_Genbank);
                 ValidateSecondaryAccConflict(acc, ctx, CSeqdesc::e_Embl);
@@ -789,14 +799,13 @@ void CValidError_bioseq::ValidateSeqIds
         case CSeq_id::e_Embl:
         case CSeq_id::e_Ddbj:
             if ( tsid  &&  tsid->IsSetAccession() ) {
-                const string& acc = tsid->GetAccession();
-                   
                 if ((*k)->IsGenbank() || (*k)->IsEmbl() || (*k)->IsDdbj()) {
-                    is_wgs |= acc.length() == 12 || acc.length() == 13 || acc.length() == 14 || acc.length() == 15;
+                    is_wgs |= IsWGSAccession(**k);
                 }
 
                 if ( has_gi ) {
                     if (tsid->IsSetVersion() && tsid->GetVersion() == 0) {
+                        const string& acc = tsid->GetAccession();
                         PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
                             "Accession " + acc + " has 0 version", seq);
                     }
@@ -842,7 +851,7 @@ void CValidError_bioseq::ValidateSeqIds
     }
 
     CTypeConstIterator<CMolInfo> mi(ConstBegin(seq));
-    if (!SeqIsPatent(seq)) {
+    if (!SeqIsPatent(seq) && !seq.IsAa()) {
         if ( is_wgs ) {
             if ( !mi  ||  !mi->IsSetTech()  ||  
                 ( mi->GetTech() != CMolInfo::eTech_wgs  &&

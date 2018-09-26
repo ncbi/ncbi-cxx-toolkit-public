@@ -2528,8 +2528,7 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
     bad_ids.push_back("ABCD1234567");  // four letters
     bad_ids.push_back("ABCDE123456");  // five letters
     bad_ids.push_back("ABCDE12345678");  
-
-
+    
     vector<string> bad_nuc_ids;
     bad_nuc_ids.push_back("ABC12345");
 
@@ -2564,10 +2563,6 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
         expected_errors[0]->SetAccession("gb|" + id_str + "|");
         expected_errors[0]->SetErrMsg("Bad accession " + id_str);
 
-        if (id_str.length() == 12 || id_str.length() == 13 || id_str.length() == 14 || id_str.length() == 15) {
-            expected_errors.push_back(new CExpectedError("gb|" + id_str + "|", eDiag_Error, "InconsistentMolInfoTechnique", "WGS accession should have Mol-info.tech of wgs"));
-        }
-
         //GenBank
         scope.RemoveTopLevelSeqEntry(seh);
         scope.ResetDataAndHistory();
@@ -2585,11 +2580,6 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
         eval = validator.Validate(seh, options);
         CheckErrors(*eval, expected_errors);
 
-        if (expected_errors.size() > 1) {
-            delete expected_errors[1];
-            expected_errors.pop_back();
-        }
-
     }
 
     for (vector<string>::iterator id_it = bad_ids.begin();
@@ -2600,10 +2590,6 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
         expected_errors[0]->SetAccession("embl|" + id_str + "|");
         expected_errors[0]->SetErrMsg("Bad accession " + id_str);
 
-        if (id_str.length() == 12 || id_str.length() == 13 || id_str.length() == 14 || id_str.length() == 15) {
-            expected_errors.push_back(new CExpectedError("embl|" + id_str + "|", eDiag_Error, "InconsistentMolInfoTechnique", "WGS accession should have Mol-info.tech of wgs"));
-        }
-
         // EMBL
         scope.RemoveTopLevelSeqEntry(seh);
         scope.ResetDataAndHistory();
@@ -2613,10 +2599,7 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
         seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         expected_errors[0]->SetAccession("emb|" + id_str + "|");
-        if (expected_errors.size() > 1) {
-            expected_errors[1]->SetAccession("emb|" + id_str + "|");
-        }
-        CheckErrors (*eval, expected_errors);
+         CheckErrors (*eval, expected_errors);
         scope.RemoveTopLevelSeqEntry(seh);
         scope.ResetDataAndHistory();
         unit_test_util::ChangeNucId(entry, good_nuc_id);
@@ -2624,11 +2607,6 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
         seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
-
-        if (expected_errors.size() > 1) {
-            delete expected_errors[1];
-            expected_errors.pop_back();
-        }
 
     }
 
@@ -2640,10 +2618,6 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
         expected_errors[0]->SetAccession("dbj|" + id_str + "|");
         expected_errors[0]->SetErrMsg("Bad accession " + id_str);
 
-        if (id_str.length() == 12 || id_str.length() == 13 || id_str.length() == 14 || id_str.length() == 15) {
-            expected_errors.push_back(new CExpectedError("dbj|" + id_str + "|", eDiag_Error, "InconsistentMolInfoTechnique", "WGS accession should have Mol-info.tech of wgs"));
-        }
-
         // DDBJ
         scope.RemoveTopLevelSeqEntry(seh);
         scope.ResetDataAndHistory();
@@ -2653,9 +2627,6 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
         seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         expected_errors[0]->SetAccession("dbj|" + id_str + "|");
-        if (expected_errors.size() > 1) {
-            expected_errors[1]->SetAccession("dbj|" + id_str + "|");
-        }
         CheckErrors (*eval, expected_errors);
         scope.RemoveTopLevelSeqEntry(seh);
         scope.ResetDataAndHistory();
@@ -2664,11 +2635,6 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
         seh = scope.AddTopLevelSeqEntry(*entry);
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
-
-        if (expected_errors.size() > 1) {
-            delete expected_errors[1];
-            expected_errors.pop_back();
-        }
 
     }
 
@@ -23545,6 +23511,99 @@ BOOST_AUTO_TEST_CASE(Test_VR_824)
     CheckErrors(*eval, expected_errors);
 }
 
+
+void TestNewAccessionOnNuc(const string& accession, bool is_prot_acc, bool is_wgs)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_id> new_id(new CSeq_id());
+    new_id->SetGenbank().SetAccession(accession);
+    entry->SetSeq().SetId().push_back(new_id);
+
+    STANDARD_SETUP
+
+    if (is_wgs) {
+        expected_errors.push_back(new CExpectedError("gb|" + accession + "|", eDiag_Error,
+            "InconsistentMolInfoTechnique",
+            "WGS accession should have Mol-info.tech of wgs"));
+    }
+    if (is_prot_acc) {
+        expected_errors.push_back(new CExpectedError("gb|" + accession + "|", eDiag_Error, "BadSeqIdFormat", "Bad accession " + accession));
+    }
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    SetTech(entry, CMolInfo::eTech_wgs);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    if (is_prot_acc) {
+        expected_errors.push_back(new CExpectedError("gb|" + accession + "|", eDiag_Error, "BadSeqIdFormat", "Bad accession " + accession));
+    }
+    if (!is_wgs) {
+        expected_errors.push_back(new CExpectedError("gb|" + accession + "|", eDiag_Error, "InconsistentWGSFlags", "Mol-info.tech of wgs should have WGS accession"));
+    }
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+void TestNewAccessionOnStandaloneProt(const string& accession, bool is_nuc_acc, bool is_wgs)
+{
+    CRef<CSeq_entry> entry = BuildGoodProtSeq();
+    CRef<CSeq_id> new_id(new CSeq_id());
+    new_id->SetGenbank().SetAccession(accession);
+    entry->SetSeq().SetId().push_back(new_id);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("gb|" + accession + "|", eDiag_Error, "OrphanedProtein", "Orphaned stand-alone protein"));
+    if (is_nuc_acc) {
+        expected_errors.push_back(new CExpectedError("gb|" + accession + "|", eDiag_Error, "BadSeqIdFormat", "Bad accession " + accession));
+    }
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+void TestNewAccessionOnNucProt(const string& n_acc, const string& p_acc, bool is_wgs)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_id> nid(new CSeq_id());
+    nid->SetGenbank().SetAccession(n_acc);
+    unit_test_util::ChangeNucProtSetNucId(entry, nid);
+    CRef<CSeq_id> pid(new CSeq_id());
+    pid->SetGenbank().SetAccession(p_acc);
+    unit_test_util::ChangeNucProtSetProteinId(entry, pid);
+    STANDARD_SETUP
+
+    if (is_wgs) {
+        expected_errors.push_back(new CExpectedError("gb|" + n_acc + "|", eDiag_Error, "InconsistentMolInfoTechnique", "WGS accession should have Mol-info.tech of wgs"));
+    }
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4560)
+{
+    // new accession formats
+    TestNewAccessionOnNuc("AAAAAB010000001", false, true);
+    TestNewAccessionOnNuc("AA12345678", false, false);
+    TestNewAccessionOnNuc("EAA0000015", true, true);
+    TestNewAccessionOnStandaloneProt("AAAAAB010000001", true, true);
+    TestNewAccessionOnStandaloneProt("AA12345678", true, false);
+    TestNewAccessionOnStandaloneProt("EAA0000015", false, true);
+ 
+    TestNewAccessionOnNucProt("AAAAAB010000001", "EAA0000015", true);
+    TestNewAccessionOnNucProt("AA12345678", "EAA0000015", false);
+}
 
 #if 0
 BOOST_AUTO_TEST_CASE(Test_TM_897)
