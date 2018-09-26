@@ -1,0 +1,144 @@
+#!/bin/env python2
+# $Id$
+# Authors: David McElhany
+# Audience: NCBI Internal
+
+"""
+Filter STDIN to STDOUT, either treating input as binary and converting to a
+printable string (a la C++ Toolkit NStr::PrintableString() or treating input as
+a printable string and decoding to binary.
+
+Python2 is required, to allow writing arbitrary bytes to STDOUT.
+"""
+
+
+import argparse
+import re
+import sys
+
+
+def get_octal(istr):
+    digits = 0
+    slen = len(istr)
+    if slen > 0 and istr[0] in "01234567":
+        digits += 1
+        if slen > 1 and istr[1] in "01234567":
+            digits += 1
+            if slen > 2 and istr[2] in "01234567":
+                digits += 1
+    val = 0
+    if digits:
+        val = int(istr[0:digits], 8)
+    if val < 256:
+        return (digits, val)
+    else:
+        return (0, 0)
+
+
+def decode(istr):
+    ostr = ""
+    slen = len(istr)
+    i = 0
+    while i < slen:
+        c = istr[i]
+        if c == "\\":
+            if i == slen - 1:
+                ostr += c
+            else:
+                d = istr[i+1]
+                if d == "a":
+                    ostr += "\a"
+                elif d == "b":
+                    ostr += "\b"
+                elif d == "t":
+                    ostr += "\t"
+                elif d == "n":
+                    ostr += "\n"
+                elif d == "v":
+                    ostr += "\v"
+                elif d == "f":
+                    ostr += "\f"
+                elif d == "r":
+                    ostr += "\r"
+                elif d == "\\":
+                    ostr += "\\"
+                else:
+                    (digits, val) = get_octal(istr[i+1:])
+                    if digits > 0:
+                        ostr += chr(val)
+                        i += digits - 1
+                    else:
+                        ostr += c
+                        ostr += d
+                i += 1
+        else:
+            ostr += c
+        i += 1
+    return ostr
+
+
+def escape(istr, quote, zero):
+    ostr = ""
+    for c in istr:
+        o = ord(c)
+        if   o == 7:
+            ostr += "\\a"
+        elif o == 8:
+            ostr += "\\b"
+        elif o == 9:
+            ostr += "\\t"
+#        elif o == 10:
+#            ostr += "\\n"
+        elif o == 11:
+            ostr += "\\v"
+        elif o == 12:
+            ostr += "\\f"
+#        elif o == 13:
+#            ostr += "\\r"
+        elif o == 92:
+            ostr += "\\"
+        elif (o >= 32 and o <= 126) or o == 10 or o == 13:
+            ostr += c
+        else:
+            ostr += "\\" + format(o, "03o")
+
+    # Remove leading zeros from unambiguous octal sequences.
+    # Not ambiguous if 2nd or 3rd octal digit not followed by octal.
+    # For regex simplicity, do it in two passes (one then two digits).
+    if zero:
+        reg1 = re.compile(r"\\00?([0-7])(?![0-7])", re.MULTILINE)       # one digit
+        reg2 = re.compile(r"\\0([1-7][0-7])(?![0-7])", re.MULTILINE)    # two digits
+        ostr = reg1.sub(r"\\\1", reg2.sub(r"\\\1", ostr))
+
+    # Escape quotes and wrap in quotes, if indicated.
+    if quote:
+        ostr = quote + ostr.replace(quote, "\\" + quote) + quote
+
+    return ostr
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("-b", action="store_true",
+                        help="Decode a supplied printable string to binary.")
+    parser.add_argument("-d", action="store_true",
+                        help="Escape double quotes and enclose result in double quotes.")
+    parser.add_argument("-s", action="store_true",
+                        help="Escape single quotes and enclose result in single quotes.")
+    parser.add_argument("-n", action="store_true",
+                        help="Append a newline (not applicable with -b).")
+    parser.add_argument("-z", action="store_false",
+                        help="Retain unambiguous leading zeros (stripped by default).")
+    args = parser.parse_args()
+    istr = sys.stdin.read()
+    if args.b:
+        ostr = decode(istr)
+    else:
+        ostr = escape(istr, "'" if args.s else '"' if args.d else None, args.z)
+        if args.n:
+            ostr += "\n"
+    sys.stdout.write(ostr)
+
+
+if __name__ == "__main__":
+    main()
