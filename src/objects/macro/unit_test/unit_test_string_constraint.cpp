@@ -713,24 +713,24 @@ BOOST_AUTO_TEST_CASE(Test_MatchEnd)
 
 BOOST_AUTO_TEST_CASE(Test_UnwantedMatch1)
 {
-	CString_constraint s;
-	s.SetMatch_text("RNA-Dependent RNA polymerase");
-	s.SetMatch_location(eString_location_equals);
-	s.SetCase_sensitive(false);
-	s.SetIgnore_space(true);
-	s.SetIgnore_punct(true);
+    CString_constraint s;
+    s.SetMatch_text("RNA-Dependent RNA polymerase");
+    s.SetMatch_location(eString_location_equals);
+    s.SetCase_sensitive(false);
+    s.SetIgnore_space(true);
+    s.SetIgnore_punct(true);
 
-	BOOST_CHECK_EQUAL(s.Match("NADH dehydrogenase subunit"), false);
+    BOOST_CHECK_EQUAL(s.Match("NADH dehydrogenase subunit"), false);
 }
 
 BOOST_AUTO_TEST_CASE(Test_UnwantedMatch2)
 {
-	CString_constraint s;
-	s.SetMatch_text("Nonstructural protein");
-	s.SetMatch_location(eString_location_equals);
-	s.SetCase_sensitive(false);
-	s.SetIgnore_space(true);
-	s.SetIgnore_punct(true);
+    CString_constraint s;
+    s.SetMatch_text("Nonstructural protein");
+    s.SetMatch_location(eString_location_equals);
+    s.SetCase_sensitive(false);
+    s.SetIgnore_space(true);
+    s.SetIgnore_punct(true);
 
-	BOOST_CHECK_EQUAL(s.Match("reverse transcriptase"), false);
+    BOOST_CHECK_EQUAL(s.Match("reverse transcriptase"), false);
 }
