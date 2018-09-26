@@ -1489,6 +1489,7 @@ static void s_SetDBLinkFieldVals(const string& label,
         user_obj.SetData().push_back(pField);
     }
 
+    pField->SetData().SetStrs().clear(); // RW-518 - clear any preexisting entries
     for (const auto& val : vals) {
         pField->SetData().SetStrs().push_back(val);
     }
@@ -1525,12 +1526,12 @@ void CSourceModParser::x_ApplyDBLinkMods(CBioseq& bioseq)
 {
     CRef<CSeqdesc> pDBLinkDesc;
     const SMod* mod = NULL;
-    if ((mod = FindMod(s_Mod_biosample)) != NULL) {
-        s_SetDBLinkField("BioSample", mod->value, pDBLinkDesc, bioseq);
-    }
-
     if ((mod = FindMod(s_Mod_bioproject)) != NULL) {
         s_SetDBLinkField("BioProject", mod->value, pDBLinkDesc, bioseq);
+    }
+
+    if ((mod = FindMod(s_Mod_biosample)) != NULL) {
+        s_SetDBLinkField("BioSample", mod->value, pDBLinkDesc, bioseq);
     }
 }
 
