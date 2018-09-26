@@ -50,7 +50,6 @@
 
 #include <corelib/ncbiapp.hpp>
 
-#include <objtools/pubseq_gateway/impl/rpc/UtilException.hpp>
 #include <objtools/pubseq_gateway/client/psg_client.hpp>
 
 USING_NCBI_SCOPE;
@@ -58,16 +57,30 @@ USING_SCOPE(objects);
 
 //////////////////////////////////
 
-class CPsgCliException: public EException {
+class CPsgCliException: public CException
+{
 public:
-    CPsgCliException(const char * const msg, const int code) noexcept : EException(msg, code) {}
-    [[noreturn]] static inline void raise(const char* msg, int code = 0) {
-        throw CPsgCliException{msg, code};
-    }
-    [[noreturn]] static inline void raise(const std::string& msg, int code = 0) {
-        raise(msg.c_str(), code);
-    }
+    enum EErrCode {
+        eInvalidNumberOfThreads,
+        eHostMissing,
+        eFileReadingFailure
+    };
+
+    const char* GetErrCodeString(void) const override;
+
+    NCBI_EXCEPTION_DEFAULT(CPsgCliException, CException);
 };
+
+inline const char* CPsgCliException::GetErrCodeString(void) const
+{
+    switch (GetErrCode())
+    {
+        case eInvalidNumberOfThreads: return "eInvalidNumberOfThreads";
+        case eHostMissing:            return "eHostMissing";
+        case eFileReadingFailure:     return "eFileReadingFailure";
+        default:                      return CException::GetErrCodeString();
+    }
+}
 
 struct SAtomicCout : stringstream
 {
@@ -161,7 +174,7 @@ public:
             m_NumThreads = args["t"].AsInteger();
 
         if (m_HostPort.empty())
-            CPsgCliException::raise("Host is not specified, use -H command line argument");
+            NCBI_THROW(CPsgCliException, eHostMissing, "Host is not specified, use -H command line argument");
     }
 
     virtual int Run(void)
@@ -258,10 +271,10 @@ void CPsgCliApp::ProcessFile(const string& filename, TFactory factory)
     vector<string> ids;
 
     if (m_NumThreads == 0 || m_NumThreads > 1000)
-        CPsgCliException::raise("Invalid number of threads");
+        NCBI_THROW(CPsgCliException, eInvalidNumberOfThreads, "Invalid number of threads");
 
     if (!infile) {
-        CPsgCliException::raise("Error on reading bio IDs");
+        NCBI_THROW(CPsgCliException, eFileReadingFailure, "Error on reading bio IDs");
     }
 
     while (!infile.eof()) {

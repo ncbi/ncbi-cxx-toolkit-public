@@ -1468,7 +1468,7 @@ void io_coordinator::create_io(CNetService service)
     int rv;
     rv = uv_sem_init(&sem, 0);
     if (rv != 0)
-        EUvException::raise("Failed to init semaphore", rv);
+        NCBI_THROW2(CUvException, eUvSemInitFailure, "Failed to init semaphore", rv);
     m_io.emplace_back(new io_thread(sem, service));
     uv_sem_wait(&sem);
     uv_sem_destroy(&sem);

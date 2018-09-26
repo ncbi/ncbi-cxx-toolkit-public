@@ -33,12 +33,56 @@
  */
 
 #include <stdexcept>
+#include <sstream>
 
 #include <corelib/ncbimtx.hpp>
 USING_NCBI_SCOPE;
 
 #include "uv.h"
-#include "UtilException.hpp"
+
+class CUvBaseException : public CException
+{
+public:
+    enum EErrCode {
+        eSignalAlreadyStarted,
+        eSignalNotStarted,
+        eTcpHandleClosed
+    };
+
+    const char* GetErrCodeString(void) const override;
+
+    NCBI_EXCEPTION_DEFAULT(CUvBaseException, CException);
+};
+
+class CUvException : public CUvBaseException
+{
+public:
+    enum EErrCode {
+        eUvLoopInitFailure,
+        eUvSignalInitFailure,
+        eUvSignalStartFailure,
+        eUvIp4AddrFailure,
+        eUvTcpInitFailure,
+        eUvTcpBindFailure,
+        eUvSemInitFailure
+    };
+
+    CUvException(const CDiagCompileInfo& info,
+                 const CException* prev_exception,
+                 EErrCode err_code,
+                 const string& message,
+                 int uv_err_code,
+                 EDiagSev severity = eDiag_Error) :
+        CUvBaseException(info, prev_exception, (CUvBaseException::EErrCode) err_code,
+                message + ": " + uv_strerror(uv_err_code), severity),
+        m_UvErrCode(uv_err_code)
+    NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CUvException, CUvBaseException);
+
+    const char* GetErrCodeString() const override;
+
+private:
+    int m_UvErrCode;
+};
 
 class CUvLoop {
 private:
@@ -56,7 +100,7 @@ public:
         ERR_POST(Trace << "CUvLoop::CUvLoop " << &m_loop);
         int rc = uv_loop_init(&m_loop);
         if (rc)
-            EUvException::raise("uv_loop_init failed", rc);
+            NCBI_THROW2(CUvException, eUvLoopInitFailure, "uv_loop_init failed", rc);
         m_initialized = true;
     }
     ~CUvLoop() {
@@ -107,7 +151,7 @@ public:
         int rc;
         rc = uv_signal_init(loop, &m_sig);
         if (rc)
-            EUvException::raise("uv_signal_init failed", rc);
+            NCBI_THROW2(CUvException, eUvSignalInitFailure, "uv_signal_init failed", rc);
         m_initialized = true;
     }
     ~CUvSignal() {
@@ -115,15 +159,15 @@ public:
     }
     void Start(int signum,  uv_signal_cb cb) {
         if (m_started)
-            EException::raise("signal has already started");
+            NCBI_THROW(CUvBaseException, eSignalAlreadyStarted, "signal has already started");
         int rc = uv_signal_start(&m_sig, cb, signum);
         if (rc)
-            EUvException::raise("uv_signal_init failed", rc);
+            NCBI_THROW2(CUvException, eUvSignalStartFailure, "uv_signal_start failed", rc);
         m_started = true;
     }
     void Stop() {
         if (!m_started)
-            EException::raise("signal hasn't started");
+            NCBI_THROW(CUvBaseException, eSignalNotStarted, "signal hasn't started");
         uv_signal_stop(&m_sig);
         m_started = false;
     }
@@ -180,7 +224,7 @@ public:
             int rc;
             rc = uv_tcp_init(loop, &m_tcp);
             if (rc)
-                EUvException::raise("uv_tcp_init failed", rc);
+                NCBI_THROW2(CUvException, eUvTcpInitFailure, "uv_tcp_init failed", rc);
             m_initialized = true;
         }
     }
@@ -199,7 +243,7 @@ public:
     }
     uv_tcp_t* Handle() {
         if (!m_initialized)
-            EException::raise("tcp handle is closed");
+            NCBI_THROW(CUvBaseException, eTcpHandleClosed, "tcp handle is closed");
         return &m_tcp;
     }
     void Bind(const char* addr, unsigned int port) {
@@ -208,23 +252,16 @@ public:
         struct sockaddr_in addr_in;
 
         e = uv_ip4_addr(addr, port, &addr_in);
-        switch (e) {
-            case 0:
-                break;
-            case EINVAL:
-                ss << "invalid address/port: " << addr << ':' << port;
-                EUvException::raise(ss.str(), e);
-                break;
-            default:
-                ss << "failed to parse address/port: " << addr << ':' << port;
-                EUvException::raise(ss.str(), e);
-                break;
+
+        if (e != 0) {
+            ss << (e == EINVAL ? "invalid" : "failed to parse") << " address/port: " << addr << ':' << port;
+            NCBI_THROW2(CUvException, eUvIp4AddrFailure, ss.str(), e);
         }
 
         e = uv_tcp_bind(&m_tcp, reinterpret_cast<struct sockaddr*>(&addr_in), 0);
         if (e != 0 || errno == EADDRINUSE) {
             ss << "failed to bind socket to address/port: " << addr << ':' << port;
-            EUvException::raise(ss.str(), e);
+            NCBI_THROW2(CUvException, eUvTcpBindFailure, ss.str(), e);
         }
     }
     void Close(void (*close_cb)(uv_handle_t* handle)) {
@@ -237,5 +274,30 @@ public:
         }
     }
 };
+
+inline const char* CUvBaseException::GetErrCodeString(void) const
+{
+    switch (GetErrCode())
+    {
+        case eSignalAlreadyStarted: return "eSignalAlreadyStarted";
+        case eSignalNotStarted:     return "eSignalNotStarted";
+        case eTcpHandleClosed:      return "eTcpHandleClosed";
+        default:                    return CException::GetErrCodeString();
+    }
+}
+
+inline const char* CUvException::GetErrCodeString(void) const
+{
+    switch (GetErrCode()) {
+        case eUvLoopInitFailure:    return "eUvLoopInitFailure";
+        case eUvSignalInitFailure:  return "eUvSignalInitFailure";
+        case eUvSignalStartFailure: return "eUvSignalStartFailure";
+        case eUvIp4AddrFailure:     return "eUvIp4AddrFailure";
+        case eUvTcpInitFailure:     return "eUvTcpInitFailure";
+        case eUvTcpBindFailure:     return "eUvTcpBindFailure";
+        case eUvSemInitFailure:     return "eUvSemInitFailure";
+        default:                    return CException::GetErrCodeString();
+    }
+}
 
 #endif
