@@ -1213,7 +1213,7 @@ extern TCONN_Flags CONN_GetFlags(CONN conn)
 
 extern EIO_Status CONN_SetUserData(CONN conn, void* data)
 {
-    CONN_CALLTRACE(SetUserPtr);
+    CONN_CALLTRACE(SetUserData);
 
     if (!conn)
         return eIO_InvalidArg;
@@ -1225,7 +1225,7 @@ extern EIO_Status CONN_SetUserData(CONN conn, void* data)
 
 extern void* CONN_GetUserData(CONN conn)
 {
-    CONN_CALLTRACE(GetUserPtr);
+    CONN_CALLTRACE(GetUserData);
 
     return conn ? conn->data : 0;
 }
