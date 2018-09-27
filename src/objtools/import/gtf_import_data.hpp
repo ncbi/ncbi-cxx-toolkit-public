@@ -31,17 +31,15 @@
 * ===========================================================================
 */
 
-#ifndef GTF_RECORD__HPP
-#define GTF_RECORD__HPP
+#ifndef GTF_IMPORT_DATA__HPP
+#define GTF_IMPORT_DATA__HPP
 
 #include <corelib/ncbifile.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
-#include <util/line_reader.hpp>
-
-#include <objtools/import/id_resolver.hpp>
+#include "feat_import_data.hpp"
 
 #include <map>
 
@@ -49,7 +47,8 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CGtfImportData
+class CGtfImportData:
+    public CFeatImportData
 //  ============================================================================
 {
 public:
@@ -65,17 +64,13 @@ public:
         delete mpScore; };
 
     virtual void InitializeFrom(
-        const std::vector<std::string>&);
+        const std::vector<std::string>&) override;
 
     virtual void Serialize(
-        CNcbiOstream&);
+        CNcbiOstream&) override;
 
-    std::string SeqId() const { return mSeqId; };
-    std::string Source() const { return mSource; };
-    std::string Type() const { return mType; };
-    TSeqPos SeqStart() const { return mSeqStart; };
-    TSeqPos SeqStop() const { return mSeqStop; };
-    ENa_strand SeqStrand() const { return mSeqStrand; };
+    const std::string& Source() const { return mSource; };
+    const std::string& Type() const { return mType; };
     bool IsSetScore() const { return mpScore; };
     double Score() const { return *mpScore; };
     bool IsSetFrame() const { return mpFrame; };
@@ -88,30 +83,18 @@ public:
     AttributeValueOf(
         const std::string&) const;
 
-    CRef<CSeq_id> 
-    SeqIdRef() const;
-
-    CRef<CSeq_loc> 
-    LocationRef() const;
+    const CSeq_loc& Location() const { return mLocation; };
 
     void
     AdjustFeatureType(
         const std::string& type) { mType = type; };
 
 protected:
-    void xSetSeqId(
-        const std::string&);
     void xSetSource(
         const std::string&);
     void xSetType(
         const std::string&);
-    void xSetSeqStart(
-        const std::string&);
-    void xSetSeqStop(
-        const std::string&);
     void xSetScore(
-        const std::string&);
-    void xSetSeqStrand(
         const std::string&);
     void xSetFrame(
         const std::string&);
@@ -124,15 +107,18 @@ protected:
     void xImportSplitAttribute(
         const std::string&);
 
+    void xSetLocation(
+        const std::string&,
+        const std::string&,
+        const std::string&,
+        const std::string&);
+
 protected:
-    const CIdResolver& mIdResolver;
-    string mSeqId;
-    string mSource;
-    string mType;
-    TSeqPos mSeqStart;
-    TSeqPos mSeqStop;
+    CSeq_loc mLocation;
+    //std::string mSeqId;
+    std::string mSource;
+    std::string mType;
     double* mpScore;
-    ENa_strand mSeqStrand;
     int* mpFrame;
 
     ATTRIBUTES mAttributes;

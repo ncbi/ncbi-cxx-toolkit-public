@@ -42,9 +42,7 @@ USING_SCOPE(objects);
 CGtfLineReader::CGtfLineReader(
     CNcbiIstream& istr):
 //  ============================================================================
-    CStreamLineReader(istr),
-    mLineNumber(0),
-    mRecordNumber(0),
+    CFeatLineReader(istr),
     mColumnDelimiter(""),
     mSplitFlags(0)
 {
@@ -53,17 +51,15 @@ CGtfLineReader::CGtfLineReader(
 //  ============================================================================
 bool
 CGtfLineReader::GetNextRecord(
-    CGtfImportData& record)
+    CFeatImportData& record)
 //  ============================================================================
 {
     string nextLine = "";
+
     while (!AtEOF()) {
         nextLine = *(++(*this));
         ++mLineNumber;
-        if (nextLine.empty()) {
-            continue;
-        }
-        if (NStr::StartsWith(nextLine, '#')) {
+        if (xIgnoreLine(nextLine)) {
             continue;
         }
         vector<string> columns;

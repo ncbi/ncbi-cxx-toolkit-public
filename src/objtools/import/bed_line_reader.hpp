@@ -31,35 +31,44 @@
 * ===========================================================================
 */
 
-#ifndef GTF_IMPORTER__HPP
-#define GTF_IMPORTER__HPP
+#ifndef BED_LINE_READER__HPP
+#define BED_LINE_READER__HPP
 
 #include <corelib/ncbifile.hpp>
-#include <objects/seq/Seq_annot.hpp>
+#include <util/line_reader.hpp>
 
-#include <objtools/import/feat_error_handler.hpp>
-#include <objtools/import/feat_importer.hpp>
-#include <objtools/import/id_resolver.hpp>
+#include "feat_line_reader.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CGtfImporter:
-    public CFeatImporter
+class CBedLineReader: 
+    public CFeatLineReader
 //  ============================================================================
 {
 public:
-    CGtfImporter( 
-        unsigned int);
+    CBedLineReader(
+        CNcbiIstream& istr);
 
-    virtual ~CGtfImporter();
+    virtual ~CBedLineReader() {};
+
+    virtual bool
+    GetNextRecord(
+        CFeatImportData&) override;
+
+protected:
+    bool
+    xProcessTrackLine(
+        const string&);
 
     void
-    ReadSeqAnnot(
-        CNcbiIstream&,
-        CSeq_annot&,
-        CFeatErrorHandler&) override;
+    xSplitLine(
+        const std::string&,
+        std::vector<std::string>&);
+
+    std::string mColumnDelimiter;
+    int mSplitFlags;
 };
 
 END_objects_SCOPE

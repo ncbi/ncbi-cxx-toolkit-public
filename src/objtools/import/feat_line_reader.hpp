@@ -31,35 +31,40 @@
 * ===========================================================================
 */
 
-#ifndef GTF_IMPORTER__HPP
-#define GTF_IMPORTER__HPP
+#ifndef FEAT_LINE_READER__HPP
+#define FEAT_LINE_READER__HPP
 
 #include <corelib/ncbifile.hpp>
-#include <objects/seq/Seq_annot.hpp>
+#include <util/line_reader.hpp>
 
-#include <objtools/import/feat_error_handler.hpp>
-#include <objtools/import/feat_importer.hpp>
-#include <objtools/import/id_resolver.hpp>
+#include "feat_import_data.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CGtfImporter:
-    public CFeatImporter
+class CFeatLineReader: protected CStreamLineReader
 //  ============================================================================
 {
 public:
-    CGtfImporter( 
-        unsigned int);
+    CFeatLineReader(
+        CNcbiIstream& istr);
+    virtual ~CFeatLineReader() {};
 
-    virtual ~CGtfImporter();
+    virtual bool
+    GetNextRecord(
+        CFeatImportData&) =0;
 
-    void
-    ReadSeqAnnot(
-        CNcbiIstream&,
-        CSeq_annot&,
-        CFeatErrorHandler&) override;
+    unsigned int LineCount() const { return mLineNumber; };
+    unsigned int RecordCount() const { return mRecordNumber; };
+
+protected:
+    virtual bool
+    xIgnoreLine(
+        const string&) const;
+
+    unsigned int mLineNumber;
+    unsigned int mRecordNumber;
 };
 
 END_objects_SCOPE

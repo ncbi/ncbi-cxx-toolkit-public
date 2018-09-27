@@ -31,58 +31,45 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
+#include <objects/general/Object_id.hpp>
+
 #include <objtools/import/feat_import_error.hpp>
-
-#include <objtools/import/feat_importer.hpp>
-
-#include "id_resolver_canonical.hpp"
-#include "gtf_importer.hpp"
-#include "bed_importer.hpp"
+#include "feat_import_data.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 //  ============================================================================
-CFeatImporter*
-CFeatImporter::Get(
-    const string& format,
-    unsigned int flags)
+CFeatImportData::CFeatImportData(
+    const CIdResolver& idResolver):
 //  ============================================================================
+    mIdResolver(idResolver)
 {
-    if (format == "gtf") {
-        return new CGtfImporter(flags);
-    }
-    if (format == "bed") {
-        return new CBedImporter(flags);
-    }
-    return nullptr;
-};
-
+}
 
 //  ============================================================================
-CFeatImporter::CFeatImporter(
-    unsigned int flags): mFlags(flags)
+CFeatImportData::CFeatImportData(
+    const CFeatImportData& rhs):
 //  ============================================================================
+    mIdResolver(rhs.mIdResolver)
 {
-    bool allIdsAsLocal = (mFlags & CFeatImporter::fAllIdsAsLocal);
-    bool numericIdsAsLocal = (mFlags & CFeatImporter::fNumericIdsAsLocal);
-    SetIdResolver(new CIdResolverCanonical(allIdsAsLocal, numericIdsAsLocal));
-};
-
-
-//  ============================================================================
-CFeatImporter::~CFeatImporter()
-//  ============================================================================
-{
-};
-
+}
 
 //  ============================================================================
 void
-CFeatImporter::SetIdResolver(
-    CIdResolver* pIdResolver)
-    //  ============================================================================
+CFeatImportData::InitializeFrom(
+    const vector<string>& columns)
+//  ============================================================================
 {
-    mpIdResolver.reset(pIdResolver);
+}
+
+//  ============================================================================
+void
+CFeatImportData::Serialize(
+    CNcbiOstream& out)
+//  ============================================================================
+{
+    out << "CFeatImportData:\n";
+    out << "\n";
 }
 

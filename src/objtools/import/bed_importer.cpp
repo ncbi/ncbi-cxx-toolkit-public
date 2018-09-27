@@ -33,45 +33,25 @@
 #include <corelib/ncbifile.hpp>
 #include <objtools/import/feat_import_error.hpp>
 
-#include <objtools/import/feat_importer.hpp>
-
-#include "id_resolver_canonical.hpp"
-#include "gtf_importer.hpp"
 #include "bed_importer.hpp"
+#include "bed_import_data.hpp"
+#include "bed_line_reader.hpp"
+#include "bed_annot_assembler.hpp"
+#include "id_resolver_canonical.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 //  ============================================================================
-CFeatImporter*
-CFeatImporter::Get(
-    const string& format,
-    unsigned int flags)
+CBedImporter::CBedImporter(
+    unsigned int flags): CFeatImporter(flags)
 //  ============================================================================
 {
-    if (format == "gtf") {
-        return new CGtfImporter(flags);
-    }
-    if (format == "bed") {
-        return new CBedImporter(flags);
-    }
-    return nullptr;
 };
 
 
 //  ============================================================================
-CFeatImporter::CFeatImporter(
-    unsigned int flags): mFlags(flags)
-//  ============================================================================
-{
-    bool allIdsAsLocal = (mFlags & CFeatImporter::fAllIdsAsLocal);
-    bool numericIdsAsLocal = (mFlags & CFeatImporter::fNumericIdsAsLocal);
-    SetIdResolver(new CIdResolverCanonical(allIdsAsLocal, numericIdsAsLocal));
-};
-
-
-//  ============================================================================
-CFeatImporter::~CFeatImporter()
+CBedImporter::~CBedImporter()
 //  ============================================================================
 {
 };
@@ -79,10 +59,28 @@ CFeatImporter::~CFeatImporter()
 
 //  ============================================================================
 void
-CFeatImporter::SetIdResolver(
-    CIdResolver* pIdResolver)
-    //  ============================================================================
-{
-    mpIdResolver.reset(pIdResolver);
-}
+CBedImporter::ReadSeqAnnot(
+    CNcbiIstream& istr,
+    CSeq_annot& annot,
+    CFeatErrorHandler& errorHandler)
+//  ============================================================================
+{ 
+    CBedLineReader lineReader(istr);
+    CBedAnnotAssembler annotAssembler(annot);
 
+    CBedImportData record(*mpIdResolver);
+    while (true) {
+        try {
+            if (!lineReader.GetNextRecord(record)) {
+                break;
+            }
+            //record.Serialize(cerr);
+            annotAssembler.ProcessRecord(record);
+        }
+        catch(CFeatureImportError& err) {
+            err.SetLineNumber(lineReader.LineCount());
+            errorHandler.HandleError(err);
+        }
+    }
+    annotAssembler.FinalizeAnnot();
+};

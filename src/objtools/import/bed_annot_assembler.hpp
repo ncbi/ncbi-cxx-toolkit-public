@@ -31,35 +31,40 @@
 * ===========================================================================
 */
 
-#ifndef GTF_IMPORTER__HPP
-#define GTF_IMPORTER__HPP
+#ifndef BED_ANNOT_ASSEMBLER__HPP
+#define BED_ANNOT_ASSEMBLER__HPP
 
 #include <corelib/ncbifile.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
-#include <objtools/import/feat_error_handler.hpp>
-#include <objtools/import/feat_importer.hpp>
-#include <objtools/import/id_resolver.hpp>
+#include "bed_import_data.hpp"
+
+class CFeatureIdGenerator;
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CGtfImporter:
-    public CFeatImporter
+class CBedAnnotAssembler
 //  ============================================================================
 {
 public:
-    CGtfImporter( 
-        unsigned int);
+    CBedAnnotAssembler(
+        CSeq_annot&);
 
-    virtual ~CGtfImporter();
+    virtual ~CBedAnnotAssembler();
 
     void
-    ReadSeqAnnot(
-        CNcbiIstream&,
-        CSeq_annot&,
-        CFeatErrorHandler&) override;
+    ProcessRecord(
+        const CBedImportData&);
+
+    void
+    FinalizeAnnot();
+
+protected:
+    CSeq_annot& mAnnot;
+    unique_ptr<CFeatureIdGenerator> mpIdGenerator;
 };
 
 END_objects_SCOPE

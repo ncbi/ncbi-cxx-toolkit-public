@@ -36,6 +36,8 @@
 #include <objtools/import/feat_import_error.hpp>
 #include "gtf_import_data.hpp"
 
+#include <assert.h>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -43,28 +45,26 @@ USING_SCOPE(objects);
 CGtfImportData::CGtfImportData(
     const CIdResolver& idResolver):
 //  ============================================================================
-    mIdResolver(idResolver),
+    CFeatImportData(idResolver),
     mpScore(nullptr),
     mpFrame(nullptr)
 {
+    mLocation.SetNull();
 }
 
 //  ============================================================================
 CGtfImportData::CGtfImportData(
     const CGtfImportData& rhs):
 //  ============================================================================
-    mIdResolver(rhs.mIdResolver),
-    mSeqId(rhs.mSeqId),
+    CFeatImportData(rhs),
     mSource(rhs.mSource),
     mType(rhs.mType),
-    mSeqStart(rhs.mSeqStart),
-    mSeqStop(rhs.mSeqStop),
     mpScore(nullptr),
-    mSeqStrand(rhs.mSeqStrand),
     mpFrame(nullptr),
     mGeneId(rhs.mGeneId),
     mTranscriptId(rhs.mTranscriptId)
 {
+    mLocation.Assign(rhs.mLocation);
 }
 
 //  ============================================================================
@@ -73,13 +73,10 @@ CGtfImportData::InitializeFrom(
     const vector<string>& columns)
     //  ============================================================================
 {
-    xSetSeqId(columns[0]);
+    xSetLocation(columns[0], columns[3], columns[4], columns[6]);
     xSetSource(columns[1]);
     xSetType(columns[2]);
-    xSetSeqStart(columns[3]);
-    xSetSeqStop(columns[4]);
     xSetScore(columns[5]);
-    xSetSeqStrand(columns[6]);
     xSetFrame(columns[7]);
     xSetAttributes(columns[8]);
 }
@@ -90,15 +87,20 @@ CGtfImportData::Serialize(
     CNcbiOstream& out)
 //  ============================================================================
 {
-    auto seqStrand = (mSeqStrand == eNa_strand_minus ? "minus" : "plus");
+    assert(mLocation.IsInt());
+    auto seqId = mLocation.GetInt().GetId().GetSeqIdString();
+    auto seqStart = mLocation.GetInt().GetFrom();
+    auto seqStop = mLocation.GetInt().GetTo();
+    auto seqStrand = (
+        mLocation.GetInt().GetStrand() == eNa_strand_minus ? "minus" : "plus");
     auto score = (mpScore ? NStr::DoubleToString(*mpScore) : "(not set)");
     auto frame = (mpFrame ? NStr::IntToString(*mpFrame) : "(not set)");
     out << "CGtfImportData:\n";
-    out << "  SeqId = \"" << mSeqId << "\"\n";
+    out << "  SeqId = \"" << seqId << "\"\n";
     out << "  Source = \"" << mSource << "\"\n";
     out << "  Type = \"" << mType << "\"\n";
-    out << "  SeqStart = " << mSeqStart << "\n";
-    out << "  SeqStop = " << mSeqStop << "\n";
+    out << "  SeqStart = " << seqStart << "\n";
+    out << "  SeqStop = " << seqStop << "\n";
     out << "  Score = " << score << "\n";
     out << "  SeqStrand = " << seqStrand << "\n";
     out << "  Frame = " << frame << "\n";
@@ -106,29 +108,6 @@ CGtfImportData::Serialize(
     out << "  transcript_id = \"" << mTranscriptId << "\"\n";
 
     out << "\n";
-}
-
-//  ============================================================================
-CRef<CSeq_id>
-CGtfImportData::SeqIdRef() const
-//  ============================================================================
-{
-    return mIdResolver(SeqId());
-}
-
-//  ============================================================================
-CRef<CSeq_loc>
-CGtfImportData::LocationRef() const
-//  ============================================================================
-{
-    CRef<CSeq_loc> pLocation(new CSeq_loc);
-    auto& featInt = pLocation->SetInt();
-
-    featInt.SetId(*SeqIdRef());
-    featInt.SetFrom(SeqStart());
-    featInt.SetTo(SeqStop());
-    featInt.SetStrand(SeqStrand());
-    return pLocation;
 }
 
 //  ============================================================================
@@ -146,11 +125,47 @@ CGtfImportData::AttributeValueOf(
     
 //  ============================================================================
 void
-CGtfImportData::xSetSeqId(
-    const string& seqId)
+CGtfImportData::xSetLocation(
+    const string& seqIdAsStr,
+    const string& seqStartAsStr,
+    const string& seqStopAsStr,
+    const string& seqStrandAsStr)
 //  ============================================================================
 {
-    mSeqId = seqId;
+    CFeatureImportError errorInvalidSeqStartValue(
+        CFeatureImportError::ERROR, "Invalid seqStart value");
+    CFeatureImportError errorInvalidSeqStopValue(
+        CFeatureImportError::ERROR, "Invalid seqStop value");
+    CFeatureImportError errorInvalidSeqStrandValue(
+        CFeatureImportError::ERROR, "Invalid seqStrand value");
+    TSeqPos seqStart(0), seqStop(0);
+    ENa_strand seqStrand(eNa_strand_plus);
+
+    try {
+        seqStart = NStr::StringToInt(seqStartAsStr)-1;
+    }
+    catch(std::exception&) {
+        throw errorInvalidSeqStartValue;
+    }
+    try {
+        seqStop = NStr::StringToInt(seqStopAsStr)-1;
+    }
+    catch(std::exception&) {
+        throw errorInvalidSeqStopValue;
+    }
+
+    vector<string> strandLegals = {".", "+", "-"};
+    if (find(strandLegals.begin(), strandLegals.end(), seqStrandAsStr) ==
+        strandLegals.end()) {
+        throw errorInvalidSeqStrandValue;
+    }
+    seqStrand = ((seqStrandAsStr == "-") ? eNa_strand_minus : eNa_strand_plus);
+
+    auto& featInt = mLocation.SetInt();
+    featInt.SetId(*mIdResolver(seqIdAsStr));
+    featInt.SetFrom(seqStart);
+    featInt.SetTo(seqStop);
+    featInt.SetStrand(seqStrand);
 }
 
 //  ============================================================================
@@ -188,62 +203,6 @@ CGtfImportData::xSetType(
         throw errorIllegalFeatureType;
     }
     mType = normalized;
-}
-
-//  ============================================================================
-void
-CGtfImportData::xSetSeqStart(
-    const string& seqStart)
-//  ============================================================================
-{
-    CFeatureImportError errorInvalidSeqStartValue(
-        CFeatureImportError::ERROR, "Invalid seqStart value");
-
-    try {
-        mSeqStart = NStr::StringToInt(seqStart)-1;
-    }
-    catch(std::exception&) {
-        throw errorInvalidSeqStartValue;
-    }
-}
-
-//  ============================================================================
-void
-CGtfImportData::xSetSeqStop(
-    const string& seqStop)
-//  ============================================================================
-{
-    CFeatureImportError errorInvalidSeqStopValue(
-        CFeatureImportError::ERROR, "Invalid seqStop value");
-
-    try {
-        mSeqStop = NStr::StringToInt(seqStop)-1;
-    }
-    catch(std::exception&) {
-        throw errorInvalidSeqStopValue;
-    }
-}
-
-//  ============================================================================
-void
-CGtfImportData::xSetSeqStrand(
-    const string& seqStrand)
-//  ============================================================================
-{
-    CFeatureImportError errorInvalidSeqStrandValue(
-        CFeatureImportError::ERROR, "Invalid seqStrand value");
-
-    vector<string> validSettings = {".", "+", "-"};
-    if (find(validSettings.begin(), validSettings.end(), seqStrand) ==
-            validSettings.end()) {
-        throw errorInvalidSeqStrandValue;
-    }
-    if (seqStrand == "-") {
-        mSeqStrand = eNa_strand_minus;
-    }
-    else {
-        mSeqStrand = eNa_strand_plus;
-    }
 }
 
 //  ============================================================================

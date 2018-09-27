@@ -31,8 +31,8 @@
 * ===========================================================================
 */
 
-#ifndef GTF_IMPORTER__HPP
-#define GTF_IMPORTER__HPP
+#ifndef BED_IMPORTER__HPP
+#define BED_IMPORTER__HPP
 
 #include <corelib/ncbifile.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -45,15 +45,15 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CGtfImporter:
+class CBedImporter:
     public CFeatImporter
 //  ============================================================================
 {
 public:
-    CGtfImporter( 
+    CBedImporter( 
         unsigned int);
 
-    virtual ~CGtfImporter();
+    virtual ~CBedImporter();
 
     void
     ReadSeqAnnot(

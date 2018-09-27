@@ -31,35 +31,40 @@
 * ===========================================================================
 */
 
-#ifndef GTF_IMPORTER__HPP
-#define GTF_IMPORTER__HPP
+#ifndef FEAT_IMPORT_DATA__HPP
+#define FEAT_IMPORT_DATA__HPP
 
 #include <corelib/ncbifile.hpp>
-#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqloc/Na_strand.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
-#include <objtools/import/feat_error_handler.hpp>
-#include <objtools/import/feat_importer.hpp>
 #include <objtools/import/id_resolver.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CGtfImporter:
-    public CFeatImporter
+class CFeatImportData
 //  ============================================================================
 {
 public:
-    CGtfImporter( 
-        unsigned int);
+    CFeatImportData(
+        const CIdResolver&);
 
-    virtual ~CGtfImporter();
+    CFeatImportData(
+        const CFeatImportData& rhs);
 
-    void
-    ReadSeqAnnot(
-        CNcbiIstream&,
-        CSeq_annot&,
-        CFeatErrorHandler&) override;
+    virtual ~CFeatImportData() {};
+
+    virtual void InitializeFrom(
+        const std::vector<std::string>&);
+
+    virtual void Serialize(
+        CNcbiOstream&);
+
+protected:
+    const CIdResolver& mIdResolver;
 };
 
 END_objects_SCOPE

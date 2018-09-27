@@ -69,8 +69,11 @@ CGtfImporter::ReadSeqAnnot(
     CGtfAnnotAssembler annotAssembler(annot);
 
     CGtfImportData record(*mpIdResolver);
-    while (lineReader.GetNextRecord(record)) {
+    while (true) {
         try {
+            if (!lineReader.GetNextRecord(record)) {
+                break;
+            }
             annotAssembler.ProcessRecord(record);
         }
         catch(CFeatureImportError& err) {

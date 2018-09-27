@@ -31,35 +31,45 @@
 * ===========================================================================
 */
 
-#ifndef GTF_IMPORTER__HPP
-#define GTF_IMPORTER__HPP
+#ifndef FEATID_GENERATOR__HPP
+#define FEATID_GENERATOR__HPP
 
 #include <corelib/ncbifile.hpp>
-#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
-#include <objtools/import/feat_error_handler.hpp>
-#include <objtools/import/feat_importer.hpp>
-#include <objtools/import/id_resolver.hpp>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-//  ============================================================================
-class CGtfImporter:
-    public CFeatImporter
-//  ============================================================================
+//  ========================================================================
+class CFeatureIdGenerator
+//  ========================================================================
 {
+protected:
+    map<string, int> mIdCounter;
+
 public:
-    CGtfImporter( 
-        unsigned int);
+    CFeatureIdGenerator() {};
+    ~CFeatureIdGenerator() {};
 
-    virtual ~CGtfImporter();
+    //  --------------------------------------------------------------------
+    CRef<CFeat_id>
+        GetIdFor(
+            const string& recType)
+        //  --------------------------------------------------------------------
+    {
+        auto typeIt = mIdCounter.find(recType);
+        if (typeIt == mIdCounter.end()) {
+            mIdCounter[recType] = 0;
+        }
+        ++mIdCounter[recType];
 
-    void
-    ReadSeqAnnot(
-        CNcbiIstream&,
-        CSeq_annot&,
-        CFeatErrorHandler&) override;
+        CRef<CFeat_id> pId(new CFeat_id);
+        pId->SetLocal().SetStr(recType + "_" + NStr::IntToString(
+            mIdCounter[recType]));
+        return pId;
+    };
 };
 
 END_objects_SCOPE

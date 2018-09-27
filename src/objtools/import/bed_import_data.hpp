@@ -31,40 +31,90 @@
 * ===========================================================================
 */
 
-#ifndef GTF_LINE_READER__HPP
-#define GTF_LINE_READER__HPP
+#ifndef BED_IMPORT_DATA__HPP
+#define BED_IMPORT_DATA__HPP
 
 #include <corelib/ncbifile.hpp>
-#include <util/line_reader.hpp>
+#include <objects/seqloc/Na_strand.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
-#include "feat_line_reader.hpp"
+//#include <util/line_reader.hpp>
+
+#include "feat_import_data.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CGtfLineReader: 
-    public CFeatLineReader
+class CBedImportData:
+    public CFeatImportData
 //  ============================================================================
 {
 public:
-    CGtfLineReader(
-        CNcbiIstream& istr);
+    struct RgbValue {
+        int R; int G; int B;
+        RgbValue(int r=0, int g=0, int b=0): R(r), G(g), B(b) {};
+    };
 
-    virtual ~CGtfLineReader() {};
+    CBedImportData(
+        const CIdResolver&);
 
-    virtual bool
-    GetNextRecord(
-        CFeatImportData&) override;
+    CBedImportData(
+        const CBedImportData& rhs);
+
+    virtual ~CBedImportData() {};
+
+    virtual void InitializeFrom(
+        const std::vector<std::string>&) override;
+
+    virtual void Serialize(
+        CNcbiOstream&) override;
+
+    const CSeq_loc& ChromLocation() const { return mChromLocation; };
+    const std::string& Name() const { return mName; };
+    int Score() const { return mScore; };
+    const CSeq_loc& ThickLocation() const { return mThickLocation; };
+    const RgbValue& Rgb() const { return mRgb; };
+    const CSeq_loc& BlocksLocation() const { return mBlocksLocation; };
+    
 
 protected:
     void
-    xSplitLine(
+    xSetChromLocation(
         const std::string&,
-        std::vector<std::string>&);
+        const std::string&,
+        const std::string&);
+    void
+    xSetName(
+        const std::string&);
+    void
+    xSetScore(
+        const std::string&);
+    void
+    xSetStrand(
+        const std::string&);
+    void
+    xSetThickLocation(
+        const std::string&,
+        const std::string&);
+    void
+    xSetRgb(
+        const std::string&,
+        const std::string&);
 
-    std::string mColumnDelimiter;
-    int mSplitFlags;
+    void
+    xSetBlocks(
+        const std::string&,
+        const std::string&,
+        const std::string&);
+
+    CSeq_loc mChromLocation;
+    std::string mName;
+    int mScore;
+    CSeq_loc mThickLocation;
+    RgbValue mRgb;
+    CSeq_loc mBlocksLocation;
 };
 
 END_objects_SCOPE

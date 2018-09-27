@@ -31,58 +31,34 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
+
 #include <objtools/import/feat_import_error.hpp>
-
-#include <objtools/import/feat_importer.hpp>
-
-#include "id_resolver_canonical.hpp"
-#include "gtf_importer.hpp"
-#include "bed_importer.hpp"
+#include "feat_line_reader.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 //  ============================================================================
-CFeatImporter*
-CFeatImporter::Get(
-    const string& format,
-    unsigned int flags)
+CFeatLineReader::CFeatLineReader(
+    CNcbiIstream& istr):
 //  ============================================================================
+    CStreamLineReader(istr),
+    mLineNumber(0),
+    mRecordNumber(0)
 {
-    if (format == "gtf") {
-        return new CGtfImporter(flags);
-    }
-    if (format == "bed") {
-        return new CBedImporter(flags);
-    }
-    return nullptr;
-};
-
-
-//  ============================================================================
-CFeatImporter::CFeatImporter(
-    unsigned int flags): mFlags(flags)
-//  ============================================================================
-{
-    bool allIdsAsLocal = (mFlags & CFeatImporter::fAllIdsAsLocal);
-    bool numericIdsAsLocal = (mFlags & CFeatImporter::fNumericIdsAsLocal);
-    SetIdResolver(new CIdResolverCanonical(allIdsAsLocal, numericIdsAsLocal));
-};
-
-
-//  ============================================================================
-CFeatImporter::~CFeatImporter()
-//  ============================================================================
-{
-};
-
-
-//  ============================================================================
-void
-CFeatImporter::SetIdResolver(
-    CIdResolver* pIdResolver)
-    //  ============================================================================
-{
-    mpIdResolver.reset(pIdResolver);
 }
 
+//  ============================================================================
+bool
+CFeatLineReader::xIgnoreLine(
+    const string& line) const
+//  ============================================================================
+{
+    if (line.empty()) {
+        return true;
+    }
+    if (NStr::StartsWith(line, "#")) {
+        return true;
+    }
+    return false;
+}

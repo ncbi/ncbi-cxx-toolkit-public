@@ -156,7 +156,13 @@ CFeatImportApp::Run(void)
     }
     errorHandler.Dump(cerr);
 
-    ostr << MSerial_Format_AsnText() << annot;
+    if (annot.IsFtable()) {
+        ostr << MSerial_Format_AsnText() << annot;
+    }
+    else {
+        cerr << "The input file \"" << args["input"].AsString() 
+             << "\" does not contain any recognizable features.\n";
+    }
     return 0;
 }
 
@@ -183,6 +189,7 @@ CFeatImportApp::xGetInputFormat(
     CFormatGuess fg(istr);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eGtf);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eGffAugustus);
+    fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eBed);
     fg.GetFormatHints().DisableAllNonpreferred();
 
     switch(fg.GuessFormat()) {
@@ -191,6 +198,8 @@ CFeatImportApp::xGetInputFormat(
     case CFormatGuess::eGtf:
     case CFormatGuess::eGffAugustus:
         return "gtf";
+    case CFormatGuess::eBed:
+        return "bed";
     }
 }
   

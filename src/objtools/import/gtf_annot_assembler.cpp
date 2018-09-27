@@ -41,15 +41,17 @@
 #include <objects/seqloc/Seq_interval.hpp>
 
 #include <objtools/import/feat_import_error.hpp>
-
+#include "featid_generator.hpp"
 #include "gtf_annot_assembler.hpp"
+
+#include <assert.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-//  ============================================================================
+//  ========================================================================
 class CFeatureMap
-//  ============================================================================
+//  ========================================================================
 {
 protected:
     using FEATKEY = pair<string, string>;
@@ -180,59 +182,6 @@ public:
 };
 
 //  ============================================================================
-class CFeatureIdGenerator
-//  ============================================================================
-{
-protected:
-    map<string, int> mIdCounter;
-
-public:
-    CFeatureIdGenerator() {};
-    ~CFeatureIdGenerator() {};
-
-    //  ------------------------------------------------------------------------
-    CRef<CFeat_id>
-    GetIdFor(
-        const CGtfImportData& record)
-    //  ------------------------------------------------------------------------
-    {
-        return GetIdFor(record.Type());
-    };
-
-    //  ------------------------------------------------------------------------
-    CRef<CFeat_id>
-    GetIdFor(
-        const string& recType)
-    //  ------------------------------------------------------------------------
-    {
-        map<string, string> typeMap = {
-            {"exon", "mrna"},
-            {"initial", "mrna"},
-            {"internal", "mrna"},
-            {"terminal", "mrna"},
-            {"start_codon", "cds"},
-            {"stop_codon", "cds"},
-        };
-        string mappedType(recType);
-        auto it = typeMap.find(recType);
-        if (it != typeMap.end()) {
-            mappedType = it->second;
-        }
-
-        auto typeIt = mIdCounter.find(mappedType);
-        if (typeIt == mIdCounter.end()) {
-            mIdCounter[mappedType] = 0;
-        }
-        ++mIdCounter[mappedType];
-
-        CRef<CFeat_id> pId(new CFeat_id);
-        pId->SetLocal().SetStr(mappedType + "_" + NStr::IntToString(
-            mIdCounter[mappedType]));
-        return pId;
-    };
-};
-
-//  ============================================================================
 CGtfAnnotAssembler::CGtfAnnotAssembler(
     CSeq_annot& annot):
 //  ============================================================================
@@ -349,15 +298,19 @@ CGtfAnnotAssembler::xUpdateGene(
     CRef<CSeq_feat>& pGene)
     //  ============================================================================
 {
+    assert(record.Location().IsInt());
+
     if (record.Type() == "gene") {
         xFeatureUpdateLocation(record, pGene);
         return;
     }
+    const auto& recordInt = record.Location().GetInt();
     const auto& featureInt = pGene->GetLocation().GetInt();
+
     pGene->SetLocation().SetInt().SetFrom(
-        min(record.SeqStart(), featureInt.GetFrom()));
+        min(recordInt.GetFrom(), featureInt.GetFrom()));
     pGene->SetLocation().SetInt().SetTo(
-        max(record.SeqStop(), featureInt.GetTo()));
+        max(recordInt.GetTo(), featureInt.GetTo()));
 }
 
 //  ============================================================================
@@ -476,7 +429,20 @@ CGtfAnnotAssembler::xFeatureSetFeatId(
     CRef<CSeq_feat>& pFeature)
 //  ============================================================================
 {
-    pFeature->SetId(*mpIdGenerator->GetIdFor(record));
+    map<string, string> typeMap = {
+        {"exon", "mrna"},
+        {"initial", "mrna"},
+        {"internal", "mrna"},
+        {"terminal", "mrna"},
+        {"start_codon", "cds"},
+        {"stop_codon", "cds"},
+    };
+    string mappedType(record.Type());
+    auto it = typeMap.find(record.Type());
+    if (it != typeMap.end()) {
+        mappedType = it->second;
+    }
+    pFeature->SetId(*mpIdGenerator->GetIdFor(mappedType));
 }
 
 //  ============================================================================
@@ -488,7 +454,7 @@ CGtfAnnotAssembler::xFeatureSetLocation(
 {
     record.Type() == "mrna" ?
         pFeature->SetLocation().SetNull() :
-        pFeature->SetLocation().Assign(*record.LocationRef());
+        pFeature->SetLocation().Assign(record.Location());
 }
 
 //  ============================================================================
@@ -503,9 +469,8 @@ CGtfAnnotAssembler::xFeatureUpdateLocation(
         return;
     }
     const auto& debug = pFeature->GetLocation();
-    CRef<CSeq_loc> pRecLocation = record.LocationRef();
     CRef<CSeq_loc> pUpdatedLocation = pFeature->GetLocation().Add(
-        *pRecLocation, CSeq_loc::fSortAndMerge_All, nullptr);
+        record.Location(), CSeq_loc::fSortAndMerge_All, nullptr);
     pFeature->SetLocation().Assign(*pUpdatedLocation);
 }
 

@@ -31,58 +31,86 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
+
 #include <objtools/import/feat_import_error.hpp>
-
-#include <objtools/import/feat_importer.hpp>
-
-#include "id_resolver_canonical.hpp"
-#include "gtf_importer.hpp"
-#include "bed_importer.hpp"
+#include "bed_line_reader.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 //  ============================================================================
-CFeatImporter*
-CFeatImporter::Get(
-    const string& format,
-    unsigned int flags)
+CBedLineReader::CBedLineReader(
+    CNcbiIstream& istr):
+//  ============================================================================
+    CFeatLineReader(istr),
+    mColumnDelimiter(""),
+    mSplitFlags(0)
+{
+}
+
+//  ============================================================================
+bool
+CBedLineReader::GetNextRecord(
+    CFeatImportData& record)
 //  ============================================================================
 {
-    if (format == "gtf") {
-        return new CGtfImporter(flags);
+    string nextLine = "";
+    while (!AtEOF()) {
+        nextLine = *(++(*this));
+        ++mLineNumber;
+        if (xIgnoreLine(nextLine)) {
+            continue;
+        }
+        if (xProcessTrackLine(nextLine)) {
+            continue;
+        } 
+        vector<string> columns;
+        xSplitLine(nextLine, columns);
+        record.InitializeFrom(columns);
+        ++mRecordNumber;
+        return true;
     }
-    if (format == "bed") {
-        return new CBedImporter(flags);
+    return false;
+}
+
+//  ============================================================================
+bool
+CBedLineReader::xProcessTrackLine(
+    const string& line)
+//  ============================================================================
+{
+    if (!NStr::StartsWith(line, "track")) {
+        return false;
     }
-    return nullptr;
-};
-
-
-//  ============================================================================
-CFeatImporter::CFeatImporter(
-    unsigned int flags): mFlags(flags)
-//  ============================================================================
-{
-    bool allIdsAsLocal = (mFlags & CFeatImporter::fAllIdsAsLocal);
-    bool numericIdsAsLocal = (mFlags & CFeatImporter::fNumericIdsAsLocal);
-    SetIdResolver(new CIdResolverCanonical(allIdsAsLocal, numericIdsAsLocal));
-};
-
-
-//  ============================================================================
-CFeatImporter::~CFeatImporter()
-//  ============================================================================
-{
-};
-
+    cerr << "track line\n";
+    return true;
+}
 
 //  ============================================================================
 void
-CFeatImporter::SetIdResolver(
-    CIdResolver* pIdResolver)
-    //  ============================================================================
+CBedLineReader::xSplitLine(
+    const string& line,
+    vector<string>& columns)
+//  ============================================================================
 {
-    mpIdResolver.reset(pIdResolver);
-}
+    CFeatureImportError errorInvalidColumnCount(
+        CFeatureImportError::CRITICAL, "Invalid column count");
 
+    columns.clear();
+    if (mColumnDelimiter.empty()) {
+        mColumnDelimiter = "\t";
+        mSplitFlags = 0;
+        NStr::Split(line, mColumnDelimiter, columns, mSplitFlags);
+        if (columns.size() == 12) {
+            return;
+        }
+        columns.clear();
+        mColumnDelimiter = " \t";
+        mSplitFlags = NStr::fSplit_MergeDelimiters;
+    }
+    NStr::Split(line, mColumnDelimiter, columns, mSplitFlags);
+    if (columns.size() == 12) {
+        return;
+    }
+    throw errorInvalidColumnCount;
+}
