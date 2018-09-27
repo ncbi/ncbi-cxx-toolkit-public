@@ -49,12 +49,6 @@ public:
     virtual ~IObjtoolsListener(void) = default;
 
     virtual bool PutMessage(const IObjtoolsMessage& message) = 0;
-
-    virtual void PutProgress(const string& message,
-            const Uint8 num_done=0,
-            const Uint8 num_total=0) = 0;
-
-    virtual size_t Count(void) const = 0;
 };
 
 
