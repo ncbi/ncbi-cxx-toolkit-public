@@ -286,7 +286,6 @@ private:
     void x_ApplyMods(CAutoInitRef<CSeq_hist>& hist);
     // void x_ApplyMods(CAutoInitRef<CSubmit_block>& sb);
     void x_ApplyTPAMods(CAutoInitRef<CUser_object>& tpa);
-    void x_ApplySRAMods(CAutoAddDBLink& sra);
     void x_ApplyGenomeProjectsDBMods(CAutoInitRef<CUser_object>& gpdb);
     void x_AddPCRPrimers(CAutoInitRef<CPCRReactionSet>& pcr_reaction_set);
     void x_ApplyDBLinkMods(CBioseq& bioseq);

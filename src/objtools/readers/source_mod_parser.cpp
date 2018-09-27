@@ -687,13 +687,7 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism, CConstRe
         }
     }}
 
-    {{
-        CAutoAddDBLink sra(seq, "Sequence Read Archive");
-        x_ApplySRAMods(sra);
-    }}
-
     x_ApplyDBLinkMods(seq);
-
 
     {{
         CAutoInitRef<CUser_object> gpdb;
@@ -1449,7 +1443,15 @@ void CSourceModParser::x_ApplyTPAMods(CAutoInitRef<CUser_object>& tpa)
 
 static CRef<CSeqdesc> s_SetDBLinkDesc(CBioseq& bioseq) 
 {
-    for (auto pDesc : bioseq.SetDescr().Set()) {
+    CConstRef<CBioseq_set> pParentSet = bioseq.GetParentSet();
+    CSeq_descr& descriptors = (pParentSet &&
+                               pParentSet->GetClass() == CBioseq_set::eClass_nuc_prot) ?
+
+        (const_cast<CBioseq_set&>(*pParentSet)).SetDescr() :
+        bioseq.SetDescr();
+
+
+    for (auto pDesc : descriptors.Set()) {
         if (pDesc->IsUser() && pDesc->GetUser().IsDBLink()) {
             return pDesc;
         }
@@ -1457,7 +1459,7 @@ static CRef<CSeqdesc> s_SetDBLinkDesc(CBioseq& bioseq)
 
     auto pDBLinkDesc = Ref(new CSeqdesc());
     pDBLinkDesc->SetUser().SetObjectType(CUser_object::eObjectType_DBLink);
-    bioseq.SetDescr().Set().push_back(pDBLinkDesc);
+    descriptors.Set().push_back(pDBLinkDesc);
     return pDBLinkDesc;
 }
 
@@ -1526,6 +1528,10 @@ void CSourceModParser::x_ApplyDBLinkMods(CBioseq& bioseq)
 {
     CRef<CSeqdesc> pDBLinkDesc;
     const SMod* mod = NULL;
+    if ((mod = FindMod(s_Mod_SRA)) != NULL) {
+        s_SetDBLinkField("Sequence Read Archive", mod->value, pDBLinkDesc, bioseq);
+    }
+
     if ((mod = FindMod(s_Mod_bioproject)) != NULL) {
         s_SetDBLinkField("BioProject", mod->value, pDBLinkDesc, bioseq);
     }
@@ -1533,31 +1539,6 @@ void CSourceModParser::x_ApplyDBLinkMods(CBioseq& bioseq)
     if ((mod = FindMod(s_Mod_biosample)) != NULL) {
         s_SetDBLinkField("BioSample", mod->value, pDBLinkDesc, bioseq);
     }
-}
-
-
-void CSourceModParser::x_ApplySRAMods(CAutoAddDBLink& sra_obj)
-{
-    auto range = FindAllMods(s_Mod_SRA);
-    for (auto it = range.first; it != range.second ; it++)
-    {
-        const SMod& mod = *it;
-
-        list<CTempString> sras;
-        NStr::Split(mod.value, ",", sras, NStr::fSplit_MergeDelimiters);
-
-        if (!sras.empty())
-        {
-            for (auto& sra : sras)
-            {
-                sra = NStr::TruncateSpaces_Unsafe(sra);
-                if (!sra.empty())
-                  sra_obj.Get().SetData().SetStrs().push_back(sra);
-            }
-        }
-    }
-    if (sra_obj.IsInitialised())
-        sra_obj.Get().SetNum(int(sra_obj.Get().GetData().GetStrs().size()));
 }
 
 
