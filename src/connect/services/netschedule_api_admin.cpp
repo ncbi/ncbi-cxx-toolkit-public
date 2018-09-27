@@ -52,11 +52,22 @@ void CNetScheduleAdmin::SwitchToDrainMode(ESwitch on_off)
 void CNetScheduleAdmin::ShutdownServer(
     CNetScheduleAdmin::EShutdownLevel level)
 {
-    string cmd(level == eDie ? "SHUTDOWN SUICIDE" :
+    const auto die = level == eDie;
+    string cmd(die ? "SHUTDOWN SUICIDE" :
             level == eShutdownImmediate ? "SHUTDOWN IMMEDIATE" :
                     level == eDrain ? "SHUTDOWN drain=1" : "SHUTDOWN");
     g_AppendClientIPSessionIDHitID(cmd);
-    m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
+
+    const auto retry_mode = die ? SNetServiceImpl::SRetry::eNoRetry : SNetServiceImpl::SRetry::eDefault;
+    auto retry_guard = m_Impl->m_API->m_Service->CreateRetryGuard(retry_mode);
+
+    try {
+        m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
+    }
+    catch (CNetSrvConnException& ex)
+    {
+        if ((ex.GetErrCode() != CNetSrvConnException::eConnClosedByServer) || !die) throw;
+    }
 }
 
 
