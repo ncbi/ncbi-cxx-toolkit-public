@@ -909,7 +909,7 @@ CConn_MemoryStream::CConn_MemoryStream(BUF        buf,
                                                          ? 1/*true*/
                                                          : 0/*false*/),
                                 eIO_Unknown),
-                     0, buf_size, 0,
+                     kInfiniteTimeout/*0*/, buf_size, 0/*flags*/,
                      0, BUF_Size(buf)),
       m_Ptr(0)
 {
@@ -922,7 +922,7 @@ CConn_MemoryStream::CConn_MemoryStream(const void* ptr,
                                        EOwnership  owner,
                                        size_t      buf_size)
     : CConn_IOStream(TConn_Pair(MEMORY_CreateConnector(), eIO_Unknown),
-                     0, buf_size, 0,
+                     kInfiniteTimeout/*0*/, buf_size, 0/*flags*/,
                      (CT_CHAR_TYPE*) ptr, size),
       m_Ptr(owner == eTakeOwnership ? ptr : 0)
 {
