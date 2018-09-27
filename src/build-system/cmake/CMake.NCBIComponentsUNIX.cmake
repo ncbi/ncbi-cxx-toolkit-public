@@ -52,7 +52,7 @@ option(USE_LOCAL_PCRE "Use a local copy of libpcre")
 #
 set(NCBI_TOOLS_ROOT $ENV{NCBI})
 if (EXISTS ${NCBI_TOOLS_ROOT})
-    set(_NCBI_DEFAULT_PACKAGE_SEARCH_PATH "${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/ncbi-defaults")
+    set(_NCBI_DEFAULT_PACKAGE_SEARCH_PATH "${NCBI_TREE_CMAKECFG}/ncbi-defaults")
     set(CMAKE_PREFIX_PATH
         ${CMAKE_PREFIX_PATH}
         ${_NCBI_DEFAULT_PACKAGE_SEARCH_PATH}
@@ -105,18 +105,18 @@ endif()
 #
 # Framework for dealing with external libraries
 #
-include(${top_src_dir}/src/build-system/cmake/FindExternalLibrary.cmake)
+include(${NCBI_TREE_CMAKECFG}/FindExternalLibrary.cmake)
 
 ############################################################################
 #
 # PCRE additions
 #
-include(${top_src_dir}/src/build-system/cmake/CMakeChecks.pcre.cmake)
+include(${NCBI_TREE_CMAKECFG}/CMakeChecks.pcre.cmake)
 
 ############################################################################
 #
 # Compression libraries
-include(${top_src_dir}/src/build-system/cmake/CMakeChecks.compress.cmake)
+include(${NCBI_TREE_CMAKECFG}/CMakeChecks.compress.cmake)
 
 #################################
 # Some platform-specific system libs that can be linked eventually
@@ -270,7 +270,7 @@ find_external_library(Mysql INCLUDES mysql/mysql.h LIBS mysqlclient EXTRALIBS ${
 ############################################################################
 #
 # BerkeleyDB
-include(${top_src_dir}/src/build-system/cmake/CMakeChecks.BerkeleyDB.cmake)
+include(${NCBI_TREE_CMAKECFG}/CMakeChecks.BerkeleyDB.cmake)
 
 # ODBC
 # FIXME: replace with native CMake check
@@ -289,7 +289,7 @@ find_external_library(Python
 ############################################################################
 #
 # Boost settings
-include(${top_src_dir}/src/build-system/cmake/CMakeChecks.boost.cmake)
+include(${NCBI_TREE_CMAKECFG}/CMakeChecks.boost.cmake)
 
 ############################################################################
 #
@@ -363,7 +363,7 @@ endif()
 ############################################################################
 #
 # wxWidgets
-include(${top_src_dir}/src/build-system/cmake/CMakeChecks.wxwidgets.cmake)
+include(${NCBI_TREE_CMAKECFG}/CMakeChecks.wxwidgets.cmake)
 
 # Fast-CGI
 set(_fcgi_version "fcgi-2.4.0")
@@ -507,12 +507,12 @@ find_external_library(hdf5
 ############################################################################
 #
 # SQLite3
-include(${top_src_dir}/src/build-system/cmake/CMakeChecks.sqlite3.cmake)
+include(${NCBI_TREE_CMAKECFG}/CMakeChecks.sqlite3.cmake)
 
 ############################################################################
 #
 # Various image-format libraries
-include(${top_src_dir}/src/build-system/cmake/CMakeChecks.image.cmake)
+include(${NCBI_TREE_CMAKECFG}/CMakeChecks.image.cmake)
 
 #############################################################################
 ## MongoDB
@@ -810,7 +810,7 @@ if (PYTHONINTERP_FOUND)
         set(PYTHON3 ${PYTHON_EXECUTABLE})
         set(CD_REPORTER "/am/ncbiapdata/bin/cd_reporter")
         set(abs_top_srcdir ${abs_top_src_dir})
-        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/run_with_cd_reporter.py.in ${build_root}/build-system/run_with_cd_reporter.py)
+        configure_file(${NCBI_TREE_BUILDCFG}/run_with_cd_reporter.py.in ${build_root}/build-system/run_with_cd_reporter.py)
 
         # copy to build_root and set executable permissions (workaround because configure_file doesn't set permissions)
         file(COPY ${build_root}/build-system/run_with_cd_reporter.py DESTINATION ${build_root}

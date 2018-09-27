@@ -76,6 +76,8 @@ OPTIONS:
                     examples:   --with-targets='datatool;xcgi$'
   --with-ccache              -- use ccache if available
   --with-distcc              -- use distcc if available
+  --with-install='DIR'       -- generate rules for installation into 'DIR' directory
+                    examples:   --with-install='/usr/CPP toolkit'
   --without-experimental     -- disable experimental configuration
   --with-generator='X'       -- use generator X
 EOF
@@ -165,6 +167,9 @@ while [ $# != 0 ]; do
         project_targets="${tree_root}/$project_targets"
       fi
       ;; 
+    --with-install=*)
+      install_path=${1#*=}
+      ;; 
     *) 
       Error "unknown option: $1" 
       ;; 
@@ -200,6 +205,9 @@ fi
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_LIST=$(Quote "${project_list}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TAGS=$(Quote "${project_tags}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TARGETS=$(Quote "${project_targets}")"
+if [ -n "$install_path" ]; then
+  CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_INSTALL_PATH=$(Quote "${install_path}")"
+fi
 CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
 CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
 if test "$generator" = "Xcode"; then

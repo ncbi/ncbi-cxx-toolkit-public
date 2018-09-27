@@ -47,6 +47,8 @@ OPTIONS:
                     examples:   --with-tags='*;-test'
   --with-targets='names'     -- build projects which have allowed names only
                     examples:   --with-targets='datatool;xcgi$'
+  --with-install='DIR'       -- generate rules for installation into 'DIR' directory
+                    examples:   --with-install='/usr/CPP toolkit'
 EOF
 
   generatorfound=""
@@ -111,6 +113,9 @@ while [ $# != 0 ]; do
         project_targets="${tree_root}/$project_targets"
       fi
       ;; 
+    --with-install=*)
+      install_path=${1#*=}
+      ;; 
     *) 
       Error "unknown option: $1" 
       ;; 
@@ -133,6 +138,9 @@ CMAKE_ARGS="-DNCBI_EXPERIMENTAL=ON -G Xcode"
 CMAKE_ARGS="$CMAKE_ARGS -DNCBI_PTBCFG_PROJECT_LIST=$(Quote "${project_list}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TAGS=$(Quote "${project_tags}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TARGETS=$(Quote "${project_targets}")"
+if [ -n "$install_path" ]; then
+  CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_INSTALL_PATH=$(Quote "${install_path}")"
+fi
 CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
 
 build_root=CMake-${CC_NAME}${CC_VERSION}

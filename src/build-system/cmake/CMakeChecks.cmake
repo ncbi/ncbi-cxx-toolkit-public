@@ -29,6 +29,7 @@ set(NCBI_DIRNAME_COMMON_INCLUDE  common)
 set(NCBI_DIRNAME_CFGINC          inc)
 set(NCBI_DIRNAME_INTERNAL        internal)
 set(NCBI_DIRNAME_BUILD           build)
+set(NCBI_DIRNAME_EXPORT          cmake)
 set(NCBI_DIRNAME_BUILDCFG ${NCBI_DIRNAME_SRC}/build-system)
 set(NCBI_DIRNAME_CMAKECFG ${NCBI_DIRNAME_SRC}/build-system/cmake)
 
@@ -110,8 +111,13 @@ if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
         else()
             set(_prebuilt_loc ${_prebuilt_loc}/static)
         endif()
+    else()
+        set(_prebuilt_loc "CMake-${NCBI_COMPILER}${NCBI_COMPILER_VERSION}-${CMAKE_BUILD_TYPE}")
+        if (BUILD_SHARED_LIBS)
+            set(_prebuilt_loc ${_prebuilt_loc}DLL)
+        endif()
     endif()
-    set(NCBI_EXTERNAL_BUILD_ROOT  ${NCBI_EXTERNAL_TREE_ROOT}/${_prebuilt_loc}/cmake)
+    set(NCBI_EXTERNAL_BUILD_ROOT  ${NCBI_EXTERNAL_TREE_ROOT}/${_prebuilt_loc}/${NCBI_DIRNAME_EXPORT})
 
     if (IS_DIRECTORY ${NCBI_EXTERNAL_TREE_ROOT}/${NCBI_DIRNAME_INCLUDE})
         set(_ext_includedir0 ${NCBI_EXTERNAL_TREE_ROOT}/${NCBI_DIRNAME_INCLUDE})
@@ -288,8 +294,10 @@ if (NCBI_EXPERIMENTAL_CFG)
         set(SYBASE_PATH "")
 
         set(NCBI_SIGNATURE "${NCBI_COMPILER}_${NCBI_COMPILER_VERSION}-${NCBI_BUILD_TYPE}--${HOST_CPU}-${HOST_OS_WITH_VERSION}-${_local_host_name}")
-        configure_file(${NCBI_SRC_ROOT}/build-system/cmake/config.cmake.h.in ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_CFGINC}/ncbiconf_unix.h)
-        configure_file(${NCBI_SRC_ROOT}/corelib/ncbicfg.c.in ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/corelib/ncbicfg.c)
+        configure_file(${NCBI_TREE_CMAKECFG}/config.cmake.h.in ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_CFGINC}/ncbiconf_unix.h)
+        if (EXISTS ${NCBI_SRC_ROOT}/corelib/ncbicfg.c.in)
+            configure_file(${NCBI_SRC_ROOT}/corelib/ncbicfg.c.in ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/corelib/ncbicfg.c)
+        endif()
     endif()
 
 else (NCBI_EXPERIMENTAL_CFG)
@@ -309,21 +317,21 @@ configure_file(${includedir}/common/ncbi_build_ver.h.in ${includedir}/common/ncb
 # OS-specific generated header configs
 if (UNIX)
     message(STATUS "Generating ${build_root}/inc/ncbiconf_unix.h...")
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/config.cmake.h.in ${build_root}/inc/ncbiconf_unix.h)
+    configure_file(${NCBI_TREE_CMAKECFG}/config.cmake.h.in ${build_root}/inc/ncbiconf_unix.h)
     set(_os_specific_config ${build_root}/inc/ncbiconf_unix.h)
 endif(UNIX)
 
 if (WIN32)
     message(STATUS "Generating ${build_root}/inc/ncbiconf_msvc.h...")
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/config.cmake.h.in ${build_root}/inc/ncbiconf_msvc.h)
+    configure_file(${NCBI_TREE_CMAKECFG}/config.cmake.h.in ${build_root}/inc/ncbiconf_msvc.h)
     message(STATUS "Generating ${includedir}/common/config/ncbiconf_msvc_site.h...")
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/ncbiconf_msvc_site.h.in ${includedir}/common/config/ncbiconf_msvc_site.h)
+    configure_file(${NCBI_TREE_CMAKECFG}/ncbiconf_msvc_site.h.in ${includedir}/common/config/ncbiconf_msvc_site.h)
     set(_os_specific_config ${build_root}/inc/ncbiconf_msvc.h ${includedir}/common/config/ncbiconf_msvc_site.h)
 endif (WIN32)
 
 if (APPLE AND NOT UNIX) #XXX 
     message(STATUS "Generating ${build_root}/inc/ncbiconf_xcode.h...")
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/build-system/cmake/config.cmake.h.in ${build_root}/inc/ncbiconf_xcode.h)
+    configure_file(${NCBI_TREE_CMAKECFG}/config.cmake.h.in ${build_root}/inc/ncbiconf_xcode.h)
     set(_os_specific_config ${build_root}/inc/ncbiconf_xcode.h)
 endif (APPLE AND NOT UNIX)
 
@@ -346,5 +354,5 @@ endif (NCBI_EXPERIMENTAL_CFG)
 
 #
 # Dump our final diagnostics
-include(${top_src_dir}/src/build-system/cmake/CMakeChecks.final-message.cmake)
+include(${NCBI_TREE_CMAKECFG}/CMakeChecks.final-message.cmake)
 

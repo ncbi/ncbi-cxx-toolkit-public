@@ -1220,32 +1220,42 @@ endfunction()
 function(NCBI_internal_install_root)
 
     file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${NCBI_BUILD_ROOT}")
-    foreach(_cfg ${CMAKE_CONFIGURATION_TYPES})
-        install(EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
-            CONFIGURATIONS ${_cfg}
-            DESTINATION ${_dest}/cmake
+    if (WIN32 OR XCODE)
+        foreach(_cfg ${CMAKE_CONFIGURATION_TYPES})
+            install(EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
+                CONFIGURATIONS ${_cfg}
+                DESTINATION ${_dest}/${NCBI_DIRNAME_EXPORT}
+                FILE ${NCBI_PTBCFG_INSTALL_EXPORT}.cmake
+            )
+        endforeach()
+    else()
+        install(EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}
+            DESTINATION ${_dest}/${NCBI_DIRNAME_EXPORT}
             FILE ${NCBI_PTBCFG_INSTALL_EXPORT}.cmake
         )
-    endforeach()
+    endif()
 
 # install headers
     get_property(_all_subdirs GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR)
     list(APPEND _all_subdirs ${NCBI_DIRNAME_COMMON_INCLUDE})
     foreach(_dir IN LISTS _all_subdirs)
-        install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION include)
+        install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}
+            REGEX "/[.].*$" EXCLUDE)
     endforeach()
     file(GLOB _files LIST_DIRECTORIES false "${NCBI_INC_ROOT}/*")
-    install( FILES ${_files} DESTINATION include)
+    install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_INCLUDE})
 
 # install sources?
     # TODO
 
     file(GLOB _files LIST_DIRECTORIES false "${NCBI_TREE_BUILDCFG}/*")
     install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_BUILDCFG})
-    install( DIRECTORY ${NCBI_TREE_CMAKECFG} DESTINATION ${NCBI_DIRNAME_BUILDCFG})
+    install( DIRECTORY ${NCBI_TREE_CMAKECFG} DESTINATION ${NCBI_DIRNAME_BUILDCFG}
+            REGEX "/[.].*$" EXCLUDE)
 
     file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${NCBI_BUILD_ROOT}")
-    install( DIRECTORY ${NCBI_CFGINC_ROOT} DESTINATION "${_dest}")
+    install( DIRECTORY ${NCBI_CFGINC_ROOT} DESTINATION "${_dest}"
+            REGEX "/[.].*$" EXCLUDE)
 endfunction()
 
 ##############################################################################
@@ -1307,7 +1317,7 @@ function(NCBI_internal_install_target)
     else()
         install(
             TARGETS ${NCBI_PROJECT}
-            DESTINATION ${_dest}/${NCBI_BUILD_TYPE}
+            DESTINATION ${_dest}
             EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}
         )
     endif()
