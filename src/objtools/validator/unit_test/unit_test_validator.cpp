@@ -7657,7 +7657,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("OTM");
     ambig.push_back("LP");
     ambig.push_back("SME");
-    ambig.push_back("OSU");
     ambig.push_back("PEM");
     ambig.push_back("UMF");
     ambig.push_back("CIS");
@@ -7711,7 +7710,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("CUMZ");
     ambig.push_back("CRE");
     ambig.push_back("FSC");
-    ambig.push_back("CHAS");
     ambig.push_back("ENCB");
     ambig.push_back("BAS");
     ambig.push_back("GOE");
