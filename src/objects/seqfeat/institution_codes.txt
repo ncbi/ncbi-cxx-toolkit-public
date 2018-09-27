@@ -148,18 +148,18 @@ ALTA	s	University of Alberta, Biological Sciences Department
 ALTB	s	University of Barnaul, Altai State University			
 ALU	s	Alabama Museum of Natural History			
 ALUH	s	Alzahra University			
-AM	sb		AMS		
-AM:Arachnology	s	, Invertebrate Collections: Arachnology	
-AM:EBU	sb	, Evolutionary Biology Unit Tissue Collection		
-AM:Entomology	s	, Invertebrate Collections: Entomology	
-AM:Herpetology	s	, Vertebrate Collections: Herpetology		
-AM:Ichthyology	s	, Vertebrate Collections: Ichthyology		
-AM:Malacology	s	, Invertebrate Collections: Malacology		
-AM:Mammalogy	s	, Vertebrate Collections: Mammalogy		
-AM:Marine_Invertebrates	s	, Invertebrate Collections: Marine and other invertebrates		
-AM:Mineralogy	s	, Earth Sciences: Mineralogy and Petrology Collection		
-AM:Ornithology	s	, Vertebrate Collections: Ornithology		
-AM:Palaeontology	s	, Palaeontology Collection		
+AM	sb	Australian Museum	AMS		
+AM:Arachnology	s	Australian Museum, Invertebrate Collections: Arachnology	
+AM:EBU	sb	Australian Museum, Evolutionary Biology Unit Tissue Collection		
+AM:Entomology	s	Australian Museum, Invertebrate Collections: Entomology	
+AM:Herpetology	s	Australian Museum, Vertebrate Collections: Herpetology		
+AM:Ichthyology	s	Australian Museum, Vertebrate Collections: Ichthyology		
+AM:Malacology	s	Australian Museum, Invertebrate Collections: Malacology		
+AM:Mammalogy	s	Australian Museum, Vertebrate Collections: Mammalogy		
+AM:Marine_Invertebrates	s	Australian Museum, Invertebrate Collections: Marine and other invertebrates		
+AM:Mineralogy	s	Australian Museum, Earth Sciences: Mineralogy and Petrology Collection		
+AM:Ornithology	s	Australian Museum, Vertebrate Collections: Ornithology		
+AM:Palaeontology	s	Australian Museum, Palaeontology Collection		
 AM<ARG>	s	Acatushun Museum at the Estancia Haberton			
 AM<BLG>	s	Asenovgrad Paleontology Museum			
 AMAL	s	Anniston Museum of Natural History			
@@ -806,11 +806,11 @@ CAS:DS	s	California Academy of Sciences, Dudley Stanford Collection
 CAS:EGG	s	California Academy of Sciences, Egg & Nest Collection		
 CAS:ENT	s	California Academy of Sciences, Entomology collection	
 CAS:HERP	s	California Academy of Sciences, Herpetology collection	http://collections.calacademy.org/herp/specimen/CAS:HERP:&spec;
-CAS:ICH	s	California Academy of Sciences, Ichthyology collection		
+CAS:ICH	s	California Academy of Sciences, Ichthyology collection	
 CAS:IU	s	California Academy of Sciences, Indiana University fish collection		
 CAS:IZ	s	California Academy of Sciences, Invertebrate Zoology collection	
-CAS:MAM	s	California Academy of Sciences, Mammalogy Collection		
-CAS:ORN	s	California Academy of Sciences, Ornithology Collection		
+CAS:MAM	s	California Academy of Sciences, Mammalogy Collection	
+CAS:ORN	s	California Academy of Sciences, Ornithology Collection	
 CAS:SU	s	California Academy of Sciences, Stanford University Collection of fish		
 CAS:SUA	s	California Academy of Sciences, Stanford University Collection of amphibians		
 CAS:SUR	s	California Academy of Sciences, Stanford University Collection of reptiles		
@@ -1234,6 +1234,10 @@ CNWGRGL	b	Chinese National Waterfowl Germplasm Resources Gene Library
 CO	s	Museum National d'Histoire Naturelle, Department of Marine Biology			
 COA	s	Herbario, Universidad de Cordoba - Jardin Botanico de Cordoba			
 COA<USA-ME>	s	College of the Atlantic, Museum			
+COA<USA-ME>:Birds	s	College of the Atlantic, Museum, Birds collection	
+COA<USA-ME>:Eggs	s	College of the Atlantic, Museum, Eggs Collection	
+COA<USA-ME>:Herps	s	College of the Atlantic, Museum, Herpetology Collection	
+COA<USA-ME>:Mammal	s	College of the Atlantic, Museum, Mammals collection	
 COAD	c	Colecao Octavio de Almeida Drumond			
 COAH	s	Herbario Amazonico Colombiano (Instituto Amazonico de Investigaciones Cientificas SINCHI)	COAH<IH>		
 COCA	s	Comision Tecnico Consultiva de Coeficientes de Agostadero (COTECOCA)			
@@ -1347,7 +1351,7 @@ CSGT	s	Collegio San Giuseppe
 CSH	s	Shanghai Chenshan Botanical Garden			
 CSIR	c	Council for Scientific and Industrial Research			
 CSIRO	s	Commonwealth Science & Industrial Research Organization			
-CSIRO:Ichthyology	s	Commonwealth Science & Industrial Research Organization, Australian National Fish Collection		
+CSIRO:Ichthyology	s	Commonwealth Science & Industrial Research Organization, Australian National Fish Collection	
 CSJ	s	Colegio de San Jose, Museo de Historia Natural, Medellin			
 CSLA	s	California State University,Los Angeles			
 CSLB	s	California State University at Long Beach			
@@ -1583,8 +1587,8 @@ DMNH<USA-DE>	s	Delaware Museum of Natural History
 DMNH<USA-DE>:Bird	s	Delaware Museum of Natural History, Birds collection	
 DMNH<USA-OH>	s	Dayton Museum of Natural History, Biology Department			
 DMNS	s	Denver Museum of Nature and Science	DMNH<USA-CO>,DNHC		
-DMNS:Bird	s	Denver Museum of Nature and Science, Ornithology Collections		
-DMNS:Mamm	s	Denver Museum of Nature and Science, Mammology Collection		
+DMNS:Bird	s	Denver Museum of Nature and Science, Ornithology Collections	
+DMNS:Mamm	s	Denver Museum of Nature and Science, Mammology Collection	
 DMNS:Para	s	Denver Museum of Nature and Science, Parasite collection		
 DMPMC	c	Department of Microbiology, University of Western Australia			
 DMSA	s	Durban Museum	DMSA		
@@ -1967,11 +1971,11 @@ FMM	s	Muzeum Beskyd
 FMNH	s	Field Museum of Natural History	CMNH<USA-IL>		
 FMNH:ARTH	s	Field Museum of Natural History, Arthropod Collection		
 FMNH:AVES	s	Field Museum of Natural History, Ornithology Collection		
-FMNH:F	s	Field Museum of Natural History, Botany Department		
-FMNH:HERP	s	Field Museum of Natural History, Herpetology Collection		
+FMNH:F	s	Field Museum of Natural History, Botany Department	
+FMNH:HERP	s	Field Museum of Natural History, Herpetology Collection	
 FMNH:ICHTHY	s	Field Museum of Natural History, Ichthyology Collection		
 FMNH:INVRT	s	Field Museum of Natural History, Invertebrate Collection		
-FMNH:MAMM	s	Field Museum of Natural History, Mammal Collection		
+FMNH:MAMM	s	Field Museum of Natural History, Mammal Collection	
 FMNH<FIN>	s	Finnish Museum of Natural History			
 FMP	s	Fujian Academy of Traditional Chinese Medicine and Pharmacology			
 FMPC	s	Fairbanks Museum and Planetarium Collection			
@@ -2558,6 +2562,10 @@ HSP	s	Instituto Cientifico Michael Owen Dillon
 HSS	s	Development, Technological and Investigacion Service, Forest Production Department			
 HSTM	s	Universidade Federal do Oeste do Para			
 HSU<USA-CA>	s	Humboldt State University			
+HSU<USA-CA>:Amphibian	s	Humboldt State University, Amphibian Collection	
+HSU<USA-CA>:Birds	s	Humboldt State University, Birds collection	
+HSU<USA-CA>:Mammal	s	Humboldt State University, Mammals collection	
+HSU<USA-CA>:Reptile	s	Humboldt State University, Reptile collection	
 HSU<USA-TX>	s	Hardin-Simmons University, Biology Department			
 HSUCV	s	Hardin-Simmons University, Collection of Vertebrates			
 HSUD	s	Station of Nature Research and Environmental Education			
@@ -3041,6 +3049,8 @@ ISTF	s	Istanbul University, Botany Department
 ISTO	s	University of Istanbul, Orman Fakueltesi			
 ISTPM	s	Institut Scientifique et Technique des Peches Maritimes			
 ISU<USA-IL>	s	Illinois State University, Biological Sciences Department			
+ISU<USA-IL>:Birds	s	Illinois State University, Biological Sciences Department, Birds Collection	
+ISU<USA-IL>:Mammal	s	Illinois State University, Biological Sciences Department, Mammals Collection	
 ISU<USA-IN>	s	Indiana State University			
 ISUC	s	Normal, Illinois State University			
 ISUI	s	Iowa State University			
@@ -3668,11 +3678,11 @@ LSU	s	Louisiana State University, Biological Sciences Department	LSUM
 LSUHC	s	La Sierra University, Herpetological Collection			
 LSUM	s	Louisiana State University, Biological Sciences Department	LSU		
 LSUMZ	s	Louisiana State University, Musuem of Zoology	LSUMNS		
-LSUMZ:FrozenTissue	s	Louisiana State University, Musuem of Zoology, Frozen Tissue Collection		
-LSUMZ:Herpetology	s	Louisiana State University, Musuem of Zoology, Herpetology Collection		
-LSUMZ:Ichthyology	s	Louisiana State University, Musuem of Zoology, Ichthyology Collection		
-LSUMZ:Mammalogy	s	Louisiana State University, Musuem of Zoology, Mammal Collection		
-LSUMZ:Ornithology	s	Louisiana State University, Musuem of Zoology, Bird Collection		
+LSUMZ:FrozenTissue	s	Louisiana State University, Musuem of Zoology, Frozen Tissue Collection	
+LSUMZ:Herpetology	s	Louisiana State University, Musuem of Zoology, Herpetology Collection	
+LSUMZ:Ichthyology	s	Louisiana State University, Musuem of Zoology, Ichthyology Collection	
+LSUMZ:Mammalogy	s	Louisiana State University, Musuem of Zoology, Mammal Collection	
+LSUMZ:Ornithology	s	Louisiana State University, Musuem of Zoology, Bird Collection	
 LSUS	s	Museum of Life Sciences, Louisiana State University			
 LT	s	Universite de Montreal			
 LTB	s	La Trobe University, Botany Department			
@@ -6019,17 +6029,96 @@ SMDB	s	Universidade Federal de Santa Maria, Departamento de Biologia
 SME<FRA>	s	Station Marine d'Endoume			
 SME<GBR>	s	Sedgwick Museum of Geology			
 SMF<DEU>	s	Forschungsinstitut und NaturMuseum Senckenberg			
+SMF<DEU>:Amphibia fossil	s	Forschungsinstitut und NaturMuseum Senckenberg, Amphibia fossil Collection		
+SMF<DEU>:Anatomie	s	Forschungsinstitut und NaturMuseum Senckenberg, Anatomie Collection		
+SMF<DEU>:Arachnologie	s	Forschungsinstitut und NaturMuseum Senckenberg, Arachnologie Collection		
+SMF<DEU>:Arachnologie fossil	s	Forschungsinstitut und NaturMuseum Senckenberg, Arachnologie fossil Collection		
+SMF<DEU>:Aschelminthes	s	Forschungsinstitut und NaturMuseum Senckenberg, Aschelminthes Collection		
+SMF<DEU>:Aves fossil	s	Forschungsinstitut und NaturMuseum Senckenberg, Aves fossil Collection		
+SMF<DEU>:Bernstein	s	Forschungsinstitut und NaturMuseum Senckenberg, Bernstein Collection		
+SMF<DEU>:Brachiopoda fossil	s	Forschungsinstitut und NaturMuseum Senckenberg, Brachiopoda fossil Collection		
+SMF<DEU>:Bryozoa	s	Forschungsinstitut und NaturMuseum Senckenberg, Bryozoa Collection		
+SMF<DEU>:Chaetognatha	s	Forschungsinstitut und NaturMuseum Senckenberg, Chaetognatha Collection		
+SMF<DEU>:Clitellata	s	Forschungsinstitut und NaturMuseum Senckenberg, Clitellata Collection		
+SMF<DEU>:Cnidaria	s	Forschungsinstitut und NaturMuseum Senckenberg, Cnidaria Collection		
+SMF<DEU>:Cnidaria fossil	s	Forschungsinstitut und NaturMuseum Senckenberg, Cnidaria fossil Collection		
+SMF<DEU>:Coleoptera	s	Forschungsinstitut und NaturMuseum Senckenberg, Coleoptera Collection		
+SMF<DEU>:Copepoda	s	Forschungsinstitut und NaturMuseum Senckenberg, Copepoda Collection		
+SMF<DEU>:Crustacea	s	Forschungsinstitut und NaturMuseum Senckenberg, Crustacea Collection		
+SMF<DEU>:Ctenophora	s	Forschungsinstitut und NaturMuseum Senckenberg, Ctenophora Collection		
+SMF<DEU>:Diptera	s	Forschungsinstitut und NaturMuseum Senckenberg, Diptera Collection		
+SMF<DEU>:Echinodermata	s	Forschungsinstitut und NaturMuseum Senckenberg, Echinodermata Collection		
+SMF<DEU>:Echinodermata fossil	s	Forschungsinstitut und NaturMuseum Senckenberg, Echinodermata fossil Collection		
+SMF<DEU>:Echiura	s	Forschungsinstitut und NaturMuseum Senckenberg, Echiura Collection		
+SMF<DEU>:Ephemeroptera	s	Forschungsinstitut und NaturMuseum Senckenberg, Ephemeroptera Collection		
+SMF<DEU>:Foraminifera	s	Forschungsinstitut und NaturMuseum Senckenberg, Foraminifera Collection		
+SMF<DEU>:Graptolithina fossil	s	Forschungsinstitut und NaturMuseum Senckenberg, Graptolithina fossil Collection		
+SMF<DEU>:Hemichordata	s	Forschungsinstitut und NaturMuseum Senckenberg, Hemichordata Collection		
+SMF<DEU>:Herpetologie	s	Forschungsinstitut und NaturMuseum Senckenberg, Herpetologie Collection		
+SMF<DEU>:Hunsruckschiefer	s	Forschungsinstitut und NaturMuseum Senckenberg, Hunsruckschiefer Collection	
+SMF<DEU>:Hymenoptera	s	Forschungsinstitut und NaturMuseum Senckenberg, Hymenoptera Collection		
+SMF<DEU>:Hyolithen	s	Forschungsinstitut und NaturMuseum Senckenberg, Hyolithen Collection		
+SMF<DEU>:Ichthyologie	s	Forschungsinstitut und NaturMuseum Senckenberg, Ichthyologie Collection		
+SMF<DEU>:Insecta fossil	s	Forschungsinstitut und NaturMuseum Senckenberg, Insecta fossil Collection		
+SMF<DEU>:Lepidoptera	s	Forschungsinstitut und NaturMuseum Senckenberg, Lepidoptera Collection		
+SMF<DEU>:Loricifera	s	Forschungsinstitut und NaturMuseum Senckenberg, Loricifera Collection		
+SMF<DEU>:Malakologie	s	Forschungsinstitut und NaturMuseum Senckenberg, Malakologie Collection		
+SMF<DEU>:Mammalia fossil Grossauger	s	Forschungsinstitut und NaturMuseum Senckenberg, Mammalia fossil Grossauger Collection	
+SMF<DEU>:Mammalia fossil Kleinsauger	s	Forschungsinstitut und NaturMuseum Senckenberg, Mammalia fossil Kleinsauger Collection	
+SMF<DEU>:Mammalogie	s	Forschungsinstitut und NaturMuseum Senckenberg, Mammalogie Collection		
+SMF<DEU>:Mantodea	s	Forschungsinstitut und NaturMuseum Senckenberg, Mantodea Collection		
+SMF<DEU>:Mineralogie	s	Forschungsinstitut und NaturMuseum Senckenberg, Mineralogie Collection		
+SMF<DEU>:Myriapoda	s	Forschungsinstitut und NaturMuseum Senckenberg, Myriapoda Collection		
+SMF<DEU>:Nemertini	s	Forschungsinstitut und NaturMuseum Senckenberg, Nemertini Collection		
+SMF<DEU>:Odonata	s	Forschungsinstitut und NaturMuseum Senckenberg, Odonata Collection		
+SMF<DEU>:Onychophora	s	Forschungsinstitut und NaturMuseum Senckenberg, Onychophora Collection		
+SMF<DEU>:Ornithologie-Alkohol	s	Forschungsinstitut und NaturMuseum Senckenberg, Ornithologie-Alkohol Collection		
+SMF<DEU>:Ornithologie-Balge	s	Forschungsinstitut und NaturMuseum Senckenberg, Ornithologie-Balge Collection	
+SMF<DEU>:Ornithologie-Skelette	s	Forschungsinstitut und NaturMuseum Senckenberg, Ornithologie-Skelette Collection		
+SMF<DEU>:Orthoptera	s	Forschungsinstitut und NaturMuseum Senckenberg, Orthoptera Collection		
+SMF<DEU>:Ostracoda	s	Forschungsinstitut und NaturMuseum Senckenberg, Ostracoda Collection		
+SMF<DEU>:Otolithen	s	Forschungsinstitut und NaturMuseum Senckenberg, Otolithen Collection		
+SMF<DEU>:Palaoanthropologie	s	Forschungsinstitut und NaturMuseum Senckenberg, Palaoanthropologie Collection	
+SMF<DEU>:Palaoherpetologie	s	Forschungsinstitut und NaturMuseum Senckenberg, Palaoherpetologie Collection	
+SMF<DEU>:Pantopoda	s	Forschungsinstitut und NaturMuseum Senckenberg, Pantopoda Collection		
+SMF<DEU>:Pentastomida	s	Forschungsinstitut und NaturMuseum Senckenberg, Pentastomida Collection		
+SMF<DEU>:Phoronida	s	Forschungsinstitut und NaturMuseum Senckenberg, Phoronida Collection		
+SMF<DEU>:Pisces fossil	s	Forschungsinstitut und NaturMuseum Senckenberg, Pisces fossil Collection		
+SMF<DEU>:Plathelminthes	s	Forschungsinstitut und NaturMuseum Senckenberg, Plathelminthes Collection		
+SMF<DEU>:Plecoptera	s	Forschungsinstitut und NaturMuseum Senckenberg, Plecoptera Collection		
+SMF<DEU>:Polychaeta	s	Forschungsinstitut und NaturMuseum Senckenberg, Polychaeta Collection		
+SMF<DEU>:Porifera	s	Forschungsinstitut und NaturMuseum Senckenberg, Porifera Collection		
+SMF<DEU>:Reptilia fossil	s	Forschungsinstitut und NaturMuseum Senckenberg, Reptilia fossil Collection		
+SMF<DEU>:Sedimentologie	s	Forschungsinstitut und NaturMuseum Senckenberg, Sedimentologie Collection		
+SMF<DEU>:Sipuncula	s	Forschungsinstitut und NaturMuseum Senckenberg, Sipuncula Collection		
+SMF<DEU>:Strepsiptera	s	Forschungsinstitut und NaturMuseum Senckenberg, Strepsiptera Collection		
+SMF<DEU>:Stromatolithen	s	Forschungsinstitut und NaturMuseum Senckenberg, Stromatolithen Collection		
+SMF<DEU>:Tardigrada	s	Forschungsinstitut und NaturMuseum Senckenberg, Tardigrada Collection		
+SMF<DEU>:Tentakulita fossil	s	Forschungsinstitut und NaturMuseum Senckenberg, Tentakulita fossil Collection		
+SMF<DEU>:Thysanoptera	s	Forschungsinstitut und NaturMuseum Senckenberg, Thysanoptera Collection		
+SMF<DEU>:Trichoptera	s	Forschungsinstitut und NaturMuseum Senckenberg, Trichoptera Collection		
+SMF<DEU>:Trilobita	s	Forschungsinstitut und NaturMuseum Senckenberg, Trilobita Collection		
+SMF<DEU>:Tunicata	s	Forschungsinstitut und NaturMuseum Senckenberg, Tunicata Collection		
+SMF<DEU>:Xiphosura	s	Forschungsinstitut und NaturMuseum Senckenberg, Xiphosura Collection		
 SMF<PER>	s	Universidad Nacional Mayor de San Marcos			
 SMH	s	Saint Meinrad College of Liberal Arts, Biology Department			
 SMI	s	Prince Rupert Forest Region, Research Section			
 SMIP	c	Secao de Maricultura			
 SMJM	s	Sabah Museum	SBM		
 SMK	s	Sarawak Museum	SM,SMSM		
+SMK:Mesozoa	s	Sarawak Museum, Mesozoa Collection		
 SMKM	s	Selangor Museum			
 SMM	s	Science Museum of Minnesota	SMPM		
 SMMC	s	Second Military Medical College			
 SMN	s	Simao District National Medical and Pharmaceutical Institute			
 SMNG	s	Senckenberg Museum fuer Naturkunde Goerlitz			
+SMNG:Acari fossil	s	Senckenberg Museum fuer Naturkunde Goerlitz, Acari fossil Collection		
+SMNG:Arachnologie	s	Senckenberg Museum fuer Naturkunde Goerlitz, Arachnologie Collection		
+SMNG:Collembola	s	Senckenberg Museum fuer Naturkunde Goerlitz, Collembola Collection		
+SMNG:Heteroptera	s	Senckenberg Museum fuer Naturkunde Goerlitz, Heteroptera Collection		
+SMNG:Malakologie	s	Senckenberg Museum fuer Naturkunde Goerlitz, Malakologie Collection		
+SMNG:Orthoptera	s	Senckenberg Museum fuer Naturkunde Goerlitz, Orthoptera Collection		
+SMNG:Siphonaptera fossil	s	Senckenberg Museum fuer Naturkunde Goerlitz, Siphonaptera fossil Collection		
 SMNH<CAN>	s	Saskatchewan Museum of Natural History			
 SMNH<ISR>	s	Steinhardt Museum of Natural History			
 SMNH<SWE>	s	Swedish Museum of Natural History	NRM		
@@ -6072,7 +6161,17 @@ SNOMNH	s	Sam Nobel Oklahoma Museum of Natural History
 SNP<MYS>	s	Sabah Parks, Botany Section			
 SNPH	s	Sehlabathebe National Park			
 SNSD	s	Senckenberg Natural History Collections Dresden, Museum of Zoology			
+SNSD:Arachnida	s	Senckenberg Natural History Collections Dresden, Museum of Zoology, Arachnida Collection		
+SNSD:Crustacea	s	Senckenberg Natural History Collections Dresden, Museum of Zoology, Crustacea Collection		
+SNSD:Hemiptera	s	Senckenberg Natural History Collections Dresden, Museum of Zoology, Hemiptera Collection		
+SNSD:Herpetologie	s	Senckenberg Natural History Collections Dresden, Museum of Zoology, Herpetologie Collection		
+SNSD:Ichthyologie	s	Senckenberg Natural History Collections Dresden, Museum of Zoology, Ichthyologie Collection		
+SNSD:Lepidoptera	s	Senckenberg Natural History Collections Dresden, Museum of Zoology, Lepidoptera Collection		
+SNSD:Malakologie	s	Senckenberg Natural History Collections Dresden, Museum of Zoology, Malakologie Collection		
+SNSD:Mammalogie	s	Senckenberg Natural History Collections Dresden, Museum of Zoology, Mammalogie Collection		
 SNSD:Moll	s	Senckenberg Natural History Collections Dresden, Museum of Zoology, 		
+SNSD:Myriapoda	s	Senckenberg Natural History Collections Dresden, Museum of Zoology, Myriapoda Collection		
+SNSD:Ornithologie	s	Senckenberg Natural History Collections Dresden, Museum of Zoology, Ornithologie Collection		
 SNU	s	Seoul National University, School of Biological Sciences			
 SNUA	s	Seoul National University, The Arboretum			
 SNW	s	Shropshire and North Wales Natural History and Antiquarian Society			
@@ -6706,11 +6805,11 @@ UESS	s	Universidad de El Salvador
 UEVH	s	Universidade de Evora, Departamento de Biologia			
 UF	sb	University of Florida Museum of Natural History	FLMNH		
 UF/FGS	s	Florida Geological Survey			
-UF:Herpetology	s	University of Florida Museum of Natural History, Herpetology Collection		
-UF:Ichthyology	s	University of Florida Museum of Natural History, Fish Collection		
+UF:Herpetology	s	University of Florida Museum of Natural History, Herpetology Collection	
+UF:Ichthyology	s	University of Florida Museum of Natural History, Fish Collection	
 UF:Invertebrate	s	University of Florida Museum of Natural History, Invertebrate Zoology and Malacology Collection		
 UF:Mammalogy	s	University of Florida Museum of Natural History, Mammalogy Collection	
-UF:Ornithology	s	University of Florida Museum of Natural History, Ornithology Skins and Skeletons Collection		
+UF:Ornithology	s	University of Florida Museum of Natural History, Ornithology Skins and Skeletons Collection	
 UF:Porifera	s	University of Florida Museum of Natural History, 		
 UFA	s	Ufa Scientific Centre, Russian Academy of Sciences			
 UFACPZ	s	Universidade Federal do Acre/Parque Zoobotanico			
@@ -7606,6 +7705,13 @@ ZMA:POR	s	Universiteit van Amsterdam, Zoologisch Museum, Porifera collection
 ZMAN	s	Instituut voor Taxonomische Zoologie, Zoologisch Museum			
 ZMAU	s	Zoological Museum Andhra University			
 ZMB	s	Zoologisches Museum der Humboldt-Universitat zu Berlin	ZMHU		
+ZMB:Bryozoa	s	Zoologisches Museum der Humboldt-Universitat zu Berlin, Bryozoa Collection	
+ZMB:Cnidaria	s	Zoologisches Museum der Humboldt-Universitat zu Berlin, Cnidaria Collection	
+ZMB:Crustacea	s	Zoologisches Museum der Humboldt-Universitat zu Berlin, Crustacea Collection	
+ZMB:Echinodermata	s	Zoologisches Museum der Humboldt-Universitat zu Berlin, Echinodermata Collection	
+ZMB:Hydrozoa	s	Zoologisches Museum der Humboldt-Universitat zu Berlin, Hydrozoa Collection	
+ZMB:Porifera	s	Zoologisches Museum der Humboldt-Universitat zu Berlin, Porifera Collection	
+ZMB:Vermes	s	Zoologisches Museum der Humboldt-Universitat zu Berlin, Vermes Collection	
 ZMBJ	s	Banding Zoological Museum			
 ZMBN	s	Museum of Zoology at the University of Bergen, Invertebrate Collection	BMBN		
 ZMC	s	Deptment of Biology, Zunyi Medical College			
