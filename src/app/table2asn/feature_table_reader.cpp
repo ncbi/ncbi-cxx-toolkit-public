@@ -81,6 +81,7 @@
 #include "utils.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
+#include <unordered_set>
 
 BEGIN_NCBI_SCOPE
 
@@ -670,25 +671,45 @@ CConstRef<CSeq_feat> CFeatureTableReader::_GetLinkedFeature(const CSeq_feat& cd_
 static void s_AppendProtRefInfo(CProt_ref& current_ref, const CProt_ref& other_ref)
 {
     if (other_ref.IsSetName()) {
+        unordered_set<string> name_set;
+        if (current_ref.IsSetName()) {
+            for (const auto& name : current_ref.GetName()) {
+                name_set.insert(name);
+            }
+        }
         for (const auto& name : other_ref.GetName()) {
-            current_ref.SetName().push_back(name);
+            if (name_set.find(name) == name_set.end()) {
+                current_ref.SetName().push_back(name);
+            }
         }
     }
 
-    if (other_ref.IsSetDesc() &&
-        !current_ref.IsSetDesc()) {
-        current_ref.SetDesc(other_ref.GetDesc());
-    }
-
     if (other_ref.IsSetEc()) {
+        unordered_set<string> ec_set;
+        if (current_ref.IsSetEc()) {
+            for (const auto& ec : current_ref.GetEc()) {
+                ec_set.insert(ec);
+            }
+        }
         for (const auto& ec : other_ref.GetEc()) {
-            current_ref.SetEc().push_back(ec);
+            if (ec_set.find(ec) == ec_set.end()) {
+                current_ref.SetEc().push_back(ec);
+            }
         }
     }
 
     if (other_ref.IsSetActivity()) {
+        unordered_set<string> activity_set;
+        if (current_ref.IsSetActivity()) {
+            for (const auto& activity : current_ref.GetActivity()) {
+                activity_set.insert(activity);
+            }
+        }
+
         for (const auto& activity : other_ref.GetActivity()) {
-            current_ref.SetActivity().push_back(activity);
+            if (activity_set.find(activity) == activity_set.end()) {
+                current_ref.SetActivity().push_back(activity);
+            }
         }
     }
 
@@ -714,6 +735,8 @@ static void s_SetProtRef(const CSeq_feat& cds,
    if (pProtXref) {
         s_AppendProtRefInfo(prot_ref, *pProtXref);
    } 
+
+
    if (!prot_ref.IsSetName()) {
         const string& product_name = cds.GetNamedQual("product");
         if (product_name != kEmptyStr) {
@@ -725,22 +748,17 @@ static void s_SetProtRef(const CSeq_feat& cds,
         return;
    }
 
-   bool hypothetical=false;
    if (prot_ref.IsSetName()) {
-        for (const auto& prot_name : prot_ref.GetName()) {
+        for (auto& prot_name : prot_ref.SetName()) {
             if (NStr::CompareNocase(prot_name, "hypothetical protein")==0) {
-                hypothetical=true; 
-                break;
+                if (pMrna->GetData().GetRna().IsSetExt() &&
+                    pMrna->GetData().GetRna().GetExt().IsName()){
+                    prot_name = pMrna->GetData().GetRna().GetExt().GetName();
+                    break;
+                }
             }
         }
-   }
-
-   if (hypothetical && 
-       pMrna->GetData().GetRna().IsSetExt() &&
-       pMrna->GetData().GetRna().GetExt().IsName()) {
-       const string& prot_name = pMrna->GetData().GetRna().GetExt().GetName();
-       prot_ref.SetName().push_back(prot_name);
-   }
+   } // prot_ref.IsSetName() 
 }
 
 
@@ -842,8 +860,16 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
     }
 
     CSeq_feat& prot_feat = CreateOrSetFTable(*protein);
-
     CProt_ref& prot_ref = prot_feat.SetData().SetProt();
+
+    s_SetProtRef(cd_feature, mrna, prot_ref);
+    if ((!prot_ref.IsSetName() ||
+        prot_ref.GetName().empty()) &&
+        m_context.m_use_hypothetic_protein) {
+        prot_ref.SetName().push_back("hypothetical protein");
+    }
+
+/*
     const CProt_ref* pProtXref=cd_feature.GetProtXref();
     if (pProtXref) {
         s_AppendProtRefInfo(prot_ref, *pProtXref);
@@ -880,7 +906,6 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
     {
             protein_name = "hypothetical protein";
     }
-
     if (!protein_name.empty())
     {
         if (!prot_ref.IsSetName() || prot_ref.GetName().empty())
@@ -889,6 +914,7 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
         }
     }
 
+*/
     prot_feat.SetLocation().SetInt().SetFrom(0);
     prot_feat.SetLocation().SetInt().SetTo(protein->GetInst().GetLength() - 1);
     prot_feat.SetLocation().SetInt().SetId().Assign(*GetAccessionId(protein->GetId()));
@@ -917,13 +943,13 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
 
         AssignLocalIdIfEmpty(mrna_feature, m_local_id_counter);
 
-        if (protein_name != kEmptyStr)
+        if (prot_ref.IsSetName() &&
+            !prot_ref.GetName().empty())
         {
             auto& ext = mrna_feature.SetData().SetRna().SetExt();
             if (ext.Which() == CRNA_ref::C_Ext::e_not_set ||
-                (ext.IsName() && ext.SetName().empty()) ||
-                fixed_protein_name)
-                ext.SetName() = protein_name;
+                (ext.IsName() && ext.SetName().empty()))
+                ext.SetName() = prot_ref.GetName().front();
         }
         mrna_feature.AddSeqFeatXref(cd_feature.GetId());
         cd_feature.AddSeqFeatXref(mrna_feature.GetId());
