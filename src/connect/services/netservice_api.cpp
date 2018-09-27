@@ -59,36 +59,47 @@
 
 BEGIN_NCBI_SCOPE
 
-// The purpose of this class is to execute commands suppressing possible errors and avoiding retries
-class SNetServiceImpl::CTry
+// The purpose of these classes is to execute commands suppressing possible errors and avoiding retries
+struct SNoRetry : SNetServiceImpl::SRetry
 {
-public:
-    CTry(SNetServiceImpl* service) :
+    SNoRetry(SNetServiceImpl* service) :
         m_Service(service)
     {
         _ASSERT(m_Service);
 
-        auto error_handler = [](const string&, CNetServer) {
-            return true;
-        };
-
-        Swap(error_handler);
+        Swap(*m_Service, m_MaxRetries);
     }
 
-    ~CTry()
+    ~SNoRetry()
     {
-        Swap(nullptr);
+        Swap(*m_Service, m_MaxRetries);
+    }
+
+protected:
+    CNetRef<SNetServiceImpl> m_Service;
+
+private:
+    unsigned m_MaxRetries = 0;
+};
+
+struct SNoRetryNoErrors : SNoRetry
+{
+    SNoRetryNoErrors(SNetServiceImpl* service) :
+        SNoRetry(service)
+    {
+        Set([](const string&, CNetServer) { return true; });
+    }
+
+    ~SNoRetryNoErrors()
+    {
+        Set(nullptr);
     }
 
 private:
-    void Swap(CNetService::TEventHandler error_handler)
+    void Set(CNetService::TEventHandler error_handler)
     {
         m_Service->m_Listener->SetErrorHandler(error_handler);
-        swap(m_MaxRetries, m_Service->m_ConnectionMaxRetries);
     }
-
-    CNetRef<SNetServiceImpl> m_Service;
-    unsigned m_MaxRetries = 0;
 };
 
 void SDiscoveredServers::DeleteThis()
@@ -1215,9 +1226,14 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     }
 }
 
-shared_ptr<SNetServiceImpl::CTry> SNetServiceImpl::GetTryGuard()
+shared_ptr<void> SNetServiceImpl::CreateRetryGuard(SRetry::EType type)
 {
-    return make_shared<CTry>(this);
+    switch (type)
+    {
+        case SRetry::eNoRetryNoErrors: return make_shared<SNoRetryNoErrors>(this);
+        case SRetry::eNoRetry:         return make_shared<SNoRetry>(this);
+        default:                       return nullptr;
+    }
 }
 
 void SNetServerPoolImpl::ResetServerConnections()

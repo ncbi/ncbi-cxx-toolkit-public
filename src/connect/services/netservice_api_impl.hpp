@@ -279,7 +279,17 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : SNetServiceXSiteAPI
         eSingleServerService
     };
 
-    class CTry;
+    struct SRetry
+    {
+        enum EType {
+            eDefault,
+            eNoRetry,
+            eNoRetryNoErrors
+        };
+
+    protected:
+        void Swap(SNetServiceImpl& impl, unsigned& n) { swap(impl.m_ConnectionMaxRetries, n); }
+    };
 
     static SNetServiceImpl* Create(const string& api_name, const string& service_name, const string& client_name,
             INetServerConnectionListener* listener,
@@ -331,7 +341,7 @@ public:
     unsigned GetConnectionMaxRetries() const { return m_ConnectionMaxRetries; }
     unsigned long GetConnectionRetryDelay() const { return m_ConnectionRetryDelay; }
     bool IsLoadBalanced() const { return m_ServiceType == eLoadBalancedService; }
-    shared_ptr<CTry> GetTryGuard();
+    shared_ptr<void> CreateRetryGuard(SRetry::EType type);
 
     virtual ~SNetServiceImpl();
 

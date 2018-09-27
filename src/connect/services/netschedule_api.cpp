@@ -434,8 +434,10 @@ bool CNetScheduleConfigLoader::operator()(SNetScheduleAPIImpl* impl)
     // and need cross connectivity which is usually enabled later
     //
     // This guard is set to suppress errors and avoid retries if config loading is not enabled explicitly
-    shared_ptr<void> try_guard;
-    if (mode == eImplicit) try_guard = impl->m_Service->GetTryGuard();
+    const auto retry_mode = mode == eImplicit ?
+        SNetServiceImpl::SRetry::eNoRetryNoErrors :
+        SNetServiceImpl::SRetry::eDefault;
+    auto retry_guard = impl->m_Service->CreateRetryGuard(retry_mode);
 
     CNetScheduleAPI::TQueueParams queue_params;
 
