@@ -346,7 +346,7 @@ void CDiscRepApp::x_ProcessOne(const string& fname)
     }
     m_Xml ? x_OutputXml(x_ConstructOutputName(fname), *Tests) : x_Output(x_ConstructOutputName(fname), *Tests);
     if (m_Print) {
-        m_Xml ? Tests->OutputXML(cout) : Tests->OutputText(cout, false, m_Fat);
+        m_Xml ? Tests->OutputXML(cout) : Tests->OutputText(cout, m_Fat, false);
     }
 }
 
@@ -397,7 +397,7 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
     }
     m_Xml ? x_OutputXml(outname, *Tests) : x_Output(outname, *Tests);
     if (m_Print) {
-        m_Xml ? Tests->OutputXML(cout) : Tests->OutputText(cout, true, m_Fat);
+        m_Xml ? Tests->OutputXML(cout) : Tests->OutputText(cout, m_Fat, true);
     }
 }
 
