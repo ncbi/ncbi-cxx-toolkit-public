@@ -164,6 +164,15 @@
 #  endif
 #endif
 
+
+/* Whether there is a proven sufficient support for the 'thread_local'.
+ * NOTE that this is a very conservative estimation which can be extended if
+ * needed (after proper vetting and testing, of course) to additional
+ * platforms. FYI, the known (or at least suspected) issues with some other
+ * platforms are:
+ *  - Clang  - may not work well on MacOS (runtime; may depend on LIBC)
+ *  - VS2015 - may not export well from DLLs
+ */
 #if (defined(_MSC_VER) && _MSC_VER >= 1914) || \
     (defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 730)
 #  define HAVE_THREAD_LOCAL 1
