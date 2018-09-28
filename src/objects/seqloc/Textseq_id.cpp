@@ -219,7 +219,7 @@ int CTextseq_id::Compare(const CTextseq_id& tsip2) const
             return diff;
         }
     }
-    
+
     // All checks failed to distinguish Seq-ids.
     return 0;
 }
@@ -233,12 +233,13 @@ ostream& CTextseq_id::AsFastaString(ostream& s, bool allow_version) const
         if (allow_version  &&  IsSetVersion()) {
             int version = GetVersion();
             if (version) {
-                s << '.' << version;
+                s.put('.');
+                s << version;
             }
         }
     }
 
-    s << '|';
+    s.put('|');
     if ( IsSetName() ) {
         s << GetName();  // no Upcase per Ostell - Karl 7/2001
     }

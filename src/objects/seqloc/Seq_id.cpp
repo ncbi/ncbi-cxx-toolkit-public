@@ -1688,12 +1688,15 @@ void CSeq_id::WriteAsFasta(ostream& out)
         the_type = e_not_set;
 
     if (IsPatent()  &&  !GetPatent().GetCit().GetId().IsNumber() ) {
-        out << "pgp|";
+        const char pgp[] = "pgp|";
+        out.write(pgp, sizeof(pgp) - 1);
     } else if (IsSwissprot()  &&  GetSwissprot().IsSetRelease()
                &&  GetSwissprot().GetRelease() == "unreviewed") {
-        out << "tr|";
+        const char tr[] = "tr|";
+        out.write(tr, sizeof(tr) - 1);
     } else {
-        out << s_TextId[the_type] << '|';
+        out.write(s_TextId[the_type], strlen(s_TextId[the_type]));
+        out.put('|');
     }
 
     x_WriteContentAsFasta(out);
@@ -1779,10 +1782,14 @@ void CSeq_id::x_WriteContentAsFasta(ostream& out) const
     }
 }
 
-
 const string CSeq_id::AsFastaString(void) const
 {
+#ifdef HAVE_THREAD_LOCAL
+    thread_local static CNcbiOstrstream str;
+    str.seekp(0);
+#else
     CNcbiOstrstream str;
+#endif
     WriteAsFasta(str);
     return CNcbiOstrstreamToString(str);
 }
