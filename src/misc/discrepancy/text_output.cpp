@@ -156,20 +156,22 @@ void CDiscrepancyContext::OutputText(ostream& out, bool fatal, bool summary, boo
     }
 
     out << "Summary\n";
-    const CDiscrepancyGroup& order = x_OutputOrder();
-    TReportItemList group0 = order[0].Collect(m_Tests, false);
-    TReportItemList group1 = order[1].Collect(m_Tests, true);
-    RecursiveSummary(out, group0, fatal);
-    if (fatal) {
-        RecursiveFatalSummary(out, group1);
+    if (!m_Group0.size() && !m_Group1.size()) {
+        const CDiscrepancyGroup& order = x_OutputOrder();
+        m_Group0 = order[0].Collect(m_Tests, false);
+        m_Group1 = order[1].Collect(m_Tests, true);
     }
-    RecursiveSummary(out, group1, fatal);
+    RecursiveSummary(out, m_Group0, fatal);
+    if (fatal) {
+        RecursiveFatalSummary(out, m_Group1);
+    }
+    RecursiveSummary(out, m_Group1, fatal);
 
     if (summary) return;
     
     out << "\nDetailed Report\n\n";
-    RecursiveText(out, group0, m_Files, fatal, ext);
-    RecursiveText(out, group1, m_Files, fatal, ext);
+    RecursiveText(out, m_Group0, m_Files, fatal, ext);
+    RecursiveText(out, m_Group1, m_Files, fatal, ext);
 }
 
 

@@ -577,6 +577,8 @@ protected:
         IsBGPipe_is_bgpipe = 0;
         IsBGPipe_count = 0;
     }
+    mutable TReportItemList m_Group0;
+    mutable TReportItemList m_Group1;
 };
 
 
