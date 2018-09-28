@@ -164,6 +164,13 @@
 #  endif
 #endif
 
+#if (defined(_MSC_VER) && _MSC_VER >= 1914) || \
+    (defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 730)
+#  define HAVE_THREAD_LOCAL 1
+#endif
+
+
+
 #include <common/ncbi_skew_guard.h>
 
 
