@@ -36,6 +36,7 @@
 
 #include <corelib/ncbifile.hpp>
 #include <util/line_reader.hpp>
+#include <objtools/import/feat_message_handler.hpp>
 
 #include "feat_import_data.hpp"
 
@@ -43,12 +44,15 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CFeatLineReader: protected CStreamLineReader
+class CFeatLineReader: 
+    public CStreamLineReader
 //  ============================================================================
 {
 public:
     CFeatLineReader(
-        CNcbiIstream& istr);
+        CNcbiIstream&,
+        CFeatMessageHandler& );
+
     virtual ~CFeatLineReader() {};
 
     virtual bool
@@ -58,13 +62,24 @@ public:
     unsigned int LineCount() const { return mLineNumber; };
     unsigned int RecordCount() const { return mRecordNumber; };
 
+    void
+    SetProgressReportFrequency(
+        unsigned int numLines) { mProgressFreq = numLines; };
+
 protected:
     virtual bool
     xIgnoreLine(
         const string&) const;
 
+    virtual void
+    xReportProgress();
+
+    CFeatMessageHandler& mErrorReporter;
+
     unsigned int mLineNumber;
     unsigned int mRecordNumber;
+    unsigned int mProgressFreq;
+    unsigned int mLastProgress;
 };
 
 END_objects_SCOPE

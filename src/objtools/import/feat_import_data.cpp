@@ -41,9 +41,11 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CFeatImportData::CFeatImportData(
-    const CIdResolver& idResolver):
+    const CIdResolver& idResolver,
+    CFeatMessageHandler& errorReporter):
 //  ============================================================================
-    mIdResolver(idResolver)
+    mIdResolver(idResolver),
+    mErrorReporter(errorReporter)
 {
 }
 
@@ -51,7 +53,8 @@ CFeatImportData::CFeatImportData(
 CFeatImportData::CFeatImportData(
     const CFeatImportData& rhs):
 //  ============================================================================
-    mIdResolver(rhs.mIdResolver)
+    mIdResolver(rhs.mIdResolver),
+    mErrorReporter(rhs.mErrorReporter)
 {
 }
 

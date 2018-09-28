@@ -55,7 +55,8 @@ public:
     using ATTRIBUTES = std::map<std::string, std::vector<std::string> >;
 
     CGtfImportData(
-        const CIdResolver&);
+        const CIdResolver&,
+        CFeatMessageHandler&);
 
     CGtfImportData(
         const CGtfImportData& rhs);

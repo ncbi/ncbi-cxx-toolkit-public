@@ -31,77 +31,45 @@
 * ===========================================================================
 */
 
-#ifndef FEAT_IMPORT_ERROR__HPP
-#define FEAT_IMPORT_ERROR__HPP
+#ifndef FEAT_ANNOT_ASSEMBLER__HPP
+#define FEAT_ANNOT_ASSEMBLER__HPP
 
-#include <corelib/ncbistd.hpp>
-#include <util/line_reader.hpp>
+#include <corelib/ncbifile.hpp>
+#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
-#undef ERROR
+#include "feat_import_data.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_objects_SCOPE
 
 //  ============================================================================
-class NCBI_XOBJIMPORT_EXPORT CFeatImportError:
-    public CException
+class CFeatAnnotAssembler
 //  ============================================================================
 {
 public:
-    enum  ErrorLevel {
-        PROGRESS = -1,
-        CRITICAL = 0,
-        ERROR = 1,
-        WARNING = 2,
-        INFO = 3,
-        DEBUG = 4,
-    };
+    CFeatAnnotAssembler(
+        CSeq_annot&,
+        CFeatMessageHandler&);
 
-    enum ErrorCode {
-        eUNSPECIFIED = 0,
-        eEOF_NO_DATA,
-    };
+    virtual ~CFeatAnnotAssembler();
 
-public:
-    CFeatImportError(
-        ErrorLevel,
-        const std::string &,
-        unsigned int =0,
-        ErrorCode = eUNSPECIFIED); //line number
+    virtual void
+    InitializeAnnot();
 
-    CFeatImportError&
-    operator =(
-        const CFeatImportError& rhs) {
-        mSeverity = rhs.mSeverity;
-        mMessage = rhs.mMessage;
-        mLineNumber = rhs.mLineNumber;
-        return *this;
-    };
+    virtual void
+    ProcessRecord(
+        const CFeatImportData&) =0;
 
-    virtual ~CFeatImportError() {};
-
-    void
-    SetLineNumber(
-        unsigned int lineNumber) { mLineNumber = lineNumber; };
-
-    ErrorLevel Severity() const { return mSeverity; };
-    const std::string& Message() const { return mMessage; };
-    unsigned int LineNumber() const { return mLineNumber; };
-    ErrorCode Code() const { return mCode; };
-
-    string 
-    SeverityStr() const;
-
-    void
-    Serialize(
-        CNcbiOstream&);
+    virtual void
+    FinalizeAnnot();
 
 protected:
-    ErrorLevel mSeverity;
-    ErrorCode mCode;
-    string mMessage;
-    unsigned int mLineNumber;
+    CSeq_annot& mAnnot;
+    CFeatMessageHandler& mErrorReporter;
 };
 
+END_objects_SCOPE
 END_NCBI_SCOPE
 
 #endif

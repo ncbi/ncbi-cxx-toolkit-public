@@ -58,7 +58,8 @@ public:
     };
 
     CBedImportData(
-        const CIdResolver&);
+        const CIdResolver&,
+        CFeatMessageHandler&);
 
     CBedImportData(
         const CBedImportData& rhs);

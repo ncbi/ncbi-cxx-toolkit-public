@@ -183,9 +183,10 @@ public:
 
 //  ============================================================================
 CGtfAnnotAssembler::CGtfAnnotAssembler(
-    CSeq_annot& annot):
+    CSeq_annot& annot,
+    CFeatMessageHandler& errorReporter):
 //  ============================================================================
-    mAnnot(annot)
+    CFeatAnnotAssembler(annot, errorReporter)
 {
     mAnnot.SetData().SetFtable();
     mpFeatureMap.reset(new CFeatureMap);
@@ -201,11 +202,14 @@ CGtfAnnotAssembler::~CGtfAnnotAssembler()
 //  ============================================================================
 void
 CGtfAnnotAssembler::ProcessRecord(
-    const CGtfImportData& record)
+    const CFeatImportData& record_)
 //  ============================================================================
 {
-    CFeatureImportError errorUnknownFeatureType(
-        CFeatureImportError::ERROR, "Unknown GTF feature type");
+    assert(dynamic_cast<const CGtfImportData*>(&record_));
+    const CGtfImportData& record = static_cast<const CGtfImportData&>(record_);
+
+    CFeatImportError errorUnknownFeatureType(
+        CFeatImportError::ERROR, "Unknown GTF feature type");
 
     vector<string> ignoredFeatureTypes = {
         "intron",

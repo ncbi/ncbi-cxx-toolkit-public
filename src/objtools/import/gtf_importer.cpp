@@ -31,8 +31,8 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
-#include <objtools/import/feat_import_error.hpp>
 
+#include <objtools/import/feat_import_error.hpp>
 #include "gtf_importer.hpp"
 #include "gtf_import_data.hpp"
 #include "gtf_line_reader.hpp"
@@ -56,30 +56,3 @@ CGtfImporter::~CGtfImporter()
 {
 };
 
-
-//  ============================================================================
-void
-CGtfImporter::ReadSeqAnnot(
-    CNcbiIstream& istr,
-    CSeq_annot& annot,
-    CFeatErrorHandler& errorHandler)
-//  ============================================================================
-{ 
-    CGtfLineReader lineReader(istr);
-    CGtfAnnotAssembler annotAssembler(annot);
-
-    CGtfImportData record(*mpIdResolver);
-    while (true) {
-        try {
-            if (!lineReader.GetNextRecord(record)) {
-                break;
-            }
-            annotAssembler.ProcessRecord(record);
-        }
-        catch(CFeatureImportError& err) {
-            err.SetLineNumber(lineReader.LineCount());
-            errorHandler.HandleError(err);
-        }
-    }
-    annotAssembler.FinalizeAnnot();
-};

@@ -31,98 +31,57 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
-
-#include <objtools/import/feat_import_error.hpp>
-#include "bed_line_reader.hpp"
+#include <objtools/import/feat_message_handler.hpp>
 
 USING_NCBI_SCOPE;
-USING_SCOPE(objects);
+//USING_SCOPE(objects);
 
 //  ============================================================================
-CBedLineReader::CBedLineReader(
-    CNcbiIstream& istr,
-    CFeatMessageHandler& errorReporter):
-//  ============================================================================
-    CFeatLineReader(istr, errorReporter),
-    mColumnDelimiter(""),
-    mSplitFlags(0)
-{
-}
-
-//  ============================================================================
-bool
-CBedLineReader::GetNextRecord(
-    CFeatImportData& record)
+CFeatMessageHandler::CFeatMessageHandler()
 //  ============================================================================
 {
-    CFeatImportError errorEofNoData(
-        CFeatImportError::CRITICAL, 
-        "Stream does not contain feature data", 
-        0, CFeatImportError::eEOF_NO_DATA);
-
-    xReportProgress();
-
-    string nextLine = "";
-    while (!AtEOF()) {
-        nextLine = *(++(*this));
-        ++mLineNumber;
-        if (xIgnoreLine(nextLine)) {
-            continue;
-        }
-        if (xProcessTrackLine(nextLine)) {
-            continue;
-        } 
-        vector<string> columns;
-        xSplitLine(nextLine, columns);
-        record.InitializeFrom(columns);
-        ++mRecordNumber;
-        return true;
-    }
-    if (0 == mRecordNumber) {
-        errorEofNoData.SetLineNumber(mLineNumber);
-        throw errorEofNoData;
-    }
-    return false;
-}
+};
 
 //  ============================================================================
-bool
-CBedLineReader::xProcessTrackLine(
-    const string& line)
+CFeatMessageHandler::~CFeatMessageHandler()
 //  ============================================================================
 {
-    if (!NStr::StartsWith(line, "track")) {
-        return false;
+};
+
+//  ============================================================================
+void
+CFeatMessageHandler::ReportError(
+    const CFeatImportError& error)
+//  ============================================================================
+{
+    switch(error.Severity()) {
+    default:
+        mErrors.push_back(error);
+        return;
+    case CFeatImportError::PROGRESS:
+        cerr << error.Message() << "\n";
+        return;
+    case CFeatImportError::CRITICAL:
+        throw error;
     }
-    cerr << "track line\n";
-    return true;
 }
 
 //  ============================================================================
 void
-CBedLineReader::xSplitLine(
-    const string& line,
-    vector<string>& columns)
+CFeatMessageHandler::ReportProgress(
+    const CFeatImportProgress& progress)
 //  ============================================================================
 {
-    CFeatImportError errorInvalidColumnCount(
-        CFeatImportError::CRITICAL, "Invalid column count");
+    progress.Serialize(cerr);
+}
 
-    columns.clear();
-    if (mColumnDelimiter.empty()) {
-        mColumnDelimiter = "\t";
-        mSplitFlags = 0;
-        NStr::Split(line, mColumnDelimiter, columns, mSplitFlags);
-        if (columns.size() == 12) {
-            return;
-        }
-        columns.clear();
-        mColumnDelimiter = " \t";
-        mSplitFlags = NStr::fSplit_MergeDelimiters;
-    }
-    NStr::Split(line, mColumnDelimiter, columns, mSplitFlags);
-    if (columns.size() == 12) {
-        return;
-    }
-    throw errorInvalidColumnCount;
+//  ============================================================================
+void
+CFeatMessageHandler::Dump(
+    CNcbiOstream& out)
+//  ============================================================================
+{
+    for (auto error: mErrors) {
+        error.Serialize(out);
+    } 
 }

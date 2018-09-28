@@ -38,7 +38,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 
-#include "bed_import_data.hpp"
+#include "feat_annot_assembler.hpp"
 
 class CFeatureIdGenerator;
 
@@ -46,24 +46,22 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CBedAnnotAssembler
+class CBedAnnotAssembler:
+    public CFeatAnnotAssembler
 //  ============================================================================
 {
 public:
     CBedAnnotAssembler(
-        CSeq_annot&);
+        CSeq_annot&,
+        CFeatMessageHandler&);
 
     virtual ~CBedAnnotAssembler();
 
     void
     ProcessRecord(
-        const CBedImportData&);
-
-    void
-    FinalizeAnnot();
+        const CFeatImportData&) override;
 
 protected:
-    CSeq_annot& mAnnot;
     unique_ptr<CFeatureIdGenerator> mpIdGenerator;
 };
 

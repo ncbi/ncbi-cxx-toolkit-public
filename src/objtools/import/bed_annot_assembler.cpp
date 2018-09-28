@@ -41,18 +41,21 @@
 #include <objects/seqloc/Seq_interval.hpp>
 
 #include <objtools/import/feat_import_error.hpp>
-
 #include "featid_generator.hpp"
 #include "bed_annot_assembler.hpp"
+#include "bed_import_data.hpp"
+
+#include <assert.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 //  ============================================================================
 CBedAnnotAssembler::CBedAnnotAssembler(
-    CSeq_annot& annot):
+    CSeq_annot& annot,
+    CFeatMessageHandler& errorReporter):
 //  ============================================================================
-    mAnnot(annot)
+    CFeatAnnotAssembler(annot, errorReporter)
 {
     mAnnot.SetData().SetFtable();
     mpIdGenerator.reset(new CFeatureIdGenerator);
@@ -67,9 +70,12 @@ CBedAnnotAssembler::~CBedAnnotAssembler()
 //  ============================================================================
 void
 CBedAnnotAssembler::ProcessRecord(
-    const CBedImportData& record)
+    const CFeatImportData& record_)
 //  ============================================================================
 {
+    assert(dynamic_cast<const CBedImportData*>(&record_));
+    const CBedImportData& record = static_cast<const CBedImportData&>(record_);
+
     CRef<CSeq_feat> pGene(0), pMrna(0), pCds(0);
 
     const auto& geneLocation = record.ChromLocation();
@@ -118,11 +124,3 @@ CBedAnnotAssembler::ProcessRecord(
         pCds->AddSeqFeatXref(pMrna->GetId());
     }
 }
-
-//  ============================================================================
-void
-CBedAnnotAssembler::FinalizeAnnot()
-//  ============================================================================
-{
-}
-

@@ -37,11 +37,15 @@
 #include <corelib/ncbifile.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
-#include <objtools/import/feat_error_handler.hpp>
+#include <objtools/import/feat_message_handler.hpp>
 #include <objtools/import/id_resolver.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
+
+class CFeatLineReader;
+class CFeatImportData;
+class CFeatAnnotAssembler;
 
 //  ============================================================================
 class NCBI_XOBJIMPORT_EXPORT CFeatImporter
@@ -52,6 +56,7 @@ public:
         fNormal = 0,
         fAllIdsAsLocal = (1 << 0),
         fNumericIdsAsLocal = (1 << 2),
+        fReportProgress = (1 << 3),
     };
 
     static CFeatImporter*
@@ -69,7 +74,7 @@ public:
     ReadSeqAnnot(
         CNcbiIstream&,
         CSeq_annot&,
-        CFeatErrorHandler&)  =0;
+        CFeatMessageHandler&);
 
     void
     SetIdResolver(
@@ -77,6 +82,20 @@ public:
 
 protected:
     unsigned int mFlags;
+
+    virtual CFeatLineReader*
+    GetReader(
+        CNcbiIstream&,
+        CFeatMessageHandler&) { return nullptr; };
+
+    virtual CFeatImportData*
+    GetImportData(
+        CFeatMessageHandler&) { return nullptr; };
+
+    virtual CFeatAnnotAssembler*
+    GetAnnotAssembler(
+        CSeq_annot&,
+        CFeatMessageHandler&) { return nullptr; };
 
     unique_ptr<CIdResolver> mpIdResolver; 
 };

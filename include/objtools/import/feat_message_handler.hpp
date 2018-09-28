@@ -31,75 +31,37 @@
 * ===========================================================================
 */
 
-#ifndef FEAT_IMPORT_ERROR__HPP
-#define FEAT_IMPORT_ERROR__HPP
+#ifndef FEAT_ERROR_HANDLER__HPP
+#define FEAT_ERROR_HANDLER__HPP
 
-#include <corelib/ncbistd.hpp>
-#include <util/line_reader.hpp>
+#include <corelib/ncbifile.hpp>
 
-#undef ERROR
+#include "feat_import_error.hpp"
+#include "feat_import_progress.hpp"
 
 BEGIN_NCBI_SCOPE
 
 //  ============================================================================
-class NCBI_XOBJIMPORT_EXPORT CFeatImportError:
-    public CException
+class NCBI_XOBJIMPORT_EXPORT CFeatMessageHandler
 //  ============================================================================
 {
 public:
-    enum  ErrorLevel {
-        PROGRESS = -1,
-        CRITICAL = 0,
-        ERROR = 1,
-        WARNING = 2,
-        INFO = 3,
-        DEBUG = 4,
-    };
+    CFeatMessageHandler();
+    virtual ~CFeatMessageHandler();
 
-    enum ErrorCode {
-        eUNSPECIFIED = 0,
-        eEOF_NO_DATA,
-    };
+    virtual void
+    ReportError(
+        const CFeatImportError&);
 
-public:
-    CFeatImportError(
-        ErrorLevel,
-        const std::string &,
-        unsigned int =0,
-        ErrorCode = eUNSPECIFIED); //line number
+    virtual void
+    ReportProgress(
+        const CFeatImportProgress&);
 
-    CFeatImportError&
-    operator =(
-        const CFeatImportError& rhs) {
-        mSeverity = rhs.mSeverity;
-        mMessage = rhs.mMessage;
-        mLineNumber = rhs.mLineNumber;
-        return *this;
-    };
-
-    virtual ~CFeatImportError() {};
-
-    void
-    SetLineNumber(
-        unsigned int lineNumber) { mLineNumber = lineNumber; };
-
-    ErrorLevel Severity() const { return mSeverity; };
-    const std::string& Message() const { return mMessage; };
-    unsigned int LineNumber() const { return mLineNumber; };
-    ErrorCode Code() const { return mCode; };
-
-    string 
-    SeverityStr() const;
-
-    void
-    Serialize(
-        CNcbiOstream&);
+    void Dump(
+        CNcbiOstream& out);
 
 protected:
-    ErrorLevel mSeverity;
-    ErrorCode mCode;
-    string mMessage;
-    unsigned int mLineNumber;
+    std::vector<CFeatImportError> mErrors;
 };
 
 END_NCBI_SCOPE

@@ -49,7 +49,8 @@ class CBedLineReader:
 {
 public:
     CBedLineReader(
-        CNcbiIstream& istr);
+        CNcbiIstream& istr,
+        CFeatMessageHandler&);
 
     virtual ~CBedLineReader() {};
 

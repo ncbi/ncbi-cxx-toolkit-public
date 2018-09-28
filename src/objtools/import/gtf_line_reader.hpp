@@ -49,7 +49,8 @@ class CGtfLineReader:
 {
 public:
     CGtfLineReader(
-        CNcbiIstream& istr);
+        CNcbiIstream& istr,
+        CFeatMessageHandler&);
 
     virtual ~CGtfLineReader() {};
 

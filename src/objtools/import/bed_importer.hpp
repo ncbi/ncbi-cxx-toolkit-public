@@ -37,9 +37,13 @@
 #include <corelib/ncbifile.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
-#include <objtools/import/feat_error_handler.hpp>
+#include <objtools/import/feat_message_handler.hpp>
 #include <objtools/import/feat_importer.hpp>
 #include <objtools/import/id_resolver.hpp>
+
+#include "bed_line_reader.hpp"
+#include "bed_import_data.hpp"
+#include "bed_annot_assembler.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -55,11 +59,27 @@ public:
 
     virtual ~CBedImporter();
 
-    void
-    ReadSeqAnnot(
-        CNcbiIstream&,
-        CSeq_annot&,
-        CFeatErrorHandler&) override;
+protected:
+    CFeatLineReader*
+    GetReader(
+        CNcbiIstream& istr,
+        CFeatMessageHandler& errorReporter) override { 
+        return new CBedLineReader(istr, errorReporter); 
+    };
+
+    CFeatImportData*
+    GetImportData(
+        CFeatMessageHandler& errorReporter) override { 
+        return new CBedImportData(*mpIdResolver, errorReporter); 
+    };
+
+    CFeatAnnotAssembler*
+    GetAnnotAssembler(
+        CSeq_annot& annot,
+        CFeatMessageHandler& errorReporter) override { 
+        return new CBedAnnotAssembler(annot, errorReporter); 
+    };
+
 };
 
 END_objects_SCOPE

@@ -40,9 +40,10 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CGtfLineReader::CGtfLineReader(
-    CNcbiIstream& istr):
+    CNcbiIstream& istr,
+    CFeatMessageHandler& errorReporter):
 //  ============================================================================
-    CFeatLineReader(istr),
+    CFeatLineReader(istr, errorReporter),
     mColumnDelimiter(""),
     mSplitFlags(0)
 {
@@ -54,8 +55,14 @@ CGtfLineReader::GetNextRecord(
     CFeatImportData& record)
 //  ============================================================================
 {
-    string nextLine = "";
+    CFeatImportError errorEofNoData(
+        CFeatImportError::CRITICAL, 
+        "Stream does not contain feature data", 
+        0, CFeatImportError::eEOF_NO_DATA);
 
+    xReportProgress();
+
+    string nextLine = "";
     while (!AtEOF()) {
         nextLine = *(++(*this));
         ++mLineNumber;
@@ -68,6 +75,10 @@ CGtfLineReader::GetNextRecord(
         ++mRecordNumber;
         return true;
     }
+    if (0 == mRecordNumber) {
+        errorEofNoData.SetLineNumber(mLineNumber);
+        throw errorEofNoData;
+    }
     return false;
 }
 
@@ -78,8 +89,8 @@ CGtfLineReader::xSplitLine(
     vector<string>& columns)
 //  ============================================================================
 {
-    CFeatureImportError errorInvalidColumnCount(
-        CFeatureImportError::CRITICAL, "Invalid column count");
+    CFeatImportError errorInvalidColumnCount(
+        CFeatImportError::CRITICAL, "Invalid column count");
 
     columns.clear();
     if (mColumnDelimiter.empty()) {

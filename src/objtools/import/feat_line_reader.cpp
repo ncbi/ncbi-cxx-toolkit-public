@@ -40,11 +40,15 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CFeatLineReader::CFeatLineReader(
-    CNcbiIstream& istr):
+    CNcbiIstream& istr,
+    CFeatMessageHandler& errorReporter):
 //  ============================================================================
     CStreamLineReader(istr),
+    mErrorReporter(errorReporter),
     mLineNumber(0),
-    mRecordNumber(0)
+    mRecordNumber(0),
+    mProgressFreq(0),
+    mLastProgress(0)
 {
 }
 
@@ -61,4 +65,21 @@ CFeatLineReader::xIgnoreLine(
         return true;
     }
     return false;
+}
+
+//  ============================================================================
+void
+CFeatLineReader::xReportProgress()
+//  ============================================================================
+{
+    if (0 == mProgressFreq) { //don't
+        return;
+    }
+    if (mLineNumber < mLastProgress + mProgressFreq) { //don't yet
+        return;
+    }
+    mLastProgress += mProgressFreq;
+    auto charCount = CStreamLineReader::GetPosition();
+    mErrorReporter.ReportProgress(
+        CFeatImportProgress(mRecordNumber, mLineNumber, charCount));
 }

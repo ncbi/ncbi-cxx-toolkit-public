@@ -38,6 +38,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 
+#include "feat_annot_assembler.hpp"
 #include "gtf_import_data.hpp"
 
 class CFeatureMap;
@@ -47,21 +48,23 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CGtfAnnotAssembler
+class CGtfAnnotAssembler:
+    public CFeatAnnotAssembler
 //  ============================================================================
 {
 public:
     CGtfAnnotAssembler(
-        CSeq_annot&);
+        CSeq_annot&,
+        CFeatMessageHandler&);
 
     virtual ~CGtfAnnotAssembler();
 
     void
     ProcessRecord(
-        const CGtfImportData&);
+        const CFeatImportData&) override;
 
     void
-    FinalizeAnnot();
+    FinalizeAnnot() override;
 
 protected:
     void xProcessRecordGene(
@@ -124,7 +127,6 @@ protected:
     void xAnnotGenerateXrefs();
 
 protected:
-    CSeq_annot& mAnnot;
     unique_ptr<CFeatureMap> mpFeatureMap;
     unique_ptr<CFeatureIdGenerator> mpIdGenerator;
 };

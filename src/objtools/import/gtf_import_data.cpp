@@ -43,9 +43,10 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CGtfImportData::CGtfImportData(
-    const CIdResolver& idResolver):
+    const CIdResolver& idResolver,
+    CFeatMessageHandler& errorReporter):
 //  ============================================================================
-    CFeatImportData(idResolver),
+    CFeatImportData(idResolver, errorReporter),
     mpScore(nullptr),
     mpFrame(nullptr)
 {
@@ -132,12 +133,12 @@ CGtfImportData::xSetLocation(
     const string& seqStrandAsStr)
 //  ============================================================================
 {
-    CFeatureImportError errorInvalidSeqStartValue(
-        CFeatureImportError::ERROR, "Invalid seqStart value");
-    CFeatureImportError errorInvalidSeqStopValue(
-        CFeatureImportError::ERROR, "Invalid seqStop value");
-    CFeatureImportError errorInvalidSeqStrandValue(
-        CFeatureImportError::ERROR, "Invalid seqStrand value");
+    CFeatImportError errorInvalidSeqStartValue(
+        CFeatImportError::ERROR, "Invalid seqStart value");
+    CFeatImportError errorInvalidSeqStopValue(
+        CFeatImportError::ERROR, "Invalid seqStop value");
+    CFeatImportError errorInvalidSeqStrandValue(
+        CFeatImportError::ERROR, "Invalid seqStrand value");
     TSeqPos seqStart(0), seqStop(0);
     ENa_strand seqStrand(eNa_strand_plus);
 
@@ -183,8 +184,8 @@ CGtfImportData::xSetType(
     const string& type)
 //  ============================================================================
 {
-    CFeatureImportError errorIllegalFeatureType(
-        CFeatureImportError::ERROR, "Illegal feature type");
+    CFeatImportError errorIllegalFeatureType(
+        CFeatImportError::ERROR, "Illegal feature type");
 
     static const vector<string> validTypes = {
         "cds", "exon", "gene", "initial", "internal", "intron", "mrna", 
@@ -211,8 +212,8 @@ CGtfImportData::xSetScore(
     const string& score)
 //  ============================================================================
 {
-    CFeatureImportError errorInvalidScoreValue(
-        CFeatureImportError::ERROR, "Invalid score value");
+    CFeatImportError errorInvalidScoreValue(
+        CFeatImportError::ERROR, "Invalid score value");
 
     if (score == ".") {
         return;
@@ -234,8 +235,8 @@ CGtfImportData::xSetFrame(
     const string& frame)
 //  ============================================================================
 {
-    CFeatureImportError errorInvalidFrameValue(
-        CFeatureImportError::ERROR, "Invalid frame value");
+    CFeatImportError errorInvalidFrameValue(
+        CFeatImportError::ERROR, "Invalid frame value");
 
     vector<string> validSettings = {".", "0", "1", "2"};
     if (find(validSettings.begin(), validSettings.end(), frame) ==
@@ -257,11 +258,11 @@ CGtfImportData::xSetAttributes(
     const string& attributes)
 //  ============================================================================
 {
-    CFeatureImportError errorMissingGeneId(
-        CFeatureImportError::ERROR, "Feature misses mandatory gene_id");
+    CFeatImportError errorMissingGeneId(
+        CFeatImportError::ERROR, "Feature misses mandatory gene_id");
 
-    CFeatureImportError errorMissingTranscriptId(
-        CFeatureImportError::ERROR, "Feature misses mandatory gene_id");
+    CFeatImportError errorMissingTranscriptId(
+        CFeatImportError::ERROR, "Feature misses mandatory transcript_id");
 
     mAttributes.clear();
     vector<string> splitAttributes;
@@ -320,12 +321,11 @@ CGtfImportData::xImportSplitAttribute(
     const string& splitAttr)
 //  ============================================================================
 {
-    CFeatureImportError errorAssigningAttrsBeforeFeatureType(
-        CFeatureImportError::CRITICAL, 
+    CFeatImportError errorAssigningAttrsBeforeFeatureType(
+        CFeatImportError::CRITICAL, 
         "Attempt to assign attributes before feature type");
-
-    CFeatureImportError errorInvalidAttributeFormat(
-        CFeatureImportError::ERROR, "Invalid attribute formatting");
+    CFeatImportError errorInvalidAttributeFormat(
+        CFeatImportError::ERROR, "Invalid attribute formatting");
 
     if (mType.empty()) {
         throw errorAssigningAttrsBeforeFeatureType;

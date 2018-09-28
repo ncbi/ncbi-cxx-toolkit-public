@@ -44,9 +44,10 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CBedImportData::CBedImportData(
-    const CIdResolver& idResolver):
+    const CIdResolver& idResolver,
+    CFeatMessageHandler& errorReporter):
 //  ============================================================================
-    CFeatImportData(idResolver),
+    CFeatImportData(idResolver, errorReporter),
     mName(""),
     mScore(0),
     mRgb(0, 0, 0)
@@ -146,10 +147,10 @@ CBedImportData::xSetChromLocation(
     const string& chromEndAsStr)
 //  =============================================================================
 {
-    CFeatureImportError errorInvalidChromStartValue(
-        CFeatureImportError::ERROR, "Invalid chromStart value");
-    CFeatureImportError errorInvalidChromEndValue(
-        CFeatureImportError::ERROR, "Invalid chromEnd value");
+    CFeatImportError errorInvalidChromStartValue(
+        CFeatImportError::ERROR, "Invalid chromStart value");
+    CFeatImportError errorInvalidChromEndValue(
+        CFeatImportError::ERROR, "Invalid chromEnd value");
 
     int chromStart = 0, chromEnd = 0;
     try {
@@ -183,18 +184,21 @@ CBedImportData::xSetScore(
     const string& score)
 //  =============================================================================
 {
-    CFeatureImportError errorInvalidScoreValue(
-        CFeatureImportError::ERROR, "Invalid score value");
+    CFeatImportError errorInvalidScoreValue(
+        CFeatImportError::WARNING, "Invalid score value- defaulting to 0.");
 
     try {
         mScore = NStr::StringToInt(score);
     }
     catch(std::exception&) {
-        throw errorInvalidScoreValue;
-    }
-    if (mScore < 0  ||  1000 < mScore) {
         mScore = 0;
-        throw errorInvalidScoreValue;
+        mErrorReporter.ReportError(errorInvalidScoreValue);
+        return;
+    }
+    if (mScore < 0  ||  mScore > 1000) {
+        mScore = 0;
+        mErrorReporter.ReportError(errorInvalidScoreValue);
+        return;
     }
 }
 
@@ -206,8 +210,8 @@ CBedImportData::xSetStrand(
 {
     assert(mChromLocation.IsInt());
 
-    CFeatureImportError errorInvalidStrandValue(
-        CFeatureImportError::ERROR, "Invalid strand value");
+    CFeatImportError errorInvalidStrandValue(
+        CFeatImportError::ERROR, "Invalid strand value");
 
     vector<string> validSettings = {".", "+", "-"};
     if (find(validSettings.begin(), validSettings.end(), strand) ==
@@ -227,10 +231,10 @@ CBedImportData::xSetThickLocation(
 {
     assert(mChromLocation.IsInt());
 
-    CFeatureImportError errorInvalidThickStartValue(
-        CFeatureImportError::ERROR, "Invalid thickStart value");
-    CFeatureImportError errorInvalidThickEndValue(
-        CFeatureImportError::ERROR, "Invalid thickEnd value");
+    CFeatImportError errorInvalidThickStartValue(
+        CFeatImportError::ERROR, "Invalid thickStart value");
+    CFeatImportError errorInvalidThickEndValue(
+        CFeatImportError::ERROR, "Invalid thickEnd value");
 
     int thickStart = 0, thickEnd = 0;
     try {
@@ -258,8 +262,8 @@ CBedImportData::xSetRgb(
     const string& rgb)
 //  ============================================================================
 {
-    CFeatureImportError errorInvalidRgbValue(
-        CFeatureImportError::ERROR, "Invalid RGB value");
+    CFeatImportError errorInvalidRgbValue(
+        CFeatImportError::WARNING, "Invalid RGB value- defaulting to BLACK");
 
     mRgb.R = mRgb.G = mRgb.B = 0;
     try {
@@ -285,16 +289,24 @@ CBedImportData::xSetRgb(
         }
     }
     catch(std::exception&) {
-        throw errorInvalidRgbValue;
+        mRgb.R = mRgb.G = mRgb.B = 0;
+        mErrorReporter.ReportError(errorInvalidRgbValue);
+        return;
     }
     if (mRgb.R < 0  ||  255 < mRgb.R) {
-        throw errorInvalidRgbValue;
+        mRgb.R = mRgb.G = mRgb.B = 0;
+        mErrorReporter.ReportError(errorInvalidRgbValue);
+        return;
     }
     if (mRgb.G < 0  ||  255 < mRgb.G) {
-        throw errorInvalidRgbValue;
+        mRgb.R = mRgb.G = mRgb.B = 0;
+        mErrorReporter.ReportError(errorInvalidRgbValue);
+        return;
     }
     if (mRgb.B < 0  ||  255 < mRgb.B) {
-        throw errorInvalidRgbValue;
+        mRgb.R = mRgb.G = mRgb.B = 0;
+        mErrorReporter.ReportError(errorInvalidRgbValue);
+        return;
     }
 }
 
@@ -308,14 +320,14 @@ CBedImportData::xSetBlocks(
 {
     assert(mChromLocation.IsInt());
 
-    CFeatureImportError errorInvalidBlockCountValue(
-        CFeatureImportError::ERROR, "Invalid blockCount value");
-    CFeatureImportError errorInvalidBlockStartsValue(
-        CFeatureImportError::ERROR, "Invalid blockStarts value");
-    CFeatureImportError errorInvalidBlockSizesValue(
-        CFeatureImportError::ERROR, "Invalid blockStarts value");
-    CFeatureImportError errorInconsistentBlocksInformation(
-        CFeatureImportError::ERROR, "Inconsistent blocks information");
+    CFeatImportError errorInvalidBlockCountValue(
+        CFeatImportError::ERROR, "Invalid blockCount value");
+    CFeatImportError errorInvalidBlockStartsValue(
+        CFeatImportError::ERROR, "Invalid blockStarts value");
+    CFeatImportError errorInvalidBlockSizesValue(
+        CFeatImportError::ERROR, "Invalid blockStarts value");
+    CFeatImportError errorInconsistentBlocksInformation(
+        CFeatImportError::ERROR, "Inconsistent blocks information");
 
     int blockCounts = 0;
     try {

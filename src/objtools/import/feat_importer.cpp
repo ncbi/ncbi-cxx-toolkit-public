@@ -31,13 +31,18 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
-#include <objtools/import/feat_import_error.hpp>
 
 #include <objtools/import/feat_importer.hpp>
 
+#include <objtools/import/feat_import_error.hpp>
 #include "id_resolver_canonical.hpp"
 #include "gtf_importer.hpp"
 #include "bed_importer.hpp"
+#include "feat_line_reader.hpp"
+#include "feat_import_data.hpp"
+#include "feat_annot_assembler.hpp"
+
+#include <assert.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -81,8 +86,46 @@ CFeatImporter::~CFeatImporter()
 void
 CFeatImporter::SetIdResolver(
     CIdResolver* pIdResolver)
-    //  ============================================================================
+//  ============================================================================
 {
     mpIdResolver.reset(pIdResolver);
 }
+
+//  =============================================================================
+void
+CFeatImporter::ReadSeqAnnot(
+    CNcbiIstream& istr,
+    CSeq_annot& annot,
+    CFeatMessageHandler& errorReporter)
+//  =============================================================================
+{
+    unique_ptr<CFeatLineReader> pLineReader(GetReader(istr, errorReporter));
+    unique_ptr<CFeatImportData> pImportData(GetImportData(errorReporter));
+    unique_ptr<CFeatAnnotAssembler> pAssembler(GetAnnotAssembler(annot, errorReporter));
+    assert(pLineReader  &&  pImportData  &&  pAssembler);
+
+    if (mFlags & fReportProgress) {
+        pLineReader->SetProgressReportFrequency(5);
+    }
+
+    pAssembler->InitializeAnnot();
+    while (true) {
+        try {
+            if (!pLineReader->GetNextRecord(*pImportData)) {
+                break;
+            }
+            //pImportData->Serialize(cerr);
+            pAssembler->ProcessRecord(*pImportData);
+        }
+        catch(CFeatImportError& err) {
+            if (err.Code() == CFeatImportError::eEOF_NO_DATA) {
+                throw;
+            }
+            err.SetLineNumber(pLineReader->LineCount());
+            errorReporter.ReportError(err);
+        }
+    }
+    pAssembler->FinalizeAnnot();
+}
+
 

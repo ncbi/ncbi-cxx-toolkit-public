@@ -38,7 +38,7 @@
 #include <corelib/ncbifile.hpp>
 #include <util/line_reader.hpp>
 
-#include <objtools/import/feat_error_handler.hpp>
+#include <objtools/import/feat_message_handler.hpp>
 #include <objtools/import/feat_importer.hpp>
 
 // This header must be included before all Boost.Test headers if there are any
@@ -65,13 +65,13 @@ void sRunTest(
     cerr << "Running test " << testName << " ...\n";
     // produce output:
     unique_ptr<CFeatImporter> pImporter(CFeatImporter::Get(format, 0));
-    CFeatErrorHandler errorHandler;
+    CFeatMessageHandler messageHandler;
     CNcbiIfstream iStr(inputName, ios::binary);
     CSeq_annot annot;
     try {
-        pImporter->ReadSeqAnnot(iStr, annot, errorHandler);
+        pImporter->ReadSeqAnnot(iStr, annot, messageHandler);
     }
-    catch (const CFeatureImportError& error) {
+    catch (const CFeatImportError& error) {
         BOOST_ERROR("Error: Test \"" << testName << "\" failed during import:");
         BOOST_ERROR("  " << error.Message() << ", at line " << error.LineNumber());
         iStr.close();
@@ -80,7 +80,7 @@ void sRunTest(
     iStr.close();
 
     CNcbiOfstream oStrErrors(outputNameErrors);
-    errorHandler.Dump(oStrErrors);
+    messageHandler.Dump(oStrErrors);
     oStrErrors.close();
 
     CNcbiOfstream oStrAnnot(outputNameAnnot);

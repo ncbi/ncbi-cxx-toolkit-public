@@ -49,7 +49,7 @@
 #include <objects/seq/Bioseq.hpp>
 
 #include <objtools/import/feat_import_error.hpp>
-#include <objtools/import/feat_error_handler.hpp>
+#include <objtools/import/feat_message_handler.hpp>
 #include <objtools/import/feat_importer.hpp>
 
 USING_NCBI_SCOPE;
@@ -114,12 +114,17 @@ CFeatImportApp::Init(void)
     arg_desc->AddFlag(
         "all-ids-as-local",
         "turn all ids into local ids",
-        true );
+        true);
 
     arg_desc->AddFlag(
         "numeric-ids-as-local",
         "turn integer ids into local ids",
-        true );
+        true);
+
+    arg_desc->AddFlag(
+        "show-progress",
+        "periodically report line and record counts",
+        true);
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -129,8 +134,8 @@ int
 CFeatImportApp::Run(void)
 //  ============================================================================
 {
-    CFeatureImportError errorFormatNotRecognized(
-        CFeatureImportError::CRITICAL, "Input file format not recognized");
+    CFeatImportError errorFormatNotRecognized(
+        CFeatImportError::CRITICAL, "Input file format not recognized");
 
     const CArgs& args = GetArgs();
 
@@ -138,21 +143,35 @@ CFeatImportApp::Run(void)
     CNcbiOstream& ostr = args["output"].AsOutputFile();
 
     CSeq_annot annot;
-    CFeatErrorHandler errorHandler;
-    
+    CFeatMessageHandler errorHandler;
+    unique_ptr<CFeatImporter> pImporter(nullptr);
+ 
     try {
         auto inFormat = xGetInputFormat(args, istr);
         auto flags = xGetImporterFlags(args);
-        unique_ptr<CFeatImporter> pImporter(CFeatImporter::Get(inFormat, flags));
+        pImporter.reset(CFeatImporter::Get(inFormat, flags));
         if (!pImporter) {
             throw errorFormatNotRecognized;
         }
-        pImporter->ReadSeqAnnot(istr, annot, errorHandler);
     }
-    catch (const CFeatureImportError& error) {
+    catch (const CFeatImportError& error) {
         cerr << "Line " << error.LineNumber() << ": " << error.SeverityStr() 
              << ": " << error.Message() << "\n";
         return 1;
+    } 
+
+    while (true) {
+        try {
+            pImporter->ReadSeqAnnot(istr, annot, errorHandler);
+        }
+        catch (const CFeatImportError& error) {
+            if (error.Code() == CFeatImportError::eEOF_NO_DATA) {
+                break;
+            }
+            cerr << "Line " << error.LineNumber() << ": " << error.SeverityStr() 
+                << ": " << error.Message() << "\n";
+            return 1;
+        } 
     }
     errorHandler.Dump(cerr);
 
@@ -215,6 +234,9 @@ CFeatImportApp::xGetImporterFlags(
     }
     if (args["numeric-ids-as-local"]) {
         flags |= CFeatImporter::fNumericIdsAsLocal;
+    }
+    if (args["show-progress"]) {
+        flags |= CFeatImporter::fReportProgress;
     }
     return flags;
 }

@@ -31,8 +31,8 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
-#include <objtools/import/feat_import_error.hpp>
 
+#include <objtools/import/feat_import_error.hpp>
 #include "bed_importer.hpp"
 #include "bed_import_data.hpp"
 #include "bed_line_reader.hpp"
@@ -54,33 +54,4 @@ CBedImporter::CBedImporter(
 CBedImporter::~CBedImporter()
 //  ============================================================================
 {
-};
-
-
-//  ============================================================================
-void
-CBedImporter::ReadSeqAnnot(
-    CNcbiIstream& istr,
-    CSeq_annot& annot,
-    CFeatErrorHandler& errorHandler)
-//  ============================================================================
-{ 
-    CBedLineReader lineReader(istr);
-    CBedAnnotAssembler annotAssembler(annot);
-
-    CBedImportData record(*mpIdResolver);
-    while (true) {
-        try {
-            if (!lineReader.GetNextRecord(record)) {
-                break;
-            }
-            //record.Serialize(cerr);
-            annotAssembler.ProcessRecord(record);
-        }
-        catch(CFeatureImportError& err) {
-            err.SetLineNumber(lineReader.LineCount());
-            errorHandler.HandleError(err);
-        }
-    }
-    annotAssembler.FinalizeAnnot();
 };

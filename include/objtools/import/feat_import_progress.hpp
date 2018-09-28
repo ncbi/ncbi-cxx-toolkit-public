@@ -31,8 +31,8 @@
 * ===========================================================================
 */
 
-#ifndef FEAT_IMPORT_ERROR__HPP
-#define FEAT_IMPORT_ERROR__HPP
+#ifndef FEAT_IMPORT_PROGRESS__HPP
+#define FEAT_IMPORT_PROGRESS__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <util/line_reader.hpp>
@@ -42,64 +42,37 @@
 BEGIN_NCBI_SCOPE
 
 //  ============================================================================
-class NCBI_XOBJIMPORT_EXPORT CFeatImportError:
-    public CException
+class NCBI_XOBJIMPORT_EXPORT CFeatImportProgress
 //  ============================================================================
 {
 public:
-    enum  ErrorLevel {
-        PROGRESS = -1,
-        CRITICAL = 0,
-        ERROR = 1,
-        WARNING = 2,
-        INFO = 3,
-        DEBUG = 4,
-    };
-
-    enum ErrorCode {
-        eUNSPECIFIED = 0,
-        eEOF_NO_DATA,
-    };
-
-public:
-    CFeatImportError(
-        ErrorLevel,
-        const std::string &,
-        unsigned int =0,
-        ErrorCode = eUNSPECIFIED); //line number
-
-    CFeatImportError&
-    operator =(
-        const CFeatImportError& rhs) {
-        mSeverity = rhs.mSeverity;
-        mMessage = rhs.mMessage;
-        mLineNumber = rhs.mLineNumber;
-        return *this;
-    };
-
-    virtual ~CFeatImportError() {};
+    CFeatImportProgress(
+        unsigned int,
+        unsigned int,
+        std::streampos);
 
     void
-    SetLineNumber(
-        unsigned int lineNumber) { mLineNumber = lineNumber; };
+    SetCounts(
+        unsigned int recordCount,
+        unsigned int lineCount,
+        std::streampos charCount) { 
+        mRecordCount = recordCount;
+        mLineCount = lineCount; 
+        mCharCount = charCount;
+    };
 
-    ErrorLevel Severity() const { return mSeverity; };
-    const std::string& Message() const { return mMessage; };
-    unsigned int LineNumber() const { return mLineNumber; };
-    ErrorCode Code() const { return mCode; };
-
-    string 
-    SeverityStr() const;
+    unsigned int LineCount() const { return mLineCount; };
+    unsigned int RecordCount() const {return mRecordCount; };
+    std::streampos CharCount() const {return mCharCount; };
 
     void
     Serialize(
-        CNcbiOstream&);
+        CNcbiOstream&) const;
 
 protected:
-    ErrorLevel mSeverity;
-    ErrorCode mCode;
-    string mMessage;
-    unsigned int mLineNumber;
+    unsigned int mRecordCount;
+    unsigned int mLineCount;
+    std::streampos mCharCount;
 };
 
 END_NCBI_SCOPE

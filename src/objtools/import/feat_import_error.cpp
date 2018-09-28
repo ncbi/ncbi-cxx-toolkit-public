@@ -36,19 +36,21 @@
 USING_NCBI_SCOPE;
 
 //  ============================================================================
-CFeatureImportError::CFeatureImportError(
+CFeatImportError::CFeatImportError(
     ErrorLevel severity,
     const std::string& message,
-    unsigned int lineNumber): 
+    unsigned int lineNumber,
+    ErrorCode code): 
 //  ============================================================================
     mSeverity(severity),
+    mCode(code),
     mMessage(message),
     mLineNumber(lineNumber)
 {};
 
 //  ============================================================================
 string
-CFeatureImportError::SeverityStr() const
+CFeatImportError::SeverityStr() const
 //  ============================================================================
 {
     static map<int, string> severityStrings = {
@@ -67,7 +69,7 @@ CFeatureImportError::SeverityStr() const
 
 //  ============================================================================
 void
-CFeatureImportError::Serialize(
+CFeatImportError::Serialize(
     CNcbiOstream& out)
 //  ============================================================================
 {
