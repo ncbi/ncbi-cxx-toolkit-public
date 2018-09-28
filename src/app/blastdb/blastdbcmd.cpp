@@ -890,7 +890,7 @@ void CBlastDBCmdApp::Init()
 
     arg_desc->AddFlag("tax_info",
     		          "Print taxonomic information contained in this BLAST database.\n"
-    		          "Use -outfmt to customoize output. Format specifiers supported are:\n"
+    		          "Use -outfmt to customize output. Format specifiers supported are:\n"
     		          "\t\t%T means taxid\n"
     		          "\t\t%L means common taxonomic name\n"
     		          "\t\t%S means scientific name\n"
