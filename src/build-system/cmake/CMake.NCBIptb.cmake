@@ -1203,6 +1203,13 @@ function(NCBI_internal_add_test _test)
         set(_extra -DXCODE=TRUE)
     endif()
 
+    file(RELATIVE_PATH _outdir "${NCBI_SRC_ROOT}" "${NCBI_CURRENT_SOURCE_DIR}")
+    if (WIN32 OR XCODE)
+        set(_outdir ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/$<CONFIG>/${_outdir})
+    else()
+        set(_outdir ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_TESTING}/${_outdir})
+    endif()
+
     add_test(NAME ${_test} COMMAND ${CMAKE_COMMAND}
         -DNCBITEST_NAME=${_test}
         -DNCBITEST_CONFIG=$<CONFIG>
@@ -1211,6 +1218,7 @@ function(NCBI_internal_add_test _test)
         -DNCBITEST_TIMEOUT=${_timeout}
         -DNCBITEST_BINDIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
         -DNCBITEST_SOURCEDIR=${NCBI_CURRENT_SOURCE_DIR}
+        -DNCBITEST_OUTDIR=${_outdir}
         -DNCBITEST_ASSETS=${_assets}
         ${_extra}
         -P "${NCBITEST_DRIVER}")
