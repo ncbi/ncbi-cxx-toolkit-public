@@ -3847,6 +3847,11 @@ MBM<BRA>	s	Museu Botanico Municipal
 MBM<USA-CA>	s	San Jose State University, Museum of Birds and Mammals			
 MBM<USA-NV>	s	Marjorie Barrick Museum			
 MBML	s	Museu de Biologia Mello Leitao			
+MBML:Anfibios	s	Museu de Biologia Mello Leitao, Anfibios Collection	
+MBML:Aves	s	Museu de Biologia Mello Leitao, Aves collection	
+MBML:Mamiferos	s	Museu de Biologia Mello Leitao, Mamiferos collection	
+MBML:Peixes	s	Museu de Biologia Mello Leitao, Peixes Collection	
+MBML:Repteis	s	Museu de Biologia Mello Leitao, Repteis Collection	
 MBMU	c	Institute of Molecular Biology and Genetics (IMBG), Mahidol University			
 MBR	s	Museo Argention de Ciencias Naturales "Bernardino Rivadavia"			
 MBS	s	Manchester Banksian Society			
@@ -4028,8 +4033,8 @@ MHNC<CHL>	s	Museo de Historia Natural de Concepcion (Chile)
 MHNCSJ	s	Museo de Historia Natural			
 MHNES	s	Museo de Historia Natural de El Salvador			
 MHNG	s	Natural History Museum of Geneva			
-MHNG:Herp	s	Natural History Museum of Geneva, Herpetology collection		
-MHNG:Invertebrate	s	Natural History Museum of Geneva, Invertebrate collection		
+MHNG:Herp	s	Natural History Museum of Geneva, Herpetology collection	
+MHNG:Invertebrate	s	Natural History Museum of Geneva, Invertebrate collection	
 MHNH	s	Museo Nacional de Historia Natural de Cuba	MNHNCU		
 MHNI	s	Museu Hist. Naturales Universidade Federal Minas Gerais			
 MHNJP	s	Universidad Nacional Mayor de San Marcos	MNHNJP		
@@ -4106,8 +4111,8 @@ MLSU	s	St. Petersburg State University, Zoology Museum
 MLUH	s	Martin Luther Universitat	MLU		
 MLY	s	Arboretum Mlynany			
 MLZ	s	Moore Laboratory of Zoology, Occidental College			
-MLZ:Bird	s	Moore Laboratory of Zoology, Occidental College, Bird Collection		
-MLZ:Mamm	s	Moore Laboratory of Zoology, Occidental College, Mammal Collection		
+MLZ:Bird	s	Moore Laboratory of Zoology, Occidental College, Bird Collection	
+MLZ:Mamm	s	Moore Laboratory of Zoology, Occidental College, Mammal Collection	
 MM<CAN>	s	Manitoba Museum			
 MM<COL>	s	Museo del Mar			
 MM<DEU>	s	Magdeburg Museum			
@@ -4317,8 +4322,8 @@ MS	s	Universita di Messina, Dipartimento di Scienze Botaniche
 MSA	s	Museum of Science and Art			
 MSB	s	Museum of Southwestern Biology			
 MSB:Bird	s	Museum of Southwestern Biology, Bird Collection	http://arctos.database.museum/SpecimenDetail.cfm?GUID=
-MSB:Fishes	s	Museum of Southwestern Biology, Fish Collection		
-MSB:Herp	s	Museum of Southwestern Biology, Herpetology Collection		
+MSB:Fishes	s	Museum of Southwestern Biology, Fish Collection	
+MSB:Herp	s	Museum of Southwestern Biology, Herpetology Collection	
 MSB:Mamm	s	Museum of Southwestern Biology, Mammal Collection	http://arctos.database.museum/SpecimenDetail.cfm?GUID=
 MSB:Para	s	Museum of Southwestern Biology, Parasitology Collection	http://arctos.database.museum/SpecimenDetail.cfm?GUID=
 MSB<BGR>	s	Museum Sophia			
@@ -4457,12 +4462,12 @@ MVP	s	Museum of Vicotria
 MVSC	s	Millersville University, Biology Department			
 MVUP	s	Museo de Vertebrados de la Universidad de Panama			
 MVZ	s	Museum of Vertebrate Zoology, University of California at Berkeley		http://mvzarctos.berkeley.edu/SpecimenDetail.cfm?guid=	
-MVZ:Bird	s	Museum of Vertebrate Zoology, University of California at Berkeley, Bird Collection		
-MVZ:Egg	s	Museum of Vertebrate Zoology, University of California at Berkeley, Egg Collection		
-MVZ:Herp	s	Museum of Vertebrate Zoology, University of California at Berkeley, Herpetology Collection		
-MVZ:Hild	s	Museum of Vertebrate Zoology, University of California at Berkeley, Milton Hildebrand collection		
+MVZ:Bird	s	Museum of Vertebrate Zoology, University of California at Berkeley, Bird Collection	
+MVZ:Egg	s	Museum of Vertebrate Zoology, University of California at Berkeley, Egg Collection	
+MVZ:Herp	s	Museum of Vertebrate Zoology, University of California at Berkeley, Herpetology Collection	
+MVZ:Hild	s	Museum of Vertebrate Zoology, University of California at Berkeley, Milton Hildebrand collection	
 MVZ:Img	b	Museum of Vertebrate Zoology, University of California at Berkeley, Image Collection		
-MVZ:Mamm	s	Museum of Vertebrate Zoology, University of California at Berkeley, Mammal Collection		
+MVZ:Mamm	s	Museum of Vertebrate Zoology, University of California at Berkeley, Mammal Collection	
 MVZ:Page	b	Museum of Vertebrate Zoology, University of California at Berkeley, Notebook Page Collection		
 MW<NLD>	s	Museum Wasmann			
 MW<RUS>	sb	Moscow State University Herbarium			
@@ -5092,6 +5097,12 @@ OMJ	s	Okresni muzeum a galerie
 OMKH	s	Oblastni muzeum Kutna Hora			
 OMNH<JPN>	s	Osaka Museum of Natural History			
 OMNH<USA-OK>	s	Oklahoma Museum of Natural History			
+OMNH<USA-OK>:Amphibian	s	Oklahoma Museum of Natural History, Amphibian collection	
+OMNH<USA-OK>:Birds	s	Oklahoma Museum of Natural History, Birds Collection	
+OMNH<USA-OK>:Eggs	s	Oklahoma Museum of Natural History, Eggs collection	
+OMNH<USA-OK>:Fish	s	Oklahoma Museum of Natural History, Fish collection	
+OMNH<USA-OK>:Mammal	s	Oklahoma Museum of Natural History, Mammals Collection	
+OMNH<USA-OK>:Reptile	s	Oklahoma Museum of Natural History, Reptile Collection	
 OMNHN	s	The Sam Noble Oklahoma State Museum of Natural History			
 OMNHO	s	Osaka Museum of Natural History	OMNH		
 OMNZ	s	Otago Museum	OM		
@@ -5145,6 +5156,11 @@ OSUC	s	Oregon State University	OS,SU
 OSUF	s	Oregon State University, Department of Wood Science and Engineering			
 OSUFW	s	Oregon State University, Department of Fisheries and Wildlife Mammal Collection			
 OSUMZ	s	Ohio State University Museum	OSU,OSUMZ		
+OSUMZ:Amphibian	s	Ohio State University Museum, Amphibian collection	
+OSUMZ:Bird	s	Ohio State University Museum, Bird Collection	
+OSUMZ:Fish	s	Ohio State University Museum, Fish collection	
+OSUMZ:Mammal	c	Ohio State University Museum, Mammal collection	
+OSUMZ:Reptile	s	Ohio State University Museum, Reptile Collection	
 OSUO	s	Oregon State University, School of Oceanography			
 OSUS	s	Oklahoma State University			
 OSW	s	State University of New York at Oswego			
@@ -5641,10 +5657,10 @@ ROIG	s	Estacion Experimental de Plantas Medicinales Dr. Juan T. Roig
 ROM	s	Royal Ontario Museum			
 ROM:ENT	s	Royal Ontario Museum, Entomology collection		
 ROM:HERP	s	Royal Ontario Museum, Herpetology collection		
-ROM:ICH	s	Royal Ontario Museum, Fish collection		
+ROM:ICH	s	Royal Ontario Museum, Fish collection	
 ROM:IZ	s	Royal Ontario Museum, Invertebrate Zoology Collection		
 ROM:MAM	s	Royal Ontario Museum, Mammal Collection	
-ROM:ORN	s	Royal Ontario Museum, Ornithology Collection		
+ROM:ORN	s	Royal Ontario Museum, Ornithology Collection	
 ROME	s	Royal Ontario Museum, Entomology Collection	ROM:ENT		
 ROML	s	National University of Lesotho, Biology Department			
 ROMO	s	Rocky Mountain National Park			
@@ -6549,6 +6565,8 @@ TNAU	s	Tamil Nadu Agricultural University
 TNFC	s	Tynside Naturalists' Field Club			
 TNFS	s	USDA Forest Service, Alaska Region			
 TNHC	s	Texas Memorial Museum, Texas Natural History Collection	TMM,TMMC		
+TNHC:Herpetology	s	Texas Memorial Museum, Texas Natural History Collection, Herpetology Collection	
+TNHC:Ichthyology	s	Texas Memorial Museum, Texas Natural History Collection, Ichthyology Collection	
 TNHM	s	University of Texas			
 TNM	s	National Museum of Natural Science, Botany Department			
 TNP	s	Museum of Tatra National Park			
@@ -6614,6 +6632,8 @@ TTCC	s	Texas Tech University
 TTMB	s	Termeszettudomanyi Muzeum			
 TTN	s	Somerset County Museum			
 TTRS	s	Tall Timbers Research Station, Fire Ecology Laboratory			
+TTRS:Mammal	s	Tall Timbers Research Station, Fire Ecology Laboratory, Mammals collection	
+TTRS:Ornithology	s	Tall Timbers Research Station, Fire Ecology Laboratory, Ornithology collection	
 TTU	s	Texas Tech University, Museum			
 TTY	s	Westonbirt School			
 TU<DEU>	s	Institut fur Geologie und Palaontologie, Technische Universitat Braunschweig			
@@ -6933,7 +6953,7 @@ UMMZ:MC	s	University of Michigan, Museum of Zoology, Mollusk Collection
 UMNH	s	Utah Museum of Natural History			
 UMNH:Bird	s	Utah Museum of Natural History, Birds collection	
 UMNH:HERP	s	Utah Museum of Natural History, 	
-UMNH:Mamm	s	Utah Museum of Natural History, Mammal collection		
+UMNH:Mamm	s	Utah Museum of Natural History, Mammal collection	
 UMO<GBR>	s	University Museum of Natural History			
 UMO<USA-ME>	s	University of Maine	UMDE		
 UMO<USA-MO>	s	Dunn-Palmer Herbarium, University of Missouri, Museum Support Center			
@@ -7133,7 +7153,7 @@ USMP	s	Universiti Sains Malaysia
 USMS	s	University of Southern Mississippi, Department of Biological Sciences			
 USNC	s	Smithsonian Institution, Paleobiology Department			
 USNM	sb	National Museum of Natural History, Smithsonian Institution	NMNH		
-USNM:Birds	s	National Museum of Natural History, Smithsonian Institution, Division of Birds		
+USNM:Birds	s	National Museum of Natural History, Smithsonian Institution, Division of Birds	
 USNM:ENT	s	National Museum of Natural History, Smithsonian Institution, Entomology Collection	
 USNM:FISH	s	National Museum of Natural History, Smithsonian Institution, National Fish Collection	
 USNM:Herp	s	National Museum of Natural History, Smithsonian Institution, Division of Amphibians and Reptiles	
@@ -7223,6 +7243,7 @@ UWCC<USA-WA>	c	University of Washington Culture Collection
 UWCP	s	University of Wroclaw			
 UWEC	s	University of Wisconsin, Department of Biology			
 UWFC	s	University of Washington Burke Museum Fish			
+UWFC:Ichthyology	s	University of Washington Burke Museum Fish, Ichthyology Collection	
 UWFP	s	University of West Florida, Department of Biology			
 UWGB	s	University of Wisconsin-Green Bay, MAC 212			
 UWI	s	University of the West Indies (Trinidad and Tobago)			
@@ -7481,7 +7502,7 @@ WNHM	s	Oklahoma Baptist University, Webster Natural History Museum
 WNLM	s	Niederoesterreichisches Landesmuseum			
 WNMU	s	Western New Mexico University Museum			
 WNMU:Bird	s	Western New Mexico University Museum, bird collection	
-WNMU:Fish	s	Western New Mexico University Museum, fish collection	
+WNMU:Fish	s	Western New Mexico University Museum, Fish Collection	
 WNMU:Mamm	s	Western New Mexico University Museum, mammal collection	
 WNRE	s	Whiteshell Nuclear Research Establishment			
 WNS	s	Wiesbaden Naturwissenschaftliche Sammlung der Stadt			
