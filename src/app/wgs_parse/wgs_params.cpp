@@ -678,11 +678,26 @@ static bool IsValidAccession(const string& accession)
     return len == ACC_LEN && non_zero;
 }
 
+static int GetMonthNumber(const string& month)
+{
+    static const map<string, int> MONTH_NUM =
+    {
+        {"JAN", 1}, {"FEB", 2}, {"MAR", 3}, {"APR", 4}, {"MAY", 5}, {"JUN", 6},
+        {"JUL", 7}, {"AUG", 8}, {"SEP", 9}, {"OCT", 10}, {"NOV", 11}, {"DEC", 12}
+    };
+
+    auto it = MONTH_NUM.find(month);
+
+    return it != MONTH_NUM.end() ? it->second : -1;
+}
+
 static bool ParseSubmissionDate(const string& str, CDate_std& date)
 {
-    static const size_t DATE_STR_LEN = 10;
+    static const size_t DATE_STR_LEN = 11;
     static const size_t FIRST_DASH_POS = 2;
-    static const size_t SECOND_DASH_POS = 5;
+    static const size_t SECOND_DASH_POS = 6;
+    static const size_t DAY_STR_LEN = 2;
+    static const size_t MONTH_STR_LEN = 3;
 
     size_t len = str.size();
     if (len != DATE_STR_LEN) {
@@ -695,13 +710,13 @@ static bool ParseSubmissionDate(const string& str, CDate_std& date)
                 return false;
             }
         }
-        else if (!isdigit(str[i])) {
+        else if ((i < FIRST_DASH_POS || i > SECOND_DASH_POS) && !isdigit(str[i])) {
             return false;
         }
     }
 
-    int day = NStr::StringToInt(str),
-        month = NStr::StringToInt(str.c_str() + FIRST_DASH_POS + 1),
+    int day = NStr::StringToInt(str.c_str(), NStr::fAllowTrailingSymbols),
+        month = GetMonthNumber(str.substr(FIRST_DASH_POS + 1, MONTH_STR_LEN)),
         year = NStr::StringToInt(str.c_str() + SECOND_DASH_POS + 1);
 
     if (month < 1 || month > 12) {
