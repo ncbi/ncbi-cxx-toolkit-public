@@ -4268,7 +4268,16 @@ case "$host_os:$compiler" in
      solaris*:GCC ) ac_cv_search_dlopen="-ldl" ;;
      darwin*      ) ac_cv_search_iconv="-liconv" ;;
 esac
+# Temporarily drop -fsanitize= flags for this test, as some toolchains count
+# the support library's indirect use of libdt when building applications
+# but not when building shared libraries with --no-undefined.
+orig_CXXFLAGS=$CXXFLAGS
+orig_LDFLAGS=$LDFLAGS
+CXXFLAGS=`echo $CXXFLAGS | sed -e 's/[[^ ]]*fsanitize=[[^ ]]*//g'`
+LDFLAGS=`echo $LDFLAGS | sed -e 's/[[^ ]]*fsanitize=[[^ ]]*//g'`
 NCBI_CHECK_LIBS(DL, dl, dlopen)
+CXXFLAGS=$orig_CXXFLAGS
+LDFLAGS=$orig_LDFLAGS
 orig_LIBS="$DL_LIBS $orig_LIBS"
 # Left alone for the sake of anything using $(C_LIBS) in lieu of $(ORIG_LIBS).
 # DL_LIBS=
