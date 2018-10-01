@@ -282,7 +282,6 @@ private:
 
     // All blobs currently fetched
     unique_ptr<SBlobFetchDetails>           m_MainBlobFetchDetails;
-    unique_ptr<SBlobFetchDetails>           m_Id2ShellFetchDetails;
     unique_ptr<SBlobFetchDetails>           m_Id2InfoFetchDetails;
     unique_ptr<SBlobFetchDetails>           m_OriginalBlobChunkFetch;
     vector<unique_ptr<SBlobFetchDetails>>   m_Id2ChunkFetchDetails;

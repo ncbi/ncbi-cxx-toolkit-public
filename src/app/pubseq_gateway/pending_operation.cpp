@@ -128,10 +128,6 @@ CPendingOperation::~CPendingOperation()
         PSG_TRACE("CPendingOperation::~CPendingOperation: "
                   "main blob loader: " <<
                   m_MainBlobFetchDetails->m_Loader.get());
-    if (m_Id2ShellFetchDetails)
-        PSG_TRACE("CPendingOperation::~CPendingOperation: "
-                  "Id2Shell blob loader: " <<
-                  m_Id2ShellFetchDetails->m_Loader.get());
     if (m_Id2InfoFetchDetails)
         PSG_TRACE("CPendingOperation::~CPendingOperation: "
                   "Id2Info blob loader: " <<
@@ -180,15 +176,6 @@ void CPendingOperation::Clear()
         m_MainBlobFetchDetails->m_Loader->SetErrorCB(nullptr);
         m_MainBlobFetchDetails->m_Loader->SetChunkCallback(nullptr);
         m_MainBlobFetchDetails = nullptr;
-    }
-    if (m_Id2ShellFetchDetails) {
-        PSG_TRACE("CPendingOperation::Clear: "
-                  "Id2Shell blob loader: " <<
-                  m_Id2ShellFetchDetails->m_Loader.get());
-        m_Id2ShellFetchDetails->m_Loader->SetDataReadyCB(nullptr, nullptr);
-        m_Id2ShellFetchDetails->m_Loader->SetErrorCB(nullptr);
-        m_Id2ShellFetchDetails->m_Loader->SetChunkCallback(nullptr);
-        m_Id2ShellFetchDetails = nullptr;
     }
     if (m_Id2InfoFetchDetails) {
         PSG_TRACE("CPendingOperation::Clear: "
@@ -507,8 +494,6 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
     // 3 -> call resp->Send()  to send what we have if it is ready
     if (m_MainBlobFetchDetails)
         x_Peek(resp, need_wait, m_MainBlobFetchDetails);
-    if (m_Id2ShellFetchDetails)
-        x_Peek(resp, need_wait, m_Id2ShellFetchDetails);
     if (m_Id2InfoFetchDetails)
         x_Peek(resp, need_wait, m_Id2InfoFetchDetails);
     if (m_OriginalBlobChunkFetch)
@@ -575,12 +560,6 @@ bool CPendingOperation::x_AllFinishedRead(void) const
     if (m_MainBlobFetchDetails) {
         ++started_count;
         if (!m_MainBlobFetchDetails->m_FinishedRead)
-            return false;
-    }
-
-    if (m_Id2ShellFetchDetails) {
-        ++started_count;
-        if (!m_Id2ShellFetchDetails->m_FinishedRead)
             return false;
     }
 
@@ -1523,10 +1502,9 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
     CPubseqGatewayApp *     app = CPubseqGatewayApp::GetInstance();
 
     // Translate sat to keyspace
-    SBlobId     shell_blob_id(m_Id2InfoSat, m_Id2InfoShell);  // optional
     SBlobId     info_blob_id(m_Id2InfoSat, m_Id2InfoInfo);    // mandatory
 
-    if (!app->SatToSatName(m_Id2InfoSat, shell_blob_id.m_SatName)) {
+    if (!app->SatToSatName(m_Id2InfoSat, info_blob_id.m_SatName)) {
         // Error: send it in the context of the blob props
         string      message = "Error mapping id2 info sat (" +
                               NStr::NumericToString(m_Id2InfoSat) +
@@ -1543,62 +1521,12 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
         return;
     }
 
-    // The keyspace match for both blobs
-    info_blob_id.m_SatName = shell_blob_id.m_SatName;
-
-    // Create the Id2Shell and Id2Info requests
-    SBlobRequest    shell_blob_request(shell_blob_id, INT64_MIN);
+    // Create the Id2Info requests
     SBlobRequest    info_blob_request(info_blob_id, INT64_MIN);
-
-    shell_blob_request.m_NeedBlobProp = false;
-    shell_blob_request.m_NeedChunks = true;
-    shell_blob_request.m_Optional = true;
 
     info_blob_request.m_NeedBlobProp = false;
     info_blob_request.m_NeedChunks = true;
     info_blob_request.m_Optional = false;
-
-    // Prepare Id2Shell retrieval
-    if (m_Id2InfoShell > 0) {
-        m_PendingOp->m_Id2ShellFetchDetails.reset(
-                new CPendingOperation::SBlobFetchDetails(shell_blob_request));
-
-        unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
-        bool            cache_hit = m_PendingOp->x_LookupBlobPropCache(
-                                        shell_blob_request.m_BlobId.m_Sat,
-                                        shell_blob_request.m_BlobId.m_SatKey,
-                                        shell_blob_request.m_LastModified,
-                                        *blob_record.get());
-
-        if (cache_hit) {
-            m_PendingOp->m_Id2ShellFetchDetails->m_Loader.reset(
-                    new CCassBlobTaskLoadBlob(
-                        m_PendingOp->m_Timeout, m_PendingOp->m_MaxRetries,
-                        m_PendingOp->m_Conn,
-                        shell_blob_request.m_BlobId.m_SatName,
-                        std::move(blob_record),
-                        shell_blob_request.m_NeedChunks,
-                        nullptr));
-        } else {
-            m_PendingOp->m_Id2ShellFetchDetails->m_Loader.reset(
-                    new CCassBlobTaskLoadBlob(
-                        m_PendingOp->m_Timeout, m_PendingOp->m_MaxRetries,
-                        m_PendingOp->m_Conn,
-                        shell_blob_request.m_BlobId.m_SatName,
-                        shell_blob_request.m_BlobId.m_SatKey,
-                        shell_blob_request.m_NeedChunks,
-                        nullptr));
-        }
-        m_PendingOp->m_Id2ShellFetchDetails->m_Loader->SetDataReadyCB(
-                HST::CHttpReply<CPendingOperation>::s_DataReady, m_Reply);
-        m_PendingOp->m_Id2ShellFetchDetails->m_Loader->SetErrorCB(
-                CGetBlobErrorCallback(m_PendingOp, m_Reply,
-                                      m_PendingOp->m_Id2ShellFetchDetails.get()));
-        m_PendingOp->m_Id2ShellFetchDetails->m_Loader->SetPropsCallback(nullptr);
-        m_PendingOp->m_Id2ShellFetchDetails->m_Loader->SetChunkCallback(
-                CBlobChunkCallback(m_PendingOp, m_Reply,
-                                   m_PendingOp->m_Id2ShellFetchDetails.get()));
-    }
 
     // Prepare Id2Info retrieval
     m_PendingOp->m_Id2InfoFetchDetails.reset(
@@ -1642,12 +1570,10 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
     // We may need to request ID2 chunks
     if (m_FetchDetails->m_IncludeDataFlags & fServWholeTSE) {
         // Sat name is the same
-        x_RequestId2SplitBlobs(shell_blob_id.m_SatName);
+        x_RequestId2SplitBlobs(info_blob_id.m_SatName);
     }
 
     // initiate retrieval
-    if (m_PendingOp->m_Id2ShellFetchDetails)
-        m_PendingOp->m_Id2ShellFetchDetails->m_Loader->Wait();
     m_PendingOp->m_Id2InfoFetchDetails->m_Loader->Wait();
     for (auto &  fetch_details: m_PendingOp->m_Id2ChunkFetchDetails) {
         if (fetch_details)
@@ -1724,7 +1650,7 @@ void CBlobPropCallback::x_ParseId2Info(CBlobRecord const &  blob)
     vector<string>          parts;
     NStr::Split(id2_info, ".", parts);
 
-    if (parts.size() != 4) {
+    if (parts.size() < 4) {
         // Error: send it in the context of the blob props
         string      message = "Error extracting id2 info for the blob " +
                               GetBlobId(m_FetchDetails->m_BlobId) +
@@ -1766,10 +1692,10 @@ void CBlobPropCallback::x_ParseId2Info(CBlobRecord const &  blob)
     if (m_Id2InfoSat <= 0)
         validate_message = "Invalid id2_info SAT value. Expected to be > 0. Received: " +
             NStr::NumericToString(m_Id2InfoSat) + ".";
-    if (m_Id2InfoShell < 0) {
+    if (m_Id2InfoShell != 0) {
         if (!validate_message.empty())
             validate_message += " ";
-        validate_message += "Invalid id2_info SHELL value. Expected to be >= 0. Received: " +
+        validate_message += "Invalid id2_info SHELL value. Expected to be == 0. Received: " +
             NStr::NumericToString(m_Id2InfoShell) + ".";
     }
     if (m_Id2InfoInfo <= 0) {
