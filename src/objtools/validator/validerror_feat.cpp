@@ -253,75 +253,11 @@ Return values are:
 
 static int ValidateAccessionFormat (string accession) 
 {
-    if (NStr::IsBlank (accession)) {
-        return -3;
-    }
-    if (accession.length() >= 16) {
-        return -4;
-    }
-    if (accession.c_str()[0] < 'A' || accession.c_str()[0] > 'Z') {
+    if (CSeq_id::IdentifyAccession(accession) == CSeq_id::eAcc_unknown) {
         return -1;
+    } else {
+        return 0;
     }
-
-    if (NStr::StartsWith(accession, "NZ_")) {
-        accession = accession.substr(3);
-    }
-
-    const char *cp = accession.c_str();
-    int num_alpha = 0;
-    int num_underscore = 0;
-    int num_digits = 0;
-
-    while (isalpha (*cp)) {
-        num_alpha++;
-        cp++;
-    }
-    while (*cp == '_') {
-        num_underscore++;
-        cp++;
-    }
-    while (isdigit (*cp)) {
-        num_digits ++;
-        cp++;
-    }
-
-    if (*cp != 0 && *cp != ' ' && *cp != '.') {
-        return -2;
-    }
-
-    if (num_underscore > 1) {
-        return -2;
-    }
-
-    if (num_underscore == 0) {
-        if (num_alpha == 1 && num_digits == 5) return 0;
-        if (num_alpha == 2 && num_digits == 6) return 0;
-        if (num_alpha == 3 && num_digits == 5) return 0;
-        if (num_alpha == 4 && num_digits == 8) return 0;
-        if (num_alpha == 5 && num_digits == 7) return 0;
-    } else if (num_underscore == 1) {
-        if (num_alpha != 2 || (num_digits != 6 && num_digits != 8 && num_digits != 9)) return -2;
-        char first_char = accession.c_str()[0];
-        char second_char = accession.c_str()[1];
-        if (first_char == 'N' || first_char == 'X' || first_char == 'Z') {
-          if (second_char == 'M' ||
-              accession [1] == 'C' ||
-              accession [1] == 'T' ||
-              accession [1] == 'P' ||
-              accession [1] == 'G' ||
-              accession [1] == 'R' ||
-              accession [1] == 'S' ||
-              accession [1] == 'W' ||
-              accession [1] == 'Z') {
-            return 0;
-          }
-        }
-        if (accession [0] == 'A' || accession [0] == 'W' || accession [0] == 'Y') {
-          if (accession [1] == 'P') return 0;
-        }
-      }
-
-  return -2;
 }
 
 

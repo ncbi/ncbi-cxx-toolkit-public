@@ -23587,6 +23587,21 @@ void TestNewAccessionOnNucProt(const string& n_acc, const string& p_acc, bool is
 }
 
 
+void TestNewAccessionAsInference(const string& acc)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> misc = AddMiscFeature(entry);
+    misc->SetQual().push_back(CRef<CGb_qual>(new CGb_qual("inference", "similar to DNA sequence:INSD:" + acc + ".1")));
+
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SQD_4560)
 {
     // new accession formats
@@ -23599,6 +23614,10 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4560)
  
     TestNewAccessionOnNucProt("AAAAAB010000001", "EAA0000015", true);
     TestNewAccessionOnNucProt("AA12345678", "EAA0000015", false);
+
+    TestNewAccessionAsInference("AAAAAB010000001");
+    TestNewAccessionAsInference("AA12345678");
+    TestNewAccessionAsInference("EAA0000015");
 }
 
 #if 0
