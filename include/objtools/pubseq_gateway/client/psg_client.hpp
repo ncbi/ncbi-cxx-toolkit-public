@@ -389,17 +389,9 @@ public:
     /// Name of the user who loaded this blob
     string GetUsername() const;
 
-    /// Types of the ID2 split info
-    enum ESplitInfo {
-        eSplitShell,  ///< Blob that contains shell (skeleton) of the bioseq
-        eSplitInfo    ///< Blob that contains split info for the bioseq
-    };
-
     /// Get coordinates of the blob that contains the specified ID2 split info.
-    /// If the blob is not split, then return an empty blob id. Also return
-    /// empty blob id for the (newer) split blob's "info part" when the latter
-    /// is put into the "shell" blob.
-    CPSG_BlobId GetSplitInfoBlobId(ESplitInfo split_info_type) const;
+    /// If the blob is not split, then return an empty blob id.
+    CPSG_BlobId GetSplitInfoBlobId() const;
 
     /// Get coordinates of a chunk blob -- from the chunk's serial number.
     /// @throw  If the blob has not been splitted.

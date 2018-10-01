@@ -392,8 +392,7 @@ void CPsgCliApp::PrintBlobInfo(shared_ptr<CPSG_BlobInfo> blob_info)
     atomic_cout << "GetClass: " << blob_info->GetClass() << ";";
     atomic_cout << "GetDivision: " << blob_info->GetDivision() << ";";
     atomic_cout << "GetUsername: " << blob_info->GetUsername() << ";";
-    atomic_cout << "GetSplitInfoBlobId(eSplitShell): " << blob_info->GetSplitInfoBlobId(CPSG_BlobInfo::eSplitShell).Get() << ";";
-    atomic_cout << "GetSplitInfoBlobId(eSplitInfo): " << blob_info->GetSplitInfoBlobId(CPSG_BlobInfo::eSplitInfo).Get() << ";";
+    atomic_cout << "GetSplitInfoBlobId: " << blob_info->GetSplitInfoBlobId().Get() << ";";
 
     for (int i = 1; ; ++i) {
         auto blob_id = blob_info->GetChunkBlobId(i).Get();

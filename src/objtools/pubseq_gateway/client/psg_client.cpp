@@ -631,7 +631,9 @@ CPSG_BlobId SId2Info::GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key)
     vector<CTempString> sat_keys;
     NStr::Split(id2_info, ".", sat_keys);
 
-    if (sat_keys.size() != eSize ) return kEmptyStr;
+    if (sat_keys.size() != eSize ) {
+        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Wrong Id2Info format: " << id2_info);
+    }
 
     auto sat_str = sat_keys[eSat];
 
@@ -642,19 +644,21 @@ CPSG_BlobId SId2Info::GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key)
     if (sat == 0) return kEmptyStr;
 
     auto sat_key = get_sat_key(sat_keys);
+    auto shell_sat_key = sat_keys[eShell];
 
-    if (sat_key == 0) return kEmptyStr;
+    if (!shell_sat_key.empty() && stoi(shell_sat_key)) {
+        NCBI_THROW_FMT(CPSG_Exception, eServerError, "SHELL is not zero (" << shell_sat_key <<
+                ") in Id2Info: " << id2_info);
+    }
 
-    return CPSG_BlobId(sat, sat_key);
+    return sat_key == 0 ? kEmptyStr : CPSG_BlobId(sat, sat_key);
 }
 
-CPSG_BlobId CPSG_BlobInfo::GetSplitInfoBlobId(ESplitInfo split_info_type) const
+CPSG_BlobId CPSG_BlobInfo::GetSplitInfoBlobId() const
 {
     auto l = [&](const vector<CTempString>& sat_keys)
     {
-        auto index = split_info_type == eSplitShell ? SId2Info::eShell : SId2Info::eInfo;
-        auto sat_key = sat_keys[index];
-
+        auto sat_key = sat_keys[SId2Info::eInfo];
         return stoi(sat_key);
     };
 
