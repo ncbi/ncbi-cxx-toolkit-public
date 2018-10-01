@@ -118,7 +118,7 @@ private:
     // types
 
     CObjectIStream* x_OpenIStream(const CArgs& args, const string& filename);
-    void x_OpenOStream(const string& filename, const string& dir = kEmptyStr, bool remove_orig_dir = true);
+    void x_OpenOStream(const string& filename, const string& dir = kEmptyStr, bool remove_orig_dir = true, bool binary = false);
     void x_CloseOStream();
     bool x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is);
     bool x_ProcessBigFile(auto_ptr<CObjectIStream>& is, const string& asn_type);
@@ -472,8 +472,8 @@ void CCleanupApp::x_ProcessOneFile(auto_ptr<CObjectIStream> is, EProcessingMode 
         in.Read();  // HandleSeqEntry will be called from this function
     }
     else if (mode == eModeBigfile) {
-        NCBI_THROW(CFlatException, eInternal, "\"bigfile\" option is not implemented yet");
-        //x_ProcessBigFile(is, asn_type);
+//        NCBI_THROW(CFlatException, eInternal, "\"bigfile\" option is not implemented yet");
+        x_ProcessBigFile(is, asn_type);
     }
     else {
         if (asn_type == "seq-submit") {  // submission
@@ -581,7 +581,14 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     bool opened_output = false;
 
     if (!args["o"] && args["r"]) {
-        x_OpenOStream(filename, args["r"].AsString(), true);
+        bool binary_out = false;
+        if (args["bigfile"] && args["serial"]) {
+            const string& val = args["serial"].AsString();
+            if ( val == "binary" ) {
+                binary_out = true;
+            }
+        }
+        x_OpenOStream(filename, args["r"].AsString(), true, binary_out);
         opened_output = true;
     }
 
@@ -693,7 +700,7 @@ int CCleanupApp::Run(void)
         }
         x_OpenOStream(args["o"].AsString(),
                       args["r"] ? args["r"].AsString() : kEmptyStr,
-                      false);
+                      false, args["bigfile"]);
         opened_output = true;
     } else if (!args["r"] || args["id"]) {
         x_OpenOStream(kEmptyStr);
@@ -1218,9 +1225,9 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
 }
 
 
-void CCleanupApp::x_OpenOStream(const string& filename, const string& dir, bool remove_orig_dir)
+void CCleanupApp::x_OpenOStream(const string& filename, const string& dir, bool remove_orig_dir, bool binary)
 {
-    ESerialDataFormat outFormat = eSerial_AsnText;
+    ESerialDataFormat outFormat = binary ? eSerial_AsnBinary : eSerial_AsnText;
     if (NStr::IsBlank(filename)) {
         m_Out.reset(CObjectOStream::Open(outFormat, cout));
     } else if (!NStr::IsBlank(dir)) {
@@ -1252,7 +1259,11 @@ void CCleanupApp::x_CloseOStream()
 void CCleanupApp::Process(CRef<CSerialObject>& obj)
 {
     static long long cnt;
-    cerr << ++cnt << ' ' << obj->GetThisTypeInfo()->GetName() << '\n';
+    //cerr << ++cnt << ' ' << obj->GetThisTypeInfo()->GetName() << '\n';
+    if (obj->GetThisTypeInfo() == CSeq_entry::GetTypeInfo()) {
+        CRef<CSeq_entry> entry(dynamic_cast<CSeq_entry*>(obj.GetPointer()));
+        HandleSeqEntry(entry);
+    }
 }
 
 
