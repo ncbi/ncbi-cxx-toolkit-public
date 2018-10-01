@@ -36,6 +36,10 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objtools/edit/apply_mods.hpp>
 
 #include <cstdio>
@@ -49,7 +53,7 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 //  Customization data:
-const string extInput(".mod");
+const string extInput("fsa");
 const string extOutput("asn");
 const string extErrors("errors");
 const string extKeep("new");
@@ -132,6 +136,93 @@ private:
     string mExtErrors;
 };
 
+
+static bool sFindBrackets(const CTempString& line, size_t& start, size_t& stop, size_t& eq_pos)
+{ // Copied from CSourceModParser
+    size_t i = start;
+    bool found = false;
+
+    eq_pos = CTempString::npos;
+    const char* s = line.data() + start;
+
+    int nested_brackets = -1;
+    while (i < line.size())
+    {
+        switch (*s)
+        {
+        case '[':
+            nested_brackets++;
+            if (nested_brackets == 0)
+            {
+                start = i;
+            }
+            break;
+        case '=':
+            if (nested_brackets >= 0 && eq_pos == CTempString::npos) {
+                eq_pos = i;
+            }
+            break;
+        case ']':
+            if (nested_brackets == 0)
+            {
+                stop = i;
+                if (eq_pos == CTempString::npos)
+                    eq_pos = i;
+                    return true;
+            }
+            else
+            if (nested_brackets < 0) {
+                return false;
+            }
+            else
+            {
+                nested_brackets--;
+            }
+        }
+        i++; s++;
+    }
+    return false;
+};
+
+
+static bool sGetMods(const CTempString& title, multimap<string, string>& mods)
+{
+    mods.clear();
+    size_t pos = 0;
+    while(pos < title.size()) {
+        size_t lb_pos, end_pos, eq_pos;
+        lb_pos = pos;
+        if (sFindBrackets(title, lb_pos, end_pos, eq_pos))
+        {            
+            if (eq_pos < end_pos) {
+                CTempString key = NStr::TruncateSpaces_Unsafe(title.substr(lb_pos+1, eq_pos - lb_pos - 1));
+                CTempString value = NStr::TruncateSpaces_Unsafe(title.substr(eq_pos + 1, end_pos - eq_pos - 1));
+                mods.emplace(key, value);
+            }
+            pos = end_pos + 1;
+        }
+        else
+        { 
+            break;
+        }
+    }
+    return !mods.empty();
+}
+
+
+static CRef<CBioseq> sCreateSkeletonBioseq(void)
+{
+    auto pBioseq = Ref(new CBioseq());
+    auto pSeqId = Ref(new CSeq_id());
+    pSeqId->SetLocal().SetStr("dummy");
+    pBioseq->SetId().push_back(pSeqId);
+
+    pBioseq->SetInst().SetRepr(CSeq_inst::eRepr_not_set);
+    pBioseq->SetInst().SetMol(CSeq_inst::eMol_not_set);
+
+    return pBioseq;
+}
+
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 {   
     string input = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
@@ -154,10 +245,6 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     cerr << "    Produced new error listing " << output << "." << endl;
 
     CNcbiOfstream ofstr(output.c_str());
-    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        ofstr << MSerial_AsnText << **cit;
-        ofstr.flush();
-    }
     ofstr.close();
     cerr << "    Produced new ASN1 file " << output << "." << endl;
 
@@ -192,16 +279,36 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     string logName = CDirEntry::GetTmpName();
 
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
+    const string& resultName = CDirEntry::GetTmpName();
+    CNcbiOfstream ofstr(resultName.c_str());
 
+    auto pBioseq = sCreateSkeletonBioseq();
     try {
+        edit::CModApply mod_apply;
+        for (string line; getline(ifstr, line);) {
+            NStr::TruncateSpacesInPlace(line);
+            if (line[0] == '>') {
+                multimap<string, string> mods;
+                if (sGetMods(line, mods)) {
+                    for (const auto& kv : mods) {
+                        mod_apply.AddMod(kv.first, kv.second);
+                    }
+                }
+            }
+        }
+        mod_apply.Apply(*pBioseq);
     }
     catch (...) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
         ifstr.close();
         return;
     }
+
+    cout << MSerial_AsnText << *pBioseq;
+    ofstr << MSerial_AsnText << *pBioseq;
     ifstr.close();
     ofstr.close();
+
 
     bool success = testInfo.mOutFile.CompareTextContents(resultName, CFile::eIgnoreWs);
     if (!success) {
@@ -215,8 +322,11 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     }
     CDirEntry(resultName).Remove();
 
+
+/*
     success = testInfo.mErrorFile.CompareTextContents(logName, CFile::eIgnoreWs);
     CDirEntry deErrors = CDirEntry(logName);
+    deErrors.Copy(testInfo.mErrorFile.GetPath() + "." + extKeep);
     if (!success  &&  keep) {
         deErrors.Copy(testInfo.mErrorFile.GetPath() + "." + extKeep);
     }
@@ -224,6 +334,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     if (!success) {
         BOOST_ERROR("Error: " << sTestName << " failed due to error handling diffs.");
     }
+    */
 };
 
 NCBITEST_AUTO_INIT()

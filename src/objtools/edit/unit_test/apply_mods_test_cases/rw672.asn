@@ -1,0 +1,663 @@
+Bioseq ::= {
+  id {
+    local str "dummy"
+  },
+  descr {
+    source {
+      genome proviral,
+      org {
+      },
+      subtype {
+        {
+          subtype altitude,
+          name "val243_0"
+        },
+        {
+          subtype altitude,
+          name "val244_0"
+        },
+        {
+          subtype altitude,
+          name "val244_1"
+        },
+        {
+          subtype cell-line,
+          name "val121_0"
+        },
+        {
+          subtype cell-line,
+          name "val122_0"
+        },
+        {
+          subtype cell-line,
+          name "val122_1"
+        },
+        {
+          subtype cell-type,
+          name "val125_0"
+        },
+        {
+          subtype cell-type,
+          name "val126_0"
+        },
+        {
+          subtype cell-type,
+          name "val126_1"
+        },
+        {
+          subtype chromosome,
+          name "val107_0"
+        },
+        {
+          subtype chromosome,
+          name "val108_0"
+        },
+        {
+          subtype chromosome,
+          name "val108_1"
+        },
+        {
+          subtype clone,
+          name "val111_0"
+        },
+        {
+          subtype clone,
+          name "val112_0"
+        },
+        {
+          subtype clone,
+          name "val112_1"
+        },
+        {
+          subtype clone,
+          name "abc"
+        },
+        {
+          subtype clone-lib,
+          name "val133_0"
+        },
+        {
+          subtype clone-lib,
+          name "val134_0"
+        },
+        {
+          subtype clone-lib,
+          name "val134_1"
+        },
+        {
+          subtype collected-by,
+          name "val201_0"
+        },
+        {
+          subtype collected-by,
+          name "val202_0"
+        },
+        {
+          subtype collected-by,
+          name "val202_1"
+        },
+        {
+          subtype collection-date,
+          name "val197_0"
+        },
+        {
+          subtype collection-date,
+          name "val198_0"
+        },
+        {
+          subtype collection-date,
+          name "val198_1"
+        },
+        {
+          subtype country,
+          name "val175_0"
+        },
+        {
+          subtype country,
+          name "val176_0"
+        },
+        {
+          subtype country,
+          name "val176_1"
+        },
+        {
+          subtype dev-stage,
+          name "val137_0"
+        },
+        {
+          subtype dev-stage,
+          name "val138_0"
+        },
+        {
+          subtype dev-stage,
+          name "val138_1"
+        },
+        {
+          subtype endogenous-virus-name,
+          name "val179_0"
+        },
+        {
+          subtype endogenous-virus-name,
+          name "val180_0"
+        },
+        {
+          subtype endogenous-virus-name,
+          name "val180_1"
+        },
+        {
+          subtype environmental-sample,
+          name "val185_0"
+        },
+        {
+          subtype environmental-sample,
+          name "val186_0"
+        },
+        {
+          subtype environmental-sample,
+          name "val186_1"
+        },
+        {
+          subtype frequency,
+          name "val141_0"
+        },
+        {
+          subtype frequency,
+          name "val142_0"
+        },
+        {
+          subtype frequency,
+          name "val142_1"
+        },
+        {
+          subtype fwd-primer-name,
+          name "val217_0"
+        },
+        {
+          subtype fwd-primer-name,
+          name "val218_0"
+        },
+        {
+          subtype fwd-primer-name,
+          name "val218_1"
+        },
+        {
+          subtype fwd-primer-seq,
+          name "val209_0"
+        },
+        {
+          subtype fwd-primer-seq,
+          name "val210_0"
+        },
+        {
+          subtype fwd-primer-seq,
+          name "val210_1"
+        },
+        {
+          subtype genotype,
+          name "val117_0"
+        },
+        {
+          subtype genotype,
+          name "val118_0"
+        },
+        {
+          subtype genotype,
+          name "val118_1"
+        },
+        {
+          subtype germline,
+          name "val143_0"
+        },
+        {
+          subtype germline,
+          name "val144_0"
+        },
+        {
+          subtype germline,
+          name "val144_1"
+        },
+        {
+          subtype haplogroup,
+          name "val235_0"
+        },
+        {
+          subtype haplogroup,
+          name "val236_0"
+        },
+        {
+          subtype haplogroup,
+          name "val236_1"
+        },
+        {
+          subtype haplotype,
+          name "val115_0"
+        },
+        {
+          subtype haplotype,
+          name "val116_0"
+        },
+        {
+          subtype haplotype,
+          name "val116_1"
+        },
+        {
+          subtype identified-by,
+          name "val205_0"
+        },
+        {
+          subtype identified-by,
+          name "val206_0"
+        },
+        {
+          subtype identified-by,
+          name "val206_1"
+        },
+        {
+          subtype insertion-seq-name,
+          name "val167_0"
+        },
+        {
+          subtype insertion-seq-name,
+          name "val168_0"
+        },
+        {
+          subtype insertion-seq-name,
+          name "val168_1"
+        },
+        {
+          subtype isolation-source,
+          name "val189_0"
+        },
+        {
+          subtype isolation-source,
+          name "val190_0"
+        },
+        {
+          subtype isolation-source,
+          name "val190_1"
+        },
+        {
+          subtype lab-host,
+          name "val147_0"
+        },
+        {
+          subtype lab-host,
+          name "val148_0"
+        },
+        {
+          subtype lab-host,
+          name "val148_1"
+        },
+        {
+          subtype lat-lon,
+          name "val193_0"
+        },
+        {
+          subtype lat-lon,
+          name "val194_0"
+        },
+        {
+          subtype lat-lon,
+          name "val194_1"
+        },
+        {
+          subtype linkage-group,
+          name "val231_0"
+        },
+        {
+          subtype linkage-group,
+          name "val232_0"
+        },
+        {
+          subtype linkage-group,
+          name "val232_1"
+        },
+        {
+          subtype map,
+          name "val109_0"
+        },
+        {
+          subtype map,
+          name "val110_0"
+        },
+        {
+          subtype map,
+          name "val110_1"
+        },
+        {
+          subtype mating-type,
+          name "val227_0"
+        },
+        {
+          subtype mating-type,
+          name "val228_0"
+        },
+        {
+          subtype mating-type,
+          name "val228_1"
+        },
+        {
+          subtype metagenomic,
+          name "val225_0"
+        },
+        {
+          subtype metagenomic,
+          name "val226_0"
+        },
+        {
+          subtype metagenomic,
+          name "val226_1"
+        },
+        {
+          subtype other,
+          name "val105_0"
+        },
+        {
+          subtype other,
+          name "val106_0"
+        },
+        {
+          subtype other,
+          name "val106_1"
+        },
+        {
+          subtype other,
+          name "val245_0"
+        },
+        {
+          subtype other,
+          name "val246_0"
+        },
+        {
+          subtype other,
+          name "val246_1"
+        },
+        {
+          subtype other,
+          name "val246_0"
+        },
+        {
+          subtype phenotype,
+          name "val241_0"
+        },
+        {
+          subtype phenotype,
+          name "val242_0"
+        },
+        {
+          subtype phenotype,
+          name "val242_1"
+        },
+        {
+          subtype plasmid-name,
+          name "val159_0"
+        },
+        {
+          subtype plasmid-name,
+          name "val160_0"
+        },
+        {
+          subtype plasmid-name,
+          name "val160_1"
+        },
+        {
+          subtype plastid-name,
+          name "val171_0"
+        },
+        {
+          subtype plastid-name,
+          name "val172_0"
+        },
+        {
+          subtype plastid-name,
+          name "val172_1"
+        },
+        {
+          subtype pop-variant,
+          name "val151_0"
+        },
+        {
+          subtype pop-variant,
+          name "val152_0"
+        },
+        {
+          subtype pop-variant,
+          name "val152_1"
+        },
+        {
+          subtype rearranged,
+          name "val145_0"
+        },
+        {
+          subtype rearranged,
+          name "val146_0"
+        },
+        {
+          subtype rearranged,
+          name "val146_1"
+        },
+        {
+          subtype rev-primer-name,
+          name "val221_0"
+        },
+        {
+          subtype rev-primer-name,
+          name "val222_0"
+        },
+        {
+          subtype rev-primer-name,
+          name "val222_1"
+        },
+        {
+          subtype rev-primer-seq,
+          name "val213_0"
+        },
+        {
+          subtype rev-primer-seq,
+          name "val214_0"
+        },
+        {
+          subtype rev-primer-seq,
+          name "val214_1"
+        },
+        {
+          subtype segment,
+          name "val177_0"
+        },
+        {
+          subtype segment,
+          name "val178_0"
+        },
+        {
+          subtype segment,
+          name "val178_1"
+        },
+        {
+          subtype sex,
+          name "val119_0"
+        },
+        {
+          subtype sex,
+          name "val120_0"
+        },
+        {
+          subtype sex,
+          name "val120_1"
+        },
+        {
+          subtype subclone,
+          name "val113_0"
+        },
+        {
+          subtype subclone,
+          name "val114_0"
+        },
+        {
+          subtype subclone,
+          name "val114_1"
+        },
+        {
+          subtype tissue-lib,
+          name "val155_0"
+        },
+        {
+          subtype tissue-lib,
+          name "val156_0"
+        },
+        {
+          subtype tissue-lib,
+          name "val156_1"
+        },
+        {
+          subtype tissue-type,
+          name "val129_0"
+        },
+        {
+          subtype tissue-type,
+          name "val130_0"
+        },
+        {
+          subtype tissue-type,
+          name "val130_1"
+        },
+        {
+          subtype transgenic,
+          name "val183_0"
+        },
+        {
+          subtype transgenic,
+          name "val184_0"
+        },
+        {
+          subtype transgenic,
+          name "val184_1"
+        },
+        {
+          subtype transposon-name,
+          name "val163_0"
+        },
+        {
+          subtype transposon-name,
+          name "val164_0"
+        },
+        {
+          subtype transposon-name,
+          name "val164_1"
+        },
+        {
+          subtype whole-replicon,
+          name "val237_0"
+        },
+        {
+          subtype whole-replicon,
+          name "val238_0"
+        },
+        {
+          subtype whole-replicon,
+          name "val238_1"
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 456,
+        pmid 123
+      }
+    },
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "Sequence Read Archive",
+          num 2,
+          data strs {
+            "12345",
+            "ABCD"
+          }
+        },
+        {
+          label str "BioProject",
+          num 1,
+          data strs {
+            "PRJNA31873"
+          }
+        },
+        {
+          label str "BioSample",
+          num 1,
+          data strs {
+            "SAMN1334554"
+          }
+        }
+      }
+    },
+    molinfo {
+      biomol mRNA,
+      completeness partial
+    },
+    genbank {
+      extra-accessions {
+        "M10101",
+        "M10102",
+        "Q8Y7J9"
+      },
+      keywords {
+        "keyword1",
+        "keyword2"
+      }
+    },
+    user {
+      type str "TpaAssembly",
+      data {
+        {
+          label id 0,
+          data fields {
+            {
+              label str "accession",
+              data str "M10102"
+            }
+          }
+        }
+      }
+    },
+    user {
+      type str "GenomeProjectsDB",
+      data {
+        {
+          label id 0,
+          data fields {
+            {
+              label str "ProjectID",
+              data int 112
+            },
+            {
+              label str "ParentID",
+              data int 0
+            }
+          }
+        }
+      }
+    }
+  },
+  inst {
+    repr not-set,
+    mol rna,
+    topology circular,
+    strand mixed,
+    hist {
+      replaces {
+        ids {
+          genbank {
+            accession "M10101"
+          },
+          genbank {
+            accession "M10102"
+          },
+          swissprot {
+            accession "Q8Y7J9"
+          }
+        }
+      }
+    }
+  }
+}
