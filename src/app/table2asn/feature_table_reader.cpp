@@ -862,52 +862,6 @@ CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_en
         prot_ref.SetName().push_back("hypothetical protein");
     }
 
-/*
-    const CProt_ref* pProtXref=cd_feature.GetProtXref();
-    if (pProtXref) {
-        s_AppendProtRefInfo(prot_ref, *pProtXref);
-    }
-
-
-    string protein_name;
-    bool fixed_protein_name = false;
-    if (GetProteinName(protein_name, cd_feature))
-    {
-        if (NStr::CompareNocase(protein_name, "hypothetical protein") == 0)
-        {
-            if (!mrna.Empty() && mrna->IsSetData() && mrna->GetData().GetRna().IsSetExt() &&
-                mrna->GetData().GetRna().GetExt().IsName())
-            {
-                protein_name = mrna->GetData().GetRna().GetExt().GetName();
-            }
-        }
-
-#if 0
-        if (NStr::CompareNocase(protein_name, "hypothetical protein") != 0)
-        {
-            string old = protein_name;
-            if (m_context.m_suspect_rules.FixSuspectProductName(protein_name))
-            {
-                m_context.m_suspect_rules.ReportFixedProduct(old, protein_name, cd_feature.GetLocation(), locustag);
-                fixed_protein_name = true;
-            }
-        }
-#endif
-    }
-    else
-    if (m_context.m_use_hypothetic_protein)
-    {
-            protein_name = "hypothetical protein";
-    }
-    if (!protein_name.empty())
-    {
-        if (!prot_ref.IsSetName() || prot_ref.GetName().empty())
-        {
-            prot_ref.SetName().push_back(protein_name);
-        }
-    }
-
-*/
     prot_feat.SetLocation().SetInt().SetFrom(0);
     prot_feat.SetLocation().SetInt().SetTo(protein->GetInst().GetLength() - 1);
     prot_feat.SetLocation().SetInt().SetId().Assign(*GetAccessionId(protein->GetId()));
