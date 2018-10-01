@@ -561,7 +561,9 @@ BMHP	s	Bermuda Department of Agriculture and Fisheries
 BMKB	s	Brunei Museum	BM<BRN>		
 BMM	s	Buergermeister Mueller, Museum			
 BMNH	s	Natural History Museum, London	NHMUK		
-BMNH:ENT	s	Natural History Museum, London, Entomology collection		
+BMNH:BOT	s	Natural History Museum, London, Plants collection	
+BMNH:ENT	s	Natural History Museum, London, Entomology collection	
+BMNH:ZOO	s	Natural History Museum, London, Zoological Collection	
 BMNHC	s	Burpee Museum of Natural History	BURP		
 BMPS	s	Bristol Museum and Philosophical Society			
 BMR	s	Bureau of Mineral Resources			
@@ -3482,6 +3484,7 @@ LBLC	s	M. Curie-Sklodowska University
 LBM<BRA>	c	Laboratorio de Biologia Molecula Depto de Biologia Celular			
 LBM<JPN>	s	Lake Biwa Museum			
 LBN	s	Lembaga Biologi Nasional			
+LBP	s	Laboratorio de Biologia e Genetica de Peixes			
 LBRP	s	Laboratorio de Biodiversidade de Recursos Pesqueiros			
 LBUCH	s	Laboratorio de Biologia			
 LBV	s	CENAREST			
@@ -3546,6 +3549,7 @@ LGM	s	Leningrad School of Mines
 LGM-USP	c	Departamento de Microbiologia Lab. de Genetica de Microrganismos			
 LGMF	c	Culture Collection of Laboratory of Genetics of Microorganisms, Federal University of Parana			
 LGO	s	Columbia University			
+LGP	s	Laboratorio de Genetica de Peixes			
 LGPUT	s	Laboratory of Geology and Palaeontology			
 LGU	s	Leningrad State University			
 LHMS<ZAF >	b	Leslie Hill Molecular Systematics Laboratory			
@@ -6396,7 +6400,7 @@ SZE<TUR>	s	Zoology Department, Aegean University, Science Faculty
 SZG	s	Shenzhen Fairy Lake Botanical Garden			
 SZL	s	Landesherbar von Salzburg			
 SZM	s	Saitama Zoogeographical Museum			
-SZMC	c	Szeged Microbiological Collection			
+SZMC	c	Szeged Microbiological Collection		https://www.ncbi.nlm.nih.gov/biocollections/?term=BP	
 SZMN	s	Siberian Zoological Museum			
 SZPT	s	Shenzhen Polytechnic			
 SZPT:ENT	s	Shenzhen Polytechnic, Entomology Collection		
