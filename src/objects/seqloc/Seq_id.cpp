@@ -1784,8 +1784,8 @@ void CSeq_id::x_WriteContentAsFasta(ostream& out) const
 
 const string CSeq_id::AsFastaString(void) const
 {
-#ifdef HAVE_THREAD_LOCAL && \
-       (defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 730)
+#if defined(HAVE_THREAD_LOCAL) && \
+    (defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 730)
     thread_local static CNcbiOstrstream str;
     str.seekp(0);
 #else
