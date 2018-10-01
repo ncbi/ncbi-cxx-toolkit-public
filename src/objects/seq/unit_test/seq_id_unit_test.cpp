@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromStdAcc)
     BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("ADDEDE01P0000001"),
                       CSeq_id::eAcc_gb_wgs_prot);
     BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("KJ01234522"),
-                      CSeq_id::eAcc_gb_dirsub);
+                      CSeq_id::eAcc_gb_other_nuc);
     BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("AHL6932631"),
                       CSeq_id::eAcc_gb_prot);
 }
