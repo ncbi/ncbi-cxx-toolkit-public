@@ -670,47 +670,39 @@ CConstRef<CSeq_feat> CFeatureTableReader::_GetLinkedFeature(const CSeq_feat& cd_
 
 static void s_AppendProtRefInfo(CProt_ref& current_ref, const CProt_ref& other_ref)
 {
+
+    auto append_nonduplicated_item = [](list<string>& current_list, 
+                                        const list<string>& other_list) 
+    {
+        unordered_set<string> current_set;
+        for (const auto& item : current_list) {
+            current_set.insert(item);
+        }
+
+        for (const auto& item : other_list) {
+            if (current_set.find(item) == current_set.end()) {
+                current_list.push_back(item);
+            }
+        }
+    };
+
     if (other_ref.IsSetName()) {
-        unordered_set<string> name_set;
-        if (current_ref.IsSetName()) {
-            for (const auto& name : current_ref.GetName()) {
-                name_set.insert(name);
-            }
-        }
-        for (const auto& name : other_ref.GetName()) {
-            if (name_set.find(name) == name_set.end()) {
-                current_ref.SetName().push_back(name);
-            }
-        }
+        append_nonduplicated_item(current_ref.SetName(),
+                                  other_ref.GetName());
     }
 
+    if (other_ref.IsSetDesc()) {
+        current_ref.SetDesc() = other_ref.GetDesc();
+    } 
+
     if (other_ref.IsSetEc()) {
-        unordered_set<string> ec_set;
-        if (current_ref.IsSetEc()) {
-            for (const auto& ec : current_ref.GetEc()) {
-                ec_set.insert(ec);
-            }
-        }
-        for (const auto& ec : other_ref.GetEc()) {
-            if (ec_set.find(ec) == ec_set.end()) {
-                current_ref.SetEc().push_back(ec);
-            }
-        }
+        append_nonduplicated_item(current_ref.SetEc(),
+                                  other_ref.GetEc());
     }
 
     if (other_ref.IsSetActivity()) {
-        unordered_set<string> activity_set;
-        if (current_ref.IsSetActivity()) {
-            for (const auto& activity : current_ref.GetActivity()) {
-                activity_set.insert(activity);
-            }
-        }
-
-        for (const auto& activity : other_ref.GetActivity()) {
-            if (activity_set.find(activity) == activity_set.end()) {
-                current_ref.SetActivity().push_back(activity);
-            }
-        }
+        append_nonduplicated_item(current_ref.SetActivity(),
+                                  other_ref.GetActivity());
     }
 
     if (other_ref.IsSetDb()) {
@@ -766,6 +758,7 @@ static void s_SetProtRef(const CSeq_feat& cds,
 
 CRef<CSeq_entry> CFeatureTableReader::_TranslateProtein(CSeq_entry_Handle top_entry_h, const CBioseq& bioseq, CSeq_feat& cd_feature)
 {
+
     if (sequence::IsPseudo(cd_feature, *m_scope))
         return CRef<CSeq_entry>();
 
@@ -1218,6 +1211,7 @@ CRef<CSeq_entry> CFeatureTableReader::ReadProtein(ILineReader& line_reader)
 
 void CFeatureTableReader::AddProteins(const CSeq_entry& possible_proteins, CSeq_entry& entry)
 {
+
     CScope scope(*CObjectManager::GetInstance());
     CSeq_entry_Handle tse = scope.AddTopLevelSeqEntry(entry);
 
