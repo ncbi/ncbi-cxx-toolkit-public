@@ -698,9 +698,16 @@ int CCleanupApp::Run(void)
                 return 1;
             }
         }
+        bool binary_out = false;
+        if (args["bigfile"] && args["serial"]) {
+            const string& val = args["serial"].AsString();
+            if ( val == "binary" ) {
+                binary_out = true;
+            }
+        }
         x_OpenOStream(args["o"].AsString(),
                       args["r"] ? args["r"].AsString() : kEmptyStr,
-                      false, args["bigfile"]);
+                      false, binary_out);
         opened_output = true;
     } else if (!args["r"] || args["id"]) {
         x_OpenOStream(kEmptyStr);
