@@ -67,7 +67,8 @@ public:
     virtual ~CBedImportData() {};
 
     virtual void InitializeFrom(
-        const std::vector<std::string>&) override;
+        const std::vector<std::string>&,
+        unsigned int) override;
 
     virtual void Serialize(
         CNcbiOstream&) override;

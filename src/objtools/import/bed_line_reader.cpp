@@ -74,7 +74,7 @@ CBedLineReader::GetNextRecord(
         } 
         vector<string> columns;
         xSplitLine(nextLine, columns);
-        record.InitializeFrom(columns);
+        record.InitializeFrom(columns, mLineNumber);
         ++mRecordNumber;
         return true;
     }
@@ -94,7 +94,6 @@ CBedLineReader::xProcessTrackLine(
     if (!NStr::StartsWith(line, "track")) {
         return false;
     }
-    cerr << "track line\n";
     return true;
 }
 

@@ -71,9 +71,12 @@ CGtfImportData::CGtfImportData(
 //  ============================================================================
 void
 CGtfImportData::InitializeFrom(
-    const vector<string>& columns)
+    const vector<string>& columns,
+    unsigned int originatingLineNumber)
     //  ============================================================================
 {
+    CFeatImportData::InitializeFrom(columns, originatingLineNumber);
+
     xSetLocation(columns[0], columns[3], columns[4], columns[6]);
     xSetSource(columns[1]);
     xSetType(columns[2]);
@@ -134,11 +137,15 @@ CGtfImportData::xSetLocation(
 //  ============================================================================
 {
     CFeatImportError errorInvalidSeqStartValue(
-        CFeatImportError::ERROR, "Invalid seqStart value");
+        CFeatImportError::ERROR, "Invalid seqStart value",
+        mOriginatingLineNumber);
     CFeatImportError errorInvalidSeqStopValue(
-        CFeatImportError::ERROR, "Invalid seqStop value");
+        CFeatImportError::ERROR, "Invalid seqStop value",
+        mOriginatingLineNumber);
     CFeatImportError errorInvalidSeqStrandValue(
-        CFeatImportError::ERROR, "Invalid seqStrand value");
+        CFeatImportError::ERROR, "Invalid seqStrand value",
+        mOriginatingLineNumber);
+
     TSeqPos seqStart(0), seqStop(0);
     ENa_strand seqStrand(eNa_strand_plus);
 
@@ -157,7 +164,7 @@ CGtfImportData::xSetLocation(
 
     vector<string> strandLegals = {".", "+", "-"};
     if (find(strandLegals.begin(), strandLegals.end(), seqStrandAsStr) ==
-        strandLegals.end()) {
+            strandLegals.end()) {
         throw errorInvalidSeqStrandValue;
     }
     seqStrand = ((seqStrandAsStr == "-") ? eNa_strand_minus : eNa_strand_plus);
@@ -185,7 +192,8 @@ CGtfImportData::xSetType(
 //  ============================================================================
 {
     CFeatImportError errorIllegalFeatureType(
-        CFeatImportError::ERROR, "Illegal feature type");
+        CFeatImportError::ERROR, "Illegal feature type",
+        mOriginatingLineNumber);
 
     static const vector<string> validTypes = {
         "cds", "exon", "gene", "initial", "internal", "intron", "mrna", 
@@ -199,8 +207,8 @@ CGtfImportData::xSetType(
         normalized = "mrna";
     }
 
-    if (find(validTypes.begin(), validTypes.end(), normalized) 
-            == validTypes.end()) {
+    if (find(validTypes.begin(), validTypes.end(), normalized) ==
+            validTypes.end()) {
         throw errorIllegalFeatureType;
     }
     mType = normalized;
@@ -213,7 +221,8 @@ CGtfImportData::xSetScore(
 //  ============================================================================
 {
     CFeatImportError errorInvalidScoreValue(
-        CFeatImportError::ERROR, "Invalid score value");
+        CFeatImportError::ERROR, "Invalid score value",
+        mOriginatingLineNumber);
 
     if (score == ".") {
         return;
@@ -236,11 +245,12 @@ CGtfImportData::xSetFrame(
 //  ============================================================================
 {
     CFeatImportError errorInvalidFrameValue(
-        CFeatImportError::ERROR, "Invalid frame value");
+        CFeatImportError::ERROR, "Invalid frame value",
+        mOriginatingLineNumber);
 
     vector<string> validSettings = {".", "0", "1", "2"};
     if (find(validSettings.begin(), validSettings.end(), frame) ==
-        validSettings.end()) {
+            validSettings.end()) {
         throw errorInvalidFrameValue;
     }
     if (frame == ".") {
@@ -259,10 +269,12 @@ CGtfImportData::xSetAttributes(
 //  ============================================================================
 {
     CFeatImportError errorMissingGeneId(
-        CFeatImportError::ERROR, "Feature misses mandatory gene_id");
+        CFeatImportError::ERROR, "Feature misses mandatory gene_id",
+        mOriginatingLineNumber);
 
     CFeatImportError errorMissingTranscriptId(
-        CFeatImportError::ERROR, "Feature misses mandatory transcript_id");
+        CFeatImportError::ERROR, "Feature misses mandatory transcript_id",
+        mOriginatingLineNumber);
 
     mAttributes.clear();
     vector<string> splitAttributes;
@@ -323,9 +335,11 @@ CGtfImportData::xImportSplitAttribute(
 {
     CFeatImportError errorAssigningAttrsBeforeFeatureType(
         CFeatImportError::CRITICAL, 
-        "Attempt to assign attributes before feature type");
+        "Attempt to assign attributes before feature type",
+        mOriginatingLineNumber);
     CFeatImportError errorInvalidAttributeFormat(
-        CFeatImportError::ERROR, "Invalid attribute formatting");
+        CFeatImportError::ERROR, "Invalid attribute formatting",
+        mOriginatingLineNumber);
 
     if (mType.empty()) {
         throw errorAssigningAttrsBeforeFeatureType;

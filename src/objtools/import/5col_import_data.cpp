@@ -64,9 +64,12 @@ C5ColImportData::C5ColImportData(
 //  ============================================================================
 void
 C5ColImportData::InitializeFrom(
-    const vector<string>& lines)
+    const vector<string>& lines,
+    unsigned int originatingLineNumber)
 //  ============================================================================
 {
+    CFeatImportData::InitializeFrom(lines, originatingLineNumber);
+
     vector<string> columns;
 
     assert(lines.size() >= 2  &&  !lines[0].empty());
@@ -142,7 +145,8 @@ C5ColImportData::xFeatureSetType(
 {
     CFeatImportError errorBadFeatureType(
         CFeatImportError::ERROR, 
-        "Feature type not recognized");
+        "Feature type not recognized",
+        mOriginatingLineNumber);
 
     vector<string> recognizedTypes {
         "gene", "mrna", "cds", "cdregion", "rrna", "trna"
@@ -223,7 +227,8 @@ C5ColImportData::xParseInterval(
 {
     CFeatImportError errorBadIntervalBoundaries(
         CFeatImportError::ERROR, 
-        "Bad interval boundaries");
+        "Bad interval boundaries",
+        mOriginatingLineNumber);
 
     string fromStr(fromStr_);
     string toStr(toStr_);

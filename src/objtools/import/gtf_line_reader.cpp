@@ -71,7 +71,7 @@ CGtfLineReader::GetNextRecord(
         }
         vector<string> columns;
         xSplitLine(nextLine, columns);
-        record.InitializeFrom(columns);
+        record.InitializeFrom(columns, mLineNumber);
         ++mRecordNumber;
         return true;
     }

@@ -74,9 +74,12 @@ CBedImportData::CBedImportData(
 //  ============================================================================
 void
 CBedImportData::InitializeFrom(
-    const vector<string>& columns)
+    const vector<string>& columns,
+    unsigned int originatingLineNumber)
 //  ============================================================================
 {
+    CFeatImportData::InitializeFrom(columns, originatingLineNumber);
+
     // note: ordering is important!
     xSetChromLocation(columns[0], columns[1], columns[2]);
     xSetName(columns[3]);
@@ -148,9 +151,11 @@ CBedImportData::xSetChromLocation(
 //  =============================================================================
 {
     CFeatImportError errorInvalidChromStartValue(
-        CFeatImportError::ERROR, "Invalid chromStart value");
+        CFeatImportError::ERROR, "Invalid chromStart value",
+        mOriginatingLineNumber);
     CFeatImportError errorInvalidChromEndValue(
-        CFeatImportError::ERROR, "Invalid chromEnd value");
+        CFeatImportError::ERROR, "Invalid chromEnd value",
+        mOriginatingLineNumber);
 
     int chromStart = 0, chromEnd = 0;
     try {
@@ -185,7 +190,8 @@ CBedImportData::xSetScore(
 //  =============================================================================
 {
     CFeatImportError errorInvalidScoreValue(
-        CFeatImportError::WARNING, "Invalid score value- defaulting to 0.");
+        CFeatImportError::WARNING, "Invalid score value- defaulting to 0.",
+        mOriginatingLineNumber);
 
     try {
         mScore = NStr::StringToInt(score);
@@ -211,11 +217,12 @@ CBedImportData::xSetStrand(
     assert(mChromLocation.IsInt());
 
     CFeatImportError errorInvalidStrandValue(
-        CFeatImportError::ERROR, "Invalid strand value");
+        CFeatImportError::ERROR, "Invalid strand value",
+        mOriginatingLineNumber);
 
     vector<string> validSettings = {".", "+", "-"};
     if (find(validSettings.begin(), validSettings.end(), strand) ==
-        validSettings.end()) {
+            validSettings.end()) {
         throw errorInvalidStrandValue;
     }
     auto chromStrand = ((strand == "-") ? eNa_strand_minus : eNa_strand_plus);
@@ -232,9 +239,11 @@ CBedImportData::xSetThickLocation(
     assert(mChromLocation.IsInt());
 
     CFeatImportError errorInvalidThickStartValue(
-        CFeatImportError::ERROR, "Invalid thickStart value");
+        CFeatImportError::ERROR, "Invalid thickStart value",
+        mOriginatingLineNumber);
     CFeatImportError errorInvalidThickEndValue(
-        CFeatImportError::ERROR, "Invalid thickEnd value");
+        CFeatImportError::ERROR, "Invalid thickEnd value",
+        mOriginatingLineNumber);
 
     int thickStart = 0, thickEnd = 0;
     try {
@@ -263,7 +272,8 @@ CBedImportData::xSetRgb(
 //  ============================================================================
 {
     CFeatImportError errorInvalidRgbValue(
-        CFeatImportError::WARNING, "Invalid RGB value- defaulting to BLACK");
+        CFeatImportError::WARNING, "Invalid RGB value- defaulting to BLACK",
+        mOriginatingLineNumber);
 
     mRgb.R = mRgb.G = mRgb.B = 0;
     try {
@@ -321,13 +331,17 @@ CBedImportData::xSetBlocks(
     assert(mChromLocation.IsInt());
 
     CFeatImportError errorInvalidBlockCountValue(
-        CFeatImportError::ERROR, "Invalid blockCount value");
+        CFeatImportError::ERROR, "Invalid blockCount value",
+        mOriginatingLineNumber);
     CFeatImportError errorInvalidBlockStartsValue(
-        CFeatImportError::ERROR, "Invalid blockStarts value");
+        CFeatImportError::ERROR, "Invalid blockStarts value",
+        mOriginatingLineNumber);
     CFeatImportError errorInvalidBlockSizesValue(
-        CFeatImportError::ERROR, "Invalid blockStarts value");
+        CFeatImportError::ERROR, "Invalid blockStarts value",
+        mOriginatingLineNumber);
     CFeatImportError errorInconsistentBlocksInformation(
-        CFeatImportError::ERROR, "Inconsistent blocks information");
+        CFeatImportError::ERROR, "Inconsistent blocks information",
+        mOriginatingLineNumber);
 
     int blockCounts = 0;
     try {

@@ -45,7 +45,8 @@ CFeatImportData::CFeatImportData(
     CFeatMessageHandler& errorReporter):
 //  ============================================================================
     mIdResolver(idResolver),
-    mErrorReporter(errorReporter)
+    mErrorReporter(errorReporter),
+    mOriginatingLineNumber(0)
 {
 }
 
@@ -54,16 +55,19 @@ CFeatImportData::CFeatImportData(
     const CFeatImportData& rhs):
 //  ============================================================================
     mIdResolver(rhs.mIdResolver),
-    mErrorReporter(rhs.mErrorReporter)
+    mErrorReporter(rhs.mErrorReporter),
+    mOriginatingLineNumber(rhs.mOriginatingLineNumber)
 {
 }
 
 //  ============================================================================
 void
 CFeatImportData::InitializeFrom(
-    const vector<string>& columns)
+    const vector<string>& columns,
+    unsigned int originatingLineNumber)
 //  ============================================================================
 {
+    mOriginatingLineNumber = originatingLineNumber;
 }
 
 //  ============================================================================

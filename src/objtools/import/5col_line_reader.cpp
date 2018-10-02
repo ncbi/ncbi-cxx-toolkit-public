@@ -119,7 +119,7 @@ C5ColLineReader::GetNextRecord(
                 errorDataLineOutOfOrder.SetLineNumber(mLineNumber);
                 throw errorDataLineOutOfOrder;
             }
-            record.InitializeFrom(mCollectedLines);
+            record.InitializeFrom(mCollectedLines, mLineNumber);
             ++mRecordNumber;
             mCollectedLines.clear();
             mCurrentSeqId = columns[1];
@@ -139,7 +139,7 @@ C5ColLineReader::GetNextRecord(
                 mCollectedLines.push_back(nextLine);
                 continue;
             }
-            record.InitializeFrom(mCollectedLines);
+            record.InitializeFrom(mCollectedLines, mLineNumber);
             ++mRecordNumber;
             mCollectedLines.clear();
             mCollectedLines.push_back(mCurrentSeqId);
