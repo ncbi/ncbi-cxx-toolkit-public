@@ -38,6 +38,7 @@
 #include "id_resolver_canonical.hpp"
 #include "gtf_importer.hpp"
 #include "bed_importer.hpp"
+#include "5col_importer.hpp"
 #include "feat_line_reader.hpp"
 #include "feat_import_data.hpp"
 #include "feat_annot_assembler.hpp"
@@ -59,6 +60,9 @@ CFeatImporter::Get(
     }
     if (format == "bed") {
         return new CBedImporter(flags);
+    }
+    if (format == "5col") {
+        return new C5ColImporter(flags);
     }
     return nullptr;
 };

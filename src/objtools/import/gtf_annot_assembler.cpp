@@ -472,7 +472,6 @@ CGtfAnnotAssembler::xFeatureUpdateLocation(
         xFeatureSetLocation(record, pFeature);
         return;
     }
-    const auto& debug = pFeature->GetLocation();
     CRef<CSeq_loc> pUpdatedLocation = pFeature->GetLocation().Add(
         record.Location(), CSeq_loc::fSortAndMerge_All, nullptr);
     pFeature->SetLocation().Assign(*pUpdatedLocation);

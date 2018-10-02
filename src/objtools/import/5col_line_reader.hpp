@@ -31,81 +31,59 @@
 * ===========================================================================
 */
 
-#ifndef FEAT_IMPORT_ERROR__HPP
-#define FEAT_IMPORT_ERROR__HPP
+#ifndef FIVECOL_LINE_READER__HPP
+#define FIVECOL_LINE_READER__HPP
 
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbifile.hpp>
 #include <util/line_reader.hpp>
 
-#undef ERROR
+#include "feat_line_reader.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_objects_SCOPE
 
 //  ============================================================================
-class NCBI_XOBJIMPORT_EXPORT CFeatImportError:
-    public CException
+class C5ColLineReader: 
+    public CFeatLineReader
 //  ============================================================================
 {
 public:
-    enum  ErrorLevel {
-        PROGRESS = -1,
-        CRITICAL = 0,
-        ERROR = 1,
-        WARNING = 2,
-        INFO = 3,
-        DEBUG = 4,
-    };
+    C5ColLineReader(
+        CNcbiIstream& istr,
+        CFeatMessageHandler&);
 
-    enum ErrorCode {
-        eUNSPECIFIED = 0,
-        eEOF_NO_DATA,
-    };
+    virtual ~C5ColLineReader() {};
 
-public:
-    CFeatImportError(
-        ErrorLevel,
-        const std::string&,
-        unsigned int =0,
-        ErrorCode = eUNSPECIFIED); //line number
-
-    CFeatImportError&
-    operator =(
-        const CFeatImportError& rhs) {
-        mSeverity = rhs.mSeverity;
-        mMessage = rhs.mMessage;
-        mLineNumber = rhs.mLineNumber;
-        return *this;
-    };
-
-    virtual ~CFeatImportError() {};
-
-    void
-    SetLineNumber(
-        unsigned int lineNumber) { mLineNumber = lineNumber; };
-
-    void
-    AmendMessage(
-        const std::string& amend) { mMessage += ": "; mMessage += amend; };
-
-    ErrorLevel Severity() const { return mSeverity; };
-    const std::string& Message() const { return mMessage; };
-    unsigned int LineNumber() const { return mLineNumber; };
-    ErrorCode Code() const { return mCode; };
-
-    string 
-    SeverityStr() const;
-
-    void
-    Serialize(
-        CNcbiOstream&);
+    virtual bool
+    GetNextRecord(
+        CFeatImportData&) override;
 
 protected:
-    ErrorLevel mSeverity;
-    ErrorCode mCode;
-    string mMessage;
-    unsigned int mLineNumber;
+    enum ELineType {
+        eLineTypeNone,
+        eLineTypeSeqId,
+        eLineTypeIntervalAndType,
+        eLineTypeBareInterval,
+        eLineTypeAttribute,
+        eLineTypeOffset
+    };
+
+    void
+    xSplitLine(
+        const std::string&,
+        std::vector<std::string>&);
+
+    ELineType
+    xLineTypeOf(
+        const std::vector<std::string>&);
+
+    std::string mCurrentSeqId;
+    std::vector<std::string> mCollectedLines;
+    ELineType mLastTypeSeen;
+    std::string mCurrentOffset;
 };
 
+END_objects_SCOPE
 END_NCBI_SCOPE
 
 #endif

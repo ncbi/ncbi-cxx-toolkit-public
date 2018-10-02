@@ -31,34 +31,82 @@
 * ===========================================================================
 */
 
-#ifndef FEAT_ERROR_HANDLER__HPP
-#define FEAT_ERROR_HANDLER__HPP
+#ifndef FIVECOL_IMPORT_DATA__HPP
+#define FIVECOL_IMPORT_DATA__HPP
 
 #include <corelib/ncbifile.hpp>
+#include <objects/seqloc/Na_strand.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 
-#include "feat_import_error.hpp"
+//#include <util/line_reader.hpp>
+
+#include "feat_import_data.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_objects_SCOPE
 
 //  ============================================================================
-class NCBI_XOBJIMPORT_EXPORT CFeatErrorHandler
+class C5ColImportData:
+    public CFeatImportData
 //  ============================================================================
 {
 public:
-    CFeatErrorHandler();
-    virtual ~CFeatErrorHandler();
+    C5ColImportData(
+        const CIdResolver&,
+        CFeatMessageHandler&);
 
-    virtual void
-    HandleError(
-        const CFeatureImportError&);
+    C5ColImportData(
+        const C5ColImportData& rhs);
 
-    void Dump(
-        CNcbiOstream& out);
+    virtual ~C5ColImportData() {};
+
+    virtual void InitializeFrom(
+        const std::vector<std::string>&) override;
+
+    virtual void Serialize(
+        CNcbiOstream&) override;
+
+    const CSeq_feat& GetFeature() const { return *mpFeature; };
 
 protected:
-    std::vector<CFeatureImportError> mErrors;
+    void
+    xFeatureInit(
+        const std::string&,
+        const std::string&);
+
+    void
+    xFeatureSetType(
+        const std::string&);
+
+    void
+    xFeatureSetInterval(
+        const std::string&,
+        const std::string&);
+
+    void
+    xFeatureAddInterval(
+        const std::string&,
+        const std::string&);
+
+    void
+    xFeatureAddAttribute(
+        const std::string&,
+        const std::string&);
+
+    void
+    xParseInterval(
+        const std::string&,
+        const std::string&,
+        CSeq_interval&);
+
+    CRef<CSeq_feat> mpFeature;
+    CRef<CSeq_id> mpId;
+    TSeqPos mOffset;
 };
 
+END_objects_SCOPE
 END_NCBI_SCOPE
 
 #endif

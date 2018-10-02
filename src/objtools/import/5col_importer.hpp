@@ -31,81 +31,58 @@
 * ===========================================================================
 */
 
-#ifndef FEAT_IMPORT_ERROR__HPP
-#define FEAT_IMPORT_ERROR__HPP
+#ifndef FIVECOL_IMPORTER__HPP
+#define FIVECOL_IMPORTER__HPP
 
-#include <corelib/ncbistd.hpp>
-#include <util/line_reader.hpp>
+#include <corelib/ncbifile.hpp>
+#include <objects/seq/Seq_annot.hpp>
 
-#undef ERROR
+#include <objtools/import/feat_message_handler.hpp>
+#include <objtools/import/feat_importer.hpp>
+#include <objtools/import/id_resolver.hpp>
+
+#include "5col_line_reader.hpp"
+#include "5col_import_data.hpp"
+#include "5col_annot_assembler.hpp"
 
 BEGIN_NCBI_SCOPE
+BEGIN_objects_SCOPE
 
 //  ============================================================================
-class NCBI_XOBJIMPORT_EXPORT CFeatImportError:
-    public CException
+class C5ColImporter:
+    public CFeatImporter
 //  ============================================================================
 {
 public:
-    enum  ErrorLevel {
-        PROGRESS = -1,
-        CRITICAL = 0,
-        ERROR = 1,
-        WARNING = 2,
-        INFO = 3,
-        DEBUG = 4,
-    };
+    C5ColImporter( 
+        unsigned int);
 
-    enum ErrorCode {
-        eUNSPECIFIED = 0,
-        eEOF_NO_DATA,
-    };
-
-public:
-    CFeatImportError(
-        ErrorLevel,
-        const std::string&,
-        unsigned int =0,
-        ErrorCode = eUNSPECIFIED); //line number
-
-    CFeatImportError&
-    operator =(
-        const CFeatImportError& rhs) {
-        mSeverity = rhs.mSeverity;
-        mMessage = rhs.mMessage;
-        mLineNumber = rhs.mLineNumber;
-        return *this;
-    };
-
-    virtual ~CFeatImportError() {};
-
-    void
-    SetLineNumber(
-        unsigned int lineNumber) { mLineNumber = lineNumber; };
-
-    void
-    AmendMessage(
-        const std::string& amend) { mMessage += ": "; mMessage += amend; };
-
-    ErrorLevel Severity() const { return mSeverity; };
-    const std::string& Message() const { return mMessage; };
-    unsigned int LineNumber() const { return mLineNumber; };
-    ErrorCode Code() const { return mCode; };
-
-    string 
-    SeverityStr() const;
-
-    void
-    Serialize(
-        CNcbiOstream&);
+    virtual ~C5ColImporter();
 
 protected:
-    ErrorLevel mSeverity;
-    ErrorCode mCode;
-    string mMessage;
-    unsigned int mLineNumber;
+    CFeatLineReader*
+    GetReader(
+        CNcbiIstream& istr,
+        CFeatMessageHandler& errorReporter) override { 
+        return new C5ColLineReader(istr, errorReporter); 
+    };
+
+    CFeatImportData*
+    GetImportData(
+        CFeatMessageHandler& errorReporter) override { 
+        return new C5ColImportData(*mpIdResolver, errorReporter); 
+    };
+
+    CFeatAnnotAssembler*
+    GetAnnotAssembler(
+        CSeq_annot& annot,
+        CFeatMessageHandler& errorReporter) override { 
+        return new C5ColAnnotAssembler(annot, errorReporter); 
+    };
+
 };
 
+END_objects_SCOPE
 END_NCBI_SCOPE
 
 #endif

@@ -161,27 +161,31 @@ CFeatImportApp::Run(void)
     } 
 
     while (true) {
+        annot.Reset();
         try {
             pImporter->ReadSeqAnnot(istr, annot, errorHandler);
+            const auto& ft = annot.GetData().GetFtable();
+            cerr << "";
         }
         catch (const CFeatImportError& error) {
             if (error.Code() == CFeatImportError::eEOF_NO_DATA) {
+                annot.Reset();
                 break;
             }
             cerr << "Line " << error.LineNumber() << ": " << error.SeverityStr() 
                 << ": " << error.Message() << "\n";
             return 1;
         } 
+        if (annot.IsFtable()  &&  !annot.GetData().GetFtable().empty()) {
+            ostr << MSerial_Format_AsnText() << annot;
+        }
+        else {
+            cerr << "The input file \"" << args["input"].AsString() 
+                 << "\" does not contain any recognizable features.\n";
+        }
     }
     errorHandler.Dump(cerr);
 
-    if (annot.IsFtable()) {
-        ostr << MSerial_Format_AsnText() << annot;
-    }
-    else {
-        cerr << "The input file \"" << args["input"].AsString() 
-             << "\" does not contain any recognizable features.\n";
-    }
     return 0;
 }
 
@@ -209,6 +213,7 @@ CFeatImportApp::xGetInputFormat(
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eGtf);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eGffAugustus);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eBed);
+    fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eFiveColFeatureTable);
     fg.GetFormatHints().DisableAllNonpreferred();
 
     switch(fg.GuessFormat()) {
@@ -219,6 +224,8 @@ CFeatImportApp::xGetInputFormat(
         return "gtf";
     case CFormatGuess::eBed:
         return "bed";
+    case CFormatGuess::eFiveColFeatureTable:
+        return "5col";
     }
 }
   
