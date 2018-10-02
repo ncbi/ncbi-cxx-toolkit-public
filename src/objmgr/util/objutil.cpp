@@ -1210,7 +1210,8 @@ static bool s_IsValidDotVersion(const string& accn)
 
 bool IsValidAccession(const string& accn, EAccValFlag flag)
 {
-    bool valid = s_IsValidAccession(accn);
+    // bool valid = s_IsValidAccession(accn);
+    bool valid = (CSeq_id::IdentifyAccession(accn) != CSeq_id::eAcc_unknown);
     if (valid  &&  flag == eValidateAccDotVer) {
         valid = s_IsValidDotVersion(accn);
     }
