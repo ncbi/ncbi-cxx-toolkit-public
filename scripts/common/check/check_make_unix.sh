@@ -345,6 +345,9 @@ if (valgrind --ncbi --help) >/dev/null 2>&1; then
     VALGRIND_CMD="--ncbi \$VALGRIND_CMD" # --ncbi must be the first option!
 fi
 
+LSAN_OPTIONS="suppressions=\$root_dir/scripts/common/check/lsan.supp"
+export LSAN_OPTIONS
+
 # Export some global vars
 top_srcdir="\$root_dir"
 export top_srcdir

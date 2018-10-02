@@ -1,0 +1,5 @@
+leak:::CreateTypeInfo(
+leak:^d_growable_string_callback_adapter$
+leak:^ncbi::InitDiagHandler()$
+leak:^ncbi::objects::CSeq_id_Mapper::GetInstance()$
+leak:^void test_static_tls<
