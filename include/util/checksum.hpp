@@ -143,6 +143,7 @@ public:
     /// @note
     ///   Should be used with eCityHash32, eCitiHash64, eFarmHash32 and eFarmHash64.
     /// @sa AddChars
+    void Calculate(const CTempString str);
     void Calculate(const char* str, size_t len);
 
     // Methods used for file/stream operations
@@ -306,6 +307,14 @@ inline
 bool CChecksum::Valid(void) const
 {
     return GetMethod() != eNone;
+}
+
+inline
+void CChecksum::Calculate(const CTempString str)
+{
+    _ASSERT(!m_CharCount);
+    x_Update(str.data(), str.size());
+    m_CharCount = str.size();
 }
 
 inline
