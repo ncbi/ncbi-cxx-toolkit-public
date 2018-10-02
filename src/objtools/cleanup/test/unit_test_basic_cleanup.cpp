@@ -2345,3 +2345,30 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4536)
     CheckAuthNameSingleInitialFix("", "M.E.", "", "M.E.");
     
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4565)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+
+    prot->SetData().SetProt().SetName().push_back("A");
+    prot->SetData().SetProt().SetName().push_back("A");
+    prot->SetData().SetProt().SetName().push_back("B");
+    prot->SetData().SetProt().SetName().push_back("C");
+    prot->SetData().SetProt().SetName().push_back("B");
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    BOOST_CHECK_EQUAL(prot->SetData().SetProt().GetName().size(), 4);
+
+}
+

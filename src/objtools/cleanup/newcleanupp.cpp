@@ -7285,6 +7285,8 @@ void CNewCleanup_imp::ProtrefBC (
             }
         }
     }
+
+    UNIQUE_WITHOUT_SORT(NAME_ON_PROTREF, prot_ref, PNocase, CCleanupChange::eChangeProtNames);
 }
 
 static const char* const uninf_names [] = {
