@@ -1355,7 +1355,7 @@ DISCREPANCY_CASE(RIBOSOMAL_SLIPPAGE, CSeq_feat_BY_BIOSEQ, eDisc | eSmart, " Only
         if (obj.GetExcept_text().find("ribosomal slippage") != string::npos) {
             string product = GetProductForCDS(obj, context.GetScope()); // sema: may need to change when we start using CFeatTree
             static string ignore1[] = { "transposase", "chain release" };
-            static string ignore2[] = { "IS150 protein InsAB" };
+            static string ignore2[] = { "IS150 protein InsAB", "PCRF domain-containing protein" };
             static size_t len1 = sizeof(ignore1) / sizeof(ignore1[0]);
             static size_t len2 = sizeof(ignore2) / sizeof(ignore2[0]);
             for (size_t n = 0; n < len1; n++) {
