@@ -3073,6 +3073,7 @@ SIZE_TYPE NStr::CommonOverlapSize(const CTempString s1, const CTempString s2)
             return best;
         }
         n += pos;
+        pattern.assign(t1.data() + len - n, n);
         if (pos == 0 || memcmp(pattern.data(), t2.data(), n) == 0) {
             best = n;
             n++;
