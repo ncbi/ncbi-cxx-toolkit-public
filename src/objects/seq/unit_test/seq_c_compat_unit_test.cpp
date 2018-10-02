@@ -123,8 +123,10 @@ enum EIDLabelType {
 
 static string s_IdLabel(const TAutoSeqId& c_id, EIDLabelType type)
 {
-    return NStr::TruncateSpaces(string(SeqIdWholeLabel(c_id.get(), type)),
-                                NStr::eTrunc_End);
+    CharPtr c_label = SeqIdWholeLabel(c_id.get(), type);
+    string result = NStr::TruncateSpaces(c_label, NStr::eTrunc_End);
+    Nlm_MemFree(c_label);
+    return result;
 }
 
 static string s_IdLabel(const CSeq_id& cxx_id, EIDLabelType type)
@@ -168,6 +170,9 @@ static void s_TestIdFormatting(const char* s)
     BOOST_CHECK_EQUAL(s_IdLabel(c_id,   eTextAccOnly),
                       s_IdLabel(cxx_id, eTextAccOnly));
     BOOST_CHECK_EQUAL(s_IdLabel(c_id, eReport), s_IdLabel(cxx_id, eReport));
+
+    AsnIoClose(aip);
+    AsnIoMemClose(aimp);
 }
 
 BOOST_AUTO_PARAM_TEST_CASE(s_TestIdFormatting, kRepresentativeIDs + 0,
