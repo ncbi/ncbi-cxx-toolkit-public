@@ -228,6 +228,7 @@ main(int argc, char **argv)
                                 for (j = 0;  j <= srclen;  ++j) {
                                         widesrc[j] = src[j];
                                 }
+                                src = widesrc;
                                 srclen *= sizeof(*widesrc);
                         }
 			break;
