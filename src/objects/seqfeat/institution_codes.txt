@@ -3542,6 +3542,7 @@ LFG	s	Centre de Recherche de la Nature, des Forets et du Bois
 LFM	s	Merseyside County Museums (formerly Liverpool Free Museum)			
 LG	s	Universite de Liege, Departement de Botanique			
 LGBH	s	Loughborough Public Library			
+LGC	s	Laboratorio de Genetica da Conservacao			
 LGEMA<BRA>	s	Laboratorio de Genetica e Evolucao Molecular de Aves, Universidade de Sao Paulo			
 LGHF	s	Universite de Liege			
 LGICT	s	Laboratoire de Geologie de l'Institut Catholique de Toulouse			
@@ -3549,7 +3550,6 @@ LGM	s	Leningrad School of Mines
 LGM-USP	c	Departamento de Microbiologia Lab. de Genetica de Microrganismos			
 LGMF	c	Culture Collection of Laboratory of Genetics of Microorganisms, Federal University of Parana			
 LGO	s	Columbia University			
-LGP	s	Laboratorio de Genetica de Peixes			
 LGPUT	s	Laboratory of Geology and Palaeontology			
 LGU	s	Leningrad State University			
 LHMS<ZAF >	b	Leslie Hill Molecular Systematics Laboratory			
@@ -4790,7 +4790,7 @@ NMBA<ARG>	s	National Museum, Buenos Aires
 NMBA<AUT>	s	Naturhistorisches Museum der Benediktiner-Abtei			
 NMBA<CHE>	s	Naturhistorisches Museum, Basel	NHMB		
 NMBE	s	Naturhistorisches Museum der Burgergemeinde Bern	NHM		
-NMBO	s	National Museum, Bloemfontein			
+NMBO	s	National Museum, Bloemfontein	NMB		
 NMBT	s	Natuurmuseum Brabant			
 NMBZ	s	Natural History Museum of Zimbabwe			
 NMC	s	New Mexico State University, Department of Biology			
@@ -6544,7 +6544,7 @@ TLS	s	Tunbridge Wells Museum and Art Gallery
 TLXM	s	Universidad Autonoma de Tlaxcala			
 TM<DEU>	s	Teylers Museum, Paleontologische			
 TM<SVK>	s	Slovak National Museum			
-TM<ZAF>	s	Transvaal Museum	TMSA,TRM		
+TM<ZAF>	s	Ditsong National Museum of Natural History	TMSA,TRM		
 TMAG	s	Tasmanian Museum & Art Gallery			
 TMAL	s	Tameside Metropolitan Borough Museum			
 TMBS	s	Tatsuo Tanaka Memorial Biological Laboratory			
@@ -6562,7 +6562,7 @@ TMNH	s	Tianjin Museum of Natural History
 TMP<FIN>	s	Tampere Museums			
 TMRC	s	Shahid Beheshti University of Medical Sciences			
 TMS	s	Toleco Museum of Health and Natural History			
-TMSA	s	Transvaal Museum	TM<ZAF>		
+TMSA	s	Ditsong National Museum of Natural History	TM<ZAF>		
 TMTC	s	Taiwan Provincial Museum			
 TMW	c	Technische Mikrobiologie Weihenstephan			
 TNAU	s	Tamil Nadu Agricultural University			
