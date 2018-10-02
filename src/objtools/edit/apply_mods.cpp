@@ -64,7 +64,6 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
-#include <objtools/edit/dblink_field.hpp>
 #include <objtools/edit/apply_mods.hpp>
 
 #include <unordered_set>
@@ -467,7 +466,7 @@ private:
 
     CSeqdesc& x_SetDescriptor(EChoice eChoice,
                               function<bool(const CSeqdesc&)>f_verify,
-                              function<CRef<CSeqdesc>(void)> f_create =[](){ return Ref(new CSeqdesc()); });
+                              function<CRef<CSeqdesc>(void)> f_create);
 
     bool x_IsUserType(const CUser_object& user_object, const string& type);
     void x_SetUserType(const string& type, CUser_object& user_object);
@@ -543,14 +542,30 @@ CSeqdesc& CDescriptorCache::SetGenomeProjects()
 CSeqdesc& CDescriptorCache::SetGBblock()
 {
     return x_SetDescriptor(eGBblock, 
-                            [](const CSeqdesc& desc) { return desc.IsGenbank(); });
+        [](const CSeqdesc& desc) { 
+            return desc.IsGenbank(); 
+        },
+        []() {
+            auto pDesc = Ref(new CSeqdesc());
+            pDesc->SetGenbank();
+            return pDesc;
+        }
+    );
 }
 
 
 CSeqdesc& CDescriptorCache::SetMolInfo()
 {
     return x_SetDescriptor(eMolInfo,
-                           [](const CSeqdesc& desc) { return desc.IsMolinfo(); });
+        [](const CSeqdesc& desc) { 
+            return desc.IsMolinfo(); 
+        },
+        []() {
+            auto pDesc = Ref(new CSeqdesc());
+            pDesc->SetMolinfo();
+            return pDesc;
+        }
+    );
 }
 
 
@@ -559,7 +574,13 @@ CSeqdesc& CDescriptorCache::SetPub()
     return x_SetDescriptor(ePub,
         [](const CSeqdesc& desc) {
             return desc.IsPub();
-        });
+        },
+        []() {
+            auto pDesc = Ref(new CSeqdesc());
+            pDesc->SetPub();
+            return pDesc;
+        }
+    );
 }
 
 
@@ -939,24 +960,76 @@ void CModApply_Impl::x_ApplyNonBioSourceDescriptorMods(const TMods& mods, CBiose
 
 
 
+static void s_SetDBLinkFieldVals(const string& label, 
+                                const list<CTempString>& vals,
+                                CSeqdesc& dblink_desc)
+{
+    if (vals.empty()) {
+        return;
+    }
+
+    auto& user_obj = dblink_desc.SetUser();
+    CRef<CUser_field> pField;
+    if (user_obj.IsSetData()) {
+        for (auto pUserField : user_obj.SetData()) {
+            if (pUserField->IsSetLabel() &&
+                pUserField->GetLabel().IsStr() &&
+                NStr::EqualNocase(pUserField->GetLabel().GetStr(), label)) {
+                pField = pUserField;
+                break;
+            }
+        }
+    }
+
+    if (!pField) {
+        pField = Ref(new CUser_field());
+        pField->SetLabel().SetStr() = label;
+        user_obj.SetData().push_back(pField);
+    }
+
+   // pField->SetData().SetStrs().clear(); // RW-518 - clear any preexisting entries
+    for (const auto& val : vals) {
+        pField->SetData().SetStrs().push_back(val);
+    }
+    pField->SetNum(pField->GetData().GetStrs().size());
+}
+
+
+static void s_SetDBLinkField(const string& label,
+                             const string& vals,
+                             CDescriptorCache& descriptor_cache)
+{
+    list<CTempString> value_list;
+    NStr::Split(vals, ",", value_list, NStr::fSplit_MergeDelimiters);
+    for (auto& val : value_list) {
+        val = NStr::TruncateSpaces_Unsafe(val);
+    }
+    value_list.remove_if([](const CTempString& val){ return val.empty(); });
+    if (value_list.empty()) { // nothing to do
+        return;
+    }
+
+    s_SetDBLinkFieldVals(label,
+                         value_list,
+                         descriptor_cache.SetDBLink());
+}
+
+
 bool CModApply_Impl::x_AddDBLinkMod(const TMod& mod, CDescriptorCache& descriptor_cache)
 {
     const auto& name = mod.first;
     if (s_IsMatch(name, "SRA")) {
-        auto& user = descriptor_cache.SetDBLink().SetUser();
-        CDBLink::SetSRA(user, mod.second, eExistingText_add_qual);
+        s_SetDBLinkField("Sequence Read Archive", mod.second, descriptor_cache);
         return true;
     }
         
     if (s_IsMatch(name, "biosample")) {
-        auto& user = descriptor_cache.SetDBLink().SetUser();
-        CDBLink::SetBioSample(user, mod.second, eExistingText_add_qual);
+        s_SetDBLinkField("BioSample", mod.second, descriptor_cache);
         return true;
     }
     
     if (s_IsMatch(name, "bioproject")) {
-        auto& user = descriptor_cache.SetDBLink().SetUser();
-        CDBLink::SetBioProject(user, mod.second, eExistingText_add_qual);
+        s_SetDBLinkField("BioProject", mod.second, descriptor_cache);
         return true;
     } 
 
