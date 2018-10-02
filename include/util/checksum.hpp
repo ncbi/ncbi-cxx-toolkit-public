@@ -79,9 +79,10 @@ public:
                            ///< places (iSCSI). This method has hardware support in new
                            ///< Intel processors. Least significant bits are processed first,
                            ///< extra inversions at the beginning and the end.
-        eFarmHash32,       ///< FarmHash CRC 32-bit.
-        eFarmHash64,       ///< FarmHash CRC 64-bit.
-        eCityHash64,       ///< CityHash CRC 64-bit.
+        eCityHash32,       ///< CityHash 32-bit. Can be used with Calculate() only.
+        eCityHash64,       ///< CityHash 64-bit. Can be used with Calculate() only.
+        eFarmHash32,       ///< FarmHash 32-bit. Can be used with Calculate() only.
+        eFarmHash64,       ///< FarmHash 64-bit. Can be used with Calculate() only.
         eDefault = eCRC32
     };
     enum {
@@ -118,7 +119,7 @@ public:
     }
 
     /// Return calculated checksum.
-    /// Only valid in 32-bit modes, like: CRC32*, Adler32, FarmHash32.
+    /// Only valid in 32-bit modes, like: CRC32*, Adler32, CityHash32, FarmHash32.
     Uint4 GetChecksum32(void) const;
 
     /// Return calculated checksum.
@@ -129,19 +130,33 @@ public:
     string GetHexSum(void) const;
 
     /// Return calculated MD5 digest.
-    /// Only valid in MD5 mode!
+    /// @attention Only valid in MD5 mode!
     void GetMD5Digest(unsigned char digest[16]) const;
     void GetMD5Digest(string& str) const;
 
     /// Reset the object to prepare it to the next checksum computation.
     void Reset(EMethod method = eNone/**<keep current method*/);
 
+    /// One pass method to calculate checksum/hash.
+    /// Similar to AddChars(), but with additional checks, it doesn't allow
+    /// to update calculated checksum anymore. Cannot be combined with any Add*() methods.
+    /// @note
+    ///   Should be used with eCityHash32, eCitiHash64, eFarmHash32 and eFarmHash64.
+    /// @sa AddChars
+    void Calculate(const char* str, size_t len);
+
     // Methods used for file/stream operations
+    //
+    // ATTENTION!
+    //
+    // The following Add*() methods are not implemented for methods
+    // eCityHash32, eCitiHash64, eFarmHash32 and eFarmHash64!
+    // Use Calculate().
 
     /// Update current control sum with data provided.
+    void AddChars(const char* str, size_t len);
     void AddLine(const char* line, size_t len);
     void AddLine(const string& line);
-    void AddChars(const char* str, size_t len);
     void NextLine(void);
 
     /// Compute checksum for the file, add it to this checksum.
@@ -294,9 +309,11 @@ bool CChecksum::Valid(void) const
 }
 
 inline
-CNcbiOstream& operator<<(CNcbiOstream& out, const CChecksum& checksum)
+void CChecksum::Calculate(const char* str, size_t count)
 {
-    return checksum.WriteChecksum(out);
+    _ASSERT(!m_CharCount);
+    x_Update(str, count);
+    m_CharCount = count;
 }
 
 inline
@@ -349,6 +366,13 @@ void CChecksum::GetMD5Digest(string& str) const
     str.clear();
     str.insert(str.end(), (const char*)buf, (const char*)buf + 16);
 }
+
+inline
+CNcbiOstream& operator<<(CNcbiOstream& out, const CChecksum& checksum)
+{
+    return checksum.WriteChecksum(out);
+}
+
 
 inline
 const CChecksum& CChecksumStreamWriter::GetChecksum(void) const

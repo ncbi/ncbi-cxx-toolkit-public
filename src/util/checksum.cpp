@@ -189,9 +189,10 @@ void CChecksum::Reset(EMethod method)
     case eAdler32:
         m_Checksum.CRC32 = 1;
         break;
+    case eCityHash32:
+    case eCityHash64:
     case eFarmHash32:
     case eFarmHash64:
-    case eCityHash64:
     default:
         break;
     }
@@ -232,6 +233,7 @@ Uint4 CChecksum::GetChecksum32(void) const
     case eCRC32:
     case eCRC32INSD:
     case eAdler32:
+    case eCityHash32:
     case eFarmHash32:
         return m_Checksum.CRC32;
     case eCRC32ZIP:
@@ -247,8 +249,8 @@ Uint4 CChecksum::GetChecksum32(void) const
 Uint8 CChecksum::GetChecksum64(void) const
 {
     switch ( GetMethod() ) {
-    case eFarmHash64:
     case eCityHash64:
+    case eFarmHash64:
         return m_Checksum.CRC64;
     default:
         _ASSERT(0);
@@ -340,14 +342,17 @@ CNcbiOstream& CChecksum::WriteChecksumData(CNcbiOstream& out) const
     case eCRC32C:
         out << "CRC32: ";
         break;
+    case eCityHash32:
+        out << "CityHash32: ";
+        break;
+    case eCityHash64:
+        out << "CityHash64: ";
+        break;
     case eFarmHash32:
         out << "FarmHash32: ";
         break;
     case eFarmHash64:
         out << "FarmHash64: ";
-        break;
-    case eCityHash64:
-        out << "CityHash64: ";
         break;
     default:
         out << "none";
@@ -1179,26 +1184,21 @@ void CChecksum::x_Update(const char* str, size_t count)
     case eMD5:
         m_Checksum.MD5->Update(str, count);
         break;
-    case eFarmHash32:
-        if (m_Checksum.CRC32 == 0) {
-            m_Checksum.CRC32 = farmhash::Hash32(str, count);
-        } else {
-            m_Checksum.CRC32 = farmhash::Hash32WithSeed(str, count, m_Checksum.CRC32);
-        }
-        break;
-    case eFarmHash64:
-        if (m_Checksum.CRC64 == 0) {
-            m_Checksum.CRC64 = farmhash::Hash64(str, count);
-        } else {
-            m_Checksum.CRC64 = farmhash::Hash64WithSeed(str, count, m_Checksum.CRC64);
-        }
+    case eCityHash32:
+        _ASSERT(!m_CharCount);
+        m_Checksum.CRC32 = CityHash32(str, count);
         break;
     case eCityHash64:
-        if (m_Checksum.CRC64 == 0) {
-            m_Checksum.CRC64 = CityHash64(str, count);
-        } else {
-            m_Checksum.CRC64 = CityHash64WithSeed(str, count, m_Checksum.CRC64);
-        }
+        _ASSERT(!m_CharCount);
+        m_Checksum.CRC64 = CityHash64(str, count);
+        break;
+    case eFarmHash32:
+        _ASSERT(!m_CharCount);
+        m_Checksum.CRC32 = farmhash::Hash32(str, count);
+        break;
+    case eFarmHash64:
+        _ASSERT(!m_CharCount);
+        m_Checksum.CRC64 = farmhash::Hash64(str, count);
         break;
     default:
         _ASSERT(0);
