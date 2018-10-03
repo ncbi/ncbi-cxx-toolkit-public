@@ -79,8 +79,14 @@ public:
                            ///< places (iSCSI). This method has hardware support in new
                            ///< Intel processors. Least significant bits are processed first,
                            ///< extra inversions at the beginning and the end.
+
         eCityHash32,       ///< CityHash 32-bit. Can be used with Calculate() only.
         eCityHash64,       ///< CityHash 64-bit. Can be used with Calculate() only.
+
+        // ATTENTION! 
+        // FarmHash methods may change from time to time, may differ on different platforms,
+        // may differ depending on NDEBUG. So, shouldn't be used for storing. 
+        
         eFarmHash32,       ///< FarmHash 32-bit. Can be used with Calculate() only.
         eFarmHash64,       ///< FarmHash 64-bit. Can be used with Calculate() only.
         eDefault = eCRC32

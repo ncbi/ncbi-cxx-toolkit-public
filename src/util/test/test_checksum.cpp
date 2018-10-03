@@ -224,9 +224,7 @@ vector<SChecksumStrTest> s_StrTests = {
         { CChecksum::eCRC32C,      0,           "" },
         { CChecksum::eAdler32,     0x00000001,  "" },
         { CChecksum::eCityHash32,  0xdc56d17a,  "" },
-        { CChecksum::eFarmHash32,  0x65466984,  "" },
         { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x9ae16a3b2f90404f), "" },
-        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0x826e8074d1fa8def), "" },
         { CChecksum::eMD5,         0, "d41d8cd98f00b204e9800998ecf8427e" }}
     },
     { "a", {
@@ -237,9 +235,7 @@ vector<SChecksumStrTest> s_StrTests = {
         { CChecksum::eCRC32C,      0xc1d04330,  "" },
         { CChecksum::eAdler32,     0x00620062,  "" },
         { CChecksum::eCityHash32,  0x3c973d4d,  "" },
-        { CChecksum::eFarmHash32,  0xa211d90c,  "" },
         { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0xb3454265b6df75e3), "" },
-        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0x06756523d617d714), "" },
         { CChecksum::eMD5,         0, "0cc175b9c0f1b6a831c399e269772661" }}
     },
     { "abc", {
@@ -250,9 +246,7 @@ vector<SChecksumStrTest> s_StrTests = {
         { CChecksum::eCRC32C,      0x364b3fb7,  "" },
         { CChecksum::eAdler32,     0x024d0127,  "" },
         { CChecksum::eCityHash32,  0x2f635ec7,  "" },
-        { CChecksum::eFarmHash32,  0x08081477,  "" },
         { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x24a5b3a074e7f369), "" },
-        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0xd4655cc380df37ea), "" },
         { CChecksum::eMD5,         0, "900150983cd24fb0d6963f7d28e17f72" }}
     },
     { "message digest", {
@@ -263,9 +257,7 @@ vector<SChecksumStrTest> s_StrTests = {
         { CChecksum::eCRC32C,      0x02bd79d0,  "" },
         { CChecksum::eAdler32,     0x29750586,  "" },
         { CChecksum::eCityHash32,  0x246f52b3,  "" },
-        { CChecksum::eFarmHash32,  0x218f0e26,  "" },
         { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x8db193972bf98c6a), "" },
-        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0x61b8394d2d3bd58f), "" },
         { CChecksum::eMD5,         0, "f96b697d7cb7938d525a2f31aaf161d0" }}
     },
     { "abcdefghijklmnopqrstuvwxyz", {
@@ -276,9 +268,7 @@ vector<SChecksumStrTest> s_StrTests = {
         { CChecksum::eCRC32C,      0x9ee6ef25,  "" },
         { CChecksum::eAdler32,     0x90860b20,  "" },
         { CChecksum::eCityHash32,  0xaa02c5c1,  "" },
-        { CChecksum::eFarmHash32,  0x49395595,  "" },
         { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x5ead741ce7ac31bd), "" },
-        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0x18fe6858e83966fa), "" },
         { CChecksum::eMD5,         0, "c3fcd3d76192e4007dfb496cca67e13b" }}
     },
     { "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", {
@@ -289,9 +279,7 @@ vector<SChecksumStrTest> s_StrTests = {
         { CChecksum::eCRC32C,      0xa245d57d,  "" },
         { CChecksum::eAdler32,     0x8adb150c,  "" },
         { CChecksum::eCityHash32,  0xa77b8219,  "" },
-        { CChecksum::eFarmHash32,  0x1ba6920c,  "" },
         { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x4566c1e718836cd6), "" },
-        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0xf1c5d0f3b9102e0b), "" },
         { CChecksum::eMD5,         0, "d174ab98d277d9f5a5611c2c9f419d9f" }}
     },
     { "12345678901234567890123456789012345678901234567890123456789012345678901234567890", {
@@ -302,9 +290,7 @@ vector<SChecksumStrTest> s_StrTests = {
         { CChecksum::eCRC32C,      0x477a6781,  "" },
         { CChecksum::eAdler32,     0x97b61069,  "" },
         { CChecksum::eCityHash32,  0x725594c0,  "" },
-        { CChecksum::eFarmHash32,  0x4c4e8ef8,  "" },
         { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x791a4c16629ee4cd), "" },
-        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0x0009b5b901af0ae0), "" },
         { CChecksum::eMD5,         0, "57edf4a22be3c955ac49da2e2107b67a" }}
     },
     { string("\1\xc0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\1\xfe\x60\xac\0\0\0"
@@ -316,9 +302,7 @@ vector<SChecksumStrTest> s_StrTests = {
         { CChecksum::eCRC32C,      0x99b08a14,  "" },
         { CChecksum::eAdler32,     0x65430307,  "" },
         { CChecksum::eCityHash32,  0x5a50eecd,  "" },
-        { CChecksum::eFarmHash32,  0x809ab598,  "" },
         { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0xca8a7f96d3b805dd), "" },
-        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0x784c0b56a08388d3), "" },
         { CChecksum::eMD5,         0, "f16de75fd4137d2b5b12f35f247a6214" }}
     }
 };
@@ -495,9 +479,7 @@ vector<SChecksumCase> s_BigTests = {
     { CChecksum::eCRC32C,      0x7adb1cd3,  "" },
     { CChecksum::eAdler32,     0x528a7135,  "" },
     { CChecksum::eCityHash32,  0xca83e47e,  "" },
-    { CChecksum::eFarmHash32,  0xac98e810,  "" },
     { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0xb2195ac46438d77d), "" },
-    { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0x41793487f7df34e2), "" },
     { CChecksum::eMD5,         0, "a1ed665e33b6feb5a645738b4384ca25" }
 };
 
