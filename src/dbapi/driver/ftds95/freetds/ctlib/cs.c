@@ -832,6 +832,7 @@ _cs_convert_ex(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata,
                 if (handle == NULL) {
                     memcpy(dest, cres.c, len);
                 } else {
+                    free(*handle);
                     *handle = cres.c;
                     dest = *handle;
                 }
@@ -846,6 +847,7 @@ _cs_convert_ex(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata,
             if (handle == NULL) {
                 memcpy(dest, cres.c, len);
             } else {
+                free(*handle);
                 *handle = cres.c;
                 destlen = len;
             }
@@ -860,6 +862,7 @@ _cs_convert_ex(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata,
             if (handle == NULL) {
                 memcpy(dest, cres.c, len);
             } else {
+                free(*handle);
                 *handle = cres.c;
                 destlen = len;
             }
@@ -872,6 +875,7 @@ _cs_convert_ex(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata,
             if (handle == NULL) {
                 memcpy(dest, cres.c, len);
             } else {
+                free(*handle);
                 *handle = cres.c;
             }
 			*resultlen = len;

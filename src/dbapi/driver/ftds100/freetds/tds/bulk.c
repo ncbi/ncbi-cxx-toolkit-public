@@ -1370,6 +1370,8 @@ static int tds_bcp_read_column_defaults(TDSSOCKET *tds, TDSBCPINFO *bcpinfo)
                                 if (is_blob_type(curcol->column_type)) {
                                         src = (unsigned char*)
                                                 ((TDSBLOB*)src)->textvalue;
+                                        tds_free_bcp_column_data
+                                                (bindcol->bcp_column_data);
                                         bindcol->bcp_column_data
                                                 = tds_alloc_bcp_column_data
                                                 (curcol->column_cur_size);

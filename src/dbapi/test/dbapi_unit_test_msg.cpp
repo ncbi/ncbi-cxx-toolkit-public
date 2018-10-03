@@ -871,6 +871,7 @@ BOOST_AUTO_TEST_CASE(Test_MsgToEx)
             BOOST_CHECK_THROW(s_ES_01_Internal(*local_conn), CDB_Exception);
 
             while((dbex = local_conn->GetErrorAsEx()->Pop())) {
+                delete dbex;
                 ++msg_num;
             }
 
@@ -887,6 +888,7 @@ BOOST_AUTO_TEST_CASE(Test_MsgToEx)
             BOOST_CHECK_THROW(s_ES_01_Internal(*local_conn), CDB_Exception);
 
             while ((dbex = local_conn->GetErrorAsEx()->Pop())) {
+                delete dbex;
                 ++msg_num;
             }
 
@@ -903,6 +905,7 @@ BOOST_AUTO_TEST_CASE(Test_MsgToEx)
             BOOST_CHECK_THROW(s_ES_01_Internal(*local_conn), CDB_Exception);
 
             while ((dbex = local_conn->GetErrorAsEx()->Pop())) {
+                delete dbex;
                 ++msg_num;
             }
 
@@ -919,6 +922,7 @@ BOOST_AUTO_TEST_CASE(Test_MsgToEx)
             BOOST_CHECK_THROW(s_ES_01_Internal(*local_conn), CDB_Exception);
 
             while ((dbex = local_conn->GetErrorAsEx()->Pop())) {
+                delete dbex;
                 ++msg_num;
             }
 
@@ -937,6 +941,7 @@ BOOST_AUTO_TEST_CASE(Test_MsgToEx)
             BOOST_CHECK_THROW(s_ES_01_Internal(*local_conn), CDB_Exception);
 
             while ((dbex = local_conn->GetErrorAsEx()->Pop())) {
+                delete dbex;
                 ++msg_num;
             }
 

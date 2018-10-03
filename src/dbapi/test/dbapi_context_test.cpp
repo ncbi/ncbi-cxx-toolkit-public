@@ -100,6 +100,17 @@ void  CContextThread::OnExit(void)
 }
 
 
+static
+void s_CloseOriginalConnection(void)
+{
+    static bool closed;
+    if ( !closed ) {
+        GetConnection().Close();
+        closed = true;
+    }
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(Test_DriverContext_One)
 {
@@ -108,6 +119,8 @@ BOOST_AUTO_TEST_CASE(Test_DriverContext_One)
     int succeeded_num = 0;
     CRef<CContextThread> thr[eNumThreadsMax];
 
+    s_CloseOriginalConnection();
+    
     // Spawn more threads
     for (int i = 0; i < eNumThreadsMax; ++i) {
         thr[i] = new CContextThread(GetDM(), &GetArgs());
@@ -133,6 +146,8 @@ BOOST_AUTO_TEST_CASE(Test_DriverContext_Many)
     void* ok;
     int succeeded_num = 0;
     CRef<CContextThread> thr[eNumThreadsMax];
+
+    s_CloseOriginalConnection();
 
     // Spawn more threads
     for (int i = 0; i < eNumThreadsMax; ++i) {

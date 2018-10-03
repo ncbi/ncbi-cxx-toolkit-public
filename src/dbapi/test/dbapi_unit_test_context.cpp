@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE(Test_SetLogStream)
                                                        );
                 } else {
                     CRef<CDB_UserHandler> hx(new CDB_UserHandler_Exception);
-                    CDB_UserHandler::SetDefault(hx);
+                    hx.Reset(CDB_UserHandler::SetDefault(hx));
                     drv_context->PushCntxMsgHandler(new CDB_UserHandler_Exception,
                                                     eTakeOwnership);
                     drv_context->PushDefConnMsgHandler(new CDB_UserHandler_Exception,
