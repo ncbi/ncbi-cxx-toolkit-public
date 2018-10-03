@@ -779,7 +779,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
                     idStr = sdl->id->AsFastaString();
                 }
                 else {
-                    idStr = CAlignFormatUtil::GetBareId(*sdl->id);
+                    idStr = CAlignFormatUtil::GetBareId(*sdl->id) + " ";
                 }
             	if (strncmp(idStr.c_str(), "lcl|", 4) == 0) {
             		idStr = sdl->id->AsFastaString().substr(4);
@@ -791,9 +791,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
         if((m_Option & eHtml) && (sdl->id_url != NcbiEmptyString)) {
             out << "</a>";
         }
-        // TEMP comment out previous change
-        //        line_component = (line_component.empty() ? " " : "  ") + sdl->defline;
-        line_component = "  " + sdl->defline;
+        line_component = (line_component.empty() ? "" : "  ") + sdl->defline;
         string actual_line_component;
         if(line_component.size()+line_length > m_LineLen){
             actual_line_component = line_component.substr(0, m_LineLen -
