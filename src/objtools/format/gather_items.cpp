@@ -1722,8 +1722,8 @@ void CFlatGatherer::x_GatherSequence(void) const
     to = ( to <= size ? to : size );
 
     bool first = true;
-    for ( TSeqPos pos = 1; pos <= to; pos += kChunkSize ) {
-        TSeqPos end = min( pos + kChunkSize - 1, to );
+    for ( TSeqPos pos = 1; pos <= size; pos += kChunkSize ) {
+        TSeqPos end = min( pos + kChunkSize - 1, size );
         item.Reset( new CSequenceItem( pos, end, first, *m_Current ) );
         *m_ItemOS << item;
         first = false;
