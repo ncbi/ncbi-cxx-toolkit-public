@@ -1,4 +1,4 @@
-/*  $Id$
+﻿/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Aaron Ucko, NCBI
+* Authors:  Aaron Ucko, Vladimir Ivanov
 *
 * File Description:
 *   checksum computation test
@@ -43,19 +43,68 @@
 
 USING_NCBI_SCOPE;
 
+
 class CFileData;
+
+/// Checksum computation results
+
+union SChecksumCRC {
+    Uint8 crc64;
+    Uint4 crc32;
+};
+
+struct SChecksumCase
+{
+    CChecksum::EMethod method;
+    SChecksumCRC       crc;
+    const char*        md5;
+};
+
+
+// Test application
 
 class CChecksumTestApp : public CNcbiApplication
 {
 public:
     void Init(void);
     int  Run (void);
-    void RunChecksum(CChecksum::EMethod type, const CFileData& data);
 
+public:
+    // Get method name
+    string GetMethodName(const CChecksum& sum);
+    // Check that method is an one-pass hash method (to use with Calculate())
+    bool IsHashMethod(CChecksum::EMethod method);
+    // Compute checksum for a given string
+    void ComputeStrSum(const char* data, size_t size, CChecksum& sum);
+    // Compute checksum for a big data
+    void ComputeBigSum(CRandom& random, const CFileData& file_data, size_t offset, CChecksum& sum);
+    // Verify computed checksum against known values
+    bool VerifySum(const string& data_origin, CChecksum& sum, SChecksumCase& expected);
+
+    // Self tests
+
+    // CRC/MD5 string tests
+    bool SelfTest_Str();
+    // Additional Adler32 test
+    bool SelfTest_Adler32();
+    // Big data test
+    bool SelfTest_Big();
+
+    // Speed tests
+
+    // Run speed tests on a file data (depends on arguments)
+    void RunChecksums(const CFileData& file_data);
+    // Run a specific speed test on a file data
+    void RunChecksum(CChecksum::EMethod method, const CFileData& file_data);
+
+private:
+/* -- not used (yet)
     size_t m_ChunkSize;
     size_t m_ChunkCount;
     size_t m_ChunkOffset;
+*/
 };
+
 
 void CChecksumTestApp::Init(void)
 {
@@ -63,29 +112,19 @@ void CChecksumTestApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "CChecksum test program");
 
-    arg_desc->AddFlag("selftest",
-                      "Just verify behavior on internal test data");
-    arg_desc->AddFlag("CRC32",
-                      "Run CRC32 test.");
-    arg_desc->AddFlag("CRC32ZIP",
-                      "Run CRC32ZIP test.");
-    arg_desc->AddFlag("CRC32CKSUM",
-                      "Run CRC32 test as cksum does.");
-    arg_desc->AddFlag("CRC32C",
-                      "Run CRC32C test.");
-    arg_desc->AddFlag("MD5",
-                      "Run MD5 test.");
-    arg_desc->AddFlag("Adler32",
-                      "Run Adler32 test.");
+    arg_desc->AddFlag("selftest",   "Verify behavior on internal test data");
+
+    /* -- not used (yet)
     arg_desc->AddDefaultKey("size", "size",
-                            "Process chunk size",
-                            CArgDescriptions::eInteger, "8192");
+                      "Process chunk size",
+                      CArgDescriptions::eInteger, "8192");
     arg_desc->AddDefaultKey("count", "count",
-                            "Process chunk count",
-                            CArgDescriptions::eInteger, "1");
+                      "Process chunk count",
+                      CArgDescriptions::eInteger, "1");
     arg_desc->AddDefaultKey("offset", "offset",
-                            "Process chunk unalignment offset",
-                            CArgDescriptions::eInteger, "0");
+                      "Process chunk unalignment offset",
+                      CArgDescriptions::eInteger, "0");
+*/
     arg_desc->AddExtra(0, kMax_UInt, "files to process (stdin if none given)",
                        CArgDescriptions::eInputFile,
                        CArgDescriptions::fPreOpen | CArgDescriptions::fBinary);
@@ -95,103 +134,236 @@ void CChecksumTestApp::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-static void s_ComputeSums(const char* data,
-                          size_t size,
-                          CChecksum& crc32,
-                          CChecksum& crc32zip,
-                          CChecksum& crc32cksum,
-                          CChecksum& crc32c,
-                          CChecksum& md5)
+
+string CChecksumTestApp::GetMethodName(const CChecksum& sum)
 {
-    char buf[289]; // use a weird size to force varying phases
+    switch ( sum.GetMethod() ) {
+    case CChecksum::eCRC32:      return "CRC32";
+    case CChecksum::eCRC32ZIP:   return "CRC32ZIP";
+    case CChecksum::eCRC32INSD:  return "CRC32INSD";
+    case CChecksum::eCRC32CKSUM: return "CRC32CKSUM";
+    case CChecksum::eCRC32C:     return "CRC32C";
+    case CChecksum::eAdler32:    return "Adler32";
+    case CChecksum::eMD5:        return "MD5";
+    case CChecksum::eCityHash32: return "CityHash32";
+    case CChecksum::eCityHash64: return "CityHash64";
+    case CChecksum::eFarmHash32: return "FarmHash32";
+    case CChecksum::eFarmHash64: return "FarmHash64";
+    }
+     _TROUBLE;
+    return "";
+}
+
+bool CChecksumTestApp::IsHashMethod(CChecksum::EMethod method)
+{
+    switch ( method ) {
+    case CChecksum::eCityHash32:
+    case CChecksum::eCityHash64:
+    case CChecksum::eFarmHash32:
+    case CChecksum::eFarmHash64:
+        return true;
+    }
+    return false;
+}
+
+
+bool CChecksumTestApp::VerifySum(const string& data_origin, CChecksum& sum, SChecksumCase& expected)
+{
+    string method = GetMethodName(sum);
+
+    if ( sum.GetMethod() == CChecksum::eMD5 ) {
+        if ( sum.GetHexSum() != expected.md5 ) {
+            cerr << "FAILED "<< method << " for " << data_origin << endl;
+            cerr << "    Expected: " << hex << expected.md5  << endl;
+            cerr << "    Computed: " << hex << sum.GetHexSum() << endl;
+            return false;
+        }
+    }
+    else 
+    if (sum.GetChecksumBits() == 32) {
+        if ( sum.GetChecksum32() != expected.crc.crc32 ) {
+            cerr << "FAILED "<< method << " for " << data_origin << endl;
+            cerr << "    Expected: " << hex << expected.crc.crc32  << endl;
+            cerr << "    Computed: " << hex << sum.GetChecksum32() << endl;
+            return false;
+        }
+    }
+    else 
+    if (sum.GetChecksumBits() == 64) {
+        if ( sum.GetChecksum64() != expected.crc.crc64 ) {
+            cerr << "FAILED "<< method << " for " << data_origin << endl;
+            cerr << "    Expected: " << hex << expected.crc.crc64  << endl;
+            cerr << "    Computed: " << hex << sum.GetChecksum64() << endl;
+            return false;
+        }
+    } else{
+        _TROUBLE;
+    }
+    return true;
+}
+
+
+// Not testing CRCs for now, since I can't find an external
+// implementation that agrees with what we have.
+// Note: MD5 test cases from RFC 1321
+
+struct SChecksumStrTest
+{
+    string str;
+    vector<SChecksumCase> cases;
+};
+
+vector<SChecksumStrTest> s_StrTests = {
+
+    { // CChecksum::Reset() test, except hash methods, that compute hash even for empty strings
+      "", {
+        { CChecksum::eCRC32,       0,           "" },
+        { CChecksum::eCRC32ZIP,    0,           "" },
+        { CChecksum::eCRC32INSD,   0xffffffff,  "" },
+        { CChecksum::eCRC32CKSUM,  0xffffffff,  "" },
+        { CChecksum::eCRC32C,      0,           "" },
+        { CChecksum::eAdler32,     0x00000001,  "" },
+        { CChecksum::eCityHash32,  0xdc56d17a,  "" },
+        { CChecksum::eFarmHash32,  0x65466984,  "" },
+        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x9ae16a3b2f90404f), "" },
+        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0x826e8074d1fa8def), "" },
+        { CChecksum::eMD5,         0, "d41d8cd98f00b204e9800998ecf8427e" }}
+    },
+    { "a", {
+        { CChecksum::eCRC32,       0xa864db20,  "" },
+        { CChecksum::eCRC32ZIP,    0xe8b7be43,  "" },
+        { CChecksum::eCRC32INSD,   0x174841bc,  "" },
+        { CChecksum::eCRC32CKSUM,  0x48c279fe,  "" },
+        { CChecksum::eCRC32C,      0xc1d04330,  "" },
+        { CChecksum::eAdler32,     0x00620062,  "" },
+        { CChecksum::eCityHash32,  0x3c973d4d,  "" },
+        { CChecksum::eFarmHash32,  0xa211d90c,  "" },
+        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0xb3454265b6df75e3), "" },
+        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0x06756523d617d714), "" },
+        { CChecksum::eMD5,         0, "0cc175b9c0f1b6a831c399e269772661" }}
+    },
+    { "abc", {
+        { CChecksum::eCRC32,       0x2c17398c,  "" },
+        { CChecksum::eCRC32ZIP,    0x352441c2,  "" },
+        { CChecksum::eCRC32INSD,   0xcadbbe3d,  "" },
+        { CChecksum::eCRC32CKSUM,  0x48aa78a2,  "" },
+        { CChecksum::eCRC32C,      0x364b3fb7,  "" },
+        { CChecksum::eAdler32,     0x024d0127,  "" },
+        { CChecksum::eCityHash32,  0x2f635ec7,  "" },
+        { CChecksum::eFarmHash32,  0x08081477,  "" },
+        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x24a5b3a074e7f369), "" },
+        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0xd4655cc380df37ea), "" },
+        { CChecksum::eMD5,         0, "900150983cd24fb0d6963f7d28e17f72" }}
+    },
+    { "message digest", {
+        { CChecksum::eCRC32,       0x5c57dedc,  "" },
+        { CChecksum::eCRC32ZIP,    0x20159d7f,  "" },
+        { CChecksum::eCRC32INSD,   0xdfea6280,  "" },
+        { CChecksum::eCRC32CKSUM,  0xd934b396,  "" },
+        { CChecksum::eCRC32C,      0x02bd79d0,  "" },
+        { CChecksum::eAdler32,     0x29750586,  "" },
+        { CChecksum::eCityHash32,  0x246f52b3,  "" },
+        { CChecksum::eFarmHash32,  0x218f0e26,  "" },
+        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x8db193972bf98c6a), "" },
+        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0x61b8394d2d3bd58f), "" },
+        { CChecksum::eMD5,         0, "f96b697d7cb7938d525a2f31aaf161d0" }}
+    },
+    { "abcdefghijklmnopqrstuvwxyz", {
+        { CChecksum::eCRC32,       0x3bc2a463,  "" },
+        { CChecksum::eCRC32ZIP,    0x4c2750bd,  "" },
+        { CChecksum::eCRC32INSD,   0xb3d8af42,  "" },
+        { CChecksum::eCRC32CKSUM,  0xa1b937a8,  "" },
+        { CChecksum::eCRC32C,      0x9ee6ef25,  "" },
+        { CChecksum::eAdler32,     0x90860b20,  "" },
+        { CChecksum::eCityHash32,  0xaa02c5c1,  "" },
+        { CChecksum::eFarmHash32,  0x49395595,  "" },
+        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x5ead741ce7ac31bd), "" },
+        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0x18fe6858e83966fa), "" },
+        { CChecksum::eMD5,         0, "c3fcd3d76192e4007dfb496cca67e13b" }}
+    },
+    { "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", {
+        { CChecksum::eCRC32,       0x26910730,  "" },
+        { CChecksum::eCRC32ZIP,    0x1fc2e6d2,  "" },
+        { CChecksum::eCRC32INSD,   0xe03d192d,  "" },
+        { CChecksum::eCRC32CKSUM,  0x4e1f937,   "" },
+        { CChecksum::eCRC32C,      0xa245d57d,  "" },
+        { CChecksum::eAdler32,     0x8adb150c,  "" },
+        { CChecksum::eCityHash32,  0xa77b8219,  "" },
+        { CChecksum::eFarmHash32,  0x1ba6920c,  "" },
+        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x4566c1e718836cd6), "" },
+        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0xf1c5d0f3b9102e0b), "" },
+        { CChecksum::eMD5,         0, "d174ab98d277d9f5a5611c2c9f419d9f" }}
+    },
+    { "12345678901234567890123456789012345678901234567890123456789012345678901234567890", {
+        { CChecksum::eCRC32,       0x7110bde7,  "" },
+        { CChecksum::eCRC32ZIP,    0x7ca94a72,  "" },
+        { CChecksum::eCRC32INSD,   0x8356b58d,  "" },
+        { CChecksum::eCRC32CKSUM,  0x73a0b3a8,  "" },
+        { CChecksum::eCRC32C,      0x477a6781,  "" },
+        { CChecksum::eAdler32,     0x97b61069,  "" },
+        { CChecksum::eCityHash32,  0x725594c0,  "" },
+        { CChecksum::eFarmHash32,  0x4c4e8ef8,  "" },
+        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x791a4c16629ee4cd), "" },
+        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0x0009b5b901af0ae0), "" },
+        { CChecksum::eMD5,         0, "57edf4a22be3c955ac49da2e2107b67a" }}
+    },
+    { string("\1\xc0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\1\xfe\x60\xac\0\0\0"
+             "\x8\0\0\0\x4\0\0\0\x9\x25\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 48), {
+        { CChecksum::eCRC32,       0xfbcf2b84,  "" },
+        { CChecksum::eCRC32ZIP,    0xc897a166,  "" },
+        { CChecksum::eCRC32INSD,   0x37685e99,  "" },
+        { CChecksum::eCRC32CKSUM,  0x46152007,  "" },
+        { CChecksum::eCRC32C,      0x99b08a14,  "" },
+        { CChecksum::eAdler32,     0x65430307,  "" },
+        { CChecksum::eCityHash32,  0x5a50eecd,  "" },
+        { CChecksum::eFarmHash32,  0x809ab598,  "" },
+        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0xca8a7f96d3b805dd), "" },
+        { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0x784c0b56a08388d3), "" },
+        { CChecksum::eMD5,         0, "f16de75fd4137d2b5b12f35f247a6214" }}
+    }
+};
+
+
+bool CChecksumTestApp::SelfTest_Str()
+{
+    bool ok = true;
+    for (auto test : s_StrTests) {
+        for (auto testcase : test.cases) {
+            CChecksum sum(testcase.method);
+            if ( IsHashMethod(testcase.method) ) {
+                sum.Calculate(test.str.data(), test.str.size());
+            }
+            else {
+                ComputeStrSum(test.str.data(), test.str.size(), sum);
+            }
+            ok &= VerifySum("string '" + NStr::PrintableString(test.str) + "'", sum, testcase);
+        }
+    }
+    cout << "CRC/MD5: " << (ok ? "passed" : "failed") << endl;
+    return ok;
+}
+
+
+void CChecksumTestApp::ComputeStrSum(const char* data, size_t size, CChecksum& sum)
+{
+    char buf[289];  // use a weird size to force varying phases
     size_t test_size = 3;
     while (size) {
         size_t count = min(test_size, size);
         memcpy(buf, data, count);
         data += count;
         size -= count;
-        crc32.AddChars(buf, count);
-        crc32zip.AddChars(buf, count);
-        crc32cksum.AddChars(buf, count);
-        crc32c.AddChars(buf, count);
-        md5.AddChars(buf, count);
+        sum.AddChars(buf, count);
         test_size = sizeof(buf);
     }
 }
 
-static const char* s_GetMethodName(const CChecksum& checksum)
-{
-    switch ( checksum.GetMethod() ) {
-    case CChecksum::eCRC32: return "CRC32";
-    case CChecksum::eCRC32ZIP: return"CRC32ZIP";
-    case CChecksum::eCRC32INSD: return "CRC32INSD";
-    case CChecksum::eCRC32CKSUM: return "CRC32CKSUM";
-    case CChecksum::eCRC32C: return "CRC32C";
-    case CChecksum::eAdler32: return "Adler32";
-    case CChecksum::eMD5: return "MD5";
-    default: return "???";
-    }
-}
 
-static bool s_VerifySum(const char* test,
-                        const CChecksum& checksum,
-                        Uint4 expected,
-                        const char* expected_md5 = 0)
-{
-    if ( expected_md5 ) {
-        if ( checksum.GetHexSum() != expected_md5 ) {
-            const char* method = s_GetMethodName(checksum);
-            cerr << "FAILED "<<test<<"!" << endl;
-            cerr << "Expected "<<method<<": " << hex << expected_md5 << endl;
-            cerr << "Computed "<<method<<": " << hex << checksum.GetHexSum()
-                 << endl;
-            return false;
-        }
-    }
-    else {
-        if ( checksum.GetChecksum() != expected ) {
-            const char* method = s_GetMethodName(checksum);
-            cerr << "FAILED "<<test<<"!" << endl;
-            cerr << "Expected "<<method<<": " << hex << expected << endl;
-            cerr << "Computed "<<method<<": " << hex << checksum.GetChecksum()
-                 << endl;
-            return false;
-        }
-    }
-    return true;
-}
-
-static bool s_VerifySums(const string& data,
-                         Uint4 expected_crc32,
-                         Uint4 expected_crc32zip,
-                         Uint4 expected_crc32cksum,
-                         Uint4 expected_crc32c,
-                         const char* expected_md5)
-{
-    //cerr << "Input: \"" << Printable(data) << '\"' << endl;
-    bool ok = true;
-    CChecksum       crc32(CChecksum::eCRC32);
-    CChecksum       crc32zip(CChecksum::eCRC32ZIP);
-    CChecksum       crc32cksum(CChecksum::eCRC32CKSUM);
-    CChecksum       crc32c(CChecksum::eCRC32C);
-    CChecksum       md5(CChecksum::eMD5);
-    s_ComputeSums(data.data(), data.size(),
-                  crc32, crc32zip, crc32cksum, crc32c, md5);
-    ok &= s_VerifySum("string", crc32, expected_crc32);
-    ok &= s_VerifySum("string", crc32zip, expected_crc32zip);
-    ok &= s_VerifySum("string", crc32cksum, expected_crc32cksum);
-    ok &= s_VerifySum("string", crc32c, expected_crc32c);
-    ok &= s_VerifySum("string", md5, 0, expected_md5);
-    cerr << "CRC/MD5 test " << (ok?"passed":"failed")
-         << " for \""<< Printable(data) << "\"" << endl;
-    return ok;
-}
-
-bool s_Adler32Test()
+bool CChecksumTestApp::SelfTest_Adler32()
 {
     // 1000, 6000, ..., 96000 arrays filled with value = (byte) index.
-    static const int kNumTests = 20;
-    static const Uint4 expected[kNumTests] = {
+    const int kNumTests = 20;
+    const Uint4 expected[kNumTests] = {
         486795068U,
         1525910894U,
         3543032800U,
@@ -227,18 +399,18 @@ bool s_Adler32Test()
                 sum.AddChars(&bs[p], min(c, length-p));
             }
             if ( sum.GetChecksum() != expected[l] ) {
-                cerr << "Failed Adler32 test "<<l
-                     << " length: "<<length
-                     << " chunk: "<<c
+                cerr << "FAILED Adler32 test "<<l
+                     << " length: " << length
+                     << " chunk: "  << c
                      << hex
-                     << " expected: "<<expected[l]
-                     << " calculated: "<<sum.GetChecksum()
+                     << " expected: "   << expected[l]
+                     << " calculated: " << sum.GetChecksum()
                      << dec << endl;
                 ok = false;
             }
         }
     }
-    cerr << "Adler32 test "<<(ok?"passed":"failed") << endl;
+    cout << "Adler32: " << (ok ? "passed" : "failed") << endl;
     return ok;
 }
 
@@ -246,39 +418,32 @@ bool s_Adler32Test()
 class CFileData
 {
 public:
-    CFileData(const string& file_name)
-        : m_data(0), m_size(0)
-        {
-            Load(file_name);
-        }
-    CFileData(CNcbiIstream& is)
-        : m_data(0), m_size(0)
-        {
-            Load(is);
-        }
-    ~CFileData()
-        {
-            Reset();
-        }
-
+    CFileData(const string& file_name) : m_data(0), m_size(0) {
+        Load(file_name);
+    }
+    CFileData(CNcbiIstream& is) : m_data(0), m_size(0) {
+        Load(is);
+    }
+    ~CFileData() {
+        Reset();
+    }
     void Load(const string& file_name);
     void Load(CNcbiIstream& is);
     void Reset(void);
 
-    const char* data() const
-        {
-            return m_data;
-        }
-    size_t size() const
-        {
-            return m_size;
-        }
+    const char* data() const {
+        return m_data;
+    }
+    size_t size() const {
+        return m_size;
+    }
 private:
-    const char* m_data;
-    size_t m_size;
-    vector<char> m_buffer;
-    AutoPtr<CMemoryFile> m_file;
-    
+    const char*             m_data;
+    size_t                  m_size;
+    vector<char>            m_buffer;
+    unique_ptr<CMemoryFile> m_file;
+
+    // disable copying and assignment
     CFileData(const CFileData&);
     void operator=(const CFileData&);
 };
@@ -293,11 +458,10 @@ void CFileData::Reset(void)
 }
 
 
-static size_t dummy_counter;
-
-
 void CFileData::Load(const string& file_name)
 {
+    static size_t dummy_counter;
+
     CStopWatch sw(CStopWatch::eStart);
     m_file.reset(new CMemoryFile(file_name));
     m_size = m_file->GetSize();
@@ -305,7 +469,7 @@ void CFileData::Load(const string& file_name)
     m_data = (const char*)m_file->GetPtr();
     dummy_counter += count(data(), data()+size(), '\0');
     string time = sw.AsString();
-    cout << "Mapped "<<file_name<<" in "<<time<<endl;
+    cout << ", mapped in "<< time;
 }
 
 
@@ -322,227 +486,147 @@ void CFileData::Load(CNcbiIstream& is)
 }
 
 
-bool s_BigSelfTest(CRandom& random,
-                   const CFileData& file_data,
-                   CChecksum::EMethod method,
-                   Uint4 expected,
-                   const char* expected_md5 = 0)
-{
-    bool ok = true;
-    const char* data = file_data.data();
-    size_t size = file_data.size();
-    vector<char> buf;
-    const size_t kOffsets = 16;
-    for ( size_t offset = 0; offset < kOffsets; ++offset ) {
-        CChecksum checksum(method);
-        const char* cur_data = data;
-        if ( offset ) {
-            buf.resize(offset);
-            buf.insert(buf.end(), data, data+size);
-            cur_data = &buf[offset];
-        }
-        for ( size_t cur_size = size; cur_size > 0; ) {
-            size_t chunk = random.GetRand(1, 20000);
-            chunk = random.GetRand(1, (CRandom::TValue)chunk);
-            chunk = min(chunk, cur_size);
-            checksum.AddChars(cur_data, chunk);
-            cur_data += chunk;
-            cur_size -= chunk;
-        }
-        ok &= s_VerifySum("file", checksum, expected, expected_md5);
-    }
-    return ok;
-}
+
+vector<SChecksumCase> s_BigTests = {
+    { CChecksum::eCRC32,       0xa0b29e2f,  "" },
+    { CChecksum::eCRC32ZIP,    0x39a90823,  "" },
+    { CChecksum::eCRC32INSD,   0xc656f7dc,  "" },
+    { CChecksum::eCRC32CKSUM,  0x4a0a1bdb,  "" },
+    { CChecksum::eCRC32C,      0x7adb1cd3,  "" },
+    { CChecksum::eAdler32,     0x528a7135,  "" },
+    { CChecksum::eCityHash32,  0xca83e47e,  "" },
+    { CChecksum::eFarmHash32,  0xac98e810,  "" },
+    { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0xb2195ac46438d77d), "" },
+    { CChecksum::eFarmHash64,  NCBI_CONST_UINT8(0x41793487f7df34e2), "" },
+    { CChecksum::eMD5,         0, "a1ed665e33b6feb5a645738b4384ca25" }
+};
 
 
-bool s_BigSelfTest(void)
+bool CChecksumTestApp::SelfTest_Big()
 {
-    const char* file_name = "test_data/checksum.dat";
+    const char*  kFileName = "test_data/checksum.dat";
+    const size_t kOffsets  = 16;
+
     bool ok = true;
-    CFileData data(file_name);
-    cerr << "Testing file "<<file_name<<" of "<<data.size()<<" bytes:"<<endl;
     CRandom random;
-    ok &= s_BigSelfTest(random, data, CChecksum::eCRC32, 0xa0b29e2f);
-    ok &= s_BigSelfTest(random, data, CChecksum::eCRC32ZIP, 0x39a90823);
-    ok &= s_BigSelfTest(random, data, CChecksum::eCRC32INSD, 0xc656f7dc);
-    ok &= s_BigSelfTest(random, data, CChecksum::eCRC32CKSUM, 0x4a0a1bdb);
-    ok &= s_BigSelfTest(random, data, CChecksum::eCRC32C, 0x7adb1cd3);
-    ok &= s_BigSelfTest(random, data, CChecksum::eAdler32, 0x528a7135);
-    ok &= s_BigSelfTest(random, data, CChecksum::eMD5, 0,
-                        "a1ed665e33b6feb5a645738b4384ca25");
-    cerr << "File "<<file_name<<" test "<<(ok?"passed":"failed") << endl;
+
+    cout << "File: " << kFileName;
+    CFileData file_data(kFileName);
+    cout << ", size: " << file_data.size() << " bytes" << endl;
+
+    for (auto testcase : s_BigTests) {
+        if ( IsHashMethod(testcase.method) ) {
+            CChecksum sum(testcase.method);
+            sum.Calculate(file_data.data(), file_data.size());
+            ok &= VerifySum("file (hash)", sum, testcase);
+        }
+        else {
+            for (size_t offset = 0; offset < kOffsets; ++offset) {
+                CChecksum sum(testcase.method);
+                ComputeBigSum(random, file_data, offset, sum);
+                ok &= VerifySum("file (" + NStr::NumericToString(offset) + ")", sum, testcase);
+            }
+        }
+    }
+    cout << "File "<< kFileName << ": " << (ok ? "passed" : "failed") << endl;
     return ok;
 }
 
 
-static
-CNcbiOstream& s_ReportSum(CNcbiOstream& out, const CChecksum& sum)
+void CChecksumTestApp::ComputeBigSum(CRandom& random, const CFileData& file_data, size_t offset, CChecksum& sum)
 {
-    out <<setw(10)<<s_GetMethodName(sum)<<": ";
-    sum.WriteHexSum(out);
-    return out;
+    bool ok = true;
+    const char*  data = file_data.data();
+    size_t       size = file_data.size();
+    vector<char> buf;
+    const char*  cur_data = data;
+
+    if ( offset ) {
+        buf.resize(offset);
+        buf.reserve(offset+size);
+        buf.insert(buf.end(), data, data+size);
+        cur_data = &buf[offset];
+    }
+    for ( size_t cur_size = size; cur_size > 0; ) {
+        size_t chunk = random.GetRand(1, 20000);
+        chunk = random.GetRand(1, (CRandom::TValue)chunk);
+        chunk = min(chunk, cur_size);
+        sum.AddChars(cur_data, chunk);
+        cur_data += chunk;
+        cur_size -= chunk;
+    }
 }
 
-void CChecksumTestApp::RunChecksum(CChecksum::EMethod type,
-                                   const CFileData& data)
+
+void CChecksumTestApp::RunChecksums(const CFileData& data)
+{
+    RunChecksum(CChecksum::eCRC32,      data);
+    RunChecksum(CChecksum::eCRC32ZIP,   data);
+    RunChecksum(CChecksum::eCRC32CKSUM, data);
+    RunChecksum(CChecksum::eCRC32C,     data);
+    RunChecksum(CChecksum::eAdler32,    data);
+    RunChecksum(CChecksum::eCityHash32, data);
+    RunChecksum(CChecksum::eFarmHash32, data);
+    RunChecksum(CChecksum::eCityHash64, data);
+    RunChecksum(CChecksum::eFarmHash64, data);
+    RunChecksum(CChecksum::eMD5,        data);
+}
+
+
+void CChecksumTestApp::RunChecksum(CChecksum::EMethod method,  const CFileData& file_data)
 {
     CStopWatch timer(CStopWatch::eStart);
-    CChecksum sum(type);
-    for ( size_t i = 0; i < m_ChunkCount; ++i ) {
-        sum.AddChars(data.data(), data.size());
-    }
+    CChecksum sum(method);
+    sum.Calculate(file_data.data(), file_data.size());
     string time = timer.AsString();
-    cout << "Processed in "<<time<<": ";
-    s_ReportSum(cout, sum);
-    cout<<endl;
+    cout << "Processed in " << time << ": ";
+    cout << setw(10) << GetMethodName(sum) << ": "
+         << setw(8)  << sum.GetHexSum() << endl;
 }
+
 
 int CChecksumTestApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
-    m_ChunkSize = args["size"].AsInteger();
-    m_ChunkCount = args["count"].AsInteger();
+/* -- not used (yet)
+    m_ChunkSize   = args["size"].AsInteger();
+    m_ChunkCount  = args["count"].AsInteger();
     m_ChunkOffset = args["offset"].AsInteger();
     m_ChunkOffset %= 16;
+*/
 
     if (args["selftest"]) {
-        // Not testing CRCs for now, since I can't find an external
-        // implementation that agrees with what we have.
-
-        // MD5 test cases from RFC 1321
         bool ok = true;
-        ok &= s_VerifySums(kEmptyStr,
-                           0, 0, 0xffffffff, 0,
-                           "d41d8cd98f00b204e9800998ecf8427e");
-        ok &= s_VerifySums("a",
-                           0xa864db20, 0xe8b7be43, 0x48c279fe, 0xc1d04330,
-                           "0cc175b9c0f1b6a831c399e269772661");
-        ok &= s_VerifySums("abc",
-                           0x2c17398c, 0x352441c2, 0x48aa78a2, 0x364b3fb7,
-                           "900150983cd24fb0d6963f7d28e17f72");
-        ok &= s_VerifySums("message digest",
-                           0x5c57dedc, 0x20159d7f, 0xd934b396, 0x02bd79d0,
-                           "f96b697d7cb7938d525a2f31aaf161d0");
-        ok &= s_VerifySums("abcdefghijklmnopqrstuvwxyz",
-                           0x3bc2a463, 0x4c2750bd, 0xa1b937a8, 0x9ee6ef25,
-                           "c3fcd3d76192e4007dfb496cca67e13b");
-        ok &= s_VerifySums("ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                           "abcdefghijklmnopqrstuvwxyz0123456789",
-                           0x26910730, 0x1fc2e6d2, 0x4e1f937, 0xa245d57d,
-                           "d174ab98d277d9f5a5611c2c9f419d9f");
-        ok &= s_VerifySums("1234567890123456789012345678901234567890123456789"
-                           "0123456789012345678901234567890",
-                           0x7110bde7, 0x7ca94a72, 0x73a0b3a8, 0x477a6781,
-                           "57edf4a22be3c955ac49da2e2107b67a");
-        ok &= s_VerifySums(string("\1\xc0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
-                                  "\1\xfe\x60\xac\0\0\0\x8\0\0\0\x4\0\0\0\x9"
-                                  "\x25\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 48),
-                           0xfbcf2b84, 0xc897a166, 0x46152007, 0x99b08a14,
-                           "f16de75fd4137d2b5b12f35f247a6214");
-        ok &= s_Adler32Test();
-        ok &= s_BigSelfTest();
-        cerr << (ok? "All tests passed": "Errors detected") << endl;
-        return ok? 0: 1;
+        ok &= SelfTest_Str();
+        ok &= SelfTest_Adler32();
+        ok &= SelfTest_Big();
+        cout << (ok ? "All tests passed" : "Errors detected") << endl;
+        return ok ? 0 : 1;
     }
+    
+    // Special/internal
     else if ( args["print_tables"] ) {
         CChecksum::PrintTables(NcbiCout);
     }
+    
+    // Run speed tests for specified methods
     else {
-        bool run_crc32 = args["CRC32"];
-        bool run_crc32zip = args["CRC32ZIP"];
-        bool run_crc32cksum = args["CRC32CKSUM"];
-        bool run_crc32c = args["CRC32C"];
-        bool run_md5 = args["MD5"];
-        bool run_adler32 = args["Adler32"];
-        if ( run_crc32 | run_crc32zip | run_crc32cksum | run_crc32c |
-             run_md5 | run_adler32 ) {
-            if (args.GetNExtra()) {
-                for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
-                    if (extra > 1) {
-                        cout << endl;
-                    }
-                    const string& file_name = args[extra].AsString();
-                    cout << "File: " << file_name << endl;
-                    CFileData data(file_name);
-                    if ( run_crc32 ) {
-                        RunChecksum(CChecksum::eCRC32, data);
-                    }
-                    if ( run_crc32zip ) {
-                        RunChecksum(CChecksum::eCRC32ZIP, data);
-                    }
-                    if ( run_crc32cksum ) {
-                        RunChecksum(CChecksum::eCRC32CKSUM, data);
-                    }
-                    if ( run_crc32c ) {
-                        RunChecksum(CChecksum::eCRC32C, data);
-                    }
-                    if ( run_md5 ) {
-                        RunChecksum(CChecksum::eMD5, data);
-                    }
-                    if ( run_adler32 ) {
-                        RunChecksum(CChecksum::eAdler32, data);
-                    }
+        if (args.GetNExtra()) {
+            for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
+                if (extra > 1) {
+                    cout << endl;
                 }
-            }
-            else {
-                CFileData data(cin);
-                if ( run_crc32 ) {
-                    RunChecksum(CChecksum::eCRC32, data);
-                }
-                if ( run_crc32zip ) {
-                    RunChecksum(CChecksum::eCRC32ZIP, data);
-                }
-                if ( run_crc32cksum ) {
-                    RunChecksum(CChecksum::eCRC32CKSUM, data);
-                }
-                if ( run_crc32c ) {
-                    RunChecksum(CChecksum::eCRC32C, data);
-                }
-                if ( run_md5 ) {
-                    RunChecksum(CChecksum::eMD5, data);
-                }
-                if ( run_adler32 ) {
-                    RunChecksum(CChecksum::eAdler32, data);
-                }
+                const string& filename = args[extra].AsString();
+                cout << "File: " << filename;
+                CFileData data(filename);
+                cout << ", size: " << data.size() << " bytes" << endl;
+                RunChecksums(data);
             }
         }
         else {
-            if (args.GetNExtra()) {
-                for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
-                    if (extra > 1) {
-                        cout << endl;
-                    }
-                    cout << "File: " << args[extra].AsString() << endl;
-                    CFileData data(args[extra].AsString());
-                    CChecksum crc32(CChecksum::eCRC32);
-                    CChecksum crc32zip(CChecksum::eCRC32ZIP);
-                    CChecksum crc32cksum(CChecksum::eCRC32CKSUM);
-                    CChecksum crc32c(CChecksum::eCRC32C);
-                    CChecksum md5(CChecksum::eMD5);
-                    s_ComputeSums(data.data(), data.size(),
-                                  crc32, crc32zip, crc32cksum, crc32c, md5);
-                    s_ReportSum(cout, crc32) << endl;
-                    s_ReportSum(cout, crc32zip) << endl;
-                    s_ReportSum(cout, crc32cksum) << endl;
-                    s_ReportSum(cout, crc32c) << endl;
-                    s_ReportSum(cout, md5) << endl;
-                }
-            } else {
-                CFileData data(cin);
-                CChecksum crc32(CChecksum::eCRC32);
-                CChecksum crc32zip(CChecksum::eCRC32ZIP);
-                CChecksum crc32cksum(CChecksum::eCRC32CKSUM);
-                CChecksum crc32c(CChecksum::eCRC32C);
-                CChecksum md5(CChecksum::eMD5);
-                s_ComputeSums(data.data(), data.size(),
-                              crc32, crc32zip, crc32cksum, crc32c, md5);
-                s_ReportSum(cout, crc32) << endl;
-                s_ReportSum(cout, crc32zip) << endl;
-                s_ReportSum(cout, crc32cksum) << endl;
-                s_ReportSum(cout, crc32c) << endl;
-                s_ReportSum(cout, md5) << endl;
-            }
+            CFileData data(cin);
+            RunChecksums(data);
         }
     }
     return 0;
