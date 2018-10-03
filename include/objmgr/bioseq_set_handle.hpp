@@ -243,7 +243,7 @@ protected:
 
     TLock m_Info;
 
-    typedef int TComplexityTable[20];
+    typedef int TComplexityTable[25];
     static const TComplexityTable& sx_GetComplexityTable(void);
 
     static TComplexityTable sm_ComplexityTable;

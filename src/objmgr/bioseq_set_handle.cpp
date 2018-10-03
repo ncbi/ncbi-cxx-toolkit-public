@@ -289,6 +289,11 @@ CBioseq_set_Handle::sm_ComplexityTable = {
     4, // eco-set (16)
     4, // gen-prod-set (17)
     4, // wgs-set (18)
+    4, // named-annot (19)
+    4, // named-annot-prod (20)
+    4, // read-set (21)
+    4, // paired-end-reads (22)
+    4, // small-genome-set (23)
     0, // other (255 - processed separately)
 };
 

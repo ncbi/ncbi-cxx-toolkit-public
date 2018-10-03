@@ -579,15 +579,19 @@ CBioseq_Handle::GetComplexityLevel(CBioseq_set::EClass cls) const
 {
     const CBioseq_set_Handle::TComplexityTable& ctab =
         CBioseq_set_Handle::sx_GetComplexityTable();
+    const int ctab_size = sizeof(ctab) / sizeof(ctab[0]);
     if (cls == CBioseq_set::eClass_other) {
         // adjust 255 to the correct value
-        cls = CBioseq_set::EClass(sizeof(ctab) - 1);
+        cls = CBioseq_set::EClass(ctab_size - 1);
     }
     CSeq_entry_Handle last = GetParentEntry();
     _ASSERT(last && last.IsSeq());
     CSeq_entry_Handle e = last.GetParentEntry();
     while ( e ) {
         _ASSERT(e.IsSet());
+        _ASSERT(cls < ctab_size);
+        _ASSERT(!last.IsSet() || last.GetSet().GetClass() < ctab_size);
+        _ASSERT(e.GetSet().GetClass() < ctab_size);
         // Found good level
         if ( last.IsSet()  &&
              ctab[last.GetSet().GetClass()] == ctab[cls] )
