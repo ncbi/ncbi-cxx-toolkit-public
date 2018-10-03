@@ -338,6 +338,9 @@ string CAutoDefAvailableModifier::GetSubSourceLabel (CSubSource::ESubtype st)
         case CSubSource::eSubtype_identified_by:
             label = "identified by";
             break;
+        case CSubSource::eSubtype_linkage_group:
+            label = "linkage group";
+            break;
         default:
             label = "";
             break;
