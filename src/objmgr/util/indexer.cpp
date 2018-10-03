@@ -859,6 +859,7 @@ CBioseqIndex::CBioseqIndex (CBioseq_Handle bsh,
     m_IsCrossKingdom = false;
 
     m_Chromosome.clear();
+    m_LinkageGroup.clear();
     m_Clone.clear();
     m_has_clone = false;
     m_Map.clear();
@@ -1310,6 +1311,9 @@ void CBioseqIndex::x_InitSource (void)
                         break;
                     case NCBI_SUBSOURCE(segment):
                         m_Segment = str;
+                        break;
+                    case NCBI_SUBSOURCE(linkage_group):
+                        m_LinkageGroup = str;
                         break;
                     default:
                         break;
@@ -2376,6 +2380,16 @@ CTempString CBioseqIndex::GetChromosome (void)
     }
 
     return m_Chromosome;
+}
+
+CTempString CBioseqIndex::GetLinkageGroup (void)
+
+{
+    if (! m_SourcesInitialized) {
+        x_InitSource();
+    }
+
+    return m_LinkageGroup;
 }
 
 CTempString CBioseqIndex::GetClone (void)

@@ -514,6 +514,7 @@ void CDeflineGenerator::x_SetFlagsIdx (
     m_IsCrossKingdom = bsx->IsCrossKingdom();
 
     m_Chromosome = bsx->GetChromosome();
+    m_LinkageGroup = bsx->GetLinkageGroup();
     m_Clone = bsx->GetClone();
     m_has_clone = bsx->HasClone();
     m_Map = bsx->GetMap();
@@ -671,6 +672,7 @@ void CDeflineGenerator::x_SetFlags (
     m_IsCrossKingdom = false;
 
     m_Chromosome.clear();
+    m_LinkageGroup.clear();
     m_Clone.clear();
     m_has_clone = false;
     m_Map.clear();
@@ -1152,6 +1154,7 @@ void CDeflineGenerator::x_SetBioSrcIdx (
     m_IsChromosome = bsx->IsChromosome();
 
     m_Chromosome = bsx->GetChromosome();
+    m_LinkageGroup = bsx->GetLinkageGroup();
     m_Clone = bsx->GetClone();
     m_has_clone = bsx->HasClone();
     m_Map = bsx->GetMap();
@@ -1209,6 +1212,9 @@ void CDeflineGenerator::x_SetBioSrc (
                     break;
                 case NCBI_SUBSOURCE(segment):
                     m_Segment = str;
+                    break;
+                case NCBI_SUBSOURCE(linkage_group):
+                    m_LinkageGroup = str;
                     break;
                 default:
                     break;
@@ -1445,6 +1451,9 @@ void CDeflineGenerator::x_SetTitleFromBioSrc (void)
     if (! m_Chromosome.empty()) {
         joiner.Add("location", "chromosome", eHideType);
         joiner.Add("chromosome", m_Chromosome, eHideType);
+    } else if ( !m_LinkageGroup.empty()) {
+        joiner.Add("location", "linkage-group", eHideType);
+        joiner.Add("linkage-group", m_LinkageGroup, eHideType);
     } else if ( !m_Plasmid.empty()) {
         joiner.Add("location", m_Organelle, eHideType); //"plasmid"
         joiner.Add("plasmid-name", m_Plasmid, eHideType);
@@ -1510,7 +1519,11 @@ void CDeflineGenerator::x_SetTitleFromNC (void)
                     joiner.Add("location", m_Organelle, eHideType);
                     break;
             }
-            add_gen_tag = true;
+            /*
+            if ( m_LinkageGroup.empty() ) {
+                add_gen_tag = true;
+            }
+            */
         } else {
             if (! m_IsChromosome) {
                 joiner.Add("location", m_Organelle, eHideType);
@@ -1528,7 +1541,7 @@ void CDeflineGenerator::x_SetTitleFromNC (void)
         }
     } else if (! m_Chromosome.empty()) {
         joiner.Add("chromosome", m_Chromosome);
-    } else {
+    } else /* if ( m_LinkageGroup.empty() ) */ {
         add_gen_tag = true;
     }
 
@@ -2818,6 +2831,8 @@ void CDeflineGenerator::x_SetSuffix (
                 comp = ", complete genome";
             } else if (m_IsChromosome) {
                 if (! m_Chromosome.empty()) {
+                    comp = ", complete sequence";
+                } else if (! m_LinkageGroup.empty()) {
                     comp = ", complete sequence";
                 } else {
                     comp = ", complete genome";

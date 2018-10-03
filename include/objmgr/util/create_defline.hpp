@@ -318,6 +318,7 @@ private:
 
     /// subsource fields
     CTempString m_Chromosome;
+    CTempString m_LinkageGroup;
     CTempString m_Clone;
     bool m_has_clone;
     CTempString m_Map;

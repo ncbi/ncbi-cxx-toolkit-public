@@ -96,14 +96,16 @@ public:
     };
 
     enum EFlags {
-        fDefault =          0,
-        fHideImpFeats =     1,
-        fHideSNPFeats =     2,
-        fHideCDDFeats =     4,
-        fHideSTSFeats =     8,
-        fHideExonFeats =   16,
-        fHideIntronFeats = 32,
-        fHideMiscFeats =   64
+        fDefault =           0,
+        fHideImpFeats =      1,
+        fHideSNPFeats =      2,
+        fHideCDDFeats =      4,
+        fHideSTSFeats =      8,
+        fHideExonFeats =    16,
+        fHideIntronFeats =  32,
+        fHideMiscFeats =    64,
+        fShowSNPFeats =    128,
+        fShowCDDFeats =    256
     };
     typedef int TFlags; // Binary "OR" of EFlags
 
@@ -517,6 +519,7 @@ public:
     bool IsCrossKingdom (void);
 
     CTempString GetChromosome (void);
+    CTempString GetLinkageGroup (void);
     CTempString GetClone (void);
     bool HasClone (void);
     CTempString GetMap (void);
@@ -690,6 +693,7 @@ private:
 
     // Subsource fields
     CTempString m_Chromosome;
+    CTempString m_LinkageGroup;
     CTempString m_Clone;
     bool m_has_clone;
     CTempString m_Map;
