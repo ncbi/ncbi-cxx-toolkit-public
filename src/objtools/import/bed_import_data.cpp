@@ -73,22 +73,42 @@ CBedImportData::CBedImportData(
 
 //  ============================================================================
 void
-CBedImportData::InitializeFrom(
-    const vector<string>& columns,
-    unsigned int originatingLineNumber)
+CBedImportData::Initialize(
+    const std::string& chrom,
+    TSeqPos chromStart,
+    TSeqPos chromEnd,
+    const std::string& chromName,
+    double score,
+    ENa_strand chromStrand,
+    TSeqPos thickStart,
+    TSeqPos thickEnd,
+    const RgbValue& rgb,
+    unsigned int blockCount,
+    const std::vector<int>& blockStarts,
+    const std::vector<int>& blockSizes)
 //  ============================================================================
 {
-    CFeatImportData::InitializeFrom(columns, originatingLineNumber);
+    CRef<CSeq_id> pId = mIdResolver(chrom);
+    mChromLocation.SetInt().Assign(
+        CSeq_interval(*pId, chromStart, chromEnd, chromStrand)); 
+    mName = chromName;
+    mScore = score;
+    mThickLocation.SetInt().Assign(
+        CSeq_interval(*pId, thickStart, thickEnd, chromStrand));
+    mRgb = rgb;
 
-    // note: ordering is important!
-    xSetChromLocation(columns[0], columns[1], columns[2]);
-    xSetName(columns[3]);
-    xSetScore(columns[4]);
-    xSetStrand(columns[5]);
-    xSetThickLocation(columns[6], columns[7]);
-    xSetRgb(columns[4], columns[8]);
-    xSetBlocks(columns[9], columns[10], columns[11]);
+    //auto blockOffset = mChromLocation.GetInt().GetFrom();
+    mBlocksLocation.SetPacked_int();
+    for (unsigned int i=0; i < blockCount; ++i) {
+        CRef<CSeq_interval> pBlockInterval(new CSeq_interval);
+        pBlockInterval->SetFrom(chromStart + blockStarts[i]);
+        pBlockInterval->SetTo(chromStart + blockStarts[i] + blockSizes[i]);
+        pBlockInterval->SetId(mChromLocation.SetInt().SetId());
+        pBlockInterval->SetStrand(mChromLocation.GetInt().GetStrand());
+        mBlocksLocation.SetPacked_int().AddInterval(*pBlockInterval);
+    }
 }
+
 
 //  ============================================================================
 void
@@ -140,261 +160,4 @@ CBedImportData::Serialize(
     out << "  Rgb = (" << mRgb.R << "," << mRgb.G << "," << mRgb.B << ")\n"; 
     out << "  Blocks = " << blocks << "\n";
     out << "\n";
-}
-
-//  =============================================================================
-void
-CBedImportData::xSetChromLocation(
-    const string& chrom,
-    const string& chromStartAsStr,
-    const string& chromEndAsStr)
-//  =============================================================================
-{
-    CFeatImportError errorInvalidChromStartValue(
-        CFeatImportError::ERROR, "Invalid chromStart value",
-        mOriginatingLineNumber);
-    CFeatImportError errorInvalidChromEndValue(
-        CFeatImportError::ERROR, "Invalid chromEnd value",
-        mOriginatingLineNumber);
-
-    int chromStart = 0, chromEnd = 0;
-    try {
-        chromStart = NStr::StringToInt(chromStartAsStr);
-    }
-    catch(std::exception&) {
-        throw errorInvalidChromStartValue;
-    }
-    try {
-        chromEnd = NStr::StringToInt(chromEndAsStr);
-    }
-    catch(std::exception&) {
-        throw errorInvalidChromEndValue;
-    }
-    mChromLocation.SetInt().Assign(
-        CSeq_interval(*mIdResolver(chrom), chromStart, chromEnd)); 
-}
-
-//  =============================================================================
-void
-CBedImportData::xSetName(
-    const string& name)
-//  =============================================================================
-{
-    mName = name;
-}
-
-//  =============================================================================
-void
-CBedImportData::xSetScore(
-    const string& score)
-//  =============================================================================
-{
-    CFeatImportError errorInvalidScoreValue(
-        CFeatImportError::WARNING, "Invalid score value- defaulting to 0.",
-        mOriginatingLineNumber);
-
-    try {
-        mScore = NStr::StringToInt(score);
-    }
-    catch(std::exception&) {
-        mScore = 0;
-        mErrorReporter.ReportError(errorInvalidScoreValue);
-        return;
-    }
-    if (mScore < 0  ||  mScore > 1000) {
-        mScore = 0;
-        mErrorReporter.ReportError(errorInvalidScoreValue);
-        return;
-    }
-}
-
-//  ============================================================================
-void
-CBedImportData::xSetStrand(
-    const string& strand)
-    //  ============================================================================
-{
-    assert(mChromLocation.IsInt());
-
-    CFeatImportError errorInvalidStrandValue(
-        CFeatImportError::ERROR, "Invalid strand value",
-        mOriginatingLineNumber);
-
-    vector<string> validSettings = {".", "+", "-"};
-    if (find(validSettings.begin(), validSettings.end(), strand) ==
-            validSettings.end()) {
-        throw errorInvalidStrandValue;
-    }
-    auto chromStrand = ((strand == "-") ? eNa_strand_minus : eNa_strand_plus);
-    mChromLocation.SetInt().SetStrand(chromStrand);
-}
-
-//  =============================================================================
-void
-CBedImportData::xSetThickLocation(
-    const string& thickStartAsStr,
-    const string& thickEndAsStr)
-//  =============================================================================
-{
-    assert(mChromLocation.IsInt());
-
-    CFeatImportError errorInvalidThickStartValue(
-        CFeatImportError::ERROR, "Invalid thickStart value",
-        mOriginatingLineNumber);
-    CFeatImportError errorInvalidThickEndValue(
-        CFeatImportError::ERROR, "Invalid thickEnd value",
-        mOriginatingLineNumber);
-
-    int thickStart = 0, thickEnd = 0;
-    try {
-        thickStart = NStr::StringToInt(thickStartAsStr);
-    }
-    catch(std::exception&) {
-        throw errorInvalidThickStartValue;
-    }
-    try {
-        thickEnd = NStr::StringToInt(thickEndAsStr);
-    }
-    catch(std::exception&) {
-        throw errorInvalidThickEndValue;
-    }
-    
-    mThickLocation.SetInt().Assign(
-        CSeq_interval(mChromLocation.SetInt().SetId(), thickStart, thickEnd));
-    mThickLocation.SetStrand(mChromLocation.GetInt().GetStrand());
-}
-
-//  ============================================================================
-void
-CBedImportData::xSetRgb(
-    const string& score,
-    const string& rgb)
-//  ============================================================================
-{
-    CFeatImportError errorInvalidRgbValue(
-        CFeatImportError::WARNING, "Invalid RGB value- defaulting to BLACK",
-        mOriginatingLineNumber);
-
-    mRgb.R = mRgb.G = mRgb.B = 0;
-    try {
-        vector<string > rgbSplits;
-        NStr::Split(rgb, ",", rgbSplits);
-        switch(rgbSplits.size()) {
-        default:
-            throw errorInvalidRgbValue;
-        case 1: {
-                unsigned int rgbValue = NStr::StringToInt(rgbSplits[0]);
-                rgbValue &= 0xffffff;
-                mRgb.R = (rgbValue & 0xff0000) >> 16;
-                mRgb.G = (rgbValue & 0x00ff00) >> 8;
-                mRgb.B = (rgbValue & 0x0000ff);
-                break;
-        }
-        case 3: {
-                mRgb.R = NStr::StringToInt(rgbSplits[0]);
-                mRgb.G = NStr::StringToInt(rgbSplits[1]);
-                mRgb.B = NStr::StringToInt(rgbSplits[2]);
-                break;
-            }
-        }
-    }
-    catch(std::exception&) {
-        mRgb.R = mRgb.G = mRgb.B = 0;
-        mErrorReporter.ReportError(errorInvalidRgbValue);
-        return;
-    }
-    if (mRgb.R < 0  ||  255 < mRgb.R) {
-        mRgb.R = mRgb.G = mRgb.B = 0;
-        mErrorReporter.ReportError(errorInvalidRgbValue);
-        return;
-    }
-    if (mRgb.G < 0  ||  255 < mRgb.G) {
-        mRgb.R = mRgb.G = mRgb.B = 0;
-        mErrorReporter.ReportError(errorInvalidRgbValue);
-        return;
-    }
-    if (mRgb.B < 0  ||  255 < mRgb.B) {
-        mRgb.R = mRgb.G = mRgb.B = 0;
-        mErrorReporter.ReportError(errorInvalidRgbValue);
-        return;
-    }
-}
-
-//  ============================================================================
-void
-CBedImportData::xSetBlocks(
-    const string& blockCountAsStr,
-    const string& blockStartsAsStr,
-    const string& blockSizesAsStr)
-//  ============================================================================
-{
-    assert(mChromLocation.IsInt());
-
-    CFeatImportError errorInvalidBlockCountValue(
-        CFeatImportError::ERROR, "Invalid blockCount value",
-        mOriginatingLineNumber);
-    CFeatImportError errorInvalidBlockStartsValue(
-        CFeatImportError::ERROR, "Invalid blockStarts value",
-        mOriginatingLineNumber);
-    CFeatImportError errorInvalidBlockSizesValue(
-        CFeatImportError::ERROR, "Invalid blockStarts value",
-        mOriginatingLineNumber);
-    CFeatImportError errorInconsistentBlocksInformation(
-        CFeatImportError::ERROR, "Inconsistent blocks information",
-        mOriginatingLineNumber);
-
-    int blockCounts = 0;
-    try {
-        blockCounts = NStr::StringToInt(blockCountAsStr);
-    }
-    catch(std::exception&) {
-        throw errorInvalidBlockCountValue;
-    }
-
-    vector<int> blockStarts;
-    try {
-        vector<string> blockStartsSplits;
-        NStr::Split(blockStartsAsStr, ",", blockStartsSplits);
-        if (blockStartsSplits.back().empty()) {
-            blockStartsSplits.pop_back();
-        }
-        for (auto blockStart: blockStartsSplits) {
-            blockStarts.push_back(NStr::StringToInt(blockStart));
-        }
-    }
-    catch(std::exception&) {
-        throw errorInvalidBlockCountValue;
-    }
-    if (blockCounts != blockStarts.size()) {
-        throw errorInconsistentBlocksInformation;
-    }
-
-    vector<int> blockSizes;
-    try {
-        vector<string> blockSizesSplits;
-        NStr::Split(blockSizesAsStr, ",", blockSizesSplits);
-        if (blockSizesSplits.back().empty()) {
-            blockSizesSplits.pop_back();
-        }
-        for (auto blockSize: blockSizesSplits) {
-            blockSizes.push_back(NStr::StringToInt(blockSize));
-        }
-    }
-    catch(std::exception&) {
-        throw errorInvalidBlockCountValue;
-    }
-    if (blockCounts != blockSizes.size()) {
-        throw errorInconsistentBlocksInformation;
-    }
-
-    auto blockOffset = mChromLocation.GetInt().GetFrom();
-    mBlocksLocation.SetPacked_int();
-    for (int i=0; i < blockCounts; ++i) {
-        CRef<CSeq_interval> pBlockInterval(new CSeq_interval);
-        pBlockInterval->SetFrom(blockOffset + blockStarts[i]);
-        pBlockInterval->SetTo(blockOffset + blockStarts[i] + blockSizes[i]);
-        pBlockInterval->SetId(mChromLocation.SetInt().SetId());
-        pBlockInterval->SetStrand(mChromLocation.GetInt().GetStrand());
-        mBlocksLocation.SetPacked_int().AddInterval(*pBlockInterval);
-    }
 }

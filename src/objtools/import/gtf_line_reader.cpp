@@ -34,6 +34,9 @@
 
 #include <objtools/import/feat_import_error.hpp>
 #include "gtf_line_reader.hpp"
+#include "gtf_import_data.hpp"
+
+#include <assert.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -71,7 +74,7 @@ CGtfLineReader::GetNextRecord(
         }
         vector<string> columns;
         xSplitLine(nextLine, columns);
-        record.InitializeFrom(columns, mLineNumber);
+        xInitializeRecord(columns, record);
         ++mRecordNumber;
         return true;
     }
@@ -116,3 +119,261 @@ CGtfLineReader::xSplitLine(
     }
     throw errorInvalidColumnCount;
 }
+
+//  ============================================================================
+void
+CGtfLineReader::xInitializeRecord(
+    const vector<string>& columns,
+    CFeatImportData& record_)
+//  ============================================================================
+{
+    assert(dynamic_cast<CGtfImportData*>(&record_));
+    CGtfImportData& record = static_cast<CGtfImportData&>(record_);
+    //record.InitializeFrom(columns, mLineNumber);
+
+    string seqId;
+    TSeqPos seqStart, seqStop;
+    ENa_strand seqStrand;
+    xInitializeLocation(columns, seqId, seqStart, seqStop, seqStrand);
+
+    string source;
+    xInitializeSource(columns, source);
+
+    string featType;
+    xInitializeType(columns, featType);
+
+    bool scoreIsValid;
+    double score;
+    xInitializeScore(columns, scoreIsValid, score);
+
+    bool frameIsValid;
+    int frame;
+    xInitializeFrame(columns, frameIsValid, frame);
+
+    vector<pair<string, string>> attributes;
+    xInitializeAttributes(columns, attributes);
+
+    record.Initialize(seqId, source, featType, seqStart, seqStop, 
+        scoreIsValid, score, seqStrand, frameIsValid, frame, attributes);
+
+}
+
+//  ============================================================================
+void
+CGtfLineReader::xInitializeAttributes(
+    const vector<string>& columns,
+    vector<pair<string, string>>& attributes)
+//  ============================================================================
+{
+    CFeatImportError errorInvalidAttributeFormat(
+        CFeatImportError::ERROR, "Invalid attribute formatting", 
+        mLineNumber);
+
+    string attributesStr = columns[8];
+    string featType = columns[2];
+    NStr::ToLower(featType);
+
+    vector<string> attributesVec;
+    xSplitAttributeStringBySemicolons(attributesStr, attributesVec);
+
+    attributes.clear();
+    for (auto singleAttr: attributesVec) {
+        string key, value;
+        if (!NStr::SplitInTwo(singleAttr, " ", key, value)) {
+
+            //deal with AUGUSTUS convention for gene_ids and transcript_ids
+            if (featType == "gene") {
+                attributes.push_back(
+                    pair<string, string>("gene_id", singleAttr));
+                continue;
+            }
+            if (featType == "mrna"  ||  featType == "transcript") {
+                string geneId, transcriptId;
+                if (NStr::SplitInTwo(key, ".", geneId, transcriptId)) {
+                    attributes.push_back(
+                        pair<string, string>("gene_id", geneId));
+                }
+                attributes.push_back(
+                    pair<string, string>("transcript_id", singleAttr));
+                continue;
+            }
+            throw errorInvalidAttributeFormat;
+        }
+        NStr::TruncateSpacesInPlace(value);
+        if (NStr::StartsWith(value, "\"")  &&  NStr::EndsWith(value, "\"")) {
+            value = value.substr(1, value.size() -2);
+        }
+        attributes.push_back(pair<string, string>(key, value));
+    }
+}
+
+//  ============================================================================
+void
+CGtfLineReader::xInitializeFrame(
+    const vector<string>& columns,
+    bool& frameIsValid,
+    int& frame)
+//  ============================================================================
+{
+    CFeatImportError errorInvalidFrameValue(
+        CFeatImportError::ERROR, "Invalid frame value", mLineNumber);
+
+    vector<string> validSettings = {".", "0", "1", "2"};
+    if (find(validSettings.begin(), validSettings.end(), columns[7]) ==
+        validSettings.end()) {
+        throw errorInvalidFrameValue;
+    }
+    if (columns[7] == ".") {
+        frameIsValid = false;
+        return;
+    }
+    frame = NStr::StringToInt(columns[7]);
+    frameIsValid = true;
+}
+
+//  ============================================================================
+void
+CGtfLineReader::xInitializeScore(
+    const vector<string>& columns,
+    bool& scoreIsValid,
+    double& score)
+//  ============================================================================
+{
+    CFeatImportError errorInvalidScoreValue(
+        CFeatImportError::ERROR, "Invalid score value",
+        mLineNumber);
+
+    if (columns[5] == ".") {
+        scoreIsValid = false;
+        return;
+    }
+
+    try {
+        score = NStr::StringToDouble(columns[5]);
+    }
+    catch(std::exception&) {
+        throw errorInvalidScoreValue;
+    }
+    scoreIsValid = true;
+}
+
+//  ============================================================================
+void
+CGtfLineReader::xInitializeType(
+    const vector<string>& columns,
+    string& featType)
+//  ============================================================================
+{
+    CFeatImportError errorIllegalFeatureType(
+        CFeatImportError::ERROR, "Illegal feature type", mLineNumber);
+
+    static const vector<string> validTypes = {
+        "cds", "exon", "gene", "initial", "internal", "intron", "mrna", 
+        "start_codon", "stop_codon",
+    };
+
+    // normalization:
+    string normalized(columns[2]);
+    NStr::ToLower(normalized);
+    if (normalized == "transcript") {
+        normalized = "mrna";
+    }
+
+    if (find(validTypes.begin(), validTypes.end(), normalized) ==
+            validTypes.end()) {
+        throw errorIllegalFeatureType;
+    }
+    featType = normalized;
+}
+
+//  ============================================================================
+void
+CGtfLineReader::xInitializeSource(
+    const vector<string>& columns,
+    string& source)
+    //  ============================================================================
+{
+    source = columns[1];
+}
+
+//  ============================================================================
+void
+CGtfLineReader::xInitializeLocation(
+    const vector<string>& columns,
+    string& seqId,
+    TSeqPos& seqStart,
+    TSeqPos& seqStop,
+    ENa_strand& seqStrand)
+//  ============================================================================
+{
+    CFeatImportError errorInvalidSeqStartValue(
+        CFeatImportError::ERROR, "Invalid seqStart value",
+        mLineNumber);
+    CFeatImportError errorInvalidSeqStopValue(
+        CFeatImportError::ERROR, "Invalid seqStop value",
+        mLineNumber);
+    CFeatImportError errorInvalidSeqStrandValue(
+        CFeatImportError::ERROR, "Invalid seqStrand value",
+        mLineNumber);
+
+    seqId = columns[0];
+
+    try {
+        seqStart = NStr::StringToInt(columns[3])-1;
+    }
+    catch(std::exception&) {
+        throw errorInvalidSeqStartValue;
+    }
+    try {
+        seqStop = NStr::StringToInt(columns[4])-1;
+    }
+    catch(std::exception&) {
+        throw errorInvalidSeqStopValue;
+    }
+
+    vector<string> strandLegals = {".", "+", "-"};
+    if (find(strandLegals.begin(), strandLegals.end(), columns[6]) ==
+            strandLegals.end()) {
+        throw errorInvalidSeqStrandValue;
+    }
+    seqStrand = ((columns[6] == "-") ? eNa_strand_minus : eNa_strand_plus);
+}
+
+
+//  ============================================================================
+void
+CGtfLineReader::xSplitAttributeStringBySemicolons(
+    const std::string& attrStr,
+    std::vector<std::string>& attrVec)
+//  ============================================================================
+{
+    string strCurrAttrib;
+    bool inQuotes = false;
+
+    for (auto curChar: attrStr) {
+        if (inQuotes) {
+            if (curChar == '\"') {
+                inQuotes = false;
+            }  
+            strCurrAttrib += curChar;
+        } else { // not in quotes
+            if (curChar == ';') {
+                NStr::TruncateSpacesInPlace( strCurrAttrib );
+                if(!strCurrAttrib.empty())
+                    attrVec.push_back(strCurrAttrib);
+                strCurrAttrib.clear();
+            } else {
+                if(curChar == '\"') {
+                    inQuotes = true;
+                }
+                strCurrAttrib += curChar;
+            }
+        }
+    }
+
+    NStr::TruncateSpacesInPlace( strCurrAttrib );
+    if (!strCurrAttrib.empty()) {
+        attrVec.push_back(strCurrAttrib);
+    }
+}
+

@@ -70,20 +70,28 @@ CGtfImportData::CGtfImportData(
 
 //  ============================================================================
 void
-CGtfImportData::InitializeFrom(
-    const vector<string>& columns,
-    unsigned int originatingLineNumber)
-    //  ============================================================================
+CGtfImportData::Initialize(
+    const std::string& seqId,
+    const std::string& source,
+    const std::string& featureType,
+    TSeqPos seqStart,
+    TSeqPos seqStop,
+    bool scoreIsValid, double score,
+    ENa_strand seqStrand,
+    bool frameIsValid, unsigned int frame,
+    const vector<pair<string, string>>& attributes)
+//  ============================================================================
 {
-    CFeatImportData::InitializeFrom(columns, originatingLineNumber);
-
-    xSetLocation(columns[0], columns[3], columns[4], columns[6]);
-    xSetSource(columns[1]);
-    xSetType(columns[2]);
-    xSetScore(columns[5]);
-    xSetFrame(columns[7]);
-    xSetAttributes(columns[8]);
+    CRef<CSeq_id> pId = mIdResolver(seqId);
+    mLocation.SetInt().Assign(
+        CSeq_interval(*pId, seqStart, seqStop, seqStrand));   
+    mSource = source; 
+    mType = featureType;
+    mpScore = (scoreIsValid ? new double(score) : nullptr);
+    mpFrame = (frameIsValid ? new int(frame) : nullptr); 
+    xInitializeAttributes(attributes);
 }
+
 
 //  ============================================================================
 void
@@ -129,255 +137,42 @@ CGtfImportData::AttributeValueOf(
     
 //  ============================================================================
 void
-CGtfImportData::xSetLocation(
-    const string& seqIdAsStr,
-    const string& seqStartAsStr,
-    const string& seqStopAsStr,
-    const string& seqStrandAsStr)
-//  ============================================================================
-{
-    CFeatImportError errorInvalidSeqStartValue(
-        CFeatImportError::ERROR, "Invalid seqStart value",
-        mOriginatingLineNumber);
-    CFeatImportError errorInvalidSeqStopValue(
-        CFeatImportError::ERROR, "Invalid seqStop value",
-        mOriginatingLineNumber);
-    CFeatImportError errorInvalidSeqStrandValue(
-        CFeatImportError::ERROR, "Invalid seqStrand value",
-        mOriginatingLineNumber);
-
-    TSeqPos seqStart(0), seqStop(0);
-    ENa_strand seqStrand(eNa_strand_plus);
-
-    try {
-        seqStart = NStr::StringToInt(seqStartAsStr)-1;
-    }
-    catch(std::exception&) {
-        throw errorInvalidSeqStartValue;
-    }
-    try {
-        seqStop = NStr::StringToInt(seqStopAsStr)-1;
-    }
-    catch(std::exception&) {
-        throw errorInvalidSeqStopValue;
-    }
-
-    vector<string> strandLegals = {".", "+", "-"};
-    if (find(strandLegals.begin(), strandLegals.end(), seqStrandAsStr) ==
-            strandLegals.end()) {
-        throw errorInvalidSeqStrandValue;
-    }
-    seqStrand = ((seqStrandAsStr == "-") ? eNa_strand_minus : eNa_strand_plus);
-
-    auto& featInt = mLocation.SetInt();
-    featInt.SetId(*mIdResolver(seqIdAsStr));
-    featInt.SetFrom(seqStart);
-    featInt.SetTo(seqStop);
-    featInt.SetStrand(seqStrand);
-}
-
-//  ============================================================================
-void
-CGtfImportData::xSetSource(
-    const string& source)
-//  ============================================================================
-{
-    mSource = source;
-}
-
-//  ============================================================================
-void
-CGtfImportData::xSetType(
-    const string& type)
-//  ============================================================================
-{
-    CFeatImportError errorIllegalFeatureType(
-        CFeatImportError::ERROR, "Illegal feature type",
-        mOriginatingLineNumber);
-
-    static const vector<string> validTypes = {
-        "cds", "exon", "gene", "initial", "internal", "intron", "mrna", 
-        "start_codon", "stop_codon",
-    };
-
-    // normalization:
-    string normalized(type);
-    NStr::ToLower(normalized);
-    if (normalized == "transcript") {
-        normalized = "mrna";
-    }
-
-    if (find(validTypes.begin(), validTypes.end(), normalized) ==
-            validTypes.end()) {
-        throw errorIllegalFeatureType;
-    }
-    mType = normalized;
-}
-
-//  ============================================================================
-void
-CGtfImportData::xSetScore(
-    const string& score)
-//  ============================================================================
-{
-    CFeatImportError errorInvalidScoreValue(
-        CFeatImportError::ERROR, "Invalid score value",
-        mOriginatingLineNumber);
-
-    if (score == ".") {
-        return;
-    }
-    if (!mpScore) {
-        mpScore = new double;
-    }
-    try {
-        *mpScore = NStr::StringToDouble(score);
-    }
-    catch(std::exception&) {
-        throw errorInvalidScoreValue;
-    }
-}
-
-//  ============================================================================
-void
-CGtfImportData::xSetFrame(
-    const string& frame)
-//  ============================================================================
-{
-    CFeatImportError errorInvalidFrameValue(
-        CFeatImportError::ERROR, "Invalid frame value",
-        mOriginatingLineNumber);
-
-    vector<string> validSettings = {".", "0", "1", "2"};
-    if (find(validSettings.begin(), validSettings.end(), frame) ==
-            validSettings.end()) {
-        throw errorInvalidFrameValue;
-    }
-    if (frame == ".") {
-        return;
-    }
-    if (!mpFrame) {
-        mpFrame = new int;
-    }
-    *mpFrame = NStr::StringToInt(frame);
-}
-
-//  ============================================================================
-void
-CGtfImportData::xSetAttributes(
-    const string& attributes)
+CGtfImportData::xInitializeAttributes(
+    const vector<pair<string, string>>& attributes)
 //  ============================================================================
 {
     CFeatImportError errorMissingGeneId(
-        CFeatImportError::ERROR, "Feature misses mandatory gene_id",
-        mOriginatingLineNumber);
+        CFeatImportError::ERROR, "Feature misses mandatory gene_id");
 
     CFeatImportError errorMissingTranscriptId(
-        CFeatImportError::ERROR, "Feature misses mandatory transcript_id",
-        mOriginatingLineNumber);
+        CFeatImportError::ERROR, "Feature misses mandatory transcript_id");
 
     mAttributes.clear();
-    vector<string> splitAttributes;
-    xSplitAttributeString(attributes, splitAttributes);
-    for (auto splitAttr: splitAttributes) {
-        xImportSplitAttribute(splitAttr);
+    for (auto keyValuePair: attributes) {
+        auto key = keyValuePair.first;
+        auto value = keyValuePair.second;
+
+        if (key == "gene_id") {
+            mGeneId = value;
+            continue;
+        }
+        if (key == "transcript_id") {
+            mTranscriptId = value;
+            continue;
+        }
+        auto appendTo = mAttributes.find(key);
+        if (appendTo == mAttributes.end()) {
+            appendTo = mAttributes.insert(
+                pair<string, vector<string> >(key, vector<string>())).first;
+        }
+        appendTo->second.push_back(value);
     }
+
     if (mGeneId.empty()) {
         throw errorMissingGeneId;
     }
     if (mType != "gene"  && mTranscriptId.empty()) {
         throw errorMissingTranscriptId;
     }
-}
-
-//  ============================================================================
-void
-CGtfImportData::xSplitAttributeString(
-    const string& attrString,
-    vector<string>& splitAttributes)
-//  ============================================================================
-{
-    string strCurrAttrib;
-    bool inQuotes = false;
-
-    for (auto curChar: attrString) {
-        if (inQuotes) {
-            if (curChar == '\"') {
-                inQuotes = false;
-            }  
-            strCurrAttrib += curChar;
-        } else { // not in quotes
-            if (curChar == ';') {
-                NStr::TruncateSpacesInPlace( strCurrAttrib );
-                if(!strCurrAttrib.empty())
-                    splitAttributes.push_back(strCurrAttrib);
-                strCurrAttrib.clear();
-            } else {
-                if(curChar == '\"') {
-                    inQuotes = true;
-                }
-                strCurrAttrib += curChar;
-            }
-        }
-    }
-
-    NStr::TruncateSpacesInPlace( strCurrAttrib );
-    if (!strCurrAttrib.empty()) {
-        splitAttributes.push_back(strCurrAttrib);
-    }
-}
-
-//  ============================================================================
-void
-CGtfImportData::xImportSplitAttribute(
-    const string& splitAttr)
-//  ============================================================================
-{
-    CFeatImportError errorAssigningAttrsBeforeFeatureType(
-        CFeatImportError::CRITICAL, 
-        "Attempt to assign attributes before feature type",
-        mOriginatingLineNumber);
-    CFeatImportError errorInvalidAttributeFormat(
-        CFeatImportError::ERROR, "Invalid attribute formatting",
-        mOriginatingLineNumber);
-
-    if (mType.empty()) {
-        throw errorAssigningAttrsBeforeFeatureType;
-    }
-    string key, value;
-    if (!NStr::SplitInTwo(splitAttr, " ", key, value)) {
-        //deal with AUGUSTUS convention for gene_ids and transcript_ids
-        if (mType == "gene") {
-            mGeneId = key;
-            return;
-        }
-        if (mType == "mrna"  ||  mType == "transcript") {
-            string geneId, transcriptTail;
-            if (NStr::SplitInTwo(key, ".", geneId, transcriptTail)) {
-                mGeneId = geneId;
-            }
-            mTranscriptId = key;
-            return;
-        }
-        throw errorInvalidAttributeFormat;
-    }
-    NStr::TruncateSpacesInPlace(value);
-    if (NStr::StartsWith(value, "\"")  &&  NStr::EndsWith(value, "\"")) {
-        value = value.substr(1, value.size() -2);
-    }
-    if (key == "gene_id") {
-        mGeneId = value;
-        return;
-    }
-    if (key == "transcript_id") {
-        mTranscriptId = value;
-        return;
-    }
-    auto appendTo = mAttributes.find(key);
-    if (appendTo == mAttributes.end()) {
-        appendTo = mAttributes.insert(
-            pair<string, vector<string> >(key, vector<string>())).first;
-    }
-    appendTo->second.push_back(value);
 }
 

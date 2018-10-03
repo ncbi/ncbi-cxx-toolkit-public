@@ -62,40 +62,49 @@ C5ColImportData::C5ColImportData(
 }
 
 //  ============================================================================
-void
-C5ColImportData::InitializeFrom(
-    const vector<string>& lines,
-    unsigned int originatingLineNumber)
+void 
+C5ColImportData::Initialize(
+    const string& seqId,
+    const string& featType,
+    const vector<pair<int, int>>& vecIntervals,
+    const vector<pair<bool, bool>>& vecPartials,
+    const vector<pair<string, string>>& vecAttributes)
 //  ============================================================================
 {
-    CFeatImportData::InitializeFrom(lines, originatingLineNumber);
+    mpFeature.Reset(new CSeq_feat);
 
-    vector<string> columns;
-
-    assert(lines.size() >= 2  &&  !lines[0].empty());
-    auto seqId = lines[0];
-    auto offset = lines[1];
-    xFeatureInit(seqId, offset);
-
-    NStr::Split(lines[2], "\t", columns);
-    assert(columns.size() == 3);
-    xFeatureSetInterval(columns[0], columns[1]);
-    xFeatureSetType(columns[2]);
+    // ftype
+    xFeatureSetType(featType);
     
-    auto i = 3; 
-    for (/**/; !NStr::StartsWith(lines[i], "\t"); ++i) {
-        columns.clear();
-        NStr::Split(lines[i], "\t", columns);
-        assert(columns.size() == 2);
-        xFeatureAddInterval(columns[0], columns[1]);
+    // location
+    mpFeature->SetLocation().SetNull();
+    CRef<CSeq_id> pId = mIdResolver(seqId);
+    for (int i=0; i < vecIntervals.size(); ++i) {
+        TSeqPos intervalFrom = vecIntervals[i].first;
+        TSeqPos intervalTo = vecIntervals[i].second;
+        bool partialFrom = vecPartials[i].first;
+        bool partialTo = vecPartials[i].second;
+        ENa_strand intervalStrand = eNa_strand_plus;
+        if (intervalFrom > intervalTo) {
+            swap(intervalFrom, intervalTo);
+            swap(partialFrom, partialTo);
+            intervalStrand = eNa_strand_minus;
+        }
+        CSeq_loc addition;
+        addition.SetInt().Assign(
+            CSeq_interval(*pId, intervalFrom, intervalTo, intervalStrand));
+        if (mpFeature->GetLocation().IsNull()) {
+            mpFeature->SetLocation().Assign(addition);
+        }
+        else {
+            mpFeature->SetLocation().Assign(
+                *mpFeature->GetLocation().Add(addition, 0, nullptr));
+        }
     }
-    for (/**/; i < lines.size(); ++i) {
-        columns.clear();
-        NStr::Split(lines[i], "\t", columns);
-        assert(columns.size() == 5);
-        xFeatureAddAttribute(columns[3], columns[4]);
+    // attributes
+    for (auto attribute: vecAttributes) {
+        mpFeature->AddQualifier(attribute.first, attribute.second);
     }
-    //Serialize(cerr);
 }
 
 //  ============================================================================
@@ -127,26 +136,13 @@ C5ColImportData::Serialize(
 
 //  ============================================================================
 void
-C5ColImportData::xFeatureInit(
-    const string& seqId,
-    const string& offset)
-//  ============================================================================
-{
-    mpFeature.Reset(new CSeq_feat);
-    mOffset = NStr::StringToInt(offset);
-    mpId = mIdResolver(seqId);
-}
-
-//  ============================================================================
-void
 C5ColImportData::xFeatureSetType(
     const string& type_)
 //  ============================================================================
 {
     CFeatImportError errorBadFeatureType(
         CFeatImportError::ERROR, 
-        "Feature type not recognized",
-        mOriginatingLineNumber);
+        "Feature type not recognized");
 
     vector<string> recognizedTypes {
         "gene", "mrna", "cds", "cdregion", "rrna", "trna"
@@ -183,88 +179,3 @@ C5ColImportData::xFeatureSetType(
     return;
 }
 
-//  ============================================================================
-void
-C5ColImportData::xFeatureSetInterval(
-    const string& fromStr,
-    const string& toStr)
-//  ============================================================================
-{
-    xParseInterval(fromStr, toStr, mpFeature->SetLocation().SetInt());
-}
-
-//  ============================================================================
-void
-C5ColImportData::xFeatureAddInterval(
-    const string& toStr,
-    const string& fromStr)
-//  ============================================================================
-{
-    CSeq_loc addition;
-    xParseInterval(fromStr, toStr, addition.SetInt());
-    CRef<CSeq_loc> pUpdatedLocation = mpFeature->GetLocation().Add(
-        addition, CSeq_loc::fSortAndMerge_All, nullptr);
-    mpFeature->SetLocation().Assign(*pUpdatedLocation);
-}
-  
-//  =============================================================================
-void
-C5ColImportData::xFeatureAddAttribute(
-    const string& key,
-    const string& value)
-//  =============================================================================
-{
-    mpFeature->AddQualifier(key, value);
-}
-
-//  =============================================================================
-void
-C5ColImportData::xParseInterval(
-    const string& fromStr_,
-    const string& toStr_,
-    CSeq_interval& parseInt)
-//  =============================================================================
-{
-    CFeatImportError errorBadIntervalBoundaries(
-        CFeatImportError::ERROR, 
-        "Bad interval boundaries",
-        mOriginatingLineNumber);
-
-    string fromStr(fromStr_);
-    string toStr(toStr_);
-    bool fromPartial(false);
-    bool toPartial(false);
-    TSeqPos from = 0;
-    TSeqPos to = 0;
-
-    if (fromStr[0] == '>'  ||  fromStr[0] == '<') {
-        fromStr = fromStr.substr(1, string::npos);
-        fromPartial = true;
-    }
-    if (toStr[0] == '>'  ||  toStr[0] == '<') {
-        toStr = toStr.substr(1, string::npos);
-        toPartial = true;
-    }
-
-    try {
-        from = NStr::StringToInt(fromStr);
-        to = NStr::StringToInt(toStr);
-    }
-    catch (CException&) {
-        throw errorBadIntervalBoundaries;
-    }
-
-    ENa_strand strand = eNa_strand_plus;
-    if (from > to) {
-        swap(from , to);
-        swap(fromPartial, toPartial);
-        strand = eNa_strand_minus;
-    }
-    parseInt.Assign(CSeq_interval(*mpId, mOffset + from, mOffset + to, strand));
-    if (fromPartial) {
-        parseInt.SetPartialStart(true, eExtreme_Positional);
-    }
-    if (toPartial) {
-        parseInt.SetPartialStop(true, eExtreme_Positional);
-    }
-}

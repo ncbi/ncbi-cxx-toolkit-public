@@ -38,6 +38,7 @@
 #include <util/line_reader.hpp>
 
 #include "feat_line_reader.hpp"
+#include "bed_import_data.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -67,6 +68,47 @@ protected:
     xSplitLine(
         const std::string&,
         std::vector<std::string>&);
+
+    void
+    xInitializeRecord(
+        const std::vector<std::string>&,
+        CFeatImportData&);
+
+    void
+    xInitializeChromInterval(
+        const std::vector<std::string>&,
+        std::string&,
+        TSeqPos&,
+        TSeqPos&,
+        ENa_strand&);
+
+    void
+    xInitializeChromName(
+        const std::vector<std::string>&,
+        std::string&);
+
+    void
+    xInitializeScore(
+        const std::vector<string>&,
+        double&);
+
+    void
+    xInitializeThickInterval(
+        const std::vector<std::string>&,
+        TSeqPos&,
+        TSeqPos&);
+
+    void
+    xInitializeRgb(
+        const std::vector<string>&,
+        CBedImportData::RgbValue&);
+
+    void
+    xInitializeBlocks(
+        const std::vector<string>&,
+        unsigned int& blockCount,
+        std::vector<int>& blockStarts,
+        std::vector<int>& blockSizes);
 
     std::string mColumnDelimiter;
     int mSplitFlags;

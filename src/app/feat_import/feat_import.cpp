@@ -206,6 +206,9 @@ CFeatImportApp::xGetInputFormat(
 {
     auto format = args["format"].AsString();
     if (!format.empty()) {
+        if (format == "tbl") {
+            format = "5col";
+        }
         return format;
     }
 

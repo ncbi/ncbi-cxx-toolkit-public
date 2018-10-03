@@ -62,9 +62,12 @@ public:
 
     virtual ~C5ColImportData() {};
 
-    virtual void InitializeFrom(
-        const std::vector<std::string>&,
-        unsigned int) override;
+    void Initialize(
+        const std::string&,
+        const std::string&,
+        const std::vector<std::pair<int, int>>&,
+        const std::vector<std::pair<bool, bool>>&,
+        const std::vector<std::pair<std::string, std::string>>&);
 
     virtual void Serialize(
         CNcbiOstream&) override;
@@ -73,38 +76,10 @@ public:
 
 protected:
     void
-    xFeatureInit(
-        const std::string&,
-        const std::string&);
-
-    void
     xFeatureSetType(
         const std::string&);
 
-    void
-    xFeatureSetInterval(
-        const std::string&,
-        const std::string&);
-
-    void
-    xFeatureAddInterval(
-        const std::string&,
-        const std::string&);
-
-    void
-    xFeatureAddAttribute(
-        const std::string&,
-        const std::string&);
-
-    void
-    xParseInterval(
-        const std::string&,
-        const std::string&,
-        CSeq_interval&);
-
     CRef<CSeq_feat> mpFeature;
-    CRef<CSeq_id> mpId;
-    TSeqPos mOffset;
 };
 
 END_objects_SCOPE

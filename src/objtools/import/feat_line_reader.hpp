@@ -74,6 +74,11 @@ protected:
     virtual void
     xReportProgress();
 
+    virtual void
+    xInitializeRecord(
+        const std::vector<std::string>&,
+        CFeatImportData&) =0;
+
     CFeatMessageHandler& mErrorReporter;
 
     unsigned int mLineNumber;

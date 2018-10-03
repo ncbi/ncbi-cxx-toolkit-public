@@ -64,6 +64,51 @@ protected:
         const std::string&,
         std::vector<std::string>&);
 
+    void
+    xInitializeRecord(
+        const std::vector<std::string>&,
+        CFeatImportData&);
+
+    void
+    xInitializeLocation(
+        const std::vector<std::string>&,
+        std::string&,
+        TSeqPos&,
+        TSeqPos&,
+        ENa_strand&);
+
+    void
+    xInitializeSource(
+        const std::vector<std::string>&,
+        std::string&);
+
+    void
+    xInitializeType(
+        const std::vector<std::string>&,
+        std::string&);
+
+    void
+    xInitializeScore(
+        const std::vector<std::string>&,
+        bool&,
+        double&);
+
+    void
+    xInitializeFrame(
+        const std::vector<std::string>&,
+        bool&,
+        int&);
+
+    void
+    xInitializeAttributes(
+        const std::vector<std::string>&,
+        std::vector<std::pair<std::string, std::string>>&);
+
+    void
+    xSplitAttributeStringBySemicolons(
+        const std::string&,
+        std::vector<std::string>&);
+
     std::string mColumnDelimiter;
     int mSplitFlags;
 };

@@ -64,9 +64,17 @@ public:
     virtual ~CGtfImportData() {
         delete mpScore; };
 
-    virtual void InitializeFrom(
-        const std::vector<std::string>&,
-        unsigned int) override;
+    void
+    Initialize(
+        const std::string&,
+        const std::string&,
+        const std::string&,
+        TSeqPos,
+        TSeqPos,
+        bool, double,
+        ENa_strand,
+        bool, unsigned int,
+        const std::vector<std::pair<std::string, std::string>>&);
 
     virtual void Serialize(
         CNcbiOstream&) override;
@@ -92,32 +100,11 @@ public:
         const std::string& type) { mType = type; };
 
 protected:
-    void xSetSource(
-        const std::string&);
-    void xSetType(
-        const std::string&);
-    void xSetScore(
-        const std::string&);
-    void xSetFrame(
-        const std::string&);
-    void xSetAttributes(
-        const std::string&);
-
-    void xSplitAttributeString(
-        const std::string&,
-        std::vector<std::string>&);
-    void xImportSplitAttribute(
-        const std::string&);
-
-    void xSetLocation(
-        const std::string&,
-        const std::string&,
-        const std::string&,
-        const std::string&);
+    void xInitializeAttributes(
+        const std::vector<std::pair<std::string, std::string>>&);
 
 protected:
     CSeq_loc mLocation;
-    //std::string mSeqId;
     std::string mSource;
     std::string mType;
     double* mpScore;

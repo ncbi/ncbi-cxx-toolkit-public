@@ -34,6 +34,7 @@
 
 #include <objtools/import/feat_import_error.hpp>
 #include "5col_line_reader.hpp"
+#include "5col_import_data.hpp"
 
 #include <assert.h>
 
@@ -48,7 +49,7 @@ C5ColLineReader::C5ColLineReader(
     CFeatLineReader(istr, errorReporter),
     mCurrentSeqId(""),
     mLastTypeSeen(eLineTypeNone),
-    mCurrentOffset("0")
+    mCurrentOffset(0)
 {
 }
 
@@ -97,9 +98,9 @@ C5ColLineReader::GetNextRecord(
                 continue;
             }
             try {
-                mCurrentOffset = NStr::IntToString(NStr::StringToInt(
+                mCurrentOffset = NStr::StringToInt(
                     tail, 
-                    NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSymbols));
+                    NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSymbols);
             }
             catch(CException&) {
                 mErrorReporter.ReportError(errorBadDataLine);
@@ -111,20 +112,12 @@ C5ColLineReader::GetNextRecord(
             mLastTypeSeen = eLineTypeSeqId;
             if (mCollectedLines.empty()) {
                 mCurrentSeqId = columns[1];
-                mCollectedLines.push_back(mCurrentSeqId);
-                mCollectedLines.push_back(mCurrentOffset);
                 continue;
             }
-            if (mCollectedLines.size() < 3) {
-                errorDataLineOutOfOrder.SetLineNumber(mLineNumber);
-                throw errorDataLineOutOfOrder;
-            }
-            record.InitializeFrom(mCollectedLines, mLineNumber);
+            xInitializeRecord(mCollectedLines, record);
             ++mRecordNumber;
             mCollectedLines.clear();
             mCurrentSeqId = columns[1];
-            mCollectedLines.push_back(mCurrentSeqId);
-            mCollectedLines.push_back(mCurrentOffset);
             return true;
 
         case eLineTypeIntervalAndType:
@@ -135,15 +128,13 @@ C5ColLineReader::GetNextRecord(
             }
             mLastTypeSeen = eLineTypeIntervalAndType;
 
-            if (mCollectedLines.size() < 3) {
+            if (mCollectedLines.empty()) {
                 mCollectedLines.push_back(nextLine);
                 continue;
             }
-            record.InitializeFrom(mCollectedLines, mLineNumber);
+            xInitializeRecord(mCollectedLines, record);
             ++mRecordNumber;
             mCollectedLines.clear();
-            mCollectedLines.push_back(mCurrentSeqId);
-            mCollectedLines.push_back(mCurrentOffset);
             mCollectedLines.push_back(nextLine);
             return true;
 
@@ -236,4 +227,74 @@ C5ColLineReader::xLineTypeOf(
         break;
     }
     throw errorBadDataLine;
+}
+
+
+//  ============================================================================
+void
+C5ColLineReader::xInitializeRecord(
+    const vector<string>& lines,
+    CFeatImportData& record_)
+    //  ============================================================================
+{
+    CFeatImportError errorBadIntervalBoundaries(
+        CFeatImportError::ERROR, 
+        "Invalid interval boundaries",
+        mLineNumber);
+
+    assert(dynamic_cast<C5ColImportData*>(&record_));
+    C5ColImportData& record = static_cast<C5ColImportData&>(record_);
+    //record.InitializeFrom(columns, mLineNumber);
+
+    string seqId;
+    string featType;
+    vector<pair<int, int>> vecIntervals;
+    vector<pair<bool, bool>> vecPartials;
+    vector<pair<string, string>> vecAttributes;
+
+    seqId = mCurrentSeqId;
+    
+    vector<string> columns;
+    NStr::Split(lines[0], "\t", columns);
+    featType = columns[2];
+    
+    int i = 0;
+    for (/**/; !NStr::StartsWith(lines[i], "\t"); ++i) {
+        columns.clear();
+        int intervalFrom(0), intervalTo(0);
+        bool partialFrom(false), partialTo(false);
+        NStr::Split(lines[i], "\t", columns);
+        auto fromStr = columns[0];
+        if (fromStr[0] == '<'  ||  fromStr[0] == '>') {
+            fromStr = fromStr.substr(1, string::npos);
+            partialFrom = true;
+        }
+        auto toStr = columns[1];
+        if (toStr[0] == '<'  || toStr[0] == '>') {
+            toStr = toStr.substr(1, string::npos);
+            partialTo = true;
+        }
+        try {
+            intervalFrom = NStr::StringToInt(fromStr);
+            intervalTo = NStr::StringToInt(toStr);
+        }
+        catch(CException&) {
+            throw errorBadIntervalBoundaries;
+        }
+        vecIntervals.push_back(pair<int, int>(intervalFrom, intervalTo));
+        vecPartials.push_back(pair<bool, bool>(partialFrom, partialTo));
+    }
+    for (/**/; i < lines.size(); ++i) {
+        columns.clear();
+        NStr::Split(lines[i], "\t", columns);
+        vecAttributes.push_back(pair<string, string>(columns[3], columns[4]));
+    }
+
+    if (mCurrentOffset) {
+        for (auto interval: vecIntervals) {
+            interval.first += mCurrentOffset;
+            interval.second += mCurrentOffset;
+        }
+    }
+    record.Initialize(seqId, featType, vecIntervals, vecPartials, vecAttributes);
 }

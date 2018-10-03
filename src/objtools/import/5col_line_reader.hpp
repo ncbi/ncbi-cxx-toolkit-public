@@ -77,10 +77,15 @@ protected:
     xLineTypeOf(
         const std::vector<std::string>&);
 
+    void
+    xInitializeRecord(
+        const std::vector<std::string>&,
+        CFeatImportData&);
+
     std::string mCurrentSeqId;
     std::vector<std::string> mCollectedLines;
     ELineType mLastTypeSeen;
-    std::string mCurrentOffset;
+    int mCurrentOffset;
 };
 
 END_objects_SCOPE

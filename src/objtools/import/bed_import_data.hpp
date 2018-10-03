@@ -66,54 +66,36 @@ public:
 
     virtual ~CBedImportData() {};
 
-    virtual void InitializeFrom(
-        const std::vector<std::string>&,
-        unsigned int) override;
+    void
+    Initialize(
+        const std::string&,
+        TSeqPos,
+        TSeqPos,
+        const std::string&,
+        double,
+        ENa_strand,
+        TSeqPos,
+        TSeqPos,
+        const RgbValue&,
+        unsigned int,
+        const std::vector<int>&,
+        const std::vector<int>&);
 
     virtual void Serialize(
         CNcbiOstream&) override;
 
     const CSeq_loc& ChromLocation() const { return mChromLocation; };
     const std::string& Name() const { return mName; };
-    int Score() const { return mScore; };
+    double Score() const { return mScore; };
     const CSeq_loc& ThickLocation() const { return mThickLocation; };
     const RgbValue& Rgb() const { return mRgb; };
     const CSeq_loc& BlocksLocation() const { return mBlocksLocation; };
     
 
 protected:
-    void
-    xSetChromLocation(
-        const std::string&,
-        const std::string&,
-        const std::string&);
-    void
-    xSetName(
-        const std::string&);
-    void
-    xSetScore(
-        const std::string&);
-    void
-    xSetStrand(
-        const std::string&);
-    void
-    xSetThickLocation(
-        const std::string&,
-        const std::string&);
-    void
-    xSetRgb(
-        const std::string&,
-        const std::string&);
-
-    void
-    xSetBlocks(
-        const std::string&,
-        const std::string&,
-        const std::string&);
-
     CSeq_loc mChromLocation;
     std::string mName;
-    int mScore;
+    double mScore;
     CSeq_loc mThickLocation;
     RgbValue mRgb;
     CSeq_loc mBlocksLocation;

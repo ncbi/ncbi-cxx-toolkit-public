@@ -59,17 +59,12 @@ public:
 
     virtual ~CFeatImportData() {};
 
-    virtual void InitializeFrom(
-        const std::vector<std::string>&,
-        unsigned int);
-
     virtual void Serialize(
         CNcbiOstream&);
 
 protected:
     const CIdResolver& mIdResolver;
     CFeatMessageHandler& mErrorReporter;
-    unsigned int mOriginatingLineNumber;
 };
 
 END_objects_SCOPE

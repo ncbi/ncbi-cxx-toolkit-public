@@ -14,8 +14,6 @@ LIB =	xobjimport
 
 DLL_LIB = xobjutil $(SOBJMGR_LIBS)
 
-ASN_DEP = seqset valid
-
 WATCHERS = ludwigf
 
 USES_LIBRARIES = xobjutil
