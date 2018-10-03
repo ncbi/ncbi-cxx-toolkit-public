@@ -1784,10 +1784,13 @@ void CSeq_id::x_WriteContentAsFasta(ostream& out) const
 
 const string CSeq_id::AsFastaString(void) const
 {
-#if defined(HAVE_THREAD_LOCAL) && \
-    (defined(NCBI_COMPILER_GCC) && NCBI_COMPILER_VERSION >= 730)
+#ifdef HAVE_THREAD_LOCAL
     thread_local static CNcbiOstrstream str;
     str.seekp(0);
+
+    // VS2017 needs this call presumably because the first time seekp(0) is
+    // called on an empty stream and thus a failbit is set.
+    str.clear();
 #else
     CNcbiOstrstream str;
 #endif
