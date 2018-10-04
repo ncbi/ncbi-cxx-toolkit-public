@@ -560,7 +560,11 @@ Bioseq ::= {
     },
     pub {
       pub {
-        pmid 456,
+        pmid 456
+      }
+    },
+    pub {
+      pub {
         pmid 123
       }
     },

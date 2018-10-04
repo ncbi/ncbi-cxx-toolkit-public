@@ -187,7 +187,6 @@ static bool sFindBrackets(const CTempString& line, size_t& start, size_t& stop, 
 
 static bool sGetMods(const CTempString& title, multimap<string, string>& mods)
 {
-    mods.clear();
     size_t pos = 0;
     while(pos < title.size()) {
         size_t lb_pos, end_pos, eq_pos;
@@ -284,18 +283,14 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 
     auto pBioseq = sCreateSkeletonBioseq();
     try {
-        edit::CModApply mod_apply;
+        multimap<string, string> mods;
         for (string line; getline(ifstr, line);) {
             NStr::TruncateSpacesInPlace(line);
             if (line[0] == '>') {
-                multimap<string, string> mods;
-                if (sGetMods(line, mods)) {
-                    for (const auto& kv : mods) {
-                        mod_apply.AddMod(kv.first, kv.second);
-                    }
-                }
+                sGetMods(line, mods);
             }
         }
+        edit::CModApply mod_apply(mods);
         mod_apply.Apply(*pBioseq);
     }
     catch (...) {

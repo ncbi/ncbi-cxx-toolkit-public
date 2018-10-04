@@ -30,7 +30,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Bioseq.hpp>
-
+#include <map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -41,10 +41,10 @@ class CModApply_Impl;
 class NCBI_XOBJEDIT_EXPORT CModApply  
 {
 public:
-    CModApply();
+    CModApply(const multimap<string, string>& mods);
     virtual ~CModApply();
 
-    void AddMod(const string& name, const string& value);
+  //  void AddMod(const string& name, const string& value);
     void Apply(CBioseq& bioseq);
 
 protected:
