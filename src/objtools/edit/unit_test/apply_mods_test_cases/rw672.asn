@@ -6,6 +6,16 @@ Bioseq ::= {
     source {
       genome proviral,
       org {
+        db {
+          {
+            db "notag",
+            tag str "?"
+          },
+          {
+            db "database",
+            tag str "tag"
+          }
+        }
       },
       subtype {
         {

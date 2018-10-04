@@ -336,7 +336,7 @@ SModNameInfo::TNames SModNameInfo::annot_mods =
 // org mods is handled separately
 SModNameInfo::TNames SModNameInfo::non_orgmod_orgref_mods = 
     { "division", "div", "lineage", "gcode", 
-      "mgcode", "pgcode", "taxid"
+      "mgcode", "pgcode", "taxid", "dbxref"
     };
 
 // These should be initialized using a map - less chance of error that way
@@ -352,508 +352,508 @@ SModNameInfo::TNames SModNameInfo::subsource_mods =
 
 SModNameInfo::TNames SModNameInfo::org_mods = 
     s_InitModNames(*COrgMod::GetTypeInfo_enum_ESubtype(), 
-                   {"dosage", "old-lineage", "old-name"},
-                   {"subspecies", "host", "specific-host"});
+                       {"dosage", "old-lineage", "old-name"},
+                       {"subspecies", "host", "specific-host"});
 
-SModNameInfo::TNames SModNameInfo::non_biosource_descr_mods = 
-    {"comment", 
-     "moltype", "mol_type", "tech", "completeness", "completedness", // MolInfo
-     "secondary_accession", "secondary_accessions", "keyword", "keywords", // GBblock
-     "primary", "primary_accessions", // TPA
-     "PubMed", "PMID", // Pub Mods
-     "SRA", "biosample", "bioproject",
-     "project", "projects"
-    };
+    SModNameInfo::TNames SModNameInfo::non_biosource_descr_mods = 
+        {"comment", 
+         "moltype", "mol_type", "tech", "completeness", "completedness", // MolInfo
+         "secondary_accession", "secondary_accessions", "keyword", "keywords", // GBblock
+         "primary", "primary_accessions", // TPA
+         "PubMed", "PMID", // Pub Mods
+         "SRA", "biosample", "bioproject",
+         "project", "projects"
+        };
 
 
 
-struct SModContainer
-{
-    using TMods = multimap<string, string>;
-    using TMod = TMods::value_type;
+    struct SModContainer
+    {
+        using TMods = multimap<string, string>;
+        using TMod = TMods::value_type;
 
-    struct SBiosourceMods { 
-        TMods top_level_mods;
-        TMods subsource_mods;
-        TMods non_orgmod_orgref_mods;
-        TMods org_mods;
+        struct SBiosourceMods { 
+            TMods top_level_mods;
+            TMods subsource_mods;
+            TMods non_orgmod_orgref_mods;
+            TMods org_mods;
 
-        bool empty() const {
-            return top_level_mods.empty() &&
-                   subsource_mods.empty() &&
-                   non_orgmod_orgref_mods.empty() &&
-                   org_mods.empty();
+            bool empty() const {
+                return top_level_mods.empty() &&
+                       subsource_mods.empty() &&
+                       non_orgmod_orgref_mods.empty() &&
+                       org_mods.empty();
+            }
+        };
+        using TBiosourceMods = SBiosourceMods;
+
+        void AddMod(const string& name, const string& value) {
+            AddMod(TMod(name, value));
         }
-    };
-    using TBiosourceMods = SBiosourceMods;
 
-    void AddMod(const string& name, const string& value) {
-        AddMod(TMod(name, value));
-    }
+        void AddMod(const TMod& name_value) {
+            const auto& mod_name = name_value.first;
 
-    void AddMod(const TMod& name_value) {
-        const auto& mod_name = name_value.first;
+            // const auto& mod_name = SModInfo::Canonicalize(name_value.first);
+            // CheckUniqueness - Need to add a method to do this
 
-        // const auto& mod_name = SModInfo::Canonicalize(name_value.first);
-        // CheckUniqueness - Need to add a method to do this
-
-        if (SModNameInfo::IsNonBiosourceDescrMod(mod_name)) {
-            non_biosource_descr_mods.insert(name_value);
-            if (mod_name == "secondary_accession" ||
-                mod_name == "secondary_accessions") {
+            if (SModNameInfo::IsNonBiosourceDescrMod(mod_name)) {
+                non_biosource_descr_mods.insert(name_value);
+                if (mod_name == "secondary_accession" ||
+                    mod_name == "secondary_accessions") {
+                    seq_inst_mods.insert(name_value);
+                }
+            }
+            else 
+            if (SModNameInfo::IsSeqInstMod(mod_name)) {
                 seq_inst_mods.insert(name_value);
             }
+            else 
+            if (SModNameInfo::IsAnnotMod(mod_name)) {
+                annot_mods.insert(name_value);
+            }
+            else 
+            if (SModNameInfo::IsTopLevelBioSourceMod(mod_name)) {
+                biosource_mods.top_level_mods.insert(name_value);
+            }
+            else
+            if (SModNameInfo::IsSubSourceMod(mod_name)) {
+                biosource_mods.subsource_mods.insert(name_value);
+            }
+            else 
+            if (SModNameInfo::IsStructuredOrgRefMod(mod_name)) {
+                biosource_mods.non_orgmod_orgref_mods.insert(name_value);
+            }
+            else 
+            if (SModNameInfo::IsOrgMod(mod_name)) {
+                biosource_mods.org_mods.insert(name_value);
+            }
+            else {
+                // Else report an error - unrecognised modifier
+            }
         }
-        else 
-        if (SModNameInfo::IsSeqInstMod(mod_name)) {
-            seq_inst_mods.insert(name_value);
-        }
-        else 
-        if (SModNameInfo::IsAnnotMod(mod_name)) {
-            annot_mods.insert(name_value);
-        }
-        else 
-        if (SModNameInfo::IsTopLevelBioSourceMod(mod_name)) {
-            biosource_mods.top_level_mods.insert(name_value);
-        }
-        else
-        if (SModNameInfo::IsSubSourceMod(mod_name)) {
-            biosource_mods.subsource_mods.insert(name_value);
-        }
-        else 
-        if (SModNameInfo::IsStructuredOrgRefMod(mod_name)) {
-            biosource_mods.non_orgmod_orgref_mods.insert(name_value);
-        }
-        else 
-        if (SModNameInfo::IsOrgMod(mod_name)) {
-            biosource_mods.org_mods.insert(name_value);
-        }
-        else {
-            // Else report an error - unrecognised modifier
-        }
-    }
 
-    TMods seq_inst_mods;
-    TMods annot_mods;
-    TMods non_biosource_descr_mods;
-    TBiosourceMods biosource_mods;
-    //unordered_set<string> m_ProcessedUniqueModifiers; // Use this to store unique modifiers
-};
-
-class CDescriptorCache 
-{
-public:
-
-    struct SDescrContainer {
-        virtual ~SDescrContainer(void) = default;
-        virtual bool IsSet(void) const = 0;
-        virtual CSeq_descr& SetDescr(void) = 0;
+        TMods seq_inst_mods;
+        TMods annot_mods;
+        TMods non_biosource_descr_mods;
+        TBiosourceMods biosource_mods;
+        //unordered_set<string> m_ProcessedUniqueModifiers; // Use this to store unique modifiers
     };
 
-    CDescriptorCache(CBioseq& bioseq);
-    CDescriptorCache(CBioseq_set& bioseq_set);
+    class CDescriptorCache 
+    {
+    public:
 
-    CSeqdesc& SetDBLink(void);
-    CSeqdesc& SetPub(void);
-    CSeqdesc& SetTpaAssembly(void);
-    CSeqdesc& SetGenomeProjects(void);
-    CSeqdesc& SetGBblock(void);
-    CSeqdesc& SetMolInfo(void);
-private:
+        struct SDescrContainer {
+            virtual ~SDescrContainer(void) = default;
+            virtual bool IsSet(void) const = 0;
+            virtual CSeq_descr& SetDescr(void) = 0;
+        };
 
-    enum EChoice : size_t {
-        eDBLink = 1,
-        eTpa = 2,
-        eGenomeProjects = 3,
-        eMolInfo = 4,
-        eGBblock = 5,
-        ePub = 6,
+        CDescriptorCache(CBioseq& bioseq);
+        CDescriptorCache(CBioseq_set& bioseq_set);
+
+        CSeqdesc& SetDBLink(void);
+        CSeqdesc& SetPub(void);
+        CSeqdesc& SetTpaAssembly(void);
+        CSeqdesc& SetGenomeProjects(void);
+        CSeqdesc& SetGBblock(void);
+        CSeqdesc& SetMolInfo(void);
+    private:
+
+        enum EChoice : size_t {
+            eDBLink = 1,
+            eTpa = 2,
+            eGenomeProjects = 3,
+            eMolInfo = 4,
+            eGBblock = 5,
+            ePub = 6,
+        };
+
+        bool x_IsUserType(const CUser_object& user_object, const string& type);
+        void x_SetUserType(const string& type, CUser_object& user_object);
+        CSeqdesc& x_SetDescriptor(const EChoice eChoice, 
+                                  function<bool(const CSeqdesc&)> f_verify,
+                                  function<CRef<CSeqdesc>(void)> f_create);
+
+        using TMap = unordered_map<EChoice, CRef<CSeqdesc>, hash<underlying_type<EChoice>::type>>;
+        TMap m_Cache;
+
+        unique_ptr<SDescrContainer> m_pDescrContainer;
     };
 
-    bool x_IsUserType(const CUser_object& user_object, const string& type);
-    void x_SetUserType(const string& type, CUser_object& user_object);
-    CSeqdesc& x_SetDescriptor(const EChoice eChoice, 
-                              function<bool(const CSeqdesc&)> f_verify,
-                              function<CRef<CSeqdesc>(void)> f_create);
 
-    using TMap = unordered_map<EChoice, CRef<CSeqdesc>, hash<underlying_type<EChoice>::type>>;
-    TMap m_Cache;
+    template<class TObject>
+    class CDescrContainer : public CDescriptorCache::SDescrContainer 
+    {
+    public:
+        CDescrContainer(TObject& object) : m_Object(object) {}
 
-    unique_ptr<SDescrContainer> m_pDescrContainer;
-};
+        bool IsSet(void) const {
+            return m_Object.IsSetDescr();
+        }
+
+        CSeq_descr& SetDescr(void) {
+            return m_Object.SetDescr();
+        }
+
+    private:
+        TObject& m_Object;
+    };
 
 
-template<class TObject>
-class CDescrContainer : public CDescriptorCache::SDescrContainer 
-{
-public:
-    CDescrContainer(TObject& object) : m_Object(object) {}
 
-    bool IsSet(void) const {
-        return m_Object.IsSetDescr();
+
+    bool CDescriptorCache::x_IsUserType(const CUser_object& user_object, const string& type)
+    {
+        return (user_object.IsSetType() &&
+                user_object.GetType().IsStr() &&
+                user_object.GetType().GetStr() == type);
     }
 
-    CSeq_descr& SetDescr(void) {
-        return m_Object.SetDescr();
+
+    void CDescriptorCache::x_SetUserType(const string& type, 
+                                         CUser_object& user_object) 
+    {
+        user_object.SetType().SetStr(type);
+    } 
+
+
+    CDescriptorCache::CDescriptorCache(CBioseq& bioseq) : m_pDescrContainer(new CDescrContainer<CBioseq>(bioseq)) {}
+
+
+    CDescriptorCache::CDescriptorCache(CBioseq_set& bioseq_set) : m_pDescrContainer(new CDescrContainer<CBioseq_set>(bioseq_set)) {}
+
+
+    CSeqdesc& CDescriptorCache::SetDBLink() 
+    {
+        return x_SetDescriptor(eDBLink, 
+            [](const CSeqdesc& desc) {
+                return (desc.IsUser() && desc.GetUser().IsDBLink());
+            },
+            []() {
+                auto pDesc = Ref(new CSeqdesc());
+                pDesc->SetUser().SetObjectType(CUser_object::eObjectType_DBLink);
+                return pDesc;
+            });
     }
 
-private:
-    TObject& m_Object;
-};
-
-
-
-
-bool CDescriptorCache::x_IsUserType(const CUser_object& user_object, const string& type)
-{
-    return (user_object.IsSetType() &&
-            user_object.GetType().IsStr() &&
-            user_object.GetType().GetStr() == type);
-}
-
-
-void CDescriptorCache::x_SetUserType(const string& type, 
-                                     CUser_object& user_object) 
-{
-    user_object.SetType().SetStr(type);
-} 
-
-
-CDescriptorCache::CDescriptorCache(CBioseq& bioseq) : m_pDescrContainer(new CDescrContainer<CBioseq>(bioseq)) {}
-
-
-CDescriptorCache::CDescriptorCache(CBioseq_set& bioseq_set) : m_pDescrContainer(new CDescrContainer<CBioseq_set>(bioseq_set)) {}
-
-
-CSeqdesc& CDescriptorCache::SetDBLink() 
-{
-    return x_SetDescriptor(eDBLink, 
-        [](const CSeqdesc& desc) {
-            return (desc.IsUser() && desc.GetUser().IsDBLink());
-        },
-        []() {
-            auto pDesc = Ref(new CSeqdesc());
-            pDesc->SetUser().SetObjectType(CUser_object::eObjectType_DBLink);
-            return pDesc;
-        });
-}
-
-CSeqdesc& CDescriptorCache::SetTpaAssembly()
-{
-    return x_SetDescriptor(eTpa,
-        [this](const CSeqdesc& desc) {
-            return (desc.IsUser() && x_IsUserType(desc.GetUser(), "TpaAssembly"));
-        },
-        [this]() {
-            auto pDesc = Ref(new CSeqdesc());
-            x_SetUserType("TpaAssembly", pDesc->SetUser());
-            return pDesc;
-        }
-    );
-}
-
-CSeqdesc& CDescriptorCache::SetGenomeProjects()
-{
-    return x_SetDescriptor(eGenomeProjects,
-        [this](const CSeqdesc& desc) {
-            return (desc.IsUser() && x_IsUserType(desc.GetUser(), "GenomeProjectsDB"));
-        },
-        [this]() {
-            auto pDesc = Ref(new CSeqdesc());
-            x_SetUserType("GenomeProjectsDB", pDesc->SetUser());
-            return pDesc;
-        }
-    );
-}
-
-CSeqdesc& CDescriptorCache::SetGBblock()
-{
-    return x_SetDescriptor(eGBblock, 
-        [](const CSeqdesc& desc) { 
-            return desc.IsGenbank(); 
-        },
-        []() {
-            auto pDesc = Ref(new CSeqdesc());
-            pDesc->SetGenbank();
-            return pDesc;
-        }
-    );
-}
-
-CSeqdesc& CDescriptorCache::SetMolInfo()
-{
-    return x_SetDescriptor(eMolInfo,
-        [](const CSeqdesc& desc) { 
-            return desc.IsMolinfo(); 
-        },
-        []() {
-            auto pDesc = Ref(new CSeqdesc());
-            pDesc->SetMolinfo();
-            return pDesc;
-        }
-    );
-}
-
-
-CSeqdesc& CDescriptorCache::SetPub() 
-{
-    return x_SetDescriptor(ePub,
-        [](const CSeqdesc& desc) {
-            return desc.IsPub();
-        },
-        []() {
-            auto pDesc = Ref(new CSeqdesc());
-            pDesc->SetPub();
-            return pDesc;
-        }
-    );
-}
-
-CSeqdesc& CDescriptorCache::x_SetDescriptor(const EChoice eChoice, 
-                                            function<bool(const CSeqdesc&)> f_verify,
-                                            function<CRef<CSeqdesc>(void)> f_create)
-{
-    auto it = m_Cache.find(eChoice);
-    if (it != m_Cache.end()) {
-        return *(it->second);
+    CSeqdesc& CDescriptorCache::SetTpaAssembly()
+    {
+        return x_SetDescriptor(eTpa,
+            [this](const CSeqdesc& desc) {
+                return (desc.IsUser() && x_IsUserType(desc.GetUser(), "TpaAssembly"));
+            },
+            [this]() {
+                auto pDesc = Ref(new CSeqdesc());
+                x_SetUserType("TpaAssembly", pDesc->SetUser());
+                return pDesc;
+            }
+        );
     }
 
-    // Search for descriptor on Bioseq
-    if (m_pDescrContainer->IsSet()) {
-        for (auto& pDesc : m_pDescrContainer->SetDescr().Set()) {
-            if (pDesc.NotEmpty() && f_verify(*pDesc)) {
-                m_Cache.insert(make_pair(eChoice, pDesc));
+    CSeqdesc& CDescriptorCache::SetGenomeProjects()
+    {
+        return x_SetDescriptor(eGenomeProjects,
+            [this](const CSeqdesc& desc) {
+                return (desc.IsUser() && x_IsUserType(desc.GetUser(), "GenomeProjectsDB"));
+            },
+            [this]() {
+                auto pDesc = Ref(new CSeqdesc());
+                x_SetUserType("GenomeProjectsDB", pDesc->SetUser());
+                return pDesc;
+            }
+        );
+    }
+
+    CSeqdesc& CDescriptorCache::SetGBblock()
+    {
+        return x_SetDescriptor(eGBblock, 
+            [](const CSeqdesc& desc) { 
+                return desc.IsGenbank(); 
+            },
+            []() {
+                auto pDesc = Ref(new CSeqdesc());
+                pDesc->SetGenbank();
+                return pDesc;
+            }
+        );
+    }
+
+    CSeqdesc& CDescriptorCache::SetMolInfo()
+    {
+        return x_SetDescriptor(eMolInfo,
+            [](const CSeqdesc& desc) { 
+                return desc.IsMolinfo(); 
+            },
+            []() {
+                auto pDesc = Ref(new CSeqdesc());
+                pDesc->SetMolinfo();
+                return pDesc;
+            }
+        );
+    }
+
+
+    CSeqdesc& CDescriptorCache::SetPub() 
+    {
+        return x_SetDescriptor(ePub,
+            [](const CSeqdesc& desc) {
+                return desc.IsPub();
+            },
+            []() {
+                auto pDesc = Ref(new CSeqdesc());
+                pDesc->SetPub();
+                return pDesc;
+            }
+        );
+    }
+
+    CSeqdesc& CDescriptorCache::x_SetDescriptor(const EChoice eChoice, 
+                                                function<bool(const CSeqdesc&)> f_verify,
+                                                function<CRef<CSeqdesc>(void)> f_create)
+    {
+        auto it = m_Cache.find(eChoice);
+        if (it != m_Cache.end()) {
+            return *(it->second);
+        }
+
+        // Search for descriptor on Bioseq
+        if (m_pDescrContainer->IsSet()) {
+            for (auto& pDesc : m_pDescrContainer->SetDescr().Set()) {
+                if (pDesc.NotEmpty() && f_verify(*pDesc)) {
+                    m_Cache.insert(make_pair(eChoice, pDesc));
+                    return *pDesc;
+                }
+            }
+        }
+
+        auto pDesc = f_create();
+        m_Cache.insert(make_pair(eChoice, pDesc));
+        m_pDescrContainer->SetDescr().Set().push_back(pDesc);
+        return *pDesc;
+    }
+
+
+    template<typename T>
+    static bool s_IsMatch(const string& a, const T& b) 
+    {
+        return  (a == b);
+    }
+
+    template<typename T, typename...Args> 
+    static bool s_IsMatch(const string& name, const T& first, Args...args)
+    {
+        return (s_IsMatch(name, first) || s_IsMatch(name, args...));
+    }
+
+    class CModApply_Impl {
+    public:
+
+        using TMods = SModContainer::TMods;
+        using TMod = SModContainer::TMod;
+        using TBiosourceMods = SModContainer::TBiosourceMods;
+        using TUnusedMods = multiset<TMod>;
+
+        CModApply_Impl(const multimap<string, string>& mods);
+        ~CModApply_Impl(void);
+
+        void Apply(CBioseq& bioseq);
+
+        void AddMod(const string& name, const string& value) {
+            m_Mods.AddMod(name, value);
+        }
+
+    private:
+        // Seq-inst modifiers
+        void x_ApplySeqInstMods(const TMods& mods, CSeq_inst& inst);
+        bool x_AddTopology(const TMod& mod, CSeq_inst& inst);
+        bool x_AddMolType(const TMod& mod, CSeq_inst& inst);
+        bool x_AddStrand(const TMod& mod, CSeq_inst& inst);
+        bool x_AddHist(const TMod& mod, CSeq_inst& inst);
+
+        // Feature annotation modifiers
+        bool x_CreateGene(const TMods& mods, CAutoInitRef<CSeqFeatData>& pFeatData);
+        bool x_CreateProtein(const TMods& mods, CAutoInitRef<CSeqFeatData>& pFeatData);
+
+        // Non-biosource descriptor modifiers
+        void x_ApplyNonBioSourceDescriptorMods(const TMods& mods, CBioseq& bioseq);
+        bool x_AddPubMod(const TMod& mod, CDescriptorCache::SDescrContainer& descr_container);
+        bool x_AddGenomeProjectsDBMod(const TMod& mod, CDescriptorCache& desc_cache);
+        bool x_AddTpaAssemblyMod(const TMod& mod, CDescriptorCache& desc_cache);
+        bool x_AddDBLinkMod(const TMod& mod, CDescriptorCache& desc_cache);
+        bool x_AddGBblockMod(const TMod& mod, CDescriptorCache& desc_cache);
+        bool x_AddMolInfoMod(const TMod& mod, CDescriptorCache& desc_cache);
+        template<typename TObject>
+        bool x_AddComment(const TMod& mod, CDescrContainer<TObject>& descr_container);
+       
+        // Biosource modifiers
+        CSeqdesc& x_SetBioSource(CBioseq& bioseq);
+        CSeqdesc& x_SetBioSource(CSeq_descr& descr);
+        void x_ApplyBioSourceMods(const TBiosourceMods& mods, CBioseq& bioseq);
+        bool x_AddBioSourceGenome(const TMod& mod, CBioSource& biosource);
+        bool x_AddBioSourceOrigin(const TMod& mod, CBioSource& biosource);
+        bool x_AddBioSourceFocus(const TMod& mod, CBioSource& biosource);
+        void x_AddSubSourceMods(const TMods& mods, CBioSource& biosource);
+        void x_AddOrgRefMods(const TMods& org_mods, 
+                             const TMods& other_mods,
+                             CBioSource& biosource);
+        void x_AddOrgMods(const TMods& org_mods,
+                          CBioSource& biosource);
+        
+        SModContainer m_Mods;
+    };
+
+
+    CModApply_Impl::CModApply_Impl(const multimap<string, string>& mods) 
+    {
+        for (auto it = mods.cbegin(); 
+             it != mods.cend();
+             ++it) {
+            AddMod(it->first, it->second);
+        }
+
+    }
+
+    CModApply_Impl::~CModApply_Impl() = default;
+
+
+    void CModApply_Impl::Apply(CBioseq& bioseq) 
+    {
+        const auto& seq_inst_mods = m_Mods.seq_inst_mods;
+        x_ApplySeqInstMods(seq_inst_mods, bioseq.SetInst());
+
+        const auto& biosource_mods = m_Mods.biosource_mods;
+        x_ApplyBioSourceMods(biosource_mods, bioseq);
+
+        const auto& nonbiosrc_descr_mods = m_Mods.non_biosource_descr_mods;
+        x_ApplyNonBioSourceDescriptorMods(nonbiosrc_descr_mods, bioseq);
+
+        // const auto& annotation_mods = m_Mods.annotation_mods;
+        // x_ApplyAnnotationMods(annotation_mods, bioseq);
+    }
+
+
+    static CBioSource::EGenome s_GetEGenome(const string& genome) 
+    {
+
+        if (NStr::EqualNocase(genome, "mitochondrial")) {
+            return CBioSource::eGenome_mitochondrion;
+        }
+        if (NStr::EqualNocase(genome, "provirus")) {
+            return CBioSource::eGenome_proviral;
+        }
+        if (NStr::EqualNocase(genome, "extrachromosomal")) {
+            return CBioSource::eGenome_extrachrom;
+        }
+        if (NStr::EqualNocase(genome, "insertion sequence")) 
+        {
+            return CBioSource::eGenome_insertion_seq;
+        }
+        
+        return static_cast<CBioSource::EGenome>(CBioSource::GetTypeInfo_enum_EGenome()->FindValue(genome));
+    }
+
+
+    static CBioSource::EOrigin s_GetEOrigin(const string& origin)
+    {
+        if (NStr::EqualNocase(origin, "natural mutant")) {
+            return CBioSource::eOrigin_natmut;
+        }
+
+        if (NStr::EqualNocase(origin, "mutant")) {
+            return CBioSource::eOrigin_mut;
+        }
+
+        return static_cast<CBioSource::EOrigin>(CBioSource::GetTypeInfo_enum_EOrigin()->FindValue(origin));
+    }
+
+
+    void CModApply_Impl::x_ApplyBioSourceMods(const TBiosourceMods& mods, 
+                                              CBioseq& bioseq) 
+    {
+        if (mods.empty()) {
+            return;
+        }
+        auto& descriptor = x_SetBioSource(bioseq);
+        auto& biosource  = descriptor.SetSource();
+
+        // Need to reconsider this - b
+        for (const auto& mod : mods.top_level_mods) {
+            if (x_AddBioSourceGenome(mod, biosource) ||
+                x_AddBioSourceOrigin(mod, biosource) ||
+                x_AddBioSourceFocus(mod, biosource)) {
+                continue;
+            }
+        }
+
+        // PCR primers
+       // x_AddPCRPrimers(mods.pcr_mods, biosource);
+
+        // subsource
+        x_AddSubSourceMods(mods.subsource_mods, biosource);
+
+        // Org-ref
+        x_AddOrgRefMods(mods.org_mods, 
+                        mods.non_orgmod_orgref_mods,
+                        biosource);
+        return;
+    }
+
+
+    CSeqdesc& CModApply_Impl::x_SetBioSource(CBioseq& bioseq) 
+    {   
+        // Check to see if sequence is in a nuc-prot-set
+        if (bioseq.GetParentSet() && 
+            bioseq.GetParentSet()->IsSetClass() &&
+            bioseq.GetParentSet()->GetClass() == CBioseq_set::eClass_nuc_prot) 
+        {
+            auto& bioseq_set = const_cast<CBioseq_set&>(*(bioseq.GetParentSet()));
+            return x_SetBioSource(bioseq_set.SetDescr());
+        }
+
+        // else
+        return x_SetBioSource(bioseq.SetDescr());
+    }
+
+
+    CSeqdesc& CModApply_Impl::x_SetBioSource(CSeq_descr& descr) 
+    {
+        for (auto& pDesc : descr.Set()) {
+            if (pDesc.NotEmpty() && pDesc->IsSource()) {
                 return *pDesc;
             }
         }
+
+        auto pDesc = Ref(new CSeqdesc());
+        pDesc->SetSource();
+        descr.Set().push_back(pDesc);
+        return *pDesc;
     }
 
-    auto pDesc = f_create();
-    m_Cache.insert(make_pair(eChoice, pDesc));
-    m_pDescrContainer->SetDescr().Set().push_back(pDesc);
-    return *pDesc;
-}
 
 
-template<typename T>
-static bool s_IsMatch(const string& a, const T& b) 
-{
-    return  (a == b);
-}
-
-template<typename T, typename...Args> 
-static bool s_IsMatch(const string& name, const T& first, Args...args)
-{
-    return (s_IsMatch(name, first) || s_IsMatch(name, args...));
-}
-
-class CModApply_Impl {
-public:
-
-    using TMods = SModContainer::TMods;
-    using TMod = SModContainer::TMod;
-    using TBiosourceMods = SModContainer::TBiosourceMods;
-    using TUnusedMods = multiset<TMod>;
-
-    CModApply_Impl(const multimap<string, string>& mods);
-    ~CModApply_Impl(void);
-
-    void Apply(CBioseq& bioseq);
-
-    void AddMod(const string& name, const string& value) {
-        m_Mods.AddMod(name, value);
-    }
-
-private:
-    // Seq-inst modifiers
-    void x_ApplySeqInstMods(const TMods& mods, CSeq_inst& inst);
-    bool x_AddTopology(const TMod& mod, CSeq_inst& inst);
-    bool x_AddMolType(const TMod& mod, CSeq_inst& inst);
-    bool x_AddStrand(const TMod& mod, CSeq_inst& inst);
-    bool x_AddHist(const TMod& mod, CSeq_inst& inst);
-
-    // Feature annotation modifiers
-    bool x_CreateGene(const TMods& mods, CAutoInitRef<CSeqFeatData>& pFeatData);
-    bool x_CreateProtein(const TMods& mods, CAutoInitRef<CSeqFeatData>& pFeatData);
-
-    // Non-biosource descriptor modifiers
-    void x_ApplyNonBioSourceDescriptorMods(const TMods& mods, CBioseq& bioseq);
-    bool x_AddPubMod(const TMod& mod, CDescriptorCache::SDescrContainer& descr_container);
-    bool x_AddGenomeProjectsDBMod(const TMod& mod, CDescriptorCache& desc_cache);
-    bool x_AddTpaAssemblyMod(const TMod& mod, CDescriptorCache& desc_cache);
-    bool x_AddDBLinkMod(const TMod& mod, CDescriptorCache& desc_cache);
-    bool x_AddGBblockMod(const TMod& mod, CDescriptorCache& desc_cache);
-    bool x_AddMolInfoMod(const TMod& mod, CDescriptorCache& desc_cache);
-    template<typename TObject>
-    bool x_AddComment(const TMod& mod, CDescrContainer<TObject>& descr_container);
-   
-    // Biosource modifiers
-    CSeqdesc& x_SetBioSource(CBioseq& bioseq);
-    CSeqdesc& x_SetBioSource(CSeq_descr& descr);
-    void x_ApplyBioSourceMods(const TBiosourceMods& mods, CBioseq& bioseq);
-    bool x_AddBioSourceGenome(const TMod& mod, CBioSource& biosource);
-    bool x_AddBioSourceOrigin(const TMod& mod, CBioSource& biosource);
-    bool x_AddBioSourceFocus(const TMod& mod, CBioSource& biosource);
-    void x_AddSubSourceMods(const TMods& mods, CBioSource& biosource);
-    void x_AddOrgRefMods(const TMods& org_mods, 
-                         const TMods& other_mods,
-                         CBioSource& biosource);
-    void x_AddOrgMods(const TMods& org_mods,
-                      CBioSource& biosource);
-    
-    SModContainer m_Mods;
-};
-
-
-CModApply_Impl::CModApply_Impl(const multimap<string, string>& mods) 
-{
-    for (auto it = mods.cbegin(); 
-         it != mods.cend();
-         ++it) {
-        AddMod(it->first, it->second);
-    }
-
-}
-
-CModApply_Impl::~CModApply_Impl() = default;
-
-
-void CModApply_Impl::Apply(CBioseq& bioseq) 
-{
-    const auto& seq_inst_mods = m_Mods.seq_inst_mods;
-    x_ApplySeqInstMods(seq_inst_mods, bioseq.SetInst());
-
-    const auto& biosource_mods = m_Mods.biosource_mods;
-    x_ApplyBioSourceMods(biosource_mods, bioseq);
-
-    const auto& nonbiosrc_descr_mods = m_Mods.non_biosource_descr_mods;
-    x_ApplyNonBioSourceDescriptorMods(nonbiosrc_descr_mods, bioseq);
-
-    // const auto& annotation_mods = m_Mods.annotation_mods;
-    // x_ApplyAnnotationMods(annotation_mods, bioseq);
-}
-
-
-static CBioSource::EGenome s_GetEGenome(const string& genome) 
-{
-
-    if (NStr::EqualNocase(genome, "mitochondrial")) {
-        return CBioSource::eGenome_mitochondrion;
-    }
-    if (NStr::EqualNocase(genome, "provirus")) {
-        return CBioSource::eGenome_proviral;
-    }
-    if (NStr::EqualNocase(genome, "extrachromosomal")) {
-        return CBioSource::eGenome_extrachrom;
-    }
-    if (NStr::EqualNocase(genome, "insertion sequence")) 
+    void CModApply_Impl::x_AddSubSourceMods(const TMods& mods, CBioSource& biosource)
     {
-        return CBioSource::eGenome_insertion_seq;
-    }
-    
-    return static_cast<CBioSource::EGenome>(CBioSource::GetTypeInfo_enum_EGenome()->FindValue(genome));
-}
+        for (const auto& mod : mods) {
+            const auto& name = mod.first;
+            static const auto& subsource_name_to_enum = s_InitModNameSubSrcSubtypeMap();
 
-
-static CBioSource::EOrigin s_GetEOrigin(const string& origin)
-{
-    if (NStr::EqualNocase(origin, "natural mutant")) {
-        return CBioSource::eOrigin_natmut;
-    }
-
-    if (NStr::EqualNocase(origin, "mutant")) {
-        return CBioSource::eOrigin_mut;
-    }
-
-    return static_cast<CBioSource::EOrigin>(CBioSource::GetTypeInfo_enum_EOrigin()->FindValue(origin));
-}
-
-
-void CModApply_Impl::x_ApplyBioSourceMods(const TBiosourceMods& mods, 
-                                          CBioseq& bioseq) 
-{
-    if (mods.empty()) {
-        return;
-    }
-    auto& descriptor = x_SetBioSource(bioseq);
-    auto& biosource  = descriptor.SetSource();
-
-    // Need to reconsider this - b
-    for (const auto& mod : mods.top_level_mods) {
-        if (x_AddBioSourceGenome(mod, biosource) ||
-            x_AddBioSourceOrigin(mod, biosource) ||
-            x_AddBioSourceFocus(mod, biosource)) {
-            continue;
-        }
-    }
-
-    // PCR primers
-   // x_AddPCRPrimers(mods.pcr_mods, biosource);
-
-    // subsource
-    x_AddSubSourceMods(mods.subsource_mods, biosource);
-
-    // Org-ref
-    x_AddOrgRefMods(mods.org_mods, 
-                    mods.non_orgmod_orgref_mods,
-                    biosource);
-    return;
-}
-
-
-CSeqdesc& CModApply_Impl::x_SetBioSource(CBioseq& bioseq) 
-{   
-    // Check to see if sequence is in a nuc-prot-set
-    if (bioseq.GetParentSet() && 
-        bioseq.GetParentSet()->IsSetClass() &&
-        bioseq.GetParentSet()->GetClass() == CBioseq_set::eClass_nuc_prot) 
-    {
-        auto& bioseq_set = const_cast<CBioseq_set&>(*(bioseq.GetParentSet()));
-        return x_SetBioSource(bioseq_set.SetDescr());
-    }
-
-    // else
-    return x_SetBioSource(bioseq.SetDescr());
-}
-
-
-CSeqdesc& CModApply_Impl::x_SetBioSource(CSeq_descr& descr) 
-{
-    for (auto& pDesc : descr.Set()) {
-        if (pDesc.NotEmpty() && pDesc->IsSource()) {
-            return *pDesc;
-        }
-    }
-
-    auto pDesc = Ref(new CSeqdesc());
-    pDesc->SetSource();
-    descr.Set().push_back(pDesc);
-    return *pDesc;
-}
-
-
-
-void CModApply_Impl::x_AddSubSourceMods(const TMods& mods, CBioSource& biosource)
-{
-    for (const auto& mod : mods) {
-        const auto& name = mod.first;
-        static const auto& subsource_name_to_enum = s_InitModNameSubSrcSubtypeMap();
-
-        const auto& it = subsource_name_to_enum.find(name);
-        if (it == subsource_name_to_enum.end()) {
-            continue; // Asserttion here - this should never happen
-        }
-        const auto& e_subtype = it->second;
-        const auto& value = mod.second;
-        auto pSubsource = Ref(new CSubSource());
-        pSubsource->SetSubtype(e_subtype);
-        if (NStr::IsBlank(value)) {
-            pSubsource->SetName(kEmptyStr);
-        }
-        else {
-            pSubsource->SetName(value);
-        }
-        biosource.SetSubtype().push_back(move(pSubsource));
+            const auto& it = subsource_name_to_enum.find(name);
+            if (it == subsource_name_to_enum.end()) {
+                continue; // Asserttion here - this should never happen
+            }
+            const auto& e_subtype = it->second;
+            const auto& value = mod.second;
+            auto pSubsource = Ref(new CSubSource());
+            pSubsource->SetSubtype(e_subtype);
+            if (NStr::IsBlank(value)) {
+                pSubsource->SetName(kEmptyStr);
+            }
+            else {
+                pSubsource->SetName(value);
+            }
+            biosource.SetSubtype().push_back(move(pSubsource));
     }
 }
 

@@ -488,7 +488,7 @@ AAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCC
 AAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCC
 >seq_245 [organism=Homo sapiens][other=val245_0][bioproject=PRJNA31873][biosample=SAMN1334554][primary=M10102][moltype=mRNA]
 AAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCC
->seq_246 [organism=Homo sapiens][other=val246_0][other=val246_1][PubMed=123][PMID=456][SRA=12345][SRA=ABCD][clone=abc]
+>seq_246 [organism=Homo sapiens][other=val246_0][other=val246_1][PubMed=123][PMID=456][SRA=12345][SRA=ABCD][clone=abc][dbxref=notag][dbxref=database:tag]
 AAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCC
 >seq_246 [organism=Homo sapiens][other=val246_0][secondary_accession=M10101,M10102][secondary_accession=Q8Y7J9][strand=mixed][mol=rna][topology=circular][keyword=keyword1,keyword2]
 AAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCC
