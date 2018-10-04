@@ -149,7 +149,7 @@ private:
     bool m_connUsed;
     unsigned int m_modeMask;
     bool m_forceSingle;
-    class CToMultiExHandler *m_multiExH;
+    CRef<CToMultiExHandler> m_multiExH;
     bool m_msgToEx;
 
     EOwnership m_ownership;

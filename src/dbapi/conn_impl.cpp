@@ -533,10 +533,10 @@ void CConnection::MsgToEx(bool v)
 
 CToMultiExHandler* CConnection::GetHandler()
 {
-    if(m_multiExH == 0 ) {
+    if (m_multiExH.Empty()) {
         m_multiExH = new CToMultiExHandler;
     }
-    return m_multiExH;
+    return m_multiExH.GetPointerOrNull();
 }
 
 CDB_MultiEx* CConnection::GetErrorAsEx()
