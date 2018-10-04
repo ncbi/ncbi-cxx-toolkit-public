@@ -115,7 +115,7 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc_, c
 
     try {
         return CCachedAssembly(AskGet_assembly_blob(req, &reply)).Assembly();
-    } catch (CException& ex) {
+    } catch (CException& ) {
         if (reply.IsSrvr_error())
             throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
         throw;
@@ -134,7 +134,7 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId, const 
 
     try {
         return CCachedAssembly(AskGet_assembly_blob(req, &reply)).Assembly();
-    } catch (CException& ex) {
+    } catch (CException& ) {
         if (reply.IsSrvr_error())
             throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
         throw;
@@ -153,7 +153,7 @@ string CGenomicCollectionsService::ValidateChrType(const string& chrType, const 
 
     try {
         return AskGet_chrtype_valid(req, &reply);
-    } catch (CException& ex) {
+    } catch (CException& ) {
         if (reply.IsSrvr_error())
             throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
         throw;
@@ -205,7 +205,7 @@ CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAssemblie
 
     try {
         return AskGet_assembly_by_sequence(req, &reply);
-    } catch (const CException& ex) {
+    } catch (const CException& ) {
         if (reply.IsSrvr_error())
             throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
         throw;
@@ -225,7 +225,7 @@ CRef<CGCClient_EquivalentAssemblies> CGenomicCollectionsService::GetEquivalentAs
 
     try {
         return AskGet_equivalent_assemblies(req, &reply);
-    } catch (const CException& ex) {
+    } catch (const CException& ) {
         if (reply.IsSrvr_error())
             throw CGCServiceException(DIAG_COMPILE_INFO, reply.GetSrvr_error());
         throw;
