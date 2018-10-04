@@ -330,6 +330,20 @@ SNetServerPoolImpl::SNetServerPoolImpl(INetServerConnectionListener* listener) :
 {
 }
 
+SNetServerPoolImpl::SNetServerPoolImpl(const SNetServerPoolImpl& p) :
+    m_PropCreator(p.m_PropCreator),
+    m_EnforcedServer(0, 0),
+    m_RebalanceStrategy(new CSimpleRebalanceStrategy(*p.m_RebalanceStrategy)),
+    m_LBSMAffinity(p.m_LBSMAffinity),
+    m_ConnTimeout(p.m_ConnTimeout),
+    m_CommTimeout(p.m_CommTimeout),
+    m_FirstServerTimeout(p.m_FirstServerTimeout),
+    m_MaxTotalTime(p.m_MaxTotalTime),
+    m_UseOldStyleAuth(p.m_UseOldStyleAuth),
+    m_ThrottleParams(p.m_ThrottleParams)
+{
+}
+
 SNetServiceImpl::SNetServiceImpl(const string& api_name, const string& service_name, const string& client_name,
         INetServerConnectionListener* listener) :
     m_Listener(listener),
@@ -356,7 +370,7 @@ SNetServiceImpl::SNetServiceImpl(SNetServerInPool* server, SNetServiceImpl* prot
 
 SNetServiceImpl::SNetServiceImpl(const string& service_name, SNetServiceImpl* prototype) :
     m_Listener(prototype->m_Listener->Clone()),
-    m_ServerPool(prototype->m_ServerPool),
+    m_ServerPool(new SNetServerPoolImpl(*prototype->m_ServerPool)),
     m_ServiceName(service_name),
     m_APIName(prototype->m_APIName),
     m_ClientName(prototype->m_ClientName),
