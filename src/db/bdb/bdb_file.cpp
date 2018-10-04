@@ -762,14 +762,15 @@ void CBDB_RawFile::x_Open(const char* filename,
                          kOpenFileMask
                         );
         if ( ret ) {
+            m_DB->close(m_DB, 0);
+            m_DB = 0;
             if (open_mode == eCreate ||
                 open_mode == eReadWriteCreate)
             {
+                x_CreateDB(rec_len);
                 x_Create(filename, database);
             }
             else {
-                m_DB->close(m_DB, 0);
-                m_DB = 0;
                 BDB_CHECK(ret, filename);
             }
         } else {

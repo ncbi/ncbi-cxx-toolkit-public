@@ -424,11 +424,14 @@ bool CBDB_Env::Remove()
     BDB_CHECK(ret, "DB_ENV::create");
 
     ret = m_Env->remove(m_Env, m_HomePath.c_str(), 0);
-    m_Env = 0;
 
-    if (ret == EBUSY)
+    if (ret == EBUSY) {
+        m_Env->close(m_Env, 0);
+        m_Env = 0;
         return false;
+    }
 
+    m_Env = 0;
     BDB_CHECK(ret, "DB_ENV::remove");
     return true;
 }
