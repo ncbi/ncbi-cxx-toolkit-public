@@ -45,7 +45,7 @@
 #include <corelib/test_boost.hpp>
 
 USING_NCBI_SCOPE;
-USING_SCOPE(objects);
+USING_SCOPE(objects);  
 
 const string DIRDATA = "unit_test/data";
 

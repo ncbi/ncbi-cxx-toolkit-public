@@ -1,0 +1,868 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local str "gene_1",
+      data gene {
+      },
+      location int {
+        from 2000,
+        to 2100,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "cds_1"
+        }
+      }
+    },
+    {
+      id local str "mrna_1",
+      data rna {
+        type mRNA
+      },
+      location packed-int {
+        {
+          from 2433,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2399,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_1"
+        },
+        {
+          id local str "cds_1"
+        }
+      }
+    },
+    {
+      id local str "cds_1",
+      data cdregion {
+      },
+      location int {
+        from 2399,
+        to 6000,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "gene_1"
+        },
+        {
+          id local str "mrna_1"
+        }
+      }
+    },
+    {
+      id local str "gene_2",
+      data gene {
+      },
+      location int {
+        from 2200,
+        to 2300,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_2"
+        },
+        {
+          id local str "cds_2"
+        }
+      }
+    },
+    {
+      id local str "mrna_2",
+      data rna {
+        type mRNA
+      },
+      location packed-int {
+        {
+          from 2433,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2399,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2633,
+          to 2633,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2599,
+          to 6200,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_2"
+        },
+        {
+          id local str "cds_2"
+        }
+      }
+    },
+    {
+      id local str "cds_2",
+      data cdregion {
+      },
+      location int {
+        from 2399,
+        to 6000,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "gene_2"
+        },
+        {
+          id local str "mrna_2"
+        }
+      }
+    },
+    {
+      id local str "gene_3",
+      data gene {
+      },
+      location int {
+        from 2400,
+        to 2500,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_3"
+        },
+        {
+          id local str "cds_3"
+        }
+      }
+    },
+    {
+      id local str "mrna_3",
+      data rna {
+        type mRNA
+      },
+      location packed-int {
+        {
+          from 2433,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2399,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2633,
+          to 2633,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2599,
+          to 6200,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2833,
+          to 2833,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2799,
+          to 6400,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_3"
+        },
+        {
+          id local str "cds_3"
+        }
+      }
+    },
+    {
+      id local str "cds_3",
+      data cdregion {
+      },
+      location int {
+        from 2399,
+        to 6000,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "gene_3"
+        },
+        {
+          id local str "mrna_3"
+        }
+      }
+    },
+    {
+      id local str "gene_4",
+      data gene {
+      },
+      location int {
+        from 2600,
+        to 2700,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_4"
+        },
+        {
+          id local str "cds_4"
+        }
+      }
+    },
+    {
+      id local str "mrna_4",
+      data rna {
+        type mRNA
+      },
+      location packed-int {
+        {
+          from 2433,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2399,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2633,
+          to 2633,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2599,
+          to 6200,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2833,
+          to 2833,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2799,
+          to 6400,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3033,
+          to 3033,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2999,
+          to 6600,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_4"
+        },
+        {
+          id local str "cds_4"
+        }
+      }
+    },
+    {
+      id local str "cds_4",
+      data cdregion {
+      },
+      location int {
+        from 2399,
+        to 6000,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "gene_4"
+        },
+        {
+          id local str "mrna_4"
+        }
+      }
+    },
+    {
+      id local str "gene_5",
+      data gene {
+      },
+      location int {
+        from 2800,
+        to 2900,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_5"
+        },
+        {
+          id local str "cds_5"
+        }
+      }
+    },
+    {
+      id local str "mrna_5",
+      data rna {
+        type mRNA
+      },
+      location packed-int {
+        {
+          from 2433,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2399,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2633,
+          to 2633,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2599,
+          to 6200,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2833,
+          to 2833,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2799,
+          to 6400,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3033,
+          to 3033,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2999,
+          to 6600,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3233,
+          to 3233,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3199,
+          to 6800,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_5"
+        },
+        {
+          id local str "cds_5"
+        }
+      }
+    },
+    {
+      id local str "cds_5",
+      data cdregion {
+      },
+      location int {
+        from 2399,
+        to 6000,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "gene_5"
+        },
+        {
+          id local str "mrna_5"
+        }
+      }
+    },
+    {
+      id local str "gene_6",
+      data gene {
+      },
+      location int {
+        from 3000,
+        to 3100,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_6"
+        },
+        {
+          id local str "cds_6"
+        }
+      }
+    },
+    {
+      id local str "mrna_6",
+      data rna {
+        type mRNA
+      },
+      location packed-int {
+        {
+          from 2433,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2399,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2633,
+          to 2633,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2599,
+          to 6200,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2833,
+          to 2833,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2799,
+          to 6400,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3033,
+          to 3033,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2999,
+          to 6600,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3233,
+          to 3233,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3199,
+          to 6800,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3433,
+          to 3433,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3399,
+          to 7000,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_6"
+        },
+        {
+          id local str "cds_6"
+        }
+      }
+    },
+    {
+      id local str "cds_6",
+      data cdregion {
+      },
+      location int {
+        from 2399,
+        to 6000,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "gene_6"
+        },
+        {
+          id local str "mrna_6"
+        }
+      }
+    },
+    {
+      id local str "gene_7",
+      data gene {
+      },
+      location int {
+        from 3200,
+        to 3300,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_7"
+        },
+        {
+          id local str "cds_7"
+        }
+      }
+    },
+    {
+      id local str "mrna_7",
+      data rna {
+        type mRNA
+      },
+      location packed-int {
+        {
+          from 2433,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2399,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2633,
+          to 2633,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2599,
+          to 6200,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2833,
+          to 2833,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2799,
+          to 6400,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3033,
+          to 3033,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2999,
+          to 6600,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3233,
+          to 3233,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3199,
+          to 6800,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3433,
+          to 3433,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3399,
+          to 7000,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3633,
+          to 3633,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3599,
+          to 7200,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_7"
+        },
+        {
+          id local str "cds_7"
+        }
+      }
+    },
+    {
+      id local str "cds_7",
+      data cdregion {
+      },
+      location int {
+        from 2399,
+        to 6000,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "gene_7"
+        },
+        {
+          id local str "mrna_7"
+        }
+      }
+    },
+    {
+      id local str "gene_8",
+      data gene {
+      },
+      location int {
+        from 3400,
+        to 3500,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "mrna_8"
+        },
+        {
+          id local str "cds_8"
+        }
+      }
+    },
+    {
+      id local str "mrna_8",
+      data rna {
+        type mRNA
+      },
+      location packed-int {
+        {
+          from 2433,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2399,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2633,
+          to 2633,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2599,
+          to 6200,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2833,
+          to 2833,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2799,
+          to 6400,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3033,
+          to 3033,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 2999,
+          to 6600,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3233,
+          to 3233,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3199,
+          to 6800,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3433,
+          to 3433,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3399,
+          to 7000,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3633,
+          to 3633,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3599,
+          to 7200,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3833,
+          to 3833,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 3799,
+          to 7400,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      xref {
+        {
+          id local str "gene_8"
+        },
+        {
+          id local str "cds_8"
+        }
+      }
+    },
+    {
+      id local str "cds_8",
+      data cdregion {
+      },
+      location int {
+        from 2399,
+        to 6000,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "gene_8"
+        },
+        {
+          id local str "mrna_8"
+        }
+      }
+    }
+  }
+}
