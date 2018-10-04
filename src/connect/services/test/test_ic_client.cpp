@@ -129,12 +129,12 @@ static int s_Run()
 
     {{
     size_t test_size = 1024 * 1024 * 2;
-    unsigned char *test_buf = new unsigned char[test_size+10];
+    vector<unsigned char> test_buf(test_size+10);
     for (size_t i = 0; i < test_size; ++i) {
         test_buf[i] = 127;
     }
 
-    cl.Store(key2, version, subkey, test_buf, test_size);
+    cl.Store(key2, version, subkey, test_buf.data(), test_size);
 
     for (size_t i = 0; i < test_size; ++i) {
         test_buf[i] = 0;
@@ -145,7 +145,7 @@ static int s_Run()
     BOOST_REQUIRE(sz == test_size);
 
 
-    cl.Read(key2, version, subkey, test_buf, test_size);
+    cl.Read(key2, version, subkey, test_buf.data(), test_size);
 
     for (size_t i = 0; i < test_size; ++i) {
         BOOST_REQUIRE(test_buf[i] == 127);
