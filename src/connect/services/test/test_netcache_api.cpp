@@ -974,6 +974,7 @@ static void s_AllowedServicesTest()
         BOOST_CHECK_NO_THROW_CTX(api.HasBlob(short_key), ctx);
     }
 
+#if 0
     // Allowed service / server in allowed service
     {
         const string ctx = "RestrictedToAFew::Additional";
@@ -984,6 +985,7 @@ static void s_AllowedServicesTest()
         BOOST_CHECK_NO_THROW_CTX(api.HasBlob(key), ctx);
         BOOST_CHECK_NO_THROW_CTX(api.HasBlob(short_key), ctx);
     }
+#endif
 
 
     // Not allowed service / server not in allowed service
