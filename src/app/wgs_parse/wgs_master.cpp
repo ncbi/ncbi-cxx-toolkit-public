@@ -1393,6 +1393,10 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
 
     if (info.m_dblink_state == eDblinkNoProblem && info.m_dblink.NotEmpty()) {
         UpdateDbLink(*bioseq, *info.m_dblink);
+
+        if (info.m_id_master_bioseq.NotEmpty() && info.m_id_master_bioseq->IsSeq()) {
+            UpdateDbLink(info.m_id_master_bioseq->SetSeq(), *info.m_dblink);
+        }
     }
 
     ret.Reset(new CSeq_entry);
