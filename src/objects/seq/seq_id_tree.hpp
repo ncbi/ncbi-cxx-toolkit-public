@@ -826,7 +826,7 @@ public:
         }
     };
     struct PHash {
-        bool operator()(const TKey& a) const {
+        TPacked operator()(const TKey& a) const {
             return a.m_Key;
         }
     };
