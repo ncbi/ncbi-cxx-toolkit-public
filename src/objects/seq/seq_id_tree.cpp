@@ -2183,10 +2183,11 @@ CSeq_id_General_Str_Info::Parse(const CDbtag& dbtag)
     const string& str = dbtag.GetTag().GetStr();
     size_t len = str.size(), prefix_len = len, str_digits = 0;
     // find longest digit substring
-    size_t cur_digits = 0;
+    size_t cur_digits = 0, total_digits = 0;
     for ( ssize_t i = len; i >= 0; ) {
         char c = --i < 0? 0: str[i];
         if ( c >= '0' && c <= '9' ) {
+            ++total_digits;
             ++cur_digits;
         }
         else {
@@ -2199,7 +2200,12 @@ CSeq_id_General_Str_Info::Parse(const CDbtag& dbtag)
     }
     if ( str_digits > 9 ) {
         prefix_len += str_digits - 9;
+        total_digits += str_digits - 9;
         str_digits = 9;
+    }
+    if ( str_digits*3 < total_digits*2 ) {
+        // too many other digits
+        return key;
     }
     key.m_Db = dbtag.GetDb();
     if ( prefix_len > 0 ) {
@@ -2210,7 +2216,13 @@ CSeq_id_General_Str_Info::Parse(const CDbtag& dbtag)
     }
     TPacked hash = 1;
     if ( 1 ) {
+        ITERATE(string, i, key.m_Db) {
+            hash = hash*17 + toupper(Uint1(*i));
+        }
         ITERATE ( string, i, key.m_StrPrefix ) {
+            hash = hash*17 + toupper(Uint1(*i));
+        }
+        ITERATE(string, i, key.m_StrSuffix) {
             hash = hash*17 + toupper(Uint1(*i));
         }
     }
