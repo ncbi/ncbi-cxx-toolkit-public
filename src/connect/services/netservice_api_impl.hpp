@@ -93,7 +93,6 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
 {
     // Construct a new object.
     SNetServerPoolImpl(INetServerConnectionListener* listener);
-    SNetServerPoolImpl(const SNetServerPoolImpl& p);
 
     void Init(CSynRegistry& registry, const SRegSynonyms& sections);
 

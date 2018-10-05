@@ -44,13 +44,9 @@ class CSimpleRebalanceStrategy : public CObject
 public:
     CSimpleRebalanceStrategy(int max_requests, double max_seconds) :
         m_MaxRequests(max_requests),
-        m_MaxNs(static_cast<long>(max_seconds * kNanoSecondsPerSecond))
-    {
-    }
-
-    CSimpleRebalanceStrategy(const CSimpleRebalanceStrategy& s) :
-        m_MaxRequests(s.m_MaxRequests),
-        m_MaxNs(s.m_MaxNs)
+        m_MaxNs(static_cast<long>(max_seconds * kNanoSecondsPerSecond)),
+        m_RequestCounter(0),
+        m_NextRebalanceTime(CTime::eEmpty)
     {
     }
 
@@ -86,8 +82,8 @@ public:
 private:
     const int m_MaxRequests;
     const long m_MaxNs;
-    int        m_RequestCounter    = 0;
-    CTime      m_NextRebalanceTime = CTime::eEmpty;
+    int     m_RequestCounter;
+    CTime   m_NextRebalanceTime;
     CFastMutex m_Mutex;
 };
 
