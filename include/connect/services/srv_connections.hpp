@@ -59,7 +59,7 @@ class NCBI_XCONNECT_EXPORT CNetServerConnection
     /// remaining characters of the reply as a string.
     string Exec(const string& cmd,
             bool multiline_output = false,
-            STimeout* timeout = NULL);
+            const STimeout* timeout = NULL);
 };
 
 

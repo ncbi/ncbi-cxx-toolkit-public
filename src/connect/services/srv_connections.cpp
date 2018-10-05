@@ -276,7 +276,7 @@ void SNetServerConnectionImpl::WriteLine(const string& line)
 
 string CNetServerConnection::Exec(const string& cmd,
         bool multiline_output,
-        STimeout* timeout)
+        const STimeout* timeout)
 {
     CTimeoutKeeper timeout_keeper(&m_Impl->m_Socket, timeout);
 
@@ -521,7 +521,7 @@ const STimeout SNetServerImpl::SConnectDeadline::kMaxTryTimeout = {0, 250 * 1000
 const STimeout SNetServerImpl::SConnectDeadline::kMaxTryTimeout = {1, 250 * 1000};
 #endif
 
-CNetServerConnection SNetServerInPool::Connect(SNetServerImpl* server, STimeout* timeout)
+CNetServerConnection SNetServerInPool::Connect(SNetServerImpl* server, const STimeout* timeout)
 {
     CNetServerConnection conn = new SNetServerConnectionImpl(server);
 
@@ -569,7 +569,7 @@ void SNetServerImpl::ConnectImpl(CSocket& socket, SConnectDeadline& deadline,
 }
 
 void SNetServerInPool::TryExec(SNetServerImpl* server, INetServerExecHandler& handler,
-        STimeout* timeout)
+        const STimeout* timeout)
 {
     CheckIfThrottled();
 
@@ -603,7 +603,7 @@ void SNetServerInPool::TryExec(SNetServerImpl* server, INetServerExecHandler& ha
     }
 }
 
-void SNetServerImpl::TryExec(INetServerExecHandler& handler, STimeout* timeout)
+void SNetServerImpl::TryExec(INetServerExecHandler& handler, const STimeout* timeout)
 {
     return m_ServerInPool->TryExec(this, handler, timeout);
 }
@@ -623,7 +623,7 @@ public:
     }
 
     virtual void Exec(CNetServerConnection::TInstance conn_impl,
-            STimeout* timeout);
+            const STimeout* timeout);
 
     string m_Cmd;
     bool m_MultilineOutput;
@@ -632,7 +632,7 @@ public:
 };
 
 void CNetServerExecHandler::Exec(CNetServerConnection::TInstance conn_impl,
-        STimeout* timeout)
+        const STimeout* timeout)
 {
     m_ExecResult.conn = conn_impl;
 
@@ -646,7 +646,7 @@ void CNetServerExecHandler::Exec(CNetServerConnection::TInstance conn_impl,
 
 void SNetServerImpl::ConnectAndExec(const string& cmd,
         bool multiline_output,
-        CNetServer::SExecResult& exec_result, STimeout* timeout,
+        CNetServer::SExecResult& exec_result, const STimeout* timeout,
         INetServerExecListener* exec_listener)
 {
     CNetServerExecHandler exec_handler(cmd, multiline_output,

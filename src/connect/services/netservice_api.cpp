@@ -1083,7 +1083,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     unsigned servers_throttled = 0;
     bool blob_not_found = false;
 
-    STimeout* timeout = retry_count <= 0 && !m_UseSmartRetries ?
+    const STimeout* timeout = retry_count <= 0 && !m_UseSmartRetries ?
             NULL : &m_ServerPool->m_FirstServerTimeout;
 
     CMessageListener_Basic err_listener;

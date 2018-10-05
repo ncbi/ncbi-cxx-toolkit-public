@@ -482,7 +482,7 @@ public:
     CJsonOverUTTPExecHandler(const CJsonNode& request) : m_Request(request) {}
 
     virtual void Exec(CNetServerConnection::TInstance conn_impl,
-            STimeout* timeout);
+            const STimeout* timeout);
 
     CNetServerConnection GetConnection() const {return m_Connection;}
 
@@ -493,7 +493,7 @@ private:
 };
 
 void CJsonOverUTTPExecHandler::Exec(CNetServerConnection::TInstance conn_impl,
-        STimeout* timeout)
+        const STimeout* timeout)
 {
     CTimeoutKeeper timeout_keeper(&conn_impl->m_Socket, timeout);
     CSendJsonOverSocket sender(conn_impl->m_Socket);

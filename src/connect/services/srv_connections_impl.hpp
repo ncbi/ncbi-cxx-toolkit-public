@@ -133,7 +133,7 @@ public:
     virtual ~INetServerExecHandler() {}
 
     virtual void Exec(CNetServerConnection::TInstance conn_impl,
-            STimeout* timeout) = 0;
+            const STimeout* timeout) = 0;
 };
 
 class INetServerExecListener
@@ -203,14 +203,14 @@ struct SNetServerInPool : public CObject
 
     virtual ~SNetServerInPool();
 
-    void TryExec(SNetServerImpl* server, INetServerExecHandler& handler, STimeout* timeout);
+    void TryExec(SNetServerImpl* server, INetServerExecHandler& handler, const STimeout* timeout);
     void DiscoveredAfterThrottling() { m_ThrottleStats.DiscoveredAfterThrottling(); }
 
 private:
     void AdjustThrottlingParameters(SThrottleStats::EConnOpResult op_result);
     void CheckIfThrottled();
     CNetServerConnection GetConnectionFromPool(SNetServerImpl* server);
-    CNetServerConnection Connect(SNetServerImpl* server, STimeout* timeout);
+    CNetServerConnection Connect(SNetServerImpl* server, const STimeout* timeout);
 
 public:
     // A smart pointer to the server pool object that contains
@@ -260,12 +260,12 @@ struct SNetServerImpl : public CObject
     }
 
     void TryExec(INetServerExecHandler& handler,
-            STimeout* timeout = NULL);
+            const STimeout* timeout = NULL);
 
     void ConnectAndExec(const string& cmd,
             bool multiline_output,
             CNetServer::SExecResult& exec_result,
-            STimeout* timeout = NULL,
+            const STimeout* timeout = NULL,
             INetServerExecListener* exec_listener = NULL);
 
     static void ConnectImpl(CSocket&, SConnectDeadline&, const CNetServer::SAddress&,
@@ -285,7 +285,7 @@ struct SNetServerImpl : public CObject
 class CTimeoutKeeper
 {
 public:
-    CTimeoutKeeper(CSocket* sock, STimeout* timeout)
+    CTimeoutKeeper(CSocket* sock, const STimeout* timeout)
     {
         if (timeout == NULL)
             m_Socket = NULL;
