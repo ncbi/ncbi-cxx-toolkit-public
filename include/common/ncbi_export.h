@@ -1490,6 +1490,15 @@
 #endif
 
 
+/* Export specifier for library xloader_psg
+ */
+#ifdef NCBI_XLOADER_PSG_EXPORTS
+#  define NCBI_XLOADER_PSG_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_XLOADER_PSG_EXPORT NCBI_DLL_IMPORT
+#endif
+
+
 /* STATIC LIBRARIES SECTION */
 /* This section is for static-only libraries */
 

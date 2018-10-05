@@ -1,14 +1,16 @@
 # $Id$
 
-ASN_DEP = id2
-
 SRC = psg_client psg_client_transport
-
 LIB = psg_client
 
-LIBS = $(PSG_CLIENT_LIBS)
-CPPFLAGS = $(ORIG_CPPFLAGS) $(LIBUV_INCLUDE) $(NGHTTP2_INCLUDE)
+ASN_DEP = id2
 
-REQUIRES = NGHTTP2 LIBUV MT Linux
+REQUIRES = MT LIBUV NGHTTP2
+
+DLL_LIB = xconnserv
+
+LIBS = $(PSG_CLIENT_LIBS)
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(LIBUV_INCLUDE) $(NGHTTP2_INCLUDE)
 
 WATCHERS = sadyrovr dmitrie1

@@ -3,7 +3,7 @@
 SUB_PROJ = diag cassandra client cassandra_old
 EXPENDABLE_SUB_PROJ = protobuf cache
 
-REQUIRES = MT LIBUV NGHTTP2 CASSANDRA
+REQUIRES = MT LIBUV NGHTTP2
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

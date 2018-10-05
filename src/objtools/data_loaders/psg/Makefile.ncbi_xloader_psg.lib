@@ -1,0 +1,21 @@
+# $Id$
+
+# Build library "ncbi_xloader_psg"
+###############################
+
+LIB = ncbi_xloader_psg
+SRC = psg_loader psg_loader_impl
+
+ASN_DEP = seqset seq seqsplit
+
+REQUIRES = MT LIBUV NGHTTP2
+
+LIB_OR_DLL = both
+
+DLL_LIB = psg_client
+
+LIBS = $(CMPRS_LIBS) $(ORIG_LIBS)
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(CMPRS_INCLUDE) $(LIBUV_INCLUDE) $(NGHTTP2_INCLUDE) -DNCBI_XLOADER_PSG_EXPORTS
+
+WATCHERS = grichenk

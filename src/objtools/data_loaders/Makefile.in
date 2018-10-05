@@ -1,6 +1,7 @@
 # $Id$
 
 SUB_PROJ = genbank lds2 blastdb patcher asn_cache cdd
+EXPENDABLE_SUB_PROJ = psg
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

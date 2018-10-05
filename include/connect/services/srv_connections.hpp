@@ -99,7 +99,7 @@ class NCBI_XCONNECT_EXPORT CNetServer
 {
     NCBI_NET_COMPONENT(NetServer);
 
-    struct SAddress
+    struct NCBI_XCONNECT_EXPORT SAddress
     {
         unsigned host;
         unsigned short port;
