@@ -2008,9 +2008,9 @@ static bool IsScaffoldAccessionPrefixValid(const string& prefix)
     }
 
     static const map<EScaffoldType, list<string>> POSSIBLE_PREFICIES = {
-        { eRegularGenomic, { "CH", "DS", "EM", "EN", "EP", "EQ", "FA", "GG", "GL", "JH", "KB", "KD", "KE", "KI", "KK", "KL", "KN", "KQ", "KV", "KZ" } },
+        { eRegularGenomic, { "CH", "DS", "EM", "EN", "EP", "EQ", "FA", "GG", "GL", "JH", "KB", "KD", "KE", "KI", "KK", "KL", "KN", "KQ", "KV", "KZ", "ML" } },
         { eRegularChromosomal, { "CM" } },
-        { eGenColGenomic, { "CH", "DS", "EM", "EN", "EP", "EQ", "FA", "GG", "GL", "JH", "KB", "KD", "KE", "KI", "KK", "KL", "KN", "KQ", "KV", "KZ" } },
+        { eGenColGenomic, { "CH", "DS", "EM", "EN", "EP", "EQ", "FA", "GG", "GL", "JH", "KB", "KD", "KE", "KI", "KK", "KL", "KN", "KQ", "KV", "KZ", "ML" } },
         { eTPAGenomic, { "GJ" } },
         { eTPAChromosomal, { "GK" } }
     };
