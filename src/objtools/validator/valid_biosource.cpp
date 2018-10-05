@@ -2036,44 +2036,9 @@ const CBioseq_Handle& bsh)
         }
 
         if (!bsh.IsAa() && orgref.IsSetLineage()) {
-            const string& lineage = orgref.GetOrgname().GetLineage();
-            // look for viral taxonomic conflicts
-            if ((NStr::Find(lineage, " ssRNA viruses; ") != string::npos
-                || NStr::Find(lineage, " ssRNA negative-strand viruses; ") != string::npos
-                || NStr::Find(lineage, " ssRNA positive-strand viruses, no DNA stage; ") != string::npos
-                || NStr::Find(lineage, " unassigned ssRNA viruses; ") != string::npos)
-                && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_rna)) {
-
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
-                    "Taxonomy indicates single-stranded RNA, molecule type (" +
-                    CSeq_inst::GetMoleculeClass(bsh.IsSetInst_Mol() ? bsh.GetInst_Mol() : CSeq_inst::eMol_not_set)
-                    + ") is conflicting.",
-                    obj, ctx);
-            }
-            if (NStr::Find(lineage, " dsRNA viruses") != string::npos
-                && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_rna)) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
-                    "Taxonomy indicates double-stranded RNA, molecule type (" +
-                    CSeq_inst::GetMoleculeClass(bsh.IsSetInst_Mol() ? bsh.GetInst_Mol() : CSeq_inst::eMol_not_set)
-                    + ") is conflicting.",
-                    obj, ctx);
-            }
-            if (NStr::Find(lineage, " ssDNA viruses") != string::npos
-                && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_dna)) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
-                    "Taxonomy indicates single-stranded DNA, molecule type (" +
-                    CSeq_inst::GetMoleculeClass(bsh.IsSetInst_Mol() ? bsh.GetInst_Mol() : CSeq_inst::eMol_not_set)
-                    + ") is conflicting.",
-                    obj, ctx);
-            }
-            if (NStr::Find(lineage, " dsDNA viruses; ") != string::npos
-                && (!bsh.IsSetInst_Mol() || bsh.GetInst_Mol() != CSeq_inst::eMol_dna)) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
-                    "Taxonomy indicates double-stranded DNA, molecule type (" +
-                    CSeq_inst::GetMoleculeClass(bsh.IsSetInst_Mol() ? bsh.GetInst_Mol() : CSeq_inst::eMol_not_set)
-                    + ") is conflicting.",
-                    obj, ctx);
-            }
+            x_ReportLineageConflictWithMol(orgref.GetOrgname().GetLineage(),
+                         bsh.IsSetInst_Mol() ? bsh.GetInst_Mol() : CSeq_inst::eMol_not_set,
+                         obj, ctx);
         }
     }
 
@@ -2118,6 +2083,98 @@ const CBioseq_Handle& bsh)
     }
 
 
+}
+
+
+
+
+size_t CValidError_imp::s_GetStrandedMolTypeFromLineage(const string& lineage)
+{
+    size_t smol = eStrandedMoltype_unknown;
+
+    if (NStr::Find(lineage, " ssRNA ") != string::npos) {
+        smol |= eStrandedMoltype_ssRNA;
+    }
+    if (NStr::Find(lineage, " dsRNA ") != string::npos) {
+        smol |= eStrandedMoltype_dsRNA;
+    } 
+    if (NStr::Find(lineage, " ssDNA ") != string::npos) {
+        smol |= eStrandedMoltype_ssDNA;
+    }
+    if (NStr::Find(lineage, " dsDNA ") != string::npos) {
+        smol |= eStrandedMoltype_dsDNA;
+    }
+    return smol;
+}
+
+
+string CValidError_imp::s_GetStrandedMoltype(EStrandedMoltype smol)
+{
+    switch (smol) {
+        case eStrandedMoltype_ssRNA:
+            return "single-stranded RNA";
+            break;
+        case eStrandedMoltype_dsRNA:
+            return "double-stranded RNA";
+            break;
+        case eStrandedMoltype_ssDNA:
+            return "single-stranded DNA";
+            break;
+        case eStrandedMoltype_dsDNA:
+            return "double-stranded DNA";
+            break;
+        default:
+            return kEmptyStr;
+            break;
+    }
+}
+
+
+CSeq_inst::EMol CValidError_imp::s_ExpectedMoltypeForStrandedMol(EStrandedMoltype smol)
+{
+    CSeq_inst::EMol rval = CSeq_inst::eMol_not_set;
+    switch (smol) {
+        case eStrandedMoltype_ssRNA:
+        case eStrandedMoltype_dsRNA:
+            rval = CSeq_inst::eMol_rna;
+            break;
+        case eStrandedMoltype_ssDNA:
+        case eStrandedMoltype_dsDNA:
+            rval = CSeq_inst::eMol_dna;
+            break;
+        default:
+            break;
+    }
+    return rval;
+}           
+
+
+void CValidError_imp::x_ReportLineageConflictWithMol(size_t smol, EStrandedMoltype esmol, CSeq_inst::EMol mol, const CSerialObject& obj, const CSeq_entry *ctx)
+{
+    if ((smol & esmol) && mol != s_ExpectedMoltypeForStrandedMol(esmol)) {
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
+                  "Taxonomy indicates " + s_GetStrandedMoltype(esmol) +
+                  ", molecule type (" + CSeq_inst::GetMoleculeClass(mol) +
+                  ") is conflicting.",
+                   obj, ctx);
+    }
+}
+
+
+void CValidError_imp::x_ReportLineageConflictWithMol
+(const string& lineage, 
+ CSeq_inst::EMol mol,
+ const CSerialObject& obj,
+ const CSeq_entry    *ctx)
+{
+    size_t smol = s_GetStrandedMolTypeFromLineage(lineage);
+    if (smol == eStrandedMoltype_unknown || mol == CSeq_inst::eMol_aa) {
+        return;
+    }
+    x_ReportLineageConflictWithMol(smol, eStrandedMoltype_ssRNA, mol, obj, ctx);
+    x_ReportLineageConflictWithMol(smol, eStrandedMoltype_dsRNA, mol, obj, ctx);
+    x_ReportLineageConflictWithMol(smol, eStrandedMoltype_ssDNA, mol, obj, ctx);
+    x_ReportLineageConflictWithMol(smol, eStrandedMoltype_dsDNA, mol, obj, ctx);
 }
 
 
