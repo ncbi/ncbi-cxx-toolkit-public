@@ -5000,7 +5000,7 @@ void ReverseComplement(CSeq_inst& inst, CScope* scope)
                     case CDelta_seq::e_Loc:
                         {{
                             CSeq_loc* flip = sequence::SeqLocRevCmpl((*it)->SetLoc(), scope);
-                            (*it)->SetLoc().Assign(*flip);
+                            (*it)->SetLoc(*flip);
                         }}
                         break;
                     default:
