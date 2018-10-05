@@ -913,7 +913,7 @@ static void CheckSeqIdStatus(const CBioseq::TId& ids, CSeq_id::E_Choice& choice,
 
 bool IsScaffoldPrefix(const string& accession, size_t prefix_len)
 {
-    static string scaffold_prefs[] = { "CH", "CM", "DS", "EM", "EN", "EP", "EQ", "FA", "GG", "GJ", "GK", "GL", "JH", "KB", "KD", "KE", "KI", "KK", "KL", "KN", "KQ", "KV", "KZ" };
+    static string scaffold_prefs[] = { "CH", "CM", "DS", "EM", "EN", "EP", "EQ", "FA", "GG", "GJ", "GK", "GL", "JH", "KB", "KD", "KE", "KI", "KK", "KL", "KN", "KQ", "KV", "KZ", "ML" };
     static string* end_of_scaffold_prefs = scaffold_prefs + sizeof(scaffold_prefs) / sizeof(scaffold_prefs[0]);
 
     string prefix = accession.substr(0, prefix_len);
