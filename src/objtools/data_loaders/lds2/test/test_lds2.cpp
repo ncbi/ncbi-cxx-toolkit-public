@@ -159,9 +159,12 @@ void CLDS2TestApplication::x_ConvertFile(const string& rel_name)
     CNcbiOfstream fout(dst.GetPath().c_str(), ios::binary | ios::out);
     auto_ptr<CObjectOStream> out;
     if ( m_GZip ) {
-        auto_ptr<CCompressionOStream> zout(new CCompressionOStream(fout,
-            new CZipStreamCompressor(CZipCompression::eLevel_Default,
-            CZipCompression::fGZip)));
+        unique_ptr<CZipStreamCompressor> zcomp
+            (new CZipStreamCompressor(CZipCompression::eLevel_Default,
+                                      CZipCompression::fGZip));
+        unique_ptr<CCompressionOStream> zout
+            (new CCompressionOStream(fout, zcomp.release(),
+                                     CCompressionStream::fOwnProcessor));
         out.reset(CObjectOStream::Open(m_Fmt, *zout.release(),
             eTakeOwnership));
     }
