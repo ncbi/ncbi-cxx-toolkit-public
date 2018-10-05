@@ -311,9 +311,12 @@ void CLDS2TestApplication::x_InitStressTest(void)
         auto_ptr<CNcbiOstream> zout;
         CNcbiOstream* out_stream = &fout;
         if ( m_GZip ) {
-            zout.reset(new CCompressionOStream(fout,
-                new CZipStreamCompressor(CZipCompression::eLevel_Default,
-                CZipCompression::fGZip)));
+            unique_ptr<CZipStreamCompressor> zcomp
+                (new CZipStreamCompressor(CZipCompression::eLevel_Default,
+                                          CZipCompression::fGZip));
+            zout.reset(new CCompressionOStream
+                       (fout, zcomp.release(),
+                        CCompressionOStream::fOwnProcessor));
             out_stream = zout.get();
         }
         auto_ptr<CObjectOStream> out;
