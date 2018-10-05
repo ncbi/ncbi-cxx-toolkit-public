@@ -128,6 +128,7 @@ void SDiscoveredServers::DeleteThis()
 
 CNetServer CNetServiceIterator::GetServer()
 {
+    m_Impl->m_ServerGroup->m_Service->m_RebalanceStrategy->OnResourceRequested();
     return new SNetServerImpl(m_Impl->m_ServerGroup->m_Service,
             m_Impl->m_ServerGroup->m_Service->m_ServerPool->
             ReturnServer(m_Impl->m_Position->first));
@@ -358,6 +359,7 @@ SNetServiceImpl::SNetServiceImpl(const string& service_name, SNetServiceImpl* pr
     m_Listener(prototype->m_Listener->Clone()),
     m_ServerPool(prototype->m_ServerPool),
     m_ServiceName(service_name),
+    m_RebalanceStrategy(new CSimpleRebalanceStrategy(prototype->m_RebalanceStrategy)),
     m_APIName(prototype->m_APIName),
     m_ClientName(prototype->m_ClientName),
     m_UseSmartRetries(prototype->m_UseSmartRetries),
@@ -640,6 +642,10 @@ void SNetServiceImpl::Init(CSynRegistry& registry, SRegSynonyms& sections, const
         m_ClientName = app->GetProgramDisplayName();
     }
 
+    auto max_requests = registry.Get(sections, "rebalance_requests", CSimpleRebalanceStrategy::DefaultMaxRequests());
+    auto max_seconds = registry.Get(sections, "rebalance_time", CSimpleRebalanceStrategy::DefaultMaxSeconds());
+    m_RebalanceStrategy = new CSimpleRebalanceStrategy(max_requests, max_seconds);
+
     m_ServerPool->Init(registry, sections);
 
     Construct();
@@ -647,9 +653,6 @@ void SNetServiceImpl::Init(CSynRegistry& registry, SRegSynonyms& sections, const
 
 void SNetServerPoolImpl::Init(CSynRegistry& registry, const SRegSynonyms& sections)
 {
-    int max_requests = CSimpleRebalanceStrategy::DefaultMaxRequests();
-    double max_seconds = CSimpleRebalanceStrategy::DefaultMaxSeconds();
-
     const auto kConnTimeoutDefault = 2.0;
     const auto kCommTimeoutDefault = 12.0;
     const auto kFirstServerTimeoutDefault = 0.3;
@@ -682,12 +685,7 @@ void SNetServerPoolImpl::Init(CSynRegistry& registry, const SRegSynonyms& sectio
     double max_total_time = registry.Get(sections, "max_connection_time", 0.0);
     if (max_total_time > 0) m_MaxTotalTime = CTimeout(max_total_time);
 
-    max_requests = registry.Get(sections, "rebalance_requests", max_requests);
-    max_seconds = registry.Get(sections, "rebalance_time", max_seconds);
-
     m_ThrottleParams.Init(registry, sections);
-
-    m_RebalanceStrategy = new CSimpleRebalanceStrategy(max_requests, max_seconds);
 }
 
 SDiscoveredServers* SNetServiceImpl::AllocServerGroup(
@@ -820,8 +818,6 @@ SNetServerInPool* SNetServerPoolImpl::FindOrCreateServerImpl(
 CRef<SNetServerInPool> SNetServerPoolImpl::ReturnServer(
         SNetServerInPool* server_impl)
 {
-    m_RebalanceStrategy->OnResourceRequested();
-
     CFastMutexGuard server_mutex_lock(m_ServerMutex);
 
     server_impl->m_ServerPool = this;
@@ -830,8 +826,6 @@ CRef<SNetServerInPool> SNetServerPoolImpl::ReturnServer(
 
 CNetServer SNetServerPoolImpl::GetServer(SNetServiceImpl* service, CNetServer::SAddress server_address)
 {
-    m_RebalanceStrategy->OnResourceRequested();
-
     CFastMutexGuard server_mutex_lock(m_ServerMutex);
 
     auto* server = FindOrCreateServerImpl(m_EnforcedServer.host == 0 ? move(server_address) : m_EnforcedServer);
@@ -842,6 +836,7 @@ CNetServer SNetServerPoolImpl::GetServer(SNetServiceImpl* service, CNetServer::S
 
 CNetServer SNetServiceImpl::GetServer(CNetServer::SAddress server_address)
 {
+    m_RebalanceStrategy->OnResourceRequested();
     return m_ServerPool->GetServer(this, move(server_address));
 }
 
@@ -905,6 +900,7 @@ CNetServer::SExecResult SNetServiceImpl::FindServerAndExec(const string& cmd,
 
     case eSingleServerService:
         {
+            m_RebalanceStrategy->OnResourceRequested();
             CNetServer server(new SNetServerImpl(this,
                     m_ServerPool->ReturnServer(
                     m_DiscoveredServers->m_Servers.front().first)));
@@ -935,8 +931,8 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
 
     if (m_ServiceType == eLoadBalancedService) {
         // The service is load-balanced, check if rebalancing is required.
-        m_ServerPool->m_RebalanceStrategy->OnResourceRequested();
-        if (m_ServerPool->m_RebalanceStrategy->NeedRebalance())
+        m_RebalanceStrategy->OnResourceRequested();
+        if (m_RebalanceStrategy->NeedRebalance())
             ++m_LatestDiscoveryIteration;
 
         if (m_DiscoveredServers == NULL ||

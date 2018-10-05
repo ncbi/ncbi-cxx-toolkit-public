@@ -111,8 +111,6 @@ private:
 public:
     CNetServer::SAddress m_EnforcedServer;
 
-    CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
-
     // LBSM affinity name and value
     pair<string, const char*> m_LBSMAffinity;
 
@@ -358,6 +356,7 @@ public:
     SDiscoveredServers* m_DiscoveredServers = nullptr;
     SDiscoveredServers* m_ServerGroupPool = nullptr;
     unsigned m_LatestDiscoveryIteration = 0;
+    CRef<CSimpleRebalanceStrategy> m_RebalanceStrategy;
 
 private:
     string m_APIName;
