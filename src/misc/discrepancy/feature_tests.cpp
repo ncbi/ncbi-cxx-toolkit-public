@@ -1298,7 +1298,7 @@ DISCREPANCY_SUMMARIZE(JOINED_FEATURES)
 
 DISCREPANCY_CASE(BACTERIAL_JOINED_FEATURES_NO_EXCEPTION, CSeq_feat_BY_BIOSEQ, eDisc | eSubmitter | eSmart, "Joined Features on prokaryote without exception")
 {
-    if (context.IsEukaryotic() || context.IsOrganelle() || !obj.IsSetLocation() || !obj.CanGetData() || !obj.GetData().IsCdregion()) {
+    if (context.IsEukaryotic() || context.IsOrganelle() || context.IsPseudo(obj) || !obj.IsSetLocation() || !obj.CanGetData() || !obj.GetData().IsCdregion()) {
         return;
     }
     if (obj.GetLocation().IsMix() || obj.GetLocation().IsPacked_int()) {
