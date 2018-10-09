@@ -530,7 +530,7 @@ CNetServerConnection SNetServerInPool::Connect(SNetServerImpl* server, const STi
 
     SNetServiceXSiteAPI::ConnectXSite(socket, deadline, m_Address, server->m_Service->m_ServiceName);
 
-    AdjustThrottlingParameters(SThrottleStats::eCOR_Success);
+    AdjustThrottlingParameters();
 
     socket.SetDataLogging(TServConn_ConnDataLogging::GetDefault() ? eOn : eOff);
     socket.SetTimeout(eIO_ReadWrite, timeout ? timeout :
@@ -588,7 +588,7 @@ void SNetServerInPool::TryExec(SNetServerImpl* server, INetServerExecHandler& ha
             if (err_code != CNetSrvConnException::eWriteFailure &&
                 err_code != CNetSrvConnException::eConnClosedByServer)
             {
-                AdjustThrottlingParameters(SThrottleStats::eCOR_Failure);
+                AdjustThrottlingParameters(err_code);
                 throw;
             }
         }
@@ -597,8 +597,8 @@ void SNetServerInPool::TryExec(SNetServerImpl* server, INetServerExecHandler& ha
     try {
         handler.Exec(Connect(server, timeout), timeout);
     }
-    catch (CNetSrvConnException&) {
-        AdjustThrottlingParameters(SThrottleStats::eCOR_Failure);
+    catch (CNetSrvConnException& e) {
+        AdjustThrottlingParameters(e.GetErrCode());
         throw;
     }
 }
@@ -655,12 +655,18 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
     TryExec(exec_handler, timeout);
 }
 
-void SNetServerInPool::AdjustThrottlingParameters(SThrottleStats::EConnOpResult op_result)
+void SNetServerInPool::AdjustThrottlingParameters(int err_code)
 {
     const auto& params = m_ServerPool->GetThrottleParams();
 
     if (params.m_ServerThrottlePeriod <= 0)
         return;
+
+    const auto op_result = err_code < 0 ? SThrottleStats::eCOR_Success : SThrottleStats::eCOR_Failure;
+
+    if (params.m_ConnectionFailuresOnly &&
+            (op_result == SThrottleStats::eCOR_Failure) &&
+            (err_code != CNetSrvConnException::eConnectionFailure)) return;
 
     m_ThrottleStats.AdjustThrottlingParameters(params, op_result);
 }
@@ -876,6 +882,8 @@ void SThrottleParams::Init(CSynRegistry& registry, const SRegSynonyms& sections)
 
     m_IOFailureThresholdNumerator = numerator;
     m_IOFailureThresholdDenominator = denominator;
+
+    m_ConnectionFailuresOnly = registry.Get(sections, "throttle_connection_failures_only", false);
 }
 
 CNetServer::SAddress::SAddress(unsigned h, unsigned short p) :

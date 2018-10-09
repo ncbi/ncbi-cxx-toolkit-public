@@ -161,6 +161,9 @@ struct SThrottleParams
     // Whether to check with LBSMD before re-enabling the server.
     bool m_ThrottleUntilDiscoverable;
 
+    // Whether to throttle on connection failures only
+    bool m_ConnectionFailuresOnly;
+
     void Init(CSynRegistry& registry, const SRegSynonyms& sections);
 };
 
@@ -207,7 +210,7 @@ struct SNetServerInPool : public CObject
     void DiscoveredAfterThrottling() { m_ThrottleStats.DiscoveredAfterThrottling(); }
 
 private:
-    void AdjustThrottlingParameters(SThrottleStats::EConnOpResult op_result);
+    void AdjustThrottlingParameters(int err_code = -1);
     void CheckIfThrottled();
     CNetServerConnection GetConnectionFromPool(SNetServerImpl* server);
     CNetServerConnection Connect(SNetServerImpl* server, const STimeout* timeout);
