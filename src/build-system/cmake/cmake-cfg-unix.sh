@@ -77,7 +77,7 @@ OPTIONS:
   --with-ccache              -- use ccache if available
   --with-distcc              -- use distcc if available
   --with-install='DIR'       -- generate rules for installation into 'DIR' directory
-                    examples:   --with-install='/usr/CPP toolkit'
+                    examples:   --with-install='/usr/CPP_toolkit'
   --without-experimental     -- disable experimental configuration
   --with-generator='X'       -- use generator X
 EOF

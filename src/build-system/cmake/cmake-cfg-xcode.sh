@@ -48,7 +48,7 @@ OPTIONS:
   --with-targets='names'     -- build projects which have allowed names only
                     examples:   --with-targets='datatool;xcgi$'
   --with-install='DIR'       -- generate rules for installation into 'DIR' directory
-                    examples:   --with-install='/usr/CPP toolkit'
+                    examples:   --with-install='/usr/CPP_toolkit'
 EOF
 
   generatorfound=""
