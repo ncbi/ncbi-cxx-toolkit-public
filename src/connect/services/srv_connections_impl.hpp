@@ -165,6 +165,9 @@ struct SThrottleParams
     bool m_ConnectionFailuresOnly;
 
     void Init(CSynRegistry& registry, const SRegSynonyms& sections);
+
+private:
+    void InitIOFailureThreshold(CSynRegistry& registry, const SRegSynonyms& sections);
 };
 
 struct SThrottleStats

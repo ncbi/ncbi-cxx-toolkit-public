@@ -851,7 +851,13 @@ void SThrottleParams::Init(CSynRegistry& registry, const SRegSynonyms& sections)
             { "throttle_by_consecutive_connection_failures", "throttle_by_subsequent_connection_failures" }, 0);
 
     m_ThrottleUntilDiscoverable = registry.Get(sections, "throttle_hold_until_active_in_lb", false);
+    m_ConnectionFailuresOnly = registry.Get(sections, "throttle_connection_failures_only", false);
 
+    InitIOFailureThreshold(registry, sections);
+}
+
+void SThrottleParams::InitIOFailureThreshold(CSynRegistry& registry, const SRegSynonyms& sections)
+{
     // These values must correspond to each other
     const auto default_error_rate = "0/1";
     m_IOFailureThresholdNumerator = 0;
@@ -882,8 +888,6 @@ void SThrottleParams::Init(CSynRegistry& registry, const SRegSynonyms& sections)
 
     m_IOFailureThresholdNumerator = numerator;
     m_IOFailureThresholdDenominator = denominator;
-
-    m_ConnectionFailuresOnly = registry.Get(sections, "throttle_connection_failures_only", false);
 }
 
 CNetServer::SAddress::SAddress(unsigned h, unsigned short p) :
