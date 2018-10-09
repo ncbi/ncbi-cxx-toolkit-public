@@ -6,7 +6,7 @@ REQUIRES = dbapi FreeTDS Boost.Test.Included
 
 APP = id_unit_test
 SRC = id_unit_test
-LIB = test_boost xobjutil ncbi_xdbapi_ftds $(OBJMGR_LIBS) $(FTDS_LIB)
+LIB = test_boost xobjsimple xobjutil ncbi_xdbapi_ftds $(OBJMGR_LIBS) $(FTDS_LIB)
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
