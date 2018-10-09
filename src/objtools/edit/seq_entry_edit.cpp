@@ -2455,7 +2455,7 @@ void TrimSeqData(CBioseq_Handle bsh,
             seqvec.GetSeqData(seqmap_ci.GetPosition(), seqmap_ci.GetEndPosition(),
                               new_data);
             CRef<CSeq_data> pSeqData(new CSeq_data());
-            pSeqData->SetIupacna(*new CIUPACna(new_data));
+            pSeqData->SetIupacna().Set(new_data);
             CSeqportUtil::Pack(pSeqData);
             CAutoInitRef<CDelta_seq> pDeltaSeq;
             pDeltaSeq->SetLiteral().SetLength(seqmap_ci.GetLength());
