@@ -2225,4 +2225,6 @@ NCBITEST_INIT_TREE()
 {
     NCBITEST_DISABLE(StateTest);
     NCBITEST_DISABLE(WithdrawnStateTest);
+    NCBITEST_DISABLE(TPGTest);
+    NCBITEST_DISABLE(FixedFileTest);
 }
