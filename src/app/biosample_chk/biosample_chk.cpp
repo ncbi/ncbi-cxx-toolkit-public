@@ -755,6 +755,8 @@ int CBiosampleChkApp::Run(void)
       m_Username = args["username"] ? args["username"].AsString() : "";
       m_Password = args["password"] ? args["password"].AsString() : "";
     }
+    NStr::TruncateSpacesInPlace(m_Username);
+    NStr::TruncateSpacesInPlace(m_Password);
 
     if (!NStr::IsBlank(m_StructuredCommentPrefix) && m_Mode != e_generate_biosample) {
         // error
