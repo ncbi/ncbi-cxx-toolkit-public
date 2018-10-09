@@ -947,6 +947,15 @@ static const TErrTypStrs sc_ErrStrs[] = {
     { eErr_SEQ_DESCR_BadTypeMaterial,
     { "BadTypeMaterial",
       "Bad value for type_material" } } ,
+    { eErr_SEQ_DESCR_TaxonomyNoCommonAncestor,
+    { "TaxonomyNoCommonAncestor",
+      "No common ancestor for input taxids in join request" } },
+    { eErr_SEQ_DESCR_TaxonomyNoValidTaxids,
+    { "TaxonomyNoValidTaxids", 
+      "All taxids in join request are invalid" } },
+    { eErr_SEQ_DESCR_TaxonomyEmptyInput,
+    { "TaxonomyEmptyInput",
+      "No valid input to perform Taxonomy request" } } ,
 
 
     /* SEQ_GENERIC */

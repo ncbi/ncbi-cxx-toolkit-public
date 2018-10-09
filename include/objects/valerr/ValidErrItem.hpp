@@ -343,7 +343,9 @@ enum EErrType {
     eErr_SEQ_DESCR_MultipleStrains,
     eErr_SEQ_DESCR_BadVariety,
     eErr_SEQ_DESCR_BadTypeMaterial,
-
+    eErr_SEQ_DESCR_TaxonomyNoCommonAncestor,
+    eErr_SEQ_DESCR_TaxonomyNoValidTaxids,
+    eErr_SEQ_DESCR_TaxonomyEmptyInput,
     ERR_CODE_END(SEQ_DESCR),
 
 
