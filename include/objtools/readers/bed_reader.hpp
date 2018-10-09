@@ -427,6 +427,7 @@ protected:
     bool m_usescore;
     unsigned int m_CurBatchSize;
     const unsigned int m_MaxBatchSize;
+    unique_ptr<CLinePreBuffer> mLinePreBuffer;
 };
 
 END_SCOPE(objects)

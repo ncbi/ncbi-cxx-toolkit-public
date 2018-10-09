@@ -170,7 +170,7 @@ public:
         return true;
     }
 
-    size_t LineNumber() const
+    int LineNumber() const
     {
         return mLineNumber;
     };
@@ -185,10 +185,20 @@ public:
         return mBuffer.end();
     };
 
+    void
+    AssignReader(
+        ILineReader& lineReader) {
+        if (&mLineReader != &lineReader) {
+            mLineReader = lineReader;
+            mBuffer.clear();
+            mLineNumber = 0;
+        }
+    };
+
 protected:
     ILineReader& mLineReader;
     deque<string> mBuffer;
-    size_t mLineNumber;
+    int mLineNumber;
 };
 
 
@@ -208,7 +218,8 @@ CBedReader::CBedReader(
     m_CurrentFeatureCount(0),
     m_usescore(false),
     m_CurBatchSize(0),
-    m_MaxBatchSize(10000)
+    m_MaxBatchSize(10000),
+    mLinePreBuffer(nullptr)
 {
 }
 
@@ -251,12 +262,19 @@ CBedReader::ReadSeqAnnot(
     xParseTrackLine("track", pEC);
 
     string line;
-    CLinePreBuffer preBuffer(lineReader);
+    if (!mLinePreBuffer) {
+        mLinePreBuffer.reset(new CLinePreBuffer(lineReader));
+    }
+    else {
+        mLinePreBuffer->AssignReader(lineReader);
+    }
+
+    //CLinePreBuffer preBuffer(lineReader);
 
     try {
-        xDetermineLikelyColumnCount(preBuffer, pEC);
-        while (preBuffer.GetLine(line)) {
-            m_uLineNumber = preBuffer.LineNumber();
+        xDetermineLikelyColumnCount(*mLinePreBuffer, pEC);
+        while (mLinePreBuffer->GetLine(line)) {
+            m_uLineNumber = mLinePreBuffer->LineNumber();
             // interact with calling party
             if (IsCanceled()) {
                 AutoPtr<CObjReaderLineException> pErr(
@@ -275,8 +293,8 @@ CBedReader::ReadSeqAnnot(
                     xParseTrackLine(line, pEC);
                     continue;
                 }
-                preBuffer.UngetLine(line);
-                xDetermineLikelyColumnCount(preBuffer, pEC);
+                mLinePreBuffer->UngetLine(line);
+                //xDetermineLikelyColumnCount(*mLinePreBuffer, pEC);
                 break;
             }
             if (xParseBrowserLine(line, annot, pEC)) {
