@@ -49,6 +49,10 @@
 #include <connect/ncbi_util.h>
 #include <algorithm>
 
+#include <objtools/simple/simple_om.hpp>
+#include <gui/objutils/utils.hpp>
+#include <future>
+
 #include <objects/general/general__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/seq/seq__.hpp>
@@ -908,10 +912,70 @@ BOOST_AUTO_TEST_CASE(TestHistory)
 }
 
 
+BOOST_AUTO_TEST_CASE(MTCrash1)
+{
+    CRef<CScope> scope = CSimpleOM::NewScope();
+    SAnnotSelector sel;
+    sel
+        // consider overlaps by total range...
+        .SetOverlapTotalRange()
+        // resolve all segments...
+        .SetResolveAll()
+        .SetAdaptiveDepth(true)
+        .SetResolveAll()
+        ;
+    sel.SetFeatType(CSeqFeatData::e_Gene)
+        .IncludeFeatType(CSeqFeatData::e_Rna)
+        .IncludeFeatType(CSeqFeatData::e_Cdregion);
+    
+    vector<string> accs;
+    for (int i = 1; i < 6; ++i) {
+        CNcbiOstrstream ss;
+        ss << "NC_" << std::setw(6) << std::setfill('0') << i;
+        accs.push_back(CNcbiOstrstreamToString(ss));
+    }
+    for (int c = 0; c < 5; ++c) {
+        //                srand(time(0));
+        //                random_shuffle(accs.begin(), accs.end());
+        for (const auto& acc : accs) {
+            auto seq_id = Ref(new CSeq_id(acc));
+            int bioseq_len = 0;
+            {
+                auto bsh = scope->GetBioseqHandle(*seq_id);
+                bioseq_len = bsh.GetBioseqLength();
+            }
+            int start = 0;
+            int chunk_size = max<int>(100000, bioseq_len / 8);
+            vector<future<bool>> res;
+            while (start < bioseq_len - 1) {
+                int stop = min(start + chunk_size, bioseq_len - 1);
+                res.emplace_back(async(launch::async, [&]()->bool {
+                    auto bsh = scope->GetBioseqHandle(*seq_id);
+                    TSeqRange range(start, stop);
+                    CFeat_CI feat_it(bsh, range, sel);
+                    for (;  feat_it;  ++feat_it) {
+                    }
+                    return true;
+                        }));
+                start = stop + 1;
+            }
+            bool all_is_good = all_of(res.begin(), res.end(), [](future<bool>& f) { return f.get(); });
+            cout << acc << ": passed" << endl;
+        }
+        cout << "============================" << endl;
+    }
+}
+
+
 NCBITEST_INIT_TREE()
 {
     NCBITEST_DISABLE(CheckAll);
     NCBITEST_DISABLE(CheckExtHPRD);
+    NCBITEST_DISABLE(CheckExtMGC);
+    NCBITEST_DISABLE(CheckExtTRNA);
+    NCBITEST_DISABLE(CheckExtTRNAEdit);
+    NCBITEST_DISABLE(CheckExtMicroRNA);
+    NCBITEST_DISABLE(CheckExtExon);
 #if !defined(HAVE_PUBSEQ_OS) || (defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT))
     // HUP test needs multiple PubSeqOS readers
     NCBITEST_DISABLE(Test_HUP);
