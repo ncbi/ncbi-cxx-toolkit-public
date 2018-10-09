@@ -109,7 +109,7 @@ public:
     void SuppressFeature(objects::CFeatListItem feat); 
     void SuppressFeature(objects::CSeqFeatData::ESubtype subtype);
     
-    typedef vector<CAutoDefModifierCombo *> TModifierComboVector;
+    typedef vector<CRef<CAutoDefModifierCombo>> TModifierComboVector;
     
     void GetAvailableModifiers(TAvailableModifierSet &mod_set);
     

@@ -67,6 +67,9 @@ CAutoDefFeatureClause_Base::CAutoDefFeatureClause_Base() :
 
 CAutoDefFeatureClause_Base::~CAutoDefFeatureClause_Base()
 {
+    for (auto it : m_ClauseList) {
+        delete it;
+    }
 }
 
 

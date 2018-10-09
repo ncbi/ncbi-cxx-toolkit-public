@@ -187,10 +187,10 @@ unsigned int CAutoDef::GetNumAvailableModifiers()
 
 
 struct SAutoDefModifierComboSort {
-    bool operator()(const CAutoDefModifierCombo& s1,
-                    const CAutoDefModifierCombo& s2) const
+    bool operator()(const CRef<CAutoDefModifierCombo>& s1,
+                    const CRef<CAutoDefModifierCombo>& s2) const
     {
-        return (s1 < s2);
+        return (*s1 < *s2);
     }
 };
 
@@ -202,7 +202,7 @@ CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
     TModifierComboVector  combo_list;
 
     combo_list.clear();
-    combo_list.push_back (new CAutoDefModifierCombo(&m_OrigModCombo));
+    combo_list.emplace_back (new CAutoDefModifierCombo(&m_OrigModCombo));
 
 
     TModifierComboVector tmp, add_list;
@@ -226,7 +226,7 @@ CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
             if (!tmp.empty()) {
                 stop = false;
                 for (k = 0; k < tmp.size(); k++) {
-                    add_list.push_back (new CAutoDefModifierCombo(tmp[k]));
+                    add_list.emplace_back (new CAutoDefModifierCombo(tmp[k]));
                 }
                 it = combo_list.erase (it);
             } else {
@@ -235,7 +235,7 @@ CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
             tmp.clear();
         }
         for (k = 0; k < add_list.size(); k++) {
-            combo_list.push_back (new CAutoDefModifierCombo(add_list[k]));
+            combo_list.emplace_back (new CAutoDefModifierCombo(add_list[k]));
         }
         add_list.clear();
         std::sort (combo_list.begin(), combo_list.end(), SAutoDefModifierComboSort());
@@ -248,13 +248,7 @@ CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
         mod_list.push_back (CAutoDefSourceModifierInfo(*it));
     }
 
-    best = combo_list[0];
-    combo_list[0] = NULL;
-    for (k = 1; k < combo_list.size(); k++) {
-       delete combo_list[k];
-       combo_list[k] = NULL;
-    }
-    return best;
+    return combo_list[0].Release();
 }
 
 
@@ -1220,7 +1214,7 @@ string CAutoDef::GetOneDefLine(CBioseq_Handle bh)
     string org_desc = "Unknown organism";
     unsigned int genome_val = CBioSource::eGenome_unknown;
 
-    CAutoDefModifierCombo *mod_combo = GetEmptyCombo();
+    CRef<CAutoDefModifierCombo> mod_combo(GetEmptyCombo());
     mod_combo->InitFromOptions(m_Options);
 
     for (CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit; ++dit) {

@@ -136,7 +136,7 @@ public:
     bool AddQual (bool IsOrgMod, int subtype, bool even_if_not_uniquifying = false);
     bool RemoveQual (bool IsOrgMod, int subtype);
 
-    vector<CAutoDefModifierCombo *> ExpandByAnyPresent();
+    vector<CRef<CAutoDefModifierCombo>> ExpandByAnyPresent();
     bool AreFeatureClausesUnique();
 
     static bool IsModifierRequiredByDefault(bool is_orgmod, int subtype);

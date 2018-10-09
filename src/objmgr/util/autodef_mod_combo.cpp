@@ -1088,10 +1088,10 @@ bool CAutoDefModifierCombo::RemoveQual (bool IsOrgMod, int subtype)
 }
 
 
-vector<CAutoDefModifierCombo *> CAutoDefModifierCombo::ExpandByAnyPresent()
+vector<CRef<CAutoDefModifierCombo>> CAutoDefModifierCombo::ExpandByAnyPresent()
 {
     CAutoDefSourceDescription::TModifierVector mods;
-    vector<CAutoDefModifierCombo *> expanded;
+    vector<CRef<CAutoDefModifierCombo>> expanded;
 
     expanded.clear();
     NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {
@@ -1100,7 +1100,7 @@ vector<CAutoDefModifierCombo *> CAutoDefModifierCombo::ExpandByAnyPresent()
         }
         mods = (*it)->GetModifiersPresentForAny();
         ITERATE (CAutoDefSourceDescription::TModifierVector, mod_it, mods) {
-            expanded.push_back (new CAutoDefModifierCombo (this));
+            expanded.emplace_back (new CAutoDefModifierCombo (this));
             if (!expanded[expanded.size() - 1]->AddQual (mod_it->IsOrgMod(), mod_it->GetSubtype())) {
                 expanded.pop_back ();
                 RemoveQual(mod_it->IsOrgMod(), mod_it->GetSubtype());
