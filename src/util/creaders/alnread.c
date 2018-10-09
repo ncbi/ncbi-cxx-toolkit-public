@@ -2703,7 +2703,9 @@ static TCommentLocPtr s_FindOrganismComment (char * string)
 
     clp = s_FindComment (string);
     while (clp != NULL  &&  ! s_IsOrganismComment (clp)) {
-        clp = s_FindComment (clp->end);
+        char * pos = clp->end;
+        free(clp);
+        clp = s_FindComment (pos);
     }
 
     if (clp == NULL) {
@@ -2715,8 +2717,10 @@ static TCommentLocPtr s_FindOrganismComment (char * string)
            !s_IsOrganismComment(next_clp))
     {
         clp->end = next_clp->end;
+        free(next_clp);
         next_clp = s_FindComment (clp->end);
     }
+    free(next_clp);
     return clp;
 }
 
@@ -4456,6 +4460,8 @@ static void s_ProcessAlignFileRawForMarkedIDs (
     }
     s_CreateSequencesBasedOnTokenPatterns (afrp->line_list, afrp->offset_list,
                                          anchorpattern, afrp, gen_local_ids);
+    s_LengthListFree(*anchorpattern);
+    free(anchorpattern);
 }
 
 
