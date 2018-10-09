@@ -6457,7 +6457,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetBiomol (entry->SetSet().SetSeq_set().front(), CMolInfo::eBiomol_genomic);
-    unit_test_util::SetLineage (entry, "Viruses; negative-strand viruses; Arenavirus");
+    unit_test_util::SetLineage (entry, "Viruses; negative-strand viruses; Arenaviridae");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetLineage (entry, "Viruses; negative-strand viruses; Phlebovirus");
@@ -6534,7 +6534,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetBiomol (entry, CMolInfo::eBiomol_genomic);
-    unit_test_util::SetLineage (entry, "Viruses; negative-strand viruses; Arenavirus");
+    unit_test_util::SetLineage (entry, "Viruses; negative-strand viruses; Arenaviridae");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetLineage (entry, "Viruses; negative-strand viruses; Phlebovirus");
@@ -6643,7 +6643,7 @@ BOOST_AUTO_TEST_CASE(Test_SingleStrandViruses)
     // error goes away if ambisense or synthetic
     CLEAR_ERRORS
 
-    unit_test_util::SetLineage(entry, "Viruses; ssRNA positive-strand viruses; Arenavirus");
+    unit_test_util::SetLineage(entry, "Viruses; ssRNA positive-strand viruses; Arenaviridae");
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
     unit_test_util::SetLineage(entry, "Viruses; ssRNA positive-strand viruses; Phlebovirus");

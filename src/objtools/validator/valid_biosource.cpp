@@ -1748,8 +1748,7 @@ const CMolInfo& molinfo)
     }
 
     bool is_ambisense = false;
-    if (NStr::FindNoCase(lineage, "Arenavirus") != string::npos
-        || NStr::FindNoCase(lineage, "Arenaviridae") != string::npos
+    if (NStr::FindNoCase(lineage, "Arenaviridae") != string::npos
         || NStr::FindNoCase(lineage, "Phlebovirus") != string::npos
         || NStr::FindNoCase(lineage, "Tospovirus") != string::npos
         || NStr::FindNoCase(lineage, "Tenuivirus") != string::npos) {
