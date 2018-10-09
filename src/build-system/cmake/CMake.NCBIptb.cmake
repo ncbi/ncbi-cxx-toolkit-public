@@ -1002,7 +1002,7 @@ function(NCBI_internal_collect_parts)
         elseif (EXISTS ${_path}/CMakeLists.${_lib}.asn.txt)
             include(${_path}/CMakeLists.${_lib}.asn.txt)
         else()
-            message(WARNING "ERROR: project part not found: ${NCBI_SRC_ROOT}/${_part}")
+            message(WARNING "ERROR: part of ${_hostproject} project not found: ${NCBI_SRC_ROOT}/${_part}")
         endif()
     endforeach()
 
@@ -1225,9 +1225,55 @@ function(NCBI_internal_add_test _test)
 endfunction()
 
 ##############################################################################
+function(NCBI_internal_export_hostinfo _file)
+    if(EXISTS ${_file})
+        file(REMOVE ${_file})
+    endif()
+    get_property(_allprojects     GLOBAL PROPERTY NCBI_PTBPROP_ALL_PROJECTS)
+    if (NOT "${_allprojects}" STREQUAL "")
+        set(_hostinfo)
+        foreach(_prj IN LISTS _allprojects)
+            get_property(_prjhost GLOBAL PROPERTY NCBI_PTBPROP_HOST_${_prj})
+            if (NOT "${_prjhost}" STREQUAL "")
+                list(APPEND _hostinfo "${_prj} ${_prjhost}\n")
+
+            endif()
+        endforeach()
+        if (NOT "${_hostinfo}" STREQUAL "")
+            file(WRITE ${_file} ${_hostinfo})
+        endif()
+    endif()
+endfunction()
+
+##############################################################################
+function(NCBI_internal_import_hostinfo _file)
+    if(NOT EXISTS ${_file})
+        return()
+    endif()
+    file(STRINGS ${_file} _hostinfo)
+    if (NOT "${_hostinfo}" STREQUAL "")
+        foreach( _item IN LISTS _hostinfo)
+            string(REPLACE " " ";" _item ${_item})
+            if (NOT "${_item}" STREQUAL "")
+                list(GET _item 0 _prj)
+                list(GET _item 1 _host)
+                set_property(GLOBAL PROPERTY NCBI_PTBPROP_HOST_${_prj} ${_host})
+            endif()
+        endforeach()
+    endif()
+endfunction()
+
+##############################################################################
 function(NCBI_internal_install_root)
 
     file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${NCBI_BUILD_ROOT}")
+
+    set(_hostinfo ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_BUILD}/${CMAKE_PROJECT_NAME}.hostinfo)
+    NCBI_internal_export_hostinfo(${_hostinfo})
+    if (EXISTS ${_hostinfo})
+        install( FILES ${_hostinfo} DESTINATION ${_dest}/${NCBI_DIRNAME_EXPORT} RENAME ${NCBI_PTBCFG_INSTALL_EXPORT}.hostinfo)
+    endif()
+
     if (WIN32 OR XCODE)
         foreach(_cfg ${CMAKE_CONFIGURATION_TYPES})
             install(EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
@@ -1247,8 +1293,10 @@ function(NCBI_internal_install_root)
     get_property(_all_subdirs GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR)
     list(APPEND _all_subdirs ${NCBI_DIRNAME_COMMON_INCLUDE})
     foreach(_dir IN LISTS _all_subdirs)
-        install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}
-            REGEX "/[.].*$" EXCLUDE)
+        if (EXISTS ${NCBI_INC_ROOT}/${_dir})
+            install( DIRECTORY ${NCBI_INC_ROOT}/${_dir} DESTINATION ${NCBI_DIRNAME_INCLUDE}
+                REGEX "/[.].*$" EXCLUDE)
+        endif()
     endforeach()
     file(GLOB _files LIST_DIRECTORIES false "${NCBI_INC_ROOT}/*")
     install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_INCLUDE})
@@ -1272,7 +1320,12 @@ function(NCBI_internal_install_target)
     if (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "STATIC")
         file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
     elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "SHARED")
-        file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+        if (WIN32)
+            file(RELATIVE_PATH _dest    "${NCBI_TREE_ROOT}" "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
+            file(RELATIVE_PATH _dest_ar "${NCBI_TREE_ROOT}" "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
+        else()
+            file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
+        endif()
     elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "CONSOLEAPP")
         file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
         if (DEFINED NCBI_PTBCFG_INSTALL_TAGS)
@@ -1310,23 +1363,41 @@ function(NCBI_internal_install_target)
     list(GET _rel 0 _dir)
     get_property(_all_subdirs GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR)
     list(APPEND _all_subdirs ${_dir})
+    if (DEFINED NCBI_${NCBI_PROJECT}_PARTS)
+        foreach(_rel IN LISTS NCBI_${NCBI_PROJECT}_PARTS)
+            string(REPLACE "/" ";" _rel ${_rel})
+            list(GET _rel 0 _dir)
+            list(APPEND _all_subdirs ${_dir})
+        endforeach()
+    endif()
     list(REMOVE_DUPLICATES _all_subdirs)
     set_property(GLOBAL PROPERTY NCBI_PTBPROP_ROOT_SUBDIR ${_all_subdirs})
 
     if (WIN32 OR XCODE)
         foreach(_cfg ${CMAKE_CONFIGURATION_TYPES})
-            install(
-                TARGETS ${NCBI_PROJECT}
-                CONFIGURATIONS ${_cfg}
-                DESTINATION ${_dest}/${_cfg}
-                EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
-            )
+            if (DEFINED _dest_ar)
+                install(
+                    TARGETS ${NCBI_PROJECT}
+                    EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
+                    RUNTIME DESTINATION ${_dest}/${_cfg}
+                    CONFIGURATIONS ${_cfg}
+                    ARCHIVE DESTINATION ${_dest_ar}/${_cfg}
+                    CONFIGURATIONS ${_cfg}
+                )
+            else()
+                install(
+                    TARGETS ${NCBI_PROJECT}
+                    EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}${_cfg}
+                    DESTINATION ${_dest}/${_cfg}
+                    CONFIGURATIONS ${_cfg}
+                )
+            endif()
         endforeach()
     else()
         install(
             TARGETS ${NCBI_PROJECT}
-            DESTINATION ${_dest}
             EXPORT ${NCBI_PTBCFG_INSTALL_EXPORT}
+            DESTINATION ${_dest}
         )
     endif()
 endfunction()
