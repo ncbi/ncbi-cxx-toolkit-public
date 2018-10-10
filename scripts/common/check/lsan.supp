@@ -1,5 +1,6 @@
 leak:::CreateTypeInfo(
 leak:^d_growable_string_callback_adapter$
+leak:^ncbi::CBDB_Env::Remove(
 leak:^ncbi::CNcbiEnvironment::Set(
 leak:^ncbi::CPluginManager_DllResolver::ResolveFile(
 leak:^ncbi::InitDiagHandler()$

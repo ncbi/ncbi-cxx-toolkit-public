@@ -426,7 +426,10 @@ bool CBDB_Env::Remove()
     ret = m_Env->remove(m_Env, m_HomePath.c_str(), 0);
 
     if (ret == EBUSY) {
-        m_Env->close(m_Env, 0);
+        // Some versions (observed with 4.6.21.1) will leak the environment
+        // in this case, but others close it, so err on the side of leakage
+        // because double closing is unsafe and can cause crashes.
+        // m_Env->close(m_Env, 0);
         m_Env = 0;
         return false;
     }
