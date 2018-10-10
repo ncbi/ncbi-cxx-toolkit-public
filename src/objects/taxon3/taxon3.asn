@@ -14,8 +14,8 @@ BEGIN
 IMPORTS Org-ref FROM NCBI-Organism;
 
 Taxon3-request ::= SEQUENCE {
-    options BIT STRING OPTIONAL ,
-    request SEQUENCE OF T3Request
+    request SEQUENCE OF T3Request ,
+    options BIT STRING OPTIONAL
 }
 
 SequenceOfInt ::= SEQUENCE OF INTEGER
