@@ -19,6 +19,7 @@ connect/services$
 connect/services/test$
 connect/services/impl$
 connect/test$
+connect/mbedtls
 check
 db$
 db/bdb$
