@@ -954,6 +954,9 @@ CFormatGuess::TestFormatNewick(
     // newick trees can be found in nexus files. check for that first as a special case
     if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
         const int BUFFSIZE = 8096;
+        if (m_pTestBuffer) {
+            delete [] m_pTestBuffer;
+        }
         m_pTestBuffer = new char[BUFFSIZE+1];
         m_Stream.read( m_pTestBuffer, BUFFSIZE );
         m_iTestDataSize = m_Stream.gcount();
@@ -1773,6 +1776,9 @@ CFormatGuess::TestFormatHgvs(
 {
     if ( ! EnsureStats() || ! EnsureSplitLines() ) {
         const int BUFFSIZE = 1024;
+        if (m_pTestBuffer) {
+            delete [] m_pTestBuffer;
+        }
         m_pTestBuffer = new char[BUFFSIZE+1];
         m_Stream.read( m_pTestBuffer, BUFFSIZE );
         m_iTestDataSize = m_Stream.gcount();
