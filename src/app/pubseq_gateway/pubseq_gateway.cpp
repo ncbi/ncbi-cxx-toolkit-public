@@ -74,7 +74,7 @@ EDiagSev    g_ConfiguredSeverity = eDiag_Critical;
 bool        g_Log = kDefaultLog;
 
 
-static const string     kNodaemonArgName = "nodaemon";
+static const string     kDaemonizeArgName = "daemonize";
 
 
 CPubseqGatewayApp *     CPubseqGatewayApp::sm_PubseqApp = nullptr;
@@ -102,8 +102,8 @@ void CPubseqGatewayApp::Init(void)
 {
     unique_ptr<CArgDescriptions>    argdesc(new CArgDescriptions());
 
-    argdesc->AddFlag(kNodaemonArgName,
-                     "Turn off daemonization of Pubseq Gateway at the start.");
+    argdesc->AddFlag(kDaemonizeArgName,
+                     "Turn on daemonization of Pubseq Gateway at the start.");
 
     argdesc->SetUsageContext(
         GetArguments().GetProgramBasename(),
@@ -202,7 +202,7 @@ int CPubseqGatewayApp::Run(void)
         return 1;
     }
 
-    if (!GetArgs()[kNodaemonArgName]) {
+    if (GetArgs()[kDaemonizeArgName]) {
         bool    is_good = CProcess::Daemonize(kEmptyCStr,
                                               CProcess::fDontChroot);
         if (!is_good)
