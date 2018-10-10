@@ -288,6 +288,7 @@ void CMsvcConfigure::WriteExtraDefines(CMsvcSite& site, const string& root_dir, 
             << setw(16) << std::showbase << rnd.GetRand() << endl;
     }
     ofs << endl;
+    GetApp().RegisterGeneratedFile( filename );
 }
 
 
@@ -325,13 +326,19 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
     // so create it once and copy to each configuration on next calls.
 
     if (filename_cache) {
-        CFile(_T_STDSTRING(filename_cache)).Copy(filename, CFile::fCF_Overwrite);
+        CFile src(_T_STDSTRING(filename_cache));
+        CFile dst(filename);
+        if (!dst.Exists() || src.IsNewer(dst.GetPath(),0)) {
+            src.Copy(filename, CFile::fCF_Overwrite);
+            GetApp().RegisterGeneratedFile( filename );
+        }
         return;
     }
 
     // Create file
 
-    CNcbiOfstream ofs(filename.c_str(), IOS_BASE::out | IOS_BASE::trunc);
+    string candidate(filename + ".candidate");
+    CNcbiOfstream ofs(candidate.c_str(), IOS_BASE::out | IOS_BASE::trunc);
     if ( !ofs ) {
 	    NCBI_THROW(CProjBulderAppException, eFileCreation, filename);
     }
@@ -396,6 +403,7 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
         }
     }
     ofs << endl;
+    PromoteIfDifferent(filename, candidate);
 
     // Cache file name for the generated file
     filename_cache = NcbiSys_strdup(_T_XCSTRING(filename));
