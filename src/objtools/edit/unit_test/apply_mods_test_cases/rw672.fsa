@@ -486,7 +486,7 @@ AAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCC
 AAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCC
 >seq_244 [organism=Homo sapiens][altitude=val244_0][altitude=val244_1][project=112][completeness=partial][location=provirus]
 AAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCC
->seq_245 [organism=Homo sapiens][other=val245_0][bioproject=PRJNA31873][biosample=SAMN1334554][primary=M10102][moltype=mRNA]
+>seq_245 [organism=Homo sapiens][other=val245_0][bioproject=PRJNA31873][biosample=SAMN1334554][primary=M10102][moltype=mRNA][allele=allele_mod]
 AAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCC
 >seq_246 [organism=Homo sapiens][other=val246_0][other=val246_1][PubMed=123][PMID=456][SRA=12345][SRA=ABCD][clone=abc][dbxref=notag][dbxref=database:tag]
 AAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCCAAATTTGGGCCC

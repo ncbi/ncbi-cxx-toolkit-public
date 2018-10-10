@@ -32,6 +32,10 @@ Bioseq ::= {
         },
         {
           subtype cell-line,
+          name "val124_0"
+        },
+        {
+          subtype cell-line,
           name "val121_0"
         },
         {
@@ -41,6 +45,14 @@ Bioseq ::= {
         {
           subtype cell-line,
           name "val122_1"
+        },
+        {
+          subtype cell-line,
+          name "val123_0"
+        },
+        {
+          subtype cell-type,
+          name "val128_0"
         },
         {
           subtype cell-type,
@@ -53,6 +65,10 @@ Bioseq ::= {
         {
           subtype cell-type,
           name "val126_1"
+        },
+        {
+          subtype cell-type,
+          name "val127_0"
         },
         {
           subtype chromosome,
@@ -84,6 +100,10 @@ Bioseq ::= {
         },
         {
           subtype clone-lib,
+          name "val136_0"
+        },
+        {
+          subtype clone-lib,
           name "val133_0"
         },
         {
@@ -93,6 +113,14 @@ Bioseq ::= {
         {
           subtype clone-lib,
           name "val134_1"
+        },
+        {
+          subtype clone-lib,
+          name "val135_0"
+        },
+        {
+          subtype collected-by,
+          name "val204_0"
         },
         {
           subtype collected-by,
@@ -107,6 +135,14 @@ Bioseq ::= {
           name "val202_1"
         },
         {
+          subtype collected-by,
+          name "val203_0"
+        },
+        {
+          subtype collection-date,
+          name "val200_0"
+        },
+        {
           subtype collection-date,
           name "val197_0"
         },
@@ -117,6 +153,10 @@ Bioseq ::= {
         {
           subtype collection-date,
           name "val198_1"
+        },
+        {
+          subtype collection-date,
+          name "val199_0"
         },
         {
           subtype country,
@@ -132,6 +172,10 @@ Bioseq ::= {
         },
         {
           subtype dev-stage,
+          name "val140_0"
+        },
+        {
+          subtype dev-stage,
           name "val137_0"
         },
         {
@@ -141,6 +185,14 @@ Bioseq ::= {
         {
           subtype dev-stage,
           name "val138_1"
+        },
+        {
+          subtype dev-stage,
+          name "val139_0"
+        },
+        {
+          subtype endogenous-virus-name,
+          name "val182_0"
         },
         {
           subtype endogenous-virus-name,
@@ -155,6 +207,14 @@ Bioseq ::= {
           name "val180_1"
         },
         {
+          subtype endogenous-virus-name,
+          name "val181_0"
+        },
+        {
+          subtype environmental-sample,
+          name "val188_0"
+        },
+        {
           subtype environmental-sample,
           name "val185_0"
         },
@@ -167,6 +227,10 @@ Bioseq ::= {
           name "val186_1"
         },
         {
+          subtype environmental-sample,
+          name "val187_0"
+        },
+        {
           subtype frequency,
           name "val141_0"
         },
@@ -177,30 +241,6 @@ Bioseq ::= {
         {
           subtype frequency,
           name "val142_1"
-        },
-        {
-          subtype fwd-primer-name,
-          name "val217_0"
-        },
-        {
-          subtype fwd-primer-name,
-          name "val218_0"
-        },
-        {
-          subtype fwd-primer-name,
-          name "val218_1"
-        },
-        {
-          subtype fwd-primer-seq,
-          name "val209_0"
-        },
-        {
-          subtype fwd-primer-seq,
-          name "val210_0"
-        },
-        {
-          subtype fwd-primer-seq,
-          name "val210_1"
         },
         {
           subtype genotype,
@@ -252,6 +292,10 @@ Bioseq ::= {
         },
         {
           subtype identified-by,
+          name "val208_0"
+        },
+        {
+          subtype identified-by,
           name "val205_0"
         },
         {
@@ -261,6 +305,14 @@ Bioseq ::= {
         {
           subtype identified-by,
           name "val206_1"
+        },
+        {
+          subtype identified-by,
+          name "val207_0"
+        },
+        {
+          subtype insertion-seq-name,
+          name "val170_0"
         },
         {
           subtype insertion-seq-name,
@@ -275,6 +327,14 @@ Bioseq ::= {
           name "val168_1"
         },
         {
+          subtype insertion-seq-name,
+          name "val169_0"
+        },
+        {
+          subtype isolation-source,
+          name "val192_0"
+        },
+        {
           subtype isolation-source,
           name "val189_0"
         },
@@ -285,6 +345,14 @@ Bioseq ::= {
         {
           subtype isolation-source,
           name "val190_1"
+        },
+        {
+          subtype isolation-source,
+          name "val191_0"
+        },
+        {
+          subtype lab-host,
+          name "val150_0"
         },
         {
           subtype lab-host,
@@ -299,6 +367,14 @@ Bioseq ::= {
           name "val148_1"
         },
         {
+          subtype lab-host,
+          name "val149_0"
+        },
+        {
+          subtype lat-lon,
+          name "val196_0"
+        },
+        {
           subtype lat-lon,
           name "val193_0"
         },
@@ -311,6 +387,14 @@ Bioseq ::= {
           name "val194_1"
         },
         {
+          subtype lat-lon,
+          name "val195_0"
+        },
+        {
+          subtype linkage-group,
+          name "val234_0"
+        },
+        {
           subtype linkage-group,
           name "val231_0"
         },
@@ -321,6 +405,10 @@ Bioseq ::= {
         {
           subtype linkage-group,
           name "val232_1"
+        },
+        {
+          subtype linkage-group,
+          name "val233_0"
         },
         {
           subtype map,
@@ -336,6 +424,10 @@ Bioseq ::= {
         },
         {
           subtype mating-type,
+          name "val230_0"
+        },
+        {
+          subtype mating-type,
           name "val227_0"
         },
         {
@@ -345,6 +437,10 @@ Bioseq ::= {
         {
           subtype mating-type,
           name "val228_1"
+        },
+        {
+          subtype mating-type,
+          name "val229_0"
         },
         {
           subtype metagenomic,
@@ -400,6 +496,10 @@ Bioseq ::= {
         },
         {
           subtype plasmid-name,
+          name "val162_0"
+        },
+        {
+          subtype plasmid-name,
           name "val159_0"
         },
         {
@@ -409,6 +509,14 @@ Bioseq ::= {
         {
           subtype plasmid-name,
           name "val160_1"
+        },
+        {
+          subtype plasmid-name,
+          name "val161_0"
+        },
+        {
+          subtype plastid-name,
+          name "val174_0"
         },
         {
           subtype plastid-name,
@@ -423,6 +531,14 @@ Bioseq ::= {
           name "val172_1"
         },
         {
+          subtype plastid-name,
+          name "val173_0"
+        },
+        {
+          subtype pop-variant,
+          name "val154_0"
+        },
+        {
           subtype pop-variant,
           name "val151_0"
         },
@@ -435,6 +551,10 @@ Bioseq ::= {
           name "val152_1"
         },
         {
+          subtype pop-variant,
+          name "val153_0"
+        },
+        {
           subtype rearranged,
           name "val145_0"
         },
@@ -445,30 +565,6 @@ Bioseq ::= {
         {
           subtype rearranged,
           name "val146_1"
-        },
-        {
-          subtype rev-primer-name,
-          name "val221_0"
-        },
-        {
-          subtype rev-primer-name,
-          name "val222_0"
-        },
-        {
-          subtype rev-primer-name,
-          name "val222_1"
-        },
-        {
-          subtype rev-primer-seq,
-          name "val213_0"
-        },
-        {
-          subtype rev-primer-seq,
-          name "val214_0"
-        },
-        {
-          subtype rev-primer-seq,
-          name "val214_1"
         },
         {
           subtype segment,
@@ -508,6 +604,10 @@ Bioseq ::= {
         },
         {
           subtype tissue-lib,
+          name "val158_0"
+        },
+        {
+          subtype tissue-lib,
           name "val155_0"
         },
         {
@@ -517,6 +617,14 @@ Bioseq ::= {
         {
           subtype tissue-lib,
           name "val156_1"
+        },
+        {
+          subtype tissue-lib,
+          name "val157_0"
+        },
+        {
+          subtype tissue-type,
+          name "val132_0"
         },
         {
           subtype tissue-type,
@@ -529,6 +637,10 @@ Bioseq ::= {
         {
           subtype tissue-type,
           name "val130_1"
+        },
+        {
+          subtype tissue-type,
+          name "val131_0"
         },
         {
           subtype transgenic,
@@ -544,6 +656,10 @@ Bioseq ::= {
         },
         {
           subtype transposon-name,
+          name "val166_0"
+        },
+        {
+          subtype transposon-name,
           name "val163_0"
         },
         {
@@ -553,6 +669,14 @@ Bioseq ::= {
         {
           subtype transposon-name,
           name "val164_1"
+        },
+        {
+          subtype transposon-name,
+          name "val165_0"
+        },
+        {
+          subtype whole-replicon,
+          name "val240_0"
         },
         {
           subtype whole-replicon,
@@ -565,30 +689,32 @@ Bioseq ::= {
         {
           subtype whole-replicon,
           name "val238_1"
+        },
+        {
+          subtype whole-replicon,
+          name "val239_0"
         }
-      }
-    },
-    pub {
-      pub {
-        pmid 456
-      }
-    },
-    pub {
-      pub {
-        pmid 123
+      },
+      pcr-primers {
+        {
+          forward {
+            {
+              seq "val211_0",
+              name "val219_0"
+            }
+          },
+          reverse {
+            {
+              seq "val215_0",
+              name "val223_0"
+            }
+          }
+        }
       }
     },
     user {
       type str "DBLink",
       data {
-        {
-          label str "Sequence Read Archive",
-          num 2,
-          data strs {
-            "12345",
-            "ABCD"
-          }
-        },
         {
           label str "BioProject",
           num 1,
@@ -610,11 +736,6 @@ Bioseq ::= {
       completeness partial
     },
     genbank {
-      extra-accessions {
-        "M10101",
-        "M10102",
-        "Q8Y7J9"
-      },
       keywords {
         "keyword1",
         "keyword2"
@@ -657,19 +778,16 @@ Bioseq ::= {
     repr not-set,
     mol rna,
     topology circular,
-    strand mixed,
-    hist {
-      replaces {
-        ids {
-          genbank {
-            accession "M10101"
+    strand mixed
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data gene {
+            allele "allele_mod"
           },
-          genbank {
-            accession "M10102"
-          },
-          swissprot {
-            accession "Q8Y7J9"
-          }
+          location whole local str "dummy"
         }
       }
     }
