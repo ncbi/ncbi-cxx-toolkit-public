@@ -107,7 +107,7 @@ void sRunTest(
     }
     else {
         if (updateAll) {
-            CFile(outputNameAnnot).Copy(goldenNameAnnot);
+            CFile(outputNameAnnot).Copy(goldenNameAnnot, CFile::fCF_Overwrite);
             CFile(outputNameAnnot).Remove();
         }
     }

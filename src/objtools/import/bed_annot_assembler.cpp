@@ -99,21 +99,22 @@ CBedAnnotAssembler::ProcessRecord(
         mAnnot.SetData().SetFtable().push_back(pGene);
     }
 
-    const auto& mRnaLocation = record.BlocksLocation();
-    if (!mRnaLocation.IsNull()) {
+    const auto mRnaLocation = 
+        record.BlocksLocation().Merge(CSeq_loc::fMerge_All, nullptr);
+    if (!mRnaLocation->IsNull()) {
         pMrna.Reset(new CSeq_feat);
         //pMrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
         pMrna->SetData().SetRegion(record.Name());
-        pMrna->SetLocation().Assign(mRnaLocation);
+        pMrna->SetLocation(). Assign(*mRnaLocation);
         pMrna->SetId(*mpIdGenerator->GetIdFor("mrna"));
         mAnnot.SetData().SetFtable().push_back(pMrna);
     }
 
     CRef<CSeq_loc> pCdsLocation(new CSeq_loc);
     pCdsLocation->Assign(record.ThickLocation());
-    if (!mRnaLocation.IsNull()) {
+    if (!mRnaLocation->IsNull()) {
         CRef<CSeq_loc> pIntersection = pCdsLocation->Intersect(
-            mRnaLocation, 0, nullptr);
+            *mRnaLocation, 0, nullptr);
         pCdsLocation->Assign(*pIntersection);   
     }
     if (!pCdsLocation->IsNull()) {

@@ -48,13 +48,11 @@ Seq-annot ::= {
     {
       id local str "mrna_1",
       data region "uc010nzm.1",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        }
+      location int {
+        from 3729855,
+        to 3731616,
+        strand plus,
+        id local str "chr1"
       },
       xref {
         {
@@ -119,31 +117,11 @@ Seq-annot ::= {
     {
       id local str "mrna_2",
       data region "uc010nzm.1",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        }
+      location int {
+        from 3728743,
+        to 3732934,
+        strand plus,
+        id local str "chr1"
       },
       xref {
         {
@@ -208,44 +186,19 @@ Seq-annot ::= {
     {
       id local str "mrna_3",
       data region "uc010nzm.1",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
@@ -315,62 +268,30 @@ Seq-annot ::= {
     {
       id local str "mrna_4",
       data region "uc010nzm.1",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
@@ -440,80 +361,41 @@ Seq-annot ::= {
     {
       id local str "mrna_5",
       data region "uc010nzm.1",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
@@ -583,92 +465,52 @@ Seq-annot ::= {
     {
       id local str "mrna_6",
       data region "uc010nzm.1",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
@@ -735,98 +577,58 @@ Seq-annot ::= {
     {
       id local str "mrna_7",
       data region "uc010nzm.2",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
@@ -872,116 +674,69 @@ Seq-annot ::= {
     {
       id local str "mrna_8",
       data region "uc010nzm.2",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
@@ -1027,134 +782,80 @@ Seq-annot ::= {
     {
       id local str "mrna_9",
       data region "uc010nzm.2",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
@@ -1200,152 +901,91 @@ Seq-annot ::= {
     {
       id local str "mrna_10",
       data region "uc010nzm.2",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
@@ -1391,170 +1031,102 @@ Seq-annot ::= {
     {
       id local str "mrna_11",
       data region "uc010nzm.2",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
@@ -1600,182 +1172,113 @@ Seq-annot ::= {
     {
       id local str "mrna_12",
       data region "uc010nzm.2",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
@@ -1817,188 +1320,119 @@ Seq-annot ::= {
     {
       id local str "mrna_13",
       data region "uc010nzm.3",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
@@ -2040,206 +1474,130 @@ Seq-annot ::= {
     {
       id local str "mrna_14",
       data region "uc010nzm.3",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
@@ -2281,224 +1639,141 @@ Seq-annot ::= {
     {
       id local str "mrna_15",
       data region "uc010nzm.3",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
@@ -2540,242 +1815,152 @@ Seq-annot ::= {
     {
       id local str "mrna_16",
       data region "uc010nzm.3",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
@@ -2817,260 +2002,163 @@ Seq-annot ::= {
     {
       id local str "mrna_17",
       data region "uc010nzm.3",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
@@ -3112,272 +2200,174 @@ Seq-annot ::= {
     {
       id local str "mrna_18",
       data region "uc010nzm.3",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
@@ -3419,278 +2409,180 @@ Seq-annot ::= {
     {
       id local str "mrna_19",
       data region "uc010nzm.4",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
@@ -3732,296 +2624,191 @@ Seq-annot ::= {
     {
       id local str "mrna_20",
       data region "uc010nzm.4",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
@@ -4063,314 +2850,202 @@ Seq-annot ::= {
     {
       id local str "mrna_21",
       data region "uc010nzm.4",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
@@ -4412,332 +3087,213 @@ Seq-annot ::= {
     {
       id local str "mrna_22",
       data region "uc010nzm.4",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
@@ -4779,350 +3335,224 @@ Seq-annot ::= {
     {
       id local str "mrna_23",
       data region "uc010nzm.4",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
@@ -5164,362 +3594,235 @@ Seq-annot ::= {
     {
       id local str "mrna_24",
       data region "uc010nzm.4",
-      location packed-int {
-        {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3729855,
-          to 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+      location mix {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr1"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr1"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand plus,
           id local str "chr1"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3729855,
           to 3731616,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand minus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr2"
-        },
-        {
+        int {
           from 3728743,
           to 3732934,
           strand plus,
           id local str "chr2"
         },
-        {
-          from 3729855,
-          to 3729855,
+        pnt {
+          point 3729855,
           strand minus,
           id local str "chr2"
         },
-        {
+        int {
           from 3730320,
           to 3732081,
           strand minus,

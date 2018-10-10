@@ -112,6 +112,7 @@ CBedImportData::Initialize(
         mBlocksLocation.SetNull();
     }
     else {
+        mBlocksLocation.Reset();
         mBlocksLocation.SetPacked_int();
         for (unsigned int i=0; i < blockCount; ++i) {
             CRef<CSeq_interval> pBlockInterval(new CSeq_interval);

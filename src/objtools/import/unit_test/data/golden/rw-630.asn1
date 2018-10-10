@@ -14,7 +14,7 @@ Seq-annot ::= {
       data region "cloneB",
       location int {
         from 2000,
-        to 2100,
+        to 12100,
         strand minus,
         id local str "chr22"
       },
@@ -41,15 +41,15 @@ Seq-annot ::= {
     {
       id local str "mrna_1",
       data region "cloneB",
-      location packed-int {
-        {
-          from 2433,
+      location mix {
+        int {
+          from 2000,
           to 2433,
           strand minus,
           id local str "chr22"
         },
-        {
-          from 2399,
+        int {
+          from 5601,
           to 6000,
           strand minus,
           id local str "chr22"
@@ -67,11 +67,19 @@ Seq-annot ::= {
     {
       id local str "cds_1",
       data region "cloneB",
-      location int {
-        from 2399,
-        to 6000,
-        strand minus,
-        id local str "chr22"
+      location mix {
+        int {
+          from 5601,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        },
+        int {
+          from 2000,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        }
       },
       xref {
         {
@@ -84,10 +92,10 @@ Seq-annot ::= {
     },
     {
       id local str "gene_2",
-      data region "cloneB",
+      data region "cloneC",
       location int {
         from 2200,
-        to 2300,
+        to 12300,
         strand minus,
         id local str "chr22"
       },
@@ -113,28 +121,16 @@ Seq-annot ::= {
     },
     {
       id local str "mrna_2",
-      data region "cloneB",
-      location packed-int {
-        {
-          from 2433,
-          to 2433,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2399,
-          to 6000,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2633,
+      data region "cloneC",
+      location mix {
+        int {
+          from 2200,
           to 2633,
           strand minus,
           id local str "chr22"
         },
-        {
-          from 2599,
+        int {
+          from 5801,
           to 6200,
           strand minus,
           id local str "chr22"
@@ -151,12 +147,20 @@ Seq-annot ::= {
     },
     {
       id local str "cds_2",
-      data region "cloneB",
-      location int {
-        from 2399,
-        to 6000,
-        strand minus,
-        id local str "chr22"
+      data region "cloneC",
+      location mix {
+        int {
+          from 5801,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        },
+        int {
+          from 2200,
+          to 2633,
+          strand minus,
+          id local str "chr22"
+        }
       },
       xref {
         {
@@ -169,10 +173,10 @@ Seq-annot ::= {
     },
     {
       id local str "gene_3",
-      data region "cloneB",
+      data region "cloneD",
       location int {
         from 2400,
-        to 2500,
+        to 12500,
         strand minus,
         id local str "chr22"
       },
@@ -198,40 +202,16 @@ Seq-annot ::= {
     },
     {
       id local str "mrna_3",
-      data region "cloneB",
-      location packed-int {
-        {
-          from 2433,
-          to 2433,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2399,
-          to 6000,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2633,
-          to 2633,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2599,
-          to 6200,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2833,
+      data region "cloneD",
+      location mix {
+        int {
+          from 2400,
           to 2833,
           strand minus,
           id local str "chr22"
         },
-        {
-          from 2799,
+        int {
+          from 6001,
           to 6400,
           strand minus,
           id local str "chr22"
@@ -248,10 +228,10 @@ Seq-annot ::= {
     },
     {
       id local str "cds_3",
-      data region "cloneB",
+      data region "cloneD",
       location int {
-        from 2399,
-        to 6000,
+        from 2400,
+        to 2833,
         strand minus,
         id local str "chr22"
       },
@@ -266,10 +246,10 @@ Seq-annot ::= {
     },
     {
       id local str "gene_4",
-      data region "cloneB",
+      data region "cloneE",
       location int {
         from 2600,
-        to 2700,
+        to 12700,
         strand minus,
         id local str "chr22"
       },
@@ -295,52 +275,16 @@ Seq-annot ::= {
     },
     {
       id local str "mrna_4",
-      data region "cloneB",
-      location packed-int {
-        {
-          from 2433,
-          to 2433,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2399,
-          to 6000,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2633,
-          to 2633,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2599,
-          to 6200,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2833,
-          to 2833,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2799,
-          to 6400,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3033,
+      data region "cloneE",
+      location mix {
+        int {
+          from 2600,
           to 3033,
           strand minus,
           id local str "chr22"
         },
-        {
-          from 2999,
+        int {
+          from 6201,
           to 6600,
           strand minus,
           id local str "chr22"
@@ -357,10 +301,10 @@ Seq-annot ::= {
     },
     {
       id local str "cds_4",
-      data region "cloneB",
+      data region "cloneE",
       location int {
-        from 2399,
-        to 6000,
+        from 2600,
+        to 3033,
         strand minus,
         id local str "chr22"
       },
@@ -375,10 +319,10 @@ Seq-annot ::= {
     },
     {
       id local str "gene_5",
-      data region "cloneB",
+      data region "cloneF",
       location int {
         from 2800,
-        to 2900,
+        to 12900,
         strand minus,
         id local str "chr22"
       },
@@ -404,64 +348,16 @@ Seq-annot ::= {
     },
     {
       id local str "mrna_5",
-      data region "cloneB",
-      location packed-int {
-        {
-          from 2433,
-          to 2433,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2399,
-          to 6000,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2633,
-          to 2633,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2599,
-          to 6200,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2833,
-          to 2833,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2799,
-          to 6400,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3033,
-          to 3033,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2999,
-          to 6600,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3233,
+      data region "cloneF",
+      location mix {
+        int {
+          from 2800,
           to 3233,
           strand minus,
           id local str "chr22"
         },
-        {
-          from 3199,
+        int {
+          from 6401,
           to 6800,
           strand minus,
           id local str "chr22"
@@ -478,10 +374,10 @@ Seq-annot ::= {
     },
     {
       id local str "cds_5",
-      data region "cloneB",
+      data region "cloneF",
       location int {
-        from 2399,
-        to 6000,
+        from 2800,
+        to 3233,
         strand minus,
         id local str "chr22"
       },
@@ -496,10 +392,10 @@ Seq-annot ::= {
     },
     {
       id local str "gene_6",
-      data region "cloneB",
+      data region "cloneG",
       location int {
         from 3000,
-        to 3100,
+        to 13100,
         strand minus,
         id local str "chr22"
       },
@@ -525,76 +421,16 @@ Seq-annot ::= {
     },
     {
       id local str "mrna_6",
-      data region "cloneB",
-      location packed-int {
-        {
-          from 2433,
-          to 2433,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2399,
-          to 6000,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2633,
-          to 2633,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2599,
-          to 6200,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2833,
-          to 2833,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2799,
-          to 6400,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3033,
-          to 3033,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2999,
-          to 6600,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3233,
-          to 3233,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3199,
-          to 6800,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3433,
+      data region "cloneG",
+      location mix {
+        int {
+          from 3000,
           to 3433,
           strand minus,
           id local str "chr22"
         },
-        {
-          from 3399,
+        int {
+          from 6601,
           to 7000,
           strand minus,
           id local str "chr22"
@@ -611,10 +447,10 @@ Seq-annot ::= {
     },
     {
       id local str "cds_6",
-      data region "cloneB",
+      data region "cloneG",
       location int {
-        from 2399,
-        to 6000,
+        from 3000,
+        to 3433,
         strand minus,
         id local str "chr22"
       },
@@ -629,10 +465,10 @@ Seq-annot ::= {
     },
     {
       id local str "gene_7",
-      data region "cloneB",
+      data region "cloneH",
       location int {
         from 3200,
-        to 3300,
+        to 13300,
         strand minus,
         id local str "chr22"
       },
@@ -658,88 +494,16 @@ Seq-annot ::= {
     },
     {
       id local str "mrna_7",
-      data region "cloneB",
-      location packed-int {
-        {
-          from 2433,
-          to 2433,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2399,
-          to 6000,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2633,
-          to 2633,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2599,
-          to 6200,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2833,
-          to 2833,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2799,
-          to 6400,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3033,
-          to 3033,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2999,
-          to 6600,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3233,
-          to 3233,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3199,
-          to 6800,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3433,
-          to 3433,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3399,
-          to 7000,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3633,
+      data region "cloneH",
+      location mix {
+        int {
+          from 3200,
           to 3633,
           strand minus,
           id local str "chr22"
         },
-        {
-          from 3599,
+        int {
+          from 6801,
           to 7200,
           strand minus,
           id local str "chr22"
@@ -756,10 +520,10 @@ Seq-annot ::= {
     },
     {
       id local str "cds_7",
-      data region "cloneB",
+      data region "cloneH",
       location int {
-        from 2399,
-        to 6000,
+        from 3200,
+        to 3633,
         strand minus,
         id local str "chr22"
       },
@@ -774,10 +538,10 @@ Seq-annot ::= {
     },
     {
       id local str "gene_8",
-      data region "cloneB",
+      data region "cloneI",
       location int {
         from 3400,
-        to 3500,
+        to 13500,
         strand minus,
         id local str "chr22"
       },
@@ -803,100 +567,16 @@ Seq-annot ::= {
     },
     {
       id local str "mrna_8",
-      data region "cloneB",
-      location packed-int {
-        {
-          from 2433,
-          to 2433,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2399,
-          to 6000,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2633,
-          to 2633,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2599,
-          to 6200,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2833,
-          to 2833,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2799,
-          to 6400,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3033,
-          to 3033,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 2999,
-          to 6600,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3233,
-          to 3233,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3199,
-          to 6800,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3433,
-          to 3433,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3399,
-          to 7000,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3633,
-          to 3633,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3599,
-          to 7200,
-          strand minus,
-          id local str "chr22"
-        },
-        {
-          from 3833,
+      data region "cloneI",
+      location mix {
+        int {
+          from 3400,
           to 3833,
           strand minus,
           id local str "chr22"
         },
-        {
-          from 3799,
+        int {
+          from 7001,
           to 7400,
           strand minus,
           id local str "chr22"
@@ -913,10 +593,10 @@ Seq-annot ::= {
     },
     {
       id local str "cds_8",
-      data region "cloneB",
+      data region "cloneI",
       location int {
-        from 2399,
-        to 6000,
+        from 3400,
+        to 3833,
         strand minus,
         id local str "chr22"
       },

@@ -508,26 +508,11 @@ CBedLineReader::xInitializeBlocks(
         throw errorInvalidBlockCountValue;
     }
 
-    try {
-        vector<string> blockStartsSplits;
-        NStr::Split(columns[10], ",", blockStartsSplits);
-        if (blockStartsSplits.back().empty()) {
-            blockStartsSplits.pop_back();
-        }
-        for (auto blockStart: blockStartsSplits) {
-            blockStarts.push_back(NStr::StringToInt(blockStart));
-        }
-    }
-    catch(std::exception&) {
-        throw errorInvalidBlockCountValue;
-    }
-    if (blockCount != blockStarts.size()) {
-        throw errorInconsistentBlocksInformation;
-    }
-
+    blockStarts.clear();
+    blockSizes.clear();
     try {
         vector<string> blockSizesSplits;
-        NStr::Split(columns[11], ",", blockSizesSplits);
+        NStr::Split(columns[10], ",", blockSizesSplits);
         if (blockSizesSplits.back().empty()) {
             blockSizesSplits.pop_back();
         }
@@ -539,6 +524,23 @@ CBedLineReader::xInitializeBlocks(
         throw errorInvalidBlockCountValue;
     }
     if (blockCount != blockSizes.size()) {
+        throw errorInconsistentBlocksInformation;
+    }
+
+    try {
+        vector<string> blockStartsSplits;
+        NStr::Split(columns[11], ",", blockStartsSplits);
+        if (blockStartsSplits.back().empty()) {
+            blockStartsSplits.pop_back();
+        }
+        for (auto blockStart: blockStartsSplits) {
+            blockStarts.push_back(NStr::StringToInt(blockStart));
+        }
+    }
+    catch(std::exception&) {
+        throw errorInvalidBlockCountValue;
+    }
+    if (blockCount != blockStarts.size()) {
         throw errorInconsistentBlocksInformation;
     }
 }
