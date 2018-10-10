@@ -50,7 +50,6 @@
 #include <algorithm>
 
 #include <objtools/simple/simple_om.hpp>
-#include <gui/objutils/utils.hpp>
 #include <future>
 
 #include <objects/general/general__.hpp>
