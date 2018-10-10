@@ -1,0 +1,6 @@
+track name=pairedReads description="9-col bed"
+chr22 2000 2100
+chr22 2200 2300
+chr22 2400 2500
+chr22 2600 2700
+chr22 2800 2900

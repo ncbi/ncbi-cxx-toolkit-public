@@ -7,5 +7,7 @@ uud-3s gtf
 
 rw-461 bed
 rw-630 bed
+rw-630-9col bed
+rw-630-3col bed
 
 gb-7002 5col

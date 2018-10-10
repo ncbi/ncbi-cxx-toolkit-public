@@ -1,0 +1,63 @@
+Seq-annot ::= {
+  desc {
+    title "9-col bed",
+    name "pairedReads",
+    user {
+      type str "Track Data",
+      data {
+      }
+    }
+  },
+  data ftable {
+    {
+      id local str "gene_1",
+      data region "",
+      location int {
+        from 2000,
+        to 2100,
+        strand plus,
+        id local str "chr22"
+      }
+    },
+    {
+      id local str "gene_2",
+      data region "",
+      location int {
+        from 2200,
+        to 2300,
+        strand plus,
+        id local str "chr22"
+      }
+    },
+    {
+      id local str "gene_3",
+      data region "",
+      location int {
+        from 2400,
+        to 2500,
+        strand plus,
+        id local str "chr22"
+      }
+    },
+    {
+      id local str "gene_4",
+      data region "",
+      location int {
+        from 2600,
+        to 2700,
+        strand plus,
+        id local str "chr22"
+      }
+    },
+    {
+      id local str "gene_5",
+      data region "",
+      location int {
+        from 2800,
+        to 2900,
+        strand plus,
+        id local str "chr22"
+      }
+    }
+  }
+}

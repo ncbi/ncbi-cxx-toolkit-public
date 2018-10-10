@@ -1,9 +1,17 @@
 Seq-annot ::= {
+  desc {
+    title "Clone Paired Reads",
+    name "pairedReads",
+    user {
+      type str "Track Data",
+      data {
+      }
+    }
+  },
   data ftable {
     {
       id local str "gene_1",
-      data gene {
-      },
+      data region "cloneB",
       location int {
         from 2000,
         to 2100,
@@ -17,13 +25,22 @@ Seq-annot ::= {
         {
           id local str "cds_1"
         }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 9, 10, 2 }
+            }
+          }
+        }
       }
     },
     {
       id local str "mrna_1",
-      data rna {
-        type mRNA
-      },
+      data region "cloneB",
       location packed-int {
         {
           from 2433,
@@ -49,8 +66,7 @@ Seq-annot ::= {
     },
     {
       id local str "cds_1",
-      data cdregion {
-      },
+      data region "cloneB",
       location int {
         from 2399,
         to 6000,
@@ -68,8 +84,7 @@ Seq-annot ::= {
     },
     {
       id local str "gene_2",
-      data gene {
-      },
+      data region "cloneB",
       location int {
         from 2200,
         to 2300,
@@ -83,13 +98,22 @@ Seq-annot ::= {
         {
           id local str "cds_2"
         }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 9, 10, 2 }
+            }
+          }
+        }
       }
     },
     {
       id local str "mrna_2",
-      data rna {
-        type mRNA
-      },
+      data region "cloneB",
       location packed-int {
         {
           from 2433,
@@ -127,8 +151,7 @@ Seq-annot ::= {
     },
     {
       id local str "cds_2",
-      data cdregion {
-      },
+      data region "cloneB",
       location int {
         from 2399,
         to 6000,
@@ -146,8 +169,7 @@ Seq-annot ::= {
     },
     {
       id local str "gene_3",
-      data gene {
-      },
+      data region "cloneB",
       location int {
         from 2400,
         to 2500,
@@ -161,13 +183,22 @@ Seq-annot ::= {
         {
           id local str "cds_3"
         }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 9, 10, 2 }
+            }
+          }
+        }
       }
     },
     {
       id local str "mrna_3",
-      data rna {
-        type mRNA
-      },
+      data region "cloneB",
       location packed-int {
         {
           from 2433,
@@ -217,8 +248,7 @@ Seq-annot ::= {
     },
     {
       id local str "cds_3",
-      data cdregion {
-      },
+      data region "cloneB",
       location int {
         from 2399,
         to 6000,
@@ -236,8 +266,7 @@ Seq-annot ::= {
     },
     {
       id local str "gene_4",
-      data gene {
-      },
+      data region "cloneB",
       location int {
         from 2600,
         to 2700,
@@ -251,13 +280,22 @@ Seq-annot ::= {
         {
           id local str "cds_4"
         }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 9, 10, 2 }
+            }
+          }
+        }
       }
     },
     {
       id local str "mrna_4",
-      data rna {
-        type mRNA
-      },
+      data region "cloneB",
       location packed-int {
         {
           from 2433,
@@ -319,8 +357,7 @@ Seq-annot ::= {
     },
     {
       id local str "cds_4",
-      data cdregion {
-      },
+      data region "cloneB",
       location int {
         from 2399,
         to 6000,
@@ -338,8 +375,7 @@ Seq-annot ::= {
     },
     {
       id local str "gene_5",
-      data gene {
-      },
+      data region "cloneB",
       location int {
         from 2800,
         to 2900,
@@ -353,13 +389,22 @@ Seq-annot ::= {
         {
           id local str "cds_5"
         }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 9, 10, 2 }
+            }
+          }
+        }
       }
     },
     {
       id local str "mrna_5",
-      data rna {
-        type mRNA
-      },
+      data region "cloneB",
       location packed-int {
         {
           from 2433,
@@ -433,8 +478,7 @@ Seq-annot ::= {
     },
     {
       id local str "cds_5",
-      data cdregion {
-      },
+      data region "cloneB",
       location int {
         from 2399,
         to 6000,
@@ -452,8 +496,7 @@ Seq-annot ::= {
     },
     {
       id local str "gene_6",
-      data gene {
-      },
+      data region "cloneB",
       location int {
         from 3000,
         to 3100,
@@ -467,13 +510,22 @@ Seq-annot ::= {
         {
           id local str "cds_6"
         }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 9, 10, 2 }
+            }
+          }
+        }
       }
     },
     {
       id local str "mrna_6",
-      data rna {
-        type mRNA
-      },
+      data region "cloneB",
       location packed-int {
         {
           from 2433,
@@ -559,8 +611,7 @@ Seq-annot ::= {
     },
     {
       id local str "cds_6",
-      data cdregion {
-      },
+      data region "cloneB",
       location int {
         from 2399,
         to 6000,
@@ -578,8 +629,7 @@ Seq-annot ::= {
     },
     {
       id local str "gene_7",
-      data gene {
-      },
+      data region "cloneB",
       location int {
         from 3200,
         to 3300,
@@ -593,13 +643,22 @@ Seq-annot ::= {
         {
           id local str "cds_7"
         }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 9, 10, 2 }
+            }
+          }
+        }
       }
     },
     {
       id local str "mrna_7",
-      data rna {
-        type mRNA
-      },
+      data region "cloneB",
       location packed-int {
         {
           from 2433,
@@ -697,8 +756,7 @@ Seq-annot ::= {
     },
     {
       id local str "cds_7",
-      data cdregion {
-      },
+      data region "cloneB",
       location int {
         from 2399,
         to 6000,
@@ -716,8 +774,7 @@ Seq-annot ::= {
     },
     {
       id local str "gene_8",
-      data gene {
-      },
+      data region "cloneB",
       location int {
         from 3400,
         to 3500,
@@ -731,13 +788,22 @@ Seq-annot ::= {
         {
           id local str "cds_8"
         }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 9, 10, 2 }
+            }
+          }
+        }
       }
     },
     {
       id local str "mrna_8",
-      data rna {
-        type mRNA
-      },
+      data region "cloneB",
       location packed-int {
         {
           from 2433,
@@ -847,8 +913,7 @@ Seq-annot ::= {
     },
     {
       id local str "cds_8",
-      data cdregion {
-      },
+      data region "cloneB",
       location int {
         from 2399,
         to 6000,

@@ -1,10 +1,10 @@
 CGffImportError:
   Severity = Warning
   Message = "Invalid RGB value- defaulting to BLACK"
-  LineNumber = 6
+  LineNumber = 7
 
 CGffImportError:
   Severity = Warning
   Message = "Invalid RGB value- defaulting to BLACK"
-  LineNumber = 7
+  LineNumber = 8
 
