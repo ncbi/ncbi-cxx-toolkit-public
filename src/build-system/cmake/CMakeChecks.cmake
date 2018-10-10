@@ -53,7 +53,7 @@ set(NCBI_INC_ROOT      ${includedir0})
 
 string(FIND ${CMAKE_BINARY_DIR} ${NCBI_TREE_ROOT} _pos_root)
 string(FIND ${CMAKE_BINARY_DIR} ${NCBI_SRC_ROOT}  _pos_src)
-if("${_pos_root}" GREATER_EQUAL "0" AND "${_pos_src}" LESS "0" AND NOT "${CMAKE_BINARY_DIR}" STREQUAL "${NCBI_TREE_ROOT}")
+if("0" LESS "${_pos_root}" AND "${_pos_src}" LESS "0" AND NOT "${CMAKE_BINARY_DIR}" STREQUAL "${NCBI_TREE_ROOT}")
     get_filename_component(NCBI_BUILD_ROOT "${CMAKE_BINARY_DIR}/.." ABSOLUTE)
 else()
     get_filename_component(NCBI_BUILD_ROOT "${CMAKE_BINARY_DIR}" ABSOLUTE)
