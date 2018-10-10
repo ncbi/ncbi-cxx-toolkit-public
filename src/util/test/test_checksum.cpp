@@ -149,8 +149,9 @@ string CChecksumTestApp::GetMethodName(const CChecksum& sum)
     case CChecksum::eCityHash64: return "CityHash64";
     case CChecksum::eFarmHash32: return "FarmHash32";
     case CChecksum::eFarmHash64: return "FarmHash64";
+    default: ;
     }
-     _TROUBLE;
+    _TROUBLE;
     return "";
 }
 
@@ -162,6 +163,7 @@ bool CChecksumTestApp::IsHashMethod(CChecksum::EMethod method)
     case CChecksum::eFarmHash32:
     case CChecksum::eFarmHash64:
         return true;
+    default: ;
     }
     return false;
 }
@@ -217,93 +219,93 @@ vector<SChecksumStrTest> s_StrTests = {
 
     { // CChecksum::Reset() test, except hash methods, that compute hash even for empty strings
       "", {
-        { CChecksum::eCRC32,       0,           "" },
-        { CChecksum::eCRC32ZIP,    0,           "" },
-        { CChecksum::eCRC32INSD,   0xffffffff,  "" },
-        { CChecksum::eCRC32CKSUM,  0xffffffff,  "" },
-        { CChecksum::eCRC32C,      0,           "" },
-        { CChecksum::eAdler32,     0x00000001,  "" },
-        { CChecksum::eCityHash32,  0xdc56d17a,  "" },
-        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x9ae16a3b2f90404f), "" },
-        { CChecksum::eMD5,         0, "d41d8cd98f00b204e9800998ecf8427e" }}
+        { CChecksum::eCRC32,       { 0 },           "" },
+        { CChecksum::eCRC32ZIP,    { 0 },           "" },
+        { CChecksum::eCRC32INSD,   { 0xffffffff },  "" },
+        { CChecksum::eCRC32CKSUM,  { 0xffffffff },  "" },
+        { CChecksum::eCRC32C,      { 0 },           "" },
+        { CChecksum::eAdler32,     { 0x00000001 },  "" },
+        { CChecksum::eCityHash32,  { 0xdc56d17a },  "" },
+        { CChecksum::eCityHash64,  { NCBI_CONST_UINT8(0x9ae16a3b2f90404f) }, "" },
+        { CChecksum::eMD5,         { 0 }, "d41d8cd98f00b204e9800998ecf8427e" }}
     },
     { "a", {
-        { CChecksum::eCRC32,       0xa864db20,  "" },
-        { CChecksum::eCRC32ZIP,    0xe8b7be43,  "" },
-        { CChecksum::eCRC32INSD,   0x174841bc,  "" },
-        { CChecksum::eCRC32CKSUM,  0x48c279fe,  "" },
-        { CChecksum::eCRC32C,      0xc1d04330,  "" },
-        { CChecksum::eAdler32,     0x00620062,  "" },
-        { CChecksum::eCityHash32,  0x3c973d4d,  "" },
-        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0xb3454265b6df75e3), "" },
-        { CChecksum::eMD5,         0, "0cc175b9c0f1b6a831c399e269772661" }}
+        { CChecksum::eCRC32,       { 0xa864db20 },  "" },
+        { CChecksum::eCRC32ZIP,    { 0xe8b7be43 },  "" },
+        { CChecksum::eCRC32INSD,   { 0x174841bc },  "" },
+        { CChecksum::eCRC32CKSUM,  { 0x48c279fe },  "" },
+        { CChecksum::eCRC32C,      { 0xc1d04330 },  "" },
+        { CChecksum::eAdler32,     { 0x00620062 },  "" },
+        { CChecksum::eCityHash32,  { 0x3c973d4d },  "" },
+        { CChecksum::eCityHash64,  { NCBI_CONST_UINT8(0xb3454265b6df75e3) }, "" },
+        { CChecksum::eMD5,         { 0 }, "0cc175b9c0f1b6a831c399e269772661" }}
     },
     { "abc", {
-        { CChecksum::eCRC32,       0x2c17398c,  "" },
-        { CChecksum::eCRC32ZIP,    0x352441c2,  "" },
-        { CChecksum::eCRC32INSD,   0xcadbbe3d,  "" },
-        { CChecksum::eCRC32CKSUM,  0x48aa78a2,  "" },
-        { CChecksum::eCRC32C,      0x364b3fb7,  "" },
-        { CChecksum::eAdler32,     0x024d0127,  "" },
-        { CChecksum::eCityHash32,  0x2f635ec7,  "" },
-        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x24a5b3a074e7f369), "" },
-        { CChecksum::eMD5,         0, "900150983cd24fb0d6963f7d28e17f72" }}
+        { CChecksum::eCRC32,       { 0x2c17398c },  "" },
+        { CChecksum::eCRC32ZIP,    { 0x352441c2 },  "" },
+        { CChecksum::eCRC32INSD,   { 0xcadbbe3d },  "" },
+        { CChecksum::eCRC32CKSUM,  { 0x48aa78a2 },  "" },
+        { CChecksum::eCRC32C,      { 0x364b3fb7 },  "" },
+        { CChecksum::eAdler32,     { 0x024d0127 },  "" },
+        { CChecksum::eCityHash32,  { 0x2f635ec7 },  "" },
+        { CChecksum::eCityHash64,  { NCBI_CONST_UINT8(0x24a5b3a074e7f369) }, "" },
+        { CChecksum::eMD5,         { 0 }, "900150983cd24fb0d6963f7d28e17f72" }}
     },
     { "message digest", {
-        { CChecksum::eCRC32,       0x5c57dedc,  "" },
-        { CChecksum::eCRC32ZIP,    0x20159d7f,  "" },
-        { CChecksum::eCRC32INSD,   0xdfea6280,  "" },
-        { CChecksum::eCRC32CKSUM,  0xd934b396,  "" },
-        { CChecksum::eCRC32C,      0x02bd79d0,  "" },
-        { CChecksum::eAdler32,     0x29750586,  "" },
-        { CChecksum::eCityHash32,  0x246f52b3,  "" },
-        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x8db193972bf98c6a), "" },
-        { CChecksum::eMD5,         0, "f96b697d7cb7938d525a2f31aaf161d0" }}
+        { CChecksum::eCRC32,       { 0x5c57dedc },  "" },
+        { CChecksum::eCRC32ZIP,    { 0x20159d7f },  "" },
+        { CChecksum::eCRC32INSD,   { 0xdfea6280 },  "" },
+        { CChecksum::eCRC32CKSUM,  { 0xd934b396 },  "" },
+        { CChecksum::eCRC32C,      { 0x02bd79d0 },  "" },
+        { CChecksum::eAdler32,     { 0x29750586 },  "" },
+        { CChecksum::eCityHash32,  { 0x246f52b3 },  "" },
+        { CChecksum::eCityHash64,  { NCBI_CONST_UINT8(0x8db193972bf98c6a) }, "" },
+        { CChecksum::eMD5,         { 0 }, "f96b697d7cb7938d525a2f31aaf161d0" }}
     },
     { "abcdefghijklmnopqrstuvwxyz", {
-        { CChecksum::eCRC32,       0x3bc2a463,  "" },
-        { CChecksum::eCRC32ZIP,    0x4c2750bd,  "" },
-        { CChecksum::eCRC32INSD,   0xb3d8af42,  "" },
-        { CChecksum::eCRC32CKSUM,  0xa1b937a8,  "" },
-        { CChecksum::eCRC32C,      0x9ee6ef25,  "" },
-        { CChecksum::eAdler32,     0x90860b20,  "" },
-        { CChecksum::eCityHash32,  0xaa02c5c1,  "" },
-        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x5ead741ce7ac31bd), "" },
-        { CChecksum::eMD5,         0, "c3fcd3d76192e4007dfb496cca67e13b" }}
+        { CChecksum::eCRC32,       { 0x3bc2a463 },  "" },
+        { CChecksum::eCRC32ZIP,    { 0x4c2750bd },  "" },
+        { CChecksum::eCRC32INSD,   { 0xb3d8af42 },  "" },
+        { CChecksum::eCRC32CKSUM,  { 0xa1b937a8 },  "" },
+        { CChecksum::eCRC32C,      { 0x9ee6ef25 },  "" },
+        { CChecksum::eAdler32,     { 0x90860b20 },  "" },
+        { CChecksum::eCityHash32,  { 0xaa02c5c1 },  "" },
+        { CChecksum::eCityHash64,  { NCBI_CONST_UINT8(0x5ead741ce7ac31bd) }, "" },
+        { CChecksum::eMD5,         { 0 }, "c3fcd3d76192e4007dfb496cca67e13b" }}
     },
     { "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", {
-        { CChecksum::eCRC32,       0x26910730,  "" },
-        { CChecksum::eCRC32ZIP,    0x1fc2e6d2,  "" },
-        { CChecksum::eCRC32INSD,   0xe03d192d,  "" },
-        { CChecksum::eCRC32CKSUM,  0x4e1f937,   "" },
-        { CChecksum::eCRC32C,      0xa245d57d,  "" },
-        { CChecksum::eAdler32,     0x8adb150c,  "" },
-        { CChecksum::eCityHash32,  0xa77b8219,  "" },
-        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x4566c1e718836cd6), "" },
-        { CChecksum::eMD5,         0, "d174ab98d277d9f5a5611c2c9f419d9f" }}
+        { CChecksum::eCRC32,       { 0x26910730 },  "" },
+        { CChecksum::eCRC32ZIP,    { 0x1fc2e6d2 },  "" },
+        { CChecksum::eCRC32INSD,   { 0xe03d192d },  "" },
+        { CChecksum::eCRC32CKSUM,  { 0x04e1f937 },  "" },
+        { CChecksum::eCRC32C,      { 0xa245d57d },  "" },
+        { CChecksum::eAdler32,     { 0x8adb150c },  "" },
+        { CChecksum::eCityHash32,  { 0xa77b8219 },  "" },
+        { CChecksum::eCityHash64,  { NCBI_CONST_UINT8(0x4566c1e718836cd6) }, "" },
+        { CChecksum::eMD5,         { 0 }, "d174ab98d277d9f5a5611c2c9f419d9f" }}
     },
     { "12345678901234567890123456789012345678901234567890123456789012345678901234567890", {
-        { CChecksum::eCRC32,       0x7110bde7,  "" },
-        { CChecksum::eCRC32ZIP,    0x7ca94a72,  "" },
-        { CChecksum::eCRC32INSD,   0x8356b58d,  "" },
-        { CChecksum::eCRC32CKSUM,  0x73a0b3a8,  "" },
-        { CChecksum::eCRC32C,      0x477a6781,  "" },
-        { CChecksum::eAdler32,     0x97b61069,  "" },
-        { CChecksum::eCityHash32,  0x725594c0,  "" },
-        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0x791a4c16629ee4cd), "" },
-        { CChecksum::eMD5,         0, "57edf4a22be3c955ac49da2e2107b67a" }}
+        { CChecksum::eCRC32,       { 0x7110bde7 },  "" },
+        { CChecksum::eCRC32ZIP,    { 0x7ca94a72 },  "" },
+        { CChecksum::eCRC32INSD,   { 0x8356b58d },  "" },
+        { CChecksum::eCRC32CKSUM,  { 0x73a0b3a8 },  "" },
+        { CChecksum::eCRC32C,      { 0x477a6781 },  "" },
+        { CChecksum::eAdler32,     { 0x97b61069 },  "" },
+        { CChecksum::eCityHash32,  { 0x725594c0 },  "" },
+        { CChecksum::eCityHash64,  { NCBI_CONST_UINT8(0x791a4c16629ee4cd) }, "" },
+        { CChecksum::eMD5,         { 0 }, "57edf4a22be3c955ac49da2e2107b67a" }}
     },
     { string("\1\xc0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\1\xfe\x60\xac\0\0\0"
              "\x8\0\0\0\x4\0\0\0\x9\x25\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 48), {
-        { CChecksum::eCRC32,       0xfbcf2b84,  "" },
-        { CChecksum::eCRC32ZIP,    0xc897a166,  "" },
-        { CChecksum::eCRC32INSD,   0x37685e99,  "" },
-        { CChecksum::eCRC32CKSUM,  0x46152007,  "" },
-        { CChecksum::eCRC32C,      0x99b08a14,  "" },
-        { CChecksum::eAdler32,     0x65430307,  "" },
-        { CChecksum::eCityHash32,  0x5a50eecd,  "" },
-        { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0xca8a7f96d3b805dd), "" },
-        { CChecksum::eMD5,         0, "f16de75fd4137d2b5b12f35f247a6214" }}
+        { CChecksum::eCRC32,       { 0xfbcf2b84 },  "" },
+        { CChecksum::eCRC32ZIP,    { 0xc897a166 },  "" },
+        { CChecksum::eCRC32INSD,   { 0x37685e99 },  "" },
+        { CChecksum::eCRC32CKSUM,  { 0x46152007 },  "" },
+        { CChecksum::eCRC32C,      { 0x99b08a14 },  "" },
+        { CChecksum::eAdler32,     { 0x65430307 },  "" },
+        { CChecksum::eCityHash32,  { 0x5a50eecd },  "" },
+        { CChecksum::eCityHash64,  { NCBI_CONST_UINT8(0xca8a7f96d3b805dd) }, "" },
+        { CChecksum::eMD5,         { 0 }, "f16de75fd4137d2b5b12f35f247a6214" }}
     }
 };
 
@@ -472,15 +474,15 @@ void CFileData::Load(CNcbiIstream& is)
 
 
 vector<SChecksumCase> s_BigTests = {
-    { CChecksum::eCRC32,       0xa0b29e2f,  "" },
-    { CChecksum::eCRC32ZIP,    0x39a90823,  "" },
-    { CChecksum::eCRC32INSD,   0xc656f7dc,  "" },
-    { CChecksum::eCRC32CKSUM,  0x4a0a1bdb,  "" },
-    { CChecksum::eCRC32C,      0x7adb1cd3,  "" },
-    { CChecksum::eAdler32,     0x528a7135,  "" },
-    { CChecksum::eCityHash32,  0xca83e47e,  "" },
-    { CChecksum::eCityHash64,  NCBI_CONST_UINT8(0xb2195ac46438d77d), "" },
-    { CChecksum::eMD5,         0, "a1ed665e33b6feb5a645738b4384ca25" }
+    { CChecksum::eCRC32,       { 0xa0b29e2f },  "" },
+    { CChecksum::eCRC32ZIP,    { 0x39a90823 },  "" },
+    { CChecksum::eCRC32INSD,   { 0xc656f7dc },  "" },
+    { CChecksum::eCRC32CKSUM,  { 0x4a0a1bdb },  "" },
+    { CChecksum::eCRC32C,      { 0x7adb1cd3 },  "" },
+    { CChecksum::eAdler32,     { 0x528a7135 },  "" },
+    { CChecksum::eCityHash32,  { 0xca83e47e },  "" },
+    { CChecksum::eCityHash64,  { NCBI_CONST_UINT8(0xb2195ac46438d77d) }, "" },
+    { CChecksum::eMD5,         { 0 }, "a1ed665e33b6feb5a645738b4384ca25" }
 };
 
 
@@ -517,7 +519,6 @@ bool CChecksumTestApp::SelfTest_Big()
 
 void CChecksumTestApp::ComputeBigSum(CRandom& random, const CFileData& file_data, size_t offset, CChecksum& sum)
 {
-    bool ok = true;
     const char*  data = file_data.data();
     size_t       size = file_data.size();
     vector<char> buf;
