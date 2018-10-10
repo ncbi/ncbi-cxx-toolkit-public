@@ -8,7 +8,8 @@ SRC =	feat_import_error feat_import_progress feat_message_handler \
 		feat_importer feat_import_data feat_line_reader feat_annot_assembler \
 		gtf_importer gtf_import_data gtf_line_reader gtf_annot_assembler \
 		bed_importer bed_import_data bed_line_reader bed_annot_assembler \
-		5col_importer 5col_import_data 5col_line_reader 5col_annot_assembler	
+		5col_importer 5col_import_data 5col_line_reader 5col_annot_assembler \
+		annot_import_data
 
 LIB =	xobjimport
 

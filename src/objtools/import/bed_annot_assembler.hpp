@@ -61,6 +61,10 @@ public:
     ProcessRecord(
         const CFeatImportData&) override;
 
+    virtual void
+    FinalizeAnnot(
+        const CAnnotImportData&);
+
 protected:
     unique_ptr<CFeatureIdGenerator> mpIdGenerator;
 };

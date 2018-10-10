@@ -39,6 +39,7 @@
 #include <objtools/import/feat_message_handler.hpp>
 
 #include "feat_import_data.hpp"
+#include "annot_import_data.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -66,6 +67,9 @@ public:
     SetProgressReportFrequency(
         unsigned int numLines) { mProgressFreq = numLines; };
 
+    const CAnnotImportData&
+    AnnotImportData() const { return mAnnotInfo; };
+
 protected:
     virtual bool
     xIgnoreLine(
@@ -85,6 +89,7 @@ protected:
     unsigned int mRecordNumber;
     unsigned int mProgressFreq;
     unsigned int mLastProgress;
+    CAnnotImportData mAnnotInfo;
 };
 
 END_objects_SCOPE

@@ -102,6 +102,19 @@ protected:
     xInitializeRgb(
         const std::vector<string>&,
         CBedImportData::RgbValue&);
+    void
+    xInitializeRgbFromScoreColumn(
+        const std::vector<string>&,
+        CBedImportData::RgbValue&);
+    void
+    xInitializeRgbFromRgbColumn(
+        const std::vector<string>&,
+        CBedImportData::RgbValue&);
+    void
+    xInitializeRgbFromStrandColumn(
+        const std::vector<string>&,
+        CBedImportData::RgbValue&);
+
 
     void
     xInitializeBlocks(
@@ -110,8 +123,14 @@ protected:
         std::vector<int>& blockStarts,
         std::vector<int>& blockSizes);
 
+	size_t mColumnCount;
     std::string mColumnDelimiter;
     int mSplitFlags;
+    bool mUseScore;
+    bool mItemRgb;
+    bool mColorByStrand;
+    CBedImportData::RgbValue mRgbStrandPlus;
+    CBedImportData::RgbValue mRgbStrandMinus;
 };
 
 END_objects_SCOPE

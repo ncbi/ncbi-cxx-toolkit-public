@@ -47,8 +47,12 @@ CBedLineReader::CBedLineReader(
     CFeatMessageHandler& errorReporter):
 //  ============================================================================
     CFeatLineReader(istr, errorReporter),
+    mColumnCount(0),
     mColumnDelimiter(""),
-    mSplitFlags(0)
+    mSplitFlags(0),
+    mUseScore(false),
+    mItemRgb(false),
+    mColorByStrand(false)
 {
 }
 
@@ -94,8 +98,73 @@ CBedLineReader::xProcessTrackLine(
     const string& line)
 //  ============================================================================
 {
-    if (!NStr::StartsWith(line, "track")) {
+    CFeatImportError errorInvalidTrackLine(
+        CFeatImportError::ERROR, "Invalid track setting", 
+        mLineNumber);
+
+    string track, values;
+    NStr::SplitInTwo(line, " \t", track, values);
+    if (track != "track") {
         return false;
+    }
+    if (values.empty()) {
+        return true;
+    }
+
+    vector<string> trackPieces;
+    NStr::Split(values, "=", trackPieces);
+    string key, value;
+    key = NStr::TruncateSpaces_Unsafe(trackPieces[0]);
+    for (int i = 1; i < trackPieces.size() - 1; ++i) {
+        vector<string> words;
+        NStr::Split(trackPieces[i], " \t", words);
+        auto pendingKey = words.back();
+        words.pop_back();
+        value = NStr::Join(words, " ");
+        mAnnotInfo.SetValue(key, NStr::Replace(value, "\"", ""));
+        key = pendingKey;
+    }
+    mAnnotInfo.SetValue(key, NStr::Replace(trackPieces.back(), "\"", ""));
+
+    //cash some often accessed values:
+    const string& useScore = mAnnotInfo.ValueOf("useScore");
+    mUseScore = (!useScore.empty()  &&  useScore != "0"  &&  useScore != "false");
+
+    const string& itemRgb = mAnnotInfo.ValueOf("itemRgb");
+    mItemRgb = (itemRgb == "on"  ||  itemRgb == "On");
+    if (!itemRgb.empty()  &&  !mItemRgb) {
+        errorInvalidTrackLine.AmendMessage("Bad itemRgb value --- ignored");
+        mErrorReporter.ReportError(errorInvalidTrackLine);
+    }
+
+    const string& colorByStrand = mAnnotInfo.ValueOf("colorByStrand");
+    if (!colorByStrand.empty()) {
+        try {
+            string colorStrandPlus, colorStrandMinus;
+            NStr::SplitInTwo(
+                colorByStrand, " ", colorStrandPlus, colorStrandMinus);
+            vector<string> rgbComponents;
+            NStr::Split(colorStrandPlus, ",", rgbComponents);
+            if (rgbComponents.size() != 3) {
+                throw std::exception();
+            }
+            mRgbStrandPlus.R = NStr::StringToInt(rgbComponents[0]);
+            mRgbStrandPlus.G = NStr::StringToInt(rgbComponents[1]);
+            mRgbStrandPlus.B = NStr::StringToInt(rgbComponents[2]);
+            rgbComponents.clear();
+            NStr::Split(colorStrandMinus, ",", rgbComponents);
+            if (rgbComponents.size() != 3) {
+                throw std::exception();
+            }
+            mRgbStrandMinus.R = NStr::StringToInt(rgbComponents[0]);
+            mRgbStrandMinus.G = NStr::StringToInt(rgbComponents[1]);
+            mRgbStrandMinus.B = NStr::StringToInt(rgbComponents[2]);
+        }
+        catch(std::exception&) {
+            errorInvalidTrackLine.AmendMessage("Bad colorByStrand value --- ignored");
+            mErrorReporter.ReportError(errorInvalidTrackLine);
+        }
+        mColorByStrand = true;
     }
     return true;
 }
@@ -108,7 +177,8 @@ CBedLineReader::xSplitLine(
 //  ============================================================================
 {
     CFeatImportError errorInvalidColumnCount(
-        CFeatImportError::CRITICAL, "Invalid column count");
+        CFeatImportError::CRITICAL, "Invalid column count",
+        mLineNumber);
 
     columns.clear();
     if (mColumnDelimiter.empty()) {
@@ -123,10 +193,16 @@ CBedLineReader::xSplitLine(
         mSplitFlags = NStr::fSplit_MergeDelimiters;
     }
     NStr::Split(line, mColumnDelimiter, columns, mSplitFlags);
-    if (columns.size() == 12) {
+	if (mColumnCount == 0) {
+		if (columns.size() < 3  ||  columns.size() > 12) {
+			throw errorInvalidColumnCount;
+		}
+        mColumnCount = columns.size();
         return;
+	}
+    if (columns.size() != mColumnCount) {
+        throw errorInvalidColumnCount;
     }
-    throw errorInvalidColumnCount;
 }
 
 //  ============================================================================
@@ -182,7 +258,7 @@ CBedLineReader::xInitializeScore(
         CFeatImportError::WARNING, "Invalid score value- omitting from output.",
         mLineNumber);
 
-    if (columns.size() < 5  ||  columns[4] == ".") {
+    if (columns.size() < 5  ||  columns[4] == "."  ||  mUseScore) {
         score = -1.0;
         return;
     }
@@ -199,6 +275,89 @@ CBedLineReader::xInitializeScore(
 //  ============================================================================
 void
 CBedLineReader::xInitializeRgb(
+    const vector<string>& columns,
+    CBedImportData::RgbValue& rgbValue)
+    //  ============================================================================
+{
+    if (mUseScore) {
+        xInitializeRgbFromScoreColumn(columns, rgbValue);
+        return;
+    }
+    if (mItemRgb) {
+        xInitializeRgbFromRgbColumn(columns, rgbValue);
+        return;
+    }
+    if (mColorByStrand) {
+        xInitializeRgbFromStrandColumn(columns, rgbValue);
+        return;
+    }
+    rgbValue.R = rgbValue.B = rgbValue.G = -1;
+}
+
+//  ============================================================================
+void
+CBedLineReader::xInitializeRgbFromStrandColumn(
+    const vector<string>& columns,
+    CBedImportData::RgbValue& rgbValue)
+//  ============================================================================
+{
+    CFeatImportError errorInvalidStrandValue(
+        CFeatImportError::WARNING, "Invalid strand value- setting color to BLACK.",
+        mLineNumber);
+
+    if (columns.size() < 6 || (columns[5] != "+"  &&  columns[5] != "-")) {
+        mErrorReporter.ReportError(errorInvalidStrandValue);
+        rgbValue.R = rgbValue.G = rgbValue.B = 0;
+        return;
+    }
+    if (columns[5] == "-") {
+        rgbValue.R = mRgbStrandMinus.R;
+        rgbValue.B = mRgbStrandMinus.B;
+        rgbValue.G = mRgbStrandMinus.G;
+    }
+    else {
+        rgbValue.R = mRgbStrandPlus.R;
+        rgbValue.B = mRgbStrandPlus.B;
+        rgbValue.G = mRgbStrandPlus.G;
+    }
+}
+
+//  ============================================================================
+void
+CBedLineReader::xInitializeRgbFromScoreColumn(
+    const vector<string>& columns,
+    CBedImportData::RgbValue& rgbValue)
+//  ============================================================================
+{
+    CFeatImportError errorInvalidScoreValue(
+        CFeatImportError::WARNING, "Invalid score value- setting color to BLACK.",
+        mLineNumber);
+
+    if (columns.size() < 5 || columns[4] == ".") {
+        mErrorReporter.ReportError(errorInvalidScoreValue);
+        rgbValue.R = rgbValue.G = rgbValue.B = 0;
+        return;
+    }
+    auto scoreValue = static_cast<int>(NStr::StringToDouble(columns[4]));
+    if (scoreValue < 0) {
+        scoreValue = 0;
+    }
+    else if (scoreValue > 1000) {
+        scoreValue = 1000;
+    }
+    if (scoreValue == 0) {
+        rgbValue.R = rgbValue.G = rgbValue.B = 0;
+        return;
+    }
+
+    scoreValue = static_cast<int>(scoreValue / 111);
+    rgbValue.R = rgbValue.G = rgbValue.B = (29 + 29*scoreValue);
+    return;
+}
+
+//  ============================================================================
+void
+CBedLineReader::xInitializeRgbFromRgbColumn(
     const vector<string>& columns,
     CBedImportData::RgbValue& rgbValue)
 //  ============================================================================
@@ -339,7 +498,7 @@ CBedLineReader::xInitializeBlocks(
         mLineNumber);
 
     if (columns.size() < 12) {
-        blockCount = 1;
+        blockCount = 0;
         return;
     }
     try {
@@ -419,3 +578,4 @@ CBedLineReader::xInitializeRecord(
     record.Initialize(chromId, chromStart, chromEnd, name, score, chromStrand, 
         thickStart, thickEnd, rgbValue, blockCount, blockStarts, blockSizes); 
 }
+

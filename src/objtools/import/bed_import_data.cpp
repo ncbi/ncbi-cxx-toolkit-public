@@ -69,6 +69,7 @@ CBedImportData::CBedImportData(
     mChromLocation.Assign(rhs.mChromLocation);
     mThickLocation.Assign(rhs.mThickLocation);
     mBlocksLocation.Assign(rhs.mBlocksLocation);
+    mDisplayData.Assign(rhs.mDisplayData);
 }
 
 //  ============================================================================
@@ -92,20 +93,34 @@ CBedImportData::Initialize(
     mChromLocation.SetInt().Assign(
         CSeq_interval(*pId, chromStart, chromEnd, chromStrand)); 
     mName = chromName;
-    mScore = score;
-    mThickLocation.SetInt().Assign(
-        CSeq_interval(*pId, thickStart, thickEnd, chromStrand));
-    mRgb = rgb;
+
+    mDisplayData.Reset();
+    mDisplayData.SetType().SetStr("DisplaySettings");
+    xInitializeScore(score);
+    xInitializeRgb(rgb);
+
+    if (chromStart == thickStart  &&  thickStart == thickEnd) {
+        mThickLocation.SetNull();
+    }
+    else {
+        mThickLocation.SetInt().Assign(
+            CSeq_interval(*pId, thickStart, thickEnd, chromStrand));
+    }
 
     //auto blockOffset = mChromLocation.GetInt().GetFrom();
-    mBlocksLocation.SetPacked_int();
-    for (unsigned int i=0; i < blockCount; ++i) {
-        CRef<CSeq_interval> pBlockInterval(new CSeq_interval);
-        pBlockInterval->SetFrom(chromStart + blockStarts[i]);
-        pBlockInterval->SetTo(chromStart + blockStarts[i] + blockSizes[i]);
-        pBlockInterval->SetId(mChromLocation.SetInt().SetId());
-        pBlockInterval->SetStrand(mChromLocation.GetInt().GetStrand());
-        mBlocksLocation.SetPacked_int().AddInterval(*pBlockInterval);
+    if (blockCount == 0) {
+        mBlocksLocation.SetNull();
+    }
+    else {
+        mBlocksLocation.SetPacked_int();
+        for (unsigned int i=0; i < blockCount; ++i) {
+            CRef<CSeq_interval> pBlockInterval(new CSeq_interval);
+            pBlockInterval->SetFrom(chromStart + blockStarts[i]);
+            pBlockInterval->SetTo(chromStart + blockStarts[i] + blockSizes[i]);
+            pBlockInterval->SetId(mChromLocation.SetInt().SetId());
+            pBlockInterval->SetStrand(mChromLocation.GetInt().GetStrand());
+            mBlocksLocation.SetPacked_int().AddInterval(*pBlockInterval);
+        }
     }
 }
 
@@ -160,4 +175,32 @@ CBedImportData::Serialize(
     out << "  Rgb = (" << mRgb.R << "," << mRgb.G << "," << mRgb.B << ")\n"; 
     out << "  Blocks = " << blocks << "\n";
     out << "\n";
+}
+
+//  ============================================================================
+void
+CBedImportData::xInitializeScore(
+    double score)
+//  ============================================================================
+{
+    // score negative indicates there is no score
+    if (score >= 0) {
+        mDisplayData.AddField("score", score);
+    }
+}
+
+//  ============================================================================
+void
+CBedImportData::xInitializeRgb(
+    const RgbValue& rgb)
+    //  ============================================================================
+{
+    if (rgb.R == -1) {
+        return;
+    }
+    auto r = NStr::IntToString(rgb.R);
+    auto g = NStr::IntToString(rgb.G);
+    auto b = NStr::IntToString(rgb.B);
+    auto color = r + " " + g + " " + b;
+    mDisplayData.AddField("color", color);
 }

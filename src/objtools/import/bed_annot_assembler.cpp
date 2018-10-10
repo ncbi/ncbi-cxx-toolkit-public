@@ -33,6 +33,9 @@
 #include <corelib/ncbifile.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include <objects/seq/Annotdesc.hpp>
+#include <objects/seq/Annot_descr.hpp>
+
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
@@ -81,8 +84,17 @@ CBedAnnotAssembler::ProcessRecord(
     const auto& geneLocation = record.ChromLocation();
     if (!geneLocation.IsNull()) {
         pGene.Reset(new CSeq_feat);
-        pGene->SetData().SetGene();
+        //pGene->SetData().SetGene();
+        pGene->SetData().SetRegion(record.Name());
         pGene->SetLocation().Assign(geneLocation);
+
+        const auto& displayData = record.DisplayData(); 
+        if (displayData.IsSetData()) {
+            CRef<CUser_object> pDisplayData(new CUser_object);
+            pDisplayData->Assign(displayData);
+            pGene->SetExts().push_back(pDisplayData);
+        }
+
         pGene->SetId(*mpIdGenerator->GetIdFor("gene"));
         mAnnot.SetData().SetFtable().push_back(pGene);
     }
@@ -90,7 +102,8 @@ CBedAnnotAssembler::ProcessRecord(
     const auto& mRnaLocation = record.BlocksLocation();
     if (!mRnaLocation.IsNull()) {
         pMrna.Reset(new CSeq_feat);
-        pMrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+        //pMrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+        pMrna->SetData().SetRegion(record.Name());
         pMrna->SetLocation().Assign(mRnaLocation);
         pMrna->SetId(*mpIdGenerator->GetIdFor("mrna"));
         mAnnot.SetData().SetFtable().push_back(pMrna);
@@ -105,7 +118,8 @@ CBedAnnotAssembler::ProcessRecord(
     }
     if (!pCdsLocation->IsNull()) {
         pCds.Reset(new CSeq_feat);
-        pCds->SetData().SetCdregion();
+        //pCds->SetData().SetCdregion();
+        pCds->SetData().SetRegion(record.Name());
         pCds->SetLocation().Assign(*pCdsLocation);
         pCds->SetId(*mpIdGenerator->GetIdFor("cds"));
         mAnnot.SetData().SetFtable().push_back(pCds);
@@ -123,4 +137,33 @@ CBedAnnotAssembler::ProcessRecord(
         pMrna->AddSeqFeatXref(pCds->GetId());
         pCds->AddSeqFeatXref(pMrna->GetId());
     }
+}
+
+
+//  ============================================================================
+void
+CBedAnnotAssembler::FinalizeAnnot(
+    const CAnnotImportData& annotInfo)
+    //  ============================================================================
+{
+    auto description = annotInfo.ValueOf("description");
+    if (!description.empty()) {
+        mAnnot.SetTitleDesc(description);
+    }
+    auto name = annotInfo.ValueOf("name");
+    if (!name.empty()) {
+        mAnnot.SetNameDesc(name);
+    }
+
+    CRef<CUser_object> pTrackData(new CUser_object());
+    pTrackData->SetType().SetStr("Track Data");
+    pTrackData->SetData();
+
+    auto useScore = annotInfo.ValueOf("useScore");
+    if (!useScore.empty()) {
+        pTrackData->AddField("useScore", useScore);
+    }
+    CRef<CAnnotdesc> user(new CAnnotdesc());
+    user->SetUser(*pTrackData);
+    mAnnot.SetDesc().Set().push_back(user);
 }

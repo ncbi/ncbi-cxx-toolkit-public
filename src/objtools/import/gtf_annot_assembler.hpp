@@ -63,8 +63,9 @@ public:
     ProcessRecord(
         const CFeatImportData&) override;
 
-    void
-    FinalizeAnnot() override;
+    virtual void
+    FinalizeAnnot(
+        const CAnnotImportData&);
 
 protected:
     void xProcessRecordGene(

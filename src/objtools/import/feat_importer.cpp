@@ -42,6 +42,7 @@
 #include "feat_line_reader.hpp"
 #include "feat_import_data.hpp"
 #include "feat_annot_assembler.hpp"
+#include "annot_import_data.hpp"
 
 #include <assert.h>
 
@@ -129,7 +130,8 @@ CFeatImporter::ReadSeqAnnot(
             errorReporter.ReportError(err);
         }
     }
-    pAssembler->FinalizeAnnot();
+    const CAnnotImportData& annotMeta = pLineReader->AnnotImportData();
+    pAssembler->FinalizeAnnot(annotMeta);
 }
 
 

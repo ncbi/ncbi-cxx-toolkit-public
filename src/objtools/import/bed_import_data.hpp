@@ -35,11 +35,10 @@
 #define BED_IMPORT_DATA__HPP
 
 #include <corelib/ncbifile.hpp>
+#include <objects/general/User_object.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
-
-//#include <util/line_reader.hpp>
 
 #include "feat_import_data.hpp"
 
@@ -86,19 +85,29 @@ public:
 
     const CSeq_loc& ChromLocation() const { return mChromLocation; };
     const std::string& Name() const { return mName; };
-    double Score() const { return mScore; };
+    //double Score() const { return mScore; };
     const CSeq_loc& ThickLocation() const { return mThickLocation; };
     const RgbValue& Rgb() const { return mRgb; };
     const CSeq_loc& BlocksLocation() const { return mBlocksLocation; };
-    
+    const CUser_object& DisplayData() const { return mDisplayData; };
+
 
 protected:
+    void
+    xInitializeScore(
+        double);
+
+    void
+    xInitializeRgb(
+        const RgbValue&);
+
     CSeq_loc mChromLocation;
     std::string mName;
     double mScore;
     CSeq_loc mThickLocation;
     RgbValue mRgb;
     CSeq_loc mBlocksLocation;
+    CUser_object mDisplayData;
 };
 
 END_objects_SCOPE

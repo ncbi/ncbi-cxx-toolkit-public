@@ -39,6 +39,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 
 #include "feat_import_data.hpp"
+#include "annot_import_data.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -62,7 +63,8 @@ public:
         const CFeatImportData&) =0;
 
     virtual void
-    FinalizeAnnot();
+    FinalizeAnnot(
+        const CAnnotImportData&);
 
 protected:
     CSeq_annot& mAnnot;

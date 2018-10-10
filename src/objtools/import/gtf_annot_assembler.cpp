@@ -386,7 +386,8 @@ CGtfAnnotAssembler::xAnnotAddFeature(
 
 //  ============================================================================
 void
-CGtfAnnotAssembler::FinalizeAnnot()
+CGtfAnnotAssembler::FinalizeAnnot(
+    const CAnnotImportData& annotData)
 //  ============================================================================
 {
     xAnnotGenerateXrefs();

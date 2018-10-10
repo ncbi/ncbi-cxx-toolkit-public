@@ -42,6 +42,7 @@
 
 #include <objtools/import/feat_import_error.hpp>
 #include "feat_annot_assembler.hpp"
+#include "annot_import_data.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -73,7 +74,8 @@ CFeatAnnotAssembler::InitializeAnnot()
 
 //  ============================================================================
 void
-CFeatAnnotAssembler::FinalizeAnnot()
+CFeatAnnotAssembler::FinalizeAnnot(
+    const CAnnotImportData&)
 //  ============================================================================
 {
 }
