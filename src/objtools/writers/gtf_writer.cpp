@@ -323,10 +323,10 @@ bool CGtfWriter::xWriteFeatureCdsFragments(
 		for (EXONIT cdsIt = cdsExons.begin(); cdsIt != cdsExons.end(); ++cdsIt) {
 			count++;
 			const CSeq_interval& cdsExon = **cdsIt;
-			CGtfRecord* pRecord = new CGtfRecord(record);
+			CRef<CGtfRecord> pRecord(new CGtfRecord(record));
 			pRecord->MakeChildRecord( record, cdsExon);
 			pRecord->SetCdsPhase(cdsExons, cdsLoc.GetStrand());
-			xWriteRecord(pRecord);
+			xWriteRecord(pRecord.GetPointer());
 		}
 		return true;
 	}
@@ -347,10 +347,10 @@ bool CGtfWriter::xWriteFeatureCdsFragments(
                  break;
             }
         }
-        CGtfRecord* pRecord = new CGtfRecord(record);
+        CRef<CGtfRecord> pRecord(new CGtfRecord(record));
         pRecord->MakeChildRecord( record, cdsExon, uExonNumber );
         pRecord->SetCdsPhase( cdsExons, cdsLoc.GetStrand() );
-        xWriteRecord( pRecord );
+        xWriteRecord( pRecord.GetPointer() );
     }
     return true;
 }
