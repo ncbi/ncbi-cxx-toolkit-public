@@ -21,7 +21,7 @@ APP: $srcdir/src/app/netschedule/test/ns.py+ $srcdir/src/app/netschedule/test/te
 APP: $srcdir/src/app/netschedule/utils/ns_health_check.py
 ETC: src/app/netschedule/netscheduled.ini
 
-DEFAULT_CONFIGURATIONS: Linux64-Centos:Bdb6126-O2g
+DEFAULT_CONFIGURATIONS: Linux64-Centos7:Bdb6126-O2g
 
 # Each line describes a single configuration
 # The format is as follows:
@@ -30,13 +30,12 @@ DEFAULT_CONFIGURATIONS: Linux64-Centos:Bdb6126-O2g
 # Release configurator assumes that this script will eventually call standard configure script and pass all options
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
-Linux64-Centos  : Bdb6126-Release : GCC.sh 7.3.0 --without-debug --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-6.1.26
-Linux64-Centos  : Bdb6126-Debug   : GCC.sh 7.3.0 --with-debug    --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-6.1.26
-Linux64-Centos  : Bdb6126-O2g : GCC.sh 7.3.0 --without-debug --with-symbols --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-6.1.26
-Linux64-Centos7 : Bdb6126-O2g : GCC.sh 7.3.0 --without-debug --with-symbols --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-6.1.26
+Linux64-Centos7 : Bdb6126-Release  : GCC.sh 7.3.0 --without-debug                 --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-6.1.26
+Linux64-Centos7 : Bdb6126-Debug    : GCC.sh 7.3.0 --with-debug                    --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-6.1.26
+Linux64-Centos7 : Bdb6126-O2g      : GCC.sh 7.3.0 --without-debug  --with-symbols --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-6.1.26
 
 # --with-max-debug builds with a GCC sanitizer
-Linux64-Centos  : Bdb6126-MaxDebug   : GCC.sh 7.3.0 --with-max-debug    --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-6.1.26
+Linux64-Centos7 : Bdb6126-MaxDebug : GCC.sh 7.3.0 --with-max-debug                --with-mt --with-flat-makefile --with-bdb=$NCBI/BerkeleyDB-6.1.26
 
 USE_COMPONENTS
 
