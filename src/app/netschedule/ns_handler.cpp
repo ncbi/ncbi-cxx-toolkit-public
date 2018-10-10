@@ -1109,7 +1109,11 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
         CDiagContext_Extra diag_extra = GetDiagContext().Extra();
         diag_extra.Print("queue", m_QueueName);
         ITERATE(TNSProtoParams, it, params) {
-            diag_extra.Print(it->first, it->second);
+            if (it->first == "status") {
+                diag_extra.Print("job_status", it->second);
+            } else {
+                diag_extra.Print(it->first, it->second);
+            }
         }
     }
 
