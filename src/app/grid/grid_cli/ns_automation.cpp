@@ -47,8 +47,8 @@ SNetScheduleService::SNetScheduleService(
     m_NetScheduleAPI(ns_api)
 {
     auto warning_handler = [&](const string& m, CNetServer s) {
-        auto o = automation_proc->ReturnNetScheduleServerObject(m_NetScheduleAPI, s);
-        automation_proc->SendWarning(m, o);
+        auto o = m_AutomationProc->ReturnNetScheduleServerObject(m_NetScheduleAPI, s);
+        m_AutomationProc->SendWarning(m, o);
         return true;
     };
 

@@ -106,8 +106,8 @@ SNetStorageService::SNetStorageService(
     m_NetStorageAdmin(nst_api)
 {
     auto warning_handler = [&](const string& m, CNetServer s) {
-        auto o = automation_proc->ReturnNetStorageServerObject(m_NetStorageAdmin, s);
-        automation_proc->SendWarning(m, o);
+        auto o = m_AutomationProc->ReturnNetStorageServerObject(m_NetStorageAdmin, s);
+        m_AutomationProc->SendWarning(m, o);
         return true;
     };
 

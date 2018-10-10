@@ -188,8 +188,8 @@ SNetCacheService::SNetCacheService(CAutomationProc* automation_proc,
     m_NetCacheAPI(ic_api.GetNetCacheAPI())
 {
     auto warning_handler = [&](const string& m, CNetServer s) {
-        auto o = automation_proc->ReturnNetCacheServerObject(m_NetICacheClient, s);
-        automation_proc->SendWarning(m, o);
+        auto o = m_AutomationProc->ReturnNetCacheServerObject(m_NetICacheClient, s);
+        m_AutomationProc->SendWarning(m, o);
         return true;
     };
 
