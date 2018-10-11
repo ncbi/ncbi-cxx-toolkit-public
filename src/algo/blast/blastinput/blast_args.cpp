@@ -2519,7 +2519,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.SetCurrentGroup("Restrict search or results");
     arg_desc.AddOptionalKey(kArgMaxTargetSequences, "num_sequences",
                             "Maximum number of aligned sequences to keep \n"
-    						"Not applicable for outfmt <= 4\n"
+    						"(value of 5 or more is recommended)\n"
     						"Default = `" + NStr::IntToString(BLAST_HITLIST_SIZE) + "'",
                             CArgDescriptions::eInteger);
     arg_desc.SetConstraint(kArgMaxTargetSequences,
@@ -2622,11 +2622,7 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 
     if(m_OutputFormat <= eFlatQueryAnchoredNoIdentities) {
-        if (args.Exist(kArgMaxTargetSequences) && args[kArgMaxTargetSequences]) {
-    		 ERR_POST(Warning << "The parameter -max_target_seqs is ignored for "
-    				    "output formats, 0,1,2,3. Use -num_descriptions "
-    				    "and -num_alignments to control output");
-    	 }
+
 
     	 m_NumDescriptions = m_DfltNumDescriptions;
     	 m_NumAlignments = m_DfltNumAlignments;
@@ -2638,6 +2634,12 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
          if (args.Exist(kArgNumAlignments) && args[kArgNumAlignments]) {
     		m_NumAlignments = args[kArgNumAlignments].AsInteger();
     	}
+
+         if (args.Exist(kArgMaxTargetSequences) && args[kArgMaxTargetSequences]) {
+    	    m_NumDescriptions = args[kArgMaxTargetSequences].AsInteger();
+    		m_NumAlignments = args[kArgMaxTargetSequences].AsInteger();
+    		hitlist_size = m_NumAlignments;
+         }
 
     	// The If clause is for handling import_search_strategy hitlist size < 500
     	// We want to preserve the hitlist size in iss if no formatting input is entered in cmdline
@@ -2676,6 +2678,9 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     	m_NumAlignments = hitlist_size;
     }
 
+    if(hitlist_size < 5){
+   		ERR_POST(Warning << "Examining 5 or more matches is recommended");
+    }
     opt.SetHitlistSize(hitlist_size);
 
     return;
