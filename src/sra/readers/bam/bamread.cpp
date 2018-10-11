@@ -42,6 +42,7 @@
 #include <vfs/manager.h>
 #include <kns/manager.h>
 #include <kns/http.h>
+#include <kns/tls.h>
 #include <align/bam.h>
 #include <align/align-access.h>
 
@@ -444,20 +445,28 @@ CBamMgr::CBamMgr(void)
     }
     
     if ( CNcbiApplication* app = CNcbiApplication::Instance() ) {
+        CBamVFSManager vfs_mgr;
+        CBamRef<KNSManager> kns_mgr;
+        if ( rc_t rc = VFSManagerGetKNSMgr(vfs_mgr, kns_mgr.x_InitPtr()) ) {
+            NCBI_THROW2(CBamException, eInitFailed,
+                        "Cannot get KNSManager", rc);
+        }
+        
         string host = app->GetConfig().GetString("CONN", "HTTP_PROXY_HOST", kEmptyStr);
         int port = app->GetConfig().GetInt("CONN", "HTTP_PROXY_PORT", 0);
         if ( !host.empty() && port != 0 ) {
-            CBamVFSManager vfs_mgr;
-            CBamRef<KNSManager> kns_mgr;
-            if ( rc_t rc = VFSManagerGetKNSMgr(vfs_mgr, kns_mgr.x_InitPtr()) ) {
-                NCBI_THROW2(CBamException, eInitFailed,
-                            "Cannot get KNSManager", rc);
-            }
             if ( rc_t rc = KNSManagerSetHTTPProxyPath(kns_mgr, "%s:%d", host.c_str(), port) ) {
                 NCBI_THROW2(CBamException, eInitFailed,
                             "Cannot set KNSManager proxy parameters", rc);
             }
             KNSManagerSetHTTPProxyEnabled(kns_mgr, true);
+        }
+        
+        if ( app->GetConfig().GetBool("VDB", "ALLOW_ALL_CERTS", false) ) {
+            if ( rc_t rc = KNSManagerSetAllowAllCerts(kns_mgr, true) ) {
+                NCBI_THROW2(CBamException, eInitFailed,
+                            "Cannot enable all HTTPS certificates in KNSManager", rc);
+            }
         }
     }
 }

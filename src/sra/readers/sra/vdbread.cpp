@@ -43,6 +43,7 @@
 #include <kdb/kdb-priv.h>
 #include <kns/manager.h>
 #include <kns/http.h>
+#include <kns/tls.h>
 
 #include <vfs/manager-priv.h>
 #include <vfs/manager.h>
@@ -490,6 +491,13 @@ void CVDBMgr::x_Init(void)
                             "Cannot set KNSManager proxy parameters", rc);
             }
             KNSManagerSetHTTPProxyEnabled(kns_mgr, true);
+        }
+
+        if ( app->GetConfig().GetBool("VDB", "ALLOW_ALL_CERTS", false) ) {
+            if ( rc_t rc = KNSManagerSetAllowAllCerts(kns_mgr, true) ) {
+                NCBI_THROW2(CSraException, eInitFailed,
+                            "Cannot enable all HTTPS certificates in KNSManager", rc);
+            }
         }
     }
 }
