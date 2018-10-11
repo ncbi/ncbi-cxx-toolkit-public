@@ -62,42 +62,18 @@ public:
     static CFeatImporter*
     Get(
         const std::string&,
-        unsigned int);
+        unsigned int,
+        CFeatMessageHandler&);
 
 public:
-    CFeatImporter(
-        unsigned int);
-
-    virtual ~CFeatImporter();
-
     virtual void
     ReadSeqAnnot(
         CNcbiIstream&,
-        CSeq_annot&,
-        CFeatMessageHandler&);
+        CSeq_annot&) =0;
 
-    void
+    virtual void
     SetIdResolver(
-        CIdResolver*);
-
-protected:
-    unsigned int mFlags;
-
-    virtual CFeatLineReader*
-    GetReader(
-        CNcbiIstream&,
-        CFeatMessageHandler&) { return nullptr; };
-
-    virtual CFeatImportData*
-    GetImportData(
-        CFeatMessageHandler&) { return nullptr; };
-
-    virtual CFeatAnnotAssembler*
-    GetAnnotAssembler(
-        CSeq_annot&,
-        CFeatMessageHandler&) { return nullptr; };
-
-    unique_ptr<CIdResolver> mpIdResolver; 
+        CIdResolver*) =0;
 };
 
 END_objects_SCOPE

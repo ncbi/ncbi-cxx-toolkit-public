@@ -43,10 +43,9 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CBedLineReader::CBedLineReader(
-    CNcbiIstream& istr,
     CFeatMessageHandler& errorReporter):
 //  ============================================================================
-    CFeatLineReader(istr, errorReporter),
+    CFeatLineReader(errorReporter),
     mColumnCount(0),
     mColumnDelimiter(""),
     mSplitFlags(0),
@@ -62,6 +61,8 @@ CBedLineReader::GetNextRecord(
     CFeatImportData& record)
 //  ============================================================================
 {
+    assert(mpLineReader);
+
     CFeatImportError errorEofNoData(
         CFeatImportError::CRITICAL, 
         "Stream does not contain feature data", 
@@ -70,15 +71,27 @@ CBedLineReader::GetNextRecord(
     xReportProgress();
 
     string nextLine = "";
-    while (!AtEOF()) {
-        nextLine = *(++(*this));
-        ++mLineNumber;
+    while (!mpLineReader->AtEOF()) {
+        nextLine = *(++(*mpLineReader));
         if (xIgnoreLine(nextLine)) {
             continue;
         }
-        if (xProcessTrackLine(nextLine)) {
-            continue;
-        } 
+        if (xIsTrackLine(nextLine)) {
+            if (mRecordNumber == 0) {
+                xProcessTrackLine(nextLine);
+                continue;
+            }
+            else {
+                mpLineReader->UngetLine();
+                break;
+            }
+        }
+        //if (xProcessTrackLine(nextLine)) {
+        //    if (mRecordNumber > 0) {
+        //        break;
+        //    }
+        //    continue;
+        //} 
         vector<string> columns;
         xSplitLine(nextLine, columns);
         xInitializeRecord(columns, record);
@@ -86,10 +99,19 @@ CBedLineReader::GetNextRecord(
         return true;
     }
     if (0 == mRecordNumber) {
-        errorEofNoData.SetLineNumber(mLineNumber);
+        errorEofNoData.SetLineNumber(LineCount());
         throw errorEofNoData;
     }
     return false;
+}
+
+//  ============================================================================
+bool
+CBedLineReader::xIsTrackLine(
+    const string& line)
+//  ============================================================================
+{
+    return NStr::StartsWith(line, "track");
 }
 
 //  ============================================================================
@@ -100,13 +122,15 @@ CBedLineReader::xProcessTrackLine(
 {
     CFeatImportError errorInvalidTrackLine(
         CFeatImportError::ERROR, "Invalid track setting", 
-        mLineNumber);
+        LineCount());
 
     string track, values;
     NStr::SplitInTwo(line, " \t", track, values);
     if (track != "track") {
         return false;
     }
+
+    mAnnotInfo.Clear();
     if (values.empty()) {
         return true;
     }
@@ -178,7 +202,7 @@ CBedLineReader::xSplitLine(
 {
     CFeatImportError errorInvalidColumnCount(
         CFeatImportError::CRITICAL, "Invalid column count",
-        mLineNumber);
+        LineCount());
 
     columns.clear();
     if (mColumnDelimiter.empty()) {
@@ -217,13 +241,13 @@ CBedLineReader::xInitializeChromInterval(
 {
     CFeatImportError errorInvalidChromStartValue(
         CFeatImportError::ERROR, "Invalid chromStart value",
-        mLineNumber);
+        LineCount());
     CFeatImportError errorInvalidChromEndValue(
         CFeatImportError::ERROR, "Invalid chromEnd value",
-        mLineNumber);
+        LineCount());
     CFeatImportError errorInvalidStrandValue(
         CFeatImportError::ERROR, "Invalid strand value",
-        mLineNumber);
+        LineCount());
 
     chromId = columns[0];
 
@@ -256,7 +280,7 @@ CBedLineReader::xInitializeScore(
 {
     CFeatImportError errorInvalidScoreValue(
         CFeatImportError::WARNING, "Invalid score value- omitting from output.",
-        mLineNumber);
+        LineCount());
 
     if (columns.size() < 5  ||  columns[4] == "."  ||  mUseScore) {
         score = -1.0;
@@ -303,7 +327,7 @@ CBedLineReader::xInitializeRgbFromStrandColumn(
 {
     CFeatImportError errorInvalidStrandValue(
         CFeatImportError::WARNING, "Invalid strand value- setting color to BLACK.",
-        mLineNumber);
+        LineCount());
 
     if (columns.size() < 6 || (columns[5] != "+"  &&  columns[5] != "-")) {
         mErrorReporter.ReportError(errorInvalidStrandValue);
@@ -331,7 +355,7 @@ CBedLineReader::xInitializeRgbFromScoreColumn(
 {
     CFeatImportError errorInvalidScoreValue(
         CFeatImportError::WARNING, "Invalid score value- setting color to BLACK.",
-        mLineNumber);
+        LineCount());
 
     if (columns.size() < 5 || columns[4] == ".") {
         mErrorReporter.ReportError(errorInvalidScoreValue);
@@ -364,7 +388,7 @@ CBedLineReader::xInitializeRgbFromRgbColumn(
 {
     CFeatImportError errorInvalidRgbValue(
         CFeatImportError::WARNING, "Invalid RGB value- defaulting to BLACK",
-        mLineNumber);
+        LineCount());
 
     rgbValue.R = rgbValue.G = rgbValue.B = 0;
     if (columns.size() < 9  ||  columns[8] == ".") {
@@ -437,10 +461,10 @@ CBedLineReader::xInitializeThickInterval(
 {
     CFeatImportError errorInvalidThickStartValue(
         CFeatImportError::ERROR, "Invalid thickStart value",
-        mLineNumber);
+        LineCount());
     CFeatImportError errorInvalidThickEndValue(
         CFeatImportError::ERROR, "Invalid thickEnd value",
-        mLineNumber);
+        LineCount());
 
     if (columns.size() < 8) {
         return;
@@ -486,16 +510,16 @@ CBedLineReader::xInitializeBlocks(
 {
     CFeatImportError errorInvalidBlockCountValue(
         CFeatImportError::ERROR, "Invalid blockCount value",
-        mLineNumber);
+        LineCount());
     CFeatImportError errorInvalidBlockStartsValue(
         CFeatImportError::ERROR, "Invalid blockStarts value",
-        mLineNumber);
+        LineCount());
     CFeatImportError errorInvalidBlockSizesValue(
         CFeatImportError::ERROR, "Invalid blockStarts value",
-        mLineNumber);
+        LineCount());
     CFeatImportError errorInconsistentBlocksInformation(
         CFeatImportError::ERROR, "Inconsistent blocks information",
-        mLineNumber);
+        LineCount());
 
     if (columns.size() < 12) {
         blockCount = 0;

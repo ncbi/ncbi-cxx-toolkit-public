@@ -64,28 +64,32 @@ void sRunTest(
 {
     cerr << "Running test " << testName << " ...\n";
     // produce output:
-    unique_ptr<CFeatImporter> pImporter(CFeatImporter::Get(format, 0));
     CFeatMessageHandler messageHandler;
-    CNcbiIfstream iStr(inputName, ios::binary);
+    unique_ptr<CFeatImporter> pImporter(
+        CFeatImporter::Get(format, 0, messageHandler));
     CSeq_annot annot;
-    try {
-        pImporter->ReadSeqAnnot(iStr, annot, messageHandler);
-    }
-    catch (const CFeatImportError& error) {
-        BOOST_ERROR("Error: Test \"" << testName << "\" failed during import:");
-        BOOST_ERROR("  " << error.Message() << ", at line " << error.LineNumber());
-        iStr.close();
-        return;
-    }
-    iStr.close();
 
     CNcbiOfstream oStrErrors(outputNameErrors);
+    CNcbiOfstream oStrAnnot(outputNameAnnot);
+    CNcbiIfstream iStr(inputName, ios::binary);
+    try {
+        while (true) {
+            pImporter->ReadSeqAnnot(iStr, annot);
+            oStrAnnot << MSerial_Format_AsnText() << annot;
+        }
+    }
+    catch (const CFeatImportError& error) {
+        if (error.Code() != error.eEOF_NO_DATA) {
+            BOOST_ERROR("Error: Test \"" << testName << "\" failed during import:");
+            BOOST_ERROR("  " << error.Message() << ", at line " << error.LineNumber());
+            iStr.close();
+            return;
+        }
+    }
+    iStr.close();
+    oStrAnnot.close();
     messageHandler.Dump(oStrErrors);
     oStrErrors.close();
-
-    CNcbiOfstream oStrAnnot(outputNameAnnot);
-    oStrAnnot << MSerial_Format_AsnText() << annot;
-    oStrAnnot.close();
 
     // compare with golden data:
     bool successAnnot = CFile(goldenNameAnnot).CompareTextContents(
@@ -116,7 +120,7 @@ void sRunTest(
     }
     else {
         if (updateAll) {
-            CFile(outputNameErrors).Copy(goldenNameErrors);
+            CFile(outputNameErrors).Copy(goldenNameErrors, CFile::fCF_Overwrite);
             CFile(outputNameErrors).Remove();
         }
     }

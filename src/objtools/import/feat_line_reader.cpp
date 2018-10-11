@@ -40,16 +40,38 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CFeatLineReader::CFeatLineReader(
-    CNcbiIstream& istr,
     CFeatMessageHandler& errorReporter):
 //  ============================================================================
-    CStreamLineReader(istr),
+    mpLineReader(nullptr),
     mErrorReporter(errorReporter),
-    mLineNumber(0),
     mRecordNumber(0),
     mProgressFreq(0),
     mLastProgress(0)
 {
+}
+
+//  ============================================================================
+void
+CFeatLineReader::SetInputStream(
+    CNcbiIstream& istr,
+    bool force)
+//  ============================================================================
+{
+    if (!mpLineReader  ||  force) {
+        mpLineReader.reset(new CStreamLineReader(istr));
+    }
+    mRecordNumber = 0;
+}
+
+//  ============================================================================
+unsigned int
+CFeatLineReader::LineCount() const
+//  ============================================================================
+{
+    if (!mpLineReader) {
+        return 0;
+    }
+    return mpLineReader->GetLineNumber();
 }
 
 //  ============================================================================
@@ -75,11 +97,11 @@ CFeatLineReader::xReportProgress()
     if (0 == mProgressFreq) { //don't
         return;
     }
-    if (mLineNumber < mLastProgress + mProgressFreq) { //don't yet
+    if (LineCount() < mLastProgress + mProgressFreq) { //don't yet
         return;
     }
     mLastProgress += mProgressFreq;
-    auto charCount = CStreamLineReader::GetPosition();
+    auto charCount = mpLineReader->GetPosition();
     mErrorReporter.ReportProgress(
-        CFeatImportProgress(mRecordNumber, mLineNumber, charCount));
+        CFeatImportProgress(mRecordNumber, LineCount(), charCount));
 }

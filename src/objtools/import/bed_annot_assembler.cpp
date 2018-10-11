@@ -159,10 +159,8 @@ CBedAnnotAssembler::FinalizeAnnot(
     CRef<CUser_object> pTrackData(new CUser_object());
     pTrackData->SetType().SetStr("Track Data");
     pTrackData->SetData();
-
-    auto useScore = annotInfo.ValueOf("useScore");
-    if (!useScore.empty()) {
-        pTrackData->AddField("useScore", useScore);
+    for (auto info: annotInfo) {
+        pTrackData->AddField(info.first, info.second);
     }
     CRef<CAnnotdesc> user(new CAnnotdesc());
     user->SetUser(*pTrackData);

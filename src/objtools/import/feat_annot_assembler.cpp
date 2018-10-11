@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/seq/Annotdesc.hpp>
 
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
@@ -68,7 +69,8 @@ void
 CFeatAnnotAssembler::InitializeAnnot()
 //  ============================================================================
 {
-    mAnnot.SetData().SetFtable().clear();
+    mAnnot.Reset();
+    mAnnot.SetData().SetFtable();
 }
 
 

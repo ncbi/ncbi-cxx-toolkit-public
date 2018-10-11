@@ -1,12 +1,16 @@
 Seq-annot ::= {
   desc {
-    title "color from strand, grey and black",
+    title "use score value. the last two should trigger errors",
     user {
       type str "Track Data",
       data {
         {
-          label str "useScore",
-          data str "1"
+          label str "description",
+          data str "use score value. the last two should trigger errors"
+        },
+        {
+          label str "itemrgb",
+          data str "On"
         }
       }
     }
@@ -49,7 +53,7 @@ Seq-annot ::= {
       id local str "mrna_1",
       data region "uc010nzm.1",
       location int {
-        from 3729855,
+        from 3730413,
         to 3731616,
         strand plus,
         id local str "chr1"
@@ -67,7 +71,7 @@ Seq-annot ::= {
       id local str "cds_1",
       data region "uc010nzm.1",
       location int {
-        from 3729855,
+        from 3730413,
         to 3731616,
         strand plus,
         id local str "chr1"
@@ -117,11 +121,25 @@ Seq-annot ::= {
     {
       id local str "mrna_2",
       data region "uc010nzm.1",
-      location int {
-        from 3728743,
-        to 3732934,
-        strand plus,
-        id local str "chr1"
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand plus,
+          id local str "chr1"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand plus,
+          id local str "chr1"
+        },
+        int {
+          from 3732843,
+          to 3732934,
+          strand plus,
+          id local str "chr1"
+        }
       },
       xref {
         {
@@ -135,11 +153,25 @@ Seq-annot ::= {
     {
       id local str "cds_2",
       data region "uc010nzm.1",
-      location int {
-        from 3728743,
-        to 3732934,
-        strand plus,
-        id local str "chr1"
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand plus,
+          id local str "chr1"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand plus,
+          id local str "chr1"
+        },
+        int {
+          from 3732843,
+          to 3732934,
+          strand plus,
+          id local str "chr1"
+        }
       },
       xref {
         {
@@ -188,18 +220,19 @@ Seq-annot ::= {
       data region "uc010nzm.1",
       location mix {
         int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
+          from 3728652,
+          to 3729855,
           strand minus,
           id local str "chr1"
         },
         int {
-          from 3728743,
+          from 3730413,
+          to 3732081,
+          strand minus,
+          id local str "chr1"
+        },
+        int {
+          from 3732843,
           to 3732934,
           strand minus,
           id local str "chr1"
@@ -217,11 +250,25 @@ Seq-annot ::= {
     {
       id local str "cds_3",
       data region "uc010nzm.1",
-      location int {
-        from 3728743,
-        to 3732934,
-        strand minus,
-        id local str "chr1"
+      location mix {
+        int {
+          from 3732843,
+          to 3732934,
+          strand minus,
+          id local str "chr1"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand minus,
+          id local str "chr1"
+        },
+        int {
+          from 3728652,
+          to 3729855,
+          strand minus,
+          id local str "chr1"
+        }
       },
       xref {
         {
@@ -270,29 +317,19 @@ Seq-annot ::= {
       data region "uc010nzm.1",
       location mix {
         int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
+          from 3728652,
+          to 3729855,
           strand plus,
           id local str "chr1"
         },
         int {
-          from 3728743,
+          from 3730413,
+          to 3732081,
+          strand plus,
+          id local str "chr1"
+        },
+        int {
+          from 3732843,
           to 3732934,
           strand plus,
           id local str "chr1"
@@ -310,11 +347,25 @@ Seq-annot ::= {
     {
       id local str "cds_4",
       data region "uc010nzm.1",
-      location int {
-        from 3728743,
-        to 3732934,
-        strand plus,
-        id local str "chr1"
+      location mix {
+        int {
+          from 3728653,
+          to 3729855,
+          strand plus,
+          id local str "chr1"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand plus,
+          id local str "chr1"
+        },
+        int {
+          from 3732843,
+          to 3732934,
+          strand plus,
+          id local str "chr1"
+        }
       },
       xref {
         {
@@ -363,40 +414,19 @@ Seq-annot ::= {
       data region "uc010nzm.1",
       location mix {
         int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
+          from 3728652,
+          to 3729855,
           strand minus,
           id local str "chr1"
         },
         int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
+          from 3730413,
+          to 3732081,
           strand minus,
           id local str "chr1"
         },
         int {
-          from 3728743,
+          from 3732843,
           to 3732934,
           strand minus,
           id local str "chr1"
@@ -414,11 +444,25 @@ Seq-annot ::= {
     {
       id local str "cds_5",
       data region "uc010nzm.1",
-      location int {
-        from 3728743,
-        to 3732934,
-        strand minus,
-        id local str "chr1"
+      location mix {
+        int {
+          from 3732843,
+          to 3732934,
+          strand minus,
+          id local str "chr1"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand minus,
+          id local str "chr1"
+        },
+        int {
+          from 3728653,
+          to 3729855,
+          strand minus,
+          id local str "chr1"
+        }
       },
       xref {
         {
@@ -467,51 +511,13 @@ Seq-annot ::= {
       data region "uc010nzm.1",
       location mix {
         int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
+          from 3728652,
+          to 3729855,
           strand plus,
           id local str "chr1"
         },
         int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
+          from 3730413,
           to 3732081,
           strand plus,
           id local str "chr1"
@@ -529,11 +535,19 @@ Seq-annot ::= {
     {
       id local str "cds_6",
       data region "uc010nzm.1",
-      location int {
-        from 3728743,
-        to 3732934,
-        strand plus,
-        id local str "chr1"
+      location mix {
+        int {
+          from 3728653,
+          to 3729855,
+          strand plus,
+          id local str "chr1"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand plus,
+          id local str "chr1"
+        }
       },
       xref {
         {
@@ -543,9 +557,25 @@ Seq-annot ::= {
           id local str "mrna_6"
         }
       }
-    },
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    title "there should not be any RGB imported from this sample",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "description",
+          data str "there should not be any RGB imported from this sample"
+        }
+      }
+    }
+  },
+  data ftable {
     {
-      id local str "gene_7",
+      id local str "gene_1",
       data region "uc010nzm.2",
       location int {
         from 3728652,
@@ -555,7 +585,855 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mrna_7"
+          id local str "mrna_1"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 1, 10, 0 }
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_1",
+      data region "uc010nzm.2",
+      location int {
+        from 3730413,
+        to 3731616,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "gene_2",
+      data region "uc010nzm.2",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_2"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 2, 10, 0 }
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_2",
+      data region "uc010nzm.2",
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand minus,
+          id local str "chr2"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand minus,
+          id local str "chr2"
+        },
+        int {
+          from 3732843,
+          to 3732934,
+          strand minus,
+          id local str "chr2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_2"
+        }
+      }
+    },
+    {
+      id local str "gene_3",
+      data region "uc010nzm.2",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_3"
+        },
+        {
+          id local str "cds_1"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 3, 10, 0 }
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_3",
+      data region "uc010nzm.2",
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand plus,
+          id local str "chr2"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand plus,
+          id local str "chr2"
+        },
+        int {
+          from 3732843,
+          to 3732934,
+          strand plus,
+          id local str "chr2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_3"
+        },
+        {
+          id local str "cds_1"
+        }
+      }
+    },
+    {
+      id local str "cds_1",
+      data region "uc010nzm.2",
+      location int {
+        from 3728653,
+        to 3728654,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_3"
+        },
+        {
+          id local str "mrna_3"
+        }
+      }
+    },
+    {
+      id local str "gene_4",
+      data region "uc010nzm.2",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_4"
+        },
+        {
+          id local str "cds_2"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 4, 10, 0 }
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_4",
+      data region "uc010nzm.2",
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand minus,
+          id local str "chr2"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand minus,
+          id local str "chr2"
+        },
+        int {
+          from 3732843,
+          to 3732934,
+          strand minus,
+          id local str "chr2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_4"
+        },
+        {
+          id local str "cds_2"
+        }
+      }
+    },
+    {
+      id local str "cds_2",
+      data region "uc010nzm.2",
+      location int {
+        from 3728653,
+        to 3728654,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_4"
+        },
+        {
+          id local str "mrna_4"
+        }
+      }
+    },
+    {
+      id local str "gene_5",
+      data region "uc010nzm.2",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_5"
+        },
+        {
+          id local str "cds_3"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 11, 10, -1 }
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_5",
+      data region "uc010nzm.2",
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand plus,
+          id local str "chr2"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand plus,
+          id local str "chr2"
+        },
+        int {
+          from 3732843,
+          to 3732934,
+          strand plus,
+          id local str "chr2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_5"
+        },
+        {
+          id local str "cds_3"
+        }
+      }
+    },
+    {
+      id local str "cds_3",
+      data region "uc010nzm.2",
+      location pnt {
+        point 3728653,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_5"
+        },
+        {
+          id local str "mrna_5"
+        }
+      }
+    },
+    {
+      id local str "gene_6",
+      data region "uc010nzm.2",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_6"
+        },
+        {
+          id local str "cds_4"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 2, 10, 0 }
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_6",
+      data region "uc010nzm.2",
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand minus,
+          id local str "chr2"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand minus,
+          id local str "chr2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_6"
+        },
+        {
+          id local str "cds_4"
+        }
+      }
+    },
+    {
+      id local str "cds_4",
+      data region "uc010nzm.2",
+      location pnt {
+        point 3728653,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_6"
+        },
+        {
+          id local str "mrna_6"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    title "color from score, last three value should max out",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "description",
+          data str "color from score, last three value should max out"
+        },
+        {
+          label str "usescore",
+          data str "1"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local str "gene_1",
+      data region "uc010nzm.3",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "29 29 29"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_1",
+      data region "uc010nzm.3",
+      location int {
+        from 3730413,
+        to 3731616,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "gene_2",
+      data region "uc010nzm.3",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_2"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "29 29 29"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_2",
+      data region "uc010nzm.3",
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand minus,
+          id local str "chr2"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand minus,
+          id local str "chr2"
+        },
+        int {
+          from 3732843,
+          to 3732934,
+          strand minus,
+          id local str "chr2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_2"
+        }
+      }
+    },
+    {
+      id local str "gene_3",
+      data region "uc010nzm.3",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_3"
+        },
+        {
+          id local str "cds_1"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "29 29 29"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_3",
+      data region "uc010nzm.3",
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand plus,
+          id local str "chr2"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand plus,
+          id local str "chr2"
+        },
+        int {
+          from 3732843,
+          to 3732934,
+          strand plus,
+          id local str "chr2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_3"
+        },
+        {
+          id local str "cds_1"
+        }
+      }
+    },
+    {
+      id local str "cds_1",
+      data region "uc010nzm.3",
+      location int {
+        from 3728653,
+        to 3728654,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_3"
+        },
+        {
+          id local str "mrna_3"
+        }
+      }
+    },
+    {
+      id local str "gene_4",
+      data region "uc010nzm.3",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_4"
+        },
+        {
+          id local str "cds_2"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "29 29 29"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_4",
+      data region "uc010nzm.3",
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand minus,
+          id local str "chr2"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand minus,
+          id local str "chr2"
+        },
+        int {
+          from 3732843,
+          to 3732934,
+          strand minus,
+          id local str "chr2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_4"
+        },
+        {
+          id local str "cds_2"
+        }
+      }
+    },
+    {
+      id local str "cds_2",
+      data region "uc010nzm.3",
+      location int {
+        from 3728653,
+        to 3728654,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_4"
+        },
+        {
+          id local str "mrna_4"
+        }
+      }
+    },
+    {
+      id local str "gene_5",
+      data region "uc010nzm.3",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_5"
+        },
+        {
+          id local str "cds_3"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "29 29 29"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_5",
+      data region "uc010nzm.3",
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand plus,
+          id local str "chr2"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand plus,
+          id local str "chr2"
+        },
+        int {
+          from 3732843,
+          to 3732934,
+          strand plus,
+          id local str "chr2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_5"
+        },
+        {
+          id local str "cds_3"
+        }
+      }
+    },
+    {
+      id local str "cds_3",
+      data region "uc010nzm.3",
+      location pnt {
+        point 3728653,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_5"
+        },
+        {
+          id local str "mrna_5"
+        }
+      }
+    },
+    {
+      id local str "gene_6",
+      data region "uc010nzm.3",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_6"
+        },
+        {
+          id local str "cds_4"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "color",
+              data str "29 29 29"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_6",
+      data region "uc010nzm.3",
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand minus,
+          id local str "chr2"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand minus,
+          id local str "chr2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_6"
+        },
+        {
+          id local str "cds_4"
+        }
+      }
+    },
+    {
+      id local str "cds_4",
+      data region "uc010nzm.3",
+      location pnt {
+        point 3728653,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_6"
+        },
+        {
+          id local str "mrna_6"
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  desc {
+    title "color from strand, grey and black",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "colorbystrand",
+          data str "127,127,127 0,0,0"
+        },
+        {
+          label str "description",
+          data str "color from strand, grey and black"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local str "gene_1",
+      data region "uc010nzm.4",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_1"
         }
       },
       exts {
@@ -568,82 +1446,30 @@ Seq-annot ::= {
             },
             {
               label str "color",
-              data str "0 0 0"
+              data str "127 127 127"
             }
           }
         }
       }
     },
     {
-      id local str "mrna_7",
-      data region "uc010nzm.2",
-      location mix {
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        }
+      id local str "mrna_1",
+      data region "uc010nzm.4",
+      location int {
+        from 3730413,
+        to 3731616,
+        strand plus,
+        id local str "chr2"
       },
       xref {
         {
-          id local str "gene_7"
+          id local str "gene_1"
         }
       }
     },
     {
-      id local str "gene_8",
-      data region "uc010nzm.2",
+      id local str "gene_2",
+      data region "uc010nzm.4",
       location int {
         from 3728652,
         to 3773797,
@@ -652,7 +1478,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mrna_8"
+          id local str "mrna_2"
         }
       },
       exts {
@@ -665,79 +1491,30 @@ Seq-annot ::= {
             },
             {
               label str "color",
-              data str "0 0 128"
+              data str "0 0 0"
             }
           }
         }
       }
     },
     {
-      id local str "mrna_8",
-      data region "uc010nzm.2",
+      id local str "mrna_2",
+      data region "uc010nzm.4",
       location mix {
         int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
+          from 3728652,
+          to 3729855,
           strand minus,
-          id local str "chr1"
+          id local str "chr2"
         },
         int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
+          from 3730413,
           to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
           strand minus,
           id local str "chr2"
         },
         int {
-          from 3728743,
+          from 3732843,
           to 3732934,
           strand minus,
           id local str "chr2"
@@ -745,13 +1522,13 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene_8"
+          id local str "gene_2"
         }
       }
     },
     {
-      id local str "gene_9",
-      data region "uc010nzm.2",
+      id local str "gene_3",
+      data region "uc010nzm.4",
       location int {
         from 3728652,
         to 3773797,
@@ -760,7 +1537,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mrna_9"
+          id local str "mrna_3"
+        },
+        {
+          id local str "cds_1"
         }
       },
       exts {
@@ -773,90 +1553,30 @@ Seq-annot ::= {
             },
             {
               label str "color",
-              data str "0 2 4"
+              data str "127 127 127"
             }
           }
         }
       }
     },
     {
-      id local str "mrna_9",
-      data region "uc010nzm.2",
+      id local str "mrna_3",
+      data region "uc010nzm.4",
       location mix {
         int {
-          from 3728743,
-          to 3732934,
+          from 3728652,
+          to 3729855,
           strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
+          id local str "chr2"
         },
         int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
+          from 3730413,
           to 3732081,
           strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
           id local str "chr2"
         },
         int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
+          from 3732843,
           to 3732934,
           strand plus,
           id local str "chr2"
@@ -864,13 +1584,34 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene_9"
+          id local str "gene_3"
+        },
+        {
+          id local str "cds_1"
         }
       }
     },
     {
-      id local str "gene_10",
-      data region "uc010nzm.2",
+      id local str "cds_1",
+      data region "uc010nzm.4",
+      location int {
+        from 3728653,
+        to 3728654,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_3"
+        },
+        {
+          id local str "mrna_3"
+        }
+      }
+    },
+    {
+      id local str "gene_4",
+      data region "uc010nzm.4",
       location int {
         from 3728652,
         to 3773797,
@@ -879,7 +1620,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mrna_10"
+          id local str "mrna_4"
+        },
+        {
+          id local str "cds_2"
         }
       },
       exts {
@@ -892,101 +1636,30 @@ Seq-annot ::= {
             },
             {
               label str "color",
-              data str "0 4 0"
+              data str "0 0 0"
             }
           }
         }
       }
     },
     {
-      id local str "mrna_10",
-      data region "uc010nzm.2",
+      id local str "mrna_4",
+      data region "uc010nzm.4",
       location mix {
         int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
+          from 3728652,
+          to 3729855,
           strand minus,
-          id local str "chr1"
+          id local str "chr2"
         },
         int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
+          from 3730413,
           to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
           strand minus,
           id local str "chr2"
         },
         int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
+          from 3732843,
           to 3732934,
           strand minus,
           id local str "chr2"
@@ -994,13 +1667,34 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene_10"
+          id local str "gene_4"
+        },
+        {
+          id local str "cds_2"
         }
       }
     },
     {
-      id local str "gene_11",
-      data region "uc010nzm.2",
+      id local str "cds_2",
+      data region "uc010nzm.4",
+      location int {
+        from 3728653,
+        to 3728654,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_4"
+        },
+        {
+          id local str "mrna_4"
+        }
+      }
+    },
+    {
+      id local str "gene_5",
+      data region "uc010nzm.4",
       location int {
         from 3728652,
         to 3773797,
@@ -1009,7 +1703,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mrna_11"
+          id local str "mrna_5"
+        },
+        {
+          id local str "cds_3"
         }
       },
       exts {
@@ -1022,112 +1719,30 @@ Seq-annot ::= {
             },
             {
               label str "color",
-              data str "0 8 0"
+              data str "127 127 127"
             }
           }
         }
       }
     },
     {
-      id local str "mrna_11",
-      data region "uc010nzm.2",
+      id local str "mrna_5",
+      data region "uc010nzm.4",
       location mix {
         int {
-          from 3728743,
-          to 3732934,
+          from 3728652,
+          to 3729855,
           strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
+          id local str "chr2"
         },
         int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
+          from 3730413,
           to 3732081,
           strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
           id local str "chr2"
         },
         int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
+          from 3732843,
           to 3732934,
           strand plus,
           id local str "chr2"
@@ -1135,13 +1750,34 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene_11"
+          id local str "gene_5"
+        },
+        {
+          id local str "cds_3"
         }
       }
     },
     {
-      id local str "gene_12",
-      data region "uc010nzm.2",
+      id local str "cds_3",
+      data region "uc010nzm.4",
+      location int {
+        from 3728653,
+        to 3728654,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_5"
+        },
+        {
+          id local str "mrna_5"
+        }
+      }
+    },
+    {
+      id local str "gene_6",
+      data region "uc010nzm.4",
       location int {
         from 3728652,
         to 3773797,
@@ -1150,7 +1786,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mrna_12"
+          id local str "mrna_6"
+        },
+        {
+          id local str "cds_4"
         }
       },
       exts {
@@ -1163,123 +1802,24 @@ Seq-annot ::= {
             },
             {
               label str "color",
-              data str "0 16 0"
+              data str "0 0 0"
             }
           }
         }
       }
     },
     {
-      id local str "mrna_12",
-      data region "uc010nzm.2",
+      id local str "mrna_6",
+      data region "uc010nzm.4",
       location mix {
         int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
+          from 3728652,
+          to 3729855,
           strand minus,
           id local str "chr2"
         },
         int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
+          from 3730413,
           to 3732081,
           strand minus,
           id local str "chr2"
@@ -1287,2551 +1827,27 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "gene_12"
+          id local str "gene_6"
+        },
+        {
+          id local str "cds_4"
         }
       }
     },
     {
-      id local str "gene_13",
-      data region "uc010nzm.3",
-      location int {
-        from 3728652,
-        to 3773797,
-        strand plus,
-        id local str "chr2"
-      },
-      xref {
-        {
-          id local str "mrna_13"
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "color",
-              data str "29 29 29"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local str "mrna_13",
-      data region "uc010nzm.3",
-      location mix {
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        }
-      },
-      xref {
-        {
-          id local str "gene_13"
-        }
-      }
-    },
-    {
-      id local str "gene_14",
-      data region "uc010nzm.3",
-      location int {
-        from 3728652,
-        to 3773797,
+      id local str "cds_4",
+      data region "uc010nzm.4",
+      location pnt {
+        point 3728653,
         strand minus,
         id local str "chr2"
       },
       xref {
         {
-          id local str "mrna_14"
-        }
-      },
-      exts {
+          id local str "gene_6"
+        },
         {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "color",
-              data str "29 29 29"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local str "mrna_14",
-      data region "uc010nzm.3",
-      location mix {
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        }
-      },
-      xref {
-        {
-          id local str "gene_14"
-        }
-      }
-    },
-    {
-      id local str "gene_15",
-      data region "uc010nzm.3",
-      location int {
-        from 3728652,
-        to 3773797,
-        strand plus,
-        id local str "chr2"
-      },
-      xref {
-        {
-          id local str "mrna_15"
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "color",
-              data str "29 29 29"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local str "mrna_15",
-      data region "uc010nzm.3",
-      location mix {
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        }
-      },
-      xref {
-        {
-          id local str "gene_15"
-        }
-      }
-    },
-    {
-      id local str "gene_16",
-      data region "uc010nzm.3",
-      location int {
-        from 3728652,
-        to 3773797,
-        strand minus,
-        id local str "chr2"
-      },
-      xref {
-        {
-          id local str "mrna_16"
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "color",
-              data str "29 29 29"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local str "mrna_16",
-      data region "uc010nzm.3",
-      location mix {
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        }
-      },
-      xref {
-        {
-          id local str "gene_16"
-        }
-      }
-    },
-    {
-      id local str "gene_17",
-      data region "uc010nzm.3",
-      location int {
-        from 3728652,
-        to 3773797,
-        strand plus,
-        id local str "chr2"
-      },
-      xref {
-        {
-          id local str "mrna_17"
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "color",
-              data str "29 29 29"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local str "mrna_17",
-      data region "uc010nzm.3",
-      location mix {
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        }
-      },
-      xref {
-        {
-          id local str "gene_17"
-        }
-      }
-    },
-    {
-      id local str "gene_18",
-      data region "uc010nzm.3",
-      location int {
-        from 3728652,
-        to 3773797,
-        strand minus,
-        id local str "chr2"
-      },
-      xref {
-        {
-          id local str "mrna_18"
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "color",
-              data str "29 29 29"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local str "mrna_18",
-      data region "uc010nzm.3",
-      location mix {
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        }
-      },
-      xref {
-        {
-          id local str "gene_18"
-        }
-      }
-    },
-    {
-      id local str "gene_19",
-      data region "uc010nzm.4",
-      location int {
-        from 3728652,
-        to 3773797,
-        strand plus,
-        id local str "chr2"
-      },
-      xref {
-        {
-          id local str "mrna_19"
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "color",
-              data str "29 29 29"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local str "mrna_19",
-      data region "uc010nzm.4",
-      location mix {
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        }
-      },
-      xref {
-        {
-          id local str "gene_19"
-        }
-      }
-    },
-    {
-      id local str "gene_20",
-      data region "uc010nzm.4",
-      location int {
-        from 3728652,
-        to 3773797,
-        strand minus,
-        id local str "chr2"
-      },
-      xref {
-        {
-          id local str "mrna_20"
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "color",
-              data str "29 29 29"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local str "mrna_20",
-      data region "uc010nzm.4",
-      location mix {
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        }
-      },
-      xref {
-        {
-          id local str "gene_20"
-        }
-      }
-    },
-    {
-      id local str "gene_21",
-      data region "uc010nzm.4",
-      location int {
-        from 3728652,
-        to 3773797,
-        strand plus,
-        id local str "chr2"
-      },
-      xref {
-        {
-          id local str "mrna_21"
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "color",
-              data str "29 29 29"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local str "mrna_21",
-      data region "uc010nzm.4",
-      location mix {
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        }
-      },
-      xref {
-        {
-          id local str "gene_21"
-        }
-      }
-    },
-    {
-      id local str "gene_22",
-      data region "uc010nzm.4",
-      location int {
-        from 3728652,
-        to 3773797,
-        strand minus,
-        id local str "chr2"
-      },
-      xref {
-        {
-          id local str "mrna_22"
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "color",
-              data str "29 29 29"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local str "mrna_22",
-      data region "uc010nzm.4",
-      location mix {
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        }
-      },
-      xref {
-        {
-          id local str "gene_22"
-        }
-      }
-    },
-    {
-      id local str "gene_23",
-      data region "uc010nzm.4",
-      location int {
-        from 3728652,
-        to 3773797,
-        strand plus,
-        id local str "chr2"
-      },
-      xref {
-        {
-          id local str "mrna_23"
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "color",
-              data str "29 29 29"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local str "mrna_23",
-      data region "uc010nzm.4",
-      location mix {
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        }
-      },
-      xref {
-        {
-          id local str "gene_23"
-        }
-      }
-    },
-    {
-      id local str "gene_24",
-      data region "uc010nzm.4",
-      location int {
-        from 3728652,
-        to 3773797,
-        strand minus,
-        id local str "chr2"
-      },
-      xref {
-        {
-          id local str "mrna_24"
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "color",
-              data str "29 29 29"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local str "mrna_24",
-      data region "uc010nzm.4",
-      location mix {
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr1"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr1"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand plus,
-          id local str "chr1"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3729855,
-          to 3731616,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand minus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand plus,
-          id local str "chr2"
-        },
-        int {
-          from 3728743,
-          to 3732934,
-          strand plus,
-          id local str "chr2"
-        },
-        pnt {
-          point 3729855,
-          strand minus,
-          id local str "chr2"
-        },
-        int {
-          from 3730320,
-          to 3732081,
-          strand minus,
-          id local str "chr2"
-        }
-      },
-      xref {
-        {
-          id local str "gene_24"
+          id local str "mrna_6"
         }
       }
     }

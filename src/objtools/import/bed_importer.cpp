@@ -44,9 +44,12 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CBedImporter::CBedImporter(
-    unsigned int flags): CFeatImporter(flags)
+    unsigned int flags,
+    CFeatMessageHandler& errorHandler):
 //  ============================================================================
+    CFeatImporter_impl(flags, errorHandler)
 {
+    mpReader.reset(GetReader(errorHandler));
 };
 
 

@@ -5,6 +5,14 @@ Seq-annot ::= {
     user {
       type str "Track Data",
       data {
+        {
+          label str "description",
+          data str "Clone Paired Reads"
+        },
+        {
+          label str "name",
+          data str "pairedReads"
+        }
       }
     }
   },

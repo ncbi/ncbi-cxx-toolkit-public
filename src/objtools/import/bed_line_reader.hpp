@@ -50,7 +50,6 @@ class CBedLineReader:
 {
 public:
     CBedLineReader(
-        CNcbiIstream& istr,
         CFeatMessageHandler&);
 
     virtual ~CBedLineReader() {};
@@ -60,6 +59,9 @@ public:
         CFeatImportData&) override;
 
 protected:
+    bool
+    xIsTrackLine(
+        const string&);
     bool
     xProcessTrackLine(
         const string&);

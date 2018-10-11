@@ -49,7 +49,6 @@ class C5ColLineReader:
 {
 public:
     C5ColLineReader(
-        CNcbiIstream& istr,
         CFeatMessageHandler&);
 
     virtual ~C5ColLineReader() {};

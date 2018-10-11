@@ -32,9 +32,10 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 
-#include <objtools/import/feat_importer.hpp>
-
 #include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/feat_message_handler.hpp>
+
+#include "feat_importer_impl.hpp"
 #include "id_resolver_canonical.hpp"
 #include "gtf_importer.hpp"
 #include "bed_importer.hpp"
@@ -49,30 +50,37 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+
 //  ============================================================================
 CFeatImporter*
 CFeatImporter::Get(
     const string& format,
-    unsigned int flags)
+    unsigned int flags,
+    CFeatMessageHandler& errorHandler
+    )
 //  ============================================================================
 {
     if (format == "gtf") {
-        return new CGtfImporter(flags);
+        return new CGtfImporter(flags, errorHandler);
     }
     if (format == "bed") {
-        return new CBedImporter(flags);
+        return new CBedImporter(flags, errorHandler);
     }
     if (format == "5col") {
-        return new C5ColImporter(flags);
+        return new C5ColImporter(flags, errorHandler);
     }
     return nullptr;
 };
 
 
 //  ============================================================================
-CFeatImporter::CFeatImporter(
-    unsigned int flags): mFlags(flags)
+CFeatImporter_impl::CFeatImporter_impl(
+    unsigned int flags,
+    CFeatMessageHandler& errorHandler):
 //  ============================================================================
+    mFlags(flags),
+    mpReader(nullptr),
+    mErrorHandler(errorHandler)
 {
     bool allIdsAsLocal = (mFlags & CFeatImporter::fAllIdsAsLocal);
     bool numericIdsAsLocal = (mFlags & CFeatImporter::fNumericIdsAsLocal);
@@ -81,15 +89,8 @@ CFeatImporter::CFeatImporter(
 
 
 //  ============================================================================
-CFeatImporter::~CFeatImporter()
-//  ============================================================================
-{
-};
-
-
-//  ============================================================================
 void
-CFeatImporter::SetIdResolver(
+CFeatImporter_impl::SetIdResolver(
     CIdResolver* pIdResolver)
 //  ============================================================================
 {
@@ -98,25 +99,25 @@ CFeatImporter::SetIdResolver(
 
 //  =============================================================================
 void
-CFeatImporter::ReadSeqAnnot(
+CFeatImporter_impl::ReadSeqAnnot(
     CNcbiIstream& istr,
-    CSeq_annot& annot,
-    CFeatMessageHandler& errorReporter)
+    CSeq_annot& annot)
 //  =============================================================================
 {
-    unique_ptr<CFeatLineReader> pLineReader(GetReader(istr, errorReporter));
-    unique_ptr<CFeatImportData> pImportData(GetImportData(errorReporter));
-    unique_ptr<CFeatAnnotAssembler> pAssembler(GetAnnotAssembler(annot, errorReporter));
-    assert(pLineReader  &&  pImportData  &&  pAssembler);
+    //unique_ptr<CFeatLineReader> pLineReader(GetReader(errorReporter));
+    unique_ptr<CFeatImportData> pImportData(GetImportData(mErrorHandler));
+    unique_ptr<CFeatAnnotAssembler> pAssembler(
+        GetAnnotAssembler(annot, mErrorHandler));
 
+    mpReader->SetInputStream(istr);
     if (mFlags & fReportProgress) {
-        pLineReader->SetProgressReportFrequency(5);
+        mpReader->SetProgressReportFrequency(5);
     }
 
     pAssembler->InitializeAnnot();
     while (true) {
         try {
-            if (!pLineReader->GetNextRecord(*pImportData)) {
+            if (!mpReader->GetNextRecord(*pImportData)) {
                 break;
             }
             //pImportData->Serialize(cerr);
@@ -124,13 +125,16 @@ CFeatImporter::ReadSeqAnnot(
         }
         catch(CFeatImportError& err) {
             if (err.Code() == CFeatImportError::eEOF_NO_DATA) {
+                if (mpReader->RecordCount() > 0) {
+                    break;
+                }
                 throw;
             }
-            err.SetLineNumber(pLineReader->LineCount());
-            errorReporter.ReportError(err);
+            err.SetLineNumber(mpReader->LineCount());
+            mErrorHandler.ReportError(err);
         }
     }
-    const CAnnotImportData& annotMeta = pLineReader->AnnotImportData();
+    const CAnnotImportData& annotMeta = mpReader->AnnotImportData();
     pAssembler->FinalizeAnnot(annotMeta);
 }
 

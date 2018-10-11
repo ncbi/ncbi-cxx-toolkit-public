@@ -38,9 +38,9 @@
 #include <objects/seq/Seq_annot.hpp>
 
 #include <objtools/import/feat_message_handler.hpp>
-#include <objtools/import/feat_importer.hpp>
 #include <objtools/import/id_resolver.hpp>
 
+#include "feat_importer_impl.hpp"
 #include "gtf_line_reader.hpp"
 #include "gtf_import_data.hpp"
 #include "gtf_annot_assembler.hpp"
@@ -50,21 +50,21 @@ BEGIN_objects_SCOPE
 
 //  ============================================================================
 class CGtfImporter:
-    public CFeatImporter
+    public CFeatImporter_impl
 //  ============================================================================
 {
 public:
     CGtfImporter( 
-        unsigned int);
+        unsigned int,
+        CFeatMessageHandler&);
 
     virtual ~CGtfImporter();
 
 protected:
     CFeatLineReader*
     GetReader(
-        CNcbiIstream& istr,
         CFeatMessageHandler& errorReporter) override { 
-        return new CGtfLineReader(istr, errorReporter); 
+        return new CGtfLineReader(errorReporter); 
     };
 
     CFeatImportData*

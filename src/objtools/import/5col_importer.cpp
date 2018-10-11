@@ -40,9 +40,11 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 C5ColImporter::C5ColImporter(
-    unsigned int flags): CFeatImporter(flags)
+    unsigned int flags,
+    CFeatMessageHandler& errorHandler): CFeatImporter_impl(flags, errorHandler)
 //  ============================================================================
 {
+    mpReader.reset(GetReader(errorHandler));
 };
 
 

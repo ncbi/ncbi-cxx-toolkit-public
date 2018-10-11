@@ -9,5 +9,6 @@ rw-461 bed
 rw-630 bed
 rw-630-9col bed
 rw-630-3col bed
+test-3-col bed
 
 gb-7002 5col

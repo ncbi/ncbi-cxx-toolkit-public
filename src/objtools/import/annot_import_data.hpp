@@ -60,6 +60,9 @@ public:
     virtual void Serialize(
         CNcbiOstream&);
 
+    void
+    Clear() { mAnnotData.clear(); };
+
     std::string
     ValueOf(
         const std::string&) const;
@@ -68,6 +71,12 @@ public:
     SetValue(
         const std::string&,
         const std::string&);
+
+    std::map<std::string, std::string>::const_iterator
+    begin() const { return mAnnotData.begin(); };
+
+    std::map<std::string, std::string>::const_iterator
+    end() const { return mAnnotData.end(); };
 
 protected:
     std::map<std::string, std::string> mAnnotData;

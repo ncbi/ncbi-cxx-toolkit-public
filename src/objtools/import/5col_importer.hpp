@@ -38,9 +38,9 @@
 #include <objects/seq/Seq_annot.hpp>
 
 #include <objtools/import/feat_message_handler.hpp>
-#include <objtools/import/feat_importer.hpp>
 #include <objtools/import/id_resolver.hpp>
 
+#include "feat_importer_impl.hpp"
 #include "5col_line_reader.hpp"
 #include "5col_import_data.hpp"
 #include "5col_annot_assembler.hpp"
@@ -50,21 +50,21 @@ BEGIN_objects_SCOPE
 
 //  ============================================================================
 class C5ColImporter:
-    public CFeatImporter
+    public CFeatImporter_impl
 //  ============================================================================
 {
 public:
     C5ColImporter( 
-        unsigned int);
+        unsigned int,
+        CFeatMessageHandler&);
 
     virtual ~C5ColImporter();
 
 protected:
     CFeatLineReader*
     GetReader(
-        CNcbiIstream& istr,
         CFeatMessageHandler& errorReporter) override { 
-        return new C5ColLineReader(istr, errorReporter); 
+        return new C5ColLineReader(errorReporter); 
     };
 
     CFeatImportData*

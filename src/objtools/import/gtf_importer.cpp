@@ -44,9 +44,11 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CGtfImporter::CGtfImporter(
-    unsigned int flags): CFeatImporter(flags)
+    unsigned int flags,
+    CFeatMessageHandler& errorHandler): CFeatImporter_impl(flags, errorHandler)
 //  ============================================================================
 {
+    mpReader.reset(GetReader(errorHandler));
 };
 
 

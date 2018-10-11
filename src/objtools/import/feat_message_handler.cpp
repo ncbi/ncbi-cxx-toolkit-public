@@ -84,4 +84,5 @@ CFeatMessageHandler::Dump(
     for (auto error: mErrors) {
         error.Serialize(out);
     } 
+    out.flush();
 }

@@ -31,56 +31,64 @@
 * ===========================================================================
 */
 
-#ifndef BED_IMPORTER__HPP
-#define BED_IMPORTER__HPP
+#ifndef FEAT_IMPORTER_IMPL__HPP
+#define FEAT_IMPORTER_IMPL__HPP
 
 #include <corelib/ncbifile.hpp>
-#include <objects/seq/Seq_annot.hpp>
-
+#include <util/line_reader.hpp>
 #include <objtools/import/feat_message_handler.hpp>
-#include <objtools/import/id_resolver.hpp>
-
-#include "feat_importer_impl.hpp"
-#include "bed_line_reader.hpp"
-#include "bed_import_data.hpp"
-#include "bed_annot_assembler.hpp"
+#include <objtools/import/feat_importer.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CBedImporter:
-    public CFeatImporter_impl
+class NCBI_XOBJIMPORT_EXPORT CFeatImporter_impl :
+    public CFeatImporter
 //  ============================================================================
 {
 public:
-    CBedImporter( 
+    virtual void
+    ReadSeqAnnot(
+        CNcbiIstream&,
+        CSeq_annot&) override;
+
+    virtual void
+    SetIdResolver(
+        CIdResolver*) override;
+
+protected:
+    CFeatImporter_impl(
         unsigned int,
         CFeatMessageHandler&);
 
-    virtual ~CBedImporter();
+    virtual ~CFeatImporter_impl() {};
 
-protected:
-    CFeatLineReader*
+    virtual CFeatLineReader*
     GetReader(
-        CFeatMessageHandler& errorReporter) override { 
-        return new CBedLineReader(errorReporter); 
+        CFeatMessageHandler&) {
+        return nullptr;
     };
 
-    CFeatImportData*
+    virtual CFeatImportData*
     GetImportData(
-        CFeatMessageHandler& errorReporter) override { 
-        return new CBedImportData(*mpIdResolver, errorReporter); 
+        CFeatMessageHandler&) {
+        return nullptr;
     };
 
-    CFeatAnnotAssembler*
+    virtual CFeatAnnotAssembler*
     GetAnnotAssembler(
-        CSeq_annot& annot,
-        CFeatMessageHandler& errorReporter) override { 
-        return new CBedAnnotAssembler(annot, errorReporter); 
+        CSeq_annot&,
+        CFeatMessageHandler&) {
+        return nullptr;
     };
 
+    unsigned int mFlags;
+    unique_ptr<CIdResolver> mpIdResolver;
+    unique_ptr<CFeatLineReader> mpReader;
+    CFeatMessageHandler mErrorHandler;
 };
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE

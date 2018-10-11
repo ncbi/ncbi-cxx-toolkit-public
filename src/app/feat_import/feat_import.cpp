@@ -149,7 +149,7 @@ CFeatImportApp::Run(void)
     try {
         auto inFormat = xGetInputFormat(args, istr);
         auto flags = xGetImporterFlags(args);
-        pImporter.reset(CFeatImporter::Get(inFormat, flags));
+        pImporter.reset(CFeatImporter::Get(inFormat, flags, errorHandler));
         if (!pImporter) {
             throw errorFormatNotRecognized;
         }

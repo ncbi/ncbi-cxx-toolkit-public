@@ -43,10 +43,9 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CGtfLineReader::CGtfLineReader(
-    CNcbiIstream& istr,
     CFeatMessageHandler& errorReporter):
 //  ============================================================================
-    CFeatLineReader(istr, errorReporter),
+    CFeatLineReader(errorReporter),
     mColumnDelimiter(""),
     mSplitFlags(0)
 {
@@ -66,9 +65,8 @@ CGtfLineReader::GetNextRecord(
     xReportProgress();
 
     string nextLine = "";
-    while (!AtEOF()) {
-        nextLine = *(++(*this));
-        ++mLineNumber;
+    while (!mpLineReader->AtEOF()) {
+        nextLine = *(++(*mpLineReader));
         if (xIgnoreLine(nextLine)) {
             continue;
         }
@@ -78,10 +76,8 @@ CGtfLineReader::GetNextRecord(
         ++mRecordNumber;
         return true;
     }
-    if (0 == mRecordNumber) {
-        errorEofNoData.SetLineNumber(mLineNumber);
-        throw errorEofNoData;
-    }
+    errorEofNoData.SetLineNumber(LineCount());
+    throw errorEofNoData;
     return false;
 }
 
@@ -167,7 +163,7 @@ CGtfLineReader::xInitializeAttributes(
 {
     CFeatImportError errorInvalidAttributeFormat(
         CFeatImportError::ERROR, "Invalid attribute formatting", 
-        mLineNumber);
+        LineCount());
 
     string attributesStr = columns[8];
     string featType = columns[2];
@@ -216,7 +212,7 @@ CGtfLineReader::xInitializeFrame(
 //  ============================================================================
 {
     CFeatImportError errorInvalidFrameValue(
-        CFeatImportError::ERROR, "Invalid frame value", mLineNumber);
+        CFeatImportError::ERROR, "Invalid frame value", LineCount());
 
     vector<string> validSettings = {".", "0", "1", "2"};
     if (find(validSettings.begin(), validSettings.end(), columns[7]) ==
@@ -241,7 +237,7 @@ CGtfLineReader::xInitializeScore(
 {
     CFeatImportError errorInvalidScoreValue(
         CFeatImportError::ERROR, "Invalid score value",
-        mLineNumber);
+        LineCount());
 
     if (columns[5] == ".") {
         scoreIsValid = false;
@@ -265,7 +261,7 @@ CGtfLineReader::xInitializeType(
 //  ============================================================================
 {
     CFeatImportError errorIllegalFeatureType(
-        CFeatImportError::ERROR, "Illegal feature type", mLineNumber);
+        CFeatImportError::ERROR, "Illegal feature type", LineCount());
 
     static const vector<string> validTypes = {
         "cds", "exon", "gene", "initial", "internal", "intron", "mrna", 
@@ -308,13 +304,13 @@ CGtfLineReader::xInitializeLocation(
 {
     CFeatImportError errorInvalidSeqStartValue(
         CFeatImportError::ERROR, "Invalid seqStart value",
-        mLineNumber);
+        LineCount());
     CFeatImportError errorInvalidSeqStopValue(
         CFeatImportError::ERROR, "Invalid seqStop value",
-        mLineNumber);
+        LineCount());
     CFeatImportError errorInvalidSeqStrandValue(
         CFeatImportError::ERROR, "Invalid seqStrand value",
-        mLineNumber);
+        LineCount());
 
     seqId = columns[0];
 

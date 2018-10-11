@@ -43,10 +43,9 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 C5ColLineReader::C5ColLineReader(
-    CNcbiIstream& istr,
     CFeatMessageHandler& errorReporter):
 //  ============================================================================
-    CFeatLineReader(istr, errorReporter),
+    CFeatLineReader(errorReporter),
     mCurrentSeqId(""),
     mLastTypeSeen(eLineTypeNone),
     mCurrentOffset(0)
@@ -68,15 +67,14 @@ C5ColLineReader::GetNextRecord(
         "Data line out of order");
     CFeatImportError errorBadDataLine(
         CFeatImportError::ERROR, 
-        "Bad data line", mLineNumber);
+        "Bad data line", LineCount());
 
     xReportProgress();
 
     string nextLine = "";
-    while (!AtEOF()) {
-        nextLine = *(++(*this));
+    while (!mpLineReader->AtEOF()) {
+        nextLine = *(++(*mpLineReader));
         NStr::TruncateSpacesInPlace(nextLine, NStr::eTrunc_End);
-        ++mLineNumber;
         if (xIgnoreLine(nextLine)) {
             continue;
         }
@@ -86,7 +84,7 @@ C5ColLineReader::GetNextRecord(
         switch (xLineTypeOf(columns)) {
         default:
             mLastTypeSeen = eLineTypeNone;
-            errorBadDataLine.SetLineNumber(mLineNumber);
+            errorBadDataLine.SetLineNumber(LineCount());
             mErrorReporter.ReportError(errorBadDataLine);
             continue;
 
@@ -123,7 +121,7 @@ C5ColLineReader::GetNextRecord(
         case eLineTypeIntervalAndType:
             if (mLastTypeSeen == eLineTypeIntervalAndType  ||
                     mLastTypeSeen == eLineTypeBareInterval) {
-                errorDataLineOutOfOrder.SetLineNumber(mLineNumber);
+                errorDataLineOutOfOrder.SetLineNumber(LineCount());
                 throw errorDataLineOutOfOrder;
             }
             mLastTypeSeen = eLineTypeIntervalAndType;
@@ -140,7 +138,7 @@ C5ColLineReader::GetNextRecord(
 
         case eLineTypeBareInterval:
             if (mLastTypeSeen != eLineTypeIntervalAndType) {
-                errorDataLineOutOfOrder.SetLineNumber(mLineNumber);
+                errorDataLineOutOfOrder.SetLineNumber(LineCount());
                 throw errorDataLineOutOfOrder;
             }
             mLastTypeSeen = eLineTypeIntervalAndType;
@@ -150,7 +148,7 @@ C5ColLineReader::GetNextRecord(
         case eLineTypeAttribute:
             if (mLastTypeSeen == eLineTypeSeqId  ||
                     mLastTypeSeen == eLineTypeNone) {
-                errorDataLineOutOfOrder.SetLineNumber(mLineNumber);
+                errorDataLineOutOfOrder.SetLineNumber(LineCount());
                 throw errorDataLineOutOfOrder;
             }
             mLastTypeSeen = eLineTypeAttribute;
@@ -159,7 +157,7 @@ C5ColLineReader::GetNextRecord(
         }
     }
     if (0 == mRecordNumber) {
-        errorEofNoData.SetLineNumber(mLineNumber);
+        errorEofNoData.SetLineNumber(LineCount());
         throw errorEofNoData;
     }
     return false;
@@ -174,7 +172,7 @@ C5ColLineReader::xSplitLine(
 {
     CFeatImportError errorBadDataLine(
         CFeatImportError::ERROR, 
-        "Bad data line", mLineNumber);
+        "Bad data line", LineCount());
 
     string line = NStr::TruncateSpaces(line_, NStr::eTrunc_End);
     NStr::Split(line, "\t", columns);
@@ -204,7 +202,7 @@ C5ColLineReader::xLineTypeOf(
 {
     CFeatImportError errorBadDataLine(
         CFeatImportError::ERROR, 
-        "Bad data line", mLineNumber);
+        "Bad data line", LineCount());
 
     if (columns.empty()) {
         throw errorBadDataLine;
@@ -240,7 +238,7 @@ C5ColLineReader::xInitializeRecord(
     CFeatImportError errorBadIntervalBoundaries(
         CFeatImportError::ERROR, 
         "Invalid interval boundaries",
-        mLineNumber);
+        LineCount());
 
     assert(dynamic_cast<C5ColImportData*>(&record_));
     C5ColImportData& record = static_cast<C5ColImportData&>(record_);
