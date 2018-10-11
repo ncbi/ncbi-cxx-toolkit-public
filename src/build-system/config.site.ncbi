@@ -172,7 +172,7 @@ esac
 
 : ${GLEW_PATH=$NCBI/glew-1.5.8}
 
-: ${GMOCK_PATH=$NCBI/gmock-1.7.0}
+: ${GMOCK_PATH=$NCBI/googletest-1.8.1}
 
 case "$ncbi_platform" in
     Linux64    ) : ${GMP_PATH=$NCBI/gmp-6.0.0a} ;;
