@@ -55,7 +55,7 @@ my $opt_verbose = 1;
 my $opt_quiet = 0;
 my $opt_force_download = 0;     
 my $opt_help = 0;
-my $opt_passive = 0;
+my $opt_passive = 1;
 my $opt_timeout = 120;
 my $opt_showall = 0;
 my $opt_show_version = 0;
@@ -63,7 +63,7 @@ my $opt_decompress = 0;
 my $result = GetOptions("verbose+"      =>  \$opt_verbose,
                         "quiet"         =>  \$opt_quiet,
                         "force"         =>  \$opt_force_download,
-                        "passive"       =>  \$opt_passive,
+                        "passive:s"     =>  \$opt_passive,
                         "timeout=i"     =>  \$opt_timeout,
                         "showall"       =>  \$opt_showall,
                         "version"       =>  \$opt_show_version,
@@ -75,7 +75,11 @@ pod2usage({-exitval => 0, -verbose => 2}) if $opt_help;
 pod2usage({-exitval => 0, -verbose => 2}) unless (scalar @ARGV or 
                                                   $opt_showall or
                                                   $opt_show_version);
-
+if (length($opt_passive) and $opt_passive =~ /n|no/i) {
+    $opt_passive = 0;
+} else {
+    $opt_passive = 1;
+}
 my $exit_code = 0;
 $|++;
 
