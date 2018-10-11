@@ -1107,7 +1107,7 @@ const TTo* UppermostCast(const TFrom& from)
 }
 
 #define NCBI_EXCEPTION_DEFAULT_THROW(exception_class) \
-    NCBI_NORETURN virtual void Throw(void) const \
+    NCBI_NORETURN virtual void Throw(void) const override \
     { \
         this->x_ThrowSanityCheck(typeid(exception_class), #exception_class); \
         throw *this; \
@@ -1121,7 +1121,7 @@ const TTo* UppermostCast(const TFrom& from)
     } \
 public: \
     virtual ~exception_class(void) throw() {} \
-    virtual const char* GetType(void) const {return #exception_class;} \
+    virtual const char* GetType(void) const override {return #exception_class;} \
     typedef int TErrCode; \
     TErrCode GetErrCode(void) const \
     { \
@@ -1132,7 +1132,7 @@ public: \
     NCBI_EXCEPTION_DEFAULT_THROW(exception_class) \
 protected: \
     exception_class(void) {} \
-    virtual const CException* x_Clone(void) const \
+    virtual const CException* x_Clone(void) const override \
     { \
         return new exception_class(*this); \
     } \
