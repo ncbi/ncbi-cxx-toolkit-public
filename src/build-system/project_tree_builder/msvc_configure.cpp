@@ -311,7 +311,7 @@ void CMsvcConfigure::WriteBuildVer(CMsvcSite& site, const string& root_dir, cons
     if (!cfg.empty()) {
         NStr::ReplaceInPlace(cfg_root_inc, cfg, config.GetConfigFullName());
     }
-    string extra = site.GetConfigureEntry("BuildVerPath");
+    string extra = CDirEntry::ConvertToOSPath(site.GetConfigureEntry("BuildVerPath"));
     string filename = CDirEntry::ConcatPath(cfg_root_inc, extra);
 
     if (extra.empty()) {
