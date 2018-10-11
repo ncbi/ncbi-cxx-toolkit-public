@@ -16,7 +16,7 @@ LIBS= -lconnect $(GMOCK_LIBS) $(CASSANDRA_STATIC_LIBS) $(ORIG_LIBS)
 LDFLAGS = $(ORIG_LDFLAGS) $(FAST_LDFLAGS) $(COVERAGE_FLAGS) $(LOCAL_LDFLAGS)
 
 #EXTRA=-fno-omit-frame-pointer -fsanitize=address
-#LOCAL_CPPFLAGS += $(EXTRA)
+LOCAL_CPPFLAGS += $(EXTRA) -fno-delete-null-pointer-checks
 #LOCAL_LDFLAGS += $(EXTRA) 
 
 CHECK_CMD = psg_cassandra_test
