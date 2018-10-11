@@ -376,6 +376,9 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
 
 string CGBDataLoader::GetLoaderNameFromArgs(const CGBLoaderParams& params)
 {
+    if ( !params.GetLoaderName().empty() ) {
+        return params.GetLoaderName();
+    }
     if (params.HasHUPIncluded()) {
         const string& web_cookie = params.GetWebCookie();
         if (web_cookie.empty())

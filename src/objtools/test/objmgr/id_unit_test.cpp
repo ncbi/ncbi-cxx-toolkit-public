@@ -916,6 +916,20 @@ BOOST_AUTO_TEST_CASE(TestHistory)
     }
 }
 
+BOOST_AUTO_TEST_CASE(TestGBLoaderName)
+{
+    LOG_POST("Checking CGBDataLoader user-defined name");
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CGBLoaderParams params;
+    params.SetLoaderName("GBLOADER-user");
+    string name0 = CGBDataLoader::RegisterInObjectManager(*objmgr).GetLoader()->GetName();
+    BOOST_CHECK_EQUAL(name0, "GBLOADER");
+    string name1 = CGBDataLoader::RegisterInObjectManager(*objmgr, params).GetLoader()->GetName();
+    BOOST_CHECK_EQUAL(name1, "GBLOADER-user");
+    objmgr->RevokeDataLoader("GBLOADER");
+    objmgr->RevokeDataLoader("GBLOADER-user");
+}
+
 #if defined(RUN_MT_TESTS) && defined(NCBI_THREADS)
 BOOST_AUTO_TEST_CASE(MTCrash1)
 {

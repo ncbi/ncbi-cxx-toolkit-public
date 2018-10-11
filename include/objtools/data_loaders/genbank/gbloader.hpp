@@ -139,6 +139,15 @@ public:
     CGBLoaderParams(const CGBLoaderParams&);
     CGBLoaderParams& operator=(const CGBLoaderParams&);
 
+    void SetLoaderName(const string& loader_name)
+        {
+            m_LoaderName = loader_name;
+        }
+    const string& GetLoaderName(void) const
+        {
+            return m_LoaderName;
+        }
+
     void SetReaderName(const string& reader_name)
         {
             m_ReaderName = reader_name;
@@ -189,6 +198,7 @@ private:
     EPreopenConnection m_Preopen;
     bool m_HasHUPIncluded;
     string m_WebCookie;
+    string m_LoaderName;
 };
 
 class NCBI_XLOADER_GENBANK_EXPORT CGBDataLoader : public CDataLoader
