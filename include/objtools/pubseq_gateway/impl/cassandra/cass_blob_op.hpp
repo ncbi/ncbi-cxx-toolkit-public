@@ -37,6 +37,11 @@
 #include <corelib/request_status.hpp>
 #include <corelib/ncbidiag.hpp>
 
+#include <vector>
+#include <utility>
+#include <string>
+#include <memory>
+
 #include "cass_driver.hpp"
 #include "cass_exception.hpp"
 #include "Key.hpp"
@@ -56,20 +61,18 @@ enum ECassTristate {
     eFalse
 };
 
-using TBlobChunkCallback =
-    function<void(const unsigned char * data, unsigned int size, int chunk_no)>;
-using TDataErrorCallback =
-    function<void(
-        CRequestStatus::ECode status,
-        int code,
-        EDiagSev severity,
-        const string & message
-    )>;
+using TBlobChunkCallback = function<void(const unsigned char * data, unsigned int size, int chunk_no)>;
+using TDataErrorCallback = function<void(
+    CRequestStatus::ECode status,
+    int code,
+    EDiagSev severity,
+    const string & message
+)>;
 using TDataReadyCallback = void(*)(void*);
 
 class CCassBlobWaiter
 {
-public:
+ public:
     CCassBlobWaiter(const CCassBlobWaiter&) = delete;
     CCassBlobWaiter& operator=(const CCassBlobWaiter&) = delete;
     CCassBlobWaiter(CCassBlobWaiter&&) = default;
@@ -94,9 +97,9 @@ public:
       ,  m_OpTimeoutMs(op_timeout_ms)
       ,  m_LastActivityMs(gettime() / 1000L)
       ,  m_RestartCounter(0)
-      ,  m_MaxRetries(max_retries) // 0 means no limit in auto-restart count,
-                                   // any other positive value is the limit,
-                                   // 1 means no 2nd start -> no re-starts at all
+      ,  m_MaxRetries(max_retries)  // 0 means no limit in auto-restart count,
+                                    // any other positive value is the limit,
+                                    // 1 means no 2nd start -> no re-starts at all
       ,  m_Async(async)
       ,  m_Cancelled(false)
     {
@@ -125,8 +128,9 @@ public:
                       CCassandraException::eUnknown, eDiag_Error, "Unknown exception");
                 throw;
             }
-            if (m_Async)
+            if (m_Async) {
                 break;
+            }
         }
         return (m_State == eDone || m_State == eError);
     }
@@ -182,7 +186,7 @@ public:
         m_DataReadyData = data;
     }
 
-protected:
+ protected:
     enum EBlobWaiterState {
         eInit = 0,
         eDone = 10000,
@@ -191,7 +195,7 @@ protected:
 
     void CloseAll(void)
     {
-        for (auto &  it: m_QueryArr) {
+        for (auto & it : m_QueryArr) {
             it->Close();
         }
     }
@@ -319,10 +323,10 @@ class CCassBlobLoader: public CCassBlobWaiter
     void Cancel(void);
     virtual bool Restart() override;
 
-protected:
+ protected:
     virtual void Wait1(void) override;
 
-private:
+ private:
     enum EBlobLoaderState {
         eInit = CCassBlobWaiter::eInit,
         eReadingEntity,
@@ -356,49 +360,34 @@ private:
 
 class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
 {
-public:
+ public:
     enum EBlopOpFlag {
         eFlagOpOr,
         eFlagOpAnd,
         eFlagOpSet
     };
 
-public:
+ public:
     CCassBlobOp(CCassBlobOp&&) = default;
     CCassBlobOp& operator=(CCassBlobOp&&) = default;
     CCassBlobOp(const CCassBlobOp&) = delete;
     CCassBlobOp& operator=(const CCassBlobOp&) = delete;
 
-    CCassBlobOp(shared_ptr<CCassConnection> conn)
+    explicit CCassBlobOp(shared_ptr<CCassConnection> conn)
         : m_Conn(conn)
-        , m_ExtendedSchema(false)
     {
         m_Keyspace = m_Conn->Keyspace();
     }
 
     ~CCassBlobOp()
     {
-        m_Conn = NULL;
+        m_Conn = nullptr;
     }
 
-    // MAIN API >
-    void GetBlobChunkTresholds(unsigned int  op_timeout_ms,
-                               int64_t *  LargeTreshold,
-                               int64_t *  LargeChunkSize);
-
+    void GetBlobChunkTresholds(unsigned int op_timeout_ms, int64_t * LargeTreshold, int64_t * LargeChunkSize);
     void SetKeyspace(const string &  keyspace)
     {
         m_Keyspace = keyspace;
-    }
-
-    void SetExtendedSchema(bool value)
-    {
-        m_ExtendedSchema = value;
-    }
-
-    bool IsExtendedSchema() const
-    {
-        return m_ExtendedSchema;
     }
 
     string GetKeyspace(void) const
@@ -422,7 +411,17 @@ public:
                          int64_t  LargeTreshold, int64_t  LargeChunkSz,
                          TDataErrorCallback error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);
+    void InsertBlobExtended(unsigned int  op_timeout_ms,
+                         int32_t  key, unsigned int  max_retries,
+                         CBlobRecord *  blob_rslt, ECassTristate  is_new,
+                         int64_t  LargeTreshold, int64_t  LargeChunkSz,
+                         TDataErrorCallback error_cb,
+                         unique_ptr<CCassBlobWaiter> &  waiter);
     void DeleteBlobAsync(unsigned int  op_timeout_ms,
+                         int32_t  key, unsigned int  max_retries,
+                         TDataErrorCallback error_cb,
+                         unique_ptr<CCassBlobWaiter> &  waiter);
+    void DeleteBlobExtended(unsigned int  op_timeout_ms,
                          int32_t  key, unsigned int  max_retries,
                          TDataErrorCallback error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);
@@ -466,26 +465,22 @@ public:
         bool set_flag
     );
 
-    bool GetSetting(unsigned int  op_timeout_ms,
-                    const string &  name, string &  value);
-    void UpdateSetting(unsigned int  op_timeout_ms,
-                       const string &  name, const string &  value);
+    bool GetSetting(unsigned int op_timeout_ms, const string & name, string & value);
+    void UpdateSetting(unsigned int op_timeout_ms, const string & name, const string & value);
 
     shared_ptr<CCassConnection> GetConn(void)
     {
-        if (!m_Conn)
-            NCBI_THROW(CCassandraException, eSeqFailed,
-                       "CCassBlobOp instance is not initialized "
-                       "with DB connection");
+        if (!m_Conn) {
+            NCBI_THROW(CCassandraException, eSeqFailed, "CCassBlobOp instance is not initialized with DB connection");
+        }
         return m_Conn;
     }
 
-private:
-    shared_ptr<CCassConnection>     m_Conn;
-    string                          m_Keyspace;
-    bool                            m_ExtendedSchema;
+ private:
+    shared_ptr<CCassConnection> m_Conn;
+    string m_Keyspace;
 
-    void x_LoadKeysScheduleNext(CCassQuery &  query, void *  data);
+    void x_LoadKeysScheduleNext(CCassQuery & query, void * data);
 };
 
 END_IDBLOB_SCOPE

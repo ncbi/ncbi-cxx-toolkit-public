@@ -49,6 +49,9 @@
 #include <atomic>
 #include <cassert>
 #include <fstream>
+#include <vector>
+#include <list>
+#include <utility>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -171,30 +174,33 @@ void CCassBlobOp::GetBlobAsync(unsigned int  op_timeout_ms,
 }
 
 
-void CCassBlobOp::InsertBlobAsync(unsigned int  op_timeout_ms,
-                                  int32_t  key, unsigned int max_retries,
-                                  CBlobRecord *  blob_rslt, ECassTristate  is_new,
-                                  int64_t  LargeTreshold, int64_t LargeChunkSz,
+void CCassBlobOp::InsertBlobAsync(unsigned int op_timeout_ms,
+                                  int32_t key, unsigned int max_retries,
+                                  CBlobRecord * blob_rslt, ECassTristate  is_new,
+                                  int64_t LargeTreshold, int64_t LargeChunkSz,
+                                  TDataErrorCallback error_cb,
+                                  unique_ptr<CCassBlobWaiter> & Waiter)
+{
+    Waiter.reset(new CCassBlobTaskInsert(
+        op_timeout_ms, m_Conn, m_Keyspace,
+        key, blob_rslt, is_new, LargeTreshold,
+        LargeChunkSz, true, max_retries,
+        move(error_cb)
+    ));
+}
+
+void CCassBlobOp::InsertBlobExtended(unsigned int op_timeout_ms,
+                                  int32_t key, unsigned int max_retries,
+                                  CBlobRecord * blob_rslt, ECassTristate is_new,
+                                  int64_t LargeTreshold, int64_t LargeChunkSz,
                                   TDataErrorCallback error_cb,
                                   unique_ptr<CCassBlobWaiter> &  Waiter)
 {
-    if (m_ExtendedSchema) {
-        Waiter.reset(
-            new CCassBlobTaskInsertExtended(
-                op_timeout_ms, m_Conn, m_Keyspace,
-                blob_rslt, true, max_retries,
-                move(error_cb)
-            )
-        );
-    }
-    else {
-        Waiter.reset(
-            new CCassBlobTaskInsert(op_timeout_ms, m_Conn, m_Keyspace,
-                key, blob_rslt, is_new, LargeTreshold,
-                LargeChunkSz, true, max_retries,
-                move(error_cb))
-        );
-    }
+    Waiter.reset(new CCassBlobTaskInsertExtended(
+        op_timeout_ms, m_Conn, m_Keyspace,
+        blob_rslt, true, max_retries,
+        move(error_cb)
+    ));
 }
 
 
@@ -204,7 +210,18 @@ void CCassBlobOp::DeleteBlobAsync(unsigned int  op_timeout_ms,
                                   unique_ptr<CCassBlobWaiter> &  Waiter)
 {
     Waiter.reset(new CCassBlobTaskDelete(
-        op_timeout_ms, m_Conn, m_Keyspace, m_ExtendedSchema,
+        op_timeout_ms, m_Conn, m_Keyspace, false,
+        key, true, max_retries, move(error_cb)
+    ));
+}
+
+void CCassBlobOp::DeleteBlobExtended(unsigned int  op_timeout_ms,
+                                  int32_t  key, unsigned int  max_retries,
+                                  TDataErrorCallback error_cb,
+                                  unique_ptr<CCassBlobWaiter> &  Waiter)
+{
+    Waiter.reset(new CCassBlobTaskDelete(
+        op_timeout_ms, m_Conn, m_Keyspace, true,
         key, true, max_retries, move(error_cb)
     ));
 }
@@ -501,16 +518,9 @@ void CCassBlobOp::LoadKeys(TBlobFullStatVec * keys,
     string fsql;
     string sql;
     string error;
-    if (m_ExtendedSchema) {
-        common = "SELECT sat_key, last_modified, size, flags FROM " + KeySpaceDot(m_Keyspace) + "blob_prop WHERE";
-        fsql = common + " TOKEN(sat_key) >= ? and TOKEN(sat_key) <= ?";
-        sql = common + " TOKEN(sat_key) > ? and TOKEN(sat_key) <= ?";
-    }
-    else {
-        common = "SELECT ent, modified, size, flags FROM " + KeySpaceDot(m_Keyspace) + "entity WHERE";
-        fsql = common + " TOKEN(ent) >= ? and TOKEN(ent) <= ?";
-        sql = common + " TOKEN(ent) > ? and TOKEN(ent) <= ?";
-    }
+    common = "SELECT ent, modified, size, flags FROM " + KeySpaceDot(m_Keyspace) + "entity WHERE";
+    fsql = common + " TOKEN(ent) >= ? and TOKEN(ent) <= ?";
+    sql = common + " TOKEN(ent) > ? and TOKEN(ent) <= ?";
 
     SLoadKeysContext loadkeys_context(0, concurrent, 0, ranges, sql, keys, tick);
     int val = loadkeys_context.m_wakeup.Value();

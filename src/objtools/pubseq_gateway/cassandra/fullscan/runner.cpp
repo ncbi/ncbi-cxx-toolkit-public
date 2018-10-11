@@ -185,6 +185,7 @@ bool CCassandraFullscanRunner::Execute()
             all_finished = false;
         }
     }
+    workers.clear();
     return all_finished;
 }
 

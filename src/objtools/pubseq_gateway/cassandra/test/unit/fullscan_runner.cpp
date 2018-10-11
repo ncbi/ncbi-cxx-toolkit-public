@@ -236,7 +236,7 @@ TEST_F(CCassandraFullscanRunnerTest, OneThreadRunnerTest) {
     unique_ptr<MockCassandraFullscanPlan> plan_mock = make_default_plan_mock();
     EXPECT_CALL(*plan_mock, GetNextQuery())
         .WillOnce(Return(query))
-        .WillOnce(Return(nullptr));
+        .WillRepeatedly(Return(nullptr));
 
     SConsumeContext context;
     CCassandraFullscanRunner runner;

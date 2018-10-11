@@ -56,16 +56,23 @@ class CCassandraFullscanWorker
         {}
         SQueryContext(CCassandraFullscanPlan::TQueryPtr q, shared_ptr<CFutex> ready, unsigned int max_retries)
             : query(move(q))
-            , data_ready(new atomic_bool(false))
+            , data_ready(false)
             , total_ready(ready)
             , retires(max_retries)
         {}
+        SQueryContext(SQueryContext&& other) = delete;
+        SQueryContext(const SQueryContext&) = delete;
+        SQueryContext& operator=(SQueryContext&& other) = delete;
+        SQueryContext& operator=(const SQueryContext&) = delete;
         ~SQueryContext()
         {
-            query = nullptr;
+            if (query) {
+                query->Close();
+                query = nullptr;
+            }
         }
         CCassandraFullscanPlan::TQueryPtr query;
-        atomic_bool* data_ready;
+        atomic_bool data_ready;
         shared_ptr<CFutex> total_ready;
         unsigned int retires;
     };
@@ -102,7 +109,7 @@ class CCassandraFullscanWorker
     unsigned int m_MaxActiveStatements;
     TTaskProvider m_TaskProvider;
 
-    vector<SQueryContext> m_Queries;
+    vector<unique_ptr<SQueryContext>> m_Queries;
     shared_ptr<CFutex> m_ReadyQueries;
     unique_ptr<atomic_long> m_ActiveQueries;
     unsigned int m_QueryMaxRetryCount;

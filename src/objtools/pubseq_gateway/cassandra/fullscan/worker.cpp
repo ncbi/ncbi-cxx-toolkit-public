@@ -120,17 +120,17 @@ bool CCassandraFullscanWorker::StartQuery(size_t index)
     try {
         CCassandraFullscanPlan::TQueryPtr task = GetNextTask();
         if (task) {
-            m_Queries[index] = SQueryContext(task, m_ReadyQueries, m_QueryMaxRetryCount);
-            SQueryContext &context = m_Queries[index];
-            context.query->SetOnData2(
+            m_Queries[index] = unique_ptr<SQueryContext>(new SQueryContext(task, m_ReadyQueries, m_QueryMaxRetryCount));
+            SQueryContext *context = m_Queries[index].get();
+            context->query->SetOnData2(
                 [](void * data) {
                     SQueryContext * context = static_cast<SQueryContext *>(data);
-                    *context->data_ready = true;
+                    context->data_ready = true;
                     context->total_ready->Inc();
                 },
-                &context
+                context
             );
-            context.query->Query(m_Consistency, true, true, m_PageSize);
+            context->query->Query(m_Consistency, true, true, m_PageSize);
             (*m_ActiveQueries)++;
             return true;
         }
@@ -143,22 +143,21 @@ bool CCassandraFullscanWorker::StartQuery(size_t index)
 
 bool CCassandraFullscanWorker::ProcessQueryResult(size_t index)
 {
-    assert(m_Queries[index].query != nullptr);
+    assert(m_Queries[index] && m_Queries[index]->query != nullptr);
     bool do_next = true, restart_request = false, result = true;
-    SQueryContext& context = m_Queries[index];
-    *context.data_ready = false;
+    SQueryContext * context = m_Queries[index].get();
+    context->data_ready = false;
     m_ReadyQueries->Dec(false);
     try {
-        async_rslt_t state = context.query->NextRow();
+        async_rslt_t state = context->query->NextRow();
         while (do_next && state == ar_dataready) {
-            do_next = m_RowConsumer->ReadRow(*(context.query));
+            do_next = m_RowConsumer->ReadRow(*(context->query));
             if (do_next) {
-                state = context.query->NextRow();
+                state = context->query->NextRow();
             }
         }
-        if (!do_next || context.query->IsEOF()) {
-            context.query->Close();
-            context.query = nullptr;
+        if (!do_next || context->query->IsEOF()) {
+            m_Queries[index].reset();
             (*m_ActiveQueries)--;
         }
     } catch (CCassandraException const & e) {
@@ -166,9 +165,9 @@ bool CCassandraFullscanWorker::ProcessQueryResult(size_t index)
                 e.GetErrCode() == CCassandraException::eQueryTimeout
                 || e.GetErrCode() == CCassandraException::eQueryFailedRestartable
             )
-            && context.retires > 0
+            && context->retires > 0
         ) {
-            --context.retires;
+            --context->retires;
             restart_request = true;
         } else {
             ProcessError(e);
@@ -181,15 +180,15 @@ bool CCassandraFullscanWorker::ProcessQueryResult(size_t index)
 
     if (restart_request) {
         string params;
-        for (size_t i = 0; i < context.query->ParamCount(); ++i) {
-            params += (i > 0 ? "," : "" ) + context.query->ParamAsStr(i);
+        for (size_t i = 0; i < context->query->ParamCount(); ++i) {
+            params += (i > 0 ? "," : "" ) + context->query->ParamAsStr(i);
         }
         ERR_POST(
-            Warning << "Query timeout! SQL - " << context.query->ToString()
-            << " Params - (" << params  << ") Restart count - " << context.retires
+            Warning << "Query timeout! SQL - " << context->query->ToString()
+            << " Params - (" << params  << ") Restart count - " << context->retires
         );
         try {
-            context.query->RestartQuery(m_Consistency);
+            context->query->RestartQuery(m_Consistency);
         } catch(exception const & e) {
             ERR_POST(Warning << "Query restart failed");
             ProcessError(e);
@@ -226,7 +225,7 @@ void CCassandraFullscanWorker::operator()()
             more_tasks && i < m_Queries.size() && *m_ActiveQueries <= m_MaxActiveStatements;
             ++i
         ) {
-            if (m_Queries[i].query == nullptr) {
+            if (!m_Queries[i]) {
                 more_tasks = StartQuery(i);
             }
         }
@@ -240,8 +239,8 @@ void CCassandraFullscanWorker::operator()()
                 && contunue_processing;
             ++i
         ) {
-            if (*(m_Queries[i].data_ready)) {
-                if (m_Queries[i].query == nullptr) {
+            if (m_Queries[i] && m_Queries[i]->data_ready) {
+                if (m_Queries[i]->query == nullptr) {
                     string error_msg = "context.data_ready == true while context.query === nullptr";
                     ERR_POST(Warning << error_msg);
                     ProcessError(error_msg);
@@ -252,13 +251,6 @@ void CCassandraFullscanWorker::operator()()
         }
         contunue_processing = contunue_processing && m_RowConsumer->Tick();
         need_exit = (!more_tasks && *m_ActiveQueries == 0) || !contunue_processing;
-    }
-
-    for (size_t i = 0; i < m_Queries.size(); ++i) {
-        if (m_Queries[i].query != nullptr) {
-            m_Queries[i].query->Close();
-            m_Queries[i].query = nullptr;
-        }
     }
     m_Queries.clear();
 
