@@ -197,8 +197,8 @@ void CAnyContentTypeStrings::GenerateTypeCode(CClassContext& /*ctx*/) const
 
 
 CBitStringTypeStrings::CBitStringTypeStrings(const string& type,
-    const CComments& comments)
-    : CParent(type,comments,false)
+    const CComments& comments, CTypeStrings* bitNames)
+    : m_BitNames(bitNames), CParent(type,comments,false)
 {
 }
 
@@ -220,7 +220,10 @@ string CBitStringTypeStrings::GetResetCode(const string& var) const
 
 void CBitStringTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 {
-    ctx.HPPIncludes().insert("<vector>");
+//    ctx.HPPIncludes().insert("<vector>");
+    if (m_BitNames) {
+        m_BitNames->GenerateTypeCode(ctx);
+    }
 }
 
 END_NCBI_SCOPE

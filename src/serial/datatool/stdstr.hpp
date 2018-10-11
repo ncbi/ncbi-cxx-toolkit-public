@@ -121,7 +121,7 @@ class CBitStringTypeStrings : public CStdTypeStrings
 {
     typedef CStdTypeStrings CParent;
 public:
-    CBitStringTypeStrings(const string& type, const CComments& comments);
+    CBitStringTypeStrings(const string& type, const CComments& comments, CTypeStrings* bit_names);
 
     virtual EKind GetKind(void) const override;
 
@@ -129,7 +129,8 @@ public:
     virtual string GetResetCode(const string& var) const override;
 
     virtual void GenerateTypeCode(CClassContext& ctx) const override;
-
+private:
+    AutoPtr<CTypeStrings> m_BitNames;
 };
 
 END_NCBI_SCOPE

@@ -246,6 +246,9 @@ CDataType* ASNParser::x_Type(void)
     case K_BIT:
         Consume();
         Consume(K_STRING, "STRING");
+        if ( CheckSymbol('{') ) {
+            return new CBitStringDataType(EnumeratedBlock(new CIntEnumDataType()));
+        }
         return new CBitStringDataType();
     case K_OCTET:
         Consume();

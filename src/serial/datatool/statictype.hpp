@@ -149,6 +149,8 @@ public:
 class CBitStringDataType : public CStaticDataType {
     typedef CStaticDataType CParent;
 public:
+    CBitStringDataType(CDataType* bitenum = nullptr);
+    virtual void FixTypeTree(void) const override;
     virtual bool CheckValue(const CDataValue& value) const override;
     virtual const CTypeInfo* GetRealTypeInfo(void) override;
     virtual bool NeedAutoPointer(const CTypeInfo* typeInfo) const override;
@@ -158,6 +160,8 @@ public:
     virtual const char* GetDEFKeyword(void) const override;
     virtual const char* GetXMLContents(void) const override;
     virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const override;
+private:
+    CDataType* m_BitStringEnum;
 };
 
 class COctetStringDataType : public CBitStringDataType {

@@ -744,6 +744,18 @@ const char* CBitStringDataType::GetDEFKeyword(void) const
     return "_BIT_STRING_";
 }
 
+CBitStringDataType::CBitStringDataType(CDataType* bitenum)
+    : m_BitStringEnum(bitenum)
+{
+}
+
+void CBitStringDataType::FixTypeTree(void) const
+{
+    if (m_BitStringEnum) {
+        m_BitStringEnum->SetParent(GetModule(), GetMemberName());
+    }
+}
+
 bool CBitStringDataType::CheckValue(const CDataValue& value) const
 {
     CheckValueType(value, CBitStringDataValue, "BIT STRING");
@@ -764,7 +776,8 @@ bool CBitStringDataType::NeedAutoPointer(TTypeInfo /*typeInfo*/) const
 
 AutoPtr<CTypeStrings> CBitStringDataType::GetFullCType(void) const
 {
-    return AutoPtr<CTypeStrings>(new CBitStringTypeStrings( GetDefaultCType(), Comments() ));
+    return AutoPtr<CTypeStrings>(new CBitStringTypeStrings( GetDefaultCType(), Comments(),
+        m_BitStringEnum ? m_BitStringEnum->GetFullCType().release() : nullptr ));
 }
 
 const char* CBitStringDataType::GetDefaultCType(void) const
