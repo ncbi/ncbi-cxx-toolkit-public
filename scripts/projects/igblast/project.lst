@@ -64,6 +64,7 @@ objtools/edit$
 objtools/format$
 objtools/format/items$
 objtools/align_format
+objtools/logging$
 dbapi$
 dbapi/driver$
 dbapi/cache$
