@@ -1785,6 +1785,7 @@ EMBT	s	Department of Agriculture, Thailand
 EMC	s	Eastern Michigan University, Biology Department			
 EMCC	c	Egypt Microbial Culture Collection			
 EMEC	s	Essig Museum of Entomology	EMUC		
+EMEC:UCIS	s	Essig Museum of Entomology, University of California Insect Survey	
 EMET	s	Faculty of Agriculture, Entomology Museum			
 EMMA	s	Universidad Politecnica de Madrid, Unidad Docente Botanica, Departamento Silvopascicultura			
 EMNH	s	The Everhart Museum of Natural History, Science & Art			
@@ -4201,7 +4202,6 @@ MNHN:M	s	Museum National d'Histoire Naturelle, Mammal
 MNHN:MY	s	Museum National d'Histoire Naturelle, Myriapods	
 MNHN:P	s	Museum National d'Histoire Naturelle, Vascular plants	
 MNHN:PMC	c	Museum National d'Histoire Naturelle, Cyanobacteria	
-MNHN:RA	s	Museum National d'Histoire Naturelle, Reptiles and amphibians	
 MNHN:RA	s	Museum National d'Histoire Naturelle, Reptiles and amphibians	
 MNHN:RF	sc	Museum National d'Histoire Naturelle, Fungal strains	
 MNHN:RS	s	Museum National d'Histoire Naturelle, Arachnids : Scorpions	
