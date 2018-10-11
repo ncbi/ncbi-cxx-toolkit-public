@@ -49,8 +49,11 @@
 #include <connect/ncbi_util.h>
 #include <algorithm>
 
-#include <objtools/simple/simple_om.hpp>
-#include <future>
+//#define RUN_MT_TESTS
+#if defined(RUN_MT_TESTS) && defined(NCBI_THREADS)
+# include <objtools/simple/simple_om.hpp>
+# include <future>
+#endif
 
 #include <objects/general/general__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
@@ -785,6 +788,7 @@ BOOST_AUTO_TEST_CASE(Test_DeltaSAnnot)
         //LOG_POST("Feature: "<<MSerial_AsnText<<*it->GetSeq_feat());
         ++num_feat;
         CSeqFeatData::ESubtype subtype = it->GetData().GetSubtype();
+        BOOST_CHECK(subtype != CSeqFeatData::eSubtype_bad);
         if (it->GetSeq_feat()->GetLocation().IsInt()) {
             const CSeq_id& id = it->GetOriginalSeq_feat()->GetLocation().GetInt().GetId();
             CBioseq_Handle local_bsh = scope.GetBioseqHandle(id);
@@ -793,9 +797,11 @@ BOOST_AUTO_TEST_CASE(Test_DeltaSAnnot)
                 id_it->GetSeqId()->GetLabel(&label);
                 TSeqPos start = it->GetLocation().GetStart(eExtreme_Biological);
                 TSeqPos stop = it->GetLocation().GetStop(eExtreme_Biological);
+                BOOST_CHECK(start != stop);
             }
             TSeqPos start = it->GetLocation().GetStart(eExtreme_Biological);
             TSeqPos stop = it->GetLocation().GetStop(eExtreme_Biological);
+            BOOST_CHECK(start != stop);
         }
         ++it;
     }
@@ -910,7 +916,7 @@ BOOST_AUTO_TEST_CASE(TestHistory)
     }
 }
 
-
+#if defined(RUN_MT_TESTS) && defined(NCBI_THREADS)
 BOOST_AUTO_TEST_CASE(MTCrash1)
 {
     CRef<CScope> scope = CSimpleOM::NewScope();
@@ -959,12 +965,13 @@ BOOST_AUTO_TEST_CASE(MTCrash1)
                 start = stop + 1;
             }
             bool all_is_good = all_of(res.begin(), res.end(), [](future<bool>& f) { return f.get(); });
+            BOOST_CHECK(all_is_good);
             cout << acc << ": passed" << endl;
         }
         cout << "============================" << endl;
     }
 }
-
+#endif
 
 NCBITEST_INIT_TREE()
 {
