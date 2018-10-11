@@ -36,6 +36,7 @@
 #include <objects/seqfeat/Trna_ext.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
 
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -54,12 +55,13 @@ CFeaturePropagator::CFeaturePropagator
 (CBioseq_Handle src, CBioseq_Handle target,
  const CSeq_align& align, 
  bool stop_at_stop, bool cleanup_partials, bool merge_abutting,
- CMessageListener_Basic* pMessageListener) : 
-        m_Src(src), m_Target(target),
+ CMessageListener_Basic* pMessageListener, CObject_id::TId* feat_id)
+  :     m_Src(src), m_Target(target),
         m_Scope(m_Target.GetScope()),
         m_CdsStopAtStopCodon(stop_at_stop),
         m_CdsCleanupPartials(cleanup_partials),
-        m_MessageListener(pMessageListener)
+        m_MessageListener(pMessageListener),
+        m_MaxFeatId(feat_id)
 {
     m_Mapper = new CSeq_loc_Mapper(*m_Src.GetSeqId(), *m_Target.GetSeqId(), align, &m_Target.GetScope());
     if (merge_abutting) {
@@ -67,11 +69,15 @@ CFeaturePropagator::CFeaturePropagator
     }
 }
 
-
-CRef<CSeq_feat> CFeaturePropagator::Propagate(const objects::CSeq_feat& orig_feat)
+CRef<CSeq_feat> CFeaturePropagator::Propagate(const CSeq_feat& orig_feat)
 {
     CRef<CSeq_feat> rval(new CSeq_feat());
     rval->Assign(orig_feat);
+
+    if (rval->IsSetId() && (m_MaxFeatId && *m_MaxFeatId > 0)) {
+        rval->SetId().SetLocal().SetId(++(*m_MaxFeatId));
+        m_FeatIdMap.emplace(orig_feat.GetId().GetLocal().GetId(), rval->GetId().GetLocal().GetId());
+    }
 
     // propagate feature location
     CConstRef<CSeq_id> pTargetId = m_Target.GetSeqId();
@@ -127,6 +133,56 @@ vector<CRef<CSeq_feat> > CFeaturePropagator::PropagateAll()
         ++fi;
     }
     return rval;
+}
+
+vector<CRef<CSeq_feat>> CFeaturePropagator::PropagateFeatureList(const vector<CConstRef<CSeq_feat>>& orig_feats)
+{
+    vector<CRef<CSeq_feat>> propagated_feats;
+
+    for (auto&& it : orig_feats) {
+        CRef<CSeq_feat> new_feat = Propagate(*it);
+        if (new_feat) {
+            propagated_feats.push_back(new_feat);
+        }
+        if (new_feat->IsSetData() && new_feat->GetData().IsCdregion()) {
+            if (it->IsSetProduct()) {
+                CRef<CSeq_feat> prot_feat = ConstructProteinFeatureForPropagatedCodingRegion(*it, *new_feat);
+                if (prot_feat) {
+                    propagated_feats.push_back(prot_feat);
+                }
+            }
+        }
+    }
+
+    if (!m_FeatIdMap.empty()) {
+        for (auto&& it : propagated_feats) {
+            if (it->IsSetXref()) {
+                auto xref_it = it->SetXref().begin();
+                while (xref_it != it->SetXref().end()) {
+                    if ((*xref_it)->IsSetId()) {
+                        CFeat_id& feat_id = (*xref_it)->SetId();
+                        if (feat_id.IsLocal() && feat_id.GetLocal().IsId()) {
+                            auto orig_featid = m_FeatIdMap.find(feat_id.GetLocal().GetId());
+                            if (orig_featid != m_FeatIdMap.end()) {
+                                feat_id.SetLocal().SetId(orig_featid->second);
+                            }
+                            else {
+                                // it hasn't been propagated yet or it will not be propagated
+                                xref_it = it->SetXref().erase(xref_it);
+                                continue;
+                            }
+                        }
+                    }
+                    ++xref_it;
+                }
+                if (it->GetXref().empty()) {
+                    it->ResetXref();
+                }
+            }
+        }
+    }
+
+    return propagated_feats;
 }
 
 
@@ -386,7 +442,7 @@ CRef<CSeq_loc> CFeaturePropagator::x_ExtendToStopCodon (CSeq_feat& feat)
 }
 
 
-void CFeaturePropagator::x_PropagateCds(objects::CSeq_feat& feat, const CSeq_id& targetId, bool origIsPartialStart)
+void CFeaturePropagator::x_PropagateCds(CSeq_feat& feat, const CSeq_id& targetId, bool origIsPartialStart)
 {
     bool ambiguous = false;
     feat.SetData().SetCdregion().SetFrame(CSeqTranslator::FindBestFrame(feat, m_Scope, ambiguous));
@@ -438,7 +494,7 @@ void CFeaturePropagator::x_CdsMapCodeBreaks(CSeq_feat& feat, const CSeq_id& targ
 }
 
 
-void CFeaturePropagator::x_CdsCleanupPartials(objects::CSeq_feat& cds, bool origIsPartialStart) 
+void CFeaturePropagator::x_CdsCleanupPartials(CSeq_feat& cds, bool origIsPartialStart) 
 {
     if (cds.GetData().GetSubtype() != CSeqFeatData::eSubtype_cdregion) {
         return;
@@ -531,7 +587,7 @@ void CFeaturePropagator::x_CdsStopAtStopCodon(CSeq_feat& cds)
 }
 
 
-void CFeaturePropagator::x_PropagatetRNA(objects::CSeq_feat& feat, const CSeq_id& targetId)
+void CFeaturePropagator::x_PropagatetRNA(CSeq_feat& feat, const CSeq_id& targetId)
 {
     if (feat.GetData().GetRna().IsSetExt()) {
         const CRNA_ref::C_Ext& ext = feat.GetData().GetRna().GetExt();
@@ -570,7 +626,13 @@ CRef<CSeq_feat> CFeaturePropagator::ConstructProteinFeatureForPropagatedCodingRe
         CFeat_CI pf(prot, CSeqFeatData::eSubtype_prot);
         if (pf) {
             prot_feat.Reset(new CSeq_feat());
-            prot_feat->Assign(*(pf->GetOriginalSeq_feat()));
+            const CSeq_feat& orig_prot = *pf->GetOriginalSeq_feat();
+            prot_feat->Assign(orig_prot);
+
+            if ((m_MaxFeatId && *m_MaxFeatId > 0) && (pf->GetOriginalSeq_feat()->IsSetId() || orig_cds.IsSetId())) {
+                prot_feat->SetId().SetLocal().SetId(++(*m_MaxFeatId));
+                // protein features don't have Xrefs
+            }
             // fix partials
             prot_feat->SetLocation().SetPartialStart(new_cds.GetLocation().IsPartialStart(eExtreme_Biological), eExtreme_Biological);
             prot_feat->SetLocation().SetPartialStop(new_cds.GetLocation().IsPartialStop(eExtreme_Biological), eExtreme_Biological);

@@ -63,13 +63,14 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
-#include <objects/seq/seqport_util.hpp>
+#include <objmgr/align_ci.hpp>
 
 #include <objects/seqalign/Dense_seg.hpp>
 
@@ -602,6 +603,622 @@ BOOST_AUTO_TEST_CASE(Test_PropagateAll)
     BOOST_CHECK_EQUAL(listener.Count(), 1);
     BOOST_CHECK_EQUAL(listener.GetMessage(0).GetText(), "Unable to propagate location of feature: lcl|good3:1-10");
     
+}
+
+CObject_id::TId s_FindHighestFeatId(const CSeq_entry_Handle entry)
+{
+    CObject_id::TId id = 0;
+    for (CFeat_CI feat_it(entry); feat_it; ++feat_it) {
+        if (feat_it->IsSetId()) {
+            const CFeat_id& feat_id = feat_it->GetId();
+            if (feat_id.IsLocal() && feat_id.GetLocal().IsId() && feat_id.GetLocal().GetId() > id) {
+                id = feat_id.GetLocal().GetId();
+            }
+        }
+    }
+    return id;
+}
+
+CSeq_entry_Handle GetGoodSeqEntryWithFeatureIds(int& feat_id)
+{
+    size_t front_insert = 5;
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
+    CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
+
+    CRef<CSeq_entry> first = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_entry> last = entry->SetSet().SetSeq_set().back();
+
+    CRef<CSeq_loc> main_loc(new CSeq_loc());
+    main_loc->SetInt().SetFrom(0);
+    main_loc->SetInt().SetTo(15);
+    main_loc->SetInt().SetId().Assign(*(first->GetSeq().GetId().front()));
+
+    CRef<CSeq_loc> subloc(new CSeq_loc());
+    subloc->SetInt().SetFrom(3);
+    subloc->SetInt().SetTo(5);
+    subloc->SetInt().SetId().Assign(*(first->GetSeq().GetId().front()));
+
+    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature(first, 15);
+    gene->SetData().SetGene().SetLocus("gene locus");
+    gene->SetId().SetLocal().SetId(++feat_id);
+    gene->SetLocation().Assign(*main_loc);
+
+    CRef<CSeq_feat> mrna = unit_test_util::AddMiscFeature(first, 15);
+    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    mrna->SetId().SetLocal().SetId(++feat_id);
+    mrna->SetLocation().Assign(*main_loc);
+
+    CRef<CSeq_feat> cds_withoutprot = unit_test_util::AddMiscFeature(first, 15);
+    cds_withoutprot->SetComment("CDS without product");
+    cds_withoutprot->SetData().SetCdregion();
+    cds_withoutprot->SetId().SetLocal().SetId(++feat_id);
+    cds_withoutprot->SetLocation().SetInt().SetFrom(10);
+    cds_withoutprot->SetLocation().SetInt().SetTo(25);
+    cds_withoutprot->SetLocation().SetInt().SetId().Assign(*(first->GetSeq().GetId().front()));
+
+    CRef<CSeq_feat> cds_withprot = unit_test_util::MakeMiscFeature(unit_test_util::IdFromEntry(first), 15);
+    cds_withprot->SetComment("CDS with product");
+    cds_withprot->SetData().SetCdregion();
+    cds_withprot->SetId().SetLocal().SetId(++feat_id);
+    cds_withprot->SetLocation().Assign(*main_loc);
+
+    // constructing the protein sequence
+    CRef<CSeq_entry> prot_entry(new CSeq_entry());
+    prot_entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    prot_entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_aa);
+    prot_entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("-WPKL");
+    prot_entry->SetSeq().SetInst().SetLength(5);
+
+    const string prot_id = "good1_1";
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetLocal().SetStr(prot_id);
+    prot_entry->SetSeq().SetId().push_back(id);
+
+    CRef<CSeqdesc> mdesc(new CSeqdesc());
+    mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+    prot_entry->SetSeq().SetDescr().Set().push_back(mdesc);
+
+    CRef<CSeq_feat> prot_feat(new CSeq_feat());
+    prot_feat->SetData().SetProt().SetName().push_back("hypothetical protein");
+    prot_feat->SetLocation().SetInt().SetId().Assign(*(prot_entry->GetSeq().GetId().front()));
+    prot_feat->SetLocation().SetInt().SetFrom(0);
+    prot_feat->SetLocation().SetInt().SetTo(prot_entry->GetSeq().GetInst().GetLength() - 1);
+    prot_feat->SetId().SetLocal().SetId(++feat_id);
+    unit_test_util::AddFeat(prot_feat, prot_entry);
+
+    cds_withprot->SetProduct().SetWhole().SetLocal().SetStr(prot_id);
+
+    CRef<CBioseq_set> set(new CBioseq_set());
+    set->SetClass(CBioseq_set::eClass_nuc_prot);
+    set->SetSeq_set().push_back(first);
+    set->SetSeq_set().push_back(prot_entry);
+    CRef<CSeq_entry> set_entry(new CSeq_entry());
+    set_entry->SetSet(*set);
+
+    unit_test_util::AddFeat(cds_withprot, set_entry);
+
+    auto it = entry->SetSet().SetSeq_set().begin();
+    it = entry->SetSet().SetSeq_set().erase(it);
+
+    entry->SetSet().SetSeq_set().insert(it, set_entry);
+
+    //cout << MSerial_AsnText << *entry << endl;
+
+    // add entry to the scope
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    return seh;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PropagateFeatsTo2Sequences_UsingFeatureIds)
+{
+    int feat_id = 0;
+    CSeq_entry_Handle seh = GetGoodSeqEntryWithFeatureIds(feat_id);
+    CScope& scope = seh.GetScope();
+
+    BOOST_CHECK(feat_id == 5);
+    BOOST_TEST_MESSAGE("A set containing " + NStr::IntToString(feat_id) + " five features");
+    CFeat_CI gene_it(seh, SAnnotSelector(CSeqFeatData::e_Gene));
+    CConstRef<CSeq_feat> gene = gene_it->GetOriginalSeq_feat();
+    CFeat_CI mrna_it(seh, SAnnotSelector(CSeqFeatData::eSubtype_mRNA));
+    CConstRef<CSeq_feat> mrna = mrna_it->GetOriginalSeq_feat();
+    CFeat_CI cds_it(seh, SAnnotSelector(CSeqFeatData::e_Cdregion));
+    CConstRef<CSeq_feat> cds_withoutprot;
+    CConstRef<CSeq_feat> cds_withprot;
+    CConstRef<CSeq_feat> protein;
+    for (; cds_it; ++cds_it) {
+        if (cds_it->IsSetProduct()) {
+            cds_withprot = cds_it->GetOriginalSeq_feat();
+            CFeat_CI prot_it(scope.GetBioseqHandle(cds_it->GetProduct()));
+            protein = prot_it->GetOriginalSeq_feat();
+        }
+        else {
+            cds_withoutprot = cds_it->GetOriginalSeq_feat();
+        }
+    }
+
+    BOOST_CHECK(!gene.IsNull());
+    BOOST_CHECK(!mrna.IsNull());
+    BOOST_CHECK(!cds_withoutprot.IsNull());
+    BOOST_CHECK(!cds_withprot.IsNull());
+    BOOST_CHECK(!protein.IsNull());
+
+    CAlign_CI align_it(seh);
+    CConstRef<CSeq_align> align(&*align_it);
+    BOOST_CHECK(!align.IsNull());
+
+    CObject_id::TId maxFeatId = s_FindHighestFeatId(seh);
+    BOOST_CHECK(maxFeatId == feat_id);
+
+    CBioseq_CI b_iter(seh, CSeq_inst::eMol_na);
+    CBioseq_Handle src_bseq = *b_iter;
+    CBioseq_Handle target_bseq1 = *(++b_iter);
+    CBioseq_Handle target_bseq2 = *(++b_iter);
+
+
+    BOOST_TEST_MESSAGE("Propagating to the second sequence");
+    CMessageListener_Basic listener;
+    edit::CFeaturePropagator propagator1(src_bseq, target_bseq1, *align, true, true, true, &listener, &maxFeatId);
+    CRef<CSeq_feat> propagated_gene1 = propagator1.Propagate(*gene);
+
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+    BOOST_CHECK(propagated_gene1->IsSetId());
+    BOOST_CHECK(propagated_gene1->GetId().GetLocal().GetId() == (++feat_id));
+
+    CRef<CSeq_feat> propagated_mrna1 = propagator1.Propagate(*mrna);
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+    BOOST_CHECK(propagated_mrna1->IsSetId());
+    BOOST_CHECK(propagated_mrna1->GetId().GetLocal().GetId() == ++feat_id);
+
+    CRef<CSeq_feat> propagated_cds_woprot1 = propagator1.Propagate(*cds_withoutprot);
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+    BOOST_CHECK(!propagated_cds_woprot1->IsSetProduct());
+    BOOST_CHECK(propagated_cds_woprot1->IsSetId());
+    BOOST_CHECK(propagated_cds_woprot1->GetId().GetLocal().GetId() == ++feat_id);
+
+    CRef<CSeq_feat> propagated_cds_wprot1 = propagator1.Propagate(*cds_withprot);
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+    BOOST_CHECK(!propagated_cds_wprot1->IsSetProduct()); // this cds also does not have a product at this point
+    BOOST_CHECK(propagated_cds_wprot1->IsSetId());
+    BOOST_CHECK(propagated_cds_wprot1->GetId().GetLocal().GetId() == ++feat_id);
+
+    CRef<CSeq_feat> propagated_prot1 = propagator1.ConstructProteinFeatureForPropagatedCodingRegion(*cds_withprot, *propagated_cds_wprot1);
+    BOOST_CHECK(propagated_prot1->IsSetId());
+    BOOST_CHECK(propagated_prot1->GetId().GetLocal().GetId() == ++feat_id);
+    listener.Clear();
+
+    BOOST_TEST_MESSAGE("Propagating to the third sequence");
+    edit::CFeaturePropagator propagator2(src_bseq, target_bseq2, *align, true, true, true, &listener, &maxFeatId);
+    CRef<CSeq_feat> propagated_gene2 = propagator2.Propagate(*gene);
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+    BOOST_CHECK(propagated_gene2->IsSetId());
+    BOOST_CHECK(propagated_gene2->GetId().GetLocal().GetId() == (++feat_id));
+
+    CRef<CSeq_feat> propagated_mrna2 = propagator2.Propagate(*mrna);
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+    BOOST_CHECK(propagated_mrna2->IsSetId());
+    BOOST_CHECK(propagated_mrna2->GetId().GetLocal().GetId() == ++feat_id);
+    listener.Clear();
+
+    CRef<CSeq_feat> propagated_cds_woprot2 = propagator2.Propagate(*cds_withoutprot);
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+    BOOST_CHECK(!propagated_cds_woprot2->IsSetProduct());
+    BOOST_CHECK(propagated_cds_woprot2->IsSetId());
+    BOOST_CHECK(propagated_cds_woprot2->GetId().GetLocal().GetId() == ++feat_id);
+
+    CRef<CSeq_feat> propagated_cds_wprot2 = propagator2.Propagate(*cds_withprot);
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+    BOOST_CHECK(!propagated_cds_wprot2->IsSetProduct());
+    BOOST_CHECK(propagated_cds_wprot2->IsSetId());
+    BOOST_CHECK(propagated_cds_wprot2->GetId().GetLocal().GetId() == ++feat_id);
+
+    CRef<CSeq_feat> propagated_prot2 = propagator2.ConstructProteinFeatureForPropagatedCodingRegion(*cds_withprot, *propagated_cds_wprot2);
+    BOOST_CHECK(propagated_prot2->IsSetId());
+    BOOST_CHECK(propagated_prot2->GetId().GetLocal().GetId() == ++feat_id);
+    listener.Clear();
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_PropagateAllFeatures_UsingFeatureIds)
+{
+    int feat_id = 0;
+    CSeq_entry_Handle seh = GetGoodSeqEntryWithFeatureIds(feat_id);
+    CScope& scope = seh.GetScope();
+
+    BOOST_CHECK(feat_id == 5);
+    BOOST_TEST_MESSAGE("A set containing " + NStr::IntToString(feat_id) + " five features");
+    CFeat_CI gene_it(seh, SAnnotSelector(CSeqFeatData::e_Gene));
+    CConstRef<CSeq_feat> gene = gene_it->GetOriginalSeq_feat();
+    CFeat_CI mrna_it(seh, SAnnotSelector(CSeqFeatData::eSubtype_mRNA));
+    CConstRef<CSeq_feat> mrna = mrna_it->GetOriginalSeq_feat();
+    CFeat_CI cds_it(seh, SAnnotSelector(CSeqFeatData::e_Cdregion));
+    CConstRef<CSeq_feat> cds_withoutprot;
+    CConstRef<CSeq_feat> cds_withprot;
+    CConstRef<CSeq_feat> protein;
+    for (; cds_it; ++cds_it) {
+        if (cds_it->IsSetProduct()) {
+            cds_withprot = cds_it->GetOriginalSeq_feat();
+            CFeat_CI prot_it(scope.GetBioseqHandle(cds_it->GetProduct()));
+            protein = prot_it->GetOriginalSeq_feat();
+        }
+        else {
+            cds_withoutprot = cds_it->GetOriginalSeq_feat();
+        }
+    }
+
+    BOOST_CHECK(!gene.IsNull());
+    BOOST_CHECK(!mrna.IsNull());
+    BOOST_CHECK(!cds_withoutprot.IsNull());
+    BOOST_CHECK(!cds_withprot.IsNull());
+    BOOST_CHECK(!protein.IsNull());
+
+    CAlign_CI align_it(seh);
+    CConstRef<CSeq_align> align(&*align_it);
+    BOOST_CHECK(!align.IsNull());
+
+    CObject_id::TId maxFeatId = s_FindHighestFeatId(seh);
+    BOOST_CHECK(maxFeatId == feat_id);
+
+    CBioseq_CI b_iter(seh, CSeq_inst::eMol_na);
+    CBioseq_Handle src_bseq = *b_iter;
+    CBioseq_Handle target_bseq = *(++b_iter);
+
+
+    CMessageListener_Basic listener;
+    edit::CFeaturePropagator propagator(src_bseq, target_bseq, *align, true, true, true, &listener, &maxFeatId);
+    vector<CRef<CSeq_feat>> propagated_feats = propagator.PropagateAll();
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+
+    BOOST_CHECK(propagated_feats.size() == feat_id - 1); // it's 'feat_id-1' because the protein is not propagated
+    for (auto& it : propagated_feats) {
+        BOOST_CHECK(it->IsSetId());
+        BOOST_CHECK(it->GetId().GetLocal().GetId() == (++feat_id));
+    }
+    listener.Clear();
+}
+
+void CreateXRefLink(CSeq_feat& from_feat, CSeq_feat& to_feat)
+{
+    CRef<CSeqFeatXref> xref(new CSeqFeatXref);
+    xref->SetId(to_feat.SetId());
+    from_feat.SetXref().push_back(xref);
+}
+
+BOOST_AUTO_TEST_CASE(Test_Propagate2FeaturesWithXrefs)
+{
+    size_t front_insert = 5;
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
+    CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
+
+    CRef<CSeq_entry> first = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_entry> last = entry->SetSet().SetSeq_set().back();
+
+    CRef<CSeq_loc> main_loc(new CSeq_loc());
+    main_loc->SetInt().SetFrom(0);
+    main_loc->SetInt().SetTo(15);
+    main_loc->SetInt().SetId().Assign(*(first->GetSeq().GetId().front()));
+
+    CRef<CSeq_loc> subloc(new CSeq_loc());
+    subloc->SetInt().SetFrom(3);
+    subloc->SetInt().SetTo(5);
+    subloc->SetInt().SetId().Assign(*(first->GetSeq().GetId().front()));
+
+    int feat_id = 0;
+    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature(first, 15);
+    gene->SetData().SetGene().SetLocus("gene locus");
+    gene->SetId().SetLocal().SetId(++feat_id);
+    gene->SetLocation().Assign(*main_loc);
+
+    CRef<CSeq_feat> mrna = unit_test_util::AddMiscFeature(first, 15);
+    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    mrna->SetId().SetLocal().SetId(++feat_id);
+    mrna->SetLocation().Assign(*main_loc);
+
+    CreateXRefLink(*mrna, *gene);
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CObject_id::TId maxFeatId = s_FindHighestFeatId(seh);
+
+    CBioseq_CI b_iter(seh, CSeq_inst::eMol_na);
+    CBioseq_Handle src_bseq = *b_iter;
+    CBioseq_Handle target_bseq = *(++b_iter);
+
+    BOOST_TEST_MESSAGE("When both mrna and gene are propagated");
+    CMessageListener_Basic listener;
+    edit::CFeaturePropagator propagator(src_bseq, target_bseq, *align, true, true, true, &listener, &maxFeatId);
+    vector<CRef<CSeq_feat>> propagated_feats = propagator.PropagateFeatureList({ gene, mrna });
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+
+    auto prop_gene = propagated_feats.front();
+    BOOST_CHECK(prop_gene->IsSetId());
+    BOOST_CHECK(prop_gene->GetId().GetLocal().GetId() == (++feat_id));
+    BOOST_CHECK(!prop_gene->IsSetXref());
+
+    auto prop_mrna = propagated_feats.back();
+    BOOST_CHECK(prop_mrna->IsSetId());
+    BOOST_CHECK(prop_mrna->GetId().GetLocal().GetId() == (++feat_id));
+    BOOST_TEST_MESSAGE("the Xref is also propagated");
+    BOOST_CHECK(prop_mrna->IsSetXref());
+    CSeqFeatXref xref;
+    xref.SetId(prop_gene->SetId());
+    BOOST_CHECK(prop_mrna->HasSeqFeatXref(xref.GetId()));
+    listener.Clear();
+}
+
+BOOST_AUTO_TEST_CASE(Test_Propagate1FeatureWithXrefs)
+{
+    size_t front_insert = 5;
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
+    CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
+
+    CRef<CSeq_entry> first = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_entry> last = entry->SetSet().SetSeq_set().back();
+
+    CRef<CSeq_loc> main_loc(new CSeq_loc());
+    main_loc->SetInt().SetFrom(0);
+    main_loc->SetInt().SetTo(15);
+    main_loc->SetInt().SetId().Assign(*(first->GetSeq().GetId().front()));
+
+    CRef<CSeq_loc> subloc(new CSeq_loc());
+    subloc->SetInt().SetFrom(3);
+    subloc->SetInt().SetTo(5);
+    subloc->SetInt().SetId().Assign(*(first->GetSeq().GetId().front()));
+
+    int feat_id = 0;
+    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature(first, 15);
+    gene->SetData().SetGene().SetLocus("gene locus");
+    gene->SetId().SetLocal().SetId(++feat_id);
+    gene->SetLocation().Assign(*main_loc);
+
+    CRef<CSeq_feat> mrna = unit_test_util::AddMiscFeature(first, 15);
+    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    mrna->SetId().SetLocal().SetId(++feat_id);
+    mrna->SetLocation().Assign(*main_loc);
+
+    CreateXRefLink(*mrna, *gene);
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CObject_id::TId maxFeatId = s_FindHighestFeatId(seh);
+
+    CBioseq_CI b_iter(seh, CSeq_inst::eMol_na);
+    CBioseq_Handle src_bseq = *b_iter;
+    CBioseq_Handle target_bseq = *(++b_iter);
+
+    BOOST_TEST_MESSAGE("When the mrna is propagated alone");
+    CMessageListener_Basic listener;
+    edit::CFeaturePropagator propagator(src_bseq, target_bseq, *align, true, true, true, &listener, &maxFeatId);
+    vector<CRef<CSeq_feat>> propagated_feats = propagator.PropagateFeatureList({ mrna });
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+
+    auto prop_mrna = propagated_feats.front();
+    BOOST_CHECK(prop_mrna->IsSetId());
+    BOOST_CHECK(prop_mrna->GetId().GetLocal().GetId() == (++feat_id));
+    BOOST_TEST_MESSAGE("the Xref is missing");
+    BOOST_CHECK(!prop_mrna->IsSetXref()); 
+    listener.Clear();
+}
+
+BOOST_AUTO_TEST_CASE(Test_Propagate2FeaturesWithXrefs_RevOrder)
+{
+    size_t front_insert = 5;
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
+    CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
+
+    CRef<CSeq_entry> first = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_entry> last = entry->SetSet().SetSeq_set().back();
+
+    CRef<CSeq_loc> main_loc(new CSeq_loc());
+    main_loc->SetInt().SetFrom(0);
+    main_loc->SetInt().SetTo(15);
+    main_loc->SetInt().SetId().Assign(*(first->GetSeq().GetId().front()));
+
+    CRef<CSeq_loc> subloc(new CSeq_loc());
+    subloc->SetInt().SetFrom(3);
+    subloc->SetInt().SetTo(5);
+    subloc->SetInt().SetId().Assign(*(first->GetSeq().GetId().front()));
+
+    int feat_id = 0;
+    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature(first, 15);
+    gene->SetData().SetGene().SetLocus("gene locus");
+    gene->SetId().SetLocal().SetId(++feat_id);
+    gene->SetLocation().Assign(*main_loc);
+
+    CRef<CSeq_feat> mrna = unit_test_util::AddMiscFeature(first, 15);
+    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    mrna->SetId().SetLocal().SetId(++feat_id);
+    mrna->SetLocation().Assign(*main_loc);
+
+    CreateXRefLink(*gene, *mrna);
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CObject_id::TId maxFeatId = s_FindHighestFeatId(seh);
+
+    CBioseq_CI b_iter(seh, CSeq_inst::eMol_na);
+    CBioseq_Handle src_bseq = *b_iter;
+    CBioseq_Handle target_bseq = *(++b_iter);
+
+    CMessageListener_Basic listener;
+    edit::CFeaturePropagator propagator(src_bseq, target_bseq, *align, true, true, true, &listener, &maxFeatId);
+    vector<CRef<CSeq_feat>> propagated_feats = propagator.PropagateFeatureList({ gene, mrna });
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+
+    auto prop_gene = propagated_feats.front();
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+    BOOST_CHECK(prop_gene->IsSetId());
+    BOOST_CHECK(prop_gene->GetId().GetLocal().GetId() == (++feat_id));
+    BOOST_CHECK(prop_gene->IsSetXref());
+
+    auto prop_mrna = propagated_feats.back();
+    CSeqFeatXref xref;
+    xref.SetId(prop_mrna->SetId());
+    BOOST_CHECK(prop_gene->HasSeqFeatXref(xref.GetId()));
+
+    BOOST_CHECK(prop_mrna->IsSetId());
+    BOOST_CHECK(prop_mrna->GetId().GetLocal().GetId() == (++feat_id));
+    BOOST_CHECK(!prop_mrna->IsSetXref());
+    listener.Clear();
+}
+
+BOOST_AUTO_TEST_CASE(Test_PropagateFeaturesWithXrefsWithCDS)
+{
+    size_t front_insert = 5;
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodEcoSetWithAlign(front_insert);
+    CRef<CSeq_align> align = entry->SetSet().SetAnnot().front()->SetData().SetAlign().front();
+
+    CRef<CSeq_entry> first = entry->SetSet().SetSeq_set().front();
+    CRef<CSeq_entry> last = entry->SetSet().SetSeq_set().back();
+
+    CRef<CSeq_loc> main_loc(new CSeq_loc());
+    main_loc->SetInt().SetFrom(0);
+    main_loc->SetInt().SetTo(15);
+    main_loc->SetInt().SetId().Assign(*(first->GetSeq().GetId().front()));
+
+    CRef<CSeq_loc> subloc(new CSeq_loc());
+    subloc->SetInt().SetFrom(3);
+    subloc->SetInt().SetTo(5);
+    subloc->SetInt().SetId().Assign(*(first->GetSeq().GetId().front()));
+
+    int feat_id = 0;
+    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature(first, 15);
+    gene->SetData().SetGene().SetLocus("gene locus");
+    gene->SetId().SetLocal().SetId(++feat_id);
+    gene->SetLocation().Assign(*main_loc);
+
+    CRef<CSeq_feat> mrna = unit_test_util::AddMiscFeature(first, 15);
+    mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
+    mrna->SetId().SetLocal().SetId(++feat_id);
+    mrna->SetLocation().Assign(*main_loc);
+
+    CreateXRefLink(*mrna, *gene);
+
+    CRef<CSeq_feat> cds_withoutprot = unit_test_util::AddMiscFeature(first, 15);
+    cds_withoutprot->SetData().SetCdregion();
+    cds_withoutprot->SetId().SetLocal().SetId(++feat_id);
+    cds_withoutprot->SetLocation().SetInt().SetFrom(10);
+    cds_withoutprot->SetLocation().SetInt().SetTo(25);
+    cds_withoutprot->SetLocation().SetInt().SetId().Assign(*(first->GetSeq().GetId().front()));
+
+    CRef<CSeq_feat> cds_withprot = unit_test_util::MakeMiscFeature(unit_test_util::IdFromEntry(first), 15);
+    cds_withprot->SetComment("CDS with product");
+    cds_withprot->SetData().SetCdregion();
+    cds_withprot->SetId().SetLocal().SetId(++feat_id);
+    cds_withprot->SetLocation().Assign(*main_loc);
+
+    CreateXRefLink(*cds_withprot, *gene);
+    CreateXRefLink(*mrna, *cds_withprot);
+    CreateXRefLink(*cds_withprot, *mrna);
+
+    // constructing the protein sequence
+    CRef<CSeq_entry> prot_entry(new CSeq_entry());
+    prot_entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
+    prot_entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_aa);
+    prot_entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("-WPKL");
+    prot_entry->SetSeq().SetInst().SetLength(5);
+
+    const string prot_id = "good1_1";
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetLocal().SetStr(prot_id);
+    prot_entry->SetSeq().SetId().push_back(id);
+
+    CRef<CSeqdesc> mdesc(new CSeqdesc());
+    mdesc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+    prot_entry->SetSeq().SetDescr().Set().push_back(mdesc);
+
+    CRef<CSeq_feat> prot_feat(new CSeq_feat());
+    prot_feat->SetData().SetProt().SetName().push_back("hypothetical protein");
+    prot_feat->SetLocation().SetInt().SetId().Assign(*(prot_entry->GetSeq().GetId().front()));
+    prot_feat->SetLocation().SetInt().SetFrom(0);
+    prot_feat->SetLocation().SetInt().SetTo(prot_entry->GetSeq().GetInst().GetLength() - 1);
+    prot_feat->SetId().SetLocal().SetId(++feat_id);
+    unit_test_util::AddFeat(prot_feat, prot_entry);
+
+    cds_withprot->SetProduct().SetWhole().SetLocal().SetStr(prot_id);
+
+    CRef<CBioseq_set> set(new CBioseq_set());
+    set->SetClass(CBioseq_set::eClass_nuc_prot);
+    set->SetSeq_set().push_back(first);
+    set->SetSeq_set().push_back(prot_entry);
+    CRef<CSeq_entry> set_entry(new CSeq_entry());
+    set_entry->SetSet(*set);
+
+    unit_test_util::AddFeat(cds_withprot, set_entry);
+
+    auto it = entry->SetSet().SetSeq_set().begin();
+    it = entry->SetSet().SetSeq_set().erase(it);
+    entry->SetSet().SetSeq_set().insert(it, set_entry);
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CObject_id::TId maxFeatId = s_FindHighestFeatId(seh);
+
+    CBioseq_CI b_iter(seh, CSeq_inst::eMol_na);
+    CBioseq_Handle src_bseq = *b_iter;
+    CBioseq_Handle target_bseq = *(++b_iter);
+
+    CMessageListener_Basic listener;
+	edit::CFeaturePropagator propagator(src_bseq, target_bseq, *align, true, true, true, &listener, &maxFeatId);
+    vector<CConstRef<CSeq_feat>> feat_list{ gene, mrna, cds_withoutprot, cds_withprot };
+    vector<CRef<CSeq_feat>> propagated_feats = propagator.PropagateFeatureList(feat_list);
+    BOOST_CHECK_EQUAL(listener.Count(), 0);
+
+    BOOST_CHECK(propagated_feats.size() == feat_id );
+
+    auto feat_it = propagated_feats.begin();
+    auto prop_gene = *feat_it;
+    BOOST_CHECK(prop_gene->IsSetId());
+    BOOST_CHECK(prop_gene->GetId().GetLocal().GetId() == (++feat_id));
+    BOOST_CHECK(!prop_gene->IsSetXref());
+
+    ++feat_it;
+    auto prop_mrna = *feat_it;
+    BOOST_CHECK(prop_mrna->IsSetId());
+    BOOST_CHECK(prop_mrna->GetId().GetLocal().GetId() == (++feat_id));
+    BOOST_CHECK(prop_mrna->IsSetXref());
+    BOOST_CHECK(prop_mrna->GetXref().size() == 2);
+
+    ++feat_it;
+    auto prop_cds_withoutprot = *feat_it; 
+    BOOST_CHECK(prop_cds_withoutprot->IsSetId());
+    BOOST_CHECK(prop_cds_withoutprot->GetId().GetLocal().GetId() == (++feat_id));
+    BOOST_CHECK(!prop_cds_withoutprot->IsSetXref());
+
+    ++feat_it;
+    auto prop_cds = *feat_it;
+    BOOST_CHECK(prop_cds->IsSetId());
+    BOOST_CHECK(prop_cds->GetId().GetLocal().GetId() == (++feat_id));
+    BOOST_CHECK(prop_cds->IsSetXref());
+
+    CSeqFeatXref mrna_xref1;
+    mrna_xref1.SetId(prop_gene->SetId());
+    BOOST_CHECK(prop_mrna->HasSeqFeatXref(mrna_xref1.GetId()));
+    mrna_xref1.SetId(prop_cds->SetId());
+    BOOST_CHECK(prop_mrna->HasSeqFeatXref(mrna_xref1.GetId()));
+
+    CSeqFeatXref cds_xref;
+    cds_xref.SetId(prop_gene->SetId());
+    BOOST_CHECK(prop_cds->HasSeqFeatXref(cds_xref.GetId()));
+    cds_xref.SetId(prop_mrna->SetId());
+    BOOST_CHECK(prop_cds->HasSeqFeatXref(cds_xref.GetId()));
+
+    ++feat_it;
+    auto prop_protein = *feat_it;
+    BOOST_CHECK(prop_protein->IsSetId());
+    BOOST_CHECK(prop_protein->GetId().GetLocal().GetId() == (++feat_id));
+    listener.Clear();
 }
 
 

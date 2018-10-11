@@ -34,6 +34,7 @@
 #include <corelib/ncbi_message.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -52,13 +53,18 @@ class NCBI_XOBJEDIT_EXPORT CFeaturePropagator
 public:
     CFeaturePropagator(CBioseq_Handle src, CBioseq_Handle target, const CSeq_align& align,
         bool stop_at_stop = true, bool cleanup_partials = true, bool merge_abutting = true,
-        CMessageListener_Basic* pMessageListener = 0);
+        CMessageListener_Basic* pMessageListener = 0,
+        CObject_id::TId* feat_id = nullptr);
     ~CFeaturePropagator() {}
 
     CRef<CSeq_feat> Propagate(const objects::CSeq_feat& orig_feat);
     vector<CRef<CSeq_feat> > PropagateAll();
 
     CRef<CSeq_feat> ConstructProteinFeatureForPropagatedCodingRegion(const CSeq_feat& orig_cds, const CSeq_feat& new_cds);
+
+    /// Propagates a feature list from the source sequence
+    /// The propagated protein feature is stored right after the propagated cds
+    vector<CRef<CSeq_feat>> PropagateFeatureList(const vector<CConstRef<CSeq_feat>>& orig_feats);
 
     typedef enum {
         eFeaturePropagationProblem_None = 0,
@@ -75,9 +81,9 @@ private:
     void x_PropagateCds(CSeq_feat& feat, const CSeq_id& targetId, bool origIsPartialStart);
     void x_CdsMapCodeBreaks(CSeq_feat& feat, const CSeq_id& targetId);
     void x_CdsStopAtStopCodon(CSeq_feat& cds);
-    void x_CdsCleanupPartials(objects::CSeq_feat& cds, bool origIsPartialStart);
+    void x_CdsCleanupPartials(CSeq_feat& cds, bool origIsPartialStart);
 
-    void x_PropagatetRNA(objects::CSeq_feat& feat, const CSeq_id& targetId);
+    void x_PropagatetRNA(CSeq_feat& feat, const CSeq_id& targetId);
 
     CRef<CSeq_interval> x_MapInterval(const CSeq_interval& sourceInt, const CSeq_id& targetId);
     CRef<CSeq_loc> x_MapLocation(const CSeq_loc& sourceLoc, const CSeq_id& targetId);
@@ -91,7 +97,8 @@ private:
     bool m_CdsStopAtStopCodon;
     bool m_CdsCleanupPartials;
     CMessageListener_Basic* m_MessageListener;
-
+    CObject_id::TId* m_MaxFeatId = nullptr;
+    map<CObject_id::TId, CObject_id::TId> m_FeatIdMap; // map old feat-id to propagated feat-id
 };
 
 END_SCOPE(edit)
