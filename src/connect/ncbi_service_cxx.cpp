@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 
 static bool x_OrderHostsByRateDesc(const CSERV_Info& lhs, const CSERV_Info& rhs)
 {
-    return lhs.GetRate() >= rhs.GetRate();
+    return lhs.GetRate() > rhs.GetRate();
 }
 
 /////////////////////////////////////////////////////////////////////////////
