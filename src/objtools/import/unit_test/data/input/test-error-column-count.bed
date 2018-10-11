@@ -1,0 +1,4 @@
+track name="test-error-bad-column-count" description="track1"
+chr22 2000 2100 cloneB 900 - 2000 2100 0
+chr22 2200 2300 cloneB 900 - 2200 2200 0 additional junk
+

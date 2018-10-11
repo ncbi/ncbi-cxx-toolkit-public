@@ -61,7 +61,8 @@ CFeatMessageHandler::ReportError(
     case CFeatImportError::PROGRESS:
         cerr << error.Message() << "\n";
         return;
-    case CFeatImportError::CRITICAL:
+    case CFeatImportError::FATAL:
+        mErrors.push_back(error);
         throw error;
     }
 }

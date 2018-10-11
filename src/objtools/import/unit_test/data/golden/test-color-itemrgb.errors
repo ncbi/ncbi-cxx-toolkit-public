@@ -1,0 +1,15 @@
+CFeatureImportError:
+  Severity = Warning
+  Message = "Invalid RGB value- defaulting to BLACK"
+  LineNumber = 8
+
+CFeatureImportError:
+  Severity = Warning
+  Message = "Invalid RGB value- defaulting to BLACK"
+  LineNumber = 9
+
+CFeatureImportError:
+  Severity = Warning
+  Message = "Invalid RGB value- defaulting to BLACK"
+  LineNumber = 10
+

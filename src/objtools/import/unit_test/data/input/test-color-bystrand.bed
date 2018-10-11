@@ -1,0 +1,4 @@
+track colorByStrand=""11,11,11 222,222,222" name="test-color-bystrand" description="track1"
+chr22 2000 12100 cloneB 0 - 2000 6000 . 2 433,399, 0,3601
+chr22 2000 12300 cloneC 500 + 2000 6000 . 2 433,399, 0,3601
+chr22 2000 12500 cloneD 1000 . 2000 6000 . 2 433,399, 0,3601

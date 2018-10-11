@@ -26,7 +26,7 @@
 * Author:  Frank Ludwig, NCBI
 *
 * File Description:
-*   Test application for the CFormatGuess component
+*   Scanner for BED input data.
 *
 * ===========================================================================
 */
@@ -59,9 +59,15 @@ public:
         CFeatImportData&) override;
 
 protected:
-    bool
-    xIsTrackLine(
-        const string&);
+    void
+    SetInputStream(
+        CNcbiIstream&,
+        bool = false);
+
+    virtual bool
+    xIgnoreLine(
+        const string&) const;
+
     bool
     xProcessTrackLine(
         const string&);
@@ -117,7 +123,6 @@ protected:
         const std::vector<string>&,
         CBedImportData::RgbValue&);
 
-
     void
     xInitializeBlocks(
         const std::vector<string>&,
@@ -125,6 +130,7 @@ protected:
         std::vector<int>& blockStarts,
         std::vector<int>& blockSizes);
 
+    bool mStreamIsBad;
 	size_t mColumnCount;
     std::string mColumnDelimiter;
     int mSplitFlags;

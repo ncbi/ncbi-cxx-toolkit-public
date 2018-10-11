@@ -86,7 +86,7 @@ protected:
     unsigned int mFlags;
     unique_ptr<CIdResolver> mpIdResolver;
     unique_ptr<CFeatLineReader> mpReader;
-    CFeatMessageHandler mErrorHandler;
+    CFeatMessageHandler& mErrorHandler;
 };
 
 

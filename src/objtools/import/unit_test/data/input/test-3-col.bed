@@ -1,4 +1,4 @@
-track name=pairedReads description="9-col bed"
+track name="test-3-col" description="track1"
 chr22 2000 2100
 chr22 2200 2300
 chr22 2400 2500

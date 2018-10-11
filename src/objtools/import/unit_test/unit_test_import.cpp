@@ -75,16 +75,18 @@ void sRunTest(
     try {
         while (true) {
             pImporter->ReadSeqAnnot(iStr, annot);
+            if (annot.GetData().GetFtable().empty()) {
+                break;
+            }
             oStrAnnot << MSerial_Format_AsnText() << annot;
         }
     }
-    catch (const CFeatImportError& error) {
-        if (error.Code() != error.eEOF_NO_DATA) {
-            BOOST_ERROR("Error: Test \"" << testName << "\" failed during import:");
-            BOOST_ERROR("  " << error.Message() << ", at line " << error.LineNumber());
-            iStr.close();
-            return;
-        }
+    catch (const CFeatImportError&) {
+    }
+    catch(std::exception& err) {
+        BOOST_ERROR("Error: Test \"" << testName << "\" failed during import:");
+        BOOST_ERROR("  " << err.what());
+        return;
     }
     iStr.close();
     oStrAnnot.close();

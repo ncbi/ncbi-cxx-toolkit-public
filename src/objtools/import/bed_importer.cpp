@@ -49,7 +49,7 @@ CBedImporter::CBedImporter(
 //  ============================================================================
     CFeatImporter_impl(flags, errorHandler)
 {
-    mpReader.reset(GetReader(errorHandler));
+    mpReader.reset(new CBedLineReader(errorHandler));
 };
 
 
@@ -58,3 +58,49 @@ CBedImporter::~CBedImporter()
 //  ============================================================================
 {
 };
+
+//  =============================================================================
+void
+CBedImporter::ReadSeqAnnot(
+    CNcbiIstream& istr,
+    CSeq_annot& annot)
+    //  =============================================================================
+{
+    unique_ptr<CFeatImportData> pImportData(GetImportData(mErrorHandler));
+    unique_ptr<CFeatAnnotAssembler> pAssembler(
+        GetAnnotAssembler(annot, mErrorHandler));
+
+    mpReader->SetInputStream(istr);
+    if (mFlags & fReportProgress) {
+        mpReader->SetProgressReportFrequency(5);
+    }
+
+    pAssembler->InitializeAnnot();
+    bool terminateNow = false;
+    while (!terminateNow) {
+        try {
+            if (!mpReader->GetNextRecord(*pImportData)) {
+                break;
+            }
+            pAssembler->ProcessRecord(*pImportData);
+        }
+        catch (CFeatImportError& err) {
+            mErrorHandler.ReportError(err);
+            switch(err.Severity()) {
+            default:
+                continue;
+            case CFeatImportError::CRITICAL:
+                terminateNow = true;
+                break;
+            case CFeatImportError::FATAL:
+                throw;
+            }
+        }
+    }
+    if (0 != mpReader->RecordCount()) {
+        const CAnnotImportData& annotMeta = mpReader->AnnotImportData();
+        pAssembler->FinalizeAnnot(annotMeta);
+    }
+}
+
+

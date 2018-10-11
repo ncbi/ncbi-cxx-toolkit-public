@@ -1,17 +1,17 @@
 Seq-annot ::= {
   desc {
-    title "9-col bed",
-    name "pairedReads",
+    title "track1",
+    name "test-3-col",
     user {
       type str "Track Data",
       data {
         {
           label str "description",
-          data str "9-col bed"
+          data str "track1"
         },
         {
           label str "name",
-          data str "pairedReads"
+          data str "test-3-col"
         }
       }
     }

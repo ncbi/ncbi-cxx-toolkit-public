@@ -184,8 +184,15 @@ CBedImportData::xInitializeScore(
     double score)
 //  ============================================================================
 {
-    // score negative indicates there is no score
-    if (score >= 0) {
+    if (score < 0) { // score negative indicates there is no score
+        return;
+    }
+
+    int intScore = static_cast<int>(score);
+    if (intScore == score) {
+        mDisplayData.AddField("score", intScore);
+    }
+    else {
         mDisplayData.AddField("score", score);
     }
 }

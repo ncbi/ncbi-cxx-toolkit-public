@@ -49,10 +49,10 @@ class NCBI_XOBJIMPORT_EXPORT CFeatImportError:
 public:
     enum  ErrorLevel {
         PROGRESS = -1,
-        CRITICAL = 0,
-        ERROR = 1,
-        WARNING = 2,
-        INFO = 3,
+        FATAL = 0,          // show stops here, discard all data
+        CRITICAL = 1,       // show stops here, preserve data retrieved so far
+        ERROR = 2,          // discard current unit of information
+        WARNING = 3,        // fix up and use current unit of information
         DEBUG = 4,
     };
 
@@ -85,10 +85,10 @@ public:
 
     void
     AmendMessage(
-        const std::string& amend) { mMessage += ": "; mMessage += amend; };
+        const std::string& amend) { mAmend = amend; };
 
     ErrorLevel Severity() const { return mSeverity; };
-    const std::string& Message() const { return mMessage; };
+    std::string Message() const;
     unsigned int LineNumber() const { return mLineNumber; };
     ErrorCode Code() const { return mCode; };
 
@@ -103,6 +103,7 @@ protected:
     ErrorLevel mSeverity;
     ErrorCode mCode;
     string mMessage;
+    string mAmend;
     unsigned int mLineNumber;
 };
 

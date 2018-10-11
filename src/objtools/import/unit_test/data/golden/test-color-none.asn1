@@ -1,0 +1,414 @@
+Seq-annot ::= {
+  desc {
+    title "track1",
+    name "test-color-none",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "description",
+          data str "track1"
+        },
+        {
+          label str "name",
+          data str "test-color-none"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local str "gene_1",
+      data region "uc010nzm.1",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        }
+      }
+    },
+    {
+      id local str "mrna_1",
+      data region "uc010nzm.1",
+      location int {
+        from 3730413,
+        to 3731616,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "gene_2",
+      data region "uc010nzm.2",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_2"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 10
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_2",
+      data region "uc010nzm.2",
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand minus,
+          id local str "chr2"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand minus,
+          id local str "chr2"
+        },
+        int {
+          from 3732843,
+          to 3732934,
+          strand minus,
+          id local str "chr2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_2"
+        }
+      }
+    },
+    {
+      id local str "gene_3",
+      data region "uc010nzm.3",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_3"
+        },
+        {
+          id local str "cds_1"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 500
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_3",
+      data region "uc010nzm.3",
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand plus,
+          id local str "chr2"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand plus,
+          id local str "chr2"
+        },
+        int {
+          from 3732843,
+          to 3732934,
+          strand plus,
+          id local str "chr2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_3"
+        },
+        {
+          id local str "cds_1"
+        }
+      }
+    },
+    {
+      id local str "cds_1",
+      data region "uc010nzm.3",
+      location int {
+        from 3728653,
+        to 3728654,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_3"
+        },
+        {
+          id local str "mrna_3"
+        }
+      }
+    },
+    {
+      id local str "gene_4",
+      data region "uc010nzm.4",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_4"
+        },
+        {
+          id local str "cds_2"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 4000
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_4",
+      data region "uc010nzm.4",
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand minus,
+          id local str "chr2"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand minus,
+          id local str "chr2"
+        },
+        int {
+          from 3732843,
+          to 3732934,
+          strand minus,
+          id local str "chr2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_4"
+        },
+        {
+          id local str "cds_2"
+        }
+      }
+    },
+    {
+      id local str "cds_2",
+      data region "uc010nzm.4",
+      location int {
+        from 3728653,
+        to 3728654,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_4"
+        },
+        {
+          id local str "mrna_4"
+        }
+      }
+    },
+    {
+      id local str "gene_5",
+      data region "uc010nzm.5",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_5"
+        },
+        {
+          id local str "cds_3"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 11, 10, -1 }
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_5",
+      data region "uc010nzm.5",
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand plus,
+          id local str "chr2"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand plus,
+          id local str "chr2"
+        },
+        int {
+          from 3732843,
+          to 3732934,
+          strand plus,
+          id local str "chr2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_5"
+        },
+        {
+          id local str "cds_3"
+        }
+      }
+    },
+    {
+      id local str "cds_3",
+      data region "uc010nzm.5",
+      location pnt {
+        point 3728653,
+        strand plus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_5"
+        },
+        {
+          id local str "mrna_5"
+        }
+      }
+    },
+    {
+      id local str "gene_6",
+      data region "uc010nzm.6",
+      location int {
+        from 3728652,
+        to 3773797,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "mrna_6"
+        },
+        {
+          id local str "cds_4"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 2
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "mrna_6",
+      data region "uc010nzm.6",
+      location mix {
+        int {
+          from 3728652,
+          to 3729855,
+          strand minus,
+          id local str "chr2"
+        },
+        int {
+          from 3730413,
+          to 3732081,
+          strand minus,
+          id local str "chr2"
+        }
+      },
+      xref {
+        {
+          id local str "gene_6"
+        },
+        {
+          id local str "cds_4"
+        }
+      }
+    },
+    {
+      id local str "cds_4",
+      data region "uc010nzm.6",
+      location pnt {
+        point 3728653,
+        strand minus,
+        id local str "chr2"
+      },
+      xref {
+        {
+          id local str "gene_6"
+        },
+        {
+          id local str "mrna_6"
+        }
+      }
+    }
+  }
+}

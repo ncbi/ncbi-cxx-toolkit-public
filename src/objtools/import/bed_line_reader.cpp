@@ -41,14 +41,26 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+//  ****************************************************************************
+//  Implementation notes:
+//  - This implementation follows the UCSC version of BED as described at
+//    https://genome.ucsc.edu/FAQ/FAQformat.html#format1.
+//  - Per spec, arbitrary whitespace (i.e. any combination of tabs and spaces)
+//    is permissible as column separators.
+//  - Per spec, there can only be a single instance of browser/track lines,
+//    right at the beginning of the file. There is no provision for multiple
+//    tracks in a single file.
+//  ****************************************************************************
+
 //  ============================================================================
 CBedLineReader::CBedLineReader(
     CFeatMessageHandler& errorReporter):
 //  ============================================================================
     CFeatLineReader(errorReporter),
+    mStreamIsBad(true),
     mColumnCount(0),
-    mColumnDelimiter(""),
-    mSplitFlags(0),
+    mColumnDelimiter(" \t"),
+    mSplitFlags(NStr::fSplit_MergeDelimiters),
     mUseScore(false),
     mItemRgb(false),
     mColorByStrand(false)
@@ -59,15 +71,24 @@ CBedLineReader::CBedLineReader(
 bool
 CBedLineReader::GetNextRecord(
     CFeatImportData& record)
+//
+//  Error disposition:
+//  Abort on:
+//    Bad column count.
+//  Terminate on:
+//    Track line out of order.
+//  Discard record on:
+//    Bad topology (block description off, text in numeric fields)
+//  Fix up data with default values on:
+//    Bad score values, bad RGB values.
 //  ============================================================================
 {
     assert(mpLineReader);
 
-    CFeatImportError errorEofNoData(
-        CFeatImportError::CRITICAL, 
-        "Stream does not contain feature data", 
-        0, CFeatImportError::eEOF_NO_DATA);
-
+    if (mStreamIsBad) {
+        return false;
+    }
+    
     xReportProgress();
 
     string nextLine = "";
@@ -76,42 +97,41 @@ CBedLineReader::GetNextRecord(
         if (xIgnoreLine(nextLine)) {
             continue;
         }
-        if (xIsTrackLine(nextLine)) {
-            if (mRecordNumber == 0) {
-                xProcessTrackLine(nextLine);
-                continue;
-            }
-            else {
-                mpLineReader->UngetLine();
-                break;
-            }
+        if (xProcessTrackLine(nextLine)) {
+            continue;
         }
-        //if (xProcessTrackLine(nextLine)) {
-        //    if (mRecordNumber > 0) {
-        //        break;
-        //    }
-        //    continue;
-        //} 
         vector<string> columns;
         xSplitLine(nextLine, columns);
         xInitializeRecord(columns, record);
         ++mRecordNumber;
         return true;
     }
-    if (0 == mRecordNumber) {
-        errorEofNoData.SetLineNumber(LineCount());
-        throw errorEofNoData;
-    }
     return false;
 }
 
 //  ============================================================================
-bool
-CBedLineReader::xIsTrackLine(
-    const string& line)
+void
+CBedLineReader::SetInputStream(
+    CNcbiIstream& istr,
+    bool force)
 //  ============================================================================
 {
-    return NStr::StartsWith(line, "track");
+    if (!mpLineReader) {
+        mStreamIsBad = false;
+    }
+    CFeatLineReader::SetInputStream(istr, force);
+}
+
+//  ============================================================================
+bool
+CBedLineReader::xIgnoreLine(
+    const string& line) const
+//  ============================================================================
+{
+    if (CFeatLineReader::xIgnoreLine(line)) {
+        return true;
+    }
+    return NStr::StartsWith(line, "browser");
 }
 
 //  ============================================================================
@@ -120,14 +140,22 @@ CBedLineReader::xProcessTrackLine(
     const string& line)
 //  ============================================================================
 {
-    CFeatImportError errorInvalidTrackLine(
-        CFeatImportError::ERROR, "Invalid track setting", 
+    CFeatImportError errorInvalidTrackValue(
+        CFeatImportError::WARNING, "Invalid track value", 
+        LineCount());
+
+    CFeatImportError errorTrackLineOutOfOrder(
+        CFeatImportError::CRITICAL, "Track line out of order",
         LineCount());
 
     string track, values;
     NStr::SplitInTwo(line, " \t", track, values);
     if (track != "track") {
         return false;
+    }
+    if (this->mRecordNumber > 0) { //track line not before any data
+        mStreamIsBad = true;
+        throw errorTrackLineOutOfOrder;
     }
 
     mAnnotInfo.Clear();
@@ -157,8 +185,8 @@ CBedLineReader::xProcessTrackLine(
     const string& itemRgb = mAnnotInfo.ValueOf("itemRgb");
     mItemRgb = (itemRgb == "on"  ||  itemRgb == "On");
     if (!itemRgb.empty()  &&  !mItemRgb) {
-        errorInvalidTrackLine.AmendMessage("Bad itemRgb value --- ignored");
-        mErrorReporter.ReportError(errorInvalidTrackLine);
+        errorInvalidTrackValue.AmendMessage("Bad itemRgb value --- ignored");
+        mErrorReporter.ReportError(errorInvalidTrackValue);
     }
 
     const string& colorByStrand = mAnnotInfo.ValueOf("colorByStrand");
@@ -185,8 +213,9 @@ CBedLineReader::xProcessTrackLine(
             mRgbStrandMinus.B = NStr::StringToInt(rgbComponents[2]);
         }
         catch(std::exception&) {
-            errorInvalidTrackLine.AmendMessage("Bad colorByStrand value --- ignored");
-            mErrorReporter.ReportError(errorInvalidTrackLine);
+            errorInvalidTrackValue.AmendMessage(
+                "Bad colorByStrand value --- ignored");
+            mErrorReporter.ReportError(errorInvalidTrackValue);
         }
         mColorByStrand = true;
     }
@@ -198,24 +227,15 @@ void
 CBedLineReader::xSplitLine(
     const string& line,
     vector<string>& columns)
+//
+//  See implementation notes!
 //  ============================================================================
 {
     CFeatImportError errorInvalidColumnCount(
-        CFeatImportError::CRITICAL, "Invalid column count",
+        CFeatImportError::FATAL, "Invalid column count",
         LineCount());
 
     columns.clear();
-    if (mColumnDelimiter.empty()) {
-        mColumnDelimiter = "\t";
-        mSplitFlags = 0;
-        NStr::Split(line, mColumnDelimiter, columns, mSplitFlags);
-        if (columns.size() == 12) {
-            return;
-        }
-        columns.clear();
-        mColumnDelimiter = " \t";
-        mSplitFlags = NStr::fSplit_MergeDelimiters;
-    }
     NStr::Split(line, mColumnDelimiter, columns, mSplitFlags);
 	if (mColumnCount == 0) {
 		if (columns.size() < 3  ||  columns.size() > 12) {
@@ -266,8 +286,14 @@ CBedLineReader::xInitializeChromInterval(
     }
 
     chromStrand = eNa_strand_plus;
-    if (columns.size() > 5  &&  columns[5] == "-") {
-        chromStrand = eNa_strand_minus;
+    if (columns.size() > 5) {
+        const auto& strand = columns[5];
+        if (strand != "+"  &&  strand != "-"  &&  strand != ".") {
+            throw errorInvalidStrandValue;
+        }
+        if (strand == "-") {
+            chromStrand = eNa_strand_minus;
+        }
     }
 }
 
@@ -326,10 +352,12 @@ CBedLineReader::xInitializeRgbFromStrandColumn(
 //  ============================================================================
 {
     CFeatImportError errorInvalidStrandValue(
-        CFeatImportError::WARNING, "Invalid strand value- setting color to BLACK.",
+        CFeatImportError::WARNING, 
+        "Invalid strand value- setting color to BLACK.",
         LineCount());
 
-    if (columns.size() < 6 || (columns[5] != "+"  &&  columns[5] != "-")) {
+    if (columns.size() < 6  || 
+            (columns[5] != "+"  &&  columns[5] != "-"  &&  columns[5] != ".")) {
         mErrorReporter.ReportError(errorInvalidStrandValue);
         rgbValue.R = rgbValue.G = rgbValue.B = 0;
         return;
@@ -356,26 +384,47 @@ CBedLineReader::xInitializeRgbFromScoreColumn(
     CFeatImportError errorInvalidScoreValue(
         CFeatImportError::WARNING, "Invalid score value- setting color to BLACK.",
         LineCount());
+    CFeatImportError errorScoreValueTooLow(
+        CFeatImportError::WARNING, "Invalid score value- clipping to 0.",
+        LineCount());
+    CFeatImportError errorScoreValueTooHigh(
+        CFeatImportError::WARNING, "Invalid score value- clipping to 1000.",
+        LineCount());
 
     if (columns.size() < 5 || columns[4] == ".") {
         mErrorReporter.ReportError(errorInvalidScoreValue);
         rgbValue.R = rgbValue.G = rgbValue.B = 0;
         return;
     }
-    auto scoreValue = static_cast<int>(NStr::StringToDouble(columns[4]));
+    auto scoreValue = 0;
+    try {
+        scoreValue = static_cast<int>(NStr::StringToDouble(columns[4]));
+    }
+    catch(CException&) {
+        mErrorReporter.ReportError(errorInvalidScoreValue);
+        rgbValue.R = rgbValue.G = rgbValue.B = 0;
+        return;
+    }
+
     if (scoreValue < 0) {
+        mErrorReporter.ReportError(errorScoreValueTooLow);
         scoreValue = 0;
     }
     else if (scoreValue > 1000) {
+        mErrorReporter.ReportError(errorScoreValueTooHigh);
         scoreValue = 1000;
     }
     if (scoreValue == 0) {
         rgbValue.R = rgbValue.G = rgbValue.B = 0;
         return;
     }
+    if (scoreValue > 998) {
+        rgbValue.R = rgbValue.G = rgbValue.B = 255;
+        return;
+    }
 
     scoreValue = static_cast<int>(scoreValue / 111);
-    rgbValue.R = rgbValue.G = rgbValue.B = (29 + 29*scoreValue);
+    rgbValue.R = rgbValue.G = rgbValue.B = (13 + 29*scoreValue);
     return;
 }
 
@@ -465,7 +514,6 @@ CBedLineReader::xInitializeThickInterval(
     CFeatImportError errorInvalidThickEndValue(
         CFeatImportError::ERROR, "Invalid thickEnd value",
         LineCount());
-
     if (columns.size() < 8) {
         return;
     }
@@ -515,7 +563,7 @@ CBedLineReader::xInitializeBlocks(
         CFeatImportError::ERROR, "Invalid blockStarts value",
         LineCount());
     CFeatImportError errorInvalidBlockSizesValue(
-        CFeatImportError::ERROR, "Invalid blockStarts value",
+        CFeatImportError::ERROR, "Invalid blockSizes value",
         LineCount());
     CFeatImportError errorInconsistentBlocksInformation(
         CFeatImportError::ERROR, "Inconsistent blocks information",
@@ -545,7 +593,7 @@ CBedLineReader::xInitializeBlocks(
         }
     }
     catch(std::exception&) {
-        throw errorInvalidBlockCountValue;
+        throw errorInvalidBlockSizesValue;
     }
     if (blockCount != blockSizes.size()) {
         throw errorInconsistentBlocksInformation;
@@ -562,7 +610,7 @@ CBedLineReader::xInitializeBlocks(
         }
     }
     catch(std::exception&) {
-        throw errorInvalidBlockCountValue;
+        throw errorInvalidBlockStartsValue;
     }
     if (blockCount != blockStarts.size()) {
         throw errorInconsistentBlocksInformation;
@@ -576,7 +624,12 @@ CBedLineReader::xInitializeRecord(
     CFeatImportData& record_)
 //  ============================================================================
 {
+    CFeatImportError errorInvalidThickInterval(
+        CFeatImportError::ERROR, "thickInterval extending beyond chrom feature",
+        LineCount());
+
     assert(dynamic_cast<CBedImportData*>(&record_));
+
     CBedImportData& record = static_cast<CBedImportData&>(record_);
     //record.InitializeFrom(columns, mLineNumber);
 
@@ -593,6 +646,9 @@ CBedLineReader::xInitializeRecord(
 
     TSeqPos thickStart = chromStart, thickEnd = chromStart; //!!
     xInitializeThickInterval(columns, thickStart, thickEnd);
+    if (thickStart < chromStart  ||  thickEnd > chromEnd) {
+        throw errorInvalidThickInterval;
+    }
 
     CBedImportData::RgbValue rgbValue;
     xInitializeRgb(columns, rgbValue);

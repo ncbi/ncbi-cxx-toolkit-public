@@ -115,21 +115,18 @@ CFeatImporter_impl::ReadSeqAnnot(
     }
 
     pAssembler->InitializeAnnot();
+    if (!mpReader->GetNextRecord(*pImportData)) {
+        return;
+    }
     while (true) {
         try {
+            //pImportData->Serialize(cerr);
+            pAssembler->ProcessRecord(*pImportData);
             if (!mpReader->GetNextRecord(*pImportData)) {
                 break;
             }
-            //pImportData->Serialize(cerr);
-            pAssembler->ProcessRecord(*pImportData);
         }
         catch(CFeatImportError& err) {
-            if (err.Code() == CFeatImportError::eEOF_NO_DATA) {
-                if (mpReader->RecordCount() > 0) {
-                    break;
-                }
-                throw;
-            }
             err.SetLineNumber(mpReader->LineCount());
             mErrorHandler.ReportError(err);
         }

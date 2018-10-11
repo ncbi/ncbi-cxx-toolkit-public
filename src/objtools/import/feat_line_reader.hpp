@@ -62,7 +62,7 @@ public:
     unsigned int LineCount() const;
     unsigned int RecordCount() const { return mRecordNumber; };
 
-    void
+    virtual void
     SetInputStream(
         CNcbiIstream&,
         bool =false);

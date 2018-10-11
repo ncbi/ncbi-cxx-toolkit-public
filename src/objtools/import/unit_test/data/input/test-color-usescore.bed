@@ -1,0 +1,10 @@
+track useScore=1 name="test-color-usescore" description="track1"
+chr22 2000 12100 cloneB 0 - 2000 6000 . 2 433,399, 0,3601
+chr22 2000 12300 cloneC 500 - 2000 6000 . 2 433,399, 0,3601
+chr22 2000 12500 cloneD 1000 - 2000 6000 . 2 433,399, 0,3601
+chr22 2000 12700 cloneE 998 - 2000 6000 . 2 433,399, 0,3601
+# remaining ones should cause warnings and be set to black or clipped
+chr22 2000 12900 cloneF . - 2000 6000 . 2 433,399, 0,3601
+chr22 3000 13100 cloneG junk - 3000 6000 . 2 433,399, 0,3601
+chr22 3000 13300 cloneH -1 - 3000 6000 . 2 433,399, 0,3601
+chr22 3000 13500 cloneI 10000 - 3000 6000 . 2 433,399, 0,3601

@@ -1,17 +1,25 @@
 Seq-annot ::= {
   desc {
-    title "Clone Paired Reads",
-    name "pairedReads",
+    title "track1",
+    name "test-error-trackline",
     user {
       type str "Track Data",
       data {
         {
+          label str "colorbystrand",
+          data str "no good"
+        },
+        {
           label str "description",
-          data str "Clone Paired Reads"
+          data str "track1"
+        },
+        {
+          label str "itemrgb",
+          data str "invalid"
         },
         {
           label str "name",
-          data str "pairedReads"
+          data str "test-error-trackline"
         }
       }
     }
@@ -40,7 +48,11 @@ Seq-annot ::= {
           data {
             {
               label str "score",
-              data real { 9, 10, 2 }
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         }
@@ -121,7 +133,11 @@ Seq-annot ::= {
           data {
             {
               label str "score",
-              data real { 9, 10, 2 }
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         }
@@ -202,7 +218,11 @@ Seq-annot ::= {
           data {
             {
               label str "score",
-              data real { 9, 10, 2 }
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         }
@@ -275,7 +295,11 @@ Seq-annot ::= {
           data {
             {
               label str "score",
-              data real { 9, 10, 2 }
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         }
@@ -348,7 +372,11 @@ Seq-annot ::= {
           data {
             {
               label str "score",
-              data real { 9, 10, 2 }
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         }
@@ -421,7 +449,11 @@ Seq-annot ::= {
           data {
             {
               label str "score",
-              data real { 9, 10, 2 }
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         }
@@ -494,7 +526,11 @@ Seq-annot ::= {
           data {
             {
               label str "score",
-              data real { 9, 10, 2 }
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
             }
           }
         }
@@ -541,79 +577,6 @@ Seq-annot ::= {
         },
         {
           id local str "mrna_7"
-        }
-      }
-    },
-    {
-      id local str "gene_8",
-      data region "cloneI",
-      location int {
-        from 3400,
-        to 13500,
-        strand minus,
-        id local str "chr22"
-      },
-      xref {
-        {
-          id local str "mrna_8"
-        },
-        {
-          id local str "cds_8"
-        }
-      },
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "score",
-              data real { 9, 10, 2 }
-            }
-          }
-        }
-      }
-    },
-    {
-      id local str "mrna_8",
-      data region "cloneI",
-      location mix {
-        int {
-          from 3400,
-          to 3833,
-          strand minus,
-          id local str "chr22"
-        },
-        int {
-          from 7001,
-          to 7400,
-          strand minus,
-          id local str "chr22"
-        }
-      },
-      xref {
-        {
-          id local str "gene_8"
-        },
-        {
-          id local str "cds_8"
-        }
-      }
-    },
-    {
-      id local str "cds_8",
-      data region "cloneI",
-      location int {
-        from 3400,
-        to 3833,
-        strand minus,
-        id local str "chr22"
-      },
-      xref {
-        {
-          id local str "gene_8"
-        },
-        {
-          id local str "mrna_8"
         }
       }
     }

@@ -60,6 +60,11 @@ public:
 
     virtual ~CBedImporter();
 
+    virtual void
+    ReadSeqAnnot(
+        CNcbiIstream&,
+        CSeq_annot&) override;
+
 protected:
     CFeatLineReader*
     GetReader(

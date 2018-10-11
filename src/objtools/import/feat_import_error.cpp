@@ -54,10 +54,10 @@ CFeatImportError::SeverityStr() const
 //  ============================================================================
 {
     static map<int, string> severityStrings = {
-        {0, "Critical"},
-        {1, "Error"},
-        {2, "Warning"},
-        {3, "Info"},
+        {0, "Fatal"},
+        {1, "Critical"},
+        {2, "Error"},
+        {3, "Warning"},
         {4, "Debug"},
     };
     auto severityEntry = severityStrings.find(mSeverity);
@@ -68,12 +68,25 @@ CFeatImportError::SeverityStr() const
 };
 
 //  ============================================================================
+string
+CFeatImportError::Message() const
+//  ============================================================================
+{
+    auto message = mMessage;
+    if (!mAmend.empty()) {
+        message += ": ";
+        message += mAmend;
+    }
+    return message;
+}
+
+//  ============================================================================
 void
 CFeatImportError::Serialize(
     CNcbiOstream& out)
 //  ============================================================================
 {
-    out << "CGffImportError:" << "\n";
+    out << "CFeatureImportError:" << "\n";
     out << "  Severity = " << SeverityStr() << "\n";
     out << "  Message = \"" << Message() << "\"\n";
     out << "  LineNumber = " << LineNumber() << "\n";

@@ -1,14 +1,19 @@
-rw-100 gtf
-rw-153 gtf
-rw-451 gtf
-gene-mrna-exon-cds gtf
-exon-cds gtf
-uud-3s gtf
+#rw-100 gtf
+#rw-153 gtf
+#rw-451 gtf
+#gene-mrna-exon-cds gtf
+#exon-cds gtf
+#uud-3s gtf
 
-rw-461 bed
-rw-630 bed
-rw-630-9col bed
-rw-630-3col bed
+#rw-461 bed
+test-12-col bed
+test-9-col bed
 test-3-col bed
+test-error-column-count bed
+test-error-trackline bed
+test-color-itemrgb bed
+test-color-usescore bed
+test-color-bystrand bed
+test-color-none bed
 
-gb-7002 5col
+#gb-7002 5col

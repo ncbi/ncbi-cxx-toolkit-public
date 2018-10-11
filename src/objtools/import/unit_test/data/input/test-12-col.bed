@@ -1,0 +1,15 @@
+track name="test-12-col" description="track1"
+#normal
+chr22 2000 12100 cloneB 900 - 2000 6000 0 2 433,100 0,10000
+#single block
+chr22 2200 12300 cloneC 900 - 2200 6000 0 1 10100 0
+#trailing commas
+chr22 2400 12500 cloneD 900 - 2400 6000 0 2 433,399, 0,3601,
+#error: bad strand
+chr22 2600 12700 cloneE 900 ? 2600 6000 0 2 433,399, 0,3601
+#error: block count off
+chr22 2800 12900 cloneF 900 - 2800 6000 0 3 433,399 0,3601
+#error: junk block sizes
+chr22 3000 13100 cloneG 900 - 3000 6000 0 2 junk 0,3601
+#error: extra block start
+chr22 3200 13300 cloneH 900 - 3200 6000 0 2 433,399, 0,3601,5000

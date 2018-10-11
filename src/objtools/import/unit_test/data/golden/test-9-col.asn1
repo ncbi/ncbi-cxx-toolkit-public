@@ -1,0 +1,83 @@
+Seq-annot ::= {
+  desc {
+    title "track1",
+    name "test-9-col",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "description",
+          data str "track1"
+        },
+        {
+          label str "name",
+          data str "test-9-col"
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local str "gene_1",
+      data region "cloneB",
+      location int {
+        from 2000,
+        to 3000,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "cds_1"
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            }
+          }
+        }
+      }
+    },
+    {
+      id local str "cds_1",
+      data region "cloneB",
+      location int {
+        from 2100,
+        to 2800,
+        strand minus,
+        id local str "chr22"
+      },
+      xref {
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "gene_2",
+      data region "cloneC",
+      location int {
+        from 2200,
+        to 2300,
+        strand minus,
+        id local str "chr22"
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            }
+          }
+        }
+      }
+    }
+  }
+}
