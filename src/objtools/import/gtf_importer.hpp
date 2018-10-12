@@ -41,9 +41,6 @@
 #include <objtools/import/id_resolver.hpp>
 
 #include "feat_importer_impl.hpp"
-#include "gtf_line_reader.hpp"
-#include "gtf_import_data.hpp"
-#include "gtf_annot_assembler.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -59,26 +56,6 @@ public:
         CFeatMessageHandler&);
 
     virtual ~CGtfImporter();
-
-protected:
-    CFeatLineReader*
-    GetReader(
-        CFeatMessageHandler& errorReporter) override { 
-        return new CGtfLineReader(errorReporter); 
-    };
-
-    CFeatImportData*
-    GetImportData(
-        CFeatMessageHandler& errorReporter) override { 
-        return new CGtfImportData(*mpIdResolver, errorReporter); 
-    };
-
-    CFeatAnnotAssembler*
-    GetAnnotAssembler(
-        CSeq_annot& annot,
-        CFeatMessageHandler& errorReporter) override { 
-        return new CGtfAnnotAssembler(annot, errorReporter); 
-    };
 };
 
 END_objects_SCOPE

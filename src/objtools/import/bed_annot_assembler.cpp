@@ -55,12 +55,10 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CBedAnnotAssembler::CBedAnnotAssembler(
-    CSeq_annot& annot,
     CFeatMessageHandler& errorReporter):
 //  ============================================================================
-    CFeatAnnotAssembler(annot, errorReporter)
+    CFeatAnnotAssembler(errorReporter)
 {
-    mAnnot.SetData().SetFtable();
     mpIdGenerator.reset(new CFeatureIdGenerator);
 }
 
@@ -73,7 +71,8 @@ CBedAnnotAssembler::~CBedAnnotAssembler()
 //  ============================================================================
 void
 CBedAnnotAssembler::ProcessRecord(
-    const CFeatImportData& record_)
+    const CFeatImportData& record_,
+    CSeq_annot& annot)
 //  ============================================================================
 {
     assert(dynamic_cast<const CBedImportData*>(&record_));
@@ -96,7 +95,7 @@ CBedAnnotAssembler::ProcessRecord(
         }
 
         pGene->SetId(*mpIdGenerator->GetIdFor("gene"));
-        mAnnot.SetData().SetFtable().push_back(pGene);
+        annot.SetData().SetFtable().push_back(pGene);
     }
 
     const auto mRnaLocation = 
@@ -107,7 +106,7 @@ CBedAnnotAssembler::ProcessRecord(
         pMrna->SetData().SetRegion(record.Name());
         pMrna->SetLocation(). Assign(*mRnaLocation);
         pMrna->SetId(*mpIdGenerator->GetIdFor("mrna"));
-        mAnnot.SetData().SetFtable().push_back(pMrna);
+        annot.SetData().SetFtable().push_back(pMrna);
     }
 
     CRef<CSeq_loc> pCdsLocation(new CSeq_loc);
@@ -123,7 +122,7 @@ CBedAnnotAssembler::ProcessRecord(
         pCds->SetData().SetRegion(record.Name());
         pCds->SetLocation().Assign(*pCdsLocation);
         pCds->SetId(*mpIdGenerator->GetIdFor("cds"));
-        mAnnot.SetData().SetFtable().push_back(pCds);
+        annot.SetData().SetFtable().push_back(pCds);
     }
 
     if (pGene  &&  pMrna) {
@@ -144,16 +143,17 @@ CBedAnnotAssembler::ProcessRecord(
 //  ============================================================================
 void
 CBedAnnotAssembler::FinalizeAnnot(
-    const CAnnotImportData& annotInfo)
+    const CAnnotImportData& annotInfo,
+    CSeq_annot& annot)
     //  ============================================================================
 {
     auto description = annotInfo.ValueOf("description");
     if (!description.empty()) {
-        mAnnot.SetTitleDesc(description);
+        annot.SetTitleDesc(description);
     }
     auto name = annotInfo.ValueOf("name");
     if (!name.empty()) {
-        mAnnot.SetNameDesc(name);
+        annot.SetNameDesc(name);
     }
 
     CRef<CUser_object> pTrackData(new CUser_object());
@@ -164,5 +164,5 @@ CBedAnnotAssembler::FinalizeAnnot(
     }
     CRef<CAnnotdesc> user(new CAnnotdesc());
     user->SetUser(*pTrackData);
-    mAnnot.SetDesc().Set().push_back(user);
+    annot.SetDesc().Set().push_back(user);
 }

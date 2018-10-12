@@ -163,15 +163,9 @@ CFeatImportApp::Run(void)
     while (true) {
         annot.Reset();
         try {
-            pImporter->ReadSeqAnnot(istr, annot, errorHandler);
-            const auto& ft = annot.GetData().GetFtable();
-            cerr << "";
+            pImporter->ReadSeqAnnot(istr, annot);
         }
         catch (const CFeatImportError& error) {
-            if (error.Code() == CFeatImportError::eEOF_NO_DATA) {
-                annot.Reset();
-                break;
-            }
             cerr << "Line " << error.LineNumber() << ": " << error.SeverityStr() 
                 << ": " << error.Message() << "\n";
             return 1;
@@ -180,8 +174,7 @@ CFeatImportApp::Run(void)
             ostr << MSerial_Format_AsnText() << annot;
         }
         else {
-            cerr << "The input file \"" << args["input"].AsString() 
-                 << "\" does not contain any recognizable features.\n";
+            break;
         }
     }
     errorHandler.Dump(cerr);

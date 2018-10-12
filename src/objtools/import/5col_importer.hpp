@@ -41,9 +41,6 @@
 #include <objtools/import/id_resolver.hpp>
 
 #include "feat_importer_impl.hpp"
-#include "5col_line_reader.hpp"
-#include "5col_import_data.hpp"
-#include "5col_annot_assembler.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -59,27 +56,6 @@ public:
         CFeatMessageHandler&);
 
     virtual ~C5ColImporter();
-
-protected:
-    CFeatLineReader*
-    GetReader(
-        CFeatMessageHandler& errorReporter) override { 
-        return new C5ColLineReader(errorReporter); 
-    };
-
-    CFeatImportData*
-    GetImportData(
-        CFeatMessageHandler& errorReporter) override { 
-        return new C5ColImportData(*mpIdResolver, errorReporter); 
-    };
-
-    CFeatAnnotAssembler*
-    GetAnnotAssembler(
-        CSeq_annot& annot,
-        CFeatMessageHandler& errorReporter) override { 
-        return new C5ColAnnotAssembler(annot, errorReporter); 
-    };
-
 };
 
 END_objects_SCOPE

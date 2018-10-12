@@ -41,9 +41,6 @@
 #include <objtools/import/id_resolver.hpp>
 
 #include "feat_importer_impl.hpp"
-#include "bed_line_reader.hpp"
-#include "bed_import_data.hpp"
-#include "bed_annot_assembler.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -59,32 +56,6 @@ public:
         CFeatMessageHandler&);
 
     virtual ~CBedImporter();
-
-    virtual void
-    ReadSeqAnnot(
-        CNcbiIstream&,
-        CSeq_annot&) override;
-
-protected:
-    CFeatLineReader*
-    GetReader(
-        CFeatMessageHandler& errorReporter) override { 
-        return new CBedLineReader(errorReporter); 
-    };
-
-    CFeatImportData*
-    GetImportData(
-        CFeatMessageHandler& errorReporter) override { 
-        return new CBedImportData(*mpIdResolver, errorReporter); 
-    };
-
-    CFeatAnnotAssembler*
-    GetAnnotAssembler(
-        CSeq_annot& annot,
-        CFeatMessageHandler& errorReporter) override { 
-        return new CBedAnnotAssembler(annot, errorReporter); 
-    };
-
 };
 
 END_objects_SCOPE

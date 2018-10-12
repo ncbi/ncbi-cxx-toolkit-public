@@ -104,35 +104,38 @@ CFeatImporter_impl::ReadSeqAnnot(
     CSeq_annot& annot)
 //  =============================================================================
 {
-    //unique_ptr<CFeatLineReader> pLineReader(GetReader(errorReporter));
-    unique_ptr<CFeatImportData> pImportData(GetImportData(mErrorHandler));
-    unique_ptr<CFeatAnnotAssembler> pAssembler(
-        GetAnnotAssembler(annot, mErrorHandler));
+    assert(mpReader  &&  mpImportData  &&  mpAssembler);
 
     mpReader->SetInputStream(istr);
     if (mFlags & fReportProgress) {
         mpReader->SetProgressReportFrequency(5);
     }
 
-    pAssembler->InitializeAnnot();
-    if (!mpReader->GetNextRecord(*pImportData)) {
-        return;
-    }
-    while (true) {
+    mpAssembler->InitializeAnnot(annot);
+
+    bool terminateNow = false;
+    while (!terminateNow) {
         try {
-            //pImportData->Serialize(cerr);
-            pAssembler->ProcessRecord(*pImportData);
-            if (!mpReader->GetNextRecord(*pImportData)) {
+            if (!mpReader->GetNextRecord(*mpImportData)) {
                 break;
             }
+            mpAssembler->ProcessRecord(*mpImportData, annot);
         }
         catch(CFeatImportError& err) {
-            err.SetLineNumber(mpReader->LineCount());
             mErrorHandler.ReportError(err);
+            switch(err.Severity()) {
+            default:
+                continue;
+            case CFeatImportError::CRITICAL:
+                terminateNow = true;
+                break;
+            case CFeatImportError::FATAL:
+                throw;
+            }
         }
     }
     const CAnnotImportData& annotMeta = mpReader->AnnotImportData();
-    pAssembler->FinalizeAnnot(annotMeta);
+    mpAssembler->FinalizeAnnot(annotMeta, annot);
 }
 
 

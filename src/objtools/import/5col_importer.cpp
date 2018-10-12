@@ -34,6 +34,9 @@
 
 #include <objtools/import/feat_import_error.hpp>
 #include "5col_importer.hpp"
+#include "5col_line_reader.hpp"
+#include "5col_import_data.hpp"
+#include "5col_annot_assembler.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -44,7 +47,9 @@ C5ColImporter::C5ColImporter(
     CFeatMessageHandler& errorHandler): CFeatImporter_impl(flags, errorHandler)
 //  ============================================================================
 {
-    mpReader.reset(GetReader(errorHandler));
+    mpReader.reset(new C5ColLineReader(errorHandler));
+    mpImportData.reset(new C5ColImportData(*mpIdResolver, errorHandler));
+    mpAssembler.reset(new C5ColAnnotAssembler(errorHandler));
 };
 
 

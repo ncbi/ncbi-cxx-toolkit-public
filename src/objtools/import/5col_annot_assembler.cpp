@@ -52,12 +52,10 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 C5ColAnnotAssembler::C5ColAnnotAssembler(
-    CSeq_annot& annot,
     CFeatMessageHandler& errorReporter):
 //  ============================================================================
-    CFeatAnnotAssembler(annot, errorReporter)
+    CFeatAnnotAssembler(errorReporter)
 {
-    mAnnot.SetData().SetFtable();
     mpIdGenerator.reset(new CFeatureIdGenerator);
 }
 
@@ -70,7 +68,8 @@ C5ColAnnotAssembler::~C5ColAnnotAssembler()
 //  ============================================================================
 void
 C5ColAnnotAssembler::ProcessRecord(
-    const CFeatImportData& record_)
+    const CFeatImportData& record_,
+    CSeq_annot& annot)
 //  ============================================================================
 {
     assert(dynamic_cast<const C5ColImportData*>(&record_));
@@ -82,6 +81,5 @@ C5ColAnnotAssembler::ProcessRecord(
     }
     CRef<CSeq_feat> pNewFeature(new CSeq_feat);
     pNewFeature->Assign(feature);
-    const auto& ft = mAnnot.GetData().GetFtable();
-    mAnnot.SetData().SetFtable().push_back(pNewFeature);
+    annot.SetData().SetFtable().push_back(pNewFeature);
 }

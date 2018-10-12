@@ -37,7 +37,6 @@
 #include "gtf_import_data.hpp"
 #include "gtf_line_reader.hpp"
 #include "gtf_annot_assembler.hpp"
-#include "id_resolver_canonical.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -48,7 +47,9 @@ CGtfImporter::CGtfImporter(
     CFeatMessageHandler& errorHandler): CFeatImporter_impl(flags, errorHandler)
 //  ============================================================================
 {
-    mpReader.reset(GetReader(errorHandler));
+    mpReader.reset(new CGtfLineReader(errorHandler));
+    mpImportData.reset(new CGtfImportData(*mpIdResolver, mErrorHandler));
+    mpAssembler.reset(new CGtfAnnotAssembler(errorHandler));
 };
 
 

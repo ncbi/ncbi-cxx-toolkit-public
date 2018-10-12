@@ -50,24 +50,25 @@ class CFeatAnnotAssembler
 {
 public:
     CFeatAnnotAssembler(
-        CSeq_annot&,
         CFeatMessageHandler&);
 
     virtual ~CFeatAnnotAssembler();
 
     virtual void
-    InitializeAnnot();
+    InitializeAnnot(
+        CSeq_annot&);
 
     virtual void
     ProcessRecord(
-        const CFeatImportData&) =0;
+        const CFeatImportData&,
+        CSeq_annot&) =0;
 
     virtual void
     FinalizeAnnot(
-        const CAnnotImportData&);
+        const CAnnotImportData&,
+        CSeq_annot&);
 
 protected:
-    CSeq_annot& mAnnot;
     CFeatMessageHandler& mErrorReporter;
 };
 

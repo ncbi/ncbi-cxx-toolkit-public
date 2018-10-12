@@ -50,10 +50,8 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 CFeatAnnotAssembler::CFeatAnnotAssembler(
-    CSeq_annot& annot,
     CFeatMessageHandler& errorReporter):
 //  ============================================================================
-    mAnnot(annot),
     mErrorReporter(errorReporter)
 {
 }
@@ -66,18 +64,20 @@ CFeatAnnotAssembler::~CFeatAnnotAssembler()
 
 //  ============================================================================
 void
-CFeatAnnotAssembler::InitializeAnnot()
+CFeatAnnotAssembler::InitializeAnnot(
+    CSeq_annot& annot)
 //  ============================================================================
 {
-    mAnnot.Reset();
-    mAnnot.SetData().SetFtable();
+    annot.Reset();
+    annot.SetData().SetFtable();
 }
 
 
 //  ============================================================================
 void
 CFeatAnnotAssembler::FinalizeAnnot(
-    const CAnnotImportData&)
+    const CAnnotImportData&,
+    CSeq_annot&)
 //  ============================================================================
 {
 }

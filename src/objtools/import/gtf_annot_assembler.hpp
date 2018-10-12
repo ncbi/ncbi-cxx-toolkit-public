@@ -54,46 +54,56 @@ class CGtfAnnotAssembler:
 {
 public:
     CGtfAnnotAssembler(
-        CSeq_annot&,
         CFeatMessageHandler&);
 
     virtual ~CGtfAnnotAssembler();
 
     void
     ProcessRecord(
-        const CFeatImportData&) override;
+        const CFeatImportData&,
+        CSeq_annot&) override;
 
     virtual void
     FinalizeAnnot(
-        const CAnnotImportData&);
+        const CAnnotImportData&,
+        CSeq_annot&);
 
 protected:
     void xProcessRecordGene(
-        const CGtfImportData&);
+        const CGtfImportData&,
+        CSeq_annot&);
     void xProcessRecordMrna(
-        const CGtfImportData&);
+        const CGtfImportData&,
+        CSeq_annot&);
     void xProcessRecordCds(
-        const CGtfImportData&);
+        const CGtfImportData&,
+        CSeq_annot&);
 
     void xCreateGene(
         const CGtfImportData&,
-        CRef<CSeq_feat>&);
+        CRef<CSeq_feat>&,
+        CSeq_annot&);
     void xCreateMrna(
         const CGtfImportData&,
-        CRef<CSeq_feat>&);
+        CRef<CSeq_feat>&,
+        CSeq_annot&);
     void xCreateCds(
         const CGtfImportData&,
-        CRef<CSeq_feat>&);
+        CRef<CSeq_feat>&,
+        CSeq_annot&);
 
     void xUpdateGene(
         const CGtfImportData&,
-        CRef<CSeq_feat>&);
+        CRef<CSeq_feat>&,
+        CSeq_annot&);
     void xUpdateMrna(
         const CGtfImportData&,
-        CRef<CSeq_feat>&);
+        CRef<CSeq_feat>&,
+        CSeq_annot&);
     void xUpdateCds(
         const CGtfImportData&,
-        CRef<CSeq_feat>&);
+        CRef<CSeq_feat>&,
+        CSeq_annot&);
 
     void xFeatureSetGene(
         const CGtfImportData&,
@@ -123,9 +133,11 @@ protected:
 
     void xAnnotAddFeature(
         const CGtfImportData&,
-        CRef<CSeq_feat>&);
+        CRef<CSeq_feat>&,
+        CSeq_annot&);
 
-    void xAnnotGenerateXrefs();
+    void xAnnotGenerateXrefs(
+        CSeq_annot&);
 
 protected:
     unique_ptr<CFeatureMap> mpFeatureMap;

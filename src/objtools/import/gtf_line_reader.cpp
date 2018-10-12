@@ -57,11 +57,6 @@ CGtfLineReader::GetNextRecord(
     CFeatImportData& record)
 //  ============================================================================
 {
-    CFeatImportError errorEofNoData(
-        CFeatImportError::CRITICAL, 
-        "Stream does not contain feature data", 
-        0, CFeatImportError::eEOF_NO_DATA);
-
     xReportProgress();
 
     string nextLine = "";
@@ -76,8 +71,6 @@ CGtfLineReader::GetNextRecord(
         ++mRecordNumber;
         return true;
     }
-    errorEofNoData.SetLineNumber(LineCount());
-    throw errorEofNoData;
     return false;
 }
 

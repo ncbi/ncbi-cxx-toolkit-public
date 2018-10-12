@@ -58,7 +58,6 @@ public:
 
     enum ErrorCode {
         eUNSPECIFIED = 0,
-        eEOF_NO_DATA,
     };
 
 public:

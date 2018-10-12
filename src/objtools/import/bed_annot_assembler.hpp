@@ -52,18 +52,19 @@ class CBedAnnotAssembler:
 {
 public:
     CBedAnnotAssembler(
-        CSeq_annot&,
         CFeatMessageHandler&);
 
     virtual ~CBedAnnotAssembler();
 
     void
     ProcessRecord(
-        const CFeatImportData&) override;
+        const CFeatImportData&,
+        CSeq_annot&) override;
 
     virtual void
     FinalizeAnnot(
-        const CAnnotImportData&);
+        const CAnnotImportData&,
+        CSeq_annot&);
 
 protected:
     unique_ptr<CFeatureIdGenerator> mpIdGenerator;

@@ -52,14 +52,14 @@ class C5ColAnnotAssembler:
 {
 public:
     C5ColAnnotAssembler(
-        CSeq_annot&,
         CFeatMessageHandler&);
 
     virtual ~C5ColAnnotAssembler();
 
     void
     ProcessRecord(
-        const CFeatImportData&) override;
+        const CFeatImportData&,
+        CSeq_annot&) override;
 
 protected:
     unique_ptr<CFeatureIdGenerator> mpIdGenerator;

@@ -58,10 +58,6 @@ C5ColLineReader::GetNextRecord(
     CFeatImportData& record)
 //  ============================================================================
 {
-    CFeatImportError errorEofNoData(
-        CFeatImportError::CRITICAL, 
-        "Stream does not contain feature data", 
-        0, CFeatImportError::eEOF_NO_DATA);
     CFeatImportError errorDataLineOutOfOrder(
         CFeatImportError::ERROR, 
         "Data line out of order");
@@ -155,10 +151,6 @@ C5ColLineReader::GetNextRecord(
             mCollectedLines.push_back(nextLine);
             continue;
         }
-    }
-    if (0 == mRecordNumber) {
-        errorEofNoData.SetLineNumber(LineCount());
-        throw errorEofNoData;
     }
     return false;
 }
