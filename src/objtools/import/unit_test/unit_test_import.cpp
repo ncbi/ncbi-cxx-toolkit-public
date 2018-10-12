@@ -38,6 +38,7 @@
 #include <corelib/ncbifile.hpp>
 #include <util/line_reader.hpp>
 
+#include <objtools/import/feat_util.hpp>
 #include <objtools/import/feat_message_handler.hpp>
 #include <objtools/import/feat_importer.hpp>
 
@@ -75,7 +76,7 @@ void sRunTest(
     try {
         while (true) {
             pImporter->ReadSeqAnnot(iStr, annot);
-            if (annot.GetData().GetFtable().empty()) {
+            if (!FeatUtil::ContainsData(annot)) {
                 break;
             }
             oStrAnnot << MSerial_Format_AsnText() << annot;

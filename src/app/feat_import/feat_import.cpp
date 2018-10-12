@@ -48,6 +48,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Bioseq.hpp>
 
+#include <objtools/import/feat_util.hpp>
 #include <objtools/import/feat_import_error.hpp>
 #include <objtools/import/feat_message_handler.hpp>
 #include <objtools/import/feat_importer.hpp>
@@ -170,15 +171,12 @@ CFeatImportApp::Run(void)
                 << ": " << error.Message() << "\n";
             return 1;
         } 
-        if (annot.IsFtable()  &&  !annot.GetData().GetFtable().empty()) {
-            ostr << MSerial_Format_AsnText() << annot;
-        }
-        else {
+        if (!FeatUtil::ContainsData(annot)) {
             break;
         }
+        ostr << MSerial_Format_AsnText() << annot;
     }
     errorHandler.Dump(cerr);
-
     return 0;
 }
 
