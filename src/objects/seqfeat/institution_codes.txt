@@ -1784,7 +1784,7 @@ EMAU	s	Ernst-Moritz-Arndt-Universitat Greifswald
 EMBT	s	Department of Agriculture, Thailand			
 EMC	s	Eastern Michigan University, Biology Department			
 EMCC	c	Egypt Microbial Culture Collection			
-EMEC	s	Essig Museum of Entomology	EMUC		
+EMEC	s	Essig Museum of Entomology			
 EMEC:UCIS	s	Essig Museum of Entomology, University of California Insect Survey	
 EMET	s	Faculty of Agriculture, Entomology Museum			
 EMMA	s	Universidad Politecnica de Madrid, Unidad Docente Botanica, Departamento Silvopascicultura			

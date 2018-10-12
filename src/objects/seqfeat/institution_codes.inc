@@ -1817,7 +1817,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "EMBT\ts\tDepartment of Agriculture, Thailand\t\t\t",
 "EMC\ts\tEastern Michigan University, Biology Department\t\t\t",
 "EMCC\tc\tEgypt Microbial Culture Collection\t\t\t",
-"EMEC\ts\tEssig Museum of Entomology\tEMUC\t\t",
+"EMEC\ts\tEssig Museum of Entomology\t\t\t",
 "EMEC:UCIS\ts\tEssig Museum of Entomology, University of California Insect Survey\t",
 "EMET\ts\tFaculty of Agriculture, Entomology Museum\t\t\t",
 "EMMA\ts\tUniversidad Politecnica de Madrid, Unidad Docente Botanica, Departamento Silvopascicultura\t\t\t",
