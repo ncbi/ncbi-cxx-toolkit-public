@@ -135,8 +135,11 @@ static void RemovePubs(CSeq_entry& entry, const list<string>& common_pubs, CPubC
 
                 const CPubInfo& pub_info = all_pubs.GetPubInfo(pubdesc_key);
                 if (pub_info.m_desc.NotEmpty()) {
-                    cur_descr = descrs->Set().erase(cur_descr);
-                    removed = true;
+
+                    if (find(common_pubs.begin(), common_pubs.end(), pub_info.m_pubdesc_key) != common_pubs.end()) {
+                        cur_descr = descrs->Set().erase(cur_descr);
+                        removed = true;
+                    }
                 }
             }
 
