@@ -54,21 +54,23 @@ CGtfLineReader::CGtfLineReader(
 //  ============================================================================
 bool
 CGtfLineReader::GetNextRecord(
+    CStreamLineReader& lineReader,
     CFeatImportData& record)
 //  ============================================================================
 {
     xReportProgress();
 
     string nextLine = "";
-    while (!mpLineReader->AtEOF()) {
-        nextLine = *(++(*mpLineReader));
+    while (!lineReader.AtEOF()) {
+        nextLine = *(++lineReader);
+        ++mLineCount;
         if (xIgnoreLine(nextLine)) {
             continue;
         }
         vector<string> columns;
         xSplitLine(nextLine, columns);
         xInitializeRecord(columns, record);
-        ++mRecordNumber;
+        ++mRecordCount;
         return true;
     }
     return false;

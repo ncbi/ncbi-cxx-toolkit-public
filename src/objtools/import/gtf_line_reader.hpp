@@ -55,6 +55,7 @@ public:
 
     virtual bool
     GetNextRecord(
+        CStreamLineReader&,
         CFeatImportData&) override;
 
 private:

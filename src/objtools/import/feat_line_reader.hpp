@@ -45,8 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
 //  ============================================================================
-class CFeatLineReader//: 
-    //public CStreamLineReader
+class CFeatLineReader
 //  ============================================================================
 {
 public:
@@ -57,10 +56,11 @@ public:
 
     virtual bool
     GetNextRecord(
+        CStreamLineReader&,
         CFeatImportData&) =0;
 
     unsigned int LineCount() const;
-    unsigned int RecordCount() const { return mRecordNumber; };
+    unsigned int RecordCount() const { return mRecordCount; };
 
     virtual void
     SetInputStream(
@@ -87,10 +87,11 @@ protected:
         const std::vector<std::string>&,
         CFeatImportData&) =0;
 
-    unique_ptr<CStreamLineReader> mpLineReader;
+    //unique_ptr<CStreamLineReader> mpLineReader;
     CFeatMessageHandler& mErrorReporter;
 
-    unsigned int mRecordNumber;
+    unsigned int mLineCount;
+    unsigned int mRecordCount;
     unsigned int mProgressFreq;
     unsigned int mLastProgress;
     CAnnotImportData mAnnotInfo;

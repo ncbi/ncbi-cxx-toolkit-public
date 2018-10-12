@@ -57,11 +57,15 @@ public:
     ReportProgress(
         const CFeatImportProgress&);
 
+    CFeatImportError::ErrorLevel
+    GetWorstErrorLevel() const { return mWorstErrorLevel; };
+
     void Dump(
         CNcbiOstream& out);
 
 protected:
     std::vector<CFeatImportError> mErrors;
+    CFeatImportError::ErrorLevel mWorstErrorLevel;
 };
 
 END_NCBI_SCOPE

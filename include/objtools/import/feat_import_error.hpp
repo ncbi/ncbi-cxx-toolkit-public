@@ -54,6 +54,7 @@ public:
         ERROR = 2,          // discard current unit of information
         WARNING = 3,        // fix up and use current unit of information
         DEBUG = 4,
+        NONE = 10,
     };
 
     enum ErrorCode {

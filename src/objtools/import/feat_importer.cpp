@@ -99,14 +99,25 @@ CFeatImporter_impl::SetIdResolver(
 
 //  =============================================================================
 void
-CFeatImporter_impl::ReadSeqAnnot(
+CFeatImporter::ReadSeqAnnot(
     CNcbiIstream& istr,
+    CSeq_annot& annot)
+//  =============================================================================
+{
+    CStreamLineReader lineReader(istr);
+    ReadSeqAnnot(lineReader, annot);
+}
+
+//  =============================================================================
+void
+CFeatImporter_impl::ReadSeqAnnot(
+    CStreamLineReader& lineReader,
     CSeq_annot& annot)
 //  =============================================================================
 {
     assert(mpReader  &&  mpImportData  &&  mpAssembler);
 
-    mpReader->SetInputStream(istr);
+    //mpReader->SetInputStream(istr);
     if (mFlags & fReportProgress) {
         mpReader->SetProgressReportFrequency(5);
     }
@@ -116,7 +127,7 @@ CFeatImporter_impl::ReadSeqAnnot(
     bool terminateNow = false;
     while (!terminateNow) {
         try {
-            if (!mpReader->GetNextRecord(*mpImportData)) {
+            if (!mpReader->GetNextRecord(lineReader, *mpImportData)) {
                 break;
             }
             mpAssembler->ProcessRecord(*mpImportData, annot);

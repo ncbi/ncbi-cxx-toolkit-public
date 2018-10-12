@@ -38,12 +38,10 @@ USING_NCBI_SCOPE;
 //  ============================================================================
 CFeatImportProgress::CFeatImportProgress(
     unsigned int recordCount,
-    unsigned int lineCount,
-    std::streampos charCount): 
+    unsigned int lineCount): 
 //  ============================================================================
     mRecordCount(recordCount),
-    mLineCount(lineCount),
-    mCharCount(charCount)
+    mLineCount(lineCount)
     {};
 
 //  ============================================================================
@@ -55,6 +53,5 @@ CFeatImportProgress::Serialize(
     out << "CGffImportProgress:" << "\n";
     out << "  RecordCount = " << RecordCount() << "\n";
     out << "  LineCount = " << LineCount() << "\n";
-    out << "  Character Count = " << CharCount() << "\n";
     out << "\n";
 };

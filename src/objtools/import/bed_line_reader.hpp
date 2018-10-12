@@ -56,6 +56,7 @@ public:
 
     virtual bool
     GetNextRecord(
+        CStreamLineReader&,
         CFeatImportData&) override;
 
     void
@@ -130,7 +131,6 @@ private:
         std::vector<int>& blockStarts,
         std::vector<int>& blockSizes);
 
-    bool mStreamIsBad;
 	size_t mColumnCount;
     std::string mColumnDelimiter;
     int mSplitFlags;

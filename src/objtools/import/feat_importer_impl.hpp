@@ -50,7 +50,7 @@ class NCBI_XOBJIMPORT_EXPORT CFeatImporter_impl :
 public:
     virtual void
     ReadSeqAnnot(
-        CNcbiIstream&,
+        CStreamLineReader&,
         CSeq_annot&) override;
 
     virtual void
@@ -64,25 +64,6 @@ protected:
 
     virtual ~CFeatImporter_impl() {};
 
-    virtual CFeatLineReader*
-    GetReader(
-        CFeatMessageHandler&) {
-        return nullptr;
-    };
-
-    virtual CFeatImportData*
-    GetImportData(
-        CFeatMessageHandler&) {
-        return nullptr;
-    };
-
-    virtual CFeatAnnotAssembler*
-    GetAnnotAssembler(
-        CSeq_annot&,
-        CFeatMessageHandler&) {
-        return nullptr;
-    };
-
     unsigned int mFlags;
     unique_ptr<CIdResolver> mpIdResolver;
     unique_ptr<CFeatLineReader> mpReader;
@@ -90,7 +71,6 @@ protected:
     unique_ptr<CFeatAnnotAssembler> mpAssembler;
     CFeatMessageHandler& mErrorHandler;
 };
-
 
 END_objects_SCOPE
 END_NCBI_SCOPE

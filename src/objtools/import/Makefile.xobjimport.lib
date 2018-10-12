@@ -3,7 +3,8 @@
 # Build library "xobjimport"
 ###############################
 
-SRC =	feat_util feat_import_error feat_import_progress feat_message_handler \
+SRC =	feat_util \
+		feat_import_error feat_import_progress feat_message_handler \
 		id_resolver id_resolver_canonical id_resolver_prefix \
 		feat_importer feat_import_data feat_line_reader feat_annot_assembler \
 		gtf_importer gtf_import_data gtf_line_reader gtf_annot_assembler \

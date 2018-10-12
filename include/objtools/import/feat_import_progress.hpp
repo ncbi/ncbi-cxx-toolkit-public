@@ -48,22 +48,18 @@ class NCBI_XOBJIMPORT_EXPORT CFeatImportProgress
 public:
     CFeatImportProgress(
         unsigned int,
-        unsigned int,
-        std::streampos);
+        unsigned int);
 
     void
     SetCounts(
         unsigned int recordCount,
-        unsigned int lineCount,
-        std::streampos charCount) { 
+        unsigned int lineCount) { 
         mRecordCount = recordCount;
         mLineCount = lineCount; 
-        mCharCount = charCount;
     };
 
     unsigned int LineCount() const { return mLineCount; };
     unsigned int RecordCount() const {return mRecordCount; };
-    std::streampos CharCount() const {return mCharCount; };
 
     void
     Serialize(
@@ -72,7 +68,6 @@ public:
 protected:
     unsigned int mRecordCount;
     unsigned int mLineCount;
-    std::streampos mCharCount;
 };
 
 END_NCBI_SCOPE

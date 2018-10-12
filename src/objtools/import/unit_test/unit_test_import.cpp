@@ -65,9 +65,9 @@ void sRunTest(
 {
     cerr << "Running test " << testName << " ...\n";
     // produce output:
-    CFeatMessageHandler messageHandler;
+    CFeatMessageHandler msgHandler;
     unique_ptr<CFeatImporter> pImporter(
-        CFeatImporter::Get(format, 0, messageHandler));
+        CFeatImporter::Get(format, 0, msgHandler));
     CSeq_annot annot;
 
     CNcbiOfstream oStrErrors(outputNameErrors);
@@ -80,6 +80,9 @@ void sRunTest(
                 break;
             }
             oStrAnnot << MSerial_Format_AsnText() << annot;
+            if (msgHandler.GetWorstErrorLevel() <= CFeatImportError::CRITICAL) {
+                break;
+            }
         }
     }
     catch (const CFeatImportError&) {
@@ -91,7 +94,7 @@ void sRunTest(
     }
     iStr.close();
     oStrAnnot.close();
-    messageHandler.Dump(oStrErrors);
+    msgHandler.Dump(oStrErrors);
     oStrErrors.close();
 
     // compare with golden data:

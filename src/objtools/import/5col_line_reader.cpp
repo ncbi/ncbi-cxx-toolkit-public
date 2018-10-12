@@ -55,6 +55,7 @@ C5ColLineReader::C5ColLineReader(
 //  ============================================================================
 bool
 C5ColLineReader::GetNextRecord(
+    CStreamLineReader& lineReader,
     CFeatImportData& record)
 //  ============================================================================
 {
@@ -68,8 +69,9 @@ C5ColLineReader::GetNextRecord(
     xReportProgress();
 
     string nextLine = "";
-    while (!mpLineReader->AtEOF()) {
-        nextLine = *(++(*mpLineReader));
+    while (!lineReader.AtEOF()) {
+        nextLine = *(++lineReader);
+        ++mLineCount;
         NStr::TruncateSpacesInPlace(nextLine, NStr::eTrunc_End);
         if (xIgnoreLine(nextLine)) {
             continue;
@@ -109,7 +111,7 @@ C5ColLineReader::GetNextRecord(
                 continue;
             }
             xInitializeRecord(mCollectedLines, record);
-            ++mRecordNumber;
+            ++mRecordCount;
             mCollectedLines.clear();
             mCurrentSeqId = columns[1];
             return true;
@@ -127,7 +129,7 @@ C5ColLineReader::GetNextRecord(
                 continue;
             }
             xInitializeRecord(mCollectedLines, record);
-            ++mRecordNumber;
+            ++mRecordCount;
             mCollectedLines.clear();
             mCollectedLines.push_back(nextLine);
             return true;

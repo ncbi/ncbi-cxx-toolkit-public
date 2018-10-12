@@ -57,7 +57,6 @@ CBedLineReader::CBedLineReader(
     CFeatMessageHandler& errorReporter):
 //  ============================================================================
     CFeatLineReader(errorReporter),
-    mStreamIsBad(true),
     mColumnCount(0),
     mColumnDelimiter(" \t"),
     mSplitFlags(NStr::fSplit_MergeDelimiters),
@@ -70,6 +69,7 @@ CBedLineReader::CBedLineReader(
 //  ============================================================================
 bool
 CBedLineReader::GetNextRecord(
+    CStreamLineReader& lineReader,
     CFeatImportData& record)
 //
 //  Error disposition:
@@ -83,17 +83,12 @@ CBedLineReader::GetNextRecord(
 //    Bad score values, bad RGB values.
 //  ============================================================================
 {
-    assert(mpLineReader);
-
-    if (mStreamIsBad) {
-        return false;
-    }
-    
     xReportProgress();
 
     string nextLine = "";
-    while (!mpLineReader->AtEOF()) {
-        nextLine = *(++(*mpLineReader));
+    while (!lineReader.AtEOF()) {
+        nextLine = *(++lineReader);
+        ++mLineCount;
         if (xIgnoreLine(nextLine)) {
             continue;
         }
@@ -103,7 +98,7 @@ CBedLineReader::GetNextRecord(
         vector<string> columns;
         xSplitLine(nextLine, columns);
         xInitializeRecord(columns, record);
-        ++mRecordNumber;
+        ++mRecordCount;
         return true;
     }
     return false;
@@ -116,9 +111,6 @@ CBedLineReader::SetInputStream(
     bool force)
 //  ============================================================================
 {
-    if (!mpLineReader) {
-        mStreamIsBad = false;
-    }
     CFeatLineReader::SetInputStream(istr, force);
 }
 
@@ -153,8 +145,7 @@ CBedLineReader::xProcessTrackLine(
     if (track != "track") {
         return false;
     }
-    if (this->mRecordNumber > 0) { //track line not before any data
-        mStreamIsBad = true;
+    if (this->mRecordCount > 0) { //track line not before any data
         throw errorTrackLineOutOfOrder;
     }
 
@@ -178,7 +169,7 @@ CBedLineReader::xProcessTrackLine(
     }
     mAnnotInfo.SetValue(key, NStr::Replace(trackPieces.back(), "\"", ""));
 
-    //cash some often accessed values:
+    //cache some often accessed values:
     const string& useScore = mAnnotInfo.ValueOf("useScore");
     mUseScore = (!useScore.empty()  &&  useScore != "0"  &&  useScore != "false");
 

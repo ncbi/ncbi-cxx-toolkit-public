@@ -37,8 +37,9 @@ USING_NCBI_SCOPE;
 //USING_SCOPE(objects);
 
 //  ============================================================================
-CFeatMessageHandler::CFeatMessageHandler()
+CFeatMessageHandler::CFeatMessageHandler():
 //  ============================================================================
+    mWorstErrorLevel(CFeatImportError::NONE)
 {
 };
 
@@ -54,6 +55,9 @@ CFeatMessageHandler::ReportError(
     const CFeatImportError& error)
 //  ============================================================================
 {
+    if (error.Severity() < mWorstErrorLevel) {
+        mWorstErrorLevel = error.Severity();
+    }
     switch(error.Severity()) {
     default:
         mErrors.push_back(error);

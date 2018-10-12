@@ -66,9 +66,14 @@ public:
         CFeatMessageHandler&);
 
 public:
-    virtual void
+    void
     ReadSeqAnnot(
         CNcbiIstream&,
+        CSeq_annot&);
+
+    virtual void
+    ReadSeqAnnot(
+        CStreamLineReader&,
         CSeq_annot&) =0;
 
     virtual void
