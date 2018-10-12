@@ -57,7 +57,7 @@ public:
     GetNextRecord(
         CFeatImportData&) override;
 
-protected:
+private:
     enum ELineType {
         eLineTypeNone,
         eLineTypeSeqId,

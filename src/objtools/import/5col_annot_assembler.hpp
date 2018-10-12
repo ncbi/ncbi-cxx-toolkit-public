@@ -61,7 +61,7 @@ public:
         const CFeatImportData&,
         CSeq_annot&) override;
 
-protected:
+private:
     unique_ptr<CFeatureIdGenerator> mpIdGenerator;
 };
 

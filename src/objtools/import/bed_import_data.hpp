@@ -92,7 +92,7 @@ public:
     const CUser_object& DisplayData() const { return mDisplayData; };
 
 
-protected:
+private:
     void
     xInitializeScore(
         double);

@@ -56,7 +56,7 @@ public:
     operator() (
         const string&) const;
 
-protected:
+private:
     string mPrefix;
 };
 

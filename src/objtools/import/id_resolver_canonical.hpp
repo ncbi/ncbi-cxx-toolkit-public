@@ -59,7 +59,7 @@ public:
 
     static const int NUMERIC_TO_LOCAL_LIMIT = 1000;
 
-protected:
+private:
     bool mAllIdsAsLocal;
     bool mNumericIdsAsLocal;
 };

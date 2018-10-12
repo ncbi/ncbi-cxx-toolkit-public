@@ -66,7 +66,7 @@ public:
         const CAnnotImportData&,
         CSeq_annot&);
 
-protected:
+private:
     unique_ptr<CFeatureIdGenerator> mpIdGenerator;
 };
 

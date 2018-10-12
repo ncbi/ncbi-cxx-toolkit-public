@@ -78,7 +78,7 @@ public:
     std::map<std::string, std::string>::const_iterator
     end() const { return mAnnotData.end(); };
 
-protected:
+private:
     std::map<std::string, std::string> mAnnotData;
 };
 

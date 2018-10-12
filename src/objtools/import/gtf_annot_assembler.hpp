@@ -68,7 +68,7 @@ public:
         const CAnnotImportData&,
         CSeq_annot&);
 
-protected:
+private:
     void xProcessRecordGene(
         const CGtfImportData&,
         CSeq_annot&);
@@ -139,7 +139,6 @@ protected:
     void xAnnotGenerateXrefs(
         CSeq_annot&);
 
-protected:
     unique_ptr<CFeatureMap> mpFeatureMap;
     unique_ptr<CFeatureIdGenerator> mpIdGenerator;
 };

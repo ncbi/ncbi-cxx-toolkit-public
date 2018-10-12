@@ -57,7 +57,7 @@ public:
     GetNextRecord(
         CFeatImportData&) override;
 
-protected:
+private:
     void
     xSplitLine(
         const std::string&,

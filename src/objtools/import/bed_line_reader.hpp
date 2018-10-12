@@ -58,12 +58,12 @@ public:
     GetNextRecord(
         CFeatImportData&) override;
 
-protected:
     void
     SetInputStream(
         CNcbiIstream&,
         bool = false);
 
+private:
     virtual bool
     xIgnoreLine(
         const string&) const;

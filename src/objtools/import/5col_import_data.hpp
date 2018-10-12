@@ -74,7 +74,7 @@ public:
 
     const CSeq_feat& GetFeature() const { return *mpFeature; };
 
-protected:
+private:
     void
     xFeatureSetType(
         const std::string&);

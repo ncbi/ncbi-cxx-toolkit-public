@@ -99,11 +99,10 @@ public:
     AdjustFeatureType(
         const std::string& type) { mType = type; };
 
-protected:
+private:
     void xInitializeAttributes(
         const std::vector<std::pair<std::string, std::string>>&);
 
-protected:
     CSeq_loc mLocation;
     std::string mSource;
     std::string mType;
