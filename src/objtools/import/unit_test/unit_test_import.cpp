@@ -51,6 +51,26 @@ USING_SCOPE(objects);
 const string DIRDATA = "unit_test/data";
 
 //  ============================================================================
+bool
+sSkipTest(
+    const CArgs& args,
+    const string& testName,
+    const string& testFormat)
+//  ============================================================================
+{
+    auto singleCase = args["single-case"].AsString();
+    if (!singleCase.empty()) {
+        return (singleCase != testName);
+    }
+    auto singleFormat = args["single-format"].AsString();
+    if (!singleFormat.empty()) {
+        return (singleFormat != testFormat);
+    }
+    return false;
+}
+
+    
+//  ============================================================================
 void sRunTest(
     const string& testName,
     const string& format,
@@ -149,6 +169,18 @@ NCBITEST_INIT_CMDLINE(arg_descrs)
         "Set the root directory under which all test files can be found.",
         CArgDescriptions::eString,
         DIRDATA);
+    arg_descrs->AddDefaultKey(
+        "single-case",
+        "TEST_SINGLE_CASE",
+        "Limit to only the given case.",
+        CArgDescriptions::eString,
+        "");
+    arg_descrs->AddDefaultKey(
+        "single-format",
+        "TEST_SINGLE_FORMAT",
+        "Limit to only the given format.",
+        CArgDescriptions::eString,
+        "");
     arg_descrs->AddFlag(
         "update-all",
         "Update all test cases to current reader code.",
@@ -208,6 +240,9 @@ BOOST_AUTO_TEST_CASE(RunTests)
             "Invalid test description: " << testDescription);
         auto testName = testComponents[0];
         auto format = testComponents[1];
+        if (sSkipTest(args, testName, format)) {
+            continue;
+        }
         auto inFile = dirInput + testName + "." + format;
         auto goldenFile = dirGolden + testName + ".asn1";
         auto errorsFile = dirGolden + testName + ".errors";
