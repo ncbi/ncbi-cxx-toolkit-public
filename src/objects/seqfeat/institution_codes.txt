@@ -1784,8 +1784,9 @@ EMAU	s	Ernst-Moritz-Arndt-Universitat Greifswald
 EMBT	s	Department of Agriculture, Thailand			
 EMC	s	Eastern Michigan University, Biology Department			
 EMCC	c	Egypt Microbial Culture Collection			
-EMEC	s	Essig Museum of Entomology			
-EMEC:UCIS	s	Essig Museum of Entomology, University of California Insect Survey	
+EMEC	s	Essig Museum of Entomology, University of California at Berkeley		https://essigdb.berkeley.edu/cgi/eme_query?table=eme&bnhm_id=EMEC209800&one=T	
+EMEC:EMEC	s	Essig Museum of Entomology, University of California at Berkeley, Essig Museum of Entomology	https://essigdb.berkeley.edu/cgi/eme_query?table=eme&bnhm_id=EMEC71410&one=T
+EMEC:UCIS	s	Essig Museum of Entomology, University of California at Berkeley, University of California Insect Survey	https://essigdb.berkeley.edu/cgi/eme_query?table=eme&bnhm_id=UCIS133938&one=T
 EMET	s	Faculty of Agriculture, Entomology Museum			
 EMMA	s	Universidad Politecnica de Madrid, Unidad Docente Botanica, Departamento Silvopascicultura			
 EMNH	s	The Everhart Museum of Natural History, Science & Art			
@@ -3395,7 +3396,7 @@ KTC	s	Pedagogical University, Botany Department
 KTG	s	Kettering and District Naturalists' Society and Field Club			
 KTU	s	University of Silesia, Department of Plant Systematics			
 KTUH	s	Kuwait University, Botany and Microbiology Department			
-KU	s	University of Kansas Natural History Museum	KUMNA,KUVP,UK		
+KU	s	University of Kansas Natural History Museum	KUMNA,KUNHM,KUVP,UK		
 KU-MACC	c	Kobe University Macroalgal Culture Collection			
 KU:H	s	University of Kansas Natural History Museum, Herpetology Collection	
 KU:I	s	University of Kansas Natural History Museum, Ichthyology collection	https://ichthyology.specify.ku.edu/specify/bycatalog/KUI/&spec;/
@@ -6400,7 +6401,7 @@ SZE<TUR>	s	Zoology Department, Aegean University, Science Faculty
 SZG	s	Shenzhen Fairy Lake Botanical Garden			
 SZL	s	Landesherbar von Salzburg			
 SZM	s	Saitama Zoogeographical Museum			
-SZMC	c	Szeged Microbiological Collection		https://www.ncbi.nlm.nih.gov/biocollections/?term=BP	
+SZMC	c	Szeged Microbiological Collection			
 SZMN	s	Siberian Zoological Museum			
 SZPT	s	Shenzhen Polytechnic			
 SZPT:ENT	s	Shenzhen Polytechnic, Entomology Collection		
