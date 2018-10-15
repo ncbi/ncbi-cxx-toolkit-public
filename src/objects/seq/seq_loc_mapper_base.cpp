@@ -3664,6 +3664,31 @@ CRef<CSeq_loc> CSeq_loc_Mapper_Base::Map(const CSeq_loc& src_loc)
 }
 
 
+class CTotalRangeSynonymMapper : public ISynonymMapper
+{
+public:
+    typedef CSeq_loc_Mapper_Base::TSynonymMap TSynonymMap;
+    CTotalRangeSynonymMapper(const TSynonymMap& syn_map) : m_Map(syn_map) {}
+    virtual ~CTotalRangeSynonymMapper(void) {}
+
+    virtual CSeq_id_Handle GetBestSynonym(const CSeq_id& id)
+    {
+        auto main_id = m_Map.find(CSeq_id_Handle::GetHandle(id));
+        return main_id != m_Map.end() ? main_id->second : CSeq_id_Handle();
+    }
+private:
+    const TSynonymMap& m_Map;
+};
+
+
+CRef<CSeq_loc> CSeq_loc_Mapper_Base::MapTotalRange(const CSeq_loc& src_loc)
+{
+    CTotalRangeSynonymMapper syn_mapper(m_SynonymMap);
+    CRef<CSeq_loc> total_range = src_loc.Merge(CSeq_loc::fMerge_SingleRange, &syn_mapper);
+    return Map(*total_range);
+}
+
+
 CRef<CSeq_align>
 CSeq_loc_Mapper_Base::x_MapSeq_align(const CSeq_align& src_align,
                                      size_t*           row)

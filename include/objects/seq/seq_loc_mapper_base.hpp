@@ -523,6 +523,8 @@ public:
 
     /// Map seq-loc
     CRef<CSeq_loc>   Map(const CSeq_loc& src_loc);
+    /// Take the total range from the location and run it through the mapper.
+    CRef<CSeq_loc>   MapTotalRange(const CSeq_loc& seq_loc);
     /// Map the whole alignment. Searches all rows for ranges
     /// which can be mapped.
     CRef<CSeq_align> Map(const CSeq_align& src_align);
@@ -901,6 +903,8 @@ private:
 
     typedef map<CSeq_id_Handle, CSeq_id_Handle> TSynonymMap;
     typedef map<CSeq_id_Handle, TSeqPos> TLengthMap;
+
+    friend class CTotalRangeSynonymMapper;
 
     // How to merge mapped locations.
     EMergeFlags          m_MergeFlag;
