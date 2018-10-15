@@ -659,12 +659,12 @@ void SNetServerInPool::AdjustThrottlingParameters(int err_code)
 {
     const auto& params = m_ServerPool->GetThrottleParams();
 
-    if (params.m_ServerThrottlePeriod <= 0)
+    if (params.throttle_period <= 0)
         return;
 
     const auto op_result = err_code < 0 ? SThrottleStats::eCOR_Success : SThrottleStats::eCOR_Failure;
 
-    if (params.m_ConnectionFailuresOnly &&
+    if (params.connect_failures_only &&
             (op_result == SThrottleStats::eCOR_Failure) &&
             (err_code != CNetSrvConnException::eConnectionFailure)) return;
 
@@ -675,14 +675,14 @@ void SThrottleStats::AdjustThrottlingParameters(const SThrottleParams& params, E
 {
     CFastMutexGuard guard(m_ThrottleLock);
 
-    if (params.m_MaxConsecutiveIOFailures > 0) {
+    if (params.max_consecutive_io_failures > 0) {
         if (op_result != eCOR_Success)
             ++m_NumberOfConsecutiveIOFailures;
-        else if (m_NumberOfConsecutiveIOFailures < params.m_MaxConsecutiveIOFailures)
+        else if (m_NumberOfConsecutiveIOFailures < params.max_consecutive_io_failures)
             m_NumberOfConsecutiveIOFailures = 0;
     }
 
-    if (params.m_IOFailureThresholdNumerator > 0) {
+    if (params.io_failure_threshold_numerator > 0) {
         if (m_IOFailureRegister[m_IOFailureRegisterIndex] != op_result) {
             if ((m_IOFailureRegister[m_IOFailureRegisterIndex] =
                     op_result) == eCOR_Success)
@@ -691,7 +691,7 @@ void SThrottleStats::AdjustThrottlingParameters(const SThrottleParams& params, E
                 ++m_IOFailureCounter;
         }
 
-        if (++m_IOFailureRegisterIndex >= params.m_IOFailureThresholdDenominator)
+        if (++m_IOFailureRegisterIndex >= params.io_failure_threshold_denominator)
             m_IOFailureRegisterIndex = 0;
     }
 }
@@ -700,7 +700,7 @@ void SNetServerInPool::CheckIfThrottled()
 {
     const auto& params = m_ServerPool->GetThrottleParams();
 
-    if (params.m_ServerThrottlePeriod <= 0)
+    if (params.throttle_period <= 0)
         return;
 
     m_ThrottleStats.CheckIfThrottled(params, m_Address);
@@ -715,19 +715,19 @@ void SThrottleStats::CheckIfThrottled(const SThrottleParams& params, const CNetS
         auto duration = current_time - m_ThrottledUntil;
 
         if ((duration >= CTimeSpan(0, 0)) &&
-                (!params.m_ThrottleUntilDiscoverable || m_DiscoveredAfterThrottling)) {
-            duration += CTimeSpan(params.m_ServerThrottlePeriod, 0);
+                (!params.throttle_until_discoverable || m_DiscoveredAfterThrottling)) {
+            duration += CTimeSpan(params.throttle_period, 0);
             ResetThrottlingParameters();
             LOG_POST(Warning << "Disabling throttling for server " << address.AsString() <<
                     " after " << duration.AsString() << " seconds wait" << 
-                    (params.m_ThrottleUntilDiscoverable ? " and rediscovery" : ""));
+                    (params.throttle_until_discoverable ? " and rediscovery" : ""));
             return;
         }
         NCBI_THROW(CNetSrvConnException, eServerThrottle, m_ThrottleMessage);
     }
 
-    if (params.m_MaxConsecutiveIOFailures > 0 &&
-        m_NumberOfConsecutiveIOFailures >= params.m_MaxConsecutiveIOFailures) {
+    if (params.max_consecutive_io_failures > 0 &&
+        m_NumberOfConsecutiveIOFailures >= params.max_consecutive_io_failures) {
         m_Throttled = true;
         m_DiscoveredAfterThrottling = false;
         m_ThrottleMessage = "Server " + address.AsString();
@@ -735,8 +735,8 @@ void SThrottleStats::CheckIfThrottled(const SThrottleParams& params, const CNetS
             "of connection failures in a row";
     }
 
-    if (params.m_IOFailureThresholdNumerator > 0 &&
-            m_IOFailureCounter >= params.m_IOFailureThresholdNumerator) {
+    if (params.io_failure_threshold_numerator > 0 &&
+            m_IOFailureCounter >= params.io_failure_threshold_numerator) {
         m_Throttled = true;
         m_DiscoveredAfterThrottling = false;
         m_ThrottleMessage = "Connection to server " + address.AsString();
@@ -745,7 +745,7 @@ void SThrottleStats::CheckIfThrottled(const SThrottleParams& params, const CNetS
 
     if (m_Throttled) {
         m_ThrottledUntil.SetCurrent();
-        m_ThrottledUntil.AddSecond(params.m_ServerThrottlePeriod);
+        m_ThrottledUntil.AddSecond(params.throttle_period);
         NCBI_THROW(CNetSrvConnException, eServerThrottle, m_ThrottleMessage);
     }
 }
@@ -843,15 +843,15 @@ CNetServerInfo g_ServerInfoFromString(const string& server_info)
 
 void SThrottleParams::Init(CSynRegistry& registry, const SRegSynonyms& sections)
 {
-    m_ServerThrottlePeriod = registry.Get(sections, "throttle_relaxation_period", 0);
+    throttle_period = registry.Get(sections, "throttle_relaxation_period", 0);
 
-    if (m_ServerThrottlePeriod <= 0) return;
+    if (throttle_period <= 0) return;
 
-    m_MaxConsecutiveIOFailures = registry.Get(sections,
+    max_consecutive_io_failures = registry.Get(sections,
             { "throttle_by_consecutive_connection_failures", "throttle_by_subsequent_connection_failures" }, 0);
 
-    m_ThrottleUntilDiscoverable = registry.Get(sections, "throttle_hold_until_active_in_lb", false);
-    m_ConnectionFailuresOnly = registry.Get(sections, "throttle_connection_failures_only", false);
+    throttle_until_discoverable = registry.Get(sections, "throttle_hold_until_active_in_lb", false);
+    connect_failures_only = registry.Get(sections, "throttle_connect_failures_only", false);
 
     InitIOFailureThreshold(registry, sections);
 }
@@ -860,8 +860,8 @@ void SThrottleParams::InitIOFailureThreshold(CSynRegistry& registry, const SRegS
 {
     // These values must correspond to each other
     const auto default_error_rate = "0/1";
-    m_IOFailureThresholdNumerator = 0;
-    m_IOFailureThresholdDenominator = 1;
+    io_failure_threshold_numerator = 0;
+    io_failure_threshold_denominator = 1;
 
     const string error_rate = registry.Get(sections, "throttle_by_connection_error_rate", default_error_rate);
 
@@ -886,8 +886,8 @@ void SThrottleParams::InitIOFailureThreshold(CSynRegistry& registry, const SRegS
         denominator = CONNECTION_ERROR_HISTORY_MAX;
     }
 
-    m_IOFailureThresholdNumerator = numerator;
-    m_IOFailureThresholdDenominator = denominator;
+    io_failure_threshold_numerator = numerator;
+    io_failure_threshold_denominator = denominator;
 }
 
 CNetServer::SAddress::SAddress(unsigned h, unsigned short p) :

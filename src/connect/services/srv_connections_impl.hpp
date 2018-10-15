@@ -148,21 +148,21 @@ public:
 struct SThrottleParams
 {
     // The parameters below describe different conditions that trigger server throttling.
-    int m_MaxConsecutiveIOFailures;
+    int max_consecutive_io_failures;
 
     // Connection failure rate (numerator/denominator), which is when reached, triggers server throttling.
-    int m_IOFailureThresholdNumerator;
-    int m_IOFailureThresholdDenominator; // Cannot be greater than CONNECTION_ERROR_HISTORY_MAX
+    int io_failure_threshold_numerator;
+    int io_failure_threshold_denominator; // Cannot be greater than CONNECTION_ERROR_HISTORY_MAX
 
     // How many seconds the API should wait before attempting to connect to a misbehaving server again.
     // Throttling is off if period is less or equal to zero.
-    int m_ServerThrottlePeriod;
+    int throttle_period;
 
     // Whether to check with LBSMD before re-enabling the server.
-    bool m_ThrottleUntilDiscoverable;
+    bool throttle_until_discoverable;
 
     // Whether to throttle on connection failures only
-    bool m_ConnectionFailuresOnly;
+    bool connect_failures_only;
 
     void Init(CSynRegistry& registry, const SRegSynonyms& sections);
 
