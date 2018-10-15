@@ -304,16 +304,15 @@ CNetServerMultilineCmdOutput::CNetServerMultilineCmdOutput(
 
 /*************************************************************************/
 SNetServerInPool::SNetServerInPool(CNetServer::SAddress address,
-        INetServerProperties* server_properties) :
+        INetServerProperties* server_properties, SThrottleParams throttle_params) :
     m_Address(move(address)),
-    m_ServerProperties(server_properties)
+    m_ServerProperties(server_properties),
+    m_ThrottleStats(move(throttle_params))
 {
     m_CurrentConnectionGeneration.Set(0);
 
     m_FreeConnectionListHead = NULL;
     m_FreeConnectionListSize = 0;
-
-    m_ThrottleStats.Reset();
 
     m_RankBase = 1103515245 *
             // XOR the network prefix bytes of the IP address with the port
@@ -668,21 +667,21 @@ void SNetServerInPool::AdjustThrottlingParameters(int err_code)
             (op_result == SThrottleStats::eCOR_Failure) &&
             (err_code != CNetSrvConnException::eConnectionFailure)) return;
 
-    m_ThrottleStats.Adjust(params, op_result);
+    m_ThrottleStats.Adjust(op_result);
 }
 
-void SThrottleStats::Adjust(const SThrottleParams& params, EConnOpResult op_result)
+void SThrottleStats::Adjust(EConnOpResult op_result)
 {
     CFastMutexGuard guard(m_ThrottleLock);
 
-    if (params.max_consecutive_io_failures > 0) {
+    if (m_Params.max_consecutive_io_failures > 0) {
         if (op_result != eCOR_Success)
             ++m_NumberOfConsecutiveIOFailures;
-        else if (m_NumberOfConsecutiveIOFailures < params.max_consecutive_io_failures)
+        else if (m_NumberOfConsecutiveIOFailures < m_Params.max_consecutive_io_failures)
             m_NumberOfConsecutiveIOFailures = 0;
     }
 
-    if (params.io_failure_threshold_numerator > 0) {
+    if (m_Params.io_failure_threshold_numerator > 0) {
         if (m_IOFailureRegister[m_IOFailureRegisterIndex] != op_result) {
             if ((m_IOFailureRegister[m_IOFailureRegisterIndex] =
                     op_result) == eCOR_Success)
@@ -691,7 +690,7 @@ void SThrottleStats::Adjust(const SThrottleParams& params, EConnOpResult op_resu
                 ++m_IOFailureCounter;
         }
 
-        if (++m_IOFailureRegisterIndex >= params.io_failure_threshold_denominator)
+        if (++m_IOFailureRegisterIndex >= m_Params.io_failure_threshold_denominator)
             m_IOFailureRegisterIndex = 0;
     }
 }
@@ -703,10 +702,10 @@ void SNetServerInPool::CheckIfThrottled()
     if (params.throttle_period <= 0)
         return;
 
-    m_ThrottleStats.Check(params, m_Address);
+    m_ThrottleStats.Check(m_Address);
 }
 
-void SThrottleStats::Check(const SThrottleParams& params, const CNetServer::SAddress& address)
+void SThrottleStats::Check(const CNetServer::SAddress& address)
 {
     CFastMutexGuard guard(m_ThrottleLock);
 
@@ -715,19 +714,19 @@ void SThrottleStats::Check(const SThrottleParams& params, const CNetServer::SAdd
         auto duration = current_time - m_ThrottledUntil;
 
         if ((duration >= CTimeSpan(0, 0)) &&
-                (!params.throttle_until_discoverable || m_DiscoveredAfterThrottling)) {
-            duration += CTimeSpan(params.throttle_period, 0);
+                (!m_Params.throttle_until_discoverable || m_DiscoveredAfterThrottling)) {
+            duration += CTimeSpan(m_Params.throttle_period, 0);
             Reset();
             LOG_POST(Warning << "Disabling throttling for server " << address.AsString() <<
                     " after " << duration.AsString() << " seconds wait" << 
-                    (params.throttle_until_discoverable ? " and rediscovery" : ""));
+                    (m_Params.throttle_until_discoverable ? " and rediscovery" : ""));
             return;
         }
         NCBI_THROW(CNetSrvConnException, eServerThrottle, m_ThrottleMessage);
     }
 
-    if (params.max_consecutive_io_failures > 0 &&
-        m_NumberOfConsecutiveIOFailures >= params.max_consecutive_io_failures) {
+    if (m_Params.max_consecutive_io_failures > 0 &&
+        m_NumberOfConsecutiveIOFailures >= m_Params.max_consecutive_io_failures) {
         m_Throttled = true;
         m_DiscoveredAfterThrottling = false;
         m_ThrottleMessage = "Server " + address.AsString();
@@ -735,8 +734,8 @@ void SThrottleStats::Check(const SThrottleParams& params, const CNetServer::SAdd
             "of connection failures in a row";
     }
 
-    if (params.io_failure_threshold_numerator > 0 &&
-            m_IOFailureCounter >= params.io_failure_threshold_numerator) {
+    if (m_Params.io_failure_threshold_numerator > 0 &&
+            m_IOFailureCounter >= m_Params.io_failure_threshold_numerator) {
         m_Throttled = true;
         m_DiscoveredAfterThrottling = false;
         m_ThrottleMessage = "Connection to server " + address.AsString();
@@ -745,7 +744,7 @@ void SThrottleStats::Check(const SThrottleParams& params, const CNetServer::SAdd
 
     if (m_Throttled) {
         m_ThrottledUntil.SetCurrent();
-        m_ThrottledUntil.AddSecond(params.throttle_period);
+        m_ThrottledUntil.AddSecond(m_Params.throttle_period);
         NCBI_THROW(CNetSrvConnException, eServerThrottle, m_ThrottleMessage);
     }
 }

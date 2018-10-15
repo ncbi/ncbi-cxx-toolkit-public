@@ -808,7 +808,7 @@ SNetServerInPool* SNetServerPoolImpl::FindOrCreateServerImpl(
     if (!loc.second)
         return loc.first->second;
 
-    auto* server = new SNetServerInPool(move(server_address), m_PropCreator());
+    auto* server = new SNetServerInPool(move(server_address), m_PropCreator(), m_ThrottleParams);
 
     loc.first->second = server;
 

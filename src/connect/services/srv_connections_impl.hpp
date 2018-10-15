@@ -172,18 +172,22 @@ private:
 
 struct SThrottleStats
 {
+    SThrottleStats(SThrottleParams params) : m_Params(move(params)) { Reset(); }
+
     // Server throttling implementation.
     enum EConnOpResult {
         eCOR_Success,
         eCOR_Failure
     };
 
-    void Adjust(const SThrottleParams& params, EConnOpResult op_result);
-    void Check(const SThrottleParams& params, const CNetServer::SAddress& address);
-    void Reset();
+    void Adjust(EConnOpResult op_result);
+    void Check(const CNetServer::SAddress& address);
     void Discover();
 
 private:
+    void Reset();
+
+    const SThrottleParams m_Params;
     int m_NumberOfConsecutiveIOFailures;
     EConnOpResult m_IOFailureRegister[CONNECTION_ERROR_HISTORY_MAX];
     int m_IOFailureRegisterIndex;
@@ -198,7 +202,7 @@ private:
 struct SNetServerInPool : public CObject
 {
     SNetServerInPool(CNetServer::SAddress address,
-            INetServerProperties* server_properties);
+            INetServerProperties* server_properties, SThrottleParams throttle_params);
 
     // Releases a reference to the parent service object,
     // and if that was the last reference, the service object
