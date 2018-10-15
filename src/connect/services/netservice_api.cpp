@@ -998,7 +998,7 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
                         sinfo->rate != 0.0) {
                     SNetServerInPool* server = m_ServerPool->
                             FindOrCreateServerImpl(CNetServer::SAddress(sinfo->host, sinfo->port));
-                    server->DiscoveredAfterThrottling();
+                    server->m_ThrottleStats.Discover();
 
                     TServerRate server_rate(server, sinfo->rate);
 

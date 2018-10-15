@@ -529,8 +529,6 @@ CNetServerConnection SNetServerInPool::Connect(SNetServerImpl* server, const STi
 
     SNetServiceXSiteAPI::ConnectXSite(socket, deadline, m_Address, server->m_Service->m_ServiceName);
 
-    AdjustThrottlingParameters();
-
     socket.SetDataLogging(TServConn_ConnDataLogging::GetDefault() ? eOn : eOff);
     socket.SetTimeout(eIO_ReadWrite, timeout ? timeout :
                               &m_ServerPool->m_CommTimeout);
@@ -570,8 +568,6 @@ void SNetServerImpl::ConnectImpl(CSocket& socket, SConnectDeadline& deadline,
 void SNetServerInPool::TryExec(SNetServerImpl* server, INetServerExecHandler& handler,
         const STimeout* timeout)
 {
-    CheckIfThrottled();
-
     CNetServerConnection conn;
 
     // Silently reconnect if the connection was taken
@@ -587,24 +583,21 @@ void SNetServerInPool::TryExec(SNetServerImpl* server, INetServerExecHandler& ha
             if (err_code != CNetSrvConnException::eWriteFailure &&
                 err_code != CNetSrvConnException::eConnClosedByServer)
             {
-                AdjustThrottlingParameters(err_code);
                 throw;
             }
         }
     }
 
-    try {
-        handler.Exec(Connect(server, timeout), timeout);
-    }
-    catch (CNetSrvConnException& e) {
-        AdjustThrottlingParameters(e.GetErrCode());
-        throw;
-    }
+    handler.Exec(Connect(server, timeout), timeout);
 }
 
 void SNetServerImpl::TryExec(INetServerExecHandler& handler, const STimeout* timeout)
 {
-    return m_ServerInPool->TryExec(this, handler, timeout);
+    auto& server_in_pool = *m_ServerInPool;
+    auto& throttle_stats = server_in_pool.m_ThrottleStats;
+
+    throttle_stats.Check(server_in_pool.m_Address);
+    throttle_stats.TryExec([&]() { server_in_pool.TryExec(this, handler, timeout); });
 }
 
 class CNetServerExecHandler : public INetServerExecHandler
@@ -654,24 +647,17 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
     TryExec(exec_handler, timeout);
 }
 
-void SNetServerInPool::AdjustThrottlingParameters(int err_code)
+void SThrottleStats::Adjust(int err_code)
 {
-    const auto& params = m_ServerPool->GetThrottleParams();
-
-    if (params.throttle_period <= 0)
+    if (m_Params.throttle_period <= 0)
         return;
 
     const auto op_result = err_code < 0 ? SThrottleStats::eCOR_Success : SThrottleStats::eCOR_Failure;
 
-    if (params.connect_failures_only &&
+    if (m_Params.connect_failures_only &&
             (op_result == SThrottleStats::eCOR_Failure) &&
             (err_code != CNetSrvConnException::eConnectionFailure)) return;
 
-    m_ThrottleStats.Adjust(op_result);
-}
-
-void SThrottleStats::Adjust(EConnOpResult op_result)
-{
     CFastMutexGuard guard(m_ThrottleLock);
 
     if (m_Params.max_consecutive_io_failures > 0) {
@@ -695,18 +681,11 @@ void SThrottleStats::Adjust(EConnOpResult op_result)
     }
 }
 
-void SNetServerInPool::CheckIfThrottled()
-{
-    const auto& params = m_ServerPool->GetThrottleParams();
-
-    if (params.throttle_period <= 0)
-        return;
-
-    m_ThrottleStats.Check(m_Address);
-}
-
 void SThrottleStats::Check(const CNetServer::SAddress& address)
 {
+    if (m_Params.throttle_period <= 0)
+        return;
+
     CFastMutexGuard guard(m_ThrottleLock);
 
     if (m_Throttled) {
@@ -747,6 +726,19 @@ void SThrottleStats::Check(const CNetServer::SAddress& address)
         m_ThrottledUntil.AddSecond(m_Params.throttle_period);
         NCBI_THROW(CNetSrvConnException, eServerThrottle, m_ThrottleMessage);
     }
+}
+
+void SThrottleStats::TryExec(function<void()> f)
+{
+    try {
+        f();
+    }
+    catch (CNetSrvConnException& e) {
+        Adjust(e.GetErrCode());
+        throw;
+    }
+
+    Adjust(-1); // Success
 }
 
 void SThrottleStats::Reset()

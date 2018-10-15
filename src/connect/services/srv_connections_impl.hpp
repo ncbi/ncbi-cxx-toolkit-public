@@ -180,11 +180,12 @@ struct SThrottleStats
         eCOR_Failure
     };
 
-    void Adjust(EConnOpResult op_result);
     void Check(const CNetServer::SAddress& address);
+    void TryExec(function<void()> f);
     void Discover();
 
 private:
+    void Adjust(int err_code);
     void Reset();
 
     const SThrottleParams m_Params;
@@ -214,11 +215,7 @@ struct SNetServerInPool : public CObject
     virtual ~SNetServerInPool();
 
     void TryExec(SNetServerImpl* server, INetServerExecHandler& handler, const STimeout* timeout);
-    void DiscoveredAfterThrottling() { m_ThrottleStats.Discover(); }
 
-private:
-    void AdjustThrottlingParameters(int err_code = -1);
-    void CheckIfThrottled();
     CNetServerConnection GetConnectionFromPool(SNetServerImpl* server);
     CNetServerConnection Connect(SNetServerImpl* server, const STimeout* timeout);
 
