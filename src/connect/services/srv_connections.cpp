@@ -313,7 +313,7 @@ SNetServerInPool::SNetServerInPool(CNetServer::SAddress address,
     m_FreeConnectionListHead = NULL;
     m_FreeConnectionListSize = 0;
 
-    m_ThrottleStats.ResetThrottlingParameters();
+    m_ThrottleStats.Reset();
 
     m_RankBase = 1103515245 *
             // XOR the network prefix bytes of the IP address with the port
@@ -668,10 +668,10 @@ void SNetServerInPool::AdjustThrottlingParameters(int err_code)
             (op_result == SThrottleStats::eCOR_Failure) &&
             (err_code != CNetSrvConnException::eConnectionFailure)) return;
 
-    m_ThrottleStats.AdjustThrottlingParameters(params, op_result);
+    m_ThrottleStats.Adjust(params, op_result);
 }
 
-void SThrottleStats::AdjustThrottlingParameters(const SThrottleParams& params, EConnOpResult op_result)
+void SThrottleStats::Adjust(const SThrottleParams& params, EConnOpResult op_result)
 {
     CFastMutexGuard guard(m_ThrottleLock);
 
@@ -703,10 +703,10 @@ void SNetServerInPool::CheckIfThrottled()
     if (params.throttle_period <= 0)
         return;
 
-    m_ThrottleStats.CheckIfThrottled(params, m_Address);
+    m_ThrottleStats.Check(params, m_Address);
 }
 
-void SThrottleStats::CheckIfThrottled(const SThrottleParams& params, const CNetServer::SAddress& address)
+void SThrottleStats::Check(const SThrottleParams& params, const CNetServer::SAddress& address)
 {
     CFastMutexGuard guard(m_ThrottleLock);
 
@@ -717,7 +717,7 @@ void SThrottleStats::CheckIfThrottled(const SThrottleParams& params, const CNetS
         if ((duration >= CTimeSpan(0, 0)) &&
                 (!params.throttle_until_discoverable || m_DiscoveredAfterThrottling)) {
             duration += CTimeSpan(params.throttle_period, 0);
-            ResetThrottlingParameters();
+            Reset();
             LOG_POST(Warning << "Disabling throttling for server " << address.AsString() <<
                     " after " << duration.AsString() << " seconds wait" << 
                     (params.throttle_until_discoverable ? " and rediscovery" : ""));
@@ -750,7 +750,7 @@ void SThrottleStats::CheckIfThrottled(const SThrottleParams& params, const CNetS
     }
 }
 
-void SThrottleStats::ResetThrottlingParameters()
+void SThrottleStats::Reset()
 {
     m_NumberOfConsecutiveIOFailures = 0;
     memset(m_IOFailureRegister, 0, sizeof(m_IOFailureRegister));
@@ -758,7 +758,7 @@ void SThrottleStats::ResetThrottlingParameters()
     m_Throttled = false;
 }
 
-void SThrottleStats::DiscoveredAfterThrottling()
+void SThrottleStats::Discover()
 {
     CFastMutexGuard guard(m_ThrottleLock);
     m_DiscoveredAfterThrottling = true;

@@ -178,10 +178,10 @@ struct SThrottleStats
         eCOR_Failure
     };
 
-    void AdjustThrottlingParameters(const SThrottleParams& params, EConnOpResult op_result);
-    void CheckIfThrottled(const SThrottleParams& params, const CNetServer::SAddress& address);
-    void ResetThrottlingParameters();
-    void DiscoveredAfterThrottling();
+    void Adjust(const SThrottleParams& params, EConnOpResult op_result);
+    void Check(const SThrottleParams& params, const CNetServer::SAddress& address);
+    void Reset();
+    void Discover();
 
 private:
     int m_NumberOfConsecutiveIOFailures;
@@ -210,7 +210,7 @@ struct SNetServerInPool : public CObject
     virtual ~SNetServerInPool();
 
     void TryExec(SNetServerImpl* server, INetServerExecHandler& handler, const STimeout* timeout);
-    void DiscoveredAfterThrottling() { m_ThrottleStats.DiscoveredAfterThrottling(); }
+    void DiscoveredAfterThrottling() { m_ThrottleStats.Discover(); }
 
 private:
     void AdjustThrottlingParameters(int err_code = -1);
