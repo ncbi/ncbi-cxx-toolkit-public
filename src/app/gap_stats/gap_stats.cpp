@@ -694,13 +694,6 @@ int CGapStatsApplication::RunNoCatch(void)
         try {
             x_ReadFileOrAccn(sFileOrAccn);
         }
-        catch (const SOutMessage & out_message) {
-            // a thrown SOutMessage indicates we give up on this file_or_accn.
-            // (Note that a non-thrown SOutMessage would just be printed
-            // but would not halt processing of the file_or_accn)
-            x_PrintOutMessage(out_message, cerr);
-            exit_code = 1;
-        }
         catch (const ncbi::objects::CObjMgrException& ex) {
             if (ex.GetErrCode() == ncbi::objects::CObjMgrException::eAddDataError
                 && ex.GetMsg().find("duplicate Bioseq id") == 0) {
@@ -710,6 +703,13 @@ int CGapStatsApplication::RunNoCatch(void)
                 x_PrintOutMessage(out_message, cerr);
                 exit_code = 1;
             }
+        }
+        catch (const SOutMessage & out_message) {
+            // a thrown SOutMessage indicates we give up on this file_or_accn.
+            // (Note that a non-thrown SOutMessage would just be printed
+            // but would not halt processing of the file_or_accn)
+            x_PrintOutMessage(out_message, cerr);
+            exit_code = 1;
         }
         catch (const ncbi::CException& ex) {
             SOutMessage out_message(
