@@ -255,7 +255,7 @@ void CBlastDBAliasApp::Init()
     string dflt_seqid("Default = input file name provided to -seqid_file_in argument");
     const char* seqid_exclusions[]  = { kArgDb.c_str(), kArgDbType.c_str(), kArgDbTitle.c_str(),
                   kArgGiList.c_str(), kArgSeqIdList.c_str(), kArgOutput.c_str(),
-                  "dblist", "num_volumes", "vdblist", "gi_file_out", "gi_file_out"};
+                  "dblist", "num_volumes", "vdblist", "gi_file_in", "gi_file_out"};
         arg_desc->SetCurrentGroup("Seqd ID file conversion options");
         arg_desc->AddOptionalKey("seqid_file_in", "input_file",
                          "Text file to convert, should contain one seq id per line",
@@ -285,7 +285,7 @@ void CBlastDBAliasApp::Init()
 
         const char* seqid_info_exclusions[]  = { kArgDb.c_str(), kArgDbType.c_str(), kArgDbTitle.c_str(),
                   kArgGiList.c_str(), kArgSeqIdList.c_str(), kArgOutput.c_str(),
-                  "dblist", "num_volumes", "vdblist", "gi_file_out", "gi_file_out", "seqid_file_in", "seqid_file_out"};
+                  "dblist", "num_volumes", "vdblist", "gi_file_in", "gi_file_out", "seqid_file_in", "seqid_file_out"};
         arg_desc->AddOptionalKey("seqid_file_info", "seqid_file_info", "Display seqidlist file info", CArgDescriptions::eString);
         for (size_t i = 0; i < sizeof(seqid_info_exclusions)/sizeof(*seqid_info_exclusions); i++) {
             arg_desc->SetDependency("seqid_info", CArgDescriptions::eExcludes, string(seqid_info_exclusions[i]));
@@ -555,8 +555,21 @@ int CBlastDBAliasApp::Run(void)
 
         if (x_GetOperationMode() == eConvertGiFile) {
             CNcbiIstream& input = args["gi_file_in"].AsInputFile();
-            CNcbiOstream& output = args["gi_file_out"].AsOutputFile();
-            status = ConvertGiFile(input, output);
+            string gi_file_out;
+            if (args["gi_file_out"].HasValue()) {
+                gi_file_out = args["gi_file_out"].AsString();
+            } else {
+                gi_file_out = args["gi_file_in"].AsString();
+                gi_file_out += ".bgl";
+            }
+            {
+                // output will close at end of scope.
+                CNcbiOfstream output(gi_file_out);
+                status = ConvertGiFile(input, output);
+            }
+            if (!CFile(gi_file_out).Exists()) {
+                NCBI_THROW(CSeqDBException, eFileErr, gi_file_out + " not written");
+            }
         } else if(x_GetOperationMode() == eConvertSeqIDFile) {
         	status = x_ConvertSeqIDFile();
         } else if(x_GetOperationMode() == eSeqIDFileInfo) {
