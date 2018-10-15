@@ -205,23 +205,36 @@ void CTable2AsnValidator::ReportErrorStats(CNcbiOstream& out)
     }
 }
 
-void CTable2AsnValidator::ReportDiscrepancies(CSerialObject& obj, CScope& scope, bool eucariote, const string& lineage)
+void CTable2AsnValidator::InitDisrepancyReport(objects::CScope& scope)
 {
-    CRef<NDiscrepancy::CDiscrepancySet> tests = NDiscrepancy::CDiscrepancySet::New(scope);
-    vector<string> names = NDiscrepancy::GetDiscrepancyNames(NDiscrepancy::eSubmitter);
-    tests->AddTests(names);
-    tests->SetFile(m_context->m_current_file);
-    tests->SetLineage(lineage);
-    tests->SetEucariote(eucariote);
-    tests->Parse(obj);
-    tests->Summarize();
+    if (m_discrepancy.NotEmpty())
+        return;
 
-    if (!m_discrepancy_output.get())
-    {
-        m_discrepancy_output.reset(new CNcbiOfstream(m_context->m_discrepancy_file.c_str()));
-    }
+    m_discrepancy = NDiscrepancy::CDiscrepancySet::New(scope);
+    vector<string> names = NDiscrepancy::GetDiscrepancyNames(NDiscrepancy::eSubmitter);
+    m_discrepancy->AddTests(names);
+}
+
+void CTable2AsnValidator::CollectDiscrepancies(CSerialObject& obj, bool eucariote, const string& lineage)
+{
+    m_discrepancy->SetFile(m_context->m_current_file);
+    m_discrepancy->SetLineage(lineage);
+    m_discrepancy->SetEucariote(eucariote);
+    m_discrepancy->Parse(obj);
+}
+
+void CTable2AsnValidator::ReportDiscrepancies()
+{
+    auto_ptr<CNcbiOstream> discrepancy_output;
+
+    if (m_context->m_discrepancy_file.empty())
+        return;
+
+    m_discrepancy->Summarize();
+    discrepancy_output.reset(new CNcbiOfstream(m_context->m_discrepancy_file.c_str()));
     bool print_fatal = true;
-    tests->OutputText(*m_discrepancy_output, print_fatal, false, true);
+    m_discrepancy->OutputText(*discrepancy_output, print_fatal, false, true);
+    m_discrepancy.Release();
 }
 
 void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh, const string& fname, auto_ptr<CNcbiOfstream>& ostream)

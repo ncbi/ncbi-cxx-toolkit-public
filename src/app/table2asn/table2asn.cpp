@@ -653,6 +653,7 @@ int CTbl2AsnApp::Run(void)
             if (!m_context.m_ResultsDirectory.empty())
                 m_context.m_discrepancy_file.insert(0, m_context.m_ResultsDirectory);
         }
+        m_validator->InitDisrepancyReport(*m_context.m_scope);
     }
 
     m_context.m_eukariote = args["euk"].AsBoolean();
@@ -720,6 +721,7 @@ int CTbl2AsnApp::Run(void)
             CNcbiOfstream val_stats(outputfile.c_str());
             m_validator->ReportErrorStats(val_stats);
         }
+        m_validator->ReportDiscrepancies();
     }
     catch (const CBadResiduesException& e)
     {
@@ -955,7 +957,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
         if (!m_context.m_discrepancy_file.empty())
         {
-            m_validator->ReportDiscrepancies(submit_or_entry, *m_context.m_scope, m_context.m_disc_eucariote, m_context.m_disc_lineage);
+            m_validator->CollectDiscrepancies(submit_or_entry, m_context.m_disc_eucariote, m_context.m_disc_lineage);
         }
 
         if (m_context.m_make_flatfile)

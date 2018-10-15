@@ -12,6 +12,10 @@ namespace objects
     class CSeq_submit;
     class CScope;
 };
+namespace NDiscrepancy
+{
+    class CDiscrepancySet;
+};
 
 class CTable2AsnContext;
 class CTable2AsnValidator: public CObject
@@ -24,7 +28,10 @@ public:
     void ReportErrors(CConstRef<objects::CValidError> errors, CNcbiOstream& out);
     void ReportErrorStats(CNcbiOstream& out);
     size_t TotalErrors() const; 
-    void ReportDiscrepancies(CSerialObject& obj, objects::CScope& scope, bool eucariote, const string& lineage);
+
+    void CollectDiscrepancies(CSerialObject& obj, bool eucariote, const string& lineage);
+    void InitDisrepancyReport(objects::CScope& scope);
+    void ReportDiscrepancies();
 
 protected:
     typedef map<int, size_t> TErrorStatMap;
@@ -37,7 +44,7 @@ protected:
     };
     vector<TErrorStats> m_stats;
     CTable2AsnContext* m_context;
-    auto_ptr<CNcbiOstream> m_discrepancy_output;
+    CRef<NDiscrepancy::CDiscrepancySet> m_discrepancy;
 };
 
 END_NCBI_SCOPE
