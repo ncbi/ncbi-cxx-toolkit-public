@@ -4999,7 +4999,7 @@ void ReverseComplement(CSeq_inst& inst, CScope* scope)
                         break;
                     case CDelta_seq::e_Loc:
                         {{
-                            CSeq_loc* flip = sequence::SeqLocRevCmpl((*it)->SetLoc(), scope);
+                            CRef<CSeq_loc> flip(sequence::SeqLocRevCmpl((*it)->SetLoc(), scope));
                             (*it)->SetLoc(*flip);
                         }}
                         break;
