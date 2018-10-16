@@ -3020,7 +3020,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
         CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
         if (IsAllNs(vec)) {
-            PostErr(eDiag_Critical, eErr_SEQ_INST_AllNs, "Sequence is all Ns", seq);
+            PostErr(m_Imp.IsPDB() ? eDiag_Warning : eDiag_Critical, eErr_SEQ_INST_AllNs, "Sequence is all Ns", seq);
             return;
         }
 
