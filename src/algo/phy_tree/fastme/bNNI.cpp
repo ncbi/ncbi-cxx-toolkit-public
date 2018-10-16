@@ -181,6 +181,7 @@ void bNNI(meTree *T, double **avgDistArray, int *count)
   free(q);
   free(location);
   free(edgeArray);
+  free(weights);
   assignBalWeights(T,avgDistArray);
 }
 
