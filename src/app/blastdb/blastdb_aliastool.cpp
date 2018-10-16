@@ -564,7 +564,7 @@ int CBlastDBAliasApp::Run(void)
             }
             {
                 // output will close at end of scope.
-                CNcbiOfstream output(gi_file_out);
+                CNcbiOfstream output(gi_file_out.c_str());
                 status = ConvertGiFile(input, output);
             }
             if (!CFile(gi_file_out).Exists()) {
