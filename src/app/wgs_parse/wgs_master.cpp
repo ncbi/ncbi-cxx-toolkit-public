@@ -59,6 +59,7 @@
 #include <objects/biblio/ArticleIdSet.hpp>
 #include <objects/biblio/ArticleId.hpp>
 #include <objects/seqblock/GB_block.hpp>
+#include <objects/seqfeat/OrgName.hpp>
 
 #include "wgs_params.hpp"
 #include "wgs_master.hpp"
@@ -553,9 +554,28 @@ static void SortOrgRef(COrg_ref& org_ref)
             });
     }
 
-    if (org_ref.IsSetMod()) {
-        COrg_ref::TMod& mods = org_ref.SetMod();
-        mods.sort();
+    if (org_ref.IsSetOrgname() && org_ref.GetOrgname().IsSetMod()) {
+        COrgName::TMod& mods = org_ref.SetOrgname().SetMod();
+        mods.sort([](const CRef<COrgMod>& mod1, const CRef<COrgMod>& mod2)
+        {
+            if (mod1.Empty() || !mod1->IsSetSubtype()) {
+                return true;
+            }
+
+            if (mod2.Empty() || !mod2->IsSetSubtype()) {
+                return false;
+            }
+
+            if (mod1->GetSubtype() == mod2->GetSubtype()) {
+                if (!mod1->IsSetSubname())
+                    return true;
+                if (!mod2->IsSetSubname())
+                    return false;
+                return NStr::CompareNocase(mod1->GetSubname(), mod2->GetSubname()) < 0;
+            }
+
+            return mod1->GetSubtype() < mod2->GetSubtype();
+        });
     }
 }
 
