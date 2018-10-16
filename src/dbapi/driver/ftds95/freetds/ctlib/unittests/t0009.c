@@ -56,6 +56,7 @@ main(int argc, char *argv[])
         if (TDS_IS_MSSQL(tds)
             &&  tds->conn->product_version >= TDS_MS_VER(11, 0, 0)) {
             fputs("Skipping COMPUTE tests with MS SQL 2012+.\n", stderr);
+            try_ctlogout(ctx, conn, cmd, verbose);
             return 77;
         }
 	}
