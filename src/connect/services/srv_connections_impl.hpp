@@ -151,8 +151,14 @@ struct SThrottleParams
     int max_consecutive_io_failures;
 
     // Connection failure rate (numerator/denominator), which is when reached, triggers server throttling.
-    int io_failure_threshold_numerator;
-    int io_failure_threshold_denominator; // Cannot be greater than CONNECTION_ERROR_HISTORY_MAX
+    struct SIOFailureThreshold
+    {
+        size_t numerator = 0;
+        size_t denominator = 1;
+        constexpr static size_t kMaxDenominator = 128;
+
+        void Init(CSynRegistry& registry, const SRegSynonyms& sections);
+    } io_failure_threshold;
 
     // How many seconds the API should wait before attempting to connect to a misbehaving server again.
     // Throttling is off if period is less or equal to zero.
@@ -165,9 +171,6 @@ struct SThrottleParams
     bool connect_failures_only;
 
     void Init(CSynRegistry& registry, const SRegSynonyms& sections);
-
-private:
-    void InitIOFailureThreshold(CSynRegistry& registry, const SRegSynonyms& sections);
 };
 
 struct SThrottleStats
@@ -189,7 +192,7 @@ private:
 
     const SThrottleParams m_Params;
     int m_NumberOfConsecutiveIOFailures;
-    EConnOpResult m_IOFailureRegister[CONNECTION_ERROR_HISTORY_MAX];
+    EConnOpResult m_IOFailureRegister[SThrottleParams::SIOFailureThreshold::kMaxDenominator];
     int m_IOFailureRegisterIndex;
     int m_IOFailureCounter;
     bool m_Throttled;

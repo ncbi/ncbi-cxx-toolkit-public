@@ -47,10 +47,6 @@
 // Delay between two successive connection attempts in seconds.
 #define RETRY_DELAY_DEFAULT 1.0
 
-// The size of an internal array, which is used for calculation
-// of the connection failure rate.
-#define CONNECTION_ERROR_HISTORY_MAX 128
-
 #define COMMIT_JOB_INTERVAL_DEFAULT 2
 
 BEGIN_NCBI_SCOPE

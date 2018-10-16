@@ -681,20 +681,20 @@ void SThrottleStats::Adjust(int err_code, const CNetServer::SAddress& address)
         }
     }
 
-    if (m_Params.io_failure_threshold_numerator > 0) {
+    if (m_Params.io_failure_threshold.numerator > 0) {
         if (m_IOFailureRegister[m_IOFailureRegisterIndex] != op_result) {
             if ((m_IOFailureRegister[m_IOFailureRegisterIndex] =
                     op_result) == eCOR_Success)
                 --m_IOFailureCounter;
 
-            else if (++m_IOFailureCounter >= m_Params.io_failure_threshold_numerator) {
+            else if (++m_IOFailureCounter >= m_Params.io_failure_threshold.numerator) {
                 m_Throttled = true;
                 m_ThrottleMessage = "Connection to server " + address.AsString() +
                     " aborted as it is considered bad/overloaded";
             }
         }
 
-        if (++m_IOFailureRegisterIndex >= m_Params.io_failure_threshold_denominator)
+        if (++m_IOFailureRegisterIndex >= m_Params.io_failure_threshold.denominator)
             m_IOFailureRegisterIndex = 0;
     }
 
@@ -832,19 +832,15 @@ void SThrottleParams::Init(CSynRegistry& registry, const SRegSynonyms& sections)
     throttle_until_discoverable = registry.Get(sections, "throttle_hold_until_active_in_lb", false);
     connect_failures_only = registry.Get(sections, "throttle_connect_failures_only", false);
 
-    InitIOFailureThreshold(registry, sections);
+    io_failure_threshold.Init(registry, sections);
 }
 
-void SThrottleParams::InitIOFailureThreshold(CSynRegistry& registry, const SRegSynonyms& sections)
+void SThrottleParams::SIOFailureThreshold::Init(CSynRegistry& registry, const SRegSynonyms& sections)
 {
     // These values must correspond to each other
-    const auto default_error_rate = "0/1";
-    io_failure_threshold_numerator = 0;
-    io_failure_threshold_denominator = 1;
+    const string error_rate = registry.Get(sections, "throttle_by_connection_error_rate", kEmptyStr);
 
-    const string error_rate = registry.Get(sections, "throttle_by_connection_error_rate", default_error_rate);
-
-    if (error_rate == default_error_rate || error_rate.empty()) return;
+    if (error_rate.empty()) return;
 
     string numerator_str, denominator_str;
 
@@ -852,21 +848,16 @@ void SThrottleParams::InitIOFailureThreshold(CSynRegistry& registry, const SRegS
 
     const auto flags = NStr::fConvErr_NoThrow | NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces;
 
-    int numerator = NStr::StringToInt(numerator_str, flags);
-    int denominator = NStr::StringToInt(denominator_str, flags);
+    int n = NStr::StringToInt(numerator_str, flags);
+    int d = NStr::StringToInt(denominator_str, flags);
 
-    if (numerator < 0) numerator = 0;
+    if (n > 0) numerator = static_cast<size_t>(n);
+    if (d > 1) denominator = static_cast<size_t>(d);
 
-    if (denominator < 1) {
-        denominator = 1;
-
-    } else if (denominator > CONNECTION_ERROR_HISTORY_MAX) {
-        numerator = (numerator * CONNECTION_ERROR_HISTORY_MAX) / denominator;
-        denominator = CONNECTION_ERROR_HISTORY_MAX;
+    if (denominator > kMaxDenominator) {
+        numerator = (numerator * kMaxDenominator) / denominator;
+        denominator = kMaxDenominator;
     }
-
-    io_failure_threshold_numerator = numerator;
-    io_failure_threshold_denominator = denominator;
 }
 
 CNetServer::SAddress::SAddress(unsigned h, unsigned short p) :
