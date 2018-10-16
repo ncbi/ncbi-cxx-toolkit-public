@@ -384,7 +384,7 @@ void CReaderBase::xSetBrowserRegion(
                 0,
                 "Bad browser line: cannot parse browser position" ) );
             ProcessError(*pErr, pEC);
-            location.Release();
+            location.Reset();
         }
     }
 
