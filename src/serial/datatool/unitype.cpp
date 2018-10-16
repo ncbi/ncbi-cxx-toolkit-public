@@ -51,6 +51,7 @@ CUniSequenceDataType::CUniSequenceDataType(const AutoPtr<CDataType>& element)
     if (element->IsNsQualified() != eNSQNotSet) {
         SetNsQualified( element->IsNsQualified() == eNSQualified);
     }
+    SetNamespaceName(element->GetNamespaceName());
     ForbidVar("_type", "short");
     ForbidVar("_type", "int");
     ForbidVar("_type", "long");
