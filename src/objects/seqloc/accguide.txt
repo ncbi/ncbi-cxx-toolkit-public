@@ -32,7 +32,8 @@ version  1 # of file format
 3+7  G??  ddbj_prot
 3+9  G??  ddbj_prot
 3+11 G??  ddbj_prot
-3+5  H??  gb_tpa_wgs_prot
+3+5  H??  gb_tpa_wgs_prot # fallback to placate older clients
+3+5  H??  gb_tpa_wgsv_prot
 3+7  H??  gb_tpa_prot
 3+9  H??  gb_tpa_prot
 3+11 H??  gb_tpa_prot
@@ -53,11 +54,13 @@ version  1 # of file format
 3+7  L??  ddbj_prot
 3+9  L??  ddbj_prot
 3+11 L??  ddbj_prot
-3+5  M??  gb_wgs_prot
+3+5  M??  gb_wgs_prot # fallback to placate older clients
+3+5  M??  gb_wgsv_prot
 3+7  M??  gb_prot
 3+9  M??  gb_prot
 3+11 M??  gb_prot
-3+5  N??  gb_wgs_prot
+3+5  N??  gb_wgs_prot # fallback to placate older clients
+3+5  N??  gb_wgsv_prot
 3+7  N??  gb_prot
 3+9  N??  gb_prot
 3+11 N??  gb_prot
