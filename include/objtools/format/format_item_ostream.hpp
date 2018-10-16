@@ -36,13 +36,13 @@
 #include <corelib/ncbistd.hpp>
 
 #include <objtools/format/item_ostream.hpp>
+#include <objtools/format/text_ostream.hpp>
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class IFlatTextOStream;
 class IFormatter;
 
 
@@ -57,7 +57,7 @@ public:
     virtual void AddItem(CConstRef<IFlatItem> item);
 
 private:
-    IFlatTextOStream*  m_TextOS;
+    CRef<IFlatTextOStream>  m_TextOS;
 };
 
 
