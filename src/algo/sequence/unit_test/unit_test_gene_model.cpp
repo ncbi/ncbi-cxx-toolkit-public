@@ -417,7 +417,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                     if ((*ext_it)->HasField("cdregion")) {
                         string cdregion = (*ext_it)->GetField("cdregion").GetData().GetStr();
                         CNcbiIstrstream istrs(cdregion.c_str());
-                        CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+                        unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
                         feat.Reset(new CSeq_feat);
                         *istr >> *feat;
                     }
@@ -1292,7 +1292,7 @@ Seq-align ::= { \
 
     CNcbiIstrstream istrs(buf.c_str());
 
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
     CSeq_align align;
     *istr >> align;
 
@@ -1430,7 +1430,7 @@ Seq-feat ::= { \
 
     CNcbiIstrstream istrs(buf.c_str());
 
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
     for (;;) {
         CSeq_align align;
@@ -1507,7 +1507,7 @@ Seq-align ::= { \
 
     CNcbiIstrstream istrs(buf.c_str());
 
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
     CSeq_align align;
     *istr >> align;
@@ -1556,7 +1556,7 @@ Seq-loc ::= packed-int { \
           } \
 ";
     CNcbiIstrstream istrs(buf.c_str());
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
     CSeq_loc loc;
     *istr >> loc;
 
@@ -1609,7 +1609,7 @@ ATTGAAATTTGGAAGCAATCAATTGGTCTAATTTCTCCAAAAGACTTTCCGAAGCCCAGTTTTCATCTTC\n\
 TACGATCAATA\n\
 ";
     CNcbiIstrstream istrs(buf.c_str());
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
     CSeq_loc loc;
     *istr >> loc;
 
@@ -1657,7 +1657,7 @@ Seq-loc ::= packed-int { \
           } \
 ";
     CNcbiIstrstream istrs(buf.c_str());
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
     CSeq_loc loc;
     *istr >> loc;
 
@@ -1713,7 +1713,7 @@ Seq-loc ::= packed-int { \
           } \
 ";
     CNcbiIstrstream istrs(buf.c_str());
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
     CSeq_loc loc;
     *istr >> loc;
 

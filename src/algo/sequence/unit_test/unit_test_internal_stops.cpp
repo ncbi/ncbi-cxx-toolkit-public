@@ -114,7 +114,7 @@ Seq-align ::= { \
 
     CNcbiIstrstream istrs(buf.c_str());
 
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
     CSeq_align align;
     *istr >> align;
@@ -171,7 +171,7 @@ Seq-align ::= { \
 
     CNcbiIstrstream istrs(buf.c_str());
 
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
     CSeq_align align;
     *istr >> align;
@@ -238,7 +238,7 @@ Seq-align ::= { \
 
     CNcbiIstrstream istrs(buf.c_str());
 
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
     CSeq_align align;
     *istr >> align;
@@ -296,7 +296,7 @@ Seq-align ::= { \
 
     CNcbiIstrstream istrs(buf.c_str());
 
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
     CSeq_align align;
     *istr >> align;
@@ -362,7 +362,7 @@ Seq-align ::= { \
 
     CNcbiIstrstream istrs(buf.c_str());
 
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
     CSeq_align align;
     *istr >> align;
@@ -430,7 +430,7 @@ Seq-align ::= { \
 
     CNcbiIstrstream istrs(buf.c_str());
 
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
     CSeq_align align;
     *istr >> align;
@@ -495,7 +495,7 @@ Seq-align ::= { \
 
     CNcbiIstrstream istrs(buf.c_str());
 
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
     CSeq_align align;
     *istr >> align;
@@ -552,7 +552,7 @@ Seq-align ::= { \
 
     CNcbiIstrstream istrs(buf.c_str());
 
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
     CSeq_align align;
     *istr >> align;

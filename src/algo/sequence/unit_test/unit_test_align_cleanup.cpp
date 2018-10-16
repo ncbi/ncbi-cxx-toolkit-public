@@ -173,7 +173,7 @@ Seq-align ::= { \
 
     CNcbiIstrstream istrs(buf.c_str());
 
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
     CAlignCleanup::TAligns orig_aligns;
     while (!istr->EndOfData()) {
@@ -399,7 +399,7 @@ Seq-align ::= { \
 
     CNcbiIstrstream istrs(buf.c_str());
 
-    CObjectIStream* istr = CObjectIStream::Open(eSerial_AsnText, istrs);
+    unique_ptr<CObjectIStream> istr(CObjectIStream::Open(eSerial_AsnText, istrs));
 
     CAlignCleanup::TAligns orig_aligns;
     while (!istr->EndOfData()) {
