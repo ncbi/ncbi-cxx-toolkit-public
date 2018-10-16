@@ -180,12 +180,11 @@ struct SThrottleStats
         eCOR_Failure
     };
 
+    void Adjust(int err_code, const CNetServer::SAddress& address);
     void Check(const CNetServer::SAddress& address);
-    void TryExec(function<void()> f);
     void Discover();
 
 private:
-    void Adjust(int err_code);
     void Reset();
 
     const SThrottleParams m_Params;

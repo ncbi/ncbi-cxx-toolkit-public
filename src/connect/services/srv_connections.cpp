@@ -595,9 +595,19 @@ void SNetServerImpl::TryExec(INetServerExecHandler& handler, const STimeout* tim
 {
     auto& server_in_pool = *m_ServerInPool;
     auto& throttle_stats = server_in_pool.m_ThrottleStats;
+    const auto& address = server_in_pool.m_Address;
 
-    throttle_stats.Check(server_in_pool.m_Address);
-    throttle_stats.TryExec([&]() { server_in_pool.TryExec(this, handler, timeout); });
+    throttle_stats.Check(address);
+
+    try {
+        server_in_pool.TryExec(this, handler, timeout);
+    }
+    catch (CNetSrvConnException& e) {
+        throttle_stats.Adjust(e.GetErrCode(), address);
+        throw;
+    }
+
+    throttle_stats.Adjust(-1, address); // Success
 }
 
 class CNetServerExecHandler : public INetServerExecHandler
@@ -647,7 +657,7 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
     TryExec(exec_handler, timeout);
 }
 
-void SThrottleStats::Adjust(int err_code)
+void SThrottleStats::Adjust(int err_code, const CNetServer::SAddress& address)
 {
     if (m_Params.throttle_period <= 0)
         return;
@@ -661,10 +671,14 @@ void SThrottleStats::Adjust(int err_code)
     CFastMutexGuard guard(m_ThrottleLock);
 
     if (m_Params.max_consecutive_io_failures > 0) {
-        if (op_result != eCOR_Success)
-            ++m_NumberOfConsecutiveIOFailures;
-        else if (m_NumberOfConsecutiveIOFailures < m_Params.max_consecutive_io_failures)
+        if (op_result == eCOR_Success)
             m_NumberOfConsecutiveIOFailures = 0;
+
+        else if (++m_NumberOfConsecutiveIOFailures >= m_Params.max_consecutive_io_failures) {
+            m_Throttled = true;
+            m_ThrottleMessage = "Server " + address.AsString() +
+                " has reached the maximum number of connection failures in a row";
+        }
     }
 
     if (m_Params.io_failure_threshold_numerator > 0) {
@@ -672,12 +686,22 @@ void SThrottleStats::Adjust(int err_code)
             if ((m_IOFailureRegister[m_IOFailureRegisterIndex] =
                     op_result) == eCOR_Success)
                 --m_IOFailureCounter;
-            else
-                ++m_IOFailureCounter;
+
+            else if (++m_IOFailureCounter >= m_Params.io_failure_threshold_numerator) {
+                m_Throttled = true;
+                m_ThrottleMessage = "Connection to server " + address.AsString() +
+                    " aborted as it is considered bad/overloaded";
+            }
         }
 
         if (++m_IOFailureRegisterIndex >= m_Params.io_failure_threshold_denominator)
             m_IOFailureRegisterIndex = 0;
+    }
+
+    if (m_Throttled) {
+        m_DiscoveredAfterThrottling = false;
+        m_ThrottledUntil.SetCurrent();
+        m_ThrottledUntil.AddSecond(m_Params.throttle_period);
     }
 }
 
@@ -703,42 +727,6 @@ void SThrottleStats::Check(const CNetServer::SAddress& address)
         }
         NCBI_THROW(CNetSrvConnException, eServerThrottle, m_ThrottleMessage);
     }
-
-    if (m_Params.max_consecutive_io_failures > 0 &&
-        m_NumberOfConsecutiveIOFailures >= m_Params.max_consecutive_io_failures) {
-        m_Throttled = true;
-        m_DiscoveredAfterThrottling = false;
-        m_ThrottleMessage = "Server " + address.AsString();
-        m_ThrottleMessage += " has reached the maximum number "
-            "of connection failures in a row";
-    }
-
-    if (m_Params.io_failure_threshold_numerator > 0 &&
-            m_IOFailureCounter >= m_Params.io_failure_threshold_numerator) {
-        m_Throttled = true;
-        m_DiscoveredAfterThrottling = false;
-        m_ThrottleMessage = "Connection to server " + address.AsString();
-        m_ThrottleMessage += " aborted as it is considered bad/overloaded";
-    }
-
-    if (m_Throttled) {
-        m_ThrottledUntil.SetCurrent();
-        m_ThrottledUntil.AddSecond(m_Params.throttle_period);
-        NCBI_THROW(CNetSrvConnException, eServerThrottle, m_ThrottleMessage);
-    }
-}
-
-void SThrottleStats::TryExec(function<void()> f)
-{
-    try {
-        f();
-    }
-    catch (CNetSrvConnException& e) {
-        Adjust(e.GetErrCode());
-        throw;
-    }
-
-    Adjust(-1); // Success
 }
 
 void SThrottleStats::Reset()
