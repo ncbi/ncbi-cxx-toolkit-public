@@ -40,6 +40,8 @@
 
 #include <util/ncbi_url.hpp>
 
+#include <bitset>
+
 BEGIN_NCBI_SCOPE
 
 struct SNetServerMultilineCmdOutputImpl : public CObject
@@ -177,12 +179,6 @@ struct SThrottleStats
 {
     SThrottleStats(SThrottleParams params) : m_Params(move(params)) { Reset(); }
 
-    // Server throttling implementation.
-    enum EConnOpResult {
-        eCOR_Success,
-        eCOR_Failure
-    };
-
     void Adjust(int err_code, const CNetServer::SAddress& address);
     void Check(const CNetServer::SAddress& address);
     void Discover();
@@ -192,9 +188,7 @@ private:
 
     const SThrottleParams m_Params;
     int m_NumberOfConsecutiveIOFailures;
-    EConnOpResult m_IOFailureRegister[SThrottleParams::SIOFailureThreshold::kMaxDenominator];
-    int m_IOFailureRegisterIndex;
-    int m_IOFailureCounter;
+    pair<bitset<SThrottleParams::SIOFailureThreshold::kMaxDenominator>, size_t> m_IOFailureRegister;
     bool m_Throttled;
     bool m_DiscoveredAfterThrottling;
     string m_ThrottleMessage;

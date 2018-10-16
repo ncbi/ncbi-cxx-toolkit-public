@@ -662,16 +662,15 @@ void SThrottleStats::Adjust(int err_code, const CNetServer::SAddress& address)
     if (m_Params.throttle_period <= 0)
         return;
 
-    const auto op_result = err_code < 0 ? SThrottleStats::eCOR_Success : SThrottleStats::eCOR_Failure;
+    const auto op_result = err_code >= 0; // True, if failure
 
-    if (m_Params.connect_failures_only &&
-            (op_result == SThrottleStats::eCOR_Failure) &&
+    if (op_result && m_Params.connect_failures_only &&
             (err_code != CNetSrvConnException::eConnectionFailure)) return;
 
     CFastMutexGuard guard(m_ThrottleLock);
 
     if (m_Params.max_consecutive_io_failures > 0) {
-        if (op_result == eCOR_Success)
+        if (!op_result)
             m_NumberOfConsecutiveIOFailures = 0;
 
         else if (++m_NumberOfConsecutiveIOFailures >= m_Params.max_consecutive_io_failures) {
@@ -682,20 +681,20 @@ void SThrottleStats::Adjust(int err_code, const CNetServer::SAddress& address)
     }
 
     if (m_Params.io_failure_threshold.numerator > 0) {
-        if (m_IOFailureRegister[m_IOFailureRegisterIndex] != op_result) {
-            if ((m_IOFailureRegister[m_IOFailureRegisterIndex] =
-                    op_result) == eCOR_Success)
-                --m_IOFailureCounter;
+        auto& reg = m_IOFailureRegister.first;
+        auto& index = m_IOFailureRegister.second;
 
-            else if (++m_IOFailureCounter >= m_Params.io_failure_threshold.numerator) {
+        if (reg[index] != op_result) {
+            reg[index] = op_result;
+
+            if (op_result && (reg.count() >= m_Params.io_failure_threshold.numerator)) {
                 m_Throttled = true;
                 m_ThrottleMessage = "Connection to server " + address.AsString() +
                     " aborted as it is considered bad/overloaded";
             }
         }
 
-        if (++m_IOFailureRegisterIndex >= m_Params.io_failure_threshold.denominator)
-            m_IOFailureRegisterIndex = 0;
+        if (++index >= m_Params.io_failure_threshold.denominator) index = 0;
     }
 
     if (m_Throttled) {
@@ -732,8 +731,8 @@ void SThrottleStats::Check(const CNetServer::SAddress& address)
 void SThrottleStats::Reset()
 {
     m_NumberOfConsecutiveIOFailures = 0;
-    memset(m_IOFailureRegister, 0, sizeof(m_IOFailureRegister));
-    m_IOFailureCounter = m_IOFailureRegisterIndex = 0;
+    m_IOFailureRegister.first.reset();
+    m_IOFailureRegister.second = 0;
     m_Throttled = false;
 }
 
