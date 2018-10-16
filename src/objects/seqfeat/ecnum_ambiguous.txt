@@ -274,6 +274,8 @@
 1.17.7.n	With an iron-sulfur protein as acceptor
 1.17.8.-	With a flavin as acceptor
 1.17.8.n	With a flavin as acceptor
+1.17.9.-	With a copper protein as acceptor
+1.17.9.n	With a copper protein as acceptor
 1.17.98.-	With other, known, acceptors
 1.17.98.n	With other, known, acceptors
 1.17.99.-	With other acceptors
@@ -704,6 +706,12 @@
 5.5.n.n	Intramolecular lyases
 5.5.1.-	Intramolecular lyases
 5.5.1.n	Intramolecular lyases
+5.6.-.-	Isomerases altering macromolecular conformation
+5.6.n.n	Isomerases altering macromolecular conformation
+5.6.1.-	Enzymes altering polypeptide conformation or assembly
+5.6.1.n	Enzymes altering polypeptide conformation or assembly
+5.6.2.-	Enzymes altering nucleic acid conformation
+5.6.2.n	Enzymes altering nucleic acid conformation
 5.99.-.-	Other isomerases
 5.99.n.n	Other isomerases
 5.99.1.-	Other isomerases
@@ -746,3 +754,35 @@
 6.6.n.n	Forming nitrogen-metal bonds
 6.6.1.-	Forming coordination complexes
 6.6.1.n	Forming coordination complexes
+7.-.-.-	Translocases
+7.n.n.n	Translocases
+7.1.-.-	Catalysing the translocation of hydrons
+7.1.n.n	Catalysing the translocation of hydrons
+7.1.1.-	Hydron translocation or charge separation linked to oxidoreductase reactions
+7.1.1.n	Hydron translocation or charge separation linked to oxidoreductase reactions
+7.1.2.-	Hydron translocation linked to the hydrolysis of a nucleoside triphosphate
+7.1.2.n	Hydron translocation linked to the hydrolysis of a nucleoside triphosphate
+7.2.-.-	Catalysing the translocation of inorganic cations
+7.2.n.n	Catalysing the translocation of inorganic cations
+7.2.1.-	Linked to oxidoreductase reactions
+7.2.1.n	Linked to oxidoreductase reactions
+7.2.2.-	Linked to the hydrolysis of a nucleoside triphosphate
+7.2.2.n	Linked to the hydrolysis of a nucleoside triphosphate
+7.2.3.-	Linked to decarboxylation
+7.2.3.n	Linked to decarboxylation
+7.3.-.-	Catalysing the translocation of inorganic anions and their chelates
+7.3.n.n	Catalysing the translocation of inorganic anions and their chelates
+7.3.2.-	Linked to the hydrolysis of a nucleoside triphosphate
+7.3.2.n	Linked to the hydrolysis of a nucleoside triphosphate
+7.4.-.-	Catalysing the translocation amino acids and peptides
+7.4.n.n	Catalysing the translocation amino acids and peptides
+7.4.2.-	Linked to the hydrolysis of a nucleoside triphosphate
+7.4.2.n	Linked to the hydrolysis of a nucleoside triphosphate
+7.5.-.-	Catalysing the translocation carbohydrates and their derivatives
+7.5.n.n	Catalysing the translocation carbohydrates and their derivatives
+7.5.2.-	Linked to the hydrolysis of a nucleoside triphosphate
+7.5.2.n	Linked to the hydrolysis of a nucleoside triphosphate
+7.6.-.-	Catalysing the translocation of other compounds
+7.6.n.n	Catalysing the translocation of other compounds
+7.6.2.-	Linked to the hydrolysis of a nucleoside triphosphate
+7.6.2.n	Linked to the hydrolysis of a nucleoside triphosphate
