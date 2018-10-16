@@ -65,6 +65,7 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamXml(CNcbiOstream& out,
 
 
 string CObjectOStreamXml::sm_DefaultDTDFilePrefix = "";
+const char* sm_DefaultNamespacePrefix = "ns";
 const char* sm_DefaultSchemaNamespace = "http://www.ncbi.nlm.nih.gov";
 static
 const char* s_SchemaInstanceNamespace = "http://www.w3.org/2001/XMLSchema-instance";
@@ -295,25 +296,22 @@ void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
     }
     OpenTagEndBack();
 
-    if (m_UseSchemaLoc) {
-        m_Output.PutEol();
-        m_Output.PutString("   ");
-    }
-    m_Output.PutString(" xmlns");
-    if (!m_CurrNsPrefix.empty()) {
-       m_Output.PutChar(':');
-       m_Output.PutString(m_CurrNsPrefix);
-    }
-    m_Output.PutString("=\"");
-
     string ns_name( m_NsPrefixToName[m_CurrNsPrefix]);
     if (ns_name.empty()) {
         ns_name = GetDefaultSchemaNamespace();
     }
-    m_Output.PutString(ns_name + "\"");
+    if (type->HasNamespaceName() || type->GetDataSpec() != EDataSpec::eXSD) {
+        m_Output.PutEol();
+        m_Output.PutString("    xmlns");
+        if (!m_CurrNsPrefix.empty()) {
+           m_Output.PutChar(':');
+           m_Output.PutString(m_CurrNsPrefix);
+        }
+        m_Output.PutString("=\"");
+        m_Output.PutString(ns_name + "\"");
+    }
 
     if (m_UseSchemaLoc) {
-        m_Output.PutEol();
         string xs_name(s_SchemaInstanceNamespace);
         string xs_prefix("xs");
         if (m_NsNameToPrefix.find(xs_name) == m_NsNameToPrefix.end()) {
@@ -323,6 +321,7 @@ void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
             }
             m_NsPrefixToName[xs_prefix] = xs_name;
             m_NsNameToPrefix[xs_name] = xs_prefix;
+            m_Output.PutEol();
             m_Output.PutString("    xmlns:");
             m_Output.PutString(xs_prefix + "=\"");
             m_Output.PutString(xs_name + "\"");
@@ -342,13 +341,14 @@ void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
 bool CObjectOStreamXml::x_ProcessTypeNamespace(TTypeInfo type)
 {
     if (m_UseSchemaRef) {
-        string nsName;
         if (type->HasNamespaceName()) {
-            nsName = type->GetNamespaceName();
-        } else if (m_NsPrefixes.empty()) {
-            nsName = GetDefaultSchemaNamespace();
+            string prefix(type->GetNamespacePrefix());
+            if (prefix.empty() && type->IsNsQualified() == eNSUnqualified) {
+                prefix = sm_DefaultNamespacePrefix;
+            }
+            return x_BeginNamespace(type->GetNamespaceName(),prefix);
         }
-        return x_BeginNamespace(nsName,type->GetNamespacePrefix());
+        return true;
     }
     return false;
 }
