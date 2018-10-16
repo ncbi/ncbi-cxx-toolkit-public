@@ -39,6 +39,7 @@ free_convert(int type, CONV_RESULT *cr)
 {
 	switch (type) {
 	case SYBCHAR: case SYBVARCHAR: case SYBTEXT: case XSYBCHAR: case XSYBVARCHAR:
+        case SYBNVARCHAR: case SYBNTEXT: case XSYBNCHAR: case XSYBNVARCHAR:
 	case SYBBINARY: case SYBVARBINARY: case SYBIMAGE: case XSYBBINARY: case XSYBVARBINARY:
 	case SYBLONGBINARY:
 		free(cr->c);
@@ -341,7 +342,7 @@ main(int argc, char **argv)
 		 */
 
 		result = tds_convert(ctx, srctype, src, srclen, desttype, &cr);
-		if (result >= 0)
+                /* if (result >= 0) */
 			free_convert(desttype, &cr);
 
 		if (result < 0) {
