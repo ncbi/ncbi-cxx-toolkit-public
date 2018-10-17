@@ -3122,7 +3122,7 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
     for (query_index = 0;  query_index < numQueries;  query_index++) {
         status_code =
             BlastCompo_HeapInitialize(&redoneMatches[query_index],
-                                      hitParams->options->hitlist_size,
+                                      hitParams->options->hitlist_size+1,
                                       inclusion_ethresh);
         if (status_code != 0) {
             goto function_cleanup;
@@ -3266,7 +3266,7 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
         for (query_index = 0; query_index < numQueries; query_index++) {
             status_code =
                 BlastCompo_HeapInitialize(&redoneMatches_tld[i][query_index],
-                                          hitParams->options->hitlist_size,
+                                          hitParams->options->hitlist_size + 1,
                                           inclusion_ethresh);
             if (status_code != 0) {
                 goto function_cleanup;
@@ -3746,7 +3746,7 @@ function_cleanup:
             s_FillResultsFromCompoHeaps(
                     results_tld[i],
                     redoneMatches_tld[i],
-                    hitParams->options->hitlist_size
+                    hitParams->options->hitlist_size + 1
             );
             if (redoneMatches_tld[i] != NULL) {
                 int qi;

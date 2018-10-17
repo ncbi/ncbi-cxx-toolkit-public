@@ -851,14 +851,19 @@ s_FilterBlastResults(BlastHSPResults* results, const BlastHitSavingOptions* hit_
     	  	  }
     	  	  if(hit_options->query_cov_hsp_perc) {
     	  		  Blast_HSPListReapByQueryCoverage(hsp_list, hit_options, query_info, program_number);
+    	  		  if(hsp_list->hspcnt == 0){
+    	  			hit_list->hsplist_array[subject_index] =  Blast_HSPListFree(hsp_list);
+    	  		  }
     	  	  }
-
     	  	  if((hit_options->hsp_filt_opt != NULL) && (hit_options->hsp_filt_opt->subject_besthit_opts != NULL)) {
     	  		  Blast_HSPListSubjectBestHit(program_number,
     	  		  				           hit_options->hsp_filt_opt->subject_besthit_opts,
     	  		  				           query_info, hsp_list);
     	  	  }
-      }
+       }
+       if(hit_options->query_cov_hsp_perc) {
+            Blast_HitListPurgeNullHSPLists(hit_list);
+       }
    }
 }
 
@@ -879,9 +884,12 @@ s_BlastPruneExtraHits(BlastHSPResults* results, Int4 hitlist_size)
       if (!(hit_list = results->hitlist_array[query_index]))
          continue;
       if (hitlist_size < hit_list->hsplist_count){
-          if(hit_list->hsplist_array[hitlist_size]->hsp_array[0]->score ==
-        	 hit_list->hsplist_array[hitlist_size -1]->hsp_array[0]->score){
-        	  fprintf(stderr, "Additional matches with identical score are not shown\n");
+          if ((hit_list->hsplist_array[hitlist_size]->hsp_array[0] != NULL) &&
+        	  (hit_list->hsplist_array[hitlist_size -1]->hsp_array[0] != NULL)){
+        	  if (hit_list->hsplist_array[hitlist_size]->hsp_array[0]->score ==
+        		  hit_list->hsplist_array[hitlist_size -1]->hsp_array[0]->score){
+        		  fprintf(stderr, "Additional matches with identical score are not shown\n");
+        	  }
           }
           for (subject_index = hitlist_size;
                subject_index < hit_list->hsplist_count; ++subject_index) {
@@ -1685,7 +1693,7 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
                 }
                 else {
                     Blast_HSPResultsInsertHSPList(thread_data->tld[tid]->results, hsp_list,
-                                  hit_params->options->hitlist_size);
+                                  hit_params->options->hitlist_size+ 1);
                 }
             }      /* loop over one HSPList batch */
             if (perform_traceback) {

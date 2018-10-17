@@ -151,7 +151,7 @@ BlastHSPResults* SThreadLocalDataArrayConsolidateResults(SThreadLocalDataArray* 
         sfree(num_hsplists_per_query);
         return retval;
     }
-    hitlist_size = array->tld[0]->hit_params->options->hitlist_size;
+    hitlist_size = array->tld[0]->hit_params->options->hitlist_size + 1;
 
     for (query_idx = 0; query_idx < num_queries; query_idx++) {
         Uint4 tid = 0;
