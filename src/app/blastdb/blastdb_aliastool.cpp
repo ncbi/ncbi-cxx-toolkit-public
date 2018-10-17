@@ -118,11 +118,11 @@ const char * const CBlastDBAliasApp::DOCUMENTATION = "\n\n"
 "   of the BLAST search command line binaries or to the -gilist option of\n"
 "   this program to create an alias file for a BLAST database (see below).\n\n"
 "2) Alias file creation (restricting with GI List or Sequence ID List):\n"
-"   Creates an alias for a BLAST database and a GI or ID list which\n"
-"   restricts this database. This is useful if one often searches a subset\n"
-"   of a database (e.g., based on organism or a curated list). The alias\n"
-"   file makes the search appear as if one were searching a regular BLAST\n"
-"   database rather than the subset of one.\n\n"
+"   Creates an alias for a BLAST database and a GI or ID list which restricts\n"
+"   this database. This is useful if one often searches a subset of a database\n"
+"   (e.g., based on organism or a curated list). The alias file makes the\n"
+"   search appear as if one were searching a regular BLAST database rather\n"
+"   than the subset of one.\n\n"
 "3) Alias file creation (aggregating BLAST databases):\n"
 "   Creates an alias for multiple BLAST databases. All databases must be of\n"
 "   the same molecule type (no validation is done). The relevant options are\n" 
@@ -137,39 +137,36 @@ void CBlastDBAliasApp::Init()
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(), 
-                              "Application to create BLAST database aliases, version " 
-                              + CBlastVersion().Print() + DOCUMENTATION);
+                  "Application to create BLAST database aliases, version " 
+                  + CBlastVersion().Print() + DOCUMENTATION);
 
     string dflt("Default = input file name provided to -gi_file_in argument");
     dflt += " with the .bgl extension";
 
-    set<string> exclusions  = {
-        kArgDb, kArgDbType, kArgDbTitle, kArgGiList, kArgSeqIdList, kArgOutput,
-        "dblist", "num_volumes", "vdblist", "seqid_file_in", "seqid_file_out",
-        "seqid_db", "seqid_dbtype", "seqid_file_info"
-    };
-    
+    const char* exclusions[]  = { kArgDb.c_str(), kArgDbType.c_str(), kArgDbTitle.c_str(), 
+              kArgGiList.c_str(), kArgSeqIdList.c_str(), kArgOutput.c_str(),
+              "dblist", "num_volumes", "vdblist", "seqid_file_in", "seqid_file_out",
+              "seqid_file_in", "seqid_file_out", "seqid_db", "seqid_dbtype", "seqid_file_info"};
     arg_desc->SetCurrentGroup("GI file conversion options");
-
     arg_desc->AddOptionalKey("gi_file_in", "input_file",
-                             "Text file to convert, should contain one GI per line",
-                             CArgDescriptions::eInputFile);
-    for (string exclusion : exclusions) {
-        arg_desc->SetDependency("gi_file_in", CArgDescriptions::eExcludes, exclusion);
+                     "Text file to convert, should contain one GI per line",
+                     CArgDescriptions::eInputFile);
+    for (size_t i = 0; i < sizeof(exclusions)/sizeof(*exclusions); i++) {
+        arg_desc->SetDependency("gi_file_in", CArgDescriptions::eExcludes,
+                                string(exclusions[i]));
     }
-
     arg_desc->AddOptionalKey("gi_file_out", "output_file",
-                             "File name of converted GI file\n" + dflt,
-                             CArgDescriptions::eOutputFile,
-                             CArgDescriptions::fPreOpen | CArgDescriptions::fBinary);
+                     "File name of converted GI file\n" + dflt,
+                     CArgDescriptions::eOutputFile,
+                     CArgDescriptions::fPreOpen | CArgDescriptions::fBinary);
     arg_desc->SetDependency("gi_file_out", CArgDescriptions::eRequires,
                             "gi_file_in");
-    for (string exclusion : exclusions) {
-        arg_desc->SetDependency("gi_file_out", CArgDescriptions::eExcludes, exclusion);
+    for (size_t i = 0; i < sizeof(exclusions)/sizeof(*exclusions); i++) {
+        arg_desc->SetDependency("gi_file_out", CArgDescriptions::eExcludes,
+                                string(exclusions[i]));
     }
 
     arg_desc->SetCurrentGroup("Alias file creation options");
-
     arg_desc->AddOptionalKey(kArgDb, "dbname", "BLAST database name", 
                              CArgDescriptions::eString);
     arg_desc->SetDependency(kArgDb, CArgDescriptions::eRequires, kOutput);
@@ -178,13 +175,13 @@ void CBlastDBAliasApp::Init()
                             "Molecule type stored in BLAST database",
                             CArgDescriptions::eString, "prot");
     arg_desc->SetConstraint(kArgDbType, &(*new CArgAllow_Strings,
-                                          "nucl", "prot"));
+                                        "nucl", "prot"));
 
     arg_desc->AddOptionalKey(kArgDbTitle, "database_title",
-                             "Title for BLAST database\n"
-                             "Default = name of BLAST database provided to -db"
-                             " argument with the -gifile argument appended to it",
-                             CArgDescriptions::eString);
+                     "Title for BLAST database\n"
+                     "Default = name of BLAST database provided to -db"
+                     " argument with the -gifile argument appended to it",
+                     CArgDescriptions::eString);
     arg_desc->SetDependency(kArgDbTitle, CArgDescriptions::eRequires, kOutput);
 
     arg_desc->AddOptionalKey(kArgGiList, "input_file", 
@@ -217,17 +214,14 @@ void CBlastDBAliasApp::Init()
                              "A space separated list of BLAST database names to"
                              " aggregate",
                              CArgDescriptions::eString);
-
     arg_desc->AddOptionalKey("dblist_file", "file_name", 
                              "A file containing a list of BLAST database names"
                              " to aggregate, one per line",
                              CArgDescriptions::eInputFile);
-
     /* For VDBLIST */
     arg_desc->AddOptionalKey("vdblist", "vdb_names",
                              "A space separated list of VDB names to aggregate",
                              CArgDescriptions::eString);
-
     arg_desc->AddOptionalKey("vdblist_file", "file_name",
                              "A file containing a list of vdb names"
                              " to aggregate, one per line",
@@ -259,54 +253,43 @@ void CBlastDBAliasApp::Init()
     arg_desc->SetConstraint("num_volumes", new CArgAllowValuesGreaterThanOrEqual(1));
 
     string dflt_seqid("Default = input file name provided to -seqid_file_in argument");
-    set<string> seqid_exclusions  = {
-        kArgDb, kArgDbType, kArgDbTitle, kArgGiList, kArgSeqIdList, kArgOutput,
-        "dblist", "num_volumes", "vdblist"
-    };
-    // "gi_file_in" and "gi_file_out" already exclude "seqid_file_in" and
-    // "seqid_file_out".
+    const char* seqid_exclusions[]  = { kArgDb.c_str(), kArgDbType.c_str(), kArgDbTitle.c_str(),
+                  kArgGiList.c_str(), kArgSeqIdList.c_str(), kArgOutput.c_str(),
+                  "dblist", "num_volumes", "vdblist", "gi_file_in", "gi_file_out"};
+        arg_desc->SetCurrentGroup("Seqd ID file conversion options");
+        arg_desc->AddOptionalKey("seqid_file_in", "input_file",
+                         "Text file to convert, should contain one seq id per line",
+                         CArgDescriptions::eInputFile);
+        for (size_t i = 0; i < sizeof(seqid_exclusions)/sizeof(*seqid_exclusions); i++) {
+            arg_desc->SetDependency("seqid_file_in", CArgDescriptions::eExcludes,
+                                    string(seqid_exclusions[i]));
+        }
+        arg_desc->AddOptionalKey("seqid_title", "seqid_title", "Title for seqid list.\n " +
+                         	 	 dflt_seqid, CArgDescriptions::eString);
+        arg_desc->SetDependency("seqid_title", CArgDescriptions::eRequires, "seqid_file_in");
+        arg_desc->AddOptionalKey("seqid_file_out", "output_file",
+                         	     "File name of converted seq id file\n" + dflt_seqid + " with the .bsl extension",
+                                 CArgDescriptions::eString);
+        arg_desc->AddOptionalKey("seqid_db", "dbname", "BLAST database for seqidlist",
+                                 CArgDescriptions::eString);
+        arg_desc->SetDependency("seqid_db", CArgDescriptions::eRequires, "seqid_file_in");
 
-    arg_desc->SetCurrentGroup("Seqd ID file conversion options");
+        arg_desc->AddOptionalKey("seqid_dbtype", "molecule_type", "Molecule type BLAST database",
+                                 CArgDescriptions::eString);
+        arg_desc->SetDependency("seqid_dbtype", CArgDescriptions::eRequires, "seqid_file_in");
+        arg_desc->SetDependency("seqid_dbtype", CArgDescriptions::eRequires, "seqid_db");
+        arg_desc->SetConstraint("seqid_dbtype", &(*new CArgAllow_Strings, "nucl", "prot"));
+        for (size_t i = 0; i < sizeof(seqid_exclusions)/sizeof(*seqid_exclusions); i++) {
+            arg_desc->SetDependency("seqid_file_out", CArgDescriptions::eExcludes, string(seqid_exclusions[i]));
+        }
 
-    arg_desc->AddOptionalKey("seqid_file_in", "input_file",
-                             "Text file to convert, should contain one seq id per line",
-                             CArgDescriptions::eInputFile);
-    for (string exclusion : seqid_exclusions) {
-        arg_desc->SetDependency("seqid_file_in", CArgDescriptions::eExcludes, exclusion);
-    }
-    
-    arg_desc->AddOptionalKey("seqid_title", "seqid_title", "Title for seqid list.\n " +
-                             dflt_seqid, CArgDescriptions::eString);
-    arg_desc->SetDependency("seqid_title", CArgDescriptions::eRequires, "seqid_file_in");
-
-    arg_desc->AddOptionalKey("seqid_file_out", "output_file",
-                             "File name of converted seq id file\n" + dflt_seqid + " with the .bsl extension",
-                             CArgDescriptions::eString);
-
-    arg_desc->AddOptionalKey("seqid_db", "dbname", "BLAST database for seqidlist",
-                             CArgDescriptions::eString);
-    arg_desc->SetDependency("seqid_db", CArgDescriptions::eRequires, "seqid_file_in");
-
-    arg_desc->AddOptionalKey("seqid_dbtype", "molecule_type", "Molecule type BLAST database",
-                             CArgDescriptions::eString);
-    arg_desc->SetDependency("seqid_dbtype", CArgDescriptions::eRequires, "seqid_file_in");
-    arg_desc->SetDependency("seqid_dbtype", CArgDescriptions::eRequires, "seqid_db");
-    arg_desc->SetConstraint("seqid_dbtype", &(*new CArgAllow_Strings, "nucl", "prot"));
-
-    for (string exclusion : seqid_exclusions) {
-        arg_desc->SetDependency("seqid_file_out", CArgDescriptions::eExcludes, exclusion);
-    }
-
-    set<string> seqid_info_exclusions = {
-        kArgDb, kArgDbType, kArgDbTitle, kArgGiList, kArgSeqIdList, kArgOutput,
-        "dblist", "num_volumes", "vdblist", "seqid_file_in", "seqid_file_out"
-    };
-    // "gi_file_in" and "gi_file_out" already exclude "seqid_file_info".
-    
-    arg_desc->AddOptionalKey("seqid_file_info", "seqid_file_info", "Display seqidlist file info", CArgDescriptions::eString);
-    for (string exclusion : seqid_info_exclusions) {
-        arg_desc->SetDependency("seqid_file_info", CArgDescriptions::eExcludes, exclusion);
-    }
+        const char* seqid_info_exclusions[]  = { kArgDb.c_str(), kArgDbType.c_str(), kArgDbTitle.c_str(),
+                  kArgGiList.c_str(), kArgSeqIdList.c_str(), kArgOutput.c_str(),
+                  "dblist", "num_volumes", "vdblist", "gi_file_in", "gi_file_out", "seqid_file_in", "seqid_file_out"};
+        arg_desc->AddOptionalKey("seqid_file_info", "seqid_file_info", "Display seqidlist file info", CArgDescriptions::eString);
+        for (size_t i = 0; i < sizeof(seqid_info_exclusions)/sizeof(*seqid_info_exclusions); i++) {
+            arg_desc->SetDependency("seqid_info", CArgDescriptions::eExcludes, string(seqid_info_exclusions[i]));
+        }
 
 
     SetupArgDescriptions(arg_desc.release());
