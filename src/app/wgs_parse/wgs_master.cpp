@@ -969,7 +969,7 @@ static bool CreateBiosource(CBioseq& bioseq, CBioSource& biosource, const list<C
     descr->SetSource().Assign(biosource);
     bioseq.SetDescr().Set().push_back(descr);
 
-    if (GetParams().IsTsa() && biosource.IsSetOrg() && biosource.GetOrg().IsSetTaxname()) {
+    if (!GetParams().IsTpa() && GetParams().IsTsa() && biosource.IsSetOrg() && biosource.GetOrg().IsSetTaxname()) {
 
         CRef<CSeqdesc> title(new CSeqdesc);
         title->SetTitle("TSA: " + biosource.GetOrg().GetTaxname() + ", transcriptome shotgun assembly");
