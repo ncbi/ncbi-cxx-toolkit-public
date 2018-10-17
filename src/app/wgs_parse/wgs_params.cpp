@@ -88,6 +88,7 @@ struct CParams_imp
     int m_fix_tech;
 
     mutable ESource m_source;
+    bool m_tpa_tsa;
 
     TIdContainer m_bioproject_ids;
     TIdContainer m_biosample_ids;
@@ -130,7 +131,8 @@ struct CParams_imp
         m_input_type(eSeqSubmit),
         m_gap_size(0),
         m_fix_tech(eNoFix),
-        m_source(eNotSet)
+        m_source(eNotSet),
+        m_tpa_tsa(false)
     {}
 };
 
@@ -193,6 +195,9 @@ bool CParams::IsTpa() const
 bool CParams::IsTsa() const
 {
     _ASSERT(!m_imp->m_accession.empty() && "Accession should be set at this moment");
+
+    if(m_imp->m_tpa_tsa)
+        return true;
 
     static const string TSA_FIRST_LETTER = "GHI";
     return TSA_FIRST_LETTER.find_first_of(m_imp->m_accession.front()) != string::npos;
@@ -1016,6 +1021,13 @@ bool SetParams(const CArgs& args)
     params_imp.m_override_existing = args["w"].AsBoolean();
     params_imp.m_taxonomy_lookup = args["t"].AsBoolean();
     params_imp.m_replace_dbname = args["r"].AsBoolean();
+
+    params_imp.m_tpa_tsa = args["J"].AsBoolean();
+    if(params_imp.m_tpa_tsa && params_imp.m_accession.front() != 'D')
+    {
+        ERR_POST_EX(0, 0, "For TPA-TSA projects (\"-J T\" setting) accession prefix MUST start with \"D\", not \"" << params_imp.m_accession.front() << "\".");
+        return false;
+    }
 
     params_imp.m_vdb_mode = args["U"].AsBoolean();
     if (params_imp.m_vdb_mode && params_imp.m_update_mode != eUpdateAssembly && params_imp.m_update_mode != eUpdateNew) {
