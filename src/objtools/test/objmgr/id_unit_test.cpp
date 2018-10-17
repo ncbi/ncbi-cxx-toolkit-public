@@ -999,5 +999,7 @@ NCBITEST_INIT_TREE()
 #if !defined(HAVE_PUBSEQ_OS) || (defined(NCBI_THREADS) && !defined(HAVE_SYBASE_REENTRANT))
     // HUP test needs multiple PubSeqOS readers
     NCBITEST_DISABLE(Test_HUP);
+    // GBLoader name test needs multiple PubSeqOS readers
+    NCBITEST_DISABLE(TestGBLoaderName);
 #endif
 }
