@@ -252,6 +252,9 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
         m_Output.PutString("\"?>");
     }
 
+    if (type->GetDataSpec() == EDataSpec::eXSD || type->GetDataSpec() == EDataSpec::eJSON) {
+        m_UseSchemaRef = true;
+    }
     if (!m_UseSchemaRef && m_UseDTDRef) {
         if (m_UseXmlDecl) {
             m_Output.PutEol();
@@ -294,15 +297,21 @@ void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
     if (type->GetName().find(':') != string::npos) {
         return;
     }
-    OpenTagEndBack();
+    if (!m_Attlist) {
+        OpenTagEndBack();
+    }
 
     string ns_name( m_NsPrefixToName[m_CurrNsPrefix]);
     if (ns_name.empty()) {
         ns_name = GetDefaultSchemaNamespace();
     }
     if (type->HasNamespaceName() || type->GetDataSpec() != EDataSpec::eXSD) {
-        m_Output.PutEol();
-        m_Output.PutString("    xmlns");
+        if (m_Attlist) {
+            m_Output.PutString(" xmlns");
+        } else {
+            m_Output.PutEol();
+            m_Output.PutString("    xmlns");
+        }
         if (!m_CurrNsPrefix.empty()) {
            m_Output.PutChar(':');
            m_Output.PutString(m_CurrNsPrefix);
@@ -335,7 +344,9 @@ void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
             m_Output.PutEol();
         }
     }
-    OpenTagEnd();
+    if (!m_Attlist) {
+        OpenTagEnd();
+    }
 }
 
 bool CObjectOStreamXml::x_ProcessTypeNamespace(TTypeInfo type)
@@ -343,7 +354,7 @@ bool CObjectOStreamXml::x_ProcessTypeNamespace(TTypeInfo type)
     if (m_UseSchemaRef) {
         if (type->HasNamespaceName()) {
             string prefix(type->GetNamespacePrefix());
-            if (prefix.empty() && type->IsNsQualified() == eNSUnqualified) {
+            if (prefix.empty() && (type->IsNsQualified() == eNSUnqualified || (m_Attlist && type->IsNsQualified() == eNSQualified))) {
                 prefix = sm_DefaultNamespacePrefix;
             }
             return x_BeginNamespace(type->GetNamespaceName(),prefix);
@@ -372,13 +383,22 @@ bool CObjectOStreamXml::x_BeginNamespace(const string& ns_name,
         return false;
     }
     string nsPrefix(ns_prefix);
-    if (m_NsNameToPrefix.find(ns_name) == m_NsNameToPrefix.end()) {
+    if (m_Attlist || m_NsNameToPrefix.find(ns_name) == m_NsNameToPrefix.end()) {
         for (char a='a';
             m_NsPrefixToName.find(nsPrefix) != m_NsPrefixToName.end(); ++a) {
             nsPrefix += a;
         }
+        if (m_Attlist && m_NsNameToPrefix.find(ns_name) != m_NsNameToPrefix.end()) {
+            if (!m_NsNameToPrefix.at(ns_name).empty()) {
+                m_CurrNsPrefix = m_NsNameToPrefix.at(ns_name);
+                m_NsPrefixes.push_back(m_CurrNsPrefix);
+                return false;
+            }
+        }
         m_CurrNsPrefix = nsPrefix;
-        m_NsNameToPrefix[ns_name] = nsPrefix;
+        if (!m_Attlist) {
+            m_NsNameToPrefix[ns_name] = nsPrefix;
+        }
         m_NsPrefixToName[nsPrefix] = ns_name;
         m_NsPrefixes.push_back(nsPrefix);
         return true;
@@ -394,13 +414,15 @@ void CObjectOStreamXml::x_EndNamespace(const string& ns_name)
     if (!m_UseSchemaRef || ns_name.empty()) {
         return;
     }
-    string nsPrefix = m_NsNameToPrefix[ns_name];
+    string nsPrefix = m_CurrNsPrefix;
 // we should erase them according to Namespace Scoping rules
 // http://www.w3.org/TR/REC-xml-names/#scoping 
     m_NsPrefixes.pop_back();
     if (find(m_NsPrefixes.begin(), m_NsPrefixes.end(), nsPrefix)
         == m_NsPrefixes.end()) {
-        m_NsNameToPrefix.erase(ns_name);
+        if (!m_Attlist) {
+            m_NsNameToPrefix.erase(ns_name);
+        }
         m_NsPrefixToName.erase(nsPrefix);
     }
     m_CurrNsPrefix = m_NsPrefixes.empty() ? kEmptyStr : m_NsPrefixes.back();
@@ -1476,7 +1498,7 @@ void CObjectOStreamXml::EndClassMember(void)
 void CObjectOStreamXml::WriteClass(const CClassTypeInfo* classType,
                                    TConstObjectPtr classPtr)
 {
-    if ( !classType->GetName().empty() ) {
+    if ( (m_Attlist && classType->IsNsQualified() == eNSQualified) || !classType->GetName().empty() ) {
         BEGIN_OBJECT_FRAME2(eFrameClass, classType);
 
         BeginClass(classType);

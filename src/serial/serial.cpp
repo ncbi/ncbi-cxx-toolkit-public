@@ -165,13 +165,7 @@ CMemberInfo* AddMember(CClassTypeInfoBase* info, const char* name,
                        TTypeInfoGetter1 f1,
                        TTypeInfoGetter f)
 {
-    CMemberInfo* mem = AddMember(info, name, member, f1, CTypeRef(f));
-#if 0
-    if (f()->IsNsQualified() != eNSQNotSet) {
-        mem->SetNsQualified(true);
-    }
-#endif
-    return mem;
+    return AddMember(info, name, member, f1, CTypeRef(f));
 }
 
 // three arguments:
@@ -278,13 +272,7 @@ CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
                        const void* member,
                        TTypeInfoGetter f)
 {
-    CVariantInfo* mem = AddVariant(info, name, member, CTypeRef(f));
-#if 0
-    if (f()->IsNsQualified() != eNSQNotSet) {
-        mem->SetNsQualified(true);
-    }
-#endif
-    return mem;
+    return AddVariant(info, name, member, CTypeRef(f));
 }
 
 // two arguments:
