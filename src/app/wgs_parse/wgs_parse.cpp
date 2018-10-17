@@ -153,6 +153,8 @@ void CWGSParseApp::Init(void)
 
     arg_desc->AddDefaultKey("D", "DiffBioSamples", "For brand new TLS projects only: allows DBLinks with different BioSamples among contigs. DBLinks won't be removed from contigs.", CArgDescriptions::eBoolean, "F");
 
+    arg_desc->AddDefaultKey("J", "IsTpaTsa", "Is this TPA-TSA project? Set to TRUE then.", CArgDescriptions::eBoolean, "F");
+
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
 }
 
