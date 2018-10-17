@@ -693,6 +693,8 @@ protected:
         m_Retriable = val;
     }
 
+    void EnsureActiveStatus(void);
+    
 protected:
     int             m_RowCount;
     CRef<TDbgInfo>  m_DbgInfo;

@@ -1762,6 +1762,7 @@ size_t CTL_SendDataCmd::SendChunk(const void* chunk_ptr, size_t nof_bytes)
     if (bytes2go > 0  &&  !m_UseUpdateWrite)
         return nof_bytes;
 
+    EnsureActiveStatus();
     CTL_LRCmd::SetWasSent();
     if (Check(ct_send(x_GetSybaseCmd())) != CS_SUCCEED) {
         Check(ct_cancel(0, x_GetSybaseCmd(), CS_CANCEL_CURRENT));

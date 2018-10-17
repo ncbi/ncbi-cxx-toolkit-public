@@ -111,6 +111,18 @@ CTL_CmdBase::Check(CS_RETCODE rc)
 }
 
 
+void CTL_CmdBase::EnsureActiveStatus(void)
+{
+    if ( !m_IsActive ) {
+        CTL_Connection& conn = GetConnection();
+        if (conn.m_ActiveCmd) {
+            conn.m_ActiveCmd->m_IsActive = false;
+        }
+        conn.m_ActiveCmd = this;
+        m_IsActive = true;
+    }
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //
 //  CTL_Cmd::
@@ -930,6 +942,8 @@ CTL_LangCmd::CTL_LangCmd(CTL_Connection& conn,
 
 bool CTL_LangCmd::Send()
 {
+    EnsureActiveStatus();
+
     Cancel();
 
     SetHasFailed(false);
