@@ -161,6 +161,9 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
                     out->SetWriteNamedIntegersByValue(false);
                     out->EnforceWritingDefaultValues(false);
                 }
+                if (fmt[out_i] == eSerial_Xml) {
+                    dynamic_cast<CObjectOStreamXml*>(out.get())->SetReferenceDTD();
+                }
 //                CSysWatch sw;
                 *out << *obj;
 //                LOG_POST("\t" << ext[out_i] << "\t" << sw.Elapsed());
@@ -287,6 +290,9 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
                     out->SetWriteNamedIntegersByValue(false);
                     out->EnforceWritingDefaultValues(false);
                 }
+                if (fmt[out_i] == eSerial_Xml) {
+                    dynamic_cast<CObjectOStreamXml*>(out.get())->SetReferenceDTD();
+                }
 //                CSysWatch sw;
                 *out << *obj;
 //                LOG_POST("\t" << ext[out_i] << "\t" << sw.Elapsed());
@@ -372,6 +378,9 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationCopy)
                 if (fmt[out_i] == eSerial_Json) {
                     out->SetWriteNamedIntegersByValue(false);
                     out->EnforceWritingDefaultValues(false);
+                }
+                if (fmt[out_i] == eSerial_Xml) {
+                    dynamic_cast<CObjectOStreamXml*>(out.get())->SetReferenceDTD();
                 }
 
                 CObjectStreamCopier copier(*in,*out);
