@@ -1397,12 +1397,6 @@ mem_simple = false;
     ENsQualifiedMode defNsqMode = eNSQNotSet;
     if (DataType()) {
         defNsqMode = DataType()->IsNsQualified();
-        if (defNsqMode == eNSQNotSet) {
-            const CDataMember *dm = DataType()->GetDataMember();
-            if (dm && dm->Attlist()) {
-                defNsqMode = eNSUnqualified;
-            }
-        }
     }
     if ( !GetNamespaceName().empty() ) {
         methods <<
@@ -1567,14 +1561,18 @@ mem_simple = false;
                     }
                 }
                 ENsQualifiedMode memNsqMode = i->dataType->IsNsQualified();
-                if (memNsqMode != eNSQNotSet && memNsqMode != defNsqMode) {
-                    methods << "->SetNsQualified(";
-                    if (memNsqMode == eNSQualified) {
-                        methods << "true";
-                    } else {
-                        methods << "false";
+                if (memNsqMode != eNSQNotSet) {
+                    if (memNsqMode != defNsqMode) {
+                        methods << "->SetNsQualified(";
+                        if (memNsqMode == eNSQualified) {
+                            methods << "true";
+                        } else {
+                            methods << "false";
+                        }
+                        methods << ")";
+                    } else if (defNsqMode == eNSUnqualified && i->dataType->IsReference()) {
+                        methods << "->SetNsQualified(true)";
                     }
-                    methods << ")";
                 }
             }
             if (i->nonEmpty) {

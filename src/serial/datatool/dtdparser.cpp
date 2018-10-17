@@ -1404,6 +1404,7 @@ CDataType* DTDParser::AttribBlock(const DTDElement& node)
 {
     AutoPtr<CDataMemberContainerType> container(new CDataSetType());
     const list<DTDAttribute>& att = node.GetAttributes();
+    bool has_nsq = false;
     for (list<DTDAttribute>::const_iterator i= att.begin();
         i != att.end(); ++i) {
         AutoPtr<CDataType> type(x_AttribType(*i));
@@ -1417,7 +1418,14 @@ CDataType* DTDParser::AttribBlock(const DTDElement& node)
         }
         member->SetNoPrefix();
         member->Comments() = i->GetComments();
+        if (type->IsNsQualified() == eNSQualified) {
+            has_nsq = true;
+        }
         container->AddMember(member);
+    }
+    if (has_nsq) {
+        container->SetNamespaceName(node.GetNamespaceName());
+        container->SetNsQualified(true);
     }
     return container.release();
 }

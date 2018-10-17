@@ -1596,14 +1596,18 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     methods << "->SetNonEmpty()";
                 }
                 ENsQualifiedMode memNsqMode = i->dataType->IsNsQualified();
-                if (memNsqMode != eNSQNotSet && memNsqMode != defNsqMode) {
-                    methods << "->SetNsQualified(";
-                    if (memNsqMode == eNSQualified) {
-                        methods << "true";
-                    } else {
-                        methods << "false";
+                if (memNsqMode != eNSQNotSet) {
+                    if (memNsqMode != defNsqMode) {
+                        methods << "->SetNsQualified(";
+                        if (memNsqMode == eNSQualified) {
+                            methods << "true";
+                        } else {
+                            methods << "false";
+                        }
+                        methods << ")";
+                    } else if (defNsqMode == eNSUnqualified && i->dataType->IsReference()) {
+                        methods << "->SetNsQualified(true)";
                     }
-                    methods << ")";
                 }
             }
             if (!DataTool().IsSetCodeGenerationStyle(CDataTool::eNoRestrictions) && i->dataType && i->dataType->GetDataMember()) {
