@@ -256,13 +256,13 @@ string s_GetNormalizedModName(const string& mod_name)
     NStr::TruncateSpacesInPlace(normalized_name);
     NStr::ReplaceInPlace(normalized_name, "_", "-");
     NStr::ReplaceInPlace(normalized_name, " ", "-");
-/*
     auto new_end = unique(normalized_name.begin(), 
                           normalized_name.end(),
                           [](char a, char b) { return ((a==b) && (a==' ')); });
 
     normalized_name.erase(new_end, normalized_name.end());
-*/
+    NStr::ReplaceInPlace(normalized_name, " ", "-");
+
     return normalized_name;
 }
 
@@ -298,8 +298,8 @@ struct SModNameInfo {
     }
 
     static bool IsPCRPrimerMod(const string& name) {
-
         auto normalized_name = s_GetNormalizedModName(name);
+
         return ((normalized_name == "fwd-primer-name") ||
                 (normalized_name == "fwd-pcr-primer-name") ||
                 (normalized_name == "fwd-primer-seq") ||
@@ -315,7 +315,7 @@ struct SModNameInfo {
     }
 
     static bool IsOrgMod(const string& name) {
-        return false;
+        return (org_mods.find(name) != org_mods.end());
     }
 
     static string Canonicalize(const string& mod_name) {
@@ -352,17 +352,19 @@ SModNameInfo::TNames SModNameInfo::seq_inst_mods =
     { "top", "topology", 
     "molecule", "mol", "moltype", "mol_type",
     "strand", 
-    "secondary_accession", "secondary_accessions" };
+    "secondary-accession", "secondary-accessions" };
 
 SModNameInfo::TNames SModNameInfo::annot_mods = 
     { "gene", "allele", "gene_syn", "gene_synonym", "locus_tag"
       "prot", "protein", "prot_desc", "protein_desc", 
-      "EC_number", "activity", "function" };
+      "EC-number", "activity", "function" };
 
 // org mods is handled separately
 SModNameInfo::TNames SModNameInfo::non_orgmod_orgref_mods = 
-    { "division", "div", "lineage", "gcode", 
-      "mgcode", "pgcode", "taxid", "dbxref"
+    { 
+      "org", "organism", "taxname", "common", "dbxref",
+      "division", "div", "lineage", "gcode", 
+      "mgcode", "pgcode", "taxid"
     };
 
 // These should be initialized using a map - less chance of error that way
@@ -381,15 +383,15 @@ SModNameInfo::TNames SModNameInfo::org_mods =
                        {"dosage", "old-lineage", "old-name"},
                        {"subspecies", "host", "specific-host"});
 
-    SModNameInfo::TNames SModNameInfo::non_biosource_descr_mods = 
-        {"comment", 
-         "moltype", "mol_type", "tech", "completeness", "completedness", // MolInfo
-         "secondary_accession", "secondary_accessions", "keyword", "keywords", // GBblock
-         "primary", "primary_accessions", // TPA
-         "PubMed", "PMID", // Pub Mods
-         "SRA", "biosample", "bioproject",
-         "project", "projects"
-        };
+SModNameInfo::TNames SModNameInfo::non_biosource_descr_mods = 
+    { "comment", 
+      "moltype", "mol_type", "tech", "completeness", "completedness", // MolInfo
+      "secondary_accession", "secondary_accessions", "keyword", "keywords", // GBblock
+      "primary", "primary_accessions", // TPA
+      "pubmed", "pmid", // Pub Mods
+      "sra", "biosample", "bioproject",
+      "project", "projects"
+    };
 
 
 
@@ -429,8 +431,8 @@ SModNameInfo::TNames SModNameInfo::org_mods =
 
             if (SModNameInfo::IsNonBiosourceDescrMod(mod_name)) {
                 non_biosource_descr_mods.insert(normalized_mod);
-                if (mod_name == "secondary_accession" ||
-                    mod_name == "secondary_accessions") {
+                if (mod_name == "secondary-accession" ||
+                    mod_name == "secondary-accessions") {
                     seq_inst_mods.insert(normalized_mod);
                 }
             }
@@ -870,6 +872,55 @@ CSeqdesc& CModApply_Impl::x_SetBioSource(CSeq_descr& descr)
 
 
 
+static void s_AddPrimerNames(const string& primer_names, CPCRPrimerSet& primer_set)
+{
+    const auto set_size = primer_set.Get().size();
+    vector<string> names;
+    NStr::Split(primer_names, ":", names, NStr::fSplit_Tokenize);
+    const auto num_names = names.size();
+
+    auto it = primer_set.Set().begin();
+    for (auto i=0; i<num_names; ++i) {
+        if (NStr::IsBlank(names[i])) {
+            continue;
+        }
+        if (i<set_size) {
+            (*it)->SetName().Set(names[i]);
+            ++it;
+        } 
+        else {
+            auto pPrimer = Ref(new CPCRPrimer());
+            pPrimer->SetName().Set(names[i]);
+            primer_set.Set().push_back(move(pPrimer));
+        }
+    }
+}
+
+static void s_AddPrimerSeqs(const string& primer_seqs, CPCRPrimerSet& primer_set)
+{
+    const auto set_size = primer_set.Get().size();
+    vector<string> seqs;
+    NStr::Split(primer_seqs, ":", seqs, NStr::fSplit_Tokenize);
+    const auto num_seqs = seqs.size();
+
+    auto it = primer_set.Set().begin();
+    for (auto i=0; i<num_seqs; ++i) {
+        if (NStr::IsBlank(seqs[i])) {
+            continue;
+        }
+        if (i<set_size) {
+            (*it)->SetSeq().Set(seqs[i]);
+            ++it;
+        } 
+        else {
+            auto pPrimer = Ref(new CPCRPrimer());
+            pPrimer->SetSeq().Set(seqs[i]);
+            primer_set.Set().push_back(move(pPrimer));
+        }
+    }
+}
+
+
 static void s_AddPrimers(const pair<string, string>& primer_info, CPCRPrimerSet& primer_set)
 {
     vector<string> names;
@@ -929,6 +980,35 @@ static void s_GetPrimerInfo(const SModContainer::TMod* pNamesMod,
     }
 }
 
+static void s_GetPrimerNames(const SModContainer::TMod* pNamesMod,
+                             vector<string>& names)
+{
+    names.clear();
+    if (pNamesMod) {
+        NStr::Split(pNamesMod->second, ",", names, NStr::fSplit_Tokenize);
+    }
+}
+
+
+static void s_GetPrimerSeqs(const SModContainer::TMod* pSeqsMod,
+                            vector<string>& seqs)
+{
+    seqs.clear();
+    if (pSeqsMod) {
+        NStr::Split(pSeqsMod->second, ",", seqs, NStr::fSplit_Tokenize);
+        if (seqs.size()>1) {
+            if (seqs.front().front() == '(') {
+                seqs.front().erase(0,1);
+            }
+            if (seqs.back().back() == ')') {
+                seqs.back().erase(seqs.back().size()-1, 1);
+            }
+        }
+    }
+}
+
+
+
 void CModApply_Impl::x_AddPCRPrimerMods(const TMods& mods, CBioSource& biosource)
 {
 
@@ -966,28 +1046,58 @@ void CModApply_Impl::x_AddPCRPrimerMods(const TMods& mods, CBioSource& biosource
 
 
     using TNameSeqPair = pair<string, string>;
-    vector<TNameSeqPair> fwd_primer_info;
-    s_GetPrimerInfo(pFwdNameMod, pFwdSeqMod, fwd_primer_info);
+//    vector<TNameSeqPair> fwd_primer_info;
+//    s_GetPrimerInfo(pFwdNameMod, pFwdSeqMod, fwd_primer_info);
     vector<TNameSeqPair> rev_primer_info;
     s_GetPrimerInfo(pRevNameMod, pRevSeqMod, rev_primer_info);
 
 
-
-    auto num_fwd_primer_info = fwd_primer_info.size();
-    auto num_rev_primer_info = rev_primer_info.size();
     auto& pcr_reaction_set = biosource.SetPcr_primers();
+    vector<string> fwd_primer_names;
+    s_GetPrimerNames(pFwdNameMod, fwd_primer_names);
+    for (const auto& name :fwd_primer_names) {
+        CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
+        s_AddPrimerNames(name, pcr_reaction->SetForward());    
+        pcr_reaction_set.Set().push_back(pcr_reaction);
+    }
 
+
+    vector<string> fwd_primer_seqs;
+    s_GetPrimerSeqs(pFwdSeqMod, fwd_primer_seqs);
+    auto it = pcr_reaction_set.Set().begin();
+    for (auto i=0; i<fwd_primer_seqs.size(); ++i) {
+        if (i < pcr_reaction_set.Get().size()) {
+            s_AddPrimerSeqs(fwd_primer_seqs[i], (*it)->SetForward()); 
+            ++it;
+        }
+        else {
+            CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
+            s_AddPrimerSeqs(fwd_primer_seqs[i], pcr_reaction->SetForward());    
+            pcr_reaction_set.Set().push_back(pcr_reaction);
+        }
+    }
+
+
+//    auto num_fwd_primer_info = fwd_primer_info.size();
+    auto num_rev_primer_info = rev_primer_info.size();
+
+/*
     // First loop over fwd primers
     for (auto i=0; i<num_fwd_primer_info; ++i) {
         CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
-        s_AddPrimers(fwd_primer_info[i], pcr_reaction->SetForward());
+        s_AddPrimerNames(fwd_primer_info[i].first, pcr_reaction->SetForward());
+        s_AddPrimerSeqs(fwd_primer_info[i].second, pcr_reaction->SetForward());
         pcr_reaction_set.Set().push_back(pcr_reaction);
     }
+*/
+
+   
     const auto num_reactions = pcr_reaction_set.Get().size();
     if (num_rev_primer_info <= num_reactions) {
         auto it = pcr_reaction_set.Set().rbegin();
         for (auto i=1; i<=num_rev_primer_info; ++i) {
-            s_AddPrimers(rev_primer_info[num_rev_primer_info-i], (*it)->SetReverse());
+            s_AddPrimerNames(rev_primer_info[num_rev_primer_info-i].first, (*it)->SetReverse());
+            s_AddPrimerSeqs(rev_primer_info[num_rev_primer_info-i].second, (*it)->SetReverse());
             ++it;
         }
     }
@@ -998,7 +1108,8 @@ void CModApply_Impl::x_AddPCRPrimerMods(const TMods& mods, CBioSource& biosource
         }
         for (auto i=num_reactions; i<num_rev_primer_info; ++i) {
             CRef<CPCRReaction> pcr_reaction(new CPCRReaction());
-            s_AddPrimers(rev_primer_info[i], pcr_reaction->SetReverse());
+            s_AddPrimerNames(rev_primer_info[i].first, pcr_reaction->SetReverse());
+            s_AddPrimerSeqs(rev_primer_info[i].second, pcr_reaction->SetReverse());
             pcr_reaction_set.Set().push_back(pcr_reaction);
         }
     }
@@ -1060,6 +1171,10 @@ void CModApply_Impl::x_AddOrgRefMods(const TMods& org_mods,
         const auto& name = mod.first;
         if (s_IsMatch(name, "org", "organism", "taxname")) {
             biosource.SetOrg().SetTaxname(mod.second);
+        }
+        else 
+        if (s_IsMatch(name, "common")) {
+            biosource.SetOrg().SetCommon(mod.second);
         }
         else
         if (s_IsMatch(name, "div")) {

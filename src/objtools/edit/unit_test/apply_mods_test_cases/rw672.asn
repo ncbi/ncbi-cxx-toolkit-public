@@ -6,6 +6,8 @@ Bioseq ::= {
     source {
       genome proviral,
       org {
+        taxname "Homo sapiens",
+        common "val34_1",
         db {
           {
             db "notag",
@@ -14,6 +16,518 @@ Bioseq ::= {
           {
             db "database",
             tag str "tag"
+          }
+        },
+        orgname {
+          mod {
+            {
+              subtype acronym,
+              subname "val35_0"
+            },
+            {
+              subtype acronym,
+              subname "val36_0"
+            },
+            {
+              subtype acronym,
+              subname "val36_1"
+            },
+            {
+              subtype anamorph,
+              subname "val63_0"
+            },
+            {
+              subtype anamorph,
+              subname "val64_0"
+            },
+            {
+              subtype anamorph,
+              subname "val64_1"
+            },
+            {
+              subtype authority,
+              subname "val51_0"
+            },
+            {
+              subtype authority,
+              subname "val52_0"
+            },
+            {
+              subtype authority,
+              subname "val52_1"
+            },
+            {
+              subtype bio-material,
+              subname "val88_0"
+            },
+            {
+              subtype bio-material,
+              subname "val85_0"
+            },
+            {
+              subtype bio-material,
+              subname "val86_0"
+            },
+            {
+              subtype bio-material,
+              subname "val86_1"
+            },
+            {
+              subtype bio-material,
+              subname "val87_0"
+            },
+            {
+              subtype biotype,
+              subname "val25_0"
+            },
+            {
+              subtype biotype,
+              subname "val26_0"
+            },
+            {
+              subtype biotype,
+              subname "val26_1"
+            },
+            {
+              subtype biovar,
+              subname "val23_0"
+            },
+            {
+              subtype biovar,
+              subname "val24_0"
+            },
+            {
+              subtype biovar,
+              subname "val24_1"
+            },
+            {
+              subtype breed,
+              subname "val67_0"
+            },
+            {
+              subtype breed,
+              subname "val68_0"
+            },
+            {
+              subtype breed,
+              subname "val68_1"
+            },
+            {
+              subtype chemovar,
+              subname "val21_0"
+            },
+            {
+              subtype chemovar,
+              subname "val22_0"
+            },
+            {
+              subtype chemovar,
+              subname "val22_1"
+            },
+            {
+              subtype cultivar,
+              subname "val17_0"
+            },
+            {
+              subtype cultivar,
+              subname "val18_0"
+            },
+            {
+              subtype cultivar,
+              subname "val18_1"
+            },
+            {
+              subtype culture-collection,
+              subname "val84_0"
+            },
+            {
+              subtype culture-collection,
+              subname "val81_0"
+            },
+            {
+              subtype culture-collection,
+              subname "val82_0"
+            },
+            {
+              subtype culture-collection,
+              subname "val82_1"
+            },
+            {
+              subtype culture-collection,
+              subname "val83_0"
+            },
+            {
+              subtype ecotype,
+              subname "val59_0"
+            },
+            {
+              subtype ecotype,
+              subname "val60_0"
+            },
+            {
+              subtype ecotype,
+              subname "val60_1"
+            },
+            {
+              subtype forma,
+              subname "val53_0"
+            },
+            {
+              subtype forma,
+              subname "val54_0"
+            },
+            {
+              subtype forma,
+              subname "val54_1"
+            },
+            {
+              subtype forma-specialis,
+              subname "val58_0"
+            },
+            {
+              subtype forma-specialis,
+              subname "val55_0"
+            },
+            {
+              subtype forma-specialis,
+              subname "val56_0"
+            },
+            {
+              subtype forma-specialis,
+              subname "val56_1"
+            },
+            {
+              subtype forma-specialis,
+              subname "val57_0"
+            },
+            {
+              subtype gb-acronym,
+              subname "val72_0"
+            },
+            {
+              subtype gb-acronym,
+              subname "val69_0"
+            },
+            {
+              subtype gb-acronym,
+              subname "val70_0"
+            },
+            {
+              subtype gb-acronym,
+              subname "val70_1"
+            },
+            {
+              subtype gb-acronym,
+              subname "val71_0"
+            },
+            {
+              subtype gb-anamorph,
+              subname "val76_0"
+            },
+            {
+              subtype gb-anamorph,
+              subname "val73_0"
+            },
+            {
+              subtype gb-anamorph,
+              subname "val74_0"
+            },
+            {
+              subtype gb-anamorph,
+              subname "val74_1"
+            },
+            {
+              subtype gb-anamorph,
+              subname "val75_0"
+            },
+            {
+              subtype gb-synonym,
+              subname "val80_0"
+            },
+            {
+              subtype gb-synonym,
+              subname "val77_0"
+            },
+            {
+              subtype gb-synonym,
+              subname "val78_0"
+            },
+            {
+              subtype gb-synonym,
+              subname "val78_1"
+            },
+            {
+              subtype gb-synonym,
+              subname "val79_0"
+            },
+            {
+              subtype group,
+              subname "val27_0"
+            },
+            {
+              subtype group,
+              subname "val28_0"
+            },
+            {
+              subtype group,
+              subname "val28_1"
+            },
+            {
+              subtype isolate,
+              subname "val31_0"
+            },
+            {
+              subtype isolate,
+              subname "val32_0"
+            },
+            {
+              subtype isolate,
+              subname "val32_1"
+            },
+            {
+              subtype metagenome-source,
+              subname "val92_0"
+            },
+            {
+              subtype metagenome-source,
+              subname "val89_0"
+            },
+            {
+              subtype metagenome-source,
+              subname "val90_0"
+            },
+            {
+              subtype metagenome-source,
+              subname "val90_1"
+            },
+            {
+              subtype metagenome-source,
+              subname "val91_0"
+            },
+            {
+              subtype nat-host,
+              subname "val42_0"
+            },
+            {
+              subtype nat-host,
+              subname "val39_0"
+            },
+            {
+              subtype nat-host,
+              subname "val40_0"
+            },
+            {
+              subtype nat-host,
+              subname "val40_1"
+            },
+            {
+              subtype nat-host,
+              subname "val41_0"
+            },
+            {
+              subtype pathovar,
+              subname "val19_0"
+            },
+            {
+              subtype pathovar,
+              subname "val20_0"
+            },
+            {
+              subtype pathovar,
+              subname "val20_1"
+            },
+            {
+              subtype serogroup,
+              subname "val13_0"
+            },
+            {
+              subtype serogroup,
+              subname "val14_0"
+            },
+            {
+              subtype serogroup,
+              subname "val14_1"
+            },
+            {
+              subtype serotype,
+              subname "val11_0"
+            },
+            {
+              subtype serotype,
+              subname "val12_0"
+            },
+            {
+              subtype serotype,
+              subname "val12_1"
+            },
+            {
+              subtype serovar,
+              subname "val15_0"
+            },
+            {
+              subtype serovar,
+              subname "val16_0"
+            },
+            {
+              subtype serovar,
+              subname "val16_1"
+            },
+            {
+              subtype specimen-voucher,
+              subname "val50_0"
+            },
+            {
+              subtype specimen-voucher,
+              subname "val47_0"
+            },
+            {
+              subtype specimen-voucher,
+              subname "val48_0"
+            },
+            {
+              subtype specimen-voucher,
+              subname "val48_1"
+            },
+            {
+              subtype specimen-voucher,
+              subname "val49_0"
+            },
+            {
+              subtype strain,
+              subname "val1_0"
+            },
+            {
+              subtype strain,
+              subname "val2_0"
+            },
+            {
+              subtype strain,
+              subname "val2_1"
+            },
+            {
+              subtype sub-species,
+              subname "val46_0"
+            },
+            {
+              subtype sub-species,
+              subname "val43_0"
+            },
+            {
+              subtype sub-species,
+              subname "val44_0"
+            },
+            {
+              subtype sub-species,
+              subname "val44_1"
+            },
+            {
+              subtype sub-species,
+              subname "val45_0"
+            },
+            {
+              subtype subgroup,
+              subname "val29_0"
+            },
+            {
+              subtype subgroup,
+              subname "val30_0"
+            },
+            {
+              subtype subgroup,
+              subname "val30_1"
+            },
+            {
+              subtype substrain,
+              subname "val3_0"
+            },
+            {
+              subtype substrain,
+              subname "val4_0"
+            },
+            {
+              subtype substrain,
+              subname "val4_1"
+            },
+            {
+              subtype subtype,
+              subname "val7_0"
+            },
+            {
+              subtype subtype,
+              subname "val8_0"
+            },
+            {
+              subtype subtype,
+              subname "val8_1"
+            },
+            {
+              subtype synonym,
+              subname "val61_0"
+            },
+            {
+              subtype synonym,
+              subname "val62_0"
+            },
+            {
+              subtype synonym,
+              subname "val62_1"
+            },
+            {
+              subtype teleomorph,
+              subname "val65_0"
+            },
+            {
+              subtype teleomorph,
+              subname "val66_0"
+            },
+            {
+              subtype teleomorph,
+              subname "val66_1"
+            },
+            {
+              subtype type,
+              subname "val5_0"
+            },
+            {
+              subtype type,
+              subname "val6_0"
+            },
+            {
+              subtype type,
+              subname "val6_1"
+            },
+            {
+              subtype type-material,
+              subname "val96_0"
+            },
+            {
+              subtype type-material,
+              subname "val93_0"
+            },
+            {
+              subtype type-material,
+              subname "val94_0"
+            },
+            {
+              subtype type-material,
+              subname "val94_1"
+            },
+            {
+              subtype type-material,
+              subname "val95_0"
+            },
+            {
+              subtype variety,
+              subname "val9_0"
+            },
+            {
+              subtype variety,
+              subname "val10_0"
+            },
+            {
+              subtype variety,
+              subname "val10_1"
+            }
           }
         }
       },
@@ -699,14 +1213,36 @@ Bioseq ::= {
         {
           forward {
             {
-              seq "val211_0",
-              name "val219_0"
+              seq "GTT",
+              name "fwd1"
+            }
+          }
+        },
+        {
+          forward {
+            {
+              seq "CC",
+              name "fwd2"
             }
           },
           reverse {
             {
-              seq "val215_0",
-              name "val223_0"
+              seq "GTAA",
+              name "rev1"
+            }
+          }
+        },
+        {
+          forward {
+            {
+              seq "GG",
+              name "fwd3"
+            }
+          },
+          reverse {
+            {
+              seq "CC",
+              name "rev2"
             }
           }
         }
