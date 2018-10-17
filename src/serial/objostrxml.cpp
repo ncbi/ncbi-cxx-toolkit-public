@@ -73,32 +73,30 @@ const char* s_SchemaInstanceNamespace = "http://www.w3.org/2001/XMLSchema-instan
 
 CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
     : CObjectOStream(eSerial_Xml, out, deleteOut ? eTakeOwnership : eNoOwnership),
-      m_LastTagAction(eTagClose), m_EndTag(true),
+      m_LastTagAction(eTagClose), m_SpecRef(eSpecRefNotSet), m_EndTag(true),
       m_UseDefaultDTDFilePrefix( true),
       m_UsePublicId( true),
       m_Attlist( false), m_StdXml( false), m_EnforcedStdXml( false),
       m_RealFmt( eRealScientificFormat ),
       m_Encoding( eEncoding_Unknown ), m_StringEncoding( eEncoding_UTF8 ),
-      m_UseXmlDecl(true),
-      m_UseSchemaRef( false ), m_UseSchemaLoc( true ), m_UseDTDRef( true ),
+      m_UseXmlDecl( true ), m_UseSchemaLoc( true ),
       m_DefaultSchemaNamespace( sm_DefaultSchemaNamespace ),
-      m_SkipIndent( false ), m_SkipNextTag(false)
+      m_SkipIndent( false ), m_SkipNextTag( false )
 {
     m_Output.SetBackLimit(1);
 }
 
 CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, EOwnership deleteOut)
     : CObjectOStream(eSerial_Xml, out, deleteOut),
-      m_LastTagAction(eTagClose), m_EndTag(true),
+      m_LastTagAction(eTagClose), m_SpecRef(eSpecRefNotSet), m_EndTag(true),
       m_UseDefaultDTDFilePrefix( true),
       m_UsePublicId( true),
       m_Attlist( false), m_StdXml( false), m_EnforcedStdXml( false),
       m_RealFmt( eRealScientificFormat ),
       m_Encoding( eEncoding_Unknown ), m_StringEncoding( eEncoding_UTF8 ),
-      m_UseXmlDecl(true),
-      m_UseSchemaRef( false ), m_UseSchemaLoc( true ), m_UseDTDRef( true ),
+      m_UseXmlDecl( true ), m_UseSchemaLoc( true ),
       m_DefaultSchemaNamespace( sm_DefaultSchemaNamespace ),
-      m_SkipIndent( false ), m_SkipNextTag(false)
+      m_SkipIndent( false ), m_SkipNextTag( false )
 {
     m_Output.SetBackLimit(1);
 }
@@ -129,20 +127,19 @@ EEncoding CObjectOStreamXml::GetDefaultStringEncoding(void) const
 
 void CObjectOStreamXml::SetReferenceSchema(bool use_schema)
 {
-    m_UseSchemaRef = use_schema;
+    m_SpecRef = use_schema ? eSpecRefSchema : eSpecRefNone;
 }
-
 bool CObjectOStreamXml::GetReferenceSchema(void) const
 {
-    return m_UseSchemaRef;
+    return m_SpecRef == eSpecRefSchema;
 }
 void CObjectOStreamXml::SetReferenceDTD(bool use_dtd)
 {
-    m_UseDTDRef = use_dtd;
+    m_SpecRef = use_dtd ? eSpecRefDTD : eSpecRefNone;
 }
 bool CObjectOStreamXml::GetReferenceDTD(void) const
 {
-    return m_UseDTDRef;
+    return m_SpecRef == eSpecRefDTD;
 }
 
 void CObjectOStreamXml::SetUseSchemaLocation(bool use_loc)
@@ -185,8 +182,8 @@ void CObjectOStreamXml::SetFormattingFlags(TSerial_Format_Flags flags)
             "CObjectOStreamXml::SetFormattingFlags: ignoring unknown formatting flags");
     }
     m_UseXmlDecl   = (flags & fSerial_Xml_NoXmlDecl)   == 0;
-    m_UseDTDRef    = (flags & fSerial_Xml_NoRefDTD)    == 0;
-    m_UseSchemaRef = (flags & fSerial_Xml_RefSchema)   != 0;
+    if ((flags & fSerial_Xml_NoRefDTD)    != 0) {m_SpecRef = eSpecRefNone;}
+    if ((flags & fSerial_Xml_RefSchema)   != 0) {m_SpecRef = eSpecRefSchema;}
     m_UseSchemaLoc = (flags & fSerial_Xml_NoSchemaLoc) == 0;
 
     CObjectOStream::SetFormattingFlags(
@@ -252,10 +249,11 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
         m_Output.PutString("\"?>");
     }
 
-    if (type->GetDataSpec() == EDataSpec::eXSD || type->GetDataSpec() == EDataSpec::eJSON) {
-        m_UseSchemaRef = true;
+    if (m_SpecRef == eSpecRefNotSet) {
+        CheckStdXml(type);
+        m_SpecRef = (type->GetDataSpec() == EDataSpec::eDTD || !x_IsStdXml()) ? eSpecRefDTD : eSpecRefSchema;
     }
-    if (!m_UseSchemaRef && m_UseDTDRef) {
+    if (GetReferenceDTD()) {
         if (m_UseXmlDecl) {
             m_Output.PutEol();
         }
@@ -351,7 +349,7 @@ void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
 
 bool CObjectOStreamXml::x_ProcessTypeNamespace(TTypeInfo type)
 {
-    if (m_UseSchemaRef) {
+    if (GetReferenceSchema()) {
         if (type->HasNamespaceName()) {
             string prefix(type->GetNamespacePrefix());
             if (prefix.empty() && (type->IsNsQualified() == eNSUnqualified || (m_Attlist && type->IsNsQualified() == eNSQualified))) {
@@ -366,7 +364,7 @@ bool CObjectOStreamXml::x_ProcessTypeNamespace(TTypeInfo type)
 
 void CObjectOStreamXml::x_EndTypeNamespace(void)
 {
-    if (m_UseSchemaRef) {
+    if (GetReferenceSchema()) {
         if (TopFrame().HasTypeInfo()) {
             TTypeInfo type = TopFrame().GetTypeInfo();
             if (type->HasNamespaceName()) {
@@ -379,7 +377,7 @@ void CObjectOStreamXml::x_EndTypeNamespace(void)
 bool CObjectOStreamXml::x_BeginNamespace(const string& ns_name,
                                          const string& ns_prefix)
 {
-    if (!m_UseSchemaRef || ns_name.empty()) {
+    if (!GetReferenceSchema() || ns_name.empty()) {
         return false;
     }
     string nsPrefix(ns_prefix);
@@ -411,7 +409,7 @@ bool CObjectOStreamXml::x_BeginNamespace(const string& ns_name,
 
 void CObjectOStreamXml::x_EndNamespace(const string& ns_name)
 {
-    if (!m_UseSchemaRef || ns_name.empty()) {
+    if (!GetReferenceSchema() || ns_name.empty()) {
         return;
     }
     string nsPrefix = m_CurrNsPrefix;
@@ -590,7 +588,7 @@ bool CObjectOStreamXml::x_SpecialCaseWrite(void)
     else if (m_SpecialCaseWrite == eWriteAsNil) {
         OpenTagEndBack();
          m_Output.PutChar(' ');
-        if (m_UseSchemaRef) {
+        if (GetReferenceSchema()) {
             m_Output.PutString("xs:");
         }
         m_Output.PutString("nil=\"true\"");
@@ -737,7 +735,7 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
     }
     OpenTag(obj_name);
 
-    if (m_UseSchemaRef) {
+    if (GetReferenceSchema()) {
         OpenTagEndBack();
         if (needNs) {
             m_Output.PutEol();
@@ -831,7 +829,7 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
             if (*(is+1) == '/') {
                 m_Output.PutChar(*(++is));
             }
-            if (m_UseSchemaRef && !m_CurrNsPrefix.empty()) {
+            if (GetReferenceSchema() && !m_CurrNsPrefix.empty()) {
                 m_Output.PutString(m_CurrNsPrefix);
                 m_Output.PutChar(':');
             }

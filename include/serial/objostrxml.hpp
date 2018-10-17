@@ -420,6 +420,13 @@ private:
         eAttlistTag
     };
     ETagAction m_LastTagAction;
+    enum EDataSpecRef {
+        eSpecRefNotSet,
+        eSpecRefNone,
+        eSpecRefSchema,
+        eSpecRefDTD
+    };
+    EDataSpecRef m_SpecRef;
     bool m_EndTag;
 
     // DTD file name and prefix
@@ -436,9 +443,7 @@ private:
     EEncoding m_Encoding;
     EEncoding m_StringEncoding;
     bool m_UseXmlDecl;
-    bool m_UseSchemaRef;
     bool m_UseSchemaLoc;
-    bool m_UseDTDRef;
     string m_DefaultSchemaNamespace;
     string m_CurrNsPrefix;
     map<string,string> m_NsNameToPrefix;
