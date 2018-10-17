@@ -51,7 +51,17 @@ set(NCBI_TREE_ROOT    ${top_src_dir})
 set(NCBI_SRC_ROOT      ${CMAKE_CURRENT_SOURCE_DIR})
 set(NCBI_INC_ROOT      ${includedir0})
 
-get_filename_component(NCBI_BUILD_ROOT "${CMAKE_BINARY_DIR}/.." ABSOLUTE)
+if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
+    string(FIND ${CMAKE_BINARY_DIR} ${NCBI_TREE_ROOT} _pos_root)
+    string(FIND ${CMAKE_BINARY_DIR} ${NCBI_SRC_ROOT}  _pos_src)
+    if(NOT "${_pos_root}" LESS "0" AND "${_pos_src}" LESS "0" AND NOT "${CMAKE_BINARY_DIR}" STREQUAL "${NCBI_TREE_ROOT}")
+        get_filename_component(NCBI_BUILD_ROOT "${CMAKE_BINARY_DIR}/.." ABSOLUTE)
+    else()
+        get_filename_component(NCBI_BUILD_ROOT "${CMAKE_BINARY_DIR}" ABSOLUTE)
+    endif()
+else()
+    get_filename_component(NCBI_BUILD_ROOT "${CMAKE_BINARY_DIR}/.." ABSOLUTE)
+endif()
 
 
 set(NCBI_CFGINC_ROOT   ${NCBI_BUILD_ROOT}/${NCBI_DIRNAME_CFGINC})
