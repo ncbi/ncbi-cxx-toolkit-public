@@ -16,4 +16,4 @@ CHECK_CMD =
 CHECK_COPY = 
 CHECK_TIMEOUT = 3000
 
-WATCHERS = bollin
+WATCHERS = bollin asztalos
