@@ -23,9 +23,9 @@
  *
  * ===========================================================================
  *
- * Author:  Eugene Vasilchenko
+ * Author:  Eugene Vasilchenko, Vladimir Ivanov
  *
- * File Description:  Checksum (CRC32, Adler32 or MD5) calculation class
+ * File Description:  Checksum and hash calculation classes.
  *
  */
 
@@ -99,125 +99,51 @@ static const char sx_CharCount[] = "chars: ";
 #endif
 
 
-CChecksum::CChecksum(EMethod method)
+
+CChecksumBase::CChecksumBase(EMethodDef method)
     : m_Method(eNone)
 {
-    Reset(method);
+    x_Reset(method);
 }
 
 
-CChecksum::CChecksum(const CChecksum& checksum)
-    : m_LineCount(checksum.m_LineCount),
-      m_CharCount(checksum.m_CharCount),
-      m_Method(checksum.m_Method)
-{
-    if ( GetMethod() == eMD5 ) {
-        m_Checksum.MD5 = new CMD5(*checksum.m_Checksum.MD5);
-    } else {
-        m_Checksum.CRC64 = checksum.m_Checksum.CRC64;
-    }
-}
-
-
-CChecksum::~CChecksum()
+CChecksumBase::~CChecksumBase()
 {
     x_Free();
 }
 
 
-void CChecksum::x_Free(void)
+CChecksumBase::CChecksumBase(const CChecksumBase& other)
+    : m_Method(other.m_Method),
+      m_CharCount(other.m_CharCount)
 {
-    if ( GetMethod() == eMD5 ) {
-        delete m_Checksum.MD5;
-        m_Checksum.MD5 = NULL;
+    if ( m_Method == eMD5 ) {
+        m_Value.md5 = new CMD5(*other.m_Value.md5);
+    } else {
+        m_Value.v64 = other.m_Value.v64;
     }
 }
 
 
-CChecksum& CChecksum::operator= (const CChecksum& checksum)
+CChecksumBase& CChecksumBase::operator= (const CChecksumBase& other)
 {
     x_Free();
 
-    m_LineCount = checksum.m_LineCount;
-    m_CharCount = checksum.m_CharCount;
-    m_Method    = checksum.m_Method;
+    m_Method    = other.m_Method;
+    m_CharCount = other.m_CharCount;
 
-    if ( GetMethod() == eMD5 ) {
-        m_Checksum.MD5 = new CMD5(*checksum.m_Checksum.MD5);
+    if ( m_Method == eMD5 ) {
+        m_Value.md5 = new CMD5(*other.m_Value.md5);
     } else {
-        m_Checksum.CRC64 = checksum.m_Checksum.CRC64;
+        m_Value.v64 = other.m_Value.v64;
     }
     return *this;
 }
 
 
-void CChecksum::Reset(EMethod method)
+Uint4 CChecksumBase::GetResult32(void) const
 {
-    x_Free();
-
-    m_LineCount = 0;
-    m_CharCount = 0;
-
-    if (method != eNone) {
-        m_Method = method;
-    }
-
-    m_Checksum.CRC64 = 0;
-
-    switch ( GetMethod() ) {
-    case eCRC32:
-    case eCRC32CKSUM:
-        s_InitTableCRC32Forward();
-        break;
-    case eCRC32ZIP:
-    case eCRC32INSD:
-        m_Checksum.CRC32 = ~0;
-        s_InitTableCRC32Reverse();
-        break;
-    case eCRC32C:
-        m_Checksum.CRC32 = ~0;
-#ifdef USE_CRC32C_INTEL
-        if ( s_IsCRC32CIntelEnabled() ) {
-            break;
-        }
-#endif
-        s_InitTableCRC32CReverse();
-        break;
-    case eMD5:
-        m_Checksum.MD5 = new CMD5;
-        break;
-    case eAdler32:
-        m_Checksum.CRC32 = 1;
-        break;
-    case eCityHash32:
-    case eCityHash64:
-    case eFarmHash32:
-    case eFarmHash64:
-    default:
-        break;
-    }
-}
-
-
-size_t CChecksum::GetChecksumSize(void) const
-{
-    switch ( GetMethod() ) {
-    case eNone:
-        return 0;
-    case eMD5:  
-        return 16;
-    case eFarmHash64:
-    case eCityHash64:
-        return 8;
-    default:
-        return 4;
-    }
-}
-
-
-Uint4 CChecksum::GetChecksum32(void) const
-{
-    switch ( GetMethod() ) {
+    switch ( m_Method ) {
     case eCRC32CKSUM:
     {
         // POSIX checksum includes length of data
@@ -226,19 +152,19 @@ Uint4 CChecksum::GetChecksum32(void) const
         for ( size_t len = m_CharCount; len; len >>= 8 ) {
             extra_bytes[extra_len++] = char(len & 0xff);
         }
-        CChecksum extra(*this);
-        extra.AddChars(extra_bytes, extra_len);
-        return ~extra.m_Checksum.CRC32;
+        CChecksumBase extra(*this);
+        extra.x_Update(extra_bytes, extra_len);
+        return ~extra.m_Value.v32;
     }
     case eCRC32:
     case eCRC32INSD:
     case eAdler32:
     case eCityHash32:
     case eFarmHash32:
-        return m_Checksum.CRC32;
+        return m_Value.v32;
     case eCRC32ZIP:
     case eCRC32C:
-        return ~m_Checksum.CRC32;
+        return ~m_Value.v32;
     default:
         _ASSERT(0);
         return 0;
@@ -246,22 +172,156 @@ Uint4 CChecksum::GetChecksum32(void) const
 }
 
 
-Uint8 CChecksum::GetChecksum64(void) const
+Uint8 CChecksumBase::GetResult64(void) const
 {
-    switch ( GetMethod() ) {
+    switch ( m_Method ) {
     case eCityHash64:
     case eFarmHash64:
-        return m_Checksum.CRC64;
+        return m_Value.v64;
     default:
         _ASSERT(0);
         return 0;
     }
+}
+
+
+string CChecksumBase::GetResultHex(void) const
+{
+    switch (m_Method ) {
+    case eMD5:
+        return m_Value.md5->GetHexSum();
+    default:
+        if (GetBits() == 32) {
+            return NStr::NumericToString(GetResult32(), 0, 16);
+        }
+        if (GetBits() == 64) {
+            return NStr::NumericToString(GetResult64(), 0, 16);
+        }
+        _ASSERT(0);
+        return kEmptyStr;
+    }
+}
+
+
+void CChecksumBase::x_Reset(EMethodDef method)
+{
+    x_Free();
+
+    m_Method = method;
+    m_Value.v64 = 0;
+    m_CharCount = 0;
+
+    switch ( method ) {
+    case eCRC32:
+    case eCRC32CKSUM:
+        s_InitTableCRC32Forward();
+        break;
+    case eCRC32ZIP:
+    case eCRC32INSD:
+        m_Value.v32 = ~0;
+        s_InitTableCRC32Reverse();
+        break;
+    case eCRC32C:
+        m_Value.v32 = ~0;
+#ifdef USE_CRC32C_INTEL
+        if ( s_IsCRC32CIntelEnabled() ) {
+            break;
+        }
+#endif
+        s_InitTableCRC32CReverse();
+        break;
+    case eAdler32:
+        m_Value.v32 = 1;
+        break;
+    case eMD5:
+        m_Value.md5 = new CMD5;
+        break;
+    case eCityHash32:
+    case eCityHash64:
+    case eFarmHash32:
+    case eFarmHash64:
+        break;
+    default:
+        _ASSERT(0);
+    }
+}
+
+
+CHash::CHash(EMethod method)
+    : CChecksumBase((EMethodDef)method)
+{
+}
+
+
+CHash::CHash(const CHash& other)
+    : CChecksumBase(other)
+{
+}
+
+
+CHash& CHash::operator= (const CHash& other)
+{
+    CChecksumBase::operator=(other);
+    return *this;
+}
+
+
+void CHash::Calculate(const CTempString str, EMethod method, Uint4& hash)
+{
+    CHash h(method);
+    h.Calculate(str);
+    hash = h.GetResult32();
+}
+
+
+void CHash::Calculate(const CTempString str, EMethod method, Uint8& hash)
+{
+    CHash h(method);
+    h.Calculate(str);
+    hash = h.GetResult64();
+}
+
+
+void CHash::Calculate(const char* str, size_t len, EMethod method, Uint4& hash)
+{
+    CHash h(method);
+    h.Calculate(str, len);
+    hash = h.GetResult32();
+}
+
+
+void CHash::Calculate(const char* str, size_t len, EMethod method, Uint8& hash)
+{
+    CHash h(method);
+    h.Calculate(str, len);
+    hash = h.GetResult64();
+}
+
+
+CChecksum::CChecksum(EMethod method)
+    : CChecksumBase((EMethodDef)method)
+{
+}
+
+
+CChecksum::CChecksum(const CChecksum& other)
+    : CChecksumBase(other),
+      m_LineCount(other.m_LineCount)
+{
+}
+
+
+CChecksum& CChecksum::operator= (const CChecksum& other)
+{
+    CChecksumBase::operator=(other);
+    m_LineCount = other.m_LineCount;
+    return *this;
 }
 
 
 CNcbiOstream& CChecksum::WriteChecksum(CNcbiOstream& out) const
 {
-    if (!Valid()   ||  !out.good()) {
+    if (!out.good()) {
         return out;
     }
     out << sx_Start
@@ -274,9 +334,6 @@ CNcbiOstream& CChecksum::WriteChecksum(CNcbiOstream& out) const
 
 bool CChecksum::ValidChecksumLineLong(const char* line, size_t len) const
 {
-    if ( !Valid() ) {
-        return false;
-    }
     CNcbiOstrstream buffer;
     WriteChecksum(buffer);
     string buffer_str = CNcbiOstrstreamToString(buffer);
@@ -287,39 +344,14 @@ bool CChecksum::ValidChecksumLineLong(const char* line, size_t len) const
 }
 
 
-string CChecksum::GetHexSum(void) const
-{
-    switch ( GetMethod() ) {
-    case eNone:
-        return kEmptyStr;
-    case eMD5:
-        return m_Checksum.MD5->GetHexSum();
-    default:
-        if (GetChecksumBits() == 32) {
-            return NStr::NumericToString(GetChecksum32(), 0, 16);
-        }
-        if (GetChecksumBits() == 64) {
-            return NStr::NumericToString(GetChecksum64(), 0, 16);
-        }
-        _ASSERT(0);
-        return kEmptyStr;
-    }
-}
-
-
 CNcbiOstream& CChecksum::WriteHexSum(CNcbiOstream& out) const
 {
     if ( GetMethod() == eMD5 ) {
-        out << m_Checksum.MD5->GetHexSum();
+        out << m_Value.md5->GetHexSum();
     } else {
         IOS_BASE::fmtflags flags = out.setf(IOS_BASE::hex, IOS_BASE::basefield);
         out << setprecision(8);
-        if (GetChecksumBits() == 32) {
-            out << GetChecksum32();
-        }
-        if (GetChecksumBits() == 64) {
-            out << GetChecksum64();
-        }
+        out << GetChecksum();
         out.flags(flags);
     }
     return out;
@@ -342,20 +374,8 @@ CNcbiOstream& CChecksum::WriteChecksumData(CNcbiOstream& out) const
     case eCRC32C:
         out << "CRC32: ";
         break;
-    case eCityHash32:
-        out << "CityHash32: ";
-        break;
-    case eCityHash64:
-        out << "CityHash64: ";
-        break;
-    case eFarmHash32:
-        out << "FarmHash32: ";
-        break;
-    case eFarmHash64:
-        out << "FarmHash64: ";
-        break;
     default:
-        out << "none";
+        _ASSERT(0);
         return out;
     }
     WriteHexSum(out);
@@ -387,8 +407,7 @@ void CChecksum::AddFile(const string& file_path)
     }
     catch (CFileException& e) {
         f.Close();
-        NCBI_RETHROW(e, CChecksumException, eFileIO,
-                     "Error add checksum for file: " + file_path);
+        NCBI_RETHROW(e, CChecksumException, eFileIO, "Error add checksum for file: " + file_path);
         throw;
     }
 }
@@ -462,7 +481,7 @@ Uint4 ComputeFileCRC32(const string& path)
 }
 
 
-void CChecksum::InitTables(void)
+void CChecksumBase::InitTables(void)
 {
     s_InitTableCRC32Forward();
     s_InitTableCRC32Reverse();
@@ -1149,7 +1168,7 @@ Uint4 s_UpdateAdler32(Uint4 sum, const char* data, size_t len)
 }
 
 
-void CChecksum::PrintTables(CNcbiOstream& out)
+void CChecksumBase::PrintTables(CNcbiOstream& out)
 {
     InitTables();
     s_PrintTable(out, "s_CRC32TableForward", s_CRC32TableForward);
@@ -1158,47 +1177,47 @@ void CChecksum::PrintTables(CNcbiOstream& out)
 }
 
 
-void CChecksum::x_Update(const char* str, size_t count)
+void CChecksumBase::x_Update(const char* str, size_t count)
 {
-    switch ( GetMethod() ) {
+    switch ( m_Method ) {
     case eCRC32:
     case eCRC32CKSUM:
-        m_Checksum.CRC32 = s_UpdateCRC32Forward(m_Checksum.CRC32, str, count, s_CRC32TableForward);
+        m_Value.v32 = s_UpdateCRC32Forward(m_Value.v32, str, count, s_CRC32TableForward);
         break;
     case eCRC32ZIP:
     case eCRC32INSD:
-        m_Checksum.CRC32 = s_UpdateCRC32Reverse(m_Checksum.CRC32, str, count, s_CRC32TableReverse);
+        m_Value.v32 = s_UpdateCRC32Reverse(m_Value.v32, str, count, s_CRC32TableReverse);
         break;
     case eCRC32C:
 #ifdef USE_CRC32C_INTEL
         if ( s_IsCRC32CIntelEnabled() ) {
-            m_Checksum.CRC32 = s_UpdateCRC32CIntel(m_Checksum.CRC32, str, count);
+            m_Value.v32 = s_UpdateCRC32CIntel(m_Value.v32, str, count);
             break;
         }
 #endif
-        m_Checksum.CRC32 = s_UpdateCRC32Reverse(m_Checksum.CRC32, str, count, s_CRC32CTableReverse);
+        m_Value.v32 = s_UpdateCRC32Reverse(m_Value.v32, str, count, s_CRC32CTableReverse);
         break;
     case eAdler32:
-        m_Checksum.CRC32 = s_UpdateAdler32(m_Checksum.CRC32, str, count);
+        m_Value.v32 = s_UpdateAdler32(m_Value.v32, str, count);
         break;
     case eMD5:
-        m_Checksum.MD5->Update(str, count);
+        m_Value.md5->Update(str, count);
         break;
     case eCityHash32:
         _ASSERT(!m_CharCount);
-        m_Checksum.CRC32 = CityHash32(str, count);
+        m_Value.v32 = CityHash32(str, count);
         break;
     case eCityHash64:
         _ASSERT(!m_CharCount);
-        m_Checksum.CRC64 = CityHash64(str, count);
+        m_Value.v64 = CityHash64(str, count);
         break;
     case eFarmHash32:
         _ASSERT(!m_CharCount);
-        m_Checksum.CRC32 = farmhash::Hash32(str, count);
+        m_Value.v32 = farmhash::Hash32(str, count);
         break;
     case eFarmHash64:
         _ASSERT(!m_CharCount);
-        m_Checksum.CRC64 = farmhash::Hash64(str, count);
+        m_Value.v64 = farmhash::Hash64(str, count);
         break;
     default:
         _ASSERT(0);

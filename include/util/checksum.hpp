@@ -26,12 +26,12 @@
  *
  * ===========================================================================
  *
- * Author:  Eugene Vasilchenko
+ * Author:  Eugene Vasilchenko, Vladimir Ivanov
  *
  */
 
 /// @file checksum.hpp
-/// Checksum (CRC32 or MD5) calculation class.
+/// Checksum and hash calculation classes.
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/reader_writer.hpp>
@@ -49,47 +49,199 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// CChecksumBase -- Base class with auxiliary methods for CHash and CChecksum.
+/// 
+class NCBI_XUTIL_EXPORT CChecksumBase
+{
+protected:
+    /// All supported methods for CHash and CCheksum.
+    enum EMethodDef {
+        eNone,        ///< Undefined (for internal use).
+        eCRC32,       ///< 32-bit Cyclic Redundancy Check.
+                      ///< Most significant bit first, no inversions.
+        eCRC32ZIP,    ///< Exact zip CRC32. Same polynomial as eCRC32.
+                      ///< Least significant bit are processed first,
+                      ///< extra inversions at the beginning and the end.
+        eCRC32INSD,   ///< Inverted CRC32ZIP. Hash function used in
+                      ///< the ID system to verify sequence uniqueness.
+        eCRC32CKSUM,  ///< CRC32 implemented by cksum utility.
+                      ///< Same as eCRC32, but with data length included
+                      ///< in CRC, and extra inversion at the end.
+        eCRC32C,      ///< CRC32C (Castagnoli). Better polynomial used in some
+                      ///< places (iSCSI). This method has hardware support in new
+                      ///< Intel processors. Least significant bits are processed first,
+                      ///< extra inversions at the beginning and the end.
+        eAdler32,     ///< A bit faster than CRC32ZIP, not recommended for small data sizes.
+        eMD5,         ///< Message Digest version 5.
+
+        /// @attention
+        /// You should not use CityHash for persistent storage.  
+        /// CityHash does not maintain backward compatibility with previous versions.
+        eCityHash32,  ///< CityHash 32-bit.
+        eCityHash64,  ///< CityHash 64-bit.
+
+        /// @attention
+        /// You should not use FarmHash for persistent storage.  
+        /// Both FarmHash 32/64-bit methods may change from time to time,
+        /// may differ on different platforms or compiler flags.
+        eFarmHash32,  ///< FarmHash 32-bit.
+        eFarmHash64   ///< FarmHash 64-bit.
+    };
+
+public:
+    /// Default constructor.
+    CChecksumBase(EMethodDef method);
+    /// Destructor.
+    ~CChecksumBase();
+    /// Copy constructor.
+    CChecksumBase(const CChecksumBase& other);
+    /// Assignment operator.
+    CChecksumBase& operator=(const CChecksumBase& other);
+
+    /// Return size of checksum/hash in bytes, depending on used method.
+    /// @sa GetMethod, GetBits 
+    size_t GetSize(void) const;
+
+    /// Return size of checksum/hash in bits (32, 64).
+    /// @sa GetSize
+    size_t GetBits(void) const;
+
+    /// Return calculated result.
+    /// @attention Only valid in 32-bit modes, like: CRC32*, Adler32, CityHash32, FarmHash32.
+    Uint4 GetResult32(void) const;
+    
+    /// Return calculated result.
+    /// @attention Only valid in 64-bit modes, like: CityHash64, FarmHash64.
+    Uint8 GetResult64(void) const;
+
+    /// Return string with checksum/hash in hexadecimal form.
+    string GetResultHex(void) const;
+
+public:
+    /// Initialize static tables used in CRC32 calculation.
+    /// There is no need to call this method since it's done internally when necessary.
+    static void InitTables(void);
+
+    /// Print C++ code for CRC32 tables for direct inclusion into library.
+    /// Such inclusion eliminates the need to initialize CRC32 tables.
+    static void PrintTables(CNcbiOstream& out);
+
+    ///
+    EMethodDef x_GetMethod(void) const {
+        return m_Method;
+    };
+
+protected:
+    EMethodDef m_Method;      ///< Current method
+    size_t     m_CharCount;   ///< Number of processed chars
+
+    /// Checksum/Hash computation result
+    union {
+        Uint4 v32;   ///< Used to store 32-bit results
+        Uint8 v64;   ///< Used to store 64-bit results
+        CMD5* md5;   ///< Used for MD5 calculation
+    } m_Value;
+
+    /// Update current control sum with data provided.
+    void x_Update(const char* str, size_t len);
+    /// Reset the object to prepare it to the next computation using selected method.
+    void x_Reset(EMethodDef method);
+    /// Cleanup (used in destructor and assignment operator).
+    void x_Free(void);
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CHash -- Hash calculator
+///
+/// This class is used to compute hash.
+///
+/// @note
+///   This class may use static tables (for CRC32 based methods only).
+///   This presents a potential race condition in MT programs. To avoid races
+///   call static InitTables() method before first concurrent use of CHash
+///   if use it with CRC32-based methods.
+///
+/// @attention
+///   You should not use some CHash methods for persistent storage, 
+///   like CityHash or FarmHash for example. It is netter to use CChecksum class
+///   if you need to do that.
+/// @sa
+///   CChecksumBase::EMethods. CChecksum
+
+class NCBI_XUTIL_EXPORT CHash : public CChecksumBase
+{
+public:
+    /// Method used to compute hash.
+    /// @sa CChecksumBase::EMethods
+    enum EMethod {
+        eCRC32       = CChecksumBase::eCRC32C,
+        eCRC32ZIP    = CChecksumBase::eCRC32ZIP,
+        eCRC32INSD   = CChecksumBase::eCRC32INSD,
+        eCRC32CKSUM  = CChecksumBase::eCRC32CKSUM,
+        eCRC32C      = CChecksumBase::eCRC32C,
+        eAdler32     = CChecksumBase::eAdler32,
+        eCityHash32  = CChecksumBase::eCityHash32,
+        eCityHash64  = CChecksumBase::eCityHash64,
+        eFarmHash32  = CChecksumBase::eFarmHash32,
+        eFarmHash64  = CChecksumBase::eFarmHash64,
+        eDefault     = eCityHash64
+    };
+
+    /// Default constructor.
+    CHash(EMethod method = eDefault);
+    /// Copy constructor.
+    CHash(const CHash& other);
+    /// Assignment operator.
+    CHash& operator=(const CHash& other);
+
+    /// Get current method used to compute hash.
+    EMethod GetMethod(void) const;
+
+    /// Calculate hash.
+    /// @sa GetResult32(), GetResult66()
+    void Calculate(const CTempString str);
+    void Calculate(const char* str, size_t len);
+
+    /// Static methods for simplified one line calculations.
+    static void Calculate(const CTempString str, EMethod method, Uint4& hash);
+    static void Calculate(const CTempString str, EMethod method, Uint8& hash);
+    static void Calculate(const char* str, size_t len, EMethod method, Uint4& hash);
+    static void Calculate(const char* str, size_t len, EMethod method, Uint8& hash);
+
+    /// Reset the object to prepare it to the next computation using another method.
+    void Reset(EMethod method);
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// CChecksum -- Checksum calculator
 ///
-/// This class is used to compute control sums (CRC32, Adler32, MD5).
-/// Please note that this class uses static tables. This presents a potential
-/// race condition in MT programs. To avoid races call static InitTables method
-/// before first concurrent use of CChecksum.
+/// This class is used to compute control sums.
 ///
-class NCBI_XUTIL_EXPORT CChecksum
+/// @note
+///   This class may use static tables (for CRC32 based methods only).
+///   This presents a potential race condition in MT programs. To avoid races
+///   call static InitTables() method before first concurrent use of CChecksum.
+///
+class NCBI_XUTIL_EXPORT CChecksum : public CChecksumBase
 {
 public:
     /// Method used to compute control sum.
+    /// @sa CChecksumBase::EMethods
     enum EMethod {
-        eNone,             ///< No checksum in file.
-        eCRC32,            ///< 32-bit Cyclic Redundancy Check.
-                           ///< Most significant bit first, no inversions.
-        eCRC32ZIP,         ///< Exact zip CRC32. Same polynomial as eCRC32.
-                           ///< Least significant bit are processed first,
-                           ///< extra inversions at the beginning and the end.
-        eCRC32INSD,        ///< Inverted CRC32ZIP. Hash function used in
-                           ///< the ID system to verify sequence uniqueness.
-        eMD5,              ///< Message Digest version 5.
-        eAdler32,          ///< A bit faster than CRC32ZIP, not recommended
-                           ///< for small data sizes.
-        eCRC32CKSUM,       ///< CRC32 implemented by cksum utility.
-                           ///< Same as eCRC32, but with data length included
-                           ///< in CRC, and extra inversion at the end.
-        eCRC32C,           ///< CRC32C (Castagnoli). Better polynomial used in some
-                           ///< places (iSCSI). This method has hardware support in new
-                           ///< Intel processors. Least significant bits are processed first,
-                           ///< extra inversions at the beginning and the end.
-
-        eCityHash32,       ///< CityHash 32-bit. Can be used with Calculate() only.
-        eCityHash64,       ///< CityHash 64-bit. Can be used with Calculate() only.
-
-        // ATTENTION! 
-        // FarmHash methods may change from time to time, may differ on different platforms,
-        // may differ depending on NDEBUG. So, shouldn't be used for storing. 
-        
-        eFarmHash32,       ///< FarmHash 32-bit. Can be used with Calculate() only.
-        eFarmHash64,       ///< FarmHash 64-bit. Can be used with Calculate() only.
-        eDefault = eCRC32
+        eCRC32       = CChecksumBase::eCRC32,
+        eCRC32ZIP    = CChecksumBase::eCRC32ZIP,
+        eCRC32INSD   = CChecksumBase::eCRC32INSD,
+        eCRC32CKSUM  = CChecksumBase::eCRC32CKSUM,
+        eCRC32C      = CChecksumBase::eCRC32C,
+        eAdler32     = CChecksumBase::eAdler32,
+        eMD5         = CChecksumBase::eMD5,
+        eDefault     = eCRC32
     };
     enum {
         kMinimumChecksumLength = 20
@@ -98,67 +250,39 @@ public:
     /// Default constructor.
     CChecksum(EMethod method = eDefault);
     /// Copy constructor.
-    CChecksum(const CChecksum& checksum);
-    /// Destructor.
-    ~CChecksum();
+    CChecksum(const CChecksum& other);
     /// Assignment operator.
-    CChecksum& operator=(const CChecksum& checksum);
+    CChecksum& operator=(const CChecksum& other);
 
-    /// Get current method used to compute control sum.
+    /// Get current method used to compute checksum.
     EMethod GetMethod(void) const;
 
-    /// Check that method is specified (not equal eNone).
-    bool Valid(void) const;
-
     /// Return size of checksum in bytes.
-    size_t GetChecksumSize(void) const;
-
-    /// Return size of checksum in bits (32, 64).
-    size_t GetChecksumBits(void) const {
-        return GetChecksumSize()*8;
+    /// Use this name for backward compatibility.
+    /// @sa GetSize()
+    size_t GetChecksumSize(void) const {
+        return GetSize();
     };
 
-    /// Return calculated checksum (legacy 32-bit version).
-    // @sa GetChecksum32, GetChecksum64
+    /// Return calculated checksum.
+    /// @attention
+    ///   Valid for all methods except MD5, please use GetMD5Digest() instead.
+    /// @sa GetMD5Digest
     Uint4 GetChecksum(void) const {
-        return GetChecksum32();
-    }
-
-    /// Return calculated checksum.
-    /// Only valid in 32-bit modes, like: CRC32*, Adler32, CityHash32, FarmHash32.
-    Uint4 GetChecksum32(void) const;
-
-    /// Return calculated checksum.
-    /// Only valid in 64-bit modes, like: CityHash64, FarmHash64.
-    Uint8 GetChecksum64(void) const;
-
-    /// Return string with checksum in hexadecimal form.
-    string GetHexSum(void) const;
+        return GetResult32();
+    };
 
     /// Return calculated MD5 digest.
-    /// @attention Only valid in MD5 mode!
+    /// @attention  Only valid in MD5 mode!
     void GetMD5Digest(unsigned char digest[16]) const;
     void GetMD5Digest(string& str) const;
 
-    /// Reset the object to prepare it to the next checksum computation.
-    void Reset(EMethod method = eNone/**<keep current method*/);
-
-    /// One pass method to calculate checksum/hash.
-    /// Similar to AddChars(), but with additional checks, it doesn't allow
-    /// to update calculated checksum anymore. Cannot be combined with any Add*() methods.
-    /// @note
-    ///   Should be used with eCityHash32, eCitiHash64, eFarmHash32 and eFarmHash64.
-    /// @sa AddChars
-    void Calculate(const CTempString str);
-    void Calculate(const char* str, size_t len);
-
-    // Methods used for file/stream operations
-    //
-    // ATTENTION!
-    //
-    // The following Add*() methods are not implemented for methods
-    // eCityHash32, eCitiHash64, eFarmHash32 and eFarmHash64!
-    // Use Calculate().
+    /// Return string with checksum in hexadecimal form.
+    /// Use this name for backward compatibility.
+    /// @sa GetHex()
+    string GetHexSum(void) const {
+        return GetResultHex();
+    };
 
     /// Update current control sum with data provided.
     void AddChars(const char* str, size_t len);
@@ -166,19 +290,22 @@ public:
     void AddLine(const string& line);
     void NextLine(void);
 
-    /// Compute checksum for the file, add it to this checksum.
-    /// On any error an exception will be thrown, and the checksum
-    /// will not change.
+    /// Update checksum with the file data.
+    /// On error an exception will be thrown, and the checksum not change.
     void AddFile(const string& file_path);
 
-    /// Compute checksum for the stream, add it to this checksum.
-    /// On any error an exception will be thrown, and the checksum
-    /// will not change.
+    /// Update checksum with the stream data.
+    /// On error an exception will be thrown, and the checksum not change.
     /// @param is
     ///   Input stream to read data from.
     ///   Please use ios_base::binary flag for the input stream
     ///   if you want to count all symbols there, including end of lines.
     void AddStream(CNcbiIstream& is);
+
+    /// Reset the object to prepare it to the next checksum computation with the same method.
+    void Reset(void);
+    /// Reset the object to prepare it to the next checksum computation with different method.
+    void Reset(EMethod method);
 
     /// Check for checksum line.
     bool ValidChecksumLine(const char* line, size_t len) const;
@@ -189,33 +316,11 @@ public:
     CNcbiOstream& WriteChecksumData(CNcbiOstream& out) const;
     CNcbiOstream& WriteHexSum(CNcbiOstream& out) const;
 
-public:
-    /// Initialize static tables used in checksum calculation.
-    /// There is no need to call this method since it's done internally.
-    static void InitTables(void);
-
-    /// Print C++ code for CRC32 tables for direct inclusion into library.
-    /// It also eliminates the need to initialize CRC32 tables.
-    static void PrintTables(CNcbiOstream& out);
-
 private:
-    size_t   m_LineCount;  ///< Number of lines
-    size_t   m_CharCount;  ///< Number of chars
-    EMethod  m_Method;     ///< Current method
-
-    /// Checksum computation results
-    union {
-        Uint4 CRC32;  ///< Used to store 32-bit checksums
-        Uint8 CRC64;  ///< Used to store 64-bit checksums
-        CMD5* MD5;    ///< Used for MD5 calculation
-    } m_Checksum;
+    size_t  m_LineCount;   ///< Number of processed lines
 
     /// Check for checksum line.
     bool ValidChecksumLineLong(const char* line, size_t len) const;
-    /// Update current control sum with data provided.
-    void x_Update(const char* str, size_t len);
-    /// Cleanup (used in destructor and assignment operator).
-    void x_Free(void);
 };
 
 
@@ -283,8 +388,7 @@ public:
     virtual ~CChecksumStreamWriter(void);
 
     /// Virtual methods from IWriter
-    virtual ERW_Result Write(const void* buf, size_t count,
-                             size_t* bytes_written = 0);
+    virtual ERW_Result Write(const void* buf, size_t count, size_t* bytes_written = 0);
     virtual ERW_Result Flush(void);
 
     /// Return checksum
@@ -304,31 +408,76 @@ private:
 //
 
 inline
+size_t CChecksumBase::GetSize(void) const
+{
+    switch ( m_Method ) {
+    case eMD5:  
+        return 16;
+    case eFarmHash64:
+    case eCityHash64:
+        return 8;
+    default:
+        return 4;
+    }
+}
+
+inline 
+size_t CChecksumBase::GetBits(void) const
+{
+    return GetSize() * 8;
+}
+
+inline
+CHash::EMethod CHash::GetMethod(void) const
+{
+    return (EMethod)m_Method;
+}
+
+inline
 CChecksum::EMethod CChecksum::GetMethod(void) const
 {
-    return m_Method;
+    return (EMethod)m_Method;
 }
 
 inline
-bool CChecksum::Valid(void) const
+void CChecksumBase::x_Free(void)
 {
-    return GetMethod() != eNone;
+    if ( m_Method == eMD5 ) {
+        delete m_Value.md5;
+        m_Value.md5 = NULL;
+    }
 }
 
 inline
-void CChecksum::Calculate(const CTempString str)
+void CHash::Calculate(const CTempString str)
 {
-    _ASSERT(!m_CharCount);
     x_Update(str.data(), str.size());
     m_CharCount = str.size();
 }
 
 inline
-void CChecksum::Calculate(const char* str, size_t count)
+void CHash::Calculate(const char* str, size_t count)
 {
-    _ASSERT(!m_CharCount);
     x_Update(str, count);
     m_CharCount = count;
+}
+
+inline
+void CHash::Reset(EMethod method)
+{
+    x_Reset((EMethodDef)method);
+}
+
+inline
+void CChecksum::Reset(EMethod method)
+{
+    x_Reset((EMethodDef)method);
+}
+
+inline
+void CChecksum::Reset(void)
+{
+    x_Reset(m_Method);
 }
 
 inline
@@ -370,14 +519,15 @@ inline
 void CChecksum::GetMD5Digest(unsigned char digest[16]) const
 {
     _ASSERT(GetMethod() == eMD5);
-    m_Checksum.MD5->Finalize(digest);
+    m_Value.md5->Finalize(digest);
 }
 
 inline
 void CChecksum::GetMD5Digest(string& str) const
 {
+    _ASSERT(GetMethod() == eMD5);
     unsigned char buf[16];
-    m_Checksum.MD5->Finalize(buf);
+    m_Value.md5->Finalize(buf);
     str.clear();
     str.insert(str.end(), (const char*)buf, (const char*)buf + 16);
 }
@@ -387,7 +537,6 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CChecksum& checksum)
 {
     return checksum.WriteChecksum(out);
 }
-
 
 inline
 const CChecksum& CChecksumStreamWriter::GetChecksum(void) const
