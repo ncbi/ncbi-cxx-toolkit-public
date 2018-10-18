@@ -949,6 +949,11 @@ bool SetParams(const CArgs& args)
     }
 
     params_imp.m_sort_order = static_cast<ESortOrder>(args["o"].AsInteger());
+    params_imp.m_vdb_mode = args["U"].AsBoolean();
+    if (params_imp.m_vdb_mode) {
+        params_imp.m_sort_order = eUnsorted;
+    }
+
     params_imp.m_preserve_input_path = args["I"].AsBoolean();
 
     if (args["i"].HasValue() && args["f"].HasValue()) {
@@ -1123,7 +1128,6 @@ bool SetParams(const CArgs& args)
     params_imp.m_dblink_override = args["X"].AsBoolean();
 
     if (params_imp.m_vdb_mode) {
-        params_imp.m_sort_order = eUnsorted;
         params_imp.m_accessions_sorted_in_file = false;
         params_imp.m_id_acc_file.clear();
     }
