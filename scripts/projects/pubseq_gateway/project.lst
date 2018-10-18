@@ -1,4 +1,5 @@
 corelib$
+corelib/impl
 corelib/hash_impl$
 connect$
 connect/ext$
@@ -69,3 +70,4 @@ util/cache$
 util/sequtil$
 util/xregexp
 util/compress
+util/checksum
