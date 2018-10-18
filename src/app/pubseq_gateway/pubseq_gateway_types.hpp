@@ -73,9 +73,9 @@ enum EServIncludeData {
     fServHash = (1 << 11),
     fServDateChanged = (1 << 12),
 
-    fServBioseqFields = fServCanonicalId | fServSeqIds | fServMoleculeType |
-                        fServLength | fServState | fServBlobId |
-                        fServTaxId | fServHash | fServDateChanged
+    fServAllBioseqFields = fServCanonicalId | fServSeqIds | fServMoleculeType |
+                           fServLength | fServState | fServBlobId |
+                           fServTaxId | fServHash | fServDateChanged
 };
 
 // Bit-set of EServIncludeData flags
@@ -88,6 +88,17 @@ enum EOutputFormat {
     eNativeFormat,
 
     eUnknownFormat
+};
+
+
+enum ETSEOption {
+    eNoneTSE,
+    eSlimTSE,
+    eSmartTSE,
+    eWholeTSE,
+    eOrigTSE,
+
+    eUnknownTSE
 };
 
 

@@ -146,6 +146,9 @@ private:
     EOutputFormat x_GetOutputFormat(const string &  param_name,
                                     const CTempString &  param_value,
                                     string &  err_msg) const;
+    ETSEOption x_GetTSEOption(const string &  param_name,
+                              const CTempString &  param_value,
+                              string &  err_msg) const;
     int x_PopulateSatToKeyspaceMap(void);
 
 private:

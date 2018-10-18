@@ -103,26 +103,20 @@ private:
     {
         SBlobFetchDetails(const SBlobRequest &  blob_request) :
             m_BlobId(blob_request.m_BlobId),
-            m_NeedBlobProp(blob_request.m_NeedBlobProp),
-            m_NeedChunks(blob_request.m_NeedChunks),
-            m_Optional(blob_request.m_Optional),
+            m_TSEOption(blob_request.m_TSEOption),
             m_BlobPropSent(false),
             m_BlobIdType(blob_request.GetBlobIdentificationType()),
             m_TotalSentBlobChunks(0), m_FinishedRead(false),
-            m_IncludeDataFlags(blob_request.m_IncludeDataFlags),
             m_BlobPropItemId(0),
             m_BlobChunkItemId(0)
         {}
 
         SBlobFetchDetails() :
-            m_NeedBlobProp(true),
-            m_NeedChunks(true),
-            m_Optional(false),
+            m_TSEOption(eUnknownTSE),
             m_BlobPropSent(false),
             m_BlobIdType(eBySatAndSatKey),
             m_TotalSentBlobChunks(0),
             m_FinishedRead(false),
-            m_IncludeDataFlags(0),
             m_BlobPropItemId(0),
             m_BlobChunkItemId(0)
         {}
@@ -132,10 +126,6 @@ private:
             // At the time of an error report it needs to be known to what the
             // error message is associated - to blob properties or to blob
             // chunks
-            if (m_NeedChunks == false)
-                return true;
-            if (m_NeedBlobProp == false)
-                return false;
             return !m_BlobPropSent;
         }
 
@@ -154,16 +144,13 @@ private:
         }
 
         SBlobId                             m_BlobId;
+        ETSEOption                          m_TSEOption;
 
-        bool                                m_NeedBlobProp;
-        bool                                m_NeedChunks;
-        bool                                m_Optional;
         bool                                m_BlobPropSent;
 
         EBlobIdentificationType             m_BlobIdType;
         int32_t                             m_TotalSentBlobChunks;
         bool                                m_FinishedRead;
-        TServIncludeData                    m_IncludeDataFlags;
 
         unique_ptr<CCassBlobTaskLoadBlob>   m_Loader;
 
@@ -213,6 +200,7 @@ public:
 
 private:
     void x_ProcessResolveRequest(void);
+    void x_ProcessGetRequest(void);
     void x_StartMainBlobRequest(void);
     bool x_AllFinishedRead(void) const;
     void x_SendReplyCompletion(bool  forced = false);
@@ -334,7 +322,8 @@ class CBlobPropCallback
 
     private:
         void x_RequestOriginalBlobChunks(CBlobRecord const &  blob);
-        void x_RequestID2BlobChunks(CBlobRecord const &  blob);
+        void x_RequestID2BlobChunks(CBlobRecord const &  blob,
+                                    bool  info_blob_only);
         void x_ParseId2Info(CBlobRecord const &  blob);
         void x_RequestId2SplitBlobs(const string &  sat_name);
 

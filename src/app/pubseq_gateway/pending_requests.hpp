@@ -42,10 +42,9 @@ struct SBlobRequest
 {
     // Construct the request for the case of sat/sat_key request
     SBlobRequest(const SBlobId &  blob_id,
-                 int64_t  last_modified) :
-        m_NeedBlobProp(true),
-        m_NeedChunks(true),
-        m_Optional(false),
+                 int64_t  last_modified,
+                 ETSEOption  tse_option) :
+        m_TSEOption(tse_option),
         m_BlobIdType(eBySatAndSatKey),
         m_BlobId(blob_id),
         m_LastModified(last_modified)
@@ -56,15 +55,12 @@ struct SBlobRequest
     // Construct the request for the case of seq_id/id_type request
     SBlobRequest(const CTempString &  seq_id,
                  int  seq_id_type,
-                 TServIncludeData  include_data_flags) :
-        m_NeedBlobProp(true),
-        m_NeedChunks(false),
-        m_Optional(false),
+                 ETSEOption  tse_option) :
+        m_TSEOption(tse_option),
         m_BlobIdType(eBySeqId),
         m_LastModified(INT64_MIN),
         m_SeqId(seq_id),
-        m_SeqIdType(seq_id_type),
-        m_IncludeDataFlags(include_data_flags)
+        m_SeqIdType(seq_id_type)
     {}
 
     EBlobIdentificationType  GetBlobIdentificationType(void) const
@@ -73,10 +69,7 @@ struct SBlobRequest
     }
 
 public:
-    bool                        m_NeedBlobProp;
-    bool                        m_NeedChunks;
-    bool                        m_Optional;
-
+    ETSEOption                  m_TSEOption;
     EBlobIdentificationType     m_BlobIdType;
 
     // Fields in case of request by sat/sat_key
@@ -86,7 +79,6 @@ public:
     // Fields in case of request by seq_id/seq_id_type
     CTempString                 m_SeqId;
     int                         m_SeqIdType;
-    TServIncludeData            m_IncludeDataFlags;
 };
 
 

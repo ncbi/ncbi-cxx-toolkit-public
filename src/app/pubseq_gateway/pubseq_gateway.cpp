@@ -580,6 +580,39 @@ CPubseqGatewayApp::x_GetOutputFormat(const string &  param_name,
 }
 
 
+ETSEOption
+CPubseqGatewayApp::x_GetTSEOption(const string &  param_name,
+                                  const CTempString &  param_value,
+                                  string &  err_msg) const
+{
+    static string   none = "none";
+    static string   whole = "whole";
+    static string   orig = "orig";
+    static string   smart = "smart";
+    static string   slim = "slim";
+
+    if (param_value == none)
+        return eNoneTSE;
+    if (param_value == whole)
+        return eWholeTSE;
+    if (param_value == orig)
+        return eOrigTSE;
+    if (param_value == smart)
+        return eSmartTSE;
+    if (param_value == slim)
+        return eSlimTSE;
+
+    err_msg = "Malformed '" + param_name + "' parameter. "
+              "Acceptable values are '" +
+              none + "', '" +
+              whole + "', '" +
+              orig + "', '" +
+              smart + "' and '" +
+              slim + "'.";
+    return eUnknownTSE;
+}
+
+
 bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
                                               const CTempString &  param_value,
                                               int &  converted,

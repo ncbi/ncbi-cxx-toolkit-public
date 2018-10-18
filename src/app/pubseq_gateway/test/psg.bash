@@ -51,7 +51,7 @@ odirname=$(dirname $ofile)
 obasename=$(basename $odirname)
 
 # full_url="http://nctest21:2180/${url}"
-full_url="http://iebdev12:2280/${url}"
+full_url="http://localhost:2180/${url}"
 if [[ $url == ADMIN* ]]; then
     curl -I --HEAD -s -i "${full_url}" | grep -v '^Date: ' | grep -v '^Content-Length: ' | ${cdir}/printable_string -z > $ofile
     exit 0
@@ -63,7 +63,7 @@ if [[ $obasename == "many_chunk_blob" ]]; then
     exit 0
 fi
 
-if [[ $obasename == "get_splitted_3150015__12" ]]; then
+if [[ $obasename == "get_AFP68755__5" ]] || [[ $obasename == "get_AFP68755" ]] || [[ $obasename == "get_splitted_tse_whole" ]] || [[ $obasename == "get_splitted_tse_orig" ]] || [[ $obasename == "get_non_splitted_tse_smart" ]] || [[ $obasename == "get_non_splitted_tse_whole" ]] || [[ $obasename == "get_non_splitted_tse_orig" ]] || [[ $obasename == "get_blob_splitted_tse_whole" ]] || [[ $obasename == "get_blob_splitted_tse_orig" ]] || [[ $obasename == "get_blob_non_splitted_tse_smart" ]] || [[ $obasename == "get_blob_non_splitted_tse_whole" ]] || [[ $obasename == "get_blob_non_splitted_tse_orig" ]]; then
     # The chunks may come in arbitrary order so diff may fail
     curl -s -i "${full_url}" | grep --text '^PSG-Reply-Chunk: ' | sed  -r 's/item_id=[0-9]+&//g' | sort > $ofile
     exit 0

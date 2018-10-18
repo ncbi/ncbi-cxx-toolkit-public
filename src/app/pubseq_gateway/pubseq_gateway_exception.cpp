@@ -98,6 +98,8 @@ const char *  CPubseqGatewayException::GetErrCodeString(void) const
             return "eCannotUpdateDb";
         case eInvalidRequest:
             return "eInvalidRequest";
+        case eUnknownTSEOption:
+            return "eUnknownTSEOption";
         case eAccessionMismatch:
             return "eAccessionMismatch";
         case eVersionMismatch:

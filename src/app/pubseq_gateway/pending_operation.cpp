@@ -210,16 +210,18 @@ void CPendingOperation::Clear()
 void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
 {
     m_Reply = &resp;
-
-    // There are a few options here:
-    // - this is a resolution request
-    // - the blobs were requested by sat/sat_key
-    // - the blob was requested by a seq_id/seq_id_type
-    if (m_IsResolveRequest) {
+    if (m_IsResolveRequest)
         x_ProcessResolveRequest();
-        return;
-    }
+    else
+        x_ProcessGetRequest();
+}
 
+
+void CPendingOperation::x_ProcessGetRequest(void)
+{
+    // Get request could be one of the following:
+    // - the blob was requested by a sat/sat_key pair
+    // - the blob was requested by a seq_id/seq_id_type pair
     if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
         // By seq_id -> search for the bioseq key info in the cache only
         string          err_msg;
@@ -296,34 +298,13 @@ void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
             // This is server data inconsistency error, so 500 (not 404)
             UpdateOverallStatus(CRequestStatus::e500_InternalServerError);
             x_SendReplyCompletion(true);
-            resp.Send(m_Chunks, true);
+            m_Reply->Send(m_Chunks, true);
             m_Chunks.clear();
             return;
         }
 
         // retrieve BLOB_PROP & CHUNKS (if needed)
         m_BlobRequest.m_BlobId = blob_id;
-
-        // Calculate effective no_tse flag
-        if (m_BlobRequest.m_IncludeDataFlags & fServOrigTSE ||
-            m_BlobRequest.m_IncludeDataFlags & fServWholeTSE)
-            m_BlobRequest.m_IncludeDataFlags &= ~fServNoTSE;
-
-        if (m_BlobRequest.m_IncludeDataFlags & fServNoTSE) {
-            m_BlobRequest.m_NeedBlobProp = true;
-            m_BlobRequest.m_NeedChunks = false;
-            m_BlobRequest.m_Optional = false;
-        } else {
-            if (m_BlobRequest.m_IncludeDataFlags & fServOrigTSE) {
-                m_BlobRequest.m_NeedBlobProp = true;
-                m_BlobRequest.m_NeedChunks = true;
-                m_BlobRequest.m_Optional = false;
-            } else {
-                m_BlobRequest.m_NeedBlobProp = true;
-                m_BlobRequest.m_NeedChunks = false;
-                m_BlobRequest.m_Optional = false;
-            }
-        }
     }
 
     x_StartMainBlobRequest();
@@ -439,16 +420,14 @@ void CPendingOperation::x_StartMainBlobRequest(void)
                             m_Timeout, m_MaxRetries, m_Conn,
                             m_BlobRequest.m_BlobId.m_SatName,
                             std::move(blob_record),
-                            m_BlobRequest.m_NeedChunks,
-                            nullptr));
+                            false, nullptr));
     } else if (m_BlobRequest.m_LastModified == INT64_MIN) {
         m_MainBlobFetchDetails->m_Loader.reset(
             new CCassBlobTaskLoadBlob(
                             m_Timeout, m_MaxRetries, m_Conn,
                             m_BlobRequest.m_BlobId.m_SatName,
                             m_BlobRequest.m_BlobId.m_SatKey,
-                            m_BlobRequest.m_NeedChunks,
-                            nullptr));
+                            false, nullptr));
     } else {
         m_MainBlobFetchDetails->m_Loader.reset(
             new CCassBlobTaskLoadBlob(
@@ -456,8 +435,7 @@ void CPendingOperation::x_StartMainBlobRequest(void)
                             m_BlobRequest.m_BlobId.m_SatName,
                             m_BlobRequest.m_BlobId.m_SatKey,
                             m_BlobRequest.m_LastModified,
-                            m_BlobRequest.m_NeedChunks,
-                            nullptr));
+                            false, nullptr));
     }
 
     m_MainBlobFetchDetails->m_Loader->SetDataReadyCB(
@@ -470,11 +448,6 @@ void CPendingOperation::x_StartMainBlobRequest(void)
     m_MainBlobFetchDetails->m_Loader->SetPropsCallback(
                 CBlobPropCallback(this, m_Reply,
                                   m_MainBlobFetchDetails.get()));
-
-    if (m_BlobRequest.m_NeedChunks)
-        m_MainBlobFetchDetails->m_Loader->SetChunkCallback(
-                    CBlobChunkCallback(this, m_Reply,
-                                       m_MainBlobFetchDetails.get()));
 
     m_MainBlobFetchDetails->m_Loader->Wait();
 }
@@ -1017,7 +990,7 @@ void CPendingOperation::x_SendBioseqInfo(const string &  protobuf_bioseq_info,
         ConvertBioseqInfoToJson(
                 bioseq_info,
                 m_IsResolveRequest ? m_ResolveRequest.m_IncludeDataFlags :
-                                     m_BlobRequest.m_IncludeDataFlags,
+                                     fServAllBioseqFields,
                 data_to_send);
     } else {
         if (protobuf_bioseq_info.empty())
@@ -1373,49 +1346,81 @@ void CBlobPropCallback::operator()(CBlobRecord const &  blob, bool is_found)
     CRequestContextResetter     context_resetter;
     m_PendingOp->x_SetRequestContext();
 
-    // Need to skip properties in two cases:
-    // - no props asked
-    // - not found and optional
-    if (m_FetchDetails->m_NeedBlobProp == false)
-        return;
-    if (m_FetchDetails->m_Optional && is_found == false) {
-        m_FetchDetails->m_FinishedRead = true;
-        m_PendingOp->x_SendReplyCompletion();
-        return;
-    }
-
     if (is_found) {
         // Found, send back as JSON
         CJsonNode   json = ConvertBlobPropToJson(blob);
         m_PendingOp->PrepareBlobPropData(m_FetchDetails, json.Repr());
 
-        if (m_FetchDetails->m_NeedChunks == false) {
-            m_FetchDetails->m_FinishedRead = true;
-            if (m_FetchDetails->m_IncludeDataFlags & fServNoTSE) {
-                // Reply is finished, the only blob prop were needed
+        // Note: initially only blob_props are requested and at that moment the
+        //       TSE option is 'known'. So the initial request should be
+        //       finished, see m_FinishedRead = true
+        //       In the further requests of the blob data regardless with blob
+        //       props or not, the TSE option is set to unknown so the request
+        //       will be finished at the moment when blob chunks are handled.
+        switch (m_FetchDetails->m_TSEOption) {
+            case eNoneTSE:
+                m_FetchDetails->m_FinishedRead = true;
+                // Nothing else to be sent;
                 m_PendingOp->PrepareBlobPropCompletion(m_FetchDetails);
                 m_PendingOp->x_SendReplyCompletion();
-            } else {
-                // Not the end; need to decide about the other two blobs or the
-                // original one
+                break;
+            case eSlimTSE:
+                m_FetchDetails->m_FinishedRead = true;
                 if (blob.GetId2Info().empty()) {
-                    // Request original blob chunks
-
-                    // It is important to send completion before: the new
-                    // request overwrites the main one
+                    // Nothing else to be sent
                     m_PendingOp->PrepareBlobPropCompletion(m_FetchDetails);
-                    x_RequestOriginalBlobChunks(blob);
+                    m_PendingOp->x_SendReplyCompletion();
                 } else {
-                    // Request chunks of two other ID2 blobs.
-                    x_RequestID2BlobChunks(blob);
+                    // Request the split INFO blob only
+                    x_RequestID2BlobChunks(blob, true);
 
                     // It is important to send completion after: there could be
                     // an error of converting/translating ID2 info
                     m_PendingOp->PrepareBlobPropCompletion(m_FetchDetails);
                 }
-            }
-        } else {
-            m_PendingOp->PrepareBlobPropCompletion(m_FetchDetails);
+                break;
+            case eSmartTSE:
+                m_FetchDetails->m_FinishedRead = true;
+                if (blob.GetId2Info().empty()) {
+                    // Request original blob chunks
+                    m_PendingOp->PrepareBlobPropCompletion(m_FetchDetails);
+                    x_RequestOriginalBlobChunks(blob);
+                } else {
+                    // Request the split INFO blob only
+                    x_RequestID2BlobChunks(blob, true);
+
+                    // It is important to send completion after: there could be
+                    // an error of converting/translating ID2 info
+                    m_PendingOp->PrepareBlobPropCompletion(m_FetchDetails);
+                }
+                break;
+            case eWholeTSE:
+                m_FetchDetails->m_FinishedRead = true;
+                if (blob.GetId2Info().empty()) {
+                    // Request original blob chunks
+                    m_PendingOp->PrepareBlobPropCompletion(m_FetchDetails);
+                    x_RequestOriginalBlobChunks(blob);
+                } else {
+                    // Request the split INFO blob and all split chunks
+                    x_RequestID2BlobChunks(blob, false);
+
+                    // It is important to send completion after: there could be
+                    // an error of converting/translating ID2 info
+                    m_PendingOp->PrepareBlobPropCompletion(m_FetchDetails);
+                }
+                break;
+            case eOrigTSE:
+                m_FetchDetails->m_FinishedRead = true;
+                // Request original blob chunks
+                m_PendingOp->PrepareBlobPropCompletion(m_FetchDetails);
+                x_RequestOriginalBlobChunks(blob);
+                break;
+            case eUnknownTSE:
+                // Used when INFO blobs are asked; i.e. chunks have been
+                // requeted as well, so only the prop completion message needs
+                // to be sent.
+                m_PendingOp->PrepareBlobPropCompletion(m_FetchDetails);
+                break;
         }
     } else {
         // Not found, report 500 because it is data inconsistency
@@ -1459,12 +1464,9 @@ void CBlobPropCallback::x_RequestOriginalBlobChunks(CBlobRecord const &  blob)
 {
     // Cannot reuse the fetch details, it leads to a core dump
 
+    // eUnknownTSE is safe here; no blob prop call will happen anyway
     SBlobRequest    orig_blob_request(m_FetchDetails->m_BlobId,
-                                      blob.GetModified());
-
-    orig_blob_request.m_NeedBlobProp = false;
-    orig_blob_request.m_NeedChunks = true;
-    orig_blob_request.m_Optional = false;
+                                      blob.GetModified(), eUnknownTSE);
 
     m_PendingOp->m_OriginalBlobChunkFetch.reset(
             new CPendingOperation::SBlobFetchDetails(orig_blob_request));
@@ -1493,7 +1495,8 @@ void CBlobPropCallback::x_RequestOriginalBlobChunks(CBlobRecord const &  blob)
 }
 
 
-void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
+void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob,
+                                               bool  info_blob_only)
 {
     x_ParseId2Info(blob);
     if (!m_Id2InfoValid)
@@ -1521,12 +1524,10 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
         return;
     }
 
-    // Create the Id2Info requests
-    SBlobRequest    info_blob_request(info_blob_id, INT64_MIN);
-
-    info_blob_request.m_NeedBlobProp = false;
-    info_blob_request.m_NeedChunks = true;
-    info_blob_request.m_Optional = false;
+    // Create the Id2Info requests.
+    // eUnknownTSE is treated in the blob prop handler as to do nothing (no
+    // sending completion message, no requesting other blobs)
+    SBlobRequest    info_blob_request(info_blob_id, INT64_MIN, eUnknownTSE);
 
     // Prepare Id2Info retrieval
     m_PendingOp->m_Id2InfoFetchDetails.reset(
@@ -1545,8 +1546,7 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
                     m_PendingOp->m_Conn,
                     info_blob_request.m_BlobId.m_SatName,
                     std::move(blob_record),
-                    info_blob_request.m_NeedChunks,
-                    nullptr));
+                    true, nullptr));
     } else {
         m_PendingOp->m_Id2InfoFetchDetails->m_Loader.reset(
                 new CCassBlobTaskLoadBlob(
@@ -1554,21 +1554,22 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob)
                     m_PendingOp->m_Conn,
                     info_blob_request.m_BlobId.m_SatName,
                     info_blob_request.m_BlobId.m_SatKey,
-                    info_blob_request.m_NeedChunks,
-                    nullptr));
+                    true, nullptr));
     }
     m_PendingOp->m_Id2InfoFetchDetails->m_Loader->SetDataReadyCB(
             HST::CHttpReply<CPendingOperation>::s_DataReady, m_Reply);
     m_PendingOp->m_Id2InfoFetchDetails->m_Loader->SetErrorCB(
             CGetBlobErrorCallback(m_PendingOp, m_Reply,
                                   m_PendingOp->m_Id2InfoFetchDetails.get()));
-    m_PendingOp->m_Id2InfoFetchDetails->m_Loader->SetPropsCallback(nullptr);
+    m_PendingOp->m_Id2InfoFetchDetails->m_Loader->SetPropsCallback(
+            CBlobPropCallback(m_PendingOp, m_Reply,
+                              m_PendingOp->m_Id2InfoFetchDetails.get()));
     m_PendingOp->m_Id2InfoFetchDetails->m_Loader->SetChunkCallback(
             CBlobChunkCallback(m_PendingOp, m_Reply,
                                m_PendingOp->m_Id2InfoFetchDetails.get()));
 
     // We may need to request ID2 chunks
-    if (m_FetchDetails->m_IncludeDataFlags & fServWholeTSE) {
+    if (!info_blob_only) {
         // Sat name is the same
         x_RequestId2SplitBlobs(info_blob_id.m_SatName);
     }
@@ -1589,10 +1590,9 @@ void CBlobPropCallback::x_RequestId2SplitBlobs(const string &  sat_name)
                                    m_Id2InfoInfo - m_Id2InfoChunks - 1 + chunk_no);
         chunks_blob_id.m_SatName = sat_name;
 
-        SBlobRequest    chunk_request(chunks_blob_id, INT64_MIN);
-        chunk_request.m_NeedBlobProp = false;
-        chunk_request.m_NeedChunks = true;
-        chunk_request.m_Optional = false;
+        // eUnknownTSE is treated in the blob prop handler as to do nothing (no
+        // sending completion message, no requesting other blobs)
+        SBlobRequest    chunk_request(chunks_blob_id, INT64_MIN, eUnknownTSE);
 
         unique_ptr<CPendingOperation::SBlobFetchDetails>   details;
         details.reset(new CPendingOperation::SBlobFetchDetails(chunk_request));
@@ -1611,8 +1611,7 @@ void CBlobPropCallback::x_RequestId2SplitBlobs(const string &  sat_name)
                     m_PendingOp->m_Conn,
                     chunk_request.m_BlobId.m_SatName,
                     std::move(blob_record),
-                    chunk_request.m_NeedChunks,
-                    nullptr));
+                    true, nullptr));
         } else {
             details->m_Loader.reset(
                 new CCassBlobTaskLoadBlob(
@@ -1620,14 +1619,14 @@ void CBlobPropCallback::x_RequestId2SplitBlobs(const string &  sat_name)
                     m_PendingOp->m_Conn,
                     chunk_request.m_BlobId.m_SatName,
                     chunk_request.m_BlobId.m_SatKey,
-                    chunk_request.m_NeedChunks,
-                    nullptr));
+                    true, nullptr));
         }
         details->m_Loader->SetDataReadyCB(
             HST::CHttpReply<CPendingOperation>::s_DataReady, m_Reply);
         details->m_Loader->SetErrorCB(
             CGetBlobErrorCallback(m_PendingOp, m_Reply, details.get()));
-        details->m_Loader->SetPropsCallback(nullptr);
+        details->m_Loader->SetPropsCallback(
+            CBlobPropCallback(m_PendingOp, m_Reply, details.get()));
         details->m_Loader->SetChunkCallback(
             CBlobChunkCallback(m_PendingOp, m_Reply, details.get()));
 
@@ -1745,13 +1744,6 @@ void CGetBlobErrorCallback::operator()(CRequestStatus::ECode  status,
     bool    is_error = (severity == eDiag_Error ||
                         severity == eDiag_Critical ||
                         severity == eDiag_Fatal);
-
-    // If it was an optional blob then the retrieving errors are to be ignored
-    if (m_FetchDetails->m_Optional) {
-        if (is_error)
-            m_FetchDetails->m_FinishedRead = true;
-        return;
-    }
 
     CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
     PSG_ERROR(message);

@@ -72,6 +72,7 @@ public:
         eIterNoPostIncrement,
         eCannotUpdateDb,
         eInvalidRequest,
+        eUnknownTSEOption,
 
         eAccessionMismatch,
         eVersionMismatch,

@@ -49,9 +49,10 @@ static string  kBlobIdParam = "blob_id";
 static string  kLastModifiedParam = "last_modified";
 static string  kSeqIdParam = "seq_id";
 static string  kSeqIdTypeParam = "seq_id_type";
+static string  kTSEParam = "tse";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
-    make_pair("all_info", fServBioseqFields),   // must be first
+    make_pair("all_info", fServAllBioseqFields),   // must be first
 
     make_pair("canon_id", fServCanonicalId),
     make_pair("seq_ids", fServSeqIds),
@@ -62,24 +63,6 @@ static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
     make_pair("tax_id", fServTaxId),
     make_pair("hash", fServHash),
     make_pair("date_changed", fServDateChanged)
-};
-static vector<pair<string, EServIncludeData>>   kGetFlagParams =
-{
-    make_pair("no_tse", fServNoTSE),
-    make_pair("whole_tse", fServWholeTSE),
-    make_pair("orig_tse", fServOrigTSE)
-
-// Commented out: it was decided (temporary?) that all the parts will always be
-// supplied
-//    make_pair("canon_id", fServCanonicalId),
-//    make_pair("seq_ids", fServSeqIds),
-//    make_pair("mol_type", fServMoleculeType),
-//    make_pair("length", fServLength),
-//    make_pair("state", fServState),
-//    make_pair("blob_id", fServBlobId),
-//    make_pair("tax_id", fServTaxId),
-//    make_pair("hash", fServHash),
-//    make_pair("date_changed", fServDateChanged)
 };
 static string  kBadUrlMessage = "Unknown request, the provided URL "
                                 "is not recognized";
@@ -117,28 +100,18 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
         return 0;
     }
 
-    string                  err_msg;
-
-    // It was decided (temorary?) that all parts are supplied
-    TServIncludeData        include_data_flags = fServBioseqFields;
-    SRequestParameter       request_param;
-    for (const auto &  flag_param: kGetFlagParams) {
-        request_param = x_GetParam(req, flag_param.first);
-        if (request_param.m_Found) {
-            if (!x_IsBoolParamValid(flag_param.first,
-                                    request_param.m_Value, err_msg)) {
-                m_ErrorCounters.IncMalformedArguments();
-                x_SendMessageAndCompletionChunks(resp, err_msg,
-                                                 CRequestStatus::e400_BadRequest,
-                                                 eMalformedParameter, eDiag_Error);
-
-                PSG_WARNING(err_msg);
-                x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
-                return 0;
-            }
-            if (request_param.m_Value == "yes") {
-                include_data_flags |= flag_param.second;
-            }
+    string              err_msg;
+    ETSEOption          tse_option = eOrigTSE;
+    SRequestParameter   tse_param = x_GetParam(req, kTSEParam);
+    if (tse_param.m_Found) {
+        tse_option = x_GetTSEOption(kTSEParam, tse_param.m_Value, err_msg);
+        if (tse_option == eUnknownTSE) {
+            m_ErrorCounters.IncMalformedArguments();
+            x_SendMessageAndCompletionChunks(resp, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             eMalformedParameter, eDiag_Error);
+            PSG_WARNING(err_msg);
+            return 0;
         }
     }
 
@@ -150,7 +123,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
     m_RequestCounters.IncGetBlobBySeqId();
     resp.Postpone(
             CPendingOperation(
-                SBlobRequest(seq_id, seq_id_type, include_data_flags),
+                SBlobRequest(seq_id, seq_id_type, tse_option),
                 0, m_CassConnection, m_TimeoutMs,
                 m_MaxRetries, context));
     return 0;
@@ -163,27 +136,41 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    SRequestParameter   blob_id_param = x_GetParam(req, kBlobIdParam);
+    string              err_msg;
+    ETSEOption          tse_option = eOrigTSE;
+    SRequestParameter   tse_param = x_GetParam(req, kTSEParam);
+    if (tse_param.m_Found) {
+        tse_option = x_GetTSEOption(kTSEParam, tse_param.m_Value, err_msg);
+        if (tse_option == eUnknownTSE) {
+            m_ErrorCounters.IncMalformedArguments();
+            x_SendMessageAndCompletionChunks(resp, err_msg,
+                                             CRequestStatus::e400_BadRequest,
+                                             eMalformedParameter, eDiag_Error);
+            PSG_WARNING(err_msg);
+            return 0;
+        }
+    }
+
     SRequestParameter   last_modified_param = x_GetParam(req, kLastModifiedParam);
     int64_t             last_modified_value = INT64_MIN;
-
     if (last_modified_param.m_Found) {
         try {
             last_modified_value = NStr::StringToLong(
                                             last_modified_param.m_Value);
         } catch (...) {
-            string  message = "Malformed 'last_modified' parameter. "
-                              "Expected an integer";
+            err_msg = "Malformed 'last_modified' parameter. "
+                      "Expected an integer";
             m_ErrorCounters.IncMalformedArguments();
-            x_SendMessageAndCompletionChunks(resp, message,
+            x_SendMessageAndCompletionChunks(resp, err_msg,
                                              CRequestStatus::e400_BadRequest,
                                              eMalformedParameter, eDiag_Error);
-            PSG_WARNING(message);
+            PSG_WARNING(err_msg);
             x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
             return 0;
         }
     }
 
+    SRequestParameter   blob_id_param = x_GetParam(req, kBlobIdParam);
     if (blob_id_param.m_Found)
     {
         SBlobId     blob_id(blob_id_param.m_Value);
@@ -206,7 +193,7 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
             m_RequestCounters.IncGetBlobBySatSatKey();
             resp.Postpone(
                     CPendingOperation(
-                        SBlobRequest(blob_id, last_modified_value),
+                        SBlobRequest(blob_id, last_modified_value, tse_option),
                         0, m_CassConnection, m_TimeoutMs,
                         m_MaxRetries, context));
 
