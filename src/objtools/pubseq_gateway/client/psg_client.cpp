@@ -317,6 +317,20 @@ CPSG_Queue::SImpl::SImpl(const string& service) :
     }
 }
 
+const char* s_GetTSE(CPSG_Request_Biodata::EIncludeData include_data)
+{
+    switch (include_data) {
+        case CPSG_Request_Biodata::eDefault:  return nullptr;
+        case CPSG_Request_Biodata::eNoTSE:    return "none";
+        case CPSG_Request_Biodata::eSlimTSE:  return "slim";
+        case CPSG_Request_Biodata::eSmartTSE: return "smart";
+        case CPSG_Request_Biodata::eWholeTSE: return "whole";
+        case CPSG_Request_Biodata::eOrigTSE:  return "orig";
+    }
+
+    return nullptr;
+}
+
 string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Biodata* request_biodata)
 {
     ostringstream os;
@@ -326,11 +340,7 @@ string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Biodata* request_biodata)
 
     if (const auto type = bio_id.GetType()) os << "&seq_id_type=" << type;
 
-    const auto include_data = request_biodata->GetIncludeData();
-
-    if (include_data & CPSG_Request_Biodata::fNoTSE)        os << "&no_tse=yes";
-    if (include_data & CPSG_Request_Biodata::fWholeTSE)     os << "&whole_tse=yes";
-    if (include_data & CPSG_Request_Biodata::fOrigTSE)      os << "&orig_tse=yes";
+    if (const auto tse = s_GetTSE(request_biodata->GetIncludeData())) os << "&tse=" << tse;
 
     return os.str();
 }
@@ -376,6 +386,8 @@ string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Blob* request_blob)
     const auto& last_modified = request_blob->GetLastModified();
 
     if (!last_modified.empty()) os << "&last_modified=" << last_modified;
+
+    if (const auto tse = s_GetTSE(request_blob->GetIncludeData())) os << "&tse=" << tse;
 
     return os.str();
 }

@@ -122,33 +122,34 @@ public:
 
     /// Specify which info and data is needed
     enum EIncludeData {
+        /// Server default
+        eDefault,
+
         /// Only the info
-        /// @NOTE  Incompatible with the "fWholeTSE" and "fOrigTSE")
-        fNoTSE     = (1 << 0),
+        eNoTSE,
 
-        /// By default (unless "fNoTSE" flag is set):
-        /// - if the TSE blob is split, then only the blob containing its split
-        ///   info will be retrieved;
-        /// - if the blob is not split, then the whole original TSE will be
-        ///   retrieved.
-        /// This flag forces the retrieval of the whole TSE. If it is set then:
-        /// - if the TSE blob is split, then all its split info and split data
-        ///   info will be retrieved;
-        /// - if the blob is not split, then the whole original TSE will be
-        ///   retrieved.
-        fWholeTSE  = (1 << 1),
+        /// If ID2 split is available, return split info blob only.
+        /// Otherwise, return no data.
+        eSlimTSE,
 
-        /// Retrieve the whole original(!) TSE blob
-        fOrigTSE   = (1 << 2),
+        /// If ID2 split is available, return split info blob only.
+        /// Otherwise, return all Cassandra data chunks of the blob itself.
+        eSmartTSE,
+
+        /// If ID2 split is available, return all split blobs.
+        /// Otherwise, return all Cassandra data chunks of the blob itself.
+        eWholeTSE,
+
+        /// Return all Cassandra data chunks of the blob itself.
+        eOrigTSE
     };
-    DECLARE_SAFE_FLAGS_TYPE(EIncludeData, TIncludeData);
-    void IncludeData(TIncludeData include) { m_IncludeData = include; }
+    void IncludeData(EIncludeData include) { m_IncludeData = include; }
 
-    TIncludeData      GetIncludeData() const { return m_IncludeData; }
+    EIncludeData GetIncludeData() const { return m_IncludeData; }
 
 private:
     CPSG_BioId    m_BioId;
-    TIncludeData  m_IncludeData = 0;
+    EIncludeData  m_IncludeData = EIncludeData::eDefault;
 };
 
 
@@ -236,9 +237,16 @@ public:
     const CPSG_BlobId& GetBlobId()       const { return m_BlobId; }
     const string&      GetLastModified() const { return m_LastModified; }
 
+    /// Specify which data is needed (info is always returned)
+    using EIncludeData = CPSG_Request_Biodata::EIncludeData;
+    void IncludeData(EIncludeData include) { m_IncludeData = include; }
+
+    EIncludeData GetIncludeData() const { return m_IncludeData; }
+
 private:
-    CPSG_BlobId m_BlobId;
-    string      m_LastModified;
+    CPSG_BlobId  m_BlobId;
+    string       m_LastModified;
+    EIncludeData m_IncludeData = EIncludeData::eDefault;
 };
 
 
@@ -596,7 +604,6 @@ private:
 };
 
 
-DECLARE_SAFE_FLAGS(CPSG_Request_Biodata::EIncludeData);
 DECLARE_SAFE_FLAGS(CPSG_Request_Resolve::EIncludeInfo);
 
 END_NCBI_SCOPE
