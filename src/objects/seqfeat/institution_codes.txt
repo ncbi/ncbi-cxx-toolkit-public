@@ -7326,6 +7326,7 @@ VICA	s	Agriculture Department
 VICF	s	Forestry Department			
 VICH	s	Plant Protection Department			
 VIES	s	Federal University of Espirito Santo			
+VIGG	s	Vavilov Institute of General Genetics			
 VIL	s	Universite de Paris-Sud			
 VIMS	s	Virginia Institute of Marine Science			
 VIST	s	University of the Virgin Islands, Natural Resources Program			

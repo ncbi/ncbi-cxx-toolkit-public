@@ -7359,6 +7359,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "VICF\ts\tForestry Department\t\t\t",
 "VICH\ts\tPlant Protection Department\t\t\t",
 "VIES\ts\tFederal University of Espirito Santo\t\t\t",
+"VIGG\ts\tVavilov Institute of General Genetics\t\t\t",
 "VIL\ts\tUniversite de Paris-Sud\t\t\t",
 "VIMS\ts\tVirginia Institute of Marine Science\t\t\t",
 "VIST\ts\tUniversity of the Virgin Islands, Natural Resources Program\t\t\t",
