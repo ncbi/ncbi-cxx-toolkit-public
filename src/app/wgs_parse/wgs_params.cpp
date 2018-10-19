@@ -747,6 +747,43 @@ static void BuildFilenameWithPath(const string& outdir, string& filename)
     }
 }
 
+static bool FileNameCmp(const string& name1, const string& name2)
+{
+    auto it1 = name1.begin(),
+         it2 = name2.begin();
+
+    bool digits = false;
+    for (; it1 != name1.end() && it2 != name2.end(); ++it1, ++it2) {
+
+        if (!digits && isdigit(*it1) && isdigit(*it2))
+        {
+            digits = true;
+            for (; it1 != name1.end() && *it1 == '0'; ++it1);
+            for (; it2 != name2.end() && *it2 == '0'; ++it2);
+
+            if (it1 == name1.end() && it2 == name2.end()) {
+                return false; // semantically equal strings, like 'abc01' and 'abc0001'
+            }
+
+            if (it1 == name1.end() || it2 == name2.end()) {
+                return it1 == name1.end();
+            }
+        }
+        else {
+
+            if (!isdigit(*it1) || !isdigit(*it2)) {
+                digits = false;
+            }
+        }
+
+        if (*it1 != *it2) {
+            return *it1 < *it2;
+        }
+    }
+
+    return false;
+}
+
 bool SetParams(const CArgs& args)
 {
     if (!params) {
@@ -991,6 +1028,10 @@ bool SetParams(const CArgs& args)
         if (!GetFilesFromDir(input_mask, params_imp.m_file_list)) {
             ERR_POST_EX(0, 0, "No input files matching input \"" << input_mask << "\" have been found.");
             return false;
+        }
+
+        if (params_imp.m_sort_order == eUnsorted) {
+            params_imp.m_file_list.sort(FileNameCmp);
         }
     }
     else {
