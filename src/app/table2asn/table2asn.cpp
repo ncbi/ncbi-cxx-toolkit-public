@@ -576,9 +576,13 @@ int CTbl2AsnApp::Run(void)
 
     if (args["H"])
     {
+	string sdate = args["H"].AsString();
+        if (sdate=="Y" || sdate=="y") {
+            m_context.m_HoldUntilPublish.SetCurrent();
+            m_context.m_HoldUntilPublish.SetYear(m_context.m_HoldUntilPublish.Year() + 1);
+        } else 
         try
         {
-            string sdate = args["H"].AsString();
             if (sdate[0] == '\'' && sdate.length() > 0 && sdate[sdate.length() - 1] == '\'')
             {
                 sdate.erase(0, 1);
