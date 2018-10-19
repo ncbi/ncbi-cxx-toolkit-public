@@ -9969,8 +9969,9 @@ case "$compiler:$compiler_version:$with_bin_release" in
           LINK=$C_LINK
           ;;
        *)
-          { echo "$as_me:$LINENO: WARNING: Unable to find static libstdc++ requested by --with-bin-release." >&5
-echo "$as_me: WARNING: Unable to find static libstdc++ requested by --with-bin-release." >&2;}
+          { { echo "$as_me:$LINENO: error: Unable to find static libstdc++ requested by --with-bin-release." >&5
+echo "$as_me: error: Unable to find static libstdc++ requested by --with-bin-release." >&2;}
+   { (exit 1); exit 1; }; }
           ;;
     esac
     ;;

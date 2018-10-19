@@ -2170,7 +2170,7 @@ case "$compiler:$compiler_version:$with_bin_release" in
           LINK=$C_LINK
           ;;
        *)
-          AC_MSG_WARN([Unable to find static libstdc++ requested by --with-bin-release.])
+          AC_MSG_ERROR([Unable to find static libstdc++ requested by --with-bin-release.])
           ;;
     esac
     ;;
