@@ -342,10 +342,21 @@ static char CheckForBadFileIDSeqIdChars(const string& id)
 void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
 {
     // see if ID can be used to find ctx
-    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(id);
+    CBioseq_Handle ctx_handle = m_Scope->GetBioseqHandle(ctx);
+    if (!ctx_handle) {
+        if (!m_Imp.IsPatent()) {
+            PostErr(eDiag_Error, eErr_SEQ_INST_IdOnMultipleBioseqs,
+                "BioseqFind (" + id.AsFastaString() +
+                ") unable to find itself - possible internal error", ctx);
+        }
+        return;
+    }
+    CTSE_Handle tse = ctx_handle.GetTSE_Handle();
+    CBioseq_Handle bsh = tse.GetBioseqHandle(id);
+
     if (bsh) {
-        CConstRef<CBioseq> core = m_Scope->GetBioseqHandle(id).GetBioseqCore();
-        if ( !core ) {
+        CConstRef<CBioseq> core = bsh.GetBioseqCore();
+        if (!core) {
             if ( !m_Imp.IsPatent() ) {
                 PostErr(eDiag_Error, eErr_SEQ_INST_IdOnMultipleBioseqs,
                     "BioseqFind (" + id.AsFastaString() + 
@@ -386,7 +397,6 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                     PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat,
                            "Bad character '" + string(1, badch) + "' in accession '" + acc + "'", ctx);
                 }
-#if 1
                 CSeq_id::EAccessionInfo info = CSeq_id::IdentifyAccession(acc);
                 if (info == CSeq_id::eAcc_unknown || 
                     (ctx.IsNa() && (info & CSeq_id::fAcc_prot)) ||
@@ -394,64 +404,6 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                     PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
                         "Bad accession " + acc, ctx);
                 }
-#else
-                unsigned int num_digits = 0;
-                unsigned int num_letters = 0;
-                size_t num_underscores = 0;
-                bool internal_S = false;
-                bool letter_after_digit = false;
-                bool bad_id_chars = false;
-                size_t i = 0;
-                    
-                for ( ; i < acc.length(); ++i ) {
-                    if ( isupper((unsigned char) acc[i]) ) {
-                        num_letters++;
-                        if ( num_digits > 0  ||  num_underscores > 1 ) {
-                            if (acc[i] == 'S' && num_letters == 5 && num_digits == 2 && (! internal_S)) {
-                                num_letters--;
-                                internal_S = true;
-                            } else {
-                                letter_after_digit = true;
-                            }
-                         }
-                    } else if ( isdigit((unsigned char) acc[i]) ) {
-                        num_digits++;
-                    } else if ( acc[i] == '_' ) {
-                        num_underscores++;
-                        if ( num_digits > 0  ||  num_underscores > 1 ) {
-                            letter_after_digit = true;
-                        }
-                    } else {
-                        bad_id_chars = true;
-                    }
-                }
-
-
-                if ( letter_after_digit || bad_id_chars ) {
-                    PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
-                        "Bad accession " + acc, ctx);
-                } else if (num_underscores == 1) {
-                    if (NStr::CompareNocase(acc, 0, 4, "MAP_") != 0 || num_digits != 6) {
-                        PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
-                            "Bad accession " + acc, ctx);
-                    }
-                } else if (num_letters == 1 && num_digits == 5 && ctx.IsNa()) {
-                } else if (num_letters == 2 && num_digits == 6 && ctx.IsNa()) {
-                } else if (num_letters == 3 && num_digits == 5 && ctx.IsAa()) {
-                } else if (num_letters == 2 && num_digits == 6 && ctx.IsAa() &&
-                    ctx.GetInst().GetRepr() == CSeq_inst::eRepr_seg) {
-                } else if (num_letters == 4 && internal_S &&
-                          (num_digits == 8 || num_digits == 9 || num_digits == 10) && ctx.IsNa()) {
-                } else if ( num_letters == 4  &&
-                            (num_digits == 8  ||  num_digits == 9)  && 
-                            ctx.IsNa() ) {
-                } else if (num_letters == 4 && num_digits == 10 && ctx.IsNa()) {
-                } else if (num_letters == 5 && num_digits == 7 && ctx.IsNa()) {
-                } else {
-                    PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
-                        "Bad accession " + acc, ctx);
-                }
-#endif
                 // Check for secondary conflicts
                 ValidateSecondaryAccConflict(acc, ctx, CSeqdesc::e_Genbank);
                 ValidateSecondaryAccConflict(acc, ctx, CSeqdesc::e_Embl);
