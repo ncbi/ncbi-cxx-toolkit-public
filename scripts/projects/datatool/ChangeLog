@@ -175,3 +175,7 @@ Fixed SOAP code generation
 August 31, 2018
 version 2.18.2, CXX-10216
 Fixed bugs in handling JSON schema.
+
+October 19, 2018
+version 2.19.0, CXX-10288
+Added support of named bit list in ASN.1 BIT STRING.
