@@ -12,7 +12,7 @@ var g_branch     = "toolkit/trunk/internal/c++";
 //var g_def_branch = "toolkit/trunk/c++";
 //var g_branch     = "toolkit/trunk/c++";
 
-// valid:   "120", "120x64", "140", "140x64"
+// valid:   "150", "150x64", "140", "140x64"
 var g_def_msvcver = "140x64";
 var g_msvcver     = "140x64";
 
@@ -495,6 +495,7 @@ function SetMsvcVer(oArgs, flag)
 				   msvcver != "110" && msvcver != "110x64"
 				&& msvcver != "120" && msvcver != "120x64"
 				&& msvcver != "140" && msvcver != "140x64"
+				&& msvcver != "150" && msvcver != "150x64"
            ) {
             WScript.Echo("ERROR: Unknown version of MSVC requested: " + msvcver);
             WScript.Quit(1);    
@@ -514,7 +515,10 @@ function GetMsvcFolder()
     if (g_msvcver == "140" || g_msvcver == "140x64") {
         return "vs2015";
     }
-    return "vs2013";
+    if (g_msvcver == "150" || g_msvcver == "150x64") {
+        return "vs2017";
+    }
+    return "vs2015";
 }
 
 function GetFlaggedValue(oArgs, flag, default_val)
@@ -588,6 +592,8 @@ function GetDefaultSuffix()
         s = "vs2015";
     } else if (g_msvcver == "140x64") {
         s = "vs2015.64";
+    } else if (g_msvcver == "150x64") {
+        s = "vs2017.64";
     }
     return s;
 }
@@ -610,15 +616,19 @@ function GetPtbTargetSolutionArgs(oShell, ptb)
         s = " -ide 1400 -arch Win32";
     } else if (g_msvcver == "140x64") {
         s = " -ide 1400 -arch x64";
+    } else if (g_msvcver == "150") {
+        s = " -ide 1500 -arch Win32";
+    } else if (g_msvcver == "150x64") {
+        s = " -ide 1500 -arch x64";
     } else {
-        s = " -ide 1200 -arch Win32";
+        s = " -ide 1400 -arch x64";
     }
     return s;
 }
 function GetTargetPlatform()
 {
     if (g_msvcver == "110x64" ||
-        g_msvcver == "120x64" || g_msvcver == "140x64") {
+        g_msvcver == "120x64" || g_msvcver == "140x64" || g_msvcver == "150x64") {
         return "x64";
     }
     return "Win32";
