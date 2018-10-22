@@ -606,6 +606,8 @@ public:
     /// Get the entire HTTP header as received
     const string&     GetHTTPHeader(void) const { return m_StatusData.header; }
 
+    void              SetURL(const string& url) { m_URL = url; }
+
 protected:
     // Chained callbacks
     void*             m_UserData;
@@ -615,6 +617,9 @@ protected:
 
     // HTTP status & text seen last
     SHTTP_StatusData  m_StatusData;
+
+    // URL to hit next
+    string            m_URL;
 
 private:
     // Interceptors

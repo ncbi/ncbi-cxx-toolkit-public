@@ -686,6 +686,11 @@ int/*bool*/ CConn_HttpStream::x_Adjust(SConnNetInfo* net_info,
                                        unsigned int  count)
 {
     CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*>(data);
+    if (count == (unsigned int)(-1)  &&  !http->m_URL.empty()) {
+        if (!ConnNetInfo_ParseURL(net_info, http->m_URL.c_str()))
+            return 0/*false*/;
+        http->m_URL.erase();
+    }
     return http->m_UserAdjust(net_info, http->m_UserData, count);
 }
 
