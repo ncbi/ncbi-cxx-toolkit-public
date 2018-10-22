@@ -26,7 +26,7 @@
 #cmakedefine HAVE_LIBTIFF 1
 #cmakedefine HAVE_LIBXML 1
 #cmakedefine HAVE_LIBXSLT 1
-/* #undef HAVE_LOCAL_LBSM */
+#cmakedefine HAVE_LOCAL_LBSM 1
 #cmakedefine HAVE_NCBI_VDB 1
 #cmakedefine HAVE_ODBC 1
 #cmakedefine HAVE_ODBCSS_H 1
