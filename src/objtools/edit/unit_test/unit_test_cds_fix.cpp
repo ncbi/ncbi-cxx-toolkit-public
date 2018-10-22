@@ -902,7 +902,7 @@ BOOST_AUTO_TEST_CASE(Test_GetNewProtId)
     objects::CBioseq_Handle bsh2 = seh2.GetSeq();
     id_label.clear();
     CRef<objects::CSeq_id> new_prot_id2 = edit::GetNewProtId(bsh2, offset, id_label);
-    BOOST_CHECK_EQUAL(id_label, "gnl|TEST2:C8EA47E0_1");
+    BOOST_CHECK_EQUAL(id_label, "gnl|TEST2:624900FCF5A05DAD_1");
     BOOST_CHECK_EQUAL(offset, 1);
 }
 
@@ -930,7 +930,7 @@ BOOST_AUTO_TEST_CASE(Test_GetNewProtIdFromExistingProt)
     seh = scope.AddTopLevelSeqEntry(*prot);
     bsh = seh.GetSeq();
     new_prot_ids = edit::GetNewProtIdFromExistingProt(bsh, offset, id_label);
-    BOOST_CHECK_EQUAL(id_label, "lcl|C8EA47E0_1");
+    BOOST_CHECK_EQUAL(id_label, "lcl|624900FCF5A05DAD_1");
     BOOST_CHECK_EQUAL(offset, 1);
 }
 

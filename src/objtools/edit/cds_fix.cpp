@@ -1222,7 +1222,7 @@ ApplyCDSFrame::ECdsFrame ApplyCDSFrame::s_GetFrameFromName(const string& name)
 
 CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label)
 {
-    CChecksum chksum(CChecksum::eCRC32);
+    CHash chksum(CHash::eCityHash64);
     objects::CSeq_id_Handle hid;
     for (auto it : bsh.GetId()) 
     {
@@ -1252,9 +1252,8 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
             id_base = new_id->GetGeneral().GetTag().GetStr();
         }
     }
-    chksum.AddLine(id_base);
-    string id_base_hash = chksum.GetHexSum();
-    chksum.Reset();
+    chksum.Calculate(id_base);
+    string id_base_hash = chksum.GetResultHex();
     new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
     new_id_hash->SetGeneral().SetTag().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
     objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
@@ -1282,7 +1281,7 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
 vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Handle bsh, int &offset, string& id_label)
 {
     vector<CRef<objects::CSeq_id> > ids;
-    CChecksum chksum(CChecksum::eCRC32);
+    CHash chksum(CHash::eCityHash64);
 
     for(auto it : bsh.GetId()) 
     {
@@ -1300,9 +1299,8 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
                 {
                     id_base = hid.GetSeqId()->GetLocal().GetStr();
                 }
-                chksum.AddLine(id_base);
-                string id_base_hash = chksum.GetHexSum();
-                chksum.Reset();
+                chksum.Calculate(id_base);
+                string id_base_hash = chksum.GetResultHex();
                 CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
                 new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
                 CRef<objects::CSeq_id> new_id_hash(new objects::CSeq_id());
@@ -1339,9 +1337,8 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
                 {
                     id_base = hid.GetSeqId()->GetGeneral().GetTag().GetStr();
                 }
-                chksum.AddLine(id_base);
-                string id_base_hash = chksum.GetHexSum();
-                chksum.Reset();
+                chksum.Calculate(id_base);
+                string id_base_hash = chksum.GetResultHex();
                 new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
                 objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
                 new_id_hash->SetGeneral().SetTag().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
@@ -1370,9 +1367,8 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
     {
         string id_base;
         bsh.GetId().front().GetSeqId()->GetLabel(&id_base, objects::CSeq_id::eContent);
-        chksum.AddLine(id_base);
-        string id_base_hash = chksum.GetHexSum();
-        chksum.Reset();
+        chksum.Calculate(id_base);
+        string id_base_hash = chksum.GetResultHex();
         CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
         new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
         objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
