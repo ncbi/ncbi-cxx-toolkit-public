@@ -53,6 +53,8 @@
 #include <util/random_gen.hpp>
 #include <util/checksum.hpp>
 
+#include <deque>
+
 #define NCBI_USE_ERRCODE_X   ConnServ_Connection
 
 #define LBSMD_PENALIZED_RATE_BOUNDARY -0.01
@@ -1054,6 +1056,24 @@ bool SNetServiceImpl::IsInService(CNetServer::TInstance server)
     return false;
 }
 
+struct SFailOnlyWarnings : deque<pair<string, CNetServer>>
+{
+    SFailOnlyWarnings(CRef<INetServerConnectionListener> listener) : m_Listener(listener) {}
+    ~SFailOnlyWarnings() { IssueAndClear(); }
+
+    void IssueAndClear()
+    {
+        for (auto& w : *this) {
+            m_Listener->OnWarning(w.first, w.second);
+        }
+
+        clear();
+    }
+
+private:
+    CRef<INetServerConnectionListener> m_Listener;
+};
+
 void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     bool multiline_output,
     CNetServer::SExecResult& exec_result,
@@ -1086,7 +1106,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     const STimeout* timeout = retry_count <= 0 && !m_UseSmartRetries ?
             NULL : &m_ServerPool->m_FirstServerTimeout;
 
-    CMessageListener_Basic err_listener;
+    SFailOnlyWarnings fail_only_warnings(m_Listener);
 
     for (;;) {
         skip_server = false;
@@ -1094,6 +1114,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
         try {
             server->ConnectAndExec(cmd, multiline_output, exec_result,
                     timeout);
+            fail_only_warnings.clear();
             return;
         }
         catch (CNetCacheBlobTooOldException& /*ex rethrown*/) {
@@ -1109,8 +1130,6 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                 throw;
             else
                 m_Listener->OnWarning(ex.GetMsg(), server);
-
-            err_listener.PostMessage(CMessage_Basic(ex.GetMsg(), eDiag_Warning));
         }
         catch (CNetScheduleException& ex) {
             if (retry_count <= 0 && !m_UseSmartRetries)
@@ -1118,32 +1137,29 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             if (ex.GetErrCode() == CNetScheduleException::eSubmitsDisabled) {
                 ++ns_with_submits_disabled;
                 skip_server = true;
+                fail_only_warnings.emplace_back(ex.GetMsg(), server);
             } else if (error_handling == eRethrowServerErrors)
                 throw;
             else
                 m_Listener->OnWarning(ex.GetMsg(), server);
-
-            err_listener.PostMessage(CMessage_Basic(ex.GetMsg(), eDiag_Warning));
         }
         catch (CNetSrvConnException& ex) {
             if (retry_count <= 0 && !m_UseSmartRetries)
                 throw;
             switch (ex.GetErrCode()) {
             case CNetSrvConnException::eReadTimeout:
-                break;
             case CNetSrvConnException::eConnectionFailure:
                 m_Listener->OnWarning(ex.GetMsg(), server);
                 break;
 
             case CNetSrvConnException::eServerThrottle:
                 ++servers_throttled;
+                fail_only_warnings.emplace_back(ex.GetMsg(), server);
                 break;
 
             default:
                 throw;
             }
-
-            err_listener.PostMessage(CMessage_Basic(ex.GetMsg(), eDiag_Warning));
         }
 
         ++number_of_servers;
@@ -1179,9 +1195,13 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                         "in REFUSESUBMITS mode for the " + m_ServiceName + " service.");
             }
 
-            const bool all_servers_throttled = number_of_servers == servers_throttled;
+            if (number_of_servers == servers_throttled) {
+                NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
+                        "Cannot execute ["  << cmd <<
+                        "]: all servers are throttled for the " + m_ServiceName + " service.");
+            }
 
-            if (!all_servers_throttled && (retry_count <= 0 || servers_to_retry.empty())) {
+            if (retry_count <= 0 || servers_to_retry.empty()) {
                 if (blob_not_found) {
                     NCBI_THROW_FMT(CNetCacheException, eBlobNotFound,
                             "Cannot execute ["  << cmd << "]: blob not found.");
@@ -1191,18 +1211,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                         "] on any of the discovered servers for the " + m_ServiceName + " service.");
             }
 
-            for (size_t i = 0; i < err_listener.Count(); ++i) {
-                LOG_POST(Warning << err_listener.GetMessage(i).GetText());
-            }
-
-            err_listener.Clear();
-
-            if (all_servers_throttled) {
-                NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
-                        "Cannot execute ["  << cmd <<
-                        "]: all servers are throttled for the " + m_ServiceName + " service.");
-            }
-
+            fail_only_warnings.IssueAndClear();
             LOG_POST(Warning << "Unable to send [" << cmd << "] to any "
                     "of the discovered servers; will retry after delay.");
 
