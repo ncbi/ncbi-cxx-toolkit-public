@@ -1605,7 +1605,10 @@ void CBioseqIndex::x_InitDescs (void)
                             case NCBI_TECH(tsa):
                                 m_IsTSA = true;
                                 m_UseBiosrc = true;
-                                break;
+                                 if (m_IsVirtual) {
+                                    m_TSAMaster = true;
+                                }
+                               break;
                             case NCBI_TECH(targeted):
                                 m_IsTLS = true;
                                 m_UseBiosrc = true;

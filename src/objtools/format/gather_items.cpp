@@ -1329,9 +1329,11 @@ void CFlatGatherer::x_WGSComment(CBioseqContext& ctx) const
 
 void CFlatGatherer::x_TSAComment(CBioseqContext& ctx) const
 {
+    /*
     if ( !ctx.IsTSAMaster()  ||  ctx.GetTSAMasterName().empty() ) {
         return;
     }
+    */
 
     if ( ctx.GetTech() == CMolInfo::eTech_tsa &&
          (ctx.GetBiomol() == CMolInfo::eBiomol_mRNA || ctx.GetBiomol() == CMolInfo::eBiomol_transcribed_RNA) ) 
@@ -1345,9 +1347,11 @@ void CFlatGatherer::x_TSAComment(CBioseqContext& ctx) const
 
 void CFlatGatherer::x_TLSComment(CBioseqContext& ctx) const
 {
+    /*
     if ( !ctx.IsTLSMaster()  ||  ctx.GetTLSMasterName().empty() ) {
         return;
     }
+    */
 
     if ( ctx.GetTech() == CMolInfo::eTech_targeted ) 
     {

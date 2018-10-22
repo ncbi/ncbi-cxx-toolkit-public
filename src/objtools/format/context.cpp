@@ -891,14 +891,12 @@ void CBioseqContext::x_SetId(void)
         } 
 
         // TSA
-        m_IsTSA = m_IsTSA  ||  (acc_div == CSeq_id::eAcc_tsa);
+        m_IsTSA = m_IsTSA  ||  ( GetTech() == CMolInfo::eTech_tsa );
         
         if ( m_IsTSA  &&  !acc.empty() ) {
-            size_t len = acc.length();
-            m_IsTSAMaster = 
-                ( ((len == 12  ||  len == 15)  &&  NStr::EndsWith(acc, "000000"))  ||
-                  (len == 13  &&  NStr::EndsWith(acc, "0000000")) ) &&
-                ( m_Repr == CSeq_inst::eRepr_virtual );
+            if ( m_Repr == CSeq_inst::eRepr_virtual) {
+                m_IsTSAMaster = true;
+            }
             if ( m_IsTSAMaster ) {
                 m_TSAMasterAccn = acc;
                 m_TSAMasterName = tsip->CanGetName() ? tsip->GetName() : kEmptyStr;

@@ -191,13 +191,14 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     const bool bIsMap = (ctx.GetRepr() == CSeq_inst::eRepr_map);
     if ( ctx.IsWGSMaster()  &&  ctx.GetTech() == CMolInfo::eTech_wgs ) {
         GATHER_VIA_FUNC(Wgs, x_GatherWGS);
-    } else if( ctx.IsTSAMaster()  &&
-               ctx.GetTech() == CMolInfo::eTech_tsa &&
+    } else if( /* ctx.IsTSAMaster()  && */
+               ctx.GetTech() == CMolInfo::eTech_tsa  &&  ctx.GetRepr() == CSeq_inst::eRepr_virtual &&
                (ctx.GetBiomol() == CMolInfo::eBiomol_mRNA || ctx.GetBiomol() == CMolInfo::eBiomol_transcribed_RNA) ) 
     {
         // Yes, the TSA info is considered a kind of PRIMARY block
         GATHER_VIA_FUNC(Tsa, x_GatherTSA);
-    } else if( ctx.IsTLSMaster()  &&  ctx.GetTech() == CMolInfo::eTech_targeted ) 
+    } else if( /* ctx.IsTLSMaster()  && */
+               ctx.GetTech() == CMolInfo::eTech_targeted  &&  ctx.GetRepr() == CSeq_inst::eRepr_virtual ) 
     {
         GATHER_VIA_FUNC(Tsa, x_GatherTLS);
     } else if ( ctx.DoContigStyle() ) {

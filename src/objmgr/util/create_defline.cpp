@@ -716,6 +716,11 @@ void CDeflineGenerator::x_SetFlags (
     FOR_EACH_SEQID_ON_BIOSEQ_HANDLE (sid_itr, bsh) {
         CSeq_id_Handle sid = *sid_itr;
         switch (sid.Which()) {
+            case NCBI_SEQID(Tpg):
+            case NCBI_SEQID(Tpe):
+            case NCBI_SEQID(Tpd):
+                m_ThirdParty = true;
+                // fall through
             case NCBI_SEQID(Other):
             case NCBI_SEQID(Genbank):
             case NCBI_SEQID(Embl):
@@ -767,11 +772,6 @@ void CDeflineGenerator::x_SetFlags (
                 }
                 break;
             }
-            case NCBI_SEQID(Tpg):
-            case NCBI_SEQID(Tpe):
-            case NCBI_SEQID(Tpd):
-                m_ThirdParty = true;
-                break;
             case NCBI_SEQID(Pdb):
             {
                 m_IsPDB = true;
@@ -881,6 +881,9 @@ void CDeflineGenerator::x_SetFlags (
                 case NCBI_TECH(tsa):
                     m_IsTSA = true;
                     m_UseBiosrc = true;
+                    if (m_IsVirtual) {
+                        m_TSAMaster = true;
+                    }
                     break;
                 case NCBI_TECH(targeted):
                     m_IsTLS = true;
