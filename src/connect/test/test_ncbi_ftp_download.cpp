@@ -50,7 +50,7 @@
 
 #include "test_assert.h"  // This header must go last
 
-#define SCREEN_COLS (80 - 1)
+#define SCREEN_COLS  (80 - 1)
 
 
 #define CONN_NCBI_FTP_HOST  "ftp-ext.ncbi.nlm.nih.gov"
@@ -91,6 +91,24 @@ static void s_Interrupt(int /*signo*/)
 }
 }
 #endif // NCBI_OS
+
+
+static bool s_IsATTY(void)
+{
+    static int x_IsATTY = -1/*uninited*/;
+    if (x_IsATTY < 0) {
+        x_IsATTY =
+#if   defined(NCBI_OS_UNIX)
+             isatty(STDERR_FILENO)   ? 1 : 0
+#elif defined(NCBI_OS_MSWIN)
+            _isatty(_fileno(stderr)) ? 1 : 0
+#else
+            0/*safe choice*/
+#endif // NCBI_OS
+            ;
+    }
+    return x_IsATTY ? true : false;
+}
 
 
 class CDownloadCallbackData {
@@ -200,7 +218,7 @@ protected:
         streamsize linelen = (streamsize) line.size();
         NcbiCerr.flush();
         NcbiCout << line;
-        if (linelen < SCREEN_COLS) {
+        if (s_IsATTY()  &&  linelen < SCREEN_COLS) {
             NcbiCout << NcbiSetw(SCREEN_COLS - linelen) << ' ';
         }
         NcbiCout << NcbiEndl;
@@ -330,7 +348,7 @@ size_t CListProcessor::Run(void)
         if (linelen /*!line.empty()*/) {
             NcbiCerr.flush();
             NcbiCout << line;
-            if (linelen < SCREEN_COLS) {
+            if (s_IsATTY()  &&  linelen < SCREEN_COLS) {
                 NcbiCout << NcbiSetw(SCREEN_COLS - linelen) << ' ';
             }
             NcbiCout << NcbiEndl;
@@ -392,24 +410,6 @@ void CUntarProcessor::Stop(void)
     m_Tar = 0;
     delete m_Prev;
     m_Prev = 0;
-}
-
-
-static bool s_IsATTY(void)
-{
-    static int x_IsATTY = -1/*uninited*/;
-    if (x_IsATTY < 0) {
-        x_IsATTY =
-#if   defined(NCBI_OS_UNIX)
-             isatty(STDERR_FILENO)   ? 1 : 0
-#elif defined(NCBI_OS_MSWIN)
-            _isatty(_fileno(stderr)) ? 1 : 0
-#else
-            0/*safe choice*/
-#endif // NCBI_OS
-            ;
-    }
-    return x_IsATTY ? true : false;
 }
 
 
