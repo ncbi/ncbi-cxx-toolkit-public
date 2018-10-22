@@ -237,7 +237,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
         NStr::Split(testDescription, " ", testComponents);
         BOOST_REQUIRE_MESSAGE(
             (testComponents.size() == 2), 
-            "Invalid test description: " << testDescription);
+            "Invalid test description: \"" << testDescription << "\"");
         auto testName = testComponents[0];
         auto format = testComponents[1];
         if (sSkipTest(args, testName, format)) {

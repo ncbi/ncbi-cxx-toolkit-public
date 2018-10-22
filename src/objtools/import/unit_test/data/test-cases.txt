@@ -6,6 +6,9 @@ gene-mrna-exon-cds gtf
 exon-cds gtf
 uud-3s gtf
 
+# GFF3
+test-basic gff3
+
 # BED:
 test-12-col bed
 test-9-col bed

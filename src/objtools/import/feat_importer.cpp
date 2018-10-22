@@ -38,6 +38,7 @@
 #include "feat_importer_impl.hpp"
 #include "id_resolver_canonical.hpp"
 #include "gtf_importer.hpp"
+#include "gff3_importer.hpp"
 #include "bed_importer.hpp"
 #include "5col_importer.hpp"
 #include "feat_line_reader.hpp"
@@ -62,6 +63,9 @@ CFeatImporter::Get(
 {
     if (format == "gtf") {
         return new CGtfImporter(flags, errorHandler);
+    }
+    if (format == "gff3") {
+        return new CGff3Importer(flags, errorHandler);
     }
     if (format == "bed") {
         return new CBedImporter(flags, errorHandler);

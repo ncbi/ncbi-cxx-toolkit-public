@@ -1,0 +1,95 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local id 1,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 833,
+        to 934,
+        strand plus,
+        id local str "chr1"
+      },
+      qual {
+        {
+          qual "ID",
+          val "chr1-cds"
+        },
+        {
+          qual "Parent",
+          val "chr1-mrna"
+        }
+      },
+      xref {
+        {
+          id local id 3
+        },
+        {
+          id local id 2
+        }
+      }
+    },
+    {
+      id local id 2,
+      data gene {
+      },
+      location int {
+        from 833,
+        to 934,
+        strand plus,
+        id local str "chr1"
+      },
+      qual {
+        {
+          qual "ID",
+          val "chr1-gene"
+        },
+        {
+          qual "Name",
+          val "the-gene"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        },
+        {
+          id local id 3
+        }
+      }
+    },
+    {
+      id local id 3,
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 833,
+          to 934,
+          strand plus,
+          id local str "chr1"
+        }
+      },
+      qual {
+        {
+          qual "Parent",
+          val "chr1-gene"
+        },
+        {
+          qual "ID",
+          val "chr1-mrna"
+        }
+      },
+      xref {
+        {
+          id local id 1
+        },
+        {
+          id local id 2
+        }
+      }
+    }
+  }
+}
