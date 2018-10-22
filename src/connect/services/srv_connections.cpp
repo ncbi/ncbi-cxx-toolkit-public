@@ -595,19 +595,18 @@ void SNetServerImpl::TryExec(INetServerExecHandler& handler, const STimeout* tim
 {
     auto& server_in_pool = *m_ServerInPool;
     auto& throttle_stats = server_in_pool.m_ThrottleStats;
-    const auto& address = server_in_pool.m_Address;
 
-    throttle_stats.Check(address);
+    throttle_stats.Check(this);
 
     try {
         server_in_pool.TryExec(this, handler, timeout);
     }
     catch (CNetSrvConnException& e) {
-        throttle_stats.Adjust(e.GetErrCode(), address);
+        throttle_stats.Adjust(this, e.GetErrCode());
         throw;
     }
 
-    throttle_stats.Adjust(-1, address); // Success
+    throttle_stats.Adjust(this, -1); // Success
 }
 
 class CNetServerExecHandler : public INetServerExecHandler
@@ -657,8 +656,10 @@ void SNetServerImpl::ConnectAndExec(const string& cmd,
     TryExec(exec_handler, timeout);
 }
 
-void SThrottleStats::Adjust(int err_code, const CNetServer::SAddress& address)
+void SThrottleStats::Adjust(SNetServerImpl* server_impl, int err_code)
 {
+    _ASSERT(server_impl);
+
     if (m_Params.throttle_period <= 0)
         return;
 
@@ -668,6 +669,7 @@ void SThrottleStats::Adjust(int err_code, const CNetServer::SAddress& address)
             (err_code != CNetSrvConnException::eConnectionFailure)) return;
 
     CFastMutexGuard guard(m_ThrottleLock);
+    const auto& address = server_impl->m_ServerInPool->m_Address;
 
     if (m_Params.max_consecutive_io_failures > 0) {
         if (!op_result)
@@ -676,7 +678,7 @@ void SThrottleStats::Adjust(int err_code, const CNetServer::SAddress& address)
         else if (++m_NumberOfConsecutiveIOFailures >= m_Params.max_consecutive_io_failures) {
             m_Throttled = true;
             m_ThrottleMessage = "Server " + address.AsString() +
-                " has reached the maximum number of connection failures in a row";
+                " reached the maximum number of connection failures in a row";
         }
     }
 
@@ -690,7 +692,7 @@ void SThrottleStats::Adjust(int err_code, const CNetServer::SAddress& address)
             if (op_result && (reg.count() >= m_Params.io_failure_threshold.numerator)) {
                 m_Throttled = true;
                 m_ThrottleMessage = "Connection to server " + address.AsString() +
-                    " aborted as it is considered bad/overloaded";
+                    " aborted as it was considered bad/overloaded";
             }
         }
 
@@ -700,12 +702,17 @@ void SThrottleStats::Adjust(int err_code, const CNetServer::SAddress& address)
     if (m_Throttled) {
         m_DiscoveredAfterThrottling = false;
         m_ThrottledUntil.SetCurrent();
+        CNetServer server(server_impl);
+        server_impl->m_Service->m_Listener->OnWarning(m_ThrottleMessage, server);
+        m_ThrottleMessage += " on " + m_ThrottledUntil.AsString();
         m_ThrottledUntil.AddSecond(m_Params.throttle_period);
     }
 }
 
-void SThrottleStats::Check(const CNetServer::SAddress& address)
+void SThrottleStats::Check(SNetServerImpl* server_impl)
 {
+    _ASSERT(server_impl);
+
     if (m_Params.throttle_period <= 0)
         return;
 
@@ -719,9 +726,13 @@ void SThrottleStats::Check(const CNetServer::SAddress& address)
                 (!m_Params.throttle_until_discoverable || m_DiscoveredAfterThrottling)) {
             duration += CTimeSpan(m_Params.throttle_period, 0);
             Reset();
-            LOG_POST(Warning << "Disabling throttling for server " << address.AsString() <<
-                    " after " << duration.AsString() << " seconds wait" << 
-                    (m_Params.throttle_until_discoverable ? " and rediscovery" : ""));
+            const auto& address = server_impl->m_ServerInPool->m_Address;
+            ostringstream os;
+            os << "Disabling throttling for server " << address.AsString() <<
+                    " before new attempt after " << duration.AsString() << " seconds wait" << 
+                    (m_Params.throttle_until_discoverable ? " and rediscovery" : "");
+            CNetServer server(server_impl);
+            server_impl->m_Service->m_Listener->OnWarning(os.str(), server);
             return;
         }
         NCBI_THROW(CNetSrvConnException, eServerThrottle, m_ThrottleMessage);

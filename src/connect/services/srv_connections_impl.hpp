@@ -179,8 +179,8 @@ struct SThrottleStats
 {
     SThrottleStats(SThrottleParams params) : m_Params(move(params)) { Reset(); }
 
-    void Adjust(int err_code, const CNetServer::SAddress& address);
-    void Check(const CNetServer::SAddress& address);
+    void Adjust(SNetServerImpl* server_impl, int err_code);
+    void Check(SNetServerImpl* server_impl);
     void Discover();
 
 private:
