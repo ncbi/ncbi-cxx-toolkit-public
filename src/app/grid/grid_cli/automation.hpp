@@ -282,6 +282,7 @@ private:
     static void ExecVersion(const TArguments& args, SInputOutput& io, void* data);
     static void ExecWhatIs(const TArguments& args, SInputOutput& io, void* data);
     static void ExecEcho(const TArguments& args, SInputOutput& io, void* data);
+    static void ExecSleep(const TArguments& args, SInputOutput& io, void* data);
     static void ExecSetContext(const TArguments& args, SInputOutput& io, void* data);
 
     static TCommands Commands();

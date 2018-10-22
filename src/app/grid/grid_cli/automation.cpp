@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include <sstream>
+#include <thread>
 
 #include "nc_automation.hpp"
 #include "ns_automation.hpp"
@@ -443,6 +444,9 @@ TCommands CAutomationProc::Commands()
                 { "some_id", CJsonNode::eString, },
             }},
         { "echo", ExecEcho, "any" },
+        { "sleep", ExecSleep, {
+                { "seconds", CJsonNode::eDouble, },
+            }},
         { "version", ExecVersion },
         { "set_context", ExecSetContext, {
                 { "phid", CJsonNode::eString, },
@@ -500,6 +504,14 @@ void CAutomationProc::ExecEcho(const TArguments& args, SInputOutput& io, void*)
 {
     auto& reply = io.reply;
     for (auto& arg: args) reply.Append(arg.Value());
+}
+
+void CAutomationProc::ExecSleep(const TArguments& args, SInputOutput&, void*)
+{
+    _ASSERT(args.size() == 1);
+
+    const auto seconds = args["seconds"].AsDouble();
+    this_thread::sleep_for(chrono::duration<double>(seconds));
 }
 
 void CAutomationProc::ExecSetContext(const TArguments& args, SInputOutput&, void*)
