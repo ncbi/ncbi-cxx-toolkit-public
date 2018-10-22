@@ -592,6 +592,8 @@ function GetDefaultSuffix()
         s = "vs2015";
     } else if (g_msvcver == "140x64") {
         s = "vs2015.64";
+    } else if (g_msvcver == "150") {
+        s = "vs2017";
     } else if (g_msvcver == "150x64") {
         s = "vs2017.64";
     }
