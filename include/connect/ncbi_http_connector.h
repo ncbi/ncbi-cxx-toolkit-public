@@ -74,8 +74,8 @@ extern "C" {
  *
  * @var fHTTP_KeepHeader
  *       Do not strip HTTP header (i.e. everything up to the first "\r\n\r\n",
- *       including the "\r\n\r\n") from the CGI script's response (including
- *       any server error, which then is made available for reading as well)
+ *       including the "\r\n\r\n") from the incomning HTTP response (including
+ *       any server error, which then is made available for reading as well).
  *       *NOTE* this flag disables automatic authorization and redirection.
  *
  * @var fHTTP_WriteThru
@@ -98,12 +98,12 @@ extern "C" {
  * @var fHTTP_DropUnread
  *       Do not collect incoming data in "Read" mode before switching into
  *       "Write" mode for preparing next request;  by default all data sent by
- *       the server get stored even if not all of it had been requested prior
- *       to a "Write" following a "Read" was issued (stream emulation).
+ *       the server get stored even if not all of it have been requested prior
+ *       to a "Write" that followed data reading (stream emulation).
  *
  * @var fHTTP_NoAutoRetry
  *       Do not attempt any auto-retries in case of failing connections
- *       (this flag effectively means having SConnNetInfo::max_try set to 1).
+ *       (this flag effectively overrides SConnNetInfo::max_try with 1).
  *
  * @var fHTTP_UnsafeRedirects
  *       For security reasons the following redirects comprise security risk,
