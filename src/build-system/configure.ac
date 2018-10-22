@@ -2161,8 +2161,8 @@ else
    multiarch=`echo $host | sed -e 's/-unknown-/-/; [s/^i[3-9]86-/^i\[3-9\]86/]'`
 fi
 
-case "$compiler:$compiler_version:$with_bin_release" in
-  GCC:*:yes )
+case "$compiler:$compiler_version:$with_bin_release:$ncbi_cv_prog_cxx_stdlib_libcxx" in
+  GCC:*:yes:no )
     libstdcxx=`$CXX $LDFLAGS -print-file-name=libstdc++.a`
     case "$libstdcxx" in
        /*)
