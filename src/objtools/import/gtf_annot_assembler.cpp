@@ -31,9 +31,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
-#include <objects/general/Object_id.hpp>
-
-#include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>

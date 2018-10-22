@@ -39,6 +39,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 
 #include "feat_annot_assembler.hpp"
+#include "featid_generator.hpp"
 #include "gff3_import_data.hpp"
 
 class CFeatureMap;
@@ -177,8 +178,20 @@ private:
         CRef<CSeq_feat>,
         CSeq_annot&);
 
+    void
+    xProcessFeatureCds(
+        const std::string&,
+        const std::string&,
+        CRef<CSeq_feat>,
+        CSeq_annot&);
+
+    void xAnnotGenerateXrefs(
+        CSeq_annot&);
+
     CGff3FeatureMap mFeatureMap;
     CGff3PendingFeatureList mPendingFeatures;
+    map<string,string> mXrefMap;
+    CFeatureIdGenerator mIdGenerator;
 };
 
 END_objects_SCOPE

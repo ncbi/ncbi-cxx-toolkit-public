@@ -35,6 +35,8 @@
 #define FEATID_GENERATOR__HPP
 
 #include <corelib/ncbifile.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 
 #include <map>
@@ -55,9 +57,9 @@ public:
 
     //  --------------------------------------------------------------------
     CRef<CFeat_id>
-        GetIdFor(
-            const string& recType)
-        //  --------------------------------------------------------------------
+    GetIdFor(
+        const string& recType)
+    //  --------------------------------------------------------------------
     {
         auto typeIt = mIdCounter.find(recType);
         if (typeIt == mIdCounter.end()) {

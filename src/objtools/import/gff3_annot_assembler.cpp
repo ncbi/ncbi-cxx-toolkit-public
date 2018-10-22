@@ -88,6 +88,8 @@ CGff3AnnotAssembler::ProcessRecord(
         return xProcessFeatureExon(recordId, parentId, pFeature, annot);
     case CSeqFeatData::eSubtype_mRNA:
         return xProcessFeatureRna(recordId, parentId, pFeature, annot);
+    case CSeqFeatData::eSubtype_cdregion:
+        return xProcessFeatureCds(recordId, parentId, pFeature, annot);
     }
 }
 
@@ -100,7 +102,28 @@ CGff3AnnotAssembler::xProcessFeatureDefault(
     CSeq_annot& annot)
 //  ============================================================================
 {
+    auto featureType = CSeqFeatData::SubtypeValueToName(
+        pFeature->GetData().GetSubtype());
+    NStr::ToLower(featureType);
+    pFeature->SetId(*mIdGenerator.GetIdFor(featureType));
     annot.SetData().SetFtable().push_back(pFeature);
+}
+
+
+//  ============================================================================
+void
+CGff3AnnotAssembler::xProcessFeatureCds(
+    const std::string& recordId,
+    const std::string& parentId,
+    CRef<CSeq_feat> pFeature,
+    CSeq_annot& annot)
+//  ============================================================================
+{
+    pFeature->SetId(*mIdGenerator.GetIdFor("cds"));
+    annot.SetData().SetFtable().push_back(pFeature);
+    if (!recordId.empty()  &&  !parentId.empty()) {
+        mXrefMap[recordId] = parentId;
+    }
 }
 
 
@@ -114,13 +137,21 @@ CGff3AnnotAssembler::xProcessFeatureRna(
 //  ============================================================================
 {
     annot.SetData().SetFtable().push_back(pFeature);
+    pFeature->SetId(*mIdGenerator.GetIdFor("mrna"));
     pFeature->SetLocation().SetNull();
+    if (!recordId.empty()  &&  !parentId.empty()) {
+        mXrefMap[recordId] = parentId;
+    }
 
     vector<CRef<CSeq_feat>> pendingExons;
     if (!mPendingFeatures.FindPendingFeatures(recordId, pendingExons)) {
         return;
     }
     for (auto pExon: pendingExons) {
+        if (pFeature->GetLocation().IsNull()) {
+            pFeature->SetLocation().Assign(pExon->GetLocation());
+            continue;
+        }
         CRef<CSeq_loc> pUpdatedLocation = pFeature->GetLocation().Add(
             pExon->GetLocation(), 
             CSeq_loc::fSortAndMerge_All, nullptr);
@@ -158,5 +189,32 @@ CGff3AnnotAssembler::FinalizeAnnot(
     CSeq_annot& annot)
 //  ============================================================================
 {
+    for (auto entry: mXrefMap) {
+        auto childId = entry.first;
+        auto parentId = entry.second;
+
+        auto pChild = mFeatureMap.FindFeature(childId);
+        auto pParent = mFeatureMap.FindFeature(parentId);
+        if (!pChild  ||  !pParent) {
+            continue;
+        }
+        pChild->AddSeqFeatXref(pParent->GetId());
+        pParent->AddSeqFeatXref(pChild->GetId());
+
+        auto itGrandParent = mXrefMap.find(parentId);
+        if (itGrandParent == mXrefMap.end()) {
+            continue;
+        }
+        auto grandParentId = itGrandParent->second;
+        auto pGrandParent = mFeatureMap.FindFeature(grandParentId);
+        if (!pGrandParent) {
+            continue;
+        }
+        pChild->AddSeqFeatXref(pGrandParent->GetId());
+        pGrandParent->AddSeqFeatXref(pChild->GetId());
+        pParent->AddSeqFeatXref(pGrandParent->GetId());
+        pGrandParent->AddSeqFeatXref(pParent->GetId());
+    }
 }
+
 

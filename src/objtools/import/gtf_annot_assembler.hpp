@@ -38,6 +38,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 
+#include "featid_generator.hpp"
 #include "feat_annot_assembler.hpp"
 #include "gtf_import_data.hpp"
 
