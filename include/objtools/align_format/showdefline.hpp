@@ -95,7 +95,9 @@ public:
         eShowNewSeqGif = (1 << 8),      //show new sequence gif image
         eShowPercentIdent = (1 << 9),   //show percent identity column
         eLongSeqId = (1 << 10),         //print long sequences id (with bars)
-        eRealtedInfoLinks = (1 << 11)           //Related information links - Linkout links with descriptions + others
+        eRealtedInfoLinks = (1 << 11),  //Related information links - Linkout links with descriptions + others
+        eShowTotalScore = (1 << 12),    //show total score column
+        eShowQueryCoverage = (1 << 13)  //show query coverage column
     };
 
     ///Data Representing each defline
