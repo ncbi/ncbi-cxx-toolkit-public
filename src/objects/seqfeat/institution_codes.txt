@@ -2937,6 +2937,7 @@ INMI	c	Institute of Microbiology, Russian Academy of Sciences
 INPA	s	Instituto Nacional de Pesquisas da Amazonia			
 INPA:CR	s	Instituto Nacional de Pesquisas da Amazonia, Crustacea Collection		
 INPA:H	s	Instituto Nacional de Pesquisas da Amazonia, Collection of Amphibians and Reptiles		
+INPA:ICT	s	Instituto Nacional de Pesquisas da Amazonia, 	
 INPA:LMM	c	Instituto Nacional de Pesquisas da Amazonia, Laboratorio de Micologia Medica Divisao de Microbiologia e Nutricao	
 INPC	s	National Pusa Collections			
 INRA	b	Institut National de la Recherche Agronomique			
@@ -4522,6 +4523,7 @@ MZUC<CHL>	s	Museo de Zoologia, Universidad de Concepcion
 MZUC<ITA>	s	Universita di Cagliari			
 MZUCR	s	Universidad de Costa Rica, Museo de Zoologia	UCR		
 MZUEL	s	Museu de Zoologia da Universidade Estadual de Londrina	MZUEL		
+MZUEL:Pisces	s	Museu de Zoologia da Universidade Estadual de Londrina, Fish collection	
 MZUESC<BRA>	s	Museu de Zoologia da Universidade Estadual de Santa Cruz			
 MZUF	s	Museo Zoologico La Specola, Universita di Firenze			
 MZUFBA	s	Museu de Zoologia, Universidade Federal da Bahia, Salvador			
@@ -7549,7 +7551,7 @@ WSRP	s	University of Podlasie, Botany Department
 WSU<USA-UT>	s	Weber State University, Bird and Mammal Collection			
 WSU<USA-WA>	s	Washington State University			
 WSUMNH	s	Wayne State University, Museum of Natural History			
-WSY	s	Royal Horticultural Society's Gardens			
+WSY	s	Royal Horticultural Society Garden Wisley			
 WTR	s	Winchester College, Biology Department			
 WTS	s	West Texas A&M University, Department of Life, Earth and Environmental Sciences			
 WTSU	s	West Texas A&M University, Natural History Collection			
