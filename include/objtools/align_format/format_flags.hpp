@@ -79,6 +79,8 @@ NCBI_ALIGN_FORMAT_EXPORT extern const size_t kDfltLineLength;
 NCBI_ALIGN_FORMAT_EXPORT extern const string kArgAlignSeqList;
 NCBI_ALIGN_FORMAT_EXPORT extern const string kArgMetadata;
 NCBI_ALIGN_FORMAT_EXPORT extern const string kArgQueryIndex;
+NCBI_ALIGN_FORMAT_EXPORT extern const string kArgSortHits;
+NCBI_ALIGN_FORMAT_EXPORT extern const string kArgSortHSPs;
 
 
 

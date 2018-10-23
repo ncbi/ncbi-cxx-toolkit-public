@@ -1070,6 +1070,18 @@ public:
                                ILinkoutDB* linkoutdb,
                                const string& mv_build_name);
 
+    static CRef<objects::CSeq_align_set> 
+        SortSeqalignForSortableFormat(objects::CSeq_align_set& aln_set,
+                               bool nuc_to_nuc_translation,
+                               int hit_order,
+                               int hsp_order);
+
+    static list< CRef<objects::CSeq_align_set> >
+        SortOneSeqalignForSortableFormat(const objects::CSeq_align_set& source,                                                                                                 
+                                      bool nuc_to_nuc_translation,                                             
+                                      int hit_sort,
+                                      int hsp_sort);
+
 	/// function for calculating  percent match for an alignment.	
 	///@param numerator
 	/// int numerator in percent identity calculation.
