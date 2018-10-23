@@ -257,9 +257,11 @@ s_BlastGreedyAlignMemAlloc(const BlastScoringParameters* score_params,
    gamp->max_score = (Int4*) malloc(sizeof(Int4) * (max_d + 1 + d_diff));
 
    gamp->space = MBSpaceNew(0);
-   if (!gamp->max_score || !gamp->space)
-      /* Failure in one of the memory allocations */
-      s_BlastGreedyAlignsFree(gamp);
+   if (!gamp->max_score || !gamp->space) {
+       /* Failure in one of the memory allocations */
+       s_BlastGreedyAlignsFree(gamp);
+       return NULL;
+   }
 
    return gamp;
 }
