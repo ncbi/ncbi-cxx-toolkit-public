@@ -1,7 +1,7 @@
 Seq-annot ::= {
   data ftable {
     {
-      id local id 1,
+      id local str "gene_1",
       data gene {
         locus "fdnG",
         syn {
@@ -35,7 +35,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local str "cds_1"
         }
       },
       dbxref {
@@ -46,9 +46,8 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 2,
+      id local str "cds_1",
       data cdregion {
-        frame one,
         code {
           id 11
         },
@@ -83,6 +82,14 @@ Seq-annot ::= {
           val "cds1460"
         },
         {
+          qual "Parent",
+          val "gene1509"
+        },
+        {
+          qual "Name",
+          val "AAD13438.1"
+        },
+        {
           qual "gene",
           val "fdnG"
         },
@@ -93,15 +100,11 @@ Seq-annot ::= {
         {
           qual "protein_id",
           val "AAD13438.1"
-        },
-        {
-          qual "Parent",
-          val "gene1509"
         }
       },
       xref {
         {
-          id local id 1
+          id local str "gene_1"
         }
       },
       dbxref {

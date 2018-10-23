@@ -9,6 +9,7 @@ uud-3s gtf
 # GFF3
 test-basic gff3
 test-gene-cds gff3
+test-multi-rna gff3
 
 # BED:
 test-12-col bed

@@ -92,6 +92,22 @@ private:
     void xInitializeAttributes(
         const std::vector<std::pair<std::string, std::string>>&);
 
+    bool xInitializeDbxref(
+        const std::string&,
+        const std::string&);
+
+    bool xInitializeComment(
+        const std::string&,
+        const std::string&);
+
+    bool xInitializeDataGene(
+        const std::string&,
+        const std::string&);
+
+    bool xInitializeDataCds(
+        const std::string&,
+        const std::string&);
+
     CRef<CSeq_feat> mpFeat;
     string mId;
     string mParent;

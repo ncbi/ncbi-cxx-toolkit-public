@@ -32,8 +32,12 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <objects/seq/so_map.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Genetic_code.hpp>
 
+#include <objtools/import/feat_util.hpp>
 #include <objtools/import/feat_import_error.hpp>
 #include "gff3_import_data.hpp"
 
@@ -102,10 +106,132 @@ CGff3ImportData::xInitializeAttributes(
             mParent = value;
             //continue;
         }
-        mpFeat->AddQualifier(key, value);
+        if (key == "gbkey") {
+            continue;
+        }
+        if (xInitializeDbxref(key, value)) {
+            continue;
+        }
+        if (xInitializeComment(key, value)) {
+            continue;
+        }
+        if (xInitializeDataGene(key, value)) {
+            continue;
+        }
+        if (xInitializeDataCds(key, value)) {
+            continue;
+        }
+        mpFeat->AddQualifier(key, NStr::URLDecode(value));
     }
 }
 
+
+//  ============================================================================
+bool
+CGff3ImportData::xInitializeDbxref(
+    const std::string& key,
+    const std::string& value)
+//  ============================================================================
+{
+    if (key != "Dbxref") {
+        return false;
+    }
+    vector<string> dbxRefs;
+    NStr::Split(value, ",", dbxRefs);
+    CRef<CDbtag> pDbtag;
+    for (auto dbxRef: dbxRefs) {
+        pDbtag.Reset(new CDbtag);
+        string db, tag;
+        NStr::SplitInTwo(dbxRef, ":", pDbtag->SetDb(), pDbtag->SetTag().SetStr());
+        mpFeat->SetDbxref().push_back(pDbtag);
+    }
+    return true;
+}
+
+
+//  ============================================================================
+bool
+CGff3ImportData::xInitializeComment(
+    const std::string& key,
+    const std::string& value)
+//  ============================================================================
+{
+    if (key != "Note") {
+        return false;
+    }
+    auto normalizedValue = NStr::URLDecode(value);
+    mpFeat->SetComment() = normalizedValue;
+    return true;
+}
+
+
+//  ============================================================================
+bool
+CGff3ImportData::xInitializeDataGene(
+    const std::string& key,
+    const std::string& value)
+//  ============================================================================
+{
+    auto& data = mpFeat->SetData();
+    if (!data.IsGene()) {
+        return false;
+    }
+
+    auto& geneRef = data.SetGene();
+    if (key == "gene") {
+        geneRef.SetLocus(value);
+        return true;
+    }
+    if (key == "locus_tag") {
+        geneRef.SetLocus_tag(value);
+        return true;
+    }
+    if (key == "gene_synonym") {
+        vector<string> synonyms;
+        NStr::Split(value, ",", synonyms);
+        for (auto synonym: synonyms) {
+            geneRef.SetSyn().push_back(synonym);
+        }
+        return true;
+    }
+    return false;
+}
+
+//  ============================================================================
+bool
+CGff3ImportData::xInitializeDataCds(
+    const std::string& key,
+    const std::string& value)
+//  ============================================================================
+{
+    auto& data = mpFeat->SetData();
+    if (!data.IsCdregion()) {
+        return false;
+    }
+    auto& cdsRef = data.SetCdregion();
+
+    if (key == "transl_except") {
+        vector<string> codeBreaks;
+        NStr::Split(value, ",", codeBreaks);
+        for (auto codeBreakStr: codeBreaks) {
+            CRef<CCode_break> pCodeBreak = FeatUtil::MakeCodeBreak(
+                *mpFeat->GetLocation().GetId(), 
+                NStr::URLDecode(codeBreakStr));
+            if (pCodeBreak) {
+                cdsRef.SetCode_break().push_back(pCodeBreak);
+            }
+        }
+        return true;
+    }
+
+    if (key == "transl_table") {
+        CRef<CGenetic_code::C_E> pCe(new CGenetic_code::C_E);
+        pCe->SetId(NStr::StringToInt(value));
+        cdsRef.SetCode().Set().push_back(pCe);
+        return true;
+    }
+    return false;
+}
 
 //  ============================================================================
 void

@@ -205,6 +205,7 @@ CFeatImportApp::xGetInputFormat(
 
     CFormatGuess fg(istr);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eGtf);
+    fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff3);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eGffAugustus);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eBed);
     fg.GetFormatHints().AddPreferredFormat(CFormatGuess::eFiveColFeatureTable);
@@ -216,6 +217,8 @@ CFeatImportApp::xGetInputFormat(
     case CFormatGuess::eGtf:
     case CFormatGuess::eGffAugustus:
         return "gtf";
+    case CFormatGuess::eGff3:
+        return "gff3";
     case CFormatGuess::eBed:
         return "bed";
     case CFormatGuess::eFiveColFeatureTable:

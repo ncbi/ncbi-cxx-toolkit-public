@@ -35,6 +35,8 @@
 
 #include <corelib/ncbifile.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqfeat/Code_break.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -45,6 +47,11 @@ public:
     static bool
     ContainsData(
         const CSeq_annot& annot);
+
+    static CRef<CCode_break>
+    MakeCodeBreak(
+        const CSeq_id&,
+        const std::string&);
 };
 
 END_objects_SCOPE
