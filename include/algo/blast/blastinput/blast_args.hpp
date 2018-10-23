@@ -1071,7 +1071,9 @@ public:
         m_Html(false),
         m_IsIgBlast(isIgblast),
         m_LineLength(align_format::kDfltLineLength),
-        m_FormatFlags(flag)
+        m_FormatFlags(flag),
+        m_HitsSortOption(-1),
+        m_HspsSortOption(-1)
     {
         if (m_IsIgBlast) {
             m_DfltNumAlignments = m_DfltNumDescriptions = 10;
@@ -1148,6 +1150,12 @@ public:
     size_t GetLineLength() const {
     	return m_LineLength;
     }
+    int GetHitsSortOption() const {
+        return m_HitsSortOption;
+    }
+    int GetHspsSortOption() const {
+        return m_HspsSortOption;
+    }
 protected:
     EOutputFormat m_OutputFormat;   ///< Choice of formatting output
     bool m_ShowGis;                 ///< Display NCBI GIs?
@@ -1162,6 +1170,8 @@ protected:
     string m_CustomOutputFormatSpec;
     size_t m_LineLength;
     EFormatFlags m_FormatFlags;
+    int m_HitsSortOption;
+    int m_HspsSortOption;
 };
 
 /// Formatting args for magicblast advertising only SAM and fast tabular
