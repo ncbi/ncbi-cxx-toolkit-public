@@ -225,6 +225,8 @@ const size_t kDfltLineLength = 60;
 const string kArgAlignSeqList("alignseqlist");
 const string kArgMetadata("searchmetadata");
 const string kArgQueryIndex("queryindex");
+const string kArgSortHits("sorthits");
+const string kArgSortHSPs("sorthsps");
 
 const size_t kNumSAMOutputFormatSpecifiers = 2;
 const SSAMFormatSpec sc_SAMFormatSpecifiers[kNumSAMOutputFormatSpecifiers] = {

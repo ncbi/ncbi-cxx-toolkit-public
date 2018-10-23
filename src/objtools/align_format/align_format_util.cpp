@@ -2875,7 +2875,6 @@ CRange<TSeqPos> CAlignFormatUtil::GetSeqAlignCoverageParams(const CSeq_align_set
     return subjectRange;
 }
 
-
 CRef<CSeq_align_set>
 CAlignFormatUtil::SortSeqalignForSortableFormat(CCgiContext& ctx,
                                              CScope& scope,
@@ -2902,44 +2901,76 @@ CAlignFormatUtil::SortSeqalignForSortableFormat(CCgiContext& ctx,
     }else {
         seqalign_vec[0] = const_cast<CSeq_align_set*>(&aln_set);
     }
-
+    
+                                                            
     ITERATE(vector< CRef<CSeq_align_set> >, iter, seqalign_vec){
-        list< CRef<CSeq_align_set> > seqalign_hit_list;
-        HspListToHitList(seqalign_hit_list, **iter);
-            
-        if (hit_sort == eTotalScore) {
-            seqalign_hit_list.sort(SortHitByTotalScoreDescending);
-        } else if (hit_sort == eHighestScore) {
-                seqalign_hit_list.sort(CAlignFormatUtil::SortHitByScoreDescending);
-        } else if (hit_sort == ePercentIdentity) {
-            
-            SortHitByPercentIdentityDescending(seqalign_hit_list, 
-                                               nuc_to_nuc_translation);
-        } else if (hit_sort == eQueryCoverage) {
-            seqalign_hit_list.sort(SortHitByMasterCoverageDescending);
-        }
+        list< CRef<CSeq_align_set> > one_seqalign_hit_total_list = SortOneSeqalignForSortableFormat(**iter,                                                                                                 
+                                                            nuc_to_nuc_translation,                                             
+                                                            hit_sort,
+                                                            hsp_sort);
 
-        ITERATE(list< CRef<CSeq_align_set> >, iter2, seqalign_hit_list) { 
-            CRef<CSeq_align_set> temp(*iter2);
-            if (hsp_sort == eQueryStart) {
-                temp->Set().sort(SortHspByMasterStartAscending);
-            } else if (hsp_sort == eHspPercentIdentity) {
-                temp->Set().sort(SortHspByPercentIdentityDescending);
-                
-            } else if (hsp_sort == eScore) {
-                temp->Set().sort(SortHspByScoreDescending);
-                
-            } else if (hsp_sort == eSubjectStart) {
-                temp->Set().sort(SortHspBySubjectStartAscending);
-                
-            } 
-            
-            seqalign_hit_total_list.push_back(temp);
-        }
+        seqalign_hit_total_list.splice(seqalign_hit_total_list.end(),one_seqalign_hit_total_list);
+        
     }
        
     return HitListToHspList(seqalign_hit_total_list);
 }
+list< CRef<CSeq_align_set> >
+CAlignFormatUtil::SortOneSeqalignForSortableFormat(const CSeq_align_set& source,                                                                                                 
+                                                bool nuc_to_nuc_translation,                                             
+                                                int hit_sort,
+                                                int hsp_sort)     
+{                                                
+    list< CRef<CSeq_align_set> > seqalign_hit_total_list;
+    list< CRef<CSeq_align_set> > seqalign_hit_list;
+    HspListToHitList(seqalign_hit_list, source);
+            
+    if (hit_sort == eTotalScore) {
+        seqalign_hit_list.sort(SortHitByTotalScoreDescending);
+    } else if (hit_sort == eHighestScore) {
+        seqalign_hit_list.sort(CAlignFormatUtil::SortHitByScoreDescending);
+    } else if (hit_sort == ePercentIdentity) {            
+        SortHitByPercentIdentityDescending(seqalign_hit_list, 
+                                               nuc_to_nuc_translation);
+    } else if (hit_sort == eQueryCoverage) {
+        seqalign_hit_list.sort(SortHitByMasterCoverageDescending);
+    }
+
+    ITERATE(list< CRef<CSeq_align_set> >, iter2, seqalign_hit_list) { 
+        CRef<CSeq_align_set> temp(*iter2);
+        if (hsp_sort == eQueryStart) {
+            temp->Set().sort(SortHspByMasterStartAscending);
+        } else if (hsp_sort == eHspPercentIdentity) {
+            temp->Set().sort(SortHspByPercentIdentityDescending);                
+        } else if (hsp_sort == eScore) {
+            temp->Set().sort(SortHspByScoreDescending);                
+        } else if (hsp_sort == eSubjectStart) {
+            temp->Set().sort(SortHspBySubjectStartAscending);
+               
+        }             
+        seqalign_hit_total_list.push_back(temp);
+    }
+    return seqalign_hit_total_list;
+}
+
+CRef<CSeq_align_set>
+CAlignFormatUtil::SortSeqalignForSortableFormat(CSeq_align_set& aln_set,
+                                             bool nuc_to_nuc_translation,                                             
+                                             int hit_sort,
+                                             int hsp_sort) {
+
+    if (hit_sort == eEvalue && hsp_sort == eHspEvalue) {       
+       return (CRef<CSeq_align_set>) &aln_set;
+    }
+
+//  seqalign_vec[0] = const_cast<CSeq_align_set*>(&aln_set);
+    list< CRef<CSeq_align_set> > seqalign_hit_total_list = SortOneSeqalignForSortableFormat(aln_set,                                                                                                 
+                                                            nuc_to_nuc_translation,                                             
+                                                            hit_sort,
+                                                            hsp_sort);
+    return HitListToHspList(seqalign_hit_total_list);
+}
+
 
 CRef<CSeq_align_set> CAlignFormatUtil::FilterSeqalignByEval(CSeq_align_set& source_aln,
                                      double evalueLow,
