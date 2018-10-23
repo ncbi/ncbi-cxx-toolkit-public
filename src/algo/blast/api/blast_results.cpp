@@ -267,7 +267,7 @@ CSearchResults::GetErrorStrings() const
     }
     ITERATE(TQueryMessages, iter, m_Errors) {
         if ((**iter).GetSeverity() >= eBlastSevError) {
-            retval += (*iter)->GetMessage() + " ";
+            retval += (*iter)->GetMessage(false) + " ";
         }
     }
     return retval;
@@ -286,7 +286,7 @@ CSearchResults::GetWarningStrings() const
     }
     ITERATE(TQueryMessages, iter, m_Errors) {
         if ((**iter).GetSeverity() == eBlastSevWarning) {
-            retval += (*iter)->GetMessage() + " ";
+            retval += (*iter)->GetMessage(false) + " ";
         }
     }
     return retval;

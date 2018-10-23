@@ -888,7 +888,8 @@ s_BlastPruneExtraHits(BlastHSPResults* results, Int4 hitlist_size)
         	  (hit_list->hsplist_array[hitlist_size -1]->hsp_array[0] != NULL)){
         	  if (hit_list->hsplist_array[hitlist_size]->hsp_array[0]->score ==
         		  hit_list->hsplist_array[hitlist_size -1]->hsp_array[0]->score){
-        		  fprintf(stderr, "Additional matches with identical score are not shown\n");
+        		  Blast_MessageWrite(&(results->msgs), eBlastSevWarning,
+        		                          query_index, "Additional matches with identical score are not shown");
         	  }
           }
           for (subject_index = hitlist_size;

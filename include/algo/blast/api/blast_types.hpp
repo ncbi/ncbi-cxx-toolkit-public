@@ -177,9 +177,12 @@ public:
     
     /// Get the error message.
     /// @return A message describing this error or warning.
-    string GetMessage() const
+    string GetMessage(bool withSeverity = true) const
     {
-        return GetSeverityString() + ": " + m_Message;
+    	if (withSeverity) {
+    		return GetSeverityString() + ": " + m_Message;
+    	}
+   		return m_Message;
     }
 
     /// Compare two error messages for equality.

@@ -3327,6 +3327,7 @@ BlastHSPResults* Blast_HSPResultsNew(Int4 num_queries)
        return Blast_HSPResultsFree(retval);
    }
 
+   retval->msgs = NULL;
    return retval;
 }
 
@@ -3342,6 +3343,10 @@ BlastHSPResults* Blast_HSPResultsFree(BlastHSPResults* results)
    	for (index = 0; index < results->num_queries; ++index)
       		Blast_HitListFree(results->hitlist_array[index]);
    	sfree(results->hitlist_array);
+   }
+
+   if(results->msgs != NULL){
+	   results->msgs = Blast_MessageFree(results->msgs);
    }
    sfree(results);
    return NULL;

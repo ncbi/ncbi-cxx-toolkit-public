@@ -532,10 +532,14 @@ SetupQueries_OMF(IBlastQuerySource& queries,
             // Set the id if this is possible
             if (const CSeq_id* id = queries.GetSeqId(index)) {
                 const string kTitle = queries.GetTitle(index);
-                string query_id = id->AsFastaString();
+                string query_id = id->GetSeqIdString();
                 if (kTitle != kEmptyStr) {
                     query_id += " " + kTitle;
                 }
+                 if(query_id.size() > 35) {
+                	 query_id = query_id.substr(0, 25) + ".. ";
+                 }
+
                 messages[index].SetQueryId(query_id);
             }
 

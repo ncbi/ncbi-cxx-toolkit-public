@@ -187,6 +187,20 @@ CBlastTracebackSearch::x_Init(CRef<IQueryFactory>   qf,
     m_InternalData->m_HspStream.Reset(hsps);
 }
 
+void s_ProcessBlastMessages(const BlastHSPResults * hsp_result,
+		                    TSearchMessages & search_msgs)
+{
+	Blast_Message * current_msg = hsp_result->msgs;
+	while (current_msg != NULL) {
+		if(current_msg->message != NULL) {
+			CRef<CSearchMessage>  m(new CSearchMessage(current_msg->severity , 0,  string (current_msg->message)));
+			search_msgs[current_msg->context].push_back(m);
+		}
+		current_msg = current_msg->next;
+	}
+
+}
+
 CRef<CSearchResultSet>
 CBlastTracebackSearch::Run()
 {
@@ -280,6 +294,7 @@ CBlastTracebackSearch::Run()
         query_ids.push_back(CConstRef<CSeq_id>(qdata->GetSeq_loc(i)->GetId()));
     }
     
+    s_ProcessBlastMessages(hsp_results, m_Messages);
     return BlastBuildSearchResultSet(query_ids,
                                      m_InternalData->m_ScoreBlk->GetPointer(),
                                      m_InternalData->m_QueryInfo,
