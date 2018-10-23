@@ -51,6 +51,7 @@ Author: Jason Papadopoulos
 #include <algo/blast/blastinput/blast_input.hpp>    // for CInputException
 #include <algo/winmask/seq_masker_istat_factory.hpp>    // for CSeqMaskerIstatFactory::DiscoverStatType
 #include <connect/ncbi_connutil.h>
+#include <objtools/align_format/align_format_util.hpp>
 
 #include <algo/blast/api/msa_pssm_input.hpp>    // for CPsiBlastInputClustalW
 #include <algo/blast/api/pssm_engine.hpp>       // for CPssmEngine
@@ -2514,6 +2515,35 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     if(!m_IsIgBlast){
         arg_desc.AddFlag(kArgProduceHtml, "Produce HTML output?", true);
     }
+    
+    arg_desc.AddOptionalKey(kArgSortHits, "sort_hits",
+                           "Sorting option for hits:\n"
+                           "alignment view options:\n"
+                           "  0 = Sort by evalue,\n"
+                           "  1 = Sort by bit score,\n" 
+                           "  2 = Sort by total score,\n" 
+                           "  3 = Sort by percent identity,\n" 
+                           "  4 = Sort by query coverage\n"        
+                           "Not applicable for outfmt > 4\n",
+                           CArgDescriptions::eInteger);
+    arg_desc.SetConstraint(kArgSortHits,
+                           new CArgAllowValuesBetween(CAlignFormatUtil::eEvalue,
+                                                      CAlignFormatUtil::eQueryCoverage,
+                                                      true));                           
+    
+    arg_desc.AddOptionalKey(kArgSortHSPs, "sort_hsps",
+                           "Sorting option for hps:\n"
+                           "  0 = Sort by hsp evalue,\n"
+                           "  1 = Sort by hsp score,\n"                            
+                           "  2 = Sort by hsp query start,\n"
+                           "  3 = Sort by hsp percent identity,\n" 
+                           "  4 = Sort by hsp subject start\n"                           
+                           "Not applicable for outfmt != 0\n",
+                           CArgDescriptions::eInteger); 
+    arg_desc.SetConstraint(kArgSortHSPs,
+                           new CArgAllowValuesBetween(CAlignFormatUtil::eHspEvalue,
+                                                      CAlignFormatUtil::eSubjectStart,
+                                                      true));                                                                           
 
     /// Hit list size, listed here for convenience only
     arg_desc.SetCurrentGroup("Restrict search or results");
@@ -2581,7 +2611,7 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
                fmt_type == eSAM) ) {
                custom_fmt_spec.clear();
         }
-    }
+    }    
 }
 
 
@@ -2653,6 +2683,10 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     	if (args[kArgLineLength]) {
     	    m_LineLength = args[kArgLineLength].AsInteger();
     	}
+        if(args[kArgSortHits])
+        {
+       	    m_HitsSortOption = args[kArgSortHits].AsInteger();
+        }
     }
     else
     {
@@ -2676,13 +2710,28 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
 
     	m_NumDescriptions = hitlist_size;
     	m_NumAlignments = hitlist_size;
-    }
 
+        if(args[kArgSortHits]) {
+            int sorthits = args[kArgSortHits].AsInteger();            
+            ERR_POST(Warning << "The parameter -sorthits is ignored for output formats > 4.");                    
+        }
+    }   
+    
     if(hitlist_size < 5){
    		ERR_POST(Warning << "Examining 5 or more matches is recommended");
     }
     opt.SetHitlistSize(hitlist_size);
 
+    if(args[kArgSortHSPs]) 
+    {
+        int hspsSortOption = args[kArgSortHSPs].AsInteger();
+        if(m_OutputFormat == ePairwise) {        
+       	    m_HspsSortOption = hspsSortOption;
+        }        
+        else {
+            ERR_POST(Warning << "The parameter -sorthsps is ignored for output formats != 0.");
+        }
+    }
     return;
 }
 
