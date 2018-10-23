@@ -135,7 +135,7 @@ class CCommand;
 
 typedef vector<CCommand> TCommands;
 typedef function<void(const TArguments&, SInputOutput&, void*)> TCommandExecutor;
-typedef function<bool(const string&, SInputOutput&, void*&)> TCommandChecker;
+typedef function<void*(const string&, SInputOutput&, void*)> TCommandChecker;
 typedef pair<TCommands, TCommandChecker> TCommandGroup;
 
 class CCommand
@@ -184,7 +184,7 @@ public:
     CAutomationProc* m_AutomationProc;
 
     template <class TDerived>
-    static bool CheckCall(const string& name, SInputOutput& io, void*& data);
+    static void* CheckCall(const string& name, SInputOutput& io, void* data);
 
     template <class TDerived>
     static void ExecNew(const TArguments& args, SInputOutput& io, void* data);
@@ -299,7 +299,7 @@ inline TObjectID CAutomationProc::AddObject(TAutomationObjectRef new_object)
 }
 
 template <class TDerived>
-bool CAutomationObject::CheckCall(const string& name, SInputOutput& io, void*& data)
+void* CAutomationObject::CheckCall(const string& name, SInputOutput& io, void* data)
 {
     _ASSERT(data);
 
@@ -313,11 +313,10 @@ bool CAutomationObject::CheckCall(const string& name, SInputOutput& io, void*& d
     auto object_id = input.GetNode().AsInteger();
     auto& object_ref = that->ObjectIdToRef(object_id);
 
-    if (name != object_ref->GetType()) return false;
+    if (name != object_ref->GetType()) return nullptr;
 
-    data = object_ref.GetPointer();
     ++input;
-    return true;
+    return object_ref.GetPointer();
 }
 
 template <class TDerived>

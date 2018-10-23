@@ -62,7 +62,7 @@ struct NAutomation::SCommandImpl
 {
     virtual ~SCommandImpl() {}
     virtual CJsonNode Help(const string& name, CJsonIterator& input) = 0;
-    virtual bool Check(const string& name, SInputOutput& io, void*& data);
+    virtual void* Check(const string& name, SInputOutput& io, void* data);
     virtual bool Exec(const string& name, SInputOutput& io, void* data) = 0;
 };
 
@@ -92,7 +92,7 @@ struct SCommandGroupImpl : SCommandImpl
 {
     SCommandGroupImpl(TCommandGroup group);
     CJsonNode Help(const string& name, CJsonIterator& input) override;
-    bool Check(const string& name, SInputOutput& io, void*& data) override;
+    void* Check(const string& name, SInputOutput& io, void* data) override;
     bool Exec(const string& name, SInputOutput& io, void* data) override;
 
 private:
@@ -136,7 +136,7 @@ void CArgument::Exec(const string& name, CJsonIterator& input)
     }
 }
 
-bool SCommandImpl::Check(const string& name, SInputOutput& io, void*&)
+void* SCommandImpl::Check(const string& name, SInputOutput& io, void* data)
 {
     auto& input = io.input;
 
@@ -146,10 +146,10 @@ bool SCommandImpl::Check(const string& name, SInputOutput& io, void*&)
 
     // Call to a different element
     auto current = input.GetNode().AsString();
-    if (current != name) return false;
+    if (current != name) return nullptr;
 
     ++input;
-    return true;
+    return data;
 }
 
 SSimpleCommandImpl::SSimpleCommandImpl(TArgsInit args, TCommandExecutor exec) :
@@ -251,7 +251,7 @@ CJsonNode SCommandGroupImpl::Help(const string& name, CJsonIterator& input)
     return help;
 }
 
-bool SCommandGroupImpl::Check(const string& name, SInputOutput& io, void*& data)
+void* SCommandGroupImpl::Check(const string& name, SInputOutput& io, void* data)
 {
     if (m_Check) return m_Check(name, io, data);
 
@@ -309,9 +309,11 @@ CJsonNode CCommand::Help(CJsonIterator& input)
 
 bool CCommand::Exec(SInputOutput& io, void* data)
 {
-    if (!m_Impl->Check(m_Name, io, data)) return false;
+    if (auto new_data = m_Impl->Check(m_Name, io, data)) {
+        return m_Impl->Exec(m_Name, io, new_data);
+    }
 
-    return m_Impl->Exec(m_Name, io, data);
+    return false;
 }
 
 CJsonNode SServerAddressToJson::ExecOn(CNetServer server)
