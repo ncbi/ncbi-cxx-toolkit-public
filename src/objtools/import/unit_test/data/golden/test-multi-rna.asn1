@@ -1,7 +1,7 @@
 Seq-annot ::= {
   data ftable {
     {
-      id local id 1,
+      id local str "region_1",
       data region "",
       location int {
         from 0,
@@ -24,7 +24,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 2,
+      id local str "gene_1",
       data gene {
         locus "thrL",
         syn {
@@ -50,10 +50,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 3
+          id local str "cds_1"
         },
         {
-          id local id 4
+          id local str "mrna_1"
         }
       },
       dbxref {
@@ -64,44 +64,41 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 3,
+      id local str "mrna_1",
       data rna {
         type mRNA
       },
-      location mix {
-        int {
-          from 189,
-          to 254,
-          strand plus,
-          id genbank {
-            accession "U00096",
-            version 3
-          }
+      location int {
+        from 189,
+        to 254,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
         }
       },
       qual {
         {
-          qual "Parent",
-          val "gene0"
-        },
-        {
           qual "ID",
           val "mrna0"
+        },
+        {
+          qual "Parent",
+          val "gene0"
         }
       },
       xref {
         {
-          id local id 4
+          id local str "cds_1"
         },
         {
-          id local id 2
+          id local str "gene_1"
         }
       }
     },
     {
-      id local id 4,
+      id local str "cds_1",
       data cdregion {
-        frame one
       },
       location int {
         from 189,
@@ -118,12 +115,8 @@ Seq-annot ::= {
           val "cds0"
         },
         {
-          qual "function",
-          val "leader; Amino acid biosynthesis: Threonine"
-        },
-        {
-          qual "go_process",
-          val "threonine biosynthetic process|0009088"
+          qual "Parent",
+          val "mrna0"
         },
         {
           qual "product",
@@ -134,16 +127,20 @@ Seq-annot ::= {
           val "gb|AAC73112"
         },
         {
-          qual "Parent",
-          val "mrna0"
+          qual "function",
+          val "leader; Amino acid biosynthesis: Threonine"
+        },
+        {
+          qual "go_process",
+          val "threonine biosynthetic process|0009088"
         }
       },
       xref {
         {
-          id local id 3
+          id local str "mrna_1"
         },
         {
-          id local id 2
+          id local str "gene_1"
         }
       },
       dbxref {
@@ -158,7 +155,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 5,
+      id local str "gene_2",
       data gene {
         locus "thrA",
         syn {
@@ -188,10 +185,10 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 6
+          id local str "cds_2"
         },
         {
-          id local id 7
+          id local str "mrna_2"
         }
       },
       dbxref {
@@ -202,44 +199,41 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 6,
+      id local str "mrna_2",
       data rna {
         type mRNA
       },
-      location mix {
-        int {
-          from 336,
-          to 2798,
-          strand plus,
-          id genbank {
-            accession "U00096",
-            version 3
-          }
+      location int {
+        from 336,
+        to 2798,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
         }
       },
       qual {
         {
-          qual "Parent",
-          val "gene1"
-        },
-        {
           qual "ID",
           val "mrna1"
+        },
+        {
+          qual "Parent",
+          val "gene1"
         }
       },
       xref {
         {
-          id local id 7
+          id local str "cds_2"
         },
         {
-          id local id 5
+          id local str "gene_2"
         }
       }
     },
     {
-      id local id 7,
+      id local str "cds_2",
       data cdregion {
-        frame one
       },
       comment "bifunctional: aspartokinase I (N-terminal); homoserine
  dehydrogenase I (C-terminal)",
@@ -254,24 +248,28 @@ Seq-annot ::= {
       },
       qual {
         {
-          qual "experiment",
-          val "N-terminus verified by Edman degradation:PMID 354697,4562989"
-        },
-        {
           qual "ID",
           val "cds1"
         },
         {
-          qual "ec_number",
-          val "1.1.1.3"
+          qual "Parent",
+          val "mrna1"
         },
         {
-          qual "ec_number",
-          val "2.7.2.4"
+          qual "product",
+          val "Bifunctional aspartokinase/homoserine dehydrogenase 1"
+        },
+        {
+          qual "protein_id",
+          val "gb|AAC73113"
         },
         {
           qual "function",
           val "enzyme; Amino acid biosynthesis: Threonine"
+        },
+        {
+          qual "experiment",
+          val "N-terminus verified by Edman degradation:PMID 354697,4562989"
         },
         {
           qual "go_component",
@@ -290,24 +288,20 @@ Seq-annot ::= {
           val "homoserine biosynthetic process|0009090"
         },
         {
-          qual "product",
-          val "Bifunctional aspartokinase/homoserine dehydrogenase 1"
+          qual "ec_number",
+          val "1.1.1.3"
         },
         {
-          qual "protein_id",
-          val "gb|AAC73113"
-        },
-        {
-          qual "Parent",
-          val "mrna1"
+          qual "ec_number",
+          val "2.7.2.4"
         }
       },
       xref {
         {
-          id local id 6
+          id local str "mrna_2"
         },
         {
-          id local id 5
+          id local str "gene_2"
         }
       },
       dbxref {
@@ -322,7 +316,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 8,
+      id local str "repeat_region_1",
       data imp {
         key "repeat_region"
       },
@@ -349,7 +343,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 9,
+      id local str "mobile_element_1",
       data imp {
         key "mobile_element"
       },
@@ -374,7 +368,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local str "gene_3",
       data gene {
         locus "sokC",
         syn {
@@ -401,7 +395,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 11
+          id local str "mrna_3"
         }
       },
       dbxref {
@@ -412,7 +406,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 11,
+      id local str "mrna_3",
       data rna {
         type ncRNA,
         ext gen {
@@ -436,26 +430,26 @@ Seq-annot ::= {
           val "antisense_RNA"
         },
         {
-          qual "Parent",
-          val "gene17"
-        },
-        {
           qual "ID",
           val "rna0"
         },
         {
-          qual "function",
-          val "component of addiction module"
+          qual "Parent",
+          val "gene17"
         },
         {
           qual "product",
           val "sRNA antisense regulator blocking mokC, and hence hokC,
  translation"
+        },
+        {
+          qual "function",
+          val "component of addiction module"
         }
       },
       xref {
         {
-          id local id 10
+          id local str "gene_3"
         }
       },
       dbxref {
@@ -466,7 +460,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 12,
+      id local str "gene_4",
       data gene {
         locus "ssrA",
         syn {
@@ -493,7 +487,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 13
+          id local str "mrna_4"
         }
       },
       dbxref {
@@ -504,32 +498,34 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local str "mrna_4",
       data rna {
         type tmRNA
       },
       comment "acts as tRNA-Ala and mRNA template for tagging proteins
  resulting from premature transcription termination for degradation, a process
  known as trans-translation",
-      location mix {
-        int {
-          from 2755592,
-          to 2755954,
-          strand plus,
-          id genbank {
-            accession "U00096",
-            version 3
-          }
+      location int {
+        from 2755592,
+        to 2755954,
+        strand plus,
+        id genbank {
+          accession "U00096",
+          version 3
         }
       },
       qual {
+        {
+          qual "ID",
+          val "rna88"
+        },
         {
           qual "Parent",
           val "gene2687"
         },
         {
-          qual "ID",
-          val "rna88"
+          qual "product",
+          val "tmRNA, 10Sa RNA"
         },
         {
           qual "function",
@@ -551,15 +547,11 @@ Seq-annot ::= {
         {
           qual "function",
           val "RNA; Ribosomal and stable RNAs"
-        },
-        {
-          qual "product",
-          val "tmRNA, 10Sa RNA"
         }
       },
       xref {
         {
-          id local id 12
+          id local str "gene_4"
         }
       },
       dbxref {
@@ -570,7 +562,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 14,
+      id local str "misc_feature_1",
       data imp {
         key "misc_feature"
       },
@@ -592,7 +584,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 15,
+      id local str "gene_5",
       data gene {
         locus "ileY",
         syn {
@@ -618,7 +610,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 16
+          id local str "mrna_5"
         }
       },
       dbxref {
@@ -629,30 +621,28 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local str "mrna_5",
       data rna {
         type tRNA
       },
       comment "anticodon: GAU",
-      location mix {
-        int {
-          from 2785761,
-          to 2785836,
-          strand minus,
-          id genbank {
-            accession "U00096",
-            version 3
-          }
+      location int {
+        from 2785761,
+        to 2785836,
+        strand minus,
+        id genbank {
+          accession "U00096",
+          version 3
         }
       },
       qual {
         {
-          qual "Parent",
-          val "gene2717"
-        },
-        {
           qual "ID",
           val "rna90"
+        },
+        {
+          qual "Parent",
+          val "gene2717"
         },
         {
           qual "product",
@@ -661,7 +651,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 15
+          id local str "gene_5"
         }
       },
       dbxref {
@@ -672,7 +662,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 17,
+      id local str "gene_6",
       data gene {
         locus "rrfF",
         syn {
@@ -700,7 +690,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 18
+          id local str "mrna_6"
         }
       },
       dbxref {
@@ -711,29 +701,27 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 18,
+      id local str "mrna_6",
       data rna {
         type rRNA
       },
-      location mix {
-        int {
-          from 3423422,
-          to 3423541,
-          strand minus,
-          id genbank {
-            accession "U00096",
-            version 3
-          }
+      location int {
+        from 3423422,
+        to 3423541,
+        strand minus,
+        id genbank {
+          accession "U00096",
+          version 3
         }
       },
       qual {
         {
-          qual "Parent",
-          val "gene3334"
-        },
-        {
           qual "ID",
           val "rna117"
+        },
+        {
+          qual "Parent",
+          val "gene3334"
         },
         {
           qual "product",
@@ -742,7 +730,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 17
+          id local str "gene_6"
         }
       },
       dbxref {
@@ -753,7 +741,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local str "rep_origin_1",
       data imp {
         key "rep_origin"
       },

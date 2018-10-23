@@ -42,6 +42,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 
 #include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/feat_util.hpp>
 #include "featid_generator.hpp"
 #include "gff3_annot_assembler.hpp"
 
@@ -87,6 +88,10 @@ CGff3AnnotAssembler::ProcessRecord(
     case CSeqFeatData::eSubtype_exon:
         return xProcessFeatureExon(recordId, parentId, pFeature, annot);
     case CSeqFeatData::eSubtype_mRNA:
+    case CSeqFeatData::eSubtype_ncRNA:
+    case CSeqFeatData::eSubtype_rRNA:
+    case CSeqFeatData::eSubtype_tmRNA:
+    case CSeqFeatData::eSubtype_tRNA:
         return xProcessFeatureRna(recordId, parentId, pFeature, annot);
     case CSeqFeatData::eSubtype_cdregion:
         return xProcessFeatureCds(recordId, parentId, pFeature, annot);
@@ -138,7 +143,9 @@ CGff3AnnotAssembler::xProcessFeatureRna(
 {
     annot.SetData().SetFtable().push_back(pFeature);
     pFeature->SetId(*mIdGenerator.GetIdFor("mrna"));
-    pFeature->SetLocation().SetNull();
+    if (pFeature->GetData().GetSubtype() != CSeqFeatData::eSubtype_ncRNA) {
+        pFeature->SetLocation().SetNull();
+    }
     if (!recordId.empty()  &&  !parentId.empty()) {
         mXrefMap[recordId] = parentId;
     }
@@ -148,13 +155,8 @@ CGff3AnnotAssembler::xProcessFeatureRna(
         return;
     }
     for (auto pExon: pendingExons) {
-        if (pFeature->GetLocation().IsNull()) {
-            pFeature->SetLocation().Assign(pExon->GetLocation());
-            continue;
-        }
-        CRef<CSeq_loc> pUpdatedLocation = pFeature->GetLocation().Add(
-            pExon->GetLocation(), 
-            CSeq_loc::fSortAndMerge_All, nullptr);
+        CRef<CSeq_loc> pUpdatedLocation = FeatUtil::AddLocations(
+            pFeature->GetLocation(), pExon->GetLocation());
         pFeature->SetLocation().Assign(*pUpdatedLocation);
     }
     mPendingFeatures.MarkFeaturesDone(recordId);
@@ -172,9 +174,8 @@ CGff3AnnotAssembler::xProcessFeatureExon(
 {
     auto pParentRna = mFeatureMap.FindFeature(parentId);
     if (pParentRna) {
-        CRef<CSeq_loc> pUpdatedLocation = pParentRna->GetLocation().Add(
-            pFeature->GetLocation(), 
-            CSeq_loc::fSortAndMerge_All, nullptr);
+        CRef<CSeq_loc> pUpdatedLocation = FeatUtil::AddLocations(
+            pParentRna->GetLocation(), pFeature->GetLocation());
         pParentRna->SetLocation().Assign(*pUpdatedLocation);
     }
     else {

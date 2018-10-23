@@ -104,7 +104,15 @@ private:
         const std::string&,
         const std::string&);
 
+    bool xInitializeDataRna(
+        const std::string&,
+        const std::string&);
+
     bool xInitializeDataCds(
+        const std::string&,
+        const std::string&);
+
+    bool xInitializeMultiValue(
         const std::string&,
         const std::string&);
 

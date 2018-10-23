@@ -86,7 +86,6 @@ CGff3LineReader::xInitializeRecord(
 {
     assert(dynamic_cast<CGff3ImportData*>(&record_));
     CGff3ImportData& record = static_cast<CGff3ImportData&>(record_);
-    //record.InitializeFrom(columns, mLineNumber);
 
     string seqId;
     TSeqPos seqStart, seqStop;
@@ -157,15 +156,7 @@ CGff3LineReader::xInitializeType(
     string& featType)
 //  ============================================================================
 {
-    CFeatImportError errorIllegalFeatureType(
-        CFeatImportError::ERROR, "Illegal feature type", LineCount());
-
     featType = columns[2];
-    if (find(mValidFeatureTypes.begin(), mValidFeatureTypes.end(), featType) ==
-            mValidFeatureTypes.end()) {
-        errorIllegalFeatureType.AmendMessage(featType);
-        throw errorIllegalFeatureType;
-    }
 }
 
 //  ============================================================================

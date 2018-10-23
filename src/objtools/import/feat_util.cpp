@@ -49,6 +49,28 @@ FeatUtil::ContainsData(
 
 
 //  ============================================================================
+CRef<CSeq_loc>
+FeatUtil::AddLocations(
+    const CSeq_loc& lhs,
+    const CSeq_loc& rhs)
+//  ============================================================================
+{
+    CRef<CSeq_loc> pMerged(new CSeq_loc);
+    pMerged->Assign(lhs);
+    if (pMerged->IsNull()) {
+        if (!rhs.IsNull()) {
+            pMerged->Assign(rhs);
+        }
+    }
+    else {
+        if (!rhs.IsNull()) {
+            pMerged = lhs.Add(rhs, CSeq_loc::fSortAndMerge_All, nullptr);
+        }
+    }
+    return pMerged;
+} 
+    
+//  ============================================================================
 CRef<CCode_break>
 FeatUtil::MakeCodeBreak(
     const CSeq_id& id,

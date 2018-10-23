@@ -37,6 +37,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -52,6 +53,11 @@ public:
     MakeCodeBreak(
         const CSeq_id&,
         const std::string&);
+
+    static CRef<CSeq_loc>
+    AddLocations(
+        const CSeq_loc&,
+        const CSeq_loc&);
 };
 
 END_objects_SCOPE

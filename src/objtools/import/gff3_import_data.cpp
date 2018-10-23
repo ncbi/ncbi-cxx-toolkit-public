@@ -34,6 +34,9 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/seq/so_map.hpp>
+#include <objects/seqfeat/Gene_ref.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Genetic_code.hpp>
 
@@ -78,7 +81,7 @@ CGff3ImportData::Initialize(
 //  ============================================================================
 {
     mpFeat.Reset(new CSeq_feat);
-    CSoMap::SoTypeToFeature(featureType, *mpFeat);
+    CSoMap::SoTypeToFeature(featureType, *mpFeat, true);
 
     CRef<CSeq_id> pId = mIdResolver(seqId);
     mpFeat->SetLocation().SetInt().Assign(
@@ -118,7 +121,13 @@ CGff3ImportData::xInitializeAttributes(
         if (xInitializeDataGene(key, value)) {
             continue;
         }
+        if (xInitializeDataRna(key, value)) {
+            continue;
+        }
         if (xInitializeDataCds(key, value)) {
+            continue;
+        }
+        if (xInitializeMultiValue(key, value)) {
             continue;
         }
         mpFeat->AddQualifier(key, NStr::URLDecode(value));
@@ -231,6 +240,49 @@ CGff3ImportData::xInitializeDataCds(
         return true;
     }
     return false;
+}
+
+//  ============================================================================
+bool
+CGff3ImportData::xInitializeDataRna(
+    const std::string& key,
+    const std::string& value)
+//  ============================================================================
+{
+    auto& data = mpFeat->SetData();
+    if (!data.IsRna()) {
+        return false;
+    }
+    auto& rnaRef = data.SetRna();
+
+    if (key == "ncrna_class") {
+        rnaRef.SetExt().SetGen().SetClass(value);
+        mpFeat->AddOrReplaceQualifier("ncRNA_class", value);
+        return true;
+    }
+    return false;
+}
+
+//  ============================================================================
+bool
+CGff3ImportData::xInitializeMultiValue(
+    const std::string& key,
+    const std::string& value)
+//  ============================================================================
+{
+    vector<string> multiValueAttrs = {
+        "ec_number", "function", "go_process"
+    };
+    auto attrIt = find(multiValueAttrs.begin(), multiValueAttrs.end(), key);
+    if (attrIt == multiValueAttrs.end()) {
+        return false;
+    }
+    vector<string> allValues;
+    NStr::Split(value, ",", allValues);
+    for (auto singleValue: allValues) {
+        mpFeat->AddQualifier(key, NStr::URLDecode(singleValue));
+    }
+    return true;
 }
 
 //  ============================================================================
