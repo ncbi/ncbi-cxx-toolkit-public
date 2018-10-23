@@ -263,7 +263,9 @@ bool SCommandGroupImpl::Exec(const string&, SInputOutput& io, void* data)
     if (m_Commands.empty()) return false;
 
     for (auto& element : m_Commands) {
-        if (element.Exec(io, data)) return true;
+        if (auto new_data = element.Check(io, data)) {
+            return element.Exec(io, new_data);
+        }
     }
 
     return false;
@@ -307,13 +309,14 @@ CJsonNode CCommand::Help(CJsonIterator& input)
     return m_Impl->Help(m_Name, ++input);
 }
 
+void* CCommand::Check(SInputOutput& io, void* data)
+{
+    return m_Impl->Check(m_Name, io, data);
+}
+
 bool CCommand::Exec(SInputOutput& io, void* data)
 {
-    if (auto new_data = m_Impl->Check(m_Name, io, data)) {
-        return m_Impl->Exec(m_Name, io, new_data);
-    }
-
-    return false;
+    return m_Impl->Exec(m_Name, io, data);
 }
 
 CJsonNode SServerAddressToJson::ExecOn(CNetServer server)

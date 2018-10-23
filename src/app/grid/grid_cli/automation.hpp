@@ -147,6 +147,7 @@ public:
     CCommand(string name, TCommandGroup group);
 
     CJsonNode Help(CJsonIterator& input);
+    void* Check(SInputOutput& io, void* data);
     bool Exec(SInputOutput& io, void* data);
 
 private:
