@@ -1009,6 +1009,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
 
     /* Get KarlinBlk for context with smallest lambda (still greater than zero) */
     s_BlastFindSmallestLambda(sbp->kbp, query_info, &kbp);
+    if (!kbp)
+        return;
+
     window_size
         = link_hsp_params->gap_size + link_hsp_params->overlap_size + 1;
     gap_prob = link_hsp_params->gap_prob = BLAST_GAP_PROB;
