@@ -145,7 +145,7 @@ CSeqDBPerfApp::x_ScanDatabase()
         thread_id = omp_get_thread_num();
 #endif
         #pragma omp for schedule(static, (oids2iterate.size()/m_DbHandles.size())) nowait
-        for (size_t i = 0; i < oids2iterate.size(); i++) {
+        for (ssize_t i = 0; i < oids2iterate.size(); i++) {
             int oid = oids2iterate[i];
             const char* buffer = NULL;
             int seqlen = 0;

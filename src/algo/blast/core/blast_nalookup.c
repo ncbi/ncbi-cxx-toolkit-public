@@ -1829,7 +1829,7 @@ s_NaHashLookupScanSubjectForWordCounts(BlastSeqSrc* seq_src,
                                        Uint4 in_num_threads,
                                        Uint1 max_word_count)
 {
-    Uint4 i;
+    Int8 i;
     Int4 k, b;
     Int4 num_db_seqs, th_batch;
     NaHashLookupThreadData* th_data = NULL;
