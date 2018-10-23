@@ -131,7 +131,7 @@ if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
             set(_prebuilt_loc ${_prebuilt_loc}DLL)
         endif()
     endif()
-    set(NCBI_EXTERNAL_BUILD_ROOT  ${NCBI_EXTERNAL_TREE_ROOT}/${_prebuilt_loc}/${NCBI_DIRNAME_EXPORT})
+    set(NCBI_EXTERNAL_BUILD_ROOT  ${NCBI_EXTERNAL_TREE_ROOT}/${_prebuilt_loc})
 
     if (IS_DIRECTORY ${NCBI_EXTERNAL_TREE_ROOT}/${NCBI_DIRNAME_INCLUDE})
         set(_ext_includedir0 ${NCBI_EXTERNAL_TREE_ROOT}/${NCBI_DIRNAME_INCLUDE})

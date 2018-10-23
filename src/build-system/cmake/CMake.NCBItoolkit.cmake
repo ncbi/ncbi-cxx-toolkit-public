@@ -55,6 +55,7 @@ if(NCBI_EXPERIMENTAL)
     endif()
 
     if (DEFINED NCBI_PTBCFG_COMPOSITE_DLL
+        OR DEFINED NCBI_EXTERNAL_TREE_ROOT
         OR NOT "${NCBI_PTBCFG_PROJECT_LIST}" STREQUAL ""
         OR NOT "${NCBI_PTBCFG_PROJECT_TAGS}" STREQUAL ""
         OR NOT "${NCBI_PTBCFG_PROJECT_TARGETS}" STREQUAL "")
@@ -166,12 +167,12 @@ if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
     include(${NCBI_EXTERNAL_TREE_ROOT}/src/build-system/cmake/CMakeMacros.cmake)
     include(${NCBI_EXTERNAL_TREE_ROOT}/src/build-system/cmake/CMake.NCBIptb.cmake)
     include(${NCBI_EXTERNAL_TREE_ROOT}/src/build-system/cmake/CMakeChecks.cmake)
-    if (EXISTS ${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_PTBCFG_INSTALL_EXPORT}.cmake)
-        include(${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_PTBCFG_INSTALL_EXPORT}.cmake)
+    if (EXISTS ${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_EXPORT}/${NCBI_PTBCFG_INSTALL_EXPORT}.cmake)
+        include(${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_EXPORT}/${NCBI_PTBCFG_INSTALL_EXPORT}.cmake)
     else()
-        message(FATAL_ERROR "${NCBI_PTBCFG_INSTALL_EXPORT} was not found in ${NCBI_EXTERNAL_BUILD_ROOT}")
+        message(FATAL_ERROR "${NCBI_PTBCFG_INSTALL_EXPORT} was not found in ${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_EXPORT}")
     endif()
-    NCBI_internal_import_hostinfo(${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_PTBCFG_INSTALL_EXPORT}.hostinfo)
+    NCBI_internal_import_hostinfo(${NCBI_EXTERNAL_BUILD_ROOT}/${NCBI_DIRNAME_EXPORT}/${NCBI_PTBCFG_INSTALL_EXPORT}.hostinfo)
 else()
     include(build-system/cmake/CMakeMacros.cmake)
     include(build-system/cmake/CMake.NCBIptb.cmake)
