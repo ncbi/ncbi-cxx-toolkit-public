@@ -929,7 +929,7 @@ endif()
 
 #############################################################################
 # PCRE
-if(PCRE_FOUND)
+if(PCRE_FOUND AND NOT USE_LOCAL_PCRE)
   set(NCBI_COMPONENT_PCRE_FOUND YES)
   set(NCBI_COMPONENT_PCRE_INCLUDE ${PCRE_INCLUDE_DIR})
   set(NCBI_COMPONENT_PCRE_LIBS ${PCRE_LIBRARIES})
@@ -955,7 +955,7 @@ endif()
 
 #############################################################################
 # BZ2
-if(BZIP2_FOUND)
+if(BZIP2_FOUND AND NOT USE_LOCAL_BZLIB)
   set(NCBI_COMPONENT_BZ2_FOUND YES)
   set(NCBI_COMPONENT_BZ2_INCLUDE ${BZIP2_INCLUDE_DIR})
   set(NCBI_COMPONENT_BZ2_LIBS ${BZIP2_LIBRARIES})

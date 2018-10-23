@@ -9,7 +9,7 @@ NCBI_begin_lib(z)
     ncbi_z_compress uncompr gzclose gzlib gzread gzwrite
   )
   NCBI_disable_pch()
-  NCBI_add_include_directories(${includedir}/util/compress/zlib)
+  NCBI_requires(LocalZ)
   NCBI_project_watchers(ivanov)
 NCBI_end_lib()
 

@@ -12,7 +12,7 @@ NCBI_sources(
     pcre_string_utils pcre_study pcre_tables pcre_ucd pcre_valid_utf8 pcre_version pcre_xclass
     pcreposix
 )
-NCBI_add_include_directories(${includedir}/util/regexp)
+NCBI_requires(LocalPCRE)
 NCBI_add_definitions(HAVE_CONFIG_H PCRE_NO_UTF16 PCRE_NO_UTF32)
 NCBI_project_watchers(ivanov)
 NCBI_end_lib()
