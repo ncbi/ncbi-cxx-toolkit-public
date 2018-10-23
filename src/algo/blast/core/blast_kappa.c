@@ -51,6 +51,14 @@
 
 #ifdef _OPENMP
 #include <omp.h>
+
+#  ifdef _WIN32
+/* stderr expands to (__acrt_iob_func(2)), which won't work in an OpenMP
+ * shared(...) list. */
+#    define STDERR_COMMA
+#  else
+#    define STDERR_COMMA stderr,
+#  endif
 #endif
 
 #include <algo/blast/composition_adjustment/nlm_linear_algebra.h>
@@ -3410,7 +3418,7 @@ Blast_RedoAlignmentCore_MT(EBlastProgramType program_number,
     shared(interrupt, seqsrc_tld, score_params_tld, hit_params_tld, \
     gap_align_tld, results_tld, \
     redoneMatches_tld, \
-    stderr, \
+    STDERR_COMMA \
     numQueries, numMatches, theseMatches, \
     numFrames, program_number, subjectBlk_tld, positionBased, \
     default_db_genetic_code, localScalingFactor, queryInfo, \
