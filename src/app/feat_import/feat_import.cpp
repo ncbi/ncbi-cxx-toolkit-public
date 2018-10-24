@@ -71,6 +71,10 @@ private:
         const CArgs&,
         CNcbiIstream&);
 
+    MSerial_Format
+    xGetOutputFormat(
+        const CArgs&);
+
     unsigned int
     xGetImporterFlags(
         const CArgs&);
@@ -85,7 +89,7 @@ CFeatImportApp::Init(void)
 
     arg_desc->SetUsageContext
         (GetArguments().GetProgramBasename(),
-         "CGffImport front end: Import GFF data");
+         "CFeatureImport front end: Import feature tables");
 
     //
     //  shared flags and parameters:
@@ -111,6 +115,21 @@ CFeatImportApp::Init(void)
         "Input file format",
         CArgDescriptions::eString, 
         "");
+    arg_desc->SetConstraint(
+        "format", 
+        &(*new CArgAllow_Strings, 
+            "", "5col", "bed", "gff3", "gtf", "tbl"));
+
+    arg_desc->AddDefaultKey(
+        "out-format", 
+        "FORMAT", 
+        "Output file format",
+        CArgDescriptions::eString, 
+        "asn-text");
+    arg_desc->SetConstraint(
+        "out-format", 
+        &(*new CArgAllow_Strings, 
+            "asn-text", "asn-binary", "xml", "json"));
 
     arg_desc->AddFlag(
         "all-ids-as-local",
@@ -174,7 +193,7 @@ CFeatImportApp::Run(void)
         if (!FeatUtil::ContainsData(annot)) {
             break;
         }
-        ostr << MSerial_Format_AsnText() << annot;
+        ostr << xGetOutputFormat(args) << annot;
     }
     errorHandler.Dump(cerr);
     return 0;
@@ -244,6 +263,27 @@ CFeatImportApp::xGetImporterFlags(
     }
     return flags;
 }
+
+
+//  ============================================================================
+MSerial_Format
+CFeatImportApp::xGetOutputFormat(
+    const CArgs& args)
+//  ============================================================================
+{
+    auto outFormat = args["out-format"].AsString();
+    if (outFormat == "asn-binary") {
+        return MSerial_Format_AsnBinary();
+    }
+    if (outFormat == "xml") {
+        return MSerial_Format_Xml();
+    }
+    if (outFormat == "json") {
+        return MSerial_Format_Json();
+    }
+    return MSerial_Format_AsnText();
+}
+
 
 //  ============================================================================
 int main(int argc, const char* argv[])
