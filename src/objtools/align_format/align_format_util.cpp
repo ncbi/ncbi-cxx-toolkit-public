@@ -2959,7 +2959,7 @@ CAlignFormatUtil::SortSeqalignForSortableFormat(CSeq_align_set& aln_set,
                                              int hit_sort,
                                              int hsp_sort) {
 
-    if (hit_sort == eEvalue && hsp_sort == eHspEvalue) {       
+    if (hit_sort <= eEvalue && hsp_sort <= eHspEvalue) {       
        return (CRef<CSeq_align_set>) &aln_set;
     }
 

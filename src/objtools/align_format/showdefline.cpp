@@ -92,6 +92,12 @@ static const string kQuery = "Query";
 static const string kCoverage = "Query coverage";
 static const string kEllipsis = "...";
 
+static const string kIdent = "Max";
+static const string kIdentLine2  = "ident";
+static const string kTotalLine2 = "score";
+static const string kQueryCov = "Query";
+static const string kQueryCovLine2 = "cover";
+
 //psiblast related
 static const string kPsiblastNewSeqGif = "<IMG SRC=\"images/new.gif\" \
 WIDTH=30 HEIGHT=15 ALT=\"New sequence mark\">";
@@ -616,6 +622,11 @@ void CShowBlastDefline::x_InitDefline(void)
     m_MaxEvalueLen = kValue.size();
     m_MaxSumNLen =1;
 
+    m_MaxPercentIdentityLen = kIdentity.size();    
+    m_MaxQueryCoverLen = kCoverage.size();
+    m_MaxTotalScoreLen = kTotal.size();
+    
+
 
     if(m_Option & eHtml){
         m_ConfigFile.reset(new CNcbiIfstream(".ncbirc"));
@@ -639,7 +650,7 @@ void CShowBlastDefline::x_InitDefline(void)
         }
         subid = &((*iter)->GetSeq_id(1));
         if(is_first_aln || (!is_first_aln && !subid->Match(*previous_id))) {
-            SScoreInfo* sci = x_GetScoreInfo(**iter, num_align);
+            SScoreInfo* sci = x_GetScoreInfo(**iter, num_align);            
             if(sci){
                 m_ScoreList.push_back(sci);
                 if(m_MaxScoreLen < sci->bit_string.size()){
@@ -647,6 +658,14 @@ void CShowBlastDefline::x_InitDefline(void)
                 }
                 if(m_MaxEvalueLen < sci->evalue_string.size()){
                     m_MaxEvalueLen = sci->evalue_string.size();
+                }
+
+                if(m_MaxTotalScoreLen < sci->total_bit_string.size()){
+                    m_MaxTotalScoreLen = sci->total_bit_string.size();
+                }
+                int percent_identity = CAlignFormatUtil::GetPercentMatch(sci->match,sci->align_length);
+                if(m_MaxPercentIdentityLen < NStr::IntToString(percent_identity).size()) {
+                    m_MaxPercentIdentityLen = NStr::IntToString(percent_identity).size();
                 }
 
                 if( m_MaxSumNLen < NStr::IntToString(sci->sum_n).size()){
@@ -688,8 +707,29 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             out << kScore;
             CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - kScore.size());
             CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+            
+            
+            if (m_Option & eShowTotalScore) {
+                out << kTotal;
+                CAlignFormatUtil::AddSpace(out, m_MaxTotalScoreLen - kTotal.size());
+                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+            }
+            if (m_Option & eShowQueryCoverage) {
+                out << kQueryCov;                
+                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+            }
+
             CAlignFormatUtil::AddSpace(out, 2); //E align to l of value
-            out << kE;
+            out << kE;         
+
+            if (m_Option & eShowPercentIdent) {                
+                CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - kValue.size()); 
+                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+                CAlignFormatUtil::AddSpace(out, kOneSpaceMargin.size());
+                out << kIdent;//"Max" - "ident" -second line                
+            }
+
             out << "\n";
             out << kHeader;
             if(m_Option & eHtml){
@@ -708,11 +748,30 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             //in case m_MaxScoreLen > kBits.size()
             CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - kBits.size());
             CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
-            out << kValue;
-            if(m_Option & eShowSumN){
-                CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - kValue.size());
+
+            
+            if (m_Option & eShowTotalScore) {
+                CAlignFormatUtil::AddSpace(out, kOneSpaceMargin.size());
+                out << kTotalLine2;//"score"
+                CAlignFormatUtil::AddSpace(out, m_MaxTotalScoreLen - kTotal.size()); 
                 CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+            }
+            if (m_Option & eShowQueryCoverage) {
+                out << kQueryCovLine2;//"cov"                
+                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());
+                CAlignFormatUtil::AddSpace(out, kOneSpaceMargin.size());
+            }
+
+            out << kValue;
+            if((m_Option & eShowSumN) || (m_Option & eShowPercentIdent)){
+                CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - kValue.size()); 
+                CAlignFormatUtil::AddSpace(out, kTwoSpaceMargin.size());                
+            }
+            if(m_Option & eShowSumN){
                 out << kN;
+            }
+            if (m_Option & eShowPercentIdent) {
+                out << kIdentLine2;//"ident"
             }
             out << "\n";
         }
@@ -819,12 +878,36 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             out << "</a>";
         }
         CAlignFormatUtil::AddSpace(out, m_MaxScoreLen - (*iter)->bit_string.size());
+        if (m_Option & eShowTotalScore) {
+            out << kTwoSpaceMargin << kOneSpaceMargin << (*iter)->total_bit_string;
+            CAlignFormatUtil::AddSpace(out, m_MaxTotalScoreLen - 
+                                   (*iter)->total_bit_string.size());
+        }
+
+        if (m_Option & eShowQueryCoverage) {        
+            //int percent_coverage = 100*(*iter)->master_covered_length/m_QueryLength;        
+            int percent_coverage = (*iter)->percent_coverage;
+            
+            out << kTwoSpaceMargin << percent_coverage << "%";        
+            //minus one due to % sign
+            CAlignFormatUtil::AddSpace(out, kQueryCov.size() - 
+                                       NStr::IntToString(percent_coverage).size() - 1);
+        }
+
+
         out << kTwoSpaceMargin << (*iter)->evalue_string;
         CAlignFormatUtil::AddSpace(out, m_MaxEvalueLen - (*iter)->evalue_string.size());
-        if(m_Option & eShowSumN){
-            out << kTwoSpaceMargin << (*iter)->sum_n;
-            CAlignFormatUtil::AddSpace(out, m_MaxSumNLen -
+
+        if(m_Option & eShowSumN){ 
+            out << kTwoSpaceMargin << (*iter)->sum_n;   
+            CAlignFormatUtil::AddSpace(out, m_MaxSumNLen - 
                      NStr::IntToString((*iter)->sum_n).size());
+        }
+        if(m_Option & eShowPercentIdent){                        
+            int percent_identity =(*iter)->percent_identity;           
+            out << kTwoSpaceMargin << percent_identity <<"%";
+            CAlignFormatUtil::AddSpace(out, m_MaxPercentIdentityLen - 
+                                           NStr::IntToString(percent_identity).size());
         }
         if((m_Option & eLinkout) && (m_Option & eHtml)){
             bool is_first = true;
@@ -843,7 +926,7 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
 
 void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
 {
-    x_InitDefline();
+    x_InitDeflineTable();
     if(m_StructureLinkout){
         char buf[512];
         string  mapCDDParams = (NStr::Find(m_CddRid,"data_cache") != NPOS) ? "" : "blast_CD_RID=" + m_CddRid;
@@ -853,7 +936,7 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
                         "none": m_EntrezTerm.c_str());
         out << buf <<"\n\n";
     }
-    x_DisplayDefline(out);
+    x_DisplayDefline(out);    
 }
 
 static void s_DisplayDescrColumnHeader(CNcbiOstream & out,
@@ -907,7 +990,8 @@ void CShowBlastDefline::x_InitDeflineTable(void)
     m_MaxTotalScoreLen = kTotal.size();
     m_MaxPercentIdentityLen = kIdentity.size();
     int percent_identity = 0;
-    m_MaxQueryCoverLen = kCoverage.size();
+    m_MaxQueryCoverLen = kCoverage.size();    
+    
 
     if(m_Option & eHtml){
         m_ConfigFile.reset(new CNcbiIfstream(".ncbirc"));
