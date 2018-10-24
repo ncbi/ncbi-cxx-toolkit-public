@@ -19,11 +19,6 @@ NCBI_begin_lib(tds_ftds100 STATIC)
   NCBI_headers(*.h ../*.h ../../*.h)
   NCBI_add_definitions(_FREETDS_LIBRARY_SOURCE HAVE_CONFIG_H=1)
   NCBI_uses_external_libraries(${KRB5_LIBS} ${ORIG_LIBS})
-
-  if (NOT WIN32 AND NOT XCODE)
-    add_compile_options(-fPIC)
-  endif()
-
   NCBI_project_watchers(ucko satskyse)
 NCBI_end_lib()
 

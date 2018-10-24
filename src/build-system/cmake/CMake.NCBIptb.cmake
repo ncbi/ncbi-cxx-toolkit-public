@@ -1590,6 +1590,9 @@ endif()
 #message("add static library ${NCBI_PROJECT}")
         add_library(${NCBI_PROJECT} STATIC ${NCBITMP_PROJECT_SOURCES} ${NCBITMP_PROJECT_HEADERS} ${NCBITMP_PROJECT_RESOURCES} ${NCBITMP_PROJECT_DATASPEC})
         set(_suffix ${CMAKE_STATIC_LIBRARY_SUFFIX})
+        if (NOT WIN32 AND BUILD_SHARED_LIBS )
+            target_compile_options(${NCBI_PROJECT} PRIVATE -fPIC)
+        endif()
 
     elseif (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "SHARED")
 
