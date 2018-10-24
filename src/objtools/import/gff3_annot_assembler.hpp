@@ -188,6 +188,13 @@ private:
     void xAnnotGenerateXrefs(
         CSeq_annot&);
 
+    static void xMarkLocationPending(
+        CSeq_feat&);
+    static bool xIsLocationPending(
+        const CSeq_feat&);
+    static void xUnmarkLocationPending(
+        CSeq_feat&);
+
     CGff3FeatureMap mFeatureMap;
     CGff3PendingFeatureList mPendingFeatures;
     map<string,string> mXrefMap;

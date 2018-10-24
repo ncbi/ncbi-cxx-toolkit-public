@@ -11,6 +11,7 @@ test-basic gff3
 test-gene-cds gff3
 test-multi-rna gff3
 test-so-types gff3
+test-pseudo-features gff3
 
 # BED:
 test-12-col bed

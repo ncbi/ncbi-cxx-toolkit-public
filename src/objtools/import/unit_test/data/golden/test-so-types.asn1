@@ -661,7 +661,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "_1",
+      id local str "mrna_1",
       data imp {
         key "misc_RNA"
       },

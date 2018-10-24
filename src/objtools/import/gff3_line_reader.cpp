@@ -125,18 +125,7 @@ CGff3LineReader::xSplitLine(
         CFeatImportError::CRITICAL, "Invalid column count");
 
     columns.clear();
-    if (mColumnDelimiter.empty()) {
-        mColumnDelimiter = "\t";
-        mSplitFlags = 0;
-        NStr::Split(line, mColumnDelimiter, columns, mSplitFlags);
-        if (columns.size() == 9) {
-            return;
-        }
-        columns.clear();
-        mColumnDelimiter = " \t";
-        mSplitFlags = NStr::fSplit_MergeDelimiters;
-    }
-    NStr::Split(line, mColumnDelimiter, columns, mSplitFlags);
+    NStr::Split(line, "\t", columns, 0);
     if (columns.size() == 9) {
         return;
     }

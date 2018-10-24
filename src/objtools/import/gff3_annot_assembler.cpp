@@ -88,6 +88,7 @@ CGff3AnnotAssembler::ProcessRecord(
     case CSeqFeatData::eSubtype_exon:
         return xProcessFeatureExon(recordId, parentId, pFeature, annot);
     case CSeqFeatData::eSubtype_mRNA:
+    case CSeqFeatData::eSubtype_misc_RNA:
     case CSeqFeatData::eSubtype_ncRNA:
     case CSeqFeatData::eSubtype_rRNA:
     case CSeqFeatData::eSubtype_tmRNA:
@@ -143,9 +144,7 @@ CGff3AnnotAssembler::xProcessFeatureRna(
 {
     annot.SetData().SetFtable().push_back(pFeature);
     pFeature->SetId(*mIdGenerator.GetIdFor("mrna"));
-    if (pFeature->GetData().GetSubtype() != CSeqFeatData::eSubtype_ncRNA) {
-        pFeature->SetLocation().SetNull();
-    }
+    xMarkLocationPending(*pFeature);
     if (!recordId.empty()  &&  !parentId.empty()) {
         mXrefMap[recordId] = parentId;
     }
@@ -174,9 +173,15 @@ CGff3AnnotAssembler::xProcessFeatureExon(
 {
     auto pParentRna = mFeatureMap.FindFeature(parentId);
     if (pParentRna) {
-        CRef<CSeq_loc> pUpdatedLocation = FeatUtil::AddLocations(
-            pParentRna->GetLocation(), pFeature->GetLocation());
-        pParentRna->SetLocation().Assign(*pUpdatedLocation);
+        if (xIsLocationPending(*pParentRna)) {
+            pParentRna->SetLocation().Assign(pFeature->GetLocation());
+            xUnmarkLocationPending(*pParentRna);
+        }
+        else {
+            CRef<CSeq_loc> pUpdatedLocation = FeatUtil::AddLocations(
+                pParentRna->GetLocation(), pFeature->GetLocation());
+            pParentRna->SetLocation().Assign(*pUpdatedLocation);
+        }
     }
     else {
         mPendingFeatures.AddFeature(parentId, pFeature);
@@ -190,6 +195,7 @@ CGff3AnnotAssembler::FinalizeAnnot(
     CSeq_annot& annot)
 //  ============================================================================
 {
+    // generate crefs between genes, mRNAs, and coding regions:
     for (auto entry: mXrefMap) {
         auto childId = entry.first;
         auto parentId = entry.second;
@@ -216,6 +222,45 @@ CGff3AnnotAssembler::FinalizeAnnot(
         pParent->AddSeqFeatXref(pGrandParent->GetId());
         pGrandParent->AddSeqFeatXref(pParent->GetId());
     }
+
+    // remove any remaining "under construction" markers:
+    auto& ftable = annot.SetData().SetFtable();
+    for (auto& pFeature: ftable) {
+        xUnmarkLocationPending(*pFeature);
+    }
 }
 
+//  ============================================================================
+bool
+CGff3AnnotAssembler::xIsLocationPending(
+    const CSeq_feat& feat)
+//  ============================================================================
+{
+    if (!feat.IsSetQual()) {
+        return false;
+    }
+    for (const auto& pQual: feat.GetQual()) {
+        if (pQual->IsSetQual()  &&  pQual->GetQual() == "__location_pending") {
+            return true;
+        }
+    }
+    return false;
+}
 
+//  ============================================================================
+void
+CGff3AnnotAssembler::xMarkLocationPending(
+    CSeq_feat& feat)
+//  ============================================================================
+{
+    feat.AddQualifier("__location_pending", "true");
+}
+
+//  ============================================================================
+void
+CGff3AnnotAssembler::xUnmarkLocationPending(
+    CSeq_feat& feat)
+//  ============================================================================
+{
+    feat.RemoveQualifier("__location_pending");
+}
