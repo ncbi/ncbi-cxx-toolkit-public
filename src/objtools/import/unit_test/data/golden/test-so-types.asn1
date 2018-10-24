@@ -1,7 +1,7 @@
 Seq-annot ::= {
   data ftable {
     {
-      id local id 1,
+      id local str "gene_1",
       data gene {
         locus "thrL",
         syn {
@@ -33,7 +33,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 2,
+      id local str "regulatory_1",
       data imp {
         key "regulatory"
       },
@@ -58,7 +58,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 3,
+      id local str "regulatory_2",
       data imp {
         key "regulatory"
       },
@@ -83,7 +83,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 4,
+      id local str "regulatory_3",
       data imp {
         key "regulatory"
       },
@@ -108,7 +108,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 5,
+      id local str "3'utr_1",
       data imp {
         key "3'UTR"
       },
@@ -129,7 +129,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 6,
+      id local str "region_1",
       data region "",
       location int {
         from 25386,
@@ -152,7 +152,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local str "5'utr_1",
       data imp {
         key "5'UTR"
       },
@@ -173,7 +173,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 8,
+      id local str "region_2",
       data region "",
       location int {
         from 25386,
@@ -196,7 +196,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 9,
+      id local str "c_region_1",
       data imp {
         key "C_region"
       },
@@ -217,7 +217,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local str "d-loop_1",
       data imp {
         key "D-loop"
       },
@@ -238,7 +238,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 11,
+      id local str "d_segment_1",
       data imp {
         key "D_segment"
       },
@@ -259,7 +259,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 12,
+      id local str "j_segment_1",
       data imp {
         key "J_segment"
       },
@@ -280,7 +280,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local str "repeat_region_1",
       data imp {
         key "repeat_region"
       },
@@ -305,7 +305,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 14,
+      id local str "regulatory_4",
       data imp {
         key "regulatory"
       },
@@ -330,7 +330,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 15,
+      id local str "regulatory_5",
       data imp {
         key "regulatory"
       },
@@ -355,7 +355,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
+      id local str "v_segment_1",
       data imp {
         key "V_segment"
       },
@@ -376,7 +376,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 17,
+      id local str "gap_1",
       data imp {
         key "gap"
       },
@@ -397,7 +397,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 18,
+      id local str "region_3",
       data region "",
       location int {
         from 25386,
@@ -420,7 +420,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 19,
+      id local str "region_4",
       data region "",
       location int {
         from 25386,
@@ -443,7 +443,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 20,
+      id local str "mat_peptide_nt_1",
       data imp {
         key "mat_peptide"
       },
@@ -464,7 +464,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 21,
+      id local str "mat_peptide_nt_2",
       data imp {
         key "mat_peptide"
       },
@@ -485,7 +485,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local str "misc_binding_1",
       data imp {
         key "misc_binding"
       },
@@ -506,7 +506,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 23,
+      id local str "misc_difference_1",
       data imp {
         key "misc_difference"
       },
@@ -527,7 +527,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 24,
+      id local str "misc_feature_1",
       data imp {
         key "misc_feature"
       },
@@ -548,7 +548,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local str "misc_recomb_1",
       data imp {
         key "misc_recomb"
       },
@@ -573,7 +573,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 26,
+      id local str "regulatory_6",
       data imp {
         key "regulatory"
       },
@@ -598,7 +598,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 27,
+      id local str "misc_structure_1",
       data imp {
         key "misc_structure"
       },
@@ -619,7 +619,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local str "mobile_element_1",
       data imp {
         key "mobile_element"
       },
@@ -640,7 +640,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 29,
+      id local str "modified_base_1",
       data imp {
         key "modified_base"
       },
@@ -661,7 +661,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 30,
+      id local str "_1",
       data imp {
         key "misc_RNA"
       },
@@ -682,7 +682,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local str "regulatory_7",
       data imp {
         key "regulatory"
       },
@@ -707,7 +707,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 32,
+      id local str "prim_transcript_1",
       data imp {
         key "prim_transcript"
       },
@@ -728,7 +728,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 33,
+      id local str "prim_transcript_2",
       data imp {
         key "prim_transcript"
       },
@@ -749,7 +749,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local str "region_5",
       data region "",
       location int {
         from 25386,
@@ -772,7 +772,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 35,
+      id local str "prim_transcript_3",
       data imp {
         key "prim_transcript"
       },
@@ -793,7 +793,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 36,
+      id local str "primer_bind_1",
       data imp {
         key "primer_bind"
       },
@@ -814,7 +814,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local str "region_6",
       data region "",
       location int {
         from 25386,
@@ -837,7 +837,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 38,
+      id local str "protein_bind_1",
       data imp {
         key "protein_bind"
       },
@@ -858,7 +858,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 39,
+      id local str "misc_structure_2",
       data imp {
         key "misc_structure"
       },
@@ -879,7 +879,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local str "rep_origin_1",
       data imp {
         key "rep_origin"
       },
@@ -900,7 +900,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 41,
+      id local str "region_7",
       data region "",
       location int {
         from 25386,
@@ -923,7 +923,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 42,
+      id local str "repeat_region_2",
       data imp {
         key "repeat_region"
       },
@@ -948,7 +948,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local str "sig_peptide_nt_1",
       data imp {
         key "sig_peptide"
       },
@@ -969,7 +969,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 44,
+      id local str "sig_peptide_nt_2",
       data imp {
         key "sig_peptide"
       },
@@ -990,7 +990,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 45,
+      id local str "region_8",
       data region "",
       location int {
         from 25386,
@@ -1013,7 +1013,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local str "region_9",
       data region "",
       location int {
         from 25386,
@@ -1036,7 +1036,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 47,
+      id local str "transit_peptide_nt_1",
       data imp {
         key "transit_peptide"
       },
@@ -1057,7 +1057,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 48,
+      id local str "unsure_1",
       data imp {
         key "unsure"
       },
@@ -1078,7 +1078,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local str "variation_1",
       data imp {
         key "variation"
       },
@@ -1099,7 +1099,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 50,
+      id local str "variation_2",
       data imp {
         key "variation"
       },
@@ -1120,7 +1120,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 51,
+      id local str "region_10",
       data region "",
       location int {
         from 25386,

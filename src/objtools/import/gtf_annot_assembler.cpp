@@ -38,6 +38,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 
 #include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/feat_util.hpp>
 #include "featid_generator.hpp"
 #include "gtf_annot_assembler.hpp"
 
@@ -476,12 +477,8 @@ CGtfAnnotAssembler::xFeatureUpdateLocation(
     CRef<CSeq_feat>& pFeature)
 //  ============================================================================
 {
-    if (pFeature->GetLocation().IsNull()) {
-        xFeatureSetLocation(record, pFeature);
-        return;
-    }
-    CRef<CSeq_loc> pUpdatedLocation = pFeature->GetLocation().Add(
-        record.Location(), CSeq_loc::fSortAndMerge_All, nullptr);
+    CRef<CSeq_loc> pUpdatedLocation = FeatUtil::AddLocations(
+        pFeature->GetLocation(), record.Location());
     pFeature->SetLocation().Assign(*pUpdatedLocation);
 }
 
