@@ -1,9 +1,8 @@
 Seq-annot ::= {
   data ftable {
     {
-      id local id 1,
+      id local str "cds_1",
       data cdregion {
-        frame one
       },
       location int {
         from 498,
@@ -13,6 +12,14 @@ Seq-annot ::= {
       },
       qual {
         {
+          qual "ID",
+          val "D806_00010"
+        },
+        {
+          qual "Parent",
+          val "D806_00010_gene"
+        },
+        {
           qual "inference",
           val "ab initio prediction:Prodigal:2.6"
         },
@@ -21,30 +28,22 @@ Seq-annot ::= {
           val "similar to AA sequence:INSD:ABK70300.1"
         },
         {
-          qual "ID",
-          val "D806_00010"
-        },
-        {
           qual "note",
           val "reciprocal best blast hit to MSMEG_0001"
         },
         {
           qual "product",
           val "DNA polymerase III, beta subunit"
-        },
-        {
-          qual "Parent",
-          val "D806_00010_gene"
         }
       },
       xref {
         {
-          id local id 2
+          id local str "gene_1"
         }
       }
     },
     {
-      id local id 2,
+      id local str "gene_1",
       data gene {
         locus-tag "D806_00010"
       },
@@ -62,7 +61,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 1
+          id local str "cds_1"
         }
       }
     }

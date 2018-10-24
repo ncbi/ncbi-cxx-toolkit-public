@@ -97,9 +97,24 @@ CGff3ImportData::xInitializeAttributes(
     const vector<pair<string, string>>& attributes)
 //  ============================================================================
 {
+    vector<string> alwaysIgnored = {
+        "gbkey"
+    };
+
+    // typically attributes that have meaning for some feature types only and
+    // should not be present for others:
+    vector<string> sometimesIgnored = {
+        "locus_tag"
+    };
+
     for (auto keyValuePair: attributes) {
         auto key = keyValuePair.first;
         auto value = keyValuePair.second;
+
+        auto itAI = find(alwaysIgnored.begin(), alwaysIgnored.end(), key);
+        if (itAI != alwaysIgnored.end()) {
+            continue;
+        }
 
         if (key == "ID") {
             mId = value;
@@ -108,9 +123,6 @@ CGff3ImportData::xInitializeAttributes(
         if (key == "Parent") {
             mParent = value;
             //continue;
-        }
-        if (key == "gbkey") {
-            continue;
         }
         if (xInitializeDbxref(key, value)) {
             continue;
@@ -128,6 +140,11 @@ CGff3ImportData::xInitializeAttributes(
             continue;
         }
         if (xInitializeMultiValue(key, value)) {
+            continue;
+        }
+
+        auto itCI = find(sometimesIgnored.begin(), sometimesIgnored.end(), key);
+        if (itCI != sometimesIgnored.end()) {
             continue;
         }
         mpFeat->AddQualifier(key, NStr::URLDecode(value));
@@ -271,7 +288,7 @@ CGff3ImportData::xInitializeMultiValue(
 //  ============================================================================
 {
     vector<string> multiValueAttrs = {
-        "ec_number", "function", "go_process"
+        "ec_number", "function", "go_process", "inference"
     };
     auto attrIt = find(multiValueAttrs.begin(), multiValueAttrs.end(), key);
     if (attrIt == multiValueAttrs.end()) {
