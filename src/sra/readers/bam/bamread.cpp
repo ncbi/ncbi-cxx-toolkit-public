@@ -705,16 +705,19 @@ CBamDb::SPileupValues::SPileupValues()
 }
 
 
-CBamDb::SPileupValues::SPileupValues(CRange<TSeqPos> ref_range)
+CBamDb::SPileupValues::SPileupValues(CRange<TSeqPos> ref_range,
+                                     EIntronMode intron_mode)
 {
-    initialize(ref_range);
+    initialize(ref_range, intron_mode);
 }
 
 
-void CBamDb::SPileupValues::initialize(CRange<TSeqPos> ref_range)
+void CBamDb::SPileupValues::initialize(CRange<TSeqPos> ref_range,
+                                       EIntronMode intron_mode)
 {
     m_RefToOpen = m_RefFrom = ref_range.GetFrom();
     m_RefStop = ref_range.GetToOpen();
+    m_IntronMode = intron_mode;
     TSeqPos len = ref_range.GetLength()+32;
     for ( auto& c : max_count ) c = 0;
     cc_acgt.clear();
@@ -724,6 +727,11 @@ void CBamDb::SPileupValues::initialize(CRange<TSeqPos> ref_range)
     cc_gap.clear();
     cc_gap.resize(len);
     cc_gap[0] = 0;
+    cc_intron.clear();
+    if ( count_introns() ) {
+        cc_intron.resize(len);
+        cc_intron[0] = 0;
+    }
 }
 
 
@@ -738,6 +746,20 @@ void CBamDb::SPileupValues::decode_gap(TSeqPos len)
         cc_gap[i] = g;
     }
     _ASSERT(accumulate(&cc_gap[len], &cc_gap[m_RefToOpen-m_RefFrom+1], 0) == 0);
+}
+
+
+void CBamDb::SPileupValues::decode_intron(TSeqPos len)
+{
+    _ASSERT(len <= (m_RefToOpen-m_RefFrom));
+    _ASSERT(accumulate(&cc_intron[0], &cc_intron[m_RefToOpen-m_RefFrom+1], 0) == 0);
+    // restore intron counts from delta encoding
+    TCount g = 0;
+    for ( TSeqPos i = 0; i <= len; ++i ) {
+        g += cc_intron[i];
+        cc_intron[i] = g;
+    }
+    _ASSERT(accumulate(&cc_intron[len], &cc_intron[m_RefToOpen-m_RefFrom+1], 0) == 0);
 }
 
 
@@ -867,22 +889,38 @@ void CBamDb::SPileupValues::advance_current_beg(TSeqPos ref_pos, ICollectPileupC
     }
     if ( flush ) {
         decode_gap(flush);
+        if ( count_introns() ) {
+            decode_intron(flush);
+        }
         TSeqPos total = m_RefToOpen-m_RefFrom;
         if ( flush >= 16 ) {
             _ASSERT(flush%16 == 0);
             update_max_counts(flush);
             callback->AddValuesBy16(flush, *this);
             TSeqPos copy = total-flush;
-            TCount gap_save = cc_gap[total];
+            TSeqPos copy16 = align_to_16_up(copy);
             if ( copy ) {
-                TSeqPos copy16 = align_to_16_up(copy);
                 NFast::MoveBuffer(cc_acgt[flush].cc, copy16*4, cc_acgt[0].cc);
                 NFast::MoveBuffer(cc_match.data()+flush, copy16, cc_match.data());
-                NFast::MoveBuffer(cc_gap.data()+flush, copy16, cc_gap.data());
             }
-            cc_gap[copy] = gap_save;
+            {
+                TCount gap_save = cc_gap[total];
+                if ( copy ) {
+                    NFast::MoveBuffer(cc_gap.data()+flush, copy16, cc_gap.data());
+                }
+                cc_gap[copy] = gap_save;
+            }
+            if ( count_introns() ) {
+                TCount intron_save = cc_intron[total];
+                if ( copy ) {
+                    NFast::MoveBuffer(cc_intron.data()+flush, copy16, cc_intron.data());
+                }
+                cc_intron[copy] = intron_save;
+            }
             m_RefFrom += flush;
             _ASSERT(accumulate(&cc_gap[0], &cc_gap[m_RefToOpen-m_RefFrom+1], 0) == 0);
+            _ASSERT(!count_introns() ||
+                    accumulate(&cc_intron[0], &cc_intron[m_RefToOpen-m_RefFrom+1], 0) == 0);
         }
         else {
             _ASSERT(ref_pos == m_RefStop);
@@ -904,10 +942,18 @@ void CBamDb::SPileupValues::advance_current_end(TSeqPos ref_end)
 
     NFast::ClearBuffer(cc_acgt[cur_pos].cc, (new_pos-cur_pos)*4);
     NFast::ClearBuffer(cc_match.data()+cur_pos, (new_pos-cur_pos));
-    TCount gap_save = cc_gap[cur_pos];
-    NFast::ClearBuffer(cc_gap.data()+cur_pos, (new_pos-cur_pos));
-    cc_gap[cur_pos] = gap_save;
-    cc_gap[new_pos] = 0;
+    {
+        TCount gap_save = cc_gap[cur_pos];
+        NFast::ClearBuffer(cc_gap.data()+cur_pos, (new_pos-cur_pos));
+        cc_gap[cur_pos] = gap_save;
+        cc_gap[new_pos] = 0;
+    }
+    if ( count_introns() ) {
+        TCount intron_save = cc_intron[cur_pos];
+        NFast::ClearBuffer(cc_intron.data()+cur_pos, (new_pos-cur_pos));
+        cc_intron[cur_pos] = intron_save;
+        cc_intron[new_pos] = 0;
+    }
     m_RefToOpen = min(m_RefStop, m_RefFrom + new_pos);
 }
 
@@ -941,6 +987,12 @@ void CBamDb::SPileupValues::update_max_counts(TSeqPos length)
     NFast::Find4MaxElements(cc_acgt[0].cc, length, max_count);
     NFast::FindMaxElement(cc_match.data(), length, max_count[kStat_Match]);
     NFast::FindMaxElement(cc_gap.data(), length, max_count[kStat_Gap]);
+    if ( count_introns() ) {
+        NFast::FindMaxElement(cc_intron.data(), length, max_count[kStat_Intron]);
+    }
+    else {
+        max_count[kStat_Intron] = 0;
+    }
     m_SplitACGTLen = 0;
 }
 
@@ -967,9 +1019,11 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
                              const string& ref_id,
                              CRange<TSeqPos> graph_range,
                              Uint1 min_quality,
-                             ICollectPileupCallback* callback) const
+                             ICollectPileupCallback* callback,
+                             SPileupValues::EIntronMode intron_mode,
+                             TSeqPos gap_to_intron_threshold) const
 {
-    values.initialize(graph_range);
+    values.initialize(graph_range, intron_mode);
     
     size_t count = 0;
 
@@ -1016,11 +1070,17 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
                     break;
                 case SBamAlignInfo::kCIGAR_N: // N
                     // intron
+                    values.add_intron_ref_range(ref_pos, ref_end);
                     ref_pos += seglen;
                     break;
                 case SBamAlignInfo::kCIGAR_D: // D
                     // gap or intron
-                    values.add_gap_ref_range(ref_pos, ref_end);
+                    if ( seglen > gap_to_intron_threshold ) {
+                        values.add_intron_ref_range(ref_pos, ref_end);
+                    }
+                    else {
+                        values.add_gap_ref_range(ref_pos, ref_end);
+                    }
                     ref_pos += seglen;
                     break;
                 default: // P
@@ -1088,11 +1148,17 @@ size_t CBamDb::CollectPileup(SPileupValues& values,
                 }
                 else if ( type == 'N' ) {
                     // intron
+                    values.add_intron_ref_range(ref_pos, ref_end);
                     ref_pos += seglen;
                 }
                 else if ( type == 'D' ) {
                     // gap or intron
-                    values.add_gap_ref_range(ref_pos, ref_end);
+                    if ( seglen > gap_to_intron_threshold ) {
+                        values.add_intron_ref_range(ref_pos, ref_end);
+                    }
+                    else {
+                        values.add_gap_ref_range(ref_pos, ref_end);
+                    }
                     ref_pos += seglen;
                 }
                 else if ( type != 'P' ) {

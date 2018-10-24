@@ -239,15 +239,27 @@ public:
             kStat_T = 3,
             kStat_Gap = 4,
             kStat_Match = 5,
+            kStat_Intron = 6,
             kNumStat_ACGT = 4,
-            kNumStat = 6
+            kNumStat = 7
         };
 
+        enum EIntronMode {
+            eNoCountIntron,
+            eCountIntron
+        };
+        
         TSeqPos m_RefFrom; // current values array start on ref sequence
         TSeqPos m_RefToOpen; // current values array end on ref sequence
         TSeqPos m_RefStop; // limit of pileup collection on ref sequence
         TSeqPos m_SplitACGTLen;
+        EIntronMode m_IntronMode;
         
+        bool count_introns() const
+        {
+            return m_IntronMode != eNoCountIntron;
+        }
+
         struct SCountACGT {
             TCount cc[kNumStat_ACGT];
         };
@@ -255,12 +267,15 @@ public:
         CSimpleBufferT<TCount> cc_split_acgt[kNumStat_ACGT];
         CSimpleBufferT<TCount> cc_gap;
         CSimpleBufferT<TCount> cc_match;
+        CSimpleBufferT<TCount> cc_intron;
         TCount max_count[kNumStat];
         
         SPileupValues();
-        explicit SPileupValues(CRange<TSeqPos> ref_range);
+        explicit SPileupValues(CRange<TSeqPos> ref_range,
+                               EIntronMode intron_mode = eNoCountIntron);
 
-        void initialize(CRange<TSeqPos> ref_range);
+        void initialize(CRange<TSeqPos> ref_range,
+                        EIntronMode intron_mode = eNoCountIntron);
         void finalize(ICollectPileupCallback* callback);
 
         const TCount* get_acgt_counts() const
@@ -283,6 +298,10 @@ public:
             {
                 return cc_gap.data();
             }
+        const TCount* get_intron_counts() const
+            {
+                return cc_intron.data();
+            }
     
         void add_match_graph_pos(TSeqPos pos)
             {
@@ -300,6 +319,12 @@ public:
                 cc_gap[pos] += 1;
                 cc_gap[end] -= 1;
             }
+        void add_intron_graph_range(TSeqPos pos, TSeqPos end)
+            {
+                _ASSERT(pos < end);
+                cc_intron[pos] += 1;
+                cc_intron[end] -= 1;
+            }
         void add_bases_graph_range(TSeqPos pos, TSeqPos end,
                                    CTempString read, TSeqPos read_pos);
         void add_bases_graph_range_raw(TSeqPos pos, TSeqPos end,
@@ -308,6 +333,7 @@ public:
         static const TSeqPos FLUSH_SIZE = 512;
 
         void decode_gap(TSeqPos len);
+        void decode_intron(TSeqPos len);
         void advance_current_beg(TSeqPos ref_pos, ICollectPileupCallback* callback);
         void advance_current_end(TSeqPos ref_end);
         // update pileup collection start, the alignments should be coming sorted by start
@@ -369,6 +395,13 @@ public:
                                         ref_end - m_RefFrom);
                 }
             }
+        void add_intron_ref_range(TSeqPos ref_pos, TSeqPos ref_end)
+            {
+                if ( count_introns() && trim_ref_range(ref_pos, ref_end) ) {
+                    add_intron_graph_range(ref_pos - m_RefFrom,
+                                           ref_end - m_RefFrom);
+                }
+            }
         void add_bases_ref_range(TSeqPos ref_pos, TSeqPos ref_end,
                                  const CTempString& read, TSeqPos read_pos)
             {
@@ -400,7 +433,9 @@ public:
                          const string& ref_id,
                          CRange<TSeqPos> graph_range,
                          Uint1 map_quality = 0,
-                         ICollectPileupCallback* callback = 0) const;
+                         ICollectPileupCallback* callback = 0,
+                         SPileupValues::EIntronMode intron_mode = SPileupValues::eNoCountIntron,
+                         TSeqPos gap_to_intron_threshold = kInvalidSeqPos) const;
 #endif //HAVE_NEW_PILEUP_COLLECTOR
 
 private:
