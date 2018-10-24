@@ -3911,16 +3911,19 @@ SubjectIndex* SubjectIndexNew(BLAST_SequenceBlk* subject, Int4 width,
     retval = calloc(1, sizeof(SubjectIndex));
     if (!retval) {
         s_SubjectIndexNewCleanup(sequence, seqloc, opt, query_opt, retval);
+        return NULL;
     }
 
     retval->lookups = calloc(num_lookups, sizeof(BlastNaLookupTable*));
     if (!retval->lookups) {
         s_SubjectIndexNewCleanup(sequence, seqloc, opt, query_opt, retval);
+        return NULL;
     }
 
     ssr = malloc(sizeof(SSeqRange));
     if (!ssr) {
         s_SubjectIndexNewCleanup(sequence, seqloc, opt, query_opt, retval);
+        return NULL;
     }
 
     seqloc = calloc(1, sizeof(BlastSeqLoc));
