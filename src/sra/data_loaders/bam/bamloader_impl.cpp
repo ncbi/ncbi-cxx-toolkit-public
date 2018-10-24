@@ -166,6 +166,16 @@ static TSeqPos s_GetGapToIntronThreshold(void)
 }
 
 
+NCBI_PARAM_DECL(bool, BAM_LOADER, INTRON_GRAPH);
+NCBI_PARAM_DEF(bool, BAM_LOADER, INTRON_GRAPH, false);
+
+static bool s_GetMakeIntronGraph(void)
+{
+    static TSeqPos value = NCBI_PARAM_TYPE(BAM_LOADER, INTRON_GRAPH)::GetDefault();
+    return value;
+}
+
+
 NCBI_PARAM_DECL(bool, BAM_LOADER, ESTIMATED_COVERAGE_GRAPH);
 NCBI_PARAM_DEF(bool, BAM_LOADER, ESTIMATED_COVERAGE_GRAPH, true);
 
@@ -1735,12 +1745,14 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
 {
     static const int kStat_Match = CBamDb::SPileupValues::kStat_Match;
     static const int kStat_Gap = CBamDb::SPileupValues::kStat_Gap;
+    static const int kStat_Intron = CBamDb::SPileupValues::kStat_Intron;
     static const int kNumStat_ACGT = CBamDb::SPileupValues::kNumStat_ACGT;
     static const int kNumStat = CBamDb::SPileupValues::kNumStat;
     typedef CBamDb::SPileupValues::TCount TCount;
     
     CRef<CSeq_id> ref_id;
     CRange<TSeqPos> ref_range;
+    bool make_intron;
 
     struct SGraph {
         SGraph()
@@ -1760,7 +1772,8 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
     SPileupGraphCreator(const CSeq_id_Handle& ref_id,
                         CRange<TSeqPos> ref_range)
         : ref_id(SerialClone(*ref_id.GetSeqId())),
-          ref_range(ref_range)
+          ref_range(ref_range),
+          make_intron(s_GetMakeIntronGraph())
         {
         }
 
@@ -1774,7 +1787,8 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
                 "Number of G bases",
                 "Number of T bases",
                 "Number of inserts",
-                "Number of matches"
+                "Number of matches",
+                "Number of introns"
             };
             graph->SetTitle(titles[&g-graphs]);
             CSeq_interval& loc = graph->SetLoc().SetInt();
@@ -1848,7 +1862,8 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
                         // graph already created
                         continue;
                     }
-                    if ( k == CBamDb::SPileupValues::kStat_Match ) {
+                    if ( k == CBamDb::SPileupValues::kStat_Match ||
+                         k == CBamDb::SPileupValues::kStat_Intron ) {
                         // do not generate empty 'matches' graph
                         continue;
                     }
@@ -1942,6 +1957,9 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
         {
             x_AddValuesBy16(graphs[kStat_Match], len, values.cc_match.data());
             x_AddValuesBy16(graphs[kStat_Gap], len, values.get_gap_counts());
+            if ( make_intron ) {
+                x_AddValuesBy16(graphs[kStat_Intron], len, values.get_intron_counts());
+            }
             int dst_byte = 0, dst_int = 0;
             for ( int k = 0; k < kNumStat_ACGT; ++k ) {
                 SGraph& g = graphs[k];
@@ -1978,6 +1996,9 @@ struct SPileupGraphCreator : public CBamDb::ICollectPileupCallback
         {
             x_AddValues(graphs[kStat_Match], len, values.cc_match.data());
             x_AddValues(graphs[kStat_Gap], len, values.cc_gap.data());
+            if ( make_intron ) {
+                x_AddValues(graphs[kStat_Intron], len, values.cc_intron.data());
+            }
             // use split ACGT into separate arrays
             for ( int k = 0; k < kNumStat_ACGT; ++k ) {
                 SGraph& g = graphs[k];
@@ -2037,7 +2058,14 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
     
     SPileupGraphCreator gg(GetRefSeq_id(), graph_range);
     CBamDb::SPileupValues ss;
-    size_t count = m_File->GetBamDb().CollectPileup(ss, GetRefSeqId(), graph_range, min_quality, &gg);
+    CBamDb::SPileupValues::EIntronMode intron_mode =
+        s_GetMakeIntronGraph()?
+        CBamDb::SPileupValues::eCountIntron:
+        CBamDb::SPileupValues::eNoCountIntron;
+    TSeqPos gap_to_intron_threshold = s_GetGapToIntronThreshold();
+    size_t count = m_File->GetBamDb().CollectPileup(ss, GetRefSeqId(), graph_range,
+                                                    min_quality, &gg,
+                                                    intron_mode, gap_to_intron_threshold);
 
     if ( GetDebugLevel() >= 3 ) {
         LOG_POST_X(11, Info<<"CBAMDataLoader: "
@@ -2093,24 +2121,32 @@ struct SBaseStats
 {
     typedef unsigned TCount;
 
-    enum {
+    enum EStat {
         kStat_A = 0,
         kStat_C = 1,
         kStat_G = 2,
         kStat_T = 3,
         kStat_Gap = 4,
         kStat_Match = 5,
-        kNumStat = 6
+        kStat_Intron = 6,
+        kNumStat = 7
     };
     
     TSeqPos len;
+    bool make_intron_graph;
+    TSeqPos gap_to_intron_threshold;
     vector<TCount> cc[kNumStat];
     
     explicit
     SBaseStats(TSeqPos len)
-        : len(len)
+        : len(len),
+          make_intron_graph(s_GetMakeIntronGraph()),
+          gap_to_intron_threshold(s_GetGapToIntronThreshold())
         {
             for ( int k = 0; k < kNumStat; ++k ) {
+                if ( k == kStat_Intron && !make_intron_graph ) {
+                    continue;
+                }
                 cc[k].resize(len);
             }
         }
@@ -2147,8 +2183,9 @@ struct SBaseStats
                 }
             }
         }
-    void add_gap(TSignedSeqPos gap_pos, TSeqPos gap_len)
+    void x_add_gap_or_intron(TSignedSeqPos gap_pos, TSeqPos gap_len, EStat stat)
         {
+            _ASSERT(stat == kStat_Gap || stat == kStat_Intron);
             if ( gap_pos < 0 ) {
                 if ( TSignedSeqPos(gap_len + gap_pos) <= 0 ) {
                     // gap is fully before graph segment
@@ -2166,23 +2203,46 @@ struct SBaseStats
                 // gap goes beyond end of graph segment
                 gap_end = len;
             }
-            cc[kStat_Gap][gap_pos] += 1;
+            cc[stat][gap_pos] += 1;
             if ( gap_end < len ) {
-                cc[kStat_Gap][gap_end] -= 1;
+                cc[stat][gap_end] -= 1;
+            }
+        }
+    void add_intron(TSignedSeqPos gap_pos, TSeqPos gap_len)
+        {
+            if ( make_intron_graph ) {
+                x_add_gap_or_intron(gap_pos, gap_len, kStat_Intron);
+            }
+        }
+    void add_gap(TSignedSeqPos gap_pos, TSeqPos gap_len)
+        {
+            if ( gap_len > gap_to_intron_threshold ) {
+                add_intron(gap_pos, gap_len);
+            }
+            else {
+                x_add_gap_or_intron(gap_pos, gap_len, kStat_Gap);
+            }
+        }
+    void x_finish_add(EStat stat)
+        {
+            _ASSERT(stat == kStat_Gap || stat == kStat_Intron);
+            TCount g = 0;
+            for ( TSeqPos i = 0; i < len; ++i ) {
+                g += cc[stat][i];
+                cc[stat][i] = g;
             }
         }
     void finish_add()
         {
-            TCount g = 0;
-            for ( TSeqPos i = 0; i < len; ++i ) {
-                g += cc[kStat_Gap][i];
-                cc[kStat_Gap][i] = g;
+            x_finish_add(kStat_Gap);
+            if ( make_intron_graph ) {
+                x_finish_add(kStat_Intron);
             }
         }
 
     TCount get_max_count(int type) const
         {
-            return *max_element(cc[type].begin(), cc[type].end());
+            return cc[type].empty()? 0: *max_element(cc[type].begin(), cc[type].end());
         }
     void get_maxs(TCount (&c_max)[kNumStat]) const
         {
@@ -2267,13 +2327,12 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
                     break;
                 case SBamAlignInfo::kCIGAR_N: // N
                     // intron
+                    ss.add_intron(ss_pos, seglen);
                     ss_pos += seglen;
                     break;
                 case SBamAlignInfo::kCIGAR_D: // D
                     // gap or intron
-                    if ( seglen < s_GetGapToIntronThreshold() ) {
-                        ss.add_gap(ss_pos, seglen);
-                    }
+                    ss.add_gap(ss_pos, seglen);
                     ss_pos += seglen;
                     break;
                 default: // P
@@ -2346,13 +2405,12 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
                 }
                 else if ( type == 'N' ) {
                     // intron
+                    ss.add_intron(ss_pos, seglen);
                     ss_pos += seglen;
                 }
                 else if ( type == 'D' ) {
                     // gap or intron
-                    if ( seglen <= s_GetGapToIntronThreshold() ) {
-                        ss.add_gap(ss_pos, seglen);
-                    }
+                    ss.add_gap(ss_pos, seglen);
                     ss_pos += seglen;
                 }
                 else if ( type != 'P' ) {
@@ -2390,8 +2448,8 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
     for ( int k = 0; k < SBaseStats::kNumStat; ++k ) {
         SBaseStats::TCount max = ss.get_max_count(k);
         if ( max == 0 ) {
-            if ( k == SBaseStats::kStat_Match ) {
-                // do not generate empty 'matches' graph
+            if ( k == SBaseStats::kStat_Match || k == SBaseStats::kStat_Intron ) {
+                // do not generate empty 'matches' or 'introns' graph
                 continue;
             }
             if ( GetSkipEmptyPileupGraphsParam() ) {
@@ -2406,7 +2464,8 @@ void CBamRefSeqInfo::LoadPileupChunk(CTSE_Chunk_Info& chunk_info)
             "Number of G bases",
             "Number of T bases",
             "Number of inserts",
-            "Number of matches"
+            "Number of matches",
+            "Number of introns"
         };
         graph->SetTitle(titles[k]);
         CSeq_interval& loc = graph->SetLoc().SetInt();
