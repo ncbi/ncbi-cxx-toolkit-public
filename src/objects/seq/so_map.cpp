@@ -134,6 +134,7 @@ CSoMap::TYPEMAP CSoMap::mMapSoIdToType = {
     {"SO:0000466", "V_gene_segment"},
     {"SO:0000470", "J_gene_segment"},
     {"SO:0000478", "C_gene_segment"},
+    {"SO:0000507", "pseudogenic_exon"},
     {"SO:0000516", "pseudogenic_transcript"},
     {"SO:0000551", "polyA_signal_sequence"},
     {"SO:0000553", "polyA_site"},
@@ -287,6 +288,7 @@ CSoMap::FEATFUNCMAP CSoMap::mMapFeatFunc = {
     //{"propeptide",              CSoMap::xFeatureMakeImp},
     {"protein_binding_site",    CSoMap::xFeatureMakeImp},
     {"pseudogene",              CSoMap::xFeatureMakeGene},
+    {"pseudogenic_exon",        CSoMap::xFeatureMakeImp},
     {"pseudogenic_CDS",         CSoMap::xFeatureMakeCds},
     {"pseudogenic_rRNA",        CSoMap::xFeatureMakeRna},
     {"pseudogenic_tRNA",        CSoMap::xFeatureMakeRna},
@@ -574,6 +576,7 @@ bool CSoMap::xFeatureMakeImp(
         {"primary_transcript", "prim_transcript"},
         {"primer_binding_site", "primer_bind"},
         {"protein_binding_site", "protein_bind"},
+        {"pseudogenic_exon", "exon"},
         {"region", "source"},
         {"sequence_alteration", "variation"},
         {"sequence_difference", "misc_difference"},
@@ -588,6 +591,9 @@ bool CSoMap::xFeatureMakeImp(
     }
     else {
         feature.SetData().SetImp().SetKey(cit->second);
+    }
+    if(NStr::StartsWith(so_type, "pseudogenic_")) {
+        feature.SetPseudo(true);
     }
     return true;
 }
