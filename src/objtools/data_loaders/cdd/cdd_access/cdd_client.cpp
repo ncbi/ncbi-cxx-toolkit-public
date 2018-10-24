@@ -42,8 +42,10 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
 CCDDClient::CCDDClient(const string& service_name)
-    : Tparent(service_name.empty() ? DEFAULT_CDD_SERVICE_NAME : service_name, eSerial_Json)
+    : Tparent(service_name.empty() ? DEFAULT_CDD_SERVICE_NAME : service_name,
+              eSerial_AsnBinary)
 {
+    SetArgs("binary=1");
 }
 
 
@@ -67,7 +69,8 @@ void CCDDClient::ReadReply(CObjectIStream& in, CCDD_Reply& reply)
         next_reply.Reset(new CCDD_Reply);
         in >> *next_reply;
         m_Replies.push_back(next_reply);
-    } while (!next_reply->IsSetEnd_of_reply());
+    } while (!next_reply->IsSetEnd_of_reply()
+             &&  !next_reply->GetReply().IsEmpty());
 
     if (!m_Replies.empty()) {
         reply.Assign(*m_Replies.back());
