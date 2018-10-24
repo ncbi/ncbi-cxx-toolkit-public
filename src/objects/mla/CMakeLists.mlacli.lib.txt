@@ -3,8 +3,7 @@
 #############################################################################
 
 NCBI_begin_lib(mlacli)
-  NCBI_sources(mla_client.cpp ${NCBI_CURRENT_SOURCE_DIR}/mla_client_.cpp)
-  set_source_files_properties(${NCBI_CURRENT_SOURCE_DIR}/mla_client_.cpp PROPERTIES GENERATED TRUE)
+  NCBI_generated_sources(mla_client.cpp mla_client_.cpp)
   NCBI_uses_toolkit_libraries(mla xconnect)
 NCBI_end_lib()
 

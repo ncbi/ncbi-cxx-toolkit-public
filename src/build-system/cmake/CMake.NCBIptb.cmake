@@ -28,6 +28,7 @@
 ##    NCBI_begin_lib(name) or NCBI_begin_app(name)
 ##
 ##      NCBI_sources(   list of source files)
+##      NCBI_generated_sources(   list of source files) - file extension is mandatory
 ##      NCBI_headers(   list of header files) - only relative paths and masks are allowed
 ##      NCBI_resources( list of resource files) - file extension is mandatory
 ##      NCBI_dataspecs( list of data specs - ASN, DTD, XSD etc) - file extension is mandatory
@@ -337,6 +338,9 @@ endmacro()
 macro(NCBI_sources)
     set(NCBI_${NCBI_PROJECT}_SOURCES ${NCBI_${NCBI_PROJECT}_SOURCES} "${ARGV}")
 endmacro()
+macro(NCBI_generated_sources)
+    set(NCBI_${NCBI_PROJECT}_GENERATED_SOURCES ${NCBI_${NCBI_PROJECT}_GENERATED_SOURCES} "${ARGV}")
+endmacro()
 
 #############################################################################
 macro(NCBI_headers)
@@ -600,6 +604,18 @@ function(NCBI_internal_collect_sources)
                     list(APPEND _nopch "${_dir}/${_file}")
                 endif()
             endif()
+        endif()
+    endforeach()
+
+    foreach(_file IN LISTS NCBI_${NCBI_PROJECT}_GENERATED_SOURCES)
+        if(NOT IS_ABSOLUTE ${_file})
+            set(_file "${_dir}/${_file}")
+        endif()
+        list(APPEND _sources "${_file}")
+        set_source_files_properties(${_file} PROPERTIES GENERATED TRUE)
+        get_filename_component(_ext ${_file} EXT)
+        if("${_ext}" STREQUAL ".c")
+            list(APPEND _nopch "${_file}")
         endif()
     endforeach()
 
@@ -1490,7 +1506,7 @@ if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
 message("-----------------------------------")
 message("NCBI_PROJECT = ${NCBI_PROJECT}")
 message("  TYPE = ${NCBI_${NCBI_PROJECT}_TYPE}")
-message("  SOURCES = ${NCBI_${NCBI_PROJECT}_SOURCES}")
+message("  SOURCES = ${NCBI_${NCBI_PROJECT}_SOURCES} ${NCBI_${NCBI_PROJECT}_GENERATED_SOURCES}")
 message("  RESOURCES = ${NCBI_${NCBI_PROJECT}_RESOURCES}")
 message("  HEADERS = ${NCBI_${NCBI_PROJECT}_HEADERS}")
 message("  REQUIRES = ${NCBI_${NCBI_PROJECT}_REQUIRES}")

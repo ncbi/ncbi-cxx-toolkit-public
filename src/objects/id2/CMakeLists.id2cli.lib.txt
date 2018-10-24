@@ -3,8 +3,7 @@
 #############################################################################
 
 NCBI_begin_lib(id2cli)
-  NCBI_sources(id2_client.cpp ${NCBI_CURRENT_SOURCE_DIR}/id2_client_.cpp)
-  set_source_files_properties(${NCBI_CURRENT_SOURCE_DIR}/id2_client_.cpp PROPERTIES GENERATED TRUE)
+  NCBI_generated_sources(id2_client.cpp id2_client_.cpp)
   NCBI_uses_toolkit_libraries(id2 xconnect)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()

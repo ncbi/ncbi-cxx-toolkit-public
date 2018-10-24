@@ -3,8 +3,7 @@
 #############################################################################
 
 NCBI_begin_lib(xnetblastcli)
-  NCBI_sources(${NCBI_CURRENT_SOURCE_DIR}/blastclient.cpp ${NCBI_CURRENT_SOURCE_DIR}/blastclient_.cpp)
-  set_source_files_properties(${NCBI_CURRENT_SOURCE_DIR}/blastclient.cpp ${NCBI_CURRENT_SOURCE_DIR}/blastclient_.cpp PROPERTIES GENERATED TRUE)
+  NCBI_generated_sources(blastclient.cpp blastclient_.cpp)
   NCBI_uses_toolkit_libraries(xconnect xnetblast)
 NCBI_end_lib()
 
