@@ -1133,10 +1133,10 @@ CRef<CSeq_entry> CFeatureTableReader::ReadProtein(ILineReader& line_reader)
           |  CFastaReader::fBadModThrow
           |  CFastaReader::fAssumeProt;
 
-    auto_ptr<CFastaReader> pReader(new CFastaReader(0, flags));
+    unique_ptr<CFastaReader> pReader(new CFastaReader(0, flags));
 
-    CRef<CSerialObject> pep = pReader->ReadObject(line_reader, m_context.m_logger);
     CRef<CSeq_entry> result;
+    CRef<CSerialObject> pep = pReader->ReadObject(line_reader, m_context.m_logger);
 
     if (pep.NotEmpty())
     {
@@ -1147,7 +1147,10 @@ CRef<CSeq_entry> CFeatureTableReader::ReadProtein(ILineReader& line_reader)
             {
                 if (result->GetDescr().Get().size() == 0)
                 {
-                    result->SetDescr(*(CSeq_descr*)0);
+                    if (result->IsSeq())
+                        result->SetSeq().ResetDescr();
+                    else
+                        result->SetSet().ResetDescr();
                 }
             }
             if (result->IsSeq())
