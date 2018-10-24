@@ -188,7 +188,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     if (app) {
         const CNcbiRegistry& registry = app->GetConfig();
         m_LongSeqId = (registry.Get("BLAST", "LONG_SEQID") == "1");
-    }
+    }    
 }
 
 CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts, 
@@ -289,8 +289,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
     m_IsIterative = opts.IsIterativeSearch();
     if (m_FormatType == CFormattingArgs::eSAM) {
     	x_InitSAMFormatter();
-    }
-
+    }    
     CNcbiApplication* app = CNcbiApplication::Instance();
     if (app) {
         const CNcbiRegistry& registry = app->GetConfig();
@@ -488,7 +487,11 @@ CBlastFormat::x_ConfigCShowBlastDefline(CShowBlastDefline& showdef,
     if (m_LongSeqId) {
         flags |= CShowBlastDefline::eLongSeqId;
     }
-
+    if(m_HitsSortOption >= 0) {
+        flags |= CShowBlastDefline::eShowPercentIdent;
+        flags |= CShowBlastDefline::eShowTotalScore;
+        flags |= CShowBlastDefline::eShowQueryCoverage;
+    }
     showdef.SetOption(flags);
     showdef.SetDbName(m_DbName);
     showdef.SetDbType(!m_DbIsAA);
@@ -1466,6 +1469,15 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     _ASSERT(results.HasAlignments());
     if (m_IsUngappedSearch) {
         aln_set.Reset(CDisplaySeqalign::PrepareBlastUngappedSeqalign(*aln_set));
+    }
+    
+    //invoke sorting only for m_HitsSortOption > CAlignFormatUtil::eEvalue or m_HspsSortOption > CAlignFormatUtil::eHspEvalue
+    if(m_HitsSortOption > 0 || m_HspsSortOption > 0) {     
+        aln_set = CBlastFormatUtil::SortSeqalignForSortableFormat(
+                                      *(const_cast<CSeq_align_set*>(aln_set.GetPointer())),
+                                      (m_Program == "tblastx") ? true : false,                                                                              
+                                      m_HitsSortOption, 
+                                      m_HspsSortOption);
     }
 
     const bool kIsGlobal = s_IsGlobalSeqAlign(aln_set);
