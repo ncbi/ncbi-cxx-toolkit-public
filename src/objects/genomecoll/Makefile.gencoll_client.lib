@@ -12,7 +12,7 @@ LIB_OR_DLL = lib
 
 #REQUIRES = objects dbapi
 
-WATCHERS = shchekot dicuccio zherikov
+WATCHERS = smithrg dicuccio zherikov
 
 
 USES_LIBRARIES =  \
