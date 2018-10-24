@@ -1,7 +1,7 @@
 Seq-annot ::= {
   data ftable {
     {
-      id local id 1,
+      id local str "gene_1",
       data gene {
         locus-tag "BMA10229_RS12890"
       },
@@ -34,34 +34,32 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 2
+          id local str "mrna_1"
         }
       }
     },
     {
-      id local id 2,
+      id local str "mrna_1",
       data rna {
         type rRNA
       },
-      location mix {
-        int {
-          from 722381,
-          to 723918,
-          strand minus,
-          id other {
-            accession "NC_008836",
-            version 1
-          }
+      location int {
+        from 722381,
+        to 723918,
+        strand minus,
+        id other {
+          accession "NC_008836",
+          version 1
         }
       },
       qual {
         {
-          qual "Parent",
-          val "gene649"
-        },
-        {
           qual "ID",
           val "rna9"
+        },
+        {
+          qual "Parent",
+          val "gene649"
         },
         {
           qual "product",
@@ -70,12 +68,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 1
+          id local str "gene_1"
         }
       }
     },
     {
-      id local id 3,
+      id local str "gene_2",
       data gene {
         locus "ssrA",
         locus-tag "BMA10229_RS25505"
@@ -105,34 +103,32 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 4
+          id local str "mrna_2"
         }
       }
     },
     {
-      id local id 4,
+      id local str "mrna_2",
       data imp {
         key "misc_RNA"
       },
-      location mix {
-        int {
-          from 978036,
-          to 978405,
-          strand plus,
-          id other {
-            accession "NC_008836",
-            version 1
-          }
+      location int {
+        from 978036,
+        to 978405,
+        strand plus,
+        id other {
+          accession "NC_008836",
+          version 1
         }
       },
       qual {
         {
-          qual "Parent",
-          val "gene891"
-        },
-        {
           qual "ID",
           val "rna11"
+        },
+        {
+          qual "Parent",
+          val "gene891"
         },
         {
           qual "gene",
@@ -145,12 +141,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 3
+          id local str "gene_2"
         }
       }
     },
     {
-      id local id 5,
+      id local str "gene_3",
       data gene {
         locus-tag "BMA10229_RS25510"
       },
@@ -179,27 +175,25 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 6
+          id local str "mrna_3"
         }
       }
     },
     {
-      id local id 6,
+      id local str "mrna_3",
       data rna {
         type ncRNA,
         ext gen {
           class "RNase_P_RNA"
         }
       },
-      location mix {
-        int {
-          from 1227237,
-          to 1227648,
-          strand minus,
-          id other {
-            accession "NC_008836",
-            version 1
-          }
+      location int {
+        from 1227237,
+        to 1227648,
+        strand minus,
+        id other {
+          accession "NC_008836",
+          version 1
         }
       },
       qual {
@@ -208,12 +202,12 @@ Seq-annot ::= {
           val "RNase_P_RNA"
         },
         {
-          qual "Parent",
-          val "gene1111"
-        },
-        {
           qual "ID",
           val "rna14"
+        },
+        {
+          qual "Parent",
+          val "gene1111"
         },
         {
           qual "product",
@@ -222,7 +216,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local id 5
+          id local str "gene_3"
         }
       }
     }

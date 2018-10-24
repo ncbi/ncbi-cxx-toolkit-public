@@ -13,6 +13,7 @@ test-multi-rna gff3
 test-so-types gff3
 test-pseudo-features gff3
 test-inference gff3
+test-transcript gff3
 
 # BED:
 test-12-col bed
