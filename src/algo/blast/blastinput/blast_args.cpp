@@ -1455,8 +1455,6 @@ CMappingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            " masked in the lookup table",
                            CArgDescriptions::eInteger,
                            NStr::IntToString(MAX_DB_WORD_COUNT_MAPPER));
-    arg_desc.SetDependency(kArgMaxDbWordCount, CArgDescriptions::eRequires,
-                           kArgLimitLookup);
     arg_desc.AddDefaultKey(kArgLookupStride, "num", "Number of words to skip "
 			    "after collecting one while creating a lookup table",
                  CArgDescriptions::eInteger, "0");
@@ -1535,6 +1533,13 @@ CMappingArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 
     if (args.Exist(kArgMaxDbWordCount) && args[kArgMaxDbWordCount]) {
+        if (!opt.GetLookupDbFilter()) {
+            ERR_POST(Warning << (string)"The parameter " + kArgMaxDbWordCount +
+                     " is ignored when " + kArgLimitLookup + " is set to false."
+                     " Use -" + kArgLimitLookup + " T so that " +
+                     kArgMaxDbWordCount + " has effect.");
+
+        }
         opt.SetMaxDbWordCount(args[kArgMaxDbWordCount].AsInteger());
     }
 
