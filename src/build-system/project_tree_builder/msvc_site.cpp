@@ -334,7 +334,7 @@ void CMsvcSite::GetLibInfo(const string& lib,
     } else {
         string include_str    = ToOSPath(
             ProcessMacros(GetOpt(m_Registry, section, "INCLUDE", config),false));
-        NStr::Split(include_str, LIST_SEPARATOR, libinfo->m_IncludeDir, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+        NStr::Split(include_str, LIST_SEPARATOR, libinfo->m_IncludeDir, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate | NStr::fSplit_CanQuote);
 
         string defines_str    = GetOpt(m_Registry, section, "DEFINES", config);
         NStr::Split(defines_str, LIST_SEPARATOR, libinfo->m_LibDefines, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
@@ -563,7 +563,7 @@ void CMsvcSite::GetLibChoiceIncludes(
                                                cpp_flags_define);
     //split on parts
     list<string> parts;
-    NStr::Split(include_str, LIST_SEPARATOR, parts, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+    NStr::Split(include_str, LIST_SEPARATOR, parts, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate | NStr::fSplit_CanQuote | NStr::fSplit_CanQuote);
 
     string lib_id;
     ITERATE(list<string>, p, parts) {

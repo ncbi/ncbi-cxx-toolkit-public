@@ -446,7 +446,7 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
             GetApp().GetSite().ResolveDefine(CSymResolver::StripDefine(flag), dir_all);
             if ( !dir_all.empty() ) {
                 list<string> dir_list;
-                NStr::Split(dir_all, LIST_SEPARATOR, dir_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+                NStr::Split(dir_all, LIST_SEPARATOR, dir_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate | NStr::fSplit_CanQuote);
                 ITERATE(list<string>, dir_item, dir_list) {
                     const string& dir = *dir_item;
                     if ( CDirEntry(dir).IsDir() ) {

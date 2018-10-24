@@ -443,7 +443,7 @@ void CMsvcProjectMakefile::GetAdditionalIncludeDirs(const SConfigInfo& config,
     string dirs_string = 
         GetOpt(m_MakeFile, "AddToProject", "IncludeDirs", config);
     
-    NStr::Split(dirs_string, LIST_SEPARATOR, *dirs, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+    NStr::Split(dirs_string, LIST_SEPARATOR, *dirs, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate | NStr::fSplit_CanQuote);
 }
 
 void CMsvcProjectMakefile::GetHeadersInInclude(const SConfigInfo& config, 

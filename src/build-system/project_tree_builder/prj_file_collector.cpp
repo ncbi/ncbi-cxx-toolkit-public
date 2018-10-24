@@ -250,7 +250,7 @@ bool CProjectFileCollector::GetIncludeDirs(list<string>& inc_dirs, const SConfig
     inc_dirs.clear();
     string alldirs = m_ProjContext.AdditionalIncludeDirectories(cfg);
     list<string> dirs;
-    NStr::Split(alldirs, LIST_SEPARATOR, dirs, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+    NStr::Split(alldirs, LIST_SEPARATOR, dirs, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate | NStr::fSplit_CanQuote);
     ITERATE( list<string>, i, dirs) {
         string dir;
 #ifdef PSEUDO_XCODE
@@ -273,7 +273,7 @@ bool CProjectFileCollector::GetLibraryDirs(list<string>& lib_dirs, const SConfig
     lib_dirs.clear();
     string alldirs = m_ProjContext.AdditionalLibraryDirectories(cfg);
     list<string> dirs;
-    NStr::Split(alldirs, LIST_SEPARATOR, dirs, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+    NStr::Split(alldirs, LIST_SEPARATOR, dirs, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate | NStr::fSplit_CanQuote);
     ITERATE( list<string>, i, dirs) {
         string dir;
 #ifdef PSEUDO_XCODE
