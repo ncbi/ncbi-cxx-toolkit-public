@@ -315,7 +315,8 @@ public:
     /// Set Alignment Length
     void SetLineLength(size_t len) {m_LineLength = len;}    
     void SetAlignSeqList(string alignSeqList) {m_AlignSeqList = alignSeqList;}
-    
+    void SetHitsSortOption(int hitsSortOption) {m_HitsSortOption = hitsSortOption;}
+    void SetHspsSortOption(int hspsSortOption) {m_HspsSortOption = hspsSortOption;}
     
 
     static void PrintArchive(CRef<objects::CBlast4_archive> archive,
@@ -412,6 +413,9 @@ private:
     CShowBlastDefline::SDeflineTemplates *m_DeflineTemplates;
     CDisplaySeqalign::SAlignTemplates *m_AlignTemplates;
     string m_AlignSeqList;
+
+    int m_HitsSortOption;
+    int m_HspsSortOption;
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]
