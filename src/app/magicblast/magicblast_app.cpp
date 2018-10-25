@@ -1870,15 +1870,18 @@ int CMagicBlastApp::Run(void)
                               new CSearchDatabase(kDbName,
                                     CSearchDatabase::eBlastDbIsNucleotide));
 
-                        if (num_query_threads > 1) {
-                            search_db->GetSeqDb()->SetNumberOfThreads(1, true);
-                        }
-
                         CRef<CSeqDBGiList> gilist =
                             db_args->GetSearchDatabase()->GetGiList();
 
                         if (gilist.NotEmpty()) {
                             search_db->SetGiList(gilist.GetNonNullPointer());
+                        }
+
+                        // this must be the last operation on searh_db, because
+                        // CSearchDatabase::GetSeqDb initializes CSeqDB with
+                        // whatever information it currently has
+                        if (num_query_threads > 1) {
+                            search_db->GetSeqDb()->SetNumberOfThreads(1, true);
                         }
 
                         thread_db_adapter.Reset(
