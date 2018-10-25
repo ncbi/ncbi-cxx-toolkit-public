@@ -825,26 +825,6 @@ Seq-entry ::= seq {
           name "val207_0"
         },
         {
-          subtype insertion-seq-name,
-          name "val170_0"
-        },
-        {
-          subtype insertion-seq-name,
-          name "val167_0"
-        },
-        {
-          subtype insertion-seq-name,
-          name "val168_0"
-        },
-        {
-          subtype insertion-seq-name,
-          name "val168_1"
-        },
-        {
-          subtype insertion-seq-name,
-          name "val169_0"
-        },
-        {
           subtype isolation-source,
           name "val192_0"
         },
@@ -1029,26 +1009,6 @@ Seq-entry ::= seq {
           name "val161_0"
         },
         {
-          subtype plastid-name,
-          name "val174_0"
-        },
-        {
-          subtype plastid-name,
-          name "val171_0"
-        },
-        {
-          subtype plastid-name,
-          name "val172_0"
-        },
-        {
-          subtype plastid-name,
-          name "val172_1"
-        },
-        {
-          subtype plastid-name,
-          name "val173_0"
-        },
-        {
           subtype pop-variant,
           name "val154_0"
         },
@@ -1167,26 +1127,6 @@ Seq-entry ::= seq {
         {
           subtype transgenic,
           name "val184_1"
-        },
-        {
-          subtype transposon-name,
-          name "val166_0"
-        },
-        {
-          subtype transposon-name,
-          name "val163_0"
-        },
-        {
-          subtype transposon-name,
-          name "val164_0"
-        },
-        {
-          subtype transposon-name,
-          name "val164_1"
-        },
-        {
-          subtype transposon-name,
-          name "val165_0"
         },
         {
           subtype whole-replicon,

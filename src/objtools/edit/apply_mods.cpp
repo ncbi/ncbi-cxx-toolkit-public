@@ -226,14 +226,12 @@ TModNameSubSrcSubtype s_InitModNameSubSrcSubtypeMap(void)
     // skipped because they're deprecated
     TModNameSet skip_enum_names {
         // skip because handled specially elsewhere
-        "fwd_primer_seq", "rev_primer_seq",
-        "fwd_primer_name", "rev_primer_name",
-        "fwd_PCR_primer_seq", "rev_PCR_primer_seq",
-        "fwd_PCR_primer_name", "rev_PCR_primer_name",
+        "fwd-primer-seq", "rev-primer-seq",
+        "fwd-primer-name", "rev-primer-name",
         // skip because deprecated
-        "transposon_name",
-        "plastid_name",
-        "insertion_seq_name",
+        "transposon-name",
+        "plastid-name",
+        "insertion-seq-name",
     };
     const TModNameSubSrcSubtype extra_smod_to_enum_names {
         { "sub-clone",          CSubSource::eSubtype_subclone },
@@ -370,11 +368,11 @@ SModNameInfo::TNames SModNameInfo::non_orgmod_orgref_mods =
 // These should be initialized using a map - less chance of error that way
 SModNameInfo::TNames SModNameInfo::subsource_mods =
     s_InitModNames(*CSubSource::GetTypeInfo_enum_ESubtype(),
-                   {"fwd_primer_seq", "rev_primer_seq", 
-                    "fwd_primer_name", "rev_primer_name",
-                    "transposon_name", 
-                    "plastid_name", 
-                    "insertion_seq_name"},
+                   {"fwd-primer-seq", "rev-primer-seq", 
+                    "fwd-primer-name", "rev-primer-name",
+                    "transposon-name", 
+                    "plastid-name", 
+                    "insertion-seq-name"},
                   {"sub-clone", "lat-long", "latitude-longitude"});
                     
 
@@ -562,12 +560,6 @@ void CDescrCache::x_SetUserType(const string& type,
 CDescrCache::CDescrCache(CDescrCache::SDescrContainer& descr_container) : m_DescrContainer(descr_container) {}
 
 
-//CDescrCache::CDescrCache(CBioseq& bioseq) : m_DescrContainer(new CDescrContainer<CBioseq>(bioseq)) {}
-
-
-//CDescrCache::CDescrCache(CBioseq_set& bioseq_set) : m_DescrContainer(new CDescrContainer<CBioseq_set>(bioseq_set)) {}
-
-
 CSeqdesc& CDescrCache::SetDBLink() 
 {
     return x_SetDescriptor(eDBLink, 
@@ -699,7 +691,6 @@ CSeqdesc& CDescrCache::x_ResetDescriptor(const EChoice eChoice,
     m_DescrContainer.SetDescr().Set().push_back(pDesc);
     return *pDesc;
 }
-
 
 
 template<typename T>
