@@ -737,7 +737,8 @@ CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set)
             CBioseq& bioseq = seq_entry->SetSeq();
             bioseq.SetId().clear();
             if (m_ParseSeqIds) {
-                CRef<CSeq_id> seqid(new CSeq_id(id + ".1"));
+                CRef<CSeq_id> seqid(new CSeq_id(id + ".1",
+                                                CSeq_id::fParse_AnyLocal));
                 bioseq.SetId().push_back(seqid);
             }
             else {
@@ -762,7 +763,8 @@ CShortReadFastaInputSource::x_ReadFastc(CBioseq_set& bioseq_set)
             CBioseq& bioseq = seq_entry->SetSeq();
             bioseq.SetId().clear();
             if (m_ParseSeqIds) {
-                CRef<CSeq_id> seqid(new CSeq_id(id + ".2"));
+                CRef<CSeq_id> seqid(new CSeq_id(id + ".2",
+                                                CSeq_id::fParse_AnyLocal));
                 bioseq.SetId().push_back(seqid);
             }
             else {
@@ -831,7 +833,8 @@ CShortReadFastaInputSource::x_ReadFastaOneSeq(CRef<ILineReader> line_reader)
         CBioseq& bioseq = seq_entry->SetSeq();
         bioseq.SetId().clear();
         if (m_ParseSeqIds) {
-            CRef<CSeq_id> seqid(new CSeq_id(defline_id));
+            CRef<CSeq_id> seqid(new CSeq_id(defline_id,
+                                            CSeq_id::fParse_AnyLocal));
             bioseq.SetId().push_back(seqid);
             bioseq.SetDescr();
         }
@@ -895,7 +898,8 @@ CShortReadFastaInputSource::x_ReadFastqOneSeq(CRef<ILineReader> line_reader)
         CBioseq& bioseq = seq_entry->SetSeq();
         bioseq.SetId().clear();
         if (m_ParseSeqIds) {
-            CRef<CSeq_id> seqid(new CSeq_id(defline_id));
+            CRef<CSeq_id> seqid(new CSeq_id(defline_id,
+                                            CSeq_id::fParse_AnyLocal));
             bioseq.SetId().push_back(seqid);
             bioseq.SetDescr();
         }
