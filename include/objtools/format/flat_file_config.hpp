@@ -191,6 +191,8 @@ public:
         fHideGI                = 1 << 1,
         fLongLocusNames        = 1 << 2,
         fExpandGaps            = 1 << 3,
+        fShowSNPFeatures       = 1 << 6,
+        fShowCDDFeatures       = 1 << 7,
         fDisableAnnotRefs      = 1 << 10,
         fUseSeqEntryIndexer    = 1 << 11,
         fUseAutoDef            = 1 << 12,
@@ -574,6 +576,8 @@ public:
     bool HideGI                (void) const;
     bool LongLocusNames        (void) const;
     bool ExpandGaps            (void) const;
+    bool ShowSNPFeatures       (void) const;
+    bool ShowCDDFeatures       (void) const;
     bool DisableAnnotRefs      (void) const;
     bool UseSeqEntryIndexer    (void) const;
     bool UseAutoDef            (void) const;
@@ -585,6 +589,8 @@ public:
     CFlatFileConfig& SetHideGI               (bool val = true);
     CFlatFileConfig& SetLongLocusNames       (bool val = true);
     CFlatFileConfig& SetExpandGaps           (bool val = true);
+    CFlatFileConfig& SetShowSNPFeatures      (bool val = true);
+    CFlatFileConfig& SetShowCDDFeatures      (bool val = true);
     CFlatFileConfig& SetDisableAnnotRefs     (bool val = true);
     CFlatFileConfig& SetUseSeqEntryIndexer   (bool val = true);
     CFlatFileConfig& SetUseAutoDef           (bool val = true);
@@ -769,6 +775,8 @@ CUSTOM_ARG_IMP(HideProteinID)
 CUSTOM_ARG_IMP(HideGI)
 CUSTOM_ARG_IMP(LongLocusNames)
 CUSTOM_ARG_IMP(ExpandGaps)
+CUSTOM_ARG_IMP(ShowSNPFeatures)
+CUSTOM_ARG_IMP(ShowCDDFeatures)
 CUSTOM_ARG_IMP(DisableAnnotRefs)
 CUSTOM_ARG_IMP(UseSeqEntryIndexer)
 CUSTOM_ARG_IMP(UseAutoDef)

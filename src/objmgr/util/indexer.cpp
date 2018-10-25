@@ -1832,11 +1832,11 @@ void CBioseqIndex::x_InitFeats (void)
 
             // allow external SNPs - testing for now, probably needs to be in external policy
             sel.AddUnnamedAnnots();
-            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0) {
+            if ((m_Flags & CSeqEntryIndex::fHideSNPFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowSNPFeats) != 0) {
                 sel.IncludeNamedAnnotAccession("SNP");
                 sel.AddNamedAnnots("SNP");
             }
-            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) == 0) {
+            if ((m_Flags & CSeqEntryIndex::fHideCDDFeats) == 0 && (m_Flags & CSeqEntryIndex::fShowCDDFeats) != 0) {
                 sel.IncludeNamedAnnotAccession("CDD");
                 sel.AddNamedAnnots("CDD");
             }
