@@ -153,6 +153,7 @@ void CDbapiConnMgr::SetConnectionFactory(IDBConnectionFactory* factory,
                                          EIfSet if_set)
 {
     CFastMutexGuard mg(m_Mutex);
+    CRef<IDBConnectionFactory> factory_ref(factory);
     if (m_HasExplicitConnectionFactory) {
         static const char* msg
             = "A connection factory has already been explicitly registered.";
@@ -169,7 +170,7 @@ void CDbapiConnMgr::SetConnectionFactory(IDBConnectionFactory* factory,
         }
     }
     m_HasExplicitConnectionFactory = true;
-    m_ConnectFactory.Reset(factory);
+    m_ConnectFactory = factory_ref;
 }
 
 void CDbapiConnMgr::SetMaxConnect(unsigned int max_connect)
