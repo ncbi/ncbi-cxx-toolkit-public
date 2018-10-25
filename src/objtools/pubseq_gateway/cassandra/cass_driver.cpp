@@ -1192,7 +1192,7 @@ void CCassQuery::Execute(CassConsistency  c, bool  run_async,
             if (run_async) {
                 GetFuture();
             } else {
-                Wait(m_qtimeoutms * 1000L);
+                Wait(0);
             }
         }
     } catch(...) {
@@ -1373,6 +1373,10 @@ void CCassQuery::ProcessFutureResult()
 
     CassError   rc = cass_future_error_code(m_future);
     if (rc != CASS_OK) {
+        if (m_statement) {
+            cass_statement_free(m_statement);
+            m_statement = nullptr;
+        }
         string      msg = (rc == CASS_ERROR_SERVER_SYNTAX_ERROR ||
                            rc == CASS_ERROR_SERVER_INVALID_QUERY) ?
                                     string(", sql: ") + m_sql : string("");
