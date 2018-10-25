@@ -92,25 +92,25 @@ CGff3LineReader::xInitializeRecord(
     ENa_strand seqStrand;
     xInitializeLocation(columns, seqId, seqStart, seqStop, seqStrand);
 
-    //string source;
-    //xInitializeSource(columns, source);
+    string source;
+    xInitializeSource(columns, source);
 
     string featType;
     xInitializeType(columns, featType);
 
-    //bool scoreIsValid;
-    //double score;
-    //xInitializeScore(columns, scoreIsValid, score);
+    bool scoreIsValid;
+    double score;
+    xInitializeScore(columns, scoreIsValid, score);
 
-    //bool frameIsValid;
-    //int frame;
-    //xInitializeFrame(columns, frameIsValid, frame);
+    bool frameIsValid;
+    int frame;
+    xInitializeFrame(columns, frameIsValid, frame);
 
     vector<pair<string, string>> attributes;
     xInitializeAttributes(columns, attributes);
 
-    record.Initialize(seqId, "", featType, seqStart, seqStop, 
-        false, 0, seqStrand, false, 0, attributes);
+    record.Initialize(seqId, source, featType, seqStart, seqStop, 
+        scoreIsValid, score, seqStrand, frameIsValid, frame, attributes);
 
 }
 
@@ -189,6 +189,66 @@ CGff3LineReader::xInitializeLocation(
         throw errorInvalidSeqStrandValue;
     }
     seqStrand = ((columns[6] == "-") ? eNa_strand_minus : eNa_strand_plus);
+}
+
+//  ============================================================================
+void
+CGff3LineReader::xInitializeSource(
+    const vector<string>& columns,
+    string& source)
+    //  ============================================================================
+{
+    source = columns[1];
+}
+
+//  ============================================================================
+void
+CGff3LineReader::xInitializeScore(
+    const vector<string>& columns,
+    bool& scoreIsValid,
+    double& score)
+//  ============================================================================
+{
+    CFeatImportError errorInvalidScoreValue(
+        CFeatImportError::ERROR, "Invalid score value",
+        LineCount());
+
+    if (columns[5] == ".") {
+        scoreIsValid = false;
+        return;
+    }
+
+    try {
+        score = NStr::StringToDouble(columns[5]);
+    }
+    catch(std::exception&) {
+        throw errorInvalidScoreValue;
+    }
+    scoreIsValid = true;
+}
+
+//  ============================================================================
+void
+CGff3LineReader::xInitializeFrame(
+    const vector<string>& columns,
+    bool& frameIsValid,
+    int& frame)
+//  ============================================================================
+{
+    CFeatImportError errorInvalidFrameValue(
+        CFeatImportError::ERROR, "Invalid frame value", LineCount());
+
+    vector<string> validSettings = {".", "0", "1", "2"};
+    if (find(validSettings.begin(), validSettings.end(), columns[7]) ==
+        validSettings.end()) {
+        throw errorInvalidFrameValue;
+    }
+    if (columns[7] == ".") {
+        frameIsValid = false;
+        return;
+    }
+    frame = NStr::StringToInt(columns[7]);
+    frameIsValid = true;
 }
 
 //  ============================================================================

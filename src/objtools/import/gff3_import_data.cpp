@@ -76,10 +76,11 @@ CGff3ImportData::Initialize(
     TSeqPos seqStop,
     bool scoreIsValid, double score,
     ENa_strand seqStrand,
-    bool frameIsValid, unsigned int frame,
+    bool phaseIsValid, unsigned int phase,
     const vector<pair<string, string>>& attributes)
 //  ============================================================================
 {
+
     mpFeat.Reset(new CSeq_feat);
     CSoMap::SoTypeToFeature(featureType, *mpFeat, true);
 
@@ -87,9 +88,34 @@ CGff3ImportData::Initialize(
     mpFeat->SetLocation().SetInt().Assign(
         CSeq_interval(*pId, seqStart, seqStop, seqStrand));
  
+    mSource = source;
+    if (scoreIsValid) {
+        mpScore.reset(new double(score));
+    }
+
+    if (phaseIsValid) {
+        xInitializeFrame(phase);
+    }
+
     xInitializeAttributes(attributes);
 }
 
+
+//  ============================================================================
+void
+CGff3ImportData::xInitializeFrame(
+    int phase)
+//  ============================================================================
+{
+    map<int, CCdregion::TFrame> mapPhaseToFrame {
+        {0, CCdregion::eFrame_one},
+        {1, CCdregion::eFrame_two},
+        {2, CCdregion::eFrame_three},
+    };
+    if (mpFeat->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
+        mpFeat->SetData().SetCdregion().SetFrame(mapPhaseToFrame[phase]);
+    }
+}
 
 //  ============================================================================
 void

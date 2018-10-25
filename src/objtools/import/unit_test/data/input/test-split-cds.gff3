@@ -1,0 +1,7 @@
+chr1	test	gene	1000	9999	.	+	.	ID=chr1-gene;Name=the-gene;
+chr1	test	mRNA	1000	9999	.	+	.	ID=chr1-mrna;Parent=chr1-gene;Name=the-mrna;
+chr1	test	exon	1000	1999	.	+	.	Parent=chr1-mrna;
+chr1	test	exon	4000	5999	.	+	.	Parent=chr1-mrna;
+chr1	test	exon	8000	9999	.	+	.	Parent=chr1-mrna;
+chr1	test	CDS	1500	1999	.	+	0	ID=chr1-cds;Parent=chr1-mrna;
+chr1	test	CDS	4000	5999	.	+	0	ID=chr1-cds;Parent=chr1-mrna;

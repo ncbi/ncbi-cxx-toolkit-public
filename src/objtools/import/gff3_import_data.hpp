@@ -86,9 +86,20 @@ public:
     Id() const { return mId; };
 
     std::string
-    Parent() const {return mParent; };
+    Parent() const { return mParent; };
 
+    std::string
+    Source() const { return mSource; };
+
+    bool
+    HasScore() const { return static_cast<bool>(mpScore); };
+
+    double
+    Score() const { return HasScore() ? *mpScore : 0; };
 private:
+    void xInitializeFrame(
+        int);
+
     void xInitializeAttributes(
         const std::vector<std::pair<std::string, std::string>>&);
 
@@ -119,6 +130,8 @@ private:
     CRef<CSeq_feat> mpFeat;
     string mId;
     string mParent;
+    string mSource;
+    unique_ptr<double> mpScore;
 };
 
 END_objects_SCOPE

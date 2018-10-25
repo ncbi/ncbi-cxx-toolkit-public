@@ -99,6 +99,7 @@ Seq-annot ::= {
     {
       id local str "cds_1",
       data cdregion {
+        frame one
       },
       location int {
         from 189,
@@ -234,6 +235,7 @@ Seq-annot ::= {
     {
       id local str "cds_2",
       data cdregion {
+        frame one
       },
       comment "bifunctional: aspartokinase I (N-terminal); homoserine
  dehydrogenase I (C-terminal)",

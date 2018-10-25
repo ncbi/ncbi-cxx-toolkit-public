@@ -48,6 +48,7 @@ Seq-annot ::= {
     {
       id local str "cds_1",
       data cdregion {
+        frame one,
         code {
           id 11
         },

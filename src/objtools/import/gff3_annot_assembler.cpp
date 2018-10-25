@@ -37,6 +37,7 @@
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
@@ -78,9 +79,6 @@ CGff3AnnotAssembler::ProcessRecord(
     auto recordId = record.Id();
     auto parentId = record.Parent();
     auto pFeature = record.GetData();
-    if (!recordId.empty()) {
-        mFeatureMap.AddFeature(recordId, pFeature);
-    }
 
     switch (pFeature->GetData().GetSubtype()) {
     default:
@@ -113,6 +111,9 @@ CGff3AnnotAssembler::xProcessFeatureDefault(
     NStr::ToLower(featureType);
     pFeature->SetId(*mIdGenerator.GetIdFor(featureType));
     annot.SetData().SetFtable().push_back(pFeature);
+    if (!recordId.empty()) {
+        mFeatureMap.AddFeature(recordId, pFeature);
+    }
 }
 
 
@@ -125,10 +126,45 @@ CGff3AnnotAssembler::xProcessFeatureCds(
     CSeq_annot& annot)
 //  ============================================================================
 {
-    pFeature->SetId(*mIdGenerator.GetIdFor("cds"));
-    annot.SetData().SetFtable().push_back(pFeature);
-    if (!recordId.empty()  &&  !parentId.empty()) {
-        mXrefMap[recordId] = parentId;
+    auto pExistingCds = mFeatureMap.FindFeature(recordId);
+    if (pExistingCds) {
+        // add new piece to existing piece
+        CRef<CSeq_loc> pUpdatedLocation = FeatUtil::AddLocations(
+            pExistingCds->GetLocation(), pFeature->GetLocation());
+        pExistingCds->SetLocation().Assign(*pUpdatedLocation);
+
+        // update frame if necessary
+        auto cdsStrand = pExistingCds->GetLocation().GetStrand();
+        auto& existingCds = pExistingCds->SetData().SetCdregion();
+        const auto& newCds = pFeature->GetData().GetCdregion();
+        if (cdsStrand == eNa_strand_plus) {
+            auto existingStart = 
+                pExistingCds->GetLocation().GetStart(eExtreme_Positional);
+            auto contributedStart =
+                pFeature->GetLocation().GetStart(eExtreme_Positional);
+            if (existingStart == contributedStart) {
+                existingCds.SetFrame(newCds.GetFrame());
+            }
+        }
+        else if (cdsStrand == eNa_strand_minus) {
+            auto existingStop = 
+                pExistingCds->GetLocation().GetStart(eExtreme_Positional);
+            auto contributedStop =
+                pFeature->GetLocation().GetStart(eExtreme_Positional);
+            if (existingStop == contributedStop) {
+                existingCds.SetFrame(newCds.GetFrame());
+            }
+        }
+    }
+    else {
+        pFeature->SetId(*mIdGenerator.GetIdFor("cds"));
+        annot.SetData().SetFtable().push_back(pFeature);
+        if (!recordId.empty()) {
+            mFeatureMap.AddFeature(recordId, pFeature);
+        }
+        if (!recordId.empty()  &&  !parentId.empty()) {
+            mXrefMap[recordId] = parentId;
+        }
     }
 }
 
@@ -143,11 +179,15 @@ CGff3AnnotAssembler::xProcessFeatureRna(
 //  ============================================================================
 {
     annot.SetData().SetFtable().push_back(pFeature);
-    pFeature->SetId(*mIdGenerator.GetIdFor("mrna"));
-    xMarkLocationPending(*pFeature);
+    if (!recordId.empty()) {
+        mFeatureMap.AddFeature(recordId, pFeature);
+    }
     if (!recordId.empty()  &&  !parentId.empty()) {
         mXrefMap[recordId] = parentId;
     }
+
+    pFeature->SetId(*mIdGenerator.GetIdFor("mrna"));
+    xMarkLocationPending(*pFeature);
 
     vector<CRef<CSeq_feat>> pendingExons;
     if (!mPendingFeatures.FindPendingFeatures(recordId, pendingExons)) {

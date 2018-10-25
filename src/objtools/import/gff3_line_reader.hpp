@@ -81,9 +81,26 @@ private:
         ENa_strand&);
 
     void
+    xInitializeSource(
+        const std::vector<std::string>&,
+        std::string&);
+
+    void
     xInitializeType(
         const std::vector<std::string>&,
         std::string&);
+
+    void
+    xInitializeScore(
+        const std::vector<std::string>&,
+        bool&,
+        double&);
+
+    void
+    xInitializeFrame(
+        const std::vector<std::string>&,
+        bool&,
+        int&);
 
     void
     xInitializeAttributes(
