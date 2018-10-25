@@ -377,6 +377,23 @@ CGtfAnnotAssembler::xUpdateCds(
     //  ============================================================================
 {
     xFeatureUpdateLocation(record, pCds);
+
+    const auto& recordLoc = record.Location().GetInt();
+    const auto& cdsLoc = pCds->GetLocation();
+    auto& cdsRef = pCds->SetData().SetCdregion();
+
+    if (cdsLoc.GetStrand() == eNa_strand_plus) {
+        auto cdsStart = cdsLoc.GetStart(eExtreme_Positional);
+        if (cdsStart == recordLoc.GetFrom()) {
+            cdsRef.SetFrame(record.Frame());
+        }
+    }
+    else if (cdsLoc.GetStrand() == eNa_strand_minus) {
+        auto cdsStop = cdsLoc.GetStop(eExtreme_Positional);
+        if (cdsStop == recordLoc.GetTo()) {
+            cdsRef.SetFrame(record.Frame());
+        }
+    }
 }
 
 //  ============================================================================
@@ -433,6 +450,9 @@ CGtfAnnotAssembler::xFeatureSetCds(
     //  ============================================================================
 {
     pFeature->SetData().SetCdregion();
+    if (record.Frame() != CCdregion::eFrame_not_set) {
+        pFeature->SetData().SetCdregion().SetFrame(record.Frame());
+    }
 }
 
 //  ============================================================================
