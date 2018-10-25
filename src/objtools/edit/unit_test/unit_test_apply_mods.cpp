@@ -39,6 +39,8 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objtools/edit/apply_mods.hpp>
 
@@ -53,6 +55,7 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 //  Customization data:
+const string extTemplate("template");
 const string extInput("fsa");
 const string extOutput("asn");
 const string extErrors("errors");
@@ -64,6 +67,7 @@ const string dirTestFiles("apply_mods_test_cases");
 //  ============================================================================
 
 struct STestInfo {
+    CFile mTemplateFile;
     CFile mInFile;
     CFile mOutFile;
     CFile mErrorFile;
@@ -74,11 +78,13 @@ typedef map<TTestName, STestInfo> TTestNameToInfoMap;
 class CTestNameToInfoMapLoader {
 public:
     CTestNameToInfoMapLoader(
-        TTestNameToInfoMap * pTestNameToInfoMap,
+        TTestNameToInfoMap& testNameToInfoMap,
+        const string& extTemplate,
         const string& extInput,
         const string& extOutput,
         const string& extErrors)
-        : m_pTestNameToInfoMap(pTestNameToInfoMap),
+        : m_TestNameToInfoMap(testNameToInfoMap),
+          mExtTemplate(extTemplate),
           mExtInput(extInput),
           mExtOutput(extOutput),
           mExtErrors(extErrors)
@@ -106,11 +112,14 @@ public:
         CTempString tsFileType = vecFileNamePieces[1];
         BOOST_REQUIRE(!tsFileType.empty());
             
-        STestInfo & test_info_to_load =
-            (*m_pTestNameToInfoMap)[vecFileNamePieces[0]];
+        STestInfo & test_info_to_load = m_TestNameToInfoMap[tsTestName];
 
         // figure out what type of file we have and set appropriately
-        if (tsFileType == mExtInput) {
+        if (tsFileType == mExtTemplate) {
+            BOOST_REQUIRE( test_info_to_load.mTemplateFile.GetPath().empty() );
+            test_info_to_load.mTemplateFile = file;
+        }
+        else if (tsFileType == mExtInput) {
             BOOST_REQUIRE( test_info_to_load.mInFile.GetPath().empty() );
             test_info_to_load.mInFile = file;
         } 
@@ -130,7 +139,8 @@ public:
 
 private:
     // raw pointer because we do NOT own this
-    TTestNameToInfoMap * m_pTestNameToInfoMap;
+    TTestNameToInfoMap& m_TestNameToInfoMap;
+    string mExtTemplate;
     string mExtInput;
     string mExtOutput;
     string mExtErrors;
@@ -217,10 +227,25 @@ static CRef<CBioseq> sCreateSkeletonBioseq(void)
     pBioseq->SetId().push_back(pSeqId);
 
     pBioseq->SetInst().SetRepr(CSeq_inst::eRepr_not_set);
-    pBioseq->SetInst().SetMol(CSeq_inst::eMol_not_set);
+    pBioseq->SetInst().SetMol(CSeq_inst::eMol_dna);
 
     return pBioseq;
 }
+
+
+static CRef<CSeq_entry> sCreateSkeletonEntry(void)
+{
+    auto pSeqEntry = Ref(new CSeq_entry());
+    pSeqEntry->SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
+
+    auto pSubEntry = Ref(new CSeq_entry());
+    auto pBioseq = sCreateSkeletonBioseq();
+    pSubEntry->SetSeq(*pBioseq);
+    pSeqEntry->SetSet().SetSeq_set().push_back(pSubEntry);
+
+    return pSeqEntry;
+}
+
 
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 {   
@@ -255,7 +280,7 @@ void sUpdateAll(CDir& test_cases_dir) {
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
-        &testNameToInfoMap, extInput, extOutput, extErrors);
+        testNameToInfoMap, extTemplate, extInput, extOutput, extErrors);
     FindFilesInDir(
         test_cases_dir,
         kEmptyStringVec,
@@ -271,7 +296,8 @@ void sUpdateAll(CDir& test_cases_dir) {
 
 void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 {
-    cerr << "Testing " << testInfo.mInFile.GetName() << " against " <<
+    cerr << "Testing " << testInfo.mInFile.GetName() << " and " << 
+        testInfo.mTemplateFile.GetName() << " against " <<
         testInfo.mOutFile.GetName() << " and " <<
         testInfo.mErrorFile.GetName() << endl;
 
@@ -280,8 +306,15 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
     const string& resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
+    CNcbiIfstream tmpltstr(testInfo.mTemplateFile.GetPath().c_str());
+    auto pSeqEntry = Ref(new CSeq_entry());
+    tmpltstr >> MSerial_AsnText >> pSeqEntry;
+    pSeqEntry->Parentize();
 
-    auto pBioseq = sCreateSkeletonBioseq();
+    auto& bioseq = pSeqEntry->IsSeq() ? 
+                   pSeqEntry->SetSeq() :
+                   const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
+
     try {
         multimap<string, string> mods;
         for (string line; getline(ifstr, line);) {
@@ -291,7 +324,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
             }
         }
         edit::CModApply mod_apply(mods);
-        mod_apply.Apply(*pBioseq);
+        mod_apply.Apply(bioseq);
     }
     catch (...) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
@@ -299,8 +332,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         return;
     }
 
-    cout << MSerial_AsnText << *pBioseq;
-    ofstr << MSerial_AsnText << *pBioseq;
+    ofstr << MSerial_AsnText << pSeqEntry;
     ifstr.close();
     ofstr.close();
 
@@ -382,7 +414,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
-        &testNameToInfoMap, extInput, extOutput, extErrors);
+        testNameToInfoMap, extTemplate, extInput, extOutput, extErrors);
     FindFilesInDir(
         test_cases_dir,
         kEmptyStringVec,

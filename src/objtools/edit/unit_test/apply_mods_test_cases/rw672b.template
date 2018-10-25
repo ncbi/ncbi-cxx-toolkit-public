@@ -1,0 +1,14 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        local str "dummy"
+      },
+      inst {
+        repr not-set,
+        mol dna
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+Seq-entry ::= seq {
+  id {
+    local str "dummy"
+  },
+  inst {
+    repr not-set,
+    mol not-set
+  }
+}

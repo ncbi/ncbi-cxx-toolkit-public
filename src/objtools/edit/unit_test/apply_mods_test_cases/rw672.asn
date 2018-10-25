@@ -1,4 +1,4 @@
-Bioseq ::= {
+Seq-entry ::= seq {
   id {
     local str "dummy"
   },
@@ -1272,6 +1272,9 @@ Bioseq ::= {
       completeness partial
     },
     genbank {
+      extra-accessions {
+        "Q8Y7J9"
+      },
       keywords {
         "keyword1",
         "keyword2"
@@ -1314,7 +1317,22 @@ Bioseq ::= {
     repr not-set,
     mol rna,
     topology circular,
-    strand mixed
+    strand mixed,
+    hist {
+      replaces {
+        ids {
+          genbank {
+            accession "M10101"
+          },
+          genbank {
+            accession "M10102"
+          },
+          swissprot {
+            accession "Q8Y7J9"
+          }
+        }
+      }
+    }
   },
   annot {
     {
