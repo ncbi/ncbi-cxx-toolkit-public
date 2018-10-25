@@ -38,6 +38,7 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 
 #include "feat_import_data.hpp"
 
@@ -62,7 +63,8 @@ public:
         const CGtfImportData& rhs);
 
     virtual ~CGtfImportData() {
-        delete mpScore; };
+        delete mpScore; 
+        delete mpFrame; };
 
     void
     Initialize(
@@ -73,7 +75,7 @@ public:
         TSeqPos,
         bool, double,
         ENa_strand,
-        bool, unsigned int,
+        const std::string&,
         const std::vector<std::pair<std::string, std::string>>&);
 
     virtual void Serialize(
@@ -84,7 +86,7 @@ public:
     bool IsSetScore() const { return mpScore; };
     double Score() const { return *mpScore; };
     bool IsSetFrame() const { return mpFrame; };
-    int Frame() const { return *mpFrame; };
+    CCdregion::TFrame Frame() const { return *mpFrame; };
     std::string GeneId() const { return mGeneId; };
     std::string TranscriptId() const { return mTranscriptId; };
     const ATTRIBUTES& Attributes() const { return mAttributes; };
@@ -107,7 +109,7 @@ private:
     std::string mSource;
     std::string mType;
     double* mpScore;
-    int* mpFrame;
+    CCdregion::TFrame* mpFrame;
 
     ATTRIBUTES mAttributes;
     std::string mGeneId;

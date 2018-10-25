@@ -41,6 +41,7 @@
 #include <objects/seqfeat/Genetic_code.hpp>
 
 #include <objtools/import/feat_util.hpp>
+#include <objtools/import/gff_util.hpp>
 #include <objtools/import/feat_import_error.hpp>
 #include "gff3_import_data.hpp"
 
@@ -76,7 +77,7 @@ CGff3ImportData::Initialize(
     TSeqPos seqStop,
     bool scoreIsValid, double score,
     ENa_strand seqStrand,
-    bool phaseIsValid, unsigned int phase,
+    const string& phase,
     const vector<pair<string, string>>& attributes)
 //  ============================================================================
 {
@@ -93,29 +94,16 @@ CGff3ImportData::Initialize(
         mpScore.reset(new double(score));
     }
 
-    if (phaseIsValid) {
-        xInitializeFrame(phase);
+    if (mpFeat->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
+        if (phase != ".") {
+            mpFeat->SetData().SetCdregion().SetFrame(
+                GffUtil::PhaseToFrame(phase));
+        }
     }
 
     xInitializeAttributes(attributes);
 }
 
-
-//  ============================================================================
-void
-CGff3ImportData::xInitializeFrame(
-    int phase)
-//  ============================================================================
-{
-    map<int, CCdregion::TFrame> mapPhaseToFrame {
-        {0, CCdregion::eFrame_one},
-        {1, CCdregion::eFrame_two},
-        {2, CCdregion::eFrame_three},
-    };
-    if (mpFeat->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
-        mpFeat->SetData().SetCdregion().SetFrame(mapPhaseToFrame[phase]);
-    }
-}
 
 //  ============================================================================
 void

@@ -26,88 +26,33 @@
 * Author:  Frank Ludwig, NCBI
 *
 * File Description:
-*   Test application for the CFormatGuess component
 *
 * ===========================================================================
 */
 
-#ifndef GFF3_LINE_READER__HPP
-#define GFF3_LINE_READER__HPP
+#ifndef GFF_UTIL__HPP
+#define FEAT_UTIL__HPP
 
 #include <corelib/ncbifile.hpp>
+#include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
-#include <util/line_reader.hpp>
-
-#include "feat_line_reader.hpp"
+#include <objects/seqfeat/Code_break.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-//  ============================================================================
-class CGff3LineReader: 
-    public CFeatLineReader
-//  ============================================================================
+class NCBI_XOBJIMPORT_EXPORT GffUtil 
 {
 public:
-    CGff3LineReader(
-        CFeatMessageHandler&);
-
-    virtual ~CGff3LineReader() {};
-
-    virtual bool
-    GetNextRecord(
-        CStreamLineReader&,
-        CFeatImportData&) override;
-
-private:
-    void
-    xInitializeRecord(
-        const std::vector<std::string>&,
-        CFeatImportData&);
-
-    void
-    xSplitLine(
-        const std::string&,
-        std::vector<std::string>&);
-
-    std::string mColumnDelimiter;
-    int mSplitFlags;
-
-    void
-    xInitializeLocation(
-        const std::vector<std::string>&,
-        std::string&,
-        TSeqPos&,
-        TSeqPos&,
-        ENa_strand&);
-
-    void
-    xInitializeSource(
+    static bool
+    InitializeFrame(
         const std::vector<std::string>&,
         std::string&);
 
-    void
-    xInitializeType(
-        const std::vector<std::string>&,
-        std::string&);
-
-    void
-    xInitializeScore(
-        const std::vector<std::string>&,
-        bool&,
-        double&);
-
-    void
-    xInitializeAttributes(
-        const std::vector<std::string>&,
-        std::vector<std::pair<std::string, std::string>>&);
-
-    void
-    xSplitAttributeStringBySemicolons(
-        const std::string&,
-        std::vector<std::string>&);
-
-    std::vector<std::string> mValidFeatureTypes;
+    static CCdregion::TFrame PhaseToFrame(
+        const std::string&);
 };
 
 END_objects_SCOPE

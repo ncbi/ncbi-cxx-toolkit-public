@@ -39,6 +39,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 
 #include "feat_import_data.hpp"
 
@@ -73,7 +74,7 @@ public:
         TSeqPos,
         bool, double,
         ENa_strand,
-        bool, unsigned int,
+        const std::string&,
         const std::vector<std::pair<std::string, std::string>>&);
 
     virtual void Serialize(
@@ -97,9 +98,6 @@ public:
     double
     Score() const { return HasScore() ? *mpScore : 0; };
 private:
-    void xInitializeFrame(
-        int);
-
     void xInitializeAttributes(
         const std::vector<std::pair<std::string, std::string>>&);
 

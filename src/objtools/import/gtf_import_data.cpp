@@ -33,6 +33,7 @@
 #include <corelib/ncbifile.hpp>
 #include <objects/general/Object_id.hpp>
 
+#include <objtools/import/gff_util.hpp>
 #include <objtools/import/feat_import_error.hpp>
 #include "gtf_import_data.hpp"
 
@@ -78,7 +79,7 @@ CGtfImportData::Initialize(
     TSeqPos seqStop,
     bool scoreIsValid, double score,
     ENa_strand seqStrand,
-    bool frameIsValid, unsigned int frame,
+    const string& phase,
     const vector<pair<string, string>>& attributes)
 //  ============================================================================
 {
@@ -88,10 +89,12 @@ CGtfImportData::Initialize(
     mSource = source; 
     mType = featureType;
     mpScore = (scoreIsValid ? new double(score) : nullptr);
-    mpFrame = (frameIsValid ? new int(frame) : nullptr); 
+    mpFrame = nullptr;
+    if (phase != ".") { 
+        mpFrame = new CCdregion::TFrame(GffUtil::PhaseToFrame(phase)); 
+    }
     xInitializeAttributes(attributes);
 }
-
 
 //  ============================================================================
 void

@@ -32,7 +32,10 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
 #include <objects/seq/so_map.hpp>
+
 #include <objtools/import/feat_import_error.hpp>
+#include <objtools/import/gff_util.hpp>
+
 #include "gff3_line_reader.hpp"
 #include "gff3_import_data.hpp"
 
@@ -84,6 +87,11 @@ CGff3LineReader::xInitializeRecord(
     CFeatImportData& record_)
 //  ============================================================================
 {
+    CFeatImportError errorInvalidPhase(
+        CFeatImportError::WARNING, 
+        "Bad phase value - assuming \".\"", 
+        LineCount());
+
     assert(dynamic_cast<CGff3ImportData*>(&record_));
     CGff3ImportData& record = static_cast<CGff3ImportData&>(record_);
 
@@ -102,15 +110,17 @@ CGff3LineReader::xInitializeRecord(
     double score;
     xInitializeScore(columns, scoreIsValid, score);
 
-    bool frameIsValid;
-    int frame;
-    xInitializeFrame(columns, frameIsValid, frame);
+    string phase;
+    if (!GffUtil::InitializeFrame(columns, phase)) {
+        phase = ".";
+        mErrorReporter.ReportError(errorInvalidPhase);
+    }
 
     vector<pair<string, string>> attributes;
     xInitializeAttributes(columns, attributes);
 
     record.Initialize(seqId, source, featType, seqStart, seqStop, 
-        scoreIsValid, score, seqStrand, frameIsValid, frame, attributes);
+        scoreIsValid, score, seqStrand, phase, attributes);
 
 }
 
@@ -225,30 +235,6 @@ CGff3LineReader::xInitializeScore(
         throw errorInvalidScoreValue;
     }
     scoreIsValid = true;
-}
-
-//  ============================================================================
-void
-CGff3LineReader::xInitializeFrame(
-    const vector<string>& columns,
-    bool& frameIsValid,
-    int& frame)
-//  ============================================================================
-{
-    CFeatImportError errorInvalidFrameValue(
-        CFeatImportError::ERROR, "Invalid frame value", LineCount());
-
-    vector<string> validSettings = {".", "0", "1", "2"};
-    if (find(validSettings.begin(), validSettings.end(), columns[7]) ==
-        validSettings.end()) {
-        throw errorInvalidFrameValue;
-    }
-    if (columns[7] == ".") {
-        frameIsValid = false;
-        return;
-    }
-    frame = NStr::StringToInt(columns[7]);
-    frameIsValid = true;
 }
 
 //  ============================================================================

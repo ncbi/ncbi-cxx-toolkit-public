@@ -31,7 +31,9 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbifile.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
 
+#include <objtools/import/gff_util.hpp>
 #include <objtools/import/feat_import_error.hpp>
 #include "gtf_line_reader.hpp"
 #include "gtf_import_data.hpp"
@@ -118,9 +120,13 @@ CGtfLineReader::xInitializeRecord(
     CFeatImportData& record_)
 //  ============================================================================
 {
+    CFeatImportError errorInvalidPhase(
+        CFeatImportError::WARNING, 
+        "Bad phase value - assuming \".\"", 
+        LineCount());
+
     assert(dynamic_cast<CGtfImportData*>(&record_));
     CGtfImportData& record = static_cast<CGtfImportData&>(record_);
-    //record.InitializeFrom(columns, mLineNumber);
 
     string seqId;
     TSeqPos seqStart, seqStop;
@@ -137,15 +143,18 @@ CGtfLineReader::xInitializeRecord(
     double score;
     xInitializeScore(columns, scoreIsValid, score);
 
-    bool frameIsValid;
-    int frame;
-    xInitializeFrame(columns, frameIsValid, frame);
+    string phase;
+    if (!GffUtil::InitializeFrame(columns, phase)) {
+        phase = ".";
+        mErrorReporter.ReportError(errorInvalidPhase);
+    }
+
 
     vector<pair<string, string>> attributes;
     xInitializeAttributes(columns, attributes);
 
     record.Initialize(seqId, source, featType, seqStart, seqStop, 
-        scoreIsValid, score, seqStrand, frameIsValid, frame, attributes);
+        scoreIsValid, score, seqStrand, phase, attributes);
 
 }
 
