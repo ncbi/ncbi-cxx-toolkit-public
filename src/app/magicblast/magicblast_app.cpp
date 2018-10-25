@@ -1496,7 +1496,7 @@ CNcbiOstream& PrintASN1(CNcbiOstream& ostr, const CBioseq_set& query_batch,
                 if (it->IsTitle()) {
                     vector<string> tokens;
                     NStr::Split(it->GetTitle(), " ", tokens);
-                    seqid.Reset(new CSeq_id(tokens[0], CSeq_id::fParse_Default));
+                    seqid.Reset(new CSeq_id(CSeq_id::e_Local, tokens[0]));
                 }
             }
         }
