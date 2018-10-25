@@ -7,7 +7,6 @@ NCBI_begin_lib(ncbi_xloader_bam SHARED)
   NCBI_add_definitions(NCBI_XLOADER_BAM_EXPORTS)
   NCBI_uses_toolkit_libraries(bamread xobjreadex seqset)
   NCBI_project_watchers(vasilche)
-  NCBI_add_include_directories(${SRA_INCLUDE})
 NCBI_end_lib()
 
 if(OFF)

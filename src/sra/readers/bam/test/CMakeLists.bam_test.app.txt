@@ -6,7 +6,6 @@ NCBI_begin_app(bam_test)
   NCBI_sources(bam_test bam_test_common)
   NCBI_uses_toolkit_libraries(bamread xobjreadex xobjsimple)
   NCBI_project_watchers(vasilche ucko)
-  NCBI_add_include_directories(${SRA_INCLUDE})
 
   NCBI_add_test(bam_test -file NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam -no_index)
   NCBI_add_test(bam_test -file NA10851.chrom20.ILLUMINA.bwa.CEU.low_coverage.20111114.bam)

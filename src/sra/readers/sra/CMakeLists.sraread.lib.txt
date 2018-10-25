@@ -10,8 +10,6 @@ NCBI_begin_lib(sraread SHARED)
   NCBI_add_definitions(NCBI_SRAREAD_EXPORTS)
   NCBI_uses_toolkit_libraries(xobjmgr)
   NCBI_project_watchers(vasilche)
-  NCBI_add_include_directories(${SRA_INCLUDE})
-  NCBI_uses_external_libraries(${SRAREAD_LDEP})
 NCBI_end_lib()
 
 if(OFF)

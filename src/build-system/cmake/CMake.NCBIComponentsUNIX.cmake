@@ -619,7 +619,7 @@ else (WIN32)
  	    LIBS_HINTS "/opt/ncbi/64/trace_software/vdb/vdb-versions/cxx_toolkit/2/linux/release/x86_64/lib/")
 endif (WIN32)
 
-if (${VDB_FOUND})
+if (VDB_FOUND)
 	if (WIN32)
 		set(VDB_INCLUDE "${VDB_INCLUDE}" "${VDB_INCLUDE}\\os\\win" "${VDB_INCLUDE}\\cc\\vc++\\x86_64" "${VDB_INCLUDE}\\cc\\vc++")
 	else (WIN32)
@@ -1129,6 +1129,17 @@ if(VDB_FOUND)
   set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} VDB")
 else()
   set(NCBI_COMPONENT_VDB_FOUND NO)
+endif()
+
+#############################################################################
+# SAMTOOLS
+if(SAMTOOLS_FOUND)
+  set(NCBI_COMPONENT_SAMTOOLS_FOUND YES)
+  set(NCBI_COMPONENT_SAMTOOLS_INCLUDE ${SAMTOOLS_INCLUDE})
+  set(NCBI_COMPONENT_SAMTOOLS_LIBS    ${SAMTOOLS_LIBS})
+#  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} SAMTOOLS")
+else()
+  set(NCBI_COMPONENT_SAMTOOLS_FOUND NO)
 endif()
 
 #############################################################################

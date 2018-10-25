@@ -6,7 +6,6 @@ NCBI_begin_app(vdb_test)
   NCBI_sources(vdb_test)
   NCBI_uses_toolkit_libraries(sraread)
   NCBI_project_watchers(vasilche ucko)
-  NCBI_add_include_directories(${SRA_INCLUDE})
 
   NCBI_add_test(vdb_test -acc SRR035417 -refseq_table -quality_graph -seq_entry  -scan_reads)
   NCBI_add_test(vdb_test -acc SRR749060 -refseq_table -quality_graph -seq_entry  -scan_reads)
