@@ -37,22 +37,23 @@
 #include <corelib/ncbistr.hpp>
 #include <connect/ncbi_service.h>
 
+#include <string>
+#include <vector>
+#include <utility>
+
 #include "IdCassScope.hpp"
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 class LbsmLookup
 {
-public:
-    static bool s_Resolve(const string &  service,
-                          vector<pair<string, int> > &  result,
-                          TSERV_Type  serv_type = fSERV_Any);
+ public:
+    static bool s_Resolve(const string & service, vector<pair<string, int>> & result, TSERV_Type serv_type = fSERV_Any);
 
-    // Returns a dilimited list of host:port items
-    static string s_Resolve(const string &  service, char  delimiter,
-                            TSERV_Type  serv_type = fSERV_Any);
+    // Returns a delimited list of host:port items
+    static string s_Resolve(const string & service, char delimiter, TSERV_Type serv_type = fSERV_Any);
 };
 
-END_NCBI_SCOPE;
+END_NCBI_SCOPE
 
-#endif
+#endif  // LBSMRESOLVER__HPP

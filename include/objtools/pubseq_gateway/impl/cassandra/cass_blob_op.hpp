@@ -395,8 +395,6 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         return m_Keyspace;
     }
 
-    void LoadKeys(TBlobFullStatVec * keys, function<void()> tick = nullptr);
-
     void GetBlob(unsigned int  op_timeout_ms,
                  int32_t  key, unsigned int  max_retries,
                  SBlobStat *  blob_stat, TBlobChunkCallback data_chunk_cb);
@@ -479,8 +477,6 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
  private:
     shared_ptr<CCassConnection> m_Conn;
     string m_Keyspace;
-
-    void x_LoadKeysScheduleNext(CCassQuery & query, void * data);
 };
 
 END_IDBLOB_SCOPE

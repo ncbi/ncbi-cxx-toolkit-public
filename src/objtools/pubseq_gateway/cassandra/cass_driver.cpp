@@ -69,7 +69,7 @@ bool CCassConnection::m_LoggingEnabled = false;
 EDiagSev CCassConnection::m_LoggingLevel = eDiag_Error;
 
 
-static void LogCallback(const CassLogMessage *  message, void *  data)
+static void LogCallback(const CassLogMessage * message, void * /*data*/)
 {
     switch (message->severity) {
         case CASS_LOG_CRITICAL:

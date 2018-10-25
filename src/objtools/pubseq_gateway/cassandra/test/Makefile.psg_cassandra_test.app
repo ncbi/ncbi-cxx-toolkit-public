@@ -19,4 +19,4 @@ LDFLAGS = $(ORIG_LDFLAGS) $(FAST_LDFLAGS) $(COVERAGE_FLAGS) $(LOCAL_LDFLAGS)
 LOCAL_CPPFLAGS += $(EXTRA) -fno-delete-null-pointer-checks
 #LOCAL_LDFLAGS += $(EXTRA) 
 
-CHECK_CMD = psg_cassandra_test
+#CHECK_CMD = psg_cassandra_test

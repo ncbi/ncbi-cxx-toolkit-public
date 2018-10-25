@@ -33,7 +33,9 @@
 
 #include <ncbi_pch.hpp>
 
+#include <string>
 #include <sstream>
+#include <vector>
 
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbiargs.hpp>
@@ -102,7 +104,7 @@ CCassConnectionFactory::~CCassConnectionFactory()
     CCassConnection::UpdateLogging();
 }
 
-void CCassConnectionFactory::AppParseArgs(const CArgs &  args)
+void CCassConnectionFactory::AppParseArgs(const CArgs & /*args*/)
 {
     ProcessParams();
 }
@@ -204,13 +206,12 @@ void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry &  registry)
 }
 
 
-void CCassConnectionFactory::GetHostPort(string &  cass_hosts,
-                                         short &  cass_port)
+void CCassConnectionFactory::GetHostPort(string & cass_hosts, short & cass_port)
 {
-    string  hosts = m_CassHosts;
-    if (hosts.empty())
-        NCBI_THROW(CCassandraException, eGeneric,
-                   "Cassandra connection point is not specified");
+    string hosts = m_CassHosts;
+    if (hosts.empty()) {
+        NCBI_THROW(CCassandraException, eGeneric, "Cassandra connection point is not specified");
+    }
 
     bool    is_lbsm = (m_CassHosts.find(':') == string::npos) &&
                       (m_CassHosts.find(' ') == string::npos) &&
@@ -218,19 +219,18 @@ void CCassConnectionFactory::GetHostPort(string &  cass_hosts,
 
     if (is_lbsm) {
         hosts = LbsmLookup::s_Resolve(m_CassHosts, ',');
-        if (hosts.empty())
-            NCBI_THROW(CCassandraException, eGeneric,
-                       "Failed to resolve: " + m_CassHosts);
+        if (hosts.empty()) {
+            NCBI_THROW(CCassandraException, eGeneric, "Failed to resolve: " + m_CassHosts);
+        }
     }
 
     // Here: the 'hosts' variable has a list of host[:port] items came
     //       from a config file or from an LBSM resolver.
-    vector<string>      items;
-    NStr::Split(hosts, ", ", items,
-                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+    vector<string> items;
+    NStr::Split(hosts, ", ", items, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     cass_port = 0;
-    for (const auto &  item: items) {
+    for (const auto & item : items) {
         string      item_host;
         string      item_port;
 
@@ -277,8 +277,8 @@ shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance(void)
         rv->DisableLogging();
     }
 
-    string      host;
-    short       port;
+    string host;
+    short port;
     GetHostPort(host, port);
     rv->SetConnProp(host, m_CassUserName, m_CassPassword, port);
     rv->SetKeyspace(m_CassDataNamespace);
@@ -288,8 +288,7 @@ shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance(void)
 
 void CCassConnectionFactory::x_ValidateArgs(void)
 {
-    if (m_CassConnTimeoutMs < kCassConnTimeoutMin ||
-        m_CassConnTimeoutMs > kCassConnTimeoutMax) {
+    if (m_CassConnTimeoutMs < kCassConnTimeoutMin || m_CassConnTimeoutMs > kCassConnTimeoutMax) {
         ERR_POST("The cassandra connection timeout is out of range. Allowed "
                  "range: " << kCassConnTimeoutMin << "..." <<
                  kCassConnTimeoutMax << ". Received: " <<
@@ -313,15 +312,16 @@ void CCassConnectionFactory::x_ValidateArgs(void)
     if (policy_item != kPolicyArgMap.end()) {
         m_LoadBalancing = policy_item->second;
     } else {
-        string      allowed;
-        string      default_name;
-        for (const auto &  item: kPolicyArgMap) {
+        string allowed, default_name;
+        for (const auto & item : kPolicyArgMap) {
             if (!item.first.empty()) {
-                if (!allowed.empty())
+                if (!allowed.empty()) {
                     allowed += ", ";
+                }
                 allowed += item.second;
-                if (item.second == kLoadBalancingDefaultPolicy)
+                if (item.second == kLoadBalancingDefaultPolicy) {
                     default_name = item.first;
+                }
             }
         }
         ERR_POST("The load balancing value is not recognized. Allowed values: " <<

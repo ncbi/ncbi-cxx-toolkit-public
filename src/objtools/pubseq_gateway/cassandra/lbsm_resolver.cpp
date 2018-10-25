@@ -42,63 +42,54 @@
 #include <objtools/pubseq_gateway/impl/cassandra/lbsm_resolver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
-
-bool LbsmLookup::s_Resolve(const string &  service,
-                           vector<pair<string, int> > &  result,
-                           TSERV_Type  serv_type)
+bool LbsmLookup::s_Resolve(const string & service, vector<pair<string, int>> & result, TSERV_Type serv_type)
 {
-    unique_ptr<SConnNetInfo,
-               function<void(SConnNetInfo*)> > net_info(
-                        ConnNetInfo_Create(service.c_str()),
-                        [](SConnNetInfo* net_info)
-                        {
-                            ConnNetInfo_Destroy(net_info);
-                        });
+    unique_ptr<SConnNetInfo, function<void(SConnNetInfo*)> > net_info(
+        ConnNetInfo_Create(service.c_str()),
+        [](SConnNetInfo* net_info)
+        {
+            ConnNetInfo_Destroy(net_info);
+        }
+    );
 
     unique_ptr<SSERV_IterTag, function<void(SSERV_IterTag*)> > iter(
-        SERV_Open(
-            service.c_str(),
-            serv_type,
-            0,                  // prefered host
-            net_info.get()
-        ),
+        SERV_Open(service.c_str(), serv_type, 0, net_info.get()),
         [](SSERV_IterTag* iter)
         {
             SERV_Close(iter);
         }
     );
 
-    const SSERV_Info *  info;
-    while (info = SERV_GetNextInfo(iter.get()), info != NULL) {
-        char    buff[128];
-
+    const SSERV_Info * info;
+    while (info = SERV_GetNextInfo(iter.get()), info != nullptr) {
+        char buff[128];
         SOCK_HostPortToString(info->host, info->port, buff, sizeof(buff));
         result.push_back(make_pair(buff, info->rate));
     }
 
     sort(result.begin(), result.end(),
-         [](const pair<string, int> &  a, const pair<string, int> &  b) -> bool
-         {
-             return a.second > b.second;
-         });
+        [](const pair<string, int> & a, const pair<string, int> & b) -> bool
+        {
+            return a.second > b.second;
+        }
+    );
 
     return true;
 }
 
 
-string LbsmLookup::s_Resolve(const string &  service, char  delimiter,
-                             TSERV_Type  serv_type)
+string LbsmLookup::s_Resolve(const string & service, char delimiter, TSERV_Type serv_type)
 {
-    stringstream                rv;
-    vector<pair<string,int> >   result;
-
+    stringstream rv;
+    vector<pair<string,int>> result;
     if (s_Resolve(service, result, serv_type)) {
-        bool    is_first = true;
-        for (auto const &  el: result) {
-            if (!is_first)
+        bool is_first = true;
+        for (auto const & el : result) {
+            if (!is_first) {
                 rv << delimiter;
+            }
             is_first = false;
             rv << el.first;
         }
@@ -106,4 +97,4 @@ string LbsmLookup::s_Resolve(const string &  service, char  delimiter,
     return rv.str();
 }
 
-END_NCBI_SCOPE;
+END_NCBI_SCOPE

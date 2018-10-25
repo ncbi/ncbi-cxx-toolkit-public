@@ -49,6 +49,7 @@
 #include <utility>
 #include <vector>
 #include <limits>
+#include <functional>
 
 #include "IdCassScope.hpp"
 #include "cass_exception.hpp"

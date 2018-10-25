@@ -35,6 +35,8 @@
 
 #include <atomic>
 #include <thread>
+#include <string>
+#include <memory>
 
 #ifdef __linux__
 #include <linux/futex.h>
@@ -66,34 +68,36 @@ bool WaitCondVar(unsigned int  timeout_mks, CFastMutex &  mux,
     }
 
     bool rv = false;
-    if (is_done_cb)
+    if (is_done_cb) {
         rv = is_done_cb();
+    }
 
     if (!rv && timeout_mks) {
         CFastMutexGuard guard(mux);
+        if (is_done_cb) {
+            rv = is_done_cb();
+        }
         if (timeout_mks == INT_MAX) {
-            if (is_done_cb)
-                rv = is_done_cb();
             while(!rv) {
                 ev.WaitForSignal(mux);
-                if (is_done_cb)
+                if (is_done_cb) {
                     rv = is_done_cb();
-                else
+                } else {
                     break;
+                }
             }
-        }
-        else {
-            if (is_done_cb)
-                rv = is_done_cb();
+        } else {
             if (!rv && timeout_mks > 0) {
                 ev.WaitForSignal(mux, CDeadline(s, ns));
-                if (is_done_cb)
+                if (is_done_cb) {
                     rv = is_done_cb();
+                }
             }
         }
     }
-    if (update_result_cb)
+    if (update_result_cb) {
         update_result_cb(&rv);
+    }
     return (rv);
 }
 
@@ -102,28 +106,28 @@ bool WaitCondVar(unsigned int  timeout_mks, CFastMutex &  mux,
 
 void CFutex::DoWake(int waiters)
 {
-    int     rt = syscall(__NR_futex, &m_Value, FUTEX_WAKE, waiters, NULL);
-    if (rt < 0)
+    int rt = syscall(__NR_futex, &m_Value, FUTEX_WAKE, waiters, NULL);
+    if (rt < 0) {
         NCBI_THROW(CCassandraException, eSeqFailed,
                    string("CFutex::DoWake: failed, unexpected errno: ") +
                    NStr::NumericToString(errno));
+    }
 }
 
 
-CFutex::EWaitResult CFutex::WaitWhile(int  value, int  timeout_mks)
+CFutex::EWaitResult CFutex::WaitWhile(int value, int timeout_mks)
 {
-    struct timespec     timeout = {0};
-    struct timespec *   ptimeout = &timeout;
+    struct timespec timeout = {0, 0};
+    struct timespec * ptimeout = &timeout;
 
     if (timeout_mks < 0) {
-        ptimeout = NULL;
+        ptimeout = nullptr;
     } else {
         timeout.tv_sec = timeout_mks / 1000000L;
         timeout.tv_nsec = (timeout_mks % 1000000L) * 1000L;
     }
 
-    while (syscall(__NR_futex, &m_Value, FUTEX_WAIT,
-                   value, ptimeout, 0, 0) != 0) {
+    while (syscall(__NR_futex, &m_Value, FUTEX_WAIT, value, ptimeout, 0, 0) != 0) {
         switch (errno) {
             case EWOULDBLOCK:
                 /* someone has already changed value */
@@ -134,8 +138,7 @@ CFutex::EWaitResult CFutex::WaitWhile(int  value, int  timeout_mks)
                 return eWaitResultTimeOut;
             default:
                 NCBI_THROW(CCassandraException, eSeqFailed,
-                           string("CFutex::WaitWhile: failed, "
-                                  "unexpected errno: ") +
+                           string("CFutex::WaitWhile: failed, unexpected errno: ") +
                            NStr::NumericToString(errno));
         }
     }
@@ -146,19 +149,17 @@ CFutex::EWaitResult CFutex::WaitWhile(int  value, int  timeout_mks)
 
 /** SSignalHandler */
 
-volatile sig_atomic_t   SSignalHandler::sm_CtrlCPressed(0);
+volatile sig_atomic_t SSignalHandler::sm_CtrlCPressed(0);
 #ifdef __linux__
-CFutex                  SSignalHandler::sm_CtrlCPressedEvent;
+CFutex SSignalHandler::sm_CtrlCPressedEvent;
 #endif
 
-function<void()>                        SSignalHandler::sm_OnCtrlCPressed(NULL);
-unique_ptr<thread,
-           function<void(thread*)> >    SSignalHandler::sm_WatchThread;
-volatile bool                           SSignalHandler::sm_Quit(false);
+function<void()> SSignalHandler::sm_OnCtrlCPressed(NULL);
+unique_ptr<thread, function<void(thread*)> > SSignalHandler::sm_WatchThread;
+volatile bool SSignalHandler::sm_Quit(false);
 
 
-void SSignalHandler::s_WatchCtrlCPressed(bool              enable,
-                                         function<void()>  on_ctrl_c_pressed)
+void SSignalHandler::s_WatchCtrlCPressed(bool enable, function<void()> on_ctrl_c_pressed)
 {
     sm_CtrlCPressed = 0;
     sm_OnCtrlCPressed = on_ctrl_c_pressed;
@@ -173,11 +174,10 @@ void SSignalHandler::s_WatchCtrlCPressed(bool              enable,
     if (enable) {
         if (!sm_WatchThread) {
             ERR_POST(Trace << "Creating Ctrl+C watcher thread");
-            sm_WatchThread = unique_ptr<thread,
-                                        function<void(thread*)> >(new thread(
+            sm_WatchThread = unique_ptr<thread, function<void(thread*)> >(new thread(
                 [](){
                     sm_Quit = false;
-                    signal(SIGINT, [](int signum) {
+                    signal(SIGINT, [](int) {
                         signal(SIGINT, SIG_DFL);
                         SSignalHandler::sm_CtrlCPressed = 1;
 #ifdef __linux__

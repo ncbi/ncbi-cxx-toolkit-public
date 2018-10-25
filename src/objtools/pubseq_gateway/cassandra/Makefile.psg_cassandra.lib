@@ -15,7 +15,9 @@ REQUIRES = CASSANDRA MT Linux
 
 WATCHERS = satskyse dmitrie1 saprykin
 
+#PEDANTIC = -pedantic -Werror -Wextra -Wno-type-limits
 #EXTRA=-fno-omit-frame-pointer -fsanitize=address
-#LOCAL_CPPFLAGS += $(EXTRA)
+#LOCAL_CPPFLAGS += $(EXTRA) 
+#LOCAL_CPPFLAGS += $(PEDANTIC) 
 #user_homedir = $(shell readlink -e ~)
 #LOCAL_CPPFLAGS = -I$(user_homedir)/trunk/c++/include

@@ -58,7 +58,6 @@ CCassBlobTaskInsertExtended::CCassBlobTaskInsertExtended(
 void CCassBlobTaskInsertExtended::Wait1()
 {
     bool b_need_repeat;
-
     do {
         b_need_repeat = false;
         switch (m_State) {

@@ -37,6 +37,7 @@
 #include <atomic>
 #include <thread>
 #include <signal.h>
+#include <functional>
 
 #include <corelib/ncbithr.hpp>
 

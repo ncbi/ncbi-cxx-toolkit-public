@@ -39,10 +39,10 @@ BEGIN_IDBLOB_SCOPE
 
 int64_t gettime(void)
 {
-    int             cnt = 100;
-    struct timeval  tv = {0};
+    int cnt = 100;
+    struct timeval tv = {0, 0};
 
-    while (gettimeofday(&tv, NULL) != 0 && cnt-- > 0);
+    while (gettimeofday(&tv, NULL) != 0 && cnt-- > 0) {}
     return (int64_t)tv.tv_usec + ((int64_t)tv.tv_sec) * 1000000L;
 }
 
