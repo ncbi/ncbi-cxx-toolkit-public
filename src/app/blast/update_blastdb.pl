@@ -362,7 +362,8 @@ requesting downloads or updates using this script.
 
 =item B<--passive>
 
-Use passive FTP, useful when behind a firewall (default: false).
+Use passive FTP, useful when behind a firewall or working in the cloud (default: true).
+To disable passive FTP, configure this option as follows: --passive no
 
 =item B<--timeout>
 
