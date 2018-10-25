@@ -33,10 +33,11 @@
  *
  */
 
+#include "ns_types.hpp"
+
 #include <corelib/ncbitype.h>
 
 #include <stdio.h>
-#include "ns_db.hpp"
 
 
 // NB

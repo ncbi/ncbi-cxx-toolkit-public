@@ -47,7 +47,6 @@ CNetScheduleServer* CNetScheduleServer::sm_netschedule_server = 0;
 /// NetScheduler threaded server implementation
 CNetScheduleServer::CNetScheduleServer(const string &  dbpath)
     : m_BackgroundHost(this),
-      m_RequestExecutor(this),
       m_Port(0),
       m_HostNetAddr(0),
       m_Shutdown(false),
@@ -75,8 +74,7 @@ CNetScheduleServer::CNetScheduleServer(const string &  dbpath)
       m_SessionID("s" + x_GenerateGUID()),
       m_StartIDs(dbpath),
       m_AnybodyCanReconfigure(false),
-      m_ReserveDumpSpace(default_reserve_dump_space),
-      m_WSTCacheSize(default_wst_cache_size)
+      m_ReserveDumpSpace(default_reserve_dump_space)
 {
     m_CurrentSubmitsCounter.Set(kSubmitCounterInitialValue);
     sm_netschedule_server = this;
@@ -223,14 +221,6 @@ CJsonNode CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
         changes.SetByKey("reserve_dump_space", values);
     }
     m_ReserveDumpSpace = params.reserve_dump_space;
-
-    if (m_WSTCacheSize != params.wst_cache_size) {
-        CJsonNode       values = CJsonNode::NewArrayNode();
-        values.AppendInteger(m_WSTCacheSize);
-        values.AppendInteger(params.wst_cache_size);
-        changes.SetByKey("wst_cache_size", values);
-    }
-    m_WSTCacheSize = params.wst_cache_size;
 
 
     if (limited) {
@@ -442,24 +432,6 @@ CNetScheduleServer::QueueInfo(const string &  qname) const
 std::string CNetScheduleServer::GetQueueNames(const string &  sep) const
 {
     return m_QueueDB->GetQueueNames(sep);
-}
-
-
-void CNetScheduleServer::PrintMutexStat(CNcbiOstream& out)
-{
-    m_QueueDB->PrintMutexStat(out);
-}
-
-
-void CNetScheduleServer::PrintLockStat(CNcbiOstream& out)
-{
-    m_QueueDB->PrintLockStat(out);
-}
-
-
-void CNetScheduleServer::PrintMemStat(CNcbiOstream& out)
-{
-    m_QueueDB->PrintMemStat(out);
 }
 
 

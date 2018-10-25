@@ -242,6 +242,16 @@ void CJobStatusTracker::ClearAll(TNSBitVector *  bv)
 }
 
 
+void CJobStatusTracker::ClearAll(void)
+{
+    CWriteLockGuard         guard(m_Lock);
+
+    for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {
+        m_StatusStor[g_ValidJobStatuses[k]]->clear(true);
+    }
+}
+
+
 void CJobStatusTracker::OptimizeMem()
 {
     for (size_t  k = 0; k < g_ValidJobStatusesSize; ++k) {

@@ -60,7 +60,6 @@ struct SQueueParameters
     // Transit parameters; stored in memory and in the DB but not present
     // in the config files.
     int             kind;       // 0 - static, 1 - dynamic
-    int             position;
     bool            delete_request;
 
     // General parameters, reconfigurable at run time

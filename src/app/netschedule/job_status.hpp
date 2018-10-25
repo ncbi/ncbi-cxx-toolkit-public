@@ -144,6 +144,7 @@ public:
 
     // Clear status storage
     void ClearAll(TNSBitVector* bv);
+    void ClearAll(void);
 
     // Optimize bitvectors memory
     void OptimizeMem();

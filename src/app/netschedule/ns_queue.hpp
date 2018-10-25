@@ -43,14 +43,12 @@
 
 #include "ns_types.hpp"
 #include "ns_util.hpp"
-#include "ns_db.hpp"
 #include "background_host.hpp"
 #include "job.hpp"
 #include "job_status.hpp"
 #include "queue_vc.hpp"
 #include "access_list.hpp"
 #include "ns_affinity.hpp"
-#include "ns_queue_db_block.hpp"
 #include "ns_queue_parameters.hpp"
 #include "ns_clients_registry.hpp"
 #include "ns_notifications.hpp"
@@ -59,7 +57,6 @@
 #include "ns_group.hpp"
 #include "ns_gc_registry.hpp"
 #include "ns_precise_time.hpp"
-#include "ns_job_info_cache.hpp"
 #include "ns_scope.hpp"
 #include "ns_server_params.hpp"
 
@@ -70,16 +67,7 @@ BEGIN_NCBI_SCOPE
 
 class CNetScheduleServer;
 class CNSRollbackInterface;
-
-
 class CQueue;
-class CQueueEnumCursor : public CBDB_FileCursor
-{
-public:
-    CQueueEnumCursor(CQueue *      queue,
-                     unsigned int  start_after);
-};
-
 
 // slight violation of naming convention for porting to util/time_line
 typedef CTimeLine<TNSBitVector>     CJobTimeLine;
@@ -116,15 +104,13 @@ public:
 
 public:
     // Constructor/destructor
-    CQueue(CRequestExecutor&     executor,
-           const string&         queue_name,
+    CQueue(const string&         queue_name,
            TQueueKind            queue_kind,
            CNetScheduleServer *  server,
            CQueueDataBase &      qdb);
     ~CQueue();
 
-    void Attach(SQueueDbBlock* block);
-    int  GetPos() const { return m_QueueDbBlock->pos; }
+    void Attach(void);
     TQueueKind GetQueueKind(void) const { return m_Kind; }
 
     // Thread-safe parameter access
@@ -414,9 +400,6 @@ public:
     void          StaleNodes(const CNSPreciseTime &  current_time);
     void          PurgeBlacklistedJobs(void);
     void          PurgeClientRegistry(const CNSPreciseTime &  current_time);
-    unsigned int  PurgeJobInfoCache(void);
-
-    CBDB_FileCursor& GetEventsCursor();
 
     // Dump a single job
     string PrintJobDbStat(const CNSClientId &  client,
@@ -468,9 +451,6 @@ public:
     bool  AnyJobs(void) const
     { return m_StatusTracker.AnyJobs(); }
 
-    void MarkForTruncating(void)
-    { m_TruncateAtDetach = true; }
-
     TPauseStatus GetPauseStatus(void) const
     { return m_PauseStatus; }
     void SetPauseStatus(const CNSClientId &  client, TPauseStatus  status);
@@ -491,11 +471,6 @@ public:
     void UpdatePerfLoggingSettings(const string &  qclass);
 
 private:
-    void x_Detach(void);
-
-    friend class CNSTransaction;
-    CBDB_Env &  GetEnv() { return *m_QueueDbBlock->job_db.GetEnv(); }
-
     TJobStatus  x_ChangeReadingStatus(const CNSClientId &  client,
                                       unsigned int         job_id,
                                       const string &       job_key,
@@ -583,7 +558,6 @@ private:
                                  bool                    logging);
 
     void x_LogSubmit(const CJob &  job);
-    void x_DeleteJobEvents(unsigned int  job_id);
     void x_ResetRunningDueToClear(const CNSClientId &   client,
                                   const TNSBitVector &  jobs);
     void x_ResetReadingDueToClear(const CNSClientId &   client,
@@ -648,27 +622,20 @@ private:
 
 private:
     friend class CJob;
-    friend class CQueueEnumCursor;
     friend class CQueueParamAccessor;
 
     CNetScheduleServer *        m_Server;
     CJobStatusTracker           m_StatusTracker;    // status FSA
     CQueueDataBase &            m_QueueDB;
 
+    map<unsigned int, CJob>     m_Jobs;             // in-memory jobs
+
     // Timeline object to control job execution timeout
     CJobTimeLine*               m_RunTimeLine;
     CRWLock                     m_RunTimeLineLock;
 
-    // Background executor
-    CRequestExecutor&           m_Executor;
-
     string                      m_QueueName;
     TQueueKind                  m_Kind;            // 0 - static, 1 - dynamic
-
-    SQueueDbBlock *             m_QueueDbBlock;
-    bool                        m_TruncateAtDetach;
-
-    unique_ptr<CBDB_FileCursor> m_EventsCursor;    // DB cursor for EventsDB
 
     // Lock for a queue operations
     mutable CFastMutex          m_OperationLock;
@@ -768,10 +735,6 @@ private:
     CNSPreciseTime              m_ClientRegistryTimeoutUnknown;
     unsigned int                m_ClientRegistryMinUnknowns;
 
-    // Job info cache for WST2
-    unsigned int                m_JobInfoCacheSize;
-    CJobInfoCache               m_JobInfoCache;
-
     CNSScopeRegistry            m_ScopeRegistry;
 
     bool                        m_ShouldPerfLogTransitions;
@@ -846,28 +809,6 @@ inline bool CQueue::IsProgramAllowed(const string &  program_name) const
         return false;
     }
 }
-
-
-// Application specific defaults provider for DB transaction
-class CNSTransaction : public CBDB_Transaction
-{
-public:
-    CNSTransaction(CQueue *              queue,
-                   int                   what_tables = eAllTables,
-                   ETransSync            tsync = eEnvDefault,
-                   EKeepFileAssociation  assoc = eNoAssociation)
-        : CBDB_Transaction(queue->GetEnv(), tsync, assoc)
-    {
-        if (what_tables & eJobTable)
-            queue->m_QueueDbBlock->job_db.SetTransaction(this);
-
-        if (what_tables & eJobInfoTable)
-            queue->m_QueueDbBlock->job_info_db.SetTransaction(this);
-
-        if (what_tables & eJobEventsTable)
-            queue->m_QueueDbBlock->events_db.SetTransaction(this);
-    }
-};
 
 
 END_NCBI_SCOPE

@@ -81,22 +81,6 @@ private:
 };
 
 
-//////////////////////////////////////////////////////////////////////////
-/// Executor for long-standing requests
-class CNetScheduleRequestExecutor : public CRequestExecutor
-{
-public:
-    CNetScheduleRequestExecutor(CNetScheduleServer* server)
-        : m_Server(server)
-    {}
-
-    virtual void SubmitRequest(const CRef<CStdRequest>& request);
-
-private:
-    CNetScheduleServer* m_Server;
-};
-
-
 END_NCBI_SCOPE
 
 #endif

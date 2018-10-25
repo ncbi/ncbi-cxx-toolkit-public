@@ -35,7 +35,6 @@
 
 #include "ns_queue_parameters.hpp"
 #include "ns_types.hpp"
-#include "ns_db.hpp"
 #include "ns_queue.hpp"
 #include "ns_ini_params.hpp"
 
@@ -46,7 +45,6 @@ BEGIN_NCBI_SCOPE
 
 SQueueParameters::SQueueParameters() :
     kind(CQueue::eKindStatic),
-    position(-1),
     delete_request(false),
     qclass(""),
     timeout(default_timeout),
@@ -667,7 +665,6 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
             result += "dynamic" + separator;
 
         result +=
-        prefix + "position" + suffix + NStr::NumericToString(position) + separator +
         prefix + "qclass" + suffix + qclass + separator +
         prefix + "refuse_submits" + suffix + NStr::BoolToString(refuse_submits) + separator +
         prefix + "max_aff_slots" + suffix + NStr::NumericToString(max_aff_slots) + separator +

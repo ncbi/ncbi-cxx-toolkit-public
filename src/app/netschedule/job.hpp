@@ -36,7 +36,6 @@
 #include <connect/services/netschedule_api.hpp>
 
 #include "ns_types.hpp"
-#include "ns_db.hpp"
 #include "job_status.hpp"
 #include "ns_command_arguments.hpp"
 #include "ns_precise_time.hpp"
@@ -50,20 +49,6 @@ class CQueue;
 class CNSAffinityRegistry;
 class CNSGroupsRegistry;
 struct SJobDumpHeader;
-
-
-// Used to specify what to fetch and what to include into a transaction
-enum EQueueJobTable {
-    eJobTable       = 1,
-    eJobInfoTable   = 2,
-    eJobEventsTable = 4,
-    eAffinityTable  = 8,
-    eGroupTable     = 16,
-    eAllTables      = eJobTable | eJobInfoTable |
-                      eJobEventsTable | eAffinityTable |
-                      eGroupTable
-};
-
 
 
 // Instantiation of a Job on a Worker Node
@@ -136,38 +121,28 @@ public:
     { return "'" + NStr::PrintableString(m_ErrorMsg) + "'"; }
 
     void SetStatus(TJobStatus status)
-    { m_Dirty = true;
-      m_Status = status; }
+    { m_Status = status; }
     void SetEvent(EJobEvent  event)
-    { m_Dirty = true;
-      m_Event = event; }
+    { m_Event = event; }
     void SetTimestamp(const CNSPreciseTime & t)
-    { m_Dirty = true;
-      m_Timestamp = t; }
+    { m_Timestamp = t; }
     void SetNodeAddr(unsigned int  node_ip)
-    { m_Dirty = true;
-      m_NodeAddr = node_ip; }
+    { m_NodeAddr = node_ip; }
     void SetRetCode(int retcode)
-    { m_Dirty = true;
-      m_RetCode = retcode; }
+    { m_RetCode = retcode; }
     // The size of the client_node is normalized at the handshake stage
     void SetClientNode(const string &  client_node)
-    { m_Dirty = true;
-      m_ClientNode = client_node; }
+    { m_ClientNode = client_node; }
     // The size of the client_session is normalized at the handshake stage
     void SetClientSession(const string &  cliet_session)
-    { m_Dirty = true;
-      m_ClientSession = cliet_session; }
+    { m_ClientSession = cliet_session; }
     // The size of the error message is truncated (if needed) at the
     // command parameters processing stage
     void SetErrorMsg(const string &  msg)
-    { m_Dirty = true;
-      m_ErrorMsg = msg; }
+    { m_ErrorMsg = msg; }
 
 private:
     friend class CJob;
-    // Service fields
-    bool            m_Dirty;
 
     // SEventDB fields
     // id, event id - implicit
@@ -207,11 +182,6 @@ public:
         fJobPart     = 1 << 0, ///< SQueueDB part
         fJobInfoPart = 1 << 1, ///< SJobInfoDB part
         fEventsPart  = 1 << 2  ///< SEventsDB part
-    };
-    enum EJobFetchResult {
-        eJF_Ok       = 0,
-        eJF_NotFound = 1,
-        eJF_DBErr    = 2
     };
     enum EAuthTokenCompareResult {
         eCompleteMatch = 0,
@@ -297,99 +267,64 @@ public:
     string GetErrorMsg() const;
     int    GetRetCode() const;
 
-    void           SetId(unsigned id)
-    { m_Id = id;
-      m_Dirty |= fJobPart; }
-    void           SetPassport(unsigned int  passport)
-    { m_Passport = passport;
-      m_Dirty |= fJobPart; }
-    void           SetStatus(TJobStatus status)
-    { m_Status = status;
-      m_Dirty |= fJobPart; }
-    void           SetTimeout(const CNSPreciseTime & t)
-    { m_Timeout = t;
-      m_Dirty |= fJobPart; }
-    void           SetRunTimeout(const CNSPreciseTime & t)
-    { m_RunTimeout = t;
-      m_Dirty |= fJobPart; }
-    void           SetReadTimeout(const CNSPreciseTime & t)
-    { m_ReadTimeout = t;
-      m_Dirty |= fJobPart; }
+    void SetId(unsigned id)
+    { m_Id = id; }
+    void SetPassport(unsigned int  passport)
+    { m_Passport = passport; }
+    void SetStatus(TJobStatus status)
+    { m_Status = status; }
+    void SetTimeout(const CNSPreciseTime & t)
+    { m_Timeout = t; }
+    void SetRunTimeout(const CNSPreciseTime & t)
+    { m_RunTimeout = t; }
+    void SetReadTimeout(const CNSPreciseTime & t)
+    { m_ReadTimeout = t; }
 
-    void           SetSubmNotifPort(unsigned short port)
-    { m_SubmNotifPort = port;
-      m_Dirty |= fJobPart; }
-    void           SetSubmNotifTimeout(const CNSPreciseTime & t)
-    { m_SubmNotifTimeout = t;
-      m_Dirty |= fJobPart; }
+    void SetSubmNotifPort(unsigned short port)
+    { m_SubmNotifPort = port; }
+    void SetSubmNotifTimeout(const CNSPreciseTime & t)
+    { m_SubmNotifTimeout = t; }
 
-    void           SetListenerNotifAddr(unsigned int  address)
-    { m_ListenerNotifAddress = address;
-      m_Dirty |= fJobPart; }
-    void           SetListenerNotifPort(unsigned short  port)
-    { m_ListenerNotifPort = port;
-      m_Dirty |= fJobPart; }
-    void           SetListenerNotifAbsTime(const CNSPreciseTime & abs_time)
-    { m_ListenerNotifAbsTime = abs_time;
-      m_Dirty |= fJobPart; }
+    void SetListenerNotifAddr(unsigned int  address)
+    { m_ListenerNotifAddress = address; }
+    void SetListenerNotifPort(unsigned short  port)
+    { m_ListenerNotifPort = port; }
+    void SetListenerNotifAbsTime(const CNSPreciseTime & abs_time)
+    { m_ListenerNotifAbsTime = abs_time; }
 
-    void           SetRunCount(unsigned count)
-    { m_RunCount = count;
-      m_Dirty |= fJobPart; }
-    void           SetReadCount(unsigned count)
-    { m_ReadCount = count;
-      m_Dirty |= fJobPart;
-    }
-    void           SetProgressMsg(const string& msg)
-    { m_ProgressMsg = msg;
-      m_Dirty |= fJobPart; }
-    void           SetAffinityId(unsigned aff_id)
-    { m_AffinityId = aff_id;
-      m_Dirty |= fJobPart; }
-    void           SetMask(unsigned mask)
-    { m_Mask = mask;
-      m_Dirty |= fJobPart; }
-    void           SetGroupId(unsigned id)
-    { m_GroupId = id;
-      m_Dirty |= fJobPart; }
-    void           SetLastTouch(const CNSPreciseTime &  t)
-    { m_LastTouch = t;
-      m_Dirty |= fJobPart; }
+    void SetRunCount(unsigned count)
+    { m_RunCount = count; }
+    void SetReadCount(unsigned count)
+    { m_ReadCount = count; }
+    void SetProgressMsg(const string& msg)
+    { m_ProgressMsg = msg; }
+    void SetAffinityId(unsigned aff_id)
+    { m_AffinityId = aff_id; }
+    void SetMask(unsigned mask)
+    { m_Mask = mask; }
+    void SetGroupId(unsigned id)
+    { m_GroupId = id; }
+    void SetLastTouch(const CNSPreciseTime &  t)
+    { m_LastTouch = t; }
 
-    void           SetClientIP(const string& client_ip)
-    { if (client_ip.size() < kMaxClientIpSize) m_ClientIP = client_ip;
-      else m_ClientIP = client_ip.substr(0, kMaxClientIpSize);
-      m_Dirty |= fJobPart; }
-    void           SetClientSID(const string& client_sid)
-    { if (client_sid.size() < kMaxSessionIdSize) m_ClientSID = client_sid;
-      else m_ClientSID = "SID_TOO_LONG_FOR_NS_STORAGE";
-      m_Dirty |= fJobPart; }
-    void           SetNCBIPHID(const string& ncbi_phid)
-    { if (ncbi_phid.size() < kMaxHitIdSize) m_NCBIPHID = ncbi_phid;
-      else {
-        if (ncbi_phid.find('.') == string::npos)
-            m_NCBIPHID = "PHID_TOO_LONG_FOR_NS_STORAGE";
-        else
-            m_NCBIPHID = ncbi_phid.substr(0, kMaxHitIdSize);
-      }
-      m_Dirty |= fJobPart; }
-    void  SetNeedSubmProgressMsgNotif(bool  need)
-    { m_NeedSubmProgressMsgNotif = need;
-      m_Dirty |= fJobPart; }
-    void  SetNeedLsnrProgressMsgNotif(bool  need)
-    { m_NeedLsnrProgressMsgNotif = need;
-      m_Dirty |= fJobPart; }
-    void  SetNeedStolenNotif(bool  need)
-    { m_NeedStolenNotif = need;
-      m_Dirty |= fJobPart; }
+    void SetClientIP(const string& client_ip)
+    { m_ClientIP = client_ip; }
+    void SetClientSID(const string& client_sid)
+    { m_ClientSID = client_sid; }
+    void SetNCBIPHID(const string& ncbi_phid)
+    { m_NCBIPHID = ncbi_phid; }
+    void SetNeedSubmProgressMsgNotif(bool  need)
+    { m_NeedSubmProgressMsgNotif = need; }
+    void SetNeedLsnrProgressMsgNotif(bool  need)
+    { m_NeedLsnrProgressMsgNotif = need; }
+    void SetNeedStolenNotif(bool  need)
+    { m_NeedStolenNotif = need; }
 
-    void           SetEvents(const vector<CJobEvent>& events)
-    { m_Events = events;
-      m_Dirty |= fEventsPart; }
+    void SetEvents(const vector<CJobEvent>& events)
+    { m_Events = events; }
 
-    void           SetInput(const string& input);
-    void           SetOutput(const string& output);
-
+    void SetInput(const string& input);
+    void SetOutput(const string& output);
 
     // manipulators
     CJobEvent &         AppendEvent();
@@ -418,18 +353,6 @@ public:
     }
 
     EAuthTokenCompareResult  CompareAuthToken(const string &  auth_token) const;
-
-    // Mark job for deletion
-    void Delete();
-
-    // Fetch object by its numeric id
-    EJobFetchResult Fetch(CQueue* queue, unsigned id);
-
-    // Cursor like functionality - not here yet. May be we need
-    // to create separate CJobIterator.
-    // EJobFetchResult FetchNext(CQueue* queue);
-    bool Flush(CQueue* queue);
-
     bool ShouldNotifySubmitter(const CNSPreciseTime & current_time) const;
     bool ShouldNotifyListener(const CNSPreciseTime &  current_time) const;
 
@@ -444,16 +367,6 @@ public:
                       const SJobDumpHeader &  header);
 
 private:
-    EJobFetchResult x_Fetch(CQueue* queue);
-
-private:
-    // Service flags
-    bool                m_New;     // Object should be inserted, not updated
-    bool                m_Deleted; // Object with this id should be deleted
-    unsigned            m_Dirty;
-
-    // Reflection of database structures
-
     // Reside in SJobDB table
     unsigned            m_Id;
     unsigned int        m_Passport;

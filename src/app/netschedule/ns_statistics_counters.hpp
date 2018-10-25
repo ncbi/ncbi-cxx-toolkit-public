@@ -83,9 +83,6 @@ public:
     void CountOutdatedPick(ECommandGroup  cmd_group);
     void CountToPendingWithoutBlacklist(size_t  count);
     void CountToPendingRescheduled(size_t  count);
-    void CountJobInfoCacheHit(size_t  count);
-    void CountJobInfoCacheMiss(size_t  count);
-    void CountJobInfoCacheGCRemoved(size_t  count);
     void CountRedo(CNetScheduleAPI::EJobStatus  from);
     void CountReread(CNetScheduleAPI::EJobStatus  from,
                      CNetScheduleAPI::EJobStatus  to);
@@ -134,10 +131,6 @@ private:
 
     CAtomicCounter_WithAutoInit     m_PickedAsPendingOutdated;
     CAtomicCounter_WithAutoInit     m_PickedAsReadOutdated;
-
-    CAtomicCounter_WithAutoInit     m_JobInfoCacheHit;
-    CAtomicCounter_WithAutoInit     m_JobInfoCacheMiss;
-    CAtomicCounter_WithAutoInit     m_JobInfoGCRemoved;
 
     // REDO related counters
     CAtomicCounter_WithAutoInit     m_FromDoneJobRedo;

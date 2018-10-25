@@ -89,7 +89,6 @@ string CJobEvent::EventToString(EJobEvent  event)
 
 
 CJobEvent::CJobEvent() :
-    m_Dirty(false),
     m_Status(CNetScheduleAPI::eJobNotFound),
     m_Event(eUnknown),
     m_Timestamp(0, 0),
@@ -152,7 +151,6 @@ GetJobExpirationTime(const CNSPreciseTime &     last_touch,
 // CJob implementation
 
 CJob::CJob() :
-    m_New(true), m_Deleted(false), m_Dirty(0),
     m_Id(0),
     m_Passport(0),
     m_Status(CNetScheduleAPI::ePending),
@@ -177,7 +175,6 @@ CJob::CJob() :
 
 
 CJob::CJob(const SNSCommandArguments &  request) :
-    m_New(true), m_Deleted(false), m_Dirty(fJobPart),
     m_Id(0),
     m_Passport(0),
     m_Status(CNetScheduleAPI::ePending),
@@ -226,39 +223,12 @@ int    CJob::GetRetCode() const
 
 void CJob::SetInput(const string &  input)
 {
-    bool    was_overflow = m_Input.size() > kNetScheduleSplitSize;
-    bool    is_overflow = input.size() > kNetScheduleSplitSize;
-
-    if (is_overflow) {
-        m_Dirty |= fJobInfoPart;
-        if (!was_overflow)
-            m_Dirty |= fJobPart;
-    } else {
-        m_Dirty |= fJobPart;
-        if (was_overflow)
-            m_Dirty |= fJobInfoPart;
-    }
     m_Input = input;
 }
 
 
 void CJob::SetOutput(const string &  output)
 {
-    if (m_Output.empty() && output.empty())
-        return;     // It might be the most common case for failed jobs
-
-    bool    was_overflow = m_Output.size() > kNetScheduleSplitSize;
-    bool    is_overflow = output.size() > kNetScheduleSplitSize;
-
-    if (is_overflow) {
-        m_Dirty |= fJobInfoPart;
-        if (!was_overflow)
-            m_Dirty |= fJobPart;
-    } else {
-        m_Dirty |= fJobPart;
-        if (was_overflow)
-            m_Dirty |= fJobInfoPart;
-    }
     m_Output = output;
 }
 
@@ -266,8 +236,7 @@ void CJob::SetOutput(const string &  output)
 CJobEvent &  CJob::AppendEvent()
 {
     m_Events.push_back(CJobEvent());
-    m_Dirty |= fEventsPart;
-    return m_Events[m_Events.size()-1];
+    return m_Events[m_Events.size() - 1];
 }
 
 
@@ -275,7 +244,7 @@ const CJobEvent *  CJob::GetLastEvent() const
 {
     // The first event is attached when a job is submitted, so
     // there is no way to have the events empty
-    return &(m_Events[m_Events.size()-1]);
+    return &(m_Events[m_Events.size() - 1]);
 }
 
 
@@ -283,8 +252,7 @@ CJobEvent *  CJob::GetLastEvent()
 {
     // The first event is attached when a job is submitted, so
     // there is no way to have the events empty
-    m_Dirty |= fEventsPart;
-    return &(m_Events[m_Events.size()-1]);
+    return &(m_Events[m_Events.size() - 1]);
 }
 
 
@@ -307,251 +275,6 @@ CJob::CompareAuthToken(const string &  auth_token) const
         return eInvalidTokenFormat;
     }
     return eCompleteMatch;
-}
-
-
-void CJob::Delete()
-{
-    m_Deleted = true;
-    m_Dirty = 0;
-}
-
-
-CJob::EJobFetchResult CJob::x_Fetch(CQueue* queue)
-{
-    SJobDB &        job_db      = queue->m_QueueDbBlock->job_db;
-    SJobInfoDB &    job_info_db = queue->m_QueueDbBlock->job_info_db;
-    SEventsDB &     events_db   = queue->m_QueueDbBlock->events_db;
-
-    m_Id            = job_db.id;
-
-    m_Passport      = job_db.passport;
-    m_Status        = TJobStatus(int(job_db.status));
-    m_Timeout       = CNSPreciseTime(job_db.timeout);
-    m_RunTimeout    = CNSPreciseTime(job_db.run_timeout);
-    m_ReadTimeout   = CNSPreciseTime(job_db.read_timeout);
-
-    m_SubmNotifPort    = job_db.subm_notif_port;
-    m_SubmNotifTimeout = CNSPreciseTime(job_db.subm_notif_timeout);
-
-    m_ListenerNotifAddress = job_db.listener_notif_addr;
-    m_ListenerNotifPort    = job_db.listener_notif_port;
-    m_ListenerNotifAbsTime = CNSPreciseTime(job_db.listener_notif_abstime);
-
-    m_RunCount      = job_db.run_counter;
-    m_ReadCount     = job_db.read_counter;
-    m_AffinityId    = job_db.aff_id;
-    m_Mask          = job_db.mask;
-    m_GroupId       = job_db.group_id;
-    m_LastTouch     = CNSPreciseTime(job_db.last_touch);
-
-    m_ClientIP      = job_db.client_ip;
-    m_ClientSID     = job_db.client_sid;
-    m_NCBIPHID      = job_db.ncbi_phid;
-
-    m_NeedSubmProgressMsgNotif = job_db.need_subm_progress_notif;
-    m_NeedLsnrProgressMsgNotif = job_db.need_lsnr_progress_notif;
-    m_NeedStolenNotif = job_db.need_stolen_notif;
-
-    if (!(char) job_db.input_overflow)
-        job_db.input.ToString(m_Input);
-    if (!(char) job_db.output_overflow)
-        job_db.output.ToString(m_Output);
-    job_db.progress_msg.ToString(m_ProgressMsg);
-
-    // JobInfoDB, can be optimized by adding lazy load
-    EBDB_ErrCode        res;
-
-    if ((char) job_db.input_overflow ||
-        (char) job_db.output_overflow) {
-        job_info_db.id = m_Id;
-        res = job_info_db.Fetch();
-
-        if (res != eBDB_Ok) {
-            if (res != eBDB_NotFound) {
-                ERR_POST("Error reading the job input/output DB, job_key " <<
-                         queue->MakeJobKey(m_Id));
-                return eJF_DBErr;
-            }
-            ERR_POST("DB inconsistency detected. Long input/output "
-                     "expected but no record found in the DB. job_key " <<
-                     queue->MakeJobKey(m_Id));
-            return eJF_DBErr;
-        }
-
-        if ((char) job_db.input_overflow)
-            job_info_db.input.ToString(m_Input);
-        if ((char) job_db.output_overflow)
-            job_info_db.output.ToString(m_Output);
-    }
-
-    // EventsDB
-    m_Events.clear();
-    CBDB_FileCursor &       cur = queue->GetEventsCursor();
-    CBDB_CursorGuard        cg(cur);
-
-    cur.SetCondition(CBDB_FileCursor::eEQ);
-    cur.From << m_Id;
-
-    for (unsigned n = 0; (res = cur.Fetch()) == eBDB_Ok; ++n) {
-        CJobEvent &       event = AppendEvent();
-
-        event.m_Status     = TJobStatus(int(events_db.status));
-        event.m_Event      = CJobEvent::EJobEvent(int(events_db.event));
-        event.m_Timestamp  = CNSPreciseTime(events_db.timestamp);
-        event.m_NodeAddr   = events_db.node_addr;
-        event.m_RetCode    = events_db.ret_code;
-        events_db.client_node.ToString(event.m_ClientNode);
-        events_db.client_session.ToString(event.m_ClientSession);
-        events_db.err_msg.ToString(event.m_ErrorMsg);
-        event.m_Dirty = false;
-    }
-    if (res != eBDB_NotFound) {
-        ERR_POST("Error reading queue events db, job_key " <<
-                 queue->MakeJobKey(m_Id));
-        return eJF_DBErr;
-    }
-
-    m_New   = false;
-    m_Dirty = 0;
-    return eJF_Ok;
-}
-
-
-CJob::EJobFetchResult  CJob::Fetch(CQueue *  queue, unsigned  id)
-{
-    SJobDB &        job_db = queue->m_QueueDbBlock->job_db;
-
-    job_db.id = id;
-
-    EBDB_ErrCode    res = job_db.Fetch();
-    if (res != eBDB_Ok) {
-        if (res != eBDB_NotFound) {
-            ERR_POST("Error reading queue job db, job_key " <<
-                     queue->MakeJobKey(id));
-            return eJF_DBErr;
-        }
-        return eJF_NotFound;
-    }
-    return x_Fetch(queue);
-}
-
-
-bool CJob::Flush(CQueue* queue)
-{
-    if (m_Deleted) {
-        queue->EraseJob(m_Id, m_Status);
-        return true;
-    }
-
-    if (m_Dirty == 0 && m_New == false)
-        return true;
-
-    SJobDB &        job_db      = queue->m_QueueDbBlock->job_db;
-    SJobInfoDB &    job_info_db = queue->m_QueueDbBlock->job_info_db;
-    SEventsDB &     events_db   = queue->m_QueueDbBlock->events_db;
-
-    bool            flush_job = (m_Dirty & fJobPart) || m_New;
-    bool            input_overflow = m_Input.size() > kNetScheduleSplitSize;
-    bool            output_overflow = m_Output.size() > kNetScheduleSplitSize;
-
-    // JobDB (QueueDB)
-    if (flush_job) {
-        job_db.id       = m_Id;
-        job_db.passport = m_Passport;
-        job_db.status   = int(m_Status);
-
-        job_db.timeout      = (double)m_Timeout;
-        job_db.run_timeout  = (double)m_RunTimeout;
-        job_db.read_timeout = (double)m_ReadTimeout;
-
-        job_db.subm_notif_port    = m_SubmNotifPort;
-        job_db.subm_notif_timeout = (double)m_SubmNotifTimeout;
-
-        job_db.listener_notif_addr    = m_ListenerNotifAddress;
-        job_db.listener_notif_port    = m_ListenerNotifPort;
-        job_db.listener_notif_abstime = (double)m_ListenerNotifAbsTime;
-
-        job_db.run_counter  = m_RunCount;
-        job_db.read_counter = m_ReadCount;
-        job_db.aff_id       = m_AffinityId;
-        job_db.mask         = m_Mask;
-        job_db.group_id     = m_GroupId;
-        job_db.last_touch   = (double)m_LastTouch;
-
-        job_db.client_ip    = m_ClientIP;
-        job_db.client_sid   = m_ClientSID;
-        job_db.ncbi_phid    = m_NCBIPHID;
-
-        job_db.need_subm_progress_notif = m_NeedSubmProgressMsgNotif;
-        job_db.need_lsnr_progress_notif = m_NeedLsnrProgressMsgNotif;
-        job_db.need_stolen_notif = m_NeedStolenNotif;
-
-        if (!input_overflow) {
-            job_db.input_overflow = 0;
-            job_db.input = m_Input;
-        } else {
-            job_db.input_overflow = 1;
-            job_db.input = "";
-        }
-        if (!output_overflow) {
-            job_db.output_overflow = 0;
-            job_db.output = m_Output;
-        } else {
-            job_db.output_overflow = 1;
-            job_db.output = "";
-        }
-        job_db.progress_msg = m_ProgressMsg;
-    }
-
-    // JobInfoDB
-    bool    nonempty_job_info = input_overflow || output_overflow;
-    if (m_Dirty & fJobInfoPart) {
-        job_info_db.id = m_Id;
-        if (input_overflow)
-            job_info_db.input = m_Input;
-        else
-            job_info_db.input = "";
-        if (output_overflow)
-            job_info_db.output = m_Output;
-        else
-            job_info_db.output = "";
-    }
-    if (flush_job)
-        job_db.UpdateInsert();
-    if (m_Dirty & fJobInfoPart) {
-        if (nonempty_job_info)
-            job_info_db.UpdateInsert();
-        else
-            job_info_db.Delete(CBDB_File::eIgnoreError);
-    }
-
-    // EventsDB
-    unsigned n = 0;
-    NON_CONST_ITERATE(vector<CJobEvent>, it, m_Events) {
-        CJobEvent &         event = *it;
-
-        if (event.m_Dirty) {
-            events_db.id             = m_Id;
-            events_db.event_id       = n;
-            events_db.status         = int(event.m_Status);
-            events_db.event          = int(event.m_Event);
-            events_db.timestamp      = (double)event.m_Timestamp;
-            events_db.node_addr      = event.m_NodeAddr;
-            events_db.ret_code       = event.m_RetCode;
-            events_db.client_node    = event.m_ClientNode;
-            events_db.client_session = event.m_ClientSession;
-            events_db.err_msg        = event.m_ErrorMsg;
-            events_db.UpdateInsert();
-            event.m_Dirty = false;
-        }
-        ++n;
-    }
-
-    m_New = false;
-    m_Dirty = 0;
-
-    return true;
 }
 
 
@@ -864,8 +587,6 @@ bool CJob::LoadFromDump(FILE *  jobs_file,
         return false;
 
     // Fill in the job fields
-    m_New = true;
-    m_Deleted = false;
     m_Id = job_dump.id;
     m_Passport = job_dump.passport;
     m_Status = (TJobStatus)job_dump.status;
@@ -909,7 +630,6 @@ bool CJob::LoadFromDump(FILE *  jobs_file,
 
         // Fill the event and append it to the job events
         CJobEvent       event;
-        event.m_Dirty = true;
         event.m_Status = (TJobStatus)event_dump.status;
         event.m_Event = (CJobEvent::EJobEvent)event_dump.event;
         event.m_Timestamp = CNSPreciseTime(event_dump.timestamp);

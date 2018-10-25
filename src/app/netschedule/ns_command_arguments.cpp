@@ -35,7 +35,6 @@
 
 
 #include "ns_command_arguments.hpp"
-#include "ns_db.hpp"
 
 
 USING_NCBI_SCOPE;

@@ -47,8 +47,6 @@ public:
     GetOrigLogSection(void) const { return m_OrigLogSection; }
     map<string, string>
     GetOrigDiagSection(void) const { return m_OrigDiagSection; }
-    map<string, string>
-    GetOrigBDBSection(void) const { return m_OrigBDBSection; }
 
 private:
     STimeout                m_ServerAcceptTimeout;
@@ -61,6 +59,5 @@ private:
 
     map<string, string>     m_OrigLogSection;
     map<string, string>     m_OrigDiagSection;
-    map<string, string>     m_OrigBDBSection;
 };
 

@@ -68,13 +68,3 @@ bool CNetScheduleBackgroundHost::IsLog() const
 {
     return m_Server->IsLog();
 }
-
-
-//////////////////////////////////////////////////////////////////////////
-/// CNetScheduleRequestExecutor implementation
-void
-CNetScheduleRequestExecutor::SubmitRequest(const CRef<CStdRequest>& request)
-{
-    m_Server->SubmitRequest(request);
-}
-

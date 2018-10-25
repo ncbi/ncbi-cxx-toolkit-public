@@ -67,42 +67,14 @@ typedef map<string,
             PNocase >   TQueueInfo;
 
 
-struct SNSDBEnvironmentParams
-{
-    string    db_path;
-    string    db_log_path;
-    unsigned  max_queues;          // Number of pre-allocated queues
-    Uint8     cache_ram_size;      // Size of database cache
-    unsigned  mutex_max;           // Number of mutexes
-    unsigned  max_locks;           // Number of locks
-    unsigned  max_lockers;         // Number of lockers
-    unsigned  max_lockobjects;     // Number of lock objects
-
-    //    Size of in-memory LOG (when 0 log is put to disk)
-    //    In memory LOG is not durable, put it to memory
-    //    only if you need better performance
-    Uint8     log_mem_size;
-    unsigned  max_trans;           // Maximum number of active transactions
-    unsigned  checkpoint_kb;
-    unsigned  checkpoint_min;
-    bool      sync_transactions;
-    bool      direct_db;
-    bool      direct_log;
-    bool      database_in_ram;
-
-    bool Read(const IRegistry& reg, const string& sname);
-};
-
-
-
-
 // Top level queue database. (Thread-Safe, synchronized.)
 class CQueueDataBase
 {
 public:
-    CQueueDataBase(CNetScheduleServer *            server,
-                   const SNSDBEnvironmentParams &  params,
-                   bool                            reinit);
+    CQueueDataBase(CNetScheduleServer *  server,
+                   const string &  path,
+                   unsigned int  max_queues,
+                   bool  reinit);
     ~CQueueDataBase();
 
     // Read queue information from registry and configure queues
@@ -141,7 +113,6 @@ public:
     void StaleWNodes(void);
     void PurgeBlacklistedJobs(void);
     void PurgeClientRegistry(void);
-    void PurgeJobInfoCache(void);
 
     // Notify all listeners
     void NotifyListeners(void);
@@ -163,22 +134,6 @@ public:
 
     /// Force transaction checkpoint
     void TransactionCheckPoint(bool  clean_log = false);
-
-    // BerkeleyDB-specific statistics
-    void PrintMutexStat(CNcbiOstream& out)
-    {
-        m_Env->PrintMutexStat(out);
-    }
-
-    void PrintLockStat(CNcbiOstream& out)
-    {
-        m_Env->PrintLockStat(out);
-    }
-
-    void PrintMemStat(CNcbiOstream& out)
-    {
-        m_Env->PrintMemStat(out);
-    }
 
     string PrintTransitionCounters(void);
     string PrintJobsStat(const CNSClientId &  client);
@@ -210,10 +165,9 @@ protected:
     unsigned int  GetNextIdBatch(unsigned int  count);
 
 private:
-    void x_Open(const SNSDBEnvironmentParams &  params, bool  reinit);
+    void x_Open(bool  reinit);
     void x_CreateAndMountQueue(const string &            qname,
-                               const SQueueParameters &  params,
-                               SQueueDbBlock *           queue_db_block);
+                               const SQueueParameters &  params);
 
     unsigned x_PurgeUnconditional(void);
     void     x_OptimizeStatusMatrix(const CNSPreciseTime &  current_time);
@@ -221,10 +175,9 @@ private:
     SQueueParameters x_SingleQueueInfo(TQueueInfo::const_iterator  found) const;
 
     CBackgroundHost &    m_Host;
-    CRequestExecutor &   m_Executor;
-    CBDB_Env *           m_Env;
     string               m_DataPath;
     string               m_DumpPath;
+    unsigned int         m_MaxQueues;
 
     mutable CFastMutex   m_ConfigureLock;
 
@@ -232,9 +185,6 @@ private:
     TQueueParams         m_QueueClasses;
     // Effective queues
     TQueueInfo           m_Queues;
-
-    // Pre-allocated Berkeley DB blocks
-    CQueueDbBlockArray   m_QueueDbBlockArray;
 
     bool                 m_StopPurge;         // Purge stop flag
     CFastMutex           m_PurgeLock;
@@ -325,8 +275,6 @@ private:
     void x_CreateStorageVersionFile(void);
 
     bool x_CheckOpenPreconditions(bool  reinit);
-    CBDB_Env *  x_CreateBDBEnvironment(const SNSDBEnvironmentParams &  params);
-
     void x_ReadDumpQueueDesrc(set<string, PNocase> &  dump_static_queues,
                               map<string, string,
                                   PNocase> &  dump_dynamic_queues,

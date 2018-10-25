@@ -48,9 +48,6 @@
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 
-#include <db/bdb/bdb_expt.hpp>
-#include <db.h>
-
 #include "queue_database.hpp"
 #include "ns_types.hpp"
 #include "ns_server_params.hpp"
@@ -148,7 +145,6 @@ int CNetScheduleDApp::Run(void)
         .Print("server", NETSCHEDULED_VERSION)
         .Print("storage", NETSCHEDULED_STORAGE_VERSION)
         .Print("protocol", NETSCHEDULED_PROTOCOL_VERSION)
-        .Print("berkeley_db_version", DB_VERSION_STRING)
         .Print("build", NETSCHEDULED_BUILD_DATE);
 
     const CArgs &           args = GetArgs();
@@ -156,7 +152,6 @@ int CNetScheduleDApp::Run(void)
 
     x_SaveSection(reg, "log", m_OrigLogSection);
     x_SaveSection(reg, "diag", m_OrigDiagSection);
-    x_SaveSection(reg, "bdb", m_OrigBDBSection);
 
     CNcbiOstrstream     ostr;
     reg.Write(ostr);
@@ -174,25 +169,16 @@ int CNetScheduleDApp::Run(void)
     // true -> throw exception if there is a port problem
     NS_ValidateConfigFile(reg, config_warnings, true, admin_decrypt_error);
 
-    // [bdb] section
-    SNSDBEnvironmentParams  bdb_params;
-
-    if (!bdb_params.Read(reg, "bdb"))
-        NCBI_THROW(CNetScheduleException, eInternalError,
-                   "Failed to read BDB initialization section.");
-
     // [server] section
     SNS_Parameters      params;
     params.Read(reg);
-
 
     m_ServerAcceptTimeout.sec  = 1;
     m_ServerAcceptTimeout.usec = 0;
     params.accept_timeout      = &m_ServerAcceptTimeout;
 
     SOCK_SetIOWaitSysAPI(eSOCK_IOWaitSysAPIPoll);
-    unique_ptr<CNetScheduleServer>    server(new CNetScheduleServer(
-                                                        bdb_params.db_path));
+    unique_ptr<CNetScheduleServer>  server(new CNetScheduleServer(params.path));
     server->SetCustomThreadSuffix("_h");
     server->SetNSParameters(params, false);
     server->SetAnybodyCanReconfigure(admin_decrypt_error);
@@ -201,12 +187,11 @@ int CNetScheduleDApp::Run(void)
     server->AddDefaultListener(new CNetScheduleConnectionFactory(&*server));
     server->StartListening();
 
-    // two transactions per thread should be enough
-    bdb_params.max_trans = params.max_threads * 2;
-
     m_Reinit = args[kReinitArgName];
     unique_ptr<CQueueDataBase>    qdb(new CQueueDataBase(server.get(),
-                                                         bdb_params, m_Reinit));
+                                                         params.path,
+                                                         params.max_queues,
+                                                         m_Reinit));
 
     if (!args[kNodaemonArgName]) {
         GetDiagContext().Extra()

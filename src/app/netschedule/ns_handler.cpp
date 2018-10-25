@@ -814,29 +814,6 @@ void CNetScheduleHandler::OnMessage(BUF buffer)
         else
             error_code = eStatus_ServerError;
     }
-    catch (const CBDB_ErrnoException &  ex) {
-        ERR_POST(ex);
-        if (ex.IsRecovery()) {
-            error_client_message = "ERR:eInternalError:" +
-                    NStr::PrintableString("Fatal Berkeley DB error "
-                                          "(DB_RUNRECOVERY). Emergency "
-                                          "shutdown initiated. " +
-                                          string(ex.what()));
-            m_Server->SetShutdownFlag();
-        }
-        else
-            error_client_message = "ERR:eInternalError:" +
-                    NStr::PrintableString("Internal database error - " +
-                                          string(ex.what()));
-        error_code = eStatus_ServerError;
-    }
-    catch (const CBDB_Exception &  ex) {
-        ERR_POST(ex);
-        error_client_message = "ERR:" +
-                               NStr::PrintableString("eInternalError:Internal "
-                               "database (BDB) error - " + string(ex.what()));
-        error_code = eStatus_ServerError;
-    }
     catch (const exception &  ex) {
         ERR_POST("STL exception: " << ex.what());
         error_client_message = "ERR:" +
@@ -3005,36 +2982,6 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
         }
     } // for
 
-
-    if (what == "ALL") {
-        info += "OK:[Berkeley DB Mutexes]:" + kEndOfResponse;
-        {{
-            CNcbiOstrstream ostr;
-
-            m_Server->PrintMutexStat(ostr);
-            info += "OK:" + (string)CNcbiOstrstreamToString(ostr) +
-                    kEndOfResponse;
-        }}
-
-        info += "OK:[Berkeley DB Locks]:" + kEndOfResponse;
-        {{
-            CNcbiOstrstream ostr;
-
-            m_Server->PrintLockStat(ostr);
-            info += "OK:" + (string)CNcbiOstrstreamToString(ostr) +
-                    kEndOfResponse;
-        }}
-
-        info += "OK:[Berkeley DB Memory Usage]:" + kEndOfResponse;
-        {{
-            CNcbiOstrstream ostr;
-
-            m_Server->PrintMemStat(ostr);
-            info += "OK:" + (string)CNcbiOstrstreamToString(ostr) +
-                    kEndOfResponse;
-        }}
-    }
-
     x_MakeSureSingleEOR(info);
     x_WriteMessage(info +
                    "OK:[Transitions counters]:" + kEndOfResponse +
@@ -3291,7 +3238,6 @@ void CNetScheduleHandler::x_ProcessGetConf(CQueue*)
         configuration = x_GetServerSection() +
                         x_GetLogSection() +
                         x_GetDiagSection() +
-                        x_GetBdbSection() +
                         m_Server->GetQueueClassesConfig() +
                         m_Server->GetQueueConfig() +
                         m_Server->GetLinkedSectionConfig() +
@@ -4709,14 +4655,6 @@ string CNetScheduleHandler::x_GetDiagSection(void) const
     CNetScheduleDApp *      app = dynamic_cast<CNetScheduleDApp*>
                                             (CNcbiApplication::Instance());
     return x_GetStoredSectionValues("diag", app->GetOrigDiagSection());
-}
-
-
-string CNetScheduleHandler::x_GetBdbSection(void) const
-{
-    CNetScheduleDApp *      app = dynamic_cast<CNetScheduleDApp*>
-                                            (CNcbiApplication::Instance());
-    return x_GetStoredSectionValues("bdb", app->GetOrigBDBSection());
 }
 
 

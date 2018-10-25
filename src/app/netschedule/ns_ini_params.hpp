@@ -95,7 +95,7 @@ const unsigned int      default_scope_low_removal = 100;
 const unsigned int      default_scope_dirt_percentage = 20;
 
 const unsigned int      default_reserve_dump_space = 1024 * 1024 * 1024; // 1GB
-const unsigned int      default_wst_cache_size = 2000;
+const unsigned int      default_max_queues = 1000;
 
 
 // Queue section values

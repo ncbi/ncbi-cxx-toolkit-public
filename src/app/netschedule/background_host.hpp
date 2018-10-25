@@ -57,18 +57,6 @@ public:
 };
 
 
-// This interface allows its user to submit a (possibly) long-running job
-// to a thread pool, where it will be executed by one of worker threads.
-// It exists for irregular jobs, which do not justify their own thread and
-// do not produce user output.
-class CRequestExecutor // better name, please
-{
-public:
-    virtual ~CRequestExecutor() {}
-    virtual void SubmitRequest(const CRef<CStdRequest>& request) = 0;
-};
-
-
 END_NCBI_SCOPE
 
 #endif /* NETSCHEDULE_BACKGROUND_HOST__HPP */

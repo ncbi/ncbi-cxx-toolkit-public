@@ -229,17 +229,25 @@ void SNS_Parameters::Read(const IRegistry &  reg)
 
     reserve_dump_space = NS_GetDataSize(reg, "server", "reserve_dump_space",
                                         default_reserve_dump_space);
-    wst_cache_size = GetIntNoErr("wst_cache_size",
-                                 default_wst_cache_size);
-    if (wst_cache_size < 0)
-        wst_cache_size = default_wst_cache_size;
 
+    max_queues = GetIntNoErr("max_queues", default_max_queues);
+    if (max_queues <= 0)
+        max_queues = default_max_queues;
+
+    if (!reg.HasEntry(sname, "path"))
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "Mandatory parameter [" + sname + "]/path is not found.");
+    path = reg.GetString(sname, "path", kEmptyStr);
+    if (path.empty())
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "Mandatory parameter [" + sname +
+                   "]/path cannot be an empty string.");
 
     max_client_data = GetIntNoErr("max_client_data", default_max_client_data);
     if (max_client_data <= 0)
         max_client_data = default_max_client_data;
 
-    admin_hosts        = reg.GetString(sname, "admin_host", kEmptyStr);
+    admin_hosts = reg.GetString(sname, "admin_host", kEmptyStr);
     try {
         admin_client_names = reg.GetEncryptedString(sname, "admin_client_name",
                                                 IRegistry::fPlaintextAllowed);

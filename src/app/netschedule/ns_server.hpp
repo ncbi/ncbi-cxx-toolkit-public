@@ -101,8 +101,6 @@ public:
     { return m_StartTime; }
     CBackgroundHost & GetBackgroundHost()
     { return m_BackgroundHost; }
-    CRequestExecutor & GetRequestExecutor()
-    { return m_RequestExecutor; }
     unsigned int GetMaxClientData(void) const
     { return m_MaxClientData; }
     string GetNodeID(void) const
@@ -164,9 +162,6 @@ public:
                             const string &  qname);
     SQueueParameters  QueueInfo(const string &  qname) const;
     string  GetQueueNames(const string &  sep) const;
-    void PrintMutexStat(CNcbiOstream& out);
-    void PrintLockStat(CNcbiOstream& out);
-    void PrintMemStat(CNcbiOstream& out);
     string PrintTransitionCounters(void);
     string PrintJobsStat(const CNSClientId &  client);
     string GetQueueClassesInfo(void) const;
@@ -210,8 +205,6 @@ public:
     { return m_AnybodyCanReconfigure; }
     unsigned int GetReserveDumpSpace(void) const
     { return m_ReserveDumpSpace; }
-    unsigned int GetWSTCacheSize(void) const
-    { return m_WSTCacheSize; }
     map<string, int> GetPauseQueues(void) const;
     vector<string> GetRefuseSubmitQueues(void) const;
     string GetDataPath(void) const;
@@ -222,7 +215,6 @@ protected:
 private:
     // API for background threads
     CNetScheduleBackgroundHost      m_BackgroundHost;
-    CNetScheduleRequestExecutor     m_RequestExecutor;
     // Host name where server runs
     string                          m_Host;
     unsigned                        m_Port;
@@ -294,7 +286,6 @@ private:
     bool                            m_AnybodyCanReconfigure;
 
     unsigned int                    m_ReserveDumpSpace;
-    unsigned int                    m_WSTCacheSize;
 
 private:
     string x_GenerateGUID(void) const;

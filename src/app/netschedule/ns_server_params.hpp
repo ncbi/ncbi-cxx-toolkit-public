@@ -159,7 +159,9 @@ struct SNS_Parameters : SServer_Parameters
     SNSRegistryParameters       scope_reg;
 
     unsigned int    reserve_dump_space;
-    unsigned int    wst_cache_size;
+
+    string          path;
+    unsigned int    max_queues;
 
     void Read(const IRegistry &  reg);
 

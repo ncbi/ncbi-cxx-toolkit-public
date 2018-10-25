@@ -29,17 +29,13 @@
  *
  */
 #include <ncbi_pch.hpp>
+#include <unistd.h>
 
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbireg.hpp>
 
 #include <connect/services/netschedule_api.hpp>
 #include <connect/ncbi_socket.hpp>
-
-#include <db.h>
-#include <db/bdb/bdb_trans.hpp>
-#include <db/bdb/bdb_cursor.hpp>
-#include <db/bdb/bdb_util.hpp>
 
 #include <util/time_line.hpp>
 
@@ -56,83 +52,16 @@
 BEGIN_NCBI_SCOPE
 
 
-#define GetUIntNoErr(name, dflt) \
-    (unsigned) bdb_conf.GetInt("netschedule", name, \
-                               CConfig::eErr_NoThrow, dflt)
-#define GetSizeNoErr(name, dflt) \
-    bdb_conf.GetDataSize("netschedule", name, \
-                         CConfig::eErr_NoThrow, dflt)
-#define GetBoolNoErr(name, dflt) \
-    bdb_conf.GetBool("netschedule", name, CConfig::eErr_NoThrow, dflt)
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-// SNSDBEnvironmentParams implementation
-
-bool SNSDBEnvironmentParams::Read(const IRegistry& reg, const string& sname)
-{
-    CConfig                         conf(reg);
-    const CConfig::TParamTree*      param_tree = conf.GetTree();
-    const TPluginManagerParamTree*  bdb_tree = param_tree->FindSubNode(sname);
-
-    if (!bdb_tree)
-        return false;
-
-    CConfig bdb_conf((CConfig::TParamTree*)bdb_tree, eNoOwnership);
-
-    db_path = bdb_conf.GetString("netschedule", "path", CConfig::eErr_Throw);
-    db_log_path = ""; // doesn't work yet
-        // bdb_conf.GetString("netschedule", "transaction_log_path",
-        // CConfig::eErr_NoThrow, "");
-
-    max_queues        = GetUIntNoErr("max_queues", 50);
-
-    cache_ram_size    = GetSizeNoErr("mem_size", 0);
-    mutex_max         = GetUIntNoErr("mutex_max", 0);
-    max_locks         = GetUIntNoErr("max_locks", 0);
-    max_lockers       = GetUIntNoErr("max_lockers", 0);
-    max_lockobjects   = GetUIntNoErr("max_lockobjects", 0);
-    log_mem_size      = GetSizeNoErr("log_mem_size", 0);
-    // max_trans is derivative, so we do not read it here
-
-    checkpoint_kb     = GetUIntNoErr("checkpoint_kb", 5000);
-    checkpoint_min    = GetUIntNoErr("checkpoint_min", 5);
-
-    sync_transactions = GetBoolNoErr("sync_transactions", false);
-    direct_db         = GetBoolNoErr("direct_db", false);
-    direct_log        = GetBoolNoErr("direct_log", false);
-    database_in_ram   = GetBoolNoErr("database_in_ram", false);
-
-    // CXX-9245
-    if (database_in_ram) {
-        if (cache_ram_size == 0) {
-            cache_ram_size = kBDBMemSizeInMemDefault;
-            ERR_POST(Warning << "[bdb]/mem_size has been adjusted to 2GB "
-                                "because [bdb]/database_in_ram is true "
-                                "and mem_size is zero.");
-        } else if (cache_ram_size < kBDBMemSizeInMemLowLimit) {
-            cache_ram_size = kBDBMemSizeInMemLowLimit;
-            ERR_POST(Warning << "[bdb]/mem_size has been adjusted to 100 MB "
-                                "because [bdb]/database_in_ram is true "
-                                "and mem_size is less than 100MB.");
-        }
-    }
-
-    return true;
-}
-
-
 
 /////////////////////////////////////////////////////////////////////////////
 // CQueueDataBase implementation
 
-CQueueDataBase::CQueueDataBase(CNetScheduleServer *            server,
-                               const SNSDBEnvironmentParams &  params,
-                               bool                            reinit)
+CQueueDataBase::CQueueDataBase(CNetScheduleServer *  server,
+                               const string &  path,
+                               unsigned int  max_queues,
+                               bool  reinit)
 : m_Host(server->GetBackgroundHost()),
-  m_Executor(server->GetRequestExecutor()),
-  m_Env(NULL),
+  m_MaxQueues(max_queues),
   m_StopPurge(false),
   m_FreeStatusMemCnt(0),
   m_LastFreeMem(time(0)),
@@ -141,7 +70,7 @@ CQueueDataBase::CQueueDataBase(CNetScheduleServer *            server,
   m_PurgeStatusIndex(0),
   m_PurgeJobScanned(0)
 {
-    m_DataPath = CDirEntry::AddTrailingPathSeparator(params.db_path);
+    m_DataPath = CDirEntry::AddTrailingPathSeparator(path);
     m_DumpPath = CDirEntry::AddTrailingPathSeparator(m_DataPath +
                                                      kDumpSubdirName);
 
@@ -157,7 +86,7 @@ CQueueDataBase::CQueueDataBase(CNetScheduleServer *            server,
     x_RemoveBDBFiles();
 
     // Creates the queues from the ini file and loads jobs from the dump
-    x_Open(params, reinit);
+    x_Open(reinit);
 
     // Restore the queue state
     x_RestorePauseState(paused_queues);
@@ -180,8 +109,7 @@ CQueueDataBase::~CQueueDataBase()
 }
 
 
-void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
-                             bool                            reinit)
+void  CQueueDataBase::x_Open(bool  reinit)
 {
     // Checks preconditions and provides the final reinit value
     // It sets alerts and throws exceptions if needed.
@@ -196,8 +124,6 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
     // The initialization must be done before the queues are created but after
     // the directory is possibly re-created
     m_Server->InitNodeID(m_DataPath);
-
-    m_Env = x_CreateBDBEnvironment(params);
 
     // Detect what queues need to be loaded. It depends on the configuration
     // file and on the dumped queues. It might be that the saved queues +
@@ -223,23 +149,16 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
 
     size_t      total_queues = final_dynamic_count +
                                config_static_queues.size();
-    size_t      queues_limit = total_queues;
-    if (total_queues > params.max_queues) {
+    if (total_queues > m_MaxQueues) {
         string  msg = "The initial number of queues on the server exceeds the "
                       "configured max number of queues. Configured: " +
-                      NStr::NumericToString(params.max_queues) + ". Real: " +
+                      NStr::NumericToString(m_MaxQueues) + ". Real: " +
                       NStr::NumericToString(total_queues) + ". The limit will "
                       "be extended to accomodate all the queues.";
         LOG_POST(Note << msg);
         m_Server->RegisterAlert(eMaxQueues, msg);
-    } else {
-        // The configuration file limit has not been exceeded
-        queues_limit = params.max_queues;
+        m_MaxQueues = total_queues;
     }
-
-    // Allocate SQueueDbBlock's here, open/create corresponding databases
-    m_QueueDbBlockArray.Init(*m_Env, m_DataPath, queues_limit,
-                             params.database_in_ram);
 
     try {
         // Here: we can start restoring what was saved. The first step is
@@ -280,12 +199,10 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
             // Here: the dumped queue has not been changed from a dynamic one
             //       to a static. So, it needs to be added.
             string      qclass = k->second;
-            int         new_position = m_QueueDbBlockArray.Allocate();
 
             SQueueParameters    params = m_QueueClasses[qclass];
 
             params.kind = CQueue::eKindDynamic;
-            params.position = new_position;
             params.delete_request = false;
             params.qclass = qclass;
 
@@ -293,8 +210,7 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
             // dumped so the description is lost.
             // params.description = ...
 
-            x_CreateAndMountQueue(qname, params,
-                                  m_QueueDbBlockArray.Get(new_position));
+            x_CreateAndMountQueue(qname, params);
         }
 
         // All the structures are ready to upload the jobs from the dump
@@ -831,13 +747,9 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
             queue->SetParameters(new_queue->second);
             queue->SetRefuseSubmits(false);
 
-            // The queue position must be preserved.
             // The queue kind could not be changed here.
             // The delete request is just checked.
-            int     pos = k->second.first.position;
-
             k->second.first = new_queue->second;
-            k->second.first.position = pos;
             added_queues.push_back(make_pair(queue_name,
                                              k->second.first.qclass));
             continue;
@@ -855,13 +767,9 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
             CRef<CQueue>    queue = k->second.second;
             queue->SetParameters(new_queue->second);
 
-            // The queue position must be preserved.
             // The queue kind could not be changed here.
             // The queue delete request could not be changed here.
-            int     pos = k->second.first.position;
-
             k->second.first = new_queue->second;
-            k->second.first.position = pos;
 
             section_changes.SetByKey(queue_name, queue_diff);
             has_changes = true;
@@ -899,7 +807,6 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
             // There is a difference in the queue class - update the
             // parameters.
             string      old_class = k->second.first.qclass;
-            int         old_pos = k->second.first.position;
             string      old_description = k->second.first.description;
 
             CRef<CQueue>    queue = k->second.second;
@@ -907,7 +814,6 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
 
             k->second.first = queue_class->second;
             k->second.first.qclass = old_class;
-            k->second.first.position = old_pos;
             k->second.first.description = old_description;
             k->second.first.kind = CQueue::eKindDynamic;
 
@@ -926,16 +832,7 @@ CQueueDataBase::x_ConfigureQueues(const TQueueParams &  queues_from_ini,
         string      new_queue_name = k->first;
 
         if (m_Queues.find(new_queue_name) == m_Queues.end()) {
-            // No need to check the allocation success here. It was checked
-            // before that the server has enough resources for the new
-            // configuration.
-            int     new_position = m_QueueDbBlockArray.Allocate();
-
-            x_CreateAndMountQueue(new_queue_name, k->second,
-                                  m_QueueDbBlockArray.Get(new_position));
-
-            m_Queues[new_queue_name].first.position = new_position;
-
+            x_CreateAndMountQueue(new_queue_name, k->second);
             added_queues.push_back(make_pair(new_queue_name, k->second.qclass));
         }
     }
@@ -974,7 +871,7 @@ time_t  CQueueDataBase::Configure(const IRegistry &  reg,
     // Check that the there are enough slots for the new queues if so
     // configured
     unsigned int        to_add_count = x_CountQueuesToAdd(queues_from_ini);
-    unsigned int        available_count = m_QueueDbBlockArray.CountAvailable();
+    unsigned int        available_count = m_MaxQueues - m_Queues.size();
 
     if (to_add_count > available_count)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
@@ -1062,13 +959,11 @@ CRef<CQueue> CQueueDataBase::OpenQueue(const string &  name)
 
 void
 CQueueDataBase::x_CreateAndMountQueue(const string &            qname,
-                                      const SQueueParameters &  params,
-                                      SQueueDbBlock *           queue_db_block)
+                                      const SQueueParameters &  params)
 {
-    unique_ptr<CQueue>    q(new CQueue(m_Executor, qname,
-                                       params.kind, m_Server, *this));
+    unique_ptr<CQueue>    q(new CQueue(qname, params.kind, m_Server, *this));
 
-    q->Attach(queue_db_block);
+    q->Attach();
     q->SetParameters(params);
 
     m_Queues[qname] = make_pair(params, q.release());
@@ -1114,7 +1009,7 @@ void CQueueDataBase::CreateDynamicQueue(const CNSClientId &  client,
                    "' for queue '" + qname + "' is marked for deletion.");
 
     // Slot availability
-    if (m_QueueDbBlockArray.CountAvailable() <= 0)
+    if ((int)m_MaxQueues - (int)m_Queues.size() <= 0)
         NCBI_THROW(CNetScheduleException, eUnknownQueue,
                    "Cannot allocate queue '" + qname +
                    "'. max_queues limit reached.");
@@ -1159,17 +1054,14 @@ void CQueueDataBase::CreateDynamicQueue(const CNSClientId &  client,
 
 
     // All the preconditions are met. Create the queue
-    int     new_position = m_QueueDbBlockArray.Allocate();
-
     SQueueParameters    params = queue_class->second;
 
     params.kind = CQueue::eKindDynamic;
-    params.position = new_position;
     params.delete_request = false;
     params.qclass = qclass;
     params.description = description;
 
-    x_CreateAndMountQueue(qname, params, m_QueueDbBlockArray.Get(new_position));
+    x_CreateAndMountQueue(qname, params);
 }
 
 
@@ -1255,10 +1147,6 @@ string CQueueDataBase::GetQueueNames(const string &  sep) const
 
 void CQueueDataBase::Close(void)
 {
-    // Check that we're still open
-    if (!m_Env)
-        return;
-
     StopNotifThread();
     StopPurgeThread();
     StopServiceThread();
@@ -1290,31 +1178,12 @@ void CQueueDataBase::Close(void)
         // Dump all the queues/queue classes/queue parameters to flat files
         x_Dump();
 
-        // A Dump is created, so we may avoid calling
-        // - m_Env->ForceTransactionCheckpoint();
-        // - m_Env->CleanLog();
-        // which may take very long time to complete
-
         m_QueueClasses.clear();
 
         // CQueue objects destructors are called from here because the last
         // reference to the object has gone
         m_Queues.clear();
-
-        // The call below may also cause a very long shutdown. At this point
-        // we are not interested in proper BDB file closing because the jobs
-        // have already been dumped. Thus we can ommit calling the DBD files
-        // close and just remove them a few statements later.
-        // The only caveat is that valgrind will complain on memory leaks. This
-        // is however minor in comparison to the shutdown time consumption.
-        // With the close() commented out it only depends on the current number
-        // of jobs but not on the number of job since start.
-        // Close pre-allocated databases
-        // m_QueueDbBlockArray.Close();
     }
-
-    delete m_Env;
-    m_Env = 0;
 
     // BDB files are not needed anymore. They could be safely deleted.
     x_RemoveBDBFiles();
@@ -1323,11 +1192,7 @@ void CQueueDataBase::Close(void)
 
 
 void CQueueDataBase::TransactionCheckPoint(bool clean_log)
-{
-    m_Env->TransactionCheckpoint();
-    if (clean_log)
-        m_Env->CleanLog();
-}
+{}
 
 
 string CQueueDataBase::PrintTransitionCounters(void)
@@ -1594,7 +1459,7 @@ void  CQueueDataBase::x_DeleteQueuesAndClasses(void)
 
         // Deallocation of the DB block will be done later when the queue
         // is actually deleted
-        queue->second.second->MarkForTruncating();
+        // queue->second.second->MarkForTruncating();
         m_Queues.erase(queue);
     }
 
@@ -2097,19 +1962,6 @@ void CQueueDataBase::PurgeClientRegistry(void)
         if (queue.IsNull())
             break;
         queue->PurgeClientRegistry(current_time);
-        if (x_CheckStopPurge())
-            break;
-    }
-}
-
-
-void CQueueDataBase::PurgeJobInfoCache(void)
-{
-    for (unsigned int  index = 0; ; ++index) {
-        CRef<CQueue>  queue = x_GetQueueAt(index);
-        if (queue.IsNull())
-            break;
-        queue->PurgeJobInfoCache();
         if (x_CheckStopPurge())
             break;
     }
@@ -2666,83 +2518,6 @@ bool CQueueDataBase::x_CheckOpenPreconditions(bool  reinit)
     }
 
     return false;
-}
-
-
-CBDB_Env *
-CQueueDataBase::x_CreateBDBEnvironment(const SNSDBEnvironmentParams &  params)
-{
-    string      trailed_log_path =
-                        CDirEntry::AddTrailingPathSeparator(params.db_log_path);
-    string      err_file = m_DataPath + "errjsqueue.log";
-    CBDB_Env *  env = new CBDB_Env();
-
-    if (!trailed_log_path.empty())
-        env->SetLogDir(trailed_log_path);
-
-    env->OpenErrFile(err_file.c_str());
-
-    env->SetLogRegionMax(512 * 1024);
-    if (params.log_mem_size) {
-        env->SetLogInMemory(true);
-        env->SetLogBSize(params.log_mem_size);
-    } else {
-        env->SetLogFileMax(200 * 1024 * 1024);
-        env->SetLogAutoRemove(true);
-    }
-
-    CBDB_Env::TEnvOpenFlags opt = CBDB_Env::eThreaded;
-    if (params.database_in_ram)
-        opt |= CBDB_Env::ePrivate;
-
-    if (params.cache_ram_size)
-        env->SetCacheSize(params.cache_ram_size);
-    if (params.mutex_max)
-        env->MutexSetMax(params.mutex_max);
-    if (params.max_locks)
-        env->SetMaxLocks(params.max_locks);
-    if (params.max_lockers)
-        env->SetMaxLockers(params.max_lockers);
-    if (params.max_lockobjects)
-        env->SetMaxLockObjects(params.max_lockobjects);
-    if (params.max_trans)
-        env->SetTransactionMax(params.max_trans);
-    env->SetTransactionSync(params.sync_transactions ?
-                                  CBDB_Transaction::eTransSync :
-                                  CBDB_Transaction::eTransASync);
-
-    if (params.database_in_ram)
-        env->OpenWithTrans("", opt);
-    else
-        env->OpenWithTrans(m_DataPath, opt);
-
-    GetDiagContext().Extra()
-        .Print("_type", "startup")
-        .Print("info", "opened BDB environment")
-        .Print("database_in_ram", params.database_in_ram ? "true" : "false")
-        .Print("max_locks", env->GetMaxLocks())
-        .Print("transactions",
-               env->GetTransactionSync() == CBDB_Transaction::eTransSync ?
-                    "syncronous" : "asyncronous")
-        .Print("max_mutexes", env->MutexGetMax());
-
-    env->SetDirectDB(params.direct_db);
-    env->SetDirectLog(params.direct_log);
-
-    env->SetCheckPointKB(params.checkpoint_kb);
-    env->SetCheckPointMin(params.checkpoint_min);
-
-    env->SetLockTimeout(10 * 1000000); // 10 sec
-
-    env->SetTasSpins(5);
-
-    if (env->IsTransactional()) {
-        env->SetTransactionTimeout(10 * 1000000); // 10 sec
-        env->ForceTransactionCheckpoint();
-        env->CleanLog();
-    }
-
-    return env;
 }
 
 

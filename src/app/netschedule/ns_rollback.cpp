@@ -46,7 +46,7 @@ void CNSSubmitRollback::Rollback(CQueue *  queue)
 
     ERR_POST(Warning << "Cancelling the submitted job due to "
                         "a network error while reporting the job key. "
-                        "Time to write to berkley DB: "
+                        "Time to write to memory: "
                      << NS_FormatPreciseTimeAsSec(m_WrittenToDB - m_OpBegin)
                      << " sec. Time on socket write: "
                      << NS_FormatPreciseTimeAsSec(report_time - m_WrittenToDB)

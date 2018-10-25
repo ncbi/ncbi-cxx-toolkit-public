@@ -264,7 +264,6 @@ private:
                                     const map<string, string> & values) const;
     string x_GetLogSection(void) const;
     string x_GetDiagSection(void) const;
-    string x_GetBdbSection(void) const;
 
     vector<TJobStatus>  x_RemoveDuplicateStatuses(
                                             const vector<TJobStatus> &  src,

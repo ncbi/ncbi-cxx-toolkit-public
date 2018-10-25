@@ -33,10 +33,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/request_ctx.hpp>
 
-
-#include <db.h>
-#include <db/bdb/bdb_expt.hpp>
-
 #include "queue_database.hpp"
 #include "queue_clean_thread.hpp"
 #include "ns_handler.hpp"
@@ -113,32 +109,6 @@ void CJobQueueCleanerThread::x_DoJob(void)
         m_QueueDB.StaleWNodes();
         m_QueueDB.PurgeBlacklistedJobs();
         m_QueueDB.PurgeClientRegistry();
-        m_QueueDB.PurgeJobInfoCache();
-    }
-    catch (CBDB_ErrnoException &  ex) {
-        if (ex.IsNoMem()) {
-            ERR_POST("BDB reported resource shortage (no mem) in "
-                     "cleaning thread. Ignored.");
-        } else if (ex.IsDeadLock()) {
-            ERR_POST("BDB reported deadlock in cleaning thread. Ignored.");
-        } else {
-            RequestStop();
-            if (ex.BDB_GetErrno() == DB_RUNRECOVERY) {
-                string      msg = "Fatal BerkeleyDB error: DB_RUNRECOVERY. " +
-                                  string(ex.what());
-
-                ERR_POST(msg);
-                // eFatal will request the server to stop
-                m_Host.ReportError(CBackgroundHost::eFatal, msg);
-            } else {
-                ERR_POST(Error << "BDB Error while cleaning job queue: "
-                               << ex.what()
-                               << " Cleaning thread has been stopped.");
-            }
-        }
-        if (is_log)
-            ctx->SetRequestStatus(
-                            CNetScheduleHandler::eStatus_ServerError);
     }
     catch(exception &  ex) {
         RequestStop();
@@ -228,32 +198,6 @@ void CJobQueueExecutionWatcherThread::x_DoJob(void)
 
     try {
         m_QueueDB.CheckExecutionTimeout(is_log);
-    }
-    catch (CBDB_ErrnoException& ex)
-    {
-        if (ex.IsNoMem()) {
-            ERR_POST("BDB reported resource shortage (no mem) in "
-                     "execution watch thread. Ignored.");
-        } else if (ex.IsDeadLock()) {
-            ERR_POST("BDB reported deadlock in "
-                     "execution watch thread. Ignored.");
-        } else {
-            RequestStop();
-            if (ex.BDB_GetErrno() == DB_RUNRECOVERY) {
-                string      msg = "Fatal BerkeleyDB error: DB_RUNRECOVERY. " +
-                                  string(ex.what());
-
-                ERR_POST(msg);
-                // eFatal will request the server to stop
-                m_Host.ReportError(CBackgroundHost::eFatal, msg);
-            } else {
-                ERR_POST("BDB Error in execution watcher thread: " <<
-                         ex.what() << " Watcher thread has been stopped.");
-            }
-        }
-        if (is_log)
-            ctx->SetRequestStatus(
-                            CNetScheduleHandler::eStatus_ServerError);
     }
     catch (exception &  ex) {
         RequestStop();

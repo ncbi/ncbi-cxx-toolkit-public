@@ -41,7 +41,6 @@
 #include <corelib/ncbistd.hpp>
 
 #include "ns_group.hpp"
-#include "ns_db.hpp"
 #include "ns_queue.hpp"
 #include "ns_db_dump.hpp"
 

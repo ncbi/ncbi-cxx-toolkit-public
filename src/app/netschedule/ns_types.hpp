@@ -100,6 +100,19 @@ const Int4      kDumpMagic(0xE0E0E0E0);
 // An empty bit vector is returned in quite a few places
 const TNSBitVector  kEmptyBitVector;
 
+// A few limits
+const unsigned kMaxQueueNameSize           = 64;
+const unsigned kMaxHitIdSize               = 64;
+const unsigned kMaxClientIpSize            = 48;  // 64 -> 48 See CXX-3449
+const unsigned kMaxSessionIdSize           = 48;  // 64 -> 48 See CXX-3449
+const unsigned kLinkedSectionValueNameSize = 8192;
+const unsigned kLinkedSectionValueSize     = 8192;
+const unsigned kLinkedSectionsList         = 8192;
+const unsigned kMaxQueueLimitsSize         = 16 * 1024;
+const unsigned kMaxDescriptionSize         = 16 * 1024;
+const unsigned kMaxWorkerNodeIdSize        = 64;
+const unsigned kNetScheduleMaxOverflowSize = 1024 * 1024;
+
 
 END_NCBI_SCOPE
 
