@@ -826,6 +826,16 @@ void CCdregionValidator::x_ValidateQuals()
 }
 
 
+bool CCdregionValidator::x_ReportOrigProteinId()
+{
+    if (!m_GeneIsPseudo && !s_IsPseudo(m_Feat)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 const string s_PlastidTxt[] = {
   "",
   "",

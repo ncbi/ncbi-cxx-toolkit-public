@@ -159,6 +159,7 @@ protected:
     virtual void x_ValidateExceptText(const string& text);
 
     void x_ValidateGbquals();
+    virtual bool x_ReportOrigProteinId();
     void x_ValidateRptUnitVal(const string& val, const string& key);
     void x_ValidateRptUnitSeqVal(const string& val, const string& key);
     void x_ValidateRptUnitRangeVal(const string& val);
@@ -203,6 +204,7 @@ protected:
     virtual void x_ValidateFeatComment() override;
     virtual void x_ValidateExceptText(const string& text) override;
     void x_ValidateQuals();
+    virtual bool x_ReportOrigProteinId() override;
     static bool IsPlastid(int genome);
     void x_ValidateGeneticCode();
     void x_ValidateBadMRNAOverlap();

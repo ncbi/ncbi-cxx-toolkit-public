@@ -6575,8 +6575,10 @@ bool s_GeneralTagsMatch(const string& protein_id, const CDbtag& dbtag)
 void CValidError_bioseq::x_TranscriptIDsMatch(const string& protein_id, const CSeq_feat& cds)
 {
     if (!cds.IsSetProduct() || !cds.GetProduct().GetId()) {
-        PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAMissingProteinIDs,
-            "CDS-mRNA pair has one missing protein_id (" + protein_id + ")", cds);
+        if (!sequence::IsPseudo(cds, *m_Scope)) {
+            PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSmRNAMissingProteinIDs,
+                "CDS-mRNA pair has one missing protein_id (" + protein_id + ")", cds);
+        }
         return;
     }
     const CSeq_id& product_id = *(cds.GetProduct().GetId());

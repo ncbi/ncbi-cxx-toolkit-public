@@ -1274,6 +1274,18 @@ void CSingleFeatValidator::x_ValidateExceptText(const string& text)
 }
 
 
+const string kOrigProteinId = "orig_protein_id";
+
+bool CSingleFeatValidator::x_ReportOrigProteinId()
+{
+    if (!m_Feat.GetData().IsRna()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 void CSingleFeatValidator::x_ValidateGbquals()
 {
     if (!m_Feat.IsSetQual()) {
@@ -1321,6 +1333,10 @@ void CSingleFeatValidator::x_ValidateGbquals()
                     PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownImpFeatQual,
                         "Unknown qualifier " + qual_str);
                 }
+            } else if (NStr::Equal(qual_str, kOrigProteinId)) {
+                if (x_ReportOrigProteinId()) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnknownFeatureQual, "Unknown qualifier " + kOrigProteinId);
+                }
             } else {
                 CSeqFeatData::E_Choice chs = m_Feat.GetData().Which();
                 if (chs == CSeqFeatData::e_Gene) {
@@ -1334,8 +1350,7 @@ void CSingleFeatValidator::x_ValidateGbquals()
                         continue;
                     }
                 } else if (chs == CSeqFeatData::e_Rna) {
-                    if (NStr::Equal(qual_str, "orig_protein_id")
-                        || NStr::Equal(qual_str, "orig_transcript_id")) {
+                    if (NStr::Equal(qual_str, "orig_transcript_id")) {
                         continue;
                     }
                 }
