@@ -3342,7 +3342,7 @@ KNHM	s	The Educational Science Museum [=Kuwait Natural History Museum?]
 KNK	s	Northern Kentucky University, Department of Biological Sciences			
 KNL	s	Kinneil Museum			
 KNOX	s	Knox College, Department of Biology			
-KNP	s	South African National Parks, Scientific Services			
+KNP	s	Skukuza  Biological Reference, South African National Parks			
 KNU	s	Kyungpook National University, Biology Department			
 KNUC	s	Kangweon National University			
 KNUH	s	Kyung-Nam University, Biology Department			

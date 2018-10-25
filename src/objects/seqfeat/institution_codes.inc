@@ -3375,7 +3375,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KNK\ts\tNorthern Kentucky University, Department of Biological Sciences\t\t\t",
 "KNL\ts\tKinneil Museum\t\t\t",
 "KNOX\ts\tKnox College, Department of Biology\t\t\t",
-"KNP\ts\tSouth African National Parks, Scientific Services\t\t\t",
+"KNP\ts\tSkukuza  Biological Reference, South African National Parks\t\t\t",
 "KNU\ts\tKyungpook National University, Biology Department\t\t\t",
 "KNUC\ts\tKangweon National University\t\t\t",
 "KNUH\ts\tKyung-Nam University, Biology Department\t\t\t",
