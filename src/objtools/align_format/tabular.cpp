@@ -1789,7 +1789,7 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
     alnvec.GetWholeAlnSeqString(1, whole_v_germline_alignment);
     airr_data["germline_alignment"] += NStr::TruncateSpaces(whole_v_germline_alignment);
 
-    airr_data["v_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(1));
+    airr_data["v_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(1) + 1);
     airr_data["v_alignment_end"] = NStr::IntToString(alnvec.GetSeqAlnStop(1) + 1);
 
     if (align_d) {
@@ -1805,7 +1805,7 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
             string seq = NStr::TruncateSpaces(whole_d_germline_alignment);
             airr_data["germline_alignment"] += seq.substr(start_pos);            
         }
-        airr_data["d_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(2));
+        airr_data["d_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(2) + 1);
         airr_data["d_alignment_end"] = NStr::IntToString(alnvec.GetSeqAlnStop(2) + 1);
 
         if (align_j) {
@@ -1821,7 +1821,7 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
                 string seq = NStr::TruncateSpaces(whole_j_germline_alignment);
                 airr_data["germline_alignment"] += seq.substr(start_pos);
             }
-            airr_data["j_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(3));
+            airr_data["j_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(3) + 1);
             airr_data["j_alignment_end"] = NStr::IntToString(alnvec.GetSeqAlnStop(3) + 1);
             
         }
@@ -1839,7 +1839,7 @@ static void s_SetAirrAlignmentInfo(const CRef<CSeq_align>& align_v,
                 string seq = NStr::TruncateSpaces(whole_j_germline_alignment);
                 airr_data["germline_alignment"] += seq .substr(start_pos);
             }
-            airr_data["j_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(2));
+            airr_data["j_alignment_start"] = NStr::IntToString(alnvec.GetSeqAlnStart(2) + 1);
             airr_data["j_alignment_end"] = NStr::IntToString(alnvec.GetSeqAlnStop(2) + 1);
             
         }
@@ -2007,10 +2007,10 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         if (m_TopAlign_V) {
             s_GetCigarString(*m_TopAlign_V, cigar, query_handle.GetBioseqLength(), scope);
             m_AirrData["v_cigar"] = cigar;
-            m_AirrData["v_sequence_start"] = NStr::IntToString(m_TopAlign_V->GetSeqStart(0));
+            m_AirrData["v_sequence_start"] = NStr::IntToString(m_TopAlign_V->GetSeqStart(0) + 1);
             m_AirrData["v_sequence_end"] = NStr::IntToString(m_TopAlign_V->GetSeqStop(0) + 1);
             
-            m_AirrData["v_germline_start"] = NStr::IntToString(m_TopAlign_V->GetSeqStart(1));
+            m_AirrData["v_germline_start"] = NStr::IntToString(m_TopAlign_V->GetSeqStart(1) + 1);
             m_AirrData["v_germline_end"] = NStr::IntToString(m_TopAlign_V->GetSeqStop(1) + 1);
             if (m_TopAlign_D) {
                 int np_len = 0;
@@ -2025,14 +2025,14 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
 
         if (m_TopAlign_D) {
             s_GetCigarString(*m_TopAlign_D, cigar, query_handle.GetBioseqLength(), scope);
-            m_AirrData["d_sequence_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(0));
+            m_AirrData["d_sequence_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(0) + 1);
             m_AirrData["d_sequence_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(0) + 1);
             
             if (m_TopAlign_D->GetSeqStrand(1) == eNa_strand_plus) {
-                m_AirrData["d_germline_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(1));
+                m_AirrData["d_germline_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(1) + 1);
                 m_AirrData["d_germline_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(1) + 1);
             } else {
-                m_AirrData["d_germline_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(1));
+                m_AirrData["d_germline_start"] = NStr::IntToString(m_TopAlign_D->GetSeqStop(1) + 1);
                 m_AirrData["d_germline_end"] = NStr::IntToString(m_TopAlign_D->GetSeqStart(1) + 1);
             }
 
@@ -2043,10 +2043,10 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         if (m_TopAlign_J) {
             s_GetCigarString(*m_TopAlign_J, cigar, query_handle.GetBioseqLength(), scope);
             m_AirrData["j_cigar"] = cigar;
-            m_AirrData["j_sequence_start"] = NStr::IntToString(m_TopAlign_J->GetSeqStart(0));
+            m_AirrData["j_sequence_start"] = NStr::IntToString(m_TopAlign_J->GetSeqStart(0) + 1);
             m_AirrData["j_sequence_end"] = NStr::IntToString(m_TopAlign_J->GetSeqStop(0) + 1);
             
-            m_AirrData["j_germline_start"] = NStr::IntToString(m_TopAlign_J->GetSeqStart(1));
+            m_AirrData["j_germline_start"] = NStr::IntToString(m_TopAlign_J->GetSeqStart(1) + 1);
             m_AirrData["j_germline_end"] = NStr::IntToString(m_TopAlign_J->GetSeqStop(1) + 1);
             if (m_TopAlign_D) {
                 int np_len = 0;
@@ -2070,7 +2070,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
 
         for (unsigned int i=0; i<m_IgDomains.size(); ++i) {
             if (m_IgDomains[i]->name.find("FR1") !=  string::npos) {
-                m_AirrData["fwr1_start"] =  NStr::IntToString(m_IgDomains[i]->start);
+                m_AirrData["fwr1_start"] =  NStr::IntToString(m_IgDomains[i]->start + 1);
                 m_AirrData["fwr1_end"] =  NStr::IntToString(m_IgDomains[i]->end);
                 if (m_IgDomains[i]->length > 0) {
                     m_AirrData["fwr1_identity"] = 
@@ -2078,7 +2078,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
                 }
             } 
             if (m_IgDomains[i]->name.find("CDR1") !=  string::npos) {
-                m_AirrData["cdr1_start"] =  NStr::IntToString(m_IgDomains[i]->start);
+                m_AirrData["cdr1_start"] =  NStr::IntToString(m_IgDomains[i]->start + 1);
                 m_AirrData["cdr1_end"] =  NStr::IntToString(m_IgDomains[i]->end);
                 if (m_IgDomains[i]->length > 0) {
                     m_AirrData["cdr1_identity"] = 
@@ -2086,7 +2086,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
                 }
             } 
             if (m_IgDomains[i]->name.find("FR2") !=  string::npos) {
-                m_AirrData["fwr2_start"] =  NStr::IntToString(m_IgDomains[i]->start);
+                m_AirrData["fwr2_start"] =  NStr::IntToString(m_IgDomains[i]->start + 1);
                 m_AirrData["fwr2_end"] =  NStr::IntToString(m_IgDomains[i]->end);
                 if (m_IgDomains[i]->length > 0) {
                     m_AirrData["fwr2_identity"] = 
@@ -2094,7 +2094,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
                 }
             } 
             if (m_IgDomains[i]->name.find("CDR2") !=  string::npos) {
-                m_AirrData["cdr2_start"] =  NStr::IntToString(m_IgDomains[i]->start);
+                m_AirrData["cdr2_start"] =  NStr::IntToString(m_IgDomains[i]->start + 1);
                 m_AirrData["cdr2_end"] =  NStr::IntToString(m_IgDomains[i]->end);
                 if (m_IgDomains[i]->length > 0) {
                     m_AirrData["cdr2_identity"] = 
@@ -2102,7 +2102,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
                 }
             } 
             if (m_IgDomains[i]->name.find("FR3") !=  string::npos && annot->m_DomainInfo[9] >=0) {
-                m_AirrData["fwr3_start"] =  NStr::IntToString(m_IgDomains[i]->start);
+                m_AirrData["fwr3_start"] =  NStr::IntToString(m_IgDomains[i]->start + 1);
                 
                 m_AirrData["fwr3_end"] =  NStr::IntToString(min(m_QueryAlignSeqEnd, annot->m_DomainInfo[9]) + 1);
                 if (m_IgDomains[i]->length > 0) {
@@ -2113,7 +2113,7 @@ void CIgBlastTabularInfo::SetAirrFormatData(CScope& scope,
         }
 
         if (m_Cdr3Start > 0){
-            m_AirrData["cdr3_start"] = NStr::IntToString(m_Cdr3Start); 
+            m_AirrData["cdr3_start"] = NStr::IntToString(m_Cdr3Start + 1); 
             if (m_Cdr3End > 0) {
                 m_AirrData["cdr3_end"] = NStr::IntToString(m_Cdr3End + 1); 
             }     
