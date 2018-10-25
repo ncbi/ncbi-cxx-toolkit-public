@@ -23620,6 +23620,12 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4560)
     TestNewAccessionAsInference("EAA0000015");
 }
 
+BOOST_AUTO_TEST_CASE(Test_VR_852)
+{
+    BOOST_CHECK_EQUAL("unclassified sequences", objects::validator::FixSpecificHost("unclassified sequences"));
+}
+
+
 #if 0
 BOOST_AUTO_TEST_CASE(Test_TM_897)
 {

@@ -164,7 +164,7 @@ void CSpecificHostRequest::AddReply(const CT3Reply& reply)
         if (NStr::IsBlank(new_error)) {
             m_Response = eNormal;
             m_SuggestedFix = m_Host;
-            m_HostLineage = reply.GetData().GetOrg().GetLineage();
+            m_HostLineage = reply.GetData().GetOrg().IsSetLineage() ? reply.GetData().GetOrg().GetLineage() : kEmptyStr;
             m_Error = kEmptyStr;
         }
     } else if (m_Response == eUnrecognized) {
@@ -172,7 +172,7 @@ void CSpecificHostRequest::AddReply(const CT3Reply& reply)
         if (NStr::IsBlank(m_Error)) {
             m_Response = eNormal;
             m_SuggestedFix = m_Host;
-            m_HostLineage = reply.GetData().GetOrg().GetLineage();
+            m_HostLineage = reply.GetData().GetOrg().IsSetLineage() ? reply.GetData().GetOrg().GetLineage() : kEmptyStr;
         } else if (NStr::Find(m_Error, "ambiguous") != NPOS) {
             m_Response = eAmbiguous;
         } else if (NStr::StartsWith(m_Error, "Invalid value for specific host") && !IsLikelyTaxname(m_Host)) {
@@ -181,17 +181,17 @@ void CSpecificHostRequest::AddReply(const CT3Reply& reply)
         } else if (NStr::StartsWith(m_Error, "Specific host value is alternate name")) {
             m_Response = eAlternateName;
             m_SuggestedFix = reply.GetData().GetOrg().GetTaxname();
-            m_HostLineage = reply.GetData().GetOrg().GetLineage();
+            m_HostLineage = reply.GetData().GetOrg().IsSetLineage() ? reply.GetData().GetOrg().GetLineage() : kEmptyStr;
         } else {
             m_Response = eUnrecognized;
             if (NStr::IsBlank(m_SuggestedFix) && reply.IsData() && reply.GetData().IsSetOrg()) {
                 if (HasMisSpellFlag(reply.GetData())) {
                     m_SuggestedFix = reply.GetData().GetOrg().GetTaxname();
-                    m_HostLineage = reply.GetData().GetOrg().GetLineage();
+                    m_HostLineage = reply.GetData().GetOrg().IsSetLineage() ? reply.GetData().GetOrg().GetLineage() : kEmptyStr;
                 } else if (!FindMatchInOrgRef(m_Host, reply.GetData().GetOrg())
                         && !IsCommonName(reply.GetData())) {
                     m_SuggestedFix = reply.GetData().GetOrg().GetTaxname();
-                    m_HostLineage = reply.GetData().GetOrg().GetLineage();
+                    m_HostLineage = reply.GetData().GetOrg().IsSetLineage() ? reply.GetData().GetOrg().GetLineage() : kEmptyStr;
                 }
             }
         }
