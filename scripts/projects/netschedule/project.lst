@@ -21,8 +21,6 @@ connect/services/impl$
 connect/test$
 connect/mbedtls
 check
-db$
-db/bdb$
 app$
 app/netschedule$
 app/netschedule/test$
