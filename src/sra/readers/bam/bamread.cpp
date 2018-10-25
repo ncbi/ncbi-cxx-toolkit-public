@@ -1533,6 +1533,10 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
         AlignAccessAlignmentEnumerator* ptr = 0;
         if ( rc_t rc = AlignAccessDBWindowedAlignments(bam_db.m_AADB->m_DB, &ptr,
                                                        ref_id.c_str(), ref_pos, window) ) {
+            if ( ptr ) {
+                AlignAccessAlignmentEnumeratorRelease(ptr);
+                ptr = 0;
+            }
             if ( !AlignAccessAlignmentEnumeratorIsEOF(rc) ) {
                 // error
                 NCBI_THROW2(CBamException, eNoData, "Cannot find first alignment", rc);
