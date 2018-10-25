@@ -56,6 +56,7 @@ my $opt_quiet = 0;
 my $opt_force_download = 0;     
 my $opt_help = 0;
 my $opt_passive = 1;
+my $opt_blastdb_ver = 4;
 my $opt_timeout = 120;
 my $opt_showall = 0;
 my $opt_show_version = 0;
@@ -67,6 +68,7 @@ my $result = GetOptions("verbose+"      =>  \$opt_verbose,
                         "timeout=i"     =>  \$opt_timeout,
                         "showall"       =>  \$opt_showall,
                         "version"       =>  \$opt_show_version,
+                        "blastdb_version:i"=>  \$opt_blastdb_ver,
                         "decompress"    =>  \$opt_decompress,
                         "help"          =>  \$opt_help);
 $opt_verbose = 0 if $opt_quiet;
@@ -75,6 +77,8 @@ pod2usage({-exitval => 0, -verbose => 2}) if $opt_help;
 pod2usage({-exitval => 0, -verbose => 2}) unless (scalar @ARGV or 
                                                   $opt_showall or
                                                   $opt_show_version);
+pod2usage({-exitval => 1, -verbose => 0, -msg => "Invalid BLAST database version"}) 
+    unless ($opt_blastdb_ver == 4 or $opt_blastdb_ver == 5);
 if (length($opt_passive) and $opt_passive =~ /n|no/i) {
     $opt_passive = 0;
 } else {
@@ -117,7 +121,9 @@ sub connect_to_ftp
         or die "Failed to connect to " . NCBI_FTP . ": $!\n";
     $ftp->login(USER, PASSWORD) 
         or die "Failed to login to " . NCBI_FTP . ": $!\n";
-    $ftp->cwd(BLAST_DB_DIR);
+    my $ftp_path = BLAST_DB_DIR;
+    $ftp_path .= "/v5" if ($opt_blastdb_ver == 5);
+    $ftp->cwd($ftp_path);
     $ftp->binary();
     print "Connected to NCBI\n" if $opt_verbose;
     return $ftp;
@@ -359,6 +365,11 @@ your system's native decompression tool(s).
 Show all available pre-formatted BLAST databases (default: false). The output
 of this option lists the database names which should be used when
 requesting downloads or updates using this script.
+
+=item B<--blastdb_version>
+
+Specify which BLAST database version to download (default: 4).
+Supported values: 4, 5
 
 =item B<--passive>
 
