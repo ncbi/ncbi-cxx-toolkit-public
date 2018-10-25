@@ -120,9 +120,14 @@ CGtfLineReader::xInitializeRecord(
     CFeatImportData& record_)
 //  ============================================================================
 {
+    CFeatImportError errorInvalidScore(
+        CFeatImportError::WARNING, 
+        "Invalid score value - assuming \".\"",
+        LineCount());
+
     CFeatImportError errorInvalidPhase(
         CFeatImportError::WARNING, 
-        "Bad phase value - assuming \".\"", 
+        "Invalid phase value - assuming \".\"", 
         LineCount());
 
     assert(dynamic_cast<CGtfImportData*>(&record_));
@@ -141,7 +146,10 @@ CGtfLineReader::xInitializeRecord(
 
     bool scoreIsValid;
     double score;
-    xInitializeScore(columns, scoreIsValid, score);
+    if (!GffUtil::InitializeScore(columns, scoreIsValid, score)) {
+        scoreIsValid = false;
+        mErrorReporter.ReportError(errorInvalidScore);
+    }
 
     string phase;
     if (!GffUtil::InitializeFrame(columns, phase)) {
@@ -205,56 +213,6 @@ CGtfLineReader::xInitializeAttributes(
         }
         attributes.push_back(pair<string, string>(key, value));
     }
-}
-
-//  ============================================================================
-void
-CGtfLineReader::xInitializeFrame(
-    const vector<string>& columns,
-    bool& frameIsValid,
-    int& frame)
-//  ============================================================================
-{
-    CFeatImportError errorInvalidFrameValue(
-        CFeatImportError::ERROR, "Invalid frame value", LineCount());
-
-    vector<string> validSettings = {".", "0", "1", "2"};
-    if (find(validSettings.begin(), validSettings.end(), columns[7]) ==
-        validSettings.end()) {
-        throw errorInvalidFrameValue;
-    }
-    if (columns[7] == ".") {
-        frameIsValid = false;
-        return;
-    }
-    frame = NStr::StringToInt(columns[7]);
-    frameIsValid = true;
-}
-
-//  ============================================================================
-void
-CGtfLineReader::xInitializeScore(
-    const vector<string>& columns,
-    bool& scoreIsValid,
-    double& score)
-//  ============================================================================
-{
-    CFeatImportError errorInvalidScoreValue(
-        CFeatImportError::ERROR, "Invalid score value",
-        LineCount());
-
-    if (columns[5] == ".") {
-        scoreIsValid = false;
-        return;
-    }
-
-    try {
-        score = NStr::StringToDouble(columns[5]);
-    }
-    catch(std::exception&) {
-        throw errorInvalidScoreValue;
-    }
-    scoreIsValid = true;
 }
 
 //  ============================================================================

@@ -92,12 +92,6 @@ private:
         std::string&);
 
     void
-    xInitializeScore(
-        const std::vector<std::string>&,
-        bool&,
-        double&);
-
-    void
     xInitializeAttributes(
         const std::vector<std::string>&,
         std::vector<std::pair<std::string, std::string>>&);

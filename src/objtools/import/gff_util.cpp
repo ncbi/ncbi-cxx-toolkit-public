@@ -42,6 +42,30 @@ BEGIN_SCOPE(objects)
 
 //  ============================================================================
 bool
+GffUtil::InitializeScore(
+    const vector<string>& gffColumns,
+    bool& scoreIsPresent,
+    double& scoreValue)
+//  ============================================================================
+{
+    auto score = gffColumns[5];
+    if (score == ".") {
+        scoreIsPresent = false;
+        return true;
+    }
+
+    try {
+        scoreValue = NStr::StringToDouble(score);
+    }
+    catch(std::exception&) {
+        return false;
+    }
+    scoreIsPresent = true;
+    return true;
+}
+    
+//  ============================================================================
+bool
 GffUtil::InitializeFrame(
     const vector<string>& gffColumns,
     std::string& phase)

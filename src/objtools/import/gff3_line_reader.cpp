@@ -87,6 +87,11 @@ CGff3LineReader::xInitializeRecord(
     CFeatImportData& record_)
 //  ============================================================================
 {
+    CFeatImportError errorInvalidScore(
+        CFeatImportError::WARNING, 
+        "Invalid score value - assuming \".\"",
+        LineCount());
+
     CFeatImportError errorInvalidPhase(
         CFeatImportError::WARNING, 
         "Bad phase value - assuming \".\"", 
@@ -108,7 +113,10 @@ CGff3LineReader::xInitializeRecord(
 
     bool scoreIsValid;
     double score;
-    xInitializeScore(columns, scoreIsValid, score);
+    if (!GffUtil::InitializeScore(columns, scoreIsValid, score)) {
+        scoreIsValid = false;
+        mErrorReporter.ReportError(errorInvalidScore);
+    }
 
     string phase;
     if (!GffUtil::InitializeFrame(columns, phase)) {
@@ -209,32 +217,6 @@ CGff3LineReader::xInitializeSource(
     //  ============================================================================
 {
     source = columns[1];
-}
-
-//  ============================================================================
-void
-CGff3LineReader::xInitializeScore(
-    const vector<string>& columns,
-    bool& scoreIsValid,
-    double& score)
-//  ============================================================================
-{
-    CFeatImportError errorInvalidScoreValue(
-        CFeatImportError::ERROR, "Invalid score value",
-        LineCount());
-
-    if (columns[5] == ".") {
-        scoreIsValid = false;
-        return;
-    }
-
-    try {
-        score = NStr::StringToDouble(columns[5]);
-    }
-    catch(std::exception&) {
-        throw errorInvalidScoreValue;
-    }
-    scoreIsValid = true;
 }
 
 //  ============================================================================

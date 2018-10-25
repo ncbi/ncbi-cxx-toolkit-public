@@ -47,6 +47,12 @@ class NCBI_XOBJIMPORT_EXPORT GffUtil
 {
 public:
     static bool
+    InitializeScore(
+        const std::vector<std::string>&,
+        bool&,
+        double&);
+
+    static bool
     InitializeFrame(
         const std::vector<std::string>&,
         std::string&);
