@@ -637,9 +637,10 @@ int http2_session::s_ng_error_cb(nghttp2_session*, const char *msg, size_t, void
     return 0;
 }
 
-void http2_session::s_alloc_cb(uv_handle_t* handle, size_t, uv_buf_t* buf)
+void http2_session::s_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf)
 {
     http2_session *session_data = (http2_session*)handle->data;
+    session_data->m_read_buf.resize(suggested_size);
     buf->base = session_data->m_read_buf.data();
     buf->len = session_data->m_read_buf.size();
 }
