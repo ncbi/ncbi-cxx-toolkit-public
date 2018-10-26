@@ -58,9 +58,9 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_PARAM_DEF(unsigned, PSG, rd_buf_size,            8 * 1024);
-NCBI_PARAM_DEF(unsigned, PSG, write_buf_size,         8 * 1024);
-NCBI_PARAM_DEF(unsigned, PSG, write_hiwater,          8 * 1024);
+NCBI_PARAM_DEF(unsigned, PSG, rd_buf_size,            64 * 1024);
+NCBI_PARAM_DEF(unsigned, PSG, write_buf_size,         64 * 1024);
+NCBI_PARAM_DEF(unsigned, PSG, write_hiwater,          64 * 1024);
 NCBI_PARAM_DEF(unsigned, PSG, max_concurrent_streams, 200);
 NCBI_PARAM_DEF(unsigned, PSG, num_io,                 16);
 NCBI_PARAM_DEF(bool,     PSG, delayed_completion,     true);
