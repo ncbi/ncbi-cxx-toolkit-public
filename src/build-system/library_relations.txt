@@ -1025,6 +1025,7 @@ pcassay needs pcsubstance
 pcre needs3party $(ORIG_LIBS)
 pcsubstance needs pub
 pepXML needs xser
+pgap_yaml_input_reader needs xser
 phytree_format needs align_format
 phytree_format needs xalgophytree
 pmcidconv_client needs xmlwrapp
