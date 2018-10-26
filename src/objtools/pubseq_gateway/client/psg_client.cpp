@@ -629,10 +629,10 @@ struct SId2Info
 
     enum : size_t { eSat, eShell, eInfo, eNChunks, eSize };
 
-    static CPSG_BlobId GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key);
+    static CPSG_BlobId GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key, const CPSG_BlobId& id);
 };
 
-CPSG_BlobId SId2Info::GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key)
+CPSG_BlobId SId2Info::GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key, const CPSG_BlobId& id)
 {
     if (!data.HasKey("Id2Info")) return kEmptyStr;
 
@@ -644,7 +644,8 @@ CPSG_BlobId SId2Info::GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key)
     NStr::Split(id2_info, ".", sat_keys);
 
     if (sat_keys.size() != eSize ) {
-        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Wrong Id2Info format: " << id2_info);
+        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Wrong Id2Info format: " << id2_info <<
+                " for blob '" << id.Get() << '\'');
     }
 
     auto sat_str = sat_keys[eSat];
@@ -660,7 +661,7 @@ CPSG_BlobId SId2Info::GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key)
 
     if (!shell_sat_key.empty() && stoi(shell_sat_key)) {
         NCBI_THROW_FMT(CPSG_Exception, eServerError, "SHELL is not zero (" << shell_sat_key <<
-                ") in Id2Info: " << id2_info);
+                ") in Id2Info: " << id2_info << " for blob '" << id.Get() << '\'');
     }
 
     return sat_key == 0 ? kEmptyStr : CPSG_BlobId(sat, sat_key);
@@ -674,7 +675,7 @@ CPSG_BlobId CPSG_BlobInfo::GetSplitInfoBlobId() const
         return stoi(sat_key);
     };
 
-    return SId2Info::GetBlobId(m_Data, l);
+    return SId2Info::GetBlobId(m_Data, l, m_Id);
 }
 
 CPSG_BlobId CPSG_BlobInfo::GetChunkBlobId(unsigned split_chunk_no) const
@@ -697,7 +698,7 @@ CPSG_BlobId CPSG_BlobInfo::GetChunkBlobId(unsigned split_chunk_no) const
         return info + index - nchunks - 1;
     };
 
-    return SId2Info::GetBlobId(m_Data, l);
+    return SId2Info::GetBlobId(m_Data, l, m_Id);
 }
 
 

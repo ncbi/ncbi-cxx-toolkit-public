@@ -227,7 +227,22 @@ void CPsgCliApp::ProcessReply(shared_ptr<CPSG_Reply> reply)
 
     if (status != EPSG_Status::eSuccess) {
         SAtomicCout atomic_cout;
-        atomic_cout << "Reply. ERROR: ";
+        atomic_cout << "Reply. ERROR for ";
+        auto request = reply->GetRequest();
+
+        if (auto request_biodata = dynamic_cast<const CPSG_Request_Biodata*>(request.get())) {
+            atomic_cout << "biodata request '" << request_biodata->GetBioId().Get() << "': ";
+
+        } else if (auto request_resolve = dynamic_cast<const CPSG_Request_Resolve*>(request.get())) {
+            atomic_cout << "resolve request '" << request_resolve->GetBioId().Get() << "': ";
+
+        } else if (auto request_blob = dynamic_cast<const CPSG_Request_Blob*>(request.get())) {
+            atomic_cout << "blob request '" << request_blob->GetBlobId().Get() << "': ";
+
+        } else {
+            atomic_cout << "UNKNOWN_REQUEST: ";
+        }
+
         PrintErrors(atomic_cout, status, reply);
         return;
     }

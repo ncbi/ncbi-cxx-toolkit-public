@@ -445,7 +445,8 @@ void http2_reply::on_status(int status)
     if (status == CRequestStatus::e404_NotFound) {
         state.SetState(SPSG_Reply::SState::eNotFound);
     } else {
-        state.AddError(CRequestStatus::GetStdStatusMessage((CRequestStatus::ECode)status));
+        state.AddError(to_string(status) + ' ' +
+                CRequestStatus::GetStdStatusMessage((CRequestStatus::ECode)status));
     }
 }
 

@@ -324,8 +324,9 @@ public:
     }
     void append_data(const char* data, size_t len)
     {
-        if (get_canceled())
-            return;
+        assert(m_Reply);
+
+        if (m_Reply->GetLock()->reply_item.GetLock()->state.GetState() != SPSG_Reply::SState::eInProgress) return;
 
         m_Receiver(data, len);
     }
