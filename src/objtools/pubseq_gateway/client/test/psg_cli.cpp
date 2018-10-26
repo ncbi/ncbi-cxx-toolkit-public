@@ -108,7 +108,7 @@ private:
     void ProcessReply(shared_ptr<CPSG_Reply> reply);
 
     template <class TReply>
-    void PrintErrors(SAtomicCout& atomic_cout, EPSG_Status status, shared_ptr<TReply> item);
+    void PrintErrors(SAtomicCout& atomic_cout, EPSG_Status status, shared_ptr<TReply> item, shared_ptr<const CPSG_Request> request);
 
     void PrintBlobData(shared_ptr<CPSG_BlobData>);
     void PrintBlobInfo(shared_ptr<CPSG_BlobInfo>);
@@ -227,23 +227,8 @@ void CPsgCliApp::ProcessReply(shared_ptr<CPSG_Reply> reply)
 
     if (status != EPSG_Status::eSuccess) {
         SAtomicCout atomic_cout;
-        atomic_cout << "Reply. ERROR for ";
-        auto request = reply->GetRequest();
-
-        if (auto request_biodata = dynamic_cast<const CPSG_Request_Biodata*>(request.get())) {
-            atomic_cout << "biodata request '" << request_biodata->GetBioId().Get() << "': ";
-
-        } else if (auto request_resolve = dynamic_cast<const CPSG_Request_Resolve*>(request.get())) {
-            atomic_cout << "resolve request '" << request_resolve->GetBioId().Get() << "': ";
-
-        } else if (auto request_blob = dynamic_cast<const CPSG_Request_Blob*>(request.get())) {
-            atomic_cout << "blob request '" << request_blob->GetBlobId().Get() << "': ";
-
-        } else {
-            atomic_cout << "UNKNOWN_REQUEST: ";
-        }
-
-        PrintErrors(atomic_cout, status, reply);
+        atomic_cout << "Reply. ERROR: Failed to retrieve reply";
+        PrintErrors(atomic_cout, status, reply, reply->GetRequest());
         return;
     }
 
@@ -337,9 +322,27 @@ void CPsgCliApp::ProcessFile(const string& filename, TFactory factory)
 }
 
 template <class TReply>
-void CPsgCliApp::PrintErrors(SAtomicCout& atomic_cout, EPSG_Status status, shared_ptr<TReply> item)
+void CPsgCliApp::PrintErrors(SAtomicCout& atomic_cout, EPSG_Status status, shared_ptr<TReply> item, shared_ptr<const CPSG_Request> request)
 {
-    atomic_cout << static_cast<int>(status);
+    assert(request);
+    assert(item);
+
+    atomic_cout << " for ";
+
+    if (auto request_biodata = dynamic_cast<const CPSG_Request_Biodata*>(request.get())) {
+        atomic_cout << "biodata request '" << request_biodata->GetBioId().Get() << '\'';
+
+    } else if (auto request_resolve = dynamic_cast<const CPSG_Request_Resolve*>(request.get())) {
+        atomic_cout << "resolve request '" << request_resolve->GetBioId().Get() << '\'';
+
+    } else if (auto request_blob = dynamic_cast<const CPSG_Request_Blob*>(request.get())) {
+        atomic_cout << "blob request '" << request_blob->GetBlobId().Get() << '\'';
+
+    } else {
+        atomic_cout << "UNKNOWN_REQUEST";
+    }
+
+    atomic_cout << ": " << static_cast<int>(status);
 
     for (;;) {
         auto message = item->GetNextMessage();
@@ -365,8 +368,8 @@ void CPsgCliApp::PrintBlobData(shared_ptr<CPSG_BlobData> blob_data)
     auto status = blob_data->GetStatus(CDeadline::eInfinite);
 
     if (status != EPSG_Status::eSuccess) {
-        atomic_cout << "ERROR: Failed to retrieve blob data'" << blob_data->GetId().Get() << "': ";
-        PrintErrors(atomic_cout, status, blob_data);
+        atomic_cout << "ERROR: Failed to retrieve blob data";
+        PrintErrors(atomic_cout, status, blob_data, blob_data->GetReply()->GetRequest());
         return;
     }
 
@@ -387,8 +390,8 @@ void CPsgCliApp::PrintBlobInfo(shared_ptr<CPSG_BlobInfo> blob_info)
     auto status = blob_info->GetStatus(CDeadline::eInfinite);
 
     if (status != EPSG_Status::eSuccess) {
-        atomic_cout << "ERROR: Failed to retrieve blob_info '" << blob_info->GetId().Get() << "': ";
-        PrintErrors(atomic_cout, status, blob_info);
+        atomic_cout << "ERROR: Failed to retrieve blob info";
+        PrintErrors(atomic_cout, status, blob_info, blob_info->GetReply()->GetRequest());
         return;
     }
 
@@ -427,18 +430,8 @@ void CPsgCliApp::PrintBioseqInfo(shared_ptr<CPSG_BioseqInfo> bioseq_info)
     auto status = bioseq_info->GetStatus(CDeadline::eInfinite);
 
     if (status != EPSG_Status::eSuccess) {
-        auto request = bioseq_info->GetReply()->GetRequest();
-        string id;
-        if (auto request_biodata = dynamic_cast<const CPSG_Request_Biodata*>(request.get())) {
-            id = request_biodata->GetBioId().Get();
-        } else if (auto request_resolve = dynamic_cast<const CPSG_Request_Resolve*>(request.get())) {
-            id = request_resolve->GetBioId().Get();
-        } else {
-            id = "UNKNOWN_REQUEST";
-        }
-
-        atomic_cout << "ERROR: Failed to retrieve bioseq_info '" << id << "': ";
-        PrintErrors(atomic_cout, status, bioseq_info);
+        atomic_cout << "ERROR: Failed to retrieve bioseq info";
+        PrintErrors(atomic_cout, status, bioseq_info, bioseq_info->GetReply()->GetRequest());
         return;
     }
 
