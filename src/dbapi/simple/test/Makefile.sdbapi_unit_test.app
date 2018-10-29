@@ -24,13 +24,9 @@ CHECK_CMD = sdbapi_unit_test -dr ftds95 -S MsSql
 CHECK_CMD = sdbapi_unit_test -dr ftds95 -S MsSql -V 7.2
 CHECK_CMD = sdbapi_unit_test -dr ftds100 -S MsSql
 CHECK_CMD = sdbapi_unit_test -dr ftds100 -S MsSql -V 7.4
-CHECK_CMD = sdbapi_unit_test -dr ftds95 -S DBAPI_MS2017_TEST_LB -T MsSql
-CHECK_CMD = sdbapi_unit_test -dr ftds95 -S DBAPI_MS2017_TEST_LB -T MsSql -V 7.2
-CHECK_CMD = sdbapi_unit_test -dr ftds100 -S DBAPI_MS2017_TEST_LB -T MsSql
-CHECK_CMD = sdbapi_unit_test -dr ftds100 -S DBAPI_MS2017_TEST_LB -T MsSql -V 7.4
 CHECK_CMD = sdbapi_unit_test -dr ftds95 -S Sybase
 CHECK_CMD = sdbapi_unit_test -dr ftds100 -S Sybase
-CHECK_CMD = sdbapi_unit_test -dr ftds95 -S DBAPI_SYB160_TEST -T Sybase
-CHECK_CMD = sdbapi_unit_test -dr ftds100 -S DBAPI_SYB160_TEST -T Sybase
+CHECK_CMD = sdbapi_unit_test -dr ftds95 -S DBAPI_DEV16_16K -T Sybase
+CHECK_CMD = sdbapi_unit_test -dr ftds100 -S DBAPI_DEV16_16K -T Sybase
 
 WATCHERS = ucko satskyse

@@ -13,7 +13,7 @@ REQUIRES = Sybase
 CHECK_REQUIRES = in-house-resources
 CHECK_COPY = ctl_sp_who.ini
 # CHECK_CMD = run_sybase_app.sh ctl_sp_who /CHECK_NAME=ctl_sp_who
-CHECK_CMD = run_sybase_app.sh ctl_sp_who -S DBAPI_SYB155_TEST /CHECK_NAME=ctl_sp_who-SYB155
-CHECK_CMD = run_sybase_app.sh ctl_sp_who -S DBAPI_SYB160_TEST /CHECK_NAME=ctl_sp_who-SYB160
+CHECK_CMD = run_sybase_app.sh ctl_sp_who -S DBAPI_SYB160_TEST /CHECK_NAME=ctl_sp_who-SYB16-2K
+CHECK_CMD = run_sybase_app.sh ctl_sp_who -S DBAPI_DEV16_16K /CHECK_NAME=ctl_sp_who-SYB16-16K
 
 WATCHERS = ucko satskyse

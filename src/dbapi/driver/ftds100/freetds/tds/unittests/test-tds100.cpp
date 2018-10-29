@@ -43,10 +43,9 @@
 BEGIN_NCBI_SCOPE
 
 static const char* kServers[] = {
-    "MSDEV1",
     "DBAPI_MS2017_TEST",
-    "DBAPI_DEV3",
-    "DBAPI_DEV16",
+    "DBAPI_DEV16_2K",
+    "DBAPI_DEV16_16K",
     NULL
 };
 

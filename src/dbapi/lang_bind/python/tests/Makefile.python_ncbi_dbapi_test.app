@@ -15,25 +15,19 @@ CHECK_COPY = python_ncbi_dbapi_test.ini
 CHECK_TIMEOUT = 300
 
 CHECK_CMD = python_ncbi_dbapi_test -dr ctlib -S Sybase
-CHECK_CMD = python_ncbi_dbapi_test -dr ctlib -S DBAPI_SYB160_TEST
+CHECK_CMD = python_ncbi_dbapi_test -dr ctlib -S DBAPI_DEV16_16K
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds64 -S Sybase
-CHECK_CMD = python_ncbi_dbapi_test -dr ftds64 -S DBAPI_SYB160_TEST
+CHECK_CMD = python_ncbi_dbapi_test -dr ftds64 -S DBAPI_DEV16_16K
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds64 -S MsSql
-CHECK_CMD = python_ncbi_dbapi_test -dr ftds64 -S DBAPI_MS2017_TEST_LB
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S Sybase
-CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S DBAPI_SYB160_TEST
+CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S DBAPI_DEV16_16K
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S MsSql
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S MsSql -V 7.3
-CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S DBAPI_MS2017_TEST_LB
-CHECK_CMD = python_ncbi_dbapi_test -dr ftds95 -S DBAPI_MS2017_TEST_LB -V 7.3
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds100 -S Sybase
-CHECK_CMD = python_ncbi_dbapi_test -dr ftds100 -S DBAPI_SYB160_TEST
+CHECK_CMD = python_ncbi_dbapi_test -dr ftds100 -S DBAPI_DEV16_16K
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds100 -S MsSql
 CHECK_CMD = python_ncbi_dbapi_test -dr ftds100 -S MsSql -V 7.4
-CHECK_CMD = python_ncbi_dbapi_test -dr ftds100 -S DBAPI_MS2017_TEST_LB
-CHECK_CMD = python_ncbi_dbapi_test -dr ftds100 -S DBAPI_MS2017_TEST_LB -V 7.4
 CHECK_CMD = python_ncbi_dbapi_test -dr odbc  -S MsSql
-CHECK_CMD = python_ncbi_dbapi_test -dr odbc  -S DBAPI_MS2017_TEST_LB
 
 
 WATCHERS = ucko satskyse
