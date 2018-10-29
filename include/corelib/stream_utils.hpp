@@ -101,7 +101,7 @@ struct NCBI_XNCBI_EXPORT CStreamUtils
                                streamsize          buf_size)
     { x_Pushback(is, const_cast<CT_CHAR_TYPE*> (buf), (size_t) buf_size); }
 
-// Unsafe but fast API that tries to backup "buf_size" bytes in the internal
+// Unsafe but fast API that tries to back-up "buf_size" bytes in the internal
 // stream buffer, but if that is not possible, will use (perhaps, partially)
 // "buf" and "del_ptr" to pushback as described above.
 // This call relies upon that the data in "buf" is exactly same as it has been

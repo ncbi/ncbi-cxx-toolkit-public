@@ -461,7 +461,7 @@ void CStreamUtils::x_Pushback(CNcbiIstream& is,
 #elif defined(NCBI_COMPILER_MIPSPRO)
     /* MIPSPro does not comply with the standard and always checks for EOF
      * doing one extra read from the stream [which might be a killing idea
-     * for network connections]. We introduced an ugly workaround here...
+     * for network connections].  We introduced an ugly workaround here...
      * Don't use istream::readsome() but istream::read() instead in order to be
      * able to clear fake EOF caused by the unnecessary underflow() upcall.*/
 #  define NCBI_NO_READSOME 1
