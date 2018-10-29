@@ -1,3 +1,8 @@
+Release 4.40.0 based on SC-22 (2018-10-29)
+
+    * First release without BerkeleyDB (all the jobs are in memory)
+
+
 Release 4.32.0 based on SC-22 (2018-10-10)
 
 Improvements:
