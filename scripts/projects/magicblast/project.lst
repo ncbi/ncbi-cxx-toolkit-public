@@ -50,7 +50,6 @@ util/cache$
 util/impl$
 util/lmdb$
 util/lmdbxx$
-util/checksum
 objtools$
 objtools/alnmgr$
 objtools/readers$
