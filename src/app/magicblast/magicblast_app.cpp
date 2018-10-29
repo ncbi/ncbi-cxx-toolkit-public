@@ -1873,8 +1873,16 @@ int CMagicBlastApp::Run(void)
                         CRef<CSeqDBGiList> gilist =
                             db_args->GetSearchDatabase()->GetGiList();
 
+                        CRef<CSeqDBGiList> neg_gilist =
+                            db_args->GetSearchDatabase()->GetNegativeGiList();
+
+
                         if (gilist.NotEmpty()) {
                             search_db->SetGiList(gilist.GetNonNullPointer());
+                        }
+                        else if (neg_gilist.NotEmpty()) {
+                            search_db->SetNegativeGiList(
+                                              neg_gilist.GetNonNullPointer());
                         }
 
                         // this must be the last operation on searh_db, because
