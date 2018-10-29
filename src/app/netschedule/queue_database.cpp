@@ -82,8 +82,8 @@ CQueueDataBase::CQueueDataBase(CNetScheduleServer *  server,
     vector<string>      refuse_submit_queues =
                                 DeserializeRefuseSubmitState(m_DataPath);
 
-    // Old instance bdb files are not needed (even if they survived)
-    x_RemoveBDBFiles();
+    // Old instance data files are not needed (even if they survived)
+    x_RemoveDataFiles();
 
     // Creates the queues from the ini file and loads jobs from the dump
     x_Open(reinit);
@@ -1185,8 +1185,7 @@ void CQueueDataBase::Close(void)
         m_Queues.clear();
     }
 
-    // BDB files are not needed anymore. They could be safely deleted.
-    x_RemoveBDBFiles();
+    x_RemoveDataFiles();
     x_RemoveCrashFlagFile();
 }
 
@@ -2374,7 +2373,8 @@ void CQueueDataBase::x_RemoveDump(void)
 }
 
 
-void CQueueDataBase::x_RemoveBDBFiles(void)
+// Removes unnecessary files in the data directory
+void CQueueDataBase::x_RemoveDataFiles(void)
 {
     CDir        data_dir(m_DataPath);
     if (!data_dir.Exists())

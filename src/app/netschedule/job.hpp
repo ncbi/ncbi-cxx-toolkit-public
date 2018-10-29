@@ -100,6 +100,11 @@ public:
 
 public:
     CJobEvent();
+    CJobEvent(const CJobEvent &) = default;
+    CJobEvent &  operator=(const CJobEvent &) = default;
+    CJobEvent(CJobEvent&&) = default;
+    CJobEvent &  operator=(CJobEvent &&) = default;
+
     // setters/getters
     TJobStatus GetStatus() const
     { return m_Status; }
@@ -177,12 +182,6 @@ GetJobExpirationTime(const CNSPreciseTime &   last_touch,
 class CJob
 {
 public:
-    // Parts of objects residing in different DB tables
-    enum EPart {
-        fJobPart     = 1 << 0, ///< SQueueDB part
-        fJobInfoPart = 1 << 1, ///< SJobInfoDB part
-        fEventsPart  = 1 << 2  ///< SEventsDB part
-    };
     enum EAuthTokenCompareResult {
         eCompleteMatch = 0,
         ePassportOnlyMatch = 1,
@@ -193,6 +192,10 @@ public:
 
     CJob();
     CJob(const SNSCommandArguments &  request);
+    CJob(const CJob &) = default;
+    CJob &  operator=(const CJob &) = default;
+    CJob(CJob &&) = default;
+    CJob &  operator=(CJob &&) = default;
 
     // Getter/setters
     unsigned       GetId() const
@@ -367,7 +370,6 @@ public:
                       const SJobDumpHeader &  header);
 
 private:
-    // Reside in SJobDB table
     unsigned            m_Id;
     unsigned int        m_Passport;
     TJobStatus          m_Status;
@@ -394,10 +396,8 @@ private:
     string              m_ClientSID;
     string              m_NCBIPHID;
 
-    // Resides in SEventsDB table
     vector<CJobEvent>   m_Events;
 
-    // Reside in SJobInfoDB table (input and output - if over limit)
     string              m_Input;
     string              m_Output;
 

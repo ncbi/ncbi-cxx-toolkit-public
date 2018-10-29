@@ -315,6 +315,10 @@ class CNSClient
         CNSClient(const CNSClientId &  client_id,
                   CNSPreciseTime *     blacklist_timeout,
                   CNSPreciseTime *     read_blacklist_timeout);
+        CNSClient(const CNSClient &) = default;
+        CNSClient &  operator=(const CNSClient &) = default;
+        CNSClient(CNSClient &&) = default;
+        CNSClient &  operator=(CNSClient &&) = default;
 
         TNSBitVector GetJobs(ECommandGroup  cmd_group) const
         { if (cmd_group == eGet) return m_WNData.m_Jobs;

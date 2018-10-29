@@ -1,5 +1,5 @@
-#ifndef NETSCHEDULE_BDB_AFF__HPP
-#define NETSCHEDULE_BDB_AFF__HPP
+#ifndef NETSCHEDULE_AFF__HPP
+#define NETSCHEDULE_AFF__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -284,5 +284,5 @@ class CNSAffinityRegistry
 
 END_NCBI_SCOPE
 
-#endif /* NETSCHEDULE_BDB_AFF__HPP */
+#endif /* NETSCHEDULE_AFF__HPP */
 

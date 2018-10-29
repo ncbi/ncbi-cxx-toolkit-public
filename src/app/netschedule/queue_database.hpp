@@ -54,10 +54,6 @@
 
 BEGIN_NCBI_SCOPE
 
-// See CXX-9245
-const Uint8 kBDBMemSizeInMemDefault = 2 * 1000 * 1000 * 1000;   // 2 GB
-const Uint8 kBDBMemSizeInMemLowLimit = 100 * 1000 * 1000;       // 100 MB
-
 class CNetScheduleServer;
 
 
@@ -271,7 +267,7 @@ private:
     void x_DumpLinkedSection(FILE *  f, const string &  sname,
                              const map<string, string> &  values);
     void x_RemoveDump(void);
-    void x_RemoveBDBFiles(void);
+    void x_RemoveDataFiles(void);
     void x_CreateStorageVersionFile(void);
 
     bool x_CheckOpenPreconditions(bool  reinit);

@@ -60,7 +60,6 @@
 #include "ns_scope.hpp"
 #include "ns_server_params.hpp"
 
-#include <deque>
 #include <map>
 
 BEGIN_NCBI_SCOPE

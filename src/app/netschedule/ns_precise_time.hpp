@@ -76,6 +76,17 @@ class CNSPreciseTime : public timespec
         CNSPreciseTime(unsigned int sec, unsigned int  nsec)
         { tv_sec = sec;
           tv_nsec = nsec; }
+
+        CNSPreciseTime(const CNSPreciseTime &  other)
+        { tv_sec = other.tv_sec;
+          tv_nsec = other.tv_nsec; }
+        CNSPreciseTime &  operator=(const CNSPreciseTime &  rhs)
+        { tv_sec = rhs.tv_sec;
+          tv_nsec = rhs.tv_nsec;
+          return *this; }
+        CNSPreciseTime(CNSPreciseTime &&) = default;
+        CNSPreciseTime &  operator=(CNSPreciseTime &&) = default;
+
         time_t &  Sec(void)
         { return tv_sec; }
         time_t Sec(void) const

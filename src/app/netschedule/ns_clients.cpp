@@ -329,27 +329,19 @@ SRemoteNodeData::SRemoteNodeData(CNSPreciseTime *  timeout) :
 // Checks if jobs should be removed from the node blacklist
 void SRemoteNodeData::x_UpdateBlacklist(void) const
 {
-    if (m_BlacklistLimits.empty())
-        return;
+    if (!m_BlacklistLimits.empty()) {
+        CNSPreciseTime          current_time = CNSPreciseTime::Current();
+        vector<unsigned int>    to_be_removed;
+        for (const auto &  item : m_BlacklistLimits) {
+            if (item.second < current_time)
+                to_be_removed.push_back(item.first);
+        }
 
-    CNSPreciseTime          current_time = CNSPreciseTime::Current();
-    vector<unsigned int>    to_be_removed;
-    map<unsigned int,
-        CNSPreciseTime>::const_iterator
-                            end_iterator = m_BlacklistLimits.end();
-
-    for (map<unsigned int,
-             CNSPreciseTime>::const_iterator k = m_BlacklistLimits.begin();
-         k != end_iterator; ++k) {
-        if (k->second < current_time)
-            to_be_removed.push_back(k->first);
-    }
-
-    for (vector<unsigned int>::const_iterator j = to_be_removed.begin();
-         j != to_be_removed.end(); ++j) {
-        m_BlacklistedJobs.set_bit(*j, false);
-        x_BlacklistedOp();
-        m_BlacklistLimits.erase(*j);
+        for (const auto &  job_id : to_be_removed) {
+            m_BlacklistedJobs.set_bit(job_id, false);
+            x_BlacklistedOp();
+            m_BlacklistLimits.erase(job_id);
+        }
     }
 }
 

@@ -139,7 +139,7 @@ struct SNS_Parameters : SServer_Parameters
     bool            log_statistics_thread;
 
     unsigned int    del_batch_size;     // Max number of jobs to be deleted
-                                        // from BDB during one Purge() call
+                                        // from memory during one Purge() call
     unsigned int    markdel_batch_size; // Max number of jobs marked for deletion
     unsigned int    scan_batch_size;    // Max number of jobs expiration checks
                                         // during one Purge() call
