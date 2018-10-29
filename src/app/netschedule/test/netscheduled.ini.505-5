@@ -16,6 +16,7 @@ admin_client_name=netschedule_admin, netschedule_control
 node_id=dev_4_14_0
 reserve_dump_space=1K
 
+path=$DBPATH
 
 [log]
 file=netscheduled.log

@@ -19,6 +19,7 @@ admin_client_name=netschedule_admin, netschedule_control, a
 stat_interval=1000
 max_client_data=2048
 reserve_dump_space=1GB
+path=$DBPATH
 
 
 [Log]
