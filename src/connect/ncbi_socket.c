@@ -4252,7 +4252,7 @@ static EIO_Status s_Connect_(SOCK            sock,
     }
 
 #ifndef SOCK_CLOEXEC
-    if ((!sock->crossexec  ||  sock->session)  &&  !s_SetCloexec(fd, 1)) {
+    if ((!sock->crossexec  ||  sock->sslctx)  &&  !s_SetCloexec(fd, 1)) {
         const char* strerr;
 #  ifdef NCBI_OS_MSWIN
         DWORD err = GetLastError();
