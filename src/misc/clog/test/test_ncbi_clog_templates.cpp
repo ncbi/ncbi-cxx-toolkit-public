@@ -143,8 +143,9 @@ void s_TestCase_PHID_App_subhit(void)
 {
     NcbiLog_AppStart(NULL);
     NcbiLog_AppRun();
-    NcbiLog_GetNextSubHitID();
+    char* subhitid = NcbiLog_GetNextSubHitID();
     NcbiLog_AppStop(0);
+    NcbiLog_FreeMemory(subhitid);
 }
 
 
