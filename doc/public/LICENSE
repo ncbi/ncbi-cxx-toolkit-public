@@ -77,6 +77,10 @@ Location: src/util/checksum/farmhash
 Author:   Geoff Pike, Google Inc.
 License:  BSDish [src/util/checksum/farmhash/COPYING]
 
+Location: src/util/checksum/murmurhash
+Author:   Austin Appleby
+License:  Unrestricted; at top of file
+
 Location: {src,include}/util/compress/bzip2
 Author:   Julian R Seward
 License:  BSDish [src/util/compress/bzip2/LICENSE]
