@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(blast_formatter)
+  NCBI_sources(blast_formatter)
+  NCBI_uses_toolkit_libraries(blast_app_util)
+  NCBI_add_definitions(NCBI_MODULE=BLASTFORMAT)
+NCBI_end_app()
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(blast_formatter-app PROPERTIES OUTPUT_NAME blast_formatter
 target_link_libraries(blast_formatter-app
     blast_app_util
 )
-
+endif()

@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(ncfetch.cgi)
+  NCBI_sources(ncfetch)
+  NCBI_uses_toolkit_libraries(xcgi xconnserv)
+  NCBI_project_watchers(sadyrovr)
+  NCBI_project_tags(grid)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -10,4 +23,4 @@ set_target_properties(ncfetch.cgi-app PROPERTIES OUTPUT_NAME ncfetch.cgi)
 target_link_libraries(ncfetch.cgi-app
     xcgi xconnserv
 )
-
+endif()

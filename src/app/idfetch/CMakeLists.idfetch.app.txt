@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(idfetch)
+  NCBI_sources(idfetch)
+  NCBI_uses_toolkit_libraries(data_loaders_util eutils_client xobjutil)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(idfetch-app PROPERTIES OUTPUT_NAME idfetch)
 target_link_libraries(idfetch-app
     data_loaders_util eutils_client xobjutil
 )
-
+endif()

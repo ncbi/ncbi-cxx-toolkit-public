@@ -1,3 +1,18 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(agpconvert)
+  NCBI_sources(agpconvert)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank taxon1 xobjread xregexp)
+  NCBI_project_watchers(xiangcha)
+  NCBI_set_test_requires(unix -Cygwin)
+  NCBI_set_test_assets(test_data)
+  NCBI_add_test(test_agpconvert.sh)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -11,4 +26,4 @@ target_link_libraries(agpconvert-app
     ncbi_xloader_genbank taxon1 xobjread
     xregexp
 )
-
+endif()

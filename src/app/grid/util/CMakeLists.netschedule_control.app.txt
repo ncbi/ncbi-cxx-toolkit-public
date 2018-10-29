@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(netschedule_control)
+  NCBI_sources(netschedule_control)
+  NCBI_uses_toolkit_libraries(xconnserv)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -10,4 +22,4 @@ set_target_properties(netschedule_control-app PROPERTIES OUTPUT_NAME netschedule
 target_link_libraries(netschedule_control-app
     xconnserv
 )
-
+endif()

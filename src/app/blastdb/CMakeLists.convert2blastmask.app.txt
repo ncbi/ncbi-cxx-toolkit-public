@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(convert2blastmask)
+  NCBI_sources(convert2blastmask)
+  NCBI_uses_toolkit_libraries(blast seqmasks_io)
+  NCBI_add_definitions(NCBI_MODULE=BLASTDB)
+  NCBI_project_watchers(camacho fongah2)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -10,4 +23,4 @@ set_target_properties(convert2blastmask-app PROPERTIES OUTPUT_NAME convert2blast
 target_link_libraries(convert2blastmask-app
     blast seqmasks_io
 )
-
+endif()

@@ -1,3 +1,14 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(asndisc)
+  NCBI_sources(asndisc)
+  NCBI_uses_toolkit_libraries(xcompress xdiscrepancy data_loaders_util)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -10,4 +21,4 @@ set_target_properties(asndisc-app PROPERTIES OUTPUT_NAME asndisc)
 target_link_libraries(asndisc-app
     xcompress xdiscrepancy data_loaders_util
 )
-
+endif()

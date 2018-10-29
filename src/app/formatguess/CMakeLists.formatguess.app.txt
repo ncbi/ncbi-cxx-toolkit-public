@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(formatguess)
+  NCBI_sources(formatguess)
+  NCBI_uses_toolkit_libraries(submit xmlwrapp)
+  NCBI_project_watchers(ludwigf)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -10,4 +22,4 @@ set_target_properties(formatguess-app PROPERTIES OUTPUT_NAME formatguess)
 target_link_libraries(formatguess-app
     submit xmlwrapp
 )
-
+endif()

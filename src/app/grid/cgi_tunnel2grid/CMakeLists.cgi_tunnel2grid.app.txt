@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(cgi_tunnel2grid.cgi)
+  NCBI_sources(cgi_tunnel2grid)
+  NCBI_uses_toolkit_libraries(xgridcgi)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -10,4 +22,4 @@ set_target_properties(cgi_tunnel2grid.cgi-app PROPERTIES OUTPUT_NAME cgi_tunnel2
 target_link_libraries(cgi_tunnel2grid.cgi-app
     xgridcgi
 )
-
+endif()

@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(prt2fsm)
+  NCBI_sources(prt2fsm)
+  NCBI_uses_toolkit_libraries(macro data_loaders_util)
+  NCBI_project_watchers(kachalos)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -10,4 +22,4 @@ set_target_properties(prt2fsm-app PROPERTIES OUTPUT_NAME prt2fsm)
 target_link_libraries(prt2fsm-app
     macro data_loaders_util
 )
-
+endif()

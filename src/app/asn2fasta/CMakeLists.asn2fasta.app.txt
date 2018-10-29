@@ -1,3 +1,18 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(asn2fasta)
+  NCBI_sources(asn2fasta)
+  NCBI_uses_toolkit_libraries(
+    ncbi_xdbapi_ftds ncbi_xloader_genbank ncbi_xloader_wgs
+    ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 xobjwrite
+  )
+  NCBI_project_watchers(ludwigf foleyjp)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -11,4 +26,4 @@ target_link_libraries(asn2fasta-app
     ncbi_xdbapi_ftds ncbi_xloader_genbank ncbi_xloader_wgs
     ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 xobjwrite
 )
-
+endif()

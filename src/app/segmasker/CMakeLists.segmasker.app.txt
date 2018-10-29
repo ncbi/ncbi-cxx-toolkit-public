@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(segmasker)
+  NCBI_sources(segmasker)
+  NCBI_uses_toolkit_libraries(seq xobjsimple seqmasks_io xalgosegmask)
+  NCBI_project_watchers(camacho fongah2)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -15,4 +27,4 @@ target_link_libraries(segmasker-app
 add_dependencies(segmasker-app
     seq
 )
-
+endif()

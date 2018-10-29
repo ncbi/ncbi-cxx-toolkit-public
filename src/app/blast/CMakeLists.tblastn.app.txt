@@ -1,3 +1,17 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(tblastn)
+  NCBI_sources(tblastn_app)
+  NCBI_add_definitions(NCBI_MODULE=BLAST)
+  NCBI_uses_toolkit_libraries(blast_app_util)
+  NCBI_requires(-Cygwin)
+  NCBI_project_tags(gbench)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -10,4 +24,4 @@ set_target_properties(tblastn-app PROPERTIES OUTPUT_NAME tblastn)
 target_link_libraries(tblastn-app
     blast_app_util
 )
-
+endif()

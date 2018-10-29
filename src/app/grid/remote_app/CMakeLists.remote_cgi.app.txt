@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(remote_cgi)
+  NCBI_sources(remote_cgi_wn exec_helpers)
+  NCBI_uses_toolkit_libraries(xcgi xconnserv)
+  NCBI_project_watchers(sadyrovr)
+  NCBI_project_tags(grid)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -10,4 +23,4 @@ set_target_properties(remote_cgi-app PROPERTIES OUTPUT_NAME remote_cgi)
 target_link_libraries(remote_cgi-app
     xcgi xconnserv
 )
-
+endif()

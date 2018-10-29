@@ -1,3 +1,16 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(id1_fetch_simple)
+  NCBI_sources(id1_fetch_simple)
+  NCBI_uses_toolkit_libraries(id1 xconnect)
+  NCBI_project_watchers(grichenk)
+  NCBI_add_test(id1_fetch_simple -gi 3)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -10,4 +23,4 @@ set_target_properties(id1_fetch_simple-app PROPERTIES OUTPUT_NAME id1_fetch_simp
 target_link_libraries(id1_fetch_simple-app
     id1 xconnect
 )
-
+endif()

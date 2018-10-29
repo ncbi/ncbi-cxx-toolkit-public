@@ -1,3 +1,15 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(read_index_speed)
+  NCBI_sources(read_index_speed)
+  NCBI_uses_toolkit_libraries(asn_cache)
+  NCBI_project_watchers(marksc2)
+NCBI_end_app()
+
+
+if(OFF)
 #
 #
 #
@@ -10,4 +22,4 @@ set_target_properties(read_index_speed-app PROPERTIES OUTPUT_NAME read_index_spe
 target_link_libraries(read_index_speed-app
     asn_cache
 )
-
+endif()
