@@ -75,7 +75,7 @@ struct CPSG_ReplyItem::SImpl
 
 struct CPSG_Reply::SImpl
 {
-    shared_ptr<SPSG_Reply::TTS> reply;
+    shared_ptr<SPSG_Reply> reply;
     weak_ptr<CPSG_Reply> user_reply;
 
     shared_ptr<CPSG_ReplyItem> Create(SPSG_Reply::SItem::TTS* item_ts);
@@ -110,7 +110,7 @@ struct CPSG_Queue::SImpl::SRequest
 {
     SRequest(shared_ptr<const CPSG_Request> user_request,
             shared_ptr<HCT::http2_request> http_request,
-            shared_ptr<SPSG_Reply::TTS> reply);
+            shared_ptr<SPSG_Reply> reply);
 
     shared_ptr<CPSG_Reply> GetNextReply();
     void Reset();
@@ -119,7 +119,7 @@ struct CPSG_Queue::SImpl::SRequest
 private:
     shared_ptr<const CPSG_Request> m_UserRequest;
     shared_ptr<HCT::http2_request> m_HttpRequest;
-    shared_ptr<SPSG_Reply::TTS> m_Reply;
+    shared_ptr<SPSG_Reply> m_Reply;
 };
 
 END_NCBI_SCOPE

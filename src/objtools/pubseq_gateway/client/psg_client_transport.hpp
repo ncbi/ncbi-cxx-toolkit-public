@@ -182,8 +182,6 @@ struct SPSG_Nullable : protected CNullable<TValue>
 
 struct SPSG_Reply
 {
-    class TTS;
-
     struct SChunk
     {
         using TPart = vector<char>;
@@ -231,7 +229,14 @@ struct SPSG_Reply
         SState state;
     };
 
-    list<SItem::TTS> items;
+    // Forbid signals on reply
+    class SItemsTS : public SPSG_ThreadSafe<list<SItem::TTS>>
+    {
+        using SPSG_ThreadSafe::NotifyOne;
+        using SPSG_ThreadSafe::WaitFor;
+    };
+
+    SItemsTS items;
     SItem::TTS reply_item;
 
     void SetSuccess()  { SetState(SState::eSuccess);  }
@@ -241,16 +246,9 @@ private:
     void SetState(SState::EState state);
 };
 
-// Forbid signals on reply
-class SPSG_Reply::TTS : public SPSG_ThreadSafe<SPSG_Reply>
-{
-    using SPSG_ThreadSafe::NotifyOne;
-    using SPSG_ThreadSafe::WaitFor;
-};
-
 struct SPSG_Receiver
 {
-    SPSG_Receiver(shared_ptr<SPSG_Reply::TTS> reply, shared_ptr<SPSG_Future> queue);
+    SPSG_Receiver(shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue);
 
     void operator()(const char* data, size_t len) { while (len) (this->*m_State)(data, len); }
 
@@ -278,7 +276,7 @@ private:
     };
 
     SBuffer m_Buffer;
-    shared_ptr<SPSG_Reply::TTS> m_Reply;
+    shared_ptr<SPSG_Reply> m_Reply;
     unordered_map<string, SPSG_Reply::SItem::TTS*> m_ItemsByID;
     shared_ptr<SPSG_Future> m_Queue;
 };
@@ -295,22 +293,22 @@ class http2_session;
 class http2_reply final
 {
 private:
-    shared_ptr<SPSG_Reply::TTS> m_Reply;
+    shared_ptr<SPSG_Reply> m_Reply;
     SPSG_Receiver m_Receiver;
     mutable std::shared_ptr<SPSG_Future> m_Queue;
     std::atomic<http2_session*> m_session_data;
 public:
-    http2_reply(shared_ptr<SPSG_Reply::TTS> reply, std::shared_ptr<SPSG_Future> queue);
+    http2_reply(shared_ptr<SPSG_Reply> reply, std::shared_ptr<SPSG_Future> queue);
 
     ~http2_reply()
     {
         assert(m_Reply);
-        assert(!m_session_data || !m_Reply->GetLock()->reply_item.GetLock()->state.InProgress());
+        assert(!m_session_data || !m_Reply->reply_item.GetLock()->state.InProgress());
     }
     void set_session(http2_session* session_data)
     {
         assert(m_Reply);
-        assert(m_Reply->GetLock()->reply_item.GetLock()->state.InProgress());
+        assert(m_Reply->reply_item.GetLock()->state.InProgress());
 
         http2_session* previous_session_data = m_session_data;
         assert((previous_session_data == nullptr) != (session_data == nullptr));
@@ -320,13 +318,13 @@ public:
     bool get_canceled() const
     {
         assert(m_Reply);
-        return m_Reply->GetLock()->reply_item.GetLock()->state.GetState() == SPSG_Reply::SState::eCanceled;
+        return m_Reply->reply_item.GetLock()->state.GetState() == SPSG_Reply::SState::eCanceled;
     }
     void append_data(const char* data, size_t len)
     {
         assert(m_Reply);
 
-        if (m_Reply->GetLock()->reply_item.GetLock()->state.GetState() != SPSG_Reply::SState::eInProgress) return;
+        if (m_Reply->reply_item.GetLock()->state.GetState() != SPSG_Reply::SState::eInProgress) return;
 
         m_Receiver(data, len);
     }
@@ -335,7 +333,7 @@ public:
     void error(const std::string& err)
     {
         assert(m_Reply);
-        m_Reply->GetLock()->reply_item.GetLock()->state.AddError(err);
+        m_Reply->reply_item.GetLock()->state.AddError(err);
     }
 };
 
@@ -362,7 +360,7 @@ private:
     void do_complete();
     http2_reply m_reply;
 public:
-    http2_request(shared_ptr<SPSG_Reply::TTS> reply, std::shared_ptr<SPSG_Future> queue, std::string path, std::string query);
+    http2_request(shared_ptr<SPSG_Reply> reply, std::shared_ptr<SPSG_Future> queue, std::string path, std::string query);
 
     ~http2_request()
     {
@@ -488,7 +486,7 @@ private:
     CNetServer::SAddress m_Address;
     std::vector<char> m_read_buf;
     std::atomic<bool> m_cancel_requested;
-    std::set<pair<shared_ptr<SPSG_Reply::TTS>, std::shared_ptr<SPSG_Future>>> m_completion_list;
+    std::set<pair<shared_ptr<SPSG_Reply>, std::shared_ptr<SPSG_Future>>> m_completion_list;
 
     void dump_requests();
 
@@ -539,7 +537,7 @@ public:
     void notify_cancel();
 
     void request_complete(http2_request* req);
-    void add_to_completion(shared_ptr<SPSG_Reply::TTS>& reply, shared_ptr<SPSG_Future>& queue);
+    void add_to_completion(shared_ptr<SPSG_Reply>& reply, shared_ptr<SPSG_Future>& queue);
 
     size_t get_num_requests() const
     {

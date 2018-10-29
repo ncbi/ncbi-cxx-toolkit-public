@@ -253,7 +253,7 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::SImpl::Create(SPSG_Reply::SItem::TTS* ite
 
 CPSG_Queue::SImpl::SRequest::SRequest(shared_ptr<const CPSG_Request> user_request,
         shared_ptr<HCT::http2_request> http_request,
-        shared_ptr<SPSG_Reply::TTS> reply) :
+        shared_ptr<SPSG_Reply> reply) :
     m_UserRequest(user_request),
     m_HttpRequest(http_request),
     m_Reply(reply)
@@ -262,23 +262,23 @@ CPSG_Queue::SImpl::SRequest::SRequest(shared_ptr<const CPSG_Request> user_reques
 
 shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SRequest::GetNextReply()
 {
-    auto reply_locked = m_Reply->GetLock();
-    auto reply_item_locked = reply_locked->reply_item.GetLock();
+    auto reply_item_locked = m_Reply->reply_item.GetLock();
     auto& reply_item = *reply_item_locked;
 
     // A reply has already been returned
     if (reply_item.state.Returned()) return {};
 
     auto returned = [](SPSG_Reply::SItem::TTS& item) { return item.GetLock()->state.Returned(); };
-    auto& items = reply_locked->items;
+    auto items_locked = m_Reply->items.GetLock();
+    auto& items = *items_locked;
 
     // No reply items to return
     if (all_of(items.begin(), items.end(), returned) &&
             reply_item.expected.Cmp<less_equal>(reply_item.received)) return {};
 
+    items_locked.Unlock();
     reply_item.state.SetReturned();
     reply_item_locked.Unlock();
-    reply_locked.Unlock();
 
     shared_ptr<CPSG_Reply> rv(new CPSG_Reply);
     rv->m_Impl->reply = m_Reply;
@@ -297,11 +297,10 @@ void CPSG_Queue::SImpl::SRequest::Reset()
 
 bool CPSG_Queue::SImpl::SRequest::IsEmpty() const
 {
-    auto reply_locked = m_Reply->GetLock();
+    if (m_Reply->reply_item.GetLock()->state.InProgress()) return false;
 
-    if (reply_locked->reply_item.GetLock()->state.InProgress()) return false;
-
-    auto& items = reply_locked->items;
+    auto items_locked = m_Reply->items.GetLock();
+    auto& items = *items_locked;
     auto returned = [](SPSG_Reply::SItem::TTS& item) { return item.GetLock()->state.Returned(); };
 
     return all_of(items.begin(), items.end(), returned);
@@ -398,7 +397,7 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request,
 
     chrono::milliseconds wait_ms{};
     shared_ptr<HCT::http2_request> http_request;
-    auto reply = make_shared<SPSG_Reply::TTS>();
+    auto reply = make_shared<SPSG_Reply>();
 
     if (auto request_biodata = dynamic_cast<const CPSG_Request_Biodata*>(user_request.get())) {
         string query(GetQuery(request_biodata));
@@ -792,7 +791,7 @@ CPSG_Reply::CPSG_Reply() :
 EPSG_Status CPSG_Reply::GetStatus(CDeadline deadline) const
 {
     assert(m_Impl);
-    auto reply_item = &m_Impl->reply->GetLock()->reply_item;
+    auto reply_item = &m_Impl->reply->reply_item;
 
     // Do not hold lock on reply around this call!
     return s_GetStatus(reply_item, deadline);
@@ -803,7 +802,7 @@ string CPSG_Reply::GetNextMessage() const
     assert(m_Impl);
     assert(m_Impl->reply);
 
-    return m_Impl->reply->GetLock()->reply_item.GetLock()->state.GetError();
+    return m_Impl->reply->reply_item.GetLock()->state.GetError();
 }
 
 shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
@@ -812,9 +811,10 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
     assert(m_Impl->reply);
 
     for (;;) {
-        auto reply_locked = m_Impl->reply->GetLock();
+        auto items_locked = m_Impl->reply->items.GetLock();
+        auto& items = *items_locked;
 
-        for (auto& item_ts : reply_locked->items) {
+        for (auto& item_ts : items) {
             auto item_locked = item_ts.GetLock();
             auto& item = *item_locked;
 
@@ -829,16 +829,16 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
             return m_Impl->Create(&item_ts);
         }
 
+        items_locked.Unlock();
+
         if (deadline.IsExpired()) return {};
 
-        auto reply_item = &reply_locked->reply_item;
+        auto reply_item = &m_Impl->reply->reply_item;
 
         // No more reply items
         if (!reply_item->GetLock()->state.InProgress()) {
             return shared_ptr<CPSG_ReplyItem>(new CPSG_ReplyItem(CPSG_ReplyItem::eEndOfReply));
         }
-
-        reply_locked.Unlock();
 
         auto wait_ms = RemainingTimeMs(deadline);
         reply_item->WaitFor(wait_ms);

@@ -184,13 +184,15 @@ string SPSG_Reply::SState::GetError()
 void SPSG_Reply::SetState(SState::EState state)
 {
     reply_item.GetLock()->state.SetState(state);
+    auto items_locked = items.GetLock();
+    auto& items = *items_locked;
 
     for (auto& item : items) {
         item.GetLock()->state.SetState(state);
     }
 }
 
-SPSG_Receiver::SPSG_Receiver(shared_ptr<SPSG_Reply::TTS> reply, shared_ptr<SPSG_Future> queue) :
+SPSG_Receiver::SPSG_Receiver(shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue) :
     m_Reply(reply),
     m_Queue(queue)
 {
@@ -277,20 +279,20 @@ void SPSG_Receiver::Add()
     SPSG_Reply::SItem::TTS* item_ts = nullptr;
 
     if (item_type.empty() || (item_type == "reply")) {
-        auto reply_locked = m_Reply->GetLock();
-        item_ts = &reply_locked->reply_item;
+        item_ts = &m_Reply->reply_item;
 
     } else {
         auto item_id = args.GetValue("item_id");
         auto& item_by_id = m_ItemsByID[item_id];
 
         if (!item_by_id) {
-            auto reply_locked = m_Reply->GetLock();
-            auto& items = reply_locked->items;
+            auto items_locked = m_Reply->items.GetLock();
+            auto& items = *items_locked;
             items.emplace_back();
             item_by_id = &items.back();
+            items_locked.Unlock();
             item_by_id->GetLock()->args = args;
-            auto reply_item_locked = reply_locked->reply_item.GetLock();
+            auto reply_item_locked = m_Reply->reply_item.GetLock();
             auto& reply_item = *reply_item_locked;
             ++reply_item.received;
 
@@ -299,8 +301,7 @@ void SPSG_Receiver::Add()
             }
 
             reply_item_locked.Unlock();
-            auto reply_item_ts = &reply_locked->reply_item;
-            reply_locked.Unlock();
+            auto reply_item_ts = &m_Reply->reply_item;
             reply_item_ts->NotifyOne();
             m_Queue->NotifyOne();
         }
@@ -378,7 +379,7 @@ namespace HCT {
 
 /** http2_request */
 
-http2_request::http2_request(shared_ptr<SPSG_Reply::TTS> reply, shared_ptr<SPSG_Future> queue, string path, string query) :
+http2_request::http2_request(shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue, string path, string query) :
     m_session_data(nullptr),
     m_state(http2_request_state::rs_initial),
     m_stream_id(-1),
@@ -413,7 +414,7 @@ void http2_request::do_complete()
 
 /** http2_reply */
 
-http2_reply::http2_reply(shared_ptr<SPSG_Reply::TTS> reply, shared_ptr<SPSG_Future> queue) :
+http2_reply::http2_reply(shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue) :
     m_Reply(reply),
     m_Receiver(reply, queue),
     m_Queue(queue),
@@ -426,8 +427,7 @@ void http2_reply::send_cancel()
 {
     assert(m_Reply);
     http2_session* session_data = m_session_data;
-    auto reply_locked = m_Reply->GetLock();
-    reply_locked->SetCanceled();
+    m_Reply->SetCanceled();
     if (session_data)
         session_data->notify_cancel();
 }
@@ -438,8 +438,7 @@ void http2_reply::on_status(int status)
 
     if (status == CRequestStatus::e200_Ok) return;
 
-    auto reply_locked = m_Reply->GetLock();
-    auto reply_item_locked = reply_locked->reply_item.GetLock();
+    auto reply_item_locked = m_Reply->reply_item.GetLock();
     auto& state = reply_item_locked->state;
 
     if (status == CRequestStatus::e404_NotFound) {
@@ -455,12 +454,12 @@ void http2_reply::on_complete()
     assert(m_Reply);
     assert(m_Queue);
 
-    m_Reply->GetLock()->SetSuccess();
+    m_Reply->SetSuccess();
     http2_session* session_data = m_session_data;
     if (session_data && TPSG_DelayedCompletion::GetDefault())
         session_data->add_to_completion(m_Reply, m_Queue);
     else {
-        m_Reply->GetLock()->reply_item.NotifyOne();
+        m_Reply->reply_item.NotifyOne();
         m_Queue->NotifyOne();
     }
 }
@@ -1110,7 +1109,7 @@ bool http2_session::check_connection()
 void http2_session::process_completion_list()
 {
     for (auto& it : m_completion_list) {
-        it.first->GetLock()->reply_item.NotifyOne();
+        it.first->reply_item.NotifyOne();
         it.second->NotifyOne();
     }
     m_completion_list.clear();
@@ -1127,7 +1126,7 @@ void http2_session::request_complete(http2_request* req)
         --m_num_requests;
     }
 }
-void http2_session::add_to_completion(shared_ptr<SPSG_Reply::TTS>& reply, shared_ptr<SPSG_Future>& queue)
+void http2_session::add_to_completion(shared_ptr<SPSG_Reply>& reply, shared_ptr<SPSG_Future>& queue)
 {
     assert(reply.use_count() > 1);
     assert(queue.use_count() > 1);
