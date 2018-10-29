@@ -120,14 +120,12 @@ void CNCBITestHttpStreamApp::Init(void)
     // Usage setup
     unique_ptr<CArgDescriptions> args(new CArgDescriptions);
     args->SetMiscFlags(CArgDescriptions::fUsageIfNoArgs);
-    if (args->Exist ("h")) {
+    if (args->Exist ("h"))
         args->Delete("h");
-    }
-    if (args->Exist ("xmlhelp")) {
+    if (args->Exist ("xmlhelp"))
         args->Delete("xmlhelp");
-    }
     args->AddExtra(1/*one mandatory*/, kMax_UInt/*unlimited optional*/,
-                   "List of URLs to process", CArgDescriptions::eString);
+                   "List of URL(s) to process", CArgDescriptions::eString);
     args->SetUsageContext(GetArguments().GetProgramBasename(),
                           "Test NCBI HTTP stream");
     SetupArgDescriptions(args.release());
