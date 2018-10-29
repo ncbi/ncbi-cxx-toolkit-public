@@ -290,9 +290,9 @@ struct SModNameInfo {
 
     static bool IsTopLevelBioSourceMod(const string& name) 
     {
-        return (NStr::EqualNocase(name, "origin") || 
-                NStr::EqualNocase(name, "location") || 
-                NStr::EqualNocase(name, "focus"));
+        return ((name == "origin") ||
+                (name == "location") ||
+                (name == "focus"));
     }
 
     static bool IsPCRPrimerMod(const string& name) {
@@ -1388,7 +1388,8 @@ bool CModApply_Impl::x_AddMolType(const TMod& mod, CSeq_inst& seq_inst)
 
 bool CModApply_Impl::x_AddStrand(const TMod& mod, CSeq_inst& seq_inst)
 {
-    if (!NStr::EqualNocase(mod.first,"strand")) {
+
+    if (mod.first != "strand") {
         return false;
     }
 
@@ -1657,7 +1658,7 @@ bool CDescriptorModApply::x_AddPubMod(const TMod& mod, CDescrCache::SDescrContai
 
 bool CDescriptorModApply::x_AddComment(const TMod& mod, CDescrCache::SDescrContainer& descr_container) 
 {
-    if (NStr::EqualNocase("comment", mod.first)) {
+    if (mod.first == "comment") {
         auto pDesc = Ref(new CSeqdesc());
         pDesc->SetComment(mod.second);
         descr_container.SetDescr().Set().push_back(move(pDesc));
@@ -1666,6 +1667,7 @@ bool CDescriptorModApply::x_AddComment(const TMod& mod, CDescrCache::SDescrConta
     return false;
 }
 
+unordered_map<string, string> synonyms;
 
 bool CDescriptorModApply::x_AddGenomeProjectsDBMod(const TMod& mod, bool replace_preexisting_vals, CDescrCache& descriptor_cache)
 {
@@ -1739,38 +1741,28 @@ bool CDescriptorModApply::x_AddDBLinkMod(const TMod& mod,
                                     const bool replace_preexisting_vals,
                                     CDescrCache& descriptor_cache)
 {
-
+    /*
     unordered_map<string, function<void(const string&,
                                         const string&,
                                         const bool,
                                         CDescrCache& descriptor_cache)>> func_map;
+*/
 
+
+    static unordered_map<string, string> name_to_label({{"sra", "Sequence Read Archive"},
+                                                 {"biosample", "BioSample"},
+                                                 {"bioproject", "BioProject"}});
 
     const auto& name = mod.first;
-    if (s_IsMatch(name, "sra")) {
-        x_SetDBLinkField("Sequence Read Archive", 
-                         mod.second, 
+    const auto& it = name_to_label.find(name);
+    if (it != name_to_label.end()) {
+        const auto& label = it->second;
+        x_SetDBLinkField(label, 
+                         mod.second,
                          replace_preexisting_vals,
                          descriptor_cache);
         return true;
     }
-        
-    if (s_IsMatch(name, "biosample")) {
-        x_SetDBLinkField("BioSample", 
-                         mod.second, 
-                         replace_preexisting_vals,
-                         descriptor_cache);
-        return true;
-    }
-    
-    if (s_IsMatch(name, "bioproject")) {
-        x_SetDBLinkField("BioProject", 
-                          mod.second, 
-                          replace_preexisting_vals,
-                          descriptor_cache);
-        return true;
-    } 
-
     return false;
 }
 
