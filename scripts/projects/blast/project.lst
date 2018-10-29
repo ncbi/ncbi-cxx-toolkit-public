@@ -31,8 +31,9 @@ connect/services
 -connect/services/test
 connect/ext$
 util$
-util/creaders$
 util/tables$
+util/creaders$
+util/checksum
 util/compress$
 util/compress/bzip2$
 util/compress/zlib$
