@@ -188,8 +188,6 @@
 #  undef sun
 #endif
 
-#define SESSION_INVALID       ((void*)(-1L))
-
 #define MAXIDLEN              80
 
 #define SOCK_STRERROR(error)  s_StrError(0, (error))
@@ -281,11 +279,10 @@ static const char* s_StrError(SOCK sock, int error)
         return 0;
 
     if (sock  &&  error < 0) {
-        FSSLError sslerror = sock->session  &&  s_SSL ? s_SSL->Error : 0;
+        FSSLError sslerror = sock->sslctx  &&  s_SSL ? s_SSL->Error : 0;
         if (sslerror) {
             char errbuf[256];
-            const char* strerr = sslerror(sock->session == SESSION_INVALID
-                                          ? 0 : sock->session, error,
+            const char* strerr = sslerror(sock->sslctx->sess, error,
                                           errbuf, sizeof(errbuf));
             if (strerr  &&  *strerr)
                 return ERR_STRDUP(strerr);
@@ -387,10 +384,10 @@ static const char* s_ID(const SOCK sock, char buf[MAXIDLEN])
                   addr, sizeof(addr));
 #ifdef NCBI_OS_UNIX
         if (sock->path[0])
-            sname = sock->session ? "SUSOCK" : "USOCK";
+            sname = sock->sslctx ? "SUSOCK" : "USOCK";
         else
 #endif /*NCBI_OS_UNIX*/
-            sname = sock->session ? "SSOCK"  : g_kNcbiSockNameAbbr;
+            sname = sock->sslctx ? "SSOCK"  : g_kNcbiSockNameAbbr;
         break;
     case eDatagram:
         sname = "DSOCK";
@@ -677,8 +674,7 @@ static void x_ShowDataLayout(void)
 #  ifdef NCBI_OS_MSWIN
         "\tevent:     %3u (%u)\n"
 #  endif /*NCBI_OS_MSWIN*/
-        "\tsession:   %3u (%u)\n"
-        "\tcred:      %3u (%u)\n"
+        "\tsslctx:    %3u (%u)\n"
         "\tr_tv:      %3u (%u)\n"
         "\tw_tv:      %3u (%u)\n"
         "\tc_tv:      %3u (%u)\n"
@@ -706,8 +702,7 @@ static void x_ShowDataLayout(void)
         infof(SOCK_struct,    port),                \
         infof(SOCK_struct,    myport),              \
         infof(SOCK_struct,    event),               \
-        infof(SOCK_struct,    session),             \
-        infof(SOCK_struct,    cred),                \
+        infof(SOCK_struct,    sslctx),              \
         infof(SOCK_struct,    r_tv),                \
         infof(SOCK_struct,    w_tv),                \
         infof(SOCK_struct,    c_tv),                \
@@ -730,8 +725,7 @@ static void x_ShowDataLayout(void)
         infof(SOCK_struct,    host),                \
         infof(SOCK_struct,    port),                \
         infof(SOCK_struct,    myport),              \
-        infof(SOCK_struct,    session),             \
-        infof(SOCK_struct,    cred),                \
+        infof(SOCK_struct,    sslctx),              \
         infof(SOCK_struct,    r_tv),                \
         infof(SOCK_struct,    w_tv),                \
         infof(SOCK_struct,    c_tv),                \
@@ -779,10 +773,10 @@ static EIO_Status s_Init(void)
 
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
     /* Layout / alignment sanity check */
-    assert(sizeof(TRIGGER_Handle)         == sizeof(TSOCK_Handle));
-    assert(offsetof(SOCK_struct, session) == offsetof(LSOCK_struct, context));
+    assert(sizeof(TRIGGER_Handle)        == sizeof(TSOCK_Handle));
+    assert(offsetof(SOCK_struct, sslctx) == offsetof(LSOCK_struct, context));
 #  ifdef NCBI_OS_MSWIN
-    assert(offsetof(SOCK_struct, event)   == offsetof(LSOCK_struct, event));
+    assert(offsetof(SOCK_struct, event)  == offsetof(LSOCK_struct, event));
     assert(WSA_INVALID_EVENT == 0);
 #  endif /*NCBI_OS_MSWIN*/
 #endif /*_DEBUG && !NDEBUG*/
@@ -2671,13 +2665,12 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                                  s_ID(sock, _id)));
             UTIL_ReleaseBuffer(strerr);
         }
-        sock->connected = 1;
+        sock->connected = 1/*true*/;
     }
 
     if (sock->pending) {
-        if (sock->session) {
+        if (sock->sslctx) {
             FSSLOpen sslopen = s_SSL ? s_SSL->Open : 0;
-            assert(sock->session != SESSION_INVALID);
             if (sslopen) {
                 const unsigned int rtv_set = sock->r_tv_set;
                 const unsigned int wtv_set = sock->w_tv_set;
@@ -2690,13 +2683,13 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                     wtv = sock->w_tv;
                 SOCK_SET_TIMEOUT(sock, r, tv);
                 SOCK_SET_TIMEOUT(sock, w, tv);
-                status = sslopen(sock->session, error, &desc);
+                status = sslopen(sock->sslctx->sess, error, &desc);
                 if ((sock->w_tv_set = wtv_set & 1) != 0)
                     x_tvcpy(&sock->w_tv, &wtv);
                 if ((sock->r_tv_set = rtv_set & 1) != 0)
                     x_tvcpy(&sock->r_tv, &rtv);
                 if (status == eIO_Success) {
-                    sock->pending = 0;
+                    sock->pending = 0/*false*/;
                     if (sock->log == eOn
                         ||  (sock->log == eDefault  &&  s_Log == eOn)) {
                         CORE_LOGF(eLOG_Trace,
@@ -2711,7 +2704,7 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
             } else
                 status = eIO_NotSupported;
         } else
-            sock->pending = 0;
+            sock->pending = 0/*false*/;
     }
 
     return status;
@@ -2787,7 +2780,7 @@ static EIO_Status s_Recv(SOCK    sock,
             /* statistics & logging */
             if ((x_read < 0  &&  sock->log != eOff)  ||
                 ((sock->log == eOn || (sock->log == eDefault && s_Log == eOn))
-                 &&  (!sock->session  ||  flag > 0))) {
+                 &&  (!sock->sslctx  ||  flag > 0))) {
                 s_DoLog(x_read < 0
                         ? (sock->n_read  &&  sock->n_written
                            ? eLOG_Error : eLOG_Trace)
@@ -2950,17 +2943,17 @@ static EIO_Status s_Read_(SOCK    sock,
             x_todo = SOCK_BUF_CHUNK_SIZE;
             x_buf  = p_buf;
         }
-        if (sock->session) {
+        if (sock->sslctx) {
             int error;
             FSSLRead sslread = s_SSL ? s_SSL->Read : 0;
-            assert(sock->session != SESSION_INVALID);
             if (!sslread) {
                 if (p_buf)
                     free(p_buf);
                 status = eIO_NotSupported;
                 break/*error*/;
             }
-            status = sslread(sock->session, x_buf, x_todo, &x_read, &error);
+            status = sslread(sock->sslctx->sess,
+                             x_buf, x_todo, &x_read, &error);
             assert(status == eIO_Success  ||  !x_read);
             assert(status == eIO_Success  ||  error);
             assert(x_read <= x_todo);
@@ -3276,7 +3269,7 @@ static EIO_Status s_Send(SOCK        sock,
             /* statistics & logging */
             if ((x_written <= 0  &&  sock->log != eOff)  ||
                 ((sock->log == eOn || (sock->log == eDefault && s_Log == eOn))
-                 &&  (!sock->session  ||  flag > 0))) {
+                 &&  (!sock->sslctx  ||  flag > 0))) {
                 s_DoLog(x_written <= 0
                         ? (sock->n_read  &&  sock->n_written
                            ? eLOG_Error : eLOG_Trace)
@@ -3453,16 +3446,15 @@ static EIO_Status s_WriteData(SOCK        sock,
 {
     assert(sock->type == eSocket  &&  !sock->pending  &&  size);
 
-    if (sock->session) {
+    if (sock->sslctx) {
         int error;
         EIO_Status status;
         FSSLWrite sslwrite = s_SSL ? s_SSL->Write : 0;
-        assert(sock->session != SESSION_INVALID);
         if (!sslwrite  ||  oob) {
             *n_written = 0;
             return eIO_NotSupported;
         }
-        status = sslwrite(sock->session, data, size, n_written, &error);
+        status = sslwrite(sock->sslctx->sess, data, size, n_written, &error);
         assert((status == eIO_Success) == (*n_written > 0));
         assert(status == eIO_Success  ||  error);
         assert(*n_written <= size);
@@ -3550,8 +3542,9 @@ static EIO_Status s_WritePending(SOCK                  sock,
             }
             return status;
         }
+        assert(sock->connected  &&  !sock->pending);
     }
-    if ((!sock->session  &&  oob)  ||  sock->w_len == 0)
+    if ((!sock->sslctx  &&  oob)  ||  !sock->w_len)
         return eIO_Success;
     if (sock->w_status == eIO_Closed)
         return eIO_Closed;
@@ -3723,12 +3716,11 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                                  (unsigned long) sock->w_len,
                                  &"s"[sock->w_len == 1],
                                  IO_StatusStr(status)));
-                } else if (!(dir & eIO_ReadWrite))
+                } else if (!(dir & eIO_ReadWrite)  &&  !sock->w_len)
                     status = eIO_Success;
             }
-            if (!sock->pending  &&  sock->session) {
+            if (!sock->pending  &&  sock->sslctx) {
                 FSSLClose sslclose = s_SSL ? s_SSL->Close : 0;
-                assert(sock->session != SESSION_INVALID);
                 if (sslclose) {
                     const unsigned int rtv_set = sock->r_tv_set;
                     const unsigned int wtv_set = sock->w_tv_set;
@@ -3740,7 +3732,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                         wtv = sock->w_tv;
                     SOCK_SET_TIMEOUT(sock, r, tv);
                     SOCK_SET_TIMEOUT(sock, w, tv);
-                    status = sslclose(sock->session, how, &error);
+                    status = sslclose(sock->sslctx->sess, how, &error);
                     if ((sock->w_tv_set = wtv_set & 1) != 0)
                         x_tvcpy(&sock->w_tv, &wtv);
                     if ((sock->r_tv_set = rtv_set & 1) != 0)
@@ -3925,13 +3917,12 @@ static EIO_Status s_Close_(SOCK sock, int abort, TSOCK_Keep keep)
     } else
         status = eIO_Success;
 
-    if (!(keep & fSOCK_KeepSession)
-        &&  sock->session  &&  sock->session != SESSION_INVALID) {
+    if (!(keep & fSOCK_KeepSession)  &&  sock->sslctx  &&  sock->sslctx->sess){
         FSSLDelete ssldelete = s_SSL ? s_SSL->Delete : 0;
-        assert(sock->type == eSocket);
         if (ssldelete)
-            ssldelete(sock->session);
-        sock->session = SESSION_INVALID;
+            ssldelete(sock->sslctx->sess);
+        sock->sslctx->sess = 0;
+        sock->sslctx->sock = 0;
     }
 
     if (abort >= -1) {
@@ -3945,7 +3936,8 @@ static EIO_Status s_Close_(SOCK sock, int abort, TSOCK_Keep keep)
     }
 
 #ifdef NCBI_OS_MSWIN
-    if (!(keep & fSOCK_KeepEvent)  &&  sock->event)
+    assert(sock->event);
+    if (!(keep & fSOCK_KeepEvent))
         WSAEventSelect(sock->sock, sock->event/*ignored*/, 0/*de-associate*/);
 #endif /*NCBI_OS_MSWIN*/
 
@@ -3964,11 +3956,6 @@ static EIO_Status s_Close_(SOCK sock, int abort, TSOCK_Keep keep)
 
     if (abort  ||  !sock->keep) {
         TSOCK_Handle fd = sock->sock;
-        sock->sock = SOCK_INVALID;
-#ifdef NCBI_OS_MSWIN
-        if (sock->event)
-            WSASetEvent(sock->event); /*signal closure*/
-#endif /*NCBI_OS_MSWIN*/
         if (abort < 0)
             abort = 1;
 #ifdef NCBI_MONKEY
@@ -3979,7 +3966,6 @@ static EIO_Status s_Close_(SOCK sock, int abort, TSOCK_Keep keep)
         for (;;) { /* close persistently - retry if interrupted by a signal */
             if (SOCK_CLOSE(fd) == 0)
                 break;
-
             /* error */
             if (s_Initialized <= 0)
                 break;
@@ -4016,11 +4002,15 @@ static EIO_Status s_Close_(SOCK sock, int abort, TSOCK_Keep keep)
                     abort = 2;
             }
         }
+        sock->sock = SOCK_INVALID;
+#ifdef NCBI_OS_MSWIN
+        WSASetEvent(sock->event); /*signal closure*/
+#endif /*NCBI_OS_MSWIN*/
     } else
         sock->sock = SOCK_INVALID;
 
 #ifdef NCBI_OS_MSWIN
-    if (!(keep & fSOCK_KeepEvent)  &&  sock->event) {
+    if (!(keep & fSOCK_KeepEvent)) {
         WSACloseEvent(sock->event);
         sock->event = 0;
     }
@@ -4085,30 +4075,30 @@ static EIO_Status s_Connect_(SOCK            sock,
     TSOCK_Handle    fd;
     int             n;
 
+    assert(sock->sock == SOCK_INVALID);
     assert(sock->type == eSocket  &&  sock->side == eSOCK_Client);
 
     /* initialize internals */
-    if (s_InitAPI(sock->session ? 1/*secure*/ : 0/*regular*/) != eIO_Success)
+    if (s_InitAPI(sock->sslctx ? 1/*secure*/ : 0/*regular*/) != eIO_Success)
         return eIO_NotSupported;
 
-    if (sock->session) {
-        FSSLCreate sslcreate = s_SSL ? s_SSL->Create : 0;
+    if (sock->sslctx) {
         const char* hostname = 0;
-        void* session;
-        assert(sock->sock == SOCK_INVALID);
-        assert(sock->session == SESSION_INVALID);
+        FSSLCreate sslcreate = s_SSL ? s_SSL->Create : 0;
+        assert(!sock->sslctx->sess);
 #ifdef NCBI_OS_UNIX
         if (!sock->path[0])
 #endif /*NCBI_OS_UNIX*/
             hostname = host;
         if (!hostname  ||  SOCK_isip(hostname))
             hostname = "";
-        if (!sslcreate) {
-            session = 0;
-            error = 0;
+        if (sslcreate) {
+            sock->sslctx->sock = sock;
+            sock->sslctx->sess = sslcreate(eSOCK_Client, sock->sslctx,
+                                           hostname, &error);
         } else
-            session = sslcreate(eSOCK_Client,sock,hostname,sock->cred,&error);
-        if (!session) {
+            error = 0;
+        if (!sock->sslctx->sess) {
             const char* strerr = s_StrError(sock, error);
             CORE_LOGF_ERRNO_EXX(131, eLOG_Error,
                                 error, strerr ? strerr : "",
@@ -4120,8 +4110,6 @@ static EIO_Status s_Connect_(SOCK            sock,
             UTIL_ReleaseBuffer(strerr);
             return eIO_NotSupported;
         }
-        assert(session != SESSION_INVALID);
-        sock->session = session;
     }
 
     memset(&addr, 0, sizeof(addr));
@@ -4175,7 +4163,7 @@ static EIO_Status s_Connect_(SOCK            sock,
     type |= SOCK_NONBLOCK;
 #endif /*SOCK_NONBLOCK*/
 #ifdef SOCK_CLOEXEC
-    if (!sock->crossexec  ||  sock->session)
+    if (!sock->crossexec  ||  sock->sslctx)
         type |= SOCK_CLOEXEC;
 #endif /*SOCK_CLOEXEC*/
     if ((fd = socket(addr.sa.sa_family, type, 0)) == SOCK_INVALID) {
@@ -4291,6 +4279,7 @@ static EIO_Status s_Connect_(SOCK            sock,
     sock->eof       = 0/*false*/;
     sock->r_status  = eIO_Success;
     sock->w_status  = eIO_Success;
+    sock->pending   = 1/*true*/;
     sock->connected = 0/*false*/;
 #ifdef NCBI_OS_MSWIN
     sock->readable  = 0/*false*/;
@@ -4340,9 +4329,7 @@ static EIO_Status s_Connect_(SOCK            sock,
             s_Close_(sock, -1/*abort*/, fSOCK_KeepNone);
             return status/*error*/;
         }
-        sock->pending = 1;
-    } else
-        sock->pending = sock->session ? 1 : 0;
+    }
 
     if (!error  ||  !timeout  ||  (timeout->sec | timeout->usec)) {
         const char* what;
@@ -4427,15 +4414,22 @@ static EIO_Status s_Create(const char*     hostpath,
 
     assert(!*sock);
 
-    /* allocate memory for the internal socket structure */
+    /* allocate memory for the internal socket structure(s) */
     if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + x_n)))
         return eIO_Unknown;
+    if (flags & fSOCK_Secure) {
+        SNcbiSSLctx* sslctx = (SNcbiSSLctx*) calloc(1, sizeof(*sslctx));
+        if (!(x_sock->sslctx = sslctx)) {
+            free(x_sock);
+            return eIO_Unknown;
+        }
+        sslctx->cred = cred;
+    }
     x_sock->sock      = SOCK_INVALID;
     x_sock->id        = x_id;
     x_sock->type      = eSocket;
     x_sock->side      = eSOCK_Client;
     x_sock->log       = flags & (fSOCK_LogDefault | fSOCK_LogOn);
-    x_sock->session   = flags & fSOCK_Secure ? SESSION_INVALID : 0;
     x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/  : 0/*false*/;
     x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
     x_sock->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
@@ -4457,8 +4451,6 @@ static EIO_Status s_Create(const char*     hostpath,
         SOCK_Destroy(x_sock);
         return eIO_Unknown;
     }
-    if (x_sock->session)
-        x_sock->cred = cred;
 
     /* connect */
     status = s_Connect(x_sock, hostpath, port, timeout);
@@ -4470,15 +4462,25 @@ static EIO_Status s_Create(const char*     hostpath,
 }
 
 
+/* Mimic SOCK_CLOSE() */
+static void SOCK_ABORT(TSOCK_Handle x_sock)
+{
+    struct SOCK_tag temp;
+    memset(&temp, 0, sizeof(temp));
+    temp.side = eSOCK_Server;
+    temp.type = eSocket;
+    temp.sock = x_sock;
+    s_Close_(&temp, -2/*silent abort*/, fSOCK_KeepNone);
+}
+
+
 static EIO_Status s_CreateOnTop(const void*   handle,
                                 size_t        handle_size,
                                 SOCK*         sock,
                                 const void*   data,
                                 size_t        size,
                                 NCBI_CRED     cred,
-                                TSOCK_Flags   flags,
-                                TSOCK_Handle* oldfd,
-                                void**        oldssl)
+                                TSOCK_Flags   flags)
 {
     union {
         struct sockaddr    sa;
@@ -4487,13 +4489,12 @@ static EIO_Status s_CreateOnTop(const void*   handle,
         struct sockaddr_un un;
 #endif /*NCBI_OS_UNIX*/
     } peer;
-    TSOCK_Handle    fd;
     struct linger   lgr;
     unsigned int    host;
     int             error;
+    EIO_Status      status;
     TSOCK_socklen_t peerlen;
     size_t          socklen;
-    void*           session;
 #ifdef NCBI_OS_MSWIN
     WSAEVENT        event = 0;
 #endif /*NCBI_OS_MSWIN*/
@@ -4501,10 +4502,11 @@ static EIO_Status s_CreateOnTop(const void*   handle,
     char            _id[MAXIDLEN];
     unsigned short  port, myport = 0;
     SOCK            x_sock, x_orig = 0;
+    SNcbiSSLctx*    oldctx = 0, *sslctx = 0;
+    TSOCK_Handle    fd, oldfd = SOCK_INVALID;
     unsigned int    x_id = ++s_ID_Counter * 1000;
 
-    assert(!*sock  &&  *oldfd == SOCK_INVALID  &&  !*oldssl);
-    assert(!size  ||  data);
+    assert(!*sock);
 
     if (!handle  ||  (handle_size  &&  handle_size != sizeof(fd))) {
         CORE_LOGF_X(47, eLOG_Error,
@@ -4529,26 +4531,31 @@ static EIO_Status s_CreateOnTop(const void*   handle,
             return eIO_Closed;
         if (!x_orig->keep) {
             x_orig->keep = 1/*true*/;
-            *oldfd = fd;
+            oldfd = fd;
         }
-        if (!x_orig->session == !(flags & fSOCK_Secure)) {
+        if (!x_orig->sslctx == !(flags & fSOCK_Secure)) {
             keep |= fSOCK_KeepPending;
-            if (flags & fSOCK_Secure)
+            if (flags & fSOCK_Secure) {
                 keep |= fSOCK_KeepSession;
+                oldctx = x_orig->sslctx;
+            }
         }
         myport = x_orig->myport;
         s_Close(x_orig, keep);
+#ifdef NCBI_OS_MSWIN
+        event = x_orig->event;
+        x_orig->event = 0;
+#endif/*NCBI_OS_MSWIN*/
+        if (oldfd != SOCK_INVALID)
+            x_orig->keep = 0/*false*/;
     } else
         memcpy(&fd, handle, sizeof(fd));
-    if (!x_orig
-        ||  !(session = *oldssl = x_orig->session)
-        ||  session == SESSION_INVALID) {
-        session = flags & fSOCK_Secure ? SESSION_INVALID : 0;
-    }
 
     /* initialize internals */
-    if (s_InitAPI(flags & fSOCK_Secure) != eIO_Success)
-        return eIO_NotSupported;
+    if (s_InitAPI(flags & fSOCK_Secure) != eIO_Success) {
+        status = eIO_NotSupported;
+        goto errout;
+    }
 
     /* get peer's address */
     peerlen = (TSOCK_socklen_t) sizeof(peer);
@@ -4567,7 +4574,8 @@ static EIO_Status s_CreateOnTop(const void*   handle,
                              ? "Unconnected" : "Invalid",
                              x_orig ? "SOCK" : "OS socket"));
         UTIL_ReleaseBuffer(strerr);
-        return eIO_Closed;
+        status = eIO_Closed;
+        goto errout;
     }
 #ifdef NCBI_OS_UNIX
     if (peer.sa.sa_family != AF_INET  &&  peer.sa.sa_family != AF_UNIX)
@@ -4581,7 +4589,8 @@ static EIO_Status s_CreateOnTop(const void*   handle,
 #endif /*NCBI_OS_UNIX*/
     {
         assert(!x_orig);
-        return eIO_NotSupported;
+        status = eIO_NotSupported;
+        goto errout;
     }
 
 #ifdef NCBI_OS_UNIX
@@ -4609,7 +4618,8 @@ static EIO_Status s_CreateOnTop(const void*   handle,
                              peerlen == sizeof(peer.sa.sa_family)
                              ? "Unnamed" : "Abstract"));
                 assert(!x_orig);
-                return eIO_InvalidArg;
+                status = eIO_InvalidArg;
+                goto errout;
             }
         }
         assert(!x_orig  ||   x_orig->path[0]);
@@ -4619,16 +4629,19 @@ static EIO_Status s_CreateOnTop(const void*   handle,
 #endif /*NCBI_OS_UNIX*/
     {
         socklen = 0;
-        assert(!x_orig  ||   x_orig->port);
+        assert(!x_orig  ||  x_orig->port);
         host = x_orig ? x_orig->host :       peer.in.sin_addr.s_addr;
         port = x_orig ? x_orig->port : ntohs(peer.in.sin_port);
 #ifdef NCBI_OS_UNIX
-        assert(!x_orig  ||  !x_orig->path[0]);
+        assert(!x_orig  || !x_orig->path[0]);
 #endif /*NCBI_OS_UNIX*/
     }
 
+    status = eIO_Unknown;
+
 #ifdef NCBI_OS_MSWIN
-    if (!x_orig) {
+    if (!event) {
+        assert(!x_orig);
         if (!(event = WSACreateEvent())) {
             DWORD err = GetLastError();
             const char* strerr = s_WinStrerror(err);
@@ -4638,7 +4651,7 @@ static EIO_Status s_CreateOnTop(const void*   handle,
                                  " Failed to create IO event",
                                  x_id, (unsigned int) fd));
             UTIL_ReleaseBufferOnHeap(strerr);
-            return eIO_Unknown;
+            goto errout;
         }
         /* NB: WSAEventSelect() sets non-blocking automatically */
         if (WSAEventSelect(fd, event, SOCK_EVENTS) != 0) {
@@ -4649,13 +4662,10 @@ static EIO_Status s_CreateOnTop(const void*   handle,
                                  " Failed to bind IO event",
                                  x_id, (unsigned int) fd));
             UTIL_ReleaseBuffer(strerr);
-            return eIO_Unknown;
+            goto errout;
         }
-    } else {
-        event = x_orig->event;
-        x_orig->event = 0;
-        assert(event);
-    }
+    } else
+        assert(x_orig);
 #else
     /* set to non-blocking mode */
     if (!s_SetNonblock(fd, 1/*true*/)) {
@@ -4666,7 +4676,7 @@ static EIO_Status s_CreateOnTop(const void*   handle,
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) fd));
         UTIL_ReleaseBuffer(strerr);
-        return eIO_Unknown;
+        goto errout;
     }
 #endif /*NCBI_OS_MSWIN*/
 
@@ -4681,6 +4691,10 @@ static EIO_Status s_CreateOnTop(const void*   handle,
     }
 
     /* create and fill in a socket handle */
+    if ((flags & fSOCK_Secure)
+        &&  !(sslctx = (SNcbiSSLctx*) calloc(1, sizeof(*sslctx)))) {
+        goto errout;
+    }
     if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + socklen)))
         goto errout;
     x_sock->sock      = fd;
@@ -4691,55 +4705,70 @@ static EIO_Status s_CreateOnTop(const void*   handle,
     else
 #endif /*NCBI_OS_UNIX*/
     {
-        x_sock->host  = host;
-        x_sock->port  = port;
+        x_sock->host   = host;
+        x_sock->port   = port;
         assert(x_sock->port);
     }
-    x_sock->myport    = myport;
-    x_sock->type      = eSocket;
-    x_sock->side      = eSOCK_Server;
-    x_sock->log       = flags & (fSOCK_LogDefault | fSOCK_LogOn);
-    x_sock->session   = session;
-    x_sock->keep      = flags & fSOCK_KeepOnClose ? 1/*true*/  : 0/*false*/;
-    x_sock->r_on_w    = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
-    x_sock->i_on_sig  = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
-#ifdef NCBI_OS_MSWIN
-    x_sock->event     = event;
-    x_sock->writable  = 1/*true*/;
+    x_sock->myport     = myport;
+    x_sock->type       = eSocket;
+    x_sock->side       = eSOCK_Server;
+    x_sock->log        = flags & (fSOCK_LogDefault | fSOCK_LogOn);
+    x_sock->keep       = flags & fSOCK_KeepOnClose ? 1/*true*/  : 0/*false*/;
+    x_sock->r_on_w     = flags & fSOCK_ReadOnWrite       ? eOn  : eDefault;
+    x_sock->i_on_sig   = flags & fSOCK_InterruptOnSignal ? eOn  : eDefault;
+    x_sock->pending    = 1/*have to check at the nearest I/O*/;
+ #ifdef NCBI_OS_MSWIN
+    x_sock->event      = event;
+    x_sock->writable   = 1/*true*/;
 #endif /*NCBI_OS_MSWIN*/
-    x_sock->pending   = 1/*have to check at the nearest I/O*/;
-    x_sock->crossexec = flags & fSOCK_KeepOnExec  ? 1/*true*/  : 0/*false*/;
-    x_sock->keepalive = flags & fSOCK_KeepAlive   ? 1/*true*/  : 0/*false*/;
+    x_sock->connected  = x_orig ? x_orig->connected             : 0/*false*/;
+    x_sock->crossexec  = flags & fSOCK_KeepOnExec  ? 1/*true*/  : 0/*false*/;
+    x_sock->keepalive  = flags & fSOCK_KeepAlive   ? 1/*true*/  : 0/*false*/;
     /* all timeout bits zeroed - infinite */
-    x_sock->w_buf     = w_buf;
+    x_sock->w_buf      = w_buf;
+    if (oldctx  &&  sslctx) {
+        x_sock->sslctx = oldctx;
+        x_sock->sslctx->sock = x_sock;
+        x_orig->sslctx = sslctx;
+        x_orig->sslctx->cred = oldctx->cred;
+        x_sock->sslctx->cred = cred;
+    } else if (sslctx) {
+        x_sock->sslctx = sslctx;
+        x_sock->sslctx->sock = x_sock;
+        x_sock->sslctx->cred = cred;
+    }
 
-    if (x_sock->session == SESSION_INVALID) {
-        FSSLCreate sslcreate = s_SSL ? s_SSL->Create : 0;
-        void* session;
-        if (!sslcreate) {
-            session = 0;
-            error = 0;
-        } else
-            session = sslcreate(eSOCK_Client, x_sock, 0, cred, &error);
-        if (!session) {
-            const char* strerr = s_StrError(x_sock, error);
-            CORE_LOGF_ERRNO_EXX(132, eLOG_Error,
-                                error, strerr ? strerr : "",
-                                ("%s[SOCK::CreateOnTop] "
-                                 " %s to initialize secure session",
-                                 s_ID(x_sock, _id),
-                                 sslcreate ? "Failed" : "Unable"));
-            UTIL_ReleaseBuffer(strerr);
-            x_sock->sock = SOCK_INVALID;
+    if (x_sock->sslctx) {
+        if (!x_sock->sslctx->sess) {
+            FSSLCreate sslcreate = s_SSL ? s_SSL->Create : 0;
+            if (sslcreate) {
+                assert(x_sock->sslctx->sock == x_sock);
+                x_sock->sslctx->sess = sslcreate(eSOCK_Client, x_sock->sslctx,
+                                                 0, &error);
+            } else
+                error = 0;
+            if (!x_sock->sslctx->sess) {
+                const char* strerr = s_StrError(x_sock, error);
+                CORE_LOGF_ERRNO_EXX(132, eLOG_Error,
+                                    error, strerr ? strerr : "",
+                                    ("%s[SOCK::CreateOnTop] "
+                                     " %s to initialize secure session",
+                                     s_ID(x_sock, _id),
+                                     sslcreate ? "Failed" : "Unable"));
+                UTIL_ReleaseBuffer(strerr);
+                x_sock->sock = SOCK_INVALID;
 #ifdef NCBI_OS_MSWIN
-            WSAEventSelect(fd, event, 0/*de-associate*/);
+                WSAEventSelect(fd, event, 0/*de-associate*/);
+                WSACloseEvent(event);
 #endif /*NCBI_OS_MSWIN*/
-            SOCK_Destroy(x_sock);
-            return eIO_NotSupported;
+                SOCK_Destroy(x_sock);
+                return eIO_NotSupported;
+            }
+        } else {
+            CORE_LOGF(eLOG_Trace,
+                      ("%sSSL session re-acquired", s_ID(x_sock, _id)));
+            x_sock->pending = x_orig->pending;
         }
-        assert(session != SESSION_INVALID);
-        x_sock->session = session;
-        x_sock->cred = cred;
     }
 
     if (x_orig) {
@@ -4780,7 +4809,7 @@ static EIO_Status s_CreateOnTop(const void*   handle,
 #endif /*SO_OOBINLINE*/
     }
 
-    if (!s_SetCloexec(fd, !x_sock->crossexec  ||  x_sock->session)) {
+    if (!s_SetCloexec(fd, !x_sock->crossexec  ||  x_sock->sslctx)) {
         const char* strerr;
 #ifdef NCBI_OS_MSWIN
         DWORD err = GetLastError();
@@ -4822,12 +4851,26 @@ static EIO_Status s_CreateOnTop(const void*   handle,
     return eIO_Success;
 
  errout:
-#ifdef NCBI_OS_MSWIN
-    WSAEventSelect(fd, event, 0/*de-associate*/);
-    WSACloseEvent(event);
-#endif /*NCBI_OS_MSWIN*/
+    assert(status != eIO_Success);
+    if (sslctx)
+        free(sslctx);
     BUF_Destroy(w_buf);
-    return eIO_Unknown;
+    if (oldctx  &&  oldctx->sess) {
+        FSSLDelete ssldelete = s_SSL ? s_SSL->Delete : 0;
+        if (ssldelete)
+            ssldelete(sslctx->sess);
+        oldctx->sess = 0;
+        oldctx->sock = 0;
+    }
+#ifdef NCBI_OS_MSWIN
+    if (event) {
+        WSAEventSelect(fd, event, 0/*de-associate*/);
+        WSACloseEvent(event);
+    }
+#endif /*NCBI_OS_MSWIN*/
+    if (oldfd != SOCK_INVALID)
+        SOCK_ABORT(oldfd);
+    return status;
 }
 
 
@@ -5177,18 +5220,6 @@ static EIO_Status s_CreateListening(const char*    path,
 }
 
 
-/* Mimic SOCK_CLOSE() */
-static void SOCK_ABORT(TSOCK_Handle x_sock)
-{
-    struct SOCK_tag temp;
-    memset(&temp, 0, sizeof(temp));
-    temp.side = eSOCK_Server;
-    temp.type = eSocket;
-    temp.sock = x_sock;
-    s_Close_(&temp, -2/*silent abort*/, fSOCK_KeepNone);
-}
-
-
 static EIO_Status s_Accept(LSOCK           lsock,
                            const STimeout* timeout,
                            SOCK*           sock,
@@ -5493,10 +5524,6 @@ static EIO_Status s_CloseListening(LSOCK lsock)
     status = eIO_Success;
     if (!lsock->keep) {
         TSOCK_Handle fd = lsock->sock;
-        lsock->sock = SOCK_INVALID;
-#ifdef NCBI_OS_MSWIN
-        WSASetEvent(lsock->event); /*signal closure*/
-#endif /*NCBI_OS_MSWIN*/
         for (;;) { /* close persistently - retry if interrupted */
             if (SOCK_CLOSE(fd) == 0)
                 break;
@@ -5523,6 +5550,10 @@ static EIO_Status s_CloseListening(LSOCK lsock)
                 break;
             }
         }
+        lsock->sock = SOCK_INVALID;
+#ifdef NCBI_OS_MSWIN
+        WSASetEvent(lsock->event); /*signal closure*/
+#endif /*NCBI_OS_MSWIN*/
     } else
         lsock->sock = SOCK_INVALID;
 
@@ -6290,26 +6321,15 @@ EIO_Status SOCK_CreateOnTopInternal(const void* handle,
                                     SSOCK_Init* init,
                                     TSOCK_Flags flags)
 {
-    const void*   data = init ? init->data : 0;
-    size_t        size = init ? init->size : 0;
-    NCBI_CRED     cred = init ? init->cred : 0;
-    TSOCK_Handle oldfd = SOCK_INVALID;
-    void*       oldssl = 0;
-    EIO_Status  status;
+    const void*  data = init ? init->data : 0;
+    size_t       size = init ? init->size : 0;
+    NCBI_CRED    cred = init ? init->cred : 0;
+    EIO_Status status;
 
     *sock = 0;
     status = s_CreateOnTop(handle, handle_size, sock,
-                           data, size, cred, flags, &oldfd, &oldssl);
+                           data, size, cred, flags);
     assert((status != eIO_Success) == !*sock);
-    if (status != eIO_Success) {
-        if (oldssl  &&  oldssl != SESSION_INVALID) {
-            FSSLDelete ssldelete = s_SSL ? s_SSL->Delete : 0;
-            if (ssldelete)
-                ssldelete(oldssl);
-        }
-        if (oldfd != SOCK_INVALID)
-            SOCK_ABORT(oldfd);
-    }
     return status;
 }
 
@@ -6472,13 +6492,9 @@ extern EIO_Status SOCK_CloseEx(SOCK sock, int/*bool*/ destroy)
     /* likely NOOP */
     BUF_Erase(sock->r_buf);
     BUF_Erase(sock->w_buf);
-#ifdef NCBI_OS_MSWIN
-    if (sock->event) {
-        WSACloseEvent(sock->event);
-        sock->event = 0;
-    }
-#endif /*NCBI_OS_MSWIN*/
     if (destroy) {
+        if (sock->sslctx)
+            free(sock->sslctx);
         BUF_Destroy(sock->r_buf);
         BUF_Destroy(sock->w_buf);
         free(sock);
@@ -6570,7 +6586,7 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
     case eIO_Open:
         if (sock->type == eDatagram)
             return eIO_Success/*always connected*/;
-        if (sock->pending) {
+        if (!sock->connected  ||  sock->pending) {
             struct timeval tv;
             return s_WaitConnected(sock, s_to2tv(timeout, &tv));
         }
@@ -6994,7 +7010,7 @@ extern EIO_Status SOCK_Status(SOCK      sock,
         case eIO_Write:
             if (sock->sock == SOCK_INVALID)
                 return eIO_Closed;
-            if (sock->pending)
+            if (!sock->connected  ||  sock->pending)
                 return eIO_Timeout;
             if (direction == eIO_Read) {
                 return sock->type == eSocket  &&  sock->eof
@@ -7960,7 +7976,7 @@ extern int/*bool*/ SOCK_IsUNIX(SOCK sock)
 
 extern int/*bool*/ SOCK_IsSecure(SOCK sock)
 {
-    return sock &&  sock->sock != SOCK_INVALID  &&  sock->session;
+    return sock &&  sock->sock != SOCK_INVALID  &&  sock->sslctx;
 }
 
 

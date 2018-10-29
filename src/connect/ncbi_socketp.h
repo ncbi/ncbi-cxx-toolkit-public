@@ -155,6 +155,13 @@ typedef enum {
 typedef unsigned TBSOCK_Type;
 
 
+typedef struct {
+    void*     sess;    /* secure session handle, 0 if none            */
+    NCBI_CRED cred;    /* secure session credential(s), 0 if none     */
+    SOCK      sock;    /* sock that the above session handle is using */
+} SNcbiSSLctx;
+
+
 /* Event trigger
  */
 typedef struct TRIGGER_tag {
@@ -278,8 +285,7 @@ typedef struct SOCK_tag {
     WSAEVENT         event;     /* event bound to I/O                        */
 #endif /*!NCBI_OS_MSWIN*/
 
-    void*            session;   /* secure session handle if used, else 0     */
-    NCBI_CRED        cred;      /* secure session credentials, 0 if none     */
+    SNcbiSSLctx*     sslctx;    /* secure session context if used, else 0    */
 
     /* timeouts */
     struct timeval   r_tv;      /* finite read  timeout value                */

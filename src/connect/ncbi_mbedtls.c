@@ -123,9 +123,8 @@ extern "C" {
 #  endif /*__cplusplus*/
 
 static EIO_Status  s_MbedTlsInit  (FSSLPull pull, FSSLPush push);
-static void*       s_MbedTlsCreate(ESOCK_Side side, SOCK sock,
-                                   const char* host, NCBI_CRED cred,
-                                   int* error);
+static void*       s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx,
+                                   const char* host, int* error);
 static EIO_Status  s_MbedTlsOpen  (void* session, int* error, char** desc);
 static EIO_Status  s_MbedTlsRead  (void* session,       void* buf,
                                    size_t size, size_t* done, int* error);
@@ -200,7 +199,7 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
 
     if (!error)
         return eIO_Success;
-    sock = (SOCK) session->p_bio;
+    sock = ((SNcbiSSLctx*) session->p_bio)->sock;
     switch (error) {
     case MBEDTLS_ERR_SSL_WANT_READ:
         status = x_RetryStatus(sock, direction);
@@ -314,8 +313,8 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
 }
 
 
-static void* s_MbedTlsCreate(ESOCK_Side side, SOCK sock,
-                             const char* host, NCBI_CRED cred, int* error)
+static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx,
+                             const char* host, int* error)
 {
     int end = (side == eSOCK_Client
                ? MBEDTLS_SSL_IS_CLIENT
@@ -330,20 +329,24 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SOCK sock,
 
     *error = 0;
 
-    if (cred  &&  (cred->type != eNcbiCred_MbedTls  ||  !cred->data)) {
-        /*FIXME: there's a NULL(data)-terminated array of credentials */
-        CORE_LOGF(eLOG_Error,
-                  ("%s credentials in MBEDTLS session",
-                   cred->type != eNcbiCred_MbedTls
-                   ? "Foreign"
-                   : "Empty"));
-        return 0;
+    if (ctx->cred) {
+        if (ctx->cred->type != eNcbiCred_MbedTls  ||  !ctx->cred->data) {
+            /*FIXME: there's a NULL(data)-terminated array of credentials */
+            CORE_LOGF(eLOG_Error,
+                      ("%s credentials in MBEDTLS session",
+                       ctx->cred->type != eNcbiCred_MbedTls
+                       ? "Foreign"
+                       : "Empty"));
+            return 0;
+        }
+        CORE_LOG(eLOG_Critical, "MBEDTLS credentials not implemented");
     }
 
     if (!(session = (mbedtls_ssl_context*) malloc(sizeof(*session)))) {
         *error = errno;
         return 0;
     }
+
     mbedtls_ssl_init(session);
     if ((*error = mbedtls_ssl_setup(session, &s_MbedTlsConf)) != 0) {
         mbedtls_ssl_free(session);
@@ -358,7 +361,7 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SOCK sock,
         return 0;
     }
 
-    mbedtls_ssl_set_bio(session, sock, x_MbedTlsPush, x_MbedTlsPull, 0);
+    mbedtls_ssl_set_bio(session, ctx, x_MbedTlsPush, x_MbedTlsPull, 0);
  
     return session;
 }
@@ -395,9 +398,9 @@ static int/*bool*/ x_IfToLog(void)
 
 static int x_MbedTlsPull(void* ctx, unsigned char* buf, size_t size)
 {
-    EIO_Status status;
-    SOCK sock = (SOCK) ctx;
+    SOCK sock = ((SNcbiSSLctx*) ctx)->sock;
     FSSLPull pull = s_Pull;
+    EIO_Status status;
 
     if (pull) {
         size_t x_read = 0;
@@ -416,9 +419,9 @@ static int x_MbedTlsPull(void* ctx, unsigned char* buf, size_t size)
 
 static int x_MbedTlsPush(void* ctx, const unsigned char* data, size_t size)
 {
-    EIO_Status status;
-    SOCK sock = (SOCK) ctx;
+    SOCK sock = ((SNcbiSSLctx*) ctx)->sock;
     FSSLPush push = s_Push;
+    EIO_Status status;
 
     if (push) {
         ssize_t n_written = 0;
@@ -588,6 +591,7 @@ static void s_MbedTlsDelete(void* session)
     assert(session);
 
     mbedtls_ssl_free((mbedtls_ssl_context*) session);
+
     free(session);
 }
 

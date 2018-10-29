@@ -134,8 +134,8 @@ extern "C" {
 #  endif /*__cplusplus*/
 
 static EIO_Status  s_GnuTlsInit  (FSSLPull pull, FSSLPush push);
-static void*       s_GnuTlsCreate(ESOCK_Side side, SOCK sock, const char* host,
-                                  NCBI_CRED cred, int* error);
+static void*       s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx,
+                                  const char* host, int* error);
 static EIO_Status  s_GnuTlsOpen  (void* session, int* error, char** desc);
 static EIO_Status  s_GnuTlsRead  (void* session,       void* buf,  size_t size,
                                   size_t* done, int* error);
@@ -220,7 +220,7 @@ static EIO_Status x_ErrorToStatus(int* error, gnutls_session_t session,
 
     if (!*error)
         return eIO_Success;
-    sock = (SOCK) gnutls_transport_get_ptr(session);
+    sock = ((SNcbiSSLctx*) gnutls_transport_get_ptr(session))->sock;
     if      (*error == GNUTLS_E_AGAIN)
         status = x_RetryStatus(sock, direction);
     else if (*error == GNUTLS_E_INTERRUPTED)
@@ -299,10 +299,9 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
 }
 
 
-static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock, const char* host,
-                            NCBI_CRED cred, int* error)
+static void* s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx,
+                            const char* host, int* error)
 {
-    gnutls_transport_ptr_t  ptr = (gnutls_transport_ptr_t) sock;
     gnutls_connection_end_t end = (side == eSOCK_Client
                                    ? GNUTLS_CLIENT
                                    : GNUTLS_SERVER);
@@ -325,7 +324,8 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock, const char* host,
     CORE_UNLOCK;
 
     if (!acred
-        ||  (cred  &&  (cred->type != eNcbiCred_GnuTls  ||  !cred->data))) {
+        ||  (ctx->cred
+             &&  (ctx->cred->type != eNcbiCred_GnuTls  ||  !ctx->cred->data))){
         CORE_LOGF(eLOG_Error, ("Cannot %s GNUTLS credentials: %s",
                                acred ? "use"            : "set",
                                acred ? "Invalid format" : "Not initialized"));
@@ -344,7 +344,7 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock, const char* host,
     if ((err = gnutls_set_default_priority(session))                   != 0  ||
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x020200
         ( *val  &&
-         (err = gnutls_priority_set_direct(session, val, 0))           != 0) ||
+          (err = gnutls_priority_set_direct(session, val, 0))          != 0) ||
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=2.2.0*/
 #  if LIBGNUTLS_VERSION_NUMBER < 0x030306
         (!*val  &&
@@ -355,7 +355,8 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock, const char* host,
                                                      kGnuTlsCertPrio)) != 0) ||
 #  endif /*LIBGNUTLS_VERSION_NUMBER<3.3.6*/
         (err = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE,
-                                      cred ? cred->data : xcred))      != 0  ||
+                                      ctx->cred
+                                      ? ctx->cred->data : xcred))      != 0  ||
         (err = gnutls_credentials_set(session, GNUTLS_CRD_ANON, acred))!= 0  ||
         (len  &&  (err = gnutls_server_name_set(session, GNUTLS_NAME_DNS,
                                                 host, len))            != 0)) {
@@ -366,8 +367,8 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock, const char* host,
 
     gnutls_transport_set_pull_function(session, x_GnuTlsPull);
     gnutls_transport_set_push_function(session, x_GnuTlsPush);
-    gnutls_transport_set_ptr(session, ptr);
-    gnutls_session_set_ptr(session, sock);
+    gnutls_transport_set_ptr(session, ctx);
+    gnutls_session_set_ptr(session, ctx);
 
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x030000
     gnutls_handshake_set_timeout(session, 0);
@@ -436,26 +437,26 @@ static void x_set_errno(gnutls_session_t session, int error)
 static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr,
                             void* buf, size_t size)
 {
-    int x_error;
-    EIO_Status status;
-    SOCK sock = (SOCK) ptr;
+    SNcbiSSLctx* ctx = (SNcbiSSLctx*) ptr;
     FSSLPull pull = s_Pull;
+    EIO_Status status;
+    int x_error;
 
     if (pull) {
         size_t x_read = 0;
-        status = pull(sock, buf, size, &x_read, x_IfToLog());
+        status = pull(ctx->sock, buf, size, &x_read, x_IfToLog());
         if (x_read > 0  ||  status == eIO_Success/*&& x_read==0*/) {
             assert(status == eIO_Success);
             assert(x_read <= size);
-            x_set_errno((gnutls_session_t) sock->session, 0);
+            x_set_errno((gnutls_session_t) ctx->sess, 0);
             return x_read;
         }
     } else
         status = eIO_NotSupported;
 
-    x_error = x_StatusToError(status, sock, eIO_Read);
+    x_error = x_StatusToError(status, ctx->sock, eIO_Read);
     if (x_error)
-        x_set_errno((gnutls_session_t) sock->session, x_error);
+        x_set_errno((gnutls_session_t) ctx->sess, x_error);
     return -1;
 }
 
@@ -463,16 +464,16 @@ static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr,
 static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
                             const void* data, size_t size)
 {
-    int x_error;
-    EIO_Status status;
-    SOCK sock = (SOCK) ptr;
+    SNcbiSSLctx* ctx = (SNcbiSSLctx*) ptr;
     FSSLPush push = s_Push;
+    EIO_Status status;
+    int x_error;
 
     if (push) {
         ssize_t n_written = 0;
         do {
             size_t x_written = 0;
-            status = push(sock, data, size, &x_written, x_IfToLog());
+            status = push(ctx->sock, data, size, &x_written, x_IfToLog());
             if (!x_written) {
                 assert(!size  ||  status != eIO_Success);
                 if (size  ||  status != eIO_Success)
@@ -485,15 +486,15 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
                 data       = (const char*) data + x_written;
             }
         } while (size);
-        x_set_errno((gnutls_session_t) sock->session, 0);
+        x_set_errno((gnutls_session_t) ctx->sess, 0);
         return n_written;
     } else
         status = eIO_NotSupported;
 
  out:
-    x_error = x_StatusToError(status, sock, eIO_Write);
+    x_error = x_StatusToError(status, ctx->sock, eIO_Write);
     if (x_error)
-        x_set_errno((gnutls_session_t) sock->session, x_error);
+        x_set_errno((gnutls_session_t) ctx->sess, x_error);
     return -1;
 }
 
