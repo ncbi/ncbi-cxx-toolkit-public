@@ -883,20 +883,10 @@ s_BlastPruneExtraHits(BlastHSPResults* results, Int4 hitlist_size)
    for (query_index = 0; query_index < results->num_queries; ++query_index) {
       if (!(hit_list = results->hitlist_array[query_index]))
          continue;
-      if (hitlist_size < hit_list->hsplist_count){
-          if ((hit_list->hsplist_array[hitlist_size]->hsp_array[0] != NULL) &&
-        	  (hit_list->hsplist_array[hitlist_size -1]->hsp_array[0] != NULL)){
-        	  if (hit_list->hsplist_array[hitlist_size]->hsp_array[0]->score ==
-        		  hit_list->hsplist_array[hitlist_size -1]->hsp_array[0]->score){
-        		  Blast_MessageWrite(&(results->msgs), eBlastSevWarning,
-        		                          query_index, "Additional matches with identical score are not shown");
-        	  }
-          }
-          for (subject_index = hitlist_size;
-               subject_index < hit_list->hsplist_count; ++subject_index) {
-             hit_list->hsplist_array[subject_index] =
-             Blast_HSPListFree(hit_list->hsplist_array[subject_index]);
-          }
+      for (subject_index = hitlist_size;
+           subject_index < hit_list->hsplist_count; ++subject_index) {
+         hit_list->hsplist_array[subject_index] =
+         Blast_HSPListFree(hit_list->hsplist_array[subject_index]);
       }
       hit_list->hsplist_count = MIN(hit_list->hsplist_count, hitlist_size);
    }
