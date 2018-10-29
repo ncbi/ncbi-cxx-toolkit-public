@@ -14,6 +14,8 @@ Seq-entry ::= set {
     },
     genbank {
       extra-accessions {
+        "M10101",
+        "M10102",
         "Q8Y7J9"
       },
       keywords {

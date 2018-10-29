@@ -44,8 +44,7 @@ public:
     CModApply(const multimap<string, string>& mods);
     virtual ~CModApply();
 
-  //  void AddMod(const string& name, const string& value);
-    void Apply(CBioseq& bioseq);
+    void Apply(CBioseq& bioseq, bool replace_preexisting_vals);
 
 protected:
     unique_ptr<CModApply_Impl> m_pImpl;

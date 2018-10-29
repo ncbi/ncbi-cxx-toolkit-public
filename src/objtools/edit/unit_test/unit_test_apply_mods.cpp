@@ -324,7 +324,8 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
             }
         }
         edit::CModApply mod_apply(mods);
-        mod_apply.Apply(bioseq);
+        bool replace_preexisting_vals = true;
+        mod_apply.Apply(bioseq, replace_preexisting_vals);
     }
     catch (...) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
