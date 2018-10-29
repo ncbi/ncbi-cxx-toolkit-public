@@ -77,15 +77,24 @@ protected:
         /// @attention
         /// You should not use CityHash for persistent storage.  
         /// CityHash does not maintain backward compatibility with previous versions.
-        eCityHash32,  ///< CityHash 32-bit.
-        eCityHash64,  ///< CityHash 64-bit.
+        eCityHash32,  ///< CityHash, 32-bit result.
+        eCityHash64,  ///< CityHash, 64-bit result.
 
         /// @attention
         /// You should not use FarmHash for persistent storage.  
         /// Both FarmHash 32/64-bit methods may change from time to time,
         /// may differ on different platforms or compiler flags.
-        eFarmHash32,  ///< FarmHash 32-bit.
-        eFarmHash64   ///< FarmHash 64-bit.
+        eFarmHash32,  ///< FarmHash, 32-bit result.
+        eFarmHash64,  ///< FarmHash, 64-bit result.
+
+        /// @attention
+        /// You should not use MurmurHash for persistent storage.  
+        /// It may produce different results depends on platforms, depending on 
+        /// little-endian or big-endian architectures, 32- or 64-bit, or compiler
+        /// options related to alignment.
+        eMurmurHash2_32,  ///< MurmurHash2 for x86, 32-bit result.
+        eMurmurHash2_64,  ///< MurmurHash2 for x64, 64-bit result.
+        eMurmurHash3_32   ///< MurmurHash3 for x86, 32-bit result.
     };
 
 public:
@@ -135,6 +144,11 @@ protected:
     EMethodDef m_Method;      ///< Current method
     size_t     m_CharCount;   ///< Number of processed chars
 
+    /// Unique seed used by some hash methods. Usually this value 
+    /// sets once per process if needed. 0 by default, if not specified.
+    /// @sa CHash::SetSeed()
+    static Uint8 m_Seed;
+
     /// Checksum/Hash computation result
     union {
         Uint4 v32;   ///< Used to store 32-bit results
@@ -166,28 +180,37 @@ protected:
 ///
 /// @attention
 ///   You should not use some CHash methods for persistent storage, 
-///   like CityHash or FarmHash for example. It is netter to use CChecksum class
-///   if you need to do that.
+///   like CityHash, FarmHash or Murmur. Many hash methods designed
+///   to be used inside current process only, here and now.
+///   Please use CChecksum class if you need to store checksums for later usage.
+///
+/// @attention
+///   Some hash methods have 32/64 bit variants. Usually 32-bit version works
+///   faster on 32-bit machines and vice versa.
+///
 /// @sa
-///   CChecksumBase::EMethods. CChecksum
-
+///   CChecksumBase::EMethods, NHash, CChecksum
+///
 class NCBI_XUTIL_EXPORT CHash : public CChecksumBase
 {
 public:
     /// Method used to compute hash.
     /// @sa CChecksumBase::EMethods
     enum EMethod {
-        eCRC32       = CChecksumBase::eCRC32C,
-        eCRC32ZIP    = CChecksumBase::eCRC32ZIP,
-        eCRC32INSD   = CChecksumBase::eCRC32INSD,
-        eCRC32CKSUM  = CChecksumBase::eCRC32CKSUM,
-        eCRC32C      = CChecksumBase::eCRC32C,
-        eAdler32     = CChecksumBase::eAdler32,
-        eCityHash32  = CChecksumBase::eCityHash32,
-        eCityHash64  = CChecksumBase::eCityHash64,
-        eFarmHash32  = CChecksumBase::eFarmHash32,
-        eFarmHash64  = CChecksumBase::eFarmHash64,
-        eDefault     = eCityHash64
+        eCRC32          = CChecksumBase::eCRC32C,
+        eCRC32ZIP       = CChecksumBase::eCRC32ZIP,
+        eCRC32INSD      = CChecksumBase::eCRC32INSD,
+        eCRC32CKSUM     = CChecksumBase::eCRC32CKSUM,
+        eCRC32C         = CChecksumBase::eCRC32C,
+        eAdler32        = CChecksumBase::eAdler32,
+        eCityHash32     = CChecksumBase::eCityHash32,
+        eCityHash64     = CChecksumBase::eCityHash64,
+        eFarmHash32     = CChecksumBase::eFarmHash32,
+        eFarmHash64     = CChecksumBase::eFarmHash64,
+        eMurmurHash2_32 = CChecksumBase::eMurmurHash2_32,
+        eMurmurHash2_64 = CChecksumBase::eMurmurHash2_64,
+        eMurmurHash3_32 = CChecksumBase::eMurmurHash3_32,
+        eDefault        = eCityHash64
     };
 
     /// Default constructor.
@@ -199,6 +222,10 @@ public:
 
     /// Get current method used to compute hash.
     EMethod GetMethod(void) const;
+
+    /// Unique seed used by some hash methods. Usually this value 
+    /// sets once per process if needed. 0 by default, if not specified.
+    static void SetSeed(Uint8 seed);
 
     /// Calculate hash.
     /// @sa GetResult32(), GetResult66()
@@ -213,6 +240,49 @@ public:
 
     /// Reset the object to prepare it to the next computation using another method.
     void Reset(EMethod method);
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// NHash -- 
+///
+/// Wrappers for portable versions of 3rd party hash functions.
+///
+/// @note
+///   For more generic code see CHash, almost the same performance,
+///   but similar interface for all hash methods.
+/// @sa
+///   CHash, CChecksum
+
+class NCBI_XNCBI_EXPORT NHash
+{
+public:
+    /// CityHash
+    static Uint4 CityHash32(const CTempString str);
+    static Uint4 CityHash32(const char* str, size_t len);
+    static Uint8 CityHash64(const CTempString str);
+    static Uint8 CityHash64(const char* str, size_t len);
+
+    /// FarmHash
+    static Uint4 FarmHash32(const CTempString str);
+    static Uint4 FarmHash32(const char* str, size_t len);
+    static Uint8 FarmHash64(const CTempString str);
+    static Uint8 FarmHash64(const char* str, size_t len);
+
+    /// MurmurHash2
+    /// @note The length of string is limited with int type.
+    static Uint4 MurmurHash2(const CTempString str, Uint4 seed = 0);
+    static Uint4 MurmurHash2(const char* str, size_t len, Uint4 seed = 0);
+    static Uint8 MurmurHash64A(const CTempString str, Uint8 seed = 0);
+    static Uint8 MurmurHash64A(const char* str, size_t len, Uint8 seed = 0);
+
+    /// MurmurHash3 (32-bit version only)
+    /// @note The length of string is limited with int type.
+    /// MurmurHash2 for x64, 64-bit result.
+    static Uint4 MurmurHash3_x86_32(const CTempString str, Uint4 seed = 0);
+    static Uint4 MurmurHash3_x86_32(const char* str, size_t len, Uint4 seed = 0);
 };
 
 
@@ -415,6 +485,7 @@ size_t CChecksumBase::GetSize(void) const
         return 16;
     case eFarmHash64:
     case eCityHash64:
+    case eMurmurHash2_64:
         return 8;
     default:
         return 4;
@@ -437,6 +508,53 @@ inline
 CChecksum::EMethod CChecksum::GetMethod(void) const
 {
     return (EMethod)m_Method;
+}
+
+inline
+Uint4 CChecksumBase::GetResult32(void) const
+{
+    switch ( m_Method ) {
+    case eCRC32:
+    case eCRC32INSD:
+    case eAdler32:
+    case eCityHash32:
+    case eFarmHash32:
+    case eMurmurHash2_32:
+    case eMurmurHash3_32:
+        return m_Value.v32;
+    case eCRC32ZIP:
+    case eCRC32C:
+        return ~m_Value.v32;
+    case eCRC32CKSUM:
+    {
+        // POSIX checksum includes length of data
+        char extra_bytes[8];
+        size_t extra_len = 0;
+        for ( size_t len = m_CharCount; len; len >>= 8 ) {
+            extra_bytes[extra_len++] = char(len & 0xff);
+        }
+        CChecksumBase extra(*this);
+        extra.x_Update(extra_bytes, extra_len);
+        return ~extra.m_Value.v32;
+    }
+    default:
+        _ASSERT(0);
+        return 0;
+    }
+}
+
+inline
+Uint8 CChecksumBase::GetResult64(void) const
+{
+    switch ( m_Method ) {
+    case eCityHash64:
+    case eFarmHash64:
+    case eMurmurHash2_64:
+        return m_Value.v64;
+    default:
+        _ASSERT(0);
+        return 0;
+    }
 }
 
 inline

@@ -34,10 +34,14 @@
 #include <corelib/ncbifile.hpp>
 #include <util/checksum.hpp>
 
-// Use builtin versions of CityHash and FarmHash libraries.
+// Use builtin versions of CityHash and FarmHash libraries,
+// that compiles as separate files to avoid name clashing.
 #include "checksum/cityhash/city.h"
-#include "checksum/farmhash/config.h" // farmhash doesn't include it automatically
+#include "checksum/farmhash/config.h" // need for farmhash.h
 #include "checksum/farmhash/farmhash.h"
+// And include MurmurHash directly
+#include "checksum/murmurhash/MurmurHash2.cxx"
+#include "checksum/murmurhash/MurmurHash3.cxx"
 
 
 #define USE_CRC32C_INTEL // try to use Intel CRC32C instructions
@@ -67,6 +71,7 @@
 
 
 BEGIN_NCBI_SCOPE
+
 
 static const size_t kCRC32Size = 256;
 typedef Uint4 TCRC32Table[kCRC32Size];
@@ -141,61 +146,17 @@ CChecksumBase& CChecksumBase::operator= (const CChecksumBase& other)
 }
 
 
-Uint4 CChecksumBase::GetResult32(void) const
-{
-    switch ( m_Method ) {
-    case eCRC32CKSUM:
-    {
-        // POSIX checksum includes length of data
-        char extra_bytes[8];
-        size_t extra_len = 0;
-        for ( size_t len = m_CharCount; len; len >>= 8 ) {
-            extra_bytes[extra_len++] = char(len & 0xff);
-        }
-        CChecksumBase extra(*this);
-        extra.x_Update(extra_bytes, extra_len);
-        return ~extra.m_Value.v32;
-    }
-    case eCRC32:
-    case eCRC32INSD:
-    case eAdler32:
-    case eCityHash32:
-    case eFarmHash32:
-        return m_Value.v32;
-    case eCRC32ZIP:
-    case eCRC32C:
-        return ~m_Value.v32;
-    default:
-        _ASSERT(0);
-        return 0;
-    }
-}
-
-
-Uint8 CChecksumBase::GetResult64(void) const
-{
-    switch ( m_Method ) {
-    case eCityHash64:
-    case eFarmHash64:
-        return m_Value.v64;
-    default:
-        _ASSERT(0);
-        return 0;
-    }
-}
-
-
 string CChecksumBase::GetResultHex(void) const
 {
     switch (m_Method ) {
     case eMD5:
         return m_Value.md5->GetHexSum();
     default:
-        if (GetBits() == 32) {
-            return NStr::NumericToString(GetResult32(), 0, 16);
-        }
         if (GetBits() == 64) {
             return NStr::NumericToString(GetResult64(), 0, 16);
+        }
+        if (GetBits() == 32) {
+            return NStr::NumericToString(GetResult32(), 0, 16);
         }
         _ASSERT(0);
         return kEmptyStr;
@@ -240,6 +201,9 @@ void CChecksumBase::x_Reset(EMethodDef method)
     case eCityHash64:
     case eFarmHash32:
     case eFarmHash64:
+    case eMurmurHash2_32:
+    case eMurmurHash2_64:
+    case eMurmurHash3_32:
         break;
     default:
         _ASSERT(0);
@@ -263,6 +227,16 @@ CHash& CHash::operator= (const CHash& other)
 {
     CChecksumBase::operator=(other);
     return *this;
+}
+
+
+/// @sa CHash::SetSeed()
+Uint8 CChecksumBase::m_Seed = 0;
+
+
+void CHash::SetSeed(Uint8 seed)
+{
+    m_Seed = seed;
 }
 
 
@@ -1219,10 +1193,118 @@ void CChecksumBase::x_Update(const char* str, size_t count)
         _ASSERT(!m_CharCount);
         m_Value.v64 = farmhash::Hash64(str, count);
         break;
+    case eMurmurHash2_32:
+        {{
+            _ASSERT(!m_CharCount);
+            int n = count > kMax_Int ? kMax_Int : (int)count;
+            m_Value.v32 = MurmurHash2(str, n, (uint32_t)m_Seed);
+        }}
+        break;
+    case eMurmurHash2_64:
+        {{
+            _ASSERT(!m_CharCount);
+            int n = count > kMax_Int ? kMax_Int : (int)count;
+            m_Value.v64 = MurmurHash64A(str, n, m_Seed);
+        }}
+        break;
+    case eMurmurHash3_32:
+        {{
+            _ASSERT(!m_CharCount);
+            int n = count > kMax_Int ? kMax_Int : (int)count;
+            MurmurHash3_x86_32(str, n, (uint32_t)m_Seed, &m_Value.v32);
+        }}
+        break;
     default:
         _ASSERT(0);
         break;
     }
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// NHash
+//
+
+Uint4 NHash::CityHash32(const CTempString str)
+{
+    return ::CityHash32(str.data(), str.length());
+}
+
+Uint4 NHash::CityHash32(const char* str, size_t len)
+{
+    return ::CityHash32(str, len);
+}
+
+Uint8 NHash::CityHash64(const CTempString str)
+{
+    return ::CityHash64(str.data(), str.length());
+}
+
+Uint8 NHash::CityHash64(const char* str, size_t len)
+{
+    return ::CityHash64(str, len);
+}
+
+Uint4 NHash::FarmHash32(const CTempString str)
+{
+    return farmhash::Hash32(str.data(), str.length());
+ 
+}
+
+Uint4 NHash::FarmHash32(const char* str, size_t len)
+{
+    return farmhash::Hash32(str, len);
+}
+
+Uint8 NHash::FarmHash64(const CTempString str)
+{
+    return farmhash::Hash64(str.data(), str.length());
+}
+
+Uint8 NHash::FarmHash64(const char* str, size_t len)
+{
+    return farmhash::Hash64(str, len);
+}
+
+Uint4 NHash::MurmurHash2(const CTempString str, Uint4 seed)
+{
+    _ASSERT(str.length() <= kMax_Int);
+    return ::MurmurHash2(str.data(), (int)str.length(), seed);
+}
+
+Uint4 NHash::MurmurHash2(const char* str, size_t len, Uint4 seed)
+{
+    _ASSERT(len <= kMax_Int);
+    return ::MurmurHash2(str, (int)len, seed);
+}
+
+Uint8 NHash::MurmurHash64A(const CTempString str, Uint8 seed)
+{
+    _ASSERT(str.length() <= kMax_Int);
+    return ::MurmurHash64A(str.data(), (int)str.length(), seed);
+}
+
+Uint8 NHash::MurmurHash64A(const char* str, size_t len, Uint8 seed)
+{
+    _ASSERT(len <= kMax_Int);
+    return ::MurmurHash64A(str, (int)len, seed);
+}
+
+Uint4 NHash::MurmurHash3_x86_32(const CTempString str, Uint4 seed)
+{
+    _ASSERT(str.length() <= kMax_Int);
+    Uint4 result;
+    ::MurmurHash3_x86_32(str.data(), (int)str.length(), seed, &result);
+    return result;
+}
+
+Uint4 NHash::MurmurHash3_x86_32(const char* str, size_t len, Uint4 seed)
+{
+    _ASSERT(len <= kMax_Int);
+    Uint4 result;
+    ::MurmurHash3_x86_32(str, (int)len, seed, &result);
+    return result;
 }
 
 

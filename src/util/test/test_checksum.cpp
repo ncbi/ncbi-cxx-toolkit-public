@@ -123,17 +123,20 @@ void CChecksumTestApp::Init(void)
 string CChecksumTestApp::GetMethodName(EMethodDef method)
 {
     switch ( method ) {
-    case eCRC32:      return "CRC32";
-    case eCRC32ZIP:   return "CRC32ZIP";
-    case eCRC32INSD:  return "CRC32INSD";
-    case eCRC32CKSUM: return "CRC32CKSUM";
-    case eCRC32C:     return "CRC32C";
-    case eAdler32:    return "Adler32";
-    case eMD5:        return "MD5";
-    case eCityHash32: return "CityHash32";
-    case eCityHash64: return "CityHash64";
-    case eFarmHash32: return "FarmHash32";
-    case eFarmHash64: return "FarmHash64";
+    case eCRC32:          return "CRC32";
+    case eCRC32ZIP:       return "CRC32ZIP";
+    case eCRC32INSD:      return "CRC32INSD";
+    case eCRC32CKSUM:     return "CRC32CKSUM";
+    case eCRC32C:         return "CRC32C";
+    case eAdler32:        return "Adler32";
+    case eMD5:            return "MD5";
+    case eCityHash32:     return "CityHash32";
+    case eCityHash64:     return "CityHash64";
+    case eFarmHash32:     return "FarmHash32";
+    case eFarmHash64:     return "FarmHash64";
+    case eMurmurHash2_32: return "MurmurHash2_32";
+    case eMurmurHash2_64: return "MurmurHash2_64";
+    case eMurmurHash3_32: return "MurmurHash3_32";
     case eNone:
         ;
     }
@@ -154,6 +157,9 @@ bool CChecksumTestApp::IsHashMethod(EMethodDef method)
     case eCityHash64:
     case eFarmHash32:
     case eFarmHash64:
+    case eMurmurHash2_32:
+    case eMurmurHash2_64:
+    case eMurmurHash3_32:
         return true;
     case eMD5:
         return false;
@@ -179,6 +185,9 @@ bool CChecksumTestApp::IsChecksumhMethod(EMethodDef method)
     case eCityHash64:
     case eFarmHash32:
     case eFarmHash64:
+    case eMurmurHash2_32:
+    case eMurmurHash2_64:
+    case eMurmurHash3_32:
         return false;
     case eNone:
         ;
@@ -238,93 +247,117 @@ bool CChecksumTestApp::SelfTest_Str()
     vector<STest> s_Tests = {
         { // CChecksum::Reset() test, except hash methods, that compute hash even for empty strings
           "", {
-            { eCRC32,       { 0 },           "" },
-            { eCRC32ZIP,    { 0 },           "" },
-            { eCRC32INSD,   { 0xffffffff },  "" },
-            { eCRC32CKSUM,  { 0xffffffff },  "" },
-            { eCRC32C,      { 0 },           "" },
-            { eAdler32,     { 0x00000001 },  "" },
-            { eCityHash32,  { 0xdc56d17a },  "" },
-            { eCityHash64,  { NCBI_CONST_UINT8(0x9ae16a3b2f90404f) }, "" },
-            { eMD5,         { 0 }, "d41d8cd98f00b204e9800998ecf8427e" }}
+            { eCRC32,          { 0 },           "" },
+            { eCRC32ZIP,       { 0 },           "" },
+            { eCRC32INSD,      { 0xffffffff },  "" },
+            { eCRC32CKSUM,     { 0xffffffff },  "" },
+            { eCRC32C,         { 0 },           "" },
+            { eAdler32,        { 0x00000001 },  "" },
+            { eCityHash32,     { 0xdc56d17a },  "" },
+            { eCityHash64,     { NCBI_CONST_UINT8(0x9ae16a3b2f90404f) }, "" },
+            { eMurmurHash2_32, { 0x71b7ebf6 },  "" },
+            { eMurmurHash2_64, { NCBI_CONST_UINT8(0x1a14f106cd88c604) }, "" },
+            { eMurmurHash3_32, { 0x3c46c9dc },  "" },
+            { eMD5,            { 0 }, "d41d8cd98f00b204e9800998ecf8427e" }}
         },
         { "a", {
-            { eCRC32,       { 0xa864db20 },  "" },
-            { eCRC32ZIP,    { 0xe8b7be43 },  "" },
-            { eCRC32INSD,   { 0x174841bc },  "" },
-            { eCRC32CKSUM,  { 0x48c279fe },  "" },
-            { eCRC32C,      { 0xc1d04330 },  "" },
-            { eAdler32,     { 0x00620062 },  "" },
-            { eCityHash32,  { 0x3c973d4d },  "" },
-            { eCityHash64,  { NCBI_CONST_UINT8(0xb3454265b6df75e3) }, "" },
-            { eMD5,         { 0 }, "0cc175b9c0f1b6a831c399e269772661" }}
+            { eCRC32,          { 0xa864db20 },  "" },
+            { eCRC32ZIP,       { 0xe8b7be43 },  "" },
+            { eCRC32INSD,      { 0x174841bc },  "" },
+            { eCRC32CKSUM,     { 0x48c279fe },  "" },
+            { eCRC32C,         { 0xc1d04330 },  "" },
+            { eAdler32,        { 0x00620062 },  "" },
+            { eCityHash32,     { 0x3c973d4d },  "" },
+            { eCityHash64,     { NCBI_CONST_UINT8(0xb3454265b6df75e3) }, "" },
+            { eMurmurHash2_32, { 0xdd6eaa72 },  "" },
+            { eMurmurHash2_64, { NCBI_CONST_UINT8(0xe78727fd27938759) }, "" },
+            { eMurmurHash3_32, { 0x95352c35 },  "" },
+            { eMD5,            { 0 }, "0cc175b9c0f1b6a831c399e269772661" }}
         },
         { "abc", {
-            { eCRC32,       { 0x2c17398c },  "" },
-            { eCRC32ZIP,    { 0x352441c2 },  "" },
-            { eCRC32INSD,   { 0xcadbbe3d },  "" },
-            { eCRC32CKSUM,  { 0x48aa78a2 },  "" },
-            { eCRC32C,      { 0x364b3fb7 },  "" },
-            { eAdler32,     { 0x024d0127 },  "" },
-            { eCityHash32,  { 0x2f635ec7 },  "" },
-            { eCityHash64,  { NCBI_CONST_UINT8(0x24a5b3a074e7f369) }, "" },
-            { eMD5,         { 0 }, "900150983cd24fb0d6963f7d28e17f72" }}
+            { eCRC32,          { 0x2c17398c },  "" },
+            { eCRC32ZIP,       { 0x352441c2 },  "" },
+            { eCRC32INSD,      { 0xcadbbe3d },  "" },
+            { eCRC32CKSUM,     { 0x48aa78a2 },  "" },
+            { eCRC32C,         { 0x364b3fb7 },  "" },
+            { eAdler32,        { 0x024d0127 },  "" },
+            { eCityHash32,     { 0x2f635ec7 },  "" },
+            { eCityHash64,     { NCBI_CONST_UINT8(0x24a5b3a074e7f369) }, "" },
+            { eMurmurHash2_32, { 0xe64e1d8a },  "" },
+            { eMurmurHash2_64, { NCBI_CONST_UINT8(0x9d373123f31f4b40) }, "" },
+            { eMurmurHash3_32, { 0xcdb7804f },  "" },
+            { eMD5,            { 0 }, "900150983cd24fb0d6963f7d28e17f72" }}
         },
         { "message digest", {
-            { eCRC32,       { 0x5c57dedc },  "" },
-            { eCRC32ZIP,    { 0x20159d7f },  "" },
-            { eCRC32INSD,   { 0xdfea6280 },  "" },
-            { eCRC32CKSUM,  { 0xd934b396 },  "" },
-            { eCRC32C,      { 0x02bd79d0 },  "" },
-            { eAdler32,     { 0x29750586 },  "" },
-            { eCityHash32,  { 0x246f52b3 },  "" },
-            { eCityHash64,  { NCBI_CONST_UINT8(0x8db193972bf98c6a) }, "" },
-            { eMD5,         { 0 }, "f96b697d7cb7938d525a2f31aaf161d0" }}
+            { eCRC32,          { 0x5c57dedc },  "" },
+            { eCRC32ZIP,       { 0x20159d7f },  "" },
+            { eCRC32INSD,      { 0xdfea6280 },  "" },
+            { eCRC32CKSUM,     { 0xd934b396 },  "" },
+            { eCRC32C,         { 0x02bd79d0 },  "" },
+            { eAdler32,        { 0x29750586 },  "" },
+            { eCityHash32,     { 0x246f52b3 },  "" },
+            { eCityHash64,     { NCBI_CONST_UINT8(0x8db193972bf98c6a) }, "" },
+            { eMurmurHash2_32, { 0x00e65523 },  "" },
+            { eMurmurHash2_64, { NCBI_CONST_UINT8(0x9ccccdc1590b7884) }, "" },
+            { eMurmurHash3_32, { 0x46558202 },  "" },
+            { eMD5,            { 0 }, "f96b697d7cb7938d525a2f31aaf161d0" }}
         },
         { "abcdefghijklmnopqrstuvwxyz", {
-            { eCRC32,       { 0x3bc2a463 },  "" },
-            { eCRC32ZIP,    { 0x4c2750bd },  "" },
-            { eCRC32INSD,   { 0xb3d8af42 },  "" },
-            { eCRC32CKSUM,  { 0xa1b937a8 },  "" },
-            { eCRC32C,      { 0x9ee6ef25 },  "" },
-            { eAdler32,     { 0x90860b20 },  "" },
-            { eCityHash32,  { 0xaa02c5c1 },  "" },
-            { eCityHash64,  { NCBI_CONST_UINT8(0x5ead741ce7ac31bd) }, "" },
-            { eMD5,         { 0 }, "c3fcd3d76192e4007dfb496cca67e13b" }}
+            { eCRC32,          { 0x3bc2a463 },  "" },
+            { eCRC32ZIP,       { 0x4c2750bd },  "" },
+            { eCRC32INSD,      { 0xb3d8af42 },  "" },
+            { eCRC32CKSUM,     { 0xa1b937a8 },  "" },
+            { eCRC32C,         { 0x9ee6ef25 },  "" },
+            { eAdler32,        { 0x90860b20 },  "" },
+            { eCityHash32,     { 0xaa02c5c1 },  "" },
+            { eCityHash64,     { NCBI_CONST_UINT8(0x5ead741ce7ac31bd) }, "" },
+            { eMurmurHash2_32, { 0xb24869d9 },  "" },
+            { eMurmurHash2_64, { NCBI_CONST_UINT8(0x31a588f6a77a8210) }, "" },
+            { eMurmurHash3_32, { 0x98aa3c36 },  "" },
+            { eMD5,            { 0 }, "c3fcd3d76192e4007dfb496cca67e13b" }}
         },
         { "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", {
-            { eCRC32,       { 0x26910730 },  "" },
-            { eCRC32ZIP,    { 0x1fc2e6d2 },  "" },
-            { eCRC32INSD,   { 0xe03d192d },  "" },
-            { eCRC32CKSUM,  { 0x04e1f937 },  "" },
-            { eCRC32C,      { 0xa245d57d },  "" },
-            { eAdler32,     { 0x8adb150c },  "" },
-            { eCityHash32,  { 0xa77b8219 },  "" },
-            { eCityHash64,  { NCBI_CONST_UINT8(0x4566c1e718836cd6) }, "" },
-            { eMD5,         { 0 }, "d174ab98d277d9f5a5611c2c9f419d9f" }}
+            { eCRC32,          { 0x26910730 },  "" },
+            { eCRC32ZIP,       { 0x1fc2e6d2 },  "" },
+            { eCRC32INSD,      { 0xe03d192d },  "" },
+            { eCRC32CKSUM,     { 0x04e1f937 },  "" },
+            { eCRC32C,         { 0xa245d57d },  "" },
+            { eAdler32,        { 0x8adb150c },  "" },
+            { eCityHash32,     { 0xa77b8219 },  "" },
+            { eCityHash64,     { NCBI_CONST_UINT8(0x4566c1e718836cd6) }, "" },
+            { eMurmurHash2_32, { 0x648c1aef },  "" },
+            { eMurmurHash2_64, { NCBI_CONST_UINT8(0x8c72371817be471b) }, "" },
+            { eMurmurHash3_32, { 0x2566f7c8 },  "" },
+            { eMD5,            { 0 }, "d174ab98d277d9f5a5611c2c9f419d9f" }}
         },
         { "12345678901234567890123456789012345678901234567890123456789012345678901234567890", {
-            { eCRC32,       { 0x7110bde7 },  "" },
-            { eCRC32ZIP,    { 0x7ca94a72 },  "" },
-            { eCRC32INSD,   { 0x8356b58d },  "" },
-            { eCRC32CKSUM,  { 0x73a0b3a8 },  "" },
-            { eCRC32C,      { 0x477a6781 },  "" },
-            { eAdler32,     { 0x97b61069 },  "" },
-            { eCityHash32,  { 0x725594c0 },  "" },
-            { eCityHash64,  { NCBI_CONST_UINT8(0x791a4c16629ee4cd) }, "" },
-            { eMD5,         { 0 }, "57edf4a22be3c955ac49da2e2107b67a" }}
+            { eCRC32,          { 0x7110bde7 },  "" },
+            { eCRC32ZIP,       { 0x7ca94a72 },  "" },
+            { eCRC32INSD,      { 0x8356b58d },  "" },
+            { eCRC32CKSUM,     { 0x73a0b3a8 },  "" },
+            { eCRC32C,         { 0x477a6781 },  "" },
+            { eAdler32,        { 0x97b61069 },  "" },
+            { eCityHash32,     { 0x725594c0 },  "" },
+            { eCityHash64,     { NCBI_CONST_UINT8(0x791a4c16629ee4cd) }, "" },
+            { eMurmurHash2_32, { 0xf334c676 },  "" },
+            { eMurmurHash2_64, { NCBI_CONST_UINT8(0x48cfebd7cd2eac2f) }, "" },
+            { eMurmurHash3_32, { 0x6029055e },  "" },
+            { eMD5,            { 0 }, "57edf4a22be3c955ac49da2e2107b67a" }}
         },
         { string("\1\xc0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\1\xfe\x60\xac\0\0\0"
                  "\x8\0\0\0\x4\0\0\0\x9\x25\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", 48), {
-            { eCRC32,       { 0xfbcf2b84 },  "" },
-            { eCRC32ZIP,    { 0xc897a166 },  "" },
-            { eCRC32INSD,   { 0x37685e99 },  "" },
-            { eCRC32CKSUM,  { 0x46152007 },  "" },
-            { eCRC32C,      { 0x99b08a14 },  "" },
-            { eAdler32,     { 0x65430307 },  "" },
-            { eCityHash32,  { 0x5a50eecd },  "" },
-            { eCityHash64,  { NCBI_CONST_UINT8(0xca8a7f96d3b805dd) }, "" },
-            { eMD5,         { 0 }, "f16de75fd4137d2b5b12f35f247a6214" }}
+            { eCRC32,          { 0xfbcf2b84 },  "" },
+            { eCRC32ZIP,       { 0xc897a166 },  "" },
+            { eCRC32INSD,      { 0x37685e99 },  "" },
+            { eCRC32CKSUM,     { 0x46152007 },  "" },
+            { eCRC32C,         { 0x99b08a14 },  "" },
+            { eAdler32,        { 0x65430307 },  "" },
+            { eCityHash32,     { 0x5a50eecd },  "" },
+            { eCityHash64,     { NCBI_CONST_UINT8(0xca8a7f96d3b805dd) }, "" },
+            { eMurmurHash2_32, { 0x38abf1aa },  "" },
+            { eMurmurHash2_64, { NCBI_CONST_UINT8(0xf47f0a3ee8e9fa45) }, "" },
+            { eMurmurHash3_32, { 0x084d2e6b },  "" },
+            { eMD5,            { 0 }, "f16de75fd4137d2b5b12f35f247a6214" }}
         }
     };
 
@@ -334,12 +367,12 @@ bool CChecksumTestApp::SelfTest_Str()
             if ( IsHashMethod(testcase.method) ) {
                 CHash hash((CHash::EMethod)testcase.method);
                 hash.Calculate(test.str.data(), test.str.size());
-                ok &= VerifySum("Hash - string '" + NStr::PrintableString(test.str) + "'", hash, testcase);
+                ok &= VerifySum("string '" + NStr::PrintableString(test.str) + "'", hash, testcase);
             }
             if ( IsChecksumhMethod(testcase.method) ) {
                 CChecksum sum((CChecksum::EMethod)testcase.method);
                 ComputeStrSum(test.str.data(), test.str.size(), sum);
-                ok &= VerifySum("Checksum - string '" + NStr::PrintableString(test.str) + "'", sum, testcase);
+                ok &= VerifySum("string '" + NStr::PrintableString(test.str) + "'", sum, testcase);
             }
         }
     }
@@ -494,15 +527,18 @@ void CFileData::Load(CNcbiIstream& is)
 bool CChecksumTestApp::SelfTest_Big()
 {
     vector<SCase> s_Tests = {
-        { eCRC32,       { 0xa0b29e2f },  "" },
-        { eCRC32ZIP,    { 0x39a90823 },  "" },
-        { eCRC32INSD,   { 0xc656f7dc },  "" },
-        { eCRC32CKSUM,  { 0x4a0a1bdb },  "" },
-        { eCRC32C,      { 0x7adb1cd3 },  "" },
-        { eAdler32,     { 0x528a7135 },  "" },
-        { eCityHash32,  { 0xca83e47e },  "" },
-        { eCityHash64,  { NCBI_CONST_UINT8(0xb2195ac46438d77d) }, "" },
-        { eMD5,         { 0 }, "a1ed665e33b6feb5a645738b4384ca25" }
+        { eCRC32,          { 0xa0b29e2f },  "" },
+        { eCRC32ZIP,       { 0x39a90823 },  "" },
+        { eCRC32INSD,      { 0xc656f7dc },  "" },
+        { eCRC32CKSUM,     { 0x4a0a1bdb },  "" },
+        { eCRC32C,         { 0x7adb1cd3 },  "" },
+        { eAdler32,        { 0x528a7135 },  "" },
+        { eCityHash32,     { 0xca83e47e },  "" },
+        { eCityHash64,     { NCBI_CONST_UINT8(0xb2195ac46438d77d) }, "" },
+        { eMurmurHash2_32, { 0x65547016 },  "" },
+        { eMurmurHash2_64, { NCBI_CONST_UINT8(0x971d5ff461a89662) },  "" },
+        { eMurmurHash3_32, { 0xa7e2d7ae },  "" },
+        { eMD5,            { 0 }, "a1ed665e33b6feb5a645738b4384ca25" }
     };
     const char*  kFileName = "test_data/checksum.dat";
     const size_t kOffsets  = 16;
@@ -559,16 +595,19 @@ void CChecksumTestApp::ComputeBigSum(CRandom& random, const CFileData& file_data
 
 void CChecksumTestApp::SpeedTests(const CFileData& data)
 {
-    SpeedTest( eCRC32,      data );
-    SpeedTest( eCRC32ZIP,   data );
-    SpeedTest( eCRC32CKSUM, data );
-    SpeedTest( eCRC32C,     data );
-    SpeedTest( eAdler32,    data );
-    SpeedTest( eCityHash32, data );
-    SpeedTest( eFarmHash32, data );
-    SpeedTest( eCityHash64, data );
-    SpeedTest( eFarmHash64, data );
-    SpeedTest( eMD5,        data );
+    SpeedTest( eCRC32,          data );
+    SpeedTest( eCRC32ZIP,       data );
+    SpeedTest( eCRC32CKSUM,     data );
+    SpeedTest( eCRC32C,         data );
+    SpeedTest( eAdler32,        data );
+    SpeedTest( eCityHash32,     data );
+    SpeedTest( eFarmHash32,     data );
+    SpeedTest( eCityHash64,     data );
+    SpeedTest( eFarmHash64,     data );
+    SpeedTest( eMurmurHash2_32, data );
+    SpeedTest( eMurmurHash2_64, data );
+    SpeedTest( eMurmurHash3_32, data );
+    SpeedTest( eMD5,            data );
 }
 
 
@@ -592,7 +631,7 @@ void CChecksumTestApp::SpeedTest(CChecksumBase::EMethodDef method,  const CFileD
     }
     string time = timer.AsString();
     cout << "Processed in " << time << ": ";
-    cout << setw(10) << GetMethodName(method) << ": "
+    cout << setw(14) << GetMethodName(method) << ": "
          << setw(8)  << base->GetResultHex() << endl;
 }
 
@@ -600,6 +639,9 @@ void CChecksumTestApp::SpeedTest(CChecksumBase::EMethodDef method,  const CFileD
 int CChecksumTestApp::Run(void)
 {
     const CArgs& args = GetArgs();
+
+    // Optional global seed for hash methods.
+    CHash::SetSeed(12345);
 
     if (args["selftest"]) {
         bool ok = true;
