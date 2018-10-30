@@ -41,8 +41,6 @@
 
 BEGIN_NCBI_SCOPE
 
-class CHash;
-
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
