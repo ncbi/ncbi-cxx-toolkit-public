@@ -27,6 +27,8 @@ set(NCBI_PTBCFG_KNOWN_FOLDERS
   algo
   misc
   sra
+  app
+  sample
 )
 
 project(${NCBI_CMAKEPROJECT_NAME})
