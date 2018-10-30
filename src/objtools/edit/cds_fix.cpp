@@ -1220,60 +1220,103 @@ ApplyCDSFrame::ECdsFrame ApplyCDSFrame::s_GetFrameFromName(const string& name)
 
 #define MAX_ID_LENGTH 50
 
-CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label)
-{
-    CHash chksum(CHash::eCityHash64);
-    objects::CSeq_id_Handle hid;
-    for (auto it : bsh.GetId()) 
-    {
-        if (it.GetSeqIdOrNull() && it.GetSeqIdOrNull()->IsGeneral())
-        {
-            hid = it;
-            break;
-        }
-    }
-    if (!hid)
-        NCBI_THROW(CException, eUnknown, "Seq-id type general not found");
-
-    CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
-    new_id->Assign(*hid.GetSeqId());
-    CRef<objects::CSeq_id> new_id_hash(new objects::CSeq_id());
-    new_id_hash->Assign(*hid.GetSeqId());
-    string id_base;
-    if (new_id->GetGeneral().IsSetTag())
-    {
-        if (new_id->GetGeneral().GetTag().IsId())
-        {
-            id_base =  NStr::NumericToString(new_id->GetGeneral().GetTag().GetId());
-            new_id->SetGeneral().ResetTag();
-        }
-        else
-        {
-            id_base = new_id->GetGeneral().GetTag().GetStr();
-        }
-    }
+CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_base, CHash &chksum, CScope &scope, int &offset) // TODO use directly in x_DoImportCDS
+{   
     chksum.Calculate(id_base);
     string id_base_hash = chksum.GetResultHex();
-    new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
-    new_id_hash->SetGeneral().SetTag().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
-    objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
-    objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time 
-                                                                                         // to avoid a situation where ID_1 and HASH_1 are both created
+    CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
+    string new_str = id_base;
+    if (offset > 0)
+        new_str += "_" + NStr::NumericToString(offset);
+    new_id->SetLocal().SetStr(new_str);
+    CRef<objects::CSeq_id> new_id_hash(new objects::CSeq_id());
+    string new_hash = id_base_hash;
+    if (offset > 0)
+        new_hash += "_" + NStr::NumericToString(offset);
+    new_id_hash->SetLocal().SetStr(new_hash);
+    objects::CBioseq_Handle b_found = scope.GetBioseqHandle(*new_id);
+    objects::CBioseq_Handle b_found_hash = scope.GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time 
+    // to avoid a situation where ID_1 and HASH_1 are both created
+    while (b_found || b_found_hash) 
+    {
+        offset++;
+        new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
+        b_found = scope.GetBioseqHandle(*new_id);
+        new_id_hash->SetLocal().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
+        b_found_hash = scope.GetBioseqHandle(*new_id_hash);
+    }
+    if (new_id->GetLocal().GetStr().size() <= MAX_ID_LENGTH)
+        return new_id;
+    return new_id_hash;
+}
+
+static CRef<objects::CSeq_id> GetNewGeneralProtId(const string &id_base, const string &db, CHash &chksum, CScope &scope, int &offset)
+{    
+    chksum.Calculate(id_base);
+    string id_base_hash = chksum.GetResultHex();
+    CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
+    new_id->SetGeneral().SetDb(db);
+    string new_str = id_base;
+    if (offset > 0)
+        new_str += "_" + NStr::NumericToString(offset);
+    new_id->SetGeneral().SetTag().SetStr(new_str);
+    CRef<objects::CSeq_id> new_id_hash(new objects::CSeq_id());
+    new_id_hash->SetGeneral().SetDb(db);
+    string new_hash = id_base_hash;
+    if (offset > 0)
+        new_hash += "_" + NStr::NumericToString(offset);
+    new_id_hash->SetGeneral().SetTag().SetStr(new_hash);
+    objects::CBioseq_Handle b_found = scope.GetBioseqHandle(*new_id);
+    objects::CBioseq_Handle b_found_hash = scope.GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time 
+    // to avoid a situation where ID_1 and HASH_1 are both created
     while (b_found || b_found_hash) 
     {
         offset++;
         new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
-        b_found = bsh.GetScope().GetBioseqHandle(*new_id);
+        b_found = scope.GetBioseqHandle(*new_id);
         new_id_hash->SetGeneral().SetTag().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
-        b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
+        b_found_hash = scope.GetBioseqHandle(*new_id_hash);
     }
+    if (new_id->GetGeneral().GetTag().GetStr().size() <= MAX_ID_LENGTH)
+        return  new_id;
+    return new_id_hash;
+}
 
-    new_id->GetLabel(&id_label, objects::CSeq_id::eBoth);
-    if (new_id->GetGeneral().GetTag().GetStr().size() > MAX_ID_LENGTH)
+static CRef<objects::CSeq_id> GetGeneralOrLocal(objects::CSeq_id_Handle hid, CHash &chksum, CScope &scope, int &offset, bool fall_through)
+{
+    CRef<objects::CSeq_id> new_id;
+    if (hid.GetSeqId()->IsLocal())
     {
-        id_label.clear();
-        new_id_hash->GetLabel(&id_label, objects::CSeq_id::eBoth);
-        return new_id_hash;
+        string id_base;           
+        if (hid.GetSeqId()->GetLocal().IsId())
+        {
+            id_base =  NStr::NumericToString(hid.GetSeqId()->GetLocal().GetId());
+        }
+        else
+        {
+            id_base = hid.GetSeqId()->GetLocal().GetStr();
+        }
+        new_id = GetNewLocalProtId(id_base, chksum, scope, offset);
+    }
+    else if (hid.GetSeqId()->IsGeneral() && hid.GetSeqId()->GetGeneral().IsSetTag()
+             && (!hid.GetSeqId()->GetGeneral().IsSetDb() || hid.GetSeqId()->GetGeneral().GetDb() != "TMSMART"))
+    {
+        string id_base;
+        if (hid.GetSeqId()->GetGeneral().GetTag().IsId())
+        {
+            id_base =  NStr::NumericToString(hid.GetSeqId()->GetGeneral().GetTag().GetId());
+        }
+        else
+        {
+            id_base = hid.GetSeqId()->GetGeneral().GetTag().GetStr();
+        }
+        new_id = GetNewGeneralProtId(id_base, hid.GetSeqId()->GetGeneral().GetDb(), chksum, scope, offset);
+    }
+    else if (fall_through)
+    {
+        string id_base;
+        hid.GetSeqId()->GetLabel(&id_base, objects::CSeq_id::eContent);
+        new_id = GetNewLocalProtId(id_base, chksum, scope, offset);
     }
     return new_id;
 }
@@ -1288,106 +1331,16 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
         if (it.GetSeqIdOrNull())
         {
             objects::CSeq_id_Handle hid = it;
-            string id_base;
-            if (hid.GetSeqId()->IsLocal())
-            {
-                if (hid.GetSeqId()->GetLocal().IsId())
-                {
-                    id_base =  NStr::NumericToString(hid.GetSeqId()->GetLocal().GetId());
-                }
-                else
-                {
-                    id_base = hid.GetSeqId()->GetLocal().GetStr();
-                }
-                chksum.Calculate(id_base);
-                string id_base_hash = chksum.GetResultHex();
-                CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
-                new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
-                CRef<objects::CSeq_id> new_id_hash(new objects::CSeq_id());
-                new_id_hash->SetLocal().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
-                objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
-                objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time 
-                                                                                                     // to avoid a situation where ID_1 and HASH_1 are both created
-                while (b_found || b_found_hash) 
-                {
-                    offset++;
-                    new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
-                    b_found = bsh.GetScope().GetBioseqHandle(*new_id);
-                    new_id_hash->SetLocal().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
-                    b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
-                }
-                if (new_id->GetLocal().GetStr().size() <= MAX_ID_LENGTH)
-                    ids.push_back(new_id);
-                else
-                    ids.push_back(new_id_hash);
-            }
-            else if (hid.GetSeqId()->IsGeneral() && hid.GetSeqId()->GetGeneral().IsSetTag()
-                     && (!hid.GetSeqId()->GetGeneral().IsSetDb() || hid.GetSeqId()->GetGeneral().GetDb() != "TMSMART"))
-            {
-                CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
-                new_id->Assign(*hid.GetSeqId());
-                CRef<objects::CSeq_id> new_id_hash(new objects::CSeq_id());
-                new_id_hash->Assign(*hid.GetSeqId());
-                if (hid.GetSeqId()->GetGeneral().GetTag().IsId())
-                {
-                    id_base =  NStr::NumericToString(hid.GetSeqId()->GetGeneral().GetTag().GetId());
-                    new_id->SetGeneral().ResetTag();
-                }
-                else
-                {
-                    id_base = hid.GetSeqId()->GetGeneral().GetTag().GetStr();
-                }
-                chksum.Calculate(id_base);
-                string id_base_hash = chksum.GetResultHex();
-                new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
-                objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
-                new_id_hash->SetGeneral().SetTag().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
-                objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time 
-                                                                                                     // to avoid a situation where ID_1 and HASH_1 are both created
-                while (b_found || b_found_hash) 
-                {
-                    offset++;
-                    new_id->SetGeneral().SetTag().SetStr(id_base + "_" + NStr::NumericToString(offset));
-                    b_found = bsh.GetScope().GetBioseqHandle(*new_id);
-                    new_id_hash->SetGeneral().SetTag().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
-                    b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
-                }
-                if (new_id->GetGeneral().GetTag().GetStr().size() <= MAX_ID_LENGTH)
-                    ids.push_back(new_id);
-                else
-                    ids.push_back(new_id_hash);
-            }
-            
+            CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(hid, chksum, bsh.GetScope(), offset, false);
+            if (new_id)
+                ids.push_back(new_id);
         }
     }
-    
-    
 
     if (ids.empty() && !bsh.GetId().empty())
     {
-        string id_base;
-        bsh.GetId().front().GetSeqId()->GetLabel(&id_base, objects::CSeq_id::eContent);
-        chksum.Calculate(id_base);
-        string id_base_hash = chksum.GetResultHex();
-        CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
-        new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
-        objects::CBioseq_Handle b_found = bsh.GetScope().GetBioseqHandle(*new_id);
-        CRef<objects::CSeq_id> new_id_hash(new objects::CSeq_id());
-        new_id_hash->SetLocal().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
-        objects::CBioseq_Handle b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash); // as we consider ID_NUM and HASH_NUM to be synonyms we need to check for the existence of both at the same time 
-                                                                                             // to avoid a situation where ID_1 and HASH_1 are both created
-        while (b_found || b_found_hash) 
-        {
-            offset++;
-            new_id->SetLocal().SetStr(id_base + "_" + NStr::NumericToString(offset));
-            b_found = bsh.GetScope().GetBioseqHandle(*new_id);
-            new_id_hash->SetLocal().SetStr(id_base_hash + "_" + NStr::NumericToString(offset));
-            b_found_hash = bsh.GetScope().GetBioseqHandle(*new_id_hash);
-        }
-        if (new_id->GetLocal().GetStr().size() <= MAX_ID_LENGTH)
-            ids.push_back(new_id);
-        else
-            ids.push_back(new_id_hash);
+        CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(bsh.GetId().front(), chksum, bsh.GetScope(), offset, true);
+        ids.push_back(new_id);
     }
 
     if (ids.empty())
@@ -1396,6 +1349,56 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
     ids.front()->GetLabel(&id_label, objects::CSeq_id::eBoth);
     return ids;
 }
+
+CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label, bool general_only)
+{
+    CHash chksum(CHash::eCityHash64);
+
+    objects::CSeq_id_Handle hid;
+    objects::CSeq_id_Handle gen_id;
+    objects::CSeq_id_Handle lcl_id;
+
+    for (auto it : bsh.GetId()) 
+    {
+        if (it.GetSeqId()->IsGeneral() && it.GetSeqId()->GetGeneral().IsSetDb() &&
+            !it.GetSeqId()->GetGeneral().IsSkippable()) 
+        {
+            gen_id = it;
+        } 
+        else if (it.GetSeqId()->IsLocal()) 
+        {
+            lcl_id = it;
+        }
+        if (!hid || it.IsBetter(hid)) 
+        {
+            hid = it;
+        }
+    }
+
+    if (gen_id || general_only) 
+    {
+        hid = gen_id;
+    } 
+
+    if (!gen_id && !general_only && lcl_id)
+    {
+        hid = lcl_id;
+    }
+   
+    if (!hid)
+        NCBI_THROW(CException, eUnknown, "Seq-id of the requested type not found");
+  
+    CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(hid, chksum, bsh.GetScope(), offset, !general_only);   
+    new_id->GetLabel(&id_label, objects::CSeq_id::eBoth);
+    return new_id;
+}
+
+CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label) // TODO split_cds, raw_seq_to_delta
+{
+    return GetNewProtId(bsh, offset, id_label, true);
+}
+
+// GetNewProtId(bsh, offset, id_label, false); TODO protein_utils, cmd_add_seqentry
 
 END_SCOPE(edit)
 END_SCOPE(objects)
