@@ -3869,6 +3869,25 @@ const char*    CDiagBuffer::sm_SeverityName[eDiag_Trace+1] = {
     "Info", "Warning", "Error", "Critical", "Fatal", "Trace" };
 
 
+NCBI_PARAM_ENUM_DECL(EDiagSev, DEBUG, Stack_Trace_Level);
+NCBI_PARAM_ENUM_ARRAY(EDiagSev, DEBUG, Stack_Trace_Level)
+{
+    {"Trace", eDiag_Trace},
+    { "Info",     eDiag_Info },
+    { "Warning",  eDiag_Warning },
+    { "Error",    eDiag_Error },
+    { "Critical", eDiag_Critical },
+    { "Fatal",    eDiag_Fatal }
+};
+NCBI_PARAM_ENUM_DEF_EX(EDiagSev,
+    DEBUG,
+    Stack_Trace_Level,
+    eDiag_Fatal,
+    eParam_NoThread, // No per-thread values
+    DEBUG_STACK_TRACE_LEVEL);
+typedef NCBI_PARAM_TYPE(DEBUG, Stack_Trace_Level) TStackTraceLevelParam;
+
+
 void* InitDiagHandler(void)
 {
     static bool s_DiagInitialized = false;
@@ -4272,25 +4291,6 @@ void CDiagBuffer::Flush(void)
 #endif // NCBI_COMPILER_MSVC
     }
 }
-
-
-NCBI_PARAM_ENUM_DECL(EDiagSev, DEBUG, Stack_Trace_Level);
-NCBI_PARAM_ENUM_ARRAY(EDiagSev, DEBUG, Stack_Trace_Level)
-{
-    {"Trace",    eDiag_Trace},
-    {"Info",     eDiag_Info},
-    {"Warning",  eDiag_Warning},
-    {"Error",    eDiag_Error},
-    {"Critical", eDiag_Critical},
-    {"Fatal",    eDiag_Fatal}
-};
-NCBI_PARAM_ENUM_DEF_EX(EDiagSev,
-                       DEBUG,
-                       Stack_Trace_Level,
-                       eDiag_Fatal,
-                       eParam_NoThread, // No per-thread values
-                       DEBUG_STACK_TRACE_LEVEL);
-typedef NCBI_PARAM_TYPE(DEBUG, Stack_Trace_Level) TStackTraceLevelParam;
 
 
 void CDiagBuffer::PrintMessage(SDiagMessage& mess, const CNcbiDiag& diag)
