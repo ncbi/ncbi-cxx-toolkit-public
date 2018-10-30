@@ -65,5 +65,5 @@ execute_process(
 file(REMOVE_RECURSE ${_workdir})
 
 if (NOT ${_result} EQUAL "0")
-    message(SEND_ERROR "Test ${NCBITEST_NAME} failed")
+    message(SEND_ERROR "Test ${NCBITEST_NAME} failed (error=${_result})")
 endif()
