@@ -97,11 +97,12 @@ size_t CCassandraFullscanPlan::GetPartitionCountEstimate()
     schema_bytes = query->FieldGetStrValue(2);
     ERR_POST(Trace << "CCassandraFullscanPlanner::GetTableRowsCountEstimate - Datacenter  '" << datacenter << "'");
     ERR_POST(Trace << "CCassandraFullscanPlanner::GetTableRowsCountEstimate - Schema  '" << schema << "'");
+    ERR_POST(Trace << "CCassandraFullscanPlanner::GetTableRowsCountEstimate - Bytes size " << schema_bytes.size());
 
     query = m_Connection->NewQuery();
     query->SetSQL("SELECT count(*) FROM system.peers WHERE data_center = ? and schema_version = ? ALLOW FILTERING", 2);
     query->BindStr(0, datacenter);
-    query->BindStr(1, schema_bytes);
+    query->BindBytes(1, reinterpret_cast<const unsigned char*>(schema_bytes.c_str()), schema_bytes.size());
     query->Query(CassConsistency::CASS_CONSISTENCY_LOCAL_ONE, false, false);
     query->NextRow();
     peers_count = query->FieldGetInt64Value(0, 0);
