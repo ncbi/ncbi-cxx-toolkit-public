@@ -498,7 +498,7 @@ bool FixSeqSubmit(CRef<CSeq_submit>& seq_submit, int& accession_ver, bool first,
 
 static EChromosomeSubtypeStatus CheckChromosome(const CSeq_descr& descrs)
 {
-    if (GetParams().GetScaffoldPrefix().empty() || GetParams().GetScaffoldType() != eRegularChromosomal || GetParams().GetScaffoldType() != eTPAChromosomal)
+    if (GetParams().GetScaffoldPrefix().empty() || (GetParams().GetScaffoldType() != eRegularChromosomal && GetParams().GetScaffoldType() != eTPAChromosomal))
         return eChromosomeSubtypeValid;
 
     bool source_present = false;
