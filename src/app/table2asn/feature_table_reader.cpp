@@ -1024,7 +1024,11 @@ void CFeatureTableReader::_MoveCdRegions(CSeq_entry_Handle entry_h, const CBiose
             }
             if (!data.GetCdregion().IsSetFrame())
             {
-                data.SetCdregion().SetFrame(CSeqTranslator::FindBestFrame(*feature, *m_scope));
+                if ((*feat_it)->IsSetExcept_text() && NStr::Find((*feat_it)->GetExcept_text(), "annotated by transcript or proteomic data") != NPOS) {
+                    data.SetCdregion().SetFrame(CCdregion::eFrame_one);
+                } else {
+                    data.SetCdregion().SetFrame(CSeqTranslator::FindBestFrame(*feature, *m_scope));
+                }
             }
             CCleanup::ParseCodeBreaks(*feature, *m_scope);
             CRef<CSeq_entry> protein = _TranslateProtein(entry_h, bioseq, *feature);
