@@ -1,8 +1,8 @@
 /*  $Id$
 * ===========================================================================
 *
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
+*                            PUBLIC DOMAIN NOTICEpublic:
+*                            void Apply(map<string, string>*               National Center for Biotechnology Information
 *
 *  This software/database is a "United States Government Work" under the
 *  terms of the United States Copyright Act.  It was written as part of
@@ -65,6 +65,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 
 #include <objtools/edit/apply_mods.hpp>
+#include <objtools/logging/listener.hpp>
 
 #include <unordered_map>
 #include <unordered_set>
@@ -705,6 +706,44 @@ static bool s_IsMatch(const string& name, const T& first, Args...args)
 {
     return (s_IsMatch(name, first) || s_IsMatch(name, args...));
 }
+
+
+class CModNormalize 
+{
+public:
+    using TMods = SModContainer::TMods;
+    void Apply(TMods& mods); // Need an error message 
+    // Maybe make the message static
+    //
+    string GetNormalizedName(const string& name);
+
+private:
+    //static unordered_map<string, string> m_CanonicalNameMap;
+    unordered_map<string, string> m_CanonicalNameMap;
+};  
+
+
+void CModNormalize::Apply(TMods& mods) {
+}
+
+string CModNormalize::GetNormalizedName(const string& name) 
+{
+    string normalized_name = name;
+    NStr::ToLower(normalized_name);
+    NStr::TruncateSpacesInPlace(normalized_name);
+    NStr::ReplaceInPlace(normalized_name, "_", "-");
+    NStr::ReplaceInPlace(normalized_name, " ", "-");
+    auto new_end = unique(normalized_name.begin(), 
+                          normalized_name.end(),
+                          [](char a, char b) { return ((a==b) && (a==' ')); });
+
+    normalized_name.erase(new_end, normalized_name.end());
+    NStr::ReplaceInPlace(normalized_name, " ", "-");
+
+    return normalized_name;
+}
+
+
 
 class CModApply_Impl {
 public:
@@ -1748,7 +1787,6 @@ bool CDescriptorModApply::x_AddDBLinkMod(const TMod& mod,
                                         CDescrCache& descriptor_cache)>> func_map;
 */
 
-
     static unordered_map<string, string> name_to_label({{"sra", "Sequence Read Archive"},
                                                  {"biosample", "BioSample"},
                                                  {"bioproject", "BioProject"}});
@@ -1947,6 +1985,167 @@ void CModApply::Apply(CBioseq& bioseq, bool replace_preexisting_vals)
 {
     m_pImpl->Apply(bioseq, replace_preexisting_vals);
 }
+
+class CModHandler 
+{
+public:
+
+    enum EHandleExisting {
+        eReplace        = 0,
+        ePreserve       = 1,
+        eReplaceAppend  = 2,
+        ePreserveAppend = 3,
+    };
+
+    using TMods = multimap<string, string>;
+
+    CModHandler(IObjtoolsListener* listener=nullptr);
+
+    void AddMod(const string& name,
+                const string& value,
+                EHandleExisting handle_existing);
+
+    void AddMods(const TMods& mods, EHandleExisting handle_existing);
+
+    const TMods& GetMods(void) const;
+
+    void Clear(void);
+private:
+
+    string x_GetNormalizedName(const string& name);
+    string x_GetCanonicalName(const string& name);
+
+    TMods m_Mods;
+    using TNameMap = unordered_map<string, string>;
+    static const TNameMap sm_NameMap;
+    static const unordered_set<string> sm_MultipleValuesPermitted;
+
+    IObjtoolsListener* m_pMessageListener;
+};
+
+const CModHandler::TNameMap CModHandler::sm_NameMap = 
+{{"top","topology"},
+ {"mol","molecule"},
+ {"mol-type", "moltype"},
+ {"fwd-pcr-primer-name", "fwd-primer-name"},
+ {"fwd-pcr-primer-seq"," fwd-primer-seq"},
+ {"rev-pcr-primer-name", "rev-primer-name"},
+ {"rev-pcr-primer-seq", "rev-primer-seq"},
+ {"org", "organism"},
+ {"organism", "taxname"},
+ {"div", "division"},
+ {"notes", "note"},
+ {"completedness", "completeness"},
+ {"gene-syn", "gene-synonym"},
+ {"genesyn", "gene-synonym"},
+ {"genesynonym", "gene-synonym"},
+ {"prot", "protein"},
+ {"prot-desc", "protein-desc"},
+ {"function", "activity"},
+ {"secondary", "secondary-accession"},
+ {"secondary-accessions", "secondary-accession"},
+ {"keywords", "keyword"},
+ {"primary", "primary-accession"},
+ {"primary-accessions", "primary-accession"},
+ {"projects", "project"},
+ {"db-xref", "dbxref"},
+ {"pubmed", "pmid"}
+};
+
+const unordered_set<string> CModHandler::sm_MultipleValuesPermitted =
+{ 
+    "primary-accession",
+    "secondary-accession",
+    "dbxref",
+    "protein",
+    "EC-number",
+    "activity",
+    "pmid",
+    "comment",
+    "project",
+    "keyword",
+    "note",     // Need to check subsources
+    "sub-clone"
+};
+
+CModHandler::CModHandler(IObjtoolsListener* listener) 
+    : m_pMessageListener(listener) {}
+
+
+void CModHandler::AddMod(const string& name,
+                         const string& value,
+                         EHandleExisting handle_existing)
+{
+    const auto& canonical_name = x_GetCanonicalName(name);
+    m_Mods.emplace(canonical_name, value);
+}
+
+
+void CModHandler::AddMods(const TMods& mods,
+                          EHandleExisting handle_existing)
+{
+    unordered_set<string> previous_mods;
+    for (const auto& mod : mods) {
+        const auto& canonical_name = x_GetCanonicalName(mod.first);
+
+        if (previous_mods.insert(canonical_name).second ||
+            (sm_MultipleValuesPermitted.find(canonical_name) !=
+             sm_MultipleValuesPermitted.end())) {
+            m_Mods.emplace(canonical_name, mod.second);
+        }
+        else {
+            if (m_pMessageListener) {
+                // report an error
+            }
+            else {
+                // throw an exception
+            }
+        }
+    }
+}
+
+
+const CModHandler::TMods& CModHandler::GetMods(void) const
+{
+    return m_Mods;
+}
+
+
+void CModHandler::Clear(void) 
+{
+    m_Mods.clear();
+}
+
+
+string CModHandler::x_GetCanonicalName(const string& name)
+{
+    const auto& normalized_name = x_GetNormalizedName(name);
+    const auto& it = sm_NameMap.find(normalized_name);
+    if (it != sm_NameMap.end()) {
+        return it->second;
+    }
+    return normalized_name;
+}
+
+
+string CModHandler::x_GetNormalizedName(const string& name) 
+{
+    string normalized_name = name;
+    NStr::ToLower(normalized_name);
+    NStr::TruncateSpacesInPlace(normalized_name);
+    NStr::ReplaceInPlace(normalized_name, "_", "-");
+    NStr::ReplaceInPlace(normalized_name, " ", "-");
+    auto new_end = unique(normalized_name.begin(), 
+                          normalized_name.end(),
+                          [](char a, char b) { return ((a==b) && (a==' ')); });
+
+    normalized_name.erase(new_end, normalized_name.end());
+    NStr::ReplaceInPlace(normalized_name, " ", "-");
+
+    return normalized_name;
+}
+
+
 
 END_SCOPE(edit)
 END_SCOPE(objects)
