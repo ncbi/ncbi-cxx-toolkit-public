@@ -1,14 +1,8 @@
-#
-#
-#
-add_executable(hooks_highest_se_objs-app
-    hooks_highest_se_objs
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(hooks_highest_se_objs-app PROPERTIES OUTPUT_NAME hooks_highest_se_objs)
-
-target_link_libraries(hooks_highest_se_objs-app
-    submit pub 
- 
-)
-
+NCBI_begin_app(hooks_highest_se_objs)
+  NCBI_sources(hooks_highest_se_objs)
+  NCBI_uses_toolkit_libraries(submit pub)
+NCBI_end_app()

@@ -1,14 +1,9 @@
-#
-#
-#
-add_executable(cgi_session_sample.cgi-app
-    cgi_session_sample
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(cgi_session_sample.cgi-app PROPERTIES OUTPUT_NAME cgi_session_sample.cgi)
-
-target_link_libraries(cgi_session_sample.cgi-app
-    xgridcgi xcgi xhtml xconnserv xconnect 
-     
-)
-
+NCBI_begin_app(cgi_session_sample.cgi)
+  NCBI_sources(cgi_session_sample)
+  NCBI_uses_toolkit_libraries(xgridcgi)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_app()

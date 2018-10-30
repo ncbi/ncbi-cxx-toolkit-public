@@ -1,14 +1,10 @@
-#
-#
-#
-add_executable(netschedule_client_sample-app
-    netschedule_client_sample
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(netschedule_client_sample-app PROPERTIES OUTPUT_NAME netschedule_client_sample)
-
-target_link_libraries(netschedule_client_sample-app
-    xconnserv xthrserv xconnect 
- 
-)
-
+NCBI_begin_app(netschedule_client_sample)
+  NCBI_sources(netschedule_client_sample)
+  NCBI_uses_toolkit_libraries(xconnserv)
+  NCBI_project_tags(grid)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_app()

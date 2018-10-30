@@ -1,13 +1,9 @@
-#
-#
-#
-add_executable(fcgi_sample.fcgi-app
-    cgi_sample
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(fcgi_sample.fcgi-app PROPERTIES OUTPUT_NAME fcgi_sample.fcgi)
-
-target_link_libraries(fcgi_sample.fcgi-app
-    xfcgi xhtml xconnect ${FASTCGI_LIBS} 
-)
-
+NCBI_begin_app(fcgi_sample.cgi)
+  NCBI_sources(cgi_sample)
+  NCBI_uses_toolkit_libraries(xfcgi xhtml xconnect)
+  NCBI_project_watchers(vakatov)
+NCBI_end_app()

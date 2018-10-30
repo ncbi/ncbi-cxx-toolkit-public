@@ -1,13 +1,8 @@
-#
-#
-#
-add_executable(hello.cgi-app
-    helloapp hellores hellocmd
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(hello.cgi-app PROPERTIES OUTPUT_NAME hello.cgi)
-
-target_link_libraries(hello.cgi-app
-    xhtml xcgi xutil 
-)
-
+NCBI_begin_app(hello.cgi)
+  NCBI_sources(helloapp hellores hellocmd)
+  NCBI_uses_toolkit_libraries(xcgi xhtml)
+NCBI_end_app()

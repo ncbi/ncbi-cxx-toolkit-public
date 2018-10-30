@@ -1,13 +1,8 @@
-#
-#
-#
-add_executable(hooks_read_member-app
-    hooks_read_member
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(hooks_read_member-app PROPERTIES OUTPUT_NAME hooks_read_member)
-
-target_link_libraries(hooks_read_member-app
-    seq seqcode sequtil 
-)
-
+NCBI_begin_app(hooks_read_member)
+  NCBI_sources(hooks_read_member)
+  NCBI_uses_toolkit_libraries(seqset)
+NCBI_end_app()

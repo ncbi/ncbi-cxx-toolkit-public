@@ -1,14 +1,9 @@
-#
-#
-#
-add_executable(blast_sample-app
-    blast_sample
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(blast_sample-app PROPERTIES OUTPUT_NAME blast_sample)
-
-target_link_libraries(blast_sample-app
-    xobjsimple ${BLAST_LIBS} ${OBJMGR_LIBS} 
-     
-)
-
+NCBI_begin_app(blast_sample)
+  NCBI_sources(blast_sample)
+  NCBI_uses_toolkit_libraries(xobjsimple xblast)
+  NCBI_project_watchers(camacho madden)
+NCBI_end_app()

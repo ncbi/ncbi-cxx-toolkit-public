@@ -1,13 +1,8 @@
-#
-#
-#
-add_executable(seqannot_splicer-app
-    seqannot_splicer seqannot_splicer_stats seqannot_splicer_util
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(seqannot_splicer-app PROPERTIES OUTPUT_NAME seqannot_splicer)
-
-target_link_libraries(seqannot_splicer-app
-    seqset 
-)
-
+NCBI_begin_app(seqannot_splicer)
+  NCBI_sources(seqannot_splicer seqannot_splicer_stats seqannot_splicer_util)
+  NCBI_uses_toolkit_libraries(seqset)
+NCBI_end_app()

@@ -1,15 +1,9 @@
-#
-#
-#
-add_executable(unit_test_alt_sample-app
-    unit_test_alt_sample
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(unit_test_alt_sample-app PROPERTIES OUTPUT_NAME unit_test_alt_sample)
-
-
-
-target_link_libraries(unit_test_alt_sample-app
-    test_boost xncbi 
-)
-
+NCBI_begin_app(unit_test_alt_sample)
+  NCBI_sources(unit_test_alt_sample)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xncbi)
+NCBI_end_app()

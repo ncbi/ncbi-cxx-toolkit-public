@@ -1,13 +1,11 @@
-#
-#
-#
-add_executable(cgi_sample.cgi-app
-    cgi_sample
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(cgi_sample.cgi-app PROPERTIES OUTPUT_NAME cgi_sample.cgi)
-
-target_link_libraries(cgi_sample.cgi-app
-    xcgi xhtml xconnect 
-)
-
+NCBI_begin_app(cgi_sample.cgi)
+  NCBI_sources(cgi_sample)
+  NCBI_uses_toolkit_libraries(xcgi xhtml xconnect)
+  NCBI_project_watchers(vakatov)
+  NCBI_set_test_assets(cgi_sample.html)
+  NCBI_add_test(cgi_sample.cgi)
+NCBI_end_app()

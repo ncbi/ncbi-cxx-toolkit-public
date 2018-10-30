@@ -1,15 +1,9 @@
-#
-#
-#
-add_executable(lds2_sample-app
-    lds2_sample
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(lds2_sample-app PROPERTIES OUTPUT_NAME lds2_sample)
-
-target_link_libraries(lds2_sample-app
-    ncbi_xloader_lds2 lds2 xobjread xobjutil sqlitewrapp creaders
-    xcompress ${COMPRESS_LIBS} ${SOBJMGR_LIBS} ${SQLITE3_LIBS} 
-     
-)
-
+NCBI_begin_app(lds2_sample)
+  NCBI_sources(lds2_sample)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_lds2)
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()

@@ -2,7 +2,7 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_app(asn_assign)
-  NCBI_sources(asn_assign)
-  NCBI_uses_toolkit_libraries(seqset)
-NCBI_end_app()
+NCBI_begin_lib(jsd_sample_lib)
+  NCBI_dataspecs(jsd_sample_lib.jsd)
+  NCBI_uses_toolkit_libraries(xser)
+NCBI_end_lib()

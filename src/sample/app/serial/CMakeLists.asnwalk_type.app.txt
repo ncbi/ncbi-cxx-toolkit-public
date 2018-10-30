@@ -1,13 +1,8 @@
-#
-#
-#
-add_executable(asnwalk_type-app
-    asnwalk_type
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(asnwalk_type-app PROPERTIES OUTPUT_NAME asnwalk_type)
-
-target_link_libraries(asnwalk_type-app
-    seqset 
-)
-
+NCBI_begin_app(asnwalk_type)
+  NCBI_sources(asnwalk_type)
+  NCBI_uses_toolkit_libraries(seqset)
+NCBI_end_app()

@@ -2,7 +2,7 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_app(asn_assign)
-  NCBI_sources(asn_assign)
-  NCBI_uses_toolkit_libraries(seqset)
-NCBI_end_app()
+NCBI_begin_lib(soap_dataobj)
+  NCBI_dataspecs(soap_dataobj.xsd)
+  NCBI_uses_toolkit_libraries(xser)
+NCBI_end_lib()

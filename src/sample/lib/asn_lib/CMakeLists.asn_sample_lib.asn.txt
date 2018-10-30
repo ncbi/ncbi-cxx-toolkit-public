@@ -1,16 +1,8 @@
-#
-#
-#
+#############################################################################
+# $Id$
+#############################################################################
 
-set(MODULE asn_sample_lib)
-set(MODULE_IMPORT )
-set(MODULE_PATH )
-
-set(MODULE_EXT "asn")
-add_library(asn_sample_lib ${MODULE}__ ${MODULE}___)
-
-RunDatatool("${MODULE}" "${MODULE_IMPORT}")
-
-target_link_libraries(${MODULE}
-    xser
-)
+NCBI_begin_lib(asn_sample_lib)
+  NCBI_dataspecs(asn_sample_lib.asn)
+  NCBI_uses_toolkit_libraries(xser)
+NCBI_end_lib()

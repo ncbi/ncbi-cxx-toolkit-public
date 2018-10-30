@@ -1,13 +1,9 @@
-#
-#
-#
-add_executable(db_copy-app
-    db_copy
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(db_copy-app PROPERTIES OUTPUT_NAME db_copy)
-
-target_link_libraries(db_copy-app
-    dbapi dbapi_driver xncbi  
-)
-
+NCBI_begin_app(db_copy)
+  NCBI_sources(db_copy)
+  NCBI_uses_toolkit_libraries(dbapi)
+  NCBI_project_watchers(ucko)
+NCBI_end_app()

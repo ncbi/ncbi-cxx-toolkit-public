@@ -1,13 +1,10 @@
-#
-#
-#
-add_executable(http_session_sample-app
-    http_session_sample
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(http_session_sample-app PROPERTIES OUTPUT_NAME http_session_sample)
-
-target_link_libraries(http_session_sample-app
-    connssl xconnect 
-)
-
+NCBI_begin_app(http_session_sample)
+  NCBI_sources(http_session_sample)
+  NCBI_uses_toolkit_libraries(connssl xconnect)
+  NCBI_project_watchers(grichenk)
+  NCBI_add_test()
+NCBI_end_app()

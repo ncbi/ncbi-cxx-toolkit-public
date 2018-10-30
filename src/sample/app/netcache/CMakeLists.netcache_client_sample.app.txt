@@ -1,14 +1,9 @@
-#
-#
-#
-add_executable(netcache_client_sample-app
-    netcache_client_sample
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(netcache_client_sample-app PROPERTIES OUTPUT_NAME netcache_client_sample)
-
-target_link_libraries(netcache_client_sample-app
-    xconnserv xthrserv xconnect xcompress ${CMPRS_LIB} 
-  
-)
-
+NCBI_begin_app(netcache_client_sample)
+  NCBI_sources(netcache_client_sample)
+  NCBI_uses_toolkit_libraries(xconnserv xcompress)
+  NCBI_project_watchers(sadyrovr vakatov)
+NCBI_end_app()

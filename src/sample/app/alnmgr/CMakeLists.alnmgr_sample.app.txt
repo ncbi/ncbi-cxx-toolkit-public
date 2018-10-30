@@ -1,14 +1,9 @@
-#
-#
-#
-add_executable(alnmgr_sample-app
-    alnmgr_sample
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(alnmgr_sample-app PROPERTIES OUTPUT_NAME alnmgr_sample)
-
-target_link_libraries(alnmgr_sample-app
-    xalnmgr xobjutil tables ${OBJMGR_LIBS} 
-     
-)
-
+NCBI_begin_app(alnmgr_sample)
+  NCBI_sources(alnmgr_sample)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_genbank xalnmgr)
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()

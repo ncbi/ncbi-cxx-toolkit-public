@@ -1,17 +1,11 @@
-#
-#
-#
-add_executable(asn_sample-app
-    asn_sample
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(asn_sample-app PROPERTIES OUTPUT_NAME asn_sample)
-
-target_link_libraries(asn_sample-app
-    sample_asn general-lib 
-)
-
-add_dependencies(asn_sample-app
-    sample_asn
-)
-
+NCBI_begin_app(asn_sample)
+  NCBI_sources(asn_sample)
+  NCBI_uses_toolkit_libraries(sample_asn)
+  NCBI_project_watchers(gouriano)
+  NCBI_set_test_assets(sample_asn.data)
+  NCBI_add_test(asn_sample -input sample_asn.data -output sample_asn.xml)
+NCBI_end_app()

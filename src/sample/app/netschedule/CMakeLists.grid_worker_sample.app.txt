@@ -1,14 +1,10 @@
-#
-#
-#
-add_executable(grid_worker_sample-app
-    grid_worker_sample
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(grid_worker_sample-app PROPERTIES OUTPUT_NAME grid_worker_sample)
-
-target_link_libraries(grid_worker_sample-app
-    xconnserv xthrserv xconnect 
- 
-)
-
+NCBI_begin_app(grid_worker_sample)
+  NCBI_sources(grid_worker_sample)
+  NCBI_uses_toolkit_libraries(xconnserv)
+  NCBI_project_tags(grid)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_app()

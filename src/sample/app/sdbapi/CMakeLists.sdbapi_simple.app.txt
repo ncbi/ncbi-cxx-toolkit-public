@@ -1,14 +1,9 @@
-#
-#
-#
-add_executable(sdbapi_simple-app
-    sdbapi_simple
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(sdbapi_simple-app PROPERTIES OUTPUT_NAME sdbapi_simple)
-
-target_link_libraries(sdbapi_simple-app
-    ${SDBAPI_LIB} xconnect  
-     
-)
-
+NCBI_begin_app(sdbapi_simple)
+  NCBI_sources(sdbapi_simple)
+  NCBI_uses_toolkit_libraries(sdbapi xconnect)
+  NCBI_project_watchers(ucko mcelhany)
+NCBI_end_app()

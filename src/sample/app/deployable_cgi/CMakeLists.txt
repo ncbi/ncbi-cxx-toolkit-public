@@ -2,7 +2,4 @@
 # $Id$
 #############################################################################
 
-NCBI_begin_app(asn_assign)
-  NCBI_sources(asn_assign)
-  NCBI_uses_toolkit_libraries(seqset)
-NCBI_end_app()
+NCBI_add_app(deployable_cgi sample_cgi_test)

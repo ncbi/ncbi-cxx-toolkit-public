@@ -1,14 +1,9 @@
-#
-#
-#
-add_executable(bioseq_edit_sample-app
-    bioseq_edit_sample file_db_engine
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(bioseq_edit_sample-app PROPERTIES OUTPUT_NAME bioseq_edit_sample)
-
-target_link_libraries(bioseq_edit_sample-app
-    ncbi_xloader_patcher ${OBJMGR_LIBS} 
-     
-)
-
+NCBI_begin_app(bioseq_edit_sample)
+  NCBI_sources(bioseq_edit_sample file_db_engine)
+  NCBI_uses_toolkit_libraries(ncbi_xloader_patcher ncbi_xloader_genbank xconnect)
+  NCBI_project_watchers(vasilche)
+NCBI_end_app()

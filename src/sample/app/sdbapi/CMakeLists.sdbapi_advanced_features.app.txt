@@ -1,14 +1,9 @@
-#
-#
-#
-add_executable(sdbapi_advanced_features-app
-    sdbapi_advanced_features
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(sdbapi_advanced_features-app PROPERTIES OUTPUT_NAME sdbapi_advanced_features)
-
-target_link_libraries(sdbapi_advanced_features-app
-    ${SDBAPI_LIB} xconnect  
-     
-)
-
+NCBI_begin_app(sdbapi_advanced_features)
+  NCBI_sources(sdbapi_advanced_features)
+  NCBI_uses_toolkit_libraries(sdbapi xconnect)
+  NCBI_project_watchers(ucko mcelhany)
+NCBI_end_app()

@@ -1,14 +1,9 @@
-#
-#
-#
-add_executable(dbapi_advanced_features-app
-    dbapi_advanced_features
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(dbapi_advanced_features-app PROPERTIES OUTPUT_NAME dbapi_advanced_features)
-
-target_link_libraries(dbapi_advanced_features-app
-    dbapi dbapi_driver ${XCONNEXT} xconnect 
- 
-)
-
+NCBI_begin_app(dbapi_advanced_features)
+  NCBI_sources(dbapi_advanced_features)
+  NCBI_uses_toolkit_libraries(dbapi xconnext)
+  NCBI_project_watchers(ucko)
+NCBI_end_app()

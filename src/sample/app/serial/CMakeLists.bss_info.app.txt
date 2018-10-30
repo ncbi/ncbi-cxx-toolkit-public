@@ -1,13 +1,8 @@
-#
-#
-#
-add_executable(bss_info-app
-    bss_info
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(bss_info-app PROPERTIES OUTPUT_NAME bss_info)
-
-target_link_libraries(bss_info-app
-    seqset 
-)
-
+NCBI_begin_app(bss_info)
+  NCBI_sources(bss_info)
+  NCBI_uses_toolkit_libraries(seqset)
+NCBI_end_app()

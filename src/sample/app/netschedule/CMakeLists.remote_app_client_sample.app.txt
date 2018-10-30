@@ -1,14 +1,9 @@
-#
-#
-#
-add_executable(remote_app_client_sample-app
-    remote_app_client_sample
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(remote_app_client_sample-app PROPERTIES OUTPUT_NAME remote_app_client_sample)
-
-target_link_libraries(remote_app_client_sample-app
-    xconnserv xthrserv xconnect 
- 
-)
-
+NCBI_begin_app(remote_app_client_sample)
+  NCBI_sources(remote_app_client_sample)
+  NCBI_uses_toolkit_libraries(xconnserv)
+  NCBI_project_watchers(sadyrovr)
+NCBI_end_app()

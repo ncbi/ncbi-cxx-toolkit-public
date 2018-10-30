@@ -1,13 +1,8 @@
-#
-#
-#
-add_executable(asnwalk_write-app
-    asnwalk_write
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(asnwalk_write-app PROPERTIES OUTPUT_NAME asnwalk_write)
-
-target_link_libraries(asnwalk_write-app
-    seqset 
-)
-
+NCBI_begin_app(asnwalk_write)
+  NCBI_sources(asnwalk_write)
+  NCBI_uses_toolkit_libraries(seqset)
+NCBI_end_app()

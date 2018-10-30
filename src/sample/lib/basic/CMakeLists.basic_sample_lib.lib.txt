@@ -1,10 +1,8 @@
-#
-#
-#
-add_library(basic_sample_lib
-    basic_sample_lib
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-target_link_libraries(basic_sample_lib
-    xncbi
-)
+NCBI_begin_lib(basic_sample_lib)
+  NCBI_sources(basic_sample_lib)
+  NCBI_uses_toolkit_libraries(xncbi)
+NCBI_end_lib()

@@ -1,14 +1,9 @@
-#
-#
-#
-add_executable(eutils_sample-app
-    eutils_sample
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(eutils_sample-app PROPERTIES OUTPUT_NAME eutils_sample)
-
-target_link_libraries(eutils_sample-app
-    ${EUTILS_LIBS} seqset xcgi
- 
-)
-
+NCBI_begin_app(eutils_sample)
+  NCBI_sources(eutils_sample)
+  NCBI_uses_toolkit_libraries(eutils)
+  NCBI_project_watchers(grichenk)
+NCBI_end_app()

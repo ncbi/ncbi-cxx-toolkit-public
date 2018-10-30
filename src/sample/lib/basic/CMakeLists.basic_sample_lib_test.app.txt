@@ -1,13 +1,8 @@
-#
-#
-#
-add_executable(basic_sample_lib_test-app
-    basic_sample_lib_test
-)
+#############################################################################
+# $Id$
+#############################################################################
 
-set_target_properties(basic_sample_lib_test-app PROPERTIES OUTPUT_NAME basic_sample_lib_test)
-
-target_link_libraries(basic_sample_lib_test-app
-    basic_sample_lib xncbi 
-)
-
+NCBI_begin_app(basic_sample_lib_test)
+  NCBI_sources(basic_sample_lib_test)
+  NCBI_uses_toolkit_libraries(basic_sample_lib)
+NCBI_end_app()
