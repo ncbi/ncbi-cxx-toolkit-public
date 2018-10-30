@@ -407,20 +407,29 @@ void CMultiReader::LoadDescriptors(const string& ifname, CRef<CSeq_descr> & out_
                     CObjectIStream::eNoFileHeader);
                 out_desc->Set().insert(out_desc->Set().end(), descr->Get().begin(), descr->Get().end());
             }
+            else if (sType == CSeqdesc::GetTypeInfo()->GetName())
+            {
+                CRef<CSeqdesc> desc(new CSeqdesc);
+                pObjIstrm->Read(ObjectInfo(*desc),
+                    CObjectIStream::eNoFileHeader);
+                out_desc->Set().push_back(desc);
+            }
+            else if (sType == CPubdesc::GetTypeInfo()->GetName())
+            {
+                CRef<CSeqdesc> desc(new CSeqdesc);
+                pObjIstrm->Read(ObjectInfo(desc->SetPub()),
+                    CObjectIStream::eNoFileHeader);
+                out_desc->Set().push_back(desc);
+            }
             else
-                if (sType == CSeqdesc::GetTypeInfo()->GetName())
-                {
-                    CRef<CSeqdesc> desc(new CSeqdesc);
-                    pObjIstrm->Read(ObjectInfo(*desc),
-                        CObjectIStream::eNoFileHeader);
-                    out_desc->Set().push_back(desc);
-                }
-                else
-                {
-                    throw runtime_error("Descriptor file must contain "
-                        "either Seq_descr or Seqdesc elements");
-                }
-        } catch (...) {
+            {
+                throw runtime_error("Descriptor file must contain "
+                    "either Seq_descr or Seqdesc elements");
+            }
+        } catch (CException& ex) {
+            if (!NStr::EqualNocase(ex.GetMsg(), "end of file")) {
+                throw runtime_error("Unable to read descriptor from file:" + ex.GetMsg());
+            }
             break;
         }
     }
