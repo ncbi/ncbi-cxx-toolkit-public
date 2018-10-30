@@ -196,19 +196,6 @@ CSeqDBAtlas::CSeqDBAtlas(bool use_mmap)
 
 CSeqDBAtlas::~CSeqDBAtlas()
 {
-    //int openedFilesCount = GetOpenedFilseCount();
-    //cerr << "********Before Cleaning: openedFilesCount=" << openedFilesCount << endl;                
-    for (map<string, CMemoryFile *>::iterator it=m_FileMemMap.begin(); it!=m_FileMemMap.end(); ++it) {
-            string filename = it->first;
-            it->second->Unmap();
-            //ChangeOpenedFilseCount(eFileCounterDecrement);
-            //cerr << "********Cleaning:Unmap CMemoryFile:" << filename << endl;                
-            delete it->second;     
-    }
-    //openedFilesCount = GetOpenedFilseCount();
-    //cerr << "********After Cleaning: openedFilesCount=" << openedFilesCount  << " maxOpenedFilesCount="<< m_MaxOpenedFilesCount << endl;                
-
-
     // For now, and maybe permanently, enforce balance.
 
     _ASSERT(m_Pool.size() == 0);

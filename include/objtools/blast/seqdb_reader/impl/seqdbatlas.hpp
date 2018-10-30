@@ -1,4 +1,4 @@
-#ifndef OBJTOOLS_READERS_SEQDB__SEQDBATLAS_HPP
+ #ifndef OBJTOOLS_READERS_SEQDB__SEQDBATLAS_HPP
 #define OBJTOOLS_READERS_SEQDB__SEQDBATLAS_HPP
 
 /*  $Id$
@@ -574,7 +574,10 @@ public:
         return path;
     }
 
-    map< string, CMemoryFile* > &GetFilesMemMap(void){return m_FileMemMap;}
+    map<string, unique_ptr<CMemoryFile> >& GetFilesMemMap(void)
+    {
+        return m_FileMemMap;
+    }
 
     enum EFilesCount{
         eFileCounterNoChange,
@@ -659,7 +662,7 @@ private:
     const string m_SearchPath;
 
     bool m_Alloc;//m_pool was used for mrmory allocation
-    map< string, CMemoryFile* > m_FileMemMap;    
+    map<string, unique_ptr<CMemoryFile> > m_FileMemMap;    
     int m_OpenedFilesCount;
     int m_MaxOpenedFilesCount;
 };
@@ -760,9 +763,10 @@ public:
     void Init(void) {            
 
             
-            map <string, CMemoryFile* > &fileMemMap = m_Atlas.GetFilesMemMap();
+        map<string, unique_ptr<CMemoryFile> >& fileMemMap =
+            m_Atlas.GetFilesMemMap();
             if(IsIndexFile() && fileMemMap.count(m_Filename) > 0) {        
-                m_MappedFile = fileMemMap[m_Filename];                
+                m_MappedFile = fileMemMap[m_Filename].get();                
                 x_LogMessage(eMapExists);       
             }
             else {
@@ -772,12 +776,12 @@ public:
                         m_Atlas.Lock(locked);                                                                        
                         if(fileMemMap.count(m_Filename) == 0) {      
                             m_MappedFile = new CMemoryFile(m_Filename);
-                            fileMemMap.insert(map<string, CMemoryFile * >::value_type(m_Filename,m_MappedFile));                                                          
+                            fileMemMap.insert(map<string, unique_ptr<CMemoryFile> >::value_type(m_Filename,unique_ptr<CMemoryFile>(m_MappedFile)));                                                          
                             m_Atlas.ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterIncrement);
                             x_LogMessage(eMapNewLocked);
                         }
                         else {                                     
-                            m_MappedFile = fileMemMap[m_Filename];                            
+                            m_MappedFile = fileMemMap[m_Filename].get();                            
                             x_LogMessage(eMapExistsLocked);
                         }                        
                     }
@@ -792,7 +796,8 @@ public:
                      x_LogMessage(eMapError);                     
                      NCBI_THROW(CSeqDBException,
                                 eFileErr,
-                                "Cannot memory map " + m_Filename + ". Number of files opened: " + NStr::IntToString(m_Atlas.GetOpenedFilseCount()));                    
+                                "Cannot memory map " + m_Filename + ". Number of files opened: "
+                                + NStr::IntToString(m_Atlas.GetOpenedFilseCount()));                    
                 }
             }            
             
