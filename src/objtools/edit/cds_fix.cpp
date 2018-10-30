@@ -31,7 +31,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <util/checksum.hpp>
 #include <objtools/edit/cds_fix.hpp>
 #include <objtools/edit/loc_edit.hpp>
 #include <objects/seq/Seq_descr.hpp>
@@ -1218,7 +1217,6 @@ ApplyCDSFrame::ECdsFrame ApplyCDSFrame::s_GetFrameFromName(const string& name)
     return frame;
 }
 
-#define MAX_ID_LENGTH 50
 
 CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_base, CHash &chksum, CScope &scope, int &offset) // TODO use directly in x_DoImportCDS
 {   
@@ -1324,7 +1322,7 @@ static CRef<objects::CSeq_id> GetGeneralOrLocal(objects::CSeq_id_Handle hid, CHa
 vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Handle bsh, int &offset, string& id_label)
 {
     vector<CRef<objects::CSeq_id> > ids;
-    CHash chksum(CHash::eCityHash64);
+    CHash chksum(MAX_ID_HASH_METHOD);
 
     for(auto it : bsh.GetId()) 
     {
@@ -1352,7 +1350,7 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
 
 CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label, bool general_only)
 {
-    CHash chksum(CHash::eCityHash64);
+    CHash chksum(MAX_ID_HASH_METHOD);
 
     objects::CSeq_id_Handle hid;
     objects::CSeq_id_Handle gen_id;

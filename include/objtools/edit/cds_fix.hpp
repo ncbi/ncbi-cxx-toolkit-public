@@ -33,7 +33,7 @@
 #include <corelib/ncbistd.hpp>
 
 #include <objmgr/scope.hpp>
-
+#include <util/checksum.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
@@ -45,6 +45,9 @@ class CHash;
 
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
+
+NCBI_XOBJEDIT_EXPORT const unsigned int MAX_ID_LENGTH = 50;
+NCBI_XOBJEDIT_EXPORT const CHash::EMethod MAX_ID_HASH_METHOD =  CHash::eCityHash64;
 
 NCBI_XOBJEDIT_EXPORT bool SetTranslExcept(objects::CSeq_feat& cds, const string& comment, bool strict, bool extend, objects::CScope& scope);
 NCBI_XOBJEDIT_EXPORT void ExtendStop(CSeq_loc& loc, TSeqPos len, CScope& scope);
