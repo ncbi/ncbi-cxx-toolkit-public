@@ -50,6 +50,7 @@
 #include <corelib/ncbi_message.hpp>
 #include <objtools/edit/edit_error.hpp>
 #include <objtools/logging/listener.hpp>
+#include <objtools/edit/cds_fix.hpp>
 
 #include <sstream>
 
@@ -1397,15 +1398,15 @@ string CFeatTableEdit::xNextProteinId(
         return "";
     }
 
+    int offset = 0;
     string locusTag = parentGene.GetData().GetGene().GetLocus_tag();
-	string disAmbig = "";
 	map<string, int>::iterator it = mMapProtIdCounts.find(locusTag);
 	if (it == mMapProtIdCounts.end()) {
 		mMapProtIdCounts[locusTag] = 0;
 	}
 	else {
 		++mMapProtIdCounts[locusTag];
-		disAmbig = string("_") + NStr::IntToString(mMapProtIdCounts[locusTag]);
+                offset = mMapProtIdCounts[locusTag];
 	}
     string db = mLocusTagPrefix;
     if (locusTag.empty() &&
@@ -1418,7 +1419,7 @@ string CFeatTableEdit::xNextProteinId(
         NStr::SplitInTwo(locusTag, "_", prefix, suffix);
         db = prefix;
     }
-    string proteinId = dbPrefix + db + "|" + locusTag + disAmbig;
+    string proteinId = dbPrefix + db + "|" + GetIdHashOrValue(locusTag, offset);
     return proteinId;
 }
 
@@ -1440,10 +1441,10 @@ string CFeatTableEdit::xNextTranscriptId(
 
 
     string locusTag = parentGene.GetData().GetGene().GetLocus_tag();
-    string disAmbig = "";
+    int offset = 0;
 	map<string, int>::iterator it = mMapProtIdCounts.find(locusTag);
 	if (it != mMapProtIdCounts.end()  &&  mMapProtIdCounts[locusTag] != 0) {
-		disAmbig = string("_") + NStr::IntToString(mMapProtIdCounts[locusTag]);
+		offset = mMapProtIdCounts[locusTag];
 	}
     string db = mLocusTagPrefix;
 
@@ -1459,7 +1460,7 @@ string CFeatTableEdit::xNextTranscriptId(
         db = prefix;
     }
 
-    string transcriptId = dbPrefix + db + "|mrna." + locusTag + disAmbig;
+    string transcriptId = dbPrefix + db + "|mrna." + GetIdHashOrValue(locusTag, offset);
 	return transcriptId;
 }
 
