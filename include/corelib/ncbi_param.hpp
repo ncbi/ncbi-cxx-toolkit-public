@@ -89,7 +89,6 @@ BEGIN_NCBI_SCOPE
 ///
 
 /// Get string configuration value.
-/// NOTE: The function is not MT-safe.
 ///
 /// @param section
 ///   Check application configuration named section first if not null.
@@ -113,7 +112,6 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
                                            const char* default_value);
 
 /// Get integer configuration value.
-/// NOTE: The function is not MT-safe.
 ///
 /// @param section
 ///   Check application configuration named section first if not null.
@@ -137,7 +135,6 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
                                      int         default_value);
 
 /// Get boolean configuration value.
-/// NOTE: The function is not MT-safe.
 ///
 /// @param section
 ///   Check application configuration named section first if not null.
@@ -162,7 +159,6 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
 
 
 /// Get double configuration value.
-/// NOTE: The function is not MT-safe.
 ///
 /// @param section
 ///   Check application configuration named section first if not null.
@@ -487,6 +483,9 @@ public:
         eState_Config = 5, ///< The app. config file has been checked
         eState_Error = 99  ///< Error reading param value, do not try to re-read
     };
+
+    // Allow to disable config dump to avoid recursions/deadlocks (e.g. from SetupDiag).
+    static void EnableConfigDump(bool enable);
 };
 
 

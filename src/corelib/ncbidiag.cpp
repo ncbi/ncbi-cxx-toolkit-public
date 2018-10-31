@@ -3444,6 +3444,8 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
 {
     CDiagLock lock(CDiagLock::eWrite);
 
+    CParamBase::EnableConfigDump(false);
+
     // Check severity level change status now.
     // This used to be done in SetDiag(), but if the first logging event is an
     // Extra(), new post format is enabled and post level is Trace, the initialization
@@ -3744,6 +3746,8 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
 
     // Refresh rate controls
     ctx.ResetLogRates();
+
+    CParamBase::EnableConfigDump(true);
 }
 
 

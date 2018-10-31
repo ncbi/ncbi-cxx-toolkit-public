@@ -42,10 +42,22 @@
 
 BEGIN_NCBI_SCOPE
 
+//#define NCBI_PARAM_ENABLE_CONFIG_DUMP
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// Helper functions for getting values from registry/environment
 ///
+
+
+static CAtomicCounter_WithAutoInit s_ConfigDumpDisabled(0);
+
+void CParamBase::EnableConfigDump(bool enable)
+{
+    s_ConfigDumpDisabled.Add(enable ? -1 : 1);
+}
+
 
 const char* kNcbiConfigPrefix = "NCBI_CONFIG__";
 
@@ -92,7 +104,7 @@ namespace {
             s_GetEnvVarName(section, variable, env_var_name).c_str() ));
     }
 
-#ifdef _DEBUG
+#ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
     static const char* const CONFIG_DUMP_SECTION = "NCBI";
     static const char* const CONFIG_DUMP_VARIABLE = "CONFIG_DUMP_VARIABLES";
     static bool s_ConfigDump = g_GetConfigFlag(CONFIG_DUMP_SECTION,
@@ -104,7 +116,9 @@ namespace {
 
     inline bool s_CanDumpConfig(void)
     {
-        return s_ConfigDump  &&  CDiagContextThreadData::IsInitialized();
+        return s_ConfigDumpDisabled.Get() == 0
+            && s_ConfigDump
+            && CDiagContextThreadData::IsInitialized();
     }
 #endif
 }
@@ -121,7 +135,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
                                        const char* env_var_name,
                                        bool default_value)
 {
-#ifdef _DEBUG
+#ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
     bool is_config_dump = NStr::Equal(section, CONFIG_DUMP_SECTION)  &&
         NStr::Equal(variable, CONFIG_DUMP_VARIABLE);
 #endif
@@ -132,7 +146,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
     if ( str && *str ) {
         try {
             bool value = s_StringToBool(_T_CSTRING(str));
-#ifdef _DEBUG
+#ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
             if ( is_config_dump ) {
                 s_ConfigDump = value;
             }
@@ -168,7 +182,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
             if ( !s.empty() ) {
                 try {
                     bool value = s_StringToBool(s);
-#ifdef _DEBUG
+#ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
                     if ( is_config_dump ) {
                         s_ConfigDump = value;
                     }
@@ -189,7 +203,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
         }
     }
     bool value = default_value;
-#ifdef _DEBUG
+#ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
     if ( is_config_dump ) {
         s_ConfigDump = value;
     }
@@ -224,7 +238,7 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
     if ( str && *str ) {
         try {
             int value = NStr::StringToInt(_T_CSTRING(str));
-#ifdef _DEBUG
+#ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
             if ( s_CanDumpConfig() ) {
                 if ( section  &&  *section ) {
                     DUMP_CONFIG(11, "NCBI_CONFIG: int variable"
@@ -257,7 +271,7 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
             if ( !s.empty() ) {
                 try {
                     int value = NStr::StringToInt(s);
-#ifdef _DEBUG
+#ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
                     if ( s_CanDumpConfig() ) {
                         DUMP_CONFIG(10, "NCBI_CONFIG: int variable"
                                         " ["  << section  << "]"
@@ -275,7 +289,7 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
         }
     }
     int value = default_value;
-#ifdef _DEBUG
+#ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
     if ( s_CanDumpConfig() ) {
         if ( section  &&  *section ) {
             DUMP_CONFIG(13, "NCBI_CONFIG: int variable"
@@ -309,7 +323,7 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
             double value = NStr::StringToDouble(_T_CSTRING(str),
                 NStr::fDecimalPosixOrLocal |
                 NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
-#ifdef _DEBUG
+#ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
             if ( s_CanDumpConfig() ) {
                 if ( section  &&  *section ) {
                     DUMP_CONFIG(11, "NCBI_CONFIG: double variable"
@@ -344,7 +358,7 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
                     double value = NStr::StringToDouble(s,
                         NStr::fDecimalPosixOrLocal |
                         NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
-#ifdef _DEBUG
+#ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
                     if ( s_CanDumpConfig() ) {
                         DUMP_CONFIG(10, "NCBI_CONFIG: double variable"
                                         " ["  << section  << "]"
@@ -362,7 +376,7 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
         }
     }
     double value = default_value;
-#ifdef _DEBUG
+#ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
     if ( s_CanDumpConfig() ) {
         if ( section  &&  *section ) {
             DUMP_CONFIG(13, "NCBI_CONFIG: double variable"
@@ -392,7 +406,7 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
     // will not find it and can use INI file value instead.
     const TXChar* value = s_GetEnv(section, variable, env_var_name);
     if ( value ) {
-#ifdef _DEBUG
+#ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
         if ( s_CanDumpConfig() ) {
             if ( section  &&  *section ) {
                 DUMP_CONFIG(16, "NCBI_CONFIG: str variable"
@@ -419,7 +433,7 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
         if ( app  &&  app->HasLoadedConfig() ) {
             const string& v = app->GetConfig().Get(section, variable);
             if ( !v.empty() ) {
-#ifdef _DEBUG
+#ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
                 if ( s_CanDumpConfig() ) {
                     DUMP_CONFIG(15, "NCBI_CONFIG: str variable"
                                     " [" << section  << "]"
@@ -433,7 +447,7 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
         }
     }
     const char* dvalue = default_value? default_value: "";
-#ifdef _DEBUG
+#ifdef NCBI_PARAM_ENABLE_CONFIG_DUMP
     if ( s_CanDumpConfig() ) {
         if ( section  &&  *section ) {
             DUMP_CONFIG(18, "NCBI_CONFIG: str variable"
