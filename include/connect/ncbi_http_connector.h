@@ -175,6 +175,7 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
  *   received from the server, and only if fHTTP_KeepHeader is NOT set.
  *   Return code from the parser adjusts the existing server error condition
  *   (if any) as the following:
+ *
  *   + eHTTP_HeaderError:    unconditionally flag a server error;
  *   + eHTTP_HeaderSuccess:  header parse successful, retain existing condition
  *                           (note that in case of an already existing server
@@ -192,16 +193,24 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
  *                           authorization etc), yet make the response body (if
  *                           any, and regardless of whether there was a server
  *                           error or not) available for reading.
+ *
  * - FHTTP_Adjust() gets invoked every time before starting a new "HTTP
  *   micro-session" making a hit when a previous hit has failed;  it is passed
  *   "net_info" as stored within the connector, and the number of previously
  *   unsuccessful consecutive attempts (in the least significant word) since
  *   the connection was opened, pass 0 in that parameter if calling for
  *   redirects (when fHTTP_AdjustOnRedirect was set);  a zero (false) return
- *   value ends the retries;
+ *   value ends the retries;  return 1 if the adjustment was made, or -1 to
+ *   indicate no changes but to continue with the request.  This callback is
+ *   also invoked when a new request is about to be made for solicitaiton of
+ *   new URL for the hit -- in this case return 1 if the SConnNetInfo was
+ *   updated with a new parameters; or -1 of no changes were made; or 0 to
+ *   stop the request.
+ *
  * - FHTTP_Cleanup() gets called when the connector is about to be destroyed;
  *   "user_data" is guaranteed not to be referenced anymore (so this is a good
  *   place to clean up "user_data" if necessary).
+ *
  * @sa
  *   SConnNetInfo::max_try
  */
@@ -217,6 +226,12 @@ typedef EHTTP_HeaderParse (*FHTTP_ParseHeader)
  int                 server_error   /**< != 0 if HTTP error (NOT 2xx code)   */
  );
 
+
+/* Called with failure_count == 0 for redirects; and with failure_count == -1
+ * for a new URL before starting new successive request(s).  Return value 0
+ * means an error, and stops processing;  return value 1 means changes were
+ * made, and request should proceed;  and return value -1 means no changes.
+ */
 typedef int/*bool*/ (*FHTTP_Adjust)
 (SConnNetInfo*       net_info,      /**< net_info to adjust (in place)       */
  void*               user_data,     /**< supplemental user data              */
