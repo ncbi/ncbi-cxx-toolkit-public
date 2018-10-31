@@ -45,7 +45,8 @@ CNetScheduleServer* CNetScheduleServer::sm_netschedule_server = 0;
 
 //////////////////////////////////////////////////////////////////////////
 /// NetScheduler threaded server implementation
-CNetScheduleServer::CNetScheduleServer(const string &  dbpath)
+CNetScheduleServer::CNetScheduleServer(const string &  dbpath,
+                                       bool  diskless)
     : m_BackgroundHost(this),
       m_Port(0),
       m_HostNetAddr(0),
@@ -62,6 +63,7 @@ CNetScheduleServer::CNetScheduleServer(const string &  dbpath)
       m_LogStatisticsThreadFlag(default_log_statistics_thread),
       m_RefuseSubmits(false),
       m_UseHostname(default_use_hostname),
+      m_Diskless(diskless),
       m_DBDrained(false),
       m_DeleteBatchSize(default_del_batch_size),
       m_MarkdelBatchSize(default_markdel_batch_size),
@@ -72,7 +74,7 @@ CNetScheduleServer::CNetScheduleServer(const string &  dbpath)
       m_MaxClientData(default_max_client_data),
       m_NodeID("not_initialized"),
       m_SessionID("s" + x_GenerateGUID()),
-      m_StartIDs(dbpath),
+      m_StartIDs(dbpath, diskless),
       m_AnybodyCanReconfigure(false),
       m_ReserveDumpSpace(default_reserve_dump_space)
 {
@@ -651,6 +653,11 @@ void CNetScheduleServer::RegisterAlert(EAlertType  alert_type,
 // Returns: true if everything is fine.
 void CNetScheduleServer::InitNodeID(const string &  db_path)
 {
+    if (m_Diskless) {
+        m_NodeID = "n" + x_GenerateGUID();
+        return;
+    }
+
     CFile   node_id_file(CFile::MakePath(
                             CDirEntry::AddTrailingPathSeparator(db_path),
                             kNodeIDFileName));

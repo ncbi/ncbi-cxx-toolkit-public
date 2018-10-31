@@ -51,7 +51,8 @@ class CNSStartIDs
     typedef map< string, unsigned int, PNocase >    TStartIDs;
 
     public:
-        CNSStartIDs(const string &  data_dir_name);
+        CNSStartIDs(const string &  data_dir_name,
+                    bool  diskless);
         ~CNSStartIDs();
 
         void Set(const string &  qname, unsigned int  value);
@@ -65,6 +66,7 @@ class CNSStartIDs
 
     private:
         string                          m_FileName;
+        bool                            m_Diskless;
         mutable CFastMutex              m_Lock;
         TStartIDs                       m_IDs;
 };

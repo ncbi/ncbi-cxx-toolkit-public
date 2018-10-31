@@ -42,7 +42,9 @@ BEGIN_NCBI_SCOPE
 
 
 
-CNSStartIDs::CNSStartIDs(const string &  data_dir_name)
+CNSStartIDs::CNSStartIDs(const string &  data_dir_name,
+                         bool  diskless) :
+    m_Diskless(diskless)
 {
     m_FileName = CFile::MakePath(data_dir_name, kStartJobIDsFileName);
 }
@@ -54,48 +56,57 @@ CNSStartIDs::~CNSStartIDs()
 
 void CNSStartIDs::Set(const string &  qname, unsigned int  value)
 {
-    TStartIDs::iterator     k;
-    CFastMutexGuard         guard(m_Lock);
+    if (!m_Diskless) {
+        TStartIDs::iterator     k;
+        CFastMutexGuard         guard(m_Lock);
 
-    k = m_IDs.find(qname);
-    if (k != m_IDs.end()) {
-        if (k->second != value) {
-            k->second = value;
+        k = m_IDs.find(qname);
+        if (k != m_IDs.end()) {
+            if (k->second != value) {
+                k->second = value;
+                x_SerializeNoLock();
+            }
+        } else {
+            // Create a new entry and serialize the file
+            m_IDs[ qname ] = value;
             x_SerializeNoLock();
         }
-    } else {
-        // Create a new entry and serialize the file
-        m_IDs[ qname ] = value;
-        x_SerializeNoLock();
     }
 }
 
 
 unsigned int CNSStartIDs::Get(const string &  qname)
 {
-    TStartIDs::const_iterator       k;
-    CFastMutexGuard                 guard(m_Lock);
+    if (!m_Diskless) {
+        TStartIDs::const_iterator       k;
+        CFastMutexGuard                 guard(m_Lock);
 
-    k = m_IDs.find(qname);
-    if (k != m_IDs.end())
-        return k->second;
+        k = m_IDs.find(qname);
+        if (k != m_IDs.end())
+            return k->second;
 
-    // Create a new entry and serialize the file
-    m_IDs[ qname ] = 1;
-    x_SerializeNoLock();
+        // Create a new entry and serialize the file
+        m_IDs[ qname ] = 1;
+        x_SerializeNoLock();
+    }
     return 1;
 }
 
 
 void CNSStartIDs::Serialize(void) const
 {
-    CFastMutexGuard     guard(m_Lock);
-    x_SerializeNoLock();
+    if (!m_Diskless) {
+        CFastMutexGuard     guard(m_Lock);
+        x_SerializeNoLock();
+    }
 }
 
 
 void CNSStartIDs::Load(void)
 {
+    if (m_Diskless)
+        return;
+
     // Loading is done at the startup time when there is no threaded access
     FILE *      f = fopen(m_FileName.c_str(), "r");
     if (f == NULL)
@@ -141,16 +152,18 @@ void CNSStartIDs::Load(void)
 
 void CNSStartIDs::x_SerializeNoLock(void) const
 {
-    TStartIDs::const_iterator       k;
-    FILE *                          f = fopen(m_FileName.c_str(), "w");
+    if (!m_Diskless) {
+        TStartIDs::const_iterator       k;
+        FILE *                          f = fopen(m_FileName.c_str(), "w");
 
-    if (f != NULL) {
-        for (k = m_IDs.begin(); k != m_IDs.end(); ++k)
-            fprintf(f, "%s=%d\n", k->first.c_str(), k->second);
-        fclose(f);
-    } else
-        ERR_POST("Cannot serialize start queue job ids into file " +
-                 m_FileName);
+        if (f != NULL) {
+            for (k = m_IDs.begin(); k != m_IDs.end(); ++k)
+                fprintf(f, "%s=%d\n", k->first.c_str(), k->second);
+            fclose(f);
+        } else
+            ERR_POST("Cannot serialize start queue job ids into file " +
+                     m_FileName);
+    }
 }
 
 END_NCBI_SCOPE

@@ -296,12 +296,23 @@ void NS_ValidateServerSection(const IRegistry &  reg,
                      " must be > 0");
     }
 
+    ok = NS_ValidateInt(reg, section, "max_queues", warnings);
+    if (ok) {
+        int     val = reg.GetInt(section, "max_queues",
+                                 default_max_queues);
+        if (val <= 0)
+            warnings.push_back(g_ValidPrefix + "value " +
+                     NS_RegValName(section, "max_queues") +
+                     " must be > 0");
+    }
+
     NS_ValidateBool(reg, section, "log", warnings);
     NS_ValidateBool(reg, section, "log_batch_each_job", warnings);
     NS_ValidateBool(reg, section, "log_notification_thread", warnings);
     NS_ValidateBool(reg, section, "log_cleaning_thread", warnings);
     NS_ValidateBool(reg, section, "log_execution_watcher_thread", warnings);
     NS_ValidateBool(reg, section, "log_statistics_thread", warnings);
+    NS_ValidateBool(reg, section, "diskless", warnings);
 
 
     ok = NS_ValidateInt(reg, section, "del_batch_size", warnings);

@@ -60,8 +60,10 @@ bool IsPauseStatusValid(int  value)
 
 void SerializePauseState(CNetScheduleServer *  server)
 {
-    SerializePauseState(server->GetDataPath(),
-                        server->GetPauseQueues());
+    if (!server->GetDiskless()) {
+        SerializePauseState(server->GetDataPath(),
+                            server->GetPauseQueues());
+    }
 }
 
 
@@ -112,9 +114,11 @@ void SerializePauseState(const string &  data_path,
 
 void SerializeRefuseSubmitState(CNetScheduleServer *  server)
 {
-    SerializeRefuseSubmitState(server->GetDataPath(),
-                               server->GetRefuseSubmits(),
-                               server->GetRefuseSubmitQueues());
+    if (!server->GetDiskless()) {
+        SerializeRefuseSubmitState(server->GetDataPath(),
+                                   server->GetRefuseSubmits(),
+                                   server->GetRefuseSubmitQueues());
+    }
 }
 
 
@@ -168,42 +172,46 @@ void SerializeRefuseSubmitState(const string &  data_path,
 }
 
 
-map<string, int> DeserializePauseState(const string &  data_path)
+map<string, int> DeserializePauseState(const string &  data_path,
+                                       bool  diskless)
 {
     map<string, int>    paused_queues;
-    string              path = CFile::MakePath(data_path,
-                                               kPausedQueuesFilesName);
-    CFile               pause_state_file(path);
-    bool                reported = false;
 
-    if (pause_state_file.Exists()) {
-        ifstream    queue_file(path);
-        string      line;
+    if (!diskless) {
+        string              path = CFile::MakePath(data_path,
+                                                   kPausedQueuesFilesName);
+        CFile               pause_state_file(path);
+        bool                reported = false;
 
-        while (std::getline(queue_file, line)) {
-            if (line.empty())
-                continue;
+        if (pause_state_file.Exists()) {
+            ifstream    queue_file(path);
+            string      line;
 
-            std::istringstream  iss(line);
-            string              queue_name;
-            int                 pause_mode;
+            while (std::getline(queue_file, line)) {
+                if (line.empty())
+                    continue;
 
-            if (!(iss >> queue_name >> pause_mode)) {
-                if (!reported) {
-                    ERR_POST("Error reading queue name and its pause status "
-                             "from " << path << ". Ignore and continue.");
-                    reported = true;
+                std::istringstream  iss(line);
+                string              queue_name;
+                int                 pause_mode;
+
+                if (!(iss >> queue_name >> pause_mode)) {
+                    if (!reported) {
+                        ERR_POST("Error reading queue name and its pause status "
+                                 "from " << path << ". Ignore and continue.");
+                        reported = true;
+                    }
+                    continue;
                 }
-                continue;
-            }
 
-            if (!IsPauseStatusValid(pause_mode)) {
-                ERR_POST("Invalid pause mode " << pause_mode <<
-                         " for queue " << queue_name <<
-                         " while reading from " << path <<
-                         ". Ignore and continue.");
-            } else {
-                paused_queues[queue_name] = pause_mode;
+                if (!IsPauseStatusValid(pause_mode)) {
+                    ERR_POST("Invalid pause mode " << pause_mode <<
+                             " for queue " << queue_name <<
+                             " while reading from " << path <<
+                             ". Ignore and continue.");
+                } else {
+                    paused_queues[queue_name] = pause_mode;
+                }
             }
         }
     }
@@ -211,22 +219,26 @@ map<string, int> DeserializePauseState(const string &  data_path)
 }
 
 
-vector<string> DeserializeRefuseSubmitState(const string &  data_path)
+vector<string> DeserializeRefuseSubmitState(const string &  data_path,
+                                            bool  diskless)
 {
     vector<string>      refuse_submit_queues;
-    string              path = CFile::MakePath(data_path,
-                                               kRefuseSubmitFileName);
-    CFile               refuse_submit_file(path);
 
-    if (refuse_submit_file.Exists()) {
-        ifstream    refuse_file(path);
-        string      line;
+    if (!diskless) {
+        string              path = CFile::MakePath(data_path,
+                                                   kRefuseSubmitFileName);
+        CFile               refuse_submit_file(path);
 
-        while (std::getline(refuse_file, line)) {
-            if (line.empty())
-                continue;
+        if (refuse_submit_file.Exists()) {
+            ifstream    refuse_file(path);
+            string      line;
 
-            refuse_submit_queues.push_back(line);
+            while (std::getline(refuse_file, line)) {
+                if (line.empty())
+                    continue;
+
+                refuse_submit_queues.push_back(line);
+            }
         }
     }
     return refuse_submit_queues;

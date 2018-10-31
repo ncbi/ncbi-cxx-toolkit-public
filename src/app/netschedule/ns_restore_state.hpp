@@ -53,11 +53,13 @@ void SerializeRefuseSubmitState(const string &  data_path,
 
 // Reads from a file a pause state for the queues saved by the previous NS
 // session
-map<string, int> DeserializePauseState(const string &  data_path);
+map<string, int> DeserializePauseState(const string &  data_path,
+                                       bool  diskless);
 
 // Reads from a file a list of queues which were in a refuse submit state when
 // the previous NS session ended.
-vector<string> DeserializeRefuseSubmitState(const string &  data_path);
+vector<string> DeserializeRefuseSubmitState(const string &  data_path,
+                                            bool  diskless);
 
 
 END_NCBI_SCOPE

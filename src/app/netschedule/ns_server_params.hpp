@@ -162,6 +162,7 @@ struct SNS_Parameters : SServer_Parameters
 
     string          path;
     unsigned int    max_queues;
+    bool            diskless;
 
     void Read(const IRegistry &  reg);
 

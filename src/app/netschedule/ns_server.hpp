@@ -56,7 +56,7 @@ const unsigned int   kSubmitCounterInitialValue = 1000000000;
 class CNetScheduleServer : public CServer
 {
 public:
-    CNetScheduleServer(const string &  dbpath);
+    CNetScheduleServer(const string &  dbpath, bool  diskless);
     virtual ~CNetScheduleServer();
 
     const bool & IsLog() const
@@ -89,6 +89,8 @@ public:
     { return m_DeleteBatchSize; }
     bool GetUseHostname(void) const
     { return m_UseHostname; }
+    bool GetDiskless(void) const
+    { return m_Diskless; }
     unsigned GetMarkdelBatchSize(void) const
     { return m_MarkdelBatchSize; }
     unsigned GetScanBatchSize(void) const
@@ -236,6 +238,8 @@ private:
 
     bool                            m_RefuseSubmits;
     bool                            m_UseHostname;
+
+    bool                            m_Diskless;
 
     // Support for shutdown with drain
     CAtomicCounter                  m_CurrentSubmitsCounter;

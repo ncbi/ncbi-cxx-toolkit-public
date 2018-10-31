@@ -178,7 +178,8 @@ int CNetScheduleDApp::Run(void)
     params.accept_timeout      = &m_ServerAcceptTimeout;
 
     SOCK_SetIOWaitSysAPI(eSOCK_IOWaitSysAPIPoll);
-    unique_ptr<CNetScheduleServer>  server(new CNetScheduleServer(params.path));
+    unique_ptr<CNetScheduleServer>  server(new CNetScheduleServer(params.path,
+                                                                  params.diskless));
     server->SetCustomThreadSuffix("_h");
     server->SetNSParameters(params, false);
     server->SetAnybodyCanReconfigure(admin_decrypt_error);
@@ -191,6 +192,7 @@ int CNetScheduleDApp::Run(void)
     unique_ptr<CQueueDataBase>    qdb(new CQueueDataBase(server.get(),
                                                          params.path,
                                                          params.max_queues,
+                                                         params.diskless,
                                                          m_Reinit));
 
     if (!args[kNodaemonArgName]) {

@@ -56,7 +56,8 @@ enum EAlertType {
     eDumpError = 8,
     eMaxQueues = 9,
     eDumpLoadError = 10,
-    eDumpSpaceError = 11
+    eDumpSpaceError = 11,
+    eDataDirRemoveError = 12
 };
 
 enum EAlertAckResult {

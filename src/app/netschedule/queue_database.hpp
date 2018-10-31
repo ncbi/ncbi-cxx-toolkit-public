@@ -70,6 +70,7 @@ public:
     CQueueDataBase(CNetScheduleServer *  server,
                    const string &  path,
                    unsigned int  max_queues,
+                   bool  diskless,
                    bool  reinit);
     ~CQueueDataBase();
 
@@ -174,6 +175,7 @@ private:
     string               m_DataPath;
     string               m_DumpPath;
     unsigned int         m_MaxQueues;
+    bool                 m_Diskless;
 
     mutable CFastMutex   m_ConfigureLock;
 

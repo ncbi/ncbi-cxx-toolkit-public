@@ -261,6 +261,7 @@ void SNS_Parameters::Read(const IRegistry &  reg)
     state_transition_perf_log_classes = reg.GetString(sname,
                             "state_transition_perf_log_classes", kEmptyStr);
 
+    diskless = GetBoolNoErr("diskless", default_diskless);
 
     #if defined(_DEBUG) && !defined(NDEBUG)
     ReadErrorEmulatorSection(reg);

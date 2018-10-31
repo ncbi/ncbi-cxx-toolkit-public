@@ -59,9 +59,11 @@ BEGIN_NCBI_SCOPE
 CQueueDataBase::CQueueDataBase(CNetScheduleServer *  server,
                                const string &  path,
                                unsigned int  max_queues,
+                               bool  diskless,
                                bool  reinit)
 : m_Host(server->GetBackgroundHost()),
   m_MaxQueues(max_queues),
+  m_Diskless(diskless),
   m_StopPurge(false),
   m_FreeStatusMemCnt(0),
   m_LastFreeMem(time(0)),
@@ -75,29 +77,35 @@ CQueueDataBase::CQueueDataBase(CNetScheduleServer *  server,
                                                      kDumpSubdirName);
 
     // First, load the previous session start job IDs if file existed
+    // The diskless flag will be considered when IDs are loaded.
     m_Server->LoadJobsStartIDs();
 
     // Load the content of the queue state files
-    map<string, int>    paused_queues = DeserializePauseState(m_DataPath);
+    map<string, int>    paused_queues = DeserializePauseState(m_DataPath,
+                                                              m_Diskless);
     vector<string>      refuse_submit_queues =
-                                DeserializeRefuseSubmitState(m_DataPath);
+                                DeserializeRefuseSubmitState(m_DataPath,
+                                                             m_Diskless);
 
     // Old instance data files are not needed (even if they survived)
-    x_RemoveDataFiles();
+    if (!m_Diskless)
+        x_RemoveDataFiles();
 
     // Creates the queues from the ini file and loads jobs from the dump
     x_Open(reinit);
 
-    // Restore the queue state
-    x_RestorePauseState(paused_queues);
-    x_RestoreRefuseSubmitState(refuse_submit_queues);
+    if (!m_Diskless) {
+        // Restore the queue state
+        x_RestorePauseState(paused_queues);
+        x_RestoreRefuseSubmitState(refuse_submit_queues);
 
-    // The files with queue state could be broken or the queues may be removed
-    // from the configuration file so update the state files to keep them
-    // consistent with the up to date configuration
-    SerializePauseState(m_DataPath, GetPauseQueues());
-    SerializeRefuseSubmitState(m_DataPath, server->GetRefuseSubmits(),
-                               GetRefuseSubmitQueues());
+        // The files with queue state could be broken or the queues may be removed
+        // from the configuration file so update the state files to keep them
+        // consistent with the up to date configuration
+        SerializePauseState(m_DataPath, GetPauseQueues());
+        SerializeRefuseSubmitState(m_DataPath, server->GetRefuseSubmits(),
+                                   GetRefuseSubmitQueues());
+    }
 }
 
 
@@ -113,13 +121,34 @@ void  CQueueDataBase::x_Open(bool  reinit)
 {
     // Checks preconditions and provides the final reinit value
     // It sets alerts and throws exceptions if needed.
-    reinit = x_CheckOpenPreconditions(reinit);
+    if (m_Diskless) {
+        reinit = false;
+    } else {
+        reinit = x_CheckOpenPreconditions(reinit);
+    }
 
     CDir    data_dir(m_DataPath);
     if (reinit)
         data_dir.Remove();
-    if (!data_dir.Exists())
+    if (m_Diskless) {
+        // Try to remove th dir if it exists
+        if (data_dir.Exists()) {
+            ERR_POST(Warning << "The configuration has the [server]/diskless "
+                                "value set to true but the previous run "
+                                "directory is on the disk. It will be removed.");
+            if (!data_dir.Remove()) {
+                ERR_POST(Critical << "Error removing the previous run data "
+                                     "directory " << m_DataPath);
+                m_Server->RegisterAlert(eDataDirRemoveError,
+                                        "Error removing the previous run data "
+                                        "directory " + m_DataPath +
+                                        " (due to the cofiguration file sets "
+                                        "the [server]/diskless value to true)");
+            }
+        }
+    } else if (!data_dir.Exists()) {
         data_dir.Create();
+    }
 
     // The initialization must be done before the queues are created but after
     // the directory is possibly re-created
@@ -132,8 +161,11 @@ void  CQueueDataBase::x_Open(bool  reinit)
     map<string, string,
         PNocase>            dump_dynamic_queues;    // qname -> qclass
     TQueueParams            dump_queue_classes;
-    x_ReadDumpQueueDesrc(dump_static_queues, dump_dynamic_queues,
-                         dump_queue_classes);
+
+    if (!m_Diskless)
+        x_ReadDumpQueueDesrc(dump_static_queues, dump_dynamic_queues,
+                             dump_queue_classes);
+
     set<string, PNocase>    config_static_queues = x_GetConfigQueues();
     string                  last_queue_load_error;
     size_t                  queue_load_error_count = 0;
@@ -169,7 +201,9 @@ void  CQueueDataBase::x_Open(bool  reinit)
         CJsonNode       unused_diff = CJsonNode::NewObjectNode();
         x_ReadLinkedSections(CNcbiApplication::Instance()->GetConfig(),
                              unused_diff);
-        x_AppendDumpLinkedSections();
+
+        if (!m_Diskless)
+            x_AppendDumpLinkedSections();
 
         // Read the queue classes from the config file and append those which
         // come from the dump
@@ -214,25 +248,27 @@ void  CQueueDataBase::x_Open(bool  reinit)
         }
 
         // All the structures are ready to upload the jobs from the dump
-        for (TQueueInfo::iterator  k = m_Queues.begin();
-                k != m_Queues.end(); ++k) {
-            try {
-                unsigned int   records =
-                                    k->second.second->LoadFromDump(m_DumpPath);
-                GetDiagContext().Extra()
-                    .Print("_type", "startup")
-                    .Print("_queue", k->first)
-                    .Print("info", "load_from_dump")
-                    .Print("records", records);
-            } catch (const exception &  ex) {
-                ERR_POST(ex.what());
-                last_queue_load_error = ex.what();
-                ++queue_load_error_count;
-            } catch (...) {
-                last_queue_load_error = "Unknown error loading queue " +
-                                        k->first + " from dump";
-                ERR_POST(last_queue_load_error);
-                ++queue_load_error_count;
+        if (!m_Diskless) {
+            for (TQueueInfo::iterator  k = m_Queues.begin();
+                    k != m_Queues.end(); ++k) {
+                try {
+                    unsigned int   records =
+                                        k->second.second->LoadFromDump(m_DumpPath);
+                    GetDiagContext().Extra()
+                        .Print("_type", "startup")
+                        .Print("_queue", k->first)
+                        .Print("info", "load_from_dump")
+                        .Print("records", records);
+                } catch (const exception &  ex) {
+                    ERR_POST(ex.what());
+                    last_queue_load_error = ex.what();
+                    ++queue_load_error_count;
+                } catch (...) {
+                    last_queue_load_error = "Unknown error loading queue " +
+                                            k->first + " from dump";
+                    ERR_POST(last_queue_load_error);
+                    ++queue_load_error_count;
+                }
             }
         }
     } catch (const exception &  ex) {
@@ -245,14 +281,16 @@ void  CQueueDataBase::x_Open(bool  reinit)
         ++queue_load_error_count;
     }
 
-    x_CreateCrashFlagFile();
-    x_CreateDumpErrorFlagFile();
-    x_CreateStorageVersionFile();
+    if (!m_Diskless) {
+        x_CreateCrashFlagFile();
+        x_CreateDumpErrorFlagFile();
+        x_CreateStorageVersionFile();
 
-    // Serialize the start job IDs file if it was deleted during the database
-    // initialization. Even if it is overwriting an existing file there is no
-    // performance issue at this point (it's done once anyway).
-    m_Server->SerializeJobsStartIDs();
+        // Serialize the start job IDs file if it was deleted during the
+        // database initialization. Even if it is overwriting an existing file
+        // there is no performance issue at this point (it's done once anyway).
+        m_Server->SerializeJobsStartIDs();
+    }
 
     if (queue_load_error_count > 0) {
         m_Server->RegisterAlert(eDumpLoadError,
@@ -261,12 +299,15 @@ void  CQueueDataBase::x_Open(bool  reinit)
                                 NStr::NumericToString(queue_load_error_count) +
                                 ". See log for all the loading errors. "
                                 "Last error: " + last_queue_load_error);
-        x_BackupDump();
+        if (!m_Diskless)
+            x_BackupDump();
     } else {
-        x_RemoveDump();
+        if (!m_Diskless)
+            x_RemoveDump();
     }
 
-    x_CreateSpaceReserveFile();
+    if (!m_Diskless)
+        x_CreateSpaceReserveFile();
 }
 
 
@@ -1176,7 +1217,8 @@ void CQueueDataBase::Close(void)
                      "Shutting down immediately.");
 
         // Dump all the queues/queue classes/queue parameters to flat files
-        x_Dump();
+        if (!m_Diskless)
+            x_Dump();
 
         m_QueueClasses.clear();
 
@@ -1185,8 +1227,10 @@ void CQueueDataBase::Close(void)
         m_Queues.clear();
     }
 
-    x_RemoveDataFiles();
-    x_RemoveCrashFlagFile();
+    if (!m_Diskless) {
+        x_RemoveDataFiles();
+        x_RemoveCrashFlagFile();
+    }
 }
 
 
@@ -1777,15 +1821,17 @@ bool  CQueueDataBase::x_DoesDumpErrorFlagFileExist(void) const
 
 void  CQueueDataBase::x_RemoveDumpErrorFlagFile(void)
 {
-    try {
-        CFile       crash_file(CFile::MakePath(m_DataPath,
-                                               kDumpErrorFlagFileName));
-        if (crash_file.Exists())
-            crash_file.Remove();
-    }
-    catch (...) {
-        ERR_POST("Error removing dump error detection file. When the server "
-                 "restarts it will set an alert.");
+    if (!m_Diskless) {
+        try {
+            CFile       crash_file(CFile::MakePath(m_DataPath,
+                                                   kDumpErrorFlagFileName));
+            if (crash_file.Exists())
+                crash_file.Remove();
+        }
+        catch (...) {
+            ERR_POST("Error removing dump error detection file. When the server "
+                     "restarts it will set an alert.");
+        }
     }
 }
 

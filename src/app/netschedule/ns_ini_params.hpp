@@ -96,6 +96,7 @@ const unsigned int      default_scope_dirt_percentage = 20;
 
 const unsigned int      default_reserve_dump_space = 1024 * 1024 * 1024; // 1GB
 const unsigned int      default_max_queues = 1000;
+const bool              default_diskless = false;
 
 
 // Queue section values
