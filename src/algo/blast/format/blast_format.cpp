@@ -188,7 +188,9 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     if (app) {
         const CNcbiRegistry& registry = app->GetConfig();
         m_LongSeqId = (registry.Get("BLAST", "LONG_SEQID") == "1");
-    }    
+    }
+    m_HitsSortOption = -1;
+    m_HspsSortOption = -1;    
 }
 
 CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts, 
@@ -295,6 +297,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
         const CNcbiRegistry& registry = app->GetConfig();
         m_LongSeqId = (registry.Get("BLAST", "LONG_SEQID") == "1");
     }
+    m_HitsSortOption = -1;
+    m_HspsSortOption = -1;
 }
 
 CBlastFormat::~CBlastFormat()
