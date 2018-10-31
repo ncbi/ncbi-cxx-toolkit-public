@@ -111,8 +111,6 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
 
     const IRegistry&   config   = GetConfig();
 
-    const string&      secret = config.GetEncryptedString("Crypto", "secret", IRegistry::fPlaintextAllowed);
-
 #ifdef NEED_SET_DEPLOYMENT_UID
     const auto deployment_uid = GetEnvironment().Get("DEPLOYMENT_UID");
     CDiagContext &diag_ctx(GetDiagContext());
@@ -159,7 +157,6 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
         page->AddTagMap("SELF_URL", new CHTMLPlainText(ctx.GetSelfURL()));
         page->AddTagMap("TITLE", new CHTMLPlainText("C++ SVN CGI Sample"));
         page->AddTagMap("VERSION", new CHTMLPlainText(GetCdVersion()));
-        page->AddTagMap("SECRET", new CHTMLPlainText(secret));
     }
     catch (const exception& e) {
         ERR_POST("Failed to populate Sample CGI HTML page: " << e.what());

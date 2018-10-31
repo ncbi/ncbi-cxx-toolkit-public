@@ -1,9 +1,9 @@
 APP=sample_cgi_test
 SRC=sample_cgi_test
 
+### BEGIN COPIED SETTINGS
 CPPFLAGS=$(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-### BEGIN COPIED SETTINGS
 ## Use these two lines for normal CGI.
 LIB = xcgi xhtml xconnect xutil test_boost xncbi
 LIBS = $(CGI_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
