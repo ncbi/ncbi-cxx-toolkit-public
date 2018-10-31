@@ -136,7 +136,7 @@ int CNCBITestHttpStreamApp::Run(void)
 {
     const CArgs& args = GetArgs();
     size_t n = args.GetNExtra();
-    assert(n > 0);
+    _ASSERT(n > 0);
 
     CCanceled canceled;
     CConn_HttpStream http(args[1].AsString(), eReqMethod_Get11);
