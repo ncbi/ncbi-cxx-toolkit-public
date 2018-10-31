@@ -35,11 +35,11 @@
 #define _OBJTOOLS_LISTENER_HPP_
 
 #include <corelib/ncbi_message.hpp>
+#include <objtools/logging/message.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class IObjtoolsMessage;
 
 //  ============================================================================
 class IObjtoolsListener
