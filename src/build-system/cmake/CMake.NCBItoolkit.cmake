@@ -40,6 +40,7 @@ if(DEFINED NCBI_VERBOSE_PROJECTS)
     endforeach()
 endif()
 
+cmake_policy(SET CMP0057 NEW)
 if(NCBI_EXPERIMENTAL)
     cmake_policy(SET CMP0054 NEW)
 

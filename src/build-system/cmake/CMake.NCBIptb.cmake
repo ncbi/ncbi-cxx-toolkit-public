@@ -749,10 +749,22 @@ function(NCBI_internal_collect_dataspec)
     foreach(_dataspec IN LISTS NCBI_${NCBI_PROJECT}_DATASPEC)
         if (EXISTS ${NCBI_CURRENT_SOURCE_DIR}/${_dataspec})
             get_filename_component(_basename ${_dataspec} NAME_WE)
+            get_filename_component(_ext ${_dataspec} EXT)
             get_filename_component(_path ${NCBI_CURRENT_SOURCE_DIR}/${_dataspec} DIRECTORY)
             set(_specfiles ${_specfiles}  ${NCBI_CURRENT_SOURCE_DIR}/${_dataspec})
-            set_source_files_properties(${_path}/${_basename}__.cpp ${_path}/${_basename}___.cpp PROPERTIES GENERATED TRUE)
-            set(_srcfiles ${_srcfiles}  ${_path}/${_basename}__.cpp ${_path}/${_basename}___.cpp)
+            if ("${_ext}" STREQUAL ".proto")
+                if ("PROTOBUF" IN_LIST NCBITMP_REQUIRE)
+                    set_source_files_properties(${_path}/${_basename}.pb.cc PROPERTIES GENERATED TRUE)
+                    set(_srcfiles ${_srcfiles}  ${_path}/${_basename}.pb.cc)
+                endif()
+                if ("GRPC" IN_LIST NCBITMP_REQUIRE)
+                    set_source_files_properties(${_path}/${_basename}.grpc.pb.cc PROPERTIES GENERATED TRUE)
+                    set(_srcfiles ${_srcfiles}  ${_path}/${_basename}.grpc.pb.cc)
+                endif()
+            else()
+                set_source_files_properties(${_path}/${_basename}__.cpp ${_path}/${_basename}___.cpp PROPERTIES GENERATED TRUE)
+                set(_srcfiles ${_srcfiles}  ${_path}/${_basename}__.cpp ${_path}/${_basename}___.cpp)
+            endif()
         else()
             message(WARNING "ERROR: file not found: ${NCBI_CURRENT_SOURCE_DIR}/${_dataspec}")
         endif()
@@ -776,39 +788,67 @@ function(NCBI_internal_add_dataspec)
         set(_filepath ${_dataspec})
         get_filename_component(_path ${_filepath} DIRECTORY)
         file(RELATIVE_PATH _relpath ${NCBI_SRC_ROOT} ${_path})
-        set(_module_imports "")
-        set(_imports "")
 
-        if(EXISTS "${_path}/${_basename}.module")
-            FILE(READ "${_path}/${_basename}.module" _module_contents)
-            STRING(REGEX MATCH "MODULE_IMPORT *=[^\n]*[^ \n]" _tmp "${_module_contents}")
-            STRING(REGEX REPLACE "MODULE_IMPORT *= *" "" _tmp "${_tmp}")
-            STRING(REGEX REPLACE "  *$" "" _imp_list "${_tmp}")
-            STRING(REGEX REPLACE " " ";" _imp_list "${_imp_list}")
-
-            foreach(_module IN LISTS _imp_list)
-                set(_module_imports "${_module_imports} ${_module}${_ext}")
-            endforeach()
-            if (NOT "${_module_imports}" STREQUAL "")
-                set(_imports -M ${_module_imports})
+        if ("${_ext}" STREQUAL ".proto")
+            if ("PROTOBUF" IN_LIST NCBITMP_REQUIRE)
+                set(_cmd ${NCBI_PROTOC_APP} --cpp_out=${_path} --proto_path=${_path} ${_filepath})
+                add_custom_command(
+                    OUTPUT ${_path}/${_basename}.pb.cc
+                    COMMAND ${_cmd} VERBATIM
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
+                    COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.pb.h VERBATIM
+                    WORKING_DIRECTORY ${top_src_dir}
+                    COMMENT "Generate PROTOC C++ classes from ${_filepath}"
+                    VERBATIM
+                )
             endif()
-        endif()
+            if ("GRPC" IN_LIST NCBITMP_REQUIRE)
+                set(_cmd ${NCBI_PROTOC_APP} --grpc_out=${_path} --proto_path=${_path} --plugin=protoc-gen-grpc=${NCBI_GRPC_PLUGIN}  ${_filepath})
+                add_custom_command(
+                    OUTPUT ${_path}/${_basename}.grpc.pb.cc
+                    COMMAND ${_cmd} VERBATIM
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${_path}/${_basename}.grpc.pb.h ${NCBI_INC_ROOT}/${_relpath} VERBATIM
+                    COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.grpc.pb.h VERBATIM
+                    WORKING_DIRECTORY ${top_src_dir}
+                    COMMENT "Generate GRPC C++ classes from ${_filepath}"
+                    VERBATIM
+                )
+            endif()
+            set(NCBITMP_INCLUDES ${NCBITMP_INCLUDES} ${NCBI_INC_ROOT}/${_relpath} PARENT_SCOPE)
+        else()
+            set(_module_imports "")
+            set(_imports "")
+            if(EXISTS "${_path}/${_basename}.module")
+                FILE(READ "${_path}/${_basename}.module" _module_contents)
+                STRING(REGEX MATCH "MODULE_IMPORT *=[^\n]*[^ \n]" _tmp "${_module_contents}")
+                STRING(REGEX REPLACE "MODULE_IMPORT *= *" "" _tmp "${_tmp}")
+                STRING(REGEX REPLACE "  *$" "" _imp_list "${_tmp}")
+                STRING(REGEX REPLACE " " ";" _imp_list "${_imp_list}")
 
-        set(_oc ${_basename})
-        if (NOT "${NCBI_DEFAULT_PCH}" STREQUAL "")
-            set(_pch -pch ${NCBI_DEFAULT_PCH})
+                foreach(_module IN LISTS _imp_list)
+                    set(_module_imports "${_module_imports} ${_module}${_ext}")
+                endforeach()
+                if (NOT "${_module_imports}" STREQUAL "")
+                    set(_imports -M ${_module_imports})
+                endif()
+            endif()
+
+            set(_oc ${_basename})
+            if (NOT "${NCBI_DEFAULT_PCH}" STREQUAL "")
+                set(_pch -pch ${NCBI_DEFAULT_PCH})
+            endif()
+            set(_od ${_path}/${_basename}.def)
+            set(_oex -oex " ")
+            set(_cmd ${NCBI_DATATOOL} ${_oex} ${_pch} -m ${_filepath} -oA -oc ${_oc} -od ${_od} -odi -ocvs -or ${_relpath} -oR ${top_src_dir} ${_imports})
+            add_custom_command(
+                OUTPUT ${_path}/${_basename}__.cpp ${_path}/${_basename}___.cpp
+                COMMAND ${_cmd} VERBATIM
+                WORKING_DIRECTORY ${top_src_dir}
+                COMMENT "Generate C++ classes from ${_filepath}"
+                DEPENDS ${NCBI_DATATOOL}
+                VERBATIM
+            )
         endif()
-        set(_od ${_path}/${_basename}.def)
-        set(_oex -oex " ")
-        set(_cmd ${NCBI_DATATOOL} ${_oex} ${_pch} -m ${_filepath} -oA -oc ${_oc} -od ${_od} -odi -ocvs -or ${_relpath} -oR ${top_src_dir} ${_imports})
-        add_custom_command(
-            OUTPUT ${_path}/${_basename}__.cpp ${_path}/${_basename}___.cpp
-            COMMAND ${_cmd} VERBATIM
-            WORKING_DIRECTORY ${top_src_dir}
-            COMMENT "Generate C++ classes from ${_filepath}"
-            DEPENDS ${NCBI_DATATOOL}
-            VERBATIM
-        )
     endforeach()
 endfunction()
 
@@ -927,7 +967,7 @@ function(NCBI_internal_install_component_files _comp)
             continue()
         endif()
         if (IS_DIRECTORY ${_src})
-            file(GLOB _files LIST_DIRECTORIES false "${_src}/*.dll")
+            file(GLOB _files LIST_DIRECTORIES false "${_src}/*${CMAKE_SHARED_LIBRARY_SUFFIX}")
             foreach(_file IN LISTS _files)
 #message("============ COPY ${_file}  DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${_cfg}")
                 file(COPY ${_file}  DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${_cfg})
@@ -948,6 +988,7 @@ macro(NCBI_internal_process_project_requires)
         list(REMOVE_DUPLICATES _all)
     endif()
 
+    set(NCBITMP_REQUIRE ${_all})
     if(NCBI_PTBMODE_COLLECT_DEPS)
         set_property(GLOBAL PROPERTY NCBI_PTBPROP_REQUIRES_${NCBI_PROJECT} ${_all})
     endif()
@@ -1800,7 +1841,6 @@ message("  NCBITMP_PROJECT_SOURCES ${NCBITMP_PROJECT_SOURCES}")
 message("  NCBITMP_PROJECT_HEADERS ${NCBITMP_PROJECT_HEADERS}")
 message("  NCBITMP_PROJECT_RESOURCES ${NCBITMP_PROJECT_RESOURCES}")
 endif()
-
     target_include_directories(${NCBI_PROJECT} PRIVATE ${NCBITMP_INCLUDES})
     target_compile_definitions(${NCBI_PROJECT} PRIVATE ${NCBITMP_DEFINES})
 

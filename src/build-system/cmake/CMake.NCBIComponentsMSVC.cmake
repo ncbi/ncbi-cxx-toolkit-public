@@ -75,7 +75,7 @@ else()
 endif()
 
 set(NCBI_ThirdParty_PYTHON     ${NCBI_ThirdPartyAppsPath}/Python252)
-
+set(NCBI_ThirdParty_GRPC       ${NCBI_ThirdPartyBasePath}/grpc/${NCBI_ThirdPartyCompiler}/1.14.1)
 
 #############################################################################
 macro(NCBI_define_component _name)
@@ -351,3 +351,18 @@ endif()
 #############################################################################
 # PYTHON
 NCBI_define_component(PYTHON)
+
+##############################################################################
+# GRPC/PROTOBUF
+
+set(NCBI_PROTOC_APP "${NCBI_ThirdParty_GRPC}/bin/protoc.exe")
+set(NCBI_GRPC_PLUGIN "${NCBI_ThirdParty_GRPC}/bin/grpc_cpp_plugin.exe")
+
+if (EXISTS "${NCBI_ThirdParty_GRPC}/include" AND EXISTS "${NCBI_ThirdParty_GRPC}/lib/libprotobuf.lib")
+  set(NCBI_COMPONENT_PROTOBUF_FOUND YES)
+  set(NCBI_COMPONENT_PROTOBUF_INCLUDE ${NCBI_ThirdParty_GRPC}/include)
+  set(NCBI_COMPONENT_PROTOBUF_LIBS ${NCBI_ThirdParty_GRPC}/lib/libprotobuf.lib)
+  message("PROTOBUF found at ${NCBI_ThirdParty_GRPC}")
+else()
+  set(NCBI_COMPONENT_PROTOBUF_FOUND NO)
+endif()
