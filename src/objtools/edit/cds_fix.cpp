@@ -45,6 +45,7 @@
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqfeat/seqfeat_macros.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
+#include <util/checksum.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
@@ -1217,11 +1218,29 @@ ApplyCDSFrame::ECdsFrame ApplyCDSFrame::s_GetFrameFromName(const string& name)
     return frame;
 }
 
+const unsigned int MAX_ID_LENGTH = 50;
 
-CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_base, CHash &chksum, CScope &scope, int &offset) // TODO use directly in x_DoImportCDS
+static inline string GetIdHash(const string &str)
+{
+    return NStr::NumericToString(NHash::CityHash64(str), 0, 16);
+}
+
+string GetIdHashOrValue(const string &base, int offset)
+{
+    string new_str = base;
+    if (offset > 0)
+        new_str += "_" + NStr::NumericToString(offset);
+    if (new_str.length() <= MAX_ID_LENGTH)
+        return new_str;
+    string new_hash = GetIdHash(base);
+    if (offset > 0)
+        new_hash += "_" + NStr::NumericToString(offset);
+    return new_hash;
+}
+
+CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_base, CScope &scope, int &offset) // TODO use directly in x_DoImportCDS
 {   
-    chksum.Calculate(id_base);
-    string id_base_hash = chksum.GetResultHex();
+    string id_base_hash = GetIdHash(id_base);
     CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
     string new_str = id_base;
     if (offset > 0)
@@ -1248,10 +1267,9 @@ CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_base, CHash &chksum, C
     return new_id_hash;
 }
 
-static CRef<objects::CSeq_id> GetNewGeneralProtId(const string &id_base, const string &db, CHash &chksum, CScope &scope, int &offset)
+static CRef<objects::CSeq_id> GetNewGeneralProtId(const string &id_base, const string &db, CScope &scope, int &offset)
 {    
-    chksum.Calculate(id_base);
-    string id_base_hash = chksum.GetResultHex();
+    string id_base_hash = GetIdHash(id_base);
     CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
     new_id->SetGeneral().SetDb(db);
     string new_str = id_base;
@@ -1280,7 +1298,7 @@ static CRef<objects::CSeq_id> GetNewGeneralProtId(const string &id_base, const s
     return new_id_hash;
 }
 
-static CRef<objects::CSeq_id> GetGeneralOrLocal(objects::CSeq_id_Handle hid, CHash &chksum, CScope &scope, int &offset, bool fall_through)
+static CRef<objects::CSeq_id> GetGeneralOrLocal(objects::CSeq_id_Handle hid, CScope &scope, int &offset, bool fall_through)
 {
     CRef<objects::CSeq_id> new_id;
     if (hid.GetSeqId()->IsLocal())
@@ -1294,7 +1312,7 @@ static CRef<objects::CSeq_id> GetGeneralOrLocal(objects::CSeq_id_Handle hid, CHa
         {
             id_base = hid.GetSeqId()->GetLocal().GetStr();
         }
-        new_id = GetNewLocalProtId(id_base, chksum, scope, offset);
+        new_id = GetNewLocalProtId(id_base, scope, offset);
     }
     else if (hid.GetSeqId()->IsGeneral() && hid.GetSeqId()->GetGeneral().IsSetTag()
              && (!hid.GetSeqId()->GetGeneral().IsSetDb() || hid.GetSeqId()->GetGeneral().GetDb() != "TMSMART"))
@@ -1308,13 +1326,13 @@ static CRef<objects::CSeq_id> GetGeneralOrLocal(objects::CSeq_id_Handle hid, CHa
         {
             id_base = hid.GetSeqId()->GetGeneral().GetTag().GetStr();
         }
-        new_id = GetNewGeneralProtId(id_base, hid.GetSeqId()->GetGeneral().GetDb(), chksum, scope, offset);
+        new_id = GetNewGeneralProtId(id_base, hid.GetSeqId()->GetGeneral().GetDb(), scope, offset);
     }
-    else if (fall_through)
+    else if (fall_through) // if we don't care for the incoming seq-id to be specifically local or general take any input and create a local seq-id output
     {
         string id_base;
         hid.GetSeqId()->GetLabel(&id_base, objects::CSeq_id::eContent);
-        new_id = GetNewLocalProtId(id_base, chksum, scope, offset);
+        new_id = GetNewLocalProtId(id_base, scope, offset);
     }
     return new_id;
 }
@@ -1322,14 +1340,12 @@ static CRef<objects::CSeq_id> GetGeneralOrLocal(objects::CSeq_id_Handle hid, CHa
 vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Handle bsh, int &offset, string& id_label)
 {
     vector<CRef<objects::CSeq_id> > ids;
-    CHash chksum(MAX_ID_HASH_METHOD);
-
     for(auto it : bsh.GetId()) 
     {
         if (it.GetSeqIdOrNull())
         {
             objects::CSeq_id_Handle hid = it;
-            CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(hid, chksum, bsh.GetScope(), offset, false);
+            CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(hid, bsh.GetScope(), offset, false);
             if (new_id)
                 ids.push_back(new_id);
         }
@@ -1337,7 +1353,7 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
 
     if (ids.empty() && !bsh.GetId().empty())
     {
-        CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(bsh.GetId().front(), chksum, bsh.GetScope(), offset, true);
+        CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(bsh.GetId().front(), bsh.GetScope(), offset, true);
         ids.push_back(new_id);
     }
 
@@ -1350,8 +1366,6 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
 
 CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label, bool general_only)
 {
-    CHash chksum(MAX_ID_HASH_METHOD);
-
     objects::CSeq_id_Handle hid;
     objects::CSeq_id_Handle gen_id;
     objects::CSeq_id_Handle lcl_id;
@@ -1386,7 +1400,7 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
     if (!hid)
         NCBI_THROW(CException, eUnknown, "Seq-id of the requested type not found");
   
-    CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(hid, chksum, bsh.GetScope(), offset, !general_only);   
+    CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(hid, bsh.GetScope(), offset, !general_only);   
     new_id->GetLabel(&id_label, objects::CSeq_id::eBoth);
     return new_id;
 }

@@ -33,7 +33,6 @@
 #include <corelib/ncbistd.hpp>
 
 #include <objmgr/scope.hpp>
-#include <util/checksum.hpp>
 #include <objmgr/scope.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
@@ -44,8 +43,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-NCBI_XOBJEDIT_EXPORT const unsigned int MAX_ID_LENGTH = 50;
-NCBI_XOBJEDIT_EXPORT const CHash::EMethod MAX_ID_HASH_METHOD =  CHash::eCityHash64;
 
 NCBI_XOBJEDIT_EXPORT bool SetTranslExcept(objects::CSeq_feat& cds, const string& comment, bool strict, bool extend, objects::CScope& scope);
 NCBI_XOBJEDIT_EXPORT void ExtendStop(CSeq_loc& loc, TSeqPos len, CScope& scope);
@@ -59,10 +56,11 @@ NCBI_XOBJEDIT_EXPORT bool TruncateCDSAtStop(CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT void AdjustCDSFrameForStartChange(CCdregion& cds, int change);
 NCBI_XOBJEDIT_EXPORT bool DemoteCDSToNucSeq(objects::CSeq_feat_Handle& orig_feat);
-NCBI_XOBJEDIT_EXPORT CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_base, CHash &chksum, CScope &scope, int &offset);
+NCBI_XOBJEDIT_EXPORT CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_base, CScope &scope, int &offset);
 NCBI_XOBJEDIT_EXPORT CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label); // TODO remove
 NCBI_XOBJEDIT_EXPORT CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label, bool general_only);
 NCBI_XOBJEDIT_EXPORT vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Handle bsh, int &offset, string& id_label);
+NCBI_XOBJEDIT_EXPORT string GetIdHashOrValue(const string &base, int offset);
 
 // these methods are being moved to ncbi::feature namespace 
 // please modify your usage of them
