@@ -281,6 +281,31 @@ extern char* UTIL_PrintableString(const char* data, size_t size,
 }
 
 
+#ifdef NCBI_OS_MSWIN
+static const char* s_WinStrerror(DWORD error)
+{
+    TCHAR* str;
+    DWORD  rv;
+
+    if (!error)
+        return 0;
+    str = NULL;
+    rv  = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+                        FORMAT_MESSAGE_FROM_SYSTEM     |
+                        FORMAT_MESSAGE_MAX_WIDTH_MASK  |
+                        FORMAT_MESSAGE_IGNORE_INSERTS,
+                        NULL, error,
+                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                        (LPTSTR) &str, 0, NULL);
+    if (!rv  &&  str) {
+        LocalFree((HLOCAL) str);
+        return 0;
+    }
+    return UTIL_TcharToUtf8OnHeap(str);
+}
+#endif /*NCBI_OS_MSWIN*/
+
+
 extern const char* NcbiMessagePlusError
 (int/*bool*/ *dynamic,
  const char*  message,
@@ -309,6 +334,14 @@ extern const char* NcbiMessagePlusError
 #else
         descr = strerror(error);
 #endif /*NCBI_OS_MSWIN && _UNICODE*/
+#ifdef NCBI_OS_MSWIN
+        if (!descr  ||  !*descr  ||  strncasecmp(descr, "Unknown ", 8) == 0) {
+            if (release)
+                UTIL_ReleaseBuffer(descr);
+            descr = s_WinStrerror(error);
+            release = -1/*on heap*/;
+        }
+#endif /*NCBI_OS_MSWIN*/
     }
     if (descr  &&  *descr) {
         dlen = strlen(descr);
@@ -329,8 +362,10 @@ extern const char* NcbiMessagePlusError
         if (*dynamic  &&  message)
             free((void*) message);
         *dynamic = 0;
-        if (release)
+        if (release > 0)
             UTIL_ReleaseBuffer(descr);
+        else if (release < 0)
+            UTIL_ReleaseBufferOnHeap(descr);
         return "Ouch! Out of memory";
     }
 
@@ -346,8 +381,10 @@ extern const char* NcbiMessagePlusError
         mlen += (size_t) sprintf(buf + mlen, "%d%s", error, &","[!*descr]);
 
     memcpy((char*) memcpy(buf + mlen, descr, dlen) + dlen, "}", 2);
-    if (release)
+    if (release > 0)
         UTIL_ReleaseBuffer(descr);
+    else if (release < 0)
+        UTIL_ReleaseBufferOnHeap(descr);
 
     *dynamic = 1/*true*/;
     return buf;
