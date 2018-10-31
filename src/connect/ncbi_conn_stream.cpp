@@ -686,13 +686,21 @@ int/*bool*/ CConn_HttpStream::x_Adjust(SConnNetInfo* net_info,
                                        unsigned int  count)
 {
     CConn_HttpStream* http = reinterpret_cast<CConn_HttpStream*>(data);
+    int retval, modified = 0/*false*/;
     if (count == (unsigned int)(-1)  &&  !http->m_URL.empty()) {
         if (!ConnNetInfo_ParseURL(net_info, http->m_URL.c_str()))
-            return 0/*false*/;
+            return 0/*failure*/;
         http->m_URL.erase();
+        modified = 1/*true*/;
     }
-    return http->m_UserAdjust
-        ? http->m_UserAdjust(net_info, http->m_UserData, count) : 1/*true*/;
+    if (http->m_UserAdjust) {
+        if (!(retval = http->m_UserAdjust(net_info, http->m_UserData, count)))
+            return 0/*failure*/;
+        if (retval < 0  &&  modified)
+            retval = 1;
+    } else
+        retval = modified ? 1 : -1;
+    return retval;
 }
 
 
