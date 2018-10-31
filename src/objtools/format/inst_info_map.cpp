@@ -169,7 +169,6 @@ CInstInfoMap::GetInstitutionVoucherInfo(
         { "MVZ:Img",          TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  false, 0, NULL,   &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Image Collection") ) },
         { "MVZ:Mamm",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  false, 0, NULL,   &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Mammal Collection") ) },
         { "MVZ:Page",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  false, 0, NULL,   &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Notebook Page Collection") ) },
-        { "MVZ:Herp",         TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  false, 0, NULL,   &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Herpetology Collection") ) },
         { "MVZObs:Herp",      TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  false, 0, NULL,   &s_colon_pfx,  NULL,        "Museum of Vertebrate Zoology, University of California at Berkeley, Herpetology Collection") ) },
         { "NBRC",             TVoucherInfoRef(new SVoucherInfo(&s_nbrc_base,  false, false, 8, &yp0,   NULL,          NULL,        "NITE Biological Resource Center") ) },
         { "NBSB:Bird",        TVoucherInfoRef(new SVoucherInfo(&s_uam_base,   true,  false, 0, NULL,   &s_colon_pfx,  NULL,        "National Biomonitoring Specimen Bank, U.S. Geological Survey, bird collection") ) },
