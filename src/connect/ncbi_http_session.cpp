@@ -871,10 +871,13 @@ int/*bool*/ CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
                                     void*         user_data,
                                     unsigned int  failure_count)
 {
-    if ( !user_data ) return 1;
+    if ( !user_data )
+        return  1;
     // Reset and re-fill headers on redirects (failure_count == 0).
     CHttpRequest* req = reinterpret_cast<CHttpRequest*>(user_data);
     _ASSERT(req);
+    if (failure_count == (unsigned int)(-1)  &&  !req->m_IsService)
+        return -1;
     CRef<CHttpResponse> resp = req->m_Response;
     _ASSERT(resp);
 
