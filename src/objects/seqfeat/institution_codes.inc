@@ -1190,7 +1190,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CMMC\tc\tChina Marine Microbe Collection\t\t\t",
 "CMMED<USA-HI>\tc\tCenter for Marine Microbial Ecology & Diversity Collection\t\t\t",
 "CMMEX\ts\tUniversidad Autonoma de Baja California\t\t\t",
-"CMMF\ts\tJardin botanique de Montreal\t\t\t",
+"CMMF\ts\tCercle des Mycologues de Montreal Fungarium\t\t\t",
 "CMMI\ts\tChinese Academy of Traditional Medicine\t\t\t",
 "CMML\ts\tCenter for Environmental Management of Military Lands (CEMML)\t\t\t",
 "CMN\ts\tCanadian Museum of Nature\tNMC<CAN>\t\t",

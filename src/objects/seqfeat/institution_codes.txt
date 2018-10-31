@@ -1157,7 +1157,7 @@ CMM<BRA>	c	Culture Collection of Phytopathogenic Fungi  (Colecao de Culturas de 
 CMMC	c	China Marine Microbe Collection			
 CMMED<USA-HI>	c	Center for Marine Microbial Ecology & Diversity Collection			
 CMMEX	s	Universidad Autonoma de Baja California			
-CMMF	s	Jardin botanique de Montreal			
+CMMF	s	Cercle des Mycologues de Montreal Fungarium			
 CMMI	s	Chinese Academy of Traditional Medicine			
 CMML	s	Center for Environmental Management of Military Lands (CEMML)			
 CMN	s	Canadian Museum of Nature	NMC<CAN>		
