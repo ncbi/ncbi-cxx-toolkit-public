@@ -1063,7 +1063,9 @@ void CWriteDB_Impl::x_Publish()
                                        m_Blobs,
                                        m_MaskDataColumn);
         if (done  &&  (m_DbVersion == eBDB_Version5)  &&  m_Lmdbdb) {
-            m_Lmdbdb->InsertEntries(m_Ids,m_LmdbOid);
+        	if (m_ParseIDs) {
+        		m_Lmdbdb->InsertEntries(m_Ids,m_LmdbOid);
+        	}
             m_Taxdb->InsertEntries(m_TaxIds, m_LmdbOid);
             m_LmdbOid++;
         }
@@ -1118,7 +1120,9 @@ void CWriteDB_Impl::x_Publish()
                                        m_MaskDataColumn);
 
         if (done  &&  (m_DbVersion == eBDB_Version5)  &&  m_Lmdbdb) {
-            m_Lmdbdb->InsertEntries(m_Ids,m_LmdbOid);
+        	if (m_ParseIDs){
+             m_Lmdbdb->InsertEntries(m_Ids,m_LmdbOid);
+        	}
             m_Taxdb->InsertEntries(m_TaxIds, m_LmdbOid);
             m_LmdbOid++;
         }
