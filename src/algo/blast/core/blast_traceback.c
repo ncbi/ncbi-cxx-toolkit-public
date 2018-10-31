@@ -1684,7 +1684,7 @@ BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
                 }
                 else {
                     Blast_HSPResultsInsertHSPList(thread_data->tld[tid]->results, hsp_list,
-                                  hit_params->options->hitlist_size+ 1);
+                                  hit_params->options->hitlist_size);
                 }
             }      /* loop over one HSPList batch */
             if (perform_traceback) {

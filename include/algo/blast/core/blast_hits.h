@@ -44,7 +44,6 @@
 #include <algo/blast/core/gapinfo.h>
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/pattern.h>
-#include <algo/blast/core/blast_message.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -185,7 +184,6 @@ typedef struct BlastHSPResults {
    Int4 num_queries; /**< Number of query sequences */
    BlastHitList** hitlist_array; /**< Array of results for individual
                                           query sequences */
-   Blast_Message * msgs; /**< Linked list of msgs */
 } BlastHSPResults;
 
 
