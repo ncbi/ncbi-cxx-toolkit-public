@@ -381,8 +381,7 @@ void CCassConnection::Reconnect()
 
     CassFuture *    __future = cass_session_connect(m_session, m_cluster);
     if (!__future)
-        RAISE_DB_ERROR(eRsrcFailed,
-                       "failed to obtain cassandra connection future");
+        RAISE_DB_ERROR(eRsrcFailed, "failed to obtain cassandra connection future");
 
     unique_ptr<CassFuture,
                function<void(CassFuture*)> >    future(
@@ -646,8 +645,7 @@ const CassPrepared *  CCassConnection::Prepare(const string &  sql)
         CassFuture *    __future = cass_session_prepare(m_session, query);
 
         if (!__future)
-            RAISE_DB_ERROR(eRsrcFailed,
-                           string("failed to obtain cassandra query future"));
+            RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain cassandra query future"));
 
         unique_ptr<CassFuture,
                    function<void(CassFuture*)> >    future(
@@ -673,8 +671,7 @@ const CassPrepared *  CCassConnection::Prepare(const string &  sql)
 
         rv = cass_future_get_prepared(future.get());
         if (!rv)
-            RAISE_DB_ERROR(eRsrcFailed,
-                           string("failed to obtain prepared handle for sql: ") + sql);
+            RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain prepared handle for sql: ") + sql);
         ERR_POST(Trace << "Prepared miss: sql: " << sql << ", " << rv);
 
         m_prepared.emplace(sql, rv);
@@ -745,17 +742,17 @@ void CCassPrm::Bind(CassStatement *  statement, unsigned int  idx)
                            NStr::NumericToString(idx) + " is not assigned");
             rc = cass_statement_bind_null(statement, idx);
             break;
+        case CASS_VALUE_TYPE_TINY_INT:
+            rc = cass_statement_bind_int8(statement, idx, static_cast<cass_int8_t>(m_simpleval.i8));
+            break;
         case CASS_VALUE_TYPE_SMALL_INT:
-            rc = cass_statement_bind_int16(statement, idx,
-                                          (cass_int16_t) m_simpleval.i16);
+            rc = cass_statement_bind_int16(statement, idx, static_cast<cass_int16_t>(m_simpleval.i16));
             break;
         case CASS_VALUE_TYPE_INT:
-            rc = cass_statement_bind_int32(statement, idx,
-                                           (cass_int32_t) m_simpleval.i32);
+            rc = cass_statement_bind_int32(statement, idx, static_cast<cass_int32_t>(m_simpleval.i32));
             break;
         case CASS_VALUE_TYPE_BIGINT:
-            rc = cass_statement_bind_int64(statement, idx,
-                                           (cass_int64_t) m_simpleval.i64);
+            rc = cass_statement_bind_int64(statement, idx, static_cast<cass_int64_t>(m_simpleval.i64));
             break;
 
         /*
@@ -777,11 +774,11 @@ void CCassPrm::Bind(CassStatement *  statement, unsigned int  idx)
             else
                 rc = cass_statement_bind_null(statement, idx);
             break;
+        case CASS_VALUE_TYPE_SET:
         case CASS_VALUE_TYPE_LIST:
         case CASS_VALUE_TYPE_MAP:
             if (m_collection.get())
-                rc = cass_statement_bind_collection(statement, idx,
-                                                    m_collection.get());
+                rc = cass_statement_bind_collection(statement, idx, m_collection.get());
             else
                 rc = cass_statement_bind_null(statement, idx);
             break;
@@ -792,16 +789,11 @@ void CCassPrm::Bind(CassStatement *  statement, unsigned int  idx)
                 rc = cass_statement_bind_null(statement, idx);
             break;
         default:
-            RAISE_DB_ERROR(eBindFailed,
-                           string("Bind for (") +
-                           NStr::NumericToString(static_cast<int>(m_type)) +
-                           ") type is not implemented");
+            RAISE_DB_ERROR(eBindFailed, string("Bind for (") + NStr::NumericToString(static_cast<int>(m_type)) + ") type is not implemented");
     }
     if (rc != CASS_OK)
         RAISE_CASS_ERROR(rc, eBindFailed,
-                         string("Bind for (") +
-                         NStr::NumericToString(static_cast<int>(m_type)) +
-                         ") failed with rc= " +
+                         string("Bind for (") + NStr::NumericToString(static_cast<int>(m_type)) + ") failed with rc= " +
                          NStr::NumericToString(static_cast<int>(rc)));
 }
 
@@ -918,7 +910,7 @@ void CCassQuery::BindNull(int iprm)
     m_params[iprm].AssignNull();
 }
 
-void CCassQuery::BindInt16(int iprm, int16_t value)
+void CCassQuery::BindInt8(int iprm, int8_t value)
 {
     if (iprm < 0 || static_cast<size_t>(iprm) >= m_params.size()) {
         RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
@@ -926,6 +918,13 @@ void CCassQuery::BindInt16(int iprm, int16_t value)
     m_params[iprm].Assign(value);
 }
 
+void CCassQuery::BindInt16(int iprm, int16_t value)
+{
+    if (iprm < 0 || static_cast<size_t>(iprm) >= m_params.size()) {
+        RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
+    }
+    m_params[iprm].Assign(value);
+}
 
 void CCassQuery::BindInt32(int iprm, int32_t value)
 {
@@ -1269,8 +1268,7 @@ void CCassQuery::GetFuture()
                                             m_statement);
         if (!m_future) {
             --m_connection->m_active_statements;
-            RAISE_DB_ERROR(eRsrcFailed,
-                           string("failed to obtain cassandra query future"));
+            RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain cassandra query future"));
         }
         m_futuretime = gettime();
         ERR_POST(Trace << "CCassQuery::GetFuture: this: " << this <<
@@ -1386,16 +1384,14 @@ void CCassQuery::ProcessFutureResult()
     if (m_results_expected) {
         m_result = cass_future_get_result(m_future);
         if (!m_result)
-            RAISE_DB_ERROR(eRsrcFailed,
-                           string("failed to obtain cassandra query result"));
+            RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain cassandra query result"));
         if (m_iterator)
             NCBI_THROW(CCassandraException, eSeqFailed,
                        "iterator has already been allocated");
 
         m_iterator = cass_iterator_from_result(m_result);
         if (!m_iterator)
-            RAISE_DB_ERROR(eRsrcFailed,
-                           string("failed to obtain cassandra query iterator"));
+            RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain cassandra query iterator"));
         /*
             we release m_future here for statements that return dataset,
             otherwise we free it in the destructor, keeping m_future not null
@@ -1497,9 +1493,7 @@ async_rslt_t  CCassQuery::NextRow()
             } else {
                 m_row = cass_iterator_get_row(m_iterator);
                 if (!m_row)
-                    RAISE_DB_ERROR(eRsrcFailed,
-                                   string("failed to obtain "
-                                          "cassandra query result row"));
+                    RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain cassandra query result row"));
                 return ar_dataready;
             }
         } else {
@@ -1557,22 +1551,6 @@ const CassValue * CCassQuery::GetColumn(const char * name) const
     return clm;
 }
 
-const CassValue * CCassQuery::GetTupleIteratorValue(CassIterator * itr) const
-{
-    if (!m_row) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "query row is not fetched");
-    }
-    if (!cass_iterator_next(itr)) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "cass tuple iterator next failed");
-    }
-
-    const CassValue * value = cass_iterator_get_value(itr);
-    if (!value) {
-        NCBI_THROW(CCassandraException, eSeqFailed, "cass tuple iterator fetch failed");
-    }
-    return value;
-}
-
 string CCassQuery::ToString() const
 {
     return m_sql.empty() ? "<>" : m_sql;
@@ -1586,276 +1564,6 @@ bool CCassQuery::IsEOF(void) const
 bool CCassQuery::IsAsync(void) const
 {
     return m_async;
-}
-
-
-/* Value conversion routines */
-
-template<>
-bool CassValueConvert<bool>(const CassValue * Val)
-{
-    if (!Val) {
-        RAISE_DB_ERROR(eFetchFailed, "Failed to convert Cassandra value to bool: Cassandra value is NULL");
-    }
-
-    CassError err;
-    CassValueType type = cass_value_type(Val);
-    cass_bool_t cb;
-    bool rv = false;
-    switch (type) {
-        case CASS_VALUE_TYPE_BOOLEAN:
-            if ((err = cass_value_get_bool(Val, &cb)) != CASS_OK) {
-                RAISE_CASS_ERROR(err, eFetchFailed, "Failed to convert Cassandra value to bool:");
-            }
-            rv = cb;
-            break;
-        default:
-            if (type == CASS_VALUE_TYPE_UNKNOWN && (!Val || cass_value_is_null(Val))) {
-                return false;
-            }
-            RAISE_DB_ERROR(
-                eFetchFailed,
-                "Failed to convert Cassandra value to bool: unsupported data type (Cassandra type - " +
-                NStr::NumericToString(static_cast<int>(type)) + ")"
-            );
-    }
-    return rv;
-}
-
-template<>
-int16_t CassValueConvert<int16_t>(const CassValue * Val)
-{
-    if (!Val) {
-        RAISE_DB_ERROR(eFetchFailed, "Failed to convert Cassandra value to int16_t: Cassandra value is NULL");
-    }
-
-    int16_t rv = 0;
-    CassError err;
-    CassValueType type = cass_value_type(Val);
-    switch (type) {
-        case CASS_VALUE_TYPE_SMALL_INT:
-            if ((err = cass_value_get_int16(Val, &rv)) != CASS_OK) {
-                RAISE_CASS_ERROR(err, eFetchFailed, "Failed to convert Cassandra value to int16_t:");
-            }
-            break;
-        default:
-            if (
-                type == CASS_VALUE_TYPE_UNKNOWN &&
-                (!Val || cass_value_is_null(Val))
-            ) {
-                return 0;
-            }
-            RAISE_DB_ERROR(eFetchFailed,
-               "Failed to convert Cassandra value to int16_t: unsupported data type (Cassandra type - " +
-               NStr::NumericToString(static_cast<int>(type)) + ")"
-           );
-    }
-    return rv;
-}
-
-
-template<>
-int32_t CassValueConvert<int32_t>(const CassValue *  Val)
-{
-    if (!Val) {
-        RAISE_DB_ERROR(eFetchFailed, "Failed to convert Cassandra value to int32_t: Cassandra value is NULL");
-    }
-
-    int32_t rv = 0;
-    CassError err;
-    CassValueType type = cass_value_type(Val);
-    switch (type) {
-        case CASS_VALUE_TYPE_TIMESTAMP:
-        case CASS_VALUE_TYPE_BIGINT:
-        case CASS_VALUE_TYPE_COUNTER: {
-            int64_t rv64;
-            if ((err = cass_value_get_int64(Val, &rv64)) != CASS_OK) {
-                RAISE_CASS_ERROR(err, eFetchFailed, "Failed to convert Cassandra value to int32_t:");
-            }
-            if (rv64 < INT_MIN || rv64 > INT_MAX) {
-                RAISE_DB_ERROR(eFetchFailed, "Failed to convert Cassandra value to int32_t: Fetched value overflow");
-            }
-            rv = rv64;
-            break;
-        }
-        case CASS_VALUE_TYPE_INT:
-            if ((err = cass_value_get_int32(Val, &rv)) != CASS_OK) {
-                RAISE_CASS_ERROR(err, eFetchFailed, "Failed to convert Cassandra value to int32_t:");
-            }
-            break;
-        default:
-            if (type == CASS_VALUE_TYPE_UNKNOWN && (!Val || cass_value_is_null(Val))) {
-                return 0;
-            }
-            RAISE_DB_ERROR(eFetchFailed,
-               "Failed to convert Cassandra value to int32_t: unsupported data type (Cassandra type - " +
-               NStr::NumericToString(static_cast<int>(type)) + ")"
-            );
-    }
-    return rv;
-}
-
-
-template<>
-int64_t CassValueConvert<int64_t>(const CassValue *  Val)
-{
-    if (!Val) {
-        RAISE_DB_ERROR(eFetchFailed, "Failed to convert Cassandra value to int64_t: Cassandra value is NULL");
-    }
-
-    CassError           err;
-    int64_t             rv = 0;
-    CassValueType       type = cass_value_type(Val);
-    switch (type) {
-        case CASS_VALUE_TYPE_TIMESTAMP:
-        case CASS_VALUE_TYPE_BIGINT:
-        case CASS_VALUE_TYPE_COUNTER:
-            if ((err = cass_value_get_int64(Val, &rv)) != CASS_OK) {
-                RAISE_CASS_ERROR(err, eFetchFailed, "Failed to convert Cassandra value to int64_t:");
-            }
-            break;
-        case CASS_VALUE_TYPE_INT: {
-            int32_t rv32;
-            if ((err = cass_value_get_int32(Val, &rv32)) != CASS_OK) {
-                RAISE_CASS_ERROR(err, eFetchFailed, "Failed to convert Cassandra value to int64_t:");
-            }
-            rv = rv32;
-            break;
-        }
-        default:
-            if (type == CASS_VALUE_TYPE_UNKNOWN && (!Val || cass_value_is_null(Val))) {
-                return 0;
-            }
-            RAISE_DB_ERROR(eFetchFailed,
-                "Failed to convert Cassandra value to int64_t: unsupported data type (Cassandra type - " +
-                NStr::NumericToString(static_cast<int>(type)) + ")"
-            );
-    }
-    return rv;
-}
-
-template<>
-double CassValueConvert<double>(const CassValue *  Val)
-{
-    if (!Val) {
-        RAISE_DB_ERROR(eFetchFailed, "Failed to convert Cassandra value to double: Cassandra value is NULL");
-    }
-
-    CassError err;
-    cass_double_t rv = 0;
-    if ((err = cass_value_get_double(Val, &rv)) != CASS_OK) {
-        RAISE_CASS_ERROR(err, eFetchFailed, "Failed to convert Cassandra value to double:");
-    }
-    return rv;
-}
-
-
-template<>
-string CassValueConvert<string>(const CassValue *  Val)
-{
-    if (!Val) {
-        RAISE_DB_ERROR(eFetchFailed, "Failed to convert Cassandra value to string: Cassandra value is NULL");
-    }
-
-    CassError err;
-    string value;
-    CassValueType type = cass_value_type(Val);
-    switch (type) {
-        case CASS_VALUE_TYPE_BOOLEAN:
-        case CASS_VALUE_TYPE_ASCII:
-        case CASS_VALUE_TYPE_BLOB:
-        case CASS_VALUE_TYPE_TEXT:
-        case CASS_VALUE_TYPE_VARCHAR:
-        case CASS_VALUE_TYPE_CUSTOM: {
-            const char * rv = nullptr;
-            size_t len = 0;
-            if ((err = cass_value_get_string(Val, &rv, &len)) != CASS_OK) {
-                RAISE_CASS_ERROR(err, eFetchFailed, "Failed to convert Cassandra value to string:");
-            }
-            value.assign(rv, len);
-            break;
-        }
-        case CASS_VALUE_TYPE_TIMESTAMP: {
-            int64_t v = CassValueConvert<int64_t>(Val);
-            CTime c(v / 1000);
-            c.SetMilliSecond(v % 1000);
-            value = c;
-            break;
-        }
-        case CASS_VALUE_TYPE_TIMEUUID:
-        case CASS_VALUE_TYPE_UUID: {
-            CassUuid fetched_value;
-            char fetched_buffer[CASS_UUID_STRING_LENGTH];
-            cass_value_get_uuid(Val, &fetched_value);
-            cass_uuid_string(fetched_value, fetched_buffer);
-            value = string(fetched_buffer);
-            break;
-        }
-        default:
-            if (type == CASS_VALUE_TYPE_UNKNOWN && (!Val || cass_value_is_null(Val))) {
-                return "";
-            }
-            RAISE_DB_ERROR(eFetchFailed,
-                "Failed to convert Cassandra value to int64_t: unsupported data type (Cassandra type - " +
-                NStr::NumericToString(static_cast<int>(type)) + ")"
-            );
-    }
-    return value;
-}
-
-template<>
-void CassDataToCollection<bool>(CassCollection * coll, const bool &  v)
-{
-    CassError err;
-    cass_bool_t b = v ? cass_true : cass_false;
-    if ((err = cass_collection_append_bool(coll, b)) != CASS_OK) {
-        RAISE_CASS_ERROR(err, eBindFailed, "Failed to append bool value to Cassandra collection:");
-    }
-}
-
-template<>
-void CassDataToCollection<int32_t>(CassCollection *  coll, const int32_t &  v)
-{
-    CassError err;
-    if ((err = cass_collection_append_int32(coll, v)) != CASS_OK) {
-        RAISE_CASS_ERROR(err, eBindFailed, "Failed to append int32_t value to Cassandra collection:");
-    }
-}
-
-template<>
-void CassDataToCollection<int64_t>(CassCollection *  coll, const int64_t &  v)
-{
-    CassError err;
-    if ((err = cass_collection_append_int64(coll, v)) != CASS_OK) {
-        RAISE_CASS_ERROR(err, eBindFailed, "Failed to append int64_t value to Cassandra collection:");
-    }
-}
-
-template<>
-void CassDataToCollection<double>(CassCollection *  coll, const double &  v)
-{
-    CassError err;
-    if ((err = cass_collection_append_double(coll, v)) != CASS_OK) {
-        RAISE_CASS_ERROR(err, eBindFailed, "Failed to append double value to Cassandra collection:");
-    }
-}
-
-template<>
-void CassDataToCollection<float>(CassCollection *  coll, const float &  v)
-{
-    CassError err;
-    if ((err = cass_collection_append_float(coll, v)) != CASS_OK) {
-        RAISE_CASS_ERROR(err, eBindFailed, "Failed to append float value to Cassandra collection:");
-    }
-}
-
-template<>
-void CassDataToCollection<string>(CassCollection *  coll, const string &  v)
-{
-    CassError err;
-    if ((err = cass_collection_append_string(coll, v.c_str())) != CASS_OK) {
-        RAISE_CASS_ERROR(err, eBindFailed, "Failed to append string value to Cassandra collection:");
-    }
 }
 
 END_IDBLOB_SCOPE
