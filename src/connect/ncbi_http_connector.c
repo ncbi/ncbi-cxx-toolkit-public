@@ -2717,7 +2717,8 @@ static EIO_Status s_CreateHttpConnector
     uuu->unsafe_redir = flags & fHTTP_UnsafeRedirects ? eOn : eOff;
     uuu->error_header = eDefault;
     uuu->can_connect  = fCC_None;         /* will be properly set at open    */
-    uuu->unused       = 0;
+
+    memset(uuu->unused, 0, sizeof(uuu->unused));
 
     uuu->sock         = 0;
     uuu->o_timeout    = kDefaultTimeout;  /* deliberately bad values here... */
