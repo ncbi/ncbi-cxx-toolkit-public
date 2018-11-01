@@ -337,14 +337,21 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromPDBAcc)
     BOOST_CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), 'X');
 
-    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV|XY")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|XY")));
+    BOOST_CHECK( !id->GetPdb().IsSetChain() );
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "XY");
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|XX")));
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), 'x');
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "XX");
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV_!")));
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), '!');
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "!");
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|VB")));
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), '|');
-    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV|AAA")));
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "VB");
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAV|AAA")));
+    BOOST_CHECK( !id->GetPdb().IsSetChain() );
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "AAA");
 
     BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("2004[dp]"),
                       CSeq_id::eAcc_unknown);
@@ -653,20 +660,29 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaPdb)
     BOOST_CHECK(id->IsPdb());
     BOOST_CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), ' ');
+    BOOST_CHECK( !id->GetPdb().IsSetChain_id() );
 
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|X")));
     BOOST_CHECK(id->IsPdb());
     BOOST_CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), 'X');
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "X");
 
-    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pdb|1GAV|XY")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|XY")));
+    BOOST_CHECK( !id->GetPdb().IsSetChain() );
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "XY");
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|XX")));
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), 'x');
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "XX");
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|!")));
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), '!');
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "!");
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|VB")));
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), '|');
-    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("pdb|1GAV|AAA")));
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "VB");
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAV|AAA")));
+    BOOST_CHECK( !id->GetPdb().IsSetChain() );
+    BOOST_CHECK_EQUAL(id->GetPdb().GetChain_id(), "AAA");
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromFastaTpa)

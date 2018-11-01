@@ -1275,8 +1275,9 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
         const unsigned char* ucdata = (const unsigned char*)main_acc.data();
         if (non_dig_pos != NPOS  &&  (flags & fParse_RawText) != 0) {
             if ( !has_version  &&  digit_pos == 0  &&  main_size >= 4
-                &&  main_size <= 7  &&  isalnum(ucdata[1])
-                &&  isalnum(ucdata[2])  &&  isalnum(ucdata[3])) {
+                &&  (main_size <= 7  ||  strchr("|-_", main_acc[4]))
+                &&  isalnum(ucdata[1])  &&  isalnum(ucdata[2])
+                &&  isalnum(ucdata[3])) {
                 // Possible PDB (always unversioned); examine further
                 // to avoid false positives.
                 switch (main_size) {
@@ -1300,6 +1301,9 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
                         break;
                     } // else fall through
                 case 4:
+                    return eAcc_pdb;
+                }
+                if (strchr("|-_", main_acc[4])) {
                     return eAcc_pdb;
                 }
             }
@@ -1602,7 +1606,10 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
             {{
                 const CPDB_seq_id& pid = id.GetPdb();
                 *label += pid.GetMol().Get();
-                if (pid.IsSetChain()) {
+                if (pid.IsSetChain_id()) {
+                    *label += '_';
+                    *label += pid.GetChain_id();
+                } else if (pid.IsSetChain()) {
                     unsigned char chain = static_cast<unsigned char>(pid.GetChain());
                     if (chain > ' ') {
                         *label += '_';
@@ -1613,10 +1620,6 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
                             *label += static_cast<char>(chain);
                         }
                     }
-                }
-                if (pid.IsSetChain_id()) {
-                    *label += '_';
-                    *label += pid.GetChain_id();
                 }
             }}
             break;
@@ -2511,6 +2514,7 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
                 pdb.ResetChain();
             } else if (name.empty()) {
                 pdb.SetChain(' ');
+                name = " ";
             } else if (name.size() == 1) { // force upper case?
                 pdb.SetChain(static_cast<unsigned char>(name[0]));
             } else if (NStr::EqualNocase(name, "VB")) {
@@ -2518,9 +2522,16 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
             } else if (name.size() == 2  &&  name[0] == name[1]) {
                 pdb.SetChain(tolower(static_cast<unsigned char>(name[0])));
             } else {
-                NCBI_THROW(CSeqIdException, eFormat,
-                           "Unexpected PDB chain id " + string(name) + " for "
-                           + string(acc));
+                pdb.ResetChain();
+                ERR_POST_X(16,
+                           Info << "Necessarily using backwards-incompatible"
+                           " representation for chain " << string(name)
+                           << " of PDB molecule " << acc << '.');
+            }
+            if (name.empty()) {
+                pdb.ResetChain_id();
+            } else {
+                pdb.SetChain_id(name);
             }
             pdb.ResetRel();
             break;
