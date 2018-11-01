@@ -44,6 +44,7 @@
 #include <memory>
 #include <unordered_map>
 #include <tuple>
+#include <set>
 #include <cassert>
 #include <atomic>
 #include <utility>
@@ -53,6 +54,8 @@
 
 #include "IdCassScope.hpp"
 #include "cass_exception.hpp"
+
+#include <objtools/pubseq_gateway/impl/cassandra/cass_conv.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -212,21 +215,6 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     static EDiagSev                 m_LoggingLevel;
 };
 
-
-template<typename T>
-void CassDataToCollection(CassCollection* coll, const T& v)
-{
-    static_assert(sizeof(T) == 0,
-                  "CassDataToCollection() is not implemented for this type");
-}
-
-template<> void CassDataToCollection<bool>(CassCollection* coll, const bool& v);
-template<> void CassDataToCollection<int32_t>(CassCollection* coll, const int32_t& v);
-template<> void CassDataToCollection<int64_t>(CassCollection* coll, const int64_t& v);
-template<> void CassDataToCollection<double>(CassCollection* coll, const double& v);
-template<> void CassDataToCollection<string>(CassCollection* coll, const string& v);
-
-
 class CCassPrm
 {
  protected:
@@ -234,6 +222,7 @@ class CCassPrm
     bool            m_assigned;
 
     union simpleval_t {
+        int8_t  i8;
         int16_t i16;
         int32_t i32;
         int64_t i64;
@@ -270,6 +259,13 @@ class CCassPrm
         m_bytes.clear();
     }
 
+    void Assign(int8_t  v)
+    {
+        m_type = CASS_VALUE_TYPE_TINY_INT;
+        m_simpleval.i8 = v;
+        m_assigned = true;
+    }
+
     void Assign(int16_t  v)
     {
         m_type = CASS_VALUE_TYPE_SMALL_INT;
@@ -291,12 +287,7 @@ class CCassPrm
         m_assigned = true;
     }
 
-    template<
-        typename T,
-        typename = typename enable_if<
-            is_constructible<string, T>::value
-        >::type
-    >
+    template<typename T, typename = typename enable_if<is_constructible<string, T>::value>::type >
     // string, string&, string&&, char *
     void Assign(T v) {
         m_type = CASS_VALUE_TYPE_VARCHAR;
@@ -315,18 +306,16 @@ class CCassPrm
     void Assign(const map<K, V> &  v)
     {
         m_type = CASS_VALUE_TYPE_MAP;
-        m_collection = unique_ptr<CassCollection,
-                                  function<void(CassCollection*)> >
-                            (cass_collection_new(CASS_COLLECTION_TYPE_MAP,
-                                                 v.size() * 2),
-                             [](CassCollection* coll)
-                             {
-                                cass_collection_free(coll);
-                             });
+        m_collection = unique_ptr<CassCollection, function<void(CassCollection*)> > (
+            cass_collection_new(CASS_COLLECTION_TYPE_MAP, v.size() * 2),
+            [](CassCollection* coll) {
+                cass_collection_free(coll);
+            }
+        );
 
         for (const auto &  it : v) {
-            CassDataToCollection<K>(m_collection.get(), it.first);
-            CassDataToCollection<V>(m_collection.get(), it.second);
+            Convert::ValueToCassCollection(it.first, m_collection.get());
+            Convert::ValueToCassCollection(it.second, m_collection.get());
         }
         m_assigned = true;
     }
@@ -335,18 +324,39 @@ class CCassPrm
     void AssignList(I begin, I end, size_t sz)
     {
         m_type = CASS_VALUE_TYPE_LIST;
-        m_collection = unique_ptr<CassCollection,
-                                  function<void(CassCollection*)> >
-                        (cass_collection_new(CASS_COLLECTION_TYPE_LIST, sz),
-                         [](CassCollection* coll)
-                         {
-                            cass_collection_free(coll);
-                         });
+        m_collection = unique_ptr<CassCollection, function<void(CassCollection*)> > (
+            cass_collection_new(CASS_COLLECTION_TYPE_LIST, sz),
+            [](CassCollection* coll) {
+                cass_collection_free(coll);
+            }
+        );
 
         for (; begin != end; ++begin) {
-            CassDataToCollection(m_collection.get(), *begin);
+            Convert::ValueToCassCollection(*begin, m_collection.get());
         }
         m_assigned = true;
+    }
+
+    template<typename I>
+    void AssignSet(I begin, I end, size_t sz)
+    {
+        m_type = CASS_VALUE_TYPE_SET;
+        m_collection = unique_ptr<CassCollection, function<void(CassCollection*)> > (
+            cass_collection_new(CASS_COLLECTION_TYPE_SET, sz),
+            [](CassCollection* coll) {
+                cass_collection_free(coll);
+            }
+        );
+
+        for (; begin != end; ++begin) {
+            Convert::ValueToCassCollection(*begin, m_collection.get());
+        }
+        m_assigned = true;
+    }
+
+    template<typename I>
+    void AssignSet(const set<I>& v) {
+        AssignSet<typename set<I>::const_iterator>(v.cbegin(), v.cend(), v.size());
     }
 
     template<typename ...T>
@@ -360,9 +370,7 @@ class CCassPrm
                 cass_tuple_free(coll);
             }
         );
-        typedef typename conditional<sizeof...(T) == 0,
-                                     char, Int8>::type TSwitch;
-        AssignTupleImpl< decltype(t), sizeof...(T) > (t, TSwitch());
+        Convert::ValueToCassTuple(t, m_tuple.get());
         m_assigned = true;
     }
 
@@ -377,9 +385,51 @@ class CCassPrm
         return m_assigned;
     }
 
+    int32_t AsInt8(void) const
+    {
+        switch (m_type) {
+            case CASS_VALUE_TYPE_TINY_INT:
+                return m_simpleval.i8;
+            case CASS_VALUE_TYPE_VARCHAR: {
+                int8_t     i8;
+                if (NStr::StringToNumeric(m_bytes, &i8))
+                    return i8;
+                else
+                    RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int8");
+            }
+            // no break
+            default:
+                RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int8");
+        }
+    }
+
+    int32_t AsInt16(void) const
+    {
+        switch (m_type) {
+            case CASS_VALUE_TYPE_TINY_INT:
+                return m_simpleval.i8;
+            case CASS_VALUE_TYPE_SMALL_INT:
+                return m_simpleval.i16;
+            case CASS_VALUE_TYPE_VARCHAR: {
+                int16_t     i16;
+                if (NStr::StringToNumeric(m_bytes, &i16))
+                    return i16;
+                else
+                    RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int16");
+            }
+            // no break
+            default:
+                RAISE_DB_ERROR(eBindFailed, "Can't convert Param to int16");
+        }
+    }
+
     int32_t AsInt32(void) const
     {
         switch (m_type) {
+            case CASS_VALUE_TYPE_TINY_INT:
+                return m_simpleval.i8;
+            case CASS_VALUE_TYPE_SMALL_INT:
+                return m_simpleval.i16;
             case CASS_VALUE_TYPE_INT:
                 return m_simpleval.i32;
             case CASS_VALUE_TYPE_BIGINT:
@@ -400,6 +450,10 @@ class CCassPrm
     int64_t AsInt64(void) const
     {
         switch (m_type) {
+            case CASS_VALUE_TYPE_TINY_INT:
+                return m_simpleval.i8;
+            case CASS_VALUE_TYPE_SMALL_INT:
+                return m_simpleval.i16;
             case CASS_VALUE_TYPE_INT:
                 return m_simpleval.i32;
             case CASS_VALUE_TYPE_BIGINT:
@@ -420,6 +474,12 @@ class CCassPrm
     void AsString(string & value) const
     {
         switch (m_type) {
+            case CASS_VALUE_TYPE_TINY_INT:
+                value = NStr::NumericToString(m_simpleval.i8);
+                break;
+            case CASS_VALUE_TYPE_SMALL_INT:
+                value = NStr::NumericToString(m_simpleval.i16);
+                break;
             case CASS_VALUE_TYPE_INT:
                 value = NStr::NumericToString(m_simpleval.i32);
                 break;
@@ -435,57 +495,11 @@ class CCassPrm
     }
 
     friend class CCassQuery;
-
- private:
-    void AssignTupleItem(const Int4 &  v, size_t  idx)
-    {
-        cass_tuple_set_int32(m_tuple.get(), idx, v);
-    }
-
-    template<typename T, size_t N>
-    void AssignTupleImpl(const T &  t, Int8)
-    {
-        AssignTupleItem(get<N - 1>(t), N - 1);
-        typedef typename conditional< (N - 1) == 0, char, Int8>::type TSwitch;
-        AssignTupleImpl<decltype(t), N - 1>(t, TSwitch());
-    }
-
-    template<typename T, size_t N>
-    void AssignTupleImpl(const T& t, char)
-    {
-    }
 };
 
 
 class CCassParams: public vector<CCassPrm>
 {};
-
-
-template <typename T>
-T CassValueConvert(const CassValue* Val)
-{
-    static_assert(sizeof(T) == 0,
-                  "Conversion for this type is not implemented yet");
-}
-
-
-template<> bool CassValueConvert<bool>(const CassValue* Val);
-template<> int16_t CassValueConvert<int16_t>(const CassValue* Val);
-template<> int32_t CassValueConvert<int32_t>(const CassValue* Val);
-template<> int64_t CassValueConvert<int64_t>(const CassValue* Val);
-template<> double CassValueConvert<double>(const CassValue* Val);
-template<> string CassValueConvert<string>(const CassValue* Val);
-
-
-template<class T>
-T CassValueConvertDef(const CassValue* Val, const T& _default)
-{
-    if (Val && cass_value_is_null(Val))
-        return _default;
-    else
-        return CassValueConvert<T>(Val);
-}
-
 
 class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
 {
@@ -617,35 +631,6 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         return CNotImplemented<F>::GetColumn_works_by_name_and_by_index();
     }
 
-    template <typename F = int>
-    CassIterator* GetTupleIterator(F ifld) const
-    {
-        if (!m_row)
-            NCBI_THROW(CCassandraException, eSeqFailed, "query row is not fetched");
-        CassIterator* it = cass_iterator_from_tuple(GetColumn(ifld));
-        if (!it) {
-            NCBI_THROW(CCassandraException, eSeqFailed,
-                "cannot resolve tuple iterator for column");
-        }
-        return it;
-    }
-
-    const CassValue* GetTupleIteratorValue(CassIterator* itr) const;
-
-    template<typename T, size_t C, size_t N>
-    void FieldGetTupleValue(CassIterator* itr, T& t, Int8) const
-    {
-        typedef typename tuple_element< C, T >::type TItemType;
-        get<C>(t) = CassValueConvert< TItemType >(GetTupleIteratorValue(itr));
-        typedef typename conditional< C + 1 == N, char, Int8>::type TSwitch;
-        FieldGetTupleValue<T, C + 1, N>(itr, t, TSwitch());
-    }
-
-    template<typename T, size_t C, size_t N>
-    void FieldGetTupleValue(CassIterator*, T&, char) const
-    {
-    }
-
     void GetFuture();
     void ProcessFutureResult();
     void SetupOnDataCallback();
@@ -726,6 +711,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     virtual bool IsAsync(void) const;
 
     void BindNull(int iprm);
+    void BindInt8(int iprm, int8_t value);
     void BindInt16(int iprm, int16_t value);
     void BindInt32(int iprm, int32_t value);
     void BindInt64(int iprm, int64_t value);
@@ -747,6 +733,20 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         if (iprm < 0 || (unsigned int)iprm >= m_params.size())
             RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
         m_params[iprm].AssignList(begin, end, sz);
+    }
+
+    template<typename I>
+    void BindSet(int iprm, I begin, I end, size_t sz)
+    {
+        if (iprm < 0 || (unsigned int)iprm >= m_params.size())
+            RAISE_DB_ERROR(eBindFailed, string("Param index is out of range"));
+        m_params[iprm].AssignSet<I>(begin, end, sz);
+    }
+
+    template<typename I>
+    void BindSet(int iprm, const set<I>& v)
+    {
+        BindSet(iprm, v.begin(), v.end(), v.size());
     }
 
     template<typename ...T>
@@ -793,6 +793,8 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
                 return dtText;
             case CASS_VALUE_TYPE_VARINT:
             case CASS_VALUE_TYPE_DECIMAL:
+            case CASS_VALUE_TYPE_TINY_INT:
+            case CASS_VALUE_TYPE_SMALL_INT:
             case CASS_VALUE_TYPE_INT:
             case CASS_VALUE_TYPE_BIGINT:
                 return dtInteger;
@@ -826,73 +828,113 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     template <typename F = int>
     bool FieldGetBoolValue(F ifld) const
     {
-        return CassValueConvert<bool>(GetColumn(ifld));
+        bool rv;
+        Convert::CassValueConvert<bool>(GetColumn(ifld), rv);
+        return rv;
     }
 
     template <typename F = int>
     bool FieldGetBoolValue(F ifld, bool _default) const
     {
-        return CassValueConvertDef<bool>(GetColumn(ifld), _default);
+        bool rv;
+        Convert::CassValueConvertDef<bool>(GetColumn(ifld), _default, rv);
+        return rv;
     }
 
     template <typename F = int>
-    int32_t FieldGetInt16Value(F ifld) const
+    int8_t FieldGetInt8Value(F ifld) const
     {
-        return CassValueConvert<int16_t>(GetColumn(ifld));
+        int8_t rv;
+        Convert::CassValueConvert<int8_t>(GetColumn(ifld), rv);
+        return rv;
     }
 
     template <typename F = int>
-    int32_t FieldGetInt16Value(F ifld, int16_t _default) const
+    int8_t FieldGetInt8Value(F ifld, int8_t _default) const
     {
-        return CassValueConvertDef<int16_t>(GetColumn(ifld), _default);
+        int8_t rv;
+        Convert::CassValueConvertDef<int8_t>(GetColumn(ifld), _default, rv);
+        return rv;
+    }
+
+    template <typename F = int>
+    int16_t FieldGetInt16Value(F ifld) const
+    {
+        int16_t rv;
+        Convert::CassValueConvert<int16_t>(GetColumn(ifld), rv);
+        return rv;
+    }
+
+    template <typename F = int>
+    int16_t FieldGetInt16Value(F ifld, int16_t _default) const
+    {
+        int16_t rv;
+        Convert::CassValueConvertDef<int16_t>(GetColumn(ifld), _default, rv);
+        return rv;
     }
 
     template <typename F = int>
     int32_t FieldGetInt32Value(F ifld) const
     {
-        return CassValueConvert<int32_t>(GetColumn(ifld));
+        int32_t rv;
+        Convert::CassValueConvert<int32_t>(GetColumn(ifld), rv);
+        return rv;
     }
 
     template <typename F = int>
     int32_t FieldGetInt32Value(F ifld, int32_t _default) const
     {
-        return CassValueConvertDef<int32_t>(GetColumn(ifld), _default);
+        int32_t rv;
+        Convert::CassValueConvertDef<int32_t>(GetColumn(ifld), _default, rv);
+        return rv;
     }
 
     template <typename F = int>
     int64_t FieldGetInt64Value(F ifld) const
     {
-        return CassValueConvert<int64_t>(GetColumn(ifld));
+        int64_t rv;
+        Convert::CassValueConvert<int64_t>(GetColumn(ifld), rv);
+        return rv;
     }
 
     template <typename F = int>
     int64_t FieldGetInt64Value(F ifld, int64_t _default) const
     {
-        return CassValueConvertDef<int64_t>(GetColumn(ifld), _default);
+        int64_t rv;
+        Convert::CassValueConvertDef<int64_t>(GetColumn(ifld), _default, rv);
+        return rv;
     }
 
     template <typename F = int>
     double FieldGetFloatValue(F ifld) const
     {
-        return CassValueConvert<double>(GetColumn(ifld));
+        double rv;
+        Convert::CassValueConvert<double>(GetColumn(ifld), rv);
+        return rv;
     }
 
     template <typename F = int>
     double FieldGetFloatValue(F ifld, double _default) const
     {
-        return CassValueConvertDef<double>(GetColumn(ifld), _default);
+        double rv;
+        Convert::CassValueConvertDef<double>(GetColumn(ifld), _default, rv);
+        return rv;
     }
 
     template <typename F = int>
     string FieldGetStrValue(F ifld) const
     {
-        return CassValueConvert<string>(GetColumn(ifld));
+        string rv;
+        Convert::CassValueConvert<string>(GetColumn(ifld), rv);
+        return rv;
     }
 
     template <typename F = int>
     string FieldGetStrValueDef(F ifld, const string& _default) const
     {
-        return CassValueConvertDef<string>(GetColumn(ifld), _default);
+        string rv;
+        Convert::CassValueConvertDef<string>(GetColumn(ifld), _default, rv);
+        return rv;
     }
 
     template <typename I, typename F = int>
@@ -906,17 +948,17 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
             case CASS_COLLECTION_TYPE_SET:
             {
                 if (!cass_value_is_null(clm)) {
-                    CassIterator* items_iterator = cass_iterator_from_collection(clm);
-                    unique_ptr<CassIterator,
-                               function<void(CassIterator*)> > items_iterator_ptr(
-                            items_iterator, [](CassIterator* itr)
-                            {
-                                cass_iterator_free(itr);
-                            });
-                    while (cass_iterator_next(items_iterator)) {
-                        *insert_iterator = CassValueConvert<
-                                 typename I::container_type::value_type >(
-                                         cass_iterator_get_value(items_iterator));
+                    unique_ptr<CassIterator, function<void(CassIterator*)> > items_iterator_ptr(
+                        cass_iterator_from_collection(clm), 
+                        [](CassIterator* itr) {
+                            cass_iterator_free(itr);
+                        }
+                    );
+                    while (cass_iterator_next(items_iterator_ptr.get())) {
+                        const CassValue* value = cass_iterator_get_value(items_iterator_ptr.get());
+                        if (!value)
+                            NCBI_THROW(CCassandraException, eSeqFailed, "cass iterator fetch failed");
+                        Convert::CassValueConvert(value, *insert_iterator);
                         ++insert_iterator;
                     }
                 }
@@ -947,10 +989,10 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     template<typename T, typename F = int>
     T FieldGetTupleValue(F ifld) const
     {
-        if (!cass_value_is_null(GetColumn(ifld))) {
+        const CassValue * clm = GetColumn(ifld);
+        if (!cass_value_is_null(clm)) {
             T t;
-            using TSwitch = typename conditional<tuple_size<T>::value == 0, char, Int8>::type;
-            FieldGetTupleValue< T, 0, tuple_size<T>::value > (GetTupleIterator(ifld), t, TSwitch());
+            Convert::CassValueConvert(clm, t);
             return t;
         }
         return T();
@@ -964,18 +1006,51 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
 
         switch (type) {
             case CASS_VALUE_TYPE_SET: {
-                CassIterator* items_iterator = cass_iterator_from_collection(clm);
                 unique_ptr<CassIterator, function<void(CassIterator*)> > items_iterator_ptr(
-                    items_iterator,
-                    [](CassIterator* itr)
-                    {
+                    cass_iterator_from_collection(clm),
+                    [](CassIterator* itr) {
                         cass_iterator_free(itr);
                     }
                 );
-                while (cass_iterator_next(items_iterator)) {
-                    values.emplace_back(
-                        CassValueConvert<T>(cass_iterator_get_value(items_iterator))
-                    );
+                while (cass_iterator_next(items_iterator_ptr.get())) {
+                    T v;
+                    const CassValue* value = cass_iterator_get_value(items_iterator_ptr.get());
+                    if (!value)
+                        NCBI_THROW(CCassandraException, eSeqFailed, "cass iterator fetch failed");
+                    Convert::CassValueConvert(value, v);
+                    values.push_back(move(v));
+                }
+                break;
+            }
+            default:
+                RAISE_DB_ERROR(eFetchFailed,
+                    "Failed to convert Cassandra value to set<>: unsupported data type (Cassandra type - " +
+                    NStr::NumericToString(static_cast<int>(type)) + ")"
+                );
+        }
+    }
+
+    template<typename T, typename F = int>
+    void FieldGetSetValues(F ifld, std::set<T>& values) const
+    {
+        const CassValue *   clm = GetColumn(ifld);
+        CassValueType       type = cass_value_type(clm);
+
+        switch (type) {
+            case CASS_VALUE_TYPE_SET: {
+                unique_ptr<CassIterator, function<void(CassIterator*)> > items_iterator_ptr(
+                    cass_iterator_from_collection(clm),
+                    [](CassIterator* itr) {
+                        cass_iterator_free(itr);
+                    }
+                );
+                while (cass_iterator_next(items_iterator_ptr.get())) {
+                    T v;
+                    const CassValue* value = cass_iterator_get_value(items_iterator_ptr.get());
+                    if (!value)
+                        NCBI_THROW(CCassandraException, eSeqFailed, "cass iterator fetch failed");
+                    Convert::CassValueConvert(value, v);
+                    values.insert(move(v));
                 }
                 break;
             }
@@ -996,21 +1071,20 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         switch (type) {
             case CASS_VALUE_TYPE_MAP: {
                 result.clear();
-                CassIterator* items_iterator = cass_iterator_from_map(clm);
-                if (items_iterator != nullptr) {
-                    unique_ptr<CassIterator, function<void(CassIterator*)> >
-                        items_iterator_ptr(
-                            items_iterator,
-                            [](CassIterator* itr)
-                            {
-                                cass_iterator_free(itr);
-                            }
-                    );
-                    while (cass_iterator_next(items_iterator)) {
-                        const CassValue* key = cass_iterator_get_map_key(items_iterator);
-                        const CassValue* val = cass_iterator_get_map_value(items_iterator);
-                        result.emplace(CassValueConvert<K>(key), CassValueConvert<V>(val));
+                unique_ptr<CassIterator, function<void(CassIterator*)> > items_iterator_ptr(
+                    cass_iterator_from_map(clm),
+                    [](CassIterator* itr) {
+                        cass_iterator_free(itr);
                     }
+                );                
+                while (cass_iterator_next(items_iterator_ptr.get())) {
+                    const CassValue* key = cass_iterator_get_map_key(items_iterator_ptr.get());
+                    const CassValue* val = cass_iterator_get_map_value(items_iterator_ptr.get());
+                    K k;
+                    Convert::CassValueConvert(key, k);
+                    V v;
+                    Convert::CassValueConvert(val, v);
+                    result.emplace(move(k), move(v));
                 }
                 break;
             }

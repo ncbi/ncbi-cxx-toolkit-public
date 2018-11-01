@@ -59,6 +59,7 @@ public:
         eQueryTimeout,
         eFetchFailed,
         eExtraFetch,
+        eConvFailed,
         eMissData,
         eInconsistentData,
         eNotFound,
@@ -83,6 +84,7 @@ public:
             case eQueryTimeout:           return "eQueryTimeout";
             case eFetchFailed:            return "eFetchFailed";
             case eExtraFetch:             return "eExtraFetch";
+            case eConvFailed:             return "eConvFailed";
             case eMissData:               return "eMissData";
             case eInconsistentData:       return "eInconsistentData";
             case eNotFound:               return "eNotFound";
