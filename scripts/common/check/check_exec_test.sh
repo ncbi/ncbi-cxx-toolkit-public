@@ -55,7 +55,7 @@ case `uname -s` in
 esac
 
 # Increase sub-PHID, and set new PHID
-if [ -f $NCBI_LOG_HIT_ID ]; then
+if [ -f "$NCBI_LOG_HIT_ID" ]; then
     subid=`cat $NCBI_LOG_HIT_ID | tr -d '\n\r'`
     subid=`expr $subid + 1`
     echo $subid > $NCBI_LOG_HIT_ID
