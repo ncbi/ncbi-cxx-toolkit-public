@@ -2169,7 +2169,8 @@ static EIO_Status s_Disconnect(SHttpConnector* uuu,
     BUF_Erase(uuu->http);
     if (extract == eEM_Drop)
         BUF_Erase(uuu->r_buf);
-    else if ((status = s_PreRead(uuu, timeout, extract)) == eIO_Success) {
+    else if (uuu->conn_state != eCS_Eom
+             &&  (status = s_PreRead(uuu, timeout, extract)) == eIO_Success) {
         char* x_buf = 0;
         do {
             if (x_buf  ||  (x_buf = (char*) malloc(HTTP_SOAK_READ_SIZE)) != 0){
