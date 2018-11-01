@@ -117,7 +117,7 @@ public:
 };
 
 
-class CTestNcbiLinkerdCxxApp : public CNcbiApplication
+class CTestNcbiLinkerdProxyApp : public CNcbiApplication
 {
 public:
     virtual void Init(void);
@@ -286,7 +286,7 @@ void CProxy::Init(vector<CProxy>& proxies)
 }
 
 
-void CTestNcbiLinkerdCxxApp::SelectMapper(int id)
+void CTestNcbiLinkerdProxyApp::SelectMapper(int id)
 {
     for (auto& mapper : m_Mappers) {
         if (mapper.m_Id == id) {
@@ -299,7 +299,7 @@ void CTestNcbiLinkerdCxxApp::SelectMapper(int id)
 }
 
 
-void CTestNcbiLinkerdCxxApp::SelectProxy(int id)
+void CTestNcbiLinkerdProxyApp::SelectProxy(int id)
 {
     for (auto& proxy : m_Proxies) {
         if (proxy.m_Id == id) {
@@ -312,7 +312,7 @@ void CTestNcbiLinkerdCxxApp::SelectProxy(int id)
 }
 
 
-int CTestNcbiLinkerdCxxApp::CompareResponse(const string& expected, const string& got)
+int CTestNcbiLinkerdProxyApp::CompareResponse(const string& expected, const string& got)
 {
     CRegexp re(expected, CRegexp::fCompile_dotall);
     if (re.IsMatch(got)) {
@@ -339,7 +339,7 @@ int CTestNcbiLinkerdCxxApp::CompareResponse(const string& expected, const string
 }
 
 
-int CTestNcbiLinkerdCxxApp::ProcessResponse(CHttpResponse& resp, const string& expected)
+int CTestNcbiLinkerdProxyApp::ProcessResponse(CHttpResponse& resp, const string& expected)
 {
     ERR_POST(Info << "HTTP Status: " << resp.GetStatusCode() << " " << resp.GetStatusText());
 
@@ -373,7 +373,7 @@ int CTestNcbiLinkerdCxxApp::ProcessResponse(CHttpResponse& resp, const string& e
 }
 
 
-void CTestNcbiLinkerdCxxApp::TestCaseLine(
+void CTestNcbiLinkerdProxyApp::TestCaseLine(
     int           id,
     const string& header,
     const string& footer,
@@ -392,7 +392,7 @@ void CTestNcbiLinkerdCxxApp::TestCaseLine(
 }
 
 
-void CTestNcbiLinkerdCxxApp::TestCaseStart(int id)
+void CTestNcbiLinkerdProxyApp::TestCaseStart(int id)
 {
     TestCaseLine(
         id, string(80, '=') + "\n", "",
@@ -403,7 +403,7 @@ void CTestNcbiLinkerdCxxApp::TestCaseStart(int id)
 
 // Result records can easily be transformed into a CSV.  For example:
 //      ./test_ncbi_linkerd_proxy | grep -P '^TestCaseEnd\t' | tr '\t' ,
-void CTestNcbiLinkerdCxxApp::TestCaseEnd(int id, int result)
+void CTestNcbiLinkerdProxyApp::TestCaseEnd(int id, int result)
 {
     TestCaseLine(
         id, "", string("\n") + string(80, '-') + "\n",
@@ -412,7 +412,7 @@ void CTestNcbiLinkerdCxxApp::TestCaseEnd(int id, int result)
 }
 
 
-int CTestNcbiLinkerdCxxApp::Test(int id, bool pass_expected)
+int CTestNcbiLinkerdProxyApp::Test(int id, bool pass_expected)
 {
     static const char* url = "cxx-fast-cgi-sample";
     static const char* post_data = "message=hi%20there%0A";
@@ -436,7 +436,7 @@ int CTestNcbiLinkerdCxxApp::Test(int id, bool pass_expected)
 }
 
 
-void CTestNcbiLinkerdCxxApp::Init(void)
+void CTestNcbiLinkerdProxyApp::Init(void)
 {
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -451,7 +451,7 @@ void CTestNcbiLinkerdCxxApp::Init(void)
 }
 
 
-int CTestNcbiLinkerdCxxApp::Run(void)
+int CTestNcbiLinkerdProxyApp::Run(void)
 {
     int num_tests = 0, num_errors = 0;
 
@@ -487,7 +487,7 @@ int main(int argc, char* argv[])
     SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
     try {
-        exit_code = CTestNcbiLinkerdCxxApp().AppMain(argc, argv);
+        exit_code = CTestNcbiLinkerdProxyApp().AppMain(argc, argv);
     }
     catch (...) {
         // ERR_POST may not work
