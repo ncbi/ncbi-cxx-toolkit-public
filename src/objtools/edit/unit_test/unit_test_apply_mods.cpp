@@ -176,9 +176,10 @@ static bool sFindBrackets(const CTempString& line, size_t& start, size_t& stop, 
             if (nested_brackets == 0)
             {
                 stop = i;
-                if (eq_pos == CTempString::npos)
-                    eq_pos = i;
-                    return true;
+                return true;
+               // if (eq_pos == CTempString::npos)
+               //     eq_pos = i;
+               // return true;
             }
             else
             if (nested_brackets < 0) {

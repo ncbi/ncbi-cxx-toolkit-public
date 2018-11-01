@@ -1993,8 +1993,8 @@ public:
     enum EHandleExisting {
         eReplace        = 0,
         ePreserve       = 1,
-        eReplaceAppend  = 2,
-        ePreserveAppend = 3,
+        eAppendReplace  = 2,
+        eAppendPreserve = 3,
     };
 
     using TMods = multimap<string, string>;
@@ -2077,6 +2077,29 @@ void CModHandler::AddMod(const string& name,
                          EHandleExisting handle_existing)
 {
     const auto& canonical_name = x_GetCanonicalName(name);
+
+    if (m_Mods.find(canonical_name) != m_Mods.end()) {
+        if (handle_existing == ePreserve) { // Do nothing
+            return;
+        }
+        if (handle_existing == eReplace) {
+            m_Mods.erase(canonical_name);    
+        }
+        else { 
+            const auto allow_multiple_values = 
+                (sm_MultipleValuesPermitted.find(canonical_name) != 
+                sm_MultipleValuesPermitted.end());
+
+            if (allow_multiple_values == false) {
+                if (handle_existing == eAppendPreserve) { // Do nothing
+                    return;
+                }
+                // handle_existing == eAppendReplace
+                m_Mods.erase(canonical_name);
+            }
+        }
+    }
+
     m_Mods.emplace(canonical_name, value);
 }
 
@@ -2087,11 +2110,40 @@ void CModHandler::AddMods(const TMods& mods,
     unordered_set<string> previous_mods;
     for (const auto& mod : mods) {
         const auto& canonical_name = x_GetCanonicalName(mod.first);
+        const auto allow_multiple_values = 
+            (sm_MultipleValuesPermitted.find(canonical_name) != 
+            sm_MultipleValuesPermitted.end());
 
-        if (previous_mods.insert(canonical_name).second ||
-            (sm_MultipleValuesPermitted.find(canonical_name) !=
-             sm_MultipleValuesPermitted.end())) {
-            m_Mods.emplace(canonical_name, mod.second);
+        const auto first_mod_instance = previous_mods.insert(canonical_name).second;
+
+        if (first_mod_instance ||
+            allow_multiple_values) {
+            if (allow_multiple_values) {
+                if ((handle_existing == eAppendPreserve) ||
+                    (handle_existing == eAppendReplace) ) {
+                    m_Mods.emplace(canonical_name, mod.second);
+                }
+                else 
+                if (m_Mods.find(canonical_name) == m_Mods.end()) {
+                    m_Mods.emplace(canonical_name, mod.second);
+                }
+                else
+                if ((handle_existing == eReplace) &&
+                     first_mod_instance) {
+                    m_Mods.erase(canonical_name);
+                    m_Mods.emplace(canonical_name, mod.second);
+                }
+                else
+                if (!first_mod_instance) {
+                    m_Mods.emplace(canonical_name, mod.second);
+                }
+            }
+            else { // first_mod_instance
+                if (m_Mods.find(canonical_name) != m_Mods.end()) {
+                    m_Mods.erase(canonical_name);
+                }
+                m_Mods.emplace(canonical_name, mod.second);
+            }
         }
         else {
             if (m_pMessageListener) {
@@ -2143,6 +2195,55 @@ string CModHandler::x_GetNormalizedName(const string& name)
     NStr::ReplaceInPlace(normalized_name, " ", "-");
 
     return normalized_name;
+}
+
+
+static bool sFindBrackets(const CTempString& line,
+                          size_t& start, 
+                          size_t& stop, 
+                          size_t& eq_pos)
+{
+    size_t i = start;
+    bool found = false;
+    eq_pos = CTempString::npos;
+    const char* s = line.data() + start;
+
+    int num_unmatched_opening_brackets = 0;
+    while (i < line.size()) 
+    {
+        switch(*s) 
+        {
+        case '[':
+            if (num_unmatched_opening_brackets == 0) {
+                start = i;
+            } 
+            ++num_unmatched_opening_brackets;
+            break;
+
+        case '=':
+            if (num_unmatched_opening_brackets > 0 &&
+                eq_pos == CTempString::npos) {
+                eq_pos = i;
+            }
+            break;
+        case ']':
+            if (num_unmatched_opening_brackets == 1) 
+            {
+                stop = i;
+                return true;
+            }
+            else if (num_unmatched_opening_brackets == 0)
+            {
+                return false;
+            }
+            else 
+            {
+                --num_unmatched_opening_brackets;
+            }
+        }
+        ++i; ++s;
+    }
+    return false;
 }
 
 
