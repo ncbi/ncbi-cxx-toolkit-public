@@ -59,9 +59,9 @@ Chicken Breast	chicken breast
 Chicken Carcass	chicken carcass
 Clinical	clinical
 clinical isolate	clinical isolate
-clinical isolates	clinical isolate
+clinical isolates	clinical isolates
 clinical sample	clinical sample
-clinical samples	clinical sample
+clinical samples	clinical samples
 cloaca	cloaca
 cloacal swab	cloacal swab
 Comminuted Beef	comminuted beef
@@ -88,7 +88,7 @@ embryogenic callus	embryogenic callus
 Environmental	environmental
 environmental sample	environmental sample
 Environmental Swab	environmental swab
-Environmental Swabs	environmental swab
+Environmental Swabs	environmental swabs
 Environmental: non-food-contact surface	environmental: non-food-contact surface
 epithelium	epithelium
 esophageal mucosa	esophageal mucosa
@@ -101,7 +101,7 @@ farm environment	farm environment
 farm soil	farm soil
 fecal	feces
 fecal sample	fecal sample
-fecal samples	fecal sample
+fecal samples	fecal samples
 Feces	feces
 fermented food	fermented food
 fermented soybeans	fermented soybeans
@@ -116,7 +116,7 @@ flower	flower
 Food	food
 food product	food product
 food sample	food sample
-food samples	food sample
+food samples	food samples
 forest	forest
 forest soil	forest soil
 freshwater	freshwater
@@ -199,7 +199,7 @@ Nares	nares
 nasal	nasal
 nasal mucosa	nasal mucosa
 nasal sample	nasal sample
-nasal samples	nasal sample
+nasal samples	nasal samples
 nasal swab	nasal swab
 nasopharyngeal aspirate	nasopharyngeal aspirate
 nasopharyngeal swab	nasopharyngeal swab
@@ -210,12 +210,12 @@ nodule	nodule
 nodules	nodules
 nose swab	nose swab
 Not Applicable	not applicable
-Not known	unknown
+Not known	not known
 olfactory mucosa	olfactory mucosa
 oral fluid	oral fluid
 oral lexion	oral lexion
 oral mucosa	oral mucosa
-Other	missing
+Other	other
 ovary	ovary
 oviduct	oviduct
 paddy soil	paddy soil
@@ -292,9 +292,9 @@ stem base	stem base
 stems	stems
 stomach	stomach
 Stool	stool
-stool sample	stool
-stool samples	stool
-Stool/Fecal	stool
+stool sample	stool sample
+stool samples	stool samples
+Stool/Fecal	stool/fecal
 strawberry	strawberry
 sulphur spring	sulphur spring
 surface water	surface water
