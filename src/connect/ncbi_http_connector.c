@@ -56,9 +56,10 @@
 /* Connection states, see table below
  */
 enum EConnState {
-    eCS_WriteRequest =   0,
-    eCS_FlushRequest =   1,
-    eCS_ReadHeader   =   2,
+    eCS_NotConnected =   0,
+    eCS_WriteRequest =   1,
+    eCS_FlushRequest =   2,
+    eCS_ReadHeader   =   3,
     eCS_ReadBody     =   4,
     eCS_DoneBody     =   5,  /* NB: |eCS_ReadBody */
     eCS_Discard      =   7,  /* NB: |eCS_DoneBody */
@@ -104,21 +105,19 @@ typedef struct {
 } SRetry;
 
 
-/* All internal data necessary to perform the (re)connect and I/O:
+/* All internal data necessary to perform the (re)connect and I/O.
  *
- * IDLE:  !sock or Eom  (can_connect & fCC_Once)  [store data in w_buf]
- * CONN:                               [read from either r_buf or sock]
- *
- * The following connection states are defined (sock != NULL):
- * --------------+--------------------------------------------------
- *  WriteRequest | HTTP request body is being written
- *  FlushRequest | HTTP request is being completed and flushed out
- *   ReadHeader  | HTTP response header is being read
- *    ReadBody   | HTTP response body is being read
- *    DoneBody   | HTTP body is all read out of the connection
- *    Discard    | HTTP data (if any) to be discarded
- *      Eom      | HTTP message has been completed (end of message)
- * --------------+--------------------------------------------------
+ *  The following connection states are defined:                    |  sock?
+ * --------------+--------------------------------------------------+---------
+ *  NotConnected | HTTP connection needs to be (re-)established     | 
+ *  WriteRequest | HTTP request body is being written               | != NULL
+ *  FlushRequest | HTTP request is being completed and flushed out  | != NULL
+ *   ReadHeader  | HTTP response header is being read               | != NULL
+ *    ReadBody   | HTTP response body is being read                 | != NULL
+ *    DoneBody   | HTTP body is all read out of the connection      | != NULL
+ *    Discard    | HTTP data (if any) to be discarded               | != NULL
+ *      Eom      | HTTP message has been completed (end of message) |
+ * --------------+--------------------------------------------------+---------
  */
 typedef struct {
     SConnNetInfo*     net_info;       /* network configuration parameters    */
@@ -138,10 +137,10 @@ typedef struct {
     unsigned          keepalive:1;    /* keep-alive connection               */
     unsigned          chunked:1;      /* if writing/reading chunked, HTTP/1.1*/
     unsigned          entity:1;       /* if there's entity payload (body)/1.1*/
-    unsigned          unused:5;
-    unsigned          minor_fault:3;  /* incr each minor failure since majo  */
+    unsigned char     unused[7];
+    unsigned char     minor_fault;    /* incr each minor failure since majo  */
     unsigned short    major_fault;    /* incr each major failure since open  */
-    unsigned short    http_code;      /* last http code response             */
+    unsigned short    http_code;      /* last HTTP response code             */
 
     SOCK              sock;           /* socket;  NULL if not connected      */
     const STimeout*   o_timeout;      /* NULL(infinite), dflt or ptr to next */
@@ -367,15 +366,17 @@ static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
                      uuu->net_info->http_proxy_port ==
                           net_info->http_proxy_port)){
                 close = 1/*true*/;
-            } else if (!uuu->net_info->http_proxy_host[0]
-                       &&  (!x_SameScheme(uuu->net_info->scheme,
-                                               net_info->scheme)             ||
-                            !(same_host = !strcasecmp(uuu->net_info->host,
-                                                           net_info->host))  ||
-                            !x_SamePort(uuu->net_info->port,
-                                        uuu->net_info->scheme,
-                                             net_info->port,
-                                             net_info->scheme))) {
+            } else if (uuu->net_info->http_proxy_host[0]) {
+                /* Proxy connection can be reused w/CONNECT if HTTP -> HTTPS */
+                /*FIXME*/;
+            } else if (!x_SameScheme(uuu->net_info->scheme,
+                                          net_info->scheme)             ||
+                       !(same_host = !strcasecmp(uuu->net_info->host,
+                                                      net_info->host))  ||
+                       !x_SamePort(uuu->net_info->port,
+                                   uuu->net_info->scheme,
+                                        net_info->port,
+                                   net_info->scheme)) {
                 close = 1/*true*/;
             }
             if (close) {
@@ -749,7 +750,7 @@ static void x_SetRequestIDs(SConnNetInfo* net_info)
 
 /* Connect to the HTTP server, specified by uuu->net_info's "port:host".
  * Return eIO_Success only if socket connection has succeeded and uuu->sock
- * is non-zero.  If unsuccessful, try to adjust uuu->net_info by s_Adjust(),
+ * is non-zero.  If unsuccessful, try to adjust uuu->net_info with s_Adjust(),
  * and then re-try the connection attempt.
  */
 static EIO_Status s_Connect(SHttpConnector* uuu,
@@ -758,6 +759,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
 {
     EIO_Status status;
     SOCK sock;
+
+    assert(uuu->conn_state == eCS_NotConnected || uuu->conn_state == eCS_Eom);
 
     uuu->http_code = 0;
     if (!(uuu->can_connect & fCC_Once)) {
@@ -774,10 +777,16 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
         return eIO_Closed;
     }
 
-    if (uuu->sock) {
-        assert(uuu->conn_state == eCS_Eom);
-        if (uuu->adjust  &&  !s_CallAdjust(uuu, (unsigned int)(-1)))
-            return eIO_Unknown;
+    if (uuu->conn_state == eCS_Eom) {
+        if (uuu->adjust) {
+            int retval = s_CallAdjust(uuu, (unsigned int)(-1));
+            if (!retval)
+                return eIO_Unknown;
+            if (retval < 0)
+                return eIO_Closed;
+        } else
+            return eIO_Closed;
+        uuu->conn_state  = eCS_NotConnected;
     }
 
     uuu->entity = 0;
@@ -1014,7 +1023,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
 
 
 /* Unconditionally drop the connection w/o any wait */
-static void s_DropConnection(SHttpConnector* uuu)
+static void s_DropConnection(SHttpConnector* uuu, enum EConnState state)
 {
     assert(uuu->sock);
     if (!(uuu->conn_state & eCS_ReadBody)  ||  uuu->conn_state == eCS_Discard)
@@ -1023,6 +1032,7 @@ static void s_DropConnection(SHttpConnector* uuu)
         SOCK_SetTimeout(uuu->sock, eIO_Close, &kZeroTimeout);
     SOCK_Close(uuu->sock);
     uuu->sock = 0;
+    uuu->conn_state = state;
 }
 
 
@@ -1056,7 +1066,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
                                    const STimeout* timeout,
                                    EExtractMode    extract)
 {
-    EIO_Status status;
+    EIO_Status status = eIO_Success;
 
     for (;;) {
         char   what[80];
@@ -1064,10 +1074,12 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
         size_t off;
         char*  url;
 
-        if (uuu->sock  &&  uuu->conn_state != eCS_Eom)
-            status = eIO_Success;
-        else if ((status = s_Connect(uuu, timeout, extract)) != eIO_Success)
+        assert(status == eIO_Success);
+
+        if ((uuu->conn_state == eCS_NotConnected || uuu->conn_state == eCS_Eom)
+            &&  (status = s_Connect(uuu, timeout, extract)) != eIO_Success) {
             break;
+        }
 
         if (uuu->w_len) {
             XBUF_PeekCBCtx ctx;
@@ -1134,10 +1146,10 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
             free(url);
 
         /* write failed; close and try to use another server, if possible */
-        s_DropConnection(uuu);
+        s_DropConnection(uuu, eCS_NotConnected);
         assert(status != eIO_Success);
         if ((status = s_Adjust(uuu, 0, extract)) != eIO_Success)
-            break/*closed*/;
+            break;
     }
 
     return status;
@@ -1361,6 +1373,8 @@ static EIO_Status s_ReadData(SHttpConnector* uuu,
             free(buf);
             status = eIO_Unknown;
         }
+        if (status == eIO_Closed)
+            uuu->conn_state = eCS_Eom;
         return status;
     }
 
@@ -1466,8 +1480,8 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             CORE_LOGF_X(8, level,
                         ("[HTTP%s%s]  Cannot %s header (%s)",
                          url ? "; " : "",
-                         url ? url  : "", status != eIO_Success
-                         ? "read" : "scan",
+                         url ? url  : "",
+                         status != eIO_Success ? "read" : "scan",
                          IO_StatusStr(status != eIO_Success
                                       ? status : eIO_Unknown)));
             if (url)
@@ -1599,7 +1613,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                     ++msg;
                 if (!(e = strchr(msg, '\r'))  &&  !(e = strchr(msg, '\n')))
                     break;
-                do {
+                if (e > msg) do {
                     if (!isspace((unsigned char) e[-1]))
                         break;
                 } while (--e > msg);
@@ -1632,7 +1646,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                     ++sid;
                 if (!(e = strchr(sid, '\r'))  &&  !(e = strchr(sid, '\n')))
                     break;
-                do {
+                if (e > sid) do {
                     if (!isspace((unsigned char) e[-1]))
                         break;
                 } while (--e > sid);
@@ -1657,7 +1671,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                     ++loc;
                 if (!(e = strchr(loc, '\r'))  &&  !(e = strchr(loc, '\n')))
                     break;
-                do {
+                if (e > loc) do {
                     if (!isspace((unsigned char) e[-1]))
                         break;
                 } while (--e > loc);
@@ -1680,13 +1694,31 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                     ++con;
                 if (!(e = strchr(con, '\r'))  &&  !(e = strchr(con, '\n')))
                     break;
-                do {
+                if (e > con) do {
                     if (!isspace((unsigned char) e[-1]))
                         break;
                 } while (--e > con);
-                n = (size_t)(e - con);
-                if (strncasecmp(con, "close", n) == 0)
-                    uuu->keepalive = 0;
+                while ((n = (size_t)(e - con)) > 0) {
+                    const char* c = (const char*) memchr(con, ',', n);
+                    size_t m;
+                    if (c > con) {
+                        do {
+                            if (!isspace((unsigned char) c[-1]))
+                                break;
+                        } while (--c > con);
+                        m = (size_t)(c - con);
+                    } else
+                        m = n;
+                    if (m == 5  &&  strncasecmp(con, "close", m) == 0) {
+                        uuu->keepalive = 0;
+                        break;
+                    }
+                    if (m == n)
+                        break;
+                    con += m + 1;
+                    while (con < e  &&  isspace((unsigned char)(*con)))
+                        ++con;
+                }
                 tags &= (THTTP_Tags)(~eHTTP_Connection);
                 continue;
             }
@@ -1707,7 +1739,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                         ++txt;
                     if (!(e = strchr(txt, '\r'))  &&  !(e = strchr(txt, '\n')))
                         break;
-                    do {
+                    if (e > txt) do {
                         if (!isspace((unsigned char) e[-1]))
                             break;
                     } while (--e > txt);
@@ -1735,7 +1767,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                         ++len;
                     if (!(e = strchr(len, '\r'))  &&  !(e = strchr(len, '\n')))
                         break;
-                    do {
+                    if (e > len) do {
                         if (!isspace((unsigned char) e[-1]))
                             break;
                     } while (--e > len);
@@ -1759,7 +1791,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                     ++te;
                 if (!(e = strchr(te, '\r'))  &&  !(e = strchr(te, '\n')))
                     break;
-                do {
+                if (e > te) do {
                     if (!isspace((unsigned char) e[-1]))
                         break;
                 } while(--e > te);
@@ -1933,11 +1965,10 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
                 break;
             assert(!uuu->w_len);
         }
+        assert(uuu->conn_state > eCS_FlushRequest);
 
         if (extract == eEM_Flush)
             return eIO_Success;
-
-        assert(uuu->sock  &&  uuu->conn_state > eCS_FlushRequest);
 
         if (extract == eEM_Wait
             &&  (uuu->conn_state & eCS_DoneBody) == eCS_DoneBody) {
@@ -1950,7 +1981,7 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
         if (uuu->conn_state & eCS_ReadBody)
             return eIO_Success;
 
-        assert(uuu->conn_state == eCS_ReadHeader);
+        assert(uuu->sock  &&  uuu->conn_state == eCS_ReadHeader);
         if ((status = s_ReadHeader(uuu, &retry, extract)) == eIO_Success) {
             assert((uuu->conn_state & eCS_ReadBody)  &&  !retry.mode);
             /* pending output data no longer needed */
@@ -1968,8 +1999,8 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
         }
 
         /* HTTP header read error; disconnect and retry */
-        s_DropConnection(uuu);
         assert(status != eIO_Success);
+        s_DropConnection(uuu, eCS_NotConnected);
         adjust = s_Adjust(uuu, &retry, extract);
         if (retry.data)
             free((void*) retry.data);
@@ -2165,7 +2196,7 @@ static EIO_Status s_Disconnect(SHttpConnector* uuu,
     }
 
     if (uuu->sock) /* s_PreRead() might have dropped the connection already */
-        s_DropConnection(uuu);
+        s_DropConnection(uuu, eCS_Eom);
     uuu->can_connect &= ~fCC_Once;
     return status;
 }
@@ -2189,9 +2220,10 @@ static void s_OpenHttpConnector(SHttpConnector* uuu,
         uuu->w_timeout  = kInfiniteTimeout;
     }
 
-    /* reset the auto-reconnect/re-try/auth features */
+    /* reset the auto-reconnect/state/re-try/auth features */
     uuu->can_connect     = (uuu->flags & fHTTP_AutoReconnect
                             ? fCC_Unlimited | fCC_Once : fCC_Once);
+    uuu->conn_state      = eCS_NotConnected;
     uuu->major_fault     = 0;
     uuu->minor_fault     = 0;
     uuu->auth_done       = 0;
@@ -2205,9 +2237,9 @@ static void s_DestroyHttpConnector(SHttpConnector* uuu)
     if (uuu->cleanup)
         uuu->cleanup(uuu->user_data);
     ConnNetInfo_Destroy(uuu->net_info);
-    BUF_Destroy(uuu->http);
     BUF_Destroy(uuu->r_buf);
     BUF_Destroy(uuu->w_buf);
+    BUF_Destroy(uuu->http);
     free(uuu);
 }
 
@@ -2345,14 +2377,14 @@ static EIO_Status s_VT_Write
     } else
         uuu->w_timeout  = kInfiniteTimeout;
 
-    /* if trying to write after a request then close the socket first,
-     * and so return to "IDLE" */
-    if (uuu->sock  &&  uuu->conn_state > eCS_WriteRequest) {
+    /* if trying to write after a request then close the socket first */
+    if (uuu->conn_state > eCS_WriteRequest) {
         status = s_Disconnect(uuu, timeout,
                               uuu->flags & fHTTP_DropUnread
                               ? eEM_Drop : eEM_Read);
         if (status != eIO_Success)
             return status;
+        uuu->conn_state = eCS_NotConnected;
     }
     if (uuu->can_connect == fCC_None)
         return eIO_Closed; /* no more connects permitted */
@@ -2809,7 +2841,7 @@ extern EIO_Status HTTP_CreateTunnelEx
             uuu->sock = 0;
         } else {
             if (uuu->sock)
-                s_DropConnection(uuu);
+                s_DropConnection(uuu, eCS_Eom);
             http_code = uuu->http_code;
         }
     } else {
