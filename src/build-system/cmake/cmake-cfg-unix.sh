@@ -66,20 +66,20 @@ OPTIONS:
   --without-dll              -- build all libraries as static ones (default)
   --with-dll                 -- build all libraries as shared ones,
                                 unless explicitely requested otherwise
-  --with-projects='FILE'     -- build projects listed in ${tree_root}/FILE
+  --with-projects="FILE"     -- build projects listed in ${tree_root}/FILE
                                 FILE can also be a list of subdirectories of ${tree_root}/src
-                    examples:   --with-projects='corelib$;serial'
+                    examples:   --with-projects="corelib$;serial"
                                 --with-projects=scripts/projects/ncbi_cpp.lst
-  --with-tags='tags'         -- build projects which have allowed tags only
-                    examples:   --with-tags='*;-test'
-  --with-targets='names'     -- build projects which have allowed names only
-                    examples:   --with-targets='datatool;xcgi$'
+  --with-tags="tags"         -- build projects which have allowed tags only
+                    examples:   --with-tags="*;-test"
+  --with-targets="names"     -- build projects which have allowed names only
+                    examples:   --with-targets="datatool;xcgi$"
   --with-ccache              -- use ccache if available
   --with-distcc              -- use distcc if available
-  --with-install='DIR'       -- generate rules for installation into 'DIR' directory
-                    examples:   --with-install='/usr/CPP_toolkit'
+  --with-install="DIR"       -- generate rules for installation into DIR directory
+                    examples:   --with-install="/usr/CPP_toolkit"
   --without-experimental     -- disable experimental configuration
-  --with-generator='X'       -- use generator X
+  --with-generator="X"       -- use generator X
 EOF
 
   generatorfound=""
@@ -110,14 +110,17 @@ Quote() {
 ############################################################################# 
 # parse arguments
 
+do_help="no"
 while [ $# != 0 ]; do
   case "$1" in 
-    --help)
-      Usage
-      exit 0
+    --help|-help|help)
+      do_help="yes"
     ;; 
-    --srcdir=*)
+    --rootdir=*)
       tree_root=`(cd "${1#*=}" ; pwd)`
+      ;; 
+    --caller=*)
+      script_name=${1#*=}
       ;; 
     --with-static|--without-dll) 
       BUILD_SHARED_LIBS=OFF
@@ -176,6 +179,10 @@ while [ $# != 0 ]; do
   esac 
   shift 
 done 
+if [ $do_help = "yes" ]; then
+  Usage
+  exit 0
+fi
 
 ############################################################################# 
 if test "$generator" = "Xcode"; then

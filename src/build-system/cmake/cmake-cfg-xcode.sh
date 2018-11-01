@@ -33,22 +33,22 @@ Usage()
 USAGE:
   $script_name [OPTION]...
 SYNOPSIS:
-  Configure NCBI C++ toolkit using CMake build system.
+  Configure NCBI C++ toolkit for XCode using CMake build system.
 OPTIONS:
   --help                     -- print Usage
   --without-dll              -- build all libraries as static ones (default)
   --with-dll                 -- build all libraries as shared ones,
                                 unless explicitely requested otherwise
-  --with-projects='FILE'     -- build projects listed in ${tree_root}/FILE
+  --with-projects="FILE"     -- build projects listed in ${tree_root}/FILE
                                 FILE can also be a list of subdirectories of ${tree_root}/src
-                    examples:   --with-projects='corelib$;serial'
+                    examples:   --with-projects="corelib$;serial"
                                 --with-projects=scripts/projects/ncbi_cpp.lst
-  --with-tags='tags'         -- build projects which have allowed tags only
-                    examples:   --with-tags='*;-test'
-  --with-targets='names'     -- build projects which have allowed names only
-                    examples:   --with-targets='datatool;xcgi$'
-  --with-install='DIR'       -- generate rules for installation into 'DIR' directory
-                    examples:   --with-install='/usr/CPP_toolkit'
+  --with-tags="tags"         -- build projects which have allowed tags only
+                    examples:   --with-tags="*;-test"
+  --with-targets="names"     -- build projects which have allowed names only
+                    examples:   --with-targets="datatool;xcgi$"
+  --with-install="DIR"       -- generate rules for installation into DIR directory
+                    examples:   --with-install="/usr/CPP_toolkit"
 EOF
 
   generatorfound=""
@@ -79,15 +79,18 @@ Quote() {
 ############################################################################# 
 # parse arguments
 
+do_help="no"
 generator=Xcode
 while [ $# != 0 ]; do
   case "$1" in 
-    --help)
-      Usage
-      exit 0
+    --help|-help|help)
+      do_help="yes"
     ;; 
-    --srcdir=*)
+    --rootdir=*)
       tree_root=`(cd "${1#*=}" ; pwd)`
+      ;; 
+    --caller=*)
+      script_name=${1#*=}
       ;; 
     --without-dll) 
       BUILD_SHARED_LIBS=OFF
@@ -122,6 +125,10 @@ while [ $# != 0 ]; do
   esac 
   shift 
 done 
+if [ $do_help = "yes" ]; then
+  Usage
+  exit 0
+fi
 
 ############################################################################# 
 XC=`which xcodebuild 2>/dev/null`
