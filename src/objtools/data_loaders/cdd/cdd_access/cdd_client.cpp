@@ -69,8 +69,7 @@ void CCDDClient::ReadReply(CObjectIStream& in, CCDD_Reply& reply)
         next_reply.Reset(new CCDD_Reply);
         in >> *next_reply;
         m_Replies.push_back(next_reply);
-    } while (!next_reply->IsSetEnd_of_reply()
-             &&  !next_reply->GetReply().IsEmpty());
+    } while (!next_reply->IsSetEnd_of_reply());
 
     if (!m_Replies.empty()) {
         reply.Assign(*m_Replies.back());
