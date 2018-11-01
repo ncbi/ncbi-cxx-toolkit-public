@@ -1489,7 +1489,7 @@ function(NCBI_internal_install_root)
     file(GLOB _files LIST_DIRECTORIES false "${NCBI_TREE_BUILDCFG}/*")
     install( FILES ${_files} DESTINATION ${NCBI_DIRNAME_BUILDCFG})
     install( DIRECTORY ${NCBI_TREE_CMAKECFG} DESTINATION ${NCBI_DIRNAME_BUILDCFG}
-            REGEX "/[.].*$" EXCLUDE)
+            USE_SOURCE_PERMISSIONS REGEX "/[.].*$" EXCLUDE)
 
     file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${NCBI_BUILD_ROOT}")
     install( DIRECTORY ${NCBI_CFGINC_ROOT} DESTINATION "${_dest}"
