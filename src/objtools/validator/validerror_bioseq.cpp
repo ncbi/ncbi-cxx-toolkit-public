@@ -574,8 +574,21 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
             if (id.IsPdb()) {
                 const CPDB_seq_id& pdb = id.GetPdb();
                 if (pdb.IsSetChain() && pdb.IsSetChain_id()) {
-                    PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
-                            "PDB Seq-id contains both \'chain\' and \'chain-id\' slots", ctx);
+                    int chain = pdb.GetChain();
+                    const string& chain_id = pdb.GetChain_id();
+                    if (chain_id.size() == 1  &&  chain_id[0] == chain) {
+                        break; // OK (straightforward match)
+                    } else if (islower(chain)  &&  chain_id.size() == 2
+                               &&  chain_id[0] == chain_id[1]
+                               &&  chain_id[0] == toupper(chain)) {
+                        break; // OK (historic special case)
+                    } else if (chain == '|'  &&  chain_id == "VB") {
+                        break; // OK (likewise)
+                    } else {
+                        PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
+                                "PDB Seq-id contains mismatched \'chain\' and"
+                                " \'chain-id\' slots", ctx);
+                    }
                 }
             }
             break;
