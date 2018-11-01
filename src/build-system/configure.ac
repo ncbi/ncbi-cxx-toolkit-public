@@ -1894,6 +1894,8 @@ if $CXX -v 2>&1 | grep -q clang; then
           [ncbi_cv_prog_cxx_stdlib_libcxx=no])
        CXX=$orig_CXX])
    test "$ncbi_cv_prog_cxx_stdlib_libcxx" = no  ||  CXX="$CXX -stdlib=libc++"
+else
+   ncbi_cv_prog_cxx_stdlib_libcxx=no
 fi
 
 AC_CHECK_DECL([_LIBCPP_VERSION], [], [], [#include <iosfwd>])

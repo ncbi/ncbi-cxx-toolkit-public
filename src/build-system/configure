@@ -9323,6 +9323,8 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_prog_cxx_stdlib_libcxx" >&5
 echo "${ECHO_T}$ncbi_cv_prog_cxx_stdlib_libcxx" >&6; }
    test "$ncbi_cv_prog_cxx_stdlib_libcxx" = no  ||  CXX="$CXX -stdlib=libc++"
+else
+   ncbi_cv_prog_cxx_stdlib_libcxx=no
 fi
 
 { echo "$as_me:$LINENO: checking whether _LIBCPP_VERSION is declared" >&5
