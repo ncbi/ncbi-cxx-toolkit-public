@@ -198,7 +198,7 @@ void CAnyContentTypeStrings::GenerateTypeCode(CClassContext& /*ctx*/) const
 
 CBitStringTypeStrings::CBitStringTypeStrings(const string& type,
     const CComments& comments, CTypeStrings* bitNames)
-    : m_BitNames(bitNames), CParent(type,comments,false)
+    : CParent(type,comments,false), m_BitNames(bitNames)
 {
 }
 
