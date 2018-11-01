@@ -23,7 +23,7 @@
 #    'GC_GetAssembly_v3s'
 #shift `expr $$ '%' $#`
 #svc="$1"
-svc=bounce
+svc=bouncehttp
 
 # Test the service using a pseudo-random number of threads (between 2 and 11).
 nthreads="`expr $$ % 10 + 2`"
@@ -33,7 +33,7 @@ test_text="param1%3Dval1%26param2%3D%22line+1%0Aline+2%0A%22"
 
 : ${CHECK_TIMEOUT:=600}
 if test -n "$CHECK_EXEC"; then
-    $CHECK_EXEC test_ncbi_namerd_mt -timeout $CHECK_TIMEOUT -threads $nthreads -service $svc -post "$test_text"
+    $CHECK_EXEC test_ncbi_namerd_mt -timeout $CHECK_TIMEOUT -threads $nthreads -service $svc -post "$test_text" -expected "$test_text"
 else
-    ./test_ncbi_namerd_mt -timeout $CHECK_TIMEOUT -threads $nthreads -service $svc -post "$test_text"
+    ./test_ncbi_namerd_mt -timeout $CHECK_TIMEOUT -threads $nthreads -service $svc -post "$test_text" -expected "$test_text"
 fi

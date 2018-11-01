@@ -84,8 +84,7 @@ bool CTestApp::TestApp_Args(CArgDescriptions& args)
     args.AddDefaultKey("post", "ToPost", "The data to send via POST (if any)",
                        CArgDescriptions::eString, "");
 
-    args.AddDefaultKey("expected", "Expected", "The expected output "
-                       "(if empty, expected = posted)",
+    args.AddDefaultKey("expected", "Expected", "The expected output",
                        CArgDescriptions::eString, "");
 
     args.AddDefaultKey("timeout", "Timeout", "Timeout",
@@ -112,11 +111,6 @@ bool CTestApp::TestApp_Init(void)
     sm_Expected = GetArgs()["expected"].AsString();
     sm_Retries  = static_cast<unsigned short>(GetArgs()["retries"].AsInteger());
     sm_Timeout.Set(GetArgs()["timeout"].AsDouble());
-
-    /* Set expected=posted if not given in args. */
-    if (sm_Expected.empty()) {
-        sm_Expected = sm_ToPost;
-    }
 
     ERR_POST(Info << "Service:  '" << sm_Service << "'");
     ERR_POST(Info << "ToPost:   '" << sm_ToPost << "'");
@@ -161,17 +155,27 @@ bool CTestApp::Thread_Run(int idx)
         NcbiStreamCopy(out, response.ContentStream());
         data_out = CNcbiOstrstreamToString(out);
 
-
         // Process result
         if (data_out.empty()) {
-            ERR_POST(Error << "FAIL: Did not receive any data.");
-        } else if (data_out != sm_Expected) {
-            ERR_POST(Error << "FAIL: Received data '" << data_out
-                           << "' didn't match expected data '"
-                           << sm_Expected << "'.");
+            if (sm_Expected.empty()) {
+                ERR_POST(Info << "SUCCESS: No data expected or received.");
+                retval = true;
+            } else {
+                ERR_POST(Error << "FAIL: Expected data not received.");
+            }
         } else {
-            ERR_POST(Info << "SUCCESS: Received data matched sent data.");
-            retval = true;
+            if (sm_Expected.empty()) {
+                ERR_POST(Error << "FAIL: Received data unexpectedly.");
+            } else {
+                if (data_out == sm_Expected) {
+                    ERR_POST(Info << "SUCCESS: Expected data received.");
+                    retval = true;
+                } else {
+                    ERR_POST(Error << "FAIL: Received data '" << data_out
+                                   << "' didn't match expected data '"
+                                   << sm_Expected << "'.");
+                }
+            }
         }
     }
 

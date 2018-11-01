@@ -175,38 +175,6 @@ struct SNAMERD_Data {
 };
 
 
-/* Extra-verbose tracing to make following nested functions easier. */
-#define EXTRA_VERBOSE_DBG 1
-#if defined(EXTRA_VERBOSE_DBG)  &&  defined(_DEBUG)  &&  ! defined(NDEBUG)
-
-static int s_nest = 0; /* trace nest level */
-
-#define NEST_PFX    ".........................................................."
-#define NEST_PFXX   "**********************************************************"
-#define MAX_NEST    ((int)(sizeof(NEST_PFX)-1))
-
-#define PFXI  (s_nest++ > MAX_NEST ? NEST_PFXX : NEST_PFX + MAX_NEST - s_nest+1)
-#define PFXO  (--s_nest > MAX_NEST ? NEST_PFXX : NEST_PFX + MAX_NEST - s_nest  )
-
-#define TIN( fmt            )   CORE_TRACEF(("%s[ " fmt, PFXI            ));
-#define TIN1(fmt, arg       )   CORE_TRACEF(("%s[ " fmt, PFXI, arg       ));
-#define TIN2(fmt, arg1, arg2)   CORE_TRACEF(("%s[ " fmt, PFXI, arg1, arg2));
-
-#define TOUT( fmt            )  CORE_TRACEF(("%s] " fmt, PFXO            ));
-#define TOUT1(fmt, arg       )  CORE_TRACEF(("%s] " fmt, PFXO, arg       ));
-
-#else
-
-#define TIN( fmt            )
-#define TIN1(fmt, arg       )
-#define TIN2(fmt, arg1, arg2)
-
-#define TOUT( fmt            )
-#define TOUT1(fmt, arg       )
-
-#endif /* EXTRA_VERBOSE_DBG */
-
-
 /* Some static variables needed only to support testing with mock data.
     Testing with mock data is currently limited to single-threaded tests. */
 static int          s_initialized = 0;
@@ -293,7 +261,7 @@ static EIO_Status s_CONN_Create(SERV_ITER iter, CONNECTOR* c_p, CONN* conn_p)
 {
     EIO_Status  status = eIO_Unknown;
 
-    TIN("s_CONN_Create()");
+    CORE_TRACE("Entering s_CONN_Create()");
 
     /* require valid, NULL pointers */
     assert(c_p     &&  ! *c_p   );
@@ -315,7 +283,7 @@ static EIO_Status s_CONN_Create(SERV_ITER iter, CONNECTOR* c_p, CONN* conn_p)
         CORE_LOG_X(eNSub_Connect, eLOG_Error, "Unable to create connector.");
     }
 
-    TOUT("s_CONN_Create()");
+    CORE_TRACE("Leaving s_CONN_Create()");
     return status;
 }
 
@@ -337,15 +305,15 @@ static void s_UpdateDtab(char** dest_dtab_p, char* src_dtab, int* success_p)
     char enc_dtab[MAX_QRY_STR_LEN + 1];
     size_t new_size, src_size, enc_size;
 
-    TIN2("s_UpdateDtab(\"%s\") -- old dtab = \"%s\"", src_dtab,
-        *dest_dtab_p ? *dest_dtab_p : "");
+    CORE_TRACEF(("Entering s_UpdateDtab(\"%s\") -- old dtab = \"%s\"", src_dtab,
+        *dest_dtab_p ? *dest_dtab_p : ""));
 
     if ( ! *success_p) {
-        TOUT("s_UpdateDtab() -- prior no success");
+        CORE_TRACE("Leaving s_UpdateDtab() -- prior no success");
         return;
     }
     if ( ! *src_dtab) {
-        TOUT("s_UpdateDtab() -- prior no dtab");
+        CORE_TRACE("Leaving s_UpdateDtab() -- prior no dtab");
         return;
     }
 
@@ -381,14 +349,14 @@ static void s_UpdateDtab(char** dest_dtab_p, char* src_dtab, int* success_p)
     if ( ! new_dtab) {
         *success_p = 0;
         CORE_LOG_X(eNSub_Alloc, eLOG_Critical, "Couldn't alloc for dtab.");
-        TOUT("s_UpdateDtab() -- bad alloc");
+        CORE_TRACE("Leaving s_UpdateDtab() -- bad alloc");
         return;
     }
 
     /* Update the caller's pointer. */
     *dest_dtab_p = new_dtab;
 
-    TOUT1("s_UpdateDtab() -- new dtab = \"%s\"", new_dtab);
+    CORE_TRACEF(("Leaving s_UpdateDtab() -- new dtab = \"%s\"", new_dtab));
 }
 
 
@@ -535,7 +503,7 @@ static int/*bool*/ s_AddServerInfo(struct SNAMERD_Data* data, SSERV_Info* info)
             &&  SERV_EqualInfo(info, data->cand[i].info))
         {
             /* Replace older version */
-            CORE_TRACE("Replaced older version.");
+            CORE_TRACE("Replaced older candidate version.");
             free((void*) data->cand[i].info);
             data->cand[i].info   = info;
             data->cand[i].status = info->rate;
@@ -704,7 +672,7 @@ static EIO_Status s_ReadFullResponse(CONN conn, char** bufp,
     int             num_steps;
     EIO_Status      status = eIO_Unknown;
 
-    TIN("s_ReadFullResponse()");
+    CORE_TRACE("Entering s_ReadFullResponse()");
 
     assert(bufp);
     assert(net_info);
@@ -721,7 +689,7 @@ static EIO_Status s_ReadFullResponse(CONN conn, char** bufp,
                 free(*bufp);
                 *bufp = NULL;
             }
-            TOUT("s_ReadFullResponse() -- bad alloc");
+            CORE_TRACE("Leaving s_ReadFullResponse() -- bad alloc");
             return eIO_Unknown;
         }
         *bufp = new_buf;
@@ -753,7 +721,7 @@ static EIO_Status s_ReadFullResponse(CONN conn, char** bufp,
                 ("Read error: %s", IO_StatusStr(status)));
             free(*bufp);
             *bufp = NULL;
-            TOUT("s_ReadFullResponse() -- read problem");
+            CORE_TRACE("Leaving s_ReadFullResponse() -- read problem 1");
             return status;
         }
 
@@ -772,7 +740,7 @@ static EIO_Status s_ReadFullResponse(CONN conn, char** bufp,
         CORE_LOG_X(eNSub_TooLong, eLOG_Error, "Insufficient buffer size.");
         free(*bufp);
         *bufp = NULL;
-        TOUT("s_ReadFullResponse() -- read problem");
+        CORE_TRACE("Leaving s_ReadFullResponse() -- read problem 2");
         return status;
     }
 
@@ -788,7 +756,7 @@ static EIO_Status s_ReadFullResponse(CONN conn, char** bufp,
 
     CORE_TRACEF(("Got response: %s", *bufp));
 
-    TOUT("s_ReadFullResponse()");
+    CORE_TRACE("Leaving s_ReadFullResponse()");
     return eIO_Success;
 }
 
@@ -801,7 +769,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
     char*                   response = NULL;
     int/*bool*/             retval = 0;
 
-    TIN("s_ParseResponse()");
+    CORE_TRACE("Entering s_ParseResponse()");
 
     if (eIO_Success == s_ReadFullResponse(conn, &response, net_info)) {
         x_JSON_Object *root_obj;
@@ -1129,7 +1097,7 @@ static int/*bool*/ s_ParseResponse(SERV_ITER iter, CONN conn)
 out:
     if (response)   free(response);
     if (root_value) x_json_value_free(root_value);
-    TOUT("s_ParseResponse()");
+    CORE_TRACE("Leaving s_ParseResponse()");
     return retval;
 }
 
@@ -1141,7 +1109,7 @@ static char* s_GetDtabHeaderFromBuf(const char* buf)
     char* end;
     char* dup_hdr;
 
-    TIN1("s_GetDtabHeaderFromBuf(\"%s\")", buf ? buf : "");
+    CORE_TRACEF(("Entering s_GetDtabHeaderFromBuf(\"%s\")", buf ? buf : ""));
 
     if (start  &&  strncasecmp(start, DTAB_HDR_FIELD_NAME ":",
                        sizeof(DTAB_HDR_FIELD_NAME) + 1/*':'*/ - 1/*'\0'*/) == 0)
@@ -1159,16 +1127,18 @@ static char* s_GetDtabHeaderFromBuf(const char* buf)
         if ( ! dup_hdr) {
             CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
                        "Couldn't alloc for dtab header value.");
-            TOUT("s_GetDtabHeaderFromBuf() -- bad alloc");
+            CORE_TRACE("Leaving s_GetDtabHeaderFromBuf() -- bad alloc");
             return NULL;
         }
         memcpy(dup_hdr, start, (size_t)(end - start));
         dup_hdr[end - start] = NIL;
-        TOUT1("s_GetDtabHeaderFromBuf() -- got dtab header \"%s\"", dup_hdr);
+        CORE_TRACEF((
+            "Leaving s_GetDtabHeaderFromBuf() -- got dtab header \"%s\"",
+            dup_hdr));
         return dup_hdr;
     }
 
-    TOUT("s_GetDtabHeaderFromBuf()");
+    CORE_TRACE("Leaving s_GetDtabHeaderFromBuf()");
     return NULL;
 }
 
@@ -1179,12 +1149,12 @@ static void s_UpdateDtabFromUserHeader(char** dtab_p, int* success_p,
 {
     char* dtab = NULL;
 
-    TIN2("s_UpdateDtabFromUserHeader(\"%s\") -- success=%d",
+    CORE_TRACEF(("Entering s_UpdateDtabFromUserHeader(\"%s\") -- success=%d",
         net_info->http_user_header ? net_info->http_user_header : "",
-        *success_p);
+        *success_p));
 
     if ( ! *success_p) {
-        TOUT("s_UpdateDtabFromUserHeader() -- prior no success");
+        CORE_TRACE("Leaving s_UpdateDtabFromUserHeader() -- prior no success");
         return;
     }
 
@@ -1195,7 +1165,7 @@ static void s_UpdateDtabFromUserHeader(char** dtab_p, int* success_p,
         free(dtab);
     }
 
-    TOUT("s_UpdateDtabFromUserHeader()");
+    CORE_TRACE("Leaving s_UpdateDtabFromUserHeader()");
 }
 
 
@@ -1205,11 +1175,11 @@ static void s_UpdateDtabFromRegistry(char** dtab_p, int* success_p,
 {
     char val[MAX_QRY_STR_LEN + 1];
 
-    TIN2("s_UpdateDtabFromRegistry(\"%s\") -- success=%d",
-        service ? service : "", *success_p);
+    CORE_TRACEF(("Entering s_UpdateDtabFromRegistry(\"%s\") -- success=%d",
+        service ? service : "", *success_p));
 
     if ( ! *success_p) {
-        TOUT("s_UpdateDtabFromRegistry() -- prior no success");
+        CORE_TRACE("Leaving s_UpdateDtabFromRegistry() -- prior no success");
         return;
     }
 
@@ -1220,13 +1190,13 @@ static void s_UpdateDtabFromRegistry(char** dtab_p, int* success_p,
         *success_p = 0;
         CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
                    "Couldn't alloc for dtab from registry.");
-        TOUT("s_UpdateDtabFromRegistry() -- bad alloc");
+        CORE_TRACE("Leaving s_UpdateDtabFromRegistry() -- bad alloc");
         return;
     }
 
     s_UpdateDtab(dtab_p, val, success_p);
 
-    TOUT("s_UpdateDtabFromRegistry()");
+    CORE_TRACE("Leaving s_UpdateDtabFromRegistry()");
 }
 
 
@@ -1246,7 +1216,7 @@ static int/*bool*/ s_ProcessDtab(SConnNetInfo* net_info)
     int/*bool*/ success = 1;
     char* dtab = NULL;
 
-    TIN("s_ProcessDtab()");
+    CORE_TRACE("Entering s_ProcessDtab()");
 
     /* Dtab precedence (highest first): registry > user_header */
     s_UpdateDtabFromRegistry(&dtab, &success, net_info->svc);
@@ -1266,7 +1236,7 @@ static int/*bool*/ s_ProcessDtab(SConnNetInfo* net_info)
 
     if (dtab)   free(dtab);
 
-    TOUT("s_ProcessDtab()");
+    CORE_TRACE("Leaving s_ProcessDtab()");
     return success;
 #undef  DTAB_ARGS_SEP
 }
@@ -1279,13 +1249,13 @@ static EHTTP_HeaderParse s_ParseHeader(const char* header,
     struct SNAMERD_Data* data = (struct SNAMERD_Data*)((SERV_ITER) iter)->data;
     int code = 0/*success code if any*/;
 
-    TIN1("s_ParseHeader(\"%s\")", header);
+    CORE_TRACEF(("Entering s_ParseHeader(\"%s\")", header));
 
     if (server_error == 400  ||  server_error == 403  ||  server_error == 404) {
         data->fail = 1/*true*/;
     } else if (sscanf(header, "%*s %d", &code) < 1) {
         data->eof = 1/*true*/;
-        TOUT("s_ParseHeader() -- eof=true");
+        CORE_TRACE("Leaving s_ParseHeader() -- eof=true");
         return eHTTP_HeaderError;
     }
 
@@ -1293,7 +1263,7 @@ static EHTTP_HeaderParse s_ParseHeader(const char* header,
     if (code == 204)
         data->eof = 1/*true*/;
 
-    TOUT("s_ParseHeader()");
+    CORE_TRACE("Leaving s_ParseHeader()");
     return eHTTP_HeaderSuccess;
 }
 
@@ -1315,7 +1285,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     CONN                    conn = NULL;
     int/*bool*/             retval = 0;
 
-    TIN("s_Resolve()");
+    CORE_TRACE("Entering s_Resolve()");
     assert( ! (data->eof | data->fail));
 
     /* Handle DTAB, if present. */
@@ -1327,7 +1297,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     }
     s_CONN_Destroy(&c, &conn);
 
-    TOUT("s_Resolve()");
+    CORE_TRACE("Leaving s_Resolve()");
     return retval;
 }
 
@@ -1376,9 +1346,9 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text, int code)
     /*struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;*/
     int retval = 0;
 
-    TIN2("s_Update(\"%s\", %d)", text ? text : "", code);
+    CORE_TRACEF(("Entering s_Update(\"%s\", %d)", text ? text : "", code));
 
-    TOUT1("s_Update() -- %supdated", retval ? "" : "not ");
+    CORE_TRACEF(("Leaving s_Update() -- %supdated", retval ? "" : "not "));
     return retval;
 }
 
@@ -1396,12 +1366,12 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     SSERV_Info* info;
     size_t n;
 
-    TIN("s_GetNextInfo()");
+    CORE_TRACE("Entering s_GetNextInfo()");
     assert(data);
 
     if (data->n_cand < 1  &&  data->done) {
         data->done = 0;
-        TOUT("s_GetNextInfo() -- end of candidates");
+        CORE_TRACE("Leaving s_GetNextInfo() -- end of candidates");
         return NULL;
     }
 
@@ -1410,7 +1380,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
             s_Resolve(iter);
             if (data->n_cand < 1) {
                 data->done = 1;
-                TOUT("s_GetNextInfo() -- resolved no candidates");
+                CORE_TRACE("Leaving s_GetNextInfo() -- resolved no candidates");
                 return NULL;
             }
         }
@@ -1427,7 +1397,7 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     if (host_info)
         *host_info = NULL;
 
-    TOUT("s_GetNextInfo()");
+    CORE_TRACE("Leaving s_GetNextInfo()");
     return info;
 }
 
@@ -1436,7 +1406,7 @@ static void s_Reset(SERV_ITER iter)
 {
     struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
 
-    TIN("s_Reset()");
+    CORE_TRACE("Entering s_Reset()");
 
     if (data) {
         data->eof = data->fail = data->done = 0/*false*/;
@@ -1452,7 +1422,7 @@ static void s_Reset(SERV_ITER iter)
         }
     }
 
-    TOUT("s_Reset()");
+    CORE_TRACE("Leaving s_Reset()");
 }
 
 
@@ -1460,7 +1430,7 @@ static void s_Close(SERV_ITER iter)
 {
     struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
 
-    TIN("s_Close()");
+    CORE_TRACE("Entering s_Close()");
 
     /* Make sure s_Reset() has been called - it frees info structs. */
     s_Reset(iter);
@@ -1472,7 +1442,7 @@ static void s_Close(SERV_ITER iter)
     free(data);
     iter->data = NULL;
 
-    TOUT("s_Close()");
+    CORE_TRACE("Leaving s_Close()");
 }
 
 
@@ -1487,7 +1457,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     struct SNAMERD_Data*    data;
     char                    namerd_env[32];
 
-    TIN1("SERV_NAMERD_Open(\"%s\")", iter->name);
+    CORE_TRACEF(("Entering SERV_NAMERD_Open(\"%s\")", iter->name));
 
     s_Init();
 
@@ -1498,7 +1468,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     if ( ! iter->name) {
         CORE_LOG_X(eNSub_BadData, eLOG_Error,
             "\"iter->name\" is NULL, not able to continue SERV_NAMERD_Open");
-        TOUT("SERV_NAMERD_Open() -- fail");
+        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, no service name");
         return NULL;
     }
     assert(iter->name);
@@ -1509,7 +1479,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
         CORE_LOGF_X(eNSub_BadData, eLOG_Error,
             ("Invalid service name \"%s\" - must not begin with '/'.",
              iter->name));
-        TOUT("SERV_NAMERD_Open() -- fail");
+        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, catalog prefix");
         return NULL;
     }
 
@@ -1517,14 +1487,14 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     if (iter->ismask) {
         CORE_LOG_X(eNSub_BadData, eLOG_Error,
             "NAMERD doesn't support masks.");
-        TOUT("SERV_NAMERD_Open() -- fail");
+        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, iter is a mask");
         return NULL;
     }
 
     if ( ! (data = (struct SNAMERD_Data*) calloc(1, sizeof(*data)))) {
         CORE_LOG_X(eNSub_Alloc, eLOG_Critical,
             "Could not allocate for SNAMERD_Data.");
-        TOUT("SERV_NAMERD_Open() -- fail");
+        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, bad alloc");
         return NULL;
     }
     iter->data = data;
@@ -1536,7 +1506,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
         if ( ! new_net_info) {
             CORE_LOG_X(eNSub_Alloc, eLOG_Critical, "Couldn't create net_info.");
             s_Close(iter);
-            TOUT("SERV_NAMERD_Open() -- fail");
+            CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, no new net_info");
             return NULL;
         }
         data->net_info = ConnNetInfo_Clone(new_net_info);
@@ -1546,7 +1516,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     if ( ! data->net_info) {
         CORE_LOG_X(eNSub_Alloc, eLOG_Critical, "Couldn't clone net_info.");
         s_Close(iter);
-        TOUT("SERV_NAMERD_Open() -- fail");
+        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, no net_info clone");
         return NULL;
     }
     if (new_net_info) {
@@ -1557,7 +1527,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
         CORE_LOG_X(eNSub_BadData, eLOG_Critical,
             "Couldn't set up standard args.");
         s_Close(iter);
-        TOUT("SERV_NAMERD_Open() -- fail");
+        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, standard args");
         return NULL;
     }
 
@@ -1578,7 +1548,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
         &data->net_info->http_proxy_port))
     {
         s_Close(iter);
-        TOUT("SERV_NAMERD_Open() -- fail");
+        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, http_proxy");
         return NULL;
     }
 
@@ -1627,14 +1597,14 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
                             ||  !(data->net_info->stateless  &&
                                   data->net_info->firewall))) {
         s_Close(iter);
-        TOUT("SERV_NAMERD_Open() -- fail");
+        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, stateless, firewall");
         return NULL;
     }
 
     /* call GetNextInfo subsequently if info is actually needed */
     if (info)   *info = NULL;
 
-    TOUT("SERV_NAMERD_Open()");
+    CORE_TRACE("Leaving SERV_NAMERD_Open()");
     return &s_op;
 }
 
