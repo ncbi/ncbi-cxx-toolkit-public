@@ -2,6 +2,7 @@
 #############################################################################
 # $Id$
 #   Configure NCBI C++ toolkit for XCode using CMake build system.
+#   Author: Andrei Gourianov, gouriano@ncbi
 #############################################################################
 initial_dir=`pwd`
 script_name=`basename $0`
@@ -47,6 +48,8 @@ OPTIONS:
                     examples:   --with-tags="*;-test"
   --with-targets="names"     -- build projects which have allowed names only
                     examples:   --with-targets="datatool;xcgi$"
+  --with-details="names"     -- print detailed information about projects
+                    examples:   --with-details="datatool;test_hash"
   --with-install="DIR"       -- generate rules for installation into DIR directory
                     examples:   --with-install="/usr/CPP_toolkit"
 EOF
@@ -116,6 +119,9 @@ while [ $# != 0 ]; do
         project_targets="${tree_root}/$project_targets"
       fi
       ;; 
+    --with-details=*)
+      project_details=${1#*=}
+      ;; 
     --with-install=*)
       install_path=${1#*=}
       ;; 
@@ -145,6 +151,7 @@ CMAKE_ARGS="-DNCBI_EXPERIMENTAL=ON -G Xcode"
 CMAKE_ARGS="$CMAKE_ARGS -DNCBI_PTBCFG_PROJECT_LIST=$(Quote "${project_list}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TAGS=$(Quote "${project_tags}")"
 CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_PROJECT_TARGETS=$(Quote "${project_targets}")"
+CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_VERBOSE_PROJECTS=$(Quote "${project_details}")"
 if [ -n "$install_path" ]; then
   CMAKE_ARGS="$CMAKE_ARGS  -DNCBI_PTBCFG_INSTALL_PATH=$(Quote "${install_path}")"
 fi
@@ -166,6 +173,6 @@ fi
 cd ${tree_root}/${build_root}/build 
 
 
-echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "${tree_root}/src"
+#echo Running "${CMAKE_CMD}" ${CMAKE_ARGS} "${tree_root}/src"
 eval "${CMAKE_CMD}" ${CMAKE_ARGS}  "${tree_root}/src"
 cd ${initial_dir}

@@ -3,6 +3,7 @@ setlocal
 REM #########################################################################
 REM  $Id$
 REM  Configure NCBI C++ toolkit for Visual Studio using CMake build system.
+REM  Author: Andrei Gourianov, gouriano@ncbi
 REM #########################################################################
 
 set initial_dir=%CD%
@@ -28,6 +29,7 @@ set VISUAL_STUDIO=2017
 
 goto :RUN
 REM #########################################################################
+REM when specifying path, both "/" and "\" are allowed
 
 :USAGE
 echo USAGE:
@@ -48,6 +50,8 @@ echo   --with-tags="tags"      -- build projects which have allowed tags only
 echo                  examples:   --with-tags="*;-test"
 echo   --with-targets="names"  -- build projects which have allowed names only
 echo                  examples:   --with-targets="datatool;xcgi$"
+echo   --with-details="names"  -- print detailed information about projects
+echo                  examples:   --with-details="datatool;test_hash"
 echo   --with-vs=N             -- use Visual Studio N generator 
 echo                  examples:   --with-vs=2017  (default)
 echo                              --with-vs=2015
@@ -89,30 +93,34 @@ goto :eof
 REM #########################################################################
 REM parse arguments
 
+set do_help=
 set unknown=
-set dest=
 :PARSEARGS
 if "%~1"=="" goto :ENDPARSEARGS
-if "%dest%"=="lst"                      (set project_list=%~1&  set dest=& goto :CONTINUEPARSEARGS)
-if "%dest%"=="tag"                      (set project_tags=%~1&  set dest=& goto :CONTINUEPARSEARGS)
-if "%dest%"=="nam"                      (set project_targets=%~1&  set dest=& goto :CONTINUEPARSEARGS)
-if "%dest%"=="vs"                       (set VISUAL_STUDIO=%~1& set dest=& goto :CONTINUEPARSEARGS)
-if "%dest%"=="ins"                      (set INSTALL_PATH=%~1&  set dest=& goto :CONTINUEPARSEARGS)
-if "%dest%"=="gen"                      (set generator=%~1&     set dest=& goto :CONTINUEPARSEARGS)
-if "%1"=="--help"                       (call :USAGE&       exit /b 0)
-if "%1"=="--without-dll"                (set BUILD_SHARED_LIBS=OFF&  goto :CONTINUEPARSEARGS)
-if "%1"=="--with-dll"                   (set BUILD_SHARED_LIBS=ON&   goto :CONTINUEPARSEARGS)
-if "%1"=="--with-projects"              (set dest=lst&               goto :CONTINUEPARSEARGS)
-if "%1"=="--with-tags"                  (set dest=tag&               goto :CONTINUEPARSEARGS)
-if "%1"=="--with-targets"               (set dest=nam&               goto :CONTINUEPARSEARGS)
-if "%1"=="--with-vs"                    (set dest=vs&                goto :CONTINUEPARSEARGS)
-if "%1"=="--with-install"               (set dest=ins&               goto :CONTINUEPARSEARGS)
-if "%1"=="--with-generator"             (set dest=gen&               goto :CONTINUEPARSEARGS)
+if "%1"=="--help"              (set do_help=YES&       goto :CONTINUEPARSEARGS)
+if "%1"=="-help"               (set do_help=YES&       goto :CONTINUEPARSEARGS)
+if "%1"=="help"                (set do_help=YES&       goto :CONTINUEPARSEARGS)
+if "%1"=="--rootdir"           (set tree_root=%~2&         shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--caller"            (set script_name=%~2&       shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--without-dll"       (set BUILD_SHARED_LIBS=OFF&        goto :CONTINUEPARSEARGS)
+if "%1"=="--with-dll"          (set BUILD_SHARED_LIBS=ON&         goto :CONTINUEPARSEARGS)
+if "%1"=="--with-projects"     (set project_list=%~2&      shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-tags"         (set project_tags=%~2&      shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-targets"      (set project_targets=%~2&   shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-details"      (set project_details=%~2&   shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-vs"           (set VISUAL_STUDIO=%~2&     shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-install"      (set INSTALL_PATH=%~2&      shift& goto :CONTINUEPARSEARGS)
+if "%1"=="--with-generator"    (set generator=%~2&         shift& goto :CONTINUEPARSEARGS)
 set unknown=%unknown% %1
 :CONTINUEPARSEARGS
 shift
 goto :PARSEARGS
 :ENDPARSEARGS
+
+if not "%do_help%"=="" (
+  call :USAGE
+  goto :DONE
+)
 
 if not "%unknown%"=="" (
   call :ERROR unknown option: %unknown%
@@ -158,6 +166,7 @@ if not "%generator%"=="" (
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_LIST="%project_list%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TAGS="%project_tags%"
 set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_PROJECT_TARGETS="%project_targets%"
+set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_VERBOSE_PROJECTS="%project_details%"
 if not "%INSTALL_PATH%"=="" (
   set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_PTBCFG_INSTALL_PATH="%INSTALL_PATH%"
 )
@@ -178,11 +187,7 @@ if not exist "%tree_root%\%build_root%\build" (
 )
 cd "%tree_root%\%build_root%\build"
 
-REM if exist "CMakeCache.txt" (
-REM   del CMakeCache.txt
-REM )
-
-echo Running "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
+REM echo Running "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
 "%CMAKE_CMD%" %CMAKE_ARGS% "%tree_root%\src"
 
 :DONE
