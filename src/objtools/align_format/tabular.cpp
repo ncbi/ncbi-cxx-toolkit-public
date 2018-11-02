@@ -113,15 +113,15 @@ void CBlastTabularInfo::x_ResetFields()
     m_QueryCovSeqalign = -1;
 }
 
-void CBlastTabularInfo::x_SetFieldDelimiter(EFieldDelimiter delim)
+void CBlastTabularInfo::x_SetFieldDelimiter(EFieldDelimiter delim,string customDelim)
 {
     switch (delim) {
-    case eSpace: m_FieldDelimiter = ' '; break;
-    case eComma: m_FieldDelimiter = ','; break;
-    default: m_FieldDelimiter = '\t'; break; // eTab or unsupported value
+    case eSpace: m_FieldDelimiter = " "; break;
+    case eComma: m_FieldDelimiter = ","; break;
+    case eCustom: m_FieldDelimiter = customDelim; break;
+    default: m_FieldDelimiter = "\t"; break; // eTab or unsupported value
     }
 }
-
 
 void CBlastTabularInfo::x_CheckTaxDB()
 {
