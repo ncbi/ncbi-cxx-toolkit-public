@@ -769,7 +769,7 @@ s_CollectClientConfigKeys(SSpecParamsSet* cur_set,
     }
 }
 
-void CNCServer::WriteAppSetup(CSrvSocketTask& task, const TStringMap& client)
+void CNCServer::WriteAppSetup(TNCBufferType& task, const TStringMap& client)
 {
     set<string> all_ports;
     ITERATE(TPortsList, it, s_Ports) {
@@ -836,7 +836,7 @@ void CNCServer::WriteAppSetup(CSrvSocketTask& task, const TStringMap& client)
     task.WriteText("]");
 }
 
-void CNCServer::WriteAppSetup(CSrvSocketTask& task, const SNCSpecificParams* params)
+void CNCServer::WriteAppSetup(TNCBufferType& task, const SNCSpecificParams* params)
 {
     map<string,string> source(params->source);
     map<string,string> keys(params->keys);

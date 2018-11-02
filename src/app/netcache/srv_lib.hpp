@@ -598,4 +598,11 @@ public:
 
 END_NCBI_SCOPE
 
+inline uint64_t CityHash64(char const *,size_t) {return 0;}
+inline uint32_t CityHash32(char const *,size_t) {return 0;}
+namespace farmhash {
+    inline uint64_t Hash64(char const *,size_t) {return 0;}
+    inline uint32_t Hash32(char const *,size_t) {return 0;}
+}
+
 #endif /* NETCACHE__SRV_LIB__HPP */

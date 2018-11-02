@@ -4034,8 +4034,13 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
             if (params.find("cache") != params.end()) {
                 client["cache"] = params["cache"];
             }
-            CNCServer::WriteAppSetup(*this, client);
-//        } else if (section == "task_server") {
+            Flush();
+            m_SendBuff.reset(new TNCBufferType());
+            CNCServer::WriteAppSetup(*m_SendBuff, client);
+            m_SendBuff->WriteText("\n}}\nOK:END\n");
+            x_SetFlag(fNoReplyOnFinish);
+            m_SendPos = 0;
+            return &CNCMessageHandler::x_WriteSendBuff;
         } else if (section == "storage") {
             CNCBlobStorage::WriteSetup(*this);
         } else if (section == "mirror") {
