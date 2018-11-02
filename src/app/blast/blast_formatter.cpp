@@ -318,7 +318,10 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
                            opts.GetMBIndexLoaded(),
                            NULL, NULL,
                            GetCmdlineArgs(GetArguments()));
-    formatter.SetLineLength(fmt_args.GetLineLength());
+    formatter.SetLineLength(fmt_args.GetLineLength());    
+    formatter.SetHitsSortOption(fmt_args.GetHitsSortOption());
+    formatter.SetHspsSortOption(fmt_args.GetHspsSortOption());
+    formatter.SetCustomDelimiter(fmt_args.GetCustomDelimiter());
     if(UseXInclude(fmt_args, args[kArgOutput].AsString())) {
        	formatter.SetBaseFile(args[kArgOutput].AsString());
     }
