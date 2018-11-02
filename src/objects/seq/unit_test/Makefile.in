@@ -6,7 +6,7 @@ APP_PROJ = seq_id_unit_test seqalign_unit_test mapper_unit_test \
        unit_test_so_map
 PROJ_TAG = test
 
-REQUIRES = Boost.Test.Included
+REQUIRES = Boost.Test.Included objects -Cygwin
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

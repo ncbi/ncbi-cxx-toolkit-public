@@ -10,8 +10,6 @@ LIB = $(SEQ_LIBS) pub medline biblio general xser xutil test_boost xncbi
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-REQUIRES = objects
-
 CHECK_CMD =
 
 WATCHERS = grichenk
