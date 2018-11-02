@@ -1080,7 +1080,7 @@ public:
         } else {
             m_DfltNumAlignments = align_format::kDfltArgNumAlignments;
             m_DfltNumDescriptions = align_format::kDfltArgNumDescriptions;
-        }
+        }        
     };
 
     /** Interface method, \sa IBlastCmdLineArgs::SetArgumentDescriptions */
@@ -1100,7 +1100,8 @@ public:
     virtual void
     ParseFormattingString(const CArgs& args,
                           EOutputFormat& fmt_type,
-                          string& custom_fmt_spec) const;
+                          string& custom_fmt_spec,
+                          string& custom_delim) const;
 
     /// Get the choice of formatted output
     EOutputFormat GetFormattedOutputChoice() const {
@@ -1156,6 +1157,8 @@ public:
     int GetHspsSortOption() const {
         return m_HspsSortOption;
     }
+    string GetCustomDelimiter(){return m_CustomDelim;}
+    
 protected:
     EOutputFormat m_OutputFormat;   ///< Choice of formatting output
     bool m_ShowGis;                 ///< Display NCBI GIs?
@@ -1172,6 +1175,7 @@ protected:
     EFormatFlags m_FormatFlags;
     int m_HitsSortOption;
     int m_HspsSortOption;
+    string m_CustomDelim;
 };
 
 /// Formatting args for magicblast advertising only SAM and fast tabular
