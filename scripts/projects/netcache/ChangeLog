@@ -259,3 +259,7 @@ September 17, 2018
 version 6.14.5 (CXX-10242)
 Added printing immediate client IP on request start.
 Lowered priorities of blob maintenance tasks, made them configurable.
+
+November 02, 2018
+version 6.14.6 (CXX-10317)
+When writing app setup, changed code to avoid buffer overflow.
