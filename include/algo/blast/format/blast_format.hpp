@@ -317,6 +317,8 @@ public:
     void SetAlignSeqList(string alignSeqList) {m_AlignSeqList = alignSeqList;}
     void SetHitsSortOption(int hitsSortOption) {m_HitsSortOption = hitsSortOption;}
     void SetHspsSortOption(int hspsSortOption) {m_HspsSortOption = hspsSortOption;}
+    void SetCustomDelimiter(string customDelim) {m_CustomDelim = customDelim;}
+    
     
 
     static void PrintArchive(CRef<objects::CBlast4_archive> archive,
@@ -416,6 +418,7 @@ private:
 
     int m_HitsSortOption;
     int m_HspsSortOption;
+    string m_CustomDelim;
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]
