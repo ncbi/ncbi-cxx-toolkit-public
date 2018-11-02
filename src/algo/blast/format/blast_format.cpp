@@ -748,11 +748,14 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
     if (m_FormatType == CFormattingArgs::eTabular ||
         m_FormatType == CFormattingArgs::eTabularWithComments ||
         m_FormatType == CFormattingArgs::eCommaSeparatedValues) {
-        const CBlastTabularInfo::EFieldDelimiter kDelim =
+        const CBlastTabularInfo::EFieldDelimiter kDelim = 
             (m_FormatType == CFormattingArgs::eCommaSeparatedValues
              ? CBlastTabularInfo::eComma : CBlastTabularInfo::eTab);
-
+        
         CBlastTabularInfo tabinfo(m_Outfile, m_CustomOutputFormatSpec, kDelim);
+        if(!m_CustomDelim.empty()) {
+            tabinfo.SetCustomDelim(m_CustomDelim);
+        }
         tabinfo.SetParseLocalIds(m_BelieveQuery);
         if((m_IsBl2Seq && (!m_BelieveQuery))|| m_IsRemoteSearch) {
         	tabinfo.SetParseSubjectDefline(true);
