@@ -62,7 +62,7 @@ fi
 
 # -- kill the process
 echo
-echo "Maximum execution time of $1 seconds is exceeded"
+echo "Maximum execution time of $1 second(s) is exceeded"
 echo
 
 $kill $pid > /dev/null 2>&1
