@@ -168,6 +168,16 @@
 
 #elif defined(NCBI_OS_UNIX)
 
+#  ifdef NCBI_OS_CYGWIN
+     /* These do not work correctly as of cygwin 2.11.1 */
+#    ifdef   SOCK_NONBLOCK
+#      undef SOCK_NONBLOCK
+#    endif /*SOCK_NONBLOCK*/
+#    ifdef   SOCK_CLOEXEC
+#      undef SOCK_CLOEXEC
+#    endif /*SOCK_CLOEXEC*/
+#  endif /*NCBI_OS_CYGWIN*/
+
 #  define SOCK_INVALID          (-1)
 #  define SOCK_ERRNO            errno
 #  define SOCK_NFDS(s)          ((s) + 1)

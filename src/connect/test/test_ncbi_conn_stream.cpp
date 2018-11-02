@@ -165,7 +165,7 @@ int CNCBITestConnStreamApp::Run(void)
     m = (rand() & 0x00FF) + 1;
     size = 0;
     const IOS_BASE::iostate ex = IOS_BASE::badbit;
-    for (n = 0;  n < m;  n++) {
+    for (n = 0;  n < m;  ++n) {
         CConn_MemoryStream* ms = 0;
         string data, back;
         size_t sz = 0;
@@ -174,11 +174,11 @@ int CNCBITestConnStreamApp::Run(void)
                  << (int) m << " start");
 #endif
         k = (rand() & 0x00FF) + 1;
-        for (i = 0;  i < k;  i++) {
+        for (i = 0;  i < k;  ++i) {
             l = (rand() & 0x00FF) + 1;
             string bit;
             bit.resize(l);
-            for (j = 0;  j < l;  j++) {
+            for (j = 0;  j < l;  ++j) {
                 bit[j] = "0123456789"[rand() % 10];
             }
 #if 0
@@ -250,9 +250,10 @@ int CNCBITestConnStreamApp::Run(void)
             } catch (IOS_BASE::failure& ) {
                 state = ms->rdstate();
             }
-#if defined(NCBI_COMPILER_GCC)
-#  if NCBI_COMPILER_VERSION > 500  &&  NCBI_COMPILER_VERSION < 600      \
-      &&  (!defined(_GLIBCXX_USE_CXX11_ABI)  ||  _GLIBCXX_USE_CXX11_ABI != 0)
+#ifdef NCBI_COMPILER_GCC
+#  if defined(NCBI_OS_CYGWIN)                                           \
+    ||  (NCBI_COMPILER_VERSION > 500  &&  NCBI_COMPILER_VERSION < 600   \
+         &&  (!defined(_GLIBCXX_USE_CXX11_ABI) || _GLIBCXX_USE_CXX11_ABI != 0))
             catch (...) {
                 // WORKAROUND:
                 //   At least GCC 5.1.0 and 5.3.0 and using new ABI:
@@ -262,7 +263,7 @@ int CNCBITestConnStreamApp::Run(void)
                 state = ms->rdstate();
             }
 #  endif
-#endif
+#endif /*NCBI_COMPILER_GCC*/
             _ASSERT(state & IOS_BASE::eofbit);
             SetDiagTrace(eDT_Enable);
             ms->clear();
@@ -271,7 +272,7 @@ int CNCBITestConnStreamApp::Run(void)
 #if 0
         LOG_POST(Info << "  Data size=" << (unsigned long) data.size());
         LOG_POST(Info << "  Back size=" << (unsigned long) back.size());
-        for (i = 0;  i < data.size()  &&  i < back.size(); i++) {
+        for (i = 0;  i < data.size()  &&  i < back.size();  ++i) {
             if (data[i] != back[i]) {
                 LOG_POST("  Data differ at pos " << (unsigned long) i
                          << ": '" << data[i] << "' vs '" << back[i] << '\'');
