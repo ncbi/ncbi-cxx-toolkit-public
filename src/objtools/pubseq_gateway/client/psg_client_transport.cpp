@@ -1201,7 +1201,7 @@ void http2_session::process_requests()
                     return;
                 }
 
-                const auto authority = m_Address.AsString();
+                const auto& authority = m_Address.AsString();
                 const auto& path = req->get_full_path();
                 nghttp2_nv hdrs[] = {
                     MAKE_NV2(":method",    "GET"),

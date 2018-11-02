@@ -106,7 +106,7 @@ class NCBI_XCONNECT_EXPORT CNetServer
 
         SAddress(unsigned h, unsigned short p);
         SAddress(string n, unsigned short p);
-        string AsString() const;
+        const string& AsString() const;
 
     private:
         mutable pair<unsigned, string> name;

@@ -483,7 +483,7 @@ private:
 
     std::unordered_map<int32_t, std::shared_ptr<http2_request>> m_requests;
 
-    CNetServer::SAddress m_Address;
+    const CNetServer::SAddress m_Address;
     std::vector<char> m_read_buf;
     std::atomic<bool> m_cancel_requested;
     std::set<pair<shared_ptr<SPSG_Reply>, std::shared_ptr<SPSG_Future>>> m_completion_list;

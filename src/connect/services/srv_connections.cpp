@@ -896,15 +896,15 @@ bool operator< (const CNetServer::SAddress& lhs, const CNetServer::SAddress& rhs
     return lhs.port < rhs.port;
 }
 
-string CNetServer::SAddress::AsString() const
+const string& CNetServer::SAddress::AsString() const
 {
     // Name was not looked up yet or host changed
     if (name.second.empty() || name.first != host) {
         name.first = host;
-        name.second = g_NetService_gethostnamebyaddr(host);
+        name.second = g_NetService_gethostnamebyaddr(host) + ':' + NStr::UIntToString(port);
     }
 
-    return name.second + ':' + NStr::UIntToString(port);
+    return name.second;
 }
 
 END_NCBI_SCOPE
