@@ -2571,26 +2571,42 @@ bool
 CFormattingArgs::ArchiveFormatRequested(const CArgs& args) const
 {
     EOutputFormat output_fmt;
-    string ignore;
-    ParseFormattingString(args, output_fmt, ignore);
+    string ignore1, ignore2;
+    ParseFormattingString(args, output_fmt, ignore1, ignore2);
     return (output_fmt == eArchiveFormat ? true : false);
 }
 
 void
 CFormattingArgs::ParseFormattingString(const CArgs& args,
                                        EOutputFormat& fmt_type,
-                                       string& custom_fmt_spec) const
+                                       string& custom_fmt_spec,
+                                       string& custom_delim) const
 {
     custom_fmt_spec.clear();
     if (args[kArgOutputFormat]) {
         string fmt_choice =
             NStr::TruncateSpaces(args[kArgOutputFormat].AsString());
-        string::size_type pos;
+        string::size_type pos;                            
         if ( (pos = fmt_choice.find_first_of(' ')) != string::npos) {
             custom_fmt_spec.assign(fmt_choice, pos+1,
                                    fmt_choice.size()-(pos+1));
             fmt_choice.erase(pos);
-        }
+        }       
+        if(!custom_fmt_spec.empty()) {            
+            if(NStr::StartsWith(custom_fmt_spec, "delim")) {
+                vector <string> tokens;
+                NStr::Split(custom_fmt_spec," ",tokens);
+                if(tokens.size() > 0) {
+                    string tag;
+                    bool isValid = NStr::SplitInTwo(tokens[0],"=",tag,custom_delim);
+                    if(!isValid) {
+                        string msg("Delimiter format is invalid. Valid format is delim=<delimiter value>");
+                        NCBI_THROW(CInputException, eInvalidInput, msg);
+                    }                    
+                    custom_fmt_spec = NStr::Replace(custom_fmt_spec,tokens[0],"");
+                }                
+            }            
+        }        
         int val = 0;
         try { val = NStr::StringToInt(fmt_choice); }
         catch (const CStringException&) {   // probably a conversion error
@@ -2622,7 +2638,7 @@ void
 CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
                                          CBlastOptions& opt)
 {
-    ParseFormattingString(args, m_OutputFormat, m_CustomOutputFormatSpec);
+    ParseFormattingString(args, m_OutputFormat, m_CustomOutputFormatSpec,m_CustomDelim);
     if((m_OutputFormat == eSAM) && !(m_FormatFlags & eIsSAM) ){
     		NCBI_THROW(CInputException, eInvalidInput,
     		                        "SAM format is only applicable to blastn" );
