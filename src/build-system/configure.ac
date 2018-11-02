@@ -1798,6 +1798,8 @@ case "$host_os:$compiler" in
              [ncbi_cv_prog_cc_wl_rpath=yes], [ncbi_cv_prog_cc_wl_rpath=no])
           LDFLAGS=$orig_LDFLAGS])
       ;;
+   cygwin* )
+      ;;
    *:GCC | *:ICC )
       AC_CACHE_CHECK([whether $CC has an option to export all symbols],
          ncbi_cv_prog_cc_export_all,

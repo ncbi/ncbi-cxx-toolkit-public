@@ -8914,6 +8914,8 @@ fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_prog_cc_wl_rpath" >&5
 echo "${ECHO_T}$ncbi_cv_prog_cc_wl_rpath" >&6; }
       ;;
+   cygwin* )
+      ;;
    *:GCC | *:ICC )
       { echo "$as_me:$LINENO: checking whether $CC has an option to export all symbols" >&5
 echo $ECHO_N "checking whether $CC has an option to export all symbols... $ECHO_C" >&6; }
