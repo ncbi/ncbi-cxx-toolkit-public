@@ -66,7 +66,8 @@ public:
     enum EFieldDelimiter {
         eTab = 0, ///< Tab
         eSpace,   ///< Space
-        eComma    ///< Comma
+        eComma,   ///< Comma
+        eCustom   ///<Custom
     };
 
     /// Constructor
@@ -131,7 +132,9 @@ public:
     int SetFields(const objects::CSeq_align& sal, 
                           objects::CScope& scope, 
                           CNcbiMatrix<int>* matrix=0);
-
+    void SetCustomDelim(string customDelim) {
+        x_SetFieldDelimiter(eCustom,customDelim);    
+    }
     /// Print one line of tabular output
     virtual void Print(void);
     /// Print the tabular output header
@@ -203,7 +206,7 @@ protected:
     void x_ResetFields(void);
     /// Set the tabular fields delimiter.
     /// @param delim Which delimiter to use
-    void x_SetFieldDelimiter(EFieldDelimiter delim);
+    void x_SetFieldDelimiter(EFieldDelimiter delim, string customDelim = "");
     /// Print the names of all supported fields
     void x_PrintFieldNames(void);
     /// Print the value of a given field
@@ -307,7 +310,7 @@ protected:
     void x_CheckTaxDB();
 
     CNcbiOstream& m_Ostream; ///< Stream to write output to
-    char m_FieldDelimiter;   ///< Delimiter character for fields to print.
+    string m_FieldDelimiter;   ///< Delimiter character for fields to print.
     string m_QuerySeq;       ///< Aligned part of the query sequence
     string m_SubjectSeq;     ///< Aligned part of the subject sequence
     int m_QueryStart;        ///< Starting offset in query
@@ -365,6 +368,7 @@ private:
     int m_DbGeneticCode;
 
     TSeqRange m_QueryRange;
+    string m_CustomDelim;
 };
 
 
