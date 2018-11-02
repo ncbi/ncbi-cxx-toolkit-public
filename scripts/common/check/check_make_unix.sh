@@ -179,7 +179,7 @@ no_report_err=true
 . \${root_dir}/scripts/common/common.sh
 
 
-##  Printout USAGE info and exit
+# Printout USAGE info and exit
 
 Usage() {
    cat <<EOF_usage
@@ -208,12 +208,9 @@ if test \$# -ne 1; then
 fi
 
 
-###  What to do (cmd-line arg)
+# Action
 
 method="\$1"
-
-
-### Action
 
 case "\$method" in
 #----------------------------------------------------------
@@ -291,17 +288,6 @@ case "\$method" in
 esac
 
 
-# Check for automated build
-is_automated=false
-is_db_load=false
-if test -n "\$NCBI_AUTOMATED_BUILD"; then
-   is_automated=true
-   if test -n "\$NCBI_CHECK_DB_LOAD"; then
-      is_db_load=true
-   fi
-fi
-
-
 #//////////////////////////////////////////////////////////////////////////
 
 
@@ -336,7 +322,6 @@ if test -z "\$NCBI_TEST_DATA_PATH"; then
     NCBI_TEST_DATA_PATH=\$NCBI_TEST_DATA
     export NCBI_TEST_DATA_PATH
 fi
-
 
 # Valgrind configuration
 VALGRIND_SUP="\${root_dir}/scripts/common/check/valgrind.supp"
@@ -436,7 +421,28 @@ EOF
 fi
 
 
+#//////////////////////////////////////////////////////////////////////////
+
 cat >> $x_out <<EOF
+
+# Check for automated build
+is_automated=false
+is_db_load=false
+if test -n "\$NCBI_AUTOMATED_BUILD"; then
+   is_automated=true
+   if test -n "\$NCBI_CHECK_DB_LOAD"; then
+      is_db_load=true
+   fi
+fi
+
+# Check for ncbi_applog
+have_ncbi_applog=false
+if (ncbi_applog) >/dev/null 2>&1; then
+   have_ncbi_applog=true
+fi
+
+#//////////////////////////////////////////////////////////////////////////
+
 
 # Run
 count_ok=0
@@ -465,7 +471,7 @@ if test "\$NCBI_CHECK_SETLIMITS" != "0"; then
 fi
 
 
-##  Run one test
+# Run one test
 
 RunTest()
 {
@@ -611,7 +617,9 @@ RunTest()
                 logfile=\$NCBI_CONFIG__LOG__FILE
                 NCBI_CONFIG__LOG__FILE=
                 export NCBI_CONFIG__LOG__FILE
-                eval "\`ncbi_applog generate -phid -sid -format=shell-export | tr -d '\r'\`"
+                if \$have_ncbi_applog; then
+                   eval "\`ncbi_applog generate -phid -sid -format=shell-export | tr -d '\r'\`"
+                fi
                 if \$is_run && \$is_db_load; then
                    # Use generated PHID for test statistics, and sub-PHID.1 for test itself
                    saved_phid=\$NCBI_LOG_HIT_ID
