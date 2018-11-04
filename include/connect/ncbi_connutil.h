@@ -509,7 +509,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ParseURL
 
 
 /* Setup standard arguments:  service(as passed), address, and platform.
- * Also setup user-agent HTTP header using CORE_GetAppName().
+ * Also setup the User-Agent HTTP header using CORE_GetAppName().
  * Return non-zero on success; zero on error.
  * @sa
  *  CORE_GetAppName, CORE_GetPlatform
@@ -578,19 +578,18 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  * A protocol version "1.x" is selected by the "req_method"'s value, and
  * can be either 1.0 or 1.1.  METHOD can be any of those of EReqMethod.
  *
- * @note Unlike deprecated URL_Connect(), this call never encodes any "args",
- * and never auto-inserts any "Host:" tag into the headers (unless provided by
- * the "user_header" argument).
+ * @note that unlike the deprecated URL_Connect(), this call never encodes any
+ * "args", and never auto-inserts any "Host:" tag into the headers (unless
+ * provided by the "user_header" argument).
  *
- * Request method "eReqMethod_Any" selects an appropriate method depending on
- * the value of "content_length":  results in GET when no content is expected
- * ("content_length"==0), and POST when "content_length" provided non-zero.
+ * Request method "eReqMethod_Any/11" selects an appropriate method depending
+ * on the value of "content_length":  results in GET when no content is
+ * expected ("content_length"==0), and POST when "content_length" is non-zero.
  *
  * The "content_length" parameter must specify the exact(!) amount of data
  * that is going to be sent (0 if none) to HTTP server.  The "Content-Length"
- * header gets always added to all legal requests (but GET / HEAD / CONNECT),
- * whether or not the data payload has any defined protocol semantics
- * (e.g. for DELETE / TRACE / OPTIONS).
+ * header with the specified non-zero value gets added to all legal requests
+ * (but GET / HEAD / CONNECT).
  *
  * Alternatively, "content_length" can specify the amount of initial data to be
  * sent with a CONNECT request into the established tunnel, and held by the
@@ -614,14 +613,14 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  * If "*sock" is non-NULL, the call _does not_ create a new socket, but builds
  * an HTTP(S) data stream on top of the passed socket.  Regardless of the
  * completion status, the original SOCK handle will be closed as if with
- * SOCK_Close(), but in case of success, a new SOCK handle will be returned
- * via the same last parameter, yet in case of errors, the last parameter will
- * be updated to read as NULL.
+ * SOCK_Destroy().  In case of success, a new SOCK handle will be returned via
+ * the same last parameter;  yet in case of errors, the last parameter will be
+ * updated to read as NULL.
  *
  * On success, return eIO_Success and non-NULL handle of a socket via the last
  * parameter.
  *
- * The returned socket must be exipicitly closed by "SOCK_Close()" when no
+ * The returned socket must be exipicitly closed by "SOCK_Close[Ex]()" when no
  * longer needed.
  *
  * NOTE: The returned socket may not be immediately readable/writeable if
@@ -630,9 +629,9 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  *       in the resultant socket.  It is responsibility of the application to
  *       analyze the actual socket state in this case (see "ncbi_socket.h").
  * @sa
- *  SOCK_Create, SOCK_CreateOnTop, SOCK_Wait, SOCK_Abort, SOCK_Close
+ *  SOCK_Create, SOCK_CreateOnTop, SOCK_Wait, SOCK_Status,
+ *  SOCK_Abort, SOCK_Destroy, SOCK_CloseEx
  */
-
 extern NCBI_XCONNECT_EXPORT EIO_Status URL_ConnectEx
 (const char*     host,            /* must be provided                        */
  unsigned short  port,            /* may be 0, defaulted to either 80 or 443 */
@@ -648,10 +647,11 @@ extern NCBI_XCONNECT_EXPORT EIO_Status URL_ConnectEx
  SOCK*           sock             /* returned socket (on eIO_Success only)   */
  );
 
+
 /* Equivalent to the above except that it returns a non-NULL socket handle
  * on success, and NULL on error without providing a reason for the failure.
  *
- * @note Only HTTP/1.0 methods can be used with this call.  For HTTP/1.1
+ * @note that only HTTP/1.0 methods can be used with this call.  For HTTP/1.1
  * see URL_ConnectEx().
  *
  * For GET/POST(or ANY) methods the call attempts to provide a "Host:" HTTP tag
@@ -664,7 +664,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status URL_ConnectEx
  *
  *    Host: host[:port]\r\n
  *
- * @note DO NOT USE THIS CALL!
+ * @warning DO NOT USE THIS CALL!
  *
  * CAUTION:  If requested, "args" can get encoded but will do that as a whole!
  *
