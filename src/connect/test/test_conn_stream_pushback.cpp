@@ -39,7 +39,8 @@
 
 #include "test_assert.h"  // This header must go last
 
-USING_NCBI_SCOPE;
+
+BEGIN_NCBI_SCOPE
 
 
 class CTestConnStreamPushbackApp : public CNcbiApplication
@@ -92,7 +93,18 @@ int CTestConnStreamPushbackApp::Run(void)
 }
 
 
+END_NCBI_SCOPE
+
+
 int main(int argc, char* argv[])
 {
+    USING_NCBI_SCOPE;
+
+#ifdef NCBI_OS_MSWIN
+    static char buf[4096];
+    cerr.rdbuf()->pubsetbuf(buf, sizeof(buf));
+    cerr.unsetf(std::ios_base::unitbuf);
+#endif /*NCBI_OS_MSWIN*/
+
     return CTestConnStreamPushbackApp().AppMain(argc, argv);
 }

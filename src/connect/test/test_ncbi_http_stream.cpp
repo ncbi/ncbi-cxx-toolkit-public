@@ -43,7 +43,7 @@
 #include "test_assert.h"  // This header must go last
 
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 
 static volatile bool s_Canceled = false;
@@ -158,10 +158,18 @@ int CNCBITestHttpStreamApp::Run(void)
 }
 
 
+END_NCBI_SCOPE
+
+
 int main(int argc, const char* argv[])
 {
+    USING_NCBI_SCOPE;
+
 #if   defined(NCBI_OS_MSWIN)
     SetConsoleCtrlHandler(s_Interrupt, TRUE);
+    static char buf[4096];
+    cerr.rdbuf()->pubsetbuf(buf, sizeof(buf));
+    cerr.unsetf(std::ios_base::unitbuf);
 #elif defined(NCBI_OS_UNIX)
     signal(SIGINT,  s_Interrupt);
     signal(SIGTERM, s_Interrupt);

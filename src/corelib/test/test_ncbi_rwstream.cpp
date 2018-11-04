@@ -37,7 +37,7 @@
 #include <corelib/rwstream.hpp>
 #include <stdlib.h>                // atoi() & rand()
 
-#include <common/test_assert.h>  /* This header must go last */
+#include <common/test_assert.h>  // This header must go last
 
 
 BEGIN_NCBI_SCOPE
@@ -258,6 +258,12 @@ END_NCBI_SCOPE
 int main(int argc, char* argv[])
 {
     USING_NCBI_SCOPE;
+
+#ifdef NCBI_OS_MSWIN
+    static char x_buf[4096];
+    cerr.rdbuf()->pubsetbuf(x_buf, sizeof(x_buf));
+    cerr.unsetf(std::ios_base::unitbuf);
+#endif /*NCBI_OS_MSWIN*/
 
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);

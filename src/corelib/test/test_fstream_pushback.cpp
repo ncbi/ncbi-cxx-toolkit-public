@@ -35,8 +35,8 @@
 #include <corelib/ncbidiag.hpp>
 #include <corelib/test_mt.hpp>
 #include <stdio.h>                 // remove()
-/* This header must go last */
-#include <common/test_assert.h>
+
+#include <common/test_assert.h>  // This header must go last
 
 
 BEGIN_NCBI_SCOPE
@@ -85,6 +85,12 @@ END_NCBI_SCOPE
 int main(int argc, char* argv[])
 {
     USING_NCBI_SCOPE;
+
+#ifdef NCBI_OS_MSWIN
+    static char buf[4096];
+    cerr.rdbuf()->pubsetbuf(buf, sizeof(buf));
+    cerr.unsetf(std::ios_base::unitbuf);
+#endif /*NCBI_OS_MSWIN*/
 
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
