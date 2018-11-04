@@ -42,7 +42,7 @@
 
 int main(int argc, const char* argv[])
 {
-    int n;
+    int n, err = 0;
 
     CORE_SetLOGFormatFlags(fLOG_Short | fLOG_OmitNoteLevel);
     CORE_SetLOGFILE(stderr, 0/*no auto-close*/);
@@ -57,9 +57,10 @@ int main(int argc, const char* argv[])
         } else {
             CORE_LOGF(eLOG_Error,
                       ("%d: Cannot parse `%s'", n, argv[n]));
+            ++err;
         }
     }
 
     CORE_SetLOG(0);
-    return 0;
+    return err;
 }

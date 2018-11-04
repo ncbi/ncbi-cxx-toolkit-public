@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
     SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
     STimeout tmo = { 5, 0 };
-    EIO_Status status = Soaker(argv[1], "Hello", &tmo, &tmo);
+    EIO_Status status = Soaker(argv[1], "Hello\n", &tmo, &tmo);
     cout << "Status = " << IO_StatusStr(status) << endl;
 
     return !(status == eIO_Success);

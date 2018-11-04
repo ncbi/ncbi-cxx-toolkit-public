@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
                       | (service  &&  (!*service  ||  strpbrk(service, "?*"))
                          ? fSERV_Promiscuous : 0), 0, 0, 0.0,
                       NULL, NULL, 0, 0, NULL, NULL);
-    for (count = 0;  ; count++) {
+    for (count = 0;  ;  ++count) {
         SSERV_InfoCPtr info;
         char*          str;
         if (!(info = SERV_GetNextInfo(iter)))
