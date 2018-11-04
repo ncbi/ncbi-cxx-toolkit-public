@@ -144,12 +144,13 @@ int CNCBITestHttpStreamApp::Run(void)
 
     size_t i = 1;
     for (;;) {
-        NcbiStreamCopy(cout, http);
+        NcbiStreamCopy(NcbiCout, http);
+        NcbiCout << NcbiEndl;
         http.clear();
         if (i >= n)
             break;
         if (http.Status() == eIO_Interrupt)
-            break;
+            return 2;
         http.SetURL(args[++i].AsString());
     }
 
