@@ -262,7 +262,7 @@ int main(int argc, char* argv[])
 #ifdef NCBI_OS_MSWIN
     static char x_buf[4096];
     cerr.rdbuf()->pubsetbuf(x_buf, sizeof(x_buf));
-    cerr.unsetf(std::ios_base::unitbuf);
+    cerr.unsetf(ios_base::unitbuf);
 #endif /*NCBI_OS_MSWIN*/
 
     SetDiagTrace(eDT_Enable);

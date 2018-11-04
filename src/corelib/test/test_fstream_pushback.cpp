@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 #ifdef NCBI_OS_MSWIN
     static char buf[4096];
     cerr.rdbuf()->pubsetbuf(buf, sizeof(buf));
-    cerr.unsetf(std::ios_base::unitbuf);
+    cerr.unsetf(ios_base::unitbuf);
 #endif /*NCBI_OS_MSWIN*/
 
     SetDiagTrace(eDT_Enable);

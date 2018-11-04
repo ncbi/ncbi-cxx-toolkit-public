@@ -169,7 +169,7 @@ int main(int argc, const char* argv[])
     SetConsoleCtrlHandler(s_Interrupt, TRUE);
     static char buf[4096];
     cerr.rdbuf()->pubsetbuf(buf, sizeof(buf));
-    cerr.unsetf(std::ios_base::unitbuf);
+    cerr.unsetf(ios_base::unitbuf);
 #elif defined(NCBI_OS_UNIX)
     signal(SIGINT,  s_Interrupt);
     signal(SIGTERM, s_Interrupt);
