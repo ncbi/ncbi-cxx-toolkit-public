@@ -1738,7 +1738,7 @@ extern EIO_Status URL_ConnectEx
         !BUF_Write      (&buf, http, sizeof(kHttp[0]) - 1)         ||
 
         /* Content-Length: <content_length>\r\n */
-        (x_req_meth != eReqMethod_Connect  &&  content_length
+        (content_length  &&  x_req_meth != eReqMethod_Connect
          &&  !BUF_Write(&buf, temp, (size_t)
                         sprintf(temp, "Content-Length: %lu\r\n",
                                 (unsigned long) content_length)))  ||
@@ -1751,7 +1751,7 @@ extern EIO_Status URL_ConnectEx
         !BUF_Write(&buf, "\r\n\r\n", user_hdr_len ? 4 : 2)         ||
 
         /* tunneled data */
-        (x_req_meth == eReqMethod_Connect  &&  content_length
+        (content_length  &&  x_req_meth == eReqMethod_Connect
          &&  !BUF_Write(&buf, args, content_length))) {
         int x_errno = errno;
         if (port)
