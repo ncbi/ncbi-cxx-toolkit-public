@@ -750,6 +750,7 @@ static bool s_DumpStdStream(CNcbiIstream& std_stream, FILE* output_stream)
 int CGridCommandLineInterfaceApp::DumpJobInputOutput(
     const string& data_or_blob_id)
 {
+    const auto kStreamFlags = CRWStreambuf::fOwnReader | CRWStreambuf::fLeakExceptions;
     unique_ptr<IReader> reader;
 
     try {
@@ -778,11 +779,9 @@ int CGridCommandLineInterfaceApp::DumpJobInputOutput(
         CRemoteAppRequest request(m_NetCacheAPI);
 
         try {
-            auto_ptr<CNcbiIstream> input_stream(new CRStream(reader.release(),
-                    0, 0, CRWStreambuf::fOwnReader |
-                            CRWStreambuf::fLeakExceptions));
+            CRStream input_stream(reader.release(), 0, 0, kStreamFlags);
 
-            request.Deserialize(*input_stream);
+            request.Deserialize(input_stream);
         }
         catch (exception&) {
             fprintf(stderr, GRID_APP_NAME
@@ -797,12 +796,10 @@ int CGridCommandLineInterfaceApp::DumpJobInputOutput(
     }
 
     if (IsOptionSet(eRemoteAppStdOut) || IsOptionSet(eRemoteAppStdErr)) {
-        auto_ptr<CNcbiIstream> input_stream(new CRStream(reader.release(),
-                0, 0, CRWStreambuf::fOwnReader |
-                        CRWStreambuf::fLeakExceptions));
+        CRStream input_stream(reader.release(), 0, 0, kStreamFlags);
 
         CRemoteAppResult remote_app_result(m_NetCacheAPI);
-        remote_app_result.Receive(*input_stream);
+        remote_app_result.Receive(input_stream);
 
         CNcbiIstream& std_stream = IsOptionSet(eRemoteAppStdOut) ?
                 remote_app_result.GetStdOut() : remote_app_result.GetStdErr();
@@ -1078,9 +1075,8 @@ int CGridCommandLineInterfaceApp::Cmd_CommitJob()
     if (IsOptionSet(eJobOutputBlob))
         job.output = "K " + m_Opts.job_output_blob;
     else {
-        auto_ptr<IEmbeddedStreamWriter> writer(new CStringOrBlobStorageWriter(
-                m_NetScheduleAPI.GetServerParams().max_output_size,
-                m_NetCacheAPI, job.output));
+        const auto kMaxOutputSize = m_NetScheduleAPI.GetServerParams().max_output_size;
+        CStringOrBlobStorageWriter writer(kMaxOutputSize, m_NetCacheAPI, job.output);
 
         if (!IsOptionSet(eJobOutput)) {
             char buffer[IO_BUFFER_SIZE];
@@ -1092,12 +1088,12 @@ int CGridCommandLineInterfaceApp::Cmd_CommitJob()
                     NCBI_THROW(CIOException, eRead,
                             "Error while reading job output data");
                 }
-                if (writer->Write(buffer,
+                if (writer.Write(buffer,
                         (size_t) m_Opts.input_stream->gcount()) != eRW_Success)
                     goto ErrorExit;
             } while (!m_Opts.input_stream->eof());
         } else
-            if (writer->Write(m_Opts.job_output.data(),
+            if (writer.Write(m_Opts.job_output.data(),
                     m_Opts.job_output.length()) != eRW_Success)
                 goto ErrorExit;
     }
