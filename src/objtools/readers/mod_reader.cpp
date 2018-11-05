@@ -30,8 +30,19 @@
 * ===========================================================================
 */
 
+#include <ncbi_pch.hpp>
+#include <corelib/ncbistd.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 
-#include  <ncbi_pch.hpp>
+#include <map>
+#include <unordered_map>
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 
 class CModValueAttribs
 {
@@ -39,6 +50,7 @@ public:
     using TAttribs = map<string, string>;
 
     CModValueAttribs(const string& value); 
+    CModValueAttribs(const char* value);
 
     void SetValue(const string& value);
     void AddAttrib(const string& attrib_name, const string& attrib_value);
@@ -52,7 +64,12 @@ private:
     TAttribs mAdditionalAttribs;
 };
 
-CModValueAttribs(const string& value) : mValue(value) {}
+
+CModValueAttribs::CModValueAttribs(const string& value) : mValue(value) {}
+
+
+CModValueAttribs::CModValueAttribs(const char* value) : mValue(value) {}
+
 
 void CModValueAttribs::SetValue(const string& value) 
 {
@@ -75,13 +92,31 @@ const string& CModValueAttribs::GetValue(void) const
     return mValue;
 }
 
-const CModValue::TAttrings& GetAdditionalAttribs(void) const
+const CModValueAttribs::TAttribs& CModValueAttribs::GetAdditionalAttribs(void) const
 {
     return mAdditionalAttribs;
 }
 
 
 using TMods = multimap<string, CModValueAttribs>;
+
+
+class CModImporter 
+{
+
+public:
+    using TMods = multimap<string, CModValueAttribs>;
+
+    void Apply(const CSeqdesc& desc, TMods& mods);
+    void x_ImportUserObject(const CUser_object& user_object, TMods& mods);
+    void x_ImportDBLink(const CUser_object& user_object, TMods& mods);
+    void x_ImportGenomeProjects(const CUser_object& user_object, TMods& mods);
+    void x_ImportTpaAssembly(const CUser_object& user_object, TMods& mods);
+    void x_ImportBioSource(const CBioSource& biosource, TMods& mods);
+
+    bool x_IsUserType(const CUser_object& user_object, const string& type) const;
+};
+
 
 
 void CModImporter::Apply(const CSeqdesc& desc, TMods& mods)
@@ -94,6 +129,7 @@ void CModImporter::Apply(const CSeqdesc& desc, TMods& mods)
     if (desc.IsSource()) {
         x_ImportBioSource(desc.GetSource(), mods);
     }
+/*
     else
     if (desc.IsGenbank()) {
         x_ImportGBblock(desc.GetGenbank(), mods);
@@ -102,6 +138,7 @@ void CModImporter::Apply(const CSeqdesc& desc, TMods& mods)
     if (desc.IsMolinfo()) {
         x_ImportMolinfo(desc.GetMolinfo(), mods);
     }
+    */
 }
 
 
@@ -110,6 +147,7 @@ void CModImporter::x_ImportUserObject(const CUser_object& user_object, TMods& mo
     if (user_object.IsDBLink()) {
         x_ImportDBLink(user_object, mods);
     }
+/*
     else
     if (x_IsUserType(user_object, "GenomeProjectsDB")) {
         x_ImportGenomeProjects(user_object, mods);
@@ -118,43 +156,45 @@ void CModImporter::x_ImportUserObject(const CUser_object& user_object, TMods& mo
     if (x_IsUserType(user_object, "TpaAssembly")) {
         x_ImportTpaAssembly(user_object, mods);
     }
+    */
 }
 
-static unordered_map<CBioSource::EGenome, string> genome_enum_to_string 
-= { {CBioSource::eGenome_unknown : "unknown"},
-    {CBioSource::eGenome_genomic : "genomic" },
-    {CBioSource::eGenome_chloroplast : "chloroplast"},
-    {CBioSource::eGenome_kinetoplast : "kinetoplast"}, 
-    {CBioSource::eGenome_mitochondrion : "mitochondrial"},
-    {CBioSource::eGenome_plastid : "plastid"},
-    {CBioSource::eGenome_macronuclear : "macronuclear"},
-    {CBioSource::eGenome_extrachrom : "extrachromosomal"},
-    {CBioSource::eGenome_plasmid : "plasmid"},
-    {CBioSource::eGenome_transposon : "transposon"},
-    {CBioSource::eGenome_insertion_seq : "insertion sequence"},
-    {CBioSource::eGenome_cyanelle : "cyanelle"},
-    {CBioSource::eGenome_proviral : "provirus"},
-    {CBioSource::eGenome_virion : "virion"},
-    {CBioSource::eGenome_nucleomorph : "nucleomorph"},
-    {CBioSource::eGenome_apicoplast : "apicoplase"},
-    {CBioSource::eGenome_leucoplast : "leucoplast"},
-    {CBioSource::eGenome_proplastid : "proplastid"},
-    {CBioSource::eGenome_endogenous_virus : "endogenous virus"},
-    {CBioSource::eGenome_hydrogenosome : "hydrogenosome"},
-    {CBioSource::eGenome_chromosome : "chromosome" },
-    {CBioSource::eGenome_chromatophore : "chromatophore"},
-    {CBioSource::eGenome_plasmid_in_mitochondrion : "plasmid in mitochondrion"},
-    {CBioSource::eGenome_plasmid_in_plastid : "plasmid in plastid"}
+static unordered_map<CBioSource::EGenome, string, hash<underlying_type<CBioSource::EGenome>::type>> genome_enum_to_string 
+= { {CBioSource::eGenome_unknown, "unknown"},
+    {CBioSource::eGenome_genomic, "genomic" },
+    {CBioSource::eGenome_chloroplast, "chloroplast"},
+    {CBioSource::eGenome_kinetoplast, "kinetoplast"}, 
+    {CBioSource::eGenome_mitochondrion, "mitochondrial"},
+    {CBioSource::eGenome_plastid, "plastid"},
+    {CBioSource::eGenome_macronuclear, "macronuclear"},
+    {CBioSource::eGenome_extrachrom, "extrachromosomal"},
+    {CBioSource::eGenome_plasmid, "plasmid"},
+    {CBioSource::eGenome_transposon, "transposon"},
+    {CBioSource::eGenome_insertion_seq, "insertion sequence"},
+    {CBioSource::eGenome_cyanelle, "cyanelle"},
+    {CBioSource::eGenome_proviral, "provirus"},
+    {CBioSource::eGenome_virion, "virion"},
+    {CBioSource::eGenome_nucleomorph, "nucleomorph"},
+    {CBioSource::eGenome_apicoplast, "apicoplase"},
+    {CBioSource::eGenome_leucoplast, "leucoplast"},
+    {CBioSource::eGenome_proplastid, "proplastid"},
+    {CBioSource::eGenome_endogenous_virus, "endogenous virus"},
+    {CBioSource::eGenome_hydrogenosome, "hydrogenosome"},
+    {CBioSource::eGenome_chromosome, "chromosome" },
+    {CBioSource::eGenome_chromatophore, "chromatophore"},
+    {CBioSource::eGenome_plasmid_in_mitochondrion, "plasmid in mitochondrion"},
+    {CBioSource::eGenome_plasmid_in_plastid, "plasmid in plastid"}
 };
 
-static unordered_map<CBioSource::EOrigin, string> origin_enum_to_string
-= { {CBioSource::eOrigin_unknown : "unknown"},
-    {CBioSource::eOrigin_natural : "natural"},
-    {CBioSource::eOrigin_natmut : "natural mutant"},
-    {CBioSource::eOrigin_mut : "mutant"},
-    {CBioSource::eOrigin_artificial : "artificial"},
-    {CBioSource::eOrigin_synthetic : "synthetic"},
-    {CBioSource::eOrigin_other : "other"}
+
+static unordered_map<CBioSource::EOrigin, string, hash<underlying_type<CBioSource::EOrigin>::type>> origin_enum_to_string
+= { {CBioSource::eOrigin_unknown, "unknown"},
+    {CBioSource::eOrigin_natural, "natural"},
+    {CBioSource::eOrigin_natmut, "natural mutant"},
+    {CBioSource::eOrigin_mut, "mutant"},
+    {CBioSource::eOrigin_artificial, "artificial"},
+    {CBioSource::eOrigin_synthetic, "synthetic"},
+    {CBioSource::eOrigin_other, "other"}
 };
 
 
@@ -173,7 +213,6 @@ void CModImporter::x_ImportBioSource(const CBioSource& biosource, TMods& mods)
         const auto& origin_string = origin_enum_to_string[e_origin];
         mods.emplace("origin", origin_string);
     }
-
     if (biosource.IsSetIs_focus()) {
         mods.emplace("focus", "true");
     }
@@ -183,18 +222,18 @@ void CModImporter::x_ImportBioSource(const CBioSource& biosource, TMods& mods)
     if (biosource.IsSetSubtype()) {
         for (const auto& pSubSource : biosource.GetSubtype()) {
             if (pSubSource) {
-                x_ImportSubSource(*pSubSource, mods);
+  //              x_ImportSubSource(*pSubSource, mods);
             }
         }
     }
 
-    x_ImportOrgRef(biosource.GetOrg(), mods);
+  //  x_ImportOrgRef(biosource.GetOrg(), mods);
 }
 
-
+/*
 void CModImporter::x_ImportSubSource(const CSubSource& subsource, TMods& mods)
 {
-    statuc const auto& subsource_enum_to_name;
+    static const auto& subsource_enum_to_name;
     const auto& subtype = subsource_enum_to_name[org_mod.GetSubtype()];
     const auto& subname = subsource.GetSubname();
 }
@@ -313,7 +352,7 @@ void CModImporter::x_ImportMolInfo(const CMolinfo& mol_info, TMods& mods)
         mods.emplace("completeness", completeness);
     }
 }
-
+*/
 
 void CModImporter::x_ImportDBLink(const CUser_object& user_object, TMods& mods) 
 {
@@ -322,9 +361,9 @@ void CModImporter::x_ImportDBLink(const CUser_object& user_object, TMods& mods)
     }
 
     static const map<string,string> label_to_mod_name =
-    {{"BioProject" : "bioproject"},
-     {"BioSample" : "biosample"},
-     {"Sequence Read Archive" : "sra"}};
+    {{"BioProject" ,"bioproject"},
+     {"BioSample" , "biosample"},
+     {"Sequence Read Archive" , "sra"}};
 
 
     if (user_object.IsSetData()) {
@@ -337,8 +376,7 @@ void CModImporter::x_ImportDBLink(const CUser_object& user_object, TMods& mods)
                 if (it != label_to_mod_name.end()) {
                     string vals = "";
                     size_t index = 0;
-                    for (const auto& val : pField->GetData().GetStrs()) {
-                        
+                    for (const auto& val : pUserField->GetData().GetStrs()) {
                         if (index > 0) {
                             vals += ",";
                         }
@@ -352,8 +390,26 @@ void CModImporter::x_ImportDBLink(const CUser_object& user_object, TMods& mods)
 }
 
 
+void CModImporter::x_ImportGenomeProjects(const CUser_object& user_object, TMods& mods)
+{
+}
 
 
+void CModImporter::x_ImportTpaAssembly(const CUser_object& user_object, TMods& mods)
+{
+}
+
+
+bool CModImporter::x_IsUserType(const CUser_object& user_object, const string& type) const
+{
+    return (user_object.IsSetType() &&
+            user_object.GetType().IsStr() &&
+            user_object.GetType().GetStr() == type);
+}
+
+
+END_SCOPE(objects)
+END_NCBI_SCOPE
 
 
 

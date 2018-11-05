@@ -18,6 +18,7 @@ SRC = read_util format_guess_ex \
       vcf_reader \
       best_feat_finder source_mod_parser fasta_exception agp_converter \
       ucscregion_reader struct_cmt_reader \
+      mod_reader \
       message_listener line_error
 
 
