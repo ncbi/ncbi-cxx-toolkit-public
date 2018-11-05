@@ -578,7 +578,7 @@ void CAutomationProc::SendWarning(const string& warn_msg,
     warning.AppendString(warn_msg);
     warning.AppendString(source->GetType());
     warning.AppendInteger(source->GetID());
-    m_MessageSender->SendMessage(warning);
+    m_MessageSender->OutputMessage(warning);
 }
 
 void CAutomationProc::SendError(const CTempString& error_message)
@@ -586,7 +586,7 @@ void CAutomationProc::SendError(const CTempString& error_message)
     CJsonNode error(CJsonNode::NewArrayNode());
     error.Append(m_ErrNode);
     error.AppendString(error_message);
-    m_MessageSender->SendMessage(error);
+    m_MessageSender->OutputMessage(error);
 }
 
 TAutomationObjectRef& CAutomationProc::ObjectIdToRef(TObjectID object_id)
@@ -609,7 +609,7 @@ public:
     {
     }
 
-    virtual void SendMessage(const CJsonNode& message);
+    virtual void OutputMessage(const CJsonNode& message);
 
 private:
     void SendOutputBuffer();
@@ -618,7 +618,7 @@ private:
     CPipe& m_Pipe;
 };
 
-void CMessageSender::SendMessage(const CJsonNode& message)
+void CMessageSender::OutputMessage(const CJsonNode& message)
 {
     if (!m_JSONWriter.WriteMessage(message))
         do
@@ -656,7 +656,7 @@ public:
 
     void DumpInputMessage(const CJsonNode& message);
 
-    virtual void SendMessage(const CJsonNode& message);
+    virtual void OutputMessage(const CJsonNode& message);
 
 private:
     IMessageSender* m_ActualSender;
@@ -695,14 +695,14 @@ void CMessageDumperSender::DumpInputMessage(const CJsonNode& message)
     fflush(m_ProtocolDumpFile);
 }
 
-void CMessageDumperSender::SendMessage(const CJsonNode& message)
+void CMessageDumperSender::OutputMessage(const CJsonNode& message)
 {
     fprintf(m_ProtocolDumpFile, m_DumpOutputHeaderFormat.c_str(),
             GetFastLocalTime().AsString(m_ProtocolDumpTimeFormat).c_str());
     g_PrintJSON(m_ProtocolDumpFile, message);
 
     if (m_ActualSender != NULL)
-        m_ActualSender->SendMessage(message);
+        m_ActualSender->OutputMessage(message);
 
     fflush(m_ProtocolDumpFile);
 }
@@ -748,7 +748,7 @@ int CGridCommandLineInterfaceApp::Automation_PipeServer()
         greeting.AppendString(GRID_APP_NAME);
         greeting.AppendInteger(PROTOCOL_VERSION);
 
-        message_sender->SendMessage(greeting);
+        message_sender->OutputMessage(greeting);
     }
 
     CAutomationProc proc(message_sender);
@@ -772,7 +772,7 @@ int CGridCommandLineInterfaceApp::Automation_PipeServer()
                     if (!reply)
                         return 0;
 
-                    message_sender->SendMessage(reply);
+                    message_sender->OutputMessage(reply);
                 }
                 catch (CAutomationException& e) {
                     proc.SendError(e.ReportThis(eDPF_Log));
@@ -821,7 +821,7 @@ int CGridCommandLineInterfaceApp::Automation_DebugConsole()
                 if (!reply)
                     return 0;
 
-                dumper_and_sender.SendMessage(reply);
+                dumper_and_sender.OutputMessage(reply);
             }
             catch (CException& e) {
                 proc.SendError(e.ReportThis(eDPF_Log));
