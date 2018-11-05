@@ -2682,6 +2682,10 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
         if (sock->sslctx) {
             FSSLOpen sslopen = s_SSL ? s_SSL->Open : 0;
             if (sslopen) {
+                int/*bool*/ want_desc
+                    = (sock->log == eOn
+                       ||  (sock->log == eDefault  &&  s_Log == eOn)
+                       ? 1/*true*/ : 0/*false*/);
                 const unsigned int rtv_set = sock->r_tv_set;
                 const unsigned int wtv_set = sock->w_tv_set;
                 struct timeval rtv;
@@ -2693,22 +2697,22 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                     wtv = sock->w_tv;
                 SOCK_SET_TIMEOUT(sock, r, tv);
                 SOCK_SET_TIMEOUT(sock, w, tv);
-                status = sslopen(sock->sslctx->sess, error, &desc);
+                status = sslopen(sock->sslctx->sess, error,
+                                 want_desc ? &desc : 0);
                 if ((sock->w_tv_set = wtv_set & 1) != 0)
                     x_tvcpy(&sock->w_tv, &wtv);
                 if ((sock->r_tv_set = rtv_set & 1) != 0)
                     x_tvcpy(&sock->r_tv, &rtv);
                 if (status == eIO_Success) {
                     sock->pending = 0/*false*/;
-                    if (sock->log == eOn
-                        ||  (sock->log == eDefault  &&  s_Log == eOn)) {
+                    if (want_desc) {
                         CORE_LOGF(eLOG_Trace,
                                   ("%sSSL session created%s%s",
                                    s_ID(sock, _id),
                                    &" "[!desc], desc ? desc : ""));
+                        if (desc)
+                            free(desc);
                     }
-                    if (desc)
-                        free(desc);
                 } else
                     *what = "SSL hello";
             } else
