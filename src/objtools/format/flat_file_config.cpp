@@ -587,6 +587,9 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
          arg_desc->AddFlag("no-external",
                            "Disable all external annotation sources");
 
+         arg_desc->AddFlag("enable-external",
+                           "Enable loading of external annotation sources for local file");
+
          arg_desc->AddFlag("resolve-all",
                            "Resolves all, e.g. for contigs.");
 

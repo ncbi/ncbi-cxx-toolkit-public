@@ -62,6 +62,7 @@
 #include <objmgr/util/objutil.hpp>
 
 #include <misc/data_loaders_util/data_loaders_util.hpp>
+#include <objtools/data_loaders/genbank/gbloader.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -349,7 +350,7 @@ private:
 // constructor
 CAsn2FlatApp::CAsn2FlatApp (void)
 {
-    const CVersionInfo vers (1,1,0);
+    const CVersionInfo vers (1,2,0);
     SetVersion (vers);
 }
 
@@ -491,6 +492,14 @@ int CAsn2FlatApp::Run(void)
         static const CDataLoadersUtil::TLoaders default_loaders =
             CDataLoadersUtil::fGenbank | CDataLoadersUtil::fVDB | CDataLoadersUtil::fSRA;
         CDataLoadersUtil::SetupObjectManager(args, *m_Objmgr, default_loaders);
+
+        if (args["enable-external"] && ! args["no-external"]) {
+            CGBDataLoader* gb_loader = dynamic_cast<CGBDataLoader*>(CObjectManager::GetInstance()->FindDataLoader("GBLOADER"));
+            if (gb_loader) {
+                // needed to find remote features when reading local ASN.1 file
+                gb_loader->CGBDataLoader::SetAlwaysLoadExternal(true);
+            }
+        }
     }
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();
