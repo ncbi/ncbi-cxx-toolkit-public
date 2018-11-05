@@ -24,7 +24,7 @@
 * ===========================================================================
 *
 * Author: 
-	Vsevolod Sandomirskiy
+*   Vsevolod Sandomirskiy
 *
 * File Description:
 *   Sample to test OS-independent C++ exceptions
@@ -32,6 +32,8 @@
 
 #define __EXTENSIONS__
 #define _POSIX_C_SOURCE 199506L
+
+#include <ncbi_pch.hpp>
 
 #ifdef UNIX
 #include <signal.h>
@@ -195,4 +197,3 @@ int main( int argc, char* argv[] )
   
   return res;
 }
-  
