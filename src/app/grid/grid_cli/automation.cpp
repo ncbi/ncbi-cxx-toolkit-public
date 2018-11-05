@@ -744,14 +744,12 @@ int CGridCommandLineInterfaceApp::Automation_PipeServer()
 
     IMessageSender* message_sender;
 
-    auto_ptr<CMessageDumperSender> dumper_and_sender;
+    CMessageDumperSender dumper_and_sender(&actual_message_sender, m_Opts.protocol_dump);
 
     if (!IsOptionSet(eProtocolDump))
         message_sender = &actual_message_sender;
     else {
-        dumper_and_sender.reset(new CMessageDumperSender(&actual_message_sender,
-                m_Opts.protocol_dump));
-        message_sender = dumper_and_sender.get();
+        message_sender = &dumper_and_sender;
     }
 
     {
