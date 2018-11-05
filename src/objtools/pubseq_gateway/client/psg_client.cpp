@@ -722,7 +722,8 @@ vector<CPSG_BioId> CPSG_BioseqInfo::GetOtherIds() const
     for (CJsonIterator it = seq_ids.Iterate(); it.IsValid(); it.Next()) {
         auto accession = it.GetNode().AsString();
         auto type = static_cast<CPSG_BioId::TType>(stoi(it.GetKey()));
-        rv.emplace_back(objects::CSeq_id(type, accession).AsFastaString());
+        rv.emplace_back(objects::CSeq_id(objects::CSeq_id::eFasta_AsTypeAndContent,
+            type, accession).AsFastaString());
     }
 
     return rv;
