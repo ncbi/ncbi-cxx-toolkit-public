@@ -80,32 +80,43 @@ typedef EIO_Status  (*FSSLPull)  (SOCK sock,       void* buf,  size_t size,
 typedef EIO_Status  (*FSSLPush)  (SOCK sock, const void* data, size_t size,
                                   size_t* done, int/*bool*/ logdata);
 
-
+/* Init SSL layer; called only once and under a lock */
 typedef EIO_Status  (*FSSLInit)  (FSSLPull pull, FSSLPush push);
+
+/* Create session data with "ctx"; "host" can be NULL or "" for no host */
 typedef void*       (*FSSLCreate)(ESOCK_Side side, SNcbiSSLctx* ctx,
                                   const char* host, int* error);
+
+/* Begin secure session; "desc" can be NULL for no description to return */
 typedef EIO_Status  (*FSSLOpen)  (void* session, int* error, char** desc);
 
 /* See FSSLPull for behavior.  When non-eIO_Success code gets returned,
  * the call must set "*error" to indicate specific problem.  The "*error" may
- * be left unset (and thus, will be ignored) when eIO_Success gets returned.
- */
+ * be left unset (and thus, will be ignored) when eIO_Success gets returned. */
 typedef EIO_Status  (*FSSLRead)  (void* session,       void* buf,  size_t size,
                                   size_t* done,  int* error);
+
 /* See FSSLPush for behavior.  When non-eIO_Success code gets returned,
  * the call must set "*error" to indicate specific problem.  The "*error" may
- * be left unset (and thus, will be ignored) when eIO_Success gets returned.
- */
+ * be left unset (and thus, will be ignored) when eIO_Success gets returned. */
 typedef EIO_Status  (*FSSLWrite) (void* session, const void* data, size_t size,
                                   size_t* done,  int* error);
+
+/* End secure session; "how" is of shutdown(2) and may be ignored */
 typedef EIO_Status  (*FSSLClose) (void* session, int how, int* error);
+
+/* Delete session data */
 typedef void        (*FSSLDelete)(void* session);
+
+/* Deinit SSL layer; called once and under a lock */
 typedef void        (*FSSLExit)  (void);
+
+/* Return an error description (possibly stored in "buf" of size "size") */
 typedef const char* (*FSSLError) (void* session, int  error,
                                   char* buf, size_t size);
 
 
-/* Table of "virtual functions"
+/* Table of operations
  */
 struct SOCKSSL_struct {
     const char* Name;
