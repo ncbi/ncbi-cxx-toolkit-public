@@ -43,17 +43,19 @@ int main(int argc, char* argv[])
 {
     SERV_ITER      iter;
     int            count;
+    int/*bool*/    wildcard;
+    SConnNetInfo*  net_info;
     const char*    service = argv[1];
 
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
     LBSMD_FastHeapAccess(eOn);
-
-    iter = SERV_OpenP(service, fSERV_All
-                      | (service  &&  (!*service  ||  strpbrk(service, "?*"))
-                         ? fSERV_Promiscuous : 0), 0, 0, 0.0,
-                      NULL, NULL, 0, 0, NULL, NULL);
+    wildcard
+        = service && (!*service  ||  strpbrk(service, "?*")) ? 1/*T*/ : 0/*F*/;
+    net_info = wildcard ? 0 : ConnNetInfo_Create(service);
+    iter = SERV_OpenP(service, fSERV_All | (wildcard ? fSERV_Promiscuous : 0),
+                      0, 0, 0.0, net_info, NULL, 0, 0, NULL, NULL);
     for (count = 0;  ;  ++count) {
         SSERV_InfoCPtr info;
         char*          str;
@@ -61,10 +63,13 @@ int main(int argc, char* argv[])
             break;
         if (!(str = SERV_WriteInfo(info)))
             continue;
-        CORE_LOG(eLOG_Note, str);
+        CORE_LOGF(eLOG_Note, ("`%s' %s",
+                              wildcard ?SERV_NameOfInfo(info) : service, str));
         free(str);
     }
     SERV_Close(iter);
+    if (net_info)
+        ConnNetInfo_Destroy(net_info);
 
     CORE_LOGF(eLOG_Note, ("Servers found: %d", count));
     CORE_SetLOG(0);
