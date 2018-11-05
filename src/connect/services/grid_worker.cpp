@@ -176,7 +176,7 @@ private:
 
     IWorkerNodeIdleTask* m_Task;
     SGridWorkerNodeImpl* m_WorkerNode;
-    auto_ptr<CWorkerNodeIdleTaskContext> m_TaskContext;
+    CWorkerNodeIdleTaskContext m_TaskContext;
     mutable CSemaphore  m_Wait1;
     mutable CSemaphore  m_Wait2;
     volatile bool       m_StopFlag;
@@ -196,6 +196,7 @@ CWorkerNodeIdleThread::CWorkerNodeIdleThread(IWorkerNodeIdleTask* task,
                                              unsigned run_delay,
                                              unsigned int auto_shutdown)
     : m_Task(task), m_WorkerNode(worker_node),
+      m_TaskContext(*this),
       m_Wait1(0,100000), m_Wait2(0,1000000),
       m_StopFlag(false), m_ShutdownFlag(false),
       m_RunInterval(run_delay),
@@ -253,9 +254,7 @@ void CWorkerNodeIdleThread::OnExit(void)
 
 CWorkerNodeIdleTaskContext& CWorkerNodeIdleThread::GetContext()
 {
-    if (!m_TaskContext.get())
-        m_TaskContext.reset(new CWorkerNodeIdleTaskContext(*this));
-    return *m_TaskContext;
+    return m_TaskContext;
 }
 
 /////////////////////////////////////////////////////////////////////////////
