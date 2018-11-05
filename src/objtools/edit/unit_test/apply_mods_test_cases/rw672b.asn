@@ -3,7 +3,6 @@ Seq-entry ::= set {
   descr {
     source {
       org {
-        taxname "Homo sapiens"
       },
       subtype {
         {
@@ -31,14 +30,13 @@ Seq-entry ::= set {
       },
       descr {
         molinfo {
-          biomol mRNA,
           tech both,
           completeness partial
         }
       },
       inst {
         repr not-set,
-        mol rna,
+        mol dna,
         topology circular,
         strand mixed,
         hist {

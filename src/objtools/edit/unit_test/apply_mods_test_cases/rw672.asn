@@ -6,7 +6,6 @@ Seq-entry ::= seq {
     source {
       genome proviral,
       org {
-        taxname "Homo sapiens",
         common "val34_1",
         db {
           {
@@ -1230,18 +1229,9 @@ Seq-entry ::= seq {
         "keyword2"
       }
     },
-    user {
-      type str "TpaAssembly",
-      data {
-        {
-          label id 0,
-          data fields {
-            {
-              label str "accession",
-              data str "M10102"
-            }
-          }
-        }
+    pub {
+      pub {
+        pmid 456
       }
     },
     user {
@@ -1265,7 +1255,7 @@ Seq-entry ::= seq {
   },
   inst {
     repr not-set,
-    mol rna,
+    mol not-set,
     topology circular,
     strand mixed,
     hist {
@@ -1280,18 +1270,6 @@ Seq-entry ::= seq {
           swissprot {
             accession "Q8Y7J9"
           }
-        }
-      }
-    }
-  },
-  annot {
-    {
-      data ftable {
-        {
-          data gene {
-            allele "allele_mod"
-          },
-          location whole local str "dummy"
         }
       }
     }

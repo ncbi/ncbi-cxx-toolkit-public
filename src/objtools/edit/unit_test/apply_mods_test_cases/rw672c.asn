@@ -14,11 +14,15 @@ Seq-entry ::= set {
     },
     genbank {
       extra-accessions {
+        "dummy1",
+        "dummy2",
+        "dummy3",
         "M10101",
         "M10102",
         "Q8Y7J9"
       },
       keywords {
+        "dummy",
         "keyword1",
         "keyword2"
       }
@@ -31,7 +35,7 @@ Seq-entry ::= set {
       },
       descr {
         molinfo {
-          biomol mRNA,
+          biomol ncRNA,
           tech both,
           completeness partial
         }
@@ -44,6 +48,9 @@ Seq-entry ::= set {
         hist {
           replaces {
             ids {
+              swissprot {
+                accession "dummy"
+              },
               genbank {
                 accession "M10101"
               },
