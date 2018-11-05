@@ -78,26 +78,20 @@ class CGridControlThread : public CThread
 public:
     CGridControlThread(SGridWorkerNodeImpl* worker_node,
         unsigned short start_port, unsigned short end_port) : m_Control(
-            new CWorkerNodeControlServer(worker_node, start_port, end_port)),
+            worker_node, start_port, end_port),
           m_ThreadName(worker_node->GetAppName() + "_ct")
     {
     }
 
-    void Prepare() {m_Control->StartListening();}
-
-    unsigned short GetControlPort() {return m_Control->GetControlPort();}
-
-    void Stop()
-    {
-        if (m_Control.get())
-            m_Control->RequestShutdown();
-    }
+    void Prepare()                        {        m_Control.StartListening();  }
+    unsigned short GetControlPort() const { return m_Control.GetControlPort();  }
+    void Stop()                           {        m_Control.RequestShutdown(); }
 
 protected:
     virtual void* Main(void)
     {
         SetCurrentThreadName(m_ThreadName);
-        m_Control->Run();
+        m_Control.Run();
         return NULL;
     }
     virtual void OnExit(void)
@@ -109,7 +103,7 @@ protected:
     }
 
 private:
-    auto_ptr<CWorkerNodeControlServer> m_Control;
+    CWorkerNodeControlServer m_Control;
     const string m_ThreadName;
 };
 
