@@ -63,24 +63,31 @@
 
 BEGIN_NCBI_SCOPE
 
-static bool s_FallbackServer_Initialized = false;
-static CSafeStatic<auto_ptr<CNetServer::SAddress> > s_FallbackServer;
-
-static CNetServer::SAddress* s_GetFallbackServer()
+struct SFallbackServer
 {
-    if (s_FallbackServer_Initialized)
-        return s_FallbackServer->get();
+    using TAddress = CNetServer::SAddress;
+
+    static const TAddress* Get()
+    {
+        static const TAddress address(Init());
+        return address.host ? &address : nullptr;
+    }
+
+private:
+    static TAddress Init();
+};
+
+CNetServer::SAddress SFallbackServer::Init()
+{
     try {
         string host, port;
-        if (NStr::SplitInTwo(TCGI_NetCacheFallbackServer::GetDefault(),
-                ":", host, port)) {
-            s_FallbackServer->reset(new CNetServer::SAddress(host,
-                            (unsigned short) NStr::StringToInt(port)));
+        if (NStr::SplitInTwo(TCGI_NetCacheFallbackServer::GetDefault(), ":", host, port)) {
+            return TAddress(host, static_cast<unsigned short>(NStr::StringToInt(port)));
         }
     } catch (...) {
     }
-    s_FallbackServer_Initialized = true;
-    return s_FallbackServer->get();
+
+    return TAddress(0, 0);
 }
 
 INetServerConnectionListener::TPropCreator CNetCacheServerListener::GetPropCreator() const
@@ -533,7 +540,7 @@ CNetServerConnection SNetCacheAPIImpl::InitiateWriteCmd(
         try {
             exec_result = m_Service.FindServerAndExec(cmd, false);
         } catch (CNetSrvConnException& e) {
-            CNetServer::SAddress* backup = s_GetFallbackServer();
+            const CNetServer::SAddress* backup = SFallbackServer::Get();
 
             if (backup == NULL) {
                 LOG_POST(Info << "Fallback server address is not configured.");
