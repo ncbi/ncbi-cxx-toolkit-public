@@ -1390,7 +1390,7 @@ string CFeatTableEdit::xNextProteinId(
 {
     const string dbPrefix("gnl|");
 
-    // format: mLocusTagPrefix|<locus tag of gene>[_numeric disambiguation]
+    // format: mLocusTagPrefix|<locus tag of gene or hash>[_numeric disambiguation]
     CMappedFeat parentGene = feature::GetBestGeneForFeat(mf, &mTree);
     if (!parentGene ||
         !parentGene.GetData().GetGene().IsSetLocus_tag()) {
@@ -1431,7 +1431,7 @@ string CFeatTableEdit::xNextTranscriptId(
     const string dbPrefix("gnl|");
 
 
-	// format: mLocusTagPrefix|mrna.<locus tag of gene>[_numeric disambiguation]
+	// format: mLocusTagPrefix|mrna.<locus tag of gene or hash>[_numeric disambiguation]
 	CMappedFeat parentGene = feature::GetBestGeneForFeat(cds, &mTree);
     if (!parentGene ||
         !parentGene.GetData().GetGene().IsSetLocus_tag()) {
