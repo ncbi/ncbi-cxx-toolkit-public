@@ -570,6 +570,18 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
     return reply;
 }
 
+bool CAutomationProc::Process(const CJsonNode& message)
+{
+    m_MessageSender->InputMessage(message);
+
+    if (auto reply = ProcessMessage(message)) {
+        m_MessageSender->OutputMessage(reply);
+        return true;
+    }
+
+    return false;
+}
+
 void CAutomationProc::SendWarning(const string& warn_msg,
         TAutomationObjectRef source)
 {
@@ -761,15 +773,7 @@ int CGridCommandLineInterfaceApp::Automation_PipeServer()
 
             while (json_reader.ReadMessage(reader)) {
                 try {
-                    message_sender->InputMessage(json_reader.GetMessage());
-
-                    CJsonNode reply(proc.ProcessMessage(
-                            json_reader.GetMessage()));
-
-                    if (!reply)
-                        return 0;
-
-                    message_sender->OutputMessage(reply);
+                    if (!proc.Process(json_reader.GetMessage())) return 0;
                 }
                 catch (CAutomationException& e) {
                     proc.SendError(e.ReportThis(eDPF_Log));
@@ -811,14 +815,7 @@ int CGridCommandLineInterfaceApp::Automation_DebugConsole()
             CJsonNode input_message(CJsonNode::ParseArray(read_buf));
 
             try {
-                dumper_and_sender.InputMessage(input_message);
-
-                CJsonNode reply(proc.ProcessMessage(input_message));
-
-                if (!reply)
-                    return 0;
-
-                dumper_and_sender.OutputMessage(reply);
+                if (!proc.Process(input_message)) return 0;
             }
             catch (CException& e) {
                 proc.SendError(e.ReportThis(eDPF_Log));

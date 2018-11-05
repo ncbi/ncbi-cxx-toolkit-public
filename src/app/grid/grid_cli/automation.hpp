@@ -246,7 +246,7 @@ class CAutomationProc
 public:
     CAutomationProc(IMessageSender* message_sender);
 
-    CJsonNode ProcessMessage(const CJsonNode& message);
+    bool Process(const CJsonNode& message);
 
     void SendWarning(const string& warn_msg, TAutomationObjectRef source);
 
@@ -271,6 +271,8 @@ public:
     TAutomationObjectRef& ObjectIdToRef(TObjectID object_id);
 
 private:
+    CJsonNode ProcessMessage(const CJsonNode& message);
+
     IMessageSender* m_MessageSender;
 
     vector<TAutomationObjectRef> m_ObjectByIndex;
