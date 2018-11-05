@@ -57,7 +57,6 @@ NCBI_XOBJEDIT_EXPORT bool ExtendCDSToStopCodon (CSeq_feat& cds, CScope& scope);
 NCBI_XOBJEDIT_EXPORT void AdjustCDSFrameForStartChange(CCdregion& cds, int change);
 NCBI_XOBJEDIT_EXPORT bool DemoteCDSToNucSeq(objects::CSeq_feat_Handle& orig_feat);
 NCBI_XOBJEDIT_EXPORT CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_base, CScope &scope, int &offset);
-NCBI_XOBJEDIT_EXPORT CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label); // TODO remove
 NCBI_XOBJEDIT_EXPORT CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label, bool general_only);
 NCBI_XOBJEDIT_EXPORT vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Handle bsh, int &offset, string& id_label);
 NCBI_XOBJEDIT_EXPORT string GetIdHashOrValue(const string &base, int offset);

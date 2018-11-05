@@ -1238,7 +1238,7 @@ string GetIdHashOrValue(const string &base, int offset)
     return new_hash;
 }
 
-CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_base, CScope &scope, int &offset) // TODO use directly in x_DoImportCDS
+CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_base, CScope &scope, int &offset)
 {   
     string id_base_hash = GetIdHash(id_base);
     CRef<objects::CSeq_id> new_id(new objects::CSeq_id());
@@ -1405,12 +1405,6 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
     return new_id;
 }
 
-CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label) // TODO split_cds, raw_seq_to_delta
-{
-    return GetNewProtId(bsh, offset, id_label, true);
-}
-
-// GetNewProtId(bsh, offset, id_label, false); TODO protein_utils, cmd_add_seqentry
 
 END_SCOPE(edit)
 END_SCOPE(objects)
