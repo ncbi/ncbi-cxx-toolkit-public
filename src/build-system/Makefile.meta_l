@@ -236,7 +236,7 @@ NCBICXX_TESTING_REQS=1 $(MAKE_APP) -q requirements REQUIRES= && \
 if NCBICXX_TESTING_REQS=1 $(MAKE_APP) -q requirements >/dev/null 2>&1; then \
     $(check_add) $(abs_srcdir) $(1) $(signature) $(subdir)  ||  exit 5 ; \
 else \
-    echo SKIP -- $(rel_srcdir)/$(1) \(unmet build REQUIRES\) ; \
+    echo SKIP -- $(rel_srcdir:src/%=%)/$(1) \(unmet build REQUIRES\) ; \
 fi
 
 endef
