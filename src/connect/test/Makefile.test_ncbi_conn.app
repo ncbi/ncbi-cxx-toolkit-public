@@ -7,7 +7,7 @@ LIB = xconnect xutil xncbi
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 #LINK = purify $(ORIG_LINK)
 
-CHECK_CMD = test_ncbi_conn.sh
 CHECK_COPY = test_ncbi_conn.sh ../../check/ncbi_test_data
+CHECK_CMD = test_ncbi_conn.sh
 
 WATCHERS = lavr satskyse
