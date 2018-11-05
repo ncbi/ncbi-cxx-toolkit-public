@@ -334,8 +334,10 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx,
         return 0;
     }
 
-    if ((*error = gnutls_init(&session, end)) != GNUTLS_E_SUCCESS/*0*/)
+    if ((err = gnutls_init(&session, end)) != GNUTLS_E_SUCCESS/*0*/) {
+        *error = err;
         return 0;
+    }
 
     ConnNetInfo_GetValue(0, "GNUTLS_PRIORITY", val, sizeof(val), 0);
 
@@ -383,8 +385,6 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error, char** desc)
     EIO_Status status;
     int x_error;
 
-    *desc = 0;
-
     do {
         x_error = gnutls_handshake((gnutls_session_t) session);
     } while (x_error  &&  x_error == GNUTLS_E_REHANDSHAKE);
@@ -394,14 +394,19 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error, char** desc)
                                  eIO_Open);
         assert(status != eIO_Success);
         *error = x_error;
+        if (desc)
+            *desc = 0;
     } else {
+        if (desc) {
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x030110
-        char* temp = gnutls_session_get_desc((gnutls_session_t) session);
-        if (temp) {
-            *desc = strdup(temp);
-            gnutls_free(temp);
-        }
+            char* temp = gnutls_session_get_desc((gnutls_session_t) session);
+            if (temp) {
+                *desc = strdup(temp);
+                gnutls_free(temp);
+            } else
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=3.1.10*/
+                *desc = 0;
+        }
         status = eIO_Success;
     }
 
@@ -499,51 +504,6 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
 }
 
 
-static EIO_Status x_InitLocking(void)
-{
-    EIO_Status status;
-
-#  if GNUTLS_VERSION_NUMBER < 0x020C00
-#    ifdef HAVE_LIBGCRYPT
-#      if   defined(NCBI_POSIX_THREADS)
-    status = gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread) == 0
-        ? eIO_Success
-        : eIO_NotSupported;
-#      elif defined(NCBI_THREADS)
-    MT_LOCK lk = CORE_GetLOCK();
-    if (MT_LOCK_Do(lk, eMT_Lock) != -1) {
-        status = gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_user) == 0
-            ? eIO_Success
-            : eIO_NotSupported;
-        MT_LOCK_Do(lk, eMT_Unlock);
-    } else
-        status = lk ? eIO_Success : eIO_NotSupported;
-#      elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
-    CORE_LOG(eLOG_Critical,"LIBGCRYPT uninitialized: Unknown threading model");
-    status = eIO_NotSupported;
-#      endif /*NCBI_POSIX_THREADS*/
-#    endif /*HAVE_LIBGCRYPT*/
-#  elif defined(NCBI_THREADS)
-    MT_LOCK lk = CORE_GetLOCK();
-    if (MT_LOCK_Do(lk, eMT_Lock) != -1) {
-        /* NB: calls global_deinit/global_init internally */
-        gnutls_global_set_mutex(gtls_user_mutex_init, gtls_user_mutex_deinit,
-                                gtls_user_mutex_lock, gtls_user_mutex_unlock);
-        MT_LOCK_Do(lk, eMT_Unlock);
-        status = eIO_Success;
-    } else
-        status = lk ? eIO_Success : eIO_NotSupported;
-#  elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
-    CORE_LOG(eLOG_Critical,"GNUTLS locking uninited: Unknown threading model");
-    status = eIO_NotSupported;
-#  else
-    status = eIO_Success;
-#  endif
-
-    return status;
-}
-
-
 static EIO_Status s_GnuTlsRead(void* session, void* buf, size_t n_todo,
                                size_t* n_done, int* error)
 {
@@ -632,11 +592,11 @@ static EIO_Status s_GnuTlsClose(void* session, int how, int* error)
                          how == SOCK_SHUTDOWN_RDWR
                          ? GNUTLS_SHUT_RDWR
                          : GNUTLS_SHUT_WR);
+
     if (x_error != GNUTLS_E_SUCCESS) {
         *error = x_error;
         return eIO_Unknown;
     }
-
     return eIO_Success;
 }
 
@@ -646,6 +606,51 @@ static void s_GnuTlsDelete(void* session)
     assert(session);
 
     gnutls_deinit((gnutls_session_t) session);
+}
+
+
+static EIO_Status x_InitLocking(void)
+{
+    EIO_Status status;
+
+#  if GNUTLS_VERSION_NUMBER < 0x020C00
+#    ifdef HAVE_LIBGCRYPT
+#      if   defined(NCBI_POSIX_THREADS)
+    status = gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread) == 0
+        ? eIO_Success
+        : eIO_NotSupported;
+#      elif defined(NCBI_THREADS)
+    MT_LOCK lk = CORE_GetLOCK();
+    if (MT_LOCK_Do(lk, eMT_Lock) != -1) {
+        status = gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_user) == 0
+            ? eIO_Success
+            : eIO_NotSupported;
+        MT_LOCK_Do(lk, eMT_Unlock);
+    } else
+        status = lk ? eIO_Success : eIO_NotSupported;
+#      elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
+    CORE_LOG(eLOG_Critical,"LIBGCRYPT uninitialized: Unknown threading model");
+    status = eIO_NotSupported;
+#      endif /*NCBI_POSIX_THREADS*/
+#    endif /*HAVE_LIBGCRYPT*/
+#  elif defined(NCBI_THREADS)
+    MT_LOCK lk = CORE_GetLOCK();
+    if (MT_LOCK_Do(lk, eMT_Lock) != -1) {
+        /* NB: calls global_deinit/global_init internally */
+        gnutls_global_set_mutex(gtls_user_mutex_init, gtls_user_mutex_deinit,
+                                gtls_user_mutex_lock, gtls_user_mutex_unlock);
+        MT_LOCK_Do(lk, eMT_Unlock);
+        status = eIO_Success;
+    } else
+        status = lk ? eIO_Success : eIO_NotSupported;
+#  elif !defined(NCBI_NO_THREADS)  &&  defined(_MT)
+    CORE_LOG(eLOG_Critical,"GNUTLS locking uninited: Unknown threading model");
+    status = eIO_NotSupported;
+#  else
+    status = eIO_Success;
+#  endif
+
+    return status;
 }
 
 
