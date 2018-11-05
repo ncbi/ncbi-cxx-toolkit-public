@@ -128,9 +128,8 @@ CNcbiIstream& CBlobStreamHelper::GetIStream(string* fname /*= NULL*/,
         if (fname) *fname = name;
         if (type) *type = (EStdOutErrStorageType)tmp;
         if (!name.empty() && (EStdOutErrStorageType)tmp == eLocalFile) {
-            auto_ptr<CNcbiIstream> fstr(new CNcbiIfstream(name.c_str()));
-            if (fstr->good()) {
-                m_GridRead.stream.reset(fstr.release());
+            m_GridRead.stream.reset(new CNcbiIfstream(name.c_str()));
+            if (m_GridRead.stream->good()) {
                 m_GridRead.stream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
             } else {
                 string msg = "Can not open " + name;
