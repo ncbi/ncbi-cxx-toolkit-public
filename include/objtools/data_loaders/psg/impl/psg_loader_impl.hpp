@@ -52,8 +52,8 @@ public:
 
     string ToString(void) const override;
 
-    bool operator<(const CBlobId& id) const;
-    bool operator==(const CBlobId& id) const;
+    bool operator<(const CBlobId& id) const override;
+    bool operator==(const CBlobId& id) const override;
 
 private:
     string m_Id;
@@ -71,6 +71,7 @@ struct SPsgBioseqInfo
     TTaxId tax_id;
     int hash;
     TIds ids;
+    string blob_id;
 
 private:
     SPsgBioseqInfo(const SPsgBioseqInfo&);
@@ -80,20 +81,19 @@ private:
 
 struct SPsgBlobInfo
 {
-    SPsgBlobInfo(const CPSG_BioseqInfo& bioseq_info, const CPSG_BlobInfo& blob_info);
+    SPsgBlobInfo(const CPSG_BlobInfo& blob_info);
 
-    typedef vector<CSeq_id_Handle> TSeqIds;
     typedef int TChunkId;
     typedef vector<string> TChunks;
 
-    TSeqIds seq_ids;
     string blob_id_main;
     string blob_id_split;
     TChunks chunks;
 
-    bool IsSplit(void) const { return !blob_id_split.empty(); }
-    const string& GetDataBlobId(void) const { return IsSplit() ? blob_id_split : blob_id_main; }
     const string& GetBlobIdForChunk(TChunkId chunk_id) const;
+
+    const string& GetDataBlobId() const { return IsSplit() ? blob_id_split : blob_id_main; }
+    bool IsSplit() const { return !blob_id_split.empty(); }
 
 private:
     SPsgBlobInfo(const SPsgBlobInfo&);
@@ -108,15 +108,8 @@ class CBioseqCache;
 class CPSGDataLoader_Impl : public CObject
 {
 public:
-    explicit CPSGDataLoader_Impl(const CPSGDataLoader::SLoaderParams& params);
+    explicit CPSGDataLoader_Impl(const SPSGLoaderParams& params);
     ~CPSGDataLoader_Impl(void);
-
-    CDataLoader::TTSE_LockSet GetRecords(CDataSource* data_source,
-                                         const CSeq_id_Handle& idh,
-                                         CDataLoader::EChoice choice);
-    CRef<CPsgBlobId> GetBlobId(const CSeq_id_Handle& idh);
-    CTSE_LoadLock GetBlobById(CDataSource* data_source,
-                              const CPsgBlobId& blob_id);
 
     typedef vector<CSeq_id_Handle> TIds;
 
@@ -125,17 +118,31 @@ public:
     TSeqPos GetSequenceLength(const CSeq_id_Handle& idh);
     CDataLoader::SHashFound GetSequenceHash(const CSeq_id_Handle& idh);
     CDataLoader::STypeFound GetSequenceType(const CSeq_id_Handle& idh);
+
+    CDataLoader::TTSE_LockSet GetRecords(CDataSource* data_source,
+                                         const CSeq_id_Handle& idh,
+                                         CDataLoader::EChoice choice);
+    CRef<CPsgBlobId> GetBlobId(const CSeq_id_Handle& idh);
+    CTSE_LoadLock GetBlobById(CDataSource* data_source,
+                              const CPsgBlobId& blob_id);
     void LoadChunk(const CPsgBlobId& blob_id, CTSE_Chunk_Info& chunk_info);
 
     void DropTSE(const CPsgBlobId& blob_id);
 
 private:
+    struct SReplyResult {
+        CTSE_LoadLock lock;
+        shared_ptr<CPSG_BioseqInfo> bioseq_info;
+        string blob_id;
+        shared_ptr<SPsgBlobInfo> blob_info;
+    };
+
     CPSG_BioId x_GetBioId(const CSeq_id_Handle& idh);
     shared_ptr<CPSG_Reply> x_ProcessRequest(shared_ptr<CPSG_Request> request);
+    SReplyResult x_ProcessReply(shared_ptr<CPSG_Reply> reply, CDataSource* data_source);
     shared_ptr<SPsgBioseqInfo> x_GetBioseqInfo(const CSeq_id_Handle& idh);
-    shared_ptr<SPsgBlobInfo> x_GetBlobInfo(const CSeq_id_Handle& idh);
-    shared_ptr<SPsgBlobInfo> x_GetBlobInfo(const string& blob_id);
-    void x_CacheBioseq(shared_ptr<SPsgBioseqInfo> seq_info);
+    shared_ptr<SPsgBlobInfo> x_FindBlob(const string& bid);
+    void x_AddBlob(const string& bid, shared_ptr<SPsgBlobInfo> blob);
     CTSE_LoadLock x_LoadBlob(const SPsgBlobInfo& psg_blob_info, CDataSource& data_source);
     void x_GetBlobInfoAndData(
         const string& psg_blob_id,
@@ -162,14 +169,13 @@ private:
 
     // Map seq-id to bioseq info.
     typedef map<CSeq_id_Handle, shared_ptr<SPsgBioseqInfo> > TBioseqCache;
-    // Map seq-id to blob-id
-    typedef map<CSeq_id_Handle, string> TBlobIds;
     // Map blob-id to blob info
     typedef map<string, shared_ptr<SPsgBlobInfo> > TBlobs;
 
+    CFastMutex m_Mutex;
+    bool m_NoSplit = false;
     shared_ptr<CPSG_Queue> m_Queue;
     CRef<CPsgClientThread> m_Thread;
-    TBlobIds m_BlobIds;
     TBlobs m_Blobs;
     unique_ptr<CBioseqCache> m_BioseqCache;
 };

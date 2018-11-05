@@ -80,9 +80,32 @@ END_LOCAL_NAMESPACE;
 // CPSGDataLoader
 /////////////////////////////////////////////////////////////////////////////
 
+
+const char kDataLoader_PSG_DriverName[] = "psg";
+const char kPSG_ServiceName[] = "service_name";
+const char kPSG_NoSplit[] = "no_split";
+
+
+NCBI_PARAM_DECL(string, PSG_LOADER, SERVICE_NAME);
+NCBI_PARAM_DEF_EX(string, PSG_LOADER, SERVICE_NAME, "psg",
+    eParam_NoThread, PSG_LOADER_SERVICE_NAME);
+typedef NCBI_PARAM_TYPE(PSG_LOADER, SERVICE_NAME) TPSG_ServiceName;
+
+NCBI_PARAM_DECL(bool, PSG_LOADER, NO_SPLIT);
+NCBI_PARAM_DEF_EX(bool, PSG_LOADER, NO_SPLIT, false,
+    eParam_NoThread, PSG_LOADER_NO_SPLIT);
+typedef NCBI_PARAM_TYPE(PSG_LOADER, NO_SPLIT) TPSG_NoSplit;
+
+SPSGLoaderParams::SPSGLoaderParams(void)
+{
+    m_ServiceName = TPSG_ServiceName::GetDefault();
+    m_NoSplit = TPSG_NoSplit::GetDefault();
+}
+
+
 CPSGDataLoader::TRegisterLoaderInfo CPSGDataLoader::RegisterInObjectManager(
     CObjectManager& om,
-    const SLoaderParams& params,
+    const SPSGLoaderParams& params,
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
@@ -97,7 +120,7 @@ CPSGDataLoader::TRegisterLoaderInfo CPSGDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
-    SLoaderParams params;
+    SPSGLoaderParams params;
     TMaker maker(params);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
@@ -110,7 +133,7 @@ CPSGDataLoader::TRegisterLoaderInfo CPSGDataLoader::RegisterInObjectManager(
     CObjectManager::EIsDefault is_default,
     CObjectManager::TPriority priority)
 {
-    SLoaderParams params;
+    SPSGLoaderParams params;
     params.m_ServiceName = service_name;
     TMaker maker(params);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
@@ -124,7 +147,7 @@ string CPSGDataLoader::GetLoaderNameFromArgs(void)
 }
 
 
-string CPSGDataLoader::GetLoaderNameFromArgs(const SLoaderParams& params)
+string CPSGDataLoader::GetLoaderNameFromArgs(const SPSGLoaderParams& params)
 {
     string ret = GetLoaderNameFromArgs();
     if ( !params.m_ServiceName.empty() ) {
@@ -137,14 +160,14 @@ string CPSGDataLoader::GetLoaderNameFromArgs(const SLoaderParams& params)
 string CPSGDataLoader::GetLoaderNameFromArgs(
     const string& service_name)
 {
-    SLoaderParams params;
+    SPSGLoaderParams params;
     params.m_ServiceName = service_name;
     return GetLoaderNameFromArgs(params);
 }
 
 
 CPSGDataLoader::CPSGDataLoader(const string& loader_name,
-                               const SLoaderParams& params)
+                               const SPSGLoaderParams& params)
     : CDataLoader(loader_name)
 {
     m_Impl.Reset(new CPSGDataLoader_Impl(params));
@@ -298,13 +321,11 @@ void DataLoaders_Register_PSG(void)
 }
 
 
-const char kDataLoader_PSG_DriverName[] = "psg";
-
 class CPSG_DataLoaderCF : public CDataLoaderFactory
 {
 public:
     CPSG_DataLoaderCF(void)
-        : CDataLoaderFactory(kDataLoader_PSG_DriverName) {}
+        : CDataLoaderFactory(objects::kDataLoader_PSG_DriverName) {}
     virtual ~CPSG_DataLoaderCF(void) {}
 
 protected:

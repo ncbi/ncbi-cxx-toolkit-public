@@ -41,20 +41,22 @@ BEGIN_SCOPE(objects)
 
 class CPSGDataLoader_Impl;
 
+struct SPSGLoaderParams
+{
+    SPSGLoaderParams(void);
+
+    string m_ServiceName; // PSG service name or host:port
+    bool m_NoSplit = false; // Don't use split data.
+};
+
+
 class NCBI_XLOADER_PSG_EXPORT CPSGDataLoader : public CDataLoader
 {
 public:
-
-    struct SLoaderParams
-    {
-        SLoaderParams(void) {}
-        string m_ServiceName; // PSG service name or host:port
-    };
-
     typedef SRegisterLoaderInfo<CPSGDataLoader> TRegisterLoaderInfo;
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
-        const SLoaderParams& params,
+        const SPSGLoaderParams& params,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static TRegisterLoaderInfo RegisterInObjectManager(
@@ -67,7 +69,7 @@ public:
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(void);
-    static string GetLoaderNameFromArgs(const SLoaderParams& params);
+    static string GetLoaderNameFromArgs(const SPSGLoaderParams& params);
     static string GetLoaderNameFromArgs(const string& service_name);
 
     TBlobId GetBlobId(const CSeq_id_Handle& idh) override;
@@ -94,18 +96,18 @@ public:
     SHashFound GetSequenceHashFound(const CSeq_id_Handle& idh) override;
     STypeFound GetSequenceTypeFound(const CSeq_id_Handle& idh) override;
 
-    virtual CObjectManager::TPriority GetDefaultPriority(void) const;
+    virtual CObjectManager::TPriority GetDefaultPriority(void) const override;
 
     void DropTSE(CRef<CTSE_Info> tse_info) override;
 
 private:
-    typedef CParamLoaderMaker<CPSGDataLoader, SLoaderParams> TMaker;
-    friend class CParamLoaderMaker<CPSGDataLoader, SLoaderParams>;
+    typedef CParamLoaderMaker<CPSGDataLoader, SPSGLoaderParams> TMaker;
+    friend class CParamLoaderMaker<CPSGDataLoader, SPSGLoaderParams>;
 
     // default constructor
     CPSGDataLoader(void);
     // parametrized constructor
-    CPSGDataLoader(const string& loader_name, const SLoaderParams& params);
+    CPSGDataLoader(const string& loader_name, const SPSGLoaderParams& params);
     ~CPSGDataLoader(void);
 
     CRef<CPSGDataLoader_Impl> m_Impl;
