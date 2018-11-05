@@ -318,7 +318,8 @@ TMgr-CreateUserTrackReply ::= SEQUENCE {
 TMgr-RemoveUserTrackRequest ::= SEQUENCE {
     identity TMgr-Identity,
     dtrack-ids SET OF TMgr-DTrackId,
-    hub-id TMgr-DHubId OPTIONAL
+    hub-id TMgr-DHubId OPTIONAL,
+    client TMgr-ClientInfo OPTIONAL
 }
 
 TMgr-TypeTrackType ::= INTEGER {
@@ -393,8 +394,8 @@ TMgr-CreateRemoteTrackRequest ::= SEQUENCE {
         track TMgr-HubTrack
     } OPTIONAL,
 
-    -- future use
-    attrs SET OF TMgr-Attribute OPTIONAL
+    attrs SET OF TMgr-Attribute OPTIONAL, -- future use
+    client TMgr-ClientInfo OPTIONAL       -- Client information
 }
 
 ---
