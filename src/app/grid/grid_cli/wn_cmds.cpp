@@ -57,16 +57,15 @@ int CGridCommandLineInterfaceApp::Cmd_Replay()
     }
 
     if (IsOptionSet(eDumpCGIEnv) || IsOptionSet(eDumpCGIStdIn)) {
-        auto_ptr<CNcbiIstream> input_stream(new CRStream(
-                new CStringOrBlobStorageReader(job.input, m_NetCacheAPI), 0, 0,
-                    CRWStreambuf::fOwnReader | CRWStreambuf::fLeakExceptions));
+        CStringOrBlobStorageReader reader(job.input, m_NetCacheAPI);
+        CRStream input_stream(&reader, 0, 0, CRWStreambuf::fLeakExceptions);
 
-        input_stream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+        input_stream.exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
 
         unique_ptr<CCgiRequest> request;
 
         try {
-            request.reset(new CCgiRequest(*input_stream,
+            request.reset(new CCgiRequest(input_stream,
                 CCgiRequest::fIgnoreQueryString |
                 CCgiRequest::fDoNotParseContent |
                 CCgiRequest::fSaveRequestContent));
