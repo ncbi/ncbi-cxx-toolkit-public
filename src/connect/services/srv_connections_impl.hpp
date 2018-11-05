@@ -243,11 +243,7 @@ struct SNetServerInfoImpl : public CObject
 private:
     typedef CUrlArgs::TArgs TAttributes;
 
-    auto_ptr<CUrlArgs> m_URLParser;
-
-    TAttributes m_FreeFormVersionAttributes;
-
-    TAttributes* m_Attributes;
+    TAttributes m_Attributes;
     TAttributes::const_iterator m_NextAttribute;
 };
 

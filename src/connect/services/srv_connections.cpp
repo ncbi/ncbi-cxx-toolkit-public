@@ -352,15 +352,15 @@ SNetServerInPool::~SNetServerInPool()
     }
 }
 
-SNetServerInfoImpl::SNetServerInfoImpl(const string& version_string)
+CUrlArgs::TArgs s_GetAttributes(const string& version_string)
 {
+    CUrlArgs::TArgs rv;
+
     try {
-        m_URLParser.reset(new CUrlArgs(version_string));
-        m_Attributes = &m_URLParser->GetArgs();
+        CUrlArgs args(version_string);
+        rv = move(args.GetArgs());
     }
     catch (CUrlParserException&) {
-        m_Attributes = &m_FreeFormVersionAttributes;
-
         const char* version = version_string.c_str();
         const char* prev_part_end = version;
 
@@ -381,7 +381,7 @@ SNetServerInfoImpl::SNetServerInfoImpl(const string& version_string)
                         *version_number_end == '.')
                     ++version_number_end;
                 attr_value.assign(version_number, version_number_end);
-                m_FreeFormVersionAttributes.push_back(
+                rv.push_back(
                     CUrlArgs::TArg(attr_name, attr_value));
                 prev_part_end = version_number_end;
                 while (isspace(*prev_part_end) || *prev_part_end == '&')
@@ -396,7 +396,7 @@ SNetServerInfoImpl::SNetServerInfoImpl(const string& version_string)
                 while (isspace(*build) || *build == ':' || *build == '=')
                     ++build;
                 attr_value.assign(build);
-                m_FreeFormVersionAttributes.push_back(
+                rv.push_back(
                     CUrlArgs::TArg(attr_name, attr_value));
                 break;
             }
@@ -408,17 +408,23 @@ SNetServerInfoImpl::SNetServerInfoImpl(const string& version_string)
                     break;
 
             if (prev_part_end < version)
-                m_FreeFormVersionAttributes.push_back(CUrlArgs::TArg(
+                rv.push_back(CUrlArgs::TArg(
                     "Details", string(prev_part_end, version)));
         }
     }
 
-    m_NextAttribute = m_Attributes->begin();
+    return rv;
+}
+
+SNetServerInfoImpl::SNetServerInfoImpl(const string& version_string) :
+    m_Attributes(s_GetAttributes(version_string)),
+    m_NextAttribute(m_Attributes.begin())
+{
 }
 
 bool SNetServerInfoImpl::GetNextAttribute(string& attr_name, string& attr_value)
 {
-    if (m_NextAttribute == m_Attributes->end())
+    if (m_NextAttribute == m_Attributes.end())
         return false;
 
     attr_name = m_NextAttribute->name;
