@@ -30,6 +30,7 @@
  *
  */
 
+#include <connect/ncbi_tls.h>
 #include "../ncbi_priv.h"
 #include "../ncbi_lbsmd.h"
 #include "../ncbi_servicep.h"
@@ -53,8 +54,14 @@ int main(int argc, char* argv[])
     LBSMD_FastHeapAccess(eOn);
     wildcard
         = service && (!*service  ||  strpbrk(service, "?*")) ? 1/*T*/ : 0/*F*/;
-    net_info = wildcard ? 0 : ConnNetInfo_Create(service);
-    iter = SERV_OpenP(service, fSERV_All | (wildcard ? fSERV_Promiscuous : 0),
+    if (!wildcard) {
+        net_info = ConnNetInfo_Create(service);
+        SOCK_SetupSSL(NcbiSetupTls);
+    } else
+        net_info = 0;
+    iter = SERV_OpenP(service,
+                      (fSERV_All & ~fSERV_Firewall) |
+                      (wildcard ? fSERV_Promiscuous : 0),
                       0, 0, 0.0, net_info, NULL, 0, 0, NULL, NULL);
     for (count = 0;  ;  ++count) {
         SSERV_InfoCPtr info;
