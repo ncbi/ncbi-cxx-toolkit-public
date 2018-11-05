@@ -235,6 +235,7 @@ typedef CRef<CAutomationObject> TAutomationObjectRef;
 class IMessageSender
 {
 public:
+    virtual void InputMessage(const CJsonNode& message) {}
     virtual void OutputMessage(const CJsonNode& message) = 0;
 
     virtual ~IMessageSender() {}

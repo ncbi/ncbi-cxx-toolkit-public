@@ -654,8 +654,7 @@ public:
     CMessageDumperSender(IMessageSender* actual_sender,
             FILE* protocol_dump_file);
 
-    void DumpInputMessage(const CJsonNode& message);
-
+    virtual void InputMessage(const CJsonNode& message);
     virtual void OutputMessage(const CJsonNode& message);
 
 private:
@@ -687,7 +686,7 @@ CMessageDumperSender::CMessageDumperSender(
     m_DumpOutputHeaderFormat.append(") -----------------------\n");
 }
 
-void CMessageDumperSender::DumpInputMessage(const CJsonNode& message)
+void CMessageDumperSender::InputMessage(const CJsonNode& message)
 {
     fprintf(m_ProtocolDumpFile, m_DumpInputHeaderFormat.c_str(),
             GetFastLocalTime().AsString(m_ProtocolDumpTimeFormat).c_str());
@@ -762,9 +761,7 @@ int CGridCommandLineInterfaceApp::Automation_PipeServer()
 
             while (json_reader.ReadMessage(reader)) {
                 try {
-                    if (dumper_and_sender.get() != NULL)
-                        dumper_and_sender->DumpInputMessage(
-                                json_reader.GetMessage());
+                    message_sender->InputMessage(json_reader.GetMessage());
 
                     CJsonNode reply(proc.ProcessMessage(
                             json_reader.GetMessage()));
@@ -814,7 +811,7 @@ int CGridCommandLineInterfaceApp::Automation_DebugConsole()
             CJsonNode input_message(CJsonNode::ParseArray(read_buf));
 
             try {
-                dumper_and_sender.DumpInputMessage(input_message);
+                dumper_and_sender.InputMessage(input_message);
 
                 CJsonNode reply(proc.ProcessMessage(input_message));
 
