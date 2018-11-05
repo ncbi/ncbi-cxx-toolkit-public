@@ -160,12 +160,9 @@ CMAKE_ARGS="$CMAKE_ARGS -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS"
 build_root=CMake-${CC_NAME}${CC_VERSION}
 if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
   build_root="$build_root"/dll
-  project_name=ncbi_cpp_dll
 else
   build_root="$build_root"/static
-  project_name=ncbi_cpp
 fi
-CMAKE_ARGS="$CMAKE_ARGS -DNCBI_CMAKEPROJECT_NAME=$project_name"
 
 if test ! -e "${tree_root}/${build_root}/build"; then
   mkdir -p "${tree_root}/${build_root}/build"

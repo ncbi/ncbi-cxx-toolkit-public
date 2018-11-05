@@ -228,12 +228,9 @@ if test "$generator" = "Xcode"; then
   build_root=CMake-${CC_NAME}${CC_VERSION}
   if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
     build_root="$build_root"/dll
-    project_name=ncbi_cpp_dll
   else
     build_root="$build_root"/static
-    project_name=ncbi_cpp
   fi
-  CMAKE_ARGS="$CMAKE_ARGS -DNCBI_CMAKEPROJECT_NAME=$project_name"
 else
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_CCACHE=$USE_CCACHE"
   CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_DISTCC=$USE_DISTCC"

@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal ENABLEDELAYEDEXPANSION
 REM #########################################################################
 REM  $Id$
 REM  Configure NCBI C++ toolkit for Visual Studio using CMake build system.
@@ -175,12 +175,9 @@ set CMAKE_ARGS=%CMAKE_ARGS% -DBUILD_SHARED_LIBS=%BUILD_SHARED_LIBS%
 set build_root=CMake-%generator_name%
 if "%BUILD_SHARED_LIBS%"=="ON" (
   set build_root=%build_root%\dll
-  set project_name=ncbi_cpp_dll
 ) else (
   set build_root=%build_root%\static
-  set project_name=ncbi_cpp
 )
-set CMAKE_ARGS=%CMAKE_ARGS% -DNCBI_CMAKEPROJECT_NAME=%project_name%
 
 if not exist "%tree_root%\%build_root%\build" (
   mkdir "%tree_root%\%build_root%\build"

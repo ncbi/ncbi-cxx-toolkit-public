@@ -1191,7 +1191,7 @@ endfunction()
 ##############################################################################
 function(NCBI_internal_verify_libs)
     set(_optimize NO)
-    if (WIN32 AND NCBI_PTBCFG_ENABLE_COLLECTOR AND NOT DEFINED NCBI_EXTERNAL_TREE_ROOT)
+    if (WIN32 AND NCBI_PTBCFG_ENABLE_COLLECTOR AND NOT DEFINED NCBI_EXTERNAL_TREE_ROOT AND NOT DEFINED NCBI_PTBCFG_DOINSTALL)
         if (${NCBI_${NCBI_PROJECT}_TYPE} STREQUAL "STATIC")
             set(_ncbilib ${NCBITMP_NCBILIB})
             set(_optimize YES)
