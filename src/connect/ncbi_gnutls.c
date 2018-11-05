@@ -687,7 +687,7 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
             if (val == buf)
                 gnutls_global_set_log_level(s_GnuTlsLogLevel);
             level = eLOG_Note;
-		} else
+        } else
             level = eLOG_Trace;
         CORE_LOGF(level, ("GNUTLS V%s (LogLevel=%d)",
                           version, s_GnuTlsLogLevel));

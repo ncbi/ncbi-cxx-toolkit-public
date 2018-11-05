@@ -112,28 +112,28 @@ static const char* x_GetPkcs12Pass(const char* val, char* buf, size_t bufsize)
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x021000
 static int x_CertVfyCB(gnutls_session_t session)
 {
-	unsigned int n, cert_list_size = 0;
-	const gnutls_datum_t* cert_list;
-	
-	cert_list = gnutls_certificate_get_peers(session, &cert_list_size);
-	if (cert_list_size == 0) {
-		CORE_LOG(eLOG_Error, "No certificates obtained from server");
-		return 1;
-	}
+    unsigned int n, cert_list_size = 0;
+    const gnutls_datum_t* cert_list;
+
+    cert_list = gnutls_certificate_get_peers(session, &cert_list_size);
+    if (cert_list_size == 0) {
+            CORE_LOG(eLOG_Error, "No certificates obtained from server");
+            return 1;
+    }
     assert(cert_list);
 
     CORE_LOGF(eLOG_Note,
               ("%u certificate%s received from server:",
                cert_list_size, &"s"[cert_list_size == 1]));
-	for (n = 0;  n < cert_list_size;  ++n) {
+    for (n = 0;  n < cert_list_size;  ++n) {
         gnutls_x509_crt_t crt;
-		gnutls_datum_t cinfo;
+        gnutls_datum_t cinfo;
         int err;
 
-		gnutls_x509_crt_init(&crt);
+        gnutls_x509_crt_init(&crt);
         err = gnutls_x509_crt_import(crt, &cert_list[n],
                                      GNUTLS_X509_FMT_DER);
-		if (!err) {
+        if (!err) {
             err = gnutls_x509_crt_print(crt, GNUTLS_CRT_PRINT_ONELINE, &cinfo);
             if (!err) {
                 CORE_LOGF(eLOG_Note,
@@ -147,7 +147,7 @@ static int x_CertVfyCB(gnutls_session_t session)
                        n + 1, gnutls_strerror(err)));
         }
         gnutls_x509_crt_deinit(crt);
-	}
+    }
     return 0;
 }
 #  endif /*LIBGNUTLS_VERSION_NUMBER>=2.10.0*/

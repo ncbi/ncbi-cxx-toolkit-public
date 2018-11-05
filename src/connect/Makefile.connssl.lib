@@ -3,7 +3,7 @@
 CPPFLAGS = $(TLS_INCLUDE) $(ORIG_CPPFLAGS)
 
 SRC_TLS  = ncbi_gnutls ncbi_mbedtls ncbi_tls \
-	   mbedtls/aes mbedtls/aesni mbedtls/arc4 mbedtls/asn1parse \
+           mbedtls/aes mbedtls/aesni mbedtls/arc4 mbedtls/asn1parse \
            mbedtls/asn1write mbedtls/base64 mbedtls/bignum mbedtls/blowfish \
            mbedtls/camellia mbedtls/ccm mbedtls/cipher mbedtls/cipher_wrap \
            mbedtls/cmac mbedtls/ctr_drbg mbedtls/des mbedtls/dhm mbedtls/ecdh \

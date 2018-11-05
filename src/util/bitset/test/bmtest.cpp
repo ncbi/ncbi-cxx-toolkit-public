@@ -987,7 +987,7 @@ void SerializationTest()
     // far from the beginning
     for (unsigned i = 0; i < 5; ++i)
     {
-        bv_sparse[BSIZE/2 + i * 3] = true;		
+        bv_sparse[BSIZE/2 + i * 3] = true;
     }
     bv_sparse[100] = true;
     bv_sparse[70000] = true;
@@ -1037,7 +1037,7 @@ void SerializationTest()
     
     
     delete bv;
-    delete bset;	
+    delete bset;
     delete [] buf;
 }
 

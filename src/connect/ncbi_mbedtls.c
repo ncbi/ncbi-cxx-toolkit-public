@@ -641,11 +641,11 @@ static EIO_Status s_MbedTlsInit(FSSLPull pull, FSSLPush push)
             mbedtls_debug_set_threshold(s_MbedTlsLogLevel);
             mbedtls_ssl_conf_dbg(&s_MbedTlsConf, x_MbedTlsLogger, 0);
             level = eLOG_Note;
-		} else
+        } else
             level = eLOG_Trace;
         CORE_LOGF(level, ("%s V%s (LogLevel=%d)",
                           kMbedTls, version, s_MbedTlsLogLevel));
-	} else
+    } else
         CORE_UNLOCK;
 
     if ((status = x_InitLocking()) != eIO_Success) {

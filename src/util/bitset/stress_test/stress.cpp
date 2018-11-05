@@ -12250,7 +12250,7 @@ void GroupByTest(const char* filename, const char* query_filename)
                                                    (unsigned char*)buffer,
                                                    0,
                                                    bm::set_AND);
-        // control			
+        // control
         if (0)
         {
             bvect bv_control(BM_GAP);
@@ -12263,7 +12263,7 @@ void GroupByTest(const char* filename, const char* query_filename)
                 cerr << bv.count() << endl;
                 exit(1);
             }
-        }				
+        }
 
 
         if (bv.any())

@@ -2125,7 +2125,7 @@ unsigned short LBOS_Announce(const char*    service,
     /* Check if we need to replace 0.0.0.0 with local IP, and do it if needed*/
     my_healthcheck_url = s_LBOS_Replace0000WithIP(healthcheck_url);
 
-	/*my_healthcheck_url = strdup(healthcheck_url); */
+    /*my_healthcheck_url = strdup(healthcheck_url); */
     if (my_healthcheck_url == NULL) {
         result = eLBOS_DNSResolve;
         goto clean_and_exit;

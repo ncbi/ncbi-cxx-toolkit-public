@@ -102,7 +102,7 @@ int CTestNSStorage::Run(void)
     reg.Set(kDriverName, "service", service);
     reg.Set(kDriverName, "client_name", "test_blobstorage_netcache");
     if (args["protocol"])
-	reg.Set(kDriverName, "protocol", args["protocol"].AsString());
+        reg.Set(kDriverName, "protocol", args["protocol"].AsString());
 
     CNetCacheAPI nc_api(reg);
     auto_ptr<IBlobStorage> storage1(new CBlobStorage_NetCache(nc_api));
@@ -116,7 +116,7 @@ int CTestNSStorage::Run(void)
     try {
         /*CNcbiIstream& is = */storage2->GetIStream(blobid, &blobsize,
                                IBlobStorage::eLockNoWait );
-	throw runtime_error("The blob \"" + blobid + "\" must be locked. Server error.");
+        throw runtime_error("The blob \"" + blobid + "\" must be locked. Server error.");
     } catch( CBlobStorageException& ex ) {
         if( ex.GetErrCode() == CBlobStorageException::eBlocked ) {
             cout << "Blob : " << blobid << " is blocked" << endl;
