@@ -38,6 +38,7 @@
 #include "json_over_uttp.hpp"
 
 #include <functional>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 

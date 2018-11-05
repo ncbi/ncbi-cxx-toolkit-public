@@ -186,7 +186,7 @@ void CRemoteAppRequest::Send(CNcbiOstream& os)
 
         CNcbiIfstream inf(fname.c_str());
         if (inf.good()) {
-            auto_ptr<CNcbiOstream> of(GetNetCacheAPI().CreateOStream(blobid));
+            unique_ptr<CNcbiOstream> of(GetNetCacheAPI().CreateOStream(blobid));
             *of << inf.rdbuf();
             file_map[fname] = blobid;
         }
@@ -262,7 +262,7 @@ void CRemoteAppRequest::x_Deserialize(CNcbiIstream& is, TStoredFiles* files)
                 + blobid;
             CNcbiOfstream of(nfname.c_str());
             if (of.good()) {
-                auto_ptr<CNcbiIstream> blob_is(GetNetCacheAPI().GetIStream(blobid));
+                unique_ptr<CNcbiIstream> blob_is(GetNetCacheAPI().GetIStream(blobid));
                 of << blob_is->rdbuf();
                 blob_is.reset();
                 s_ReplaceArg(args, fname, nfname);

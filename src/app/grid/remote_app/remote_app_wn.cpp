@@ -333,9 +333,9 @@ public:
     }
 
 private:
-    auto_ptr<CRemoteAppLauncher> m_RemoteAppLauncher;
+    unique_ptr<CRemoteAppLauncher> m_RemoteAppLauncher;
     const IWorkerNodeInitContext* m_WorkerNodeInitContext;
-    auto_ptr<CRemoteAppIdleTask> m_IdleTask;
+    unique_ptr<CRemoteAppIdleTask> m_IdleTask;
 };
 
 int main(int argc, const char* argv[])

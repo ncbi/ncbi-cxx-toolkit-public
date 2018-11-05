@@ -332,7 +332,7 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///
     /// @code
     /// size_t blob_size;
-    /// auto_ptr<IReader> reader(nc_api.GetReader(key, &blob_size,
+    /// unique_ptr<IReader> reader(nc_api.GetReader(key, &blob_size,
     ///         nc_caching_mode = CNetCacheAPI::eCaching_Disable));
     /// size_t bytes_read;
     /// size_t total_bytes_read = 0;
@@ -671,8 +671,8 @@ public:
 private:
     CNetCacheAPI m_NCClient;
 
-    auto_ptr<CNcbiIstream> m_IStream;
-    auto_ptr<CNcbiOstream> m_OStream;
+    unique_ptr<CNcbiIstream> m_IStream;
+    unique_ptr<CNcbiOstream> m_OStream;
 
     CBlobStorage_NetCache(const CBlobStorage_NetCache&);
     CBlobStorage_NetCache& operator=(CBlobStorage_NetCache&);

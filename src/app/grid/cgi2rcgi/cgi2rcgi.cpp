@@ -315,7 +315,7 @@ private:
 
     CNetScheduleAPIExt m_NetScheduleAPI;
     CNetCacheAPI m_NetCacheAPI;
-    auto_ptr<CGridClient> m_GridClient;
+    unique_ptr<CGridClient> m_GridClient;
     CCgiResponse* m_Response;
 
 private:
@@ -339,8 +339,8 @@ private:
     bool m_InterceptJQueryCallback;
     bool m_AddJobIdToHeader;
 
-    auto_ptr<CHTMLPage> m_Page;
-    auto_ptr<CHTMLPage> m_CustomHTTPHeader;
+    unique_ptr<CHTMLPage> m_Page;
+    unique_ptr<CHTMLPage> m_CustomHTTPHeader;
 
     string m_HtmlTemplate;
     vector<string> m_HtmlIncs;
@@ -410,7 +410,7 @@ void CCgi2RCgiApp::Init()
 
     // Create CGI argument descriptions class
     //  (For CGI applications only keys can be used)
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),

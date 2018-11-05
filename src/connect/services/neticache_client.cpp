@@ -533,7 +533,7 @@ bool CNetICacheClient::ReadPart(const string& key,
 {
     size_t blob_size;
 
-    auto_ptr<IReader> rdr(m_Impl->GetReadStreamPart(
+    unique_ptr<IReader> rdr(m_Impl->GetReadStreamPart(
         key, version, subkey, offset, part_size,
             &blob_size, nc_caching_mode = CNetCacheAPI::eCaching_Disable));
 

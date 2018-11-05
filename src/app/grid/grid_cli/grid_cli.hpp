@@ -448,7 +448,7 @@ private:
     CNetScheduleAdmin m_NetScheduleAdmin;
     CNetScheduleSubmitter m_NetScheduleSubmitter;
     CNetScheduleExecutor m_NetScheduleExecutor;
-    auto_ptr<CGridClient> m_GridClient;
+    unique_ptr<CGridClient> m_GridClient;
     CNetStorage m_NetStorage;
     CNetStorageByKey m_NetStorageByKey;
     CNetStorageAdmin m_NetStorageAdmin;

@@ -211,7 +211,7 @@ int CRemoteCgiJob::Do(CWorkerNodeJobContext& context)
             context.GetJobInput());
     }
 
-    auto_ptr<CCgiRequest> request;
+    unique_ptr<CCgiRequest> request;
 
     try {
         request.reset(new CCgiRequest(context.GetIStream(),
@@ -348,9 +348,9 @@ public:
     }
 
 private:
-    auto_ptr<CRemoteAppLauncher> m_RemoteAppLauncher;
+    unique_ptr<CRemoteAppLauncher> m_RemoteAppLauncher;
     const IWorkerNodeInitContext* m_WorkerNodeInitContext;
-    auto_ptr<CRemoteCgiIdleTask> m_IdleTask;
+    unique_ptr<CRemoteCgiIdleTask> m_IdleTask;
 };
 
 int main(int argc, const char* argv[])

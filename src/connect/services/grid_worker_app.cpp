@@ -97,7 +97,7 @@ void CGridWorkerApp::Init(void)
 
     CFileAPI::SetDeleteReadOnlyFiles(eOn);
 
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    unique_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               "Worker Node");

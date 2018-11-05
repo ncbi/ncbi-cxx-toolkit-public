@@ -497,7 +497,7 @@ void CWNCTConnectionHandler::x_ProcessRequest(BUF buffer)
 
     CNcbiOstrstream os;
 
-    auto_ptr<CWorkerNodeControlServer::IRequestProcessor>
+    unique_ptr<CWorkerNodeControlServer::IRequestProcessor>
             processor(m_Server.MakeProcessor(request));
 
     if (processor->Authenticate(host, m_Auth, m_Queue, os, &m_Server))

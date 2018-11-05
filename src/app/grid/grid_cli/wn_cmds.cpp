@@ -63,7 +63,7 @@ int CGridCommandLineInterfaceApp::Cmd_Replay()
 
         input_stream->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
 
-        auto_ptr<CCgiRequest> request;
+        unique_ptr<CCgiRequest> request;
 
         try {
             request.reset(new CCgiRequest(*input_stream,

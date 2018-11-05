@@ -184,7 +184,7 @@ int SGridWorkerNodeImpl::OfflineRun()
 
     CDir input_dir(input_dir_name);
 
-    auto_ptr<CDir::TEntries> dir_contents(input_dir.GetEntriesPtr(kEmptyStr,
+    unique_ptr<CDir::TEntries> dir_contents(input_dir.GetEntriesPtr(kEmptyStr,
             CDir::fIgnoreRecursive | CDir::fIgnorePath));
 
     if (dir_contents.get() == NULL) {

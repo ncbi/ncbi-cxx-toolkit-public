@@ -176,7 +176,7 @@ static int s_Run()
     NcbiCout << "check reader/writer" << NcbiEndl;
     {{
         {
-        auto_ptr<IWriter> writer1(cl.GetWriteStream(key1, version, subkey));
+        unique_ptr<IWriter> writer1(cl.GetWriteStream(key1, version, subkey));
         string str = "qwerty";
         writer1->Write(str.c_str(), str.size());
         }
@@ -281,7 +281,7 @@ static void s_SimpleTest()
 
             // Checking blob
             size_t size = 0;
-            auto_ptr<IReader> reader(api.GetReadStream(ctx.key, ctx.version, ctx.subkey, &size));
+            unique_ptr<IReader> reader(api.GetReadStream(ctx.key, ctx.version, ctx.subkey, &size));
 
             BOOST_REQUIRE_MESSAGE(size == kSrcSize,
                     "Blob size (GetData) differs from the source" << ctx);
@@ -362,7 +362,7 @@ static void s_SimpleTest()
             BOOST_REQUIRE_MESSAGE(!api.HasBlob(ctx.key, ctx.subkey),
                     "Removed blob still exists" << ctx);
             size_t size = 0;
-            auto_ptr<IReader> fail_reader(api.GetReadStream(ctx.key, ctx.version, ctx.subkey, &size));
+            unique_ptr<IReader> fail_reader(api.GetReadStream(ctx.key, ctx.version, ctx.subkey, &size));
             BOOST_REQUIRE_MESSAGE(!fail_reader.get(),
                     "Got reader for removed blob" << ctx);
         }
@@ -407,7 +407,7 @@ static void s_SimpleTest()
             BOOST_REQUIRE_MESSAGE(!api.HasBlob(ctx.key, ctx.subkey),
                     "Removed blob still exists" << ctx);
             size_t size = 0;
-            auto_ptr<IReader> fail_reader(api.GetReadStream(ctx.key, ctx.version, ctx.subkey, &size));
+            unique_ptr<IReader> fail_reader(api.GetReadStream(ctx.key, ctx.version, ctx.subkey, &size));
             BOOST_REQUIRE_MESSAGE(!fail_reader.get(),
                     "Got reader for removed blob" << ctx);
         }

@@ -722,7 +722,7 @@ struct SIosApiImpl
         }
 
     private:
-        auto_ptr<CNcbiIostream> m_Impl;
+        unique_ptr<CNcbiIostream> m_Impl;
     };
 
     class CWriter : public CNetStorageRW<IWriter>
@@ -745,7 +745,7 @@ struct SIosApiImpl
         ERW_Result Flush(void) { return m_Impl->flush() ? eRW_Success : eRW_Error; }
 
     private:
-        auto_ptr<CNcbiIostream> m_Impl;
+        unique_ptr<CNcbiIostream> m_Impl;
     };
 };
 

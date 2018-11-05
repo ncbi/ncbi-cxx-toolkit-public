@@ -91,8 +91,8 @@ struct SNetCacheBlob : public CAutomationObject
     CRef<SNetCacheService> m_NetCacheObject;
     string m_BlobKey;
     size_t m_BlobSize;
-    auto_ptr<IReader> m_Reader;
-    auto_ptr<IEmbeddedStreamWriter> m_Writer;
+    unique_ptr<IReader> m_Reader;
+    unique_ptr<IEmbeddedStreamWriter> m_Writer;
 
     static const string kName;
 

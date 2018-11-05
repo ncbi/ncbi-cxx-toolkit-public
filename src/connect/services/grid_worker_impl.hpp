@@ -209,7 +209,7 @@ struct SGridWorkerNodeImpl : public CObject, IWorkerNodeInitContext
     CNetScheduleAPI                GetNetScheduleAPI()     const override;
     CNetCacheAPI                   GetNetCacheAPI()        const override;
 
-    auto_ptr<IWorkerNodeJobFactory>      m_JobProcessorFactory;
+    unique_ptr<IWorkerNodeJobFactory> m_JobProcessorFactory;
 
     CNetCacheAPI m_NetCacheAPI;
     CNetScheduleAPI m_NetScheduleAPI;
@@ -259,7 +259,7 @@ struct SGridWorkerNodeImpl : public CObject, IWorkerNodeInitContext
     CRef<CJobCommitterThread> m_JobCommitterThread;
     CRef<CWorkerNodeIdleThread>  m_IdleThread;
 
-    auto_ptr<IGridWorkerNodeApp_Listener> m_Listener;
+    unique_ptr<IGridWorkerNodeApp_Listener> m_Listener;
 
     CNcbiApplication& m_App;
     CSynRegistry::TPtr m_SynRegistry;

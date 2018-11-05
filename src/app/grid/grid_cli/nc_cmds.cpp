@@ -282,7 +282,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
 
     SetUp_NetCacheCmd(IsOptionSet(eCache), reader_select);
 
-    auto_ptr<IReader> reader;
+    unique_ptr<IReader> reader;
 
     if (m_APIClass == eNetCacheAPI) {
         size_t blob_size = 0;
@@ -403,7 +403,7 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
 {
     SetUp_NetCacheCmd();
 
-    auto_ptr<IEmbeddedStreamWriter> writer;
+    unique_ptr<IEmbeddedStreamWriter> writer;
 
     // Cannot use a reference here because m_Opts.ncid.key.empty() is
     // used later to find out whether a blob was given in the

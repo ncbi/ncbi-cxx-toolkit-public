@@ -342,7 +342,7 @@ INetStorageObjectState* CNetCache::StartRead(void* buf, size_t count,
             return NULL;
         }
 
-        m_Read.Set(reader, blob_size);
+        m_Read.Set(move(reader), blob_size);
         *result =  m_Read.Read(buf, count, bytes_read);
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on reading " + object_loc.GetLocator())
@@ -365,7 +365,7 @@ INetStorageObjectState* CNetCache::StartWrite(const void* buf, size_t count,
 
         _ASSERT(writer.get());
 
-        m_Write.Set(writer);
+        m_Write.Set(move(writer));
         *result = m_Write.Write(buf, count, bytes_written);
     }
     NETSTORAGE_CONVERT_NETCACHEEXCEPTION("on writing " + object_loc.GetLocator())

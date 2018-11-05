@@ -153,8 +153,8 @@ private:
     void UploadCacheFile();
 
     CNetServerConnection m_Connection;
-    auto_ptr<CSocketReaderWriter> m_SocketReaderWriter;
-    auto_ptr<CTransmissionWriter> m_TransmissionWriter;
+    unique_ptr<CSocketReaderWriter> m_SocketReaderWriter;
+    unique_ptr<CTransmissionWriter> m_TransmissionWriter;
     ENetCacheResponseType m_ResponseType;
 
     CNetCacheAPI m_NetCacheAPI;

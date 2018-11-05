@@ -75,7 +75,7 @@ protected:
     virtual bool UseProgressMessage() const;
     virtual bool UseAutomaticCleanup() const;
 
-    auto_ptr<CGridClient>        m_GridClient;
+    unique_ptr<CGridClient> m_GridClient;
 };
 
 /////////////////////////////////////////////////////////////////////////////

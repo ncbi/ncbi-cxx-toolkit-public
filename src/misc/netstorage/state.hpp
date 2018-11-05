@@ -160,13 +160,13 @@ public:
 class CRONetCache : public CROState
 {
 public:
-    typedef auto_ptr<IReader> TReaderPtr;
+    typedef unique_ptr<IReader> TReaderPtr;
 
     CRONetCache(bool* cancel_relocate) : CROState(cancel_relocate) {}
 
     void Set(TReaderPtr reader, size_t blob_size)
     {
-        m_Reader = reader;
+        m_Reader = move(reader);
         m_BlobSize = blob_size;
         m_BytesRead = 0;
     }
@@ -187,11 +187,11 @@ private:
 class CWONetCache : public SNetStorageObjectOState
 {
 public:
-    typedef auto_ptr<IEmbeddedStreamWriter> TWriterPtr;
+    typedef unique_ptr<IEmbeddedStreamWriter> TWriterPtr;
 
     void Set(TWriterPtr writer)
     {
-        m_Writer = writer;
+        m_Writer = move(writer);
     }
 
     ERW_Result Write(const void* buf, size_t count, size_t* written) override;

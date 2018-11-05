@@ -115,7 +115,7 @@ protected:
 
 private:
     CNetCacheAPI m_Storage;
-    auto_ptr<IReader> m_NetCacheReader;
+    unique_ptr<IReader> m_NetCacheReader;
     string m_Data;
     size_t m_BytesToRead;
 };

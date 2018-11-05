@@ -996,8 +996,8 @@ public:
 
 private:
     CNcbiOstream& m_OrigStream;
-    auto_ptr<CFileReaderWriter> m_ReaderWriter;
-    auto_ptr<CNcbiOstream> m_StreamGuard;
+    unique_ptr<CFileReaderWriter> m_ReaderWriter;
+    unique_ptr<CNcbiOstream> m_StreamGuard;
     CNcbiOstream* m_Stream;
     string m_Name;
 };
@@ -1071,7 +1071,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
 
         bool monitor = !m_MonitorAppPath.empty() && m_MonitorPeriod.IsFinite();
 
-        auto_ptr<CPipe::IProcessWatcher> watcher(monitor ?
+        unique_ptr<CPipe::IProcessWatcher> watcher(monitor ?
                 new CMonitoredProcessWatcher(params, working_dir,
                     m_MonitorAppPath, env, m_MonitorPeriod, m_MonitorRunTimeout) :
                 new CJobContextProcessWatcher(params));

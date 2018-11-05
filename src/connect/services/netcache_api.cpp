@@ -786,7 +786,7 @@ void CNetCacheAPI::ReadPart(const string& key,
     const CNamedParameterList* optional)
 {
     size_t blob_size;
-    auto_ptr<IReader> reader(GetPartReader(key, offset, part_size,
+    unique_ptr<IReader> reader(GetPartReader(key, offset, part_size,
         &blob_size, optional));
 
     buffer.resize(blob_size);
@@ -879,7 +879,7 @@ CNetCacheAPI::EReadResult CNetCacheAPI::GetData(const string&  key,
 
     size_t x_blob_size = 0;
 
-    auto_ptr<IReader> reader(GetData(key, &x_blob_size, optional));
+    unique_ptr<IReader> reader(GetData(key, &x_blob_size, optional));
     if (reader.get() == 0)
         return eNotFound;
 
@@ -896,7 +896,7 @@ CNetCacheAPI::EReadResult CNetCacheAPI::GetData(
 {
     size_t x_blob_size = 0;
 
-    auto_ptr<IReader> reader(GetData(key, &x_blob_size, optional));
+    unique_ptr<IReader> reader(GetData(key, &x_blob_size, optional));
     if (reader.get() == 0)
         return eNotFound;
 

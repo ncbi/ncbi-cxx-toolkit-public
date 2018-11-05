@@ -480,7 +480,7 @@ public:
     virtual IWorkerNodeIdleTask* GetIdleTask() { return m_IdleTask.get(); }
 
 private:
-    auto_ptr<TWorkerNodeIdleTask> m_IdleTask;
+    unique_ptr<TWorkerNodeIdleTask> m_IdleTask;
 };
 
 #define NCBI_DECLARE_WORKERNODE_FACTORY_IMPL(TWorkerNodeJob, Version)       \

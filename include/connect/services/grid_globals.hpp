@@ -153,7 +153,7 @@ private:
 
     volatile CNetScheduleAdmin::EShutdownLevel m_ShutdownLevel;
     volatile int                               m_ExitCode;
-    auto_ptr<CWNJobWatcher> m_JobWatcher;
+    unique_ptr<CWNJobWatcher> m_JobWatcher;
     const CTime  m_StartTime;
     SGridWorkerNodeImpl* m_Worker;
     unsigned short m_UDPPort;

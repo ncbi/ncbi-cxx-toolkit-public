@@ -422,7 +422,7 @@ static int s_AbortTest(const string& service,
     string key;
 
     {{
-        auto_ptr<IEmbeddedStreamWriter> writer(nc.PutData(&key,
+        unique_ptr<IEmbeddedStreamWriter> writer(nc.PutData(&key,
                 nc_caching_mode = CNetCacheAPI::eCaching_Disable));
 
         writer->Write("Hello", 5);
@@ -609,7 +609,7 @@ static int s_Run(const CNamedParameterList* nc_params)
 
 
         size_t bsize;
-        auto_ptr<IReader> rdr(nc_client.GetData(key, &bsize));
+        unique_ptr<IReader> rdr(nc_client.GetData(key, &bsize));
 
         BOOST_REQUIRE(rdr.get() != NULL);
 
@@ -826,7 +826,7 @@ static void s_SimpleTest(const CNamedParameterList* nc_params)
 
         // Checking blob
         size_t size = 0;
-        auto_ptr<IReader> reader(api.GetData(key, &size));
+        unique_ptr<IReader> reader(api.GetData(key, &size));
 
         BOOST_REQUIRE_MESSAGE(size == kSrcSize,
                 "Blob size (GetData) differs from the source (" << i << ")");
@@ -864,7 +864,7 @@ static void s_SimpleTest(const CNamedParameterList* nc_params)
         // Checking removed blob
         BOOST_REQUIRE_MESSAGE(!api.HasBlob(key),
                 "Removed blob still exists (" << i << ")");
-        auto_ptr<IReader> fail_reader(api.GetData(key, &size));
+        unique_ptr<IReader> fail_reader(api.GetData(key, &size));
         BOOST_REQUIRE_MESSAGE(!fail_reader.get(),
                 "Got reader for removed blob (" << i << ")");
     }

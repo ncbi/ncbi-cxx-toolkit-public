@@ -106,9 +106,9 @@ private:
     list<string> m_ExcludeEnv;
     list<string> m_IncludeEnv;
 
-    auto_ptr<CRemoteAppReaper> m_Reaper;
-    auto_ptr<CRemoteAppVersion> m_Version;
-    auto_ptr<CRemoteAppTimeoutReporter> m_TimeoutReporter;
+    unique_ptr<CRemoteAppReaper> m_Reaper;
+    unique_ptr<CRemoteAppVersion> m_Version;
+    unique_ptr<CRemoteAppTimeoutReporter> m_TimeoutReporter;
     unique_ptr<CRanges> m_MustFailNoRetries;
 };
 
@@ -116,7 +116,7 @@ private:
 class CRemoteAppBaseListener : public CGridWorkerNodeApp_Listener
 {
 public:
-    typedef auto_ptr<CRemoteAppLauncher> TLauncherPtr;
+    typedef unique_ptr<CRemoteAppLauncher> TLauncherPtr;
 
     CRemoteAppBaseListener(const TLauncherPtr& launcher) : m_Launcher(launcher) {}
 
@@ -134,8 +134,8 @@ template<class TFactory, class TListener>
 int Main(int argc, const char* argv[])
 {
     GetDiagContext().SetOldPostFormat(false);
-    auto_ptr<TFactory> factory(new TFactory);
-    auto_ptr<TListener> listener(factory->CreateListener());
+    unique_ptr<TFactory> factory(new TFactory);
+    unique_ptr<TListener> listener(factory->CreateListener());
     const string app_name(factory->GetAppName());
     grid::CVersionReporting<CGridWorkerApp> app(factory.release());
     app.SetListener(listener.release());

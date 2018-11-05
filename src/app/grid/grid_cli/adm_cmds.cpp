@@ -224,7 +224,7 @@ int CGridCommandLineInterfaceApp::NetCacheSanityCheck()
         return CHECK_FAILED_RETVAL;
     }
 
-    auto_ptr<IReader> reader(m_NetCacheAPI.GetData(key, &blob_size,
+    unique_ptr<IReader> reader(m_NetCacheAPI.GetData(key, &blob_size,
             nc_caching_mode = CNetCacheAPI::eCaching_Disable));
 
     if (reader.get() == 0) {
@@ -244,7 +244,7 @@ int CGridCommandLineInterfaceApp::NetCacheSanityCheck()
     reader.reset(0);
 
     {{
-        auto_ptr<IEmbeddedStreamWriter> wrt(m_NetCacheAPI.PutData(&key));
+        unique_ptr<IEmbeddedStreamWriter> wrt(m_NetCacheAPI.PutData(&key));
         size_t bytes_written;
         wrt->Write(test_data2, sizeof(test_data2), &bytes_written);
         wrt->Close();
