@@ -33,18 +33,9 @@
 
 #include "exec_helpers.hpp"
 
-#include <connect/services/grid_globals.hpp>
-
 #include <cgi/ncbicgi.hpp>
 
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbifile.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbiexec.hpp>
-
-#include <vector>
 #include <functional>
-#include <algorithm>
 #include <iterator>
 
 USING_NCBI_SCOPE;
@@ -271,90 +262,13 @@ CRemoteCgiJob::CRemoteCgiJob(const IWorkerNodeInitContext&,
     CGridGlobals::GetInstance().SetReuseJobObject(true);
 }
 
-class CRemoteCgiIdleTask : public IWorkerNodeIdleTask
-{
-public:
-    CRemoteCgiIdleTask(const string& idle_app_cmd) : m_AppCmd(idle_app_cmd)
-    {
-    }
-
-    virtual ~CRemoteCgiIdleTask() {}
-
-    virtual void Run(CWorkerNodeIdleTaskContext&)
-    {
-        if (!m_AppCmd.empty())
-            CExec::System(m_AppCmd.c_str());
-    }
-
-private:
-    string m_AppCmd;
-};
-
-typedef CRemoteAppBaseListener CRemoteCgiListener;
-
 #define GRID_APP_NAME "remote_cgi"
+extern const char kGridAppName[] = GRID_APP_NAME;
 
-class CRemoteCgiJobFactory : public IWorkerNodeJobFactory
-{
-public:
-    virtual void Init(const IWorkerNodeInitContext& context)
-    {
-        m_RemoteAppLauncher.reset(
-                new CRemoteAppLauncher("remote_cgi", context.GetConfig()));
-
-        CFile file(m_RemoteAppLauncher->GetAppPath());
-
-        if (!file.Exists()) {
-            NCBI_THROW_FMT(CException, eInvalid, "File \"" <<
-                    m_RemoteAppLauncher->GetAppPath() <<
-                    "\" does not exists.");
-        }
-
-        if (!CRemoteAppLauncher::CanExec(file)) {
-            NCBI_THROW_FMT(CException, eInvalid, "File \"" <<
-                    m_RemoteAppLauncher->GetAppPath() <<
-                    "\" is not executable.");
-        }
-
-        m_WorkerNodeInitContext = &context;
-        string idle_app_cmd = context.GetConfig().GetString("remote_cgi",
-                "idle_app_cmd", kEmptyStr);
-        if (!idle_app_cmd.empty())
-            m_IdleTask.reset(new CRemoteCgiIdleTask(idle_app_cmd));
-    }
-    virtual IWorkerNodeJob* CreateInstance(void)
-    {
-        return new CRemoteCgiJob(*m_WorkerNodeInitContext, *m_RemoteAppLauncher);
-    }
-    virtual IWorkerNodeIdleTask* GetIdleTask() { return m_IdleTask.get(); }
-
-    virtual string GetJobVersion() const
-    {
-        return m_WorkerNodeInitContext->GetNetScheduleAPI().GetProgramVersion();
-    }
-    virtual string GetAppName() const
-    {
-        return GRID_APP_NAME;
-    }
-    virtual string GetAppVersion() const
-    {
-        _ASSERT(m_RemoteAppLauncher.get());
-        return m_RemoteAppLauncher->GetAppVersion(GRID_APP_VERSION);
-    }
-
-    CRemoteCgiListener* CreateListener() const
-    {
-        return new CRemoteCgiListener(m_RemoteAppLauncher);
-    }
-
-private:
-    unique_ptr<CRemoteAppLauncher> m_RemoteAppLauncher;
-    const IWorkerNodeInitContext* m_WorkerNodeInitContext;
-    unique_ptr<CRemoteCgiIdleTask> m_IdleTask;
-};
+using TRemoteAppJobFactory = CRemoteAppJobFactory<CRemoteCgiJob, CRemoteAppBaseListener, kGridAppName>;
 
 int main(int argc, const char* argv[])
 {
     GRID_APP_CHECK_VERSION_ARGS();
-    return Main<CRemoteCgiJobFactory, CRemoteCgiListener>(argc, argv);
+    return Main<TRemoteAppJobFactory, CRemoteAppBaseListener>(argc, argv);
 }

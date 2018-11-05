@@ -34,8 +34,16 @@
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbienv.hpp>
+#include <corelib/ncbiexec.hpp>
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbifile.hpp>
+#include <corelib/ncbiargs.hpp>
 
 #include <connect/services/grid_worker_app.hpp>
+#include <connect/services/grid_globals.hpp>
+
+#include <vector>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
@@ -128,6 +136,82 @@ public:
 
 private:
     const TLauncherPtr& m_Launcher;
+};
+
+class CRemoteAppIdleTask : public IWorkerNodeIdleTask
+{
+public:
+    CRemoteAppIdleTask(const string& idle_app_cmd) : m_AppCmd(idle_app_cmd) {}
+    ~CRemoteAppIdleTask() {}
+
+    void Run(CWorkerNodeIdleTaskContext&);
+
+private:
+    string m_AppCmd;
+};
+
+template <class TJob, class TListener, const char* const kName>
+class CRemoteAppJobFactory : public IWorkerNodeJobFactory
+{
+public:
+    virtual void Init(const IWorkerNodeInitContext& context)
+    {
+        m_RemoteAppLauncher.reset(
+                new CRemoteAppLauncher(kName, context.GetConfig()));
+
+        CFile file(m_RemoteAppLauncher->GetAppPath());
+
+        if (!file.Exists()) {
+            NCBI_THROW_FMT(CException, eInvalid, "File \"" <<
+                    m_RemoteAppLauncher->GetAppPath() <<
+                    "\" does not exists.");
+        }
+
+        if (!CRemoteAppLauncher::CanExec(file)) {
+            NCBI_THROW_FMT(CException, eInvalid, "File \"" <<
+                    m_RemoteAppLauncher->GetAppPath() <<
+                    "\" is not executable.");
+        }
+
+        m_WorkerNodeInitContext = &context;
+        string idle_app_cmd = context.GetConfig().GetString(kName,
+                "idle_app_cmd", kEmptyStr);
+        if (!idle_app_cmd.empty())
+            m_IdleTask.reset(new CRemoteAppIdleTask(idle_app_cmd));
+    }
+
+    virtual IWorkerNodeJob* CreateInstance(void)
+    {
+        return new TJob(*m_WorkerNodeInitContext, *m_RemoteAppLauncher);
+    }
+
+    virtual IWorkerNodeIdleTask* GetIdleTask() { return m_IdleTask.get(); }
+
+    virtual string GetJobVersion() const
+    {
+        return m_WorkerNodeInitContext->GetNetScheduleAPI().GetProgramVersion();
+    }
+
+    virtual string GetAppName() const
+    {
+        return kName;
+    }
+
+    virtual string GetAppVersion() const
+    {
+        _ASSERT(m_RemoteAppLauncher.get());
+        return m_RemoteAppLauncher->GetAppVersion(GRID_APP_VERSION);
+    }
+
+    TListener* CreateListener() const
+    {
+        return new TListener(m_RemoteAppLauncher);
+    }
+
+private:
+    unique_ptr<CRemoteAppLauncher> m_RemoteAppLauncher;
+    const IWorkerNodeInitContext* m_WorkerNodeInitContext;
+    unique_ptr<IWorkerNodeIdleTask> m_IdleTask;
 };
 
 template<class TFactory, class TListener>

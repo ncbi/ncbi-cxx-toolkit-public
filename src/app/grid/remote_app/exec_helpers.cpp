@@ -1124,4 +1124,10 @@ void CRemoteAppLauncher::OnGridWorkerStart()
     m_Reaper->StartCollector();
 }
 
+void CRemoteAppIdleTask::Run(CWorkerNodeIdleTaskContext&)
+{
+    if (!m_AppCmd.empty())
+        CExec::System(m_AppCmd.c_str());
+}
+
 END_NCBI_SCOPE
