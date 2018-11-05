@@ -135,8 +135,6 @@ using namespace grid::netschedule;
 ////////////////////////////////////////////////////////////////////////////////
 //
 
-#define SERVER_PARAMS_ASK_MAX_COUNT 100
-
 inline string g_MakeBaseCmd(const string& cmd_name, const string& job_key)
 {
     string cmd(cmd_name);
@@ -343,7 +341,7 @@ public:
             const CNetScheduleJob& job, time_t* job_exptime,
             ENetScheduleQueuePauseMode* pause_mode);
 
-    const CNetScheduleAPI::SServerParams& GetServerParams();
+    const CNetScheduleAPI::SServerParams& GetServerParams() { return m_ServerParamsSync(m_Service, m_Queue); }
 
     typedef CNetScheduleAPI::TQueueParams TQueueParams;
     void GetQueueParams(const string& queue_name, TQueueParams& queue_params);
@@ -394,9 +392,16 @@ public:
     typedef map<string, string> TAuthParams;
     TAuthParams m_AuthParams;
 
-    auto_ptr<CNetScheduleAPI::SServerParams> m_ServerParams;
-    long m_ServerParamsAskCount;
-    CFastMutex m_FastMutex;
+    struct SServerParamsSync
+    {
+        const CNetScheduleAPI::SServerParams& operator()(CNetService& service, const string& queue);
+
+    private:
+        CFastMutex m_FastMutex;
+        CNetScheduleAPI::SServerParams m_ServerParams;
+        long m_AskCount = 0;
+        constexpr static long kAskMaxCount = 100;
+    } m_ServerParamsSync;
 
     CNetScheduleExecutor::EJobAffinityPreference m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
     list<string> m_AffinityList;

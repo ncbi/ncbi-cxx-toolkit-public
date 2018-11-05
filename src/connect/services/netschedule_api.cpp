@@ -1023,25 +1023,22 @@ bool SNetScheduleAPIImpl::GetServerByNode(const string& ns_node,
     return true;
 }
 
-const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
+const CNetScheduleAPI::SServerParams&
+SNetScheduleAPIImpl::SServerParamsSync::operator()(CNetService& service, const string& queue)
 {
     CFastMutexGuard g(m_FastMutex);
 
-    if (!m_ServerParams.get())
-        m_ServerParams.reset(new CNetScheduleAPI::SServerParams);
-    else
-        if (m_ServerParamsAskCount-- > 0)
-            return *m_ServerParams;
+    if (m_AskCount-- > 0) return m_ServerParams;
 
-    m_ServerParamsAskCount = SERVER_PARAMS_ASK_MAX_COUNT;
+    m_AskCount = kAskMaxCount;
 
-    m_ServerParams->max_input_size = kNetScheduleMaxDBDataSize;
-    m_ServerParams->max_output_size = kNetScheduleMaxDBDataSize;
+    m_ServerParams.max_input_size = kNetScheduleMaxDBDataSize;
+    m_ServerParams.max_output_size = kNetScheduleMaxDBDataSize;
 
-    string cmd("QINF2 " + m_Queue);
+    string cmd("QINF2 " + queue);
     g_AppendClientIPSessionIDHitID(cmd);
 
-    CUrlArgs url_parser(m_Service.FindServerAndExec(cmd, false).response);
+    CUrlArgs url_parser(service.FindServerAndExec(cmd, false).response);
 
     enum {
         eMaxInputSize,
@@ -1055,11 +1052,11 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
         if (field->name[0] == 'm') {
             if (field->name == "max_input_size") {
                 field_bits |= (1 << eMaxInputSize);
-                m_ServerParams->max_input_size =
+                m_ServerParams.max_input_size =
                         NStr::StringToInt(field->value);
             } else if (field->name == "max_output_size") {
                 field_bits |= (1 << eMaxOutputSize);
-                m_ServerParams->max_output_size =
+                m_ServerParams.max_output_size =
                         NStr::StringToInt(field->value);
             }
         }
@@ -1067,7 +1064,7 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
             break;
     }
 
-    return *m_ServerParams;
+    return m_ServerParams;
 }
 
 const CNetScheduleAPI::SServerParams& CNetScheduleAPI::GetServerParams()
