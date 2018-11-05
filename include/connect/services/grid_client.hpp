@@ -263,7 +263,6 @@ public:
 private:
     friend class CGridJobBatchSubmitter;
 
-    void Init(ECleanUp cleanup, EProgressMsg progress_msg);
     void RemoveDataBlob(const string&);
     void UseNextSubHitID();
 
@@ -274,7 +273,7 @@ private:
     SGridRead m_GridRead;
     SGridWrite m_GridWrite;
 
-    auto_ptr<CGridJobBatchSubmitter> m_JobBatchSubmitter;
+    CGridJobBatchSubmitter m_JobBatchSubmitter;
 
     void x_ProlongBlobLifetime(const string& blob_key, unsigned ttl);
     bool x_ProlongJobFieldLifetime(const string& job_field, unsigned ttl);
@@ -283,10 +282,10 @@ private:
             CNetScheduleAPI::EJobStatus status, time_t job_exptime);
     void x_GetJobDetails();
 
-    size_t       m_BlobSize;
+    size_t       m_BlobSize = 0;
     bool         m_AutoCleanUp;
     bool         m_UseProgress;
-    bool         m_JobDetailsRead;
+    bool         m_JobDetailsRead = false;
 
     /// The copy constructor and the assignment operator
     /// are prohibited

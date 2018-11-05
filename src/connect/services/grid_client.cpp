@@ -45,11 +45,8 @@ CGridClient::CGridClient(CNetScheduleSubmitter::TInstance ns_submitter,
                          IBlobStorage& storage,
                          ECleanUp cleanup,
                          EProgressMsg progress_msg) :
-    m_NetScheduleSubmitter(ns_submitter),
-    m_NetCacheAPI(
-        dynamic_cast<CBlobStorage_NetCache&>(storage).GetNetCacheAPI())
+    CGridClient(ns_submitter, dynamic_cast<CBlobStorage_NetCache&>(storage).GetNetCacheAPI(), cleanup, progress_msg)
 {
-    Init(cleanup, progress_msg);
 }
 
 CGridClient::CGridClient(CNetScheduleSubmitter::TInstance ns_submitter,
@@ -57,25 +54,17 @@ CGridClient::CGridClient(CNetScheduleSubmitter::TInstance ns_submitter,
                          ECleanUp cleanup,
                          EProgressMsg progress_msg) :
     m_NetScheduleSubmitter(ns_submitter),
-    m_NetCacheAPI(nc_client)
+    m_NetCacheAPI(nc_client),
+    m_JobBatchSubmitter(*this),
+    m_AutoCleanUp(cleanup == eAutomaticCleanup),
+    m_UseProgress(progress_msg == eProgressMsgOn)
 {
-    Init(cleanup, progress_msg);
-}
-
-void CGridClient::Init(ECleanUp cleanup, EProgressMsg progress_msg)
-{
-    m_JobBatchSubmitter.reset(new CGridJobBatchSubmitter(*this));
-
-    m_BlobSize = 0;
-    m_AutoCleanUp = cleanup == eAutomaticCleanup;
-    m_UseProgress = progress_msg == eProgressMsgOn;
-    m_JobDetailsRead = false;
 }
 
 CGridJobBatchSubmitter& CGridClient::GetJobBatchSubmitter()
 {
-    m_JobBatchSubmitter->Reset();
-    return *m_JobBatchSubmitter;
+    m_JobBatchSubmitter.Reset();
+    return m_JobBatchSubmitter;
 }
 
 void CGridClient::CancelJob(const string& job_key)
