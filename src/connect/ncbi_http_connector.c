@@ -839,9 +839,11 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
             }
             if (x_IsWriteThru(uuu)) {
                 assert(req_method != eReqMethod_Connect);
-                if (req_method == eReqMethod_Any)
+                if (req_method == eReqMethod_Any) {
                     req_method  = BUF_Size(uuu->w_buf)
-                        ? eReqMethod_Post : eReqMethod_Get;
+                        ? eReqMethod_Post
+                        : eReqMethod_Get;
+                }
                 if (req_method != eReqMethod_Head  &&
                     req_method != eReqMethod_Get) {
                     if (!ConnNetInfo_OverrideUserHeader
@@ -851,7 +853,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                     }
                     uuu->chunked = 1;
                 }
-                len = 0;
+                len = (size_t)(-1L);
             } else
                 len = BUF_Size(uuu->w_buf);
             if (req_method == eReqMethod_Connect
@@ -960,6 +962,13 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                      " (C Toolkit)"
 #endif /*NCBI_CXX_TOOLKIT*/
                      );
+#if 0
+                if (!uuu->net_info->version
+                    &&  req_method != eReqMethod_Connect) {
+                    ConnNetInfo_ExtendUserHeader(uuu->net_info,
+                                                 "Connection: keep-alive");
+                }
+#endif
                 reset_user_header = 1;
             } else
                 reset_user_header = 0;
@@ -1393,7 +1402,7 @@ static EIO_Status s_ReadData(SHttpConnector* uuu,
 }
 
 
-static int/*bool*/ x_IsErrorHeader(SHttpConnector* uuu)
+static int/*bool*/ x_ErrorHeaderOnly(SHttpConnector* uuu)
 {
     if (uuu->error_header == eDefault) {
         char val[32];
@@ -1519,7 +1528,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         http_code = 0/*no server error*/;
 
     if (uuu->net_info->debug_printout == eDebugPrintout_Some
-        &&  (http_code  ||  !x_IsErrorHeader(uuu))) {
+        &&  (http_code  ||  !x_ErrorHeaderOnly(uuu))) {
         /* HTTP header gets printed as part of data logging when
            uuu->net_info->debug_printout == eDebugPrintout_Data. */
         const char* header_header;
@@ -1574,7 +1583,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         if (header_parse == eHTTP_HeaderError) {
             retry->mode = eRetry_None;
             if (uuu->net_info->debug_printout == eDebugPrintout_Some
-                &&  !http_code/*i.e. was okay*/  &&  x_IsErrorHeader(uuu)) {
+                &&  !http_code/*i.e. was okay*/  &&  x_ErrorHeaderOnly(uuu)) {
                 if (!url)
                     url = ConnNetInfo_URL(uuu->net_info);
                 CORE_DATAF_X(9, eLOG_Note, hdr, size,
@@ -1709,8 +1718,12 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                         m = (size_t)(c - con);
                     } else
                         m = n;
-                    if (m == 5  &&  strncasecmp(con, "close", m) == 0) {
+                    if (m == 5  &&  strncasecmp(con, "close", 5) == 0) {
                         uuu->keepalive = 0;
+                        break;
+                    }
+                    if (m == 10  &&  strncasecmp(con, "keep-alive", 10) == 0) {
+                        uuu->keepalive = 1;
                         break;
                     }
                     if (m == n)

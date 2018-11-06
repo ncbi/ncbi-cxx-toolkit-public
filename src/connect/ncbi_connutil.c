@@ -193,7 +193,7 @@ static const char* s_GetValue(const char* svc, size_t len, const char* param,
 {
     const char* retval;
 
-    assert(!svc  ||  (*svc  &&  len == strlen(svc)));
+    assert((!svc  &&  !len)  ||  (*svc  &&  len == strlen(svc)));
     assert(param  &&  *param);
     assert(value  &&  value_size > 0);
 
@@ -495,10 +495,11 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         goto out;
     }
 
-    /* default referer */
-    ConnNetInfo_GetValue(0, REG_CONN_HTTP_REFERER, str, sizeof(str),
-                         DEF_CONN_HTTP_REFERER);
+    /* default referer, all error(s) ignored */
+    s_GetValue(0, 0, REG_CONN_HTTP_REFERER, str, sizeof(str),
+               DEF_CONN_HTTP_REFERER, &generic);
     info->http_referer = *str ? strdup(str) : 0;
+    assert(generic);
 
     /* credentials */
     info->credentials = 0;
@@ -1632,6 +1633,7 @@ extern EIO_Status URL_ConnectEx
     const char* str;  
     SSOCK_Init  init;
     const char* http;
+    int/*bool*/ x_c_l;
     EIO_Status  status;
     size_t      hdr_len;
     size_t      args_len;
@@ -1683,10 +1685,11 @@ extern EIO_Status URL_ConnectEx
     http = kHttp[req_method < eReqMethod_v1 ? 0 : 1];
     x_req_meth = (EReqMethod)(req_method & (TReqMethod)(~eReqMethod_v1));
     /* select request method and its verbal representation */
+    x_c_l = content_length  &&  content_length != (size_t)(-1L) ? 1 : 0;
     if (x_req_meth == eReqMethod_Any)
-        x_req_meth  = content_length ? eReqMethod_Post : eReqMethod_Get;
-    else if (content_length  &&  (x_req_meth == eReqMethod_Head  ||
-                                  x_req_meth == eReqMethod_Get)) {
+        x_req_meth  = x_c_l ? eReqMethod_Post : eReqMethod_Get;
+    else if (x_c_l  &&  (x_req_meth == eReqMethod_Head  ||
+                         x_req_meth == eReqMethod_Get)) {
         if (port)
             sprintf(temp, ":%hu", port);
         else
@@ -1698,8 +1701,15 @@ extern EIO_Status URL_ConnectEx
                      host, temp, &"/"[*path == '/'], path,
                      (unsigned long) content_length,
                      x_req_meth == eReqMethod_Get ? "GET" : "HEAD"));
-        content_length = 0;
+        content_length  = (size_t)(-1L);
     }
+    if (content_length != (size_t)(-1L)  &&  x_req_meth != eReqMethod_Connect){
+        /* RFC7230 3.3.2 */
+        x_c_l = content_length
+            ||  x_req_meth == eReqMethod_Put
+            ||  x_req_meth == eReqMethod_Post ? 1/*true*/ : 0/*false*/;
+    } else
+        x_c_l = 0/*false*/;
 
     if (!(str = x_ReqMethod(x_req_meth, 0))) {
         char tmp[40];
@@ -1738,7 +1748,7 @@ extern EIO_Status URL_ConnectEx
         !BUF_Write      (&buf, http, sizeof(kHttp[0]) - 1)         ||
 
         /* Content-Length: <content_length>\r\n */
-        (content_length  &&  x_req_meth != eReqMethod_Connect
+        (x_c_l
          &&  !BUF_Write(&buf, temp, (size_t)
                         sprintf(temp, "Content-Length: %lu\r\n",
                                 (unsigned long) content_length)))  ||

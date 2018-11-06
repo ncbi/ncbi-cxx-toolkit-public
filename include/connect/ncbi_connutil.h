@@ -588,8 +588,10 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  *
  * The "content_length" parameter must specify the exact(!) amount of data
  * that is going to be sent (0 if none) to HTTP server.  The "Content-Length"
- * header with the specified non-zero value gets added to all legal requests
- * (but GET / HEAD / CONNECT).
+ * header with the specified value gets added to all legal requests
+ * (but GET / HEAD / CONNECT).  Special case of (-1L) suppresses the header.
+ * Note that if "user_header" contains a "Transfer-Encoding:" header tag, then
+ * "content_length" must be passed as (-1L) (RFC7230, 3.3.2).
  *
  * Alternatively, "content_length" can specify the amount of initial data to be
  * sent with a CONNECT request into the established tunnel, and held by the
