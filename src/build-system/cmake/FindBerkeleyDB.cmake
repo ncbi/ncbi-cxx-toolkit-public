@@ -10,6 +10,7 @@ FIND_PATH( BERKELEYDB_INCLUDE_DIR db.h
     PATHS ${NCBI_TOOLS_ROOT}/BerkeleyDB/include/
           /usr/local/include
           /usr/include
+    NO_DEFAULT_PATH
     )
 
 IF (BERKELEYDB_INCLUDE_DIR)
@@ -18,6 +19,7 @@ IF (BERKELEYDB_INCLUDE_DIR)
               "${NCBI_TOOLS_ROOT}/BerkeleyDB/${BUILD_PREFIX}${CMAKE_BUILD_TYPE}/"
               /usr/local/lib
               /usr/lib
+        NO_DEFAULT_PATH
         )
 
     IF (BERKELEYDB_LIBRARY)
