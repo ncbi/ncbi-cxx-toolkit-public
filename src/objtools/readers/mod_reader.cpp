@@ -37,7 +37,12 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/pub/Pub_equiv.hpp>
@@ -45,9 +50,97 @@
 
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+using TModNameSet = unordered_set<string>;
+
+    
+template<typename TEnum>
+unordered_map<string, TEnum> s_InitModNameToEnumMap(
+    const CEnumeratedTypeValues& etv,
+    const TModNameSet& skip_enum_names,
+    const unordered_map<string, TEnum>&  extra_enum_names_to_vals)
+
+{
+    using TModNameEnumMap = unordered_map<string, TEnum>;
+    TModNameEnumMap smod_enum_map;
+    
+    for (const auto& name_val : etv.GetValues()) {
+        const auto& enum_name = name_val.first;
+        const TEnum& enum_val = static_cast<TEnum>(name_val.second);
+
+        if (skip_enum_names.find(enum_name) != skip_enum_names.end()) 
+        {
+            continue;
+        }
+        auto emplace_result = smod_enum_map.emplace(enum_name, enum_val);
+        // emplace must succeed
+        if (!emplace_result.second) {
+            NCBI_USER_THROW_FMT(
+                "s_InitModNameToEnumMap " << enum_name);
+        }
+    }
+
+    for (auto extra_smod_to_enum : extra_enum_names_to_vals) {
+        auto emplace_result = smod_enum_map.emplace(extra_smod_to_enum);
+        // emplace must succeed
+        if (!emplace_result.second) {
+            NCBI_USER_THROW_FMT(
+                "s_InitModNameToEnumMap " << extra_smod_to_enum.first);
+        }
+    }
+    return smod_enum_map;
+}
+
+
+static unordered_map<string, COrgMod::TSubtype> 
+s_InitModNameOrgSubtypeMap(void)
+{
+    static const unordered_set<string> kDeprecatedOrgSubtypes{
+            "dosage", "old-lineage", "old-name"};
+    static const unordered_map<string, COrgMod::TSubtype> 
+        extra_smod_to_enum_names 
+        {{ "subspecies", COrgMod::eSubtype_sub_species},
+         {"host",COrgMod::eSubtype_nat_host},
+         {"specific-host", COrgMod::eSubtype_nat_host}};
+    return s_InitModNameToEnumMap<COrgMod::TSubtype>(
+        *COrgMod::GetTypeInfo_enum_ESubtype(),
+        kDeprecatedOrgSubtypes,
+        extra_smod_to_enum_names
+    );
+}
+
+
+static unordered_map<string, CSubSource::TSubtype> 
+s_InitModNameSubSrcSubtypeMap(void)
+{
+    // some are skipped because they're handled specially and some are
+    // skipped because they're deprecated
+    static const unordered_set<string> skip_enum_names {
+        // skip because handled specially elsewhere
+        "fwd-primer-seq", "rev-primer-seq",
+        "fwd-primer-name", "rev-primer-name",
+        // skip because deprecated
+        "transposon-name",
+        "plastid-name",
+        "insertion-seq-name",
+    };
+    static const unordered_map<string, CSubSource::TSubtype> 
+        extra_smod_to_enum_names 
+        {{ "sub-clone", CSubSource::eSubtype_subclone },
+        { "lat-long",   CSubSource::eSubtype_lat_lon  },
+        { "latitude-longitude", CSubSource::eSubtype_lat_lon },
+        {  "note",  CSubSource::eSubtype_other  },
+        {  "notes", CSubSource::eSubtype_other  }};  
+    return s_InitModNameToEnumMap<CSubSource::TSubtype>(
+            *CSubSource::GetTypeInfo_enum_ESubtype(),
+            skip_enum_names,
+            extra_smod_to_enum_names );
+}
+
 
 template<typename T, typename U> // Only works if TUmap values are unique
 static unordered_map<U,T> s_GetReverseMap(const unordered_map<T,U>& TUmap) 
@@ -132,6 +225,10 @@ public:
     void x_ImportBioSource(const CBioSource& biosource, TMods& mods);
     void x_ImportMolInfo(const CMolInfo& molinfo, TMods& mods);
     void x_ImportPMID(const CPubdesc& pub_desc, TMods& mods);
+    void x_ImportOrgRef(const COrg_ref& org_ref, TMods& mods);
+    void x_ImportOrgName(const COrgName& org_name, TMods& mods);
+    void x_ImportOrgMod(const COrgMod& org_mod, TMods& mods);
+    void x_ImportSubSource(const CSubSource& subsource, TMods& mods);
 
     bool x_IsUserType(const CUser_object& user_object, const string& type) const;
 };
@@ -237,20 +334,23 @@ void CModImporter::x_ImportBioSource(const CBioSource& biosource, TMods& mods)
     if (biosource.IsSetSubtype()) {
         for (const auto& pSubSource : biosource.GetSubtype()) {
             if (pSubSource) {
-  //              x_ImportSubSource(*pSubSource, mods);
+                x_ImportSubSource(*pSubSource, mods);
             }
         }
     }
-
-  //  x_ImportOrgRef(biosource.GetOrg(), mods);
+    x_ImportOrgRef(biosource.GetOrg(), mods);
 }
 
-/*
+
+static const auto subsource_string_to_enum = s_InitModNameSubSrcSubtypeMap();
+
+
 void CModImporter::x_ImportSubSource(const CSubSource& subsource, TMods& mods)
 {
-    static const auto& subsource_enum_to_name;
-    const auto& subtype = subsource_enum_to_name[org_mod.GetSubtype()];
-    const auto& subname = subsource.GetSubname();
+    static const auto subsource_enum_to_string = s_GetReverseMap(subsource_string_to_enum);
+    const auto& subtype = subsource_enum_to_string.at(subsource.GetSubtype());
+    const auto& name = subsource.GetName();
+    mods.emplace(subtype, name);
 }
 
 
@@ -270,15 +370,16 @@ void CModImporter::x_ImportOrgRef(const COrg_ref& org_ref, TMods& mods)
     if (org_ref.IsSetDb()) {
         for(const auto& pDbtag : org_ref.GetDb()) {
             string database = pDbtag->GetDb();
-            string tag = pDbtag->GetTag().IsSetStr() ?
-                         pDbtab->GetTag().GetStr() :
+            string tag = pDbtag->GetTag().IsStr() ?
+                         pDbtag->GetTag().GetStr() :
                          NStr::IntToString(pDbtag->GetTag().GetId());
             mods.emplace("dbxref", database + ":" + tag);
         }
     }
 }
 
-void CModImporter::x_ImportOrgName(const COrg_name& org_name, TMods& mods)
+
+void CModImporter::x_ImportOrgName(const COrgName& org_name, TMods& mods)
 {
     if (org_name.IsSetDiv()) {
         mods.emplace("division", org_name.GetDiv());
@@ -297,31 +398,30 @@ void CModImporter::x_ImportOrgName(const COrg_name& org_name, TMods& mods)
     }
 
     if (org_name.IsSetPgcode()) {
-        mods.emplace("pgcode", NStr::IntToString(org_name.GetPgcode());
+        mods.emplace("pgcode", NStr::IntToString(org_name.GetPgcode()));
     }
 
-
     if (org_name.IsSetMod()) {
-        for(const auto& pOrgMod : org_name.SetMod()) {
+        for(const auto& pOrgMod : org_name.GetMod()) {
             if (pOrgMod) {
-                x_ImportOrgMod(org_mod, mods);
+                x_ImportOrgMod(*pOrgMod, mods);
             }
         }
     }
 }
 
 
+static const auto orgmod_string_to_enum = s_InitModNameOrgSubtypeMap();
+
+
 void CModImporter::x_ImportOrgMod(const COrgMod& org_mod, TMods& mods)
 {
-    static const auto& orgmod_enum_to_name;
-
-    const auto& subtype = orgmod_enum_to_name[org_mod.GetSubtype()];
+    static const auto orgmod_enum_to_string = s_GetReverseMap(orgmod_string_to_enum);
+    const auto& subtype = orgmod_enum_to_string.at(org_mod.GetSubtype());
     const auto& subname = org_mod.GetSubname();
-
     mods.emplace(subtype, subname);
 }
 
-*/
 
 void CModImporter::x_ImportPMID(const CPubdesc& pub_desc, TMods& mods)
 {  
