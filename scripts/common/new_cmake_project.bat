@@ -42,7 +42,32 @@ if "%~1"=="" (
                 for /f "tokens=1,2,* delims=/" %%c in ('echo %%b') do (
                     if not "%%d"=="" (
                         if "%%e"=="" (
-                            echo   %%c/%%d
+                                   if "%%c/%%d"=="app/alnmgr"         (echo   app/alnmgr          an application that uses Alignment Manager
+                            ) else if "%%c/%%d"=="app/asn"            (echo   app/asn             an application that uses ASN.1 specification
+                            ) else if "%%c/%%d"=="app/basic"          (echo   app/basic           a simple application
+                            ) else if "%%c/%%d"=="app/blast"          (echo   app/blast           a BLAST application
+                            ) else if "%%c/%%d"=="app/cgi"            (echo   app/cgi             a CGI application
+                            ) else if "%%c/%%d"=="app/dbapi"          (echo   app/dbapi           a DBAPI application
+                            ) else if "%%c/%%d"=="app/deployable_cgi" (echo   app/deployable_cgi  a CD-deployable CGI application
+                            ) else if "%%c/%%d"=="app/eutils"         (echo   app/eutils          an eUtils client application
+                            ) else if "%%c/%%d"=="app/http_session"   (echo   app/http_session    an application that uses CHttpSession
+                            ) else if "%%c/%%d"=="app/lds"            (echo   app/lds             an application that uses local data store
+                            ) else if "%%c/%%d"=="app/multicmd"       (echo   app/multicmd        a simple command-based application
+                            ) else if "%%c/%%d"=="app/netcache"       (echo   app/netcache        an application that uses NetCache
+                            ) else if "%%c/%%d"=="app/netschedule"    (echo   app/netschedule     an NCBI GRID ^(NetSchedule^) application
+                            ) else if "%%c/%%d"=="app/objects"        (echo   app/objects         an application that uses ASN.1 objects
+                            ) else if "%%c/%%d"=="app/objmgr"         (echo   app/objmgr          an application that uses Object Manager
+                            ) else if "%%c/%%d"=="app/sdbapi"         (echo   app/sdbapi          a Simple-DBAPI application
+                            ) else if "%%c/%%d"=="app/serial"         (echo   app/serial          a data serialization application
+                            ) else if "%%c/%%d"=="app/soap"           (echo   app/soap/client     a SOAP client
+                                                                       echo   app/soap/server     a SOAP server
+                            ) else if "%%c/%%d"=="app/unit_test"      (echo   app/unit_test       a Boost-based unit test application
+                            ) else if "%%c/%%d"=="lib/asn_lib"        (echo   lib/asn_lib         a static library from ASN.1 specification
+                            ) else if "%%c/%%d"=="lib/basic"          (echo   lib/basic           a simple static library
+                            ) else if "%%c/%%d"=="lib/dtd"            (echo   lib/dtd             a static library from DTD specification
+                            ) else if "%%c/%%d"=="lib/jsd"            (echo   lib/jsd             a static library from JSON Schema specification
+                            ) else if "%%c/%%d"=="lib/xsd"            (echo   lib/xsd             a static library from XML Schema specification
+                            ) else (echo   %%c/%%d)
                         )
                     )
                 )

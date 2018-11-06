@@ -39,7 +39,35 @@ if test -z "$1"; then
     if [[ $line =~ .*/$ ]]; then
       count=`echo $line | tr -cd '/' | wc -c`
       if [[ $count -eq 2 ]]; then
-        echo "  "${line%?}
+        prj=${line%?}
+        case "$prj" in 
+        app/alnmgr)         echo "  app/alnmgr          an application that uses Alignment Manager";;
+        app/asn)            echo "  app/asn             an application that uses ASN.1 specification";;
+        app/basic)          echo "  app/basic           a simple application";;
+        app/blast)          echo "  app/blast           a BLAST application";;
+        app/cgi)            echo "  app/cgi             a CGI application";;
+        app/dbapi)          echo "  app/dbapi           a DBAPI application";;
+        app/deployable_cgi) echo "  app/deployable_cgi  a CD-deployable CGI application";;
+        app/eutils)         echo "  app/eutils          an eUtils client application";;
+        app/http_session)   echo "  app/http_session    an application that uses CHttpSession";;
+        app/lds)            echo "  app/lds             an application that uses local data store";;
+        app/multicmd)       echo "  app/multicmd        a simple command-based application";;
+        app/netcache)       echo "  app/netcache        an application that uses NetCache";;
+        app/netschedule)    echo "  app/netschedule     an NCBI GRID ^(NetSchedule^) application";;
+        app/objects)        echo "  app/objects         an application that uses ASN.1 objects";;
+        app/objmgr)         echo "  app/objmgr          an application that uses Object Manager";;
+        app/sdbapi)         echo "  app/sdbapi          a Simple-DBAPI application";;
+        app/serial)         echo "  app/serial          a data serialization application";;
+        app/soap)           echo "  app/soap/client     a SOAP client"
+                            echo "  app/soap/server     a SOAP server";;
+        app/unit_test)      echo "  app/unit_test       a Boost-based unit test application";;
+        lib/asn_lib)        echo "  lib/asn_lib         a static library from ASN.1 specification";;
+        lib/basic)          echo "  lib/basic           a simple static library";;
+        lib/dtd)            echo "  lib/dtd             a static library from DTD specification";;
+        lib/jsd)            echo "  lib/jsd             a static library from JSON Schema specification";;
+        lib/xsd)            echo "  lib/xsd             a static library from XML Schema specification";;
+        *)                  echo "  $prj";;
+        esac 
       fi
     fi
   done
