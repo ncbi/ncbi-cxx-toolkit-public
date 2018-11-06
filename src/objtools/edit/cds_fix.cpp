@@ -1368,7 +1368,6 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
 {
     objects::CSeq_id_Handle hid;
     objects::CSeq_id_Handle gen_id;
-    objects::CSeq_id_Handle lcl_id;
 
     for (auto it : bsh.GetId()) 
     {
@@ -1376,11 +1375,7 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
             !it.GetSeqId()->GetGeneral().IsSkippable()) 
         {
             gen_id = it;
-        } 
-        else if (it.GetSeqId()->IsLocal()) 
-        {
-            lcl_id = it;
-        }
+        }        
         if (!hid || it.IsBetter(hid)) 
         {
             hid = it;
@@ -1392,11 +1387,7 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
         hid = gen_id;
     } 
 
-    if (!gen_id && !general_only && lcl_id)
-    {
-        hid = lcl_id;
-    }
-   
+      
     if (!hid)
         NCBI_THROW(CException, eUnknown, "Seq-id of the requested type not found");
   
