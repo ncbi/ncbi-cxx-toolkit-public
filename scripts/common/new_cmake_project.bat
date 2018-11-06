@@ -134,8 +134,8 @@ move /Y %prj_tmp% %prj_prj% >NUL
 REM #########################################################################
 
 echo Created project %prj_name%
-echo To configure:  cd %prj_name%; ./%prj_cfg% ^<arguments^>
-echo For help:      cd %prj_name%; ./%prj_cfg% --help
+echo To configure:  cd %prj_name%; %prj_cfg% ^<arguments^>
+echo For help:      cd %prj_name%; %prj_cfg% --help
 :DONE
 cd %initial_dir%
 endlocal
