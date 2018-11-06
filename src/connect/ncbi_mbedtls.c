@@ -199,7 +199,7 @@ static EIO_Status x_ErrorToStatus(int error, mbedtls_ssl_context* session,
 
     if (!error)
         return eIO_Success;
-    sock = ((SNcbiSSLctx*) session->p_bio)->sock;
+    sock = ((SNcbiSSLctx*)(session->p_bio))->sock;
     switch (error) {
     case MBEDTLS_ERR_SSL_WANT_READ:
         status = x_RetryStatus(sock, direction);
