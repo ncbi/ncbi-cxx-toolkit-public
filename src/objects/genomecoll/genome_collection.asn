@@ -133,6 +133,9 @@ GC-AssemblySet ::= SEQUENCE {
         diploid(3),
         -- unresolved-diploid: single unit which includes the diploid sequences
         unresolved-diploid(4),
+        -- second part of diploid; linked to another haploid full-assembly
+        -- this one is alt-loci or second full-haploid
+        alternate-haplotype(5),
         -- assembly is a collection for annotation
         annotation-target-set(101),
         -- analysis set used for sequencing by alignments
