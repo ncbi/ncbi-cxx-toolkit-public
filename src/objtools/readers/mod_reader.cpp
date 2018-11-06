@@ -33,16 +33,32 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/MolInfo.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqblock/GB_block.hpp>
+#include <objects/seq/Pubdesc.hpp>
+#include <objects/pub/Pub_equiv.hpp>
+#include <objects/pub/Pub.hpp>
 
 #include <map>
 #include <unordered_map>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+template<typename T, typename U> // Only works if TUmap values are unique
+static unordered_map<U,T> s_GetReverseMap(const unordered_map<T,U>& TUmap) 
+{
+    unordered_map<U,T> UTmap;
+    for (const auto& key_val : TUmap) {
+        UTmap.emplace(key_val.second, key_val.first);
+    }
+    return UTmap;
+}
+
 
 class CModValueAttribs
 {
@@ -110,9 +126,12 @@ public:
     void Apply(const CSeqdesc& desc, TMods& mods);
     void x_ImportUserObject(const CUser_object& user_object, TMods& mods);
     void x_ImportDBLink(const CUser_object& user_object, TMods& mods);
+    void x_ImportGBblock(const CGB_block& gb_block, TMods& mods);
     void x_ImportGenomeProjects(const CUser_object& user_object, TMods& mods);
     void x_ImportTpaAssembly(const CUser_object& user_object, TMods& mods);
     void x_ImportBioSource(const CBioSource& biosource, TMods& mods);
+    void x_ImportMolInfo(const CMolInfo& molinfo, TMods& mods);
+    void x_ImportPMID(const CPubdesc& pub_desc, TMods& mods);
 
     bool x_IsUserType(const CUser_object& user_object, const string& type) const;
 };
@@ -129,16 +148,14 @@ void CModImporter::Apply(const CSeqdesc& desc, TMods& mods)
     if (desc.IsSource()) {
         x_ImportBioSource(desc.GetSource(), mods);
     }
-/*
     else
     if (desc.IsGenbank()) {
         x_ImportGBblock(desc.GetGenbank(), mods);
     }
     else 
     if (desc.IsMolinfo()) {
-        x_ImportMolinfo(desc.GetMolinfo(), mods);
+        x_ImportMolInfo(desc.GetMolinfo(), mods);
     }
-    */
 }
 
 
@@ -147,7 +164,6 @@ void CModImporter::x_ImportUserObject(const CUser_object& user_object, TMods& mo
     if (user_object.IsDBLink()) {
         x_ImportDBLink(user_object, mods);
     }
-/*
     else
     if (x_IsUserType(user_object, "GenomeProjectsDB")) {
         x_ImportGenomeProjects(user_object, mods);
@@ -156,7 +172,6 @@ void CModImporter::x_ImportUserObject(const CUser_object& user_object, TMods& mo
     if (x_IsUserType(user_object, "TpaAssembly")) {
         x_ImportTpaAssembly(user_object, mods);
     }
-    */
 }
 
 static unordered_map<CBioSource::EGenome, string, hash<underlying_type<CBioSource::EGenome>::type>> genome_enum_to_string 
@@ -306,6 +321,7 @@ void CModImporter::x_ImportOrgMod(const COrgMod& org_mod, TMods& mods)
     mods.emplace(subtype, subname);
 }
 
+*/
 
 void CModImporter::x_ImportPMID(const CPubdesc& pub_desc, TMods& mods)
 {  
@@ -319,40 +335,87 @@ void CModImporter::x_ImportPMID(const CPubdesc& pub_desc, TMods& mods)
     }
 }
 
-static unordered_map<CMolInfo::TBiomol, string> biomol_enum_to_name =
-{{CMolInfo::eBiomol_cRNA : "cRNA"},
- {CMolInfo::eBiomol_genomic : "Genomic"},
- {CMolInfo::eBiomol_mRNA : "mRNA"},
- {CMolInfo::eBiomol_ncRNA : "ncRNA"},
- {CMolInfo::eBiomol_other_genetic : "Other-Genetic"},
- {CMolInfo::eBiomol_pre_RNA : "Precursor RNA"},
- {CMolInfo::eBiomol_rRNA : "rRNA"},
- {CMolInfo::eBiomol_transcribed_RNA : "Transcribed RNA"},
- {CMolInfo::eBiomol_tmRNA : "tmRNA"},
- {CMolInfo::eBiomol_tRNA : "tRNA"}};
-    
+static const
+unordered_map<CMolInfo::TBiomol, string> biomol_enum_to_string =
+{{CMolInfo::eBiomol_cRNA, "cRNA"},
+ {CMolInfo::eBiomol_genomic, "Genomic"},
+ {CMolInfo::eBiomol_mRNA, "mRNA"},
+ {CMolInfo::eBiomol_ncRNA, "ncRNA"},
+ {CMolInfo::eBiomol_other_genetic, "Other-Genetic"},
+ {CMolInfo::eBiomol_pre_RNA, "Precursor RNA"},
+ {CMolInfo::eBiomol_rRNA, "rRNA"},
+ {CMolInfo::eBiomol_transcribed_RNA, "Transcribed RNA"},
+ {CMolInfo::eBiomol_tmRNA, "tmRNA"},
+ {CMolInfo::eBiomol_tRNA, "tRNA"}
+};
+
+static const 
+unordered_map<string, CMolInfo::TTech>
+tech_string_to_enum = {
+    { "?",                  CMolInfo::eTech_unknown },
+    { "barcode",            CMolInfo::eTech_barcode },
+    { "both",               CMolInfo::eTech_both },
+    { "composite-wgs-htgs", CMolInfo::eTech_composite_wgs_htgs },
+    { "concept-trans",      CMolInfo::eTech_concept_trans },
+    { "concept-trans-a",    CMolInfo::eTech_concept_trans_a },
+    { "derived",            CMolInfo::eTech_derived },
+    { "EST",                CMolInfo::eTech_est },
+    { "fli cDNA",           CMolInfo::eTech_fli_cdna },
+    { "genetic map",        CMolInfo::eTech_genemap },
+    { "htc",                CMolInfo::eTech_htc },
+    { "htgs 0",             CMolInfo::eTech_htgs_0 },
+    { "htgs 1",             CMolInfo::eTech_htgs_1 },
+    { "htgs 2",             CMolInfo::eTech_htgs_2 },
+    { "htgs 3",             CMolInfo::eTech_htgs_3 },
+    { "physical map",       CMolInfo::eTech_physmap },
+    { "seq-pept",           CMolInfo::eTech_seq_pept },
+    { "seq-pept-homol",     CMolInfo::eTech_seq_pept_homol },
+    { "seq-pept-overlap",   CMolInfo::eTech_seq_pept_overlap },
+    { "standard",           CMolInfo::eTech_standard },
+    { "STS",                CMolInfo::eTech_sts },
+    { "survey",             CMolInfo::eTech_survey },
+    { "targeted",           CMolInfo::eTech_targeted },
+    { "tsa",                CMolInfo::eTech_tsa },
+    { "wgs",                CMolInfo::eTech_wgs }
 };
 
 
-void CModImporter::x_ImportMolInfo(const CMolinfo& mol_info, TMods& mods)
+static const auto tech_enum_to_string  = s_GetReverseMap(tech_string_to_enum);
+
+
+static const 
+unordered_map<string, CMolInfo::TCompleteness> 
+completeness_string_to_enum = {
+    { "complete",  CMolInfo::eCompleteness_complete  },
+    { "has-left",  CMolInfo::eCompleteness_has_left  },
+    { "has-right", CMolInfo::eCompleteness_has_right  },
+    { "no-ends",   CMolInfo::eCompleteness_no_ends  },
+    { "no-left",   CMolInfo::eCompleteness_no_left  },
+    { "no-right",  CMolInfo::eCompleteness_no_right  },
+    { "partial",   CMolInfo::eCompleteness_partial  }
+};
+
+
+static const auto completeness_enum_to_string = s_GetReverseMap(completeness_string_to_enum);
+
+
+void CModImporter::x_ImportMolInfo(const CMolInfo& mol_info, TMods& mods)
 {
     if (mol_info.IsSetBiomol()) {
-        const string& moltype = biomol_enum_to_name[mol_info.GetBiomol()];
+        const string& moltype = biomol_enum_to_string.at(mol_info.GetBiomol());
         mods.emplace("moltype", moltype);
     }
-
     if (mol_info.IsSetTech()) {
-        const string& tech =  tech_enum_to_name[mol_info.GetTech()];
+        const string& tech =  tech_enum_to_string.at(mol_info.GetTech());
         mods.emplace("tech", tech);
     }
 
-
     if (mol_info.IsSetCompleteness()) {
-        const string& completeness = completeness_enum_to_name[mol_info.GetCompleteness()];
+        const string& completeness = completeness_enum_to_string.at(mol_info.GetCompleteness());
         mods.emplace("completeness", completeness);
     }
 }
-*/
+
 
 void CModImporter::x_ImportDBLink(const CUser_object& user_object, TMods& mods) 
 {
@@ -361,9 +424,9 @@ void CModImporter::x_ImportDBLink(const CUser_object& user_object, TMods& mods)
     }
 
     static const map<string,string> label_to_mod_name =
-    {{"BioProject" ,"bioproject"},
-     {"BioSample" , "biosample"},
-     {"Sequence Read Archive" , "sra"}};
+    {{"BioProject", "bioproject"},
+     {"BioSample", "biosample"},
+     {"Sequence Read Archive", "sra"}};
 
 
     if (user_object.IsSetData()) {
@@ -375,14 +438,14 @@ void CModImporter::x_ImportDBLink(const CUser_object& user_object, TMods& mods)
                 const auto it = label_to_mod_name.find(label);
                 if (it != label_to_mod_name.end()) {
                     string vals = "";
-                    size_t index = 0;
+                    size_t count = 0;
                     for (const auto& val : pUserField->GetData().GetStrs()) {
-                        if (index > 0) {
+                        if (count++ > 0) {
                             vals += ",";
                         }
                         vals += val;
-                        ++index;
                     }
+                    mods.emplace(it->second, vals);
                 }
             }
         }
@@ -392,11 +455,68 @@ void CModImporter::x_ImportDBLink(const CUser_object& user_object, TMods& mods)
 
 void CModImporter::x_ImportGenomeProjects(const CUser_object& user_object, TMods& mods)
 {
+    if (user_object.IsSetData()) {
+        string projects = "";
+        size_t count = 0;
+        for (const auto& pField : user_object.GetData()) {
+            if (pField && 
+                pField->IsSetData() &&
+                pField->GetData().IsFields()) {
+                for (const auto& pSubfield : pField->GetData().GetFields()) {
+                    if (pSubfield->IsSetLabel() &&
+                        pSubfield->GetLabel().IsStr() &&
+                        pSubfield->GetLabel().GetStr() == "ProjectID") {
+                        if (pSubfield->GetData().IsInt()) {
+                            const auto& id_string = 
+                                NStr::IntToString(pSubfield->GetData().GetInt());
+                            if (count++>0) {
+                                projects += ",";
+                            }
+                            projects += id_string;
+                        }
+                    }
+                }
+            }
+        }
+        if (!projects.empty()) {
+            mods.emplace("project", projects);
+        }
+    }
 }
 
 
 void CModImporter::x_ImportTpaAssembly(const CUser_object& user_object, TMods& mods)
 {
+    // Maybe I don't need to extract primary accessions here
+    // because these should also be on the bioseq - need to check this!
+}
+
+
+void CModImporter::x_ImportGBblock(const CGB_block& gb_block, TMods& mods)
+{
+    if (gb_block.IsSetExtra_accessions()) {
+        string accessions = "";
+        size_t count = 0;
+        for (const auto& accession : gb_block.GetExtra_accessions()) {
+            if (count++ > 0) {
+                accessions += ",";
+            }    
+            accessions += accession; 
+        }
+        mods.emplace("secondary-accession", accessions);
+    }
+
+    if (gb_block.IsSetKeywords()) {
+        string keywords = "";
+        size_t count = 0;
+        for (const auto& keyword : gb_block.GetKeywords()) {
+            if (count++ > 0) {
+                keywords += ",";
+            }
+            keywords += keyword;
+        }
+        mods.emplace("keyword", keywords);
+    }
 }
 
 
@@ -406,6 +526,8 @@ bool CModImporter::x_IsUserType(const CUser_object& user_object, const string& t
             user_object.GetType().IsStr() &&
             user_object.GetType().GetStr() == type);
 }
+
+
 
 
 END_SCOPE(objects)
