@@ -832,14 +832,14 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
 
         items_locked.Unlock();
 
-        if (deadline.IsExpired()) return {};
-
         auto reply_item = &m_Impl->reply->reply_item;
 
         // No more reply items
         if (!reply_item->GetLock()->state.InProgress()) {
             return shared_ptr<CPSG_ReplyItem>(new CPSG_ReplyItem(CPSG_ReplyItem::eEndOfReply));
         }
+
+        if (deadline.IsExpired()) return {};
 
         auto wait_ms = RemainingTimeMs(deadline);
         reply_item->WaitFor(wait_ms);
