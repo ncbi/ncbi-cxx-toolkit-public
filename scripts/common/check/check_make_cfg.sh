@@ -343,7 +343,7 @@ fi
 
 # Check for ncbi_applog
 have_ncbi_applog=false
-if (ncbi_applog) >/dev/null 2>&1; then
+if (ncbi_applog generate) >/dev/null 2>&1; then
    have_ncbi_applog=true
 fi
 
@@ -501,15 +501,15 @@ RunTest() {
            export NCBI_CONFIG__LOG__FILE
            if \$have_ncbi_applog; then
               eval "\`ncbi_applog generate -phid -sid -format=shell-export | tr -d '\r'\`"
-           fi
-           if \$is_run && \$is_db_load; then
-              # Use generated PHID for test statistics, and sub-PHID.1 for test itself
-              saved_phid=\$NCBI_LOG_HIT_ID
-              NCBI_LOG_HIT_ID=\$NCBI_LOG_HIT_ID.1
-              export NCBI_LOG_HIT_ID
-              # Create a file in the cirrent directory with initial sub-PHID
-              # (will be incremented by $CHECK_EXEC, if any)
-              echo "0" > \$NCBI_LOG_HIT_ID
+              if \$is_run && \$is_db_load; then
+                 # Use generated PHID for test statistics, and sub-PHID.1 for test itself
+                 saved_phid=\$NCBI_LOG_HIT_ID
+                 NCBI_LOG_HIT_ID=\$NCBI_LOG_HIT_ID.1
+                 export NCBI_LOG_HIT_ID
+                 # Create a file in the cirrent directory with initial sub-PHID
+                 # (will be incremented by $CHECK_EXEC, if any)
+                 echo "0" > \$NCBI_LOG_HIT_ID
+              fi
            fi
            NCBI_CONFIG__LOG__FILE=\$logfile
            export NCBI_CONFIG__LOG__FILE
@@ -616,8 +616,10 @@ RunTest() {
         
         if \$is_run && \$is_db_load; then
            echo "\$x_path_app:" >> "\$build_dir/test_stat_load.log" 2>&1
-           NCBI_LOG_HIT_ID=\$saved_phid
-           export NCBI_LOG_HIT_ID
+           if test -n "\$saved_phid";  then
+              NCBI_LOG_HIT_ID=\$saved_phid
+              export NCBI_LOG_HIT_ID
+           fi
            case "$x_compiler" in
              MSVC )
                 test_stat_load "\$(cygpath -w "\$x_test_rep")" "\$(cygpath -w "\$x_test_out")" "\$(cygpath -w "\$x_boost_rep")" "\$(cygpath -w "\$top_srcdir/build_info")" >> "\$build_dir/test_stat_load.log" 2>&1
