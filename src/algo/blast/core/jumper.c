@@ -334,6 +334,17 @@ static int s_ShiftGapsRight(JumperPrelimEditBlock* edit_script,
                     /* update score */
                     (*score) -= err_score;
 
+                    /* check if the new mismatch is a match and update 
+                       scores and identity if it is */
+                    q_pos = query_offset;
+                    s_pos = subject_offset;
+                    s_GetSeqPositions(edit_script, i - 1, &q_pos, &s_pos);
+                    if (query[q_pos] == UNPACK_BASE(subject, s_pos)) {
+                        edit_script->edit_ops[i - 1] = 1;
+                        (*score)++;
+                        (*num_identical)++;
+                    }
+
                     /* if there a no indels left, search for a new gap */
                     if (i >= 0) {
                         break;
@@ -2985,7 +2996,7 @@ int JumperFindSpliceSignals(BlastHSP* hsp, Int4 query_len,
 }
 
 
-#define MAX_SUBJECT_OVERHANG 20
+#define MAX_SUBJECT_OVERHANG 30
 
 SequenceOverhangs* SequenceOverhangsFree(SequenceOverhangs* overhangs)
 {
