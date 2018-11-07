@@ -579,7 +579,6 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
     shared_ptr<CCassQueryCbRef>     m_self;
 };
 
-
 class CCassQuery: public std::enable_shared_from_this<CCassQuery>
 {
  private:
@@ -938,8 +937,9 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     }
 
     template <typename I, typename F = int>
-    void FieldGetContainerValue(F ifld, I  insert_iterator) const
+    void FieldGetContainerValue(F ifld, I insert_iterator) const
     {
+        using TValueType = typename I::container_type::value_type;
         const CassValue * clm = GetColumn(ifld);
         CassValueType type = cass_value_type(clm);
 
@@ -949,17 +949,20 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
             {
                 if (!cass_value_is_null(clm)) {
                     unique_ptr<CassIterator, function<void(CassIterator*)> > items_iterator_ptr(
-                        cass_iterator_from_collection(clm), 
+                        cass_iterator_from_collection(clm),
                         [](CassIterator* itr) {
                             cass_iterator_free(itr);
                         }
                     );
                     while (cass_iterator_next(items_iterator_ptr.get())) {
                         const CassValue* value = cass_iterator_get_value(items_iterator_ptr.get());
-                        if (!value)
+                        if (!value) {
                             NCBI_THROW(CCassandraException, eSeqFailed, "cass iterator fetch failed");
-                        Convert::CassValueConvert(value, *insert_iterator);
-                        ++insert_iterator;
+                        }
+
+                        TValueType v;
+                        Convert::CassValueConvert(value, v);
+                        insert_iterator++ = move(v);
                     }
                 }
             }
