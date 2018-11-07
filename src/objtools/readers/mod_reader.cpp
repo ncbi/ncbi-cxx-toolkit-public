@@ -59,6 +59,7 @@
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 
+#include <objtools/readers/mod_reader.hpp>
 #include <map>
 #include <unordered_map>
 #include <unordered_set>
@@ -164,27 +165,6 @@ static unordered_map<U,T> s_GetReverseMap(const unordered_map<T,U>& TUmap)
 }
 
 
-class CModValueAttribs
-{
-public:
-    using TAttribs = map<string, string>;
-
-    CModValueAttribs(const string& value); 
-    CModValueAttribs(const char* value);
-
-    void SetValue(const string& value);
-    void AddAttrib(const string& attrib_name, const string& attrib_value);
-    bool HasAdditionalAttribs(void) const;
-
-    const string& GetValue(void) const;
-    const TAttribs& GetAdditionalAttribs(void) const;
-
-private:
-    string mValue;
-    TAttribs mAdditionalAttribs;
-};
-
-
 CModValueAttribs::CModValueAttribs(const string& value) : mValue(value) {}
 
 
@@ -216,42 +196,6 @@ const CModValueAttribs::TAttribs& CModValueAttribs::GetAdditionalAttribs(void) c
 {
     return mAdditionalAttribs;
 }
-
-
-using TMods = multimap<string, CModValueAttribs>;
-
-
-class CModParser 
-{
-
-public:
-    using TMods = multimap<string, CModValueAttribs>;
-
-    static void Apply(const CBioseq& bioseq, TMods& mods);
-private:
-    static void x_ImportSeqInst(const CSeq_inst& seq_inst, TMods& mods);
-    static void x_ImportHist(const CSeq_hist& seq_hist, TMods& mods);
-
-    static void x_ImportDescriptors(const CBioseq& bioseq, TMods& mods);
-    static void x_ImportDesc(const CSeqdesc& desc, TMods& mods);
-    static void x_ImportUserObject(const CUser_object& user_object, TMods& mods);
-    static void x_ImportDBLink(const CUser_object& user_object, TMods& mods);
-    static void x_ImportGBblock(const CGB_block& gb_block, TMods& mods);
-    static void x_ImportGenomeProjects(const CUser_object& user_object, TMods& mods);
-    static void x_ImportTpaAssembly(const CUser_object& user_object, TMods& mods);
-    static void x_ImportBioSource(const CBioSource& biosource, TMods& mods);
-    static void x_ImportMolInfo(const CMolInfo& molinfo, TMods& mods);
-    static void x_ImportPMID(const CPubdesc& pub_desc, TMods& mods);
-    static void x_ImportOrgRef(const COrg_ref& org_ref, TMods& mods);
-    static void x_ImportOrgName(const COrgName& org_name, TMods& mods);
-    static void x_ImportOrgMod(const COrgMod& org_mod, TMods& mods);
-    static void x_ImportSubSource(const CSubSource& subsource, TMods& mods);
-    static bool x_IsUserType(const CUser_object& user_object, const string& type);
-
-    static void x_ImportFeatureModifiers(const CSeq_annot& annot, TMods& mods);
-    static void x_ImportGene(const CGene_ref& gene_ref, TMods& mods);
-    static void x_ImportProtein(const CProt_ref& prot_ref, TMods& mods);
-};
 
 
 void CModParser::Apply(const CBioseq& bioseq, TMods& mods) 
