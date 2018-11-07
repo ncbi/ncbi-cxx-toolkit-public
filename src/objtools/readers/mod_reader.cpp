@@ -32,7 +32,10 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -218,42 +221,93 @@ const CModValueAttribs::TAttribs& CModValueAttribs::GetAdditionalAttribs(void) c
 using TMods = multimap<string, CModValueAttribs>;
 
 
-class CModImporter 
+class CModParser 
 {
 
 public:
     using TMods = multimap<string, CModValueAttribs>;
 
-    void Apply(const CSeqdesc& desc, TMods& mods);
+    static void Apply(const CBioseq& bioseq, TMods& mods);
 private:
-    void x_ImportSeqInst(const CSeq_inst& seq_inst, TMods& mods);
-    void x_ImportHist(const CSeq_hist& seq_hist, TMods& mods);
+    static void x_ImportSeqInst(const CSeq_inst& seq_inst, TMods& mods);
+    static void x_ImportHist(const CSeq_hist& seq_hist, TMods& mods);
 
-    void x_ImportUserObject(const CUser_object& user_object, TMods& mods);
-    void x_ImportDBLink(const CUser_object& user_object, TMods& mods);
-    void x_ImportGBblock(const CGB_block& gb_block, TMods& mods);
-    void x_ImportGenomeProjects(const CUser_object& user_object, TMods& mods);
-    void x_ImportTpaAssembly(const CUser_object& user_object, TMods& mods);
-    void x_ImportBioSource(const CBioSource& biosource, TMods& mods);
-    void x_ImportMolInfo(const CMolInfo& molinfo, TMods& mods);
-    void x_ImportPMID(const CPubdesc& pub_desc, TMods& mods);
-    void x_ImportOrgRef(const COrg_ref& org_ref, TMods& mods);
-    void x_ImportOrgName(const COrgName& org_name, TMods& mods);
-    void x_ImportOrgMod(const COrgMod& org_mod, TMods& mods);
-    void x_ImportSubSource(const CSubSource& subsource, TMods& mods);
-    bool x_IsUserType(const CUser_object& user_object, const string& type) const;
+    static void x_ImportDescriptors(const CBioseq& bioseq, TMods& mods);
+    static void x_ImportDesc(const CSeqdesc& desc, TMods& mods);
+    static void x_ImportUserObject(const CUser_object& user_object, TMods& mods);
+    static void x_ImportDBLink(const CUser_object& user_object, TMods& mods);
+    static void x_ImportGBblock(const CGB_block& gb_block, TMods& mods);
+    static void x_ImportGenomeProjects(const CUser_object& user_object, TMods& mods);
+    static void x_ImportTpaAssembly(const CUser_object& user_object, TMods& mods);
+    static void x_ImportBioSource(const CBioSource& biosource, TMods& mods);
+    static void x_ImportMolInfo(const CMolInfo& molinfo, TMods& mods);
+    static void x_ImportPMID(const CPubdesc& pub_desc, TMods& mods);
+    static void x_ImportOrgRef(const COrg_ref& org_ref, TMods& mods);
+    static void x_ImportOrgName(const COrgName& org_name, TMods& mods);
+    static void x_ImportOrgMod(const COrgMod& org_mod, TMods& mods);
+    static void x_ImportSubSource(const CSubSource& subsource, TMods& mods);
+    static bool x_IsUserType(const CUser_object& user_object, const string& type);
 
-    void x_ImportFeatureModifiers(const CSeq_annot& annot, TMods& mods);
-    void x_ImportGene(const CGene_ref& gene_ref, TMods& mods);
-    void x_ImportProtein(const CProt_ref& prot_ref, TMods& mods);
+    static void x_ImportFeatureModifiers(const CSeq_annot& annot, TMods& mods);
+    static void x_ImportGene(const CGene_ref& gene_ref, TMods& mods);
+    static void x_ImportProtein(const CProt_ref& prot_ref, TMods& mods);
 };
 
 
+void CModParser::Apply(const CBioseq& bioseq, TMods& mods) 
+{
+    x_ImportSeqInst(bioseq.GetInst(), mods);
 
-void CModImporter::Apply(const CSeqdesc& desc, TMods& mods)
+    x_ImportDescriptors(bioseq, mods);
+
+    if (bioseq.IsSetAnnot()) {
+        for (const auto& pAnnot : bioseq.GetAnnot()) {
+            if (pAnnot) {
+                x_ImportFeatureModifiers(*pAnnot, mods);
+            }
+        }
+    }
+}
+
+
+void CModParser::x_ImportDescriptors(const CBioseq& bioseq, TMods& mods)
+{
+    if (bioseq.GetParentSet() &&
+        bioseq.GetParentSet()->IsSetClass() &&
+        bioseq.GetParentSet()->GetClass() == CBioseq_set::eClass_nuc_prot &&
+        bioseq.GetParentSet()->IsSetDescr()) 
+    {
+        for (const auto& pDesc : bioseq.GetParentSet()->GetDescr().Get()) {
+            if (pDesc) {
+                x_ImportDesc(*pDesc, mods);
+            }
+        } 
+
+        // MolInfo is on the sequence itself
+        if (bioseq.IsSetDescr()) {
+            for (const auto& pDesc : bioseq.GetDescr().Get()) {
+                if (pDesc && 
+                    pDesc->IsMolinfo()) {
+                    x_ImportMolInfo(pDesc->GetMolinfo(), mods);
+                }
+            }
+        }
+    }
+    else 
+    if (bioseq.IsSetDescr()) {
+        for (const auto& pDesc : bioseq.GetDescr().Get()) {
+            if (pDesc) {
+                x_ImportDesc(*pDesc, mods);
+            }
+        }
+    }
+}
+
+
+void CModParser::x_ImportDesc(const CSeqdesc& desc, TMods& mods)
 {
 
-    if (desc.IsUser()) {
+    if (desc.IsUser()) { // DBLink, GenomeProjects, TpaAssembly
         x_ImportUserObject(desc.GetUser(), mods);
     }
     else
@@ -269,13 +323,17 @@ void CModImporter::Apply(const CSeqdesc& desc, TMods& mods)
         x_ImportMolInfo(desc.GetMolinfo(), mods);
     }
     else 
+    if (desc.IsPub()) {
+        x_ImportPMID(desc.GetPub(), mods);
+    }
+    else
     if (desc.IsComment()) {
         mods.emplace("comment", desc.GetComment());
     }
 }
 
 
-void CModImporter::x_ImportSeqInst(const CSeq_inst& seq_inst, TMods& mods)
+void CModParser::x_ImportSeqInst(const CSeq_inst& seq_inst, TMods& mods)
 {
     if (seq_inst.IsSetTopology()) {
         static const unordered_map<CSeq_inst::ETopology, string, hash<underlying_type<CSeq_inst::ETopology>::type>> 
@@ -318,7 +376,7 @@ void CModImporter::x_ImportSeqInst(const CSeq_inst& seq_inst, TMods& mods)
 }
 
 
-void CModImporter::x_ImportHist(const CSeq_hist& seq_hist, TMods& mods) 
+void CModParser::x_ImportHist(const CSeq_hist& seq_hist, TMods& mods) 
 {
     if (seq_hist.IsSetReplaces() &&
         seq_hist.GetReplaces().IsSetIds()) {
@@ -330,7 +388,7 @@ void CModImporter::x_ImportHist(const CSeq_hist& seq_hist, TMods& mods)
 }
 
 
-void CModImporter::x_ImportUserObject(const CUser_object& user_object, TMods& mods)
+void CModParser::x_ImportUserObject(const CUser_object& user_object, TMods& mods)
 {
     if (user_object.IsDBLink()) {
         x_ImportDBLink(user_object, mods);
@@ -384,7 +442,7 @@ static unordered_map<CBioSource::EOrigin, string, hash<underlying_type<CBioSourc
 };
 
 
-void CModImporter::x_ImportBioSource(const CBioSource& biosource, TMods& mods)
+void CModParser::x_ImportBioSource(const CBioSource& biosource, TMods& mods)
 {
     if (biosource.IsSetGenome()) {
         auto e_genome = static_cast<CBioSource::EGenome>(biosource.GetGenome());
@@ -419,7 +477,7 @@ void CModImporter::x_ImportBioSource(const CBioSource& biosource, TMods& mods)
 static const auto subsource_string_to_enum = s_InitModNameSubSrcSubtypeMap();
 
 
-void CModImporter::x_ImportSubSource(const CSubSource& subsource, TMods& mods)
+void CModParser::x_ImportSubSource(const CSubSource& subsource, TMods& mods)
 {
     static const auto subsource_enum_to_string = s_GetReverseMap(subsource_string_to_enum);
     const auto& subtype = subsource_enum_to_string.at(subsource.GetSubtype());
@@ -428,7 +486,7 @@ void CModImporter::x_ImportSubSource(const CSubSource& subsource, TMods& mods)
 }
 
 
-void CModImporter::x_ImportOrgRef(const COrg_ref& org_ref, TMods& mods)
+void CModParser::x_ImportOrgRef(const COrg_ref& org_ref, TMods& mods)
 {
     if (org_ref.IsSetTaxname()) {
         mods.emplace("taxname", org_ref.GetTaxname());
@@ -453,7 +511,7 @@ void CModImporter::x_ImportOrgRef(const COrg_ref& org_ref, TMods& mods)
 }
 
 
-void CModImporter::x_ImportOrgName(const COrgName& org_name, TMods& mods)
+void CModParser::x_ImportOrgName(const COrgName& org_name, TMods& mods)
 {
     if (org_name.IsSetDiv()) {
         mods.emplace("division", org_name.GetDiv());
@@ -488,7 +546,7 @@ void CModImporter::x_ImportOrgName(const COrgName& org_name, TMods& mods)
 static const auto orgmod_string_to_enum = s_InitModNameOrgSubtypeMap();
 
 
-void CModImporter::x_ImportOrgMod(const COrgMod& org_mod, TMods& mods)
+void CModParser::x_ImportOrgMod(const COrgMod& org_mod, TMods& mods)
 {
     static const auto orgmod_enum_to_string = s_GetReverseMap(orgmod_string_to_enum);
     const auto& subtype = orgmod_enum_to_string.at(org_mod.GetSubtype());
@@ -497,7 +555,7 @@ void CModImporter::x_ImportOrgMod(const COrgMod& org_mod, TMods& mods)
 }
 
 
-void CModImporter::x_ImportPMID(const CPubdesc& pub_desc, TMods& mods)
+void CModParser::x_ImportPMID(const CPubdesc& pub_desc, TMods& mods)
 {  
     if (pub_desc.IsSetPub()) {
         for (const auto& pPub : pub_desc.GetPub().Get()) {
@@ -573,7 +631,7 @@ completeness_string_to_enum = {
 static const auto completeness_enum_to_string = s_GetReverseMap(completeness_string_to_enum);
 
 
-void CModImporter::x_ImportMolInfo(const CMolInfo& mol_info, TMods& mods)
+void CModParser::x_ImportMolInfo(const CMolInfo& mol_info, TMods& mods)
 {
     if (mol_info.IsSetBiomol()) {
         const string& moltype = biomol_enum_to_string.at(mol_info.GetBiomol());
@@ -591,7 +649,7 @@ void CModImporter::x_ImportMolInfo(const CMolInfo& mol_info, TMods& mods)
 }
 
 
-void CModImporter::x_ImportDBLink(const CUser_object& user_object, TMods& mods) 
+void CModParser::x_ImportDBLink(const CUser_object& user_object, TMods& mods) 
 {
     if (!user_object.IsDBLink()) {
         return;
@@ -627,7 +685,7 @@ void CModImporter::x_ImportDBLink(const CUser_object& user_object, TMods& mods)
 }
 
 
-void CModImporter::x_ImportGenomeProjects(const CUser_object& user_object, TMods& mods)
+void CModParser::x_ImportGenomeProjects(const CUser_object& user_object, TMods& mods)
 {
     if (user_object.IsSetData()) {
         string projects = "";
@@ -659,14 +717,14 @@ void CModImporter::x_ImportGenomeProjects(const CUser_object& user_object, TMods
 }
 
 
-void CModImporter::x_ImportTpaAssembly(const CUser_object& user_object, TMods& mods)
+void CModParser::x_ImportTpaAssembly(const CUser_object& user_object, TMods& mods)
 {
     // Maybe I don't need to extract primary accessions here
     // because these should also be on the bioseq - need to check this!
 }
 
 
-void CModImporter::x_ImportGBblock(const CGB_block& gb_block, TMods& mods)
+void CModParser::x_ImportGBblock(const CGB_block& gb_block, TMods& mods)
 {
     if (gb_block.IsSetExtra_accessions()) {
         string accessions = "";
@@ -694,7 +752,7 @@ void CModImporter::x_ImportGBblock(const CGB_block& gb_block, TMods& mods)
 }
 
 
-bool CModImporter::x_IsUserType(const CUser_object& user_object, const string& type) const
+bool CModParser::x_IsUserType(const CUser_object& user_object, const string& type)
 {
     return (user_object.IsSetType() &&
             user_object.GetType().IsStr() &&
@@ -702,7 +760,7 @@ bool CModImporter::x_IsUserType(const CUser_object& user_object, const string& t
 }
 
 
-void CModImporter::x_ImportGene(const CGene_ref& gene_ref, TMods& mods) 
+void CModParser::x_ImportGene(const CGene_ref& gene_ref, TMods& mods) 
 {
     if (gene_ref.IsSetLocus()) {
         mods.emplace("gene", gene_ref.GetLocus());
@@ -721,7 +779,7 @@ void CModImporter::x_ImportGene(const CGene_ref& gene_ref, TMods& mods)
 }
 
 
-void CModImporter::x_ImportProtein(const CProt_ref& prot_ref, TMods& mods)
+void CModParser::x_ImportProtein(const CProt_ref& prot_ref, TMods& mods)
 {
     if (prot_ref.IsSetName()) {
         for (const auto& name : prot_ref.GetName()) {
@@ -747,7 +805,7 @@ void CModImporter::x_ImportProtein(const CProt_ref& prot_ref, TMods& mods)
 }
 
 
-void CModImporter::x_ImportFeatureModifiers(const CSeq_annot& annot, TMods& mods)
+void CModParser::x_ImportFeatureModifiers(const CSeq_annot& annot, TMods& mods)
 {
     if (annot.IsFtable()) {
         for (const auto& pSeqFeat : annot.GetData().GetFtable()) {
