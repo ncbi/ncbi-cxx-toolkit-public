@@ -526,11 +526,12 @@ private:
 
 void CMakeBlastDBApp::x_AddSeqEntries(CNcbiIstream & data, TFormat fmt)
 {
+    bool found = false;
 	try {
         while(!data.eof())
         {
             CSeqEntrySource src(data, fmt, m_SkipUnver);
-            m_DB->AddSequences(src);
+            found = found || m_DB->AddSequences(src);
         }
     } catch (const CEofException& e) {
         if (e.GetErrCode() == CEofException::eEof) {
@@ -538,6 +539,9 @@ void CMakeBlastDBApp::x_AddSeqEntries(CNcbiIstream & data, TFormat fmt)
         } else {
             throw e;
         }
+    }
+    if (!found) {
+        ERR_POST(Warning << "No sequences written");
     }
 }
 
