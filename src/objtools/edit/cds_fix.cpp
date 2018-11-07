@@ -1366,7 +1366,7 @@ vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Ha
 
 CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label, bool general_only)
 {
-    objects::CSeq_id_Handle hid;
+    objects::CSeq_id_Handle hid = sequence::GetId(bsh, sequence::eGetId_Best);
     objects::CSeq_id_Handle gen_id;
 
     for (auto it : bsh.GetId()) 
@@ -1376,12 +1376,7 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
         {
             gen_id = it;
         }        
-        if (!hid || it.IsBetter(hid)) 
-        {
-            hid = it;
-        }
     }
-
     if (gen_id || general_only) 
     {
         hid = gen_id;
