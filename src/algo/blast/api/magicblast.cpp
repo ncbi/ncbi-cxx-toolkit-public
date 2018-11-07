@@ -289,14 +289,7 @@ static void s_ComputeBtopAndIdentity(const HSPChain* chain,
         num_identical += num_matches;
         if (num_matches > 0) {
             btop += NStr::IntToString(num_matches);
-
-            if (hsp_edits->num_edits > 0) {
-                md_tag += NStr::IntToString(num_matches + md_matches);
-                md_matches = 0;
-            }
-            else {
-                md_matches += num_matches;
-            }
+            md_matches += num_matches;
         }
     }
     if (md_matches > 0) {
