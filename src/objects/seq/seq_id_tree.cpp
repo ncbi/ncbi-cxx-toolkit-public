@@ -3153,42 +3153,15 @@ inline string CSeq_id_PDB_Tree::x_IdToStrKey(const CPDB_seq_id& id) const
 // this is an attempt to follow the undocumented rules of PDB
 // ("documented" as code written elsewhere)
     string skey = id.GetMol().Get();
-    if (id.IsSetChain()) {
-        switch (char chain = (char)id.GetChain()) {
-        case '\0': skey += " ";   break;
-        case '|':  skey += "VB";  break;
-        default:
-            if ( islower((unsigned char)chain) ) {
-                skey.append(2, (char)toupper((unsigned char)chain));
-                break;
-            }
-            else {
-                skey += chain;
-                break;
-            }
-        }
-    }
     if (id.IsSetChain_id()) {
-        skey += "_";
+        skey += '_';
         skey += id.GetChain_id();
     }
-    return skey;
-}
-
-
-CSeq_id_Info* CSeq_id_PDB_Tree::x_FindInfo(const CPDB_seq_id& pid) const
-{
-    TMolMap::const_iterator mol_it = m_MolMap.find(x_IdToStrKey(pid));
-    if (mol_it == m_MolMap.end())
-        return 0;
-    ITERATE(TSubMolList, it, mol_it->second) {
-        CConstRef<CSeq_id> id = (*it)->GetSeqId();
-        if (pid.Equals(id->GetPdb())) {
-            return *it;
-        }
+    else if (id.IsSetChain()) {
+        skey += '_';
+        skey += char(id.GetChain());
     }
-    // Not found
-    return 0;
+    return skey;
 }
 
 
@@ -3197,7 +3170,15 @@ CSeq_id_Handle CSeq_id_PDB_Tree::FindInfo(const CSeq_id& id) const
     _ASSERT( id.IsPdb() );
     const CPDB_seq_id& pid = id.GetPdb();
     TReadLockGuard guard(m_TreeLock);
-    return CSeq_id_Handle(x_FindInfo(pid));
+    TMolMap::const_iterator mol_it = m_MolMap.find(x_IdToStrKey(pid));
+    if ( mol_it != m_MolMap.end() ) {
+        ITERATE( TSubMolList, it, mol_it->second ) {
+            if ( pid.Equals((*it)->GetSeqId()->GetPdb()) ) {
+                return CSeq_id_Handle(*it);
+            }
+        }
+    }
+    return CSeq_id_Handle();
 }
 
 
@@ -3206,16 +3187,14 @@ CSeq_id_Handle CSeq_id_PDB_Tree::FindOrCreate(const CSeq_id& id)
     _ASSERT( id.IsPdb() );
     const CPDB_seq_id& pid = id.GetPdb();
     TWriteLockGuard guard(m_TreeLock);
-    CSeq_id_Info* info = x_FindInfo(pid);
-    if ( !info ) {
-        info = CreateInfo(id);
-        TSubMolList& sub = m_MolMap[x_IdToStrKey(id.GetPdb())];
-        ITERATE(TSubMolList, sub_it, sub) {
-           _ASSERT(!info->GetSeqId()->GetPdb()
-                    .Equals((*sub_it)->GetSeqId()->GetPdb()));
+    TSubMolList& sub = m_MolMap[x_IdToStrKey(id.GetPdb())];
+    ITERATE ( TSubMolList, it, sub ) {
+        if ( pid.Equals((*it)->GetSeqId()->GetPdb()) ) {
+            return CSeq_id_Handle(*it);
         }
-        sub.push_back(info);
     }
+    CSeq_id_Info* info = CreateInfo(id);
+    sub.push_back(info);
     return CSeq_id_Handle(info);
 }
 
@@ -3230,8 +3209,7 @@ void CSeq_id_PDB_Tree::x_Unindex(const CSeq_id_Info* info)
     _ASSERT(mol_it != m_MolMap.end());
     NON_CONST_ITERATE(TSubMolList, it, mol_it->second) {
         if (*it == info) {
-            CConstRef<CSeq_id> id2 = (*it)->GetSeqId();
-            _ASSERT(pid.Equals(id2->GetPdb()));
+            _ASSERT(pid.Equals((*it)->GetSeqId()->GetPdb()));
             mol_it->second.erase(it);
             break;
         }
@@ -3258,8 +3236,7 @@ void CSeq_id_PDB_Tree::FindMatch(const CSeq_id_Handle& id,
     if (mol_it == m_MolMap.end())
         return;
     ITERATE(TSubMolList, it, mol_it->second) {
-        CConstRef<CSeq_id> seq_id2 = (*it)->GetSeqId();
-        const CPDB_seq_id& pid2 = seq_id2->GetPdb();
+        const CPDB_seq_id& pid2 = (*it)->GetSeqId()->GetPdb();
         // Ignore date if not set in id
         if ( pid.IsSetRel() ) {
             if ( !pid2.IsSetRel()  ||
@@ -3305,8 +3282,7 @@ void CSeq_id_PDB_Tree::FindReverseMatch(const CSeq_id_Handle& id,
     if (mol_it == m_MolMap.end())
         return;
     ITERATE(TSubMolList, it, mol_it->second) {
-        CConstRef<CSeq_id> seq_id2 = (*it)->GetSeqId();
-        const CPDB_seq_id& pid2 = seq_id2->GetPdb();
+        const CPDB_seq_id& pid2 = (*it)->GetSeqId()->GetPdb();
         // Ignore date if set in id
         if ( pid2.IsSetRel() )
             continue;

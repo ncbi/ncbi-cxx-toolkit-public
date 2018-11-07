@@ -178,6 +178,10 @@ protected:
         {
             return id.m_Info;
         }
+    static const CSeq_id* GetSeqId(const CSeq_id_Info* info)
+        {
+            return info->m_Seq_id.GetPointerOrNull();
+        }
     virtual void x_Unindex(const CSeq_id_Info* info) = 0;
 
     typedef CFastMutex TTreeLock;
@@ -1023,7 +1027,6 @@ public:
 
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
-    CSeq_id_Info* x_FindInfo(const CPDB_seq_id& pid) const;
 
     string x_IdToStrKey(const CPDB_seq_id& id) const;
 
