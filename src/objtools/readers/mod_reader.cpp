@@ -32,8 +32,12 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/MolInfo.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_hist.hpp>
+#include <objects/seq/Seq_hist_rec.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
@@ -43,6 +47,10 @@
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/seqfeat/Gene_ref.hpp>
+#include <objects/seqfeat/Prot_ref.hpp>
 #include <objects/seqblock/GB_block.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/pub/Pub_equiv.hpp>
@@ -217,6 +225,10 @@ public:
     using TMods = multimap<string, CModValueAttribs>;
 
     void Apply(const CSeqdesc& desc, TMods& mods);
+private:
+    void x_ImportSeqInst(const CSeq_inst& seq_inst, TMods& mods);
+    void x_ImportHist(const CSeq_hist& seq_hist, TMods& mods);
+
     void x_ImportUserObject(const CUser_object& user_object, TMods& mods);
     void x_ImportDBLink(const CUser_object& user_object, TMods& mods);
     void x_ImportGBblock(const CGB_block& gb_block, TMods& mods);
@@ -229,8 +241,11 @@ public:
     void x_ImportOrgName(const COrgName& org_name, TMods& mods);
     void x_ImportOrgMod(const COrgMod& org_mod, TMods& mods);
     void x_ImportSubSource(const CSubSource& subsource, TMods& mods);
-
     bool x_IsUserType(const CUser_object& user_object, const string& type) const;
+
+    void x_ImportFeatureModifiers(const CSeq_annot& annot, TMods& mods);
+    void x_ImportGene(const CGene_ref& gene_ref, TMods& mods);
+    void x_ImportProtein(const CProt_ref& prot_ref, TMods& mods);
 };
 
 
@@ -252,6 +267,65 @@ void CModImporter::Apply(const CSeqdesc& desc, TMods& mods)
     else 
     if (desc.IsMolinfo()) {
         x_ImportMolInfo(desc.GetMolinfo(), mods);
+    }
+    else 
+    if (desc.IsComment()) {
+        mods.emplace("comment", desc.GetComment());
+    }
+}
+
+
+void CModImporter::x_ImportSeqInst(const CSeq_inst& seq_inst, TMods& mods)
+{
+    if (seq_inst.IsSetTopology()) {
+        static const unordered_map<CSeq_inst::ETopology, string, hash<underlying_type<CSeq_inst::ETopology>::type>> 
+            topology_enum_to_string = {{CSeq_inst::eTopology_linear, "linear"},
+                                       {CSeq_inst::eTopology_circular, "circular"},
+                                       {CSeq_inst::eTopology_tandem, "tandem"},
+                                       {CSeq_inst::eTopology_other, "other"}};
+
+        const auto& topology = topology_enum_to_string.at(seq_inst.GetTopology());
+        mods.emplace("topology", topology);
+    }
+
+
+    if (seq_inst.IsSetMol()) {
+        static const unordered_map<CSeq_inst::EMol, string, hash<underlying_type<CSeq_inst::EMol>::type>>
+            mol_enum_to_string = {{CSeq_inst::eMol_dna, "dna"},
+                                  {CSeq_inst::eMol_rna, "rna"},
+                                  {CSeq_inst::eMol_aa, "aa"},
+                                  {CSeq_inst::eMol_na, "na"},
+                                  {CSeq_inst::eMol_other, "other"}};
+        const auto& molecule = mol_enum_to_string.at(seq_inst.GetMol());
+        mods.emplace("molecule", molecule);
+    }
+
+
+    if (seq_inst.IsSetStrand()) {
+        static const unordered_map<CSeq_inst::EStrand, string, hash<underlying_type<CSeq_inst::EStrand>::type>>
+            strand_enum_to_string = {{CSeq_inst::eStrand_ss, "single"},
+                                     {CSeq_inst::eStrand_ds, "double"},
+                                     {CSeq_inst::eStrand_mixed, "mixed"},
+                                     {CSeq_inst::eStrand_other, "other"}};
+        const auto& strand = strand_enum_to_string.at(seq_inst.GetStrand());
+        mods.emplace("strand", strand);
+    }
+
+
+    if (seq_inst.IsSetHist()) {
+        x_ImportHist(seq_inst.GetHist(),mods);
+    }
+}
+
+
+void CModImporter::x_ImportHist(const CSeq_hist& seq_hist, TMods& mods) 
+{
+    if (seq_hist.IsSetReplaces() &&
+        seq_hist.GetReplaces().IsSetIds()) {
+        const bool with_version = true;
+        for (const auto& pSeqId : seq_hist.GetReplaces().GetIds()) {
+            mods.emplace("secondary-accession", pSeqId->GetSeqIdString(with_version));
+        }
     }
 }
 
@@ -428,8 +502,8 @@ void CModImporter::x_ImportPMID(const CPubdesc& pub_desc, TMods& mods)
     if (pub_desc.IsSetPub()) {
         for (const auto& pPub : pub_desc.GetPub().Get()) {
             if (pPub && pPub->IsPmid()) {
-                const auto pmid = NStr::IntToString(pPub->GetPmid());
-                mods.emplace("pmid", pmid);
+                const int pmid = pPub->GetPmid();
+                mods.emplace("pmid", NStr::IntToString(pmid));
             }
         }
     }
@@ -628,7 +702,69 @@ bool CModImporter::x_IsUserType(const CUser_object& user_object, const string& t
 }
 
 
+void CModImporter::x_ImportGene(const CGene_ref& gene_ref, TMods& mods) 
+{
+    if (gene_ref.IsSetLocus()) {
+        mods.emplace("gene", gene_ref.GetLocus());
+    }
+    if (gene_ref.IsSetAllele()) {
+        mods.emplace("allele", gene_ref.GetAllele());
+    }
+    if (gene_ref.IsSetSyn()) {
+        for (const auto& synonym : gene_ref.GetSyn()) {
+            mods.emplace("gene-synonym", synonym);
+        }
+    }
+    if (gene_ref.IsSetLocus_tag()) {
+        mods.emplace("locus-tag", gene_ref.GetLocus_tag());
+    }
+}
 
+
+void CModImporter::x_ImportProtein(const CProt_ref& prot_ref, TMods& mods)
+{
+    if (prot_ref.IsSetName()) {
+        for (const auto& name : prot_ref.GetName()) {
+            mods.emplace("protein", name);
+        }
+    }
+
+    if (prot_ref.IsSetDesc()) {
+        mods.emplace("protein-desc", prot_ref.GetDesc());
+    }
+
+    if (prot_ref.IsSetEc()) {
+        for (const auto& ec_number : prot_ref.GetEc()) {
+            mods.emplace("EC-number", ec_number);
+        }
+    }
+
+    if (prot_ref.IsSetActivity()) {
+        for (const auto& activity : prot_ref.GetActivity()) {
+            mods.emplace("activity", activity);
+        }
+    }
+}
+
+
+void CModImporter::x_ImportFeatureModifiers(const CSeq_annot& annot, TMods& mods)
+{
+    if (annot.IsFtable()) {
+        for (const auto& pSeqFeat : annot.GetData().GetFtable()) {
+            if (pSeqFeat && 
+                pSeqFeat->IsSetData()) {
+
+                if (pSeqFeat->GetData().IsGene()) {
+                    x_ImportGene(pSeqFeat->GetData().GetGene(), mods);
+                }
+                else
+                if (pSeqFeat->GetData().IsProt()) {
+                    x_ImportProtein(pSeqFeat->GetData().GetProt(), mods);
+                }
+            }
+        }
+    }
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
