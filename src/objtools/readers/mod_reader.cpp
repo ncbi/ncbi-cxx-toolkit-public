@@ -59,6 +59,7 @@
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 
+#include <objtools/logging/listener.hpp>
 #include <objtools/readers/mod_reader.hpp>
 #include <map>
 #include <unordered_map>
@@ -766,6 +767,212 @@ void CModParser::x_ImportFeatureModifiers(const CSeq_annot& annot, TMods& mods)
             }
         }
     }
+}
+
+
+const CModHandler::TNameMap CModHandler::sm_NameMap = 
+{{"top","topology"},
+ {"mol","molecule"},
+ {"mol-type", "moltype"},
+ {"fwd-pcr-primer-name", "fwd-primer-name"},
+ {"fwd-pcr-primer-seq"," fwd-primer-seq"},
+ {"rev-pcr-primer-name", "rev-primer-name"},
+ {"rev-pcr-primer-seq", "rev-primer-seq"},
+ {"org", "organism"},
+ {"organism", "taxname"},
+ {"div", "division"},
+ {"notes", "note"},
+ {"completedness", "completeness"},
+ {"gene-syn", "gene-synonym"},
+ {"genesyn", "gene-synonym"},
+ {"genesynonym", "gene-synonym"},
+ {"prot", "protein"},
+ {"prot-desc", "protein-desc"},
+ {"function", "activity"},
+ {"secondary", "secondary-accession"},
+ {"secondary-accessions", "secondary-accession"},
+ {"keywords", "keyword"},
+ {"primary", "primary-accession"},
+ {"primary-accessions", "primary-accession"},
+ {"projects", "project"},
+ {"db-xref", "dbxref"},
+ {"pubmed", "pmid"}
+};
+
+const unordered_set<string> CModHandler::sm_MultipleValuesPermitted =
+{ 
+    "primary-accession",
+    "secondary-accession",
+    "dbxref",
+    "protein",
+    "EC-number",
+    "activity",
+    "pmid",
+    "comment",
+    "project",
+    "keyword",
+    "note",     // Need to check subsources
+    "sub-clone"
+};
+
+CModHandler::CModHandler(IObjtoolsListener* listener) 
+    : m_pMessageListener(listener) {}
+
+
+void CModHandler::AddMod(const string& name,
+                         const string& value,
+                         EHandleExisting handle_existing)
+{
+    const auto& canonical_name = x_GetCanonicalName(name);
+
+    if (m_Mods.find(canonical_name) != m_Mods.end()) {
+        if (handle_existing == ePreserve) { // Do nothing
+            return;
+        }
+        if (handle_existing == eReplace) {
+            m_Mods.erase(canonical_name);    
+        }
+        else { 
+            const auto allow_multiple_values = 
+                (sm_MultipleValuesPermitted.find(canonical_name) != 
+                sm_MultipleValuesPermitted.end());
+
+            if (allow_multiple_values == false) {
+                if (handle_existing == eAppendPreserve) { // Do nothing
+                    return;
+                }
+                // handle_existing == eAppendReplace
+                m_Mods.erase(canonical_name);
+            }
+        }
+    }
+
+    m_Mods.emplace(canonical_name, value);
+}
+
+
+void CModHandler::AddMod(const string& name,
+                         const CModValueAttribs& value_attribs,
+                         EHandleExisting handle_existing)
+{
+    const auto& canonical_name = x_GetCanonicalName(name);
+
+    if (m_Mods.find(canonical_name) != m_Mods.end()) {
+        if (handle_existing == ePreserve) { // Do nothing
+            return;
+        }
+        if (handle_existing == eReplace) {
+            m_Mods.erase(canonical_name);    
+        }
+        else { 
+            const auto allow_multiple_values = 
+                (sm_MultipleValuesPermitted.find(canonical_name) != 
+                sm_MultipleValuesPermitted.end());
+
+            if (allow_multiple_values == false) {
+                if (handle_existing == eAppendPreserve) { // Do nothing
+                    return;
+                }
+                // handle_existing == eAppendReplace
+                m_Mods.erase(canonical_name);
+            }
+        }
+    }
+    m_Mods.emplace(canonical_name, value_attribs);
+}
+
+
+void CModHandler::AddMods(const TMods& mods,
+                          EHandleExisting handle_existing)
+{
+    unordered_set<string> previous_mods;
+    for (const auto& mod : mods) {
+        const auto& canonical_name = x_GetCanonicalName(mod.first);
+        const auto allow_multiple_values = 
+            (sm_MultipleValuesPermitted.find(canonical_name) != 
+            sm_MultipleValuesPermitted.end());
+
+        const auto first_mod_instance = previous_mods.insert(canonical_name).second;
+
+        if (first_mod_instance ||
+            allow_multiple_values) {
+            if (allow_multiple_values) {
+                if ((handle_existing == eAppendPreserve) ||
+                    (handle_existing == eAppendReplace) ) {
+                    m_Mods.emplace(canonical_name, mod.second);
+                }
+                else 
+                if (m_Mods.find(canonical_name) == m_Mods.end()) {
+                    m_Mods.emplace(canonical_name, mod.second);
+                }
+                else
+                if ((handle_existing == eReplace) &&
+                     first_mod_instance) {
+                    m_Mods.erase(canonical_name);
+                    m_Mods.emplace(canonical_name, mod.second);
+                }
+                else
+                if (!first_mod_instance) {
+                    m_Mods.emplace(canonical_name, mod.second);
+                }
+            }
+            else { // first_mod_instance
+                if (m_Mods.find(canonical_name) != m_Mods.end()) {
+                    m_Mods.erase(canonical_name);
+                }
+                m_Mods.emplace(canonical_name, mod.second);
+            }
+        }
+        else {
+            if (m_pMessageListener) {
+                // report an error
+            }
+            else {
+                // throw an exception
+            }
+        }
+    }
+}
+
+
+const CModHandler::TMods& CModHandler::GetMods(void) const
+{
+    return m_Mods;
+}
+
+
+void CModHandler::Clear(void) 
+{
+    m_Mods.clear();
+}
+
+
+string CModHandler::x_GetCanonicalName(const string& name)
+{
+    const auto& normalized_name = x_GetNormalizedName(name);
+    const auto& it = sm_NameMap.find(normalized_name);
+    if (it != sm_NameMap.end()) {
+        return it->second;
+    }
+    return normalized_name;
+}
+
+
+string CModHandler::x_GetNormalizedName(const string& name) 
+{
+    string normalized_name = name;
+    NStr::ToLower(normalized_name);
+    NStr::TruncateSpacesInPlace(normalized_name);
+    NStr::ReplaceInPlace(normalized_name, "_", "-");
+    NStr::ReplaceInPlace(normalized_name, " ", "-");
+    auto new_end = unique(normalized_name.begin(), 
+                          normalized_name.end(),
+                          [](char a, char b) { return ((a==b) && (a==' ')); });
+
+    normalized_name.erase(new_end, normalized_name.end());
+    NStr::ReplaceInPlace(normalized_name, " ", "-");
+
+    return normalized_name;
 }
 
 END_SCOPE(objects)

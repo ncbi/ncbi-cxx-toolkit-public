@@ -30,6 +30,8 @@
 #define _MOD_READER_HPP_
 #include <corelib/ncbistd.hpp>
 #include <map>
+#include <unordered_map>
+#include <unordered_set>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -55,6 +57,48 @@ private:
     TAttribs mAdditionalAttribs;
 };
 
+class IObjtoolsListener;
+
+class CModHandler 
+{
+public:
+    enum EHandleExisting {
+        eReplace        = 0,
+        ePreserve       = 1,
+        eAppendReplace  = 2,
+        eAppendPreserve = 3
+    };
+
+    using TMods = multimap<string, CModValueAttribs>;
+
+    CModHandler(IObjtoolsListener* listener=nullptr);
+
+    void AddMod(const string& name, 
+                const string& value,
+                EHandleExisting handle_existing);
+
+    void AddMod(const string& name,
+                const CModValueAttribs& val_attribs,
+                EHandleExisting handle_existing);
+
+    void AddMods(const TMods& mods, EHandleExisting handle_existing);
+
+    const TMods& GetMods(void) const;
+
+    void Clear(void);
+
+private:
+    string x_GetNormalizedName(const string& name);
+    string x_GetCanonicalName(const string& name);
+
+    TMods m_Mods;
+    using TNameMap = unordered_map<string, string>;
+    static const TNameMap sm_NameMap;
+    static const unordered_set<string> sm_MultipleValuesPermitted;
+
+    IObjtoolsListener* m_pMessageListener;
+};
+
 
 class CBioseq;
 class CSeq_inst;
@@ -76,7 +120,7 @@ class CProt_ref;
 class CModParser 
 {
 public:
-    using TMods = multimap<string, CModValueAttribs>;
+    using TMods = CModHandler::TMods;
 
     static void Apply(const CBioseq& bioseq, TMods& mods);
 private:
