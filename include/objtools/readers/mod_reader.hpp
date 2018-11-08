@@ -148,6 +148,16 @@ private:
     static void x_ImportProtein(const CProt_ref& prot_ref, TMods& mods);
 };
 
+
+class CModAdder
+{
+public:
+    using TMods = CModHandler::TMods;
+
+    static void Apply(const TMods& mods, CBioseq& bioseq);
+private:
+};
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

@@ -812,8 +812,11 @@ const unordered_set<string> CModHandler::sm_MultipleValuesPermitted =
     "project",
     "keyword",
     "note",     // Need to check subsources
-    "sub-clone"
+    "sub-clone",
+    "gene_synonym"
 };
+
+
 
 CModHandler::CModHandler(IObjtoolsListener* listener) 
     : m_pMessageListener(listener) {}
@@ -974,6 +977,37 @@ string CModHandler::x_GetNormalizedName(const string& name)
 
     return normalized_name;
 }
+
+
+
+
+template<typename T, typename U>
+struct SRangeGetter 
+{
+    using TMap = multimap<T,U>;
+    using TIterator = typename multimap<T,U>::const_iterator;
+    using TPair = pair<TIterator,TIterator>;
+    using TRanges = list<TPair>;
+
+    static TRanges GetEqualRanges(const TMap& mod_map)  
+    {
+        TRanges ranges;
+        auto current_it = mod_map.cbegin();
+        auto end_it = mod_map.cend();
+        while (current_it != end_it) {
+            auto range = equal_range(current_it, end_it, current_it->first);
+            current_it = range.second;
+            ranges.emplace_back(range);
+        }
+        return ranges;
+    }
+};
+
+
+void CModAdder::Apply(const TMods& mods, CBioseq& bioseq) {
+}
+// Need implementation code for CModAdder
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
