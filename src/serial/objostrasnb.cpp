@@ -828,7 +828,7 @@ void CObjectOStreamAsnBinary::WriteFloat(float data)
 
 void CObjectOStreamAsnBinary::WriteString(const string& str, EStringType type)
 {
-    size_t length = str.size();
+    size_t length = str.size(), fixed = 0;
     WriteStringTag(type);
     WriteLength(length);
     if ( type == eStringTypeVisible && x_FixCharsMethod() != eFNP_Allow ) {
@@ -836,16 +836,30 @@ void CObjectOStreamAsnBinary::WriteString(const string& str, EStringType type)
         for ( size_t i = 0; i < length; ++i ) {
             char c = str[i];
             if ( !GoodVisibleChar(c) ) {
+#if SERIAL_ALLOW_UTF8_IN_VISIBLESTRING_ON_WRITING
+                size_t valid = CUtf8::EvaluateSymbolLength(CTempString(str.data()+i,length-done-i));
+                if (valid != 0) {
+                    i += valid-1;
+                    continue;
+                }
+#endif
                 if ( i > done ) {
                     WriteBytes(str.data() + done, i - done);
                 }
-                FixVisibleChar(c, x_FixCharsMethod(), this, str);
-                WriteByte(c);
+                c = ReplaceVisibleChar(c, x_FixCharsMethod(), this, str, x_FixCharsSubst());
+                if (c != 0) {
+                    WriteByte(c);
+                } else {
+                    ++fixed;
+                }
                 done = i + 1;
             }
         }
         if ( done < length ) {
             WriteBytes(str.data() + done, length - done);
+        }
+        while (fixed--) {
+            WriteByte(0);
         }
     }
     else {
@@ -862,7 +876,7 @@ void CObjectOStreamAsnBinary::WriteStringStore(const string& str)
 }
 
 void CObjectOStreamAsnBinary::CopyStringValue(CObjectIStreamAsnBinary& in,
-                                              bool checkVisible)
+                                              bool /*checkVisible*/)
 {
     size_t length = in.ReadLength();
     WriteLength(length);
@@ -870,6 +884,7 @@ void CObjectOStreamAsnBinary::CopyStringValue(CObjectIStreamAsnBinary& in,
         char buffer[1024];
         size_t c = min(length, sizeof(buffer));
         in.ReadBytes(buffer, c);
+#if 0
         if ( checkVisible ) {
             // Check the string for non-printable characters
             for (size_t i = 0; i < c; i++) {
@@ -878,6 +893,7 @@ void CObjectOStreamAsnBinary::CopyStringValue(CObjectIStreamAsnBinary& in,
                 }
             }
         }
+#endif
         WriteBytes(buffer, c);
         length -= c;
     }
@@ -901,6 +917,7 @@ void CObjectOStreamAsnBinary::CopyString(CObjectIStream& in,
         string str;
         in.ReadString(str, type);
         size_t length = str.size();
+#if 0
         if ( checkVisible ) {
             // Check the string for non-printable characters
             NON_CONST_ITERATE(string, i, str) {
@@ -909,6 +926,7 @@ void CObjectOStreamAsnBinary::CopyString(CObjectIStream& in,
                 }
             }
         }
+#endif
         WriteLength(length);
         WriteBytes(str.data(), length);
     }
@@ -939,7 +957,8 @@ void CObjectOStreamAsnBinary::WriteCString(const char* str)
         WriteShortLength(0);
     }
     else {
-        size_t length = strlen(str);
+        size_t length = strlen(str), fixed = 0;
+        CTempString original(str, length);
         WriteSysTag(eVisibleString);
         WriteLength(length);
         if ( x_FixCharsMethod() != eFNP_Allow ) {
@@ -947,16 +966,31 @@ void CObjectOStreamAsnBinary::WriteCString(const char* str)
             for ( size_t i = 0; i < length; ++i ) {
                 char c = str[i];
                 if ( !GoodVisibleChar(c) ) {
+#if SERIAL_ALLOW_UTF8_IN_VISIBLESTRING_ON_WRITING
+                    size_t valid = CUtf8::EvaluateSymbolLength(CTempString(str+i,length-done-i));
+                    if (valid != 0) {
+                        i += valid-1;
+                        continue;
+                    }
+#endif
                     if ( i > done ) {
                         WriteBytes(str + done, i - done);
                     }
-                    FixVisibleChar(c, x_FixCharsMethod(), this, string(str,length));
+                    c = ReplaceVisibleChar(c, x_FixCharsMethod(), this, original, x_FixCharsSubst());
                     WriteByte(c);
+                    if (c != 0) {
+                        WriteByte(c);
+                    } else {
+                        ++fixed;
+                    }
                     done = i + 1;
                 }
             }
             if ( done < length ) {
                 WriteBytes(str + done, length - done);
+            }
+            while (fixed--) {
+                WriteByte(0);
             }
         }
         else {
@@ -1691,20 +1725,35 @@ void CObjectOStreamAsnBinary::WriteChars(const CharBlock& ,
                                          const char* str, size_t length)
 {
     if ( x_FixCharsMethod() != eFNP_Allow ) {
-        size_t done = 0;
+        CTempString original(str, length);
+        size_t done = 0, fixed = 0;
         for ( size_t i = 0; i < length; ++i ) {
             char c = str[i];
             if ( !GoodVisibleChar(c) ) {
+#if SERIAL_ALLOW_UTF8_IN_VISIBLESTRING_ON_WRITING
+                size_t valid = CUtf8::EvaluateSymbolLength(CTempString(str+i,length-done-i));
+                if (valid != 0) {
+                    i += valid-1;
+                    continue;
+                }
+#endif
                 if ( i > done ) {
                     WriteBytes(str + done, i - done);
                 }
-                FixVisibleChar(c, x_FixCharsMethod(), this, string(str,length));
-                WriteByte(c);
+                c = ReplaceVisibleChar(c, x_FixCharsMethod(), this, original, x_FixCharsSubst());
+                if (c != 0) {
+                    WriteByte(c);
+                } else {
+                    ++fixed;
+                }
                 done = i + 1;
             }
         }
         if ( done < length ) {
             WriteBytes(str + done, length - done);
+        }
+        while (fixed--) {
+            WriteByte(0);
         }
     }
     else {

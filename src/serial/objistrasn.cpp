@@ -879,16 +879,30 @@ void CObjectIStreamAsn::AppendStringData(string& s,
 {
     const char* data = m_Input.GetCurrentPos();
     if ( fix_method != eFNP_Allow ) {
-        size_t done = 0;
+        size_t done = 0, valid = 0;
         for ( size_t i = 0; i < count; ++i ) {
             char c = data[i];
             if ( !GoodVisibleChar(c) ) {
-                if ( i > done ) {
-                    s.append(data + done, i - done);
+#if SERIAL_ALLOW_UTF8_IN_VISIBLESTRING_ON_READING
+                if (valid == 0) {
+                    if (CUtf8::EvaluateFirst(c, valid)) {
+                        ++valid;
+                    }
                 }
-                FixVisibleChar(c, fix_method, this, string(data,count));
-                s += c;
-                done = i + 1;
+#endif
+                if (valid == 0) {
+                    if ( i > done ) {
+                        s.append(data + done, i - done);
+                    }
+                    c = ReplaceVisibleChar(c, fix_method, this, CTempString(data,count), x_FixCharsSubst());
+                    if (c != 0) {
+                        s += c;
+                    }
+                    done = i + 1;
+                }
+            }
+            if (valid != 0) {
+                --valid;
             }
         }
         if ( done < count ) {
@@ -1079,7 +1093,7 @@ void CObjectIStreamAsn::SkipString(EStringType type)
 {
     Expect('\"', true);
     size_t startLine = m_Input.GetLine();
-    size_t i = 0;
+    size_t i = 0, valid = 0;
     try {
         for (;;) {
             char c = m_Input.PeekChar(i);
@@ -1107,7 +1121,16 @@ void CObjectIStreamAsn::SkipString(EStringType type)
             default:
                 if (type == eStringTypeVisible) {
                     if ( !GoodVisibleChar(c) ) {
-                        FixVisibleChar(c, x_FixCharsMethod(), this, kEmptyStr);
+#if SERIAL_ALLOW_UTF8_IN_VISIBLESTRING_ON_READING
+                        if (valid == 0) {
+                            if (CUtf8::EvaluateFirst(c, valid)) {
+                                ++valid;
+                            }
+                        }
+#endif
+                        if (valid == 0) {
+                            c = ReplaceVisibleChar(c, x_FixCharsMethod(), this, kEmptyStr, x_FixCharsSubst());
+                        }
                     }
                 }
                 // ok: skip char
@@ -1117,6 +1140,9 @@ void CObjectIStreamAsn::SkipString(EStringType type)
                     i = 0;
                 }
                 break;
+            }
+            if (valid != 0) {
+                --valid;
             }
         }
     }
@@ -1518,7 +1544,7 @@ void CObjectIStreamAsn::BeginChars(CharBlock& )
 size_t CObjectIStreamAsn::ReadChars(CharBlock& block,
                                     char* dst, size_t length)
 {
-    size_t count = 0;
+    size_t count = 0, valid = 0;
     try {
         while (length-- > 0) {
             char c = m_Input.GetChar();
@@ -1538,8 +1564,20 @@ size_t CObjectIStreamAsn::ReadChars(CharBlock& block,
                     if ( fix_method != eFNP_Allow ) {
                         for (size_t i = 0;  i < count;  i++) {
                             if ( !GoodVisibleChar(dst[i]) ) {
-                                FixVisibleChar(dst[i], fix_method,
-                                    this, string(dst, count));
+#if SERIAL_ALLOW_UTF8_IN_VISIBLESTRING_ON_READING
+                                if (valid == 0) {
+                                    if (CUtf8::EvaluateFirst(dst[i], valid)) {
+                                        ++valid;
+                                    }
+                                }
+#endif
+                                if (valid == 0) {
+                                     char c = ReplaceVisibleChar(dst[i], fix_method, this, CTempString(dst, count), x_FixCharsSubst());
+                                     dst[i] = c == '\0' ? '#' : c;
+                                }
+                            }
+                            if (valid != 0) {
+                                --valid;
                             }
                         }
                     }

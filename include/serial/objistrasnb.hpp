@@ -330,6 +330,8 @@ public:
 private:
     void ReadBytes(char* buffer, size_t count);
     void ReadBytes(string& str, size_t count);
+    bool FixVisibleChars(char* buffer, size_t& count, EFixNonPrint fix_method);
+    bool FixVisibleChars(string& str, EFixNonPrint fix_method);
     void SkipBytes(size_t count);
 
     void ReadStringValue(size_t length, string& s, EFixNonPrint fix_type);

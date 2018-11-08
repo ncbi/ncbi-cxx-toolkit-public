@@ -303,7 +303,8 @@ void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
     if (ns_name.empty()) {
         ns_name = GetDefaultSchemaNamespace();
     }
-    if (type->HasNamespaceName() || type->GetDataSpec() != EDataSpec::eXSD) {
+    if ((type->HasNamespaceName() || type->GetDataSpec() != EDataSpec::eXSD) &&
+         m_NsNameToPrefix.find(ns_name) == m_NsNameToPrefix.end()) {
         if (m_Attlist) {
             m_Output.PutString(" xmlns");
         } else {
@@ -316,6 +317,8 @@ void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
         }
         m_Output.PutString("=\"");
         m_Output.PutString(ns_name + "\"");
+        m_NsPrefixToName[m_CurrNsPrefix] = ns_name;
+        m_NsNameToPrefix[ns_name] = m_CurrNsPrefix;
     }
 
     if (m_UseSchemaLoc) {
@@ -556,7 +559,7 @@ inline bool BAD_CHAR(char x) {
 }
 inline char CObjectOStreamXml::x_VerifyChar(char x) {
     return BAD_CHAR(x) ?
-        ReplaceVisibleChar(x, x_FixCharsMethod(), this, kEmptyStr) : x;
+        ReplaceVisibleChar(x, x_FixCharsMethod(), this, kEmptyStr, x_FixCharsSubst()) : x;
 }
 
 void CObjectOStreamXml::WriteEncodedChar(const char*& src, EStringType type)
@@ -565,15 +568,24 @@ void CObjectOStreamXml::WriteEncodedChar(const char*& src, EStringType type)
     EEncoding enc_out(m_Encoding == eEncoding_Unknown ? eEncoding_UTF8 : m_Encoding);
 
     if (enc_in == enc_out || enc_in == eEncoding_Unknown || (*src & 0x80) == 0) {
-        WriteEscapedChar(x_VerifyChar(*src));
+        char s = x_VerifyChar(*src);
+        if (s != '\0') {
+            WriteEscapedChar(s);
+        }
     } else if (enc_out != eEncoding_UTF8) {
         TUnicodeSymbol chU = (enc_in == eEncoding_UTF8) ?
             CUtf8::Decode(src) : CUtf8::CharToSymbol( *src, enc_in);
-        WriteEscapedChar( x_VerifyChar( CUtf8::SymbolToChar( chU, enc_out)) );
+        char s = x_VerifyChar( CUtf8::SymbolToChar( chU, enc_out));
+        if (s != '\0') {
+            WriteEscapedChar(s);
+        }
     } else {
         CStringUTF8 tmp( CUtf8::AsUTF8( CTempString(src,1),enc_in));
         for ( string::const_iterator t = tmp.begin(); t != tmp.end(); ++t ) {
-            WriteEscapedChar(x_VerifyChar(*t));
+            char s = x_VerifyChar(*t);
+            if (s != '\0') {
+                WriteEscapedChar(s);
+            }
         }
     }
 }

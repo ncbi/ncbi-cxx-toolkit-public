@@ -473,16 +473,6 @@ bool GoodVisibleChar(char c)
     return c >= ' ' && c <= '~';
 }
 
-
-inline
-void FixVisibleChar(char& c, EFixNonPrint fix_method,
-    const CObjectStack* io, const string& str)
-{
-    if ( !GoodVisibleChar(c) ) {
-        c = ReplaceVisibleChar(c, fix_method, io, str);
-    }
-}
-
 inline
 void CObjectIStream::SetVerifyData(ESerialVerifyData verify)
 {

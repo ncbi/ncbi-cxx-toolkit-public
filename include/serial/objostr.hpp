@@ -206,6 +206,9 @@ public:
         m_FixMethod = how == eFNP_Default ? x_GetFixCharsMethodDefault() : how;
         return tmp;
     }
+    void FixNonPrintSubst(char subst) {
+        m_NonPrintSubst = subst;
+    }
 
     // Enforce explicit writing of values with default,
     // even when they were never set
@@ -786,6 +789,9 @@ protected:
     EFixNonPrint x_FixCharsMethod(void) const {
         return m_FixMethod;
     }
+    char x_FixCharsSubst(void) const {
+        return m_NonPrintSubst;
+    }
     // Write current separator to the stream
     virtual void WriteSeparator(void);
 
@@ -814,6 +820,7 @@ private:
                                                 EOwnership deleteOut);
     static ESerialVerifyData x_GetVerifyDataDefault(void);
 
+    char m_NonPrintSubst;
     EFixNonPrint m_FixMethod; // method of fixing wrong (eg, non-printable) chars
     ESerialVerifyData   m_VerifyData;
     CStreamObjectPathHook<CWriteObjectHook*>                m_PathWriteObjectHooks;

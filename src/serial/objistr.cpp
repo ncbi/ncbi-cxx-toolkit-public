@@ -291,6 +291,7 @@ ESerialVerifyData CObjectIStream::x_GetVerifyDataDefault(void)
 
 NCBI_PARAM_ENUM_ARRAY(EFixNonPrint, SERIAL, WRONG_CHARS_READ)
 {
+    {"SKIP",               eFNP_Skip},
     {"ALLOW",              eFNP_Allow},
     {"REPLACE",            eFNP_Replace},
     {"REPLACE_AND_WARN",   eFNP_ReplaceAndWarn},
@@ -449,6 +450,7 @@ CObjectIStream::CObjectIStream(ESerialDataFormat format)
       m_DataFormat(format),
       m_ParseDelayBuffers(eDelayBufferPolicyNotSet),
       m_TypeAlias(nullptr),
+      m_NonPrintSubst('#'),
       m_FixMethod(x_GetFixCharsMethodDefault()),
       m_VerifyData(x_GetVerifyDataDefault()),
       m_SkipUnknown(eSerialSkipUnknown_Default),
@@ -1831,9 +1833,14 @@ void CObjectIStream::ReadCompressedBitString(CBitString& obj)
 }
 
 char ReplaceVisibleChar(char c, EFixNonPrint fix_method,
-    const CObjectStack* io, const string& str)
+    const CObjectStack* io, const CTempString& str, char subst)
 {
-    _ASSERT(fix_method != eFNP_Allow);
+    if ( fix_method == eFNP_Skip ) {
+        return '\0';
+    }
+    if ( fix_method == eFNP_Allow ) {
+        return c;
+    }
     if ( fix_method != eFNP_Replace ) {
         string message;
         if (io != NULL) {
@@ -1863,7 +1870,7 @@ char ReplaceVisibleChar(char c, EFixNonPrint fix_method,
             break;
         }
     }
-    return '#';
+    return subst;
 }
 
 void CObjectIStream::SetCanceledCallback(const ICanceled* callback)

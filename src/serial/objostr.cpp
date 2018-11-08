@@ -267,6 +267,7 @@ ESerialVerifyData CObjectOStream::x_GetVerifyDataDefault(void)
 
 NCBI_PARAM_ENUM_ARRAY(EFixNonPrint, SERIAL, WRONG_CHARS_WRITE)
 {
+    {"SKIP",               eFNP_Skip},
     {"ALLOW",              eFNP_Allow},
     {"REPLACE",            eFNP_Replace},
     {"REPLACE_AND_WARN",   eFNP_ReplaceAndWarn},
@@ -298,6 +299,7 @@ CObjectOStream::CObjectOStream(ESerialDataFormat format,
       m_FastWriteDouble(s_FastWriteDouble->Get()),
       m_EnforceWritingDefaults(false),
       m_TypeAlias(nullptr),
+      m_NonPrintSubst('#'),
       m_FixMethod(x_GetFixCharsMethodDefault()),
       m_VerifyData(x_GetVerifyDataDefault())
 {

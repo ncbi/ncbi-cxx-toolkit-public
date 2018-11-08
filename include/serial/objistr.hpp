@@ -358,6 +358,9 @@ public:
         m_FixMethod = how == eFNP_Default ? x_GetFixCharsMethodDefault() : how;
         return tmp;
     }
+    void FixNonPrintSubst(char subst) {
+        m_NonPrintSubst = subst;
+    }
 
 //---------------------------------------------------------------------------
 // Stream state
@@ -1025,6 +1028,9 @@ protected:
     EFixNonPrint x_FixCharsMethod(void) const {
         return m_FixMethod;
     }
+    char x_FixCharsSubst(void) const {
+        return m_NonPrintSubst;
+    }
 
     CIStreamBuffer m_Input;
     bool m_DiscardCurrObject;
@@ -1048,6 +1054,7 @@ private:
     static ESerialSkipUnknown x_GetSkipUnknownDefault(void);
     static ESerialSkipUnknown x_GetSkipUnknownVariantsDefault(void);
 
+    char m_NonPrintSubst;
     EFixNonPrint m_FixMethod; // method of fixing wrong (eg, non-printable) chars
     ESerialVerifyData   m_VerifyData;
     ESerialSkipUnknown m_SkipUnknown;
@@ -1140,13 +1147,11 @@ public:
 inline
 bool GoodVisibleChar(char c);
 
+#define SERIAL_ALLOW_UTF8_IN_VISIBLESTRING_ON_READING 0
+#define SERIAL_ALLOW_UTF8_IN_VISIBLESTRING_ON_WRITING 0
 NCBI_XSERIAL_EXPORT
 char ReplaceVisibleChar(char c, EFixNonPrint fix_method,
-    const CObjectStack* io, const string& str);
-
-inline
-void FixVisibleChar(char& c, EFixNonPrint fix_method,
-    const CObjectStack* io, const string& str);
+    const CObjectStack* io, const CTempString& str, char subst);
 
 
 /// Guard class for CObjectIStream::StartDelayBuffer/EndDelayBuffer

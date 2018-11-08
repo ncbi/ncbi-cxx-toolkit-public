@@ -460,9 +460,8 @@ CTempString CObjectIStreamXml::ReadName(char c)
                                 type = FetchFrameFromTop(3).GetTypeInfo();
                         }
                     }
-                if (type) {
+                if (type && type->HasNamespaceName()) {
                     type->SetNamespacePrefix(m_CurrNsPrefix);
-                    type->SetNamespaceName(value);
                 }
             }
             m_NsPrefixToName[m_LastTag] = value;
@@ -483,8 +482,9 @@ CTempString CObjectIStreamXml::ReadName(char c)
             ReadAttributeValue(value, true);
             if (GetStackDepth() > 1 && FetchFrameFromTop(1).HasTypeInfo()) {
                 TTypeInfo type = FetchFrameFromTop(1).GetTypeInfo();
-                type->SetNamespacePrefix(m_CurrNsPrefix);
-                type->SetNamespaceName(value);
+                if (type->HasNamespaceName()) {
+                    type->SetNamespacePrefix(m_CurrNsPrefix);
+                }
             }
             m_NsPrefixToName[m_LastTag] = value;
             m_NsNameToPrefix[value] = m_LastTag;
@@ -798,7 +798,7 @@ inline bool BAD_CHAR(int x) {
 }
 inline int CObjectIStreamXml::x_VerifyChar(int x) {
     return BAD_CHAR(x) ?
-        ReplaceVisibleChar((char)x, x_FixCharsMethod(), this, kEmptyStr) : x;
+        ReplaceVisibleChar((char)x, x_FixCharsMethod(), this, kEmptyStr, x_FixCharsSubst()) : x;
 }
 inline
 int CObjectIStreamXml::ReadEncodedChar(char endingChar, EStringType type, bool& encoded)
@@ -887,7 +887,9 @@ void CObjectIStreamXml::ReadAttributeValue(string& value, bool skipClosing)
         int c = ReadEncodedChar(startChar,eStringTypeUTF8,encoded);
         if ( c < 0 )
             break;
-        value += char(c);
+        if (c != 0) {
+            value += char(c);
+        }
     }
     if (!m_Attlist || skipClosing) {
         m_Input.SkipChar();
@@ -1302,6 +1304,9 @@ void CObjectIStreamXml::ReadTagData(string& str, EStringType type)
                 CR = false;
                 continue;
             }
+            if (c == 0) {
+                continue;
+            }
             if (CR) {
                 if (c == '\n') {
                     CR = false;
@@ -1337,7 +1342,9 @@ void CObjectIStreamXml::ReadWord(string& str, EStringType type)
             if ( c < 0  || IsWhiteSpace((char)c)) {
                 break;
             }
-            str += (char)c;
+            if (c != 0) {
+                str += (char)c;
+            }
         }
     } catch (CEofException&) {
     }

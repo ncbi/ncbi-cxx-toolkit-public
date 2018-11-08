@@ -645,103 +645,107 @@ double CObjectIStreamAsnBinary::ReadDouble(void)
     return result;
 }
 
-namespace {
-    inline
-    bool BadVisibleChar(char c)
-    {
-        return Uint1(c-' ') > Uint1('~' - ' ');
-    }
+inline
+bool BadVisibleChar(char c)
+{
+    return Uint1(c-' ') > Uint1('~' - ' ');
+}
 
-    inline
-    void ReplaceVisibleCharMethod(char& c, EFixNonPrint fix_method)
-    {
-        c = ReplaceVisibleChar(c, fix_method, 0, kEmptyStr);
-    }
-
-    inline
-    void FixVisibleCharAlways(char& c)
-    {
-        if ( BadVisibleChar(c) ) {
-            c = '#';
+bool CObjectIStreamAsnBinary::FixVisibleChars(char* buffer, size_t& count, EFixNonPrint fix_method)
+{
+    _ASSERT(fix_method != eFNP_Allow);
+    bool result = false;
+    char subst = x_FixCharsSubst();
+    if (fix_method == eFNP_Replace && subst != '\0') {
+        for(size_t i=0; i<count; ++i) {
+            if ( BadVisibleChar(buffer[i]) ) {
+#if SERIAL_ALLOW_UTF8_IN_VISIBLESTRING_ON_READING
+                size_t more=0;
+                if (CUtf8::EvaluateFirst(buffer[i], more)) {
+                    i += more;
+                }
+                else
+#endif
+                {
+                    buffer[i] = subst;
+                    result = true;
+                }
+            }
+        }
+    } else {
+        CTempString original(buffer, count);
+        for(size_t i=0; i<count; ++i) {
+            if ( BadVisibleChar(buffer[i]) ) {
+#if SERIAL_ALLOW_UTF8_IN_VISIBLESTRING_ON_READING
+                size_t more=0;
+                if (CUtf8::EvaluateFirst(buffer[i], more)) {
+                    i += more;
+                }
+                else
+#endif
+                {
+                    char c = ReplaceVisibleChar(buffer[i], fix_method, this, original, subst);
+                    if (c != '\0') {
+                        buffer[i] = subst;
+                    } else {
+                        memmove(buffer+i, buffer+i+1, count-i-1);
+                        --i;
+                        --count;
+                    }
+                    result = true;
+                }
+            }
         }
     }
-    inline
-    void FixVisibleCharMethod(char& c, EFixNonPrint fix_method)
-    {
-        if ( BadVisibleChar(c) ) {
-            ReplaceVisibleCharMethod(c, fix_method);
+    return result;
+}
+
+bool CObjectIStreamAsnBinary::FixVisibleChars(string& str, EFixNonPrint fix_method)
+{
+    _ASSERT(fix_method != eFNP_Allow);
+    bool result = false;
+    char subst = x_FixCharsSubst();
+    string::iterator to = str.end();
+    if (fix_method == eFNP_Replace && subst != '\0') {
+        for(string::iterator i = str.begin(); i < to; ++i) {
+            if ( BadVisibleChar(*i) ) {
+#if SERIAL_ALLOW_UTF8_IN_VISIBLESTRING_ON_READING
+                size_t more=0;
+                if (CUtf8::EvaluateFirst(*i, more)) {
+                    i += more;
+                }
+                else
+#endif
+                {
+                    *i = subst;
+                    result = true;
+                }
+            }
+        }
+    } else {
+        for(string::iterator i = str.begin(); i < to; ++i) {
+            if ( BadVisibleChar(*i) ) {
+#if SERIAL_ALLOW_UTF8_IN_VISIBLESTRING_ON_READING
+                size_t more=0;
+                if (CUtf8::EvaluateFirst(*i, more)) {
+                    i += more;
+                }
+                else
+#endif
+                {
+                    char c = ReplaceVisibleChar(*i, fix_method, this, str, subst);
+                    if (c != '\0') {
+                        *i = subst;
+                    } else {
+                        str.erase(i);
+                        to = str.end();
+                    }
+                    result = true;
+                }
+            }
         }
     }
-
-#define FIND_BAD_CHAR(ptr)                      \
-        do {                                    \
-            if ( !count ) {                     \
-                return false;                   \
-            }                                   \
-            --count;                            \
-        } while ( !BadVisibleChar(*ptr++) );    \
-        --ptr
-
-#define REPLACE_BAD_CHARS_ALWAYS(ptr)           \
-        *--ptr = '#';                           \
-        while ( count-- ) {                     \
-            FixVisibleCharAlways(*++ptr);       \
-        }                                       \
-        return true
-    
-#define REPLACE_BAD_CHARS_METHOD(ptr, fix_method)          \
-        ReplaceVisibleCharMethod(*--ptr, fix_method);      \
-        while ( count-- ) {                                \
-            FixVisibleCharMethod(*++ptr, fix_method);      \
-        }                                                  \
-        return true
-    
-    bool FixVisibleCharsAlways(char* ptr, size_t count)
-    {
-        FIND_BAD_CHAR(ptr);
-        REPLACE_BAD_CHARS_ALWAYS(ptr);
-    }
-
-    bool FixVisibleCharsMethod(char* ptr, size_t count,
-                               EFixNonPrint fix_method)
-    {
-        FIND_BAD_CHAR(ptr);
-        REPLACE_BAD_CHARS_METHOD(ptr, fix_method);
-    }
-
-    bool FixVisibleCharsAlways(string& s)
-    {
-        size_t count = s.size();
-        const char* ptr = s.data();
-        FIND_BAD_CHAR(ptr);
-        string::iterator it = s.begin()+(ptr-s.data());
-        REPLACE_BAD_CHARS_ALWAYS(it);
-    }
-
-    bool FixVisibleCharsMethod(string& s, EFixNonPrint fix_method)
-    {
-        size_t count = s.size();
-        const char* ptr = s.data();
-        FIND_BAD_CHAR(ptr);
-        string::iterator it = s.begin()+(ptr-s.data());
-        REPLACE_BAD_CHARS_METHOD(it, fix_method);
-    }
-
-    inline
-    bool FixVisibleChars(char* ptr, size_t count, EFixNonPrint fix_method)
-    {
-        return fix_method == eFNP_Allow? false:
-            fix_method == eFNP_Replace? FixVisibleCharsAlways(ptr, count):
-            FixVisibleCharsMethod(ptr, count, fix_method);
-    }
-
-    inline
-    bool FixVisibleChars(string& s, EFixNonPrint fix_method)
-    {
-        return fix_method == eFNP_Allow? false:
-            fix_method == eFNP_Replace? FixVisibleCharsAlways(s):
-            FixVisibleCharsMethod(s, fix_method);
-    }
+    return result;
 }
 
 void CObjectIStreamAsnBinary::ReadPackedString(string& s,
@@ -767,6 +771,7 @@ void CObjectIStreamAsnBinary::ReadPackedString(string& s,
         }
         else {
             if ( type == eStringTypeVisible &&
+                 x_FixCharsMethod() != eFNP_Allow &&
                  FixVisibleChars(buffer, length, x_FixCharsMethod()) ) {
                 // do not remember fixed strings
                 pack_string.Pack(s, buffer, length);
@@ -803,15 +808,18 @@ void CObjectIStreamAsnBinary::ReadStringValue(size_t length,
     if ( length != s.size() || length > BUFFER_SIZE ) {
         // new string
         ReadBytes(s, length);
-        FixVisibleChars(s, fix_method);
+        if (fix_method != eFNP_Allow) {
+            FixVisibleChars(s, fix_method);
+        }
     }
     else {
         char buffer[BUFFER_SIZE];
         // try to reuse old value
         ReadBytes(buffer, length);
-        FixVisibleChars(buffer, length, fix_method);
-        if ( memcmp(s.data(), buffer, length) != 0 ) {
-            s.assign(buffer, length);
+        if (fix_method != eFNP_Allow) {
+            if (FixVisibleChars(buffer, length, fix_method)) {
+                s.assign(buffer, length);
+            }
         }
     }
     EndOfTag();
@@ -824,7 +832,9 @@ char* CObjectIStreamAsnBinary::ReadCString(void)
     char* s = static_cast<char*>(malloc(length + 1));
     ReadBytes(s, length);
     s[length] = 0;
-    FixVisibleChars(s, length, x_FixCharsMethod());
+    if (x_FixCharsMethod() != eFNP_Allow) {
+        FixVisibleChars(s, length, x_FixCharsMethod());
+    }
     EndOfTag();
     return s;
 }

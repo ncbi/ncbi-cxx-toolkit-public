@@ -375,18 +375,35 @@ void CObjectOStreamAsn::CopyBitString(CObjectIStream& in)
 void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)
 {
     m_Output.PutChar('"');
+    CTempString original(ptr, length);
+    size_t valid=0;
     while ( length > 0 ) {
-        char c = *ptr++;
+        char c = *ptr;
         if ( x_FixCharsMethod() != eFNP_Allow ) {
             if ( !GoodVisibleChar(c) ) {
-                FixVisibleChar(c, x_FixCharsMethod(), this, string(ptr,length));
+                if (valid == 0) {
+#if SERIAL_ALLOW_UTF8_IN_VISIBLESTRING_ON_WRITING
+                    valid = CUtf8::EvaluateSymbolLength(CTempString(ptr,length));
+#endif
+                    if (valid == 0) {
+                        c = ReplaceVisibleChar(c, x_FixCharsMethod(), this, original, x_FixCharsSubst());
+                    }
+                }
             }
         }
+        ++ptr;
         --length;
+        if (valid != 0) {
+            --valid;
+        }
+        if (c == 0) {
+            continue;
+        }
         m_Output.WrapAt(78, true);
         m_Output.PutChar(c);
-        if ( c == '"' )
+        if ( c == '"' ) {
             m_Output.PutChar('"');
+        }
     }
     m_Output.PutChar('"');
 }
@@ -847,12 +864,28 @@ void CObjectOStreamAsn::BeginChars(const CharBlock& )
 void CObjectOStreamAsn::WriteChars(const CharBlock& ,
                                    const char* chars, size_t length)
 {
+    size_t valid=0;
+    CTempString original(chars, length);
     while ( length > 0 ) {
         char c = *chars++;
         if ( !GoodVisibleChar(c) ) {
-            FixVisibleChar(c, x_FixCharsMethod(), this, string(chars,length));
+            if (valid == 0) {
+#if SERIAL_ALLOW_UTF8_IN_VISIBLESTRING_ON_WRITING
+                valid = CUtf8::EvaluateSymbolLength(CTempString(chars,length));
+#endif
+                if (valid == 0) {
+                    c = ReplaceVisibleChar(c, x_FixCharsMethod(), this, original, x_FixCharsSubst());
+                }
+            }
         }
+        ++chars;
         --length;
+        if (valid != 0) {
+            --valid;
+        }
+        if (c == 0) {
+            continue;
+        }
         m_Output.WrapAt(78, true);
         m_Output.PutChar(c);
         if ( c == '"' )

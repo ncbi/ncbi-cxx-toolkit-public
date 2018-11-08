@@ -171,6 +171,7 @@ enum EContainerType {
 
 /// How to process non-printing character in the ASN VisibleString
 enum EFixNonPrint {
+    eFNP_Skip,             ///< skip, post no error message
     eFNP_Allow,            ///< pass through unchanged, post no error message
     eFNP_Replace,          ///< replace with '#' silently
     eFNP_ReplaceAndWarn,   ///< replace with '#', post an error of severity ERROR
