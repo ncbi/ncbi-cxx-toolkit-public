@@ -139,7 +139,7 @@ int CNCBITestHttpStreamApp::Run(void)
     _ASSERT(n > 0);
 
     CCanceled canceled;
-    CConn_HttpStream http(args[1].AsString(), eReqMethod_Get11);
+    CConn_HttpStream http(args[1].AsString(), eReqMethod_Any11);
     http.SetCanceledCallback(&canceled);
 
     size_t i = 1;
