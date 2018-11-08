@@ -301,6 +301,8 @@ dbsnp_primary_track needs3party $(ORIG_LIBS)
 dbsnp_primary_track needs3party $(Z_LIBS)
 dbsnp_tooltip_service needs xser
 ddvlib needs3party ncbidesk
+demo_contig_assembly needs $(OBJMGR_LIBS)
+demo_contig_assembly needs xalgocontig_assembly
 distance needs xalgophytree
 docsum needs xser
 drmaa needs3party $(ORIG_LIBS)
@@ -786,6 +788,7 @@ mongocxx needs3party bson-1.0
 mongocxx needs3party bsoncxx
 mongocxx needs3party mongoc-1.0
 monitor_buildrun needs general
+msbuild_dataobj needs xser
 muparser needs3party $(ORIG_LIBS)
 muscleasn_g needs $(SEQ_LIBS)
 muscleasn_g needs pub
@@ -849,11 +852,6 @@ ncbi_xdbapi_ctlib needs dbapi_driver
 ncbi_xdbapi_ctlib needs3party $(NETWORK_LIBS)
 ncbi_xdbapi_ctlib needs3party $(SYBASE_DLLS)
 ncbi_xdbapi_ctlib needs3party $(SYBASE_LIBS)
-ncbi_xdbapi_dblib needs dbapi_driver
-ncbi_xdbapi_dblib needs3party $(NETWORK_LIBS)
-ncbi_xdbapi_dblib needs3party $(SYBASE_DBLIBS)
-ncbi_xdbapi_dblib needs3party $(SYBASE_DLLS)
-ncbi_xdbapi_dblib needs3party $(SYBASE_LIBS)
 ncbi_xdbapi_ftds needs $(FTDS_LIB)
 ncbi_xdbapi_ftds needs dbapi_driver
 ncbi_xdbapi_ftds needs3party $(FTDS_LIBS)
@@ -989,6 +987,8 @@ netcli needs3party $(NCBI_C_ncbi)
 netentr needs3party ncbiacc
 netentr needs3party netcli
 netstorage needs ncbi_xcache_netcache
+ngalign_app needs ncbi_xloader_asn_cache
+ngalign_app needs xngalign
 nghttp2 needs3party $(ORIG_LIBS)
 nlmzip needs3party $(NCBI_C_ncbi)
 nsl needs3party $(ORIG_LIBS)
