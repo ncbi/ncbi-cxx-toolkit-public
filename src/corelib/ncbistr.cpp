@@ -6745,6 +6745,17 @@ SIZE_TYPE CUtf8::x_BytesNeeded(TUnicodeSymbol c)
     return 4;
 }
 
+SIZE_TYPE CUtf8::EvaluateSymbolLength(const CTempString& str)
+{
+    CTempString::const_iterator src = str.begin();
+    CTempString::const_iterator to = str.end();
+    SIZE_TYPE more = 0;
+    bool good = x_EvalFirst(*src, more);
+    while (more-- && good) {
+        good = (++src != to) && x_EvalNext(*src);
+    }
+    return good ? (src - str.begin() + 1) : 0;
+}
 
 bool CUtf8::x_EvalFirst(char ch, SIZE_TYPE& more)
 {

@@ -3964,6 +3964,36 @@ public:
     ///   Number of valid bytes (no exception thrown)
     static SIZE_TYPE GetValidBytesCount(const CTempString& src);
 
+    /// Check buffer for presence of UTF-8 byte sequence and return length of first symbol
+    ///
+    /// @param src
+    ///   Character buffer
+    /// @return
+    ///   Number of bytes
+    static SIZE_TYPE EvaluateSymbolLength(const CTempString& src);
+
+    /// Check that the character is valid first byte of an UTF8 byte sequence
+    ///
+    /// @param ch
+    ///   Character
+    /// @param more
+    ///   Number of additional bytes to expect
+    /// @return
+    ///   true, if this is a valid first byte
+    static bool EvaluateFirst(char ch, SIZE_TYPE& more) {
+        return x_EvalFirst(ch, more);
+    }
+
+    /// Check that the character is valid continuation byte of an UTF8 byte sequence
+    ///
+    /// @param ch
+    ///   Character
+    /// @return
+    ///   true, if this is a valid byte
+    static bool EvaluateNext(char ch) {
+        return x_EvalNext(ch);
+    }
+
     /// Check the encoding of the C/C++ string
     ///
     /// Check that the encoding of the source is the same, or
