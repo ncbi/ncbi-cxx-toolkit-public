@@ -981,15 +981,14 @@ string CModHandler::x_GetNormalizedName(const string& name)
 
 
 
-template<typename T, typename U>
+template<typename TMultimap>
 struct SRangeGetter 
 {
-    using TMap = multimap<T,U>;
-    using TIterator = typename multimap<T,U>::const_iterator;
+    using TIterator = typename TMultimap::const_iterator;
     using TPair = pair<TIterator,TIterator>;
     using TRanges = list<TPair>;
 
-    static TRanges GetEqualRanges(const TMap& mod_map)  
+    static TRanges GetEqualRanges(const TMultimap& mod_map)  
     {
         TRanges ranges;
         auto current_it = mod_map.cbegin();
