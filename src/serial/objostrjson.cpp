@@ -524,6 +524,7 @@ void CObjectOStreamJson::EndClassMember(void)
     if (TopFrame().GetNotag()) {
         TopFrame().SetNotag(false);
     }
+    m_ExpectValue = false;
 }
 
 
@@ -560,6 +561,7 @@ void CObjectOStreamJson::EndChoiceVariant(void)
     if (TopFrame().GetNotag()) {
         TopFrame().SetNotag(false);
     }
+    m_ExpectValue = false;
 }
 
 
