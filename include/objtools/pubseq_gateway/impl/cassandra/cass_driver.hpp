@@ -1041,19 +1041,22 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
 
         switch (type) {
             case CASS_VALUE_TYPE_SET: {
-                unique_ptr<CassIterator, function<void(CassIterator*)> > items_iterator_ptr(
+                unique_ptr<CassIterator, function<void(CassIterator*)>> items_iterator(
                     cass_iterator_from_collection(clm),
                     [](CassIterator* itr) {
                         cass_iterator_free(itr);
                     }
                 );
-                while (cass_iterator_next(items_iterator_ptr.get())) {
-                    T v;
-                    const CassValue* value = cass_iterator_get_value(items_iterator_ptr.get());
-                    if (!value)
-                        NCBI_THROW(CCassandraException, eSeqFailed, "cass iterator fetch failed");
-                    Convert::CassValueConvert(value, v);
-                    values.insert(move(v));
+                if (items_iterator != nullptr) {
+                    while (cass_iterator_next(items_iterator.get())) {
+                        T v;
+                        const CassValue* value = cass_iterator_get_value(items_iterator.get());
+                        if (!value) {
+                            NCBI_THROW(CCassandraException, eSeqFailed, "cass iterator fetch failed");
+                        }
+                        Convert::CassValueConvert(value, v);
+                        values.insert(move(v));
+                    }
                 }
                 break;
             }
@@ -1069,25 +1072,27 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     void FieldGetMapValue(F ifld, map<K, V>& result) const
     {
         const CassValue * clm = GetColumn(ifld);
-        CassValueType     type = cass_value_type(clm);
+        CassValueType type = cass_value_type(clm);
 
         switch (type) {
             case CASS_VALUE_TYPE_MAP: {
                 result.clear();
-                unique_ptr<CassIterator, function<void(CassIterator*)> > items_iterator_ptr(
+                unique_ptr<CassIterator, function<void(CassIterator*)>> items_iterator(
                     cass_iterator_from_map(clm),
                     [](CassIterator* itr) {
                         cass_iterator_free(itr);
                     }
-                );                
-                while (cass_iterator_next(items_iterator_ptr.get())) {
-                    const CassValue* key = cass_iterator_get_map_key(items_iterator_ptr.get());
-                    const CassValue* val = cass_iterator_get_map_value(items_iterator_ptr.get());
-                    K k;
-                    Convert::CassValueConvert(key, k);
-                    V v;
-                    Convert::CassValueConvert(val, v);
-                    result.emplace(move(k), move(v));
+                );
+                if (items_iterator != nullptr) {
+                    while (cass_iterator_next(items_iterator.get())) {
+                        const CassValue* key = cass_iterator_get_map_key(items_iterator.get());
+                        const CassValue* val = cass_iterator_get_map_value(items_iterator.get());
+                        K k;
+                        Convert::CassValueConvert(key, k);
+                        V v;
+                        Convert::CassValueConvert(val, v);
+                        result.emplace(move(k), move(v));
+                    }
                 }
                 break;
             }

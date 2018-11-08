@@ -37,6 +37,7 @@
 #include "blob_task/insert_extended.hpp"
 #include "blob_task/insert.hpp"
 #include "blob_task/delete.hpp"
+#include "blob_task/delete_expired.hpp"
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/SyncObj.hpp>
@@ -222,6 +223,19 @@ void CCassBlobOp::DeleteBlobExtended(unsigned int  op_timeout_ms,
     Waiter.reset(new CCassBlobTaskDelete(
         op_timeout_ms, m_Conn, m_Keyspace, true,
         key, true, max_retries, move(error_cb)
+    ));
+}
+
+void CCassBlobOp::DeleteExpiredBlobVersion(unsigned int op_timeout_ms,
+                             int32_t key, CBlobRecord::TTimestamp last_modified,
+                             CBlobRecord::TTimestamp expiration,
+                             unsigned int max_retries,
+                             TDataErrorCallback error_cb,
+                             unique_ptr<CCassBlobWaiter> & waiter)
+{
+    waiter.reset(new CCassBlobTaskDeleteExpired(
+        op_timeout_ms, m_Conn, m_Keyspace,
+        key, last_modified, expiration, max_retries, move(error_cb)
     ));
 }
 

@@ -423,6 +423,12 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
                          int32_t  key, unsigned int  max_retries,
                          TDataErrorCallback error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);
+    void DeleteExpiredBlobVersion(unsigned int op_timeout_ms,
+                             int32_t key, CBlobRecord::TTimestamp last_modified,
+                             CBlobRecord::TTimestamp expiration,
+                             unsigned int  max_retries,
+                             TDataErrorCallback error_cb,
+                             unique_ptr<CCassBlobWaiter> & waiter);
 
     unique_ptr<CCassBlobTaskLoadBlob> GetBlobExtended(
         unsigned int op_timeout_ms,
