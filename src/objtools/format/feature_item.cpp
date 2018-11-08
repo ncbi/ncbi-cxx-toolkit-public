@@ -1691,6 +1691,9 @@ void CFeatureItem::x_AddQualsIdx(
                         gene_feat = &(mf.GetMappedFeature());
                         gene_ref = &(mf.GetData().GetGene());
                     }
+                } else if (feat_gene_xref) {
+                    // last resort, e.g., MH013512 after first nuc-prot set
+                    gene_ref = feat_gene_xref;
                 }
             }
         }
