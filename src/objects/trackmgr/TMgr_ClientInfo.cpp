@@ -100,7 +100,7 @@ const string& CTMgr_ClientInfo::GetContextAttr(const string &key) const
     if (!IsSetContext_attrs()) 
         return kEmptyStr;
         
-    for (auto attr : request.GetContext_attrs()) {
+    for (auto attr : GetContext_attrs()) {
         if (!NStr::Equal(attr->GetKey(), key)) 
             continue;
 
