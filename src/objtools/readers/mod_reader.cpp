@@ -155,8 +155,8 @@ s_InitModNameSubSrcSubtypeMap(void)
 }
 
 
-template<typename T, typename U> // Only works if TUmap values are unique
-static unordered_map<U,T> s_GetReverseMap(const unordered_map<T,U>& TUmap) 
+template<typename T, typename U, typename THash> // Only works if TUmap values are unique
+static unordered_map<U,T> s_GetReverseMap(const unordered_map<T,U,THash>& TUmap) 
 {
     unordered_map<U,T> UTmap;
     for (const auto& key_val : TUmap) {
@@ -277,43 +277,50 @@ void CModParser::x_ImportDesc(const CSeqdesc& desc, TMods& mods)
     }
 }
 
+static const unordered_map<CSeq_inst::EStrand, string, hash<underlying_type<CSeq_inst::EStrand>::type>>
+strand_enum_to_string = {{CSeq_inst::eStrand_ss, "single"},
+                         {CSeq_inst::eStrand_ds, "double"},
+                         {CSeq_inst::eStrand_mixed, "mixed"},
+                         {CSeq_inst::eStrand_other, "other"}};
+
+static const auto& strand_string_to_enum = s_GetReverseMap(strand_enum_to_string);
+
+
+static const unordered_map<CSeq_inst::EMol, string, hash<underlying_type<CSeq_inst::EMol>::type>>
+mol_enum_to_string = {{CSeq_inst::eMol_dna, "dna"},
+                      {CSeq_inst::eMol_rna, "rna"},
+                      {CSeq_inst::eMol_aa, "aa"},
+                      {CSeq_inst::eMol_na, "na"},
+                      {CSeq_inst::eMol_other, "other"}};
+
+static const auto& mol_string_to_enum = s_GetReverseMap(mol_enum_to_string);
+
+
+static const unordered_map<CSeq_inst::ETopology, string, hash<underlying_type<CSeq_inst::ETopology>::type>> 
+topology_enum_to_string = {{CSeq_inst::eTopology_linear, "linear"},
+                           {CSeq_inst::eTopology_circular, "circular"},
+                           {CSeq_inst::eTopology_tandem, "tandem"},
+                           {CSeq_inst::eTopology_other, "other"}};
+
+static const auto& topology_string_to_enum = s_GetReverseMap(topology_enum_to_string);
+
 
 void CModParser::x_ImportSeqInst(const CSeq_inst& seq_inst, TMods& mods)
 {
     if (seq_inst.IsSetTopology()) {
-        static const unordered_map<CSeq_inst::ETopology, string, hash<underlying_type<CSeq_inst::ETopology>::type>> 
-            topology_enum_to_string = {{CSeq_inst::eTopology_linear, "linear"},
-                                       {CSeq_inst::eTopology_circular, "circular"},
-                                       {CSeq_inst::eTopology_tandem, "tandem"},
-                                       {CSeq_inst::eTopology_other, "other"}};
-
         const auto& topology = topology_enum_to_string.at(seq_inst.GetTopology());
         mods.emplace("topology", topology);
     }
 
-
     if (seq_inst.IsSetMol()) {
-        static const unordered_map<CSeq_inst::EMol, string, hash<underlying_type<CSeq_inst::EMol>::type>>
-            mol_enum_to_string = {{CSeq_inst::eMol_dna, "dna"},
-                                  {CSeq_inst::eMol_rna, "rna"},
-                                  {CSeq_inst::eMol_aa, "aa"},
-                                  {CSeq_inst::eMol_na, "na"},
-                                  {CSeq_inst::eMol_other, "other"}};
         const auto& molecule = mol_enum_to_string.at(seq_inst.GetMol());
         mods.emplace("molecule", molecule);
     }
 
-
     if (seq_inst.IsSetStrand()) {
-        static const unordered_map<CSeq_inst::EStrand, string, hash<underlying_type<CSeq_inst::EStrand>::type>>
-            strand_enum_to_string = {{CSeq_inst::eStrand_ss, "single"},
-                                     {CSeq_inst::eStrand_ds, "double"},
-                                     {CSeq_inst::eStrand_mixed, "mixed"},
-                                     {CSeq_inst::eStrand_other, "other"}};
         const auto& strand = strand_enum_to_string.at(seq_inst.GetStrand());
         mods.emplace("strand", strand);
     }
-
 
     if (seq_inst.IsSetHist()) {
         x_ImportHist(seq_inst.GetHist(),mods);
@@ -979,24 +986,29 @@ string CModHandler::x_GetNormalizedName(const string& name)
 }
 
 
-
-
 template<typename TMultimap>
 struct SRangeGetter 
 {
     using TIterator = typename TMultimap::const_iterator;
-    using TPair = pair<TIterator,TIterator>;
-    using TRanges = list<TPair>;
+    using TRange = pair<TIterator,TIterator>;
+    using TRanges = list<TRange>;
 
     static TRanges GetEqualRanges(const TMultimap& mod_map)  
     {
         TRanges ranges;
-        auto current_it = mod_map.cbegin();
-        auto end_it = mod_map.cend();
-        while (current_it != end_it) {
-            auto range = equal_range(current_it, end_it, current_it->first);
-            current_it = range.second;
-            ranges.emplace_back(range);
+        if (!mod_map.empty()) {
+            auto end_it = mod_map.cend();
+            auto current_it = mod_map.cbegin();
+            while (current_it != end_it) {
+                auto next_it = ++current_it;
+                auto current_key = current_it->first;
+                while(next_it != end_it &&
+                    next_it->first == current_key) {
+                    ++next_it;
+                }
+                ranges.emplace_back(current_it, next_it);
+                current_it = next_it;
+            }
         }
         return ranges;
     }
@@ -1006,6 +1018,58 @@ struct SRangeGetter
 void CModAdder::Apply(const TMods& mods, CBioseq& bioseq) {
 }
 // Need implementation code for CModAdder
+
+
+class CModAdder_Impl 
+{
+public:
+    using TMods = CModAdder::TMods;
+    using TRange = SRangeGetter<TMods>::TRange;
+
+    static void Apply(const TMods& mods, CBioseq& bioseq) {
+        const auto& ranges = SRangeGetter<TMods>::GetEqualRanges(mods);
+        for (const auto& range : ranges) {
+            x_Apply(range, bioseq);
+        }
+    }
+
+private:
+    static void x_Apply(const TRange& equal_range, CBioseq& bioseq) 
+    {
+    }
+
+
+    static void x_SetStrand(const TRange& equal_range, CBioseq& bioseq);
+    static void x_SetMolecule(const TRange& equal_range, CBioseq& bioseq);
+    static void x_SetTopology(const TRange& equal_range, CBioseq& bioseq);
+    static void x_SetSecondaryIds(const TRange& equal_range, CBioseq& bioseq);
+};
+
+
+void CModAdder_Impl::x_SetStrand(const TRange& equal_range, CBioseq& bioseq)
+{
+    auto strand = strand_string_to_enum.at(equal_range.first->second.GetValue());
+    bioseq.SetInst().SetStrand(strand);
+}
+
+
+void CModAdder_Impl::x_SetMolecule(const TRange& equal_range, CBioseq& bioseq)
+{
+    auto mol = mol_string_to_enum.at(equal_range.first->second.GetValue());
+    bioseq.SetInst().SetMol(mol);
+}
+
+
+void CModAdder_Impl::x_SetTopology(const TRange& equal_range, CBioseq& bioseq)
+{
+    auto topology = topology_string_to_enum.at(equal_range.first->second.GetValue());
+    bioseq.SetInst().SetTopology(topology);
+}
+
+
+void CModAdder_Impl::x_SetSecondaryIds(const TRange& equal_range, CBioseq& bioseq) 
+{
+}
 
 
 END_SCOPE(objects)
