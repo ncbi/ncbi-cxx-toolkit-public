@@ -87,6 +87,28 @@ void CTMgr_ClientInfo::SetContext(const CTMgr_ClientInfo::TContext& value)
     }
 }
 
+void CTMgr_ClientInfo::SetContextAttr(const string &key, const string &value)
+{
+    CRef<CTMgr_AttrSpec> attr(new CTMgr_AttrSpec());
+    attr->SetKey(key);
+    attr->SetValue(value);
+    SetContext_attrs().push_back(attr);
+}
+
+const string& CTMgr_ClientInfo::GetContextAttr(const string &key) const
+{
+    if (!IsSetContext_attrs()) 
+        return kEmptyStr;
+        
+    for (auto attr : request.GetContext_attrs()) {
+        if (!NStr::Equal(attr->GetKey(), key)) 
+            continue;
+
+        return attr->GetValue();
+    }
+    return kEmptyStr;
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

@@ -64,6 +64,9 @@ public:
         return CTMgr_ClientInfo_Base::SetContext();
     }
     
+    void SetContextAttr(const string &key, const string &value);
+    const string& GetContextAttr(const string &key) const;
+	
 private:
     // Prohibit copy constructor and assignment operator
     CTMgr_ClientInfo(const CTMgr_ClientInfo& value);
