@@ -853,32 +853,37 @@ CPSG_Reply::~CPSG_Reply()
 }
 
 
+CPSG_Queue::CPSG_Queue() = default;
+CPSG_Queue::CPSG_Queue(CPSG_Queue&&) = default;
+CPSG_Queue& CPSG_Queue::operator=(CPSG_Queue&&) = default;
+CPSG_Queue::~CPSG_Queue() = default;
+
 CPSG_Queue::CPSG_Queue(const string& service) :
     m_Impl(new SImpl(service))
 {
 }
 
-CPSG_Queue::~CPSG_Queue()
-{
-}
-
 bool CPSG_Queue::SendRequest(shared_ptr<CPSG_Request> request, CDeadline deadline)
 {
+    _ASSERT(m_Impl);
     return m_Impl->SendRequest(const_pointer_cast<const CPSG_Request>(request), deadline);
 }
 
 shared_ptr<CPSG_Reply> CPSG_Queue::GetNextReply(CDeadline deadline)
 {
+    _ASSERT(m_Impl);
     return m_Impl->GetNextReply(deadline);
 }
 
 void CPSG_Queue::Reset()
 {
+    _ASSERT(m_Impl);
     m_Impl->Reset();
 }
 
 bool CPSG_Queue::IsEmpty() const
 {
+    _ASSERT(m_Impl);
     return m_Impl->IsEmpty();
 }
 

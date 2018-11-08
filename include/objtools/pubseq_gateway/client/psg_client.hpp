@@ -553,6 +553,12 @@ private:
 class CPSG_Queue
 {
 public:
+    /// Creates an uninitialized instance.
+    /// It allows to postpone queue initialization until later.
+    /// The uninitialized instances can then be initialized using
+    /// regular constructor and move assignment operator.
+    CPSG_Queue();
+
     /// @param service
     ///  Either a name of service (which can be resolved into a set of PSG
     ///  servers) or a single fixed PSG server (in format "host:port")
@@ -597,6 +603,9 @@ public:
     ///  - requests still waiting for a reply from the server
     ///  - replies that still have not been completely retrieved
     bool IsEmpty() const;
+
+    CPSG_Queue(CPSG_Queue&&);
+    CPSG_Queue& operator=(CPSG_Queue&&);
 
 private:
     struct SImpl;
