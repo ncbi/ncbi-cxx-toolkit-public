@@ -496,10 +496,10 @@ bool FixSeqSubmit(CRef<CSeq_submit>& seq_submit, int& accession_ver, bool first,
     return ret;
 }
 
-static EChromosomeSubtypeStatus CheckChromosome(const CSeq_descr& descrs)
+static void CheckChromosome(const CSeq_descr& descrs, EChromosomeSubtypeStatus& chromosome_status)
 {
     if (GetParams().GetScaffoldPrefix().empty() || (GetParams().GetScaffoldType() != eRegularChromosomal && GetParams().GetScaffoldType() != eTPAChromosomal))
-        return eChromosomeSubtypeValid;
+        return;
 
     bool source_present = false;
     bool bacteria_or_archea = false;
@@ -522,7 +522,7 @@ static EChromosomeSubtypeStatus CheckChromosome(const CSeq_descr& descrs)
                     for (auto subsource : source.GetSubtype()) {
                         if (subsource->IsSetSubtype() && subsource->GetSubtype() == CSubSource::eSubtype_chromosome &&
                             subsource->IsSetName() && !subsource->GetName().empty()) {
-                            return eChromosomeSubtypeValid;
+                            return;
                         }
                     }
                 }
@@ -531,10 +531,8 @@ static EChromosomeSubtypeStatus CheckChromosome(const CSeq_descr& descrs)
     }
 
     if (source_present) {
-        return bacteria_or_archea ? eChromosomeSubtypeMissingInBacteria : eChromosomeSubtypeMissing;
+        chromosome_status = bacteria_or_archea ? eChromosomeSubtypeMissingInBacteria : eChromosomeSubtypeMissing;
     }
-
-    return eChromosomeSubtypeValid;
 }
 
 static void CheckKeywords(const CSeq_descr& descrs, CSeqEntryInfo& info)
@@ -976,7 +974,7 @@ static void CheckNucBioseqs(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEn
         }
 
         if (bioseq_set.IsSetDescr()) {
-            info.m_chromosome_subtype_status = CheckChromosome(bioseq_set.GetDescr());
+            CheckChromosome(bioseq_set.GetDescr(), info.m_chromosome_subtype_status);
         }
 
         for (auto cur_entry : bioseq_set.GetSeq_set()) {
@@ -991,7 +989,7 @@ static void CheckNucBioseqs(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEn
         }
 
         if (bioseq.IsSetDescr()) {
-            info.m_chromosome_subtype_status = CheckChromosome(bioseq.GetDescr());
+            CheckChromosome(bioseq.GetDescr(), info.m_chromosome_subtype_status);
 
             if (bioseq.IsNa()) {
                 CheckKeywords(bioseq.GetDescr(), info);
@@ -1107,7 +1105,7 @@ bool CheckSeqEntry(const CSeq_entry& entry, const string& file, CSeqEntryInfo& i
     if (info.m_chromosome_subtype_status != eChromosomeSubtypeValid) {
 
         string err_str = "Empty or missing \"chromosome\" SubSource for one or more chromosomal scaffold(s). File \"" + file + "\".";
-        if (info.m_chromosome_subtype_status != eChromosomeSubtypeMissing) {
+        if (info.m_chromosome_subtype_status != eChromosomeSubtypeMissingInBacteria) {
             err_str += " Cannot proceed.";
             ERR_POST_EX(0, 0, Critical << err_str);
             ret = false;
