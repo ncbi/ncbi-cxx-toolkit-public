@@ -262,7 +262,7 @@ void SFixture::MtReading()
     const size_t kSleepMax = 13;
     const unsigned kReadingDeadline = 300;
 
-    shared_ptr<SPSG_Reply::TTS> reply(new SPSG_Reply::TTS);
+    auto reply = make_shared<SPSG_Reply>();
     map<SPSG_Reply::SItem::TTS*, thread> readers;
 
 
@@ -310,8 +310,8 @@ void SFixture::MtReading()
         CDeadline deadline(kReadingDeadline, 0);
 
         while (!deadline.IsExpired()) {
-            auto reply_locked = reply->GetLock();
-            auto& items = reply_locked->items;
+            auto items_locked = reply->items.GetLock();
+            auto& items = *items_locked;
             bool empty_items = false;
 
             for (auto& item_ts : items) {
@@ -341,13 +341,12 @@ void SFixture::MtReading()
 
             if (empty_items) continue;
 
-            reply_locked.Unlock();
+            items_locked.Unlock();
 
             if (readers.size() == src_blobs.size()) break;
 
-            auto reply_item = &reply->GetLock()->reply_item;
             auto ms = chrono::milliseconds(r.Get(kSleepMin, kSleepMax));
-            reply_item->WaitFor(ms);
+            reply->reply_item.WaitFor(ms);
         }
 
         if (readers.size() < src_blobs.size()) {
@@ -395,7 +394,7 @@ BOOST_AUTO_TEST_CASE(Receiver)
     const size_t kSizeMin = 100 * 1024;
     const size_t kSizeMax = 1024 * 1024;
 
-    shared_ptr<SPSG_Reply::TTS> reply(new SPSG_Reply::TTS);
+    auto reply = make_shared<SPSG_Reply>();
 
 
     // Reading
@@ -416,8 +415,8 @@ BOOST_AUTO_TEST_CASE(Receiver)
 
     // Checking
 
-    auto reply_locked = reply->GetLock();
-    auto& items = reply_locked->items;
+    auto items_locked = reply->items.GetLock();
+    auto& items = *items_locked;
 
     for (auto& item_ts : items) {
         auto item_locked = item_ts.GetLock();
