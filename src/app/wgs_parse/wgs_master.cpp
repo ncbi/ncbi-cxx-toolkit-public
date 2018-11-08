@@ -2162,17 +2162,14 @@ static void MergeRanges(list<TAccessionRange>& ranges)
                                 end = ranges.front().second;
 
         for (auto range : ranges) {
-            if (range.first.GetPrefix() != start.GetPrefix() || range.first.GetNumber() + 1 > end.GetNumber()) {
+            if (range.first.GetPrefix() != start.GetPrefix() || range.first.GetNumber() > end.GetNumber() + 1) {
                 res.push_back({start, end});
                 start = range.first;
-                end = range.second;
             }
-            else {
-                end = range.second;
-            }
-        }
-        res.push_back({ start, end });
+            end = range.second;
+       }
 
+        res.push_back({ start, end });
         ranges.swap(res);
     }
 }
