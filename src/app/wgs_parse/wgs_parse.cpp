@@ -1270,7 +1270,7 @@ static bool IsFirstCitSubDateEarlier(const CCit_sub& new_cit_sub, const CCit_sub
     return old_cit_sub.GetDate().Compare(new_cit_sub.GetDate()) == CDate::eCompare_after;
 }
 
-static bool ReplaceOldCitSub(CRef<CSeq_entry>& id_entry, const CCit_sub& new_cit_sub)
+static bool ReplaceOldCitSub(CRef<CSeq_entry>& id_entry, CCit_sub& new_cit_sub)
 {
     _ASSERT(id_entry.NotEmpty() && id_entry->IsSeq() && id_entry->GetSeq().IsNa() && "Should be Bioseq of nucleotides");
 
@@ -1354,7 +1354,7 @@ static void InsertOtherPubs(CSeq_descr::Tdata& descrs, CSeq_descr::Tdata& other_
     }
 }
 
-static bool AddNewPubsToOldMaster(CRef<CSeq_entry>& id_entry, const CRef<CSeq_entry>& master_entry, size_t num_of_pubs, bool got_cit_sub)
+static bool AddNewPubsToOldMaster(CRef<CSeq_entry>& id_entry, CRef<CSeq_entry>& master_entry, size_t num_of_pubs, bool got_cit_sub)
 {
     if (id_entry.Empty() || !id_entry->IsSeq() || !id_entry->GetSeq().IsNa() || !master_entry->IsSeq() || !master_entry->GetSeq().IsNa()) {
         return true;
@@ -1363,13 +1363,13 @@ static bool AddNewPubsToOldMaster(CRef<CSeq_entry>& id_entry, const CRef<CSeq_en
     bool replace_cit_gen = GetParams().GetUpdateMode() == eUpdateFull && num_of_pubs == 1;
 
     CSeq_descr::Tdata other_pubs;
-    const CCit_sub* new_cit_sub = nullptr;
+    CCit_sub* new_cit_sub = nullptr;
 
     if (master_entry->IsSeq() && master_entry->GetSeq().IsSetDescr() && master_entry->GetSeq().GetDescr().IsSet()) {
-        for (auto& descr : master_entry->GetSeq().GetDescr().Get()) {
+        for (auto& descr : master_entry->SetSeq().SetDescr().Set()) {
             if (descr->IsPub()) {
 
-                const CCit_sub* cur_cit_sub = GetCitSub(descr->GetPub());
+                CCit_sub* cur_cit_sub = GetNonConstCitSub(descr->SetPub());
                 if (cur_cit_sub) {
                     new_cit_sub = cur_cit_sub;
                     continue;

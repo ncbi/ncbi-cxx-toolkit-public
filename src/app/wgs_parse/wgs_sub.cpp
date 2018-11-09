@@ -1536,7 +1536,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
                         contact = &seq_submit->GetSub().GetContact();
                     }
 
-                    cit_sub_descr = CreateCitSub(seq_submit->GetSub().GetCit(), contact);
+                    cit_sub_descr = CreateCitSub(seq_submit->SetSub().SetCit(), contact);
                 }
             }
 

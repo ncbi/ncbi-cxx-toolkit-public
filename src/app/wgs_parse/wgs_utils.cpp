@@ -486,7 +486,7 @@ static void AddContactInfo(const CContact_info& contact, CCit_sub& cit_sub)
     }
 }
 
-CRef<CSeqdesc> CreateCitSub(const CCit_sub& cit_sub, const CContact_info* contact)
+CRef<CSeqdesc> CreateCitSub(CCit_sub& cit_sub, const CContact_info* contact)
 {
     CRef<CPub> pub(new CPub);
     pub->SetSub().Assign(cit_sub);
@@ -497,7 +497,7 @@ CRef<CSeqdesc> CreateCitSub(const CCit_sub& cit_sub, const CContact_info* contac
     pubdescr.SetPub().Set().push_back(pub);
 
     if (contact) {
-        AddContactInfo(*contact, pub->SetSub());
+        AddContactInfo(*contact, cit_sub);
     }
 
     return descr;
