@@ -2441,17 +2441,25 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     	kOutputFormatDescription +=
                 "Options 6, 7, 10 and 17 "
     			"can be additionally configured to produce\n"
-    		    "a custom format specified by space delimited format specifiers.\n"
+    		    "a custom format specified by space delimited format specifiers,\n"
+                "or in the case of options 6, 7, and 10, by a token specified\n"
+                "by the delim keyword. E.g.: \"17 delim=@ qacc sacc score\".\n"
+                "The delim keyword must appear after the numeric output format\n"
+                "specification.\n"
     		    "The supported format specifiers for options 6, 7 and 10 are:\n";
     }
     else {
     	kOutputFormatDescription +=
     			"Options 6, 7 and 10 "
     			"can be additionally configured to produce\n"
-    		    "a custom format specified by space delimited format specifiers.\n"
+    		    "a custom format specified by space delimited format specifiers,\n"
+                "or by a token specified by the delim keyword.\n"
+                " E.g.: \"17 delim=@ qacc sacc score\".\n"                
+                "The delim keyword must appear after the numeric output format\n"
+                "specification.\n"
     		    "The supported format specifiers are:\n";
     }
-
+    
     kOutputFormatDescription += DescribeTabularOutputFormatSpecifiers() +  string("\n");
 
     if(m_FormatFlags & eIsSAM) {
@@ -2576,6 +2584,49 @@ CFormattingArgs::ArchiveFormatRequested(const CArgs& args) const
     return (output_fmt == eArchiveFormat ? true : false);
 }
 
+
+static void s_ValidateCustomDelim(string custom_fmt_spec,string customDelim)
+{
+    bool error = false;
+    string checkfield;
+    custom_fmt_spec = NStr::TruncateSpaces(custom_fmt_spec);
+    if(custom_fmt_spec.empty()) return;
+
+    //Check if delim is already used
+    const string kFieldsWithSemicolSeparator = "sallseqid staxids sscinames scomnames sblastnames sskingdoms";//sep = ";"
+    const string kFramesField = "frames"; //sep = "/"
+    const string kAllTitlesField ="salltitles"; //sep = "<>""    
+
+    if(customDelim == ";") {
+        vector <string> tokens;
+        NStr::Split(kFieldsWithSemicolSeparator," ", tokens);   
+        for(size_t i = 0; i < tokens.size(); i++)   {
+            if(NStr::Find(custom_fmt_spec,tokens[i]) != NPOS) {
+                checkfield = tokens[i];
+                error = true;                
+                break;
+            }
+        }
+    }
+    else {
+        if(customDelim == "/") {
+            checkfield = kFramesField;
+        }
+        else if(customDelim == "<>") {
+            checkfield = kAllTitlesField;
+        }
+        if(!checkfield.empty() && NStr::Find(custom_fmt_spec,checkfield) != NPOS) {
+            error = true;
+        }
+    }
+    
+    if(error) {                
+        string msg("Your custom record separator (" + customDelim + ") is also used by the format specifier (" + checkfield +
+                                                                ") to separate multiple entries. Please use a different record separator (delim keyword).");
+        NCBI_THROW(CInputException, eInvalidInput, msg);                                                                
+    }
+}
+
 void
 CFormattingArgs::ParseFormattingString(const CArgs& args,
                                        EOutputFormat& fmt_type,
@@ -2593,7 +2644,7 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
             fmt_choice.erase(pos);
         }       
         if(!custom_fmt_spec.empty()) {            
-            if(NStr::StartsWith(custom_fmt_spec, "delim")) {
+            if(NStr::StartsWith(custom_fmt_spec, "delim")) {                
                 vector <string> tokens;
                 NStr::Split(custom_fmt_spec," ",tokens);
                 if(tokens.size() > 0) {
@@ -2603,9 +2654,11 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
                         string msg("Delimiter format is invalid. Valid format is delim=<delimiter value>");
                         NCBI_THROW(CInputException, eInvalidInput, msg);
                     }                    
-                    custom_fmt_spec = NStr::Replace(custom_fmt_spec,tokens[0],"");
-                }                
-            }            
+                    else {
+                        custom_fmt_spec = NStr::Replace(custom_fmt_spec,tokens[0],"");                                                
+                    }                  
+                }                 
+            }                        
         }        
         int val = 0;
         try { val = NStr::StringToInt(fmt_choice); }
@@ -2647,7 +2700,7 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
         NCBI_THROW(CInputException, eInvalidInput,
                    "AIRR rearrangement format is only applicable to igblastn" );
     }
-    
+    s_ValidateCustomDelim(m_CustomOutputFormatSpec,m_CustomDelim);
     m_ShowGis = static_cast<bool>(args[kArgShowGIs]);
     if(m_IsIgBlast){
         m_Html = false;
