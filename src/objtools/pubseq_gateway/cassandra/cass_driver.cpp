@@ -632,7 +632,7 @@ const CassPrepared *  CCassConnection::Prepare(const string &  sql)
         auto            it = m_prepared.find(sql);
         if (it != m_prepared.end()) {
             rv = it->second;
-            ERR_POST(Trace << "Prepared hit: sql: " << sql << ", " << rv);
+/*            ERR_POST(Trace << "Prepared hit: sql: " << sql << ", " << rv); */
             return rv;
         }
     }
@@ -677,7 +677,7 @@ const CassPrepared *  CCassConnection::Prepare(const string &  sql)
         m_prepared.emplace(sql, rv);
     } else {
         rv = it->second;
-        ERR_POST(Trace << "Prepared hit2: sql: " << sql << ", " << rv);
+/*        ERR_POST(Trace << "Prepared hit2: sql: " << sql << ", " << rv); */
         return rv;
     }
 #endif
@@ -1271,9 +1271,10 @@ void CCassQuery::GetFuture()
             RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain cassandra query future"));
         }
         m_futuretime = gettime();
+/*
         ERR_POST(Trace << "CCassQuery::GetFuture: this: " << this <<
                  ", fut: " << m_future);
-
+*/
         if (m_ondata || m_ondata2) {
             SetupOnDataCallback();
         }
@@ -1283,8 +1284,10 @@ void CCassQuery::GetFuture()
 
 async_rslt_t  CCassQuery::Wait(unsigned int  timeoutmks)
 {
+/*
     ERR_POST(Trace << "CCassQuery::Wait: this: " << this <<
              ", fut: " << m_future);
+*/
     if (m_results_expected && m_result) {
         if (m_async)
             return ar_dataready;
@@ -1338,10 +1341,11 @@ void CCassQuery::SetupOnDataCallback()
     if (!m_ondata && !m_ondata2)
         NCBI_THROW(CCassandraException, eSeqFailed,
                    "invalid sequence of operations, m_ondata is not set");
+/*
     ERR_POST(Trace << "CCassQuery::SetupOnDataCallback: this: " << this <<
              ", fut: " << m_future << ", ondata: " << m_ondata <<
              ", ondata2: " << m_ondata2);
-
+*/
     if (m_cb_ref)
         m_cb_ref->Detach();
 
@@ -1397,8 +1401,10 @@ void CCassQuery::ProcessFutureResult()
             otherwise we free it in the destructor, keeping m_future not null
             as an indication that we have already waited for query to finish
         */
+/*
         ERR_POST(Trace << "CCassQuery::ProcessFutureResult: "
                  "release future this: " << this << ", fut: " << m_future);
+*/
         cass_future_free(m_future);
         --m_connection->m_active_statements;
         m_future = nullptr;
@@ -1428,10 +1434,11 @@ void CCassQuery::ProcessFutureResult()
 
 async_rslt_t  CCassQuery::NextRow()
 {
+/*
     ERR_POST(Trace << "CCassQuery::NextRow: this: " << this <<
              ", fut: " << m_future << ", m_row: " << m_row <<
              ", m_result: " << m_result << ", m_iterator: " << m_iterator);
-
+*/
     if (!IsActive())
         NCBI_THROW(CCassandraException, eSeqFailed,
                    "invalid sequence of operations, Query is not active");
@@ -1447,9 +1454,11 @@ async_rslt_t  CCassQuery::NextRow()
             }
 
             if (wr != ar_dataready) {
+/*
                 ERR_POST(Trace << "CCassQuery::NextRow: async=" << m_async <<
                          " returning wr=" << static_cast<int>(wr) <<
                          " b'ze of Wait");
+*/
                 return wr;
             }
         }
@@ -1457,8 +1466,10 @@ async_rslt_t  CCassQuery::NextRow()
         if (m_iterator && m_result) {
             bool    b = cass_iterator_next(m_iterator);
             if (!b) {
+/*
                 ERR_POST(Trace << "CCassQuery::NextRow: this: " << this <<
                          ", cass_iterator_next returned false");
+*/
                 if (m_page_size > 0) {
                     bool    has_more_pages = cass_result_has_more_pages(m_result);
                     if (has_more_pages) {
@@ -1476,18 +1487,22 @@ async_rslt_t  CCassQuery::NextRow()
 
                     if (!has_more_pages) {
                         SetEOF(true);
+/*
                         ERR_POST(Trace << "CCassQuery::NextRow: this: " << this <<
                                  ", async=" << m_async << " returning "
                                  "wr=ar_done b'ze has_more_pages==false");
+*/
                         return ar_done;
                     }
                     // go to above
                     m_page_start = true; 
                 } else {
                     SetEOF(true);
+/*
                     ERR_POST(Trace << "CCassQuery::NextRow: this: " << this <<
                              ", async=" << m_async << " returning "
                              "wr=ar_done b'ze m_page_size=" << m_page_size);
+*/
                     return ar_done;
                 }
             } else {
