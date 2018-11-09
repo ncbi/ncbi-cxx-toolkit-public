@@ -542,7 +542,6 @@ gpipe_objutil needs taxon1
 gpipe_objutil needs valid
 gpipe_objutil needs writedb
 gpipe_objutil needs xid_wgsdb
-gpipe_objutil needs xobjutil
 gpipe_objutil needs3party $(DATA_LOADERS_UTIL_LIBS)
 gpipe_objutil needs3party $(UUID_LIBS)
 gpipe_prodigal needs prok_cluster_data
@@ -1617,11 +1616,10 @@ xid_estsub needs xregexp
 xid_mapper needs $(SOBJMGR_LIBS)
 xid_utils needs $(COMPRESS_LIBS)
 xid_utils needs $(CONNEXT)
-xid_utils needs $(SEQ_LIBS)
 xid_utils needs dbapi_driver
-xid_utils needs pub
 xid_utils needs xcgi
 xid_utils needs xmlwrapp
+xid_utils needs xobjutil
 xid_utils_noncorelib needs txclient
 xid_utils_noncorelib needs xid_utils
 xid_wgs needs xncbi
