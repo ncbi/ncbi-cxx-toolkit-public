@@ -329,8 +329,6 @@ fi
 
 #//////////////////////////////////////////////////////////////////////////
 
-cat >> $x_out <<EOF
-
 # Check for automated build
 is_automated=false
 is_db_load=false
