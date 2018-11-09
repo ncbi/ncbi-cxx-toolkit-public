@@ -541,7 +541,7 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
     static void s_OnFutureCb(CassFuture* future, void* data)
     {
         try {
-            ERR_POST(Trace << "CCassQueryCbRef::s_OnFutureCb " << data);
+/*            ERR_POST(Trace << "CCassQueryCbRef::s_OnFutureCb " << data); */
             shared_ptr<CCassQueryCbRef>     self(
                     static_cast<CCassQueryCbRef*>(data)->shared_from_this());
 
@@ -550,8 +550,10 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
 
             auto    query = self->m_query.lock();
             if (query != nullptr) {
+/*
                 ERR_POST(Trace << "CCassQuery::OnDataReady this: " <<
                          query.get() << ", fut: " << future);
+*/
                 if (self->m_ondata)
                     self->m_ondata(*query.get(), self->m_data);
                 if (self->m_ondata2)
