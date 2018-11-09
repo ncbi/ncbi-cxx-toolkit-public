@@ -734,6 +734,9 @@ CSNPDbSeqIterator::CSNPDbSeqIterator(const CSNPDb& db,
     m_Db = db;
     m_Iter = db->m_SeqList.begin()+seq_index;
     m_TrackIter = db->GetTrackInfoList().begin();
+    if ( *this ) {
+        GetDb().x_Update(m_Iter);
+    }
 }
 
 
