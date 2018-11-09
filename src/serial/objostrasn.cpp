@@ -867,7 +867,7 @@ void CObjectOStreamAsn::WriteChars(const CharBlock& ,
     size_t valid=0;
     CTempString original(chars, length);
     while ( length > 0 ) {
-        char c = *chars++;
+        char c = *chars;
         if ( !GoodVisibleChar(c) ) {
             if (valid == 0) {
 #if SERIAL_ALLOW_UTF8_IN_VISIBLESTRING_ON_WRITING
