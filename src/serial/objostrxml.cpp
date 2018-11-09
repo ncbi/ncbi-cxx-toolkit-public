@@ -303,7 +303,7 @@ void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
     if (ns_name.empty()) {
         ns_name = GetDefaultSchemaNamespace();
     }
-    if ((type->HasNamespaceName() || type->GetDataSpec() != EDataSpec::eXSD) &&
+    if (type->HasNamespaceName() || (type->GetDataSpec() != EDataSpec::eXSD) &&
          m_NsNameToPrefix.find(ns_name) == m_NsNameToPrefix.end()) {
         if (m_Attlist) {
             m_Output.PutString(" xmlns");
