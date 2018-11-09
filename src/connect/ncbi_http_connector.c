@@ -56,7 +56,7 @@
 /* Connection states, see table below
  */
 enum EConnState {
-    eCS_NotConnected =   0,
+    eCS_NotInitiated =   0,
     eCS_WriteRequest =   1,
     eCS_FlushRequest =   2,
     eCS_ReadHeader   =   3,
@@ -109,7 +109,7 @@ typedef struct {
  *
  *  The following connection states are defined:                    |  sock?
  * --------------+--------------------------------------------------+---------
- *  NotConnected | HTTP connection needs to be (re-)established     | 
+ *  NotInitiated | HTTP connection needs to be (re-)established     | 
  *  WriteRequest | HTTP request body is being written               | != NULL
  *  FlushRequest | HTTP request is being completed and flushed out  | != NULL
  *   ReadHeader  | HTTP response header is being read               | != NULL
@@ -363,12 +363,23 @@ static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
             if (!x_SameHost(uuu->net_info->http_proxy_host,
                                  net_info->http_proxy_host)
                 ||  (uuu->net_info->http_proxy_host[0]  &&
-                     uuu->net_info->http_proxy_port ==
+                     uuu->net_info->http_proxy_port !=
                           net_info->http_proxy_port)){
                 close = 1/*true*/;
-            } else if (uuu->net_info->http_proxy_host[0]) {
-                /* Proxy connection can be reused w/CONNECT if HTTP -> HTTPS */
-                /*FIXME*/;
+            } else if (net_info->http_proxy_host[0]) {
+                if (net_info->scheme == eURL_Https) {
+                    if (uuu->net_info->scheme != eURL_Https)
+                        close = 1/*true*/;
+                    else if (!(same_host = !strcasecmp(uuu->net_info->host,
+                                                            net_info->host)) ||
+                             !x_SamePort(uuu->net_info->port,
+                                         uuu->net_info->scheme,
+                                              net_info->port,
+                                              net_info->scheme)) {
+                        close = 1/*true*/;
+                    }
+                }
+                /* connection reused with HTTP and w/CONNECT: HTTP -> HTTPS */
             } else if (!x_SameScheme(uuu->net_info->scheme,
                                           net_info->scheme)             ||
                        !(same_host = !strcasecmp(uuu->net_info->host,
@@ -397,13 +408,13 @@ static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
 }
 
 
-/* NB: host_from and host_to have got non-symmetrical treatment */
+/* NB: treatment of 'host_from' and 'host_to' is not symmetrical */
 static int/*bool*/ x_RedirectOK(EURLScheme     scheme_to,
-                                const char*    host_to,
-                                unsigned short port_to,
+                                const char*      host_to,
+                                unsigned short   port_to,
                                 EURLScheme     scheme_from,
-                                const char*    host_from,
-                                unsigned short port_from)
+                                const char*      host_from,
+                                unsigned short   port_from)
 {
     char buf1[CONN_HOST_LEN+1], buf2[CONN_HOST_LEN+1];
     unsigned int ip1, ip2;
@@ -760,7 +771,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
     EIO_Status status;
     SOCK sock;
 
-    assert(uuu->conn_state == eCS_NotConnected || uuu->conn_state == eCS_Eom);
+    assert(uuu->conn_state == eCS_NotInitiated || uuu->conn_state == eCS_Eom);
 
     uuu->http_code = 0;
     if (!(uuu->can_connect & fCC_Once)) {
@@ -786,7 +797,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 return eIO_Closed;
         } else
             return eIO_Closed;
-        uuu->conn_state  = eCS_NotConnected;
+        uuu->conn_state  = eCS_NotInitiated;
     }
 
     uuu->entity = 0;
@@ -799,7 +810,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                : fSOCK_KeepAlive | fSOCK_LogDefault);
         sock = uuu->sock;
         uuu->sock = 0;
-        if (!sock
+        if ((!sock  ||  !SOCK_IsSecure(sock))
             &&  uuu->net_info->req_method != eReqMethod_Connect
             &&  uuu->net_info->scheme == eURL_Https
             &&  uuu->net_info->http_proxy_host[0]
@@ -962,7 +973,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                      " (C Toolkit)"
 #endif /*NCBI_CXX_TOOLKIT*/
                      );
-#if 0
+#if 1
                 if (!uuu->net_info->version
                     &&  req_method != eReqMethod_Connect) {
                     ConnNetInfo_ExtendUserHeader(uuu->net_info,
@@ -1085,7 +1096,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
 
         assert(status == eIO_Success);
 
-        if ((uuu->conn_state == eCS_NotConnected || uuu->conn_state == eCS_Eom)
+        if ((uuu->conn_state == eCS_NotInitiated || uuu->conn_state == eCS_Eom)
             &&  (status = s_Connect(uuu, timeout, extract)) != eIO_Success) {
             break;
         }
@@ -1155,7 +1166,7 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
             free(url);
 
         /* write failed; close and try to use another server, if possible */
-        s_DropConnection(uuu, eCS_NotConnected);
+        s_DropConnection(uuu, eCS_NotInitiated);
         assert(status != eIO_Success);
         if ((status = s_Adjust(uuu, 0, extract)) != eIO_Success)
             break;
@@ -2013,7 +2024,7 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
 
         /* HTTP header read error; disconnect and retry */
         assert(status != eIO_Success);
-        s_DropConnection(uuu, eCS_NotConnected);
+        s_DropConnection(uuu, eCS_NotInitiated);
         adjust = s_Adjust(uuu, &retry, extract);
         if (retry.data)
             free((void*) retry.data);
@@ -2237,7 +2248,7 @@ static void s_OpenHttpConnector(SHttpConnector* uuu,
     /* reset the auto-reconnect/state/re-try/auth features */
     uuu->can_connect     = (uuu->flags & fHTTP_AutoReconnect
                             ? fCC_Unlimited | fCC_Once : fCC_Once);
-    uuu->conn_state      = eCS_NotConnected;
+    uuu->conn_state      = eCS_NotInitiated;
     uuu->major_fault     = 0;
     uuu->minor_fault     = 0;
     uuu->auth_done       = 0;
@@ -2398,7 +2409,7 @@ static EIO_Status s_VT_Write
                               ? eEM_Drop : eEM_Read);
         if (status != eIO_Success)
             return status;
-        uuu->conn_state = eCS_NotConnected;
+        uuu->conn_state = eCS_NotInitiated;
     }
     if (uuu->can_connect == fCC_None)
         return eIO_Closed; /* no more connects permitted */
@@ -2833,7 +2844,7 @@ extern EIO_Status HTTP_CreateTunnelEx
     EIO_Status      status;
     SHttpConnector* uuu;
 
-    if (!sock  ||  *sock)
+    if (!sock)
         return eIO_InvalidArg;
 
     status = s_CreateHttpConnector(net_info, 0/*user_header*/, 1/*tunnel*/,
@@ -2842,6 +2853,8 @@ extern EIO_Status HTTP_CreateTunnelEx
         assert(!uuu);
         return status;
     }
+    uuu->sock = *sock;
+    *sock = 0;
     assert(uuu  &&  !BUF_Size(uuu->w_buf));
     if (!size  ||  BUF_Prepend(&uuu->w_buf, data, size)) {
         if (size)
@@ -2852,17 +2865,16 @@ extern EIO_Status HTTP_CreateTunnelEx
             assert(uuu->http_code / 100 == 2);
             assert(uuu->sock);
             *sock = uuu->sock;
-            http_code = 0;
             uuu->sock = 0;
-        } else {
-            if (uuu->sock)
-                s_DropConnection(uuu, eCS_Eom);
+            http_code = 0;
+        } else 
             http_code = uuu->http_code;
-        }
     } else {
         http_code = 0;
         status = eIO_Unknown;
     }
+    if (uuu->sock)
+        s_DropConnection(uuu, eCS_Eom);
     s_DestroyHttpConnector(uuu);
     switch (http_code) {
     case 503:
