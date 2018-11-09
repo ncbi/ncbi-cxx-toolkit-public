@@ -2869,7 +2869,7 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            CArgDescriptions::eInteger,
                            NStr::IntToString(kDfltValue));
     arg_desc.SetConstraint(kArgNumThreads,
-                           new CArgAllowValuesBetween(kMinValue, kMaxValue, true));
+                           new CArgAllowValuesGreaterThanOrEqual(kMinValue));
     arg_desc.SetDependency(kArgNumThreads,
                            CArgDescriptions::eExcludes,
                            kArgRemote);
@@ -2885,9 +2885,24 @@ CMTArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 void
 CMTArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */)
 {
+    const int kMaxValue = static_cast<int>(GetCpuCount());
+
     if (args.Exist(kArgNumThreads) &&
         args[kArgNumThreads].HasValue()) {  // could be cancelled by the exclusion in CRemoteArgs
-        m_NumThreads = args[kArgNumThreads].AsInteger();
+
+        // use the minimum of the two: user requested number of threads and
+        // number of available CPUs for number of threads
+        int num_threads = args[kArgNumThreads].AsInteger();
+        if (num_threads > kMaxValue) {
+            m_NumThreads = kMaxValue;
+
+            ERR_POST(Warning << (string)"Number of threads was reduced to " +
+                     NStr::IntToString((unsigned int)m_NumThreads) +
+                     " to match the number of available CPUs");
+        }
+        else {
+            m_NumThreads = num_threads;
+        }
 
         // This is temporarily ignored (per SB-635)
         if (args.Exist(kArgSubject) && args[kArgSubject].HasValue() &&
