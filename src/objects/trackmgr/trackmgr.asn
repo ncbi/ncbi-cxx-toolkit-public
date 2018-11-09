@@ -89,15 +89,21 @@ TMgr-DisplayTrackRequest ::= SEQUENCE {
         include-default-tracks BOOLEAN DEFAULT FALSE,
         include-track-items BOOLEAN DEFAULT FALSE,
         expanded-rid-details BOOLEAN DEFAULT FALSE,
-        include-track-hubs BOOLEAN DEFAULT FALSE
+        include-TMS-tracks BOOLEAN DEFAULT TRUE,
+        include-user-tracks BOOLEAN DEFAULT TRUE,
+        include-remote-tracks BOOLEAN DEFAULT TRUE,
+        include-track-hubs BOOLEAN DEFAULT FALSE,
+        use-multiple-containers BOOLEAN DEFAULT FALSE
     } OPTIONAL
 }
 
 TMgr-DisplayTrackReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL,
     display-tracks SET OF TMgr-DisplayTrack OPTIONAL,
-    blast-tracks SET OF TMgr-BlastRIDDetail OPTIONAL
-    --tracks TMgr-DisplayTracks OPTIONAL
+    blast-tracks SET OF TMgr-BlastRIDDetail OPTIONAL,
+    user-tracks SET OF TMgr-DisplayTrack OPTIONAL,
+    remote-tracks SET OF TMgr-DisplayTrack OPTIONAL,
+    hubs SET OF TMgr-DisplayTrack OPTIONAL
 }
 
 TMgr-DTrackId ::= Dbtag
