@@ -244,7 +244,7 @@ CBlastNucleotideOptionsHandle::SetHitSavingOptionsDefaults()
     // effective lengths and Karlin-Altschul params in BLAST_Cutoffs_simple
     // and passed to the engine in the params structure
 
-    SetLowScorePerc(0.15);
+    SetLowScorePerc(0);
     SetQueryCovHspPerc(0);
 }
 void
@@ -264,7 +264,7 @@ CBlastNucleotideOptionsHandle::SetMBHitSavingOptionsDefaults()
     // effective lengths and Karlin-Altschul params in BLAST_Cutoffs_simple
     // and passed to the engine in the params structure
 
-    SetLowScorePerc(0.15);
+    SetLowScorePerc(0);
 
     SetQueryCovHspPerc(0);
 }
