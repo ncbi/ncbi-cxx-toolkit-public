@@ -5588,6 +5588,7 @@ RFE	s	Radcliffe Literary and Scientific Society Museum
 RFFP	s	Universidade do Estado do Rio de Janeiro			
 RFNS	s	Rochdale Field Naturalists' Society			
 RGM	s	Nationaal Natuurhistorisch Museum Leiden			
+RGPG	s	Raghunath Girls' Post-Graduate College			
 RGY	s	Rugby School Natural History Society Museum			
 Rh-EF	s	Museum of Grannat			
 RHK	s	St. Berchmans College			
@@ -5649,6 +5650,7 @@ RMNH:POR	s	Naturalis Biodiversity Center, poriferan collection
 RMNHD	s	Naturalis Biodiversity Center	RMNH		
 RMNP	s	Riding Mountain National Park			
 RMRC	b	Regional Medical Research Centre			
+RMRIMS	b	Rajendra Memorial Research Institute of Medical Science			
 RMS	s	University of Wyoming			
 RMSC	s	Rocky Mountain Forest and Range Experiment Station			
 RMSCC	c	Roche Molecular Systems Culture Collection			
