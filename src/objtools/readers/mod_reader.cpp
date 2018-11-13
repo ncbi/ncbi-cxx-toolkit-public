@@ -816,6 +816,9 @@ public:
     CSeqdesc& SetGBblock(void);
     CSeqdesc& SetMolInfo(void);
     CSeqdesc& SetBioSource(void);
+    CSeqdesc& SetComment(void);
+    CSeqdesc& SetPubdesc(void);
+
     TSubtype& SetSubtype(void);
     TOrgMods& SetOrgMods(void);
     
@@ -842,12 +845,12 @@ private:
 
     TSubtype* m_pSubtype = nullptr;
     TOrgMods* m_pOrgMods = nullptr;
-    
+    bool m_FirstComment = true;
+    bool m_FirstPubdesc  = true;
     
 
     using TMap = unordered_map<EChoice, CRef<CSeqdesc>, hash<underlying_type<EChoice>::type>>;
     TMap m_Cache;
-
 
     SDescrContainer& m_DescrContainer;
 };
@@ -889,6 +892,38 @@ void CDescrCache::x_SetUserType(const string& type,
 
 
 CDescrCache::CDescrCache(CDescrCache::SDescrContainer& descr_container) : m_DescrContainer(descr_container) {}
+
+
+CSeqdesc& CDescrCache::SetPubdesc()
+{
+    if (m_FirstPubdesc) {
+        if (m_DescrContainer.IsSet()) {
+            m_DescrContainer.Set().remove_if([](const CRef<CSeqdesc>& pDesc) { return (pDesc && pDesc->IsPub()) });
+        }
+        m_FirstPubdesc = false;
+    }
+
+    auto pDesc = Ref(new CSeqdesc());
+    m_DescrContainer.push_back(pDesc);
+    pDesc->SetPub();
+    return *pDesc;
+}
+
+
+CSeqdesc& CDescrCache::SetComment()
+{
+    if (m_FirstComment) {
+        if (m_DescrContainer.IsSet()) {
+            m_DescrContainer.Set().remove_if([](const CRef<CSeqdesc>& pDesc) { return (pDesc && pDesc->IsComment()) });
+        }
+        m_FirstComment = false;
+    }
+
+    auto pDesc = Ref(new CSeqdesc());
+    m_DescrContainer.push_back(pDesc);
+    pDesc->SetComment();
+    return *pDesc;
+}
 
 
 CSeqdesc& CDescrCache::SetDBLink() 
