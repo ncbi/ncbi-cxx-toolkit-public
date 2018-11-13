@@ -806,6 +806,7 @@ public:
 
     using TDescrContainer = SDescrContainer;
     using TSubtype = CBioSource::TSubtype;
+    using TOrgMods = COrgName::TMod;
 
 
     CDescrCache(TDescrContainer& descr_container);
@@ -816,6 +817,8 @@ public:
     CSeqdesc& SetGBblock(void);
     CSeqdesc& SetMolInfo(void);
     CSeqdesc& SetBioSource(void);
+    TSubtype& SetSubtype(void);
+    TOrgMods& SetOrgMods(void);
     
 
 private:
@@ -837,6 +840,11 @@ private:
     CSeqdesc& x_ResetDescriptor(const EChoice eChoice, 
                                 function<bool(const CSeqdesc&)> f_verify,
                                 function<CRef<CSeqdesc>(void)> f_create);
+
+    TSubtype* m_pSubtype = nullptr;
+    TOrgMods* m_pOrgMods = nullptr;
+    
+    
 
     using TMap = unordered_map<EChoice, CRef<CSeqdesc>, hash<underlying_type<EChoice>::type>>;
     TMap m_Cache;
@@ -970,6 +978,27 @@ CSeqdesc& CDescrCache::SetBioSource()
         );
 }
 
+
+CDescrCache::TSubtype& CDescrCache::SetSubtype()
+{
+    if (!m_pSubtype) {
+        m_pSubtype = &(SetBioSource().SetSource().SetSubtype());
+        m_pSubtype->clear();
+    }
+
+    return *m_pSubtype;
+}
+
+
+CDescrCache::TOrgMods& CDescrCache::SetOrgMods()
+{
+    if (!m_pOrgMods) {
+        m_pOrgMods = &(SetBioSource().SetSource().SetOrg().SetOrgname().SetMod());
+        m_pOrgMods->clear();
+    }
+
+    return *m_pOrgMods;
+}
 
 
 CSeqdesc& CDescrCache::x_SetDescriptor(const EChoice eChoice, 
