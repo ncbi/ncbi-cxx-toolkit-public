@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include "delete_expired.hpp"
+#include <objtools/pubseq_gateway/impl/cassandra/blob_task/delete_expired.hpp>
 
 #include <memory>
 #include <string>
@@ -61,7 +61,13 @@ CCassBlobTaskDeleteExpired::CCassBlobTaskDeleteExpired(
     : CCassBlobWaiter(op_timeout_ms, conn, keyspace, key, true, max_retries, move(error_cb))
     , m_LastModified(last_modified)
     , m_Expiration(expiration)
+    , m_ExpiredVersionDeleted(false)
 {}
+
+bool CCassBlobTaskDeleteExpired::IsExpiredVersionDeleted() const
+{
+    return m_ExpiredVersionDeleted;
+}
 
 void CCassBlobTaskDeleteExpired::Wait1()
 {
@@ -74,6 +80,7 @@ void CCassBlobTaskDeleteExpired::Wait1()
                 return;
 
             case eInit: {
+                m_ExpiredVersionDeleted = false;
                 CloseAll();
                 m_QueryArr.clear();
                 m_QueryArr.emplace_back(m_Conn->NewQuery());
@@ -81,7 +88,7 @@ void CCassBlobTaskDeleteExpired::Wait1()
                     + ".blob_prop WHERE sat_key = ? and last_modified = ?";
                 m_QueryArr[0]->SetSQL(sql, 2);
                 m_QueryArr[0]->BindInt32(0, m_Key);
-                m_QueryArr[0]->BindInt64(0, m_LastModified);
+                m_QueryArr[0]->BindInt64(1, m_LastModified);
                 m_QueryArr[0]->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
                 UpdateLastActivity();
                 m_State = eReadingWriteTime;
@@ -111,8 +118,8 @@ void CCassBlobTaskDeleteExpired::Wait1()
 
                         CloseAll();
                         CTime expiration(CTime::eEmpty, CTime::eUTC);
-                        expiration.SetSecond(write_timestamp / 1000);
-                        expiration.SetMilliSecond(write_timestamp % 1000);
+                        expiration.SetTimeT(write_timestamp / 1000000);
+                        expiration.SetMicroSecond(write_timestamp % 1000000);
                         expiration.AddSecond(m_Expiration);
                         if (CTime(CTime::eCurrent, CTime::eUTC) > expiration) {
                             m_State = eDeleteData;
@@ -161,12 +168,11 @@ void CCassBlobTaskDeleteExpired::Wait1()
                         );
                     }
                     break;
-                } else {
-                    ERR_POST(Trace << "BlobDeleteExpired blob key=" << m_Keyspace << "." << m_Key
-                             << ", last_modified = " << m_LastModified << " has been deleted successfully"
-                    );
                 }
-
+                ERR_POST(Trace << "BlobDeleteExpired blob key=" << m_Keyspace << "." << m_Key
+                         << ", last_modified = " << m_LastModified << " has been deleted successfully"
+                );
+                m_ExpiredVersionDeleted = true;
                 CloseAll();
                 m_State = eDone;
                 break;

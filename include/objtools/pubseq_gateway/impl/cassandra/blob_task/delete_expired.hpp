@@ -1,5 +1,5 @@
-#ifndef OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__BLOB_TASK__DELETE_EXPIRED_HPP
-#define OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__BLOB_TASK__DELETE_EXPIRED_HPP
+#ifndef OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__BLOB_TASK__DELETE_EXPIRED_HPP_
+#define OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__BLOB_TASK__DELETE_EXPIRED_HPP_
 
 /*  $Id$
  * ===========================================================================
@@ -60,6 +60,8 @@ class CCassBlobTaskDeleteExpired: public CCassBlobWaiter
         TDataErrorCallback error_cb
     );
 
+    bool IsExpiredVersionDeleted() const;
+
  protected:
     virtual void Wait1(void) override;
 
@@ -75,8 +77,9 @@ class CCassBlobTaskDeleteExpired: public CCassBlobWaiter
 
     CBlobRecord::TTimestamp m_LastModified;
     CBlobRecord::TTimestamp m_Expiration;
+    bool m_ExpiredVersionDeleted;
 };
 
 END_IDBLOB_SCOPE
 
-#endif  // OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__BLOB_TASK__DELETE_EXPIRED_HPP
+#endif  // OBJTOOLS__PUBSEQ_GATEWAY__CASSANDRA__BLOB_TASK__DELETE_EXPIRED_HPP_

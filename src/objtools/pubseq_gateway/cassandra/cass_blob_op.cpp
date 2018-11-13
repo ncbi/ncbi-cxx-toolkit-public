@@ -37,8 +37,8 @@
 #include "blob_task/insert_extended.hpp"
 #include "blob_task/insert.hpp"
 #include "blob_task/delete.hpp"
-#include "blob_task/delete_expired.hpp"
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/blob_task/delete_expired.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/SyncObj.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
