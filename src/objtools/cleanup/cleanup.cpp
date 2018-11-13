@@ -63,6 +63,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_vector_ci.hpp>
+#include <objtools/edit/cds_fix.hpp>
 #include <objtools/cleanup/cleanup.hpp>
 #include "cleanup_utils.hpp"
 
@@ -2046,33 +2047,6 @@ CRef<CSeq_entry> AddProtein(const CSeq_feat& cds, CScope& scope)
     return prot_entry;
 }
 
-
-CRef<objects::CSeq_id> GetNewProteinId(size_t& offset, objects::CSeq_entry_Handle seh, objects::CBioseq_Handle bsh)
-{
-    string id_base;
-    objects::CSeq_id_Handle hid;
-
-    ITERATE(objects::CBioseq_Handle::TId, it, bsh.GetId()) {
-        if (!hid || !it->IsBetter(hid)) {
-            hid = *it;
-        }
-    }
-
-    hid.GetSeqId()->GetLabel(&id_base, objects::CSeq_id::eContent);
-
-    CRef<objects::CSeq_id> id(new objects::CSeq_id());
-    string& id_label = id->SetLocal().SetStr();
-    objects::CBioseq_Handle b_found;
-    do
-    {
-        id_label = id_base + "_" + NStr::NumericToString(offset++);
-        b_found = seh.GetBioseqHandle(*id);
-    } while (b_found);
-
-    return id;
-}
-
-
 bool CCleanup::SetGeneticCodes(CBioseq_Handle bsh)
 {
     if (!bsh) {
@@ -2549,7 +2523,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
 {
     bool any_changes = false;
 
-    size_t protein_id_counter = 1;
+    int protein_id_counter = 1;
     SAnnotSelector sel(CSeqFeatData::e_Cdregion);
     for (CFeat_CI cds_it(entry, sel); cds_it; ++cds_it) {
         bool change_this_cds = false;
@@ -2570,7 +2544,8 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
             } else {
                 // need to set product if not set
                 if (!new_cds->IsSetProduct() && !sequence::IsPseudo(*new_cds, entry.GetScope())) {
-                    CRef<CSeq_id> new_id = GetNewProteinId(protein_id_counter, entry, entry.GetScope().GetBioseqHandle(new_cds->GetLocation()));
+                    string id_label;
+                    CRef<CSeq_id> new_id = objects::edit::GetNewProtId(entry.GetScope().GetBioseqHandle(new_cds->GetLocation()), protein_id_counter, id_label, false); 
                     if (new_id) {
                         new_cds->SetProduct().SetWhole().Assign(*new_id);
                         change_this_cds = true;
