@@ -65,106 +65,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "mod_info.hpp"
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-using TModNameSet = unordered_set<string>;
-
-    
-template<typename TEnum>
-unordered_map<string, TEnum> s_InitModNameToEnumMap(
-    const CEnumeratedTypeValues& etv,
-    const TModNameSet& skip_enum_names,
-    const unordered_map<string, TEnum>&  extra_enum_names_to_vals)
-
-{
-    using TModNameEnumMap = unordered_map<string, TEnum>;
-    TModNameEnumMap smod_enum_map;
-    
-    for (const auto& name_val : etv.GetValues()) {
-        const auto& enum_name = name_val.first;
-        const TEnum& enum_val = static_cast<TEnum>(name_val.second);
-
-        if (skip_enum_names.find(enum_name) != skip_enum_names.end()) 
-        {
-            continue;
-        }
-        auto emplace_result = smod_enum_map.emplace(enum_name, enum_val);
-        // emplace must succeed
-        if (!emplace_result.second) {
-            NCBI_USER_THROW_FMT(
-                "s_InitModNameToEnumMap " << enum_name);
-        }
-    }
-
-    for (auto extra_smod_to_enum : extra_enum_names_to_vals) {
-        auto emplace_result = smod_enum_map.emplace(extra_smod_to_enum);
-        // emplace must succeed
-        if (!emplace_result.second) {
-            NCBI_USER_THROW_FMT(
-                "s_InitModNameToEnumMap " << extra_smod_to_enum.first);
-        }
-    }
-    return smod_enum_map;
-}
-
-
-static unordered_map<string, COrgMod::TSubtype> 
-s_InitModNameOrgSubtypeMap(void)
-{
-    static const unordered_set<string> kDeprecatedOrgSubtypes{
-            "dosage", "old-lineage", "old-name"};
-    static const unordered_map<string, COrgMod::TSubtype> 
-        extra_smod_to_enum_names 
-        {{ "subspecies", COrgMod::eSubtype_sub_species},
-         {"host",COrgMod::eSubtype_nat_host},
-         {"specific-host", COrgMod::eSubtype_nat_host}};
-    return s_InitModNameToEnumMap<COrgMod::TSubtype>(
-        *COrgMod::GetTypeInfo_enum_ESubtype(),
-        kDeprecatedOrgSubtypes,
-        extra_smod_to_enum_names
-    );
-}
-
-
-static unordered_map<string, CSubSource::TSubtype> 
-s_InitModNameSubSrcSubtypeMap(void)
-{
-    // some are skipped because they're handled specially and some are
-    // skipped because they're deprecated
-    static const unordered_set<string> skip_enum_names {
-        // skip because handled specially elsewhere
-        "fwd-primer-seq", "rev-primer-seq",
-        "fwd-primer-name", "rev-primer-name",
-        // skip because deprecated
-        "transposon-name",
-        "plastid-name",
-        "insertion-seq-name",
-    };
-    static const unordered_map<string, CSubSource::TSubtype> 
-        extra_smod_to_enum_names 
-        {{ "sub-clone", CSubSource::eSubtype_subclone },
-        { "lat-long",   CSubSource::eSubtype_lat_lon  },
-        { "latitude-longitude", CSubSource::eSubtype_lat_lon },
-        {  "note",  CSubSource::eSubtype_other  },
-        {  "notes", CSubSource::eSubtype_other  }};  
-    return s_InitModNameToEnumMap<CSubSource::TSubtype>(
-            *CSubSource::GetTypeInfo_enum_ESubtype(),
-            skip_enum_names,
-            extra_smod_to_enum_names );
-}
-
-
-template<typename T, typename U, typename THash> // Only works if TUmap values are unique
-static unordered_map<U,T> s_GetReverseMap(const unordered_map<T,U,THash>& TUmap) 
-{
-    unordered_map<U,T> UTmap;
-    for (const auto& key_val : TUmap) {
-        UTmap.emplace(key_val.second, key_val.first);
-    }
-    return UTmap;
-}
-
 
 CModValueAttribs::CModValueAttribs(const string& value) : mValue(value) {}
 
@@ -277,48 +181,21 @@ void CModParser::x_ImportDesc(const CSeqdesc& desc, TMods& mods)
     }
 }
 
-static const unordered_map<CSeq_inst::EStrand, string, hash<underlying_type<CSeq_inst::EStrand>::type>>
-strand_enum_to_string = {{CSeq_inst::eStrand_ss, "single"},
-                         {CSeq_inst::eStrand_ds, "double"},
-                         {CSeq_inst::eStrand_mixed, "mixed"},
-                         {CSeq_inst::eStrand_other, "other"}};
-
-static const auto& strand_string_to_enum = s_GetReverseMap(strand_enum_to_string);
-
-
-static const unordered_map<CSeq_inst::EMol, string, hash<underlying_type<CSeq_inst::EMol>::type>>
-mol_enum_to_string = {{CSeq_inst::eMol_dna, "dna"},
-                      {CSeq_inst::eMol_rna, "rna"},
-                      {CSeq_inst::eMol_aa, "aa"},
-                      {CSeq_inst::eMol_na, "na"},
-                      {CSeq_inst::eMol_other, "other"}};
-
-static const auto& mol_string_to_enum = s_GetReverseMap(mol_enum_to_string);
-
-
-static const unordered_map<CSeq_inst::ETopology, string, hash<underlying_type<CSeq_inst::ETopology>::type>> 
-topology_enum_to_string = {{CSeq_inst::eTopology_linear, "linear"},
-                           {CSeq_inst::eTopology_circular, "circular"},
-                           {CSeq_inst::eTopology_tandem, "tandem"},
-                           {CSeq_inst::eTopology_other, "other"}};
-
-static const auto& topology_string_to_enum = s_GetReverseMap(topology_enum_to_string);
-
 
 void CModParser::x_ImportSeqInst(const CSeq_inst& seq_inst, TMods& mods)
 {
     if (seq_inst.IsSetTopology()) {
-        const auto& topology = topology_enum_to_string.at(seq_inst.GetTopology());
+        const auto& topology = s_TopologyEnumToString.at(seq_inst.GetTopology());
         mods.emplace("topology", topology);
     }
 
     if (seq_inst.IsSetMol()) {
-        const auto& molecule = mol_enum_to_string.at(seq_inst.GetMol());
+        const auto& molecule = s_MolEnumToString.at(seq_inst.GetMol());
         mods.emplace("molecule", molecule);
     }
 
     if (seq_inst.IsSetStrand()) {
-        const auto& strand = strand_enum_to_string.at(seq_inst.GetStrand());
+        const auto& strand = s_StrandEnumToString.at(seq_inst.GetStrand());
         mods.emplace("strand", strand);
     }
 
@@ -355,58 +232,20 @@ void CModParser::x_ImportUserObject(const CUser_object& user_object, TMods& mods
     }
 }
 
-static unordered_map<CBioSource::EGenome, string, hash<underlying_type<CBioSource::EGenome>::type>> genome_enum_to_string 
-= { {CBioSource::eGenome_unknown, "unknown"},
-    {CBioSource::eGenome_genomic, "genomic" },
-    {CBioSource::eGenome_chloroplast, "chloroplast"},
-    {CBioSource::eGenome_kinetoplast, "kinetoplast"}, 
-    {CBioSource::eGenome_mitochondrion, "mitochondrial"},
-    {CBioSource::eGenome_plastid, "plastid"},
-    {CBioSource::eGenome_macronuclear, "macronuclear"},
-    {CBioSource::eGenome_extrachrom, "extrachromosomal"},
-    {CBioSource::eGenome_plasmid, "plasmid"},
-    {CBioSource::eGenome_transposon, "transposon"},
-    {CBioSource::eGenome_insertion_seq, "insertion sequence"},
-    {CBioSource::eGenome_cyanelle, "cyanelle"},
-    {CBioSource::eGenome_proviral, "provirus"},
-    {CBioSource::eGenome_virion, "virion"},
-    {CBioSource::eGenome_nucleomorph, "nucleomorph"},
-    {CBioSource::eGenome_apicoplast, "apicoplase"},
-    {CBioSource::eGenome_leucoplast, "leucoplast"},
-    {CBioSource::eGenome_proplastid, "proplastid"},
-    {CBioSource::eGenome_endogenous_virus, "endogenous virus"},
-    {CBioSource::eGenome_hydrogenosome, "hydrogenosome"},
-    {CBioSource::eGenome_chromosome, "chromosome" },
-    {CBioSource::eGenome_chromatophore, "chromatophore"},
-    {CBioSource::eGenome_plasmid_in_mitochondrion, "plasmid in mitochondrion"},
-    {CBioSource::eGenome_plasmid_in_plastid, "plasmid in plastid"}
-};
-
-
-static unordered_map<CBioSource::EOrigin, string, hash<underlying_type<CBioSource::EOrigin>::type>> origin_enum_to_string
-= { {CBioSource::eOrigin_unknown, "unknown"},
-    {CBioSource::eOrigin_natural, "natural"},
-    {CBioSource::eOrigin_natmut, "natural mutant"},
-    {CBioSource::eOrigin_mut, "mutant"},
-    {CBioSource::eOrigin_artificial, "artificial"},
-    {CBioSource::eOrigin_synthetic, "synthetic"},
-    {CBioSource::eOrigin_other, "other"}
-};
-
 
 void CModParser::x_ImportBioSource(const CBioSource& biosource, TMods& mods)
 {
     if (biosource.IsSetGenome()) {
         auto e_genome = static_cast<CBioSource::EGenome>(biosource.GetGenome());
-        _ASSERT(genome_enum_to_string.find(e_genome) != genome_enum_to_string.end());
-        const auto& genome_string = genome_enum_to_string[e_genome]; 
+        _ASSERT(s_GenomeEnumToString.find(e_genome) != s_GenomeEnumToString.end());
+        const auto& genome_string = s_GenomeEnumToString[e_genome]; 
         mods.emplace("location", genome_string);
     }
 
     if (biosource.IsSetOrigin()) {
         auto e_origin = static_cast<CBioSource::EOrigin>(biosource.GetOrigin());
-        _ASSERT(origin_enum_to_string.find(e_origin) != origin_enum_to_string.end());
-        const auto& origin_string = origin_enum_to_string[e_origin];
+        _ASSERT(s_OriginEnumToString.find(e_origin) != s_OriginEnumToString.end());
+        const auto& origin_string = s_OriginEnumToString[e_origin];
         mods.emplace("origin", origin_string);
     }
     if (biosource.IsSetIs_focus()) {
@@ -426,13 +265,13 @@ void CModParser::x_ImportBioSource(const CBioSource& biosource, TMods& mods)
 }
 
 
-static const auto subsource_string_to_enum = s_InitModNameSubSrcSubtypeMap();
+static const auto s_SubSourceStringToEnum = s_InitModNameSubSrcSubtypeMap();
 
 
 void CModParser::x_ImportSubSource(const CSubSource& subsource, TMods& mods)
 {
-    static const auto subsource_enum_to_string = s_GetReverseMap(subsource_string_to_enum);
-    const auto& subtype = subsource_enum_to_string.at(subsource.GetSubtype());
+    static const auto s_SubSourceEnumToString = s_GetReverseMap(s_SubSourceStringToEnum);
+    const auto& subtype = s_SubSourceEnumToString.at(subsource.GetSubtype());
     const auto& name = subsource.GetName();
     mods.emplace(subtype, name);
 }
@@ -495,13 +334,11 @@ void CModParser::x_ImportOrgName(const COrgName& org_name, TMods& mods)
 }
 
 
-static const auto orgmod_string_to_enum = s_InitModNameOrgSubtypeMap();
-
 
 void CModParser::x_ImportOrgMod(const COrgMod& org_mod, TMods& mods)
 {
-    static const auto orgmod_enum_to_string = s_GetReverseMap(orgmod_string_to_enum);
-    const auto& subtype = orgmod_enum_to_string.at(org_mod.GetSubtype());
+    static const auto s_OrgModEnumToString = s_GetReverseMap(s_OrgModStringToEnum);
+    const auto& subtype = s_OrgModEnumToString.at(org_mod.GetSubtype());
     const auto& subname = org_mod.GetSubname();
     mods.emplace(subtype, subname);
 }
@@ -519,83 +356,20 @@ void CModParser::x_ImportPMID(const CPubdesc& pub_desc, TMods& mods)
     }
 }
 
-static const
-unordered_map<CMolInfo::TBiomol, string> biomol_enum_to_string =
-{{CMolInfo::eBiomol_cRNA, "cRNA"},
- {CMolInfo::eBiomol_genomic, "Genomic"},
- {CMolInfo::eBiomol_mRNA, "mRNA"},
- {CMolInfo::eBiomol_ncRNA, "ncRNA"},
- {CMolInfo::eBiomol_other_genetic, "Other-Genetic"},
- {CMolInfo::eBiomol_pre_RNA, "Precursor RNA"},
- {CMolInfo::eBiomol_rRNA, "rRNA"},
- {CMolInfo::eBiomol_transcribed_RNA, "Transcribed RNA"},
- {CMolInfo::eBiomol_tmRNA, "tmRNA"},
- {CMolInfo::eBiomol_tRNA, "tRNA"}
-};
-
-static const 
-unordered_map<string, CMolInfo::TTech>
-tech_string_to_enum = {
-    { "?",                  CMolInfo::eTech_unknown },
-    { "barcode",            CMolInfo::eTech_barcode },
-    { "both",               CMolInfo::eTech_both },
-    { "composite-wgs-htgs", CMolInfo::eTech_composite_wgs_htgs },
-    { "concept-trans",      CMolInfo::eTech_concept_trans },
-    { "concept-trans-a",    CMolInfo::eTech_concept_trans_a },
-    { "derived",            CMolInfo::eTech_derived },
-    { "EST",                CMolInfo::eTech_est },
-    { "fli cDNA",           CMolInfo::eTech_fli_cdna },
-    { "genetic map",        CMolInfo::eTech_genemap },
-    { "htc",                CMolInfo::eTech_htc },
-    { "htgs 0",             CMolInfo::eTech_htgs_0 },
-    { "htgs 1",             CMolInfo::eTech_htgs_1 },
-    { "htgs 2",             CMolInfo::eTech_htgs_2 },
-    { "htgs 3",             CMolInfo::eTech_htgs_3 },
-    { "physical map",       CMolInfo::eTech_physmap },
-    { "seq-pept",           CMolInfo::eTech_seq_pept },
-    { "seq-pept-homol",     CMolInfo::eTech_seq_pept_homol },
-    { "seq-pept-overlap",   CMolInfo::eTech_seq_pept_overlap },
-    { "standard",           CMolInfo::eTech_standard },
-    { "STS",                CMolInfo::eTech_sts },
-    { "survey",             CMolInfo::eTech_survey },
-    { "targeted",           CMolInfo::eTech_targeted },
-    { "tsa",                CMolInfo::eTech_tsa },
-    { "wgs",                CMolInfo::eTech_wgs }
-};
-
-
-static const auto tech_enum_to_string  = s_GetReverseMap(tech_string_to_enum);
-
-
-static const 
-unordered_map<string, CMolInfo::TCompleteness> 
-completeness_string_to_enum = {
-    { "complete",  CMolInfo::eCompleteness_complete  },
-    { "has-left",  CMolInfo::eCompleteness_has_left  },
-    { "has-right", CMolInfo::eCompleteness_has_right  },
-    { "no-ends",   CMolInfo::eCompleteness_no_ends  },
-    { "no-left",   CMolInfo::eCompleteness_no_left  },
-    { "no-right",  CMolInfo::eCompleteness_no_right  },
-    { "partial",   CMolInfo::eCompleteness_partial  }
-};
-
-
-static const auto completeness_enum_to_string = s_GetReverseMap(completeness_string_to_enum);
-
 
 void CModParser::x_ImportMolInfo(const CMolInfo& mol_info, TMods& mods)
 {
     if (mol_info.IsSetBiomol()) {
-        const string& moltype = biomol_enum_to_string.at(mol_info.GetBiomol());
+        const string& moltype = s_BiomolEnumToString.at(mol_info.GetBiomol());
         mods.emplace("moltype", moltype);
     }
     if (mol_info.IsSetTech()) {
-        const string& tech =  tech_enum_to_string.at(mol_info.GetTech());
+        const string& tech =  s_TechEnumToString.at(mol_info.GetTech());
         mods.emplace("tech", tech);
     }
 
     if (mol_info.IsSetCompleteness()) {
-        const string& completeness = completeness_enum_to_string.at(mol_info.GetCompleteness());
+        const string& completeness = s_CompletenessEnumToString.at(mol_info.GetCompleteness());
         mods.emplace("completeness", completeness);
     }
 }
@@ -1017,7 +791,231 @@ struct SRangeGetter
 
 void CModAdder::Apply(const TMods& mods, CBioseq& bioseq) {
 }
-// Need implementation code for CModAdder
+
+
+// Add subtype and subsource references
+class CDescrCache 
+{
+public:
+
+    struct SDescrContainer {
+        virtual ~SDescrContainer(void) = default;
+        virtual bool IsSet(void) const = 0;
+        virtual CSeq_descr& SetDescr(void) = 0;
+    };
+
+    using TDescrContainer = SDescrContainer;
+    using TSubtype = CBioSource::TSubtype;
+
+
+    CDescrCache(TDescrContainer& descr_container);
+
+    CSeqdesc& SetDBLink(void);
+    CSeqdesc& SetTpaAssembly(void);
+    CSeqdesc& SetGenomeProjects(void);
+    CSeqdesc& SetGBblock(void);
+    CSeqdesc& SetMolInfo(void);
+    CSeqdesc& SetBioSource(void);
+    
+
+private:
+    enum EChoice : size_t {
+        eDBLink = 1,
+        eTpa = 2,
+        eGenomeProjects = 3,
+        eMolInfo = 4,
+        eGBblock = 5,
+        eBioSource = 6,
+    };
+
+    bool x_IsUserType(const CUser_object& user_object, const string& type);
+    void x_SetUserType(const string& type, CUser_object& user_object);
+    CSeqdesc& x_SetDescriptor(const EChoice eChoice, 
+                              function<bool(const CSeqdesc&)> f_verify,
+                              function<CRef<CSeqdesc>(void)> f_create);
+
+    CSeqdesc& x_ResetDescriptor(const EChoice eChoice, 
+                                function<bool(const CSeqdesc&)> f_verify,
+                                function<CRef<CSeqdesc>(void)> f_create);
+
+    using TMap = unordered_map<EChoice, CRef<CSeqdesc>, hash<underlying_type<EChoice>::type>>;
+    TMap m_Cache;
+
+
+    SDescrContainer& m_DescrContainer;
+};
+
+
+template<class TObject>
+class CDescrContainer : public CDescrCache::SDescrContainer 
+{
+public:
+    CDescrContainer(TObject& object) : m_Object(object) {}
+
+    bool IsSet(void) const {
+        return m_Object.IsSetDescr();
+    }
+
+    CSeq_descr& SetDescr(void) {
+        return m_Object.SetDescr();
+    }
+
+private:
+    TObject& m_Object;
+};
+
+
+
+bool CDescrCache::x_IsUserType(const CUser_object& user_object, const string& type)
+{
+    return (user_object.IsSetType() &&
+            user_object.GetType().IsStr() &&
+            user_object.GetType().GetStr() == type);
+}
+
+
+void CDescrCache::x_SetUserType(const string& type, 
+                                     CUser_object& user_object) 
+{
+    user_object.SetType().SetStr(type);
+} 
+
+
+CDescrCache::CDescrCache(CDescrCache::SDescrContainer& descr_container) : m_DescrContainer(descr_container) {}
+
+
+CSeqdesc& CDescrCache::SetDBLink() 
+{
+    return x_SetDescriptor(eDBLink, 
+        [](const CSeqdesc& desc) {
+            return (desc.IsUser() && desc.GetUser().IsDBLink());
+        },
+        []() {
+            auto pDesc = Ref(new CSeqdesc());
+            pDesc->SetUser().SetObjectType(CUser_object::eObjectType_DBLink);
+            return pDesc;
+        });
+}
+
+CSeqdesc& CDescrCache::SetTpaAssembly()
+{
+    return x_SetDescriptor(eTpa,
+        [this](const CSeqdesc& desc) {
+            return (desc.IsUser() && x_IsUserType(desc.GetUser(), "TpaAssembly"));
+        },
+        [this]() {
+            auto pDesc = Ref(new CSeqdesc());
+            x_SetUserType("TpaAssembly", pDesc->SetUser());
+            return pDesc;
+        }
+    );
+}
+
+CSeqdesc& CDescrCache::SetGenomeProjects()
+{
+        return x_SetDescriptor(eGenomeProjects,
+        [this](const CSeqdesc& desc) {
+            return (desc.IsUser() && x_IsUserType(desc.GetUser(), "GenomeProjectsDB"));
+        },
+        [this]() {
+            auto pDesc = Ref(new CSeqdesc());
+            x_SetUserType("GenomeProjectsDB", pDesc->SetUser());
+            return pDesc;
+        }
+    );
+}
+
+
+CSeqdesc& CDescrCache::SetGBblock()
+{
+    return x_SetDescriptor(eGBblock, 
+        [](const CSeqdesc& desc) { 
+            return desc.IsGenbank(); 
+        },
+        []() {
+            auto pDesc = Ref(new CSeqdesc());
+            pDesc->SetGenbank();
+            return pDesc;
+        }
+    );
+}
+
+
+CSeqdesc& CDescrCache::SetMolInfo()
+{
+    return x_SetDescriptor(eMolInfo,
+        [](const CSeqdesc& desc) { 
+            return desc.IsMolinfo(); 
+        },
+        []() {
+            auto pDesc = Ref(new CSeqdesc());
+            pDesc->SetMolinfo();
+            return pDesc;
+        }
+    );
+}
+
+
+CSeqdesc& CDescrCache::SetBioSource()
+{
+    return x_SetDescriptor(eBioSource,
+            [](const CSeqdesc& desc) {
+                return desc.IsSource();
+            },
+            []() {
+                auto pDesc = Ref(new CSeqdesc());
+                pDesc->SetSource();
+                return pDesc;
+            }
+        );
+}
+
+
+
+CSeqdesc& CDescrCache::x_SetDescriptor(const EChoice eChoice, 
+                                            function<bool(const CSeqdesc&)> f_verify,
+                                            function<CRef<CSeqdesc>(void)> f_create)
+{
+    auto it = m_Cache.find(eChoice);
+    if (it != m_Cache.end()) {
+        return *(it->second);
+    }
+
+    // Search for descriptor on Bioseq
+    if (m_DescrContainer.IsSet()) {
+        for (auto& pDesc : m_DescrContainer.SetDescr().Set()) {
+            if (pDesc.NotEmpty() && f_verify(*pDesc)) {
+                m_Cache.insert(make_pair(eChoice, pDesc));
+                return *pDesc;
+            }
+        }
+    }
+
+    auto pDesc = f_create();
+    m_Cache.insert(make_pair(eChoice, pDesc));
+    m_DescrContainer.SetDescr().Set().push_back(pDesc);
+    return *pDesc;
+}
+
+
+CSeqdesc& CDescrCache::x_ResetDescriptor(const EChoice eChoice,
+                                              function<bool(const CSeqdesc&)> f_verify,
+                                              function<CRef<CSeqdesc>(void)> f_create)
+{
+    auto it = m_Cache.find(eChoice);
+    if (it != m_Cache.end()) {
+        return *(it->second);
+    }
+
+    if (m_DescrContainer.IsSet()) {
+        m_DescrContainer.SetDescr().Set().remove_if([&](CRef<CSeqdesc> pDesc) {return f_verify(*pDesc);});
+    }
+
+    auto pDesc = f_create();
+    m_Cache.insert(make_pair(eChoice, pDesc));
+    m_DescrContainer.SetDescr().Set().push_back(pDesc);
+    return *pDesc;
+}
 
 
 class CModAdder_Impl 
@@ -1043,26 +1041,224 @@ private:
     static void x_SetMolecule(const TRange& equal_range, CBioseq& bioseq);
     static void x_SetTopology(const TRange& equal_range, CBioseq& bioseq);
     static void x_SetSecondaryIds(const TRange& equal_range, CBioseq& bioseq);
+    static void x_SetOrgMods(const TRange& equal_range, CBioseq& bioseq);
+    void x_SetDBLinkField(const string& label, const TRange& mod_range, CDescrCache& descr_cache);
+    void x_SetDBLinkFieldVals(const string& label, const list<CTempString>& vals, CSeqdesc& dblink_desc);
+    void x_SetGBblockIds(const TRange& mod_range, CDescrCache& descr_cache);
+    void x_SetGBblockKeywords(const TRange& mod_range, CDescrCache& descr_cache);
+    void x_SetGenomeProjects(const TRange& mod_range, CDescrCache& descr_cache);
+    void x_SetTpaAssembly(const TRange& mod_range, CDescrCache& descr_cache);
+    void x_SetMolInfoType(const TRange& mod_range, CDescrCache& descr_cache);
+    void x_SetMolInfoTech(const TRange& mod_range, CDescrCache& descr_cache);
+    void x_SetMolInfoCompleteness(const TRange& mod_range, CDescrCache& descr_cache);
+
+    void x_ReportError(void){} // Need to fill this in
+    void x_ReportBadValue(const string& mod_name, const string& mod_value) {}
 };
+
+
+void CModAdder_Impl::x_SetMolInfoType(const TRange& mod_range, CDescrCache& descr_cache)
+{
+    _ASSERT(distance(mod_range.first, mod_range.second)==1);
+    const auto& value = mod_range.first->second.GetValue();
+    auto it = s_BiomolStringToEnum.find(value);
+    if (it != s_BiomolStringToEnum.end()) {
+        descr_cache.SetMolInfo().SetMolinfo().SetBiomol(it->second);
+    }
+    else {
+        const auto& mod_name = mod_range.first->first;
+        x_ReportBadValue(mod_name, value);
+    }
+}
+
+
+void CModAdder_Impl::x_SetMolInfoTech(const TRange& mod_range, CDescrCache& descr_cache)
+{
+    _ASSERT(distance(mod_range.first, mod_range.second)==1);
+    const auto& value = mod_range.first->second.GetValue();
+    auto it = s_TechStringToEnum.find(value);
+    if (it != s_TechStringToEnum.end()) {
+        descr_cache.SetMolInfo().SetMolinfo().SetTech(it->second);
+    }
+    else {
+        const auto& mod_name = mod_range.first->first;
+        x_ReportBadValue(mod_name, value);
+    }
+}
+
+
+void CModAdder_Impl::x_SetMolInfoCompleteness(const TRange& mod_range, CDescrCache& descr_cache)
+{
+    _ASSERT(distance(mod_range.first, mod_range.second)==1);
+    const auto& value = mod_range.first->second.GetValue();
+    auto it = s_CompletenessStringToEnum.find(value);
+    if (it != s_CompletenessStringToEnum.end()) {
+        descr_cache.SetMolInfo().SetMolinfo().SetCompleteness(it->second);
+    }
+    else {
+        const auto& mod_name = mod_range.first->first;
+        x_ReportBadValue(mod_name, value);
+    }
+}
+
+
+void CModAdder_Impl::x_SetTpaAssembly(const TRange& mod_range, CDescrCache& descr_cache)
+{
+    list<CStringUTF8> accession_list;
+    for (auto it = mod_range.first; it != mod_range.second; ++it) {
+        list<CTempString> value_sublist;
+        const auto& vals = it->second.GetValue();
+        NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
+        transform(value_sublist.begin(), value_sublist.end(), back_inserter(accession_list),
+                [](const CTempString& val) { return CUtf8::AsUTF8(val, eEncoding_UTF8); });
+    }
+
+    auto make_user_field = [](const CStringUTF8& accession) {
+        auto pField = Ref(new CUser_field());
+        pField->SetLabel().SetId(0);
+        auto pSubfield = Ref(new CUser_field());
+        pSubfield->SetLabel().SetStr("accession");
+        pSubfield->SetData().SetStr(accession);
+        pField->SetData().SetFields().push_back(move(pSubfield));
+        return pField;
+    };
+
+    auto& user = descr_cache.SetTpaAssembly().SetUser();
+    user.SetData().resize(accession_list.size());
+    transform(accession_list.begin(), accession_list.end(), user.SetData().begin(), make_user_field);
+}
+
+
+void CModAdder_Impl::x_SetGenomeProjects(const TRange& mod_range, CDescrCache& descr_cache)
+{
+    list<int> id_list;
+    for (auto it = mod_range.first; it != mod_range.second; ++it) {
+        list<CTempString> value_sublist;  
+        const auto& vals = it->second.GetValue();
+        NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
+        transform(value_sublist.begin(), value_sublist.end(), back_inserter(id_list), 
+                [](const CTempString& val) { return NStr::StringToUInt(val); });
+    }
+
+    auto make_user_field = [](const int& id) {
+        auto pField = Ref(new CUser_field());
+        auto pSubfield = Ref(new CUser_field());
+        pField->SetLabel().SetId(0);
+        pSubfield->SetLabel().SetStr("ProjectID");
+        pField->SetData().SetFields().push_back(pSubfield);
+        pSubfield.Reset(new CUser_field());
+        pSubfield->SetLabel().SetStr("ParentID");
+        pSubfield->SetData().SetInt(0);
+        pField->SetData().SetFields().push_back(pSubfield);
+        return pField;
+    };
+
+    auto& user = descr_cache.SetGenomeProjects().SetUser();
+    user.SetData().resize(id_list.size());
+    transform(id_list.begin(), id_list.end(), user.SetData().begin(), make_user_field);
+}
+
+
+void CModAdder_Impl::x_SetGBblockIds(const TRange& mod_range, CDescrCache& descr_cache)
+{
+    list<CTempString> id_list;
+    for (auto it = mod_range.first; it != mod_range.second; ++it) {
+        list<CTempString> value_sublist;
+        const auto& vals = it->second.GetValue();
+        NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
+        for (const auto& val : value_sublist) {
+            try {
+                SSeqIdRange idrange(val);
+                id_list.insert(id_list.end(),idrange.begin(), idrange.end());
+            }
+            catch(...)
+            {
+                id_list.push_back(val);
+            }
+        }
+    }
+    auto& genbank = descr_cache.SetGBblock().SetGenbank();
+    genbank.SetExtra_accessions().assign(id_list.begin(), id_list.end());
+}
+
+
+void CModAdder_Impl::x_SetGBblockKeywords(const TRange& mod_range, CDescrCache& descr_cache)
+{
+    list<CTempString> value_list;
+    for (auto it = mod_range.first; it != mod_range.second; ++it) {
+        list<CTempString> value_sublist;
+        const auto& vals = it->second.GetValue();
+        NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
+        value_list.splice(value_list.end(), value_sublist);
+    }
+    descr_cache.SetGBblock().SetGenbank().SetKeywords().assign(value_list.begin(), value_list.end());
+}
+
+
+void CModAdder_Impl::x_SetDBLinkField(const string& label,
+                                      const TRange& mod_range,
+                                      CDescrCache& descr_cache)
+{
+    list<CTempString> value_list;
+    for (auto it = mod_range.first; it != mod_range.second; ++it) {
+        list<CTempString> value_sublist;
+        const auto& vals = it->second.GetValue();
+        NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
+        value_list.splice(value_list.end(), value_sublist);
+    }
+}
+
+
+void CModAdder_Impl::x_SetDBLinkFieldVals(const string& label,
+                                          const list<CTempString>& vals,
+                                          CSeqdesc& dblink_desc)
+{
+    if (vals.empty()) {
+        return;
+    }
+
+    auto& user_obj = dblink_desc.SetUser();
+    CRef<CUser_field> pField;
+    if (user_obj.IsSetData()) {
+        for (auto pUserField : user_obj.SetData()) {
+            if (pUserField &&
+                pUserField->IsSetLabel() &&
+                pUserField->GetLabel().IsStr() &&
+                NStr::EqualNocase(pUserField->GetLabel().GetStr(), label)) {
+                pField = pUserField;
+                break;
+            }
+        }
+    }
+
+    if (!pField) {
+        pField = Ref(new CUser_field());
+        pField->SetLabel().SetStr() = label;
+        user_obj.SetData().push_back(pField);
+    }
+
+    pField->SetData().SetStrs().assign(vals.begin(), vals.end());
+}
+
 
 
 void CModAdder_Impl::x_SetStrand(const TRange& equal_range, CBioseq& bioseq)
 {
-    auto strand = strand_string_to_enum.at(equal_range.first->second.GetValue());
+    auto strand = s_StrandStringToEnum.at(equal_range.first->second.GetValue());
     bioseq.SetInst().SetStrand(strand);
 }
 
 
 void CModAdder_Impl::x_SetMolecule(const TRange& equal_range, CBioseq& bioseq)
 {
-    auto mol = mol_string_to_enum.at(equal_range.first->second.GetValue());
+    auto mol = s_MolStringToEnum.at(equal_range.first->second.GetValue());
     bioseq.SetInst().SetMol(mol);
 }
 
 
 void CModAdder_Impl::x_SetTopology(const TRange& equal_range, CBioseq& bioseq)
 {
-    auto topology = topology_string_to_enum.at(equal_range.first->second.GetValue());
+    auto topology = s_TopologyStringToEnum.at(equal_range.first->second.GetValue());
     bioseq.SetInst().SetTopology(topology);
 }
 
@@ -1070,6 +1266,10 @@ void CModAdder_Impl::x_SetTopology(const TRange& equal_range, CBioseq& bioseq)
 void CModAdder_Impl::x_SetSecondaryIds(const TRange& equal_range, CBioseq& bioseq) 
 {
 }
+
+void CModAdder_Impl::x_SetOrgMods(const TRange& equal_range, CBioseq& bioseq)
+{
+} 
 
 
 END_SCOPE(objects)
