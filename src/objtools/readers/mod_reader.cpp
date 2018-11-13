@@ -898,13 +898,13 @@ CSeqdesc& CDescrCache::SetPubdesc()
 {
     if (m_FirstPubdesc) {
         if (m_DescrContainer.IsSet()) {
-            m_DescrContainer.Set().remove_if([](const CRef<CSeqdesc>& pDesc) { return (pDesc && pDesc->IsPub()) });
+            m_DescrContainer.SetDescr().Set().remove_if([](const CRef<CSeqdesc>& pDesc) { return (pDesc && pDesc->IsPub()); });
         }
         m_FirstPubdesc = false;
     }
 
     auto pDesc = Ref(new CSeqdesc());
-    m_DescrContainer.push_back(pDesc);
+    m_DescrContainer.SetDescr().Set().push_back(pDesc);
     pDesc->SetPub();
     return *pDesc;
 }
@@ -914,13 +914,13 @@ CSeqdesc& CDescrCache::SetComment()
 {
     if (m_FirstComment) {
         if (m_DescrContainer.IsSet()) {
-            m_DescrContainer.Set().remove_if([](const CRef<CSeqdesc>& pDesc) { return (pDesc && pDesc->IsComment()) });
+            m_DescrContainer.SetDescr().Set().remove_if([](const CRef<CSeqdesc>& pDesc) { return (pDesc && pDesc->IsComment()); });
         }
         m_FirstComment = false;
     }
 
     auto pDesc = Ref(new CSeqdesc());
-    m_DescrContainer.push_back(pDesc);
+    m_DescrContainer.SetDescr().Set().push_back(pDesc);
     pDesc->SetComment();
     return *pDesc;
 }

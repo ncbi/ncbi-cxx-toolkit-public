@@ -199,6 +199,7 @@ static unordered_map<CBioSource::EOrigin, string, hash<underlying_type<CBioSourc
 
 
 static const auto s_OrgModStringToEnum = s_InitModNameOrgSubtypeMap();
+static const auto s_SubSourceStringToEnum = s_InitModNameSubSrcSubtypeMap();
 
 
 static const 
