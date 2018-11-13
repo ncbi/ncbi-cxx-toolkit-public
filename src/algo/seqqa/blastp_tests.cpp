@@ -116,15 +116,12 @@ CTestBlastp_All::RunTest(const CSerialObject& obj,
     CObject_id::TId prod_taxid = s_GetTaxid(prod_id, scope);
 
     if (prod_taxid == 0) {
-        CBioseq_Handle bsh = scope.GetBioseqHandle(prod_id);
 
-        if(bsh) {
-            NcbiCerr << MSerial_AsnText 
-                     << *bsh.GetSeq_entry_Handle().GetCompleteSeq_entry();
-        }
-
-        throw runtime_error("didn't find taxid for query protein for " 
-                           + prod_id.AsFastaString());
+        result->SetOutput_data()
+            .AddField("has_blastp_match", false);
+        return ref;
+        // not an error. Could be a partially constructed ref_id
+        // without tax-info in the bioseq
     }
 
     int score;
