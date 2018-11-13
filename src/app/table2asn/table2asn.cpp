@@ -988,11 +988,15 @@ void CTbl2AsnApp::ProcessOneFile()
         SetDiagStream(error_log);
     }
 
+    CNcbiOstream* output(0);
+    CFile local_file;
+
     try
     {
         CRef<CSerialObject> input_obj;
 
         m_context.ReleaseOutputs();
+
         CFormatGuess::EFormat format = m_reader->OpenFile(m_context.m_current_file, input_obj);
         do
         {
@@ -1013,39 +1017,21 @@ void CTbl2AsnApp::ProcessOneFile()
                     }
                 }
 
-                CFile local_file;
-                CNcbiOstream* output(0);
-
                 if (m_context.m_output == 0)
                 {
-                    local_file = m_context.GenerateOutputFilename(m_context.m_asn1_suffix);
-                    output = new CNcbiOfstream(local_file.GetPath().c_str());
+                    if (output == 0) {
+                        local_file = m_context.GenerateOutputFilename(m_context.m_asn1_suffix);
+                        output = new CNcbiOfstream(local_file.GetPath().c_str());
+                    }
                 }
                 else
                 {
                     output = m_context.m_output;
                 }
 
-                try
-                {
-                    m_reader->WriteObject(*to_write, *output);
-                    if (m_context.m_output == 0)
-                        delete output;
-                    output = 0;
-                }
-                catch (...)
-                {
-                    // if something goes wrong - remove the partial output to avoid confuse
-                    if (m_context.m_output == 0)
-                    {
-                        local_file.Remove();
-                        delete output;
-                    }
-                    throw;
-                }
+                m_reader->WriteObject(*to_write, *output);
             }
             input_obj = m_reader->ReadNextEntry();
-
         } while (input_obj.NotEmpty());
 
 
@@ -1060,6 +1046,13 @@ void CTbl2AsnApp::ProcessOneFile()
         {
             m_logger->SetProgressOstream(&NcbiCout);
         }
+
+        if (m_context.m_output == 0) 
+        {
+            delete output;
+            local_file.Remove();
+        }
+        output = 0;
 
         throw;
     }
