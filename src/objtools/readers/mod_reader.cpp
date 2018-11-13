@@ -265,7 +265,6 @@ void CModParser::x_ImportBioSource(const CBioSource& biosource, TMods& mods)
 }
 
 
-static const auto s_SubSourceStringToEnum = s_InitModNameSubSrcSubtypeMap();
 
 
 void CModParser::x_ImportSubSource(const CSubSource& subsource, TMods& mods)
@@ -1080,10 +1079,40 @@ private:
     void x_SetMolInfoType(const TRange& mod_range, CDescrCache& descr_cache);
     void x_SetMolInfoTech(const TRange& mod_range, CDescrCache& descr_cache);
     void x_SetMolInfoCompleteness(const TRange& mod_range, CDescrCache& descr_cache);
+    void x_SetSubtype(const TRange& mod_range, CDescrCache& descr_cache);
+    void x_SetOrgMod(const TRange& mod_range, CDescrCache& descr_cache);
 
     void x_ReportError(void){} // Need to fill this in
     void x_ReportBadValue(const string& mod_name, const string& mod_value) {}
 };
+
+
+void CModAdder_Impl::x_SetSubtype(const TRange& mod_range, CDescrCache& descr_cache)
+{
+    if (mod_range.first == mod_range.second) {
+        return;
+    }
+    const auto subtype = s_SubSourceStringToEnum.at(mod_range.first->first);
+    for (auto it = mod_range.first; it != mod_range.second; ++it) {
+        const auto& name = it->second.GetValue();
+        auto pSubSource = Ref(new CSubSource(subtype,name));
+        descr_cache.SetSubtype().push_back(move(pSubSource));
+    }
+}
+
+
+void CModAdder_Impl::x_SetOrgMod(const TRange& mod_range, CDescrCache& descr_cache)
+{
+    if (mod_range.first == mod_range.second) {
+        return ;
+    }
+    const auto& subtype = s_OrgModStringToEnum.at(mod_range.first->first);
+    for (auto it = mod_range.first; it != mod_range.second; ++it) {
+        const auto& subname = it->second.GetValue();
+        auto pOrgMod = Ref(new COrgMod(subtype,subname));
+        descr_cache.SetOrgMods().push_back(move(pOrgMod));
+    }
+}
 
 
 void CModAdder_Impl::x_SetMolInfoType(const TRange& mod_range, CDescrCache& descr_cache)
