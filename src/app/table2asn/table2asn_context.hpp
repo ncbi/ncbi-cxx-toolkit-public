@@ -102,7 +102,6 @@ public:
 
     CRef<objects::CSeq_descr>  m_descriptors;
     auto_ptr<objects::edit::CRemoteUpdater>   m_remote_updater;
-    auto_ptr<CNcbiOfstream> m_ecn_numbers_ostream;
 
     objects::CFixSuspectProductName m_suspect_rules;
 
@@ -115,6 +114,10 @@ public:
     static
     void AddUserTrack(objects::CSeq_descr& SD, const string& type, const string& label, const string& data);
     void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
+
+    CNcbiOstream& GetOstream(CTempString suffix);
+    string GenerateOutputFilename(const CTempString& ext) const;
+    void ReleaseOutputs();
 
     static
     objects::CUser_object& SetUserObject(objects::CSeq_descr& descr, const CTempString& type);
@@ -161,6 +164,7 @@ public:
 private:
     void x_MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src, bool only_set) const;
     static void x_ApplyAccession(CTable2AsnContext& context, objects::CBioseq& bioseq);
+    map<string, pair<string, unique_ptr<CNcbiOstream>>> m_outputs;
 };
 
 

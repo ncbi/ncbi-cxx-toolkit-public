@@ -232,6 +232,52 @@ CSeq_descr& CTable2AsnContext::SetBioseqOrParentDescr(CBioseq& bioseq)
     return bioseq.SetDescr();
 }
 
+CNcbiOstream & CTable2AsnContext::GetOstream(CTempString suffix)
+{
+    auto& rec = m_outputs[suffix];
+    if (rec.second.get() == 0)
+    {
+        if (rec.first.empty())
+          rec.first = GenerateOutputFilename(suffix);
+        rec.second.reset(new CNcbiOfstream(rec.first.c_str()));
+    }
+    return *rec.second.get();
+}
+
+string CTable2AsnContext::GenerateOutputFilename(const CTempString& ext) const
+{
+    string dir;
+    string outputfile;
+    string base;
+
+    if (m_output_filename.empty())
+    {
+        CDirEntry::SplitPath(m_current_file, &dir, &base, 0);
+
+        outputfile = m_ResultsDirectory.empty() ? dir : m_ResultsDirectory;
+    }
+    else
+    {
+        CDirEntry::SplitPath(m_output_filename, &dir, &base, 0);
+        if (m_output_filename == "-" || dir == "/dev") {
+            CDirEntry::SplitPath(m_current_file, &dir, &base, 0);
+            outputfile = m_ResultsDirectory.empty() ? dir : m_ResultsDirectory;
+        }
+        else {
+            outputfile = dir;
+        }
+    }
+    outputfile += base;
+    outputfile += ext;
+
+    return outputfile;
+}
+
+void CTable2AsnContext::ReleaseOutputs()
+{
+    m_outputs.clear(); // it will close all output files
+}
+
 CUser_object& CTable2AsnContext::SetUserObject(CSeq_descr& descr, const CTempString& type)
 {
     CRef<CUser_object> user_obj;

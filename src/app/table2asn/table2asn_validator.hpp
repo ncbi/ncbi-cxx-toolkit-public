@@ -22,9 +22,9 @@ class CTable2AsnValidator: public CObject
 {
 public:
     CTable2AsnValidator(CTable2AsnContext& ctx);
-    void Validate(CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry, const string& flags, const string& report_name);
+    void Validate(CRef<objects::CSeq_submit> submit, CRef<objects::CSeq_entry> entry, const string& flags);
     void Cleanup(CRef<objects::CSeq_submit> submit, objects::CSeq_entry_Handle& entry, const string& flags);
-    void UpdateECNumbers(objects::CSeq_entry_Handle seh, const string& fname, auto_ptr<CNcbiOfstream>& ostream);
+    void UpdateECNumbers(objects::CSeq_entry_Handle seh);
     void ReportErrors(CConstRef<objects::CValidError> errors, CNcbiOstream& out);
     void ReportErrorStats(CNcbiOstream& out);
     size_t TotalErrors() const; 

@@ -32,14 +32,6 @@ namespace {
 
     static const char* big_separator = "=================================================================";
 
-CNcbiOfstream& InitOstream(auto_ptr<CNcbiOfstream>& ostr, const string& fname)
-{
-    if (ostr.get() == 0)
-        ostr.reset(new CNcbiOfstream(fname.c_str()));
-
-    return *ostr;
-}
-
 void xGetLabel(const CSeq_feat& feat, string& label)
 {
     if (label.empty())
@@ -125,7 +117,7 @@ void CTable2AsnValidator::Cleanup(CRef<objects::CSeq_submit> submit, CSeq_entry_
     }
 }
 
-void CTable2AsnValidator::Validate(CRef<CSeq_submit> submit, CRef<CSeq_entry> entry, const string& flags, const string& report_name)
+void CTable2AsnValidator::Validate(CRef<CSeq_submit> submit, CRef<CSeq_entry> entry, const string& flags)
 {
     CScope scope(*CObjectManager::GetInstance());
     scope.AddDefaults();
@@ -152,8 +144,7 @@ void CTable2AsnValidator::Validate(CRef<CSeq_submit> submit, CRef<CSeq_entry> en
     }
     if (errors.NotEmpty())
     {
-        CNcbiOfstream file(report_name.c_str());
-        ReportErrors(errors, file);
+        ReportErrors(errors, m_context->GetOstream(".val"));
     }
 }
 
@@ -237,7 +228,7 @@ void CTable2AsnValidator::ReportDiscrepancies()
     m_discrepancy.Release();
 }
 
-void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh, const string& fname, auto_ptr<CNcbiOfstream>& ostream)
+void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh)
 {
     string label;
     for (CFeat_CI feat_it(seh); feat_it; ++feat_it)
@@ -256,7 +247,7 @@ void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh, const 
                 {
                 case CProt_ref::eEC_deleted:
                     xGetLabel(feat, label);
-                    InitOstream(ostream, fname) << label << "\tEC number deleted\t" << *val << '\t' << endl;
+                    m_context->GetOstream(".ecn") << label << "\tEC number deleted\t" << *val << '\t' << endl;
                     val = EC.erase(val);
                     continue;
                     break;
@@ -265,7 +256,7 @@ void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh, const 
                     xGetLabel(feat, label);
                     const string& newvalue = CProt_ref::GetECNumberReplacement(*val);
                     bool is_split = newvalue.find('\t') != string::npos;
-                    InitOstream(ostream, fname) << label <<
+                    m_context->GetOstream(".ecn") << label <<
                         (is_split ? "\tEC number split\t" : "\tEC number changed\t")
                         << *val << '\t' << newvalue << endl;
                     if (is_split) {
@@ -278,7 +269,7 @@ void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh, const 
                 break;
                 case CProt_ref::eEC_unknown:
                     xGetLabel(feat, label);
-                    InitOstream(ostream, fname) << label << "\tEC number invalid\t" << *val << '\t' << endl;
+                    m_context->GetOstream(".ecn") << label << "\tEC number invalid\t" << *val << '\t' << endl;
                     break;
                 default:
                     break;

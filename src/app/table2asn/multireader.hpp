@@ -2,6 +2,7 @@
 #define TABLE2ASN_MULTIREADER_HPP
 
 #include <util/format_guess.hpp>
+#include <corelib/ncbistre.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -29,7 +30,8 @@ public:
    CMultiReader(CTable2AsnContext& context);
    ~CMultiReader();
  
-   CFormatGuess::EFormat LoadFile(const string& filename, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
+   CFormatGuess::EFormat OpenFile(const string& filename, CRef<CSerialObject>& entry);
+   CRef<CSerialObject> ReadNextEntry();
    void Cleanup(CRef<objects::CSeq_entry>);
    void WriteObject(const CSerialObject&, ostream&);
    void ApplyAdditionalProperties(objects::CSeq_entry& entry);
@@ -41,17 +43,22 @@ public:
    void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source);
    bool LoadAnnot(objects::CSeq_entry& obj, const string& filename);
 
+   static
+   void GetSeqEntry(CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit, CRef<CSerialObject> obj);
+
 protected:
 private:
     CFormatGuess::EFormat xReadFile(CNcbiIstream& in, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
     CRef<objects::CSeq_entry> xReadFasta(CNcbiIstream& instream);
-    bool xReadASN1(CFormatGuess::EFormat format, CNcbiIstream& instream, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
+    CRef<CSerialObject> xApplyTemplate(CRef<CSerialObject> obj);
+    CRef<CSerialObject> xReadASN1(CObjectIStream& pObjIstrm);
     CRef<objects::CSeq_entry> xReadGFF3(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> xReadGTF(CNcbiIstream& instream);
     void x_PostProcessAnnot(objects::CSeq_entry& entry);
-    bool xGetAnnotLoader(CAnnotationLoader& loader, CNcbiIstream& in, const string& filename);
+    bool xGetAnnotLoader(CAnnotationLoader& loader, const string& filename);
 
-    auto_ptr<CObjectIStream> xCreateASNStream(CFormatGuess::EFormat format, CNcbiIstream& instream);
+    unique_ptr<CObjectIStream> xCreateASNStream(const string& filename);
+    unique_ptr<CObjectIStream> xCreateASNStream(CFormatGuess::EFormat format, unique_ptr<istream>& instream);
 
     CFormatGuess::EFormat xGetFormat(CNcbiIstream&) const;
 
@@ -59,6 +66,7 @@ private:
     string m_AnnotName;
     string m_AnnotTitle;
     CTable2AsnContext& m_context;
+    unique_ptr<CObjectIStream> m_obj_stream;
 };
 
 END_NCBI_SCOPE

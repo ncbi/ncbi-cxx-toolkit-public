@@ -136,9 +136,9 @@ private:
     static const CDataLoadersUtil::TLoaders default_loaders = CDataLoadersUtil::fGenbank | CDataLoadersUtil::fVDB | CDataLoadersUtil::fGenbankOffByDefault | CDataLoadersUtil::fSRA;
     void Setup(const CArgs& args);
 
-    string GenerateOutputFilename(const CTempString& ext) const;
     void ProcessOneFile();
     void ProcessOneFile(CRef<CSerialObject>& result);
+    void ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObject> obj, CRef<CSerialObject>& result);
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
     void ProcessSecretFiles1Phase(CSeq_entry& result);
     void ProcessSecretFiles2Phase(CSeq_entry& result);
@@ -666,7 +666,7 @@ int CTbl2AsnApp::Run(void)
         m_context.m_use_hypothetic_protein = true;
 
     if (args["suspect-rules"])
-        m_context.m_suspect_rules.SetFilename(args["suspect-rules"].AsString());
+        m_context.m_suspect_rules.SetRulesFilename(args["suspect-rules"].AsString());
 
     try
     {
@@ -721,9 +721,7 @@ int CTbl2AsnApp::Run(void)
         }
         if (m_validator->TotalErrors() > 0)
         {
-            string outputfile = GenerateOutputFilename(".stats");
-            CNcbiOfstream val_stats(outputfile.c_str());
-            m_validator->ReportErrorStats(val_stats);
+            m_validator->ReportErrorStats(m_context.GetOstream(".stats"));
         }
         m_validator->ReportDiscrepancies();
     }
@@ -786,56 +784,43 @@ CRef<CScope> CTbl2AsnApp::GetScope(void)
     return m_context.m_scope;
 }
 
-void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
+void CTbl2AsnApp::ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObject> obj, CRef<CSerialObject>& result)
 {
     CRef<CSeq_entry> entry;
     CRef<CSeq_submit> submit;
 
+    m_reader->GetSeqEntry(entry, submit, obj);
+   
     bool avoid_submit_block = false;
     bool do_dates = false;
 
-#if 0
-    if (m_context.m_current_file.substr(m_context.m_current_file.length() - 4).compare(".xml") == 0)
+    if (m_fcs_reader.get())
     {
-        avoid_submit_block = m_context.m_avoid_submit_block;
-        COpticalxml2asnOperator op;
-        entry = op.LoadXML(m_context.m_current_file, m_context);
-        if (entry.IsNull())
-            return;
+        m_fcs_reader->PostProcess(*entry);
     }
-    else
+    entry->Parentize();
+
+    if (m_context.m_SetIDFromFile)
     {
-#endif
-		CFormatGuess::EFormat format = m_reader->LoadFile(m_context.m_current_file, entry, submit);
-        if (m_fcs_reader.get())
-        {
-            m_fcs_reader->PostProcess(*entry);
-        }
-        entry->Parentize();
-
-        if (m_context.m_SetIDFromFile)
-        {
-            m_context.SetSeqId(*entry);
-        }
-
-        switch (format)
-        {
-        case CFormatGuess::eTextASN:
-        case CFormatGuess::eBinaryASN:
-            do_dates = true;
-            break;
-        default:
-            break;
-        }
-#if 0
+        m_context.SetSeqId(*entry);
     }
-#endif
+
+    switch (format)
+    {
+    case CFormatGuess::eTextASN:
+    case CFormatGuess::eBinaryASN:
+        do_dates = true;
+        break;
+    default:
+        break;
+    }
 
     m_context.ApplyAccession(*entry);
 
     if (!IsDryRun())
     {
-        m_context.m_suspect_rules.SetupOutput(GenerateOutputFilename(".fixedproducts"));
+        std::function<CNcbiOstream&(void)> f = [this]()->CNcbiOstream& { return m_context.GetOstream(".fixedproducts"); };
+        m_context.m_suspect_rules.SetupOutput(f);
     }
     m_context.ApplyFileTracks(*entry);
 
@@ -952,11 +937,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (!IsDryRun())
     {
-        m_validator->UpdateECNumbers(entry_edit_handle, GenerateOutputFilename(".ecn"), m_context.m_ecn_numbers_ostream);
+        m_validator->UpdateECNumbers(entry_edit_handle);
 
         if (!m_context.m_validate.empty())
         {
-            m_validator->Validate(submit, entry, m_context.m_validate, GenerateOutputFilename(".val"));
+            m_validator->Validate(submit, entry, m_context.m_validate);
         }
 
         if (!m_context.m_discrepancy_file.empty())
@@ -966,56 +951,22 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
         if (m_context.m_make_flatfile)
         {
-            string ffname = GenerateOutputFilename(".gbf");
-
             CFlatFileConfig config;
 
             config.BasicCleanup(false);
 
             CFlatFileGenerator ffgenerator;
 
-            CNcbiOfstream outstream(ffname.c_str());
-
             if (submit.Empty())
-                ffgenerator.Generate(entry_edit_handle, outstream);
+                ffgenerator.Generate(entry_edit_handle, m_context.GetOstream(".gbf"));
             else
-                ffgenerator.Generate(*submit, *m_context.m_scope, outstream);
+                ffgenerator.Generate(*submit, *m_context.m_scope, m_context.GetOstream(".gbf"));
         }
     }
-}
-
-string CTbl2AsnApp::GenerateOutputFilename(const CTempString& ext) const
-{
-    string dir;
-    string outputfile;
-    string base;
-
-    if (m_context.m_output_filename.empty())
-    {
-        CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, 0);
-
-        outputfile = m_context.m_ResultsDirectory.empty() ? dir : m_context.m_ResultsDirectory;
-    }
-    else
-    {
-        CDirEntry::SplitPath(m_context.m_output_filename, &dir, &base, 0);
-        if (m_context.m_output_filename == "-" || dir == "/dev" ) {
-           CDirEntry::SplitPath(m_context.m_current_file, &dir, &base, 0);
-           outputfile = m_context.m_ResultsDirectory.empty() ? dir : m_context.m_ResultsDirectory;
-        }
-        else {
-          outputfile = dir;
-        }
-    }
-    outputfile += base;
-    outputfile += ext;
-
-    return outputfile;
 }
 
 void CTbl2AsnApp::ProcessOneFile()
 {
-    m_context.m_scope->ResetDataAndHistory();
     if (m_context.m_split_log_files)
         m_context.m_logger->ClearAll();
 
@@ -1031,7 +982,7 @@ void CTbl2AsnApp::ProcessOneFile()
     CFile log_name;
     if (!IsDryRun() && m_context.m_split_log_files)
     {
-        log_name = GenerateOutputFilename(".log");
+        log_name = m_context.GenerateOutputFilename(".log");
         CNcbiOstream* error_log = new CNcbiOfstream(log_name.GetPath().c_str());
         m_logger->SetProgressOstream(error_log);
         SetDiagStream(error_log);
@@ -1039,54 +990,64 @@ void CTbl2AsnApp::ProcessOneFile()
 
     try
     {
-        CRef<CSerialObject> obj;
-        ProcessOneFile(obj);
+        CRef<CSerialObject> input_obj;
 
-        if (!IsDryRun() && obj.NotEmpty())
+        m_context.ReleaseOutputs();
+        CFormatGuess::EFormat format = m_reader->OpenFile(m_context.m_current_file, input_obj);
+        do
         {
-            const CSerialObject* to_write = obj;
-            if (m_context.m_save_bioseq_set)
+            m_context.m_scope->ResetDataAndHistory();
+            CRef<CSerialObject> result;
+            ProcessOneEntry(format, input_obj, result);
+
+            if (!IsDryRun() && result.NotEmpty())
             {
-                if (obj->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
+                const CSerialObject* to_write = result;
+                if (m_context.m_save_bioseq_set)
                 {
-                    const CSeq_entry* se = (const CSeq_entry*)obj.GetPointer();
-                    if (se->IsSet())
-                        to_write = &se->GetSet();
+                    if (result->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
+                    {
+                        const CSeq_entry* se = (const CSeq_entry*)result.GetPointer();
+                        if (se->IsSet())
+                            to_write = &se->GetSet();
+                    }
                 }
-            }
 
-            CFile local_file;
-            CNcbiOstream* output(0);
+                CFile local_file;
+                CNcbiOstream* output(0);
 
-            if (m_context.m_output == 0)
-            {
-                local_file = GenerateOutputFilename(m_context.m_asn1_suffix);
-                output = new CNcbiOfstream(local_file.GetPath().c_str());
-                m_context.m_ecn_numbers_ostream.release();
-            }
-            else
-            {
-                output = m_context.m_output;
-            }
-
-            try
-            {
-                m_reader->WriteObject(*to_write, *output);
-                if (m_context.m_output == 0)
-                    delete output;
-                output = 0;
-            }
-            catch (...)
-            {
-                // if something goes wrong - remove the partial output to avoid confuse
                 if (m_context.m_output == 0)
                 {
-                    local_file.Remove();
-                    delete output;
+                    local_file = m_context.GenerateOutputFilename(m_context.m_asn1_suffix);
+                    output = new CNcbiOfstream(local_file.GetPath().c_str());
                 }
-                throw;
+                else
+                {
+                    output = m_context.m_output;
+                }
+
+                try
+                {
+                    m_reader->WriteObject(*to_write, *output);
+                    if (m_context.m_output == 0)
+                        delete output;
+                    output = 0;
+                }
+                catch (...)
+                {
+                    // if something goes wrong - remove the partial output to avoid confuse
+                    if (m_context.m_output == 0)
+                    {
+                        local_file.Remove();
+                        delete output;
+                    }
+                    throw;
+                }
             }
-        }
+            input_obj = m_reader->ReadNextEntry();
+
+        } while (input_obj.NotEmpty());
+
 
         if (!log_name.GetPath().empty())
         {

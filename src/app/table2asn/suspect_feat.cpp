@@ -60,17 +60,15 @@ CFixSuspectProductName::~CFixSuspectProductName()
 {
 }
 
-void CFixSuspectProductName::SetFilename(const string& filename)
+void CFixSuspectProductName::SetRulesFilename(const string& filename)
 {
     m_rules_filename = filename;
     m_rules.Reset();
 }
 
-void CFixSuspectProductName::SetupOutput(const string& filename)
+void CFixSuspectProductName::SetupOutput(std::function<CNcbiOstream&()> f)
 {
-    m_report_ostream.reset();    
-    if (!(m_fixed_product_report_filename = filename).empty())
-      CFile(m_fixed_product_report_filename).Remove();
+    m_output = f;
 }
 
 CConstRef<CSuspect_rule> CFixSuspectProductName::x_FixSuspectProductName(string& product_name)
@@ -98,17 +96,14 @@ CConstRef<CSuspect_rule> CFixSuspectProductName::x_FixSuspectProductName(string&
 
 void CFixSuspectProductName::ReportFixedProduct(const string& oldproduct, const string& newproduct, const CSeq_loc& loc, const string& locustag)
 {
-    if (m_fixed_product_report_filename.empty())
+    if (!m_output)
         return;
 
-    if (m_report_ostream.get() == 0)
-    {
-       m_report_ostream.reset(new CNcbiOfstream(m_fixed_product_report_filename.c_str()));
-    }
+    auto& report_ostream = m_output();
 
     string label;
     loc.GetLabel(&label);
-    *m_report_ostream << "Changed " << oldproduct << " to " << newproduct << " " << label << " " << locustag << "\n\n";
+    report_ostream << "Changed " << oldproduct << " to " << newproduct << " " << label << " " << locustag << "\n\n";
 }
 
 bool CFixSuspectProductName::FixSuspectProductNames(objects::CSeq_feat& feature)

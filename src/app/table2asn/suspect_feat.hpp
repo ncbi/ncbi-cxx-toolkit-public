@@ -24,8 +24,8 @@ namespace objects
         CFixSuspectProductName();        
         ~CFixSuspectProductName();
 
-        void SetFilename(const string& filename);
-        void SetupOutput(const string& filename);
+        void SetRulesFilename(const string& filename);
+        void SetupOutput(std::function<CNcbiOstream&()> f);
         void FixSuspectProductNames(objects::CSeq_entry& entry, CScope& scope);
         bool FixSuspectProductNames(objects::CSeq_feat& feature);
         CRef<feature::CFeatTree>& SetFeatTree()
@@ -37,8 +37,7 @@ namespace objects
 
     protected:
         CConstRef<CSuspect_rule> x_FixSuspectProductName(string& product_name);
-        string m_fixed_product_report_filename;
-        auto_ptr<CNcbiOfstream> m_report_ostream;
+        std::function<CNcbiOstream&()> m_output;
 
         string m_rules_filename;
         CConstRef<CSuspect_rule_set> m_rules;
