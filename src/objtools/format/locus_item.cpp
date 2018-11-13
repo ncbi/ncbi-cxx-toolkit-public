@@ -420,10 +420,22 @@ void CLocusItem::x_SetTopology(CBioseqContext& ctx)
     const CBioseq_Handle& bsh = ctx.GetHandle();
     
     m_Topology = bsh.GetInst_Topology();
-    // an interval is always linear
-    if ( !ctx.GetLocation().IsWhole() ) {
-        m_Topology = CSeq_inst::eTopology_linear;
+    const CSeq_loc& loc = ctx.GetLocation();
+    if ( loc.IsWhole() ) {
+        return;
     }
+    if ( loc.IsInt()) {
+        if ( m_Topology ==CSeq_inst::eTopology_circular ) {
+            const CSeq_interval& ival = loc.GetInt();
+            if (ival.GetFrom() == 0 && bsh.IsSetInst_Length() && ival.GetTo() == bsh.GetBioseqLength() - 1 ) {
+                if (ival.CanGetStrand() && ival.GetStrand() == eNa_strand_minus) {
+                    return;
+                }
+            }
+        }
+    }
+    // otherwise an interval is always linear
+    m_Topology = CSeq_inst::eTopology_linear;
 }
 
 
