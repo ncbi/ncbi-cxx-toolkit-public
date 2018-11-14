@@ -1166,12 +1166,16 @@ private:
     static void x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst);
 
     static void x_SetDBLink(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetDBLinkField(const string& label, const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetDBLinkFieldVals(const string& label, const list<CTempString>& vals, CSeqdesc& dblink_desc);
     static void x_SetGBblockIds(const TRange& mod_range, CDescrCache& descr_cache);
     static void x_SetGBblockKeywords(const TRange& mod_range, CDescrCache& descr_cache);
     static void x_SetGenomeProjects(const TRange& mod_range, CDescrCache& descr_cache);
     static void x_SetTpaAssembly(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetComment(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetPMID(const TRange& mod_range, CDescrCache& descr_cache);
+
+    static void x_SetDBLinkField(const string& label, const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetDBLinkFieldVals(const string& label, const list<CTempString>& vals, CSeqdesc& dblink_desc);
+
     static void x_SetMolInfoType(const TRange& mod_range, CDescrCache& descr_cache);
     static void x_SetMolInfoTech(const TRange& mod_range, CDescrCache& descr_cache);
     static void x_SetMolInfoCompleteness(const TRange& mod_range, CDescrCache& descr_cache);
@@ -1215,6 +1219,8 @@ bool CModAdder_Impl::x_SetDescriptorMod(const TRange& mod_range, CDescrCache& de
                            {"secondary-accession", x_SetGBblockIds},
                            {"keyword", x_SetGBblockKeywords},
                            {"project", x_SetGenomeProjects},
+                           {"comment", x_SetComment},
+                           {"pmid", x_SetPMID}
                           };
 
             auto it = s_MethodMap.find(mod_name);
@@ -1391,6 +1397,42 @@ void CModAdder_Impl::x_SetGBblockKeywords(const TRange& mod_range, CDescrCache& 
         value_list.splice(value_list.end(), value_sublist);
     }
     descr_cache.SetGBblock().SetGenbank().SetKeywords().assign(value_list.begin(), value_list.end());
+}
+
+
+void CModAdder_Impl::x_SetComment(const TRange& mod_range,
+                                  CDescrCache& descr_cache)
+
+{
+    for (auto it = mod_range.first; it != mod_range.second; ++it)
+    {
+        const auto& comment = it->second.GetValue();
+        descr_cache.SetComment().SetComment(comment);
+    }
+}
+
+
+void CModAdder_Impl::x_SetPMID(const TRange& mod_range,
+                               CDescrCache& descr_cache) 
+{
+    for (auto it = mod_range.first; it != mod_range.second; ++it)
+    {
+        const auto& value = it->second.GetValue();
+        int pmid;
+        try {
+            pmid = NStr::StringToInt(value);
+        }
+        catch(...) {
+            // Post error/Throw exception here
+        } 
+        auto pPub = Ref(new CPub());
+        pPub->SetPmid().Set(pmid);
+        descr_cache.SetPubdesc()
+                   .SetPub()
+                   .SetPub()
+                   .Set()
+                   .push_back(move(pPub));
+    }
 }
 
 
