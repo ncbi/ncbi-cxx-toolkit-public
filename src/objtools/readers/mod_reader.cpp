@@ -1157,13 +1157,18 @@ public:
 
 private:
 
-    static bool x_SetDescriptorMod(const TRange& mod_range, CDescrCache& descr_cache);
-//    static bool x_SetBioSourceMod(const TRange& mod_range, CDescrCache& descr_cache);
 
     static void x_SetStrand(const TRange& mod_range, CSeq_inst& seq_inst);
     static void x_SetMolecule(const TRange& mod_range, CSeq_inst& seq_inst);
     static void x_SetTopology(const TRange& mod_range, CSeq_inst& seq_inst);
     static void x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst);
+
+
+    static bool x_SetDescriptorMod(const TRange& mod_range, CDescrCache& descr_cache);
+    static bool x_SetBioSourceMod(const TRange& mod_range, CDescrCache& descr_cache);
+    static bool x_SetOrgRef(const TRange& mod_range, CDescrCache& descr_cache);
+    static bool x_SetOrgName(const TRange& mod_range, CDescrCache& descr_cache);
+
 
     static void x_SetDBLink(const TRange& mod_range, CDescrCache& descr_cache);
     static void x_SetGBblockIds(const TRange& mod_range, CDescrCache& descr_cache);
@@ -1230,6 +1235,42 @@ bool CModAdder_Impl::x_SetDescriptorMod(const TRange& mod_range, CDescrCache& de
         }
     }
 
+    return false;
+}
+
+bool CModAdder_Impl::x_SetBioSourceMod(const TRange& mod_range, CDescrCache& descr_cache)
+{
+    const auto& name = mod_range.first->first;
+    if (name == "location") {
+        _ASSERT(distance(mod_range.first, mod_range.second)==1);
+        static const auto s_GenomeStringToEnum = s_GetReverseMap(s_GenomeEnumToString);
+        const auto& value = mod_range.first->second.GetValue();
+        const auto& genome_enum = s_GenomeStringToEnum.at(value); // Need proper error handling here
+        descr_cache.SetBioSource().SetSource().SetGenome(genome_enum);
+        return true;
+    }
+
+    if (name == "origin") {
+        _ASSERT(distance(mod_range.first, mod_range.second)==1);
+        static const auto s_OriginStringToEnum = s_GetReverseMap(s_OriginEnumToString);
+        const auto& value = mod_range.first->second.GetValue();
+        const auto& origin_enum = s_OriginStringToEnum.at(value); // Need proper error handling here
+        descr_cache.SetBioSource().SetSource().SetOrigin(origin_enum);
+        return true;
+    }
+
+    return false;
+}
+
+
+bool CModAdder_Impl::x_SetOrgRef(const TRange& mod_range, CDescrCache& descr_cache)
+{
+    return false;
+}
+
+
+bool CModAdder_Impl::x_SetOrgName(const TRange& mod_range, CDescrCache& descr_cache)
+{
     return false;
 }
 
