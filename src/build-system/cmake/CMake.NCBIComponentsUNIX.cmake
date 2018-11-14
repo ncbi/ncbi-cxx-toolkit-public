@@ -374,8 +374,9 @@ if (APPLE)
       HINTS "${NCBI_TOOLS_ROOT}/${_fcgi_version}")
 else ()
     set(_fcgi_root "${NCBI_TOOLS_ROOT}/${_fcgi_version}")
-    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release" AND
-            EXISTS /opt/ncbi/64/${_fcgi_version} )
+    if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release"
+            AND BUILD_SHARED_LIBS 
+            AND EXISTS /opt/ncbi/64/${_fcgi_version} )
         set(_fcgi_root "/opt/ncbi/64/${_fcgi_version}")
     endif()
 
@@ -728,8 +729,9 @@ endif()
 ## libxlsxwriter
 
 set(_xlsxwriter_version "libxlsxwriter-0.6.9")
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release" AND
-        EXISTS /opt/ncbi/64/${_xlsxwriter_version}/lib/)
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release"
+        AND BUILD_SHARED_LIBS 
+        AND EXISTS /opt/ncbi/64/${_xlsxwriter_version}/lib/)
     set(_xlsxwriter_hints "/opt/ncbi/64/${_xlsxwriter_version}")
 else()
     set(_xlsxwriter_hints "${NCBI_TOOLS_ROOT}/${_xlsxwriter_version}")
@@ -757,8 +759,9 @@ endif()
 ## libunwind
 
 set(_unwind_version "libunwind-1.1")
-if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release" AND
-        EXISTS /opt/ncbi/64/${_unwind_version}/lib/)
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release"
+        AND BUILD_SHARED_LIBS 
+        AND EXISTS /opt/ncbi/64/${_unwind_version}/lib/)
     set(_unwind_hints "/opt/ncbi/64/${_unwind_version}")
 else()
     set(_unwind_hints "${NCBI_TOOLS_ROOT}/${_unwind_version}")
