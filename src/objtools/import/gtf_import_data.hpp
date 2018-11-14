@@ -82,20 +82,25 @@ public:
         CNcbiOstream&) override;
 
     const std::string& Source() const { return mSource; };
+
     const std::string& Type() const { return mType; };
+
+    const CSeq_loc& Location() const { return mLocation; };
+
     bool IsSetScore() const { return mpScore; };
     double Score() const { return *mpScore; };
+
     bool IsSetFrame() const { return mpFrame; };
     CCdregion::TFrame Frame() const { return *mpFrame; };
+
     std::string GeneId() const { return mGeneId; };
     std::string TranscriptId() const { return mTranscriptId; };
+
     const ATTRIBUTES& Attributes() const { return mAttributes; };
 
     string 
     AttributeValueOf(
         const std::string&) const;
-
-    const CSeq_loc& Location() const { return mLocation; };
 
     void
     AdjustFeatureType(

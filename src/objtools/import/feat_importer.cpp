@@ -137,6 +137,9 @@ CFeatImporter_impl::ReadSeqAnnot(
             mpAssembler->ProcessRecord(*mpImportData, annot);
         }
         catch(CFeatImportError& err) {
+            if (err.LineNumber() == 0) {
+                err.SetLineNumber(lineReader.GetLineNumber());
+            }
             mErrorHandler.ReportError(err);
             switch(err.Severity()) {
             default:

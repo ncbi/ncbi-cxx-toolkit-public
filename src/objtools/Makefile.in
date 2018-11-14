@@ -8,7 +8,8 @@ REQUIRES = objects
 SUB_PROJ = logging unit_test_util readers blast lds2 data_loaders simple \
            alnmgr cddalignview test manip edit cleanup format validator \
            asniotest align seqmasks_io eutils \
-           align_format snputil uudutil variation writers
+           align_format snputil uudutil variation writers \
+		   import	
 
 EXPENDABLE_SUB_PROJ = pubseq_gateway
 

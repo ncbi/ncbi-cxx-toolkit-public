@@ -1,0 +1,134 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local str "gene_1",
+      data gene {
+      },
+      location int {
+        from 65148,
+        to 73503,
+        strand minus,
+        id local id 140
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "140.000"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "cds_1"
+        }
+      }
+    },
+    {
+      id local str "mrna_1",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 73221,
+          to 73503,
+          strand minus,
+          id local id 140
+        },
+        int {
+          from 71695,
+          to 71806,
+          strand minus,
+          id local id 140
+        },
+        int {
+          from 70206,
+          to 70293,
+          strand minus,
+          id local id 140
+        },
+        int {
+          from 66822,
+          to 66998,
+          strand minus,
+          id local id 140
+        },
+        int {
+          from 65148,
+          to 65486,
+          strand minus,
+          id local id 140
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "140.000"
+        },
+        {
+          qual "transcript_id",
+          val "140.000.1"
+        }
+      },
+      xref {
+        {
+          id local str "cds_1"
+        },
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "cds_1",
+      data cdregion {
+        frame one
+      },
+      location mix {
+        pnt {
+          point 73221,
+          strand minus,
+          id local id 140
+        },
+        int {
+          from 71695,
+          to 71806,
+          strand minus,
+          id local id 140
+        },
+        int {
+          from 70206,
+          to 70293,
+          strand minus,
+          id local id 140
+        },
+        int {
+          from 66992,
+          to 66998,
+          strand minus,
+          id local id 140
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "140.000"
+        },
+        {
+          qual "transcript_id",
+          val "140.000.1"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "gene_1"
+        }
+      }
+    }
+  }
+}

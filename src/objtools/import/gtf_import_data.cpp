@@ -67,6 +67,13 @@ CGtfImportData::CGtfImportData(
     mTranscriptId(rhs.mTranscriptId)
 {
     mLocation.Assign(rhs.mLocation);
+    mAttributes.insert(rhs.mAttributes.begin(), rhs.mAttributes.end());
+    if (rhs.mpFrame) {
+        mpFrame = new CCdregion::TFrame(*rhs.mpFrame);
+    }
+    if (rhs.mpScore) {
+        mpScore = new double(*rhs.mpScore);
+    }
 }
 
 //  ============================================================================
@@ -151,16 +158,19 @@ CGtfImportData::xInitializeAttributes(
         CFeatImportError::ERROR, "Feature misses mandatory transcript_id");
 
     mAttributes.clear();
+    bool foundGeneId(false), foundTranscriptId(false);
     for (auto keyValuePair: attributes) {
         auto key = keyValuePair.first;
         auto value = keyValuePair.second;
 
         if (key == "gene_id") {
             mGeneId = value;
+            foundGeneId = true;
             continue;
         }
         if (key == "transcript_id") {
             mTranscriptId = value;
+            foundTranscriptId = true;
             continue;
         }
         auto appendTo = mAttributes.find(key);
@@ -171,10 +181,10 @@ CGtfImportData::xInitializeAttributes(
         appendTo->second.push_back(value);
     }
 
-    if (mGeneId.empty()) {
+    if (!foundGeneId) {
         throw errorMissingGeneId;
     }
-    if (mType != "gene"  && mTranscriptId.empty()) {
+    if (mType != "gene"  &&  !foundTranscriptId) {
         throw errorMissingTranscriptId;
     }
 }

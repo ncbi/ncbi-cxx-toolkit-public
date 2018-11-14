@@ -226,7 +226,10 @@ CGtfLineReader::xInitializeType(
         CFeatImportError::ERROR, "Illegal feature type", LineCount());
 
     static const vector<string> validTypes = {
-        "cds", "exon", "gene", "initial", "internal", "intron", "mrna", 
+        "5utr", "3utr",
+        "cds", "exon", "gene", "initial", "inter", "inter_cns", "internal", 
+        "intron", "intron_cns",
+        "mrna", 
         "start_codon", "stop_codon",
     };
 
@@ -239,6 +242,7 @@ CGtfLineReader::xInitializeType(
 
     if (find(validTypes.begin(), validTypes.end(), normalized) ==
             validTypes.end()) {
+        errorIllegalFeatureType.AmendMessage(normalized);
         throw errorIllegalFeatureType;
     }
     featType = normalized;

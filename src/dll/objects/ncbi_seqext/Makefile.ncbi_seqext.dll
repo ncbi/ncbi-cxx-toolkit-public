@@ -8,6 +8,7 @@ HOSTED_LIBS    = xalnmgr   \
                  xobjread  \
                  xobjreadex\
                  xobjwrite \
+                 xobjimport \
                  xobjutil  \
                  xobjmanip \
                  xformat   \

@@ -163,6 +163,8 @@ public:
         const CGtfImportData& record)
     {
         map<string, string> typeMap = {
+            {"5utr", "mrna"},
+            {"3utr", "mrna"},
             {"exon", "mrna"},
             {"initial", "mrna"},
             {"internal", "mrna"},
@@ -209,7 +211,7 @@ CGtfAnnotAssembler::ProcessRecord(
         CFeatImportError::ERROR, "Unknown GTF feature type");
 
     vector<string> ignoredFeatureTypes = {
-        "intron",
+        "inter", "inter_cns", "intron", "intron_cns",
     };
     if (find(ignoredFeatureTypes.begin(), ignoredFeatureTypes.end(), 
             record.Type()) != ignoredFeatureTypes.end()) {
@@ -218,6 +220,8 @@ CGtfAnnotAssembler::ProcessRecord(
  
     typedef void (CGtfAnnotAssembler::*HANDLER)(const CGtfImportData&, CSeq_annot&);
     static map<string, HANDLER> handlerMap = {
+        {"5utr", &CGtfAnnotAssembler::xProcessRecordMrna},
+        {"3utr", &CGtfAnnotAssembler::xProcessRecordMrna},
         {"gene", &CGtfAnnotAssembler::xProcessRecordGene},
         {"mrna", &CGtfAnnotAssembler::xProcessRecordMrna},
         {"exon", &CGtfAnnotAssembler::xProcessRecordMrna},
@@ -230,6 +234,7 @@ CGtfAnnotAssembler::ProcessRecord(
     };
     auto handlerIt = handlerMap.find(record.Type());
     if (handlerIt == handlerMap.end()) {
+        errorUnknownFeatureType.AmendMessage(record.Type());
         throw errorUnknownFeatureType;
     }
     (this->*(handlerIt->second))(record, annot);
@@ -253,11 +258,19 @@ CGtfAnnotAssembler::xProcessRecordMrna(
     CSeq_annot& annot)
     //  ============================================================================
 {
-    CRef<CSeq_feat> pGene = mpFeatureMap->FindGeneParent(record);
-    pGene ? xUpdateGene(record, pGene, annot) : xCreateGene(record, pGene, annot);
+    CGtfImportData impliedRecord(record);
+    if (impliedRecord.Type() != "mrna") {
+        impliedRecord.AdjustFeatureType("exon");
+    }
+    CRef<CSeq_feat> pGene = mpFeatureMap->FindGeneParent(impliedRecord);
+    pGene ? 
+        xUpdateGene(impliedRecord, pGene, annot) : 
+        xCreateGene(impliedRecord, pGene, annot);
 
-    CRef<CSeq_feat> pRna = mpFeatureMap->FindFeature(record);
-    pRna ? xUpdateMrna(record, pRna, annot) : xCreateMrna(record, pRna, annot);
+    CRef<CSeq_feat> pRna = mpFeatureMap->FindFeature(impliedRecord);
+    pRna ? 
+        xUpdateMrna(impliedRecord, pRna, annot) : 
+        xCreateMrna(impliedRecord, pRna, annot);
 }
 
 //  ============================================================================
@@ -267,14 +280,24 @@ CGtfAnnotAssembler::xProcessRecordCds(
     CSeq_annot& annot)
 //  ============================================================================
 {
-    CRef<CSeq_feat> pGene = mpFeatureMap->FindGeneParent(record);
-    pGene ? xUpdateGene(record, pGene, annot) : xCreateGene(record, pGene, annot);
+    CGtfImportData impliedRecord(record);
 
-    CRef<CSeq_feat> pRna = mpFeatureMap->FindMrnaParent(record);
-    pRna ? xUpdateMrna(record, pRna, annot) : xCreateMrna(record, pRna, annot);
+    CRef<CSeq_feat> pGene = mpFeatureMap->FindGeneParent(impliedRecord);
+    pGene ? 
+        xUpdateGene(impliedRecord, pGene, annot) : 
+        xCreateGene(impliedRecord, pGene, annot);
 
-    CRef<CSeq_feat> pCds = mpFeatureMap->FindFeature(record);
-    pCds ? xUpdateCds(record, pCds, annot) : xCreateCds(record, pCds, annot);
+    impliedRecord.AdjustFeatureType("exon");
+    CRef<CSeq_feat> pRna = mpFeatureMap->FindMrnaParent(impliedRecord);
+    pRna ? 
+        xUpdateMrna(impliedRecord, pRna, annot) : 
+        xCreateMrna(impliedRecord, pRna, annot);
+
+    impliedRecord.AdjustFeatureType("cds");
+    CRef<CSeq_feat> pCds = mpFeatureMap->FindFeature(impliedRecord);
+    pCds ? 
+        xUpdateCds(impliedRecord, pCds, annot) : 
+        xCreateCds(impliedRecord, pCds, annot);
 }
 
 //  ============================================================================
@@ -331,11 +354,8 @@ CGtfAnnotAssembler::xCreateMrna(
     xFeatureSetMrna(record, pRna);
     xFeatureSetLocation(record, pRna);
     xFeatureSetQualifiers(record, pRna);
-
-    CGtfImportData impliedRecord(record);
-    impliedRecord.AdjustFeatureType("exon");
-    xFeatureSetFeatId(impliedRecord, pRna);
-    xAnnotAddFeature(impliedRecord, pRna, annot);
+    xFeatureSetFeatId(record, pRna);
+    xAnnotAddFeature(record, pRna, annot);
 }
 
 //  ============================================================================

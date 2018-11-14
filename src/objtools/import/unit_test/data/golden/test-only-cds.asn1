@@ -1,0 +1,117 @@
+Seq-annot ::= {
+  data ftable {
+    {
+      id local str "gene_1",
+      data gene {
+      },
+      location int {
+        from 379,
+        to 709,
+        strand plus,
+        id local id 381
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "001"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "cds_1"
+        }
+      }
+    },
+    {
+      id local str "mrna_1",
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 379,
+          to 400,
+          strand plus,
+          id local id 381
+        },
+        int {
+          from 500,
+          to 649,
+          strand plus,
+          id local id 381
+        },
+        int {
+          from 699,
+          to 709,
+          strand plus,
+          id local id 381
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "001"
+        },
+        {
+          qual "transcript_id",
+          val "001.1"
+        }
+      },
+      xref {
+        {
+          id local str "cds_1"
+        },
+        {
+          id local str "gene_1"
+        }
+      }
+    },
+    {
+      id local str "cds_1",
+      data cdregion {
+        frame one
+      },
+      location mix {
+        int {
+          from 379,
+          to 400,
+          strand plus,
+          id local id 381
+        },
+        int {
+          from 500,
+          to 649,
+          strand plus,
+          id local id 381
+        },
+        int {
+          from 699,
+          to 709,
+          strand plus,
+          id local id 381
+        }
+      },
+      qual {
+        {
+          qual "gene_id",
+          val "001"
+        },
+        {
+          qual "transcript_id",
+          val "001.1"
+        }
+      },
+      xref {
+        {
+          id local str "mrna_1"
+        },
+        {
+          id local str "gene_1"
+        }
+      }
+    }
+  }
+}

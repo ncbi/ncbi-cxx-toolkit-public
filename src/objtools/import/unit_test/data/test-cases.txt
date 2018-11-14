@@ -5,6 +5,9 @@ rw-451 gtf
 gene-mrna-exon-cds gtf
 exon-cds gtf
 uud-3s gtf
+test-only-cds gtf
+test-classified-exons gtf
+test-unclassified-exons gtf
 
 # GFF3
 test-basic gff3
