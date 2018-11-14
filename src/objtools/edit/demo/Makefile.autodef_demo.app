@@ -3,7 +3,7 @@
 APP = autodef_demo
 SRC = autodef_demo
 
-LIB = $(OBJEDIT_LIBS) $(XFORMAT_LIBS) xalnmgr tables xobjutil \
+LIB = $(OBJEDIT_LIBS) xalnmgr tables xobjutil \
       xconnect xregexp $(PCRE_LIB) $(SOBJMGR_LIBS)
 
 
