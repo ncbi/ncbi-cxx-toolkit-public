@@ -156,6 +156,18 @@ private:
     
     void x_TranslatePigsFromUserList(CSeqDBGiList & gilist);
 
+    void x_ResolveNegativeList(CSeqDBAtlas            & atlas,
+                               const CSeqDBVolSet     & volset,
+                               CRef<CSeqDBNegativeList> neg_list,
+                               CSeqDBLockHold         & locked,
+                               const CSeqDBLMDBSet & lmdb_set);
+
+    void x_ResolvePositiveList(CSeqDBAtlas            & atlas,
+                               const CSeqDBVolSet     & volset,
+                               CRef<CSeqDBGiList>       user_list,
+                               CSeqDBLockHold         & locked,
+                               const CSeqDBLMDBSet & lmdb_set);
+
     /// Memory management layer object.
     CSeqDBAtlas & m_Atlas;
     

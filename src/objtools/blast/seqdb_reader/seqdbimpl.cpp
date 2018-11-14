@@ -88,7 +88,6 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
         m_GiMask.Reset(new CSeqDBGiMask(m_Atlas, mask_list));
     }
 
-    _ASSERT((! gi_list) || (! neg_list));
 
     m_VolSet.OptimizeGiLists();
 

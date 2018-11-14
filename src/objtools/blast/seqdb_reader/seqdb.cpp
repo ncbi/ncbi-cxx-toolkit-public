@@ -195,6 +195,57 @@ CSeqDB::CSeqDB(const string       & dbname,
     ////m_Impl->Verify();
 }
 
+CSeqDB::CSeqDB(const string & dbname,
+               ESeqType       seqtype,
+               CSeqDBGiList * gi_list,
+               CSeqDBNegativeList * nlist)
+{
+    if (dbname.size() == 0) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Database name is required.");
+    }
+
+    char seq_type = s_GetSeqTypeChar(seqtype);
+
+    m_Impl = s_SeqDBInit(dbname,
+                         seq_type,
+                         0,
+                         0,
+                         true,
+                         gi_list,
+                         nlist);
+
+    ////m_Impl->Verify();
+}
+
+CSeqDB::CSeqDB(const string & dbname,
+               ESeqType       seqtype,
+               int            oid_begin,
+               int            oid_end,
+               CSeqDBGiList * gi_list,
+               CSeqDBNegativeList * nlist)
+{
+    if (dbname.size() == 0) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Database name is required.");
+    }
+
+    char seq_type = s_GetSeqTypeChar(seqtype);
+
+    m_Impl = s_SeqDBInit(dbname,
+                         seq_type,
+                         oid_begin,
+                         oid_end,
+                         true,
+                         gi_list,
+                         nlist);
+
+    ////m_Impl->Verify();
+}
+
+
 void CSeqDB::AccessionsToOids(const vector<string>& accs, vector<blastdb::TOid>& oids) const
 {
      m_Impl->AccessionsToOids(accs, oids);

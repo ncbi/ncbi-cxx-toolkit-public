@@ -511,6 +511,14 @@ public:
     	tids.insert(tax_ids.begin(), tax_ids.end());
     }
 
+    void SetPigList(const vector<TPig> & list)
+    {
+    	ITERATE(vector<TPig>, itr, list) {
+    		m_PigsOids.push_back(*itr);
+    	}
+
+    }
+
     void AddPig(TPig pig)
     {
         m_PigsOids.push_back(pig);

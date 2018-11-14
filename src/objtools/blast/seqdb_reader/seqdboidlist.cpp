@@ -107,7 +107,8 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet       & volset,
 
     if (gi_list.NotEmpty()) {
         x_ApplyUserGiList(*gi_list);
-    } else if (neg_list.NotEmpty()) {
+    }
+    if (neg_list.NotEmpty()) {
         x_ApplyNegativeList(*neg_list, lmdb_set.IsBlastDBVersion5());
     }
     
@@ -283,51 +284,59 @@ void CSeqDBOIDList::x_ApplyUserGiList(CSeqDBGiList   & gis)
     // included OID, and then scan the vector sequentially.  This
     // technique also uniqifies the set, which is desireable here.
     
-    CRef<CSeqDB_BitSet> gilist_oids(new CSeqDB_BitSet(0, m_NumOIDs));
     
     int j = 0;
     
-    for(j = 0; j < gis.GetNumGis(); j++) {
-        int oid = gis.GetGiOid(j).oid;
-        
-        if ((oid != -1) && (oid < m_NumOIDs)) {
-            gilist_oids->SetBit(oid);
+    if (gis.GetNumGis() || gis.GetNumSis() || gis.GetNumTis() || gis.GetNumPigs()){
+    CRef<CSeqDB_BitSet> gilist_oids(new CSeqDB_BitSet(0, m_NumOIDs));
+    if (gis.GetNumGis()) {
+        for(j = 0; j < gis.GetNumGis(); j++) {
+            int oid = gis.GetGiOid(j).oid;
+            if ((oid != -1) && (oid < m_NumOIDs)) {
+                gilist_oids->SetBit(oid);
+            }
         }
     }
     
-    for(j = 0; j < gis.GetNumSis(); j++) {
-        int oid = gis.GetSiOid(j).oid;
-        
-        if ((oid != -1) && (oid < m_NumOIDs)) {
-            gilist_oids->SetBit(oid);
+    if(gis.GetNumSis()) {
+        for(j = 0; j < gis.GetNumSis(); j++) {
+            int oid = gis.GetSiOid(j).oid;
+            if ((oid != -1) && (oid < m_NumOIDs)) {
+                gilist_oids->SetBit(oid);
+            }
         }
     }
     
-    for(j = 0; j < gis.GetNumTis(); j++) {
-        int oid = gis.GetTiOid(j).oid;
-        
-        if ((oid != -1) && (oid < m_NumOIDs)) {
-            gilist_oids->SetBit(oid);
+    if(gis.GetNumTis()) {
+        for(j = 0; j < gis.GetNumTis(); j++) {
+            int oid = gis.GetTiOid(j).oid;
+            if ((oid != -1) && (oid < m_NumOIDs)) {
+                gilist_oids->SetBit(oid);
+            }
         }
     }
     
-    for(j = 0; j < gis.GetNumPigs(); j++) {
-        int oid = gis.GetPigOid(j).oid;
-
-        if ((oid != -1) && (oid < m_NumOIDs)) {
-            gilist_oids->SetBit(oid);
+    if(gis.GetNumPigs()) {
+        for(j = 0; j < gis.GetNumPigs(); j++) {
+            int oid = gis.GetPigOid(j).oid;
+            if ((oid != -1) && (oid < m_NumOIDs)) {
+                gilist_oids->SetBit(oid);
+            }
         }
     }
-
-    const vector<blastdb::TOid> & oids_tax = gis.GetOidsForTaxIdsList();
-    for(unsigned int k = 0; k < oids_tax.size(); k++) {
-        if (oids_tax[k] < m_NumOIDs) {
-            gilist_oids->SetBit(oids_tax[k]);
-        }
-    }
-    // Intersect the user GI list with the OID bit map.
-    
     m_AllBits->IntersectWith(*gilist_oids, true);
+    }
+    const vector<blastdb::TOid> & oids_tax = gis.GetOidsForTaxIdsList();
+    if(oids_tax.size()) {
+        CRef<CSeqDB_BitSet> taxlist_oids(new CSeqDB_BitSet(0, m_NumOIDs));
+        for(unsigned int k = 0; k < oids_tax.size(); k++) {
+            if (oids_tax[k] < m_NumOIDs) {
+                taxlist_oids->SetBit(oids_tax[k]);
+            }
+        }
+        m_AllBits->IntersectWith(*taxlist_oids, true);
+    }
+    
 }
 
 void CSeqDBOIDList::x_ApplyNegativeList(CSeqDBNegativeList & nlist, bool is_v5)

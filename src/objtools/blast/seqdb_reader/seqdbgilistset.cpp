@@ -164,19 +164,13 @@ void s_VerifySeqidlist(const SBlastSeqIdListInfo & list_info, const CSeqDBVolSet
 	 return;
 }
 
-
-CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas            & atlas,
-                                 const CSeqDBVolSet     & volset,
-                                 CRef<CSeqDBGiList>       user_list,
-                                 CRef<CSeqDBNegativeList> neg_list,
-                                 CSeqDBLockHold         & locked,
-                                 const CSeqDBLMDBSet & lmdb_set)
-    : m_Atlas        (atlas),
-      m_UserList     (user_list),
-      m_NegativeList (neg_list)
+void
+CSeqDBGiListSet::x_ResolvePositiveList(CSeqDBAtlas            & atlas,
+                                       const CSeqDBVolSet     & volset,
+                                       CRef<CSeqDBGiList>       user_list,
+                                       CSeqDBLockHold         & locked,
+                                       const CSeqDBLMDBSet & lmdb_set)
 {
-    _ASSERT(user_list.Empty() || neg_list.Empty());
-
     if (m_UserList.NotEmpty() && m_UserList->NotEmpty()) {
     	if(user_list->GetNumSis() > 0) {
     		s_VerifySeqidlist(user_list->GetListInfo(), volset, lmdb_set);
@@ -242,7 +236,18 @@ CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas            & atlas,
 
             vol->Vol()->IdsToOids(*m_UserList, locked);
         }
-    } else if (m_NegativeList.NotEmpty() && m_NegativeList->NotEmpty()) {
+    }
+}
+
+
+void
+CSeqDBGiListSet::x_ResolveNegativeList(CSeqDBAtlas            & atlas,
+                                       const CSeqDBVolSet     & volset,
+                                       CRef<CSeqDBNegativeList> neg_list,
+                                       CSeqDBLockHold         & locked,
+                                       const CSeqDBLMDBSet & lmdb_set)
+{
+    if (m_NegativeList.NotEmpty() && m_NegativeList->NotEmpty()) {
         // We don't bother to sort these since every ISAM mapping must
         // be examined for the negative ID list case.
     	if(m_NegativeList->GetNumSis() > 0) {
@@ -304,6 +309,20 @@ CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas            & atlas,
             vol->Vol()->IdsToOids(*m_NegativeList, locked);
         }
     }
+}
+
+CSeqDBGiListSet::CSeqDBGiListSet(CSeqDBAtlas            & atlas,
+                                 const CSeqDBVolSet     & volset,
+                                 CRef<CSeqDBGiList>       user_list,
+                                 CRef<CSeqDBNegativeList> neg_list,
+                                 CSeqDBLockHold         & locked,
+                                 const CSeqDBLMDBSet & lmdb_set)
+    : m_Atlas        (atlas),
+      m_UserList     (user_list),
+      m_NegativeList (neg_list)
+{
+	x_ResolvePositiveList(atlas, volset, user_list, locked, lmdb_set);
+	x_ResolveNegativeList(atlas, volset, neg_list, locked, lmdb_set);
 }
 
 CRef<CSeqDBGiList>

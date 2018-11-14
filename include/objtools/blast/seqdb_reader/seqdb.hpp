@@ -345,6 +345,44 @@ public:
            ESeqType             seqtype,
            CSeqDBNegativeList * nlist);
 
+    /// Short Constructor with Positive and Negative ID list.
+    ///
+    /// This version of the constructor assumes the entire OID range
+    /// will be included, and applies filtering by a negative ID list.
+    /// Please use quotes ("") around database names that contains
+    /// space characters.
+    ///
+    /// @param dbname
+    ///   A list of database or alias names, seperated by spaces
+    /// @param seqtype
+    ///   Specify eProtein, eNucleotide, or eUnknown.
+    /// @param nlist
+    ///   The database will be filtered to not include these GIs or TIs.
+    CSeqDB(const string       & dbname,
+           ESeqType             seqtype,
+           CSeqDBGiList *       gilist,
+           CSeqDBNegativeList * nlist);
+
+    /// Short Constructor with Positive and Negative ID list with oid range.
+    ///
+    /// This version of the constructor assumes the entire OID range
+    /// will be included, and applies filtering by a negative ID list.
+    /// Please use quotes ("") around database names that contains
+    /// space characters.
+    ///
+    /// @param dbname
+    ///   A list of database or alias names, seperated by spaces
+    /// @param seqtype
+    ///   Specify eProtein, eNucleotide, or eUnknown.
+    /// @param nlist
+    ///   The database will be filtered to not include these GIs or TIs.
+    CSeqDB(const string       & dbname,
+           ESeqType             seqtype,
+           int                  oid_begin,
+           int                  oid_end,
+           CSeqDBGiList *       gilist,
+           CSeqDBNegativeList * nlist);
+
     /// Short Constructor with Computed ID list.
     ///
     /// This version of the constructor takes a computed CSeqDBIdSet
