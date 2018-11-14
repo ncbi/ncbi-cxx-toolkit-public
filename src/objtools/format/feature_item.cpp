@@ -5783,22 +5783,16 @@ static string s_GetSpecimenVoucherText(
     if( voucher_info_ref ) {
         CNcbiOstrstream text;
 
-        const string &inst_full_name =  COrgMod::GetInstitutionFullName( inst );
-        if( ! inst_full_name.empty() ) {
-            text << "<acronym title=\""
-                 << NStr::Replace(inst_full_name, "\"", "&quot;")
-                 << "\" class=\"voucher\">"
-                 << inst << "</acronym>"
-                 << ":"
-                 << "<a href=\"" << *voucher_info_ref->m_Links;
-        } else {
-            text << "<acronym title=\""
-                 << NStr::Replace(voucher_info_ref->m_InstFullName, "\"", "&quot;")
-                 << "\" class=\"voucher\">"
-                 << inst << "</acronym>"
-                 << ":"
-                 << "<a href=\"" << *voucher_info_ref->m_Links;
+        string inst_full_name =   COrgMod::GetInstitutionFullName( inst );
+        if (inst_full_name.empty()) {
+            inst_full_name = voucher_info_ref->m_InstFullName;
         }
+        text << "<acronym title=\""
+             << NStr::Replace(inst_full_name, "\"", "&quot;")
+             << "\" class=\"voucher\">"
+             << inst << "</acronym>"
+             << ":"
+             << "<a href=\"" << *voucher_info_ref->m_Links;
 
         if( voucher_info_ref->m_PrependInstitute) {
             text << inst;
