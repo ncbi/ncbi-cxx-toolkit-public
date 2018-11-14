@@ -839,22 +839,103 @@ private:
                               function<bool(const CSeqdesc&)> f_verify,
                               function<CRef<CSeqdesc>(void)> f_create);
 
-    CSeqdesc& x_ResetDescriptor(const EChoice eChoice, 
-                                function<bool(const CSeqdesc&)> f_verify,
-                                function<CRef<CSeqdesc>(void)> f_create);
-
     TSubtype* m_pSubtype = nullptr;
     TOrgMods* m_pOrgMods = nullptr;
     bool m_FirstComment = true;
-    bool m_FirstPubdesc  = true;
-    
-
+    bool m_FirstPubdesc = true;
     using TMap = unordered_map<EChoice, CRef<CSeqdesc>, hash<underlying_type<EChoice>::type>>;
     TMap m_Cache;
 
     SDescrContainer& m_DescrContainer;
 };
 
+
+class CGeneRefCache 
+{
+public:
+    CGeneRefCache(CBioseq& bioseq);
+    CSeq_feat& SetSeq_feat(void);
+private:
+    CBioseq& m_Bioseq;
+    CRef<CSeq_feat> m_pFeature;
+};
+
+
+CGeneRefCache::CGeneRefCache(CBioseq& bioseq) : m_Bioseq(bioseq) {}
+
+
+CSeq_feat& CGeneRefCache::SetSeq_feat()
+{
+    if (m_pFeature) {
+        return *m_pFeature;
+    }
+
+    if (m_Bioseq.IsSetAnnot()) {
+        for (auto& pAnnot : m_Bioseq.SetAnnot()) {
+            if (pAnnot && pAnnot->IsFtable()) {
+                for (auto pSeqfeat : pAnnot->SetData().SetFtable()) {
+                    if (pSeqfeat &&
+                        pSeqfeat->IsSetData() &&
+                        pSeqfeat->GetData().IsGene()) {
+                        m_pFeature = pSeqfeat;
+                        return *m_pFeature;
+                    }
+                }
+            }
+        }
+    }
+
+    m_pFeature = CRef<CSeq_feat>(new CSeq_feat());
+    m_pFeature->SetData().SetGene();
+    auto pAnnot = CRef<CSeq_annot>(new CSeq_annot());
+    pAnnot->SetData().SetFtable().push_back(m_pFeature);
+    m_Bioseq.SetAnnot().push_back(pAnnot);
+    return *m_pFeature;
+}
+
+
+class CProteinRefCache 
+{
+public:
+    CProteinRefCache(CBioseq& bioseq);
+    CSeq_feat& SetSeq_feat(void);
+private:
+    CBioseq& m_Bioseq;
+    CRef<CSeq_feat> m_pFeature;
+};
+
+
+CProteinRefCache::CProteinRefCache(CBioseq& bioseq) : m_Bioseq(bioseq) {}
+
+
+CSeq_feat& CProteinRefCache::SetSeq_feat()
+{
+    if (m_pFeature) {
+        return *m_pFeature;
+    }
+
+    if (m_Bioseq.IsSetAnnot()) {
+        for (auto& pAnnot : m_Bioseq.SetAnnot()) {
+            if (pAnnot && pAnnot->IsFtable()) {
+                for (auto pSeqfeat : pAnnot->SetData().SetFtable()) {
+                    if (pSeqfeat &&
+                        pSeqfeat->IsSetData() &&
+                        pSeqfeat->GetData().IsProt()) {
+                        m_pFeature = pSeqfeat;
+                        return *m_pFeature;
+                    }
+                }
+            }
+        }
+    }
+
+    m_pFeature = CRef<CSeq_feat>(new CSeq_feat());
+    m_pFeature->SetData().SetProt();
+    auto pAnnot = CRef<CSeq_annot>(new CSeq_annot());
+    pAnnot->SetData().SetFtable().push_back(m_pFeature);
+    m_Bioseq.SetAnnot().push_back(pAnnot);
+    return *m_pFeature;
+}
 
 template<class TObject>
 class CDescrContainer : public CDescrCache::SDescrContainer 
@@ -1061,26 +1142,6 @@ CSeqdesc& CDescrCache::x_SetDescriptor(const EChoice eChoice,
 }
 
 
-CSeqdesc& CDescrCache::x_ResetDescriptor(const EChoice eChoice,
-                                              function<bool(const CSeqdesc&)> f_verify,
-                                              function<CRef<CSeqdesc>(void)> f_create)
-{
-    auto it = m_Cache.find(eChoice);
-    if (it != m_Cache.end()) {
-        return *(it->second);
-    }
-
-    if (m_DescrContainer.IsSet()) {
-        m_DescrContainer.SetDescr().Set().remove_if([&](CRef<CSeqdesc> pDesc) {return f_verify(*pDesc);});
-    }
-
-    auto pDesc = f_create();
-    m_Cache.insert(make_pair(eChoice, pDesc));
-    m_DescrContainer.SetDescr().Set().push_back(pDesc);
-    return *pDesc;
-}
-
-
 class CModAdder_Impl 
 {
 public:
@@ -1089,37 +1150,82 @@ public:
 
     static void Apply(const TMods& mods, CBioseq& bioseq) {
         const auto& ranges = SRangeGetter<TMods>::GetEqualRanges(mods);
-        for (const auto& range : ranges) {
-            x_Apply(range, bioseq);
+        for (const auto& mod_range : ranges) {
+
         }
     }
 
 private:
-    static void x_Apply(const TRange& equal_range, CBioseq& bioseq) 
-    {
+
+    static bool x_SetDescriptorMod(const TRange& mod_range, CDescrCache& descr_cache);
+//    static bool x_SetBioSourceMod(const TRange& mod_range, CDescrCache& descr_cache);
+
+    static void x_SetStrand(const TRange& mod_range, CSeq_inst& seq_inst);
+    static void x_SetMolecule(const TRange& mod_range, CSeq_inst& seq_inst);
+    static void x_SetTopology(const TRange& mod_range, CSeq_inst& seq_inst);
+    static void x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst);
+
+    static void x_SetDBLink(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetDBLinkField(const string& label, const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetDBLinkFieldVals(const string& label, const list<CTempString>& vals, CSeqdesc& dblink_desc);
+    static void x_SetGBblockIds(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetGBblockKeywords(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetGenomeProjects(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetTpaAssembly(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetMolInfoType(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetMolInfoTech(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetMolInfoCompleteness(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetSubtype(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetOrgMod(const TRange& mod_range, CDescrCache& descr_cache);
+
+    static void x_ReportError(void){} // Need to fill this in
+    static void x_ReportBadValue(const string& mod_name, const string& mod_value) {}
+};
+
+
+
+bool CModAdder_Impl::x_SetDescriptorMod(const TRange& mod_range, CDescrCache& descr_cache)
+{
+     
+    const auto& mod_name = mod_range.first->first;
+    
+    { // check to see if this is a subsource mod
+         auto it = s_SubSourceStringToEnum.find(mod_name);
+         if (it != s_SubSourceStringToEnum.end()) {
+            x_SetSubtype(mod_range, descr_cache);
+            return true;
+         }
+    }
+
+    { // check for orgmod
+        auto it = s_OrgModStringToEnum.find(mod_name);
+        if (it != s_OrgModStringToEnum.end()) {
+            x_SetOrgMod(mod_range, descr_cache);
+            return true;
+        }
     }
 
 
-    static void x_SetStrand(const TRange& equal_range, CBioseq& bioseq);
-    static void x_SetMolecule(const TRange& equal_range, CBioseq& bioseq);
-    static void x_SetTopology(const TRange& equal_range, CBioseq& bioseq);
-    static void x_SetSecondaryIds(const TRange& equal_range, CBioseq& bioseq);
-    static void x_SetOrgMods(const TRange& equal_range, CBioseq& bioseq);
-    void x_SetDBLinkField(const string& label, const TRange& mod_range, CDescrCache& descr_cache);
-    void x_SetDBLinkFieldVals(const string& label, const list<CTempString>& vals, CSeqdesc& dblink_desc);
-    void x_SetGBblockIds(const TRange& mod_range, CDescrCache& descr_cache);
-    void x_SetGBblockKeywords(const TRange& mod_range, CDescrCache& descr_cache);
-    void x_SetGenomeProjects(const TRange& mod_range, CDescrCache& descr_cache);
-    void x_SetTpaAssembly(const TRange& mod_range, CDescrCache& descr_cache);
-    void x_SetMolInfoType(const TRange& mod_range, CDescrCache& descr_cache);
-    void x_SetMolInfoTech(const TRange& mod_range, CDescrCache& descr_cache);
-    void x_SetMolInfoCompleteness(const TRange& mod_range, CDescrCache& descr_cache);
-    void x_SetSubtype(const TRange& mod_range, CDescrCache& descr_cache);
-    void x_SetOrgMod(const TRange& mod_range, CDescrCache& descr_cache);
+    {
+        static const unordered_map<string,function<void(const TRange&, CDescrCache&)>>
+            s_MethodMap = {{"sra", x_SetDBLink},
+                           {"bioproject", x_SetDBLink},
+                           {"biosample", x_SetDBLink},
+                           {"primary-accession", x_SetTpaAssembly},
+                           {"secondary-accession", x_SetGBblockIds},
+                           {"keyword", x_SetGBblockKeywords},
+                           {"project", x_SetGenomeProjects},
+                          };
 
-    void x_ReportError(void){} // Need to fill this in
-    void x_ReportBadValue(const string& mod_name, const string& mod_value) {}
-};
+            auto it = s_MethodMap.find(mod_name);
+            if (it != s_MethodMap.end()) {
+                it->second(mod_range, descr_cache);
+                return true;
+        }
+    }
+
+    return false;
+}
 
 
 void CModAdder_Impl::x_SetSubtype(const TRange& mod_range, CDescrCache& descr_cache)
@@ -1288,6 +1394,21 @@ void CModAdder_Impl::x_SetGBblockKeywords(const TRange& mod_range, CDescrCache& 
 }
 
 
+void CModAdder_Impl::x_SetDBLink(const TRange& mod_range, 
+                                 CDescrCache& descr_cache) 
+{
+    const auto& name = mod_range.first->first;
+    static const unordered_map<string, string> s_NameToLabel =
+    {{"sra", "Sequence Read Archive"},
+     {"biosample", "BioSample"},
+     {"bioproject", "BioProject"}};
+
+    const auto& label = s_NameToLabel.at(name);
+    x_SetDBLinkField(label, mod_range, descr_cache);
+}
+
+
+
 void CModAdder_Impl::x_SetDBLinkField(const string& label,
                                       const TRange& mod_range,
                                       CDescrCache& descr_cache)
@@ -1334,35 +1455,30 @@ void CModAdder_Impl::x_SetDBLinkFieldVals(const string& label,
 }
 
 
-
-void CModAdder_Impl::x_SetStrand(const TRange& equal_range, CBioseq& bioseq)
+void CModAdder_Impl::x_SetStrand(const TRange& mod_range, CSeq_inst& seq_inst)
 {
-    auto strand = s_StrandStringToEnum.at(equal_range.first->second.GetValue());
-    bioseq.SetInst().SetStrand(strand);
+    auto strand = s_StrandStringToEnum.at(mod_range.first->second.GetValue());
+    seq_inst.SetStrand(strand);
 }
 
 
-void CModAdder_Impl::x_SetMolecule(const TRange& equal_range, CBioseq& bioseq)
+void CModAdder_Impl::x_SetMolecule(const TRange& mod_range, CSeq_inst& seq_inst)
 {
-    auto mol = s_MolStringToEnum.at(equal_range.first->second.GetValue());
-    bioseq.SetInst().SetMol(mol);
+    auto mol = s_MolStringToEnum.at(mod_range.first->second.GetValue());
+    seq_inst.SetMol(mol);
 }
 
 
-void CModAdder_Impl::x_SetTopology(const TRange& equal_range, CBioseq& bioseq)
+void CModAdder_Impl::x_SetTopology(const TRange& mod_range, CSeq_inst& seq_inst)
 {
-    auto topology = s_TopologyStringToEnum.at(equal_range.first->second.GetValue());
-    bioseq.SetInst().SetTopology(topology);
+    auto topology = s_TopologyStringToEnum.at(mod_range.first->second.GetValue());
+    seq_inst.SetTopology(topology);
 }
 
 
-void CModAdder_Impl::x_SetSecondaryIds(const TRange& equal_range, CBioseq& bioseq) 
+void CModAdder_Impl::x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst) 
 {
 }
-
-void CModAdder_Impl::x_SetOrgMods(const TRange& equal_range, CBioseq& bioseq)
-{
-} 
 
 
 END_SCOPE(objects)
