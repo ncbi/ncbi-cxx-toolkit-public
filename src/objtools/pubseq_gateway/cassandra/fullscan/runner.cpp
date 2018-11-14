@@ -53,6 +53,7 @@ CCassandraFullscanRunner::CCassandraFullscanRunner()
     , m_Consistency(CASS_CONSISTENCY_LOCAL_QUORUM)
     , m_PageSize(kPageSizeDefault)
     , m_MaxActiveStatements(kMaxActiveStatementsDefault)
+    , m_MaxRetryCount(kMaxRetryCountDefault)
 {
 }
 
@@ -105,6 +106,14 @@ CCassandraFullscanRunner& CCassandraFullscanRunner::SetExecutionPlan(
     return *this;
 }
 
+CCassandraFullscanRunner& CCassandraFullscanRunner::SetMaxRetryCount(
+    unsigned int max_retry_count
+)
+{
+    m_MaxRetryCount = max_retry_count;
+    return *this;
+}
+
 bool CCassandraFullscanRunner::Execute()
 {
     if (!m_ExecutionPlan) {
@@ -150,6 +159,7 @@ bool CCassandraFullscanRunner::Execute()
         worker
             .SetConsistency(m_Consistency)
             .SetPageSize(m_PageSize)
+            .SetMaxRetryCount(m_MaxRetryCount)
             .SetMaxActiveStatements(m_MaxActiveStatements / thread_count)
             .SetRowConsumer(m_ConsumerFactory())
             .SetTaskProvider(task_provider);

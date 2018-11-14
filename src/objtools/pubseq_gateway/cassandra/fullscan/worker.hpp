@@ -90,6 +90,7 @@ class CCassandraFullscanWorker
     CCassandraFullscanWorker& SetRowConsumer(unique_ptr<ICassandraFullscanConsumer> consumer);
     CCassandraFullscanWorker& SetMaxActiveStatements(unsigned int value);
     CCassandraFullscanWorker& SetTaskProvider(TTaskProvider provider);
+    CCassandraFullscanWorker& SetMaxRetryCount(unsigned int max_retry_count);
 
     void operator()();
     bool IsFinished() const;

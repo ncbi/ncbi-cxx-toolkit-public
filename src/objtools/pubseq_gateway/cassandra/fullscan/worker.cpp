@@ -91,6 +91,12 @@ CCassandraFullscanWorker& CCassandraFullscanWorker::SetTaskProvider(TTaskProvide
     return *this;
 }
 
+CCassandraFullscanWorker& CCassandraFullscanWorker::SetMaxRetryCount(unsigned int max_retry_count)
+{
+    m_QueryMaxRetryCount = max_retry_count;
+    return *this;
+}
+
 CCassandraFullscanPlan::TQueryPtr CCassandraFullscanWorker::GetNextTask()
 {
     if (m_TaskProvider) {
@@ -184,7 +190,7 @@ bool CCassandraFullscanWorker::ProcessQueryResult(size_t index)
             params += (i > 0 ? "," : "" ) + context->query->ParamAsStr(i);
         }
         ERR_POST(
-            Warning << "Query timeout! SQL - " << context->query->ToString()
+            (context->retires > 1 ? Info : Warning) << "Query restarted! SQL - " << context->query->ToString()
             << " Params - (" << params  << ") Restart count - " << context->retires
         );
         try {
