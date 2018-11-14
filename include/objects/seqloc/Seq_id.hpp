@@ -811,6 +811,8 @@ struct NCBI_SEQLOC_EXPORT SSeqIdRange
             { return m_Number <= it.m_Number; }
         bool operator>=(const const_iterator& it) const
             { return m_Number >= it.m_Number; }
+        int operator-(const const_iterator& it) const
+            { return m_Number - it.m_Number; }
 
     private:
         const string& x_SetAccession(void) const;
