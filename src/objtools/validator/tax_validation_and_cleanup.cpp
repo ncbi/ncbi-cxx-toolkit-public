@@ -425,7 +425,7 @@ void CQualLookupMap::AddFeat(CConstRef<CSeq_feat> feat)
     }
     for (auto mod_it = org.GetOrgname().GetMod().begin(); mod_it != org.GetOrgname().GetMod().end(); mod_it++) {
         if ((*mod_it)->IsSetSubtype()
-            && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
+            && (*mod_it)->GetSubtype() == m_Subtype
             && (*mod_it)->IsSetSubname()) {
             string qual = (*mod_it)->GetSubname();
             string key = GetKey(qual, feat->GetData().GetBiosrc().GetOrg());
@@ -452,7 +452,7 @@ void CQualLookupMap::AddOrg(const COrg_ref& org)
     }
     for (auto mod_it = org.GetOrgname().GetMod().begin(); mod_it != org.GetOrgname().GetMod().end(); mod_it++) {
         if ((*mod_it)->IsSetSubtype()
-            && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
+            && (*mod_it)->GetSubtype() == m_Subtype
             && (*mod_it)->IsSetSubname()) {
             string qual = (*mod_it)->GetSubname();
             string key = GetKey(qual, org);
