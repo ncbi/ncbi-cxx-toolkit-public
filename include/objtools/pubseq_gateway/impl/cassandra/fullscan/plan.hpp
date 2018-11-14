@@ -68,6 +68,7 @@ class CCassandraFullscanPlan
 
     CCassandraFullscanPlan& SetConnection(shared_ptr<CCassConnection> connection);
     CCassandraFullscanPlan& SetFieldList(vector<string> fields);
+    CCassandraFullscanPlan& SetWhereFilter(string const & where_filter);
     CCassandraFullscanPlan& SetMinPartitionsForSubrangeScan(size_t value);
     CCassandraFullscanPlan& SetKeyspace(string const & keyspace);
     CCassandraFullscanPlan& SetTable(string const & table);
@@ -84,6 +85,7 @@ class CCassandraFullscanPlan
     vector<string> m_FieldList;
     string m_Keyspace;
     string m_Table;
+    string m_WhereFilter;
     string m_SqlTemplate;
     CCassConnection::TTokenRanges m_TokenRanges;
     size_t m_MinPartitionsForSubrangeScan;

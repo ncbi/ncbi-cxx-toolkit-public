@@ -63,6 +63,7 @@ class CCassandraFullscanRunner
     CCassandraFullscanRunner& SetMaxActiveStatements(unsigned int value);
     CCassandraFullscanRunner& SetConsumerFactory(TCassandraFullscanConsumerFactory consumer_factory);
     CCassandraFullscanRunner& SetExecutionPlan(unique_ptr<ICassandraFullscanPlan> plan);
+    CCassandraFullscanRunner& SetMaxRetryCount(unsigned int max_retry_count);
 
     bool Execute();
  private:
@@ -72,6 +73,7 @@ class CCassandraFullscanRunner
     unsigned int m_MaxActiveStatements;
     TCassandraFullscanConsumerFactory m_ConsumerFactory;
     unique_ptr<ICassandraFullscanPlan> m_ExecutionPlan;
+    unsigned int m_MaxRetryCount;
 };
 
 END_IDBLOB_SCOPE
