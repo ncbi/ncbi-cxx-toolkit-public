@@ -5,7 +5,7 @@ SRC = unit_test_pub_edit
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB  = $(OBJEDIT_LIBS) xunittestutil $(XFORMAT_LIBS) xobjutil \
+LIB  = $(OBJEDIT_LIBS) xunittestutil xobjutil \
        $(PCRE_LIB) test_boost $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

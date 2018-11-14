@@ -5,7 +5,7 @@ SRC = unit_test_apply_mods
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB  = $(OBJEDIT_LIBS) xunittestutil $(XFORMAT_LIBS) xalnmgr xobjutil \
+LIB  = $(OBJEDIT_LIBS) xunittestutil xalnmgr xobjutil \
        macro tables xregexp $(PCRE_LIB) test_boost $(OBJMGR_LIBS)
 LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

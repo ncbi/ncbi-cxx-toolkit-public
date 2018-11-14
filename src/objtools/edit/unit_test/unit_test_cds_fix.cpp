@@ -102,8 +102,6 @@
 #include <objects/seqloc/Patent_seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
-#include <objects/valid/Comment_set.hpp>
-#include <objects/valid/Comment_rule.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
