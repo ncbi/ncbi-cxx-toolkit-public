@@ -151,7 +151,7 @@ void CHTMLFormatterEx::FormatTaxid(string& str, const int taxid, const string& t
             str += "<a href=\"";
             str += strLinkBaseTaxonomy;
             str += "id=";
-            str += taxid;
+            str += NStr::NumericToString(taxid);
             str += "\">";
         }
         else {
@@ -350,7 +350,7 @@ private:
 // constructor
 CAsn2FlatApp::CAsn2FlatApp (void)
 {
-    const CVersionInfo vers (1,2,0);
+    const CVersionInfo vers (1,3,0);
     SetVersion (vers);
 }
 
