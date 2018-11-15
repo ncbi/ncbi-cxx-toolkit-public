@@ -1496,7 +1496,7 @@ CRef<objects::CSeq_entry> BuildGenProdSetNucProtSet (CRef<objects::CSeq_id> nuc_
 
 CRef<objects::CSeq_feat> MakemRNAForCDS (CRef<objects::CSeq_feat> feat)
 {
-    CRef<objects::CSeq_feat> mrna(new objects::CSeq_feat());
+    CRef<objects::CSeq_feat> mrna(new objects::CSeq_feat);
     mrna->SetData().SetRna().SetType(objects::CRNA_ref::eType_mRNA);
     mrna->SetLocation().Assign(feat->GetLocation());
     return mrna;
@@ -1804,7 +1804,7 @@ CRef<objects::CSeq_entry> BuildGoodEcoSetWithAlign(size_t front_insert)
             const string& orig = s->SetSeq().SetInst().SetSeq_data().SetIupacna().Set();
             size_t orig_len = s->GetSeq().GetInst().GetLength();
             string add = "";
-            for (auto i = 0; i < offset; i++) {
+            for (auto i = (size_t)0; i < offset; i++) {
                 add += "A";
             }
             s->SetSeq().SetInst().SetSeq_data().SetIupacna().Set(add + orig);
