@@ -60,7 +60,8 @@ endfunction()
 
 ShowMainBoilerplate()
 
-add_custom_target(NAME show-config
+if (NOT NCBI_EXPERIMENTAL_CFG)
+add_custom_target(show-config
     COMMAND ${CMAKE_COMMAND} -e echo "ShowMainBoilerplate()"
     COMMAND ${CMAKE_COMMAND} -e echo "PCRE:           ${PCRE_LIBRARIES}"
     COMMAND ${CMAKE_COMMAND} -e echo "Boost:          ${Boost_INCLUDE_DIRS}"
@@ -73,5 +74,4 @@ add_custom_target(NAME show-config
     COMMAND ${CMAKE_COMMAND} -e echo "GnuTLS include: ${GNUTLS_INCLUDE}"
     COMMAND ${CMAKE_COMMAND} -e echo "${EXTERNAL_LIBRARIES_COMMENT}"
     )
-
-
+endif()
