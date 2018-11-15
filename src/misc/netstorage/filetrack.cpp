@@ -258,7 +258,7 @@ CRef<SFileTrackUpload> SFileTrackAPI::StartUpload(
 
     if (!m_NetInfo) {
         m_NetInfo.reset(ConnNetInfo_Create(nullptr), ConnNetInfo_Destroy);
-        m_NetInfo->version = 1;
+        m_NetInfo->http_version = 1;
         m_NetInfo->req_method = eReqMethod_Post;
     }
 
