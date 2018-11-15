@@ -90,9 +90,9 @@ void sRunTest(
         CFeatImporter::Get(format, 0, msgHandler));
     CSeq_annot annot;
 
-    CNcbiOfstream oStrErrors(outputNameErrors);
-    CNcbiOfstream oStrAnnot(outputNameAnnot);
-    CNcbiIfstream iStr(inputName, ios::binary);
+    CNcbiOfstream oStrErrors(outputNameErrors.c_str());
+    CNcbiOfstream oStrAnnot(outputNameAnnot.c_str());
+    CNcbiIfstream iStr(inputName.c_str(), ios::binary);
     try {
         while (true) {
             pImporter->ReadSeqAnnot(iStr, annot);
@@ -222,7 +222,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
         oldFile->Remove();
     }
 
-    CNcbiIfstream ifStream(fileTestCases);
+    CNcbiIfstream ifStream(fileTestCases.c_str());
     CStreamLineReader testCaseStream(ifStream);
     while (!testCaseStream.AtEOF()) {
         auto testDescription = *(++testCaseStream);
