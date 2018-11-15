@@ -199,7 +199,7 @@ int CTestHttpUploadApp::Run(void)
                                     (CTimeFormat::eISO8601_DateTimeSec));
 
     SConnNetInfo* net_info = ConnNetInfo_Create(0);
-    net_info->version = 1;  /*HTTP/1.1*/
+    net_info->http_version = 1;  /*HTTP/1.1*/
 
     size_t s;
     unsigned int ntry, max_try = net_info->max_try;

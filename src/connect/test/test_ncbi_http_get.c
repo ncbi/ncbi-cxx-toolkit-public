@@ -331,10 +331,10 @@ int main(int argc, char* argv[])
 
     ConnNetInfo_GetValue(0, "HTTP11", blk, 32, 0);
     if (ConnNetInfo_Boolean(blk))
-        net_info->version = 1;
+        net_info->http_version = 1;
 
     ConnNetInfo_GetValue(0, "WRITETHRU", blk, 32, 0);
-    if (net_info->version  &&  ConnNetInfo_Boolean(blk)) {
+    if (net_info->http_version  &&  ConnNetInfo_Boolean(blk)) {
         CORE_LOG(eLOG_Note, "HTTP/1.1 Write-through mode acknowledged");
         flags |= fHTTP_WriteThru;
     }
