@@ -2,7 +2,7 @@
 # $Id$
 #############################################################################
 
-NCBI_add_subdirectory(grid_cli remote_app cgi2rcgi cgi_tunnel2grid util test)
+NCBI_add_subdirectory(grid_cli remote_app cgi2rcgi util test)
 
 if(OFF)
 # Include projects from this directory
