@@ -1688,6 +1688,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "DTE\ts\tCentro de Investigaciones Cientificas y Transferencia de Tecnologia a la Produccion (CICyTTP-CONICET)\t\t\t",
 "DTIC\ts\tDepartamento Parasitologia\t\t\t",
 "DTN\ts\tDarlington and Teesdale Naturalists' Field Club\t\t\t",
+"DTO\tc\tDepartment of Applied and Industrial Mycology\t\t\t",
 "DU\ts\tDuke University Vertebrate Collection\t\t\t",
 "DUB\ts\tNational Botanic Gardens\t\t\t",
 "DUBN\ts\tDublin Naturalists' Field Club\t\t\t",
