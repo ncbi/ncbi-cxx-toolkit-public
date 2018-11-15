@@ -2396,6 +2396,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingBiomolTech)
     CheckErrors (*eval, expected_errors);
     eval = validator.GetTSAConflictingBiomolTechErrors(*(seh.GetSeq().GetCompleteBioseq()));
     CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
 }
 
 
@@ -10324,6 +10325,8 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
     // put CDS back, move annotation to gen-prod-set
     scope.RemoveTopLevelSeqEntry(seh);
     contig->SetSeq().SetAnnot().front()->SetData().SetFtable().push_back(cds);
@@ -10334,11 +10337,9 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
     gene->SetData().SetGene().SetLocus("gene locus");
     unit_test_util::AddFeat(gene, entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrCode("GenomicProductPackagingProblem");
-    expected_errors[0]->SetSeverity(eDiag_Critical);
-    expected_errors[0]->SetAccession("lcl|good");
-    expected_errors[0]->SetErrMsg("Seq-annot packaged directly on genomic product set");
-    expected_errors.pop_back();
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Critical, "GenomicProductPackagingProblem",
+                                  "Seq-annot packaged directly on genomic product set"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -11907,6 +11908,27 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_CdTransFail)
 }
 
 
+#define START_CODON_AND_INT_STOP_ERR \
+expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StartCodon",\
+                          "Illegal start codon (and 1 internal stops). Probably wrong genetic code [0]"));
+#define INTERNAL_STOP_ERR \
+expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "InternalStop",\
+                              "1 internal stops (and illegal start codon). Genetic code [0]"));
+#define NO_STOP_ERR \
+expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "NoStop", "Missing stop codon"));
+#define NO_PUB_ERR \
+expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "NoPubFound", "No publications anywhere on this entire record."));
+#define PROT_LEN_ERR \
+expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "TransLen",\
+                                             "Given protein length [8] does not match translation length [9]"));
+#define NO_SUB_ERR \
+expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Info, "MissingPubRequirement", "No submission citation anywhere on this entire record."));
+#define EXCEPTION_PROBLEM_ERR \
+expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation"));
+#define NO_SRC_ERR \
+expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "NoSourceDescriptor", "No source information included on this record."));
+
+
 BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
@@ -11926,35 +11948,28 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
     BOOST_CHECK_EQUAL(validator::HasBadStartCodon(*cds, scope, false), true);
     BOOST_CHECK_EQUAL(validator::HasNoStop(*cds, &scope), true);
 
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StartCodon",
-                              "Illegal start codon (and 1 internal stops). Probably wrong genetic code [0]"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "InternalStop",
-                              "1 internal stops (and illegal start codon). Genetic code [0]"));
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "NoStop",
-                                                 "Missing stop codon"));
-    CExpectedError* protlen = new CExpectedError("lcl|nuc", eDiag_Error, "TransLen",
-                                                 "Given protein length [8] does not match translation length [9]");
-    expected_errors.push_back(protlen);
+    START_CODON_AND_INT_STOP_ERR
+    INTERNAL_STOP_ERR
+    NO_STOP_ERR
+    PROT_LEN_ERR
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
     seh = scope.AddTopLevelSeqEntry(*nuc);
     eval = validator.Validate(seh, options);
-    CExpectedError* no_pub = new CExpectedError("lcl|nuc", eDiag_Error, "NoPubFound", "No publications anywhere on this entire record.");
-    CExpectedError* no_sub = new CExpectedError("lcl|nuc", eDiag_Info, "MissingPubRequirement", "No submission citation anywhere on this entire record.");
-    CExpectedError* no_org = new CExpectedError("lcl|nuc", eDiag_Error, "NoSourceDescriptor", "No source information included on this record.");
-    expected_errors.pop_back();
-    expected_errors.push_back(no_pub);
-    expected_errors.push_back(no_sub);
-    expected_errors.push_back(no_org);
+
+    START_CODON_AND_INT_STOP_ERR
+    INTERNAL_STOP_ERR
+    NO_STOP_ERR
+    NO_PUB_ERR
+    NO_SUB_ERR
+    NO_SRC_ERR
     CheckErrors(*eval, expected_errors);
-    expected_errors.pop_back();
-    expected_errors.pop_back();
-    expected_errors.pop_back();
-    expected_errors.pop_back();
-    expected_errors.push_back(protlen);
+    CLEAR_ERRORS
+
 
     scope.RemoveTopLevelSeqEntry(seh);
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -11962,25 +11977,27 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
     // don't report start codon if unclassified exception
     cds->SetExcept(true);
     cds->SetExcept_text("unclassified translation discrepancy");
-    delete expected_errors[0];
-    expected_errors[0] = new CExpectedError("lcl|nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation");
-    expected_errors[1]->SetSeverity(eDiag_Warning);
-    delete expected_errors[2];
-    expected_errors.pop_back();
+
+    INTERNAL_STOP_ERR
+    EXCEPTION_PROBLEM_ERR
+
+    expected_errors[0]->SetSeverity(eDiag_Warning);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
     nuc_only_cds->Assign(*cds);
     seh = scope.AddTopLevelSeqEntry(*nuc);
     eval = validator.Validate(seh, options);
-    expected_errors.push_back(no_pub);
-    expected_errors.push_back(no_sub);
-    expected_errors.push_back(no_org);
+    EXCEPTION_PROBLEM_ERR
+    INTERNAL_STOP_ERR
+    NO_PUB_ERR 
+    NO_SUB_ERR
+    NO_SRC_ERR
+    expected_errors[1]->SetSeverity(eDiag_Warning);
     CheckErrors(*eval, expected_errors);
-    expected_errors.pop_back();
-    expected_errors.pop_back();
-    expected_errors.pop_back();
+    CLEAR_ERRORS
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodNucProtSet();
@@ -11991,29 +12008,21 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_StartCodon)
     nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[0] = 'C';
     nuc_seq->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[1] = 'C';
     seh = scope.AddTopLevelSeqEntry(*entry);
-    delete expected_errors[0];
-    expected_errors[0] = new CExpectedError("lcl|nuc", eDiag_Error, "StartCodon",
-                              "Illegal start codon used. Wrong genetic code [0] or protein should be partial");
-    delete expected_errors[1];
-    expected_errors.pop_back();
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StartCodon",
+                              "Illegal start codon used. Wrong genetic code [0] or protein should be partial"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-
     CLEAR_ERRORS
 
     // don't report start codon if unclassified exception
     cds->SetExcept(true);
     cds->SetExcept_text("unclassified translation discrepancy");
-    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation"));
+    EXCEPTION_PROBLEM_ERR
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-
     CLEAR_ERRORS
 
-    delete no_pub;
-    delete no_sub;
-    delete no_org;
 }
 
 
@@ -15952,11 +15961,11 @@ void CheckGeneOntologyTermDuplicate(CRef<CSeq_feat> feat)
 
     CLEAR_ERRORS
 
-    BOOST_CHECK_EQUAL(CountProcessGoTerms(*feat), 2);
+    BOOST_CHECK_EQUAL(CountProcessGoTerms(*feat), (size_t)2);
     RemoveDuplicateGoTerms(*feat);
-    BOOST_CHECK_EQUAL(CountProcessGoTerms(*feat), 1);
+    BOOST_CHECK_EQUAL(CountProcessGoTerms(*feat), (size_t)1);
     RemoveDuplicateGoTerms(*feat);
-    BOOST_CHECK_EQUAL(CountProcessGoTerms(*feat), 1);
+    BOOST_CHECK_EQUAL(CountProcessGoTerms(*feat), (size_t)1);
 
 }
 
@@ -15973,9 +15982,9 @@ void CheckGeneOntologyTermNotDuplicate(CRef<CSeq_feat> feat)
 
     CLEAR_ERRORS
 
-    BOOST_CHECK_EQUAL(CountProcessGoTerms(*feat), 2);
+    BOOST_CHECK_EQUAL(CountProcessGoTerms(*feat), (size_t)2);
     RemoveDuplicateGoTerms(*feat);
-    BOOST_CHECK_EQUAL(CountProcessGoTerms(*feat), 2);
+    BOOST_CHECK_EQUAL(CountProcessGoTerms(*feat), (size_t)2);
 }
 
 
@@ -16956,8 +16965,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SeqFeatXrefNotReciprocal)
 
 
     STANDARD_SETUP
-//    expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
-//                               "CDS/mRNA unambiguous pair have erroneous cross-references"));
     expected_errors.push_back (new CExpectedError("lcl|nuc", eDiag_Warning, "SeqFeatXrefNotReciprocal",
                                "Cross-referenced feature does not link reciprocally"));
 
@@ -20483,6 +20490,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2036)
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
 }
 
 
@@ -21251,7 +21259,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkSpecificHostFix)
     }
     // only five of the feats will be updated, because their taxnames cannot be
     // recognized, and only five of the specific hosts are altered.
-    BOOST_CHECK_EQUAL(num_updated_feats, 5);
+    BOOST_CHECK_EQUAL(num_updated_feats, (size_t)5);
 }
 
 
@@ -21442,7 +21450,7 @@ BOOST_AUTO_TEST_CASE(Test_BulkStrainIncremental)
     tval.Init(*entry);
 
     vector<CRef<COrg_ref> > strain_rq = tval.GetStrainLookupRequest();
-    BOOST_CHECK_EQUAL(strain_rq.size(), 9);
+    BOOST_CHECK_EQUAL(strain_rq.size(), (size_t)9);
 
     objects::CTaxon3 taxon3;
     taxon3.Init();
@@ -21495,6 +21503,7 @@ BOOST_AUTO_TEST_CASE(TEST_VR_477)
         "Translation exception locations should not be partial"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
 }
 
 
@@ -21511,6 +21520,7 @@ BOOST_AUTO_TEST_CASE(Test_VR_35)
         "Number qualifiers should not contain spaces"));
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
+    CLEAR_ERRORS
 }
 
 
@@ -21911,11 +21921,11 @@ BOOST_AUTO_TEST_CASE(Test_TripletEncodesStopCodon)
     STANDARD_SETUP
 
     vector<CRef<CSeq_loc> > nonsense = CCDSTranslationProblems::GetNonsenseIntrons(*cds, scope);
-    BOOST_CHECK_EQUAL(nonsense.size(), 2);
-    BOOST_CHECK_EQUAL(nonsense.front()->GetInt().GetFrom(), 9);
-    BOOST_CHECK_EQUAL(nonsense.front()->GetInt().GetTo(), 11);
-    BOOST_CHECK_EQUAL(nonsense.back()->GetInt().GetFrom(), 21);
-    BOOST_CHECK_EQUAL(nonsense.back()->GetInt().GetTo(), 23);
+    BOOST_CHECK_EQUAL(nonsense.size(), (size_t)2);
+    BOOST_CHECK_EQUAL(nonsense.front()->GetInt().GetFrom(), (size_t)9);
+    BOOST_CHECK_EQUAL(nonsense.front()->GetInt().GetTo(), (size_t)11);
+    BOOST_CHECK_EQUAL(nonsense.back()->GetInt().GetFrom(), (size_t)21);
+    BOOST_CHECK_EQUAL(nonsense.back()->GetInt().GetTo(), (size_t)23);
 
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Critical, "IntronIsStopCodon",
         "Triplet intron encodes stop codon"));
