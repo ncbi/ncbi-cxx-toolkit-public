@@ -248,6 +248,47 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat&);
 
+    virtual bool xAssignFeatureAttributesQualifiers(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&) { return false; };
+    virtual bool xAssignFeatureAttributeDbxref(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&) { return false; };
+    virtual bool xAssignFeatureAttributeNote(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&) { return false; };
+    virtual bool xAssignFeatureAttributeProduct(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&) { return false; };
+    virtual bool xAssignFeatureAttributeGeneSynonym(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&) { return false; };
+    virtual bool xAssignFeatureAttributeProteinId(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&) { return false; };
+    virtual bool xAssignFeatureAttributeRibosomalSlippage(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributeTranslationTable(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributePartial(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    virtual bool xAssignFeatureAttributePseudo(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+
     virtual bool x_WriteSequenceHeader(
         CBioseq_Handle ) { return true; };
 

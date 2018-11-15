@@ -32,6 +32,8 @@
 #include <ncbi_pch.hpp>
 
 #include <objects/general/User_object.hpp>
+#include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/Genetic_code.hpp>
 
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
@@ -265,27 +267,6 @@ bool CGff2Writer::x_WriteSeqAnnotHandle(
     return true;
 }
 
-/*
-//  ----------------------------------------------------------------------------
-bool CGff2Writer::xTrimWriteFeature(
-        CGffFeatureContext& fc, 
-        CMappedFeat& mapped_feat, 
-        const CRange<TSeqPos>& range) 
-//  ----------------------------------------------------------------------------
-{
-    if (mapped_feat.GetTotalRange().IntersectionWith(range).NotEmpty()) {
-        CSeq_feat_Handle sfh = mapped_feat.GetSeq_feat_Handle();
-        CSeq_feat_EditHandle sfeh(sfh);
-        CRef<CSeq_feat> trimmed_feat = sequence::CFeatTrim::Apply(*mapped_feat.GetOriginalSeq_feat(), range);
-        sfeh.Replace(*trimmed_feat);
-
-        if (!xWriteFeature(fc, mapped_feat)) {
-            return false;
-        }
-    }
-    return true;
-}
-*/
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xWriteFeature(
     CGffFeatureContext& context,
@@ -570,7 +551,17 @@ bool CGff2Writer::xAssignFeatureAttributesFormatIndependent(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    return true;
+    return( 
+        xAssignFeatureAttributesQualifiers(record, fc, mf)  &&
+        xAssignFeatureAttributeDbxref(record, fc, mf)  &&
+        xAssignFeatureAttributeNote(record, fc, mf)  &&
+        xAssignFeatureAttributeProduct(record, fc, mf)  &&
+        xAssignFeatureAttributeGeneSynonym(record, fc, mf)  &&
+        xAssignFeatureAttributeRibosomalSlippage(record, fc, mf)  &&
+        xAssignFeatureAttributeProteinId(record, fc, mf)  &&
+        xAssignFeatureAttributeTranslationTable(record, fc, mf)  &&
+        xAssignFeatureAttributePartial(record, fc, mf)  &&
+        xAssignFeatureAttributePseudo(record, fc, mf));
 }
 
 //  ----------------------------------------------------------------------------
@@ -580,6 +571,90 @@ bool CGff2Writer::xAssignFeatureAttributesFormatSpecific(
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureAttributePseudo(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+    //  ----------------------------------------------------------------------------
+{
+    if (mf.IsSetPseudo()  &&  mf.GetPseudo()) {
+        record.SetAttribute("pseudo", "true");
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureAttributePartial(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    if (mf.IsMapped()  &&  mf.IsSetPartial()  &&  mf.GetPartial()) {
+        record.SetAttribute("partial", "true");
+        return true;
+    }
+
+    if (!mf.IsMapped()  &&  mf.GetSeq_feat()->IsSetPartial()  &&
+            mf.GetSeq_feat()->GetPartial()) {
+        record.SetAttribute("partial", "true");
+        return true;
+    } 
+
+    const CRange<TSeqPos>& display_range = GetRange();
+    const CRange<TSeqPos>& feat_range = mf.GetLocation().GetTotalRange();
+    if (display_range.IntersectionWith(feat_range).NotEmpty() &&
+            (display_range.GetFrom() > feat_range.GetFrom() ||
+                display_range.GetTo() < feat_range.GetTo())) {
+        record.SetAttribute("partial", "true");
+        return true; 
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureAttributeTranslationTable(
+    CGffFeatureRecord& record,
+    CGffFeatureContext&,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    if (!mf.IsSetData()  ||  !mf.GetData().IsCdregion()) {
+        return true;
+    }
+    const CSeqFeatData::TCdregion& cds = mf.GetData().GetCdregion();
+    if (!cds.IsSetCode()) {
+        return true;
+    }
+    int id = cds.GetCode().GetId();
+    if (id != 1  &&  id != 255) {//former gff3 version
+    //if (true) {//former gtf version
+        record.SetAttribute("transl_table", NStr::IntToString(id));
+        return true;
+    }
+    return true; 
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureAttributeRibosomalSlippage(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    auto featSubtype = mf.GetFeatSubtype();
+    if (featSubtype != CSeq_feat::TData::eSubtype_cdregion) {
+        return true;
+    }
+    if (mf.IsSetExcept_text()) {
+        if (mf.GetExcept_text() == "ribosomal slippage") {
+            record.AddAttribute("ribosomal_slippage", "");
+        }
+    }
     return true;
 }
 

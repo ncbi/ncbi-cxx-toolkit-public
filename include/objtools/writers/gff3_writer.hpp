@@ -456,10 +456,10 @@ protected:
     bool xAssignFeatureAttributesGoMarkup(
         CGffFeatureRecord&,
         const CMappedFeat&);
-    bool xAssignFeatureAttributeDbXref(
+    bool xAssignFeatureAttributeDbxref(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
+        const CMappedFeat&) override;
     bool xAssignFeatureAttributeGbKey(
         CGffFeatureRecord&,
         const CMappedFeat&);
@@ -472,7 +472,8 @@ protected:
         const CMappedFeat&);
     bool xAssignFeatureAttributeGeneSynonym(
         CGffFeatureRecord&,
-        const CMappedFeat&);
+        CGffFeatureContext&,
+        const CMappedFeat&) override;
     bool xAssignFeatureAttributeIsOrdered(
         CGffFeatureRecord&,
         const CMappedFeat&);
@@ -494,26 +495,20 @@ protected:
         const CMappedFeat&);
     bool xAssignFeatureAttributeNote(
         CGffFeatureRecord&,
-        const CMappedFeat&);
+        CGffFeatureContext&,
+        const CMappedFeat&) override;
     bool xAssignFeatureAttributeNcrnaClass(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributePartial(
         CGffFeatureRecord&,
         const CMappedFeat&);
     bool xAssignFeatureAttributeProduct(
         CGffFeatureRecord&,
-        const CMappedFeat&);
+        CGffFeatureContext&,
+        const CMappedFeat&) override;
     bool xAssignFeatureAttributeProteinId(
         CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributePseudo(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
+        CGffFeatureContext&,
+        const CMappedFeat&) override;
     bool xAssignFeatureAttributeTranscriptId(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributeTranslationTable(
         CGffFeatureRecord&,
         const CMappedFeat&);
     bool xAssignFeatureAttributeGeneBiotype(
@@ -522,7 +517,9 @@ protected:
         const CMappedFeat&);
     bool xAssignFeatureAttributesQualifiers(
         CGffFeatureRecord&,
-        const CMappedFeat&);
+        CGffFeatureContext&,
+        const CMappedFeat&) override;
+
     //end mss-234//
     bool xAssignFeatureAttributeModelEvidence(
         CGffFeatureRecord&,

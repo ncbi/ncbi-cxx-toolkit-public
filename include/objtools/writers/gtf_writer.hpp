@@ -83,6 +83,10 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat&);
 
+    virtual bool xAssignFeatureAttributesFormatIndependent(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&) override;
     virtual bool xAssignFeatureAttributesFormatSpecific(
         CGffFeatureRecord&,
         CGffFeatureContext&,
@@ -95,46 +99,30 @@ protected:
         CGtfRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
-    virtual bool xAssignFeatureAttributePartial(
-        CGtfRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&);
-    virtual bool xAssignFeatureAttributePseudo(
-        CGtfRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&);
     virtual bool xAssignFeatureAttributeNote(
-        CGtfRecord&,
+        CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
+        const CMappedFeat&) override;
     virtual bool xAssignFeatureAttributeDbxref(
-        CGtfRecord&,
+        CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
+        const CMappedFeat&) override;
     virtual bool xAssignFeatureAttributeProduct(
-        CGtfRecord&,
+        CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
+        const CMappedFeat&) override;
     virtual bool xAssignFeatureAttributeGeneSynonym(
-        CGtfRecord&,
+        CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
+        const CMappedFeat&) override;
     virtual bool xAssignFeatureAttributeProteinId(
-        CGtfRecord&,
+        CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
-    virtual bool xAssignFeatureAttributeRibosomalSlippage(
-        CGtfRecord&,
+        const CMappedFeat&) override;
+    virtual bool xAssignFeatureAttributesQualifiers(
+        CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
-    virtual bool xAssignFeatureAttributeTranslTable(
-        CGtfRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&);
-    virtual bool xAssignFeatureAttributeQualifiers(
-        CGtfRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&);
+        const CMappedFeat&) override;
 
     static std::string xGenericGeneId(
         const CMappedFeat&);

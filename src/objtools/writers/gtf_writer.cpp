@@ -525,6 +525,22 @@ bool CGtfWriter::xAssignFeatureMethod(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGtfWriter::xAssignFeatureAttributesFormatIndependent(
+    CGffFeatureRecord& rec,
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf )
+//  ----------------------------------------------------------------------------
+{
+    CGtfRecord& record = dynamic_cast<CGtfRecord&>(rec);
+    if (!CGff2Writer::xAssignFeatureAttributesFormatIndependent(record, fc, mf)) {
+        return false;
+    }
+    return true;
+    return (
+        xAssignFeatureAttributeRibosomalSlippage(record, fc, mf));
+}
+
+//  ----------------------------------------------------------------------------
 bool CGtfWriter::xAssignFeatureAttributesFormatSpecific(
     CGffFeatureRecord& rec,
     CGffFeatureContext& fc,
@@ -533,23 +549,13 @@ bool CGtfWriter::xAssignFeatureAttributesFormatSpecific(
 {
     CGtfRecord& record = dynamic_cast<CGtfRecord&>(rec);
     return (
-        xAssignFeatureAttributeQualifiers(record, fc, mf)  &&
         xAssignFeatureAttributeGeneId(record, fc, mf)  &&
-        xAssignFeatureAttributeTranscriptId(record, fc, mf)  &&
-        xAssignFeatureAttributeDbxref(record, fc, mf)  &&
-        xAssignFeatureAttributeNote(record, fc, mf)  &&
-        xAssignFeatureAttributeProduct(record, fc, mf)  &&
-        xAssignFeatureAttributeGeneSynonym(record, fc, mf)  &&
-        xAssignFeatureAttributeProteinId(record, fc, mf)  &&
-        xAssignFeatureAttributeRibosomalSlippage(record, fc, mf)  &&
-        xAssignFeatureAttributeTranslTable(record, fc, mf)  &&
-        xAssignFeatureAttributePartial(record, fc, mf)  &&
-        xAssignFeatureAttributePseudo(record, fc, mf));
+        xAssignFeatureAttributeTranscriptId(record, fc, mf));
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::xAssignFeatureAttributeQualifiers(
-    CGtfRecord& record,
+bool CGtfWriter::xAssignFeatureAttributesQualifiers(
+    CGffFeatureRecord& rec,
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
@@ -561,6 +567,8 @@ bool CGtfWriter::xAssignFeatureAttributeQualifiers(
         "transcript_id",
         "gene_id", 
     };
+
+    CGtfRecord& record = dynamic_cast<CGtfRecord&>(rec);
     auto quals = mf.GetQual();
     for (auto qual: quals) {
         if (!qual->IsSetQual()  ||  !qual->IsSetVal()) {
@@ -577,46 +585,8 @@ bool CGtfWriter::xAssignFeatureAttributeQualifiers(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::xAssignFeatureAttributeTranslTable(
-    CGtfRecord& record,
-    CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    auto featSubtype = mf.GetFeatSubtype();
-    if (featSubtype != CSeq_feat::TData::eSubtype_cdregion) {
-        return true;
-    }
-    const auto& cdr = mf.GetData().GetCdregion();
-    if (cdr.IsSetCode()) {
-        record.AddAttribute(
-            "transl_table", NStr::IntToString(cdr.GetCode().GetId()));
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGtfWriter::xAssignFeatureAttributeRibosomalSlippage(
-    CGtfRecord& record,
-    CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    auto featSubtype = mf.GetFeatSubtype();
-    if (featSubtype != CSeq_feat::TData::eSubtype_cdregion) {
-        return true;
-    }
-    if (mf.IsSetExcept_text()) {
-        if (mf.GetExcept_text() == "ribosomal slippage") {
-            record.AddAttribute("ribosomal_slippage", "");
-        }
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGtfWriter::xAssignFeatureAttributeProteinId(
-    CGtfRecord& record,
+    CGffFeatureRecord& rec,
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
@@ -625,6 +595,8 @@ bool CGtfWriter::xAssignFeatureAttributeProteinId(
     if (featSubtype != CSeq_feat::TData::eSubtype_cdregion) {
         return true;
     }
+
+    CGtfRecord& record = dynamic_cast<CGtfRecord&>(rec);
     auto protein_id = mf.GetNamedQual("protein_id");
     if (!protein_id.empty()) {
         record.AddAttribute("protein_id", protein_id);
@@ -645,7 +617,7 @@ bool CGtfWriter::xAssignFeatureAttributeProteinId(
 
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::xAssignFeatureAttributeGeneSynonym(
-    CGtfRecord& record,
+    CGffFeatureRecord& rec,
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
@@ -658,6 +630,8 @@ bool CGtfWriter::xAssignFeatureAttributeGeneSynonym(
     if (!gene.IsSetSyn()) {
         return true;
     }
+
+    CGtfRecord& record = dynamic_cast<CGtfRecord&>(rec);
     if (gene.IsSetLocus_tag()) {
         record.AddAttribute("gene_synonym", gene.GetSyn().front());
         return true;
@@ -672,11 +646,12 @@ bool CGtfWriter::xAssignFeatureAttributeGeneSynonym(
 
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::xAssignFeatureAttributeProduct(
-    CGtfRecord& record,
+    CGffFeatureRecord& rec,
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
+    CGtfRecord& record = dynamic_cast<CGtfRecord&>(rec);
     auto featSubtype = mf.GetFeatSubtype();
     if (featSubtype == CSeq_feat::TData::eSubtype_mRNA) {
         auto product = mf.GetNamedQual("product");
@@ -712,7 +687,7 @@ bool CGtfWriter::xAssignFeatureAttributeProduct(
     
 //  ----------------------------------------------------------------------------
 bool CGtfWriter::xAssignFeatureAttributeDbxref(
-    CGtfRecord& record,
+    CGffFeatureRecord& rec,
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
     //  ----------------------------------------------------------------------------
@@ -720,6 +695,8 @@ bool CGtfWriter::xAssignFeatureAttributeDbxref(
     if (!mf.IsSetDbxref()) {
         return true;
     }
+
+    CGtfRecord& record = dynamic_cast<CGtfRecord&>(rec);
     for (const auto& dbxref: mf.GetDbxref()) {
         string gffDbxref;
         if (dbxref->IsSetDb()) {
@@ -740,34 +717,8 @@ bool CGtfWriter::xAssignFeatureAttributeDbxref(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::xAssignFeatureAttributePartial(
-    CGtfRecord& record,
-    CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    if (mf.IsSetPartial()  &&  mf.GetPartial()) {
-        record.SetAttribute("partial", "");
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGtfWriter::xAssignFeatureAttributePseudo(
-    CGtfRecord& record,
-    CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-    //  ----------------------------------------------------------------------------
-{
-    if (mf.IsSetPseudo()  &&  mf.GetPseudo()) {
-        record.SetAttribute("pseudo", "");
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGtfWriter::xAssignFeatureAttributeNote(
-    CGtfRecord& record,
+    CGffFeatureRecord& rec,
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
     //  ----------------------------------------------------------------------------
@@ -775,6 +726,7 @@ bool CGtfWriter::xAssignFeatureAttributeNote(
     if (!mf.IsSetComment()) {
         return true;
     }
+    CGtfRecord& record = dynamic_cast<CGtfRecord&>(rec);
     record.SetAttribute("note", mf.GetComment());
     return true;
 }
