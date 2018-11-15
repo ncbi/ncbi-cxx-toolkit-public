@@ -254,53 +254,54 @@ static void TEST_ConnNetInfo(void)
                                 "?arg/arg:arg@arg:arg/arg"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
-    assert(net_info->scheme                           == eURL_Ftp);
-    assert(strcmp(net_info->user, "user")                    == 0);
-    assert(strcmp(net_info->pass, "pass")                    == 0);
-    assert(strcmp(net_info->host, "host")                    == 0);
-    assert(       net_info->port                             == 8888);
-    assert(strcmp(net_info->path, "/ro.t/p@th?arg/arg:arg@arg:arg/arg") == 0);
+    assert(net_info->scheme               == eURL_Ftp);
+    assert(strcmp(net_info->user, "user") == 0);
+    assert(strcmp(net_info->pass, "pass") == 0);
+    assert(strcmp(net_info->host, "host") == 0);
+    assert(       net_info->port          == 8888);
+    assert(strcmp(net_info->path,    "/ro.t/p@th?arg/arg:arg@arg:arg/arg")==0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info),"arg/arg:arg@arg:arg/arg")==0);
 
     assert(ConnNetInfo_ParseURL(net_info, "https://www/path"
                                 "?arg:arg@arg#frag"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
-    assert(       net_info->scheme            == eURL_Https);
-    assert(      *net_info->user                       == 0);
-    assert(      *net_info->pass                       == 0);
-    assert(strcmp(net_info->host, "www")               == 0);
-    assert(       net_info->port                       == 0);
-    assert(strcmp(net_info->path, "/path")             == 0);
-    assert(strcmp(net_info->args, "arg:arg@arg#frag")  == 0);
+    assert(       net_info->scheme       == eURL_Https);
+    assert(      *net_info->user         == 0);
+    assert(      *net_info->pass         == 0);
+    assert(strcmp(net_info->host, "www") == 0);
+    assert(       net_info->port         == 0);
+    assert(strcmp(net_info->path,          "/path?arg:arg@arg#frag") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info), "arg:arg@arg#frag") == 0);
 
     assert(ConnNetInfo_ParseURL(net_info, "/path1?arg1#frag2"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
-    assert(strcmp(net_info->args, "arg1#frag2")        == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info), "arg1#frag2") == 0);
 
     assert(ConnNetInfo_ParseURL(net_info, "path0/0"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
-    assert(strcmp(net_info->path, "/path0/0")          == 0);
-    assert(strcmp(net_info->args, "#frag2")            == 0);
+    assert(strcmp(net_info->path,        "/path0/0#frag2") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info), "#frag2") == 0);
 
     assert(ConnNetInfo_ParseURL(net_info, "#frag3"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
-    assert(strcmp(net_info->path, "/path0/0")          == 0);
-    assert(strcmp(net_info->args, "#frag3")            == 0);
+    assert(strcmp(net_info->path,        "/path0/0#frag3") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info), "#frag3") == 0);
 
     assert(ConnNetInfo_ParseURL(net_info, "path2"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
-    assert(strcmp(net_info->path, "/path0/path2")      == 0);
-    assert(strcmp(net_info->args, "#frag3")            == 0);
+    assert(strcmp(net_info->path,    "/path0/path2#frag3") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info), "#frag3") == 0);
 
     assert(ConnNetInfo_ParseURL(net_info, "/path3?arg3"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
-    assert(strcmp(net_info->path, "/path3")            == 0);
-    assert(strcmp(net_info->args, "arg3#frag3")        == 0);
+    assert(strcmp(net_info->path,         "/path3?arg3#frag3") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info), "arg3#frag3") == 0);
 
     strcpy(net_info->user, "user");
     strcpy(net_info->pass, "pass");
@@ -313,32 +314,74 @@ static void TEST_ConnNetInfo(void)
     assert(ConnNetInfo_ParseURL(net_info, "path4/path5?arg4#"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
-    assert(strcmp(net_info->user, "user")              == 0);
-    assert(strcmp(net_info->pass, "pass")              == 0);
-    assert(strcmp(net_info->path, "/path4/path5")      == 0);
-    assert(strcmp(net_info->args, "arg4")              == 0);
+    assert(strcmp(net_info->user, "user") == 0);
+    assert(strcmp(net_info->pass, "pass") == 0);
+    assert(strcmp(net_info->path,   "/path4/path5?arg4") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info), "arg4") == 0);
 
     assert(ConnNetInfo_ParseURL(net_info, "../path6?args"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
-    assert(strcmp(net_info->user, "user")              == 0);
-    assert(strcmp(net_info->pass, "pass")              == 0);
-    assert(strcmp(net_info->path, "/path4/../path6")   == 0);
-    assert(strcmp(net_info->args, "args")              == 0);
+    assert(strcmp(net_info->user, "user") == 0);
+    assert(strcmp(net_info->pass, "pass") == 0);
+    assert(strcmp(net_info->path, "/path4/../path6?args") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info),  "args") == 0);
 
     str = ConnNetInfo_URL(net_info);
     assert(str);
     assert(strcmp(str, "https://www/path4/../path6?args") == 0);
     free(str);
 
-    assert(ConnNetInfo_ParseURL(net_info, "http:///path7?newargs"));
+    assert(ConnNetInfo_ParseURL(net_info, "http:///path7?newargs#frag"));
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
-    assert(net_info->scheme                    == eURL_Http);
-    assert(strcmp(net_info->user, "user")              == 0);
-    assert(strcmp(net_info->pass, "pass")              == 0);
-    assert(strcmp(net_info->path, "/path7")            == 0);
-    assert(strcmp(net_info->args, "newargs")           == 0);
+    assert(net_info->scheme               == eURL_Http);
+    assert(strcmp(net_info->user, "user") == 0);
+    assert(strcmp(net_info->pass, "pass") == 0);
+    assert(strcmp(net_info->path,         "/path7?newargs#frag") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info), "newargs#frag") == 0);
+
+    assert(ConnNetInfo_SetPath(net_info, "/path8?moreargs"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+
+    assert(strcmp(net_info->path,         "/path8?moreargs#frag") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info), "moreargs#frag") == 0);
+
+    assert(ConnNetInfo_SetPath(net_info, "/path9#morefrag"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+
+    assert(strcmp(net_info->path,          "/path9#morefrag") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info), "#morefrag") == 0);
+
+    assert(ConnNetInfo_SetArgs(net_info, "newarg=newval#newfrag"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+
+    assert(strcmp(net_info->path,         "/path9?newarg=newval#newfrag")==0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info), "newarg=newval#newfrag")==0);
+
+    assert(ConnNetInfo_SetArgs(net_info, "arg=val"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+
+    assert(strcmp(net_info->path,         "/path9?arg=val#newfrag")==0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info), "arg=val#newfrag")==0);
+
+    assert(ConnNetInfo_SetArgs(net_info, "#xfrag"));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+
+    assert(strcmp(net_info->path,          "/path9#xfrag") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info), "#xfrag") == 0);
+
+    assert(ConnNetInfo_SetPath(net_info, ""));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+
+    assert(strcmp(net_info->path,                "#xfrag") == 0);
+    assert(strcmp(ConnNetInfo_GetArgs(net_info), "#xfrag") == 0);
+
+    assert(ConnNetInfo_SetArgs(net_info, 0));
+    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+
+    assert(net_info->path[0] == '\0');
+    assert(net_info->path    == ConnNetInfo_GetArgs(net_info));
 
     ConnNetInfo_SetUserHeader(net_info, "");
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
@@ -472,34 +515,53 @@ static void TEST_ConnNetInfo(void)
            &"\""[!str], str ? buf : "NULL", &"\""[!str]);
     assert(!net_info->http_user_header  &&  !str);
 
-    for (n = 0; n < sizeof(net_info->args); n++)
-        net_info->args[n] = "0123456789"[rand() % 10];
+    for (n = strcspn(net_info->path, "?")+1;  n < sizeof(net_info->path);  ++n)
+        net_info->path[n] = "0123456789"[rand() % 10];
 
-    strncpy0(net_info->args, "a=b&b=c&c=d", sizeof(net_info->args) - 1);
-    printf("HTTP Arg: \"%s\"\n", net_info->args);
+    ConnNetInfo_SetArgs(net_info, "a=b&b=c&c=d#f");
+    printf("HTTP Arg:                     \"%s\"\n",
+           ConnNetInfo_GetArgs(net_info));
 
     ConnNetInfo_PrependArg(net_info, "d=e", 0);
     ConnNetInfo_PrependArg(net_info, "e", "f");
-    printf("HTTP Arg after prepend: \"%s\"\n", net_info->args);
+    printf("HTTP Arg after prepend:       \"%s\"\n",
+           ConnNetInfo_GetArgs(net_info));
+    assert(strcmp(ConnNetInfo_GetArgs(net_info),
+                  "e=f&d=e&a=b&b=c&c=d#f") == 0);
 
     ConnNetInfo_AppendArg(net_info, "f=g", 0);
     ConnNetInfo_AppendArg(net_info, "g", "h");
-    printf("HTTP Arg after append: \"%s\"\n", net_info->args);
+    printf("HTTP Arg after append:        \"%s\"\n",
+           ConnNetInfo_GetArgs(net_info));
+    assert(strcmp(ConnNetInfo_GetArgs(net_info),
+                  "e=f&d=e&a=b&b=c&c=d&f=g&g=h#f") == 0);
 
-    ConnNetInfo_PreOverrideArg(net_info, "a=z&b", "y");
+    ConnNetInfo_PreOverrideArg(net_info, "a=z&b#p", "y#t");
     ConnNetInfo_PreOverrideArg(net_info, "c", "x");
-    printf("HTTP Arg after pre-override: \"%s\"\n", net_info->args);
+    printf("HTTP Arg after pre-override:  \"%s\"\n",
+           ConnNetInfo_GetArgs(net_info));
+    assert(strcmp(ConnNetInfo_GetArgs(net_info),
+                  "c=x&a=z&b=y&e=f&d=e&f=g&g=h#f") == 0);
 
-    ConnNetInfo_PostOverrideArg(net_info, "d=w&e", "v");
+    ConnNetInfo_PostOverrideArg(net_info, "d=w&e#q", "v#s");
     ConnNetInfo_PostOverrideArg(net_info, "f", "u");
-    printf("HTTP Arg after post-override: \"%s\"\n", net_info->args);
+    printf("HTTP Arg after post-override: \"%s\"\n",
+           ConnNetInfo_GetArgs(net_info));
+    assert(strcmp(ConnNetInfo_GetArgs(net_info),
+                  "c=x&a=z&b=y&g=h&d=w&e=v&f=u#f") == 0);
 
     ConnNetInfo_DeleteArg(net_info, "g");
     ConnNetInfo_DeleteArg(net_info, "h=n");
-    printf("HTTP Arg after delete: \"%s\"\n", net_info->args);
+    printf("HTTP Arg after delete:        \"%s\"\n",
+           ConnNetInfo_GetArgs(net_info));
+    assert(strcmp(ConnNetInfo_GetArgs(net_info),
+                  "c=x&a=z&b=y&d=w&e=v&f=u#f") == 0);
 
-    ConnNetInfo_DeleteAllArgs(net_info, "a=b&p=q&f=d");
-    printf("HTTP Arg after delete-all: \"%s\"\n", net_info->args);
+    ConnNetInfo_DeleteAllArgs(net_info, "a=b&p=q&f=d#t");
+    printf("HTTP Arg after delete-all:    \"%s\"\n",
+           ConnNetInfo_GetArgs(net_info));
+    assert(strcmp(ConnNetInfo_GetArgs(net_info),
+                  "c=x&b=y&d=w&e=v#f") == 0);
 
     ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
     ConnNetInfo_Destroy(net_info);
