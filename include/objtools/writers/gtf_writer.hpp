@@ -107,18 +107,6 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
-    virtual bool xAssignFeatureAttributeProduct(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&) override;
-    virtual bool xAssignFeatureAttributeGeneSynonym(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&) override;
-    virtual bool xAssignFeatureAttributeProteinId(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&) override;
     virtual bool xAssignFeatureAttributesQualifiers(
         CGffFeatureRecord&,
         CGffFeatureContext&,

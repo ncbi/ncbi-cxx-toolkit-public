@@ -470,10 +470,6 @@ protected:
     bool xAssignFeatureAttributeGeneDesc(
         CGffFeatureRecord&,
         const CMappedFeat&);
-    bool xAssignFeatureAttributeGeneSynonym(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&) override;
     bool xAssignFeatureAttributeIsOrdered(
         CGffFeatureRecord&,
         const CMappedFeat&);
@@ -500,14 +496,6 @@ protected:
     bool xAssignFeatureAttributeNcrnaClass(
         CGffFeatureRecord&,
         const CMappedFeat&);
-    bool xAssignFeatureAttributeProduct(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&) override;
-    bool xAssignFeatureAttributeProteinId(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&) override;
     bool xAssignFeatureAttributeTranscriptId(
         CGffFeatureRecord&,
         const CMappedFeat&);

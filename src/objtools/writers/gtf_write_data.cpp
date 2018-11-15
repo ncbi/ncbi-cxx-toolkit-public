@@ -119,7 +119,9 @@ string CGtfRecord::StrAttributes() const
             }
             continue;
         }
-        strAttributes += x_AttributeToString(strKey, it->second.front());
+        for (const auto& value: it->second) {
+            strAttributes += x_AttributeToString(strKey, value);
+        }
     }
     
     if ( ! m_bNoExonNumbers ) {

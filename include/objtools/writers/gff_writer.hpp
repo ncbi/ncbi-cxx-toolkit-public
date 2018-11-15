@@ -263,15 +263,15 @@ protected:
     virtual bool xAssignFeatureAttributeProduct(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&) { return false; };
+        const CMappedFeat&);
     virtual bool xAssignFeatureAttributeGeneSynonym(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&) { return false; };
+        const CMappedFeat&);
     virtual bool xAssignFeatureAttributeProteinId(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&) { return false; };
+        const CMappedFeat&);
     virtual bool xAssignFeatureAttributeRibosomalSlippage(
         CGffFeatureRecord&,
         CGffFeatureContext&,

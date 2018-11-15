@@ -2285,36 +2285,6 @@ bool CGff3Writer::xAssignFeatureAttributeGeneDesc(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureAttributeGeneSynonym(
-    CGffFeatureRecord& record,
-    CGffFeatureContext&,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    if (!mf.GetData().IsGene()) {
-        return true;
-    }
-
-    const CGene_ref& gene_ref = mf.GetData().GetGene();
-    if (!gene_ref.IsSetSyn()) {
-        return true;
-    }
-
-    const list<string>& syns = gene_ref.GetSyn();
-    list<string>::const_iterator it = syns.begin();
-    if (!gene_ref.IsSetLocus() && !gene_ref.IsSetLocus_tag()) {
-        ++it;
-    }    
-    if (it == syns.end()) {
-        return true;
-    }
-    while (it != syns.end()) {
-        record.AddAttribute("gene_synonym", *(it++));
-    }
-    return true; 
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeOldLocusTag(
     CGffFeatureRecord& record,
     const CMappedFeat& mf)
@@ -2439,28 +2409,6 @@ bool CGff3Writer::xAssignFeatureAttributeLocusTag(
 
 
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureAttributeProteinId(
-    CGffFeatureRecord& record,
-    CGffFeatureContext&,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    auto featSubtype = mf.GetFeatSubtype();
-    if (featSubtype != CSeq_feat::TData::eSubtype_cdregion) {
-        return true;
-    }
-    if (!mf.IsSetProduct()) {
-        return true;
-    }
-    string protein_id;
-    if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), protein_id)) {
-        record.SetAttribute("protein_id", protein_id);
-        return true;
-    }
-    return true; 
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeCodeBreak(
     CGffFeatureRecord& record,
     const CMappedFeat& mf )
@@ -2495,111 +2443,6 @@ bool CGff3Writer::xAssignFeatureAttributeCodeBreak(
         string cbString;
         if (CWriteUtil::GetCodeBreak(**it, cbString)) {
             record.AddAttribute("transl_except", cbString);
-        }
-    }
-    return true; 
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureAttributeProduct(
-    CGffFeatureRecord& record,
-    CGffFeatureContext&,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-
-    CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
-    if (subtype == CSeqFeatData::eSubtype_cdregion) {
-
-        // Possibility 1:
-        // Product name comes from a prot-ref which stored in the seqfeat's 
-        // xrefs:
-        const CProt_ref* pProtRef = mf.GetProtXref();
-        if ( pProtRef && pProtRef->IsSetName() ) {
-            const list<string>& names = pProtRef->GetName();
-            record.SetAttribute("product", names.front());
-            return true;
-        }
-
-        // Possibility 2:
-        // Product name is from the prot-ref refered to by the seqfeat's 
-        // data.product:
-        if (mf.IsSetProduct()) {
-            const CSeq_id* pId = mf.GetProduct().GetId();
-            if (pId) {
-                CBioseq_Handle bsh = mf.GetScope().GetBioseqHandle(*pId); 
-                if (bsh) {
-                    SAnnotSelector sel(CSeqFeatData::eSubtype_prot);
-                    sel.SetSortOrder(SAnnotSelector::eSortOrder_Normal);
-                    CFeat_CI it(bsh, sel);
-                    if (it  &&  it->IsSetData() 
-                            &&  it->GetData().GetProt().IsSetName()
-                            &&  !it->GetData().GetProt().GetName().empty()) {
-                        record.SetAttribute("product",
-                            it->GetData().GetProt().GetName().front());
-                        return true;
-                    }
-                }
-            }
-            
-            string product;
-            if (CWriteUtil::GetBestId(mf.GetProductId(), mf.GetScope(), product)) {
-                record.SetAttribute("product", product);
-                return true;
-            }
-        }
-    }
-
-    CSeqFeatData::E_Choice type = mf.GetFeatType();
-    if (type == CSeqFeatData::e_Rna) {
-        const CRNA_ref& rna = mf.GetData().GetRna();
-
-        if (subtype == CSeqFeatData::eSubtype_tRNA) {
-            if (rna.IsSetExt()  &&  rna.GetExt().IsTRNA()) {
-
-                const CRange<TSeqPos>& display_range = GetRange();
-                const CTrna_ext& trna = display_range.IsWhole() ? 
-                    rna.GetExt().GetTRNA() :
-                    *sequence::CFeatTrim::Apply(rna.GetExt().GetTRNA(), display_range);
-
-                string anticodon;
-                if (CWriteUtil::GetTrnaAntiCodon(trna, anticodon)) {
-                    record.SetAttribute("anticodon", anticodon);
-                }
-                string codons;
-                if (CWriteUtil::GetTrnaCodons(trna, codons)) {
-                    record.SetAttribute("codons", codons);
-                }
-                string aa;
-                if (CWriteUtil::GetTrnaProductName(trna, aa)) {
-                    record.SetAttribute("product", aa);
-                    return true;
-                }
-            }
-        }
-
-        if (rna.IsSetExt()  &&  rna.GetExt().IsName()) {
-            record.SetAttribute("product", rna.GetExt().GetName());
-            return true;
-        }
-
-        if (rna.IsSetExt()  &&  rna.GetExt().IsGen()  &&  
-                rna.GetExt().GetGen().IsSetProduct() ) {
-            record.SetAttribute("product", rna.GetExt().GetGen().GetProduct());
-            return true;
-        }
-    }
-
-    // finally, look for gb_qual
-    if (mf.IsSetQual()) {
-        const CSeq_feat::TQual& quals = mf.GetQual();
-        for ( CSeq_feat::TQual::const_iterator cit = quals.begin(); 
-                cit != quals.end(); ++cit) {
-            if ((*cit)->IsSetQual()  &&  (*cit)->IsSetVal()  &&  
-                    (*cit)->GetQual() == "product") {
-                record.SetAttribute("product", (*cit)->GetVal());
-                return true;
-            }
         }
     }
     return true; 
