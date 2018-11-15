@@ -525,19 +525,15 @@ bool Asn2gnbkCompressSpaces(string& val)
         curr = next;
     }
 
-    if (curr > 0 && curr != ' ') {
-        *out = curr;
-        out++;
-    }
     *out = '\0';
 
     /* TrimSpacesAroundString but allow leading/trailing tabs/newlines */
 
-    if (str != NULL && str[0] != '\0') {
+    if (str[0] != '\0') {
         dst = str;
         ptr = str;
         ch = *ptr;
-        while (ch != '\0' && ch == ' ') {
+        while (ch == ' ') {
             ptr++;
             ch = *ptr;
         }
@@ -703,7 +699,7 @@ private:
     CScope *m_scope;
 };
 
-CRef<CSeq_loc> ReadLocFromText(string text, const CSeq_id *id, CScope *scope)
+CRef<CSeq_loc> ReadLocFromText(const string& text, const CSeq_id *id, CScope *scope)
 {
     CGetSeqLocFromStringHelper_ReadLocFromText helper(scope);
     return GetSeqLocFromString(text, id, &helper);
@@ -750,7 +746,7 @@ static ProteinAbbrevData abbreviation_list[] =
 // or three-letter abbreviation.  
 // Use X if the abbreviation is not found.
 
-char ValidAminoAcid (string abbrev)
+char ValidAminoAcid (const string& abbrev)
 {
     char ch = 'X';
     
@@ -822,8 +818,8 @@ bool ConvertAuthorContainerMlToStd( CAuth_list& authors )
 {
     CAuth_list::C_Names* names = new CAuth_list::C_Names;
     CAuth_list::C_Names::TStd& names_std = names->SetStd();
-    NON_CONST_ITERATE( CAuth_list::C_Names::TMl, author, authors.SetNames().SetMl() ) {
-        names_std.push_back( ConvertMltoSTD( *author ) );
+    for (auto& author : authors.GetNames().GetMl()) {
+        names_std.push_back( ConvertMltoSTD( author ) );
     }
     authors.SetNames( *names );
     return true;

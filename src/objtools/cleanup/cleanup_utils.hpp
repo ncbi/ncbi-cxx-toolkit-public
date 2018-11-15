@@ -382,10 +382,10 @@ if ((o).IsSet##x()) { \
     }
 
 // for converting strings to locations
-CRef<CSeq_loc> ReadLocFromText(string text, const CSeq_id *id, CScope *scope);
+CRef<CSeq_loc> ReadLocFromText(const string& text, const CSeq_id *id, CScope *scope);
 
 // for finding the correct amino acid letter given an abbreviation
-char ValidAminoAcid (string abbrev);
+char ValidAminoAcid (const string& abbrev);
 
 // for sorting and uniquing dbtags
 bool s_DbtagCompare (const CRef<CDbtag>& dbt1, const CRef<CDbtag>& dbt2);

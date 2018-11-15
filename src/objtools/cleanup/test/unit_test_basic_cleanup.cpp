@@ -2372,3 +2372,41 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4565)
 
 }
 
+
+void TestOneAsn2gnbkCompressSpaces(const string& input, const string& output)
+{
+    // In order to test Asn2gnbkCompressSpaces, we will put the string in a User-field,
+    // since this function is not exposed directly
+
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CUser_field> f(new CUser_field());
+    f->SetData().SetStr(input);
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    desc->SetUser().SetData().push_back(f);
+    entry->SetSeq().SetDescr().Set().push_back(desc);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    BOOST_CHECK_EQUAL(f->GetData().GetStr(), output);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Asn2gnbkCompressSpaces)
+{
+    TestOneAsn2gnbkCompressSpaces("abc", "abc"); // normal, no change
+    TestOneAsn2gnbkCompressSpaces(" abc ", "abc"); // trim leaading and trailing spaces
+    TestOneAsn2gnbkCompressSpaces(" a  bc ", "a bc"); // two spaces become one
+    TestOneAsn2gnbkCompressSpaces("a,,b,,c", "a, b, c"); // multiple commas become one
+    TestOneAsn2gnbkCompressSpaces("a;;b;;;c", "a;b;c"); // multiple semicolons become one
+    TestOneAsn2gnbkCompressSpaces("a ,b , c", "a, b, c"); // remove spaces before commas
+    TestOneAsn2gnbkCompressSpaces("a ( b ) c", "a (b) c"); // parentheses
+    TestOneAsn2gnbkCompressSpaces("a ; b ; c", "a; b; c"); // spaces before semicolons
+}
