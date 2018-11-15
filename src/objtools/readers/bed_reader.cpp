@@ -116,10 +116,10 @@ public:
     bool FillBuffer(
         size_t numLines)
     {
-        CTempString line;
+        string line;
         while (numLines  &&  !mLineReader.AtEOF()) {
             line = *++mLineReader;
-            NStr::TruncateSpacesInPlace(line);
+            CLinePreBuffer::StripSpaceCharsInPlace(line);
             mBuffer.push_back(line);
             if (!IsCommentLine(line)) {
                 --numLines;
@@ -151,7 +151,7 @@ public:
             }
             else {
                 temp = *++mLineReader;
-                NStr::TruncateSpacesInPlace(temp);
+                CLinePreBuffer::StripSpaceCharsInPlace(temp);
             }
             if (!IsCommentLine(temp)) {
                 line = temp;
@@ -193,6 +193,21 @@ public:
             mBuffer.clear();
             mLineNumber = 0;
         }
+    };
+
+    static void
+    StripSpaceCharsInPlace(
+        string& str)
+    {
+        auto newFirst = 0;
+        while (str[newFirst] == ' ') {
+            ++newFirst;
+        }
+        auto newLast = str.length() - 1;
+        while (str[newLast] == ' ') {
+            --newLast;
+        }
+        str = str.substr(newFirst, newLast - newFirst + 1);
     };
 
 protected:
@@ -345,19 +360,33 @@ bool CBedReader::xSplitColumns(
     vector<string>& columns)
 //  ----------------------------------------------------------------------------
 {
+    bool splitSuccessful = false;
     if (mColumnSeparator.empty()) {
         columns.clear();
         mColumnSeparator = "\t";
         NStr::Split(line, mColumnSeparator, columns, mColumnSplitFlags);
         if (columns.size() > 2) {
-            return true;
+            splitSuccessful = true;
         }
-        mColumnSeparator = " \t";
-        mColumnSplitFlags = NStr::fSplit_MergeDelimiters;
+        else {
+            mColumnSeparator = " \t";
+            mColumnSplitFlags = NStr::fSplit_MergeDelimiters;
+        }
     }
-    columns.clear();
-    NStr::Split(line, mColumnSeparator, columns, mColumnSplitFlags);
-    return (columns.size() > 2);
+    if (!splitSuccessful) {
+        columns.clear();
+        NStr::Split(line, mColumnSeparator, columns, mColumnSplitFlags);
+        if (columns.size() > 2) {
+            splitSuccessful = true;
+        }
+    }
+    if (!splitSuccessful) {
+        return false;
+    }
+    for (auto& column: columns) {
+        NStr::TruncateSpacesInPlace(column);
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -396,7 +425,6 @@ bool CBedReader::xDetermineLikelyColumnCount(
         if (this->xIsBrowserLine(line)) {
             continue;
         }
-
 
         vector<string> columns;
         if (!xSplitColumns(line, columns)) {
@@ -595,8 +623,6 @@ CBedReader::xParseFeature(
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-	CTempString record_copy = NStr::TruncateSpaces_Unsafe(line);
-
     //  parse
     vector<string> fields;
     xSplitColumns(line, fields);
