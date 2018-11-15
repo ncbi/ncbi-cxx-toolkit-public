@@ -662,7 +662,6 @@ int CTestFTPDownloadApp::Run(void)
     // Initialize all connection parameters for FTP
     SConnNetInfo* net_info = ConnNetInfo_Create("_FTP");
     net_info->path[0] = '\0';
-    net_info->args[0] = '\0';
     if (net_info->http_referer) {
         free((void*) net_info->http_referer);
         net_info->http_referer = 0;
@@ -692,9 +691,9 @@ int CTestFTPDownloadApp::Run(void)
 
     // Figure out what FTP flags to use
     TFTP_Flags flags = 0;
-    if        (net_info->req_method == eReqMethod_Post) {
+    if        ((net_info->req_method & ~eReqMethod_v1) == eReqMethod_Post) {
         flags |= fFTP_UsePassive;
-    } else if (net_info->req_method == eReqMethod_Get) {
+    } else if ((net_info->req_method & ~eReqMethod_v1) == eReqMethod_Get) {
         flags |= fFTP_UseActive;
     }
     char val[40];
