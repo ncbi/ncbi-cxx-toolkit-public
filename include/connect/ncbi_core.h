@@ -544,10 +544,13 @@ typedef enum {
  *  Default value passed in (cut to "value_size") symbols, found value out
  * @param value_size
  *  Size of "value" storage, must be greater than 0
+ * @return
+ *  1 if successfully found and stored;  -1 if not found (the default is to be
+ *  used);  0 if an error (including truncation) occurred
  * @sa
  *  REG_Create, REG_Reset
  */
-typedef void (*FREG_Get)
+typedef int (*FREG_Get)
 (void*       data,
  const char* section,
  const char* name,
@@ -574,7 +577,7 @@ typedef void (*FREG_Get)
  * @sa
  *  REG_Create, REG_Reset, EREG_Storage
  */
-typedef int (*FREG_Set)
+typedef int/*bool*/ (*FREG_Set)
 (void*        data,
  const char*  section,
  const char*  name,
@@ -684,14 +687,16 @@ extern NCBI_XCONNECT_EXPORT REG REG_Delete(REG rg);
  * @param name
  *  Registry entry name
  * @param value
- *  Buffer to put the value of the requested entry to
+ *  Buffer to receive the value of the requested entry, must be non-NULL
  * @param value_size
- *  Maximal size of buffer "value"
+ *  Maximal size of buffer "value", must be greater than 0
  * @param def_value
- *  Default value (none if passed NULL)
+ *  Default value (none if passed NULL or "")
  * @return
- *  Return "value" (however, if "value_size" is zero, then return NULL).
- *  If non-NULL, the returned "value" will be terminated with '\0'.
+ *  Return "value" if the found value, including the default, and with its '\0'
+ *  terminator, fits entirely within "value_size";  return NULL if there was an
+ *  error retrieving the value, or if it had to be truncated (but regardless,
+ *  "value" must always be kept '\0'-terminated unless "value_size" was zero).
  * @sa
  *  REG_Create, REG_Set
  */
@@ -705,7 +710,7 @@ extern NCBI_XCONNECT_EXPORT const char* REG_Get
  );
 
 
-/** Store the "value" to the registry section "section" under name "name",
+/** Store the "value" into the registry section "section" under the key "name",
  * and according to "storage".
  * @param rg
  *  Registry handle as previously obtained from REG_Create

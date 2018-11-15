@@ -58,20 +58,28 @@ static TCORE_Set s_CORE_Set = 0;
  ***********************************************************************/
 
 extern "C" {
-static void s_REG_Get(void* user_data,
+static int s_REG_Get(void* user_data,
                       const char* section, const char* name,
                       char* value, size_t value_size) THROWS_NONE
 {
     try {
         string result
             = static_cast<const IRegistry*> (user_data)->Get(section, name);
+        if (result.empty())
+            return -1/*unmodified*/;
 
-        if (!result.empty()) {
-            /*FIXME:  This is *bad* because of possible truncation*/
-            strncpy0(value, result.c_str(), value_size - 1);
-        }
+        int rv;
+        size_t len = result.size();
+        if (len >= value_size) {
+            len  = value_size - 1;
+            rv   = 0/*truncation*/;
+        } else
+            rv   = 1/*success*/;
+        strncpy0(value, result.data(), len);
+        return rv;
     }
     NCBI_CATCH_ALL_X(1, "s_REG_Get() failed");
+    return 0/*failure*/;
 }
 }
 

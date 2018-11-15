@@ -563,25 +563,33 @@ extern const char* REG_Get
  size_t      value_size,
  const char* def_value)
 {
+    int rv;
     if (!value  ||  value_size <= 0)
         return 0/*failed*/;
 
-    if (def_value)
-        strncpy0(value, def_value, value_size - 1);
-    else
-        *value = '\0';
-
+    *value = '\0';
     if (rg) {
         REG_LOCK_READ;
         REG_VALID;
 
-        if (rg->get)
-            rg->get(rg->data, section, name, value, value_size);
+        rv = (rg->get
+              ? rg->get(rg->data, section, name, value, value_size)
+              : -1/*default*/);
 
         REG_UNLOCK;
-    }
+    } else
+        rv = -1/*default*/;
 
-    return value;
+    if ((rv < 0  ||  !*value)  &&  def_value  &&  *def_value) {
+        size_t len = strlen(def_value);
+        if (len >= value_size) {
+            len  = value_size - 1;
+            rv   = 0;
+        } else
+            rv   = 1;
+        strncpy0(value, def_value, len);
+    }
+    return rv ? value : 0;
 }
 
 
@@ -592,19 +600,19 @@ extern int/*bool*/ REG_Set
  const char*  value,
  EREG_Storage storage)
 {
-    int/*bool*/ result;
+    int/*bool*/ rv;
 
     if (rg) {
         REG_LOCK_READ;
         REG_VALID;
 
-        result = (rg->set
-                  ? rg->set(rg->data, section, name, value, storage)
-                  : 0/*failed*/);
+        rv = (rg->set
+              ? rg->set(rg->data, section, name, value, storage)
+              : 0/*failed*/);
 
         REG_UNLOCK;
     } else
-        result = 0/*failed*/;
+        rv = 0/*failed*/;
 
-    return result;
+    return rv;
 }
