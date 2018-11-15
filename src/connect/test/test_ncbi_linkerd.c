@@ -176,12 +176,12 @@ static int run_a_test(size_t test_idx, const char *svc, const char *sch,
     }
     assert( ! user  ||  strlen(user) < sizeof(net_info->user));
     assert( ! pass  ||  strlen(pass) < sizeof(net_info->pass));
-    assert( ! path  ||  strlen(path) < sizeof(net_info->path));
-    assert( ! args  ||  strlen(args) < sizeof(net_info->args));
+    assert((path ? strlen(path) : 0) + 1 +
+           (args ? strlen(args) : 0) < sizeof(net_info->path));
     strcpy(net_info->user, user ? user : "");
     strcpy(net_info->pass, pass ? pass : "");
-    strcpy(net_info->path, path ? path : "");
-    strcpy(net_info->args, args ? args : "");
+    ConnNetInfo_SetPath(net_info, path ? path : "");
+    ConnNetInfo_SetArgs(net_info, args ? args : "");
 
     /* Set up the server iterator */
     iter = SERV_OpenP(svc, fSERV_All |
