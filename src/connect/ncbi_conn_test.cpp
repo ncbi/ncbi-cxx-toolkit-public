@@ -373,7 +373,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
             m_HttpProxy = true;
         // Make sure there are no extras
         ConnNetInfo_SetUserHeader(net_info, 0);
-        net_info->args[0] = '\0';
+        ConnNetInfo_SetArgs(net_info, 0);
     }
 
     PreCheck(eHttp, 0/*main*/,
@@ -864,7 +864,6 @@ EIO_Status CConnTest::CheckFWConnections(string* reason)
                 " in working order will be used to access NCBI services\n";
         }
         net_info->path[0] = '\0';
-        net_info->args[0] = '\0';
         net_info->timeout = m_Timeout;
     }
 

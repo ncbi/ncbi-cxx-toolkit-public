@@ -126,12 +126,6 @@ struct SLINKERD_Data {
 };
 
 
-/* LINKERD_TODO - tie these to SConnNetInfo */
-#define ENDPOINT_USER_LEN   64
-#define ENDPOINT_PASS_LEN   64
-#define ENDPOINT_PATH_LEN   2048
-#define ENDPOINT_ARGS_LEN   2048
-
 /* For the purposes of linkerd resolution, endpoint data doesn't include
     host and port, because the linkerd host and port are constants.
     Username and password wouldn't normally be part of an endpoint definition,
@@ -139,10 +133,9 @@ struct SLINKERD_Data {
     CUrl("scheme+ncbilb://user:pass@service/path?args") can be supported.*/
 typedef struct {
     EURLScheme      scheme;
-    char            user[ENDPOINT_USER_LEN];
-    char            pass[ENDPOINT_PASS_LEN];
-    char            path[ENDPOINT_PATH_LEN];
-    char            args[ENDPOINT_ARGS_LEN];
+    char            user[CONN_USER_LEN+1];
+    char            pass[CONN_PASS_LEN+1];
+    char            path[CONN_PATH_LEN+1];
 } SEndpoint;
 
 
@@ -193,12 +186,17 @@ static EEndpointStatus s_SetEndpoint(
     SEndpoint *end, const char *scheme, const char *user,
     const char *pass, const char *path, const char *args)
 {
+    size_t userlen = user ? strlen(user) : 0;
+    size_t passlen = pass ? strlen(pass) : 0;
+    size_t pathlen = path ? strlen(path) : 0;
+    size_t argslen = args ? strlen(args) : 0;
     if (scheme  &&  *scheme) {
         end->scheme = x_ParseScheme(scheme, strlen(scheme));
+    } else {
+        end->scheme = eURL_Unspec;
     }
     if (end->scheme == eURL_Unspec) {
-        if ((user  &&  *user)  ||  (pass  &&  *pass)  ||  (path  &&  *path)  ||
-            (args  &&  *args))
+        if (userlen | passlen | pathlen | argslen)
         {
             return eEndStat_NoScheme;
         }
@@ -210,48 +208,42 @@ static EEndpointStatus s_SetEndpoint(
         return eEndStat_Error;
     }
 
-    if (user  &&  *user) {
-        if (strlen(user) >= sizeof(end->user)) {
+    if (userlen) {
+        if (userlen++ >= sizeof(end->user)) {
             CORE_LOG_X(eLSub_BadData, eLOG_Error,
                        "Configured linkerd user too long.");
             return eEndStat_Error;
         }
-        strcpy(end->user, user);
+        memcpy(end->user, user, userlen);
     } else {
         end->user[0] = NIL;
     }
 
-    if (pass  &&  *pass) {
-        if (strlen(pass) >= sizeof(end->pass)) {
+    if (passlen) {
+        if (passlen++ >= sizeof(end->pass)) {
             CORE_LOG_X(eLSub_BadData, eLOG_Error,
                        "Configured linkerd password too long.");
             return eEndStat_Error;
         }
-        strcpy(end->pass, pass);
+        memcpy(end->pass, pass, passlen);
     } else {
         end->pass[0] = NIL;
     }
 
-    if (path  &&  *path) {
-        if (strlen(path) >= sizeof(end->path)) {
+    if (pathlen | argslen) {
+        if (pathlen + 1 + argslen >= sizeof(end->path)) {
             CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                       "Configured linkerd path too long.");
+                       "Configured linkerd path/args too long.");
             return eEndStat_Error;
         }
-        strcpy(end->path, path);
+        memcpy(end->path, path ? path : "", pathlen + !argslen);
+        if (argslen) {
+            if (*args != '#')
+                end->path[pathlen++] = '?';
+            memcpy(end->path + pathlen, args, argslen + 1);
+        }
     } else {
         end->path[0] = NIL;
-    }
-
-    if (args  &&  *args) {
-        if (strlen(args) >= sizeof(end->args)) {
-            CORE_LOG_X(eLSub_BadData, eLOG_Error,
-                       "Configured linkerd args too long.");
-            return eEndStat_Error;
-        }
-        strcpy(end->args, args);
-    } else {
-        end->args[0] = NIL;
     }
 
     return eEndStat_Success;
@@ -263,19 +255,16 @@ static EEndpointStatus s_EndpointFromNetInfo(SEndpoint *end,
                                              int warn)
 {
     const char      *scheme;
-    SEndpoint       endpoint = {eURL_Unspec, "", "", "", ""};
     EEndpointStatus end_stat;
 
     /* use the endpoint scheme if it's already been determined */
     scheme = x_Scheme(end->scheme == eURL_Unspec ?
                       net_info->scheme : end->scheme);
 
-    end_stat = s_SetEndpoint(&endpoint, scheme, net_info->user,
-                             net_info->pass, net_info->path, net_info->args);
+    end_stat = s_SetEndpoint(end, scheme, net_info->user,
+                             net_info->pass, net_info->path, 0);
     switch (end_stat) {
     case eEndStat_Success:
-        *end = endpoint;
-        break;
     case eEndStat_NoData:
         break;
     case eEndStat_NoScheme: {
@@ -300,14 +289,16 @@ static EEndpointStatus s_EndpointFromNetInfo(SEndpoint *end,
 
 static EEndpointStatus s_EndpointFromRegistry(SEndpoint *end)
 {
+    EEndpointStatus end_stat;
+
     char    scheme[12];
-    char    user[ENDPOINT_USER_LEN];
-    char    pass[ENDPOINT_PASS_LEN];
-    char    path[ENDPOINT_PATH_LEN];
-    char    args[ENDPOINT_ARGS_LEN];
+    char    user[CONN_USER_LEN+1];
+    char    pass[CONN_PASS_LEN+1];
+    char    path[(CONN_PATH_LEN+1)/2];
+    char    args[(CONN_PATH_LEN+1)/2];
 
     if ( ! ConnNetInfo_GetValue("",
-        REG_LINKERD_SCHEME_KEY, scheme, sizeof(scheme)-1,
+        REG_LINKERD_SCHEME_KEY, scheme, sizeof(scheme),
         REG_LINKERD_SCHEME_DEF))
     {
         CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
@@ -316,7 +307,7 @@ static EEndpointStatus s_EndpointFromRegistry(SEndpoint *end)
     }
 
     if ( ! ConnNetInfo_GetValue("",
-        REG_LINKERD_USER_KEY, user, sizeof(user)-1,
+        REG_LINKERD_USER_KEY, user, sizeof(user),
         REG_LINKERD_USER_DEF))
     {
         CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
@@ -325,7 +316,7 @@ static EEndpointStatus s_EndpointFromRegistry(SEndpoint *end)
     }
 
     if ( ! ConnNetInfo_GetValue("",
-        REG_LINKERD_PASS_KEY, pass, sizeof(pass)-1,
+        REG_LINKERD_PASS_KEY, pass, sizeof(pass),
         REG_LINKERD_PASS_DEF))
     {
         CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
@@ -334,7 +325,7 @@ static EEndpointStatus s_EndpointFromRegistry(SEndpoint *end)
     }
 
     if ( ! ConnNetInfo_GetValue("",
-        REG_LINKERD_PATH_KEY, path, sizeof(path)-1,
+        REG_LINKERD_PATH_KEY, path, sizeof(path),
         REG_LINKERD_PATH_DEF))
     {
         CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
@@ -343,7 +334,7 @@ static EEndpointStatus s_EndpointFromRegistry(SEndpoint *end)
     }
 
     if ( ! ConnNetInfo_GetValue("",
-        REG_LINKERD_ARGS_KEY, args, sizeof(args)-1,
+        REG_LINKERD_ARGS_KEY, args, sizeof(args),
         REG_LINKERD_ARGS_DEF))
     {
         CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
@@ -351,14 +342,9 @@ static EEndpointStatus s_EndpointFromRegistry(SEndpoint *end)
         return eEndStat_Error;
     }
 
-    SEndpoint       endpoint_reg = {eURL_Unspec, "", "", "", ""};
-    EEndpointStatus end_stat;
-
-    end_stat = s_SetEndpoint(&endpoint_reg, scheme, user, pass, path, args);
+    end_stat = s_SetEndpoint(end, scheme, user, pass, path, args);
     switch (end_stat) {
     case eEndStat_Success:
-        *end = endpoint_reg;
-        break;
     case eEndStat_NoData:
         break;
     case eEndStat_NoScheme: {
@@ -387,6 +373,8 @@ static EEndpointStatus s_EndpointFromNamerd(SEndpoint* end, SERV_ITER iter)
     SERV_ITER           nd_iter;
     EEndpointStatus     retval = eEndStat_Error;
     char                use_namerd[10];
+    const char*         path, *args;
+    size_t              pathlen, argslen;
 
     /* Make sure namerd is enabled for linkerd. */
     if ( ! ConnNetInfo_GetValue("",
@@ -430,15 +418,27 @@ static EEndpointStatus s_EndpointFromNamerd(SEndpoint* end, SERV_ITER iter)
 
     /* Sanity checks */
     assert(nd_srv_info != (SSERV_Info*)(-1L));
-    assert(strlen(SERV_HTTP_PATH(&nd_srv_info->u.http)) < ENDPOINT_PATH_LEN);
-    assert(strlen(SERV_HTTP_ARGS(&nd_srv_info->u.http)) < ENDPOINT_ARGS_LEN);
+    path = SERV_HTTP_PATH(&nd_srv_info->u.http);
+    args = SERV_HTTP_ARGS(&nd_srv_info->u.http);
+    pathlen = strlen(path);
+    argslen = strlen(args);
+    if (pathlen + 1 + argslen >= CONN_PATH_LEN) {
+        CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
+                   "Too long path/args from namerd.");
+        retval = eEndStat_Error;
+        goto out;
+    }
 
     /* Assign the endpoint data */
     end->scheme = ( nd_srv_info->mode & fSERV_Secure ? eURL_Https : eURL_Http );
     end->user[0] = NIL; /* username and password wouldn't be in namerd */
     end->pass[0] = NIL;
-    strcpy(end->path, SERV_HTTP_PATH(&nd_srv_info->u.http));
-    strcpy(end->args, SERV_HTTP_ARGS(&nd_srv_info->u.http));
+    memcpy(end->path, path, pathlen + !argslen);
+    if (argslen) {
+        if (*args != '#')
+            end->path[pathlen++] = '?';;
+        memcpy(end->path + pathlen, args, argslen + 1);
+    }
 
     /* Got the namerd endpoint info. */
     retval = eEndStat_Success;
@@ -462,7 +462,7 @@ static int s_Resolve(SERV_ITER iter)
     SOCK_ntoa(SOCK_gethostbyname(dni->host), ip4, sizeof(ip4)-1);
 
     /* Set vhost */
-    char vhost[300];
+    char vhost[CONN_HOST_LEN + 45];
     if (strlen(iter->name) + sizeof(LINKERD_HOST_HDR_SFX) >= sizeof(vhost)) {
         CORE_LOGF_X(eLSub_Alloc, eLOG_Critical,
             ("vhost '%s.%s' is too long.", iter->name, LINKERD_HOST_HDR_SFX));
@@ -648,6 +648,7 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
                                              SSERV_Info**        info)
 {
     struct SLINKERD_Data*   data;
+    SEndpoint endpoint;
 
     /* Sanity checks */
     {{
@@ -703,7 +704,7 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
     }}
 
     /* Check for sufficient endpoint info in incoming net_info */
-    SEndpoint endpoint = {eURL_Unspec, "", "", "", ""};
+    endpoint.scheme = eURL_Unspec;
     if (s_EndpointFromNetInfo(&endpoint, net_info, 0) == eEndStat_Error) {
         CORE_LOG_X(eLSub_BadData, eLOG_Error,
             "Failed to check incoming net_info for endpoint.");
@@ -784,8 +785,7 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
         dni->scheme = endpoint.scheme;
         strcpy(dni->user, endpoint.user);
         strcpy(dni->pass, endpoint.pass);
-        strcpy(dni->path, endpoint.path);
-        strcpy(dni->args, endpoint.args);
+        ConnNetInfo_SetPath(dni, endpoint.path);
 
         assert(dni->scheme == eURL_Http  ||  dni->scheme == eURL_Https);
     }}

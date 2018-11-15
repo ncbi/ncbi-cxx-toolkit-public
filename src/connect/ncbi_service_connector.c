@@ -323,10 +323,9 @@ static const char* s_AdjustNetParams(const char*    service,
     net_info->req_method = req_method;
 
     if (cgi_path)
-        strncpy0(net_info->path, cgi_path, sizeof(net_info->path) - 1);
-
+        ConnNetInfo_SetPath(net_info, cgi_path);
     if (args)
-        strncpy0(net_info->args, args, sizeof(net_info->args) - 1);
+        ConnNetInfo_SetArgs(net_info, args);
     ConnNetInfo_DeleteAllArgs(net_info, cgi_args);
 
     if (ConnNetInfo_PrependArg(net_info, cgi_args, 0)) {
@@ -478,7 +477,6 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
             net_info->user[0] = '\0';
             net_info->pass[0] = '\0';
             net_info->path[0] = '\0';
-            net_info->args[0] = '\0';
             net_info->http_proxy_host[0] = '\0';
             net_info->http_proxy_port    =   0;
             net_info->http_proxy_user[0] = '\0';
@@ -605,7 +603,7 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
                                         eReqMethod_Post,
                                         NCBID_WEBPATH,
                                         SERV_NCBID_ARGS(&info->u.ncbid),
-                                        uuu->net_info->args,
+                                        ConnNetInfo_GetArgs(uuu->net_info),
                                         user_header, info->mime_t,
                                         info->mime_s, info->mime_e,
                                         iter_header);
@@ -622,7 +620,7 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
                                            : eReqMethod_Any),
                                         SERV_HTTP_PATH(&info->u.http),
                                         SERV_HTTP_ARGS(&info->u.http),
-                                        uuu->net_info->args,
+                                        ConnNetInfo_GetArgs(uuu->net_info),
                                         user_header, info->mime_t,
                                         info->mime_s, info->mime_e,
                                         iter_header);
@@ -633,7 +631,7 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
         user_header = s_AdjustNetParams(uuu->service, net_info,
                                         eReqMethod_Any,
                                         uuu->net_info->path, 0,
-                                        uuu->net_info->args,
+                                        ConnNetInfo_GetArgs(uuu->net_info),
                                         user_header, info->mime_t,
                                         info->mime_s, info->mime_e,
                                         iter_header);
@@ -907,7 +905,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                 *status  = eIO_Unknown;
             if (!net_info->scheme)
                 net_info->scheme = eURL_Http;
-            net_info->args[0] = '\0';
+            ConnNetInfo_SetArgs(net_info, 0);
             assert(!uuu->descr);
             uuu->descr = ConnNetInfo_URL(net_info);
             return 0;

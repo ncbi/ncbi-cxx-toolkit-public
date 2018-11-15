@@ -2284,7 +2284,7 @@ extern CONNECTOR s_CreateConnector(const SConnNetInfo*  info,
     }
     if (xxx->info->scheme == eURL_Unspec)
         xxx->info->scheme  = eURL_Ftp;
-    *xxx->info->args = '\0';
+    ConnNetInfo_SetArgs(xxx->info, 0);
     if (!info) {
         if (host  &&  *host)
             strcpy(xxx->info->host,               host);

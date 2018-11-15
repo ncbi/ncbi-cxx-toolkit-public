@@ -332,7 +332,6 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
                 x_net_info->user[0] = '\0';
                 x_net_info->pass[0] = '\0';
                 x_net_info->path[0] = '\0';
-                x_net_info->args[0] = '\0';
                 x_net_info->http_proxy_host[0] = '\0';
                 x_net_info->http_proxy_port    =   0;
                 x_net_info->http_proxy_user[0] = '\0';
@@ -449,14 +448,10 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
         NCBI_THROW(CIO_Exception, eUnknown,
                    "CConn_HttpStream::CConn_HttpStream():  Out of memory");
     }
-    if (method/*!= eReqMethod_Any*/) {
-        if (method < eReqMethod_v1)
-            x_net_info->req_method = method;
-        else if (method & ~eReqMethod_v1)
-            x_net_info->req_method = method;
-        else
-            x_net_info->version = 1;
-    }
+    if (method & ~eReqMethod_v1)
+        x_net_info->req_method = method;
+    else if (method/*ANY/1.1*/)
+        x_net_info->http_version = 1;
     if (url  &&  !ConnNetInfo_ParseURL(x_net_info.get(), url)) {
         NCBI_THROW(CIO_Exception, eInvalidArg,
                    "CConn_HttpStream::CConn_HttpStream():  Bad URL");
@@ -470,19 +465,13 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
     }
     if (port)
         x_net_info->port = port;
-    if (path) {
-        if ((len = *path ? strlen(path) : 0) >= sizeof(x_net_info->path)) {
-            NCBI_THROW(CIO_Exception, eInvalidArg,
-                       "CConn_HttpStream::CConn_HttpStream():  Path too long");
-        }
-        memcpy(x_net_info->path, path, ++len);
+    if (path  &&  !ConnNetInfo_SetPath(x_net_info.get(), path)) {
+        NCBI_THROW(CIO_Exception, eInvalidArg,
+                   "CConn_HttpStream::CConn_HttpStream():  Path too long");
     }
-    if (args) {
-        if ((len = *args ? strlen(args) : 0) >= sizeof(x_net_info->args)) {
-            NCBI_THROW(CIO_Exception, eInvalidArg,
-                       "CConn_HttpStream::CConn_HttpStream():  Args too long");
-        }
-        memcpy(x_net_info->args, args, ++len);
+    if (args  &&  !ConnNetInfo_SetArgs(x_net_info.get(), args)) {
+        NCBI_THROW(CIO_Exception, eInvalidArg,
+                   "CConn_HttpStream::CConn_HttpStream():  Args too long");
     }
     if (user_header  &&  *user_header)
         ConnNetInfo_OverrideUserHeader(x_net_info.get(), user_header);
@@ -1327,7 +1316,6 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
         case eURL_File:
             if (*net_info->host  ||  net_info->port)
                 break; /*not supported*/
-            _ASSERT(!*net_info->args);
             if (net_info->debug_printout) {
                 net_info->req_method = eReqMethod_Any;
                 net_info->firewall = 0;

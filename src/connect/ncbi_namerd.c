@@ -1212,7 +1212,7 @@ static void s_UpdateDtabFromRegistry(char** dtab_p, int* success_p,
  */
 static int/*bool*/ s_ProcessDtab(SConnNetInfo* net_info)
 {
-#define  DTAB_ARGS_SEP  "&dtab="
+#define  DTAB_ARGS_SEP  "dtab"
     int/*bool*/ success = 1;
     char* dtab = NULL;
 
@@ -1222,16 +1222,10 @@ static int/*bool*/ s_ProcessDtab(SConnNetInfo* net_info)
     s_UpdateDtabFromRegistry(&dtab, &success, net_info->svc);
     s_UpdateDtabFromUserHeader(&dtab, &success, net_info);
 
-    if (success  &&  dtab) {
-        if (strlen(net_info->args) + strlen(DTAB_ARGS_SEP) +
-            strlen(dtab) < MAX_ARGS_LEN)
-        {
-            strcat(net_info->args, DTAB_ARGS_SEP);
-            strcat(net_info->args, dtab);
-        } else {
-            CORE_LOG_X(eNSub_TooLong, eLOG_Error, "Dtab too long.");
-            success = 0;
-        }
+    if (success  &&  dtab
+        &&  !ConnNetInfo_AppendArg(net_info, DTAB_ARGS_SEP, dtab)) {
+        CORE_LOG_X(eNSub_TooLong, eLOG_Error, "Dtab too long.");
+        success = 0;
     }
 
     if (dtab)   free(dtab);
@@ -1456,6 +1450,7 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
 {
     struct SNAMERD_Data*    data;
     char                    namerd_env[32];
+    char                    namerd_args[(CONN_PATH_LEN+1)/2];
 
     CORE_TRACEF(("Entering SERV_NAMERD_Open(\"%s\")", iter->name));
 
@@ -1541,7 +1536,6 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     data->net_info->port        = 0; /* namerd doesn't support a port */
     data->net_info->host[0]     = NIL;
     data->net_info->path[0]     = NIL;
-    data->net_info->args[0]     = NIL;
 
     if ( ! s_GetHttpProxy(data->net_info->http_proxy_host,
         sizeof(data->net_info->http_proxy_host),
@@ -1553,35 +1547,37 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
     }
 
     if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
-        REG_NAMERD_API_HOST_KEY, data->net_info->host, sizeof(net_info->host)-1,
+        REG_NAMERD_API_HOST_KEY, data->net_info->host, sizeof(net_info->host),
         REG_NAMERD_API_HOST_DEF))
     {
         data->net_info->host[0] = NIL;
     }
     if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
-        REG_NAMERD_API_PATH_KEY, data->net_info->path, sizeof(net_info->path)-1,
+        REG_NAMERD_API_PATH_KEY, data->net_info->path, sizeof(net_info->path),
         REG_NAMERD_API_PATH_DEF))
     {
         data->net_info->path[0] = NIL;
     }
     if (ConnNetInfo_GetValue(REG_NAMERD_SECTION,
-        REG_NAMERD_API_ENV_KEY, namerd_env, sizeof(namerd_env)-1,
+        REG_NAMERD_API_ENV_KEY, namerd_env, sizeof(namerd_env),
         REG_NAMERD_API_ENV_DEF))
     {
-        if (strlen(data->net_info->path) + strlen(namerd_env) <
-            sizeof(net_info->path) - 2) /* -2 for '/' separator and NIL */
+        if (strlen(data->net_info->path) + 1 + strlen(namerd_env) <
+            sizeof(net_info->path))
         {
             strcat(data->net_info->path, "/");
             strcat(data->net_info->path, namerd_env);
         }
     }
     if ( ! ConnNetInfo_GetValue(REG_NAMERD_SECTION,
-        REG_NAMERD_API_ARGS_KEY, data->net_info->args, sizeof(net_info->args)-1,
-        REG_NAMERD_API_ARGS_DEF))
+        REG_NAMERD_API_ARGS_KEY, namerd_args, sizeof(namerd_args),
+        REG_NAMERD_API_ARGS_DEF)
+         ||  strlen(namerd_args) + strlen(iter->name) >= sizeof(namerd_args))
     {
-        data->net_info->args[0] = NIL;
+        ConnNetInfo_SetArgs(data->net_info, 0);
     } else {
-        strcat(data->net_info->args, iter->name);
+        strcat(namerd_args, iter->name);
+        ConnNetInfo_SetArgs(data->net_info, namerd_args);
     }
 
     if (iter->types & fSERV_Stateless)

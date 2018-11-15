@@ -905,8 +905,8 @@ static void s_SetDefaultReferer(SConnNetInfo* net_info, SERV_ITER iter)
     if (strcasecmp(iter->op->mapper, "DISPD") == 0)
         referer = ConnNetInfo_URL(net_info);
     else if ((str = strdup(iter->op->mapper)) != 0) {
+        const char* args = strchr(net_info->path, '?');
         const char* host = net_info->client_host;
-        const char* args = net_info->args;
         const char* name = iter->name;
 
         if (!*net_info->client_host
@@ -916,15 +916,15 @@ static void s_SetDefaultReferer(SConnNetInfo* net_info, SERV_ITER iter)
                              sizeof(net_info->client_host));
         }
         if (!(referer = (char*) malloc(3 + 1 + 1 + 1 + 2*strlen(strlwr(str)) +
-                                       strlen(host) + (args[0]
+                                       strlen(host) + (args
                                                        ? strlen(args)
                                                        : 8 + strlen(name))))) {
             return;
         }
         strcat(strcat(strcat(strcat(strcpy
                                     (referer, str), "://"), host), "/"), str);
-        if (args[0])
-            strcat(strcat(referer, "?"),         args);
+        if (args)
+            strcat(       referer,               args);
         else
             strcat(strcat(referer, "?service="), name);
         free(str);
