@@ -2,7 +2,7 @@
 # $Id$
 #############################################################################
 
-NCBI_add_app(remote_app ns_submit_remote_job ns_remote_job_control remote_cgi)
+NCBI_add_app(remote_app remote_cgi)
 
 if (OFF)
 # Include projects from this directory

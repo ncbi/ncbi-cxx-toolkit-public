@@ -2,7 +2,7 @@
 # $Id$
 #############################################################################
 
-NCBI_add_app(netcache_control ncfetch netschedule_control cidtool)
+NCBI_add_app(ncfetch cidtool)
 
 if (OFF)
 # Include projects from this directory
