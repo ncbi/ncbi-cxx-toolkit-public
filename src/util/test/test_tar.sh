@@ -30,10 +30,11 @@ $test_tar -help >/dev/null 2>&1  ||  {
   exit 1
 }
 if [ -x ${CFG_BIN:-.}/$test_tar ]; then
-  test_tar_file=${CFG_BIN:-.}/$test_tar
+  test_tar_file="${CFG_BIN:-.}/$test_tar"
 else
-  test_tar_file=./$test_tar
+  test_tar_file="./$test_tar"
 fi
+test -e "$test_tar_file"  ||  cp -p "`which $test_tar`" "$test_tar_file"  ||  exit 1
 
 # Figure out whether the API is lf64 clean, also exclude notoriously slow platforms
 okay=false
