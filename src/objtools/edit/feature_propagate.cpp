@@ -143,12 +143,12 @@ vector<CRef<CSeq_feat>> CFeaturePropagator::PropagateFeatureList(const vector<CC
         CRef<CSeq_feat> new_feat = Propagate(*it);
         if (new_feat) {
             propagated_feats.push_back(new_feat);
-        }
-        if (new_feat->IsSetData() && new_feat->GetData().IsCdregion()) {
-            if (it->IsSetProduct()) {
-                CRef<CSeq_feat> prot_feat = ConstructProteinFeatureForPropagatedCodingRegion(*it, *new_feat);
-                if (prot_feat) {
-                    propagated_feats.push_back(prot_feat);
+            if (new_feat->IsSetData() && new_feat->GetData().IsCdregion()) {
+                if (it->IsSetProduct()) {
+                    CRef<CSeq_feat> prot_feat = ConstructProteinFeatureForPropagatedCodingRegion(*it, *new_feat);
+                    if (prot_feat) {
+                        propagated_feats.push_back(prot_feat);
+                    }
                 }
             }
         }
@@ -189,8 +189,9 @@ vector<CRef<CSeq_feat>> CFeaturePropagator::PropagateFeatureList(const vector<CC
 CRef<CSeq_interval> CFeaturePropagator::x_MapInterval(const CSeq_interval& sourceInt, const CSeq_id& targetId)
 {
     CSeq_loc sourceLoc;
-    sourceLoc.SetInt().SetFrom(sourceInt.GetFrom());
-    sourceLoc.SetInt().SetTo(sourceInt.GetTo());
+    CSeq_interval& interval = sourceLoc.SetInt();
+    interval.SetFrom(sourceInt.GetFrom());
+    interval.SetTo(sourceInt.GetTo());
     sourceLoc.SetId(sourceInt.GetId());
     if (sourceInt.IsPartialStart(eExtreme_Biological)) {
         sourceLoc.SetPartialStart(true, eExtreme_Biological);
@@ -200,7 +201,7 @@ CRef<CSeq_interval> CFeaturePropagator::x_MapInterval(const CSeq_interval& sourc
     }
     if (sourceInt.IsSetStrand()) {
         ENa_strand strand = sourceInt.GetStrand();
-        sourceLoc.SetInt().SetStrand(strand);
+        interval.SetStrand(strand);
     }
     _TRACE("Source Loc: ");
     _TRACE(MSerial_AsnText << sourceLoc);
@@ -365,15 +366,16 @@ CRef<CSeq_loc> CFeaturePropagator::x_ExtendToStopCodon (CSeq_feat& feat)
     }
     unsigned int mod = nuc_len % 3;
     CRef<CSeq_loc> vector_loc(new CSeq_loc());
-    vector_loc->SetInt().SetId().Assign(*(loc.GetId()));
+    CSeq_interval& vector_int = vector_loc->SetInt();
+    vector_int.SetId().Assign(*(loc.GetId()));
 
     if (loc.IsSetStrand() && loc.GetStrand() == eNa_strand_minus) {
-        vector_loc->SetInt().SetFrom(0);
-        vector_loc->SetInt().SetTo(stop + mod - 1);
+        vector_int.SetFrom(0);
+        vector_int.SetTo(stop + mod - 1);
         vector_loc->SetStrand(eNa_strand_minus);
     } else {
-        vector_loc->SetInt().SetFrom(stop - mod + 1);
-        vector_loc->SetInt().SetTo(m_Target.GetInst_Length() - 1);
+        vector_int.SetFrom(stop - mod + 1);
+        vector_int.SetTo(m_Target.GetInst_Length() - 1);
     }
 
     CSeqVector seq(*vector_loc, m_Scope, CBioseq_Handle::eCoding_Iupac);
