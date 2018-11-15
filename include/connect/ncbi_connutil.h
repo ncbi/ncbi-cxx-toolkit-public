@@ -89,8 +89,11 @@
 #define CONN_PORT_HTTP   80
 #define CONN_PORT_HTTPS  443
 
-/* How long a host name can be */
+/* SConnNetInfo's field lengths not including the terminating '\0' */
+#define CONN_USER_LEN    63
+#define CONN_PASS_LEN    63
 #define CONN_HOST_LEN    255
+#define CONN_PATH_LEN    4095
 
 
 /** @addtogroup UtilityFunc
@@ -170,28 +173,27 @@ typedef unsigned EBDebugPrintout;
  *             or an online tool (search the Web for "base64 online").
  */
 typedef struct {  /* NCBI_FAKE_WARNING: ICC */
-    char            client_host[256]; /* effective client hostname ('\0'=def)*/
-    EBURLScheme     scheme:3;         /* only pre-defined types (limited)    */
+    char            client_host[CONN_HOST_LEN+1]; /*client hostname('\0'=def)*/
     TReqMethod      req_method:5;     /* method to use in the request (HTTP) */
-    unsigned        version:1;        /* HTTP/1.v (or selected by req_method)*/
+    EBURLScheme     scheme:3;         /* only pre-defined types (limited)    */
     unsigned        external:1;       /* mark service request as external    */
     EBFWMode        firewall:2;       /* to use firewall (relay otherwise)   */
     unsigned        stateless:1;      /* to connect in HTTP-like fashion only*/
     unsigned        lb_disable:1;     /* to disable local load-balancing     */
+    unsigned        http_version:1;   /* HTTP/1.v (or selected by req_method)*/
     EBDebugPrintout debug_printout:2; /* switch to printout some debug info  */
     unsigned        http_push_auth:1; /* push authorize tags even w/o 401/407*/
     unsigned        http_proxy_leak:1;/* non-zero when can fallback to direct*/
     unsigned        reserved:14;      /* MBZ                                 */
-    char            user[64];         /* username (if specified or required) */
-    char            pass[64];         /* password (if any for non-empty user)*/
-    char            host[CONN_HOST_LEN + 1];  /* host name to connect to     */
-    unsigned short  port;             /* port to connect to, host byte order */
-    char            path[2048];       /* path (e.g. to  a CGI script or page)*/
-    char            args[2048];       /* args (e.g. for a CGI script)        */
-    char            http_proxy_host[CONN_HOST_LEN + 1]; /* HTTP proxy server */
-    unsigned short  http_proxy_port;      /* port #   of HTTP proxy server   */
-    char            http_proxy_user[64];  /* http proxy username (if req'd)  */
-    char            http_proxy_pass[64];  /* http proxy password             */
+    char            user[CONN_USER_LEN+1];  /* username (if spec'd or req'd) */
+    char            pass[CONN_PASS_LEN+1];  /* password (for non-empty user) */
+    char            host[CONN_HOST_LEN+1];  /* host name to connect to       */
+    unsigned short  port;                   /* port # (host byte order)      */
+    char            path[CONN_PATH_LEN+1];  /* path (incl. args and frag)    */
+    char            http_proxy_host[CONN_HOST_LEN+1]; /* HTTP proxy server   */
+    unsigned short  http_proxy_port;        /* port # of HTTP proxy server   */
+    char            http_proxy_user[CONN_USER_LEN+1]; /* HTTP proxy username */
+    char            http_proxy_pass[CONN_PASS_LEN+1]; /* HTTP proxy password */
     unsigned short  max_try;          /* max. # of attempts to connect (>= 1)*/
     const STimeout* timeout;          /* ptr to I/O timeout(infinite if NULL)*/
     const char*     http_user_header; /* user header to add to HTTP request  */
@@ -265,6 +267,9 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 
 #define REG_CONN_LB_DISABLE       "LB_DISABLE"
 #define DEF_CONN_LB_DISABLE       ""
+
+#define REG_CONN_HTTP_VERSION     "HTTP_VERSION"
+#define DEF_CONN_HTTP_VERSION     0
 
 #define REG_CONN_DEBUG_PRINTOUT   "DEBUG_PRINTOUT"
 #define DEF_CONN_DEBUG_PRINTOUT   ""
@@ -344,7 +349,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  *  host              HOST
  *  port              PORT
  *  path              PATH
- *  args              ARGS
+ *                    ARGS              combined in "path" now
+ *  http_version      HTTP_VERSION      HTTP version override
  *  http_proxy_host   HTTP_PROXY_HOST   if empty http_proxy_port is set 0
  *  http_proxy_port   HTTP_PROXY_PORT   no HTTP proxy if 0
  *  http_proxy_user   HTTP_PROXY_USER
@@ -386,51 +392,83 @@ extern NCBI_XCONNECT_EXPORT SConnNetInfo* ConnNetInfo_Clone
  );
 
 
-/* Convenience routines to manipulate SConnNetInfo::args[].
- * All routines below assume that "arg" either a single arg name
- * or an "arg=val" pair.  In the former case, an additional "val"
- * may be supplied separately (and will be prepended by an "=" if
- * necessary).  In the latter case, also having a non-zero string
- * the in the "val" argument may result in an incorrect behavior.
- * An ampersand (&) gets automatically added to keep the arg list proper.
- * Return value (if any): none-zero on success; 0 on error.
+/* Convenience routines to manipulate url path arguments and fragment that are
+ * now combined in SConnNetInfo::path.
+ * All routines below assume that "arg" either a single arg name or an
+ * "arg=val" pair (a fragment part, separated by '#', if any, is ignored).
+ * In the former case, an additional "val" may be supplied separately (and
+ * will be prepended by the "=").  In the latter case, also having a non-zero
+ * string the in the "val" argument may result in an incorrect behavior.
+ * The ampersand (&) gets automatically managed to keep the arg list proper.
+ * Return value (if any):  non-zero on success; 0 on error.
  */
 
-/* append an argument to the end of the list */
+/* Set the path part in the path element.
+ * New path can contain either or both the argument part (separated by '?') and
+ * the fragment part (separated by '#'), in this order.  The new path will
+ * replace the existing one up to the last specified part, preserving the
+ * remainder.  Thus, "" causes only the path part to be removed (preserving any
+ * existing argument(s) and fragment).  NULL clears the entire path element. */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetPath
+(SConnNetInfo* info,
+ const char*   path);
+
+/* Set the args part (which may contain or just be a #frag part) in the path
+ * element, adding the '?' separator automatically, if needed.  If the fragment
+ * is missing from the new args, the existing one will be preserved;  and if
+ * no arguments are provided before the new fragment, that part of the exising
+ * arguments will not get modified.  Thus, "" causes all arguments but the
+ * fragment to be removed.  NULL clears all existing path arguments. */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetArgs
+(SConnNetInfo* info,
+ const char*   args);
+
+/* Set fragment part only; delete if frag=="".  The passed string may start
+ * with '#'; otherwise, the '#' separator will be added to the path element. */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetFrag
+(SConnNetInfo* info,
+ const char*   frag);
+
+/* Return args (without leading '?' but with leading '#' if fragment only. */
+extern NCBI_XCONNECT_EXPORT const char* ConnNetInfo_GetArgs
+(const SConnNetInfo* info
+ );
+
+/* Append an argument to the end of the list, preserving any #frag. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AppendArg
 (SConnNetInfo* info,
  const char*   arg,
  const char*   val
  );
 
-/* put an argument at the front of the list */
+/* Insert an argument at the front of the list. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PrependArg
 (SConnNetInfo* info,
  const char*   arg,
  const char*   val
  );
 
-/* delete one (first) argument from the list of arguments in "info",
- * return zero if no such arg was found, non-zero if found and deleted */
+/* Delete an argument from the list of arguments in the path element.  Return
+ * zero if no such arg was found, non-zero if it was found and deleted. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_DeleteArg
 (SConnNetInfo* info,
  const char*   arg
  );
 
-/* delete all arguments specified in "args" from the list in "info" */
+/* Delete all arguments specified in "args" from the path element. */
 extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_DeleteAllArgs
 (SConnNetInfo* info,
  const char*   args
  );
 
-/* same as sequence DeleteAll(arg) then Prepend(arg, val), see above */
+/* Same as sequence DeleteAll(arg) then Prepend(arg, val), see above. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PreOverrideArg
 (SConnNetInfo* info,
  const char*   arg,
  const char*   val
  );
 
-/* same as sequence DeleteAll(arg) then Append(arg, val), see above */
+/* Same as sequence DeleteAll(arg) then Append(arg, val), see above. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PostOverrideArg
 (SConnNetInfo* info,
  const char*   arg,
