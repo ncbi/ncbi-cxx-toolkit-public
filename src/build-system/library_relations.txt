@@ -951,7 +951,6 @@ ncbiprs needs3party ncbimla
 ncbiprs needs3party ncbitxc2
 ncbiprscxx needs $(OBJMGR_LIBS)
 ncbiprscxx needs gui_utils
-ncbiprscxx needs mlacli
 ncbiprscxx needs ncbi_xdbapi_ftds
 ncbiprscxx needs ncbiindxcxx
 ncbiprscxx needs taxon1
@@ -962,7 +961,6 @@ ncbiprsn needs3party ncbimla
 ncbiprsn needs3party ncbitxc2
 ncbiprsncxx needs $(OBJMGR_LIBS)
 ncbiprsncxx needs gui_utils
-ncbiprsncxx needs mlacli
 ncbiprsncxx needs ncbi_xdbapi_ftds
 ncbiprsncxx needs ncbiindxcxx
 ncbiprsncxx needs taxon1
@@ -1546,7 +1544,8 @@ xcddalignview needs ncbimime
 xcgi needs xutil
 xcgi_redirect needs xcgi
 xcgi_redirect needs xhtml
-xcleanup needs taxon3
+xcleanup needs $(OBJEDIT_LIBS)
+xcleanup needs mlacli
 xcleanup needs valid
 xcleanup needs xobjutil
 xcompress needs $(CMPRS_LIB)
@@ -1564,9 +1563,7 @@ xctools needs xncbi
 xctools needs3party $(NCBI_C_ncbi)
 xdb needs xncbi
 xdiff needs xncbi
-xdiscrepancy needs $(OBJEDIT_LIBS)
 xdiscrepancy needs macro
-xdiscrepancy needs mlacli
 xdiscrepancy needs xcleanup
 xerces-c needs $(Z_LIB)
 xerces-c needs3party $(CURL_LIBS)
@@ -1579,7 +1576,6 @@ xerces-c needs3party $(Z_LIBS)
 xfcgi includes xcgi
 xfcgi needs3party $(FASTCGI_LIBS)
 xformat needs gbseq
-xformat needs mlacli
 xformat needs xalnmgr
 xformat needs xcleanup
 xgencoll needs gc_load_utils
@@ -1656,6 +1652,8 @@ xobjedit needs mlacli
 xobjedit needs taxon3
 xobjedit needs valid
 xobjedit needs xobjutil
+xobjimport needs $(SEQ_LIBS)
+xobjimport needs pub
 xobjmanip needs general
 xobjmgr needs genome_collection
 xobjmgr needs seqedit
@@ -1667,7 +1665,6 @@ xobjreadex needs xobjutil
 xobjsimple needs $(OBJMGR_LIBS)
 xobjutil needs $(SOBJMGR_LIBS)
 xobjutil needs submit
-xobjwrite needs $(OBJREAD_LIBS)
 xobjwrite needs $(XFORMAT_LIBS)
 xobjwrite needs variation_utils
 xobjwrite needs xalnmgr
@@ -1748,7 +1745,6 @@ xthrserv needs xconnect
 xthrserv needs xutil
 xunittestutil needs xobjutil
 xutil needs xncbi
-xvalidate needs $(OBJEDIT_LIBS)
 xvalidate needs $(XFORMAT_LIBS)
 xvalidate needs taxon1
 xvalidate needs valerr
