@@ -106,7 +106,7 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
         response.RegisterObjectType(*types_in);
     }
 
-    char content_type[MAX_CONTENT_TYPE_LEN + 1];
+    char content_type[CONN_CONTENT_TYPE_LEN+1];
 
 // SOAPAction:
 // http://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383528
