@@ -89,7 +89,7 @@
 #define CONN_PORT_HTTP   80
 #define CONN_PORT_HTTPS  443
 
-/* SConnNetInfo's field lengths not including the terminating '\0' */
+/* SConnNetInfo's field lengths NOT including the terminating '\0' */
 #define CONN_USER_LEN    63
 #define CONN_PASS_LEN    63
 #define CONN_HOST_LEN    255
@@ -385,10 +385,10 @@ extern NCBI_XCONNECT_EXPORT SConnNetInfo* ConnNetInfo_Create
  );
 
 
-/* Make an exact and independent copy of "*info".
+/* Make an exact and independent copy of "*net_info".
  */
 extern NCBI_XCONNECT_EXPORT SConnNetInfo* ConnNetInfo_Clone
-(const SConnNetInfo* info
+(const SConnNetInfo* net_info
  );
 
 
@@ -410,8 +410,8 @@ extern NCBI_XCONNECT_EXPORT SConnNetInfo* ConnNetInfo_Clone
  * remainder.  Thus, "" causes only the path part to be removed (preserving any
  * existing argument(s) and fragment).  NULL clears the entire path element. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetPath
-(SConnNetInfo* info,
- const char*   path);
+(SConnNetInfo*       net_info,
+ const char*         path);
 
 /* Set the args part (which may contain or just be a #frag part) in the path
  * element, adding the '?' separator automatically, if needed.  If the fragment
@@ -420,93 +420,93 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetPath
  * arguments will not get modified.  Thus, "" causes all arguments but the
  * fragment to be removed.  NULL clears all existing path arguments. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetArgs
-(SConnNetInfo* info,
- const char*   args);
+(SConnNetInfo*       net_info,
+ const char*         args);
 
 /* Set fragment part only; delete if frag=="".  The passed string may start
  * with '#'; otherwise, the '#' separator will be added to the path element. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetFrag
-(SConnNetInfo* info,
- const char*   frag);
+(SConnNetInfo*       net_info,
+ const char*         frag);
 
 /* Return args (without leading '?' but with leading '#' if fragment only. */
 extern NCBI_XCONNECT_EXPORT const char* ConnNetInfo_GetArgs
-(const SConnNetInfo* info
+(const SConnNetInfo* net_info
  );
 
 /* Append an argument to the end of the list, preserving any #frag. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AppendArg
-(SConnNetInfo* info,
- const char*   arg,
- const char*   val
+(SConnNetInfo*       net_info,
+ const char*         arg,
+ const char*         val
  );
 
 /* Insert an argument at the front of the list. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PrependArg
-(SConnNetInfo* info,
- const char*   arg,
- const char*   val
+(SConnNetInfo*       net_info,
+ const char*         arg,
+ const char*         val
  );
 
 /* Delete an argument from the list of arguments in the path element.  Return
  * zero if no such arg was found, non-zero if it was found and deleted. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_DeleteArg
-(SConnNetInfo* info,
- const char*   arg
+(SConnNetInfo*       net_info,
+ const char*         arg
  );
 
 /* Delete all arguments specified in "args" from the path element. */
 extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_DeleteAllArgs
-(SConnNetInfo* info,
- const char*   args
+(SConnNetInfo*       net_info,
+ const char*         args
  );
 
 /* Same as sequence DeleteAll(arg) then Prepend(arg, val), see above. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PreOverrideArg
-(SConnNetInfo* info,
- const char*   arg,
- const char*   val
+(SConnNetInfo*       net_info,
+ const char*         arg,
+ const char*         val
  );
 
 /* Same as sequence DeleteAll(arg) then Append(arg, val), see above. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PostOverrideArg
-(SConnNetInfo* info,
- const char*   arg,
- const char*   val
+(SConnNetInfo*       net_info,
+ const char*         arg,
+ const char*         val
  );
 
 
-/* Set user header (discard previously set header, if any).
- * Reset the old header (if any) if "header" == NULL.
- * Return non-zero if successful, otherwise return 0 to indicate an error.
+/* Set user header (discard previously set header, if any).  Remove the old
+ * header (if any) only if "header" is NULL or empty ("" or all blanks).
+ * Return non-zero if successful;  otherwise, return 0 to indicate an error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetUserHeader
-(SConnNetInfo* info,
- const char*   header
+(SConnNetInfo*       net_info,
+ const char*         header
  );
 
 
 /* Append user header (same as ConnNetInfo_SetUserHeader() if no previous
- * header was set); do nothing if the provided "header" is NULL or empty.
- * Return non-zero if successful, otherwise return 0 to indicate an error.
+ * header was set);  do nothing if the provided "header" is NULL or empty.
+ * Return non-zero if successful;  otherwise, return 0 to indicate an error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AppendUserHeader
-(SConnNetInfo* info,
- const char*   header
+(SConnNetInfo*       net_info,
+ const char*         header
  );
 
 
 /* Override user header.
  * Tags replaced (case-insensitively), and tags with empty values effectively
  * delete existing tags from the old user header, e.g. "My-Tag:\r\n" deletes
- * a first appearence (if any) of "My-Tag: [<value>]" from the user header.
+ * all appearences (if any) of "My-Tag: [<value>]" from the user header.
  * Unmatched tags with non-empty values are simply added to the existing user
  * header (as with "Append" above).  Noop if "header" is an empty string ("").
  * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_OverrideUserHeader
-(SConnNetInfo* info,
- const char*   header
+(SConnNetInfo*       net_info,
+ const char*         header
  );
 
 
@@ -521,8 +521,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_OverrideUserHeader
  * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ExtendUserHeader
-(SConnNetInfo* info,
- const char*   header
+(SConnNetInfo*       net_info,
+ const char*         header
  );
 
 
@@ -530,19 +530,19 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ExtendUserHeader
  * passed in "header" (regardless of the values, if any, in the latter).
  */
 extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_DeleteUserHeader
-(SConnNetInfo* info,
- const char*   header
+(SConnNetInfo*       net_info,
+ const char*         header
  );
 
 
-/* Parse URL into "*info", using defaults provided via "*info".
+/* Parse URL into "*net_info", using defaults provided via "*net_info".
  * In case of a relative URL, only those URL elements provided in it,
- * will get replaced in the resultant "*info".
+ * will get replaced in the resultant "*net_info".
  * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ParseURL
-(SConnNetInfo* info,
- const char*   url
+(SConnNetInfo*       net_info,
+ const char*         url
  );
 
 
@@ -553,15 +553,15 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ParseURL
  *  CORE_GetAppName, CORE_GetPlatform
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetupStandardArgs
-(SConnNetInfo* info,
- const char*   service
+(SConnNetInfo*       net_info,
+ const char*         service
  );
 
 
-/* Log the contents of "*info" into specified "log" with severity "sev".
+/* Log the contents of "*net_info" into specified "log" with severity "sev".
  */
 extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_Log
-(const SConnNetInfo* info,
+(const SConnNetInfo* net_info,
  ELOG_Level          sev,
  LOG                 log
  );
@@ -573,7 +573,7 @@ extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_Log
  * Return NULL on error.
  */
 extern NCBI_XCONNECT_EXPORT char*       ConnNetInfo_URL
-(const SConnNetInfo* info
+(const SConnNetInfo* net_info
  );
 
 
@@ -584,18 +584,20 @@ extern NCBI_XCONNECT_EXPORT char*       ConnNetInfo_URL
  * Return non-zero (TRUE) on success, or zero (FALSE) on error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetTimeout
-(SConnNetInfo*   info,
- const STimeout* timeout
+(SConnNetInfo*       net_info,
+ const STimeout*     timeout
  );
 
 
-/* Destroy and deallocate "info" (if not NULL).
+/* Destroy and deallocate "net_info" (if not NULL).
  */
-extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
+extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_Destroy
+(SConnNetInfo*       net_info
+ );
 
 
 
-/* Very low-level HTTP connection routine.  Regular use is highly discouraged.
+/* Very low-level HTTP initiation routine.  Regular use is highly discouraged.
  * Instead, please consider using higher level APIs such as HTTP connections
  * or streams:
  * @sa
@@ -849,11 +851,11 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ URL_DecodeEx
  */
 typedef enum {
     eMIME_T_Undefined = -1,
-    eMIME_T_NcbiData = 0,  /* "x-ncbi-data"  (NCBI specific data) */
-    eMIME_T_Text,          /* "text"                              */
-    eMIME_T_Application,   /* "application"                       */
-    /* eMIME_T_???, "<type>" here go other types                  */
-    eMIME_T_Unknown        /* "unknown"                           */
+    eMIME_T_NcbiData = 0,  /* "x-ncbi-data"   (NCBI-specific data)           */
+    eMIME_T_Text,          /* "text"                                         */
+    eMIME_T_Application,   /* "application"                                  */
+    /* eMIME_T_???,           "<type>" here go other types                   */
+    eMIME_T_Unknown        /* "unknown"                                      */
 } EMIME_Type;
 
 
@@ -861,43 +863,47 @@ typedef enum {
  */
 typedef enum {
     eMIME_Undefined = -1,
-    eMIME_Dispatch = 0,  /* "x-dispatch"    (dispatcher info)          */
-    eMIME_AsnText,       /* "x-asn-text"    (text ASN.1 data)          */
-    eMIME_AsnBinary,     /* "x-asn-binary"  (binary ASN.1 data)        */
-    eMIME_Fasta,         /* "x-fasta"       (data in FASTA format)     */
-    eMIME_WwwForm,       /* "x-www-form"                               */
+    eMIME_Dispatch = 0,    /* "x-dispatch"    (dispatcher info)              */
+    eMIME_AsnText,         /* "x-asn-text"    (text ASN.1 data)              */
+    eMIME_AsnBinary,       /* "x-asn-binary"  (binary ASN.1 data)            */
+    eMIME_Fasta,           /* "x-fasta"       (data in FASTA format)         */
+    eMIME_WwwForm,         /* "x-www-form"    (Web form submission)          */
     /* standard MIMEs */
-    eMIME_Html,          /* "html"                                     */
-    eMIME_Plain,         /* "plain"                                    */
-    eMIME_Xml,           /* "xml"                                      */
-    eMIME_XmlSoap,       /* "xml+soap"                                 */
-    eMIME_OctetStream,   /* "octet-stream"                             */
-    /* eMIME_???,           "<subtype>" here go other NCBI subtypes    */
-    eMIME_Unknown        /* "x-unknown"     (an arbitrary binary data) */
+    eMIME_Html,            /* "html"                                         */
+    eMIME_Plain,           /* "plain"                                        */
+    eMIME_Xml,             /* "xml"                                          */
+    eMIME_XmlSoap,         /* "xml+soap"                                     */
+    eMIME_OctetStream,     /* "octet-stream"                                 */
+    /* eMIME_???,             "<subtype>" here go other NCBI subtypes        */
+    eMIME_Unknown          /* "x-unknown"     (arbitrary binary data)        */
 } EMIME_SubType;
 
 
 /* Encoding
  */
 typedef enum {
-    eENCOD_None = 0, /* ""              (the content is passed "as is") */
-    eENCOD_Url,      /* "-urlencoded"   (the content is URL-encoded)    */
-    /* eENCOD_???,      "-<encoding>" here go other NCBI encodings      */
-    eENCOD_Unknown   /* "-encoded"      (unknown encoding)              */
+    eENCOD_None = 0,       /* ""              (the content is passed "as is")*/
+    eENCOD_Url,            /* "-urlencoded"   (the content is URL-encoded)   */
+    /* eENCOD_???,            "-<encoding>" here go other NCBI encodings     */
+    eENCOD_Unknown         /* "-encoded"      (unknown encoding)             */
 } EMIME_Encoding;
 
 
-/* Write up to "buflen" bytes to "buf":
+#define CONN_CONTENT_TYPE_LEN  63
+/* unfortunate naming, better not to use, as it is actually a size, not len */
+//#define  MAX_CONTENT_TYPE_LEN  (CONN_CONTENT_TYPE_LEN+1)
+
+
+/* Write up to "bufsize" bytes (including the '\0' terminator) to "buf":
  *   Content-Type: <type>/[x-]<subtype>-<encoding>\r\n
- * Return pointer to the "buf".
+ * Return the "buf" pointer when successful, or NULL when failed.
  */
-#define MAX_CONTENT_TYPE_LEN 64
 extern NCBI_XCONNECT_EXPORT char* MIME_ComposeContentTypeEx
 (EMIME_Type     type,
  EMIME_SubType  subtype,
  EMIME_Encoding encoding,
  char*          buf,
- size_t         buflen    /* must be at least MAX_CONTENT_TYPE_LEN */
+ size_t         bufsize    /* should be at least CONN_CONTENT_TYPE_LEN+1     */
  );
 
 /* Parse the NCBI-specific content-type; the (case-insensitive) "str"

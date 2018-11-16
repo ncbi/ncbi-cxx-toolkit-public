@@ -110,7 +110,7 @@ static const char* x_strncpy0(char* dst, const char* src, size_t dst_size)
 static const char* x_GetValue(const char* svc, size_t svclen,
                               const char* param,
                               char* value, size_t value_size,
-                              const char* def_value, int*/*bool*/ generic)
+                              const char* def_value, int* /*bool*/ generic)
 {
     const char* val, *rv;
     char        buf[128];
@@ -549,7 +549,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     return info;
 
  err:
-    /* so that Destroy() can free up user_header and referer */
+    /* so that Destroy() can free up both http_user_header and http_referer */
     info->magic = CONN_NET_INFO_MAGIC;
     ConnNetInfo_Destroy(info);
     info = 0;
@@ -729,12 +729,12 @@ static int/*bool*/ s_ModifyUserHeader(SConnNetInfo*      info,
                                           newtagval, newlen)) {
                         goto ignore;
                     }
-                    line += linelen-off;
+                    line += linelen - off;
                     linelen = off;
                     newlen++;
                     len = 0;
                 } else
-                    len = linelen-off;
+                    len = linelen - off;
             } else
                 len = 0/*==newlen*/;
 
@@ -946,7 +946,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         if (!pathlen) {
             p = info->path + len;
             path = 0;
-        } else if (!(p = memrchr(info->path, '/', len))) {
+        } else if (!(p = (char*) memrchr(info->path, '/', len))) {
             p = info->path;
             len = 0;
         } else
@@ -1438,6 +1438,7 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 
     if (!(x_info = (SConnNetInfo*) malloc(sizeof(*info) + strlen(info->svc))))
         return 0;
+    x_info->magic                 = 0;
 
     strcpy(x_info->client_host,     info->client_host);
     x_info->req_method            = info->req_method;
@@ -1467,13 +1468,11 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 
     if (info->http_user_header  &&  *info->http_user_header
         &&  !(x_info->http_user_header = strdup(info->http_user_header))) {
-        ConnNetInfo_Destroy(x_info);
-        return 0;
+        goto err;
     }
     if (info->http_referer  &&  *info->http_referer
         &&  !(x_info->http_referer = strdup(info->http_referer))) {
-        ConnNetInfo_Destroy(x_info);
-        return 0;
+        goto err;
     }
 
     x_info->tmo                   = info->timeout ? *info->timeout : info->tmo;
@@ -1482,6 +1481,12 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
 
     x_info->magic                 = CONN_NET_INFO_MAGIC;
     return x_info;
+
+ err:
+    /* so that Destroy() can free up both http_user_header and http_referer */
+    x_info->magic = CONN_NET_INFO_MAGIC;
+    ConnNetInfo_Destroy(x_info);
+    return 0;
 }
 
 
@@ -1796,6 +1801,7 @@ extern int/*bool*/ ConnNetInfo_SetTimeout(SConnNetInfo*   info,
 extern void ConnNetInfo_Destroy(SConnNetInfo* info)
 {
     if (info) {
+        /* Do not free() fields if version skew (offsets are possibly off) */
         if (ConnNetInfo_SetUserHeader(info, 0)  &&  info->http_referer) {
             free((void*) info->http_referer);
             info->http_referer = 0;
@@ -2377,14 +2383,14 @@ extern EIO_Status BUF_StripToPattern
  */
 
 
-/* Return integer (0..15) corresponding to the "ch" as a hex digit
- * Return -1 on error
+/* Return integer (0..15) corresponding to the "ch" as a hex digit.
+ * Return -1 on error.
  */
 static int s_HexChar(char ch)
 {
     unsigned int rc = (unsigned int)(ch - '0');
     if (rc <= 9)
-        return (int)rc;
+        return (int) rc;
     rc = (unsigned int)((ch | ' ') - 'a');
     return rc <= 5 ? (int)(rc + 10) : -1;
 }
@@ -2450,7 +2456,7 @@ extern int/*bool*/ URL_DecodeEx
         return 0/*false*/;
 
     for ( ;  *src_read != src_size  &&  *dst_written != dst_size;
-          (*src_read)++, (*dst_written)++, src++, dst++) {
+          ++(*src_read), ++(*dst_written), ++src, ++dst) {
         switch ( *src ) {
         case '+': {
             *dst = ' ';
@@ -2522,7 +2528,7 @@ extern void URL_EncodeEx
         return;
 
     for ( ;  *src_read != src_size  &&  *dst_written != dst_size;
-          (*src_read)++, (*dst_written)++, src++, dst++) {
+          ++(*src_read), ++(*dst_written), ++src, ++dst) {
         const char* subst = allow_symbols ? strchr(allow_symbols, *src) : 0;
         if (!subst)
             subst = s_EncodeTable[*((unsigned char*) src)];
@@ -2560,14 +2566,14 @@ extern void URL_Encode
  */
 
 
-static const char* s_MIME_Type[eMIME_T_Unknown+1] = {
+static const char* kMIME_Type[eMIME_T_Unknown+1] = {
     "x-ncbi-data",
     "text",
     "application",
     "unknown"
 };
 
-static const char* s_MIME_SubType[eMIME_Unknown+1] = {
+static const char* kMIME_SubType[eMIME_Unknown+1] = {
     "x-dispatch",
     "x-asn-text",
     "x-asn-binary",
@@ -2581,7 +2587,7 @@ static const char* s_MIME_SubType[eMIME_Unknown+1] = {
     "x-unknown"
 };
 
-static const char* s_MIME_Encoding[eENCOD_Unknown+1] = {
+static const char* kMIME_Encoding[eENCOD_Unknown+1] = {
     "",
     "urlencoded",
     "encoded"
@@ -2593,18 +2599,20 @@ extern char* MIME_ComposeContentTypeEx
  EMIME_SubType  subtype,
  EMIME_Encoding encoding,
  char*          buf,
- size_t         buflen)
+ size_t         bufsize)
 {
-    static const char s_ContentType[] = "Content-Type: ";
-    const char* x_type;
-    const char* x_subtype;
-    const char* x_encoding;
-    char        x_buf[MAX_CONTENT_TYPE_LEN];
+    static const char kContentType[] = "Content-Type: ";
+    const char* x_type, *x_subtype, *x_encoding;
+    char        x_buf[CONN_CONTENT_TYPE_LEN+1];
+    size_t      len;
+    char*       rv;
 
-    assert(buf  &&  buflen);
+    assert(buf  &&  bufsize);
 
+    *buf = '\0';
     if (type == eMIME_T_Undefined  ||  subtype == eMIME_Undefined)
         return 0;
+
     if (type >= eMIME_T_Unknown)
         type  = eMIME_T_Unknown;
     if (subtype >= eMIME_Unknown)
@@ -2612,24 +2620,29 @@ extern char* MIME_ComposeContentTypeEx
     if (encoding >= eENCOD_Unknown)
         encoding  = eENCOD_Unknown;
 
-    x_type     = s_MIME_Type    [type];
-    x_subtype  = s_MIME_SubType [subtype];
-    x_encoding = s_MIME_Encoding[encoding];
+    x_type     = kMIME_Type    [type];
+    x_subtype  = kMIME_SubType [subtype];
+    x_encoding = kMIME_Encoding[encoding];
 
     if ( *x_encoding ) {
-        assert(sizeof(s_ContentType) + strlen(x_type) + strlen(x_subtype)
-               + strlen(x_encoding) + 4 < MAX_CONTENT_TYPE_LEN);
+        assert(sizeof(kContentType) + strlen(x_type) + strlen(x_subtype)
+               + strlen(x_encoding) + 4 < sizeof(x_buf));
         sprintf(x_buf, "%s%s/%s-%s\r\n",
-                s_ContentType, x_type, x_subtype, x_encoding);
+                kContentType, x_type, x_subtype, x_encoding);
     } else {
-        assert(sizeof(s_ContentType) + strlen(x_type) + strlen(x_subtype)
-               + 3 < MAX_CONTENT_TYPE_LEN);
-        sprintf(x_buf, "%s%s/%s\r\n", s_ContentType, x_type, x_subtype);
+        assert(sizeof(kContentType) + strlen(x_type) + strlen(x_subtype)
+               +                      3 < sizeof(x_buf));
+        sprintf(x_buf, "%s%s/%s\r\n", kContentType, x_type, x_subtype);
     }
-    assert(strlen(x_buf) < sizeof(x_buf));
-    assert(strlen(x_buf) < buflen);
-    strncpy0(buf, x_buf, buflen - 1);
-    return buf;
+    len = strlen(x_buf);
+    assert(len < sizeof(x_buf));
+    if (len >= bufsize) {
+        len  = bufsize - 1;
+        rv   = 0;
+    } else
+        rv = buf;
+    strncpy0(buf, x_buf, len);
+    return rv;
 }
 
 
@@ -2654,10 +2667,10 @@ extern int/*bool*/ MIME_ParseContentTypeEx
 
     x_size = str  &&  *str ? strlen(str) + 1 : 0;
     if (!x_size)
-        return 0/*false*/;
+        return 0/*failure*/;
 
     if (!(x_buf = (char*) malloc(x_size << 1)))
-        return 0/*false*/;
+        return 0/*failure*/;
     x_type = x_buf + x_size;
 
     strlwr(strcpy(x_buf, str));
@@ -2666,25 +2679,25 @@ extern int/*bool*/ MIME_ParseContentTypeEx
          sscanf(x_buf, " %s ", x_type) != 1)  ||
         (x_subtype = strchr(x_type, '/')) == 0) {
         free(x_buf);
-        return 0/*false*/;
+        return 0/*failure*/;
     }
     *x_subtype++ = '\0';
     x_size = strlen(x_subtype);
 
     if ( type ) {
-        for (i = 0;  i < (int) eMIME_T_Unknown;  i++) {
-            if (strcmp(x_type, s_MIME_Type[i]) == 0)
+        for (i = 0;  i < (int) eMIME_T_Unknown;  ++i) {
+            if (strcmp(x_type, kMIME_Type[i]) == 0)
                 break;
         }
         *type = (EMIME_Type) i;
     }
 
-    for (i = 1;  i <= (int) eENCOD_Unknown;  i++) {
-        size_t len = strlen(s_MIME_Encoding[i]);
+    for (i = 1;  i <= (int) eENCOD_Unknown;  ++i) {
+        size_t len = strlen(kMIME_Encoding[i]);
         if (len < x_size) {
             char* x_encoding = x_subtype + x_size - len;
             if (x_encoding[-1] == '-'
-                &&  strcmp(x_encoding, s_MIME_Encoding[i]) == 0) {
+                &&  strcmp(x_encoding, kMIME_Encoding[i]) == 0) {
                 if ( encoding ) {
                     *encoding = (i == (int) eENCOD_Unknown
                                  ? eENCOD_None : (EMIME_Encoding) i);
@@ -2696,15 +2709,15 @@ extern int/*bool*/ MIME_ParseContentTypeEx
     }
 
     if ( subtype ) {
-        for (i = 0;  i < (int) eMIME_Unknown;  i++) {
-            if (strcmp(x_subtype, s_MIME_SubType[i]) == 0)
+        for (i = 0;  i < (int) eMIME_Unknown;  ++i) {
+            if (strcmp(x_subtype, kMIME_SubType[i]) == 0)
                 break;
         }
         *subtype = (EMIME_SubType) i;
     }
 
     free(x_buf);
-    return 1/*true*/;
+    return 1/*success*/;
 }
 
 
