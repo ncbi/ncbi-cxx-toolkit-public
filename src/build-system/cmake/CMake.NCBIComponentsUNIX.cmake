@@ -294,17 +294,19 @@ include(${NCBI_TREE_CMAKECFG}/CMakeChecks.boost.cmake)
 ############################################################################
 #
 # NCBI C Toolkit:  headers and libs
+# Path overridden in stable components to avoid version skew.
+set(NCBI_C_ROOT "${NCBI_TOOLS_ROOT}/ncbi")
 string(REGEX MATCH "DNCBI_INT8_GI|NCBI_STRICT_GI" INT8GI_FOUND "${CMAKE_CXX_FLAGS}")
 if (NOT "${INT8GI_FOUND}" STREQUAL "")
-    if (EXISTS "${NCBI_TOOLS_ROOT}/ncbi/ncbi.gi64/")
-        set(NCBI_CTOOLKIT_PATH "${NCBI_TOOLS_ROOT}/ncbi/ncbi.gi64/")
-    elseif (EXISTS "${NCBI_TOOLS_ROOT}/ncbi.gi64")
-        set(NCBI_CTOOLKIT_PATH "${NCBI_TOOLS_ROOT}/ncbi.gi64/")
+    if (EXISTS "${NCBI_C_ROOT}/ncbi.gi64/")
+        set(NCBI_CTOOLKIT_PATH "${NCBI_C_ROOT}/ncbi.gi64/")
+    elseif (EXISTS "${NCBI_C_ROOT}.gi64")
+        set(NCBI_CTOOLKIT_PATH "${NCBI_C_ROOT}.gi64/")
     else ()
-        set(NCBI_CTOOLKIT_PATH "${NCBI_TOOLS_ROOT}/ncbi/")
+        set(NCBI_CTOOLKIT_PATH "${NCBI_C_ROOT}/")
     endif ()
 else ()
-    set(NCBI_CTOOLKIT_PATH "${NCBI_TOOLS_ROOT}/ncbi/")
+    set(NCBI_CTOOLKIT_PATH "${NCBI_C_ROOT}/")
 endif ()
 
 if (EXISTS "${NCBI_CTOOLKIT_PATH}/include64" AND EXISTS "${NCBI_CTOOLKIT_PATH}/lib64")
