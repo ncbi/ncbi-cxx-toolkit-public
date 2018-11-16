@@ -3825,7 +3825,7 @@ enum {
     fSOCK_KeepSession = 2,
     fSOCK_KeepPending = 4
 } ESOCK_Keep;
-typedef unsigned int TSOCK_Keep;
+typedef unsigned int TSOCK_Keep;  /* Bitwise-OR of ESOCK_Keep */
 
 
 /* Close the socket (either orderly or abruptly)
