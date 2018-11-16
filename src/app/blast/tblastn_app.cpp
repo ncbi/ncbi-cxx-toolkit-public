@@ -175,7 +175,10 @@ int CTblastnApp::Run(void)
 
         formatter.SetQueryRange(query_opts->GetRange());
         formatter.SetLineLength(fmt_args->GetLineLength());
-        if(UseXInclude(*fmt_args, args[kArgOutput].AsString())) {
+        formatter.SetHitsSortOption(fmt_args->GetHitsSortOption());
+        formatter.SetHspsSortOption(fmt_args->GetHspsSortOption());
+        formatter.SetCustomDelimiter(fmt_args->GetCustomDelimiter());
+	if(UseXInclude(*fmt_args, args[kArgOutput].AsString())) {
         	formatter.SetBaseFile(args[kArgOutput].AsString());
         }
         formatter.PrintProlog();
