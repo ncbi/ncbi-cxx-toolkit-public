@@ -1721,16 +1721,8 @@ bool CGff3Writer::xAssignFeatureAttributesFormatIndependent(
         return false;
     }
     if (!xAssignFeatureAttributeGbKey(record, mf) ||
-        !xAssignFeatureAttributePseudoGene(record, fc, mf) ||
-        !xAssignFeatureAttributeException(record, mf) ||
-        !xAssignFeatureAttributeExperiment(record, mf) ||
-        !xAssignFeatureAttributeFunction(record, mf) ||
-        !xAssignFeatureAttributesGoMarkup(record, mf) ||            
         !xAssignFeatureAttributeExonNumber(record, mf)  ||
         !xAssignFeatureAttributeEcNumbers(record, mf)  ||
-        !xAssignFeatureAttributeModelEvidence(record, mf)  ||
-        !xAssignFeatureAttributeIsOrdered(record, mf)  ||
-        !xAssignFeatureAttributeRptFamily(record, mf) ||
         !xAssignFeatureAttributeTranscriptId(record, mf)) {
         return false;
     }
@@ -1750,18 +1742,6 @@ bool CGff3Writer::xAssignFeatureAttributesFormatSpecific(
         xAssignFeatureAttributeParent(record, fc, mf)  &&
         xAssignFeatureAttributeGene(record, fc, mf)  &&
         xAssignFeatureAttributeName(record, mf)); //must come last!
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureAttributeIsOrdered(
-    CGffFeatureRecord& record,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    if (CWriteUtil::IsLocationOrdered(mf.GetLocation())) {
-        record.SetAttribute("is_ordered", "true");
-    }
-    return true; 
 }
 
 //  ----------------------------------------------------------------------------
@@ -1976,120 +1956,6 @@ bool CGff3Writer::xAssignFeatureAttributeNote(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureAttributeException(
-    CGffFeatureRecord& record,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    if (mf.IsSetExcept_text()) {
-        record.SetAttribute("exception", mf.GetExcept_text());
-        return true;
-    }
-    if (mf.IsSetExcept()) {
-        // what should I do?
-        return true;
-    }
-    return true; 
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureAttributeExperiment(
-    CGffFeatureRecord& record,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    const string& experiment = mf.GetNamedQual("experiment");
-    if (experiment.empty()) {
-        return true;
-    }
-    record.SetAttribute("experiment", experiment);
-    return true; 
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureAttributeFunction(
-    CGffFeatureRecord& record,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    const string& function = mf.GetNamedQual("function");
-    if (!function.empty()) {
-        record.SetAttribute("function", function);
-        return true;
-    }
-    if (CSeqFeatData::e_Prot == mf.GetFeatType()) {
-        const CProt_ref& prot = mf.GetData().GetProt();
-        if (prot.CanGetActivity()  &&  !prot.GetActivity().empty()) {
-            record.SetAttribute("function", prot.GetActivity().front());
-        }
-        return true;
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureAttributesGoMarkup(
-    CGffFeatureRecord& record,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    const string& go_component = mf.GetNamedQual("go_component");
-    if (!go_component.empty()) {
-        record.SetAttribute("go_component", go_component);
-        return true;
-    }
-    if (mf.IsSetExt()) {
-        const auto& ext = mf.GetExt();
-        if (ext.IsSetType() && ext.GetType().IsStr() 
-                && ext.GetType().GetStr() == "GeneOntology") {
-            list<string> goIds;
-            const auto& goFields = ext.GetData();
-            for (const auto& goField: goFields) {
-                if (!goField->IsSetLabel()  ||  !goField->GetLabel().IsStr()) {
-                    continue;
-                }
-                const auto& goLabel = goField->GetLabel().GetStr();
-                if (goLabel == "Component"  &&  goField->IsSetData()  
-                        &&  goField->GetData().IsFields()) {
-                    const auto& fields = goField->GetData().GetFields();
-                    vector<string> goStrings;
-                    if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings)) {
-                        record.SetAttributes("go_component", goStrings);
-                    }
-                    CWriteUtil::GetListOfGoIds(fields, goIds);
-                    continue;
-                }
-                if (goLabel == "Process"  &&  goField->IsSetData()  
-                        &&  goField->GetData().IsFields()) {
-                    const auto& fields = goField->GetData().GetFields();
-                    vector<string> goStrings;
-                    if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings)) {
-                        record.SetAttributes("go_process", goStrings);
-                    }
-                    CWriteUtil::GetListOfGoIds(fields, goIds);
-                    continue;
-                }
-                if (goLabel == "Function"  &&  goField->IsSetData()  
-                        &&  goField->GetData().IsFields()) {
-                    const auto& fields = goField->GetData().GetFields();
-                    vector<string> goStrings;
-                    if (CWriteUtil::GetStringsForGoMarkup(fields, goStrings)) {
-                        record.SetAttributes("go_function", goStrings);
-                    }
-                    CWriteUtil::GetListOfGoIds(fields, goIds);
-                    continue;
-                }
-            }
-            if (!goIds.empty()) {
-                //record.SetAttribute("Ontology_term", NStr::Join(goIds, ","));
-                record.SetAttributes("Ontology_term", vector<string>(goIds.begin(), goIds.end()));
-            }
-        }
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeEcNumbers(
     CGffFeatureRecord& record,
     const CMappedFeat& mf )
@@ -2105,50 +1971,6 @@ bool CGff3Writer::xAssignFeatureAttributeEcNumbers(
             record.SetAttribute("ec_number", NStr::Join(ec, ","));
         }
         return true;
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureAttributeModelEvidence(
-    CGffFeatureRecord& record,
-    const CMappedFeat& mf)
-//  ----------------------------------------------------------------------------
-{
-    string modelEvidence;
-    if (!CWriteUtil::GetStringForModelEvidence(mf, modelEvidence)) {
-        return true;
-    }
-    if (!modelEvidence.empty()) {
-        record.SetAttribute("model_evidence", modelEvidence);
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureAttributeRptFamily(
-    CGffFeatureRecord& record,
-    const CMappedFeat& mf)
-//  -----------------------------------------------------------------------------
-{
-    CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
-    switch (s) {
-        default:
-            return true;
-        case CSeqFeatData::eSubtype_oriT:
-        case CSeqFeatData::eSubtype_repeat_region: {
-            const CSeq_feat::TQual& quals = mf.GetQual();
-            if (quals.empty()) {
-                return true;
-            }
-            for (CSeq_feat::TQual::const_iterator cit = quals.begin();
-                cit != quals.end(); ++cit) {
-                if ((*cit)->GetQual() == "rpt_family") {
-                    record.SetAttribute("rpt_family", (*cit)->GetVal());
-                    return true;
-                }
-            }
-        }
     }
     return true;
 }
@@ -2188,34 +2010,6 @@ bool CGff3Writer::xAssignFeatureAttributeGbKey(
 //  ----------------------------------------------------------------------------
 {
     record.SetAttribute("gbkey", mf.GetData().GetKey());
-    return true; 
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureAttributePseudoGene(
-    CGffFeatureRecord& record,
-    CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    string pseudoGene = mf.GetNamedQual("pseudogene");
-    if (!pseudoGene.empty()) {
-        record.SetAttribute("pseudogene", pseudoGene);
-        return true;
-    }
-    if (!CSeqFeatData::IsLegalQualifier(
-            mf.GetFeatSubtype(), CSeqFeatData::eQual_pseudogene)) {
-        return true;
-    }
-    CMappedFeat gene = fc.FindBestGeneParent(mf);
-    if (!gene) {
-        return true;
-    }
-    pseudoGene = gene.GetNamedQual("pseudogene");
-    if (!pseudoGene.empty()) {
-        record.SetAttribute("pseudogene", pseudoGene);
-        return true;
-    }
     return true; 
 }
 

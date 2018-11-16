@@ -316,6 +316,38 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
+    bool xAssignFeatureAttributeException(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    bool xAssignFeatureAttributeExperiment(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    bool xAssignFeatureAttributeModelEvidence(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    bool xAssignFeatureAttributeRptFamily(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    bool xAssignFeatureAttributePseudoGene(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    bool xAssignFeatureAttributeIsOrdered(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    bool xAssignFeatureAttributeFunction(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    bool xAssignFeatureAttributesGoMarkup(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
 
     virtual bool x_WriteSequenceHeader(
         CBioseq_Handle ) { return true; };

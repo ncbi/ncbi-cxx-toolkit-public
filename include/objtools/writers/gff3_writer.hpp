@@ -438,19 +438,7 @@ protected:
     bool xAssignFeatureAttributeEcNumbers(
         CGffFeatureRecord&,
         const CMappedFeat&);
-    bool xAssignFeatureAttributeException(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributeExperiment(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
     bool xAssignFeatureAttributeExonNumber(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributeFunction(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributesGoMarkup(
         CGffFeatureRecord&,
         const CMappedFeat&);
     bool xAssignFeatureAttributeDbxref(
@@ -459,13 +447,6 @@ protected:
         const CMappedFeat&) override;
     bool xAssignFeatureAttributeGbKey(
         CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributeIsOrdered(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributePseudoGene(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
         const CMappedFeat&);
     bool xAssignFeatureAttributeName(
         CGffFeatureRecord&,
@@ -484,14 +465,6 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
-
-    //end mss-234//
-    bool xAssignFeatureAttributeModelEvidence(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributeRptFamily(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
 
     string xNextAlignId();
 
