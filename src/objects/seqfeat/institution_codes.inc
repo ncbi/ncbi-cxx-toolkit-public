@@ -31,7 +31,6 @@
  */
 
 static const char* const kInstitutionCollectionCodeList[] = {
-" DZSJRP\ts\tDepartmento de Zoologia e Botanica, Universidade Estadual Paulista\t\t\t",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
 "AA\ts\tMinistry of Science, Academy of Sciences\t\t\t",
 "AAC\tc\tArignar Anna College\t\t\t",
@@ -1722,6 +1721,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "DZMU\ts\tDepartment of Zoology, Monash University\t\t\t",
 "DZS\ts\tDevizes Museum\t\t\t",
 "DZSASP\ts\tDepartamento de Zoologia, Secretaria da Agricultura\t\t\t",
+"DZSJRP\ts\tDepartmento de Zoologia e Botanica, Universidade Estadual Paulista\t\t\t",
 "DZUC\ts\tDepartamento de Zoologia da Universidade de Coimbra\t\t\t",
 "DZUFRGS\ts\tDepartamento de Zoologia da Universidade Federal do Rio Grande do Sul\t\t\t",
 "DZUH\ts\tDepartamento de Zoologia, Universidad de Havana\t\t\t",
@@ -6566,7 +6566,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "TK\ts\tTomsk State University\t\t\t",
 "TK<MEX>\ts\tColeccion de mamiferos del Centro Interdisciplinario de Investigacion para el Desarrollo Integral Regional Unidad Durango\t\t\t",
 "TKB\ts\tUniversity of Tsukuba\t\t\t",
-"TKBC\tInstitute of Biological Sciences, University of Tsukuba\tc\tInstitute of Biological Sciences, University of Tsukuba\t\t\t",
+"TKBC\tc\tInstitute of Biological Sciences, University of Tsukuba\t\t\t",
 "TKNM\ts\tTwickenham Girls' School\t\t\t",
 "TKPM\ts\tTokushima Prefectural Museum\t\t\t",
 "TKU\ts\tTokyo Kyoiku University\t\t\t",

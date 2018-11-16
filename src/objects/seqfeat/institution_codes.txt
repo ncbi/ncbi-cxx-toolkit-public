@@ -1,4 +1,3 @@
- DZSJRP	s	Departmento de Zoologia e Botanica, Universidade Estadual Paulista			
 A	s	Arnold Arboretum, Harvard University			
 AA	s	Ministry of Science, Academy of Sciences			
 AAC	c	Arignar Anna College			
@@ -1689,6 +1688,7 @@ DZKU	s	Department of Biology, Shaanxi Normal University
 DZMU	s	Department of Zoology, Monash University			
 DZS	s	Devizes Museum			
 DZSASP	s	Departamento de Zoologia, Secretaria da Agricultura			
+DZSJRP	s	Departmento de Zoologia e Botanica, Universidade Estadual Paulista			
 DZUC	s	Departamento de Zoologia da Universidade de Coimbra			
 DZUFRGS	s	Departamento de Zoologia da Universidade Federal do Rio Grande do Sul			
 DZUH	s	Departamento de Zoologia, Universidad de Havana			
@@ -6533,7 +6533,7 @@ TJMP	s	Tianjin Institute of Medical and Pharmaceutical Sciences
 TK	s	Tomsk State University			
 TK<MEX>	s	Coleccion de mamiferos del Centro Interdisciplinario de Investigacion para el Desarrollo Integral Regional Unidad Durango			
 TKB	s	University of Tsukuba			
-TKBC	Institute of Biological Sciences, University of Tsukuba	c	Institute of Biological Sciences, University of Tsukuba			
+TKBC	c	Institute of Biological Sciences, University of Tsukuba			
 TKNM	s	Twickenham Girls' School			
 TKPM	s	Tokushima Prefectural Museum			
 TKU	s	Tokyo Kyoiku University			
