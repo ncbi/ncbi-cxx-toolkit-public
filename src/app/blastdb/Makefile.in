@@ -36,5 +36,5 @@ makeprofiledb:
 blastdb_convert:
 	${MAKE} ${MFLAGS} -f Makefile.blastdb_convert_app
 
-blastdbcmdspec:
+blastdb_path:
 	${MAKE} ${MFLAGS} -f Makefile.blastdbcmdspec_app

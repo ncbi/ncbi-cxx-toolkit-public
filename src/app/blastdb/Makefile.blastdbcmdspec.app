@@ -1,6 +1,6 @@
 WATCHERS = camacho fongah2
 
-APP = blastdbcmdspec
+APP = blastdb_path
 SRC = blastdbcmd_spec
 LIB_ = $(BLAST_FORMATTER_LIBS) $(BLAST_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
