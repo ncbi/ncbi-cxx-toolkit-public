@@ -189,22 +189,24 @@ static int/*bool*/ s_Try_MIME
 static void TEST_MIME(void)
 {
     /* MIME API */
+    int i, j, k;
     EMIME_Type     type;
     EMIME_SubType  subtype;
     EMIME_Encoding encoding;
-    char str[MAX_CONTENT_TYPE_LEN];
-    int i,j,k;
+    char str[CONN_CONTENT_TYPE_LEN+1];
 
     CORE_LOG(eLOG_Note, "MIME test started");
 
     *str = '\0';
-    for (k = 0, type = (EMIME_Type) k;
-         k <= (int) eMIME_T_Unknown;  k++, type = (EMIME_Type) k) {
-        for (i = 0, subtype = (EMIME_SubType) i;
-             i <= (int) eMIME_Unknown;  i++, subtype = (EMIME_SubType) i) {
-            for (j = 0, encoding = (EMIME_Encoding) j; 
-                 j < (int) eENCOD_Unknown;
-                 j++, encoding = (EMIME_Encoding) j) {
+    for (i = 0, type = (EMIME_Type) i;
+         i <= (int) eMIME_T_Unknown;
+         ++i, type = (EMIME_Type) i) {
+        for (j = 0, subtype = (EMIME_SubType) j;
+             j <= (int) eMIME_Unknown;
+             ++j, subtype = (EMIME_SubType) j) {
+            for (k = 0, encoding = (EMIME_Encoding) k;
+                 k < (int) eENCOD_Unknown;
+                 ++k, encoding = (EMIME_Encoding) k) {
                 assert(!s_Try_MIME(str, type, subtype, encoding));
                 MIME_ComposeContentTypeEx(type, subtype, encoding,
                                           str, sizeof(str));
@@ -223,7 +225,6 @@ static void TEST_MIME(void)
                       eMIME_T_NcbiData, eMIME_Unknown, eENCOD_None));
     assert(s_Try_MIME("x-ncbi-data/plain-",
                       eMIME_T_NcbiData, eMIME_Unknown, eENCOD_None));
-
     assert(!s_Try_MIME("content-TYPE : x-ncbi-data/x-unknown\r",
                        eMIME_T_NcbiData, eMIME_Unknown, eENCOD_None));
     assert(s_Try_MIME("text/html",

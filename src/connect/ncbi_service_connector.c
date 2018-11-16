@@ -254,7 +254,7 @@ static int/*bool*/ s_IsContentTypeDefined(const char*         service,
             EMIME_Type     m_t;
             EMIME_SubType  m_s;
             EMIME_Encoding m_e;
-            char           c_t[MAX_CONTENT_TYPE_LEN];
+            char           c_t[CONN_CONTENT_TYPE_LEN+1];
             if (net_info->debug_printout         &&
                 mime_t != eMIME_T_Undefined      &&
                 mime_t != eMIME_T_Unknown        &&
@@ -331,7 +331,7 @@ static const char* s_AdjustNetParams(const char*    service,
     if (ConnNetInfo_PrependArg(net_info, cgi_args, 0)) {
         size_t sh_len = static_header ? strlen(static_header) : 0;
         size_t eh_len = extend_header ? strlen(extend_header) : 0;
-        char   c_t[MAX_CONTENT_TYPE_LEN];
+        char   c_t[CONN_CONTENT_TYPE_LEN+1];
         size_t len;
 
         if (s_IsContentTypeDefined(service, net_info, mime_t, mime_s, mime_e)

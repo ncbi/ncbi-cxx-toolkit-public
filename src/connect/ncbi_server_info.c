@@ -141,7 +141,7 @@ extern const char* SERV_ReadType(const char* str,
 extern char* SERV_WriteInfo(const SSERV_Info* info)
 {
     static const char* k_NY[] = { "no", "yes" };
-    char c_t[MAX_CONTENT_TYPE_LEN];    
+    char c_t[CONN_CONTENT_TYPE_LEN+1];
     const SSERV_Attr* attr;
     size_t reserve;
     char* str;
