@@ -238,7 +238,7 @@ void CTarTest::Init(void)
     args->AddFlag("z", "Use GZIP compression (aka tgz), subsumes NOT -r / -u");
     args->AddFlag("s", "Use stream operations with archive"
                   " [non-standard]");
-    args->AddFlag("G", "Always upplement long names with additional GNU header"
+    args->AddFlag("G", "Always supplement long names with addt'l GNU header(s)"
                   " [non-stdandard]");
     args->AddFlag("F", "Pipe the archive through"
                   " [non-standard]");
@@ -247,7 +247,8 @@ void CTarTest::Init(void)
     args->AddFlag("Z", "No NCBI signature in headers"
                   " [non-standard]");
     args->AddFlag("v", "Turn on debugging information");
-    args->AddFlag("lfs","Large File Support check; ignore all other parameters"
+    args->AddFlag("lfs", "Large File Support check;"
+                  " ignore all other optional parameters"
                   " [non-standard]");
     args->AddExtra(0/*no mandatory*/, kMax_UInt/*unlimited optional*/,
                    "List of entries to process", CArgDescriptions::eString);
