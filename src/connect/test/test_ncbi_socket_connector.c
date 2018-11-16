@@ -47,9 +47,18 @@
 #define  STR(n) _STR(n)
 
 
+/* Getter for the pseudo-registry
+ */
+#if defined(__cplusplus)
+extern "C" {
+    static int s_REG_Get(void*user_data, const char* section,
+                         const char* name, char* value, size_t value_size);
+}
+#endif /* __cplusplus */
+
 /*ARGSUSED*/
-static void s_REG_Get(void* unused, const char* section,
-                      const char* name, char* value, size_t value_size)
+static int s_REG_Get(void* unused, const char* section,
+                     const char* name, char* value, size_t value_size)
 {
     if (strcasecmp(DEF_CONN_REG_SECTION, section) == 0) {
         if      (strcasecmp(REG_CONN_HOST,    name) == 0)
@@ -58,7 +67,9 @@ static void s_REG_Get(void* unused, const char* section,
             strncpy0(value, STR(TEST_MAX_TRY), value_size);
         else if (strcasecmp(REG_CONN_TIMEOUT, name) == 0)
             strncpy0(value, STR(TEST_TIMEOUT), value_size);
+        return 1;
     }
+    return -1;
 }
 
 

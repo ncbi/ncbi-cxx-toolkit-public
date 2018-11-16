@@ -54,13 +54,12 @@ static struct {
  */
 #if defined(__cplusplus)
 extern "C" {
-    static void s_REG_Get(void*user_data,
-                          const char* section, const char* name,
-                          char* value, size_t value_size);
+    static int s_REG_Get(void*user_data, const char* section,
+                         const char* name, char* value, size_t value_size);
 }
 #endif /* __cplusplus */
 
-static void s_REG_Get
+static int s_REG_Get
 (void*       user_data,
  const char* section,
  const char* name,
@@ -69,13 +68,13 @@ static void s_REG_Get
 {
     if (strcmp(section, DEF_CONN_REG_SECTION) != 0) {
         assert(0);
-        return;
+        return 0;
     }
 
-#define X_GET_VALUE(x_name, x_value)              \
-    if (strcmp(name, x_name) == 0) {              \
-        strncpy0(value, x_value, value_size - 1); \
-        return;                                   \
+#define X_GET_VALUE(x_name, x_value)                \
+    if (strcmp(name, x_name) == 0) {                \
+        strncpy0(value, x_value, value_size - 1);   \
+        return 1;                                   \
     }
 
     X_GET_VALUE(REG_CONN_HOST,           s_Args.host);
@@ -83,6 +82,8 @@ static void s_REG_Get
     X_GET_VALUE(REG_CONN_PATH,           s_Args.path);
     X_GET_VALUE(REG_CONN_ARGS,           s_Args.args);
     X_GET_VALUE(REG_CONN_DEBUG_PRINTOUT, "yes");
+
+    return -1;
 }
 
 
