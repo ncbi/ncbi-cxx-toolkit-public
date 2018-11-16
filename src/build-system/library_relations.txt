@@ -919,7 +919,7 @@ ncbicn3dOGL needs3party vibrantOGL
 ncbidesk needs3party blastapi
 ncbidesk needs3party ncbimmdb
 ncbidesk needs3party vibrant
-ncbigbcxx needs xcleanup
+ncbigbcxx needs xobjutil
 ncbiid0 needs3party ncbiobj
 ncbiid0 needs3party netcli
 ncbiid1 needs3party ncbiobj
@@ -954,6 +954,7 @@ ncbiprscxx needs gui_utils
 ncbiprscxx needs ncbi_xdbapi_ftds
 ncbiprscxx needs ncbiindxcxx
 ncbiprscxx needs taxon1
+ncbiprscxx needs xcleanup
 ncbiprscxx needs xid_utils
 ncbiprsn needs3party ctutils
 ncbiprsn needs3party ncbiindx
@@ -964,6 +965,7 @@ ncbiprsncxx needs gui_utils
 ncbiprsncxx needs ncbi_xdbapi_ftds
 ncbiprsncxx needs ncbiindxcxx
 ncbiprsncxx needs taxon1
+ncbiprsncxx needs xcleanup
 ncbiprsncxx needs xid_utils
 ncbispel needs3party netcli
 ncbitax needs3party ncbiobj
