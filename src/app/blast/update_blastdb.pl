@@ -40,7 +40,6 @@ use Pod::Usage;
 use File::stat;
 use Digest::MD5;
 use Archive::Tar;
-use List::MoreUtils qw(uniq);
 
 use constant NCBI_FTP => "ftp.ncbi.nlm.nih.gov";
 use constant BLAST_DB_DIR => "/blast/db";
@@ -139,7 +138,8 @@ sub get_available_databases
         next unless (/\.tar\.gz$/);
         push @retval, &extract_db_name($_);
     }
-    return uniq @retval;
+    my %seen = ();
+    return grep { ! $seen{$_} ++ } @retval;
 }
 
 # Obtains the list of files to download
