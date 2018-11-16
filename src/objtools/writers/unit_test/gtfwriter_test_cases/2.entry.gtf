@@ -1,5 +1,5 @@
 #gtf-version 2.2
-U54469.1	Genbank	gene	80	2881	.	+	.	gene_id "eIF4E"; 
+U54469.1	Genbank	gene	80	2881	.	+	.	gene_id "eIF4E"; gene_biotype "protein_coding"; 
 U54469.1	Genbank	exon	80	224	.	+	.	gene_id "eIF4E"; transcript_id "eIF4E"; product "eukaryotic initiation factor 4E-I"; exon_number "1"; 
 U54469.1	Genbank	exon	892	1458	.	+	.	gene_id "eIF4E"; transcript_id "eIF4E"; product "eukaryotic initiation factor 4E-I"; exon_number "2"; 
 U54469.1	Genbank	exon	1550	1920	.	+	.	gene_id "eIF4E"; transcript_id "eIF4E"; product "eukaryotic initiation factor 4E-I"; exon_number "3"; 

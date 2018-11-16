@@ -1,5 +1,5 @@
 #gtf-version 2.2
-Zv8_NA7	.	gene	67958	88253	.	-	.	gene_id "ENSDART00000076400"; 
+Zv8_NA7	.	gene	67958	88253	.	-	.	gene_id "ENSDART00000076400"; gene_biotype "protein_coding"; 
 Zv8_NA7	.	exon	88161	88253	.	-	.	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; exon_number "1"; 
 Zv8_NA7	.	exon	86374	86421	.	-	.	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; exon_number "2"; 
 Zv8_NA7	.	exon	85732	85937	.	-	.	gene_id "ENSDART00000076400"; transcript_id "xxENSDART00000076400"; exon_number "3"; 

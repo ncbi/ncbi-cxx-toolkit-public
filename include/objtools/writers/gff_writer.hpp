@@ -288,6 +288,34 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
+    bool xAssignFeatureAttributeCodeBreak(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    bool xAssignFeatureAttributeGene(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    bool xAssignFeatureAttributeLocusTag(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    bool xAssignFeatureAttributeOldLocusTag(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    bool xAssignFeatureAttributeGeneDesc(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    bool xAssignFeatureAttributeGeneBiotype(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
+    bool xAssignFeatureAttributeMapLoc(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
 
     virtual bool x_WriteSequenceHeader(
         CBioseq_Handle ) { return true; };

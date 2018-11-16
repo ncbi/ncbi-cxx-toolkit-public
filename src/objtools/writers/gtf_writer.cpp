@@ -525,22 +525,6 @@ bool CGtfWriter::xAssignFeatureMethod(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfWriter::xAssignFeatureAttributesFormatIndependent(
-    CGffFeatureRecord& rec,
-    CGffFeatureContext& fc,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    CGtfRecord& record = dynamic_cast<CGtfRecord&>(rec);
-    if (!CGff2Writer::xAssignFeatureAttributesFormatIndependent(record, fc, mf)) {
-        return false;
-    }
-    return true;
-    return (
-        xAssignFeatureAttributeRibosomalSlippage(record, fc, mf));
-}
-
-//  ----------------------------------------------------------------------------
 bool CGtfWriter::xAssignFeatureAttributesFormatSpecific(
     CGffFeatureRecord& rec,
     CGffFeatureContext& fc,

@@ -435,9 +435,6 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat& );
 
-    bool xAssignFeatureAttributeCodeBreak(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
     bool xAssignFeatureAttributeEcNumbers(
         CGffFeatureRecord&,
         const CMappedFeat&);
@@ -463,28 +460,12 @@ protected:
     bool xAssignFeatureAttributeGbKey(
         CGffFeatureRecord&,
         const CMappedFeat&);
-    bool xAssignFeatureAttributeGene(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributeGeneDesc(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
     bool xAssignFeatureAttributeIsOrdered(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributeLocusTag(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributeOldLocusTag(
         CGffFeatureRecord&,
         const CMappedFeat&);
     bool xAssignFeatureAttributePseudoGene(
         CGffFeatureRecord&,
         CGffFeatureContext&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributeMapLoc(
-        CGffFeatureRecord&,
         const CMappedFeat&);
     bool xAssignFeatureAttributeName(
         CGffFeatureRecord&,
@@ -498,10 +479,6 @@ protected:
         const CMappedFeat&);
     bool xAssignFeatureAttributeTranscriptId(
         CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributeGeneBiotype(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
         const CMappedFeat&);
     bool xAssignFeatureAttributesQualifiers(
         CGffFeatureRecord&,
