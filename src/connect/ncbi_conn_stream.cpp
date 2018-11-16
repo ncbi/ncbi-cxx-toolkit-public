@@ -109,7 +109,6 @@ CConn_IOStream::CConn_IOStream(CONN conn, bool close,
 
 CConn_IOStream::~CConn_IOStream()
 {
-    // Explicitly destroy so that the callbacks are not called out of context.
     x_Destroy();
 }
 
@@ -440,26 +439,36 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
                        THTTP_Flags         flgs,
                        const STimeout*     timeout)
 {
-    size_t len;
+    EReqMethod x_req_method;
     AutoPtr<SConnNetInfo>
         x_net_info(net_info
                    ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(0));
     if (!x_net_info.get()) {
         NCBI_THROW(CIO_Exception, eUnknown,
-                   "CConn_HttpStream::CConn_HttpStream():  Out of memory");
+                   "CConn_HttpStream::CConn_HttpStream(): "
+                   " Out of memory");
     }
-    if (method & ~eReqMethod_v1)
+    x_req_method = (EReqMethod)(method & ~eReqMethod_v1);
+    if (x_req_method == eReqMethod_Connect) {
+        NCBI_THROW(CIO_Exception, eInvalidArg,
+                   "CConn_HttpStream::CConn_HttpStream(): "
+                   " Bad request method (CONNECT)");
+    }
+    if (x_req_method)
         x_net_info->req_method = method;
     else if (method/*ANY/1.1*/)
         x_net_info->http_version = 1;
     if (url  &&  !ConnNetInfo_ParseURL(x_net_info.get(), url)) {
         NCBI_THROW(CIO_Exception, eInvalidArg,
-                   "CConn_HttpStream::CConn_HttpStream():  Bad URL");
+                   "CConn_HttpStream::CConn_HttpStream(): "
+                   " Bad URL");
     }
     if (host) {
+        size_t len;
         if ((len = *host ? strlen(host) : 0) >= sizeof(x_net_info->host)) {
             NCBI_THROW(CIO_Exception, eInvalidArg,
-                       "CConn_HttpStream::CConn_HttpStream():  Host too long");
+                       "CConn_HttpStream::CConn_HttpStream(): "
+                       " Host too long");
         }
         memcpy(x_net_info->host, host, ++len);
     }
@@ -467,14 +476,20 @@ s_HttpConnectorBuilder(const SConnNetInfo* net_info,
         x_net_info->port = port;
     if (path  &&  !ConnNetInfo_SetPath(x_net_info.get(), path)) {
         NCBI_THROW(CIO_Exception, eInvalidArg,
-                   "CConn_HttpStream::CConn_HttpStream():  Path too long");
+                   "CConn_HttpStream::CConn_HttpStream(): "
+                   " Path too long");
     }
     if (args  &&  !ConnNetInfo_SetArgs(x_net_info.get(), args)) {
         NCBI_THROW(CIO_Exception, eInvalidArg,
-                   "CConn_HttpStream::CConn_HttpStream():  Args too long");
+                   "CConn_HttpStream::CConn_HttpStream(): "
+                   " Args too long");
     }
-    if (user_header  &&  *user_header)
-        ConnNetInfo_OverrideUserHeader(x_net_info.get(), user_header);
+    if (user_header  &&  *user_header
+        &&  !ConnNetInfo_OverrideUserHeader(x_net_info.get(), user_header)) {
+        NCBI_THROW(CIO_Exception, eInvalidArg,
+                   "CConn_HttpStream::CConn_HttpStream(): "
+                   " Cannot set user header");
+    }
     if (timeout != kDefaultTimeout)
         x_net_info->timeout = timeout;
     CONNECTOR c = HTTP_CreateConnectorEx(x_net_info.get(),
@@ -633,6 +648,7 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
 
 CConn_HttpStream::~CConn_HttpStream()
 {
+    // Explicitly destroy so that the callbacks are not called out of context.
     x_Destroy();
 }
 
@@ -644,6 +660,7 @@ EIO_Status CConn_HttpStream::Fetch(const STimeout* timeout)
     return !conn  ||  !flush()
         ? eIO_Unknown : CONN_Wait(conn, eIO_Read, timeout);
 }
+
 
 // NB:  must never be upcalled (directly or indirectly) from any stream ctor
 //      for SHTTP_StatusData may yet be unbuilt (and the header field invalid)!
@@ -1120,8 +1137,8 @@ EIO_Status CConn_FtpStream::Drain(const STimeout* timeout)
 {
     const STimeout* r_timeout = kInfiniteTimeout/*0*/;
     const STimeout* w_timeout = kInfiniteTimeout/*0*/;
+    static char block[16384]; /*NB:shared sink*/
     CONN conn = GetCONN();
-    char block[1024];
     if (conn) {
         size_t n;
         r_timeout = CONN_GetTimeout(conn, eIO_Read);
