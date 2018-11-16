@@ -109,7 +109,7 @@ typedef struct {
  *
  *  The following connection states are defined:                    |  sock?
  * --------------+--------------------------------------------------+---------
- *  NotInitiated | HTTP connection needs to be (re-)established     | 
+ *  NotInitiated | HTTP request needs to be (re-)initiated          | 
  *  WriteRequest | HTTP request body is being written               | != NULL
  *  FlushRequest | HTTP request is being completed and flushed out  | != NULL
  *   ReadHeader  | HTTP response header is being read               | != NULL
@@ -296,7 +296,7 @@ static EHTTP_Auth x_RetryAuth(SHttpConnector* uuu, const SRetry* retry)
 }
 
 
-static int/*bool*/ x_SameScheme(EURLScheme scheme1, EURLScheme scheme2)
+static int/*bool*/ x_SameScheme(EBURLScheme scheme1, EBURLScheme scheme2)
 {
     if (!scheme1)
         scheme1 = eURL_Http;
@@ -325,7 +325,7 @@ static int/*bool*/ x_SameHost(const char* host1, const char* host2)
 }
 
 
-static unsigned short x_PortForScheme(unsigned port, EURLScheme scheme)
+static unsigned short x_PortForScheme(unsigned port, EBURLScheme scheme)
 {
     if (port)
         return port;
@@ -342,10 +342,8 @@ static unsigned short x_PortForScheme(unsigned port, EURLScheme scheme)
 }
 
 
-static int/*bool*/ x_SamePort(unsigned short port1,
-                              EURLScheme     scheme1,
-                              unsigned short port2,
-                              EURLScheme     scheme2)
+static int/*bool*/ x_SamePort(unsigned short port1, EBURLScheme scheme1,
+                              unsigned short port2, EBURLScheme scheme2)
 {
     return x_PortForScheme(port1, scheme1) == x_PortForScheme(port2, scheme2)
         ? 1/*true*/ : 0/*false*/;
@@ -412,10 +410,10 @@ static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
 
 
 /* NB: treatment of 'host_from' and 'host_to' is not symmetrical */
-static int/*bool*/ x_RedirectOK(EURLScheme     scheme_to,
+static int/*bool*/ x_RedirectOK(EBURLScheme    scheme_to,
                                 const char*      host_to,
                                 unsigned short   port_to,
-                                EURLScheme     scheme_from,
+                                EBURLScheme    scheme_from,
                                 const char*      host_from,
                                 unsigned short   port_from)
 {
@@ -456,7 +454,7 @@ typedef enum {
 
 static EHTTP_Redirect x_Redirect(SHttpConnector* uuu, const SRetry* retry)
 {
-    EURLScheme     scheme = uuu->net_info->scheme;
+    EBURLScheme    scheme = uuu->net_info->scheme;
     EReqMethod     req_method = (EReqMethod) uuu->net_info->req_method;
     char           host[sizeof(uuu->net_info->host)];
     unsigned short port = uuu->net_info->port;
@@ -905,7 +903,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                     assert(uuu->net_info->scheme == eURL_Http);
                     if (uuu->flags & fHCC_UrlEncodeArgs) {
                         /* args added to path not valid(unencoded), remove */
-                        if ((temp = strchr(path, '?')) != 0)
+                        if ((temp = (char*) strchr(path, '?')) != 0)
                             *temp = '\0';
                         args = ConnNetInfo_GetArgs(uuu->net_info);
                         if (*args == '#')
