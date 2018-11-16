@@ -137,11 +137,8 @@ static const char* x_GetValue(const char* svc, size_t svclen,
             end = 0/*false*/;
         } else
             end = 1/*true*/;
-        if (len > sizeof(buf)) {
-            if (def_value  &&  *def_value)
-                x_strncpy0(value, def_value, value_size);
+        if (len > sizeof(buf))
             return 0;
-        }
 
         /* First, environment search for 'service_CONN_param' */
         s = (char*) memcpy(buf, svc, svclen) + svclen;
@@ -153,9 +150,8 @@ static const char* x_GetValue(const char* svc, size_t svclen,
         }
         memcpy(s, param, plen);
         CORE_LOCK_READ;
-        if (((val = getenv(strupr((char*) memcpy(temp, buf, len)))) != 0
-             ||  (memcmp(temp, buf, len) != 0  &&  (val = getenv(buf)) != 0))
-            &&  *val) {
+        if ((val = getenv(strupr((char*) memcpy(temp, buf, len)))) != 0
+            ||  (memcmp(temp, buf, len) != 0  &&  (val = getenv(buf)) != 0)) {
             rv = x_strncpy0(value, val, value_size);
             CORE_UNLOCK;
             return rv;
@@ -174,21 +170,15 @@ static const char* x_GetValue(const char* svc, size_t svclen,
         size_t plen = strlen(param) + 1;
         if (strncasecmp(param, DEF_CONN_REG_SECTION "_",
                         sizeof(DEF_CONN_REG_SECTION)) != 0) {
-            if (sizeof(DEF_CONN_REG_SECTION) + plen > sizeof(buf)) {
-                if (def_value  &&  *def_value)
-                    x_strncpy0(value, def_value, value_size);
+            if (sizeof(DEF_CONN_REG_SECTION) + plen > sizeof(buf))
                 return 0;
-            }
             s = buf;
             memcpy(s, DEF_CONN_REG_SECTION, sizeof(DEF_CONN_REG_SECTION) - 1);
             s += sizeof(DEF_CONN_REG_SECTION) - 1;
             *s++ = '_';
         } else {
-            if (plen > sizeof(buf)) {
-                if (def_value  &&  *def_value)
-                    x_strncpy0(value, def_value, value_size);
+            if (plen > sizeof(buf))
                 return 0;
-            }
             s = buf;
         }
         memcpy(s, param, plen);
@@ -198,7 +188,7 @@ static const char* x_GetValue(const char* svc, size_t svclen,
     *generic = 1/*true*/;
     /* Environment search for 'CONN_param' */
     CORE_LOCK_READ;
-    if ((val = getenv(s)) != 0  &&  *val) {
+    if ((val = getenv(s)) != 0) {
         rv = x_strncpy0(value, val, value_size);
         CORE_UNLOCK;
         return rv;
@@ -227,9 +217,9 @@ static const char* s_GetValue(const char* svc, size_t len, const char* param,
         /*strip enveloping quotes*/
         if ((len = strlen(value)) > 1
             &&  (value[0] == '"'  ||  value[0] == '\'')
-            &&  strchr(value + 1, value[0]) == value + len - 1) {
+            &&  (char*) memrchr(value+1, value[0], len-1) == value + len - 1) {
             if (len -= 2)
-                memcpy(value, value + 1, len);
+                memmove(value, value + 1, len);
             value[len] = '\0';
         }
         assert(retval == value);
@@ -245,25 +235,27 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
 {
     const char* retval;
     int/*bool*/ dummy;
-    size_t len = 0;
+    size_t svclen;
 
     if (!value  ||  value_size < 1)
         return 0;
+    *value = '\0';
     if (!param  ||  !*param)
         return 0;
 
+    svclen = 0;
     if (service) {
         if (!*service  ||  strpbrk(service, "*?"))
             service = 0;
         else if (!(service = SERV_ServiceName(service)))
             return 0;
         else
-            verify((len = strlen(service)));
+            verify((svclen = strlen(service)));
     }
 
-    retval =  s_GetValue(service, len, param,
-                         value, value_size, def_value, &dummy);
-    if (len)
+    retval = s_GetValue(service, svclen, param,
+                        value, value_size, def_value, &dummy);
+    if (svclen)
         free((void*) service);
 
     return retval;
@@ -544,7 +536,6 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
  out:
     if (len)
         free((void*) service);
-
     /* done */
     return info;
 

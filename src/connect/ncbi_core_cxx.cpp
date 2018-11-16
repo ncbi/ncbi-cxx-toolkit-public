@@ -62,24 +62,22 @@ static int s_REG_Get(void* user_data,
                       const char* section, const char* name,
                       char* value, size_t value_size) THROWS_NONE
 {
+    int result = 0/*assume error, including truncation*/;
     try {
-        string result
+        string item
             = static_cast<const IRegistry*> (user_data)->Get(section, name);
-        if (result.empty())
-            return -1/*unmodified*/;
-
-        int rv;
-        size_t len = result.size();
-        if (len >= value_size) {
-            len  = value_size - 1;
-            rv   = 0/*truncation*/;
+        if (!item.empty()) {
+            size_t len = item.size();
+            if (len >= value_size)
+                len  = value_size - 1;
+            else
+                result = 1/*success*/;
+            strncpy0(value, item.data(), len);
         } else
-            rv   = 1/*success*/;
-        strncpy0(value, result.data(), len);
-        return rv;
+            result = -1/*unmodified*/;
     }
     NCBI_CATCH_ALL_X(1, "s_REG_Get() failed");
-    return 0/*failure*/;
+    return result;
 }
 }
 
@@ -93,7 +91,7 @@ static int s_REG_Set(void* user_data,
     try {
         IRWRegistry* reg = static_cast<IRWRegistry*> (user_data);
         result = value
-            ? reg->Set  (section, name, value, 
+            ? reg->Set  (section, name, value,
                          (storage == eREG_Persistent
                           ? CNcbiRegistry::fPersistent
                           | CNcbiRegistry::fTruncate

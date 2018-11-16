@@ -110,25 +110,25 @@ extern "C" {
 typedef enum {
     eReqMethod_Any = 0,
     /* HTTP/1.0 */
-    eReqMethod_Get,          /*  1 */
-    eReqMethod_Post,         /*  2 */
-    eReqMethod_Head,         /*  3 */
-    eReqMethod_Connect,      /*  4 */
+    eReqMethod_Get,           /*  1 */
+    eReqMethod_Post,          /*  2 */
+    eReqMethod_Head,          /*  3 */
+    eReqMethod_Connect,       /*  4 */
     /* HTTP/1.1 */
     eReqMethod_v1  = 8,
-    eReqMethod_Any11             = eReqMethod_v1 | eReqMethod_Any,
-    eReqMethod_Get11             = eReqMethod_v1 | eReqMethod_Get,
-    eReqMethod_Post11            = eReqMethod_v1 | eReqMethod_Post,
-    eReqMethod_Head11            = eReqMethod_v1 | eReqMethod_Head,
-    eReqMethod_Connect11         = eReqMethod_v1 | eReqMethod_Connect,
-    eReqMethod_Put = 16,     /* 16 */
-    eReqMethod_Patch,        /* 17 */
-    eReqMethod_Trace,        /* 18 */
-    eReqMethod_Delete,       /* 19 */
-    eReqMethod_Options       /* 20 */
+    eReqMethod_Any11              = eReqMethod_v1 | eReqMethod_Any,
+    eReqMethod_Get11              = eReqMethod_v1 | eReqMethod_Get,
+    eReqMethod_Post11             = eReqMethod_v1 | eReqMethod_Post,
+    eReqMethod_Head11             = eReqMethod_v1 | eReqMethod_Head,
+    eReqMethod_Connect11          = eReqMethod_v1 | eReqMethod_Connect,
+    eReqMethod_Put = 16,      /* 16 */
+    eReqMethod_Patch,         /* 17 */
+    eReqMethod_Trace,         /* 18 */
+    eReqMethod_Delete,        /* 19 */
+    eReqMethod_Options        /* 20 */
 } EReqMethod;
 
-typedef unsigned TReqMethod; /* EReqMethod or (EReqMethod | eReqMethod_v1) */
+typedef unsigned TReqMethod;  /* EReqMethod or (EReqMethod | eReqMethod_v1) */
 
 
 typedef enum {
@@ -209,76 +209,76 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
 
 /* Defaults and the registry entry names for "SConnNetInfo" fields
  */
-#define DEF_CONN_REG_SECTION      "CONN"
+#define DEF_CONN_REG_SECTION       "CONN"
 
-#define REG_CONN_REQ_METHOD       "REQ_METHOD"
-#define DEF_CONN_REQ_METHOD       "ANY"
+#define REG_CONN_REQ_METHOD        "REQ_METHOD"
+#define DEF_CONN_REQ_METHOD        "ANY"
 
-#define REG_CONN_USER             "USER"
-#define DEF_CONN_USER             ""
+#define REG_CONN_USER              "USER"
+#define DEF_CONN_USER              ""
 
-#define REG_CONN_PASS             "PASS"
-#define DEF_CONN_PASS             ""
+#define REG_CONN_PASS              "PASS"
+#define DEF_CONN_PASS              ""
 
-#define REG_CONN_HOST             "HOST"
-#define DEF_CONN_HOST             "www.ncbi.nlm.nih.gov"
+#define REG_CONN_HOST              "HOST"
+#define DEF_CONN_HOST              "www.ncbi.nlm.nih.gov"
 
-#define REG_CONN_PORT             "PORT"
-#define DEF_CONN_PORT             0/*default*/
+#define REG_CONN_PORT              "PORT"
+#define DEF_CONN_PORT              0/*default*/
 
-#define REG_CONN_PATH             "PATH"
-#define DEF_CONN_PATH             "/Service/dispd.cgi"
+#define REG_CONN_PATH              "PATH"
+#define DEF_CONN_PATH              "/Service/dispd.cgi"
 
-#define REG_CONN_ARGS             "ARGS"
-#define DEF_CONN_ARGS             ""
+#define REG_CONN_ARGS              "ARGS"
+#define DEF_CONN_ARGS              ""
 
-#define REG_CONN_HTTP_PROXY_HOST  "HTTP_PROXY_HOST"
-#define DEF_CONN_HTTP_PROXY_HOST  ""
+#define REG_CONN_HTTP_PROXY_HOST   "HTTP_PROXY_HOST"
+#define DEF_CONN_HTTP_PROXY_HOST   ""
 
-#define REG_CONN_HTTP_PROXY_PORT  "HTTP_PROXY_PORT"
-#define DEF_CONN_HTTP_PROXY_PORT  ""
+#define REG_CONN_HTTP_PROXY_PORT   "HTTP_PROXY_PORT"
+#define DEF_CONN_HTTP_PROXY_PORT   ""
 
-#define REG_CONN_HTTP_PROXY_USER  "HTTP_PROXY_USER"
-#define DEF_CONN_HTTP_PROXY_USER  ""
+#define REG_CONN_HTTP_PROXY_USER   "HTTP_PROXY_USER"
+#define DEF_CONN_HTTP_PROXY_USER   ""
 
-#define REG_CONN_HTTP_PROXY_PASS  "HTTP_PROXY_PASS"
-#define DEF_CONN_HTTP_PROXY_PASS  ""
+#define REG_CONN_HTTP_PROXY_PASS   "HTTP_PROXY_PASS"
+#define DEF_CONN_HTTP_PROXY_PASS   ""
 
-#define REG_CONN_HTTP_PROXY_LEAK  "HTTP_PROXY_LEAK"
-#define DEF_CONN_HTTP_PROXY_LEAK  ""
+#define REG_CONN_HTTP_PROXY_LEAK   "HTTP_PROXY_LEAK"
+#define DEF_CONN_HTTP_PROXY_LEAK   ""
 
-#define REG_CONN_HTTP_PUSH_AUTH   "HTTP_PUSH_AUTH"
-#define DEF_CONN_HTTP_PUSH_AUTH   ""
+#define REG_CONN_HTTP_PUSH_AUTH    "HTTP_PUSH_AUTH"
+#define DEF_CONN_HTTP_PUSH_AUTH    ""
 
-#define REG_CONN_TIMEOUT          "TIMEOUT"
-#define DEF_CONN_TIMEOUT          30.0
+#define REG_CONN_TIMEOUT           "TIMEOUT"
+#define DEF_CONN_TIMEOUT           30.0
 
-#define REG_CONN_MAX_TRY          "MAX_TRY"
-#define DEF_CONN_MAX_TRY          3
+#define REG_CONN_MAX_TRY           "MAX_TRY"
+#define DEF_CONN_MAX_TRY           3
 
-#define REG_CONN_EXTERNAL         "EXTERNAL"
-#define DEF_CONN_EXTERNAL         ""
+#define REG_CONN_EXTERNAL          "EXTERNAL"
+#define DEF_CONN_EXTERNAL          ""
 
-#define REG_CONN_FIREWALL         "FIREWALL"
-#define DEF_CONN_FIREWALL         ""
+#define REG_CONN_FIREWALL          "FIREWALL"
+#define DEF_CONN_FIREWALL          ""
 
-#define REG_CONN_STATELESS        "STATELESS"
-#define DEF_CONN_STATELESS        ""
+#define REG_CONN_STATELESS         "STATELESS"
+#define DEF_CONN_STATELESS         ""
 
-#define REG_CONN_LB_DISABLE       "LB_DISABLE"
-#define DEF_CONN_LB_DISABLE       ""
+#define REG_CONN_LB_DISABLE        "LB_DISABLE"
+#define DEF_CONN_LB_DISABLE        ""
 
-#define REG_CONN_HTTP_VERSION     "HTTP_VERSION"
-#define DEF_CONN_HTTP_VERSION     0
+#define REG_CONN_HTTP_VERSION      "HTTP_VERSION"
+#define DEF_CONN_HTTP_VERSION      0
 
-#define REG_CONN_DEBUG_PRINTOUT   "DEBUG_PRINTOUT"
-#define DEF_CONN_DEBUG_PRINTOUT   ""
+#define REG_CONN_DEBUG_PRINTOUT    "DEBUG_PRINTOUT"
+#define DEF_CONN_DEBUG_PRINTOUT    ""
 
-#define REG_CONN_HTTP_USER_HEADER "HTTP_USER_HEADER"
-#define DEF_CONN_HTTP_USER_HEADER ""
+#define REG_CONN_HTTP_USER_HEADER  "HTTP_USER_HEADER"
+#define DEF_CONN_HTTP_USER_HEADER  ""
 
-#define REG_CONN_HTTP_REFERER     "HTTP_REFERER"
-#define DEF_CONN_HTTP_REFERER     0
+#define REG_CONN_HTTP_REFERER      "HTTP_REFERER"
+#define DEF_CONN_HTTP_REFERER      0
 
 /* Environment/registry keys that are *not* kept in SConnNetInfo */
 #define REG_CONN_SERVICE_NAME               "SERVICE_NAME"
@@ -310,8 +310,8 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
  * 4. Registry key "param" (with leading "CONN_" stripped) in the default
  *    section "[CONN]".
  * Steps 1 & 2 skipped for "service" passed as NULL or empty ("").
- * Steps 3 & 4 skipped for non-empty "service" and the "param" that already
- * begins with "CONN_".
+ * Steps 3 & 4 skipped for a non-empty "service" and a "param" that already
+ *             begins with "CONN_".
  * If the found match's value has enveloping quotes (either single '' or
  * double ""), then they are stripped from the result, which can then become
  * empty.
@@ -319,7 +319,8 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
  * get copied to the "value" buffer (which may cause truncation!), and the
  * passed "value" address gets returned.
  * When no match is found, the "value" gets filled with "def_value" (or an
- * empty string), which then gets returned.  Return 0 only on out of memory.
+ * empty string), which then gets returned.  Return 0 on out of memory or
+ * value truncation.
  */
 extern NCBI_XCONNECT_EXPORT const char* ConnNetInfo_GetValue
 (const char* service,
@@ -330,8 +331,8 @@ extern NCBI_XCONNECT_EXPORT const char* ConnNetInfo_GetValue
  );
 
 
-/* Return non-zero if "str" (when non-NULL, non-empty) represents a
- * true boolean value;  return 0 otherwise.
+/* Return non-zero if "str" (when non-NULL, non-empty) represents a boolean
+ * true value;  return 0 otherwise.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
 (const char* str
