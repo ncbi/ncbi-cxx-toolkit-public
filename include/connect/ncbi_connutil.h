@@ -36,17 +36,10 @@
  *       SConnNetInfo
  *       ConnNetInfo_Create()
  *       ConnNetInfo_Clone()
- *       ConnNetInfo_Print()
- *       ConnNetInfo_Destroy()
- *       ConnNetInfo_Log()
- *       ConnNetInfo_URL()
- *       ConnNetInfo_ParseURL()
- *       ConnNetInfo_SetTimeout()
- *       ConnNetInfo_SetUserHeader()
- *       ConnNetInfo_AppendUserHeader()
- *       ConnNetInfo_DeleteUserHeader()
- *       ConnNetInfo_OverrideUserHeader()
- *       ConnNetInfo_ExtendUserHeader()
+ *       ConnNetInfo_SetPath()
+ *       ConnNetInfo_SetArgs()
+ *       ConnNetInfo_SetFrag()
+ *       ConnNetInfo_GetArgs()
  *       ConnNetInfo_AppendArg()
  *       ConnNetInfo_PrependArg()
  *       ConnNetInfo_DeleteArg()
@@ -54,27 +47,37 @@
  *       ConnNetInfo_PreOverrideArg()
  *       ConnNetInfo_PostOverrideArg()
  *       ConnNetInfo_SetupStandardArgs()
+ *       ConnNetInfo_SetUserHeader()
+ *       ConnNetInfo_AppendUserHeader()
+ *       ConnNetInfo_OverrideUserHeader()
+ *       ConnNetInfo_ExtendUserHeader()
+ *       ConnNetInfo_DeleteUserHeader()
+ *       ConnNetInfo_SetTimeout()
+ *       ConnNetInfo_ParseURL()
+ *       ConnNetInfo_URL()
+ *       ConnNetInfo_Log()
+ *       ConnNetInfo_Destroy()
  *       #define REG_CONN_***
  *       #define DEF_CONN_***
  *
  *     2.Make a connection via an URL:
  *       URL_Connect[Ex]()
  *       
- *     3.Perform URL encoding/decoding of data:
- *       URL_Encode()
- *       URL_Decode[Ex]()
- *
- *     4.Compose or parse NCBI-specific Content-Type's:
- *       EMIME_Type
- *       EMIME_SubType
- *       EMIME_Encoding
- *       MIME_ComposeContentType()
- *       MIME_ParseContentType()
- *
- *     5.Search for a token in an input stream (either CONN, SOCK, or BUF):
+ *     3.Search for a token in an input stream (either CONN, SOCK, or BUF):
  *       CONN_StripToPattern()
  *       SOCK_StripToPattern()
  *       BUF_StripToPattern()
+ *
+ *     4.Perform URL encoding/decoding of data:
+ *       URL_Encode()
+ *       URL_Decode[Ex]()
+ *
+ *     5.Compose or parse NCBI-specific Content-Type's:
+ *       EMIME_Type
+ *       EMIME_SubType
+ *       EMIME_Encoding
+ *       MIME_ComposeContentType[Ex]()
+ *       MIME_ParseContentType()
  *
  */
 
@@ -393,14 +396,17 @@ extern NCBI_XCONNECT_EXPORT SConnNetInfo* ConnNetInfo_Clone
  );
 
 
-/* Convenience routines to manipulate url path arguments and fragment that are
- * now combined in SConnNetInfo::path.
- * All routines below assume that "arg" either a single arg name or an
+/* Convenience routines to manipulate URL path, arguments and fragment that are
+ * now all combined within SConnNetInfo::path.
+ * All routines below assume that "arg" is either a single arg name or an
  * "arg=val" pair (a fragment part, separated by '#', if any, is ignored).
  * In the former case, an additional "val" may be supplied separately (and
- * will be prepended by the "=").  In the latter case, also having a non-zero
+ * will be prepended by the '=').  In the latter case, also having a non-zero
  * string the in the "val" argument may result in an incorrect behavior.
- * The ampersand (&) gets automatically managed to keep the arg list proper.
+ * The ampersand ('&') gets automatically managed to keep the arg list proper.
+ * @warning
+ *   Arguments provided in the path element modification routines may not point
+ *   to the path element currently stored in the SConnNetInfo being modified.
  * Return value (if any):  non-zero on success; 0 on error.
  */
 
@@ -477,8 +483,23 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PostOverrideArg
  );
 
 
+/* Set up standard arguments:  service(as passed), address, and platform.
+ * Also, set up the User-Agent: HTTP header (using CORE_GetAppName()) in
+ * SConnNetInfo::http_user_header.
+ * Return non-zero on success; zero on error.
+ * @sa
+ *  CORE_GetAppName, CORE_GetPlatform
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetupStandardArgs
+(SConnNetInfo*       net_info,
+ const char*         service
+ );
+
+
 /* Set user header (discard previously set header, if any).  Remove the old
  * header (if any) only if "header" is NULL or empty ("" or all blanks).
+ * @warning
+ *   New "header" may not be any part of the header kept in the structure.
  * Return non-zero if successful;  otherwise, return 0 to indicate an error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetUserHeader
@@ -489,6 +510,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetUserHeader
 
 /* Append user header (same as ConnNetInfo_SetUserHeader() if no previous
  * header was set);  do nothing if the provided "header" is NULL or empty.
+ * @warning
+ *   New "header" may not be any part of the header kept in the structure.
  * Return non-zero if successful;  otherwise, return 0 to indicate an error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AppendUserHeader
@@ -503,6 +526,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_AppendUserHeader
  * all appearences (if any) of "My-Tag: [<value>]" from the user header.
  * Unmatched tags with non-empty values are simply added to the existing user
  * header (as with "Append" above).  Noop if "header" is an empty string ("").
+ * @note
+ *   New "header" may be part of the current header from the structure.
  * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_OverrideUserHeader
@@ -519,6 +544,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_OverrideUserHeader
  * header, the new value does not get added (to avoid duplicates).
  * All other new tags from "header" with non-empty values get added at the end
  * of the user header (as with "Append" above).
+ * @note
+ *   New "header" may be part of the current header from the structure.
  * Return non-zero if successful, otherwise return 0 to indicate an error.
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ExtendUserHeader
@@ -529,10 +556,24 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ExtendUserHeader
 
 /* Delete entries from current user header, if their tags match those
  * passed in "header" (regardless of the values, if any, in the latter).
+ * @note
+ *   New "header" may be part of the current header from the structure.
  */
 extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_DeleteUserHeader
 (SConnNetInfo*       net_info,
  const char*         header
+ );
+
+
+/* Set the timeout.  Accepted values can include a valid pointer
+ * (to a finite timeout) or kInfiniteTimeout (or 0) to denote
+ * the infinite timeout value.
+ * Note that kDefaultTimeout as a pointer value is not accepted.
+ * Return non-zero (TRUE) on success, or zero (FALSE) on error.
+ */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetTimeout
+(SConnNetInfo*       net_info,
+ const STimeout*     timeout
  );
 
 
@@ -547,27 +588,6 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_ParseURL
  );
 
 
-/* Setup standard arguments:  service(as passed), address, and platform.
- * Also setup the User-Agent HTTP header using CORE_GetAppName().
- * Return non-zero on success; zero on error.
- * @sa
- *  CORE_GetAppName, CORE_GetPlatform
- */
-extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetupStandardArgs
-(SConnNetInfo*       net_info,
- const char*         service
- );
-
-
-/* Log the contents of "*net_info" into specified "log" with severity "sev".
- */
-extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_Log
-(const SConnNetInfo* net_info,
- ELOG_Level          sev,
- LOG                 log
- );
-
-
 /* Reconstruct text URL out of the SConnNetInfo's components
  * (excluding username:password for safety reasons).
  * Returned string must be free()'d when no longer necessary.
@@ -578,15 +598,12 @@ extern NCBI_XCONNECT_EXPORT char*       ConnNetInfo_URL
  );
 
 
-/* Set the timeout.  Accepted values can include a valid pointer
- * (to a finite timeout) or kInfiniteTimeout (or 0) to denote
- * the infinite timeout value.
- * Note that kDefaultTimeout as a pointer value is not accepted.
- * Return non-zero (TRUE) on success, or zero (FALSE) on error.
+/* Log the contents of "*net_info" into specified "log" with severity "sev".
  */
-extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetTimeout
-(SConnNetInfo*       net_info,
- const STimeout*     timeout
+extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_Log
+(const SConnNetInfo* net_info,
+ ELOG_Level          sev,
+ LOG                 log
  );
 
 
