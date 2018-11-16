@@ -891,7 +891,7 @@ typedef enum {
 
 #define CONN_CONTENT_TYPE_LEN  63
 /* unfortunate naming, better not to use, as it is actually a size, not len */
-//#define  MAX_CONTENT_TYPE_LEN  (CONN_CONTENT_TYPE_LEN+1)
+#define  MAX_CONTENT_TYPE_LEN  (CONN_CONTENT_TYPE_LEN+1)
 
 
 /* Write up to "bufsize" bytes (including the '\0' terminator) to "buf":
