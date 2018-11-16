@@ -462,8 +462,13 @@ static int s_StreamPushback(iostream&   ios,
 extern int TEST_StreamPushback(iostream& ios,
                                bool      rewind)
 {
-    const size_t kBufferSize =
-        rewind  &&  NCBI_GetCheckTimeoutMult() > 1.0 ? 64*1024 : 512*1024;
+    const char* valgrind = ::getenv("NCBI_RUN_UNDER_VALGRIND");
+    if (!valgrind)
+        valgrind = "no";
+    const size_t kBufferSize = NStr::strcasecmp(valgrind, "yes")
+        ||  (rewind  &&  NCBI_GetCheckTimeoutMult() > 1.0)
+        ? 64*1024
+        : 512*1024;
 
     // Warnings, errors, etc
     GetDiagContext().SetLogRate_Limit(CDiagContext::eLogRate_Err,
