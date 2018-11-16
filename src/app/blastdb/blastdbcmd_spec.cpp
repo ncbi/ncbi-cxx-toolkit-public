@@ -86,7 +86,8 @@ void CBlastDBCmdApp::Init()
                             CArgDescriptions::eString, "nucl");
     arg_desc->SetConstraint(kArgDbType, &(*new CArgAllow_Strings,
                                         "nucl", "prot"));
-   
+    arg_desc->AddFlag("getvolumespath", "Get .[np]in adn .[np]sq volumes paths", true);
+
     arg_desc->SetCurrentGroup("Output configuration options");
     arg_desc->AddDefaultKey(kArgOutput, "output_file", "Output file name",
                             CArgDescriptions::eOutputFile, "-");
@@ -100,18 +101,34 @@ int CBlastDBCmdApp::Run(void)
     const CArgs& args = GetArgs();
     
     try {
-
-        string dbtype = args[kArgDbType].AsString();
-        string dbLocation = SeqDB_ResolveDbPathNoExtension(args[kArgDb].AsString(),dbtype.at(0));
         CNcbiOstream& out = args["out"].AsOutputFile();
-        if(dbLocation.empty()) {
-            status = 1;
+        string dbtype = args[kArgDbType].AsString();
+        
+        if (args["getvolumespath"]) {
+            CSeqDB::ESeqType seqType = (dbtype == "nucl" ) ? CSeqDB::eNucleotide : CSeqDB::eProtein ;
+            vector<string> paths;        
+            //CSeqDB::FindVolumePaths(args[kArgDb].AsString(),seqType,paths,&alias_paths,true);
+            CSeqDB::FindVolumePaths(args[kArgDb].AsString(),seqType,paths);
+            for( size_t i = 0; i < paths.size();i++) {
+                out << paths[i] << "." << dbtype.at(0) << "in " << paths[i] << "." << dbtype.at(0) << "sq";
+                if(i < paths.size() - 1) out << " ";
+            }            
         }
-        out << dbLocation << NcbiEndl;               	
-
-
-    } CATCH_ALL(status)
-
+        else {
+            string dbLocation = SeqDB_ResolveDbPathNoExtension(args[kArgDb].AsString(),dbtype.at(0));                    
+            if(dbLocation.empty()) {
+                status = 1;
+            }
+            out << dbLocation << NcbiEndl;               	
+        }
+    } 
+    catch (const CException& e) {
+    	ERR_POST(Error << e.GetMsg());
+        status = 1;
+    } catch (...) {
+        ERR_POST(Error << "Failed to retrieve requested item");
+        status = 1;
+    }	
     return status;
 }
 
