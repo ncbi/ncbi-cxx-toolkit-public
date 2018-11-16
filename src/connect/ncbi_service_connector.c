@@ -47,7 +47,7 @@ typedef struct SServiceConnectorTag {
     SMetaConnector      meta;           /* Low level comm.conn and its VT    */
     const char*         type;           /* Verbal connector type             */
     const char*         descr;          /* Verbal connector description      */
-    const SConnNetInfo* net_info;       /* Connection information, read-only */
+    const SConnNetInfo* net_info;       /* R/O conn info with translated svc */
     const char*         user_header;    /* User header currently set         */
 
     SERV_ITER           iter;           /* Dispatcher information            */
@@ -595,7 +595,7 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     if (!(info = s_GetNextInfo(uuu, 1/*http*/)))
         return 0/*failure - not adjusted*/;
 
-    iter_header = SERV_Print(uuu->iter, 0, 0);
+    iter_header = SERV_Print(uuu->iter, 0/*net_info*/, 0);
     switch (info->type) {
     case fSERV_Ncbid:
         user_header = "Connection-Mode: STATELESS\r\n"; /*default*/
@@ -672,6 +672,57 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
 }
 
 
+static void x_SetDefaultReferer(SConnNetInfo* net_info, SERV_ITER iter)
+{
+    const char* mapper = SERV_MapperName(iter);
+    char* str, *referer;
+
+    assert(!net_info->http_referer);
+    if (!mapper  ||  !*mapper)
+        return;
+    if (strcasecmp(mapper, "DISPD") == 0) {
+        /* the swap is to make sure URL prints correctly */
+        EBURLScheme scheme     = net_info->scheme;
+        TReqMethod  req_method = net_info->req_method;
+        net_info->scheme       = eURL_Https;
+        net_info->req_method   = eReqMethod_Get;
+        referer = ConnNetInfo_URL(net_info);
+        net_info->scheme       = scheme;
+        net_info->req_method   = req_method;
+    } else if ((str = strdup(mapper)) != 0) {
+        const char* args = strchr(net_info->path, '?');
+        const char* host = net_info->client_host;
+        const char* name = net_info->svc;
+        size_t len = strlen(strlwr(str));
+
+        if (!*net_info->client_host
+            &&  !SOCK_gethostbyaddr(0, net_info->client_host,
+                                    sizeof(net_info->client_host))) {
+            SOCK_gethostname(net_info->client_host,
+                             sizeof(net_info->client_host));
+        }
+        if (!(referer = (char*) realloc(str,
+                                        3 + 1 + 1 + (len << 1) +
+                                        strlen(host) + (args  &&  args[1]
+                                                        ? strlen(args)
+                                                        : 9 + strlen(name))))){
+            free(str);
+            return;
+        }
+        str = referer + len;
+        strncat(strcat(strcat(strcat(str, "://"), host), "/"), referer, len);
+        if (args  &&  args[1])
+            strcat(       str,               args);
+        else
+            strcat(strcat(str, "?service="), name);
+    } else
+        return;
+    assert(referer);
+    net_info->http_referer = referer;
+}
+
+
+
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
@@ -696,6 +747,8 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
 
     assert(net_info->firewall  ||  info);
     ConnNetInfo_DeleteUserHeader(net_info, kHttpHostTag);
+    if (!net_info->http_referer)
+        x_SetDefaultReferer(net_info, uuu->iter);
     if ((!net_info->firewall  &&  info->type != fSERV_Firewall)
         || (info  &&  ((info->type  & fSERV_Http)  ||
                        (info->type == fSERV_Ncbid  &&  net_info->stateless)))){

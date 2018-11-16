@@ -898,43 +898,7 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char* text, int code)
 }
 
 
-static void s_SetDefaultReferer(SConnNetInfo* net_info, SERV_ITER iter)
-{
-    char* str, *referer = 0;
-
-    if (strcasecmp(iter->op->mapper, "DISPD") == 0)
-        referer = ConnNetInfo_URL(net_info);
-    else if ((str = strdup(iter->op->mapper)) != 0) {
-        const char* args = strchr(net_info->path, '?');
-        const char* host = net_info->client_host;
-        const char* name = iter->name;
-
-        if (!*net_info->client_host
-            &&  !SOCK_gethostbyaddr(0, net_info->client_host,
-                                    sizeof(net_info->client_host))) {
-            SOCK_gethostname(net_info->client_host,
-                             sizeof(net_info->client_host));
-        }
-        if (!(referer = (char*) malloc(3 + 1 + 1 + 1 + 2*strlen(strlwr(str)) +
-                                       strlen(host) + (args
-                                                       ? strlen(args)
-                                                       : 8 + strlen(name))))) {
-            return;
-        }
-        strcat(strcat(strcat(strcat(strcpy
-                                    (referer, str), "://"), host), "/"), str);
-        if (args)
-            strcat(       referer,               args);
-        else
-            strcat(strcat(referer, "?service="), name);
-        free(str);
-    }
-    assert(!net_info->http_referer);
-    net_info->http_referer = referer;
-}
-
-
-char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
+char* SERV_Print(SERV_ITER iter, const SConnNetInfo* net_info, int but_last)
 {
     static const char kAcceptedServerTypes[] = "Accepted-Server-Types:";
     static const char kClientRevision[] = "Client-Revision: %u.%u\r\n";
@@ -960,8 +924,6 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
     if (iter) {
         TSERV_TypeOnly t, types
             = iter->types & (TSERV_TypeOnly)(~fSERV_Stateless);
-        if (net_info  &&  !net_info->http_referer  &&  iter->op->mapper)
-            s_SetDefaultReferer(net_info, iter);
         /* Accepted server types */
         buflen = sizeof(kAcceptedServerTypes) - 1;
         memcpy(buffer, kAcceptedServerTypes, buflen);

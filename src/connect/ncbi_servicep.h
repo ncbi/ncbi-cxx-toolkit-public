@@ -197,16 +197,14 @@ int/*bool*/ SERV_Update
 /* Private interface:  print and return an HTTP-compliant header portion
  * (<CR><LF> separated lines, including the last line) out of information
  * contained in the iterator;  to be used in mapping requests to DISPD.
- * Also, if "net_info" is non-NULL and "net_info->http_referer" is NULL,
- * then fill out "net_info->http_referer" accordingly.  "but_last" controls
- * whether the currently taken info appears as the info to skip over (by the
- * dispatcher) ["but_last"==0], or is just being used ["but_last"==1].
- * Return value must be 'free()'d.
+ * "but_last" controls whether the currently taken info appears as the info
+ * to skip over (by the dispatcher) ["but_last"==0], or is just being used
+ * ["but_last"==1].  Return value must be free()'d.
  */
 char* SERV_Print
-(SERV_ITER     iter,
- SConnNetInfo* net_info,
- int/*bool*/   but_last
+(SERV_ITER           iter,
+ const SConnNetInfo* net_info,  /* NB: only req'd for non-legacy fw conn req */
+ int/*bool*/         but_last
  );
 
 
