@@ -779,32 +779,44 @@ void CTestNcbiLinkerdCxxApp::Init(void)
 
 int CTestNcbiLinkerdCxxApp::Run(void)
 {
-    int num_tests = 0, num_errors = 0;
+    int num_total = sizeof(s_Tests) / sizeof(s_Tests[0]);
+    int num_run = 0, num_skipped = 0, num_passed = 0, num_failed = 0;
+
+    ERR_POST(Info << "CTestNcbiLinkerdCxxApp::Run()   $Id$");
 
     for (auto test : s_Tests) {
 #if !defined(NCBI_OS_LINUX)  ||  !defined(HAVE_LOCAL_LBSM)
-        if (test.mapper == eLbsmd) continue;
+        if (test.mapper == eLbsmd) {
+            ++num_skipped;
+            continue;
+        }
 #endif
-        //if (test.mapper != eLinkerd) continue;
         SelectMapper(test.mapper);
-             if (test.func == eHttpGet)         num_errors += TestGet_Http(test);
-        else if (test.func == eHttpPost)        num_errors += TestPost_Http(test);
-        else if (test.func == eHttpStreamGet)   num_errors += TestGet_HttpStream(test);
-        else if (test.func == eHttpStreamPost)  num_errors += TestPost_HttpStream(test);
-        else if (test.func == eNewRequestGet)   num_errors += TestGet_NewRequest(test);
-        else if (test.func == eNewRequestPost)  num_errors += TestPost_NewRequest(test);
-        ++num_tests;
+        int result = 1;
+             if (test.func == eHttpGet)         result = TestGet_Http(test);
+        else if (test.func == eHttpPost)        result = TestPost_Http(test);
+        else if (test.func == eHttpStreamGet)   result = TestGet_HttpStream(test);
+        else if (test.func == eHttpStreamPost)  result = TestPost_HttpStream(test);
+        else if (test.func == eNewRequestGet)   result = TestGet_NewRequest(test);
+        else if (test.func == eNewRequestPost)  result = TestPost_NewRequest(test);
+        else
+            NCBI_USER_THROW("Invalid test function");   // would be a programming error
+        if (result == 0)
+            ++num_passed;
+        else
+            ++num_failed;
+        ++num_run;
     }
 
-    if (num_errors == 0)
-        if (num_tests == 0)
-            ERR_POST(Info << "No tests were run!");
-        else
-            ERR_POST(Info << "All " << num_tests << " tests passed.");
-    else
-        ERR_POST(Info << num_tests - num_errors << " tests passed; " << num_errors << " failed.");
+    ERR_POST(Info << "All tests: " << num_total);
+    ERR_POST(Info << "Skipped:     " << num_skipped);
+    ERR_POST(Info << "Executed:    " << num_run);
+    ERR_POST(Info << "Passed:        " << num_passed);
+    ERR_POST(Info << "Failed:        " << num_failed);
+    if (num_total != num_run + num_skipped  ||  num_run != num_passed + num_failed)
+        NCBI_USER_THROW("Invalid test counts.");   // would be a programming error
 
-    return num_tests > 0 ? num_errors : -1;
+    return num_run > 0 ? num_failed : -1;
 }
 
 
