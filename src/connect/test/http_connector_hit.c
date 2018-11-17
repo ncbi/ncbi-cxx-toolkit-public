@@ -54,13 +54,14 @@ static struct {
  */
 #if defined(__cplusplus)
 extern "C" {
-    static int s_REG_Get(void*user_data, const char* section,
+    static int s_REG_Get(void* user_data, const char* section,
                          const char* name, char* value, size_t value_size);
 }
 #endif /* __cplusplus */
 
+/*ARGSUSED*/
 static int s_REG_Get
-(void*       user_data,
+(void*       unused,
  const char* section,
  const char* name,
  char*       value,

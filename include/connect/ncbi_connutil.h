@@ -167,11 +167,12 @@ typedef unsigned EBDebugPrintout;
 /* Network connection-related configurable informational structure.
  * ATTENTION:  Do NOT fill out this structure (SConnNetInfo) "from scratch"!
  *             Instead, use ConnNetInfo_Create() described below to create it,
- *             and then fix (hard-code) some fields, if really necessary.
+ *             and then fix (hard-code) some fields using the ConnNetInfo API,
+ *             or directly as the last resort if really necessary.
  * NOTE1:      Not every field may be fully utilized throughout the library.
- * NOTE2:      HTTP password can be either clear text or Base-64 encoded value
+ * NOTE2:      HTTP passwords can be either clear text or Base-64 encoded value
  *             enclosed in square brackets [] (which are not Base-64 charset).
- *             For encoding / decoding, one can use command line open ssl:
+ *             For encoding / decoding, one can use command-line OpenSSL:
  *             echo "password|base64value" | openssl enc {-e|-d} -base64
  *             or an online tool (search the Web for "base64 online").
  */
@@ -203,7 +204,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     const char*     http_referer;     /* default referrer (when not spec'd)  */
     NCBI_CRED       credentials;      /* connection credentials (optional)   */
 
-    /* the following field(s) are for internal use only -- do not touch!     */
+    /* the following fields are for internal use only -- look but don't touch*/
     unsigned int    magic;            /* to detect version skew              */
     STimeout        tmo;              /* default storage for finite timeout  */
     const char      svc[1];           /* service which this info created for */
@@ -306,7 +307,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
  * If "param" does not begin with "CONN_", then "CONN_" gets prepended
  * automatically in all lookups listed below, unless otherwise noted.
  * The order of search is the following (the first match causes to return):
- * 1. Environment variable "service_param" (all upper-case; and if failed,
+ * 1. Environment variable "service_param" (all upper-case;  and if failed,
  *    then "as-is");
  * 2. Registry key "param" in the section "[service]";
  * 3. Environment setting "param" (in all upper-case);
@@ -425,7 +426,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetPath
  * is missing from the new args, the existing one will be preserved;  and if
  * no arguments are provided before the new fragment, that part of the exising
  * arguments will not get modified.  Thus, "" causes all arguments but the
- * fragment to be removed.  NULL clears all existing path arguments. */
+ * fragment to be removed.  NULL clears all existing path args and frag. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_SetArgs
 (SConnNetInfo*       net_info,
  const char*         args);
@@ -455,14 +456,17 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PrependArg
  const char*         val
  );
 
-/* Delete an argument from the list of arguments in the path element.  Return
- * zero if no such arg was found, non-zero if it was found and deleted. */
+/* Delete an argument from the list of arguments in the path element.  In case
+ * the passed arg is specified as "arg=val&arg2...", the value as well as any
+ * successive arguments are ignored in the search for the matching argument.
+ * Return zero if no arg was found;  non-zero if it was found and deleted. */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_DeleteArg
 (SConnNetInfo*       net_info,
  const char*         arg
  );
 
-/* Delete all arguments specified in "args" from the path element. */
+/* Delete all arguments specified in "args" (regardless of their values) from
+ * the path element. */
 extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_DeleteAllArgs
 (SConnNetInfo*       net_info,
  const char*         args
@@ -485,8 +489,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_PostOverrideArg
 
 /* Set up standard arguments:  service(as passed), address, and platform.
  * Also, set up the User-Agent: HTTP header (using CORE_GetAppName()) in
- * SConnNetInfo::http_user_header.
- * Return non-zero on success; zero on error.
+ * SConnNetInfo::http_user_header.  Return non-zero on success; zero on error.
  * @sa
  *  CORE_GetAppName, CORE_GetPlatform
  */

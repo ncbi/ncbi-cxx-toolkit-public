@@ -60,7 +60,7 @@ extern "C" {
 
 /*ARGSUSED*/
 static int s_REG_Get
-(void*       user_data,
+(void*       unused,
  const char* section,
  const char* name,
  char*       value,

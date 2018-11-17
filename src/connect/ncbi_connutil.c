@@ -114,44 +114,42 @@ static const char* x_GetValue(const char* svc, size_t svclen,
 {
     const char* val, *rv;
     char        buf[128];
+    size_t      parlen;
     char*       s;
 
-    assert(!svc  ||  (*svc  &&  svclen == strlen(svc)));
+    assert(!svclen  ||  (svclen == strlen(svc)));
+    assert(value  &&  value_size > 0  &&  !*value);
     assert(param  &&  *param);
-    assert(value  &&  value_size > 0);
 
-    rv = value;
-    *value = '\0';
-
-    *generic = 0/*false*/;
-    if (svc) {
+    parlen = strlen(param) + 1;
+    if (svclen) {
         /* Service-specific inquiry */
+        size_t      len = svclen + 1 + parlen;
+        char        tmp[sizeof(buf)];
         int/*bool*/ end;
-        char        temp[sizeof(buf)];
-        size_t      plen = strlen(param) + 1;
-        size_t       len = svclen + 1 + plen;
 
+        *generic = 0/*false*/;
         if (strncasecmp(param, DEF_CONN_REG_SECTION "_",
                         sizeof(DEF_CONN_REG_SECTION)) != 0) {
             len += sizeof(DEF_CONN_REG_SECTION);
             end = 0/*false*/;
         } else
             end = 1/*true*/;
-        if (len > sizeof(buf))
+        if (len > sizeof(tmp))
             return 0;
 
         /* First, environment search for 'service_CONN_param' */
-        s = (char*) memcpy(buf, svc, svclen) + svclen;
+        s = (char*) memcpy(tmp, svc, svclen) + svclen;
         *s++ = '_';
         if (!end) {
             memcpy(s, DEF_CONN_REG_SECTION, sizeof(DEF_CONN_REG_SECTION) - 1);
             s += sizeof(DEF_CONN_REG_SECTION) - 1;
             *s++ = '_';
         }
-        memcpy(s, param, plen);
+        memcpy(s, param, parlen);
         CORE_LOCK_READ;
-        if ((val = getenv(strupr((char*) memcpy(temp, buf, len)))) != 0
-            ||  (memcmp(temp, buf, len) != 0  &&  (val = getenv(buf)) != 0)) {
+        if ((val = getenv(strupr((char*) memcpy(buf, tmp, len--)))) != 0
+            ||  (memcmp(tmp, buf, len) != 0  &&  (val = getenv(tmp)) != 0)) {
             rv = x_strncpy0(value, val, value_size);
             CORE_UNLOCK;
             return rv;
@@ -164,28 +162,27 @@ static const char* x_GetValue(const char* svc, size_t svclen,
         rv = CORE_REG_GET(buf, s, value, value_size, end ? def_value : 0);
         if (*value  ||  end)
             return rv;
-        rv = value;
+        *generic = 1/*true*/;
     } else {
+        *generic = 1/*true*/;
         /* Common case. Form 'CONN_param' */
-        size_t plen = strlen(param) + 1;
         if (strncasecmp(param, DEF_CONN_REG_SECTION "_",
                         sizeof(DEF_CONN_REG_SECTION)) != 0) {
-            if (sizeof(DEF_CONN_REG_SECTION) + plen > sizeof(buf))
+            if (sizeof(DEF_CONN_REG_SECTION) + parlen > sizeof(buf))
                 return 0;
             s = buf;
             memcpy(s, DEF_CONN_REG_SECTION, sizeof(DEF_CONN_REG_SECTION) - 1);
             s += sizeof(DEF_CONN_REG_SECTION) - 1;
             *s++ = '_';
         } else {
-            if (plen > sizeof(buf))
+            if (parlen > sizeof(buf))
                 return 0;
             s = buf;
         }
-        memcpy(s, param, plen);
+        memcpy(s, param, parlen);
         s = strupr(buf);
     }
 
-    *generic = 1/*true*/;
     /* Environment search for 'CONN_param' */
     CORE_LOCK_READ;
     if ((val = getenv(s)) != 0) {
@@ -205,26 +202,19 @@ static const char* s_GetValue(const char* svc, size_t len, const char* param,
                               char* value, size_t value_size,
                               const char* def_value, int* /*bool*/ generic)
 {
-    const char* retval;
-
-    assert((!svc  &&  !len)  ||  (*svc  &&  len == strlen(svc)));
-    assert(param  &&  *param);
-    assert(value  &&  value_size > 0);
-
-    retval = x_GetValue(svc, len, param,
-                        value, value_size, def_value, generic);
+    const char* retval = x_GetValue(svc, len, param,
+                                    value, value_size, def_value, generic);
     if (retval) {
-        /*strip enveloping quotes*/
-        if ((len = strlen(value)) > 1
-            &&  (value[0] == '"'  ||  value[0] == '\'')
-            &&  (char*) memrchr(value+1, value[0], len-1) == value + len - 1) {
+        /* strip enveloping quotes, if any */
+        if (*value  &&  (len = strlen(value)) > 1
+            &&  (*value == '"'  ||  *value == '\'')
+            &&  (char*) memrchr(value + 1, *value, len-1) == value + len-1) {
             if (len -= 2)
                 memmove(value, value + 1, len);
             value[len] = '\0';
         }
         assert(retval == value);
     }
-
     return retval;
 }
 
@@ -234,8 +224,8 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
                                         const char* def_value)
 {
     const char* retval;
+    size_t      svclen;
     int/*bool*/ dummy;
-    size_t svclen;
 
     if (!value  ||  value_size < 1)
         return 0;
@@ -246,18 +236,17 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
     svclen = 0;
     if (service) {
         if (!*service  ||  strpbrk(service, "*?"))
-            service = 0;
+            svclen = 0;
         else if (!(service = SERV_ServiceName(service)))
             return 0;
         else
-            verify((svclen = strlen(service)));
+            verify((svclen = strlen(service)) > 0);
     }
 
     retval = s_GetValue(service, svclen, param,
                         value, value_size, def_value, &dummy);
     if (svclen)
         free((void*) service);
-
     return retval;
 }
 
@@ -338,6 +327,25 @@ static EFWMode x_ParseFirewall(const char* str, int/*bool*/ generic)
 }
 
 
+static void x_DestroyNetInfo(SConnNetInfo* info, unsigned int magic)
+{
+    assert(info);
+    /* do not free() fields if there's version skew (offsets maybe off) */
+    if (magic == CONN_NET_INFO_MAGIC) {
+        if (info->http_user_header) {
+            free((void*) info->http_user_header);
+            info->http_user_header = 0;
+        }
+        if (info->http_referer) {
+            free((void*) info->http_referer);
+            info->http_referer = 0;
+        }
+    }
+    info->magic++;
+    free(info);
+}
+
+
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
@@ -350,6 +358,7 @@ static int/*bool*/ s_InfoIsValid(const SConnNetInfo* info)
 }
 
 
+
 /****************************************************************************
  * ConnNetInfo API
  */
@@ -358,6 +367,7 @@ static int/*bool*/ s_InfoIsValid(const SConnNetInfo* info)
 extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 {
 #define REG_VALUE(name, value, def_value)                               \
+    *value = '\0';                                                      \
     if (!s_GetValue(service, len, name, value, sizeof(value),           \
                     def_value, &generic))                               \
         goto err
@@ -370,14 +380,14 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     double dbl;
     char*  e;
 
-    if (service  &&  *service  &&  !strpbrk(service, "?*")) {
+    if (service  &&  *service  &&  !strpbrk(service, "*?")) {
         if (!(service = SERV_ServiceName(service)))
             return 0;
         assert(*service);
         len = strlen(service);  /*NB: len > 0*/
     } else {
+        service = "";
         len = 0;
-        service = 0;
     }
 
     /* NB: created *NOT* cleared up with all 0s */
@@ -389,7 +399,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     info->http_user_header = 0;
 
     /* store the service name, which this structure is being created for */
-    memcpy((char*) info->svc, service ? service : "", len + 1);
+    memcpy((char*) info->svc, service, len + 1);
 
     /* client host: default */
     info->client_host[0] = '\0';
@@ -517,6 +527,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         goto err;
 
     /* default referer, all error(s) ignored */
+    *str = '\0';
     s_GetValue(0, 0, REG_CONN_HTTP_REFERER, str, sizeof(str),
                DEF_CONN_HTTP_REFERER, &generic);
     info->http_referer = *str ? strdup(str) : 0;
@@ -540,9 +551,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     return info;
 
  err:
-    /* so that Destroy() can free up both http_user_header and http_referer */
-    info->magic = CONN_NET_INFO_MAGIC;
-    ConnNetInfo_Destroy(info);
+    x_DestroyNetInfo(info, CONN_NET_INFO_MAGIC);
     info = 0;
     goto out;
 
@@ -852,7 +861,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         return 1/*success*/;
     }
 
-    port = -1/*unassigned*/;
+    port = -1L/*unassigned*/;
 
     /* "scheme://user:pass@host:port" first [any optional] */
     if ((s = strstr(url, "//")) != 0) {
@@ -959,7 +968,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         if (*frag) {
             /* if there is a new fragment, the entire args get overridden */
             if (!frag[1])
-                --argslen; /* don't store the empty fragment # */
+                --argslen; /* although, don't store the empty fragment # */
             if ((size_t)(p - info->path)
                 + pathlen + argslen >= sizeof(info->path)) {
                 return 0/*failure*/;
@@ -1022,7 +1031,7 @@ static const char* x_SepAndLen(const char* str, const char* sep, size_t* len)
         m   += n;
     }
     *len = m + strlen(str);
-    return ""/*NB:sep*/;
+    return sep/*NB:""*/;
 }
 
 
@@ -1474,9 +1483,7 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
     return x_info;
 
  err:
-    /* so that Destroy() can free up both http_user_header and http_referer */
-    x_info->magic = CONN_NET_INFO_MAGIC;
-    ConnNetInfo_Destroy(x_info);
+    x_DestroyNetInfo(x_info, CONN_NET_INFO_MAGIC);
     return 0;
 }
 
@@ -1791,15 +1798,8 @@ extern int/*bool*/ ConnNetInfo_SetTimeout(SConnNetInfo*   info,
 
 extern void ConnNetInfo_Destroy(SConnNetInfo* info)
 {
-    if (info) {
-        /* Do not free() fields if version skew (offsets are possibly off) */
-        if (ConnNetInfo_SetUserHeader(info, 0)  &&  info->http_referer) {
-            free((void*) info->http_referer);
-            info->http_referer = 0;
-        }
-        info->magic++;
-        free(info);
-    }
+    if (info)
+        x_DestroyNetInfo(info, info->magic);
 }
 
 

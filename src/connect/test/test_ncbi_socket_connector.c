@@ -51,7 +51,7 @@
  */
 #if defined(__cplusplus)
 extern "C" {
-    static int s_REG_Get(void*user_data, const char* section,
+    static int s_REG_Get(void* user_data, const char* section,
                          const char* name, char* value, size_t value_size);
 }
 #endif /* __cplusplus */
@@ -67,6 +67,8 @@ static int s_REG_Get(void* unused, const char* section,
             strncpy0(value, STR(TEST_MAX_TRY), value_size);
         else if (strcasecmp(REG_CONN_TIMEOUT, name) == 0)
             strncpy0(value, STR(TEST_TIMEOUT), value_size);
+        else
+            return -1;
         return 1;
     }
     return -1;
