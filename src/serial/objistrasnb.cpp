@@ -817,10 +817,11 @@ void CObjectIStreamAsnBinary::ReadStringValue(size_t length,
         // try to reuse old value
         ReadBytes(buffer, length);
         if (fix_method != eFNP_Allow) {
-            if (FixVisibleChars(buffer, length, fix_method)) {
-                s.assign(buffer, length);
-            }
+            FixVisibleChars(buffer, length, fix_method);
         }
+        if ( memcmp(s.data(), buffer, length) != 0 ) {
+            s.assign(buffer, length);
+        } 
     }
     EndOfTag();
 }
