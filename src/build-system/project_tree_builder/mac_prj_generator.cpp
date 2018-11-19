@@ -202,7 +202,7 @@ void CMacProjectGenerator::Generate(const string& solution)
                 AddString( *dataspec_dependencies, proj_dependency);
             }
             if (prj.m_ProjType != CProjKey::eLib && prj.m_ProjType != CProjKey::eDll &&
-                prj.m_ProjType != CProjKey::eApp && prj.m_ProjType != CProjKey::eDataSpec &&
+                prj.m_ProjType != CProjKey::eApp && //prj.m_ProjType != CProjKey::eDataSpec &&
                 prj.m_ProjType != CProjKey::eMsvc) {
                 continue;
             }
@@ -622,6 +622,7 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
         script += "if test $? -ne 0; then\n";
         script += "cp -p " + infile + " " + outfile + "\n";
         script += "fi\n";
+        AddString( *outputs, outfile);
     }
     // datatool
     if (!prj.m_DatatoolSources.empty()) {
