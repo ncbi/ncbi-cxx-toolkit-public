@@ -21,6 +21,7 @@ ifneq "$(filter command, $(origin APP_PROJ) $(origin LIB_PROJ))" ""
     WSDL_PROJ=
     JSD_PROJ=
     PROTOBUF_PROJ=
+    METAL_PROJ=
   endif
 endif
 
@@ -221,6 +222,18 @@ $(foreach p,$(APP_PROJ),$(ign)$(call make_one_app_proj,$(p),$(1),))
 $(foreach p,$(EXPENDABLE_APP_PROJ),-$(call make_one_app_proj,$(p),$(1),1))
 endef
 
+MAKE_METAL = $(MAKE) -f "$(builddir)/Makefile.metal.tmpl" srcdir="$(srcdir)" \
+             TMPL="$$i" $(APP_NOCOPY) $(MFLAGS_NR)
+
+# 1: proj_name, 2: target, 3: is_expendable
+define make_one_metal_proj
+$(call make_one_cxx_proj,$(1),$(MAKE_METAL),$(2),.metal,unlink,2,$(3))
+endef
+# 1: target
+define make_each_metal_proj
+$(foreach p,$(METAL_PROJ),$(ign)$(call make_one_metal_proj,$(p),$(1),))
+endef
+
 ifneq "$(wildcard $(check_run))" ""
 # 1: target
 define make_check
@@ -304,12 +317,18 @@ all.nonusr: $(sources:%=%.nonusr) # $(wildcard Makefile.*.libdep)
 	@-echo "`$(DATE)`: starting to build in $(CURDIR)" > .building
 	$(call make_each_lib_proj,all)
 	$(call make_each_app_proj,all)
+ifeq "$(OSTYPE)" "darwin"
+	$(call make_each_metal_proj,all)
+endif
 	@-$(RM) -f .building
 	@-echo "`$(DATE)`: local build succeeded in $(CURDIR)" > .built
 
 clean.nonusr purge.nonusr: %.nonusr: # %_sources
 	$(call make_each_lib_proj,$*)
 	$(call make_each_app_proj,$*)
+ifeq "$(OSTYPE)" "darwin"
+	$(call make_each_metal_proj,$*)
+endif
 
 clean_sources purge_sources:
 	$(call make_each_spec,$@)
