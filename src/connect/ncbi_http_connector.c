@@ -2228,7 +2228,8 @@ static EIO_Status s_Disconnect(SHttpConnector* uuu,
             status  = eIO_Success;
     }
 
-    if (uuu->sock) /* s_PreRead() might have dropped the connection already */
+    /* s_PreRead() might have dropped the connection already */
+    if (uuu->sock  &&  (extract == eEM_Drop  ||  !uuu->keepalive))
         s_DropConnection(uuu, eCS_Eom);
     uuu->can_connect &= ~fCC_Once;
     return status;
