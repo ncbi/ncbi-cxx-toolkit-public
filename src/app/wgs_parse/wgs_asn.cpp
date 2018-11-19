@@ -833,12 +833,14 @@ static void CheckSecondaries(const CBioseq& bioseq, CSeqEntryInfo& info)
                                 auto digits = find_if(accession.begin(), accession.end(), [](char c) { return isdigit(c); });
                                 string prefix(accession.begin(), digits);
 
-                                size_t start = NStr::StringToSizet(CTempString(accession, digits - accession.begin(), range));
+                                size_t num_len = range - prefix.size(),
+                                       start = NStr::StringToSizet(CTempString(accession, digits - accession.begin(), num_len));
+
                                 digits = find_if(accession.begin() + range, accession.end(), [](char c) { return isdigit(c); });
-                                size_t end = NStr::StringToSizet(CTempString(accession, digits - accession.begin(), accession.size()));
+                                size_t end = NStr::StringToSizet(CTempString(accession, digits - accession.begin(), num_len));
 
                                 for (size_t cur_num = start; cur_num <= end; ++cur_num) {
-                                    extra_accessions.insert(prefix + to_string(cur_num));
+                                    extra_accessions.insert(prefix + ToStringLeadZeroes(cur_num, num_len));
                                 }
                             }
                         }
