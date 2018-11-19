@@ -2433,6 +2433,35 @@ vector<CConstRef<CSeq_feat> >& usr_feats)
 }
 
 
+const size_t kDefaultChunkSize = 1000;
+void CValidError_imp::ValidateOrgRefs(CTaxValidationAndCleanup& tval)
+{
+    vector< CRef<COrg_ref> > org_rq_list = tval.GetTaxonomyLookupRequest();
+
+    if (org_rq_list.size() > 0) {
+        
+        size_t chunk_size = kDefaultChunkSize;
+        size_t i = 0;
+        while (i < org_rq_list.size()) {
+            size_t len = min(chunk_size, org_rq_list.size() - i);
+            vector< CRef<COrg_ref> >  tmp_rq(org_rq_list.begin() + i, org_rq_list.begin() + i + len);
+            CRef<CTaxon3_reply> reply = x_GetTaxonService()->SendOrgRefList(tmp_rq);
+            if (!reply || !reply->IsSetReply()) {
+                if (chunk_size > 20) {
+                    chunk_size = chunk_size / 2;
+                } else {
+                    PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyServiceProblem,
+                        "Taxonomy service connection failure", *(tval.GetTopReportObject()));
+                    break;
+                }
+            } else {
+                tval.ReportIncrementalTaxLookupErrors(*reply, *this, (IsPatent() || IsINSDInSep()), i);
+                i += chunk_size;
+            }
+        }
+    }
+}
+
 void CValidError_imp::ValidateSpecificHost
 (CTaxValidationAndCleanup& tval)
 {
@@ -2442,7 +2471,7 @@ void CValidError_imp::ValidateSpecificHost
         return;
     }
 
-    size_t chunk_size = 1000;
+    size_t chunk_size = kDefaultChunkSize;
     size_t i = 0;
     while (i < org_rq_list.size()) {
         size_t len = min(chunk_size, org_rq_list.size() - i);
@@ -2474,7 +2503,7 @@ void CValidError_imp::ValidateStrain
         return;
     }
 
-    size_t chunk_size = 1000;
+    size_t chunk_size = kDefaultChunkSize;
     size_t i = 0;
     while (i < org_rq_list.size()) {
         size_t len = min(chunk_size, org_rq_list.size() - i);
@@ -2680,49 +2709,10 @@ void CValidError_imp::HandleTaxonomyError(const CT3Error& error,
 
 void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 {
-
-    bool is_insd_patent = false;
-    bool is_insd = false;
-    bool is_patent = false;
-    VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY(bs_itr, se)
-    {
-        const CBioseq& bs = *bs_itr;
-        FOR_EACH_SEQID_ON_BIOSEQ(sid_itr, bs)
-        {
-            const CSeq_id& sid = **sid_itr;
-            SWITCH_ON_SEQID_CHOICE(sid)
-            {
-        case NCBI_SEQID(Genbank):
-        case NCBI_SEQID(Embl):
-        case NCBI_SEQID(Ddbj):
-            is_insd = true;
-            break;
-        case NCBI_SEQID(Patent):
-            is_patent = true;
-            break;
-        default:
-            break;
-            }
-        }
-    }
-    if (is_insd && is_patent) {
-        is_insd_patent = true;
-    }
-
     CTaxValidationAndCleanup tval;
     tval.Init(se);
-    vector< CRef<COrg_ref> > org_rq_list = tval.GetTaxonomyLookupRequest();
 
-    if (org_rq_list.size() > 0) {
-        CRef<CTaxon3_reply> reply = x_GetTaxonService()->SendOrgRefList(org_rq_list);
-
-        if (!reply || !reply->IsSetReply()) {
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyServiceProblem,
-                "Taxonomy service connection failure", se);
-        } else {
-            tval.ReportTaxLookupErrors(*reply, *this, is_insd_patent);
-        }
-    }
+    ValidateOrgRefs(tval);
 
     // Now look at specific-host values
     ValidateSpecificHost(tval);
@@ -2736,151 +2726,8 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
 
 void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
 {
-#if 1
     CTaxValidationAndCleanup tval;
     tval.CheckOneOrg(org, genome, *this);
-#else
-    // request list for taxon3
-    vector< CRef<COrg_ref> > org_rq_list;
-    CRef<COrg_ref> rq(new COrg_ref);
-    rq->Assign(org);
-    org_rq_list.push_back(rq);
-
-    CRef<CTaxon3_reply> reply = x_GetTaxonService()->SendOrgRefList(org_rq_list);
-    if (!reply || !reply->IsSetReply()) {
-        PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyServiceProblem,
-            "Taxonomy service connection failure", org);
-    } else {
-        CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
-        vector<CRef<COrg_ref> >::const_iterator rq_it = org_rq_list.begin();
-
-        const string host = (*rq_it)->GetTaxname();
-        while (reply_it != reply->GetReply().end()
-            && rq_it != org_rq_list.end()) {
-            if ((*reply_it)->IsError()) {
-
-                HandleTaxonomyError((*reply_it)->GetError(),
-                    host, org);
-
-            } else if ((*reply_it)->IsData()) {
-                bool is_species_level = true;
-                bool force_consult = false;
-                bool has_nucleomorphs = false;
-                if ((*reply_it)->GetData().IsSetOrg()) {
-                    const COrg_ref& orp_req = **rq_it;
-                    const COrg_ref& orp_rep = (*reply_it)->GetData().GetOrg();
-                    if (orp_req.IsSetTaxname() && orp_rep.IsSetTaxname()) {
-                        const string& taxname_req = orp_req.GetTaxname();
-                        if (orp_rep.IsSetDb() && orp_req.IsSetDb()) {
-                            int taxid_req = 0;
-                            int taxid_rep = 0;
-                            FOR_EACH_DBXREF_ON_ORGREF(q_itr, orp_req)
-                            {
-                                const CDbtag& dbt = **q_itr;
-                                if (dbt.IsSetDb() && NStr::Equal(dbt.GetDb(), "taxon") && dbt.IsSetTag()) {
-                                    const CObject_id& id = dbt.GetTag();
-                                    if (id.IsId()) {
-                                        taxid_req = id.GetId();
-                                    }
-                                }
-                            }
-                            FOR_EACH_DBXREF_ON_ORGREF(p_itr, orp_rep)
-                            {
-                                const CDbtag& dbt = **p_itr;
-                                if (dbt.IsSetDb() && NStr::Equal(dbt.GetDb(), "taxon") && dbt.IsSetTag()) {
-                                    const CObject_id& id = dbt.GetTag();
-                                    if (id.IsId()) {
-                                        taxid_rep = id.GetId();
-                                    }
-                                }
-                            }
-                            if (taxid_req != taxid_rep) {
-                                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyLookupProblem,
-                                    "Organism name is '" + taxname_req
-                                    + "', taxonomy ID should be '" + NStr::IntToString(taxid_rep)
-                                    + "' but is '" + NStr::IntToString(taxid_req) + "'",
-                                    org);
-                            }
-                        }
-                    }
-                }
-                (*reply_it)->GetData().GetTaxFlags(is_species_level, force_consult, has_nucleomorphs);
-                if (!is_species_level && !IsWP()) {
-                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyIsSpeciesProblem,
-                        "Taxonomy lookup reports is_species_level FALSE", org);
-                }
-                if (force_consult) {
-                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyConsultRequired,
-                        "Taxonomy lookup reports taxonomy consultation needed", org);
-                }
-                if (genome == CBioSource::eGenome_nucleomorph
-                    && !has_nucleomorphs) {
-                    PostErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyNucleomorphProblem,
-                        "Taxonomy lookup does not have expected nucleomorph flag", org);
-                }
-            }
-            ++reply_it;
-            ++rq_it;
-        }
-    }
-
-    // Now look at specific-host values
-    org_rq_list.clear();
-
-    FOR_EACH_ORGMOD_ON_ORGREF(mod_it, org)
-    {
-        if ((*mod_it)->IsSetSubtype()
-            && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
-            && (*mod_it)->IsSetSubname()
-            && isupper((*mod_it)->GetSubname().c_str()[0])) {
-            string host = SpecificHostValueToCheck((*mod_it)->GetSubname());
-            if (!NStr::IsBlank(host)) {
-                CRef<COrg_ref> rq(new COrg_ref);
-                rq->SetTaxname(host);
-                org_rq_list.push_back(rq);
-            }
-        }
-    }
-
-    if (org_rq_list.size() > 0) {
-        reply = x_GetTaxonService()->SendOrgRefList(org_rq_list);
-
-        if (!reply || !reply->IsSetReply()) {
-            PostErr(eDiag_Error, eErr_SEQ_DESCR_TaxonomyServiceProblem,
-                "Taxonomy service connection failure", org);
-        } else {
-            CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
-            vector< CRef<COrg_ref> >::iterator rq_it = org_rq_list.begin();
-
-            while (reply_it != reply->GetReply().end()
-                && rq_it != org_rq_list.end()) {
-
-                const string host = (*rq_it)->GetTaxname();
-                if ((*reply_it)->IsError()) {
-
-                    HandleTaxonomyError((*reply_it)->GetError(),
-                        host, org);
-
-                } else if ((*reply_it)->IsData()) {
-                    if (HasMisSpellFlag((*reply_it)->GetData())) {
-                        PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
-                            "Specific host value is misspelled: " + host, org);
-                    } else if ((*reply_it)->GetData().IsSetOrg()) {
-                        if (!FindMatchInOrgRef(host, (*reply_it)->GetData().GetOrg()) && !IsCommonName((*reply_it)->GetData())) {
-                            PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
-                                "Specific host value is incorrectly capitalized: " + host, org);
-                        }
-                    } else {
-                        PostErr(eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost,
-                            "Invalid value for specific host: " + host, org);
-                    }
-                }
-                ++reply_it;
-                ++rq_it;
-            }
-        }
-    }
-#endif
 }
 
 

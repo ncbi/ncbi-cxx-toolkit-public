@@ -315,6 +315,7 @@ public:
     vector< CRef<COrg_ref> > GetTaxonomyLookupRequest() const;
     void ListTaxLookupErrors(const CT3Reply& reply, const COrg_ref& org, CBioSource::TGenome genome, bool is_insd_patent, bool is_wp, vector<TTaxError>& errs) const;
     void ReportTaxLookupErrors(const CTaxon3_reply& reply, CValidError_imp& imp, bool is_insd_patent) const;
+    void ReportIncrementalTaxLookupErrors(const CTaxon3_reply& reply, CValidError_imp& imp, bool is_insd_patent, size_t offset) const;
     bool AdjustOrgRefsWithTaxLookupReply(const CTaxon3_reply& reply, 
                                          vector<CRef<COrg_ref> > org_refs, 
                                          string& error_message,

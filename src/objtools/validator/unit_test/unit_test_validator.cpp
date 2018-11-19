@@ -20643,8 +20643,10 @@ BOOST_AUTO_TEST_CASE(Test_Empty_Taxon_Reply)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
 
     CMockTaxon::TReplies replies;
-    CRef<CTaxon3_reply> reply(new CTaxon3_reply);
-    replies.push_back(reply);
+    for (size_t i = 0; i < 50; i++) {
+        CRef<CTaxon3_reply> reply(new CTaxon3_reply);
+        replies.push_back(reply);
+    }
 
     STANDARD_SETUP_WITH_MOCK_TAXON(replies);
 

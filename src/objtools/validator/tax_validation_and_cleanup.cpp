@@ -865,6 +865,69 @@ void CTaxValidationAndCleanup::ReportTaxLookupErrors
 }
 
 
+void CTaxValidationAndCleanup::ReportIncrementalTaxLookupErrors
+(const CTaxon3_reply& reply,
+    CValidError_imp& imp,
+    bool is_insd_patent,
+    size_t offset) const
+{
+    CTaxon3_reply::TReply::const_iterator reply_it = reply.GetReply().begin();
+
+    // process descriptor responses
+    vector<CConstRef<CSeqdesc> >::const_iterator desc_it = m_SrcDescs.cbegin();
+    vector<CConstRef<CSeq_entry> >::const_iterator ctx_it = m_DescCtxs.cbegin();
+
+    size_t skipped = 0;
+    while (skipped < offset) {
+        ++desc_it;
+        ++ctx_it;
+        skipped++;
+    }
+
+    while (reply_it != reply.GetReply().end()
+        && desc_it != m_SrcDescs.cend()
+        && ctx_it != m_DescCtxs.cend()) {
+        vector<TTaxError> errs;
+        const COrg_ref& orp_req = (*desc_it)->GetSource().GetOrg();
+        ListTaxLookupErrors(**reply_it, orp_req,
+            (*desc_it)->GetSource().IsSetGenome() ? (*desc_it)->GetSource().GetGenome() : CBioSource::eGenome_unknown,
+            is_insd_patent, imp.IsWP(), errs);
+        for (auto it : errs) {
+            imp.PostObjErr(it.severity, it.err_type, it.err_msg, **desc_it, *ctx_it);
+        }
+        ++reply_it;
+        ++desc_it;
+        ++ctx_it;
+    }
+
+    if (reply_it == reply.GetReply().end()) {
+        return;
+    }
+    // process feat responses
+    vector<CConstRef<CSeq_feat> >::const_iterator feat_it = m_SrcFeats.cbegin();
+    while (skipped < offset && feat_it != m_SrcFeats.end()) {
+        ++feat_it;
+        skipped++;
+    }
+    while (reply_it != reply.GetReply().cend() &&
+        feat_it != m_SrcFeats.end()) {
+        vector<TTaxError> errs;
+        const COrg_ref& orp_req = (*feat_it)->GetData().GetBiosrc().GetOrg();
+        ListTaxLookupErrors(**reply_it, orp_req,
+            (*feat_it)->GetData().GetBiosrc().IsSetGenome() ? (*feat_it)->GetData().GetBiosrc().GetGenome() : CBioSource::eGenome_unknown,
+            is_insd_patent, imp.IsWP(), errs);
+        for (auto it : errs) {
+            imp.PostErr(it.severity, it.err_type, it.err_msg, **feat_it);
+        }
+        ++reply_it;
+        ++feat_it;
+    }
+
+
+}
+
+
+
 //LCOV_EXCL_START
 //used by Genome Workbench
 bool CTaxValidationAndCleanup::AdjustOrgRefsWithTaxLookupReply

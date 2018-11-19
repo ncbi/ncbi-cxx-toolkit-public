@@ -260,6 +260,7 @@ public:
     bool biosource = false, const CSeq_entry *ctx = 0);
     void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateTaxonomy(const CSeq_entry& se); 
+    void ValidateOrgRefs(CTaxValidationAndCleanup& tval);
     void ValidateSpecificHost(CTaxValidationAndCleanup& tval);
     void ValidateStrain(CTaxValidationAndCleanup& tval);
     void ValidateSpecificHost (const CSeq_entry& se);
