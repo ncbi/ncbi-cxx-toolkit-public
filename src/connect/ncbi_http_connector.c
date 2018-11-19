@@ -1021,6 +1021,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
 
             if (sock) {
                 assert(status == eIO_Success);
+                SOCK_DisableOSSendDelay(sock, 1/*yes,disable*/);
                 uuu->w_len = req_method != eReqMethod_Connect
                     ? BUF_Size(uuu->w_buf) : 0;
                 break;
