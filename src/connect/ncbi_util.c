@@ -1280,7 +1280,7 @@ static int/*tri-state*/ x_MatchesMask(const char* text, const char* mask,
                 return 1/*match*/;
             while (*text) {
                 int matches = x_MatchesMask(text++, mask, ignore_case);
-                if (matches)
+                if (matches/*!=0*/)
                     return matches;
             }
             return -1/*mismatch, stop*/;
