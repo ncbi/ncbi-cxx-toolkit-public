@@ -1443,9 +1443,12 @@ static int/*bool*/ s_SetNonblock(TSOCK_Handle sock, int/*bool*/ nonblock)
     unsigned long arg = nonblock ? 1 : 0;
     return ioctlsocket(sock, FIONBIO, &arg) == 0;
 #elif defined(NCBI_OS_UNIX)
+    int flags = fcntl(sock, F_GETFL, 0);
+    if (!nonblock == !(flags & O_NONBLOCK))
+        return 1/*true*/;
     return fcntl(sock, F_SETFL, nonblock
-                 ? fcntl(sock, F_GETFL, 0) |        O_NONBLOCK
-                 : fcntl(sock, F_GETFL, 0) & (int) ~O_NONBLOCK) == 0;
+                 ? flags |        O_NONBLOCK
+                 : flags & (int) ~O_NONBLOCK) == 0;
 #else
 #   error "Unsupported platform"
 #endif /*NCBI_OS*/
@@ -1460,9 +1463,12 @@ inline
 static int/*bool*/ s_SetCloexec(TSOCK_Handle x_sock, int/*bool*/ cloexec)
 {
 #if   defined(NCBI_OS_UNIX)
+    int flags = fcntl(x_sock, F_GETFD, 0);
+    if (!cloexec == !(flags & FD_CLOEXEC))
+        return 0/*true*/;
     return fcntl(x_sock, F_SETFD, cloexec
-                 ? fcntl(x_sock, F_GETFD, 0) |        FD_CLOEXEC
-                 : fcntl(x_sock, F_GETFD, 0) & (int) ~FD_CLOEXEC) == 0;
+                 ? flags |        FD_CLOEXEC
+                 : flags & (int) ~FD_CLOEXEC) == 0;
 #elif defined(NCBI_OS_MSWIN)
     return SetHandleInformation((HANDLE)x_sock,HANDLE_FLAG_INHERIT,!cloexec);
 #else
