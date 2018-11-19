@@ -541,9 +541,6 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
     if ( text_id->IsSetAccession() ) {
         ret = GetFileInfoByAcc(text_id->GetAccession());
     }
-    if ( !ret && text_id->IsSetName() ) {
-        ret = GetFileInfoByAcc(text_id->GetName());
-    }
     if ( !ret ) {
         return ret;
     }
