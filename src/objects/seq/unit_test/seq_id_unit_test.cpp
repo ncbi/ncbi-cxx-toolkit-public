@@ -823,6 +823,7 @@ static const char* kTestFastaStrings[] = {
     "pgp|EP|0238993|7",
     "ref|NM_000170.1|",
     "gnl|EcoSeq|EcoAce",
+    "gnl|Celera|CDM:10213987", 
     "gnl|taxon|9606",
     "gi|1234",
     "dbj|N00068|",
@@ -2119,3 +2120,61 @@ BOOST_AUTO_TEST_CASE(TestCase)
         BOOST_CHECK_EQUAL(id2.AsString(), "gnl|Sra|1");
     }}
 }
+
+typedef map<string,vector<string> > TFastaOSLTMap;
+static const TFastaOSLTMap kTestFastaOSLTMap = {
+    { "lcl|123", { "" } },
+    { "bbs|123", { "123" } },
+    { "bbm|123", { "123" } },
+    { "gim|123", { "123" } },
+    { "gb|U12345.1|amu12345", { "U12345", "AMU12345" } },
+    { "emb|AL123456|MtBh37RV", { "AL123456", "MTBH37RV" } },
+    { "pir||S16356", { "S16356" } },
+    { "sp|Q7CQJ0|RS22_saltY", { "Q7CQJ0", "RS22_SALTY" } },
+    { "tr|Q90RT2|Q90RT2_9hiv1", { "Q90RT2", "Q90RT2_9HIV1" } },
+    { "sp|Q7CQJ0.1|", { "Q7CQJ0" } },
+    { "pat|US|re33188|1", { "", "US|RE33188|1" } },
+    { "pgp|ep|0238993|7", { "", "EP|0238993|7" } },
+    { "ref|NM_000170.1|", { "NM_000170" } },
+    { "gnl|EcoSeq|EcoAce", { "ECOSEQ|ECOACE" } },
+    { "gnl|Celera|cdm:10213987", { "CELERA|CDM:10213987" } },
+    { "gnl|WGS:AAAB|CRA_x9P1GAV4nra", { "WGS:AAAB|CRA_X9P1GAV4NRA" } },
+    { "gnl|WGS:ABCD|cont1", { "WGS:ABCD|CONT1" } },
+    { "gi|1234", { "" } },
+    { "dbj|N00068|", { "N00068" } },
+    { "prf||0806162C", { "0806162C" } },
+    { "pdb|1GAV|", { "1GAV" } },
+    { "pdb|1GAV|X", { "1GAVX" } },
+    { "pdb|1GAV|XX", { "1GAVXX" } },
+    { "pdb|1GAV|xyZ", { "1GAVX+Y+Z" } },
+    { "tpg|BK003456|", { "BK003456" } },
+    { "tpe|BN000123|", { "BN000123" } },
+    { "tpd|FAA00017|", { "FAA00017" } },
+    { "gpp|GPC_123456789|", { "GPC_123456789" } },
+    { "nat|AT_123456789.1|", { "AT_123456789" } }
+};
+
+BOOST_AUTO_TEST_CASE(s_TestOSLT)
+{
+    string primary_id_ref;
+    string primary_id;
+    string secondary_id_ref;
+    bool has_secondary_ids;
+
+    LOG_POST("Testing generation of OSLT strings");
+
+    ITERATE(TFastaOSLTMap, it, kTestFastaOSLTMap) {
+        CSeq_id id(it->first);
+        primary_id_ref = it->second[0];
+        has_secondary_ids = (it->second.size() == 2);
+        if (has_secondary_ids)
+            secondary_id_ref = it->second[1];
+        list<string> secondary_ids;
+        string primary_id = id.ComposeOSLT(&secondary_ids);
+        BOOST_CHECK_EQUAL(primary_id, primary_id_ref);
+        BOOST_CHECK_EQUAL((secondary_ids.size() > 0), has_secondary_ids);
+        if (has_secondary_ids)
+            BOOST_CHECK_EQUAL(secondary_ids.front(), secondary_id_ref);
+    }
+}
+

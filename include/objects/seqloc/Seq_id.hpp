@@ -712,6 +712,17 @@ public:
     /// (SeqId/AvoidGi or SEQ_ID_AVOID_GI).
     static bool AvoidGi(void);
 
+    /// JIRA ID-5188 : Compose OSLT string for the primary id, as well as OSLT
+    /// strings for the secondary ids, if any.
+    /// NB: given a single Seq-id, it is not always possible to determine
+    /// whether it should be treated as primary or secondary if it were part of
+    /// a list of Seq-ids in a Bioseq. In that case, this function returns it as
+    /// primary, and the final judgement needs to be made by the caller.
+    /// @param secondary_ids
+    ///  OSLT strings for the secondary ids
+    /// @return
+    ///  OSLT string for the primary id
+    string ComposeOSLT(list<string>* secondary_ids = nullptr);
 
     /// ID length restrictions
     const static size_t kMaxLocalIDLength    = 50;

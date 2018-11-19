@@ -63,6 +63,10 @@
 #include <objects/general/Date.hpp>
 #include <objects/general/Date_std.hpp>
 #include <objects/misc/error_codes.hpp>
+#include <objects/seqloc/Patent_seq_id.hpp>
+#include <objects/biblio/Id_pat.hpp>
+#include <objects/seqloc/PDB_seq_id.hpp>
+#include <corelib/ncbistre.hpp>
 
 #include "accguide.inc"
 
@@ -2857,6 +2861,103 @@ bool CSeq_id::PreferAccessionOverGi(void)
 bool CSeq_id::AvoidGi(void)
 {
     return TAvoidGi::GetDefault();
+}
+
+
+string CSeq_id::ComposeOSLT(list<string>* secondary_id_list)
+{
+    string primary_id;
+    string secondary_id;
+    E_Choice seqid_type = Which();
+
+    switch (seqid_type) {
+    case e_Giim:
+        primary_id = NStr::IntToString(GetGiim().GetId());
+        break;
+    case e_Gibbsq: 
+        primary_id = NStr::IntToString(GetGibbsq());
+        break;
+    case e_Gibbmt:
+        primary_id = NStr::IntToString(GetGibbmt());
+        break;
+    case e_Pir: 
+    case e_Prf:
+    {
+        // This is a Textseq-id, however primary id is normally stored in the
+        // name field.
+        // For PIR, if name is empty, id is allowed to be placed in the accession field;
+        // For PRF only name is allowed!
+        const CTextseq_id* tsid = GetTextseq_Id();
+        if (tsid->CanGetName())
+            primary_id = tsid->GetName();
+        else if (seqid_type == e_Pir && tsid->CanGetAccession())
+            primary_id = tsid->GetAccession();
+        break;
+    }
+    case e_Patent:
+    {
+        // All patents have GenBank Seq-ids, so id string derived from a patent
+        // seqid is always secondary
+        const CId_pat& pat = GetPatent().GetCit();
+        secondary_id = pat.GetCountry() + "|" +
+            (pat.GetId().IsNumber() ?
+             pat.GetId().GetNumber() : pat.GetId().GetApp_number()) + "|" +
+            NStr::IntToString(GetPatent().GetSeqid());
+        break;
+    }
+    case e_Pdb:
+    {
+        const CPDB_seq_id& pdb = GetPdb();
+        primary_id = pdb.GetMol().Get();
+        if (pdb.IsSetChain_id()) {
+            const char* ptr = pdb.GetChain_id().c_str();
+            char buf[256];
+            size_t pos = 0;
+            while (*ptr != '\0') {
+                buf[pos++] = toupper(*ptr);
+                if (islower(*ptr))
+                    buf[pos++] = '+';
+                ++ptr;
+            }
+            buf[pos] = '\0';
+            primary_id += string(buf);
+        } else if (pdb.IsSetChain() && pdb.GetChain() != ' ') {
+            primary_id += string(1, pdb.GetChain());
+        }
+        break;
+    }
+    case e_General:
+    {
+        const CObject_id& dbtag = GetGeneral().GetTag();
+        primary_id = GetGeneral().GetDb() + "|";
+        if (dbtag.IsId())
+            primary_id += NStr::IntToString(dbtag.GetId());
+        else
+            primary_id += dbtag.GetStr();
+        break;
+    }
+    default:
+    {
+        // In the logic below, any Textseq-id is treated as primary. However a
+        // Bioseq object may contain multiple Textseq-ids in its list of Seq-ids, 
+        // e.g. when RefSeq takes over a preexisting GPIPE record.
+        const CTextseq_id* tsid = GetTextseq_Id();
+        if (tsid) {
+            if (tsid->CanGetAccession())
+                primary_id = tsid->GetAccession();
+            if (tsid->CanGetName() && !tsid->GetName().empty())
+                secondary_id = tsid->GetName();
+        }
+        break;
+    }
+    }
+
+    NStr::ToUpper(primary_id);
+    if (secondary_id_list && !secondary_id.empty()) {
+        NStr::ToUpper(secondary_id);
+        secondary_id_list->emplace_back(secondary_id);
+    }
+    return primary_id;
 }
 
 
