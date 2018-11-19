@@ -59,10 +59,10 @@ static ir_fp_entry * ir_fp_entry_destroy( ir_fp_entry * e )
 */
 static ir_fp_entry * ir_fp_entry_create( void )
 {
-    ir_fp_entry * result = (ir_fp_entry *)malloc( sizeof( ir_fp_entry ) );
-    
+    ir_fp_entry * result = (ir_fp_entry *) calloc(1, sizeof( ir_fp_entry ) );
+
     if( result != 0 ) {
-        ir_hash_entry * entries = (ir_hash_entry *)calloc( 
+        ir_hash_entry * entries = (ir_hash_entry *) calloc(
                 FP_ENTRY_SIZE, sizeof( ir_hash_entry ) );
         if( entries == 0 ) return ir_fp_entry_destroy( result );
         result->next = 0;
@@ -82,10 +82,10 @@ static ir_fp_entry * ir_fp_entry_create( void )
 ir_diag_hash * ir_hash_create( void )
 {
     ir_diag_hash * result = 0;
-    result = (ir_diag_hash *)malloc( sizeof( ir_diag_hash ) );
+    result = (ir_diag_hash *) calloc(1, sizeof( ir_diag_hash ) );
 
     if( result != 0 ) {
-        ir_hash_entry * entries = (ir_hash_entry *)calloc( 
+        ir_hash_entry * entries = (ir_hash_entry *) calloc(
                 IR_HASH_SIZE, sizeof( ir_hash_entry ) );
         if( entries == 0 ) return ir_hash_destroy( result );
         result->entries = entries;
@@ -99,7 +99,8 @@ ir_diag_hash * ir_hash_create( void )
 ir_diag_hash * ir_hash_destroy( ir_diag_hash * hash )
 {
     if( hash != 0 ) {
-        ir_fp_entry * fpe = hash->free_pool, * fpn;
+        ir_fp_entry * fpe = hash->free_pool;
+        ir_fp_entry * fpn;
 
         while( fpe != 0 ) {
                 fpn = fpe->next;
@@ -134,6 +135,9 @@ ir_hash_entry * ir_locate(
 
     if( hash->free == 0 ) {
         ir_fp_entry * fp = ir_fp_entry_create();
+        if (fp == 0) {
+          return (ir_hash_entry *) 0;
+        }
         fp->next = hash->free_pool;
         hash->free_pool = fp;
         hash->free = fp->entries;
