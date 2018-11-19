@@ -60,6 +60,12 @@ CCassandraFullscanPlan& CCassandraFullscanPlan::SetFieldList(vector<string> fiel
     return *this;
 }
 
+CCassandraFullscanPlan& CCassandraFullscanPlan::SetWhereFilter(string const & where_filter)
+{
+    m_WhereFilter = where_filter;
+    return *this;
+}
+
 CCassandraFullscanPlan& CCassandraFullscanPlan::SetMinPartitionsForSubrangeScan(size_t value)
 {
     m_MinPartitionsForSubrangeScan = value;
@@ -157,6 +163,8 @@ void CCassandraFullscanPlan::Generate()
     m_TokenRanges.clear();
     if (GetPartitionCountEstimate() < m_MinPartitionsForSubrangeScan) {
         m_SqlTemplate = "SELECT " + NStr::Join(m_FieldList, ", ") + " FROM " + m_Keyspace + "." + m_Table;
+        if (!m_WhereFilter.empty())
+            m_SqlTemplate += " WHERE " + m_WhereFilter + " ALLOW FILTERING";
         m_TokenRanges.push_back(make_pair(0, 0));
     } else {
         vector<string> partition_fields = m_Connection->GetPartitionKeyColumnNames(m_Keyspace, m_Table);
@@ -164,6 +172,8 @@ void CCassandraFullscanPlan::Generate()
         string partition = NStr::Join(partition_fields, ",");
         m_SqlTemplate = "SELECT " + NStr::Join(m_FieldList, ", ") + " FROM "
             + m_Keyspace + "." + m_Table + " WHERE TOKEN(" + partition + ") > ? AND TOKEN(" + partition + ") <= ?";
+        if (!m_WhereFilter.empty())
+            m_SqlTemplate += " AND " + m_WhereFilter + " ALLOW FILTERING";
         ERR_POST(Trace << "CCassandraFullscanPlanner::Generate - Sql template = '" << m_SqlTemplate << "'");
     }
 }
