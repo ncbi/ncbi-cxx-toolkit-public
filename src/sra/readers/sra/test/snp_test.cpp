@@ -89,6 +89,9 @@ void CSNPTestApp::Init(void)
     arg_desc->AddOptionalKey("seq", "SeqId",
                              "Seq id",
                              CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("seq-index", "SeqIindex",
+                             "Sequence index in the file",
+                             CArgDescriptions::eInteger);
     arg_desc->AddDefaultKey("pos", "SeqPos",
                             "Seq position",
                             CArgDescriptions::eInteger,
@@ -284,12 +287,30 @@ int CSNPTestApp::Run(void)
         }
     }
 
+    CVDBMgr mgr;
+    CStopWatch sw;
+    
+    sw.Restart();
+
+    CSNPDb snp_db(mgr, path);
+    if ( verbose ) {
+        cout << "Opened SNP in "<<sw.Restart()
+             << NcbiEndl;
+    }
+
     string query_id;
     CRange<TSeqPos> query_range = CRange<TSeqPos>::GetWhole();
     CSeq_id_Handle query_idh;
     
-    if ( args["seq"] ) {
-        query_id = args["seq"].AsString();
+    if ( args["seq"] || args["seq-index"] ) {
+        if ( args["seq-index"] ) {
+            size_t seq_index = args["seq-index"].AsInteger();
+            query_id = CSNPDbSeqIterator(snp_db, seq_index).GetSeqId()->AsFastaString();
+            cout << "Sequence["<<seq_index<<"]: "<<query_id<<endl;
+        }
+        else {
+            query_id = args["seq"].AsString();
+        }
         query_range.SetFrom(args["pos"].AsInteger());
         if ( args["window"] ) {
             TSeqPos window = args["window"].AsInteger();
@@ -340,17 +361,6 @@ int CSNPTestApp::Run(void)
     }
     if ( !query_id.empty() ) {
         query_idh = CSeq_id_Handle::GetHandle(query_id);
-    }
-
-    CVDBMgr mgr;
-    CStopWatch sw;
-    
-    sw.Restart();
-
-    CSNPDb snp_db(mgr, path);
-    if ( verbose ) {
-        cout << "Opened SNP in "<<sw.Restart()
-             << NcbiEndl;
     }
 
     CSNPDbFeatIterator::SFilter filter;
