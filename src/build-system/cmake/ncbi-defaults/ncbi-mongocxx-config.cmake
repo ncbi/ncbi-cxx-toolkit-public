@@ -8,8 +8,10 @@
 
 if (BUILD_SHARED_LIBS)
     set(_NCBI_LIBRARY_SUFFIX .so)
+    set(_NCBI_LIBRARY_STATIC )
 else()
-    set(_NCBI_LIBRARY_SUFFIX -static.a)
+    set(_NCBI_LIBRARY_SUFFIX .a)
+    set(_NCBI_LIBRARY_STATIC -static)
 endif()
 
 
@@ -55,12 +57,17 @@ endif()
 
 set(MONGOCXX_LIBRARIES
     ${_libpath_mongocxx}/libmongocxx${_NCBI_LIBRARY_SUFFIX}
-    ${_libpath_mongo_c_driver}/libmongoc-1.0${_NCBI_LIBRARY_SUFFIX}
+    ${_libpath_mongo_c_driver}/libmongoc${_NCBI_LIBRARY_STATIC}-1.0${_NCBI_LIBRARY_SUFFIX}
     )
+
+if (NOT BUILD_SHARED_LIBS)
+    set(MONGOCXX_LIBRARIES ${MONGOCXX_LIBRARIES} /usr/lib/libresolv.so)
+endif()
+
 
 set(BSONCXX_LIBRARIES
     ${_libpath_mongocxx}/libbsoncxx${_NCBI_LIBRARY_SUFFIX}
-    ${_libpath_mongo_c_driver}/libbson-1.0${_NCBI_LIBRARY_SUFFIX}
+    ${_libpath_mongo_c_driver}/libbson${_NCBI_LIBRARY_STATIC}-1.0${_NCBI_LIBRARY_SUFFIX}
     )
 
 set(MONGOCXX_INCLUDE_DIRS ${MONGOCXX_INCLUDE_DIR})
