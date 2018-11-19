@@ -1269,7 +1269,6 @@ static int/*tri-state*/ x_MatchesMask(const char* text, const char* mask,
             return -1/*mismatch, stop*/;
         switch (p) {
         case '?':
-            /*still matches*/
             assert(c);
             continue;
         case '*':
