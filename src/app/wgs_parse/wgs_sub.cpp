@@ -378,7 +378,7 @@ static void RemovePreviousAccession(const string& new_acc, CBioseq::TId& ids)
             _ASSERT(text_id != nullptr);
 
             if (text_id->GetAccession() != new_acc) {
-                ERR_POST_EX(0, 0, Info << "Input Seq-entry already has accession \"" << text_id->GetAccession() << "\". Replaced with \"" << new_acc << "\".");
+                ERR_POST_EX(0, 0, Error << "Input Seq-entry already has accession \"" << text_id->GetAccession() << "\". Replaced with \"" << new_acc << "\".");
             }
 
             ids.erase(id);
