@@ -850,7 +850,7 @@ private:
 
     TSubtype* m_pSubtype = nullptr;
     TOrgMods* m_pOrgMods = nullptr;
-    CPcrReactionSet* m_pPCRReactionSet = nullptr;
+    CPCRReactionSet* m_pPCRReactionSet = nullptr;
     bool m_FirstComment = true;
     bool m_FirstPubdesc = true;
     using TMap = unordered_map<EChoice, CRef<CSeqdesc>, hash<underlying_type<EChoice>::type>>;
@@ -1127,9 +1127,9 @@ CDescrCache::TOrgMods& CDescrCache::SetOrgMods()
 
 CPCRReactionSet& CDescrCache::SetPCR_primers()
 {
-    if (!m_PCRReactionSet) {
-        m_pPCRReactionSet = &(SetBioSource.SetPCR_primers());
-        m_pPCRReactionSet->clear();   
+    if (!m_pPCRReactionSet) {
+        m_pPCRReactionSet = &(SetBioSource().SetPcr_primers());
+        m_pPCRReactionSet->Set().clear();   
     }
     return *m_pPCRReactionSet;
 }
@@ -1432,10 +1432,21 @@ bool CModAdder_Impl::x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& des
     if (mod_name == "fwd-primer-name") {
         const auto& value = x_GetModValue(mod_range);
         vector<string> names;
-        x_GetPCRPrimerNames(value, names);
+        //x_GetPCRPrimerNames(value, names);
         // number of reactions should be greater than or equal to 
         // the number of names
-        auto& biosource = descr_cache.SetBioSource().ResetPcr_primers();
+        auto& pcr_reaction_set = descr_cache.SetPCR_primers();
+        auto it = pcr_reaction_set.Set().begin();
+        for (const auto& reaction_names : names) {
+            if (it == pcr_reaction_set.Set().end()) {
+                auto pPCRReaction = Ref(new CPCRReaction());
+               // x_SetPCRPrimerNames(reaction_names, pPCRReaction);
+                pcr_reaction_set.Set().push_back(move(pPCRReaction));
+            } 
+            else { 
+               // x_SetPCRPrimerNames(reaction_names, *it++);
+            }
+        }
     }
 
 
@@ -1452,7 +1463,7 @@ void s_GetPCRPrimerNames(const string& mod,
 void s_GetPCRPrimerSeqs(const string& mod,
     vector<string>& seqs)
 {
-    NStr::Split(mod, ",", seqs, NStr::fSplitTokenize);
+    NStr::Split(mod, ",", seqs, NStr::fSplit_Tokenize);
     if (seqs.size() > 1) {
         if (seqs.front().front() == '(') {
             seqs.front().erase(0,1);
