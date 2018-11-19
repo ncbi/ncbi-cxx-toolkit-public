@@ -260,8 +260,9 @@ set(FTDS_INCLUDE  ${FTDS95_INCLUDE})
 #OpenSSL
 find_package(OpenSSL)
 if (OpenSSL_FOUND)
-    set(OpenSSL_LIBRARIES ${OpenSSL_LIBRARIES} ${Z_LIBS} ${DL_LIBS})
-    set(OPENSSL_LIBS ${OpenSSL_LIBRARIES})
+    set(OpenSSL_LIBRARIES ${OPENSSL_LIBRARIES} ${Z_LIBS} ${DL_LIBS})
+    set(OPENSSL_LIBS ${OPENSSL_LIBRARIES})
+    message(STATUS "OpenSSL_LIBRARIES = ${OpenSSL_LIBRARIES}")
 endif()
 
 #EXTRALIBS were taken from mysql_config --libs
