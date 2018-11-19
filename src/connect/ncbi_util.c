@@ -1254,46 +1254,98 @@ extern void* UTIL_GenerateHMAC(const SHASH_Descriptor* hash,
  *  MISCELLANEOUS
  */
 
-extern int/*bool*/ UTIL_MatchesMaskEx(const char* name, const char* mask,
+
+/*  1 = match;
+ *  0 = no match;
+ * -1 = no match, stop search
+ */
+static int/*tri-state*/ x_MatchesMask(const char* text, const char* mask,
                                       int/*bool*/ ignore_case)
 {
-    for (;;) {
-        char c = *mask++;
-        char d;
-        if (!c) {
-            break;
-        } else if (c == '?') {
-            if (!*name++)
-                return 0/*false*/;
-        } else if (c == '*') {
-            c = *mask;
-            while (c == '*')
-                c = *++mask;
-            if (!c)
-                return 1/*true*/;
-            while (*name) {
-                if (UTIL_MatchesMaskEx(name, mask, ignore_case))
-                    return 1/*true*/;
-                name++;
+    char a, b, c, p;
+    for (;  (p = *mask++);  ++text) {
+        c = *text;
+        if (!c  &&  p != '*')
+            return -1/*mismatch, stop*/;
+        switch (p) {
+        case '?':
+            /*still matches*/
+            assert(c);
+            continue;
+        case '*':
+            p = *mask;
+            while (p == '*')
+                p = *++mask;
+            if (!p)
+                return 1/*match*/;
+            while (*text) {
+                int matches = x_MatchesMask(text++, mask, ignore_case);
+                if (matches)
+                    return matches;
             }
-            return 0/*false*/;
-        } else {
-            d = *name++;
+            return -1/*mismatch, stop*/;
+        case '[':
+            if (!(p = *mask))
+                return -1/*mismatch, pattern error*/;
+            if (p == '!') {
+                p  = 1/*complement*/;
+                ++mask;
+            } else
+                p  = 0;
+            if (ignore_case)
+                c = (char) tolower((unsigned char) c);
+            assert(c);
+            do {
+                if (!(a = *mask++))
+                    return -1/*mismatch, pattern error*/;
+                if (*mask == '-'  &&  mask[1] != ']') {
+                    ++mask;
+                    if (!(b = *mask++))
+                        return -1/*mismatch, pattern error*/;
+                } else
+                    b = a;
+                if (c) {
+                    if (ignore_case) {
+                        a = (char) tolower((unsigned char) a);
+                        b = (char) tolower((unsigned char) b);
+                    }
+                    if (a <= c  &&  c <= b)
+                        c = 0/*mark as found*/;
+                }
+            } while (*mask != ']');
+            if (p == !c)
+                return 0/*mismatch*/;
+            ++mask;
+            continue;
+        case '\\':
+            if (!(p = *mask++))
+                return -1/*mismatch, pattern error*/;
+            /*FALLTHRU*/
+        default: 
+            assert(c  &&  p);
             if (ignore_case) {
                 c = (char) tolower((unsigned char) c);
-                d = (char) tolower((unsigned char) d);
+                p = (char) tolower((unsigned char) p);
             }
-            if (c != d)
-                return 0/*false*/;
+            if (c != p)
+                return 0/*mismatch*/;
+            continue;
         }
     }
-    return !*name;
+    return !*text;
 }
 
 
-extern int/*bool*/ UTIL_MatchesMask(const char* name, const char* mask)
+extern int/*bool*/ UTIL_MatchesMaskEx(const char* text, const char* mask,
+                                      int/*bool*/ ignore_case)
 {
-    return UTIL_MatchesMaskEx(name, mask, 1/*ignore case*/);
+    return x_MatchesMask(text, mask, ignore_case) == 1 ? 1/*T*/ : 0/*F*/;
+}
+
+
+extern int/*bool*/ UTIL_MatchesMask(const char* text, const char* mask)
+{
+    return UTIL_MatchesMaskEx(text, mask, 1/*ignore case*/);
 }
 
 

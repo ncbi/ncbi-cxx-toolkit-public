@@ -405,13 +405,31 @@ static void TEST_CORE_GetUsername(void)
 
 static void TEST_UTIL_MatchesMask(void)
 {
-    assert(UTIL_MatchesMaskEx("aaa", "*a",  0) == 1);
-    assert(UTIL_MatchesMaskEx("bbb", "*a",  0) == 0);
-    assert(UTIL_MatchesMaskEx("bba", "*a",  0) == 1);
-    assert(UTIL_MatchesMaskEx("aab", "*a",  0) == 0);
-    assert(UTIL_MatchesMaskEx("aaa", "*a*", 0) == 1);
-    assert(UTIL_MatchesMaskEx("AAA", "*a",  1) == 1);
-    assert(UTIL_MatchesMaskEx("aaa", "*",   0) == 1);
+    assert(UTIL_MatchesMaskEx("aaa", "*a",             0) == 1);
+    assert(UTIL_MatchesMaskEx("bbb", "*a",             0) == 0);
+    assert(UTIL_MatchesMaskEx("bba", "*a",             0) == 1);
+    assert(UTIL_MatchesMaskEx("aab", "*a",             0) == 0);
+    assert(UTIL_MatchesMaskEx("aaa", "*a*",            0) == 1);
+    assert(UTIL_MatchesMaskEx("AAA", "*a",             1) == 1);
+    assert(UTIL_MatchesMaskEx("aaa", "*",              0) == 1);
+    assert(UTIL_MatchesMaskEx("aaa", "[a-z][a]a",      0) == 1);
+    assert(UTIL_MatchesMaskEx("aaa", "[!b][!b-c]a",    0) == 1);
+    assert(UTIL_MatchesMaskEx("aaa", "a[]",            0) == 0);
+    assert(UTIL_MatchesMaskEx("aaa", "a[a-a][a-",      0) == 0);
+    assert(UTIL_MatchesMaskEx("aaa", "a[a-a][a-]",     0) == 1);
+    assert(UTIL_MatchesMaskEx("a\\", "a\\",            0) == 0);
+    assert(UTIL_MatchesMaskEx("a\\", "a\\\\",          0) == 1);
+    assert(UTIL_MatchesMaskEx("a\\", "a[\\]",          0) == 1);
+    assert(UTIL_MatchesMaskEx("a\\", "a[\\\\]",        0) == 1);
+    assert(UTIL_MatchesMaskEx("aaa", "[a-b][a-b][a-b", 0) == 0);
+    assert(UTIL_MatchesMaskEx("a*a", "a\\*a",          0) == 1);
+    assert(UTIL_MatchesMaskEx("a[]", "[a-z][[][]]",    0) == 1);
+    assert(UTIL_MatchesMaskEx("a[]", "[a-z][[][[\\]]", 0) == 0);
+    assert(UTIL_MatchesMaskEx("a!b", "[a-z][!][A-Z]",  1) == 0);
+    assert(UTIL_MatchesMaskEx("a!b", "[a-z][!A-Z]b",   1) == 1);
+    assert(UTIL_MatchesMaskEx("a!b", "[a-z][!][A-Z]b", 1) == 1);
+    assert(UTIL_MatchesMaskEx("a-b", "[a-z][0-][A-Z]", 1) == 1);
+    assert(UTIL_MatchesMaskEx("a-b", "[a-z][-9][A-Z]", 1) == 1);
     printf("PASSED\n");
 }
 

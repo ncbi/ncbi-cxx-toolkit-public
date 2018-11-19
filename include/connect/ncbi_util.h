@@ -599,28 +599,69 @@ extern NCBI_XCONNECT_EXPORT void* UTIL_GenerateHMAC
 /******************************************************************************
  *  Miscellanea
  */
-/**
- * @param name
- *  TODO!
+
+
+/** Match a given text with a given pattern mask.  Very similar to fnmatch(3),
+ *  but there are differences (see also glob(7)).  There's no special treatment
+ *  for a slash character '/' in this call.
+ * @param text
+ *  A text to match
  * @param mask
- *  TODO!
+ *  A text pattern, which, along with ordinary characters that must match
+ *  literally in the given "text", can contain:  '*' to denote any sequence of
+ *  characters (including none), '?' to denote any single character, and
+ *  character classes in the forms of "[...]" or "[!...]" that must MATCH
+ *  or NOT MATCH, respectively, a single character in "text".  To cancel the
+ *  special meaning of '*', '?' or '[', they can be prepended with a backslash
+ *  '\\' (the backslash in front of other characters does not change their
+ *  meaning, so "\\\\" matches one graphical backslash in the "text").  Within
+ *  a character class, to have its literal meaning a closing square bracket ']'
+ *  must be used at the first position, whereas '?', '*', '[, and '\\' stand
+ *  just for themselves.  Two characters separated by a minus sign '-' denote
+ *  a range that can be used for contraction to include all characters in
+ *  between:  "[A-F]" is equivalent to "[ABCDEF]".  For its literal meaning,
+ *  the minus sign '-' can be used either at the very first position, or the
+ *  last position before the closing bracket ']'.
+ *  Examples:
+ *  "!"        matches a single '!' (note that just "[!]" is invalid);
+ *  "[!!]"     matches any character, which is not an exclamation point '!';
+ *  "[][!]"    matches ']', '[', and '!';
+ *  "[!][-]"   matches any character except for ']', '[', and '-';
+ *  "[-]"      matches a minus sign '-' (same as '-' just by itself);
+ *  "[?*\\]"   matches either '?', or '*', or a backslash '\\';
+ *  "[]-\\]"   matches nothing as it defines an empty range;
+ *  "\\[a]\\*" matches a substring "[a]*";
+ *  "[![a-]"   matches any char but '[', 'a' or '-' (same as "[!-[a]"; but not
+ *             "[![-a]", which defines an empty range thus matches any char!);
+ *  "[]A]"     matches either ']' or 'A' ("[A]]" matches a substring "A]");
+ *  "[0-9-]"   matches any decimal digit or a minus sign '-' (same: "[-0-9]").
+ * @note
+ *  In the above, each double backslash denotes a single graphical backslash
+ *  character (C string notation is used).
+ * @note
+ *  Unlike shell globbing, "[--0]" *does* match the slash character '/' (along
+ *  with '-', '.', and '0' that all fall within the range).
  * @param ignore_case
- *  TODO!
+ *  Whether to ignore the case of the letters (a-z) in comparisons
+ * @return
+ *  Non-zero if "text" matches "mask";  otherwise (including patter errors),
+ *  return zero
+ * @sa
+ *  UTIL_MatchesMask
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_MatchesMaskEx
-(const char* name,
+(const char* text,
  const char* mask,
  int/*bool*/ ignore_case
 );
 
-/** Same as UTIL_MatchesMaskEx(name, mask, 1)
- * @param name
- *  TODO!
- * @param mask
- *  TODO!
+/** Shortcut for UTIL_MatchesMaskEx(text, mask, 1), that is matching is done
+ *  case-insensitively for the letters (a-z).
+ * @sa
+ *  UTIL_MatchesMaskEx
  */
 extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_MatchesMask
-(const char* name,
+(const char* text,
  const char* mask
 );
 
@@ -628,7 +669,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ UTIL_MatchesMask
 /** Cut off well-known NCBI domain suffix out of the passed "hostname".
  * @param hostname
  *  Hostname to shorten (if possible)
- * @return 0 if the hostname wasn't modified, otherwise return "hostname".
+ * @return
+ *  NULL if the hostname wasn't modified;  otherwise, return "hostname"
  */
 extern NCBI_XCONNECT_EXPORT char* UTIL_NcbiLocalHostName
 (char* hostname
@@ -636,14 +678,18 @@ extern NCBI_XCONNECT_EXPORT char* UTIL_NcbiLocalHostName
 
 
 /** Calculate size of buffer needed to store printable representation of the
- * block of data of the specified size (or, if size is 0, strlen(data)).
- * NOTE:  The calculated size does not account for a terminating '\0'.
+ *  block of data of the specified size (or, if size is 0, strlen(data))
+ *  (without the '\0' terminator).
+ * @note
+ *  The calculated size does not account for a terminating '\0'.
  * @param data
  *  Block of data (NULL causes 0 to return regardless of "size")
  * @param size
- *  Size of block (0 causes strlen(data) to be used)
- * @return the buffer size needed (0 for NULL or empty (size==0) block).
- * @sa UTIL_PrintableString
+ *  Size of the block (0 causes strlen(data) to be used)
+ * @return
+ *  The buffer size needed (0 for NULL or empty data)
+ * @sa
+ *  UTIL_PrintableString
  */
 extern NCBI_XCONNECT_EXPORT size_t UTIL_PrintableStringSize
 (const char* data,
@@ -659,15 +705,17 @@ typedef int TUTIL_PrintableFlags;  /**< Bitwise "OR" of EUTIL_PrintableFlags */
 
 
 /** Create printable representation of the block of data of the specified size
- * (or, if size is 0, strlen(data), and return buffer pointer past the last
- * stored character (non '\0'-terminated).
- * NOTE:  The input buffer "buf" where to store the printable representation
- * is assumed to be of adequate size to hold the resultant string.
- * Non-printable characters can be represented in a reduced octal form
- * as long as the result is unambiguous (unless "full" passed true (non-zero),
- * in which case all non-printable characters get represented by full
- * octal tetrads).  NB: Hexadecimal output is not used because it is
- * ambiguous by the standard (can contain undefined number of hex digits).
+ *  (or, if size is 0, strlen(data)), and return the buffer pointer past the
+ *  last stored character (non '\0'-terminated).  Non-printable characters can
+ *  be represented in a reduced octal form as long as the result is unambiguous
+ *  (unless "full" passed true (non-zero), in which case all non-printable
+ *  characters get represented by full octal tetrads).  NB: Hexadecimal output
+ *  is not used because it is ambiguous by the standard (can contain undefined
+ *  number of hex digits).
+ * @note
+ *  The input buffer "buf" where to store the printable representation is
+ *  assumed to be of adequate size to hold the resultant string (use
+ *  UTIL_PrintableStringSize() to obtain the size prior to this call).
  * @param data
  *  Block of data (NULL causes NULL to return regardless of "size" or "buf")
  * @param size
@@ -676,7 +724,10 @@ typedef int TUTIL_PrintableFlags;  /**< Bitwise "OR" of EUTIL_PrintableFlags */
  *  Buffer to store the result (NULL always causes NULL to return)
  * @param flags
  *  How to print representations of certain non-printable characters
- * @return next position in the buffer past the last stored character.
+ * @return
+ *  Next position in the buffer past the last stored character
+ * @warning
+ *  The call *does not* '\0'-terminate its output!
  * @sa
  *  UTIL_PrintableStringSize, EUTIL_PrintableFlags
  */
@@ -690,11 +741,11 @@ extern NCBI_XCONNECT_EXPORT char* UTIL_PrintableString
 
 /** Conversion from Unicode to UTF8, and back.  MSWIN-specific and internal.
  *
- * NOTE:  UTIL_ReleaseBufferOnHeap() must be used to free the buffers returned
+ * @note  UTIL_ReleaseBufferOnHeap() must be used to free the buffers returned
  *        from UTIL_TcharToUtf8OnHeap(),  and UTIL_ReleaseBuffer() to free the
  *        ones returned from UTIL_TcharToUtf8()/UTIL_Utf8ToTchar().
  *
- * NOTE:  If you change these macros (here and in #else) you need to make
+ * @note  If you change these macros (here and in #else) you need to make
  *        similar changes in ncbi_strerror.c as well.
  */
 #if defined(NCBI_OS_MSWIN)  &&  defined(_UNICODE)
