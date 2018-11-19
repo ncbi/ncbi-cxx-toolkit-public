@@ -32,7 +32,6 @@
         <dict>
           <key>ARCHS</key>
           <array>
-            <string>i386</string>
             <string>x86_64</string>
           </array>
           <key>GCC_WARN_ABOUT_RETURN_TYPE</key>
@@ -81,7 +80,6 @@
         <dict>
           <key>ARCHS</key>
           <array>
-            <string>i386</string>
             <string>x86_64</string>
           </array>
           <key>GCC_WARN_ABOUT_RETURN_TYPE</key>
@@ -130,7 +128,6 @@
         <dict>
           <key>ARCHS</key>
           <array>
-            <string>i386</string>
             <string>x86_64</string>
           </array>
           <key>GCC_WARN_ABOUT_RETURN_TYPE</key>
@@ -173,7 +170,6 @@
         <dict>
           <key>ARCHS</key>
           <array>
-            <string>i386</string>
             <string>x86_64</string>
           </array>
           <key>GCC_WARN_ABOUT_RETURN_TYPE</key>
