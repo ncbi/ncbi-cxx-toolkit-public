@@ -67,14 +67,14 @@ public:
  
     void AddSources(CSeq_entry_Handle se);
     void AddSources(CBioseq_Handle bh);
-    CAutoDefModifierCombo* FindBestModifierCombo();
+    CRef<CAutoDefModifierCombo> FindBestModifierCombo();
     CAutoDefModifierCombo* GetAllModifierCombo();
     CAutoDefModifierCombo* GetEmptyCombo();
     unsigned int GetNumAvailableModifiers();
-    string GetOneSourceDescription(CBioseq_Handle bh);
+    string GetOneSourceDescription(const CBioseq_Handle& bh);
     string GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_val);
-    string GetOneDefLine(CAutoDefModifierCombo* mod_combo, CBioseq_Handle bh);
-    string GetOneDefLine(CBioseq_Handle bh);
+    string GetOneDefLine(CAutoDefModifierCombo* mod_combo, const CBioseq_Handle& bh);
+    string GetOneDefLine(const CBioseq_Handle& bh);
     
     void SetOptionsObject(const CUser_object& user);
     CRef<CUser_object> GetOptionsObject() const { return m_Options.MakeUserObject(); }
@@ -106,7 +106,7 @@ public:
     void SetUseFakePromoters (bool use_fake);
     void SetCustomFeatureClause(const string& custom_feature_clause);
     
-    void SuppressFeature(objects::CFeatListItem feat); 
+    void SuppressFeature(const objects::CFeatListItem& feat); 
     void SuppressFeature(objects::CSeqFeatData::ESubtype subtype);
     
     typedef vector<CRef<CAutoDefModifierCombo>> TModifierComboVector;
@@ -146,16 +146,16 @@ private:
     string x_GetFeatureClauses(CBioseq_Handle bh);
     string x_GetFeatureClauseProductEnding(const string& feature_clauses,
                                            CBioseq_Handle bh);
-    bool x_AddMiscRNAFeatures(CBioseq_Handle bh,
+    bool x_AddMiscRNAFeatures(const CBioseq_Handle& bh,
                               const CSeq_feat& cf,
                               const CSeq_loc& mapped_loc,
                               CAutoDefFeatureClause_Base& main_clause);
-    bool x_AddtRNAAndOther(CBioseq_Handle bh,
+    bool x_AddtRNAAndOther(const CBioseq_Handle& bh,
                               const CSeq_feat& cf,
                               const CSeq_loc& mapped_loc,
                               CAutoDefFeatureClause_Base& main_clause);
                               
-    void x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause, CBioseq_Handle bh);
+    void x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause, const CBioseq_Handle& bh);
                                   
     
     bool x_IsOrgModRequired(unsigned int mod_type);
@@ -164,7 +164,7 @@ private:
     bool x_IsFeatureSuppressed(CSeqFeatData::ESubtype subtype);
     
     void GetMasterLocation(CBioseq_Handle &bh, CRange<TSeqPos>& range);
-    bool IsSegment(CBioseq_Handle bh);
+    bool IsSegment(const CBioseq_Handle& bh);
     bool x_Is5SList(CFeat_CI feat_ci);
     bool x_IsSingleMiscFeat(CFeat_CI feat_ci);
     string x_GetHumanSTRFeatureClauses(CBioseq_Handle bh, const CUser_object& comment);

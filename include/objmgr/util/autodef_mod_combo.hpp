@@ -77,7 +77,7 @@ public:
     bool HasSubSource(CSubSource::ESubtype st);
     bool HasOrgMod(COrgMod::ESubtype st);
     
-    void AddSource(const CBioSource& bs, string feature_clauses = "");
+    void AddSource(const CBioSource& bs, const string& feature_clauses = "");
     
     void AddSubsource(CSubSource::ESubtype st, bool even_if_not_uniquifying = false);
     void AddOrgMod(COrgMod::ESubtype st, bool even_if_not_uniquifying = false);
@@ -114,7 +114,7 @@ public:
 
     typedef vector<CSubSource::ESubtype> TSubSourceTypeVector;
     typedef vector<COrgMod::ESubtype> TOrgModTypeVector;
-    typedef vector<CAutoDefSourceGroup *> TGroupListVector;
+    typedef vector<CRef<CAutoDefSourceGroup> > TGroupListVector;
 
     const TGroupListVector& GetGroupList() const { return m_GroupList; }
     const CAutoDefSourceDescription::TModifierVector& GetModifiers() const { return m_Modifiers; }

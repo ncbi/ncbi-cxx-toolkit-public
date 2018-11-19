@@ -108,7 +108,7 @@ public:
 };
 
 
-class NCBI_XOBJEDIT_EXPORT CAutoDefSourceDescription 
+class NCBI_XOBJEDIT_EXPORT CAutoDefSourceDescription : public CObject
 {
 public:
     CAutoDefSourceDescription(const CBioSource& bs, string feature_clauses = "");

@@ -51,17 +51,17 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class NCBI_XOBJEDIT_EXPORT CAutoDefSourceGroup
+class NCBI_XOBJEDIT_EXPORT CAutoDefSourceGroup : public CObject
 {
 public:
     CAutoDefSourceGroup();
     CAutoDefSourceGroup(CAutoDefSourceGroup *value);
     ~CAutoDefSourceGroup();
 
-    typedef vector<CAutoDefSourceDescription *> TSourceDescriptionVector;
+    typedef vector<CRef<CAutoDefSourceDescription> > TSourceDescriptionVector;
     unsigned int GetNumDescriptions();
 
-    void AddSourceDescription(CAutoDefSourceDescription *tmp);
+    void AddSourceDescription(CRef<CAutoDefSourceDescription> tmp);
     CAutoDefSourceDescription *GetSourceDescription(unsigned int index);
         
     void GetAvailableModifiers
@@ -75,7 +75,7 @@ public:
     bool AddQual (bool IsOrgMod, int subtype, bool keepAfterSemicolon);
     bool RemoveQual (bool IsOrgMod, int subtype);
     TSourceDescriptionVector GetSrcList() const { return m_SourceList; }
-    vector<CAutoDefSourceGroup *> RemoveNonMatchingDescriptions ();
+    vector<CRef<CAutoDefSourceGroup> > RemoveNonMatchingDescriptions ();
 
     CAutoDefSourceDescription::TModifierVector GetModifiersPresentForAll();
     CAutoDefSourceDescription::TModifierVector GetModifiersPresentForAny();

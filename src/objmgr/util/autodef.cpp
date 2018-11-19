@@ -196,9 +196,8 @@ struct SAutoDefModifierComboSort {
 
 
 
-CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
+CRef<CAutoDefModifierCombo> CAutoDef::FindBestModifierCombo()
 {
-    CAutoDefModifierCombo *best = NULL;
     TModifierComboVector  combo_list;
 
     combo_list.clear();
@@ -207,7 +206,7 @@ CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
 
     TModifierComboVector tmp, add_list;
     TModifierComboVector::iterator it;
-    CAutoDefSourceDescription::TModifierVector mod_list, mods_to_try;
+    CAutoDefSourceDescription::TModifierVector mod_list;
     bool stop = false;
     unsigned int  k;
 
@@ -230,7 +229,7 @@ CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
                 }
                 it = combo_list.erase (it);
             } else {
-                it++;
+                ++it;
             }
             tmp.clear();
         }
@@ -248,7 +247,7 @@ CAutoDefModifierCombo * CAutoDef::FindBestModifierCombo()
         mod_list.push_back (CAutoDefSourceModifierInfo(*it));
     }
 
-    return combo_list[0].Release();
+    return combo_list[0];
 }
 
 
@@ -291,9 +290,9 @@ CAutoDefModifierCombo* CAutoDef::GetEmptyCombo()
 }
 
 
-string CAutoDef::GetOneSourceDescription(CBioseq_Handle bh)
+string CAutoDef::GetOneSourceDescription(const CBioseq_Handle& bh)
 {
-    CAutoDefModifierCombo *best = FindBestModifierCombo();
+    CRef<CAutoDefModifierCombo> best = FindBestModifierCombo();
     if (best == NULL) {
         return "";
     }
@@ -310,7 +309,7 @@ string CAutoDef::GetOneSourceDescription(CBioseq_Handle bh)
 // features.  These functions create a clause for each element in the
 // comment.
 
-bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause)
+bool CAutoDef::x_AddMiscRNAFeatures(const CBioseq_Handle& bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause)
 {
     string comment = "";
     string::size_type pos;
@@ -405,7 +404,7 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
 
 
 
-bool CAutoDef::x_AddtRNAAndOther(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause)
+bool CAutoDef::x_AddtRNAAndOther(const CBioseq_Handle& bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause)
 {
     if (cf.GetData().GetSubtype() != CSeqFeatData::eSubtype_misc_feature ||
         !cf.IsSetComment()) {
@@ -430,7 +429,7 @@ bool CAutoDef::x_AddtRNAAndOther(CBioseq_Handle bh, const CSeq_feat& cf, const C
 }
 
 
-void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause, CBioseq_Handle bh)
+void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause, const CBioseq_Handle& bh)
 {
     // remove optional features that have not been requested
     if (main_clause == NULL) {
@@ -508,7 +507,7 @@ bool CAutoDef::x_IsFeatureSuppressed(CSeqFeatData::ESubtype subtype)
 }
 
 
-void CAutoDef::SuppressFeature(objects::CFeatListItem feat)
+void CAutoDef::SuppressFeature(const objects::CFeatListItem& feat)
 {
     if (feat.GetType() == CSeqFeatData::e_not_set) {
         m_Options.SuppressAllFeatures();        
@@ -524,7 +523,7 @@ void CAutoDef::SuppressFeature(objects::CSeqFeatData::ESubtype subtype)
 }
 
 
-bool CAutoDef::IsSegment(CBioseq_Handle bh)
+bool CAutoDef::IsSegment(const CBioseq_Handle& bh)
 {
     CSeq_entry_Handle seh = bh.GetParentEntry();
     
@@ -1166,7 +1165,7 @@ string CAutoDef::GetKeywordPrefix(CBioseq_Handle bh)
 }
 
 
-string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle bh)
+string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, const CBioseq_Handle& bh)
 {
     // for protein sequences, use sequence::GetTitle
     if (bh.CanGetInst() && bh.GetInst().CanGetMol() && bh.GetInst().GetMol() == CSeq_inst::eMol_aa) {
@@ -1203,7 +1202,7 @@ string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle 
 
 
 // use internal settings to create mod combo
-string CAutoDef::GetOneDefLine(CBioseq_Handle bh)
+string CAutoDef::GetOneDefLine(const CBioseq_Handle& bh)
 {
     // for protein sequences, use sequence::GetTitle
     if (bh.CanGetInst() && bh.GetInst().CanGetMol() && bh.GetInst().GetMol() == CSeq_inst::eMol_aa) {
@@ -1447,7 +1446,7 @@ CRef<CUser_object> CAutoDef::CreateIDOptions(CSeq_entry_Handle seh)
     CAutoDef ad;
     ad.AddSources(seh);
 
-    CAutoDefModifierCombo* src_combo = ad.FindBestModifierCombo();
+    CRef<CAutoDefModifierCombo> src_combo = ad.FindBestModifierCombo();
     CAutoDefSourceDescription::TAvailableModifierVector modifiers;
     src_combo->GetAvailableModifiers(modifiers);
 

@@ -78,9 +78,8 @@ CAutoDefModifierCombo::CAutoDefModifierCombo(CAutoDefModifierCombo *orig)
     m_GroupList.clear();
     m_Modifiers.clear();
 
-    ITERATE (TGroupListVector, it, orig->GetGroupList()) {
-        CAutoDefSourceGroup * g = new CAutoDefSourceGroup(*it);
-        m_GroupList.push_back (g);
+    for (auto it : orig->GetGroupList()) {
+        m_GroupList.push_back (CRef<CAutoDefSourceGroup>(new CAutoDefSourceGroup(*it)));
     }
     ITERATE (CAutoDefSourceDescription::TModifierVector, it, orig->GetModifiers()) {
         m_Modifiers.push_back (CAutoDefSourceModifierInfo(*it));
@@ -111,9 +110,6 @@ CAutoDefModifierCombo::CAutoDefModifierCombo(CAutoDefModifierCombo *orig)
 
 CAutoDefModifierCombo::~CAutoDefModifierCombo()
 {
-    for (unsigned int k = 0; k < m_GroupList.size(); k++) {
-        delete m_GroupList[k];
-    }
 }
 
 
@@ -223,20 +219,20 @@ bool CAutoDefModifierCombo::HasOrgMod(COrgMod::ESubtype st)
 }
 
 
-void CAutoDefModifierCombo::AddSource(const CBioSource& bs, string feature_clauses) 
+void CAutoDefModifierCombo::AddSource(const CBioSource& bs, const string& feature_clauses) 
 {
     CAutoDefSourceDescription src(bs, feature_clauses);
     bool found = false;
 
-    NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {
-        if ((*it)->GetSrcList().size() > 0
-            && src.Compare (*((*it)->GetSrcList().begin())) == 0) {
-            (*it)->AddSource (&src);
+    for (auto it : m_GroupList) {
+        if (it->GetSrcList().size() > 0
+            && src.Compare (**(it->GetSrcList().begin())) == 0) {
+            it->AddSource (&src);
             found = true;
         }
     }
     if (!found) {
-        CAutoDefSourceGroup * g = new CAutoDefSourceGroup();
+        CRef<CAutoDefSourceGroup> g(new CAutoDefSourceGroup());
         g->AddSource (&src);
         m_GroupList.push_back (g);
     }
@@ -371,7 +367,7 @@ bool CAutoDefModifierCombo::x_AddSubsourceString (string &source_description, co
                     val = val.substr(0, pos);
                 }
             } else if (st == CSubSource::eSubtype_plasmid_name && NStr::EqualNocase(val, "unnamed")) {
-                val = "";
+                val.clear();
             }
             if (!NStr::IsBlank(val)) {
                 source_description += " " + val;
@@ -420,7 +416,6 @@ bool CAutoDefModifierCombo::IsModifierInString(const string& find_this, const st
 bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const CBioSource& bsrc, COrgMod::ESubtype st)
 {
     bool         used = false;
-    string       val;
 
     if (!bsrc.IsSetOrg() || !bsrc.GetOrg().IsSetOrgname() || !bsrc.GetOrg().GetOrgname().IsSetMod()) {
         return false;
@@ -480,8 +475,6 @@ bool CAutoDefModifierCombo::HasTrickyHIV()
 
 void CAutoDefModifierCombo::x_AddHIVModifiers(TExtraOrgMods& extra_orgmods, TExtraSubSrcs& extra_subsrcs, const CBioSource& bsrc)
 {
-    string   clone_text = "";
-    string   isolate_text = "";
     bool     src_has_clone = false;
     bool     src_has_isolate = false;
     bool     src_has_strain = false;
@@ -1028,10 +1021,10 @@ int CAutoDefModifierCombo::Compare(const CAutoDefModifierCombo& other) const
 
 
 struct SAutoDefSourceGroupByStrings {
-    bool operator()(const CAutoDefSourceGroup& s1,
-                    const CAutoDefSourceGroup& s2) const
+    bool operator()(CRef<CAutoDefSourceGroup> s1,
+                    CRef<CAutoDefSourceGroup> s2) const
     {
-        return (s1 < s2);
+        return (*s1 < *s2);
     }
 };
 
@@ -1039,7 +1032,7 @@ struct SAutoDefSourceGroupByStrings {
 bool CAutoDefModifierCombo::AddQual (bool IsOrgMod, int subtype, bool even_if_not_uniquifying)
 {
     bool added = false, rval = false;
-    vector <CAutoDefSourceGroup *> new_groups;
+    vector <CRef<CAutoDefSourceGroup> > new_groups;
 
     new_groups.clear();
     NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {
@@ -1048,7 +1041,7 @@ bool CAutoDefModifierCombo::AddQual (bool IsOrgMod, int subtype, bool even_if_no
 
     if (added) {
         NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {
-            vector <CAutoDefSourceGroup *> tmp = (*it)->RemoveNonMatchingDescriptions();
+            vector <CRef<CAutoDefSourceGroup> > tmp = (*it)->RemoveNonMatchingDescriptions();
             while (!tmp.empty()) {
                 new_groups.push_back (tmp[tmp.size() - 1]);
                 tmp.pop_back();
@@ -1100,7 +1093,7 @@ vector<CRef<CAutoDefModifierCombo>> CAutoDefModifierCombo::ExpandByAnyPresent()
         }
         mods = (*it)->GetModifiersPresentForAny();
         ITERATE (CAutoDefSourceDescription::TModifierVector, mod_it, mods) {
-            expanded.emplace_back (new CAutoDefModifierCombo (this));
+            expanded.emplace_back (CRef<CAutoDefModifierCombo>(new CAutoDefModifierCombo (this)));
             if (!expanded[expanded.size() - 1]->AddQual (mod_it->IsOrgMod(), mod_it->GetSubtype())) {
                 expanded.pop_back ();
                 RemoveQual(mod_it->IsOrgMod(), mod_it->GetSubtype());
@@ -1123,7 +1116,7 @@ bool CAutoDefModifierCombo::AreFeatureClausesUnique()
         CAutoDefSourceGroup::TSourceDescriptionVector::iterator s = src_list.begin();
         while (s != src_list.end()) {
             clauses.push_back((*s)->GetFeatureClauses());
-            s++;
+            ++s;
         }
     }
     if (clauses.size() < 2) {
@@ -1133,14 +1126,14 @@ bool CAutoDefModifierCombo::AreFeatureClausesUnique()
     bool unique = true;
     vector<string>::iterator sit = clauses.begin();
     string prev = *sit;
-    sit++;
+    ++sit;
     while (sit != clauses.end() && unique) {
         if (NStr::Equal(prev, *sit)) {
             unique = false;
         } else {
             prev = *sit;
         }
-        sit++;
+        ++sit;
     }
     return unique;
 }

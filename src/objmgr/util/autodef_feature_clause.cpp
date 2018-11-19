@@ -735,8 +735,6 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
 
 bool CAutoDefFeatureClause::x_GetExonDescription(string &description)
 {
-    CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
-    
     if (m_MainFeat.IsSetQual()) {
         ITERATE(CSeq_feat::TQual, it, m_MainFeat.GetQual()) {
             if ((*it)->IsSetQual() && (*it)->IsSetVal()

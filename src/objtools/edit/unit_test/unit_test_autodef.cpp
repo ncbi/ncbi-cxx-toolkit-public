@@ -2158,10 +2158,9 @@ BOOST_AUTO_TEST_CASE(Test_GB_6690)
     objects::CAutoDef autodef;
     autodef.AddSources(seh);
 
-    CAutoDefModifierCombo * mod_combo = autodef.FindBestModifierCombo();
+    CRef<CAutoDefModifierCombo> mod_combo = autodef.FindBestModifierCombo();
     BOOST_CHECK_EQUAL(mod_combo->HasOrgMod(COrgMod::eSubtype_other), false);
     BOOST_CHECK_EQUAL(mod_combo->HasSubSource(CSubSource::eSubtype_other), false);
-    delete mod_combo;
 
     CheckDeflineMatches(entry, true);
 
@@ -2180,7 +2179,6 @@ BOOST_AUTO_TEST_CASE(Test_GB_6690)
     mod_combo = autodef.FindBestModifierCombo();
     BOOST_CHECK_EQUAL(mod_combo->HasOrgMod(COrgMod::eSubtype_other), false);
     BOOST_CHECK_EQUAL(mod_combo->HasSubSource(CSubSource::eSubtype_other), false);
-    delete mod_combo;
 
     CheckDeflineMatches(entry, true);
 }

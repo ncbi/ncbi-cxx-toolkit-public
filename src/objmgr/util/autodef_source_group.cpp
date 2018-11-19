@@ -63,23 +63,19 @@ CAutoDefSourceGroup::CAutoDefSourceGroup(CAutoDefSourceGroup *other)
     m_SourceList.clear();
     
     for (index = 0; index < other->GetNumDescriptions(); index++) {
-        m_SourceList.push_back(new CAutoDefSourceDescription(other->GetSourceDescription(index)));
+        m_SourceList.push_back(CRef<CAutoDefSourceDescription>(new CAutoDefSourceDescription(other->GetSourceDescription(index))));
     }
 }
 
 
 CAutoDefSourceGroup::~CAutoDefSourceGroup()
 {
-    unsigned int k;
-    for (k = 0; k < m_SourceList.size(); k++) {
-        delete (m_SourceList[k]);
-    }
 }
 
 
 void CAutoDefSourceGroup::AddSource (CAutoDefSourceDescription *src)
 {
-    m_SourceList.push_back (new CAutoDefSourceDescription(src));
+    m_SourceList.push_back (CRef<CAutoDefSourceDescription>(new CAutoDefSourceDescription(src)));
 }
 
 
@@ -108,16 +104,16 @@ bool CAutoDefSourceGroup::RemoveQual (bool IsOrgMod, int subtype)
 
 
 struct SAutoDefSourceDescByStrings {
-    bool operator()(const CAutoDefSourceDescription& s1,
-                    const CAutoDefSourceDescription& s2) const
+    bool operator()(CRef<CAutoDefSourceDescription> s1,
+                    CRef<CAutoDefSourceDescription> s2) const
     {
-        return (s1 < s2);
+        return (*s1 < *s2);
     }
 };
 
-vector<CAutoDefSourceGroup *> CAutoDefSourceGroup::RemoveNonMatchingDescriptions ()
+vector<CRef<CAutoDefSourceGroup> > CAutoDefSourceGroup::RemoveNonMatchingDescriptions ()
 {
-    vector<CAutoDefSourceGroup *> group_list;
+    vector<CRef<CAutoDefSourceGroup> > group_list;
     TSourceDescriptionVector::iterator it;
 
     group_list.clear();
@@ -132,7 +128,7 @@ vector<CAutoDefSourceGroup *> CAutoDefSourceGroup::RemoveNonMatchingDescriptions
         it++;
     }
     while (it != m_SourceList.end()) {
-        CAutoDefSourceGroup *g = new CAutoDefSourceGroup();
+        CRef<CAutoDefSourceGroup> g(new CAutoDefSourceGroup());
         g->AddSource (*it);
         it = m_SourceList.erase(it);
         while (it != m_SourceList.end() 
@@ -247,7 +243,7 @@ CAutoDefSourceDescription *CAutoDefSourceGroup::GetSourceDescription(unsigned in
 }
 
 
-void CAutoDefSourceGroup::AddSourceDescription(CAutoDefSourceDescription *tmp)
+void CAutoDefSourceGroup::AddSourceDescription(CRef<CAutoDefSourceDescription> tmp)
 {
     if (tmp == NULL) {
         return;
