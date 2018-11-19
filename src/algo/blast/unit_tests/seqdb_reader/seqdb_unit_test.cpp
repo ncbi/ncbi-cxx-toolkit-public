@@ -4486,6 +4486,109 @@ BOOST_AUTO_TEST_CASE(PigListSwissprot)
 
 }
 
+BOOST_AUTO_TEST_CASE(CombinedFilters)
+{
+	// 2 is not founc in swissprot
+	const unsigned int num_pigs = 5;
+    const int pigs[num_pigs] = {2, 355704, 863725, 1727116, 24036443};
+    string db_name = "data/ipg_test";
+
+    {
+    	CRef<CSeqDBGiList> pos_list(new CSeqDBGiList());
+    	CRef<CSeqDBNegativeList> neg_list(new CSeqDBNegativeList());
+
+    	for (unsigned int i =0; i < num_pigs; i++) {
+    		pos_list->AddPig(pigs[i]);
+    	}
+
+    	set<int> t;
+    	t.insert(9606);
+    	t.insert(83333);
+   		neg_list->AddTaxIds(t);
+
+    	CSeqDB db(db_name, CSeqDB::eProtein, &*pos_list, &* neg_list);
+
+    	int total_num_seqs = db.GetNumSeqs();
+    	BOOST_REQUIRE_EQUAL(total_num_seqs, 1);
+
+    	const int check_oids[1] = {12};
+    	for(int oid=0, c=0; db.CheckOrFindOID(oid); oid++, c++)
+    		BOOST_REQUIRE_EQUAL(oid, check_oids[c]);
+    	}
+
+    {
+    	CRef<CSeqDBGiList> pos_list(new CSeqDBGiList());
+    	for (unsigned int i =0; i < num_pigs; i++) {
+    		pos_list->AddPig(pigs[i]);
+    	}
+
+    	set<int> t;
+    	t.insert(9606);
+    	t.insert(83333);
+   		pos_list->AddTaxIds(t);
+
+    	CSeqDB db(db_name, CSeqDB::eProtein, &*pos_list);
+
+    	int total_num_seqs = db.GetNumSeqs();
+    	BOOST_REQUIRE_EQUAL(total_num_seqs, 3);
+
+    	const int check_oids[3] = {2, 6, 8};
+    	for(int oid=0, c=0; db.CheckOrFindOID(oid); oid++, c++) {
+    		BOOST_REQUIRE_EQUAL(oid, check_oids[c]);
+    	}
+    }
+    {
+    	CRef<CSeqDBGiList> pos_list(new CSeqDBGiList());
+    	CRef<CSeqDBNegativeList> neg_list(new CSeqDBNegativeList());
+
+    	vector<TPig> p;
+    	for (unsigned int i =0; i < num_pigs; i++) {
+    		p.push_back(pigs[i]);
+    	}
+   		neg_list->SetPigList(p);
+
+    	set<int> t;
+    	t.insert(9606);
+    	t.insert(83333);
+   		pos_list->AddTaxIds(t);
+
+    	CSeqDB db(db_name, CSeqDB::eProtein, &*pos_list, &* neg_list);
+
+    	int total_num_seqs = db.GetNumSeqs();
+    	BOOST_REQUIRE_EQUAL(total_num_seqs, 5);
+
+    	const int check_oids[5] = {0, 1, 3, 5, 7};
+    	for(int oid=0, c=0; db.CheckOrFindOID(oid); oid++, c++) {
+    		BOOST_REQUIRE_EQUAL(oid, check_oids[c]);
+    	}
+    }
+
+    {
+        	CRef<CSeqDBGiList> pos_list(new CSeqDBGiList());
+        	CRef<CSeqDBNegativeList> neg_list(new CSeqDBNegativeList());
+
+        	vector<TPig> p;
+        	for (unsigned int i =0; i < num_pigs; i++) {
+        		p.push_back(pigs[i]);
+        	}
+       		neg_list->SetPigList(p);
+
+        	set<int> t;
+        	t.insert(9606);
+        	t.insert(83333);
+       		pos_list->AddTaxIds(t);
+
+        	CSeqDB db(db_name, CSeqDB::eProtein, 1, 4, &*pos_list, &* neg_list);
+
+        	const int check_oids[2] = {1, 3 };
+        	for(int oid=0, c=0; db.CheckOrFindOID(oid); oid++, c++) {
+        		BOOST_REQUIRE_EQUAL(oid, check_oids[c]);
+        	}
+        }
+
+
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
