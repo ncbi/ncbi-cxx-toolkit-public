@@ -169,19 +169,19 @@ static void StripErRemarks(CPubdesc& pubdescr)
 
 static void MedlineToISO(CCit_art& cit_art)
 {
-    CAuth_list& auths = cit_art.SetAuthors();
-    if (auths.IsSetNames()) {
-        if (auths.GetNames().IsMl()) {
-            auths.ConvertMlToStandard();
-        }
-        else if (auths.GetNames().IsStd())
-        {
-            for (auto& auth: auths.SetNames().SetStd())
-            {
-                if (auth->IsSetName() && auth->GetName().IsMl()) {
+    if (cit_art.IsSetAuthors()) {
+        CAuth_list& auths = cit_art.SetAuthors();
+        if (auths.IsSetNames()) {
+            if (auths.GetNames().IsMl()) {
+                auths.ConvertMlToStandard();
+            }
+            else if (auths.GetNames().IsStd()) {
+                for (auto& auth : auths.SetNames().SetStd()) {
+                    if (auth->IsSetName() && auth->GetName().IsMl()) {
 
-                    CRef<CAuthor> standard_auth = CAuthor::ConvertMlToStandard(*auth);
-                    auth->Assign(*standard_auth);
+                        CRef<CAuthor> standard_auth = CAuthor::ConvertMlToStandard(*auth);
+                        auth->Assign(*standard_auth);
+                    }
                 }
             }
         }
