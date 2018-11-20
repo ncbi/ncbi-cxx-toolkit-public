@@ -308,6 +308,7 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
             memset(&init, 0, sizeof(init));
             init.data = data;
             init.size = size;
+            init.host = net_info->host;
             init.cred = net_info->credentials;
             SOCK s;
             status = SOCK_CreateOnTopInternal(sock, 0, &s, &init, flgs);
@@ -349,6 +350,7 @@ s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         memset(&init, 0, sizeof(init));
         init.data = data;
         init.size = size;
+        init.host = net_info->host;
         init.cred = net_info->credentials;
         status = SOCK_CreateInternal(net_info->host, net_info->port, timeout,
                                      &sock, &init, flgs);

@@ -2010,6 +2010,7 @@ extern EIO_Status URL_ConnectEx
     init.cred = cred;
 
     if (s) {
+        init.host = host;
         /* re-use existing connection */
         status = SOCK_CreateOnTopInternal(s/*old*/, 0, sock/*new*/,
                                           &init, flags);
