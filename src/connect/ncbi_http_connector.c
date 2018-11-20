@@ -357,7 +357,7 @@ static int/*bool*/ s_CallAdjust(SHttpConnector* uuu, unsigned int arg)
     if (!net_info)
         return 0/*failure*/;
     retval = uuu->adjust(uuu->net_info, uuu->user_data, arg);
-    if (retval) {
+    if (retval/*advisory of no change if < 0 but we don't trust it :-)*/) {
         int same_host = -1/*undef*/;
         if (uuu->sock) {
             int close = 0/*false*/;
