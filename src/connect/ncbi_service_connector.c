@@ -436,23 +436,20 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
                                                     fSOCK_LogDefault))))) {
             /* push initial data through the proxy, as-is (i.e. clear-text) */
             TSOCK_Flags tempf = flags;
-            if (size  &&  (flags & fSOCK_Secure)) {
-                tempf &=  fSOCK_LogOn | fSOCK_LogDefault;
-                tempf &=  (TSOCK_Flags)(~fSOCK_Secure);
-            }
+            if (size)
+                tempf &= (TSOCK_Flags)(~fSOCK_Secure);
             memset(&init, 0, sizeof(init));
             init.data = data;
             init.size = size;
-            init.cred = 0;
+            init.host = net_info->host;
+            init.cred = net_info->credentials;
             *status  = SOCK_CreateOnTopInternal(sock, 0, &s,
                                                 &init, tempf);
             assert(!s ^ !(*status != eIO_Success));
             SOCK_Destroy(sock);
             sock = s;
             if (*status == eIO_Success  &&  tempf != flags) {
-                init.data = 0;
                 init.size = 0;
-                init.cred = net_info->credentials;
                 *status  = SOCK_CreateOnTopInternal(sock, 0, &s,
                                                     &init, flags);
                 assert(!s ^ !(*status != eIO_Success));
@@ -464,10 +461,8 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
     }
     if (!sock  &&  (!proxy  ||  net_info->http_proxy_leak)) {
         TSOCK_Flags tempf = flags;
-        if (size  &&  (flags & fSOCK_Secure)) {
-            tempf &=  fSOCK_LogOn | fSOCK_LogDefault;
-            tempf &=  (TSOCK_Flags)(~fSOCK_Secure);
-        }
+        if (size)
+            tempf &= (TSOCK_Flags)(~fSOCK_Secure);
         if (!proxy  &&  net_info->debug_printout) {
             net_info->scheme = eURL_Unspec;
             net_info->req_method = eReqMethod_Any;
@@ -491,15 +486,14 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
         memset(&init, 0, sizeof(init));
         init.data = data;
         init.size = size;
-        init.cred = 0;
+        init.host = net_info->host;
+        init.cred = net_info->credentials;
         *status = SOCK_CreateInternal(net_info->host, net_info->port,
                                       net_info->timeout, &sock,
                                       &init, tempf);
         assert(!sock ^ !(*status != eIO_Success));
         if (*status == eIO_Success  &&  tempf != flags) {
-            init.data = 0;
             init.size = 0;
-            init.cred = net_info->credentials;
             *status  = SOCK_CreateOnTopInternal(sock, 0, &s,
                                                 &init, flags);
             assert(!s ^ !(*status != eIO_Success));
@@ -584,7 +578,9 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
     assert(n  ||  uuu->extra.adjust);
     assert(!net_info->firewall  ||  net_info->stateless);
 
-    if (!n  ||  n == (unsigned int)(-1))
+    if (n == (unsigned int)(-1))
+        return -1/*no new URL*/;
+    if (!n/*redirect*/)
         return uuu->extra.adjust(net_info, uuu->extra.data, n);
 
     uuu->warned = 1;
