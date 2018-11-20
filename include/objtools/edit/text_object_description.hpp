@@ -38,10 +38,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-NCBI_DLL_IMPORT string GetTextObjectDescription(const objects::CSeq_feat& sf, objects::CScope& scope);
-NCBI_DLL_IMPORT string GetTextObjectDescription(const objects::CSeqdesc& sd, objects::CScope& scope);
-NCBI_DLL_IMPORT string GetTextObjectDescription(const objects::CBioseq& bs, objects::CScope& scope);
-NCBI_DLL_IMPORT string GetTextObjectDescription(const objects::CBioseq_set& bs, objects::CScope& scope);
+NCBI_DLL_IMPORT string GetTextObjectDescription(const CSeq_feat& sf, CScope& scope);
+NCBI_DLL_IMPORT string GetTextObjectDescription(const CSeqdesc& sd, CScope& scope);
+NCBI_DLL_IMPORT string GetTextObjectDescription(const CBioseq& bs, CScope& scope);
+NCBI_DLL_IMPORT string GetTextObjectDescription(const CBioseq_set& bs, CScope& scope);
 
 END_SCOPE(edit)
 END_SCOPE(objects)

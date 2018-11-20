@@ -43,7 +43,6 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
-//#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -140,7 +139,7 @@ static string GetTextObjectDescription(CBioseq_set_Handle bssh)
         }
     }
 
-    return (string)CNcbiOstrstreamToString(result_strm);
+    return CNcbiOstrstreamToString(result_strm);
 }
 
 
