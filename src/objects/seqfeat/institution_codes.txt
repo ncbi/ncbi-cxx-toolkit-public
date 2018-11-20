@@ -1220,7 +1220,8 @@ CNMT	s	Herbario Centro-Norte-Mato-Grossense
 CNPO	s	Embrapa Pecuaria Sul			
 CNPS	s	Centro Nacional de Pesquisas da Soja			
 CNPSo	c	Culture Collection of Diazotrophic and Plant Growth Promoting Bacteria of Embrapa Soja			
-CNR	s	Crimean Natural Reserve			
+CNR	sc	Plant Protection of the National Research Council of Italy			
+CNR<UKR>	s	Crimean Natural Reserve			
 CNRO	s	Centre National de Recherches Oceanographiques			
 CNRS	s	Centre National de la Recherche Scientifique			
 CNRZ	c	Centre National de Recherches Zootechniques			
