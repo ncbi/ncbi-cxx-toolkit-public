@@ -1236,7 +1236,8 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
         AddString( *settings, "OTHER_LDFLAGS", ldlib);
     }
 
-    AddString( *settings, "PRODUCT_NAME", GetTargetName(prj));
+//    AddString( *settings, "PRODUCT_NAME", GetTargetName(prj));
+    AddString( *settings, "PRODUCT_NAME", prj.m_ID);
     if (prj.m_ProjType == CProjKey::eDataSpec || prj.m_ProjType == CProjKey::eMsvc) {
         return;
     }
@@ -1675,6 +1676,13 @@ string CMacProjectGenerator::GetTargetName( const CProjItem& prj)
 {
     if (prj.m_ProjType == CProjKey::eLib) {
         return /*string("lib") +*/ prj.m_ID;
+    }
+    if (prj.m_ProjType == CProjKey::eApp) {
+        CProjKey klib(CProjKey::eLib, prj.m_ID), kdll(CProjKey::eDll, prj.m_ID);
+        if (m_Projects_tree.m_Projects.find(klib) != m_Projects_tree.m_Projects.end() ||
+            m_Projects_tree.m_Projects.find(kdll) != m_Projects_tree.m_Projects.end()) {
+            return string(prj.m_ID) + ".exe";
+        }
     }
     return prj.m_ID;
 }

@@ -149,7 +149,7 @@ private:
     static string GetProjHeaders(  const CProjItem& prj);
     static string GetProjDependency(  const CProjItem& prj);
     static string GetProjContainer(   const CProjItem& prj);
-    static string GetTargetName(   const CProjItem& prj);
+    string GetTargetName(   const CProjItem& prj);
 
     static string GetMachOType(    const CProjItem& prj);
     static string GetProductType(  const CProjItem& prj);
