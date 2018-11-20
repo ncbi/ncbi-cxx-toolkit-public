@@ -632,8 +632,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
 
 /** [SERVER-side]  Create a SOCKet on top of either an OS-dependent "handle"
  * (file descriptor on Unix, SOCKET on MS-Windows) or an existing SOCK object.
- * Returned socket is not reopenable to its default peer (SOCK_Reconnect() may
- * not specify zeros for the connection point).
+ * In the later case, the returned socket is not reopenable to its default peer
+ * (SOCK_Reconnect() may not specify zeros for the connection point).
  * All timeouts are set to default [infinite] values.
  * The call does *not* destroy either the OS handle or the SOCK passed in the
  * arguments, regardless of the return status code.
@@ -643,10 +643,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  * the caller's code to free up the memory it occupies.
  * Any secure session that may have existed in the original SOCK will have
  * been migrated to the new socket iff "flags" indicate fSOCK_Secure (if no
- * session existed, it session may have been initiated in the new SOCK).
+ * session existed, a new session may have been initiated in the new SOCK).
  * Otherwise, the original secure session (if any) will have been closed.
  * Any pending output will have been flushed (if switching secure / insecure
- * contexts; otherwise, it will have simply migrated to the created SOCK), and
+ * contexts;  otherwise, it will have simply migrated to the created SOCK), and
  * any pending input still in the original SOCK will migrate to the new socket
  * object returned.  If this behavior is undesireable, one can use
  * SOCK_GetOSHandleEx() on the original socket, taking the ownership of the
@@ -663,6 +663,10 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Create
  *  (SOCK_IsClientSide() | SOCK_IsServerSide()) can be used to determine if the
  *  original SOCK was stripped off the underlying handle:  the expression would
  *  evaluate to 0(false) iff the SOCK object does not have the OS handle.
+ * @warning
+ *  If a new SOCK is being built from an existing SOCK, then it is assumed that
+ *  the underlying OS handle's properies have not been modified outside that
+ *  old SOCK object (as all system calls to adjust the handle will be skipped).
  * @param handle
  *  [in]  OS-dependent "handle" or SOCK to be converted
  * @param handle_size
