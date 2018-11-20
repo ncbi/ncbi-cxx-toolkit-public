@@ -156,9 +156,10 @@ typedef unsigned TBSOCK_Type;
 
 
 typedef struct {
-    void*     sess;    /* secure session handle, 0 if none            */
-    NCBI_CRED cred;    /* secure session credential(s), 0 if none     */
-    SOCK      sock;    /* sock that the above session handle is using */
+    void*       sess;  /* secure session handle, 0 if none            */
+    NCBI_CRED   cred;  /* secure session credential(s), 0 if none     */
+    SOCK        sock;  /* sock that the above session handle is using */
+    const char* host;  /* hostname for named SSL extension            */
 } SNcbiSSLctx;
 
 
@@ -369,22 +370,23 @@ typedef struct {
     const void* data;
     size_t      size;
     NCBI_CRED   cred;
+    const char* host;
 } SSOCK_Init;
 
 
-EIO_Status SOCK_CreateInternal(const char*     host,
-                               unsigned short  port,
-                               const STimeout* timeout,
-                               SOCK*           sock,
-                               SSOCK_Init*     init,
-                               TSOCK_Flags     flags);
+EIO_Status SOCK_CreateInternal(const char*       host,
+                               unsigned short    port,
+                               const STimeout*   timeout,
+                               SOCK*             sock,
+                               const SSOCK_Init* init,
+                               TSOCK_Flags       flags);
 
 
-EIO_Status SOCK_CreateOnTopInternal(const void* handle,
-                                    size_t      handle_size,
-                                    SOCK*       sock,
-                                    SSOCK_Init* init,
-                                    TSOCK_Flags flags);
+EIO_Status SOCK_CreateOnTopInternal(const void*       handle,
+                                    size_t            handle_size,
+                                    SOCK*             sock,
+                                    const SSOCK_Init* init,
+                                    TSOCK_Flags       flags);
 
 
 /* Addtl socket API for internal use:  if flag != 0 and host is nonexistent,

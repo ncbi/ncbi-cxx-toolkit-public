@@ -135,7 +135,7 @@ extern "C" {
 
 static EIO_Status  s_GnuTlsInit  (FSSLPull pull, FSSLPush push);
 static void*       s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx,
-                                  const char* host, int* error);
+                                  int* error);
 static EIO_Status  s_GnuTlsOpen  (void* session, int* error, char** desc);
 static EIO_Status  s_GnuTlsRead  (void* session,       void* buf,  size_t size,
                                   size_t* done, int* error);
@@ -299,8 +299,7 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
 }
 
 
-static void* s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx,
-                            const char* host, int* error)
+static void* s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
 {
     gnutls_connection_end_t end = (side == eSOCK_Client
                                    ? GNUTLS_CLIENT
@@ -341,7 +340,7 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx,
 
     ConnNetInfo_GetValue(0, "GNUTLS_PRIORITY", val, sizeof(val), 0);
 
-    len = host ? strlen(host) : 0;
+    len = ctx->host ? strlen(ctx->host) : 0;
 
     if ((err = gnutls_set_default_priority(session))                   != 0  ||
 #  if LIBGNUTLS_VERSION_NUMBER >= 0x020200
@@ -361,7 +360,7 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx,
                                       ? ctx->cred->data : xcred))      != 0  ||
         (err = gnutls_credentials_set(session, GNUTLS_CRD_ANON, acred))!= 0  ||
         (len  &&  (err = gnutls_server_name_set(session, GNUTLS_NAME_DNS,
-                                                host, len))            != 0)) {
+                                                ctx->host, len))       != 0)) {
         gnutls_deinit(session);
         *error = err;
         return 0;

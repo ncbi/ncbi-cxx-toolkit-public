@@ -124,7 +124,7 @@ extern "C" {
 
 static EIO_Status  s_MbedTlsInit  (FSSLPull pull, FSSLPush push);
 static void*       s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx,
-                                   const char* host, int* error);
+                                   int* error);
 static EIO_Status  s_MbedTlsOpen  (void* session, int* error, char** desc);
 static EIO_Status  s_MbedTlsRead  (void* session,       void* buf,
                                    size_t size, size_t* done, int* error);
@@ -313,8 +313,7 @@ static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
 }
 
 
-static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx,
-                             const char* host, int* error)
+static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx, int* error)
 {
     int end = (side == eSOCK_Client
                ? MBEDTLS_SSL_IS_CLIENT
@@ -348,9 +347,9 @@ static void* s_MbedTlsCreate(ESOCK_Side side, SNcbiSSLctx* ctx,
     }
     mbedtls_ssl_init(session);
 
-    if ((err = mbedtls_ssl_setup(session, &s_MbedTlsConf)) != 0  ||
-        (host  &&  *host
-         &&  (err = mbedtls_ssl_set_hostname(session, host)) != 0)) {
+    if ((err = mbedtls_ssl_setup(session, &s_MbedTlsConf))        != 0  ||
+        (ctx->host  &&  *ctx->host
+         &&  (err = mbedtls_ssl_set_hostname(session, ctx->host)) != 0)) {
         mbedtls_ssl_free(session);
         free(session);
         *error = err;

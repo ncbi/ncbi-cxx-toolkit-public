@@ -83,9 +83,9 @@ typedef EIO_Status  (*FSSLPush)  (SOCK sock, const void* data, size_t size,
 /* Init SSL layer; called only once and under a lock */
 typedef EIO_Status  (*FSSLInit)  (FSSLPull pull, FSSLPush push);
 
-/* Create session data with "ctx"; "host" can be NULL or "" for no host */
+/* Create session data with "ctx" */
 typedef void*       (*FSSLCreate)(ESOCK_Side side, SNcbiSSLctx* ctx,
-                                  const char* host, int* error);
+                                  int* error);
 
 /* Begin secure session; "desc" can be NULL for no description to return */
 typedef EIO_Status  (*FSSLOpen)  (void* session, int* error, char** desc);
@@ -94,13 +94,13 @@ typedef EIO_Status  (*FSSLOpen)  (void* session, int* error, char** desc);
  * the call must set "*error" to indicate specific problem.  The "*error" may
  * be left unset (and thus, will be ignored) when eIO_Success gets returned. */
 typedef EIO_Status  (*FSSLRead)  (void* session,       void* buf,  size_t size,
-                                  size_t* done,  int* error);
+                                  size_t* done, int* error);
 
 /* See FSSLPush for behavior.  When non-eIO_Success code gets returned,
  * the call must set "*error" to indicate specific problem.  The "*error" may
  * be left unset (and thus, will be ignored) when eIO_Success gets returned. */
 typedef EIO_Status  (*FSSLWrite) (void* session, const void* data, size_t size,
-                                  size_t* done,  int* error);
+                                  size_t* done, int* error);
 
 /* End secure session; "how" is of shutdown(2) and may be ignored */
 typedef EIO_Status  (*FSSLClose) (void* session, int how, int* error);
