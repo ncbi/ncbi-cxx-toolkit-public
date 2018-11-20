@@ -4735,7 +4735,7 @@ static EIO_Status s_CreateOnTop(const void*       handle,
     } else
 #endif /*NCBI_OS_UNIX*/
     {
-        assert(peer.sa.sa_family == AF_INET);
+        assert(x_orig  ||  peer.sa.sa_family == AF_INET);
         x_sock->host   = x_orig ? x_orig->host :       peer.in.sin_addr.s_addr;
         x_sock->port   = x_orig ? x_orig->port : ntohs(peer.in.sin_port);
         assert(x_sock->port);
