@@ -89,10 +89,10 @@ TMgr-DisplayTrackRequest ::= SEQUENCE {
         include-default-tracks BOOLEAN DEFAULT FALSE,
         include-track-items BOOLEAN DEFAULT FALSE,
         expanded-rid-details BOOLEAN DEFAULT FALSE,
+        include-track-hubs BOOLEAN DEFAULT FALSE,
         include-TMS-tracks BOOLEAN DEFAULT TRUE,
         include-user-tracks BOOLEAN DEFAULT TRUE,
         include-remote-tracks BOOLEAN DEFAULT TRUE,
-        include-track-hubs BOOLEAN DEFAULT FALSE,
         use-multiple-containers BOOLEAN DEFAULT FALSE
     } OPTIONAL
 }
