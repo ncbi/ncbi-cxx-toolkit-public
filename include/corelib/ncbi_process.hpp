@@ -423,7 +423,7 @@ public:
         eWrite         ///< Unable to write into the PID file.
     };
 
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
     /// Constructor.
     CPIDGuardException(const CDiagCompileInfo& info,
@@ -435,7 +435,7 @@ public:
         NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CPIDGuardException, CException);
 
 public:
-    virtual void ReportExtra(ostream& out) const
+    virtual void ReportExtra(ostream& out) const override
     {
         out << "pid " << m_PID;
     }
@@ -443,7 +443,7 @@ public:
     TPid GetPID(void) const throw() { return m_PID; }
 
 protected:
-    virtual void x_Assign(const CException& src)
+    virtual void x_Assign(const CException& src) override
     {
         CException::x_Assign(src);
         m_PID = dynamic_cast<const CPIDGuardException&>(src).m_PID;

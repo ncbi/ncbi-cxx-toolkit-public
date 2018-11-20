@@ -246,9 +246,9 @@ public:
     , m_Pos(pos)
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CExprParserException, CException);
 
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
-    virtual void ReportExtra(ostream& out) const;
+    virtual void ReportExtra(ostream& out) const override;
 
 public:
     int GetPos(void) const
@@ -257,7 +257,7 @@ public:
     }
 
 protected:
-    virtual void x_Assign(const CException& src);
+    virtual void x_Assign(const CException& src) override;
 
 private:
     int    m_Pos;

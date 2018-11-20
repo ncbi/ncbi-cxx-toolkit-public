@@ -1213,7 +1213,7 @@ private:                                                                \
     } \
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION_COMMON(exception_class, base_class) \
 public: \
-    virtual const char* GetErrCodeString(void) const \
+    virtual const char* GetErrCodeString(void) const override \
     { \
         switch (GetErrCode()) { \
         case CParent::eErrno: return "eErrno"; \
@@ -1349,7 +1349,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CCoreException, CException);
@@ -1371,7 +1371,7 @@ public:
     };
 
     /// Translate from an error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CInvalidParamException, CException);
@@ -1452,7 +1452,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eErrno: return "eErrno";
@@ -1474,7 +1474,7 @@ public:
     virtual ~CErrnoTemplExceptionEx(void) throw() {}
 
     /// Report error number on stream.
-    virtual void ReportExtra(ostream& out) const
+    virtual void ReportExtra(ostream& out) const override
     {
         out << "errno = " << m_Errno <<  ": " << PErrStr(m_Errno);
     }
@@ -1482,7 +1482,8 @@ public:
     // Attributes.
 
     /// Get type of class.
-    virtual const char* GetType(void) const { return "CErrnoTemplException"; }
+    virtual const char* GetType(void) const override
+        { return "CErrnoTemplException"; }
 
     typedef int TErrCode;
     /// Get error code.
@@ -1517,7 +1518,7 @@ protected:
 
 
     /// Helper clone method.
-    virtual const CException* x_Clone(void) const
+    virtual const CException* x_Clone(void) const override
     {
         return new CErrnoTemplExceptionEx<TBase, PErrCode, PErrStr>(*this);
     }

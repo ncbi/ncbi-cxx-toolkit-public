@@ -4223,7 +4223,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eErr: return "eErr";
@@ -4260,7 +4260,7 @@ public:
     virtual ~CParseTemplException(void) throw() {}
 
     /// Report error position.
-    virtual void ReportExtra(ostream& out) const
+    virtual void ReportExtra(ostream& out) const override
     {
         out << "m_Pos = " << (unsigned long)m_Pos;
     }
@@ -4268,7 +4268,8 @@ public:
     // Attributes.
 
     /// Get exception class type.
-    virtual const char* GetType(void) const { return "CParseTemplException"; }
+    virtual const char* GetType(void) const override
+        { return "CParseTemplException"; }
 
     typedef int TErrCode;
     /// Get error code.
@@ -4302,7 +4303,7 @@ protected:
     }
 
     /// Helper clone method.
-    virtual const CException* x_Clone(void) const
+    virtual const CException* x_Clone(void) const override
     {
         return new CParseTemplException<TBase>(*this);
     }
@@ -4333,7 +4334,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT2(CStringException,

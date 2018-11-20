@@ -137,7 +137,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
     // Standard exception bolier plate code.
     NCBI_EXCEPTION_DEFAULT(CArgException, CCoreException);
@@ -165,7 +165,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
     // Standard exception bolier plate code.
     NCBI_EXCEPTION_DEFAULT(CArgHelpException, CArgException);

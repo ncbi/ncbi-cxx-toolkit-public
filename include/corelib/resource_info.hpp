@@ -346,7 +346,7 @@ public:
         eDecrypt    //< Error decrypting value
     };
 
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch ( GetErrCode() ) {
         case eFileSave: return "eFileSave";
@@ -373,7 +373,7 @@ public:
         eBadVersion    //< Bad API version in the data.
     };
 
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch ( GetErrCode() ) {
         case eMissingKey:   return "eMissingKey";

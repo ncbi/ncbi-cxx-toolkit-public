@@ -494,7 +494,7 @@ public:
         eNoArgs,     //< CUrl contains no arguments
         eFlags       //< Inconsistent flags passed to Adjust()
     };
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch ( GetErrCode() ) {
         case eName:    return "Unknown argument name";
@@ -521,7 +521,7 @@ public:
         eFormat    //< Invalid URL format
     };
 
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eFormat:    return "Url format error";
