@@ -1430,9 +1430,11 @@ bool CModAdder_Impl::x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& des
     const auto& mod_name = x_GetModName(mod_range);
 
     if (mod_name == "fwd-primer-name") {
-        const auto& value = x_GetModValue(mod_range);
         vector<string> names;
-        //x_GetPCRPrimerNames(value, names);
+        for (auto it = mod_range.first; it != mod_range.second; ++it)
+        {
+         //   x_GetPCRPrimerNames(value, names);
+        }
         // number of reactions should be greater than or equal to 
         // the number of names
         auto& pcr_reaction_set = descr_cache.SetPCR_primers();
@@ -1447,8 +1449,55 @@ bool CModAdder_Impl::x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& des
                // x_SetPCRPrimerNames(reaction_names, *it++);
             }
         }
+        return true;
     }
 
+
+    if(mod_name == "rev-primer-name") 
+    {
+        vector<string> names;
+        for (auto it = mod_range.first; it != mod_range.second; ++it) {
+            //x_GetPCRPrimerNames(value, names);
+        }
+        if (!names.empty()) {
+
+            auto& pcr_reaction_set = descr_cache.SetPCR_primers();
+            const size_t num_reactions = pcr_reaction_set.Get().size();
+
+            if (pcr_reaction_set.Get().empty()) {
+                for (auto reaction_names : names) {
+                    auto pPCRReaction = Ref(new CPCRReaction());
+                    pcr_reaction_set.Set().push_back(move(pPCRReaction));
+                }
+                return true;
+            }
+
+
+            const size_t num_names = names.size();
+            if (num_names < num_reactions) {
+                int index = num_names-1;
+                auto it = pcr_reaction_set.Set().rbegin();
+                while(index >= 0) {
+                //    x_SetPrimerNames(names[index--], *(it->SetReverse())++);
+                }
+            }
+            else {
+                int index = num_reactions-1;
+                auto it = pcr_reaction_set.Set().rbegin();
+                while(index >= 0) {
+              //      x_SetPrimerNames(names[index--], (*it->SetReverse())++);
+                }
+               
+                index = num_reactions;
+                while(index <= num_names) {
+                    auto pPCRReaction = Ref(new CPCRReaction());
+              //      x_SetPrimerNames(names[index++], pPCRReaction->SetReverse());
+                }
+            }
+
+            int index = min(num_reactions, num_names) - 1;
+        }
+    }
 
     return false;
 }
