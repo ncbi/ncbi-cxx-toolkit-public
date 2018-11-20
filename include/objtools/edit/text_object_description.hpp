@@ -31,12 +31,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <util/line_reader.hpp>
+#include <objmgr/scope.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/bioseq_handle.hpp>
-#include <objmgr/bioseq_ci.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
