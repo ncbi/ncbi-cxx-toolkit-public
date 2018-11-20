@@ -39,7 +39,7 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/seq/Seqdesc.hpp>
-#include <objects/seqfeat/Biosource.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqloc/Seq_bond.hpp>
