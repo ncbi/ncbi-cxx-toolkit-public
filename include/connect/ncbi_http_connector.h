@@ -195,17 +195,18 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR HTTP_CreateConnector
  *                           error or not) available for reading.
  *
  * - FHTTP_Adjust() gets invoked every time before starting a new "HTTP
- *   micro-session" making a hit when a previous hit has failed;  it is passed
+ *   micro-session" to make a hit when a previous hit has failed;  it is passed
  *   "net_info" as stored within the connector, and the number of previously
  *   unsuccessful consecutive attempts (in the least significant word) since
- *   the connection was opened, pass 0 in that parameter if calling for
- *   redirects (when fHTTP_AdjustOnRedirect was set);  a zero (false) return
- *   value ends the retries;  return 1 if the adjustment was made, or -1 to
- *   indicate no changes but to continue with the request.  This callback is
- *   also invoked when a new request is about to be made for solicitaiton of
- *   new URL for the hit -- in this case return 1 if the SConnNetInfo was
- *   updated with a new parameters; or -1 of no changes were made; or 0 to
- *   stop the request.
+ *   the connector was opened;  it is passed 0 in that parameter if calling for
+ *   a redirect (when fHTTP_AdjustOnRedirect was set).  A zero (false) return
+ *   value ends the retries;  a non-zero continues with the request:  an
+ *   advisory value of greater than 0 means an adjustment was made, and a
+ *   negative value indicates no changes.
+ *   This very same callback is also invoked when a new request is about to be
+ *   made for solicitaiton of new URL for the hit -- in this case return 1 if
+ *   the SConnNetInfo was updated with a new parameters;  or -1 of no changes
+ *   were made;  or 0 to stop the request with an error.
  *
  * - FHTTP_Cleanup() gets called when the connector is about to be destroyed;
  *   "user_data" is guaranteed not to be referenced anymore (so this is a good
