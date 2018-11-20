@@ -1169,7 +1169,7 @@ public:
     using TMods = CModAdder::TMods;
     using TRange = SRangeGetter<TMods>::TRange;
 
-    static void Apply(const TMods& mods, CBioseq& bioseq, 
+    static void Apply(const CModHandler& mod_handler, CBioseq& bioseq, 
             IObjtoolsListener* pMessageListener);
 
 private:
@@ -1248,11 +1248,11 @@ private:
 };
 
 
-void CModAdder_Impl::Apply(const TMods& mods, 
+void CModAdder_Impl::Apply(const CModHandler& mod_handler,
                            CBioseq& bioseq,
                            IObjtoolsListener* pMessageListener)
 {
-    const auto& ranges = SRangeGetter<TMods>::GetEqualRanges(mods);
+    const auto& ranges = SRangeGetter<TMods>::GetEqualRanges(mod_handler.GetMods());
     unique_ptr<CDescrCache> pPrincipalDescrCache(x_CreatePrincipalDescrCache(bioseq));
     unique_ptr<CDescrCache> pBioseqDescrCache(x_CreateBioseqDescrCache(bioseq));
     unique_ptr<CFeatureCache> pFeatureCache;
