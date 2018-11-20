@@ -1042,19 +1042,18 @@ bool CAutoDefModifierCombo::AddQual (bool IsOrgMod, int subtype, bool even_if_no
     if (added) {
         NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {
             vector <CRef<CAutoDefSourceGroup> > tmp = (*it)->RemoveNonMatchingDescriptions();
-            while (!tmp.empty()) {
-                new_groups.push_back (tmp[tmp.size() - 1]);
-                tmp.pop_back();
+            if (!tmp.empty()) {
+                new_groups.insert(new_groups.end(), tmp.begin(), tmp.end());
                 rval = true;
             }
         }
     }
     // NOTE - need to put groups from non-matching descriptions and put them in a new_groups list
     // in order to avoid processing them twice
-    while (!new_groups.empty()) {
-        m_GroupList.push_back (new_groups[new_groups.size() - 1]);
-        new_groups.pop_back();
+    if (!new_groups.empty()) {
+        m_GroupList.insert(m_GroupList.end(), new_groups.begin(), new_groups.end());
     }
+
 
     if (rval || even_if_not_uniquifying) {
         m_Modifiers.push_back (CAutoDefSourceModifierInfo (IsOrgMod, subtype, ""));
@@ -1087,16 +1086,16 @@ vector<CRef<CAutoDefModifierCombo>> CAutoDefModifierCombo::ExpandByAnyPresent()
     vector<CRef<CAutoDefModifierCombo>> expanded;
 
     expanded.clear();
-    NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {
-        if ((*it)->GetSrcList().size() == 1) {
+    for (auto it :m_GroupList) {
+        if (it->GetSrcList().size() == 1) {
             continue;
         }
-        mods = (*it)->GetModifiersPresentForAny();
-        ITERATE (CAutoDefSourceDescription::TModifierVector, mod_it, mods) {
-            expanded.emplace_back (CRef<CAutoDefModifierCombo>(new CAutoDefModifierCombo (this)));
-            if (!expanded[expanded.size() - 1]->AddQual (mod_it->IsOrgMod(), mod_it->GetSubtype())) {
+        mods = it->GetModifiersPresentForAny();
+        for (auto mod_it : mods) {
+            expanded.push_back (CRef<CAutoDefModifierCombo>(new CAutoDefModifierCombo (this)));
+            if (!expanded[expanded.size() - 1]->AddQual (mod_it.IsOrgMod(), mod_it.GetSubtype())) {
                 expanded.pop_back ();
-                RemoveQual(mod_it->IsOrgMod(), mod_it->GetSubtype());
+                RemoveQual(mod_it.IsOrgMod(), mod_it.GetSubtype());
             }
         }
         if (!expanded.empty()) {
