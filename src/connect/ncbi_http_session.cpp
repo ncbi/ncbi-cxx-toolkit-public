@@ -877,7 +877,7 @@ int/*bool*/ CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
     CHttpRequest* req = reinterpret_cast<CHttpRequest*>(user_data);
     _ASSERT(req);
     if (failure_count == (unsigned int)(-1)  &&  !req->m_IsService)
-        return -1;
+        return -1; // no new URL
     CRef<CHttpResponse> resp = req->m_Response;
     _ASSERT(resp);
 
