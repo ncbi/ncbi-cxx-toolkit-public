@@ -117,6 +117,7 @@ class CSeq_annot;
 class CGene_ref;
 class CProt_ref;
 
+
 class CModParser 
 {
 public:
@@ -149,14 +150,90 @@ private:
 };
 
 
+
+class CDescrCache;
+class CFeatureCache;
+
+
 class CModAdder
 {
 public:
     using TMods = CModHandler::TMods;
+    using TIterator = typename TMods::const_iterator;
+    using TRange = pair<TIterator, TIterator>;
 
-    static void Apply(const TMods& mods, CBioseq& bioseq);
+    static void Apply(const CModHandler& mod_handler, CBioseq& bioseq, 
+            IObjtoolsListener* pMessageListener);
+
 private:
+    static const string& x_GetModName(const TRange& mod_range);
+    static const string& x_GetModValue(const TRange& mod_range);
+
+    static bool x_TrySeqInstMod(const TRange& mod_range, CSeq_inst& seq_inst,
+            IObjtoolsListener* pMessageListener);
+    static void x_SetStrand(const TRange& mod_range, CSeq_inst& seq_inst,
+            IObjtoolsListener* pMessageListener);
+    static void x_SetMolecule(const TRange& mod_range, CSeq_inst& seq_inst, 
+            IObjtoolsListener* pMessageListener);
+    static void x_SetTopology(const TRange& mod_range, CSeq_inst& seq_inst,
+            IObjtoolsListener* pMessageListener);
+    static void x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst, 
+            IObjtoolsListener* pMessageListener);
+
+
+    static bool x_TryDescriptorMod(const TRange& mod_range, CDescrCache& descr_cache,
+            IObjtoolsListener* pMessageListener);
+    static bool x_TryBioSourceMod(const TRange& mod_range, CDescrCache& descr_cache,
+            IObjtoolsListener* pMessageListener);
+    static bool x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& descr_cache,
+            IObjtoolsListener* pMessageListener);
+    static bool x_TryOrgRefMod(const TRange& mod_range, CDescrCache& descr_cache,
+            IObjtoolsListener* pMessageListener);
+    static bool x_TryOrgNameMod(const TRange& mod_range, CDescrCache& descr_cache, 
+            IObjtoolsListener* pMessageListener);
+    static void x_SetDBxref(const TRange& mod_range, CDescrCache& descr_cache,
+            IObjtoolsListener* pMessageListener);
+
+    static CDescrCache* x_CreatePrincipalDescrCache(CBioseq& bioseq);
+    static CDescrCache* x_CreateBioseqDescrCache(CBioseq& bioseq);
+
+    static void x_AppendPrimerNames(const string& names, vector<string>& reaction_names);
+    static void x_AppendPrimerSeqs(const string& names, vector<string>& reaction_seqs);
+    static void x_SetPrimerNames(const string& primer_names, CPCRPrimerSet& primer_set);
+    static void x_SetPrimerSeqs(const string& primer_seqs, CPCRPrimerSet& primer_set);
+
+    static void x_SetDBLink(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetGBblockIds(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetGBblockKeywords(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetGenomeProjects(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetTpaAssembly(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetComment(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetPMID(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetDBLinkField(const string& label, const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetDBLinkFieldVals(const string& label, const list<CTempString>& vals, CUser_object& dblink);
+
+    static bool x_TryMolInfoMod(const TRange& mod_range, CDescrCache& descr_cache, 
+            IObjtoolsListener* pMessageListener);
+    static void x_SetMolInfoType(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetMolInfoTech(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetMolInfoCompleteness(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetSubtype(const TRange& mod_range, CDescrCache& descr_cache);
+    static void x_SetOrgMod(const TRange& mod_range, CDescrCache& descr_cache);
+
+    static bool x_TryFeatureMod(const TRange& mod_range, CFeatureCache& feat_cache, 
+            IObjtoolsListener* pMessageListener);
+    static bool x_TryGeneRefMod(const TRange& mod_range, CFeatureCache& gene_ref_cache,
+            IObjtoolsListener* pMessageListener);
+    static bool x_TryProteinRefMod(const TRange& mod_range, CFeatureCache& protein_ref_cache,
+            IObjtoolsListener* pMessageListener);
+
+
+    static void x_ReportError(void){} // Need to fill this in
+    static void x_ReportInvalidValue(const string& mod_name, const string& mod_value,
+            IObjtoolsListener* pMessageListener=nullptr) {}
 };
+
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

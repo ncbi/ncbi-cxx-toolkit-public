@@ -792,9 +792,6 @@ struct SRangeGetter
 };
 
 
-void CModAdder::Apply(const TMods& mods, CBioseq& bioseq) {
-}
-
 
 // Add subtype and subsource references
 class CDescrCache 
@@ -1163,92 +1160,7 @@ CSeqdesc& CDescrCache::x_SetDescriptor(const EChoice eChoice,
 }
 
 
-class CModAdder_Impl 
-{
-public:
-    using TMods = CModAdder::TMods;
-    using TRange = SRangeGetter<TMods>::TRange;
-
-    static void Apply(const CModHandler& mod_handler, CBioseq& bioseq, 
-            IObjtoolsListener* pMessageListener);
-
-private:
-
-    using TDescrContainer = CDescrCache::SDescrContainer;
-
-    static const string& x_GetModName(const TRange& mod_range);
-    static const string& x_GetModValue(const TRange& mod_range);
-
-    static bool x_TrySeqInstMod(const TRange& mod_range, CSeq_inst& seq_inst,
-            IObjtoolsListener* pMessageListener);
-    static void x_SetStrand(const TRange& mod_range, CSeq_inst& seq_inst,
-            IObjtoolsListener* pMessageListener);
-    static void x_SetMolecule(const TRange& mod_range, CSeq_inst& seq_inst, 
-            IObjtoolsListener* pMessageListener);
-    static void x_SetTopology(const TRange& mod_range, CSeq_inst& seq_inst,
-            IObjtoolsListener* pMessageListener);
-    static void x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst, 
-            IObjtoolsListener* pMessageListener);
-
-
-    static bool x_TryDescriptorMod(const TRange& mod_range, CDescrCache& descr_cache,
-            IObjtoolsListener* pMessageListener);
-    static bool x_TryBioSourceMod(const TRange& mod_range, CDescrCache& descr_cache,
-            IObjtoolsListener* pMessageListener);
-    static bool x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& descr_cache,
-            IObjtoolsListener* pMessageListener);
-    static bool x_TryOrgRefMod(const TRange& mod_range, CDescrCache& descr_cache,
-            IObjtoolsListener* pMessageListener);
-    static bool x_TryOrgNameMod(const TRange& mod_range, CDescrCache& descr_cache, 
-            IObjtoolsListener* pMessageListener);
-    static void x_SetDBxref(const TRange& mod_range, CDescrCache& descr_cache,
-            IObjtoolsListener* pMessageListener);
-
-    static CDescrCache* x_CreatePrincipalDescrCache(CBioseq& bioseq);
-    static CDescrCache* x_CreateBioseqDescrCache(CBioseq& bioseq);
-
-
-    static void x_AppendPrimerNames(const string& names, vector<string>& reaction_names);
-    static void x_AppendPrimerSeqs(const string& names, vector<string>& reaction_seqs);
-
-    static void x_SetPrimerNames(const string& primer_names, CPCRPrimerSet& primer_set);
-    static void x_SetPrimerSeqs(const string& primer_seqs, CPCRPrimerSet& primer_set);
-
-    static void x_SetDBLink(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetGBblockIds(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetGBblockKeywords(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetGenomeProjects(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetTpaAssembly(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetComment(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetPMID(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetDBLinkField(const string& label, const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetDBLinkFieldVals(const string& label, const list<CTempString>& vals, CUser_object& dblink);
-
-    static bool x_TryMolInfoMod(const TRange& mod_range, CDescrCache& descr_cache, 
-            IObjtoolsListener* pMessageListener);
-    static void x_SetMolInfoType(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetMolInfoTech(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetMolInfoCompleteness(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetSubtype(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetOrgMod(const TRange& mod_range, CDescrCache& descr_cache);
-
-    static bool x_TryFeatureMod(const TRange& mod_range, CFeatureCache& feat_cache, 
-            IObjtoolsListener* pMessageListener);
-    static bool x_TryGeneRefMod(const TRange& mod_range, CFeatureCache& gene_ref_cache,
-            IObjtoolsListener* pMessageListener);
-    static bool x_TryProteinRefMod(const TRange& mod_range, CFeatureCache& protein_ref_cache,
-            IObjtoolsListener* pMessageListener);
-
-
-
-
-    static void x_ReportError(void){} // Need to fill this in
-    static void x_ReportInvalidValue(const string& mod_name, const string& mod_value,
-            IObjtoolsListener* pMessageListener=nullptr) {}
-};
-
-
-void CModAdder_Impl::Apply(const CModHandler& mod_handler,
+void CModAdder::Apply(const CModHandler& mod_handler,
                            CBioseq& bioseq,
                            IObjtoolsListener* pMessageListener)
 {
@@ -1288,19 +1200,19 @@ void CModAdder_Impl::Apply(const CModHandler& mod_handler,
 }
 
 
-const string& CModAdder_Impl::x_GetModName(const TRange& mod_range) 
+const string& CModAdder::x_GetModName(const TRange& mod_range) 
 {
     return mod_range.first->first;
 }
 
 
-const string& CModAdder_Impl::x_GetModValue(const TRange& mod_range)
+const string& CModAdder::x_GetModValue(const TRange& mod_range)
 {
     return mod_range.first->second.GetValue();
 }
 
 
-bool CModAdder_Impl::x_TrySeqInstMod(const TRange& mod_range, CSeq_inst& seq_inst,
+bool CModAdder::x_TrySeqInstMod(const TRange& mod_range, CSeq_inst& seq_inst,
     IObjtoolsListener* pMessageListener)
 {
     const auto& mod_name = x_GetModName(mod_range);
@@ -1329,9 +1241,9 @@ bool CModAdder_Impl::x_TrySeqInstMod(const TRange& mod_range, CSeq_inst& seq_ins
 }
 
 
-CDescrCache* CModAdder_Impl::x_CreatePrincipalDescrCache(CBioseq& bioseq)
+CDescrCache* CModAdder::x_CreatePrincipalDescrCache(CBioseq& bioseq)
 {
-    unique_ptr<TDescrContainer> pDescrContainer;
+    unique_ptr<CDescrCache::TDescrContainer> pDescrContainer;
     if (bioseq.GetParentSet() &&
         bioseq.GetParentSet()->IsSetClass() &&
         bioseq.GetParentSet()->GetClass() == CBioseq_set::eClass_nuc_prot)
@@ -1345,14 +1257,15 @@ CDescrCache* CModAdder_Impl::x_CreatePrincipalDescrCache(CBioseq& bioseq)
     return new CDescrCache(move(pDescrContainer)); 
 }
 
-CDescrCache* CModAdder_Impl::x_CreateBioseqDescrCache(CBioseq& bioseq)
+
+CDescrCache* CModAdder::x_CreateBioseqDescrCache(CBioseq& bioseq)
 {
-    unique_ptr<TDescrContainer> pDescrContainer(new CDescrContainer<CBioseq>(bioseq));
+    unique_ptr<CDescrCache::TDescrContainer> pDescrContainer(new CDescrContainer<CBioseq>(bioseq));
     return new CDescrCache(move(pDescrContainer)); 
 }
 
 
-bool CModAdder_Impl::x_TryDescriptorMod(const TRange& mod_range, CDescrCache& descr_cache, 
+bool CModAdder::x_TryDescriptorMod(const TRange& mod_range, CDescrCache& descr_cache, 
         IObjtoolsListener* pMessageListener)
 {
      
@@ -1388,7 +1301,8 @@ bool CModAdder_Impl::x_TryDescriptorMod(const TRange& mod_range, CDescrCache& de
     return false;
 }
 
-bool CModAdder_Impl::x_TryBioSourceMod(const TRange& mod_range, CDescrCache& descr_cache,
+
+bool CModAdder::x_TryBioSourceMod(const TRange& mod_range, CDescrCache& descr_cache,
         IObjtoolsListener* pMessageListener)
 {
     const auto& name = x_GetModName(mod_range);
@@ -1440,7 +1354,7 @@ bool CModAdder_Impl::x_TryBioSourceMod(const TRange& mod_range, CDescrCache& des
 
 
 
-void CModAdder_Impl::x_SetPrimerNames(const string& primer_names, CPCRPrimerSet& primer_set)
+void CModAdder::x_SetPrimerNames(const string& primer_names, CPCRPrimerSet& primer_set)
 {
     const auto set_size = primer_set.Get().size();
     vector<string> names;
@@ -1465,7 +1379,7 @@ void CModAdder_Impl::x_SetPrimerNames(const string& primer_names, CPCRPrimerSet&
 }
 
 
-void CModAdder_Impl::x_SetPrimerSeqs(const string& primer_seqs, CPCRPrimerSet& primer_set)
+void CModAdder::x_SetPrimerSeqs(const string& primer_seqs, CPCRPrimerSet& primer_set)
 {
     const auto set_size = primer_set.Get().size();
     vector<string> seqs;
@@ -1490,7 +1404,7 @@ void CModAdder_Impl::x_SetPrimerSeqs(const string& primer_seqs, CPCRPrimerSet& p
 }
 
 
-void CModAdder_Impl::x_AppendPrimerNames(const string& mod, vector<string>& reaction_names)
+void CModAdder::x_AppendPrimerNames(const string& mod, vector<string>& reaction_names)
 {
     vector<string> names;
     NStr::Split(mod, ":", names, NStr::fSplit_Tokenize);
@@ -1498,7 +1412,7 @@ void CModAdder_Impl::x_AppendPrimerNames(const string& mod, vector<string>& reac
 }
 
 
-void CModAdder_Impl::x_AppendPrimerSeqs(const string& mod, vector<string>& reaction_seqs)
+void CModAdder::x_AppendPrimerSeqs(const string& mod, vector<string>& reaction_seqs)
 {
     vector<string> seqs;
     NStr::Split(mod, ",", seqs, NStr::fSplit_Tokenize);
@@ -1514,7 +1428,7 @@ void CModAdder_Impl::x_AppendPrimerSeqs(const string& mod, vector<string>& react
 }
 
 
-bool CModAdder_Impl::x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& descr_cache,
+bool CModAdder::x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& descr_cache,
         IObjtoolsListener* pMessageListener)
 {
     const auto& mod_name = x_GetModName(mod_range);
@@ -1631,7 +1545,7 @@ bool CModAdder_Impl::x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& des
 }
 
 
-bool CModAdder_Impl::x_TryOrgRefMod(const TRange& mod_range, CDescrCache& descr_cache,
+bool CModAdder::x_TryOrgRefMod(const TRange& mod_range, CDescrCache& descr_cache,
         IObjtoolsListener* pMessageListener)
 {
     const auto& name = x_GetModName(mod_range);
@@ -1660,7 +1574,7 @@ bool CModAdder_Impl::x_TryOrgRefMod(const TRange& mod_range, CDescrCache& descr_
 }
 
 
-void CModAdder_Impl::x_SetDBxref(const TRange& mod_range, CDescrCache& descr_cache,
+void CModAdder::x_SetDBxref(const TRange& mod_range, CDescrCache& descr_cache,
         IObjtoolsListener* pMessageListener)
 {   
    vector<CRef<CDbtag>> dbtags;
@@ -1688,7 +1602,7 @@ void CModAdder_Impl::x_SetDBxref(const TRange& mod_range, CDescrCache& descr_cac
 }
 
 
-bool CModAdder_Impl::x_TryOrgNameMod(const TRange& mod_range, CDescrCache& descr_cache, 
+bool CModAdder::x_TryOrgNameMod(const TRange& mod_range, CDescrCache& descr_cache, 
         IObjtoolsListener* pMessageListener)
 {
     const auto& name = x_GetModName(mod_range);
@@ -1741,7 +1655,7 @@ bool CModAdder_Impl::x_TryOrgNameMod(const TRange& mod_range, CDescrCache& descr
 }
 
 
-void CModAdder_Impl::x_SetSubtype(const TRange& mod_range, CDescrCache& descr_cache)
+void CModAdder::x_SetSubtype(const TRange& mod_range, CDescrCache& descr_cache)
 {
     if (mod_range.first == mod_range.second) {
         return;
@@ -1755,7 +1669,7 @@ void CModAdder_Impl::x_SetSubtype(const TRange& mod_range, CDescrCache& descr_ca
 }
 
 
-void CModAdder_Impl::x_SetOrgMod(const TRange& mod_range, CDescrCache& descr_cache)
+void CModAdder::x_SetOrgMod(const TRange& mod_range, CDescrCache& descr_cache)
 {
     if (mod_range.first == mod_range.second) {
         return ;
@@ -1769,7 +1683,7 @@ void CModAdder_Impl::x_SetOrgMod(const TRange& mod_range, CDescrCache& descr_cac
 }
 
 
-bool CModAdder_Impl::x_TryMolInfoMod(const TRange& mod_range, CDescrCache& descr_cache,
+bool CModAdder::x_TryMolInfoMod(const TRange& mod_range, CDescrCache& descr_cache,
         IObjtoolsListener* pMessageListener)
 {
     const auto& name = x_GetModName(mod_range);
@@ -1790,7 +1704,7 @@ bool CModAdder_Impl::x_TryMolInfoMod(const TRange& mod_range, CDescrCache& descr
     return false;
 }
 
-void CModAdder_Impl::x_SetMolInfoType(const TRange& mod_range, CDescrCache& descr_cache)
+void CModAdder::x_SetMolInfoType(const TRange& mod_range, CDescrCache& descr_cache)
 {
     _ASSERT(distance(mod_range.first, mod_range.second)==1);
     const auto& value = x_GetModValue(mod_range);
@@ -1805,7 +1719,7 @@ void CModAdder_Impl::x_SetMolInfoType(const TRange& mod_range, CDescrCache& desc
 }
 
 
-void CModAdder_Impl::x_SetMolInfoTech(const TRange& mod_range, CDescrCache& descr_cache)
+void CModAdder::x_SetMolInfoTech(const TRange& mod_range, CDescrCache& descr_cache)
 {
     _ASSERT(distance(mod_range.first, mod_range.second)==1);
     const auto& value = x_GetModValue(mod_range);
@@ -1820,7 +1734,7 @@ void CModAdder_Impl::x_SetMolInfoTech(const TRange& mod_range, CDescrCache& desc
 }
 
 
-void CModAdder_Impl::x_SetMolInfoCompleteness(const TRange& mod_range, CDescrCache& descr_cache)
+void CModAdder::x_SetMolInfoCompleteness(const TRange& mod_range, CDescrCache& descr_cache)
 {
     _ASSERT(distance(mod_range.first, mod_range.second)==1);
     const auto& value = x_GetModValue(mod_range);
@@ -1835,7 +1749,7 @@ void CModAdder_Impl::x_SetMolInfoCompleteness(const TRange& mod_range, CDescrCac
 }
 
 
-void CModAdder_Impl::x_SetTpaAssembly(const TRange& mod_range, CDescrCache& descr_cache)
+void CModAdder::x_SetTpaAssembly(const TRange& mod_range, CDescrCache& descr_cache)
 {
     list<CStringUTF8> accession_list;
     for (auto it = mod_range.first; it != mod_range.second; ++it) {
@@ -1862,7 +1776,7 @@ void CModAdder_Impl::x_SetTpaAssembly(const TRange& mod_range, CDescrCache& desc
 }
 
 
-void CModAdder_Impl::x_SetGenomeProjects(const TRange& mod_range, CDescrCache& descr_cache)
+void CModAdder::x_SetGenomeProjects(const TRange& mod_range, CDescrCache& descr_cache)
 {
     list<int> id_list;
     for (auto it = mod_range.first; it != mod_range.second; ++it) {
@@ -1892,7 +1806,7 @@ void CModAdder_Impl::x_SetGenomeProjects(const TRange& mod_range, CDescrCache& d
 }
 
 
-void CModAdder_Impl::x_SetGBblockIds(const TRange& mod_range, CDescrCache& descr_cache)
+void CModAdder::x_SetGBblockIds(const TRange& mod_range, CDescrCache& descr_cache)
 {
     list<string> id_list;
     for (auto it = mod_range.first; it != mod_range.second; ++it) {
@@ -1916,7 +1830,7 @@ void CModAdder_Impl::x_SetGBblockIds(const TRange& mod_range, CDescrCache& descr
 }
 
 
-void CModAdder_Impl::x_SetGBblockKeywords(const TRange& mod_range, CDescrCache& descr_cache)
+void CModAdder::x_SetGBblockKeywords(const TRange& mod_range, CDescrCache& descr_cache)
 {
     list<CTempString> value_list;
     for (auto it = mod_range.first; it != mod_range.second; ++it) {
@@ -1929,7 +1843,7 @@ void CModAdder_Impl::x_SetGBblockKeywords(const TRange& mod_range, CDescrCache& 
 }
 
 
-void CModAdder_Impl::x_SetComment(const TRange& mod_range,
+void CModAdder::x_SetComment(const TRange& mod_range,
                                   CDescrCache& descr_cache)
 
 {
@@ -1941,7 +1855,7 @@ void CModAdder_Impl::x_SetComment(const TRange& mod_range,
 }
 
 
-void CModAdder_Impl::x_SetPMID(const TRange& mod_range,
+void CModAdder::x_SetPMID(const TRange& mod_range,
                                CDescrCache& descr_cache) 
 {
     for (auto it = mod_range.first; it != mod_range.second; ++it)
@@ -1964,7 +1878,7 @@ void CModAdder_Impl::x_SetPMID(const TRange& mod_range,
 }
 
 
-void CModAdder_Impl::x_SetDBLink(const TRange& mod_range, 
+void CModAdder::x_SetDBLink(const TRange& mod_range, 
                                  CDescrCache& descr_cache) 
 {
     const auto& name = x_GetModName(mod_range);
@@ -1978,7 +1892,7 @@ void CModAdder_Impl::x_SetDBLink(const TRange& mod_range,
 }
 
 
-void CModAdder_Impl::x_SetDBLinkField(const string& label,
+void CModAdder::x_SetDBLinkField(const string& label,
                                       const TRange& mod_range,
                                       CDescrCache& descr_cache)
 {
@@ -1992,7 +1906,7 @@ void CModAdder_Impl::x_SetDBLinkField(const string& label,
 }
 
 
-void CModAdder_Impl::x_SetDBLinkFieldVals(const string& label,
+void CModAdder::x_SetDBLinkFieldVals(const string& label,
                                           const list<CTempString>& vals,
                                           CUser_object& dblink)
 {
@@ -2023,7 +1937,7 @@ void CModAdder_Impl::x_SetDBLinkFieldVals(const string& label,
 }
 
 
-void CModAdder_Impl::x_SetStrand(const TRange& mod_range, CSeq_inst& seq_inst,
+void CModAdder::x_SetStrand(const TRange& mod_range, CSeq_inst& seq_inst,
         IObjtoolsListener* pMessageListener)
 {
     const auto& value = x_GetModValue(mod_range);
@@ -2036,7 +1950,7 @@ void CModAdder_Impl::x_SetStrand(const TRange& mod_range, CSeq_inst& seq_inst,
 }
 
 
-void CModAdder_Impl::x_SetMolecule(const TRange& mod_range, CSeq_inst& seq_inst,
+void CModAdder::x_SetMolecule(const TRange& mod_range, CSeq_inst& seq_inst,
         IObjtoolsListener* pMessageListener)
 {
     auto mol = s_MolStringToEnum.at(x_GetModValue(mod_range));
@@ -2044,7 +1958,7 @@ void CModAdder_Impl::x_SetMolecule(const TRange& mod_range, CSeq_inst& seq_inst,
 }
 
 
-void CModAdder_Impl::x_SetTopology(const TRange& mod_range, CSeq_inst& seq_inst, 
+void CModAdder::x_SetTopology(const TRange& mod_range, CSeq_inst& seq_inst, 
         IObjtoolsListener* pMessageListener)
 {
     auto topology = s_TopologyStringToEnum.at(x_GetModValue(mod_range));
@@ -2052,7 +1966,7 @@ void CModAdder_Impl::x_SetTopology(const TRange& mod_range, CSeq_inst& seq_inst,
 }
 
 
-void CModAdder_Impl::x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst,
+void CModAdder::x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst,
         IObjtoolsListener* pMessageListener) 
 {
     list<string> id_list;
@@ -2085,7 +1999,7 @@ void CModAdder_Impl::x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst,
 }
 
 
-bool CModAdder_Impl::x_TryFeatureMod(const TRange& mod_range, CFeatureCache& feat_cache,
+bool CModAdder::x_TryFeatureMod(const TRange& mod_range, CFeatureCache& feat_cache,
         IObjtoolsListener* pMessageListener)
 {
     if (dynamic_cast<CGene_ref*>(&feat_cache)) {
@@ -2101,7 +2015,7 @@ bool CModAdder_Impl::x_TryFeatureMod(const TRange& mod_range, CFeatureCache& fea
 }
 
 
-bool CModAdder_Impl::x_TryGeneRefMod(const TRange& mod_range, CFeatureCache& feat_cache,
+bool CModAdder::x_TryGeneRefMod(const TRange& mod_range, CFeatureCache& feat_cache,
         IObjtoolsListener* pMessageListener)
 {
     const auto& name = x_GetModName(mod_range);
@@ -2137,7 +2051,7 @@ bool CModAdder_Impl::x_TryGeneRefMod(const TRange& mod_range, CFeatureCache& fea
 }
 
 
-bool CModAdder_Impl::x_TryProteinRefMod(const TRange& mod_range, CFeatureCache& feat_cache,
+bool CModAdder::x_TryProteinRefMod(const TRange& mod_range, CFeatureCache& feat_cache,
         IObjtoolsListener* pMessageListener)
 {
     const auto& mod_name = x_GetModName(mod_range);
