@@ -115,11 +115,10 @@ CBlobRecord& CBlobRecord::SetId2Info(string const & value)
     return *this;
 }
 
-CBlobRecord& CBlobRecord::SetId2Info(int16_t sat, int32_t shell, int32_t info, int32_t chunks)
+CBlobRecord& CBlobRecord::SetId2Info(int16_t sat, int32_t info, int32_t chunks)
 {
     if (sat > 0) {
         m_Id2Info = NStr::NumericToString(sat) + "." +
-            NStr::NumericToString(shell) + "." +
             NStr::NumericToString(info) + "." +
             NStr::NumericToString(chunks);
     }

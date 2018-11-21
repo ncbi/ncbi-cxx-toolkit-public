@@ -33,6 +33,10 @@
 
 #include <ncbi_pch.hpp>
 
+#include <memory>
+#include <string>
+#include <utility>
+
 #include "insert_extended.hpp"
 
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
@@ -99,7 +103,7 @@ void CCassBlobTaskInsertExtended::Wait1()
             case eWaitingChunksInserted: {
                 bool anyrunning = false;
                 int i = 0;
-                for (auto qry: m_QueryArr) {
+                for (auto qry : m_QueryArr) {
                     if (qry->IsActive()) {
                         if (!CheckReady(qry, eInsertChunks, &b_need_repeat)) {
                             if (b_need_repeat) {
@@ -148,37 +152,41 @@ void CCassBlobTaskInsertExtended::Wait1()
                 qry->BindInt64(1, m_Blob->GetModified());
                 qry->BindInt16(2, m_Blob->GetClass());
 
-                if (m_Blob->GetDateAsn1() == 0)
+                if (m_Blob->GetDateAsn1() == 0) {
                     qry->BindNull(3);
-                else
+                } else {
                     qry->BindInt64(3, m_Blob->GetDateAsn1());
+                }
 
-                if (m_Blob->GetDiv().empty())
+                if (m_Blob->GetDiv().empty()) {
                     qry->BindNull(4);
-                else
+                } else {
                     qry->BindStr(4, m_Blob->GetDiv());
+                }
 
                 qry->BindInt64(5, m_Blob->GetFlags());
 
-                if (m_Blob->GetHupDate() == 0)
+                if (m_Blob->GetHupDate() == 0) {
                     qry->BindNull(6);
-                else
+                } else {
                     qry->BindInt64(6, m_Blob->GetHupDate());
+                }
 
-                if (m_Blob->GetId2Info().empty())
+                if (m_Blob->GetId2Info().empty()) {
                     qry->BindNull(7);
-                else
+                } else {
                     qry->BindStr(7, m_Blob->GetId2Info());
+                }
 
                 qry->BindInt32(8, m_Blob->GetNChunks());
                 qry->BindInt32(9, m_Blob->GetOwner());
                 qry->BindInt64(10, m_Blob->GetSize());
                 qry->BindInt64(11, m_Blob->GetSizeUnpacked());
-                if (m_Blob->GetUserName().empty())
+                if (m_Blob->GetUserName().empty()) {
                     qry->BindNull(12);
-                else
+                } else {
                     qry->BindStr(12, m_Blob->GetUserName());
-
+                }
 
                 UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
@@ -189,8 +197,7 @@ void CCassBlobTaskInsertExtended::Wait1()
             case eWaitingPropsInserted: {
                 if (!CheckReady(m_QueryArr[0], eInsertProps, &b_need_repeat)) {
                     if (b_need_repeat) {
-                        ERR_POST(Info << "Restart stUpdatingFlags key=" <<
-                                 m_Keyspace << "." << m_Key);
+                        ERR_POST(Info << "Restart stUpdatingFlags key=" << m_Keyspace << "." << m_Key);
                     }
                     break;
                 }
