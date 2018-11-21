@@ -684,6 +684,7 @@ static void x_ShowDataLayout(void)
         "    Sizeof(SOCK_struct) = %u, offsets (sizes) follow\n"
         "\tsock:      %3u (%u)\n"
         "\tid:        %3u (%u)\n"
+        "\terr:       %3u (%u)\n"
         "\tisset:     %3u (%u)\n"
         "\thost:      %3u (%u)\n"
         "\tport:      %3u (%u)\n"
@@ -715,6 +716,7 @@ static void x_ShowDataLayout(void)
 #    define SOCK_SHOWDATALAYOUT_PARAMS              \
         infof(SOCK_struct,    sock),                \
         infof(SOCK_struct,    id),                  \
+        infof(SOCK_struct,    err),                 \
         infof(TRIGGER_struct, isset),               \
         infof(SOCK_struct,    host),                \
         infof(SOCK_struct,    port),                \
@@ -739,6 +741,7 @@ static void x_ShowDataLayout(void)
 #    define SOCK_SHOWDATALAYOUT_PARAMS              \
         infof(SOCK_struct,    sock),                \
         infof(SOCK_struct,    id),                  \
+        infof(SOCK_struct,    err),                 \
         infof(TRIGGER_struct, isset),               \
         infof(SOCK_struct,    host),                \
         infof(SOCK_struct,    port),                \
@@ -2725,8 +2728,11 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                     sock->pending = 0/*false*/;
                     if (want_desc) {
                         CORE_LOGF(eLOG_Trace,
-                                  ("%sSSL session created%s%s",
+                                  ("%sSSL session created%s%s%s%s%s",
                                    s_ID(sock, _id),
+                                   sock->sslctx->host? " \""              : "",
+                                   sock->sslctx->host? sock->sslctx->host : "",
+                                   &"\""[!sock->sslctx->host],
                                    &" "[!desc], desc ? desc : ""));
                         if (desc)
                             free(desc);
@@ -4162,7 +4168,7 @@ static EIO_Status s_Connect_(SOCK            sock,
 #  endif /*HAVE_SIN_LEN*/
         addr.un.sun_family = AF_UNIX;
         memcpy(addr.un.sun_path, sock->path, pathlen);
-        assert(!sock->port);
+        assert(!sock->port  &&  !port);
     } else
 #endif /*NCBI_OS_UNIX*/
     {
@@ -4415,12 +4421,20 @@ static EIO_Status s_Connect(SOCK            sock,
         memset(&info, 0, sizeof(info));
         info.type = eSOCK_ErrIO;
         info.sock = sock;
-        if (sock->host) {
-            SOCK_ntoa(sock->host, addr, sizeof(addr));
-            info.host = addr;
+        if (!host) {
+#ifdef NCBI_OS_UNIX
+            if (sock->path[0]) {
+                assert(!sock->port  &&  !port);
+                info.host = sock->path;
+            } else
+#endif /*NCBI_OS_UNIX*/
+            {
+                SOCK_ntoa(sock->host, addr, sizeof(addr));
+                info.host = addr;
+            }
         } else
             info.host = host;
-        info.port = port;
+        info.port = port ? port : sock->port;
         info.event = eIO_Open;
         info.status = status;
         s_ErrorCallback(&info);
@@ -4820,8 +4834,15 @@ static EIO_Status s_CreateOnTop(const void*       handle,
                 return eIO_NotSupported;
             }
         } else {
-            CORE_LOGF(eLOG_Trace,
-                      ("%sSSL session re-acquired", s_ID(x_sock, _id)));
+            if (x_sock->log == eOn
+                ||  (x_sock->log == eDefault  &&  s_Log == eOn)) {
+                CORE_LOGF(eLOG_Trace,
+                          ("%sSSL session re-acquired%s%s%s",
+                           s_ID(x_sock, _id),
+                           sslctx->host ? " \""        : "",
+                           sslctx->host ? sslctx->host : "",
+                           &"\""[!sslctx->host]));
+            }
             x_sock->pending = x_orig->pending;
         }
     }
@@ -7794,10 +7815,24 @@ extern EIO_Status DSOCK_WaitMsg(SOCK sock, const STimeout* timeout)
     poll.revent = eIO_Open;
     status = s_Select(1, &poll, s_to2tv(timeout, &tv), 1/*asis*/);
     assert(poll.event == eIO_Read);
-    if (status != eIO_Success  ||  poll.revent == eIO_Read)
-        return status;
-    assert(poll.revent == eIO_Close);
-    return eIO_Unknown;
+    if (status == eIO_Success  &&  poll.revent != eIO_Read) {
+        assert(poll.revent == eIO_Close);
+        status = eIO_Unknown;
+    }
+    if (s_ErrHook  &&  status != eIO_Success  &&  status != eIO_Timeout) {
+        SSOCK_ErrInfo info;
+        char          addr[40];
+        memset(&info, 0, sizeof(info));
+        info.type = eSOCK_ErrIO;
+        info.sock = sock;
+        SOCK_ntoa(sock->host, addr, sizeof(addr));
+        info.host =       addr;
+        info.port = sock->port;
+        info.event = eIO_Read;
+        info.status = status;
+        s_ErrorCallback(&info);
+    }
+    return status;
 }
 
 

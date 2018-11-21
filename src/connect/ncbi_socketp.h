@@ -168,6 +168,7 @@ typedef struct {
 typedef struct TRIGGER_tag {
     TRIGGER_Handle     fd;      /* OS-specific trigger handle                */
     unsigned int       id;      /* the internal ID (cf. "s_ID_Counter")      */
+    int                err;     /* Last OS error                             */
 
     union {
         volatile void* ptr;     /* trigger state (UNIX only, otherwise MBZ)  */
@@ -208,6 +209,7 @@ typedef unsigned EBSOCK_Side;
 typedef struct LSOCK_tag {
     TSOCK_Handle     sock;      /* OS-specific socket handle                 */
     unsigned int     id;        /* the internal ID (see also "s_ID_Counter") */
+    int              err;       /* Last OS error                             */
 
     unsigned int     n_accept;  /* total number of accepted clients          */
     unsigned short   away;      /* MSWIN: run-away connect warning counter   */
@@ -249,6 +251,7 @@ typedef struct LSOCK_tag {
 typedef struct SOCK_tag {
     TSOCK_Handle     sock;      /* OS-specific socket handle                 */
     unsigned int     id;        /* the internal ID (see also "s_ID_Counter") */
+    int              err;       /* Last OS error                             */
 
     /* connection point */
     unsigned int     host;      /* peer host (network byte order)            */
@@ -286,7 +289,7 @@ typedef struct SOCK_tag {
     WSAEVENT         event;     /* event bound to I/O                        */
 #endif /*!NCBI_OS_MSWIN*/
 
-    SNcbiSSLctx*     sslctx;    /* secure session context if used, else 0    */
+    SNcbiSSLctx*     sslctx;    /* secure session context if SSL's on, else 0*/
 
     /* timeouts */
     struct timeval   r_tv;      /* finite read  timeout value                */

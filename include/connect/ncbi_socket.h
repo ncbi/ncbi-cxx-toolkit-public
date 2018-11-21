@@ -1812,7 +1812,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
  *  To stop  logging the data, call this func with "log" == eOff.
  *  To get current log switch, call this func with "log" == eDefault.
  * @return
- *  Prior setting
+ *  Prior (or current, if "log" is eDefault) setting
  * @sa
  *  SOCK_SetDataLogging
  */
@@ -1839,18 +1839,21 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLogging
  );
 
 
+/*  User-level error hook.
+ */
+
 typedef enum {
-    eSOCK_ErrInit = 1,
-    eSOCK_ErrDns,
-    eSOCK_ErrIO
+    eSOCK_ErrInit = 1,      /**< Socket layer initialization error           */
+    eSOCK_ErrDns,           /**< DNS-related error (unresolvable hostname)   */
+    eSOCK_ErrIO             /**< I/O-related error                           */
 } ESOCK_ErrType;
 
 
 typedef struct {
     ESOCK_ErrType  type;
-    SOCK           sock;    /**< Non-null when SOCK-related                  */
+    SOCK           sock;    /**< Non-NULL when SOCK-related                  */
     const char*    host;    /**< Host name/IP (or path for non-IP SOCK)      */
-    unsigned short port;    /**< Port = 0 for non-IP SOCK                    */
+    unsigned short port;    /**< Port (host byte order), 0 for non-IP SOCK   */
     EIO_Event      event;   /**< Meaningful only for eSOCK_ErrIO             */
     EIO_Status     status;  /**< Status code about to be returned (if known) */
 } SSOCK_ErrInfo;
