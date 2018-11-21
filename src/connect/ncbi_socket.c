@@ -203,7 +203,7 @@
 #endif
 
 #ifndef   abs
-#  define abs(a)              ((a) < 0 ? -(a) : 0)
+#  define abs(a)              ((a) < 0 ? -(a) : (a))
 #endif /*!abs*/
 
 #define MAXIDLEN              80
@@ -4059,6 +4059,7 @@ static EIO_Status s_Close(SOCK sock, int/*bool*/ reclose, TSOCK_Keep keep)
 {
     EIO_Status status;
 
+    assert(!reclose  ||  !keep);
     status = s_Close_(sock, reclose << 1, keep);
     if (s_ErrHook  &&  status != eIO_Success) {
         SSOCK_ErrInfo info;
