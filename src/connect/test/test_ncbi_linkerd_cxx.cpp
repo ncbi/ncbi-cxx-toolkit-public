@@ -429,6 +429,7 @@ private:
     int ProcessResponse(CHttpResponse& resp, const string& expected);
 
     void TestCaseLine(
+        int id,
         const string& header,
         const string& footer,
         const string& prefix,
@@ -439,22 +440,24 @@ private:
         const string& method,
         const string& url);
     void TestCaseStart(
+        int id,
         const string& test_case,
         const string& method,
         const string& url);
     void TestCaseEnd(
+        int id,
         const string& test_case,
         const string& method,
         int           result,
         const string& url);
 
-    int TestGet_Http      (const STest& test);
-    int TestGet_HttpStream(const STest& test);
-    int TestGet_NewRequest(const STest& test);
+    int TestGet_Http      (int id, const STest& test);
+    int TestGet_HttpStream(int id, const STest& test);
+    int TestGet_NewRequest(int id, const STest& test);
 
-    int TestPost_Http      (const STest& test);
-    int TestPost_HttpStream(const STest& test);
-    int TestPost_NewRequest(const STest& test);
+    int TestPost_Http      (int id, const STest& test);
+    int TestPost_HttpStream(int id, const STest& test);
+    int TestPost_NewRequest(int id, const STest& test);
 
 private:
     char                m_Hostname[300];
@@ -624,6 +627,7 @@ int CTestNcbiLinkerdCxxApp::ProcessResponse(CHttpResponse& resp, const string& e
 
 
 void CTestNcbiLinkerdCxxApp::TestCaseLine(
+    int id,
     const string& header,
     const string& footer,
     const string& prefix,
@@ -635,8 +639,9 @@ void CTestNcbiLinkerdCxxApp::TestCaseLine(
     const string& url)
 {
     string msg("\n");
-    msg += header + prefix + sep + m_Hostname + sep + url + sep + test_case;
-    msg += sep + method + sep + m_MapperName;
+    msg += header + prefix + sep + NStr::NumericToString<int>(id) + sep +
+           m_Hostname + sep + url + sep + test_case + sep +
+           method + sep + m_MapperName;
     if (show_result)
         msg += sep + (result == 0 ? "PASS" : "FAIL");
     msg += footer + "\n";
@@ -645,12 +650,13 @@ void CTestNcbiLinkerdCxxApp::TestCaseLine(
 
 
 void CTestNcbiLinkerdCxxApp::TestCaseStart(
+    int id,
     const string& test_case,
     const string& method,
     const string& url)
 {
     TestCaseLine(
-        string(80, '=') + "\n", "",
+        id, string(80, '=') + "\n", "",
         "TestCaseStart", "\t",
         false, -1,
         test_case, method, url);
@@ -660,33 +666,34 @@ void CTestNcbiLinkerdCxxApp::TestCaseStart(
 // Result records can easily be transformed into a CSV.  For example:
 //      ./test_ncbi_linkerd_cxx | grep -P '^TestCaseEnd\t' | tr '\t' ,
 void CTestNcbiLinkerdCxxApp::TestCaseEnd(
+    int id,
     const string& test_case,
     const string& method,
     int           result,
     const string& url)
 {
     TestCaseLine(
-        "", string("\n") + string(80, '-') + "\n",
+        id, "", string("\n") + string(80, '-') + "\n",
         "TestCaseEnd", "\t",
         true, result,
         test_case, method, url);
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestGet_Http(const STest& test)
+int CTestNcbiLinkerdCxxApp::TestGet_Http(int id, const STest& test)
 {
-    TestCaseStart("g_HttpGet", "GET", test.url);
+    TestCaseStart(id, "g_HttpGet", "GET", test.url);
     CHttpResponse resp = g_HttpGet(CUrl(test.url));
     int result = ProcessResponse(resp, test.expected);
-    TestCaseEnd("g_HttpGet", "GET", result, test.url);
+    TestCaseEnd(id, "g_HttpGet", "GET", result, test.url);
     return result;
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestGet_HttpStream(const STest& test)
+int CTestNcbiLinkerdCxxApp::TestGet_HttpStream(int id, const STest& test)
 {
     int retval = 1;
-    TestCaseStart("CConn_HttpStream", "GET", test.url);
+    TestCaseStart(id, "CConn_HttpStream", "GET", test.url);
     try {
         CConn_HttpStream httpstr(test.url);
         CConn_MemoryStream mem_str;
@@ -698,39 +705,39 @@ int CTestNcbiLinkerdCxxApp::TestGet_HttpStream(const STest& test)
     catch (CException& ex) {
         ERR_POST(Error << "HttpStream exception: " << ex.what());
     }
-    TestCaseEnd("CConn_HttpStream", "GET", retval, test.url);
+    TestCaseEnd(id, "CConn_HttpStream", "GET", retval, test.url);
     return retval;
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestGet_NewRequest(const STest& test)
+int CTestNcbiLinkerdCxxApp::TestGet_NewRequest(int id, const STest& test)
 {
-    TestCaseStart("CHttpSession::NewRequest", "GET", test.url);
+    TestCaseStart(id, "CHttpSession::NewRequest", "GET", test.url);
     CHttpSession session;
     CHttpRequest req = session.NewRequest(CUrl(test.url));
     req.SetTimeout(10);
     req.SetRetries(3);
     CHttpResponse resp = req.Execute();
     int result = ProcessResponse(resp, test.expected);
-    TestCaseEnd("CHttpSession::NewRequest", "GET", result, test.url);
+    TestCaseEnd(id, "CHttpSession::NewRequest", "GET", result, test.url);
     return result;
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestPost_Http(const STest& test)
+int CTestNcbiLinkerdCxxApp::TestPost_Http(int id, const STest& test)
 {
-    TestCaseStart("g_HttpPost", "POST", test.url);
+    TestCaseStart(id, "g_HttpPost", "POST", test.url);
     CHttpResponse resp = g_HttpPost(CUrl(test.url), test.post);
     int result = ProcessResponse(resp, test.expected);
-    TestCaseEnd("g_HttpPost", "POST", result, test.url);
+    TestCaseEnd(id, "g_HttpPost", "POST", result, test.url);
     return result;
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestPost_HttpStream(const STest& test)
+int CTestNcbiLinkerdCxxApp::TestPost_HttpStream(int id, const STest& test)
 {
     int retval = 1;
-    TestCaseStart("CConn_HttpStream", "POST", test.url);
+    TestCaseStart(id, "CConn_HttpStream", "POST", test.url);
     try {
         CConn_HttpStream httpstr(test.url, eReqMethod_Post);
         httpstr << test.post;
@@ -743,14 +750,14 @@ int CTestNcbiLinkerdCxxApp::TestPost_HttpStream(const STest& test)
     catch (CException& ex) {
         ERR_POST(Error << "HttpStream exception: " << ex.what());
     }
-    TestCaseEnd("CConn_HttpStream", "POST", retval, test.url);
+    TestCaseEnd(id, "CConn_HttpStream", "POST", retval, test.url);
     return retval;
 }
 
 
-int CTestNcbiLinkerdCxxApp::TestPost_NewRequest(const STest& test)
+int CTestNcbiLinkerdCxxApp::TestPost_NewRequest(int id, const STest& test)
 {
-    TestCaseStart("CHttpSession::NewRequest", "POST", test.url);
+    TestCaseStart(id, "CHttpSession::NewRequest", "POST", test.url);
     CHttpSession session;
     CHttpRequest req = session.NewRequest(CUrl(test.url), CHttpSession::ePost);
     req.SetTimeout(10);
@@ -758,7 +765,7 @@ int CTestNcbiLinkerdCxxApp::TestPost_NewRequest(const STest& test)
     req.ContentStream() << test.post;
     CHttpResponse resp = req.Execute();
     int result = ProcessResponse(resp, test.expected);
-    TestCaseEnd("CHttpSession::NewRequest", "POST", result, test.url);
+    TestCaseEnd(id, "CHttpSession::NewRequest", "POST", result, test.url);
     return result;
 }
 
@@ -793,12 +800,12 @@ int CTestNcbiLinkerdCxxApp::Run(void)
 #endif
         SelectMapper(test.mapper);
         int result = 1;
-             if (test.func == eHttpGet)         result = TestGet_Http(test);
-        else if (test.func == eHttpPost)        result = TestPost_Http(test);
-        else if (test.func == eHttpStreamGet)   result = TestGet_HttpStream(test);
-        else if (test.func == eHttpStreamPost)  result = TestPost_HttpStream(test);
-        else if (test.func == eNewRequestGet)   result = TestGet_NewRequest(test);
-        else if (test.func == eNewRequestPost)  result = TestPost_NewRequest(test);
+             if (test.func == eHttpGet)         result = TestGet_Http(num_run, test);
+        else if (test.func == eHttpPost)        result = TestPost_Http(num_run, test);
+        else if (test.func == eHttpStreamGet)   result = TestGet_HttpStream(num_run, test);
+        else if (test.func == eHttpStreamPost)  result = TestPost_HttpStream(num_run, test);
+        else if (test.func == eNewRequestGet)   result = TestGet_NewRequest(num_run, test);
+        else if (test.func == eNewRequestPost)  result = TestPost_NewRequest(num_run, test);
         else
             NCBI_USER_THROW("Invalid test function");   // would be a programming error
         if (result == 0)
