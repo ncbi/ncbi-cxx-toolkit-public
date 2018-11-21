@@ -2895,16 +2895,16 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list)
         break;
     }
     case e_Patent:
-    {
-        // All patents have GenBank Seq-ids, so id string derived from a patent
-        // seqid is always secondary
-        const CId_pat& pat = GetPatent().GetCit();
-        secondary_id = pat.GetCountry() + "|" +
-            (pat.GetId().IsNumber() ?
-             pat.GetId().GetNumber() : pat.GetId().GetApp_number()) + "|" +
-            NStr::IntToString(GetPatent().GetSeqid());
+        if (secondary_id_list) {
+            // All patents have GenBank Seq-ids, so id string derived from a patent
+            // seqid is always secondary
+            const CId_pat& pat = GetPatent().GetCit();
+            secondary_id = pat.GetCountry() + "|" +
+                (pat.GetId().IsNumber() ?
+                 pat.GetId().GetNumber() : pat.GetId().GetApp_number()) + "|" +
+                NStr::IntToString(GetPatent().GetSeqid());
+        }
         break;
-    }
     case e_Pdb:
     {
         const CPDB_seq_id& pdb = GetPdb();
@@ -2945,7 +2945,7 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list)
         if (tsid) {
             if (tsid->CanGetAccession())
                 primary_id = tsid->GetAccession();
-            if (tsid->CanGetName() && !tsid->GetName().empty())
+            if (secondary_id_list && tsid->CanGetName() && !tsid->GetName().empty())
                 secondary_id = tsid->GetName();
         }
         break;
