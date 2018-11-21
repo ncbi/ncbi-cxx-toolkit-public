@@ -168,12 +168,13 @@ typedef struct {
 typedef struct TRIGGER_tag {
     TRIGGER_Handle     fd;      /* OS-specific trigger handle                */
     unsigned int       id;      /* the internal ID (cf. "s_ID_Counter")      */
-    int                err;     /* Last OS error                             */
 
     union {
         volatile void* ptr;     /* trigger state (UNIX only, otherwise MBZ)  */
         int            int_[2]; /* pointer storage area w/proper alignment   */
     } isset;
+
+    int                err;     /* Last OS error                             */
 
     /* type, status, EOF, log, read-on-write etc bit-field indicators */
     TBSOCK_Type         type:2; /* eTrigger                                  */
@@ -209,11 +210,12 @@ typedef unsigned EBSOCK_Side;
 typedef struct LSOCK_tag {
     TSOCK_Handle     sock;      /* OS-specific socket handle                 */
     unsigned int     id;        /* the internal ID (see also "s_ID_Counter") */
-    int              err;       /* Last OS error                             */
 
     unsigned int     n_accept;  /* total number of accepted clients          */
     unsigned short   away;      /* MSWIN: run-away connect warning counter   */
     unsigned short   port;      /* port on which listening (host byte order) */
+
+    int              err;       /* Last OS error                             */
 
     /* type, status, EOF, log, read-on-write etc bit-field indicators */
     TBSOCK_Type         type:2; /* eListening                                */
@@ -251,12 +253,13 @@ typedef struct LSOCK_tag {
 typedef struct SOCK_tag {
     TSOCK_Handle     sock;      /* OS-specific socket handle                 */
     unsigned int     id;        /* the internal ID (see also "s_ID_Counter") */
-    int              err;       /* Last OS error                             */
 
     /* connection point */
     unsigned int     host;      /* peer host (network byte order)            */
     unsigned short   port;      /* peer port (host byte order)               */
     unsigned short   myport;    /* this socket's port number, host byte order*/
+
+    int              err;       /* Last OS error                             */
 
     /* type, status, EOF, log, read-on-write etc bit-field indicators */
     TBSOCK_Type         type:2; /* |= eSocket ({ eSocket | eDatagram })      */

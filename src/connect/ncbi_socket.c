@@ -684,11 +684,11 @@ static void x_ShowDataLayout(void)
         "    Sizeof(SOCK_struct) = %u, offsets (sizes) follow\n"
         "\tsock:      %3u (%u)\n"
         "\tid:        %3u (%u)\n"
-        "\terr:       %3u (%u)\n"
         "\tisset:     %3u (%u)\n"
         "\thost:      %3u (%u)\n"
         "\tport:      %3u (%u)\n"
         "\tmyport:    %3u (%u)\n"
+        "\terr:       %3u (%u)\n"
         "\tbitfield:      (4)\n"
 #  ifdef NCBI_OS_MSWIN
         "\tevent:     %3u (%u)\n"
@@ -716,11 +716,11 @@ static void x_ShowDataLayout(void)
 #    define SOCK_SHOWDATALAYOUT_PARAMS              \
         infof(SOCK_struct,    sock),                \
         infof(SOCK_struct,    id),                  \
-        infof(SOCK_struct,    err),                 \
         infof(TRIGGER_struct, isset),               \
         infof(SOCK_struct,    host),                \
         infof(SOCK_struct,    port),                \
         infof(SOCK_struct,    myport),              \
+        infof(SOCK_struct,    err),                 \
         infof(SOCK_struct,    event),               \
         infof(SOCK_struct,    sslctx),              \
         infof(SOCK_struct,    r_tv),                \
@@ -741,11 +741,11 @@ static void x_ShowDataLayout(void)
 #    define SOCK_SHOWDATALAYOUT_PARAMS              \
         infof(SOCK_struct,    sock),                \
         infof(SOCK_struct,    id),                  \
-        infof(SOCK_struct,    err),                 \
         infof(TRIGGER_struct, isset),               \
         infof(SOCK_struct,    host),                \
         infof(SOCK_struct,    port),                \
         infof(SOCK_struct,    myport),              \
+        infof(SOCK_struct,    err),                 \
         infof(SOCK_struct,    sslctx),              \
         infof(SOCK_struct,    r_tv),                \
         infof(SOCK_struct,    w_tv),                \
@@ -795,9 +795,11 @@ static EIO_Status s_Init(void)
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
     /* Layout / alignment sanity check */
     assert(sizeof(TRIGGER_Handle)        == sizeof(TSOCK_Handle));
+    assert(offsetof(TRIGGER_struct, err) == offsetof(SOCK_struct,  err));
+    assert(offsetof(TRIGGER_struct, err) == offsetof(LSOCK_struct, err));
     assert(offsetof(SOCK_struct, sslctx) == offsetof(LSOCK_struct, context));
 #  ifdef NCBI_OS_MSWIN
-    assert(offsetof(SOCK_struct, event)  == offsetof(LSOCK_struct, event));
+    assert(offsetof(LSOCK_struct, event) == offsetof(SOCK_struct,  event));
     assert(WSA_INVALID_EVENT == 0);
 #  endif /*NCBI_OS_MSWIN*/
 #endif /*_DEBUG && !NDEBUG*/
