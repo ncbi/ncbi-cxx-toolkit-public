@@ -1021,7 +1021,6 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
 
             if (sock) {
                 assert(status == eIO_Success);
-                SOCK_DisableOSSendDelay(sock, 1/*yes,disable*/);
                 uuu->w_len = req_method != eReqMethod_Connect
                     ? BUF_Size(uuu->w_buf) : 0;
                 break;
@@ -1758,32 +1757,31 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         if (tags & eHTTP_Authenticate) {
             /* parse "Authenticate"/"Proxy-Authenticate" tags */
             static const char kAuthenticateTag[] = "-Authenticate:";
+            n = retry->mode == eRetry_Authenticate ? 4 : 6;
             assert(http_code);
-            if (strncasecmp(s + (retry->mode == eRetry_Authenticate ? 4 : 6),
+            if (((retry->mode == eRetry_Authenticate
+                  &&  strncasecmp(s, "\nWWW",   n) == 0)  ||
+                 (retry->mode == eRetry_ProxyAuthenticate
+                  &&  strncasecmp(s, "\nProxy", n) == 0))  &&
+                strncasecmp(s + n,
                             kAuthenticateTag, sizeof(kAuthenticateTag)-1)==0) {
-                if ((retry->mode == eRetry_Authenticate
-                     &&  strncasecmp(s, "\nWWW",   4) == 0)  ||
-                    (retry->mode == eRetry_ProxyAuthenticate
-                     &&  strncasecmp(s, "\nProxy", 6) == 0)) {
-                    char* txt = s + sizeof(kAuthenticateTag) - 1, *e;
-                    txt += retry->mode == eRetry_Authenticate ? 4 : 6;
-                    while (*txt  &&  isspace((unsigned char)(*txt)))
-                        ++txt;
-                    if (!(e = strchr(txt, '\r'))  &&  !(e = strchr(txt, '\n')))
+                char* txt = s + n + sizeof(kAuthenticateTag) - 1, *e;
+                while (*txt  &&  isspace((unsigned char)(*txt)))
+                    ++txt;
+                if (!(e = strchr(txt, '\r'))  &&  !(e = strchr(txt, '\n')))
+                    break;
+                if (e > txt) do {
+                    if (!isspace((unsigned char) e[-1]))
                         break;
-                    if (e > txt) do {
-                        if (!isspace((unsigned char) e[-1]))
-                            break;
-                    } while (--e > txt);
-                    n = (size_t)(e - txt);
-                    if (n  &&  x_IsValidChallenge(txt, n)) {
-                        memmove(hdr, txt, n);
-                        hdr[n] = '\0';
-                        retry->data = hdr;
-                    }
-                    tags &= (THTTP_Tags)(eHTTP_Authenticate);
-                    continue;
+                } while (--e > txt);
+                n = (size_t)(e - txt);
+                if (n  &&  x_IsValidChallenge(txt, n)) {
+                    memmove(hdr, txt, n);
+                    hdr[n] = '\0';
+                    retry->data = hdr;
                 }
+                tags &= (THTTP_Tags)(eHTTP_Authenticate);
+                continue;
             }
         }
         if (tags & eHTTP_ContentLength) {

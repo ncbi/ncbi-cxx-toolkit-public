@@ -2019,6 +2019,8 @@ extern EIO_Status URL_ConnectEx
         /* connect to HTTPD */
         status = SOCK_CreateInternal(host, x_port, o_timeout, sock/*new*/,
                                      &init, flags);
+        if (*sock)
+            SOCK_DisableOSSendDelay(*sock, 1/*yes,disable*/);
     }
     free(hdr);
 
