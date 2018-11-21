@@ -2097,19 +2097,45 @@ void CSingleFeatValidator::x_ValidateGeneXRef()
         }
 
         if (num_match_by_locus == 0 && num_match_by_locus_tag == 0) {
-            // find gene on bioseq to match genexref
-            if (gene_xref->IsSetLocus_tag() &&
-                !NStr::IsBlank(gene_xref->GetLocus_tag()) &&
-                !CValidError_feat::x_FindGeneToMatchGeneXref(*gene_xref, m_LocationBioseq.GetSeq_entry_Handle()) &&
-                !CValidError_feat::x_FindProteinGeneXrefByKey(m_LocationBioseq, gene_xref->GetLocus_tag())) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
-                    "Feature has gene locus_tag cross-reference but no equivalent gene feature exists");
-            } else if (gene_xref->IsSetLocus() &&
-                !NStr::IsBlank(gene_xref->GetLocus()) &&
-                !CValidError_feat::x_FindGeneToMatchGeneXref(*gene_xref, m_LocationBioseq.GetSeq_entry_Handle()) &&
-                !CValidError_feat::x_FindProteinGeneXrefByKey(m_LocationBioseq, gene_xref->GetLocus())) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
-                    "Feature has gene locus cross-reference but no equivalent gene feature exists");
+            // find gene on bioseq to match genexref    
+            if ((gene_xref->IsSetLocus_tag() &&
+                !NStr::IsBlank(gene_xref->GetLocus_tag())) ||
+                (gene_xref->IsSetLocus() &&
+                    !NStr::IsBlank(gene_xref->GetLocus()))) {
+                CConstRef<CSeq_feat> gene = m_Imp.GetGeneCache().GetGeneFromCache(&m_Feat, m_Scope);
+                if (!gene && m_LocationBioseq && m_LocationBioseq.IsAa()) {
+                    const CSeq_feat* cds = GetCDSForProduct(m_LocationBioseq);
+                    if (cds != 0) {
+                        if (cds->IsSetLocation()) {
+                            const CSeq_loc& loc = cds->GetLocation();
+                            const CSeq_id* id = loc.GetId();
+                            if (id != NULL) {
+                                CBioseq_Handle nbsh = m_LocationBioseq.GetScope().GetBioseqHandle(*id);
+                                if (nbsh) {
+                                    gene = m_Imp.GetGeneCache().GetGeneFromCache(cds, m_Scope);
+                                    if (gene) {
+                                        string label;
+                                        if (!gene->IsSetData() || !gene->GetData().IsGene()
+                                            || !CSingleFeatValidator::s_GeneRefsAreEquivalent(gene->GetData().GetGene(), gene->GetData().GetGene(), label)) {
+                                            gene.Reset(NULL);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (gene_xref->IsSetLocus_tag() &&
+                    !NStr::IsBlank(gene_xref->GetLocus_tag()) &&
+                    !gene) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
+                        "Feature has gene locus_tag cross-reference but no equivalent gene feature exists");
+                } else if (gene_xref->IsSetLocus() &&
+                    !NStr::IsBlank(gene_xref->GetLocus()) &&
+                    !gene) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefWithoutGene,
+                        "Feature has gene locus cross-reference but no equivalent gene feature exists");
+                }
             }
         }
     }

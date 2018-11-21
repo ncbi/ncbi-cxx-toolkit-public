@@ -810,60 +810,6 @@ void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq
 }
 
 
-// refactoring functions start
-// validator should not call if unclassified except
-
-bool CValidError_feat::x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const string& key)
-{
-    bool found = false;
-    if (bsh.IsAa()) {
-        const CSeq_feat* cds = GetCDSForProduct(bsh);
-        if (cds != 0) {
-            if (cds->IsSetLocation()) {
-                const CSeq_loc& loc = cds->GetLocation();
-                const CSeq_id* id = loc.GetId();
-                if (id != NULL) {
-                    CBioseq_Handle nbsh = bsh.GetScope().GetBioseqHandle(*id);
-                    if (nbsh) {
-#if 1
-                        CRef<CGene_ref> g(new CGene_ref());
-                        g->SetLocus_tag(key);
-                        found = x_FindGeneToMatchGeneXref(*g, nbsh.GetSeq_entry_Handle());
-#else
-                        CCacheImpl::SFeatStrKey label_key(CCacheImpl::eFeatKeyStr_Label, nbsh, key);
-                        const CCacheImpl::TFeatValue & feats = GetCache().GetFeatStrKeyToFeats(label_key, m_TSE);
-                        if (!feats.empty()) {
-                            found = true;
-                        }
-#endif
-                    }
-                }
-            }
-        }
-    }
-    return found;
-}
-
-
-bool CValidError_feat::x_FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry_Handle seh)
-{
-    CSeq_feat_Handle feat = CGeneFinder::ResolveGeneXref(&xref, seh);
-    if (feat) {
-        if (xref.IsSetLocus_tag() && !xref.IsSetLocus() &&
-            (!feat.GetData().GetGene().IsSetLocus_tag() ||
-             !NStr::Equal(feat.GetData().GetGene().GetLocus_tag(), xref.GetLocus_tag()))) {
-            //disallow locus-tag to locus matches, reverse is allowed
-            return false;
-        } else {
-            return true;
-        }
-    } else {
-        return false;
-    }
-}
-
-
-
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

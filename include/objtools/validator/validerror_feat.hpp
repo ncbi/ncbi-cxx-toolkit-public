@@ -144,9 +144,6 @@ public:
     bool IsIntronShort(const CSeq_feat& feat);
     bool GetTSACDSOnMinusStrandErrors(const CSeq_feat& feat, const CBioseq& seq);
 
-    static bool x_FindProteinGeneXrefByKey(CBioseq_Handle bsh, const string& key);
-    static bool x_FindGeneToMatchGeneXref(const CGene_ref& xref, CSeq_entry_Handle seh);
-
 private:
 
     CSeq_entry_Handle  m_TSE;
