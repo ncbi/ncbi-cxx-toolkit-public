@@ -60,13 +60,16 @@ enum { eLinkerd, eNamerd };
 
 // Proxies
 enum {
-    eProxy_fail_empty, eProxy_fail_no_colon,
-    eProxy_fail_no_host, eProxy_fail_no_port,
-    eProxy_fail_bad_host, eProxy_fail_bad_port,
-    eProxy_pass_unset,
+    eProxy_fail_bad_host,
+    eProxy_fail_bad_port,
+    eProxy_fail_bad_req_on_proxy,
+    eProxy_fail_empty,
+    eProxy_fail_no_colon,
+    eProxy_fail_no_host,
+    eProxy_fail_no_port,
     eProxy_pass_linkerd,
     eProxy_pass_pool,
-    eProxy_pass_localhost, eProxy_pass_127_0_0_1
+    eProxy_pass_unset
 };
 
 
@@ -194,6 +197,36 @@ void CProxy::Init(vector<CProxy>& proxies)
 {
     {{
         CProxy proxy;
+        proxy.m_Id = eProxy_fail_bad_host;
+        proxy.m_Name = "fail_bad_host";
+        proxy.m_Enabled = true;
+        proxy.m_PassExpected = false;
+        proxy.m_EnvSet["http_proxy"] = "Bad host, bad!:54321";
+        proxies.push_back(proxy);
+    }}
+
+    {{
+        CProxy proxy;
+        proxy.m_Id = eProxy_fail_bad_port;
+        proxy.m_Name = "fail_bad_port";
+        proxy.m_Enabled = true;
+        proxy.m_PassExpected = false;
+        proxy.m_EnvSet["http_proxy"] = "host:Bad port, bad!";
+        proxies.push_back(proxy);
+    }}
+
+    {{
+        CProxy proxy;
+        proxy.m_Id = eProxy_fail_bad_req_on_proxy;
+        proxy.m_Name = "fail_bad_req_on_proxy";
+        proxy.m_Enabled = true;
+        proxy.m_PassExpected = false;
+        proxy.m_EnvSet["http_proxy"] = "coremakeproxy:3128";
+        proxies.push_back(proxy);
+    }}
+
+    {{
+        CProxy proxy;
         proxy.m_Id = eProxy_fail_empty;
         proxy.m_Name = "fail_empty";
         proxy.m_Enabled = true;
@@ -232,36 +265,6 @@ void CProxy::Init(vector<CProxy>& proxies)
         proxies.push_back(proxy);
     }}
 
-    {{
-        CProxy proxy;
-        proxy.m_Id = eProxy_fail_bad_host;
-        proxy.m_Name = "fail_bad_host";
-        proxy.m_Enabled = true;
-        proxy.m_PassExpected = false;
-        proxy.m_EnvSet["http_proxy"] = "Bad host, bad!:54321";
-        proxies.push_back(proxy);
-    }}
-
-    {{
-        CProxy proxy;
-        proxy.m_Id = eProxy_fail_bad_port;
-        proxy.m_Name = "fail_bad_port";
-        proxy.m_Enabled = true;
-        proxy.m_PassExpected = false;
-        proxy.m_EnvSet["http_proxy"] = "host:Bad port, bad!";
-        proxies.push_back(proxy);
-    }}
-
-    {{
-        CProxy proxy;
-        proxy.m_Id = eProxy_pass_unset;
-        proxy.m_Name = "pass_unset";
-        proxy.m_Enabled = true;
-        proxy.m_PassExpected = true;
-        proxy.m_EnvUnset.push_back("http_proxy");
-        proxies.push_back(proxy);
-    }}
-
 #ifndef _MSC_VER
     {{
         CProxy proxy;
@@ -281,6 +284,16 @@ void CProxy::Init(vector<CProxy>& proxies)
         proxy.m_Enabled = true;
         proxy.m_PassExpected = true;
         proxy.m_EnvSet["http_proxy"] = "pool.linkerd-proxy.service.bethesda-dev.consul.ncbi.nlm.nih.gov:4140";
+        proxies.push_back(proxy);
+    }}
+
+    {{
+        CProxy proxy;
+        proxy.m_Id = eProxy_pass_unset;
+        proxy.m_Name = "pass_unset";
+        proxy.m_Enabled = true;
+        proxy.m_PassExpected = true;
+        proxy.m_EnvUnset.push_back("http_proxy");
         proxies.push_back(proxy);
     }}
 }
@@ -453,26 +466,32 @@ void CTestNcbiLinkerdProxyApp::Init(void)
 
 int CTestNcbiLinkerdProxyApp::Run(void)
 {
-    int num_tests = 0, num_errors = 0;
+    int num_total = m_Proxies.size() * m_Mappers.size();
+    int num_run = 0, num_passed = 0, num_failed = 0;
+
+    ERR_POST(Info << "CTestNcbiLinkerdProxyApp::Run()   $Id$");
 
     for (auto proxy : m_Proxies) {
         for (auto mapper : m_Mappers) {
             SelectMapper(mapper.m_Id);
             SelectProxy(proxy.m_Id);
-            num_errors += Test(num_tests, proxy.m_PassExpected);
-            ++num_tests;
+            int result = Test(num_run, proxy.m_PassExpected);
+            if (result == 0)
+                ++num_passed;
+            else
+                ++num_failed;
+            ++num_run;
         }
     }
 
-    if (num_errors == 0)
-        if (num_tests == 0)
-            ERR_POST(Info << "No tests were run!");
-        else
-            ERR_POST(Info << "All " << num_tests << " tests passed.");
-    else
-        ERR_POST(Info << num_tests - num_errors << " tests passed; " << num_errors << " failed.");
+    ERR_POST(Info << "All tests: " << num_total);
+    ERR_POST(Info << "Executed:    " << num_run);
+    ERR_POST(Info << "Passed:        " << num_passed);
+    ERR_POST(Info << "Failed:        " << num_failed);
+    if (num_total != num_run  ||  num_run != num_passed + num_failed)
+        NCBI_USER_THROW("Invalid test counts.");   // would be a programming error
 
-    return num_tests > 0 ? num_errors : -1;
+    return num_run > 0 ? num_failed : -1;
 }
 
 
