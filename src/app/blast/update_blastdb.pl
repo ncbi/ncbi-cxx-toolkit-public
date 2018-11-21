@@ -27,8 +27,7 @@
 # Author:  Christiam Camacho
 #
 # File Description:
-#   Script to download the pre-formatted BLAST databases from the NCBI ftp
-#   server.
+#   Script to download the pre-formatted BLAST databases.
 #
 # ===========================================================================
 
@@ -40,6 +39,7 @@ use Pod::Usage;
 use File::stat;
 use Digest::MD5;
 use Archive::Tar;
+use JSON;
 
 use constant NCBI_FTP => "ftp.ncbi.nlm.nih.gov";
 use constant BLAST_DB_DIR => "/blast/db";
@@ -48,6 +48,12 @@ use constant PASSWORD => "anonymous";
 use constant DEBUG => 0;
 use constant MAX_DOWNLOAD_ATTEMPTS => 3;
 use constant EXIT_FAILURE => 2;
+
+use constant GCS_URL => "https://storage.googleapis.com";
+use constant GCP_URL => "http://metadata.google.internal/computeMetadata/v1/instance/id";
+use constant GCP_BUCKET => "blast-db";
+use constant GCP_MANIFEST => "blastdb-manifest.json";
+use constant GCP_MANIFEST_VERSION => "1.0";
 
 # Process command line options
 my $opt_verbose = 1;
@@ -60,6 +66,7 @@ my $opt_timeout = 120;
 my $opt_showall = 0;
 my $opt_show_version = 0;
 my $opt_decompress = 0;
+my $opt_source;
 my $result = GetOptions("verbose+"      =>  \$opt_verbose,
                         "quiet"         =>  \$opt_quiet,
                         "force"         =>  \$opt_force_download,
@@ -69,6 +76,7 @@ my $result = GetOptions("verbose+"      =>  \$opt_verbose,
                         "version"       =>  \$opt_show_version,
                         "blastdb_version:i"=>  \$opt_blastdb_ver,
                         "decompress"    =>  \$opt_decompress,
+                        "source=s"      =>  \$opt_source,
                         "help"          =>  \$opt_help);
 $opt_verbose = 0 if $opt_quiet;
 die "Failed to parse command line options\n" unless $result;
@@ -86,26 +94,90 @@ if (length($opt_passive) and $opt_passive =~ /n|no/i) {
 my $exit_code = 0;
 $|++;
 
-# Connect and download files
-my $ftp = &connect_to_ftp() unless ($opt_show_version);
+my $location = "unknown";
+unless ($^O =~ /mswin/i) {
+    $location = system("curl -sfo /dev/null -H 'Metadata-Flavor: Google' " . GCP_URL) == 0 ? "GCP" : "NCBI";
+}
+# Override data source, only for testing
+if (defined($opt_source)) {
+    if ($opt_source =~ /^ncbi/i) {
+        $location = "NCBI";
+    } elsif ($opt_source =~ /^gc/i and $^O !~ /mswin/i) {
+        $location = "GCP";
+    }
+}
+
 if ($opt_show_version) {
     my $revision = '$Revision$';
     $revision =~ s/\$Revision: | \$//g;
     print "$0 version $revision\n";
-} elsif ($opt_showall) {
-    print "$_\n" foreach (sort(&get_available_databases()));
+    exit($exit_code);
+}
+
+my $ftp;
+
+if ($location eq "GCP") {
+    #die "Only BLASTDB vesion 5 is supported at GCP\n" if ($opt_blastdb_ver == 4);
+    my $latest_dir = &get_gcs_latest_dir();
+    my ($json, $url) = &get_gcs_blastdb_metadata($latest_dir);
+    unless (length($json)) {
+        print STDERR "ERROR: Missing manifest file $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
+        exit(2);
+    }
+    print "Connected to $location\n" if $opt_verbose;
+    my $metadata = from_json($json);
+    unless (exists($$metadata{version}) and ($$metadata{version} eq GCP_MANIFEST_VERSION)) {
+        print STDERR "ERROR: Invalid version in manifest file $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
+        exit(2);
+    }
+    if ($opt_showall) {
+        foreach my $db (sort keys %$metadata) {
+            next if ($db =~ /^version$/);
+            print "$db\t$$metadata{$db}{description}\t$$metadata{$db}{size}\t$$metadata{$db}{last_updated}\n";
+        }
+        #my $gsutil = &get_gsutil_path();
+        #my $cmd = "$gsutil ls -l gs://" . GCP_BUCKET . "/$latest_dir/";
+        #print "$cmd\n" if $opt_verbose;
+        #chomp(my @alias_files = map { (split)[-1] } grep {/al$/} `$cmd`);
+        #print "$_\n" foreach (sort(map { (split(/\//))[-1] } &get_available_databases(@alias_files)));
+
+    } else {
+        my @files2download;
+        for my $requested_db (@ARGV) {
+            if (exists $$metadata{$requested_db}) {
+                push @files2download, @{$$metadata{$requested_db}{files}};
+            } else {
+                print STDERR "Warning: $requested_db does not exist in $location ($latest_dir)\n";
+            }
+        }
+        my $gsutil = &get_gsutil_path();
+        unless (defined($gsutil)) {
+            die "ERROR: Cannot find gsutil\n";
+            exit(2);
+        }
+        my $cmd = "$gsutil -qm cp " . join(" ", @files2download) . " .";
+        print "$cmd\n" if $opt_verbose;
+        system($cmd);
+    }
+
 } else {
-    my @files = sort(&get_files_to_download());
-    my @files2decompress;
-    $exit_code = &download(\@files, \@files2decompress);
-    if ($exit_code == 1) {
-        foreach (@files2decompress) {
-            $exit_code = &decompress($_);
-            last if ($exit_code != 1);
+    # Connect and download files
+    $ftp = &connect_to_ftp();
+    if ($opt_showall) {
+        print "$_\n" foreach (sort(&get_available_databases($ftp->ls())));
+    } else {
+        my @files = sort(&get_files_to_download());
+        my @files2decompress;
+        $exit_code = &download(\@files, \@files2decompress);
+        if ($exit_code == 1) {
+            foreach (@files2decompress) {
+                $exit_code = &decompress($_);
+                last if ($exit_code != 1);
+            }
         }
     }
+    $ftp->quit();
 }
-$ftp->quit() unless ($opt_show_version);
 
 exit($exit_code);
 
@@ -124,7 +196,7 @@ sub connect_to_ftp
     $ftp_path .= "/v5" if ($opt_blastdb_ver == 5);
     $ftp->cwd($ftp_path);
     $ftp->binary();
-    print "Connected to NCBI\n" if $opt_verbose;
+    print "Connected to $location\n" if $opt_verbose;
     return $ftp;
 }
 
@@ -338,11 +410,37 @@ sub get_num_volumes
     return $retval + 1;
 }
 
+# Retrieves the name of the 'subdirectory' where the latest BLASTDBs residue in GCP
+sub get_gcs_latest_dir
+{
+    my $cmd = "curl -s " . GCS_URL . "/" . GCP_BUCKET . "/latest-dir";
+    return `$cmd`;
+}
+
+# Fetches the JSON text containing the BLASTDB metadata in GCS
+sub get_gcs_blastdb_metadata
+{
+    my $latest_dir = shift;
+    my $url = GCS_URL . "/" . GCP_BUCKET . "/$latest_dir/" . GCP_MANIFEST;
+    chomp(my $retval = `/usr/bin/curl -sf $url`);
+    return ($retval, $url);
+}
+
+# Returns the path to the gsutil utility or undef  if it is not found
+sub get_gsutil_path
+{
+    foreach (qw(/google/google-cloud-sdk/bin /snap/bin /usr/bin)) {
+        my $path = "$_/gsutil";
+        return $path if (-f $path);
+    }
+    return undef;
+}
+
 __END__
 
 =head1 NAME
 
-B<update_blastdb.pl> - Download pre-formatted BLAST databases from NCBI
+B<update_blastdb.pl> - Download pre-formatted BLAST databases
 
 =head1 SYNOPSIS
 
