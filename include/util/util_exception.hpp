@@ -53,7 +53,7 @@ public:
         eWrongCommand,
         eWrongData
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CUtilException,CException);
 };
 
@@ -69,7 +69,7 @@ public:
         eCanceled,
         eOverflow
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CIOException, CUtilException);
 };
 
@@ -79,7 +79,7 @@ public:
     enum EErrCode {
         eEof
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CEofException, CIOException);
 };
 
@@ -91,7 +91,7 @@ public:
         eFull,    // attempt to insert into a full queue
         eTimedOut // Put or WaitForRoom timed out
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CBlockingQueueException,CUtilException);
 };
 

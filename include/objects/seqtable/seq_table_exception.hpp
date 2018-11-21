@@ -56,7 +56,7 @@ public:
         eIncompatibleValueType, ///< Data cannot be converted to asked type
         eOtherError
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CSeqTableException, CException);
 };
 

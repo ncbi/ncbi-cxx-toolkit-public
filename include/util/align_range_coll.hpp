@@ -51,7 +51,7 @@ public:
     {
     }
 
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         return "CAlignRangeCollection - operation resulted in invalid state."; 
     }

@@ -82,7 +82,7 @@ public:
         eValidateConversion = 7
     };
 
-    virtual const char * GetErrCodeString(void) const
+    virtual const char * GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
             case eNumberOfFieldsMismatch:

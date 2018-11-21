@@ -69,21 +69,21 @@ END_SCOPE(impl)
     } \
 public: \
     virtual ~exception_class(void) throw() {} \
-    virtual const char* GetType(void) const {return #exception_class;} \
+    const char* GetType(void) const override {return #exception_class;} \
     typedef int TErrCode; \
     TErrCode GetErrCode(void) const \
     { \
         return typeid(*this) == typeid(exception_class) ? \
             (TErrCode)x_GetErrCode() : (TErrCode)CException::eInvalid; \
     } \
-    virtual CDB_Exception* Clone(void) const \
+    virtual CDB_Exception* Clone(void) const override \
     { \
         return new exception_class(*this); \
     } \
     NCBI_EXCEPTION_DEFAULT_THROW(exception_class) \
 protected: \
     exception_class(void) {} \
-    virtual const CException* x_Clone(void) const \
+    virtual const CException* x_Clone(void) const override \
     { \
         return new exception_class(*this); \
     } \
@@ -187,7 +187,7 @@ public:
     // DEPRECATED, Will be removed soon.
     NCBI_DEPRECATED
     static const char*  SeverityString(EDB_Severity sev);
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
 public:
     // Duplicate methods. We need them to support the old interface.
@@ -231,7 +231,7 @@ public:
     int GetSybaseSeverity(void) const { return m_SybaseSeverity;       }
 
 public:
-    virtual void ReportExtra(ostream& out) const;
+    virtual void ReportExtra(ostream& out) const override;
     virtual CDB_Exception* Clone(void) const;
 
 public:
@@ -261,8 +261,8 @@ protected:
     void x_StartOfWhat(ostream& out) const;
     void x_EndOfWhat  (ostream& out) const;
     void x_Init(const CDiagCompileInfo& info, const string& message,
-                const CException* prev_exception, EDiagSev severity);
-    virtual void x_Assign(const CException& src);
+                const CException* prev_exception, EDiagSev severity) override;
+    virtual void x_Assign(const CException& src) override;
     void x_InitCDB(int db_error_code) { m_DBErrCode = db_error_code; }
     SContext& x_SetContext(void);
 
@@ -338,10 +338,10 @@ public:
     const string& ProcName()  const { return m_ProcName; }
     int           ProcLine()  const { return m_ProcLine; }
 
-    virtual void ReportExtra(ostream& out) const;
+    virtual void ReportExtra(ostream& out) const override;
 
 protected:
-    virtual void x_Assign(const CException& src);
+    virtual void x_Assign(const CException& src) override;
 
 private:
     string m_ProcName;
@@ -376,10 +376,10 @@ public:
     const string& SqlState()   const { return m_SqlState;  }
     int           BatchLine()  const { return m_BatchLine; }
 
-    virtual void ReportExtra(ostream& out) const;
+    virtual void ReportExtra(ostream& out) const override;
 
 protected:
-    virtual void x_Assign(const CException& src);
+    virtual void x_Assign(const CException& src) override;
 
 private:
     string m_SqlState;
@@ -516,11 +516,11 @@ public:
 
     string WhatThis(void) const;
 
-    virtual void ReportExtra(ostream& out) const;
+    virtual void ReportExtra(ostream& out) const override;
 
 protected:
     void ReportErrorStack(ostream& out) const;
-    virtual void x_Assign(const CException& src);
+    virtual void x_Assign(const CException& src) override;
 
 private:
     // We use "deque" instead of "stack" here we need to iterate over all

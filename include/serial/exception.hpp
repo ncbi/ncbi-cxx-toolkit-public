@@ -63,16 +63,16 @@ public:
         eMissingValue,    ///< Mandatory value was missing in the input
         eNullValue        ///< Data value is null
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CSerialException,CException);
 
 public:
     // Combine stream frames info into single message
     void AddFrameInfo(string frame_info);
-    virtual void ReportExtra(ostream& out) const;
+    virtual void ReportExtra(ostream& out) const override;
 
 protected:
-    virtual void x_Assign(const CException& src);
+    virtual void x_Assign(const CException& src) override;
 
 private:
     string m_FrameStack;
@@ -88,7 +88,7 @@ public:
         eWrite,
         eUnknownMember
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
     NCBI_EXCEPTION_DEFAULT(CUnassignedMember,CSerialException);
 };
@@ -104,7 +104,7 @@ public:
     enum EErrCode {
         eFail
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     static const char* GetName(size_t index,
                                const char* const names[], 
                                size_t namesCount);
@@ -132,13 +132,13 @@ public:
     CInvalidChoiceSelection(const CInvalidChoiceSelection& other);
     virtual ~CInvalidChoiceSelection(void) throw();
 
-    virtual const char* GetType(void) const;
+    virtual const char* GetType(void) const override;
     typedef int TErrCode;
     TErrCode GetErrCode(void) const;
 
 protected:
     CInvalidChoiceSelection(void);
-    virtual const CException* x_Clone(void) const;
+    virtual const CException* x_Clone(void) const override;
 };
 
 class NCBI_XSERIAL_EXPORT CSerialFacetException : public CSerialException
@@ -159,7 +159,7 @@ public:
         eMaxItems,
         eUniqueItems
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CSerialFacetException,CSerialException);
 };
 

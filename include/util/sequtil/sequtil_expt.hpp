@@ -47,7 +47,7 @@ public:
         eBadConversion,
         eBadParameter
     };
-    virtual const char* GetErrCodeString(void) const {
+    virtual const char* GetErrCodeString(void) const override {
           switch ( GetErrCode() ) {
           case eNotSupported:
               return "Operation not supported";

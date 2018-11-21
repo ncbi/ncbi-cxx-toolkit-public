@@ -241,7 +241,7 @@ public:
         m_Context(ctxt)
     NCBI_EXCEPTION_DEFAULT_IMPLEMENTATION(CRowReaderException, CException);
 
-    virtual const char *  GetErrCodeString(void) const
+    virtual const char *  GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
             case eUnexpectedRowType:

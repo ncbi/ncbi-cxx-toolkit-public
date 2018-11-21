@@ -48,7 +48,7 @@ public:
         eColumnAlreadyExists   ///< Column id has been assigned before
     };
 
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
     NCBI_EXCEPTION_DEFAULT(CNcbiTable_Exception, CException);
 };

@@ -619,7 +619,7 @@ public:
                          ///< by means of methods of another ThreadPool or
                          ///< invalid parameters in the constructor
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CThreadPoolException, CException);
 };
 

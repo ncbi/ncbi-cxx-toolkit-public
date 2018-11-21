@@ -147,7 +147,7 @@ public:
         eOther
     };
 
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
     bool IsSetRetryContext(void) const { return m_RetryCtx; }
     /// Read retry related data.

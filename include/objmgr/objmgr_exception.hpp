@@ -63,7 +63,7 @@ public:
         eMissingData,     ///< The sequence doesn't have the data requested
         eOtherError
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CObjMgrException,CException);
 };
 
@@ -83,7 +83,7 @@ public:
         eSelfReference,    ///< Self-reference in seq map is detected
         eFail              ///< Operation failed
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CSeqMapException, CObjMgrException);
 };
 
@@ -97,7 +97,7 @@ public:
         eDataError,     ///< Sequence data error
         eOutOfRange     ///< Attempt to access out-of-range iterator
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CSeqVectorException, CObjMgrException);
 };
 
@@ -113,7 +113,7 @@ public:
         eIncomatibleType, ///< Incompatible annotation type (feat/graph/align)
         eOtherError
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CAnnotException, CObjMgrException);
 };
 
@@ -135,7 +135,7 @@ public:
         eBadConfig,
         eNotFound
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CLoaderException, CObjMgrException);
 };
 
@@ -151,7 +151,7 @@ public:
     };
     typedef int TBlobState;
 
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     CBlobStateException(const CDiagCompileInfo& info,
                         const CException* prev_exception,
                         EErrCode err_code,
@@ -172,7 +172,7 @@ public:
         x_Assign(other);
     }
     virtual ~CBlobStateException(void) throw() {}
-    virtual const char* GetType(void) const { return "CBlobStateException"; }
+    const char* GetType(void) const override { return "CBlobStateException"; }
     typedef int TErrCode;
     TErrCode GetErrCode(void) const
     {
@@ -186,7 +186,7 @@ public:
 
 protected:
     CBlobStateException(void) {}
-    virtual const CException* x_Clone(void) const
+    virtual const CException* x_Clone(void) const override
     {
         return new CBlobStateException(*this);
     }
@@ -209,7 +209,7 @@ public:
         eBadResidue,
         eBadAlignment
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CObjmgrUtilException, CObjMgrException);
 };
 
@@ -229,7 +229,7 @@ public:
         eSegmentsLimitExceded
     };
 
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CAnnotSearchLimitException, CObjMgrException);
 };
 

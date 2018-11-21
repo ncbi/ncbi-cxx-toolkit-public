@@ -132,10 +132,10 @@ protected:
     virtual void x_Init(const CDiagCompileInfo& info,
                         const string& message,
                         const CException* prev_exception,
-                        EDiagSev severity);
+                        EDiagSev severity) override;
 
     /// Override method for copying exception data.
-    virtual void x_Assign(const CException& src);
+    virtual void x_Assign(const CException& src) override;
 
 private:
     EStatusCode m_StatusCode;
@@ -165,7 +165,7 @@ public:
         eValue,     //< Bad cookie value
         eString     //< Bad cookie string (Set-Cookie:) format
     };
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eValue:   return "Bad cookie";
@@ -205,7 +205,7 @@ public:
         eData        //< Syntaxically correct but contains odd data (from the
                      //< point of view of particular CGI application)
     };
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch ( GetErrCode() ) {
         case eCookie:    return "Malformed HTTP Cookie";
@@ -265,7 +265,7 @@ public:
         eErrno,   //< Generic system call failure
         eModTime  //< File modification time cannot be obtained
     };
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eErrno:    return "System error";
@@ -292,7 +292,7 @@ public:
         eDoubleHeader,          ///< Header has already been written
         eBadHeaderValue         ///< Invalid header value
     };
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch ( GetErrCode() ) {
         case eDoubleHeader:   return "Header has already been written";
@@ -320,7 +320,7 @@ public:
         eHeaderSent          ///< Header has been written
     };
 
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch ( GetErrCode() ) {
         case eHeaderSent:  return "Header has been written";
@@ -350,7 +350,7 @@ public:
         eAttrNotFound,         ///< Attribute not found
         eNotLoaded             ///< Session not loaded
     };
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch ( GetErrCode() ) {
         case eSessionId:            return "SessionId not specified";
@@ -381,7 +381,7 @@ public:
         eApp     //< Other error
     };
 
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eApp:   return "CGI application error";

@@ -187,7 +187,7 @@ public:
                                 ///< system-dependent generator.
     };
 
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eUnavailable           : return "eUnavailable";

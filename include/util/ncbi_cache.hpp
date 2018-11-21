@@ -311,7 +311,7 @@ public:
         eOtherError
     };
 
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
     NCBI_EXCEPTION_DEFAULT(CCacheException, CException);
 };

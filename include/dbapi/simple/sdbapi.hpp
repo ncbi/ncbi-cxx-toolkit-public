@@ -89,7 +89,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
     /// Returns any underlying DBAPI exception, or else NULL.
     const CDB_Exception* GetDBException(void) const;
@@ -107,10 +107,10 @@ public:
     /// statement or database operation).
     const string& GetExtraMsg(void) const;
 
-    void ReportExtra(ostream& os) const;
+    void ReportExtra(ostream& os) const override;
 
     /// Retrieve info about ability to retry an action caused the exception
-    virtual ERetriable GetRetriable(void)  const;
+    virtual ERetriable GetRetriable(void) const override;
 
     // Standard exception boilerplate code.
     CSDB_Exception(const CDiagCompileInfo& info,
@@ -145,9 +145,9 @@ protected:
                    CException::TFlags flags = 0);
 
     void x_Init(const CDiagCompileInfo& info, const string& message,
-                const CException* prev_exception, EDiagSev severity);
+                const CException* prev_exception, EDiagSev severity) override;
 
-    void x_Assign(const CException& src);
+    void x_Assign(const CException& src) override;
 
 private:
     CConstRef<CDB_Exception::SContext> m_Context;
@@ -158,9 +158,9 @@ class CSDB_DeadlockException : public CSDB_Exception
 {
 public:
     void x_Init(const CDiagCompileInfo& info, const string& message,
-                const CException* prev_exception, EDiagSev severity);
+                const CException* prev_exception, EDiagSev severity) override;
 
-    void x_InitErrCode(CException::EErrCode err_code);
+    void x_InitErrCode(CException::EErrCode err_code) override;
 
     NCBI_EXCEPTION_DEFAULT(CSDB_DeadlockException, CSDB_Exception);
 };

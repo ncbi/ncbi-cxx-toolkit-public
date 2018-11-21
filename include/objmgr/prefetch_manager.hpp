@@ -140,7 +140,7 @@ public:
     enum EErrCode {
         eFailed
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CPrefetchFailed,CException);
 };
 
@@ -152,7 +152,7 @@ public:
     enum EErrCode {
         eCanceled
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CPrefetchCanceled,CException);
 };
 

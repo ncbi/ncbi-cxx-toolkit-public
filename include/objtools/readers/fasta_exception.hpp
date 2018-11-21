@@ -45,7 +45,7 @@ public:
         eBadResidues
     };
 
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
             case eBadResidues:    return "eBadResidues";
@@ -89,7 +89,7 @@ public:
         TBadIndexMap m_BadIndexMap;
     };
 
-    virtual void ReportExtra(ostream& out) const;
+    virtual void ReportExtra(ostream& out) const override;
 
     CBadResiduesException(const CDiagCompileInfo& info,
         const CException* prev_exception,

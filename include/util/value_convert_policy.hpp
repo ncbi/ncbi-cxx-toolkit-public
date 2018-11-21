@@ -47,7 +47,7 @@ public:
     enum EErrCode {
         eInvalidConversion
     };
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         return "Invalid run-time type conversion."; 
     }
