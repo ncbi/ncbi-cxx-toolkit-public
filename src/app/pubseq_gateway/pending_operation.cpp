@@ -1637,7 +1637,7 @@ void CBlobPropCallback::x_RequestId2SplitBlobs(const string &  sat_name)
 
 void CBlobPropCallback::x_ParseId2Info(CBlobRecord const &  blob)
 {
-    // id2_info: "sat.shell.info[.chunks]"
+    // id2_info: "sat.info[.chunks]"
 
     if (m_Id2InfoParsed)
         return;
@@ -1649,11 +1649,11 @@ void CBlobPropCallback::x_ParseId2Info(CBlobRecord const &  blob)
     vector<string>          parts;
     NStr::Split(id2_info, ".", parts);
 
-    if (parts.size() < 4) {
+    if (parts.size() < 3) {
         // Error: send it in the context of the blob props
         string      message = "Error extracting id2 info for the blob " +
                               GetBlobId(m_FetchDetails->m_BlobId) +
-                              ". Expected 'sat.shell.info.nchunks', found " +
+                              ". Expected 'sat.info.nchunks', found " +
                               NStr::NumericToString(parts.size()) + " parts.";
         m_PendingOp->PrepareBlobPropMessage(
                             m_FetchDetails, message,
@@ -1668,9 +1668,8 @@ void CBlobPropCallback::x_ParseId2Info(CBlobRecord const &  blob)
 
     try {
         m_Id2InfoSat = NStr::StringToInt(parts[0]);
-        m_Id2InfoShell = NStr::StringToInt(parts[1]);
-        m_Id2InfoInfo = NStr::StringToInt(parts[2]);
-        m_Id2InfoChunks = NStr::StringToInt(parts[3]);
+        m_Id2InfoInfo = NStr::StringToInt(parts[1]);
+        m_Id2InfoChunks = NStr::StringToInt(parts[2]);
     } catch (...) {
         // Error: send it in the context of the blob props
         string      message = "Error converting id2 info into integers for "
@@ -1691,12 +1690,6 @@ void CBlobPropCallback::x_ParseId2Info(CBlobRecord const &  blob)
     if (m_Id2InfoSat <= 0)
         validate_message = "Invalid id2_info SAT value. Expected to be > 0. Received: " +
             NStr::NumericToString(m_Id2InfoSat) + ".";
-    if (m_Id2InfoShell != 0) {
-        if (!validate_message.empty())
-            validate_message += " ";
-        validate_message += "Invalid id2_info SHELL value. Expected to be == 0. Received: " +
-            NStr::NumericToString(m_Id2InfoShell) + ".";
-    }
     if (m_Id2InfoInfo <= 0) {
         if (!validate_message.empty())
             validate_message += " ";

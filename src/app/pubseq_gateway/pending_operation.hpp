@@ -314,7 +314,7 @@ class CBlobPropCallback
             m_PendingOp(pending_op), m_Reply(reply),
             m_FetchDetails(fetch_details),
             m_Id2InfoParsed(false), m_Id2InfoValid(false),
-            m_Id2InfoSat(-1), m_Id2InfoShell(-1),
+            m_Id2InfoSat(-1),
             m_Id2InfoInfo(-1), m_Id2InfoChunks(-1)
         {}
 
@@ -336,7 +336,6 @@ class CBlobPropCallback
         bool            m_Id2InfoParsed;
         bool            m_Id2InfoValid;
         int             m_Id2InfoSat;
-        int             m_Id2InfoShell;
         int             m_Id2InfoInfo;
         int             m_Id2InfoChunks;
 };
