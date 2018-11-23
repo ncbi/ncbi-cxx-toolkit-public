@@ -73,9 +73,9 @@ CAutoDefSourceGroup::~CAutoDefSourceGroup()
 }
 
 
-void CAutoDefSourceGroup::AddSource (CAutoDefSourceDescription *src)
+void CAutoDefSourceGroup::AddSource (CRef<CAutoDefSourceDescription> src)
 {
-    m_SourceList.push_back (CRef<CAutoDefSourceDescription>(new CAutoDefSourceDescription(src)));
+    m_SourceList.emplace_back(src);
 }
 
 
@@ -111,6 +111,39 @@ struct SAutoDefSourceDescByStrings {
     }
 };
 
+
+void CAutoDefSourceGroup::SortDescriptions()
+{
+    if (m_SourceList.size() > 1) {
+        std::sort(m_SourceList.begin(), m_SourceList.end(), SAutoDefSourceDescByStrings());
+    }
+}
+
+
+// this function will make a new group out of any source descriptions that don't match the first one in the list
+CRef<CAutoDefSourceGroup> CAutoDefSourceGroup::SplitGroup()
+{
+    CRef<CAutoDefSourceGroup> g(NULL);
+    auto it = m_SourceList.begin();
+    it++;
+    while (it != m_SourceList.end() && (*it)->Compare(*m_SourceList[0]) == 0) {
+        it++;
+    }
+    if (it != m_SourceList.end()) {
+        g.Reset(new CAutoDefSourceGroup());
+        g->AddSource(*it);
+        it = m_SourceList.erase(it);
+        while (it != m_SourceList.end()) {
+            g->AddSource(*it);
+            it = m_SourceList.erase(it);
+        }
+    }
+    return g;
+}
+
+
+// After adding a qualifier, some descriptions should no longer match, so they should be
+// part of new source groups
 vector<CRef<CAutoDefSourceGroup> > CAutoDefSourceGroup::RemoveNonMatchingDescriptions ()
 {
     vector<CRef<CAutoDefSourceGroup> > group_list;

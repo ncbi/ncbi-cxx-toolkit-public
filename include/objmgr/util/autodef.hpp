@@ -143,7 +143,7 @@ private:
     
     string x_GetNonFeatureListEnding();
 
-    string x_GetFeatureClauses(CBioseq_Handle bh);
+    string x_GetFeatureClauses(const CBioseq_Handle& bh);
     string x_GetFeatureClauseProductEnding(const string& feature_clauses,
                                            CBioseq_Handle bh);
     bool x_AddMiscRNAFeatures(const CBioseq_Handle& bh,

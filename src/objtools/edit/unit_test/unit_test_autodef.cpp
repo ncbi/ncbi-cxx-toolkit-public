@@ -749,10 +749,22 @@ BOOST_AUTO_TEST_CASE(Test_DocsumTitle_Popset)
     defline = "Pinus cembra AcesapD12 fake protein name gene, complete cds.";
     AddTitle(unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(seq2), defline);
 
+    CRef<CSeq_entry> seq3 = unit_test_util::BuildGoodNucProtSet();
+    unit_test_util::ChangeId(seq3, "3");
+    unit_test_util::SetTaxname(seq3, "Pinus cembra");
+    // clear previous taxid before setting new one
+    unit_test_util::SetTaxon(seq3, 0);
+    unit_test_util::SetTaxon(seq3, 58041);
+    unit_test_util::SetOrgMod(seq3, COrgMod::eSubtype_isolate, "AcesapD33");
+    defline = "Pinus cembra AcesapD33 fake protein name gene, complete cds.";
+    AddTitle(unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(seq3), defline);
+
+
     CRef<CSeq_entry> set(new CSeq_entry());
     set->SetSet().SetClass(CBioseq_set::eClass_pop_set);
     set->SetSet().SetSeq_set().push_back(seq1);
     set->SetSet().SetSeq_set().push_back(seq2);
+    set->SetSet().SetSeq_set().push_back(seq3);
     defline = "Pinus cembra fake protein name gene, complete cds.";
     AddTitle(set, defline);
     CheckDeflineMatches(set, true);

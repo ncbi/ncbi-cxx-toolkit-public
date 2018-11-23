@@ -221,19 +221,19 @@ bool CAutoDefModifierCombo::HasOrgMod(COrgMod::ESubtype st)
 
 void CAutoDefModifierCombo::AddSource(const CBioSource& bs, const string& feature_clauses) 
 {
-    CAutoDefSourceDescription src(bs, feature_clauses);
+    CRef<CAutoDefSourceDescription> src(new CAutoDefSourceDescription(bs, feature_clauses));
     bool found = false;
 
     for (auto it : m_GroupList) {
         if (it->GetSrcList().size() > 0
-            && src.Compare (**(it->GetSrcList().begin())) == 0) {
-            it->AddSource (&src);
+            && src->Compare (**(it->GetSrcList().begin())) == 0) {
+            it->AddSource (src);
             found = true;
         }
     }
     if (!found) {
         CRef<CAutoDefSourceGroup> g(new CAutoDefSourceGroup());
-        g->AddSource (&src);
+        g->AddSource (src);
         m_GroupList.push_back (g);
     }
 }
@@ -1029,6 +1029,15 @@ struct SAutoDefSourceGroupByStrings {
 };
 
 
+void CAutoDefModifierCombo::x_ReparseGroups()
+{
+    for (auto it : m_GroupList) {
+        it->SortDescriptions();
+
+    }
+}
+
+
 bool CAutoDefModifierCombo::AddQual (bool IsOrgMod, int subtype, bool even_if_not_uniquifying)
 {
     bool added = false, rval = false;
@@ -1036,22 +1045,23 @@ bool CAutoDefModifierCombo::AddQual (bool IsOrgMod, int subtype, bool even_if_no
 
     new_groups.clear();
     NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {
-        added |= (*it)->AddQual (IsOrgMod, subtype, m_KeepAfterSemicolon);
-    }
-
-    if (added) {
-        NON_CONST_ITERATE (TGroupListVector, it, m_GroupList) {
-            vector <CRef<CAutoDefSourceGroup> > tmp = (*it)->RemoveNonMatchingDescriptions();
-            if (!tmp.empty()) {
-                new_groups.insert(new_groups.end(), tmp.begin(), tmp.end());
+        if ((*it)->AddQual(IsOrgMod, subtype, m_KeepAfterSemicolon)) {
+            (*it)->SortDescriptions();
+            auto split = (*it)->SplitGroup();
+            while (split) {
                 rval = true;
+                new_groups.emplace_back(split);
+                // further split group if necessary
+                split = split->SplitGroup();
             }
         }
     }
+
     // NOTE - need to put groups from non-matching descriptions and put them in a new_groups list
     // in order to avoid processing them twice
     if (!new_groups.empty()) {
         m_GroupList.insert(m_GroupList.end(), new_groups.begin(), new_groups.end());
+        rval = true;
     }
 
 
@@ -1092,10 +1102,9 @@ vector<CRef<CAutoDefModifierCombo>> CAutoDefModifierCombo::ExpandByAnyPresent()
         }
         mods = it->GetModifiersPresentForAny();
         for (auto mod_it : mods) {
-            expanded.push_back (CRef<CAutoDefModifierCombo>(new CAutoDefModifierCombo (this)));
-            if (!expanded[expanded.size() - 1]->AddQual (mod_it.IsOrgMod(), mod_it.GetSubtype())) {
-                expanded.pop_back ();
-                RemoveQual(mod_it.IsOrgMod(), mod_it.GetSubtype());
+            CRef<CAutoDefModifierCombo> cpy(new CAutoDefModifierCombo(this));
+            if (cpy->AddQual(mod_it.IsOrgMod(), mod_it.GetSubtype())) {
+                expanded.emplace_back(cpy);
             }
         }
         if (!expanded.empty()) {

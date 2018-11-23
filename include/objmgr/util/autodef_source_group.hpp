@@ -71,10 +71,13 @@ public:
     bool GetDefaultExcludeSp();
 
 
-    void AddSource (CAutoDefSourceDescription *src);
+    void AddSource (CRef<CAutoDefSourceDescription> src);
     bool AddQual (bool IsOrgMod, int subtype, bool keepAfterSemicolon);
     bool RemoveQual (bool IsOrgMod, int subtype);
     TSourceDescriptionVector GetSrcList() const { return m_SourceList; }
+
+    void SortDescriptions();
+    CRef<CAutoDefSourceGroup> SplitGroup();
     vector<CRef<CAutoDefSourceGroup> > RemoveNonMatchingDescriptions ();
 
     CAutoDefSourceDescription::TModifierVector GetModifiersPresentForAll();
