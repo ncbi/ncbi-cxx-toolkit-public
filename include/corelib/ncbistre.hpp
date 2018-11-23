@@ -439,6 +439,10 @@ extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str, char delim,
                                  string::size_type* count = NULL);
 
 /// Read from "is" to "str" up to any symbol contained within "delims" (or EOF)
+/// @note
+///  Special case -- if two different delimiters are back to back and in the
+///  same order as in delims, treat them as a single delimiter. E.g. "\r\n"
+///  will handle mixed DOS/MAC/UNIX line endings such as "\r", "\n" and "\r\n".
 NCBI_XNCBI_EXPORT
 extern CNcbiIstream& NcbiGetline(CNcbiIstream& is, string& str,
                                  const string& delims,
