@@ -1872,6 +1872,7 @@ endif()
         foreach(_test IN LISTS NCBI_ALLTESTS)
             NCBI_internal_add_test(${_test})
         endforeach()
+        unset(NCBI_ALLTESTS PARENT_SCOPE)
     endif()
 
     if (NCBI_PTBCFG_DOINSTALL)
