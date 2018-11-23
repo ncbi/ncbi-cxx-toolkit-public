@@ -1477,6 +1477,10 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
         TSeqPos subj_length = 0;
         CRef<CSeq_id> subject_id;
         GetSequenceLengthAndId(seqinfo_src, kOid, subject_id, &subj_length);
+        if(subject_id.Empty()){
+        	NCBI_THROW(CBlastException, eCoreBlastError,
+        			   "Failed to retrieve subject id for oid " + NStr::UIntToString(kOid));
+        }
         
         // Union subject sequence ranges
         vector <TSeqRange> ranges;
@@ -1497,7 +1501,6 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
         // Get SeqIds for entrez query restriction.
 	vector<string> seqid_list;
         GetFilteredRedundantSeqids(*seqinfo_src, hsp_list->oid, seqid_list, subject_id->IsGi());
-        
         // stores a CSeq_align for each matching sequence
         vector<CRef<CSeq_align > > hit_align;
         if (is_gapped) {
