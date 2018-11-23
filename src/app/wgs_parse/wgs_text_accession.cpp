@@ -75,6 +75,9 @@ void CTextAccessionContainer::Set(const string& accession)
         m_valid = false;
     }
     else {
+
+        static const size_t VERSION_LEN = 2;
+        idx += VERSION_LEN;
         for (; idx < m_accession.size(); ++idx) {
             if (!isdigit(m_accession[idx])) {
                 break;

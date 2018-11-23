@@ -424,10 +424,16 @@ static int GetAccessionVersion(const CSeq_id& id)
     if (IsSpecialId(id)) {
         const CTextseq_id* text_id = id.GetTextseq_Id();
         if (text_id != nullptr && text_id->IsSetAccession()) {
-            const char* ver = text_id->GetAccession().c_str();
-            ret = NStr::StringToInt(ver, NStr::fAllowLeadingSymbols | NStr::fAllowTrailingSymbols);
-            if (ret == 0) {
-                ret = -1;
+
+            const string& accession = text_id->GetAccession();
+            auto first_digit = find_if(accession.begin(), accession.end(), [](char c) { return isdigit(c);  });
+            
+            if (first_digit != accession.end()) {
+
+                ret = NStr::StringToInt(CTempString(accession, first_digit - accession.begin(), 2), NStr::fAllowLeadingSymbols | NStr::fAllowTrailingSymbols);
+                if (ret == 0) {
+                    ret = -1;
+                }
             }
         }
     }
