@@ -2113,17 +2113,14 @@ void CSingleFeatValidator::x_ValidateGeneXRef()
                                 CBioseq_Handle nbsh = m_LocationBioseq.GetScope().GetBioseqHandle(*id);
                                 if (nbsh) {
                                     gene = m_Imp.GetGeneCache().GetGeneFromCache(cds, m_Scope);
-                                    if (gene) {
-                                        string label;
-                                        if (!gene->IsSetData() || !gene->GetData().IsGene()
-                                            || !CSingleFeatValidator::s_GeneRefsAreEquivalent(gene->GetData().GetGene(), gene->GetData().GetGene(), label)) {
-                                            gene.Reset(NULL);
-                                        }
-                                    }
                                 }
                             }
                         }
                     }
+                }
+                string label;
+                if (gene && !CSingleFeatValidator::s_GeneRefsAreEquivalent(*gene_xref, gene->GetData().GetGene(), label)) {
+                    gene.Reset(NULL);
                 }
                 if (gene_xref->IsSetLocus_tag() &&
                     !NStr::IsBlank(gene_xref->GetLocus_tag()) &&
