@@ -1418,23 +1418,30 @@ bool CCdregionValidator::x_IsProductMisplaced() const
     }
 
     for (CSeq_loc_CI loc_i(m_Feat.GetLocation()); loc_i; ++loc_i) {
+        const CSeq_id& sid = loc_i.GetSeq_id();
+        if (sid.IsOther() && sid.GetOther().IsSetAccession() && NStr::StartsWith(sid.GetOther().GetAccession(), "NT_")) {
+            return false;
+        }
         CBioseq_Handle nuc = m_Scope.GetBioseqHandle(loc_i.GetSeq_id());
-        if (s_BioseqHasRefSeqThatStartsWithPrefix(nuc, "NT_")) {
-            // we don't report this for NT records
-            return false;
-        }
-        CSeq_entry_Handle wgs = nuc.GetExactComplexityLevel(CBioseq_set::eClass_gen_prod_set);
-        if (wgs) {
-            // we don't report this for gen-prod-sets
-            return false;
-        }
+        
+        if (nuc) {
+            if (s_BioseqHasRefSeqThatStartsWithPrefix(nuc, "NT_")) {
+                // we don't report this for NT records
+                return false;
+            }
+            CSeq_entry_Handle wgs = nuc.GetExactComplexityLevel(CBioseq_set::eClass_gen_prod_set);
+            if (wgs) {
+                // we don't report this for gen-prod-sets
+                return false;
+            }
 
-        CSeq_entry_Handle nuc_nps =
-            nuc.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
+            CSeq_entry_Handle nuc_nps =
+                nuc.GetExactComplexityLevel(CBioseq_set::eClass_nuc_prot);
 
-        if (prod_nps == nuc_nps) {
-            found_match = true;
-            break;
+            if (prod_nps == nuc_nps) {
+                found_match = true;
+                break;
+            }
         }
     }
     return !found_match;
