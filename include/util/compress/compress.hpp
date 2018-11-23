@@ -425,7 +425,7 @@ public:
         eCompression,      ///< Compression/decompression error
         eCompressionFile   ///< Compression/decompression file error
     };
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eCompression     : return "eCompression";
