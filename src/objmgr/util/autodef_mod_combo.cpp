@@ -1029,15 +1029,6 @@ struct SAutoDefSourceGroupByStrings {
 };
 
 
-void CAutoDefModifierCombo::x_ReparseGroups()
-{
-    for (auto it : m_GroupList) {
-        it->SortDescriptions();
-
-    }
-}
-
-
 bool CAutoDefModifierCombo::AddQual (bool IsOrgMod, int subtype, bool even_if_not_uniquifying)
 {
     bool added = false, rval = false;
