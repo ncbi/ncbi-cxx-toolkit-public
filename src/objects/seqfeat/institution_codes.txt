@@ -6409,6 +6409,7 @@ SZL	s	Landesherbar von Salzburg
 SZM	s	Saitama Zoogeographical Museum			
 SZMC	c	Szeged Microbiological Collection			
 SZMN	s	Siberian Zoological Museum			
+SZP	s	Smthsonian Zoological Park			
 SZPT	s	Shenzhen Polytechnic			
 SZPT:ENT	s	Shenzhen Polytechnic, Entomology Collection		
 SZU	s	University of Salzburg, Department of Organismic Biology			

@@ -6442,6 +6442,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SZM\ts\tSaitama Zoogeographical Museum\t\t\t",
 "SZMC\tc\tSzeged Microbiological Collection\t\t\t",
 "SZMN\ts\tSiberian Zoological Museum\t\t\t",
+"SZP\ts\tSmthsonian Zoological Park\t\t\t",
 "SZPT\ts\tShenzhen Polytechnic\t\t\t",
 "SZPT:ENT\ts\tShenzhen Polytechnic, Entomology Collection\t\t",
 "SZU\ts\tUniversity of Salzburg, Department of Organismic Biology\t\t\t",
