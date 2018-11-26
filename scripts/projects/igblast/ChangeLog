@@ -1,3 +1,7 @@
+Nov 26, 2018
+*Release 1.12.0
+*Increase allowed distance between V gene end and J gene start positions (from 90 bp to 150 bp) as well as between V gene end and D gene start positions (from 55 to 120 bp) to accommodate extremely long VDJ junctions found in some antibodies. 
+
 Oct 25, 2018
 *Release 1.11.0
 *Change the 0-based coordinate system to 1-based coordinate system in AIRR format (with -outfmt 19 parameter) for sequence start positions per the new AIRR Rearrangement Schema ( http://docs.airr-community.org/en/latest/datarep/rearrangements.html ).
