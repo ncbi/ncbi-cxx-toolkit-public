@@ -6,7 +6,7 @@ CPPFLAGS=$(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 ## Use these two lines for normal CGI.
 LIB = xcgi xhtml xconnect xutil test_boost xncbi
-LIBS = $(CGI_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES=Boost.Test.Included
 
