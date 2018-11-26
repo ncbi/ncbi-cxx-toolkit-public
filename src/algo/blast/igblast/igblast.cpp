@@ -51,11 +51,12 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-static int max_allowed_VJ_distance_with_D = 90;
-static int max_allowed_VJ_distance_without_D = 40;
-static int max_allowed_VD_distance = 55;
+static int max_allowed_VJ_distance_with_D = 150;
+static int max_allowed_VJ_distance_without_D = 50;
+static int max_allowed_VD_distance = 120;
 static int extend_length = 30;
-static int max_allowed_V_end_to_J_end =150;
+static int max_J_length = 70;
+static int max_allowed_V_end_to_J_end = max_allowed_VJ_distance_with_D + max_J_length;
 static int max_v_j_overlap = 7;
 static int j_wordsize = 7;
 
