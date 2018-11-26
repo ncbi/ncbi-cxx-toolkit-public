@@ -74,37 +74,40 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CModValueAttribs::CModValueAttribs(const string& value) : mValue(value) {}
+CModValueAndAttrib::CModValueAndAttrib(const string& value) : mValue(value) {}
 
 
-CModValueAttribs::CModValueAttribs(const char* value) : mValue(value) {}
+CModValueAndAttrib::CModValueAndAttrib(const char* value) : mValue(value) {}
 
 
-void CModValueAttribs::SetValue(const string& value) 
+void CModValueAndAttrib::SetValue(const string& value) 
 {
     mValue = value;
 }
 
-void CModValueAttribs::AddAttrib(const string& attrib_name, 
-        const string& attrib_value)
+
+void CModValueAndAttrib::SetAttrib(const string& attrib)
 {
-    mAdditionalAttribs.emplace(attrib_name, attrib_value);
+    mAttrib = attrib;
 }
 
-bool CModValueAttribs::HasAdditionalAttribs(void) const
+
+bool CModValueAndAttrib::IsSetAttrib(void) const
 {
-    return !mAdditionalAttribs.empty();
+    return !(mAttrib.empty());
 }
 
-const string& CModValueAttribs::GetValue(void) const
+const string& CModValueAndAttrib::GetValue(void) const
 {
     return mValue;
 }
 
-const CModValueAttribs::TAttribs& CModValueAttribs::GetAdditionalAttribs(void) const
+
+const string& CModValueAndAttrib::GetAttrib(void) const
 {
-    return mAdditionalAttribs;
+    return mAttrib;
 }
+
 
 static bool s_IsUserType(const CUser_object& user_object, const string& type)
 {
@@ -112,6 +115,7 @@ static bool s_IsUserType(const CUser_object& user_object, const string& type)
             user_object.GetType().IsStr() &&
             user_object.GetType().GetStr() == type);
 }
+
 
 void CModParser::Apply(const CBioseq& bioseq, TMods& mods) 
 {
@@ -661,7 +665,7 @@ void CModHandler::AddMod(const string& name,
 
 
 void CModHandler::AddMod(const string& name,
-                         const CModValueAttribs& value_attribs,
+                         const CModValueAndAttrib& value_attrib,
                          EHandleExisting handle_existing)
 {
     const auto& canonical_name = x_GetCanonicalName(name);
@@ -687,7 +691,7 @@ void CModHandler::AddMod(const string& name,
             }
         }
     }
-    m_Mods.emplace(canonical_name, value_attribs);
+    m_Mods.emplace(canonical_name, value_attrib);
 }
 
 
@@ -1729,13 +1733,14 @@ bool CModAdder::x_TryOrgNameMod(const TRange& mod_range, CDescrCache& descr_cach
 
 void CModAdder::x_SetSubtype(const TRange& mod_range, CDescrCache& descr_cache)
 {
-    if (mod_range.first == mod_range.second) {
-        return;
-    }
+    _ASSERT(mod_range.first != mod_range.second);
     const auto subtype = s_SubSourceStringToEnum.at(x_GetModName(mod_range));
     for (auto it = mod_range.first; it != mod_range.second; ++it) {
         const auto& name = it->second.GetValue();
         auto pSubSource = Ref(new CSubSource(subtype,name));
+        if (it->second.IsSetAttrib()) {
+            pSubSource->SetAttrib(it->second.GetAttrib());
+        }
         descr_cache.SetSubtype().push_back(move(pSubSource));
     }
 }
@@ -1743,13 +1748,14 @@ void CModAdder::x_SetSubtype(const TRange& mod_range, CDescrCache& descr_cache)
 
 void CModAdder::x_SetOrgMod(const TRange& mod_range, CDescrCache& descr_cache)
 {
-    if (mod_range.first == mod_range.second) {
-        return ;
-    }
+    _ASSERT(mod_range.first != mod_range.second);
     const auto& subtype = s_OrgModStringToEnum.at(x_GetModName(mod_range));
     for (auto it = mod_range.first; it != mod_range.second; ++it) {
         const auto& subname = it->second.GetValue();
         auto pOrgMod = Ref(new COrgMod(subtype,subname));
+        if (it->second.IsSetAttrib()) {
+            pOrgMod->SetAttrib(it->second.GetAttrib());
+        }
         descr_cache.SetOrgMods().push_back(move(pOrgMod));
     }
 }

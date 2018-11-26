@@ -37,25 +37,23 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CModValueAttribs
+class CModValueAndAttrib 
 {
 public:
-    using TAttribs = map<string, string>;
-
-    CModValueAttribs(const string& value); 
-    CModValueAttribs(const char* value);
+    CModValueAndAttrib(const string& value);
+    CModValueAndAttrib(const char* value);
 
     void SetValue(const string& value);
-    void AddAttrib(const string& attrib_name, const string& attrib_value);
-    bool HasAdditionalAttribs(void) const;
+    void SetAttrib(const string& attrib);
+    bool IsSetAttrib(void) const;
 
     const string& GetValue(void) const;
-    const TAttribs& GetAdditionalAttribs(void) const;
-
+    const string& GetAttrib(void) const;
 private:
     string mValue;
-    TAttribs mAdditionalAttribs;
+    string mAttrib;
 };
+
 
 class IObjtoolsListener;
 
@@ -69,7 +67,7 @@ public:
         eAppendPreserve = 3
     };
 
-    using TMods = multimap<string, CModValueAttribs>;
+    using TMods = multimap<string, CModValueAndAttrib>;
 
     CModHandler(IObjtoolsListener* listener=nullptr);
 
@@ -78,7 +76,7 @@ public:
                 EHandleExisting handle_existing);
 
     void AddMod(const string& name,
-                const CModValueAttribs& val_attribs,
+                const CModValueAndAttrib& val_attrib,
                 EHandleExisting handle_existing);
 
     void AddMods(const TMods& mods, EHandleExisting handle_existing);
