@@ -78,7 +78,7 @@ DEFINE_STATIC_MUTEX(s_DiagPostMutex);
 static CSafeStatic<CRWLock> s_DiagRWLock(CSafeStaticLifeSpan(CSafeStaticLifeSpan::eLifeSpan_Long, 1));
 static CSafeStatic<CAtomicCounter_WithAutoInit> s_ReopenEntered;
 
-DEFINE_STATIC_FAST_MUTEX(s_ApproveMutex);
+DEFINE_STATIC_MUTEX(s_ApproveMutex);
 
 
 void g_Diag_Use_RWLock(bool enable)
@@ -1268,7 +1268,7 @@ CDiagContext::~CDiagContext(void)
 
 void CDiagContext::ResetLogRates(void)
 {
-    CFastMutexGuard lock(s_ApproveMutex);
+    CMutexGuard lock(s_ApproveMutex);
     m_AppLogRC->Reset(GetLogRate_Limit(eLogRate_App),
         CTimeSpan((long)GetLogRate_Period(eLogRate_App)),
         CTimeSpan((long)0),
@@ -1305,7 +1305,7 @@ unsigned int CDiagContext::GetLogRate_Limit(ELogRate_Type type) const
 
 void CDiagContext::SetLogRate_Limit(ELogRate_Type type, unsigned int limit)
 {
-    CFastMutexGuard lock(s_ApproveMutex);
+    CMutexGuard lock(s_ApproveMutex);
     switch ( type ) {
     case eLogRate_App:
         TAppLogRateLimitParam::SetDefault(limit);
@@ -1359,7 +1359,7 @@ unsigned int CDiagContext::GetLogRate_Period(ELogRate_Type type) const
 
 void CDiagContext::SetLogRate_Period(ELogRate_Type type, unsigned int period)
 {
-    CFastMutexGuard lock(s_ApproveMutex);
+    CMutexGuard lock(s_ApproveMutex);
     switch ( type ) {
     case eLogRate_App:
         TAppLogRatePeriodParam::SetDefault(period);
@@ -1405,7 +1405,7 @@ bool CDiagContext::ApproveMessage(SDiagMessage& msg,
     bool approved = true;
     if ( IsSetDiagPostFlag(eDPF_AppLog, msg.m_Flags) ) {
         if ( m_AppLogRC->IsEnabled() ) {
-            CFastMutexGuard lock(s_ApproveMutex);
+            CMutexGuard lock(s_ApproveMutex);
             approved = m_AppLogRC->Approve();
         }
         if ( approved ) {
@@ -1421,7 +1421,7 @@ bool CDiagContext::ApproveMessage(SDiagMessage& msg,
         case eDiag_Info:
         case eDiag_Trace:
             if ( m_TraceLogRC->IsEnabled() ) {
-                CFastMutexGuard lock(s_ApproveMutex);
+                CMutexGuard lock(s_ApproveMutex);
                 approved = m_TraceLogRC->Approve();
             }
             if ( approved ) {
@@ -1434,7 +1434,7 @@ bool CDiagContext::ApproveMessage(SDiagMessage& msg,
             break;
         default:
             if ( m_ErrLogRC->IsEnabled() ) {
-                CFastMutexGuard lock(s_ApproveMutex);
+                CMutexGuard lock(s_ApproveMutex);
                 approved = m_ErrLogRC->Approve();
             }
             if ( approved ) {
@@ -1523,12 +1523,12 @@ void CDiagContext::x_CreateUID(void) const
 }
 
 
-DEFINE_STATIC_FAST_MUTEX(s_CreateGUIDMutex);
+DEFINE_STATIC_MUTEX(s_CreateGUIDMutex);
 
 CDiagContext::TUID CDiagContext::GetUID(void) const
 {
     if ( !m_UID ) {
-        CFastMutexGuard guard(s_CreateGUIDMutex);
+        CMutexGuard guard(s_CreateGUIDMutex);
         if ( !m_UID ) {
             x_CreateUID();
         }
@@ -1702,12 +1702,12 @@ void CDiagContext::SetHostIP(const string& ip)
 }
 
 
-DEFINE_STATIC_FAST_MUTEX(s_AppNameMutex);
+DEFINE_STATIC_MUTEX(s_AppNameMutex);
 
 const string& CDiagContext::GetAppName(void) const
 {
     if ( !m_AppNameSet ) {
-        CFastMutexGuard guard(s_AppNameMutex);
+        CMutexGuard guard(s_AppNameMutex);
         if ( !m_AppNameSet ) {
             m_AppName->SetString(CNcbiApplication::GetAppName());
             if (CNcbiApplication::Instance()  &&  !m_AppName->IsEmpty()) {
@@ -1735,7 +1735,7 @@ void CDiagContext::SetAppName(const string& app_name)
         ERR_POST("Application name cannot be changed.");
         return;
     }
-    CFastMutexGuard guard(s_AppNameMutex);
+    CMutexGuard guard(s_AppNameMutex);
     m_AppName->SetString(app_name);
     m_AppNameSet = true;
     if ( m_AppName->IsEncoded() ) {
@@ -2763,11 +2763,11 @@ NCBI_PARAM_DEF_EX(string, Log, Session_Id, "", eParam_NoThread,
 typedef NCBI_PARAM_TYPE(Log, Session_Id) TParamDefaultSessionId;
 
 
-DEFINE_STATIC_FAST_MUTEX(s_DefaultSidMutex);
+DEFINE_STATIC_MUTEX(s_DefaultSidMutex);
 
 string CDiagContext::GetDefaultSessionID(void) const
 {
-    CFastMutexGuard lock(s_DefaultSidMutex);
+    CMutexGuard lock(s_DefaultSidMutex);
     if (m_DefaultSessionId.get() && !m_DefaultSessionId->IsEmpty()) {
         return m_DefaultSessionId->GetOriginalString();
     }
@@ -2791,7 +2791,7 @@ string CDiagContext::GetDefaultSessionID(void) const
 
 void CDiagContext::SetDefaultSessionID(const string& session_id)
 {
-    CFastMutexGuard lock(s_DefaultSidMutex);
+    CMutexGuard lock(s_DefaultSidMutex);
     if ( !m_DefaultSessionId.get() ) {
         m_DefaultSessionId.reset(new CEncodedString);
     }
@@ -2816,7 +2816,7 @@ string CDiagContext::GetEncodedSessionID(void) const
         return rctx.GetEncodedSessionID();
     }
     GetDefaultSessionID(); // Make sure the default value is initialized.
-    CFastMutexGuard lock(s_DefaultSidMutex);
+    CMutexGuard lock(s_DefaultSidMutex);
     _ASSERT(m_DefaultSessionId.get());
     return m_DefaultSessionId->GetEncodedString();
 }
@@ -2853,7 +2853,7 @@ NCBI_PARAM_DEF_EX(string, Log, Hit_Id, "", eParam_NoThread,
 typedef NCBI_PARAM_TYPE(Log, Hit_Id) TParamHitId;
 
 
-DEFINE_STATIC_FAST_MUTEX(s_DefaultHidMutex);
+DEFINE_STATIC_MUTEX(s_DefaultHidMutex);
 
 bool CDiagContext::x_DiagAtApplicationLevel(void) const
 {
@@ -2881,21 +2881,21 @@ void CDiagContext::x_LogHitID(void) const
 
 void CDiagContext::x_LogHitID_WithLock(void) const
 {
-    CFastMutexGuard guard(s_DefaultHidMutex);
+    CMutexGuard guard(s_DefaultHidMutex);
     x_LogHitID();
 }
 
 
 bool CDiagContext::x_IsSetDefaultHitID(void) const
 {
-    CFastMutexGuard guard(s_DefaultHidMutex);
+    CMutexGuard guard(s_DefaultHidMutex);
     return m_DefaultHitId.get() && !m_DefaultHitId->Empty();
 }
 
 
 CSharedHitId CDiagContext::x_GetDefaultHitID(EDefaultHitIDFlags flag) const
 {
-    CFastMutexGuard guard(s_DefaultHidMutex);
+    CMutexGuard guard(s_DefaultHidMutex);
     if (m_DefaultHitId.get()  &&  !m_DefaultHitId->Empty()) {
         return *m_DefaultHitId;
     }
@@ -2960,7 +2960,7 @@ CSharedHitId CDiagContext::x_GetDefaultHitID(EDefaultHitIDFlags flag) const
 
 void CDiagContext::SetDefaultHitID(const string& hit_id)
 {
-    CFastMutexGuard guard(s_DefaultHidMutex);
+    CMutexGuard guard(s_DefaultHidMutex);
     if ( !m_DefaultHitId.get() ) {
         m_DefaultHitId.reset(new CSharedHitId());
     }
