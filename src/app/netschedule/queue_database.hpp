@@ -128,10 +128,6 @@ public:
     void RunExecutionWatcherThread(const CNSPreciseTime &  run_delay);
     void StopExecutionWatcherThread(void);
 
-
-    /// Force transaction checkpoint
-    void TransactionCheckPoint(bool  clean_log = false);
-
     string PrintTransitionCounters(void);
     string PrintJobsStat(const CNSClientId &  client);
     string GetQueueClassesInfo(void) const;

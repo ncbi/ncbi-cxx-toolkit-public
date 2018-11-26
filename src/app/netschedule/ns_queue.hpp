@@ -402,7 +402,8 @@ public:
 
     // Dump a single job
     string PrintJobDbStat(const CNSClientId &  client,
-                          unsigned int         job_id);
+                          unsigned int         job_id,
+                          TDumpFields          dump_fields);
     // Dump all job records
     string PrintAllJobDbStat(const CNSClientId &         client,
                              const string &              group,
@@ -410,6 +411,8 @@ public:
                              const vector<TJobStatus> &  job_statuses,
                              unsigned int                start_after_job_id,
                              unsigned int                count,
+                             bool                        order_first,
+                             TDumpFields                 dump_fields,
                              bool                        logging);
 
     unsigned CountStatus(TJobStatus) const;
@@ -597,7 +600,9 @@ private:
 
     string x_DumpJobs(const TNSBitVector &   jobs_to_dump,
                       unsigned int           start_after_job_id,
-                      unsigned int           count);
+                      unsigned int           count,
+                      TDumpFields            dump_fields,
+                      bool                   order_first);
     unsigned int x_CancelJobs(const CNSClientId &   client,
                               const TNSBitVector &  jobs_to_cancel,
                               bool                  logging);

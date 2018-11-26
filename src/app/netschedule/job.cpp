@@ -208,7 +208,7 @@ CJob::CJob(const SNSCommandArguments &  request) :
 string CJob::GetErrorMsg() const
 {
     if (m_Events.empty())
-        return "";
+        return kEmptyStr;
     return GetLastEvent()->GetErrorMsg();
 }
 
@@ -297,7 +297,8 @@ bool CJob::ShouldNotifyListener(const CNSPreciseTime &  current_time) const
 
 
 // Used to DUMP a job
-string CJob::Print(const CQueue &               queue,
+string CJob::Print(TDumpFields                  dump_fields,
+                   const CQueue &               queue,
                    const CNSAffinityRegistry &  aff_registry,
                    const CNSGroupsRegistry &    group_registry) const
 {
@@ -334,140 +335,399 @@ string CJob::Print(const CQueue &               queue,
                                      pending_timeout,
                                      m_LastTouch);
 
-    result = "OK:id: " + NStr::NumericToString(m_Id) + "\n"
-             "OK:key: " + queue.MakeJobKey(m_Id) + "\n"
-             "OK:status: " + CNetScheduleAPI::StatusToString(m_Status) + "\n"
-             "OK:last_touch: " + NS_FormatPreciseTime(m_LastTouch) +"\n";
+    if (dump_fields & eId)
+        x_AppendId(result);
+    if (dump_fields & eKey)
+        x_AppendKey(queue, result);
+    if (dump_fields & eStatus)
+        x_AppendStatus(result);
+    if (dump_fields & eLastTouch)
+        x_AppendLastTouch(result);
+    if (dump_fields & eEraseTime)
+        x_AppendEraseTime(timeout, pending_timeout, exp_time, result);
+    if (dump_fields & eRunExpiration)
+        x_AppendRunExpiration(run_timeout, exp_time, result);
+    if (dump_fields & eReadExpiration)
+        x_AppendReadExpiration(read_timeout, exp_time, result);
+    if (dump_fields & eSubmitNotifPort)
+        x_AppendSubmitNotifPort(result);
+    if (dump_fields & eSubmitNotifExpiration)
+        x_AppendSubmitNotifExpiration(result);
+    if (dump_fields & eListenerNotif)
+        x_AppendListenerNotif(result);
+    if (dump_fields & eListenerNotifExpiration)
+        x_AppendListenerNotifExpiration(result);
+    if (dump_fields & eEvents)
+        x_AppendEvents(result);
+    if (dump_fields & eRunCounter)
+        x_AppendRunCounter(result);
+    if (dump_fields & eReadCounter)
+        x_AppendReadCounter(result);
+    if (dump_fields & eAffinity)
+        x_AppendAffinity(aff_registry, result);
+    if (dump_fields & eGroup)
+        x_AppendGroup(group_registry, result);
+    if (dump_fields & eMask)
+        x_AppendMask(result);
+    if (dump_fields & eInput)
+        x_AppendInput(result);
+    if (dump_fields & eOutput)
+        x_AppendOutput(result);
+    if (dump_fields & eProgressMsg)
+        x_AppendProgressMsg(result);
+    if (dump_fields & eRemoteClientSID)
+        x_AppendRemoteClientSID(result);
+    if (dump_fields & eRemoteClientIP)
+        x_AppendRemoteClientIP(result);
+    if (dump_fields & eNcbiPHID)
+        x_AppendNcbiPhid(result);
+    if (dump_fields & eNeedSubmitProgressMsgNotif)
+        x_AppendNeedSubmitProgressMsgNotif(result);
+    if (dump_fields & eNeedListenerProgressMsgNotif)
+        x_AppendNeedListenerProgressMsgNotif(result);
+    if (dump_fields & eNeedStolenNotif)
+        x_AppendNeedStolenNotif(result);
 
-    if (m_Status == CNetScheduleAPI::eRunning ||
-        m_Status == CNetScheduleAPI::eReading)
-        result += "OK:erase_time: n/a (timeout: " +
-                  NS_FormatPreciseTimeAsSec(timeout) +
-                  " sec, pending timeout: " +
-                  NS_FormatPreciseTimeAsSec(pending_timeout) + " sec)\n";
-    else
-        result += "OK:erase_time: " + NS_FormatPreciseTime(exp_time) +
-                  " (timeout: " +
-                  NS_FormatPreciseTimeAsSec(timeout) +
-                  " sec, pending timeout: " +
-                  NS_FormatPreciseTimeAsSec(pending_timeout) + " sec)\n";
-
-    if (m_Status != CNetScheduleAPI::eRunning &&
-        m_Status != CNetScheduleAPI::eReading) {
-        result += "OK:run_expiration: n/a (timeout: " +
-                  NS_FormatPreciseTimeAsSec(run_timeout) + " sec)\n"
-                  "OK:read_expiration: n/a (timeout: " +
-                  NS_FormatPreciseTimeAsSec(read_timeout) + " sec)\n";
-    } else {
-        if (m_Status == CNetScheduleAPI::eRunning) {
-            result += "OK:run_expiration: " + NS_FormatPreciseTime(exp_time) +
-                      " (timeout: " +
-                      NS_FormatPreciseTimeAsSec(run_timeout) + " sec)\n"
-                      "OK:read_expiration: n/a (timeout: " +
-                      NS_FormatPreciseTimeAsSec(read_timeout) + " sec)\n";
-        } else {
-            // Reading job
-            result += "OK:run_expiration: n/a (timeout: " +
-                      NS_FormatPreciseTimeAsSec(run_timeout) + " sec)\n"
-                      "OK:read_expiration: " + NS_FormatPreciseTime(exp_time) +
-                      " (timeout: " +
-                      NS_FormatPreciseTimeAsSec(read_timeout) + " sec)\n";
-        }
-    }
-
-    if (m_SubmNotifPort != 0)
-        result += "OK:subm_notif_port: " +
-                  NStr::NumericToString(m_SubmNotifPort) + "\n";
-    else
-        result += "OK:subm_notif_port: n/a\n";
-
-    if (m_SubmNotifTimeout != kTimeZero) {
-        CNSPreciseTime  subm_exp_time = m_Events[0].m_Timestamp +
-                                        m_SubmNotifTimeout;
-        result += "OK:subm_notif_expiration: " +
-                  NS_FormatPreciseTime(subm_exp_time) + " (timeout: " +
-                  NS_FormatPreciseTimeAsSec(m_SubmNotifTimeout) + " sec)\n";
-    }
-    else
-        result += "OK:subm_notif_expiration: n/a\n";
-
-    if (m_ListenerNotifAddress == 0 || m_ListenerNotifPort == 0)
-        result += "OK:listener_notif: n/a\n";
-    else
-        result += "OK:listener_notif: " +
-                  CSocketAPI::gethostbyaddr(m_ListenerNotifAddress) + ":" +
-                  NStr::NumericToString(m_ListenerNotifPort) + "\n";
-
-    if (m_ListenerNotifAbsTime != kTimeZero)
-        result += "OK:listener_notif_expiration: " +
-                  NS_FormatPreciseTime(m_ListenerNotifAbsTime) + "\n";
-    else
-        result += "OK:listener_notif_expiration: n/a\n";
-
-
-    // Print detailed information about the job events
-    int                         event = 1;
-
-    ITERATE(vector<CJobEvent>, it, m_Events) {
-        unsigned int    addr = it->GetNodeAddr();
-
-        result += "OK:event" + NStr::NumericToString(event++) + ": "
-                  "client=";
-        if (addr == 0)
-            result += "ns ";
-        else
-            result += CSocketAPI::gethostbyaddr(addr) + " ";
-
-        result += "event=" + CJobEvent::EventToString(it->GetEvent()) + " "
-                  "status=" +
-                  CNetScheduleAPI::StatusToString(it->GetStatus()) + " "
-                  "ret_code=" + NStr::NumericToString(it->GetRetCode()) + " ";
-
-        // Time part
-        result += "timestamp=";
-        CNSPreciseTime  start = it->GetTimestamp();
-        if (start == kTimeZero)
-            result += "n/a ";
-        else
-            result += "'" + NS_FormatPreciseTime(start) + "' ";
-
-        // The rest
-        result += "node='" + it->GetClientNode() + "' "
-                  "session='" + it->GetClientSession() + "' "
-                  "err_msg=" + it->GetQuotedErrorMsg() + "\n";
-    }
-
-    result += "OK:run_counter: " + NStr::NumericToString(m_RunCount) + "\n"
-              "OK:read_counter: " + NStr::NumericToString(m_ReadCount) + "\n";
-
-    if (m_AffinityId != 0)
-        result += "OK:affinity: " + NStr::NumericToString(m_AffinityId) + " ('" +
-                  NStr::PrintableString(aff_registry.GetTokenByID(m_AffinityId)) +
-                  "')\n";
-    else
-        result += "OK:affinity: n/a\n";
-
-    if (m_GroupId != 0)
-        result += "OK:group: " + NStr::NumericToString(m_GroupId) + " ('" +
-            NStr::PrintableString(group_registry.ResolveGroup(m_GroupId)) +
-            "')\n";
-    else
-        result += "OK:group: n/a\n";
-
-    result += "OK:mask: " + NStr::NumericToString(m_Mask) + "\n"
-              "OK:input: '" + NStr::PrintableString(m_Input) + "'\n"
-              "OK:output: '" + NStr::PrintableString(m_Output) + "'\n"
-              "OK:progress_msg: '" + m_ProgressMsg + "'\n"
-              "OK:remote_client_sid: " + NStr::PrintableString(m_ClientSID) + "\n"
-              "OK:remote_client_ip: " + NStr::PrintableString(m_ClientIP) + "\n"
-              "OK:ncbi_phid: " + NStr::PrintableString(m_NCBIPHID) + "\n"
-              "OK:need_subm_progress_msg_notif: " +
-                 NStr::BoolToString(m_NeedSubmProgressMsgNotif) + "\n"
-              "OK:need_lsnr_progress_msg_notif: " +
-                 NStr::BoolToString(m_NeedLsnrProgressMsgNotif) + "\n"
-              "OK:need_stolen_notif: " +
-                 NStr::BoolToString(m_NeedStolenNotif) + "\n";
     return result;
+}
+
+void CJob::x_AppendId(string & dump) const
+{
+    static string   prefix = "OK:id: ";
+    dump.append(prefix)
+        .append(NStr::NumericToString(m_Id))
+        .append(kNewLine);
+}
+
+void CJob::x_AppendKey(const CQueue & queue, string & dump) const
+{
+    static string   prefix = "OK:key: ";
+    dump.append(prefix)
+        .append(queue.MakeJobKey(m_Id))
+        .append(kNewLine);
+}
+
+void CJob::x_AppendStatus(string & dump) const
+{
+    static string   prefix = "OK:status: ";
+    dump.append(prefix)
+        .append(CNetScheduleAPI::StatusToString(m_Status))
+        .append(kNewLine);
+}
+
+void CJob::x_AppendLastTouch(string & dump) const
+{
+    static string   prefix = "OK:last_touch: ";
+    dump.append(prefix)
+        .append(NS_FormatPreciseTime(m_LastTouch))
+        .append(kNewLine);
+}
+
+void CJob::x_AppendEraseTime(const CNSPreciseTime & timeout,
+                             const CNSPreciseTime & pending_timeout,
+                             const CNSPreciseTime & exp_time,
+                             string & dump) const
+{
+    static string   prefix = "OK:erase_time: ";
+    static string   na_prefix = prefix + "n/a (timeout: ";
+    static string   timeout_suffix = " (timeout: ";
+    static string   postfix = " sec)" + kNewLine;
+    static string   pending_suffix = " sec, pending timeout: ";
+    if (m_Status == CNetScheduleAPI::eRunning || m_Status == CNetScheduleAPI::eReading)
+        dump.append(na_prefix)
+            .append(NS_FormatPreciseTimeAsSec(timeout))
+            .append(pending_suffix)
+            .append(NS_FormatPreciseTimeAsSec(pending_timeout))
+            .append(postfix);
+    else
+        dump.append(prefix)
+            .append(NS_FormatPreciseTime(exp_time))
+            .append(timeout_suffix)
+            .append(NS_FormatPreciseTimeAsSec(timeout))
+            .append(pending_suffix)
+            .append(NS_FormatPreciseTimeAsSec(pending_timeout))
+            .append(postfix);
+}
+
+void CJob::x_AppendRunExpiration(const CNSPreciseTime & run_timeout,
+                                 const CNSPreciseTime & exp_time,
+                                 string & dump) const
+{
+    static string   prefix = "OK:run_expiration: ";
+    static string   na_prefix = prefix + "n/a (timeout: ";
+    static string   suffix = " (timeout: ";
+    static string   postfix = " sec)" + kNewLine;
+    if (m_Status == CNetScheduleAPI::eRunning)
+        dump.append(prefix)
+            .append(NS_FormatPreciseTime(exp_time))
+            .append(suffix)
+            .append(NS_FormatPreciseTimeAsSec(run_timeout))
+            .append(postfix);
+    else
+        dump.append(na_prefix)
+            .append(NS_FormatPreciseTimeAsSec(run_timeout))
+            .append(postfix);
+}
+
+void CJob::x_AppendReadExpiration(const CNSPreciseTime & read_timeout,
+                                  const CNSPreciseTime & exp_time,
+                                  string & dump) const
+{
+    static string   prefix = "OK:read_expiration: ";
+    static string   na_prefix = prefix + "n/a (timeout: ";
+    static string   suffix = " (timeout: ";
+    static string   postfix = " sec)" + kNewLine;
+    if (m_Status == CNetScheduleAPI::eReading)
+        dump.append(prefix)
+            .append(NS_FormatPreciseTime(exp_time))
+            .append(suffix)
+            .append(NS_FormatPreciseTimeAsSec(read_timeout))
+            .append(postfix);
+    else
+        dump.append(na_prefix)
+            .append(NS_FormatPreciseTimeAsSec(read_timeout))
+            .append(postfix);
+}
+
+void CJob::x_AppendSubmitNotifPort(string & dump) const
+{
+    static string   prefix = "OK:subm_notif_port: ";
+    static string   na_reply = prefix + "n/a" + kNewLine;
+    if (m_SubmNotifPort != 0)
+        dump.append(prefix)
+            .append(NStr::NumericToString(m_SubmNotifPort))
+            .append(kNewLine);
+    else
+        dump.append(na_reply);
+}
+
+void CJob::x_AppendSubmitNotifExpiration(string & dump) const
+{
+    static string   prefix = "OK:subm_notif_expiration: ";
+    static string   suffix = " (timeout: ";
+    static string   postfix = " sec)" + kNewLine;
+    static string   na_reply = prefix + "n/a" + kNewLine;
+    if (m_SubmNotifTimeout != kTimeZero)
+        dump.append(prefix)
+            .append(NS_FormatPreciseTime(m_Events[0].m_Timestamp + m_SubmNotifTimeout))
+            .append(suffix)
+            .append(NS_FormatPreciseTimeAsSec(m_SubmNotifTimeout))
+            .append(postfix);
+    else
+        dump.append(na_reply);
+}
+
+void CJob::x_AppendListenerNotif(string & dump) const
+{
+    static string   prefix = "OK:listener_notif: ";
+    static string   na_reply = prefix + "n/a" + kNewLine;
+    static string   colon = ":";
+    if (m_ListenerNotifAddress == 0 || m_ListenerNotifPort == 0)
+        dump.append(na_reply);
+    else
+        dump.append(prefix)
+            .append(CSocketAPI::gethostbyaddr(m_ListenerNotifAddress))
+            .append(colon)
+            .append(NStr::NumericToString(m_ListenerNotifPort))
+            .append(kNewLine);
+}
+
+void CJob::x_AppendListenerNotifExpiration(string & dump) const
+{
+    static string   prefix = "OK:listener_notif_expiration: ";
+    static string   na_reply = prefix + "n/a" + kNewLine;
+    if (m_ListenerNotifAbsTime != kTimeZero)
+        dump.append(prefix)
+            .append(NS_FormatPreciseTime(m_ListenerNotifAbsTime))
+            .append(kNewLine);
+    else
+        dump.append(na_reply);
+}
+
+void CJob::x_AppendEvents(string & dump) const
+{
+    static string       prefix = "OK:event";
+    static string       client = ": client=";
+    static string       ns = "ns";
+    static string       event = " event=";
+    static string       status = " status=";
+    static string       ret_code = " ret_code=";
+    static string       timestamp = " timestamp=";
+    static string       na = "n/a ";
+    static string       node = "' node='";
+    static string       session = "' session='";
+    static string       err_msg = "' err_msg=";
+    int                 event_no = 1;
+
+    for (const auto &  ev : m_Events) {
+        unsigned int    addr = ev.GetNodeAddr();
+
+        dump.append(prefix)
+            .append(NStr::NumericToString(event_no))
+            .append(client);
+        if (addr == 0)
+            dump.append(ns);
+        else
+            dump.append(CSocketAPI::gethostbyaddr(addr));
+
+        dump.append(event)
+            .append(CJobEvent::EventToString(ev.GetEvent()))
+            .append(status)
+            .append(CNetScheduleAPI::StatusToString(ev.GetStatus()))
+            .append(ret_code)
+            .append(NStr::NumericToString(ev.GetRetCode()))
+            .append(timestamp);
+
+        CNSPreciseTime  start = ev.GetTimestamp();
+        if (start == kTimeZero)
+            dump.append(na);
+        else
+            dump.append(1, '\'')
+                .append(NS_FormatPreciseTime(start))
+                .append(node)
+                .append(ev.GetClientNode())
+                .append(session)
+                .append(ev.GetClientSession())
+                .append(err_msg)
+                .append(ev.GetQuotedErrorMsg())
+                .append(kNewLine);
+        ++event_no;
+    }
+}
+
+void CJob::x_AppendRunCounter(string & dump) const
+{
+    static string   prefix = "OK:run_counter: ";
+    dump.append(prefix)
+        .append(NStr::NumericToString(m_RunCount))
+        .append(kNewLine);
+}
+
+void CJob::x_AppendReadCounter(string & dump) const
+{
+    static string   prefix = "OK:read_counter: ";
+    dump.append(prefix)
+        .append(NStr::NumericToString(m_ReadCount))
+        .append(kNewLine);
+}
+
+void CJob::x_AppendAffinity(const CNSAffinityRegistry &  aff_registry,
+                            string & dump) const
+{
+    static string   prefix = "OK:affinity: ";
+    static string   na_reply = prefix + "n/a" + kNewLine;
+    static string   open_paren = " ('";
+    static string   close_paren = "')";
+    if (m_AffinityId != 0)
+        dump.append(prefix)
+            .append(NStr::NumericToString(m_AffinityId))
+            .append(open_paren)
+            .append(NStr::PrintableString(aff_registry.GetTokenByID(m_AffinityId)))
+            .append(close_paren)
+            .append(kNewLine);
+    else
+        dump.append(na_reply);
+}
+
+void CJob::x_AppendGroup(const CNSGroupsRegistry & group_registry,
+                         string & dump) const
+{
+    static string   prefix = "OK:group: ";
+    static string   na_reply = prefix + "n/a" + kNewLine;
+    static string   open_paren = " ('";
+    static string   close_paren = "')";
+    if (m_GroupId != 0)
+        dump.append(prefix)
+            .append(NStr::NumericToString(m_GroupId))
+            .append(open_paren)
+            .append(NStr::PrintableString(group_registry.ResolveGroup(m_GroupId)))
+            .append(close_paren)
+            .append(kNewLine);
+    else
+        dump.append(na_reply);
+}
+
+void CJob::x_AppendMask(string & dump) const
+{
+    static string   prefix = "OK:mask: ";
+    dump.append(prefix)
+        .append(NStr::NumericToString(m_Mask))
+        .append(kNewLine);
+}
+
+void CJob::x_AppendInput(string & dump) const
+{
+    static string   prefix = "OK:input: '";
+    dump.append(prefix)
+        .append(NStr::PrintableString(m_Input))
+        .append(1, '\'')
+        .append(kNewLine);
+}
+
+void CJob::x_AppendOutput(string & dump) const
+{
+    static string   prefix = "OK:output: '";
+    dump.append(prefix)
+        .append(NStr::PrintableString(m_Output))
+        .append(1, '\'')
+        .append(kNewLine);
+}
+
+void CJob::x_AppendProgressMsg(string & dump) const
+{
+    static string   prefix = "OK:progress_msg: '";
+    dump.append(prefix)
+        .append(m_ProgressMsg)
+        .append(1, '\'')
+        .append(kNewLine);
+}
+
+void CJob::x_AppendRemoteClientSID(string & dump) const
+{
+    static string   prefix = "OK:remote_client_sid: ";
+    dump.append(prefix)
+        .append(NStr::PrintableString(m_ClientSID))
+        .append(kNewLine);
+}
+
+void CJob::x_AppendRemoteClientIP(string & dump) const
+{
+    static string   prefix = "OK:remote_client_ip: ";
+    dump.append(prefix)
+        .append(NStr::PrintableString(m_ClientIP))
+        .append(kNewLine);
+}
+
+void CJob::x_AppendNcbiPhid(string & dump) const
+{
+    static string   prefix = "OK:ncbi_phid: ";
+    dump.append(prefix)
+        .append(NStr::PrintableString(m_NCBIPHID))
+        .append(kNewLine);
+}
+
+void CJob::x_AppendNeedSubmitProgressMsgNotif(string & dump) const
+{
+    static string   prefix = "OK:need_subm_progress_msg_notif: ";
+    dump.append(prefix)
+        .append(NStr::BoolToString(m_NeedSubmProgressMsgNotif))
+        .append(kNewLine);
+}
+
+void CJob::x_AppendNeedListenerProgressMsgNotif(string & dump) const
+{
+    static string   prefix = "OK:need_lsnr_progress_msg_notif: ";
+    dump.append(prefix)
+        .append(NStr::BoolToString(m_NeedLsnrProgressMsgNotif))
+        .append(kNewLine);
+}
+
+void CJob::x_AppendNeedStolenNotif(string & dump) const
+{
+    static string   prefix = "OK:need_stolen_notif: ";
+    dump.append(prefix)
+        .append(NStr::BoolToString(m_NeedStolenNotif))
+        .append(kNewLine);
 }
 
 

@@ -1234,10 +1234,6 @@ void CQueueDataBase::Close(void)
 }
 
 
-void CQueueDataBase::TransactionCheckPoint(bool clean_log)
-{}
-
-
 string CQueueDataBase::PrintTransitionCounters(void)
 {
     string                      result;
@@ -1268,17 +1264,22 @@ string CQueueDataBase::PrintJobsStat(const CNSClientId &  client)
 string CQueueDataBase::GetQueueClassesInfo(void) const
 {
     string                  output;
+    output.reserve(16384);
+
     CFastMutexGuard         guard(m_ConfigureLock);
 
     for (TQueueParams::const_iterator  k = m_QueueClasses.begin();
          k != m_QueueClasses.end(); ++k) {
         if (!output.empty())
-            output += "\n";
+            output.append(kNewLine);
 
         // false - not to include qclass
         // false - not URL encoded format
-        output += "OK:[qclass " + k->first + "]\n" +
-                  k->second.GetPrintableParameters(false, false);
+        output.append("OK:[qclass ")
+              .append(k->first)
+              .append(1, ']')
+              .append(kNewLine)
+              .append(k->second.GetPrintableParameters(false, false));
 
         for (map<string, string>::const_iterator
              j = k->second.linked_sections.begin();
@@ -1289,7 +1290,13 @@ string CQueueDataBase::GetQueueClassesInfo(void) const
             map<string, string> values = GetLinkedSection(section_name);
             for (map<string, string>::const_iterator m = values.begin();
                  m != values.end(); ++m)
-                output += "\nOK:" + prefix + "." + m->first + ": " + m->second;
+                output.append(kNewLine)
+                      .append("OK:")
+                      .append(prefix)
+                      .append(1, '.')
+                      .append(m->first)
+                      .append(": ")
+                      .append(m->second);
         }
     }
     return output;
@@ -1303,9 +1310,12 @@ string CQueueDataBase::GetQueueClassesConfig(void) const
     for (TQueueParams::const_iterator  k = m_QueueClasses.begin();
          k != m_QueueClasses.end(); ++k) {
         if (!output.empty())
-            output += "\n";
-        output += "[qclass_" + k->first + "]\n" +
-                  k->second.ConfigSection(true);
+            output.append(kNewLine);
+        output.append("[qclass_")
+              .append(k->first)
+              .append(1, ']')
+              .append(kNewLine)
+              .append(k->second.ConfigSection(true));
     }
     return output;
 }
@@ -1640,7 +1650,6 @@ void CQueueDataBase::Purge(void)
 
     // Part IV: purge the found candidates and optimize the memory if required
     m_FreeStatusMemCnt += x_PurgeUnconditional();
-    TransactionCheckPoint();
 
     x_OptimizeStatusMatrix(current_time);
 }

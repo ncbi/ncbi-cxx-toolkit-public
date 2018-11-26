@@ -418,21 +418,30 @@ void CStatisticsCounters::PrintDelta(CDiagContext_Extra &  extra,
 
 string CStatisticsCounters::PrintTransitions(void) const
 {
-    string result = "OK:submits: " +
-                    NStr::NumericToString(m_SubmitCounter.Get()) + "\n"
-                    "OK:ns_submit_rollbacks: " +
-                    NStr::NumericToString(m_NSSubmitRollbackCounter.Get()) + "\n"
-                    "OK:ns_get_rollbacks: " +
-                    NStr::NumericToString(m_NSGetRollbackCounter.Get()) + "\n"
-                    "OK:ns_read_rollbacks: " +
-                    NStr::NumericToString(m_NSReadRollbackCounter.Get()) + "\n"
-                    "OK:picked_as_pending_outdated: " +
-                    NStr::NumericToString(m_PickedAsPendingOutdated.Get()) + "\n"
-                    "OK:picked_as_read_outdated: " +
-                    NStr::NumericToString(m_PickedAsReadOutdated.Get()) + "\n"
-                    "OK:dbdeletions: " +
-                    NStr::NumericToString(m_DBDeleteCounter.Get()) + "\n"
-                    ;
+    string result;
+    result.reserve(4096);
+
+    result.append("OK:submits: ")
+          .append(NStr::NumericToString(m_SubmitCounter.Get()))
+          .append(kNewLine)
+          .append("OK:ns_submit_rollbacks: ")
+          .append(NStr::NumericToString(m_NSSubmitRollbackCounter.Get()))
+          .append(kNewLine)
+          .append("OK:ns_get_rollbacks: ")
+          .append(NStr::NumericToString(m_NSGetRollbackCounter.Get()))
+          .append(kNewLine)
+          .append("OK:ns_read_rollbacks: ")
+          .append(NStr::NumericToString(m_NSReadRollbackCounter.Get()))
+          .append(kNewLine)
+          .append("OK:picked_as_pending_outdated: ")
+          .append(NStr::NumericToString(m_PickedAsPendingOutdated.Get()))
+          .append(kNewLine)
+          .append("OK:picked_as_read_outdated: ")
+          .append(NStr::NumericToString(m_PickedAsReadOutdated.Get()))
+          .append(kNewLine)
+          .append("OK:dbdeletions: ")
+          .append(NStr::NumericToString(m_DBDeleteCounter.Get()))
+          .append(kNewLine);
 
     for (size_t  index_from = 0;
          index_from < g_ValidJobStatusesSize; ++index_from) {
@@ -442,88 +451,127 @@ string CStatisticsCounters::PrintTransitions(void) const
             // All invalid transitions are marked as -1
             if (m_Transitions[index_from][index_to].Get() !=
                     static_cast<TNCBIAtomicValue>(-1))
-                result += "OK:" +
-                          x_GetTransitionCounterName(index_from, index_to) + ": " +
-                          NStr::NumericToString(m_Transitions[index_from][index_to].Get()) + "\n";
+                result.append("OK:")
+                      .append(x_GetTransitionCounterName(index_from, index_to))
+                      .append(": ")
+                      .append(NStr::NumericToString(m_Transitions[index_from][index_to].Get()))
+                      .append(kNewLine);
         }
     }
-    return result +
-           "OK:Running_Pending_timeout: " +
-           NStr::NumericToString(m_ToPendingDueToTimeoutCounter.Get()) + "\n"
-           "OK:Running_Pending_fail: " +
-           NStr::NumericToString(m_ToPendingDueToFailCounter.Get()) + "\n"
-           "OK:Running_Pending_clear: " +
-           NStr::NumericToString(m_ToPendingDueToClearCounter.Get()) + "\n"
-           "OK:Running_Failed_clear: " +
-           NStr::NumericToString(m_ToFailedDueToClearCounter.Get()) + "\n"
-           "OK:Running_Pending_new_session: " +
-           NStr::NumericToString(m_ToPendingDueToNewSessionCounter.Get()) + "\n"
-           "OK:Running_Pending_without_blacklist: " +
-           NStr::NumericToString(m_ToPendingWithoutBlacklist.Get()) + "\n"
-           "OK:Running_Pending_rescheduled: " +
-           NStr::NumericToString(m_ToPendingRescheduled.Get()) + "\n"
-           "OK:Running_Failed_new_session: " +
-           NStr::NumericToString(m_ToFailedDueToNewSessionCounter.Get()) + "\n"
-           "OK:Running_Failed_timeout: " +
-           NStr::NumericToString(m_ToFailedDueToTimeoutCounter.Get()) + "\n"
-           "OK:Reading_Done_timeout: " +
-           NStr::NumericToString(m_ToDoneDueToTimeoutCounter.Get()) + "\n"
-           "OK:Reading_Done_fail: " +
-           NStr::NumericToString(m_ToDoneDueToFailCounter.Get()) + "\n"
-           "OK:Reading_Done_clear: " +
-           NStr::NumericToString(m_ToDoneDueToClearCounter.Get()) + "\n"
-           "OK:Reading_ReadFailed_clear: " +
-           NStr::NumericToString(m_ToReadFailedDueToClearCounter.Get()) + "\n"
-           "OK:Reading_Done_new_session: " +
-           NStr::NumericToString(m_ToDoneDueToNewSessionCounter.Get()) + "\n"
-           "OK:Reading_ReadFailed_new_session: " +
-           NStr::NumericToString(m_ToReadFailedDueToNewSessionCounter.Get()) + "\n"
-           "OK:Reading_ReadFailed_timeout: " +
-           NStr::NumericToString(m_ToReadFailedDueToTimeoutCounter.Get()) + "\n"
-           "OK:Reading_Canceled_read_timeout: " +
-           NStr::NumericToString(m_ToCanceledDueToReadTimeoutCounter.Get()) + "\n"
-           "OK:Reading_Failed_read_timeout: " +
-           NStr::NumericToString(m_ToFailedDueToReadTimeoutCounter.Get()) + "\n"
-           "OK:Reading_Canceled_new_session: " +
-           NStr::NumericToString(m_ToCanceledDueToReadNewSessionCounter.Get()) + "\n"
-           "OK:Reading_Canceled_clear: " +
-           NStr::NumericToString(m_ToCanceledDueToReadClearCounter.Get()) + "\n"
-           "OK:Reading_Failed_new_session: " +
-           NStr::NumericToString(m_ToFailedDueToReadNewSessionCounter.Get()) + "\n"
-           "OK:Reading_Failed_clear: " +
-           NStr::NumericToString(m_ToFailedDueToReadClearCounter.Get()) + "\n"
+    result.append("OK:Running_Pending_timeout: ")
+          .append(NStr::NumericToString(m_ToPendingDueToTimeoutCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Running_Pending_fail: ")
+          .append(NStr::NumericToString(m_ToPendingDueToFailCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Running_Pending_clear: ")
+          .append(NStr::NumericToString(m_ToPendingDueToClearCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Running_Failed_clear: ")
+          .append(NStr::NumericToString(m_ToFailedDueToClearCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Running_Pending_new_session: ")
+          .append(NStr::NumericToString(m_ToPendingDueToNewSessionCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Running_Pending_without_blacklist: ")
+          .append(NStr::NumericToString(m_ToPendingWithoutBlacklist.Get()))
+          .append(kNewLine)
+          .append("OK:Running_Pending_rescheduled: ")
+          .append(NStr::NumericToString(m_ToPendingRescheduled.Get()))
+          .append(kNewLine)
+          .append("OK:Running_Failed_new_session: ")
+          .append(NStr::NumericToString(m_ToFailedDueToNewSessionCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Running_Failed_timeout: ")
+          .append(NStr::NumericToString(m_ToFailedDueToTimeoutCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Reading_Done_timeout: ")
+          .append(NStr::NumericToString(m_ToDoneDueToTimeoutCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Reading_Done_fail: ")
+          .append(NStr::NumericToString(m_ToDoneDueToFailCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Reading_Done_clear: ")
+          .append(NStr::NumericToString(m_ToDoneDueToClearCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Reading_ReadFailed_clear: ")
+          .append(NStr::NumericToString(m_ToReadFailedDueToClearCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Reading_Done_new_session: ")
+          .append(NStr::NumericToString(m_ToDoneDueToNewSessionCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Reading_ReadFailed_new_session: ")
+          .append(NStr::NumericToString(m_ToReadFailedDueToNewSessionCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Reading_ReadFailed_timeout: ")
+          .append(NStr::NumericToString(m_ToReadFailedDueToTimeoutCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Reading_Canceled_read_timeout: ")
+          .append(NStr::NumericToString(m_ToCanceledDueToReadTimeoutCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Reading_Failed_read_timeout: ")
+          .append(NStr::NumericToString(m_ToFailedDueToReadTimeoutCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Reading_Canceled_new_session: ")
+          .append(NStr::NumericToString(m_ToCanceledDueToReadNewSessionCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Reading_Canceled_clear: ")
+          .append(NStr::NumericToString(m_ToCanceledDueToReadClearCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Reading_Failed_new_session: ")
+          .append(NStr::NumericToString(m_ToFailedDueToReadNewSessionCounter.Get()))
+          .append(kNewLine)
+          .append("OK:Reading_Failed_clear: ")
+          .append(NStr::NumericToString(m_ToFailedDueToReadClearCounter.Get()))
+          .append(kNewLine)
 
            // REDO
-           "OK:Done_Pending_redo: " +
-           NStr::NumericToString(m_FromDoneJobRedo.Get()) + "\n"
-           "OK:Failed_Pending_redo: " +
-           NStr::NumericToString(m_FromFailedJobRedo.Get()) + "\n"
-           "OK:Confirmed_Pending_redo: " +
-           NStr::NumericToString(m_FromConfirmedJobRedo.Get()) + "\n"
-           "OK:ReadFailed_Pending_redo: " +
-           NStr::NumericToString(m_FromReadFailedJobRedo.Get()) + "\n"
-           "OK:Canceled_Pending_redo: " +
-           NStr::NumericToString(m_FromCanceledJobRedo.Get()) + "\n"
+          .append("OK:Done_Pending_redo: ")
+          .append(NStr::NumericToString(m_FromDoneJobRedo.Get()))
+          .append(kNewLine)
+          .append("OK:Failed_Pending_redo: ")
+          .append(NStr::NumericToString(m_FromFailedJobRedo.Get()))
+          .append(kNewLine)
+          .append("OK:Confirmed_Pending_redo: ")
+          .append(NStr::NumericToString(m_FromConfirmedJobRedo.Get()))
+          .append(kNewLine)
+          .append("OK:ReadFailed_Pending_redo: ")
+          .append(NStr::NumericToString(m_FromReadFailedJobRedo.Get()))
+          .append(kNewLine)
+          .append("OK:Canceled_Pending_redo: ")
+          .append(NStr::NumericToString(m_FromCanceledJobRedo.Get()))
+          .append(kNewLine)
 
            // REREAD
-           "OK:Canceled_Canceled_reread: " +
-           NStr::NumericToString(m_CancelToCancelJobReread.Get()) + "\n"
-           "OK:Canceled_Done_reread: " +
-           NStr::NumericToString(m_CancelToDoneJobReread.Get()) + "\n"
-           "OK:Canceled_Failed_reread: " +
-           NStr::NumericToString(m_CancelToFailedJobReread.Get()) + "\n"
-           "OK:ReadFailed_Canceled_reread: " +
-           NStr::NumericToString(m_ReadFailedToCancelJobReread.Get()) + "\n"
-           "OK:ReadFailed_Done_reread: " +
-           NStr::NumericToString(m_ReadFailedToDoneJobReread.Get()) + "\n"
-           "OK:ReadFailed_Failed_reread: " +
-           NStr::NumericToString(m_ReadFailedToFailedJobReread.Get()) + "\n"
-           "OK:Confirmed_Canceled_reread: " +
-           NStr::NumericToString(m_ConfirmedToCancelJobReread.Get()) + "\n"
-           "OK:Confirmed_Done_reread: " +
-           NStr::NumericToString(m_ConfirmedToDoneJobReread.Get()) + "\n"
-           "OK:Confirmed_Failed_reread: " +
-           NStr::NumericToString(m_ConfirmedToFailedJobReread.Get()) + "\n";
+          .append("OK:Canceled_Canceled_reread: ")
+          .append(NStr::NumericToString(m_CancelToCancelJobReread.Get()))
+          .append(kNewLine)
+          .append("OK:Canceled_Done_reread: ")
+          .append(NStr::NumericToString(m_CancelToDoneJobReread.Get()))
+          .append(kNewLine)
+          .append("OK:Canceled_Failed_reread: ")
+          .append(NStr::NumericToString(m_CancelToFailedJobReread.Get()))
+          .append(kNewLine)
+          .append("OK:ReadFailed_Canceled_reread: ")
+          .append(NStr::NumericToString(m_ReadFailedToCancelJobReread.Get()))
+          .append(kNewLine)
+          .append("OK:ReadFailed_Done_reread: ")
+          .append(NStr::NumericToString(m_ReadFailedToDoneJobReread.Get()))
+          .append(kNewLine)
+          .append("OK:ReadFailed_Failed_reread: ")
+          .append(NStr::NumericToString(m_ReadFailedToFailedJobReread.Get()))
+          .append(kNewLine)
+          .append("OK:Confirmed_Canceled_reread: ")
+          .append(NStr::NumericToString(m_ConfirmedToCancelJobReread.Get()) )
+          .append(kNewLine)
+          .append("OK:Confirmed_Done_reread: ")
+          .append(NStr::NumericToString(m_ConfirmedToDoneJobReread.Get()))
+          .append(kNewLine)
+          .append("OK:Confirmed_Failed_reread: ")
+          .append(NStr::NumericToString(m_ConfirmedToFailedJobReread.Get()))
+          .append(kNewLine);
+
+    return result;
 }
 
 

@@ -90,6 +90,9 @@ const string    kPausedQueuesFilesName("PAUSED_QUEUES");
 const string    kRefuseSubmitFileName("REFUSE_SUBMIT");
 const size_t    kDumpReservedSpaceFileBuffer = 1024 * 1024;
 
+static string   kNewLine("\n");
+
+
 // Various hex viewers show this magic in a different way.
 // Some swap first two bytes with the last two bytes
 // Some reverse the signature byte by byte. So the magic is selected to be

@@ -3703,15 +3703,18 @@ void  CQueue::PurgeClientRegistry(const CNSPreciseTime &  current_time)
 
 
 string CQueue::PrintJobDbStat(const CNSClientId &  client,
-                              unsigned int         job_id)
+                              unsigned int         job_id,
+                              TDumpFields          dump_fields)
 {
     m_ClientsRegistry.MarkAsAdmin(client);
+
+    string      job_dump;
 
     // Check first that the job has not been deleted yet
     {{
         CFastMutexGuard     guard(m_JobsToDeleteLock);
         if (m_JobsToDelete.get_bit(job_id))
-            return kEmptyStr;
+            return job_dump;
     }}
 
     string              scope = client.GetScope();
@@ -3721,31 +3724,34 @@ string CQueue::PrintJobDbStat(const CNSClientId &  client,
         // Check the scope restrictions
         if (scope == kNoScopeOnly) {
             if (m_ScopeRegistry.GetAllJobsInScopes()[job_id] == true)
-                return kEmptyStr;
+                return job_dump;
         } else if (!scope.empty()) {
             if (m_ScopeRegistry.GetJobs(scope)[job_id] == false)
-                return kEmptyStr;
+                return job_dump;
         }
 
         auto    job_iter = m_Jobs.find(job_id);
         if (job_iter == m_Jobs.end())
-            return kEmptyStr;
+            return job_dump;
 
-        string  job_dump;
+        job_dump.reserve(2048);
         try {
             // GC can remove the job from its registry while the
             // DUMP is in process. If so the job should not be dumped
             // and the exception from m_GCRegistry.GetLifetime() should
             // be suppressed.
-            job_dump = job_iter->second.Print(*this, m_AffinityRegistry,
-                                              m_GroupRegistry) +
-                       "OK:GC erase time: " +
-                       NS_FormatPreciseTime(m_GCRegistry.GetLifetime(job_id)) +
-                       "\n"
-                       "OK:scope: '" +
-                       m_ScopeRegistry.GetJobScope(job_id) + "'"
-                       "\n";
-            return job_dump;
+            job_dump = job_iter->second.Print(dump_fields,
+                                              *this, m_AffinityRegistry,
+                                              m_GroupRegistry);
+            if (dump_fields | eGCEraseTime)
+                job_dump.append("OK:GC erase time: ")
+                        .append(NS_FormatPreciseTime(m_GCRegistry.GetLifetime(job_id)))
+                        .append(kNewLine);
+            if (dump_fields | eScope)
+                job_dump.append("OK:scope: '")
+                        .append(m_ScopeRegistry.GetJobScope(job_id))
+                        .append(1, '\'')
+                        .append(kNewLine);
         } catch (...) {}
 
         return job_dump;
@@ -3759,6 +3765,8 @@ string CQueue::PrintAllJobDbStat(const CNSClientId &         client,
                                  const vector<TJobStatus> &  job_statuses,
                                  unsigned int                start_after_job_id,
                                  unsigned int                count,
+                                 bool                        order_first,
+                                 TDumpFields                 dump_fields,
                                  bool                        logging)
 {
     m_ClientsRegistry.MarkAsAdmin(client);
@@ -3822,21 +3830,36 @@ string CQueue::PrintAllJobDbStat(const CNSClientId &         client,
         }
     }}
 
-    return x_DumpJobs(jobs_to_dump, start_after_job_id, count);
+    return x_DumpJobs(jobs_to_dump, start_after_job_id, count,
+                      dump_fields, order_first);
 }
 
 
 string CQueue::x_DumpJobs(const TNSBitVector &    jobs_to_dump,
                           unsigned int            start_after_job_id,
-                          unsigned int            count)
+                          unsigned int            count,
+                          TDumpFields             dump_fields,
+                          bool                    order_first)
 {
     if (!jobs_to_dump.any())
-        return "";
+        return kEmptyStr;
 
     // Skip the jobs which should not be dumped
+    size_t                      skipped_jobs = 0;
     TNSBitVector::enumerator    en(jobs_to_dump.first());
-    while (en.valid() && *en <= start_after_job_id)
+    while (en.valid() && *en <= start_after_job_id) {
         ++en;
+        ++skipped_jobs;
+    }
+
+    if (count > 0 && !order_first) {
+        size_t      total_jobs = jobs_to_dump.count();
+        size_t      jobs_left = total_jobs - skipped_jobs;
+        while (jobs_left > count) {
+            ++en;
+            --jobs_left;
+        }
+    }
 
     // Identify the required buffer size for jobs
     size_t      buffer_size = m_DumpBufferSize;
@@ -3870,25 +3893,32 @@ string CQueue::x_DumpJobs(const TNSBitVector &    jobs_to_dump,
             }}
 
             // Print what was read
+            string      one_job;
+            one_job.reserve(2048);
             for (size_t  index = 0; index < read_jobs; ++index) {
-                string  one_job;
+                one_job.clear();
                 try {
                     // GC can remove the job from its registry while the
                     // DUMP is in process. If so the job should not be dumped
                     // and the exception from m_GCRegistry.GetLifetime() should
                     // be suppressed.
                     unsigned int  job_id = buffer[index].GetId();
-                    one_job = "\n" + buffer[index].Print(*this,
-                                                         m_AffinityRegistry,
-                                                         m_GroupRegistry) +
-                              "OK:GC erase time: " +
-                              NS_FormatPreciseTime(
-                                          m_GCRegistry.GetLifetime(job_id)) +
-                              "\n"
-                              "OK:scope: '" +
-                              m_ScopeRegistry.GetJobScope(job_id) + "'"
-                              "\n";
-                   result += one_job;
+                    one_job.append(kNewLine)
+                           .append(buffer[index].Print(dump_fields,
+                                                       *this,
+                                                       m_AffinityRegistry,
+                                                       m_GroupRegistry));
+                    if (dump_fields & eGCEraseTime)
+                        one_job.append("OK:GC erase time: ")
+                               .append(NS_FormatPreciseTime(
+                                          m_GCRegistry.GetLifetime(job_id)))
+                               .append(kNewLine);
+                    if (dump_fields & eScope)
+                        one_job.append("OK:scope: '")
+                               .append(m_ScopeRegistry.GetJobScope(job_id))
+                               .append(1, '\'')
+                               .append(kNewLine);
+                    result.append(one_job);
                 } catch (...) {}
             }
 
@@ -4275,13 +4305,18 @@ unsigned int CQueue::GetJobsToDeleteCount(void) const
 
 string CQueue::PrintTransitionCounters(void) const
 {
-    return m_StatisticsCounters.PrintTransitions() +
-           "OK:garbage_jobs: " +
-           NStr::NumericToString(GetJobsToDeleteCount()) + "\n"
-           "OK:affinity_registry_size: " +
-           NStr::NumericToString(m_AffinityRegistry.size()) + "\n"
-           "OK:client_registry_size: " +
-           NStr::NumericToString(m_ClientsRegistry.size()) + "\n";
+    string      output;
+    output.reserve(4096);
+    output.append(m_StatisticsCounters.PrintTransitions())
+          .append("OK:garbage_jobs: ")
+          .append(NStr::NumericToString(GetJobsToDeleteCount()))
+          .append(kNewLine)
+          .append("OK:affinity_registry_size: ")
+          .append(NStr::NumericToString(m_AffinityRegistry.size()))
+          .append(kNewLine)
+          .append("OK:client_registry_size: ")
+          .append(NStr::NumericToString(m_ClientsRegistry.size()))
+          .append(kNewLine);
 }
 
 

@@ -644,6 +644,7 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
                                          bool  url_encoded) const
 {
     string      result;
+    result.reserve(4096);
 
     /* Initialized for multi-line output */
     string      prefix("OK:");
@@ -658,90 +659,97 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
 
     if (include_class) {
         // These parameters make sense for queues only
-        result = prefix + "kind" + suffix;
+        result.append(prefix)
+              .append("kind")
+              .append(suffix);
         if (kind == CQueue::eKindStatic)
-            result += "static" + separator;
+            result.append("static");
         else
-            result += "dynamic" + separator;
+            result.append("dynamic");
+        result.append(separator);
 
-        result +=
-        prefix + "qclass" + suffix + qclass + separator +
-        prefix + "refuse_submits" + suffix + NStr::BoolToString(refuse_submits) + separator +
-        prefix + "max_aff_slots" + suffix + NStr::NumericToString(max_aff_slots) + separator +
-        prefix + "aff_slots_used" + suffix + NStr::NumericToString(aff_slots_used) + separator +
-        prefix + "max_group_slots" + suffix + NStr::NumericToString(max_group_slots) + separator +
-        prefix + "group_slots_used" + suffix + NStr::NumericToString(group_slots_used) + separator +
-        prefix + "max_scope_slots" + suffix + NStr::NumericToString(max_scope_slots) + separator +
-        prefix + "scope_slots_used" + suffix + NStr::NumericToString(scope_slots_used) + separator +
-        prefix + "clients" + suffix + NStr::NumericToString(clients) + separator +
-        prefix + "groups" + suffix + NStr::NumericToString(groups) + separator +
-        prefix + "gc_backlog" + suffix + NStr::NumericToString(gc_backlog) + separator +
-        prefix + "notif_count" + suffix + NStr::NumericToString(notif_count) + separator;
+        result.append(prefix).append("qclass").append(suffix).append(qclass).append(separator)
+              .append(prefix).append("refuse_submits").append(suffix).append(NStr::BoolToString(refuse_submits)).append(separator)
+              .append(prefix).append("max_aff_slots").append(suffix).append(NStr::NumericToString(max_aff_slots)).append(separator)
+              .append(prefix).append("aff_slots_used").append(suffix).append(NStr::NumericToString(aff_slots_used)).append(separator)
+              .append(prefix).append("max_group_slots").append(suffix).append(NStr::NumericToString(max_group_slots)).append(separator)
+              .append(prefix).append("group_slots_used").append(suffix).append(NStr::NumericToString(group_slots_used)).append(separator)
+              .append(prefix).append("max_scope_slots").append(suffix).append(NStr::NumericToString(max_scope_slots)).append(separator)
+              .append(prefix).append("scope_slots_used").append(suffix).append(NStr::NumericToString(scope_slots_used)).append(separator)
+              .append(prefix).append("clients").append(suffix).append(NStr::NumericToString(clients)).append(separator)
+              .append(prefix).append("groups").append(suffix).append(NStr::NumericToString(groups)).append(separator)
+              .append(prefix).append("gc_backlog").append(suffix).append(NStr::NumericToString(gc_backlog)).append(separator)
+              .append(prefix).append("notif_count").append(suffix).append(NStr::NumericToString(notif_count)).append(separator);
 
+        result.append(prefix).append("pause").append(suffix);
         if (pause_status == CQueue::ePauseWithPullback)
-            result += prefix + "pause" + suffix + "pullback" + separator;
+            result.append("pullback");
         else if (pause_status == CQueue::ePauseWithoutPullback)
-            result += prefix + "pause" + suffix + "nopullback" + separator;
+            result.append("nopullback");
         else
-            result += prefix + "pause" + suffix + "nopause" + separator;
+            result.append("nopause");
+        result.append(separator);
     }
 
-    result +=
-    prefix + "delete_request" + suffix + NStr::BoolToString(delete_request) + separator +
-    prefix + "timeout" + suffix + NStr::NumericToString(timeout.Sec()) + separator +
-    prefix + "notif_hifreq_interval" + suffix + NS_FormatPreciseTimeAsSec(notif_hifreq_interval) + separator +
-    prefix + "notif_hifreq_period" + suffix + NS_FormatPreciseTimeAsSec(notif_hifreq_period) + separator +
-    prefix + "notif_lofreq_mult" + suffix + NStr::NumericToString(notif_lofreq_mult) + separator +
-    prefix + "notif_handicap" + suffix + NS_FormatPreciseTimeAsSec(notif_handicap) + separator +
-    prefix + "dump_buffer_size" + suffix + NStr::NumericToString(dump_buffer_size) + separator +
-    prefix + "dump_client_buffer_size" + suffix + NStr::NumericToString(dump_client_buffer_size) + separator +
-    prefix + "dump_aff_buffer_size" + suffix + NStr::NumericToString(dump_aff_buffer_size) + separator +
-    prefix + "dump_group_buffer_size" + suffix + NStr::NumericToString(dump_group_buffer_size) + separator +
-    prefix + "run_timeout" + suffix + NS_FormatPreciseTimeAsSec(run_timeout) + separator +
-    prefix + "read_timeout" + suffix + NS_FormatPreciseTimeAsSec(read_timeout) + separator +
-    prefix + "failed_retries" + suffix + NStr::NumericToString(failed_retries) + separator +
-    prefix + "read_failed_retries" + suffix + NStr::NumericToString(read_failed_retries) + separator +
-    prefix + "blacklist_time" + suffix + NS_FormatPreciseTimeAsSec(blacklist_time) + separator +
-    prefix + "read_blacklist_time" + suffix + NS_FormatPreciseTimeAsSec(read_blacklist_time) + separator +
-    prefix + "max_input_size" + suffix + NStr::NumericToString(max_input_size) + separator +
-    prefix + "max_output_size" + suffix + NStr::NumericToString(max_output_size) + separator +
-    prefix + "wnode_timeout" + suffix + NS_FormatPreciseTimeAsSec(wnode_timeout) + separator +
-    prefix + "reader_timeout" + suffix + NS_FormatPreciseTimeAsSec(reader_timeout) + separator +
-    prefix + "pending_timeout" + suffix + NS_FormatPreciseTimeAsSec(pending_timeout) + separator +
-    prefix + "max_pending_wait_timeout" + suffix + NS_FormatPreciseTimeAsSec(max_pending_wait_timeout) + separator +
-    prefix + "max_pending_read_wait_timeout" + suffix + NS_FormatPreciseTimeAsSec(max_pending_read_wait_timeout) + separator +
-    prefix + "scramble_job_keys" + suffix + NStr::BoolToString(scramble_job_keys) + separator +
-    prefix + "client_registry_timeout_worker_node" + suffix + NS_FormatPreciseTimeAsSec(client_registry_timeout_worker_node) + separator +
-    prefix + "client_registry_min_worker_nodes" + suffix + NStr::NumericToString(client_registry_min_worker_nodes) + separator +
-    prefix + "client_registry_timeout_admin" + suffix + NS_FormatPreciseTimeAsSec(client_registry_timeout_admin) + separator +
-    prefix + "client_registry_min_admins" + suffix + NStr::NumericToString(client_registry_min_admins) + separator +
-    prefix + "client_registry_timeout_submitter" + suffix + NS_FormatPreciseTimeAsSec(client_registry_timeout_submitter) + separator +
-    prefix + "client_registry_min_submitters" + suffix + NStr::NumericToString(client_registry_min_submitters) + separator +
-    prefix + "client_registry_timeout_reader" + suffix + NS_FormatPreciseTimeAsSec(client_registry_timeout_reader) + separator +
-    prefix + "client_registry_min_readers" + suffix + NStr::NumericToString(client_registry_min_readers) + separator +
-    prefix + "client_registry_timeout_unknown" + suffix + NS_FormatPreciseTimeAsSec(client_registry_timeout_unknown) + separator +
-    prefix + "client_registry_min_unknowns" + suffix + NStr::NumericToString(client_registry_min_unknowns) + separator;
+    result.append(prefix).append("delete_request").append(suffix).append(NStr::BoolToString(delete_request)).append(separator)
+          .append(prefix).append("timeout").append(suffix).append(NStr::NumericToString(timeout.Sec())).append(separator)
+          .append(prefix).append("notif_hifreq_interval").append(suffix).append(NS_FormatPreciseTimeAsSec(notif_hifreq_interval)).append(separator)
+          .append(prefix).append("notif_hifreq_period").append(suffix).append(NS_FormatPreciseTimeAsSec(notif_hifreq_period)).append(separator)
+          .append(prefix).append("notif_lofreq_mult").append(suffix).append(NStr::NumericToString(notif_lofreq_mult)).append(separator)
+          .append(prefix).append("notif_handicap").append(suffix).append(NS_FormatPreciseTimeAsSec(notif_handicap)).append(separator)
+          .append(prefix).append("dump_buffer_size").append(suffix).append(NStr::NumericToString(dump_buffer_size)).append(separator)
+          .append(prefix).append("dump_client_buffer_size").append(suffix).append(NStr::NumericToString(dump_client_buffer_size)).append(separator)
+          .append(prefix).append("dump_aff_buffer_size").append(suffix).append(NStr::NumericToString(dump_aff_buffer_size)).append(separator)
+          .append(prefix).append("dump_group_buffer_size").append(suffix).append(NStr::NumericToString(dump_group_buffer_size)).append(separator)
+          .append(prefix).append("run_timeout").append(suffix).append(NS_FormatPreciseTimeAsSec(run_timeout)).append(separator)
+          .append(prefix).append("read_timeout").append(suffix).append(NS_FormatPreciseTimeAsSec(read_timeout)).append(separator)
+          .append(prefix).append("failed_retries").append(suffix).append(NStr::NumericToString(failed_retries)).append(separator)
+          .append(prefix).append("read_failed_retries").append(suffix).append(NStr::NumericToString(read_failed_retries)).append(separator)
+          .append(prefix).append("blacklist_time").append(suffix).append(NS_FormatPreciseTimeAsSec(blacklist_time)).append(separator)
+          .append(prefix).append("read_blacklist_time").append(suffix).append(NS_FormatPreciseTimeAsSec(read_blacklist_time)).append(separator)
+          .append(prefix).append("max_input_size").append(suffix).append(NStr::NumericToString(max_input_size)).append(separator)
+          .append(prefix).append("max_output_size").append(suffix).append(NStr::NumericToString(max_output_size)).append(separator)
+          .append(prefix).append("wnode_timeout").append(suffix).append(NS_FormatPreciseTimeAsSec(wnode_timeout)).append(separator)
+          .append(prefix).append("reader_timeout").append(suffix).append(NS_FormatPreciseTimeAsSec(reader_timeout)).append(separator)
+          .append(prefix).append("pending_timeout").append(suffix).append(NS_FormatPreciseTimeAsSec(pending_timeout)).append(separator)
+          .append(prefix).append("max_pending_wait_timeout").append(suffix).append(NS_FormatPreciseTimeAsSec(max_pending_wait_timeout)).append(separator)
+          .append(prefix).append("max_pending_read_wait_timeout").append(suffix).append(NS_FormatPreciseTimeAsSec(max_pending_read_wait_timeout)).append(separator)
+          .append(prefix).append("scramble_job_keys").append(suffix).append(NStr::BoolToString(scramble_job_keys)).append(separator)
+          .append(prefix).append("client_registry_timeout_worker_node").append(suffix).append(NS_FormatPreciseTimeAsSec(client_registry_timeout_worker_node)).append(separator)
+          .append(prefix).append("client_registry_min_worker_nodes").append(suffix).append(NStr::NumericToString(client_registry_min_worker_nodes)).append(separator)
+          .append(prefix).append("client_registry_timeout_admin").append(suffix).append(NS_FormatPreciseTimeAsSec(client_registry_timeout_admin)).append(separator)
+          .append(prefix).append("client_registry_min_admins").append(suffix).append(NStr::NumericToString(client_registry_min_admins)).append(separator)
+          .append(prefix).append("client_registry_timeout_submitter").append(suffix).append(NS_FormatPreciseTimeAsSec(client_registry_timeout_submitter)).append(separator)
+          .append(prefix).append("client_registry_min_submitters").append(suffix).append(NStr::NumericToString(client_registry_min_submitters)).append(separator)
+          .append(prefix).append("client_registry_timeout_reader").append(suffix).append(NS_FormatPreciseTimeAsSec(client_registry_timeout_reader)).append(separator)
+          .append(prefix).append("client_registry_min_readers").append(suffix).append(NStr::NumericToString(client_registry_min_readers)).append(separator)
+          .append(prefix).append("client_registry_timeout_unknown").append(suffix).append(NS_FormatPreciseTimeAsSec(client_registry_timeout_unknown)).append(separator)
+          .append(prefix).append("client_registry_min_unknowns").append(suffix).append(NStr::NumericToString(client_registry_min_unknowns)).append(separator);
 
     if (url_encoded) {
-        result +=
-        prefix + "program_name" + suffix + NStr::URLEncode(program_name) + separator +
-        prefix + "subm_hosts" + suffix + NStr::URLEncode(subm_hosts) + separator +
-        prefix + "wnode_hosts" + suffix + NStr::URLEncode(wnode_hosts) + separator +
-        prefix + "reader_hosts" + suffix + NStr::URLEncode(reader_hosts) + separator +
-        prefix + "description" + suffix + NStr::URLEncode(description);
-        for (map<string, string>::const_iterator  k = linked_sections.begin();
-             k != linked_sections.end(); ++k)
-            result += separator + prefix + k->first + suffix + NStr::URLEncode(k->second);
+        result.append(prefix).append("program_name").append(suffix).append(NStr::URLEncode(program_name)).append(separator)
+              .append(prefix).append("subm_hosts").append(suffix).append(NStr::URLEncode(subm_hosts)).append(separator)
+              .append(prefix).append("wnode_hosts").append(suffix).append(NStr::URLEncode(wnode_hosts)).append(separator)
+              .append(prefix).append("reader_hosts").append(suffix).append(NStr::URLEncode(reader_hosts)).append(separator)
+              .append(prefix).append("description").append(suffix).append(NStr::URLEncode(description));
+        for (const auto &  linked_section : linked_sections)
+            result.append(separator)
+                  .append(prefix)
+                  .append(linked_section.first)
+                  .append(suffix)
+                  .append(NStr::URLEncode(linked_section.second));
     } else {
-        result +=
-        prefix + "program_name" + suffix + NStr::PrintableString(program_name) + separator +
-        prefix + "subm_hosts" + suffix + NStr::PrintableString(subm_hosts) + separator +
-        prefix + "wnode_hosts" + suffix + NStr::PrintableString(wnode_hosts) + separator +
-        prefix + "reader_hosts" + suffix + NStr::PrintableString(reader_hosts) + separator +
-        prefix + "description" + suffix + NStr::PrintableString(description);
-        for (map<string, string>::const_iterator  k = linked_sections.begin();
-             k != linked_sections.end(); ++k)
-            result += separator + prefix + k->first + suffix + NStr::PrintableString(k->second);
+        result.append(prefix).append("program_name").append(suffix).append(NStr::PrintableString(program_name)).append(separator)
+              .append(prefix).append("subm_hosts").append(suffix).append(NStr::PrintableString(subm_hosts)).append(separator)
+              .append(prefix).append("wnode_hosts").append(suffix).append(NStr::PrintableString(wnode_hosts)).append(separator)
+              .append(prefix).append("reader_hosts").append(suffix).append(NStr::PrintableString(reader_hosts)).append(separator)
+              .append(prefix).append("description").append(suffix).append(NStr::PrintableString(description));
+        for (const auto &  linked_section : linked_sections)
+            result.append(separator)
+                  .append(prefix)
+                  .append(linked_section.first)
+                  .append(suffix)
+                  .append(NStr::PrintableString(linked_section.second));
     }
 
     return result;

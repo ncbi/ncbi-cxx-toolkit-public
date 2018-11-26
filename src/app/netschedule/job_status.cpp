@@ -49,7 +49,6 @@ CJobStatusTracker::CJobStatusTracker()
     // for fast access, so that missed status vector is also created. The rest
     // of the code iterates only through the valid states.
     for (int i = 0; i < CNetScheduleAPI::eLastStatus; ++i) {
-//        m_StatusStor.push_back(new TNSBitVector(bm::BM_GAP));
         m_StatusStor.push_back(new TNSBitVector());
     }
 }

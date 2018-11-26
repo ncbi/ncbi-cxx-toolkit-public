@@ -42,6 +42,49 @@
 BEGIN_NCBI_SCOPE
 
 
+enum EDumpFields {
+    eId = (1 << 0),
+    eKey = (1 << 1),
+    eStatus = (1 << 2),
+    eLastTouch = (1 << 3),
+    eEraseTime = (1 << 4),
+    eRunExpiration = (1 << 5),
+    eReadExpiration = (1 << 6),
+    eSubmitNotifPort = (1 << 7),
+    eSubmitNotifExpiration = (1 << 8),
+    eListenerNotif = (1 << 9),
+    eListenerNotifExpiration = (1 << 10),
+    eEvents = (1 << 11),
+    eRunCounter = (1 << 12),
+    eReadCounter = (1 << 13),
+    eAffinity = (1 << 14),
+    eGroup = (1 << 15),
+    eMask = (1 << 16),
+    eInput = (1 << 17),
+    eOutput = (1 << 18),
+    eProgressMsg = (1 << 19),
+    eRemoteClientSID = (1 << 20),
+    eRemoteClientIP = (1 << 21),
+    eNcbiPHID = (1 << 22),
+    eNeedSubmitProgressMsgNotif = (1 << 23),
+    eNeedListenerProgressMsgNotif = (1 << 24),
+    eNeedStolenNotif = (1 << 25),
+    eGCEraseTime = (1 << 26),
+    eScope = (1 << 27),
+
+    eAll = eId | eKey | eStatus | eLastTouch | eEraseTime |
+           eRunExpiration | eReadExpiration | eSubmitNotifPort |
+           eSubmitNotifExpiration | eListenerNotif |
+           eListenerNotifExpiration | eEvents |
+           eRunCounter | eReadCounter | eAffinity | eGroup |
+           eMask | eInput | eOutput | eProgressMsg | eRemoteClientSID |
+           eRemoteClientIP | eNcbiPHID | eNeedSubmitProgressMsgNotif |
+           eNeedListenerProgressMsgNotif | eNeedStolenNotif |
+           eGCEraseTime | eScope
+};
+typedef long TDumpFields;
+
+
 struct SNSCommandArguments
 {
     unsigned int    job_id;
@@ -100,6 +143,10 @@ struct SNSCommandArguments
     bool            need_progress_msg;
     bool            need_stolen;
 
+    // DUMP
+    bool            order_first;
+    TDumpFields     dump_fields;
+
     vector<TJobStatus>  job_statuses;
 
     void AssignValues(TNSProtoParams &           params,
@@ -115,6 +162,8 @@ struct SNSCommandArguments
         void x_CheckQueueName(const string &  val, const string &  key);
         bool x_GetBooleanValue(const string &  val, const string &  key);
         string x_NormalizeErrorMessage(const string &  val);
+        bool x_GetOrderFirst(const string &  val);
+        TDumpFields x_GetDumpFields(const string &  val);
 };
 
 END_NCBI_SCOPE

@@ -359,7 +359,8 @@ public:
     bool ShouldNotifySubmitter(const CNSPreciseTime & current_time) const;
     bool ShouldNotifyListener(const CNSPreciseTime &  current_time) const;
 
-    string Print(const CQueue &               queue,
+    string Print(TDumpFields                  dump_fields,
+                 const CQueue &               queue,
                  const CNSAffinityRegistry &  aff_registry,
                  const CNSGroupsRegistry &    group_registry) const;
 
@@ -368,6 +369,43 @@ public:
     bool LoadFromDump(FILE *  jobs_file,
                       char *  input_buf, char * output_buf,
                       const SJobDumpHeader &  header);
+
+private:
+    void x_AppendId(string & dump) const;
+    void x_AppendKey(const CQueue & queue, string & dump) const;
+    void x_AppendStatus(string & dump) const;
+    void x_AppendLastTouch(string & dump) const;
+    void x_AppendEraseTime(const CNSPreciseTime & timeout,
+                           const CNSPreciseTime & pending_timeout,
+                           const CNSPreciseTime & exp_time,
+                           string & dump) const;
+    void x_AppendRunExpiration(const CNSPreciseTime & run_timeout,
+                               const CNSPreciseTime & exp_time,
+                               string & dump) const;
+    void x_AppendReadExpiration(const CNSPreciseTime & read_timeout,
+                                const CNSPreciseTime & exp_time,
+                                string & dump) const;
+    void x_AppendSubmitNotifPort(string & dump) const;
+    void x_AppendSubmitNotifExpiration(string & dump) const;
+    void x_AppendListenerNotif(string & dump) const;
+    void x_AppendListenerNotifExpiration(string & dump) const;
+    void x_AppendEvents(string & dump) const;
+    void x_AppendRunCounter(string & dump) const;
+    void x_AppendReadCounter(string & dump) const;
+    void x_AppendAffinity(const CNSAffinityRegistry & aff_registry,
+                          string & dump) const;
+    void x_AppendGroup(const CNSGroupsRegistry & group_registry,
+                       string & dump) const;
+    void x_AppendMask(string & dump) const;
+    void x_AppendInput(string & dump) const;
+    void x_AppendOutput(string & dump) const;
+    void x_AppendProgressMsg(string & dump) const;
+    void x_AppendRemoteClientSID(string & dump) const;
+    void x_AppendRemoteClientIP(string & dump) const;
+    void x_AppendNcbiPhid(string & dump) const;
+    void x_AppendNeedSubmitProgressMsgNotif(string & dump) const;
+    void x_AppendNeedListenerProgressMsgNotif(string & dump) const;
+    void x_AppendNeedStolenNotif(string & dump) const;
 
 private:
     unsigned            m_Id;

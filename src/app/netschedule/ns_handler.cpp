@@ -243,7 +243,9 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "aff",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
-          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
+          { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  },
+          { "fields",            eNSPT_Str, eNSPA_Optional, ""  },
+          { "order",             eNSPT_Str, eNSPA_Optional, "first" } } },
     { "GETP",          { &CNetScheduleHandler::x_ProcessGetParam,
                          eNS_Queue },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
@@ -1085,11 +1087,11 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
     if (x_NeedCmdLogging()) {
         CDiagContext_Extra diag_extra = GetDiagContext().Extra();
         diag_extra.Print("queue", m_QueueName);
-        ITERATE(TNSProtoParams, it, params) {
-            if (it->first == "status") {
-                diag_extra.Print("job_status", it->second);
+        for (const auto &  param : params) {
+            if (param.first == "status") {
+                diag_extra.Print("job_status", param.second);
             } else {
-                diag_extra.Print(it->first, it->second);
+                diag_extra.Print(param.first, param.second);
             }
         }
     }
@@ -1609,26 +1611,25 @@ void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
                            kEndOfResponse);
     } else {
         if (cmdv2) {
-            string                  pause_status_msg;
             CQueue::TPauseStatus    pause_status = q->GetPauseStatus();
+            string                  reply;
+            reply.reserve(1024);
+
+            reply.append("OK:job_status=")
+                 .append(CNetScheduleAPI::StatusToString(status))
+                 .append("&job_exptime=")
+                 .append(NStr::NumericToString(lifetime.Sec()));
 
             if (pause_status == CQueue::ePauseWithPullback)
-                pause_status_msg = "&pause=pullback";
+                reply.append("&pause=pullback");
             else if (pause_status == CQueue::ePauseWithoutPullback)
-                pause_status_msg = "&pause=nopullback";
+                reply.append("&pause=nopullback");
 
-            string      progress_msg_part;
             if (m_CommandArguments.need_progress_msg)
-                progress_msg_part = "&msg=" +
-                                    NStr::URLEncode(job.GetProgressMsg());
+                reply.append("&msg=")
+                     .append(NStr::URLEncode(job.GetProgressMsg()));
 
-            x_WriteMessage("OK:job_status=" +
-                           CNetScheduleAPI::StatusToString(status) +
-                           "&job_exptime=" +
-                           NStr::NumericToString(lifetime.Sec()) +
-                           pause_status_msg +
-                           progress_msg_part +
-                           kEndOfResponse);
+            x_WriteMessage(reply);
         }
         else
             x_WriteMessage(kOKResponsePrefix +
@@ -1668,26 +1669,25 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
                            kEndOfResponse);
     } else {
         if (cmdv2) {
-            string                  pause_status_msg;
             CQueue::TPauseStatus    pause_status = q->GetPauseStatus();
+            string                  reply;
+
+            reply.reserve(1024);
+            reply.append("OK:job_status=")
+                 .append(CNetScheduleAPI::StatusToString(status))
+                 .append("&job_exptime=")
+                 .append(NStr::NumericToString(lifetime.Sec()));
 
             if (pause_status == CQueue::ePauseWithPullback)
-                pause_status_msg = "&pause=pullback";
+                reply.append("&pause=pullback");
             else if (pause_status == CQueue::ePauseWithoutPullback)
-                pause_status_msg = "&pause=nopullback";
+                reply.append("&pause=nopullback");
 
-            string      progress_msg_part;
             if (m_CommandArguments.need_progress_msg)
-                progress_msg_part = "&msg=" +
-                                    NStr::URLEncode(progress_msg);
+                reply.append("&msg=")
+                     .append(NStr::URLEncode(progress_msg));
 
-            x_WriteMessage("OK:job_status=" +
-                           CNetScheduleAPI::StatusToString(status) +
-                           "&job_exptime=" +
-                           NStr::NumericToString(lifetime.Sec()) +
-                           pause_status_msg +
-                           progress_msg_part +
-                           kEndOfResponse);
+            x_WriteMessage(reply);
         }
         else
             x_WriteMessage(kOKResponsePrefix +
@@ -2084,6 +2084,9 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
     }
 
     // Here: the job was found
+    string      reply;
+    reply.reserve(2048);
+
     if (cmdv2) {
         string                  pause_status_msg;
         CQueue::TPauseStatus    pause_status = q->GetPauseStatus();
@@ -2095,32 +2098,47 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
 
         string      progress_msg_part;
         if (m_CommandArguments.need_progress_msg)
-            progress_msg_part = "&msg=" +
-                                NStr::URLEncode(job.GetProgressMsg());
+            progress_msg_part.append("&msg=")
+                             .append(NStr::URLEncode(job.GetProgressMsg()));
 
-        x_WriteMessage("OK:"
-                       "job_status=" +
-                       CNetScheduleAPI::StatusToString(job.GetStatus()) +
-                       "&client_ip=" + NStr::URLEncode(job.GetClientIP()) +
-                       "&client_sid=" + NStr::URLEncode(job.GetClientSID()) +
-                       "&ncbi_phid=" + NStr::URLEncode(job.GetNCBIPHID()) +
-                       "&job_exptime=" + NStr::NumericToString(lifetime.Sec()) +
-                       "&ret_code=" + NStr::NumericToString(job.GetRetCode()) +
-                       "&output=" + NStr::URLEncode(job.GetOutput()) +
-                       "&err_msg=" + NStr::URLEncode(job.GetErrorMsg()) +
-                       "&input=" + NStr::URLEncode(job.GetInput()) +
-                       pause_status_msg + progress_msg_part +
-                       kEndOfResponse
-                      );
+        reply.append("OK:")
+             .append("job_status=")
+             .append(CNetScheduleAPI::StatusToString(job.GetStatus()))
+             .append("&client_ip=")
+             .append(NStr::URLEncode(job.GetClientIP()))
+             .append("&client_sid=")
+             .append(NStr::URLEncode(job.GetClientSID()))
+             .append("&ncbi_phid=")
+             .append(NStr::URLEncode(job.GetNCBIPHID()))
+             .append("&job_exptime=")
+             .append(NStr::NumericToString(lifetime.Sec()))
+             .append("&ret_code=")
+             .append(NStr::NumericToString(job.GetRetCode()))
+             .append("&output=")
+             .append(NStr::URLEncode(job.GetOutput()))
+             .append("&err_msg=")
+             .append(NStr::URLEncode(job.GetErrorMsg()))
+             .append("&input=")
+             .append(NStr::URLEncode(job.GetInput()))
+             .append(pause_status_msg)
+             .append(progress_msg_part)
+             .append(kEndOfResponse);
+    } else {
+        reply.append("OK:")
+             .append(NStr::NumericToString((int) job.GetStatus()))
+             .append(1, ' ')
+             .append(NStr::NumericToString(job.GetRetCode()))
+             .append(" \"")
+             .append(NStr::PrintableString(job.GetOutput()))
+             .append("\" \"")
+             .append(NStr::PrintableString(job.GetErrorMsg()))
+             .append("\" \"")
+             .append(NStr::PrintableString(job.GetInput()))
+             .append("\"")
+             .append(kEndOfResponse);
     }
-    else
-        x_WriteMessage("OK:" + NStr::NumericToString((int) job.GetStatus()) +
-                       " " + NStr::NumericToString(job.GetRetCode()) +
-                       " \""   + NStr::PrintableString(job.GetOutput()) +
-                       "\" \"" + NStr::PrintableString(job.GetErrorMsg()) +
-                       "\" \"" + NStr::PrintableString(job.GetInput()) +
-                       "\"" + kEndOfResponse);
 
+    x_WriteMessage(reply);
     x_LogCommandWithJob(job);
     x_PrintCmdRequestStop();
 }
@@ -3175,6 +3193,8 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
                                      statuses,
                                      m_CommandArguments.start_after_job_id,
                                      m_CommandArguments.count,
+                                     m_CommandArguments.order_first,
+                                     m_CommandArguments.dump_fields,
                                      x_NeedCmdLogging()) +
                 "OK:END" + kEndOfResponse);
         x_PrintCmdRequestStop();
@@ -3184,7 +3204,8 @@ void CNetScheduleHandler::x_ProcessDump(CQueue* q)
 
     // Certain job dump
     string      job_info = q->PrintJobDbStat(m_ClientId,
-                                             m_CommandArguments.job_id);
+                                             m_CommandArguments.job_id,
+                                             m_CommandArguments.dump_fields);
     if (job_info.empty()) {
         // Nothing was printed because there is no such a job
         x_SetCmdRequestStatus(eStatus_NotFound);
@@ -3486,26 +3507,33 @@ void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
         queue_ptr->GetLinkedSections(linked_sections);
 
         for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
-            jobs_part += "&" +
-                CNetScheduleAPI::StatusToString(g_ValidJobStatuses[index]) +
-                "=" + NStr::NumericToString(jobs_per_state[index]);
+            jobs_part.append(1, '&')
+                     .append(CNetScheduleAPI::StatusToString(g_ValidJobStatuses[index]))
+                     .append(1, '=')
+                     .append(NStr::NumericToString(jobs_per_state[index]));
             total += jobs_per_state[index];
         }
-        jobs_part += "&Total=" + NStr::NumericToString(total);
+        jobs_part.append("&Total=")
+                 .append(NStr::NumericToString(total));
 
         for (map< string, map<string, string> >::const_iterator
                 k = linked_sections.begin(); k != linked_sections.end(); ++k) {
             string  prefix((k->first).c_str() + strlen("linked_section_"));
             for (map<string, string>::const_iterator j = k->second.begin();
                     j != k->second.end(); ++j) {
-                linked_sections_part += "&" + prefix + "." +
-                                        NStr::URLEncode(j->first) + "=" +
-                                        NStr::URLEncode(j->second);
+                linked_sections_part.append(1, '&')
+                                    .append(prefix)
+                                    .append(1, '.')
+                                    .append(NStr::URLEncode(j->first))
+                                    .append(1, '=')
+                                    .append(NStr::URLEncode(j->second));
             }
         }
         string      qname_part;
         if (!m_CommandArguments.service.empty())
-            qname_part = "queue_name=" + qname + "&";
+            qname_part.append("queue_name=")
+                      .append(qname)
+                      .append(1, '&');
 
         // Include queue classes and use URL encoding
         x_WriteMessage("OK:" + qname_part +
@@ -4222,18 +4250,21 @@ void CNetScheduleHandler::x_PrintCmdRequestStart(const SParsedCmd &  cmd)
                             .Print("peer", GetSocket().GetPeerAddress(eSAF_IP))
                             .Print("conn", x_GetConnRef());
 
-        ITERATE(TNSProtoParams, it, cmd.params) {
+        for (const auto & param : cmd.params) {
             // IP is set before the print request start
-            if (it->first == "ip")
+            if (param.first == "ip")
                 continue;
             // SID is set before the print request start
-            if (it->first == "sid")
+            if (param.first == "sid")
                 continue;
             // Skip ncbi_phid because it is printed by request start anyway
-            if (it->first == "ncbi_phid")
+            if (param.first == "ncbi_phid")
                 continue;
 
-            ctxt_extra.Print(it->first, it->second);
+            if (param.first == "status")
+                ctxt_extra.Print("job_status", param.second);
+            else
+                ctxt_extra.Print(param.first, param.second);
         }
         ctxt_extra.Flush();
 
@@ -4312,24 +4343,32 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
                              "to provide it to a worker node");
                 }
             }
-            submitter_notif_info =
-                "&submitter_notif_host=" + NStr::URLEncode(host) +
-                "&submitter_notif_port=" +
-                    NStr::NumericToString(job.GetSubmNotifPort());
+            submitter_notif_info.append("&submitter_notif_host=")
+                                .append(NStr::URLEncode(host))
+                                .append("&submitter_notif_port=")
+                                .append(NStr::NumericToString(job.GetSubmNotifPort()));
         }
-        x_WriteMessage(
-                       "OK:job_key=" + job_key +
-                       "&input=" + NStr::URLEncode(job.GetInput()) +
-                       "&affinity=" +
-                       NStr::URLEncode(q->GetAffinityTokenByID(
-                                                        job.GetAffinityId())) +
-                       "&client_ip=" + NStr::URLEncode(job.GetClientIP()) +
-                       "&client_sid=" + NStr::URLEncode(job.GetClientSID()) +
-                       "&ncbi_phid=" + NStr::URLEncode(job.GetNCBIPHID()) +
-                       "&mask=" + NStr::NumericToString(job.GetMask()) +
-                       "&auth_token=" + job.GetAuthToken() +
-                       submitter_notif_info +
-                       kEndOfResponse);
+        string      reply;
+        reply.reserve(1024);
+        reply.append("OK:job_key=")
+             .append(job_key)
+             .append("&input=")
+             .append(NStr::URLEncode(job.GetInput()))
+             .append("&affinity=")
+             .append(NStr::URLEncode(q->GetAffinityTokenByID(job.GetAffinityId())))
+             .append("&client_ip=")
+             .append(NStr::URLEncode(job.GetClientIP()))
+             .append("&client_sid=")
+             .append(NStr::URLEncode(job.GetClientSID()))
+             .append("&ncbi_phid=")
+             .append(NStr::URLEncode(job.GetNCBIPHID()))
+             .append("&mask=")
+             .append(NStr::NumericToString(job.GetMask()))
+             .append("&auth_token=")
+             .append(job.GetAuthToken())
+             .append(submitter_notif_info)
+             .append(kEndOfResponse);
+        x_WriteMessage(reply);
     } else {
         x_WriteMessage(
                        "OK:" + job_key +

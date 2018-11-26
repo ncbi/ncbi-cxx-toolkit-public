@@ -189,8 +189,8 @@ string NS_FormatPreciseTime(const CNSPreciseTime &  t)
         return converted.AsString() + ".0";
 
     char        buffer[32];
-    sprintf(buffer, "%06lu", usec);
-    return converted.AsString() + "." + buffer;
+    sprintf(buffer, ".%06lu", usec);
+    return converted.AsString() + buffer;
 }
 
 inline
@@ -199,12 +199,10 @@ string NS_FormatPreciseTimeAsSec(const CNSPreciseTime &  t)
     long        usec = t.NSec() / kNSecsPerUSec;
     char        buffer[32];
 
-    if (usec == 0) {
+    if (usec == 0)
         sprintf(buffer, "%lu.0", t.Sec());
-        return buffer;
-    }
-
-    sprintf(buffer, "%lu.%06lu", t.Sec(), usec);
+    else
+        sprintf(buffer, "%lu.%06lu", t.Sec(), usec);
     return buffer;
 }
 

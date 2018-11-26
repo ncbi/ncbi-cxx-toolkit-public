@@ -39,6 +39,38 @@
 
 USING_NCBI_SCOPE;
 
+static map<string, EDumpFields>    ks_DumpFields = {
+    { "id", eId },
+    { "key", eKey },
+    { "status", eStatus },
+    { "last_touch", eLastTouch },
+    { "erase_time", eEraseTime },
+    { "run_expiration", eRunExpiration },
+    { "read_expiration", eReadExpiration },
+    { "subm_notif_port", eSubmitNotifPort },
+    { "subm_notif_expiration", eSubmitNotifExpiration },
+    { "listener_notif", eListenerNotif },
+    { "listener_notif_expiration", eListenerNotifExpiration },
+    { "events", eEvents },
+    { "run_counter", eRunCounter },
+    { "read_counter", eReadCounter },
+    { "affinity", eAffinity },
+    { "group", eGroup },
+    { "mask", eMask },
+    { "input", eInput },
+    { "output", eOutput },
+    { "progress_msg", eProgressMsg },
+    { "remote_client_sid", eRemoteClientSID },
+    { "remote_client_ip", eRemoteClientIP },
+    { "ncbi_phid", eNcbiPHID },
+    { "need_subm_progress_msg_notif", eNeedSubmitProgressMsgNotif },
+    { "need_lsnr_progress_msg_notif", eNeedListenerProgressMsgNotif },
+    { "need_stolen_notif", eNeedStolenNotif },
+    { "gc_erase_time", eGCEraseTime },
+    { "scope", eScope }
+};
+
+
 
 void SNSCommandArguments::x_Reset()
 {
@@ -97,10 +129,62 @@ void SNSCommandArguments::x_Reset()
     need_progress_msg = false;
     need_stolen = false;
 
-    job_statuses.clear();
+    order_first = true;
+    dump_fields = eAll;
 
-    return;
+    job_statuses.clear();
 }
+
+
+static string   s_AffOption = "aff";
+static string   s_AuthTokenOption = "auth_token";
+static string   s_AddOption = "add";
+static string   s_AnyAffOption = "any_aff";
+static string   s_AlertOption = "alert";
+static string   s_AffinityMayChangeOption = "affinity_may_change";
+static string   s_BlacklistOption = "blacklist";
+static string   s_CommentOption = "comment";
+static string   s_CountOption = "count";
+static string   s_DelOption = "del";
+static string   s_DrainOption = "drain";
+static string   s_DescriptionOption = "description";
+static string   s_DataOption = "data";
+static string   s_ExclusiveNewAffOption = "exclusive_new_aff";
+static string   s_ErrMsgOption = "err_msg";
+static string   s_EffectiveOption = "effective";
+static string   s_FieldsOption = "fields";
+static string   s_GroupOption = "group";
+static string   s_GroupMayChangeOption = "group_may_change";
+static string   s_InputOption = "input";
+static string   s_IpOption = "ip";
+static string   s_JobKeyOption = "job_key";
+static string   s_JobReturnCodeOption = "job_return_code";
+static string   s_MskOption = "msk";
+static string   s_ModeOption = "mode";
+static string   s_NcbiPhidOption = "ncbi_phid";
+static string   s_NoRetriesOption = "no_retries";
+static string   s_NeedStolenOption = "need_stolen";
+static string   s_NeedProgressMsgOption = "need_progress_msg";
+static string   s_OutputOption = "output";
+static string   s_OptionOption = "option";
+static string   s_OrderOption = "order";
+static string   s_PortOption = "port";
+static string   s_ProgressMsgOption = "progress_msg";
+static string   s_PullbackOption = "pullback";
+static string   s_PrioritizedAffOption = "prioritized_aff";
+static string   s_QNameOption = "qname";
+static string   s_QClassOption = "qclass";
+static string   s_ReaderAffOption = "reader_aff";
+static string   s_StatusOption = "status";
+static string   s_SidOption = "sid";
+static string   s_StartAfterOption = "start_after";
+static string   s_ServiceOption = "service";
+static string   s_ScopeOption = "scope";
+static string   s_TimeoutOption = "timeout";
+static string   s_UserOption = "user";
+static string   s_VersionOption = "version";
+static string   s_WnodeAffOption = "wnode_aff";
+
 
 
 void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
@@ -123,65 +207,70 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
 
         switch (key[0]) {
         case 'a':
-            if (key == "aff") {
+            if (key == s_AffOption) {
                 affinity_token = NStr::ParseEscapes(val);
                 x_CheckAffinityList(affinity_token);
             }
-            else if (key == "auth_token")
+            else if (key == s_AuthTokenOption)
                 auth_token = val;
-            else if (key == "add") {
+            else if (key == s_AddOption) {
                 aff_to_add = NStr::ParseEscapes(val);
                 x_CheckAffinityList(aff_to_add);
             }
-            else if (key == "any_aff")
+            else if (key == s_AnyAffOption)
                 any_affinity = x_GetBooleanValue(val, key);
-            else if (key == "alert")
+            else if (key == s_AlertOption)
                 alert = NStr::ParseEscapes(val);
-            else if (key == "affinity_may_change")
+            else if (key == s_AffinityMayChangeOption)
                 affinity_may_change = x_GetBooleanValue(val, key);
             break;
         case 'b':
-            if (key == "blacklist")
+            if (key == s_BlacklistOption)
                 blacklist = x_GetBooleanValue(val, key);
             break;
         case 'c':
-            if (key == "comment")
+            if (key == s_CommentOption)
                 comment = NStr::ParseEscapes(val);
-            else if (key == "count")
+            else if (key == s_CountOption)
                 count = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
             break;
         case 'd':
-            if (key == "del") {
+            if (key == s_DelOption) {
                 aff_to_del = NStr::ParseEscapes(val);
                 x_CheckAffinityList(aff_to_del);
             }
-            else if (key == "drain")
+            else if (key == s_DrainOption)
                 drain = x_GetBooleanValue(val, key);
-            else if (key == "description") {
+            else if (key == s_DescriptionOption) {
                 description = NStr::ParseEscapes(val);
                 size_to_check = description.size();
             }
-            else if (key == "data")
+            else if (key == s_DataOption)
                 client_data = NStr::ParseEscapes(val);
             break;
         case 'e':
-            if (key == "exclusive_new_aff")
+            if (key == s_ExclusiveNewAffOption)
                 exclusive_new_aff = x_GetBooleanValue(val, key);
-            else if (key == "err_msg")
+            else if (key == s_ErrMsgOption)
                 err_msg = x_NormalizeErrorMessage(NStr::ParseEscapes(val));
-            else if (key == "effective")
+            else if (key == s_EffectiveOption)
                 effective = x_GetBooleanValue(val, key);
             break;
+        case 'f':
+            if (key == s_FieldsOption) {
+                dump_fields = x_GetDumpFields(val);
+            }
+            break;
         case 'g':
-            if (key == "group") {
+            if (key == s_GroupOption) {
                 group = NStr::ParseEscapes(val);
                 x_CheckGroupList(group);
             }
-            else if (key == "group_may_change")
+            else if (key == s_GroupMayChangeOption)
                 group_may_change = x_GetBooleanValue(val, key);
             break;
         case 'i':
-            if (key == "input") {
+            if (key == s_InputOption) {
                 input = NStr::ParseEscapes(val);
                 if (input.size() > kNetScheduleMaxOverflowSize)
                     NCBI_THROW(CNetScheduleException, eDataTooLong,
@@ -192,7 +281,7 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                                NStr::NumericToString(
                                                 kNetScheduleMaxOverflowSize));
             }
-            else if (key == "ip") {
+            else if (key == s_IpOption) {
                 ip = NStr::ParseEscapes(val);
                 if (ip.empty()) {
                     ip = peer_socket.GetPeerAddress(eSAF_IP);
@@ -201,7 +290,7 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
             }
             break;
         case 'j':
-            if (key == "job_key") {
+            if (key == s_JobKeyOption) {
                 job_key = val;
                 if (!val.empty()) {
                     CNetScheduleKey     parsed_key(val, id_pool);
@@ -212,18 +301,18 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                     NCBI_THROW(CNetScheduleException,
                                eInvalidParameter, "Invalid job key");
             }
-            else if (key == "job_return_code")
+            else if (key == s_JobReturnCodeOption)
                 job_return_code = NStr::StringToInt(val,
                                                     NStr::fConvErr_NoThrow);
             break;
         case 'm':
-            if (key == "msk")
+            if (key == s_MskOption)
                 job_mask = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
-            else if (key == "mode")
+            else if (key == s_ModeOption)
                 mode = x_GetBooleanValue(val, key);
             break;
         case 'n':
-            if (key == "ncbi_phid") {
+            if (key == s_NcbiPhidOption) {
                 ncbi_phid = NStr::ParseEscapes(val);
                 if (ncbi_phid.empty()) {
                     if (need_to_generate) {
@@ -235,15 +324,15 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                 else
                     CDiagContext::GetRequestContext().SetHitID(ncbi_phid);
             }
-            else if (key == "no_retries")
+            else if (key == s_NoRetriesOption)
                 no_retries = x_GetBooleanValue(val, key);
-            else if (key == "need_stolen")
+            else if (key == s_NeedStolenOption)
                 need_stolen = x_GetBooleanValue(val, key);
-            else if (key == "need_progress_msg")
+            else if (key == s_NeedProgressMsgOption)
                 need_progress_msg = x_GetBooleanValue(val, key);
             break;
         case 'o':
-            if (key == "output") {
+            if (key == s_OutputOption) {
                 output = NStr::ParseEscapes(val);
                 if (output.size() > kNetScheduleMaxOverflowSize)
                     NCBI_THROW(CNetScheduleException, eDataTooLong,
@@ -254,41 +343,44 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                                NStr::NumericToString(
                                                 kNetScheduleMaxOverflowSize));
             }
-            else if (key == "option")
+            else if (key == s_OptionOption) {
                 option = NStr::ParseEscapes(val);
+            } else if (key == s_OrderOption) {
+                order_first = x_GetOrderFirst(val);
+            }
             break;
         case 'p':
-            if (key == "port") {
+            if (key == s_PortOption) {
                 port = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
                 if (port > 65535)
                     NCBI_THROW(CNetScheduleException,
                                eInvalidParameter, "Invalid port number");
             }
-            else if (key == "progress_msg") {
+            else if (key == s_ProgressMsgOption) {
                 progress_msg = NStr::ParseEscapes(val);
                 size_to_check = progress_msg.size();
             }
-            else if (key == "pullback")
+            else if (key == s_PullbackOption)
                 pullback = x_GetBooleanValue(val, key);
-            else if (key == "prioritized_aff")
+            else if (key == s_PrioritizedAffOption)
                 prioritized_aff = x_GetBooleanValue(val, key);
             break;
         case 'q':
-            if (key == "qname") {
+            if (key == s_QNameOption) {
                 qname = NStr::ParseEscapes(val);
                 x_CheckQueueName(qname, key);
             }
-            else if (key == "qclass") {
+            else if (key == s_QClassOption) {
                 qclass = NStr::ParseEscapes(val);
                 x_CheckQueueName(qclass, key);
             }
             break;
         case 'r':
-            if (key == "reader_aff")
+            if (key == s_ReaderAffOption)
                 reader_affinity = x_GetBooleanValue(val, key);
             break;
         case 's':
-            if (key == "status") {
+            if (key == s_StatusOption) {
                 job_statuses_string = val;
 
                 if (!job_statuses_string.empty()) {
@@ -301,7 +393,7 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                                         CNetScheduleAPI::StringToStatus(*k));
                 }
             }
-            else if (key == "sid") {
+            else if (key == s_SidOption) {
                 sid = NStr::ParseEscapes(val);
                 if (sid.empty()) {
                     if (need_to_generate) {
@@ -312,7 +404,7 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                 else
                     CDiagContext::GetRequestContext().SetSessionID(sid);
             }
-            else if (key == "start_after") {
+            else if (key == s_StartAfterOption) {
                 start_after = val;
                 if (!val.empty())
                     start_after_job_id = CNetScheduleKey(val, id_pool).id;
@@ -321,25 +413,25 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                                eInvalidParameter,
                                "Invalid job ID in 'start_after' option key");
             }
-            else if (key == "service")
+            else if (key == s_ServiceOption)
                 service = NStr::ParseEscapes(val);
-            else if (key == "scope")
+            else if (key == s_ScopeOption)
                 scope = NStr::ParseEscapes(val);
             break;
         case 't':
-            if (key == "timeout")
+            if (key == s_TimeoutOption)
                 timeout = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
             break;
         case 'u':
-            if (key == "user")
+            if (key == s_UserOption)
                 user = NStr::ParseEscapes(val);
             break;
         case 'v':
-            if (key == "version")
+            if (key == s_VersionOption)
                 client_data_version = NStr::StringToInt(val);
             break;
         case 'w':
-            if (key == "wnode_aff")
+            if (key == s_WnodeAffOption)
                 wnode_affinity = x_GetBooleanValue(val, key);
             break;
         default:
@@ -368,13 +460,12 @@ void SNSCommandArguments::x_CheckAffinityList(const string &  val)
 {
     list<string>    affs;
     NStr::Split(val, "\t,", affs);
-    for (list<string>::const_iterator
-            k = affs.begin(); k != affs.end(); ++k)
-        if (k->size() > kNetScheduleMaxDBDataSize - 1)
+    for (const auto &  aff : affs)
+        if (aff.size() > kNetScheduleMaxDBDataSize - 1)
             NCBI_THROW(
                 CNetScheduleException, eDataTooLong,
-                "Affinity token '" + *k + "' length (" +
-                NStr::NumericToString(k->size()) +
+                "Affinity token '" + aff + "' length (" +
+                NStr::NumericToString(aff.size()) +
                 " bytes) exceeds the limit ( " +
                 NStr::NumericToString(kNetScheduleMaxDBDataSize - 1) +
                 " bytes)");
@@ -389,13 +480,12 @@ void SNSCommandArguments::x_CheckGroupList(const string &  val)
 {
     list<string>    groups;
     NStr::Split(val, "\t,", groups);
-    for (list<string>::const_iterator
-            k = groups.begin(); k != groups.end(); ++k)
-        if (k->size() > kNetScheduleMaxDBDataSize - 1)
+    for (const auto &  group : groups)
+        if (group.size() > kNetScheduleMaxDBDataSize - 1)
             NCBI_THROW(
                 CNetScheduleException, eDataTooLong,
-                "Group token '" + *k + "' length (" +
-                NStr::NumericToString(k->size()) +
+                "Group token '" + group + "' length (" +
+                NStr::NumericToString(group.size()) +
                 " bytes) exceeds the limit ( " +
                 NStr::NumericToString(kNetScheduleMaxDBDataSize - 1) +
                 " bytes)");
@@ -422,19 +512,16 @@ void SNSCommandArguments::x_CheckQueueName(const string &  val,
 bool SNSCommandArguments::x_GetBooleanValue(const string &  val,
                                             const string &  key)
 {
-    int tmp = 0;
-    try {
-        tmp = NStr::StringToInt(val);
-    } catch (...) {
-        NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                   key +
-                   " parameter must be an integer value (0 or 1 are allowed)");
-    }
+    static string   zero = "0";
+    static string   one = "1";
 
-    if (tmp != 0 && tmp != 1)
-        NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                   key + " parameter accepted values are 0 and 1");
-    return tmp == 1;
+    if (val == zero)
+        return false;
+    if (val == one)
+        return true;
+
+    NCBI_THROW(CNetScheduleException, eInvalidParameter,
+               key + " parameter accepted values are 0 and 1");
 }
 
 
@@ -451,5 +538,43 @@ string SNSCommandArguments::x_NormalizeErrorMessage(const string &  val)
                suffix;
     }
     return val;
+}
+
+
+bool SNSCommandArguments::x_GetOrderFirst(const string &  val)
+{
+    static string   first = "first";
+    static string   last = "last";
+
+    if (val == first)
+        return true;
+    if (val == last)
+        return false;
+
+    NCBI_THROW(CNetScheduleException, eInvalidParameter,
+               "The order parameter valid values are 'first' and 'last'");
+}
+
+
+TDumpFields SNSCommandArguments::x_GetDumpFields(const string &  val)
+{
+    TDumpFields     fields = 0;
+
+    if (val.empty())
+        return eAll;
+
+    list<string>    field_names;
+    NStr::Split(val, ",", field_names);
+    for (const auto &   field_name : field_names) {
+        auto    it = ks_DumpFields.find(field_name);
+
+        if (it == ks_DumpFields.end()) {
+            ERR_POST(Warning << "Dump field name " << field_name
+                             << " is not supported. Ignore and continue.");
+        } else {
+            fields |= it->second;
+        }
+    }
+    return fields;
 }
 
