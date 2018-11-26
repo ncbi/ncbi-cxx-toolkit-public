@@ -1641,10 +1641,7 @@ void CFeatureItem::x_AddQualsIdx(
             }
         }
 
-        if (feat_gene_xref && ! suppressed && 
-            ! CGeneFinder::ResolveGeneXref(feat_gene_xref, ctx.GetTopLevelEntry())) {
-            gene_ref = feat_gene_xref;
-        } else if ((! feat_gene_xref || ! suppressed) &&
+        if ((! feat_gene_xref || ! suppressed) &&
                    subtype != CSeqFeatData::eSubtype_primer_bind) {
             CRef<CFeatureIndex> ft;
             bool is_mapped = false;
