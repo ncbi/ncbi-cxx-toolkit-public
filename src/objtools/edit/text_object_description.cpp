@@ -325,7 +325,7 @@ static string GetSeqLocDescription(const CSeq_loc& loc, CScope& scope)
 }
 
 
-static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &location, string &locus_tag)
+void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &location, string &locus_tag)
 {
     location = GetSeqLocDescription(seq_feat.GetLocation(), scope);
     label = seq_feat.GetData().GetKey();

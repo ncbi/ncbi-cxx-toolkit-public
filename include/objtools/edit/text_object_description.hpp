@@ -38,10 +38,12 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-NCBI_DLL_IMPORT string GetTextObjectDescription(const CSeq_feat& sf, CScope& scope);
-NCBI_DLL_IMPORT string GetTextObjectDescription(const CSeqdesc& sd, CScope& scope);
-NCBI_DLL_IMPORT string GetTextObjectDescription(const CBioseq& bs, CScope& scope);
-NCBI_DLL_IMPORT string GetTextObjectDescription(const CBioseq_set& bs, CScope& scope);
+NCBI_XOBJEDIT_EXPORT string GetTextObjectDescription(const CSeq_feat& sf, CScope& scope);
+NCBI_XOBJEDIT_EXPORT string GetTextObjectDescription(const CSeqdesc& sd, CScope& scope);
+NCBI_XOBJEDIT_EXPORT string GetTextObjectDescription(const CBioseq& bs, CScope& scope);
+NCBI_XOBJEDIT_EXPORT string GetTextObjectDescription(const CBioseq_set& bs, CScope& scope);
+// Giving the same name to all functions was a creative idea!
+NCBI_XOBJEDIT_EXPORT void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &type, string &context, string &location, string &locus_tag);
 
 END_SCOPE(edit)
 END_SCOPE(objects)

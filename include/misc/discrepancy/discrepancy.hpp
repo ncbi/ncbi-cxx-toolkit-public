@@ -62,10 +62,6 @@ public:
     virtual EType GetType(void) const = 0;
     virtual CConstRef<CSerialObject> GetObject(void) const = 0;
     virtual bool CanAutofix(void) const = 0;
-    static string GetTextObjectDescription(const objects::CSeq_feat& sf, objects::CScope& scope);
-    static string GetTextObjectDescription(const objects::CSeqdesc& sd, objects::CScope& scope);
-    static string GetTextObjectDescription(const objects::CBioseq& bs, objects::CScope& scope);
-    static string GetTextObjectDescription(const objects::CBioseq_set& bs, objects::CScope& scope);
 };
 typedef vector<CRef<CReportObj> > TReportObjectList;
 

@@ -65,35 +65,6 @@ BEGIN_SCOPE(NDiscrepancy)
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-
-// These four functions are not used in Discrepancy Report, but are called from somewhere in GBench.
-// It would make sense to move them to some other place.
-
-string CReportObj::GetTextObjectDescription(const CSeq_feat& sf, CScope& scope)
-{
-    return CReportObject::GetTextObjectDescription(sf, scope);
-}
-
-
-string CReportObj::GetTextObjectDescription(const CSeqdesc& sd, CScope& scope)
-{
-    return CReportObject::GetTextObjectDescription(sd);
-}
-
-
-string CReportObj::GetTextObjectDescription(const CBioseq& bs, CScope& scope)
-{
-    return CReportObject::GetTextObjectDescription(bs, scope);
-}
-
-
-string CReportObj::GetTextObjectDescription(const CBioseq_set& bs, CScope& scope)
-{
-    CBioseq_set_Handle bssh = scope.GetBioseq_setHandle(bs);
-    return CReportObject::GetTextObjectDescription(bssh);
-}
-
-
 CConstRef<CSeq_id> GetBestId(const CBioseq& bioseq);
 
 CReportObjectData::CReportObjectData(const CSerialObject* obj, CScope& scope, bool keep) : m_Obj(keep ? obj : 0)
