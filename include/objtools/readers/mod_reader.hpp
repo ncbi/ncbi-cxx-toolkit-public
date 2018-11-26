@@ -93,8 +93,10 @@ private:
 
     TMods m_Mods;
     using TNameMap = unordered_map<string, string>;
+    using TNameSet = unordered_set<string>;
     static const TNameMap sm_NameMap;
-    static const unordered_set<string> sm_MultipleValuesPermitted;
+    static const TNameSet sm_MultipleValuesForbidden;
+    static const TNameSet sm_DeprecatedModifiers;
 
     IObjtoolsListener* m_pMessageListener;
 };
@@ -142,7 +144,6 @@ private:
     static void x_ImportOrgName(const COrgName& org_name, TMods& mods);
     static void x_ImportOrgMod(const COrgMod& org_mod, TMods& mods);
     static void x_ImportSubSource(const CSubSource& subsource, TMods& mods);
-    static bool x_IsUserType(const CUser_object& user_object, const string& type);
 
     static void x_ImportFeatureModifiers(const CSeq_annot& annot, TMods& mods);
     static void x_ImportGene(const CGene_ref& gene_ref, TMods& mods);
@@ -175,6 +176,8 @@ private:
             IObjtoolsListener* pMessageListener);
     static void x_SetMolecule(const TRange& mod_range, CSeq_inst& seq_inst, 
             IObjtoolsListener* pMessageListener);
+    static void x_SetMoleculeFromMolType(const TRange& mod_range, CSeq_inst& seq_inst,
+            IObjtoolsListener* pMessageListener);
     static void x_SetTopology(const TRange& mod_range, CSeq_inst& seq_inst,
             IObjtoolsListener* pMessageListener);
     static void x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst, 
@@ -194,9 +197,6 @@ private:
     static void x_SetDBxref(const TRange& mod_range, CDescrCache& descr_cache,
             IObjtoolsListener* pMessageListener);
 
-    static CDescrCache* x_CreatePrincipalDescrCache(CBioseq& bioseq);
-    static CDescrCache* x_CreateBioseqDescrCache(CBioseq& bioseq);
-
     static void x_AppendPrimerNames(const string& names, vector<string>& reaction_names);
     static void x_AppendPrimerSeqs(const string& names, vector<string>& reaction_seqs);
     static void x_SetPrimerNames(const string& primer_names, CPCRPrimerSet& primer_set);
@@ -212,8 +212,6 @@ private:
     static void x_SetDBLinkField(const string& label, const TRange& mod_range, CDescrCache& descr_cache);
     static void x_SetDBLinkFieldVals(const string& label, const list<CTempString>& vals, CUser_object& dblink);
 
-    static bool x_TryMolInfoMod(const TRange& mod_range, CDescrCache& descr_cache, 
-            IObjtoolsListener* pMessageListener);
     static void x_SetMolInfoType(const TRange& mod_range, CDescrCache& descr_cache);
     static void x_SetMolInfoTech(const TRange& mod_range, CDescrCache& descr_cache);
     static void x_SetMolInfoCompleteness(const TRange& mod_range, CDescrCache& descr_cache);
@@ -227,10 +225,9 @@ private:
     static bool x_TryProteinRefMod(const TRange& mod_range, CFeatureCache& protein_ref_cache,
             IObjtoolsListener* pMessageListener);
 
-
     static void x_ReportError(void){} // Need to fill this in
     static void x_ReportInvalidValue(const string& mod_name, const string& mod_value,
-            IObjtoolsListener* pMessageListener=nullptr) {}
+            IObjtoolsListener* pMessageListener=nullptr);
 };
 
 

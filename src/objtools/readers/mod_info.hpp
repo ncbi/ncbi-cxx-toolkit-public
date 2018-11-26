@@ -224,6 +224,30 @@ unordered_map<string, CMolInfo::TBiomol> s_BiomolStringToEnum
 };
 
 
+static const 
+unordered_map<CMolInfo::TBiomol, CSeq_inst::EMol> s_BiomolEnumToMolEnum
+= { { CMolInfo::eBiomol_genomic, CSeq_inst::eMol_dna},
+
+    { CMolInfo::eBiomol_pre_RNA,  CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_mRNA,  CSeq_inst::eMol_rna },
+    { CMolInfo::eBiomol_rRNA, CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_tRNA, CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_snRNA, CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_scRNA, CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_genomic_mRNA, CSeq_inst::eMol_rna },
+    { CMolInfo::eBiomol_cRNA, CSeq_inst::eMol_rna },
+    { CMolInfo::eBiomol_snoRNA, CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_transcribed_RNA, CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_ncRNA, CSeq_inst::eMol_rna},
+    { CMolInfo::eBiomol_tmRNA, CSeq_inst::eMol_rna},
+
+    { CMolInfo::eBiomol_peptide, CSeq_inst::eMol_aa},
+
+    { CMolInfo::eBiomol_other_genetic, CSeq_inst::eMol_other},
+    { CMolInfo::eBiomol_other, CSeq_inst::eMol_other}
+};
+
+
 static const
 unordered_map<CMolInfo::TBiomol, string> s_BiomolEnumToString =
 {{CMolInfo::eBiomol_cRNA, "cRNA"},
