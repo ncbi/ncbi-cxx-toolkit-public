@@ -63,6 +63,7 @@
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 
+#include <objtools/logging/message.hpp>
 #include <objtools/logging/listener.hpp>
 #include <objtools/readers/mod_reader.hpp>
 #include <map>
@@ -905,7 +906,6 @@ private:
 
 
     TDescrContainer* m_pPrimaryContainer;
-    unique_ptr<TDescrContainer> m_pDescrContainer;
     unique_ptr<TDescrContainer> m_pNucProtSetContainer;
     unique_ptr<TDescrContainer> m_pBioseqContainer;
 };
@@ -1060,34 +1060,34 @@ void CDescrCache::x_SetUserType(const string& type,
 
 CPubdesc& CDescrCache::SetPubdesc()
 {
-    _ASSERT(m_pDescrContainer);
+    _ASSERT(m_pPrimaryContainer);
 
     if (m_FirstPubdesc) {
-        if (m_pDescrContainer->IsSet()) {
-            m_pDescrContainer->SetDescr().Set().remove_if([](const CRef<CSeqdesc>& pDesc) { return (pDesc && pDesc->IsPub()); });
+        if (m_pPrimaryContainer->IsSet()) {
+            m_pPrimaryContainer->SetDescr().Set().remove_if([](const CRef<CSeqdesc>& pDesc) { return (pDesc && pDesc->IsPub()); });
         }
         m_FirstPubdesc = false;
     }
 
     auto pDesc = Ref(new CSeqdesc());
-    m_pDescrContainer->SetDescr().Set().push_back(pDesc);
+    m_pPrimaryContainer->SetDescr().Set().push_back(pDesc);
     return pDesc->SetPub();
 }
 
 
 string& CDescrCache::SetComment()
 {
-    _ASSERT(m_pDescrContainer);
+    _ASSERT(m_pPrimaryContainer);
 
     if (m_FirstComment) {
-        if (m_pDescrContainer->IsSet()) {
-            m_pDescrContainer->SetDescr().Set().remove_if([](const CRef<CSeqdesc>& pDesc) { return (pDesc && pDesc->IsComment()); });
+        if (m_pPrimaryContainer->IsSet()) {
+            m_pPrimaryContainer->SetDescr().Set().remove_if([](const CRef<CSeqdesc>& pDesc) { return (pDesc && pDesc->IsComment()); });
         }
         m_FirstComment = false;
     }
 
     auto pDesc = Ref(new CSeqdesc());
-    m_pDescrContainer->SetDescr().Set().push_back(pDesc);
+    m_pPrimaryContainer->SetDescr().Set().push_back(pDesc);
     return pDesc->SetComment();
 }
 
@@ -1295,7 +1295,27 @@ void CModAdder::x_ReportInvalidValue(const string& mod_name,
                                      const string& mod_value,
                                      IObjtoolsListener* pMessageListener)
 {
+    if (!pMessageListener) {
+        return;
+    }
+
+    
 }
+
+
+void CModAdder::x_PutMessage(const string& message,
+                             EDiagSev severity,
+                            IObjtoolsListener* pMessageListener)
+{
+    if (!pMessageListener || message.empty()) 
+    {
+        return;
+    }
+
+    pMessageListener->PutMessage(
+        CObjtoolsMessage(message, severity));
+}
+
 
 
 const string& CModAdder::x_GetModName(const TRange& mod_range) 

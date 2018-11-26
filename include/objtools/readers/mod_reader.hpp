@@ -226,6 +226,9 @@ private:
     static void x_ReportError(void){} // Need to fill this in
     static void x_ReportInvalidValue(const string& mod_name, const string& mod_value,
             IObjtoolsListener* pMessageListener=nullptr);
+
+    static void x_PutMessage(const string& message, EDiagSev severity, 
+            IObjtoolsListener* pMessageListener);
 };
 
 

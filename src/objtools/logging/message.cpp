@@ -35,7 +35,79 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-    // Nothing needed here yet
+
+static string s_GetSeverityName(EDiagSev severity) 
+{
+    return CNcbiDiag::SeverityName(severity);
+}
+
+CObjtoolsMessage::CObjtoolsMessage(const string& text, EDiagSev severity)
+: m_Text(text), m_Severity(severity) {}
+
+
+CObjtoolsMessage* CObjtoolsMessage::Clone(void) const 
+{
+    return new CObjtoolsMessage(m_Text, m_Severity);
+}
+
+
+string CObjtoolsMessage::Compose(void) const
+{
+    return s_GetSeverityName(GetSeverity()) + ": " + GetText();
+}
+
+
+void CObjtoolsMessage::Write(CNcbiOstream& out) const
+{
+    out << "                " <<  
+        s_GetSeverityName(GetSeverity())
+        << ":" << endl;
+    out << "Problem:        " <<  
+        GetText() << endl;
+    out << endl;
+}
+
+
+void CObjtoolsMessage::Dump(CNcbiOstream& out) const
+{
+    Write(out);
+}
+
+
+void CObjtoolsMessage::WriteAsXML(CNcbiOstream& out) const 
+{
+    out << "<message severity=\"" << NStr::XmlEncode(s_GetSeverityName(GetSeverity())) << "\" "
+        << "problem=\"" << NStr::XmlEncode(GetText()) << "\" ";
+    out << "</message>" << endl;
+}
+
+void CObjtoolsMessage::DumpAsXML(CNcbiOstream& out) const 
+{
+}
+
+string CObjtoolsMessage::GetText(void) const 
+{ 
+    return m_Text;
+}
+
+
+EDiagSev CObjtoolsMessage::GetSeverity(void) const 
+{
+    return m_Severity;
+}
+
+
+int CObjtoolsMessage::GetCode(void) const
+{
+    return 0;
+}
+
+
+int CObjtoolsMessage::GetSubCode(void) const
+{
+    return 0;
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

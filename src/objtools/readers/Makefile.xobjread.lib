@@ -22,7 +22,7 @@ SRC = read_util format_guess_ex \
       message_listener line_error
 
 
-DLL_LIB = submit seqset $(SEQ_LIBS) general creaders xutil
+DLL_LIB = submit seqset $(SEQ_LIBS) general creaders xutil xlogging
 
 USES_LIBRARIES =  \
-    creaders submit
+    creaders submit xlogging

@@ -45,11 +45,42 @@ class NCBI_XOBJUTIL_EXPORT IObjtoolsMessage : public IMessage
 public:
     virtual ~IObjtoolsMessage(void) = default;
 
-    virtual void WriteAsXML(CNcbiOstream& out) const = 0;
-
     virtual void Dump(CNcbiOstream& out) const = 0;
 
+    virtual void WriteAsXML(CNcbiOstream& out) const = 0;
+
     virtual void DumpAsXML(CNcbiOstream& out) const = 0;
+};
+
+
+//  ============================================================================
+class CObjtoolsMessage : public IObjtoolsMessage 
+//  ============================================================================
+{
+public:
+    CObjtoolsMessage(const string& text,
+                     EDiagSev severity);
+
+    virtual CObjtoolsMessage *Clone(void) const;
+
+    virtual string Compose(void) const;
+
+    virtual void Write(CNcbiOstream& out) const;
+
+    virtual void Dump(CNcbiOstream& out) const;
+
+    virtual void WriteAsXML(CNcbiOstream& out) const;
+
+    virtual void DumpAsXML(CNcbiOstream& out) const;
+
+    virtual string GetText(void) const;
+    virtual EDiagSev GetSeverity(void) const;
+    virtual int GetCode(void) const;
+    virtual int GetSubCode(void) const;
+
+private:
+    string m_Text;
+    EDiagSev m_Severity;
 };
 
 END_SCOPE(objects)
