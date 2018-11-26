@@ -149,4 +149,16 @@ void CTable2AsnStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& 
     });
 }
 
+bool CTable2AsnStructuredCommentsReader::IsVertical(ILineReader& reader)
+{
+    CTempString line;
+    reader.ReadLine();
+    if (!reader.AtEOF())
+      line = reader.GetCurrentLine();
+
+    bool vert = NStr::StartsWith(line, "StructuredCommentPrefix");
+    reader.UngetLine();
+    return vert;
+}
+
 END_NCBI_SCOPE

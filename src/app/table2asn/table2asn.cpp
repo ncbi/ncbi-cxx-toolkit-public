@@ -451,7 +451,6 @@ int CTbl2AsnApp::Run(void)
     if (args["X"])
     {
         const string& extra = args["X"].AsString();
-        m_context.m_flipped_struc_cmt = extra.find('C') != string::npos;
         m_context.m_disc_eucariote = extra.find('E') != string::npos;
     }
 
@@ -1124,7 +1123,7 @@ void CTbl2AsnApp::ProcessSecretFiles1Phase(CSeq_entry& result)
 
     ProcessQVLFile(name + ".qvl", result);
     ProcessDSCFile(name + ".dsc", result);
-    if (!m_context.m_flipped_struc_cmt)
+    //if (!m_context.m_flipped_struc_cmt)
     {
         ProcessCMTFile(name + ".cmt", result, false);
         ProcessCMTFile(m_context.m_single_structure_cmt, result, false);
@@ -1156,7 +1155,7 @@ void CTbl2AsnApp::ProcessSecretFiles2Phase(CSeq_entry& result)
 
     string name = dir + base;
 
-    if (m_context.m_flipped_struc_cmt)
+    //if (m_context.m_flipped_struc_cmt)
     {
         ProcessCMTFile(name + ".cmt", result, true);
         ProcessCMTFile(m_context.m_single_structure_cmt, result, true);
@@ -1194,6 +1193,8 @@ void CTbl2AsnApp::ProcessCMTFile(const string& pathname, CSeq_entry& result, boo
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
     CTable2AsnStructuredCommentsReader cmt_reader(m_logger);
+    if (cmt_reader.IsVertical(*reader) && byrows==false)
+        return;
 
     if (byrows)
         cmt_reader.ProcessCommentsFileByRows(*reader, result);

@@ -74,7 +74,6 @@ public:
     string m_ProjectVersionNumber;
     string m_disc_lineage;
     bool   m_disc_eucariote;
-    bool   m_flipped_struc_cmt;
     bool   m_RemoteTaxonomyLookup;
     bool   m_RemotePubLookup;
     bool   m_HandleAsSet;

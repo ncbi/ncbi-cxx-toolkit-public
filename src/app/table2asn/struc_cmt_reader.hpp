@@ -57,6 +57,7 @@ public:
    void ProcessCommentsFileByRows(ILineReader& reader, objects::CSeq_entry& container);
    static
    void AddStructuredComments(objects::CSeq_descr& descr, const CStructComment& comments);
+   bool IsVertical(ILineReader& reader);
 
 private:
     void _AddStructuredComments(objects::CSeq_entry& entry, const CStructComment& comments);
