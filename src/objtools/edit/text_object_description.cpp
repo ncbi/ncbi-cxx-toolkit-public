@@ -325,7 +325,7 @@ static string GetSeqLocDescription(const CSeq_loc& loc, CScope& scope)
 }
 
 
-void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &location, string &locus_tag)
+static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &location, string &locus_tag)
 {
     location = GetSeqLocDescription(seq_feat.GetLocation(), scope);
     label = seq_feat.GetData().GetKey();
@@ -344,7 +344,7 @@ static string GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope,
 }
 
 
-static void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &context, string &location, string &locus_tag)
+void GetTextObjectDescription(const CSeq_feat& seq_feat, CScope& scope, string &label, string &context, string &location, string &locus_tag)
 {
     if (seq_feat.GetData().IsProt()) {
         CConstRef <CBioseq> bioseq = sequence::GetBioseqFromSeqLoc(seq_feat.GetLocation(), scope).GetCompleteBioseq();
