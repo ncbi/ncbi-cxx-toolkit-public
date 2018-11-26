@@ -69,17 +69,17 @@ public:
     /// Get the user-provided context
     template<typename TUserContext>
     shared_ptr<TUserContext> GetUserContext() const
-    { return static_pointer_cast<TUserContext>(m_UserContext.lock()); }
+    { return static_pointer_cast<TUserContext>(m_UserContext); }
 
 protected:
-    CPSG_Request(weak_ptr<void> user_context = {})
+    CPSG_Request(shared_ptr<void> user_context = {})
         : m_UserContext(user_context)
     {}
 
     virtual ~CPSG_Request() = default;
 
 private:
-    weak_ptr<void>  m_UserContext;
+    shared_ptr<void> m_UserContext;
 };
 
 
@@ -112,8 +112,8 @@ class CPSG_Request_Biodata : public CPSG_Request
 {
 public:
     /// 
-    CPSG_Request_Biodata(CPSG_BioId      bio_id,
-                         weak_ptr<void>  user_context = {})
+    CPSG_Request_Biodata(CPSG_BioId       bio_id,
+                         shared_ptr<void> user_context = {})
         : CPSG_Request(user_context),
           m_BioId(bio_id)
     {}
@@ -161,8 +161,8 @@ class CPSG_Request_Resolve : public CPSG_Request
 {
 public:
     /// 
-    CPSG_Request_Resolve(CPSG_BioId      bio_id,
-                         weak_ptr<void>  user_context = {})
+    CPSG_Request_Resolve(CPSG_BioId       bio_id,
+                         shared_ptr<void> user_context = {})
         : CPSG_Request(user_context),
           m_BioId(bio_id)
     {}
@@ -226,9 +226,9 @@ class CPSG_Request_Blob : public CPSG_Request
 {
 public:
     /// 
-    CPSG_Request_Blob(CPSG_BlobId     blob_id,
-                      string          last_modified = {},
-                      weak_ptr<void>  user_context = {})
+    CPSG_Request_Blob(CPSG_BlobId      blob_id,
+                      string           last_modified = {},
+                      shared_ptr<void> user_context = {})
         : CPSG_Request(user_context),
           m_BlobId(blob_id),
           m_LastModified(last_modified)
