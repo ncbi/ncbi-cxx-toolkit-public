@@ -262,6 +262,7 @@ find_package(OpenSSL)
 if (OpenSSL_FOUND)
     set(OpenSSL_LIBRARIES ${OPENSSL_LIBRARIES} ${Z_LIBS} ${DL_LIBS})
     set(OPENSSL_LIBS ${OPENSSL_LIBRARIES})
+    set(HAVE_LIBOPENSSL 1)
     message(STATUS "OpenSSL_LIBRARIES = ${OpenSSL_LIBRARIES}")
 endif()
 
@@ -1151,3 +1152,14 @@ endif()
 #############################################################################
 # PYTHON
 set(NCBI_COMPONENT_PYTHON_FOUND NO)
+
+#############################################################################
+# OpenSSL
+if (OpenSSL_FOUND)
+  set(NCBI_COMPONENT_OpenSSL_FOUND YES)
+  set(NCBI_COMPONENT_OpenSSL_INCLUDE ${OpenSSL_INCLUDE})
+  set(NCBI_COMPONENT_OpenSSL_LIBS    ${OPENSSL_LIBS})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} OpenSSL")
+else()
+  set(NCBI_COMPONENT_OpenSSL_FOUND NO)
+endif()

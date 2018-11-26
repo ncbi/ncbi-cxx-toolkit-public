@@ -343,7 +343,7 @@
 /* #undef HAVE_LIBOECHEM */
 
 /* Define to 1 if libssl is available. */
-#define HAVE_LIBOPENSSL 1
+#cmakedefine HAVE_LIBOPENSSL 1
 
 /* Define to 1 if you have libOSMesa. */
 #define HAVE_LIBOSMESA 1

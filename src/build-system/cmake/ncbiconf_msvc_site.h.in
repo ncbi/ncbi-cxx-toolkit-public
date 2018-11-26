@@ -19,7 +19,7 @@
 #define HAVE_LIBMIMETIC 1
 /* #undef HAVE_LIBMONGODB */
 /* #undef HAVE_LIBMUPARSER */
-#define HAVE_LIBOPENSSL 1
+#cmakedefine HAVE_LIBOPENSSL 1
 #cmakedefine HAVE_LIBPNG 1
 #cmakedefine HAVE_LIBSQLITE3 1
 #cmakedefine HAVE_LIBSYBASE 1
