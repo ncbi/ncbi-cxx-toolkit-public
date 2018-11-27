@@ -1942,7 +1942,7 @@ void CSeqDBImpl::ListColumns(vector<string> & titles)
         m_VolSet.GetVolNonConst(vol_idx)->ListColumns(all, locked);
     }
 
-    titles.resize(SeqDB_VectorAssign(all, titles));
+    titles.assign(all.begin(), all.end());
 }
 
 int CSeqDBImpl::GetColumnId(const string & title)
