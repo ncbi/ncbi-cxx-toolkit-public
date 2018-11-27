@@ -436,66 +436,66 @@ BOOST_AUTO_TEST_CASE(Test_Descr_LatLonValue)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_Descr_LatLonCountry)
+void TestOneLatLonCountry(const string& country, const string& lat_lon, const string& error, bool use_state = false, const string& err_code = "LatLonCountry")
 {
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "Romania");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "46.5 N 20 E");
-    
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, country);
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, lat_lon);
+
     STANDARD_SETUP
+    
+    if (use_state) {
+        options |= CValidator::eVal_latlon_check_state;
+    }
 
-    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "LatLonCountry",
-                              "Lat_lon '46.5 N 20 E' maps to 'Hungary' instead of 'Romania' - claimed region 'Romania' is at distance 45 km"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "34 N 65 E");
-    expected_errors[0]->SetErrCode("LatLonCountry");
-    expected_errors[0]->SetErrMsg("Lat_lon '34 N 65 E' maps to 'Afghanistan' instead of 'Romania'");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "48 N 15 E");
-    expected_errors[0]->SetErrMsg("Lat_lon '48 N 15 E' maps to 'Austria' instead of 'Romania'");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "48 N 15 W");
-    expected_errors[0]->SetErrCode("LatLonWater");
-    expected_errors[0]->SetErrMsg("Lat_lon '48 N 15 W' is in water 'Atlantic Ocean'");
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "18.47 N 64.23000000000002 W");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "Puerto Rico: Rio Mameyes in Luquillo");
-    expected_errors[0]->SetErrMsg("Lat_lon '18.47 N 64.23000000000002 W' is in water 'Caribbean Sea', 'Puerto Rico: Rio Mameyes in Luquillo' is 108 km away");
+    if (!error.empty()) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, err_code, error));
+    }
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
-    CValidErrorFormat format(*objmgr);
-    vector<string> expected;
-    expected.push_back("LatLonCountry Errors");
-    expected.push_back("lcl|good:Lat_lon '18.47 N 64.23000000000002 W' is in water 'Caribbean Sea', 'Puerto Rico: Rio Mameyes in Luquillo' is 108 km away");
-    expected.push_back("");
-    vector<string> seen;
-    vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
-    ITERATE(vector<string>, it, cat_list) {
-        vector<string> sublist;
-        NStr::Split(*it, "\n", sublist, 0);
-        ITERATE(vector<string>, sit, sublist) {
-            seen.push_back(*sit);
+    if (!error.empty()) {
+        CValidErrorFormat format(*objmgr);
+        vector<string> expected;
+        expected.push_back("LatLonCountry Errors");
+        expected.push_back("lcl|good:" + error);
+        expected.push_back("");
+        vector<string> seen;
+        vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
+        ITERATE(vector<string>, it, cat_list) {
+            vector<string> sublist;
+            NStr::Split(*it, "\n", sublist, 0);
+            ITERATE(vector<string>, sit, sublist) {
+                seen.push_back(*sit);
+            }
         }
+
+        CheckStrings(seen, expected);
     }
 
-    CheckStrings(seen, expected);
-
     CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_840)
+{
+    TestOneLatLonCountry("Portugal", "37.7715 N 25.3097 W", "", true);
+}
+
+
+
+BOOST_AUTO_TEST_CASE(Test_Descr_LatLonCountry)
+{
+    TestOneLatLonCountry("Romania", "46.5 N 20 E",
+        "Lat_lon '46.5 N 20 E' maps to 'Hungary' instead of 'Romania' - claimed region 'Romania' is at distance 45 km");
+    TestOneLatLonCountry("Romania", "34 N 65 E", "Lat_lon '34 N 65 E' maps to 'Afghanistan' instead of 'Romania'");
+    TestOneLatLonCountry("Romania", "48 N 15 E", "Lat_lon '48 N 15 E' maps to 'Austria' instead of 'Romania'");
+    TestOneLatLonCountry("Romania", "48 N 15 W", "Lat_lon '48 N 15 W' is in water 'Atlantic Ocean'", false, "LatLonWater");
+    TestOneLatLonCountry("Puerto Rico: Rio Mameyes in Luquillo", "18.47 N 64.23000000000002 W", 
+        "Lat_lon '18.47 N 64.23000000000002 W' is in water 'Caribbean Sea', 'Puerto Rico: Rio Mameyes in Luquillo' is 108 km away",
+        false, "LatLonWater");
+
 }
 
 

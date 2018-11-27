@@ -1948,6 +1948,13 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
     string wguess = id->GetGuessWater();
     string cguess = id->GetGuessCountry();
 
+    // special case where subsection of country has been identified but is not in coordinates of country
+    // VR-840
+    if (province.empty() && NStr::Equal(cguess, country)) {
+        return kEmptyStr;
+    }
+
+
     if (NStr::EqualNocase (country, "China") && NStr::EqualNocase (cguess, "Hong Kong")) {
         return kEmptyStr;
     }
