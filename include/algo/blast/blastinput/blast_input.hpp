@@ -251,7 +251,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation
-    virtual const char* GetErrCodeString(void) const {
+    virtual const char* GetErrCodeString(void) const override {
         switch ( GetErrCode() ) {
         case eInvalidStrand:        return "eInvalidStrand";
         case eSeqIdNotFound:        return "eSeqIdNotFound";

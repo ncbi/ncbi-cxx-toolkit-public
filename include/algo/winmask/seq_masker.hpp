@@ -103,7 +103,7 @@ public:
          **\return explanation string for the exception
          **
          **/
-        virtual const char * GetErrCodeString() const;
+        virtual const char * GetErrCodeString() const override;
 
         NCBI_EXCEPTION_DEFAULT( CSeqMaskerException, CException );
     };

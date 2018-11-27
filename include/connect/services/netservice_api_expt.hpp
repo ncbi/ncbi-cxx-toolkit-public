@@ -54,7 +54,7 @@ public:
         eCommandIsNotAllowed
     };
 
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eTimeout:

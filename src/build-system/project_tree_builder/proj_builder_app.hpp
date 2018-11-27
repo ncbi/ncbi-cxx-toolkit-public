@@ -277,7 +277,7 @@ public:
         eConfigureDefinesPath,
         eUnknownProjectTag
     };
-    virtual const char* GetErrCodeString(void) const {
+    virtual const char* GetErrCodeString(void) const override {
         switch ( GetErrCode() ) {
         case eFileCreation:
             return "Can not create file";

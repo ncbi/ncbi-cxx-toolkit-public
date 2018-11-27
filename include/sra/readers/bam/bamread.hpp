@@ -89,7 +89,7 @@ public:
         eBadFormat,     ///< Invalid SRZ accession format
         eNotFound       ///< Accession not found
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CSrzException,CException);
 };
 

@@ -129,7 +129,7 @@ public:
         eFormatError,      ///< includes decompression errors
         eInvalidArg        ///< invalid function argument
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CBGZFException,CException);
 };
 

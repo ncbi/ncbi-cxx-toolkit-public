@@ -78,7 +78,7 @@ public:
             /**\brief Return description string corresponding to an error code.
                \return error string
             */
-            virtual const char * GetErrCodeString() const;
+            virtual const char * GetErrCodeString() const override;
 
             NCBI_EXCEPTION_DEFAULT( GenCountsException, CException );
     };

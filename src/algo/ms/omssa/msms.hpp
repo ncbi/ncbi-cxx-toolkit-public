@@ -442,7 +442,7 @@ class COMSSAException: EXCEPTION_VIRTUAL_BASE public CException {
     };
 
     /// Translate from the error code value to its string representation.   
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eMSParseException: return "unable to parse COMSSASearch";

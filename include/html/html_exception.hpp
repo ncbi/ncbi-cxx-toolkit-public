@@ -74,7 +74,7 @@ public:
         eUnknown
     };
 
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch ( GetErrCode() ) {
         case eNullPtr:          return "eNullPtr";
@@ -104,11 +104,11 @@ public:
     virtual void AddTraceInfo(const string& node_name);
 
     /// Report node trace into the "out" stream.
-    virtual void ReportExtra(ostream& out) const;
+    virtual void ReportExtra(ostream& out) const override;
 
 protected:
     /// Helper method for copying exception data.
-    virtual void x_Assign(const CException& src);
+    virtual void x_Assign(const CException& src) override;
 
 protected:
     list<string>  m_Trace;  ///< Node trace list.

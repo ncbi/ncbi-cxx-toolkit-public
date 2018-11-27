@@ -96,7 +96,7 @@ public:
         eInvalidFormat,     ///< Format of the packed ID is not recognized.
         eInvalidDumpSyntax, ///< Dump parsing error.
     };
-    virtual const char* GetErrCodeString() const;
+    virtual const char* GetErrCodeString() const override;
     NCBI_EXCEPTION_DEFAULT(CCompoundIDException, CException);
 };
 

@@ -144,7 +144,7 @@ public:
         eNoResidueInfo
     };
 
-    virtual const char* GetErrCodeString(void) const {
+    virtual const char* GetErrCodeString(void) const override {
         switch (GetErrCode()) {
         case eInvalid : return "eInvalid";
         case eIndexOutOfBounds : return "eIndexOutOfBounds";

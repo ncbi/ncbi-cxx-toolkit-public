@@ -92,7 +92,7 @@ public:
         eBerkeleyDB   //!< GetErrno() to return BerkeleyDB specific error code
     };
 
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
     /// Return Berkley DB related error code.
     int BDB_GetErrno() const { return GetErrno(); }
@@ -142,7 +142,7 @@ public:
         eRaceCondition
     };
 
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode())
         {

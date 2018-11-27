@@ -301,24 +301,24 @@ public:
     virtual ~CLBOSException(void) throw();
     
     /** Get original status code and status message from LBOS in a string */
-    virtual const char* what() const throw();
+    virtual const char* what() const throw() override;
 
     /** Translate from the error code value to its string representation
      *  (only for internal errors; real LBOS
      *  errors will not be processed) */
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
 
     /** Translate from numerical HTTP status code to LBOS-specific err code */
     static EErrCode s_HTTPCodeToEnum(unsigned short http_code);
 
     unsigned short GetStatusCode(void) const;
-    virtual const char* GetType(void) const;
+    virtual const char* GetType(void) const override;
     TErrCode GetErrCode(void) const;
     NCBI_EXCEPTION_DEFAULT_THROW(CLBOSException)
 
 protected:
     CLBOSException(void);
-    virtual const CException* x_Clone(void) const;
+    virtual const CException* x_Clone(void) const override;
 
 private:
     unsigned short m_StatusCode;

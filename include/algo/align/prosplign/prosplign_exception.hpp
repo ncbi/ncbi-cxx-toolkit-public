@@ -56,7 +56,7 @@ public:
         eUserInterrupt,
         eGenericError
     };
-    virtual const char* GetErrCodeString(void) const {
+    virtual const char* GetErrCodeString(void) const override {
         switch ( GetErrCode() ) {
         case eFileNotFound:
             return "Can't open file";

@@ -63,7 +63,7 @@ public:
     };
 
     /// Get a message describing the exception.
-    virtual const char* GetErrCodeString() const
+    virtual const char* GetErrCodeString() const override
     {
         switch ( GetErrCode() ) {
         case eArg: return "eArgErr";

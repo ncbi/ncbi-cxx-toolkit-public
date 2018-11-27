@@ -370,7 +370,7 @@ public:
         eUnknownFunction
     };
 
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode())
         {

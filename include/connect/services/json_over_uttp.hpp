@@ -60,7 +60,7 @@ public:
         eKeyNotFound,       ///< No such key in the object node
     };
 
-    virtual const char* GetErrCodeString() const;
+    virtual const char* GetErrCodeString() const override;
 
     NCBI_EXCEPTION_DEFAULT(CJsonException, CException);
 };
@@ -487,7 +487,7 @@ public:
         eUnknownControlSymbol,
     };
 
-    virtual const char* GetErrCodeString() const;
+    virtual const char* GetErrCodeString() const override;
 
     NCBI_EXCEPTION_DEFAULT(CJsonOverUTTPException, CException);
 };

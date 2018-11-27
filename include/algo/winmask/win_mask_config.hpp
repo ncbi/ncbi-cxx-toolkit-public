@@ -81,7 +81,7 @@ public:
      **\return error description.
      **
      **/
-    virtual const char * GetErrCodeString() const;
+    virtual const char * GetErrCodeString() const override;
 
     NCBI_EXCEPTION_DEFAULT( CWinMaskConfigException, CException );
 };

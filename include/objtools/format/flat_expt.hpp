@@ -54,7 +54,7 @@ public:
 
     // Translate the specific error code into a string representations of
     // that error code.
-    virtual const char* GetErrCodeString(void) const
+    virtual const char* GetErrCodeString(void) const override
     {
         switch (GetErrCode()) {
         case eNotSupported:  return "eNotSupported";

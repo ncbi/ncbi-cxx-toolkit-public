@@ -98,7 +98,7 @@ public:
 
         @return string describing the exception type
     */
-    virtual const char * GetErrCodeString() const
+    virtual const char * GetErrCodeString() const override
     {
         switch( GetErrCode() ) {
             case eFile:    return "access failure";
@@ -422,7 +422,7 @@ class NCBI_XBLAST_EXPORT CDbIndex_Exception : public CException
         /** Get a human readable description of the exception type.
             @return string describing the exception type
           */
-        virtual const char * GetErrCodeString() const;
+        virtual const char * GetErrCodeString() const override;
 
         NCBI_EXCEPTION_DEFAULT( CDbIndex_Exception, CException );
 };

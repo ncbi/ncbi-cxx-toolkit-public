@@ -652,7 +652,7 @@ public:
         eRepeatCalc
     };
 
-    virtual const char* GetErrCodeString(void) const {
+    virtual const char* GetErrCodeString(void) const override {
         return "eInvalid";
     }
 

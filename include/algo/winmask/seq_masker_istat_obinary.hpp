@@ -70,7 +70,7 @@ class NCBI_XALGOWINMASK_EXPORT CSeqMaskerIstatOBinary
                  **\brief Get a description string for this exception.
                  **\return C-style description string
                  **/
-                virtual const char * GetErrCodeString() const;
+                virtual const char * GetErrCodeString() const override;
     
                 NCBI_EXCEPTION_DEFAULT( Exception, CException );
         };

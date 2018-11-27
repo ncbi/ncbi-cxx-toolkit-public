@@ -469,7 +469,7 @@ public:
         eCouldntListen, ///< Unable to bind listening port
         ePoolOverflow   ///< Connection pool overflowed
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CServer_Exception, CConnException);
 };
 

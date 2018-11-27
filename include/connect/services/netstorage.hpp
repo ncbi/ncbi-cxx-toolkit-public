@@ -78,7 +78,7 @@ public:
         eInterrupted,   ///< Operation has been interrupted
         eUnknown        ///< Unknown error
     };
-    virtual const char* GetErrCodeString() const;
+    virtual const char* GetErrCodeString() const override;
     NCBI_EXCEPTION_DEFAULT(CNetStorageException, CNetServiceException);
 };
 

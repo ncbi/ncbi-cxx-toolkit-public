@@ -55,7 +55,7 @@ public:
      };
 
     /// Get a message describing the situation leading to the throw.
-    virtual const char* GetErrCodeString() const
+    virtual const char* GetErrCodeString() const override
     {
            switch ( GetErrCode() ) {
            case eArgErr:  return "eArgErr";

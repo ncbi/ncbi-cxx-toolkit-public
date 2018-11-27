@@ -75,7 +75,7 @@ public:
         eInvalidServerResponse,
     };
 
-    virtual const char* GetErrCodeString() const
+    virtual const char* GetErrCodeString() const override
     {
         switch (GetErrCode()) {
         case eAuthenticationError:      return "eAuthenticationError";
@@ -106,7 +106,7 @@ public:
         eBlobTooOld,
     };
 
-    virtual const char* GetErrCodeString() const
+    virtual const char* GetErrCodeString() const override
     {
         switch (GetErrCode()) {
         case eBlobTooOld:               return "eBlobTooOld";

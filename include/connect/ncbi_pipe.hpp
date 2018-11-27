@@ -528,7 +528,7 @@ public:
         eOpen ///< Unable to open pipe
     };
     /// Translate from an error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     // Standard exception boiler plate code.
     NCBI_EXCEPTION_DEFAULT(CPipeException, CCoreException);
 };

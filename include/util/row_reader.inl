@@ -297,7 +297,7 @@ public:
         }
     }
 
-    virtual void ReportExtra(ostream& out) const
+    virtual void ReportExtra(ostream& out) const override
     {
         if (m_Context)
             out << m_Context->Serialize();
@@ -317,7 +317,7 @@ public:
     }
 
 protected:
-    virtual void x_Assign(const CException& src)
+    virtual void x_Assign(const CException& src) override
     {
         CException::x_Assign(src);
 

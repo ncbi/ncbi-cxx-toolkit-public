@@ -536,7 +536,7 @@ public:
         eCompile,
         eBadFlags
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CRegexpException, CException);
 };
 

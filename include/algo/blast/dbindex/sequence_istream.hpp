@@ -94,7 +94,7 @@ class NCBI_XBLAST_EXPORT CSequenceIStream
                 /** Get the exception description string.
                     @return the exception description text
                 */
-                virtual const char * GetErrCodeString() const
+                virtual const char * GetErrCodeString() const override
                 {
                     switch( GetErrCode() ) {
                         case eOpNotSupported: 

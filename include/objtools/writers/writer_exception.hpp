@@ -47,7 +47,7 @@ public:
         eInternal,
     };
     
-    virtual const char* GetErrCodeString() const
+    virtual const char* GetErrCodeString() const override
     {
         switch (GetErrCode()) {
         case eArgErr:

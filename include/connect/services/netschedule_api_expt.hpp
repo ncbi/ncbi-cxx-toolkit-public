@@ -91,7 +91,7 @@ public:
         eTryAgain,
     };
 
-    virtual const char* GetErrCodeString() const;
+    virtual const char* GetErrCodeString() const override;
 
     static const char* GetErrCodeString(CException::TErrCode err_code);
 

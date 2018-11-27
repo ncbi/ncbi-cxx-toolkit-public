@@ -66,7 +66,7 @@ class NCBI_XALGOWINMASK_EXPORT CWinMaskCountsConverter
 
                     \return error string
                  **/
-                virtual const char * GetErrCodeString() const;
+                virtual const char * GetErrCodeString() const override;
     
                 NCBI_EXCEPTION_DEFAULT( Exception, CException );
         };

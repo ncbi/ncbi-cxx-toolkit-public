@@ -55,7 +55,7 @@ public:
     enum EErrCode {
         eConn ///< Unspecified connect problem
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CConnException, CException);
 };
 
@@ -76,7 +76,7 @@ public:
         eUnknown      = eIO_Unknown,
         eClosed       = eIO_Closed
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CIO_Exception, CConnException);
 };
 

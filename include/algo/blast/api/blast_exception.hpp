@@ -54,7 +54,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation
-    virtual const char* GetErrCodeString(void) const {
+    virtual const char* GetErrCodeString(void) const override {
         switch ( GetErrCode() ) {
         case eOutOfMemory:          return "eOutOfMemory";
         default:                    return CException::GetErrCodeString();
@@ -87,7 +87,7 @@ public:
     };
 
     /// Translate from the error code value to its string representation
-    virtual const char* GetErrCodeString(void) const {
+    virtual const char* GetErrCodeString(void) const override {
         switch ( GetErrCode() ) {
         case eCoreBlastError:       return "eCoreBlastError";
         case eInvalidOptions:       return "eInvalidOptions";
