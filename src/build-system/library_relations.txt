@@ -68,6 +68,7 @@ align_format needs taxon1
 align_format needs xalnmgr
 align_format needs xcgi
 align_format needs xhtml
+align_format needs xlogging
 aligndb_client needs $(SEQ_LIBS)
 aligndb_client needs pub
 aligndb_reader needs $(SDBAPI_LIB)
@@ -664,6 +665,7 @@ hgvs needs $(OBJMGR_LIBS)
 hgvs needs $(OBJREAD_LIBS)
 hgvs needs entrez2cli
 hgvs needs objcoords
+hgvs needs xlogging
 hgvs needs xobjutil
 hgvs needs xregexp
 hgvs_name needs $(OBJMGR_LIBS)
@@ -727,6 +729,7 @@ lbsmdapi needs connect
 lds2 needs $(COMPRESS_LIBS)
 lds2 needs $(OBJREAD_LIBS)
 lds2 needs $(SQLITE3_WRAPPER)
+lds2 needs xlogging
 lds2 needs3party $(SQLITE3_LIBS)
 linkos_utils needs xid_utils
 linkout needs xser
@@ -919,7 +922,7 @@ ncbicn3dOGL needs3party vibrantOGL
 ncbidesk needs3party blastapi
 ncbidesk needs3party ncbimmdb
 ncbidesk needs3party vibrant
-ncbigbcxx needs xobjutil
+ncbigbcxx needs xcleanup
 ncbiid0 needs3party ncbiobj
 ncbiid0 needs3party netcli
 ncbiid1 needs3party ncbiobj
@@ -954,7 +957,6 @@ ncbiprscxx needs gui_utils
 ncbiprscxx needs ncbi_xdbapi_ftds
 ncbiprscxx needs ncbiindxcxx
 ncbiprscxx needs taxon1
-ncbiprscxx needs xcleanup
 ncbiprscxx needs xid_utils
 ncbiprsn needs3party ctutils
 ncbiprsn needs3party ncbiindx
@@ -965,7 +967,6 @@ ncbiprsncxx needs gui_utils
 ncbiprsncxx needs ncbi_xdbapi_ftds
 ncbiprsncxx needs ncbiindxcxx
 ncbiprsncxx needs taxon1
-ncbiprsncxx needs xcleanup
 ncbiprsncxx needs xid_utils
 ncbispel needs3party netcli
 ncbitax needs3party ncbiobj
@@ -1131,6 +1132,7 @@ seqgapscan needs xobjutil
 seqgapscan needs3party $(SDBAPI_LIBS)
 seqmasks_io needs $(OBJREAD_LIBS)
 seqmasks_io needs seqdb
+seqmasks_io needs xlogging
 seqmasks_io needs xobjutil
 seqset needs $(SEQ_LIBS)
 seqset needs pub
@@ -1411,6 +1413,7 @@ wgmlst_store needs3party $(MONGODB3_LIBS)
 wgmlst_store needs3party $(OPENSSL_LIBS)
 writedb needs $(OBJREAD_LIBS)
 writedb needs seqdb
+writedb needs xlogging
 wx_base-3.1 needs $(Z_LIB)
 wx_base-3.1 needs3party $(ORIG_LIBS)
 wx_base-3.1 needs3party $(Z_LIBS)
@@ -1483,6 +1486,7 @@ xalgoalignutil needs3party $(BLAST_THIRD_PARTY_LIBS)
 xalgoblastdbindex needs $(OBJREAD_LIBS)
 xalgoblastdbindex needs blast
 xalgoblastdbindex needs seqdb
+xalgoblastdbindex needs xlogging
 xalgoblastdbindex needs xobjutil
 xalgoblastdbindex_search needs $(SOBJMGR_LIBS)
 xalgocontig_assembly needs $(BLAST_LIBS)
@@ -1519,6 +1523,7 @@ xassembly_svc needs xgencollstats
 xbiosample_util needs $(OBJEDIT_LIBS)
 xbiosample_util needs mlacli
 xbiosample_util needs valid
+xbiosample_util needs xlogging
 xbiosample_util needs xmlwrapp
 xbiosample_util needs xobjutil
 xblast includes blast
@@ -1549,6 +1554,7 @@ xcgi_redirect needs xhtml
 xcleanup needs $(OBJEDIT_LIBS)
 xcleanup needs mlacli
 xcleanup needs valid
+xcleanup needs xlogging
 xcleanup needs xobjutil
 xcompress needs $(CMPRS_LIB)
 xcompress needs xutil
@@ -1662,7 +1668,9 @@ xobjmgr needs seqedit
 xobjmgr needs seqsplit
 xobjread needs creaders
 xobjread needs submit
+xobjread needs xlogging
 xobjreadex needs $(OBJREAD_LIBS)
+xobjreadex needs xlogging
 xobjreadex needs xobjutil
 xobjsimple needs $(OBJMGR_LIBS)
 xobjutil needs $(SOBJMGR_LIBS)
