@@ -104,8 +104,7 @@ static char * ALIGNMENT_CALLBACK s_ReadLine(void *user_data)
         return 0;
     }
     string s;
-    NcbiGetline(*is, s, "\n");
-    NStr::ReplaceInPlace (s, "\r", "");
+    NcbiGetline(*is, s, "\r\n");
     return strdup(s.c_str());
 }
 
