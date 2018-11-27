@@ -1365,7 +1365,7 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
     }
 
     size_t num_of_arts = 0,
-           num_of_subs = 0;
+           num_of_pubs = 0;
 
     const CPub_equiv* pub_article = nullptr;
     for (auto& pubdescr : info.m_common_pubs) {
@@ -1380,8 +1380,8 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
         }
 
         num_of_arts += cur_num_of_arts;
-        if (GetNumOfPubs(pub_info.m_desc->GetPub(), CPub::e_Sub)) {
-            ++num_of_subs;
+        if (GetNumOfPubs(pub_info.m_desc->GetPub(), CPub::e_Sub) == 0) {
+            ++num_of_pubs;
         }
     }
 
@@ -1390,7 +1390,7 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
         bioseq->SetDescr().Set().erase(pub_to_be_removed);
     }
     
-    if (num_of_subs < info.m_num_of_pubs && num_of_subs == 0) {
+    if (num_of_pubs == 0) {
         info.m_num_of_pubs = 0;
     }
 

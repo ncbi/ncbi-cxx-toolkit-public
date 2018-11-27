@@ -1215,7 +1215,7 @@ static bool IsCitGenUnpublished(const CPubdesc& pubdesc)
         if (cur_pub->IsGen()) {
 
             const CCit_gen& cit_gen = cur_pub->GetGen();
-            if (cit_gen.IsSetCit() && cit_gen.GetCit() == "unpublished") {
+            if (cit_gen.IsSetCit() && NStr::EqualNocase(cit_gen.GetCit(), "unpublished")) {
                 return true;
             }
         }
