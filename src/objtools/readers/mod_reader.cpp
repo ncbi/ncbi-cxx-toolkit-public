@@ -1299,7 +1299,8 @@ void CModAdder::x_ReportInvalidValue(const string& mod_name,
         return;
     }
 
-    
+    const string message = "Invalid value - " + mod_value + " - for " + mod_name + " qualifier";
+    x_PutMessage(message, eDiag_Error, pMessageListener);
 }
 
 
