@@ -75,7 +75,7 @@ CAutoDefSourceGroup::~CAutoDefSourceGroup()
 
 void CAutoDefSourceGroup::AddSource (CRef<CAutoDefSourceDescription> src)
 {
-    m_SourceList.emplace_back(src);
+    m_SourceList.push_back(src);
 }
 
 
@@ -114,9 +114,7 @@ struct SAutoDefSourceDescByStrings {
 
 void CAutoDefSourceGroup::SortDescriptions()
 {
-    if (m_SourceList.size() > 1) {
-        std::sort(m_SourceList.begin(), m_SourceList.end(), SAutoDefSourceDescByStrings());
-    }
+     std::sort(m_SourceList.begin(), m_SourceList.end(), SAutoDefSourceDescByStrings());
 }
 
 
@@ -131,8 +129,6 @@ CRef<CAutoDefSourceGroup> CAutoDefSourceGroup::SplitGroup()
     }
     if (it != m_SourceList.end()) {
         g.Reset(new CAutoDefSourceGroup());
-        g->AddSource(*it);
-        it = m_SourceList.erase(it);
         while (it != m_SourceList.end()) {
             g->AddSource(*it);
             it = m_SourceList.erase(it);

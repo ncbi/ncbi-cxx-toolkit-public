@@ -79,7 +79,7 @@ CAutoDefModifierCombo::CAutoDefModifierCombo(CAutoDefModifierCombo *orig)
     m_Modifiers.clear();
 
     for (auto it : orig->GetGroupList()) {
-        m_GroupList.push_back (CRef<CAutoDefSourceGroup>(new CAutoDefSourceGroup(*it)));
+        m_GroupList.emplace_back (CRef<CAutoDefSourceGroup>(new CAutoDefSourceGroup(*it)));
     }
     ITERATE (CAutoDefSourceDescription::TModifierVector, it, orig->GetModifiers()) {
         m_Modifiers.push_back (CAutoDefSourceModifierInfo(*it));
@@ -1020,13 +1020,11 @@ int CAutoDefModifierCombo::Compare(const CAutoDefModifierCombo& other) const
 }
 
 
-struct SAutoDefSourceGroupByStrings {
-    bool operator()(CRef<CAutoDefSourceGroup> s1,
-                    CRef<CAutoDefSourceGroup> s2) const
-    {
-        return (*s1 < *s2);
-    }
-};
+bool CompareAutoDefSourceGroupByStrings(CRef<CAutoDefSourceGroup> s1,
+                    CRef<CAutoDefSourceGroup> s2)
+{
+    return (*s1 < *s2);
+}
 
 
 bool CAutoDefModifierCombo::AddQual (bool IsOrgMod, int subtype, bool even_if_not_uniquifying)
@@ -1058,7 +1056,7 @@ bool CAutoDefModifierCombo::AddQual (bool IsOrgMod, int subtype, bool even_if_no
 
     if (rval || even_if_not_uniquifying) {
         m_Modifiers.push_back (CAutoDefSourceModifierInfo (IsOrgMod, subtype, ""));
-        std::sort (m_GroupList.begin(), m_GroupList.end(), SAutoDefSourceGroupByStrings());
+        std::sort (m_GroupList.begin(), m_GroupList.end(), CompareAutoDefSourceGroupByStrings);
         if (IsOrgMod) {
             m_OrgMods.push_back ((COrgMod_Base::ESubtype)subtype);
         } else {
