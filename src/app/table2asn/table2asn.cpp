@@ -287,7 +287,6 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("z", "OutFile", "Cleanup Log File", CArgDescriptions::eOutputFile);
 
     arg_desc->AddOptionalKey("X", "String", "Extra Flags (combine any of the following letters)\n\
-      C Apply comments in .cmt files to all sequences\n\
       E Treat like eukaryota in the Discrepancy Report", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("N", "String", "Project Version Number", CArgDescriptions::eString); //done
@@ -451,6 +450,10 @@ int CTbl2AsnApp::Run(void)
     if (args["X"])
     {
         const string& extra = args["X"].AsString();
+        if (extra.find('C'))
+        {
+            // need to show warning here
+        }
         m_context.m_disc_eucariote = extra.find('E') != string::npos;
     }
 
@@ -709,6 +712,10 @@ int CTbl2AsnApp::Run(void)
         else
         if (args["indir"])
         {
+            // initiate validator output
+            string basename = m_context.m_output_filename.empty() ? "validator" : m_context.m_output_filename;
+            m_context.SetOstreamName(".val", m_context.GenerateOutputFilename(".val", basename));
+            m_context.SetOstreamName(".stats", m_context.GenerateOutputFilename(".stats", basename));
             CDir directory(args["indir"].AsString());
             if (directory.Exists())
             {
@@ -994,7 +1001,7 @@ void CTbl2AsnApp::ProcessOneFile()
     {
         CRef<CSerialObject> input_obj;
 
-        m_context.ReleaseOutputs();
+        //m_context.ReleaseOutputs();
 
         CFormatGuess::EFormat format = m_reader->OpenFile(m_context.m_current_file, input_obj);
         do

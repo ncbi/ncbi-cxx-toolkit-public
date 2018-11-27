@@ -238,34 +238,39 @@ CNcbiOstream & CTable2AsnContext::GetOstream(CTempString suffix)
     {
         if (rec.first.empty())
           rec.first = GenerateOutputFilename(suffix);
+        CFile(rec.first.c_str()).Remove(CFile::fIgnoreMissing);
         rec.second.reset(new CNcbiOfstream(rec.first.c_str()));
     }
     return *rec.second.get();
 }
 
-string CTable2AsnContext::GenerateOutputFilename(const CTempString& ext) const
+void CTable2AsnContext::SetOstreamName(CTempString suffix, CTempString filename)
+{
+    string outputfile = m_ResultsDirectory.empty() ? "" : m_ResultsDirectory;
+    outputfile = CDirEntry::MakePath(outputfile, filename);
+    m_outputs[suffix].first = outputfile;
+}
+
+string CTable2AsnContext::GenerateOutputFilename(const CTempString& ext, CTempString basename) const
 {
     string dir;
     string outputfile;
     string base;
 
-    if (m_output_filename.empty())
-    {
-        CDirEntry::SplitPath(m_current_file, &dir, &base, 0);
+    if (basename.empty())
+        basename = m_output_filename;
+    if (basename.empty())
+        basename = m_current_file;
 
+    CDirEntry::SplitPath(basename, &dir, &base, 0);
+    if (basename == "-" || dir == "/dev") {
+        CDirEntry::SplitPath(m_current_file, &dir, &base, 0);
         outputfile = m_ResultsDirectory.empty() ? dir : m_ResultsDirectory;
     }
-    else
-    {
-        CDirEntry::SplitPath(m_output_filename, &dir, &base, 0);
-        if (m_output_filename == "-" || dir == "/dev") {
-            CDirEntry::SplitPath(m_current_file, &dir, &base, 0);
-            outputfile = m_ResultsDirectory.empty() ? dir : m_ResultsDirectory;
-        }
-        else {
-            outputfile = dir;
-        }
+    else {
+        outputfile = m_ResultsDirectory.empty() ? dir : m_ResultsDirectory;
     }
+
     outputfile += base;
     outputfile += ext;
 
