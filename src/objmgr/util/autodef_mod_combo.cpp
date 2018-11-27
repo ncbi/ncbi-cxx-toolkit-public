@@ -79,7 +79,7 @@ CAutoDefModifierCombo::CAutoDefModifierCombo(CAutoDefModifierCombo *orig)
     m_Modifiers.clear();
 
     for (auto it : orig->GetGroupList()) {
-        m_GroupList.emplace_back (CRef<CAutoDefSourceGroup>(new CAutoDefSourceGroup(*it)));
+        m_GroupList.emplace_back (new CAutoDefSourceGroup(*it));
     }
     ITERATE (CAutoDefSourceDescription::TModifierVector, it, orig->GetModifiers()) {
         m_Modifiers.push_back (CAutoDefSourceModifierInfo(*it));
