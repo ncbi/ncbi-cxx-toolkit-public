@@ -1,8 +1,6 @@
 # $Id$
 
-APP_PROJ = pubseq_gateway
-
-SUB_PROJ = client
+APP_PROJ = psg_client
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
