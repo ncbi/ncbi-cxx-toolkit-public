@@ -167,6 +167,7 @@ CProjItem::CProjItem(TProjType type,
     m_MakeType(maketype),
     m_GUID(guid),
     m_IsBundle(false),
+    m_IsMetallib(false),
     m_External(false),
     m_StyleObjcpp(false)
 {
@@ -184,6 +185,7 @@ void CProjItem::Clear(void)
     m_ProjType = CProjKey::eNoProj;
     m_MakeType = eMakeType_Undefined;
     m_IsBundle = false;
+    m_IsMetallib = false;
     m_External = false;
     m_StyleObjcpp = false;
     m_MkName.clear();
@@ -225,6 +227,7 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_CustomBuild = item.m_CustomBuild;
     
     m_IsBundle = item.m_IsBundle;
+    m_IsMetallib = item.m_IsMetallib;
     m_External = item.m_External;
     m_StyleObjcpp = item.m_StyleObjcpp;
     m_MkName = item.m_MkName;

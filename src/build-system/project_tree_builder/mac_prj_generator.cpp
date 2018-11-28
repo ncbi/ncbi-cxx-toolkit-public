@@ -301,7 +301,11 @@ void CMacProjectGenerator::Generate(const string& solution)
             } else if (prj.m_ProjType == CProjKey::eApp) {
                 AddString( *dict_product, "path", prj.m_ID);
             } else if (prj.m_ProjType == CProjKey::eLib) {
-                AddString( *dict_product, "path", string("lib") + prj.m_ID + string(".a"));
+                if (prj.m_IsMetallib) {
+                    AddString( *dict_product, "path", prj.m_ID + string(".metallib"));
+                } else {
+                    AddString( *dict_product, "path", string("lib") + prj.m_ID + string(".a"));
+                }
             }
             AddString( *dict_product, "sourceTree", "BUILT_PRODUCTS_DIR");
         }
@@ -1492,6 +1496,8 @@ string CMacProjectGenerator::AddFile(CDict& dict, const string& name, bool style
         filetype = "text.xml";
     } else if (ext == ".jsd") {
         filetype = "text.json";
+    } else if (ext == ".metal") {
+        filetype = "sourcecode.metal";
     } else {
         filetype = "text";
     }
@@ -1713,7 +1719,11 @@ string CMacProjectGenerator::GetMachOType(  const CProjItem& prj)
 string CMacProjectGenerator::GetProductType( const CProjItem& prj)
 {
     if (prj.m_ProjType == CProjKey::eLib) {
-        return "com.apple.product-type.library.static";
+        if (prj.m_IsMetallib) {
+            return "com.apple.product-type.metal-library";
+        } else {
+            return "com.apple.product-type.library.static";
+        }
     } else if (prj.m_ProjType == CProjKey::eDll) {
         return "com.apple.product-type.library.dynamic";
     } else if (prj.m_ProjType == CProjKey::eApp) {
@@ -1727,7 +1737,11 @@ string CMacProjectGenerator::GetProductType( const CProjItem& prj)
 string CMacProjectGenerator::GetExplicitType( const CProjItem& prj)
 {
     if (prj.m_ProjType == CProjKey::eLib) {
-        return "archive.ar";
+        if (prj.m_IsMetallib) {
+            return "archive.metal-library";
+        } else {
+            return "archive.ar";
+        }
     } else if (prj.m_ProjType == CProjKey::eDll) {
         return "compiled.mach-o.dylib";
     } else if (prj.m_ProjType == CProjKey::eApp) {

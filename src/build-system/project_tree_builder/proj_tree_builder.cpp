@@ -158,7 +158,8 @@ CProjItem::TProjType SMakeProjectT::GetProjType(const string& base_dir,
         return CProjKey::eApp;
     else if (CDirEntry(fname_msvc).Exists() || CDirEntry(fname_msvc2).Exists() )
         return CProjKey::eMsvc;
-
+    else if (CDirEntry(CDirEntry::ConcatPath(base_dir, fname + ".metal")).Exists() )
+        return CProjKey::eLib;
 
     switch (type) {
     case SMakeInInfo::eApp:
@@ -717,6 +718,12 @@ void SMakeProjectT::AnalyzeMakeIn
                 max(makein_contents.GetMakeType(),eMakeType_Expendable))); 
         }
     }
+    p = makein_contents.m_Contents.find("METAL_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eMetal, p->second,
+            makein_contents.GetMakeType())); 
+    }
 }
 
 
@@ -730,7 +737,7 @@ string SMakeProjectT::CreateMakeAppLibFileName
 
     string fname = "Makefile." + projname;
     switch (proj_type) {
-    case CProjKey::eLib:  fname += ".lib"; break;
+    case CProjKey::eLib:  fname += type == SMakeInInfo::eMetal ? ".metal" : ".lib"; break;
     case CProjKey::eDll:  fname += ".dll"; break;
     case CProjKey::eApp:  fname += ".app"; break;
     case CProjKey::eMsvc:
@@ -1737,6 +1744,9 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     (tree->m_Projects[proj_key]).m_StyleObjcpp = style_objcpp;
     (tree->m_Projects[proj_key]).m_MkName = applib_mfilepath;
     (tree->m_Projects[proj_key]).m_DataSource = CSimpleMakeFileContents(applib_mfilepath);
+    if (CDirEntry(full_makefile_name).GetExt() == ".metal") {
+        (tree->m_Projects[proj_key]).m_IsMetallib = true;
+    }
 
     k = m->second.m_Contents.find("HEADER_EXPORT");
     if (k != m->second.m_Contents.end()) {
@@ -2908,6 +2918,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
     map<string, EMakeFileType> userprojects;
     vector<string> ordered_subprojects;
     string topbuilddir;
+    bool has_metal = false;
     bool get_order = GetApp().IsScanningWholeTree();
     if (is_root && get_order) {
         topbuilddir = GetApp().GetRegSettings().GetTopBuilddir();
@@ -2980,10 +2991,8 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
             "LIB_PROJ","EXPENDABLE_LIB_PROJ","POTENTIAL_LIB_PROJ",""};
         EMakeFileType libtype[] = {
             eMakeType_Undefined, eMakeType_Undefined, eMakeType_Undefined, eMakeType_Undefined,
-            eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential};
-        if (filter->ExcludePotential()) {
-            libtype[6] = eMakeType_Excluded;
-        }
+            eMakeType_Undefined, eMakeType_Undefined,
+            eMakeType_Undefined,eMakeType_Expendable, filter->ExcludePotential() ? eMakeType_Excluded : eMakeType_Potential};
         for (j=0; !libproj[j].empty(); ++j) {
             k = makefile.m_Contents.find(libproj[j]);
             if (k != makefile.m_Contents.end()) {
@@ -3001,10 +3010,8 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
             }
         }
         string dllproj[] = {"DLL_PROJ","EXPENDABLE_DLL_PROJ","POTENTIAL_DLL_PROJ",""};
-        EMakeFileType dlltype[] = {eMakeType_Undefined,eMakeType_Expendable,eMakeType_Potential};
-        if (filter->ExcludePotential()) {
-            dlltype[2] = eMakeType_Excluded;
-        }
+        EMakeFileType dlltype[] = {eMakeType_Undefined,eMakeType_Expendable,
+            filter->ExcludePotential() ? eMakeType_Excluded : eMakeType_Potential};
         for (j=0; !dllproj[j].empty(); ++j) {
             k = makefile.m_Contents.find(dllproj[j]);
             if (k != makefile.m_Contents.end()) {
@@ -3018,6 +3025,25 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                     if (get_order) {
                         s_WriteBuildOrder(dir_name,mkname);
                     }
+                }
+            }
+        }
+        string metallib[] = {"METAL_PROJ", ""};
+        EMakeFileType metaltype[] = { eMakeType_Undefined};
+        for (j=0; !metallib[j].empty(); ++j) {
+            k = makefile.m_Contents.find(metallib[j]);
+            if (k != makefile.m_Contents.end()) {
+                const list<string>& values = k->second;
+                for (list<string>::const_iterator i=values.begin(); i!=values.end(); ++i) {
+                    if (i->at(0) == '#') {
+                        break;
+                    }
+                    string mkname("Makefile." + *i + ".metal");
+                    libprojects[mkname] = max(maketype, metaltype[j]);
+                    if (get_order) {
+                        s_WriteBuildOrder(dir_name,mkname);
+                    }
+                    has_metal = true;
                 }
             }
         }
@@ -3057,6 +3083,16 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                 SMakeProjectT::IsMakeLibFile(name) )
 	            ProcessMakeLibFile(dir_entry->GetPath(), makefiles, libprojects[name], mkin);
 
+        }
+        if (has_metal) {
+            contents = dir.GetEntries("Makefile.*.metal");
+            ITERATE(CDir::TEntries, p, contents) {
+                const AutoPtr<CDirEntry>& dir_entry = *p;
+                const string name = dir_entry->GetName();
+                if (libprojects.find(name) != libprojects.end()) {
+	                ProcessMakeLibFile(dir_entry->GetPath(), makefiles, libprojects[name], mkin);
+                }
+            }
         }
     }
     // Process Makefile.*.dll

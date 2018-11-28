@@ -317,7 +317,7 @@ string CProjectFileCollector::GetFileExtension(const string& file)
             return ".cpp";
         }
     }
-    string ext_in[]  = {".cpp", ".cpp.in", ".c", ".c.in", kEmptyStr};
+    string ext_in[]  = {".cpp", ".cpp.in", ".c", ".c.in", ".metal", kEmptyStr};
     for (int i=0; !ext_in[i].empty(); ++i) {
         if ( CFile(file + ext_in[i]).Exists() ) {
             return ext_in[i];

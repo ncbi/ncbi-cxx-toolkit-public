@@ -203,6 +203,12 @@ void CProjectItemsTree::CreateFrom(const string& root_src,
                                             applib_mfilepath,
                                             makemsvc, tree, info.m_MakeType);
                 }
+                else if (info.m_Type == SMakeProjectT::SMakeInInfo::eMetal) {
+                    SLibProjectT::DoCreate(source_base_dir, 
+                                            proj_name, 
+                                            applib_mfilepath, 
+                                            makelib, tree, info.m_MakeType);
+                }
             }
         }
     }

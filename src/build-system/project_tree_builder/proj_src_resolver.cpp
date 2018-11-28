@@ -112,6 +112,8 @@ static bool s_SourceFileExists(const string& dir, const string& name)
         return true;
     if ( CDirEntry(path + ".c").Exists() )
         return true;
+    if ( CDirEntry(path + ".metal").Exists() )
+        return true;
     
     return false;
 }

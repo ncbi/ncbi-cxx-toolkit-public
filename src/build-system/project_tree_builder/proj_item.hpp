@@ -144,6 +144,7 @@ public:
     list<SCustomBuildInfo> m_CustomBuild;
     
     mutable bool m_IsBundle;
+    bool m_IsMetallib;
     bool m_External;
     bool m_StyleObjcpp;
     string m_MkName;

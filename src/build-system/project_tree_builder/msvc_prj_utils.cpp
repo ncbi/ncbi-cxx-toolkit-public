@@ -445,6 +445,10 @@ string SourceFileExt(const string& file_path)
     if ( CFile(file).Exists() ) {
         return ".c.in";
     }
+    file += ".metal";
+    if ( CFile(file).Exists() ) {
+        return ".metal";
+    }
     return "";
 }
 
