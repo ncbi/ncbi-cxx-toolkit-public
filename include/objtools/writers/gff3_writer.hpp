@@ -435,19 +435,10 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat& );
 
-    bool xAssignFeatureAttributeEcNumbers(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributeExonNumber(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
     bool xAssignFeatureAttributeDbxref(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) override;
-    bool xAssignFeatureAttributeGbKey(
-        CGffFeatureRecord&,
-        const CMappedFeat&);
     bool xAssignFeatureAttributeName(
         CGffFeatureRecord&,
         const CMappedFeat&);

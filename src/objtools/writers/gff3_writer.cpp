@@ -1720,10 +1720,7 @@ bool CGff3Writer::xAssignFeatureAttributesFormatIndependent(
     if (!CGff2Writer::xAssignFeatureAttributesFormatIndependent(record, fc, mf)) {
         return false;
     }
-    if (!xAssignFeatureAttributeGbKey(record, mf) ||
-        !xAssignFeatureAttributeExonNumber(record, mf)  ||
-        !xAssignFeatureAttributeEcNumbers(record, mf)  ||
-        !xAssignFeatureAttributeTranscriptId(record, mf)) {
+    if (!xAssignFeatureAttributeTranscriptId(record, mf)) {
         return false;
     }
     return true;
@@ -1742,28 +1739,6 @@ bool CGff3Writer::xAssignFeatureAttributesFormatSpecific(
         xAssignFeatureAttributeParent(record, fc, mf)  &&
         xAssignFeatureAttributeGene(record, fc, mf)  &&
         xAssignFeatureAttributeName(record, mf)); //must come last!
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureAttributeExonNumber(
-    CGffFeatureRecord& record,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    if (!mf.IsSetQual()) {
-        return true;
-    }
-    const CSeq_feat::TQual& quals = mf.GetQual();
-    for ( CSeq_feat::TQual::const_iterator cit = quals.begin(); 
-        cit != quals.end(); 
-        ++cit ) {
-        const CGb_qual& qual = **cit;
-        if (qual.IsSetQual()  &&  qual.GetQual() == "number") {
-            record.SetAttribute("exon_number", qual.GetVal());
-            return true;
-        }
-    }
-    return true; 
 }
 
 //  ----------------------------------------------------------------------------
@@ -1956,26 +1931,6 @@ bool CGff3Writer::xAssignFeatureAttributeNote(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureAttributeEcNumbers(
-    CGffFeatureRecord& record,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    if (CSeqFeatData::e_Prot != mf.GetFeatType()) {
-        return true;
-    }
-    const CProt_ref& prot = mf.GetData().GetProt();
-    if (prot.CanGetEc()) {
-        const list<string> ec = prot.GetEc();
-        if (!ec.empty()) {
-            record.SetAttribute("ec_number", NStr::Join(ec, ","));
-        }
-        return true;
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff3Writer::xAssignFeatureAttributeTranscriptId(
     CGffFeatureRecord& record,
     const CMappedFeat& mf )
@@ -2000,16 +1955,6 @@ bool CGff3Writer::xAssignFeatureAttributeTranscriptId(
             return true;
         }
     }
-    return true; 
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff3Writer::xAssignFeatureAttributeGbKey(
-    CGffFeatureRecord& record,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    record.SetAttribute("gbkey", mf.GetData().GetKey());
     return true; 
 }
 
