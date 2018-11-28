@@ -2793,6 +2793,34 @@ BOOST_FIXTURE_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat, CGenBankFixture)
 }
 
 
+void TestOneGeneralSeqId(const string& db, const string& tag, const string& errmsg)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_id> id(new CSeq_id());
+    id->SetGeneral().SetDb(db);
+    id->SetGeneral().SetTag().SetStr(tag);
+    entry->SetSeq().SetId().push_back(id);
+
+    STANDARD_SETUP
+    
+    if (!errmsg.empty()) {
+        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "BadSeqIdFormat",
+            errmsg));
+    }
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_748)
+{
+    TestOneGeneralSeqId("PRJNA318798", " CpPA02_0001", "Bad character ' ' in sequence ID 'gnl|PRJNA318798| CpPA02_0001'");
+    TestOneGeneralSeqId("PRJNA3 18798", "CpPA02_0001", "Bad character ' ' in sequence ID 'gnl|PRJNA3 18798|CpPA02_0001'");
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSecondaryAccn)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();

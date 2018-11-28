@@ -542,11 +542,14 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                     if (dbt.IsSetDb() && (NStr::Equal(dbt.GetDb(), "NCBIFILE") || NStr::Equal(dbt.GetDb(), "BankIt"))) {
                         badch = CheckForBadFileIDSeqIdChars(acc);
                     } else {
-                        badch = CheckForBadSeqIdChars(acc);
+                        badch = CheckForBadLocalIdChars(acc);
+                        if (badch == '\0' && dbt.IsSetDb()) {
+                            badch = CheckForBadLocalIdChars(dbt.GetDb());
+                        }
                     }
                     if (badch != '\0') {
                         PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat,
-                                "Bad character '" + string(1, badch) + "' in accession '" + acc + "'", ctx);
+                                "Bad character '" + string(1, badch) + "' in sequence ID '" + id.AsFastaString() + "'", ctx);
                     }
                 }
              }
