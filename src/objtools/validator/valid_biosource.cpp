@@ -277,23 +277,11 @@ const CSeq_entry *ctx)
     CSubSource::ELatLonCountryErr errcode;
     countryname = x_RepairCountryName (countryname);
     string error = CSubSource::ValidateLatLonCountry(countryname, lat_lon, IsLatLonCheckState(), errcode);
-
     if (!NStr::IsBlank(error)) {
-        switch (errcode) {
-        case CSubSource::eLatLonCountryErr_Country:
-            PostObjErr(eDiag_Info, eErr_SEQ_DESCR_LatLonCountry, error, obj, ctx);
-            break;
-        case CSubSource::eLatLonCountryErr_State:
-            PostObjErr(eDiag_Info, eErr_SEQ_DESCR_LatLonState, error, obj, ctx);
-            break;
-        case CSubSource::eLatLonCountryErr_Water:
-            PostObjErr(eDiag_Info, eErr_SEQ_DESCR_LatLonWater, error, obj, ctx);
-            break;
-        case CSubSource::eLatLonCountryErr_Value:
-            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_LatLonValue, error, obj, ctx);
-            break;
-        default:
-            break;
+        EErrType errtype = CValidator::ConvertCode(errcode);
+        EDiagSev sev = (errtype == eErr_SEQ_DESCR_LatLonValue) ? eDiag_Warning : eDiag_Info;
+        if (errtype != eErr_UNKNOWN) {
+            PostObjErr(sev, errtype, error, obj, ctx);
         }
     }
 }

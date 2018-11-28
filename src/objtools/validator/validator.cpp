@@ -578,6 +578,29 @@ bool CValidator::DoesSeqLocContainDuplicateIntervals(const CSeq_loc& loc, CScope
 }
 
 
+EErrType CValidator::ConvertCode(CSubSource::ELatLonCountryErr errcode)
+{
+    EErrType rval = eErr_UNKNOWN;
+    switch (errcode) {
+    case CSubSource::eLatLonCountryErr_Country:
+        rval = eErr_SEQ_DESCR_LatLonCountry;
+        break;
+    case CSubSource::eLatLonCountryErr_State:
+        rval = eErr_SEQ_DESCR_LatLonState;
+        break;
+    case CSubSource::eLatLonCountryErr_Water:
+        rval = eErr_SEQ_DESCR_LatLonWater;
+        break;
+    case CSubSource::eLatLonCountryErr_Value:
+        rval = eErr_SEQ_DESCR_LatLonValue;
+        break;
+    default:
+        break;
+    }
+    return rval;
+}
+
+
 //LCOV_EXCL_START
 //code is not used
 CCache::CCache(void)

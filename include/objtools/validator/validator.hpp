@@ -235,6 +235,8 @@ public:
     typedef bool (*TProgressCallback)(CProgressInfo*);
     void SetProgressCallback(TProgressCallback callback, void* user_data = 0);
 
+    static EErrType ConvertCode(CSubSource::ELatLonCountryErr errcode);
+
 private:
     // Prohibit copy constructor & assignment operator
     CValidator(const CValidator&);
