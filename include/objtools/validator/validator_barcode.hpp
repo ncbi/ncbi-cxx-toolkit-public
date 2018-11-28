@@ -88,6 +88,7 @@ typedef vector<SBarcode> TBarcodeResults;
 string GetSeqTitle(CBioseq_Handle bsh);
 string GetBarcodeId(CBioseq_Handle bsh);
 
+void NCBI_VALIDATOR_EXPORT BarcodeTestBioseq(CBioseq_Handle bsh, SBarcode& b, bool even_without_keyword = false);
 bool NCBI_VALIDATOR_EXPORT BarcodeTestFails(const SBarcode& b);
 TBarcodeResults NCBI_VALIDATOR_EXPORT GetBarcodeValues(CSeq_entry_Handle seh);
 

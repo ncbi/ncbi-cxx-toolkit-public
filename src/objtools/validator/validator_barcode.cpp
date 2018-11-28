@@ -286,10 +286,9 @@ bool GetHasOrderAssignment(CBioseq_Handle bsh)
     return has_ibol && !has_order;
 }
 
-bool GetLowTrace(CBioseq_Handle bsh, bool &found)
+bool GetLowTrace(CBioseq_Handle bsh)
 {
     bool low_trace(false);
-    found = false;
     for (CSeqdesc_CI desc_ci(bsh, CSeqdesc::e_User); desc_ci; ++desc_ci)
     {
         if (desc_ci->GetUser().IsSetType() && desc_ci->GetUser().GetType().IsStr() && NStr::EqualNocase(desc_ci->GetUser().GetType().GetStr(), "Submission"))
@@ -302,7 +301,6 @@ bool GetLowTrace(CBioseq_Handle bsh, bool &found)
                     string str = field.GetData().GetStr();
                     NStr::ReplaceInPlace(str, "Traces: ", kEmptyStr);
                     int traces = NStr::StringToInt(str, NStr::fConvErr_NoThrow | NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
-                    found = true;
                     if (traces < 2)
                         low_trace = true;
                 }
@@ -324,88 +322,6 @@ bool BarcodeTestFails(const SBarcode& b)
     }
 }
 
-
-void RunLowTraceScript(map<string, pair<SBarcode, int> >& trace_lookup, TBarcodeResults& failures)
-{
-    map<string, int> m_cache_lookup;
-
-    {
-        map<string, pair<SBarcode, int> >::iterator it = trace_lookup.begin();
-        while (it != trace_lookup.end())
-        {
-            if (m_cache_lookup.find(it->first) != m_cache_lookup.end())
-            {
-                SBarcode b = it->second.first;
-                if (m_cache_lookup[it->first] < 2)
-                {
-                    b.low_trace = true;
-                }
-
-                if (BarcodeTestFails(b))
-                {
-                    failures.push_back(b);
-                }
-                it = trace_lookup.erase(it);
-            } else
-                ++it;
-        }
-    }
-
-    if (trace_lookup.empty())
-        return;
-
-#ifdef NCBI_OS_MSWIN
-    string script = "\\\\snowman\\win-coremake\\App\\Ncbi\\smart\\bin\\cmd_sequin_fetch_from_Trace.bat";
-#else
-    string script = "/netopt/genbank/subtool/bin/cmd_sequin_fetch_from_Trace";
-#endif
-
-    if (!CFile(script).Exists())
-    {
-        NCBI_THROW(CCoreException, eCore, "Path to Fetch from Trace script does not exist");
-    } else {
-        string tmpIn = CFile::GetTmpName();
-        {
-            CNcbiOfstream ostr(tmpIn.c_str());
-            for (map<string, pair<SBarcode, int> >::iterator it = trace_lookup.begin(); it != trace_lookup.end(); ++it)
-            {
-                ostr << it->first << endl;
-            }
-        }
-
-        string tmpOut = CFile::GetTmpName();
-        string cmdline = script + " -i " + tmpIn + " -o " + tmpOut;
-        CExec::System(cmdline.c_str());
-        if (!tmpIn.empty()) {
-            CFile(tmpIn).Remove();
-        }
-        CNcbiIfstream istr(tmpOut.c_str());
-        string str;
-        while (NcbiGetline(istr, str, "\r\n")) {
-            if (NStr::StartsWith(str, "ERROR"))
-                break;
-            string acc, ti;
-            NStr::SplitInTwo(str, "\t", acc, ti);
-            trace_lookup[acc].second++;
-        }
-        CFile(tmpOut).Remove();
-    }
-
-    for (map<string, pair<SBarcode, int> >::iterator it = trace_lookup.begin(); it != trace_lookup.end(); ++it)
-    {
-        m_cache_lookup[it->first] = it->second.second;
-        SBarcode b = it->second.first;
-        if (it->second.second < 2)
-        {
-            b.low_trace = true;
-        }
-
-        if (BarcodeTestFails(b))
-        {
-            failures.push_back(b);
-        }
-    }
-}
 
 bool GetHasFrameShift(CBioseq_Handle bsh)
 {
@@ -473,10 +389,11 @@ bool IsTechBarcode(CBioseq_Handle bsh)
 }
 
 
-void BarcodeTestBioseq(CBioseq_Handle bsh, SBarcode& b, bool &trace_present)
+void BarcodeTestBioseq(CBioseq_Handle bsh, SBarcode& b, bool even_without_keyword)
 {
-    if (!IsTechBarcode(bsh))
+    if (!even_without_keyword && !IsTechBarcode(bsh)) {
         return;
+    }
 
     b.bsh = bsh;
     b.barcode = GetBarcodeId(bsh);
@@ -489,7 +406,7 @@ void BarcodeTestBioseq(CBioseq_Handle bsh, SBarcode& b, bool &trace_present)
     b.percent_n = GetPercentN(bsh);
     b.collection_date = GetHasCollectionDate(bsh);
     b.order_assignment = GetHasOrderAssignment(bsh);
-    b.low_trace = GetLowTrace(bsh, trace_present);
+    b.low_trace = GetLowTrace(bsh);
     b.frame_shift = GetHasFrameShift(bsh);
     b.has_keyword = GetHasKeyword(bsh);
 }
@@ -499,23 +416,17 @@ TBarcodeResults GetBarcodeValues(CSeq_entry_Handle seh)
 {
     TBarcodeResults BarcodeFailures;
 
-    map<string, pair<SBarcode, int> > trace_lookup;
-
     objects::CBioseq_CI b_iter(seh, objects::CSeq_inst::eMol_na);
     for (; b_iter; ++b_iter)
     {
         SBarcode b;
-        bool trace_present(false);
-        BarcodeTestBioseq(*b_iter, b, trace_present);
+        BarcodeTestBioseq(*b_iter, b);
         if (b.bsh) {
-            if (!trace_present) {
-                trace_lookup[b.genbank] = pair<SBarcode, int>(b, 0);
-            } else if (BarcodeTestFails(b)) {
+            if (BarcodeTestFails(b)) {
                 BarcodeFailures.push_back(b);
             }
         }
     }
-    RunLowTraceScript(trace_lookup, BarcodeFailures);
 
     return BarcodeFailures;
 }
