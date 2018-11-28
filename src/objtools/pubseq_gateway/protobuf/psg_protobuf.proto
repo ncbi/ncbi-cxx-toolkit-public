@@ -14,7 +14,7 @@ option optimize_for = LITE_RUNTIME;
 //
  
 // Seq-id type
-// seqloc.asn:  Seq-id   (C++:  CSeq_is::E_Choice)
+// seqloc.asn:  Seq-id   (C++:  CSeq_id_Base::E_Choice)
 enum EnumSeqIdType {
     SEQID_NOT_SET           =   0;
     SEQID_LOCAL             =   1;
@@ -33,6 +33,8 @@ enum EnumSeqIdType {
     SEQID_PRF               =  14;
     SEQID_PDB               =  15;
     SEQID_TPG               =  16;
+    SEQID_TPE               =  17;
+    SEQID_TPD               =  18;
     SEQID_GPIPE             =  19;
     SEQID_NAMED_ANNOT_TRACK =  20;   
 }
