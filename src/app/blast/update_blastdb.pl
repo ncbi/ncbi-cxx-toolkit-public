@@ -37,6 +37,7 @@ use Net::FTP;
 use Getopt::Long;
 use Pod::Usage;
 use File::stat;
+use File::Basename;
 use Digest::MD5;
 use Archive::Tar;
 use JSON;
@@ -135,12 +136,6 @@ if ($location eq "GCP") {
             next if ($db =~ /^version$/);
             print "$db\t$$metadata{$db}{description}\t$$metadata{$db}{size}\t$$metadata{$db}{last_updated}\n";
         }
-        #my $gsutil = &get_gsutil_path();
-        #my $cmd = "$gsutil ls -l gs://" . GCP_BUCKET . "/$latest_dir/";
-        #print "$cmd\n" if $opt_verbose;
-        #chomp(my @alias_files = map { (split)[-1] } grep {/al$/} `$cmd`);
-        #print "$_\n" foreach (sort(map { (split(/\//))[-1] } &get_available_databases(@alias_files)));
-
     } else {
         my @files2download;
         for my $requested_db (@ARGV) {
@@ -150,14 +145,24 @@ if ($location eq "GCP") {
                 print STDERR "Warning: $requested_db does not exist in $location ($latest_dir)\n";
             }
         }
-        my $gsutil = &get_gsutil_path();
-        unless (defined($gsutil)) {
-            die "ERROR: Cannot find gsutil\n";
-            exit(2);
+        if (@files2download) {
+            my $gsutil = &get_gsutil_path();
+            my $cmd;
+            if (defined($gsutil)) {
+                $cmd = "$gsutil -qm cp " . join(" ", @files2download) . " .";
+            } else { # fall back to  curl
+                $cmd = "curl -s ";
+                my $url = GCS_URL;
+                foreach (@files2download) {
+                    my $fname = basename($_);
+                    s,gs://,$url/,;
+                    s/$/ -o $fname /;
+                    $cmd .= $_;
+                }
+            }
+            print "$cmd\n" if $opt_verbose > 3;
+            system($cmd);
         }
-        my $cmd = "$gsutil -qm cp " . join(" ", @files2download) . " .";
-        print "$cmd\n" if $opt_verbose;
-        system($cmd);
     }
 
 } else {
