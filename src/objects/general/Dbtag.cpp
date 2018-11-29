@@ -654,7 +654,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_PGN, "http://pgn.cornell.edu/cgi-bin/search/seq_search_result.pl?identifier=" }, // http page states info no longer avail at this website, includes links to look for a new location tested 7/13/2016
     { CDbtag::eDbtagType_Phytozome, "https://phytozome.jgi.doe.gov/pz/portal.html#!results?search=0&crown=1&star=1&method=0&searchText=" },
     { CDbtag::eDbtagType_PomBase, "http://www.pombase.org/spombe/result/" }, // https not available tested 7/13/2016
-    { CDbtag::eDbtagType_PseudoCap, "http://www.pseudomonas.com/getAnnotation.do?locusID=" }, // url not found tested 7/13/2016
+    { CDbtag::eDbtagType_PseudoCap, "http://www.pseudomonas.com/primarySequenceFeature/list?c1=name&e1=1&v1=" }, // url not found tested 7/13/2016
     { CDbtag::eDbtagType_RAP_DB, "http://rapdb.dna.affrc.go.jp/cgi-bin/gbrowse_details/latest?name=" }, // https appears available, domain appears to exist but http “page not found” with note about release of a major update tested 7/13/2016  
     { CDbtag::eDbtagType_RATMAP, "https://ratmap.gen.gu.se/ShowSingleLocus.htm?accno=" },
     { CDbtag::eDbtagType_RBGE_garden, "https://data.rbge.org.uk/living/" },
