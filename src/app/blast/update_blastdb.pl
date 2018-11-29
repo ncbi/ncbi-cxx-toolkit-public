@@ -64,7 +64,7 @@ my $opt_help = 0;
 my $opt_passive = 1;
 my $opt_blastdb_ver = 4;
 my $opt_timeout = 120;
-my $opt_showall = 0;
+my $opt_showall = undef;
 my $opt_show_version = 0;
 my $opt_decompress = 0;
 my $opt_source;
@@ -73,7 +73,7 @@ my $result = GetOptions("verbose+"      =>  \$opt_verbose,
                         "force"         =>  \$opt_force_download,
                         "passive:s"     =>  \$opt_passive,
                         "timeout=i"     =>  \$opt_timeout,
-                        "showall"       =>  \$opt_showall,
+                        "showall:s"     =>  \$opt_showall,
                         "version"       =>  \$opt_show_version,
                         "blastdb_version:i"=>  \$opt_blastdb_ver,
                         "decompress"    =>  \$opt_decompress,
@@ -83,7 +83,7 @@ $opt_verbose = 0 if $opt_quiet;
 die "Failed to parse command line options\n" unless $result;
 pod2usage({-exitval => 0, -verbose => 2}) if $opt_help;
 pod2usage({-exitval => 0, -verbose => 2}) unless (scalar @ARGV or 
-                                                  $opt_showall or
+                                                  defined($opt_showall) or
                                                   $opt_show_version);
 pod2usage({-exitval => 1, -verbose => 0, -msg => "Invalid BLAST database version"}) 
     unless ($opt_blastdb_ver == 4 or $opt_blastdb_ver == 5);
@@ -131,10 +131,17 @@ if ($location eq "GCP") {
         print STDERR "ERROR: Invalid version in manifest file $url, please report to blast-help\@ncbi.nlm.nih.gov\n";
         exit(2);
     }
-    if ($opt_showall) {
+    if (defined($opt_showall)) {
         foreach my $db (sort keys %$metadata) {
             next if ($db =~ /^version$/);
-            print "$db\t$$metadata{$db}{description}\t$$metadata{$db}{size}\t$$metadata{$db}{last_updated}\n";
+            if ($opt_showall =~ /tsv/i) {
+                print "$db\t$$metadata{$db}{description}\t$$metadata{$db}{size}\t$$metadata{$db}{last_updated}\n";
+            } elsif ($opt_showall =~ /pretty/i) {
+                printf("%-60s %-120s %9.4f %15s\n", $db, $$metadata{$db}{description}, 
+                    $$metadata{$db}{size}, $$metadata{$db}{last_updated});
+            } else {
+                print "$db\n";
+            }
         }
     } else {
         my @files2download;
@@ -168,7 +175,7 @@ if ($location eq "GCP") {
 } else {
     # Connect and download files
     $ftp = &connect_to_ftp();
-    if ($opt_showall) {
+    if (defined $opt_showall) {
         print "$_\n" foreach (sort(&get_available_databases($ftp->ls())));
     } else {
         my @files = sort(&get_files_to_download());
@@ -466,6 +473,14 @@ archive checksum files (default: false).
 Show all available pre-formatted BLAST databases (default: false). The output
 of this option lists the database names which should be used when
 requesting downloads or updates using this script.
+
+It accepts the optional arguments: 'tsv' and 'pretty' to produce tab-separated values
+and a human-readable format respectively. These parameters elicit the display of
+additional metadata if this is available to the program.
+This metadata is displayed in columnar format; the columns represent:
+
+name, description, size in gigabytes, date of last update (YYYY-MM-DD format).
+
 
 =item B<--blastdb_version>
 
