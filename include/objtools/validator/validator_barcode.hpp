@@ -90,6 +90,7 @@ string GetBarcodeId(CBioseq_Handle bsh);
 
 void NCBI_VALIDATOR_EXPORT BarcodeTestBioseq(CBioseq_Handle bsh, SBarcode& b, bool even_without_keyword = false);
 bool NCBI_VALIDATOR_EXPORT BarcodeTestFails(const SBarcode& b);
+bool NCBI_VALIDATOR_EXPORT IsTechBarcode(CBioseq_Handle bsh);
 TBarcodeResults NCBI_VALIDATOR_EXPORT GetBarcodeValues(CSeq_entry_Handle seh);
 
 

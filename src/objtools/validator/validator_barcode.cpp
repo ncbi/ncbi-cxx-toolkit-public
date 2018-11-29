@@ -288,7 +288,7 @@ bool GetHasOrderAssignment(CBioseq_Handle bsh)
 
 bool GetLowTrace(CBioseq_Handle bsh)
 {
-    bool low_trace(false);
+    bool low_trace(true);
     for (CSeqdesc_CI desc_ci(bsh, CSeqdesc::e_User); desc_ci; ++desc_ci)
     {
         if (desc_ci->GetUser().IsSetType() && desc_ci->GetUser().GetType().IsStr() && NStr::EqualNocase(desc_ci->GetUser().GetType().GetStr(), "Submission"))
@@ -301,8 +301,8 @@ bool GetLowTrace(CBioseq_Handle bsh)
                     string str = field.GetData().GetStr();
                     NStr::ReplaceInPlace(str, "Traces: ", kEmptyStr);
                     int traces = NStr::StringToInt(str, NStr::fConvErr_NoThrow | NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
-                    if (traces < 2)
-                        low_trace = true;
+                    if (traces >= 2)
+                        low_trace = false;
                 }
             }
         }
