@@ -4128,30 +4128,6 @@ static EIO_Status s_Connect_(SOCK            sock,
     if (s_InitAPI(sslctx ? 1/*secure*/ : 0/*regular*/) != eIO_Success)
         return eIO_NotSupported;
 
-    if (sslctx) {
-        FSSLCreate sslcreate = s_SSL ? s_SSL->Create : 0;
-        assert(!sslctx->sess);
-        assert(!sslctx->host  ||  *sslctx->host);
-        if (sslcreate) {
-            sslctx->sock = sock;
-            sslctx->sess = sslcreate(eSOCK_Client, sslctx, &error);
-        } else
-            error = 0;
-        if (!sslctx->sess) {
-            const char* strerr = s_StrError(sock, error);
-            CORE_LOGF_ERRNO_EXX(131, eLOG_Error,
-                                error, strerr ? strerr : "",
-                                ("%s[SOCK::Connect] "
-                                 " %s to initialize secure session%s%s",
-                                 s_ID(sock, _id),
-                                 sslcreate ? "Failed" : "Unable",
-                                 sslctx->host ? " with "     : "",
-                                 sslctx->host ? sslctx->host : 0));
-            UTIL_ReleaseBuffer(strerr);
-            return eIO_NotSupported;
-        }
-    }
-
     memset(&addr, 0, sizeof(addr));
 #ifdef NCBI_OS_UNIX
     if (sock->path[0]) {
@@ -4197,7 +4173,7 @@ static EIO_Status s_Connect_(SOCK            sock,
         addr.in.sin_port        = htons(sock->port);
     }
 
-    /* create the new socket */
+    /* create a new socket */
     type  = SOCK_STREAM;
 #ifdef SOCK_NONBLOCK
     type |= SOCK_NONBLOCK;
@@ -4314,6 +4290,31 @@ static EIO_Status s_Connect_(SOCK            sock,
 #  endif /*NCBI_OS_MSWIN*/
     }
 #endif /*!SOCK_CLOEXEC*/
+
+    if (sslctx) {
+        FSSLCreate sslcreate = s_SSL ? s_SSL->Create : 0;
+        assert(!sslctx->sess);
+        assert(!sslctx->host  ||  *sslctx->host);
+        if (sslcreate) {
+            sslctx->sock = sock;
+            sslctx->sess = sslcreate(eSOCK_Client, sslctx, &error);
+        } else
+            error = 0;
+        if (!sslctx->sess) {
+            const char* strerr = s_StrError(sock, error);
+            CORE_LOGF_ERRNO_EXX(131, eLOG_Error,
+                                error, strerr ? strerr : "",
+                                ("%s[SOCK::Connect] "
+                                 " %s to initialize secure session%s%s",
+                                 s_ID(sock, _id),
+                                 sslcreate ? "Failed" : "Unable",
+                                 sslctx->host ? " with "     : "",
+                                 sslctx->host ? sslctx->host : 0));
+            UTIL_ReleaseBuffer(strerr);
+            s_Close_(sock, -2/*silent abort*/, fSOCK_KeepNone);
+            return eIO_NotSupported;
+        }
+    }
 
     /* establish connection to the peer */
     sock->eof       = 0/*false*/;
