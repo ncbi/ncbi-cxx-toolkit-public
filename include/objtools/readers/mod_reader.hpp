@@ -149,7 +149,7 @@ private:
 };
 
 
-
+class CPCRPrimerSet;
 class CDescrCache;
 class CFeatureCache;
 
