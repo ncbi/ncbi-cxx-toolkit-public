@@ -375,7 +375,7 @@ int CBlastReportApp::Run(void)
             }
         }    	    
     }        
-    catch (const CSerialException& e) {
+    catch (const CSerialException&) {
         status = s_GetError("InvailInputFormat", "Invalid input format for BLAST Archive.", EXIT_CODE__INVALID_INPUT_FORMAT, msg);                            
     }        
     catch (const CException& e) {        
