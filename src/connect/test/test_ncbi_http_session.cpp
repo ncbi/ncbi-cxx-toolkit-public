@@ -74,16 +74,22 @@ void CNCBITestHttpSessionApp::Init(void)
 
 int CNCBITestHttpSessionApp::Run(void)
 {
-    const string bad_url = "https://www.ncbi.nlm.nih.gov/Service/sample/404";
-
-    CHttpSession  session;
-    CHttpRequest  request = session.NewRequest(bad_url);
-    CHttpResponse response = request.Execute();
-    _ASSERT(response.GetStatusCode() == CRequestStatus::e404_NotFound);
-    CNcbiIstream& in = response.ErrorStream();
-    if ( in.good() ) {
-        NcbiStreamCopy(cout, in);
-    }
+    {{
+        const string  bad_url("https://www.ncbi.nlm.nih.gov/Service/404");
+        CHttpSession  session;
+        CHttpRequest  request = session.NewRequest(bad_url);
+        CHttpResponse response = request.Execute();
+        _ASSERT(response.GetStatusCode() == CRequestStatus::e404_NotFound);
+        CNcbiIstream& in = response.ErrorStream();
+        if (in.good())
+            NcbiStreamCopy(cout, in);
+    }}
+    {{
+        const string  bad_url{"https://no_such_server.ncbi.nlm.nih.gov"};
+        CHttpSession  session;
+        CHttpRequest  request = session.NewRequest(bad_url);
+        CHttpResponse response = request.Execute();
+    }}
     return 0;
 }
 
