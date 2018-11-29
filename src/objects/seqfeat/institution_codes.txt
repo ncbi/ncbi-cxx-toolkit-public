@@ -785,6 +785,7 @@ CANI	s	Canisius College, Biology Department
 CANL	s	Canadian Museum of Nature, Lichenology Section			
 CANM	s	Canadian Museum of Nature, Bryology Section			
 CANT	s	South China Agricultural University, Forestry Department			
+CANTE	sb	Jardin Botanico El Charco del Ingenio			
 CANTY	s	Canterbury Museum			
 CANU	s	University of Canterbury, Department of Plant and Microbial Sciences			
 CAPM	c	Collection of Animal Pathogenic Microorganisms			
@@ -7678,7 +7679,7 @@ YUO	s	Youngstown State University, Biological Sciences Department
 YUTO	s	York University, Biology Department			
 YXDC	s	Yuxi District Institute for Drug Control			
 YZU	s	Yuzhou University			
-Z	s	Universitaet Zuerich			
+Z	sb	Institut fur Systematische Botanik Universitat Zurich			
 ZA	s	University of Zagreb, Botany Department	ZAHO		
 ZAD	s	Mount Makulu Research Station			
 ZAGR	s	University of Zagreb			
