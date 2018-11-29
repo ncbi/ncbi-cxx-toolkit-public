@@ -38,14 +38,14 @@
 #include <corelib/ncbifile.hpp>
 
 #include <cstdio>
-
+#include <objtools/readers/mod_reader.hpp>
 #include <corelib/test_boost.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-const string extInput("fsa");
-const string extOutput("mods");
+const string extInput("input");
+const string extOutput("output");
 const string extErrors("errors");
 const string extKeep("new");
 const string dirTestFiles("mod_handler_test_cases");
@@ -60,7 +60,10 @@ struct STestInfo {
 using TTestName = string;
 using TTestNameToInfoMap = map<TTestName, STestInfo>;
 
-class CTestNameToInfoMapLoader(
+class CTestNameToInfoMapLoader
+{
+public:
+    CTestNameToInfoMapLoader(
         TTestNameToInfoMap& testNameToInfoMap,
         const string& extInput,
         const string& extOutput,
@@ -196,10 +199,72 @@ static bool sGetMods(const CTempString& title, multimap<string, string>& mods)
 }
 
 
+struct SModInfo {
+    string name;
+    string value;
+    CModHandler::EHandleExisting handle_existing;
+};
+
+
+static CModHandler::EHandleExisting sGetHandleExisting(const string& handle_existing)
+{
+    if (handle_existing == "replace") {
+        return CModHandler::eReplace;
+    }
+
+    if (handle_existing == "preserve") {
+        return CModHandler::ePreserve;
+    }
+
+    if (handle_existing == "append-replace") {
+        return CModHandler::eAppendReplace;
+    }
+
+    if (handle_existing == "append-preserve") {
+        return CModHandler::eAppendPreserve;
+    }
+    
+    // default
+    return CModHandler::eReplace;
+}
+
+
+static void sGetModInfo(const string& line, SModInfo& mod_info) 
+{
+    if (NStr::IsBlank(line)) {
+        return;
+    }
+
+    vector<string> info_vec;
+    NStr::Split(line, " \t", info_vec, NStr::fSplit_Tokenize);
+
+    if (info_vec.size() < 2) {
+        return;
+    }
+
+
+    mod_info.name = info_vec[0];
+    if (info_vec.size() == 2) {
+
+    }
+
+    if (info_vec.size() == 3) {
+        mod_info.name = info_vec[0];
+        mod_info.value = info_vec[1];
+        mod_info.handle_existing = sGetHandleExisting(info_vec[2]);
+        return;
+    }
+
+    if (info_vec.size() == 2) {
+        mod_info.name = info_vec[0];
+        mod_info.handle_existing = sGetHandleExisting(info_vec[1]);
+        return;
+    }
+}
+
 void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 {
-    cerr << "Testing " << testInfo.mInFile.GetName() << " and " << 
-        testInfo.mTemplateFile.GetName() << " against " <<
+    cerr << "Testing " << testInfo.mInFile.GetName() << " against " <<
         testInfo.mOutFile.GetName() << " and " <<
         testInfo.mErrorFile.GetName() << endl;
 
@@ -208,26 +273,24 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
     const string& resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
-    CNcbiIfstream tmpltstr(testInfo.mTemplateFile.GetPath().c_str());
-    auto pSeqEntry = Ref(new CSeq_entry());
-    tmpltstr >> MSerial_AsnText >> pSeqEntry;
-    pSeqEntry->Parentize();
-
-    auto& bioseq = pSeqEntry->IsSeq() ? 
-                   pSeqEntry->SetSeq() :
-                   const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
-
+    CModHandler mod_handler;
     try {
         multimap<string, string> mods;
         for (string line; getline(ifstr, line);) {
-            NStr::TruncateSpacesInPlace(line);
-            if (line[0] == '>') {
-                sGetMods(line, mods);
-            }
+            SModInfo mod_info;
+            sGetModInfo(line, mod_info);
+            mod_handler.AddMod(mod_info.name,
+                               mod_info.value,
+                               mod_info.handle_existing);
         }
-        edit::CModApply mod_apply(mods);
-        bool replace_preexisting_vals = true;
-        mod_apply.Apply(bioseq);
+
+
+        for (auto kv : mod_handler.GetMods()) {
+            ofstr << kv.first << "  "  << kv.second.GetValue() << endl;
+        }
+        //edit::CModApply mod_apply(mods);
+       // bool replace_preexisting_vals = true;
+       // mod_apply.Apply(bioseq);
     }
     catch (...) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
@@ -235,7 +298,6 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         return;
     }
 
-    ofstr << MSerial_AsnText << pSeqEntry;
     ifstr.close();
     ofstr.close();
 
@@ -293,20 +355,20 @@ BOOST_AUTO_TEST_CASE(RunTests)
 
     bool update_all = args["update-all"].AsBoolean();
     if (update_all) {
-        sUpdateAll(test_cases_dir);
+     //   sUpdateAll(test_cases_dir);
         return;
     }
 
     string update_case = args["update-case"].AsString();
     if (!update_case.empty()) {
-        sUpdateCase(test_cases_dir, update_case);
+     //   sUpdateCase(test_cases_dir, update_case);
         return;
     }
    
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
-        testNameToInfoMap, extTemplate, extInput, extOutput, extErrors);
+        testNameToInfoMap, extInput, extOutput, extErrors);
     FindFilesInDir(
         test_cases_dir,
         kEmptyStringVec,
