@@ -569,7 +569,7 @@ const CModHandler::TNameMap CModHandler::sm_NameMap =
  {"fwd-pcr-primer-seq"," fwd-primer-seq"},
  {"rev-pcr-primer-name", "rev-primer-name"},
  {"rev-pcr-primer-seq", "rev-primer-seq"},
- {"org", "organism"},
+ {"org", "taxname"},
  {"organism", "taxname"},
  {"div", "division"},
  {"notes", "note"},
