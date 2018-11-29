@@ -2783,8 +2783,7 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
     	m_NumDescriptions = hitlist_size;
     	m_NumAlignments = hitlist_size;
 
-        if(args[kArgSortHits]) {
-            int sorthits = args[kArgSortHits].AsInteger();            
+        if(args[kArgSortHits]) {            
             ERR_POST(Warning << "The parameter -sorthits is ignored for output formats > 4.");                    
         }
     }   
