@@ -63,11 +63,11 @@ USING_SCOPE(objects);
 CWiggleWriter::CWiggleWriter(
     CScope& scope,
     CNcbiOstream& ostr,
-    size_t uTrackSize ) :
+    size_t uTrackSize) :
 //  ----------------------------------------------------------------------------
+    CWriterBase(ostr, 0),
     mpScope(&scope),
-    CWriterBase( ostr, 0 ),
-    m_uTrackSize( uTrackSize == 0 ? size_t( -1 ) : uTrackSize )
+    m_uTrackSize(uTrackSize == 0 ? size_t( -1 ) : uTrackSize)
 {
 };
 
@@ -76,9 +76,9 @@ CWiggleWriter::CWiggleWriter(
     CNcbiOstream& ostr,
     size_t uTrackSize ) :
 //  ----------------------------------------------------------------------------
+    CWriterBase(ostr, 0),
     mpScope(0),
-    CWriterBase( ostr, 0 ),
-    m_uTrackSize( uTrackSize == 0 ? size_t( -1 ) : uTrackSize )
+    m_uTrackSize(uTrackSize == 0 ? size_t( -1 ) : uTrackSize)
 {
 };
 
