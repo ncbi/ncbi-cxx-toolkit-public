@@ -126,6 +126,9 @@ void CBlastdbConvertApp::Init()
     arg_desc->AddFlag("update_timestamp",
                       "Update the date of last update in the output database",
                       true);
+    arg_desc->AddFlag("new_index",
+                      "Generate vol index for filename",
+                      true);
     arg_desc->AddDefaultKey(kMapSize, "memory_map_size_limit",
                                 "Max mempry map size of output file",
                                 CArgDescriptions::eInt8, "1000000000000");
@@ -290,6 +293,7 @@ int CBlastdbConvertApp::Run(void)
     const CSeqDB::ESeqType seqtype = ParseMoleculeTypeString(kMol);
     const bool kIsProt = (seqtype == CSeqDB::eProtein);
     string kOutputAbsPath = CDirEntry::CreateAbsolutePath(kOutput);
+    const bool kNewIndex = args["new_index"].HasValue() ? true: false;
 
     m_LogFile = & (args["logfile"].HasValue()? args["logfile"].AsOutputFile() : cout);
     SetDiagPostLevel(eDiag_Warning);
@@ -363,7 +367,7 @@ int CBlastdbConvertApp::Run(void)
             _TRACE("Processing " << vol_path);
             string vol_num = NStr::UIntToString(p);;
             string kOutputVol = output_dir.GetName();
-            if(use_index_in_filename) {
+            if(kNewIndex && use_index_in_filename) {
             	string zero_padding = kEmptyStr;
             	const string path_size_str = NStr::IntToString((int) paths.size());
             	unsigned int l = (path_size_str.size() < 2) ? 2 : path_size_str.size();
@@ -371,6 +375,20 @@ int CBlastdbConvertApp::Run(void)
             		zero_padding +='0';
             	}
             	kOutputVol += "." + zero_padding + vol_num;
+            }
+            else if(use_index_in_filename){
+            	vector<string> parts;
+            	NStr::Split(vol_path, ".", parts);
+            	if(parts.size() < 2) {
+            		NCBI_THROW(CInputException, eInvalidInput, "v4 db has no vol index in filename");
+            	}
+            	try {
+            	   NStr::StringToInt(parts.back());
+            	 } catch (CStringException &){
+            		NCBI_THROW(CInputException, eInvalidInput, "v4 db has no vol index in filename");
+            	 }
+
+            	kOutputVol += "." + parts.back();
             }
             CRef<CSeqDB> vol(new CSeqDB(vol_path, seqtype));
             _ASSERT(vol);
