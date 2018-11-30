@@ -37,9 +37,9 @@ use Net::FTP;
 use Getopt::Long;
 use Pod::Usage;
 use File::stat;
-use File::Basename;
 use Digest::MD5;
 use Archive::Tar;
+use File::Temp;
 use JSON;
 
 use constant NCBI_FTP => "ftp.ncbi.nlm.nih.gov";
@@ -68,6 +68,7 @@ my $opt_showall = undef;
 my $opt_show_version = 0;
 my $opt_decompress = 0;
 my $opt_source;
+my $opt_nt = &get_num_cores();
 my $result = GetOptions("verbose+"      =>  \$opt_verbose,
                         "quiet"         =>  \$opt_quiet,
                         "force"         =>  \$opt_force_download,
@@ -78,6 +79,7 @@ my $result = GetOptions("verbose+"      =>  \$opt_verbose,
                         "blastdb_version:i"=>  \$opt_blastdb_ver,
                         "decompress"    =>  \$opt_decompress,
                         "source=s"      =>  \$opt_source,
+                        "num_threads=i" =>  \$opt_nt,
                         "help"          =>  \$opt_help);
 $opt_verbose = 0 if $opt_quiet;
 die "Failed to parse command line options\n" unless $result;
@@ -87,6 +89,8 @@ pod2usage({-exitval => 0, -verbose => 2}) unless (scalar @ARGV or
                                                   $opt_show_version);
 pod2usage({-exitval => 1, -verbose => 0, -msg => "Invalid BLAST database version"}) 
     unless ($opt_blastdb_ver == 4 or $opt_blastdb_ver == 5);
+pod2usage({-exitval => 1, -verbose => 0, -msg => "Invalid number of threads"}) 
+    if ($opt_nt <= 0);
 if (length($opt_passive) and $opt_passive =~ /n|no/i) {
     $opt_passive = 0;
 } else {
@@ -95,9 +99,9 @@ if (length($opt_passive) and $opt_passive =~ /n|no/i) {
 my $exit_code = 0;
 $|++;
 
-my $location = "unknown";
+my $location = "NCBI";
 unless ($^O =~ /mswin/i) {
-    $location = system("curl -sfo /dev/null -H 'Metadata-Flavor: Google' " . GCP_URL) == 0 ? "GCP" : "NCBI";
+    $location = system("/usr/bin/curl -sfo /dev/null -H 'Metadata-Flavor: Google' " . GCP_URL) == 0 ? "GCP" : "NCBI";
 }
 # Override data source, only for testing
 if (defined($opt_source)) {
@@ -135,7 +139,8 @@ if ($location eq "GCP") {
         foreach my $db (sort keys %$metadata) {
             next if ($db =~ /^version$/);
             if ($opt_showall =~ /tsv/i) {
-                print "$db\t$$metadata{$db}{description}\t$$metadata{$db}{size}\t$$metadata{$db}{last_updated}\n";
+                printf("%s\t%s\t%9.4f\t%s\n", $db, $$metadata{$db}{description}, 
+                    $$metadata{$db}{size}, $$metadata{$db}{last_updated});
             } elsif ($opt_showall =~ /pretty/i) {
                 printf("%-60s %-120s %9.4f %15s\n", $db, $$metadata{$db}{description}, 
                     $$metadata{$db}{size}, $$metadata{$db}{last_updated});
@@ -155,16 +160,19 @@ if ($location eq "GCP") {
         if (@files2download) {
             my $gsutil = &get_gsutil_path();
             my $cmd;
+            my $fh = File::Temp->new();
             if (defined($gsutil)) {
-                $cmd = "$gsutil -qm cp " . join(" ", @files2download) . " .";
+                $cmd = "$gsutil " . ($opt_nt > 1 ? "-m" : "" ) . " -q cp ";
+                $cmd .= join(" ", @files2download) . " .";
             } else { # fall back to  curl
-                $cmd = "curl -s ";
                 my $url = GCS_URL;
-                foreach (@files2download) {
-                    my $fname = basename($_);
-                    s,gs://,$url/,;
-                    s/$/ -o $fname /;
-                    $cmd .= $_;
+                s,gs://,$url/, foreach (@files2download);
+                if ($opt_nt > 1 and -f "/usr/bin/xargs") {
+                    print $fh join("\n", @files2download);
+                    $cmd = "/usr/bin/xargs -P $opt_nt -a $fh -t -n 1 /usr/bin/curl -sO";
+                } else {
+                    $cmd = "/usr/bin/curl -s";
+                    $cmd .= " -O $_" foreach (@files2download);
                 }
             }
             print "$cmd\n" if $opt_verbose > 3;
@@ -425,7 +433,7 @@ sub get_num_volumes
 # Retrieves the name of the 'subdirectory' where the latest BLASTDBs residue in GCP
 sub get_gcs_latest_dir
 {
-    my $cmd = "curl -s " . GCS_URL . "/" . GCP_BUCKET . "/latest-dir";
+    my $cmd = "/usr/bin/curl -s " . GCS_URL . "/" . GCP_BUCKET . "/latest-dir";
     return `$cmd`;
 }
 
@@ -446,6 +454,20 @@ sub get_gsutil_path
         return $path if (-f $path);
     }
     return undef;
+}
+
+# Returns the number of cores, or 1 if unknown
+sub get_num_cores
+{
+    my $retval = 1;
+    if ($^O =~ /linux/i) {
+        open my $fh, "/proc/cpuinfo" or return $retval;
+        $retval = scalar(map /^processor/, <$fh>);
+        close($fh);
+    } elsif ($^O =~ /darwin/i) {
+        chomp($retval = `/usr/sbin/sysctl -n hw.ncpu`);
+    }
+    return $retval;
 }
 
 __END__
@@ -481,7 +503,6 @@ This metadata is displayed in columnar format; the columns represent:
 
 name, description, size in gigabytes, date of last update (YYYY-MM-DD format).
 
-
 =item B<--blastdb_version>
 
 Specify which BLAST database version to download (default: 4).
@@ -513,6 +534,11 @@ Produce no output (default: false). Overrides the B<--verbose> option.
 =item B<--version>
 
 Prints this script's version. Overrides all other options.
+
+=item B<--num_cores>
+
+Sets the number of cores to utilize to perform downloads in parallel when data comes from GCS.
+Defaults to all cores (Linux and macos only).
 
 =back
 
