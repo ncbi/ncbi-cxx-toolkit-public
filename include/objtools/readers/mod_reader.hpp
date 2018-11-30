@@ -37,7 +37,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CModValueAndAttrib 
+class NCBI_XOBJREAD_EXPORT CModValueAndAttrib 
 {
 public:
     CModValueAndAttrib(const string& value);
@@ -57,7 +57,7 @@ private:
 
 class IObjtoolsListener;
 
-class CModHandler 
+class NCBI_XOBJREAD_EXPORT CModHandler 
 {
 public:
     enum EHandleExisting {
@@ -118,7 +118,7 @@ class CGene_ref;
 class CProt_ref;
 
 
-class CModParser 
+class NCBI_XOBJREAD_EXPORT CModParser 
 {
 public:
     using TMods = CModHandler::TMods;
@@ -154,7 +154,7 @@ class CDescrCache;
 class CFeatureCache;
 
 
-class CModAdder
+class NCBI_XOBJREAD_EXPORT CModAdder
 {
 public:
     using TMods = CModHandler::TMods;
