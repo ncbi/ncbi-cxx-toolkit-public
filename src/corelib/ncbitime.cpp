@@ -76,9 +76,9 @@ BEGIN_NCBI_SCOPE
 
 
 // Protective mutex
-DEFINE_STATIC_FAST_MUTEX(s_TimeMutex);
-DEFINE_STATIC_FAST_MUTEX(s_TimeAdjustMutex);
-DEFINE_STATIC_FAST_MUTEX(s_FastLocalTimeMutex);
+DEFINE_STATIC_MUTEX(s_TimeMutex);
+DEFINE_STATIC_MUTEX(s_TimeAdjustMutex);
+DEFINE_STATIC_MUTEX(s_FastLocalTimeMutex);
 
 // Store global time/timespan formats in TLS
 static CStaticTls<CTimeFormat> s_TlsFormatTime;
@@ -1391,7 +1391,7 @@ bool CTime::IsDST(void) const
         NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     // MT-Safe protect
-    CFastMutexGuard LOCK(s_TimeMutex);
+    CMutexGuard LOCK(s_TimeMutex);
     return s_IsDST(*this);
 }
 
@@ -1402,7 +1402,7 @@ time_t CTime::GetTimeT(void) const
         NCBI_THROW(CTimeException, eArgument, "The date is empty");
     }
     // MT-Safe protect
-    CFastMutexGuard LOCK(s_TimeMutex);
+    CMutexGuard LOCK(s_TimeMutex);
     return s_GetTimeT(*this);
 }
 
@@ -1523,7 +1523,7 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
     }
 #if !defined(TIMEZONE_IS_UNDEFINED)
     // MT-Safe protect
-    CFastMutexGuard LOCK(s_TimeMutex);
+    CMutexGuard LOCK(s_TimeMutex);
 #endif
 
     const CTime* t = this;
@@ -1645,7 +1645,7 @@ string CTime::AsString(const CTimeFormat& format, TSeconds out_tz) const
 CTime& CTime::x_SetTimeMTSafe(const time_t* value)
 {
     // MT-Safe protect
-    CFastMutexGuard LOCK(s_TimeMutex);
+    CMutexGuard LOCK(s_TimeMutex);
     x_SetTime(value);
     return *this;
 }
@@ -2066,7 +2066,7 @@ CTime& CTime::ToTime(ETimeZone tz)
             return *this;
 
         // MT-Safe protect
-        CFastMutexGuard LOCK(s_TimeMutex);
+        CMutexGuard LOCK(s_TimeMutex);
 
 #if defined(HAVE_LOCALTIME_R)
         struct tm temp;
@@ -2231,7 +2231,7 @@ string CTime::TimeZoneName(void)
        return kEmptyStr;
     }
     // MT-Safe protect
-    CFastMutexGuard LOCK(s_TimeMutex);
+    CMutexGuard LOCK(s_TimeMutex);
     
     struct tm* t;
 #if defined(HAVE_LOCALTIME_R)
@@ -2353,7 +2353,7 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
     const int kShiftHours = 4;
 
     // MT-Safe protect
-    CFastMutexGuard LOCK(s_TimeAdjustMutex);
+    CMutexGuard LOCK(s_TimeAdjustMutex);
 
     // Special conversion from <const CTime> to <CTime>
     CTime tmp(from);
@@ -3903,7 +3903,7 @@ CFastLocalTime::CFastLocalTime(unsigned int sec_after_hour)
 {
 #if !defined(TIMEZONE_IS_UNDEFINED)
     // MT-Safe protect: use CTime locking mutex
-    CFastMutexGuard LOCK(s_TimeMutex);
+    CMutexGuard LOCK(s_TimeMutex);
     m_Timezone = (int)TimeZone();
     m_Daylight = Daylight();
 #endif
@@ -3932,7 +3932,7 @@ bool CFastLocalTime::x_Tuneup(time_t timer, long nanosec)
         return false;
 
     // MT-Safe protect: use CTime locking mutex
-    CFastMutexGuard LOCK(s_TimeMutex);
+    CMutexGuard LOCK(s_TimeMutex);
     m_TunedTime.x_SetTime(&timer);
     m_TunedTime.SetNanoSecond(nanosec);
 
@@ -3944,7 +3944,7 @@ bool CFastLocalTime::x_Tuneup(time_t timer, long nanosec)
     LOCK.Release();
 
     // Copy tuned time to cached local time
-    CFastMutexGuard FLT_LOCK(s_FastLocalTimeMutex);
+    CMutexGuard FLT_LOCK(s_FastLocalTimeMutex);
     m_LastTuneupTime = timer;
     m_LocalTime   = m_TunedTime;
     m_LastSysTime = m_LastTuneupTime;
@@ -3958,7 +3958,7 @@ bool CFastLocalTime::x_Tuneup(time_t timer, long nanosec)
 
 CTime CFastLocalTime::GetLocalTime(void)
 {
-    CFastMutexGuard LOCK(eEmptyGuard);
+    CMutexGuard LOCK(eEmptyGuard);
 
 retry:
     // Get system time
@@ -3975,7 +3975,7 @@ retry:
         int x_daylight = Daylight();
         {{
             // MT-Safe protect: use CTime locking mutex
-            CFastMutexGuard LOCK_TM(s_TimeMutex);
+            CMutexGuard LOCK_TM(s_TimeMutex);
             x_timezone = TimeZone();
             x_daylight = Daylight();
         }}
@@ -4027,7 +4027,7 @@ int CFastLocalTime::GetLocalTimezone(void)
         int x_daylight = Daylight();
         {{
             // MT-Safe protect: use CTime locking mutex
-            CFastMutexGuard LOCK(s_TimeMutex);
+            CMutexGuard LOCK(s_TimeMutex);
             x_timezone = TimeZone();
             x_daylight = Daylight();
         }}
