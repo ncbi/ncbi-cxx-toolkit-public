@@ -645,7 +645,7 @@ string CDiscrepancyContext::GetAminoacidName(const CSeq_feat& obj) // from tRNA
 bool CDiscrepancyContext::IsBadLocusTagFormat(const string& locus_tag)
 {
     // Optimization:  compile regexp only once by making it static.
-    static CRegexp regexp("^[[:alpha:]][[:alnum:]]{2,}_[[:alnum:]]+$");
+    static CRegexp regexp("^[A-Za-z][0-9A-Za-z]{2,}_[0-9A-Za-z]+$");
 
     // Locus tag format documentation:  
     // https://www.ncbi.nlm.nih.gov/genomes/locustag/Proposal.pdf
