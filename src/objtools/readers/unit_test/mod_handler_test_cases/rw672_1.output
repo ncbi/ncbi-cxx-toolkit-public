@@ -2,7 +2,7 @@
 fwd-primer-name  primer_name#1
 fwd-primer-name  primer_name#2
 molecule  rna
-organism  tax-name
 protein  protein_name#1
 protein  protein_name#2
+taxname  tax-name
 topology  circular
