@@ -32,8 +32,9 @@ nthreads="`expr $$ % 10 + 2`"
 test_text="param1%3Dval1%26param2%3D%22line+1%0Aline+2%0A%22"
 
 : ${CHECK_TIMEOUT:=600}
-if test -n "$CHECK_EXEC"; then
-    $CHECK_EXEC test_ncbi_namerd_mt -timeout $CHECK_TIMEOUT -threads $nthreads -service $svc -post "$test_text" -expected "$test_text"
+if test -z "$CHECK_EXEC"; then
+    run_local="./"
 else
-    ./test_ncbi_namerd_mt -timeout $CHECK_TIMEOUT -threads $nthreads -service $svc -post "$test_text" -expected "$test_text"
+    run_local=" "
 fi
+$CHECK_EXEC${run_local}test_ncbi_namerd_mt -timeout $CHECK_TIMEOUT -threads $nthreads -service $svc -post "$test_text" -expected "$test_text"

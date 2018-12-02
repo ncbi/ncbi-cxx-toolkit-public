@@ -73,7 +73,8 @@ enum ENAMERD_Subcodes {
     eNSub_Json            = 5,   /**< a JSON parsing failure */
     eNSub_Libc            = 6,   /**< a standard library failure */
     eNSub_NoService       = 7,   /**< couldn't reach namerd service provider */
-    eNSub_TooLong         = 8    /**< data was too long to fit in a buffer */
+    eNSub_TooLong         = 8,   /**< data was too long to fit in a buffer */
+    eNSub_Logic           = 9    /**< logic error */
 };
 
 
@@ -196,7 +197,19 @@ static fCreateConnector s_CreateConnector = s_CreateConnectorHttp;
 static CONNECTOR s_CreateConnectorHttp(SERV_ITER iter)
 {
     CORE_TRACE("s_CreateConnectorHttp()");
-    struct SNAMERD_Data*    data = (struct SNAMERD_Data*) iter->data;
+    struct SNAMERD_Data* data = NULL;
+
+    if ( ! iter) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected NULL 'iter->data' pointer.");
+        return NULL;
+    }
+    if ( ! iter->data) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected NULL 'iter->data' pointer.");
+        return NULL;
+    }
+    data = (struct SNAMERD_Data*) iter->data;
 
     return HTTP_CreateConnectorEx(data->net_info, fHTTP_Flushable,
                 s_ParseHeader, iter/*data*/, s_Adjust, 0/*cleanup*/);
@@ -214,7 +227,11 @@ static void s_DestroyMockBuf(void)
 static CONNECTOR s_CreateConnectorMemory(SERV_ITER iter)
 {
     CORE_TRACE("s_CreateConnectorMemory()");
-    assert(s_mock_body);
+    if ( ! s_mock_body) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected NULL 's_mock_body' pointer.");
+        return NULL;
+    }
 
     /* Reset buffer for each connector */
     s_DestroyMockBuf();
@@ -264,8 +281,26 @@ static EIO_Status s_CONN_Create(SERV_ITER iter, CONNECTOR* c_p, CONN* conn_p)
     CORE_TRACE("Entering s_CONN_Create()");
 
     /* require valid, NULL pointers */
-    assert(c_p     &&  ! *c_p   );
-    assert(conn_p  &&  ! *conn_p);
+    if ( ! c_p) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected NULL connector pointer pointer.");
+        return eIO_Unknown;
+    }
+    if (*c_p) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected non-NULL connector pointer.");
+        return eIO_Unknown;
+    }
+    if ( ! conn_p) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected NULL connection pointer pointer.");
+        return eIO_Unknown;
+    }
+    if (*conn_p) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected non-NULL connection pointer.");
+        return eIO_Unknown;
+    }
 
     *c_p = s_CreateConnector(iter);
     if (*c_p) {
@@ -290,10 +325,20 @@ static EIO_Status s_CONN_Create(SERV_ITER iter, CONNECTOR* c_p, CONN* conn_p)
 
 static void s_CONN_Destroy(CONNECTOR* c_p, CONN* conn_p)
 {
-    assert(conn_p);
-    if (*conn_p) CONN_Close(*conn_p);
-    *c_p    = NULL;
-    *conn_p = NULL;
+    if ( ! c_p) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected NULL connector pointer.");
+    } else {
+        *c_p = NULL;
+    }
+    if ( ! conn_p) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected NULL connection pointer.");
+    } else {
+        if (*conn_p)
+            CONN_Close(*conn_p);
+        *conn_p = NULL;
+    }
     s_DestroyMockBuf();
 }
 
@@ -447,7 +492,12 @@ static void s_RemoveCand(struct SNAMERD_Data* data, size_t n, int free_info)
     CORE_TRACEF(("s_RemoveCand() Removing info " FMT_SIZE_T ": %p",
                  n, data->cand[n].info));
 
-    assert(n < data->n_cand);
+    if (n >= data->n_cand) {
+        CORE_LOGF_X(eNSub_Logic, eLOG_Critical,
+                   ("Unexpected: n(" FMT_SIZE_T ") >= data->n_cand("
+                    FMT_SIZE_T ")", n, data->n_cand));
+        return;
+    }
     if (free_info)
         free((void*) data->cand[n].info);
     if (n < --data->n_cand) {
@@ -558,7 +608,11 @@ static TNCBI_Time s_ParseExpires(time_t tt_now, const char* expires)
     int     exp_year, exp_mon, exp_mday, exp_hour, exp_min, exp_sec;
     char    exp_zulu;
 
-    assert(expires);
+    if ( ! expires) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected NULL 'expires' pointer.");
+        return 0;
+    }
 
     if (sscanf(expires, "%d-%d-%dT%d:%d:%d%c", &exp_year, &exp_mon, &exp_mday,
             &exp_hour, &exp_min, &exp_sec, &exp_zulu) != 7  ||
@@ -674,8 +728,16 @@ static EIO_Status s_ReadFullResponse(CONN conn, char** bufp,
 
     CORE_TRACE("Entering s_ReadFullResponse()");
 
-    assert(bufp);
-    assert(net_info);
+    if ( ! bufp) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected NULL 'bufp' pointer.");
+        return eIO_Unknown;
+    }
+    if ( ! net_info) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected NULL 'net_info' pointer.");
+        return eIO_Unknown;
+    }
 
     for (num_steps = 0;  num_steps < max_steps;  ++num_steps) {
 
@@ -1280,7 +1342,12 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     int/*bool*/             retval = 0;
 
     CORE_TRACE("Entering s_Resolve()");
-    assert( ! (data->eof | data->fail));
+
+    if (data->eof | data->fail) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected non-zero 'data->eof | data->fail'.");
+        return 0;
+    }
 
     /* Handle DTAB, if present. */
     s_ProcessDtab(net_info);
@@ -1356,12 +1423,23 @@ static SLB_Candidate* s_GetCandidate(void* user_data, size_t n)
 
 static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 {
-    struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
+    struct SNAMERD_Data* data = NULL;
     SSERV_Info* info;
     size_t n;
 
     CORE_TRACE("Entering s_GetNextInfo()");
-    assert(data);
+
+    if ( ! iter) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected NULL 'iter' pointer.");
+        return NULL;
+    }
+    if ( ! iter->data) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected NULL 'iter->data' pointer.");
+        return NULL;
+    }
+    data = (struct SNAMERD_Data*) iter->data;
 
     if (data->n_cand < 1  &&  data->done) {
         data->done = 0;
@@ -1398,15 +1476,26 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 
 static void s_Reset(SERV_ITER iter)
 {
-    struct SNAMERD_Data* data = (struct SNAMERD_Data*) iter->data;
+    struct SNAMERD_Data* data = NULL;
 
     CORE_TRACE("Entering s_Reset()");
 
+    if ( ! iter) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected NULL 'iter' pointer.");
+        return;
+    }
+    data = (struct SNAMERD_Data*) iter->data;
     if (data) {
         data->eof = data->fail = data->done = 0/*false*/;
         if (data->cand) {
             size_t i;
-            assert(data->n_cand <= data->a_cand);
+            if (data->n_cand > data->a_cand) {
+                CORE_LOGF_X(eNSub_Logic, eLOG_Critical,
+                           ("Unexpected: data->n_cand(" FMT_SIZE_T ") > data->a_cand("
+                            FMT_SIZE_T ")", data->n_cand, data->a_cand));
+                return;
+            }
             for (i = 0;  i < data->n_cand;  ++i) {
                 CORE_TRACEF(("Freeing available info " FMT_SIZE_T ": %p",
                              i, data->cand[i].info));
@@ -1456,18 +1545,26 @@ extern const SSERV_VTable* SERV_NAMERD_Open(SERV_ITER           iter,
 
     s_Init();
 
-    assert(iter);
+    if ( ! iter) {
+        CORE_LOG_X(eNSub_Logic, eLOG_Critical,
+                   "Unexpected NULL 'iter' pointer.");
+        return NULL;
+    }
 
     /* Check that service name is provided - otherwise there is nothing to
      * search for. */
     if ( ! iter->name) {
         CORE_LOG_X(eNSub_BadData, eLOG_Error,
-            "\"iter->name\" is NULL, not able to continue SERV_NAMERD_Open");
+                   "Unexpected NULL 'iter->name'.");
         CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, no service name");
         return NULL;
     }
-    assert(iter->name);
-    assert(*iter->name);
+    if ( ! *iter->name) {
+        CORE_LOG_X(eNSub_BadData, eLOG_Error,
+                   "Unexpected empty 'iter->name'.");
+        CORE_TRACE("Leaving SERV_NAMERD_Open() -- fail, empty service name");
+        return NULL;
+    }
 
     /* Prohibit catalog-prefixed services, e.g. "/lbsm/<svc>" */
     if (iter->name[0] == '/') {

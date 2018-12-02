@@ -41,9 +41,9 @@ test_text="message=hi%20there%0A"
 expected_regex='^.*?C\+\+ GIT FastCGI Sample.*?<p>Your previous message: +'\''hi there\n'\''.*$'
 
 : ${CHECK_TIMEOUT:=600}
-if test -n "$CHECK_EXEC"; then
-    dot_slash=""
+if test -z "$CHECK_EXEC"; then
+    run_local="./"
 else
-    dot_slash="./"
+    run_local=" "
 fi
-$CHECK_EXEC ${dot_slash}test_ncbi_linkerd_mt -timeout $CHECK_TIMEOUT -threads $nthreads -service $svc -path $path -post "$test_text" -expected "$expected_regex"
+$CHECK_EXEC${run_local}test_ncbi_linkerd_mt -timeout $CHECK_TIMEOUT -threads $nthreads -service $svc -path $path -post "$test_text" -expected "$expected_regex"

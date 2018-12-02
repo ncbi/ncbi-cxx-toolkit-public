@@ -56,7 +56,8 @@ enum ELINKERD_Subcodes {
     eLSub_Message         = 0,   /**< not an error */
     eLSub_Alloc           = 1,   /**< memory allocation failed */
     eLSub_BadData         = 2,   /**< bad data was provided */
-    eLSub_Connect         = 3    /**< problem in connect library */
+    eLSub_Connect         = 3,   /**< problem in connect library */
+    eLSub_Logic           = 4    /**< logic error */
 };
 
 
@@ -417,7 +418,12 @@ static EEndpointStatus s_EndpointFromNamerd(SEndpoint* end, SERV_ITER iter)
     }
 
     /* Sanity checks */
-    assert(nd_srv_info != (SSERV_Info*)(-1L));
+    if (nd_srv_info == (SSERV_Info*)(-1L)) {
+        CORE_LOG_X(eLSub_Logic, eLOG_Critical,
+                   "Unexpected (-1L) service info pointer from namerd.");
+        retval = eEndStat_Error;
+        goto out;
+    }
     path = SERV_HTTP_PATH(&nd_srv_info->u.http);
     args = SERV_HTTP_ARGS(&nd_srv_info->u.http);
     pathlen = strlen(path);
@@ -523,9 +529,19 @@ static int s_Resolve(SERV_ITER iter)
 
 static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 {
-    struct SLINKERD_Data* data = (struct SLINKERD_Data*) iter->data;
+    struct SLINKERD_Data* data = NULL;
 
-    assert(data);
+    if ( ! iter) {
+        CORE_LOG_X(eLSub_Logic, eLOG_Critical,
+                   "Unexpected NULL 'iter' pointer.");
+        return NULL;
+    }
+    data = (struct SLINKERD_Data*) iter->data;
+    if ( ! data) {
+        CORE_LOG_X(eLSub_Logic, eLOG_Critical,
+                   "Unexpected NULL 'iter->data' pointer.");
+        return NULL;
+    }
 
     if (host_info)
         *host_info = NULL;
@@ -652,8 +668,16 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
 
     /* Sanity checks */
     {{
-        assert(iter);
-        assert(net_info);
+        if ( ! iter) {
+            CORE_LOG_X(eLSub_Logic, eLOG_Critical,
+                       "Expected NULL 'iter' pointer.");
+            return NULL;
+        }
+        if ( ! net_info) {
+            CORE_LOG_X(eLSub_Logic, eLOG_Critical,
+                       "Expected NULL 'net_info' pointer.");
+            return NULL;
+        }
 
         /* Check that a service name is provided - Linkerd cannot operate
            without a service name. */
@@ -665,9 +689,14 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
         }
 
         /* Linkerd only supports http or https (or unknown to be set later) */
-        assert(net_info->scheme == eURL_Http   ||
-               net_info->scheme == eURL_Https  ||
-               net_info->scheme == eURL_Unspec);
+        if ( ! (net_info->scheme == eURL_Http   ||
+                net_info->scheme == eURL_Https  ||
+                net_info->scheme == eURL_Unspec))
+        {
+            CORE_LOGF_X(eLSub_Logic, eLOG_Critical,
+                ("Unexpected 'net_info->scheme' %d.", net_info->scheme));
+            return NULL;
+        }
 
         /* Prohibit catalog-prefixed services (e.g. "/lbsm/<svc>") */
         if (iter->name[0] == '/') {
@@ -787,7 +816,11 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
         strcpy(dni->pass, endpoint.pass);
         ConnNetInfo_SetPath(dni, endpoint.path);
 
-        assert(dni->scheme == eURL_Http  ||  dni->scheme == eURL_Https);
+        if ( ! (dni->scheme == eURL_Http  ||  dni->scheme == eURL_Https)) {
+            CORE_LOGF_X(eLSub_Logic, eLOG_Critical,
+                ("Unexpected non-HTTP(S) 'dni->scheme' %d.", dni->scheme));
+            return NULL;
+        }
     }}
 
     if ( ! s_Resolve(iter)) {

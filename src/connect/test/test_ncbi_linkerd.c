@@ -167,17 +167,37 @@ static int run_a_test(size_t test_idx, const char *svc, const char *sch,
     int                 retval = -1;
 
     /* Set up the net_info */
-    assert(svc);
+    if ( ! svc) {
+        CORE_LOG(eLOG_Critical, "Unexpected empty service name.");
+        return 0;
+    }
     net_info = ConnNetInfo_Create(svc);
     if (sch) {
         if      (strcasecmp(sch, "http" ) == 0) net_info->scheme = eURL_Http;
         else if (strcasecmp(sch, "https") == 0) net_info->scheme = eURL_Https;
-        else assert(0);
+        else {
+            CORE_LOG(eLOG_Critical, "Unexpected non-http(s) scheme.");
+            CORE_LOG(eLOG_Note, "Test result:  FAIL.");
+            return 0;
+        }
     }
-    assert( ! user  ||  strlen(user) < sizeof(net_info->user));
-    assert( ! pass  ||  strlen(pass) < sizeof(net_info->pass));
-    assert((path ? strlen(path) : 0) + 1 +
-           (args ? strlen(args) : 0) < sizeof(net_info->path));
+    if (user  &&  strlen(user) >= sizeof(net_info->user)) {
+        CORE_LOG(eLOG_Critical, "Unexpected empty or too-long user.");
+        CORE_LOG(eLOG_Note, "Test result:  FAIL.");
+        return 0;
+    }
+    if (pass  &&  strlen(pass) >= sizeof(net_info->pass)) {
+        CORE_LOG(eLOG_Critical, "Unexpected empty or too-long password.");
+        CORE_LOG(eLOG_Note, "Test result:  FAIL.");
+        return 0;
+    }
+    if ((path ? strlen(path) : 0) + 1 +
+        (args ? strlen(args) : 0) >= sizeof(net_info->path))
+    {
+        CORE_LOG(eLOG_Critical, "Unexpected too-long path / args.");
+        CORE_LOG(eLOG_Note, "Test result:  FAIL.");
+        return 0;
+    }
     strcpy(net_info->user, user ? user : "");
     strcpy(net_info->pass, pass ? pass : "");
     ConnNetInfo_SetPath(net_info, path ? path : "");
@@ -261,7 +281,7 @@ static int run_a_test(size_t test_idx, const char *svc, const char *sch,
         (success ? "PASS" : "PASS (with expected error)") :
         (success ? "FAIL (success when error expected)" : "FAIL")));
 
-    return retval == -1 ? (success != exp_err ? 1 : 0) : retval;
+    return retval;
 }
 
 
@@ -341,7 +361,10 @@ static int run_tests(const char *test_nums)
 
     test_arr = x_json_object_get_array(root_obj, "tests");
     n_tests = x_json_array_get_count(test_arr);
-    assert(n_tests == x_json_array_get_count(test_arr));
+    if ( ! (n_tests == x_json_array_get_count(test_arr))) {
+        CORE_LOG(eLOG_Critical, "JSON array count mismatch.");
+        return 0;
+    }
     size_t it;
     for (it = 0; it < n_tests; ++it) {
         x_JSON_Object   *test_obj;
@@ -460,7 +483,7 @@ static int run_tests(const char *test_nums)
         CORE_LOGF(eLOG_Note, ("    args:             %s",  msg_args    ));
         CORE_LOGF(eLOG_Note, ("    expected host:    %s",  msg_exp_host));
         CORE_LOGF(eLOG_Note, ("    expected header:  %s",  msg_exp_hdr ));
-        CORE_LOGF(eLOG_Note, ("    expected port:    %hu",     exp_port));
+        CORE_LOGF(eLOG_Note, ("    expected port:    %hu", exp_port    ));
         CORE_LOGF(eLOG_Note, ("    expected error:   %s",  msg_err     ));
         CORE_LOGF(eLOG_Note, ("    expected warning: %s",  msg_warn    ));
 
@@ -482,7 +505,11 @@ static int run_tests(const char *test_nums)
 
                 CORE_LOGF(eLOG_Note, ("    Unsetting common var: %s", name));
                 unsetenv(name);
-                assert(getenv(name) == NULL);
+                if (getenv(name) != NULL) {
+                    CORE_LOGF(eLOG_Critical,
+                        ("Unable to unset common env var %s.", name));
+                    return 0;
+                }
             }
         }
         if (x_json_object_dothas_value_of_type(root_obj, "common.env_set",
@@ -505,7 +532,12 @@ static int run_tests(const char *test_nums)
                 CORE_LOGF(eLOG_Note, ("    Setting common var: %s=%s", name,
                           val));
                 setenv(name, val, 1);
-                assert(strcmp(val, getenv(name)) == 0);
+                if (strcmp(val, getenv(name)) != 0) {
+                    CORE_LOGF(eLOG_Critical,
+                        ("Unable to set common env var %s to '%s'.",
+                         name, val));
+                    return 0;
+                }
             }
         }
 
@@ -526,7 +558,11 @@ static int run_tests(const char *test_nums)
 
                     CORE_LOGF(eLOG_Note, ("        %s", name));
                     unsetenv(name);
-                    assert(getenv(name) == NULL);
+                    if (getenv(name) != NULL) {
+                        CORE_LOGF(eLOG_Critical,
+                            ("Unable to unset per-test env var %s.", name));
+                        return 0;
+                    }
                 }
             }
         }
@@ -550,13 +586,24 @@ static int run_tests(const char *test_nums)
 
                     CORE_LOGF(eLOG_Note, ("        %s=%s", name, val));
                     setenv(name, val, 1);
-                    assert(strcmp(val, getenv(name)) == 0);
+                    if (strcmp(val, getenv(name)) != 0) {
+                        CORE_LOGF(eLOG_Critical,
+                            ("Unable to set per-test env var %s to '%s'.",
+                             name, val));
+                        return 0;
+                    }
                 }
             }
         }
 
-        assert(strlen(exp_host) <= LEN_HOST);
-        assert(strlen(exp_hdr ) <= LEN_HDR);
+        if (strlen(exp_host) > LEN_HOST) {
+            CORE_LOG(eLOG_Critical, "Too-long exp_host.");
+            return 0;
+        }
+        if (strlen(exp_hdr) > LEN_HDR) {
+            CORE_LOG(eLOG_Critical, "Too-long exp_hdr.");
+            return 0;
+        }
         strcpy(s_end_exp.host, exp_host);
         strcpy(s_end_exp.hdr , exp_hdr);
         s_end_exp.port = exp_port;

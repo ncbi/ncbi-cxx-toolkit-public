@@ -182,8 +182,6 @@ static void adjust_mock_times(const char* mock_body, char** mock_body_adj_p)
     size_t      prfx_len = strlen("\"expires\":\"");
     size_t      notz_len = strlen("2017-04-01T11:04:52");
 
-    assert(mock_body_adj_p);
-
     for (cp = mock_body;  cp  &&  *cp;  cp += spec_len) {
         /* Get next "expires" offset, if any. */
         const char* exp = strstr(cp, "\"expires\":\"__________");
@@ -562,7 +560,6 @@ static int run_tests(int live, const char *test_nums)
 
     test_arr = x_json_object_get_array(root_obj, "tests");
     n_tests = x_json_array_get_count(test_arr);
-    assert(n_tests == x_json_array_get_count(test_arr));
     size_t it;
     for (it = 0; it < n_tests; ++it) {
         x_JSON_Object   *test_obj;
@@ -657,7 +654,11 @@ static int run_tests(int live, const char *test_nums)
 
                 CORE_LOGF(eLOG_Note, ("    Unsetting common var: %s", name));
                 unsetenv(name);
-                assert(getenv(name) == NULL);
+                if (getenv(name) != NULL) {
+                    CORE_LOGF(eLOG_Critical,
+                        ("Unable to unset common env var %s.", name));
+                    return 0;
+                }
             }
         }
         if (x_json_object_dothas_value_of_type(root_obj, "common.env_set",
@@ -679,7 +680,12 @@ static int run_tests(int live, const char *test_nums)
                 CORE_LOGF(eLOG_Note, ("    Setting common var: %s=%s", name,
                           val));
                 setenv(name, val, 1);
-                assert(strcmp(val, getenv(name)) == 0);
+                if (strcmp(val, getenv(name)) != 0) {
+                    CORE_LOGF(eLOG_Critical,
+                        ("Unable to set common env var %s to '%s'.",
+                         name, val));
+                    return 0;
+                }
             }
         }
 
@@ -699,7 +705,11 @@ static int run_tests(int live, const char *test_nums)
 
                     CORE_LOGF(eLOG_Note, ("        %s", name));
                     unsetenv(name);
-                    assert(getenv(name) == NULL);
+                    if (getenv(name) != NULL) {
+                        CORE_LOGF(eLOG_Critical,
+                            ("Unable to unset per-test env var %s.", name));
+                        return 0;
+                    }
                 }
             }
         }
@@ -722,21 +732,28 @@ static int run_tests(int live, const char *test_nums)
 
                     CORE_LOGF(eLOG_Note, ("        %s=%s", name, val));
                     setenv(name, val, 1);
-                    assert(strcmp(val, getenv(name)) == 0);
+                    if (strcmp(val, getenv(name)) != 0) {
+                        CORE_LOGF(eLOG_Critical,
+                            ("Unable to set per-test env var %s to '%s'.",
+                             name, val));
+                        return 0;
+                    }
                 }
             }
         }
 
         hit_arr = x_json_object_get_array(test_obj, "expect_hits");
         s_n_hits_exp = (int)x_json_array_get_count(hit_arr);
-        assert(s_n_hits_exp < MAX_HITS);
+        if (s_n_hits_exp >= MAX_HITS) {
+            CORE_LOG(eLOG_Critical, "Too many expected hits.");
+            return 0;
+        }
         CORE_LOGF(eLOG_Note, ("    Expected hits: %d", s_n_hits_exp));
         int it2;
         for (it2 = 0; it2 < s_n_hits_exp; ++it2) {
             x_JSON_Object   *hit_obj = x_json_array_get_object(hit_arr, it2);
             const char      *type = "HTTP", *loc = "no", *priv = "no";
             const char      *xtra = "", *stfl = "no";
-            unsigned short  port = 0;
 
             if (x_json_object_has_value_of_type(hit_obj, "type", JSONString))
                 type = x_json_object_get_string(hit_obj, "type");
@@ -749,11 +766,26 @@ static int run_tests(int live, const char *test_nums)
             if (x_json_object_has_value_of_type(hit_obj, "stfl", JSONString))
                 stfl = x_json_object_get_string(hit_obj, "stfl");
 
-            assert(strlen(type) <= LEN_TYPE);
-            assert(strlen(xtra) <= LEN_XTRA);
-            assert(strlen(loc ) <= LEN_LOC );
-            assert(strlen(priv) <= LEN_PRIV);
-            assert(strlen(stfl) <= LEN_STFL);
+            if (strlen(type) > LEN_TYPE) {
+                CORE_LOGF(eLOG_Critical, ("type string '%s' too long.", type));
+                return 0;
+            }
+            if (strlen(xtra) > LEN_XTRA) {
+                CORE_LOGF(eLOG_Critical, ("xtra string '%s' too long.", xtra));
+                return 0;
+            }
+            if (strlen(loc) > LEN_LOC) {
+                CORE_LOGF(eLOG_Critical, ("loc string '%s' too long.", loc));
+                return 0;
+            }
+            if (strlen(priv) > LEN_PRIV) {
+                CORE_LOGF(eLOG_Critical, ("priv string '%s' too long.", priv));
+                return 0;
+            }
+            if (strlen(stfl) > LEN_STFL) {
+                CORE_LOGF(eLOG_Critical, ("stfl string '%s' too long.", stfl));
+                return 0;
+            }
 
             strcpy(s_hits_exp[it2].type, type);
             strcpy(s_hits_exp[it2].xtra, xtra);
@@ -761,25 +793,53 @@ static int run_tests(int live, const char *test_nums)
             strcpy(s_hits_exp[it2].priv, priv);
             strcpy(s_hits_exp[it2].stfl, stfl);
 
-            assert(x_json_object_has_value_of_type(hit_obj, "host",
-                JSONString));
-            assert(strlen(x_json_object_get_string(hit_obj, "host")) <=
-                LEN_HOST);
+            if ( ! x_json_object_has_value_of_type(hit_obj, "host",
+                JSONString))
+            {
+                CORE_LOG(eLOG_Critical, "hit object missing host.");
+                return 0;
+            }
+            if (strlen(x_json_object_get_string(hit_obj, "host")) > LEN_HOST)
+            {
+                CORE_LOG(eLOG_Critical, "host string too long.");
+                return 0;
+            }
             strcpy(s_hits_exp[it2].host, x_json_object_get_string(hit_obj,
                 "host"));
 
-            assert(strcmp(s_hits_exp[it2].loc , "no" ) == 0  ||
-                   strcmp(s_hits_exp[it2].loc , "yes") == 0);
-            assert(strcmp(s_hits_exp[it2].priv, "no" ) == 0  ||
-                   strcmp(s_hits_exp[it2].priv, "yes") == 0);
-            assert(strcmp(s_hits_exp[it2].stfl, "no" ) == 0  ||
-                   strcmp(s_hits_exp[it2].stfl, "yes") == 0);
+            if ( ! (strcmp(s_hits_exp[it2].loc , "no" ) == 0  ||
+                    strcmp(s_hits_exp[it2].loc , "yes") == 0))
+            {
+                CORE_LOG(eLOG_Critical, "hits loc must be 'no' or 'yes'.");
+                return 0;
+            }
+            if ( ! (strcmp(s_hits_exp[it2].priv , "no" ) == 0  ||
+                    strcmp(s_hits_exp[it2].priv , "yes") == 0))
+            {
+                CORE_LOG(eLOG_Critical, "hits priv must be 'no' or 'yes'.");
+                return 0;
+            }
+            if ( ! (strcmp(s_hits_exp[it2].stfl , "no" ) == 0  ||
+                    strcmp(s_hits_exp[it2].stfl , "yes") == 0))
+            {
+                CORE_LOG(eLOG_Critical, "hits stfl must be 'no' or 'yes'.");
+                return 0;
+            }
 
-            assert(x_json_object_has_value_of_type(hit_obj, "port",
-                JSONNumber));
-            port = (unsigned short)x_json_object_get_number(hit_obj, "port");
-            assert(port > 0);
-            s_hits_exp[it2].port  = port;
+            if ( ! x_json_object_has_value_of_type(hit_obj, "port",
+                JSONNumber))
+            {
+                CORE_LOG(eLOG_Critical, "JSON hit missing a port.");
+                return 0;
+            }
+            double dbl_port = x_json_object_get_number(hit_obj, "port");
+            if (dbl_port < 1.0  ||  dbl_port > 65535.0)
+            {
+                CORE_LOGF(eLOG_Critical, ("Invalid JSON hit port, %lf.",
+                    dbl_port));
+                return 0;
+            }
+            s_hits_exp[it2].port = (unsigned short)dbl_port;
 
             s_hits_exp[it2].match = 0;
 

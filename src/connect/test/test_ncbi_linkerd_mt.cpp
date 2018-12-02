@@ -205,7 +205,11 @@ bool CTestApp::TestApp_Init(void)
     }
 
     sm_Url.SetUrl(url);
-    _ASSERT(sm_Url.IsService());
+    if ( ! sm_Url.IsService()) {
+        ERR_POST(Critical << "URL '" << sm_Url.ComposeUrl(CUrlArgs::eAmp_Char)
+            << "' is not a service URL.");
+        return false;
+    }
     ERR_POST(Info << "Service:  '" << sm_Service << "'");
     ERR_POST(Info << "Scheme:   '" << sm_Scheme << "'");
     ERR_POST(Info << "User:     '" << sm_User << "'");
