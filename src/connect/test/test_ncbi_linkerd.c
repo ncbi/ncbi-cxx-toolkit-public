@@ -182,12 +182,12 @@ static int run_a_test(size_t test_idx, const char *svc, const char *sch,
         }
     }
     if (user  &&  strlen(user) >= sizeof(net_info->user)) {
-        CORE_LOG(eLOG_Critical, "Unexpected empty or too-long user.");
+        CORE_LOG(eLOG_Critical, "Unexpected too-long user.");
         CORE_LOG(eLOG_Note, "Test result:  FAIL.");
         return 0;
     }
     if (pass  &&  strlen(pass) >= sizeof(net_info->pass)) {
-        CORE_LOG(eLOG_Critical, "Unexpected empty or too-long password.");
+        CORE_LOG(eLOG_Critical, "Unexpected too-long password.");
         CORE_LOG(eLOG_Note, "Test result:  FAIL.");
         return 0;
     }
