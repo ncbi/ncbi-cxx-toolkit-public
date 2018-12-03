@@ -1463,7 +1463,9 @@ bool CModAdder::x_TryBioSourceMod(const TRange& mod_range, CDescrCache& descr_ca
 
     if (name == "focus") {
         _ASSERT(distance(mod_range.first, mod_range.second)==1);
-        descr_cache.SetBioSource().SetIs_focus();
+        if (NStr::EqualNocase(x_GetModValue(mod_range), "true")) {
+            descr_cache.SetBioSource().SetIs_focus();
+        }
         return true;
     }
 
@@ -1972,7 +1974,6 @@ void CModAdder::x_SetGBblockKeywords(const TRange& mod_range, CDescrCache& descr
 
 void CModAdder::x_SetComment(const TRange& mod_range,
                                   CDescrCache& descr_cache)
-
 {
     for (auto it = mod_range.first; it != mod_range.second; ++it)
     {

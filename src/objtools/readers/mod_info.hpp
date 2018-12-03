@@ -130,7 +130,6 @@ static unordered_map<U,T> s_GetReverseMap(const unordered_map<T,U,THash>& TUmap)
 }
 
 
-
 static const unordered_map<CSeq_inst::EStrand, string, hash<underlying_type<CSeq_inst::EStrand>::type>>
 s_StrandEnumToString = {{CSeq_inst::eStrand_ss, "single"},
                         {CSeq_inst::eStrand_ds, "double"},
