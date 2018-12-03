@@ -741,14 +741,29 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bo
             } catch (...) {
                 try {
                     CSubSource::TSubtype subtype = CSubSource::GetSubtypeValue((*it)->GetFieldName());
-                    if (!NStr::IsBlank((*it)->GetSrcVal())) {
-                        RemoveSubSource(subtype, (*it)->GetSrcVal());
+                    if (CSubSource::NeedsNoText(subtype)) {
+                        // process diff that involve NeedsNoText subtypes
+                        if (NStr::EqualNocase((*it)->GetSrcVal(), "true")) {
+                            RemoveSubSource(subtype);
+                        }
+                        if (NStr::EqualNocase(sample_val, "true")) {
+                            CRef<CSubSource> sub(new CSubSource());
+                            sub->SetSubtype(subtype);
+                            sub->SetName("");
+                            subtypes.push_back(sub);
+                        }
                     }
-                    if (!NStr::IsBlank(sample_val)) {
-                        CRef<CSubSource> sub(new CSubSource());
-                        sub->SetSubtype(subtype);
-                        sub->SetName(sample_val);
-                        subtypes.push_back(sub);
+                    else {
+                        // process all other subtypes
+                        if (!NStr::IsBlank((*it)->GetSrcVal())) {
+                            RemoveSubSource(subtype, (*it)->GetSrcVal());
+                        }
+                        if (!NStr::IsBlank(sample_val)) {
+                            CRef<CSubSource> sub(new CSubSource());
+                            sub->SetSubtype(subtype);
+                            sub->SetName(sample_val);
+                            subtypes.push_back(sub);
+                        }
                     }
                 } catch (...) {
                     NCBI_THROW(CException, eUnknown, "Unknown field name");
