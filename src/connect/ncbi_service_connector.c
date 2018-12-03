@@ -698,25 +698,26 @@ static void x_SetDefaultReferer(SConnNetInfo* net_info, SERV_ITER iter)
                              sizeof(net_info->client_host));
         }
         if (!(referer = (char*) realloc(str,
-                                        3 + 1 + 1 + (len << 1) +
+                                        3 + 1 + 1/*EOL*/ + (len << 1) +
                                         strlen(host) + (args  &&  args[1]
                                                         ? strlen(args)
                                                         : 9 + strlen(name))))){
             free(str);
             return;
         }
-        str = referer + len;
-        strncat(strcat(strcat(strcat(str, "://"), host), "/"), referer, len);
+        str  = referer + len;
+        str += sprintf(str, "://%s/", host);
+        memmove(str, referer, len);
+        str += len;
         if (args  &&  args[1])
-            strcat(       str,               args);
+            strcpy(       str,                        args);
         else
-            strcat(strcat(str, "?service="), name);
+            strcpy(strcpy(str, "?service="/*9*/) + 9, name);
     } else
         return;
     assert(referer);
     net_info->http_referer = referer;
 }
-
 
 
 #ifdef __GNUC__
