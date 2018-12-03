@@ -416,11 +416,9 @@ TBarcodeResults GetBarcodeValues(CSeq_entry_Handle seh)
     for (; b_iter; ++b_iter)
     {
         SBarcode b;
-        if (IsTechBarcode(*b_iter)) {
-            BarcodeTestBioseq(*b_iter, b);
-            if (BarcodeTestFails(b)) {
-                BarcodeFailures.push_back(b);
-            }
+        BarcodeTestBioseq(*b_iter, b);
+        if (BarcodeTestFails(b)) {
+            BarcodeFailures.push_back(b);
         }
     }
 
