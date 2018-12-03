@@ -74,9 +74,10 @@ public:
                                                    CID2_Request_Packet& packet,
                                                    TReplies& replies);
 
-    void ProcessReply(CID2_Reply& reply,
-                      TReplies& replies,
-                      CID2ProcessorPacketContext* packet_context);
+    void ProcessReply(CID2ProcessorContext* context,
+                      CID2ProcessorPacketContext* packet_context,
+                      CID2_Reply& reply,
+                      TReplies& replies);
 
     CRef<CID2CDDProcessorContext> CreateContext(void);
     const CID2CDDContext& GetInitialContext(void) const {

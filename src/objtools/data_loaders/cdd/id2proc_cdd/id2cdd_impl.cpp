@@ -119,7 +119,8 @@ CID2CDDProcessor_Impl::CreateContext(void)
 }
 
 
-void CID2CDDProcessor_Impl::InitContext(CID2CDDContext& context,
+void CID2CDDProcessor_Impl::InitContext(
+    CID2CDDContext& context,
     const CID2_Request& request)
 {
     context = GetInitialContext();
@@ -196,39 +197,40 @@ CRef<CID2ProcessorPacketContext> CID2CDDProcessor_Impl::ProcessPacket(
             }
         }
     }
-    if (packet_context && packet_context->m_Replies.empty()) {
-        packet_context.Reset();
-    }
     return CRef<CID2ProcessorPacketContext>(packet_context.GetPointer());
 }
 
 
 void CID2CDDProcessor_Impl::ProcessReply(
+    CID2ProcessorContext* context,
+    CID2ProcessorPacketContext* packet_context,
     CID2_Reply& reply,
-    TReplies& replies,
-    CID2ProcessorPacketContext* packet_context)
+    TReplies& replies)
 {
-    if ( reply.IsSetEnd_of_reply() ) {
-        CID2CDDProcessorPacketContext* cdd_context =
-            dynamic_cast<CID2CDDProcessorPacketContext*>(packet_context);
-        CRef<CID2_Reply> cdd_reply;
-        if ( cdd_context ) {
-            CID2CDDProcessorPacketContext::TReplies::iterator it =
-                cdd_context->m_Replies.find(reply.GetSerial_number());
-            if (it != cdd_context->m_Replies.end()) {
-                cdd_reply = it->second;
-                cdd_context->m_Replies.erase(it);
-                replies.push_back(cdd_reply);
+    CID2CDDProcessorContext* cdd_context = dynamic_cast<CID2CDDProcessorContext*>(context);
+    if (cdd_context && cdd_context->m_Context.m_AllowVDB) {
+        if (reply.IsSetEnd_of_reply()) {
+            CID2CDDProcessorPacketContext* cdd_packet_context =
+                dynamic_cast<CID2CDDProcessorPacketContext*>(packet_context);
+            CRef<CID2_Reply> cdd_reply;
+            if (cdd_packet_context) {
+                CID2CDDProcessorPacketContext::TReplies::iterator it =
+                    cdd_packet_context->m_Replies.find(reply.GetSerial_number());
+                if (it != cdd_packet_context->m_Replies.end()) {
+                    cdd_reply = it->second;
+                    cdd_packet_context->m_Replies.erase(it);
+                    replies.push_back(cdd_reply);
+                }
             }
         }
-    }
 
-    if ( reply.GetReply().IsGet_blob_id() ) {
-        const CID2_Blob_Id& bid = reply.GetReply().GetGet_blob_id().GetBlob_id();
-        if (bid.GetSat() == kPubseqCDD_Sat) {
-            if ( !reply.IsSetEnd_of_reply() ) return;
-            // If end-of-reply is set, don't discard the reply, but rather make it empty.
-            reply.SetReply().SetEmpty();
+        if (reply.GetReply().IsGet_blob_id()) {
+            const CID2_Blob_Id& bid = reply.GetReply().GetGet_blob_id().GetBlob_id();
+            if (bid.GetSat() == kPubseqCDD_Sat) {
+                if (!reply.IsSetEnd_of_reply()) return;
+                // If end-of-reply is set, don't discard the reply, but rather make it empty.
+                reply.SetReply().SetEmpty();
+            }
         }
     }
 

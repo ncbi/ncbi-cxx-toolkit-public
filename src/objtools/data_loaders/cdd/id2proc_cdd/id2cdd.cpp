@@ -103,7 +103,7 @@ void CID2CDDProcessor::ProcessReply(CID2ProcessorContext* context,
                                     CID2_Reply& reply,
                                     TReplies& replies)
 {
-    m_Impl->ProcessReply(reply, replies, packet_context);
+    m_Impl->ProcessReply(context, packet_context, reply, replies);
 }
 
 
