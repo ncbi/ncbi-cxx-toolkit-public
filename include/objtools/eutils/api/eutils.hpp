@@ -187,6 +187,9 @@ public:
     static void SetBaseURL(const string& url);
 
 private:
+    CEUtils_Request(const CEUtils_Request&);
+    CEUtils_Request& operator=(const CEUtils_Request&);
+
     typedef map<string, string> TRequestArgs;
 
     mutable CRef<CEUtils_ConnContext> m_Context;
