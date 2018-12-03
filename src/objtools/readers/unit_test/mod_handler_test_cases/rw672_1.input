@@ -7,4 +7,3 @@ fwd_pcr_primer_name primer_name#2 append-replace
 protein protein_name#1 replace
 protein protein_name#2 append-preserve
 org tax-name replace
-

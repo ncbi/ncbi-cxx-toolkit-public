@@ -36,43 +36,59 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbifile.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objtools/readers/mod_reader.hpp>
 
 #include <cstdio>
-#include <objtools/readers/mod_reader.hpp>
+
+// This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
+
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
-const string extInput("input");
-const string extOutput("output");
+//  ============================================================================
+//  Customization data:
+const string extTemplate("template");
+const string extInput("mods");
+const string extOutput("asn");
 const string extErrors("errors");
 const string extKeep("new");
-const string dirTestFiles("mod_handler_test_cases");
-
+const string dirTestFiles("apply_mods_test_cases");
+// !!!
+// !!! Must also customize reader type in sRunTest !!!
+// !!!
+//  ============================================================================
 
 struct STestInfo {
+    CFile mTemplateFile;
     CFile mInFile;
     CFile mOutFile;
     CFile mErrorFile;
 };
+typedef string TTestName;
+typedef map<TTestName, STestInfo> TTestNameToInfoMap;
 
-using TTestName = string;
-using TTestNameToInfoMap = map<TTestName, STestInfo>;
-
-class CTestNameToInfoMapLoader
-{
+class CTestNameToInfoMapLoader {
 public:
     CTestNameToInfoMapLoader(
         TTestNameToInfoMap& testNameToInfoMap,
+        const string& extTemplate,
         const string& extInput,
         const string& extOutput,
         const string& extErrors)
-    : m_TestNameToInfoMap(testNameToInfoMap),
-      mExtInput(extInput),
-      mExtOutput(extOutput),
-      mExtErrors(extErrors) {}
-
+        : m_TestNameToInfoMap(testNameToInfoMap),
+          mExtTemplate(extTemplate),
+          mExtInput(extInput),
+          mExtOutput(extOutput),
+          mExtErrors(extErrors)
+    { }
 
     void operator()( const CDirEntry & dirEntry ) {
         if( ! dirEntry.IsFile() ) {
@@ -99,7 +115,11 @@ public:
         STestInfo & test_info_to_load = m_TestNameToInfoMap[tsTestName];
 
         // figure out what type of file we have and set appropriately
-        if (tsFileType == mExtInput) {
+        if (tsFileType == mExtTemplate) {
+            BOOST_REQUIRE( test_info_to_load.mTemplateFile.GetPath().empty() );
+            test_info_to_load.mTemplateFile = file;
+        }
+        else if (tsFileType == mExtInput) {
             BOOST_REQUIRE( test_info_to_load.mInFile.GetPath().empty() );
             test_info_to_load.mInFile = file;
         } 
@@ -120,6 +140,7 @@ public:
 private:
     // raw pointer because we do NOT own this
     TTestNameToInfoMap& m_TestNameToInfoMap;
+    string mExtTemplate;
     string mExtInput;
     string mExtOutput;
     string mExtErrors;
@@ -199,34 +220,87 @@ static bool sGetMods(const CTempString& title, multimap<string, string>& mods)
 }
 
 
+static CRef<CBioseq> sCreateSkeletonBioseq(void)
+{
+    auto pBioseq = Ref(new CBioseq());
+    auto pSeqId = Ref(new CSeq_id());
+    pSeqId->SetLocal().SetStr("dummy");
+    pBioseq->SetId().push_back(pSeqId);
+
+    pBioseq->SetInst().SetRepr(CSeq_inst::eRepr_not_set);
+    pBioseq->SetInst().SetMol(CSeq_inst::eMol_dna);
+
+    return pBioseq;
+}
+
+
+static CRef<CSeq_entry> sCreateSkeletonEntry(void)
+{
+    auto pSeqEntry = Ref(new CSeq_entry());
+    pSeqEntry->SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
+
+    auto pSubEntry = Ref(new CSeq_entry());
+    auto pBioseq = sCreateSkeletonBioseq();
+    pSubEntry->SetSeq(*pBioseq);
+    pSeqEntry->SetSet().SetSeq_set().push_back(pSubEntry);
+
+    return pSeqEntry;
+}
+
+
+void sUpdateCase(CDir& test_cases_dir, const string& test_name)
+{   
+    string input = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
+    string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
+    string errors = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extErrors);
+    if (!CFile(input).Exists()) {
+         BOOST_FAIL("input file " << input << " does not exist.");
+    }
+    cerr << "Creating new test case from " << input << " ..." << endl;
+
+    CNcbiIfstream ifstr(input.c_str());
+
+    try {
+    }
+    catch (...) {
+        ifstr.close();
+        BOOST_FAIL("Error: " << input << " failed during conversion.");
+    }
+    ifstr.close();
+    cerr << "    Produced new error listing " << output << "." << endl;
+
+    CNcbiOfstream ofstr(output.c_str());
+    ofstr.close();
+    cerr << "    Produced new ASN1 file " << output << "." << endl;
+
+    cerr << " ... Done." << endl;
+}
+
+void sUpdateAll(CDir& test_cases_dir) {
+
+    const vector<string> kEmptyStringVec;
+    TTestNameToInfoMap testNameToInfoMap;
+    CTestNameToInfoMapLoader testInfoLoader(
+        testNameToInfoMap, extTemplate, extInput, extOutput, extErrors);
+    FindFilesInDir(
+        test_cases_dir,
+        kEmptyStringVec,
+        kEmptyStringVec,
+        testInfoLoader,
+        fFF_Default | fFF_Recursive );
+
+    ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
+        const string & sName = name_to_info_it->first;
+        sUpdateCase(test_cases_dir, sName);
+    }
+}
+
+
 struct SModInfo {
     string name;
     string value;
     CModHandler::EHandleExisting handle_existing;
 };
-
-
-static CModHandler::EHandleExisting sGetHandleExisting(const string& handle_existing)
-{
-    if (handle_existing == "replace") {
-        return CModHandler::eReplace;
-    }
-
-    if (handle_existing == "preserve") {
-        return CModHandler::ePreserve;
-    }
-
-    if (handle_existing == "append-replace") {
-        return CModHandler::eAppendReplace;
-    }
-
-    if (handle_existing == "append-preserve") {
-        return CModHandler::eAppendPreserve;
-    }
-    
-    // default
-    return CModHandler::eReplace;
-}
 
 
 static void sGetModInfo(const string& line, SModInfo& mod_info) 
@@ -242,24 +316,17 @@ static void sGetModInfo(const string& line, SModInfo& mod_info)
         return;
     }
 
-
     mod_info.name = info_vec[0];
-
-    if (info_vec.size() == 3) {
-        mod_info.value = info_vec[1];
-        mod_info.handle_existing = sGetHandleExisting(info_vec[2]);
-        return;
-    }
-
     if (info_vec.size() == 2) {
-        mod_info.handle_existing = sGetHandleExisting(info_vec[1]);
-        return;
+        mod_info.value = info_vec[1];
     }
+    return;
 }
 
 void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 {
-    cerr << "Testing " << testInfo.mInFile.GetName() << " against " <<
+    cerr << "Testing " << testInfo.mInFile.GetName() << " and " << 
+        testInfo.mTemplateFile.GetName() << " against " <<
         testInfo.mOutFile.GetName() << " and " <<
         testInfo.mErrorFile.GetName() << endl;
 
@@ -268,7 +335,17 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
     const string& resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
+    CNcbiIfstream tmpltstr(testInfo.mTemplateFile.GetPath().c_str());
+    auto pSeqEntry = Ref(new CSeq_entry());
+    tmpltstr >> MSerial_AsnText >> pSeqEntry;
+    pSeqEntry->Parentize();
+
+    auto& bioseq = pSeqEntry->IsSeq() ? 
+                   pSeqEntry->SetSeq() :
+                   const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
+
     CModHandler mod_handler;
+    IObjtoolsListener* pMessageListener = nullptr;
     try {
         multimap<string, string> mods;
         for (string line; getline(ifstr, line);) {
@@ -278,14 +355,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
                                mod_info.value,
                                mod_info.handle_existing);
         }
-
-
-        for (auto kv : mod_handler.GetMods()) {
-            ofstr << kv.first << "  "  << kv.second.GetValue() << endl;
-        }
-        //edit::CModApply mod_apply(mods);
-       // bool replace_preexisting_vals = true;
-       // mod_apply.Apply(bioseq);
+        CModAdder::Apply(mod_handler, bioseq, pMessageListener);
     }
     catch (...) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
@@ -293,6 +363,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         return;
     }
 
+    ofstr << MSerial_AsnText << pSeqEntry;
     ifstr.close();
     ofstr.close();
 
@@ -308,8 +379,21 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         BOOST_ERROR("Error: " << sTestName << " failed due to post processing diffs.");
     }
     CDirEntry(resultName).Remove();
-};
 
+
+/*
+    success = testInfo.mErrorFile.CompareTextContents(logName, CFile::eIgnoreWs);
+    CDirEntry deErrors = CDirEntry(logName);
+    deErrors.Copy(testInfo.mErrorFile.GetPath() + "." + extKeep);
+    if (!success  &&  keep) {
+        deErrors.Copy(testInfo.mErrorFile.GetPath() + "." + extKeep);
+    }
+    deErrors.Remove();
+    if (!success) {
+        BOOST_ERROR("Error: " << sTestName << " failed due to error handling diffs.");
+    }
+    */
+};
 
 NCBITEST_AUTO_INIT()
 {
@@ -334,11 +418,9 @@ NCBITEST_INIT_CMDLINE(arg_descrs)
         true );
 }
 
-
 NCBITEST_AUTO_FINI()
 {
 }
-
 
 BOOST_AUTO_TEST_CASE(RunTests)
 {
@@ -350,20 +432,20 @@ BOOST_AUTO_TEST_CASE(RunTests)
 
     bool update_all = args["update-all"].AsBoolean();
     if (update_all) {
-     //   sUpdateAll(test_cases_dir);
+        sUpdateAll(test_cases_dir);
         return;
     }
 
     string update_case = args["update-case"].AsString();
     if (!update_case.empty()) {
-     //   sUpdateCase(test_cases_dir, update_case);
+        sUpdateCase(test_cases_dir, update_case);
         return;
     }
    
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
-        testNameToInfoMap, extInput, extOutput, extErrors);
+        testNameToInfoMap, extTemplate, extInput, extOutput, extErrors);
     FindFilesInDir(
         test_cases_dir,
         kEmptyStringVec,

@@ -86,8 +86,11 @@ public:
     void Clear(void);
 
 private:
-    string x_GetNormalizedName(const string& name);
-    string x_GetCanonicalName(const string& name);
+    string x_GetCanonicalName(const string& name) const;
+    string x_GetNormalizedString(const string& name) const;
+    void x_HandleExisting(const string& canonical_name, EHandleExisting handle_existing);
+    void x_PutMessage(const string& message, EDiagSev severity);
+    static bool x_IsDeprecated(const string& canonical_name);
 
     TMods m_Mods;
     using TNameMap = unordered_map<string, string>;
@@ -95,6 +98,7 @@ private:
     static const TNameMap sm_NameMap;
     static const TNameSet sm_MultipleValuesForbidden;
     static const TNameSet sm_DeprecatedModifiers;
+
 
     IObjtoolsListener* m_pMessageListener;
 };

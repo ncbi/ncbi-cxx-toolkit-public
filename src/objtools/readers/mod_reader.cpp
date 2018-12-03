@@ -559,12 +559,10 @@ void CModParser::x_ImportFeatureModifiers(const CSeq_annot& annot, TMods& mods)
 
 
 
-
-
 const CModHandler::TNameMap CModHandler::sm_NameMap = 
 {{"top","topology"},
  {"mol","molecule"},
- {"mol-type", "moltype"},
+ {"moltype", "mol-type"},
  {"fwd-pcr-primer-name", "fwd-primer-name"},
  {"fwd-pcr-primer-seq"," fwd-primer-seq"},
  {"rev-pcr-primer-name", "rev-primer-name"},
@@ -638,29 +636,18 @@ void CModHandler::AddMod(const string& name,
                          EHandleExisting handle_existing)
 {
     const auto& canonical_name = x_GetCanonicalName(name);
-
-    if (m_Mods.find(canonical_name) != m_Mods.end()) {
-        if (handle_existing == ePreserve) { // Do nothing
-            return;
-        }
-        if (handle_existing == eReplace) {
-            m_Mods.erase(canonical_name);    
-        }
-        else { 
-            const auto allow_multiple_values = 
-                (sm_MultipleValuesForbidden.find(canonical_name) == 
-                sm_MultipleValuesForbidden.end());
-
-            if (allow_multiple_values == false) {
-                if (handle_existing == eAppendPreserve) { // Do nothing
-                    return;
-                }
-                // handle_existing == eAppendReplace
-                m_Mods.erase(canonical_name);
-            }
-        }
+    if (NStr::IsBlank(canonical_name)) {
+        string message = "Modifier name not specified - skipping";
+        x_PutMessage(message, eDiag_Warning);
+        return;
     }
 
+    if (x_IsDeprecated(canonical_name)) {
+        string message = name + " is deprecated - ignoring";
+        x_PutMessage(message, eDiag_Warning);
+        return;
+    }
+    x_HandleExisting(canonical_name, handle_existing);
     m_Mods.emplace(canonical_name, value);
 }
 
@@ -671,27 +658,20 @@ void CModHandler::AddMod(const string& name,
 {
     const auto& canonical_name = x_GetCanonicalName(name);
 
-    if (m_Mods.find(canonical_name) != m_Mods.end()) {
-        if (handle_existing == ePreserve) { // Do nothing
-            return;
-        }
-        if (handle_existing == eReplace) {
-            m_Mods.erase(canonical_name);    
-        }
-        else { 
-            const auto allow_multiple_values = 
-                (sm_MultipleValuesForbidden.find(canonical_name) == 
-                sm_MultipleValuesForbidden.end());
-
-            if (allow_multiple_values == false) {
-                if (handle_existing == eAppendPreserve) { // Do nothing
-                    return;
-                }
-                // handle_existing == eAppendReplace
-                m_Mods.erase(canonical_name);
-            }
-        }
+    if (NStr::IsBlank(canonical_name)) {
+        string message = "Modifier name not specified - skipping";
+        x_PutMessage(message, eDiag_Warning);
+        return;
     }
+
+    if (x_IsDeprecated(canonical_name)) {
+        string message = name + " is deprecated - ignoring";
+        x_PutMessage(message, eDiag_Warning);
+        return;
+    }
+
+
+    x_HandleExisting(canonical_name, handle_existing);
     m_Mods.emplace(canonical_name, value_attrib);
 }
 
@@ -749,6 +729,33 @@ void CModHandler::AddMods(const TMods& mods,
 }
 
 
+void CModHandler::x_HandleExisting(const string& canonical_name, 
+        EHandleExisting handle_existing)
+{
+    if (m_Mods.find(canonical_name) != m_Mods.end()) {
+        if (handle_existing == ePreserve) { // Do nothing
+            return;
+        }
+        if (handle_existing == eReplace) {
+            m_Mods.erase(canonical_name);    
+        }
+        else { 
+            const auto allow_multiple_values = 
+                (sm_MultipleValuesForbidden.find(canonical_name) == 
+                sm_MultipleValuesForbidden.end());
+
+            if (allow_multiple_values == false) {
+                if (handle_existing == eAppendPreserve) { // Do nothing
+                    return;
+                }
+                // handle_existing == eAppendReplace
+                m_Mods.erase(canonical_name);
+            }
+        }
+    }
+}
+
+
 const CModHandler::TMods& CModHandler::GetMods(void) const
 {
     return m_Mods;
@@ -761,9 +768,9 @@ void CModHandler::Clear(void)
 }
 
 
-string CModHandler::x_GetCanonicalName(const string& name)
+string CModHandler::x_GetCanonicalName(const string& name) const
 {
-    const auto& normalized_name = x_GetNormalizedName(name);
+    const auto& normalized_name = x_GetNormalizedString(name);
     const auto& it = sm_NameMap.find(normalized_name);
     if (it != sm_NameMap.end()) {
         return it->second;
@@ -772,7 +779,14 @@ string CModHandler::x_GetCanonicalName(const string& name)
 }
 
 
-string CModHandler::x_GetNormalizedName(const string& name) 
+bool CModHandler::x_IsDeprecated(const string& canonical_name)
+{
+    return (sm_DeprecatedModifiers.find(canonical_name) !=
+            sm_DeprecatedModifiers.end());
+}
+
+
+string CModHandler::x_GetNormalizedString(const string& name) const
 {
     string normalized_name = name;
     NStr::ToLower(normalized_name);
@@ -790,6 +804,18 @@ string CModHandler::x_GetNormalizedName(const string& name)
 }
 
 
+void CModHandler::x_PutMessage(const string& message, 
+                               EDiagSev severity)
+{
+    if (!m_pMessageListener || NStr::IsBlank(message)) {
+        return;
+    }
+
+    m_pMessageListener->PutMessage(
+        CObjtoolsMessage(message, severity));
+}
+
+
 template<typename TMultimap>
 struct SRangeGetter 
 {
@@ -804,8 +830,9 @@ struct SRangeGetter
             auto end_it = mod_map.cend();
             auto current_it = mod_map.cbegin();
             while (current_it != end_it) {
-                auto next_it = ++current_it;
                 auto current_key = current_it->first;
+                auto next_it = current_it;
+                ++next_it;
                 while(next_it != end_it &&
                     next_it->first == current_key) {
                     ++next_it;
@@ -1308,7 +1335,7 @@ void CModAdder::x_PutMessage(const string& message,
                              EDiagSev severity,
                             IObjtoolsListener* pMessageListener)
 {
-    if (!pMessageListener || message.empty()) 
+    if (!pMessageListener || NStr::IsBlank(message)) 
     {
         return;
     }
@@ -1369,7 +1396,7 @@ bool CModAdder::x_TryDescriptorMod(const TRange& mod_range, CDescrCache& descr_c
      
     if (x_TryBioSourceMod(mod_range, descr_cache, pMessageListener)) {
         return true;
-    } 
+    }
 
     {
         static const unordered_map<string,function<void(const TRange&, CDescrCache&)>>
@@ -1786,6 +1813,7 @@ void CModAdder::x_SetMolInfoType(const TRange& mod_range, CDescrCache& descr_cac
 {
     _ASSERT(distance(mod_range.first, mod_range.second)==1);
     const auto& value = x_GetModValue(mod_range);
+
     auto it = s_BiomolStringToEnum.find(value);
     if (it != s_BiomolStringToEnum.end()) {
         descr_cache.SetMolInfo().SetBiomol(it->second);
@@ -1828,14 +1856,18 @@ void CModAdder::x_SetMolInfoCompleteness(const TRange& mod_range, CDescrCache& d
 
 
 void CModAdder::x_SetTpaAssembly(const TRange& mod_range, CDescrCache& descr_cache)
-{
-    list<CStringUTF8> accession_list;
+{ 
+    list<CStringUTF8> accession_list; 
     for (auto it = mod_range.first; it != mod_range.second; ++it) {
         list<CTempString> value_sublist;
         const auto& vals = it->second.GetValue();
         NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
         transform(value_sublist.begin(), value_sublist.end(), back_inserter(accession_list),
                 [](const CTempString& val) { return CUtf8::AsUTF8(val, eEncoding_UTF8); });
+    }
+
+    if (accession_list.empty()) {
+        return;
     }
 
     auto make_user_field = [](const CStringUTF8& accession) {
@@ -1864,12 +1896,16 @@ void CModAdder::x_SetGenomeProjects(const TRange& mod_range, CDescrCache& descr_
         transform(value_sublist.begin(), value_sublist.end(), back_inserter(id_list), 
                 [](const CTempString& val) { return NStr::StringToUInt(val); });
     }
+    if (id_list.empty()) {
+        return;
+    }
 
     auto make_user_field = [](const int& id) {
         auto pField = Ref(new CUser_field());
         auto pSubfield = Ref(new CUser_field());
         pField->SetLabel().SetId(0);
         pSubfield->SetLabel().SetStr("ProjectID");
+        pSubfield->SetData().SetInt(id);
         pField->SetData().SetFields().push_back(pSubfield);
         pSubfield.Reset(new CUser_field());
         pSubfield->SetLabel().SetStr("ParentID");
@@ -1957,7 +1993,7 @@ void CModAdder::x_SetPMID(const TRange& mod_range,
 
 
 void CModAdder::x_SetDBLink(const TRange& mod_range, 
-                                 CDescrCache& descr_cache) 
+        CDescrCache& descr_cache) 
 {
     const auto& name = x_GetModName(mod_range);
     static const unordered_map<string, string> s_NameToLabel =
@@ -1966,13 +2002,14 @@ void CModAdder::x_SetDBLink(const TRange& mod_range,
      {"bioproject", "BioProject"}};
 
     const auto& label = s_NameToLabel.at(name);
+
     x_SetDBLinkField(label, mod_range, descr_cache);
 }
 
 
 void CModAdder::x_SetDBLinkField(const string& label,
-                                      const TRange& mod_range,
-                                      CDescrCache& descr_cache)
+        const TRange& mod_range,
+        CDescrCache& descr_cache)
 {
     list<CTempString> value_list;
     for (auto it = mod_range.first; it != mod_range.second; ++it) {
@@ -1981,12 +2018,17 @@ void CModAdder::x_SetDBLinkField(const string& label,
         NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
         value_list.splice(value_list.end(), value_sublist);
     }
+
+    if (value_list.empty()) {
+        return;
+    }
+    x_SetDBLinkFieldVals(label, value_list, descr_cache.SetDBLink());
 }
 
 
 void CModAdder::x_SetDBLinkFieldVals(const string& label,
-                                          const list<CTempString>& vals,
-                                          CUser_object& dblink)
+        const list<CTempString>& vals,
+        CUser_object& dblink)
 {
     if (vals.empty()) {
         return;
@@ -2012,6 +2054,7 @@ void CModAdder::x_SetDBLinkFieldVals(const string& label,
     }
 
     pField->SetData().SetStrs().assign(vals.begin(), vals.end());
+
 }
 
 
@@ -2072,17 +2115,18 @@ void CModAdder::x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst,
             if (value.length() >= 8 && 
                 value.substr(0,8) == "ref_seq|") {
                 value.erase(3,4); // ref_seq| -> ref|
-                try {
-                    SSeqIdRange idrange(value);
-                    id_list.insert(id_list.end(), idrange.begin(), idrange.end());
-                }
-                catch (...) 
-                {
-                    id_list.push_back(value);
-                }
+            }
+            try {
+                SSeqIdRange idrange(value);
+                id_list.insert(id_list.end(), idrange.begin(), idrange.end());
+            }
+            catch (...) 
+            {
+                id_list.push_back(value);
             }
         }
     }
+
     list<CRef<CSeq_id>> secondary_ids;
     // try catch statement
     transform(id_list.begin(), id_list.end(), back_inserter(secondary_ids),
