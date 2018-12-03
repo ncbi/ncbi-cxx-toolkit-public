@@ -739,6 +739,7 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
         if (ext == ".proto") {
             dt_path = GetApp().GetSite().GetConfigureEntry("CustomCodeGenerator" + ext);
             build_info->m_CommandLine  =  "set GENERATOR_PATH=" + dt_path + "\n";
+            build_info->m_CommandLine +=  "set PROJECT_REQUIRES=" + NStr::Join(prj.m_Requires,";") + "\n";
         } else {
             build_info->m_CommandLine  =  "set DATATOOL_PATH=" + dt_path + "\n";
         }
