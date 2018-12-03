@@ -4317,6 +4317,7 @@ string CQueue::PrintTransitionCounters(void) const
           .append("OK:client_registry_size: ")
           .append(NStr::NumericToString(m_ClientsRegistry.size()))
           .append(kNewLine);
+    return output;
 }
 
 
