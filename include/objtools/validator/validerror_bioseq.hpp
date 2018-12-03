@@ -231,6 +231,28 @@ private:
      void ValidateGBBlock (const CGB_block& gbblock, const CBioseq& seq, const CSeqdesc& desc);
     void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol, int& tech, int& completeness,
         const CBioseq& seq, const CSeqdesc& desc);
+    void x_ValidateMolInfoForBioSource(const CBioSource& src, const CMolInfo& minfo, const CSeqdesc& desc);
+    void x_CheckSingleStrandedRNAViruses
+    (const CBioSource& source,
+        const CMolInfo& molinfo,
+        const CBioseq_Handle& bsh,
+        const CSerialObject& obj,
+        const CSeq_entry    *ctx);
+
+    // for conflicts between lineage and molecule type
+    typedef enum {
+        eStrandedMoltype_unknown = 0,
+        eStrandedMoltype_ssRNA = 1,
+        eStrandedMoltype_dsRNA = 2,
+        eStrandedMoltype_ssDNA = 4,
+        eStrandedMoltype_dsDNA = 8
+    } EStrandedMoltype;
+    static size_t s_GetStrandedMolTypeFromLineage(const string& lineage);
+    static string s_GetStrandedMoltype(EStrandedMoltype smol);
+    static CSeq_inst::EMol s_ExpectedMoltypeForStrandedMol(EStrandedMoltype smol);
+
+    void x_ReportLineageConflictWithMol(size_t smol, EStrandedMoltype esmol, CSeq_inst::EMol mol, const CSerialObject& obj, const CSeq_entry *ctx);
+    void x_ReportLineageConflictWithMol(const string& lineage, CSeq_inst::EMol mol, const CSerialObject& obj, const CSeq_entry *ctx);
     void ValidateMolTypeContext(const EGIBB_mol& gibb, EGIBB_mol& seq_biomol,
         const CBioseq& seq, const CSeqdesc& desc);
     void ValidateUpdateDateContext(const CDate& update,const CDate& create,
@@ -304,27 +326,6 @@ private:
     // (This class does *not* own this)
     const CCacheImpl::TFeatValue * m_AllFeatIt;
 
-#if 0
-    class CmRNACDSIndex 
-    {
-    public:
-        CmRNACDSIndex();
-        ~CmRNACDSIndex();
-        void SetBioseq(const CCacheImpl::TFeatValue * feat_list, const CBioseq_Handle & bioseq);
-
-        CMappedFeat GetmRNAForCDS(const CMappedFeat & cds);
-        CMappedFeat GetCDSFormRNA(const CMappedFeat & cds);
-
-    private:
-        typedef pair <CMappedFeat, CMappedFeat> TmRNACDSPair;
-        typedef vector < TmRNACDSPair > TPairList;
-        TPairList m_PairList;
-
-        typedef vector< CMappedFeat > TFeatList;
-        TFeatList m_CDSList;
-        TFeatList m_mRNAList;
-    };
-#endif
 };
 
 

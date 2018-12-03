@@ -227,20 +227,6 @@ public:
     void ValidateOrgName(const COrgName& orgname, const bool has_taxon, const CSerialObject& obj, const CSeq_entry *ctx);
     void ValidateOrgModVoucher(const COrgMod& orgmod, const CSerialObject& obj, const CSeq_entry *ctx);
     void ValidateBioSourceForSeq(const CBioSource& bsrc, const CSerialObject& obj, const CSeq_entry *ctx, const CBioseq_Handle& bsh);
-
-    // for conflicts between lineage and molecule type
-    typedef enum {
-        eStrandedMoltype_unknown = 0,
-        eStrandedMoltype_ssRNA = 1,
-        eStrandedMoltype_dsRNA = 2,
-        eStrandedMoltype_ssDNA = 4,
-        eStrandedMoltype_dsDNA = 8
-    } EStrandedMoltype;
-    static size_t s_GetStrandedMolTypeFromLineage(const string& lineage);
-    static string s_GetStrandedMoltype(EStrandedMoltype smol);
-    static CSeq_inst::EMol s_ExpectedMoltypeForStrandedMol(EStrandedMoltype smol);
-    void x_ReportLineageConflictWithMol(size_t smol, EStrandedMoltype esmol, CSeq_inst::EMol mol, const CSerialObject& obj, const CSeq_entry *ctx);
-    void x_ReportLineageConflictWithMol(const string& lineage, CSeq_inst::EMol mol, const CSerialObject& obj, const CSeq_entry *ctx);
  
     void ValidateLatLonCountry(string countryname, string lat_lon, const CSerialObject& obj, const CSeq_entry *ctx);
 
@@ -455,13 +441,6 @@ private:
     bool HasName(const CAuth_list& authors);
     bool HasTitle(const CTitle& title);
     bool HasIsoJTA(const CTitle& title);
-
-    void x_CheckSingleStrandedRNAViruses
-        (const CBioSource& source,
-        const CSerialObject& obj,
-        const CSeq_entry    *ctx,
-        const CBioseq_Handle& bsh,
-        const CMolInfo& molinfo);
 
     void FindEmbeddedScript(const CSerialObject& obj);
     void FindNonAsciiText (const CSerialObject& obj);

@@ -8594,9 +8594,16 @@ void CValidError_bioseq::ValidateMolInfoContext
     bool is_artificial = false;
 
     CSeqdesc_CI src_di(m_CurrentHandle, CSeqdesc::e_Source);
-    while (src_di && !is_synthetic_construct) {
-        is_synthetic_construct = m_Imp.IsSyntheticConstruct(src_di->GetSource());
-        is_artificial = m_Imp.IsArtificial(src_di->GetSource());
+
+    while (src_di) {
+        if (!is_synthetic_construct) {
+            is_synthetic_construct = m_Imp.IsSyntheticConstruct(src_di->GetSource());
+        }
+        if (!is_artificial) {
+            is_artificial = m_Imp.IsArtificial(src_di->GetSource());
+        }
+        x_ValidateMolInfoForBioSource(src_di->GetSource(), minfo, desc);
+
         ++src_di;
     }
 
@@ -8836,6 +8843,251 @@ void CValidError_bioseq::ValidateMolInfoContext
         }
     }
 
+}
+
+
+void CValidError_bioseq::x_ValidateMolInfoForBioSource(const CBioSource& src, const CMolInfo& minfo, const CSeqdesc& desc)
+{
+    const CSeq_entry* ctx = m_CurrentHandle.GetParentEntry().GetCompleteSeq_entry();
+
+    x_CheckSingleStrandedRNAViruses(src, minfo, m_CurrentHandle, desc, ctx);
+    if (src.IsSetOrg()) {
+        const COrg_ref& org = src.GetOrg();
+        if (!m_CurrentHandle.IsAa() && org.IsSetLineage()) {
+
+            x_ReportLineageConflictWithMol(org.GetOrgname().GetLineage(),
+                m_CurrentHandle.IsSetInst_Mol() ? m_CurrentHandle.GetInst_Mol() : CSeq_inst::eMol_not_set,
+                desc, ctx);
+        }
+    }
+}
+
+
+void CValidError_bioseq::x_CheckSingleStrandedRNAViruses
+(const CBioSource& source,
+ const CMolInfo& molinfo,
+ const CBioseq_Handle& bsh,
+ const CSerialObject& obj,
+ const CSeq_entry    *ctx)
+{
+    if (bsh.IsAa()) {
+        return;
+    }
+    if (!source.IsSetOrg() || !source.GetOrg().IsSetLineage()) {
+        return;
+    }
+    const string& lineage = source.GetOrg().GetLineage();
+    bool negative_strand_virus = false;
+    bool plus_strand_virus = false;
+
+    if (NStr::FindNoCase(lineage, "negative-strand viruses") != string::npos) {
+        negative_strand_virus = true;
+    }
+    if (NStr::FindNoCase(lineage, "ssRNA positive-strand viruses") != string::npos) {
+        plus_strand_virus = true;
+    }
+    if (!negative_strand_virus && !plus_strand_virus) {
+        return;
+    }
+
+    bool is_ambisense = false;
+    if (NStr::FindNoCase(lineage, "Arenaviridae") != string::npos
+        || NStr::FindNoCase(lineage, "Phlebovirus") != string::npos
+        || NStr::FindNoCase(lineage, "Tospovirus") != string::npos
+        || NStr::FindNoCase(lineage, "Tenuivirus") != string::npos) {
+        is_ambisense = true;
+    }
+
+    bool is_synthetic = false;
+    if (source.GetOrg().IsSetDivision() && NStr::EqualNocase(source.GetOrg().GetDivision(), "SYN")) {
+        is_synthetic = true;
+    }
+    else if (source.IsSetOrigin()
+        && (source.GetOrigin() == CBioSource::eOrigin_mut
+            || source.GetOrigin() == CBioSource::eOrigin_artificial
+            || source.GetOrigin() == CBioSource::eOrigin_synthetic)) {
+        is_synthetic = true;
+    }
+
+    bool has_cds = false;
+    bool has_plus_cds = false;
+    bool has_minus_cds = false;
+
+    CFeat_CI cds_ci(bsh, SAnnotSelector(CSeqFeatData::e_Cdregion));
+    while (cds_ci) {
+        has_cds = true;
+        if (cds_ci->GetLocation().GetStrand() == eNa_strand_minus) {
+            has_minus_cds = true;
+        }
+        else {
+            has_plus_cds = true;
+        }
+        if (has_minus_cds && has_plus_cds) {
+            break;
+        }
+
+        ++cds_ci;
+    }
+    bool has_minus_misc_feat = false;
+    bool has_plus_misc_feat = false;
+    if (!has_cds) {
+        CFeat_CI misc_ci(bsh, SAnnotSelector(CSeqFeatData::eSubtype_misc_feature));
+        while (misc_ci) {
+            if (misc_ci->IsSetComment()
+                && NStr::FindNoCase(misc_ci->GetComment(), "nonfunctional") != string::npos) {
+                if (misc_ci->GetLocation().GetStrand() == eNa_strand_minus) {
+                    has_minus_misc_feat = true;
+                }
+                else {
+                    has_plus_misc_feat = true;
+                }
+            }
+            if (has_minus_misc_feat && has_plus_misc_feat) {
+                break;
+            }
+            ++misc_ci;
+        }
+    }
+
+    if (has_minus_cds) {
+        if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
+            if (negative_strand_virus) {
+                m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
+                    "Negative-strand virus with minus strand CDS should be genomic",
+                    obj, ctx);
+            }
+        }
+    }
+    if (has_plus_cds && !is_synthetic && !is_ambisense) {
+        if (negative_strand_virus &&
+            (!molinfo.IsSetBiomol() ||
+            (molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA &&
+                molinfo.GetBiomol() != CMolInfo::eBiomol_mRNA))) {
+            m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
+                "Negative-strand virus with plus strand CDS should be mRNA or cRNA",
+                obj, ctx);
+        }
+        if (plus_strand_virus) {
+            if (molinfo.IsSetBiomol() && molinfo.GetBiomol() == CMolInfo::eBiomol_cRNA) {
+                m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
+                    "Plus-strand virus with plus strand CDS should be genomic RNA or mRNA",
+                    obj, ctx);
+            }
+        }
+    }
+
+    if (has_minus_misc_feat) {
+        if (negative_strand_virus) {
+            if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_genomic) {
+                m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
+                    "Negative-strand virus with nonfunctional minus strand misc_feature should be genomic",
+                    obj, ctx);
+            }
+        }
+    }
+    if (has_plus_misc_feat) {
+        if (negative_strand_virus) {
+            if (!is_synthetic && !is_ambisense
+                && (!molinfo.IsSetBiomol()
+                    || (molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA
+                        && molinfo.GetBiomol() != CMolInfo::eBiomol_mRNA))) {
+                m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
+                    "Negative-strand virus with nonfunctional plus strand misc_feature should be mRNA or cRNA",
+                    obj, ctx);
+            }
+        }
+    }
+
+}
+
+
+size_t CValidError_bioseq::s_GetStrandedMolTypeFromLineage(const string& lineage)
+{
+    size_t smol = eStrandedMoltype_unknown;
+
+    if (NStr::Find(lineage, " ssRNA ") != string::npos) {
+        smol |= eStrandedMoltype_ssRNA;
+    }
+    if (NStr::Find(lineage, " dsRNA ") != string::npos) {
+        smol |= eStrandedMoltype_dsRNA;
+    }
+    if (NStr::Find(lineage, " ssDNA ") != string::npos) {
+        smol |= eStrandedMoltype_ssDNA;
+    }
+    if (NStr::Find(lineage, " dsDNA ") != string::npos) {
+        smol |= eStrandedMoltype_dsDNA;
+    }
+    return smol;
+}
+
+
+string CValidError_bioseq::s_GetStrandedMoltype(EStrandedMoltype smol)
+{
+    switch (smol) {
+    case eStrandedMoltype_ssRNA:
+        return "single-stranded RNA";
+        break;
+    case eStrandedMoltype_dsRNA:
+        return "double-stranded RNA";
+        break;
+    case eStrandedMoltype_ssDNA:
+        return "single-stranded DNA";
+        break;
+    case eStrandedMoltype_dsDNA:
+        return "double-stranded DNA";
+        break;
+    default:
+        return kEmptyStr;
+        break;
+    }
+}
+
+
+CSeq_inst::EMol CValidError_bioseq::s_ExpectedMoltypeForStrandedMol(EStrandedMoltype smol)
+{
+    CSeq_inst::EMol rval = CSeq_inst::eMol_not_set;
+    switch (smol) {
+    case eStrandedMoltype_ssRNA:
+    case eStrandedMoltype_dsRNA:
+        rval = CSeq_inst::eMol_rna;
+        break;
+    case eStrandedMoltype_ssDNA:
+    case eStrandedMoltype_dsDNA:
+        rval = CSeq_inst::eMol_dna;
+        break;
+    default:
+        break;
+    }
+    return rval;
+}
+
+
+void CValidError_bioseq::x_ReportLineageConflictWithMol(size_t smol, EStrandedMoltype esmol, CSeq_inst::EMol mol, const CSerialObject& obj, const CSeq_entry *ctx)
+{
+    if ((smol & esmol) && mol != s_ExpectedMoltypeForStrandedMol(esmol)) {
+        m_Imp.PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_MolInfoConflictsWithBioSource,
+            "Taxonomy indicates " + s_GetStrandedMoltype(esmol) +
+            ", molecule type (" + CSeq_inst::GetMoleculeClass(mol) +
+            ") is conflicting.",
+            obj, ctx);
+    }
+}
+
+
+void CValidError_bioseq::x_ReportLineageConflictWithMol
+(const string& lineage,
+    CSeq_inst::EMol mol,
+    const CSerialObject& obj,
+    const CSeq_entry    *ctx)
+{
+    size_t smol = s_GetStrandedMolTypeFromLineage(lineage);
+    if (smol == eStrandedMoltype_unknown || mol == CSeq_inst::eMol_aa) {
+        return;
+    }
+    x_ReportLineageConflictWithMol(smol, eStrandedMoltype_ssRNA, mol, obj, ctx);
+    x_ReportLineageConflictWithMol(smol, eStrandedMoltype_dsRNA, mol, obj, ctx);
+    x_ReportLineageConflictWithMol(smol, eStrandedMoltype_ssDNA, mol, obj, ctx);
+    x_ReportLineageConflictWithMol(smol, eStrandedMoltype_dsDNA, mol, obj, ctx);
 }
 
 
@@ -9737,112 +9989,6 @@ unsigned int s_IdXrefsNotReciprocal (const CSeq_feat &cds, const CSeq_feat &mrna
 }
 
 
-#if 0
-void CValidError_bioseq::CmRNACDSIndex::SetBioseq(
-    const CCacheImpl::TFeatValue * feat_list,
-    const CBioseq_Handle & bioseq)
-{
-    m_PairList.clear();
-    m_CDSList.clear();
-    m_mRNAList.clear();
-
-        CMappedFeat current_mrna;
-        CMappedFeat current_cds;
-
-    if( ! feat_list ) {
-        return;
-    }
-
-    ITERATE(CCacheImpl::TFeatValue, feat_it, *feat_list) {
-        if (feat_it->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
-            current_mrna = *feat_it;
-                m_mRNAList.push_back(current_mrna);
-        } else if (feat_it->GetData().IsCdregion()) {
-            current_cds = *feat_it;
-                if (current_mrna && !GetCDSFormRNA(current_mrna)) {
-                    m_PairList.push_back(TmRNACDSPair(current_cds, current_mrna));
-                }
-                m_CDSList.push_back(current_cds);
-            }
-        }
-
-        // now replace pairings by xref etc.
-        TPairList::iterator pair_it = m_PairList.begin();
-        while (pair_it != m_PairList.end()) {
-            EOverlapType overlap_type = eOverlap_CheckIntRev;
-            bool featid_matched = false;
-            bool ok_to_keep = false;
-
-            if (pair_it->first.IsSetExcept_text()
-                && (NStr::FindNoCase (pair_it->first.GetExcept_text(), "ribosomal slippage") != string::npos
-                    || NStr::FindNoCase (pair_it->first.GetExcept_text(), "trans-splicing") != string::npos)) {
-                overlap_type = eOverlap_SubsetRev;
-            }
-
-            if (TestForOverlapEx (pair_it->first.GetLocation(), pair_it->second.GetLocation(), overlap_type, &bioseq.GetScope()) >= 0) {
-                if (pair_it->first.IsSetId() && pair_it->second.IsSetId()
-                    && s_IdXrefsAreReciprocal(pair_it->first, pair_it->second)) {
-                    featid_matched = true;
-                }
-                ok_to_keep = true;
-            }
-               
-            if (!featid_matched) {
-                // look for explicit feature ID match, to catch complicated overlaps marked by feature ID
-                FOR_EACH_SEQFEATXREF_ON_SEQFEAT (itx, pair_it->first) {
-                    if ((*itx)->IsSetId() && (*itx)->GetId().IsLocal() 
-                        && (*itx)->GetId().GetLocal().IsId()) {
-                        vector<CSeq_feat_Handle> handles = bioseq.GetTSE_Handle().GetFeaturesWithId(CSeqFeatData::e_not_set, 
-                                                                                 (*itx)->GetId().GetLocal().GetId());
-                        ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
-                            if (feat_it->IsSetData() 
-                                && feat_it->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA
-                                && s_IdXrefsAreReciprocal(pair_it->first, *feat_it)) {
-                                pair_it->second = *feat_it;
-                                ok_to_keep = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (ok_to_keep) {
-                ++pair_it;
-            } else {
-                pair_it = m_PairList.erase (pair_it);
-            }
-        }
-    }
-
-
-CMappedFeat CValidError_bioseq::CmRNACDSIndex::GetmRNAForCDS(
-    const CMappedFeat & cds)
-{
-    CMappedFeat f;
-
-    ITERATE (TPairList, pair_it, m_PairList) {
-        if (pair_it->first == cds) {
-            return pair_it->second;
-        }
-    }
-    return f;
-}
-
-
-CMappedFeat CValidError_bioseq::CmRNACDSIndex::GetCDSFormRNA(
-    const CMappedFeat & mrna)
-{
-    CMappedFeat f;
-
-    ITERATE (TPairList, pair_it, m_PairList) {
-        if (pair_it->second == mrna) {
-            return pair_it->first;
-        }
-    }
-    return f;
-}
-#endif
 
 
 END_SCOPE(validator)
