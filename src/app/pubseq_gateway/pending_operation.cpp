@@ -40,7 +40,7 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info.hpp>
-#include <objtools/pubseq_gateway/protobuf/psg_protobuf_data.hpp>
+#include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 USING_IDBLOB_SCOPE;
 USING_SCOPE(objects);
 
@@ -637,8 +637,15 @@ SBioseqKey CPendingOperation::x_ResolveInputSeqId(string &  err_msg)
     if (!parsed_as_is_ok)
         parsed_as_fasta_ok = x_ParseUrlSeqIdAsFastaTypeAndContent(parsed_seq_id);
 
+    bool        resolve_attepmt = false;
     if (parsed_as_is_ok || parsed_as_fasta_ok) {
         const CTextseq_id *     text_seq_id = parsed_seq_id.GetTextseq_Id();
+
+        // CXX-10335
+        x_ResolveViaComposeOSLT(parsed_seq_id, text_seq_id, bioseq_key);
+        if (bioseq_key.IsValid())
+            return bioseq_key;
+
         int         eff_seq_id_type;
         bool        eff_seq_id_ok = x_GetEffectiveSeqIdType(parsed_seq_id,
                                                             eff_seq_id_type);
@@ -652,13 +659,73 @@ SBioseqKey CPendingOperation::x_ResolveInputSeqId(string &  err_msg)
             } catch (...) {
                 err_msg = "Unknown error while resolving input seq_id";
             }
-            return bioseq_key;
+
+            resolve_attepmt = true;
         }
     }
 
-    // false: not tried as fasta content
-    x_ResolveInputSeqIdAsIs(parsed_seq_id, parsed_as_is_ok, false, bioseq_key);
+    if (!resolve_attepmt) {
+        // false: not tried as fasta content
+        x_ResolveInputSeqIdAsIs(parsed_seq_id, parsed_as_is_ok,
+                                false, bioseq_key);
+    }
+
+    if (bioseq_key.IsValid())
+        CPubseqGatewayApp::GetInstance()->GetRequestCounters().
+                                                IncResolvedAsFallback();
+    else
+        CPubseqGatewayApp::GetInstance()->GetRequestCounters().
+                                                IncNotResolved();
     return bioseq_key;
+}
+
+
+void CPendingOperation::x_ResolveViaComposeOSLT(CSeq_id &  parsed_seq_id,
+                                                const CTextseq_id *  text_seq_id,
+                                                SBioseqKey &  bioseq_key)
+{
+    try {
+        list<string>    secondary_id_list;
+        string          primary_id = parsed_seq_id.ComposeOSLT(&secondary_id_list);
+        int             effective_seq_id_type;
+
+        if (!x_GetEffectiveSeqIdType(parsed_seq_id, effective_seq_id_type))
+            return;     // inconsistency
+
+        if (!primary_id.empty()) {
+            // Try BIOSEQ_INFO
+            bioseq_key.m_Accession = std::move(primary_id);
+            bioseq_key.m_Version = x_GetEffectiveVersion(text_seq_id);
+            bioseq_key.m_SeqIdType = effective_seq_id_type;
+            if (x_LookupCachedBioseqInfo(bioseq_key.m_Accession,
+                                         bioseq_key.m_Version,
+                                         bioseq_key.m_SeqIdType,
+                                         bioseq_key.m_BioseqInfo)) {
+                CPubseqGatewayApp::GetInstance()->GetRequestCounters().
+                                                IncResolvedAsPrimaryOSLT();
+                return;
+            }
+        }
+
+        // Try SI2CSI
+        for (const auto &  secondary_id : secondary_id_list) {
+            string      csi_cache_data;
+
+            bioseq_key.Reset();
+            bioseq_key.m_Accession = std::move(secondary_id);
+            bioseq_key.m_SeqIdType = effective_seq_id_type;
+            if (x_LookupCachedCsi(bioseq_key.m_Accession,
+                                  bioseq_key.m_SeqIdType, csi_cache_data)) {
+                ConvertSi2csiToBioseqKey(csi_cache_data, bioseq_key);
+                CPubseqGatewayApp::GetInstance()->GetRequestCounters().
+                                                IncResolvedAsSecondaryOSLT();
+                return;
+            }
+        }
+    } catch (...) {
+    }
+
+    bioseq_key.Reset();
 }
 
 
@@ -764,9 +831,7 @@ CPendingOperation::x_ResolveInputSeqIdPath1(CSeq_id &  parsed_seq_id,
         if (text_seq_id && text_seq_id->CanGetAccession()) {
             bioseq_key.m_SeqIdType = eff_seq_id_type;
             bioseq_key.m_Accession = text_seq_id->GetAccession();
-
-            if (text_seq_id->CanGetVersion())
-                bioseq_key.m_Version = text_seq_id->GetVersion();
+            bioseq_key.m_Version = x_GetEffectiveVersion(text_seq_id);
 
             if (x_LookupCachedBioseqInfo(bioseq_key.m_Accession,
                                          bioseq_key.m_Version,
@@ -964,6 +1029,19 @@ bool CPendingOperation::x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id,
 
     // The parsed and url explicit seq_id_type do not match
     return false;
+}
+
+
+int CPendingOperation::x_GetEffectiveVersion(const CTextseq_id *  text_seq_id)
+{
+    try {
+        if (text_seq_id == nullptr)
+            return -1;
+        if (text_seq_id->CanGetVersion())
+            return text_seq_id->GetVersion();
+    } catch (...) {
+    }
+    return -1;
 }
 
 
@@ -1740,6 +1818,12 @@ void CGetBlobErrorCallback::operator()(CRequestStatus::ECode  status,
 
     CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
     PSG_ERROR(message);
+
+// TEMPORARY!!!
+//if (message.find("invalid sequence of operations") != string::npos) {
+//    abort();
+//}
+
     if (status == CRequestStatus::e404_NotFound) {
         app->GetErrorCounters().IncGetBlobNotFound();
     } else {

@@ -144,19 +144,25 @@ string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size,
                             EOutputFormat  output_format)
 {
     // E.g. PSG-Reply-Chunk: item_id=1&item_type=bioseq_info&chunk_type=data&size=450&fmt=protobuf
+    string      reply;
+    reply.reserve(1024);
+
+    reply.append(s_ReplyBegin)
+         .append(NStr::NumericToString(item_id))
+         .append(1, '&')
+         .append(s_BioseqInfoItem)
+         .append(1, '&')
+         .append(s_DataChunk)
+         .append(1, '&')
+         .append(s_Size)
+         .append(NStr::NumericToString(bioseq_info_size))
+         .append(1, '&');
     if (output_format == eJsonFormat)
-        return s_ReplyBegin + NStr::NumericToString(item_id) +
-               "&" + s_BioseqInfoItem +
-               "&" + s_DataChunk +
-               "&" + s_Size + NStr::NumericToString(bioseq_info_size) +
-               "&" + s_FmtJson +
-               "\n";
-    return s_ReplyBegin + NStr::NumericToString(item_id) +
-           "&" + s_BioseqInfoItem +
-           "&" + s_DataChunk +
-           "&" + s_Size + NStr::NumericToString(bioseq_info_size) +
-           "&" + s_FmtProtobuf +
-           "\n";
+        reply.append(s_FmtJson);
+    else
+        reply.append(s_FmtProtobuf);
+    reply.append(1, '\n');
+    return reply;
 }
 
 
@@ -164,25 +170,47 @@ string  GetBioseqMessageHeader(size_t  item_id, size_t  msg_size,
                                CRequestStatus::ECode  status, int  code,
                                EDiagSev  severity)
 {
-    return s_ReplyBegin + NStr::NumericToString(item_id) +
-           "&" + s_BioseqInfoItem +
-           "&" + s_MessageChunk +
-           "&" + s_Size + NStr::NumericToString(msg_size) +
-           "&" + s_Status + NStr::NumericToString(static_cast<int>(status)) +
-           "&" + s_Code + NStr::NumericToString(code) +
-           "&" + s_Severity + SeverityToLowerString(severity) +
-           "\n";
+    string      reply;
+    reply.reserve(1024);
+
+    return reply.append(s_ReplyBegin)
+                .append(NStr::NumericToString(item_id))
+                .append(1, '&')
+                .append(s_BioseqInfoItem)
+                .append(1, '&')
+                .append(s_MessageChunk)
+                .append(1, '&')
+                .append(s_Size)
+                .append(NStr::NumericToString(msg_size))
+                .append(1, '&')
+                .append(s_Status)
+                .append(NStr::NumericToString(static_cast<int>(status)))
+                .append(1, '&')
+                .append(s_Code)
+                .append(NStr::NumericToString(code))
+                .append(1, '&')
+                .append(s_Severity)
+                .append(SeverityToLowerString(severity))
+                .append(1, '\n');
 }
 
 
 string  GetBioseqCompletionHeader(size_t  item_id, size_t  chunk_count)
 {
     // E.g. PSG-Reply-Chunk: item_id=1&item_type=bioseq_info&chunk_type=meta&n_chunks=1
-    return s_ReplyBegin + NStr::NumericToString(item_id) +
-           "&" + s_BioseqInfoItem +
-           "&" + s_MetaChunk +
-           "&" + s_NChunks + NStr::NumericToString(chunk_count) +
-           "\n";
+    string      reply;
+    reply.reserve(1024);
+
+    return reply.append(s_ReplyBegin)
+                .append(NStr::NumericToString(item_id))
+                .append(1, '&')
+                .append(s_BioseqInfoItem)
+                .append(1, '&')
+                .append(s_MetaChunk)
+                .append(1, '&')
+                .append(s_NChunks)
+                .append(NStr::NumericToString(chunk_count))
+                .append(1, '\n');
 }
 
 
@@ -190,14 +218,23 @@ string  GetBlobPropHeader(size_t  item_id,
                           const SBlobId &  blob_id,
                           size_t  blob_prop_size)
 {
-    // E.g. PSG-Reply-Chunk:
-    // item_id=2&item_type=blob_prop&chunk_type=data&size=550&sat=111
-    return s_ReplyBegin + NStr::NumericToString(item_id) +
-           "&" + s_BlobPropItem +
-           "&" + s_DataChunk +
-           "&" + s_Size + NStr::NumericToString(blob_prop_size) +
-           "&" + s_BlobId + GetBlobId(blob_id) +
-           "\n";
+    // E.g. PSG-Reply-Chunk: item_id=2&item_type=blob_prop&chunk_type=data&size=550&sat=111
+    string      reply;
+    reply.reserve(1024);
+
+    return reply.append(s_ReplyBegin)
+                .append(NStr::NumericToString(item_id))
+                .append(1, '&')
+                .append(s_BlobPropItem)
+                .append(1, '&')
+                .append(s_DataChunk)
+                .append(1, '&')
+                .append(s_Size)
+                .append(NStr::NumericToString(blob_prop_size))
+                .append(1, '&')
+                .append(s_BlobId)
+                .append(GetBlobId(blob_id))
+                .append(1, '\n');
 }
 
 
@@ -205,24 +242,46 @@ string  GetBlobPropMessageHeader(size_t  item_id, size_t  msg_size,
                                  CRequestStatus::ECode  status, int  code,
                                  EDiagSev  severity)
 {
-    return s_ReplyBegin + NStr::NumericToString(item_id) +
-           "&" + s_BlobPropItem +
-           "&" + s_MessageChunk +
-           "&" + s_Size + NStr::NumericToString(msg_size) +
-           "&" + s_Status + NStr::NumericToString(static_cast<int>(status)) +
-           "&" + s_Code + NStr::NumericToString(code) +
-           "&" + s_Severity + SeverityToLowerString(severity) +
-           "\n";
+    string      reply;
+    reply.reserve(1024);
+
+    return reply.append(s_ReplyBegin)
+                .append(NStr::NumericToString(item_id))
+                .append(1, '&')
+                .append(s_BlobPropItem)
+                .append(1, '&')
+                .append(s_MessageChunk)
+                .append(1, '&')
+                .append(s_Size)
+                .append(NStr::NumericToString(msg_size))
+                .append(1, '&')
+                .append(s_Status)
+                .append(NStr::NumericToString(static_cast<int>(status)))
+                .append(1, '&')
+                .append(s_Code)
+                .append(NStr::NumericToString(code))
+                .append(1, '&')
+                .append(s_Severity)
+                .append(SeverityToLowerString(severity))
+                .append(1, '\n');
 }
 
 
 string  GetBlobPropCompletionHeader(size_t  item_id, size_t  chunk_count)
 {
-    return s_ReplyBegin + NStr::NumericToString(item_id) +
-           "&" + s_BlobPropItem +
-           "&" + s_MetaChunk +
-           "&" + s_NChunks + NStr::NumericToString(chunk_count) +
-           "\n";
+    string      reply;
+    reply.reserve(1024);
+
+    return reply.append(s_ReplyBegin)
+                .append(NStr::NumericToString(item_id))
+                .append(1, '&')
+                .append(s_BlobPropItem)
+                .append(1, '&')
+                .append(s_MetaChunk)
+                .append(1, '&')
+                .append(s_NChunks)
+                .append(NStr::NumericToString(chunk_count))
+                .append(1, '\n');
 }
 
 
@@ -231,13 +290,25 @@ string  GetBlobChunkHeader(size_t  item_id, const SBlobId &  blob_id,
                            size_t  chunk_number)
 {
     // E.g. PSG-Reply-Chunk: item_id=3&item_type=blob&chunk_type=data&size=2345&blob_id=333.444&blob_chunk=37
-    return s_ReplyBegin + NStr::NumericToString(item_id) +
-           "&" + s_BlobItem +
-           "&" + s_DataChunk +
-           "&" + s_Size + NStr::NumericToString(chunk_size) +
-           "&" + s_BlobId + GetBlobId(blob_id) +
-           "&" + s_BlobChunk + NStr::NumericToString(chunk_number) +
-           "\n";
+    string      reply;
+    reply.reserve(1024);
+
+    return reply.append(s_ReplyBegin)
+                .append(NStr::NumericToString(item_id))
+                .append(1, '&')
+                .append(s_BlobItem)
+                .append(1, '&')
+                .append(s_DataChunk)
+                .append(1, '&')
+                .append(s_Size)
+                .append(NStr::NumericToString(chunk_size))
+                .append(1, '&')
+                .append(s_BlobId)
+                .append(GetBlobId(blob_id))
+                .append(1, '&')
+                .append(s_BlobChunk)
+                .append(NStr::NumericToString(chunk_number))
+                .append(1, '\n');
 }
 
 
@@ -245,12 +316,22 @@ string  GetBlobCompletionHeader(size_t  item_id, const SBlobId &  blob_id,
                                 size_t  chunk_count)
 {
     // E.g. PSG-Reply-Chunk: item_id=4&item_type=blob&chunk_type=meta&blob_id=333.444&n_chunks=100
-    return s_ReplyBegin + NStr::NumericToString(item_id) +
-           "&" + s_BlobItem +
-           "&" + s_MetaChunk +
-           "&" + s_BlobId + GetBlobId(blob_id) +
-           "&" + s_NChunks + NStr::NumericToString(chunk_count) +
-           "\n";
+    string      reply;
+    reply.reserve(1024);
+
+    return reply.append(s_ReplyBegin)
+                .append(NStr::NumericToString(item_id))
+                .append(1, '&')
+                .append(s_BlobItem)
+                .append(1, '&')
+                .append(s_MetaChunk)
+                .append(1, '&')
+                .append(s_BlobId)
+                .append(GetBlobId(blob_id))
+                .append(1, '&')
+                .append(s_NChunks)
+                .append(NStr::NumericToString(chunk_count))
+                .append(1, '\n');
 }
 
 
@@ -260,26 +341,50 @@ string  GetBlobMessageHeader(size_t  item_id, const SBlobId &  blob_id,
                              EDiagSev  severity)
 {
     // E.g. PSG-Reply-Chunk: item_id=3&item_type=blob&chunk_type=message&size=22&blob_id=333.444&status=404&code=5&severity=critical
-    return s_ReplyBegin + NStr::NumericToString(item_id) +
-           "&" + s_BlobItem +
-           "&" + s_MessageChunk +
-           "&" + s_Size + NStr::NumericToString(msg_size) +
-           "&" + s_BlobId + GetBlobId(blob_id) +
-           "&" + s_Status + NStr::NumericToString(static_cast<int>(status)) +
-           "&" + s_Code + NStr::NumericToString(code) +
-           "&" + s_Severity + SeverityToLowerString(severity) +
-           "\n";
+    string      reply;
+    reply.reserve(1024);
+
+    return reply.append(s_ReplyBegin)
+                .append(NStr::NumericToString(item_id))
+                .append(1, '&')
+                .append(s_BlobItem)
+                .append(1, '&')
+                .append(s_MessageChunk)
+                .append(1, '&')
+                .append(s_Size)
+                .append(NStr::NumericToString(msg_size))
+                .append(1, '&')
+                .append(s_BlobId)
+                .append(GetBlobId(blob_id))
+                .append(1, '&')
+                .append(s_Status)
+                .append(NStr::NumericToString(static_cast<int>(status)))
+                .append(1, '&')
+                .append(s_Code)
+                .append(NStr::NumericToString(code))
+                .append(1, '&')
+                .append(s_Severity)
+                .append(SeverityToLowerString(severity))
+                .append(1, '\n');
 }
 
 
 string  GetReplyCompletionHeader(size_t  chunk_count)
 {
     // E.g. PSG-Reply-Chunk: item_id=0&item_type=reply&chunk_type=meta&n_chunks=153
-    return s_ReplyBegin + "0"
-           "&" + s_ReplyItem +
-           "&" + s_MetaChunk +
-           "&" + s_NChunks + NStr::NumericToString(chunk_count) +
-           "\n";
+    string      reply;
+    reply.reserve(1024);
+
+    return reply.append(s_ReplyBegin)
+                .append(1, '0')
+                .append(1, '&')
+                .append(s_ReplyItem)
+                .append(1, '&')
+                .append(s_MetaChunk)
+                .append(1, '&')
+                .append(s_NChunks)
+                .append(NStr::NumericToString(chunk_count))
+                .append(1, '\n');
 }
 
 
@@ -288,14 +393,28 @@ string  GetReplyMessageHeader(size_t  msg_size,
                               EDiagSev  severity)
 {
     // E.g. PSG-Reply-Chunk: item_id=0&item_type=reply&chunk_type=message&size=22&status=404&code=5&severity=critical
-    return s_ReplyBegin + "0"
-           "&" + s_ReplyItem +
-           "&" + s_MessageChunk +
-           "&" + s_Size + NStr::NumericToString(msg_size) +
-           "&" + s_Status + NStr::NumericToString(static_cast<int>(status)) +
-           "&" + s_Code + NStr::NumericToString(code) +
-           "&" + s_Severity + SeverityToLowerString(severity) +
-           "\n";
+    string      reply;
+    reply.reserve(1024);
+
+    return reply.append(s_ReplyBegin)
+                .append(1, '0')
+                .append(1, '&')
+                .append(s_ReplyItem)
+                .append(1, '&')
+                .append(s_MessageChunk)
+                .append(1, '&')
+                .append(s_Size)
+                .append(NStr::NumericToString(msg_size))
+                .append(1, '&')
+                .append(s_Status)
+                .append(NStr::NumericToString(static_cast<int>(status)))
+                .append(1, '&')
+                .append(s_Code)
+                .append(NStr::NumericToString(code))
+                .append(1, '&')
+                .append(s_Severity)
+                .append(SeverityToLowerString(severity))
+                .append(1, '\n');
 }
 
 

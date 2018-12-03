@@ -43,7 +43,7 @@ class CPubseqGatewayErrorCounters
 public:
     CPubseqGatewayErrorCounters() :
         m_BadUrlPath(0), m_InsufficientArguments(0), m_MalformedArguments(0),
-        m_ResolveNotFound(0), m_ResolveError(0), m_GetBlobNotFound(0),
+        m_ResolveError(0), m_GetBlobNotFound(0),
         m_GetBlobError(0), m_UnknownError(0), m_ClientSatToSatNameError(0),
         m_ServerSatToSatNameError(0), m_CanonicalSeqIdError(0),
         m_BioseqID2InfoError(0), m_BioseqInfoError(0),
@@ -58,9 +58,6 @@ public:
 
     void IncMalformedArguments(void)
     { ++m_MalformedArguments; }
-
-    void IncResolveNotFound(void)
-    { ++m_ResolveNotFound; }
 
     void IncResolveError(void)
     { ++m_ResolveError; }
@@ -98,7 +95,6 @@ private:
     atomic_uint_fast64_t        m_BadUrlPath;
     atomic_uint_fast64_t        m_InsufficientArguments;
     atomic_uint_fast64_t        m_MalformedArguments;
-    atomic_uint_fast64_t        m_ResolveNotFound;      // 404
     atomic_uint_fast64_t        m_ResolveError;         // 502
     atomic_uint_fast64_t        m_GetBlobNotFound;      // 404
     atomic_uint_fast64_t        m_GetBlobError;         // 502
@@ -118,7 +114,9 @@ class CPubseqGatewayRequestCounters
 public:
     CPubseqGatewayRequestCounters() :
         m_Admin(0), m_Resolve(0),
-        m_GetBlobBySeqId(0), m_GetBlobBySatSatKey(0)
+        m_GetBlobBySeqId(0), m_GetBlobBySatSatKey(0),
+        m_ResolvedAsPrimaryOSLT(0), m_ResolvedAsSecondaryOSLT(0),
+        m_ResolvedAsFallback(0), m_NotResolved(0)
     {}
 
     void IncAdmin(void)
@@ -133,6 +131,18 @@ public:
     void IncGetBlobBySatSatKey(void)
     { ++m_GetBlobBySatSatKey; }
 
+    void IncResolvedAsPrimaryOSLT(void)
+    { ++m_ResolvedAsPrimaryOSLT; }
+
+    void IncResolvedAsSecondaryOSLT(void)
+    { ++m_ResolvedAsSecondaryOSLT; }
+
+    void IncResolvedAsFallback(void)
+    { ++m_ResolvedAsFallback; }
+
+    void IncNotResolved(void)
+    { ++m_NotResolved; }
+
     void PopulateDictionary(CJsonNode &  dict) const;
 
 private:
@@ -140,6 +150,11 @@ private:
     atomic_uint_fast64_t        m_Resolve;
     atomic_uint_fast64_t        m_GetBlobBySeqId;
     atomic_uint_fast64_t        m_GetBlobBySatSatKey;
+
+    atomic_uint_fast64_t        m_ResolvedAsPrimaryOSLT;
+    atomic_uint_fast64_t        m_ResolvedAsSecondaryOSLT;
+    atomic_uint_fast64_t        m_ResolvedAsFallback;
+    atomic_uint_fast64_t        m_NotResolved;
 };
 
 

@@ -45,8 +45,6 @@ void CPubseqGatewayErrorCounters::PopulateDictionary(CJsonNode &  dict) const
     dict.SetInteger("InsufficientArgumentsCount", m_InsufficientArguments);
     err_sum += m_MalformedArguments;
     dict.SetInteger("MalformedArgumentsCount", m_MalformedArguments);
-    err_sum += m_ResolveNotFound;
-    dict.SetInteger("ResolveNotFoundCount", m_ResolveNotFound);
     err_sum += m_ResolveError;
     dict.SetInteger("ResolveErrorCount", m_ResolveError);
     err_sum += m_GetBlobNotFound;
@@ -74,6 +72,11 @@ void CPubseqGatewayErrorCounters::PopulateDictionary(CJsonNode &  dict) const
 
 void CPubseqGatewayRequestCounters::PopulateDictionary(CJsonNode &  dict) const
 {
+    dict.SetInteger("ResolvedAsPrimaryOSLT", m_ResolvedAsPrimaryOSLT);
+    dict.SetInteger("ResolvedAsSecondaryOSLT", m_ResolvedAsSecondaryOSLT);
+    dict.SetInteger("ResolvedAsFallback", m_ResolvedAsFallback);
+    dict.SetInteger("NotResolved", m_NotResolved);
+
     uint64_t    req_sum(0);
 
     req_sum += m_Admin;

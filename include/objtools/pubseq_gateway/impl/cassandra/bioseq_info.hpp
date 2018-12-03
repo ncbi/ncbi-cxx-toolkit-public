@@ -50,19 +50,23 @@ struct SBioseqInfo
         m_Version(0), m_SeqIdType(0)
     {}
 
-    string              m_Accession;
-    int                 m_Version;
-    int                 m_SeqIdType;
+    // Sequence of fields and the order are inherited from the DB
+    // https://docs.datastax.com/en/cql/3.3/cql/cql_reference/cql_data_types_c.html
+    string                          m_Accession;
+    int16_t                         m_Version;
+    int16_t                         m_SeqIdType;
 
-    int64_t             m_DateChanged;
-    int                 m_Mol;
-    int                 m_Length;
-    int                 m_State;
-    int                 m_Sat;
-    int                 m_SatKey;
-    int                 m_TaxId;
-    int                 m_Hash;
-    map<int, string>    m_SeqIds;
+    int64_t                         m_DateChanged;
+    int32_t                         m_Hash;
+    int64_t                         m_IdSync;
+    int32_t                         m_Length;
+    int8_t                          m_Mol;
+    int16_t                         m_Sat;
+    int32_t                         m_SatKey;
+    set<tuple<int16_t, string>>     m_SeqIds;
+    int8_t                          m_SeqState;
+    int8_t                          m_State;
+    int32_t                         m_TaxId;
 };
 
 

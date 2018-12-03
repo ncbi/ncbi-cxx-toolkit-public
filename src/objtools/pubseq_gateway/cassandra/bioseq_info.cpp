@@ -100,6 +100,20 @@ FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
     return CRequestStatus::e404_NotFound;
 }
 
+// Select field numbers; must be in sync with the select statemens
+static const int    fnDateChanged = 0;
+static const int    fnHash = 1;
+static const int    fnIdSync = 2;
+static const int    fnLength = 3;
+static const int    fnMol = 4;
+static const int    fnSat = 5;
+static const int    fnSatKey = 6;
+static const int    fnSeqIds = 7;
+static const int    fnSeqState = 8;
+static const int    fnState = 9;
+static const int    fnTaxId = 10;
+static const int    fnSeqIdType = 11;
+static const int    fnVersion = 12;
 
 
 // NB: the field numbers must be in sync with the SQL statement, see
@@ -108,15 +122,19 @@ static void
 s_GetBioseqValues(shared_ptr<CCassQuery> &  query,
                   SBioseqInfo &  bioseq_info)
 {
-    bioseq_info.m_DateChanged = query->FieldGetInt64Value(0);
-    bioseq_info.m_Mol = query->FieldGetInt32Value(1);
-    bioseq_info.m_Length = query->FieldGetInt32Value(2);
-    bioseq_info.m_State = query->FieldGetInt32Value(3);
-    bioseq_info.m_Sat = query->FieldGetInt32Value(4);
-    bioseq_info.m_SatKey = query->FieldGetInt32Value(5);
-    bioseq_info.m_TaxId =query->FieldGetInt32Value(6);
-    bioseq_info.m_Hash = query->FieldGetInt32Value(7);
-    query->FieldGetMapValue(8, bioseq_info.m_SeqIds);
+    bioseq_info.m_DateChanged = query->FieldGetInt64Value(fnDateChanged);
+    bioseq_info.m_Hash = query->FieldGetInt32Value(fnHash);
+    bioseq_info.m_IdSync = query->FieldGetInt64Value(fnIdSync);
+    bioseq_info.m_Length = query->FieldGetInt32Value(fnLength);
+    bioseq_info.m_Mol = query->FieldGetInt8Value(fnMol);
+    bioseq_info.m_Sat = query->FieldGetInt16Value(fnSat);
+    bioseq_info.m_SatKey = query->FieldGetInt32Value(fnSatKey);
+    query->FieldGetContainerValue(fnSeqIds,
+                                  inserter(bioseq_info.m_SeqIds,
+                                           bioseq_info.m_SeqIds.end()));
+    bioseq_info.m_SeqState = query->FieldGetInt8Value(fnSeqState);
+    bioseq_info.m_State = query->FieldGetInt8Value(fnState);
+    bioseq_info.m_TaxId =query->FieldGetInt32Value(fnTaxId);
 }
 
 
@@ -136,14 +154,17 @@ FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
     if (version_provided && seq_id_type_provided) {
         query->SetSQL("SELECT "
                       "date_changed, "
-                      "mol, "
+                      "hash, "
+                      "id_sync, "
                       "length, "
-                      "state, "
+                      "mol, "
                       "sat, "
                       "sat_key, "
-                      "tax_id, "
-                      "hash, "
-                      "seq_ids FROM " +
+                      "seq_ids, "
+                      "seq_state, "
+                      "state, "
+                      "tax_id "
+                      "FROM " +
                       keyspace + ".BIOSEQ_INFO WHERE "
                       "accession = ? AND version = ? AND seq_id_type = ?", 3);
         query->BindStr(0, bioseq_info.m_Accession);
@@ -152,15 +173,18 @@ FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
     } else if (version_provided) {
         query->SetSQL("SELECT "
                       "date_changed, "
-                      "mol, "
+                      "hash, "
+                      "id_sync, "
                       "length, "
-                      "state, "
+                      "mol, "
                       "sat, "
                       "sat_key, "
-                      "tax_id, "
-                      "hash, "
                       "seq_ids, "
-                      "seq_id_type FROM " +
+                      "seq_state, "
+                      "state, "
+                      "tax_id, "
+                      "seq_id_type "
+                      "FROM " +
                       keyspace + ".BIOSEQ_INFO WHERE "
                       "accession = ? AND version = ?", 2);
         query->BindStr(0, bioseq_info.m_Accession);
@@ -168,16 +192,19 @@ FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
     } else {
         query->SetSQL("SELECT "
                       "date_changed, "
-                      "mol, "
+                      "hash, "
+                      "id_sync, "
                       "length, "
-                      "state, "
+                      "mol, "
                       "sat, "
                       "sat_key, "
-                      "tax_id, "
-                      "hash, "
                       "seq_ids, "
-                      "version, "
-                      "seq_id_type FROM " +
+                      "seq_state, "
+                      "state, "
+                      "tax_id, "
+                      "seq_id_type, "
+                      "version "
+                      "FROM " +
                       keyspace + ".BIOSEQ_INFO WHERE "
                       "accession = ?", 1);
         query->BindStr(0, bioseq_info.m_Accession);
@@ -203,7 +230,7 @@ FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
         while (query->NextRow() == ar_dataready) {
             if (!found) {
                 s_GetBioseqValues(query, bioseq_info);
-                selected_seq_id_type = query->FieldGetInt32Value(9);
+                selected_seq_id_type = query->FieldGetInt16Value(fnSeqIdType);
                 found = true;
                 continue;
             }
@@ -224,10 +251,10 @@ FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
         bool    found = false;
         int     selected_version = INT_MIN;
         while (query->NextRow() == ar_dataready) {
-            int     seq_id_type = query->FieldGetInt32Value(9);
+            int     seq_id_type = query->FieldGetInt16Value(fnSeqIdType);
             if (seq_id_type != bioseq_info.m_SeqIdType)
                 continue;
-            int     version = query->FieldGetInt32Value(8);
+            int     version = query->FieldGetInt16Value(fnVersion);
             if (!found || version > selected_version) {
                 s_GetBioseqValues(query, bioseq_info);
 
@@ -252,16 +279,16 @@ FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
     while (query->NextRow() == ar_dataready) {
         if (!found) {
             s_GetBioseqValues(query, bioseq_info);
-            selected_version = query->FieldGetInt32Value(8);
-            selected_seq_id_type = query->FieldGetInt32Value(9);
+            selected_version = query->FieldGetInt16Value(fnVersion);
+            selected_seq_id_type = query->FieldGetInt16Value(fnSeqIdType);
             found = true;
             continue;
         }
 
-        int     seq_id_type = query->FieldGetInt32Value(9);
+        int     seq_id_type = query->FieldGetInt16Value(fnSeqIdType);
         if (selected_seq_id_type == seq_id_type) {
             // Take the latest version
-            int     version = query->FieldGetInt32Value(8);
+            int     version = query->FieldGetInt16Value(fnVersion);
             if (version > selected_version) {
                 s_GetBioseqValues(query, bioseq_info);
                 selected_version = version;

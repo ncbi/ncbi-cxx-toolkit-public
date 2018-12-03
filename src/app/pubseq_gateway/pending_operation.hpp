@@ -225,6 +225,9 @@ private:
                              bool  seq_id_parsed_as_is,
                              const CTextseq_id *  text_seq_id,
                              SBioseqKey &  bioseq_key);
+    void x_ResolveViaComposeOSLT(CSeq_id &  parsed_seq_id,
+                                 const CTextseq_id *  text_seq_id,
+                                 SBioseqKey &  bioseq_key);
     SBioseqKey x_ResolveInputSeqIdPath1(CSeq_id &  parsed_seq_id,
                                         bool  seq_id_parsed_as_is,
                                         const CTextseq_id *  text_seq_id);
@@ -236,6 +239,7 @@ private:
                                  SBioseqKey &  bioseq_key);
     bool x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id,
                                  int &  eff_seq_id_type);
+    int x_GetEffectiveVersion(const CTextseq_id *  text_seq_id);
     bool x_LookupCachedBioseqInfo(const string &  accession,
                                   int &  version,
                                   int &  seq_id_type,
