@@ -389,12 +389,8 @@ bool IsTechBarcode(CBioseq_Handle bsh)
 }
 
 
-void BarcodeTestBioseq(CBioseq_Handle bsh, SBarcode& b, bool even_without_keyword)
+void BarcodeTestBioseq(CBioseq_Handle bsh, SBarcode& b)
 {
-    if (!even_without_keyword && !IsTechBarcode(bsh)) {
-        return;
-    }
-
     b.bsh = bsh;
     b.barcode = GetBarcodeId(bsh);
     b.genbank = GetSeqTitle(bsh);
@@ -420,8 +416,8 @@ TBarcodeResults GetBarcodeValues(CSeq_entry_Handle seh)
     for (; b_iter; ++b_iter)
     {
         SBarcode b;
-        BarcodeTestBioseq(*b_iter, b);
-        if (b.bsh) {
+        if (IsTechBarcode(*b_iter)) {
+            BarcodeTestBioseq(*b_iter, b);
             if (BarcodeTestFails(b)) {
                 BarcodeFailures.push_back(b);
             }
