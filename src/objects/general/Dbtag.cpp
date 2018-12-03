@@ -142,6 +142,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "PeptideAtlas", CDbtag::eDbtagType_PeptideAtlas },
     { "Phytozome", CDbtag::eDbtagType_Phytozome },
     { "PomBase", CDbtag::eDbtagType_PomBase },
+    { "PseudoCAP", CDbtag::eDbtagType_PseudoCAP },
     { "PseudoCap", CDbtag::eDbtagType_PseudoCap },
     { "RAP-DB", CDbtag::eDbtagType_RAP_DB },
     { "RATMAP", CDbtag::eDbtagType_RATMAP },
@@ -720,6 +721,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_PeptideAtlas, "https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/Search?action=GO&search_key=" },
     { CDbtag::eDbtagType_EPDnew, "http://epd.vital-it.ch/cgi-bin/get_doc?format=genome&entry=" },
     { CDbtag::eDbtagType_Ensembl, "https://www.ensembl.org/id/" }, // url seems incorrect, includes msg user has been redirected and  “Error 404 Page not found” tested 7/13/2016  
+    { CDbtag::eDbtagType_PseudoCAP, "http://www.pseudomonas.com/primarySequenceFeature/list?c1=name&e1=1&v1=" }, // url not found tested 7/13/2016
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
