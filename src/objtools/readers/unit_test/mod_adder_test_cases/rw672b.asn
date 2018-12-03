@@ -19,7 +19,13 @@ Seq-entry ::= set {
         "dummy3"
       },
       keywords {
-        "dummy"
+        "keyword1",
+        "keyword2"
+      }
+    },
+    pub {
+      pub {
+        muid 1
       }
     },
     user {
@@ -51,6 +57,16 @@ Seq-entry ::= set {
       }
     },
     comment "comment1",
+    pub {
+      pub {
+        pmid 1234
+      }
+    },
+    pub {
+      pub {
+        pmid 5678
+      }
+    },
     user {
       type str "TpaAssembly",
       data {
@@ -118,7 +134,8 @@ Seq-entry ::= set {
       descr {
         molinfo {
           biomol ncRNA,
-          tech both
+          tech est,
+          completeness complete
         }
       },
       inst {

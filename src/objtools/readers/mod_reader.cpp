@@ -1085,13 +1085,26 @@ void CDescrCache::x_SetUserType(const string& type,
 } 
 
 
-CPubdesc& CDescrCache::SetPubdesc()
+static bool s_EmptyAfterRemovingPMID(CRef<CSeqdesc>& pDesc) 
+{
+    if (!pDesc ||
+        !pDesc->IsPub()) {
+        return false;
+    }
+
+    auto& pub_desc = pDesc->SetPub();
+    pub_desc.SetPub().Set().remove_if([](const CRef<CPub>& pPub) { return (pPub && pPub->IsPmid()); });
+    return pub_desc.GetPub().Get().empty();
+}
+
+
+CPubdesc& CDescrCache::SetPubdesc() 
 {
     _ASSERT(m_pPrimaryContainer);
 
     if (m_FirstPubdesc) {
-        if (m_pPrimaryContainer->IsSet()) {
-            m_pPrimaryContainer->SetDescr().Set().remove_if([](const CRef<CSeqdesc>& pDesc) { return (pDesc && pDesc->IsPub()); });
+        if (m_pPrimaryContainer->IsSet()) {  // Probably need to change this
+            m_pPrimaryContainer->SetDescr().Set().remove_if(s_EmptyAfterRemovingPMID);
         }
         m_FirstPubdesc = false;
     }

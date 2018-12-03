@@ -1,2 +1,2 @@
 rw672a tests Seq-inst modifiers (topology, molecule, strand, secondary-accession)
-rw67b tests DBLink, GenomeProjectDB, and comment descriptors
+rw67b tests DBLink, TPaAssembly, GenomeProjectDB, MolInfo, GB block, PMID, and comment descriptors

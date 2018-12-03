@@ -12,6 +12,11 @@ Seq-entry ::= set {
         }
       }
     },
+    pub {
+        pub {
+            pmid 0000
+        }
+    },
     comment "dummy comment",
     genbank {
       extra-accessions {
@@ -22,6 +27,13 @@ Seq-entry ::= set {
       keywords {
         "dummy"
       }
+    },
+    pub {
+        pub {
+            pmid 1111,
+            pmid 2222,
+            muid 1
+        }
     },
     user {
       type str "DBLink",
