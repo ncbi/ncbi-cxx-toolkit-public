@@ -415,10 +415,12 @@ TBarcodeResults GetBarcodeValues(CSeq_entry_Handle seh)
     objects::CBioseq_CI b_iter(seh, objects::CSeq_inst::eMol_na);
     for (; b_iter; ++b_iter)
     {
-        SBarcode b;
-        BarcodeTestBioseq(*b_iter, b);
-        if (BarcodeTestFails(b)) {
-            BarcodeFailures.push_back(b);
+        if (IsTechBarcode(*b_iter)) {
+            SBarcode b;
+            BarcodeTestBioseq(*b_iter, b);
+            if (BarcodeTestFails(b)) {
+                BarcodeFailures.push_back(b);
+            }
         }
     }
 
