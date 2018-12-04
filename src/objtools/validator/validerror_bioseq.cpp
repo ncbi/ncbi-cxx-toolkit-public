@@ -42,6 +42,7 @@
 #include <objtools/validator/validerror_annot.hpp>
 #include <objtools/validator/validerror_bioseq.hpp>
 #include <objtools/validator/utilities.hpp>
+#include <objtools/validator/dup_feats.hpp>
 
 #include <serial/enumvalues.hpp>
 #include <serial/iterator.hpp>
@@ -1360,7 +1361,7 @@ void CValidError_bioseq::ValidateBioseqContext(
     x_ValidateMultiplePubs(bsh);
 
     // look for orphaned proteins
-    if (seq.IsAa() && !GetNucProtSetParent(bsh) && !x_AllowOrphanedProtein(seq)) {
+    if (seq.IsAa() && !GetNucProtSetParent(bsh) && !AllowOrphanedProtein(seq, m_Imp.IsRefSeqConventions())) {
         PostErr(eDiag_Error, eErr_SEQ_PKG_OrphanedProtein,
                 "Orphaned stand-alone protein", seq);
     }
@@ -1424,65 +1425,6 @@ bool CValidError_bioseq::x_HasCitSub(CBioseq_Handle bsh) const
     }
 
     return has_cit_sub;
-}
-
-
-bool CValidError_bioseq::x_AllowOrphanedProtein(const CBioseq& seq) const
-{
-    bool is_genbank = false;
-    bool is_embl = false;
-    bool is_ddbj = false;
-    bool is_refseq = m_Imp.IsRefSeqConventions();
-    bool is_wp = false;
-    bool is_yp = false;
-    bool is_gibbmt = false;
-    bool is_gibbsq = false;
-    bool is_patent = false;
-    FOR_EACH_SEQID_ON_BIOSEQ(id_it, seq) {
-        const CSeq_id& sid = **id_it;
-        switch (sid.Which()) {
-        case CSeq_id::e_Genbank:
-            is_genbank = true;
-            break;
-        case CSeq_id::e_Embl:
-            is_embl = true;
-            break;
-        case CSeq_id::e_Ddbj:
-            is_ddbj = true;
-            break;
-        case CSeq_id::e_Other:
-        {
-            is_refseq = true;
-            const CTextseq_id* tsid = sid.GetTextseq_Id();
-            if (tsid != NULL && tsid->IsSetAccession()) {
-                const string& acc = tsid->GetAccession();
-                if (NStr::StartsWith(acc, "WP_")) {
-                    is_wp = true;
-                } else if (NStr::StartsWith(acc, "YP_")) {
-                    is_yp = true;
-                }
-            }
-        }
-        break;
-        case CSeq_id::e_Gibbmt:
-            is_gibbmt = true;
-            break;
-        case CSeq_id::e_Gibbsq:
-            is_gibbsq = true;
-            break;
-        case CSeq_id::e_Patent:
-            is_patent = true;
-            break;
-        default:
-            break;
-        }
-    }
-    if ((is_genbank || is_embl || is_ddbj || is_refseq)
-        && !is_gibbmt && !is_gibbsq && !is_patent && !is_wp && !is_yp) {
-        return false;
-    } else {
-        return true;
-    }
 }
 
 

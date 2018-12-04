@@ -71,6 +71,7 @@
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/edit/autodef_with_tax.hpp>
 #include <objtools/validator/tax_validation_and_cleanup.hpp>
+#include <objtools/validator/dup_feats.hpp>
 
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
@@ -130,6 +131,7 @@ private:
     void x_KOptionsValid(const string& opt);
     void x_XOptionsValid(const string& opt);
     bool x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle seh);
+    bool x_RemoveDuplicateFeatures(CSeq_entry_Handle seh);
     bool x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh, Uint4 options);
     bool x_GFF3Batch(CSeq_entry_Handle seh);
     enum EFixCDSOptions {
@@ -243,7 +245,8 @@ void CCleanupApp::Init(void)
                                  "\tr Remove Redundant Gene xref\n"
                                  "\ta Adjust for Missing Stop Codon\n"
                                  "\tp Clear internal partials\n"
-                                 "\tz Delete or Update EC Numbers\n",
+                                 "\tz Delete or Update EC Numbers\n"
+                                 "\td Remove duplicate features\n",
                                   CArgDescriptions::eString);
 
         arg_desc->AddOptionalKey("X", "Miscellaneous", "Other Cleaning Options\n"
@@ -290,7 +293,7 @@ void CCleanupApp::x_FeatureOptionsValid(const string& opt)
     string::const_iterator s = opt.begin();
     while (s != opt.end()) {
         if (!isspace(*s)) {
-            if (*s != 'r' && *s != 'a' && *s != 'p' && *s != 'z') {
+            if (*s != 'r' && *s != 'a' && *s != 'p' && *s != 'z' && *s != 'd') {
                 unrecognized += *s;
             }
         }
@@ -837,7 +840,33 @@ bool CCleanupApp::x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle s
     if (NStr::Find(opt, "z") != string::npos) {
         any_changes |= CCleanup::FixECNumbers(seh);
     }
+    if (NStr::Find(opt, "d") != string::npos) {
+        any_changes |= x_RemoveDuplicateFeatures(seh);
+    }
     return any_changes;
+}
+
+bool CCleanupApp::x_RemoveDuplicateFeatures(CSeq_entry_Handle seh)
+{
+    bool any_change = false;
+    set< CSeq_feat_Handle > deleted_feats = validator::GetDuplicateFeaturesForRemoval(seh);
+    if (deleted_feats.empty()) {
+        return false;
+    }
+    set< CBioseq_Handle > orphans = validator::ListOrphanProteins(seh);
+    for (auto df : deleted_feats) {
+        CSeq_feat_EditHandle eh(df);
+        eh.Remove();
+        any_change = true;
+    }
+    for (auto orph : orphans) {
+        CBioseq_EditHandle eh(orph);
+        eh.Remove();
+        any_change = true;
+    }
+    any_change |= CCleanup::RenormalizeNucProtSets(seh);
+    return any_change;
+
 }
 
 bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh, Uint4 options)

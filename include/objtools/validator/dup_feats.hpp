@@ -1,3 +1,6 @@
+#ifndef VALIDATOR___DUP_FEATS__HPP
+#define VALIDATOR___DUP_FEATS__HPP
+
 /*  $Id$
  * ===========================================================================
  *
@@ -22,52 +25,42 @@
  *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
- *`
- * Author:  Jonathan Kans, Clifford Clausen, Aaron Ucko......
+ *
+ * Author:  Colleen Bollin
  *
  * File Description:
- *   Privae classes and definition for the validator
+ *   for removing duplicate features
  *   .......
  *
  */
-
-#ifndef VALIDATOR___VALIDERROR_DESCR__HPP
-#define VALIDATOR___VALIDERROR_DESCR__HPP
-
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbi_autoinit.hpp>
-
+#include <corelib/ncbidiag.hpp>
+#include <serial/objectinfo.hpp>
+#include <serial/serialbase.hpp>
 #include <objmgr/scope.hpp>
 
-#include <objtools/validator/validator.hpp>
-#include <objtools/validator/validerror_imp.hpp>
-#include <objtools/validator/validerror_base.hpp>
-#include <objtools/validator/validerror_desc.hpp>
+#include <map>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CBioseq_Handle;
+class CSeq_feat_Handle;
+class CSeq_entry_Handle;
+class CScope;
+
 BEGIN_SCOPE(validator)
 
-// ============================  Validate SeqDescr  ============================
+void NCBI_VALIDATOR_EXPORT GetProductToCDSMap(CScope &scope, map<CBioseq_Handle, set<CSeq_feat_Handle> > &product_to_cds);
+set< CSeq_feat_Handle > NCBI_VALIDATOR_EXPORT GetDuplicateFeaturesForRemoval(CSeq_entry_Handle seh);
+set< CBioseq_Handle > NCBI_VALIDATOR_EXPORT ListOrphanProteins(CSeq_entry_Handle seh, bool force_refseq = false);
+bool AllowOrphanedProtein(const CBioseq& seq, bool force_refseq = false);
 
-
-class CValidError_descr : private CValidError_base
-{
-public:
-    CValidError_descr(CValidError_imp& imp);
-    virtual ~CValidError_descr(void);
-
-    void ValidateSeqDescr(const CSeq_descr& descr, const CSeq_entry& ctx);
-    bool ValidateStructuredComment(const CUser_object& usr, const CSeqdesc& desc, bool report);
-private:
-
-    CValidError_desc m_DescValidator;
-};
 
 
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif  /* VALIDATOR___VALIDERROR_DESCR__HPP */
+#endif  /* VALIDATOR___DUP_FEATS__HPP */

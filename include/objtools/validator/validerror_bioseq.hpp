@@ -297,7 +297,6 @@ private:
     bool x_IsMicroRNA(const CBioseq& seq) const;
     bool x_IsDeltaLitOnly(const CSeq_inst& inst) const;
     bool x_ShowBioProjectWarning(const CBioseq& seq);
-    bool x_AllowOrphanedProtein(const CBioseq& seq) const;
     bool x_HasCitSub(CBioseq_Handle bsh) const;
     static bool x_HasCitSub(const CPub_equiv& pub);
     static bool x_HasCitSub(const CPub& pub);

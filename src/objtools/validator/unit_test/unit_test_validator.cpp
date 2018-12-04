@@ -120,6 +120,7 @@
 #include <objtools/edit/struc_comm_field.hpp>
 #include <objtools/edit/dblink_field.hpp>
 #include <objtools/edit/cds_fix.hpp>
+#include <objtools/validator/dup_feats.hpp>
 
 // for writing out tmp files
 #include <serial/objostrasn.hpp>
@@ -5934,6 +5935,33 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
 }
 
 
+void TestConsultRequired(const string& taxname)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(entry, taxname);
+    unit_test_util::SetTaxon(entry, 0);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "NoTaxonID",
+            "BioSource is missing taxon ID"));
+    expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "TaxonomyConsultRequired",
+        "Taxonomy lookup reports taxonomy consultation needed"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_VR_857)
+{
+    TestConsultRequired("Corynebacterium urogenitalia");
+    TestConsultRequired("Erythrobacter marisflavi");
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_Descr_MultipleTitles)
 {
     // prepare entry
@@ -10674,6 +10702,8 @@ BOOST_AUTO_TEST_CASE(Test_PKG_OrphanedProtein)
                                                  "Orphaned stand-alone protein"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    set< CBioseq_Handle > orphans = validator::ListOrphanProteins(seh);
+    BOOST_CHECK_EQUAL(orphans.size(), 1);
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetEmbl().SetAccession("AQZ12345");
@@ -14077,6 +14107,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatContentDup)
       "Duplicate feature"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    set< CSeq_feat_Handle > dups = validator::GetDuplicateFeaturesForRemoval(seh);
+    BOOST_CHECK_EQUAL(dups.size(), 1);
+
 
     // many suppression conditions
     // region
@@ -14086,6 +14119,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatContentDup)
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    dups = validator::GetDuplicateFeaturesForRemoval(seh);
+    BOOST_CHECK_EQUAL(dups.size(), 1);
+
     CLEAR_ERRORS
     //suppress if different dbxrefs
     scope.RemoveTopLevelSeqEntry(seh);
@@ -14094,6 +14131,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatContentDup)
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    dups = validator::GetDuplicateFeaturesForRemoval(seh);
+    BOOST_CHECK_EQUAL(dups.size(), 0);
 
     // variation
     scope.RemoveTopLevelSeqEntry(seh);
@@ -14104,6 +14144,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatContentDup)
       "Duplicate feature"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    dups = validator::GetDuplicateFeaturesForRemoval(seh);
+    BOOST_CHECK_EQUAL(dups.size(), 1);
+
     CLEAR_ERRORS
     // suppress if different replace qualifiers
     scope.RemoveTopLevelSeqEntry(seh);
@@ -14112,6 +14156,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatContentDup)
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    dups = validator::GetDuplicateFeaturesForRemoval(seh);
+    BOOST_CHECK_EQUAL(dups.size(), 0);
 
     // coding regions/mRNAs with different links
     scope.RemoveTopLevelSeqEntry(seh);
@@ -14143,9 +14190,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatContentDup)
       "Duplicate feature"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-    
-    // suppress errors if cdss and mrnas are linked
-    //CLEAR_ERRORS
+  
+    dups = validator::GetDuplicateFeaturesForRemoval(seh);
+    BOOST_CHECK_EQUAL(dups.size(), 2);
+
+    // suppress errors if cdss and mrnas are linked AND mRNAs have different locations
+    CLEAR_ERRORS
     scope.RemoveTopLevelSeqEntry(seh);
     cds1->SetId().SetLocal().SetId(1);
     cds2->SetId().SetLocal().SetId(2);
@@ -14155,9 +14205,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatContentDup)
     cds2->AddSeqFeatXref(mrna2->GetId());
     mrna1->AddSeqFeatXref(cds1->GetId());
     mrna2->AddSeqFeatXref(cds2->GetId());
+    mrna2->SetLocation().SetInt().SetTo(mrna2->GetLocation().GetInt().GetTo() + 10);
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    dups = validator::GetDuplicateFeaturesForRemoval(seh);
+    BOOST_CHECK_EQUAL(dups.size(), 0);
 
     CLEAR_ERRORS
 }
