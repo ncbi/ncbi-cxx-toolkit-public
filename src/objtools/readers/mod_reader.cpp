@@ -564,9 +564,17 @@ const CModHandler::TNameMap CModHandler::sm_NameMap =
  {"mol","molecule"},
  {"moltype", "mol-type"},
  {"fwd-pcr-primer-name", "fwd-primer-name"},
- {"fwd-pcr-primer-seq"," fwd-primer-seq"},
+ {"fwd-pcr-primer-names", "fwd-primer-name"},
+ {"fwd-primer-names", "fwd-primer-name"},
+ {"fwd-pcr-primer-seq","fwd-primer-seq"},
+ {"fwd-pcr-primer-seqs","fwd-primer-seq"},
+ {"fwd-primer-seqs","fwd-primer-seq"},
  {"rev-pcr-primer-name", "rev-primer-name"},
+ {"rev-pcr-primer-names", "rev-primer-name"},
+ {"rev-primer-names", "rev-primer-name"},
  {"rev-pcr-primer-seq", "rev-primer-seq"},
+ {"rev-pcr-primer-seqs", "rev-primer-seq"},
+ {"rev-primer-seqs", "rev-primer-seq"},
  {"org", "taxname"},
  {"organism", "taxname"},
  {"div", "division"},
@@ -775,6 +783,7 @@ string CModHandler::x_GetCanonicalName(const string& name) const
     if (it != sm_NameMap.end()) {
         return it->second;
     }
+
     return normalized_name;
 }
 
@@ -1546,7 +1555,7 @@ void CModAdder::x_SetPrimerSeqs(const string& primer_seqs, CPCRPrimerSet& primer
 void CModAdder::x_AppendPrimerNames(const string& mod, vector<string>& reaction_names)
 {
     vector<string> names;
-    NStr::Split(mod, ":", names, NStr::fSplit_Tokenize);
+    NStr::Split(mod, ",", names, NStr::fSplit_Tokenize);
     reaction_names.insert(reaction_names.end(), names.begin(), names.end());
 }
 
@@ -1563,7 +1572,10 @@ void CModAdder::x_AppendPrimerSeqs(const string& mod, vector<string>& reaction_s
             seqs.back().erase(seqs.back().size()-1,1);
         }
     }
-    reaction_seqs.insert(reaction_seqs.end(), seqs.begin(), seqs.end());
+
+    for (auto& seq : seqs) {
+        reaction_seqs.push_back(NStr::ToLower(seq));
+    }
 }
 
 
@@ -1579,6 +1591,7 @@ bool CModAdder::x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& descr_ca
         {
             x_AppendPrimerNames(it->second.GetValue(), names);
         }
+
         auto& pcr_reaction_set = descr_cache.SetPCR_primers();
         auto it = pcr_reaction_set.Set().begin();
         for (const auto& reaction_names : names) {
@@ -1629,11 +1642,12 @@ bool CModAdder::x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& descr_ca
             const size_t num_names = names.size();
             if (num_names <= num_reactions) {
                 auto it = pcr_reaction_set.Set().rbegin();
-                for(auto i=num_names-1; i>=0; --i) {
+                for(int i=num_names-1; i>=0; --i) { // don't use auto here. i stops when at -1.
                     x_SetPrimerNames(names[i], (*it++)->SetReverse());
                 }
             }
             else {
+
                 auto it = pcr_reaction_set.Set().begin();
                 for (auto i=0; i<num_reactions; ++i) {
                      x_SetPrimerNames(names[i], (*it++)->SetReverse());
@@ -1642,6 +1656,7 @@ bool CModAdder::x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& descr_ca
                 for (auto i=num_reactions; i<num_names; ++i) {
                     auto pPCRReaction = Ref(new CPCRReaction());
                     x_SetPrimerNames(names[i], pPCRReaction->SetReverse());
+                    pcr_reaction_set.Set().push_back(move(pPCRReaction));
                 }
             }
         }
@@ -1661,7 +1676,7 @@ bool CModAdder::x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& descr_ca
             const size_t num_seqs = seqs.size();
             if (num_seqs <= num_reactions) {
                 auto it = pcr_reaction_set.Set().rbegin();
-                for(auto i=num_seqs-1; i>=0; --i) {
+                for(int i=num_seqs-1; i>=0; --i) { // don't use auto here. i stops at -1.
                     x_SetPrimerSeqs(seqs[i], (*it++)->SetReverse());
                 }
             }
@@ -1674,6 +1689,7 @@ bool CModAdder::x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& descr_ca
                 for (auto i=num_reactions; i<num_seqs; ++i) {
                     auto pPCRReaction = Ref(new CPCRReaction());
                     x_SetPrimerSeqs(seqs[i], pPCRReaction->SetReverse());
+                    pcr_reaction_set.Set().push_back(move(pPCRReaction));
                 }
             }
         }

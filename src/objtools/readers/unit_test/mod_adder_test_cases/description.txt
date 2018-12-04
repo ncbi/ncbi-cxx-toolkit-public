@@ -1,3 +1,6 @@
 rw672a tests Seq-inst modifiers (topology, molecule, strand, secondary-accession)
 rw672b tests DBLink, TPaAssembly, GenomeProjectDB, MolInfo, GB block, PMID, and comment descriptors
 rw672c tests BioSource descriptor fields - except for PCR primer fields.
+rw672d additionally tests PCR primer fields - test case has 3 forward primers and 2 reverse primers divided between 3 reactions.
+rw672e PCR primer test case has 3 forward primers and 2 reverse primers. The forward primers are in 3 different reactions and the reverse primers are both in the third reaction.
+rw672f tests PCR primer fields - test case has 2 forward primers and 3 reverse primers divided between 3 reactions.

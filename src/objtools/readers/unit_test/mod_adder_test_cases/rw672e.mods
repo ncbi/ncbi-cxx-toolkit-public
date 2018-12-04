@@ -1,0 +1,3 @@
+fwd-pcr-primer-name fwd1,fwd2,fwd3
+rev-primer-name     rev1:rev2
+rev-primer-seq      GTTACGCGCCAGTAGAAACAAGG:CC 

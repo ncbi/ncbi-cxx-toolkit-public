@@ -1,0 +1,126 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      genome nucleomorph,
+      origin artificial,
+      org {
+        taxname "Homo sapiens",
+        orgname {
+          mod {
+            {
+              subtype cultivar,
+              subname "dummy"
+            }
+          }
+        }
+      },
+      subtype {
+        {
+          subtype other,
+          name "dummy"
+        }
+      },
+      pcr-primers {
+        {
+          forward {
+            {
+              seq "gtt",
+              name "fwd1"
+            }
+          },
+          reverse {
+            {
+              seq "gttacgcgccagtagaaacaagg",
+              name "rev1"
+            }
+          }
+        },
+        {
+          forward {
+            {
+              seq "cc",
+              name "fwd2"
+            }
+          },
+          reverse {
+            {
+              seq "gga",
+              name "rev2"
+            }
+          }
+        },
+        {
+          reverse {
+            {
+              seq "cc",
+              name "rev3"
+            }
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        pmid 0
+      }
+    },
+    comment "dummy comment",
+    genbank {
+      extra-accessions {
+        "dummy1",
+        "dummy2",
+        "dummy3"
+      },
+      keywords {
+        "dummy"
+      }
+    },
+    pub {
+      pub {
+        pmid 1111,
+        pmid 2222,
+        muid 1
+      }
+    },
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "Sequence Read Archive",
+          data strs {
+            "dummy"
+          }
+        }
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "dummy"
+      },
+      descr {
+        molinfo {
+          biomol ncRNA,
+          tech both
+        }
+      },
+      inst {
+        repr not-set,
+        mol rna,
+        topology circular,
+        strand mixed,
+        hist {
+          replaces {
+            ids {
+              swissprot {
+                accession "dummy"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
