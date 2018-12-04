@@ -60,7 +60,7 @@ const string extInput("mods");
 const string extOutput("asn");
 const string extErrors("errors");
 const string extKeep("new");
-const string dirTestFiles("apply_mods_test_cases");
+const string dirTestFiles("mod_adder_test_cases");
 // !!!
 // !!! Must also customize reader type in sRunTest !!!
 // !!!
