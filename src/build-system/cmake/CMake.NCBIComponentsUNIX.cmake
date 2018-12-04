@@ -215,9 +215,10 @@ if (WIN32)
 	LIBS_HINTS "${WIN32_PACKAGE_ROOT}\\sybase-15.5\\lib")
 else (WIN32)
 	find_external_library(Sybase
-    DYNAMIC_ONLY
+#    DYNAMIC_ONLY
     INCLUDES sybdb.h
-    LIBS sybblk_r64 sybdb64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64
+#    LIBS sybblk_r64 sybdb64 sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64
+    LIBS  sybblk_r64         sybct_r64 sybcs_r64 sybtcl_r64 sybcomn_r64 sybintl_r64 sybunic64
     HINTS "/opt/sybase/clients/15.7-64bit/OCS-15_0/")
 endif (WIN32)
 
@@ -1101,6 +1102,7 @@ if(SYBASE_FOUND)
   set(NCBI_COMPONENT_Sybase_FOUND YES)
   set(NCBI_COMPONENT_Sybase_INCLUDE ${SYBASE_INCLUDE})
   set(NCBI_COMPONENT_Sybase_LIBS    ${SYBASE_LIBS})
+  set(NCBI_COMPONENT_Sybase_DEFINES SYB_LP64)
   set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} Sybase")
 else()
   set(NCBI_COMPONENT_Sybase_FOUND NO)
