@@ -1695,6 +1695,10 @@ int CMagicBlastApp::Run(void)
         SetDiagPostLevel(eDiag_Warning);
         SetDiagPostPrefix("magicblast");
 
+        // Prefer accessions to gis when generating reports
+        CNcbiEnvironment env;
+        env.Set("SEQ_ID_PREFER_ACCESSION_OVER_GI", "1");
+
         /*** Get the BLAST options ***/
         const CArgs& args = GetArgs();
         CRef<CBlastOptionsHandle> opts_hndl;
@@ -1785,7 +1789,6 @@ int CMagicBlastApp::Run(void)
         int batch_size = m_CmdLineArgs->GetQueryBatchSize();
         int batch_num = 500000;
 
-        CNcbiEnvironment env;
         string num_seqs_str = env.Get("BATCH_NUM_SEQS");
         if (!num_seqs_str.empty()) {
             batch_num = NStr::StringToInt(num_seqs_str);
