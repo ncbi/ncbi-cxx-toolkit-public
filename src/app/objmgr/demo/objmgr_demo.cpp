@@ -52,6 +52,7 @@
 #include <objects/general/general__.hpp>
 #include <objects/biblio/biblio__.hpp>
 #include <objects/pub/pub__.hpp>
+#include <objects/submit/Seq_submit.hpp>
 
 // Object manager includes
 #include <objmgr/scope.hpp>
@@ -165,6 +166,12 @@ void CDemoApp::Init(void)
     arg_desc->AddOptionalKey("bioseq_bfile", "SeqAnnotFile",
                              "file with Bioseq to load (binary ASN.1)",
                              CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("submit_file", "SeqSubmitFile",
+        "file with Seq-submit to load (text ASN.1)",
+        CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("submit_bfile", "SeqSubmitFile",
+        "file with Seq-submit to load (binary ASN.1)",
+        CArgDescriptions::eInputFile);
     arg_desc->AddDefaultKey("count", "RepeatCount",
                             "repeat test work RepeatCount times",
                             CArgDescriptions::eInteger, "1");
@@ -1021,33 +1028,56 @@ int CDemoApp::Run(void)
             exit(0);
         }
         added_entry = scope.AddTopLevelSeqEntry(const_cast<const CSeq_entry&>(*entry));
+        _ASSERT(added_entry.GetTSE_Handle().GetTopLevelObjectType() == CTSE_Handle::eTopLevel_Seq_entry);
     }
     if ( args["bfile"] ) {
         CRef<CSeq_entry> entry(new CSeq_entry);
         args["bfile"].AsInputFile() >> MSerial_AsnBinary >> *entry;
         added_entry = scope.AddTopLevelSeqEntry(*entry);
+        _ASSERT(added_entry.GetTSE_Handle().GetTopLevelObjectType() == CTSE_Handle::eTopLevel_Seq_entry);
     }
     if ( args["annot_file"] ) {
         CRef<CSeq_annot> annot(new CSeq_annot);
         args["annot_file"].AsInputFile() >> MSerial_AsnText >> *annot;
         added_annot = scope.AddSeq_annot(*annot);
         NcbiCout << "Added annot file: "<<args["annot_file"]<<NcbiEndl;
+        _ASSERT(added_annot.GetTSE_Handle().GetTopLevelObjectType() == CTSE_Handle::eTopLevel_Seq_annot);
     }
     if ( args["annot_bfile"] ) {
         CRef<CSeq_annot> annot(new CSeq_annot);
         args["annot_bfile"].AsInputFile() >> MSerial_AsnBinary >> *annot;
         added_annot = scope.AddSeq_annot(*annot);
+        _ASSERT(added_annot.GetTSE_Handle().GetTopLevelObjectType() == CTSE_Handle::eTopLevel_Seq_annot);
     }
     if ( args["bioseq_file"] ) {
         CRef<CBioseq> seq(new CBioseq);
         args["bioseq_file"].AsInputFile() >> MSerial_AsnText >> *seq;
         added_seq = scope.AddBioseq(*seq);
         NcbiCout << "Added bioseq file: "<<args["bioseq_file"]<<NcbiEndl;
+        _ASSERT(added_seq.GetTSE_Handle().GetTopLevelObjectType() == CTSE_Handle::eTopLevel_Bioseq);
     }
     if ( args["bioseq_bfile"] ) {
         CRef<CBioseq> seq(new CBioseq);
         args["bioseq_bfile"].AsInputFile() >> MSerial_AsnBinary >> *seq;
         added_seq = scope.AddBioseq(*seq);
+        _ASSERT(added_seq.GetTSE_Handle().GetTopLevelObjectType() == CTSE_Handle::eTopLevel_Bioseq);
+    }
+    if ( args["submit_file"] ) {
+        CRef<CSeq_submit> submit(new CSeq_submit);
+        args["submit_file"].AsInputFile() >> MSerial_AsnText >> *submit;
+        added_entry = scope.AddSeq_submit(*submit);
+        _ASSERT(added_entry.GetTSE_Handle().GetTopLevelObjectType() == CTSE_Handle::eTopLevel_Seq_submit);
+        _ASSERT(&added_entry.GetTSE_Handle().GetTopLevelSeq_submit() == submit);
+    }
+    if ( args["submit_bfile"] ) {
+        CRef<CSeq_submit> submit(new CSeq_submit);
+        args["submit_bfile"].AsInputFile() >> MSerial_AsnBinary >> *submit;
+        added_entry = scope.AddSeq_submit(*submit);
+        _ASSERT(added_entry.GetTSE_Handle().GetTopLevelObjectType() == CTSE_Handle::eTopLevel_Seq_submit);
+        _ASSERT(&added_entry.GetTSE_Handle().GetTopLevelSeq_submit() == submit);
+        _ASSERT(added_entry.IsTopLevelSeq_submit());
+        _ASSERT(&added_entry.GetTopLevelSeq_submit() == submit);
+        _ASSERT(&added_entry.GetTopLevelSubmit_block() == &submit->GetSub());
     }
 
     if ( args["blob_id"] ) {
