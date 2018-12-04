@@ -61,6 +61,8 @@ class CTSE_ScopeInfo;
 class CBioseq_Info;
 class CSeq_entry_Info;
 class CSeq_annot_Info;
+class CSeq_submit;
+class CSubmit_block;
 class CSeq_annot_SNP_Info;
 class CTSE_Chunk_Info;
 class CTSE_Split_Info;
@@ -181,6 +183,7 @@ class NCBI_XOBJMGR_EXPORT CTSE_Info : public CSeq_entry_Info
     typedef CSeq_entry_Info TParent;
 public:
 /*
+    /// State of bioseq handle (defined in CBioseq_Handle)
     enum EBlobState {
         fState_none          = 0,
         fState_suppress_temp = 1 << 0,
@@ -194,11 +197,20 @@ public:
         fState_conn_failed   = 1 << 7,
         fState_other_error   = 1 << 8
     };
+    /// Type of top level object added to scope (defined in CTSE_Handle)
+    enum ETopLevelObjectType {
+        eTopLevelSeq_entry,
+        eTopLevelBioseq_set,
+        eTopLevelBioseq,
+        eTopLevelSeq_annot,
+        eTopLevelSeq_submit
+    };
 */
     typedef CBlobIdKey                        TBlobId;
     typedef CBioseq_Handle::TBioseqStateFlags TBlobState;
     typedef int                               TBlobVersion;
     typedef pair<TBlobState, TBlobVersion>    TBlobOrder;
+    typedef CTSE_Handle::ETopLevelObjectType ETopLevelObjectType;
 
     // 'ctors
     // Argument tse will be parentized.
@@ -245,6 +257,21 @@ public:
 
     // return full blob order object, less is better
     TBlobOrder GetBlobOrder(void) const;
+
+    // return initial top-level object type
+    ETopLevelObjectType GetTopLevelObjectType() const;
+    const CSerialObject* GetTopLevelObjectPtr() const;
+    void SetTopLevelObject(ETopLevelObjectType type, CSerialObject* ptr);
+    void SetTopLevelObjectType(ETopLevelObjectType type);
+    
+    // Seq-submit support:
+    // return full Seq-submit object, may require to update entry/annot list
+    bool IsTopLevelSeq_submit() const;
+    const CSeq_submit& GetTopLevelSeq_submit() const;
+    // More efficient Seq-submit.sub access
+    const CSubmit_block& GetTopLevelSubmit_block() const;
+    CSubmit_block& SetTopLevelSubmit_block() const;
+    void SetTopLevelSubmit_block(CSubmit_block& sub) const;
 
     const CAnnotName& GetName(void) const;
     void SetName(const CAnnotName& name);
@@ -446,6 +473,8 @@ public:
 
     virtual string GetDescription(void) const;
 
+    CSeq_submit& x_GetTopLevelSeq_submit() const;
+    
 private:
     friend class CTSE_Guard;
     friend class CDataSource;
@@ -636,6 +665,10 @@ private:
 
     // Suppression level
     TBlobState             m_BlobState;
+
+    // Initial top-level objects type
+    ETopLevelObjectType    m_TopLevelObjectType;
+    CRef<CSerialObject>    m_TopLevelObjectPtr;
 
     // TSE has name
     CAnnotName             m_Name;

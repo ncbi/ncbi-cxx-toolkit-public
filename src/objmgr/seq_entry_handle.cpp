@@ -126,9 +126,33 @@ CSeq_entry_Handle CSeq_entry_Handle::GetParentEntry(void) const
 }
 
 
+bool CSeq_entry_Handle::IsTopLevelEntry(void) const
+{
+    return !x_GetInfo().HasParent_Info();
+}
+
+
 CSeq_entry_Handle CSeq_entry_Handle::GetTopLevelEntry(void) const
 {
     return GetTSE_Handle();
+}
+
+
+bool CSeq_entry_Handle::IsTopLevelSeq_submit(void) const
+{
+    return IsTopLevelEntry() && GetTSE_Handle().IsTopLevelSeq_submit();
+}
+
+
+const CSeq_submit& CSeq_entry_Handle::GetTopLevelSeq_submit() const
+{
+    return GetTSE_Handle().GetTopLevelSeq_submit();
+}
+
+
+const CSubmit_block& CSeq_entry_Handle::GetTopLevelSubmit_block() const
+{
+    return GetTSE_Handle().GetTopLevelSubmit_block();
 }
 
 
@@ -241,6 +265,18 @@ CSeq_entry_EditHandle::CSeq_entry_EditHandle(CSeq_entry_Info& info,
                                              const CTSE_Handle& tse)
     : CSeq_entry_Handle(info, tse)
 {
+}
+
+
+CSubmit_block& CSeq_entry_EditHandle::SetTopLevelSubmit_block(void) const
+{
+    return GetTSE_Handle().SetTopLevelSubmit_block();
+}
+
+
+void CSeq_entry_EditHandle::SetTopLevelSubmit_block(CSubmit_block& sub) const
+{
+    GetTSE_Handle().SetTopLevelSubmit_block(sub);
 }
 
 

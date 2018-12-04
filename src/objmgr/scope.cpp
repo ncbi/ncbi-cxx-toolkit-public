@@ -525,6 +525,13 @@ CBioseq_Handle CScope::AddBioseq(const CBioseq& bioseq,
 }
 
 
+CSeq_entry_Handle CScope::AddSeq_submit(CSeq_submit& submit,
+                                        TPriority priority)
+{
+    return m_Impl->AddSeq_submit(submit, priority);
+}
+
+
 CSeq_entry_Handle CScope::AddGC_Assembly(const CGC_Assembly& gc_assembly,
                                          CGC_Assembly_Parser::FParserFlags flags,
                                          TPriority pri,

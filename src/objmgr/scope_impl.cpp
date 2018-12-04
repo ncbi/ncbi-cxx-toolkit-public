@@ -65,6 +65,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/submit/Seq_submit.hpp>
 
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/impl/scope_transaction_impl.hpp>
@@ -288,6 +289,7 @@ CBioseq_Handle CScope_Impl::AddBioseq(CBioseq& bioseq,
     CRef<CDataSource_ScopeInfo> ds_info = GetEditDS(priority);
     CRef<CSeq_entry> entry = x_MakeDummyTSE(bioseq);
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(*entry);
+    const_cast<CTSE_Info&>(*tse_lock).SetTopLevelObjectType(CTSE_Handle::eTopLevel_Bioseq);
     x_ClearCacheOnNewData(*tse_lock);
 
     return x_GetBioseqHandle(tse_lock->GetSeq(),
@@ -319,6 +321,7 @@ CBioseq_Handle CScope_Impl::AddSharedBioseq(const CBioseq& bioseq,
     CRef<CDataSource_ScopeInfo> ds_info = GetConstDS(priority);
     CRef<CSeq_entry> entry = x_MakeDummyTSE(const_cast<CBioseq&>(bioseq));
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(*entry);
+    const_cast<CTSE_Info&>(*tse_lock).SetTopLevelObjectType(CTSE_Handle::eTopLevel_Bioseq);
 #endif
     _ASSERT(tse_lock->IsSeq() &&
             tse_lock->GetSeq().GetBioseqCore() == &bioseq);
@@ -347,6 +350,7 @@ CSeq_annot_Handle CScope_Impl::AddSeq_annot(CSeq_annot& annot,
     CRef<CDataSource_ScopeInfo> ds_info = GetEditDS(priority);
     CRef<CSeq_entry> entry = x_MakeDummyTSE(annot);
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(*entry);
+    const_cast<CTSE_Info&>(*tse_lock).SetTopLevelObjectType(CTSE_Handle::eTopLevel_Seq_annot);
     x_ClearCacheOnNewAnnot(*tse_lock);
 
     return CSeq_annot_Handle(*tse_lock->GetSet().GetAnnot()[0],
@@ -378,6 +382,7 @@ CSeq_annot_Handle CScope_Impl::AddSharedSeq_annot(const CSeq_annot& annot,
     CRef<CDataSource_ScopeInfo> ds_info = GetConstDS(priority);
     CRef<CSeq_entry> entry = x_MakeDummyTSE(const_cast<CSeq_annot&>(annot));
     CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(*entry);
+    const_cast<CTSE_Info&>(*tse_lock).SetTopLevelObjectType(CTSE_Handle::eTopLevel_Seq_annot);
 #endif
     _ASSERT(tse_lock->IsSet() &&
             tse_lock->GetSet().IsSetAnnot() &&
@@ -386,6 +391,21 @@ CSeq_annot_Handle CScope_Impl::AddSharedSeq_annot(const CSeq_annot& annot,
 
     return CSeq_annot_Handle(*tse_lock->GetSet().GetAnnot()[0],
                              *ds_info->GetTSE_Lock(tse_lock));
+}
+
+
+CSeq_entry_Handle CScope_Impl::AddSeq_submit(CSeq_submit& submit,
+                                             TPriority priority)
+{
+    TConfWriteLockGuard guard(m_ConfLock);
+    
+    CRef<CDataSource_ScopeInfo> ds_info = GetEditDS(priority);
+    CRef<CSeq_entry> entry = x_MakeDummyTSE(submit);
+    CTSE_Lock tse_lock = ds_info->GetDataSource().AddStaticTSE(*entry);
+    const_cast<CTSE_Info&>(*tse_lock).SetTopLevelObject(CTSE_Handle::eTopLevel_Seq_submit, &submit);
+    x_ClearCacheOnNewAnnot(*tse_lock);
+
+    return CSeq_entry_Handle(*tse_lock, *ds_info->GetTSE_Lock(tse_lock));
 }
 
 
@@ -1525,6 +1545,24 @@ CRef<CSeq_entry> CScope_Impl::x_MakeDummyTSE(CSeq_annot& annot) const
     CRef<CSeq_entry> entry(new CSeq_entry);
     entry->SetSet().SetSeq_set(); // it's not optional
     entry->SetSet().SetAnnot().push_back(Ref(&annot));
+    return entry;
+}
+
+
+CRef<CSeq_entry> CScope_Impl::x_MakeDummyTSE(CSeq_submit& submit) const
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSet().SetSeq_set(); // it's not optional
+    switch ( submit.GetData().Which() ) {
+    case CSeq_submit::TData::e_Entrys:
+        entry->SetSet().SetSeq_set() = submit.GetData().GetEntrys();
+        break;
+    case CSeq_submit::TData::e_Annots:
+        entry->SetSet().SetAnnot() = submit.GetData().GetAnnots();
+        break;
+    default: // no data to add
+        break;
+    }
     return entry;
 }
 

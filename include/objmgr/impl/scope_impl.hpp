@@ -70,6 +70,7 @@ class CSeq_data;
 class CSeq_id;
 class CSeq_loc;
 class CBioseq;
+class CSeq_submit;
 
 // objmgr
 class CScope;
@@ -183,6 +184,10 @@ public:
                                          TPriority pri,
                                          TExist action);
 
+    // Add Seq-annot.
+    CSeq_entry_Handle AddSeq_submit(CSeq_submit& submit,
+                                    TPriority pri);
+    
     //////////////////////////////////////////////////////////////////
     // Modification of existing object tree
     CTSE_Handle GetEditHandle(const CTSE_Handle& src_tse);
@@ -493,6 +498,7 @@ private:
     CRef<CSeq_entry> x_MakeDummyTSE(CBioseq& seq) const;
     CRef<CSeq_entry> x_MakeDummyTSE(CBioseq_set& seqset) const;
     CRef<CSeq_entry> x_MakeDummyTSE(CSeq_annot& annot) const;
+    CRef<CSeq_entry> x_MakeDummyTSE(CSeq_submit& submit) const;
     bool x_IsDummyTSE(const CTSE_Info& tse,
                       const CBioseq_Info& seq) const;
     bool x_IsDummyTSE(const CTSE_Info& tse,

@@ -70,6 +70,8 @@ class CTSE_Info;
 
 class CSeqdesc;
 class CBioObjectId;
+class CSeq_submit;
+class CSubmit_block;
 
 
 class CSeq_entry_ScopeInfo : public CScopeInfo_Base
@@ -129,8 +131,16 @@ public:
     /// has more than one subentry exception is thrown
     CSeq_entry_Handle GetSingleSubEntry(void) const;
 
+    /// Check if this handle is top-level entry
+    bool IsTopLevelEntry(void) const;
+    
     /// Get top level Seq-entry handle
     CSeq_entry_Handle GetTopLevelEntry(void) const;
+
+    /// Seq-submit access functions
+    bool IsTopLevelSeq_submit(void) const;
+    const CSeq_submit& GetTopLevelSeq_submit(void) const;
+    const CSubmit_block& GetTopLevelSubmit_block(void) const;
 
     /// Get Bioseq handle from the TSE of this Seq-entry
     CBioseq_Handle GetBioseqHandle(const CSeq_id& id) const;
@@ -254,6 +264,10 @@ public:
 
     /// Get parent seq-entry edit handle
     CSeq_entry_EditHandle GetParentEntry(void) const;
+
+    /// Seq-submit support
+    CSubmit_block& SetTopLevelSubmit_block(void) const;
+    void SetTopLevelSubmit_block(CSubmit_block& sub) const;
 
     /// Get edit handle of the sub seq-entry
     /// If current seq-entry is not seq-set or 

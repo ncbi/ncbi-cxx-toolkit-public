@@ -60,6 +60,8 @@ class CDataLoader;
 class CSeq_feat_Handle;
 class CAnnotObject_Info;
 class CObject_id;
+class CSeq_submit;
+class CSubmit_block;
 
 class CScopeInfo_Base;
 class CScopeInfoLocker;
@@ -120,6 +122,26 @@ public:
     /// Get top level Seq-entry handle
     CSeq_entry_Handle GetTopLevelEntry(void) const;
     
+    /// Type of top level object added to scope
+    enum ETopLevelObjectType {
+        eTopLevel_Seq_entry,
+        eTopLevel_Bioseq_set,
+        eTopLevel_Bioseq,
+        eTopLevel_Seq_annot,
+        eTopLevel_Seq_submit
+    };
+
+    /// Get type of top level object added to scope
+    ETopLevelObjectType GetTopLevelObjectType() const;
+    bool IsTopLevelSeq_submit() const;
+    /// Return reference to top-level Seq-submit object
+    /// Throw an exception if it's not available
+    const CSeq_submit& GetTopLevelSeq_submit() const;
+    /// More efficient direct access to Seq-submit.sub field
+    const CSubmit_block& GetTopLevelSubmit_block() const;
+    CSubmit_block& SetTopLevelSubmit_block() const;
+    void SetTopLevelSubmit_block(CSubmit_block& sub) const;
+
     /// Get Bioseq handle from this TSE
     CBioseq_Handle GetBioseqHandle(const CSeq_id& id) const;
     CBioseq_Handle GetBioseqHandle(const CSeq_id_Handle& id) const;

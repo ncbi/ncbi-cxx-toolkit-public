@@ -38,6 +38,7 @@
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/seq_feat_handle.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
+#include <objects/submit/Seq_submit.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -228,6 +229,50 @@ bool CTSE_Handle::AddUsedTSE(const CTSE_Handle& tse) const
 bool CTSE_Handle::CanBeEdited(void) const
 {
     return x_GetScopeInfo().CanBeEdited();
+}
+
+
+CTSE_Handle::ETopLevelObjectType CTSE_Handle::GetTopLevelObjectType() const
+{
+    return x_GetTSE_Info().GetTopLevelObjectType();
+}
+
+
+const CSeq_submit& CTSE_Handle::GetTopLevelSeq_submit() const
+{
+    return x_GetTSE_Info().GetTopLevelSeq_submit();
+}
+
+
+bool CTSE_Handle::IsTopLevelSeq_submit() const
+{
+    return x_GetTSE_Info().IsTopLevelSeq_submit();
+}
+
+
+const CSubmit_block& CTSE_Handle::GetTopLevelSubmit_block() const
+{
+    return x_GetTSE_Info().GetTopLevelSubmit_block();
+}
+
+
+CSubmit_block& CTSE_Handle::SetTopLevelSubmit_block() const
+{
+    if ( !CanBeEdited() ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CTSE_Handle::SetTopLevelSubmit_block: entry cannot be edited");
+    }
+    return x_GetTSE_Info().SetTopLevelSubmit_block();
+}
+
+
+void CTSE_Handle::SetTopLevelSubmit_block(CSubmit_block& sub) const
+{
+    if ( !CanBeEdited() ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CTSE_Handle::SetTopLevelSubmit_block: entry cannot be edited");
+    }
+    return x_GetTSE_Info().SetTopLevelSubmit_block(sub);
 }
 
 

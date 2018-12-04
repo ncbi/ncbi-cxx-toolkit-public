@@ -68,6 +68,7 @@ class CSeq_entry;
 class CBioseq_set;
 class CBioseq;
 class CSeq_annot;
+class CSeq_submit;
 class CSeq_id;
 class CSeq_loc;
 
@@ -315,6 +316,11 @@ public:
     CSeq_annot_Handle AddSeq_annot(const CSeq_annot& annot,
                                    TPriority pri = kPriority_Default,
                                    EExist action = eExist_Throw);
+
+    /// Add Seq-submit, return its CSeq_entry_Handle.
+    /// Add object to the score with possibility to edit it directly.
+    CSeq_entry_Handle AddSeq_submit(CSeq_submit& submit,
+                                    TPriority pri = kPriority_Default);
 
     /// Get editable Biosec handle by regular one
     CBioseq_EditHandle     GetEditHandle(const CBioseq_Handle&     seq);

@@ -47,6 +47,7 @@
 #include <objmgr/impl/handle_range_map.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/submit/Seq_submit.hpp>
 
 #include <objmgr/objmgr_exception.hpp>
 #include <objmgr/error_codes.hpp>
@@ -190,6 +191,7 @@ CTSE_Info::CTSE_Info(const CTSE_Lock& tse)
     x_Initialize();
 
     m_BlobState = tse->m_BlobState;
+    m_TopLevelObjectType = tse->m_TopLevelObjectType;
     m_Name = tse->m_Name;
     m_UsedMemory = tse->m_UsedMemory;
     m_LoadState = eLoaded;
@@ -231,6 +233,7 @@ CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse)
 {
     //    m_BaseTSE.reset(new SBaseTSE(tse));
     m_BlobState = tse->m_BlobState;
+    m_TopLevelObjectType = tse->m_TopLevelObjectType;
     m_Name = tse->m_Name;
     m_UsedMemory = tse->m_UsedMemory;
 
@@ -254,6 +257,7 @@ CTSE_Info& CTSE_Info::Assign(const CTSE_Lock& tse,
 //                             CRef<ITSE_Assigner> listener)
 {
     m_BlobState = tse->m_BlobState;
+    m_TopLevelObjectType = tse->m_TopLevelObjectType;
     m_Name = tse->m_Name;
     m_UsedMemory = tse->m_UsedMemory;
 
@@ -287,6 +291,7 @@ void CTSE_Info::x_Initialize(void)
     m_DataSource = 0;
     m_BlobVersion = -1;
     m_BlobState = CBioseq_Handle::fState_none;
+    m_TopLevelObjectType = CTSE_Handle::eTopLevel_Seq_entry;
     m_UsedMemory = 0;
     m_LoadState = eNotLoaded;
     m_CacheState = eNotInCache;
@@ -1985,6 +1990,101 @@ string CTSE_Info::GetDescription(void) const
         ret += GetName().GetName();
     }
     return ret;
+}
+
+
+CTSE_Info::ETopLevelObjectType CTSE_Info::GetTopLevelObjectType(void) const
+{
+    return m_TopLevelObjectType;
+}
+
+
+const CSerialObject* CTSE_Info::GetTopLevelObjectPtr(void) const
+{
+    return m_TopLevelObjectPtr.GetPointerOrNull();
+}
+
+
+void CTSE_Info::SetTopLevelObject(ETopLevelObjectType type, CSerialObject* ptr)
+{
+    m_TopLevelObjectType = type;
+    m_TopLevelObjectPtr = ptr;
+}
+
+
+bool CTSE_Info::IsTopLevelSeq_submit() const
+{
+    return GetTopLevelObjectType() == CTSE_Handle::eTopLevel_Seq_submit;
+}
+
+
+CSeq_submit& CTSE_Info::x_GetTopLevelSeq_submit() const
+{
+    if ( !IsTopLevelSeq_submit() ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CTSE_Handle::GetTopLevelSeq_submit: "
+                   "Top level object is not Seq-submit");
+    }
+    CSeq_submit* submit = dynamic_cast<CSeq_submit*>(m_TopLevelObjectPtr.GetNCPointerOrNull());
+    if ( !submit ) {
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
+                   "CTSE_Handle::GetTopLevelSeq_submit: "
+                   "Top level object is not Seq-submit");
+    }
+    return *submit;
+}
+
+
+const CSeq_submit& CTSE_Info::GetTopLevelSeq_submit() const
+{
+    CSeq_submit& submit = x_GetTopLevelSeq_submit();
+    if ( IsSet() ) {
+        const TSet& set = GetSet();
+        // update entry/annot lists
+        if ( set.IsSetSeq_set() && !set.GetSeq_set().empty() ) {
+            submit.SetData().SetEntrys() = set.GetBioseq_setCore()->GetSeq_set();
+        }
+        else if ( set.IsSetAnnot() && !set.GetAnnot().empty() ) {
+            submit.SetData().SetAnnots() = set.GetBioseq_setCore()->GetAnnot();
+        }
+        else {
+            switch ( submit.GetData().Which() ) {
+            case CSeq_submit::TData::e_Entrys:
+                submit.SetData().SetEntrys().clear();
+                break;
+            case CSeq_submit::TData::e_Annots:
+                submit.SetData().SetAnnots().clear();
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    return submit;
+}
+
+
+const CSubmit_block& CTSE_Info::GetTopLevelSubmit_block() const
+{
+    return x_GetTopLevelSeq_submit().GetSub();
+}
+
+
+CSubmit_block& CTSE_Info::SetTopLevelSubmit_block() const
+{
+    return x_GetTopLevelSeq_submit().SetSub();
+}
+
+
+void CTSE_Info::SetTopLevelSubmit_block(CSubmit_block& sub) const
+{
+    x_GetTopLevelSeq_submit().SetSub(sub);
+}
+
+
+void CTSE_Info::SetTopLevelObjectType(ETopLevelObjectType type)
+{
+    SetTopLevelObject(type, 0);
 }
 
 
