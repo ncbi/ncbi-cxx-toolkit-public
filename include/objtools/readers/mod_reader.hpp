@@ -156,6 +156,8 @@ private:
 class CPCRPrimerSet;
 class CDescrCache;
 class CFeatureCache;
+class CGeneRefCache;
+class CProteinRefCache;
 
 
 class NCBI_XOBJREAD_EXPORT CModAdder
@@ -220,7 +222,8 @@ private:
     static void x_SetSubtype(const TRange& mod_range, CDescrCache& descr_cache);
     static void x_SetOrgMod(const TRange& mod_range, CDescrCache& descr_cache);
 
-    static bool x_TryFeatureMod(const TRange& mod_range, CFeatureCache& feat_cache, 
+    static bool x_TryFeatureMod(const TRange& mod_range, CGeneRefCache& gene_ref_cache, 
+            CProteinRefCache& protein_ref_cache,
             IObjtoolsListener* pMessageListener);
     static bool x_TryGeneRefMod(const TRange& mod_range, CFeatureCache& gene_ref_cache,
             IObjtoolsListener* pMessageListener);

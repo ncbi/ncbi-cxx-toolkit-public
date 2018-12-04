@@ -525,7 +525,7 @@ void CModParser::x_ImportProtein(const CProt_ref& prot_ref, TMods& mods)
 
     if (prot_ref.IsSetEc()) {
         for (const auto& ec_number : prot_ref.GetEc()) {
-            mods.emplace("EC-number", ec_number);
+            mods.emplace("ec-number", ec_number);
         }
     }
 
@@ -985,7 +985,6 @@ private:
 
     CBioseq& m_Bioseq;
     CRef<CSeq_feat> m_pFeature;
-
 };
 
 
@@ -1304,13 +1303,8 @@ void CModAdder::Apply(const CModHandler& mod_handler,
     const auto& ranges = SRangeGetter<TMods>::GetEqualRanges(mod_handler.GetMods());
     CDescrCache descr_cache(bioseq);
 
-    unique_ptr<CFeatureCache> pFeatureCache;
-    if (bioseq.IsNa()) {
-        pFeatureCache.reset(new CGeneRefCache(bioseq));
-    }
-    else {
-        pFeatureCache.reset(new CProteinRefCache(bioseq));
-    }
+    unique_ptr<CGeneRefCache> pGeneRefCache(new CGeneRefCache(bioseq));
+    unique_ptr<CProteinRefCache> pProteinRefCache(new CProteinRefCache(bioseq));
 
     for (const auto& mod_range : ranges) {
         if (x_TryDescriptorMod(mod_range, descr_cache, pMessageListener)) {
@@ -1332,7 +1326,7 @@ void CModAdder::Apply(const CModHandler& mod_handler,
             continue;
         }
 
-        if (x_TryFeatureMod(mod_range, *pFeatureCache, pMessageListener)) {
+        if (x_TryFeatureMod(mod_range, *pGeneRefCache, *pProteinRefCache, pMessageListener)) {
             continue;
         }
         // Report unrecognised modifier
@@ -2166,16 +2160,15 @@ void CModAdder::x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst,
 }
 
 
-bool CModAdder::x_TryFeatureMod(const TRange& mod_range, CFeatureCache& feat_cache,
+bool CModAdder::x_TryFeatureMod(const TRange& mod_range, 
+        CGeneRefCache& gene_ref_cache,
+        CProteinRefCache& protein_ref_cache,
         IObjtoolsListener* pMessageListener)
 {
-    if (dynamic_cast<CGeneRefCache*>(&feat_cache)) {
-        if (x_TryGeneRefMod(mod_range, feat_cache, pMessageListener)) {
-            return true;
-        }
+    if (x_TryGeneRefMod(mod_range, gene_ref_cache, pMessageListener)) {
+        return true;
     }
-    else 
-    if (x_TryProteinRefMod(mod_range, feat_cache, pMessageListener)) {
+    if (x_TryProteinRefMod(mod_range, protein_ref_cache, pMessageListener)) {
         return true;
     }
     return false;
@@ -2222,6 +2215,7 @@ bool CModAdder::x_TryProteinRefMod(const TRange& mod_range, CFeatureCache& feat_
         IObjtoolsListener* pMessageListener)
 {
     const auto& mod_name = x_GetModName(mod_range);
+
     if (mod_name == "protein-desc") {
         const auto& value = x_GetModValue(mod_range);
         feat_cache.SetSeq_feat().SetData().SetProt().SetDesc(value);
@@ -2237,7 +2231,7 @@ bool CModAdder::x_TryProteinRefMod(const TRange& mod_range, CFeatureCache& feat_
         return true;
     }
 
-    if (mod_name == "EC-number") {
+    if (mod_name == "ec-number") {
         CProt_ref::TEc ec_numbers;
         for (auto it = mod_range.first; it != mod_range.second; ++it) {
             ec_numbers.push_back(it->second.GetValue());
