@@ -2169,7 +2169,7 @@ void CModAdder::x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst,
 bool CModAdder::x_TryFeatureMod(const TRange& mod_range, CFeatureCache& feat_cache,
         IObjtoolsListener* pMessageListener)
 {
-    if (dynamic_cast<CGene_ref*>(&feat_cache)) {
+    if (dynamic_cast<CGeneRefCache*>(&feat_cache)) {
         if (x_TryGeneRefMod(mod_range, feat_cache, pMessageListener)) {
             return true;
         }

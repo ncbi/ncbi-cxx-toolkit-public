@@ -1,0 +1,5 @@
+gene        locus_value
+allele      allele_value
+Locus_Tag   locus_tag_value
+gene_syn    synonym1,synonym2
+gene-synonym synonym3
