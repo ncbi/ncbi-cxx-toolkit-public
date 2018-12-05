@@ -299,7 +299,7 @@ void sUpdateAll(CDir& test_cases_dir) {
 struct SModInfo {
     string name;
     string value;
-    CModHandler::EHandleExisting handle_existing;
+    CModHandler::EHandleExisting handle_existing = CModHandler::eAppendReplace;
 };
 
 
@@ -312,7 +312,7 @@ static void sGetModInfo(const string& line, SModInfo& mod_info)
     vector<string> info_vec;
     NStr::Split(line, " \t", info_vec, NStr::fSplit_Tokenize);
 
-    if (info_vec.size() < 2) {
+    if (info_vec.empty()) {
         return;
     }
 
