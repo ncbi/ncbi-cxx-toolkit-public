@@ -88,6 +88,7 @@ bool is_genomic,
 bool is_refseq,
 bool is_nt_or_ng_or_nw,
 bool is_nc,
+bool has_accession,
 CScope* scope)
 {
     x_Reset();
@@ -209,7 +210,7 @@ CScope* scope)
 
             CalculateEffectiveTranslationLengths(transl_prot, prot_vec, m_TransLen, m_ProtLen);
 
-            if (m_TransLen == m_ProtLen)  {                // could be identical
+            if (m_TransLen == m_ProtLen || has_accession)  {                // could be identical
                 if (prot_vec.size() > 0 && transl_prot.length() > 0 &&
                     prot_vec[0] != transl_prot[0]) {
                     bool no_beg, no_end;
@@ -220,7 +221,7 @@ CScope* scope)
                         m_HasDashXStart = true;
                     }
                 }
-                m_Mismatches = x_GetTranslationMismatches(feat, prot_vec, transl_prot);
+                m_Mismatches = x_GetTranslationMismatches(feat, prot_vec, transl_prot, has_accession);
             }
 
             if (feat.CanGetPartial() && feat.GetPartial() &&
@@ -584,7 +585,7 @@ size_t CCDSTranslationProblems::x_CountTerminalXs(const CSeqVector& prot_vec)
 
 
 CCDSTranslationProblems::TTranslationMismatches
-CCDSTranslationProblems::x_GetTranslationMismatches(const CSeq_feat& feat, const CSeqVector& prot_vec, const string& transl_prot)
+CCDSTranslationProblems::x_GetTranslationMismatches(const CSeq_feat& feat, const CSeqVector& prot_vec, const string& transl_prot, bool has_accession)
 {
     TTranslationMismatches mismatches;
     size_t prot_len;
@@ -592,7 +593,10 @@ CCDSTranslationProblems::x_GetTranslationMismatches(const CSeq_feat& feat, const
 
     CalculateEffectiveTranslationLengths(transl_prot, prot_vec, len, prot_len);
 
-    if (len == prot_len)  {                // could be identical
+    if (len == prot_len || has_accession)  {                // could be identical
+        if (len > prot_len) {
+            len = prot_len;
+        }
         for (TSeqPos i = 0; i < len; ++i) {
             CSeqVectorTypes::TResidue p_res = prot_vec[i];
             CSeqVectorTypes::TResidue t_res = transl_prot[i];

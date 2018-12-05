@@ -71,6 +71,7 @@ public:
         bool is_refseq,
         bool is_nt_or_ng_or_nw,
         bool is_nc,
+        bool has_accession,
         CScope* scope);
 
     typedef enum {
@@ -194,7 +195,8 @@ private:
 
     static TTranslationMismatches x_GetTranslationMismatches(const CSeq_feat& feat,
         const CSeqVector& prot_vec,
-        const string& transl_prot);
+        const string& transl_prot,
+        bool has_accession);
 
     static bool x_JustifiesException(const TTranslExceptProblems& problems);
     bool x_JustifiesException() const;

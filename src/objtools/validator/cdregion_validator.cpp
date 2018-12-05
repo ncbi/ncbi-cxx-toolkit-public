@@ -199,6 +199,7 @@ void CCdregionValidator::x_ValidateTrans()
                                     m_Imp.IsRefSeq(),
                                     (is_nt||is_ng||is_nw),
                                     is_nc,
+                                    (m_Imp.IsRefSeq() || m_Imp.IsGED() || m_Imp.IsTPE()),
                                     &m_Scope);
     if (!problems.UnableToTranslate() && !problems.HasException()) {
         x_ValidateCodebreak();

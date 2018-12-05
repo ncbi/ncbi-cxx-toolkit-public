@@ -2877,6 +2877,7 @@ bool DoesCodingRegionHaveUnnecessaryException(const CSeq_feat& feat, CBioseq_Han
         false,
         false,
         false,
+        false,
         &scope);
 
     return (problems.GetTranslationProblemFlags() & CCDSTranslationProblems::eCDSTranslationProblem_UnnecessaryException);
