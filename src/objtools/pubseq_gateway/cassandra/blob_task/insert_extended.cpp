@@ -43,6 +43,8 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
 
+#include "../changelog/writer.hpp"
+
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
@@ -147,6 +149,7 @@ void CCassBlobTaskInsertExtended::Wait1()
                       " username"
                       ")"
                       "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                qry->NewBatch();
                 qry->SetSQL(sql, 13);
                 qry->BindInt32(0, m_Blob->GetKey());
                 qry->BindInt64(1, m_Blob->GetModified());
@@ -190,6 +193,13 @@ void CCassBlobTaskInsertExtended::Wait1()
 
                 UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+
+                CBlobChangelogWriter().WriteChangelogEvent(
+                    qry.get(),
+                    GetKeySpace(),
+                    CBlobChangelogRecord(m_Blob->GetKey(), m_Blob->GetModified(), TChangelogOperation::eUpdated)
+                );
+                qry->RunBatch();
                 m_State = eWaitingPropsInserted;
                 break;
             }

@@ -35,9 +35,15 @@
 
 #include "delete.hpp"
 
+#include <memory>
+#include <string>
+#include <utility>
+
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
+
+#include "../changelog/writer.hpp"
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -79,8 +85,7 @@ void CCassBlobTaskDelete::Wait1()
                     qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
                     UpdateLastActivity();
                     m_State = eReadingVersions;
-                }
-                else {
+                } else {
                     m_State = eDeleteData;
                     b_need_repeat = true;
                 }
@@ -126,19 +131,25 @@ void CCassBlobTaskDelete::Wait1()
                 auto qry = m_QueryArr[0];
                 qry->NewBatch();
                 if (m_ExtendedSchema) {
+                    CBlobChangelogWriter changelog;
                     for (auto version : m_ExtendedVersions) {
-                        string sql = "DELETE FROM " + GetKeySpace() + ".blob_chunk WHERE sat_key = ? and last_modified = ?";
+                        string sql = "DELETE FROM " + GetKeySpace()
+                            + ".blob_chunk WHERE sat_key = ? and last_modified = ?";
                         qry->SetSQL(sql, 2);
                         qry->BindInt32(0, m_Key);
                         qry->BindInt64(1, version);
                         qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+                        changelog.WriteChangelogEvent(
+                            qry.get(),
+                            GetKeySpace(),
+                            CBlobChangelogRecord(m_Key, version, TChangelogOperation::eDeleted)
+                        );
                     }
                     string sql = "DELETE FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ?";
                     qry->SetSQL(sql, 1);
                     qry->BindInt32(0, m_Key);
                     qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
-                }
-                else {
+                } else {
                     string sql = "DELETE FROM " + GetKeySpace() + ".largeentity WHERE ent = ?";
                     qry->SetSQL(sql, 1);
                     qry->BindInt32(0, m_Key);

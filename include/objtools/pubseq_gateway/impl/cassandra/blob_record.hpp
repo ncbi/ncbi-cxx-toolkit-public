@@ -40,12 +40,12 @@ USING_NCBI_SCOPE;
 
 using TBlobFlagBase = int64_t;
 enum class EBlobFlags : TBlobFlagBase {
-    eCheckFailed    = 1,
-    eGzip           = 2,
-    eNot4Gbu        = 4,
-    eWithdrawn      = 8,
-    eSuppress       = 16,
-    eDead           = 32,
+    eCheckFailed = 1,
+    eGzip        = 2,
+    eNot4Gbu     = 4,
+    eWithdrawn   = 8,
+    eSuppress    = 16,
+    eDead        = 32,
 };
 
 struct CBlobRecord {

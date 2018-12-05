@@ -44,6 +44,7 @@
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
+#include "../changelog/writer.hpp"
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -150,11 +151,19 @@ void CCassBlobTaskDeleteExpired::Wait1()
                 qry->BindInt32(0, m_Key);
                 qry->BindInt64(1, m_LastModified);
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+
                 sql = "DELETE FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ? and last_modified = ?";
                 qry->SetSQL(sql, 2);
                 qry->BindInt32(0, m_Key);
                 qry->BindInt64(1, m_LastModified);
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+
+                CBlobChangelogWriter().WriteChangelogEvent(
+                    qry.get(),
+                    GetKeySpace(),
+                    CBlobChangelogRecord(m_Key, m_LastModified, TChangelogOperation::eDeleted)
+                );
+
                 qry->RunBatch();
                 m_State = eWaitDeleteData;
                 break;
