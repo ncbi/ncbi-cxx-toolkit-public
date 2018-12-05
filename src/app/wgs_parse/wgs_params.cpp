@@ -98,6 +98,9 @@ struct CParams_imp
 
     list<string> m_file_list;
 
+    size_t m_major_version_pos;
+    size_t m_minor_version_pos;
+
     mutable string m_proj_acc;
     mutable string m_proj_acc_ver;
 
@@ -132,8 +135,26 @@ struct CParams_imp
         m_gap_size(0),
         m_fix_tech(eNoFix),
         m_source(eNotSet),
-        m_tpa_tsa(false)
+        m_tpa_tsa(false),
+        m_major_version_pos(0),
+        m_minor_version_pos(0)
     {}
+
+    void SetAccession(const string& accession)
+    {
+        size_t acc_len = accession.size();
+        for (; m_major_version_pos < acc_len; ++m_major_version_pos) {
+            if (isdigit(accession[m_major_version_pos])) {
+                break;
+            }
+        }
+
+        if (m_major_version_pos) {
+            m_minor_version_pos = m_major_version_pos + 1;
+        }
+
+        m_accession = accession;
+    }
 };
 
 CParams::CParams() :
@@ -421,17 +442,14 @@ const string& CParams::GetScaffoldPrefix() const
     return SCAFFOLD_PREFIX.at(m_imp->m_scaffold_type);
 }
 
-static const size_t MAJOR_VERSION_POS = 4;
-static const size_t MINOR_VERSION_POS = 5;
-
 char CParams::GetMajorAssemblyVersion() const
 {
-    return m_imp->m_accession[MAJOR_VERSION_POS];
+    return m_imp->m_accession[m_imp->m_major_version_pos];
 }
 
 char CParams::GetMinorAssemblyVersion() const
 {
-    return m_imp->m_accession[MINOR_VERSION_POS];
+    return m_imp->m_accession[m_imp->m_minor_version_pos];
 }
 
 int CParams::GetAssemblyVersion() const
@@ -464,7 +482,7 @@ const string& CParams::GetProjAccStr() const
     if (m_imp->m_proj_acc.empty()) {
 
         m_imp->m_proj_acc = GetProjPrefix();
-        m_imp->m_proj_acc += m_imp->m_accession.substr(0, MAJOR_VERSION_POS);
+        m_imp->m_proj_acc += m_imp->m_accession.substr(0, m_imp->m_major_version_pos);
     }
 
     return m_imp->m_proj_acc;
@@ -836,8 +854,8 @@ bool SetParams(const CArgs& args)
         return false;
     }
 
-    params_imp.m_accession = args["a"].AsString();
-    params_imp.m_accession = NStr::ToUpper(params_imp.m_accession);
+    string accession = args["a"].AsString();
+    params_imp.SetAccession(NStr::ToUpper(accession));
 
     if (!IsValidAccession(params_imp.m_accession)) {
         ERR_POST_EX(0, 0, "Incorrect accession provided on input: \"" << params_imp.m_accession << "\". Must be 4 letters + 2 digits (Not 00) or 2 letters + underscore + 4 letters + 2 digits.");
@@ -1226,8 +1244,8 @@ void SetScaffoldPrefix(const string& scaffold_prefix)
 void SetAssemblyVersion(int version)
 {
     CParams_imp& params_imp = *params->m_imp;
-    params_imp.m_accession[MINOR_VERSION_POS] = (version % 10) + '0';
-    params_imp.m_accession[MAJOR_VERSION_POS] = (version / 10) + '0';
+    params_imp.m_accession[params_imp.m_minor_version_pos] = (version % 10) + '0';
+    params_imp.m_accession[params_imp.m_major_version_pos] = (version / 10) + '0';
 
     params_imp.m_proj_acc.clear();
     params_imp.m_proj_acc_ver.clear();
