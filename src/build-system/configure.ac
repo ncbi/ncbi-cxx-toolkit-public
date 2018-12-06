@@ -4465,6 +4465,10 @@ fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(lzo, LZO, lzo2,
  [[AC_LANG_PROGRAM([#include <lzo/lzo1x.h>],
       [[lzo_uint32 c = lzo_crc32(0, (const unsigned char*)"foo", 3);]])]])
+if test -n "$LZO_LIBS" -a -f "$LZO_PATH/lib/liblzo2-static.a" \
+   -a "x$with_bin_release" = xyes; then
+   LZO_LIBS="-L$LZO_PATH/lib -llzo2-static"
+fi
 
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
     p=`pcre-config --prefix`

@@ -30220,6 +30220,10 @@ _ACEOF
 
 
 
+if test -n "$LZO_LIBS" -a -f "$LZO_PATH/lib/liblzo2-static.a" \
+   -a "x$with_bin_release" = xyes; then
+   LZO_LIBS="-L$LZO_PATH/lib -llzo2-static"
+fi
 
 if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
     p=`pcre-config --prefix`
