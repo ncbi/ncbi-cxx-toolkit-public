@@ -45,7 +45,7 @@ USING_NCBI_SCOPE;
 void CBlobChangelogWriter::WriteChangelogEvent(
     CCassQuery* query, string const &keyspace, CBlobChangelogRecord const& record) const
 {
-    string sql = "INSERT FROM " + keyspace + ".blob_prop_change_log "
+    string sql = "INSERT INTO " + keyspace + ".blob_prop_change_log "
         "(updated_time, sat_key, last_modified, op) VALUES (?,?,?,?) USING TTL "
         + NStr::NumericToString(CBlobChangelogRecord::GetTTL());
     query->SetSQL(sql, 4);
