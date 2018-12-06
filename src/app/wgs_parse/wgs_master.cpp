@@ -77,7 +77,15 @@ namespace wgsparse
 static void GetSeqIdStr(const CBioseq::TId& ids, string& id_str)
 {
     for (auto& id : ids) {
-        if (id->IsGeneral()) {
+        if (id->GetTextseq_Id() != nullptr) {
+
+            const CTextseq_id* text_id = id->GetTextseq_Id();
+            if (text_id->IsSetAccession()) {
+                id_str = "accession \"" + text_id->GetAccession() + '\"';
+                break;
+            }
+        }
+        else if (id->IsGeneral()) {
             id->GetGeneral().GetLabel(&id_str);
             id_str = "general id \"" + id_str + '\"';
             break;
@@ -93,14 +101,6 @@ static void GetSeqIdStr(const CBioseq::TId& ids, string& id_str)
 
             if (!id_str.empty()) {
                 id_str = "local id \"" + id_str + '\"';
-                break;
-            }
-        }
-        else if (id->GetTextseq_Id() != nullptr) {
-
-            const CTextseq_id* text_id = id->GetTextseq_Id();
-            if (text_id->IsSetAccession()) {
-                id_str = "accession \"" + text_id->GetAccession() + '\"';
                 break;
             }
         }
