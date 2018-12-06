@@ -178,6 +178,27 @@ void CSeqDBLMDBEntry::GetDBTaxIds(vector<Int4> & tax_ids) const
 	m_LMDB->GetDBTaxIds(tax_ids);
 }
 
+void CSeqDBLMDBEntry::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<Int4> & tax_ids) const
+{
+	if(m_isPartial) {
+		vector<TOid> tmp;
+		TOid skipped_oids = 0;
+		unsigned int j=0;
+		for(unsigned int i=0; i < oids.size(); i++) {
+			while(j < m_VolInfo.size() &&
+				  (m_VolInfo[j].skipped_oids > 0 || oids[i] + skipped_oids >= m_VolInfo[j].max_oid)){
+				skipped_oids += m_VolInfo[j].skipped_oids;
+				j++;
+			}
+
+			tmp.push_back(oids[i] + skipped_oids) ;
+		}
+	   m_LMDB->GetTaxIdsForOids(tmp, tax_ids);
+	}
+	else {
+		m_LMDB->GetTaxIdsForOids(oids, tax_ids);
+	}
+}
 
 CSeqDBLMDBSet::CSeqDBLMDBSet()
 {
@@ -341,5 +362,36 @@ void CSeqDBLMDBSet::GetDBTaxIds(set<Int4> & tax_ids) const
 		m_LMDBEntrySet[i]->GetDBTaxIds(t);
 		tax_ids.insert(t.begin(), t.end());
 	}
+}
+
+
+void CSeqDBLMDBSet::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<Int4> & tax_ids) const
+{
+	if (m_LMDBEntrySet.size() > 1) {
+    	vector<TOid> t;
+	    int j =0;
+    	for(unsigned int i =0; i < oids.size(); i++){
+		   	if (oids[i] >= m_LMDBEntrySet[j]->GetOIDEnd()){
+		   		if (t.size() > 0){
+		   			set<Int4> t_set;
+		   			m_LMDBEntrySet[j]->GetTaxIdsForOids(t, t_set);
+		   			t.clear();
+		   			tax_ids.insert(t_set.begin(), t_set.end());
+		   		}
+		   		j++;
+		   	}
+		   	t.push_back(oids[i] - m_LMDBEntrySet[j]->GetOIDStart());
+		}
+    	if (t.size() > 0){
+    		set<Int4> t_set;
+    		m_LMDBEntrySet[j]->GetTaxIdsForOids(t, t_set);
+    		tax_ids.insert(t_set.begin(), t_set.end());
+    	}
+	}
+	else {
+		m_LMDBEntrySet[0]->GetTaxIdsForOids(oids, tax_ids);
+	}
+
+
 }
 END_NCBI_SCOPE

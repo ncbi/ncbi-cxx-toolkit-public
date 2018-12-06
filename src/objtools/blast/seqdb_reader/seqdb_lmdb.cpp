@@ -517,6 +517,7 @@ void CSeqDBLMDB::GetOidsForTaxIds(const set<Int4> & tax_ids, vector<blastdb::TOi
     }
 }
 
+
 class CLookupTaxIds
 {
 public:
@@ -579,6 +580,18 @@ CSeqDBLMDB::NegativeTaxIdsToOids(const set<Int4>& tax_ids, vector<blastdb::TOid>
 		}
 	}
 }
+
+void CSeqDBLMDB::GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<Int4> & tax_ids) const
+{
+	CMemoryFile oid_file(m_Oid2TaxIdsFile);
+	CLookupTaxIds lookup(oid_file);
+	for(unsigned int i=0; i < oids.size(); i++) {
+		vector<Int4>  taxid_list;
+		lookup.GetTaxIdListForOid(oids[i], taxid_list);
+		tax_ids.insert(taxid_list.begin(), taxid_list.end());
+	}
+}
+
 
 string BuildLMDBFileName(const string& basename, bool is_protein, bool use_index, unsigned int index)
 {

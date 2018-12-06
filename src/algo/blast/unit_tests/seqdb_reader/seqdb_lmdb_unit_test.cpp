@@ -373,5 +373,27 @@ BOOST_AUTO_TEST_CASE(Test_TaxIdZero)
     }
 }
 
+BOOST_AUTO_TEST_CASE(Test_GetTaxIdsForOids)
+{
+	{
+		set<Int4> tax_ids;
+		CSeqDB db("data/15_seqs_v5", CSeqDB::eNucleotide);
+		db.GetDBTaxIds(tax_ids);
+		BOOST_REQUIRE_EQUAL(tax_ids.size(), 4);
+	}
+	{
+		set<Int4> tax_ids;
+		CSeqDB db("data/10_seqs_alias", CSeqDB::eNucleotide);
+		db.GetDBTaxIds(tax_ids);
+		BOOST_REQUIRE_EQUAL(tax_ids.size(), 2);
+	}
+	{
+		set<Int4> tax_ids;
+		CSeqDB db("data/skip_vols_mix", CSeqDB::eNucleotide);
+		db.GetDBTaxIds(tax_ids);
+		BOOST_REQUIRE_EQUAL(tax_ids.size(), 3);
+	}
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */

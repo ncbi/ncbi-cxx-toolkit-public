@@ -92,6 +92,12 @@ public:
     /// Get All Unique Tax Ids for db
     /// @parma tax_ids  Return all unique tax ids found in db
     void GetDBTaxIds(vector<Int4> & tax_ids) const;
+
+    /// Get Tax Ids for oid list
+    /// @param oids Input oid list
+    /// @param tax_ids Output tax id list
+    void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<Int4> & tax_ids) const;
+
 private:
     string  m_LMDBFile;
     string  m_Oid2SeqIdsFile;

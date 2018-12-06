@@ -106,6 +106,8 @@ public:
 
     void GetDBTaxIds(vector<Int4> & tax_ids) const;
 
+    void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<Int4> & tax_ids) const;
+
 private:
     void x_AdjustOidsOffset(vector<TOid> & oids) const;
     void x_AdjustOidsOffset_TaxList(vector<TOid> & oids) const;
@@ -174,6 +176,8 @@ public:
     void NegativeTaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv) const;
 
     void GetDBTaxIds(set<Int4> & tax_ids) const;
+
+    void GetTaxIdsForOids(const vector<blastdb::TOid> & oids, set<Int4> & tax_ids) const;
 
 private:
     vector<CRef<CSeqDBLMDBEntry> >  m_LMDBEntrySet;

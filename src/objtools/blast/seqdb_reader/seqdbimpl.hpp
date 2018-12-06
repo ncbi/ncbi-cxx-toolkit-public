@@ -1064,7 +1064,7 @@ public:
 
     /// Get all unique tax ids from db
     /// @param tax_ids	return taxonomy ids in db
-    void GetDBTaxIds(set<Int4> & tax_ids) const;
+    void GetDBTaxIds(set<Int4> & tax_ids);
 
 private:
     CLASS_MARKER_FIELD("IMPL")

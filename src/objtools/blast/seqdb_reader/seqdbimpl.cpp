@@ -1313,12 +1313,26 @@ void CSeqDBImpl::TaxIdsToOids(set<Int4>& tax_ids, vector<blastdb::TOid>& rv)
     return;
 }
 
-void CSeqDBImpl::GetDBTaxIds(set<Int4> & tax_ids) const
+void CSeqDBImpl::GetDBTaxIds(set<Int4> & tax_ids)
 {
     CHECK_MARKER();
+    CSeqDBLockHold locked(m_Atlas);
+
+    if (! m_OidListSetup) {
+        x_GetOidList(locked);
+    }
     tax_ids.clear();
     if (m_LMDBSet.IsBlastDBVersion5()) {
-    	m_LMDBSet.GetDBTaxIds(tax_ids);
+    	if(m_OIDList.NotEmpty()){
+    		vector<blastdb::TOid>  oids;
+    	    for(int oid = 0; CheckOrFindOID(oid); oid++) {
+    	    	oids.push_back(oid);
+    	    }
+    		m_LMDBSet.GetTaxIdsForOids(oids, tax_ids);
+    	}
+    	else {
+    		m_LMDBSet.GetDBTaxIds(tax_ids);
+    	}
     }
     else {
     	NCBI_THROW(CSeqDBException, eArgErr,
