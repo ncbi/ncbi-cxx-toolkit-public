@@ -1087,7 +1087,7 @@ s_BuildScoreList(const BlastHSP     * hsp,
     // Set the E-Value
     double evalue = (hsp->evalue < SMALLEST_EVALUE) ? 0.0 : hsp->evalue;
     if (evalue >= 0.0) {
-        static string score_type = (hsp->num <= 1) ? "e_value" : "sum_e";
+        string score_type = (hsp->num <= 1) ? "e_value" : "sum_e";
         scores.push_back(s_MakeScore(score_type, evalue, 0, false));
     }
 
