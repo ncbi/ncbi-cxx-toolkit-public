@@ -502,6 +502,7 @@ extern const char* CORE_SendMailEx(const char*          to,
     }
     SOCK_SetTimeout(sock, eIO_ReadWrite, &info->mx_timeout);
     SOCK_SetTimeout(sock, eIO_Close,     &info->mx_timeout);
+    SOCK_DisableOSSendDelay(sock, 1/*true,disable*/);
 
     /* Follow the protocol conversation, RFC821 */
     if (!SENDMAIL_READ_RESPONSE(220, buffer))
