@@ -109,8 +109,6 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
         return *p;
     }
 
-    const IRegistry&   config   = GetConfig();
-
 #ifdef NEED_SET_DEPLOYMENT_UID
     const auto deployment_uid = GetEnvironment().Get("DEPLOYMENT_UID");
     CDiagContext &diag_ctx(GetDiagContext());
