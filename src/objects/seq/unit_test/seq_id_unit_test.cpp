@@ -359,6 +359,13 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromPDBAcc)
                       CSeq_id::eAcc_unknown);
     BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("2000:2010"),
                       CSeq_id::eAcc_unknown);
+
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("1GAV|ABCDEFGHIJKL"),
+                      CSeq_id::eAcc_pdb);
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("1GAV|ABCDEFGHIJKLM"),
+                      CSeq_id::eAcc_unknown);
+    BOOST_CHECK_EQUAL(CSeq_id::IdentifyAccession("1GAV|@BCDEFGHIJKL"),
+                      CSeq_id::eAcc_unknown);
 }
 
 BOOST_AUTO_TEST_CASE(s_TestInitFromSPAcc)

@@ -1279,12 +1279,16 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
         const unsigned char* ucdata = (const unsigned char*)main_acc.data();
         if (non_dig_pos != NPOS  &&  (flags & fParse_RawText) != 0) {
             if ( !has_version  &&  digit_pos == 0  &&  main_size >= 4
-                &&  (main_size <= 7  ||  strchr("|-_", main_acc[4]))
-                &&  isalnum(ucdata[1])  &&  isalnum(ucdata[2])
-                &&  isalnum(ucdata[3])) {
+                &&  non_dig_pos < 5  &&  isalnum(ucdata[1])
+                &&  isalnum(ucdata[2])  &&  isalnum(ucdata[3])) {
                 // Possible PDB (always unversioned); examine further
                 // to avoid false positives.
-                switch (main_size) {
+                if (main_size > 4  &&  main_size <= 17
+                    &&  strchr("|-_", main_acc[4])
+                    &&  (main_size <= 6  ||  isalnum(ucdata[5]))) {
+                    // Conventionally delimited
+                    return eAcc_pdb; 
+                } else switch (main_size) {
                 case 7:
                     if ((main_acc[5] != main_acc[6]
                          &&  (main_acc[5] != 'V' || main_acc[6] != 'B'))
@@ -1295,8 +1299,7 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
                     // Be extra strict when the potential molecule ID
                     // could simply be a year.  (NB: *insisting* on a
                     // non-digit would rule out 1914|A, gi 157829621.)
-                    if ((non_dig_pos < 4  &&  ispunct(ucdata[4]))
-                        ||  strchr("|-_", main_acc[4])) {
+                    if ((non_dig_pos < 4  &&  ispunct(ucdata[4]))) {
                         return eAcc_pdb;
                     }
                     break;
@@ -1305,9 +1308,6 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
                         break;
                     } // else fall through
                 case 4:
-                    return eAcc_pdb;
-                }
-                if (strchr("|-_", main_acc[4])) {
                     return eAcc_pdb;
                 }
             }
