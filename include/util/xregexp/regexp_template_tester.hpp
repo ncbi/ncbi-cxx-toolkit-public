@@ -364,7 +364,7 @@ public:
         eOpErr,            ///< operation definition error
         eOpTest            ///< 'test' operation return FALSE
     } ;
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CRegexpTemplateTesterException, CCoreException);
 };
 
