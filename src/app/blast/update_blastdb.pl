@@ -140,12 +140,18 @@ if ($location eq "GCP") {
         exit(2);
     }
     if (defined($opt_showall)) {
+        my $print_header = 1;
         foreach my $db (sort keys %$metadata) {
             next if ($db =~ /^version$/);
             if ($opt_showall =~ /tsv/i) {
                 printf("%s\t%s\t%9.4f\t%s\n", $db, $$metadata{$db}{description}, 
                     $$metadata{$db}{size}, $$metadata{$db}{last_updated});
             } elsif ($opt_showall =~ /pretty/i) {
+                if ($print_header) {
+                    printf("%-60s %-120s %-11s %15s\n", "BLASTDB", 
+                        "DESCRIPTION", "SIZE (GB)", "LAST_UPDATED");
+                    $print_header = 0;
+                }
                 printf("%-60s %-120s %9.4f %15s\n", $db, $$metadata{$db}{description}, 
                     $$metadata{$db}{size}, $$metadata{$db}{last_updated});
             } else {
