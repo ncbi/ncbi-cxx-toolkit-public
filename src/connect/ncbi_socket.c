@@ -6573,6 +6573,8 @@ extern EIO_Status SOCK_CloseEx(SOCK sock, int/*bool*/ destroy)
     else if (s_Initialized > 0)
         status = s_Close(sock, 0, fSOCK_KeepNone);
     else {
+        if (sock->sslctx)
+            sock->sslctx->sess = 0;  /*NB: session may leak out, if deinited*/
         sock->sock = SOCK_INVALID;
         status = eIO_Success;
     }
