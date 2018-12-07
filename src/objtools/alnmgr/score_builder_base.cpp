@@ -536,7 +536,7 @@ static bool s_IsProteinToGenomic(CScope& scope,
 
 static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
                                  const CRangeCollection<TSeqPos>& ranges,
-                                 double* pct_coverage)
+                                 double* pct_coverage, unsigned query = 0)
 {
     if (!ranges.empty() && ranges.begin()->IsWhole() &&
         align.GetNamedScore(CSeq_align::eScore_PercentCoverage,
@@ -573,7 +573,17 @@ static void s_GetPercentCoverage(CScope& scope, const CSeq_align& align,
         }
 
         if ( !seq_len ) { 
-            seq_len = scope.GetSequenceLength(align.GetSeq_id(0));
+            const auto &query_id = align.GetSeq_id(query);
+            const objects::CBioseq_Handle& bsh_seq = scope.GetBioseqHandle(query_id);
+            if (!bsh_seq) {
+                *pct_coverage = 0;
+                NCBI_THROW(CSeqalignException, eInvalidSeqId,
+                    "Can't get sequence data for " + query_id.AsFastaString() +
+                    " in order to calculate coverage");
+            }
+            seq_len = bsh_seq.GetBioseqLength();
+            
+            //seq_len = align.GetSeqRange(query).GetLength();
 
             //
             // determine if the alignment is protein-to-genomic
@@ -686,30 +696,34 @@ double CScoreBuilderBase::GetPercentIdentity(CScope& scope,
 
 
 double CScoreBuilderBase::GetPercentCoverage(CScope& scope,
-                                         const CSeq_align& align)
+                                         const CSeq_align& align,
+                                         unsigned query)
 {
     double pct_coverage = 0;
     s_GetPercentCoverage(scope, align,
                          CRangeCollection<TSeqPos>(TSeqRange::GetWhole()),
-                         &pct_coverage);
+                         &pct_coverage,
+                         query);
     return pct_coverage;
 }
 
 double CScoreBuilderBase::GetPercentCoverage(CScope& scope,
                                          const CSeq_align& align,
-                                         const TSeqRange& range)
+                                         const TSeqRange& range,
+                                         unsigned query)
 {
     double pct_coverage = 0;
-    s_GetPercentCoverage(scope, align, CRangeCollection<TSeqPos>(range), &pct_coverage);
+    s_GetPercentCoverage(scope, align, CRangeCollection<TSeqPos>(range), &pct_coverage, query);
     return pct_coverage;
 }
 
 double CScoreBuilderBase::GetPercentCoverage(CScope& scope,
                                          const CSeq_align& align,
-                                         const CRangeCollection<TSeqPos>& ranges)
+                                         const CRangeCollection<TSeqPos>& ranges,
+                                         unsigned query)
 {
     double pct_coverage = 0;
-    s_GetPercentCoverage(scope, align, ranges, &pct_coverage);
+    s_GetPercentCoverage(scope, align, ranges, &pct_coverage, query);
     return pct_coverage;
 }
 

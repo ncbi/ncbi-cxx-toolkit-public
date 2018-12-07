@@ -133,14 +133,14 @@ public:
                               EPercentIdentityType type = eGapped);
 
     /// Compute percent coverage of the query (sequence 0) (range 0-100)
-    double GetPercentCoverage(CScope& scope, const CSeq_align& align);
+    double GetPercentCoverage(CScope& scope, const CSeq_align& align, unsigned query = 0);
 
     /// Compute percent identity or coverage of the query within specified range
     double GetPercentIdentity(CScope& scope, const CSeq_align& align,
                               const TSeqRange &range,
                               EPercentIdentityType type = eGapped);
     double GetPercentCoverage(CScope& scope, const CSeq_align& align,
-                              const TSeqRange &range);
+                              const TSeqRange &range, unsigned query = 0);
 
     /// Compute percent identity or coverage of the query within specified
     /// collection of ranges
@@ -148,7 +148,8 @@ public:
                               const CRangeCollection<TSeqPos> &ranges,
                               EPercentIdentityType type = eGapped);
     double GetPercentCoverage(CScope& scope, const CSeq_align& align,
-                              const CRangeCollection<TSeqPos> &ranges);
+                              const CRangeCollection<TSeqPos> &ranges,
+                              unsigned query = 0);
 
     /// Compute the number of identities in the alignment
     int GetIdentityCount  (CScope& scope, const CSeq_align& align);
