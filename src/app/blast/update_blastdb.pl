@@ -84,6 +84,10 @@ my $result = GetOptions("verbose+"      =>  \$opt_verbose,
 $opt_verbose = 0 if $opt_quiet;
 die "Failed to parse command line options\n" unless $result;
 pod2usage({-exitval => 0, -verbose => 2}) if $opt_help;
+if (length($opt_passive) and ($opt_passive !~ /1|no/i)) {
+    pod2usage({-exitval => 1, -verbose => 0,
+            -msg => "Invalid value for passive option: '$opt_passive'"});
+}
 pod2usage({-exitval => 0, -verbose => 2}) unless (scalar @ARGV or 
                                                   defined($opt_showall) or
                                                   $opt_show_version);
@@ -169,7 +173,9 @@ if ($location eq "GCP") {
                 s,gs://,$url/, foreach (@files2download);
                 if ($opt_nt > 1 and -f "/usr/bin/xargs") {
                     print $fh join("\n", @files2download);
-                    $cmd = "/usr/bin/xargs -P $opt_nt -a $fh -t -n 1 /usr/bin/curl -sO";
+                    $cmd = "/usr/bin/xargs -P $opt_nt -a $fh -n 1";
+                    $cmd .= " -t" if $opt_verbose > 3;
+                    $cmd .= " /usr/bin/curl -sO";
                 } else {
                     $cmd = "/usr/bin/curl -s";
                     $cmd .= " -O $_" foreach (@files2download);
