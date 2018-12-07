@@ -503,7 +503,7 @@ static void s_Init(const IRWRegistry* reg  = 0,
     CMonkey::Instance();
 #endif //NCBI_MONKEY
 
-    s_ConnectInit = g_CORE_Set ? how : eConnectInit_Strong;
+    s_ConnectInit = g_CORE_Set ? eConnectInit_Strong : how;
 }
 
 

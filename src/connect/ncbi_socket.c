@@ -8555,14 +8555,18 @@ void SOCK_SetupSSLInternal(FSSLSetup setup, int/*bool*/ init)
 {
     CORE_LOCK_WRITE;
 
-    if (!setup)
+    if (!setup  &&  !init)
         x_ShutdownSSL();
     else if (s_SSLSetup != setup  ||  (s_SSL  &&  init)) {
         if (s_SSLSetup) {
-            if (init)
+            const char* verb;
+            if (!setup  &&  init) {
                 s_SSL = 0;  /* NB: race / memory leak if was non-NULL ! */
+                verb = "Must not";
+            } else
+                verb = "Cannot";
             CORE_UNLOCK;
-            CORE_LOG(eLOG_Critical, "Cannot reset SSL while it is in use");
+            CORE_LOGF(eLOG_Critical, ("%s reset SSL while it is in use",verb));
             return;
         }
         assert(!s_SSL);
