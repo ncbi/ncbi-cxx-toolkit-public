@@ -76,34 +76,46 @@ namespace wgsparse
 
 static void GetSeqIdStr(const CBioseq::TId& ids, string& id_str)
 {
+    string accession_id,
+           general_id,
+           local_id;
+
     for (auto& id : ids) {
         if (id->GetTextseq_Id() != nullptr) {
 
             const CTextseq_id* text_id = id->GetTextseq_Id();
             if (text_id->IsSetAccession()) {
-                id_str = "accession \"" + text_id->GetAccession() + '\"';
-                break;
+                accession_id = "accession \"" + text_id->GetAccession() + '\"';
             }
         }
         else if (id->IsGeneral()) {
-            id->GetGeneral().GetLabel(&id_str);
-            id_str = "general id \"" + id_str + '\"';
-            break;
+            id->GetGeneral().GetLabel(&general_id);
+            general_id = "general id \"" + id_str + '\"';
         }
         else if (id->IsLocal()) {
 
             if (id->GetLocal().IsStr()) {
-                id_str = id->GetLocal().GetStr();
+                local_id = id->GetLocal().GetStr();
             }
             else if (id->GetLocal().IsId()) {
-                id_str = NStr::IntToString(id->GetLocal().GetId());
+                local_id = NStr::IntToString(id->GetLocal().GetId());
             }
 
-            if (!id_str.empty()) {
-                id_str = "local id \"" + id_str + '\"';
+            if (!local_id.empty()) {
+                local_id = "local id \"" + id_str + '\"';
                 break;
             }
         }
+    }
+
+    if (!accession_id.empty()) {
+        id_str = accession_id;
+    }
+    else if (!general_id.empty()) {
+        id_str = general_id;
+    }
+    else {
+        id_str = local_id;
     }
 }
 
