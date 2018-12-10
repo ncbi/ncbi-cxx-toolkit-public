@@ -3,6 +3,8 @@
 # Authors:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov),
 #           Aaron Ucko    (ucko@ncbi.nlm.nih.gov)
 
+VCSIGNORED=()
+
 svn_revision=`echo '$Revision$' | sed "s%\\$[R]evision: *\\([^$][^$]*\\) \\$.*%\\1%"`
 def_builddir="$NCBI/c++/Debug/build"
 
@@ -72,6 +74,24 @@ if [ -f /etc/redhat-release -a -d $NCBI/c++/DebugMT/build ]; then
 fi
 
 #################################
+
+ShouldBeIgnoredByVcs()
+{
+    local fname="$1"
+    VCSIGNORED+=($fname)
+}
+
+AddIgnoreFiles()
+{
+    local target="$1"
+    local fname="$target/.gitignore"
+
+    echo > $fname
+    for name in ${VCSIGNORED[@]}; do
+        echo "$name" >> $fname
+    done
+    cp $fname  "$target/.svnignore"
+}
 
 CreateMakefile_Builddir()
 {
@@ -360,6 +380,8 @@ EOF
   touch -t 197607040000 "$makefile_name.out"
   (cd `dirname $makefile_name`  &&  \
      make -f $makefile_name Makefile.out >/dev/null 2>&1)
+
+    ShouldBeIgnoredByVcs Makefile.out
 }
 
 
@@ -484,6 +506,7 @@ MayWrite() {
 }
 
 MayWrite $makefile_builddir  &&  CreateMakefile_Builddir $makefile_builddir
+ShouldBeIgnoredByVcs $(basename $makefile_builddir)
 
 case "$proj_type" in
   lib )
@@ -553,6 +576,7 @@ CopySources()
         */Makefile.in    ) output2=`echo $output | sed -e 's/\.in$//'`      ;;
         *                ) output2= ;;
     esac
+    [ -z "$output2" ] || ShouldBeIgnoredByVcs $(basename "$output2")
     if test -d $input; then
       mkdir $output
       CopySources $1/$base
@@ -637,6 +661,8 @@ if test -n "$extra_inc" ; then
   new_dir=$orig_new_dir
 fi
 test -n "$cleanup" && rm -rf "$tmp_app_checkout_dir"
+
+AddIgnoreFiles `dirname $makefile_name`
 
 fmt <<EOF
 
