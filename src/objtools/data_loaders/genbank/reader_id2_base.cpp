@@ -2682,7 +2682,8 @@ void CId2ReaderBase::x_ProcessGetBlobId(
     TContentsMask mask = 0;
     {{ // TODO: temporary logic, this info should be returned by server
         if ( blob_id.GetSubSat() == CID2_Blob_Id::eSub_sat_main ||
-             blob_id.GetSat() == CProcessor_ExtAnnot::eSat_VDB_WGS ) {
+             (blob_id.GetSat() >= CProcessor_ExtAnnot::eSat_VDB_WGS_MIN &&
+              blob_id.GetSat() <= CProcessor_ExtAnnot::eSat_VDB_WGS_MAX) ) {
             mask |= fBlobHasAllLocal;
         }
         else {

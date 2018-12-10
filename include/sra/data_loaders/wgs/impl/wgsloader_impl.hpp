@@ -142,6 +142,7 @@ public:
     SAccFileInfo GetFileInfoByGi(TGi gi);
     SAccFileInfo GetFileInfoByProtAcc(const string& acc);
     SAccFileInfo GetFileInfoByAcc(const string& acc);
+    SAccFileInfo GetFileInfoByGeneral(const CDbtag& dbtag);
     SAccFileInfo GetFileInfo(const CSeq_id_Handle& idh);
 
     CDataLoader::TTSE_LockSet GetRecords(CDataSource* data_source,

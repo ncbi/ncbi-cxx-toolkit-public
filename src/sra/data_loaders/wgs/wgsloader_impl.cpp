@@ -78,6 +78,11 @@ BEGIN_SCOPE(objects)
 
 class CDataLoader;
 
+static const size_t kMaxWGSProteinAccLen = 3+7; // longest WGS protein accession
+static const size_t kMinWGSPrefixLetters = 4;
+static const size_t kMaxWGSPrefixLetters = 6;
+static const size_t kWGSPrefixDigits = 2;
+
 NCBI_PARAM_DECL(int, WGS_LOADER, DEBUG);
 NCBI_PARAM_DEF_EX(int, WGS_LOADER, DEBUG, 0,
                   eParam_NoThread, WGS_LOADER_DEBUG);
@@ -456,7 +461,8 @@ CWGSDataLoader_Impl::GetFileInfoByAcc(const string& acc)
     case CSeq_id::eAcc_targeted:
         break;
     case CSeq_id::eAcc_other:
-        if ( type == CSeq_id::eAcc_embl_prot ) {
+        if ( type == CSeq_id::eAcc_embl_prot ||
+             (type == CSeq_id::eAcc_gb_prot && acc.size() == 10) ) { // TODO: remove
             // Some EMBL WGS accession aren't identified as WGS, so we'll try lookup anyway
             break;
         }
@@ -465,28 +471,43 @@ CWGSDataLoader_Impl::GetFileInfoByAcc(const string& acc)
         return ret;
     }
 
-    if ( (type & CSeq_id::fAcc_prot) && acc.size() <= 10 ) { // 3+5
+    if ( (type & CSeq_id::fAcc_prot) && acc.size() <= kMaxWGSProteinAccLen ) {
         if ( m_ResolveProtAccs ) {
             ret = GetFileInfoByProtAcc(acc);
         }
         return ret;
     }
 
-    const SIZE_TYPE prefix_len = 6;
-    if ( acc.size() <= prefix_len ) {
+    // WGS accession
+    // AAAA010000001 - prefix AAAA01 or AAAAAA01
+    // optional 'S' or 'P' symbol after prefix for scaffolds and proteins
+    
+    // first find number of letters in prefix
+    if ( acc.size() <= kMinWGSPrefixLetters+kWGSPrefixDigits ) {
         return ret;
     }
+    // determine actual number of letters
+    SIZE_TYPE prefix_letters = 0;
+    for ( ; prefix_letters < kMaxWGSPrefixLetters; ++prefix_letters ) {
+        if ( !isalpha(Uchar(acc[prefix_letters])) ) {
+            if ( prefix_letters < kMinWGSPrefixLetters ) {
+                return ret;
+            }
+            else {
+                break;
+            }
+        }
+    }
+    // check prefix digits
+    for ( SIZE_TYPE i = 0; i < kWGSPrefixDigits; ++i ) {
+        if ( !isdigit(Uchar(acc[prefix_letters+i])) ) {
+            return ret;
+        }
+    }
+    SIZE_TYPE prefix_len = prefix_letters+kWGSPrefixDigits;
+    // prefix is valid
+    
     string prefix = acc.substr(0, prefix_len);
-    for ( SIZE_TYPE i = prefix_len-6; i < prefix_len-2; ++i ) {
-        if ( !isalpha(acc[i]&0xff) ) {
-            return ret;
-        }
-    }
-    for ( SIZE_TYPE i = prefix_len-2; i < prefix_len; ++i ) {
-        if ( !isdigit(acc[i]&0xff) ) {
-            return ret;
-        }
-    }
     SIZE_TYPE row_pos = prefix_len;
     if ( acc[row_pos] == 'S' || acc[row_pos] == 'P' ) {
         ret.seq_type = acc[row_pos++];
@@ -513,6 +534,67 @@ CWGSDataLoader_Impl::GetFileInfoByAcc(const string& acc)
 
 
 CWGSFileInfo::SAccFileInfo
+CWGSDataLoader_Impl::GetFileInfoByGeneral(const CDbtag& dbtag)
+{
+    SAccFileInfo ret;
+    const CObject_id& object_id = dbtag.GetTag();
+    const string& db = dbtag.GetDb();
+    if ( db.size() != 8 /* WGS:AAAA */ &&
+         db.size() != 10 /* WGS:AAAA01 or WGS:AAAAAA */ &&
+         db.size() != 12 /* WGS:AAAAAA01 */ ) {
+        return SAccFileInfo();
+    }
+    bool is_tsa = false;
+    if ( NStr::StartsWith(db, "WGS:", NStr::eNocase) ) {
+    }
+    else if ( NStr::StartsWith(db, "TSA:", NStr::eNocase) ) {
+        is_tsa = true;
+    }
+    else {
+        return ret;
+    }
+    string wgs_acc = db.substr(4); // remove "WGS:" or "TSA:"
+
+    NStr::ToUpper(wgs_acc);
+    if ( isalpha(wgs_acc.back()&0xff) ) {
+        wgs_acc += "01"; // add default version digits
+    }
+    CConstRef<CWGSFileInfo> info = GetWGSFile(wgs_acc);
+    if ( !info ) {
+        return ret;
+    }
+    const CWGSDb& wgs_db = info->GetDb();
+    if ( wgs_db->IsTSA() != is_tsa ) {
+        // TSA or WGS type must match
+        return ret;
+    }
+    string tag;
+    if ( object_id.IsStr() ) {
+        tag = object_id.GetStr();
+        NStr::ToUpper(tag);
+    }
+    else {
+        tag = NStr::NumericToString(object_id.GetId());
+    }
+    if ( TVDBRowId row = wgs_db.GetContigNameRowId(tag) ) {
+        ret.row_id = row;
+    }
+    else if ( TVDBRowId row = wgs_db.GetScaffoldNameRowId(tag) ) {
+        ret.seq_type = 'S';
+        ret.row_id = row;
+    }
+    else if ( TVDBRowId row = wgs_db.GetProteinNameRowId(tag) ) {
+        ret.seq_type = 'P';
+        ret.row_id = row;
+    }
+    if ( ret.row_id ) {
+        ret.file = info;
+    }
+    return ret;
+}
+
+
+CWGSFileInfo::SAccFileInfo
 CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
 {
     if ( m_ResolveGIs && idh.IsGi() ) {
@@ -526,9 +608,10 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh)
     case CSeq_id::e_Gibbmt:
     case CSeq_id::e_Giim:
     case CSeq_id::e_Patent:
-    case CSeq_id::e_General:
     case CSeq_id::e_Pdb:
         return CWGSFileInfo::SAccFileInfo();
+    case CSeq_id::e_General:
+        return GetFileInfoByGeneral(idh.GetSeqId()->GetGeneral());
     default:
         break;
     }

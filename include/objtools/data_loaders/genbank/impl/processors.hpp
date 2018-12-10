@@ -337,7 +337,8 @@ public:
     enum {
         eSat_ANNOT_CDD      = 10,
         eSat_ANNOT          = 26,
-        eSat_VDB_WGS        = 1000
+        eSat_VDB_WGS_MIN    = 1000,
+        eSat_VDB_WGS_MAX    = 1999
     };
     enum {
         eSubSat_SNP         = 1<<0,

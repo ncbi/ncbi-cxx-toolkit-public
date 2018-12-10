@@ -90,11 +90,18 @@ enum EDebugLevel {
 
 // WGS accession parameters
 static const size_t kTypePrefixLen = 4; // "WGS:" or "TSA:"
-static const size_t kNumLetters = 4;
+static const size_t kNumLettersV1 = 4;
+static const size_t kNumLettersV2 = 6;
 static const size_t kVersionDigits = 2;
-static const size_t kPrefixLen = kNumLetters + kVersionDigits;
-static const size_t kMinRowDigits = 6;
-static const size_t kMaxRowDigits = 8;
+static const size_t kPrefixLenV1 = kNumLettersV1 + kVersionDigits;
+static const size_t kPrefixLenV2 = kNumLettersV2 + kVersionDigits;
+static const size_t kMinRowDigitsV1 = 6;
+static const size_t kMaxRowDigitsV1 = 7;
+static const size_t kMinRowDigitsV2 = 7;
+static const size_t kMaxRowDigitsV2 = 9;
+
+static const size_t kMinProtAccLen = 8; // 3+5
+static const size_t kMaxProtAccLen = 10; // 3+7
 
 
 // parameters reading
@@ -154,7 +161,7 @@ static CNcbiOstream& operator<<(CNcbiOstream& out,
                                 const CID2WGSProcessor_Impl::SWGSSeqInfo& seq)
 {
     if ( seq.IsMaster() ) {
-        out << seq.m_WGSAcc.substr(0, kNumLetters)<<"00";
+        out << seq.m_WGSAcc.substr(0, seq.m_WGSAcc.size()-kVersionDigits)<<"00";
     }
     else {
         out << seq.m_WGSAcc;
@@ -167,7 +174,7 @@ static CNcbiOstream& operator<<(CNcbiOstream& out,
     }
     out << setfill('0')<<setw(seq.m_RowDigits)<<seq.m_RowId<<setfill(' ');
     if ( seq.IsMaster() ) {
-        out << '.' << NStr::StringToInt(seq.m_WGSAcc.substr(kNumLetters));
+        out << '.' << NStr::StringToInt(seq.m_WGSAcc.substr(seq.m_WGSAcc.size()-2));
     }
     return out;
 }
@@ -593,9 +600,34 @@ bool CID2WGSProcessor_Impl::IsCorrectVersion(SWGSSeqInfo& seq, int version)
 //   (contig version - 2) * 26^4*10^2 = 45697600
 //  largest version that fits in positive subsat is 12
 //  largest version that fits in negative subsat is 24
+//
+// New WGS accession format: 6 letters + 2 version digits + 7/8/9 sequence digits
+// sat = 1001-1130 : WGS with 6 letters in accession (AAAAAA01, for example)
+//  version subfield (4 bits should be enough, although it's flexible):
+//   0 - scaffold.1
+//   1 - protein.1
+//   2+ - contig.1+
+//  encoded sum of scaled elements:
+//   (ASCII(letter 0) - 'A') * 1
+//   (ASCII(letter 1) - 'A') * 26
+//   (ASCII(letter 2) - 'A') * 26^2 = 676
+//   (ASCII(letter 3) - 'A') * 26^3 = 17576
+//   (ASCII(letter 4) - 'A') * 26^4 = 456976
+//   (ASCII(letter 5) - 'A') * 26^5 = 11881376
+//   (ASCII(digit 4) - '0') * 26^6 = 308915776
+//   (ASCII(digit 5) - '0') * 26^6*10 = 3089157760
+//   (version) * 26^6*10^2 = 30891577600
+//  total sum is 35 bits plus number of bits in version, 39 for now
+//  lowest 32 bits are stored in subsat
+//  the remaining 7 bits are added to sat=1001
 
 // satkey: row-id
-static const int kBlobIdSat = 1000;
+static const int kBlobIdV1Sat = 1000;
+static const int kBlobIdV2SatMin = 1001;
+static const int kBlobIdV2SatMax = 1129;
+static const int kBlobIdV2VersionScaffold = 0;
+static const int kBlobIdV2VersionProtein  = 1;
+static const int kBlobIdV2VersionContig   = 2;
 enum EBlobType {
     eBlobType_contig = 1,
     eBlobType_scaffold = 2,
@@ -612,58 +644,99 @@ CID2_Blob_Id& CID2WGSProcessor_Impl::GetBlobId(SWGSSeqInfo& seq0)
     if ( seq0.m_BlobId ) {
         return *seq0.m_BlobId;
     }
+    CRef<CID2_Blob_Id> id(new CID2_Blob_Id);
     SWGSSeqInfo& seq = GetRootSeq(seq0);
-    unsigned subsat;
-    if ( seq.IsContig() && seq.m_Version == -1 ) {
-        // need contig version to choose appropriate blob-id format
-        seq.m_Version = GetContigIterator(seq).GetLatestAccVersion();
-    }
-    if ( !seq.IsContig() || seq.m_Version <= 1 ) {
-        // old blob-id subsat format, version is 1
-        if ( seq.IsScaffold() ) {
-            subsat = eBlobType_scaffold;
-        }
-        else if ( seq.IsProtein() ) {
-            subsat = eBlobType_protein;
-        }
-        else { // contig or master
-            subsat = eBlobType_contig;
-        }
-        int bit = eBlobIdBits_type;
+    if ( seq.m_WGSAcc.size() == kPrefixLenV2 ) {
+        Uint8 mul = 1;
+        Uint8 value = 0;
         for ( size_t i = 0; i < seq.m_WGSAcc.size(); ++i ) {
-            if ( i < kNumLetters ) {
-                subsat |= (seq.m_WGSAcc[i]-'A') << bit;
-                bit += eBlobIdBits_letter;
-            }
-            else {
-                subsat |= (seq.m_WGSAcc[i]-'0') << bit;
-                bit += eBlobIdBits_digit;
-            }
-        }
-    }
-    else {
-        // new blob-id subsat format that includes contig version > 1
-        _ASSERT(seq.IsContig());
-        _ASSERT(seq.m_Version >= 2);
-        _ASSERT(seq.m_Version <= 24);
-        subsat = 0;
-        unsigned mul = 4;
-        for ( size_t i = 0; i < seq.m_WGSAcc.size(); ++i ) {
-            if ( i < kNumLetters ) {
-                subsat += (seq.m_WGSAcc[i]-'A')*mul;
+            if ( i < kNumLettersV2 ) {
+                value += (seq.m_WGSAcc[i]-'A')*mul;
                 mul *= 26;
             }
             else {
-                subsat += (seq.m_WGSAcc[i]-'0')*mul;
+                value += (seq.m_WGSAcc[i]-'0')*mul;
                 mul *= 10;
             }
         }
-        subsat += (seq.m_Version - 2)*mul;
+        unsigned version;
+        if ( seq.IsScaffold() ) {
+            version = kBlobIdV2VersionScaffold;
+        }
+        else if ( seq.IsProtein() ) {
+            version = kBlobIdV2VersionProtein;
+        }
+        else {
+            _ASSERT(seq.IsContig());
+            if ( seq.m_Version == -1 ) {
+                // need contig version to choose appropriate blob-id format
+                seq.m_Version = GetContigIterator(seq).GetLatestAccVersion();
+            }
+            _ASSERT(seq.m_Version >= 1);
+            _ASSERT(seq.m_Version <= 16);
+            version = seq.m_Version - 1 + kBlobIdV2VersionContig;
+        }
+        value += mul*version;
+        CID2_Blob_Id::TSat sat = kBlobIdV2SatMin + int(value >> 32); // high 32 bits
+        CID2_Blob_Id::TSub_sat subsat = int(value & 0xFFFFFFFF); // low 32 bits
+        _ASSERT(sat >= kBlobIdV2SatMin && sat <= kBlobIdV2SatMax);
+        id->SetSat(sat);
+        id->SetSub_sat(subsat);
+        id->SetSat_key(int(seq.m_RowId));
     }
-    CRef<CID2_Blob_Id> id(new CID2_Blob_Id);
-    id->SetSat(kBlobIdSat);
-    id->SetSub_sat(int(subsat));
-    id->SetSat_key(int(seq.m_RowId));
+    else {
+        _ASSERT(seq.m_WGSAcc.size() == kPrefixLenV1);
+        unsigned subsat;
+        if ( seq.IsContig() && seq.m_Version == -1 ) {
+            // need contig version to choose appropriate blob-id format
+            seq.m_Version = GetContigIterator(seq).GetLatestAccVersion();
+        }
+        if ( !seq.IsContig() || seq.m_Version <= 1 ) {
+            // old blob-id subsat format, version is 1
+            if ( seq.IsScaffold() ) {
+                subsat = eBlobType_scaffold;
+            }
+            else if ( seq.IsProtein() ) {
+                subsat = eBlobType_protein;
+            }
+            else { // contig or master
+                subsat = eBlobType_contig;
+            }
+            int bit = eBlobIdBits_type;
+            for ( size_t i = 0; i < seq.m_WGSAcc.size(); ++i ) {
+                if ( i < kNumLettersV1 ) {
+                    subsat |= (seq.m_WGSAcc[i]-'A') << bit;
+                    bit += eBlobIdBits_letter;
+                }
+                else {
+                    subsat |= (seq.m_WGSAcc[i]-'0') << bit;
+                    bit += eBlobIdBits_digit;
+                }
+            }
+        }
+        else {
+            // new blob-id subsat format that includes contig version > 1
+            _ASSERT(seq.IsContig());
+            _ASSERT(seq.m_Version >= 2);
+            _ASSERT(seq.m_Version <= 24);
+            subsat = 0;
+            unsigned mul = 4;
+            for ( size_t i = 0; i < seq.m_WGSAcc.size(); ++i ) {
+                if ( i < kNumLettersV1 ) {
+                    subsat += (seq.m_WGSAcc[i]-'A')*mul;
+                    mul *= 26;
+                }
+                else {
+                    subsat += (seq.m_WGSAcc[i]-'0')*mul;
+                    mul *= 10;
+                }
+            }
+            subsat += (seq.m_Version - 2)*mul;
+        }
+        id->SetSat(kBlobIdV1Sat);
+        id->SetSub_sat(int(subsat));
+        id->SetSat_key(int(seq.m_RowId));
+    }
     seq0.m_BlobId = id;
     return *id;
 }
@@ -672,66 +745,96 @@ CID2_Blob_Id& CID2WGSProcessor_Impl::GetBlobId(SWGSSeqInfo& seq0)
 CID2WGSProcessor_Impl::SWGSSeqInfo
 CID2WGSProcessor_Impl::ResolveBlobId(const CID2_Blob_Id& id)
 {
-    if ( id.GetSat() != kBlobIdSat ) {
-        return SWGSSeqInfo();
-    }
     SWGSSeqInfo seq;
-    seq.m_IsWGS = true;
-    bool bad = false;
-    unsigned subsat = unsigned(id.GetSub_sat());
-    if ( unsigned seq_type = (subsat & ((1<<eBlobIdBits_type)-1)) ) {
-        // old blob-id subsat format
-        switch ( seq_type ) {
-        case eBlobType_contig: seq.SetContig(); break;
-        case eBlobType_scaffold: seq.SetScaffold(); break;
-        case eBlobType_protein: seq.SetProtein(); break;
-        }
-        int bit = eBlobIdBits_type;
-        for ( size_t i = 0; i < kPrefixLen; ++i ) {
-            if ( i < kNumLetters ) {
-                int v = (subsat>>bit)&((1<<eBlobIdBits_letter)-1);
-                if ( v < 26 ) {
-                    seq.m_WGSAcc += char('A'+v);
+    CID2_Blob_Id::TSat sat = id.GetSat();
+    if ( sat == kBlobIdV1Sat ) {
+        // old 4-letter WGS accession format
+        seq.m_IsWGS = true;
+        unsigned subsat = unsigned(id.GetSub_sat());
+        if ( unsigned seq_type = (subsat & ((1<<eBlobIdBits_type)-1)) ) {
+            bool bad = false;
+            // old blob-id subsat format
+            switch ( seq_type ) {
+            case eBlobType_contig: seq.SetContig(); break;
+            case eBlobType_scaffold: seq.SetScaffold(); break;
+            case eBlobType_protein: seq.SetProtein(); break;
+            }
+            int bit = eBlobIdBits_type;
+            for ( size_t i = 0; i < kPrefixLenV1; ++i ) {
+                if ( i < kNumLettersV1 ) {
+                    int v = (subsat>>bit)&((1<<eBlobIdBits_letter)-1);
+                    if ( v < 26 ) {
+                        seq.m_WGSAcc += char('A'+v);
+                    }
+                    else {
+                        bad = true;
+                        break;
+                    }
+                    bit += eBlobIdBits_letter;
                 }
                 else {
-                    bad = true;
-                    break;
+                    int v = (subsat>>bit)&((1<<eBlobIdBits_digit)-1);
+                    if ( v < 10 ) {
+                        seq.m_WGSAcc += char('0'+v);
+                    }
+                    else {
+                        bad = true;
+                        break;
+                    }
+                    bit += eBlobIdBits_digit;
                 }
-                bit += eBlobIdBits_letter;
             }
-            else {
-                int v = (subsat>>bit)&((1<<eBlobIdBits_digit)-1);
-                if ( v < 10 ) {
-                    seq.m_WGSAcc += char('0'+v);
+            if ( seq.IsContig() ) {
+                // old format means version is 1
+                seq.m_Version = 1;
+            }
+            if ( bad ) { // bad format - illegal letters or digits
+                return seq;
+            }
+        }
+        else {
+            seq.SetContig();
+            subsat /= 4;
+            for ( size_t i = 0; i < kPrefixLenV1; ++i ) {
+                if ( i < kNumLettersV1 ) {
+                    seq.m_WGSAcc += char('A'+subsat%26);
+                    subsat /= 26;
                 }
                 else {
-                    bad = true;
-                    break;
+                    seq.m_WGSAcc += char('0'+subsat%10);
+                    subsat /= 10;
                 }
-                bit += eBlobIdBits_digit;
             }
+            seq.m_Version = subsat + 2; // remaining value is version
         }
-        if ( seq.IsContig() ) {
-            // old format means version is 1
-            seq.m_Version = 1;
+        // verify if the WGS accession actually exists in VDB
+        if ( CWGSDb wgs_db = GetWGSDb(seq) ) {
+            seq.m_ValidWGS = true;
+            seq.m_RowId = id.GetSat_key();
         }
     }
-    else {
-        seq.SetContig();
-        subsat /= 4;
-        for ( size_t i = 0; i < kPrefixLen; ++i ) {
-            if ( i < kNumLetters ) {
-                seq.m_WGSAcc += char('A'+subsat%26);
-                subsat /= 26;
-            }
-            else {
-                seq.m_WGSAcc += char('0'+subsat%10);
-                subsat /= 10;
-            }
+    else if ( sat >= kBlobIdV2SatMin && sat <= kBlobIdV2SatMax ) {
+        seq.m_IsWGS = true;
+        Uint8 v = (Uint8(sat-kBlobIdV2SatMin)<<32)|Uint4(id.GetSub_sat());
+        for ( size_t i = 0; i < 6; ++i ) {
+            seq.m_WGSAcc += char('A'+v%26);
+            v /= 26;
         }
-        seq.m_Version = subsat + 2; // remaining value is version
-    }
-    if ( !bad ) {
+        for ( size_t i = 0; i < 2; ++i ) {
+            seq.m_WGSAcc += char('0'+v%10);
+            v /= 10;
+        }
+        if ( v == kBlobIdV2VersionScaffold ) {
+            seq.SetScaffold();
+        }
+        else if ( v == kBlobIdV2VersionProtein ) {
+            seq.SetProtein();
+        }
+        else {
+            seq.SetContig();
+            seq.m_Version = int(v - kBlobIdV2VersionContig + 1);
+        }
+        // verify if the WGS accession actually exists in VDB
         if ( CWGSDb wgs_db = GetWGSDb(seq) ) {
             seq.m_ValidWGS = true;
             seq.m_RowId = id.GetSat_key();
@@ -746,8 +849,10 @@ CID2WGSProcessor_Impl::ResolveGeneral(const CDbtag& dbtag)
 {
     const CObject_id& object_id = dbtag.GetTag();
     const string& db = dbtag.GetDb();
-    if ( db.size() != kTypePrefixLen+kNumLetters /* WGS:AAAA */ &&
-         db.size() != kTypePrefixLen+kPrefixLen  /* WGS:AAAA01 */ ) {
+    if ( db.size() != kTypePrefixLen+kNumLettersV1 /* WGS:AAAA */ &&
+         db.size() != kTypePrefixLen+kPrefixLenV1  /* WGS:AAAA01 */ &&
+         db.size() != kTypePrefixLen+kNumLettersV2 /* WGS:AAAAAA */ &&
+         db.size() != kTypePrefixLen+kPrefixLenV2  /* WGS:AAAAAA01 */ ) {
         return SWGSSeqInfo();
     }
     bool is_tsa = false;
@@ -762,7 +867,7 @@ CID2WGSProcessor_Impl::ResolveGeneral(const CDbtag& dbtag)
     string wgs_acc = db.substr(kTypePrefixLen); // remove "WGS:" or "TSA:"
 
     NStr::ToUpper(wgs_acc);
-    if ( wgs_acc.size() == kNumLetters ) {
+    if ( isalpha(wgs_acc.back()&0xff) ) {
         wgs_acc += "01"; // add default version digits
     }
     SWGSSeqInfo seq;
@@ -776,6 +881,7 @@ CID2WGSProcessor_Impl::ResolveGeneral(const CDbtag& dbtag)
     string tag;
     if ( object_id.IsStr() ) {
         tag = object_id.GetStr();
+        NStr::ToUpper(tag);
     }
     else {
         tag = NStr::NumericToString(object_id.GetId());
@@ -857,8 +963,12 @@ CID2WGSProcessor_Impl::SWGSSeqInfo
 CID2WGSProcessor_Impl::ResolveProtAcc(const CTextseq_id& id,
                                       CID2ProcessorResolver* resolver)
 {
-    CRef<CWGSResolver> wgs_resolver = GetWGSResolver(resolver);
     const string& acc = id.GetAccession();
+    if ( acc.size() < kMinProtAccLen || acc.size() > kMaxProtAccLen ) {
+        return SWGSSeqInfo();
+    }
+    
+    CRef<CWGSResolver> wgs_resolver = GetWGSResolver(resolver);
     CWGSResolver::TWGSPrefixes prefixes = wgs_resolver->GetPrefixes(acc);
     ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
         if ( CWGSDb wgs_db = GetWGSDb(*it) ) {
@@ -888,24 +998,29 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc,
                                      const CTextseq_id& id,
                                      TAllowSeqType allow_seq_type)
 {
-    if ( acc.size() < kPrefixLen + kMinRowDigits ||
-         acc.size() > kPrefixLen + kMaxRowDigits + 1 ) { // one for type letter
+    if ( acc.size() < kPrefixLenV1 + kMinRowDigitsV1 ||
+         acc.size() > kPrefixLenV2 + kMaxRowDigitsV2 + 1 ) { // one for type letter
         return SWGSSeqInfo();
     }
-    for ( size_t i = 0; i < kNumLetters; ++i ) {
-        if ( !isalpha(acc[i]&0xff) ) {
-            return SWGSSeqInfo();
+    size_t num_letters;
+    for ( num_letters = 0; num_letters < kNumLettersV2; ++num_letters ) {
+        if ( !isalpha(acc[num_letters]&0xff) ) {
+            break;
         }
     }
-    for ( size_t i = kNumLetters; i < kPrefixLen; ++i ) {
+    if ( num_letters != kNumLettersV1 && num_letters != kNumLettersV2 ) {
+        return SWGSSeqInfo();
+    }
+    size_t prefix_len = num_letters + kVersionDigits;
+    for ( size_t i = num_letters; i < prefix_len; ++i ) {
         if ( !isdigit(acc[i]&0xff) ) {
             return SWGSSeqInfo();
         }
     }
     SWGSSeqInfo seq;
-    seq.m_WGSAcc = acc.substr(0, kPrefixLen);
+    seq.m_WGSAcc = acc.substr(0, prefix_len);
     seq.m_IsWGS = true;
-    SIZE_TYPE row_pos = kPrefixLen;
+    SIZE_TYPE row_pos = prefix_len;
     switch ( acc[row_pos] ) { // optional type letter
     case 'S':
         seq.SetScaffold();
@@ -927,6 +1042,17 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc,
             return seq;
         }
         break;
+    }
+    size_t row_digits = acc.size() - row_pos;
+    if ( num_letters == kNumLettersV1 ) {
+        if ( row_digits < kMinRowDigitsV1 || row_digits > kMaxRowDigitsV1 ) {
+            return SWGSSeqInfo();
+        }
+    }
+    else {
+        if ( row_digits < kMinRowDigitsV2 || row_digits > kMaxRowDigitsV2 ) {
+            return SWGSSeqInfo();
+        }
     }
     Uint8 row = 0;
     for ( size_t i = row_pos; i < acc.size(); ++i ) {
@@ -953,10 +1079,10 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc,
             return SWGSSeqInfo();
         }
         for ( size_t i = kVersionDigits; i--; version /= 10) {
-            if ( acc[kNumLetters+i] != '0' ) {
+            if ( acc[num_letters+i] != '0' ) {
                 return SWGSSeqInfo();
             }
-            seq.m_WGSAcc[kNumLetters+i] = char('0'+version%10);
+            seq.m_WGSAcc[num_letters+i] = char('0'+version%10);
         }
         if ( version ) {
             // doesn't fit
@@ -971,7 +1097,6 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc,
     if ( !GetWGSDb(seq) ) {
         return seq;
     }
-    SIZE_TYPE row_digits = acc.size() - row_pos;
     if ( seq.m_WGSDb->GetIdRowDigits() != row_digits ) {
         return seq;
     }
@@ -1026,20 +1151,16 @@ CID2WGSProcessor_Impl::ResolveAcc(const CTextseq_id& id,
     case CSeq_id::eAcc_tsa:
     case CSeq_id::eAcc_targeted:
         if ( type & CSeq_id::fAcc_prot ) {
-            if ( acc.size() <= 8 ) { // 3+5
-                return ResolveProtAcc(id, resolver);
-            }
-            return SWGSSeqInfo();
+            return ResolveProtAcc(id, resolver);
         }
         else {
             return ResolveWGSAcc(acc, id, fAllow_master|fAllow_na);
         }
     case CSeq_id::eAcc_other:
         // Some EMBL WGS accession aren't identified as WGS, so we'll try lookup anyway
-        if ( type == CSeq_id::eAcc_embl_prot ) {
-            if ( acc.size() <= 8 ) { // 3+5
-                return ResolveProtAcc(id, resolver);
-            }
+        if ( type == CSeq_id::eAcc_embl_prot ||
+             (type == CSeq_id::eAcc_gb_prot && acc.size() == 10) ) { // TODO: remove
+            return ResolveProtAcc(id, resolver);
         }
         return SWGSSeqInfo();
     default:
