@@ -22,7 +22,7 @@ NCBI_begin_lib(xobjmgr)
     edit_saver unsupp_editsaver edits_db_engine edits_db_saver annot_finder
     gc_assembly_parser split_parser seq_id_sort
   )
-  NCBI_uses_toolkit_libraries(genome_collection seqedit seqsplit)
+  NCBI_uses_toolkit_libraries(genome_collection seqedit seqsplit submit)
   NCBI_project_watchers(vasilche)
 NCBI_end_lib()
 
