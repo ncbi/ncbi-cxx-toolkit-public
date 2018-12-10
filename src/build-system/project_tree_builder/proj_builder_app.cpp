@@ -1505,7 +1505,7 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
         }
         ofs << " $(MAKE) $(MFLAGS)"
             << " APP_PROJ=" << target_app
-            << " LIB_PROJ=" << target_lib
+            << (p->second.m_IsMetallib ? " METAL_PROJ=" : " LIB_PROJ=") << target_lib
             << " UNIX_PROJ=" << target_user
             << " $(MTARGET) $(SKIP_PRELIMINARIES)" << endl << endl;
  #endif
