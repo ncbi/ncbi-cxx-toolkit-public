@@ -90,7 +90,7 @@ static void GetSeqIdStr(const CBioseq::TId& ids, string& id_str)
         }
         else if (id->IsGeneral()) {
             id->GetGeneral().GetLabel(&general_id);
-            general_id = "general id \"" + id_str + '\"';
+            general_id = "general id \"" + general_id + '\"';
         }
         else if (id->IsLocal()) {
 
@@ -102,8 +102,7 @@ static void GetSeqIdStr(const CBioseq::TId& ids, string& id_str)
             }
 
             if (!local_id.empty()) {
-                local_id = "local id \"" + id_str + '\"';
-                break;
+                local_id = "local id \"" + local_id + '\"';
             }
         }
     }
@@ -1462,12 +1461,12 @@ static void ReportDateProblem(EDateIssues issue, string date_type, bool is_error
 {
     if (issue == eDateMissing) {
         ERR_POST_EX(0, 0, (is_error ? Error : Info) <<
-                    date_type << " date is missing from one or more input submissions.Will not propagate " <<
+                    date_type << " date is missing from one or more input submissions. Will not propagate " <<
                     date_type << " date to the master record.");
     }
     else if (issue == eDateDiff) {
         ERR_POST_EX(0, 0, (is_error ? Error : Info) <<
-                    "Different " << date_type << " dates encountered amongst input submissions.Will not propagate " <<
+                    "Different " << date_type << " dates encountered amongst input submissions. Will not propagate " <<
                     date_type << " date to the master record.");
     }
 }
