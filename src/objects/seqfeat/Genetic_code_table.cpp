@@ -686,7 +686,7 @@ const char * CGen_code_table_imp::sm_GenCodeTblMemStr [] =
     "sncbieaa \"----------**--------------------MMMM----------**---M------------\" } ,\n",
     "{ name \"Yeast Mitochondrial\" , name \"SGC2\" , id 3 ,\n",
     "ncbieaa  \"FFLLSSSSYY**CCWWTTTTPPPPHHQQRRRRIIMMTTTTNNKKSSRRVVVVAAAADDEEGGGG\",\n",
-    "sncbieaa \"----------**----------------------MM----------------------------\" } ,\n",
+    "sncbieaa \"----------**----------------------MM---------------M------------\" } ,\n",
     "{ name \"Mold Mitochondrial; Protozoan Mitochondrial; Coelenterate\n",
     "Mitochondrial; Mycoplasma; Spiroplasma\" ,\n",
     "name \"SGC3\" , id 4 ,\n",
