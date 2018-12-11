@@ -331,6 +331,9 @@ void CCassConnection::Connect()
         cass_cluster_set_tcp_keepalive(m_cluster, cass_true, m_keepalive);
     }
 
+    if (!m_blacklist.empty())
+        cass_cluster_set_blacklist_filtering(m_cluster, m_blacklist.c_str());
+
     Reconnect();
 }
 
@@ -467,6 +470,10 @@ string CCassConnection::Keyspace(void) const
     return m_keyspace;
 }
 
+void CCassConnection::SetBlackList(const string & blacklist)
+{
+    m_blacklist = blacklist;
+}
 
 shared_ptr<CCassQuery> CCassConnection::NewQuery()
 {
