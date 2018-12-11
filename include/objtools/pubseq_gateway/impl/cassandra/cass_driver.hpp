@@ -172,6 +172,8 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     void SetKeyspace(const string & keyspace);
     string Keyspace(void) const;
 
+    void SetBlackList(const string & blacklist);
+
     shared_ptr<CCassQuery> NewQuery();
     void GetTokenRanges(TTokenRanges &ranges);
     // @deprecated
@@ -190,6 +192,7 @@ class CCassConnection: public std::enable_shared_from_this<CCassConnection>
     int16_t                         m_port;
     string                          m_user;
     string                          m_pwd;
+    string                          m_blacklist;
     string                          m_keyspace;
     CassCluster *                   m_cluster;
     CassSession *                   m_session;
