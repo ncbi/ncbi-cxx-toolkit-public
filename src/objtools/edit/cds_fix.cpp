@@ -597,86 +597,6 @@ string s_GetmRNAName (const CSeq_feat& mrna)
     }
 }
 
-void s_AdjustForUTR_SingleSide(CSeq_loc& mrna_loc, const CSeq_loc &utr_loc, const CSeq_id &id)
-{
-    CRef<CSeq_loc> new_loc(new CSeq_loc);
-    new_loc->Assign(utr_loc);
-    new_loc->SetId(id);
-    CSeq_loc_I loc_it(*new_loc); 
-    while(loc_it)   
-    {
-        ++loc_it;
-    }
-    size_t pos = loc_it.GetPos();
-    if (pos > 0)
-        loc_it.SetPos(pos-1);
-    int utr_stop = loc_it.GetRange().GetTo();
-    CSeq_loc_CI old_loc_it(mrna_loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Positional);
-    int cds_start = old_loc_it.GetRange().GetFrom();
-    int cds_stop = old_loc_it.GetRange().GetTo();
-    while (old_loc_it && cds_stop < utr_stop)
-    {
-        ++old_loc_it;
-        if (old_loc_it)
-        {
-            cds_start = old_loc_it.GetRange().GetFrom();
-            cds_stop = old_loc_it.GetRange().GetTo();            
-        }
-    }
-    
-    if (cds_start - utr_stop <= 2 && cds_stop >= utr_stop)
-    {
-        loc_it.SetTo(cds_stop);
-        if (old_loc_it)
-            ++old_loc_it;
-    }
-    ++loc_it;
-    while (old_loc_it)
-    {
-        loc_it.InsertInterval(id, old_loc_it.GetRange(), old_loc_it.GetStrand());
-        ++old_loc_it;
-    }
-    mrna_loc.Assign(*loc_it.MakeSeq_loc());
-}
-
-void s_AdjustForUTR(const CSeq_feat& utr, int cd_start, int cd_stop, CSeq_loc& mrna_loc, bool& found5, bool& found3, CScope& scope)
-{
-    if (utr.GetData().GetSubtype() == CSeqFeatData::eSubtype_5UTR && mrna_loc.GetStrand() == utr.GetLocation().GetStrand()) {
-        if (utr.GetLocation().GetStrand() == eNa_strand_minus) {
-            if (utr.GetLocation().GetStart(eExtreme_Positional) != cd_stop + 1) {
-                return;
-            }
-        }
-        else {
-            if (utr.GetLocation().GetStop(eExtreme_Positional) != cd_start - 1) {
-                return;
-            }
-        }
-        found5 = true;
-        s_AdjustForUTR_SingleSide(mrna_loc, utr.GetLocation(), *mrna_loc.GetId());
-        mrna_loc.SetPartialStart( utr.GetLocation().IsPartialStart(eExtreme_Positional), eExtreme_Positional );        
-    }
-    else if (utr.GetData().GetSubtype() == CSeqFeatData::eSubtype_3UTR  && mrna_loc.GetStrand() == utr.GetLocation().GetStrand()) {
-        if (utr.GetLocation().GetStrand() == eNa_strand_minus) {
-            if (utr.GetLocation().GetStop(eExtreme_Positional) != cd_start - 1) {
-                return;
-            }
-        }
-        else {
-            if (utr.GetLocation().GetStart(eExtreme_Positional) != cd_stop + 1) {
-                return;
-            }
-        }
-        found3 = true;
-        CRef<CSeq_loc> new_loc(new CSeq_loc);
-        new_loc->Assign(utr.GetLocation());
-        s_AdjustForUTR_SingleSide(*new_loc, mrna_loc, *mrna_loc.GetId());        
-        mrna_loc.Assign(*new_loc);
-        mrna_loc.SetPartialStop( utr.GetLocation().IsPartialStop(eExtreme_Positional), eExtreme_Positional );
-    }
-}
-
-
 
 /// MakemRNAforCDS
 /// A function to create a CSeq_feat that represents the
@@ -720,28 +640,66 @@ CRef<CSeq_feat> MakemRNAforCDS(const CSeq_feat& cds, CScope& scope)
     if (!mrna || !NStr::Equal(prot_nm, s_GetmRNAName(*mrna))) {
         new_mrna.Reset (new CSeq_feat());
         new_mrna->SetData().SetRna().SetType(CRNA_ref::eType_mRNA);
-        new_mrna->SetLocation().Assign(cds.GetLocation());
+        new_mrna->SetLocation().Assign(cd_loc);
         new_mrna->SetData().SetRna().SetExt().SetName(prot_nm);
       
         bool found3 = false;
         bool found5 = false;
-        int cd_start = cd_loc.GetStart(eExtreme_Positional);
-        int cd_stop = cd_loc.GetStop(eExtreme_Positional);
-        //cd_loc.GetStrand();
- 
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->Assign(new_mrna->GetLocation());
+
         if (bsh) {      
-            for (CFeat_CI utr(bsh, CSeqFeatData::e_Imp); utr; ++utr)
+            for (CFeat_CI utr(bsh, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_5UTR : CSeqFeatData::eSubtype_3UTR); utr; ++utr)
             {
-                s_AdjustForUTR(utr->GetOriginalFeature(), cd_start, cd_stop, 
-                               new_mrna->SetLocation(), found5, found3, scope);
+                if (utr->GetLocation().GetStart(eExtreme_Positional) == cd_loc.GetStop(eExtreme_Positional) + 1)
+                {
+                    loc = sequence::Seq_loc_Add(*loc, utr->GetLocation(), CSeq_loc::fMerge_All|CSeq_loc::fSort, &scope);
+                    if (cd_loc.IsReverseStrand())
+                        found5 = true;
+                    else
+                        found3 = true;
+                    break;
+                }
+            }
+            for (CFeat_CI utr(bsh, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_3UTR : CSeqFeatData::eSubtype_5UTR); utr; ++utr)
+            {
+                if (utr->GetLocation().GetStop(eExtreme_Positional) + 1 == cd_loc.GetStart(eExtreme_Positional) )
+                {
+                    loc = sequence::Seq_loc_Add(*loc, utr->GetLocation(), CSeq_loc::fMerge_All|CSeq_loc::fSort, &scope);
+                    if (cd_loc.IsReverseStrand())
+                        found3 = true;
+                    else
+                        found5 = true;
+                    break;
+                }
             }
         } else if (sah) {
-            for (CFeat_CI utr(sah, CSeqFeatData::e_Imp); utr; ++utr) {
-                s_AdjustForUTR(utr->GetOriginalFeature(), cd_start, cd_stop, 
-                                new_mrna->SetLocation(), found5, found3, scope);
+            for (CFeat_CI utr(sah, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_5UTR : CSeqFeatData::eSubtype_3UTR); utr; ++utr)
+            {
+                if (utr->GetLocation().GetStart(eExtreme_Positional) == cd_loc.GetStop(eExtreme_Positional) + 1)
+                {
+                    loc = sequence::Seq_loc_Add(*loc, utr->GetLocation(), CSeq_loc::fMerge_All|CSeq_loc::fSort, &scope);
+                    if (cd_loc.IsReverseStrand())
+                        found5 = true;
+                    else
+                        found3 = true;
+                    break;
+                }
+            }
+            for (CFeat_CI utr(sah, cd_loc.IsReverseStrand() ? CSeqFeatData::eSubtype_3UTR : CSeqFeatData::eSubtype_5UTR); utr; ++utr)
+            {
+                if (utr->GetLocation().GetStop(eExtreme_Positional) + 1 == cd_loc.GetStart(eExtreme_Positional) )
+                {
+                    loc = sequence::Seq_loc_Add(*loc, utr->GetLocation(), CSeq_loc::fMerge_All|CSeq_loc::fSort, &scope);
+                    if (cd_loc.IsReverseStrand())
+                        found3 = true;
+                    else
+                        found5 = true;
+                    break;
+                }
             }
         }
-
+        new_mrna->SetLocation(*loc);
 
         if (!found5)
             new_mrna->SetLocation().SetPartialStart(true, eExtreme_Positional); 
