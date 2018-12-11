@@ -199,6 +199,7 @@ void CCassConnectionFactory::ReloadConfig(const CNcbiRegistry &  registry)
         m_PassFile = registry.GetString(m_Section, "password_file", "");
         m_PassSection = registry.GetString(m_Section, "password_section", "");
         m_CassHosts = registry.GetString(m_Section, "service", "");
+        m_CassBlackList = registry.GetString(m_Section, "black_list", "");
         m_LogEnabled = registry.GetBool(m_Section, "log", false);
 
         ProcessParams();
@@ -267,6 +268,7 @@ shared_ptr<CCassConnection> CCassConnectionFactory::CreateInstance(void)
 
     rv->SetTimeouts(m_CassConnTimeoutMs, m_CassQueryTimeoutMs);
     rv->SetFallBackRdConsistency(m_CassFallbackRdConsistency);
+    rv->SetBlackList(m_CassBlackList);
 
     if (m_CassFallbackWrConsistency != 0)
         rv->SetFallBackWrConsistency(m_CassFallbackWrConsistency);
