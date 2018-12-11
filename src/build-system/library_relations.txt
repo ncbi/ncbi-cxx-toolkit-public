@@ -1086,7 +1086,7 @@ remapcli needs remap
 remapcli needs xconnect
 sage_mappings needs xser
 sample_asn needs general
-sampling needs3party $(ORIG_LIBS)
+sampling needs xncbi
 sasl2 needs3party $(ORIG_LIBS)
 scoremat needs seqset
 sdbapi needs $(XCONNEXT)
