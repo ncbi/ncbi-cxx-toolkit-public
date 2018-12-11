@@ -28,11 +28,11 @@ APP: project_tree_builder
 #Linux32-Centos    : debug : GCC.sh           --with-debug    --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 
 #Linux64-Centos    : plain : ICC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
-Linux64-Centos    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-downloaded-vdb
+Linux64-Centos    : plain : GCC.sh           --without-pcre --without-libdw --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-downloaded-vdb
 
-Linux64-Ubuntu    : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-downloaded-vdb
+Linux64-Ubuntu    : plain : GCC.sh           --without-pcre --without-libdw --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-downloaded-vdb
 
-FreeBSD64  : plain : Clang.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-pcre --without-downloaded-vdb
+FreeBSD64  : plain : Clang.sh           --without-pcre --without-libdw --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-pcre --without-downloaded-vdb
 
 IntelMAC   : plain : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c --without-downloaded-vdb
 
