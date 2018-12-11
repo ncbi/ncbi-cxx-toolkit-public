@@ -85,6 +85,7 @@ private:
     string                  m_PassFile;
     string                  m_PassSection;
     string                  m_LoadBalancingStr;
+    string                  m_CassBlackList;
     unsigned int            m_CassConnTimeoutMs;
     unsigned int            m_CassQueryTimeoutMs;
     bool                    m_CassFallbackRdConsistency;
