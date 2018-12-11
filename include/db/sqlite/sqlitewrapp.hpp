@@ -686,7 +686,7 @@ public:
         eBadCall        ///< Method called when there's no enough capabilities
                         ///< to finish it successfully
     };
-    virtual const char* GetErrCodeString(void) const;
+    virtual const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CSQLITE_Exception, CException);
 };
 

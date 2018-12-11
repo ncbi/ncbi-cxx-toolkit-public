@@ -1048,7 +1048,7 @@ public:
         eEmptyError,
         eOtherError
     };
-    virtual const char* GetErrCodeString(void) const;
+    const char* GetErrCodeString(void) const override;
     NCBI_EXCEPTION_DEFAULT(CSeq_id_MapperException,CException);
 };
 
