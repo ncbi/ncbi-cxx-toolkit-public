@@ -1,0 +1,24 @@
+                Warning:
+Problem:        completeness modifier has invalid value: "invalid_completeness_qual".
+
+                Warning:
+Problem:        gcode modifier has invalid value: "nonintegral". Integer value expected.
+
+                Warning:
+Problem:        mgcode modifier has invalid value: "nonintegral". Integer value expected.
+
+                Warning:
+Problem:        mol-type modifier has invalid value: "invalid_mol_type_qual".
+
+                Warning:
+Problem:        molecule modifier has invalid value: "invalid_molecule_qual".
+
+                Warning:
+Problem:        pgcode modifier has invalid value: "nonintegral". Integer value expected.
+
+                Warning:
+Problem:        strand modifier has invalid value: "invalid_strand_qual".
+
+                Warning:
+Problem:        tech modifier has invalid value: "invalid_tech_qual".
+

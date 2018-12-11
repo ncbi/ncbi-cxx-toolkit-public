@@ -1,0 +1,8 @@
+strand invalid_strand_qual
+molecule invalid_molecule_qual
+mol-type invalid_mol_type_qual
+completeness invalid_completeness_qual
+tech         invalid_tech_qual
+gcode        nonintegral
+pgcode       nonintegral
+mgcode       nonintegral 

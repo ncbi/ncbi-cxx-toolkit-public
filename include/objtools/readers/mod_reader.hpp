@@ -153,6 +153,23 @@ private:
 };
 
 
+
+class NCBI_XOBJREAD_EXPORT CModReaderException : 
+    public CException
+{
+public:
+    enum EErrCode {
+        eInvalidValue,
+        eMultipleValuesForbidden,
+        eUnknownModifier
+    };
+
+    const char* GetErrCodeString(void) const override;
+
+    NCBI_EXCEPTION_DEFAULT(CModReaderException, CException);
+};
+
+
 class CPCRPrimerSet;
 class CDescrCache;
 class CFeatureCache;
@@ -164,6 +181,7 @@ class NCBI_XOBJREAD_EXPORT CModAdder
 {
 public:
     using TMods = CModHandler::TMods;
+    using TModEntry = TMods::value_type;
     using TIterator = typename TMods::const_iterator;
     using TRange = pair<TIterator, TIterator>;
 
@@ -176,16 +194,11 @@ private:
 
     static bool x_TrySeqInstMod(const TRange& mod_range, CSeq_inst& seq_inst,
             IObjtoolsListener* pMessageListener);
-    static void x_SetStrand(const TRange& mod_range, CSeq_inst& seq_inst,
-            IObjtoolsListener* pMessageListener);
-    static void x_SetMolecule(const TRange& mod_range, CSeq_inst& seq_inst, 
-            IObjtoolsListener* pMessageListener);
-    static void x_SetMoleculeFromMolType(const TRange& mod_range, CSeq_inst& seq_inst,
-            IObjtoolsListener* pMessageListener);
-    static void x_SetTopology(const TRange& mod_range, CSeq_inst& seq_inst,
-            IObjtoolsListener* pMessageListener);
-    static void x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst, 
-            IObjtoolsListener* pMessageListener);
+    static void x_SetStrand(const TRange& mod_range, CSeq_inst& seq_inst);
+    static void x_SetMolecule(const TRange& mod_range, CSeq_inst& seq_inst);
+    static void x_SetMoleculeFromMolType(const TRange& mod_range, CSeq_inst& seq_inst);
+    static void x_SetTopology(const TRange& mod_range, CSeq_inst& seq_inst);
+    static void x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst);
 
 
     static bool x_TryDescriptorMod(const TRange& mod_range, CDescrCache& descr_cache,
@@ -196,8 +209,7 @@ private:
             IObjtoolsListener* pMessageListener);
     static bool x_TryOrgRefMod(const TRange& mod_range, CDescrCache& descr_cache,
             IObjtoolsListener* pMessageListener);
-    static bool x_TryOrgNameMod(const TRange& mod_range, CDescrCache& descr_cache, 
-            IObjtoolsListener* pMessageListener);
+    static bool x_TryOrgNameMod(const TRange& mod_range, CDescrCache& descr_cache);
     static void x_SetDBxref(const TRange& mod_range, CDescrCache& descr_cache,
             IObjtoolsListener* pMessageListener);
 
@@ -230,12 +242,14 @@ private:
     static bool x_TryProteinRefMod(const TRange& mod_range, CFeatureCache& protein_ref_cache,
             IObjtoolsListener* pMessageListener);
 
-    static void x_ReportError(void){} // Need to fill this in
-    static void x_ReportInvalidValue(const string& mod_name, const string& mod_value,
-            IObjtoolsListener* pMessageListener=nullptr);
-
-    static void x_PutMessage(const string& message, EDiagSev severity, 
+    static void x_ThrowInvalidValue(const TModEntry& mod,
+                                    const string& add_msg="");
+    static bool x_PutError(const CModReaderException& exception, IObjtoolsListener* pMessageListener);
+    static bool x_PutMessage(const string& message, EDiagSev severity, 
             IObjtoolsListener* pMessageListener);
+
+    static void x_AssertSingleValue(const TRange& mod_range);
+
 };
 
 

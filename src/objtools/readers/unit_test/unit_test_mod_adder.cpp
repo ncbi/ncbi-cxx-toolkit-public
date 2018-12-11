@@ -43,6 +43,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objtools/readers/mod_reader.hpp>
+#include <objtools/logging/listener.hpp>
 
 #include <cstdio>
 
@@ -330,12 +331,12 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         testInfo.mOutFile.GetName() << " and " <<
         testInfo.mErrorFile.GetName() << endl;
 
-    string logName = CDirEntry::GetTmpName();
-
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
+    CNcbiIfstream tmpltstr(testInfo.mTemplateFile.GetPath().c_str());
+    const string& logName = CDirEntry::GetTmpName();
+    CNcbiOfstream errstr(logName.c_str());
     const string& resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
-    CNcbiIfstream tmpltstr(testInfo.mTemplateFile.GetPath().c_str());
     auto pSeqEntry = Ref(new CSeq_entry());
     tmpltstr >> MSerial_AsnText >> pSeqEntry;
     pSeqEntry->Parentize();
@@ -345,7 +346,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
                    const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
 
     CModHandler mod_handler;
-    IObjtoolsListener* pMessageListener = nullptr;
+    unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
     try {
         multimap<string, string> mods;
         for (string line; getline(ifstr, line);) {
@@ -355,7 +356,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
                                mod_info.value,
                                mod_info.handle_existing);
         }
-        CModAdder::Apply(mod_handler, bioseq, pMessageListener);
+        CModAdder::Apply(mod_handler, bioseq, pMessageListener.get());
     }
     catch (...) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
@@ -364,8 +365,14 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     }
 
     ofstr << MSerial_AsnText << pSeqEntry;
+
+    if (pMessageListener->Count() > 0) {
+        pMessageListener->Dump(errstr);
+    }
+
     ifstr.close();
     ofstr.close();
+    errstr.close();
 
 
     bool success = testInfo.mOutFile.CompareTextContents(resultName, CFile::eIgnoreWs);
@@ -381,18 +388,15 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     CDirEntry(resultName).Remove();
 
 
-/*
     success = testInfo.mErrorFile.CompareTextContents(logName, CFile::eIgnoreWs);
-    CDirEntry deErrors = CDirEntry(logName);
-    deErrors.Copy(testInfo.mErrorFile.GetPath() + "." + extKeep);
-    if (!success  &&  keep) {
-        deErrors.Copy(testInfo.mErrorFile.GetPath() + "." + extKeep);
-    }
-    deErrors.Remove();
     if (!success) {
+        CDirEntry deErrors = CDirEntry(logName);
+        if (keep) {
+            deErrors.Copy(testInfo.mErrorFile.GetPath() + "." + extKeep);
+        }
+        deErrors.Remove();
         BOOST_ERROR("Error: " << sTestName << " failed due to error handling diffs.");
     }
-    */
 };
 
 NCBITEST_AUTO_INIT()
