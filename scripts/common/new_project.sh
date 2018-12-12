@@ -558,11 +558,23 @@ uc_proj_name=`echo "$proj_name" | tr "a-z" "A-Z"`
 
 CopySources()
 {
-  for input in $old_dir$1/*; do
+    local workdir="$1"
+
+  for input in $old_dir$1/* $old_dir$1/.*; do
+    case `basename $input` in
+        . | .. ) continue;;
+    esac
+
     base=`basename $input | sed -e "s/${old_proj_name}/${proj_name}/g; s/${old_header_name}/${proj_name}/g"`
-    case $base in
-      CMakeLists.* | *~ | CVS | .svn )
-        continue ;; # skip
+
+    case "$workdir" in
+        /pkg ) case $base in
+              *~ | CVS | .svn ) continue ;; # skip
+           esac ;;
+
+        *) case $base in
+              CMakeLists.* | *~ | CVS | .svn ) continue ;; # skip
+           esac ;;
     esac
 
     if grep -w "`basename $input`" $old_dir$1/.cvsignore >/dev/null 2>&1; then
