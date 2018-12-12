@@ -2936,6 +2936,12 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list)
             primary_id += dbtag.GetStr();
         break;
     }
+    case e_Gi:
+        // GIs are always secondary
+        if (secondary_id_list) {
+            secondary_id_list->emplace_back(NStr::NumericToString(GetGi()));
+        }
+        break;
     default:
     {
         // In the logic below, any Textseq-id is treated as primary. However a
