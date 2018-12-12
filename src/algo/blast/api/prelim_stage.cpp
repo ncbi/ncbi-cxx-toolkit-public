@@ -149,7 +149,7 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
 
     // -RMH- This appears to be a problem right now.  When used...this
     // can cause all the work to go to a single thread!  (-MN- This is fixed in SB-768)
-    BlastSeqSrcSetNumberOfThreads(m_InternalData->m_SeqSrc->GetPointer(), 
+    BlastSeqSrcSetNumberOfThreads(m_InternalData->m_SeqSrc->GetPointer(),
                                   GetNumberOfThreads());
 
     // Create the threads ...
@@ -199,12 +199,12 @@ CBlastPrelimSearch::Run()
     if (! BlastSeqSrcGetNumSeqs(m_InternalData->m_SeqSrc->GetPointer())) {
         string msg =
             "GI or TI list filtering resulted in an empty database.";
-        
+
         m_Messages.AddMessageAllQueries(eBlastSevWarning,
-                                        kBlastMessageNoContext, 
+                                        kBlastMessageNoContext,
                                         msg);
     }
-    
+
     BlastSeqSrcResetChunkIterator(m_InternalData->m_SeqSrc->GetPointer());
 
     CEffectiveSearchSpacesMemento eff_memento(m_Options);
@@ -227,9 +227,9 @@ CBlastPrelimSearch::Run()
 
         for (Uint4 i = 0; i < query_splitter->GetNumberOfChunks(); i++) {
             try {
-                CRef<IQueryFactory> chunk_qf = 
+                CRef<IQueryFactory> chunk_qf =
                     query_splitter->GetQueryFactoryForChunk(i);
-                _TRACE("Query chunk " << i << "/" << 
+                _TRACE("Query chunk " << i << "/" <<
                        query_splitter->GetNumberOfChunks());
                 CRef<SInternalData> chunk_data =
                     SplitQuery_CreateChunkData(chunk_qf, m_Options,
@@ -238,16 +238,16 @@ CBlastPrelimSearch::Run()
 
                 CRef<ILocalQueryData> query_data(
                         chunk_qf->MakeLocalQueryData( &*m_Options ) );
-                BLAST_SequenceBlk * chunk_queries = 
+                BLAST_SequenceBlk * chunk_queries =
                     query_data->GetSequenceBlk();
                 GetDbIndexSetUsingThreadsFn()( IsMultiThreaded() );
-                GetDbIndexRunSearchFn()( 
+                GetDbIndexRunSearchFn()(
                         chunk_queries, lut_options, word_options );
 
                 if (IsMultiThreaded()) {
                      x_LaunchMultiThreadedSearch(*chunk_data);
                 } else {
-                    retval = 
+                    retval =
                         CPrelimSearchRunner(*chunk_data, opts_memento.get())();
                     if (retval) {
                         NCBI_THROW(CBlastException, eCoreBlastError,
@@ -264,7 +264,7 @@ CBlastPrelimSearch::Run()
                 // free this as the query_splitter keeps a reference to the
                 // chunk factories, which in turn keep a reference to the local
                 // query data.
-                query_data->FlushSequenceData();        
+                query_data->FlushSequenceData();
             } catch (const CBlastException& e) {
                 // This error message is safe to ignore for a given chunk,
                 // because the chunks might end up producing a region of
@@ -304,6 +304,11 @@ CBlastPrelimSearch::Run()
                            BlastErrorCode2String(retval));
             }
         }
+        CRef<TBlastHSPStream> s(m_InternalData->m_HspStream);
+        if (*((*s)->results->hitlist_array) == NULL) {
+            CNcbiDiag diag;
+            diag << Warning << "No seeds produced for query" << Endm;
+        }
     }
 
     return m_InternalData;
@@ -313,7 +318,7 @@ int
 CBlastPrelimSearch::CheckInternalData()
 {
     int retval = 0;
-    retval = BlastScoreBlkCheck(m_InternalData->m_ScoreBlk->GetPointer()); 
+    retval = BlastScoreBlkCheck(m_InternalData->m_ScoreBlk->GetPointer());
     return retval;
 }
 
@@ -341,7 +346,7 @@ CBlastPrelimSearch::ComputeBlastHSPResults(BlastHSPStream* stream,
            hit_param,
            max_num_hsps,
            removed_hsps);
-    if( rm_hsps_info){ 
+    if( rm_hsps_info){
 	rm_hsps_info->reserve(m_InternalData->m_QueryInfo->num_queries );
         for( int query_index = 0 ; query_index < m_InternalData->m_QueryInfo->num_queries ; query_index ++ ){
 	  (*rm_hsps_info)[ query_index ] = removed_hsps[query_index] == FALSE ? false : true;
