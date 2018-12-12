@@ -245,7 +245,7 @@ bool sFeatureHasChildOfSubtype(
     const CMappedFeat& mf,
     CSeqFeatData::ESubtype subtype,
     feature::CFeatTree* pTree = 0)
-    //  ----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 {
     bool bTreeIsMine = false;
     if (!pTree) {
@@ -1737,7 +1737,7 @@ bool CGff3Writer::xAssignFeatureAttributesFormatSpecific(
     return (
         xAssignFeatureAttributeID(record, fc, mf)  &&
         xAssignFeatureAttributeParent(record, fc, mf)  &&
-        xAssignFeatureAttributeGene(record, fc, mf)  &&
+        //xAssignFeatureAttributesGene(record, fc, mf)  &&
         xAssignFeatureAttributeName(record, mf)); //must come last!
 }
 

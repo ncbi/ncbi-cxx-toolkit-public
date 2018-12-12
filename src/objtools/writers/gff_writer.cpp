@@ -561,12 +561,10 @@ bool CGff2Writer::xAssignFeatureAttributesFormatIndependent(
         xAssignFeatureAttributeException(record, fc, mf)  &&
         xAssignFeatureAttributeExperiment(record, fc, mf)  &&
         xAssignFeatureAttributeProduct(record, fc, mf)  &&
-        xAssignFeatureAttributeLocusTag(record, fc, mf)  &&
+        xAssignFeatureAttributesGene(record, fc, mf)  &&
         xAssignFeatureAttributeOldLocusTag(record, fc, mf)  &&
-        xAssignFeatureAttributeGeneDesc(record, fc, mf)  &&
         xAssignFeatureAttributeGeneBiotype(record, fc, mf)  &&
         xAssignFeatureAttributeMapLoc(record, fc, mf)  &&
-        xAssignFeatureAttributeGeneSynonym(record, fc, mf)  &&
         xAssignFeatureAttributeRibosomalSlippage(record, fc, mf)  &&
         xAssignFeatureAttributePseudoGene(record, fc, mf)  &&
         xAssignFeatureAttributeFunction(record, fc, mf)  &&
@@ -705,36 +703,6 @@ bool CGff2Writer::xAssignFeatureAttributeProteinId(
         return true;
     }
     return true;
-}
-
-//  ----------------------------------------------------------------------------
-bool CGff2Writer::xAssignFeatureAttributeGeneSynonym(
-    CGffFeatureRecord& record,
-    CGffFeatureContext&,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    if (!mf.GetData().IsGene()) {
-        return true;
-    }
-
-    const CGene_ref& gene_ref = mf.GetData().GetGene();
-    if (!gene_ref.IsSetSyn()) {
-        return true;
-    }
-
-    const list<string>& syns = gene_ref.GetSyn();
-    list<string>::const_iterator it = syns.begin();
-    if (!gene_ref.IsSetLocus() && !gene_ref.IsSetLocus_tag()) {
-        ++it;
-    }    
-    if (it == syns.end()) {
-        return true;
-    }
-    while (it != syns.end()) {
-        record.AddAttribute("gene_synonym", *(it++));
-    }
-    return true; 
 }
 
 //  ----------------------------------------------------------------------------
@@ -883,18 +851,72 @@ bool CGff2Writer::xAssignFeatureAttributeCodeBreak(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Writer::xAssignFeatureAttributeGene(
+const CGene_ref&
+sGetClosestGeneRef(
+    CGffFeatureContext& fc,
+    const CMappedFeat& mf)
+//  ----------------------------------------------------------------------------
+{
+    static const CGene_ref noRef;
+    if (mf.GetData().IsGene()) {
+        return mf.GetData().GetGene();
+    }
+    if (mf.IsSetXref()) {
+        const auto& xrefs = mf.GetXref();
+        for (auto it = xrefs.begin(); it != xrefs.end(); ++it) {
+            const auto& xref = **it;
+            if (xref.CanGetData() && xref.GetData().IsGene()) {
+                return xref.GetData().GetGene();
+            }
+        }
+    }
+    CMappedFeat gene = fc.FindBestGeneParent(mf);
+    if (gene  &&  gene.IsSetData()  &&  gene.GetData().IsGene()) {
+        return gene.GetData().GetGene();
+    }
+    return noRef;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Writer::xAssignFeatureAttributesGene(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
     const CMappedFeat& mf )
 //  ----------------------------------------------------------------------------
 {
-    string strGene;
-    if (mf.GetData().Which() == CSeq_feat::TData::e_Gene) {
-        const CGene_ref& gene_ref = mf.GetData().GetGene();
-        CWriteUtil::GetGeneRefGene(gene_ref, strGene);
-        if (!strGene.empty()) {
-            record.SetAttribute("gene", strGene);
+    const auto& geneRef = sGetClosestGeneRef(fc, mf);
+    if (geneRef.IsSetLocus()) {
+        record.SetAttribute("gene", geneRef.GetLocus());
+    }
+    if (geneRef.IsSetLocus_tag()) {
+        record.SetAttribute("locus_tag", geneRef.GetLocus_tag());
+    }
+    if (mf.GetData().IsGene()) {
+        if (geneRef.IsSetDesc()) {
+            record.SetAttribute("description", geneRef.GetDesc());
+        }
+        if (geneRef.IsSetSyn()) {
+            const auto& syns = geneRef.GetSyn();
+            auto it = syns.begin();
+            while (it != syns.end()) {
+                record.AddAttribute("gene_synonym", *(it++));
+            }
+        }
+    }
+    return true;
+
+    // obsolete from here onward
+    if (mf.GetData().IsGene()) {
+        const auto& geneRef = mf.GetData().GetGene();
+        if (geneRef.IsSetDesc()) {
+            record.SetAttribute("description", geneRef.GetDesc());
+        }
+        if (geneRef.IsSetSyn()) {
+            const auto& syns = geneRef.GetSyn();
+            auto it = syns.begin();
+            while (it != syns.end()) {
+                record.AddAttribute("gene_synonym", *(it++));
+            }
         }
         return true;
     }
@@ -906,9 +928,12 @@ bool CGff2Writer::xAssignFeatureAttributeGene(
                 ++it) {
             const CSeqFeatXref& xref = **it;
             if (xref.CanGetData() && xref.GetData().IsGene()) {
-                CWriteUtil::GetGeneRefGene(xref.GetData().GetGene(), strGene);
-                if (!strGene.empty()) {
-                    record.SetAttribute("gene", strGene);
+                const auto& geneRef = xref.GetData().GetGene();
+                if (geneRef.IsSetLocus()) {
+                    record.SetAttribute("gene", geneRef.GetLocus());
+                }
+                if (geneRef.IsSetLocus_tag()) {
+                    record.SetAttribute("locus_tag", geneRef.GetLocus_tag());
                 }
                 return true;
             }
@@ -917,33 +942,17 @@ bool CGff2Writer::xAssignFeatureAttributeGene(
 
     CMappedFeat gene = fc.FindBestGeneParent(mf);
     if (gene  &&  gene.IsSetData()  &&  gene.GetData().IsGene()) {
-        CWriteUtil::GetGeneRefGene(gene.GetData().GetGene(), strGene);
-        if (!strGene.empty()) {
-            record.SetAttribute("gene", strGene);
+        const auto& geneRef = gene.GetData().GetGene();
+        if (geneRef.IsSetLocus()) {
+            record.SetAttribute("gene", geneRef.GetLocus());
+        }
+        if (geneRef.IsSetLocus_tag()) {
+            record.SetAttribute("locus_tag", geneRef.GetLocus_tag());
         }
         return true; 
     }
     return true; 
 }
-
-//  ----------------------------------------------------------------------------
-bool CGff2Writer::xAssignFeatureAttributeLocusTag(
-    CGffFeatureRecord& record,
-    CGffFeatureContext&,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    if (!mf.GetData().IsGene()) {
-        return true;
-    }
-    const CGene_ref& gene_ref = mf.GetData().GetGene();
-    if (!gene_ref.IsSetLocus_tag()) {
-        return true;
-    }
-    record.SetAttribute("locus_tag", gene_ref.GetLocus_tag());
-    return true; 
-}
-
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureAttributeOldLocusTag(
@@ -978,25 +987,6 @@ bool CGff2Writer::xAssignFeatureAttributeOldLocusTag(
     }
     return true;
 }
-
-//  ----------------------------------------------------------------------------
-bool CGff2Writer::xAssignFeatureAttributeGeneDesc(
-    CGffFeatureRecord& record,
-    CGffFeatureContext&,
-    const CMappedFeat& mf )
-//  ----------------------------------------------------------------------------
-{
-    if (!mf.GetData().IsGene()) {
-        return true;
-    }
-    const CGene_ref& gene_ref = mf.GetData().GetGene();
-    if (!gene_ref.IsSetDesc()) {
-        return true;
-    }
-    record.SetAttribute("description", gene_ref.GetDesc());
-    return true; 
-}
-
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::xAssignFeatureAttributeGeneBiotype(

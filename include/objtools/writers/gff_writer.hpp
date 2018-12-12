@@ -252,6 +252,10 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&) { return false; };
+    virtual bool xAssignFeatureAttributesGene(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        const CMappedFeat&);
     virtual bool xAssignFeatureAttributeDbxref(
         CGffFeatureRecord&,
         CGffFeatureContext&,
@@ -261,10 +265,6 @@ protected:
         CGffFeatureContext&,
         const CMappedFeat&) { return false; };
     virtual bool xAssignFeatureAttributeProduct(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&);
-    virtual bool xAssignFeatureAttributeGeneSynonym(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
@@ -292,19 +292,7 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
-    bool xAssignFeatureAttributeGene(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributeLocusTag(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&);
     bool xAssignFeatureAttributeOldLocusTag(
-        CGffFeatureRecord&,
-        CGffFeatureContext&,
-        const CMappedFeat&);
-    bool xAssignFeatureAttributeGeneDesc(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CMappedFeat&);
