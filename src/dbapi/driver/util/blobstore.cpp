@@ -321,27 +321,42 @@ CSimpleBlobStore::CSimpleBlobStore(const string& table_name,
     if(m_nofDataCols) {
         int i;
         string init_val(is_text? "' '" : "0x0");
+        string data_names, data_values, updates;
+        const char* delim = kEmptyCStr;
         m_DataColName= new string[m_nofDataCols];
         for(i= 0; i < m_nofDataCols; i++) {
             m_DataColName[i]= blob_column[i];
+            data_names += delim + blob_column[i];
+            data_values += delim + init_val;
+            updates += ' ' + blob_column[i] + " = " + init_val + ',';
+            delim = ", ";
         }
-        m_sCMD= "if exists(select * from " + m_TableName +
-            " where " + m_KeyColName + " = @key AND " + m_NumColName +
-            " = @n) update " + m_TableName + " set";
-        for(i= 0; i < m_nofDataCols; i++) {
-            m_sCMD+= (i? ", ":" ") + m_DataColName[i] + "=" + init_val;
-        }
-        m_sCMD+= " where " + m_KeyColName + " = @key AND " + m_NumColName +
-            " = @n else insert " + m_TableName + "(" + m_KeyColName + "," +
-            m_NumColName;
-        for(i= 0; i < m_nofDataCols; i++) {
-            m_sCMD+= ", " + m_DataColName[i];
-        }
-        m_sCMD+= ")values(@key,@n";
-        for(i= 0; i < m_nofDataCols; i++) {
-            m_sCMD+= "," + init_val;
-        }
-        m_sCMD+=")";
+        updates[updates.size() - 1] = '\n';
+#if 0
+        // Full safety requires the WITH(HOLDLOCK), but Sybase doesn't
+        // support locking hints in this context.
+        m_sCMD  = "MERGE " + m_TableName + " WITH(HOLDLOCK) AS t\n";
+        m_sCMD += "  USING (VALUES (" + data_values + "))\n";
+        m_sCMD += "    AS s (" + data_names + ")\n";
+        m_sCMD += "  ON t." + m_KeyColName + " = @key\n";
+        m_sCMD += "    AND t." + m_NumColName + " = @n\n";
+        m_sCMD += "  WHEN MATCHED THEN UPDATE SET" + updates;
+        m_sCMD += "  WHEN NOT MATCHED THEN\n";
+        m_sCMD += "    INSERT (" + m_KeyColName + ", " + m_NumColName + ", ";
+        m_sCMD += data_names + ")\n";
+        m_sCMD += "    VALUES (@key, @n, " + data_values + ");";
+#else
+        m_sCMD  = "UPDATE " + m_TableName + " SET " + updates;
+        m_sCMD += "  WHERE " + m_KeyColName + " = @key\n";
+        m_sCMD += "    AND " + m_NumColName + " = @n\n";
+        m_sCMD += "IF @@ROWCOUNT = 0\n";
+        m_sCMD += "  INSERT INTO " + m_TableName + " (" + m_KeyColName + ", ";
+        m_sCMD += m_NumColName + ", " + data_names + ")\n";
+        m_sCMD += "    SELECT @key, @n, " + data_values + "\n";
+        m_sCMD += "      WHERE NOT EXISTS (SELECT " + m_NumColName + " FROM ";
+        m_sCMD += m_TableName + " WHERE " + m_KeyColName + " = @key AND ";
+        m_sCMD += m_NumColName + " = @n)";
+#endif
     }
     else m_DataColName= 0;
 }
@@ -366,12 +381,11 @@ bool CSimpleBlobStore::Init(CDB_Connection* con)
 }
 
 /*
-if exists(select key from T where key= @key and n = @n)
-begin
-   update T set b1=0x0, ... bn= 0x0 where key= @key and n= @n
-end
-else
-   insert T(key, n, b1, ...,bn) values(@key, @n, 0x0, ...,0x0)
+UPDATE T SET b1 = 0x0, ..., bn = 0x0 WHERE key = @key AND n = @n
+IF @@ROWCOUNT = 0
+  INSERT INTO T (key, n, b1, ..., bn)
+    SELECT @key, @n, 0x0, ..., 0x0
+      WHERE NOT EXISTS (SELECT n FROM T WHERE key = @key AND n = @n)
 */
 I_BlobDescriptor& CSimpleBlobStore::BlobDescriptor(void)
 {
