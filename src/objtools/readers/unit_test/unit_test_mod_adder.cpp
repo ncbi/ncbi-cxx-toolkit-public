@@ -345,8 +345,8 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
                    pSeqEntry->SetSeq() :
                    const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
 
-    CModHandler mod_handler;
     unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
+    CModHandler mod_handler(pMessageListener.get());
     try {
         multimap<string, string> mods;
         for (string line; getline(ifstr, line);) {

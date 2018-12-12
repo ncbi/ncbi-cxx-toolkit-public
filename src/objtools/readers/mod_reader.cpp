@@ -699,15 +699,28 @@ void CModHandler::AddMods(const TMods& mods,
                           EHandleExisting handle_existing)
 {
     unordered_set<string> previous_mods;
+    unordered_set<string> current_mods;
+
     for (const auto& mod : mods) {
         const auto& canonical_name = x_GetCanonicalName(mod.first);
         const auto allow_multiple_values = 
             (sm_MultipleValuesForbidden.find(canonical_name) == 
             sm_MultipleValuesForbidden.end());
 
-        const auto first_mod_instance = previous_mods.insert(canonical_name).second;
+        if (!allow_multiple_values &&
+            !current_mods.insert(canonical_name).second) {
+            string msg = mod.first + " conflicts with other modifiers in set.";
+            if (m_pMessageListener) {
+                x_PutMessage(msg, eDiag_Error);
+            }   
+            else { 
+                NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
+            }
+        }
 
-        if (first_mod_instance ||
+        const auto not_in_previous_mods = previous_mods.insert(canonical_name).second;
+
+        if (not_in_previous_mods ||
             allow_multiple_values) {
             if (allow_multiple_values) {
                 if ((handle_existing == eAppendPreserve) ||
@@ -720,28 +733,20 @@ void CModHandler::AddMods(const TMods& mods,
                 }
                 else
                 if ((handle_existing == eReplace) &&
-                     first_mod_instance) {
+                     not_in_previous_mods) {
                     m_Mods.erase(canonical_name);
                     m_Mods.emplace(canonical_name, mod.second);
                 }
                 else
-                if (!first_mod_instance) {
+                if (!not_in_previous_mods) {
                     m_Mods.emplace(canonical_name, mod.second);
                 }
             }
-            else { // first_mod_instance
+            else { // not_in_previous_mods
                 if (m_Mods.find(canonical_name) != m_Mods.end()) {
                     m_Mods.erase(canonical_name);
                 }
                 m_Mods.emplace(canonical_name, mod.second);
-            }
-        }
-        else {
-            if (m_pMessageListener) {
-                // report an error
-            }
-            else {
-                // throw an exception
             }
         }
     }
@@ -867,7 +872,6 @@ struct SRangeGetter
 
 
 
-// Add subtype and subsource references
 class CDescrCache 
 {
 public:
@@ -982,7 +986,8 @@ CDescrCache::CDescrCache(CBioseq& bioseq)
 class CFeatureCache
 {
 public:
-    CFeatureCache(CBioseq& bioseq) : m_Bioseq(bioseq) {}
+    CFeatureCache(CBioseq& bioseq, const CSeq_loc* pLoc) 
+        : m_Bioseq(bioseq), m_pLoc(pLoc) {}
     virtual ~CFeatureCache() = default;
 
     CSeq_feat& SetSeq_feat(void);
@@ -996,6 +1001,7 @@ private:
 
     CBioseq& m_Bioseq;
     CRef<CSeq_feat> m_pFeature;
+    const CSeq_loc* m_pLoc;
 };
 
 
@@ -1033,7 +1039,13 @@ CSeq_feat& CFeatureCache::SetSeq_feat()
 
     m_pFeature = Ref(new CSeq_feat());
     m_pFeature->SetData(*CreateSeqFeatData());
-    m_pFeature->SetLocation(*x_GetWholeSeqLoc());
+
+    if (m_pLoc) {
+        m_pFeature->SetLocation(const_cast<CSeq_loc&>(*m_pLoc));
+    } 
+    else {
+        m_pFeature->SetLocation(*x_GetWholeSeqLoc());
+    }
 
     auto pAnnot = CRef<CSeq_annot>(new CSeq_annot());
     pAnnot->SetData().SetFtable().push_back(m_pFeature);
@@ -1045,7 +1057,8 @@ CSeq_feat& CFeatureCache::SetSeq_feat()
 class CGeneRefCache : public CFeatureCache
 {
 public:
-    CGeneRefCache(CBioseq& bioseq) : CFeatureCache(bioseq) {}
+    CGeneRefCache(CBioseq& bioseq, const CSeq_loc* pLoc) : 
+        CFeatureCache(bioseq, pLoc) {}
 private: 
     bool VerifyFeature(const CSeq_feat& seq_feat) {
         return (seq_feat.IsSetData() &&
@@ -1063,7 +1076,8 @@ private:
 class CProteinRefCache : public CFeatureCache
 {
 public:
-    CProteinRefCache(CBioseq& bioseq) : CFeatureCache(bioseq) {}
+    CProteinRefCache(CBioseq& bioseq, const CSeq_loc* pLoc) : 
+        CFeatureCache(bioseq, pLoc) {}
 private:
     bool VerifyFeature(const CSeq_feat& seq_feat) {
         return (seq_feat.IsSetData() &&
@@ -1306,20 +1320,28 @@ CSeqdesc& CDescrCache::x_SetDescriptor(const EChoice eChoice,
     return *pDesc;
 }
 
+void CModAdder::Apply(const CModHandler& mod_handler,
+                      CBioseq& bioseq,
+                      IObjtoolsListener* pMessageListener)
+{
+    Apply(mod_handler, bioseq, nullptr, pMessageListener);
+}
+
 
 void CModAdder::Apply(const CModHandler& mod_handler,
                       CBioseq& bioseq,
+                      const CSeq_loc* pFeatLoc,
                       IObjtoolsListener* pMessageListener)
 {
     const auto& ranges = SRangeGetter<TMods>::GetEqualRanges(mod_handler.GetMods());
     CDescrCache descr_cache(bioseq);
 
-    unique_ptr<CGeneRefCache> pGeneRefCache(new CGeneRefCache(bioseq));
-    unique_ptr<CProteinRefCache> pProteinRefCache(new CProteinRefCache(bioseq));
+    unique_ptr<CGeneRefCache> pGeneRefCache(new CGeneRefCache(bioseq, pFeatLoc));
+    unique_ptr<CProteinRefCache> pProteinRefCache(new CProteinRefCache(bioseq, pFeatLoc));
 
     for (const auto& mod_range : ranges) {
         try {
-            if (x_TryDescriptorMod(mod_range, descr_cache, pMessageListener)) {
+            if (x_TryDescriptorMod(mod_range, descr_cache)) {
                 const string& mod_name = x_GetModName(mod_range);
                 if (mod_name == "secondary-accession"){
                     x_SetHist(mod_range, bioseq.SetInst());
@@ -1334,15 +1356,15 @@ void CModAdder::Apply(const CModHandler& mod_handler,
                 continue;
             }
 
-            if (x_TrySeqInstMod(mod_range, bioseq.SetInst(), pMessageListener)) {
+            if (x_TrySeqInstMod(mod_range, bioseq.SetInst())) {
                 continue;
             }
 
-            if (x_TryFeatureMod(mod_range, *pGeneRefCache, *pProteinRefCache, pMessageListener)) {
+            if (x_TryFeatureMod(mod_range, *pGeneRefCache, *pProteinRefCache)) {
                 continue;
             }
             // Report unrecognised modifier
-            string msg = "Unrecognized modifier: " + x_GetModName(mod_range);
+            string msg = "Unrecognized modifier: " + x_GetModName(mod_range) + ".";
             NCBI_THROW(CModReaderException, eUnknownModifier, msg);
         }
         catch(const CModReaderException& e) {
@@ -1412,8 +1434,7 @@ const string& CModAdder::x_GetModValue(const TRange& mod_range)
 }
 
 
-bool CModAdder::x_TrySeqInstMod(const TRange& mod_range, CSeq_inst& seq_inst,
-    IObjtoolsListener* pMessageListener)
+bool CModAdder::x_TrySeqInstMod(const TRange& mod_range, CSeq_inst& seq_inst)
 {
     const auto& mod_name = x_GetModName(mod_range);
 
@@ -1443,11 +1464,10 @@ bool CModAdder::x_TrySeqInstMod(const TRange& mod_range, CSeq_inst& seq_inst,
 
 
 
-bool CModAdder::x_TryDescriptorMod(const TRange& mod_range, CDescrCache& descr_cache, 
-        IObjtoolsListener* pMessageListener)
+bool CModAdder::x_TryDescriptorMod(const TRange& mod_range, CDescrCache& descr_cache)
 {
      
-    if (x_TryBioSourceMod(mod_range, descr_cache, pMessageListener)) {
+    if (x_TryBioSourceMod(mod_range, descr_cache)) {
         return true;
     }
 
@@ -1478,29 +1498,38 @@ bool CModAdder::x_TryDescriptorMod(const TRange& mod_range, CDescrCache& descr_c
 }
 
 
-bool CModAdder::x_TryBioSourceMod(const TRange& mod_range, CDescrCache& descr_cache,
-        IObjtoolsListener* pMessageListener)
+bool CModAdder::x_TryBioSourceMod(const TRange& mod_range, CDescrCache& descr_cache)
 {
     const auto& name = x_GetModName(mod_range);
     if (name == "location") {
-        const auto& value = x_GetModValue(mod_range);
         static const auto s_GenomeStringToEnum = s_GetReverseMap(s_GenomeEnumToString);
-        const auto& genome_enum = s_GenomeStringToEnum.at(value); // Need proper error handling here
-        descr_cache.SetBioSource().SetGenome(genome_enum);
+        const auto& value = x_GetModValue(mod_range);
+        auto it = s_GenomeStringToEnum.find(value);
+        if (it == s_GenomeStringToEnum.end()) {
+            x_ThrowInvalidValue(*mod_range.first);
+        }
+        descr_cache.SetBioSource().SetGenome(it->second);
         return true;
     }
 
     if (name == "origin") {
-        const auto& value = x_GetModValue(mod_range);
         static const auto s_OriginStringToEnum = s_GetReverseMap(s_OriginEnumToString);
-        const auto& origin_enum = s_OriginStringToEnum.at(value); // Need proper error handling here
-        descr_cache.SetBioSource().SetOrigin(origin_enum);
+        const auto& value = x_GetModValue(mod_range);
+        auto it = s_OriginStringToEnum.find(value);
+        if (it == s_OriginStringToEnum.end()) {
+            x_ThrowInvalidValue(*mod_range.first);
+        }
+        descr_cache.SetBioSource().SetOrigin(it->second);
         return true;
     }
 
     if (name == "focus") {
         if (NStr::EqualNocase(x_GetModValue(mod_range), "true")) {
             descr_cache.SetBioSource().SetIs_focus();
+        }
+        else 
+        if (NStr::EqualNocase(x_GetModValue(mod_range), "false")) {
+            x_ThrowInvalidValue(*mod_range.first);
         }
         return true;
     }
@@ -1515,12 +1544,12 @@ bool CModAdder::x_TryBioSourceMod(const TRange& mod_range, CDescrCache& descr_ca
     }
 
 
-    if (x_TryPCRPrimerMod(mod_range, descr_cache, pMessageListener)) {
+    if (x_TryPCRPrimerMod(mod_range, descr_cache)) {
         return true;
     }
 
 
-    if (x_TryOrgRefMod(mod_range, descr_cache, pMessageListener)) {
+    if (x_TryOrgRefMod(mod_range, descr_cache)) {
         return true;
     }
 
@@ -1606,8 +1635,7 @@ void CModAdder::x_AppendPrimerSeqs(const string& mod, vector<string>& reaction_s
 }
 
 
-bool CModAdder::x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& descr_cache,
-        IObjtoolsListener* pMessageListener)
+bool CModAdder::x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& descr_cache)
 {
     const auto& mod_name = x_GetModName(mod_range);
     
@@ -1727,8 +1755,7 @@ bool CModAdder::x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& descr_ca
 }
 
 
-bool CModAdder::x_TryOrgRefMod(const TRange& mod_range, CDescrCache& descr_cache,
-        IObjtoolsListener* pMessageListener)
+bool CModAdder::x_TryOrgRefMod(const TRange& mod_range, CDescrCache& descr_cache)
 {
     const auto& name = x_GetModName(mod_range);
     if (name == "taxname") {
@@ -1744,7 +1771,7 @@ bool CModAdder::x_TryOrgRefMod(const TRange& mod_range, CDescrCache& descr_cache
     }
 
     if (name == "dbxref") {
-        x_SetDBxref(mod_range, descr_cache, pMessageListener);
+        x_SetDBxref(mod_range, descr_cache);
         return true;
     }
 
@@ -1756,8 +1783,7 @@ bool CModAdder::x_TryOrgRefMod(const TRange& mod_range, CDescrCache& descr_cache
 }
 
 
-void CModAdder::x_SetDBxref(const TRange& mod_range, CDescrCache& descr_cache,
-        IObjtoolsListener* pMessageListener)
+void CModAdder::x_SetDBxref(const TRange& mod_range, CDescrCache& descr_cache)
 {   
    vector<CRef<CDbtag>> dbtags;
    for (auto it = mod_range.first; it != mod_range.second; ++it) {
@@ -1865,7 +1891,6 @@ void CModAdder::x_SetOrgMod(const TRange& mod_range, CDescrCache& descr_cache)
 void CModAdder::x_SetMolInfoType(const TRange& mod_range, CDescrCache& descr_cache)
 {
     const auto& value = x_GetModValue(mod_range);
- 
     auto it = s_BiomolStringToEnum.find(value);
     if (it != s_BiomolStringToEnum.end()) {
         descr_cache.SetMolInfo().SetBiomol(it->second);
@@ -2163,7 +2188,7 @@ void CModAdder::x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst)
         for (const auto& val : value_sublist) {
             string value = NStr::TruncateSpaces_Unsafe(val);
             if (value.length() >= 8 && 
-                value.substr(0,8) == "ref_seq|") {
+                value.substr(0,8) == "ref_seq|") { 
                 value.erase(3,4); // ref_seq| -> ref|
             }
             try {
@@ -2177,6 +2202,10 @@ void CModAdder::x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst)
         }
     }
 
+    if (id_list.empty()) {
+        return;
+    }
+
     list<CRef<CSeq_id>> secondary_ids;
     // try catch statement
     transform(id_list.begin(), id_list.end(), back_inserter(secondary_ids),
@@ -2188,21 +2217,19 @@ void CModAdder::x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst)
 
 bool CModAdder::x_TryFeatureMod(const TRange& mod_range, 
         CGeneRefCache& gene_ref_cache,
-        CProteinRefCache& protein_ref_cache,
-        IObjtoolsListener* pMessageListener)
+        CProteinRefCache& protein_ref_cache)
 {
-    if (x_TryGeneRefMod(mod_range, gene_ref_cache, pMessageListener)) {
+    if (x_TryGeneRefMod(mod_range, gene_ref_cache)) {
         return true;
     }
-    if (x_TryProteinRefMod(mod_range, protein_ref_cache, pMessageListener)) {
+    if (x_TryProteinRefMod(mod_range, protein_ref_cache)) {
         return true;
     }
     return false;
 }
 
 
-bool CModAdder::x_TryGeneRefMod(const TRange& mod_range, CFeatureCache& feat_cache,
-        IObjtoolsListener* pMessageListener)
+bool CModAdder::x_TryGeneRefMod(const TRange& mod_range, CFeatureCache& feat_cache)
 {
     const auto& name = x_GetModName(mod_range);
     if (name == "gene") {
@@ -2237,8 +2264,7 @@ bool CModAdder::x_TryGeneRefMod(const TRange& mod_range, CFeatureCache& feat_cac
 }
 
 
-bool CModAdder::x_TryProteinRefMod(const TRange& mod_range, CFeatureCache& feat_cache,
-        IObjtoolsListener* pMessageListener)
+bool CModAdder::x_TryProteinRefMod(const TRange& mod_range, CFeatureCache& feat_cache)
 {
     const auto& mod_name = x_GetModName(mod_range);
 

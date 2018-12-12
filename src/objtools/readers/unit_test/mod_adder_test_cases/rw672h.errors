@@ -1,8 +1,20 @@
                 Warning:
+Problem:        dosage is deprecated - ignoring
+
+                Warning:
+Problem:        old-name is deprecated - ignoring
+
+                Warning:
 Problem:        completeness modifier has invalid value: "invalid_completeness_qual".
 
                 Warning:
 Problem:        gcode modifier has invalid value: "nonintegral". Integer value expected.
+
+                Warning:
+Problem:        Unrecognized modifier: invalid-mod-name.
+
+                Warning:
+Problem:        location modifier has invalid value: "invalid_location".
 
                 Warning:
 Problem:        mgcode modifier has invalid value: "nonintegral". Integer value expected.
@@ -12,6 +24,9 @@ Problem:        mol-type modifier has invalid value: "invalid_mol_type_qual".
 
                 Warning:
 Problem:        molecule modifier has invalid value: "invalid_molecule_qual".
+
+                Warning:
+Problem:        origin modifier has invalid value: "invalid_origin".
 
                 Warning:
 Problem:        pgcode modifier has invalid value: "nonintegral". Integer value expected.

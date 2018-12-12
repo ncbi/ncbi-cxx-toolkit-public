@@ -6,3 +6,8 @@ tech         invalid_tech_qual
 gcode        nonintegral
 pgcode       nonintegral
 mgcode       nonintegral 
+location     invalid_location
+origin       invalid_origin
+invalid_mod_name invalid_mod_value
+dosage      deprecated_mod   
+old-name    deprecated_mod

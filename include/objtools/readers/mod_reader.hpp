@@ -188,30 +188,28 @@ public:
     static void Apply(const CModHandler& mod_handler, CBioseq& bioseq, 
             IObjtoolsListener* pMessageListener);
 
+    static void Apply(const CModHandler& mod_handler, 
+            CBioseq& bioseq,
+            const CSeq_loc* pFeatLoc,
+            IObjtoolsListener* pMessageListener);
+
 private:
     static const string& x_GetModName(const TRange& mod_range);
     static const string& x_GetModValue(const TRange& mod_range);
 
-    static bool x_TrySeqInstMod(const TRange& mod_range, CSeq_inst& seq_inst,
-            IObjtoolsListener* pMessageListener);
+    static bool x_TrySeqInstMod(const TRange& mod_range, CSeq_inst& seq_inst);
     static void x_SetStrand(const TRange& mod_range, CSeq_inst& seq_inst);
     static void x_SetMolecule(const TRange& mod_range, CSeq_inst& seq_inst);
     static void x_SetMoleculeFromMolType(const TRange& mod_range, CSeq_inst& seq_inst);
     static void x_SetTopology(const TRange& mod_range, CSeq_inst& seq_inst);
     static void x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst);
 
-
-    static bool x_TryDescriptorMod(const TRange& mod_range, CDescrCache& descr_cache,
-            IObjtoolsListener* pMessageListener);
-    static bool x_TryBioSourceMod(const TRange& mod_range, CDescrCache& descr_cache,
-            IObjtoolsListener* pMessageListener);
-    static bool x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& descr_cache,
-            IObjtoolsListener* pMessageListener);
-    static bool x_TryOrgRefMod(const TRange& mod_range, CDescrCache& descr_cache,
-            IObjtoolsListener* pMessageListener);
+    static bool x_TryDescriptorMod(const TRange& mod_range, CDescrCache& descr_cache);
+    static bool x_TryBioSourceMod(const TRange& mod_range, CDescrCache& descr_cache);
+    static bool x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& descr_cache);
+    static bool x_TryOrgRefMod(const TRange& mod_range, CDescrCache& descr_cache);
     static bool x_TryOrgNameMod(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetDBxref(const TRange& mod_range, CDescrCache& descr_cache,
-            IObjtoolsListener* pMessageListener);
+    static void x_SetDBxref(const TRange& mod_range, CDescrCache& descr_cache);
 
     static void x_AppendPrimerNames(const string& names, vector<string>& reaction_names);
     static void x_AppendPrimerSeqs(const string& names, vector<string>& reaction_seqs);
@@ -235,12 +233,9 @@ private:
     static void x_SetOrgMod(const TRange& mod_range, CDescrCache& descr_cache);
 
     static bool x_TryFeatureMod(const TRange& mod_range, CGeneRefCache& gene_ref_cache, 
-            CProteinRefCache& protein_ref_cache,
-            IObjtoolsListener* pMessageListener);
-    static bool x_TryGeneRefMod(const TRange& mod_range, CFeatureCache& gene_ref_cache,
-            IObjtoolsListener* pMessageListener);
-    static bool x_TryProteinRefMod(const TRange& mod_range, CFeatureCache& protein_ref_cache,
-            IObjtoolsListener* pMessageListener);
+            CProteinRefCache& protein_ref_cache);
+    static bool x_TryGeneRefMod(const TRange& mod_range, CFeatureCache& gene_ref_cache);
+    static bool x_TryProteinRefMod(const TRange& mod_range, CFeatureCache& protein_ref_cache);
 
     static void x_ThrowInvalidValue(const TModEntry& mod,
                                     const string& add_msg="");
@@ -249,7 +244,6 @@ private:
             IObjtoolsListener* pMessageListener);
 
     static void x_AssertSingleValue(const TRange& mod_range);
-
 };
 
 
