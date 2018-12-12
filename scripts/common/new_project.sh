@@ -86,6 +86,7 @@ AddIgnoreFiles()
     local target="$1"
     local fname="$target/.gitignore"
 
+    echo "Adding .gitingore to $target"
     echo > $fname
     for name in ${VCSIGNORED[@]}; do
         echo "$name" >> $fname
@@ -674,7 +675,7 @@ if test -n "$extra_inc" ; then
 fi
 test -n "$cleanup" && rm -rf "$tmp_app_checkout_dir"
 
-AddIgnoreFiles `dirname $makefile_name`
+AddIgnoreFiles "$proj_name"
 
 fmt <<EOF
 
