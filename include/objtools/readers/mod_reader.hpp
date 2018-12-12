@@ -175,6 +175,7 @@ class CDescrCache;
 class CFeatureCache;
 class CGeneRefCache;
 class CProteinRefCache;
+class CSeq_loc;
 
 
 class NCBI_XOBJREAD_EXPORT CModAdder
