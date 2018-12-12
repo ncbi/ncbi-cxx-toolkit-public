@@ -407,6 +407,8 @@ case $# in
   *)  Usage "Invalid number of arguments" ;;
 esac
 
+ShouldBeIgnoredByVcs ".#SRC-cache"
+
 if test ! -d "$builddir"  ||  test ! -f "$builddir/../inc/ncbiconf_unix.h" -a ! -f "$builddir/../inc/ncbiconf.h" ; then
   Usage "Pre-built NCBI C++ toolkit is not found in:  \"$builddir\""
 fi
