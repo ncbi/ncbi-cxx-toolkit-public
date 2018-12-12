@@ -352,12 +352,13 @@ void CGenbankGatherer::x_GatherTLS(void) const
     for (CSeqdesc_CI desc(ctx.GetHandle(), CSeqdesc::e_User);  desc;  ++desc) {
         const CUser_object& uo = desc->GetUser();
 
-        if (uo.GetType().IsStr()) {
-            const string& type = uo.GetType().GetStr();
-            if ( ! NStr::EqualNocase(type, "TLSProjects") )
-            {
-                continue;
-            }
+        if ( !uo.GetType().IsStr() ) {
+            continue;
+        }
+        const string& type = uo.GetType().GetStr();
+        if ( ! NStr::EqualNocase(type, "TLSProjects") )
+        {
+            continue;
         }
 
         ITERATE (CUser_object::TData, it, uo.GetData()) {
