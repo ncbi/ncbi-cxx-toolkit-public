@@ -1211,7 +1211,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStore)
         {
             sql =
                 "CREATE TABLE " + table_name + " ( \n"
-                "  id   INT, \n"
+                "  id   VARCHAR(2), \n"
                 "  cr_date   DATETIME DEFAULT getdate(), \n"
                 " \n"
                 "  -- columns needed to satisy blobstore.cpp classes \n"
@@ -1233,10 +1233,11 @@ BOOST_AUTO_TEST_CASE(Test_BlobStore)
 
         // Insert a row
         {
-            auto_stmt->ExecuteUpdate("INSERT INTO " + table_name + " (id) values (66)");
+            auto_stmt->ExecuteUpdate("INSERT INTO " + table_name
+                                     + " (id) values ('66')");
         }
 
-        {
+        for (int n = 0; n < 2; ++n) {
             enum {
                 IMAGE_BUFFER_SIZE = (64*1024*1024),
                 // The number of dataN fields in the table
@@ -1274,7 +1275,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStore)
                 for(int i = 0; i < 10000; ++i) {
                     *pStream <<
                         "A quick brown fox jumps over the lazy dog, message #" <<
-                        i << "\n";
+                        (n * 10000 + i) << "\n";
                 }
 
                 pStream->flush();
