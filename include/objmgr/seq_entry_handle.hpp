@@ -280,6 +280,7 @@ public:
     void ResetDescr(void) const;
     bool AddSeqdesc(CSeqdesc& v) const;
     CRef<CSeqdesc> RemoveSeqdesc(const CSeqdesc& v) const;
+    CRef<CSeqdesc> ReplaceSeqdesc(const CSeqdesc& old_desc, CSeqdesc& new_desc) const;
 
     void AddDescr(TDescr& v) const;
 
@@ -580,6 +581,7 @@ public:
     void x_RealResetDescr(void) const;
     bool x_RealAddSeqdesc(CSeqdesc& v) const;
     CRef<CSeqdesc> x_RealRemoveSeqdesc(const CSeqdesc& v) const;
+    CRef<CSeqdesc> x_RealReplaceSeqdesc(const CSeqdesc& old_desc, CSeqdesc& new_desc) const;
     void x_RealAddSeq_descr(TDescr& v) const;
 
 };

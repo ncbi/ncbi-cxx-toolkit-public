@@ -384,6 +384,11 @@ CRef<CSeqdesc> CSeq_entry_EditHandle::RemoveSeqdesc(const CSeqdesc& v) const
 }
 
 
+CRef<CSeqdesc> CSeq_entry_EditHandle::ReplaceSeqdesc(const CSeqdesc& old_desc, CSeqdesc& new_desc) const
+{
+    return x_RealReplaceSeqdesc(old_desc, new_desc);
+}
+
 
 CBioseq_EditHandle
 CSeq_entry_EditHandle::AttachBioseq(CBioseq& seq, int index) const
@@ -741,6 +746,12 @@ bool CSeq_entry_EditHandle::x_RealAddSeqdesc(CSeqdesc& v) const
 CRef<CSeqdesc> CSeq_entry_EditHandle::x_RealRemoveSeqdesc(const CSeqdesc& v) const
 {
     return x_GetInfo().RemoveSeqdesc(v);
+}
+
+
+CRef<CSeqdesc> CSeq_entry_EditHandle::x_RealReplaceSeqdesc(const CSeqdesc& old_desc, CSeqdesc& new_desc) const
+{
+    return x_GetInfo().ReplaceSeqdesc(old_desc, new_desc);
 }
 
 

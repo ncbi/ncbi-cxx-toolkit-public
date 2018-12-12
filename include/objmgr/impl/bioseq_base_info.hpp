@@ -87,6 +87,7 @@ public:
     void ResetDescr(void);
     bool AddSeqdesc(CSeqdesc& d);
     CRef<CSeqdesc> RemoveSeqdesc(const CSeqdesc& d);
+    CRef<CSeqdesc> ReplaceSeqdesc(const CSeqdesc& old_desc, CSeqdesc& new_desc);
     void AddSeq_descr(const TDescr& v);
 
     virtual bool x_IsSetDescr(void) const = 0;

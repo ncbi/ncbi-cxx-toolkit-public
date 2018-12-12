@@ -831,6 +831,12 @@ CRef<CSeqdesc> CBioseq_EditHandle::RemoveSeqdesc(const CSeqdesc& d) const
 }
 
 
+CRef<CSeqdesc> CBioseq_EditHandle::ReplaceSeqdesc(const CSeqdesc& old_desc, CSeqdesc& new_desc) const
+{
+    return x_RealReplaceSeqdesc(old_desc, new_desc);
+}
+
+
 void CBioseq_EditHandle::AddSeq_descr(TDescr& v) const
 {
     typedef CAddDescr_EditCommand<CBioseq_EditHandle> TCommand;
@@ -1034,6 +1040,12 @@ bool CBioseq_EditHandle::x_RealAddSeqdesc(CSeqdesc& d) const
 CRef<CSeqdesc> CBioseq_EditHandle::x_RealRemoveSeqdesc(const CSeqdesc& d) const
 {
     return x_GetInfo().RemoveSeqdesc(d);
+}
+
+
+CRef<CSeqdesc> CBioseq_EditHandle::x_RealReplaceSeqdesc(const CSeqdesc& old_desc, CSeqdesc& new_desc) const
+{
+    return x_GetInfo().ReplaceSeqdesc(old_desc, new_desc);
 }
 
 

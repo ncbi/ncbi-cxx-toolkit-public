@@ -535,6 +535,13 @@ CRef<CSeqdesc> CSeq_entry_Info::RemoveSeqdesc(const CSeqdesc& d)
     return m_Contents->RemoveSeqdesc(d);
 }
 
+
+CRef<CSeqdesc> CSeq_entry_Info::ReplaceSeqdesc(const CSeqdesc& old_desc, CSeqdesc& new_desc)
+{
+    x_Update(fNeedUpdate_descr);
+    return m_Contents->ReplaceSeqdesc(old_desc, new_desc);
+}
+
 /*
 void CSeq_entry_Info::AddDescr(CSeq_entry_Info& src)
 {

@@ -298,6 +298,7 @@ public:
     TDescr& SetDescr(void) const;
     bool AddSeqdesc(CSeqdesc& d) const;
     CRef<CSeqdesc> RemoveSeqdesc(const CSeqdesc& d) const;
+    CRef<CSeqdesc> ReplaceSeqdesc(const CSeqdesc& old_desc, CSeqdesc& new_desc) const;
     void AddSeq_descr(TDescr& v) const;
 
     /// Create new empty seq-entry
@@ -499,6 +500,7 @@ public:
     void x_RealSetDescr(TDescr& v) const;
     bool x_RealAddSeqdesc(CSeqdesc& d) const;
     CRef<CSeqdesc> x_RealRemoveSeqdesc(const CSeqdesc& d) const;
+    CRef<CSeqdesc> x_RealReplaceSeqdesc(const CSeqdesc& old_desc, CSeqdesc& new_desc) const;
     void x_RealAddSeq_descr(TDescr& v) const;
 
     void x_RealResetId(void) const;

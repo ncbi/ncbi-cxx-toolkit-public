@@ -289,6 +289,25 @@ CRef<CSeqdesc> CBioseq_Base_Info::RemoveSeqdesc(const CSeqdesc& d)
 }
 
 
+CRef<CSeqdesc> CBioseq_Base_Info::ReplaceSeqdesc(const CSeqdesc& old_desc, CSeqdesc& new_desc)
+{
+    x_Update(fNeedUpdate_descr);
+    if ( !IsSetDescr() ) {
+        return CRef<CSeqdesc>(0);
+    }
+    TDescr::Tdata& s = x_SetDescr().Set();
+    NON_CONST_ITERATE ( TDescr::Tdata, it, s ) {
+        if ( it->GetPointer() == &old_desc ) {
+            // Lock the object to prevent destruction
+            CRef<CSeqdesc> desc_nc = *it;
+            *it = &new_desc;
+            return desc_nc;
+        }
+    }
+    return CRef<CSeqdesc>(0);
+}
+
+
 void CBioseq_Base_Info::AddSeq_descr(const TDescr& v)
 {
     TDescr::Tdata& s = x_SetDescr().Set();
