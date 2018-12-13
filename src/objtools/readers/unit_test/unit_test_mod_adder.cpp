@@ -248,55 +248,6 @@ static CRef<CSeq_entry> sCreateSkeletonEntry(void)
     return pSeqEntry;
 }
 
-
-void sUpdateCase(CDir& test_cases_dir, const string& test_name)
-{   
-    string input = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
-    string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
-    string errors = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extErrors);
-    if (!CFile(input).Exists()) {
-         BOOST_FAIL("input file " << input << " does not exist.");
-    }
-    cerr << "Creating new test case from " << input << " ..." << endl;
-
-    CNcbiIfstream ifstr(input.c_str());
-
-    try {
-    }
-    catch (...) {
-        ifstr.close();
-        BOOST_FAIL("Error: " << input << " failed during conversion.");
-    }
-    ifstr.close();
-    cerr << "    Produced new error listing " << output << "." << endl;
-
-    CNcbiOfstream ofstr(output.c_str());
-    ofstr.close();
-    cerr << "    Produced new ASN1 file " << output << "." << endl;
-
-    cerr << " ... Done." << endl;
-}
-
-void sUpdateAll(CDir& test_cases_dir) {
-
-    const vector<string> kEmptyStringVec;
-    TTestNameToInfoMap testNameToInfoMap;
-    CTestNameToInfoMapLoader testInfoLoader(
-        testNameToInfoMap, extTemplate, extInput, extOutput, extErrors);
-    FindFilesInDir(
-        test_cases_dir,
-        kEmptyStringVec,
-        kEmptyStringVec,
-        testInfoLoader,
-        fFF_Default | fFF_Recursive );
-
-    ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
-        const string & sName = name_to_info_it->first;
-        sUpdateCase(test_cases_dir, sName);
-    }
-}
-
-
 struct SModInfo {
     string name;
     string value;
@@ -323,6 +274,81 @@ static void sGetModInfo(const string& line, SModInfo& mod_info)
     }
     return;
 }
+
+void sUpdateCase(CDir& test_cases_dir, const string& test_name)
+{   
+    string input  = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
+    string tmplt = CDir::ConcatPath(test_cases_dir.GetPath(), test_name + "." + extTemplate);
+    string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
+    string errors = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extErrors);
+    if (!CFile(input).Exists()) {
+         BOOST_FAIL("input file " << input << " does not exist.");
+    }
+    cerr << "Creating new test case from " << input << " ..." << endl;
+
+    CNcbiIfstream ifstr(input.c_str());
+    CNcbiIfstream tmpltstr(tmplt.c_str());
+    auto pSeqEntry = Ref(new CSeq_entry());
+    tmpltstr >> MSerial_AsnText >> pSeqEntry;
+    pSeqEntry->Parentize();
+
+    auto& bioseq = pSeqEntry->IsSeq() ? 
+                   pSeqEntry->SetSeq() :
+                   const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
+
+    unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
+    CModHandler mod_handler(pMessageListener.get());
+
+    try {
+        multimap<string, string> mods;
+        for (string line; getline(ifstr, line);) {
+            SModInfo mod_info;
+            sGetModInfo(line, mod_info);
+            mod_handler.AddMod(mod_info.name,
+                               mod_info.value,
+                               mod_info.handle_existing);
+        }
+        CModAdder::Apply(mod_handler, bioseq, pMessageListener.get());
+    }
+    catch (...) {
+        ifstr.close();
+        BOOST_FAIL("Error: " << input << " failed during conversion.");
+    }
+    ifstr.close();
+
+    CNcbiOfstream ofstr(output.c_str());
+    ofstr << MSerial_AsnText << pSeqEntry;
+    ofstr.close();
+    cerr << "    Produced new ASN1 file " << output << "." << endl;
+
+    CNcbiOfstream errstr(errors);
+    if (pMessageListener->Count() > 0) {
+        pMessageListener->Dump(errstr);
+    }
+    errstr.close();
+    cerr << "    Produced new error listing " << errors << "." << endl;
+    cerr << " ... Done." << endl;
+}
+
+void sUpdateAll(CDir& test_cases_dir) {
+
+    const vector<string> kEmptyStringVec;
+    TTestNameToInfoMap testNameToInfoMap;
+    CTestNameToInfoMapLoader testInfoLoader(
+        testNameToInfoMap, extTemplate, extInput, extOutput, extErrors);
+    FindFilesInDir(
+        test_cases_dir,
+        kEmptyStringVec,
+        kEmptyStringVec,
+        testInfoLoader,
+        fFF_Default | fFF_Recursive );
+
+    ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
+        const string & sName = name_to_info_it->first;
+        sUpdateCase(test_cases_dir, sName);
+    }
+}
+
 
 void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 {
@@ -365,7 +391,6 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     }
 
     ofstr << MSerial_AsnText << pSeqEntry;
-
     if (pMessageListener->Count() > 0) {
         pMessageListener->Dump(errstr);
     }
@@ -433,7 +458,6 @@ BOOST_AUTO_TEST_CASE(RunTests)
     CDir test_cases_dir( args["test-dir"].AsDirectory() );
     BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(), 
         "Cannot find dir: " << test_cases_dir.GetPath() );
-
     bool update_all = args["update-all"].AsBoolean();
     if (update_all) {
         sUpdateAll(test_cases_dir);
@@ -445,7 +469,6 @@ BOOST_AUTO_TEST_CASE(RunTests)
         sUpdateCase(test_cases_dir, update_case);
         return;
     }
-   
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
