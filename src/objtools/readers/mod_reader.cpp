@@ -651,32 +651,10 @@ CModHandler::CModHandler(IObjtoolsListener* listener)
 
 
 void CModHandler::AddMod(const string& name,
-                         const string& value,
-                         EHandleExisting handle_existing)
-{
-    const auto& canonical_name = x_GetCanonicalName(name);
-    if (NStr::IsBlank(canonical_name)) {
-        string message = "Modifier name not specified - skipping";
-        x_PutMessage(message, eDiag_Warning);
-        return;
-    }
-
-    if (x_IsDeprecated(canonical_name)) {
-        string message = name + " is deprecated - ignoring";
-        x_PutMessage(message, eDiag_Warning);
-        return;
-    }
-    x_HandleExisting(canonical_name, handle_existing);
-    m_Mods.emplace(canonical_name, value);
-}
-
-
-void CModHandler::AddMod(const string& name,
                          const CModValueAndAttrib& value_attrib,
                          EHandleExisting handle_existing)
 {
     const auto& canonical_name = x_GetCanonicalName(name);
-
     if (NStr::IsBlank(canonical_name)) {
         string message = "Modifier name not specified - skipping";
         x_PutMessage(message, eDiag_Warning);
@@ -689,9 +667,36 @@ void CModHandler::AddMod(const string& name,
         return;
     }
 
+    if (handle_existing == ePreserve) {
+        return;
+    }
 
-    x_HandleExisting(canonical_name, handle_existing);
+    const bool multiple_values_forbidden = 
+        x_MultipleValuesForbidden(canonical_name);
+
+    if (multiple_values_forbidden &&
+        (handle_existing == eAppendPreserve)) {
+        return;
+    }
+
+    const bool remove_existing = 
+        ((handle_existing == eReplace) ||
+        (multiple_values_forbidden &&
+         (handle_existing == eAppendReplace)));
+
+    if (remove_existing) {
+        m_Mods.erase(canonical_name);
+    }
+
     m_Mods.emplace(canonical_name, value_attrib);
+}
+
+
+void CModHandler::AddMod(const string& name,
+                         const string& value,
+                         EHandleExisting handle_existing)
+{
+    AddMod(name, CModValueAndAttrib(value), handle_existing);
 }
 
 
@@ -753,30 +758,10 @@ void CModHandler::AddMods(const TMods& mods,
 }
 
 
-void CModHandler::x_HandleExisting(const string& canonical_name, 
-        EHandleExisting handle_existing)
+bool CModHandler::x_MultipleValuesForbidden(const string& canonical_name)
 {
-    if (m_Mods.find(canonical_name) != m_Mods.end()) {
-        if (handle_existing == ePreserve) { // Do nothing
-            return;
-        }
-        if (handle_existing == eReplace) {
-            m_Mods.erase(canonical_name);    
-        }
-        else { 
-            const auto allow_multiple_values = 
-                (sm_MultipleValuesForbidden.find(canonical_name) == 
-                sm_MultipleValuesForbidden.end());
-
-            if (allow_multiple_values == false) {
-                if (handle_existing == eAppendPreserve) { // Do nothing
-                    return;
-                }
-                // handle_existing == eAppendReplace
-                m_Mods.erase(canonical_name);
-            }
-        }
-    }
+    return (sm_MultipleValuesForbidden.find(canonical_name) !=
+            sm_MultipleValuesForbidden.end());
 }
 
 

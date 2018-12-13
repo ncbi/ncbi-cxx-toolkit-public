@@ -88,7 +88,7 @@ public:
 private:
     string x_GetCanonicalName(const string& name) const;
     string x_GetNormalizedString(const string& name) const;
-    void x_HandleExisting(const string& canonical_name, EHandleExisting handle_existing);
+    static bool x_MultipleValuesForbidden(const string& canonical_name);
     void x_PutMessage(const string& message, EDiagSev severity);
     static bool x_IsDeprecated(const string& canonical_name);
 
