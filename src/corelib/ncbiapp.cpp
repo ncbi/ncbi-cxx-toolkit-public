@@ -114,7 +114,7 @@ CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
 
     m_DisableArgDesc = 0;
     m_HideArgs = 0;
-    m_StdioFlags = 0;
+    m_StdioFlags = fDefault_SyncWithStdio; // It is not thread-safe otherwise
     m_CinBuffer = 0;
     m_ExitCodeCond = eNoExits;
 
@@ -1090,24 +1090,16 @@ void CNcbiApplication::SetStdioFlags(TStdioSetupFlags stdio_flags)
 {
     // do not call this function more than once
     // and from places other than App constructor
-    _ASSERT(m_StdioFlags == 0);
+    _ASSERT(m_StdioFlags == fDefault_SyncWithStdio);
     m_StdioFlags = stdio_flags;
 }
 
 
 void CNcbiApplication::x_SetupStdio(void)
 {
-#if 1//!defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_VERSION >= 411
-    // CAUTION:  http://gcc.gnu.org/bugzilla/show_bug.cgi?id=26777
-    //           fix applied Mar 29, 2006, scheduled for 4.1.1
     if ((m_StdioFlags & fDefault_SyncWithStdio) == 0) {
-        // SUN WorkShop STL stream library has significant performance loss
-        // (due to the multiple gratuitous lseeks() in std i/o)
-        // when sync_with_stdio is TRUE (default),
-        // so we turn off sync_with_stdio here.
         IOS_BASE::sync_with_stdio(false);
     }
-#endif
 
     if ((m_StdioFlags & fDefault_CinBufferSize) == 0
 #ifdef NCBI_OS_UNIX
