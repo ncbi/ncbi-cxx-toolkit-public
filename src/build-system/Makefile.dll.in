@@ -61,7 +61,8 @@ XDLL_LIBDEP   = $(XDLL_LIBS:%=$(status_dir)/.%.dep)
 ifneq "" "$(wildcard Makefile.$(TMPL).dll.libdep)"
   include Makefile.$(TMPL).dll.libdep
   ifneq "" "$(GENERATED_LIB_ORDER)"
-    XDLL_LIB = $(XDLL_LIB_FLAGS) $(GENERATED_LIB_ORDER)
+    XDLL_LIB = $(XDLL_LIB_FLAGS) \
+               $(filter-out -l$(LIB) -l$(LIB)$(DLL), $(GENERATED_LIB_ORDER))
   endif
   ifneq "" "$(GENERATED_LIB3PARTY_ORDER)"
     LIBS = $(GENERATED_LIB3PARTY_ORDER)
