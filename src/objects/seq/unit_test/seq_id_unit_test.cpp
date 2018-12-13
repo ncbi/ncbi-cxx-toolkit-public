@@ -2147,7 +2147,7 @@ static const TFastaOSLTMap kTestFastaOSLTMap = {
     { "gnl|Celera|cdm:10213987", { "CELERA|CDM:10213987" } },
     { "gnl|WGS:AAAB|CRA_x9P1GAV4nra", { "WGS:AAAB|CRA_X9P1GAV4NRA" } },
     { "gnl|WGS:ABCD|cont1", { "WGS:ABCD|CONT1" } },
-    { "gi|1234", { "" } },
+    { "gi|1234", { "", "1234" } },
     { "dbj|N00068|", { "N00068" } },
     { "prf||0806162C", { "0806162C" } },
     { "pdb|1GAV|", { "1GAV" } },
