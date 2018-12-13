@@ -1,11 +1,10 @@
 # $Id$
 
-# Miscellaneous objmgr applications
+# Meta-makefile("CACHE" project)
 #################################
 
-REQUIRES = objects
-
-SUB_PROJ = demo split_demo test
+APP_PROJ = objmgr_perf_test
+SUB_PROJ = 
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
