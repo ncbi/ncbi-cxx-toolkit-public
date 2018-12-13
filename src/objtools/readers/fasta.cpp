@@ -2055,7 +2055,6 @@ void CFastaReader::x_ApplyAllMods(
         title = pSmp->ParseTitle(title, CConstRef<CSeq_id>(bioseq.GetFirstId()) );
 
         pSmp->ApplyAllMods(bioseq);
-        ApplySourceMods(bioseq, *pSmp);
         pSmp->GetLabel(&title, CSourceModParser::fUnusedMods);
 
         copy( pSmp->GetBadMods().begin(), pSmp->GetBadMods().end(),
@@ -2181,10 +2180,6 @@ void CFastaReader::PostWarning(
 void CFastaReader::IgnoreProblem(ILineError::EProblem problem)
 {
     m_ignorable.push_back(problem);
-}
-
-void CFastaReader::ApplySourceMods(CBioseq&, CSourceModParser&)
-{
 }
 
 

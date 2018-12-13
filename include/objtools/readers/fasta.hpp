@@ -259,7 +259,6 @@ protected:
         const TStr& sLineText, 
         TSeqPos iLineNum,
         ILineErrorListener * pMessageListener) const;
-    virtual void   ApplySourceMods(CBioseq & bioseq, CSourceModParser& smp);
     static bool ExcessiveSeqDataInTitle(const string& title, 
                                         TFlags fFastaFlags);
     virtual void   PostWarning(ILineErrorListener * pMessageListener,

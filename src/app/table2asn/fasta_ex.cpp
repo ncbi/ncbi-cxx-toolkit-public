@@ -137,10 +137,5 @@ void CFastaReaderEx::AssembleSeq(objects::ILineErrorListener * pMessageListener)
 
 }
 
-void CFastaReaderEx::ApplySourceMods(CBioseq& bioseq, CSourceModParser& smp)
-{
-    //CSourceQualifiersReader::ApplyQualifiers(smp, bioseq, m_context.m_logger);
-}
-
 END_NCBI_SCOPE
 

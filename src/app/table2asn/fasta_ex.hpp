@@ -30,7 +30,6 @@ public:
     virtual void AssembleSeq(objects::ILineErrorListener * pMessageListener) override;
     virtual CRef<objects::CSeq_entry> ReadDIFasta(objects::ILineErrorListener * pMessageListener);
 protected:
-    virtual void ApplySourceMods(objects::CBioseq & bioseq, objects::CSourceModParser& smp) override;
     CTable2AsnContext& m_context;
     objects::CGapsEditor m_gap_editor;
 };
