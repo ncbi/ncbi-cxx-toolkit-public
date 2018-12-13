@@ -735,7 +735,7 @@ static void CheckMolecule(const CBioseq& bioseq, CSeqEntryInfo& info)
     }
 }
 
-static bool ProcessAccession(const string& accession)
+static bool ReportAccession(const string& accession)
 {
     if (GetParams().IsUpdateScaffoldsMode()) {
         if (NStr::StartsWith(accession, GetParams().GetAccession())) {
@@ -763,7 +763,7 @@ static bool IsProjectAccession(const string& accession, size_t len)
     if (four_letters_two_digits) {
 
         auto next_to_zeros = accession.find_first_not_of('0', 6);
-        if (next_to_zeros == string::npos || accession[next_to_zeros] == '-') {
+        if (next_to_zeros == string::npos) {
             return true;
         }
     }
@@ -820,35 +820,45 @@ static void CheckSecondaries(const CBioseq& bioseq, CSeqEntryInfo& info)
 
                 for (auto& accession : *extra_acc) {
 
-                    if (ProcessAccession(accession)) {
+                    size_t range = accession.find('-');
 
-                        size_t range = accession.find('-');
+                    if (ReportAccession(accession)) {
                         if (range == string::npos) {
                             ERR_POST_EX(0, 0, Error << "Found secondary accession \"" << accession << "\" in record with id \"" << cur_id << "\".");
                         }
                         else {
                             ERR_POST_EX(0, 0, Error << "Found secondary accessions range \"" << accession << "\" in record with id \"" << cur_id << "\".");
                         }
+                    }
 
-                        if (!IsProjectAccession(accession, range == string::npos ? accession.size() : range)) {
-                            if (range == string::npos) {
-                                extra_accessions.insert(accession);
-                            }
-                            else {
-                                // Unwrap the range
-                                auto digits = find_if(accession.begin(), accession.end(), [](char c) { return isdigit(c); });
-                                string prefix(accession.begin(), digits);
+                    if (range == string::npos) {
+                        if (!IsProjectAccession(accession, accession.size())) {
+                            extra_accessions.insert(accession);
+                        }
+                    }
+                    else {
+                        // Unwrap the range
+                        auto digits = find_if(accession.begin(), accession.end(), [](char c) { return isdigit(c); });
 
-                                size_t num_len = range - prefix.size(),
-                                       start = NStr::StringToSizet(CTempString(accession, digits - accession.begin(), num_len));
+                        static const size_t VERSION_LEN = 2;
+                        digits += VERSION_LEN;
 
-                                digits = find_if(accession.begin() + range, accession.end(), [](char c) { return isdigit(c); });
-                                size_t end = NStr::StringToSizet(CTempString(accession, digits - accession.begin(), num_len));
+                        string prefix(accession.begin(), digits);
 
-                                for (size_t cur_num = start; cur_num <= end; ++cur_num) {
-                                    extra_accessions.insert(prefix + ToStringLeadZeroes(cur_num, num_len));
-                                }
-                            }
+                        size_t num_len = range - prefix.size(),
+                               start = NStr::StringToSizet(CTempString(accession, digits - accession.begin(), num_len));
+
+                        digits = find_if(accession.begin() + range, accession.end(), [](char c) { return isdigit(c); });
+                        digits += VERSION_LEN;
+                        size_t end = NStr::StringToSizet(CTempString(accession, digits - accession.begin(), num_len));
+
+                        if (start == 0) {
+                            // do not count the project accession itself
+                            ++start;
+                        }
+
+                        for (size_t cur_num = start; cur_num <= end; ++cur_num) {
+                            extra_accessions.insert(prefix + ToStringLeadZeroes(cur_num, num_len));
                         }
                     }
                 }
