@@ -31,8 +31,11 @@
  */
 
 #include <atomic>
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <queue>
+#include <thread>
 #include <utility>
 
 #include <misc/jsonwrapp/jsonwrapp.hpp>
@@ -59,66 +62,244 @@ struct SInfoFlag
 struct SJsonOut
 {
     SJsonOut(bool interactive = false) : m_Printed(false), m_Interactive(interactive) {}
-    SJsonOut(SJsonOut&& other) : m_Printed(other.m_Printed.load()), m_Interactive(other.m_Interactive) {}
-    SJsonOut& operator=(SJsonOut&& other) { m_Printed = other.m_Printed.load(); m_Interactive = other.m_Interactive; return *this; }
     ~SJsonOut();
-    void operator()(const CJson_Document& doc);
+    SJsonOut& operator<<(const CJson_Document& doc);
 
 private:
+    mutex m_Mutex;
     atomic_bool m_Printed;
     bool m_Interactive;
+};
+
+class CProcessor
+{
+public:
+    CProcessor() : m_Stop(false) {}
+
+    void Stop()
+    {
+        unique_lock<mutex> lock(m_Mutex);
+        m_Stop.store(true);
+        m_CV.notify_one();
+        lock.unlock();
+        m_Thread.join();
+    }
+
+protected:
+    thread m_Thread;
+    atomic_bool m_Stop;
+    mutex m_Mutex;
+    condition_variable m_CV;
+};
+
+class CReporter : public CProcessor
+{
+public:
+    CReporter(SJsonOut& json_out) : m_JsonOut(json_out) {}
+
+    void Start()
+    {
+        m_Thread = thread([this]() { Run(); });
+    }
+
+    template <class TItem>
+    void Add(TItem item)
+    {
+        unique_lock<mutex> lock(m_Mutex);
+        Emplace(move(item));
+        m_CV.notify_one();
+    }
+
+    static CJson_Document Report(string reply);
+    static CJson_Document Report(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyItem> reply_item);
+    static CJson_Document Report(shared_ptr<CPSG_BlobData> blob_data);
+    static CJson_Document Report(shared_ptr<CPSG_BlobInfo> blob_info);
+    static CJson_Document Report(shared_ptr<CPSG_BioseqInfo> bioseq_info);
+
+    template <class TItem>
+    static CJson_Document ReportErrors(shared_ptr<TItem> item, string type);
+
+    static CJson_Document ReportError(int code, const string& message, const CJson_Document& req_doc);
+    static CJson_Document ReportError(int code, const string& message, const string& id);
+
+private:
+    void Run();
+
+    void Emplace(string request)                  { m_Requests.emplace(move(request)); }
+    void Emplace(shared_ptr<CPSG_Reply> reply)    {  m_Replies.emplace(move(reply));   }
+    void Emplace(shared_ptr<CPSG_ReplyItem> item) {    m_Items.emplace(move(item));    }
+
+    SJsonOut& m_JsonOut;
+    queue<string> m_Requests;
+    queue<shared_ptr<CPSG_Reply>> m_Replies;
+    queue<shared_ptr<CPSG_ReplyItem>> m_Items;
+};
+
+class CRetriever : public CProcessor
+{
+public:
+    CRetriever(CPSG_Queue& queue, CReporter& reporter) : m_Queue(queue), m_Reporter(reporter) {}
+
+    void Start()
+    {
+        m_Thread = thread([this]() { Run(); });
+    }
+
+private:
+    void Run();
+
+    bool ShouldStop()
+    {
+        unique_lock<mutex> lock(m_Mutex);
+        return m_Stop;
+    }
+
+    CPSG_Queue& m_Queue;
+    CReporter& m_Reporter;
+    list<shared_ptr<CPSG_Reply>> m_Replies;
+    list<shared_ptr<CPSG_ReplyItem>> m_Items;
+};
+
+class CSender : public CProcessor
+{
+public:
+    CSender(CPSG_Queue& queue, SJsonOut& json_out) : m_Queue(queue), m_JsonOut(json_out) {}
+
+    void Start()
+    {
+        m_Thread = thread([this]() { Run(); });
+    }
+
+    void Add(shared_ptr<CPSG_Request> request)
+    {
+        unique_lock<mutex> lock(m_Mutex);
+        m_Requests.emplace(move(request));
+        m_CV.notify_one();
+    }
+
+private:
+    void Run();
+
+    CPSG_Queue& m_Queue;
+    SJsonOut& m_JsonOut;
+    queue<shared_ptr<CPSG_Request>> m_Requests;
 };
 
 class CProcessing
 {
 public:
-    CProcessing() {}
-    CProcessing(string service, bool interactive = false) : m_Queue(service), m_JsonOut(interactive) {}
-    CProcessing(CProcessing&& other) = default;
-    CProcessing& operator=(CProcessing&& other) = default;
+    CProcessing(string service, bool interactive = false) :
+        m_Queue(service),
+        m_JsonOut(interactive),
+        m_Reporter(m_JsonOut),
+        m_Retriever(m_Queue, m_Reporter),
+        m_Sender(m_Queue, m_JsonOut)
+    {}
 
     int OneRequest(shared_ptr<CPSG_Request> request);
     int Interactive(bool echo);
 
-    static CPSG_BioId::TType GetBioIdType(string type);
     static const initializer_list<SDataFlag>& GetDataFlags();
     static const initializer_list<SInfoFlag>& GetInfoFlags();
+
+    template <class TRequest, class TInput>
+    static shared_ptr<CPSG_Request> CreateRequest(shared_ptr<void> user_context, const TInput& input);
+
+private:
+    void ReadCommands(bool echo);
+
+    static CJson_Schema& RequestSchema();
+    static CPSG_BioId::TType GetBioIdType(string type);
+
+    template <class TRequest>
+    static shared_ptr<TRequest> CreateRequestImpl(shared_ptr<void> user_context, const CArgs& input);
+    template <class TRequest>
+    static shared_ptr<TRequest> CreateRequestImpl(shared_ptr<void> user_context, const CJson_ConstObject& input);
 
     using TSpecified = function<bool(const string&)>;
 
     template <class TRequest>
-    static void SetInclude(TRequest request, TSpecified specified);
-    static void SetInclude(shared_ptr<CPSG_Request_Resolve> request, TSpecified specified);
+    static TSpecified GetSpecified(const CArgs& input);
+    template <class TRequest>
+    static TSpecified GetSpecified(const CJson_ConstObject& input);
 
-private:
-    CJson_Document Report(string reply);
-    CJson_Document Report(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyItem> reply_item);
-    CJson_Document Report(shared_ptr<CPSG_BlobData> blob_data);
-    CJson_Document Report(shared_ptr<CPSG_BlobInfo> blob_info);
-    CJson_Document Report(shared_ptr<CPSG_BioseqInfo> bioseq_info);
-
-    template <class TItem>
-    CJson_Document ReportErrors(shared_ptr<TItem> item, string type);
-
-    template <class TItem>
-    void AddRequest(const string& id, const CJson_ConstNode& params);
-
-    void AddRequest(string request, bool echo);
-    void Error(int code, string message, const CJson_Document& req_doc);
-    void SendRequests(CDeadline deadline);
-    void GetReplies(CDeadline deadline);
-    void MoveReplies(CDeadline deadline);
+    template <class TRequest>
+    static void SetInclude(shared_ptr<TRequest> request, TSpecified specified);
 
     CPSG_Queue m_Queue;
     SJsonOut m_JsonOut;
-    queue<shared_ptr<CPSG_Request>> m_Requests;
-    queue<string> m_RepliesRequested;
-    list<shared_ptr<CPSG_Reply>> m_Replies;
-    list<shared_ptr<CPSG_ReplyItem>> m_ReplyItems;
+    CReporter m_Reporter;
+    CRetriever m_Retriever;
+    CSender m_Sender;
 };
 
 template <class TRequest>
-void CProcessing::SetInclude(TRequest request, TSpecified specified)
+inline shared_ptr<TRequest> CProcessing::CreateRequestImpl(shared_ptr<void> user_context, const CArgs& input)
+{
+    const auto& id = input["ID"].AsString();
+    const auto type = CProcessing::GetBioIdType(input["TYPE"].AsString());
+    return make_shared<TRequest>(CPSG_BioId(id, type), move(user_context));
+}
+
+template <>
+inline shared_ptr<CPSG_Request_Blob> CProcessing::CreateRequestImpl<CPSG_Request_Blob>(shared_ptr<void> user_context, const CArgs& input)
+{
+    const auto& id = input["ID"].AsString();
+    const auto& last_modified = input["LAST_MODIFIED"].AsString();
+    return make_shared<CPSG_Request_Blob>(id, last_modified, move(user_context));
+}
+
+template <class TRequest>
+inline shared_ptr<TRequest> CProcessing::CreateRequestImpl(shared_ptr<void> user_context, const CJson_ConstObject& input)
+{
+    auto array = input["bio_id"].GetArray();
+    auto id = array[0].GetValue().GetString();
+
+    if (array.size() == 1) return make_shared<TRequest>(CPSG_BioId(id), move(user_context));
+
+    auto value = array[1].GetValue();
+    auto type = value.IsString() ? CProcessing::GetBioIdType(value.GetString()) : static_cast<CPSG_BioId::TType>(value.GetInt4());
+    return make_shared<TRequest>(CPSG_BioId(id, type), move(user_context));
+}
+
+template <>
+inline shared_ptr<CPSG_Request_Blob> CProcessing::CreateRequestImpl<CPSG_Request_Blob>(shared_ptr<void> user_context, const CJson_ConstObject& input)
+{
+    auto blob_id = input["blob_id"].GetValue().GetString();
+    auto last_modified = input.has("last_modified") ? input["last_modified"].GetValue().GetString() : "";
+    return make_shared<CPSG_Request_Blob>(blob_id, last_modified, move(user_context));
+}
+
+template <class TRequest>
+inline CProcessing::TSpecified CProcessing::GetSpecified(const CArgs& input)
+{
+    return [&](const string& name) {
+        return input[name].HasValue();
+    };
+}
+
+template <class TRequest>
+inline CProcessing::TSpecified CProcessing::GetSpecified(const CJson_ConstObject& input)
+{
+    return [&](const string& name) {
+        return input.has("include_data") && (name == input["include_data"].GetValue().GetString());
+    };
+}
+
+template <>
+inline CProcessing::TSpecified CProcessing::GetSpecified<CPSG_Request_Resolve>(const CJson_ConstObject& input)
+{
+    return [&](const string& name) {
+        if (!input.has("include_info")) return false;
+
+        auto include_info = input["include_info"].GetArray();
+        auto equals_to = [&](const CJson_ConstNode& node) { return node.GetValue().GetString() == name; };
+        return find_if(include_info.begin(), include_info.end(), equals_to) != include_info.end();
+    };
+}
+
+template <class TRequest>
+inline void CProcessing::SetInclude(shared_ptr<TRequest> request, TSpecified specified)
 {
     for (const auto& f : GetDataFlags()) {
         if (specified(f.name)) {
@@ -126,6 +307,37 @@ void CProcessing::SetInclude(TRequest request, TSpecified specified)
             return;
         }
     }
+}
+
+template <>
+inline void CProcessing::SetInclude<CPSG_Request_Resolve>(shared_ptr<CPSG_Request_Resolve> request, TSpecified specified)
+{
+    const auto& info_flags = CProcessing::GetInfoFlags();
+
+    auto i = info_flags.begin();
+    bool all_info_except = specified(i->name);
+    unsigned include_info = all_info_except ? CPSG_Request_Resolve::fAllInfo : 0u;
+
+    for (++i; i != info_flags.end(); ++i) {
+        if (specified(i->name)) {
+            if (all_info_except) {
+                include_info &= ~i->value;
+            } else {
+                include_info |= i->value;
+            }
+        }
+    }
+
+    request->IncludeInfo(include_info);
+}
+
+template <class TRequest, class TInput>
+inline shared_ptr<CPSG_Request> CProcessing::CreateRequest(shared_ptr<void> user_context, const TInput& input)
+{
+    auto request = CreateRequestImpl<TRequest>(move(user_context), input);
+    auto specified = GetSpecified<TRequest>(input);
+    SetInclude(request, specified);
+    return request;
 }
 
 END_NCBI_SCOPE

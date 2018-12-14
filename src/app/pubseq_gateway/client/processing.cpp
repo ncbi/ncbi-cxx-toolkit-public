@@ -29,11 +29,8 @@
 
 #include <ncbi_pch.hpp>
 
-#include <condition_variable>
-#include <mutex>
 #include <queue>
 #include <sstream>
-#include <thread>
 
 #include <serial/enumvalues.hpp>
 
@@ -42,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 
 template <class TItem>
-CJson_Document CProcessing::ReportErrors(shared_ptr<TItem> item, string type)
+CJson_Document CReporter::ReportErrors(shared_ptr<TItem> item, string type)
 {
     CJson_Document json_doc;
     CJson_Object json_obj(json_doc.SetObject());
@@ -59,98 +56,7 @@ CJson_Document CProcessing::ReportErrors(shared_ptr<TItem> item, string type)
     return json_doc;
 }
 
-void CProcessing::SetInclude(shared_ptr<CPSG_Request_Resolve> request, function<bool(const string&)> specified)
-{
-    const auto& info_flags = CProcessing::GetInfoFlags();
-
-    auto i = info_flags.begin();
-    bool all_info_except = specified(i->name);
-    unsigned include_info = all_info_except ? CPSG_Request_Resolve::fAllInfo : 0u;
-
-    for (++i; i != info_flags.end(); ++i) {
-        if (specified(i->name)) {
-            if (all_info_except) {
-                include_info &= ~i->value;
-            } else {
-                include_info |= i->value;
-            }
-        }
-    }
-
-    request->IncludeInfo(include_info);
-}
-
-CPSG_BioId s_GetBioId(const CJson_ConstObject& json_obj)
-{
-    auto array = json_obj["bio_id"].GetArray();
-    auto id = array[0].GetValue().GetString();
-    auto type = CProcessing::GetBioIdType(array.size() > 1 ? array[1].GetValue().GetString() : "");
-    return CPSG_BioId(id, type);
-}
-
-template <class TRequest>
-void s_SetIncludeData(TRequest& request, const CJson_ConstObject& json_obj)
-{
-    auto specified = [&](const string& name) {
-        return json_obj.has("include_data") && (name == json_obj["include_data"].GetValue().GetString());
-    };
-
-    CProcessing::SetInclude(request, specified);
-}
-
-template <>
-void CProcessing::AddRequest<CPSG_Request_Biodata>(const string& id, const CJson_ConstNode& params)
-{
-    CJson_ConstObject json_obj(params.GetObject());
-    auto bio_id = s_GetBioId(json_obj);
-
-    auto user_context = make_shared<string>(id);
-    auto request = make_shared<CPSG_Request_Biodata>(bio_id, move(user_context));
-    s_SetIncludeData(request, json_obj);
-
-    m_Requests.emplace(move(request));
-}
-
-template <>
-void CProcessing::AddRequest<CPSG_Request_Blob>(const string& id, const CJson_ConstNode& params)
-{
-    CJson_ConstObject json_obj(params.GetObject());
-    auto blob_id = json_obj["blob_id"].GetValue().GetString();
-    auto last_modified = json_obj.has("last_modified") ? json_obj["last_modified"].GetValue().GetString() : "";
-
-    auto user_context = make_shared<string>(id);
-    auto request = make_shared<CPSG_Request_Blob>(blob_id, last_modified, move(user_context));
-    s_SetIncludeData(request, json_obj);
-
-    m_Requests.emplace(move(request));
-}
-
-template <>
-void CProcessing::AddRequest<CPSG_Request_Resolve>(const string& id, const CJson_ConstNode& params)
-{
-    CJson_ConstObject json_obj(params.GetObject());
-    auto bio_id = s_GetBioId(json_obj);
-
-    auto user_context = make_shared<string>(id);
-    auto request = make_shared<CPSG_Request_Resolve>(bio_id, move(user_context));
-
-    auto specified = [&](const string& name) {
-        if (!json_obj.has("include_info")) return false;
-
-        auto include_info = json_obj["include_info"].GetArray();
-        auto equals_to = [&](const CJson_ConstNode& node) { return node.GetValue().GetString() == name; };
-        return find_if(include_info.begin(), include_info.end(), equals_to) != include_info.end();
-    };
-
-    SetInclude(request, specified);
-    m_Requests.emplace(move(request));
-}
-
-END_NCBI_SCOPE
-
-USING_NCBI_SCOPE;
-
-void SJsonOut::operator()(const CJson_Document& doc)
+SJsonOut& SJsonOut::operator<<(const CJson_Document& doc)
 {
     ostringstream os;
 
@@ -164,8 +70,9 @@ void SJsonOut::operator()(const CJson_Document& doc)
         os << ",\n" << doc;
     }
 
-    cout << os.str();
-    cout.flush();
+    unique_lock<mutex> lock(m_Mutex);
+    cout << os.str() << flush;
+    return *this;
 }
 
 SJsonOut::~SJsonOut()
@@ -198,9 +105,9 @@ int CProcessing::OneRequest(shared_ptr<CPSG_Request> request)
             switch (status) {
                 case EPSG_Status::eSuccess:    continue;
                 case EPSG_Status::eInProgress: continue;
-                case EPSG_Status::eNotFound:   m_JsonOut(Report("NotFound")); break;
-                case EPSG_Status::eCanceled:   m_JsonOut(Report("Canceled")); break;
-                case EPSG_Status::eError:      m_JsonOut(ReportErrors(reply, "Failure")); break;
+                case EPSG_Status::eNotFound:   m_JsonOut << CReporter::Report("NotFound"); break;
+                case EPSG_Status::eCanceled:   m_JsonOut << CReporter::Report("Canceled"); break;
+                case EPSG_Status::eError:      m_JsonOut << CReporter::ReportErrors(reply, "Failure"); break;
             }
         }
 
@@ -220,7 +127,7 @@ int CProcessing::OneRequest(shared_ptr<CPSG_Request> request)
 
             if (reply_item_status != EPSG_Status::eInProgress) {
                 it = reply_items.erase(it);
-                m_JsonOut(Report(reply_item_status, reply_item));
+                m_JsonOut << CReporter::Report(reply_item_status, reply_item);
             }
         }
     }
@@ -228,7 +135,7 @@ int CProcessing::OneRequest(shared_ptr<CPSG_Request> request)
     return 0;
 }
 
-CJson_Document CProcessing::Report(string reply)
+CJson_Document CReporter::Report(string reply)
 {
     CJson_Document json_doc;
     CJson_Object json_obj(json_doc.SetObject());
@@ -236,7 +143,7 @@ CJson_Document CProcessing::Report(string reply)
     return json_doc;
 }
 
-CJson_Document CProcessing::Report(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyItem> reply_item)
+CJson_Document CReporter::Report(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyItem> reply_item)
 {
     switch (reply_item->GetType()) {
         case CPSG_ReplyItem::eBlobData:
@@ -268,7 +175,7 @@ CJson_Document CProcessing::Report(EPSG_Status reply_item_status, shared_ptr<CPS
     return CJson_Document();
 }
 
-CJson_Document CProcessing::Report(shared_ptr<CPSG_BlobData> blob_data)
+CJson_Document CReporter::Report(shared_ptr<CPSG_BlobData> blob_data)
 {
     CJson_Document json_doc;
     CJson_Object json_obj(json_doc.SetObject());
@@ -280,7 +187,7 @@ CJson_Document CProcessing::Report(shared_ptr<CPSG_BlobData> blob_data)
     return json_doc;
 }
 
-CJson_Document CProcessing::Report(shared_ptr<CPSG_BlobInfo> blob_info)
+CJson_Document CReporter::Report(shared_ptr<CPSG_BlobInfo> blob_info)
 {
     CJson_Document json_doc;
     CJson_Object json_obj(json_doc.SetObject());
@@ -312,7 +219,7 @@ CJson_Document CProcessing::Report(shared_ptr<CPSG_BlobInfo> blob_info)
     return json_doc;
 }
 
-CJson_Document CProcessing::Report(shared_ptr<CPSG_BioseqInfo> bioseq_info)
+CJson_Document CReporter::Report(shared_ptr<CPSG_BioseqInfo> bioseq_info)
 {
     CJson_Document json_doc;
     CJson_Object json_obj(json_doc.SetObject());
@@ -341,213 +248,188 @@ CJson_Document CProcessing::Report(shared_ptr<CPSG_BioseqInfo> bioseq_info)
     return json_doc;
 }
 
-void CProcessing::SendRequests(CDeadline deadline)
+void CSender::Run()
 {
-    while (!m_Requests.empty()) {
+    const CTimeout kTryTimeout(CTimeout::eInfinite);
+
+    for (;;) {
+        unique_lock<mutex> lock(m_Mutex);
+        m_CV.wait(lock, [&]() { return m_Stop || !m_Requests.empty(); });
+
+        if (m_Requests.empty()) return;
+
         auto request = m_Requests.front();
+        auto id = request->GetUserContext<string>();
+        m_Requests.pop();
 
-        if (m_Queue.SendRequest(request, deadline)) {
-            auto id = request->GetUserContext<string>();
+        CJson_Document json_doc;
 
-            CJson_Document json_doc;
+        if (m_Queue.SendRequest(request, kTryTimeout)) {
             CJson_Object json_obj(json_doc.SetObject());
             json_obj["jsonrpc"].SetValue().SetString("2.0");
             json_obj["result"].SetValue().SetBool(true);
             json_obj["id"].SetValue().SetString(*id);
-
-            m_JsonOut(json_doc);
-            m_Requests.pop();
         } else {
-            return;
+            json_doc = CReporter::ReportError(-32000, "Timeout on sending a request", *id);
         }
+
+        m_JsonOut << json_doc;
     }
 }
 
-void CProcessing::GetReplies(CDeadline deadline)
+void CRetriever::Run()
 {
-    if (m_RepliesRequested.empty()) {
-        MoveReplies(deadline);
-        return;
-    }
+    const CTimeout kTryTimeout(0.1);
+    const CTimeout kZeroTimeout(CTimeout::eZero);
 
-    do {
-        if (m_Requests.empty() && m_Queue.IsEmpty() && m_Replies.empty() && m_ReplyItems.empty()) {
-            while (!m_RepliesRequested.empty()) {
-                CJson_Document json_doc;
-                CJson_Object json_obj(json_doc.SetObject());
-                json_obj["jsonrpc"].SetValue().SetString("2.0");
-                json_obj["result"].ResetObject();
-                json_obj["id"].SetValue().SetString(m_RepliesRequested.front());
-                m_JsonOut(json_doc);
-
-                m_RepliesRequested.pop(); 
-            }
+    while (!ShouldStop() || !m_Queue.IsEmpty()) {
+        if (auto reply = m_Queue.GetNextReply(kTryTimeout)) {
+            m_Replies.emplace_back(move(reply));
         }
 
         for (auto it = m_Replies.begin(); it != m_Replies.end(); ++it) {
-            auto& reply = *it;
+            auto reply = *it;
 
-            CJson_Document json_doc;
-            CJson_Object json_obj(json_doc.SetObject());
-            json_obj["jsonrpc"].SetValue().SetString("2.0");
+            while (auto item = reply->GetNextItem(kZeroTimeout)) {
+                if (item->GetType() != CPSG_ReplyItem::eEndOfReply) {
+                    m_Items.emplace_back(move(item));
 
-            auto status = reply->GetStatus(CTimeout(CTimeout::eZero));
-
-            switch (status) {
-                case EPSG_Status::eSuccess:
-                    if (auto item = reply->GetNextItem(CTimeout(CTimeout::eZero))) {
-                        if (item->GetType() == CPSG_ReplyItem::eEndOfReply) {
-                            it = m_Replies.erase(it);
-                        } else {
-                            m_ReplyItems.emplace_back(move(item));
-                        }
-                    }
-
-                    continue;
-
-                case EPSG_Status::eInProgress: continue;
-                case EPSG_Status::eNotFound:   json_obj["result"].AssignCopy(Report("NotFound"));             break;
-                case EPSG_Status::eCanceled:   json_obj["result"].AssignCopy(Report("Canceled"));             break;
-                case EPSG_Status::eError:      json_obj["result"].AssignCopy(ReportErrors(reply, "Failure")); break;
+                } else if (reply->GetStatus(kZeroTimeout) != EPSG_Status::eInProgress) {
+                    it = m_Replies.erase(it);
+                    m_Reporter.Add(reply);
+                    break;
+                }
             }
-
-            auto request_id = reply->GetRequest()->GetUserContext<string>();
-            json_obj["result"].SetObject()["request_id"].SetValue().SetString(*request_id);
-            json_obj["id"].SetValue().SetString(m_RepliesRequested.front());
-            m_JsonOut(json_doc);
-
-            m_RepliesRequested.pop(); 
-
-            if (m_RepliesRequested.empty()) return;
         }
 
-        for (auto it = m_ReplyItems.begin(); it != m_ReplyItems.end(); ++it) {
-            auto reply_item = *it;
-            auto reply_item_status = reply_item->GetStatus(CTimeout(CTimeout::eZero));
+        for (auto it = m_Items.begin(); it != m_Items.end(); ++it) {
+            auto item = *it;
+            auto status = item->GetStatus(kZeroTimeout);
 
-            if (reply_item_status != EPSG_Status::eInProgress) {
-                it = m_ReplyItems.erase(it);
-
-                CJson_Document json_doc;
-                CJson_Object json_obj(json_doc.SetObject());
-                json_obj["jsonrpc"].SetValue().SetString("2.0");
-                json_obj["result"].AssignCopy(Report(reply_item_status, reply_item));
-                auto request_id = reply_item->GetReply()->GetRequest()->GetUserContext<string>();
-                json_obj["result"].SetObject()["request_id"].SetValue().SetString(*request_id);
-                json_obj["id"].SetValue().SetString(m_RepliesRequested.front());
-                m_JsonOut(json_doc);
-
-                m_RepliesRequested.pop(); 
+            if (status != EPSG_Status::eInProgress) {
+                it = m_Items.erase(it);
+                m_Reporter.Add(item);
             }
-
-            if (m_RepliesRequested.empty()) return;
         }
-
-        MoveReplies(deadline);
-    } while (!m_RepliesRequested.empty() && !deadline.IsExpired());
+    }
 }
 
-void CProcessing::MoveReplies(CDeadline deadline)
+void CReporter::Run()
 {
+    const CTimeout kTryTimeout(CTimeout::eZero);
+    auto pred = [&]() { return m_Stop || (!m_Requests.empty() && (!m_Replies.empty() || !m_Items.empty())); };
 
-    while (auto reply = m_Queue.GetNextReply(deadline)) {
-        m_Replies.emplace_back(move(reply));
-    }
+    for (;;) {
+        unique_lock<mutex> lock(m_Mutex);
+        m_CV.wait(lock, pred);
 
-    for (auto& reply : m_Replies) {
-        while (auto item = reply->GetNextItem(deadline)) {
-            if (item->GetType() == CPSG_ReplyItem::eEndOfReply) break;
+        // If stop requested and no more requests for replies/items
+        if (m_Requests.empty()) return;
 
-            m_ReplyItems.emplace_back(move(item));
+        shared_ptr<CPSG_Reply> reply;
+        CJson_Document result_doc;
+
+        if (!m_Replies.empty()) {
+            reply = m_Replies.front();
+            m_Replies.pop();
+
+            auto status = reply->GetStatus(kTryTimeout);
+
+            switch (status) {
+                case EPSG_Status::eSuccess:                                                 continue;
+                case EPSG_Status::eInProgress: _TROUBLE;                                    break;
+                case EPSG_Status::eNotFound:   result_doc = Report("NotFound");             break;
+                case EPSG_Status::eCanceled:   result_doc = Report("Canceled");             break;
+                case EPSG_Status::eError:      result_doc = ReportErrors(reply, "Failure"); break;
+            }
+
+        } else if (!m_Items.empty()) {
+            auto item = m_Items.front();
+            reply = item->GetReply();
+            m_Items.pop();
+
+            auto status = item->GetStatus(kTryTimeout);
+            _ASSERT(status != EPSG_Status::eInProgress);
+            result_doc = Report(status, item);
+
+        } else {
+            result_doc.ResetObject();
         }
+
+        CJson_Document json_doc;
+        CJson_Object json_obj(json_doc.SetObject());
+        json_obj["jsonrpc"].SetValue().SetString("2.0");
+        json_obj["result"].AssignCopy(result_doc);
+
+        if (reply) {
+            auto request_id = reply->GetRequest()->GetUserContext<string>();
+            json_obj["result"].SetObject()["request_id"].SetValue().SetString(*request_id);
+        }
+
+        json_obj["id"].SetValue().SetString(m_Requests.front());
+        m_JsonOut << json_doc;
+
+        m_Requests.pop(); 
     }
 }
 
 int CProcessing::Interactive(bool echo)
 {
-    mutex m;
-    condition_variable cv;
-    queue<string> commands;
+    m_Reporter.Start();
+    m_Retriever.Start();
+    m_Sender.Start();
 
-    // Asynchronous reading of stdin
-    thread reader([&]() {
-        bool read = true;
-        string line;
+    ReadCommands(echo);
 
-        while (read) {
-            read = getline(cin, line);
-
-            if (!read) {
-                line.clear();
-            } else if (line.empty()) {
-                continue;
-            }
-
-            unique_lock<mutex> lock(m);
-            commands.push(line);
-            cv.notify_one();
-        }
-    });
-
-    bool read = true;
-    const auto kTrySeconds = 0.1;
-    const CTimeout kTryTimeout(kTrySeconds);
-
-    while (read || !m_Requests.empty() || !m_Queue.IsEmpty()) {
-        CDeadline deadline(kTryTimeout);
-
-        if (read) {
-            unique_lock<mutex> lock(m);
-            cv.wait_for(lock, chrono::duration<double>(kTrySeconds), [&]() { return !commands.empty(); });
-
-            while (!commands.empty()) {
-                string line = commands.front();
-                commands.pop();
-
-                if (line.empty()) {
-                    read = false;
-                } else {
-                    AddRequest(move(line), echo);
-                }
-            }
-        }
-
-        SendRequests(deadline);
-        GetReplies(deadline);
-    }
-
-    reader.join();
+    m_Sender.Stop();
+    m_Retriever.Stop();
+    m_Reporter.Stop();
     return 0;
 }
 
-extern const string kRequestSchema;
-
-void CProcessing::AddRequest(string request, bool echo)
+void CProcessing::ReadCommands(bool echo)
 {
-    CJson_Document json_schema_doc(kRequestSchema);
-    CJson_Schema json_schema(json_schema_doc);
-    CJson_Document json_doc;
+    string request;
 
-    if (!json_doc.ParseString(request)) {
-        Error(-32700, json_doc.GetReadError(), json_doc);
-    } else if (!json_schema.Validate(json_doc)) {
-        Error(-32600, json_schema.GetValidationError(), json_doc);
-    } else {
-        if (echo) m_JsonOut(json_doc);
+    for (;;) {
+        if (!getline(cin, request)) {
+            return;
+        } else if (request.empty()) {
+            continue;
+        }
 
-        CJson_ConstObject json_obj(json_doc.GetObject());
-        auto method = json_obj["method"].GetValue().GetString();
-        auto id = json_obj["id"].GetValue().GetString();
-        auto params = json_obj.has("params") ? json_obj["params"] : CJson_Document();
+        CJson_Document json_doc;
 
-        if (method == "biodata") {
-            AddRequest<CPSG_Request_Biodata>(id, params);
-        } else if (method == "blob") {
-            AddRequest<CPSG_Request_Blob>(id, params);
-        } else if (method == "resolve") {
-            AddRequest<CPSG_Request_Resolve>(id, params);
-        } else if (method == "next_reply") {
-            m_RepliesRequested.push(id);
+        if (!json_doc.ParseString(request)) {
+            m_JsonOut << CReporter::ReportError(-32700, json_doc.GetReadError(), json_doc);
+        } else if (!RequestSchema().Validate(json_doc)) {
+            m_JsonOut << CReporter::ReportError(-32600, RequestSchema().GetValidationError(), json_doc);
+        } else {
+            if (echo) m_JsonOut << json_doc;
+
+            CJson_ConstObject json_obj(json_doc.GetObject());
+            auto method = json_obj["method"].GetValue().GetString();
+            auto id = json_obj["id"].GetValue().GetString();
+            auto params = json_obj.has("params") ? json_obj["params"] : CJson_Document();
+
+            if (method == "next_reply") {
+                m_Reporter.Add(id);
+                continue;
+            }
+
+            auto user_context = make_shared<string>(id);
+            shared_ptr<CPSG_Request> request;
+            CJson_ConstObject params_obj(params.GetObject());
+
+            if (method == "biodata") {
+                request = CreateRequest<CPSG_Request_Biodata>(move(user_context), params_obj);
+            } else if (method == "blob") {
+                request = CreateRequest<CPSG_Request_Blob>(move(user_context), params_obj);
+            } else if (method == "resolve") {
+                request = CreateRequest<CPSG_Request_Resolve>(move(user_context), params_obj);
+            }
+
+            m_Sender.Add(move(request));
         }
     }
 }
@@ -555,8 +437,11 @@ void CProcessing::AddRequest(string request, bool echo)
 CPSG_BioId::TType CProcessing::GetBioIdType(string type)
 {
     CObjectTypeInfo info(objects::CSeq_id::GetTypeInfo());
-    auto index = info.FindVariantIndex(type);
-    return index ? static_cast<CPSG_BioId::TType>(index) : objects::CSeq_id::WhichInverseSeqId(type);
+
+    if (auto index = info.FindVariantIndex(type)) return static_cast<CPSG_BioId::TType>(index);
+    if (auto value = objects::CSeq_id::WhichInverseSeqId(type)) return value;
+
+    return static_cast<CPSG_BioId::TType>(atoi(type.c_str()));
 }
 
 const initializer_list<SDataFlag> kDataFlags =
@@ -592,17 +477,9 @@ const initializer_list<SInfoFlag>& CProcessing::GetInfoFlags()
     return kInfoFlags;
 }
 
-void CProcessing::Error(int code, string message, const CJson_Document& req_doc)
+CJson_Document CReporter::ReportError(int code, const string& message, const CJson_Document& req_doc)
 {
-    CJson_Document json_doc;
-    CJson_Object json_obj(json_doc.SetObject());
-    json_obj["jsonrpc"].SetValue().SetString("2.0");
-
-    CJson_Object error_obj = json_obj.insert_object("error");
-    error_obj["code"].SetValue().SetInt4(code);
-    error_obj["message"].SetValue().SetString(message);
-
-    json_obj["id"].SetValue().SetNull();
+    string id;
 
     if (req_doc.IsObject()) {
         auto req_obj = req_doc.GetObject();
@@ -614,16 +491,39 @@ void CProcessing::Error(int code, string message, const CJson_Document& req_doc)
                 auto id_value = id_node.GetValue();
 
                 if (id_value.IsString()) {
-                    json_obj["id"].SetValue().SetString(id_value.GetString());
+                    id = id_value.GetString();
                 }
             }
         }
     }
 
-    m_JsonOut(json_doc);
+    return ReportError(code, message, id);
 }
 
-const string kRequestSchema = R"REQUEST_SCHEMA(
+CJson_Document CReporter::ReportError(int code, const string& message, const string& id)
+{
+    CJson_Document json_doc;
+    CJson_Object json_obj(json_doc.SetObject());
+    json_obj["jsonrpc"].SetValue().SetString("2.0");
+
+    CJson_Object error_obj = json_obj.insert_object("error");
+    error_obj["code"].SetValue().SetInt4(code);
+    error_obj["message"].SetValue().SetString(message);
+
+    auto id_value = json_obj["id"].SetValue();
+
+    if (id.empty()) {
+        id_value.SetNull();
+    } else {
+        id_value.SetString(id);
+    }
+
+    return json_doc;
+}
+
+CJson_Schema& CProcessing::RequestSchema()
+{
+    static CJson_Schema json_schema(CJson_Document(R"REQUEST_SCHEMA(
 {
     "$schema": "http://json-schema.org/schema#",
     "type": "object",
@@ -736,4 +636,8 @@ const string kRequestSchema = R"REQUEST_SCHEMA(
         }
     ]
 }
-)REQUEST_SCHEMA";
+)REQUEST_SCHEMA"));
+    return json_schema;
+}
+
+END_NCBI_SCOPE

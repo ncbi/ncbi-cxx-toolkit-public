@@ -81,41 +81,19 @@ private:
     template <class TRequest>
     int RunRequest(const CArgs& args);
 
-    template <class TRequest>
-    shared_ptr<TRequest> CreateRequest(shared_ptr<string> request_id, const CArgs& args);
-
     int RunInteractive(const CArgs& args);
 
     vector<SCommand> m_Commands;
-    CProcessing m_Processing;
 };
 
 template <class TRequest>
 int CPsgClientApp::RunRequest(const CArgs& args)
 {
-    m_Processing = CProcessing(args["SERVICE"].AsString());
+    CProcessing processing(args["SERVICE"].AsString());
 
-    auto request = CreateRequest<TRequest>(nullptr, args);
-    auto specified = [&](const string& name) { return args[name].HasValue(); };
-    CProcessing::SetInclude(request, specified);
+    auto request = CProcessing::CreateRequest<TRequest>(nullptr, args);
 
-    return m_Processing.OneRequest(request);
-}
-
-template <class TRequest>
-shared_ptr<TRequest> CPsgClientApp::CreateRequest(shared_ptr<string> request_id, const CArgs& args)
-{
-    const auto& id = args["ID"].AsString();
-    const auto type = CProcessing::GetBioIdType(args["TYPE"].AsString());
-    return make_shared<TRequest>(CPSG_BioId(id, type), request_id);
-}
-
-template <>
-shared_ptr<CPSG_Request_Blob> CPsgClientApp::CreateRequest(shared_ptr<string> request_id, const CArgs& args)
-{
-    const auto& id = args["ID"].AsString();
-    const auto& last_modified = args["LAST_MODIFIED"].AsString();
-    return make_shared<CPSG_Request_Blob>(id, last_modified, request_id);
+    return processing.OneRequest(request);
 }
 
 template <class TRequest>
@@ -215,8 +193,8 @@ void CPsgClientApp::s_InitInteractive(CArgDescriptions& arg_desc)
 
 int CPsgClientApp::RunInteractive(const CArgs& args)
 {
-    m_Processing = CProcessing(args["SERVICE"].AsString(), true);
-    return m_Processing.Interactive(args["echo"].HasValue());
+    CProcessing processing(args["SERVICE"].AsString(), true);
+    return processing.Interactive(args["echo"].HasValue());
 }
 
 int main(int argc, const char* argv[])
