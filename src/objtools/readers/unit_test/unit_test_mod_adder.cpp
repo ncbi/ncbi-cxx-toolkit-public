@@ -321,7 +321,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     ofstr.close();
     cerr << "    Produced new ASN1 file " << output << "." << endl;
 
-    CNcbiOfstream errstr(errors);
+    CNcbiOfstream errstr(errors.c_str());
     if (pMessageListener->Count() > 0) {
         pMessageListener->Dump(errstr);
     }
