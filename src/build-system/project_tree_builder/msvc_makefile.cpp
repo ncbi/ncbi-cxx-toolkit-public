@@ -528,9 +528,8 @@ CMsvcProjectMakefile::GetCustomBuildInfo(list<SCustomBuildInfo>* info) const
 }
 
 void
-CMsvcProjectMakefile::GetCustomScriptInfo(SCustomScriptInfo& info) const
+CMsvcProjectMakefile::GetCustomScriptInfo(SCustomScriptInfo& info, const string& sec) const
 {
-    string sec("CustomScript");
     info.m_Input  = m_MakeFile.GetString(sec, "Input");
     info.m_Output = m_MakeFile.GetString(sec, "Output");
     info.m_Shell  = m_MakeFile.GetString(sec, "Shell");
@@ -785,9 +784,9 @@ void CMsvcCombinedProjectMakefile::GetCustomBuildInfo
 }
 
 void CMsvcCombinedProjectMakefile::GetCustomScriptInfo
-                                           (SCustomScriptInfo& info) const
+                                           (SCustomScriptInfo& info, const string& section) const
 {
-    m_ProjectMakefile->GetCustomScriptInfo(info);
+    m_ProjectMakefile->GetCustomScriptInfo(info, section);
 }
 
 

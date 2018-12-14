@@ -234,6 +234,12 @@ void CMacProjectGenerator::Generate(const string& solution)
         AddString( *file_groups,
             CreateProjectFileGroups(prj, prj_files, *dict_objects, *build_files));
 
+        // project custom script phase
+        string proj_prebuild_script(
+            CreateProjectCustomScriptPhase(prj, prj_files, *dict_objects, "PreBuild"));
+        if (!proj_prebuild_script.empty()) {
+            AddString( *build_phases, proj_prebuild_script);
+        }
         // project script phase
         string proj_script(
             CreateProjectScriptPhase(prj, prj_files, *dict_objects));
@@ -248,7 +254,7 @@ void CMacProjectGenerator::Generate(const string& solution)
         }
         // project custom script phase
         string proj_cust_script(
-            CreateProjectCustomScriptPhase(prj, prj_files, *dict_objects));
+            CreateProjectCustomScriptPhase(prj, prj_files, *dict_objects, "CustomScript"));
         if (!proj_cust_script.empty()) {
             AddString( *build_phases, proj_cust_script);
         }
@@ -717,14 +723,14 @@ string CMacProjectGenerator::CreateProjectScriptPhase(
 
 string CMacProjectGenerator::CreateProjectCustomScriptPhase(
     const CProjItem& prj, const CProjectFileCollector& prj_files,
-    CDict& dict_objects)
+    CDict& dict_objects, const string& section)
 {
     SCustomScriptInfo info;
-    prj_files.GetProjectContext().GetMsvcProjectMakefile().GetCustomScriptInfo(info);
+    prj_files.GetProjectContext().GetMsvcProjectMakefile().GetCustomScriptInfo(info, section);
 
     if (!info.m_Script.empty()) {
 #if USE_VERBOSE_NAMES
-        string proj_script(   GetProjId(       prj) + "_cust_script");
+        string proj_script(   GetProjId(       prj) + section);
 #else
         string proj_script(   GetUUID());
 #endif
@@ -754,6 +760,7 @@ string CMacProjectGenerator::CreateProjectCustomScriptPhase(
         }
         AddString( *dict_script, "shellPath", info.m_Shell);
         AddString( *dict_script, "shellScript",
+            CDirEntry::IsAbsolutePath(info.m_Script) ? info.m_Script :
             GetRelativePath(CDirEntry::ConcatPath(script_loc,info.m_Script)));
         AddString( *dict_script, "showEnvVarsInLog", "0");
         return proj_script;

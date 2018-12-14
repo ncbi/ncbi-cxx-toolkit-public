@@ -256,7 +256,7 @@ public:
 
     virtual void GetExtraFiles           (map<string, list<string> >*  files) const;
 
-    void GetCustomScriptInfo             (SCustomScriptInfo& info) const;
+    void GetCustomScriptInfo             (SCustomScriptInfo& info, const string& section) const;
 
 
     string m_ProjectBaseDir;
@@ -360,7 +360,7 @@ public:
     virtual void GetExtraFiles           (map<string, list<string> >*  files) const;
 
 
-    void GetCustomScriptInfo             (SCustomScriptInfo& info) const;
+    void GetCustomScriptInfo             (SCustomScriptInfo& info, const string& section) const;
 
 private:
     typedef const CMsvcProjectMakefile*    TProjectMakefile;

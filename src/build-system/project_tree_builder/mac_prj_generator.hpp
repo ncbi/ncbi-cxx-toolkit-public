@@ -79,7 +79,7 @@ private:
         CDict& dict_objects);
     string CreateProjectCustomScriptPhase(
         const CProjItem& prj, const CProjectFileCollector& prj_files,
-        CDict& dict_objects);
+        CDict& dict_objects, const string& section);
     string CreateProjectCopyBinScript(
         const CProjItem& prj, const CProjectFileCollector& prj_files,
         CDict& dict_objects);
