@@ -631,14 +631,6 @@ CThread::CThread(void)
 #endif
 {
     DoDeleteThisObject();
-#if defined(HAVE_PTHREAD_SETCONCURRENCY)  &&  defined(NCBI_POSIX_THREADS)
-    // Adjust concurrency for Solaris etc.
-    if (pthread_getconcurrency() == 0) {
-        xncbi_Validate(pthread_setconcurrency(GetCpuCount()) == 0,
-                       "CThread::CThread() -- pthread_setconcurrency(2) "
-                       "failed");
-    }
-#endif
 }
 
 
