@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = psg_cli test_psg_client_impl
+APP_PROJ = test_psg_client_impl
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
