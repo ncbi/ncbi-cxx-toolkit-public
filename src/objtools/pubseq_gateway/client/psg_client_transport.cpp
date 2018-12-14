@@ -1489,12 +1489,10 @@ bool io_coordinator::add_request(shared_ptr<http2_request> req, chrono::millisec
         if (m_io[idx]->add_request_move(req)) return true;
 
         m_cur_idx.compare_exchange_weak(idx, (idx + 1) % m_io.size(),  memory_order_release, memory_order_relaxed);
-        ERR_POST("io failed to queue " << req.get() << ", keep trying");
 
         if (m_cur_idx.load() == 0) {
             auto wait_ms = deadline - chrono::system_clock::now();
             if (wait_ms <= chrono::milliseconds::zero()) {
-                ERR_POST("io failed to queue " << req.get() << ", timeout");
                 return false;
             }
 
