@@ -1,0 +1,4 @@
+[PreBuild]
+Input=gencoll.def
+Output=genomic_collections_cli_.cpp
+Script=/usr/bin/true
