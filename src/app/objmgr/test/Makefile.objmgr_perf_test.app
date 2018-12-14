@@ -10,7 +10,7 @@ REQUIRES = objects
 
 APP = objmgr_perf_test
 SRC = objmgr_perf_test
-LIB = ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos ncbi_xreader_pubseqos2 \
+LIB = $(ncbi_xreader_pubseqos2) \
       ncbi_xdbapi_ftds $(FTDS_LIB) xobjutil $(OBJMGR_LIBS)
 
 LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)

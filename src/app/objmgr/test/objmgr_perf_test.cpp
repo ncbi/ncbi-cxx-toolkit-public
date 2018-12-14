@@ -286,7 +286,7 @@ int CPerfTestApp::Run(void)
             CFile::MakePath(NCBI_GetTestDataPath(), "pubseq_gateway"),
             string("ids") + ids_file);
         if (CDirEntry(path).Exists()) {
-            CNcbiIfstream in(path);
+            CNcbiIfstream in(path.c_str());
             x_LoadIds(in, m_Ids, true);
         }
         else {
