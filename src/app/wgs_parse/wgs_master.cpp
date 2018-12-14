@@ -598,13 +598,18 @@ static bool CheckSameOrgRefs(list<COrgRefInfo>& org_refs)
 
     auto cur_org_ref = org_refs.begin();
     CRef<COrg_ref>& first_org_ref = cur_org_ref->m_org_ref_after_lookup;
-    SortOrgRef(*first_org_ref);
+
+    if (first_org_ref.NotEmpty()) {
+        SortOrgRef(*first_org_ref);
+    }
 
     for (++cur_org_ref; cur_org_ref != org_refs.end(); ++cur_org_ref) {
         CRef<COrg_ref>& next_org_ref = cur_org_ref->m_org_ref_after_lookup;
-        SortOrgRef(*next_org_ref);
+        if (next_org_ref.NotEmpty()) {
+            SortOrgRef(*next_org_ref);
+        }
 
-        if (!first_org_ref->Equals(*next_org_ref)) {
+        if (next_org_ref.Empty() != first_org_ref.Empty() || (first_org_ref.NotEmpty() && !first_org_ref->Equals(*next_org_ref))) {
             return false;
         }
     }
@@ -1457,11 +1462,14 @@ static bool NeedToGetAccessionPrefix() {
     return GetParams().IsUpdateScaffoldsMode() && GetParams().IsAccessionAssigned() && GetParams().GetScaffoldPrefix().empty();
 }
 
-static void ReportDateProblem(EDateIssues issue, string date_type, bool is_error)
+static void ReportDateProblem(EDateIssues issue, const string& date_type, bool is_error)
 {
     if (issue == eDateMissing) {
+        string first_word_date_type = date_type;
+        first_word_date_type[0] = toupper(first_word_date_type[0]);
+
         ERR_POST_EX(0, 0, (is_error ? Error : Info) <<
-                    date_type << " date is missing from one or more input submissions. Will not propagate " <<
+                    first_word_date_type << " date is missing from one or more input submissions. Will not propagate " <<
                     date_type << " date to the master record.");
     }
     else if (issue == eDateDiff) {
@@ -2506,12 +2514,12 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                 if (GetParams().GetSource() != eNCBI) {
                     if (master_info.m_update_date_issues == eDateNoIssues) {
                         master_info.m_update_date_issues = CheckDates(*entry, CSeqdesc::e_Update_date, *master_info.m_update_date);
-                        ReportDateProblem(master_info.m_update_date_issues, "Update", true);
+                        ReportDateProblem(master_info.m_update_date_issues, "update", true);
                     }
 
                     if (master_info.m_creation_date_issues == eDateNoIssues) {
                         master_info.m_creation_date_issues = CheckDates(*entry, CSeqdesc::e_Create_date, *master_info.m_creation_date);
-                        ReportDateProblem(master_info.m_creation_date_issues, "Create", GetParams().GetSource() != eDDBJ);
+                        ReportDateProblem(master_info.m_creation_date_issues, "create", GetParams().GetSource() != eDDBJ);
                     }
                 }
 
