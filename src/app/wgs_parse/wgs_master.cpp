@@ -817,7 +817,7 @@ static void CheckMasterDblink(CMasterInfo& info)
     }
 
     CUser_object* id_dblink_user_obj = GetDBLinkFromIdMasterBioseq(info.m_id_master_bioseq);
-    if (GetParams().IsDblinkOverride() && id_dblink_user_obj && info.m_dblink->GetFieldRef("BioSample").Empty()) {
+    if (GetParams().IsDblinkOverride() && id_dblink_user_obj && info.m_dblink->GetFieldRef("BioSample").NotEmpty()) {
 
         auto biosample_field = id_dblink_user_obj->GetFieldRef("BioSample");
         if (biosample_field.NotEmpty() && biosample_field->IsSetData() && biosample_field->GetData().IsStrs()) {
