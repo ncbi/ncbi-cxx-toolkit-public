@@ -772,7 +772,7 @@ static void FixMasterDates(CMasterInfo& info, bool entry_from_id)
             }
         }
     }
-    else if (entry_from_id && info.m_creation_date_issues == eDateNoIssues && info.m_creation_date_present) {
+    else if (entry_from_id && info.m_creation_date_issues == eDateNoIssues && info.m_creation_date->Which() != CDate::e_not_set) {
         CRef<CSeqdesc> date(new CSeqdesc);
         date->SetCreate_date(*info.m_creation_date);
         info.m_id_master_bioseq->SetDescr().Set().push_back(date);
