@@ -7171,6 +7171,8 @@ USNM:Birds	s	National Museum of Natural History, Smithsonian Institution, Divisi
 USNM:ENT	s	National Museum of Natural History, Smithsonian Institution, Entomology Collection	
 USNM:FISH	s	National Museum of Natural History, Smithsonian Institution, National Fish Collection	
 USNM:Herp	s	National Museum of Natural History, Smithsonian Institution, Division of Amphibians and Reptiles	
+USNM:Herp Image	s	National Museum of Natural History, Smithsonian Institution, Herpetology image collection	
+USNM:Herp Tissue	s	National Museum of Natural History, Smithsonian Institution, Herpetology tissue collection	
 USNM:IZ	s	National Museum of Natural History, Smithsonian Institution, Department of Invertebrate Zoology	
 USNM:LAB	b	National Museum of Natural History, Smithsonian Institution, Laboratories of Analytical Biology		
 USNM:MAMM	s	National Museum of Natural History, Smithsonian Institution, Division of Mammals	

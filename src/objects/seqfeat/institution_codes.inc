@@ -7204,6 +7204,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "USNM:ENT\ts\tNational Museum of Natural History, Smithsonian Institution, Entomology Collection\t",
 "USNM:FISH\ts\tNational Museum of Natural History, Smithsonian Institution, National Fish Collection\t",
 "USNM:Herp\ts\tNational Museum of Natural History, Smithsonian Institution, Division of Amphibians and Reptiles\t",
+"USNM:Herp Image\ts\tNational Museum of Natural History, Smithsonian Institution, Herpetology image collection\t",
+"USNM:Herp Tissue\ts\tNational Museum of Natural History, Smithsonian Institution, Herpetology tissue collection\t",
 "USNM:IZ\ts\tNational Museum of Natural History, Smithsonian Institution, Department of Invertebrate Zoology\t",
 "USNM:LAB\tb\tNational Museum of Natural History, Smithsonian Institution, Laboratories of Analytical Biology\t\t",
 "USNM:MAMM\ts\tNational Museum of Natural History, Smithsonian Institution, Division of Mammals\t",
