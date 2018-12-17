@@ -2024,36 +2024,24 @@ void CFastaReader::x_ApplyAllMods(
     // this is called even if there the user did not request
     // mods to be added because we want to give a warning if there
     // are mods when not expected.
+    if (!bioseq.IsSetDescr() || !bioseq.GetDescr().IsSet()) {
+        return;
+    }
+
+    auto& descriptors = bioseq.SetDescr().Set();
+    auto title_it = find_if(descriptors.begin(), descriptors.end(),
+            [](CRef<CSeqdesc> pDesc) { return pDesc->IsTitle(); });
+    if (title_it == descriptors.end()) {
+        return;
+    }
+    string& title = (*title_it)->SetTitle();
 
     auto_ptr<CSourceModParser> pSmp(xCreateSourceModeParser(pMessageListener));
-    pSmp->SetModFilter( m_pModFilter );
-    CRef<CSeqdesc> title_desc;
+    pSmp->SetModFilter(m_pModFilter);
 
-    if( ! bioseq.IsSetDescr() && ! bioseq.GetDescr().IsSet() ) {
-        return;
-    }
-
-    // find title
-    // (and remember iter in case we need to delete later)
-    CSeq_descr::Tdata & desc_container = bioseq.SetDescr().Set();
-    CSeq_descr::Tdata::iterator desc_it = desc_container.begin();
-    const CSeq_descr::Tdata::iterator desc_end = desc_container.end();
-    for( ; desc_it != desc_end; ++desc_it ) {
-        if( (*desc_it)->IsTitle() ) {
-            title_desc.Reset( &(**desc_it) );
-            break;
-        }
-    }
-
-    if ( ! title_desc ) {
-        return;
-    }
-
-    string& title = title_desc->SetTitle();
 
     if( TestFlag(fAddMods) ) {
         title = pSmp->ParseTitle(title, CConstRef<CSeq_id>(bioseq.GetFirstId()) );
-
         pSmp->ApplyAllMods(bioseq);
         pSmp->GetLabel(&title, CSourceModParser::fUnusedMods);
 
@@ -2082,10 +2070,8 @@ void CFastaReader::x_ApplyAllMods(
     }
 
     NStr::TruncateSpacesInPlace(title);
-
-    // remove title if empty
-    if( title.empty() ) {
-        desc_container.erase(desc_it);
+    if (title.empty()) {
+        descriptors.erase(title_it);
     }
 }
 
