@@ -4436,7 +4436,6 @@ bool CValidError_bioseq::x_ParentAndComponentLocationsDiffer(CBioseq_Handle bsh,
 // This is erring on the side of caution as most Metazoan genomes are less than 17000 bp.
 size_t CValidError_bioseq::x_BadMetazoanMitochondrialLength(const CBioSource& src, const CSeq_inst& inst)
 {
-    bool too_long = false;
     if (src.IsSetGenome() && src.GetGenome() == CBioSource::eGenome_mitochondrion &&
         inst.IsSetTopology() && inst.GetTopology() == CSeq_inst::eTopology_circular &&
         src.IsSetOrg() && src.GetOrg().IsSetLineage() &&
