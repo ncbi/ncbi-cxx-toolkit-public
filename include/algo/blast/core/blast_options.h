@@ -169,6 +169,12 @@ extern "C" {
     will be masked in the lookup table. */
 #define MAX_DB_WORD_COUNT_MAPPER 60
 
+/** Default maximum insert size: distance on the subject between reads that
+    belong to a pair, for spliced and non-spliced alignments */
+#define MAGICBLAST_MAX_INSERT_SIZE_SPLICED 1000000
+#define MAGICBLAST_MAX_INSERT_SIZE_NONSPLICED 100000
+
+
 /** Value used to indicate that no IMPALA-style scaling should be performed
  * when scaling a PSSM */
 extern const double kPSSM_NoImpalaScaling;

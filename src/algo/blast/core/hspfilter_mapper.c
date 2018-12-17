@@ -3677,6 +3677,7 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
                                Int4 min_score,
                                Pairinfo** pair_info_ptr,
                                Int4* max_num_pairs,
+                               Boolean is_spliced,
                                const ScoringOptions* scoring_options)
 {
     HSPChain* first;
@@ -3685,6 +3686,9 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
     Int4 conv_bonus = 0;
     Int4 num_pairs = 0;
     Boolean found = FALSE;
+    const Int4 kMaxInsertSize = is_spliced ?
+        MAGICBLAST_MAX_INSERT_SIZE_SPLICED :
+        MAGICBLAST_MAX_INSERT_SIZE_NONSPLICED;
 
     /* iterate over all pairs of HSP chains for the first and second read of
        the pair and collect pair information */
@@ -3755,7 +3759,7 @@ static Boolean s_FindBestPairs(HSPChain** first_list,
                 pair_info[num_pairs].distance = distance;
 
                 /* distance > 0 indicates a convergent pair (typical) */
-                if (distance > 0) {
+                if (distance > 0 && distance < kMaxInsertSize) {
                     Int4 plus_end, minus_end;
                     hsp = plus->hsps;
                     while (hsp->next) {
@@ -4232,7 +4236,7 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
         if (first && second) {
 
             s_FindBestPairs(&first, &second, 0, &pair_workspace,
-                            &workspace_size, scoring_opts);
+                            &workspace_size, is_spliced, scoring_opts);
 
             ASSERT(s_TestChains(first));
             ASSERT(s_TestChains(second));

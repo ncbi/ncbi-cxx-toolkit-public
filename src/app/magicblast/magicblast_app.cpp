@@ -857,6 +857,7 @@ enum E_StrandSpecificity {
 CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
                        const TQueryMap& queries,
                        const BlastQueryInfo* query_info,
+                       bool is_spliced,
                        int batch_number, bool& first_secondary,
                        bool& last_secondary, bool trim_read_ids,
                        E_StrandSpecificity strand_specific,
@@ -872,6 +873,9 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     int num_hits = 0;
     int context = -1;
     int sam_flags = 0;
+    const int kMaxInsertSize = is_spliced ?
+        MAGICBLAST_MAX_INSERT_SIZE_SPLICED :
+        MAGICBLAST_MAX_INSERT_SIZE_NONSPLICED;
 
     // if paired alignment
     if (align.GetSegs().IsDisc()) {
@@ -885,15 +889,15 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         ++second;
         _ASSERT(second != disc.Get().end());
 
-        PrintSAM(ostr, **first, queries, query_info, batch_number,
-                 first_secondary, last_secondary,
+        PrintSAM(ostr, **first, queries, query_info, is_spliced,
+                 batch_number, first_secondary, last_secondary,
                  trim_read_ids, strand_specific, only_specific,
                  false,
                  second->GetNonNullPointer());
         ostr << endl;
 
-        PrintSAM(ostr, **second, queries, query_info, batch_number,
-                 first_secondary, last_secondary,
+        PrintSAM(ostr, **second, queries, query_info, is_spliced,
+                 batch_number, first_secondary, last_secondary,
                  trim_read_ids, strand_specific, only_specific,
                  true,
                  first->GetNonNullPointer());
@@ -941,6 +945,23 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         query_len = spliced.GetProduct_length();
     }
 
+    // observed template length
+    int template_length = 0;
+    CRange<TSeqPos> range = align.GetSeqRange(1);
+    if (mate && align.GetSeq_id(1).Match(mate->GetSeq_id(1))) {
+        CRange<TSeqPos> mate_range = mate->GetSeqRange(1);
+        if (align.GetSeqStrand(0) == eNa_strand_plus &&
+            align.GetSeqStrand(1) == eNa_strand_plus) {
+
+            template_length = (int)mate_range.GetTo() - (int)range.GetFrom() + 1;
+        }
+        else {
+            template_length =
+                -((int)range.GetTo() - (int)mate_range.GetFrom() + 1);
+        }
+    }
+
+
     // FIXME: if subject is on a minus strand we need to reverse
     // complement both
     if (align.GetSeqStrand(0) == eNa_strand_minus) {
@@ -987,15 +1008,16 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
                 // If <bool2> is true, conditional returns <bool1> inverted.
                 // So if "other" is true, actions based on "plus_minus"
                 // and "minus_plus" are reversed.
-                if ((strand_specific == eFwdRev  &&  plus_minus != other)
-                    ||  (strand_specific == eRevFwd  &&  minus_plus != other)) {
+                if (((strand_specific == eFwdRev  &&  plus_minus != other)
+                     || (strand_specific == eRevFwd  &&  minus_plus != other))
+                    && template_length < kMaxInsertSize) {
 
                     sam_flags |= SAM_FLAG_SEGS_ALIGNED;
-
                 }
             } else {
                 if (((a_start <= m_start && plus_minus)
-                    || (m_start <= a_start && minus_plus))) {
+                     || (m_start <= a_start && minus_plus))
+                    && abs(template_length) < kMaxInsertSize) {
                     sam_flags |= SAM_FLAG_SEGS_ALIGNED;
                 }
             }
@@ -1042,7 +1064,6 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     ostr << s_GetBareId(align.GetSeq_id(1)) << sep;
 
     // mapping position
-    CRange<TSeqPos> range = align.GetSeqRange(1);
     ostr << range.GetFrom() + 1 << sep;
 
     // mapping quality
@@ -1231,20 +1252,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
     ostr << sep;
 
     // observed template length
-    if (mate && align.GetSeq_id(1).Match(mate->GetSeq_id(1))) {
-        CRange<TSeqPos> mate_range = mate->GetSeqRange(1);
-        if (align.GetSeqStrand(0) == eNa_strand_plus &&
-            align.GetSeqStrand(1) == eNa_strand_plus) {
-
-            ostr << (int)mate_range.GetTo() - (int)range.GetFrom() + 1;
-        }
-        else {
-            ostr << -((int)range.GetTo() - (int)mate_range.GetFrom() + 1);
-        }
-    }
-    else {
-        ostr << "0";
-    }
+    ostr << template_length;
     ostr << sep;
 
     // read sequence
@@ -1406,7 +1414,8 @@ CNcbiOstream& PrintSAMUnaligned(CNcbiOstream& ostr,
 
 CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
                        const TQueryMap& queries,
-                       const BlastQueryInfo* query_info, int batch_number,
+                       const BlastQueryInfo* query_info,
+                       bool is_spliced, int batch_number,
                        bool trim_read_id, bool print_unaligned,
                        bool no_discordant, E_StrandSpecificity strand_specific,
                        bool only_specific)
@@ -1426,7 +1435,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
 
     if (!no_discordant || (no_discordant && is_concordant)) {
         for (auto it: results.GetSeqAlign()->Get()) {
-            PrintSAM(ostr, *it, queries, query_info, batch_number,
+            PrintSAM(ostr, *it, queries, query_info, is_spliced, batch_number,
                      first_secondary, last_secondary, trim_read_id,
                      strand_specific, only_specific);
             ostr << endl;
@@ -1458,6 +1467,7 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, CMagicBlastResults& results,
 CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CMagicBlastResultSet& results,
                        const CBioseq_set& query_batch,
                        const BlastQueryInfo* query_info,
+                       bool is_spliced,
                        int batch_number,
                        bool trim_read_id,
                        bool print_unaligned,
@@ -1469,8 +1479,8 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CMagicBlastResultSet& results,
     s_CreateQueryMap(query_batch, bioseqs);
 
     for (auto it: results) {
-        PrintSAM(ostr, *it, bioseqs, query_info, batch_number, trim_read_id,
-                 print_unaligned, no_discordant, strand_specific,
+        PrintSAM(ostr, *it, bioseqs, query_info, is_spliced, batch_number,
+                 trim_read_id, print_unaligned, no_discordant, strand_specific,
                  only_specific);
     }
 
@@ -1949,6 +1959,7 @@ int CMagicBlastApp::Run(void)
                                  *results,
                                  *query_batch,
                                  query_data->GetQueryInfo(),
+                                 magic_opts->GetSpliceAlignments(),
                                  thread_batch_number,
                                  kTrimReadIdForSAM,
                                  kPrintUnaligned,
