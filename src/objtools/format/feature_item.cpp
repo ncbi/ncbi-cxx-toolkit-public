@@ -6112,6 +6112,7 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(collected_by);
     DO_QUAL(identified_by);
     DO_QUAL(PCR_primers);
+    DO_QUAL(metagenome_source);
 
     if ( !GetContext()->Config().SrcQualsToNote() ) {
         // some note qualifiers appear as regular quals in GBench or Dump mode
@@ -6163,8 +6164,7 @@ void CSourceFeatureItem::x_FormatGBNoteQuals(CFlatFeature& ff) const
         DO_QUAL(frequency);
     }
 
-    DO_QUAL(metagenome_source),
-
+//    DO_QUAL(metagenome_source),
 //    DO_QUAL(collection_date);
 //    DO_QUAL(collected_by);
 //    DO_QUAL(identified_by);
@@ -6250,11 +6250,13 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
             DO_NOTE(frequency);
         }
 
+        /*
         if (s_IsExactAndNonExactMatchOnNoteQuals(qvec, "metagenomic")) {
             x_FormatNoteQual(eSQ_metagenome_source, "metagenomic; derived from metagenome", qvec);
         } else {
             x_FormatNoteQual(eSQ_metagenome_source, "derived from metagenome", qvec);
         }
+        */
         
         DO_NOTE(genotype);
         x_FormatNoteQual(eSQ_plastid_name, "plastid", qvec);
