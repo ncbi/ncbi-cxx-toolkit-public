@@ -67,7 +67,7 @@ public:
         eAppendPreserve = 3
     };
 
-    using TMods = multimap<string, CModValueAndAttrib>;
+    using TMods = map<string, list<CModValueAndAttrib>>;
 
     CModHandler(IObjtoolsListener* listener=nullptr);
 
@@ -79,9 +79,9 @@ public:
                 const CModValueAndAttrib& val_attrib,
                 EHandleExisting handle_existing);
 
-    void AddMods(const TMods& mods, EHandleExisting handle_existing);
+    void AddMods(const multimap<string, CModValueAndAttrib>& mods, EHandleExisting handle_existing);
 
-    const TMods& GetMods(void) const;
+    const TMods& GetNormalizedMods(void) const;
 
     void Clear(void);
 
@@ -125,7 +125,7 @@ class CProt_ref;
 class NCBI_XOBJREAD_EXPORT CModParser 
 {
 public:
-    using TMods = CModHandler::TMods;
+    using TMods = multimap<string, CModValueAndAttrib>;
 
     static void Apply(const CBioseq& bioseq, TMods& mods);
 private:
@@ -181,8 +181,10 @@ class CSeq_loc;
 class NCBI_XOBJREAD_EXPORT CModAdder
 {
 public:
+    using TModEntry = pair<string,list<CModValueAndAttrib>>;
     using TMods = CModHandler::TMods;
-    using TModEntry = TMods::value_type;
+    //using TMod = TMods::value_type;
+    using TMod = pair<string, CModValueAndAttrib>;
     using TIterator = typename TMods::const_iterator;
     using TRange = pair<TIterator, TIterator>;
 
@@ -195,59 +197,67 @@ public:
             IObjtoolsListener* pMessageListener);
 
 private:
-    static const string& x_GetModName(const TRange& mod_range);
-    static const string& x_GetModValue(const TRange& mod_range);
 
-    static bool x_TrySeqInstMod(const TRange& mod_range, CSeq_inst& seq_inst);
-    static void x_SetStrand(const TRange& mod_range, CSeq_inst& seq_inst);
-    static void x_SetMolecule(const TRange& mod_range, CSeq_inst& seq_inst);
-    static void x_SetMoleculeFromMolType(const TRange& mod_range, CSeq_inst& seq_inst);
-    static void x_SetTopology(const TRange& mod_range, CSeq_inst& seq_inst);
-    static void x_SetHist(const TRange& mod_range, CSeq_inst& seq_inst);
+    static const string& x_GetModName(const TModEntry& mod_entry);
+    static const string& x_GetModValue(const TModEntry& mod_entry);
 
-    static bool x_TryDescriptorMod(const TRange& mod_range, CDescrCache& descr_cache);
-    static bool x_TryBioSourceMod(const TRange& mod_range, CDescrCache& descr_cache);
-    static bool x_TryPCRPrimerMod(const TRange& mod_range, CDescrCache& descr_cache);
-    static bool x_TryOrgRefMod(const TRange& mod_range, CDescrCache& descr_cache);
-    static bool x_TryOrgNameMod(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetDBxref(const TRange& mod_range, CDescrCache& descr_cache);
+    static bool x_TrySeqInstMod(const TModEntry& mod_entry, CSeq_inst& seq_inst);
+    static void x_SetStrand(const TModEntry& mod_entry, CSeq_inst& seq_inst);
+    static void x_SetMolecule(const TModEntry& mod_entry, CSeq_inst& seq_inst);
+    static void x_SetMoleculeFromMolType(const TModEntry& mod_entry, CSeq_inst& seq_inst);
+    static void x_SetTopology(const TModEntry& mod_entry, CSeq_inst& seq_inst);
+    static void x_SetHist(const TModEntry& mod_entry, CSeq_inst& seq_inst);
 
+    static bool x_TryDescriptorMod(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    static bool x_TryBioSourceMod(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    static bool x_TryPCRPrimerMod(const TModEntry& mod_entry, CDescrCache& descr_cache);
     static void x_AppendPrimerNames(const string& names, vector<string>& reaction_names);
     static void x_AppendPrimerSeqs(const string& names, vector<string>& reaction_seqs);
     static void x_SetPrimerNames(const string& primer_names, CPCRPrimerSet& primer_set);
     static void x_SetPrimerSeqs(const string& primer_seqs, CPCRPrimerSet& primer_set);
 
-    static void x_SetDBLink(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetGBblockIds(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetGBblockKeywords(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetGenomeProjects(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetTpaAssembly(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetComment(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetPMID(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetDBLinkField(const string& label, const TRange& mod_range, CDescrCache& descr_cache);
+    static bool x_TryOrgRefMod(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    static bool x_TryOrgNameMod(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    static void x_SetDBxref(const TModEntry& mod_entry, CDescrCache& descr_cache);
+
+    static void x_SetDBLink(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    static void x_SetGBblockIds(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    static void x_SetGBblockKeywords(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    static void x_SetGenomeProjects(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    static void x_SetTpaAssembly(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    static void x_SetComment(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    static void x_SetPMID(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    static void x_SetDBLinkField(const string& label, const TModEntry& mod_entry, CDescrCache& descr_cache);
     static void x_SetDBLinkFieldVals(const string& label, const list<CTempString>& vals, CUser_object& dblink);
+    static void x_SetMolInfoType(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    static void x_SetMolInfoTech(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    static void x_SetMolInfoCompleteness(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    static void x_SetSubtype(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    static void x_SetOrgMod(const TModEntry& mod_entry, CDescrCache& descr_cache);
 
-    static void x_SetMolInfoType(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetMolInfoTech(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetMolInfoCompleteness(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetSubtype(const TRange& mod_range, CDescrCache& descr_cache);
-    static void x_SetOrgMod(const TRange& mod_range, CDescrCache& descr_cache);
-
-    static bool x_TryFeatureMod(const TRange& mod_range, CGeneRefCache& gene_ref_cache, 
+    static bool x_TryFeatureMod(const TModEntry& mod_entry, CGeneRefCache& gene_ref_cache, 
             CProteinRefCache& protein_ref_cache);
-    static bool x_TryGeneRefMod(const TRange& mod_range, CFeatureCache& gene_ref_cache);
-    static bool x_TryProteinRefMod(const TRange& mod_range, CFeatureCache& protein_ref_cache);
+    static bool x_TryGeneRefMod(const TModEntry& mod_entry, CFeatureCache& gene_ref_cache);
+    static bool x_TryProteinRefMod(const TModEntry& mod_entry, CFeatureCache& protein_ref_cache);
 
-    static void x_ThrowInvalidValue(const TModEntry& mod,
+    static void x_ThrowInvalidValue(const TMod& mod,
                                     const string& add_msg="");
     static bool x_PutError(const CModReaderException& exception, IObjtoolsListener* pMessageListener);
     static bool x_PutMessage(const string& message, EDiagSev severity, 
             IObjtoolsListener* pMessageListener);
 
-    static void x_AssertSingleValue(const TRange& mod_range);
+    static void x_AssertSingleValue(const TModEntry&  mod_entry);
 };
 
 
+class NCBI_XOBJREAD_EXPORT CTitleParser 
+{
+public:
+    using TMods = multimap<string, string>;
+    static void Apply(const CTempString& title, TMods& mods, string& remainder);
+private:
+    static bool x_FindBrackets(const CTempString& line, size_t& start, size_t& stop, size_t& eq_pos);
+};
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
