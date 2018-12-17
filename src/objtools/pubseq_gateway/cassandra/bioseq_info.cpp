@@ -45,12 +45,12 @@ BEGIN_IDBLOB_SCOPE
 static void
 s_GetCSIValues(shared_ptr<CCassQuery> &  query,
                string &  accession,
-               int &  version,
-               int &  seq_id_type)
+               int16_t &  version,
+               int16_t &  seq_id_type)
 {
     accession = query->FieldGetStrValue(0);
-    version = query->FieldGetInt32Value(1);
-    seq_id_type = query->FieldGetInt32Value(2);
+    version = query->FieldGetInt16Value(1);
+    seq_id_type = query->FieldGetInt16Value(2);
 }
 
 
@@ -58,11 +58,11 @@ CRequestStatus::ECode
 FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
                     const string &  keyspace,
                     const string &  sec_seq_id,
-                    int  sec_seq_id_type,
+                    int16_t  sec_seq_id_type,
                     bool  sec_seq_id_type_provided,
                     string &  accession,
-                    int &  version,
-                    int &  seq_id_type)
+                    int16_t &  version,
+                    int16_t &  seq_id_type)
 {
     shared_ptr<CCassQuery>  query = conn->NewQuery();
 
@@ -73,7 +73,7 @@ FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
                       keyspace + ".SI2CSI WHERE "
                       "sec_seq_id = ? AND sec_seq_id_type = ?", 2);
         query->BindStr(0, sec_seq_id);
-        query->BindInt32(1, sec_seq_id_type);
+        query->BindInt16(1, sec_seq_id_type);
     } else {
         query->SetSQL("SELECT accession, version, seq_id_type FROM " +
                       keyspace + ".SI2CSI WHERE "
@@ -96,6 +96,8 @@ FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
             s_GetCSIValues(query, accession, version, seq_id_type);
             found = true;
         }
+        if (found)
+            return CRequestStatus::e200_Ok;
     }
     return CRequestStatus::e404_NotFound;
 }
@@ -168,8 +170,8 @@ FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
                       keyspace + ".BIOSEQ_INFO WHERE "
                       "accession = ? AND version = ? AND seq_id_type = ?", 3);
         query->BindStr(0, bioseq_info.m_Accession);
-        query->BindInt32(1, bioseq_info.m_Version);
-        query->BindInt32(2, bioseq_info.m_SeqIdType);
+        query->BindInt16(1, bioseq_info.m_Version);
+        query->BindInt16(2, bioseq_info.m_SeqIdType);
     } else if (version_provided) {
         query->SetSQL("SELECT "
                       "date_changed, "
@@ -188,7 +190,7 @@ FetchBioseqInfo(shared_ptr<CCassConnection>  conn,
                       keyspace + ".BIOSEQ_INFO WHERE "
                       "accession = ? AND version = ?", 2);
         query->BindStr(0, bioseq_info.m_Accession);
-        query->BindInt32(1, bioseq_info.m_Version);
+        query->BindInt16(1, bioseq_info.m_Version);
     } else {
         query->SetSQL("SELECT "
                       "date_changed, "

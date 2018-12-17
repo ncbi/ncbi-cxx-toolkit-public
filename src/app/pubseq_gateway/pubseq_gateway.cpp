@@ -358,32 +358,41 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
                    "be supplied for the server to start");
     }
 
-    if (m_Si2csiDbFile.empty())
-        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                   "[LMDB_CACHE]/dbfile_si2csi is not found. It must "
-                   "be supplied for the server to start");
-    else if (!CFile(m_Si2csiDbFile).Exists())
+    if (m_Si2csiDbFile.empty()) {
+        PSG_WARNING("[LMDB_CACHE]/dbfile_si2csi is not found "
+                    "in the ini file. No si2csi cache will be used.");
+        // NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+        //            "[LMDB_CACHE]/dbfile_si2csi is not found. It must "
+        //            "be supplied for the server to start");
+    } else if (!CFile(m_Si2csiDbFile).Exists()) {
         NCBI_THROW(CPubseqGatewayException, eConfigurationError,
                    "dbfile_si2csi is not found on the disk. It must "
                    "be supplied for the server to start");
+    }
 
-    if (m_BioseqInfoDbFile.empty())
-        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                   "[LMDB_CACHE]/dbfile_bioseq_info is not found. It must "
-                   "be supplied for the server to start");
-    else if (!CFile(m_BioseqInfoDbFile).Exists())
+    if (m_BioseqInfoDbFile.empty()) {
+        PSG_WARNING("[LMDB_CACHE]/dbfile_bioseq_info is not found "
+                    "in the ini file. No bioseq_info cache will be used.");
+        // NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+        //            "[LMDB_CACHE]/dbfile_bioseq_info is not found. It must "
+        //            "be supplied for the server to start");
+    } else if (!CFile(m_BioseqInfoDbFile).Exists()) {
         NCBI_THROW(CPubseqGatewayException, eConfigurationError,
                    "dbfile_bioseq_info is not found on the disk. It must "
                    "be supplied for the server to start");
+    }
 
-    if (m_BlobPropDbFile.empty())
-        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                   "[LMDB_CACHE]/dbfile_blob_prop is not found. It must "
-                   "be supplied for the server to start");
-    else if (!CFile(m_BlobPropDbFile).Exists())
+    if (m_BlobPropDbFile.empty()) {
+        PSG_WARNING("[LMDB_CACHE]/dbfile_blob_prop is not found "
+                    "in the ini file. No blob_prop cache will be used.");
+        // NCBI_THROW(CPubseqGatewayException, eConfigurationError,
+        //            "[LMDB_CACHE]/dbfile_blob_prop is not found. It must "
+        //            "be supplied for the server to start");
+    } else if (!CFile(m_BlobPropDbFile).Exists()) {
         NCBI_THROW(CPubseqGatewayException, eConfigurationError,
                    "dbfile_blob_prop is not found on the disk. It must "
                    "be supplied for the server to start");
+    }
 
     if (m_HttpWorkers < kWorkersMin || m_HttpWorkers > kWorkersMax) {
         string  err_msg =
@@ -620,13 +629,9 @@ bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
 {
     try {
         converted = NStr::StringToInt(param_value);
-    } catch (const exception &  exc) {
-        err_msg = "Error converting " + param_name + " parameter "
-                  "to integer: " + string(exc.what());
-        return false;
     } catch (...) {
-        err_msg = "Unknown error converting " + param_name + " parameter "
-                  "to integer";
+        err_msg = "Error converting " + param_name + " parameter "
+                  "to integer (received value: '" + string(param_value) + "')";
         return false;
     }
     return true;

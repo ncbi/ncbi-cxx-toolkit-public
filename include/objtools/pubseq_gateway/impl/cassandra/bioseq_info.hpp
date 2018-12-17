@@ -77,11 +77,11 @@ CRequestStatus::ECode
 FetchCanonicalSeqId(shared_ptr<CCassConnection>  conn,
                     const string &  keyspace,
                     const string &  sec_seq_id,
-                    int  sec_seq_id_type,
+                    int16_t  sec_seq_id_type,
                     bool  sec_seq_id_type_provided,
                     string &  accession,                // output
-                    int &  version,                     // output
-                    int &  seq_id_type);                // output
+                    int16_t &  version,                 // output
+                    int16_t &  seq_id_type);            // output
 
 // e200_Ok: exactly one record found
 // e404_NotFound: no records found

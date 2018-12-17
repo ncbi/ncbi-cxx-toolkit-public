@@ -102,4 +102,21 @@ enum ETSEOption {
 };
 
 
+enum EResolutionResult {
+    eFromSi2csiCache,
+    eFromSi2csiDB,
+    eFromBioseqCache,
+    eFromBioseqDB,
+    eNotResolved
+};
+
+
+enum ESeqIdParsingResult {
+    eParsedOK,
+    eParseFailed,
+    eParseSeqIdTypeMismatch
+};
+
+
+
 #endif

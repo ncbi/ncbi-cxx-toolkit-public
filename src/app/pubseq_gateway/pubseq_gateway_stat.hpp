@@ -116,7 +116,8 @@ public:
         m_Admin(0), m_Resolve(0),
         m_GetBlobBySeqId(0), m_GetBlobBySatSatKey(0),
         m_ResolvedAsPrimaryOSLT(0), m_ResolvedAsSecondaryOSLT(0),
-        m_ResolvedAsFallback(0), m_NotResolved(0)
+        m_ResolvedAsPrimaryOSLTinDB(0), m_ResolvedAsSecondaryOSLTinDB(0),
+        m_NotResolved(0)
     {}
 
     void IncAdmin(void)
@@ -137,8 +138,11 @@ public:
     void IncResolvedAsSecondaryOSLT(void)
     { ++m_ResolvedAsSecondaryOSLT; }
 
-    void IncResolvedAsFallback(void)
-    { ++m_ResolvedAsFallback; }
+    void IncResolvedAsPrimaryOSLTinDB(void)
+    { ++m_ResolvedAsPrimaryOSLTinDB; }
+
+    void IncResolvedAsSecondaryOSLTinDB(void)
+    { ++m_ResolvedAsSecondaryOSLTinDB; }
 
     void IncNotResolved(void)
     { ++m_NotResolved; }
@@ -153,7 +157,8 @@ private:
 
     atomic_uint_fast64_t        m_ResolvedAsPrimaryOSLT;
     atomic_uint_fast64_t        m_ResolvedAsSecondaryOSLT;
-    atomic_uint_fast64_t        m_ResolvedAsFallback;
+    atomic_uint_fast64_t        m_ResolvedAsPrimaryOSLTinDB;
+    atomic_uint_fast64_t        m_ResolvedAsSecondaryOSLTinDB;
     atomic_uint_fast64_t        m_NotResolved;
 };
 

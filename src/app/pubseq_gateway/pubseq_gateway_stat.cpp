@@ -74,7 +74,8 @@ void CPubseqGatewayRequestCounters::PopulateDictionary(CJsonNode &  dict) const
 {
     dict.SetInteger("ResolvedAsPrimaryOSLT", m_ResolvedAsPrimaryOSLT);
     dict.SetInteger("ResolvedAsSecondaryOSLT", m_ResolvedAsSecondaryOSLT);
-    dict.SetInteger("ResolvedAsFallback", m_ResolvedAsFallback);
+    dict.SetInteger("ResolvedAsPrimaryOSLTinDB", m_ResolvedAsPrimaryOSLTinDB);
+    dict.SetInteger("ResolvedAsSecondaryOSLTinDB", m_ResolvedAsSecondaryOSLTinDB);
     dict.SetInteger("NotResolved", m_NotResolved);
 
     uint64_t    req_sum(0);

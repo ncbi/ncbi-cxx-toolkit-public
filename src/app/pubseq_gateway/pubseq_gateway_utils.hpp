@@ -77,35 +77,34 @@ SBlobId ParseBlobId(const string &  blob_id);
 
 
 
-// At the resolution stage there is complicated process of resolving an
-// incoming seq_id and possibly seq_id_type into a set of values which
-// uniquely identify a bioseq_info key.
-struct SBioseqKey
+struct SBioseqResolution
 {
-    SBioseqKey() :
-        m_Version(-1), m_SeqIdType(-1)
-    {}
+    SBioseqResolution() :
+        m_ResolutionResult(eNotResolved)
+    {
+        m_BioseqInfo.m_Version = -1;
+        m_BioseqInfo.m_SeqIdType = -1;
+    }
 
-    string      m_Accession;    // if resolved, then it is a non-empty string
-    int         m_Version;      // -1 if not identified
-    int         m_SeqIdType;    // -1 if not identified
-
-    string      m_BioseqInfo;   // some resolution branches may lead to the
-                                // already found bioseq_info record
+    EResolutionResult   m_ResolutionResult;
+    SBioseqInfo         m_BioseqInfo;
+    string              m_CacheInfo;    // Bioseq or si2csi cache
 
     bool IsValid(void) const
     {
-        return !m_Accession.empty();
+        return m_ResolutionResult != eNotResolved;
     }
 
     void Reset(void)
     {
-        m_Accession.clear();
-        m_Version = -1;
-        m_SeqIdType = -1;
-        m_BioseqInfo.clear();
+        m_ResolutionResult = eNotResolved;
+        m_CacheInfo.clear();
+        m_BioseqInfo.m_Accession.clear();
+        m_BioseqInfo.m_Version = -1;
+        m_BioseqInfo.m_SeqIdType = -1;
     }
 };
+
 
 
 // Bioseq messages

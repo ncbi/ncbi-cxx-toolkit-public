@@ -176,6 +176,7 @@ CJsonNode  ConvertBioseqInfoToJson(const SBioseqInfo &  bioseq_info,
             CJsonNode       item_tuple(CJsonNode::NewArrayNode());
             item_tuple.AppendInteger(get<0>(item));
             item_tuple.AppendString(get<1>(item));
+            seq_ids.Append(item_tuple);
         }
         json.SetByKey(kSeqIds, seq_ids);
     }
@@ -213,15 +214,15 @@ CJsonNode  ConvertBlobPropToJson(const CBlobRecord &  blob_prop)
 }
 
 
-void ConvertSi2csiToBioseqKey(const string &  si2csi_protobuf,
-                              SBioseqKey &  bioseq_key)
+void ConvertSi2csiToBioseqResolution(const string &  si2csi_protobuf,
+                                     SBioseqResolution &  bioseq_resolution)
 {
     psg::retrieval::BioseqInfoKey       protobuf_si2csi_value;
     protobuf_si2csi_value.ParseFromString(si2csi_protobuf);
 
-    bioseq_key.m_Accession = protobuf_si2csi_value.accession();
-    bioseq_key.m_Version = protobuf_si2csi_value.version();
-    bioseq_key.m_SeqIdType = protobuf_si2csi_value.seq_id_type();
+    bioseq_resolution.m_BioseqInfo.m_Accession = protobuf_si2csi_value.accession();
+    bioseq_resolution.m_BioseqInfo.m_Version = protobuf_si2csi_value.version();
+    bioseq_resolution.m_BioseqInfo.m_SeqIdType = protobuf_si2csi_value.seq_id_type();
 }
 
 

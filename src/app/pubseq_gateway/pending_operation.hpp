@@ -220,38 +220,40 @@ private:
     bool x_UsePsgProtocol(void) const;
 
 private:
-    SBioseqKey x_ResolveInputSeqId(string &  err_msg);
-    void x_ResolveInputSeqId(CSeq_id &  parsed_seq_id,
-                             bool  seq_id_parsed_as_is,
-                             const CTextseq_id *  text_seq_id,
-                             SBioseqKey &  bioseq_key);
-    void x_ResolveViaComposeOSLT(CSeq_id &  parsed_seq_id,
-                                 const CTextseq_id *  text_seq_id,
-                                 SBioseqKey &  bioseq_key);
-    SBioseqKey x_ResolveInputSeqIdPath1(CSeq_id &  parsed_seq_id,
-                                        bool  seq_id_parsed_as_is,
-                                        const CTextseq_id *  text_seq_id);
-    SBioseqKey x_ResolveInputSeqIdPath2(const CSeq_id &  parsed_seq_id,
-                                        const CTextseq_id *  text_seq_id);
-    void x_ResolveInputSeqIdAsIs(CSeq_id &  parsed_seq_id,
-                                 bool  seq_id_parsed_as_is,
-                                 bool tried_as_fasta_content,
-                                 SBioseqKey &  bioseq_key);
+    SBioseqResolution x_ResolveInputSeqId(string &  err_msg);
+    bool x_ResolvePrimaryOSLT(const string &  primary_id,
+                              int16_t  effective_version,
+                              int16_t  effective_seq_id_type,
+                              SBioseqResolution &  bioseq_resolution);
+    bool x_ResolveSecondaryOSLT(const string &  secondary_id,
+                                int16_t  effective_seq_id_type,
+                                SBioseqResolution &  bioseq_resolution);
+    bool x_ResolvePrimaryOSLTviaDB(const string &  primary_id,
+                                   int16_t  effective_seq_id_type,
+                                   int16_t  effective_version,
+                                   SBioseqResolution &  bioseq_resolution);
+    bool x_ResolveSecondaryOSLTviaDB(const string &  secondary_id,
+                                     int16_t  effective_seq_id_type,
+                                     SBioseqResolution &  bioseq_resolution);
+    bool x_ResolveViaComposeOSLT(CSeq_id &  parsed_seq_id,
+                                 string &  err_msg,
+                                 SBioseqResolution &  bioseq_resolution);
+    bool x_ResolveAsIs(SBioseqResolution &  bioseq_resolution);
+    bool x_ResolveAsIsInDB(SBioseqResolution &  bioseq_resolution);
     bool x_GetEffectiveSeqIdType(const CSeq_id &  parsed_seq_id,
-                                 int &  eff_seq_id_type);
-    int x_GetEffectiveVersion(const CTextseq_id *  text_seq_id);
+                                 int16_t &  eff_seq_id_type);
+    int16_t x_GetEffectiveVersion(const CTextseq_id *  text_seq_id);
     bool x_LookupCachedBioseqInfo(const string &  accession,
-                                  int &  version,
-                                  int &  seq_id_type,
+                                  int16_t &  version,
+                                  int16_t &  seq_id_type,
                                   string &  bioseq_info_cache_data);
     bool x_LookupCachedCsi(const string &  seq_id,
-                           int &  seq_id_type,
+                           int16_t &  seq_id_type,
                            string &  csi_cache_data);
     bool x_LookupBlobPropCache(int  sat, int  sat_key,
                                int64_t &  last_modified,
                                CBlobRecord &  blob_record);
-    bool x_ParseUrlSeqIdAsIs(CSeq_id &  seq_id);
-    bool x_ParseUrlSeqIdAsFastaTypeAndContent(CSeq_id &  seq_id);
+    ESeqIdParsingResult x_ParseInputSeqId(CSeq_id &  seq_id, string &  err_msg);
 
 private:
     HST::CHttpReply<CPendingOperation> *    m_Reply;
@@ -265,7 +267,7 @@ private:
     SBlobRequest                            m_BlobRequest;
     SResolveRequest                         m_ResolveRequest;
     CTempString                             m_UrlSeqId;
-    int                                     m_UrlSeqIdType;
+    int16_t                                 m_UrlSeqIdType;
 
     int32_t                                 m_TotalSentReplyChunks;
     bool                                    m_Cancelled;

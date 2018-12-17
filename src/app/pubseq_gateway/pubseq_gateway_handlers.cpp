@@ -115,11 +115,6 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
         }
     }
 
-    // CXX-1030: uppercase seq_id in place
-    char *      current = (char *)(seq_id.data());
-    for (size_t  index = 0; index < seq_id.size(); ++index, ++current)
-        *current = (char)toupper((unsigned char)(*current));
-
     m_RequestCounters.IncGetBlobBySeqId();
     resp.Postpone(
             CPendingOperation(
@@ -296,11 +291,6 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
             }
         }
     }
-
-    // CXX-1030: uppercase seq_id in place
-    char *      current = (char *)(seq_id.data());
-    for (size_t  index = 0; index < seq_id.size(); ++index, ++current)
-        *current = (char)toupper((unsigned char)(*current));
 
     // Parameters processing has finished
     m_RequestCounters.IncResolve();
