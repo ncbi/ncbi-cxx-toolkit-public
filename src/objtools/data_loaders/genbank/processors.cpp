@@ -672,12 +672,25 @@ CSeq_id_Handle s_GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
 
     bool have_nz = NStr::StartsWith(acc, "NZ_");
     SIZE_TYPE letters_pos = have_nz? 3: 0;
-    SIZE_TYPE digits_pos = letters_pos+4;
-    SIZE_TYPE digits_count = acc.size() - digits_pos;
-    if ( digits_count < 8 || digits_count > 10 ) {
-        return master_idh;
+    bool long_acc = false;
+    SIZE_TYPE digits_pos = letters_pos+4; // default WGS accession has 4 letters
+    if ( digits_pos < acc.size() && !isdigit(acc[digits_pos] & 0xff) ) {
+        long_acc = true;
+        digits_pos += 2; // new longer WGS accession has 6 letters
     }
-    if ( !s_GoodLetters(acc.substr(letters_pos, 4)) ) {
+    SIZE_TYPE digits_count = acc.size() - digits_pos;
+    if ( !long_acc ) {
+        if ( digits_count < 8 || digits_count > 10 ) {
+            return master_idh;
+        }
+    }
+    else {
+        // new longer WGS accession can have 9 to 11 digits
+        if ( digits_count < 9 || digits_count > 11 ) {
+            return master_idh;
+        }
+    }
+    if ( !s_GoodLetters(acc.substr(letters_pos, digits_pos-letters_pos)) ) {
         return master_idh;
     }
     if ( !s_GoodDigits(acc.substr(digits_pos)) ) {
