@@ -280,8 +280,10 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         }
 
 
-        for (auto kv : mod_handler.GetMods()) {
-            ofstr << kv.first << "  "  << kv.second.GetValue() << endl;
+        for (auto mod_entry : mod_handler.GetNormalizedMods()) {
+            for (const auto& value_attrib : mod_entry.second) {
+                ofstr << mod_entry.first << "  " << value_attrib.GetValue() << endl;
+            }
         }
         //edit::CModApply mod_apply(mods);
        // bool replace_preexisting_vals = true;
