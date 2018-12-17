@@ -218,16 +218,17 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
     // check the uniqueness of id
     if (m_Indices != CWriteDB::eNoIndex) {
     	set<string>::size_type orig_size = m_IdSet.size();
-    	string id_u;
+    	string id;
     	pair<set<string>::iterator, bool > rv;
+        CSeq_id::TLabelFlags label_flags = 
+            CSeq_id::fLabel_Default | CSeq_id::fLabel_UpperCase;
         ITERATE(TIdList, iter, idlist) {
-            string id = kEmptyStr;
-            (*iter)->GetLabel(&id);
-            id_u = NStr::ToUpper(id);
-            rv = m_IdSet.insert(id_u);
+            id = kEmptyStr;
+            (*iter)->GetLabel(&id, CSeq_id::eDefault, label_flags);
+            rv = m_IdSet.insert(id);
             if((rv.second == false) && (!(*iter)->IsLocal())) {
             	CNcbiOstrstream msg;
-            	msg << "Error: Duplicate seq_ids are found: " << endl << id_u << endl;
+            	msg << "Error: Duplicate seq_ids are found: " << endl << id << endl;
             	NCBI_THROW(CWriteDBException, eArgErr, CNcbiOstrstreamToString(msg));
             }
         }
@@ -235,7 +236,7 @@ bool CWriteDB_Volume::WriteSequence(const string      & seq,
         if(m_IdSet.size() == orig_size) {
         	CNcbiOstrstream msg;
         	msg << "Error: Duplicate seq_ids are found: " << endl
-    	    << id_u << endl;
+    	    << id << endl;
         	NCBI_THROW(CWriteDBException, eArgErr, CNcbiOstrstreamToString(msg));
         }
     }
