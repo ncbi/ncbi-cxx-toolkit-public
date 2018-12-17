@@ -554,117 +554,117 @@ void CMemberInfo::SetCopyMissingFunction(TMemberCopyFunction func)
 
 void CMemberInfo::SetGlobalReadHook(CReadClassMemberHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_ReadHookData.SetGlobalHook(hook);
 }
 
 void CMemberInfo::SetLocalReadHook(CObjectIStream& stream,
                                    CReadClassMemberHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_ReadHookData.SetLocalHook(stream.m_ClassMemberHookKey, hook);
 }
 
 void CMemberInfo::ResetGlobalReadHook(void)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_ReadHookData.ResetGlobalHook();
 }
 
 void CMemberInfo::ResetLocalReadHook(CObjectIStream& stream)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_ReadHookData.ResetLocalHook(stream.m_ClassMemberHookKey);
 }
 
 void CMemberInfo::SetPathReadHook(CObjectIStream* in, const string& path,
                                   CReadClassMemberHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_ReadHookData.SetPathHook(in,path,hook);
 }
 
 void CMemberInfo::SetGlobalWriteHook(CWriteClassMemberHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_WriteHookData.SetGlobalHook(hook);
 }
 
 void CMemberInfo::SetLocalWriteHook(CObjectOStream& stream,
                                     CWriteClassMemberHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_WriteHookData.SetLocalHook(stream.m_ClassMemberHookKey, hook);
 }
 
 void CMemberInfo::ResetGlobalWriteHook(void)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_WriteHookData.ResetGlobalHook();
 }
 
 void CMemberInfo::ResetLocalWriteHook(CObjectOStream& stream)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_WriteHookData.ResetLocalHook(stream.m_ClassMemberHookKey);
 }
 
 void CMemberInfo::SetPathWriteHook(CObjectOStream* out, const string& path,
                                    CWriteClassMemberHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_WriteHookData.SetPathHook(out,path,hook);
 }
 
 void CMemberInfo::SetLocalSkipHook(CObjectIStream& stream,
                                    CSkipClassMemberHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_SkipHookData.SetLocalHook(stream.m_ClassMemberSkipHookKey, hook);
 }
 
 void CMemberInfo::ResetLocalSkipHook(CObjectIStream& stream)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_SkipHookData.ResetLocalHook(stream.m_ClassMemberSkipHookKey);
 }
 
 void CMemberInfo::SetPathSkipHook(CObjectIStream* in, const string& path,
                                   CSkipClassMemberHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_SkipHookData.SetPathHook(in,path,hook);
 }
 
 void CMemberInfo::SetGlobalCopyHook(CCopyClassMemberHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_CopyHookData.SetGlobalHook(hook);
 }
 
 void CMemberInfo::SetLocalCopyHook(CObjectStreamCopier& stream,
                                    CCopyClassMemberHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_CopyHookData.SetLocalHook(stream.m_ClassMemberHookKey, hook);
 }
 
 void CMemberInfo::ResetGlobalCopyHook(void)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_CopyHookData.ResetGlobalHook();
 }
 
 void CMemberInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_CopyHookData.ResetLocalHook(stream.m_ClassMemberHookKey);
 }
 
 void CMemberInfo::SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
                                   CCopyClassMemberHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_CopyHookData.SetPathHook(stream ? &(stream->In()) : 0,path,hook);
 }
 

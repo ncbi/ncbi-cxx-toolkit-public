@@ -759,117 +759,117 @@ void CVariantInfoFunctions::CopyHookedVariant(CObjectStreamCopier& stream,
 
 void CVariantInfo::SetGlobalReadHook(CReadChoiceVariantHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_ReadHookData.SetGlobalHook(hook);
 }
 
 void CVariantInfo::SetLocalReadHook(CObjectIStream& stream,
                                     CReadChoiceVariantHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_ReadHookData.SetLocalHook(stream.m_ChoiceVariantHookKey, hook);
 }
 
 void CVariantInfo::ResetGlobalReadHook(void)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_ReadHookData.ResetGlobalHook();
 }
 
 void CVariantInfo::ResetLocalReadHook(CObjectIStream& stream)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_ReadHookData.ResetLocalHook(stream.m_ChoiceVariantHookKey);
 }
 
 void CVariantInfo::SetPathReadHook(CObjectIStream* in, const string& path,
                                    CReadChoiceVariantHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_ReadHookData.SetPathHook(in,path,hook);
 }
 
 void CVariantInfo::SetGlobalWriteHook(CWriteChoiceVariantHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_WriteHookData.SetGlobalHook(hook);
 }
 
 void CVariantInfo::SetLocalWriteHook(CObjectOStream& stream,
                                      CWriteChoiceVariantHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_WriteHookData.SetLocalHook(stream.m_ChoiceVariantHookKey, hook);
 }
 
 void CVariantInfo::ResetGlobalWriteHook(void)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_WriteHookData.ResetGlobalHook();
 }
 
 void CVariantInfo::ResetLocalWriteHook(CObjectOStream& stream)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_WriteHookData.ResetLocalHook(stream.m_ChoiceVariantHookKey);
 }
 
 void CVariantInfo::SetPathWriteHook(CObjectOStream* out, const string& path,
                                     CWriteChoiceVariantHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_WriteHookData.SetPathHook(out,path,hook);
 }
 
 void CVariantInfo::SetLocalSkipHook(CObjectIStream& stream,
                                     CSkipChoiceVariantHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_SkipHookData.SetLocalHook(stream.m_ChoiceVariantSkipHookKey, hook);
 }
 
 void CVariantInfo::ResetLocalSkipHook(CObjectIStream& stream)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_SkipHookData.ResetLocalHook(stream.m_ChoiceVariantSkipHookKey);
 }
 
 void CVariantInfo::SetPathSkipHook(CObjectIStream* in, const string& path,
                                    CSkipChoiceVariantHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_SkipHookData.SetPathHook(in,path,hook);
 }
 
 void CVariantInfo::SetGlobalCopyHook(CCopyChoiceVariantHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_CopyHookData.SetGlobalHook(hook);
 }
 
 void CVariantInfo::SetLocalCopyHook(CObjectStreamCopier& stream,
                                     CCopyChoiceVariantHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_CopyHookData.SetLocalHook(stream.m_ChoiceVariantHookKey, hook);
 }
 
 void CVariantInfo::ResetGlobalCopyHook(void)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_CopyHookData.ResetGlobalHook();
 }
 
 void CVariantInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_CopyHookData.ResetLocalHook(stream.m_ChoiceVariantHookKey);
 }
 
 void CVariantInfo::SetPathCopyHook(CObjectStreamCopier* stream, const string& path,
                                    CCopyChoiceVariantHook* hook)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_CopyHookData.SetPathHook(stream ? &(stream->In()) : 0,path,hook);
 }
 

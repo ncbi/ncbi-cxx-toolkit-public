@@ -101,7 +101,7 @@ void CSoapMessage::AddObject(const CSerialObject& obj,
             }
         } else {
             if (!ser->HasNamespaceName()) {
-                CMutexGuard guard(GetTypeInfoMutex());
+                XSERIAL_TYPEINFO_WRITELOCK;
                 ser->GetThisTypeInfo()->SetNamespaceName(m_DefNamespaceName);
             }
         }

@@ -347,7 +347,7 @@ void CObjectOStream::Close(void)
 
 void CObjectOStream::ResetLocalHooks(void)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     ResetPathHooks();
     m_ObjectHookKey.Clear();
     m_ClassMemberHookKey.Clear();

@@ -306,7 +306,17 @@ const CObject* CClassTypeInfoBase::GetCObjectPtr(TConstObjectPtr objectPtr) cons
 CTypeInfo::EMayContainType
 CClassTypeInfoBase::GetMayContainType(TTypeInfo typeInfo) const
 {
-    CMutexGuard GUARD(GetTypeInfoMutex());
+    {
+        XSERIAL_TYPEINFO_READLOCK;
+        TContainedTypes* cache = m_ContainedTypes.get();
+        if (cache) {
+            TContainedTypes::iterator ins = cache->find(typeInfo);
+            if (ins != cache->end()) {
+                return ins->second;
+            }
+        }
+    }
+    XSERIAL_TYPEINFO_WRITELOCK;
     TContainedTypes* cache = m_ContainedTypes.get();
     if ( !cache ) {
         m_ContainedTypes.reset(cache = new TContainedTypes);

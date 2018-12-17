@@ -119,7 +119,7 @@ TTypeInfo CStlClassInfoUtil::GetInfo(TTypeInfo& storage,
                                      TTypeInfo arg, TTypeInfoCreator1 f)
 {
     if ( !storage ) {
-        CMutexGuard guard(GetTypeInfoMutex());
+        XSERIAL_TYPEINFO_WRITELOCK;
         if ( !storage ) {
             storage = f(arg);
         }
@@ -132,7 +132,7 @@ TTypeInfo CStlClassInfoUtil::GetInfo(TTypeInfo& storage,
                                      TTypeInfoCreator2 f)
 {
     if ( !storage ) {
-        CMutexGuard guard(GetTypeInfoMutex());
+        XSERIAL_TYPEINFO_WRITELOCK;
         if ( !storage ) {
             storage = f(arg1, arg2);
         }

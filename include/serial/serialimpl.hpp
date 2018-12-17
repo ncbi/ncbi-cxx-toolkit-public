@@ -269,6 +269,14 @@ TTypeInfo EnumTypeInfo(const T* member, const CEnumeratedTypeValues* enumInfo)
 }
 
 NCBI_XSERIAL_EXPORT SSystemMutex& GetTypeInfoMutex(void);
+NCBI_XSERIAL_EXPORT CRWLock& GetTypeInfoLock(void);
+#if 1
+#define XSERIAL_TYPEINFO_WRITELOCK NCBI_NS_NCBI::CWriteLockGuard GUARD(NCBI_NS_NCBI::GetTypeInfoLock())
+#define XSERIAL_TYPEINFO_READLOCK  NCBI_NS_NCBI::CReadLockGuard  GUARD(NCBI_NS_NCBI::GetTypeInfoLock())
+#else
+#define XSERIAL_TYPEINFO_WRITELOCK NCBI_NS_NCBI::CMutexGuard GUARD(NCBI_NS_NCBI::GetTypeInfoMutex())
+#define XSERIAL_TYPEINFO_READLOCK  NCBI_NS_NCBI::CMutexGuard GUARD(NCBI_NS_NCBI::GetTypeInfoMutex())
+#endif
 
 // internal macros for implementing BEGIN_*_INFO and ADD_*_MEMBER
 #define DECLARE_BASE_OBJECT(ClassName) ClassName* base = 0
@@ -284,7 +292,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
     static InfoType* volatile s_info = 0; \
     InfoType* info = s_info; \
     if ( !info ) { \
-        NCBI_NS_NCBI::CMutexGuard GUARD(NCBI_NS_NCBI::GetTypeInfoMutex()); \
+        XSERIAL_TYPEINFO_WRITELOCK; \
         info = s_info; \
         if ( !info ) { \
             DECLARE_BASE_OBJECT(CClass); \
@@ -519,7 +527,7 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
     static NCBI_NS_NCBI::CEnumeratedTypeValues* volatile s_enumInfo = 0; \
     NCBI_NS_NCBI::CEnumeratedTypeValues* enumInfo = s_enumInfo; \
     if ( !enumInfo ) { \
-        NCBI_NS_NCBI::CMutexGuard GUARD(NCBI_NS_NCBI::GetTypeInfoMutex()); \
+        XSERIAL_TYPEINFO_WRITELOCK; \
         enumInfo = s_enumInfo; \
         if ( !enumInfo ) { \
             enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(EnumAlias, IsInteger); \
@@ -571,7 +579,7 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
     static NCBI_NS_NCBI::CAliasTypeInfo* volatile s_info = 0; \
     NCBI_NS_NCBI::CAliasTypeInfo* info = s_info; \
     if ( !info ) { \
-        NCBI_NS_NCBI::CMutexGuard GUARD(NCBI_NS_NCBI::GetTypeInfoMutex()); \
+        XSERIAL_TYPEINFO_WRITELOCK; \
         info = s_info; \
         if ( !info ) { \
             typedef ClassName CClass; \
@@ -597,7 +605,7 @@ const NCBI_NS_NCBI::CTypeInfo* BaseClassName::GetTypeInfo(void) \
     static NCBI_NS_NCBI::CAliasTypeInfo* volatile s_info = 0; \
     NCBI_NS_NCBI::CAliasTypeInfo* info = s_info; \
     if ( !info ) { \
-        NCBI_NS_NCBI::CMutexGuard GUARD(NCBI_NS_NCBI::GetTypeInfoMutex()); \
+        XSERIAL_TYPEINFO_WRITELOCK; \
         info = s_info; \
         if ( !info ) { \
             typedef ClassName CClass; \

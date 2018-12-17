@@ -102,7 +102,7 @@ CTypeRef& CTypeRef::operator=(const CTypeRef& typeRef)
 void CTypeRef::Unref(void)
 {
     if ( m_Getter == sx_GetResolve ) {
-        CMutexGuard guard(GetTypeInfoMutex()/*s_TypeRefMutex*/);
+        XSERIAL_TYPEINFO_WRITELOCK;
         if ( m_Getter == sx_GetResolve ) {
             m_Getter = sx_GetAbort;
             if ( m_ResolveData->m_RefCount.Add(-1) <= 0 ) {
@@ -122,7 +122,7 @@ void CTypeRef::Assign(const CTypeRef& typeRef)
         m_Getter = sx_GetReturn;
     }
     else {
-        CMutexGuard guard(GetTypeInfoMutex()/*s_TypeRefMutex*/);
+        XSERIAL_TYPEINFO_WRITELOCK;
         m_ReturnData = typeRef.m_ReturnData;
         m_Getter = typeRef.m_Getter;
         if ( m_Getter == sx_GetProc ) {
@@ -136,7 +136,7 @@ void CTypeRef::Assign(const CTypeRef& typeRef)
 
 TTypeInfo CTypeRef::sx_GetAbort(const CTypeRef& typeRef)
 {
-    CMutexGuard guard(GetTypeInfoMutex()/*s_TypeRefMutex*/);
+    XSERIAL_TYPEINFO_WRITELOCK;
     if (typeRef.m_Getter != sx_GetAbort)
         return typeRef.m_Getter(typeRef);
     NCBI_THROW(CSerialException,eFail, "uninitialized type ref");
@@ -149,7 +149,7 @@ TTypeInfo CTypeRef::sx_GetReturn(const CTypeRef& typeRef)
 
 TTypeInfo CTypeRef::sx_GetProc(const CTypeRef& typeRef)
 {
-    CMutexGuard guard(GetTypeInfoMutex()/*s_TypeRefMutex*/);
+    XSERIAL_TYPEINFO_WRITELOCK;
     if (typeRef.m_Getter != sx_GetProc)
         return typeRef.m_Getter(typeRef);
     TTypeInfo typeInfo = typeRef.m_GetProcData();
@@ -162,7 +162,7 @@ TTypeInfo CTypeRef::sx_GetProc(const CTypeRef& typeRef)
 
 TTypeInfo CTypeRef::sx_GetResolve(const CTypeRef& typeRef)
 {
-    CMutexGuard guard(GetTypeInfoMutex()/*s_TypeRefMutex*/);
+    XSERIAL_TYPEINFO_WRITELOCK;
     if (typeRef.m_Getter != sx_GetResolve)
         return typeRef.m_Getter(typeRef);
     TTypeInfo typeInfo = typeRef.m_ResolveData->GetTypeInfo();

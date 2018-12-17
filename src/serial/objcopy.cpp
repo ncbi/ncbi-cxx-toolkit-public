@@ -65,7 +65,7 @@ CObjectStreamCopier::~CObjectStreamCopier(void)
 
 void CObjectStreamCopier::ResetLocalHooks(void)
 {
-    CMutexGuard guard(GetTypeInfoMutex());
+    XSERIAL_TYPEINFO_WRITELOCK;
     m_ObjectHookKey.Clear();
     m_ClassMemberHookKey.Clear();
     m_ChoiceVariantHookKey.Clear();
