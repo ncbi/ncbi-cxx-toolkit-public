@@ -316,6 +316,8 @@ struct CMasterInfo
     CCurrentMasterInfo* m_current_master;
 
     CCitSubInfo m_cit_sub_info;
+    CRef<CPub_equiv> m_cit_sub;
+    list<CRef<CPub_equiv>> m_cit_arts;
     EInputType m_input_type;
 
 

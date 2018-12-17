@@ -1364,10 +1364,10 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
          more_than_one_cit_art = false;
     
     
-    if (info.m_current_master) {
+    if (!info.m_cit_arts.empty()) {
 
-        more_than_one_cit_art = info.m_current_master->m_cit_arts.size() > 1;
-        for (auto cit_art : info.m_current_master->m_cit_arts) {
+        more_than_one_cit_art = info.m_cit_arts.size() > 1;
+        for (auto cit_art : info.m_cit_arts) {
 
             AddPub(*bioseq, *cit_art);
 
