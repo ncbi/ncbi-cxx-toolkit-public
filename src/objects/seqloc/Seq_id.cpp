@@ -1657,7 +1657,17 @@ void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
     case eBoth:
         x_GetLabel_Type(*this, label, flags);
         *label += "|";
-        x_GetLabel_Content(*this, label, flags, NULL);
+        if (flags & fLabel_UpperCase) {
+            NStr::ToUpper(*label);
+            *label += ComposeOSLT(); // Only primary OSLT allowed here!
+            if (flags & fLabel_Version) {
+                const CTextseq_id* tsid = GetTextseq_Id();
+                if (tsid && tsid->IsSetVersion())
+                    *label += "." + NStr::IntToString(tsid->GetVersion());
+            }
+        } else {
+            x_GetLabel_Content(*this, label, flags, NULL);
+        }
         break;
 
     case eType:
@@ -1676,7 +1686,6 @@ void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
         }
     }
 }
-
 
 void CSeq_id::GetLabel(string* label, int* version, ELabelType type) const
 {
@@ -2864,7 +2873,7 @@ bool CSeq_id::AvoidGi(void)
 }
 
 
-string CSeq_id::ComposeOSLT(list<string>* secondary_id_list)
+string CSeq_id::ComposeOSLT(list<string>* secondary_id_list) const
 {
     string primary_id;
     string secondary_id;

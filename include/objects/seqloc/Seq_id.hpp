@@ -552,6 +552,7 @@ public:
         /// and the (text or numeric) key as the content.
         fLabel_GeneralDbIsContent = 0x20,
         fLabel_Trimmed            = 0x40, ///< Trim trailing FASTA delimeters.
+        fLabel_UpperCase          = 0x80, ///< Upper case label, with special encoding for PDB chain-ids
 
         /// default options - always show the version
         fLabel_Default = fLabel_Version
@@ -722,7 +723,7 @@ public:
     ///  OSLT strings for the secondary ids
     /// @return
     ///  OSLT string for the primary id
-    string ComposeOSLT(list<string>* secondary_ids = nullptr);
+    string ComposeOSLT(list<string>* secondary_ids = nullptr) const;
 
     /// ID length restrictions
     const static size_t kMaxLocalIDLength    = 50;
