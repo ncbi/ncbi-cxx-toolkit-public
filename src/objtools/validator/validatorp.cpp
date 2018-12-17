@@ -234,7 +234,7 @@ void CValidError_imp::SetOptions(Uint4 options)
     m_LatLonCheckState = (options & CValidator::eVal_latlon_check_state) != 0;
     m_LatLonIgnoreWater = (options & CValidator::eVal_latlon_ignore_water) != 0;
     m_genomeSubmission = (options & CValidator::eVal_genome_submission) != 0;
-	m_CollectLocusTags = (options & CValidator::eVal_collect_locus_tags) != 0;
+    m_CollectLocusTags = (options & CValidator::eVal_collect_locus_tags) != 0;
 }
 
 
@@ -319,8 +319,8 @@ void CValidError_imp::PostErr
  const string&  msg,
  const CSerialObject& obj)
 {
-	const CTypeInfo* type_info = obj.GetThisTypeInfo();
-	if (type_info == CSeqdesc::GetTypeInfo()) {
+    const CTypeInfo* type_info = obj.GetThisTypeInfo();
+    if (type_info == CSeqdesc::GetTypeInfo()) {
         const CSeqdesc* desc = dynamic_cast < const CSeqdesc* > (&obj);
         LOG_POST_X(1, Warning << "Seqdesc validation error using default context.");
         PostErr (sv, et, msg, GetTSE(), *desc);
@@ -358,8 +358,8 @@ void CValidError_imp::PostErr
         const CSeq_submit* ss = dynamic_cast < const CSeq_submit* > (&obj);
         PostErr (sv, et, msg, *ss);
     } else {
-		LOG_POST_X(1, Warning << "Unknown data type in PostErr.");
-	}
+        LOG_POST_X(1, Warning << "Unknown data type in PostErr.");
+    }
 }
 
 
@@ -651,14 +651,14 @@ void CValidError_imp::PostErr
                 item->SetLocus_tag(ft.GetData().GetGene().GetLocus_tag());
             }
         } else {
-			if (m_CollectLocusTags) {
-				// TODO: this should be part of post-processing
-				CConstRef<CSeq_feat> gene = GetGeneCache().GetGeneFromCache(&ft, *m_Scope);
-				if (gene && gene->GetData().GetGene().IsSetLocus_tag() &&
-					!NStr::IsBlank(gene->GetData().GetGene().GetLocus_tag())) {
-					item->SetLocus_tag(gene->GetData().GetGene().GetLocus_tag());
-				}
-			}
+            if (m_CollectLocusTags) {
+                // TODO: this should be part of post-processing
+                CConstRef<CSeq_feat> gene = GetGeneCache().GetGeneFromCache(&ft, *m_Scope);
+                if (gene && gene->GetData().GetGene().IsSetLocus_tag() &&
+                    !NStr::IsBlank(gene->GetData().GetGene().GetLocus_tag())) {
+                    item->SetLocus_tag(gene->GetData().GetGene().GetLocus_tag());
+                }
+            }
         }
     }
 
@@ -984,11 +984,11 @@ void CValidError_imp::PostObjErr
 {
     if (ctx == 0) {
         PostErr (sv, et, msg, obj);
-	} else if (obj.GetThisTypeInfo() == CSeqdesc::GetTypeInfo()) {
-		PostErr(sv, et, msg, *ctx, *(dynamic_cast <const CSeqdesc*> (&obj)));
-	} else {
-		PostErr(sv, et, msg, obj);
-	}
+    } else if (obj.GetThisTypeInfo() == CSeqdesc::GetTypeInfo()) {
+        PostErr(sv, et, msg, *ctx, *(dynamic_cast <const CSeqdesc*> (&obj)));
+    } else {
+        PostErr(sv, et, msg, obj);
+    }
 
 }
 
@@ -1773,50 +1773,83 @@ void CValidError_imp::x_ReportInvalidFuzz(const CPacked_seqint& packed_int, cons
 static const string kSpaceLeftFirst = "Should not specify 'space to left' at first position of non-circular sequence";
 static const string kSpaceRightLast = "Should not specify 'space to right' at last position of non-circular sequence";
 
+static const string kSpaceLeftCircle = "Should not specify 'circle to left' except at first position of circular sequence";
+static const string kSpaceRightCircle = "Should not specify 'circle to right' except at last position of circular sequence";
+
 void CValidError_imp::x_ReportInvalidFuzz(const CSeq_interval& interval, const CSerialObject& obj)
 {
+    CInt_fuzz::ELim fuzz_from = CInt_fuzz::eLim_unk;
+    CInt_fuzz::ELim fuzz_to = CInt_fuzz::eLim_unk;
+    bool has_fuzz_from = false;
+    bool has_fuzz_to = false;
+
+    if (interval.IsSetFuzz_from() && interval.GetFuzz_from().IsLim()) {
+        fuzz_from = interval.GetFuzz_from().GetLim();
+        has_fuzz_from = true;
+    }
+    if (interval.IsSetFuzz_to() && interval.GetFuzz_to().IsLim()) {
+        fuzz_to = interval.GetFuzz_to().GetLim();
+        has_fuzz_to = true;
+    }
+    if (! has_fuzz_from && ! has_fuzz_to) {
+        return;
+    }
+
     // check for invalid fuzz on both ends of Interval
-    if (interval.IsSetFuzz_from()
-        && interval.GetFuzz_from().IsLim()
-        && interval.IsSetFuzz_to()
-        && interval.GetFuzz_to().IsLim()
-        && interval.GetFuzz_from().GetLim() == interval.GetFuzz_to().GetLim()) {
-        CInt_fuzz::TLim lim = interval.GetFuzz_from().GetLim();
-        if (lim == CInt_fuzz::eLim_tl) {
+    if (has_fuzz_from && has_fuzz_to && fuzz_from == fuzz_to) {
+        if (fuzz_from == CInt_fuzz::eLim_tl) {
             PostErr(eDiag_Error,
                 eErr_SEQ_FEAT_InvalidFuzz,
                 "Should not specify 'space to left' for both ends of interval", obj);
         }
-        else if (lim == CInt_fuzz::eLim_tr) {
+        else if (fuzz_from == CInt_fuzz::eLim_tr) {
             PostErr(eDiag_Error,
                 eErr_SEQ_FEAT_InvalidFuzz,
                 "Should not specify 'space to right' for both ends of interval", obj);
         }
+        else if (fuzz_from == CInt_fuzz::eLim_circle) {
+            PostErr(eDiag_Error,
+                eErr_SEQ_FEAT_InvalidFuzz,
+                "Should not specify 'origin of circle' for both ends of interval", obj);
+        }
     }
 
-    // VR-15
-    // look for space to left at beginning of sequence or space to right at end
-    bool check_from = false;
-    bool check_to = false;
-    if (interval.IsSetFuzz_from() && interval.GetFuzz_from().IsLim() &&
-        interval.GetFuzz_from().GetLim() == CInt_fuzz::eLim_tl &&
-        interval.IsSetFrom() && interval.GetFrom() == 0) {
-        check_from = true;
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(interval.GetId());
+    if (! bsh) {
+        return;
     }
-    if (interval.IsSetFuzz_to() && interval.GetFuzz_to().IsLim() &&
-        interval.GetFuzz_to().GetLim() == CInt_fuzz::eLim_tr &&
-        interval.IsSetTo()) {
-        check_to = true;
+
+    CSeq_inst::ETopology top = CSeq_inst::eTopology_not_set;
+    if (bsh.IsSetInst_Topology()) {
+        top = bsh.GetInst_Topology();
     }
-    if (check_from || check_to) {
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(interval.GetId());
-        if (bsh && (!bsh.IsSetInst_Topology() || bsh.GetInst_Topology() != CSeq_inst::eTopology_circular)) {
-            if (check_from) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFuzz, kSpaceLeftFirst, obj);
+
+    if (top != CSeq_inst::eTopology_circular) {
+
+        // VR-15
+        // look for space to left at beginning of sequence or space to right at end
+        if (fuzz_from == CInt_fuzz::eLim_tl && interval.IsSetFrom() && interval.GetFrom() == 0) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFuzz, kSpaceLeftFirst, obj);
+        }
+        if (fuzz_to == CInt_fuzz::eLim_tr && interval.IsSetTo() && interval.GetTo() == bsh.GetBioseqLength() - 1) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFuzz, kSpaceRightLast, obj);
+        }
+
+    } else if (fuzz_from == CInt_fuzz::eLim_circle || fuzz_to == CInt_fuzz::eLim_circle) {
+
+        if (obj.GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
+            const CSeq_feat* sfp = dynamic_cast<const CSeq_feat*>(&obj);
+            if (sfp && sfp->IsSetExcept() && sfp->CanGetExcept_text() && NStr::FindNoCase(sfp->GetExcept_text(), "ribosomal slippage") != NPOS) {
+                return;
             }
-            if (check_to && interval.GetTo() == bsh.GetBioseqLength() - 1) {
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFuzz, kSpaceRightLast, obj);
-            }
+        }
+
+        // VR-832
+        if (fuzz_from == CInt_fuzz::eLim_circle && interval.IsSetFrom() && interval.GetFrom() != 0) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFuzz, kSpaceLeftCircle, obj);
+        }
+        if (fuzz_to == CInt_fuzz::eLim_circle && interval.IsSetTo() && interval.GetTo() != bsh.GetBioseqLength() - 1) {
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidFuzz, kSpaceRightCircle, obj);
         }
     }
 }
@@ -2029,10 +2062,10 @@ void CValidError_imp::ValidateSeqLoc
     
     bool trans_splice = false;
     bool exception = false;
-	const CSeq_feat* sfp = NULL;
-	if (obj.GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
-		sfp = dynamic_cast<const CSeq_feat*>(&obj);
-	}
+    const CSeq_feat* sfp = NULL;
+    if (obj.GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
+        sfp = dynamic_cast<const CSeq_feat*>(&obj);
+    }
     if (sfp != 0) {
                 
         // primer_bind intervals MAY be in on opposite strands
