@@ -8,7 +8,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objtools/pubseq_gateway/cache/psg_cache.hpp>
-#include <objtools/pubseq_gateway/protobuf/psg_protobuf_data.hpp>
+#include <objtools/pubseq_gateway/protobuf/psg_protobuf.pb.h>
 
 #include <sstream>
 #include <climits>
@@ -94,13 +94,13 @@ void CTestPsgCache::ParseArgs() {
 
 }
 
-static string GetListOfSeqIds(const ::google::protobuf::Map<::google::protobuf::int32, string>& map) {
+static string GetListOfSeqIds(const ::google::protobuf::RepeatedPtrField<::psg::retrieval::BioseqInfoValue_SecondaryId>& seq_ids) {
     stringstream ss;
     bool empty = true;
-    for (const auto& it : map) {
+    for (const auto& it : seq_ids) {
         if (!empty)
             ss << ", ";
-        ss << "{" << it.first << ", " << it.second << "}";
+        ss << "{" << it.sec_seq_id_type() << ", " << it.sec_seq_id() << "}";
         empty = false;
     }
     return ss.str();
@@ -251,21 +251,26 @@ bool CTestPsgCache::ParseSecondarySeqId(const string& fasta_seqid, string& seq_i
 
 void CTestPsgCache::PrintBioseqInfo(bool lookup_res, const string& accession, int version, int seq_id_type, const string& data) {
     if (lookup_res) {
-        ::psg::retrieval::bioseq_info_value value;
-        CPubseqGatewayData::UnpackBioseqInfo(data, value);
-        cout << "result: bioseq_info cache hit" << endl
-             << "accession: " << accession << endl
-             << "version: " << version << endl
-             << "seq_id_type: " << seq_id_type << endl
-             << "sat: " << value.sat() << endl
-             << "sat_key: " << value.sat_key() << endl
-             << "state: " << value.state() << endl
-             << "mol: " << value.mol() << endl
-             << "hash: " << value.hash() << endl
-             << "length: " << value.length() << endl
-             << "date_changed: " << value.date_changed() << endl
-             << "tax_id: " << value.tax_id() << endl
-             << "seq_ids: {" << GetListOfSeqIds(value.seq_ids()) << "}" << endl;
+        ::psg::retrieval::BioseqInfoValue value;
+        bool b = value.ParseFromString(data);
+        if (b) {
+            cout << "result: bioseq_info cache hit" << endl
+                 << "accession: " << accession << endl
+                 << "version: " << version << endl
+                 << "seq_id_type: " << seq_id_type << endl
+                 << "sat: " << value.blob_key().sat() << endl
+                 << "sat_key: " << value.blob_key().sat_key() << endl
+                 << "state: " << value.state() << endl
+                 << "mol: " << value.mol() << endl
+                 << "hash: " << value.hash() << endl
+                 << "length: " << value.length() << endl
+                 << "date_changed: " << value.date_changed() << endl
+                 << "tax_id: " << value.tax_id() << endl
+                 << "seq_ids: {" << GetListOfSeqIds(value.seq_ids()) << "}" << endl;
+        }
+        else {
+            cout << "result: bioseq_info cache error: data corrupted" << endl;
+        }
     }
     else {
         cout << "result: bioseq_info cache miss" << endl;
@@ -274,14 +279,19 @@ void CTestPsgCache::PrintBioseqInfo(bool lookup_res, const string& accession, in
 
 void CTestPsgCache::PrintPrimaryId(bool lookup_res, const string& seq_id, int seq_id_type, const string& data) {
     if (lookup_res) {
-        ::psg::retrieval::si2csi_value value;
-        CPubseqGatewayData::UnpackSiInfo(data, value);
-        cout << "result: si2csi cache hit" << endl
-             << "sec_seq_id: " << seq_id << endl
-             << "sec_seq_id_type: " << seq_id_type << endl
-             << "accession: " << value.accession() << endl
-             << "version: " << value.version() << endl
-             << "seq_id_type: " << value.seq_id_type() << endl;
+        ::psg::retrieval::BioseqInfoKey value;
+        bool b = value.ParseFromString(data);
+        if (b) {
+            cout << "result: si2csi cache hit" << endl
+                 << "sec_seq_id: " << seq_id << endl
+                 << "sec_seq_id_type: " << seq_id_type << endl
+                 << "accession: " << value.accession() << endl
+                 << "version: " << value.version() << endl
+                 << "seq_id_type: " << value.seq_id_type() << endl;
+        }
+        else {
+            cout << "result: si2csi cache error: data corrupted" << endl;
+        }
     }
     else {
         cout << "result: si2csi cache miss" << endl;
@@ -290,23 +300,28 @@ void CTestPsgCache::PrintPrimaryId(bool lookup_res, const string& seq_id, int se
 
 void CTestPsgCache::PrintBlobProp(bool lookup_res, int sat, int sat_key, int64_t last_modified, const string& data) {
     if (lookup_res) {
-        ::psg::retrieval::blob_prop_value value;
-        CPubseqGatewayData::UnpackBlobPropInfo(data, value);
-        cout << "result: blob_prop cache hit" << endl
-             << "sat: " << sat << endl
-             << "sat_key: " << sat_key << endl
-             << "last_modified: " << last_modified << endl
-             << "class: " << value.class_() << endl
-             << "date_asn1: " << value.date_asn1() << endl
-             << "div: " << value.div() << endl
-             << "flags: " << value.flags() << endl
-             << "hup_date: " << value.hup_date() << endl
-             << "id2_info: " << value.id2_info() << endl
-             << "n_chunks: " << value.n_chunks() << endl
-             << "owner: " << value.owner() << endl
-             << "size: " << value.size() << endl
-             << "size_unpacked: " << value.size_unpacked() << endl
-             << "username: " << value.username() << endl;
+        ::psg::retrieval::BlobPropValue value;
+        bool b = value.ParseFromString(data);
+        if (b) {
+            cout << "result: blob_prop cache hit" << endl
+                 << "sat: " << sat << endl
+                 << "sat_key: " << sat_key << endl
+                 << "last_modified: " << last_modified << endl
+                 << "class: " << value.class_() << endl
+                 << "date_asn1: " << value.date_asn1() << endl
+                 << "div: " << value.div() << endl
+                 << "flags: " << value.flags() << endl
+                 << "hup_date: " << value.hup_date() << endl
+                 << "id2_info: " << value.id2_info() << endl
+                 << "n_chunks: " << value.n_chunks() << endl
+                 << "owner: " << value.owner() << endl
+                 << "size: " << value.size() << endl
+                 << "size_unpacked: " << value.size_unpacked() << endl
+                 << "username: " << value.username() << endl;
+        }
+        else {
+            cout << "result: blob_prop cache error: data corrupted" << endl;
+        }
     }
     else {
         cout << "result: blob_prop cache miss" << endl;
@@ -372,9 +387,14 @@ void CTestPsgCache::LookupBioseqInfoBySecondary(const string& fasta_seqid, int f
     if (!res)
         cout << "result: si2csi cache miss" << endl;
     else {
-        ::psg::retrieval::si2csi_value value;
-        CPubseqGatewayData::UnpackSiInfo(data, value);
-        LookupBioseqInfoByPrimaryAVT(value.accession(), value.version(), value.seq_id_type());
+        ::psg::retrieval::BioseqInfoKey value;
+        bool b = value.ParseFromString(data);
+        if (b) {
+            LookupBioseqInfoByPrimaryAVT(value.accession(), value.version(), value.seq_id_type());
+        }
+        else {
+            cout << "result: si2csi cache error: data corrupted" << endl;
+        }
     }
     
 }
