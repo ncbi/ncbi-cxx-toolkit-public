@@ -259,6 +259,9 @@ endfunction()
 
 #############################################################################
 macro(NCBI_begin_lib _name)
+    if(NOT NCBI_EXPERIMENTAL_CFG)
+        set(NCBI_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    endif()
     if(NCBI_PTBMODE_PARTS)
         set(_libname ${_name}.part)
     else()
@@ -317,6 +320,9 @@ endmacro()
 
 #############################################################################
 macro(NCBI_begin_app _name)
+    if(NOT NCBI_EXPERIMENTAL_CFG)
+        set(NCBI_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+    endif()
     if(NCBI_PTBMODE_PARTS)
         set(_appname ${_name}.part)
     else()
