@@ -586,6 +586,7 @@ public:
         eGet        = eReqMethod_Get,
         ePost       = eReqMethod_Post,
         ePut        = eReqMethod_Put,
+		ePatch		= eReqMethod_Patch,
         eDelete     = eReqMethod_Delete
     };
 

@@ -831,7 +831,9 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
 
 bool CHttpRequest::x_CanSendData(void) const
 {
-    return m_Method == eReqMethod_Post  ||  m_Method == eReqMethod_Put;
+    return m_Method == eReqMethod_Post  ||
+		m_Method == eReqMethod_Put  ||
+		m_Method == eReqMethod_Patch;
 }
 
 
