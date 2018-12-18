@@ -1,5 +1,4 @@
- ACSSI	c	Algal Collection of Soil Science Institute			
-/* $Id$ */
+# $Id$
 A	s	Arnold Arboretum, Harvard University			
 AA	s	Ministry of Science, Academy of Sciences			
 AAC	c	Arignar Anna College			
@@ -63,6 +62,7 @@ ACNB	s	Agriculture Canada Research Station
 ACNS	s	Agriculture Canada Nova Scotia			
 ACOI	c	Coimbra Collection of Algae			
 ACOR	s	Universidad Nacional de Cordoba			
+ACSSI	c	Algal Collection of Soil Science Institute			
 ACTC	s	Austin College			
 ACU	s	Abilene Christian University			
 ACUNHC	s	Abilene Christian University, Natural History Collection			
