@@ -626,7 +626,7 @@ struct SId2Info
     using TSatKeys = vector<CTempString>;
     using TGetSatKey = function<int(const TSatKeys&)>;
 
-    enum : size_t { eSat, eShell, eInfo, eNChunks, eSize };
+    enum : size_t { eSat, eInfo, eNChunks, eSize };
 
     static CPSG_BlobId GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key, const CPSG_BlobId& id);
 };
@@ -656,13 +656,6 @@ CPSG_BlobId SId2Info::GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key, c
     if (sat == 0) return kEmptyStr;
 
     auto sat_key = get_sat_key(sat_keys);
-    auto shell_sat_key = sat_keys[eShell];
-
-    if (!shell_sat_key.empty() && stoi(shell_sat_key)) {
-        NCBI_THROW_FMT(CPSG_Exception, eServerError, "SHELL is not zero (" << shell_sat_key <<
-                ") in Id2Info: " << id2_info << " for blob '" << id.Get() << '\'');
-    }
-
     return sat_key == 0 ? kEmptyStr : CPSG_BlobId(sat, sat_key);
 }
 
@@ -706,6 +699,38 @@ CPSG_BioseqInfo::CPSG_BioseqInfo()
 {
 }
 
+struct SGetRequestTypeAndId
+{
+    SGetRequestTypeAndId(const CPSG_ReplyItem& reply_item) : m_ReplyItem(reply_item) {}
+
+private:
+    const CPSG_ReplyItem& m_ReplyItem;
+
+    friend ostream& operator<<(ostream& os, const SGetRequestTypeAndId& get_id)
+    {
+        auto reply = get_id.m_ReplyItem.GetReply();
+        _ASSERT(reply);
+
+        auto request = reply->GetRequest().get();
+        _ASSERT(request);
+
+        if (auto request_biodata = dynamic_cast<const CPSG_Request_Biodata*>(request)) {
+            os << "biodata request '" << request_biodata->GetBioId().Get() << '\'';
+
+        } else if (auto request_resolve = dynamic_cast<const CPSG_Request_Resolve*>(request)) {
+            os << "resolve request '" << request_resolve->GetBioId().Get() << '\'';
+
+        } else if (auto request_blob = dynamic_cast<const CPSG_Request_Blob*>(request)) {
+            os << "blob request '" << request_blob->GetBlobId().Get() << '\'';
+
+        } else {
+            os << "UNKNOWN_REQUEST";
+        }
+
+        return os;
+    }
+};
+
 CPSG_BioId CPSG_BioseqInfo::GetCanonicalId() const
 {
     auto accession = m_Data.GetString("accession");
@@ -718,12 +743,23 @@ vector<CPSG_BioId> CPSG_BioseqInfo::GetOtherIds() const
 {
     auto seq_ids = m_Data.GetByKey("seq_ids");
     vector<CPSG_BioId> rv;
+    bool error = !seq_ids.IsArray();
 
-    for (CJsonIterator it = seq_ids.Iterate(); it.IsValid(); it.Next()) {
-        auto accession = it.GetNode().AsString();
-        auto type = static_cast<CPSG_BioId::TType>(stoi(it.GetKey()));
-        rv.emplace_back(objects::CSeq_id(objects::CSeq_id::eFasta_AsTypeAndContent,
-            type, accession).AsFastaString());
+    for (CJsonIterator it = seq_ids.Iterate(); !error && it.IsValid(); it.Next()) {
+        auto seq_id = it.GetNode();
+        error = !seq_id.IsArray() || (seq_id.GetSize() != 2);
+
+        if (!error) {
+            auto type = static_cast<CPSG_BioId::TType>(seq_id.GetAt(0).AsInteger());
+            auto accession = seq_id.GetAt(1).AsString();
+            rv.emplace_back(objects::CSeq_id(objects::CSeq_id::eFasta_AsTypeAndContent,
+                type, accession).AsFastaString());
+        }
+    }
+
+    if (error) {
+        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Wrong seq_ids format: '" << seq_ids.Repr() <<
+                "' for " << SGetRequestTypeAndId(*this));
     }
 
     return rv;
