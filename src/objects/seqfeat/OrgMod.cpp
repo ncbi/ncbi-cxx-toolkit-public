@@ -225,6 +225,10 @@ DEFINE_STATIC_FAST_MUTEX(s_InstitutionCollectionCodeMutex);
 
 static void s_ProcessInstitutionCollectionCodeLine(const CTempString& line)
 {
+    if (NStr::StartsWith(line, "#")) {
+        // ignore line, this is a comment
+        return;
+    }
     vector<string> tokens;
     NStr::Split(line, "\t", tokens);
     if (tokens.size() < 3) {
@@ -276,7 +280,7 @@ static void s_InitializeInstitutionCollectionCodeMaps(void)
     }
     string file = g_FindDataFile("institution_codes.txt");
     CRef<ILineReader> lr;
-    if ( !file.empty() ) {
+    if ( !file.empty() && !g_IsDataFileOld(file, kInstitutionCollectionCodeList[0])) {
         try {
             lr = ILineReader::New(file);
         } NCBI_CATCH("s_InitializeInstitutionCollectionCodeMaps")
