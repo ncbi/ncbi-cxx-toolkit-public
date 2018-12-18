@@ -31,7 +31,8 @@
  */
 
 static const char* const kInstitutionCollectionCodeList[] = {
-" ACSSI\tc\tAlgal Collection of Soil Science Institute\t\t\t",
+"#$Id$",
+"ACSSI\tc\tAlgal Collection of Soil Science Institute\t\t\t",
 "A\ts\tArnold Arboretum, Harvard University\t\t\t",
 "AA\ts\tMinistry of Science, Academy of Sciences\t\t\t",
 "AAC\tc\tArignar Anna College\t\t\t",
