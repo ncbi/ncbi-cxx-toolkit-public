@@ -312,11 +312,17 @@ protected:
     };
     TSeqPos GetCurrentPos(EPosType pos_type);
 
-    void x_ApplyAllMods( CBioseq & bioseq, TSeqPos iLineNum, 
-        ILineErrorListener * pMessageListener );
+    NCBI_DEPRECATED void x_ApplyAllMods(CBioseq & bioseq, 
+        TSeqPos iLineNum, 
+        ILineErrorListener * pMessageListener);
 
     std::string x_NucOrProt(void) const;
-    
+
+private: 
+    void x_ApplyMods(const string& title, 
+                     TSeqPos line_number,
+                     CBioseq& bioseq,
+                     ILineErrorListener* pMessageListener);
 protected:
     struct SGap : public CObject {
         enum EKnownSize {
