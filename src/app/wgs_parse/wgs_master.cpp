@@ -664,7 +664,7 @@ static void ReplaceFieldInDBLink(const TIdContainer& values, const string& tag, 
     }
 }
 
-static void CheckSetOfIds(CRef<CUser_object>& user_obj, const string& tag, const TIdContainer& ids, const string& what, const string& cmd_line_param, bool& reject)
+static bool CheckSetOfIds(CRef<CUser_object>& user_obj, const string& tag, const TIdContainer& ids, const string& what, const string& cmd_line_param, bool& reject)
 {
     TIdContainer cur_ids;
 
@@ -701,6 +701,8 @@ static void CheckSetOfIds(CRef<CUser_object>& user_obj, const string& tag, const
         }
         ERR_POST_EX(0, 0, Info << "All records from files being processed are lacking " << what << ". Using command line \"" << cmd_line_param << "\" values.");
     }
+
+    return !cur_ids.empty();
 }
 
 static CUser_object* GetDBLinkFromIdMasterBioseq(CRef<CSeq_entry>& bioseq)
@@ -807,7 +809,9 @@ static void FixDBLink(CRef<CUser_object>& user_obj)
 static void CheckMasterDblink(CMasterInfo& info)
 {
     CheckSetOfIds(info.m_dblink, "BioProject", GetParams().GetBioProjectIds(), "BioProject Accession Numbers", "-B", info.m_reject);
-    CheckSetOfIds(info.m_dblink, "BioSample", GetParams().GetBioSampleIds(), "BioSample ids", "-C", info.m_reject);
+
+    bool biosample_present = CheckSetOfIds(info.m_dblink, "BioSample", GetParams().GetBioSampleIds(), "BioSample ids", "-C", info.m_reject);
+
     CheckSetOfIds(info.m_dblink, "Sequence Read Archive", GetParams().GetSRAIds(), "SRA accessions", "-C", info.m_reject);
 
     FixDBLink(info.m_dblink);
@@ -817,13 +821,40 @@ static void CheckMasterDblink(CMasterInfo& info)
     }
 
     CUser_object* id_dblink_user_obj = GetDBLinkFromIdMasterBioseq(info.m_id_master_bioseq);
-    if (GetParams().IsDblinkOverride() && id_dblink_user_obj && info.m_dblink->GetFieldRef("BioSample").NotEmpty()) {
+    if (GetParams().GetBioSampleIds().empty() && !biosample_present && GetParams().IsDblinkOverride() &&
+        id_dblink_user_obj && id_dblink_user_obj->GetFieldRef("BioSample").NotEmpty()) {
 
         auto biosample_field = id_dblink_user_obj->GetFieldRef("BioSample");
         if (biosample_field.NotEmpty() && biosample_field->IsSetData() && biosample_field->GetData().IsStrs()) {
             ERR_POST_EX(0, 0, Warning << "The DBLink User-object content from the files being processed lacks BioSample link that is present in the current WGS-Master for this WGS project. Using the one from the current Master.");
             info.m_dblink->AddField("BioSample", biosample_field->GetData().GetStrs());
         }
+    }
+
+    if (info.m_dblink.Empty() || info.m_dblink->GetData().empty()) {
+
+        if (id_dblink_user_obj) {
+            for (auto& user_field : id_dblink_user_obj->GetData()) {
+                if (user_field->IsSetLabel() && user_field->GetLabel().IsStr() && user_field->IsSetData() && user_field->GetData().IsStrs()) {
+
+                    const string& field_label = user_field->GetLabel().GetStr();
+
+                    for (auto& field_data : user_field->GetData().GetStrs()) {
+
+                        string error_msg = "The DBLink User-object content from the files being processed lacks \"" + field_label + ":" + field_data + "\" link that is present in the current WGS-Master for this WGS project.";
+                        if (GetParams().IsDblinkOverride()) {
+                            ERR_POST_EX(0, 0, Warning << error_msg << " Continue anyway.");
+                        }
+                        else {
+                            ERR_POST_EX(0, 0, Critical << error_msg << " Rejecting the whole project.");
+                            info.m_reject = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return;
     }
 
     if (id_dblink_user_obj == nullptr) {
