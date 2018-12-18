@@ -201,6 +201,11 @@ endif()
 set(NCBI_COMPONENT_STACKTRACE_FOUND YES)
 set(NCBI_COMPONENT_STACKTRACE_LIBS dbghelp.lib)
 
+##############################################################################
+# UUID
+set(NCBI_COMPONENT_UUID_FOUND YES)
+set(NCBI_COMPONENT_UUID_LIBS uuid.lib rpcrt4.lib)
+
 #############################################################################
 # TLS
 if (EXISTS ${NCBI_ThirdParty_TLS}/include)

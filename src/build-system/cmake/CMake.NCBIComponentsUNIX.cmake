@@ -881,6 +881,20 @@ set(NCBI_COMPONENT_STACKTRACE_FOUND YES)
 set(NCBI_COMPONENT_STACKTRACE_INCLUDE ${LIBBACKWARD_INCLUDE_DIR} ${LIBUNWIND_INCLUDE})
 set(NCBI_COMPONENT_STACKTRACE_LIBS ${LIBUNWIND_LIBS} ${LIBDW_LIBRARIES})
 
+##############################################################################
+# UUID
+if (NOT UUID_LIBS-NOTFOUND)
+set(NCBI_COMPONENT_UUID_FOUND YES)
+set(NCBI_COMPONENT_UUID_LIBS ${UUID_LIBS})
+endif()
+
+##############################################################################
+# CURL
+if (NOT CURL_LIBS-NOTFOUND)
+set(NCBI_COMPONENT_CURL_FOUND YES)
+set(NCBI_COMPONENT_CURL_LIBS ${CURL_LIBS})
+endif()
+
 #############################################################################
 # TLS
 if(GnuTLS_FOUND)
@@ -1072,6 +1086,15 @@ if(LIBXSLT_FOUND)
 else()
   set(NCBI_COMPONENT_XSLT_FOUND NO)
   set(NCBI_COMPONENT_EXSLT_FOUND NO)
+endif()
+
+#############################################################################
+# XLSXWRITER
+if (LIBXLSXWRITER_FOUND)
+  set(NCBI_COMPONENT_XLSXWRITER_FOUND YES)
+  set(NCBI_COMPONENT_XLSXWRITER_INCLUDE ${LIBXLSXWRITER_INCLUDE})
+  set(NCBI_COMPONENT_XLSXWRITER_LIBS ${LIBXLSXWRITER_LIBS})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} XLSXWRITER")
 endif()
 
 #############################################################################
