@@ -351,6 +351,9 @@ Fixed to work correctly on XCode 10.1.
 Added support of Metal libraries on XCode.
 Fixed to allow blanks in third party library include directories.
 
+December 18, 2018
+version 4.7.1, CXX-10397
+Added PreBuild script on XCode.
 
 
 
