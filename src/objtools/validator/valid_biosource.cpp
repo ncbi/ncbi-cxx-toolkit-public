@@ -1291,9 +1291,19 @@ const CSeq_entry *ctx)
     }
 
     string taxname = "";
+    string lineage = "";
+    if (orgref.IsSetOrgname() && orgref.GetOrgname().IsSetLineage()) {
+        lineage = orgref.GetOrgname().GetLineage();
+    }
     if (orgref.IsSetTaxname()) {
         taxname = orgref.GetTaxname();
-        if ((NStr::EndsWith(taxname, " sp.", NStr::eNocase) ||
+        if ((NStr::StartsWith(lineage, "Eukaryota; Fungi; ", NStr::eNocase) ||
+            NStr::StartsWith(lineage, "Viruses; ", NStr::eNocase) ||
+            NStr::StartsWith(lineage, "Bacteria; ", NStr::eNocase) ||
+            NStr::StartsWith(lineage, "Archaea; ", NStr::eNocase)) &&
+            !IsGenomeSubmission()) {
+            // suppress OrganismIsUndefinedSpecies message
+        } else if ((NStr::EndsWith(taxname, " sp.", NStr::eNocase) ||
             NStr::EndsWith(taxname, " sp", NStr::eNocase)) &&
             !NStr::StartsWith(taxname, "uncultured ", NStr::eNocase) &&
             !NStr::Equal(taxname, "Haemoproteus sp.", NStr::eNocase) &&
