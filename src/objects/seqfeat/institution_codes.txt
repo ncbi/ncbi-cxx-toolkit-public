@@ -1,5 +1,5 @@
-#$Id$
-ACSSI	c	Algal Collection of Soil Science Institute			
+ ACSSI	c	Algal Collection of Soil Science Institute			
+/* $Id$ */
 A	s	Arnold Arboretum, Harvard University			
 AA	s	Ministry of Science, Academy of Sciences			
 AAC	c	Arignar Anna College			
