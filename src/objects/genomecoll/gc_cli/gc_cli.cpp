@@ -180,6 +180,8 @@ void CClientGenomicCollectionsSvcApplication::Init(void)
         arg_desc->AddOptionalKey("url", "url_to_service", "URL to genemic collections service.cgi", CArgDescriptions::eString);
         arg_desc->AddOptionalKey("cgi", "path_to_cgi", "Directly calls the CGI instead of using the gencoll client", CArgDescriptions::eString);
         arg_desc->SetDependency("cgi", arg_desc->eExcludes, "url");
+        arg_desc->AddOptionalKey("retries", "retry_count", "Max times to retry asking the CGI for a response.", CArgDescriptions::eInteger);
+        arg_desc->SetDependency("retries", arg_desc->eExcludes, "cgi");
         arg_desc->AddDefaultKey("o", "OutputFile", "File for report", CArgDescriptions::eOutputFile, "-");
         arg_desc->AddDefaultKey( "f", "format", "Output Format. - ASN1 or XML", CArgDescriptions::eString, "ASN1");
         arg_desc->SetConstraint("f", &(*new CArgAllow_Strings,"XML","XML1","xml","xml1","ASN.1","ASN1","asn1","asn.1"));
@@ -260,6 +262,8 @@ int CClientGenomicCollectionsSvcApplication::Run(void)
     if(args["cgi"])      service.Reset(new CDirectCGIExec(args["cgi"].AsString(), args["nocache"]));
     else if(args["url"]) service.Reset(new CGenollService(args["url"].AsString(), args["nocache"]));
     else                 service.Reset(new CGenollService(args["nocache"]));
+
+    if (args["retries"]) service->SetRetryLimit(args["retries"].AsInteger());
 
     return RunWithService(*service, args, ostr);
 }
