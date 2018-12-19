@@ -267,8 +267,8 @@ void CSender::Run()
         if (m_Queue.SendRequest(request, kTryTimeout)) {
             CJson_Object json_obj(json_doc.SetObject());
             json_obj["jsonrpc"].SetValue().SetString("2.0");
-            json_obj["result"].SetValue().SetBool(true);
             json_obj["id"].SetValue().SetString(*id);
+            json_obj["result"].SetValue().SetBool(true);
         } else {
             json_doc = CReporter::ReportError(-32000, "Timeout on sending a request", *id);
         }
@@ -359,6 +359,7 @@ void CReporter::Run()
         CJson_Document json_doc;
         CJson_Object json_obj(json_doc.SetObject());
         json_obj["jsonrpc"].SetValue().SetString("2.0");
+        json_obj["id"].SetValue().SetString(m_Requests.front());
         json_obj["result"].AssignCopy(result_doc);
 
         if (reply) {
@@ -366,7 +367,6 @@ void CReporter::Run()
             json_obj["result"].SetObject()["request_id"].SetValue().SetString(*request_id);
         }
 
-        json_obj["id"].SetValue().SetString(m_Requests.front());
         m_JsonOut << json_doc;
 
         m_Requests.pop(); 
@@ -506,10 +506,6 @@ CJson_Document CReporter::ReportError(int code, const string& message, const str
     CJson_Object json_obj(json_doc.SetObject());
     json_obj["jsonrpc"].SetValue().SetString("2.0");
 
-    CJson_Object error_obj = json_obj.insert_object("error");
-    error_obj["code"].SetValue().SetInt4(code);
-    error_obj["message"].SetValue().SetString(message);
-
     auto id_value = json_obj["id"].SetValue();
 
     if (id.empty()) {
@@ -517,6 +513,10 @@ CJson_Document CReporter::ReportError(int code, const string& message, const str
     } else {
         id_value.SetString(id);
     }
+
+    CJson_Object error_obj = json_obj.insert_object("error");
+    error_obj["code"].SetValue().SetInt4(code);
+    error_obj["message"].SetValue().SetString(message);
 
     return json_doc;
 }
