@@ -80,6 +80,7 @@ public:
     CJsonResponse(const string& id, bool result);
     CJsonResponse(const string& id, const CJson_Document& result);
     CJsonResponse(const string& id, int code, const string& message);
+    CJsonResponse(const string& id, int counter);
 
 private:
     CJsonResponse(const string& id);
@@ -204,6 +205,7 @@ class CProcessing
 public:
     CProcessing(string service, bool interactive = false) :
         m_Queue(service),
+        m_RequestsCounter(0),
         m_JsonOut(interactive),
         m_Reporter(m_JsonOut),
         m_Retriever(m_Queue, m_Reporter),
@@ -241,6 +243,7 @@ private:
     static void SetInclude(shared_ptr<TRequest> request, TSpecified specified);
 
     CPSG_Queue m_Queue;
+    atomic_int m_RequestsCounter;
     SJsonOut m_JsonOut;
     CReporter m_Reporter;
     CRetriever m_Retriever;

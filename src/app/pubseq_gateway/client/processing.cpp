@@ -38,6 +38,15 @@
 
 BEGIN_NCBI_SCOPE
 
+struct SUserContext : string
+{
+    SUserContext(string id, atomic_int& counter) : string(id), m_Counter(counter) { ++m_Counter; }
+    ~SUserContext() { --m_Counter; }
+
+private:
+    atomic_int& m_Counter;
+};
+
 SJsonOut& SJsonOut::operator<<(const CJson_Document& doc)
 {
     ostringstream os;
@@ -97,6 +106,14 @@ CJsonResponse::CJsonResponse(const string& id, int code, const string& message) 
     CJson_Object error_obj = m_JsonObj.insert_object("error");
     error_obj["code"].SetValue().SetInt4(code);
     error_obj["message"].SetValue().SetString(message);
+}
+
+CJsonResponse::CJsonResponse(const string& id, int counter) :
+    CJsonResponse(id)
+{
+    CJson_Object result_obj = m_JsonObj.insert_object("result");
+    CJson_Object requests_obj = result_obj.insert_object("requests");
+    requests_obj["in_progress"].SetValue().SetInt8(counter);
 }
 
 CJsonResponse::CJsonResponse(const string& id) :
@@ -298,6 +315,7 @@ void CSender::Run()
         auto request = m_Requests.front();
         auto id = request->GetUserContext<string>();
         m_Requests.pop();
+        lock.unlock();
 
         if (m_Queue.SendRequest(request, kTryTimeout)) {
             m_JsonOut << CJsonResponse(*id, true);
@@ -453,9 +471,13 @@ void CProcessing::ReadCommands(bool echo)
             if (method == "next_reply") {
                 m_Reporter.Add(id);
                 continue;
+
+            } else if (method == "status") {
+                m_JsonOut << CJsonResponse(id, m_RequestsCounter);
+                continue;
             }
 
-            auto user_context = make_shared<string>(id);
+            auto user_context = make_shared<SUserContext>(id, m_RequestsCounter);
             shared_ptr<CPSG_Request> request;
             CJson_ConstObject params_obj(params.GetObject());
 
@@ -624,6 +646,14 @@ CJson_Schema& CProcessing::RequestSchema()
             "properties": {
                 "jsonrpc": { "$rev": "#jsonrpc" },
                 "method": { "enum": [ "next_reply" ] },
+                "id": { "$ref": "#id" }
+            },
+            "required": [ "jsonrpc", "method", "id" ]
+        },
+        {
+            "properties": {
+                "jsonrpc": { "$rev": "#jsonrpc" },
+                "method": { "enum": [ "status" ] },
                 "id": { "$ref": "#id" }
             },
             "required": [ "jsonrpc", "method", "id" ]
