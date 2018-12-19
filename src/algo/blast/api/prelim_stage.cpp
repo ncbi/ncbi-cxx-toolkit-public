@@ -305,7 +305,9 @@ CBlastPrelimSearch::Run()
             }
         }
         CRef<TBlastHSPStream> s(m_InternalData->m_HspStream);
-        if (*((*s)->results->hitlist_array) == NULL) {
+        if (m_Options->GetProgram() != eMapper &&
+            *((*s)->results->hitlist_array) == NULL) {
+
             CNcbiDiag diag;
             diag << Warning << "No seeds produced for query" << Endm;
         }
