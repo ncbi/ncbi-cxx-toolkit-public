@@ -1335,7 +1335,7 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
             gen_id = it;
         }        
     }
-    if (gen_id || general_only) 
+    if (general_only) 
     {
         hid = gen_id;
     } 
