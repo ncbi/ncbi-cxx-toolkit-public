@@ -85,48 +85,68 @@ NCBI_PARAM_DEF_EX(string, EUtils, Base_URL,
                   EUTILS_BASE_URL);
 typedef NCBI_PARAM_TYPE(EUtils, Base_URL) TEUtilsBaseURLParam;
 
+static string s_CachedBaseUrl;
 
-string CEUtils_Request::GetBaseURL(void)
+#define BASE_URL_REFRESH_FREQ 100
+static int s_BaseUrlRefreshCount = 0;
+
+
+const string& CEUtils_Request::GetBaseURL(void)
 {
-    string url = TEUtilsBaseURLParam::GetDefault();
-    if ( url.empty() ) {
-        // See also: misc/eutils_client/eutils_client.cpp
-        static const char kEutils[]   = "eutils.ncbi.nlm.nih.gov";
-        static const char kEutilsLB[] = "eutils_lb";
+	if (++s_BaseUrlRefreshCount >= BASE_URL_REFRESH_FREQ) {
+		s_CachedBaseUrl.clear();
+		s_BaseUrlRefreshCount = 0;
+	}
 
-        string host;
+	if (!s_CachedBaseUrl.empty()) return s_CachedBaseUrl;
+
+    s_CachedBaseUrl = TEUtilsBaseURLParam::GetDefault();
+	if (!s_CachedBaseUrl.empty()) return s_CachedBaseUrl;
+
+    // See also: misc/eutils_client/eutils_client.cpp
+    static const char kEutils[]   = "eutils.ncbi.nlm.nih.gov";
+    static const char kEutilsLB[] = "eutils_lb";
+
+    string host;
 #ifdef HAVE_LIBCONNEXT
-        SConnNetInfo* net_info = ConnNetInfo_Create(kEutilsLB);
-        SSERV_Info*       info = SERV_GetInfo(kEutilsLB, fSERV_Dns,
-                                              SERV_ANYHOST, net_info);
-        ConnNetInfo_Destroy(net_info);
-        if (info) {
-            if (info->host) {
-                host = CSocketAPI::ntoa(info->host);
-            }
-            free(info);
+    SConnNetInfo* net_info = ConnNetInfo_Create(kEutilsLB);
+    SSERV_Info*       info = SERV_GetInfo(kEutilsLB, fSERV_Dns,
+                                            SERV_ANYHOST, net_info);
+    ConnNetInfo_Destroy(net_info);
+    if (info) {
+        if (info->host) {
+            host = CSocketAPI::ntoa(info->host);
         }
+        free(info);
+    }
 #endif //HAVE_LIBCONNEXT
 
-        string scheme("http");
-        if (host.empty()) {
-            char buf[80];
-            const char* web = ConnNetInfo_GetValue(kEutilsLB, REG_CONN_HOST,
-                                                   buf, sizeof(buf), kEutils);
-            host = string(web  &&  *web ? web : kEutils);
-            scheme += 's';
-        }
-        _ASSERT(!host.empty());
-        url = scheme + "://" + host + kDefaultEUtils_Path;
-        TEUtilsBaseURLParam::SetDefault(url);
+    string scheme("http");
+    if (host.empty()) {
+        char buf[80];
+        const char* web = ConnNetInfo_GetValue(kEutilsLB, REG_CONN_HOST,
+                                                buf, sizeof(buf), kEutils);
+        host = string(web  &&  *web ? web : kEutils);
+        scheme += 's';
     }
-    return url;
+    _ASSERT(!host.empty());
+    s_CachedBaseUrl = scheme + "://" + host + kDefaultEUtils_Path;
+
+	return s_CachedBaseUrl;
 }
 
 
 void CEUtils_Request::SetBaseURL(const string& url)
 {
     TEUtilsBaseURLParam::SetDefault(url);
+	// Refresh cached base url.
+	GetBaseURL();
+}
+
+
+void CEUtils_Request::ResetBaseURL(void)
+{
+	s_CachedBaseUrl.clear();
 }
 
 
