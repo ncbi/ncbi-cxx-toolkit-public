@@ -181,12 +181,9 @@ class CSeq_loc;
 class NCBI_XOBJREAD_EXPORT CModAdder
 {
 public:
-    using TModEntry = pair<string,list<CModValueAndAttrib>>;
     using TMods = CModHandler::TMods;
-    //using TMod = TMods::value_type;
+    using TModEntry = TMods::value_type;
     using TMod = pair<string, CModValueAndAttrib>;
-    using TIterator = typename TMods::const_iterator;
-    using TRange = pair<TIterator, TIterator>;
 
     static void Apply(const CModHandler& mod_handler, CBioseq& bioseq, 
             IObjtoolsListener* pMessageListener);
