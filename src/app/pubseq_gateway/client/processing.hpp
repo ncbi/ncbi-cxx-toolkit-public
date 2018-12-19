@@ -237,7 +237,7 @@ template <class TRequest>
 inline shared_ptr<TRequest> CProcessing::CreateRequestImpl(shared_ptr<void> user_context, const CArgs& input)
 {
     const auto& id = input["ID"].AsString();
-    const auto type = CProcessing::GetBioIdType(input["TYPE"].AsString());
+    const auto type = CProcessing::GetBioIdType(input["type"].AsString());
     return make_shared<TRequest>(CPSG_BioId(id, type), move(user_context));
 }
 
@@ -245,7 +245,7 @@ template <>
 inline shared_ptr<CPSG_Request_Blob> CProcessing::CreateRequestImpl<CPSG_Request_Blob>(shared_ptr<void> user_context, const CArgs& input)
 {
     const auto& id = input["ID"].AsString();
-    const auto& last_modified = input["LAST_MODIFIED"].AsString();
+    const auto& last_modified = input["last_modified"].AsString();
     return make_shared<CPSG_Request_Blob>(id, last_modified, move(user_context));
 }
 

@@ -89,7 +89,7 @@ private:
 template <class TRequest>
 int CPsgClientApp::RunRequest(const CArgs& args)
 {
-    CProcessing processing(args["SERVICE"].AsString());
+    CProcessing processing(args["service"].AsString());
 
     auto request = CProcessing::CreateRequest<TRequest>(nullptr, args);
 
@@ -166,7 +166,7 @@ void CPsgClientApp::s_InitFlags<CPSG_Request_Resolve>(CArgDescriptions& arg_desc
 template <class TRequest>
 void CPsgClientApp::s_InitRequest(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddPositional("SERVICE", "PSG service or host:port", CArgDescriptions::eString);
+    arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
     s_InitPositional<TRequest>(arg_desc);
     s_InitFlags<TRequest>(arg_desc);
 }
@@ -175,25 +175,25 @@ template <class TRequest>
 void CPsgClientApp::s_InitPositional(CArgDescriptions& arg_desc)
 {
     arg_desc.AddPositional("ID", "ID part of Bio ID", CArgDescriptions::eString);
-    arg_desc.AddDefaultPositional("TYPE", "Type part of bio ID", CArgDescriptions::eString, "gi");
+    arg_desc.AddDefaultKey("type", "TYPE", "Type part of bio ID", CArgDescriptions::eString, "gi");
 }
 
 template <>
 void CPsgClientApp::s_InitPositional<CPSG_Request_Blob>(CArgDescriptions& arg_desc)
 {
     arg_desc.AddPositional("ID", "Blob ID", CArgDescriptions::eString);
-    arg_desc.AddDefaultPositional("LAST_MODIFIED", "LastModified", CArgDescriptions::eString, "");
+    arg_desc.AddDefaultKey("last_modified", "LAST_MODIFIED", "LastModified", CArgDescriptions::eString, "");
 }
 
 void CPsgClientApp::s_InitInteractive(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddPositional("SERVICE", "PSG service or host:port", CArgDescriptions::eString);
+    arg_desc.AddKey("service", "SERVICE_NAME", "PSG service or host:port", CArgDescriptions::eString);
     arg_desc.AddFlag("echo", "Echo all incoming requests");
 }
 
 int CPsgClientApp::RunInteractive(const CArgs& args)
 {
-    CProcessing processing(args["SERVICE"].AsString(), true);
+    CProcessing processing(args["service"].AsString(), true);
     return processing.Interactive(args["echo"].HasValue());
 }
 
