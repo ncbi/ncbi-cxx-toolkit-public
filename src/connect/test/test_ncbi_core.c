@@ -261,12 +261,12 @@ static void TEST_CORE_Log(void)
     /* MT-lock */
     x_lock = MT_LOCK_Create(&TEST_CORE_LockData,
                             TEST_CORE_LockHandler, TEST_CORE_LockCleanup);
-
     /* dummy */
     TEST_CORE_LogData = 1;
     x_log = LOG_Create(&TEST_CORE_LogData,
                        TEST_CORE_LogHandler, TEST_CORE_LogCleanup,
                        x_lock);
+    verify(MT_LOCK_Delete(x_lock));
     assert(x_log);
 
     verify(LOG_AddRef(x_log) == x_log);
