@@ -287,8 +287,79 @@ static bool OpenOutputFile(const string& fname, const string& description, CNcbi
     return true;
 }
 
+static bool IsCitGenUnpublished(const CPubdesc& pubdesc)
+{
+    _ASSERT(pubdesc.IsSetPub());
+    for (auto& cur_pub : pubdesc.GetPub().Get()) {
+        if (cur_pub->IsGen()) {
+
+            const CCit_gen& cit_gen = cur_pub->GetGen();
+            if (cit_gen.IsSetCit() && NStr::EqualNocase(cit_gen.GetCit(), "unpublished")) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+static void ReportMultipleCitArts()
+{
+    ERR_POST_EX(0, 0, Warning << "WGS master record for project " << GetParams().GetAccession() << " contains multiple Cit-art publications.");
+}
+
+static void ReportMultipleUnpublished()
+{
+    ERR_POST_EX(0, 0, Warning << "WGS master record for project " << GetParams().GetAccession() << " contains multiple Unpublished Cit-gen publications.");
+}
+
+
+typedef bool(*PubPredicat)(const CRef<CSeqdesc>& desc);
+typedef void(*ReportPubProblem)();
+
+static bool HasArticle(const CRef<CSeqdesc>& desc)
+{
+    bool ret = false;
+    if (desc->IsPub()) {
+        ret = HasPubOfChoice(desc->GetPub(), CPub::e_Article);
+    }
+    return ret;
+}
+
+static bool IsUnpublished(const CRef<CSeqdesc>& desc)
+{
+    bool ret = false;
+    if (desc->IsPub()) {
+
+        ret = IsCitGenUnpublished(desc->GetPub());
+    }
+    return ret;
+}
+
+static void ReportMultiplePubs(const CSeq_entry& entry, PubPredicat predicat, ReportPubProblem report)
+{
+    if (GetParams().GetIdPrefix().empty() || GetParams().GetAssemblyVersion() < 1) {
+        return;
+    }
+
+    const CSeq_descr* descrs = nullptr;
+    size_t num_of_problems = 0;
+    if (GetDescr(entry, descrs) && descrs && descrs->IsSet()) {
+
+        num_of_problems = count_if(descrs->Get().begin(), descrs->Get().end(), predicat);
+    }
+
+    if (num_of_problems >= 2) {
+        report();
+    }
+}
+
 static bool OutputMaster(const CRef<CSeq_entry>& entry, const string& fname, int num_of_entries)
 {
+    if (GetParams().GetSource() != eNCBI) {
+        ReportMultiplePubs(*entry, HasArticle, ReportMultipleCitArts);
+        ReportMultiplePubs(*entry, IsUnpublished, ReportMultipleUnpublished);
+    }
+
     string path_name = GetParams().GetOutputDir() + '/';
     if (fname.empty()) {
         path_name += GetParams().GetIdPrefix() + ToStringLeadZeroes(GetParams().GetAssemblyVersion(), 2) + ToStringLeadZeroes(0, GetMaxAccessionLen(num_of_entries));
@@ -1206,21 +1277,6 @@ static bool UpdateCommonPubs(CRef<CSeq_entry>& id_entry, const CRef<CSeq_entry>&
     }
 
     return ret;
-}
-
-static bool IsCitGenUnpublished(const CPubdesc& pubdesc)
-{
-    _ASSERT(pubdesc.IsSetPub());
-    for (auto& cur_pub : pubdesc.GetPub().Get()) {
-        if (cur_pub->IsGen()) {
-
-            const CCit_gen& cit_gen = cur_pub->GetGen();
-            if (cit_gen.IsSetCit() && NStr::EqualNocase(cit_gen.GetCit(), "unpublished")) {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 static void RemoveOldCitGen(CRef<CSeq_entry>& id_entry)
