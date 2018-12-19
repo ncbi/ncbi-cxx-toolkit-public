@@ -865,6 +865,8 @@ static void s_TestFastaRoundTrip(const char* s)
         BOOST_REQUIRE_EQUAL(ids.size(), 1u);
         BOOST_CHECK_EQUAL(ids.front()->AsFastaString(), s);
         BOOST_CHECK(ids.front()->Equals(*id));
+	BOOST_CHECK(id->Match(*id));
+        BOOST_CHECK_EQUAL(id->Compare(*id), CSeq_id::e_YES);
     }
     for (SIZE_TYPE pos = strlen(s) - 1;
          pos != NPOS  &&  (s[pos] == '|'  ||  s[pos] == ' ');
@@ -2158,7 +2160,8 @@ static const TFastaOSLTMap kTestFastaOSLTMap = {
     { "tpe|BN000123|", { "BN000123" } },
     { "tpd|FAA00017|", { "FAA00017" } },
     { "gpp|GPC_123456789|", { "GPC_123456789" } },
-    { "nat|AT_123456789.1|", { "AT_123456789" } }
+    { "nat|AT_123456789.1|", { "AT_123456789" } },
+    { "gnl|REF_WGS:ACJF|NECHADRAFT_MRNA79537", { "REF_WGS:ACJF|NECHADRAFT_MRNA79537" } }
 };
 
 BOOST_AUTO_TEST_CASE(s_TestOSLT)

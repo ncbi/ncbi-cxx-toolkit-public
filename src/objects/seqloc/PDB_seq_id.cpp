@@ -58,7 +58,7 @@ bool CPDB_seq_id::Match(const CPDB_seq_id& psip2) const
         }
     }
     if (IsSetChain_id() && psip2.IsSetChain_id()) {
-        if (! PCase().Compare(GetChain_id(), psip2.GetChain_id())) {
+        if ( PCase().Compare(GetChain_id(), psip2.GetChain_id())) {
             return false;
         }
     }
