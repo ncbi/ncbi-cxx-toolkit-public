@@ -224,6 +224,7 @@ private:
     bool x_ResolvePrimaryOSLT(const string &  primary_id,
                               int16_t  effective_version,
                               int16_t  effective_seq_id_type,
+                              bool  need_to_try_bioseq_info,
                               SBioseqResolution &  bioseq_resolution);
     bool x_ResolveSecondaryOSLT(const string &  secondary_id,
                                 int16_t  effective_seq_id_type,
@@ -231,6 +232,7 @@ private:
     bool x_ResolvePrimaryOSLTviaDB(const string &  primary_id,
                                    int16_t  effective_seq_id_type,
                                    int16_t  effective_version,
+                                   bool  need_to_try_bioseq_info,
                                    SBioseqResolution &  bioseq_resolution);
     bool x_ResolveSecondaryOSLTviaDB(const string &  secondary_id,
                                      int16_t  effective_seq_id_type,

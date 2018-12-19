@@ -731,21 +731,24 @@ bool CPendingOperation::x_ResolvePrimaryOSLT(
                                 const string &  primary_id,
                                 int16_t  effective_version,
                                 int16_t  effective_seq_id_type,
+                                bool  need_to_try_bioseq_info,
                                 SBioseqResolution &  bioseq_resolution)
 {
     if (!primary_id.empty()) {
-        // Try BIOSEQ_INFO
-        bioseq_resolution.m_BioseqInfo.m_Accession = primary_id;
-        bioseq_resolution.m_BioseqInfo.m_Version = effective_version;
-        bioseq_resolution.m_BioseqInfo.m_SeqIdType = effective_seq_id_type;
-        if (x_LookupCachedBioseqInfo(bioseq_resolution.m_BioseqInfo.m_Accession,
-                                     bioseq_resolution.m_BioseqInfo.m_Version,
-                                     bioseq_resolution.m_BioseqInfo.m_SeqIdType,
-                                     bioseq_resolution.m_CacheInfo)) {
-            CPubseqGatewayApp::GetInstance()->GetRequestCounters().
-                                                IncResolvedAsPrimaryOSLT();
-            bioseq_resolution.m_ResolutionResult = eFromBioseqCache;
-            return true;
+        if (need_to_try_bioseq_info) {
+            // Try BIOSEQ_INFO
+            bioseq_resolution.m_BioseqInfo.m_Accession = primary_id;
+            bioseq_resolution.m_BioseqInfo.m_Version = effective_version;
+            bioseq_resolution.m_BioseqInfo.m_SeqIdType = effective_seq_id_type;
+            if (x_LookupCachedBioseqInfo(bioseq_resolution.m_BioseqInfo.m_Accession,
+                                         bioseq_resolution.m_BioseqInfo.m_Version,
+                                         bioseq_resolution.m_BioseqInfo.m_SeqIdType,
+                                         bioseq_resolution.m_CacheInfo)) {
+                CPubseqGatewayApp::GetInstance()->GetRequestCounters().
+                                                    IncResolvedAsPrimaryOSLT();
+                bioseq_resolution.m_ResolutionResult = eFromBioseqCache;
+                return true;
+            }
         }
 
         // Second try: SI2CSI
@@ -791,25 +794,30 @@ bool CPendingOperation::x_ResolvePrimaryOSLTviaDB(
                                 const string &  primary_id,
                                 int16_t  effective_seq_id_type,
                                 int16_t  effective_version,
+                                bool  need_to_try_bioseq_info,
                                 SBioseqResolution &  bioseq_resolution)
 {
     if (!primary_id.empty()) {
-        // Try BIOSEQ_INFO
-        bioseq_resolution.m_BioseqInfo.m_Accession = primary_id;
-        bioseq_resolution.m_BioseqInfo.m_Version = effective_version;
-        bioseq_resolution.m_BioseqInfo.m_SeqIdType = effective_seq_id_type;
+        CRequestStatus::ECode       status;
 
-        CRequestStatus::ECode   status = FetchBioseqInfo(
-                m_Conn,
-                CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
-                bioseq_resolution.m_BioseqInfo.m_Version != -1,
-                bioseq_resolution.m_BioseqInfo.m_SeqIdType != -1,
-                bioseq_resolution.m_BioseqInfo);
-        if (status == CRequestStatus::e200_Ok) {
-            CPubseqGatewayApp::GetInstance()->GetRequestCounters().
-                                                IncResolvedAsPrimaryOSLTinDB();
-            bioseq_resolution.m_ResolutionResult = eFromBioseqDB;
-            return true;
+        if (need_to_try_bioseq_info) {
+            // Try BIOSEQ_INFO
+            bioseq_resolution.m_BioseqInfo.m_Accession = primary_id;
+            bioseq_resolution.m_BioseqInfo.m_Version = effective_version;
+            bioseq_resolution.m_BioseqInfo.m_SeqIdType = effective_seq_id_type;
+
+            status = FetchBioseqInfo(
+                    m_Conn,
+                    CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
+                    bioseq_resolution.m_BioseqInfo.m_Version != -1,
+                    bioseq_resolution.m_BioseqInfo.m_SeqIdType != -1,
+                    bioseq_resolution.m_BioseqInfo);
+            if (status == CRequestStatus::e200_Ok) {
+                CPubseqGatewayApp::GetInstance()->GetRequestCounters().
+                                                    IncResolvedAsPrimaryOSLTinDB();
+                bioseq_resolution.m_ResolutionResult = eFromBioseqDB;
+                return true;
+            }
         }
 
         // Try SI2CSI
@@ -884,13 +892,22 @@ bool CPendingOperation::x_ResolveViaComposeOSLT(CSeq_id &  parsed_seq_id,
         return false;
     }
 
-    int16_t         effective_version = x_GetEffectiveVersion(
-                                                parsed_seq_id.GetTextseq_Id());
+
+    const CTextseq_id *     text_seq_id = parsed_seq_id.GetTextseq_Id();
+    int16_t                 effective_version = x_GetEffectiveVersion(text_seq_id);
+
+    // Optimization (premature?) to avoid trying bioseq_info in some cases
+    bool                    need_to_try_bioseq_info = true;
+    if (text_seq_id == nullptr || !text_seq_id->CanGetAccession()) {
+        need_to_try_bioseq_info = false;
+    }
 
     // First, try cache
     if (!primary_id.empty())
         if (x_ResolvePrimaryOSLT(primary_id, effective_version,
-                                 effective_seq_id_type, bioseq_resolution))
+                                 effective_seq_id_type,
+                                 need_to_try_bioseq_info,
+                                 bioseq_resolution))
             return true;
 
     for (const auto &  secondary_id : secondary_id_list) {
@@ -907,7 +924,9 @@ bool CPendingOperation::x_ResolveViaComposeOSLT(CSeq_id &  parsed_seq_id,
     // Now try the DB
     if (!primary_id.empty())
         if (x_ResolvePrimaryOSLTviaDB(primary_id, effective_seq_id_type,
-                                      effective_version, bioseq_resolution))
+                                      effective_version,
+                                      need_to_try_bioseq_info,
+                                      bioseq_resolution))
             return true;
 
     for (const auto &  secondary_id : secondary_id_list) {
