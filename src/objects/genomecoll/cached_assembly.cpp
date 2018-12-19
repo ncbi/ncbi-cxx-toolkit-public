@@ -139,7 +139,7 @@ const string& CCachedAssembly::Blob()
     return m_blob;
 }
 
-bool CCachedAssembly::ValidBlob(int blobSize)
+bool CCachedAssembly::ValidBlob(size_t blobSize)
 {
     const int kSmallestZip = 200; // No assembly, let alone a compressed one, will be smaller than this.
     return blobSize >= kSmallestZip;

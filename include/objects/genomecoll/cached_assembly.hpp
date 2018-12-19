@@ -45,7 +45,7 @@ public:
     const string& Blob();
 
 public:
-    static bool ValidBlob(int blobSize);
+    static bool ValidBlob(size_t blobSize);
     static CCompressStream::EMethod Compression(const string& blob);
 
 private:
