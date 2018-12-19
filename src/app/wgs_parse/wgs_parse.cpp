@@ -953,7 +953,7 @@ static void UpdateCitArt(CSeq_entry& id_entry, CSeq_entry& master_entry)
         return;
     }
 
-    if (!old_iso_jta.empty() && old_iso_jta == new_iso_jta) {
+    if (old_iso_jta == new_iso_jta) {
         old_cit_art_descr->SetPub().Assign(new_cit_art_descr->GetPub());
     }
 }
