@@ -39,21 +39,17 @@
 BEGIN_NCBI_SCOPE
 
 template <class TItem>
-CJson_Document CReporter::ReportErrors(shared_ptr<TItem> item, string type)
+void CReporter::ReportErrors(CJson_Object& json_obj, TItem item, string type)
 {
-    CJson_Document json_doc;
-    CJson_Object json_obj(json_doc.SetObject());
     json_obj["reply"].SetValue().SetString(type);
 
     for (;;) {
         auto message = item->GetNextMessage();
 
-        if (message.empty()) break;
+        if (message.empty()) return;
 
         json_obj.insert_array("errors").push_back(message);
     }
-
-    return json_doc;
 }
 
 SJsonOut& SJsonOut::operator<<(const CJson_Document& doc)
@@ -105,9 +101,7 @@ int CProcessing::OneRequest(shared_ptr<CPSG_Request> request)
             switch (status) {
                 case EPSG_Status::eSuccess:    continue;
                 case EPSG_Status::eInProgress: continue;
-                case EPSG_Status::eNotFound:   m_JsonOut << CReporter::Report("NotFound"); break;
-                case EPSG_Status::eCanceled:   m_JsonOut << CReporter::Report("Canceled"); break;
-                case EPSG_Status::eError:      m_JsonOut << CReporter::ReportErrors(reply, "Failure"); break;
+                default: m_JsonOut << CReporter::Report(status, reply);
             }
         }
 
@@ -135,62 +129,67 @@ int CProcessing::OneRequest(shared_ptr<CPSG_Request> request)
     return 0;
 }
 
-CJson_Document CReporter::Report(string reply)
+template <class TItem>
+CJson_Document CReporter::Report(EPSG_Status status, TItem item)
 {
     CJson_Document json_doc;
     CJson_Object json_obj(json_doc.SetObject());
-    json_obj["reply"].SetValue().SetString(reply);
+    auto request_id = GetReply(item)->GetRequest()->template GetUserContext<string>();
+    json_obj["request_id"].SetValue().SetString(*request_id);
+    Report(json_obj, status, item);
     return json_doc;
 }
 
-CJson_Document CReporter::Report(EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyItem> reply_item)
+void CReporter::Report(CJson_Object& json_obj, EPSG_Status reply_status, shared_ptr<CPSG_Reply> reply)
 {
-    switch (reply_item->GetType()) {
-        case CPSG_ReplyItem::eBlobData:
-            if (reply_item_status == EPSG_Status::eError) {
-                return ReportErrors(reply_item, "BlobData");
-            }
-
-            return Report(static_pointer_cast<CPSG_BlobData>(reply_item));
-
-        case CPSG_ReplyItem::eBlobInfo:
-            if (reply_item_status == EPSG_Status::eError) {
-                return ReportErrors(reply_item, "BlobInfo");
-            }
-
-            return Report(static_pointer_cast<CPSG_BlobInfo>(reply_item));
-
-        case CPSG_ReplyItem::eBioseqInfo:
-            if (reply_item_status == EPSG_Status::eError) {
-                return ReportErrors(reply_item, "BioseqInfo");
-            }
-
-            return Report(static_pointer_cast<CPSG_BioseqInfo>(reply_item));
-
-        case CPSG_ReplyItem::eEndOfReply:
-            _ASSERT(false);
-            break;
+    switch (reply_status) {
+        case EPSG_Status::eNotFound: json_obj["reply"].SetValue().SetString("NotFound"); return;
+        case EPSG_Status::eCanceled: json_obj["reply"].SetValue().SetString("Canceled"); return;
+        case EPSG_Status::eError:    ReportErrors(json_obj, reply, "Failure");           return;
+        default: _TROUBLE;
     }
-
-    return CJson_Document();
 }
 
-CJson_Document CReporter::Report(shared_ptr<CPSG_BlobData> blob_data)
+void CReporter::Report(CJson_Object& json_obj, EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyItem> reply_item)
 {
-    CJson_Document json_doc;
-    CJson_Object json_obj(json_doc.SetObject());
+    auto reply_item_type = reply_item->GetType();
+
+    if (reply_item_status == EPSG_Status::eError) {
+        switch (reply_item_type) {
+            case CPSG_ReplyItem::eBlobData:   return ReportErrors(json_obj, reply_item, "BlobData");
+            case CPSG_ReplyItem::eBlobInfo:   return ReportErrors(json_obj, reply_item, "BlobInfo");
+            case CPSG_ReplyItem::eBioseqInfo: return ReportErrors(json_obj, reply_item, "BioseqInfo");
+            case CPSG_ReplyItem::eEndOfReply: _TROUBLE; return;
+        }
+    }
+
+    switch (reply_item_type) {
+        case CPSG_ReplyItem::eBlobData:
+            return Report(json_obj, static_pointer_cast<CPSG_BlobData>(reply_item));
+
+        case CPSG_ReplyItem::eBlobInfo:
+            return Report(json_obj, static_pointer_cast<CPSG_BlobInfo>(reply_item));
+
+        case CPSG_ReplyItem::eBioseqInfo:
+            return Report(json_obj, static_pointer_cast<CPSG_BioseqInfo>(reply_item));
+
+        case CPSG_ReplyItem::eEndOfReply:
+            _TROUBLE;
+            return;
+    }
+}
+
+void CReporter::Report(CJson_Object& json_obj, shared_ptr<CPSG_BlobData> blob_data)
+{
     json_obj["reply"].SetValue().SetString("BlobData");
     json_obj["id"].SetValue().SetString(blob_data->GetId().Get());
     ostringstream os;
     os << blob_data->GetStream().rdbuf();
     json_obj["data"].SetValue().SetString(NStr::JsonEncode(os.str()));
-    return json_doc;
 }
 
-CJson_Document CReporter::Report(shared_ptr<CPSG_BlobInfo> blob_info)
+void CReporter::Report(CJson_Object& json_obj, shared_ptr<CPSG_BlobInfo> blob_info)
 {
-    CJson_Document json_doc;
-    CJson_Object json_obj(json_doc.SetObject());
     json_obj["reply"].SetValue().SetString("BlobInfo");
     json_obj["id"].SetValue().SetString(blob_info->GetId().Get());
     json_obj["compression"].SetValue().SetString(blob_info->GetCompression());
@@ -211,18 +210,14 @@ CJson_Document CReporter::Report(shared_ptr<CPSG_BlobInfo> blob_info)
 
     for (int i = 1; ; ++i) {
         auto blob_id = blob_info->GetChunkBlobId(i).Get();
-        if (blob_id.empty()) break;
+        if (blob_id.empty()) return;
         if (i == 1) CJson_Array ar = json_obj.insert_array("chunk_blob_id");
         json_obj["chunk_blob_id"].SetArray().push_back(blob_id);
     }
-
-    return json_doc;
 }
 
-CJson_Document CReporter::Report(shared_ptr<CPSG_BioseqInfo> bioseq_info)
+void CReporter::Report(CJson_Object& json_obj, shared_ptr<CPSG_BioseqInfo> bioseq_info)
 {
-    CJson_Document json_doc;
-    CJson_Object json_obj(json_doc.SetObject());
     json_obj["reply"].SetValue().SetString("BioseqInfo");
 
     const auto included_info = bioseq_info->IncludedInfo();
@@ -244,8 +239,6 @@ CJson_Document CReporter::Report(shared_ptr<CPSG_BioseqInfo> bioseq_info)
     if (included_info & CPSG_Request_Resolve::fTaxId)        json_obj["tax_id"].SetValue().SetInt8(bioseq_info->GetTaxId());
     if (included_info & CPSG_Request_Resolve::fHash)         json_obj["hash"].SetValue().SetInt8(bioseq_info->GetHash());
     if (included_info & CPSG_Request_Resolve::fDateChanged)  json_obj["date_changed"].SetValue().SetString(bioseq_info->GetDateChanged().AsString());
-
-    return json_doc;
 }
 
 void CSender::Run()
@@ -326,26 +319,22 @@ void CReporter::Run()
         // If stop requested and no more requests for replies/items
         if (m_Requests.empty()) return;
 
-        shared_ptr<CPSG_Reply> reply;
         CJson_Document result_doc;
 
         if (!m_Replies.empty()) {
-            reply = m_Replies.front();
+            auto reply = m_Replies.front();
             m_Replies.pop();
 
             auto status = reply->GetStatus(kTryTimeout);
 
             switch (status) {
-                case EPSG_Status::eSuccess:                                                 continue;
-                case EPSG_Status::eInProgress: _TROUBLE;                                    break;
-                case EPSG_Status::eNotFound:   result_doc = Report("NotFound");             break;
-                case EPSG_Status::eCanceled:   result_doc = Report("Canceled");             break;
-                case EPSG_Status::eError:      result_doc = ReportErrors(reply, "Failure"); break;
+                case EPSG_Status::eSuccess:    continue;
+                case EPSG_Status::eInProgress: _TROUBLE; break;
+                default: result_doc = Report(status, reply);
             }
 
         } else if (!m_Items.empty()) {
             auto item = m_Items.front();
-            reply = item->GetReply();
             m_Items.pop();
 
             auto status = item->GetStatus(kTryTimeout);
@@ -361,11 +350,6 @@ void CReporter::Run()
         json_obj["jsonrpc"].SetValue().SetString("2.0");
         json_obj["id"].SetValue().SetString(m_Requests.front());
         json_obj["result"].AssignCopy(result_doc);
-
-        if (reply) {
-            auto request_id = reply->GetRequest()->GetUserContext<string>();
-            json_obj["result"].SetObject()["request_id"].SetValue().SetString(*request_id);
-        }
 
         m_JsonOut << json_doc;
 
