@@ -71,6 +71,32 @@ private:
     bool m_Interactive;
 };
 
+class CJsonResponse : public CJson_Document
+{
+public:
+    template <class TItem>
+    CJsonResponse(EPSG_Status status, TItem item);
+
+    CJsonResponse(const string& id, bool result);
+    CJsonResponse(const string& id, const CJson_Document& result);
+    CJsonResponse(const string& id, int code, const string& message);
+
+private:
+    CJsonResponse(const string& id);
+
+    void Fill(EPSG_Status status, shared_ptr<CPSG_Reply> reply);
+    void Fill(EPSG_Status status, shared_ptr<CPSG_ReplyItem> item);
+
+    void Fill(shared_ptr<CPSG_BlobData> blob_data);
+    void Fill(shared_ptr<CPSG_BlobInfo> blob_info);
+    void Fill(shared_ptr<CPSG_BioseqInfo> bioseq_info);
+
+    template <class TItem>
+    void Fill(TItem item, string type);
+
+    CJson_Object m_JsonObj;
+};
+
 class CProcessor
 {
 public:
@@ -110,31 +136,12 @@ public:
         m_CV.notify_one();
     }
 
-    template <class TItem>
-    static CJson_Document Report(EPSG_Status status, TItem item);
-
-    static CJson_Document ReportError(int code, const string& message, const CJson_Document& req_doc);
-    static CJson_Document ReportError(int code, const string& message, const string& id);
-
 private:
     void Run();
 
     void Emplace(string request)                  { m_Requests.emplace(move(request)); }
     void Emplace(shared_ptr<CPSG_Reply> reply)    {  m_Replies.emplace(move(reply));   }
     void Emplace(shared_ptr<CPSG_ReplyItem> item) {    m_Items.emplace(move(item));    }
-
-    static shared_ptr<CPSG_Reply> GetReply(shared_ptr<CPSG_ReplyItem>& item) { return item->GetReply(); }
-    static shared_ptr<CPSG_Reply> GetReply(shared_ptr<CPSG_Reply>& reply)    { return reply;            }
-
-    static void Report(CJson_Object& json_obj, EPSG_Status reply_status, shared_ptr<CPSG_Reply> reply);
-    static void Report(CJson_Object& json_obj, EPSG_Status reply_item_status, shared_ptr<CPSG_ReplyItem> reply_item);
-
-    static void Report(CJson_Object& json_obj, shared_ptr<CPSG_BlobData> blob_data);
-    static void Report(CJson_Object& json_obj, shared_ptr<CPSG_BlobInfo> blob_info);
-    static void Report(CJson_Object& json_obj, shared_ptr<CPSG_BioseqInfo> bioseq_info);
-
-    template <class TItem>
-    static void ReportErrors(CJson_Object& json_obj, TItem item, string type);
 
     SJsonOut& m_JsonOut;
     queue<string> m_Requests;
