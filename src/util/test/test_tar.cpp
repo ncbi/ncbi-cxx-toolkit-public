@@ -154,12 +154,6 @@ private:
 CTarTest::CTarTest(void)
     : m_Flags(0)
 {
-#if defined(__GLIBCPP__) || (defined(__GLIBCXX__)  &&  __GLIBCXX__ < 20060524)
-    // a/ sync_with_stdio(false) is 100% buggy in GCC < 4.1.1; or
-    // b/ sync_with_stdio(any) is 100% buggy in Solaris STL;
-    // when stdin's positioning methods (failing or not) get called...
-    SetStdioFlags(fDefault_SyncWithStdio);
-#endif // __GLIBCPP__ || (__GLIBCXX__  &&  __GLIBCXX__ < 20060524)
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostAllFlags((SetDiagPostAllFlags(eDPF_Default) & ~eDPF_All)
                         | eDPF_DateTime    | eDPF_Severity

@@ -416,14 +416,16 @@ protected:
 
     /// Flags to adjust standard I/O streams' behaviour.
     enum EStdioSetup {
-        fDefault_SyncWithStdio  = 0x01,
-        ///< Use compiler-specific default as pertains to the synchronizing
-        ///< of "C++" Cin/Cout/Cerr streams with their "C" counterparts.
+        fNoSyncWithStdio  = 0x01,
+        ///< Turn off synchronizing of "C++" cin/cout/cerr streams with
+        ///< their "C" counterparts, possibly making the former not thread-safe.
 
         fDefault_CinBufferSize  = 0x02,
         ///< Use compiler-specific default of Cin buffer size.
         fBinaryCin   = 0x04,  ///< treat standard  input as binary
-        fBinaryCout  = 0x08   ///< treat standard output as binary
+        fBinaryCout  = 0x08,  ///< treat standard output as binary
+
+        fDefault_SyncWithStdio  = 0x00, ///< @deprecated @sa fNoSyncWithStdio
     };
     typedef int TStdioSetupFlags;  ///< Binary OR of "EStdioSetup"
 

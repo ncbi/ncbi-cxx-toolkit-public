@@ -114,7 +114,7 @@ CNcbiApplication::CNcbiApplication(const SBuildInfo& build_info)
 
     m_DisableArgDesc = 0;
     m_HideArgs = 0;
-    m_StdioFlags = fDefault_SyncWithStdio; // It is not thread-safe otherwise
+    m_StdioFlags = 0;
     m_CinBuffer = 0;
     m_ExitCodeCond = eNoExits;
 
@@ -1090,14 +1090,14 @@ void CNcbiApplication::SetStdioFlags(TStdioSetupFlags stdio_flags)
 {
     // do not call this function more than once
     // and from places other than App constructor
-    _ASSERT(m_StdioFlags == fDefault_SyncWithStdio);
+    _ASSERT(m_StdioFlags == 0);
     m_StdioFlags = stdio_flags;
 }
 
 
 void CNcbiApplication::x_SetupStdio(void)
 {
-    if ((m_StdioFlags & fDefault_SyncWithStdio) == 0) {
+    if ((m_StdioFlags & fNoSyncWithStdio) != 0) {
         IOS_BASE::sync_with_stdio(false);
     }
 
