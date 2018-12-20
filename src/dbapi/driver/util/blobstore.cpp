@@ -157,9 +157,11 @@ ERW_Result CBlobReader::Read(void* buf, size_t count, size_t* bytes_read)
               (unsigned int)m_ItemNum < m_Res->NofItems());
 
         m_AllDone= true; // nothing to read any more
+        r = eRW_Eof;
 
     } catch (CDB_Exception&) {
         m_AllDone= true;
+        r = eRW_Error;
     }
 
     if(bytes_read) *bytes_read= n + rn;
