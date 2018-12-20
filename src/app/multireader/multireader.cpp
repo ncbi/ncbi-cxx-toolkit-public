@@ -158,6 +158,7 @@ private:
     //void xProcessHgvs(const CArgs&, CNcbiIstream&, CNcbiOstream&);
 
     void xSetFormat(const CArgs&, CNcbiIstream&);
+    void xSetFlags(const CArgs&, const string&);
     void xSetFlags(const CArgs&, CNcbiIstream&);
     void xSetMapper(const CArgs&);
     void xSetMessageListener(const CArgs&);
@@ -591,6 +592,13 @@ void CMultiReaderApp::Init(void)
         "-");
 
     arg_desc->AddDefaultKey(
+        "aln-missing", 
+        "STRING",
+        "Alignment missing indicator",
+        CArgDescriptions::eString, 
+        "");
+
+    arg_desc->AddDefaultKey(
         "aln-alphabet", 
         "STRING",
         "Alignment alphabet",
@@ -712,7 +720,8 @@ CMultiReaderApp::xProcessSingleFile(
     CNcbiOstream& ostr)
 //  -----------------------------------------------------------------------------
 {
-    xSetFlags(args, istr);
+    xSetFlags(args, args["input"].AsString());
+
     CRef< CSerialObject> object;
     vector< CRef< CSeq_annot > > annots;
 
@@ -1137,6 +1146,7 @@ void CMultiReaderApp::xProcessAlignment(
 {
     CAlnReader reader(istr);
     reader.SetAllGap(args["aln-gapchar"].AsString());
+    reader.SetMissing(args["aln-missing"].AsString());
     reader.SetAlphabet(CAlnReader::eAlpha_Protein);
     if (args["aln-alphabet"].AsString() == "nuc") {
         reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
@@ -1213,6 +1223,17 @@ void CMultiReaderApp::xSetFormat(
     }
 }
 
+//  ----------------------------------------------------------------------------
+void CMultiReaderApp::xSetFlags(
+    const CArgs& args,
+    const string& filename )
+//  ----------------------------------------------------------------------------
+{
+    CNcbiIfstream istr(filename);
+    xSetFlags(args, istr);
+    istr.close();
+}
+ 
 //  ----------------------------------------------------------------------------
 void CMultiReaderApp::xSetFlags(
     const CArgs& args,
