@@ -55,11 +55,37 @@ private:
 };
 
 
+class NCBI_XOBJREAD_EXPORT CModData
+{
+public:
+    CModData(const string& name);
+    CModData(const string& name, const string& value);
+
+    void SetName(const string& name);
+    void SetValue(const string& value);
+    void SetAttrib(const string& attrib);
+    bool IsSetAttrib(void) const;
+
+    const string& GetName(void) const;
+    const string& GetValue(void) const;
+    const string& GetAttrib(void) const;
+
+private:
+    string mName;
+    string mValue;
+    string mAttrib;    
+};
+
+
 class IObjtoolsListener;
+
 
 class NCBI_XOBJREAD_EXPORT CModHandler 
 {
 public:
+
+    using TModList = list<CModData>;
+
     enum EHandleExisting {
         eReplace        = 0,
         ePreserve       = 1,
@@ -67,32 +93,31 @@ public:
         eAppendPreserve = 3
     };
 
-    using TMods = map<string, list<CModValueAndAttrib>>;
+    using TMods = map<string, list<CModData>>;
 
     CModHandler(IObjtoolsListener* listener=nullptr);
 
-    void AddMod(const string& name, 
-                const string& value,
-                EHandleExisting handle_existing);
+    void AddMods(const TModList& mods, EHandleExisting handle_existing);
 
-    void AddMod(const string& name,
-                const CModValueAndAttrib& val_attrib,
-                EHandleExisting handle_existing);
+    const TMods& GetProcessedMods(void) const;
 
-    void AddMods(const multimap<string, CModValueAndAttrib>& mods, EHandleExisting handle_existing);
+    const TMods& GetConflictingMods(void) const;
 
-    const TMods& GetNormalizedMods(void) const;
+    const TMods& GetDeprecatedMods(void) const;
 
     void Clear(void);
 
 private:
     string x_GetCanonicalName(const string& name) const;
     string x_GetNormalizedString(const string& name) const;
-    static bool x_MultipleValuesForbidden(const string& canonical_name);
+    static bool x_MultipleValuesAllowed(const string& canonical_name);
     void x_PutMessage(const string& message, EDiagSev severity);
     static bool x_IsDeprecated(const string& canonical_name);
 
     TMods m_Mods;
+    TMods m_ConflictingMods;
+    TMods m_DeprecatedMods;
+
     using TNameMap = unordered_map<string, string>;
     using TNameSet = unordered_set<string>;
     static const TNameMap sm_NameMap;
@@ -183,7 +208,7 @@ class NCBI_XOBJREAD_EXPORT CModAdder
 public:
     using TMods = CModHandler::TMods;
     using TModEntry = TMods::value_type;
-    using TMod = pair<string, CModValueAndAttrib>;
+    using TMod = pair<string, CModData>;
 
     static void Apply(const CModHandler& mod_handler, CBioseq& bioseq, 
             IObjtoolsListener* pMessageListener);
@@ -239,6 +264,10 @@ private:
 
     static void x_ThrowInvalidValue(const TMod& mod,
                                     const string& add_msg="");
+
+    static void x_ThrowInvalidValue(const CModData& mod_data,
+                                    const string& add_msg="");
+
     static bool x_PutError(const CModReaderException& exception, IObjtoolsListener* pMessageListener);
     static bool x_PutMessage(const string& message, EDiagSev severity, 
             IObjtoolsListener* pMessageListener);

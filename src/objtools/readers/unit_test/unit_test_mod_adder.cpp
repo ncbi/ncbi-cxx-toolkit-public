@@ -299,15 +299,17 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
     CModHandler mod_handler(pMessageListener.get());
 
+    list<CModData> mod_list;
     try {
         multimap<string, string> mods;
         for (string line; getline(ifstr, line);) {
             SModInfo mod_info;
             sGetModInfo(line, mod_info);
-            mod_handler.AddMod(mod_info.name,
-                               mod_info.value,
-                               mod_info.handle_existing);
+           // CModData mod_data(mod_info.name, mod_info.value);
+            mod_list.emplace_back(mod_info.name, mod_info.value);
         }
+        mod_handler.AddMods(mod_list, CModHandler::ePreserve);
+
         CModAdder::Apply(mod_handler, bioseq, pMessageListener.get());
     }
     catch (...) {
@@ -372,16 +374,18 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
                    const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
 
     unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
+    list<CModData> mod_list;
+
     CModHandler mod_handler(pMessageListener.get());
     try {
         multimap<string, string> mods;
         for (string line; getline(ifstr, line);) {
             SModInfo mod_info;
             sGetModInfo(line, mod_info);
-            mod_handler.AddMod(mod_info.name,
-                               mod_info.value,
-                               mod_info.handle_existing);
+         //   CModData mod_data(mod_info.name, mod_info.value);
+            mod_list.emplace_back(mod_info.name, mod_info.value);
         }
+        mod_handler.AddMods(mod_list, CModHandler::eAppendReplace);
         CModAdder::Apply(mod_handler, bioseq, pMessageListener.get());
     }
     catch (...) {

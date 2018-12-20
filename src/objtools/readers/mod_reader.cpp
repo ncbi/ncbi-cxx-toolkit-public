@@ -105,6 +105,53 @@ const string& CModValueAndAttrib::GetValue(void) const
 }
 
 
+CModData::CModData(const string& name) : mName(name) {}
+
+CModData::CModData(const string& name, const string& value) : mName(name), mValue(value) {}
+
+
+void CModData::SetName(const string& name) 
+{
+    mValue = name;
+}
+
+
+void CModData::SetValue(const string& value) 
+{
+    mValue = value;
+}
+
+
+void CModData::SetAttrib(const string& attrib)
+{
+    mAttrib = attrib;
+}
+
+
+bool CModData::IsSetAttrib(void) const
+{
+    return !(mAttrib.empty());
+}
+
+
+const string& CModData::GetName(void) const
+{
+    return mName;
+}
+
+
+const string& CModData::GetValue(void) const
+{
+    return mValue;
+}
+
+
+const string& CModData::GetAttrib(void) const
+{
+    return mAttrib;
+}
+
+
 const string& CModValueAndAttrib::GetAttrib(void) const
 {
     return mAttrib;
@@ -651,127 +698,105 @@ CModHandler::CModHandler(IObjtoolsListener* listener)
     : m_pMessageListener(listener) {}
 
 
-void CModHandler::AddMod(const string& name,
-                         const CModValueAndAttrib& value_attrib,
-                         EHandleExisting handle_existing)
-{
-    const auto& canonical_name = x_GetCanonicalName(name);
-    if (NStr::IsBlank(canonical_name)) {
-        string message = "Modifier name not specified - skipping";
-        x_PutMessage(message, eDiag_Warning);
-        return;
-    }
-
-    if (x_IsDeprecated(canonical_name)) {
-        string message = name + " is deprecated - ignoring";
-        x_PutMessage(message, eDiag_Warning);
-        return;
-    }
-
-    if (handle_existing == ePreserve) {
-        return;
-    }
-
-    const bool multiple_values_forbidden = 
-        x_MultipleValuesForbidden(canonical_name);
-
-    if (multiple_values_forbidden &&
-        (handle_existing == eAppendPreserve)) {
-        return;
-    }
-
-    const bool remove_existing = 
-        ((handle_existing == eReplace) ||
-        (multiple_values_forbidden &&
-         (handle_existing == eAppendReplace)));
-
-    if (remove_existing) {
-        m_Mods.erase(canonical_name);
-    }
-
-    m_Mods[canonical_name].push_back(value_attrib);
-}
 
 
-void CModHandler::AddMod(const string& name,
-                         const string& value,
-                         EHandleExisting handle_existing)
-{
-    AddMod(name, CModValueAndAttrib(value), handle_existing);
-}
 
-
-void CModHandler::AddMods(const multimap<string, CModValueAndAttrib>& mods,
+// Replace CModValueAndAttrib class with a CModData
+// or CModifier class, which also has a name attribute. 
+// Then, AddMods will take a list<CModInfo> 
+void CModHandler::AddMods(const TModList& mods,
                           EHandleExisting handle_existing)
 {
-    unordered_set<string> previous_mods;
-    unordered_set<string> current_mods;
+    unordered_set<string> current_set;
+
+    TMods valid_mods;
+    TMods conflicting_mods;
+    TMods deprecated_mods;
 
     for (const auto& mod : mods) {
-        const auto& canonical_name = x_GetCanonicalName(mod.first);
-        const auto allow_multiple_values = 
-            (sm_MultipleValuesForbidden.find(canonical_name) == 
-            sm_MultipleValuesForbidden.end());
+        const auto& canonical_name = x_GetCanonicalName(mod.GetName());
+
+        if (x_IsDeprecated(canonical_name)) {
+            deprecated_mods[canonical_name].push_back(mod);
+            string message = mod.GetName() + " is deprecated - ignoring";
+            x_PutMessage(message, eDiag_Warning);
+            continue;
+        }
+
+        const auto allow_multiple_values = x_MultipleValuesAllowed(canonical_name);
+        const auto first_occurrence = current_set.insert(canonical_name).second;
 
         if (!allow_multiple_values &&
-            !current_mods.insert(canonical_name).second) {
-            string msg = mod.first + " conflicts with other modifiers in set.";
+            !first_occurrence) {
+            conflicting_mods[canonical_name].push_back(mod);
+            string msg = mod.GetName() + " conflicts with other modifiers in set.";
             if (m_pMessageListener) {
                 x_PutMessage(msg, eDiag_Error);
             }   
             else { 
                 NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
             }
+            continue;
         }
 
-        const auto not_in_previous_mods = previous_mods.insert(canonical_name).second;
+        valid_mods[canonical_name].push_back(mod);
+        // The following code will become redundant after 
+        // we implement and activate x_SaveMods
 
-        if (not_in_previous_mods ||
+        if (first_occurrence ||
             allow_multiple_values) {
             if (allow_multiple_values) {
                 if ((handle_existing == eAppendPreserve) ||
                     (handle_existing == eAppendReplace) ) {
-                    m_Mods[canonical_name].push_back(mod.second);
+                    m_Mods[canonical_name].push_back(mod);
                 }
                 else 
                 if (m_Mods.find(canonical_name) == m_Mods.end()) {
-                    m_Mods[canonical_name].push_back(mod.second);
+                    m_Mods[canonical_name].push_back(mod);
                 }
                 else
                 if ((handle_existing == eReplace) &&
-                     not_in_previous_mods) {
-                    //m_Mods.erase(canonical_name);
-                    m_Mods[canonical_name] = {mod.second};
+                     first_occurrence) {
+                    m_Mods[canonical_name] = {mod};
                 }
                 else
-                if (!not_in_previous_mods) {
-                    m_Mods[canonical_name].push_back(mod.second);
+                if (!first_occurrence) {
+                    m_Mods[canonical_name].push_back(mod);
                 }
             }
-            else { // not_in_previous_mods
-                m_Mods[canonical_name] = {mod.second};
-            /*
-                if (m_Mods.find(canonical_name) != m_Mods.end()) {
-                    m_Mods.erase(canonical_name);
-                }
-                m_Mods[canonical_name].push_back(mod.second);
-                */
+            else { // first_occurrence
+                m_Mods[canonical_name] = {mod};
             }
         }
     }
+   // x_SaveMods(valid_mods, handle_existing, m_Mods)
+   // x_SaveMods(conflicting_mods, handle_existing, m_ConflictingMods);
+   // x_SaveMods(deprecated_mods, handle_existing, m_DeprecatedMods);
 }
 
 
-bool CModHandler::x_MultipleValuesForbidden(const string& canonical_name)
+bool CModHandler::x_MultipleValuesAllowed(const string& canonical_name)
 {
-    return (sm_MultipleValuesForbidden.find(canonical_name) !=
+    return (sm_MultipleValuesForbidden.find(canonical_name) ==
             sm_MultipleValuesForbidden.end());
 }
 
 
-const CModHandler::TMods& CModHandler::GetNormalizedMods(void) const
+const CModHandler::TMods& CModHandler::GetProcessedMods(void) const
 {
     return m_Mods;
+}
+
+
+const CModHandler::TMods& CModHandler::GetConflictingMods(void) const
+{
+    return m_ConflictingMods;
+}
+
+
+const CModHandler::TMods& CModHandler::GetDeprecatedMods(void) const
+{
+    return m_DeprecatedMods;
 }
 
 
@@ -1329,7 +1354,7 @@ void CModAdder::Apply(const CModHandler& mod_handler,
     unique_ptr<CProteinRefCache> pProteinRefCache(new CProteinRefCache(bioseq, pFeatLoc));
 
 
-    for (const auto& mod_entry : mod_handler.GetNormalizedMods()) {
+    for (const auto& mod_entry : mod_handler.GetProcessedMods()) {
         try {
             if (x_TryDescriptorMod(mod_entry, descr_cache)) {
                 const string& mod_name = x_GetModName(mod_entry);
@@ -1379,6 +1404,19 @@ void CModAdder::x_ThrowInvalidValue(const TMod& mod,
 {
     const auto& mod_name = mod.first;
     const auto& mod_value = mod.second.GetValue();
+    string msg = mod_name + " modifier has invalid value: \"" +   mod_value + "\".";
+    if (!NStr::IsBlank(add_msg)) {
+        msg += " " + add_msg;
+    }
+    NCBI_THROW(CModReaderException, eInvalidValue, msg);
+}
+
+
+void CModAdder::x_ThrowInvalidValue(const CModData& mod_data,
+                                    const string& add_msg)
+{
+    const auto& mod_name = mod_data.GetName();
+    const auto& mod_value = mod_data.GetValue();
     string msg = mod_name + " modifier has invalid value: \"" +   mod_value + "\".";
     if (!NStr::IsBlank(add_msg)) {
         msg += " " + add_msg;
@@ -1493,7 +1531,7 @@ bool CModAdder::x_TryBioSourceMod(const TModEntry& mod_entry, CDescrCache& descr
         const auto& value = x_GetModValue(mod_entry);
         auto it = s_GenomeStringToEnum.find(value);
         if (it == s_GenomeStringToEnum.end()) {
-            x_ThrowInvalidValue(pair<string,string>(name,value));
+            x_ThrowInvalidValue(mod_entry.second.front());
         }
         descr_cache.SetBioSource().SetGenome(it->second);
         return true;
@@ -1504,7 +1542,7 @@ bool CModAdder::x_TryBioSourceMod(const TModEntry& mod_entry, CDescrCache& descr
         const auto& value = x_GetModValue(mod_entry);
         auto it = s_OriginStringToEnum.find(value);
         if (it == s_OriginStringToEnum.end()) {
-            x_ThrowInvalidValue(pair<string,string>(name,value));
+            x_ThrowInvalidValue(mod_entry.second.front());
         }
         descr_cache.SetBioSource().SetOrigin(it->second);
         return true;
@@ -1517,7 +1555,7 @@ bool CModAdder::x_TryBioSourceMod(const TModEntry& mod_entry, CDescrCache& descr
         }
         else 
         if (NStr::EqualNocase(value, "false")) {
-            x_ThrowInvalidValue(pair<string,string>(name,value));
+            x_ThrowInvalidValue(mod_entry.second.front());
         }
         return true;
     }
@@ -1830,7 +1868,7 @@ bool CModAdder::x_TryOrgNameMod(const TModEntry& mod_entry, CDescrCache& descr_c
             code = NStr::StringToInt(value);
         }
         catch (...) {
-            x_ThrowInvalidValue(pair<string,string>(name,value), "Integer value expected.");
+            x_ThrowInvalidValue(mod_entry.second.front(), "Integer value expected.");
         }
         it->second(descr_cache.SetBioSource().SetOrg().SetOrgname(), code);
         return true;
@@ -1883,8 +1921,7 @@ void CModAdder::x_SetMolInfoType(const TModEntry& mod_entry, CDescrCache& descr_
         descr_cache.SetMolInfo().SetBiomol(it->second);
         return;
     }
-    const auto& name = x_GetModName(mod_entry);
-    x_ThrowInvalidValue(pair<string,string>(name,value));
+    x_ThrowInvalidValue(mod_entry.second.front());
 }
 
 
@@ -1896,8 +1933,7 @@ void CModAdder::x_SetMolInfoTech(const TModEntry& mod_entry, CDescrCache& descr_
         descr_cache.SetMolInfo().SetTech(it->second);
         return;
     }
-    const auto& name = x_GetModName(mod_entry);
-    x_ThrowInvalidValue(pair<string,string>(name,value));
+    x_ThrowInvalidValue(mod_entry.second.front());
 }
 
 
@@ -1909,8 +1945,7 @@ void CModAdder::x_SetMolInfoCompleteness(const TModEntry& mod_entry, CDescrCache
         descr_cache.SetMolInfo().SetCompleteness(it->second);
         return;
     }
-    const auto& name = x_GetModName(mod_entry);
-    x_ThrowInvalidValue(pair<string,string>(name,value));
+    x_ThrowInvalidValue(mod_entry.second.front());
 }
 
 
@@ -2042,7 +2077,7 @@ void CModAdder::x_SetPMID(const TModEntry& mod_entry,
             pmid = NStr::StringToInt(value);
         }
         catch(...) {
-            x_ThrowInvalidValue(pair<string,string>(mod_entry.first,value), "Expected integer value.");
+            x_ThrowInvalidValue(mod_entry.second.front(), "Expected integer value.");
         } 
         auto pPub = Ref(new CPub());
         pPub->SetPmid().Set(pmid);
@@ -2125,8 +2160,7 @@ void CModAdder::x_SetStrand(const TModEntry& mod_entry, CSeq_inst& seq_inst)
     const auto& value = x_GetModValue(mod_entry);
     const auto it = s_StrandStringToEnum.find(value);
     if (it == s_StrandStringToEnum.end()) {
-        const auto& name = x_GetModName(mod_entry);
-        x_ThrowInvalidValue(pair<string,string>(name,value));
+        x_ThrowInvalidValue(mod_entry.second.front());
     }
     seq_inst.SetStrand(it->second);
 }
@@ -2137,8 +2171,7 @@ void CModAdder::x_SetMolecule(const TModEntry& mod_entry, CSeq_inst& seq_inst)
     const auto& value = x_GetModValue(mod_entry);
     const auto it = s_MolStringToEnum.find(value);
     if (it == s_MolStringToEnum.end()) {
-        const auto& name = x_GetModName(mod_entry);
-        x_ThrowInvalidValue(pair<string,string>(name,value));
+        x_ThrowInvalidValue(mod_entry.second.front());
     }
     seq_inst.SetMol(it->second);
 }
@@ -2163,8 +2196,7 @@ void CModAdder::x_SetTopology(const TModEntry& mod_entry, CSeq_inst& seq_inst)
     const auto& value = x_GetModValue(mod_entry);
     const auto it = s_TopologyStringToEnum.find(value);
     if (it == s_TopologyStringToEnum.end()) {
-        const auto& name = x_GetModName(mod_entry);
-        x_ThrowInvalidValue(pair<string,string>(name,value));
+        x_ThrowInvalidValue(mod_entry.second.front());
     }
     seq_inst.SetTopology(it->second);
 }

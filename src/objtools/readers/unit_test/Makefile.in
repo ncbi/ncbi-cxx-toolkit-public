@@ -21,7 +21,6 @@ APP_PROJ = \
     unit_test_gtfreader \
 	unit_test_alnreader \
     unit_test_5colftblreader \
-	unit_test_mod_handler \
 	unit_test_mod_adder
 
 PROJ_TAG = test
