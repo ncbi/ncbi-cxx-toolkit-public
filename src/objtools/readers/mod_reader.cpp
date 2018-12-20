@@ -1399,19 +1399,6 @@ void CModAdder::x_AssertSingleValue(const TModEntry& mod_entry)
 }
 
 
-void CModAdder::x_ThrowInvalidValue(const TMod& mod,
-                                    const string& add_msg)
-{
-    const auto& mod_name = mod.first;
-    const auto& mod_value = mod.second.GetValue();
-    string msg = mod_name + " modifier has invalid value: \"" +   mod_value + "\".";
-    if (!NStr::IsBlank(add_msg)) {
-        msg += " " + add_msg;
-    }
-    NCBI_THROW(CModReaderException, eInvalidValue, msg);
-}
-
-
 void CModAdder::x_ThrowInvalidValue(const CModData& mod_data,
                                     const string& add_msg)
 {

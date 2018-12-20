@@ -208,7 +208,6 @@ class NCBI_XOBJREAD_EXPORT CModAdder
 public:
     using TMods = CModHandler::TMods;
     using TModEntry = TMods::value_type;
-    using TMod = pair<string, CModData>;
 
     static void Apply(const CModHandler& mod_handler, CBioseq& bioseq, 
             IObjtoolsListener* pMessageListener);
@@ -261,9 +260,6 @@ private:
             CProteinRefCache& protein_ref_cache);
     static bool x_TryGeneRefMod(const TModEntry& mod_entry, CFeatureCache& gene_ref_cache);
     static bool x_TryProteinRefMod(const TModEntry& mod_entry, CFeatureCache& protein_ref_cache);
-
-    static void x_ThrowInvalidValue(const TMod& mod,
-                                    const string& add_msg="");
 
     static void x_ThrowInvalidValue(const CModData& mod_data,
                                     const string& add_msg="");
