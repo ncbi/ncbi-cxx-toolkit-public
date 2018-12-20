@@ -2135,18 +2135,16 @@ void CGenbankFormatter::FormatWGS
         } else {
             string url_arg;
             const bool bIsWGSProject = CWGSItem::eWGS_Projects == wgs.GetType();
-            const bool bIsWGSScafldWithS = ( 
-                CWGSItem::eWGS_ScaffoldList == wgs.GetType() &&
-                first_id.length() > 7 && first_id[6] == 'S' );
-            if( bIsWGSProject || bIsWGSScafldWithS )
-            {
-                if( first_id.length() > 2 && first_id[2] == '_' ) {
-                    url_arg = first_id.substr(0, 9);
-                } else {
-                    url_arg = first_id.substr(0, 6);
-                }
+            if (bIsWGSProject) {
+                // ID-5288 : Allow for variable prefix length
+                // First 2 digits are the major version of the project which must be appended
+                SIZE_TYPE prefix_len = first_id.find_first_of("0123456789");
+                const bool bIsWGSScafldWithS = 
+                    ( CWGSItem::eWGS_ScaffoldList == wgs.GetType() &&
+                      first_id.length() > 7 && first_id[prefix_len+2] == 'S' );
+                url_arg = first_id.substr(0,prefix_len+2);
                 link = "https://www.ncbi.nlm.nih.gov/Traces/wgs?val=" + 
-                    url_arg + ( bIsWGSProject ? "#contigs" : "#scaffolds" );
+                    url_arg + ( bIsWGSScafldWithS ? "#scaffolds" : "#contigs" );
             } else {
                 link = "https://www.ncbi.nlm.nih.gov/nuccore?term=" + first_id + ":" + last_id + "[PACC]";
             }
@@ -2195,7 +2193,10 @@ void CGenbankFormatter::FormatTSA
             TryToSanitizeHtml( id_range );
 
             string tls_master = tsa.GetContext()->GetTLSMasterName();
-            tls_master = tls_master.substr(0, 6);
+            // ID-5288 : Allow for variable prefix length
+            // First 2 digits are the major version of the project which must be appended
+            SIZE_TYPE prefix_len = tls_master.find_first_of("0123456789");
+            tls_master = tls_master.substr(0, prefix_len+2);
             TryToSanitizeHtml(tls_master);
             if( ! tls_master.empty() ) {
                 id_range = "<a href=\"https://www.ncbi.nlm.nih.gov/Traces/wgs?val=" + tls_master + "#contigs\">" + id_range + "</a>";
@@ -2228,11 +2229,10 @@ void CGenbankFormatter::FormatTSA
         TryToSanitizeHtml( id_range );
 
         string tsa_master = tsa.GetContext()->GetTSAMasterName();
-        if( tsa_master.length() > 2 && tsa_master[2] == '_' ) {
-            tsa_master = tsa_master.substr(0, 9);
-        } else {
-            tsa_master = tsa_master.substr(0, 6);
-        }
+        // ID-5288 : Allow for variable prefix length
+        // First 2 digits are the major version of the project which must be appended
+        SIZE_TYPE prefix_len = tsa_master.find_first_of("0123456789");
+        tsa_master = tsa_master.substr(0, prefix_len+2);
         TryToSanitizeHtml(tsa_master);
         if( ! tsa_master.empty() ) {
             id_range = "<a href=\"https://www.ncbi.nlm.nih.gov/Traces/wgs?val=" + tsa_master + "\">" + id_range + "</a>";
