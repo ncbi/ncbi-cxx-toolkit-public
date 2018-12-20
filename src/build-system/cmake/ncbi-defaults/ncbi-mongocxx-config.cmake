@@ -61,7 +61,7 @@ set(MONGOCXX_LIBRARIES
     )
 
 if (NOT BUILD_SHARED_LIBS)
-    set(MONGOCXX_LIBRARIES ${MONGOCXX_LIBRARIES} /usr/lib/libresolv.so)
+    set(MONGOCXX_LIBRARIES ${MONGOCXX_LIBRARIES} /lib64/libresolv-2.17.so)
 endif()
 
 
