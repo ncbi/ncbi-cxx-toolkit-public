@@ -10,7 +10,7 @@ NCBI_begin_lib(xobjedit)
     link_cds_mrna cds_fix loc_edit mail_report
     feattable_edit gaps_edit source_edit rna_edit
     remote_updater parse_text_options publication_edit gap_trim
-    external_annots feature_propagate apply_mods text_object_description
+    external_annots feature_propagate text_object_description
   )
   NCBI_uses_toolkit_libraries(mlacli taxon3 valid xobjread xobjutil seqset )
   NCBI_project_watchers(bollin gotvyans foleyjp)
