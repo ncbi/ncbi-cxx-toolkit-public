@@ -185,8 +185,8 @@ public:
     static const string& GetBaseURL(void);
     /// Set new base url for all e-utils requests
     static void SetBaseURL(const string& url);
-	/// Reset cached base url so that it's refreshed on next request.
-	static void ResetBaseURL(void);
+    /// Reset cached base url so that it's refreshed on next request.
+    static void ResetBaseURL(void);
 
 private:
     CEUtils_Request(const CEUtils_Request&);

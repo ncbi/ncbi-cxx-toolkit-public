@@ -427,7 +427,7 @@ private:
 
 
 CEutilsClient::CEutilsClient()
-    : m_RetMax(kMax_Int)
+    : m_CachedHostNameCount(0), m_RetMax(kMax_Int)
 {
     class CInPlaceConnIniter : protected CConnIniter
     {
@@ -436,8 +436,9 @@ CEutilsClient::CEutilsClient()
 }
 
 CEutilsClient::CEutilsClient(const string& host)
-    : m_HostName(host)
-    , m_RetMax(kMax_Int)
+    : m_CachedHostNameCount(0),
+      m_HostName(host),
+      m_RetMax(kMax_Int)
 {
     class CInPlaceConnIniter : protected CConnIniter
     {
@@ -855,10 +856,22 @@ void CEutilsClient::SearchHistory(const string& db,
     x_Get("/entrez/eutils/esearch.fcgi", oss.str(), ostr);
 }
 
-string CEutilsClient::x_GetHostName(void) const
+
+#define HOST_NAME_REFRESH_FREQ 100
+
+const string& CEutilsClient::x_GetHostName(void) const
 {
     if (!m_HostName.empty()) {
         return m_HostName;
+    }
+
+    if (++m_CachedHostNameCount > HOST_NAME_REFRESH_FREQ) {
+        m_CachedHostName.clear();
+        m_CachedHostNameCount = 0;
+    }
+
+    if (!m_CachedHostName.empty()) {
+        return m_CachedHostName;
     }
 
     // See also: objtools/eutils/api/eutils.cpp
@@ -888,7 +901,8 @@ string CEutilsClient::x_GetHostName(void) const
         scheme += 's';
     }
     _ASSERT(!host.empty());
-    return scheme + "://" + host;
+    m_CachedHostName = scheme + "://" + host;
+    return m_CachedHostName;
 }
 
 

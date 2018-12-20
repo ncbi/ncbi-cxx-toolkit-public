@@ -426,6 +426,8 @@ protected:
     typedef map<string,string> TParamList;
 
     CRef<CMessageHandler> m_MessageHandler;
+    mutable int m_CachedHostNameCount;
+    mutable string m_CachedHostName;
     string m_HostName;
     string m_UrlTag;
     TParamList m_AdditionalParams;
@@ -443,7 +445,7 @@ protected:
     // Execute HTTP GET request.
     // Store received content into the @ostr.
 
-    string x_GetHostName(void) const;
+    const string& x_GetHostName(void) const;
     void x_Get(string const& path, string const& params, CNcbiOstream& ostr);
 
     static string x_BuildUrl(const string& host, const string &path,

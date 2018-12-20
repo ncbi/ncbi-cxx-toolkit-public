@@ -85,23 +85,24 @@ NCBI_PARAM_DEF_EX(string, EUtils, Base_URL,
                   EUTILS_BASE_URL);
 typedef NCBI_PARAM_TYPE(EUtils, Base_URL) TEUtilsBaseURLParam;
 
+DEFINE_STATIC_MUTEX(s_BaseUrlMutex);
 static string s_CachedBaseUrl;
-
 #define BASE_URL_REFRESH_FREQ 100
 static int s_BaseUrlRefreshCount = 0;
 
 
 const string& CEUtils_Request::GetBaseURL(void)
 {
-	if (++s_BaseUrlRefreshCount >= BASE_URL_REFRESH_FREQ) {
-		s_CachedBaseUrl.clear();
-		s_BaseUrlRefreshCount = 0;
-	}
+    CMutexGuard guard(s_BaseUrlMutex);
+    if (++s_BaseUrlRefreshCount > BASE_URL_REFRESH_FREQ) {
+        s_CachedBaseUrl.clear();
+        s_BaseUrlRefreshCount = 0;
+    }
 
-	if (!s_CachedBaseUrl.empty()) return s_CachedBaseUrl;
+    if (!s_CachedBaseUrl.empty()) return s_CachedBaseUrl;
 
     s_CachedBaseUrl = TEUtilsBaseURLParam::GetDefault();
-	if (!s_CachedBaseUrl.empty()) return s_CachedBaseUrl;
+    if (!s_CachedBaseUrl.empty()) return s_CachedBaseUrl;
 
     // See also: misc/eutils_client/eutils_client.cpp
     static const char kEutils[]   = "eutils.ncbi.nlm.nih.gov";
@@ -132,21 +133,22 @@ const string& CEUtils_Request::GetBaseURL(void)
     _ASSERT(!host.empty());
     s_CachedBaseUrl = scheme + "://" + host + kDefaultEUtils_Path;
 
-	return s_CachedBaseUrl;
+    return s_CachedBaseUrl;
 }
 
 
 void CEUtils_Request::SetBaseURL(const string& url)
 {
     TEUtilsBaseURLParam::SetDefault(url);
-	// Refresh cached base url.
-	GetBaseURL();
+    // Refresh cached base url.
+    GetBaseURL();
 }
 
 
 void CEUtils_Request::ResetBaseURL(void)
 {
-	s_CachedBaseUrl.clear();
+    CMutexGuard guard(s_BaseUrlMutex);
+    s_CachedBaseUrl.clear();
 }
 
 
