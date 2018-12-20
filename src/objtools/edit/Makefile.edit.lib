@@ -9,7 +9,7 @@ SRC = gene_utils seq_entry_edit promote autodef_with_tax \
       link_cds_mrna cds_fix loc_edit mail_report \
       feattable_edit gaps_edit source_edit rna_edit \
       remote_updater parse_text_options publication_edit gap_trim \
-      external_annots feature_propagate apply_mods text_object_description
+      external_annots feature_propagate text_object_description
 
 LIB    = xobjedit
 
