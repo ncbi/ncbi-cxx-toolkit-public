@@ -2211,15 +2211,24 @@ static void MergeRanges(list<TAccessionRange>& ranges)
         CTextAccessionContainer start = ranges.front().first,
                                 end = ranges.front().second;
 
+        bool add_last_range = false;
         for (auto range : ranges) {
             if (range.first.GetPrefix() != start.GetPrefix() || range.first.GetNumber() > end.GetNumber() + 1) {
                 res.push_back({start, end});
                 start = range.first;
+                add_last_range = false;
             }
-            end = range.second;
-       }
+            else {
+                add_last_range = true;
+            }
 
-        res.push_back({ start, end });
+            end = range.second;
+        }
+
+        if (add_last_range) {
+            res.push_back({ start, end });
+        }
+
         ranges.swap(res);
     }
 }
