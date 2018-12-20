@@ -1074,40 +1074,46 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_GetLabel)
         // - fasta (CSeq_id::AsFastaString())
         // - seq-id string, +version
         // - seq-id string, -version
+        // - both, upper case + version
         "Seq-id ::= gi 1234",
         "gi", "1234", "gi|1234",
-        "gi|1234", "1234", "1234",
+        "gi|1234", "1234", "1234", "GI|1234",
 
         "Seq-id ::= other { accession \"NM_123456\", version 1}",
         "ref", "NM_123456.1", "ref|NM_123456.1",
-        "ref|NM_123456.1|", "NM_123456.1", "NM_123456",
+        "ref|NM_123456.1|", "NM_123456.1", "NM_123456", "REF|NM_123456.1",
 
         "Seq-id ::= general { db \"ti\", tag id 1}",
         "gnl", "ti:1", "gnl|ti:1",
-        "gnl|ti|1", "ti:1", "ti:1",
+        "gnl|ti|1", "ti:1", "ti:1", "GNL|TI|1",
 
         "Seq-id ::= general { db \"NCBI_GENOMES\", tag id 1}",
         "gnl", "NCBI_GENOMES:1", "gnl|NCBI_GENOMES:1",
-        "gnl|NCBI_GENOMES|1", "NCBI_GENOMES:1", "NCBI_GENOMES:1",
+        "gnl|NCBI_GENOMES|1", "NCBI_GENOMES:1", "NCBI_GENOMES:1", "GNL|NCBI_GENOMES|1",
 
         "Seq-id ::= pir { name \"S34010\" }",
         "pir", "S34010", "pir|S34010",
-        "pir||S34010", "S34010", "S34010",
+        "pir||S34010", "S34010", "S34010", "PIR|S34010",
 
         "Seq-id ::= patent { seqid 257, cit { country \"JP\", id number \"2003530853\" } }",
         "pat", "JP2003530853_257", "pat|JP2003530853_257",
-        "pat|JP|2003530853|257", "JP2003530853_257", "JP2003530853_257",
+        "pat|JP|2003530853|257", "JP2003530853_257", "JP2003530853_257", "PAT|JP|2003530853|257",
 
         "Seq-id ::= pdb { mol \"1GAV\", chain 120 }",
         "pdb", "1GAV_XX", "pdb|1GAV_XX",
-        "pdb|1GAV|XX", "1GAV_XX", "1GAV_XX",
+        "pdb|1GAV|XX", "1GAV_XX", "1GAV_XX", "PDB|1GAVX+",
 
-        NULL, NULL, NULL, NULL, NULL, NULL
+        "Seq-id ::= pdb { mol \"1GAV\", chain-id \"xY\" }",
+        "pdb", "1GAV_xY", "pdb|1GAV_xY",
+        "pdb|1GAV|xY", "1GAV_xY", "1GAV_xY", "PDB|1GAVX+Y",
+        
+
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL
     };
 
 
     const char** p = sc_SeqIdLabels;
-    for ( ;  p  &&  *p;  p += 7) {
+    for ( ;  p  &&  *p;  p += 8) {
         const char* src_id    = *(p + 0);
         const char* type      = *(p + 1);
         const char* content   = *(p + 2);
@@ -1115,6 +1121,7 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_GetLabel)
         const char* fasta_str = *(p + 4);
         const char* seqid_str1 = *(p + 5);
         const char* seqid_str2 = *(p + 6);
+        const char* upper_case = *(p + 7);
 
         LOG_POST(Info << "checking ID: " << src_id);
         CSeq_id id;
@@ -1148,6 +1155,12 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_GetLabel)
         LOG_POST(Info << "  id.GetSeqIdString(false): "
                  << id.GetSeqIdString(false));
         BOOST_CHECK_EQUAL(id.GetSeqIdString(false), seqid_str2);
+
+        s.erase();
+        id.GetLabel(&s, CSeq_id::eDefault,
+                    CSeq_id::fLabel_Default | CSeq_id::fLabel_UpperCase);
+        LOG_POST(Info << "  upper case label: " << s);
+        BOOST_CHECK_EQUAL(s, upper_case);
     }
 }
 
@@ -2145,10 +2158,10 @@ static const TFastaOSLTMap kTestFastaOSLTMap = {
     { "pat|US|re33188|1", { "", "US|RE33188|1" } },
     { "pgp|ep|0238993|7", { "", "EP|0238993|7" } },
     { "ref|NM_000170.1|", { "NM_000170" } },
-    { "gnl|EcoSeq|EcoAce", { "ECOSEQ|ECOACE" } },
-    { "gnl|Celera|cdm:10213987", { "CELERA|CDM:10213987" } },
-    { "gnl|WGS:AAAB|CRA_x9P1GAV4nra", { "WGS:AAAB|CRA_X9P1GAV4NRA" } },
-    { "gnl|WGS:ABCD|cont1", { "WGS:ABCD|CONT1" } },
+    { "gnl|EcoSeq|EcoAce", { "", "ECOSEQ|ECOACE" } },
+    { "gnl|Celera|cdm:10213987", { "", "CELERA|CDM:10213987" } },
+    { "gnl|WGS:AAAB|CRA_x9P1GAV4nra", { "", "WGS:AAAB|CRA_X9P1GAV4NRA" } },
+    { "gnl|WGS:ABCD|cont1", { "", "WGS:ABCD|CONT1" } },
     { "gi|1234", { "", "1234" } },
     { "dbj|N00068|", { "N00068" } },
     { "prf||0806162C", { "0806162C" } },
@@ -2161,7 +2174,7 @@ static const TFastaOSLTMap kTestFastaOSLTMap = {
     { "tpd|FAA00017|", { "FAA00017" } },
     { "gpp|GPC_123456789|", { "GPC_123456789" } },
     { "nat|AT_123456789.1|", { "AT_123456789" } },
-    { "gnl|REF_WGS:ACJF|NECHADRAFT_MRNA79537", { "REF_WGS:ACJF|NECHADRAFT_MRNA79537" } }
+    { "gnl|REF_WGS:ACJF|NECHADRAFT_MRNA79537", { "", "REF_WGS:ACJF|NECHADRAFT_MRNA79537" } }
 };
 
 BOOST_AUTO_TEST_CASE(s_TestOSLT)

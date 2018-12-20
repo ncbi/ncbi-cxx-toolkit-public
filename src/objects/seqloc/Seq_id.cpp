@@ -1659,7 +1659,18 @@ void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
         *label += "|";
         if (flags & fLabel_UpperCase) {
             NStr::ToUpper(*label);
-            *label += ComposeOSLT(); // Only primary OSLT allowed here!
+            // ID-5290 : This function may be called for primary or secondary 
+            // Seq-ids (e.g. gis), so need to check both primary and secondary id
+            // values returned from the ComposeOSLT function. In the latter case,
+            // always look at the first secondary ID in the list (there's almost
+            // always just one anyway).
+            string primary_id;
+            list<string> secondary_id_list;
+            primary_id = ComposeOSLT(&secondary_id_list);
+            if (!primary_id.empty())
+                *label += primary_id;
+            else if (secondary_id_list.size() > 0)
+                *label += *secondary_id_list.begin();
             if (flags & fLabel_Version) {
                 const CTextseq_id* tsid = GetTextseq_Id();
                 if (tsid && tsid->IsSetVersion())
@@ -2931,24 +2942,31 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list) const
             buf[pos] = '\0';
             primary_id += string(buf);
         } else if (pdb.IsSetChain() && pdb.GetChain() != ' ') {
-            primary_id += string(1, pdb.GetChain());
+            // Old style single-character chain. For lower case, append a '+' sign
+            char chain = pdb.GetChain();
+            primary_id += string(1, chain);
+            if (islower(chain))
+                primary_id += "+";
         }
         break;
     }
     case e_General:
     {
-        const CObject_id& dbtag = GetGeneral().GetTag();
-        primary_id = GetGeneral().GetDb() + "|";
-        if (dbtag.IsId())
-            primary_id += NStr::IntToString(dbtag.GetId());
-        else
-            primary_id += dbtag.GetStr();
+        // General ids are always secondary!
+        if (secondary_id_list) {
+            const CObject_id& dbtag = GetGeneral().GetTag();
+            secondary_id = GetGeneral().GetDb() + "|";
+            if (dbtag.IsId())
+                secondary_id += NStr::IntToString(dbtag.GetId());
+            else
+                secondary_id += dbtag.GetStr();
+        }
         break;
     }
     case e_Gi:
         // GIs are always secondary
         if (secondary_id_list) {
-            secondary_id_list->emplace_back(NStr::NumericToString(GetGi()));
+            secondary_id = NStr::NumericToString(GetGi());
         }
         break;
     default:
