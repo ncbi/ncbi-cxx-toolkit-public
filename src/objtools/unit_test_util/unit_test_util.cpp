@@ -1121,7 +1121,7 @@ CRef<objects::CSeq_entry> MakeProteinForGoodNucProtSet (string id)
 }
 
 
-CRef<objects::CSeq_feat> MakeCDSForGoodNucProtSet (string nuc_id, string prot_id)
+CRef<objects::CSeq_feat> MakeCDSForGoodNucProtSet (const string& nuc_id, const string& prot_id)
 {
     CRef<objects::CSeq_feat> cds (new objects::CSeq_feat());
     cds->SetData().SetCdregion();
