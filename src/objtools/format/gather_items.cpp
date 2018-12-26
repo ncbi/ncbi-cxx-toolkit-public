@@ -2361,7 +2361,12 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_intron);
         }
         if ( cfg.HideMiscFeatures() ) {
+            sel.ExcludeFeatType(CSeqFeatData::e_Site);
+            sel.ExcludeFeatType(CSeqFeatData::e_Bond);
+            sel.ExcludeFeatType(CSeqFeatData::e_Region);
+            sel.ExcludeFeatType(CSeqFeatData::e_Comment);
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_misc_feature);
+            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_preprotein);
         }
         if ( cfg.HideGapFeatures() ) {
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gap);

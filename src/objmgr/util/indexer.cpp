@@ -1862,7 +1862,12 @@ void CBioseqIndex::x_InitFeats (void)
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_intron);
         }
         if ((m_Flags & CSeqEntryIndex::fHideMiscFeats) != 0) {
+            sel.ExcludeFeatType(CSeqFeatData::e_Site);
+            sel.ExcludeFeatType(CSeqFeatData::e_Bond);
+            sel.ExcludeFeatType(CSeqFeatData::e_Region);
+            sel.ExcludeFeatType(CSeqFeatData::e_Comment);
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_misc_feature);
+            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_preprotein);
         }
 
         // additional common settings

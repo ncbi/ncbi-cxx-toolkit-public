@@ -526,8 +526,15 @@ static bool s_SkipFeature(const CMappedFeat& feat,
         return true;
     }
 
-    if ( cfg.HideMiscFeatures()  &&  subtype == CSeqFeatData::eSubtype_misc_feature ) {
-        return true;
+    if ( cfg.HideMiscFeatures() ) {
+        if ( type == CSeqFeatData::e_Site ||
+            type == CSeqFeatData::e_Bond ||
+            type == CSeqFeatData::e_Region ||
+            type == CSeqFeatData::e_Comment ||
+            subtype == CSeqFeatData::eSubtype_misc_feature ||
+            subtype == CSeqFeatData::eSubtype_preprotein ) {
+            return true;
+        }
     }
 
     if ( cfg.HideExonFeatures()  &&  subtype == CSeqFeatData::eSubtype_exon ) {
