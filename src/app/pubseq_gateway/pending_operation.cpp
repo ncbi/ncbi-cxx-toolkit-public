@@ -641,6 +641,32 @@ void CPendingOperation::x_PrintRequestStop(int  status)
 ESeqIdParsingResult CPendingOperation::x_ParseInputSeqId(CSeq_id &  seq_id,
                                                          string &  err_msg)
 {
+    try {
+        seq_id.Set(m_UrlSeqId);
+
+        if (m_UrlSeqIdType < 0)
+            return eParsedOK;
+
+        // Check the parsed type with the given
+        int16_t     eff_seq_id_type;
+        if (x_GetEffectiveSeqIdType(seq_id, eff_seq_id_type))
+            return eParsedOK;
+
+        // Type mismatch: form the error message in case of resolution problems
+        CSeq_id_Base::E_Choice  seq_id_type = seq_id.Which();
+        err_msg = "Seq_id " + m_UrlSeqId +
+                  " possible type mismatch: the URL provides " +
+                  NStr::NumericToString(m_UrlSeqIdType) +
+                  " while the CSeq_Id detects it as " +
+                  NStr::NumericToString(static_cast<int>(seq_id_type));
+
+        // Here: fall through; maybe another variation of Set() will work
+
+    } catch (...) {
+        // Try another Set() variation below
+    }
+
+    // Second variation of Set()
     if (m_UrlSeqIdType >= 0) {
         try {
             seq_id.Set(CSeq_id::eFasta_AsTypeAndContent,
@@ -650,33 +676,7 @@ ESeqIdParsingResult CPendingOperation::x_ParseInputSeqId(CSeq_id &  seq_id,
         } catch (...) {
         }
     }
-
-    // Two ways: seq_id_type is not provided or failed to parse
-    try {
-        // Construct CSeq_id using a capitalized version of the seq_id
-        CTempString     stripped_seq_id(m_UrlSeqId);
-        while (stripped_seq_id[stripped_seq_id.size() - 1] == '|')
-            stripped_seq_id.erase(stripped_seq_id.size() - 1);
-        seq_id.Set(stripped_seq_id);
-    } catch (...) {
-        return eParseFailed;
-    }
-
-    // Check that the seq_id_type matches if present in URL
-    if (m_UrlSeqIdType >= 0) {
-        int16_t     eff_seq_id_type;
-        if (!x_GetEffectiveSeqIdType(seq_id, eff_seq_id_type)) {
-            CSeq_id_Base::E_Choice  seq_id_type = seq_id.Which();
-            err_msg = "Seq_id " + m_UrlSeqId +
-                      " type mismatch: the URL provides " +
-                      NStr::NumericToString(m_UrlSeqIdType) +
-                      " while the CSeq_Id detects it as " +
-                      NStr::NumericToString(static_cast<int>(seq_id_type));
-            return eParseSeqIdTypeMismatch;
-        }
-    }
-
-    return eParsedOK;
+    return eParseFailed;
 }
 
 

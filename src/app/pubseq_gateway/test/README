@@ -12,3 +12,6 @@ It was forbidden to save the baseline files as is in SVN however it was allowed
 to save a tar archive. So the wrapper script basically unpacks the baseline
 files if needed and runs 'udc'.
 
+Note: after changing test cases prepare a new archive with the baseline (someone
+      insisted to have an archive in SVN)
+tar -czf baseline.tar.gz baseline/

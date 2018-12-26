@@ -188,3 +188,4 @@ get_blob_non_splitted_tse_slim          | -url "ID/getblob?blob_id=4.15971&tse=s
 get_blob_non_splitted_tse_smart         | -url "ID/getblob?blob_id=4.15971&tse=smart"                                                               | Get non splitted blob with tse=smart                      | getblob
 get_blob_non_splitted_tse_whole         | -url "ID/getblob?blob_id=4.15971&tse=whole"                                                               | Get non splitted blob with tse=whole                      | getblob
 get_blob_non_splitted_tse_orig          | -url "ID/getblob?blob_id=4.15971&tse=orig"                                                                | Get non splitted blob with tse=orig                       | getblob
+d_request_001                           | -url "ID/resolve?fmt=json&all_info=yes&seq_id=gnl%7CdbSTS%7C843431"                                       | Resolve gnl_dbSTS                                         | resolve

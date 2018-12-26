@@ -113,8 +113,7 @@ enum EResolutionResult {
 
 enum ESeqIdParsingResult {
     eParsedOK,
-    eParseFailed,
-    eParseSeqIdTypeMismatch
+    eParseFailed
 };
 
 
