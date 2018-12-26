@@ -2355,6 +2355,7 @@ void s_SetSelection(SAnnotSelector& sel, CBioseqContext& ctx)
         }
         if ( cfg.HideExonFeatures() ) {
             sel.ExcludeNamedAnnots("Exon");
+            sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_exon);
         }
         if ( cfg.HideIntronFeatures() ) {
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_intron);
