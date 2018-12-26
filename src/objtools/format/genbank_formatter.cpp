@@ -2143,8 +2143,8 @@ void CGenbankFormatter::FormatWGS
                     ( CWGSItem::eWGS_ScaffoldList == wgs.GetType() &&
                       first_id.length() > 7 && first_id[prefix_len+2] == 'S' );
                 url_arg = first_id.substr(0,prefix_len+2);
-                link = "https://www.ncbi.nlm.nih.gov/Traces/wgs?val=" + 
-                    url_arg + ( bIsWGSScafldWithS ? "#scaffolds" : "#contigs" );
+                link = "https://www.ncbi.nlm.nih.gov/Traces/wgs/" + 
+                    url_arg + "?display=" + ( bIsWGSScafldWithS ? "scaffolds" : "contigs" );
             } else {
                 link = "https://www.ncbi.nlm.nih.gov/nuccore?term=" + first_id + ":" + last_id + "[PACC]";
             }
