@@ -525,7 +525,11 @@ static bool s_SkipFeature(const CMappedFeat& feat,
     if ( cfg.HideImpFeatures()  &&  type == CSeqFeatData::e_Imp ) {
         return true;
     }
-    
+
+    if ( cfg.HideMiscFeatures()  &&  subtype == CSeqFeatData::eSubtype_misc_feature ) {
+        return true;
+    }
+
     if ( cfg.HideExonFeatures()  &&  subtype == CSeqFeatData::eSubtype_exon ) {
         return true;
     }

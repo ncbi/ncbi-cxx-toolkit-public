@@ -1855,6 +1855,7 @@ void CBioseqIndex::x_InitFeats (void)
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_STS);
         }
         if ((m_Flags & CSeqEntryIndex::fHideExonFeats) != 0) {
+            sel.ExcludeNamedAnnots("Exon");
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_exon);
         }
         if ((m_Flags & CSeqEntryIndex::fHideIntronFeats) != 0) {
