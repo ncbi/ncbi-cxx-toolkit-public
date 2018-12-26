@@ -1229,7 +1229,7 @@ void CMultiReaderApp::xSetFlags(
     const string& filename )
 //  ----------------------------------------------------------------------------
 {
-    CNcbiIfstream istr(filename);
+    CNcbiIfstream istr(filename.c_str());
     xSetFlags(args, istr);
     istr.close();
 }
