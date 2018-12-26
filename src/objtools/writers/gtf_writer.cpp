@@ -653,7 +653,10 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
     auto featSubtype = mf.GetFeatSubtype();
     switch(featSubtype) {
         default:
-            return true;
+            if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
+                mrnaFeat = mf;
+                break;
+            }   
         case CSeq_feat::TData::eSubtype_mRNA:
         case CSeq_feat::TData::eSubtype_C_region:
         case CSeq_feat::TData::eSubtype_D_segment:
