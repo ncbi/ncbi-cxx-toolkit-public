@@ -81,6 +81,7 @@
 #include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/fasta_reader_utils.hpp>
+#include <objtools/readers/mod_reader.hpp>
 
 #include <ctype.h>
 
@@ -2011,7 +2012,6 @@ CSourceModParser* CFastaReader::xCreateSourceModeParser(
     return new CSourceModParser(CSourceModParser::eHandleBadMod_Ignore);
 }
 
-
 void CFastaReader::x_ApplyMods(     
      const string& title, 
      TSeqPos line_number, 
@@ -2059,6 +2059,66 @@ void CFastaReader::x_ApplyMods(
         bioseq.SetDescr().Set().push_back(move(pDesc));
     }
 }
+
+/*
+static void s_AppendMods(
+        const CModHandler::TModList& mods, 
+        string& title
+        ) 
+{
+    for (const auto& mod : mods) {
+
+        title.append(" [" 
+                + mod.GetName()
+                + "=" 
+                + mod.GetValue()
+                + "]");
+    }
+}
+
+
+void CFastaReader::x_ApplyMods(     
+     const string& title, 
+     TSeqPos line_number, 
+     CBioseq& bioseq,
+     ILineErrorListener * pMessageListener )
+{
+    string processed_title = title;
+    if (TestFlag(fAddMods)) {
+        string remainder;
+        CModHandler::TModList mods;
+        CTitleParser::Apply(processed_title, mods, remainder);
+
+        CModHandler mod_handler;
+        CModHandler::TModList rejected_mods;
+        mod_handler.AddMods(mods, CModHandler::eReplace, rejected_mods);
+        s_AppendMods(rejected_mods, remainder);
+
+        CModHandler::TModList skipped_mods;
+        CModAdder::Apply(mod_handler, bioseq, pMessageListener, skipped_mods);
+        s_AppendMods(skipped_mods, remainder);
+
+        processed_title = remainder;
+    }
+    else
+    if (!TestFlag(fIgnoreMods) &&
+        CTitleParser::HasMods(title)) {
+        FASTA_WARNING(line_number,
+        "FASTA-Reader: Ignoring FASTA modifier(s) found because "
+        "the input was not expected to have any.",
+        ILineError::eProblem_ModifierFoundButNoneExpected,
+        "defline");
+    }
+
+    NStr::TruncateSpacesInPlace(processed_title);
+    if (!processed_title.empty()) {
+        auto pDesc = Ref(new CSeqdesc());
+        pDesc->SetTitle() = processed_title;
+        bioseq.SetDescr().Set().push_back(move(pDesc));
+    }
+}
+
+*/
 
 
 void CFastaReader::x_ApplyAllMods( 
