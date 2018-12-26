@@ -1951,19 +1951,23 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
     // special case where subsection of country has been identified but is not in coordinates of country
     // VR-840
     if (province.empty() && NStr::Equal(cguess, country)) {
+        delete id;
         return kEmptyStr;
     }
 
 
     if (NStr::EqualNocase (country, "China") && NStr::EqualNocase (cguess, "Hong Kong")) {
+        delete id;
         return kEmptyStr;
     }
     if (NStr::EqualNocase (country, "USA") && NStr::EqualNocase (cguess, "Puerto Rico")) {
+        delete id;
         return kEmptyStr;
     }
     if (NStr::EqualNocase (country, "State of Palestine") &&
         (NStr::EqualNocase (cguess, "Gaza Strip") ||
          NStr::EqualNocase (cguess, "West Bank"))) {
+        delete id;
         return kEmptyStr;
     }
 

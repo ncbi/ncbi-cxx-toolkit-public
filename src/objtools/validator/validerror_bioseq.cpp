@@ -148,14 +148,13 @@ public:
     CMrnaMatchInfo(const CSeq_feat& mrna, CScope* scope);
     const CSeq_feat& GetSeqfeat(void) const;
     bool Overlaps(const CSeq_feat& cds) const;
-    void SetMatch(CCdsMatchInfo& match);
+    void SetMatch();
     bool HasMatch(void) const;
     void SetPseudo(bool val = true) { m_IsPseudo = val; }
     bool OkWithoutCds(void) const;
 
 private:
     CConstRef<CSeq_feat> m_Mrna;
-    CRef<CCdsMatchInfo> m_Match;
 
     CScope* m_Scope;
     bool m_HasMatch;
@@ -6065,8 +6064,7 @@ bool CMrnaMatchInfo::Overlaps(const CSeq_feat& cds) const
     return (TestForOverlapEx(cds.GetLocation(), m_Mrna->GetLocation(), overlap_type, m_Scope) >= 0);
 }
 
-void CMrnaMatchInfo::SetMatch(CCdsMatchInfo& match) {
-    m_Match = Ref(&match);
+void CMrnaMatchInfo::SetMatch() {
     m_HasMatch = true;
 }
 
@@ -6199,7 +6197,7 @@ bool CCdsMatchInfo::AssignXrefMatch(TmRNAList& unmatched_mrnas, const CTSE_Handl
                 TmRNAList::iterator mrna_it = unmatched_mrnas.find((*h).GetSeq_feat());
                 if (mrna_it != unmatched_mrnas.end()) {
                     m_BestMatch = mrna_it->second;
-                    m_BestMatch->SetMatch(*this);
+                    m_BestMatch->SetMatch();
                     unmatched_mrnas.erase(mrna_it);
                     rval = true;
                 }
@@ -6225,7 +6223,7 @@ bool CCdsMatchInfo::AssignOverlapMatch(TmRNAList& unmatched_mrnas, CScope& scope
         while (mrna_it != unmatched_mrnas.end()) {
             if (Overlaps(mrna_it->second->GetSeqfeat())) {
                 m_BestMatch = mrna_it->second;
-                m_BestMatch->SetMatch(*this);
+                m_BestMatch->SetMatch();
                 unmatched_mrnas.erase(mrna_it);
                 return true;
             }
@@ -6239,7 +6237,7 @@ bool CCdsMatchInfo::AssignOverlapMatch(TmRNAList& unmatched_mrnas, CScope& scope
                     m_OtherMrnas.push_back(it->second);
                 } else {
                     m_BestMatch = mrna_it->second;
-                    m_BestMatch->SetMatch(*this);
+                    m_BestMatch->SetMatch();
                     unmatched_mrnas.erase(mrna_it);
                     rval = true;
                 }
@@ -6301,7 +6299,7 @@ void CCdsMatchInfo::UpdateOtherMrnas(const TmRNAList& unmatched_mrnas)
 void CCdsMatchInfo::SetMatch(CRef<CMrnaMatchInfo> match)
 {
     m_BestMatch = match;
-    m_BestMatch->SetMatch(*this);
+    m_BestMatch->SetMatch();
 }
 
 
@@ -6566,7 +6564,6 @@ void CValidError_bioseq::x_ValidateCDSmRNAmatch(const CBioseq_Handle& seq,
             }
         }
     }
-
     // Now loop over cds to find number of matched cds and number of matched mrna
     int num_matched_cds = 0;
     int num_unmatched_cds = 0;

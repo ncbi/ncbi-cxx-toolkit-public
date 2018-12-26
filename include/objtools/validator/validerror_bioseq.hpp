@@ -108,7 +108,6 @@ class CValidError_descr;
 class CCdsMatchInfo;
 class CMrnaMatchInfo;
 
-#define USE_MRNA_MAP 1
 typedef map<const CSeq_feat *, CRef<CMrnaMatchInfo> > TmRNAList;
 
 class CValidError_bioseq : private CValidError_base
