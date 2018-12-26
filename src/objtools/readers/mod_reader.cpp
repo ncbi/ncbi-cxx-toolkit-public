@@ -617,7 +617,6 @@ const char* CModReaderException::GetErrCodeString(void) const
 
 
 
-
 const CModHandler::TNameMap CModHandler::sm_NameMap = 
 {{"top","topology"},
  {"mol","molecule"},
@@ -705,19 +704,18 @@ CModHandler::CModHandler(IObjtoolsListener* listener)
 // or CModifier class, which also has a name attribute. 
 // Then, AddMods will take a list<CModInfo> 
 void CModHandler::AddMods(const TModList& mods,
-                          EHandleExisting handle_existing)
+                          EHandleExisting handle_existing,
+                          TModList& rejected_mods)
 {
-    unordered_set<string> current_set;
+    rejected_mods.clear();
 
-    TMods valid_mods;
-    TMods conflicting_mods;
-    TMods deprecated_mods;
+    unordered_set<string> current_set;
+    TMods accepted_mods;
 
     for (const auto& mod : mods) {
         const auto& canonical_name = x_GetCanonicalName(mod.GetName());
-
         if (x_IsDeprecated(canonical_name)) {
-            deprecated_mods[canonical_name].push_back(mod);
+            rejected_mods.push_back(mod);
             string message = mod.GetName() + " is deprecated - ignoring";
             x_PutMessage(message, eDiag_Warning);
             continue;
@@ -728,7 +726,7 @@ void CModHandler::AddMods(const TModList& mods,
 
         if (!allow_multiple_values &&
             !first_occurrence) {
-            conflicting_mods[canonical_name].push_back(mod);
+            rejected_mods.push_back(mod);
             string msg = mod.GetName() + " conflicts with other modifiers in set.";
             if (m_pMessageListener) {
                 x_PutMessage(msg, eDiag_Error);
@@ -738,40 +736,54 @@ void CModHandler::AddMods(const TModList& mods,
             }
             continue;
         }
+        accepted_mods[canonical_name].push_back(mod);
+    }
 
-        valid_mods[canonical_name].push_back(mod);
-        // The following code will become redundant after 
-        // we implement and activate x_SaveMods
+    x_SaveMods(move(accepted_mods), handle_existing, m_Mods);
+}
 
-        if (first_occurrence ||
-            allow_multiple_values) {
-            if (allow_multiple_values) {
-                if ((handle_existing == eAppendPreserve) ||
-                    (handle_existing == eAppendReplace) ) {
-                    m_Mods[canonical_name].push_back(mod);
-                }
-                else 
-                if (m_Mods.find(canonical_name) == m_Mods.end()) {
-                    m_Mods[canonical_name].push_back(mod);
-                }
-                else
-                if ((handle_existing == eReplace) &&
-                     first_occurrence) {
-                    m_Mods[canonical_name] = {mod};
-                }
-                else
-                if (!first_occurrence) {
-                    m_Mods[canonical_name].push_back(mod);
-                }
+
+void CModHandler::x_SaveMods(TMods&& mods, EHandleExisting handle_existing, TMods& dest)
+{
+    if (handle_existing == eReplace) {
+        dest = mods;
+    }
+    else
+    if (handle_existing == ePreserve) {
+        dest.insert(make_move_iterator(mods.begin()), 
+                    make_move_iterator(mods.end()));
+    }
+    else
+    if (handle_existing == eAppendReplace) {
+        for (auto& mod_entry : mods) {
+            const auto& canonical_name = mod_entry.first;
+            auto& dest_mod_list = dest[canonical_name];
+            if (x_MultipleValuesAllowed(canonical_name)){
+                dest_mod_list.splice(
+                        dest_mod_list.cend(),
+                        move(mod_entry.second));
             }
-            else { // first_occurrence
-                m_Mods[canonical_name] = {mod};
+            else {
+                dest_mod_list = move(mod_entry.second);
             }
         }
     }
-   // x_SaveMods(valid_mods, handle_existing, m_Mods)
-   // x_SaveMods(conflicting_mods, handle_existing, m_ConflictingMods);
-   // x_SaveMods(deprecated_mods, handle_existing, m_DeprecatedMods);
+    else 
+    if (handle_existing == eAppendPreserve) {
+        for (auto& mod_entry : mods) {
+            const auto& canonical_name = mod_entry.first;
+            auto& dest_mod_list = dest[canonical_name];
+            if (dest_mod_list.empty()) {
+                dest_mod_list = move(mod_entry.second);  
+            }
+            else 
+            if (x_MultipleValuesAllowed(canonical_name)){
+                dest_mod_list.splice(
+                        dest_mod_list.cend(),
+                        move(mod_entry.second));
+            }
+        }
+    }
 }
 
 
@@ -782,21 +794,9 @@ bool CModHandler::x_MultipleValuesAllowed(const string& canonical_name)
 }
 
 
-const CModHandler::TMods& CModHandler::GetProcessedMods(void) const
+const CModHandler::TMods& CModHandler::GetMods(void) const
 {
     return m_Mods;
-}
-
-
-const CModHandler::TMods& CModHandler::GetConflictingMods(void) const
-{
-    return m_ConflictingMods;
-}
-
-
-const CModHandler::TMods& CModHandler::GetDeprecatedMods(void) const
-{
-    return m_DeprecatedMods;
 }
 
 
@@ -1336,9 +1336,10 @@ CSeqdesc& CDescrCache::x_SetDescriptor(const EChoice eChoice,
 
 void CModAdder::Apply(const CModHandler& mod_handler,
                       CBioseq& bioseq,
-                      IObjtoolsListener* pMessageListener)
+                      IObjtoolsListener* pMessageListener,
+                      TSkippedMods& skipped_mods)
 {
-    Apply(mod_handler, bioseq, nullptr, pMessageListener);
+    Apply(mod_handler, bioseq, nullptr, pMessageListener, skipped_mods);
 }
 
 
@@ -1346,15 +1347,16 @@ void CModAdder::Apply(const CModHandler& mod_handler,
 void CModAdder::Apply(const CModHandler& mod_handler,
                       CBioseq& bioseq,
                       const CSeq_loc* pFeatLoc,
-                      IObjtoolsListener* pMessageListener)
+                      IObjtoolsListener* pMessageListener,
+                      TSkippedMods& skipped_mods)
 {
-    CDescrCache descr_cache(bioseq);
+    skipped_mods.clear();
 
+    CDescrCache descr_cache(bioseq);
     unique_ptr<CGeneRefCache> pGeneRefCache(new CGeneRefCache(bioseq, pFeatLoc));
     unique_ptr<CProteinRefCache> pProteinRefCache(new CProteinRefCache(bioseq, pFeatLoc));
 
-
-    for (const auto& mod_entry : mod_handler.GetProcessedMods()) {
+    for (const auto& mod_entry : mod_handler.GetMods()) {
         try {
             if (x_TryDescriptorMod(mod_entry, descr_cache)) {
                 const string& mod_name = x_GetModName(mod_entry);
@@ -1383,6 +1385,9 @@ void CModAdder::Apply(const CModHandler& mod_handler,
             NCBI_THROW(CModReaderException, eUnknownModifier, msg);
         }
         catch(const CModReaderException& e) {
+            skipped_mods.insert(skipped_mods.end(),
+                    mod_entry.second.begin(),
+                    mod_entry.second.end());
             if (pMessageListener) {
                 x_PutMessage(e.GetMsg(), eDiag_Warning, pMessageListener);
                 continue;
@@ -1433,7 +1438,6 @@ bool CModAdder::x_PutError(const CModReaderException& exception,
 {
     return true;
 }
-
 
 
 const string& CModAdder::x_GetModName(const TModEntry& mod_entry)
@@ -1654,9 +1658,9 @@ bool CModAdder::x_TryPCRPrimerMod(const TModEntry& mod_entry, CDescrCache& descr
     // Refactor to eliminate duplicated code
     if (mod_name == "fwd-primer-name") {
         vector<string> names;
-        for (const auto& value_attrib : mod_entry.second)
+        for (const auto& mod : mod_entry.second)
         {
-            x_AppendPrimerNames(value_attrib.GetValue(), names);
+            x_AppendPrimerNames(mod.GetValue(), names);
         }
 
         auto& pcr_reaction_set = descr_cache.SetPCR_primers();
@@ -1677,9 +1681,9 @@ bool CModAdder::x_TryPCRPrimerMod(const TModEntry& mod_entry, CDescrCache& descr
 
     if (mod_name == "fwd-primer-seq") {
         vector<string> seqs;
-        for (const auto& value_attrib : mod_entry.second)
+        for (const auto& mod : mod_entry.second)
         {
-            x_AppendPrimerSeqs(value_attrib.GetValue(), seqs);
+            x_AppendPrimerSeqs(mod.GetValue(), seqs);
         }
         auto& pcr_reaction_set = descr_cache.SetPCR_primers();
         auto it = pcr_reaction_set.Set().begin();
@@ -1700,8 +1704,8 @@ bool CModAdder::x_TryPCRPrimerMod(const TModEntry& mod_entry, CDescrCache& descr
     if(mod_name == "rev-primer-name") 
     {
         vector<string> names;
-        for (const auto& value_attrib : mod_entry.second) {
-            x_AppendPrimerNames(value_attrib.GetValue(), names);
+        for (const auto& mod : mod_entry.second) {
+            x_AppendPrimerNames(mod.GetValue(), names);
         }
         if (!names.empty()) {
             auto& pcr_reaction_set = descr_cache.SetPCR_primers();
@@ -1734,8 +1738,8 @@ bool CModAdder::x_TryPCRPrimerMod(const TModEntry& mod_entry, CDescrCache& descr
     if(mod_name == "rev-primer-seq") 
     {
         vector<string> seqs;
-        for (const auto& value_attrib : mod_entry.second) {
-            x_AppendPrimerSeqs(value_attrib.GetValue(), seqs);
+        for (const auto& mod : mod_entry.second) {
+            x_AppendPrimerSeqs(mod.GetValue(), seqs);
         }
         if (!seqs.empty()) {
             auto& pcr_reaction_set = descr_cache.SetPCR_primers();
@@ -1875,25 +1879,37 @@ bool CModAdder::x_TryOrgNameMod(const TModEntry& mod_entry, CDescrCache& descr_c
 void CModAdder::x_SetSubtype(const TModEntry& mod_entry, CDescrCache& descr_cache)
 {
     const auto subtype = s_SubSourceStringToEnum.at(x_GetModName(mod_entry));
-    for (auto value_attrib : mod_entry.second) {
-        const auto& name = value_attrib.GetValue();
-        auto pSubSource = Ref(new CSubSource(subtype,name));
-        if (value_attrib.IsSetAttrib()) {
-            pSubSource->SetAttrib(value_attrib.GetAttrib());
+    const auto needs_no_text = CSubSource::NeedsNoText(subtype);
+
+    CBioSource::TSubtype subsources;
+    for (const auto& mod : mod_entry.second) {
+        const auto& value = mod.GetValue();
+        if (needs_no_text &&
+            !NStr::EqualNocase(value, "true")) {
+            x_ThrowInvalidValue(mod);
         }
-        descr_cache.SetSubtype().push_back(move(pSubSource));
+        auto pSubSource = Ref(new CSubSource(subtype,value));
+        if (mod.IsSetAttrib()) {
+            pSubSource->SetAttrib(mod.GetAttrib());
+        }
+        subsources.push_back(move(pSubSource));
     }
+
+    if (subsources.empty()) {
+        return;
+    }
+    descr_cache.SetSubtype() = move(subsources);
 }
 
 
 void CModAdder::x_SetOrgMod(const TModEntry& mod_entry, CDescrCache& descr_cache)
 {
     const auto& subtype = s_OrgModStringToEnum.at(x_GetModName(mod_entry));
-    for (auto value_attrib : mod_entry.second) {
-        const auto& subname = value_attrib.GetValue();
+    for (const auto& mod : mod_entry.second) {
+        const auto& subname = mod.GetValue();
         auto pOrgMod = Ref(new COrgMod(subtype,subname));
-        if (value_attrib.IsSetAttrib()) {
-            pOrgMod->SetAttrib(value_attrib.GetAttrib());
+        if (mod.IsSetAttrib()) {
+            pOrgMod->SetAttrib(mod.GetAttrib());
         }
         descr_cache.SetOrgMods().push_back(move(pOrgMod));
     }
@@ -1939,9 +1955,9 @@ void CModAdder::x_SetMolInfoCompleteness(const TModEntry& mod_entry, CDescrCache
 void CModAdder::x_SetTpaAssembly(const TModEntry& mod_entry, CDescrCache& descr_cache)
 { 
     list<CStringUTF8> accession_list; 
-    for (const auto& value_attrib : mod_entry.second) {
+    for (const auto& mod : mod_entry.second) {
         list<CTempString> value_sublist;
-        const auto& vals = value_attrib.GetValue();
+        const auto& vals = mod.GetValue();
         NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
         transform(value_sublist.begin(), value_sublist.end(), back_inserter(accession_list),
                 [](const CTempString& val) { return CUtf8::AsUTF8(val, eEncoding_UTF8); });
@@ -1971,9 +1987,9 @@ void CModAdder::x_SetTpaAssembly(const TModEntry& mod_entry, CDescrCache& descr_
 void CModAdder::x_SetGenomeProjects(const TModEntry& mod_entry, CDescrCache& descr_cache)
 {
     list<int> id_list;
-    for (const auto& value_attrib : mod_entry.second) {
+    for (const auto& mod : mod_entry.second) {
         list<CTempString> value_sublist;  
-        const auto& vals = value_attrib.GetValue();
+        const auto& vals = mod.GetValue();
         NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
         transform(value_sublist.begin(), value_sublist.end(), back_inserter(id_list), 
                 [](const CTempString& val) { return NStr::StringToUInt(val); });
@@ -2006,9 +2022,9 @@ void CModAdder::x_SetGenomeProjects(const TModEntry& mod_entry, CDescrCache& des
 void CModAdder::x_SetGBblockIds(const TModEntry& mod_entry, CDescrCache& descr_cache)
 {
     list<string> id_list;
-    for (const auto& value_attrib : mod_entry.second) {
+    for (const auto& mod : mod_entry.second) {
         list<CTempString> value_sublist;
-        const auto& vals = value_attrib.GetValue();
+        const auto& vals = mod.GetValue();
         NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
         for (const auto& val : value_sublist) {
             string value = NStr::TruncateSpaces_Unsafe(val);
@@ -2030,9 +2046,9 @@ void CModAdder::x_SetGBblockIds(const TModEntry& mod_entry, CDescrCache& descr_c
 void CModAdder::x_SetGBblockKeywords(const TModEntry& mod_entry, CDescrCache& descr_cache)
 {
     list<CTempString> value_list;
-    for (const auto& value_attrib : mod_entry.second) {
+    for (const auto& mod : mod_entry.second) {
         list<CTempString> value_sublist;
-        const auto& vals = value_attrib.GetValue();
+        const auto& vals = mod.GetValue();
         NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
         value_list.splice(value_list.end(), value_sublist);
     }
@@ -2046,8 +2062,8 @@ void CModAdder::x_SetGBblockKeywords(const TModEntry& mod_entry, CDescrCache& de
 void CModAdder::x_SetComment(const TModEntry& mod_entry,
         CDescrCache& descr_cache)
 {
-    for (const auto& value_attrib : mod_entry.second) {
-        descr_cache.SetComment() = value_attrib.GetValue();
+    for (const auto& mod : mod_entry.second) {
+        descr_cache.SetComment() = mod.GetValue();
     }
 
 }
@@ -2056,9 +2072,9 @@ void CModAdder::x_SetComment(const TModEntry& mod_entry,
 void CModAdder::x_SetPMID(const TModEntry& mod_entry,
         CDescrCache& descr_cache) 
 {
-    for (const auto& value_attrib : mod_entry.second)
+    for (const auto& mod : mod_entry.second)
     {
-        const auto& value = value_attrib.GetValue();
+        const auto& value = mod.GetValue();
         int pmid;
         try {
             pmid = NStr::StringToInt(value);
@@ -2096,9 +2112,9 @@ void CModAdder::x_SetDBLinkField(const string& label,
         CDescrCache& descr_cache)
 {
     list<CTempString> value_list;
-    for (const auto& value_attrib : mod_entry.second) {
+    for (const auto& mod : mod_entry.second) {
         list<CTempString> value_sublist;
-        const auto& vals = value_attrib.GetValue();
+        const auto& vals = mod.GetValue();
         NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
         value_list.splice(value_list.end(), value_sublist);
     }
@@ -2192,8 +2208,8 @@ void CModAdder::x_SetTopology(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 void CModAdder::x_SetHist(const TModEntry& mod_entry, CSeq_inst& seq_inst)
 {
     list<string> id_list;
-    for (const auto& value_attrib : mod_entry.second) {
-        const auto& vals = value_attrib.GetValue();
+    for (const auto& mod : mod_entry.second) {
+        const auto& vals = mod.GetValue();
         list<CTempString> value_sublist;
         NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
         for (const auto& val : value_sublist) {
@@ -2266,8 +2282,8 @@ bool CModAdder::x_TryGeneRefMod(const TModEntry& mod_entry, CFeatureCache& feat_
 
     if (name == "gene-synonym") {
         CGene_ref::TSyn synonyms;
-        for (const auto& value_attrib : mod_entry.second) {
-            synonyms.push_back(value_attrib.GetValue());
+        for (const auto& mod : mod_entry.second) {
+            synonyms.push_back(mod.GetValue());
         }
         feat_cache.SetSeq_feat().SetData().SetGene().SetSyn() = move(synonyms);
         return true;
@@ -2288,8 +2304,8 @@ bool CModAdder::x_TryProteinRefMod(const TModEntry& mod_entry, CFeatureCache& fe
 
     if (mod_name == "protein") {
         CProt_ref::TName names;
-        for (const auto& value_attrib : mod_entry.second) {
-            names.push_back(value_attrib.GetValue()); 
+        for (const auto& mod : mod_entry.second) {
+            names.push_back(mod.GetValue()); 
         }
         feat_cache.SetSeq_feat().SetData().SetProt().SetName() = move(names);
         return true;
@@ -2297,8 +2313,8 @@ bool CModAdder::x_TryProteinRefMod(const TModEntry& mod_entry, CFeatureCache& fe
 
     if (mod_name == "ec-number") {
         CProt_ref::TEc ec_numbers;
-        for (const auto& value_attrib : mod_entry.second) {
-            ec_numbers.push_back(value_attrib.GetValue());
+        for (const auto& mod : mod_entry.second) {
+            ec_numbers.push_back(mod.GetValue());
         }
         feat_cache.SetSeq_feat().SetData().SetProt().SetEc() = move(ec_numbers);
         return true;
@@ -2306,8 +2322,8 @@ bool CModAdder::x_TryProteinRefMod(const TModEntry& mod_entry, CFeatureCache& fe
 
     if (mod_name == "activity") {
         CProt_ref::TActivity activity;
-        for (const auto& value_attrib : mod_entry.second) {
-            activity.push_back(value_attrib.GetValue());
+        for (const auto& mod : mod_entry.second) {
+            activity.push_back(mod.GetValue());
         }
         feat_cache.SetSeq_feat().SetData().SetProt().SetActivity() = move(activity);
         return true;
@@ -2316,8 +2332,9 @@ bool CModAdder::x_TryProteinRefMod(const TModEntry& mod_entry, CFeatureCache& fe
 }
 
 
-void CTitleParser::Apply(const CTempString& title, TMods& mods, string& remainder)
+void CTitleParser::Apply(const CTempString& title, TModList& mods, string& remainder)
 {
+    mods.clear();
     remainder.clear();
     size_t start_pos = 0;
     while(start_pos < title.size()) {
@@ -2328,8 +2345,9 @@ void CTitleParser::Apply(const CTempString& title, TMods& mods, string& remainde
                 remainder.append(NStr::TruncateSpaces_Unsafe(title.substr(start_pos, lb_pos-start_pos)));
             }
             if (eq_pos < end_pos) {
-                CTempString key = NStr::TruncateSpaces_Unsafe(title.substr(lb_pos+1, eq_pos-(lb_pos+1)));
+                CTempString name = NStr::TruncateSpaces_Unsafe(title.substr(lb_pos+1, eq_pos-(lb_pos+1)));
                 CTempString value = NStr::TruncateSpaces_Unsafe(title.substr(eq_pos+1, end_pos-(eq_pos+1)));
+                mods.emplace_back(name, value);
             }
             start_pos = end_pos+1;
         }
@@ -2337,6 +2355,23 @@ void CTitleParser::Apply(const CTempString& title, TMods& mods, string& remainde
             return;
         }
     }
+}
+
+
+bool CTitleParser::HasMods(const CTempString& title) 
+{
+    size_t start_pos = 0;
+    while (start_pos < title.size()) {
+        size_t lb_pos, end_pos, eq_pos;
+        lb_pos = start_pos;
+        if (x_FindBrackets(title, lb_pos, end_pos, eq_pos)) {
+            if (eq_pos < end_pos) {
+                return true;
+            }
+            start_pos = end_pos+1;
+        }
+    }
+    return false;
 }
 
 
@@ -2384,6 +2419,8 @@ bool CTitleParser::x_FindBrackets(const CTempString& line, size_t& start, size_t
     }
     return false;
 };
+
+
 
 
 END_SCOPE(objects)

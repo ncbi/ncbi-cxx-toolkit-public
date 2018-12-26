@@ -37,3 +37,6 @@ Problem:        strand modifier has invalid value: "invalid_strand_qual".
                 Warning:
 Problem:        tech modifier has invalid value: "invalid_tech_qual".
 
+                Warning:
+Problem:        transgenic modifier has invalid value: "true_is_the_only_valid_value".
+

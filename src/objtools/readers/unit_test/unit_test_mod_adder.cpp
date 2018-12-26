@@ -298,19 +298,20 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 
     unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
     CModHandler mod_handler(pMessageListener.get());
+    
+    CModAdder::TSkippedMods skipped_mods;
+    CModHandler::TModList mods;
+    CModHandler::TModList rejected_mods;
 
-    list<CModData> mod_list;
     try {
-        multimap<string, string> mods;
         for (string line; getline(ifstr, line);) {
             SModInfo mod_info;
             sGetModInfo(line, mod_info);
-           // CModData mod_data(mod_info.name, mod_info.value);
-            mod_list.emplace_back(mod_info.name, mod_info.value);
+            mods.emplace_back(mod_info.name, mod_info.value);
         }
-        mod_handler.AddMods(mod_list, CModHandler::ePreserve);
+        mod_handler.AddMods(mods, CModHandler::ePreserve, rejected_mods);
 
-        CModAdder::Apply(mod_handler, bioseq, pMessageListener.get());
+        CModAdder::Apply(mod_handler, bioseq, pMessageListener.get(), skipped_mods);
     }
     catch (...) {
         ifstr.close();
@@ -374,25 +375,27 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
                    const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
 
     unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
-    list<CModData> mod_list;
+    CModHandler::TModList mods;
+    CModHandler::TModList rejected_mods;
 
+    CModAdder::TSkippedMods skipped_mods;
     CModHandler mod_handler(pMessageListener.get());
     try {
-        multimap<string, string> mods;
         for (string line; getline(ifstr, line);) {
             SModInfo mod_info;
             sGetModInfo(line, mod_info);
-         //   CModData mod_data(mod_info.name, mod_info.value);
-            mod_list.emplace_back(mod_info.name, mod_info.value);
+            mods.emplace_back(mod_info.name, mod_info.value);
         }
-        mod_handler.AddMods(mod_list, CModHandler::eAppendReplace);
-        CModAdder::Apply(mod_handler, bioseq, pMessageListener.get());
+        mod_handler.AddMods(mods, CModHandler::eAppendReplace, rejected_mods);
+        CModAdder::Apply(mod_handler, bioseq, pMessageListener.get(), skipped_mods);
     }
     catch (...) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
         ifstr.close();
         return;
     }
+
+    cout << "# skipped mods : " << skipped_mods.size() << endl;
 
     ofstr << MSerial_AsnText << pSeqEntry;
     if (pMessageListener->Count() > 0) {

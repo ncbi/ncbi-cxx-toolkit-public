@@ -11,3 +11,4 @@ origin       invalid_origin
 invalid_mod_name invalid_mod_value
 dosage      deprecated_mod   
 old-name    deprecated_mod
+transgenic  true_is_the_only_valid_value

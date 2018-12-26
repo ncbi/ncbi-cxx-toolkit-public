@@ -97,13 +97,11 @@ public:
 
     CModHandler(IObjtoolsListener* listener=nullptr);
 
-    void AddMods(const TModList& mods, EHandleExisting handle_existing);
+    void AddMods(const TModList& mods, 
+                 EHandleExisting handle_existing, 
+                 TModList& rejected_mods);
 
-    const TMods& GetProcessedMods(void) const;
-
-    const TMods& GetConflictingMods(void) const;
-
-    const TMods& GetDeprecatedMods(void) const;
+    const TMods& GetMods(void) const;
 
     void Clear(void);
 
@@ -113,10 +111,9 @@ private:
     static bool x_MultipleValuesAllowed(const string& canonical_name);
     void x_PutMessage(const string& message, EDiagSev severity);
     static bool x_IsDeprecated(const string& canonical_name);
+    void x_SaveMods(TMods&& mods, EHandleExisting handle_existing, TMods& dest);
 
     TMods m_Mods;
-    TMods m_ConflictingMods;
-    TMods m_DeprecatedMods;
 
     using TNameMap = unordered_map<string, string>;
     using TNameSet = unordered_set<string>;
@@ -208,14 +205,17 @@ class NCBI_XOBJREAD_EXPORT CModAdder
 public:
     using TMods = CModHandler::TMods;
     using TModEntry = TMods::value_type;
+    using TSkippedMods = list<CModData>;
 
     static void Apply(const CModHandler& mod_handler, CBioseq& bioseq, 
-            IObjtoolsListener* pMessageListener);
+            IObjtoolsListener* pMessageListener,
+            TSkippedMods& skipped_mods);
 
     static void Apply(const CModHandler& mod_handler, 
             CBioseq& bioseq,
             const CSeq_loc* pFeatLoc,
-            IObjtoolsListener* pMessageListener);
+            IObjtoolsListener* pMessageListener,
+            TSkippedMods& skipped_mods);
 
 private:
 
@@ -275,8 +275,9 @@ private:
 class NCBI_XOBJREAD_EXPORT CTitleParser 
 {
 public:
-    using TMods = multimap<string, string>;
-    static void Apply(const CTempString& title, TMods& mods, string& remainder);
+    using TModList = CModHandler::TModList;
+    static void Apply(const CTempString& title, TModList& mods, string& remainder);
+    static bool HasMods(const CTempString& title);
 private:
     static bool x_FindBrackets(const CTempString& line, size_t& start, size_t& stop, size_t& eq_pos);
 };
