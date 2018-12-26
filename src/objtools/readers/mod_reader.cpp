@@ -1334,6 +1334,7 @@ CSeqdesc& CDescrCache::x_SetDescriptor(const EChoice eChoice,
     return *pDesc;
 }
 
+
 void CModAdder::Apply(const CModHandler& mod_handler,
                       CBioseq& bioseq,
                       IObjtoolsListener* pMessageListener,
@@ -2369,6 +2370,9 @@ bool CTitleParser::HasMods(const CTempString& title)
                 return true;
             }
             start_pos = end_pos+1;
+        }
+        else {
+            return false;
         }
     }
     return false;
