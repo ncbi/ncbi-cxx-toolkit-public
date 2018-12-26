@@ -1132,7 +1132,7 @@ bool SetParams(const CArgs& args)
             }
             else
             {
-                ERR_POST_EX(0, 0, "Incorrect biomol type for TSA project provided via \"-T\" command line switch. Valid ones are (case insensitive): \"mRNA\", \"rRNA\" and \"ncRNA\".");
+                ERR_POST_EX(0, 0, "Incorrect biomol type for TSA project provided via \"-T\" command line switch. Valid ones are (case sensitive): \"mRNA\", \"rRNA\" and \"ncRNA\".");
                 return false;
             }
         }

@@ -229,7 +229,7 @@ static bool DescrProcUnexpected(const CSeqdesc& descr, bool first)
         { CSeqdesc::e_Pdb, "pdb" },
         { CSeqdesc::e_Het, "het" },
         { CSeqdesc::e_Molinfo, "molinfo" },
-        { CSeqdesc::e_Modelev, "moledev" }
+        { CSeqdesc::e_Modelev, "modelev" }
     };
 
     if (first) {
