@@ -667,6 +667,8 @@ bool CGtfWriter::xAssignFeatureAttributeTranscriptId(
         case CSeq_feat::TData::eSubtype_cdregion:
             mrnaFeat = feature::GetBestMrnaForCds(mf, &fc.FeatTree());
             break;
+        case CSeq_feat::TData::eSubtype_gene:
+            return true;
     }
     if (!mrnaFeat) {
         record.SetTranscriptId(xGenericTranscriptId(mf));
