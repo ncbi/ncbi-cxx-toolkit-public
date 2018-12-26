@@ -2034,7 +2034,7 @@ void CFastaReader::x_ApplyMods(
             pSmp->GetMods(CSourceModParser::fUnusedMods);
         copy( unused_mods.begin(), unused_mods.end(),
             inserter(m_UnusedMods, m_UnusedMods.begin() ) );
-    } else {
+    } else if (!TestFlag(fIgnoreMods)) {
         // user did not request fAddMods, so we warn if we found
         // mods anyway
         pSmp->ParseTitle(

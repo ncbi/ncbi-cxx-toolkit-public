@@ -109,7 +109,8 @@ public:
         fUseIupacaa           = 1<<24, ///< If Prot, use iupacaa instead of the default ncbieaa.
         fHyphensIgnoreAndWarn = 1<<25, ///< When a hyphen is encountered in seq data, ignore it but warn.
         fDisableNoResidues    = 1<<26, ///< If no residues found do not raise an error
-        fDisableParseRange    = 1<<27  ///< No ranges in seq-ids.  Ranges part of seq-id instead.
+        fDisableParseRange    = 1<<27, ///< No ranges in seq-ids.  Ranges part of seq-id instead.
+        fIgnoreMods           = 1<<28  ///< Ignore mods entirely. Incompatible with fAddMods.
     };
     using TFlags = long; ///< binary OR of EFlags
 
