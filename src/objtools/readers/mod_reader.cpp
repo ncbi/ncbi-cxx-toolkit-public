@@ -760,7 +760,7 @@ void CModHandler::x_SaveMods(TMods&& mods, EHandleExisting handle_existing, TMod
             auto& dest_mod_list = dest[canonical_name];
             if (x_MultipleValuesAllowed(canonical_name)){
                 dest_mod_list.splice(
-                        dest_mod_list.cend(),
+                        dest_mod_list.end(),
                         move(mod_entry.second));
             }
             else {
@@ -779,7 +779,7 @@ void CModHandler::x_SaveMods(TMods&& mods, EHandleExisting handle_existing, TMod
             else 
             if (x_MultipleValuesAllowed(canonical_name)){
                 dest_mod_list.splice(
-                        dest_mod_list.cend(),
+                        dest_mod_list.end(),
                         move(mod_entry.second));
             }
         }
