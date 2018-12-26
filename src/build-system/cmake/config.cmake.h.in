@@ -614,11 +614,23 @@
 /* Define to 1 if you have the `strcasecmp' function. */
 #cmakedefine HAVE_STRCASECMP 1
 
+/* Define to 1 if you have the `strncasecmp' function. */
+#cmakedefine HAVE_STRNCASECMP 1
+
 /* Define to 1 if strcasecmp treats letters as lowercase. */
 #define HAVE_STRCASECMP_LC 1
 
 /* Define to 1 if you have the `strdup' function. */
 #cmakedefine HAVE_STRDUP 1
+
+/* Define to 1 if you have the `strndup' function. */
+#cmakedefine HAVE_STRNDUP 1
+
+/* Define to 1 if you have the `memcchr' function. */
+#cmakedefine HAVE_MEMCCHR 1
+
+/* Define to 1 if you have the `memrchr' function. */
+#cmakedefine HAVE_MEMRCHR 1
 
 /* Define to 1 if you have the <strings.h> header file. */
 #cmakedefine HAVE_STRINGS_H 1
