@@ -1870,6 +1870,11 @@ void CBioseqIndex::x_InitFeats (void)
             sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_preprotein);
         }
 
+        bool onlyGeneRNACDS = false;
+        if ((m_Flags & CSeqEntryIndex::fGeneRNACDSOnly) != 0) {
+            onlyGeneRNACDS = true;
+        }
+
         // additional common settings
         sel.ExcludeFeatSubtype(CSeqFeatData::eSubtype_non_std_residue)
            .ExcludeFeatSubtype(CSeqFeatData::eSubtype_rsite)
@@ -1915,6 +1920,17 @@ void CBioseqIndex::x_InitFeats (void)
             // iterate features on Bioseq
             for (CFeat_CI feat_it(m_Bsh, sel); feat_it; ++feat_it) {
                 const CMappedFeat mf = *feat_it;
+
+                if (onlyGeneRNACDS) {
+                    const CSeqFeatData& data = mf.GetData();
+                    CSeqFeatData::E_Choice type = data.Which();
+                    if (type != CSeqFeatData::e_Gene &&
+                        type != CSeqFeatData::e_Rna &&
+                        type != CSeqFeatData::e_Cdregion) {
+                        continue;
+                    }
+                }
+
                 CSeq_feat_Handle hdl = mf.GetSeq_feat_Handle();
 
                 CRef<CFeatureIndex> sfx(new CFeatureIndex(hdl, mf, *this));
@@ -2877,7 +2893,7 @@ CFeatureIndex::CFeatureIndex (CSeq_feat_Handle sfh,
       m_Mf(mf),
       m_Bsx(&bsx)
 {
-    const CSeqFeatData& data  = m_Mf.GetData();
+    const CSeqFeatData& data = m_Mf.GetData();
     m_Type = data.Which();
     m_Subtype = data.GetSubtype();
     const CSeq_feat& mpd = m_Mf.GetMappedFeature();
