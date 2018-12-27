@@ -157,7 +157,10 @@ void CBioseq_Info::x_DoUpdate(TNeedUpdateFlags flags)
             x_LoadChunks(m_Seq_dataChunks);
         }
         if ( m_SeqMap ) {
-            m_SeqMap->x_UpdateSeq_inst(m_Object->SetInst());
+            CFastMutexGuard guard(m_SeqMap_Mtx);
+            if ( m_SeqMap ) {
+                m_SeqMap->x_UpdateSeq_inst(m_Object->SetInst());
+            }
         }
     }
     if ( flags & fNeedUpdate_assembly ) {
