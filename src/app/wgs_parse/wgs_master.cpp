@@ -1037,7 +1037,7 @@ static void AddField(CUser_object& user_obj, const string& label, const string& 
     user_obj.SetData().push_back(field);
 }
 
-static void CreateUserObject(const CMasterInfo& info, CBioseq& bioseq)
+static void CreateUserObject(const CMasterInfo& info, CBioseq& bioseq, const list<TAccessionRange>& ranges)
 {
     CRef<CUser_object> user_obj(new CUser_object);
     CObject_id& obj_id = user_obj->SetType();
@@ -1079,12 +1079,18 @@ static void CreateUserObject(const CMasterInfo& info, CBioseq& bioseq)
     accession_first_label += ACCESSION_FIRST;
     accession_last_label += ACCESSION_LAST;
 
-    size_t max_accession_len = GetMaxAccessionLen(last);
-    accession_first_val = GetAccessionValue(max_accession_len, first);
-    accession_last_val = GetAccessionValue(max_accession_len, last);
+    if (ranges.empty()) {
+        size_t max_accession_len = GetMaxAccessionLen(last);
+        accession_first_val = GetParams().GetIdPrefix() + GetAccessionValue(max_accession_len, first);
+        accession_last_val = GetParams().GetIdPrefix() + GetAccessionValue(max_accession_len, last);
+    }
+    else {
+        accession_first_val = ranges.front().first.GetAccession();
+        accession_last_val = ranges.back().second.GetAccession();
+    }
 
-    AddField(*user_obj, accession_first_label, GetParams().GetIdPrefix() + accession_first_val);
-    AddField(*user_obj, accession_last_label, GetParams().GetIdPrefix() + accession_last_val);
+    AddField(*user_obj, accession_first_label, accession_first_val);
+    AddField(*user_obj, accession_last_label, accession_last_val);
 
     CRef<CSeqdesc> descr(new CSeqdesc);
     descr->SetUser().Assign(*user_obj);
@@ -1320,7 +1326,7 @@ static size_t GetNumOfPubs(const CPub_equiv& pub, CPub::E_Choice type)
     return ret;
 }
 
-static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& cit_sub, CRef<CContact_info>& contact_info, CMolInfo::TBiomol biomol)
+static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& cit_sub, CRef<CContact_info>& contact_info, CMolInfo::TBiomol biomol, const list<TAccessionRange>& ranges)
 {
     CRef<CBioseq> bioseq(new CBioseq);
     CRef<CSeq_entry> ret;
@@ -1453,7 +1459,7 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
     }
 
     if (info.m_num_of_entries) {
-        CreateUserObject(info, *bioseq);
+        CreateUserObject(info, *bioseq, ranges);
     }
 
     if (info.m_num_of_prot_seq) {
@@ -2691,7 +2697,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
         master_info.m_master_bioseq = AddScaffoldsToMaster(master_info, common_info.m_acc_ranges);
     }
     else {
-        master_info.m_master_bioseq = CreateMasterBioseq(master_info, master_cit_sub, master_contact_info, biomol);
+        master_info.m_master_bioseq = CreateMasterBioseq(master_info, master_cit_sub, master_contact_info, biomol, common_info.m_acc_ranges);
 
         if (master_info.m_master_bioseq.NotEmpty() && GetParams().IsStripAuthors() && GetParams().GetUpdateMode() != eUpdateScaffoldsNew) {
             StripAuthors(*master_info.m_master_bioseq);
