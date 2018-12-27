@@ -554,6 +554,14 @@ static bool s_SkipFeature(const CMappedFeat& feat,
         }
     }
 
+    if ( cfg.GeneRNACDSFeatures() ) {
+        if ( type != CSeqFeatData::e_Gene &&
+            type != CSeqFeatData::e_Rna &&
+            type != CSeqFeatData::e_Cdregion ) {
+            return true;
+        }
+    }
+
     // skip genes in DDBJ format
     if ( cfg.IsFormatDDBJ()  &&  type == CSeqFeatData::e_Gene ) {
         return true;

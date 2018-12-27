@@ -307,6 +307,9 @@ void CFlatFileGenerator::Generate
                 if ( m_Ctx->GetConfig().HideMiscFeatures() ) {
                     flags |= CSeqEntryIndex::fHideMiscFeats;
                 }
+                if ( m_Ctx->GetConfig().GeneRNACDSFeatures() ) {
+                    flags |= CSeqEntryIndex::fGeneRNACDSOnly;
+                }
                 CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags ));
                 m_Ctx->SetSeqEntryIndex(idx);
                 if (idx->IsIndexFailure()) {

@@ -563,7 +563,8 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
                                  "         2 - hide GI number\n"
                                  "         4 - allow long locus lines\n"
                                  "      1024 - disable annot references\n"
-                                 "      2048 - use SeqEntryIndexer",
+                                 "      2048 - use SeqEntryIndexer\n"
+                                 "     16384 - only Gene, RNA, and CDS features",
 
                                  CArgDescriptions::eInteger, "0");
 
