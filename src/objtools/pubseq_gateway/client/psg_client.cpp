@@ -848,6 +848,8 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
     assert(m_Impl->reply);
 
     for (;;) {
+        auto reply_item = &m_Impl->reply->reply_item;
+        auto reply_item_locked = reply_item->GetLock();
         auto items_locked = m_Impl->reply->items.GetLock();
         auto& items = *items_locked;
 
@@ -868,10 +870,8 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
 
         items_locked.Unlock();
 
-        auto reply_item = &m_Impl->reply->reply_item;
-
         // No more reply items
-        if (!reply_item->GetLock()->state.InProgress()) {
+        if (!reply_item_locked->state.InProgress()) {
             return shared_ptr<CPSG_ReplyItem>(new CPSG_ReplyItem(CPSG_ReplyItem::eEndOfReply));
         }
 
