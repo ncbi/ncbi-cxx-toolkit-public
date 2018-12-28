@@ -2933,6 +2933,19 @@ static void s_ReadOrgNamesFromText
     {
       s_ReportOrgCommentError (string, afrp->report_error, afrp->report_error_userdata);
     }
+    if (clp == NULL) {
+        // if the line does not come with an organism mod and a defline 
+        //  we still need to create and record dummies to remain in sync
+        //  with the sequence data:
+        // 
+        const char* dummy = "";
+        const int linelen = strlen(string);
+        afrp->organisms = s_AddLineInfo(
+            afrp->organisms, dummy, line_num, string + linelen);
+        afrp->num_organisms ++;
+        s_AddDeflineFromOrganismLine(dummy, line_num, linelen, afrp);
+        return;
+    }
     while (clp != NULL) {
 
         org_name = s_CreateOrderedOrgName (clp);
