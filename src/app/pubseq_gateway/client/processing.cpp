@@ -53,12 +53,14 @@ SJsonOut& SJsonOut::operator<<(const CJson_Document& doc)
 
     if (!m_Printed.exchange(true)) {
         os << "[\n";
+    } else if (!m_Interactive) {
+        os << ",\n";
     }
 
     if (m_Interactive) {
         os << doc << ",\n";
     } else {
-        os << ",\n" << doc;
+        os << doc;
     }
 
     unique_lock<mutex> lock(m_Mutex);
