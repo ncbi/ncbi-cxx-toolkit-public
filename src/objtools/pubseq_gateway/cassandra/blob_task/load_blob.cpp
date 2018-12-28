@@ -440,11 +440,8 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
 
 void CCassBlobTaskLoadBlob::x_RequestChunksAhead(void)
 {
-    for (
-        int32_t chunk_no = 0;
-        chunk_no < m_Blob->GetNChunks() && m_ActiveQueries < kMaxChunksAhead;
-        ++chunk_no
-    ) {
+    auto n_chunks = m_Blob->GetNChunks();
+    for (int32_t chunk_no = 0; chunk_no < n_chunks && m_ActiveQueries < kMaxChunksAhead; ++chunk_no) {
         if (!m_ProcessedChunks[chunk_no]) {
             if (!m_QueryArr[chunk_no]) {
                 if (!CheckMaxActive()) {
