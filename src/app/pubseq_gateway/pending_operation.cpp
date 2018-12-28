@@ -1161,6 +1161,8 @@ void CPendingOperation::x_SendBioseqInfo(const string &  protobuf_bioseq_info,
     }
 
     string              data_to_send;
+    const string *      data_ptr = &data_to_send;   // To avoid copying in case
+                                                    // of protobuf
 
     if (effective_output_format == eJsonFormat) {
         if (!protobuf_bioseq_info.empty())
@@ -1173,16 +1175,17 @@ void CPendingOperation::x_SendBioseqInfo(const string &  protobuf_bioseq_info,
                                      fServAllBioseqFields,
                 data_to_send);
     } else {
-        if (protobuf_bioseq_info.empty())
+        if (protobuf_bioseq_info.empty()) {
             ConvertBioseqInfoToBioseqProtobuf(bioseq_info, data_to_send);
-        else
-            data_to_send = protobuf_bioseq_info;
+        } else {
+            data_ptr = &protobuf_bioseq_info;
+        }
     }
 
     if (x_UsePsgProtocol()) {
         // Send it as the PSG protocol
         size_t              item_id = GetItemId();
-        PrepareBioseqData(item_id, data_to_send, effective_output_format);
+        PrepareBioseqData(item_id, *data_ptr, effective_output_format);
         PrepareBioseqCompletion(item_id, 2);
     } else {
         // Send it as the HTTP data
@@ -1190,8 +1193,8 @@ void CPendingOperation::x_SendBioseqInfo(const string &  protobuf_bioseq_info,
             m_Reply->SetJsonContentType();
         else
             m_Reply->SetProtobufContentType();
-        m_Reply->SetContentLength(data_to_send.length());
-        m_Reply->SendOk(data_to_send.data(), data_to_send.length(), false);
+        m_Reply->SetContentLength(data_ptr->length());
+        m_Reply->SendOk(data_ptr->data(), data_ptr->length(), false);
     }
 }
 

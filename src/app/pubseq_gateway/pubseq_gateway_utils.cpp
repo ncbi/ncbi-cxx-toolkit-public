@@ -161,8 +161,7 @@ string  GetBioseqInfoHeader(size_t  item_id, size_t  bioseq_info_size,
         reply.append(s_FmtJson);
     else
         reply.append(s_FmtProtobuf);
-    reply.append(1, '\n');
-    return reply;
+    return reply.append(1, '\n');
 }
 
 
