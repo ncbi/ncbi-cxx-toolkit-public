@@ -43,9 +43,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 CCDDClient::CCDDClient(const string& service_name)
     : Tparent(service_name.empty() ? DEFAULT_CDD_SERVICE_NAME : service_name,
-              eSerial_AsnBinary)
+              eSerial_Json)
 {
-    SetArgs("binary=1");
 }
 
 
