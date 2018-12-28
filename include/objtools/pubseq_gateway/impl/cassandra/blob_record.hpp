@@ -114,7 +114,10 @@ struct CBlobRecord {
     int32_t GetOwner() const;
     string GetUserName() const;
 
-    int32_t GetNChunks() const;
+    int32_t GetNChunks() const
+    {
+        return m_NChunks;
+    }
     const TBlobChunk& GetChunk(size_t index) const;
 
     bool NoData() const;

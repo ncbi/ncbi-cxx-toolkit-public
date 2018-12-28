@@ -374,11 +374,8 @@ bool CCassBlobTaskLoadBlob::x_AreAllChunksProcessed(void) const
 
 void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
 {
-    for (
-        int32_t chunk_no = 0;
-        chunk_no < m_Blob->GetNChunks() && m_ActiveQueries > 0;
-        ++chunk_no
-    ) {
+    auto n_chunks = m_Blob->GetNChunks();
+    for (int32_t chunk_no = 0; chunk_no < n_chunks && m_ActiveQueries > 0; ++chunk_no) {
         if (!m_ProcessedChunks[chunk_no]) {
             auto& qry = m_QueryArr[chunk_no];
             if (qry) {

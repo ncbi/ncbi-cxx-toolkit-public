@@ -364,11 +364,6 @@ const CBlobRecord::TBlobChunk& CBlobRecord::GetChunk(size_t index) const
     return m_BlobChunks[index];
 }
 
-int32_t CBlobRecord::GetNChunks() const
-{
-    return m_NChunks;
-}
-
 string CBlobRecord::ToString() const
 {
     stringstream s;
