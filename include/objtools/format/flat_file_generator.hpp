@@ -116,6 +116,9 @@ public:
     bool Failed() { return m_Failed; }
 
     //void Reset(void);
+
+    void SetConfig(const CFlatFileConfig& cfg);
+
 protected:
     CRef<CFlatFileContext>    m_Ctx;
     bool                      m_Failed;

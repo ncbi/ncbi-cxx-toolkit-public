@@ -441,6 +441,7 @@ public:
 
     const CFlatFileConfig& GetConfig(void) const { return m_Cfg; }
     CFlatFileConfig& SetConfig(void) { return m_Cfg; }
+    void SetConfig(const CFlatFileConfig& cfg) { m_Cfg = cfg; }
 
     const SAnnotSelector* GetAnnotSelector(void) const;
     SAnnotSelector& SetAnnotSelector(void);

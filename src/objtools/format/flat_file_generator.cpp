@@ -981,5 +981,10 @@ CFlatFileGenerator::CCancelableFlatItemOStreamWrapper::AddItem(
     m_pUnderlying->AddItem(item);
 }
 
+void CFlatFileGenerator::SetConfig(const CFlatFileConfig& cfg)
+{
+    m_Ctx->SetConfig(cfg);
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
