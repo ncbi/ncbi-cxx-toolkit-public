@@ -3,7 +3,7 @@
 #############################################################################
 
 NCBI_begin_lib(xxconnect)
-  NCBI_sources(${SRC_CXX} ncbi_priv)
+  NCBI_sources(${SRC_CXX})
   NCBI_headers(*.hpp)
   NCBI_requires(TLS)
   NCBI_requires(NCBI_C)
