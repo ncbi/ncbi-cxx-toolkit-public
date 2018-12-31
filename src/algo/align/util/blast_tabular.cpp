@@ -103,7 +103,11 @@ CBlastTabular::CBlastTabular(const CSeq_align& seq_align, bool save_xcript):
             }
         }
 
-        int ratio = (6*len[0])/len[1]; // ideally 6*(1/3, 1, or 3), i.e. 2, 6, or 18
+        int ratio = 0;
+        if (len[0]  &&  len[1]) {
+            // ideally 6*(1/3, 1, or 3), i.e. 2, 6, or 18
+            ratio = (6*len[0])/len[1];
+        }
 
         if (ratio < 4) {
             scale[0] = 1;

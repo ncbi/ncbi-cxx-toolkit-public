@@ -1075,7 +1075,12 @@ int CAlnVec::CalculatePercentIdentity(TSeqPos aln_pos) const
         }
         total += *i_res;
     }
-    return 100 * max / total;
+    if (total) {
+        return 100 * max / total;
+    }
+    else {
+        return 0;
+    }
 }
 
 

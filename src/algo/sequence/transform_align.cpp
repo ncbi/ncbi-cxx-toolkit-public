@@ -514,7 +514,12 @@ RecalculateExonIdty(CSpliced_exon &exon)
                 break;
             }
         }
-        idty = matches * NCBI_CONST_INT8(10000000000) / total;
+        if (total) {
+            idty = matches * NCBI_CONST_INT8(10000000000) / total;
+        }
+        else {
+            idty = 0;
+        }
     }
 
     CScore_set::Tdata& exon_scores = exon.SetScores().Set();
