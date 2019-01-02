@@ -70,8 +70,6 @@ static void sx_RunTest(const string& file_name)
     {
         auto orig_feat = fh_feat.first;
         auto new_feat = fh_feat.second;
-        const CSeq_annot_Handle& annot_handle = orig_feat.GetAnnot();
-        CSeq_entry_EditHandle eh = annot_handle.GetParentEntry().GetEditHandle();
         CSeq_feat_EditHandle feh(orig_feat);
         feh.Replace(*new_feat);
     }
