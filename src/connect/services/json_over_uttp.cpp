@@ -895,84 +895,90 @@ bool CJsonNode::AsBoolean() const
         m_Impl.GetPointerOrNull())->m_Boolean;
 }
 
-static void s_Repr_Value(CNcbiOstrstream& oss, const CJsonNode& node);
+static void s_Repr_Value(string& os, const CJsonNode& node);
 
-static void s_Repr_Object(CNcbiOstrstream& oss, const CJsonNode& node)
+static void s_Repr_Object(string& os, const CJsonNode& node)
 {
     CJsonIterator it = node.Iterate();
     if (it) {
-        oss << '"' << it.GetKey() << "\": ";
-        s_Repr_Value(oss, *it);
+        os.append(1, '"')
+          .append(it.GetKey())
+          .append("\": ");
+        s_Repr_Value(os, *it);
         while (++it) {
-            oss << ", \"" << it.GetKey() << "\": ";
-            s_Repr_Value(oss, *it);
+            os.append(", \"")
+              .append(it.GetKey())
+              .append("\": ");
+            s_Repr_Value(os, *it);
         }
     }
 }
 
-static void s_Repr_Array(CNcbiOstrstream& oss, const CJsonNode& node)
+static void s_Repr_Array(string& os, const CJsonNode& node)
 {
     CJsonIterator it = node.Iterate();
     if (it) {
-        s_Repr_Value(oss, *it);
+        s_Repr_Value(os, *it);
         while (++it) {
-            oss << ", ";
-            s_Repr_Value(oss, *it);
+            os.append(", ");
+            s_Repr_Value(os, *it);
         }
     }
 }
 
-static void s_Repr_Value(CNcbiOstrstream& oss, const CJsonNode& node)
+static void s_Repr_Value(string& os, const CJsonNode& node)
 {
     switch (node.GetNodeType()) {
     case CJsonNode::eObject:
-        oss << '{';
-        s_Repr_Object(oss, node);
-        oss << '}';
+        os.append(1, '{');
+        s_Repr_Object(os, node);
+        os.append(1, '}');
         break;
     case CJsonNode::eArray:
-        oss << '[';
-        s_Repr_Array(oss, node);
-        oss << ']';
+        os.append(1, '[');
+        s_Repr_Array(os, node);
+        os.append(1, ']');
         break;
     case CJsonNode::eString:
-        oss << '"' << NStr::PrintableString(node.AsString()) << '"';
+        os.append(1, '"')
+          .append(NStr::PrintableString(node.AsString()))
+          .append(1, '"');
         break;
     case CJsonNode::eInteger:
-        oss << node.AsInteger();
+        os.append(NStr::NumericToString(node.AsInteger()));
         break;
     case CJsonNode::eDouble:
-        oss << node.AsDouble();
+        os.append(NStr::DoubleToString(node.AsDouble()));
         break;
     case CJsonNode::eBoolean:
-        oss << (node.AsBoolean() ? "true" : "false");
+        os.append(node.AsBoolean() ? "true" : "false");
         break;
     default: /* case CJsonNode::eNull: */
-        oss << "null";
+        os.append("null");
     }
 }
 
 string CJsonNode::Repr(TReprFlags flags) const
 {
-    CNcbiOstrstream oss;
+    string          os;
 
     switch (GetNodeType()) {
     case CJsonNode::eObject:
         if (flags & fOmitOutermostBrackets)
-            s_Repr_Object(oss, *this);
+            s_Repr_Object(os, *this);
         else {
-            oss << '{';
-            s_Repr_Object(oss, *this);
-            oss << '}';
+            os.append(1, '{');
+            s_Repr_Object(os, *this);
+            os.append(1, '}');
         }
         break;
     case CJsonNode::eArray:
         if (flags & fOmitOutermostBrackets)
-            s_Repr_Array(oss, *this);
+            s_Repr_Array(os, *this);
         else {
-            oss << '[';
-            s_Repr_Array(oss, *this);
-            oss << ']';
+            os.append(1, '[');
+            s_Repr_Array(os, *this);
+            os.append(1, ']');
         }
         break;
     case CJsonNode::eString:
@@ -981,10 +987,10 @@ string CJsonNode::Repr(TReprFlags flags) const
                     m_Impl.GetPointerOrNull())->m_String);
         /* FALL THROUGH */
     default:
-        s_Repr_Value(oss, *this);
+        s_Repr_Value(os, *this);
     }
 
-    return CNcbiOstrstreamToString(oss);
+    return os;
 }
 
 #define INVALID_FORMAT_ERROR() \
