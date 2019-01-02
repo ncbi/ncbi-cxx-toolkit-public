@@ -67,7 +67,7 @@ case "$with_3psw" in
       m4_foreach(X, [sss, sssutils, sssdb, vdb, libunwind,
                      z, bz2, lzo, pcre, mbedtls,
                      gmp, gcrypt, nettle, gnutls, openssl, krb5, boost, lmdb,
-                     sybase, ftds, mysql, opengl, mesa, glut, glew,
+                     sybase, ftds, mysql, opengl, mesa, glut, glew, gl2ps,
                      wxwidgets, freetype, ftgl, fastcgi, bdb, orbacus, odbc,
                      python, perl, jni, sqlite3, mimetic, sge, icu, sp, expat,
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
@@ -341,6 +341,10 @@ AC_ARG_WITH(glew,
    [ --with-glew=DIR         use GLEW installation in DIR])
 AC_ARG_WITH(glew-mx,
    [ --with-glew-mx          insist on a multi-context-ready GLEW installation])
+AC_ARG_WITH(gl2ps,
+   [ --without-gl2ps         do not use GL2PS])
+AC_ARG_WITH(gl2ps,
+   [ --with-gl2ps=DIR        use GL2PS installation in DIR])
 AC_ARG_WITH(wxwidgets,
    [ --without-wxwidgets     do not use wxWidgets (2.6+)])
 AC_ARG_WITH(wxwidgets,
@@ -617,7 +621,7 @@ geo included-geo vdb downloaded-vdb static-vdb libunwind libdw backward-cpp \
 backward-cpp-sig \
 z bz2 lzo pcre mbedtls gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
-orbacus freetype ftgl opengl mesa glut glew glew-mx \
+orbacus freetype ftgl opengl mesa glut glew glew-mx gl2ps \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
@@ -684,6 +688,7 @@ for x_arg in "$@" ; do
       | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
       | --with-sybase-local=* | --with-ftds=*/* | --with-mysql=* \
       | --with-opengl=* | --with-mesa=* | --with-glut=* | --with-glew=* \
+      | --with-gl2ps=* \
       | --with-wxwidgets=* | --with-freetype=* | --with-ftgl=* \
       | --with-fastcgi=*/* | --with-bdb=*/* | --with-orbacus=* \
       | --with-odbc=* | --with-python=* | --with-perl=* | --with-jni=* \
@@ -6163,6 +6168,7 @@ if test "$with_opengl" = "no" -o "$ncbi_cv_lib_opengl" = "no"; then
    GLEW_LIBS=
    GLEW_STATIC_LIBS=
    NCBI_MISSING_PACKAGE(opengl)
+   NCBI_MISSING_PACKAGE(gl2ps)
 else
    NCBI_PACKAGE(OpenGL)
    AC_DEFINE(HAVE_OPENGL, 1, [Define to 1 if you have OpenGL (-lGL).])
@@ -7488,6 +7494,26 @@ NCBI_CHECK_THIRD_PARTY_LIB(Xpm,
     $X_CFLAGS)
 # The use of X_CFLAGS is probably redundant, but shouldn't hurt.
 
+if test "$with_gl2ps" != "no"; then
+   if test "${with_gl2ps-yes}" != "yes"; then
+      GL2PS_PATH=$with_gl2ps
+   fi
+   if test -d "$GL2PS_PATH"; then
+      if test -d "$GL2PS_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx"; then
+         GL2PS_PATH=$GL2PS_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx
+      elif test -d "$GL2PS_PATH/$compiler_pfx$DEBUG_SFX$bit64_sfx"; then
+         GL2PS_PATH=$GL2PS_PATH/$compiler_pfx$DEBUG_SFX$bit64_sfx
+      elif test -d "$GL2PS_PATH/$DEBUG_SFX$bit64_sfx"; then
+         GL2PS_PATH=$GL2PS_PATH/$DEBUG_SFX$bit64_sfx
+      fi
+      NCBI_FIX_DIR(GL2PS_PATH)
+   fi
+   NCBI_CHECK_THIRD_PARTY_LIB(gl2ps,
+    AC_LANG_PROGRAM([#include <gl2ps.h>],
+       [gl2psSpecial(GL2PS_SVG, "foo")]),
+    [], [$OPENGL_LIBS $PNG_LIBS $Z_LIBS $X_ALL_LIBS], [$OPENGL_INCLUDE])
+fi
+
 ## FreeType and FTGL
 if test "$with_freetype" != "no" ; then
    : ${FREETYPE_BINPATH=$FREETYPE_PATH/bin}
@@ -8790,6 +8816,8 @@ AC_SUBST(GLUT_LIBS)
 AC_SUBST(GLEW_INCLUDE)
 AC_SUBST(GLEW_LIBS)
 AC_SUBST(GLEW_STATIC_LIBS)
+AC_SUBST(GL2PS_INCLUDE)
+AC_SUBST(GL2PS_LIBS)
 AC_SUBST(WXWIDGETS_INCLUDE)
 AC_SUBST(WXWIDGETS_LIBS)
 AC_SUBST(WXWIDGETS_STATIC_LIBS)

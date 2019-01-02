@@ -531,6 +531,8 @@ GLUT_LIBS          = @GLUT_LIBS@
 GLEW_INCLUDE       = @GLEW_INCLUDE@
 GLEW_LIBS          = @GLEW_LIBS@
 GLEW_STATIC_LIBS   = @GLEW_STATIC_LIBS@
+GL2PS_INCLUDE      = @GL2PS_INCLUDE@
+GL2PS_LIBS         = @GL2PS_LIBS@
 
 # wxWidgets (2.6 or newer):  headers and libs
 WXWIDGETS_INCLUDE        = @WXWIDGETS_INCLUDE@

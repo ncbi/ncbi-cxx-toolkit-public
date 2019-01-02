@@ -825,6 +825,8 @@ UNGIF_INCLUDE
 UNGIF_LIBS
 XPM_INCLUDE
 XPM_LIBS
+GL2PS_INCLUDE
+GL2PS_LIBS
 freetype_config
 FTGL_INCLUDE
 FTGL_LIBS
@@ -1676,7 +1678,7 @@ geo included-geo vdb downloaded-vdb static-vdb libunwind libdw backward-cpp \
 backward-cpp-sig \
 z bz2 lzo pcre mbedtls gmp gcrypt nettle gnutls static-gnutls openssl krb5 \
 sybase sybase-local sybase-new ftds mysql \
-orbacus freetype ftgl opengl mesa glut glew glew-mx \
+orbacus freetype ftgl opengl mesa glut glew glew-mx gl2ps \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
@@ -1744,6 +1746,7 @@ for x_arg in "$@" ; do
       | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
       | --with-sybase-local=* | --with-ftds=*/* | --with-mysql=* \
       | --with-opengl=* | --with-mesa=* | --with-glut=* | --with-glew=* \
+      | --with-gl2ps=* \
       | --with-wxwidgets=* | --with-freetype=* | --with-ftgl=* \
       | --with-fastcgi=*/* | --with-bdb=*/* | --with-orbacus=* \
       | --with-odbc=* | --with-python=* | --with-perl=* | --with-jni=* \
@@ -1997,6 +2000,8 @@ Optional Packages:
  --without-glew          do not use GLEW
  --with-glew=DIR         use GLEW installation in DIR
  --with-glew-mx          insist on a multi-context-ready GLEW installation
+ --without-gl2ps         do not use GL2PS
+ --with-gl2ps=DIR        use GL2PS installation in DIR
  --without-wxwidgets     do not use wxWidgets (2.6+)
  --with-wxwidgets=DIR    use wxWidgets installation in DIR
  --with-wxwidgets-ucs    use Unicode builds of wxWidgets
@@ -2420,6 +2425,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_glew=no
+         fi
+        if test "${with_gl2ps-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-gl2ps but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_gl2ps=no
          fi
         if test "${with_wxwidgets-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-wxwidgets but --without-3psw" >&2
@@ -3759,6 +3770,18 @@ fi
 # Check whether --with-glew-mx was given.
 if test "${with_glew_mx+set}" = set; then
   withval=$with_glew_mx;
+fi
+
+
+# Check whether --with-gl2ps was given.
+if test "${with_gl2ps+set}" = set; then
+  withval=$with_gl2ps;
+fi
+
+
+# Check whether --with-gl2ps was given.
+if test "${with_gl2ps+set}" = set; then
+  withval=$with_gl2ps;
 fi
 
 
@@ -40253,6 +40276,11 @@ if test "$with_opengl" = "no" -o "$ncbi_cv_lib_opengl" = "no"; then
 echo "$as_me: error: --with-opengl explicitly specified, but no usable version found." >&2;}
    { (exit 1); exit 1; }; }
     fi
+   if test "${with_gl2ps:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-gl2ps explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-gl2ps explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
 else
              WithPackages="$WithPackages${WithPackagesSep}OpenGL"; WithPackagesSep=" "
 
@@ -46641,6 +46669,209 @@ _ACEOF
 
 # The use of X_CFLAGS is probably redundant, but shouldn't hurt.
 
+if test "$with_gl2ps" != "no"; then
+   if test "${with_gl2ps-yes}" != "yes"; then
+      GL2PS_PATH=$with_gl2ps
+   fi
+   if test -d "$GL2PS_PATH"; then
+      if test -d "$GL2PS_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx"; then
+         GL2PS_PATH=$GL2PS_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx
+      elif test -d "$GL2PS_PATH/$compiler_pfx$DEBUG_SFX$bit64_sfx"; then
+         GL2PS_PATH=$GL2PS_PATH/$compiler_pfx$DEBUG_SFX$bit64_sfx
+      elif test -d "$GL2PS_PATH/$DEBUG_SFX$bit64_sfx"; then
+         GL2PS_PATH=$GL2PS_PATH/$DEBUG_SFX$bit64_sfx
+      fi
+      ncbi_fix_dir_tmp=`if cd $GL2PS_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $GL2PS_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            GL2PS_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$GL2PS_PATH" in
+               /*) ;;
+               * ) GL2PS_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) GL2PS_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   fi
+   if test "$with_gl2ps" != "no"; then
+    case "$with_gl2ps" in
+       yes | "" ) ;;
+       *        ) GL2PS_PATH=$with_gl2ps ;;
+    esac
+    if test "$GL2PS_PATH" != /usr -a -d "$GL2PS_PATH"; then
+       in_path=" in $GL2PS_PATH"
+       if test -z "$GL2PS_INCLUDE" -a -d "$GL2PS_PATH/include"; then
+          GL2PS_INCLUDE="-I$GL2PS_PATH/include"
+       fi
+       if test -n "$GL2PS_LIBPATH"; then
+          :
+       elif test -d "$GL2PS_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $GL2PS_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    GL2PS_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $GL2PS_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    GL2PS_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$GL2PS_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $GL2PS_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    GL2PS_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $GL2PS_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    GL2PS_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       GL2PS_LIBS="$GL2PS_LIBPATH -lgl2ps "
+    else
+       GL2PS_INCLUDE=""
+       GL2PS_LIBS="-lgl2ps "
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libgl2ps$in_path" >&5
+echo $ECHO_N "checking for libgl2ps$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_gl2ps+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$OPENGL_INCLUDE $GL2PS_INCLUDE $orig_CPPFLAGS"
+       LIBS="$GL2PS_LIBS $OPENGL_LIBS $PNG_LIBS $Z_LIBS $X_ALL_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <gl2ps.h>
+int
+main ()
+{
+gl2psSpecial(GL2PS_SVG, "foo")
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_gl2ps=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_gl2ps=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_gl2ps" >&5
+echo "${ECHO_T}$ncbi_cv_lib_gl2ps" >&6; }
+    if test "$ncbi_cv_lib_gl2ps" = "no"; then
+       if test "${with_gl2ps:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-gl2ps explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-gl2ps explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_gl2ps" = "no"; then
+    GL2PS_PATH="No_GL2PS"
+    GL2PS_INCLUDE=
+    GL2PS_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}GL2PS"; WithPackagesSep=" "
+    GL2PS_INCLUDE="$OPENGL_INCLUDE $GL2PS_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBGL2PS 1
+_ACEOF
+
+ fi
+
+
+
+fi
+
 ## FreeType and FTGL
 if test "$with_freetype" != "no" ; then
    : ${FREETYPE_BINPATH=$FREETYPE_PATH/bin}
@@ -52522,7 +52753,7 @@ for x in ChaosMonkey Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray W
           ;;
       esac
    done
-  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK; do
+  for x in UUID FUSE Iconv LIBUNWIND LIBDW BACKWARD_CPP Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE MBEDTLS GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PYTHON3 PERL Boost.Chrono Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF GIF UNGIF XPM GL2PS FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB MONGODB3 GMOCK LAPACK LMDB LocalLMDB LIBUV LIBSSH2 CASSANDRA NGHTTP2 H2O LIBXLSXWRITER PROTOBUF GRPC MSGSL AWS_SDK; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -52615,6 +52846,8 @@ c_ncbi_runpath=`echo "$ncbi_runpath" | sed -e 's:\\$\\$:\\$:g'`
 
 
 #AC_SUBST(real_srcdir)
+
+
 
 
 
@@ -53898,6 +54131,8 @@ UNGIF_INCLUDE!$UNGIF_INCLUDE$ac_delim
 UNGIF_LIBS!$UNGIF_LIBS$ac_delim
 XPM_INCLUDE!$XPM_INCLUDE$ac_delim
 XPM_LIBS!$XPM_LIBS$ac_delim
+GL2PS_INCLUDE!$GL2PS_INCLUDE$ac_delim
+GL2PS_LIBS!$GL2PS_LIBS$ac_delim
 freetype_config!$freetype_config$ac_delim
 FTGL_INCLUDE!$FTGL_INCLUDE$ac_delim
 FTGL_LIBS!$FTGL_LIBS$ac_delim
@@ -53970,8 +54205,6 @@ GCCPCH!$GCCPCH$ac_delim
 RUNPATH_ORIGIN!$RUNPATH_ORIGIN$ac_delim
 NO_STRICT_ALIASING!$NO_STRICT_ALIASING$ac_delim
 D_SFX!$D_SFX$ac_delim
-DEBUG_SFX!$DEBUG_SFX$ac_delim
-LIB_OR_DLL!$LIB_OR_DLL$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -54013,6 +54246,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+DEBUG_SFX!$DEBUG_SFX$ac_delim
+LIB_OR_DLL!$LIB_OR_DLL$ac_delim
 FORCE_STATIC_LIB!$FORCE_STATIC_LIB$ac_delim
 APP_LIB_SETTING!$APP_LIB_SETTING$ac_delim
 APP_LIBS_SETTING!$APP_LIBS_SETTING$ac_delim
@@ -54108,8 +54343,6 @@ MYSQL_LIBS!$MYSQL_LIBS$ac_delim
 BERKELEYDB_INCLUDE!$BERKELEYDB_INCLUDE$ac_delim
 BERKELEYDB_LIBS!$BERKELEYDB_LIBS$ac_delim
 BERKELEYDB_STATIC_LIBS!$BERKELEYDB_STATIC_LIBS$ac_delim
-BERKELEYDB_CXX_LIBS!$BERKELEYDB_CXX_LIBS$ac_delim
-BERKELEYDB_CXX_STATIC_LIBS!$BERKELEYDB_CXX_STATIC_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -54151,6 +54384,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BERKELEYDB_CXX_LIBS!$BERKELEYDB_CXX_LIBS$ac_delim
+BERKELEYDB_CXX_STATIC_LIBS!$BERKELEYDB_CXX_STATIC_LIBS$ac_delim
 ODBC_INCLUDE!$ODBC_INCLUDE$ac_delim
 ODBC_LIBS!$ODBC_LIBS$ac_delim
 BOOST_INCLUDE!$BOOST_INCLUDE$ac_delim
@@ -54246,8 +54481,6 @@ SQLITE3_STATIC_LIBS!$SQLITE3_STATIC_LIBS$ac_delim
 FREETYPE_INCLUDE!$FREETYPE_INCLUDE$ac_delim
 FREETYPE_LIBS!$FREETYPE_LIBS$ac_delim
 GSOAP_PATH!$GSOAP_PATH$ac_delim
-AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
-CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -54289,6 +54522,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+AVRO_STATIC_LIBS!$AVRO_STATIC_LIBS$ac_delim
+CEREAL_INCLUDE!$CEREAL_INCLUDE$ac_delim
 MONGODB_STATIC_LIBS!$MONGODB_STATIC_LIBS$ac_delim
 MONGODB3_STATIC_LIBS!$MONGODB3_STATIC_LIBS$ac_delim
 LMDB_LIB!$LMDB_LIB$ac_delim
@@ -54350,7 +54585,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 59; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 61; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -48,6 +48,7 @@ try_local() {
         test -d "$d/include/FTGL"          &&  : ${FTGL_PATH=$d}
         test -x "$d/bin/libgcrypt-config"  &&  : ${GCRYPT_PATH=$d}
         test -f "$d/include/gif_lib.h"     &&  : ${GIF_PATH=$d}
+        test -f "$d/include/gl2ps.h"       &&  : ${GL2PS_PATH=$d}
         test -f "$d/include/GL/glew.h"     &&  : ${GLEW_PATH=$d}
         test -d "$d/include/gmock"         &&  : ${GMOCK_PATH=$d}
         test -f "$d/include/gmp.h"         &&  : ${GMP_PATH=$d}
@@ -169,6 +170,8 @@ case "$ncbi_platform" in
     Linux*     ) : ${GCRYPT_PATH=$NCBI/libgcrypt-1.4.3} ;;
     *MAC       ) : ${with_gcrypt=no} ;;
 esac
+
+: ${GL2PS_PATH=$NCBI/gl2ps-1.4.0}
 
 : ${GLEW_PATH=$NCBI/glew-1.5.8}
 
