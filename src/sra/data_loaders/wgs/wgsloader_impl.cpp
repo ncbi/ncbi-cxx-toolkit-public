@@ -156,13 +156,25 @@ static bool GetSplitQualityGraphParam(void)
 
 
 NCBI_PARAM_DECL(bool, WGS_LOADER, SPLIT_SEQUENCE);
-NCBI_PARAM_DEF(bool, WGS_LOADER, SPLIT_SEQUENCE, false);
+NCBI_PARAM_DEF(bool, WGS_LOADER, SPLIT_SEQUENCE, true);
 
 
 static bool GetSplitSequenceParam(void)
 {
     static bool value =
         NCBI_PARAM_TYPE(WGS_LOADER, SPLIT_SEQUENCE)::GetDefault();
+    return value;
+}
+
+
+NCBI_PARAM_DECL(bool, WGS_LOADER, SPLIT_FEATURES);
+NCBI_PARAM_DEF(bool, WGS_LOADER, SPLIT_FEATURES, true);
+
+
+static bool GetSplitFeaturesParam(void)
+{
+    static bool value =
+        NCBI_PARAM_TYPE(WGS_LOADER, SPLIT_FEATURES)::GetDefault();
     return value;
 }
 
@@ -1174,6 +1186,9 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
                     }
                     if ( !GetSplitSequenceParam() ) {
                         flags &= ~it.fSplitSeqData;
+                    }
+                    if ( !GetSplitFeaturesParam() ) {
+                        flags &= ~it.fSplitFeatures;
                     }
                     split = it.GetSplitInfo(flags);
                     if ( !split ) {

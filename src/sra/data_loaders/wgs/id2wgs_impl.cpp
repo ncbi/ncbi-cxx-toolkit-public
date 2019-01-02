@@ -120,6 +120,10 @@ NCBI_PARAM_DEF_EX(bool, ID2WGS, FILTER_ALL, false,
                   eParam_NoThread, ID2WGS_FILTER_ALL);
 
 
+NCBI_PARAM_DECL(bool, ID2WGS, SPLIT_FEATURES);
+NCBI_PARAM_DEF(bool, ID2WGS, SPLIT_FEATURES, true);
+
+
 static inline bool s_Enabled(void)
 {
     static CSafeStatic<NCBI_PARAM_TYPE(ID2WGS, ENABLE)> s_Value;
@@ -144,6 +148,13 @@ static inline bool s_FilterAll(void)
 {
     static CSafeStatic<NCBI_PARAM_TYPE(ID2WGS, FILTER_ALL)> s_Value;
     return s_Value->Get();
+}
+
+
+static bool s_SplitFeatures(void)
+{
+    static bool value = NCBI_PARAM_TYPE(ID2WGS, SPLIT_FEATURES)::GetDefault();
+    return value;
 }
 
 
@@ -1719,6 +1730,9 @@ CRef<CAsnBinData> CID2WGSProcessor_Impl::GetObject(SWGSSeqInfo& seq0)
         CWGSSeqIterator& it = GetContigIterator(seq);
         CWGSSeqIterator::TFlags flags =
             it.fDefaultFlags & ~it.fMasterDescr;
+        if ( !s_SplitFeatures() ) {
+            flags &= ~it.fSplitFeatures;
+        }
         CRef<CAsnBinData> obj;
 #ifdef ALLOW_SPLIT
         obj = it.GetSplitInfoData(flags);
@@ -2035,10 +2049,10 @@ bool CID2WGSProcessor_Impl::ProcessGetChunks(CID2WGSContext& context,
 
         CRef<CAsnBinData> obj = GetChunk(seq, *it);
         _ASSERT(obj->GetMainObject().GetThisTypeInfo() == CID2S_Chunk::GetTypeInfo());
-        TRACE_X(11, eDebug_resolve, "GetChunk: "<<seq);
+        TRACE_X(11, eDebug_resolve, "GetChunk: "<<seq<<"."<<*it);
         data.SetData_type(CID2_Reply_Data::eData_type_id2s_chunk);
         WriteData(context, data, seq, *it, *obj);
-        TRACE_X(12, eDebug_resolve, "Seq("<<seq<<"): "<<
+        TRACE_X(12, eDebug_resolve, "Seq("<<seq<<")."<<*it<<": "<<
                 " data size: "<<sx_GetSize(data));
         replies.push_back(main_reply);
     }

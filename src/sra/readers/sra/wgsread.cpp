@@ -93,6 +93,7 @@ static const TSeqPos kAmbiguityBlockSize = 1024; // defined by WGS VDB schema
 static bool kEnableSplitQual = true;
 static bool kEnableSplitData = true;
 static bool kEnableSplitProd = true;
+static bool kEnableSplitFeat = true;
 
 // split info fixed parameters
 static int kMainEntryId = 1;
@@ -106,6 +107,8 @@ enum EChunkType {
 
 // split configurable parameters
 static const size_t kProdPerChunk = 64;
+static const size_t kMinFeatCountToSplit = 64;
+static const size_t kFeatPerChunk = 256;
 static const TSeqPos kQualChunkSize = 64<<10; // 64KiB
 static const TSeqPos kDataChunkSize = 256<<10; // 64KiB in 2na encoding
 static const TSeqPos kMinDataSplitSize = 128<<10;
@@ -141,7 +144,16 @@ struct SProfilerGuard
 static SProfiler sw_Serialize;
 static SProfiler sw_Feat;
 static SProfiler sw_GetAccSeq_id;
+static SProfiler sw_GetBioseq;
+static SProfiler sw_GetSeq_entry;
+static SProfiler sw_GetSeq_entryData;
+static SProfiler sw_GetSplitInfo;
+static SProfiler sw_GetSplitInfoData;
 static SProfiler sw_GetChunk;
+static SProfiler sw_CreateQualityChunk;
+static SProfiler sw_CreateDataChunk;
+static SProfiler sw_CreateProductsChunk;
+static SProfiler sw_CreateFeaturesChunk;
 static SProfiler sw__GetProtFeat;
 static SProfiler sw___GetProtAnnot;
 static SProfiler sw___GetProtInst;
@@ -149,6 +161,7 @@ static SProfiler sw___GetProtDescr;
 static SProfiler sw____GetProtWGSAcc;
 static SProfiler sw____GetProtAccVer;
 static SProfiler sw____GetProtAcc;
+static SProfiler sw____GetProtGI;
 static SProfiler sw____GetProtGISeq_id;
 static SProfiler sw____GetProtGnlSeq_id;
 static SProfiler sw____GetProtAccSeq_id;
@@ -356,6 +369,19 @@ void CWGSAsnBinData::Serialize(CObjectOStreamAsnBinary& out) const
 /////////////////////////////////////////////////////////////////////////////
 
 
+// SSeq0TableCursor is helper accessor structure for SEQUENCE table
+struct CWGSDb_Impl::SSeq0TableCursor : public CObject {
+    explicit SSeq0TableCursor(const CVDBTable& table);
+
+    CVDBCursor m_Cursor;
+
+    DECLARE_VDB_COLUMN_AS_STRING(ACC_PREFIX);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_len, ACC_CONTIG_LEN);
+    DECLARE_VDB_COLUMN_AS_STRING(SEQID_GNL_PREFIX);
+    DECLARE_VDB_COLUMN_AS(Uint1, MOL);
+};
+
+
 // SSeqTableCursor is helper accessor structure for SEQUENCE table
 struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     explicit SSeqTableCursor(const CVDBTable& table);
@@ -365,8 +391,6 @@ struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(NCBI_gi, GI);
     DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
     DECLARE_VDB_COLUMN_AS(uint32_t, ACC_VERSION);
-    DECLARE_VDB_COLUMN_AS_STRING(SEQID_GNL_PREFIX);
-    DECLARE_VDB_COLUMN_AS(Uint1, MOL);
     DECLARE_VDB_COLUMN_AS_STRING(CONTIG_NAME);
     DECLARE_VDB_COLUMN_AS_STRING(NAME);
     DECLARE_VDB_COLUMN_AS_STRING(TITLE);
@@ -417,13 +441,21 @@ struct CWGSDb_Impl::SSeqTableCursor : public CObject {
 };
 
 
+CWGSDb_Impl::SSeq0TableCursor::SSeq0TableCursor(const CVDBTable& table)
+    : m_Cursor(table),
+      INIT_VDB_COLUMN(ACC_PREFIX),
+      INIT_VDB_COLUMN(ACC_CONTIG_LEN),
+      INIT_OPTIONAL_VDB_COLUMN(SEQID_GNL_PREFIX),
+      INIT_OPTIONAL_VDB_COLUMN(MOL)
+{
+}
+
+
 CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
     : m_Cursor(table),
       INIT_OPTIONAL_VDB_COLUMN(GI),
       INIT_VDB_COLUMN(ACCESSION),
       INIT_VDB_COLUMN(ACC_VERSION),
-      INIT_OPTIONAL_VDB_COLUMN(SEQID_GNL_PREFIX),
-      INIT_OPTIONAL_VDB_COLUMN(MOL),
       INIT_VDB_COLUMN(CONTIG_NAME),
       INIT_VDB_COLUMN(NAME),
       INIT_VDB_COLUMN(TITLE),
@@ -509,24 +541,39 @@ CWGSDb_Impl::SScfTableCursor::SScfTableCursor(const CVDBTable& table)
 }
 
 
+// SProt0TableCursor is helper accessor structure for optional PROTEIN table
+struct CWGSDb_Impl::SProt0TableCursor : public CObject {
+    explicit SProt0TableCursor(const CVDBTable& table);
+    
+    CVDBCursor m_Cursor;
+    
+    DECLARE_VDB_COLUMN_AS(NCBI_gi, GI);
+    //DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
+    DECLARE_VDB_COLUMN_AS_STRING(GB_ACCESSION);
+    DECLARE_VDB_COLUMN_AS(uint32_t, ACC_VERSION);
+    DECLARE_VDB_COLUMN_AS_STRING(SEQID_GNL_PREFIX);
+    DECLARE_VDB_COLUMN_AS_STRING(PROTEIN_NAME);
+};
+
+
 // SProtTableCursor is helper accessor structure for optional PROTEIN table
 struct CWGSDb_Impl::SProtTableCursor : public CObject {
     explicit SProtTableCursor(const CVDBTable& table);
     
     CVDBCursor m_Cursor;
     
-    DECLARE_VDB_COLUMN_AS(NCBI_gi, GI);
-    DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
-    DECLARE_VDB_COLUMN_AS_STRING(GB_ACCESSION);
-    DECLARE_VDB_COLUMN_AS(uint32_t, ACC_VERSION);
-    DECLARE_VDB_COLUMN_AS_STRING(SEQID_GNL_PREFIX);
+    //DECLARE_VDB_COLUMN_AS(NCBI_gi, GI);
+    //DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
+    //DECLARE_VDB_COLUMN_AS_STRING(GB_ACCESSION);
+    //DECLARE_VDB_COLUMN_AS(uint32_t, ACC_VERSION);
+    //DECLARE_VDB_COLUMN_AS_STRING(SEQID_GNL_PREFIX);
     DECLARE_VDB_COLUMN_AS_STRING(TITLE);
     DECLARE_VDB_COLUMN_AS_STRING(DESCR);
     DECLARE_VDB_COLUMN_AS_STRING(ANNOT);
     DECLARE_VDB_COLUMN_AS(NCBI_gb_state, GB_STATE);
     DECLARE_VDB_COLUMN_AS_STRING(PUBLIC_COMMENT);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, PROTEIN_LEN);
-    DECLARE_VDB_COLUMN_AS_STRING(PROTEIN_NAME);
+    //DECLARE_VDB_COLUMN_AS_STRING(PROTEIN_NAME);
     DECLARE_VDB_COLUMN_AS_STRING(PRODUCT_NAME);
     DECLARE_VDB_COLUMN_AS_STRING(REF_ACC);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_START);
@@ -538,20 +585,32 @@ struct CWGSDb_Impl::SProtTableCursor : public CObject {
 };
 
 
-CWGSDb_Impl::SProtTableCursor::SProtTableCursor(const CVDBTable& table)
+CWGSDb_Impl::SProt0TableCursor::SProt0TableCursor(const CVDBTable& table)
     : m_Cursor(table),
       INIT_OPTIONAL_VDB_COLUMN(GI),
-      INIT_VDB_COLUMN(ACCESSION),
+      //INIT_VDB_COLUMN(ACCESSION),
       INIT_OPTIONAL_VDB_COLUMN(GB_ACCESSION),
       INIT_VDB_COLUMN(ACC_VERSION),
       INIT_OPTIONAL_VDB_COLUMN(SEQID_GNL_PREFIX),
+      INIT_VDB_COLUMN(PROTEIN_NAME)
+{
+}
+
+
+CWGSDb_Impl::SProtTableCursor::SProtTableCursor(const CVDBTable& table)
+    : m_Cursor(table),
+      //INIT_OPTIONAL_VDB_COLUMN(GI),
+      //INIT_VDB_COLUMN(ACCESSION),
+      //INIT_OPTIONAL_VDB_COLUMN(GB_ACCESSION),
+      //INIT_VDB_COLUMN(ACC_VERSION),
+      //INIT_OPTIONAL_VDB_COLUMN(SEQID_GNL_PREFIX),
       INIT_OPTIONAL_VDB_COLUMN(TITLE),
       INIT_OPTIONAL_VDB_COLUMN(DESCR),
       INIT_OPTIONAL_VDB_COLUMN(ANNOT),
       INIT_VDB_COLUMN(GB_STATE),
       INIT_OPTIONAL_VDB_COLUMN(PUBLIC_COMMENT),
       INIT_VDB_COLUMN(PROTEIN_LEN),
-      INIT_VDB_COLUMN(PROTEIN_NAME),
+      //INIT_VDB_COLUMN(PROTEIN_NAME),
       INIT_OPTIONAL_VDB_COLUMN(PRODUCT_NAME),
       INIT_OPTIONAL_VDB_COLUMN(REF_ACC),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_START),
@@ -667,9 +726,11 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
       m_ProteinNameIndexIsOpened(0),
       m_ProductNameIndexIsOpened(0),
       m_IsSetMasterDescr(false),
-      m_HasNoDefaultGnlId(false)
+      m_HasNoDefaultGnlId(false),
+      m_FeatLocIdType(eFeatLocIdUninitialized)
 {
     PROFILE(sw_WGSOpen);
+    //static CVDBSchema schema(mgr, "wgs.schema");
     m_Db = CVDB(mgr, m_WGSPath);
     m_SeqTable = CVDBTable(m_Db, "SEQUENCE"); // SEQUENCE table must exist
     x_InitIdParams();
@@ -678,6 +739,17 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
 
 CWGSDb_Impl::~CWGSDb_Impl(void)
 {
+}
+
+
+inline
+CRef<CWGSDb_Impl::SSeq0TableCursor> CWGSDb_Impl::Seq0(TVDBRowId row)
+{
+    CRef<SSeq0TableCursor> curs = m_Seq0.Get(row);
+    if ( !curs ) {
+        curs = new SSeq0TableCursor(SeqTable());
+    }
+    return curs;
 }
 
 
@@ -699,6 +771,19 @@ CRef<CWGSDb_Impl::SScfTableCursor> CWGSDb_Impl::Scf(TVDBRowId row)
     if ( !curs ) {
         if ( const CVDBTable& table = ScfTable() ) {
             curs = new SScfTableCursor(table);
+        }
+    }
+    return curs;
+}
+
+
+inline
+CRef<CWGSDb_Impl::SProt0TableCursor> CWGSDb_Impl::Prot0(TVDBRowId row)
+{
+    CRef<SProt0TableCursor> curs = m_Prot0.Get(row);
+    if ( !curs ) {
+        if ( const CVDBTable& table = ProtTable() ) {
+            curs = new SProt0TableCursor(table);
         }
     }
     return curs;
@@ -745,6 +830,13 @@ CRef<CWGSDb_Impl::SIdxTableCursor> CWGSDb_Impl::Idx(TVDBRowId row)
 
 
 inline
+void CWGSDb_Impl::Put(CRef<SSeq0TableCursor>& curs, TVDBRowId row)
+{
+    m_Seq0.Put(curs, row);
+}
+
+
+inline
 void CWGSDb_Impl::Put(CRef<SSeqTableCursor>& curs, TVDBRowId row)
 {
     m_Seq.Put(curs, row);
@@ -755,6 +847,13 @@ inline
 void CWGSDb_Impl::Put(CRef<SScfTableCursor>& curs, TVDBRowId row)
 {
     m_Scf.Put(curs, row);
+}
+
+
+inline
+void CWGSDb_Impl::Put(CRef<SProt0TableCursor>& curs, TVDBRowId row)
+{
+    m_Prot0.Put(curs, row);
 }
 
 
@@ -781,7 +880,7 @@ void CWGSDb_Impl::Put(CRef<SIdxTableCursor>& curs, TVDBRowId row)
 
 void CWGSDb_Impl::x_InitIdParams(void)
 {
-    CRef<SSeqTableCursor> seq = Seq();
+    CRef<SSeq0TableCursor> seq = Seq0();
     if ( !seq->m_Cursor.TryOpenRow(1) ) {
         m_IdPrefixWithVersion.erase();
         m_IdPrefix.erase();
@@ -789,9 +888,9 @@ void CWGSDb_Impl::x_InitIdParams(void)
         m_IdRowDigits = 0;
         return;
     }
-    CTempString acc = *seq->ACCESSION(1);
+    CTempString acc = *seq->ACC_PREFIX(1);
     const SIZE_TYPE prefix_len = acc.find_first_of("0123456789");
-    m_IdRowDigits = acc.size() - (prefix_len + 2);
+    m_IdRowDigits = *seq->ACC_CONTIG_LEN(1);
     if ( m_IdRowDigits < 6 || m_IdRowDigits > 8 ) {
         NCBI_THROW_FMT(CSraException, eInitFailed,
                        "CWGSDb: bad WGS accession format: "<<acc);
@@ -1334,7 +1433,7 @@ CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
 
 CRef<CSeq_id>
 CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
-                                      const SSeqTableCursor& cur,
+                                      const SSeq0TableCursor& cur,
                                       TVDBRowId row) const
 {
     if ( str.empty() ) {
@@ -1382,7 +1481,7 @@ CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
 
 CRef<CSeq_id>
 CWGSDb_Impl::GetGeneralOrPatentSeq_id(CTempString str,
-                                      const SProtTableCursor& cur,
+                                      const SProt0TableCursor& cur,
                                       TVDBRowId row) const
 {
     if ( str.empty() ) {
@@ -1881,7 +1980,7 @@ string CWGSDb_Impl::SProtAccInfo::GetAcc(Uint4 id) const
 CWGSDb_Impl::TProtAccRanges CWGSDb_Impl::GetProtAccRanges(void)
 {
     TProtAccRanges ranges;
-    if ( CRef<SProtTableCursor> seq = Prot() ) {
+    if ( CRef<SProt0TableCursor> seq = Prot0() ) {
         TVDBRowId row_id = 0;
         TVDBRowIdRange row_range = seq->m_Cursor.GetRowIdRange();
         for ( TVDBRowCount i = 0; i < row_range.second; ++i ) {
@@ -2047,6 +2146,39 @@ TVDBRowId CWGSDb_Impl::GetProtAccRowId(const string& acc)
 }
 
 
+CWGSDb_Impl::EFeatLocIdType CWGSDb_Impl::GetFeatLocIdType()
+{
+    if ( m_FeatLocIdType == eFeatLocIdUninitialized ) {
+        try {
+            if ( CRef<SFeatTableCursor> cur = Feat() ) {
+                CRef<CSeq_feat> feat(new CSeq_feat);
+                CTempString bytes = *cur->SEQ_FEAT(1);
+                cur.GetNCObject().m_ObjStr.OpenFromBuffer(bytes.data(), bytes.size());
+                cur.GetNCObject().m_ObjStr >> *feat;
+                Put(cur);
+                if ( const CTextseq_id* id = feat->GetLocation().GetInt().GetId().GetTextseq_Id() ) {
+                    if ( id->IsSetVersion() ) {
+                        m_FeatLocIdType = eFeatLocIdAccVer;
+                    }
+                    else {
+                        m_FeatLocIdType = eFeatLocIdAccNoVer;
+                    }
+                }
+                else {
+                    m_FeatLocIdType = eFeatLocIdGi;
+                }
+                return m_FeatLocIdType;
+            }
+        }
+        catch ( exception& /*ignored*/ ) {
+            // assume no feature id correction
+        }
+        m_FeatLocIdType = eFeatLocIdGi;
+    }
+    return m_FeatLocIdType;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CWGSSeqIterator
 /////////////////////////////////////////////////////////////////////////////
@@ -2168,18 +2300,60 @@ struct SWGSCreateInfo : SWGSDb_Defs
     TFlags flags;
     bool split_prod, split_data, split_feat, split_qual;
     CRef<CSeq_id> main_id;
+    CRef<CSeq_id> feat_id;
     CRef<CBioseq> main_seq;
     CRef<CSeq_entry> entry;
     CRef<CID2S_Split_Info> split;
     CRef<CID2S_Chunk> chunk;
     CRef<CWGSAsnBinData> data;
 
+    template<class Iter>
+    void x_SetId(Iter& it)
+        {
+            main_id = it.GetId(flags);
+            feat_id = main_id;
+            // fix feature ids
+            // it can be accession.version and accession
+            EFeatLocIdType feat_loc_id_type = db->GetFeatLocIdType();
+            if ( feat_loc_id_type != eFeatLocIdGi ) {
+                if ( feat_id->IsGi() ) {
+                    feat_id = it.GetId(flags & ~fIds_gi);
+                }
+            }
+        }
+    void x_ResetId()
+        {
+            main_id = null;
+            feat_id = null;
+        }
+    template<class Iter>
+    void x_SetSeq(Iter& it)
+        {
+            main_seq = new CBioseq();
+            x_SetId(it);
+        }
+    void x_SetSeq(CWGSProteinIterator& it)
+        {
+            main_seq = new CBioseq();
+            x_SetId(it);
+        }
+    void x_ResetSeq()
+        {
+            main_seq = null;
+            x_ResetId();
+        }
+
     void x_AddDescr(CTempString bytes);
     void x_AddFeature(const CWGSFeatureIterator& it,
                       CSeq_annot::TData::TFtable& dst);
+    void x_AddFeaturesDirect(TVDBRowIdRange range,
+                             vector<TVDBRowId>& product_row_ids);
+    void x_AddFeaturesSplit(TVDBRowIdRange range,
+                            vector<TVDBRowId>& product_row_ids);
     void x_AddFeatures(TVDBRowIdRange range,
                        vector<TVDBRowId>& product_row_ids);
     void x_AddFeatures(TVDBRowIdRange range);
+    CBioseq_set& x_GetProtSet(void);
     void x_CreateProtSet(TVDBRowIdRange range);
     void x_AddProducts(const vector<TVDBRowId>& product_row_ids);
 };
@@ -2206,6 +2380,7 @@ void CWGSSeqIterator::Reset(void)
 {
     if ( m_Cur ) {
         if ( m_Db ) {
+            GetDb().Put(m_Cur0, m_CurrId);
             GetDb().Put(m_Cur, m_CurrId);
         }
         else {
@@ -2230,6 +2405,7 @@ CWGSSeqIterator& CWGSSeqIterator::operator=(const CWGSSeqIterator& iter)
     if ( this != &iter ) {
         Reset();
         m_Db = iter.m_Db;
+        m_Cur0 = iter.m_Cur0;
         m_Cur = iter.m_Cur;
         m_CurrId = iter.m_CurrId;
         m_AccVersion = iter.m_AccVersion;
@@ -2461,6 +2637,7 @@ void CWGSSeqIterator::x_Init(const CWGSDb& wgs_db,
     if ( !wgs_db ) {
         return;
     }
+    m_Cur0 = wgs_db.GetNCObject().Seq0(get_row);
     m_Cur = wgs_db.GetNCObject().Seq(get_row);
     if ( !m_Cur ) {
         return;
@@ -2622,7 +2799,7 @@ CRef<CSeq_id> CWGSSeqIterator::GetGiSeq_id(void) const
 
 CRef<CSeq_id> CWGSSeqIterator::GetGeneralOrPatentSeq_id(void) const
 {
-    return GetDb().GetGeneralOrPatentSeq_id(GetContigName(), *m_Cur, m_CurrId);
+    return GetDb().GetGeneralOrPatentSeq_id(GetContigName(), *m_Cur0, m_CurrId);
 }
 
 
@@ -2998,7 +3175,7 @@ void CWGSSeqIterator::GetQualityAnnot(TAnnotSet& annot_set,
                                       TFlags flags) const
 {
     SWGSCreateInfo info(m_Db, flags);
-    info.main_id = GetId(flags);
+    info.x_SetId(*this);
     x_GetQualityAnnot(annot_set, info);
 }
 
@@ -3863,12 +4040,30 @@ void SWGSCreateInfo::x_AddFeature(const CWGSFeatureIterator& it,
     }
     else {
         dst.push_back(it.GetSeq_feat());
+        //LOG_POST(MSerial_AsnText<<*dst.back());
     }
 }
 
 
-void SWGSCreateInfo::x_AddFeatures(TVDBRowIdRange range,
-                                   vector<TVDBRowId>& product_row_ids)
+CBioseq_set& SWGSCreateInfo::x_GetProtSet(void)
+{
+    if ( !entry->IsSet() ) {
+        CRef<CBioseq_set> seqset(new CBioseq_set);
+        seqset->SetClass(CBioseq_set::eClass_nuc_prot);
+        if ( split_feat || split_prod ) {
+            seqset->SetId().SetId(kMainEntryId);
+        }
+        CRef<CSeq_entry> main_entry(new CSeq_entry);
+        main_entry->SetSeq(*main_seq);
+        seqset->SetSeq_set().push_back(main_entry);
+        entry->SetSet(*seqset);
+    }
+    return entry->SetSet();
+}
+
+
+void SWGSCreateInfo::x_AddFeaturesDirect(TVDBRowIdRange range,
+                                         vector<TVDBRowId>& product_row_ids)
 {
     CSeq_annot::TData::TFtable* main_features = 0;
     CSeq_annot::TData::TFtable* product_features = 0;
@@ -3878,14 +4073,8 @@ void SWGSCreateInfo::x_AddFeatures(TVDBRowIdRange range,
             // product feature
             product_row_ids.push_back(product_row_id);
             if ( !product_features ) {
-                CRef<CBioseq_set> seqset(new CBioseq_set);
-                seqset->SetClass(CBioseq_set::eClass_nuc_prot);
-                CRef<CSeq_entry> main_entry(new CSeq_entry);
-                main_entry->SetSeq(*main_seq);
-                seqset->SetSeq_set().push_back(main_entry);
-                entry->SetSet(*seqset);
                 CRef<CSeq_annot> annot(new CSeq_annot);
-                seqset->SetAnnot().push_back(annot);
+                x_GetProtSet().SetAnnot().push_back(annot);
                 product_features = &annot->SetData().SetFtable();
             }
             dst = product_features;
@@ -3900,6 +4089,279 @@ void SWGSCreateInfo::x_AddFeatures(TVDBRowIdRange range,
             dst = main_features;
         }
         x_AddFeature(feat_it, *dst);
+    }
+}
+
+
+struct SWGSFeatChunkInfo : public SWGSDb_Defs {
+    CRef<CSeq_id> main_id;
+    CRef<CSeq_id> feat_id;
+    CRef<CID2S_Bioseq_Ids::C_E> seq_place;
+
+    size_t feat_count;
+
+    struct SFeatureSet {
+        vector< COpenRange<TSeqPos> > loc_ranges;
+        bitset<CSeqFeatData::e_MaxChoice> feat_types;
+
+        void Reset() {
+            loc_ranges.clear();
+            feat_types.reset();
+        }
+        
+        void AddFeatType(NCBI_WGS_feattype feat_type)
+            {
+                if ( feat_type >= CSeqFeatData::e_MaxChoice ) {
+                    feat_type = CSeqFeatData::e_not_set;
+                }
+                feat_types.set(feat_type);
+            }
+        
+        static
+        bool ExpandRange(COpenRange<TSeqPos>& dst, COpenRange<TSeqPos> src)
+            {
+                static const TSeqPos kMaxGap = 100000;
+                if ( src.GetFrom() >= dst.GetFrom() ) {
+                    // after
+                    if ( src.GetFrom() > dst.GetToOpen() + kMaxGap ) {
+                        // too far
+                        return false;
+                    }
+                }
+                else {
+                    // before
+                    if ( src.GetToOpen() + kMaxGap < dst.GetFrom() ) {
+                        // too far
+                        return false;
+                    }
+                    dst.SetFrom(src.GetFrom());
+                }
+                if ( src.GetToOpen() > dst.GetToOpen() ) {
+                    dst.SetToOpen(src.GetToOpen());
+                }
+                return true;
+            }
+        void AddFeatRange(COpenRange<TSeqPos> range)
+            {
+                if ( loc_ranges.empty() || !ExpandRange(loc_ranges.back(), range) ) {
+                    loc_ranges.push_back(range);
+                }
+            }
+        void AddFeature(NCBI_WGS_feattype type, COpenRange<TSeqPos> range)
+            {
+                AddFeatType(type);
+                AddFeatRange(range);
+            }
+
+        bool HasFeatures() const
+            {
+                return feat_types.any();
+            }
+        void AddContent(CID2S_Chunk_Info& chunk, CSeq_id& feat_id);
+    };
+    SFeatureSet features[2]; // w/o and w/ product
+
+    SWGSFeatChunkInfo(CSeq_id& main_id, CSeq_id& feat_id)
+        : main_id(&main_id),
+          feat_id(&feat_id),
+          seq_place(new CID2S_Bioseq_Ids::C_E)
+        {
+            sx_SetSplitId(*seq_place, main_id);
+            Reset();
+        }
+    
+    void Reset() {
+        feat_count = 0;
+        for ( auto& fs : features ) {
+            fs.Reset();
+        }
+    }
+
+    void AddFeature(bool with_product, NCBI_WGS_feattype type, COpenRange<TSeqPos> range)
+        {
+            features[with_product].AddFeature(type, range);
+            ++feat_count;
+        }
+
+    CRef<CID2S_Chunk_Info> CreateChunkInfo(int index,
+                                           CWGSProteinIterator& prot_it,
+                                           const vector<TVDBRowId>& product_row_ids,
+                                           size_t product_index);
+};
+
+
+static void s_AddGiRange(CID2S_Seq_loc::TLoc_set& loc_set,
+                         CSeq_id::TGi gi_range_start,
+                         CSeq_id::TGi gi_range_stop)
+{
+    if ( gi_range_stop == gi_range_start ) {
+        return;
+    }
+    CRef<CID2S_Seq_loc> loc(new CID2S_Seq_loc);
+    if ( gi_range_stop == gi_range_start+1 ) {
+        loc->SetWhole_gi(gi_range_start);
+    }
+    else {
+        CID2S_Gi_Range& gi_range = loc->SetWhole_gi_range();
+        gi_range.SetStart(gi_range_start);
+        gi_range.SetCount(gi_range_stop - gi_range_start);
+    }
+    loc_set.push_back(loc);
+}
+
+
+CRef<CID2S_Chunk_Info> SWGSFeatChunkInfo::CreateChunkInfo(int index,
+                                                          CWGSProteinIterator& prot_it,
+                                                          const vector<TVDBRowId>& product_row_ids,
+                                                          size_t product_index)
+{
+    // pack sorted locations once more
+    //sort(loc_ranges.begin(), loc_ranges.end());
+    CRef<CID2S_Chunk_Info> chunk(new CID2S_Chunk_Info);
+    chunk->SetId().Set(index*kChunkIdStep+eChunk_feat);
+    CRef<CID2S_Chunk_Content> content;
+    if ( features[0].HasFeatures() ) {
+        // add annot place on sequence
+        content = new CID2S_Chunk_Content;
+        chunk->SetContent().push_back(content);
+        content->SetSeq_annot_place().SetBioseqs().Set().push_back(seq_place);
+        
+        // add annot types and locations
+        features[0].AddContent(*chunk, *feat_id);
+    }
+    if ( features[1].HasFeatures() ) {
+        // add annot place on nuc-prot-set
+        content = new CID2S_Chunk_Content;
+        chunk->SetContent().push_back(content);
+        content->SetSeq_annot_place().SetBioseq_sets().Set().push_back(kMainEntryId);
+
+        // add annot types and locations
+        features[1].AddContent(*chunk, *feat_id);
+
+        // add annot types and locations for products
+        CID2S_Seq_annot_Info& annot_info = chunk->SetContent().back()->SetSeq_annot();
+        CRef<CID2S_Seq_loc> old_loc(&annot_info.SetSeq_loc());
+        annot_info.ResetSeq_loc();
+        auto& loc_set = annot_info.SetSeq_loc().SetLoc_set();
+        loc_set.push_back(old_loc);
+        EFeatLocIdType feat_loc_id_type = eFeatLocIdUninitialized;
+        CSeq_id::TGi gi_range_start = ZERO_GI, gi_range_stop = ZERO_GI;
+        for ( auto it = product_row_ids.begin()+product_index; it != product_row_ids.end(); ++it ) {
+            if ( !prot_it.SelectRow(*it) ) {
+                ERR_POST_X(11, "CWGSDb::x_AddProducts: "
+                           "invalid protein row id: "<<*it);
+                continue;
+            }
+            // fix feature ids
+            // it can be accession.version and accession
+            if ( feat_loc_id_type == eFeatLocIdUninitialized ) {
+                feat_loc_id_type = prot_it.GetDb().GetFeatLocIdType();
+            }
+            if ( feat_loc_id_type == eFeatLocIdGi ) {
+                if ( CSeq_id::TGi gi = prot_it.GetGi() ) {
+                    if ( gi != gi_range_stop ) {
+                        s_AddGiRange(loc_set, gi_range_start, gi_range_stop);
+                        gi_range_start = gi;
+                    }
+                    gi_range_stop = gi+1;
+                    continue;
+                }
+            }
+            s_AddGiRange(loc_set, gi_range_start, gi_range_stop);
+            CRef<CSeq_id> feat_id = prot_it.GetId(fIds_acc|fIds_gnl);
+            //LOG_POST("Feat info for "<<feat_id->AsFastaString());
+            CRef<CID2S_Seq_loc> loc(new CID2S_Seq_loc);
+            loc->SetWhole_seq_id(*feat_id);
+            loc_set.push_back(loc);
+        }
+        s_AddGiRange(loc_set, gi_range_start, gi_range_stop);
+    }
+
+    // add empty feat-ids to prevent loading by id
+    content = new CID2S_Chunk_Content;
+    chunk->SetContent().push_back(content);
+    content->SetFeat_ids();
+
+    // done
+    Reset();
+    return chunk;
+}
+
+
+void SWGSFeatChunkInfo::SFeatureSet::AddContent(CID2S_Chunk_Info& chunk, CSeq_id& feat_id)
+{
+    // add features
+    CRef<CID2S_Chunk_Content> content;
+    content = new CID2S_Chunk_Content;
+    chunk.SetContent().push_back(content);
+    CID2S_Seq_annot_Info& annot_info = content->SetSeq_annot();
+    // types
+    for ( int type = CSeqFeatData::e_not_set; type < CSeqFeatData::e_MaxChoice; ++type ) {
+        if ( feat_types[type] ) {
+            CRef<CID2S_Feat_type_Info> type_info(new CID2S_Feat_type_Info);
+            type_info->SetType(CSeqFeatData::E_Choice(type));
+            annot_info.SetFeat().push_back(type_info);
+        }
+    }
+    // locations
+    CID2S_Seq_id_Ints& intervals = annot_info.SetSeq_loc().SetSeq_id_ints();
+    intervals.SetSeq_id(feat_id);
+    //LOG_POST("Feat info for "<<feat_id.AsFastaString());
+    for ( auto r : loc_ranges ) {
+        CRef<CID2S_Interval> interval(new CID2S_Interval);
+        interval->SetStart(r.GetFrom());
+        interval->SetLength(r.GetLength());
+        intervals.SetInts().push_back(interval);
+    }
+}
+
+
+void SWGSCreateInfo::x_AddFeaturesSplit(TVDBRowIdRange range,
+                                        vector<TVDBRowId>& product_row_ids)
+{
+    // for each chunk we need to create:
+    // ID2S-Chunk-Info.content.seq-annot-place. nuc-prot-set entry id or contig Seq-id
+    // ID2S-Chunk-Info.content.seq-annot.feat&seq-loc
+    int chunk_index = 0;
+    SWGSFeatChunkInfo c(*main_id, *feat_id);
+    COpenRange<TSeqPos> seq_range;
+    size_t product_index = 0;
+    CWGSProteinIterator prot_it(db);
+    for ( CWGSFeatureIterator feat_it(db, range); feat_it; ++feat_it ) {
+        bool with_product = false;
+        if ( TVDBRowId product_row_id = feat_it.GetProductRowId() ) {
+            // product feature
+            product_row_ids.push_back(product_row_id);
+            with_product = true;
+        }
+        c.AddFeature(with_product, feat_it.GetFeatType(), feat_it.GetLocRange());
+        if ( c.feat_count == kFeatPerChunk ) {
+            split->SetChunks().push_back(c.CreateChunkInfo(chunk_index++,
+                                                           prot_it,
+                                                           product_row_ids, product_index));
+            product_index = product_row_ids.size();
+        }
+    }
+    if ( c.feat_count ) {
+        split->SetChunks().push_back(c.CreateChunkInfo(chunk_index,
+                                                       prot_it,
+                                                       product_row_ids, product_index));
+    }
+    if ( !product_row_ids.empty() ) {
+        x_GetProtSet();
+    }
+}
+
+
+inline
+void SWGSCreateInfo::x_AddFeatures(TVDBRowIdRange range,
+                                   vector<TVDBRowId>& product_row_ids)
+{
+    if ( split_feat ) {
+        x_AddFeaturesSplit(range, product_row_ids);
+    }
+    else {
+        x_AddFeaturesDirect(range, product_row_ids);
     }
 }
 
@@ -3958,8 +4420,7 @@ void CWGSSeqIterator::x_CreateBioseq(SWGSCreateInfo& info) const
 {
     PROFILE(sw__GetContigBioseq);
     _ASSERT(!info.main_seq);
-    info.main_seq = new CBioseq();
-    info.main_id = GetId(info.flags);
+    info.x_SetSeq(*this);
     if ( info.entry ) {
         _ASSERT(info.entry->Which() == CSeq_entry::e_not_set);
         info.entry->SetSeq(*info.main_seq);
@@ -4005,26 +4466,6 @@ void CWGSSeqIterator::x_CreateBioseq(SWGSCreateInfo& info) const
 
 
 static
-void sx_GetProductsSlice(const CWGSDb& db, TVDBRowIdRange range,
-                         size_t skip, size_t count,
-                         vector<TVDBRowId>& product_row_ids)
-{
-    for ( CWGSFeatureIterator feat_it(db, range); feat_it; ++feat_it ) {
-        if ( TVDBRowId row_id = feat_it.GetProductRowId() ) {
-            if ( skip ) {
-                --skip;
-                continue;
-            }
-            product_row_ids.push_back(row_id);
-            if ( product_row_ids.size() == count ) {
-                break;
-            }
-        }
-    }
-}
-
-
-static
 bool sx_HasMoreProducts(const CWGSDb& db, TVDBRowIdRange range, size_t count)
 {
     for ( CWGSFeatureIterator feat_it(db, range); feat_it; ++feat_it ) {
@@ -4045,7 +4486,8 @@ void SWGSCreateInfo::x_AddProducts(const vector<TVDBRowId>& product_row_ids)
     // add products
     TFlags save_flags = flags;
     CRef<CBioseq> save_seq = main_seq;
-    CRef<CSeq_id> save_id = main_id;
+    CRef<CSeq_id> save_main_id = main_id;
+    CRef<CSeq_id> save_feat_id = feat_id;
     CRef<CSeq_entry> save_entry = entry;
     CWGSProteinIterator prot_it(db);
     flags = prot_it.fDefaultFlags & ~prot_it.fMasterDescr;
@@ -4067,8 +4509,7 @@ void SWGSCreateInfo::x_AddProducts(const vector<TVDBRowId>& product_row_ids)
             continue;
         }
         entry = null;
-        main_seq = null;
-        main_id = null;
+        x_ResetSeq();
         prot_it.x_CreateBioseq(*this);
         if ( entries ) {
             CRef<CSeq_entry> entry(new CSeq_entry);
@@ -4081,7 +4522,8 @@ void SWGSCreateInfo::x_AddProducts(const vector<TVDBRowId>& product_row_ids)
     }
     flags = save_flags;
     main_seq = save_seq;
-    main_id = save_id;
+    main_id = save_main_id;
+    feat_id = save_feat_id;
     entry = save_entry;
 }
 
@@ -4192,6 +4634,12 @@ bool CWGSSeqIterator::x_InitSplit(SWGSCreateInfo& info) const
         // split products if there are many enough
         info.split_prod = true;
     }
+    if ( kEnableSplitFeat && (info.flags & fSplitFeatures) && // if split is enabled and requested
+         GetLocFeatRowIdRange().second >= kMinFeatCountToSplit && // if there are anough features
+         GetDb().GetFeatLocIdType() != eFeatLocIdAccNoVer ) { // if feat Seq-ids are unambiguous
+        // split features if there are many enough
+        info.split_feat = true;
+    }
     if ( kEnableSplitQual && (info.flags & fSplitQualityGraph) &&
          CanHaveQualityGraph() ) {
         info.split_qual = true;
@@ -4214,48 +4662,130 @@ void CWGSSeqIterator::x_CreateSplit(SWGSCreateInfo& info) const
 }
 
 
+void CWGSSeqIterator::x_CreateQualityChunk(SWGSCreateInfo& info,
+                                           unsigned index) const
+{
+    PROFILE(sw_CreateQualityChunk);
+    CRef<CID2S_Chunk_Data> data(new CID2S_Chunk_Data);
+    sx_SetSplitId(data->SetId(), *info.main_id);
+    x_GetQualityAnnot(data->SetAnnots(), info,
+                      index*kQualChunkSize, kQualChunkSize);
+    info.chunk->SetData().push_back(data);
+}
+
+
+void CWGSSeqIterator::x_CreateDataChunk(SWGSCreateInfo& info,
+                                        unsigned index) const
+{
+    PROFILE(sw_CreateDataChunk);
+    CRef<CID2S_Chunk_Data> data(new CID2S_Chunk_Data);
+    sx_SetSplitId(data->SetId(), *info.main_id);
+    COpenRange<TSeqPos> range;
+    range.SetFrom(index*kDataChunkSize);
+    range.SetLength(kDataChunkSize);
+
+    TWGSContigGapInfo gap_info;
+    GetGapInfo(gap_info);
+    TSegments segments;
+    TInstSegmentFlags inst_flags = fInst_MakeData;
+    x_GetSegments(segments, range, gap_info, inst_flags);
+    ITERATE ( TSegments, it, segments ) {
+        _ASSERT(!it->is_gap);
+        _ASSERT(it->literal && it->literal->IsSetSeq_data());
+        CRef<CID2S_Sequence_Piece> piece(new CID2S_Sequence_Piece);
+        piece->SetStart(it->range.GetFrom());
+        piece->SetData().push_back(it->literal);
+        data->SetSeq_data().push_back(piece);
+    }
+    info.chunk->SetData().push_back(data);
+}
+
+
+void CWGSSeqIterator::x_CreateProductsChunk(SWGSCreateInfo& info,
+                                            unsigned index) const
+{
+    PROFILE(sw_CreateProductsChunk);
+    vector<TVDBRowId> product_row_ids;
+    TVDBRowId skip = index*kProdPerChunk;
+    for ( CWGSFeatureIterator feat_it(m_Db, GetLocFeatRowIdRange()); feat_it; ++feat_it ) {
+        if ( TVDBRowId row_id = feat_it.GetProductRowId() ) {
+            if ( skip ) {
+                --skip;
+                continue;
+            }
+            product_row_ids.push_back(row_id);
+            if ( product_row_ids.size() == kProdPerChunk ) {
+                break;
+            }
+        }
+    }
+    info.x_AddProducts(product_row_ids);
+}
+
+
+void CWGSSeqIterator::x_CreateFeaturesChunk(SWGSCreateInfo& info,
+                                            unsigned index) const
+{
+    PROFILE(sw_CreateFeaturesChunk);
+    // select range of feature table rows
+    auto range = GetLocFeatRowIdRange();
+    auto feat_start = range.first + kFeatPerChunk*index;
+    auto feat_stop = min(range.first+range.second, feat_start+kFeatPerChunk);
+    range.first = feat_start;
+    range.second = max(feat_start, feat_stop)-feat_start;
+    // create features
+    info.chunk->SetData();
+    CSeq_annot::TData::TFtable* main_features = 0;
+    CSeq_annot::TData::TFtable* product_features = 0;
+    for ( CWGSFeatureIterator feat_it(m_Db, range); feat_it; ++feat_it ) {
+        CSeq_annot::TData::TFtable* dst;
+        if ( feat_it.GetProductRowId() ) {
+            // product feature
+            if ( !product_features ) {
+                CRef<CID2S_Chunk_Data> data(new CID2S_Chunk_Data);
+                info.chunk->SetData().push_back(data);
+                data->SetId().SetBioseq_set(kMainEntryId);
+                CRef<CSeq_annot> annot(new CSeq_annot);
+                data->SetAnnots().push_back(annot);
+                product_features = &annot->SetData().SetFtable();
+            }
+            dst = product_features;
+        }
+        else {
+            // plain feature
+            if ( !main_features ) {
+                CRef<CID2S_Chunk_Data> data(new CID2S_Chunk_Data);
+                info.chunk->SetData().push_back(data);
+                data->SetId().SetSeq_id(*info.main_id);
+                CRef<CSeq_annot> annot(new CSeq_annot);
+                data->SetAnnots().push_back(annot);
+                main_features = &annot->SetData().SetFtable();
+            }
+            dst = main_features;
+        }
+        info.x_AddFeature(feat_it, *dst);
+    }
+}
+
+
 void CWGSSeqIterator::x_CreateChunk(SWGSCreateInfo& info,
                                     TChunkId chunk_id) const
 {
     PROFILE(sw_GetChunk);
-    info.main_id = GetId(info.flags);
+    info.x_SetId(*this);
     EChunkType type = EChunkType(chunk_id%kChunkIdStep);
     unsigned index = chunk_id/kChunkIdStep;
     if ( type == eChunk_qual ) {
-        CRef<CID2S_Chunk_Data> data(new CID2S_Chunk_Data);
-        sx_SetSplitId(data->SetId(), *info.main_id);
-        x_GetQualityAnnot(data->SetAnnots(), info,
-                          index*kQualChunkSize, kQualChunkSize);
-        info.chunk->SetData().push_back(data);
+        x_CreateQualityChunk(info, index);
     }
     else if ( type == eChunk_prod ) {
-        vector<TVDBRowId> product_row_ids;
-        sx_GetProductsSlice(m_Db, GetLocFeatRowIdRange(),
-                            index*kProdPerChunk, kProdPerChunk,
-                            product_row_ids);
-        info.x_AddProducts(product_row_ids);
+        x_CreateProductsChunk(info, index);
+    }
+    else if ( type == eChunk_feat ) {
+        x_CreateFeaturesChunk(info, index);
     }
     else if ( type == eChunk_data ) {
-        CRef<CID2S_Chunk_Data> data(new CID2S_Chunk_Data);
-        sx_SetSplitId(data->SetId(), *info.main_id);
-        COpenRange<TSeqPos> range;
-        range.SetFrom(index*kDataChunkSize);
-        range.SetLength(kDataChunkSize);
-
-        TWGSContigGapInfo gap_info;
-        GetGapInfo(gap_info);
-        TSegments segments;
-        TInstSegmentFlags inst_flags = fInst_MakeData;
-        x_GetSegments(segments, range, gap_info, inst_flags);
-        ITERATE ( TSegments, it, segments ) {
-            _ASSERT(!it->is_gap);
-            _ASSERT(it->literal && it->literal->IsSetSeq_data());
-            CRef<CID2S_Sequence_Piece> piece(new CID2S_Sequence_Piece);
-            piece->SetStart(it->range.GetFrom());
-            piece->SetData().push_back(it->literal);
-            data->SetSeq_data().push_back(piece);
-        }
-        info.chunk->SetData().push_back(data);
+        x_CreateDataChunk(info, index);
     }
     else {
         NCBI_THROW_FMT(CSraException, eInvalidArg,
@@ -4267,6 +4797,7 @@ void CWGSSeqIterator::x_CreateChunk(SWGSCreateInfo& info,
 
 CRef<CBioseq> CWGSSeqIterator::GetBioseq(TFlags flags) const
 {
+    PROFILE(sw_GetBioseq);
     x_CheckValid("CWGSSeqIterator::GetBioseq");
     SWGSCreateInfo info(m_Db, flags);
     x_CreateBioseq(info);
@@ -4276,6 +4807,7 @@ CRef<CBioseq> CWGSSeqIterator::GetBioseq(TFlags flags) const
 
 CRef<CSeq_entry> CWGSSeqIterator::GetSeq_entry(TFlags flags) const
 {
+    PROFILE(sw_GetSeq_entry);
     x_CheckValid("CWGSSeqIterator::GetSeq_entry");
     SWGSCreateInfo info(m_Db, flags);
     info.entry = new CSeq_entry;
@@ -4286,6 +4818,7 @@ CRef<CSeq_entry> CWGSSeqIterator::GetSeq_entry(TFlags flags) const
 
 CRef<CAsnBinData> CWGSSeqIterator::GetSeq_entryData(TFlags flags) const
 {
+    PROFILE(sw_GetSeq_entryData);
     x_CheckValid("CWGSSeqIterator::GetSeq_entryData");
     SWGSCreateInfo info(m_Db, flags);
     info.entry = new CSeq_entry;
@@ -4297,6 +4830,7 @@ CRef<CAsnBinData> CWGSSeqIterator::GetSeq_entryData(TFlags flags) const
 
 CRef<CID2S_Split_Info> CWGSSeqIterator::GetSplitInfo(TFlags flags) const
 {
+    PROFILE(sw_GetSplitInfo);
     x_CheckValid("CWGSSeqIterator::GetSplitInfo");
     SWGSCreateInfo info(m_Db, flags);
     if ( !x_InitSplit(info) ) {
@@ -4309,6 +4843,7 @@ CRef<CID2S_Split_Info> CWGSSeqIterator::GetSplitInfo(TFlags flags) const
 
 CRef<CAsnBinData> CWGSSeqIterator::GetSplitInfoData(TFlags flags) const
 {
+    PROFILE(sw_GetSplitInfoData);
     x_CheckValid("CWGSSeqIterator::GetSplitInfoData");
     SWGSCreateInfo info(m_Db, flags);
     if ( !x_InitSplit(info) ) {
@@ -4741,8 +5276,7 @@ void CWGSScaffoldIterator::x_CreateBioseq(SWGSCreateInfo& info) const
 {
     PROFILE(sw__GetScaffoldBioseq);
     _ASSERT(!info.main_seq);
-    info.main_seq = new CBioseq();
-    info.main_id = GetId(info.flags);
+    info.x_SetSeq(*this);
     if ( info.entry ) {
         _ASSERT(info.entry->Which() == CSeq_entry::e_not_set);
         info.entry->SetSeq(*info.main_seq);
@@ -4966,6 +5500,7 @@ void CWGSProteinIterator::Reset(void)
 {
     if ( m_Cur ) {
         if ( m_Db ) {
+            GetDb().Put(m_Cur0);
             GetDb().Put(m_Cur);
         }
         else {
@@ -4996,6 +5531,7 @@ CWGSProteinIterator::operator=(const CWGSProteinIterator& iter)
     if ( this != &iter ) {
         Reset();
         m_Db = iter.m_Db;
+        m_Cur0 = iter.m_Cur0;
         m_Cur = iter.m_Cur;
         m_CurrId = iter.m_CurrId;
         m_FirstGoodId = iter.m_FirstGoodId;
@@ -5044,14 +5580,22 @@ void CWGSProteinIterator::x_Init(const CWGSDb& wgs_db)
     if ( !wgs_db ) {
         return;
     }
-    m_Cur = wgs_db.GetNCObject().Prot();
-    if ( !m_Cur ) {
+    m_Cur0 = wgs_db.GetNCObject().Prot0();
+    if ( !m_Cur0 ) {
         return;
     }
     m_Db = wgs_db;
-    TVDBRowIdRange range = m_Cur->m_Cursor.GetRowIdRange();
+    TVDBRowIdRange range = m_Cur0->m_Cursor.GetRowIdRange();
     m_FirstGoodId = m_CurrId = range.first;
     m_FirstBadId = range.first+range.second;
+}
+
+
+void CWGSProteinIterator::x_Cur() const
+{
+    if ( !m_Cur ) {
+        const_cast<CWGSProteinIterator*>(this)->m_Cur = GetDb().Prot();
+    }
 }
 
 
@@ -5077,15 +5621,20 @@ void CWGSProteinIterator::x_ReportInvalid(const char* method) const
 
 bool CWGSProteinIterator::HasGi(void) const
 {
-    return m_Cur->m_GI && GetGi() != ZERO_GI;
+    return m_Cur0->m_GI && GetGi() != ZERO_GI;
 }
 
 
 CSeq_id::TGi CWGSProteinIterator::GetGi(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetGi");
-    CVDBValueFor<NCBI_gi> gi = m_Cur->GI(m_CurrId);
-    return gi.empty()? ZERO_GI: s_ToGi(*gi, "CWGSProteinIterator::GetGi()");
+    if ( m_Cur0->m_GI ) {
+        CVDBValueFor<NCBI_gi> gi = m_Cur0->GI(m_CurrId);
+        if ( !gi.empty() ) {
+            return s_ToGi(*gi, "CWGSProteinIterator::GetGi()");
+        }
+    }
+    return ZERO_GI;
 }
 
 
@@ -5093,8 +5642,8 @@ CTempString CWGSProteinIterator::GetAccession(void) const
 {
     PROFILE(sw____GetProtAcc);
     x_CheckValid("CWGSProteinIterator::GetAccession");
-    if ( m_Cur->m_GB_ACCESSION ) {
-        return *CVDBStringValue(m_Cur->GB_ACCESSION(m_CurrId));
+    if ( m_Cur0->m_GB_ACCESSION ) {
+        return *CVDBStringValue(m_Cur0->GB_ACCESSION(m_CurrId));
     }
     else {
         return CTempString();
@@ -5106,7 +5655,7 @@ int CWGSProteinIterator::GetAccVersion(void) const
 {
     PROFILE(sw____GetProtAccVer);
     x_CheckValid("CWGSProteinIterator::GetAccVersion");
-    return *m_Cur->ACC_VERSION(m_CurrId);
+    return *m_Cur0->ACC_VERSION(m_CurrId);
 }
 
 
@@ -5127,7 +5676,7 @@ CRef<CSeq_id> CWGSProteinIterator::GetAccSeq_id(void) const
 
 CRef<CSeq_id> CWGSProteinIterator::GetGeneralOrPatentSeq_id(void) const
 {
-    return GetDb().GetGeneralOrPatentSeq_id(GetProteinName(), *m_Cur, m_CurrId);
+    return GetDb().GetGeneralOrPatentSeq_id(GetProteinName(), *m_Cur0, m_CurrId);
 }
 
 
@@ -5141,12 +5690,9 @@ CRef<CSeq_id> CWGSProteinIterator::GetGiSeq_id(void) const
 {
     PROFILE(sw____GetProtGISeq_id);
     CRef<CSeq_id> id;
-    if ( m_Cur->m_GI ) {
-        CSeq_id::TGi gi = GetGi();
-        if ( gi != ZERO_GI ) {
-            id = new CSeq_id;
-            id->SetGi(gi);
-        }
+    if ( CSeq_id::TGi gi = GetGi() ) {
+        id = new CSeq_id;
+        id->SetGi(gi);
     }
     return id;
 }
@@ -5211,13 +5757,14 @@ void CWGSProteinIterator::GetIds(CBioseq::TId& ids, TFlags flags) const
 CTempString CWGSProteinIterator::GetProteinName(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetProteinName");
-    return *CVDBStringValue(m_Cur->PROTEIN_NAME(m_CurrId));
+    return *CVDBStringValue(m_Cur0->PROTEIN_NAME(m_CurrId));
 }
 
 
 CTempString CWGSProteinIterator::GetProductName(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetProductName");
+    x_Cur();
     return *CVDBStringValue(m_Cur->PRODUCT_NAME(m_CurrId));
 }
 
@@ -5225,6 +5772,7 @@ CTempString CWGSProteinIterator::GetProductName(void) const
 TSeqPos CWGSProteinIterator::GetSeqLength(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetSeqLength");
+    x_Cur();
     return *m_Cur->PROTEIN_LEN(m_CurrId);
 }
 
@@ -5232,6 +5780,7 @@ TSeqPos CWGSProteinIterator::GetSeqLength(void) const
 bool CWGSProteinIterator::HasRefAcc(void) const
 {
     x_CheckValid("CWGSProteinIterator::HasRefAcc");
+    x_Cur();
     return m_Cur->m_REF_ACC;
 }
 
@@ -5239,6 +5788,7 @@ bool CWGSProteinIterator::HasRefAcc(void) const
 CTempString CWGSProteinIterator::GetRefAcc(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetRefAcc");
+    x_Cur();
     return *CVDBStringValue(m_Cur->REF_ACC(m_CurrId));
 }
 
@@ -5246,7 +5796,7 @@ CTempString CWGSProteinIterator::GetRefAcc(void) const
 NCBI_gb_state CWGSProteinIterator::GetGBState(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetGBState");
-
+    x_Cur();
     return m_Cur->m_GB_STATE? *m_Cur->GB_STATE(m_CurrId): NCBI_gb_state_eWGSGenBankLive;
 }
 
@@ -5254,7 +5804,7 @@ NCBI_gb_state CWGSProteinIterator::GetGBState(void) const
 bool CWGSProteinIterator::HasPublicComment(void) const
 {
     x_CheckValid("CWGSProteinIterator::HasPublicComment");
-
+    x_Cur();
     if ( !m_Cur->m_PUBLIC_COMMENT ) {
         return false;
     }
@@ -5265,7 +5815,7 @@ bool CWGSProteinIterator::HasPublicComment(void) const
 CTempString CWGSProteinIterator::GetPublicComment(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetPublicComment");
-
+    x_Cur();
     if ( !m_Cur->m_PUBLIC_COMMENT ) {
         return string();
     }
@@ -5276,7 +5826,7 @@ CTempString CWGSProteinIterator::GetPublicComment(void) const
 bool CWGSProteinIterator::HasTitle(void) const
 {
     x_CheckValid("CWGSProteinIterator::HasTitle");
-
+    x_Cur();
     return m_Cur->m_TITLE && !m_Cur->TITLE(m_CurrId).empty();
 }
 
@@ -5284,7 +5834,7 @@ bool CWGSProteinIterator::HasTitle(void) const
 CTempString CWGSProteinIterator::GetTitle(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetTitle");
-
+    x_Cur();
     if ( !m_Cur->m_TITLE ) {
         return CTempString();
     }
@@ -5295,7 +5845,7 @@ CTempString CWGSProteinIterator::GetTitle(void) const
 TVDBRowIdRange CWGSProteinIterator::GetLocFeatRowIdRange(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetLocFeatRowIdRange");
-    
+    x_Cur();
     if ( !m_Cur->m_FEAT_ROW_START ) {
         return TVDBRowIdRange(0, 0);
     }
@@ -5317,7 +5867,7 @@ TVDBRowIdRange CWGSProteinIterator::GetLocFeatRowIdRange(void) const
 size_t CWGSProteinIterator::GetProductFeatCount(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetProductFeatCount");
-    
+    x_Cur();
     if ( !m_Cur->m_FEAT_PRODUCT_ROW_ID ) {
         return 0;
     }
@@ -5328,7 +5878,7 @@ size_t CWGSProteinIterator::GetProductFeatCount(void) const
 TVDBRowId CWGSProteinIterator::GetProductFeatRowId(size_t index) const
 {
     x_CheckValid("CWGSProteinIterator::GetProductFeatRowId");
-    
+    x_Cur();
     if ( !m_Cur->m_FEAT_PRODUCT_ROW_ID ) {
         return 0;
     }
@@ -5339,7 +5889,7 @@ TVDBRowId CWGSProteinIterator::GetProductFeatRowId(size_t index) const
 TVDBRowId CWGSProteinIterator::GetBestProductFeatRowId(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetBestProductFeatRowId");
-    
+    x_Cur();
     if ( !m_Cur->m_FEAT_PRODUCT_ROW_ID ) {
         return 0;
     }
@@ -5351,7 +5901,7 @@ TVDBRowId CWGSProteinIterator::GetBestProductFeatRowId(void) const
 TVDBRowId CWGSProteinIterator::GetProductFeatRowId(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetProductFeatRowId");
-    
+    x_Cur();
     if ( !m_Cur->m_FEAT_PRODUCT_ROW_ID ) {
         return 0;
     }
@@ -5363,6 +5913,7 @@ TVDBRowId CWGSProteinIterator::GetProductFeatRowId(void) const
 TVDBRowId CWGSProteinIterator::GetReplacedByRowId(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetReplacedByRowId");
+    x_Cur();
     if ( m_Cur->m_REPLACED_BY ) {
         CVDBValueFor<TVDBRowId> value = m_Cur->REPLACED_BY(m_CurrId);
         if ( !value.empty() ) {
@@ -5381,6 +5932,7 @@ TVDBRowId CWGSProteinIterator::GetReplacedByRowId(void) const
 TVDBRowId CWGSProteinIterator::GetReplacesRowId(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetReplacesRowId");
+    x_Cur();
     if ( m_Cur->m_REPLACES ) {
         CVDBValueFor<TVDBRowId> value = m_Cur->REPLACES(m_CurrId);
         if ( !value.empty() ) {
@@ -5399,7 +5951,7 @@ TVDBRowId CWGSProteinIterator::GetReplacesRowId(void) const
 bool CWGSProteinIterator::HasSeq_descr(TFlags flags) const
 {
     x_CheckValid("CWGSProteinIterator::HasSeq_descr");
-
+    x_Cur();
     if ( flags & fSeqDescr ) {
         if ( m_Cur->m_DESCR && !m_Cur->DESCR(m_CurrId).empty() ) {
             return true;
@@ -5418,7 +5970,7 @@ bool CWGSProteinIterator::HasSeq_descr(TFlags flags) const
 CRef<CSeq_descr> CWGSProteinIterator::GetSeq_descr(TFlags flags) const
 {
     x_CheckValid("CWGSProteinIterator::GetSeq_descr");
-
+    x_Cur();
     CRef<CSeq_descr> ret(new CSeq_descr);
     if ( flags & fSeqDescr ) {
         if ( m_Cur->m_DESCR ) {
@@ -5446,7 +5998,7 @@ CRef<CSeq_descr> CWGSProteinIterator::GetSeq_descr(TFlags flags) const
 bool CWGSProteinIterator::HasAnnotSet(void) const
 {
     x_CheckValid("CWGSProteinIterator::HasAnnotSet");
-
+    x_Cur();
     return m_Cur->m_ANNOT && !m_Cur->ANNOT(m_CurrId).empty();
 }
 
@@ -5454,7 +6006,7 @@ bool CWGSProteinIterator::HasAnnotSet(void) const
 void CWGSProteinIterator::GetAnnotSet(TAnnotSet& annot_set, TFlags flags) const
 {
     x_CheckValid("CWGSProteinIterator::GetAnnotSet");
-
+    x_Cur();
     if ( (flags & fSeqAnnot) && m_Cur->m_ANNOT ) {
         sx_AddAnnotBytes(annot_set, *m_Cur->ANNOT(m_CurrId));
     }
@@ -5465,7 +6017,7 @@ CRef<CSeq_inst> CWGSProteinIterator::GetSeq_inst(TFlags flags) const
 {
     PROFILE(sw___GetProtInst);
     x_CheckValid("CWGSProteinIterator::GetSeq_inst");
-
+    x_Cur();
     CRef<CSeq_inst> inst(new CSeq_inst);
     TSeqPos length = GetSeqLength();
     inst->SetMol(GetDb().GetProteinMolType());
@@ -5496,8 +6048,8 @@ void CWGSProteinIterator::x_CreateBioseq(SWGSCreateInfo& info) const
 {
     PROFILE(sw__GetProtBioseq);
     _ASSERT(!info.main_seq);
-    info.main_seq = new CBioseq();
-    info.main_id = GetId(info.flags);
+    x_Cur();
+    info.x_SetSeq(*this);
     if ( info.entry ) {
         _ASSERT(info.entry->Which() == CSeq_entry::e_not_set);
         info.entry->SetSeq(*info.main_seq);
@@ -5728,6 +6280,37 @@ TVDBRowId CWGSFeatureIterator::GetProductRowId(void) const
     }
     CVDBValueFor<TVDBRowId> row = m_Cur->PRODUCT_ROW_ID(m_CurrId);
     return row.empty()? 0: *row;
+}
+
+
+NCBI_WGS_feattype CWGSFeatureIterator::GetFeatType(void) const
+{
+    x_CheckValid("CWGSFeatureIterator::GetFeatType");
+    return *m_Cur->FEAT_TYPE(m_CurrId);
+}
+
+
+TSeqPos CWGSFeatureIterator::GetLocStart(void) const
+{
+    x_CheckValid("CWGSFeatureIterator::GetLocStart");
+    return *m_Cur->LOC_START(m_CurrId);
+}
+
+
+TSeqPos CWGSFeatureIterator::GetLocLength(void) const
+{
+    x_CheckValid("CWGSFeatureIterator::GetLocLength");
+    return *m_Cur->LOC_LEN(m_CurrId);
+}
+
+
+CRange<TSeqPos> CWGSFeatureIterator::GetLocRange(void) const
+{
+    x_CheckValid("CWGSFeatureIterator::GetLocRange");
+    CRange<TSeqPos> range;
+    range.SetFrom(*m_Cur->LOC_START(m_CurrId));
+    range.SetLength(*m_Cur->LOC_LEN(m_CurrId));
+    return range;
 }
 
 

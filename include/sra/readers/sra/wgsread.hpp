@@ -116,6 +116,7 @@ class CWGSProteinIterator;
 class CWGSFeatureIterator;
 
 struct SWGSCreateInfo;
+struct SWGSFeatChunkInfo;
 
 class NCBI_SRAREAD_EXPORT CAsnBinData : public CObject
 {
@@ -161,18 +162,26 @@ struct SWGSDb_Defs
         fSplitQualityGraph  = 1<<8,
         fSplitSeqData       = 1<<9,
         fSplitProducts      = 1<<10,
-        fSplitAll     = fSplitQualityGraph | fSplitSeqData | fSplitProducts,
-        fSplitMask    = fSplitQualityGraph | fSplitSeqData | fSplitProducts,
+        fSplitFeatures      = 1<<11,
+        fSplitAll     = fSplitQualityGraph | fSplitSeqData | fSplitProducts | fSplitFeatures,
+        fSplitMask    = fSplitQualityGraph | fSplitSeqData | fSplitProducts | fSplitFeatures,
         fDefaultSplit = fSplitAll,
 
         fDefaultFlags = fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst|fDefaultSplit
     };
     DECLARE_SAFE_FLAGS_TYPE(EFlags, TFlags);
+
+    enum EFeatLocIdType : Int1 {
+        eFeatLocIdUninitialized = -1,
+        eFeatLocIdGi = 0,
+        eFeatLocIdAccVer,
+        eFeatLocIdAccNoVer
+    };
 };
 DECLARE_SAFE_FLAGS(SWGSDb_Defs::EFlags);
 
 
-class NCBI_SRAREAD_EXPORT CWGSDb_Impl : public CObject
+class NCBI_SRAREAD_EXPORT CWGSDb_Impl : public CObject, public SWGSDb_Defs
 {
 public:
     CWGSDb_Impl(CVDBMgr& mgr,
@@ -374,6 +383,8 @@ public:
     // Key of each element is accession prefix/length pair
     TProtAccRanges GetProtAccRanges(void);
 
+    EFeatLocIdType GetFeatLocIdType();
+
 protected:
     friend class CWGSSeqIterator;
     friend class CWGSScaffoldIterator;
@@ -381,11 +392,15 @@ protected:
     friend class CWGSProteinIterator;
     friend class CWGSFeatureIterator;
 
-    // SSeqTableCursor is helper accessor structure for SEQUENCE table
+    // SSeq0TableCursor is helper accessor structure for SEQUENCE table, minimal columns
+    struct SSeq0TableCursor;
+    // SSeqTableCursor is helper accessor structure for SEQUENCE table, remaining columns
     struct SSeqTableCursor;
     // SScfTableCursor is helper accessor structure for SCAFFOLD table
     struct SScfTableCursor;
-    // SProtTableCursor is helper accessor structure for optional PROTEIN table
+    // SProt0TableCursor is helper accessor structure for optional PROTEIN table, minimal columns
+    struct SProt0TableCursor;
+    // SProtTableCursor is helper accessor structure for optional PROTEIN table, remaining columns
     struct SProtTableCursor;
     // SFeatTableCursor is helper accessor structure for optional FEATURE table
     struct SFeatTableCursor;
@@ -451,28 +466,32 @@ protected:
     }
 
     // get table accessor object for exclusive access
+    CRef<SSeq0TableCursor> Seq0(TVDBRowId row = 0);
     CRef<SSeqTableCursor> Seq(TVDBRowId row = 0);
     CRef<SScfTableCursor> Scf(TVDBRowId row = 0);
+    CRef<SProt0TableCursor> Prot0(TVDBRowId row = 0);
     CRef<SProtTableCursor> Prot(TVDBRowId row = 0);
     CRef<SFeatTableCursor> Feat(TVDBRowId row = 0);
     CRef<SIdxTableCursor> Idx(TVDBRowId row = 0);
     // return table accessor object for reuse
+    void Put(CRef<SSeq0TableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SSeqTableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SScfTableCursor>& curs, TVDBRowId row = 0);
+    void Put(CRef<SProt0TableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SProtTableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SFeatTableCursor>& curs, TVDBRowId row = 0);
     void Put(CRef<SIdxTableCursor>& curs, TVDBRowId row = 0);
 
     CRef<CSeq_id> GetGeneralOrPatentSeq_id(CTempString str,
-                                           const SSeqTableCursor& cur,
+                                           const SSeq0TableCursor& cur,
                                            TVDBRowId row) const;
     CRef<CSeq_id> GetGeneralOrPatentSeq_id(CTempString str,
                                            const SScfTableCursor& cur,
                                            TVDBRowId row) const;
     CRef<CSeq_id> GetGeneralOrPatentSeq_id(CTempString str,
-                                           const SProtTableCursor& cur,
+                                           const SProt0TableCursor& cur,
                                            TVDBRowId row) const;
-    
+
 protected:
     // open tables
     void OpenTable(CVDBTable& table,
@@ -530,8 +549,10 @@ private:
     CVDBTable m_FeatTable;
     CVDBTable m_GiIdxTable;
 
+    CVDBObjectCache<SSeq0TableCursor> m_Seq0;
     CVDBObjectCache<SSeqTableCursor> m_Seq;
     CVDBObjectCache<SScfTableCursor> m_Scf;
+    CVDBObjectCache<SProt0TableCursor> m_Prot0;
     CVDBObjectCache<SProtTableCursor> m_Prot;
     CVDBObjectCache<SFeatTableCursor> m_Feat;
     CVDBObjectCache<SIdxTableCursor> m_GiIdx;
@@ -544,6 +565,7 @@ private:
     CSeq_inst::TMol m_ContigMolType;
     bool m_IsSetMasterDescr;
     bool m_HasNoDefaultGnlId;
+    EFeatLocIdType m_FeatLocIdType;
     CRef<CSeq_entry> m_MasterEntry;
     TMasterDescr m_MasterDescr;
     CRef<CSeq_id> m_PatentId;
@@ -1057,6 +1079,15 @@ protected:
     void x_CreateChunk(SWGSCreateInfo& info,
                        TChunkId chunk_id) const;
 
+    void x_CreateDataChunk(SWGSCreateInfo& info,
+                           unsigned index) const;
+    void x_CreateQualityChunk(SWGSCreateInfo& info,
+                              unsigned index) const;
+    void x_CreateProductsChunk(SWGSCreateInfo& info,
+                               unsigned index) const;
+    void x_CreateFeaturesChunk(SWGSCreateInfo& info,
+                               unsigned index) const;
+
     TSeqPos x_GetQualityArraySize(void) const;
     void x_AddQualityChunkInfo(SWGSCreateInfo& info) const;
     void x_GetQualityAnnot(TAnnotSet& annot_set,
@@ -1103,6 +1134,7 @@ protected:
 
 private:
     CWGSDb m_Db;
+    CRef<CWGSDb_Impl::SSeq0TableCursor> m_Cur0; // VDB seq table accessor
     CRef<CWGSDb_Impl::SSeqTableCursor> m_Cur; // VDB seq table accessor
     TVDBRowId m_CurrId, m_FirstGoodId, m_FirstBadId;
     SVersionSelector m_AccVersion;
@@ -1364,8 +1396,10 @@ public:
 
 protected:
     friend struct SWGSCreateInfo;
+    friend struct SWGSFeatChunkInfo;
 
     void x_Init(const CWGSDb& wgs_db);
+    void x_Cur() const;
 
     CWGSDb_Impl& GetDb(void) const {
         return m_Db.GetNCObject();
@@ -1383,6 +1417,7 @@ protected:
 
 private:
     CWGSDb m_Db;
+    CRef<CWGSDb_Impl::SProt0TableCursor> m_Cur0; // VDB protein table accessor
     CRef<CWGSDb_Impl::SProtTableCursor> m_Cur; // VDB protein table accessor
     TVDBRowId m_CurrId, m_FirstGoodId, m_FirstBadId;
 };
@@ -1427,12 +1462,18 @@ public:
 
     CWGSFeatureIterator& SelectRow(TVDBRowId row);
     CWGSFeatureIterator& SelectRowRange(TVDBRowIdRange row_range);
+
+    NCBI_WGS_feattype GetFeatType(void) const;
     
     NCBI_WGS_seqtype GetLocSeqType(void) const;
     NCBI_WGS_seqtype GetProductSeqType(void) const;
 
     TVDBRowId GetLocRowId(void) const;
     TVDBRowId GetProductRowId(void) const;
+
+    TSeqPos GetLocStart(void) const;
+    TSeqPos GetLocLength(void) const;
+    CRange<TSeqPos> GetLocRange(void) const;
 
     CTempString GetSeq_featBytes(void) const;
     CRef<CSeq_feat> GetSeq_feat() const;
