@@ -15,3 +15,8 @@ LIB = $(SEQ_LIBS) pub medline biblio general xser psg_cassandra psg_protobuf psg
 REQUIRES = CASSANDRA MT Linux H2O LMDB LIBUV PROTOBUF
 
 WATCHERS = satskyse dmitrie1
+
+CHECK_CMD=test/tccheck.sh
+
+CHECK_COPY=test/ etc/pubseq_gateway.ini
+
