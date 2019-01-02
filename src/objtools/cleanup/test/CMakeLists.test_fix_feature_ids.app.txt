@@ -1,0 +1,28 @@
+#############################################################################
+# $Id$
+#############################################################################
+
+NCBI_begin_app(test_fix_feature_ids)
+  NCBI_sources(test_fix_feature_ids)
+  NCBI_requires(Boost.Test.Included)
+  NCBI_uses_toolkit_libraries(xcleanup seqset)
+  NCBI_project_watchers(filippov)
+  NCBI_set_test_assets(test_cases)
+  NCBI_add_test()
+NCBI_end_app()
+
+if(OFF)
+#
+#
+#
+add_executable(test_fix_feature_ids-app
+    test_fix_feature_ids
+)
+
+set_target_properties(test_fix_featuer_ids-app PROPERTIES OUTPUT_NAME test_fix_feature_ids)
+
+
+target_link_libraries(test_fix_feature_ids-app
+    xcleanup seqset test_boost
+)
+endif()
