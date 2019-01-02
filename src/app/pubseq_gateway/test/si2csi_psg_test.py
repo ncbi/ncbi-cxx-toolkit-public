@@ -16,6 +16,7 @@ CANCEL_JOIN_THREAD_TIMEOUT = 3
 PARALLEL = 100
 
 EXCLUSIONS = {}
+EXCLUSIONS_SEQ_IDS = {}
 
 
 count = 0
@@ -203,6 +204,11 @@ def ProcessDBDumpLine(dumpLine, lineNumber, outputQueue):
         seq_id_type = vals[3]
         version = vals[4]
 
+        if sec_seq_id in EXCLUSIONS_SEQ_IDS:
+            outputQueue.put({'error': None})
+            return
+            
+
         # Convert first two items to fasta
         fasta, fasta_content, which, fasta_type, fasta_content_parsable, stdoutput = \
             getFasta(sec_seq_id, sec_seq_id_type)
@@ -279,7 +285,10 @@ try:
                 line = line.strip()
                 if line:
                     if not line.startswith('#'):
-                        EXCLUSIONS[line] = None
+                        if line.upper().startswith('SEQ_ID:'):
+                            EXCLUSIONS_SEQ_IDS[line[len('SEQ_ID:'):].strip()] = None
+                        else:
+                            EXCLUSIONS[line] = None
 
     items = []
     with open(CASSANDRA_DUMP_FILE) as f:
