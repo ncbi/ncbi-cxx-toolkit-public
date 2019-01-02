@@ -2,6 +2,7 @@
 
 if [ "aa$TEAMCITY_VERSION" == "aa" ] ; then
     echo "Skipping tests which are supposed to be run under teamcity"
+    set
     exit 0
 fi
 
