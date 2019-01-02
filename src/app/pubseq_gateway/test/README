@@ -1,3 +1,6 @@
+Unit tests
+----------
+
 The tests use the udc framework (see the udc NCBI facility).
 
 To run the tests:
@@ -15,3 +18,25 @@ files if needed and runs 'udc'.
 Note: after changing test cases prepare a new archive with the baseline (someone
       insisted to have an archive in SVN)
 tar -czf baseline.tar.gz baseline/
+
+
+
+Manual tests for the resolution algorithm
+-----------------------------------------
+
+1. Make the csv snapshot of the SI2CSI table, e.g.
+  /panfs/pan1.be-md.ncbi.nlm.nih.gov/id_dumps/id_software/cassandra/test/bin/cqlsh idtest214 9042
+  cqlsh> COPY idmain.si2csi (sec_seq_id, sec_seq_id_type, accession, seq_id_type, version) TO './si2csi.cass.dump';
+
+2. Prepare the binary convert_to_fasta from the utils subdirectory
+
+3. Have
+   convert_to_fasta
+   convert_to_fasta.sh
+   si2csi_psg_test.py
+   si2csi.cass.dump
+
+   in the same directory and then run
+   python3 -u ./si2csi_psg_test.py > output 2>&1
+
+   NB: an exclusion file can also be supplied for the python script
