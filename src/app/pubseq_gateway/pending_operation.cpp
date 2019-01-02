@@ -953,17 +953,24 @@ bool CPendingOperation::x_ResolveAsIs(SBioseqResolution &  bioseq_resolution)
     for (size_t  index = 0; index < m_UrlSeqId.size(); ++index, ++current)
         *current = (char)toupper((unsigned char)(*current));
 
-    // Two tries are requred: first with stripped trailing bars, then as is
-    CTempString     strip_bar_seq_id(m_UrlSeqId);
-    while (strip_bar_seq_id[strip_bar_seq_id.size() - 1] == '|')
-        strip_bar_seq_id.erase(strip_bar_seq_id.size() - 1);
-
-    if (x_ResolveSecondaryOSLT(strip_bar_seq_id, m_UrlSeqIdType,
-                               bioseq_resolution))
+    // 1. As is
+    if (x_ResolveSecondaryOSLT(m_UrlSeqId, m_UrlSeqIdType, bioseq_resolution))
         return true;
 
-    if (strip_bar_seq_id.size() != m_UrlSeqId.size()) {
-        if (x_ResolveSecondaryOSLT(m_UrlSeqId, m_UrlSeqIdType,
+    // 2. if there are | at the end => strip all trailing bars
+    //    else => add one | at the end
+    if (m_UrlSeqId[m_UrlSeqId.size() - 1] == '|') {
+        CTempString     strip_bar_seq_id(m_UrlSeqId);
+        while (strip_bar_seq_id[strip_bar_seq_id.size() - 1] == '|')
+            strip_bar_seq_id.erase(strip_bar_seq_id.size() - 1);
+
+        if (x_ResolveSecondaryOSLT(strip_bar_seq_id, m_UrlSeqIdType,
+                                   bioseq_resolution))
+            return true;
+    } else {
+        string      seq_id_added_bar(m_UrlSeqId, m_UrlSeqId.size());
+        seq_id_added_bar.append(1, '|');
+        if (x_ResolveSecondaryOSLT(seq_id_added_bar, m_UrlSeqIdType,
                                    bioseq_resolution))
             return true;
     }
@@ -981,18 +988,25 @@ bool CPendingOperation::x_ResolveAsIsInDB(SBioseqResolution &  bioseq_resolution
     for (size_t  index = 0; index < m_UrlSeqId.size(); ++index, ++current)
         *current = (char)toupper((unsigned char)(*current));
 
-    // Two tries are requred: first with stripped trailing bars, then as is
-    CTempString     strip_bar_seq_id(m_UrlSeqId);
-    while (strip_bar_seq_id[strip_bar_seq_id.size() - 1] == '|')
-        strip_bar_seq_id.erase(strip_bar_seq_id.size() - 1);
-
-
-    if (x_ResolveSecondaryOSLTviaDB(strip_bar_seq_id, m_UrlSeqIdType,
+    // 1. As is
+    if (x_ResolveSecondaryOSLTviaDB(m_UrlSeqId, m_UrlSeqIdType,
                                     bioseq_resolution))
         return true;
 
-    if (strip_bar_seq_id.size() != m_UrlSeqId.size()) {
-        if (x_ResolveSecondaryOSLTviaDB(m_UrlSeqId, m_UrlSeqIdType,
+    // 2. if there are | at the end => strip all trailing bars
+    //    else => add one | at the end
+    if (m_UrlSeqId[m_UrlSeqId.size() - 1] == '|') {
+        CTempString     strip_bar_seq_id(m_UrlSeqId);
+        while (strip_bar_seq_id[strip_bar_seq_id.size() - 1] == '|')
+            strip_bar_seq_id.erase(strip_bar_seq_id.size() - 1);
+
+        if (x_ResolveSecondaryOSLTviaDB(strip_bar_seq_id, m_UrlSeqIdType,
+                                        bioseq_resolution))
+            return true;
+    } else {
+        string      seq_id_added_bar(m_UrlSeqId, m_UrlSeqId.size());
+        seq_id_added_bar.append(1, '|');
+        if (x_ResolveSecondaryOSLTviaDB(seq_id_added_bar, m_UrlSeqIdType,
                                         bioseq_resolution))
             return true;
     }
