@@ -43,6 +43,7 @@ public:
     string m_ResultsDirectory;
     CNcbiOstream* m_output;
     string m_output_filename;
+    string m_base_name;
     CRef<objects::CSeq_id> m_accession;
     string m_OrganismName;
     string m_single_source_qual_file;
@@ -64,7 +65,7 @@ public:
     bool   W;
     bool   m_save_bioseq_set;
     string c;
-    string m_discrepancy_file;
+    bool   m_discrepancy;
     string zOufFile;
     string X;
     string m_master_genome_flag;
@@ -114,8 +115,7 @@ public:
     void AddUserTrack(objects::CSeq_descr& SD, const string& type, const string& label, const string& data);
     void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
 
-    CNcbiOstream& GetOstream(CTempString suffix);
-    void SetOstreamName(CTempString suffix, CTempString filename);
+    CNcbiOstream& GetOstream(CTempString suffix, CTempString basename=kEmptyStr);
     string GenerateOutputFilename(const CTempString& ext, CTempString basename=kEmptyStr) const;
     void ReleaseOutputs();
 

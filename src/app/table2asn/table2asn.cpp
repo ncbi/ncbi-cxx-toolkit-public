@@ -271,8 +271,7 @@ void CTbl2AsnApp::Init(void)
       y Hold for One Year\n\
       mm/dd/yyyy", CArgDescriptions::eString); // done
 
-    arg_desc->AddOptionalKey(
-        "Z", "OutFile", "Discrepancy Report Output File", CArgDescriptions::eOutputFile);
+    arg_desc->AddFlag("Z", "Output discrepancy report");
 
     arg_desc->AddOptionalKey("c", "String", "Cleanup (combine any of the following letters)\n\
       b Basic cleanup (default)\n\
@@ -654,12 +653,7 @@ int CTbl2AsnApp::Run(void)
 
     if (args["Z"])
     {
-        m_context.m_discrepancy_file = args["Z"].AsString();
-        if (m_context.m_discrepancy_file.find(CDirEntry::GetPathSeparator()) == string::npos)
-        {
-            if (!m_context.m_ResultsDirectory.empty())
-                m_context.m_discrepancy_file.insert(0, m_context.m_ResultsDirectory);
-        }
+        m_context.m_discrepancy = true;
         m_validator->InitDisrepancyReport(*m_context.m_scope);
     }
 
@@ -711,15 +705,18 @@ int CTbl2AsnApp::Run(void)
             ProcessOneFile();
         }
         else
-        if (args["indir"])
+        if (args["indir"]) 
         {
             // initiate validator output
-            string basename = m_context.m_output_filename.empty() ? "validator" : m_context.m_output_filename;
-            m_context.SetOstreamName(".val", m_context.GenerateOutputFilename(".val", basename));
-            m_context.SetOstreamName(".stats", m_context.GenerateOutputFilename(".stats", basename));
-            CDir directory(args["indir"].AsString());
+            string indir = args["indir"].AsString();
+            CDir directory(indir);
             if (directory.Exists())
-            {
+            {                                
+                string basename = m_context.m_output_filename.empty() ? 
+                    CDir(CDir::CreateAbsolutePath(indir, CDir::eRelativeToCwd)).GetBase() : 
+                    m_context.m_output_filename;
+
+                m_context.m_base_name = basename;
                 CMaskFileName masks;
                 masks.Add("*" + args["x"].AsString());
 
@@ -951,7 +948,7 @@ void CTbl2AsnApp::ProcessOneEntry(CFormatGuess::EFormat format, CRef<CSerialObje
             m_validator->Validate(submit, entry, m_context.m_validate);
         }
 
-        if (!m_context.m_discrepancy_file.empty())
+        if (m_context.m_discrepancy)
         {
             m_validator->CollectDiscrepancies(submit_or_entry, m_context.m_disc_eucariote, m_context.m_disc_lineage);
         }

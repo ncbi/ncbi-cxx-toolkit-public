@@ -144,7 +144,7 @@ void CTable2AsnValidator::Validate(CRef<CSeq_submit> submit, CRef<CSeq_entry> en
     }
     if (errors.NotEmpty())
     {
-        ReportErrors(errors, m_context->GetOstream(".val"));
+        ReportErrors(errors, m_context->GetOstream(".val", m_context->m_base_name));
     }
 }
 
@@ -208,7 +208,8 @@ void CTable2AsnValidator::InitDisrepancyReport(objects::CScope& scope)
 
 void CTable2AsnValidator::CollectDiscrepancies(CSerialObject& obj, bool eucariote, const string& lineage)
 {
-    m_discrepancy->SetFile(m_context->m_current_file);
+    CFile nm(m_context->GenerateOutputFilename(m_context->m_asn1_suffix));
+    m_discrepancy->SetFile(nm.GetName());
     m_discrepancy->SetLineage(lineage);
     m_discrepancy->SetEucariote(eucariote);
     m_discrepancy->Parse(obj);
@@ -216,16 +217,11 @@ void CTable2AsnValidator::CollectDiscrepancies(CSerialObject& obj, bool eucariot
 
 void CTable2AsnValidator::ReportDiscrepancies()
 {
-    auto_ptr<CNcbiOstream> discrepancy_output;
-
-    if (m_context->m_discrepancy_file.empty())
-        return;
-
-    m_discrepancy->Summarize();
-    discrepancy_output.reset(new CNcbiOfstream(m_context->m_discrepancy_file.c_str()));
-    bool print_fatal = true;
-    m_discrepancy->OutputText(*discrepancy_output, print_fatal, false, true);
-    m_discrepancy.Release();
+    if (m_context->m_discrepancy) {
+        m_discrepancy->Summarize();
+        bool print_fatal = true;
+        m_discrepancy->OutputText(m_context->GetOstream(".dr", m_context->m_base_name), print_fatal, false, true);
+    }
 }
 
 void CTable2AsnValidator::UpdateECNumbers(objects::CSeq_entry_Handle seh)

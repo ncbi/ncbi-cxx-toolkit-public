@@ -198,6 +198,7 @@ CTable2AsnContext::CTable2AsnContext():
     m_verbose(false),
     m_augustus_fix(false),
     m_make_flatfile(false),
+    m_discrepancy(false),
     m_logger(0)
 {
 }
@@ -231,24 +232,17 @@ CSeq_descr& CTable2AsnContext::SetBioseqOrParentDescr(CBioseq& bioseq)
     return bioseq.SetDescr();
 }
 
-CNcbiOstream & CTable2AsnContext::GetOstream(CTempString suffix)
+CNcbiOstream & CTable2AsnContext::GetOstream(CTempString suffix, CTempString basename)
 {
     auto& rec = m_outputs[suffix];
     if (rec.second.get() == 0)
     {
         if (rec.first.empty())
-          rec.first = GenerateOutputFilename(suffix);
+          rec.first = GenerateOutputFilename(suffix, basename);
         CFile(rec.first.c_str()).Remove(CFile::fIgnoreMissing);
         rec.second.reset(new CNcbiOfstream(rec.first.c_str()));
     }
     return *rec.second.get();
-}
-
-void CTable2AsnContext::SetOstreamName(CTempString suffix, CTempString filename)
-{
-    string outputfile = m_ResultsDirectory.empty() ? "" : m_ResultsDirectory;
-    outputfile = CDirEntry::MakePath(outputfile, filename);
-    m_outputs[suffix].first = outputfile;
 }
 
 string CTable2AsnContext::GenerateOutputFilename(const CTempString& ext, CTempString basename) const
