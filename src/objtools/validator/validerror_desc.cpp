@@ -144,7 +144,6 @@ void CValidError_desc::ValidateSeqDesc
             PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
                 "OrgRef descriptor is obsolete", *m_Ctx, desc);
             break;
-            break;
         case CSeqdesc::e_Num:
             break;
         case CSeqdesc::e_Maploc:
@@ -467,7 +466,7 @@ bool CValidError_desc::ValidateStructuredComment
                     stable_sort (fields.begin(), fields.end(), s_UserFieldCompare);
                     is_valid = ValidateStructuredComment (tmp, desc, rule, report);
                 }
-            } catch (CException ) {
+            } catch (CException&) {
                 // no rule for this prefix
                 ValidateStructuredCommentGeneric(usr, desc, true);
             }
@@ -484,10 +483,10 @@ bool CValidError_desc::ValidateStructuredComment
                 PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidSuffix, 
                     report_sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);
             }
-        } catch (CException ) {
+        } catch (CException& ) {
             // we don't care about missing suffixes
         }
-    } catch (CException ) {
+    } catch (CException& ) {
         // no prefix, in which case no rules
         // but it is still an error - should have prefix
         if (report) {
@@ -645,8 +644,9 @@ bool CValidError_desc::ValidateDblink
             const string &label_str = GET_FIELD(fld.GetLabel(), Str);
             if (NStr::EqualNocase(label_str, "BioSample")) {
                 if (fld.IsSetData()) {
-                    if (fld.GetData().IsStrs()) {
-                        const CUser_field::C_Data::TStrs& strs = fld.GetData().GetStrs();
+                    const auto& fdata = fld.GetData();
+                    if (fdata.IsStrs()) {
+                        const CUser_field::C_Data::TStrs& strs = fdata.GetStrs();
                         ITERATE(CUser_field::C_Data::TStrs, st_itr, strs) {
                             const string& str = *st_itr;
                             if (x_IsBadBioSampleFormat(str) && x_IsBadAltBioSampleFormat(str)) {
@@ -654,11 +654,11 @@ bool CValidError_desc::ValidateDblink
                                     "Bad BioSample format - " + str, *m_Ctx, desc);
                             }
                         }
-                    } else if (fld.GetData().IsStr() && 
-                               x_IsBadBioSampleFormat(fld.GetData().GetStr()) &&
-                               x_IsBadAltBioSampleFormat(fld.GetData().GetStr())) {
+                    } else if (fdata.IsStr() &&
+                               x_IsBadBioSampleFormat(fdata.GetStr()) &&
+                               x_IsBadAltBioSampleFormat(fdata.GetStr())) {
                         PostErr(eDiag_Error, eErr_SEQ_DESCR_DBLinkBadBioSample,
-                            "Bad BioSample format - " + fld.GetData().GetStr(), *m_Ctx, desc);
+                            "Bad BioSample format - " + fdata.GetStr(), *m_Ctx, desc);
                     }
                 }
             } else if (NStr::EqualNocase(label_str, "Sequence Read Archive")) {
@@ -799,9 +799,9 @@ void CValidError_desc::ValidateMolInfo
         else if(bm == CMolInfo::eBiomol_other)
             p = "other";
         else
-            p = "";
+            p.clear();
 
-        if(p != "")
+        if(!p.empty())
             PostErr(eDiag_Error, eErr_SEQ_DESCR_WrongBiomolForTSA,
                     "Biomol \"" + p + "\" is not appropriate for sequences that use the TSA technique.",
                     *m_Ctx, desc);
