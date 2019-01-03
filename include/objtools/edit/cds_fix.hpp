@@ -60,6 +60,7 @@ NCBI_XOBJEDIT_EXPORT CRef<objects::CSeq_id> GetNewLocalProtId(const string &id_b
 NCBI_XOBJEDIT_EXPORT CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, string& id_label, bool general_only);
 NCBI_XOBJEDIT_EXPORT vector<CRef<objects::CSeq_id> > GetNewProtIdFromExistingProt(objects::CBioseq_Handle bsh, int &offset, string& id_label);
 NCBI_XOBJEDIT_EXPORT string GetIdHashOrValue(const string &base, int offset);
+NCBI_XOBJEDIT_EXPORT bool IsGeneralIdProtPresent(objects::CSeq_entry_Handle tse);
 
 // these methods are being moved to ncbi::feature namespace 
 // please modify your usage of them

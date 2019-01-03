@@ -1335,7 +1335,7 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
             gen_id = it;
         }        
     }
-    if (general_only) 
+    if (gen_id && general_only) 
     {
         hid = gen_id;
     } 
@@ -1349,6 +1349,23 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
     return new_id;
 }
 
+bool IsGeneralIdProtPresent(objects::CSeq_entry_Handle tse)
+{
+    bool found = false;
+    for (CBioseq_CI b_iter(tse, CSeq_inst::eMol_aa); b_iter; ++b_iter) 
+    {
+        for (auto it : b_iter->GetId()) 
+        {
+            if (it.GetSeqId()->IsGeneral() && it.GetSeqId()->GetGeneral().IsSetDb() &&
+                !it.GetSeqId()->GetGeneral().IsSkippable()) 
+            {
+                found = true;
+                break;
+            }        
+        }
+    }
+    return found;
+}
 
 END_SCOPE(edit)
 END_SCOPE(objects)
