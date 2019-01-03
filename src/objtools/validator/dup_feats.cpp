@@ -69,7 +69,6 @@ set< CSeq_feat_Handle > GetDuplicateFeaturesForRemoval(CSeq_entry_Handle seh)
 {
     map<objects::CBioseq_Handle, set<objects::CSeq_feat_Handle> > product_to_cds;
     GetProductToCDSMap(seh.GetScope(), product_to_cds);
-    bool modified = false;
     set< CSeq_feat_Handle > deleted_feats;
     for (CFeat_CI feat1(seh); feat1; ++feat1)
     {
@@ -81,7 +80,6 @@ set< CSeq_feat_Handle > GetDuplicateFeaturesForRemoval(CSeq_entry_Handle seh)
                 validator::EDuplicateFeatureType dup_type = validator::IsDuplicate(feat1->GetSeq_feat_Handle(), feat2->GetSeq_feat_Handle());
                 if (dup_type == validator::eDuplicate_Duplicate || dup_type == validator::eDuplicate_DuplicateDifferentTable) {
                     deleted_feats.insert(feat2->GetSeq_feat_Handle());
-                    modified = true;
                 }
             }
         }
