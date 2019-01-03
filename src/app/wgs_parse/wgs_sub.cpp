@@ -1272,7 +1272,7 @@ public:
 };
 
 
-static void AddMasterToSecondary(CSeq_entry& entry, const CBlockAdaptor& block)
+static void AddMasterToSecondary(CSeq_entry& entry, const string& accession, const CBlockAdaptor& block)
 {
     if (NeedToAddExtraAccessions(entry)) {
 
@@ -1291,7 +1291,6 @@ static void AddMasterToSecondary(CSeq_entry& entry, const CBlockAdaptor& block)
             entry.SetDescr().Set().push_back(block_descr);
         }
 
-        string accession = GetParams().GetAccession() + ToStringLeadZeroes(0, GetMaxAccessionLen(0));
         if (block.IsSetExtraAccessions(block_descr)) {
             auto same = find_if(block.SetExtraAccessions(block_descr).begin(), block.SetExtraAccessions(block_descr).end(),
                                 [&accession](const string& cur_accession) { return accession == cur_accession; });
@@ -1306,7 +1305,7 @@ static void AddMasterToSecondary(CSeq_entry& entry, const CBlockAdaptor& block)
     if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
 
         for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
-            AddMasterToSecondary(*cur_entry, block);
+            AddMasterToSecondary(*cur_entry, accession, block);
         }
     }
 }
@@ -1580,13 +1579,13 @@ bool ParseSubmissions(CMasterInfo& master_info)
                         AssignNucAccession(*entry, file, master_info.m_id_infos, master_info.m_order_of_entries);
                     }
 
-                    if (GetParams().IsUpdateScaffoldsMode()) {
+                    if (GetParams().IsUpdateScaffoldsMode() && master_info.m_current_master) {
 
                         if (GetParams().GetSource() == eEMBL) {
-                            AddMasterToSecondary(*entry, CEMBLBlockAdaptor());
+                            AddMasterToSecondary(*entry, master_info.m_current_master->m_accession, CEMBLBlockAdaptor());
                         }
                         else {
-                            AddMasterToSecondary(*entry, CGBBlockAdaptor());
+                            AddMasterToSecondary(*entry, master_info.m_current_master->m_accession, CGBBlockAdaptor());
                         }
                     }
 
@@ -1618,6 +1617,10 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     if (!lookup_succeed) {
                         ERR_POST_EX(0, 0, Critical << "Taxonomy lookup failed on submission \"" << file << "\". Cannot proceed.");
                         break;
+                    }
+
+                    if (GetParams().IsMedlineLookup()) {
+                        PerformMedlineLookup(*entry, master_info.m_pubs);
                     }
 
                     if (GetParams().IsStripAuthors()) {

@@ -37,10 +37,10 @@
 #include <unordered_set>
 
 #include <objects/seq/Pubdesc.hpp>
+#include <objects/general/Date_std.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-
 
 namespace wgsparse
 {

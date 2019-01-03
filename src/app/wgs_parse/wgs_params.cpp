@@ -802,6 +802,11 @@ static bool FileNameCmp(const string& name1, const string& name2)
     return false;
 }
 
+static void ReportBioProjectProblem(const string& bioproject_ids)
+{
+    ERR_POST_EX(0, 0, "One or more BioProject accession numbers for this WGS/TSA project, provided in command line, is incorrect: \"" << bioproject_ids << "\".");
+}
+
 bool SetParams(const CArgs& args)
 {
     if (!params) {
@@ -894,13 +899,14 @@ bool SetParams(const CArgs& args)
     if (!bioproject_ids.empty()) {
 
         if (!IsValidIdParam(bioproject_ids)) {
-            ERR_POST_EX(0, 0, "One or more BioProject accession numbers for this WGS/TSA project, provided in command line, is incorrect: \"" << bioproject_ids << "\".");
+            ReportBioProjectProblem(bioproject_ids);
         }
         else {
             list<string> ids;
             NStr::Split(bioproject_ids, ",", ids);
 
             if (!SetBioProjectIds(ids, params_imp.m_bioproject_ids, first_accession_char)) {
+                ReportBioProjectProblem(bioproject_ids);
                 return false;
             }
         }

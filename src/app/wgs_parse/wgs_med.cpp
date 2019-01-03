@@ -41,6 +41,7 @@
 
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
+#include <objects/pub/Pub_set.hpp>
 #include <objects/mla/mla_client.hpp>
 #include <objects/mla/Title_msg.hpp>
 #include <objects/mla/Title_msg_list.hpp>
@@ -58,6 +59,7 @@
 
 #include "wgs_med.hpp"
 #include "wgs_utils.hpp"
+#include "wgs_pubs.hpp"
 
 namespace wgsparse
 {
@@ -398,7 +400,7 @@ static size_t ExtractConsortiums(const CAuth_list_Base::C_Names::TStd& names, se
 }
 
 
-static bool CheckAuthors(CCit_art& cit, ncbi::objects::CCit_art& new_cit)
+static bool CheckAuthors(CCit_art& cit, CCit_art& new_cit)
 {
     if (!new_cit.IsSetAuthors() || !new_cit.GetAuthors().IsSetNames()) {
         if (cit.IsSetAuthors()) {
@@ -652,6 +654,170 @@ void SinglePubLookup(CPubdesc& pubdescr)
 {
     FixPubEquiv(pubdescr.SetPub().Set());
     StripErRemarks(pubdescr);
+}
+
+
+static CRef<CPubdesc> ProcessPubdesc(CPubdesc& pubdesc, CPubCollection& pubs)
+{
+    CRef<CPubdesc> ret;
+    if (!HasPubOfChoice(pubdesc, CPub::e_Sub)) {
+
+        string pubdesc_key = pubs.AddPub(pubdesc, true);
+
+        ret = pubs.GetPubInfo(pubdesc_key).m_desc;
+        _ASSERT(ret.NotEmpty());
+    }
+
+    return ret;
+}
+
+static void FindPubsInDescrs(CSeq_descr* descrs, CPubCollection& pubs)
+{
+    if (descrs && descrs->IsSet()) {
+
+        for (auto& descr : descrs->Set()) {
+            if (descr->IsPub()) {
+
+                CRef<CPubdesc> pubdesc = ProcessPubdesc(descr->SetPub(), pubs);
+
+                if (pubdesc.NotEmpty())
+                    descr->SetPub(*pubdesc);
+            }
+        }
+    }
+}
+
+static void FixArticles(CPub_set& pub_set)
+{
+    CPub_equiv::Tdata pub_equives;
+
+    for (auto& cit_art : pub_set.SetArticle()) {
+
+        CRef<CPub> article(new CPub);
+        article->SetArticle(*cit_art);
+
+        CRef<CPub> cur_pub(new CPub);
+        CPub_equiv::Tdata& cur_pub_list = cur_pub->SetEquiv();
+        cur_pub_list.push_back(article);
+
+        if (!cit_art->IsSetFrom() && cit_art->GetFrom().IsBook()) {
+
+            int pmid = GetPMID(*article);
+            bool converted_to_ISO = false;
+
+            if (pmid > 0) {
+
+                CRef<CCit_art> new_art = FetchPubPmId(pmid);
+                if (new_art.NotEmpty()) {
+                    if (CheckAuthors(article->SetArticle(), *new_art)) {
+                        article->SetArticle(*new_art);
+                        converted_to_ISO = true;
+                    }
+                }
+            }
+
+            if (!converted_to_ISO) {
+                MedlineToISO(article->SetArticle());
+            }
+        }
+
+        pub_equives.push_back(cur_pub);
+    }
+
+    pub_set.SetPub().swap(pub_equives);
+}
+
+static void FixMedlines(CPub_set& pub_set)
+{
+    CPub_equiv::Tdata pub_equives;
+
+    for (auto& pub : pub_set.SetMedline()) {
+
+        CRef<CPub> medline(new CPub);
+        medline->SetMedline(*pub);
+
+        CRef<CPub> cur_pub(new CPub);
+        CPub_equiv::Tdata& cur_pub_list = cur_pub->SetEquiv();
+
+        cur_pub_list.push_back(medline);
+        SplitMedlineEntry(cur_pub_list);
+
+        pub_equives.push_back(cur_pub);
+    }
+
+    pub_set.SetPub().swap(pub_equives);
+}
+
+static void FixPubs(CPub_set& pub_set)
+{
+    for (auto& pub : pub_set.SetPub()) {
+        if (pub->IsEquiv() && pub->GetEquiv().IsSet()) {
+            FixPubEquiv(pub->SetEquiv().Set());
+        }
+    }
+}
+
+static void FixPub(CPub_set& pub_set)
+{
+    if (pub_set.IsArticle()) {
+        FixArticles(pub_set);
+    }
+    else if (pub_set.IsMedline()) {
+        FixMedlines(pub_set);
+    }
+    else if (pub_set.IsPub()) {
+        FixPubs(pub_set);
+    }
+}
+
+static void FindPubsInFeatures(CSeq_annot::C_Data::TFtable& ftable, CPubCollection& pubs)
+{
+    for (auto& feat : ftable) {
+
+        if (feat->IsSetData() && feat->GetData().IsPub()) {
+
+            CPubdesc& cur_pub = feat->SetData().SetPub();
+            CRef<CPubdesc> pubdesc = ProcessPubdesc(cur_pub, pubs);
+
+            if (pubdesc.NotEmpty())
+                cur_pub.Assign(*pubdesc);
+        }
+
+        if (feat->IsSetCit()) {
+            FixPub(feat->SetCit());
+        }
+    }
+}
+
+static void FindPubsInAnnots(CBioseq::TAnnot* annots, CPubCollection& pubs)
+{
+    if (annots) {
+        for (auto& annot : *annots) {
+            if (annot->IsFtable()) {
+                FindPubsInFeatures(annot->SetData().SetFtable(), pubs);
+            }
+        }
+    }
+}
+
+void PerformMedlineLookup(CSeq_entry& entry, CPubCollection& pubs)
+{
+    CSeq_descr* descrs = nullptr;
+    if (GetNonConstDescr(entry, descrs)) {
+        FindPubsInDescrs(descrs, pubs);
+    }
+
+    CBioseq::TAnnot* annots = nullptr;
+    if (GetNonConstAnnot(entry, annots)) {
+        FindPubsInAnnots(annots, pubs);
+    }
+
+    if (entry.IsSet() && entry.GetSet().IsSetSeq_set()) {
+
+        for (auto& cur_entry : entry.SetSet().SetSeq_set()) {
+            PerformMedlineLookup(*cur_entry, pubs);
+        }
+    }
 }
 
 }

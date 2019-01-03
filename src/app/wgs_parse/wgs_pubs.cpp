@@ -33,7 +33,6 @@
 #include <ncbi_pch.hpp>
 
 #include <objects/general/Date.hpp>
-#include <objects/general/Date_std.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
 
