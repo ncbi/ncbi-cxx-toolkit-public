@@ -32,6 +32,7 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <common/ncbi_source_ver.h>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiapp.hpp>

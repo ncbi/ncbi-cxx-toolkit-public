@@ -31,6 +31,7 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <common/ncbi_source_ver.h>
 
 #include <memory>
 

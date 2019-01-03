@@ -30,6 +30,7 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <common/ncbi_source_ver.h>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbithr.hpp>
