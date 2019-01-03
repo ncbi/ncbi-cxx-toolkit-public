@@ -1357,11 +1357,6 @@ bool CTaxValidationAndCleanup::IsOneSpecificHostValid(const string& val, string&
         return true;
     }
 
-    if (spec_host_rq.size() == 0) {
-        m_HostMap.Clear();
-        return true;
-    }
-
     CTaxon3 taxon3;
     taxon3.Init();
     CRef<CTaxon3_reply> tmp_spec_host_reply = taxon3.SendOrgRefList(spec_host_rq);

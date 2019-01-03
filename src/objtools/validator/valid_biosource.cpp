@@ -222,16 +222,17 @@ bool CValidError_imp::IsSyntheticConstruct(const CBioSource& src)
     if (!src.IsSetOrg()) {
         return false;
     }
-    if (src.GetOrg().IsSetTaxname()) {
-        const string & taxname = src.GetOrg().GetTaxname();
+    const COrg_ref& org = src.GetOrg();
+    if (org.IsSetTaxname()) {
+        const string & taxname = org.GetTaxname();
         if (NStr::EqualNocase(taxname, "synthetic construct") ||
             NStr::FindNoCase(taxname, "vector") != string::npos) {
             return true;
         }
     }
 
-    if (src.GetOrg().IsSetLineage()) {
-        if (NStr::FindNoCase(src.GetOrg().GetLineage(), "artificial sequences") != string::npos) {
+    if (org.IsSetLineage()) {
+        if (NStr::FindNoCase(org.GetLineage(), "artificial sequences") != string::npos) {
             return true;
         }
     }
@@ -733,8 +734,7 @@ const CSeq_entry *ctx)
             obj, ctx);
     }
 
-    if ((count[CSubSource::eSubtype_fwd_primer_seq] && !count[CSubSource::eSubtype_rev_primer_seq])
-        || (!count[CSubSource::eSubtype_fwd_primer_seq] && count[CSubSource::eSubtype_rev_primer_seq])) {
+    if (bool(count[CSubSource::eSubtype_fwd_primer_seq]) != bool(count[CSubSource::eSubtype_rev_primer_seq])) {
         if (!count[CSubSource::eSubtype_fwd_primer_name] && !count[CSubSource::eSubtype_rev_primer_name]) {
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerSequence,
                 "PCR primer does not have both sequences", obj, ctx);
@@ -836,33 +836,37 @@ const CSeq_entry *ctx)
 
     // look for conflicts in orgmods, also look for unexpected viral qualifiers
     bool specific_host = false;
-    FOR_EACH_ORGMOD_ON_ORGREF(it, orgref)
-    {
-        if (!(*it)->IsSetSubtype()) {
-            continue;
-        }
-        COrgMod::TSubtype subtype = (*it)->GetSubtype();
+    if (orgref.IsSetOrgMod()) {
+        for (auto it : orgref.GetOrgname().GetMod())
+        {
+            if (!it->IsSetSubtype()) {
+                continue;
+            }
+            COrgMod::TSubtype subtype = it->GetSubtype();
 
-        if (subtype == COrgMod::eSubtype_nat_host) {
-            specific_host = true;
-        } else if (subtype == COrgMod::eSubtype_strain) {
-            if (count[CSubSource::eSubtype_environmental_sample]) {
-                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_StrainWithEnvironSample, "Strain should not be present in an environmental sample",
-                    obj, ctx);
+            if (subtype == COrgMod::eSubtype_nat_host) {
+                specific_host = true;
             }
-        } else if (subtype == COrgMod::eSubtype_metagenome_source) {
-            if (!count[CSubSource::eSubtype_metagenomic]) {
-                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_MissingMetagenomicQualifier, "Metagenome source should also have metagenomic qualifier",
-                    obj, ctx);
+            else if (subtype == COrgMod::eSubtype_strain) {
+                if (count[CSubSource::eSubtype_environmental_sample]) {
+                    PostObjErr(eDiag_Error, eErr_SEQ_DESCR_StrainWithEnvironSample, "Strain should not be present in an environmental sample",
+                        obj, ctx);
+                }
             }
-        }
-        if (isViral && IsUnexpectedViralOrgModQualifier(subtype)) {
-            string subname = COrgMod::GetSubtypeName(subtype);
-            if (subname.length() > 0) {
-                subname[0] = toupper(subname[0]);
+            else if (subtype == COrgMod::eSubtype_metagenome_source) {
+                if (!count[CSubSource::eSubtype_metagenomic]) {
+                    PostObjErr(eDiag_Error, eErr_SEQ_DESCR_MissingMetagenomicQualifier, "Metagenome source should also have metagenomic qualifier",
+                        obj, ctx);
+                }
             }
-            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
-                "Virus has unexpected " + subname + " qualifier", obj, ctx);
+            if (isViral && IsUnexpectedViralOrgModQualifier(subtype)) {
+                string subname = COrgMod::GetSubtypeName(subtype);
+                if (subname.length() > 0) {
+                    subname[0] = toupper(subname[0]);
+                }
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+                    "Virus has unexpected " + subname + " qualifier", obj, ctx);
+            }
         }
     }
     if (count[CSubSource::eSubtype_environmental_sample] && !count[CSubSource::eSubtype_isolation_source] && !specific_host) {
@@ -921,18 +925,18 @@ void CValidError_imp::ValidatePCRReactionSet
 const CSerialObject& obj,
 const CSeq_entry *ctx)
 {
-    ITERATE(CPCRReactionSet::Tdata, it, pcrset.Get())
+    for (auto it : pcrset.Get()) 
     {
-        if ((*it)->IsSetForward()) {
-            ITERATE(CPCRPrimerSet::Tdata, pit, (*it)->GetForward().Get())
+        if (it->IsSetForward()) {
+            for (auto pit : it->GetForward().Get())
             {
-                x_CheckPCRPrimer(**pit, "forward", obj, ctx);
+                x_CheckPCRPrimer(*pit, "forward", obj, ctx);
             }
         }
-        if ((*it)->IsSetReverse()) {
-            ITERATE(CPCRPrimerSet::Tdata, pit, (*it)->GetReverse().Get())
+        if (it->IsSetReverse()) {
+            for (auto pit : it->GetReverse().Get())
             {
-                x_CheckPCRPrimer(**pit, "reverse", obj, ctx);
+                x_CheckPCRPrimer(*pit, "reverse", obj, ctx);
             }
         }
     }
@@ -960,9 +964,11 @@ const CSeq_entry *ctx)
 		}
 	} else if (obj.GetThisTypeInfo() == CSeq_feat::GetTypeInfo()) {
         const CSeq_feat* feat = dynamic_cast < const CSeq_feat* > (&obj);
-		if (feat && feat->IsSetData() && feat->GetData().IsBiosrc() &&
-			feat->GetData().GetBiosrc().IsSetTaxname()) {
-			taxname = feat->GetData().GetBiosrc().GetOrg().GetTaxname();
+		if (feat && feat->IsSetData()) {
+            const auto& fdata = feat->GetData();
+            if (fdata.IsBiosrc() && fdata.GetBiosrc().IsSetTaxname()) {
+                taxname = feat->GetData().GetBiosrc().GetOrg().GetTaxname();
+            }
 		}
     }
     string sname = kEmptyStr;
@@ -1259,7 +1265,7 @@ const CSeq_entry *ctx)
 }
 
 
-static bool s_FindWholeName(string taxname, string value)
+static bool s_FindWholeName(const string& taxname, const string& value)
 {
     if (NStr::IsBlank(taxname) || NStr::IsBlank(value)) {
         return false;
@@ -1366,13 +1372,13 @@ const CSeq_entry *ctx)
     // skip first two words
     size_t pos = NStr::Find(taxname_search, " ");
     if (pos == string::npos) {
-        taxname_search = "";
+        taxname_search.clear();
     } else {
         taxname_search = taxname_search.substr(pos + 1);
         NStr::TruncateSpacesInPlace(taxname_search);
         pos = NStr::Find(taxname_search, " ");
         if (pos == string::npos) {
-            taxname_search = "";
+            taxname_search.clear();
         } else {
             taxname_search = taxname_search.substr(pos + 1);
             NStr::TruncateSpacesInPlace(taxname_search);
@@ -1442,33 +1448,39 @@ static bool s_MatchOrgname(const string& taxname, const COrgName& orgname, strin
     // special cases
     switch (orgname.GetName().Which()) {
     case COrgName::C_Name::e_Hybrid:
-        ITERATE(CMultiOrgName::Tdata, it, orgname.GetName().GetHybrid().Get()) {
-            if ((*it)->IsSetName() && s_MatchOrgname(taxname, **it, mismatch)) {
+    {
+        const auto& hybrid = orgname.GetName().GetHybrid().Get();
+        for (auto it : hybrid) {
+            if (it->IsSetName() && s_MatchOrgname(taxname, *it, mismatch)) {
                 rval = true;
                 break;
             }
         }
-        if (!rval && orgname.GetName().GetHybrid().Get().size() > 1 &&
-            orgname.GetName().GetHybrid().Get().front()->IsSetName()) {
+        if (!rval && hybrid.size() > 1 &&
+            hybrid.front()->IsSetName()) {
             // use first element for error
-            s_MatchOrgname(taxname, *(orgname.GetName().GetHybrid().Get().front()), mismatch);
+            s_MatchOrgname(taxname, *(hybrid.front()), mismatch);
         }
+    }
         break;
     case COrgName::C_Name::e_Partial:
-        ITERATE(CPartialOrgName::Tdata, it, orgname.GetName().GetPartial().Get()) {
-            if ((*it)->IsSetName()) {
-                mismatch = (*it)->GetName();
+    {
+        const auto& partial = orgname.GetName().GetPartial().Get();
+        for (auto it : partial) {
+            if (it->IsSetName()) {
+                mismatch = it->GetName();
                 rval = NStr::Equal(taxname, mismatch);
                 if (rval) {
                     break;
                 }
             }
         }
-        if (!rval && orgname.GetName().GetPartial().Get().size() > 1 && 
-            orgname.GetName().GetPartial().Get().front()->IsSetName()) {
+        if (!rval && partial.size() > 1 &&
+            partial.front()->IsSetName()) {
             // use first element for error
-            mismatch = orgname.GetName().GetPartial().Get().front()->GetName();
+            mismatch = partial.front()->GetName();
         }
+    }
         break;
     default:
         break;
@@ -1668,11 +1680,13 @@ static bool s_CompleteGenomeNeedsChromosome(const CBioSource& source)
         || source.GetGenome() == CBioSource::eGenome_unknown) {
         bool is_viral = false;
         if (source.IsSetOrg()) {
-            if (source.GetOrg().IsSetDivision() && NStr::Equal(source.GetOrg().GetDivision(), "PHG")) {
+            const COrg_ref& org = source.GetOrg();
+            if (org.IsSetDivision() && NStr::Equal(org.GetDivision(), "PHG")) {
                 is_viral = true;
-            } else if (source.GetOrg().IsSetLineage()) {
-                if (NStr::StartsWith(source.GetOrg().GetLineage(), "Viruses; ")
-                    || NStr::StartsWith(source.GetOrg().GetLineage(), "Viroids; ")) {
+            } else if (org.IsSetLineage()) {
+                const string& lineage = org.GetLineage();
+                if (NStr::StartsWith(lineage, "Viruses; ")
+                    || NStr::StartsWith(lineage, "Viroids; ")) {
                     is_viral = true;
                 }
             }
@@ -1702,11 +1716,11 @@ bool s_IsBioSample(const CBioseq_Handle& bsh)
     bool rval = false;
     CSeqdesc_CI d(bsh, CSeqdesc::e_User);
     while (d && !rval) {
-        if (d->GetUser().IsSetType() && d->GetUser().GetType().IsStr() && NStr::Equal(d->GetUser().GetType().GetStr(), "DBLink")) {
-            ITERATE(CUser_object::TData, f, d->GetUser().GetData())
-            {
-                if ((*f)->IsSetLabel() && (*f)->GetLabel().IsStr() && NStr::Equal((*f)->GetLabel().GetStr(), "BioSample")
-                    && (*f)->IsSetData() && ((*f)->GetData().IsStr() || (*f)->GetData().IsStrs())) {
+        const auto & user = d->GetUser();
+        if (user.IsSetType() && user.GetType().IsStr() && NStr::Equal(user.GetType().GetStr(), "DBLink")) {
+            for (auto f : user.GetData()) {
+                if (f->IsSetLabel() && f->GetLabel().IsStr() && NStr::Equal(f->GetLabel().GetStr(), "BioSample")
+                    && f->IsSetData() && (f->GetData().IsStr() || f->GetData().IsStrs())) {
                     rval = true;
                     break;
                 }
@@ -1726,10 +1740,12 @@ const CBioseq_Handle& bsh)
 {
     m_biosource_kind = source;
 
+    const auto & inst = bsh.GetInst();
+
     if (source.IsSetIs_focus()) {
         // skip proteins, segmented bioseqs, or segmented parts
         if (!bsh.IsAa() &&
-            !(bsh.GetInst().GetRepr() == CSeq_inst::eRepr_seg) &&
+            !(inst.GetRepr() == CSeq_inst::eRepr_seg) &&
             !(GetAncestor(*(bsh.GetCompleteBioseq()), CBioseq_set::eClass_parts) != 0)) {
             if (!CFeat_CI(bsh, CSeqFeatData::e_Biosrc)) {
                 PostObjErr(eDiag_Error,
@@ -1749,19 +1765,19 @@ const CBioseq_Handle& bsh)
     }
 
     // check locations for HIV biosource
-    if (bsh.IsSetInst() && bsh.GetInst().IsSetMol()
+    if (inst.IsSetMol()
         && source.IsSetOrg() && source.GetOrg().IsSetTaxname()
         && (NStr::EqualNocase(source.GetOrg().GetTaxname(), "Human immunodeficiency virus")
         || NStr::EqualNocase(source.GetOrg().GetTaxname(), "Human immunodeficiency virus 1")
         || NStr::EqualNocase(source.GetOrg().GetTaxname(), "Human immunodeficiency virus 2"))) {
 
-        if (bsh.GetInst().GetMol() == CSeq_inst::eMol_dna) {
+        if (inst.GetMol() == CSeq_inst::eMol_dna) {
             if (!source.IsSetGenome() || source.GetGenome() != CBioSource::eGenome_proviral) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
                     "HIV with moltype DNA should be proviral",
                     obj, ctx);
             }
-        } else if (bsh.GetInst().GetMol() == CSeq_inst::eMol_rna) {
+        } else if (inst.GetMol() == CSeq_inst::eMol_rna) {
             CSeqdesc_CI mi(bsh, CSeqdesc::e_Molinfo);
             if (mi && mi->GetMolinfo().IsSetBiomol()
                 && mi->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
@@ -1861,25 +1877,27 @@ const CBioseq_Handle& bsh)
         if (mi) {
             const CMolInfo& molinfo = mi->GetMolinfo();
             // look for conflicting cRNA notes on orgmod
-            FOR_EACH_ORGMOD_ON_ORGREF(it, orgref)
-            {
-                if ((*it)->IsSetSubtype()
-                    && (*it)->GetSubtype() == COrgMod::eSubtype_other
-                    && (*it)->IsSetSubname()
-                    && NStr::EqualNocase((*it)->GetSubname(), "cRNA")) {
-                    if (!molinfo.IsSetBiomol()
-                        || molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA) {
-                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
-                            "cRNA note conflicts with molecule type",
-                            obj, ctx);
-                    } else {
-                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
-                            "cRNA note redundant with molecule type",
-                            obj, ctx);
+            if (orgref.IsSetOrgname() && orgref.GetOrgname().IsSetMod()) {
+                for (auto it : orgref.GetOrgname().GetMod())
+                {
+                    if (it->IsSetSubtype()
+                        && it->GetSubtype() == COrgMod::eSubtype_other
+                        && it->IsSetSubname()
+                        && NStr::EqualNocase(it->GetSubname(), "cRNA")) {
+                        if (!molinfo.IsSetBiomol()
+                            || molinfo.GetBiomol() != CMolInfo::eBiomol_cRNA) {
+                            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
+                                "cRNA note conflicts with molecule type",
+                                obj, ctx);
+                        }
+                        else {
+                            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentVirusMoltype,
+                                "cRNA note redundant with molecule type",
+                                obj, ctx);
+                        }
                     }
                 }
             }
-
 
             if (orgref.IsSetLineage()) {
                 const string& lineage = orgref.GetOrgname().GetLineage();
@@ -1913,17 +1931,19 @@ const CBioseq_Handle& bsh)
                 }
             }
             if (!env_sample && source.IsSetOrg()
-                && source.GetOrg().IsSetOrgname()
-                && source.GetOrg().GetOrgname().IsSetMod()) {
-                ITERATE(COrgName::TMod, om, source.GetOrg().GetOrgname().GetMod())
-                {
-                    if ((*om)->IsSetSubtype()) {
-                        if ((*om)->GetSubtype() == COrgMod::eSubtype_isolate) {
-                            has_isolate = true;
-                            break;
-                        } else if ((*om)->GetSubtype() == COrgMod::eSubtype_strain) {
-                            has_strain = true;
-                            break;
+                && source.GetOrg().IsSetOrgname()) {
+                const auto& orgname = source.GetOrg().GetOrgname();
+                if (orgname.IsSetMod()) {
+                    for (auto om : orgname.GetMod()) {
+                        if (om->IsSetSubtype()) {
+                            if (om->GetSubtype() == COrgMod::eSubtype_isolate) {
+                                has_isolate = true;
+                                break;
+                            }
+                            else if (om->GetSubtype() == COrgMod::eSubtype_strain) {
+                                has_strain = true;
+                                break;
+                            }
                         }
                     }
                 }
@@ -2165,27 +2185,31 @@ vector<CConstRef<CSeq_entry> >& desc_ctxs,
 vector<CConstRef<CSeq_feat> >& usr_feats)
 {
     // get source descriptors
-    FOR_EACH_DESCRIPTOR_ON_SEQENTRY(it, se)
-    {
-        if ((*it)->IsUser() && x_HasTentativeName((*it)->GetUser())) {
-            CConstRef<CSeqdesc> desc;
-            desc.Reset(*it);
-            usr_descs.push_back(desc);
-            CConstRef<CSeq_entry> r_se;
-            r_se.Reset(&se);
-            desc_ctxs.push_back(r_se);
+    if (se.IsSetDescr()) {
+        for (auto it : se.GetDescr().Get())
+        {
+            if (it->IsUser() && x_HasTentativeName(it->GetUser())) {
+                CConstRef<CSeqdesc> desc;
+                desc.Reset(it);
+                usr_descs.push_back(desc);
+                CConstRef<CSeq_entry> r_se;
+                r_se.Reset(&se);
+                desc_ctxs.push_back(r_se);
+            }
         }
     }
     // also get features
-    FOR_EACH_ANNOT_ON_SEQENTRY(annot_it, se)
-    {
-        FOR_EACH_SEQFEAT_ON_SEQANNOT(feat_it, **annot_it)
-        {
-            if ((*feat_it)->IsSetData() && (*feat_it)->GetData().IsUser()
-                && x_HasTentativeName((*feat_it)->GetData().GetUser())) {
-                CConstRef<CSeq_feat> feat;
-                feat.Reset(*feat_it);
-                usr_feats.push_back(feat);
+    if (se.IsSetAnnot()) {
+        for (auto annot_it : se.GetAnnot()) {
+            if (annot_it->IsFtable()) {
+                for (auto feat_it : annot_it->GetData().GetFtable()) {
+                     if (feat_it->IsSetData() && feat_it->GetData().IsUser()
+                        && x_HasTentativeName(feat_it->GetData().GetUser())) {
+                        CConstRef<CSeq_feat> feat;
+                        feat.Reset(feat_it);
+                        usr_feats.push_back(feat);
+                    }
+                }
             }
         }
     }
@@ -2353,14 +2377,15 @@ void CValidError_imp::ValidateTentativeName(const CSeq_entry& se)
             "Taxonomy service connection failure", se);
     }
 
-    CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+    const auto& rlist = reply->GetReply();
+    CTaxon3_reply::TReply::const_iterator reply_it = rlist.begin();
 
     // process descriptor responses
     desc_it = src_descs.begin();
     ctx_it = desc_ctxs.begin();
     size_t pos = 0;
 
-    while (reply_it != reply->GetReply().end()
+    while (reply_it != rlist.end()
         && desc_it != src_descs.end()
         && ctx_it != desc_ctxs.end()) {
         if ((*reply_it)->IsError()) {
@@ -2381,7 +2406,7 @@ void CValidError_imp::ValidateTentativeName(const CSeq_entry& se)
 
     // process feat responses
     feat_it = src_feats.begin();
-    while (reply_it != reply->GetReply().end()
+    while (reply_it != rlist.end()
         && feat_it != src_feats.end()) {
         if ((*reply_it)->IsError()) {
             if (IsOrgNotFound((*reply_it)->GetError())) {
@@ -2406,12 +2431,15 @@ void CValidError_imp::HandleTaxonomyError(const CT3Error& error,
 
     if (NStr::Equal(err_str, "Organism not found")) {
         string msg = "Organism not found in taxonomy database";
-        if (error.IsSetOrg() && error.GetOrg().IsSetTaxname() &&
-            !NStr::Equal(error.GetOrg().GetTaxname(), "Not valid") &&
-            (!desc.IsSource() || !desc.GetSource().IsSetOrg() ||
-             !desc.GetSource().GetOrg().IsSetTaxname() ||
-             !NStr::Equal(desc.GetSource().GetOrg().GetTaxname(), error.GetOrg().GetTaxname()))) {
-            msg += " (suggested:" + error.GetOrg().GetTaxname() + ")";
+        if (error.IsSetOrg()) {
+            const auto& e_org = error.GetOrg();
+            const auto& d_org = desc.GetSource().GetOrg();
+            if (e_org.IsSetTaxname() &&
+                !NStr::Equal(e_org.GetTaxname(), "Not valid") &&
+                (!d_org.IsSetTaxname() ||
+                    !NStr::Equal(d_org.GetTaxname(), e_org.GetTaxname()))) {
+                msg += " (suggested:" + e_org.GetTaxname() + ")";
+            }
         }
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_OrganismNotFound,
             msg,
@@ -2734,7 +2762,7 @@ static bool s_PCRPrimerLess(const CPCRPrimer& p1, const CPCRPrimer& p2)
 
 static bool s_PCRPrimerSetLess(const CPCRPrimerSet& s1, const CPCRPrimerSet& s2)
 {
-    if (!s1.IsSet() && s1.IsSet()) {
+    if (!s1.IsSet() && s2.IsSet()) {
         return true;
     } else if (s1.IsSet() && !s2.IsSet()) {
         return false;
@@ -2755,8 +2783,8 @@ static bool s_PCRPrimerSetLess(const CPCRPrimerSet& s1, const CPCRPrimerSet& s2)
             }  else {
                 // the two are equal, continue comparisons
             }
-            it1++;
-            it2++;
+            ++it1;
+            ++it2;
         }
         return false;
     }

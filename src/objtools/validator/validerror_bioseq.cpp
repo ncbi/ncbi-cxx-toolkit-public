@@ -1353,7 +1353,7 @@ void CValidError_bioseq::ValidateBioseqContext(
     x_ValidateMultiplePubs(bsh);
 
     // look for orphaned proteins
-    if (seq.IsAa() && !GetNucProtSetParent(bsh) && !AllowOrphanedProtein(seq, m_Imp.IsRefSeqConventions())) {
+    if (seq.IsAa() && bsh && !GetNucProtSetParent(bsh) && !AllowOrphanedProtein(seq, m_Imp.IsRefSeqConventions())) {
         PostErr(eDiag_Error, eErr_SEQ_PKG_OrphanedProtein,
                 "Orphaned stand-alone protein", seq);
     }

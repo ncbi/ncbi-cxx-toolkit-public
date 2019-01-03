@@ -89,14 +89,14 @@ bool IsResidue(unsigned char residue) { return residue <= 250; }
 CConstRef<CSeq_id> GetReportableSeqIdForAlignment(const CSeq_align& align, CScope& scope);
 string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, CScope& scope, int* version);
 
-CBioseq_set_Handle GetSetParent (CBioseq_set_Handle set, CBioseq_set::TClass set_class);
-CBioseq_set_Handle GetSetParent (CBioseq_Handle set, CBioseq_set::TClass set_class);
-CBioseq_set_Handle GetGenProdSetParent (CBioseq_set_Handle set);
-CBioseq_set_Handle GetGenProdSetParent (CBioseq_Handle set);
-CBioseq_set_Handle GetNucProtSetParent (CBioseq_Handle bioseq);
+CBioseq_set_Handle GetSetParent (const CBioseq_set_Handle& set, CBioseq_set::TClass set_class);
+CBioseq_set_Handle GetSetParent (const CBioseq_Handle& bioseq, CBioseq_set::TClass set_class);
+CBioseq_set_Handle GetGenProdSetParent (const CBioseq_set_Handle& set);
+CBioseq_set_Handle GetGenProdSetParent (const CBioseq_Handle& set);
+CBioseq_set_Handle GetNucProtSetParent (const CBioseq_Handle& bioseq);
 
-CBioseq_Handle GetNucBioseq (CBioseq_set_Handle bioseq_set);
-CBioseq_Handle GetNucBioseq (CBioseq_Handle bioseq);
+CBioseq_Handle GetNucBioseq (const CBioseq_set_Handle& bioseq_set);
+CBioseq_Handle GetNucBioseq (const CBioseq_Handle& bioseq);
 
 typedef enum {
   eAccessionFormat_valid = 0,
@@ -107,13 +107,13 @@ typedef enum {
   eAccessionFormat_missing_version,
   eAccessionFormat_bad_version } EAccessionFormatError;
 
-EAccessionFormatError ValidateAccessionString (string accession, bool require_version);
+EAccessionFormatError ValidateAccessionString (const string& accession, bool require_version);
 
 bool s_IdXrefsAreReciprocal(const CSeq_feat &cds, const CSeq_feat &mrna);
 bool s_FeatureIdsMatch (const CFeat_id& f1, const CFeat_id& f2);
-bool s_StringHasPMID (string str);
-bool HasBadCharacter (string str);
-bool EndsWithBadCharacter (string str);
+bool s_StringHasPMID (const string& str);
+bool HasBadCharacter (const string& str);
+bool EndsWithBadCharacter (const string& str);
 
 typedef enum {
   eDateValid_valid = 0x0,
@@ -143,7 +143,7 @@ string GetBioseqIdLabel(const CBioseq& sq, bool limited = false);
 bool NCBI_VALIDATOR_EXPORT HasECnumberPattern (const string& str);
 
 bool SeqIsPatent (const CBioseq& seq);
-bool SeqIsPatent (CBioseq_Handle seq);
+bool SeqIsPatent (const CBioseq_Handle& seq);
 
 bool s_PartialAtGapOrNs(CScope* scope, const CSeq_loc& loc, unsigned int tag, bool only_gap = false);
 
@@ -157,7 +157,7 @@ typedef enum {
 
 
 void NCBI_VALIDATOR_EXPORT CheckBioseqEndsForNAndGap 
-(CBioseq_Handle bsh,
+(const CBioseq_Handle& bsh,
  EBioseqEndIsType& begin_n,
  EBioseqEndIsType& begin_gap,
  EBioseqEndIsType& end_n,
@@ -165,7 +165,7 @@ void NCBI_VALIDATOR_EXPORT CheckBioseqEndsForNAndGap
  bool &begin_ambig,
  bool &end_ambig);
 
-bool ShouldCheckForNsAndGap(CBioseq_Handle bsh);
+bool ShouldCheckForNsAndGap(const CBioseq_Handle& bsh);
 
 void CheckBioseqEndsForNAndGap
 (const CSeqVector& vec,
@@ -181,8 +181,8 @@ bool& end_ambig);
 /// Indicates whether feature is a dicistronic gene 
 /// @param f Seq-feat-Handle [in]
 /// @return Boolean
-bool NCBI_VALIDATOR_EXPORT IsDicistronicGene (CSeq_feat_Handle f);
-bool NCBI_VALIDATOR_EXPORT IsDicistronic(CSeq_feat_Handle f);
+bool NCBI_VALIDATOR_EXPORT IsDicistronicGene (const CSeq_feat_Handle& f);
+bool NCBI_VALIDATOR_EXPORT IsDicistronic(const CSeq_feat_Handle& f);
 
 typedef enum {
     eDuplicate_Not = 0,
@@ -199,8 +199,8 @@ typedef const CSeq_feat::TDbxref TDbtags;
 /// @param f2 Seq-feat-Handle [in]
 /// @return EDuplicateFeatureType return value indicates how features are duplicates
 EDuplicateFeatureType NCBI_VALIDATOR_EXPORT IsDuplicate 
-    (CSeq_feat_Handle f1,
-     CSeq_feat_Handle f2,
+    (const CSeq_feat_Handle& f1,
+     const CSeq_feat_Handle& f2,
      bool check_partials = false,
      bool case_sensitive = false);
 
@@ -219,7 +219,7 @@ string NCBI_VALIDATOR_EXPORT FixSpecificHost(const string& host);
 
 bool NCBI_VALIDATOR_EXPORT IsCommonName (const CT3Data& data);
 bool NCBI_VALIDATOR_EXPORT HasMisSpellFlag (const CT3Data& data);
-bool NCBI_VALIDATOR_EXPORT FindMatchInOrgRef (string str, const COrg_ref& org);
+bool NCBI_VALIDATOR_EXPORT FindMatchInOrgRef (const string& str, const COrg_ref& org);
 string NCBI_VALIDATOR_EXPORT SpecificHostValueToCheck(const string& val);
 bool NCBI_VALIDATOR_EXPORT IsLikelyTaxname(const string& val);
 string InterpretSpecificHostResult(const string& host, const CT3Reply& reply, const string& orig_host = kEmptyStr);
@@ -243,7 +243,7 @@ bool NCBI_VALIDATOR_EXPORT HasBadStartCodon(const CSeq_loc& loc, const string& t
 size_t CountInternalStopCodons(const string& transl_prot);
 bool NCBI_VALIDATOR_EXPORT HasInternalStop(const CSeq_feat& feat, CScope& scope, bool ignore_exceptions);
 
-CRef<CSeqVector> MakeSeqVectorForResidueCounting(CBioseq_Handle bsh);
+CRef<CSeqVector> MakeSeqVectorForResidueCounting(const CBioseq_Handle& bsh);
 bool HasBadProteinStart(const CSeqVector& sv);
 bool NCBI_VALIDATOR_EXPORT HasBadProteinStart(const CSeq_feat& cds, CScope& scope);
 
@@ -252,7 +252,7 @@ bool NCBI_VALIDATOR_EXPORT HasStopInProtein(const CSeq_feat& feat, CScope& scope
 
 void FeatureHasEnds(const CSeq_feat& feat, CScope* scope, bool& no_beg, bool& no_end);
 CBioseq_Handle GetCDSProductSequence(const CSeq_feat& feat, CScope* scope, const CTSE_Handle & tse, bool far_fetch, bool& is_far);
-vector<TSeqPos> GetMismatches(const CSeq_feat& feat, CBioseq_Handle prot_handle, const string& transl_prot);
+vector<TSeqPos> GetMismatches(const CSeq_feat& feat, const CBioseq_Handle& prot_handle, const string& transl_prot);
 vector<TSeqPos> GetMismatches(const CSeq_feat& feat, const CSeqVector& prot_vec, const string& transl_prot);
 void CalculateEffectiveTranslationLengths(const string& transl_prot, const CSeqVector& prot_vec, size_t &len, size_t& prot_len);
 bool NCBI_VALIDATOR_EXPORT HasNoStop(const CSeq_feat& feat, CScope* scope);
@@ -271,7 +271,7 @@ bool IsNG(const CBioseq& seq);
 bool IsTemporary(const CSeq_id& id);
 
 bool IsOrganelle(int genome);
-bool IsOrganelle(CBioseq_Handle seq);
+bool IsOrganelle(const CBioseq_Handle& seq);
 
 bool ConsistentWithA(Char ch);
 bool ConsistentWithC(Char ch);
