@@ -467,6 +467,9 @@ gpipe_an_base needs gpipe_sadb
 gpipe_an_base needs gpipe_type_verifier
 gpipe_an_base needs gpxlib
 gpipe_an_base needs grid_wrapper
+gpipe_ani needs refseq_ctl
+gpipe_ani needs tax_xml
+gpipe_ani needs xalgoalignutil
 gpipe_asn_cleanup needs xvalidate
 gpipe_asn_proc needs gencoll_client
 gpipe_asn_proc needs gpipe_blast
