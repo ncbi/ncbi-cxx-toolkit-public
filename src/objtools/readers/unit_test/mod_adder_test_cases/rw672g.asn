@@ -87,28 +87,6 @@ Seq-entry ::= set {
         {
           data ftable {
             {
-              data prot {
-                name {
-                  "protein_name1",
-                  "protein_name2"
-                },
-                desc "protein_descriptor",
-                ec {
-                  "ec1",
-                  "ec2"
-                },
-                activity {
-                  "activity1",
-                  "activity2"
-                }
-              },
-              location whole local str "dummy"
-            }
-          }
-        },
-        {
-          data ftable {
-            {
               data gene {
                 locus "locus_value",
                 allele "allele_value",

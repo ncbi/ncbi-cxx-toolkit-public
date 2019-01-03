@@ -29,6 +29,9 @@
     
 #ifndef _MOD_INFO_HPP_
 #define _MOD_INFO_HPP_
+
+#include <objects/seq/Seq_inst.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 

@@ -175,29 +175,10 @@ private:
 };
 
 
-
-class NCBI_XOBJREAD_EXPORT CModReaderException : 
-    public CException
-{
-public:
-    enum EErrCode {
-        eInvalidValue,
-        eMultipleValuesForbidden,
-        eUnknownModifier
-    };
-
-    const char* GetErrCodeString(void) const override;
-
-    NCBI_EXCEPTION_DEFAULT(CModReaderException, CException);
-};
-
-
 class CPCRPrimerSet;
 class CDescrCache;
-class CFeatureCache;
-class CGeneRefCache;
-class CProteinRefCache;
 class CSeq_loc;
+class CModReaderException;
 
 
 class NCBI_XOBJREAD_EXPORT CModAdder
@@ -228,38 +209,6 @@ private:
     static void x_SetMoleculeFromMolType(const TModEntry& mod_entry, CSeq_inst& seq_inst);
     static void x_SetTopology(const TModEntry& mod_entry, CSeq_inst& seq_inst);
     static void x_SetHist(const TModEntry& mod_entry, CSeq_inst& seq_inst);
-
-    static bool x_TryDescriptorMod(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static bool x_TryBioSourceMod(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static bool x_TryPCRPrimerMod(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_AppendPrimerNames(const string& names, vector<string>& reaction_names);
-    static void x_AppendPrimerSeqs(const string& names, vector<string>& reaction_seqs);
-    static void x_SetPrimerNames(const string& primer_names, CPCRPrimerSet& primer_set);
-    static void x_SetPrimerSeqs(const string& primer_seqs, CPCRPrimerSet& primer_set);
-
-    static bool x_TryOrgRefMod(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static bool x_TryOrgNameMod(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetDBxref(const TModEntry& mod_entry, CDescrCache& descr_cache);
-
-    static void x_SetDBLink(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetGBblockIds(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetGBblockKeywords(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetGenomeProjects(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetTpaAssembly(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetComment(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetPMID(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetDBLinkField(const string& label, const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetDBLinkFieldVals(const string& label, const list<CTempString>& vals, CUser_object& dblink);
-    static void x_SetMolInfoType(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetMolInfoTech(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetMolInfoCompleteness(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetSubtype(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetOrgMod(const TModEntry& mod_entry, CDescrCache& descr_cache);
-
-    static bool x_TryFeatureMod(const TModEntry& mod_entry, CGeneRefCache& gene_ref_cache, 
-            CProteinRefCache& protein_ref_cache);
-    static bool x_TryGeneRefMod(const TModEntry& mod_entry, CFeatureCache& gene_ref_cache);
-    static bool x_TryProteinRefMod(const TModEntry& mod_entry, CFeatureCache& protein_ref_cache);
 
     static void x_ThrowInvalidValue(const CModData& mod_data,
                                     const string& add_msg="");
