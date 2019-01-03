@@ -56,6 +56,10 @@ CTSAItem::CTSAItem
     x_SetObject(uo);
 }
 
+IFlatItem::EItem CTSAItem::GetItemType(void) const
+{
+    return eItem_Tsa;
+}
 
 void CTSAItem::Format
 (IFormatter& formatter,

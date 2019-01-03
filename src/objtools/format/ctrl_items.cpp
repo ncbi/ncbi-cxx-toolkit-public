@@ -71,6 +71,27 @@ CStartItem::CStartItem( CSeq_entry_Handle seh )
     x_SetDate( seh );
 }
 
+IFlatItem::EItem CStartItem::GetItemType(void) const
+{
+    return eItem_StartItem;
+}
+
+IFlatItem::EItem CEndItem::GetItemType(void) const
+{
+    return eItem_EndItem;
+}
+
+IFlatItem::EItem CStartSectionItem::GetItemType(void) const
+{
+    return eItem_StartSection;
+}
+
+IFlatItem::EItem CEndSectionItem::GetItemType(void) const
+{
+    return eItem_EndSection;
+}
+
+
 //  ----------------------------------------------------------------------------
 void 
 CStartItem::x_SetDate( 

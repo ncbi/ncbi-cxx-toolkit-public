@@ -771,6 +771,10 @@ CFeatHeaderItem::CFeatHeaderItem(CBioseqContext& ctx) : CFlatItem(&ctx)
     x_GatherInfo(ctx);
 }
 
+IFlatItem::EItem CFeatHeaderItem::GetItemType(void) const
+{
+    return eItem_FeatHeader;
+}
 
 void CFeatHeaderItem::x_GatherInfo(CBioseqContext& ctx)
 {
@@ -1105,6 +1109,10 @@ CFeatureItem::CFeatureItem
     x_GatherInfoWithParent(ctx, parentFeatureItem);
 }
 
+IFlatItem::EItem CFeatureItem::GetItemType(void) const
+{
+    return eItem_Feature;
+}
 
 void CFeatureItem::x_GatherInfoWithParent(CBioseqContext& ctx, CConstRef<CFeatureItem> parentFeatureItem )
 {
@@ -5719,6 +5727,11 @@ CSourceFeatureItem::CSourceFeatureItem
     x_GatherInfo(ctx);
 }
 
+
+IFlatItem::EItem CSourceFeatureItem::GetItemType(void) const
+{
+    return eItem_SourceFeat;
+}
 
 void CSourceFeatureItem::x_GatherInfo(CBioseqContext& ctx)
 {

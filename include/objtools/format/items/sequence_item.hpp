@@ -64,6 +64,7 @@ public:
     TSeqPos GetTo(void) const;
     bool IsFirst(void) const;
 
+    virtual EItem GetItemType(void) const;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 

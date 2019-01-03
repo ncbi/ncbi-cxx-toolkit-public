@@ -55,6 +55,11 @@ CGapItem::CGapItem
 {
 }
 
+IFlatItem::EItem CGapItem::GetItemType(void) const
+{
+    return eItem_Gap;
+}
+
 void CGapItem::Format(IFormatter& formatter, IFlatTextOStream& text_os) const
 {
     formatter.FormatGap(*this, text_os);

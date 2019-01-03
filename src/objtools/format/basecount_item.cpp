@@ -52,6 +52,10 @@ CBaseCountItem::CBaseCountItem(CBioseqContext& ctx) :
     x_GatherInfo(ctx);
 }
 
+IFlatItem::EItem CBaseCountItem::GetItemType(void) const
+{
+    return eItem_BaseCount;
+}
 
 void CBaseCountItem::Format
 (IFormatter& formatter,

@@ -149,6 +149,7 @@ public:
 
     static void ResetFirst(void) { sm_FirstComment = true; }
 
+    virtual EItem GetItemType(void) const;
 protected:
 
     enum EPeriod {

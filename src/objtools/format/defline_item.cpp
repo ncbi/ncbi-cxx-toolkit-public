@@ -53,6 +53,10 @@ CDeflineItem::CDeflineItem(CBioseqContext& ctx) :
     x_GatherInfo(ctx);
 }
 
+IFlatItem::EItem CDeflineItem::GetItemType(void) const
+{
+    return eItem_Defline;
+}
 
 void CDeflineItem::Format
 (IFormatter& formatter,

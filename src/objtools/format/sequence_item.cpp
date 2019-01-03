@@ -59,6 +59,11 @@ CSequenceItem::CSequenceItem
 }
 
 
+IFlatItem::EItem CSequenceItem::GetItemType(void) const
+{
+    return eItem_Sequence;
+}
+
 void CSequenceItem::Format
 (IFormatter& formatter,
  IFlatTextOStream& text_os) const

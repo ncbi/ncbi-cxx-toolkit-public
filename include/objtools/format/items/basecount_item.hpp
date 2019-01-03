@@ -67,6 +67,7 @@ public:
     SIZE_TYPE GetT(void) const { return m_T; }
     SIZE_TYPE GetOther(void) const  { return m_Other; }
 
+    virtual EItem GetItemType(void) const;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 

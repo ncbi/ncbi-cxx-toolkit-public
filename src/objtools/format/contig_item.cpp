@@ -56,6 +56,11 @@ CContigItem::CContigItem(CBioseqContext& ctx) :
 }
 
 
+IFlatItem::EItem CContigItem::GetItemType(void) const
+{
+    return eItem_Contig;
+}
+
 void CContigItem::Format
 (IFormatter& formatter,
  IFlatTextOStream& text_os) const

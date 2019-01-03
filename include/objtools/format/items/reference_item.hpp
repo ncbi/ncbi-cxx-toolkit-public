@@ -169,7 +169,7 @@ public:
 
     static void ChangeMedlineAuthorsToISO( CRef<CPub> pub );
 
-
+    virtual EItem GetItemType(void) const;
 private:
  
     CReferenceItem(const CReferenceItem& value);

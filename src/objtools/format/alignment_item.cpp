@@ -47,6 +47,10 @@ CAlignmentItem::CAlignmentItem(const CSeq_align& align, CBioseqContext& ctx)
 {
 }
 
+IFlatItem::EItem CAlignmentItem::GetItemType(void) const
+{
+    return eItem_Alignment;
+}
 
 void CAlignmentItem::Format
 (IFormatter& formatter,

@@ -51,6 +51,10 @@ CVersionItem::CVersionItem(CBioseqContext& ctx) :
     x_GatherInfo(ctx);
 }
 
+IFlatItem::EItem CVersionItem::GetItemType(void) const
+{
+    return eItem_Version;
+}
 
 void CVersionItem::Format
 (IFormatter& formatter,

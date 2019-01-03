@@ -56,6 +56,10 @@ CWGSItem::CWGSItem
     x_SetObject(uo);
 }
 
+IFlatItem::EItem CWGSItem::GetItemType(void) const
+{
+    return eItem_Wgs;
+}
 
 void CWGSItem::Format
 (IFormatter& formatter,

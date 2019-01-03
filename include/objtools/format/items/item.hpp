@@ -50,6 +50,43 @@ class IFormatter;
 class NCBI_FORMAT_EXPORT IFlatItem : public CObject
 {
 public:
+
+    enum EItem {
+        eItem_None = 0,
+        eItem_StartSection,
+        eItem_StartItem,
+        eItem_HtmlAnchor,
+        eItem_Head,
+        eItem_Locus,
+        eItem_Date,
+        eItem_Defline,
+        eItem_Accession,
+        eItem_Version,
+        eItem_Project,
+        eItem_GenomeProject,
+        eItem_DbSource,
+        eItem_Keywords,
+        eItem_Segment,
+        eItem_Source,
+        eItem_Reference,
+        eItem_Comment,
+        eItem_Primary,
+        eItem_FeatHeader,
+        eItem_SourceFeat,
+        eItem_Feature,
+        eItem_Gap,
+        eItem_BaseCount,
+        eItem_Origin,
+        eItem_Sequence,
+        eItem_Contig,
+        eItem_Wgs,
+        eItem_Tsa,
+        eItem_Alignment,
+        eItem_EndItem,
+        eItem_EndSection,
+        eItem_Slash
+    };
+
     virtual void Format(IFormatter& formatter,
                         IFlatTextOStream& text_os) const = 0;
 
@@ -58,6 +95,9 @@ public:
 
     // returns true, if the formatter should skip this object
     virtual bool Skip(void) const = 0;
+
+    // returns paragraph type
+    virtual EItem GetItemType(void) const = 0;
 
     virtual ~IFlatItem(void) {}
 };

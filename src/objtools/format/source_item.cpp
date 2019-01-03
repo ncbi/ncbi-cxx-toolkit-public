@@ -70,6 +70,10 @@ CSourceItem::CSourceItem(CBioseqContext& ctx) :
     x_GatherInfo(ctx);
 }
 
+IFlatItem::EItem CSourceItem::GetItemType(void) const
+{
+    return eItem_Source;
+}
 
 CSourceItem::CSourceItem(CBioseqContext& ctx, const CBioSource& bsrc, const CSerialObject& obj) :
     CFlatItem(&ctx),

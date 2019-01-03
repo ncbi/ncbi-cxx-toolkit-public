@@ -57,6 +57,7 @@ public:
     
     const string& GetOrigin(void) const { return m_Origin; }
 
+    virtual EItem GetItemType(void) const;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 

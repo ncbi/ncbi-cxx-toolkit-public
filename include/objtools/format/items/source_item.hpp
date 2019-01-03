@@ -75,6 +75,7 @@ public:
     TTaxid              GetTaxid        (void) const;
     bool                IsUsingAnamorph (void) const;
 
+    virtual EItem GetItemType(void) const;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
     void x_GatherInfoIdx(CBioseqContext& ctx);

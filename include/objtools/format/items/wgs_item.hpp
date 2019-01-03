@@ -69,6 +69,7 @@ public:
     const string& GetFirstID(void) const { return m_First; }
     const string& GetLastID (void) const { return m_Last;  }
 
+    virtual EItem GetItemType(void) const;
 private:
     
     

@@ -53,6 +53,11 @@ COriginItem::COriginItem(CBioseqContext& ctx) :
 }
 
 
+IFlatItem::EItem COriginItem::GetItemType(void) const
+{
+    return eItem_Origin;
+}
+
 void COriginItem::Format
 (IFormatter& formatter,
  IFlatTextOStream& text_os) const

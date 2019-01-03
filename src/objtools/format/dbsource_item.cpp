@@ -72,6 +72,10 @@ CDBSourceItem::CDBSourceItem(CBioseqContext& ctx) :
     x_GatherInfo(ctx);
 }
 
+IFlatItem::EItem CDBSourceItem::GetItemType(void) const
+{
+    return eItem_DbSource;
+}
 
 void CDBSourceItem::Format
 (IFormatter& formatter,

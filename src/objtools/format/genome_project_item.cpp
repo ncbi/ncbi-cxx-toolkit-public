@@ -54,6 +54,10 @@ CGenomeProjectItem::CGenomeProjectItem(CBioseqContext& ctx) :
     x_GatherInfo(ctx);
 }
 
+IFlatItem::EItem CGenomeProjectItem::GetItemType(void) const
+{
+    return eItem_GenomeProject;
+}
 
 void CGenomeProjectItem::Format
 (IFormatter& formatter,

@@ -89,6 +89,11 @@ CCommentItem::CCommentItem(CBioseqContext& ctx, bool need_period) :
     swap(m_First, sm_FirstComment);
 }
 
+IFlatItem::EItem CCommentItem::GetItemType(void) const
+{
+    return eItem_Comment;
+}
+
 
 CCommentItem::CCommentItem
 (const string& comment,

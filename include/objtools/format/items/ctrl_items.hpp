@@ -69,6 +69,8 @@ public:
     void Format(IFormatter& f, IFlatTextOStream& text_os) const {
         f.Start(text_os);
     }
+
+    virtual EItem GetItemType(void) const;
 private:
     void x_SetDate(CSeq_entry_Handle);
     string m_Date;
@@ -91,6 +93,8 @@ public:
     void Format(IFormatter& f, IFlatTextOStream& text_os) const {
         f.StartSection(*this, text_os);
     }
+
+    virtual EItem GetItemType(void) const;
 };
 
 
@@ -107,6 +111,8 @@ public:
     void Format(IFormatter& f, IFlatTextOStream& text_os) const {
         f.EndSection(*this, text_os);
     }
+
+    virtual EItem GetItemType(void) const;
 };
 
 
@@ -123,6 +129,8 @@ public:
     void Format(IFormatter& f, IFlatTextOStream& text_os) const {
         f.End(text_os);
     }
+
+    virtual EItem GetItemType(void) const;
 };
 
 

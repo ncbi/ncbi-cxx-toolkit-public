@@ -58,6 +58,7 @@ public:
     
     const TDBSource& GetDBSource(void) const { return m_DBSource; }
 
+    virtual EItem GetItemType(void) const;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
     void x_AddPIRBlock(CBioseqContext& ctx);

@@ -53,6 +53,10 @@ CDateItem::CDateItem(CBioseqContext& ctx) :
     x_GatherInfo(ctx);
 }
 
+IFlatItem::EItem CDateItem::GetItemType(void) const
+{
+    return eItem_Date;
+}
 
 void CDateItem::Format
 (IFormatter& formatter,

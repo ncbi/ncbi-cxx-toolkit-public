@@ -45,6 +45,11 @@ CHtmlAnchorItem::CHtmlAnchorItem( CBioseqContext& ctx, const string &label_core 
     x_GatherInfo(ctx);
 }
 
+IFlatItem::EItem CHtmlAnchorItem::GetItemType(void) const
+{
+    return eItem_HtmlAnchor;
+}
+
 void CHtmlAnchorItem::Format(IFormatter& formatter, IFlatTextOStream& text_os) const
 {
     formatter.FormatHtmlAnchor(*this, text_os);

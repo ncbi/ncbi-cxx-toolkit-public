@@ -239,6 +239,10 @@ CReferenceItem::CReferenceItem(const CSubmit_block& sub, CBioseqContext& ctx) :
 CReferenceItem::~CReferenceItem() {
 }
 
+IFlatItem::EItem CReferenceItem::GetItemType(void) const
+{
+    return eItem_Reference;
+}
 
 void CReferenceItem::SetLoc(const CConstRef<CSeq_loc>& loc)
 {

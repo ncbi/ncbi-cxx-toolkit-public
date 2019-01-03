@@ -58,6 +58,11 @@ CAccessionItem::CAccessionItem(CBioseqContext& ctx) :
     x_GatherInfo(ctx);
 }
 
+IFlatItem::EItem CAccessionItem::GetItemType(void) const
+{
+    return eItem_Accession;
+}
+
 
 void CAccessionItem::Format
 (IFormatter& formatter,

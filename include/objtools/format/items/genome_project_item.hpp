@@ -64,6 +64,7 @@ public:
     const vector<int> & GetProjectNumbers(void) const;
     const TDBLinkLineVec & GetDBLinkLines(void) const;
 
+    virtual EItem GetItemType(void) const;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 

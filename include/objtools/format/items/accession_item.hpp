@@ -71,6 +71,8 @@ public:
     const CSeq_loc& GetRegion(void) const;
     bool  IsNuc(void) const;
     bool  IsProt(void) const;
+
+    virtual EItem GetItemType(void) const;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 

@@ -64,6 +64,10 @@ CKeywordsItem::CKeywordsItem(CBioseqContext& ctx) :
     x_GatherInfo(ctx);
 }
 
+IFlatItem::EItem CKeywordsItem::GetItemType(void) const
+{
+    return eItem_Keywords;
+}
 
 void CKeywordsItem::Format
 (IFormatter& formatter,

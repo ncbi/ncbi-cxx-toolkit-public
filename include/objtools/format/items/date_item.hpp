@@ -61,6 +61,7 @@ public:
     const CDate* GetCreateDate(void) const { return m_CreateDate; }
     const CDate* GetUpdateDate(void) const { return m_UpdateDate; }
 
+    virtual EItem GetItemType(void) const;
 private:
     void x_GatherInfo(CBioseqContext& ctx);
 

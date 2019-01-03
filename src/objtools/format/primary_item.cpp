@@ -63,6 +63,10 @@ CPrimaryItem::CPrimaryItem(CBioseqContext& ctx) :
     }
 }
 
+IFlatItem::EItem CPrimaryItem::GetItemType(void) const
+{
+    return eItem_Primary;
+}
 
 void CPrimaryItem::Format
 (IFormatter& formatter,
