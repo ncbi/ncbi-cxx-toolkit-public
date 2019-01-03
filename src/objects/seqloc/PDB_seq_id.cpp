@@ -67,19 +67,28 @@ bool CPDB_seq_id::Match(const CPDB_seq_id& psip2) const
 }
 
 
+static string s_GetEffectiveChain_id(const CPDB_seq_id& id)
+{
+    if ( id.IsSetChain_id() ) {
+        return id.GetChain_id();
+    }
+    if ( id.IsSetChain() ) {
+        return string(char(id.GetChain()), 1);
+    }
+    return string();
+}
+
+
 int CPDB_seq_id::Compare(const CPDB_seq_id& psip2) const
 {
-    if (IsSetChain() && psip2.IsSetChain()) {
-        if ( int diff = GetChain() - psip2.GetChain() ) {
-            return diff;
-        }
+    if ( int diff = PCase().Compare(GetMol(), psip2.GetMol()) ) {
+        return diff;
     }
-    if (IsSetChain_id() && psip2.IsSetChain_id()) {
-        if ( int diff = PCase().Compare(GetChain_id(), psip2.GetChain_id()) ) {
-            return diff;
-        }
+    // optimization to avoid creation of temporary strings if both chain-id are set
+    if ( IsSetChain_id() && psip2.IsSetChain_id() ) {
+        return PCase().Compare(GetChain_id(), psip2.GetChain_id());
     }
-    return PCase().Compare(GetMol(), psip2.GetMol());
+    return PCase().Compare(s_GetEffectiveChain_id(*this), s_GetEffectiveChain_id(psip2));
 }
 
 
