@@ -1434,7 +1434,7 @@ CMappingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            "alignments. Can be expressed as a number or a "
                            "function of read length: "
                            "L,b,a for a * length + b.",
-                           CArgDescriptions::eString, "20");
+                           CArgDescriptions::eString, "0");
     arg_desc.AddOptionalKey(kArgMaxEditDist, "num", "Cutoff edit distance for "
                             "accepting an alignment\nDefault = unlimited",
                             CArgDescriptions::eInteger);

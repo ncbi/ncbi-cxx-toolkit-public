@@ -4249,6 +4249,10 @@ s_BlastHSPMapperSplicedPairedRun(void* data, BlastHSPList* hsp_list)
             cutoff_score = (cutoff_score_fun[0] +
                             cutoff_score_fun[1] * query_len) / 100;
         }
+        else if (params->cutoff_score == 0) {
+            cutoff_score = GetCutoffScore(
+                  query_info->contexts[query_idx * NUM_STRANDS].query_length);
+        }
 
         /* save all chains and remove ones with scores lower than
            best score - kPairBonus */

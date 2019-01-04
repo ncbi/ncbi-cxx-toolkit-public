@@ -305,6 +305,10 @@ Int2 FilterQueriesForMapping(Uint1* sequence, Int4 length, Int4 offset,
                              BlastSeqLoc** seq_loc);
 
 
+/** Get alignment cutoff score for a given query length. The function
+    assumes that score for match is 1 */
+Int4 GetCutoffScore(Int4 query_length);
+
 #ifdef __cplusplus
 }
 #endif

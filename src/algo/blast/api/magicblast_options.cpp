@@ -101,7 +101,6 @@ CMagicBlastOptionsHandle::SetRNAToRNADefaults()
     SetLookupDbFilter(false);
     SetSpliceAlignments(false);
     SetWordSize(30);
-    SetCutoffScore(70);
 
     m_Opts->SetDefaultsMode(false);
 }
@@ -126,7 +125,6 @@ CMagicBlastOptionsHandle::SetGenomeToGenomeDefaults()
     SetLookupDbFilter(true);
     SetSpliceAlignments(false);
     SetWordSize(28);
-    SetCutoffScore(70);
 
     m_Opts->SetDefaultsMode(false);
 }
@@ -204,7 +202,9 @@ CMagicBlastOptionsHandle::SetHitSavingOptionsDefaults()
     // set some default here, allow INT4MAX to mean infinity
     m_Opts->SetMaxNumHspPerSequence(0); 
     m_Opts->SetMaxHspsPerSubject(0);
-    SetCutoffScore(20);
+    // cutoff zero means use adaptive score threshold that depends on query
+    // length
+    SetCutoffScore(0);
     vector<double> coeffs = {0.0, 0.0};
     SetCutoffScoreCoeffs(coeffs);
     SetMaxEditDistance(INT4_MAX);

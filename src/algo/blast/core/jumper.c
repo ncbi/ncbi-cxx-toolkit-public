@@ -2679,6 +2679,9 @@ Boolean JumperGoodAlign(const BlastGapAlignStruct* gap_align,
                         context_info->query_length *
                         hit_params->options->cutoff_score_fun[1]) / 100;
     }
+    else if (hit_params->options->cutoff_score == 0) {
+        cutoff_score = GetCutoffScore(context_info->query_length);
+    }
     else {
         cutoff_score = hit_params->options->cutoff_score;
     }
@@ -4574,3 +4577,19 @@ Int2 FilterQueriesForMapping(Uint1* sequence, Int4 length, Int4 offset,
 }
 
 
+/* Get alignment cutoff score for a given query length. Note that the function
+   assumes that score for match is 1 */
+Int4 GetCutoffScore(Int4 query_length)
+{
+    if (query_length <= 20) {
+        return query_length;
+    }
+    else if (query_length <= 30) {
+        return 20;
+    }
+    else if (query_length <= 50) {
+        return query_length - 10;
+    }
+
+    return 40;
+}
