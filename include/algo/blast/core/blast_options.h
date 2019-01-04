@@ -167,7 +167,7 @@ extern "C" {
 
 /** Default max frequency for a database word. Words with higher frequency
     will be masked in the lookup table. */
-#define MAX_DB_WORD_COUNT_MAPPER 60
+#define MAX_DB_WORD_COUNT_MAPPER 30
 
 /** Default maximum insert size: distance on the subject between reads that
     belong to a pair, for spliced and non-spliced alignments */
