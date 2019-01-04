@@ -1344,7 +1344,7 @@ CRef<objects::CSeq_id> GetNewProtId(objects::CBioseq_Handle bsh, int &offset, st
     if (!hid)
         NCBI_THROW(CException, eUnknown, "Seq-id of the requested type not found");
   
-    CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(hid, bsh.GetScope(), offset, !general_only);   
+    CRef<objects::CSeq_id> new_id = GetGeneralOrLocal(hid, bsh.GetScope(), offset, true);   
     new_id->GetLabel(&id_label, objects::CSeq_id::eBoth);
     return new_id;
 }
