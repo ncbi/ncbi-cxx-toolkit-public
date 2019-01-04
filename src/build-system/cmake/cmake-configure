@@ -41,7 +41,7 @@ if [ -z "$CXX" ]; then
     CXX=`which g++`
 fi
 BUILD_TYPE="Debug"
-BUILD_SHARED_LIBS=ON
+BUILD_SHARED_LIBS= # NOTE: By default, not set and neither ON nor OFF!
 PREFIX=/usr/local
 LIBDIR=
 CMAKE_ARGS=
