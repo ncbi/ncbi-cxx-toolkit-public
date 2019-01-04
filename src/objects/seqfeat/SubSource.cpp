@@ -1788,6 +1788,7 @@ static const TWaterPairElem k_water_pair_map[] = {
     {"East Siberian Sea",    "Arctic Ocean"},
     {"English Channel",      "Atlantic Ocean"},
     {"Erythraean Sea",       "Indian Ocean"},
+    {"Golfo de California",  "Pacific Ocean"},
     {"Greenland Sea",        "Arctic Ocean"},
     {"Gulf of Mexico",       "Atlantic Ocean"},
     {"Gulf of Thailand",     "Pacific Ocean"},
