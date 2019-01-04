@@ -478,9 +478,10 @@ fi
 if [ -z "$ROOT" ]; then
     if [ -z "$GPIPEROOT" ]; then
         ROOT="CMake-$BUILD_TYPE"
-        if [ "$BUILD_SHARED_LIBS" == "ON" ]; then
-            ROOT="$ROOT"DLL
-        fi
+        case "$BUILD_SHARED_LIBS" in
+        ON)  ROOT="$ROOT"DLL ;;
+        OFF) ROOT="$ROOT"Static ;;
+        esac
     else
         ROOT=`cd "${TOP_SRCDIR}/../../../" && /bin/pwd` || exit 1
         ROOT=`/usr/bin/dirname "$ROOT"` || exit 1
