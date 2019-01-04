@@ -3,12 +3,11 @@
 APP = test_fix_feature_ids
 SRC = test_fix_feature_ids
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
-
-LIB = xcleanup seqset $(SEQ_LIBS) pub medline biblio general xser xutil test_boost xregexp $(PCRE_LIB) $(SOBJMGR_LIBS) xncbi
-
-LIBS = $(DL_LIBS) $(ORIG_LIBS)
+CPPFLAGS = $(PCRE_INCLUDE) $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 LDFLAGS = $(FAST_LDFLAGS)
+LIB  = xcleanup $(OBJEDIT_LIBS) xobjutil valid pubmed xconnect \
+       xregexp $(PCRE_LIB) test_boost $(SOBJMGR_LIBS)
+LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 
