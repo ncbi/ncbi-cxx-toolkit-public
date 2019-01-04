@@ -34,7 +34,6 @@ echo "[`basename $script`] NCBI C++:  \"$builddir\" to \"$target\"..."
 
 
 # Derive the destination dirs
-docdir="$target"/doc
 scriptdir="$target"/scripts
 incdir="$target"/include
 srcdir="$target"/src
@@ -66,10 +65,6 @@ test -d "$target"  &&  find "$target" -type f -exec rm -f {} \; >/dev/null 2>&1
 makedir "$target" -p
 makedir "$tmpdir" -p
 
-
-# Documentation
-echo "[`basename $script`] Installing documentation..."
-install "$builddir/doc" "$docdir"
 
 # Scripts
 echo "[`basename $script`] Installing scripts..."
