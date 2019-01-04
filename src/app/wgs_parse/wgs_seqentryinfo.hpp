@@ -107,7 +107,7 @@ struct CSeqEntryInfo
 
     // keywords data got from CMasterInfo
     bool& m_keywords_set;
-    set<string>& m_keywords;
+    map<string, string>& m_keywords;
 
     size_t m_num_of_prot_seq;
     size_t m_num_of_nuc_seq;
@@ -128,7 +128,7 @@ struct CSeqEntryInfo
     string m_diff_dbname;
     string m_cur_seqid;
 
-    CSeqEntryInfo(bool& keywords_set, set<string>& keywords) :
+    CSeqEntryInfo(bool& keywords_set, map<string, string>& keywords) :
         m_seqset(false),
         m_has_tpa_keyword(false),
         m_has_targeted_keyword(false),
@@ -309,7 +309,7 @@ struct CMasterInfo
     string m_master_file_name;
 
     bool m_keywords_set;
-    set<string> m_keywords;
+    map<string, string> m_keywords;
 
     size_t m_num_of_prot_seq;
 

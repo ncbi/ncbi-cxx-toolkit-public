@@ -921,7 +921,7 @@ static bool OutputSubmission(const CBioseq_set& bioseq_set, const string& in_fil
     return true;
 }
 
-static void RemoveKeywords(CSeq_entry& entry, const set<string>& keywords)
+static void RemoveKeywords(CSeq_entry& entry, const map<string, string>& keywords)
 {
     CSeq_descr* descrs = nullptr;
     if (GetNonConstDescr(entry, descrs) && descrs && descrs->IsSet()) {
@@ -933,7 +933,11 @@ static void RemoveKeywords(CSeq_entry& entry, const set<string>& keywords)
 
                 CGB_block& gb_block = (*descr)->SetGenbank();
                 for (auto keyword = gb_block.SetKeywords().begin(); keyword != gb_block.SetKeywords().end();) {
-                    if (keywords.find(*keyword) != keywords.end()) {
+
+                    string keyword_key = *keyword;
+                    NStr::ToLower(keyword_key);
+
+                    if (keywords.find(keyword_key) != keywords.end()) {
                         keyword = gb_block.SetKeywords().erase(keyword);
                     }
                     else {

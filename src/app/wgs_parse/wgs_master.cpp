@@ -1170,17 +1170,19 @@ static void UpdateDbLink(CBioseq& bioseq, CUser_object& user_obj)
 }
 
 static const string TPA_KEYWORD("TPA:assembly");
+static const string TPA_KEYWORD_KEY("tpa:assembly");
 
-static bool FixTpaKeyword(set<string>& keywords)
+static bool FixTpaKeyword(map<string, string>& keywords)
 {
     static const string TPA_KEYWORD_OLD("TPA:reassembly");
+    static const string TPA_KEYWORD_OLD_KEY("tpa:reassembly");
 
     bool ret = false,
          reset_tpa_keyword = !GetParams().GetTpaKeyword().empty();
 
     if (GetParams().IsVDBMode()) {
 
-        auto tpa_keyword_it = keywords.find(TPA_KEYWORD);
+        auto tpa_keyword_it = keywords.find(TPA_KEYWORD_KEY);
         if (tpa_keyword_it != keywords.end()) {
             ret = true;
 
@@ -1189,7 +1191,7 @@ static bool FixTpaKeyword(set<string>& keywords)
             }
         }
 
-        tpa_keyword_it = keywords.find(TPA_KEYWORD_OLD);
+        tpa_keyword_it = keywords.find(TPA_KEYWORD_OLD_KEY);
         if (tpa_keyword_it != keywords.end()) {
             ret = true;
 
@@ -1199,7 +1201,8 @@ static bool FixTpaKeyword(set<string>& keywords)
         }
 
         if (ret && reset_tpa_keyword) {
-            keywords.insert(GetParams().GetTpaKeyword());
+            string keyword_key = GetParams().GetTpaKeyword();
+            keywords[NStr::ToLower(keyword_key)] = GetParams().GetTpaKeyword();
         }
     }
 
@@ -1213,8 +1216,8 @@ static CGB_block* ProcessKeywords(CBioseq& bioseq, const CMasterInfo& info)
 
         descr.Reset(new CSeqdesc);
         for (auto& keyword : info.m_keywords) {
-            if (!keyword.empty()) {
-                descr->SetGenbank().SetKeywords().push_back(keyword);
+            if (!keyword.first.empty()) {
+                descr->SetGenbank().SetKeywords().push_back(keyword.second);
             }
         }
     }

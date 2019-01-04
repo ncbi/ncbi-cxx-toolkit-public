@@ -558,10 +558,14 @@ static void CheckKeywords(const CSeq_descr& descrs, CSeqEntryInfo& info)
 
                 if (!info.m_keywords.empty()) {
                     // removes all previously stored keywords which are not present in current CGB_block::keywords
-                    set<string> keywords_found;
-                    for (auto keyword : genbank_block->GetKeywords()) {
-                        if (info.m_keywords.find(keyword) != info.m_keywords.end()) {
-                            keywords_found.insert(keyword);
+                    map<string, string> keywords_found;
+                    for (auto& keyword : genbank_block->GetKeywords()) {
+
+                        string cur_keyword = keyword;
+                        NStr::ToLower(cur_keyword);
+
+                        if (info.m_keywords.find(cur_keyword) != info.m_keywords.end()) {
+                            keywords_found[cur_keyword] = keyword;
                         }
                     }
                     info.m_keywords.swap(keywords_found);
@@ -569,7 +573,10 @@ static void CheckKeywords(const CSeq_descr& descrs, CSeqEntryInfo& info)
             }
             else {
                 // copies all keywords for the first time
-                copy(genbank_block->GetKeywords().begin(), genbank_block->GetKeywords().end(), inserter(info.m_keywords, info.m_keywords.end()));
+                for (auto& keyword : genbank_block->GetKeywords()) {
+                    string cur_keyword = keyword;
+                    info.m_keywords[NStr::ToLower(cur_keyword)] = keyword;
+                }
             }
         }
     }
