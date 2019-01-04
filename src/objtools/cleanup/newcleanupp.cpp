@@ -1118,13 +1118,14 @@ void CNewCleanup_imp::GBblockBC (
 
     // split keywords at semicolons
     if (gbk.IsSetKeywords()) {
-        CGB_block::TKeywords::iterator it = gbk.SetKeywords().begin();
+        auto& keyword_list = gbk.SetKeywords();
+        CGB_block::TKeywords::iterator it = keyword_list.begin();
         while (it != gbk.SetKeywords().end()) {
             vector<string> tokens;
             NStr::Split(*it, ";", tokens, NStr::fSplit_Tokenize);
             if (tokens.size() > 1) {
-                it = gbk.SetKeywords().erase(it);
-                gbk.SetKeywords().insert(it, tokens.begin(), tokens.end());
+                it = keyword_list.erase(it);
+                keyword_list.insert(it, tokens.begin(), tokens.end());
             } else {
                 ++it;
             }
@@ -1362,23 +1363,28 @@ void CNewCleanup_imp::BiosourceFeatBC (
 {
     // consolidate all orgmods of subtype "other" into one
     CRef<COrgMod> pFirstOtherOrgMod;
-    EDIT_EACH_ORGMOD_ON_BIOSOURCE(orgmod_it, biosrc) {
-        COrgMod & orgmod = **orgmod_it;
+    if (biosrc.IsSetOrg() && biosrc.GetOrg().IsSetOrgname() && biosrc.GetOrg().GetOrgname().IsSetMod()) {
+        auto& mod_set = biosrc.SetOrg().SetOrgname().SetMod();
+        auto mod_it = mod_set.begin();
+        while (mod_it != mod_set.end()) {
+            COrgMod & orgmod = **mod_it;
 
-        // we're only cleaning the ones of type "other"
-        if( ! FIELD_EQUALS(orgmod, Subtype, NCBI_ORGMOD(other)) ||
-            ! FIELD_IS_SET(orgmod, Subname) ) 
-        {
-            continue;
-        }
+            // we're only cleaning the ones of type "other"
+            if (!FIELD_EQUALS(orgmod, Subtype, NCBI_ORGMOD(other)) ||
+                !FIELD_IS_SET(orgmod, Subname))
+            {
+                continue;
+            }
 
-        if( pFirstOtherOrgMod ) {
-            STRING_FIELD_APPEND(*pFirstOtherOrgMod, Subname, "; ", GET_STRING_FLD_OR_BLANK(orgmod, Subname) );
-            ChangeMade(CCleanupChange::eChangeOrgmod);
-            ERASE_ORGMOD_ON_BIOSOURCE(orgmod_it, biosrc);
-            ChangeMade(CCleanupChange::eRemoveOrgmod);
-        } else {
-            pFirstOtherOrgMod.Reset( &orgmod );
+            if (pFirstOtherOrgMod) {
+                STRING_FIELD_APPEND(*pFirstOtherOrgMod, Subname, "; ", GET_STRING_FLD_OR_BLANK(orgmod, Subname));
+                ChangeMade(CCleanupChange::eChangeOrgmod);
+                mod_it = mod_set.erase(mod_it);
+                ChangeMade(CCleanupChange::eRemoveOrgmod);
+            } else {
+                pFirstOtherOrgMod.Reset(&orgmod);
+                ++mod_it;
+            }
         }
     }
 
@@ -1709,18 +1715,24 @@ void CNewCleanup_imp::BiosourceBC (
     }
 
     // correct specific cases of inconsistently applied tildes
-    EDIT_EACH_ORGMOD_ON_BIOSOURCE(orgmod_it, biosrc) {
-        COrgMod & orgmod = **orgmod_it;
+    if (biosrc.IsSetOrg() && biosrc.GetOrg().IsSetOrgname()) {
+        auto& orgname = biosrc.SetOrg().SetOrgname();
+        if (orgname.IsSetMod()) {
+            auto& mod_set = orgname.SetMod();
+            for (auto& orgmod_it : mod_set) {
+                COrgMod & orgmod = *orgmod_it;
 
-        // we're only correcting tildes for the ones of type "other"
-        if( ! FIELD_EQUALS(orgmod, Subtype, NCBI_ORGMOD(other)) ||
-            ! FIELD_IS_SET(orgmod, Subname) ) 
-        {
-            continue;
+                // we're only correcting tildes for the ones of type "other"
+                if (!FIELD_EQUALS(orgmod, Subtype, NCBI_ORGMOD(other)) ||
+                    !FIELD_IS_SET(orgmod, Subname))
+                {
+                    continue;
+                }
+
+                string &subname = GET_MUTABLE(orgmod, Subname);
+                s_CorrectTildes(subname);
+            }
         }
-
-        string &subname = GET_MUTABLE (orgmod, Subname);
-        s_CorrectTildes(subname);
     }
 
     EDIT_EACH_SUBSOURCE_ON_BIOSOURCE( subsrc_iter, biosrc ) {
@@ -2393,14 +2405,16 @@ void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
     CRef<CCit_art> last_article;
     
     bool fix_initials = s_ShouldWeFixInitials(pub_equiv);
+    auto& pe_set = pub_equiv.Set();
 
-    pub_equiv.Set().sort(s_PubWhichCompare);
+    pe_set.sort(s_PubWhichCompare);
 
-    EDIT_EACH_PUB_ON_PUBEQUIV(it, pub_equiv) {
+    auto it = pe_set.begin();
+    while (it != pe_set.end()) {
         CPub &pub = **it;
 
         if( PubBC(pub, fix_initials) == eAction_Erase ) {
-            ERASE_PUB_ON_PUBEQUIV(it, pub_equiv);
+            it = pe_set.erase(it);
             ChangeMade(CCleanupChange::eRemoveEmptyPub);
             continue;
         }
@@ -2412,12 +2426,13 @@ void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
         if( pub.IsArticle() ) {
             last_article.Reset( &pub.SetArticle());
             if (last_article->IsSetIds()) {
-                CArticleIdSet::Tdata::iterator id_it = last_article->SetIds().Set().begin();
-                while (id_it != last_article->SetIds().Set().end()) {
+                auto& ids = last_article->SetIds().Set();
+                CArticleIdSet::Tdata::iterator id_it = ids.begin();
+                while (id_it != ids.end()) {
                     if ((*id_it)->IsPubmed() && last_article_pubmed_id != 0 &&
                         last_article_pubmed_id == (*id_it)->GetPubmed()) {
                         // erase duplicate
-                        id_it = last_article->SetIds().Set().erase(id_it);
+                        id_it = ids.erase(id_it);
                         ChangeMade(CCleanupChange::eChangePublication);
                     } else {
                         if ((*id_it)->IsPubmed()) {
@@ -2428,6 +2443,7 @@ void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
                 }
             }
         }
+        ++it;
     }
 
     // Now, we might have to transfer data to fill in missing information
@@ -2704,7 +2720,7 @@ static bool s_IsEmpty(const CAuthor& auth)
         {{
             const CName_std& nstd = name.GetName();
             // last name is required
-            if( (!nstd.IsSetLast()      ||  NStr::IsBlank(nstd.GetLast())) ) {
+            if( !nstd.IsSetLast()      ||  NStr::IsBlank(nstd.GetLast()) ) {
                 return true;
             }
             // also fails if all fields are blank
@@ -2758,9 +2774,10 @@ void CNewCleanup_imp::AuthListBC( CAuth_list& al, bool fix_initials )
             ChangeMade(CCleanupChange::eChangePublication);
         }
     }
-    if ( FIELD_IS_SET(al, Names) ) {
+    if ( al.IsSetNames() ) {
         typedef CAuth_list::TNames TNames;
-        switch ( GET_MUTABLE(al, Names).Which() ) {
+        auto& alnames = al.SetNames();
+        switch (alnames.Which() ) {
             case TNames::e_Ml:
             {{
                 if (ConvertAuthorContainerMlToStd(al)) {
@@ -2774,21 +2791,20 @@ void CNewCleanup_imp::AuthListBC( CAuth_list& al, bool fix_initials )
             //   std clean-up step )
             case TNames::e_Std:
             {{
-                // The "names" variable is not above the switch() because
-                // the case fall-through means it may have been invalidated.
-                TNames& names = GET_MUTABLE(al, Names);
-                // call BasicCleanup for each CAuthor
-                EDIT_EACH_AUTHOR_ON_AUTHLIST( it, al ) {
+                auto& std = alnames.SetStd();
+                auto it = std.begin();
+                while (it != std.end()) {
                     if (CCleanup::CleanupAuthor(**it, fix_initials)) {
                         ChangeMade(CCleanupChange::eChangePublication);
                     }
                     if( s_IsEmpty(**it) ) {
-                        ERASE_AUTHOR_ON_AUTHLIST( it, al );
+                        it = std.erase(it);
                         ChangeMade(CCleanupChange::eChangePublication);
                     }
+                    ++it;
                 }
-                if ( AUTHOR_ON_AUTHLIST_IS_EMPTY(al) ) {
-                    s_ResetAuthorNames (names);
+                if ( std.empty() ) {
+                    s_ResetAuthorNames (alnames);
                     ChangeMade(CCleanupChange::eChangePublication);
                 }
                 break;
@@ -2939,7 +2955,7 @@ struct TSortCit {
         const CCit_gen& g1 = p1.GetGen();
         const CCit_gen& g2 = p2.GetGen();
         if ( g1.IsSetTitle() != g2.IsSetTitle() ) {
-            return (g1.IsSetTitle() - g2.IsSetTitle());
+            return (g1.IsSetTitle() || g2.IsSetTitle());
         } else if( ! g1.IsSetTitle() && ! g2.IsSetTitle() ) {
             return false;
         }
@@ -2955,7 +2971,7 @@ bool cmpSortedvsOld(const TCit& e1, const CRef<CPub>& e2) {
 void CNewCleanup_imp::PubSetBC( CPub_set &pub_set )
 {
     // The Pub-set should always be pub. Ignore if not.
-    if( ! FIELD_IS( pub_set, Pub ) ) {
+    if( ! pub_set.IsPub() ) {
         return;
     }
 
@@ -2963,21 +2979,22 @@ void CNewCleanup_imp::PubSetBC( CPub_set &pub_set )
     // indexed by a label generated for each CPub.
     typedef set<TCit, TSortCit> TCitSet;
     TCitSet cit_set;
-    ITERATE (CPub_set::TPub, cit_it, pub_set.GetPub()) {
+    for (auto cit_it : pub_set.GetPub()) {
         string label;
-        (*cit_it)->GetLabel(&label, CPub::eContent, CPub::fLabel_Unique, CPub::eLabel_V1 );
+        cit_it->GetLabel(&label, CPub::eContent, CPub::fLabel_Unique, CPub::eLabel_V1 );
         // the following line may fail due to dups 
         // (that's okay; it lets us automatically remove dups)
-        cit_set.insert( TCit(label, *cit_it) );
+        cit_set.insert( TCit(label, cit_it) );
     }
+    auto& publist = pub_set.SetPub();
     // Has anything been deleted, or has the order changed?
-    if ( cit_set.size() != pub_set.SetPub().size() ||
-        ! equal(cit_set.begin(), cit_set.end(), pub_set.SetPub().begin(), cmpSortedvsOld) ) 
+    if ( cit_set.size() != publist.size() ||
+        ! equal(cit_set.begin(), cit_set.end(), publist.begin(), cmpSortedvsOld) )
     {
         // put everything left back into the feature's citation list.
-        pub_set.SetPub().clear();
+        publist.clear();
         ITERATE (TCitSet, citset_it, cit_set) {
-            pub_set.SetPub().push_back(citset_it->second);
+            publist.push_back(citset_it->second);
         }
         ChangeMade(CCleanupChange::eCleanCitonFeat);
     }
@@ -3187,7 +3204,7 @@ static const TSiteElem sc_site_map[] = {
 typedef CStaticArrayMap<string, CSeqFeatData::TSite, PNocase> TSiteMap;
 DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TSiteMap, sc_SiteMap, sc_site_map);
 
-void CNewCleanup_imp::SiteFeatBC( CSeqFeatData::ESite &site, CSeq_feat& feat )
+void CNewCleanup_imp::SiteFeatBC( const CSeqFeatData::ESite &site, CSeq_feat& feat )
 {
     // If site set to "other", try to extract it from the comment
     if ( FIELD_IS_SET(feat, Comment)  &&
@@ -3333,10 +3350,10 @@ void CNewCleanup_imp::ConvertSeqLocWholeToInt( CSeq_loc &loc )
         }
         if (bsh) {
             TSeqPos bs_len = bsh.GetBioseqLength();
-            
-            loc.SetInt().SetId(*id);
-            loc.SetInt().SetFrom(0);
-            loc.SetInt().SetTo(bs_len - 1);
+            auto& interval = loc.SetInt();
+            interval.SetId(*id);
+            interval.SetFrom(0);
+            interval.SetTo(bs_len - 1);
             ChangeMade(CCleanupChange::eChangeWholeLocation);
         }
     }
@@ -3574,8 +3591,9 @@ static
 const char *s_FindKeyFromFeatDefType( const CSeq_feat &feat )
 {
     static const char *kFeatBad = "???";
+    const CSeqFeatData& fdata = feat.GetData();
 
-    SWITCH_ON_SEQFEAT_CHOICE(feat) {
+    switch (fdata.Which()) {
         case NCBI_SEQFEAT(Gene):
             return "Gene";
         case NCBI_SEQFEAT(Org):
@@ -3583,7 +3601,7 @@ const char *s_FindKeyFromFeatDefType( const CSeq_feat &feat )
         case NCBI_SEQFEAT(Cdregion):
             return "CDS";
         case NCBI_SEQFEAT(Prot):
-            if( feat.GetData().GetProt().CanGetProcessed() ) {
+            if(fdata.GetProt().IsSetProcessed() ) {
                 switch( feat.GetData().GetProt().GetProcessed() ) {
                 case NCBI_PROTREF(not_set):
                     return "Protein";
@@ -3603,8 +3621,9 @@ const char *s_FindKeyFromFeatDefType( const CSeq_feat &feat )
             }
             return "Protein";
         case NCBI_SEQFEAT(Rna):
-            if( feat.GetData().GetRna().IsSetType() ) { 
-                switch ( feat.GetData().GetRna().GetType() )
+            if(fdata.GetRna().IsSetType() ) {
+                const auto& rna = fdata.GetRna();
+                switch (rna.GetType() )
                 {
                 case NCBI_RNAREF(unknown):
                         return "misc_RNA"; // unknownrna mapped to otherrna
@@ -3629,8 +3648,8 @@ const char *s_FindKeyFromFeatDefType( const CSeq_feat &feat )
                 case NCBI_RNAREF(miscRNA):
                     return "misc_RNA";
                 case NCBI_RNAREF(other):
-                    if ( FIELD_IS_SET_AND_IS(feat.GetData().GetRna(), Ext, Name) ) { 
-                        const string &name = feat.GetData().GetRna().GetExt().GetName();
+                    if ( FIELD_IS_SET_AND_IS(rna, Ext, Name) ) {
+                        const string &name = rna.GetExt().GetName();
                         if ( NStr::EqualNocase(name, "misc_RNA")) return "misc_RNA";
                         if ( NStr::EqualNocase(name, "ncRNA") ) return "ncRNA";
                         if ( NStr::EqualNocase(name, "tmRNA") ) return "tmRNA";
@@ -3646,7 +3665,7 @@ const char *s_FindKeyFromFeatDefType( const CSeq_feat &feat )
         case NCBI_SEQFEAT(Seq):
             return "Xref";
         case NCBI_SEQFEAT(Imp):
-            return s_FindImpFeatType( feat.GetData().GetImp() );
+            return s_FindImpFeatType( fdata.GetImp() );
         case NCBI_SEQFEAT(Region):
             return "Region";
         case NCBI_SEQFEAT(Comment):
@@ -4103,7 +4122,7 @@ void s_ExpandThisQual(
     string  qual_type = qual.GetQual();
     string& val = qual.SetVal();
     if (NStr::Equal(val, "()")) {
-        val = "";
+        val.clear();
         return;
     }
     if ( ! s_IsCompoundRptTypeValue( val ) ) {
@@ -4479,9 +4498,10 @@ static CRef<CTrna_ext> s_ParseTRnaFromAnticodonString (const string &str, const 
                     pos_str = pos_str.substr (0, pos_str.length() - 1);
                 }
             }
-            CRef<CSeq_loc> anticodon = ReadLocFromText (pos_str, feat.GetLocation().GetId(), scope);
+            const CSeq_loc& loc = feat.GetLocation();
+            CRef<CSeq_loc> anticodon = ReadLocFromText (pos_str, loc.GetId(), scope);
             if( anticodon ) {
-                CBioseq_Handle bsh = scope->GetBioseqHandle(*(feat.GetLocation().GetId()));
+                CBioseq_Handle bsh = scope->GetBioseqHandle(*(loc.GetId()));
                 if (!bsh) {
                     trna.Reset(NULL);
                     return trna;
@@ -4491,7 +4511,7 @@ static CRef<CTrna_ext> s_ParseTRnaFromAnticodonString (const string &str, const 
                     return trna;
                 }
                 if (feat.GetLocation().IsSetStrand()) {
-                    anticodon->SetStrand(feat.GetLocation().GetStrand());
+                    anticodon->SetStrand(loc.GetStrand());
                 } else {
                     anticodon->SetStrand(eNa_strand_plus); // anticodon is always on plus strand
                 }
@@ -4782,60 +4802,7 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
 
 CNewCleanup_imp::EAction CNewCleanup_imp::x_HandleStandardNameRnaGBQual(CSeq_feat& feat, CRNA_ref& rna, const string& standard_name)
 {
-    if (!rna.IsSetType()) {
-        return eAction_Nothing;
-    }
-    EAction rval = eAction_Nothing;
-
-    TRNAREF_TYPE rna_type = rna.GetType();
-    string previous_product = rna.GetRnaProductName();
-
-    switch (rna_type)
-    {
-        case CRNA_ref::eType_rRNA:
-        case CRNA_ref::eType_premsg:
-            /*
-            if (NStr::IsBlank(previous_product)) {
-                string remainder;
-                rna.SetRnaProductName(standard_name, remainder);
-                if (!NStr::IsBlank(remainder)) {
-                    x_AddToComment(feat, remainder);
-                }
-            } else {
-                x_AddToComment(feat, standard_name);
-            }
-            rval = eAction_Erase;
-            */
-            break;
-        case CRNA_ref::eType_ncRNA:
-            /*
-            x_AddToComment(feat, standard_name);
-            rval = eAction_Erase;
-            */
-            break;
-        case CRNA_ref::eType_mRNA:
-            /*
-            if (NStr::IsBlank(standard_name)) {
-                if (!m_SeqEntryInfoStack.top().m_IsEmblOrDdbj) {
-                    rval = eAction_Erase;
-                }
-            } else {
-                if (NStr::IsBlank(previous_product)) {
-                    rna.SetExt().SetName(standard_name);
-                    rval = eAction_Erase;
-                }
-            }
-            */
-            break;
-        case CRNA_ref::eType_tRNA:            
-            /*
-            rval = x_HandleTrnaProductGBQual(feat, rna, standard_name);
-            */
-            break;
-        default:
-            break;
-    }
-    return rval;
+    return eAction_Nothing;
 }
 
 
@@ -5067,13 +5034,18 @@ void CNewCleanup_imp::BioSourceEC(CBioSource& biosrc)
 
 void CNewCleanup_imp::x_AddEnvSamplOrMetagenomic(CBioSource& biosrc)
 {
+    if (!biosrc.IsSetOrg()) {
+        return;
+    }
+    auto& org = biosrc.SetOrg();
     // add environmental_sample or metagenomic based on lineage or div
 
-    if ( biosrc.IsSetOrg() && biosrc.GetOrg().IsSetOrgname()) {
+    if ( org.IsSetOrgname()) {
+        const auto& orgname = org.GetOrgname();
         bool needs_env_sample = false;
         bool needs_metagenomic = false;
-        if (biosrc.GetOrg().GetOrgname().IsSetLineage()) {
-            string lineage = biosrc.GetOrg().GetOrgname().GetLineage();
+        if (orgname.IsSetLineage()) {
+            string lineage = orgname.GetLineage();
             if (NStr::FindNoCase(lineage, "environmental sample") != string::npos) {
                 needs_env_sample = true;
             }
@@ -5081,7 +5053,7 @@ void CNewCleanup_imp::x_AddEnvSamplOrMetagenomic(CBioSource& biosrc)
                 needs_metagenomic = true;
             }
         }
-        if (biosrc.GetOrg().GetOrgname().IsSetDiv()
+        if (orgname.IsSetDiv()
             && NStr::Equal(biosrc.GetOrg().GetOrgname().GetDiv(), "ENV")) {
             needs_env_sample = true;
         }
@@ -5119,20 +5091,21 @@ void CNewCleanup_imp::x_AddEnvSamplOrMetagenomic(CBioSource& biosrc)
 void CNewCleanup_imp::x_CleanupOldName(COrg_ref& org)
 {
     if (org.IsSetTaxname() && org.IsSetOrgname() && org.GetOrgname().IsSetMod()) {
-        COrgName::TMod::iterator it = org.SetOrgname().SetMod().begin();
-        while (it != org.SetOrgname().SetMod().end()) {
+        auto& modset = org.SetOrgname().SetMod();
+        COrgName::TMod::iterator it = modset.begin();
+        while (it != modset.end()) {
             if ((*it)->IsSetSubtype() &&
                 (*it)->GetSubtype() == COrgMod::eSubtype_old_name &&
                 (*it)->IsSetSubname() &&
                 NStr::Equal((*it)->GetSubname(), org.GetTaxname()) &&
                 (!(*it)->IsSetAttrib() || NStr::IsBlank((*it)->GetAttrib()))) {
-                it = org.SetOrgname().SetMod().erase(it);
+                it = modset.erase(it);
                 ChangeMade(CCleanupChange::eRemoveOrgmod);
             } else {
                 ++it;
             }            
         }
-        if (org.GetOrgname().GetMod().empty()) {
+        if (modset.empty()) {
             org.SetOrgname().ResetMod();
 
         }
@@ -5164,20 +5137,21 @@ void CNewCleanup_imp::x_CleanupOrgModNoteEC(COrg_ref& org)
     if (!org.IsSetOrgname() || !org.GetOrgname().IsSetMod()) {
         return;
     }
-    COrgName::TMod::iterator it = org.SetOrgname().SetMod().begin();
-    while (it != org.SetOrgname().SetMod().end()) {
+    auto& modset = org.SetOrgname().SetMod();
+    COrgName::TMod::iterator it = modset.begin();
+    while (it != modset.end()) {
         if ((*it)->IsSetSubtype() && 
             (*it)->GetSubtype() == COrgMod::eSubtype_other &&
             (*it)->IsSetSubname() &&
             (s_HasMatchingGBMod(org.GetOrgname(), (*it)->GetSubname()) ||
              (org.IsSetTaxname() && NStr::Equal(org.GetTaxname(), (*it)->GetSubname())))) {
             ChangeMade(CCleanupChange::eRemoveOrgmod);
-            it = org.SetOrgname().SetMod().erase(it);
+            it = modset.erase(it);
         } else {
             ++it;
         }
     }
-    if (org.GetOrgname().GetMod().empty()) {
+    if (modset.empty()) {
         org.SetOrgname().ResetMod();
         ChangeMade(CCleanupChange::eRemoveOrgmod);
     }
@@ -5218,31 +5192,30 @@ void CNewCleanup_imp::x_DateStdBC( CDate_std& date )
         ChangeMade(CCleanupChange::eCleanupDate);
     }
 
-    if ( ! FIELD_IS_SET(date, Minute) || FIELD_OUT_OF_RANGE(date, Minute, 0, 59) ) {
-        if( FIELD_IS_SET(date, Minute) ) {
-            RESET_FIELD(date, Minute);
+    if (date.IsSetMinute()) {
+        if (date.GetMinute() < 0 || date.GetMinute() > 59) {
+            date.ResetMinute();
+            date.ResetSecond();
             ChangeMade(CCleanupChange::eCleanupDate);
         }
-        if( FIELD_IS_SET(date, Second) ) {
-            RESET_FIELD(date, Second);
-            ChangeMade(CCleanupChange::eCleanupDate);
-        }
+    } else if (date.IsSetSecond()) {
+        date.ResetSecond();
+        ChangeMade(CCleanupChange::eCleanupDate);
     }
-    
-    if ( ! FIELD_IS_SET(date, Hour) || FIELD_OUT_OF_RANGE(date, Hour, 0, 23) ) {
-        if( FIELD_IS_SET(date, Hour) ) {
-            RESET_FIELD(date, Hour);
+
+    if (date.IsSetHour()) {
+        if (date.GetHour() < 0 || date.GetHour() > 23) {
+            date.ResetHour();
+            date.ResetMinute();
+            date.ResetSecond();
             ChangeMade(CCleanupChange::eCleanupDate);
         }
-        if( FIELD_IS_SET(date, Minute) ) {
-            RESET_FIELD(date, Minute);
-            ChangeMade(CCleanupChange::eCleanupDate);
-        }
-        if( FIELD_IS_SET(date, Second) ) {
-            RESET_FIELD(date, Second);
-            ChangeMade(CCleanupChange::eCleanupDate);
-        }
+    } else if (date.IsSetMinute() || date.IsSetSecond()) {
+        date.ResetMinute();
+        date.ResetSecond();
+        ChangeMade(CCleanupChange::eCleanupDate);
     }
+
 }
 
 
@@ -5335,10 +5308,14 @@ void CNewCleanup_imp::x_BothStrandBC( CSeq_interval & seq_interval )
 void CNewCleanup_imp::x_SplitDbtag( CDbtag &dbt, vector< CRef< CDbtag > > & out_new_dbtags )
 {
     // check the common case of nothing to split
-    if( ! dbt.IsSetTag() || ! dbt.GetTag().IsStr() ) {
+    if (!dbt.IsSetTag()) {
         return;
     }
-    if( dbt.GetTag().GetStr().find(":") == string::npos ) {
+    auto& tag = dbt.SetTag();
+    if (!tag.IsStr()) {
+        return;
+    }
+    if( tag.GetStr().find(":") == string::npos ) {
         return;
     }
 
@@ -5356,11 +5333,11 @@ void CNewCleanup_imp::x_SplitDbtag( CDbtag &dbt, vector< CRef< CDbtag > > & out_
 
     // split by colon and generate new tags
     vector<string> tags;
-    NStr::Split(dbt.GetTag().GetStr(), ":", tags, NStr::fSplit_Tokenize);
+    NStr::Split(tag.GetStr(), ":", tags, NStr::fSplit_Tokenize);
     _ASSERT( tags.size() >= 2 );
 
     // treat the CDbtag argument as the first of the new CDbtags
-    dbt.SetTag().SetStr( tags.front() );
+    tag.SetStr( tags.front() );
     vector<string>::const_iterator str_iter = tags.begin() + 1;
     for( ; str_iter != tags.end(); ++str_iter ) {
         CRef<CDbtag> new_tag( new CDbtag );
@@ -5724,8 +5701,6 @@ void s_SplitAtSingleTildes( list<string> &piece_vec, const string &str )
         return;
     }
 
-    vector<string> pieces;
-
     // piece_start is the beginning of the piece we're working on,
     // but search_start is where to start looking for tildes on this iteration
     // ( invariant: search_pos >= piece_start_pos )
@@ -5936,8 +5911,9 @@ void CNewCleanup_imp::x_MovedNamedValuesInStrain(COrgName& orgname)
     if (!orgname.IsSetMod()) {
         return;
     }
-    COrgName::TMod::iterator m = orgname.SetMod().begin();
-    while (m != orgname.SetMod().end()) {
+    auto& mods = orgname.SetMod();
+    COrgName::TMod::iterator m = mods.begin();
+    while (m != mods.end()) {
         if ((*m)->IsSetSubtype() && (*m)->IsSetSubname()) {
             bool do_erase = false;
             switch ((*m)->GetSubtype()) {
@@ -5963,7 +5939,7 @@ void CNewCleanup_imp::x_MovedNamedValuesInStrain(COrgName& orgname)
                     break;
             }
             if (do_erase) {
-                m = orgname.SetMod().erase(m);
+                m = mods.erase(m);
                 ChangeMade(CCleanupChange::eRemoveOrgmod);
             } else {
                 ++m;
@@ -6590,13 +6566,14 @@ bool SortGBQuals(CSeq_feat& sf)
     // first, extract product qualifier values, because order must be
     // preserved
     vector<string> products;
-    CSeq_feat::TQual::iterator it = sf.SetQual().begin();
-    while (it != sf.SetQual().end()) {
+    auto& qualset = sf.SetQual();
+    CSeq_feat::TQual::iterator it = qualset.begin();
+    while (it != qualset.end()) {
         if ((*it)->IsSetQual() && NStr::EqualNocase((*it)->GetQual(), "product")) {
             if ((*it)->IsSetVal() && !NStr::IsBlank((*it)->GetVal())) {
                 products.push_back((*it)->GetVal());
             }
-            it = sf.SetQual().erase(it);
+            it = qualset.erase(it);
         } else {
             ++it;
         }
@@ -6607,8 +6584,8 @@ bool SortGBQuals(CSeq_feat& sf)
     }
 
     // insert product qualifiers back in list
-    it = sf.SetQual().begin();
-    while (it != sf.SetQual().end()) {
+    it = qualset.begin();
+    while (it != qualset.end()) {
         if (!(*it)->IsSetQual() ||            
             s_CompareNoCaseCStyle("product", (*it)->GetQual()) < 0 ||
             s_IsIllegalQual((*it)->GetQual())) {
@@ -6616,15 +6593,15 @@ bool SortGBQuals(CSeq_feat& sf)
         }
         ++it;
     }
-    if (it == sf.SetQual().end()) {
+    if (it == qualset.end()) {
         ITERATE(vector<string>, s, products) {
             CRef<CGb_qual> pq(new CGb_qual("product", *s));
-            sf.SetQual().push_back(pq);
+            qualset.push_back(pq);
         }
     } else {
         ITERATE(vector<string>, s, products) {
             CRef<CGb_qual> pq(new CGb_qual("product", *s));
-            it = sf.SetQual().insert(it, pq);
+            it = qualset.insert(it, pq);
         }
     }
     return !(orig->Equals(sf));          
@@ -7228,11 +7205,9 @@ void CNewCleanup_imp::ProtrefBC (
     }
 
     if (prot_ref.IsSetName()) {
-        for (CProt_ref::TName::iterator it = prot_ref.SetName().begin();
-             it != prot_ref.SetName().end();
-             it++) {
-            ProtNameBC(*it);
-            x_CompressStringSpacesMarkChanged(*it);
+        for (auto& it : prot_ref.SetName()) {
+            ProtNameBC(it);
+            x_CompressStringSpacesMarkChanged(it);
         }
     }
 
@@ -7416,13 +7391,13 @@ void CNewCleanup_imp::ProtFeatfBC (
     }
         
     // move prot.db to feat.dbxref
-    if (PROTREF_HAS_DBXREF (pr)) {
-        FOR_EACH_DBXREF_ON_PROTREF (db_itr, pr) {
-            CRef <CDbtag> dbc (*db_itr);
-            ADD_DBXREF_TO_SEQFEAT (sf, dbc);
+    if (pr.IsSetDb()) {
+        auto& dbset = pr.SetDb();
+        for (auto it : dbset) {
+            sf.SetDbxref().push_back(it);
         }
-        RESET_FIELD (pr, Db);
-        ChangeMade (CCleanupChange::eChangeDbxrefs);
+        pr.ResetDb();
+        ChangeMade(CCleanupChange::eChangeDbxrefs);
     }
 
     REMOVE_IF_EMPTY_NAME_ON_PROTREF(pr);

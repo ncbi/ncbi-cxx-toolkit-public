@@ -280,7 +280,7 @@ private:
 
     void ImpFeatBC( CSeq_feat& sf );
 
-    void SiteFeatBC( CSeqFeatData::ESite &site, CSeq_feat& sf );
+    void SiteFeatBC( const CSeqFeatData::ESite &site, CSeq_feat& sf );
 
     void SeqLocBC( CSeq_loc &loc );
     void ConvertSeqLocWholeToInt( CSeq_loc &loc );
