@@ -8004,16 +8004,17 @@ void CNewCleanup_imp::x_AddNcbiCleanupObject( CSeq_entry &seq_entry )
 {
     // remove from lower levels
     if (seq_entry.IsSet() && seq_entry.GetSet().IsSetSeq_set()) {
-        NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, seq_entry.SetSet().SetSeq_set()) {
-            CCleanup::RemoveNcbiCleanupObject(**it);
+        for (auto it : seq_entry.GetSet().GetSeq_set()) {
+            CCleanup::RemoveNcbiCleanupObject(*it);
         }
     }
 
     // update existing
     if (seq_entry.IsSetDescr()) {
-        NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, seq_entry.SetDescr().Set()) {
-            if ((*it)->IsUser() && (*it)->GetUser().GetObjectType() == CUser_object::eObjectType_Cleanup) {
-                (*it)->SetUser().UpdateNcbiCleanup(NCBI_CLEANUP_VERSION);
+        auto& dset = seq_entry.SetDescr().Set();
+        for (auto it : dset) {
+            if (it->IsUser() && it->GetUser().GetObjectType() == CUser_object::eObjectType_Cleanup) {
+                it->SetUser().UpdateNcbiCleanup(NCBI_CLEANUP_VERSION);
                 ChangeMade(CCleanupChange::eAddNcbiCleanupObject);
                 return;
             }
@@ -8132,8 +8133,9 @@ bool s_FixncRNA(CSeq_feat& feat)
     if (feat.IsSetQual() &&
         (rna_type == CRNA_ref::eType_ncRNA ||
          rna_type == NCBI_RNAREF(other))) {
-        CSeq_feat::TQual::iterator qual_iter = feat.SetQual().begin();
-        while (qual_iter != feat.SetQual().end()) {
+        auto& qual_list = feat.SetQual();
+        CSeq_feat::TQual::iterator qual_iter = qual_list.begin();
+        while (qual_iter != qual_list.end()) {
             string &qual = (*qual_iter)->SetQual();
             string &val = (*qual_iter)->SetVal();
             if (qual == "ncRNA_class") {
@@ -8145,13 +8147,13 @@ bool s_FixncRNA(CSeq_feat& feat)
                     rna.SetRnaProductName(product, remainder);
                 }
                 any_change = true;
-                qual_iter = feat.SetQual().erase(qual_iter);
+                qual_iter = qual_list.erase(qual_iter);
             }
             else {
                 ++qual_iter;
             }
         }
-        if (feat.SetQual().empty()) {
+        if (qual_list.empty()) {
             feat.ResetQual();
         }
     }
@@ -8192,8 +8194,9 @@ bool s_FixtmRNA(CSeq_feat& feat)
         (rna_type == CRNA_ref::eType_other || 
         rna_type == CRNA_ref::eType_tmRNA ||
         rna_type == CRNA_ref::eType_ncRNA)) {
-        CSeq_feat::TQual::iterator qual_iter = feat.SetQual().begin();
-        while (qual_iter != feat.SetQual().end()) {
+        auto& qual_list = feat.SetQual();
+        CSeq_feat::TQual::iterator qual_iter = qual_list.begin();
+        while (qual_iter != qual_list.end()) {
             string &qual = (*qual_iter)->SetQual();
             string &val = (*qual_iter)->SetVal();
             if (qual == "tag_peptide") {
@@ -8205,16 +8208,16 @@ bool s_FixtmRNA(CSeq_feat& feat)
                 rna_qual->SetVal(val);
                 rna.SetExt().SetGen().SetQuals().Set().push_back(rna_qual);
                 any_change = true;
-                qual_iter = feat.SetQual().erase(qual_iter);
+                qual_iter = qual_list.erase(qual_iter);
             } else if (qual == "ncRNA_class" && rna_type == CRNA_ref::eType_tmRNA) {
                 rna.SetExt().SetGen().SetClass(val);
                 any_change = true;
-                qual_iter = feat.SetQual().erase(qual_iter);
+                qual_iter = qual_list.erase(qual_iter);
             } else {
                 ++qual_iter;
             }
         }
-        if (feat.SetQual().empty()) {
+        if (qual_list.empty()) {
             feat.ResetQual();
         }
     }
@@ -8267,8 +8270,9 @@ bool CNewCleanup_imp::x_FixMiscRNA(CSeq_feat& feat)
     string product_name = rna.GetRnaProductName();
     if (NStr::IsBlank(product_name) && feat.IsSetQual())
     {
-        CSeq_feat::TQual::iterator qual_iter = feat.SetQual().begin();
-        while (qual_iter != feat.SetQual().end()) {
+        auto& qual_list = feat.SetQual();
+        CSeq_feat::TQual::iterator qual_iter = qual_list.begin();
+        while (qual_iter != qual_list.end()) {
             string &qual = (*qual_iter)->SetQual();
             string &val = (*qual_iter)->SetVal();
             if (qual == "product") {
@@ -8276,7 +8280,7 @@ bool CNewCleanup_imp::x_FixMiscRNA(CSeq_feat& feat)
                 CNewCleanup_imp::TranslateITSName(val);
                 rna.SetExt().SetGen().SetProduct(val);
                 any_change = true;
-                qual_iter = feat.SetQual().erase(qual_iter);
+                qual_iter = qual_list.erase(qual_iter);
             }
             else {
                 ++qual_iter;
@@ -8436,15 +8440,19 @@ void CNewCleanup_imp::RnaFeatBC (
                 seq_feat.ResetComment();
                 ChangeMade(CCleanupChange::eChangeITS);
             }
-        } else if (rna.GetExt().IsName()) {
-            if (IsInternalTranscribedSpacer(rna.GetExt().GetName()) ||
-                TranslateITSName(rna.SetExt().SetName())) {
-                rna.SetExt().SetName(rna.GetExt().GetName());
-                ChangeMade(CCleanupChange::eChangeITS);
+        } else {
+            auto& ext = rna.SetExt();
+            if (ext.IsName()) {
+                if (IsInternalTranscribedSpacer(ext.GetName()) ||
+                    TranslateITSName(ext.SetName())) {
+                    ext.SetName(ext.GetName());
+                    ChangeMade(CCleanupChange::eChangeITS);
+                }
             }
-        } else if (rna.GetExt().IsGen() && rna.GetExt().GetGen().IsSetProduct()) {
-            if (TranslateITSName(rna.SetExt().SetGen().SetProduct())) {
-                ChangeMade(CCleanupChange::eChangeITS);
+            else if (ext.IsGen() && ext.GetGen().IsSetProduct()) {
+                if (TranslateITSName(rna.SetExt().SetGen().SetProduct())) {
+                    ChangeMade(CCleanupChange::eChangeITS);
+                }
             }
         }
     }
@@ -8500,9 +8508,10 @@ void CNewCleanup_imp::RnaFeatBC (
         {
             RESET_FIELD(seq_feat, Comment);
             ChangeMade(CCleanupChange::eChangeComment);
-        } else {
-            FOR_EACH_QUAL_ON_RNAGEN( qual_iter, gen ) {
-                const CRNA_qual &rna_qual = **qual_iter;
+        } else if (gen.IsSetQuals()) {
+            const auto& genquals = gen.GetQuals().Get();
+            for (auto qual_iter : genquals) {
+                const CRNA_qual &rna_qual = *qual_iter;
                 if( FIELD_EQUALS(rna_qual, Val, comment) ) {
                     RESET_FIELD(seq_feat, Comment);
                     ChangeMade(CCleanupChange::eChangeComment);
@@ -8514,7 +8523,7 @@ void CNewCleanup_imp::RnaFeatBC (
 
     // if not tRNA and ext is tRNA and tRNA is empty, remove ext.tRNA
     if (rna.IsSetType() && 
-        (rna.GetType() == CRNA_ref::eType_mRNA || rna.GetType() == CRNA_ref::eType_rRNA || CRNA_ref::eType_tRNA) &&
+        (rna.GetType() == CRNA_ref::eType_mRNA || rna.GetType() == CRNA_ref::eType_rRNA || rna.GetType() == CRNA_ref::eType_tRNA) &&
         rna.IsSetExt() && rna.GetExt().IsTRNA() &&
         s_IsEmpty(rna.GetExt().GetTRNA())) {
         rna.ResetExt();
@@ -8844,15 +8853,16 @@ void CNewCleanup_imp::x_MoveCdregionXrefsToProt (CCdregion& cds, CSeq_feat& seqf
                     for (auto fit : ait->GetData().GetFtable()) {
                         if (fit->IsSetData() &&
                             fit->GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
-                            auto xref = seqfeat.SetXref().begin();
-                            while (xref != seqfeat.SetXref().end()) {
+                            auto& xref_list = seqfeat.SetXref();
+                            auto xref = xref_list.begin();
+                            while (xref != xref_list.end()) {
                                 if ((*xref)->IsSetData() && (*xref)->GetData().IsProt()) {
                                     CRef<CSeq_feat> pfeat(const_cast<CSeq_feat *>(fit.GetPointer()));
                                     ProtrefBC(pfeat->SetData().SetProt());
                                     ProtrefBC((*xref)->SetData().SetProt());
                                     s_CopyProtXrefToProtFeat(pfeat->SetData().SetProt(),
                                         (*xref)->SetData().SetProt());
-                                    xref = seqfeat.SetXref().erase(xref);
+                                    xref = xref_list.erase(xref);
                                     ChangeMade(CCleanupChange::eMoveToProtXref);
                                 } else {
                                     ++xref;
@@ -9002,12 +9012,16 @@ void CNewCleanup_imp::x_PCRPrimerSetBC( CPCRPrimerSet &primer_set )
 
 void CNewCleanup_imp::x_CopyGBBlockDivToOrgnameDiv( CSeq_entry &seq_entry)
 {
+    if (!seq_entry.IsSetDescr()) {
+        return;
+    }
+    auto& dset = seq_entry.SetDescr().Set();
     // find the "org" and find the "genbank"
     COrgName *orgname = NULL;
     CGB_block *gb_block = NULL;
 
-    EDIT_EACH_SEQDESC_ON_SEQENTRY(desc_iter, seq_entry) {
-        CSeqdesc &desc = **desc_iter;
+    for (auto desc_iter : dset) {
+        CSeqdesc &desc = *desc_iter;
 
         if( FIELD_IS(desc, Genbank) ) {
             gb_block = &desc.SetGenbank();
@@ -9149,8 +9163,9 @@ void CNewCleanup_imp::x_RemoveSingleStrand(CBioseq& bioseq)
 {
     // do not remove single-strandedness for patent sequences
     bool is_patent = false;
-    for (auto id = bioseq.GetId().begin(); id != bioseq.GetId().end(); id++) {
-        if ((*id)->IsPatent()) {
+    const auto& idset = bioseq.GetId();
+    for (auto id : idset) {
+        if (id->IsPatent()) {
             is_patent = true;
             break;
         }
@@ -9267,55 +9282,58 @@ namespace {
 
     // returns true if change made
     template <class T>
-    bool x_RemoveDupBioSourceImpl( T & obj )
+    bool x_RemoveDupBioSourceImpl(T & obj)
     {
-        if( ! obj.IsSetDescr() || ! obj.SetDescr().IsSet() || 
-            obj.SetDescr().Set().empty() ) 
+        if (!obj.IsSetDescr()) {
+            return false;
+        }
+        auto& dset = obj.SetDescr().Set();
+        if (dset.empty())
         {
             // nothing to remove
             return false;
         }
 
-        CSeq_descr::Tdata & descr_vec = obj.SetDescr().Set();
-
         // erase BioSources that are equal to a BioSource in some ancestor
         // Bioseq-set
         typedef vector<CSeq_descr::Tdata::iterator> TBioSrcIterVec;
         TBioSrcIterVec sourcesToErase;
-        NON_CONST_ITERATE( CSeq_descr::Tdata, descr_iter, descr_vec ) {
-            if( ! (*descr_iter)->IsSource() ) {
+        NON_CONST_ITERATE(CSeq_descr::Tdata, descr_iter, dset) {
+            if (!(*descr_iter)->IsSource()) {
                 continue;
             }
 
             // climb the hierarchy looking for identical BioSource
             bool bShouldEraseDescr = false;
             CConstRef< CBioseq_set > pParent = obj.GetParentSet();
-            for( ; pParent; pParent = pParent->GetParentSet() ) {
-                if( ! pParent->IsSetDescr() || ! pParent->GetDescr().IsSet() ) {
+            for (; pParent; pParent = pParent->GetParentSet()) {
+                if (!pParent->IsSetDescr()) {
                     continue;
                 }
-                ITERATE( CSeq_descr::Tdata, parent_descr_iter, pParent->GetDescr().Get() ) {
-                    if( ! (*parent_descr_iter)->IsSource() ) {
+                const auto& pdset = pParent->GetDescr().Get();
+                for (auto parent_descr_iter : pdset) {
+                    if (!parent_descr_iter->IsSource()) {
                         continue;
                     }
-                    if( (*parent_descr_iter)->Equals(**descr_iter) ) {
+                    if (parent_descr_iter->Equals(**descr_iter)) {
                         bShouldEraseDescr = true;
                         break;
                     }
                 }
-                if( bShouldEraseDescr ) {
+                if (bShouldEraseDescr) {
                     break;
                 }
             }
-            if( bShouldEraseDescr ) {
+            if (bShouldEraseDescr) {
                 sourcesToErase.push_back(descr_iter);
             }
         }
+
         // erase the BioSources we've decided to erase
         NON_CONST_ITERATE(TBioSrcIterVec, iter_iter, sourcesToErase) {
-            descr_vec.erase(*iter_iter);
+            dset.erase(*iter_iter);
         }
-        return ! sourcesToErase.empty();
+        return !sourcesToErase.empty();
     }
 }
 
@@ -9347,9 +9365,10 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
     vector<string> controlled_keywords = CComment_rule::GetKeywordList();
     vector<string> original_keywords;
 
-    if (beh.IsSetDescr()) {
-        CBioseq::TDescr::Tdata::iterator it = beh.SetDescr().Set().begin();
-        while (it != beh.SetDescr().Set().end()) {
+    auto& dset = beh.SetDescr().Set();
+    if (!dset.empty()) {
+        CBioseq::TDescr::Tdata::iterator it = dset.begin();
+        while (it != dset.end()) {
             CSeqdesc& desc = **it;
             if (desc.Which() != CSeqdesc::e_Genbank) {
                 ++it;
@@ -9369,7 +9388,7 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
                 gb_block.ResetKeywords();
             }
             if (gb_block.IsEmpty()) {
-                it = beh.SetDescr().Set().erase(it);
+                it = dset.erase(it);
             } else {
                 ++it;
             }
@@ -9401,8 +9420,8 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
     vector<string> final_keywords;
     if (new_keywords.size() > 0) {
         CGB_block *gb_block = NULL;
-        EDIT_EACH_SEQDESC_ON_BIOSEQ ( itr, bioseq ) {
-            CSeqdesc& desc = **itr;
+        for (auto itr : dset) {
+            CSeqdesc& desc = *itr;
             if ( desc.Which() != CSeqdesc::e_Genbank ) continue;
             gb_block = &desc.SetGenbank();
         }
@@ -9428,14 +9447,17 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
         if (!NStr::Equal(*orig_k, *final_k)) {
             any_change = true;
         }
-        orig_k++;
-        final_k++;
+        ++orig_k;
+        ++final_k;
     }
     if (orig_k != original_keywords.end() || final_k != final_keywords.end()) {
         any_change = true;
     }
     if (any_change) {
         ChangeMade(CCleanupChange::eChangeKeywords);
+    }
+    if (dset.empty()) {
+        beh.ResetDescr();
     }
 }
 
@@ -9606,12 +9628,25 @@ static string s_Reverse(const string& str)
 }
 
 
-void CNewCleanup_imp::x_tRNACodonEC(CSeq_feat& seq_feat)
+static bool s_IsRealTrna(const CSeq_feat& seq_feat)
 {
-    if (!seq_feat.IsSetData() ||
-        seq_feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_tRNA ||
+    if (!seq_feat.IsSetData()) {
+        return false;
+    }
+    const auto& fdata = seq_feat.GetData();
+    if (fdata.GetSubtype() != CSeqFeatData::eSubtype_tRNA ||
         !seq_feat.GetData().GetRna().IsSetExt() ||
         !seq_feat.GetData().GetRna().GetExt().IsTRNA()) {
+        return false;
+    }
+
+    return true;
+}
+
+
+void CNewCleanup_imp::x_tRNACodonEC(CSeq_feat& seq_feat)
+{
+    if (!s_IsRealTrna(seq_feat)) {
         return;
     }
     CTrna_ext& trna = seq_feat.SetData().SetRna().SetExt().SetTRNA();
@@ -9685,10 +9720,7 @@ void CNewCleanup_imp::x_tRNACodonEC(CSeq_feat& seq_feat)
 
 void CNewCleanup_imp::x_tRNAEC(CSeq_feat& seq_feat)
 {
-    if (!seq_feat.IsSetData() || 
-        seq_feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_tRNA ||
-        !seq_feat.GetData().GetRna().IsSetExt() ||
-        !seq_feat.GetData().GetRna().GetExt().IsTRNA()) {
+    if (!s_IsRealTrna(seq_feat)) {
         return;
     }
 
@@ -9760,16 +9792,17 @@ bool CNewCleanup_imp::x_CleanGenbankKeywords(CGB_block& blk, CMolInfo::TTech tec
         return false;
     }
     bool any_change = false;
-    CGB_block::TKeywords::iterator it = blk.SetKeywords().begin();
-    while (it != blk.SetKeywords().end()) {
+    auto& keywords = blk.SetKeywords();
+    CGB_block::TKeywords::iterator it = keywords.begin();
+    while (it != keywords.end()) {
         if (s_ShouldRemoveKeyword(*it, tech)) {
-            it = blk.SetKeywords().erase(it);
+            it = keywords.erase(it);
             any_change = true;
         } else {
             ++it;
         }
     }
-    if (blk.GetKeywords().empty()) {
+    if (keywords.empty()) {
         blk.ResetKeywords();
         any_change = true;
     }
@@ -9841,21 +9874,22 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq_set& set)
     if (!set.IsSetDescr()) {
         return;
     }
+    auto& dset = set.SetDescr().Set();
 
     CConstRef<CBioSource> biosrc(NULL);
     CMolInfo::TTech tech = CMolInfo::eTech_unknown;
 
-    ITERATE(CBioseq_set::TDescr::Tdata, it, set.GetDescr().Get()) {
-        if ((*it)->IsSource()) {
-            biosrc.Reset(&((*it)->GetSource()));
-        } else if ((*it)->IsMolinfo() &&
-                   (*it)->GetMolinfo().IsSetTech()) {
-            tech = (*it)->GetMolinfo().GetTech();
+    for (auto it : dset) {
+        if (it->IsSource()) {
+            biosrc.Reset(&(it->GetSource()));
+        } else if (it->IsMolinfo() &&
+                   it->GetMolinfo().IsSetTech()) {
+            tech = it->GetMolinfo().GetTech();
         }
     }
 
-    EDIT_EACH_SEQDESC_ON_SEQDESCR(descr_iter, set.SetDescr()) {
-        CSeqdesc &desc = **descr_iter;
+    for (auto descr_iter : dset) {
+        CSeqdesc &desc = *descr_iter;
         if (!FIELD_IS(desc, Genbank)) {
             continue;
         }
@@ -9869,8 +9903,15 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CBioseq_set& set)
 
 string s_GetDiv(const CBioSource& src)
 {
-    if (src.IsSetOrg() && src.GetOrg().IsSetOrgname() &&
-        src.GetOrg().GetOrgname().IsSetDiv()) {
+    if (!src.IsSetOrg()) {
+        return kEmptyCStr;
+    }
+    const auto& org = src.GetOrg();
+    if (!org.IsSetOrgname()) {
+        return kEmptyStr;
+    }
+    const auto& orgname = org.GetOrgname();
+    if (orgname.IsSetDiv()) {
         return src.GetOrg().GetOrgname().GetDiv();
     } else {
         return kEmptyCStr;
@@ -9880,8 +9921,15 @@ string s_GetDiv(const CBioSource& src)
 
 void RemoveStrain(string& src, const CBioSource& biosrc)
 {
-    if (!biosrc.IsSetOrg() || !biosrc.GetOrg().IsSetOrgname() ||
-        !biosrc.GetOrg().GetOrgname().IsSetMod()) {
+    if (!biosrc.IsSetOrg()) {
+        return;
+    }
+    const auto& org = biosrc.GetOrg();
+    if (!org.IsSetOrgname()) {
+        return;
+    }
+    const auto& orgname = org.GetOrgname();
+    if (!orgname.IsSetMod()) {
         return;
     }
     size_t pos = NStr::Find(src, "(strain ");
@@ -9889,11 +9937,11 @@ void RemoveStrain(string& src, const CBioSource& biosrc)
         return;
     }
 
-    ITERATE(COrgName::TMod, it, biosrc.GetOrg().GetOrgname().GetMod()) {
-        if ((*it)->IsSetSubtype() &&
-            (*it)->GetSubtype() == COrgMod::eSubtype_strain &&
-            (*it)->IsSetSubname()) {
-            const string& strain = (*it)->GetSubname();
+    for (auto it : orgname.GetMod()) {
+        if (it->IsSetSubtype() &&
+            it->GetSubtype() == COrgMod::eSubtype_strain &&
+            it->IsSetSubname()) {
+            const string& strain = it->GetSubname();
             size_t expected_len = 9 + strain.length();
             if (src.length() >= pos + expected_len) {
                 string compare = src.substr(pos, expected_len);
@@ -9923,22 +9971,25 @@ bool CNewCleanup_imp::x_CanRemoveGenbankBlockSource(const string& src, const CBi
     RemoveStrain(compare, biosrc);
 
     if (biosrc.IsSetOrg()) {
-        if (biosrc.GetOrg().IsSetTaxname() &&
-            NStr::Equal(compare, biosrc.GetOrg().GetTaxname())) {
+        const auto& org = biosrc.GetOrg();
+        if (org.IsSetTaxname() &&
+            NStr::Equal(compare, org.GetTaxname())) {
             return true;
         }
-        if (biosrc.GetOrg().IsSetCommon() &&
-            NStr::Equal(compare, biosrc.GetOrg().GetCommon())) {
+        if (org.IsSetCommon() &&
+            NStr::Equal(compare, org.GetCommon())) {
             return true;
         }
-        if (biosrc.GetOrg().IsSetOrgname() &&
-            biosrc.GetOrg().GetOrgname().IsSetMod()) {
-            ITERATE(COrgName::TMod, m, biosrc.GetOrg().GetOrgname().GetMod()) {
-                if ((*m)->IsSetSubtype() &&
-                    (*m)->GetSubtype() == COrgMod::eSubtype_old_name &&
-                    (*m)->IsSetSubname() &&
-                    NStr::Equal((*m)->GetSubname(), compare)) {
-                    return true;
+        if (org.IsSetOrgname()) {
+            const auto& orgname = org.GetOrgname();
+            if (orgname.IsSetMod()) {
+                for (auto m : orgname.GetMod()) {
+                    if (m->IsSetSubtype() &&
+                        m->GetSubtype() == COrgMod::eSubtype_old_name &&
+                        m->IsSetSubname() &&
+                        NStr::Equal(m->GetSubname(), compare)) {
+                        return true;
+                    }
                 }
             }
         }
