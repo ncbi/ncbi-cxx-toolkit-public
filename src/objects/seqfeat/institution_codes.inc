@@ -6195,6 +6195,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SMR\ts\tSamara State University, Department for Ecology, Botany, and Nature Protection\t\t\t",
 "SMRG\tc\tSoil Microbiology Research Group, Division of Soil Science, Department of Agriculture\t\t\t",
 "SMRS\ts\tStavropol Museum of Regional Studies\t\t\t",
+"SMRU\ts\tShoklo Malaria Research Unit\t\t\t",
 "SMS\ts\tMissouri State University, Department of Biology\t\t\t",
 "SMTP\ts\tSwedish Malaise Trap Project\t\t\t",
 "SMTWA\tc\tSchool of Medical Technology Western Australia\t\t\t",

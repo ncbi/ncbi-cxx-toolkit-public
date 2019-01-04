@@ -6162,6 +6162,7 @@ SMP<USA-PA>	s	The State Museum of Pennsylvania
 SMR	s	Samara State University, Department for Ecology, Botany, and Nature Protection			
 SMRG	c	Soil Microbiology Research Group, Division of Soil Science, Department of Agriculture			
 SMRS	s	Stavropol Museum of Regional Studies			
+SMRU	s	Shoklo Malaria Research Unit			
 SMS	s	Missouri State University, Department of Biology			
 SMTP	s	Swedish Malaise Trap Project			
 SMTWA	c	School of Medical Technology Western Australia			
