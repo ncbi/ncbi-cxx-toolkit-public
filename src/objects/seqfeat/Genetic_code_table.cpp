@@ -755,7 +755,10 @@ const char * CGen_code_table_imp::sm_GenCodeTblMemStr [] =
     "sncbieaa \"--------------*--------------------M----------------------------\" } ,\n",
     "{ name \"Blastocrithidia Nuclear\" , id 31 ,\n",
     "ncbieaa  \"FFLLSSSSYYEECCWWLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG\",\n",
-    "sncbieaa \"----------**-----------------------M----------------------------\" } };\n",
+    "sncbieaa \"----------**-----------------------M----------------------------\" } ,\n",
+    "{ name \"Balanophoraceae Plastid\" , id 32 ,\n",
+    "ncbieaa  \"FFLLSSSSYYW*CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG\",\n",
+    "sncbieaa \"---M------**--*----M------------MMMM---------------M------------\" } };\n",
     0  // to indicate that there is no more data
 };
 
