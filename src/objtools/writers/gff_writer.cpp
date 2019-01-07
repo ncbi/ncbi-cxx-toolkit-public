@@ -218,7 +218,7 @@ bool CGff2Writer::x_WriteBioseqHandle(
 
     for (;  feat_iter; ++feat_iter) {
         if (!xWriteFeature(fc, *feat_iter)) {
-            return false;
+            //return false;
         }
     }
     return true;
@@ -905,53 +905,6 @@ bool CGff2Writer::xAssignFeatureAttributesGene(
     }
     return true;
 
-    // obsolete from here onward
-    if (mf.GetData().IsGene()) {
-        const auto& geneRef = mf.GetData().GetGene();
-        if (geneRef.IsSetDesc()) {
-            record.SetAttribute("description", geneRef.GetDesc());
-        }
-        if (geneRef.IsSetSyn()) {
-            const auto& syns = geneRef.GetSyn();
-            auto it = syns.begin();
-            while (it != syns.end()) {
-                record.AddAttribute("gene_synonym", *(it++));
-            }
-        }
-        return true;
-    }
-
-    if (mf.IsSetXref()) {
-        const vector<CRef<CSeqFeatXref> > xrefs = mf.GetXref();
-        for (vector<CRef<CSeqFeatXref> >::const_iterator it = xrefs.begin();
-                it != xrefs.end();
-                ++it) {
-            const CSeqFeatXref& xref = **it;
-            if (xref.CanGetData() && xref.GetData().IsGene()) {
-                const auto& geneRef = xref.GetData().GetGene();
-                if (geneRef.IsSetLocus()) {
-                    record.SetAttribute("gene", geneRef.GetLocus());
-                }
-                if (geneRef.IsSetLocus_tag()) {
-                    record.SetAttribute("locus_tag", geneRef.GetLocus_tag());
-                }
-                return true;
-            }
-        }
-    }
-
-    CMappedFeat gene = fc.FindBestGeneParent(mf);
-    if (gene  &&  gene.IsSetData()  &&  gene.GetData().IsGene()) {
-        const auto& geneRef = gene.GetData().GetGene();
-        if (geneRef.IsSetLocus()) {
-            record.SetAttribute("gene", geneRef.GetLocus());
-        }
-        if (geneRef.IsSetLocus_tag()) {
-            record.SetAttribute("locus_tag", geneRef.GetLocus_tag());
-        }
-        return true; 
-    }
-    return true; 
 }
 
 //  ----------------------------------------------------------------------------

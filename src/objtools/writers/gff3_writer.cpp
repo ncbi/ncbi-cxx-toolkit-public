@@ -1737,7 +1737,6 @@ bool CGff3Writer::xAssignFeatureAttributesFormatSpecific(
     return (
         xAssignFeatureAttributeID(record, fc, mf)  &&
         xAssignFeatureAttributeParent(record, fc, mf)  &&
-        //xAssignFeatureAttributesGene(record, fc, mf)  &&
         xAssignFeatureAttributeName(record, mf)); //must come last!
 }
 
