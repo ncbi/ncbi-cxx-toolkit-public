@@ -124,6 +124,14 @@ enum ESign {
 };
 
 
+/// Enumeration to represent a tristate value.
+enum ETriState {
+    eTriState_Unknow = -1,  ///< The value is indeterminate  
+    eTriState_False  =  0,  ///< The value is equivalent to false/no
+    eTriState_True   =  1,  ///< The value is equivalent to true/yes
+};
+
+
 /// Whether to truncate/round a value.
 enum ERound {
     eTrunc,             ///< Value must be truncated
