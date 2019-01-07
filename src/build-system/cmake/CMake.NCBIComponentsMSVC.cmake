@@ -249,6 +249,10 @@ if(NCBI_COMPONENT_Boost.Spirit_FOUND)
 endif()
 
 #############################################################################
+# Boost
+NCBI_define_component(Boost boost_filesystem.lib boost_iostreams.lib boost_date_time.lib boost_regex.lib  boost_system.lib)
+
+#############################################################################
 # PCRE
 NCBI_define_component(PCRE libpcre.lib)
 if(NOT NCBI_COMPONENT_PCRE_FOUND)

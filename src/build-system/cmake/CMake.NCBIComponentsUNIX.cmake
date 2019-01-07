@@ -954,6 +954,16 @@ else()
 endif()
 
 #############################################################################
+# Boost
+if(Boost_FOUND)
+  set(NCBI_COMPONENT_Boost_FOUND YES)
+  set(NCBI_COMPONENT_Boost_INCLUDE ${Boost_INCLUDE_DIRS})
+  set(NCBI_COMPONENT_Boost_LIBS    ${Boost_LIBRARIES})
+else()
+  set(NCBI_COMPONENT_Boost_FOUND NO)
+endif()
+
+#############################################################################
 # PCRE
 if(PCRE_FOUND AND NOT USE_LOCAL_PCRE)
   set(NCBI_COMPONENT_PCRE_FOUND YES)
@@ -1191,4 +1201,47 @@ if (OpenSSL_FOUND)
   set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} OpenSSL")
 else()
   set(NCBI_COMPONENT_OpenSSL_FOUND NO)
+endif()
+
+#############################################################################
+# MSGSL
+if(HAVE_MSGSL)
+  set(NCBI_COMPONENT_MSGSL_FOUND YES)
+  set(NCBI_COMPONENT_MSGSL_INCLUDE ${MSGSL_INCLUDE})
+endif()
+
+#############################################################################
+# SGE
+if (SGE_FOUND)
+  set(NCBI_COMPONENT_SGE_FOUND YES)
+  set(NCBI_COMPONENT_SGE_INCLUDE ${SGE_INCLUDE})
+  set(NCBI_COMPONENT_SGE_LIBS    ${SGE_LIBS})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} SGE")
+endif()
+
+#############################################################################
+# MONGOCXX
+if (MONGOCXX_FOUND)
+  set(NCBI_COMPONENT_MONGOCXX_FOUND YES)
+  set(NCBI_COMPONENT_MONGOCXX_INCLUDE ${MONGOCXX_INCLUDE})
+  set(NCBI_COMPONENT_MONGOCXX_LIBS    ${MONGOCXX_LIB})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} MONGOCXX")
+endif()
+
+#############################################################################
+# LEVELDB
+if (LEVELDB_FOUND)
+  set(NCBI_COMPONENT_LEVELDB_FOUND YES)
+#  set(NCBI_COMPONENT_LEVELDB_INCLUDE ${LEVELDB_INCLUDE})
+  set(NCBI_COMPONENT_LEVELDB_LIBS    ${LEVELDB_LIBRARIES})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} LEVELDB")
+endif()
+
+#############################################################################
+# WGMLST
+if (WGMLST_FOUND)
+  set(NCBI_COMPONENT_WGMLST_FOUND YES)
+  set(NCBI_COMPONENT_WGMLST_INCLUDE ${WGMLST_INCLUDE})
+  set(NCBI_COMPONENT_WGMLST_LIBS    ${WGMLST_LIB})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} WGMLST")
 endif()
