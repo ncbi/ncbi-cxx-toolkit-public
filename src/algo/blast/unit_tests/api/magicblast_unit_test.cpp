@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(MappingNoPairs)
     CMagicBlast magicblast(query_factory, db_adapter, m_OptHandle);
     CRef<CSeq_align_set> results = magicblast.Run();
 
-    const size_t kExpectedNumResults = 5;
+    const size_t kExpectedNumResults = 4;
     BOOST_REQUIRE_EQUAL(results->Get().size(), kExpectedNumResults);
 
     SExon exon;
@@ -275,21 +275,6 @@ BOOST_AUTO_TEST_CASE(MappingNoPairs)
     expected_hits[results_idx].exons.push_back(exon);
 
     // HSP #4
-    results_idx++;
-    expected_hits[results_idx].score = 33;
-    expected_hits[results_idx].prod_length = 49;
-
-    exon.prod_start = 0;
-    exon.prod_end = 32;
-    exon.gen_start = 1033340;
-    exon.gen_end = 1033372;
-    exon.prod_strand = eNa_strand_minus;
-    exon.gen_strand = eNa_strand_plus;
-    exon.acceptor = "";
-    exon.donor = "CT";
-    expected_hits[results_idx].exons.push_back(exon);
-
-    // HSP #5
     results_idx++;
     expected_hits[results_idx].score = 49;
     expected_hits[results_idx].prod_length = 49;
