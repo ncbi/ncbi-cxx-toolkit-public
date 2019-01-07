@@ -779,7 +779,7 @@ static void FindPubsInFeatures(CSeq_annot::C_Data::TFtable& ftable, CPubCollecti
             CPubdesc& cur_pub = feat->SetData().SetPub();
             CRef<CPubdesc> pubdesc = ProcessPubdesc(cur_pub, pubs);
 
-            if (pubdesc.NotEmpty())
+            if (pubdesc.NotEmpty() && pubdesc != &cur_pub)
                 cur_pub.Assign(*pubdesc);
         }
 
