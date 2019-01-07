@@ -43,13 +43,13 @@ BEGIN_SCOPE(objects)
 class CBioseq;
 class CSeq_loc;
 class CSeq_feat;
-
+class CSeqFeatData;
 
 
 class CFeatModApply
 {
 public:
-    CFeatModApply(CBioseq& bioseq, CRef<CSeq_loc> pCdsLoc = CRef<CSeq_loc>());
+    CFeatModApply(CBioseq& bioseq, const CSeq_loc* pGeneLoc = nullptr);
     virtual ~CFeatModApply(void);
 
     using TModEntry = CModHandler::TMods::value_type;
@@ -76,7 +76,7 @@ private:
 
     CRef<CSeq_loc> x_GetWholeSeqLoc(void);
     CBioseq& m_Bioseq;
-    CRef<CSeq_loc> m_pCdsLoc;
+    CRef<CSeq_loc> m_pGeneLoc;
 
     CRef<CSeq_feat> m_pGene;
     CRef<CSeq_feat> m_pProtein;

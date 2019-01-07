@@ -30,7 +30,10 @@
 #ifndef _MOD_INFO_HPP_
 #define _MOD_INFO_HPP_
 
+#include <serial/enumvalues.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

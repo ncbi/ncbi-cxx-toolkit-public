@@ -624,7 +624,7 @@ void CDescrModApply::x_SetDBLinkField(const string& label,
     for (const auto& mod : mod_entry.second) {
         list<CTempString> value_sublist;
         const auto& vals = mod.GetValue();
-        NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
+        NStr::Split(vals, ",; \t", value_sublist, NStr::fSplit_Tokenize);
         value_list.splice(value_list.end(), value_sublist);
     }
 
@@ -708,7 +708,7 @@ void CDescrModApply::x_SetTpaAssembly(const TModEntry& mod_entry, CDescrCache& d
     for (const auto& mod : mod_entry.second) {
         list<CTempString> value_sublist;
         const auto& vals = mod.GetValue();
-        NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
+        NStr::Split(vals, ",; \t", value_sublist, NStr::fSplit_Tokenize);
         transform(value_sublist.begin(), value_sublist.end(), back_inserter(accession_list),
                 [](const CTempString& val) { return CUtf8::AsUTF8(val, eEncoding_UTF8); });
     }
@@ -740,7 +740,7 @@ void CDescrModApply::x_SetGBblockIds(const TModEntry& mod_entry, CDescrCache& de
     for (const auto& mod : mod_entry.second) {
         list<CTempString> value_sublist;
         const auto& vals = mod.GetValue();
-        NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
+        NStr::Split(vals, ",; \t", value_sublist, NStr::fSplit_Tokenize);
         for (const auto& val : value_sublist) {
             string value = NStr::TruncateSpaces_Unsafe(val);
             try {
@@ -764,7 +764,7 @@ void CDescrModApply::x_SetGBblockKeywords(const TModEntry& mod_entry, CDescrCach
     for (const auto& mod : mod_entry.second) {
         list<CTempString> value_sublist;
         const auto& vals = mod.GetValue();
-        NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
+        NStr::Split(vals, ",; \t", value_sublist, NStr::fSplit_Tokenize);
         value_list.splice(value_list.end(), value_sublist);
     }
     if (value_list.empty()) {
@@ -780,7 +780,7 @@ void CDescrModApply::x_SetGenomeProjects(const TModEntry& mod_entry, CDescrCache
     for (const auto& mod : mod_entry.second) {
         list<CTempString> value_sublist;  
         const auto& vals = mod.GetValue();
-        NStr::Split(vals, ",", value_sublist, NStr::fSplit_Tokenize);
+        NStr::Split(vals, ",; \t", value_sublist, NStr::fSplit_Tokenize);
         transform(value_sublist.begin(), value_sublist.end(), back_inserter(id_list), 
                 [](const CTempString& val) { return NStr::StringToUInt(val); });
     }
@@ -844,14 +844,13 @@ void CDescrModApply::x_SetPMID(const TModEntry& mod_entry,
 
 const string& CDescrModApply::x_GetModName(const TModEntry& mod_entry)
 {
-    return mod_entry.first;
+    return CModHandler::GetCanonicalName(mod_entry);
 }
 
 
 const string& CDescrModApply::x_GetModValue(const TModEntry& mod_entry)
 {
-    assert(mod_entry.second.size() == 1);
-    return mod_entry.second.front().GetValue();
+    return CModHandler::AssertReturnSingleValue(mod_entry);
 }
 
 

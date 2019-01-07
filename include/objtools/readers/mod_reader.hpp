@@ -37,24 +37,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class NCBI_XOBJREAD_EXPORT CModValueAndAttrib 
-{
-public:
-    CModValueAndAttrib(const string& value);
-    CModValueAndAttrib(const char* value);
-
-    void SetValue(const string& value);
-    void SetAttrib(const string& attrib);
-    bool IsSetAttrib(void) const;
-
-    const string& GetValue(void) const;
-    const string& GetAttrib(void) const;
-private:
-    string mValue;
-    string mAttrib;
-};
-
-
 class NCBI_XOBJREAD_EXPORT CModData
 {
 public:
@@ -94,6 +76,7 @@ public:
     };
 
     using TMods = map<string, list<CModData>>;
+    using TModEntry = TMods::value_type;
 
     CModHandler(IObjtoolsListener* listener=nullptr);
 
@@ -104,6 +87,9 @@ public:
     const TMods& GetMods(void) const;
 
     void Clear(void);
+
+    static const string& GetCanonicalName(const TModEntry& mod_entry);
+    static const string& AssertReturnSingleValue(const TModEntry& mod_entry);
 
 private:
     string x_GetCanonicalName(const string& name) const;
@@ -121,62 +107,12 @@ private:
     static const TNameSet sm_MultipleValuesForbidden;
     static const TNameSet sm_DeprecatedModifiers;
 
-
     IObjtoolsListener* m_pMessageListener;
 };
 
 
 class CBioseq;
 class CSeq_inst;
-class CSeq_hist;
-class CSeqdesc;
-class CUser_object;
-class CGB_block;
-class CBioSource;
-class CMolInfo;
-class CPubdesc;
-class COrg_ref;
-class COrgName;
-class COrgMod;
-class CSubSource;
-class CSeq_annot;
-class CGene_ref;
-class CProt_ref;
-
-
-class NCBI_XOBJREAD_EXPORT CModParser 
-{
-public:
-    using TMods = multimap<string, CModValueAndAttrib>;
-
-    static void Apply(const CBioseq& bioseq, TMods& mods);
-private:
-    static void x_ImportSeqInst(const CSeq_inst& seq_inst, TMods& mods);
-    static void x_ImportHist(const CSeq_hist& seq_hist, TMods& mods);
-
-    static void x_ImportDescriptors(const CBioseq& bioseq, TMods& mods);
-    static void x_ImportDesc(const CSeqdesc& desc, TMods& mods);
-    static void x_ImportUserObject(const CUser_object& user_object, TMods& mods);
-    static void x_ImportDBLink(const CUser_object& user_object, TMods& mods);
-    static void x_ImportGBblock(const CGB_block& gb_block, TMods& mods);
-    static void x_ImportGenomeProjects(const CUser_object& user_object, TMods& mods);
-    static void x_ImportTpaAssembly(const CUser_object& user_object, TMods& mods);
-    static void x_ImportBioSource(const CBioSource& biosource, TMods& mods);
-    static void x_ImportMolInfo(const CMolInfo& molinfo, TMods& mods);
-    static void x_ImportPMID(const CPubdesc& pub_desc, TMods& mods);
-    static void x_ImportOrgRef(const COrg_ref& org_ref, TMods& mods);
-    static void x_ImportOrgName(const COrgName& org_name, TMods& mods);
-    static void x_ImportOrgMod(const COrgMod& org_mod, TMods& mods);
-    static void x_ImportSubSource(const CSubSource& subsource, TMods& mods);
-
-    static void x_ImportFeatureModifiers(const CSeq_annot& annot, TMods& mods);
-    static void x_ImportGene(const CGene_ref& gene_ref, TMods& mods);
-    static void x_ImportProtein(const CProt_ref& prot_ref, TMods& mods);
-};
-
-
-class CPCRPrimerSet;
-class CDescrCache;
 class CSeq_loc;
 class CModReaderException;
 
@@ -185,7 +121,7 @@ class NCBI_XOBJREAD_EXPORT CModAdder
 {
 public:
     using TMods = CModHandler::TMods;
-    using TModEntry = TMods::value_type;
+    using TModEntry = CModHandler::TModEntry;
     using TSkippedMods = list<CModData>;
 
     static void Apply(const CModHandler& mod_handler, CBioseq& bioseq, 
@@ -194,7 +130,7 @@ public:
 
     static void Apply(const CModHandler& mod_handler, 
             CBioseq& bioseq,
-            const CSeq_loc* pFeatLoc,
+            const CSeq_loc* pGeneLoc,
             IObjtoolsListener* pMessageListener,
             TSkippedMods& skipped_mods);
 
@@ -217,7 +153,6 @@ private:
     static bool x_PutMessage(const string& message, EDiagSev severity, 
             IObjtoolsListener* pMessageListener);
 
-    static void x_AssertSingleValue(const TModEntry&  mod_entry);
 };
 
 

@@ -33,17 +33,13 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
+//#include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>
-#include <objects/seqblock/GB_block.hpp>
-#include <objects/seq/Pubdesc.hpp>
-#include <objects/pub/Pub_equiv.hpp>
-#include <objects/pub/Pub.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
 #include <objtools/logging/message.hpp>
@@ -60,10 +56,10 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CFeatModApply::CFeatModApply(CBioseq& bioseq, CRef<CSeq_loc> pCdsLoc) : 
+CFeatModApply::CFeatModApply(CBioseq& bioseq, const CSeq_loc* pGeneLoc) : 
     m_Bioseq(bioseq) {
-        if (pCdsLoc) {
-            m_pCdsLoc = pCdsLoc;
+        if (pGeneLoc) {
+            m_pGeneLoc = Ref(const_cast<CSeq_loc*>(pGeneLoc));
         }
     }
 
@@ -73,8 +69,7 @@ CFeatModApply::~CFeatModApply() {}
 
 bool CFeatModApply::Apply(const TModEntry& mod_entry) 
 {
-    // DNA only has gene-ref
-
+    // Nucleotide sequence only has gene feature annotation
     static unordered_set<string> protein_quals = {"protein-desc", "protein", "ec-number", "activity"};
     if (m_Bioseq.IsNa() &&
         protein_quals.find(x_GetModName(mod_entry)) != protein_quals.end()) {
@@ -194,14 +189,14 @@ CSeq_feat& CFeatModApply::x_SetGene(void)
                 { return (seq_feat.IsSetData() &&
                           seq_feat.GetData().IsGene()); });
         if (!m_pGene) {
-            auto pFeatLoc = m_pCdsLoc ? m_pCdsLoc : x_GetWholeSeqLoc();
+            auto pGeneLoc = m_pGeneLoc ? m_pGeneLoc : x_GetWholeSeqLoc();
             m_pGene = 
                 x_CreateSeqfeat([]() {
                     auto pData = Ref(new CSeqFeatData());
                     pData->SetGene();
                     return pData;
                     },
-                    *pFeatLoc);
+                    *pGeneLoc);
         }
     }
     return *m_pGene;
@@ -234,14 +229,13 @@ CSeq_feat& CFeatModApply::x_SetProtein(void)
 
 const string& CFeatModApply::x_GetModName(const TModEntry& mod_entry)
 {
-    return mod_entry.first;
+    return CModHandler::GetCanonicalName(mod_entry);
 }
 
 
 const string& CFeatModApply::x_GetModValue(const TModEntry& mod_entry)
 {
-    assert(mod_entry.second.size() == 1);
-    return mod_entry.second.front().GetValue();
+    return CModHandler::AssertReturnSingleValue(mod_entry);
 }
 
 
