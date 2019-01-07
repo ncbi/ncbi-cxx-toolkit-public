@@ -502,6 +502,8 @@ bool FixSeqSubmit(CRef<CSeq_submit>& seq_submit, int& accession_ver, bool first,
     return ret;
 }
 
+/* Suspended on 01/04/2019 per indexers request
+ *
 static void CheckChromosome(const CSeq_descr& descrs, EChromosomeSubtypeStatus& chromosome_status)
 {
     if (GetParams().GetScaffoldPrefix().empty() || (GetParams().GetScaffoldType() != eRegularChromosomal && GetParams().GetScaffoldType() != eTPAChromosomal))
@@ -540,6 +542,8 @@ static void CheckChromosome(const CSeq_descr& descrs, EChromosomeSubtypeStatus& 
         chromosome_status = bacteria_or_archea ? eChromosomeSubtypeMissingInBacteria : eChromosomeSubtypeMissing;
     }
 }
+ *
+ */
 
 static void CheckKeywords(const CSeq_descr& descrs, CSeqEntryInfo& info)
 {
@@ -998,9 +1002,13 @@ static void CheckNucBioseqs(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEn
             info.m_seqset = true;
         }
 
+/* Suspended on 01/04/2019 per indexers request
+ *
         if (bioseq_set.IsSetDescr()) {
             CheckChromosome(bioseq_set.GetDescr(), info.m_chromosome_subtype_status);
         }
+ *
+ */
 
         for (auto cur_entry : bioseq_set.GetSeq_set()) {
             CheckNucBioseqs(*cur_entry, info, common_info);
@@ -1014,7 +1022,11 @@ static void CheckNucBioseqs(const CSeq_entry& entry, CSeqEntryInfo& info, CSeqEn
         }
 
         if (bioseq.IsSetDescr()) {
+/* Suspended on 01/04/2019 per indexers request
+ *
             CheckChromosome(bioseq.GetDescr(), info.m_chromosome_subtype_status);
+ *
+ */
 
             if (bioseq.IsNa()) {
                 CheckKeywords(bioseq.GetDescr(), info);
