@@ -123,7 +123,7 @@ private:
         HST::CHttpRequest &  req,
         HST::CHttpReply<CPendingOperation> &  resp,
         CTempString &  seq_id, int &  seq_id_type,
-        bool  use_psg_protocol);
+        ECacheAndCassandraUse &  use_cache, bool  use_psg_protocol);
 
 private:
     void x_ValidateArgs(void);
@@ -133,6 +133,8 @@ private:
 
     SRequestParameter  x_GetParam(HST::CHttpRequest &  req,
                                   const string &  name) const;
+    ECacheAndCassandraUse x_GetUseCacheParameter(HST::CHttpRequest &  req,
+                                                 string &  err_msg);
     bool x_IsBoolParamValid(const string &  param_name,
                             const CTempString &  param_value,
                             string &  err_msg) const;

@@ -198,6 +198,11 @@ public:
                              EDiagSev  severity);
     void PrepareReplyCompletion(size_t  chunk_count);
 
+    ECacheAndCassandraUse GetUrlUseCache(void) const
+    {
+        return m_UrlUseCache;
+    }
+
 private:
     void x_ProcessResolveRequest(void);
     void x_ProcessGetRequest(void);
@@ -270,6 +275,7 @@ private:
     SResolveRequest                         m_ResolveRequest;
     CTempString                             m_UrlSeqId;
     int16_t                                 m_UrlSeqIdType;
+    ECacheAndCassandraUse                   m_UrlUseCache;
 
     int32_t                                 m_TotalSentReplyChunks;
     bool                                    m_Cancelled;

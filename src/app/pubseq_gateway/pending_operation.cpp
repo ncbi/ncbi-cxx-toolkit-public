@@ -210,10 +210,13 @@ void CPendingOperation::Clear()
 void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
 {
     m_Reply = &resp;
-    if (m_IsResolveRequest)
+    if (m_IsResolveRequest) {
+        m_UrlUseCache = m_ResolveRequest.m_UseCache;
         x_ProcessResolveRequest();
-    else
+    } else {
+        m_UrlUseCache = m_BlobRequest.m_UseCache;
         x_ProcessGetRequest();
+    }
 }
 
 
@@ -466,21 +469,34 @@ void CPendingOperation::x_StartMainBlobRequest(void)
                             m_BlobRequest.m_BlobId.m_SatName,
                             std::move(blob_record),
                             false, nullptr));
-    } else if (m_BlobRequest.m_LastModified == INT64_MIN) {
-        m_MainBlobFetchDetails->m_Loader.reset(
-            new CCassBlobTaskLoadBlob(
-                            m_Timeout, m_MaxRetries, m_Conn,
-                            m_BlobRequest.m_BlobId.m_SatName,
-                            m_BlobRequest.m_BlobId.m_SatKey,
-                            false, nullptr));
     } else {
-        m_MainBlobFetchDetails->m_Loader.reset(
-            new CCassBlobTaskLoadBlob(
-                            m_Timeout, m_MaxRetries, m_Conn,
-                            m_BlobRequest.m_BlobId.m_SatName,
-                            m_BlobRequest.m_BlobId.m_SatKey,
-                            m_BlobRequest.m_LastModified,
-                            false, nullptr));
+        if (m_UrlUseCache == eCacheOnly) {
+            // No data in cache so no going to the DB. Send 404 instead
+            PrepareReplyMessage("Blob properties are not found",
+                                CRequestStatus::e404_NotFound,
+                                eBlobPropsNotFound, eDiag_Error);
+            x_SendReplyCompletion(true);
+            m_Reply->Send(m_Chunks, true);
+            m_Chunks.clear();
+            return;
+        }
+
+        if (m_BlobRequest.m_LastModified == INT64_MIN) {
+            m_MainBlobFetchDetails->m_Loader.reset(
+                new CCassBlobTaskLoadBlob(
+                                m_Timeout, m_MaxRetries, m_Conn,
+                                m_BlobRequest.m_BlobId.m_SatName,
+                                m_BlobRequest.m_BlobId.m_SatKey,
+                                false, nullptr));
+        } else {
+            m_MainBlobFetchDetails->m_Loader.reset(
+                new CCassBlobTaskLoadBlob(
+                                m_Timeout, m_MaxRetries, m_Conn,
+                                m_BlobRequest.m_BlobId.m_SatName,
+                                m_BlobRequest.m_BlobId.m_SatKey,
+                                m_BlobRequest.m_LastModified,
+                                false, nullptr));
+        }
     }
 
     m_MainBlobFetchDetails->m_Loader->SetDataReadyCB(
@@ -593,7 +609,7 @@ bool CPendingOperation::x_AllFinishedRead(void) const
             return false;
     }
 
-    for (auto &  details: m_Id2ChunkFetchDetails) {
+    for (const auto &  details: m_Id2ChunkFetchDetails) {
         if (details) {
             ++started_count;
             if (!details->m_FinishedRead)
@@ -734,6 +750,9 @@ bool CPendingOperation::x_ResolvePrimaryOSLT(
                                 bool  need_to_try_bioseq_info,
                                 SBioseqResolution &  bioseq_resolution)
 {
+    if (m_UrlUseCache == eCassandraOnly)
+        return false;
+
     if (!primary_id.empty()) {
         if (need_to_try_bioseq_info) {
             // Try BIOSEQ_INFO
@@ -774,6 +793,9 @@ bool CPendingOperation::x_ResolveSecondaryOSLT(
                                 int16_t  effective_seq_id_type,
                                 SBioseqResolution &  bioseq_resolution)
 {
+    if (m_UrlUseCache == eCassandraOnly)
+        return false;
+
     bioseq_resolution.m_BioseqInfo.m_Accession = secondary_id;
     bioseq_resolution.m_BioseqInfo.m_SeqIdType = effective_seq_id_type;
     if (x_LookupCachedCsi(bioseq_resolution.m_BioseqInfo.m_Accession,
@@ -797,6 +819,9 @@ bool CPendingOperation::x_ResolvePrimaryOSLTviaDB(
                                 bool  need_to_try_bioseq_info,
                                 SBioseqResolution &  bioseq_resolution)
 {
+    if (m_UrlUseCache == eCacheOnly)
+        return false;
+
     if (!primary_id.empty()) {
         CRequestStatus::ECode       status;
 
@@ -851,6 +876,9 @@ bool CPendingOperation::x_ResolveSecondaryOSLTviaDB(
                                 int16_t  effective_seq_id_type,
                                 SBioseqResolution &  bioseq_resolution)
 {
+    if (m_UrlUseCache == eCacheOnly)
+        return false;
+
     CRequestStatus::ECode   status = FetchCanonicalSeqId(
                     m_Conn,
                     CPubseqGatewayApp::GetInstance()->GetBioseqKeyspace(),
@@ -946,6 +974,9 @@ bool CPendingOperation::x_ResolveViaComposeOSLT(CSeq_id &  parsed_seq_id,
 
 bool CPendingOperation::x_ResolveAsIs(SBioseqResolution &  bioseq_resolution)
 {
+    if (m_UrlUseCache == eCassandraOnly)
+        return false;
+
     // Need to capitalize the seq_id before going to the tables.
     // Capitalizing in place suites because the other tries are done via copies
     // provided by OSLT
@@ -981,6 +1012,9 @@ bool CPendingOperation::x_ResolveAsIs(SBioseqResolution &  bioseq_resolution)
 
 bool CPendingOperation::x_ResolveAsIsInDB(SBioseqResolution &  bioseq_resolution)
 {
+    if (m_UrlUseCache == eCacheOnly)
+        return false;
+
     // Need to capitalize the seq_id before going to the tables.
     // Capitalizing in place suites because the other tries are done via copies
     // provided by OSLT
@@ -1022,6 +1056,10 @@ CPendingOperation::x_LookupCachedBioseqInfo(const string &  accession,
                                             string &  bioseq_info_cache_data)
 {
     bool                    cache_hit = false;
+
+    if (m_UrlUseCache == eCassandraOnly)
+        return cache_hit;
+
     CPubseqGatewayCache *   cache = CPubseqGatewayApp::GetInstance()->
                                                             GetLookupCache();
     if (version >= 0) {
@@ -1087,6 +1125,10 @@ CPendingOperation::x_LookupCachedCsi(const string &  seq_id,
                                      string &  csi_cache_data)
 {
     bool                    cache_hit = false;
+
+    if (m_UrlUseCache == eCassandraOnly)
+        return cache_hit;
+
     CPubseqGatewayCache *   cache = CPubseqGatewayApp::GetInstance()->
                                                             GetLookupCache();
 
@@ -1225,9 +1267,13 @@ bool CPendingOperation::x_LookupBlobPropCache(int  sat, int  sat_key,
                                               int64_t &  last_modified,
                                               CBlobRecord &  blob_record)
 {
+    bool                    cache_hit = false;
+
+    if (m_UrlUseCache == eCassandraOnly)
+        return cache_hit;
+
     CPubseqGatewayCache *   cache = CPubseqGatewayApp::GetInstance()->
                                                         GetLookupCache();
-    bool                    cache_hit = false;
     string                  blob_prop_cache_data;
 
     if (last_modified == INT64_MIN) {
@@ -1662,8 +1708,10 @@ void CBlobPropCallback::x_RequestOriginalBlobChunks(CBlobRecord const &  blob)
     // Cannot reuse the fetch details, it leads to a core dump
 
     // eUnknownTSE is safe here; no blob prop call will happen anyway
+    // eUnknownUseCache is safe here; no further resolution required
     SBlobRequest    orig_blob_request(m_FetchDetails->m_BlobId,
-                                      blob.GetModified(), eUnknownTSE);
+                                      blob.GetModified(), eUnknownTSE,
+                                      eUnknownUseCache);
 
     m_PendingOp->m_OriginalBlobChunkFetch.reset(
             new CPendingOperation::SBlobFetchDetails(orig_blob_request));
@@ -1724,7 +1772,9 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob,
     // Create the Id2Info requests.
     // eUnknownTSE is treated in the blob prop handler as to do nothing (no
     // sending completion message, no requesting other blobs)
-    SBlobRequest    info_blob_request(info_blob_id, INT64_MIN, eUnknownTSE);
+    // eUnknownUseCache is safe here; no further resolution
+    SBlobRequest    info_blob_request(info_blob_id, INT64_MIN, eUnknownTSE,
+                                      eUnknownUseCache);
 
     // Prepare Id2Info retrieval
     m_PendingOp->m_Id2InfoFetchDetails.reset(
@@ -1745,6 +1795,19 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob,
                     std::move(blob_record),
                     true, nullptr));
     } else {
+        if (m_PendingOp->GetUrlUseCache() == eCacheOnly) {
+            // No need to continue; it is forbidded to look for blob props in
+            // the Cassandra DB
+            string      message = "Blob properties are not found";
+            m_PendingOp->UpdateOverallStatus(CRequestStatus::e404_NotFound);
+            PSG_WARNING(message);
+            m_PendingOp->PrepareBlobPropMessage(
+                                    m_FetchDetails, message,
+                                    CRequestStatus::e404_NotFound,
+                                    eBlobPropsNotFound, eDiag_Error);
+            return;
+        }
+
         m_PendingOp->m_Id2InfoFetchDetails->m_Loader.reset(
                 new CCassBlobTaskLoadBlob(
                     m_PendingOp->m_Timeout, m_PendingOp->m_MaxRetries,
@@ -1789,7 +1852,9 @@ void CBlobPropCallback::x_RequestId2SplitBlobs(const string &  sat_name)
 
         // eUnknownTSE is treated in the blob prop handler as to do nothing (no
         // sending completion message, no requesting other blobs)
-        SBlobRequest    chunk_request(chunks_blob_id, INT64_MIN, eUnknownTSE);
+        // eUnknownUseCache is safe here; no further resolution required
+        SBlobRequest    chunk_request(chunks_blob_id, INT64_MIN, eUnknownTSE,
+                                      eUnknownUseCache);
 
         unique_ptr<CPendingOperation::SBlobFetchDetails>   details;
         details.reset(new CPendingOperation::SBlobFetchDetails(chunk_request));
@@ -1810,6 +1875,21 @@ void CBlobPropCallback::x_RequestId2SplitBlobs(const string &  sat_name)
                     std::move(blob_record),
                     true, nullptr));
         } else {
+            if (m_PendingOp->GetUrlUseCache() == eCacheOnly) {
+                // No need to create a request because the Cassandra DB access
+                // is forbidden
+                string      message = "Blob properties are not found";
+                m_PendingOp->UpdateOverallStatus(CRequestStatus::e404_NotFound);
+                PSG_WARNING(message);
+                m_PendingOp->PrepareBlobPropMessage(
+                                    details.get(), message,
+                                    CRequestStatus::e404_NotFound,
+                                    eBlobPropsNotFound, eDiag_Error);
+                m_PendingOp->PrepareBlobPropCompletion(details.get());
+                continue;
+            }
+
+
             details->m_Loader.reset(
                 new CCassBlobTaskLoadBlob(
                     m_PendingOp->m_Timeout, m_PendingOp->m_MaxRetries,

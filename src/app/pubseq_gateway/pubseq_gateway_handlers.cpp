@@ -50,6 +50,7 @@ static string  kLastModifiedParam = "last_modified";
 static string  kSeqIdParam = "seq_id";
 static string  kSeqIdTypeParam = "seq_id_type";
 static string  kTSEParam = "tse";
+static string  kUseCacheParam = "use_cache";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
     make_pair("all_info", fServAllBioseqFields),   // must be first
@@ -91,11 +92,12 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
     CRequestContextResetter context_resetter;
     CRef<CRequestContext>   context = x_CreateRequestContext(req);
 
-    CTempString         seq_id;
-    int                 seq_id_type;
+    CTempString             seq_id;
+    int                     seq_id_type;
+    ECacheAndCassandraUse   use_cache;
 
     if (!x_ProcessCommonGetAndResolveParams(req, resp, seq_id,
-                                            seq_id_type, true)) {
+                                            seq_id_type, use_cache, true)) {
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
@@ -118,7 +120,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
     m_RequestCounters.IncGetBlobBySeqId();
     resp.Postpone(
             CPendingOperation(
-                SBlobRequest(seq_id, seq_id_type, tse_option),
+                SBlobRequest(seq_id, seq_id_type, tse_option, use_cache),
                 0, m_CassConnection, m_TimeoutMs,
                 m_MaxRetries, context));
     return 0;
@@ -165,6 +167,17 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
         }
     }
 
+    ECacheAndCassandraUse   use_cache = x_GetUseCacheParameter(req, err_msg);
+    if (!err_msg.empty()) {
+        m_ErrorCounters.IncMalformedArguments();
+        x_SendMessageAndCompletionChunks(resp, err_msg,
+                                         CRequestStatus::e400_BadRequest,
+                                         eMalformedParameter, eDiag_Error);
+        PSG_WARNING(err_msg);
+        x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+        return 0;
+    }
+
     SRequestParameter   blob_id_param = x_GetParam(req, kBlobIdParam);
     if (blob_id_param.m_Found)
     {
@@ -188,7 +201,8 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
             m_RequestCounters.IncGetBlobBySatSatKey();
             resp.Postpone(
                     CPendingOperation(
-                        SBlobRequest(blob_id, last_modified_value, tse_option),
+                        SBlobRequest(blob_id, last_modified_value,
+                                     tse_option, use_cache),
                         0, m_CassConnection, m_TimeoutMs,
                         m_MaxRetries, context));
 
@@ -237,11 +251,13 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
     }
 
 
-    CTempString         seq_id;
-    int                 seq_id_type;
+    CTempString             seq_id;
+    int                     seq_id_type;
+    ECacheAndCassandraUse   use_cache;
 
     if (!x_ProcessCommonGetAndResolveParams(req, resp, seq_id,
-                                            seq_id_type, use_psg_protocol)) {
+                                            seq_id_type, use_cache,
+                                            use_psg_protocol)) {
         x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
         return 0;
     }
@@ -297,7 +313,7 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
     resp.Postpone(
             CPendingOperation(
                 SResolveRequest(seq_id, seq_id_type, include_data_flags,
-                                output_format, use_psg_protocol),
+                                output_format, use_cache, use_psg_protocol),
                 0, m_CassConnection, m_TimeoutMs,
                 m_MaxRetries, context));
     return 0;
@@ -461,6 +477,7 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
         HST::CHttpReply<CPendingOperation> &  resp,
         CTempString &  seq_id,
         int &  seq_id_type,
+        ECacheAndCassandraUse &  use_cache,
         bool  use_psg_protocol)
 {
     SRequestParameter   seq_id_type_param;
@@ -475,6 +492,10 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
     else if (seq_id_param.m_Value.empty()) {
         err_msg = "Missing value of the 'seq_id' parameter";
         m_ErrorCounters.IncMalformedArguments();
+    }
+
+    if (err_msg.empty()) {
+        use_cache = x_GetUseCacheParameter(req, err_msg);
     }
 
     if (!err_msg.empty()) {
@@ -524,5 +545,25 @@ bool CPubseqGatewayApp::x_ProcessCommonGetAndResolveParams(
     }
 
     return true;
+}
+
+
+ECacheAndCassandraUse
+CPubseqGatewayApp::x_GetUseCacheParameter(HST::CHttpRequest &  req,
+                                          string &  err_msg)
+{
+    SRequestParameter   use_cache_param = x_GetParam(req, kUseCacheParam);
+
+    if (use_cache_param.m_Found) {
+        if (!x_IsBoolParamValid(kUseCacheParam, use_cache_param.m_Value,
+                                err_msg)) {
+            m_ErrorCounters.IncMalformedArguments();
+            return eUnknownUseCache;
+        }
+        if (use_cache_param.m_Value == "yes")
+            return eCacheOnly;
+        return eCassandraOnly;
+    }
+    return eCacheAndCassandra;
 }
 

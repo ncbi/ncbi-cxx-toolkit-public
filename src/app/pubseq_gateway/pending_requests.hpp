@@ -43,9 +43,11 @@ struct SBlobRequest
     // Construct the request for the case of sat/sat_key request
     SBlobRequest(const SBlobId &  blob_id,
                  int64_t  last_modified,
-                 ETSEOption  tse_option) :
+                 ETSEOption  tse_option,
+                 ECacheAndCassandraUse  use_cache) :
         m_TSEOption(tse_option),
         m_BlobIdType(eBySatAndSatKey),
+        m_UseCache(use_cache),
         m_BlobId(blob_id),
         m_LastModified(last_modified)
     {}
@@ -55,9 +57,11 @@ struct SBlobRequest
     // Construct the request for the case of seq_id/id_type request
     SBlobRequest(const CTempString &  seq_id,
                  int  seq_id_type,
-                 ETSEOption  tse_option) :
+                 ETSEOption  tse_option,
+                 ECacheAndCassandraUse  use_cache) :
         m_TSEOption(tse_option),
         m_BlobIdType(eBySeqId),
+        m_UseCache(use_cache),
         m_LastModified(INT64_MIN),
         m_SeqId(seq_id),
         m_SeqIdType(seq_id_type)
@@ -71,6 +75,7 @@ struct SBlobRequest
 public:
     ETSEOption                  m_TSEOption;
     EBlobIdentificationType     m_BlobIdType;
+    ECacheAndCassandraUse       m_UseCache;
 
     // Fields in case of request by sat/sat_key
     SBlobId                     m_BlobId;
@@ -89,10 +94,12 @@ public:
                     int  seq_id_type,
                     TServIncludeData  include_data_flags,
                     EOutputFormat  output_format,
+                    ECacheAndCassandraUse  use_cache,
                     bool  use_psg_protocol) :
         m_SeqId(seq_id), m_SeqIdType(seq_id_type),
         m_IncludeDataFlags(include_data_flags),
         m_OutputFormat(output_format),
+        m_UseCache(use_cache),
         m_UsePsgProtocol(use_psg_protocol)
     {}
 
@@ -103,6 +110,7 @@ public:
     int                         m_SeqIdType;
     TServIncludeData            m_IncludeDataFlags;
     EOutputFormat               m_OutputFormat;
+    ECacheAndCassandraUse       m_UseCache;
     bool                        m_UsePsgProtocol;
 };
 

@@ -117,5 +117,13 @@ enum ESeqIdParsingResult {
 };
 
 
+enum ECacheAndCassandraUse {
+    eCacheOnly,
+    eCassandraOnly,
+    eCacheAndCassandra,     // Default
+
+    eUnknownUseCache
+};
+
 
 #endif
