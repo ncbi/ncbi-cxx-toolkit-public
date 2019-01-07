@@ -260,20 +260,21 @@ static void sGetModInfo(const string& line, SModInfo& mod_info)
     if (NStr::IsBlank(line)) {
         return;
     }
+    string mod_name;
+    string mod_value;
 
-    vector<string> info_vec;
-    NStr::Split(line, " \t", info_vec, NStr::fSplit_Tokenize);
+    NStr::SplitInTwo(line, " \t", mod_name, mod_value);
 
-    if (info_vec.empty()) {
-        return;
+    if (!mod_name.empty()) {
+        mod_info.name = mod_name;
     }
 
-    mod_info.name = info_vec[0];
-    if (info_vec.size() == 2) {
-        mod_info.value = info_vec[1];
+    if (!mod_value.empty()) {
+        mod_info.value = NStr::TruncateSpaces(mod_value);
     }
     return;
 }
+
 
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 {   
