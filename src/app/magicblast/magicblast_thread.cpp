@@ -178,7 +178,7 @@ void* CMagicBlastThread::Main(void)
                              *results,
                              *query_batch,
                              m_Options->GetPaired(),
-                             /*thread_batch_number*/ 0,
+                             /*thread_batch_number*/ 1,
                              kPrintUnaligned,
                              kNoDiscordant);
             }
@@ -198,7 +198,7 @@ void* CMagicBlastThread::Main(void)
                          *query_batch,
                          query_data->GetQueryInfo(),
                          m_Options->GetSpliceAlignments(),
-                         /*thread_batch_number*/ 0,
+                         /*thread_batch_number*/ 1,
                          kTrimReadIdForSAM,
                          kPrintUnaligned,
                          kNoDiscordant,
