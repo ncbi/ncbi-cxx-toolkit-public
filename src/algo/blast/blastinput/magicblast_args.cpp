@@ -172,6 +172,34 @@ public:
     }
 };
 
+
+/// MT args that allow multiple threads with a FASTA subject
+class CMapperMTArgs : public CMTArgs
+{
+public:
+    virtual void ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& /* opts */) {
+        const int kMaxValue = static_cast<int>(GetCpuCount());
+
+        if (args.Exist(kArgNumThreads) &&
+            args[kArgNumThreads].HasValue()) {
+
+            // use the minimum of the two: user requested number of threads and
+            // number of available CPUs for number of threads
+            int num_threads = args[kArgNumThreads].AsInteger();
+            if (num_threads > kMaxValue) {
+                m_NumThreads = kMaxValue;
+                
+                ERR_POST(Warning << (string)"Number of threads was reduced to "
+                         + NStr::IntToString((unsigned int)m_NumThreads) +
+                         " to match the number of available CPUs");
+            }
+            else {
+                m_NumThreads = num_threads;
+            }
+        }
+    }
+};
+
 CMagicBlastAppArgs::CMagicBlastAppArgs()
 {
     // remove search strategy args added in parent class constructor
@@ -208,7 +236,7 @@ CMagicBlastAppArgs::CMagicBlastAppArgs()
     );
     m_Args.push_back(arg);
 
-    m_MTArgs.Reset(new CMTArgs);
+    m_MTArgs.Reset(new CMapperMTArgs);
     arg.Reset(m_MTArgs);
     m_Args.push_back(arg);
 

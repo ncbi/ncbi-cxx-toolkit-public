@@ -1261,7 +1261,7 @@ public:
 
     /// Get the number of threads to spawn
     size_t GetNumThreads() const { return m_NumThreads; }
-private:
+protected:
     size_t m_NumThreads;        ///< Number of threads to spawn
 };
 

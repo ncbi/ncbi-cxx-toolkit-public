@@ -3,7 +3,7 @@
 WATCHERS = camacho madden fongah2
 
 APP = magicblast
-SRC = magicblast_app
+SRC = magicblast_app magicblast_util magicblast_thread
 LIB_ =$(BLAST_INPUT_LIBS) blast_sra_input $(BLAST_LIBS) $(SRAREAD_LIBS) $(OBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
