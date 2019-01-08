@@ -1433,7 +1433,12 @@ CMappingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey(kArgScore, "num", "Cutoff score for accepting "
                            "alignments. Can be expressed as a number or a "
                            "function of read length: "
-                           "L,b,a for a * length + b.",
+                           "L,b,a for a * length + b.\n"
+                           "Zero means that the cutoff score will be equal to:\n"
+                           "read length,      if read length <= 20,\n"
+                           "20,               if read length <= 30,\n"
+                           "read length - 10, if read length <= 50,\n"
+                           "40,               otherwise.",
                            CArgDescriptions::eString, "0");
     arg_desc.AddOptionalKey(kArgMaxEditDist, "num", "Cutoff edit distance for "
                             "accepting an alignment\nDefault = unlimited",
