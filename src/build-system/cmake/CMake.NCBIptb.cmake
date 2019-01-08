@@ -850,6 +850,7 @@ function(NCBI_internal_add_dataspec)
                     COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.pb.h VERBATIM
                     WORKING_DIRECTORY ${top_src_dir}
                     COMMENT "Generate PROTOC C++ classes from ${_filepath}"
+                    DEPENDS ${_filepath}
                     VERBATIM
                 )
             endif()
@@ -862,6 +863,7 @@ function(NCBI_internal_add_dataspec)
                     COMMAND ${CMAKE_COMMAND} -E remove -f ${_path}/${_basename}.grpc.pb.h VERBATIM
                     WORKING_DIRECTORY ${top_src_dir}
                     COMMENT "Generate GRPC C++ classes from ${_filepath}"
+                    DEPENDS ${_filepath}
                     VERBATIM
                 )
             endif()
@@ -891,12 +893,16 @@ function(NCBI_internal_add_dataspec)
             set(_od ${_path}/${_basename}.def)
             set(_oex -oex " ")
             set(_cmd ${NCBI_DATATOOL} ${_oex} ${_pch} -m ${_filepath} -oA -oc ${_oc} -od ${_od} -odi -ocvs -or ${_relpath} -oR ${top_src_dir} ${_imports})
+            set(_depends ${NCBI_DATATOOL} ${_filepath})
+            if(EXISTS ${_od})
+                set(_depends ${_depends} ${_od})
+            endif()
             add_custom_command(
                 OUTPUT ${_path}/${_basename}__.cpp ${_path}/${_basename}___.cpp
                 COMMAND ${_cmd} VERBATIM
                 WORKING_DIRECTORY ${top_src_dir}
                 COMMENT "Generate C++ classes from ${_filepath}"
-                DEPENDS ${NCBI_DATATOOL}
+                DEPENDS ${_depends}
                 VERBATIM
             )
         endif()
