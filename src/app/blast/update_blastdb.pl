@@ -181,9 +181,9 @@ if ($location eq "GCP") {
                     print $fh join("\n", @files2download);
                     $cmd = "/usr/bin/xargs -P $opt_nt -a $fh -n 1";
                     $cmd .= " -t" if $opt_verbose > 3;
-                    $cmd .= " /usr/bin/curl -sO";
+                    $cmd .= " /usr/bin/curl -sOR";
                 } else {
-                    $cmd = "/usr/bin/curl -s";
+                    $cmd = "/usr/bin/curl -sR";
                     $cmd .= " -O $_" foreach (@files2download);
                 }
             }
