@@ -754,7 +754,8 @@ bool CGtfWriter::xAssignFeatureAttributeGeneId(
         geneFeat = feature::GetBestGeneForFeat(mf, &fc.FeatTree());
     }
     if (!geneFeat) {
-        return false;
+        record.SetGeneId("");
+        return true;
     }
 
     using GENE_ID = string;
