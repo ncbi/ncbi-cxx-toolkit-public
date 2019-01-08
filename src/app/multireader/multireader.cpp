@@ -86,6 +86,16 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+string s_AlnErrorToString(const CAlnError & error)
+{
+    return FORMAT(
+        "At ID '" << error.GetID() << "' "
+        "in category '" << static_cast<int>(error.GetCategory()) << "' "
+        "at line " << error.GetLineNum() << ": "
+        << error.GetMsg() << "'");
+}
+
+
 //  ============================================================================
 void
 DumpMemory(
@@ -645,17 +655,6 @@ CMultiReaderApp::Run(void)
     string argInDir = args["indir"].AsString();
     string argOutDir = args["outdir"].AsString();
 
-    //typedef CGff3Reader::TAnnotList TAnnotList;
-    //TAnnotList annots;
-    //int m_iFlags = 0;
-    //CGff3Reader reader(m_iFlags, "prodigal", "prodigal");
-    //CRef<CMessageListenerBase> m_pErrors;
-    //CNcbiIfstream istr(argInFile);
-    //cerr << istr.good() << endl;
-    //reader.ReadSeqAnnots(annots, istr, m_pErrors);
-    //cerr << annots.size() << endl;
-    //return 0;
-
     if ((argInFile != "-")  &&  !argInDir.empty()) {
         cerr << "multireader: command line args -input and -indir are incompatible." 
              << endl;
@@ -1152,8 +1151,20 @@ void CMultiReaderApp::xProcessAlignment(
         reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
     }
     reader.Read(false, args["force-local-ids"]);
-    CRef<CSeq_align> pAlign = reader.GetSeqAlign();
-    xWriteObject(args, *pAlign, ostr);
+
+    auto& errorContainer = *m_pErrors.get();
+    for (const auto& error : reader.GetErrorList()) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+                eDiag_Error,
+                error.GetLineNum(),
+                s_AlnErrorToString(error),
+                ILineError::eProblem_GeneralParsingError));
+        errorContainer.PutError(*pErr);
+    }
+
+    CRef<CSeq_entry> pEntry = reader.GetSeqEntry();
+    xWriteObject(args, *pEntry, ostr);
 }
 
 //  ----------------------------------------------------------------------------
@@ -1549,6 +1560,7 @@ void CMultiReaderApp::xDumpErrors(
     }
 }
 
+
 //  ----------------------------------------------------------------------------
 int main(int argc, const char* argv[])
 //  ----------------------------------------------------------------------------
@@ -1556,3 +1568,4 @@ int main(int argc, const char* argv[])
     // Execute main application function
     return CMultiReaderApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
+
