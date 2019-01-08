@@ -689,16 +689,12 @@ static void FindPubsInDescrs(CSeq_descr* descrs, CPubCollection& pubs)
 
 static void FixArticles(CPub_set& pub_set)
 {
-    CPub_equiv::Tdata pub_equives;
+    CPub_set::TPub pubs;
 
     for (auto& cit_art : pub_set.SetArticle()) {
 
         CRef<CPub> article(new CPub);
         article->SetArticle(*cit_art);
-
-        CRef<CPub> cur_pub(new CPub);
-        CPub_equiv::Tdata& cur_pub_list = cur_pub->SetEquiv();
-        cur_pub_list.push_back(article);
 
         if (!cit_art->IsSetFrom() && cit_art->GetFrom().IsBook()) {
 
@@ -721,10 +717,10 @@ static void FixArticles(CPub_set& pub_set)
             }
         }
 
-        pub_equives.push_back(cur_pub);
+        pubs.push_back(article);
     }
 
-    pub_set.SetPub().swap(pub_equives);
+    pub_set.SetPub().swap(pubs);
 }
 
 static void FixMedlines(CPub_set& pub_set)
