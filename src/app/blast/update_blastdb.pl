@@ -461,7 +461,7 @@ sub get_gcs_blastdb_metadata
 # Returns the path to the gsutil utility or undef  if it is not found
 sub get_gsutil_path
 {
-    foreach (qw(/google/google-cloud-sdk/bin /snap/bin /usr/bin)) {
+    foreach (qw(/google/google-cloud-sdk/bin /usr/local/bin /usr/bin /snap/bin)) {
         my $path = "$_/gsutil";
         return $path if (-f $path);
     }
