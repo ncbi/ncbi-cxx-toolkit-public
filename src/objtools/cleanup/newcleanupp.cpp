@@ -54,6 +54,8 @@
 
 #include "cleanup_utils.hpp"
 
+#include <objtools/cleanup/cleanup_pub.hpp>
+
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -607,33 +609,7 @@ void CNewCleanup_imp::LeavingEntry (
 // with one space. Strips all spaces after '(' and before ( ')' or ',' ).
 void CNewCleanup_imp::x_StripSpacesMarkChanged(string& str)
 {
-    if (str.empty()) {
-        return;
-    }
-
-    const string::size_type old_size = str.length();
-
-    string::iterator end = str.end();
-    string::iterator it = str.begin();
-    string::iterator new_str = it;
-    while (it != end) {
-        *new_str++ = *it;
-        if ( (*it == ' ')  ||  (*it == '\t')  ||  (*it == '(') ) {
-            for (++it; (it != end) && (*it == ' ' || *it == '\t'); ++it) continue;
-            if ((it != end) && (*it == ')' || *it == ',') ) {
-                // this "if" protects against the case "(...bunch of spaces and tabs...)".
-                // Otherwise, the first '(' is unintentionally erased
-                if( *(new_str - 1) != '(' ) { 
-                    --new_str;
-                }
-            }
-        } else {
-            ++it;
-        }
-    }
-    str.erase(new_str, str.end());
-
-    if( str.length() != old_size ) {
+    if (StripSpaces(str)) {
         ChangeMade(CCleanupChange::eTrimSpaces);
     }
 }
@@ -2309,91 +2285,20 @@ void CNewCleanup_imp::PubdescBC (
     CPubdesc& pubdesc
 )
 {
-    if ( FIELD_IS_SET(pubdesc, Comment)) {
-        x_ConvertDoubleQuotesMarkChanged( GET_MUTABLE(pubdesc, Comment) );
+    if (CCleanupPub::CleanPubdesc(pubdesc, m_StripSerial)) {
+        ChangeMade(CCleanupChange::eChangePublication);
     }
-
-    CLEAN_STRING_MEMBER(pubdesc, Comment);
-
-    if ( FIELD_IS_SET(pubdesc, Pub) ) {
-        PubEquivBC( GET_MUTABLE(pubdesc, Pub) );
-    }
-}
-
-static bool s_ShouldWeFixInitials(const CPub_equiv& equiv)
-{
-    bool has_id  = false, 
-    has_art = false;
-    
-    FOR_EACH_PUB_ON_PUBEQUIV(pub_iter, equiv) {
-        if ( ( (*pub_iter)->IsPmid() && (*pub_iter)->GetPmid() > 0 ) ||
-             ( (*pub_iter)->IsMuid() && (*pub_iter)->GetMuid() > 0 ) ) {
-            has_id = true;
-        } else if ((*pub_iter)->IsArticle()) {
-            has_art = true;
+    // need to construct m_PubToNewPubLabelMap separately
+    if (pubdesc.IsSetPub()) {
+        for (auto p : pubdesc.SetPub().Set()) {
+            string new_label;
+            p->GetLabel(&new_label, CPub::eContent, true);
+            m_PubToNewPubLabelMap[p] = new_label;
         }
     }
-    return !(has_art  &&  has_id);
 }
 
-static size_t s_PubPriority( CPub::E_Choice val)
-{
-    size_t priority = 0;
-    switch (val) {
-        case CPub::e_not_set:
-            priority = 0;
-            break;
-        case CPub::e_Gen:
-            priority = 3;
-            break;
-        case CPub::e_Sub:
-            priority = 4;
-            break;
-        case CPub::e_Medline:
-            priority = 13;
-            break;
-        case CPub::e_Muid:
-            priority = 2;
-            break;
-        case CPub::e_Article:
-            priority = 5;
-            break;
-        case CPub::e_Journal:
-            priority = 6;
-            break;
-        case CPub::e_Book:
-            priority = 7;
-            break;
-        case CPub::e_Proc:
-            priority = 8;
-            break;
-        case CPub::e_Patent:
-            priority = 9;
-            break;
-        case CPub::e_Pat_id:
-            priority = 10;
-            break;
-        case CPub::e_Man:
-            priority = 11;
-            break;
-        case CPub::e_Equiv:
-            priority = 12;
-            break;
-        case CPub::e_Pmid:
-            priority = 1;
-            break;
-    }
-    return priority;
-}
-
-inline
-static
-bool s_PubWhichCompare( CRef<CPub> pub1, CRef<CPub> pub2 ) {
-    size_t pr1 = s_PubPriority(pub1->Which());
-    size_t pr2 = s_PubPriority(pub2->Which());
-    return (pr1 < pr2);
-}
-
+#if 0
 void CNewCleanup_imp::PubEquivBC (CPub_equiv& pub_equiv)
 {
     x_FlattenPubEquiv(pub_equiv);
@@ -2927,6 +2832,7 @@ void CNewCleanup_imp::ImprintBC( CImprint& imprint, EImprintBC is_status_change_
     CLEAN_AND_COMPRESS_STRING_MEMBER(imprint, Language);
     CLEAN_AND_COMPRESS_STRING_MEMBER(imprint, Part_supi);
 }
+#endif
 
 typedef pair<string, CRef<CPub> >   TCit;
 struct TSortCit {
@@ -2999,6 +2905,7 @@ void CNewCleanup_imp::PubSetBC( CPub_set &pub_set )
         ChangeMade(CCleanupChange::eCleanCitonFeat);
     }
 }
+
 
 void CNewCleanup_imp::ImpFeatBC( CSeq_feat& feat )
 {
@@ -9020,7 +8927,7 @@ void CNewCleanup_imp::x_CopyGBBlockDivToOrgnameDiv( CSeq_entry &seq_entry)
 
 void CNewCleanup_imp::x_AuthListBCWithFixInitials( CAuth_list& al )
 {
-    AuthListBC( al, true );
+    CCleanup::CleanupAuthList( al, true );
 }
 
 void CNewCleanup_imp::x_PostProcessing(void)

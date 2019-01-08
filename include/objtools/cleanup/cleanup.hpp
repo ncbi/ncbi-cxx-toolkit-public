@@ -37,6 +37,7 @@
 #include <objtools/cleanup/cleanup_change.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/pub/Pub.hpp>
+#include <objects/biblio/Auth_list.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 
 
@@ -52,6 +53,7 @@ class CSeq_submit;
 class COrgName;
 class CSubmit_block;
 class CAuthor;
+class CAuth_list;
 class CName_std;
 
 class CSeq_entry_Handle;
@@ -573,7 +575,12 @@ public:
     // and apply specific cleanups to known types of User-object
     static bool CleanupUserObject(CUser_object& object);
 
+    // for cleaning up authors, lists of authors, and affiliation
     static bool CleanupAuthor(CAuthor& author, bool fix_initials = true);
+    static bool CleanupAuthList(CAuth_list& al, bool fix_initials = true);
+    static void ResetAuthorNames(CAuth_list::TNames& names);
+    static bool CleanupAffil(CAffil& af);
+    static bool IsEmpty(const CAuth_list::TAffil& affil);
 
     // for cleaning up collection-date subsource qualifiers
     static bool CleanupCollectionDates(CSeq_entry_Handle seh, bool month_first);
@@ -610,6 +617,8 @@ private:
     static void s_ExtractSuffixFromInitials(CName_std& name);
     static void s_FixEtAl(CName_std& name);
 
+    // for cleaning pubdesc
+    static bool s_Flatten(CPub_equiv& pub_equiv);
 };
 
 

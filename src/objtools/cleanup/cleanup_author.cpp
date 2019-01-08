@@ -33,7 +33,9 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialbase.hpp>
 
+#include <objects/biblio/Affil.hpp>
 #include <objects/biblio/Author.hpp>
+#include <objects/biblio/Auth_list.hpp>
 #include <objects/general/Name_std.hpp>
 #include <objects/general/Person_id.hpp>
 
@@ -420,6 +422,227 @@ void CCleanup::s_FixEtAl(CName_std& name)
     }
 }
 
+
+bool CCleanup::IsEmpty(const CAuth_list::TAffil& affil)
+{
+    if (affil.IsStr()) {
+        return NStr::IsBlank(affil.GetStr());
+    }
+    else if (affil.IsStd()) {
+        const CAuth_list::TAffil::TStd& std = affil.GetStd();
+        return !(std.IsSetAffil() || std.IsSetDiv() || std.IsSetCity() ||
+            std.IsSetSub() || std.IsSetCountry() || std.IsSetStreet() ||
+            std.IsSetEmail() || std.IsSetFax() || std.IsSetPhone() ||
+            std.IsSetPostal_code());
+    }
+    return true;
+}
+
+
+static bool s_IsEmpty(const CAuthor& auth)
+{
+    if (!auth.IsSetName()) {
+        return true;
+    }
+
+    const CAuthor::TName& name = auth.GetName();
+
+    const string* str = NULL;
+    switch (name.Which()) {
+    case CAuthor::TName::e_not_set:
+        return true;
+
+    case CAuthor::TName::e_Name:
+    { {
+            const CName_std& nstd = name.GetName();
+            // last name is required
+            if (!nstd.IsSetLast() || NStr::IsBlank(nstd.GetLast())) {
+                return true;
+            }
+            // also fails if all fields are blank
+            if ((!nstd.IsSetLast() || NStr::IsBlank(nstd.GetLast())) &&
+                (!nstd.IsSetFirst() || NStr::IsBlank(nstd.GetFirst())) &&
+                (!nstd.IsSetMiddle() || NStr::IsBlank(nstd.GetMiddle())) &&
+                (!nstd.IsSetFull() || NStr::IsBlank(nstd.GetFull())) &&
+                (!nstd.IsSetInitials() || NStr::IsBlank(nstd.GetInitials())) &&
+                (!nstd.IsSetSuffix() || NStr::IsBlank(nstd.GetSuffix())) &&
+                (!nstd.IsSetTitle() || NStr::IsBlank(nstd.GetTitle()))) {
+                return true;
+            }
+            break;
+        }}
+
+    case CAuthor::TName::e_Ml:
+        str = &(name.GetMl());
+        break;
+    case CAuthor::TName::e_Str:
+        str = &(name.GetStr());
+        break;
+    case CAuthor::TName::e_Consortium:
+        str = &(name.GetConsortium());
+        break;
+
+    default:
+        break;
+    };
+    if (str != NULL && NStr::IsBlank(*str)) {
+        return true;
+    }
+    return false;
+}
+
+
+bool CCleanup::CleanupAuthList(CAuth_list& al, bool fix_initials)
+{
+    bool rval = false;
+
+    if (al.IsSetAffil()) {
+        rval |= CleanupAffil(al.SetAffil());
+        if (IsEmpty(al.GetAffil())) {
+            al.ResetAffil();
+            rval = true;
+        }
+    }
+    if (al.IsSetNames()) {
+        typedef CAuth_list::TNames TNames;
+        auto& alnames = al.SetNames();
+        switch (alnames.Which()) {
+        case TNames::e_Ml:
+        { {
+            if (ConvertAuthorContainerMlToStd(al)) {
+                rval = true;
+            }
+        }}
+        // !!!!!!!!!!!!!!!!!!!!!!
+        // !!!!!FALL-THROUGH!!!!!
+        // !!!!!!!!!!!!!!!!!!!!!!
+        // ( since we just converted the ml to an std, we need to do the
+        //   std clean-up step )
+        case TNames::e_Std:
+        { {
+                auto& std = alnames.SetStd();
+                auto it = std.begin();
+                while (it != std.end()) {
+                    rval |= CCleanup::CleanupAuthor(**it, fix_initials);
+                    if (s_IsEmpty(**it)) {
+                        it = std.erase(it);
+                        rval = true;
+                    }
+                    ++it;
+                }
+                if (std.empty()) {
+                    ResetAuthorNames(alnames);
+                    rval = true;
+                }
+                break;
+            }}
+        case TNames::e_Str:
+        { {
+                TNames& names = al.SetNames();
+                for (auto& it : names.SetStr()) {
+                    rval |= Asn2gnbkCompressSpaces(it);
+                }
+
+                rval |= CleanVisStringContainer(names.SetStr());
+                if (names.GetStr().empty()) {
+                    ResetAuthorNames(names);
+                    rval = true;
+                }
+                break;
+            }}
+        default:
+            break;
+        }
+    }
+    // if no remaining authors, put in default author for legal ASN.1
+    if (!al.IsSetNames()) {
+        al.SetNames().SetStr().push_back("?");
+        rval = true;
+    }
+    return rval;
+}
+
+
+// when we reset author names, we need to put in a place holder - otherwise the ASN.1 becomes invalid
+void CCleanup::ResetAuthorNames(CAuth_list::TNames& names)
+{
+    names.Reset();
+    list< string > &auth_list = names.SetStr();
+    auth_list.clear();
+    auth_list.push_back("?");
+}
+
+
+static bool CleanAndCompressJunk(string& str)
+{
+    bool rval = false;
+    rval |= Asn2gnbkCompressSpaces(str);
+    rval |= CleanVisStringJunk(str);
+    return rval;
+}
+
+
+bool CCleanup::CleanupAffil(CAffil& af)
+{
+    bool rval = false;
+    switch (af.Which()) {
+    case CAffil::e_Str:
+        rval |= Asn2gnbkCompressSpaces(af.SetStr());
+        rval |= CleanVisString(af.SetStr());
+        break;
+    case CAffil::e_Std:
+    { {
+            CAffil::TStd& std = af.SetStd();
+#define CLEAN_AFFIL_MEMBER(x) \
+            if (std.IsSet##x()) { \
+                string& val = std.Set##x(); \
+                rval |= CleanAndCompressJunk(val); \
+                if (val.empty()) { \
+                    std.Reset##x(); \
+                    rval = true; \
+                } \
+            }
+
+            CLEAN_AFFIL_MEMBER(Affil);
+            CLEAN_AFFIL_MEMBER(Div);
+            CLEAN_AFFIL_MEMBER(City);
+            CLEAN_AFFIL_MEMBER(Sub);
+            CLEAN_AFFIL_MEMBER(Country);
+            CLEAN_AFFIL_MEMBER(Street);
+            CLEAN_AFFIL_MEMBER(Email);
+            CLEAN_AFFIL_MEMBER(Fax);
+            CLEAN_AFFIL_MEMBER(Phone);
+            CLEAN_AFFIL_MEMBER(Postal_code);
+#undef CLEAN_AFFIL_MEMBER
+
+            if (std.IsSetCountry()) {
+                const string& country = std.GetCountry();
+                if (NStr::EqualNocase(country, "U.S.A.")) {
+                    std.SetCountry("USA");
+                    rval = true;
+                } else if (NStr::EqualNocase(country, "USA") && !NStr::EqualCase(country, "USA")) {
+                    std.SetCountry("USA");
+                    rval = true;
+                }
+            }
+
+            if (std.IsSetSub() && std.IsSetCountry()) {
+                if (NStr::EqualCase(std.GetCountry(), "USA")) {
+                    string oldsub = std.GetSub();
+                    string newsub = NStr::Replace(oldsub, ".", "");
+                    if (!NStr::EqualNocase(oldsub, newsub)) {
+                        std.SetSub(newsub);
+                        rval = true;
+                    }
+                }
+            }
+            break;
+        }}
+    default:
+        break;
+    }
+    return rval;
+}
 
 
 

@@ -432,6 +432,9 @@ bool is_sorted(Iter first, Iter last)
 }
 
 
+bool StripSpaces(string& str);
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

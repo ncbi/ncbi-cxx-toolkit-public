@@ -258,6 +258,7 @@ private:
     void DbtagBC (CDbtag& dbt);
 
     void PubdescBC (CPubdesc& pub);
+#if 0
     void PubEquivBC (CPub_equiv& pub_equiv);
     EAction PubBC(CPub& pub, bool fix_initials);
     EAction CitGenBC(CCit_gen& cg, bool fix_initials);
@@ -276,6 +277,7 @@ private:
         eImprintBC_ForbidStatusChange
     };
     void ImprintBC( CImprint& imprint, EImprintBC is_status_change_allowed );
+#endif
     void PubSetBC( CPub_set &pub_set );
 
     void ImpFeatBC( CSeq_feat& sf );
