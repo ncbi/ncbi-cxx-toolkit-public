@@ -734,11 +734,13 @@ const CSeq_entry *ctx)
             obj, ctx);
     }
 
-    if (bool(count[CSubSource::eSubtype_fwd_primer_seq]) != bool(count[CSubSource::eSubtype_rev_primer_seq])) {
-        if (!count[CSubSource::eSubtype_fwd_primer_name] && !count[CSubSource::eSubtype_rev_primer_name]) {
-            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerSequence,
-                "PCR primer does not have both sequences", obj, ctx);
-        }
+    if (static_cast<bool>(count[CSubSource::eSubtype_fwd_primer_seq]) != static_cast<bool>(count[CSubSource::eSubtype_rev_primer_seq]) &&
+        !count[CSubSource::eSubtype_fwd_primer_name] && 
+        !count[CSubSource::eSubtype_rev_primer_name]) {
+        // if there are forward primers then there should also be reverse primers, and vice versa,
+        // but ignore this if there are primer names of either flavor
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadPCRPrimerSequence,
+            "PCR primer does not have both sequences", obj, ctx);
     }
 	
 	bool has_duplicate_primers = false;
