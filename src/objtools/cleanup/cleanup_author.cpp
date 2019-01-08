@@ -505,8 +505,7 @@ bool CCleanup::CleanupAuthList(CAuth_list& al, bool fix_initials)
     }
     if (al.IsSetNames()) {
         typedef CAuth_list::TNames TNames;
-        auto& alnames = al.SetNames();
-        switch (alnames.Which()) {
+        switch (al.GetNames().Which()) {
         case TNames::e_Ml:
         { {
             if (ConvertAuthorContainerMlToStd(al)) {
@@ -520,6 +519,7 @@ bool CCleanup::CleanupAuthList(CAuth_list& al, bool fix_initials)
         //   std clean-up step )
         case TNames::e_Std:
         { {
+                auto& alnames = al.SetNames();
                 auto& std = alnames.SetStd();
                 auto it = std.begin();
                 while (it != std.end()) {
