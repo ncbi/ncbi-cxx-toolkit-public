@@ -27,8 +27,8 @@ set(SRC_TLS
     mbedtls/memory_buffer_alloc mbedtls/oid mbedtls/padlock
     mbedtls/pem mbedtls/pk mbedtls/pk_wrap mbedtls/pkcs12
     mbedtls/pkcs5 mbedtls/pkparse mbedtls/pkwrite mbedtls/platform
-    mbedtls/ripemd160 mbedtls/rsa mbedtls/sha1 mbedtls/sha256
-    mbedtls/sha512 mbedtls/threading mbedtls/timing
+    mbedtls/ripemd160 mbedtls/rsa mbedtls/rsa_internal mbedtls/sha1
+    mbedtls/sha256 mbedtls/sha512 mbedtls/threading mbedtls/timing
     mbedtls/mbedtls_version mbedtls/version_features mbedtls/xtea
     mbedtls/certs mbedtls/pkcs11 mbedtls/x509 mbedtls/x509_create
     mbedtls/x509_crl mbedtls/x509_crt mbedtls/x509_csr
