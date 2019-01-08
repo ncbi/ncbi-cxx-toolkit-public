@@ -49,7 +49,7 @@
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/cleanup/cleanup_pub.hpp>
 #include "cleanup_utils.hpp"
-
+#include <objmgr/util/objutil.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

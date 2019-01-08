@@ -253,11 +253,13 @@ string ConvertQuotes(const string& str)
 // Strips all spaces in string in following manner. If the function
 // meet several spaces (spaces and tabs) in succession it replaces them
 // with one space. Strips all spaces after '(' and before ( ')' or ',' ).
-void StripSpaces(string& str)
+bool StripSpaces(string& str)
 {
     if (str.empty()) {
-        return;
+        return false;
     }
+
+    auto orig_len = str.length();
 
     string::iterator end = str.end();
     string::iterator it = str.begin();
@@ -277,6 +279,8 @@ void StripSpaces(string& str)
         }
     }
     str.erase(new_str, str.end());
+
+    return (orig_len != str.length());
 }
 
 

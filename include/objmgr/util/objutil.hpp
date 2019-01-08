@@ -75,7 +75,7 @@ string JoinString(const list<string>& l,
 // meet several spaces (spaces and tabs) in succession it replaces them
 // with one space. Strips all spaces after '(' and before ')'
 NCBI_XOBJEDIT_EXPORT
-void StripSpaces(string& str);
+bool StripSpaces(string& str);
 NCBI_XOBJEDIT_EXPORT
 bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis = false);
 NCBI_XOBJEDIT_EXPORT
