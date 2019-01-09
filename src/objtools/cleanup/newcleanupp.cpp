@@ -1352,6 +1352,7 @@ void CNewCleanup_imp::BiosourceFeatBC (
             if (!FIELD_EQUALS(orgmod, Subtype, NCBI_ORGMOD(other)) ||
                 !FIELD_IS_SET(orgmod, Subname))
             {
+                ++mod_it;
                 continue;
             }
 
@@ -12706,7 +12707,6 @@ void CNewCleanup_imp::x_ExtendedCleanupExtra(CSeq_entry_Handle seh)
         feh.Replace(*new_feat);
     }
 #endif
-
 }
 
 
