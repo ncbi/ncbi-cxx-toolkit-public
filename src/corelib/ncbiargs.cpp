@@ -914,8 +914,8 @@ inline bool s_IsAlias(const CArgDesc& arg)
 ///////////////////////////////////////////////////////
 //  CArgDesc::
 
-CArgDesc::CArgDesc(const string& name, const string& comment)
-    : m_Name(name), m_Comment(comment)
+CArgDesc::CArgDesc(const string& name, const string& comment, CArgDescriptions::TFlags flags)
+    : m_Name(name), m_Comment(comment), m_Flags(flags)
 {
     if ( !CArgDescriptions::VerifyName(m_Name) ) {
         NCBI_THROW(CArgException,eInvalidArg,
@@ -1104,8 +1104,8 @@ CArgDescMandatory::CArgDescMandatory(const string&            name,
                                      const string&            comment,
                                      CArgDescriptions::EType  type,
                                      CArgDescriptions::TFlags flags)
-    : CArgDesc(name, comment),
-      m_Type(type), m_Flags(flags),
+    : CArgDesc(name, comment, flags),
+      m_Type(type),
       m_NegateConstraint(CArgDescriptions::eConstraint)
 {
     // verify if "flags" "type" are matching
@@ -1426,9 +1426,10 @@ CArgDescSynopsis::CArgDescSynopsis(const string& synopsis)
 
 CArgDesc_Flag::CArgDesc_Flag(const string& name,
                              const string& comment,
-                             bool  set_value)
+                             bool  set_value,
+                             CArgDescriptions::TFlags flags)
 
-    : CArgDesc(name, comment),
+    : CArgDesc(name, comment, flags),
       m_Group(0),
       m_SetValue(set_value)
 {
@@ -2334,9 +2335,10 @@ void CArgDescriptions::AddDefaultKey
 void CArgDescriptions::AddFlag(
     const string& name,
     const string& comment,
-    CBoolEnum<EFlagValue> set_value)
+    CBoolEnum<EFlagValue> set_value,
+    TFlags        flags)
 {
-    unique_ptr<CArgDesc_Flag> arg(new CArgDesc_Flag(name, comment, set_value == eFlagHasValueIfSet));
+    unique_ptr<CArgDesc_Flag> arg(new CArgDesc_Flag(name, comment, set_value == eFlagHasValueIfSet, flags));
     x_AddDesc(*arg);
     arg.release();
 }
@@ -3865,7 +3867,7 @@ size_t CCommandArgDescriptions::x_GetCommandGroupIndex(const string& group) cons
 
 void CCommandArgDescriptions::AddCommand(
     const string& cmd, CArgDescriptions* description,
-    const string& alias)
+    const string& alias, ECommandFlags flags)
 {
 
     string command( NStr::TruncateSpaces(cmd));
@@ -3890,7 +3892,9 @@ void CCommandArgDescriptions::AddCommand(
             SetCurrentCommandGroup(kEmptyStr);
         }
         m_Commands.remove(command);
-        m_Commands.push_back(command);
+        if (flags != eHidden) {
+            m_Commands.push_back(command);
+        }
         m_Description[command] = description;
         m_Groups[command] = m_CurrentCmdGroup;
         if (!alias.empty()) {

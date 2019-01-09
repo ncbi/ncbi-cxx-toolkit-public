@@ -753,7 +753,8 @@ public:
     /// always TRUE.
     void AddFlag(const string& name,      ///< Name of argument
                  const string& comment,   ///< Argument description
-                 CBoolEnum<EFlagValue> set_value = eFlagHasValueIfSet
+                 CBoolEnum<EFlagValue> set_value = eFlagHasValueIfSet,
+                 TFlags        flags = 0 ///< Optional flags
                  );
 
     /// Add description of mandatory opening positional argument.
@@ -1355,6 +1356,11 @@ public:
     /// commands will be arranged by group name.
     void SetCurrentCommandGroup(const string& group);
 
+    enum ECommandFlags {
+        eDefault = 0,
+        eHidden  = 1   ///<  Hide command in Usage
+    };
+
     /// Add command argument descriptions
     ///
     /// @param cmd
@@ -1363,8 +1369,10 @@ public:
     ///    Argument description
     /// @param alias
     ///    Alternative name of the command
+    /// @param flags
+    ///    Optional flags
     void AddCommand(const string& cmd, CArgDescriptions* description,
-                    const string& alias = kEmptyStr);
+                    const string& alias = kEmptyStr, ECommandFlags flags = eDefault);
 
     /// Parse command-line arguments 'argv'
     virtual CArgs* CreateArgs(const CNcbiArguments& argv) const;
@@ -1756,8 +1764,9 @@ class NCBI_XNCBI_EXPORT CArgDesc
 {
 public:
     /// Constructor.
-    CArgDesc(const string& name,    ///< Argument name
-             const string& comment  ///< Argument description
+    CArgDesc(const string& name,     ///< Argument name
+             const string& comment,  ///< Argument description
+             CArgDescriptions::TFlags flags = 0
             );
 
     /// Destructor.
@@ -1815,7 +1824,7 @@ public:
     virtual void SetErrorHandler(CArgErrorHandler*) { return; }
 
     /// Get argument flags
-    virtual CArgDescriptions::TFlags GetFlags(void) const { return 0; }
+    CArgDescriptions::TFlags GetFlags(void) const { return m_Flags; }
 
     /// Print description in XML format
     string PrintXml(CNcbiOstream& out) const;
@@ -1823,6 +1832,7 @@ public:
 private:
     string m_Name;      ///< Argument name
     string m_Comment;   ///< Argument description
+    CArgDescriptions::TFlags  m_Flags;
 };
 
 /////////////////////////////////////////////////////////////////////////////

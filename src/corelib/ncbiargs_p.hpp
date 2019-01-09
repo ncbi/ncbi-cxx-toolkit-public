@@ -323,7 +323,6 @@ public:
     virtual ~CArgDescMandatory(void);
 
     CArgDescriptions::EType  GetType (void) const { return m_Type; }
-    virtual CArgDescriptions::TFlags GetFlags(void) const { return m_Flags; }
 
     virtual string GetUsageSynopsis(bool name_only = false) const = 0;
     virtual string GetUsageCommentAttr(void) const;
@@ -344,7 +343,6 @@ public:
 
 private:
     CArgDescriptions::EType              m_Type;
-    CArgDescriptions::TFlags             m_Flags;
     CConstRef<CArgAllow>                 m_Constraint;
     CArgDescriptions::EConstraintNegate  m_NegateConstraint;
     CRef<CArgErrorHandler>               m_ErrorHandler;
@@ -431,7 +429,8 @@ class CArgDesc_Flag : public CArgDesc
 public:
     CArgDesc_Flag(const string& name,
                   const string& comment,
-                  bool          set_value = true);
+                  bool          set_value,
+                  CArgDescriptions::TFlags flags);
     virtual ~CArgDesc_Flag(void);
 
     virtual string GetUsageSynopsis(bool name_only = false) const;
