@@ -443,7 +443,7 @@ bool CCitSubCleaner::Clean(bool fix_initials, bool strip_serial)
         auto& imp = m_Sub.SetImp();
         if (imp.IsSetDate()) {
             m_Sub.SetDate().Assign(imp.GetDate());
-            imp.ResetDate();
+            m_Sub.ResetImp();
         }
         any_change = true;
     }
