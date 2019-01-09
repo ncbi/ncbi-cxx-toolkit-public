@@ -60,8 +60,6 @@ public:
 
     // should this item be skipped during formatting?
     bool Skip(void) const;
-    // what is the paragraph type for this item?
-    virtual EItem GetItemType(void) const = 0;
     // is feature on external Seq-annot?
     bool IsExternal(void) const;
 
