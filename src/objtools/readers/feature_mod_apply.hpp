@@ -49,17 +49,15 @@ class CSeqFeatData;
 class CFeatModApply
 {
 public:
-    CFeatModApply(CBioseq& bioseq, const CSeq_loc* pGeneLoc = nullptr);
+    CFeatModApply(CBioseq& bioseq);
     virtual ~CFeatModApply(void);
 
     using TModEntry = CModHandler::TMods::value_type;
     bool Apply(const TModEntry& mod_entry);
 
 private:
-    CSeq_feat& x_SetGene(void);
     CSeq_feat& x_SetProtein(void);
 
-    bool x_TryGeneRefMod(const TModEntry& mod_entry);
     bool x_TryProtRefMod(const TModEntry& mod_entry);
 
     static const string& x_GetModName(const TModEntry& mod_entry);
@@ -76,9 +74,7 @@ private:
 
     CRef<CSeq_loc> x_GetWholeSeqLoc(void);
     CBioseq& m_Bioseq;
-    CRef<CSeq_loc> m_pGeneLoc;
 
-    CRef<CSeq_feat> m_pGene;
     CRef<CSeq_feat> m_pProtein;
 };
 

@@ -33,12 +33,10 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
-//#include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
-#include <objects/seqfeat/Gene_ref.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
@@ -56,12 +54,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CFeatModApply::CFeatModApply(CBioseq& bioseq, const CSeq_loc* pGeneLoc) : 
-    m_Bioseq(bioseq) {
-        if (pGeneLoc) {
-            m_pGeneLoc = Ref(const_cast<CSeq_loc*>(pGeneLoc));
-        }
-    }
+CFeatModApply::CFeatModApply(CBioseq& bioseq) : 
+    m_Bioseq(bioseq) {}
 
 
 CFeatModApply::~CFeatModApply() {}
@@ -69,7 +63,7 @@ CFeatModApply::~CFeatModApply() {}
 
 bool CFeatModApply::Apply(const TModEntry& mod_entry) 
 {
-    // Nucleotide sequence only has gene feature annotation
+    // A nucleotide sequence cannot have protein feature annotations
     static unordered_set<string> protein_quals = {"protein-desc", "protein", "ec-number", "activity"};
     if (m_Bioseq.IsNa() &&
         protein_quals.find(x_GetModName(mod_entry)) != protein_quals.end()) {
@@ -95,47 +89,10 @@ bool CFeatModApply::Apply(const TModEntry& mod_entry)
     }
 
 
-    if (x_TryGeneRefMod(mod_entry)) {
-        return true;
-    }
-
     if (x_TryProtRefMod(mod_entry)) {
         return true;
     }
 
-    return false;
-}
-
-
-bool CFeatModApply::x_TryGeneRefMod(const TModEntry& mod_entry)
-{
-    const auto& name = x_GetModName(mod_entry);
-    if (name == "gene") {
-        const auto& value = x_GetModValue(mod_entry);
-        x_SetGene().SetData().SetGene().SetLocus(value);
-        return true;
-    }
-
-    if (name == "allele") {
-        const auto& value = x_GetModValue(mod_entry);
-        x_SetGene().SetData().SetGene().SetAllele(value);
-        return true;
-    }
-
-    if (name == "locus-tag") {
-        const auto& value = x_GetModValue(mod_entry);
-        x_SetGene().SetData().SetGene().SetLocus_tag(value);
-        return true;
-    }
-
-    if (name == "gene-synonym") {
-        CGene_ref::TSyn synonyms;
-        for (const auto& mod : mod_entry.second) {
-            synonyms.push_back(mod.GetValue());
-        }
-        x_SetGene().SetData().SetGene().SetSyn() = move(synonyms);
-        return true;
-    }
     return false;
 }
 
@@ -179,27 +136,6 @@ bool CFeatModApply::x_TryProtRefMod(const TModEntry& mod_entry)
         return true;
     }
     return false;
-}
-
-
-CSeq_feat& CFeatModApply::x_SetGene(void) 
-{
-    if (!m_pGene) {
-        m_pGene = x_FindSeqfeat([](const CSeq_feat& seq_feat)
-                { return (seq_feat.IsSetData() &&
-                          seq_feat.GetData().IsGene()); });
-        if (!m_pGene) {
-            auto pGeneLoc = m_pGeneLoc ? m_pGeneLoc : x_GetWholeSeqLoc();
-            m_pGene = 
-                x_CreateSeqfeat([]() {
-                    auto pData = Ref(new CSeqFeatData());
-                    pData->SetGene();
-                    return pData;
-                    },
-                    *pGeneLoc);
-        }
-    }
-    return *m_pGene;
 }
 
 
@@ -282,14 +218,6 @@ CRef<CSeq_feat> CFeatModApply::x_CreateSeqfeat(
 
     return pSeqfeat;
 }
-
-
-
-
-
-
-
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
