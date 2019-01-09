@@ -561,11 +561,7 @@ BOOST_AUTO_TEST_CASE(Test_RequireRowCount)
 
         // Call a procedure yielding two result sets -- the first with
         // one row, the second with more.
-        if (GetArgs().GetServerType() == eSqlSrvMsSql) {
-            query->SetSql("exec sp_help @objname='sp_helptext'");
-        } else {
-            query->SetSql("exec sp_helpuser @name_in_db='dbo'");
-        }
+        query->SetSql("exec sp_helpdb @dbname='tempdb'");
         query->Execute();
         query->RequireRowCount(1); // correct only for the first result set
         query->MultiSet();
@@ -574,7 +570,7 @@ BOOST_AUTO_TEST_CASE(Test_RequireRowCount)
         BOOST_CHECK(query->HasMoreResultSets());
         query->begin();
         BOOST_CHECK_THROW(query->HasMoreResultSets(), CSDB_Exception);
-        query->VerifyDone();
+        query->PurgeResults();
 
         {{
             query->Execute();
@@ -582,7 +578,7 @@ BOOST_AUTO_TEST_CASE(Test_RequireRowCount)
             CQuery::CRowIterator it = query->SingleSet().begin();
             ++it;
             BOOST_CHECK_THROW(query->HasMoreResultSets(), CSDB_Exception);
-            query->VerifyDone();
+            query->PurgeResults();
         }}
 
         query->SetSql("select 1");
