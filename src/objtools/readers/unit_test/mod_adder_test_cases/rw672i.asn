@@ -45,22 +45,6 @@ Seq-entry ::= seq {
           location whole local str "dummy"
         }
       }
-    },
-    {
-      data ftable {
-        {
-          data gene {
-            locus "locus_value",
-            allele "allele_value",
-            syn {
-              "synonym1",
-              "synonym2"
-            },
-            locus-tag "locus_tag_value"
-          },
-          location whole local str "dummy"
-        }
-      }
     }
   }
 }

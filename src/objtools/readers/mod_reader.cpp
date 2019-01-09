@@ -148,7 +148,11 @@ const CModHandler::TNameSet CModHandler::sm_DeprecatedModifiers
     "plastid-name",
     "insertion-seq-name",
     "old-lineage",
-    "old-name"
+    "old-name",
+    "gene",
+    "gene-synonym",
+    "allele",
+    "locus-tag"
 };
 
 
@@ -354,20 +358,10 @@ void CModAdder::Apply(const CModHandler& mod_handler,
                       IObjtoolsListener* pMessageListener,
                       TSkippedMods& skipped_mods)
 {
-    Apply(mod_handler, bioseq, nullptr, pMessageListener, skipped_mods);
-}
-
-
-void CModAdder::Apply(const CModHandler& mod_handler,
-                      CBioseq& bioseq,
-                      const CSeq_loc* pGeneLoc,
-                      IObjtoolsListener* pMessageListener,
-                      TSkippedMods& skipped_mods)
-{
     skipped_mods.clear();
 
     CDescrModApply descr_mod_apply(bioseq);
-    CFeatModApply feat_mod_apply(bioseq, pGeneLoc);
+    CFeatModApply feat_mod_apply(bioseq);
 
     for (const auto& mod_entry : mod_handler.GetMods()) {
         try {

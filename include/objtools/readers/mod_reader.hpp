@@ -124,13 +124,8 @@ public:
     using TModEntry = CModHandler::TModEntry;
     using TSkippedMods = list<CModData>;
 
-    static void Apply(const CModHandler& mod_handler, CBioseq& bioseq, 
-            IObjtoolsListener* pMessageListener,
-            TSkippedMods& skipped_mods);
-
     static void Apply(const CModHandler& mod_handler, 
-            CBioseq& bioseq,
-            const CSeq_loc* pGeneLoc,
+            CBioseq& bioseq, 
             IObjtoolsListener* pMessageListener,
             TSkippedMods& skipped_mods);
 
