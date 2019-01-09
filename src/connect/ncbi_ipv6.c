@@ -541,10 +541,9 @@ extern const char* NcbiAddrToDNS(char* buf, size_t bufsize,
         buf += len;
         memcpy(buf, sfx->sfx + 1, sfx->len);
         buf += sfx->len;
-        return buf;
-    }
-
-    return 0;
+    } else
+        buf = 0;
+    return buf;
 }
 
 
