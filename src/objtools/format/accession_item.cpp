@@ -107,13 +107,18 @@ void CAccessionItem::x_GatherInfo(CBioseqContext& ctx)
 
         if ( ctx.IsWGS()  && ctx.GetLocation().IsWhole() && ctx.GetTech() == CMolInfo::eTech_wgs ) {
             size_t acclen = m_Accession.length();
-            m_WGSAccession = m_Accession;
-            if (acclen >= 12) {
-                size_t stem_len = (acclen >= 15) ? 7 : 6, tail_len = acclen - stem_len;
-                if (m_Accession.find_first_not_of("0", stem_len) != NPOS) {
-                    m_WGSAccession.replace(stem_len, tail_len, tail_len, '0');
-                } else {
-                    m_WGSAccession.erase();
+            size_t nz_len = (m_Accession.substr(0,3) == "NZ_" ? 3 : 0);
+            if (acclen >= 12+nz_len) {
+                size_t pos = m_Accession.find_first_of("0123456789");
+                if (pos == 4+nz_len || pos == 6+nz_len) {
+                    size_t stem_len = pos + 2;
+                    size_t tail_len = acclen - stem_len;
+                    m_WGSAccession = m_Accession;
+                    if (m_Accession.find_first_not_of("0", stem_len) != NPOS) {
+                        m_WGSAccession.replace(stem_len, tail_len, tail_len, '0');
+                    } else {
+                        m_WGSAccession.erase();
+                    }
                 }
             }
         }
