@@ -531,42 +531,6 @@ s_ReportIncorrectSequenceLength
 }
 
 
-/* This function creates and sends an error message regarding a non-unique
- * organism name.
- */
-static void
-s_ReportRepeatedOrganismName
-(char *               id,
- int                  line_num,
- int                  second_line_num,
- char *               org_name,
- FReportErrorFunction report_error,
- void *              report_error_userdata)
-{
-    TErrorInfoPtr eip;
-    const char *  err_format = "Organism name %s also appears at line %d";
-
-    if (report_error == NULL || org_name == NULL) {
-        return;
-    }
-    eip = ErrorInfoNew (NULL);
-    if (eip == NULL) {
-        return;
-    }
-    eip->category = eAlnErr_BadData;
-    eip->line_num = line_num;
-    if (id != NULL ) {
-        eip->id = strdup (id);
-    }
-    eip->message = (char*)malloc(strlen(err_format) + strlen(org_name)
-                                 + kMaxPrintedIntLen + 1);
-    if (eip->message != NULL) {
-        sprintf (eip->message, err_format, org_name, second_line_num);
-    }
-    report_error (eip, report_error_userdata);
-}
-
-
 /* This function creates and sends an error message indicating that some or
  * all of the organism information for the sequences are missing.
  */
@@ -2729,10 +2693,28 @@ static TCommentLocPtr s_FindOrganismComment (char * string)
 static void s_RemoveOrganismCommentFromLine (char * string)
 {
     TCommentLocPtr clp;
+    char pbuf1024[1024];
 
     while ((clp = s_FindOrganismComment (string)) != NULL) {
         if (clp->end != NULL) {
-            strcpy (clp->start, clp->end + 1);
+            const char* to = clp->start;
+            const char* from = clp->end + 1;
+            size_t diff = from - to;
+            size_t len = strlen(from);
+            if (diff < len-1) {
+                char* pbuf = pbuf1024;
+                if (len > sizeof(pbuf1024)-1) {
+                    pbuf = malloc(len + 1);
+                }
+                strcpy(pbuf, clp->end + 1);
+                strcpy(clp->start, pbuf);
+                if (pbuf != pbuf1024) {
+                    free(pbuf);
+                }
+            }
+            else {
+                strcpy (clp->start, clp->end + 1);
+            }
         }
         s_CommentLocFree (clp);
     }
@@ -2924,6 +2906,9 @@ static void s_ReadOrgNamesFromText
     char *         comment_end;
     int            defline_offset;
   
+    //if (string == NULL  ||  string[0] != '>'  ||  afrp == NULL) {
+    //    return;
+    //}
     if (string == NULL  ||  afrp == NULL) {
         return;
     }
@@ -5842,46 +5827,6 @@ s_s_FindBadDataCharsInSequenceList
 }
 
 
-/* This function examines the organisms listed for the alignment and determines
- * whether any of the organism names (including the associated comments) are
- * repeated.
- */
-static EBool s_AreOrganismsUnique (SAlignRawFilePtr afrp)
-{
-    TLineInfoPtr    this_org, lip;
-    TAlignRawSeqPtr arsp;
-    EBool           are_unique;
-
-    if (afrp == NULL  ||  afrp->num_organisms == 0
-        ||  afrp->organisms == NULL) {
-        return eFalse;
-    }
-    are_unique = eTrue;
-    for (this_org = afrp->organisms;
-         this_org != NULL;
-         this_org = this_org->next) {
-        lip = afrp->organisms;
-        arsp = afrp->sequences;
-        while (lip != NULL  &&  lip != this_org
-               &&  strcmp (lip->data, this_org->data) != 0  &&  arsp != NULL) {
-            lip = lip->next;
-            arsp = arsp->next;
-        }
-        if (lip != NULL  &&  lip != this_org) {
-            are_unique = eFalse;
-            if (arsp != NULL && arsp->id != NULL) {
-                s_ReportRepeatedOrganismName (arsp->id, this_org->line_num,
-                                            lip->line_num,
-                                            this_org->data,
-                                            afrp->report_error,
-                                            afrp->report_error_userdata);
-            }
-        }
-    }
-    return are_unique;
-}
-
-
 /* This function uses the contents of an SAlignRawFileData structure to
  * create an SAlignmentFile structure with the appropriate information.
  */
@@ -5923,8 +5868,6 @@ s_ConvertDataToOutput
         && afp->num_sequences / afp->num_segments != afrp->num_organisms) {
         s_ReportMissingOrganismInfo (afrp->report_error,
                                    afrp->report_error_userdata);
-    } else {
-        s_AreOrganismsUnique (afrp);
     }
 
     // allocate memory to store sequence strings
