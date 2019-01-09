@@ -6871,7 +6871,7 @@ UFRJ<museum>	s	Departramento de Zoologia, Universidade Federal do Rio de Janeiro
 UFRJ<museum>:POR	s	Departramento de Zoologia, Universidade Federal do Rio de Janeiro, Porifera collection		
 UFRJIM	c	Departamento de Microbiologia Medica			
 UFRN	s	Universidade Federal do Rio Grande do Norte			
-UFRN:Fungos	s	Universidade Federal do Rio Grande do Norte, Fungal collection		
+UFRN:Fungos	s	Universidade Federal do Rio Grande do Norte, Fungal collection	
 UFRR	s	Universidade Federal de Roraima			
 UFS	s	Nyabyeya Forestry College, Department of Environmental Forestry			
 UFSC	s	Universidade Federal de Santa Catarina			

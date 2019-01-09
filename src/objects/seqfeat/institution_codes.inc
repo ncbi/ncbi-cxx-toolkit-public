@@ -6904,7 +6904,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UFRJ<museum>:POR\ts\tDepartramento de Zoologia, Universidade Federal do Rio de Janeiro, Porifera collection\t\t",
 "UFRJIM\tc\tDepartamento de Microbiologia Medica\t\t\t",
 "UFRN\ts\tUniversidade Federal do Rio Grande do Norte\t\t\t",
-"UFRN:Fungos\ts\tUniversidade Federal do Rio Grande do Norte, Fungal collection\t\t",
+"UFRN:Fungos\ts\tUniversidade Federal do Rio Grande do Norte, Fungal collection\t",
 "UFRR\ts\tUniversidade Federal de Roraima\t\t\t",
 "UFS\ts\tNyabyeya Forestry College, Department of Environmental Forestry\t\t\t",
 "UFSC\ts\tUniversidade Federal de Santa Catarina\t\t\t",
