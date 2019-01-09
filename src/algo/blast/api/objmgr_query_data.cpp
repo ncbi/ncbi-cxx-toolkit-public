@@ -185,21 +185,21 @@ private:
     const TSeqLocVector* m_Queries;     ///< Adaptee in adapter design pattern
     CRef<CBlastQueryVector> m_QueryVector;
     const CBlastOptions* m_Options;
-    AutoPtr<IBlastQuerySource> m_QuerySource;
+    CRef<IBlastQuerySource> m_QuerySource;
 };
 
 CObjMgr_LocalQueryData::CObjMgr_LocalQueryData(TSeqLocVector * queries,
                                                const CBlastOptions * opts)
     : m_Queries(queries), m_Options(opts)
 {
-    m_QuerySource.reset(new CBlastQuerySourceOM(*queries, opts));
+    m_QuerySource.Reset(new CBlastQuerySourceOM(*queries, opts));
 }
 
 CObjMgr_LocalQueryData::CObjMgr_LocalQueryData(CBlastQueryVector   & qv,
                                                const CBlastOptions * opts)
     : m_Queries(NULL), m_QueryVector(& qv), m_Options(opts)
 {
-    m_QuerySource.reset(new CBlastQuerySourceOM(qv, opts));
+    m_QuerySource.Reset(new CBlastQuerySourceOM(qv, opts));
 }
 
 BLAST_SequenceBlk*
