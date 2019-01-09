@@ -387,19 +387,22 @@ string CGffBaseRecord::StrAttributes() const
             cit != sortedAttrs.end(); ++cit) { 
         string key = (*cit)->first;
 
-        if (!attributes.empty()) {
-            attributes += ATTR_SEPARATOR;
-        }
-        attributes += xEscapedString(key);
-        attributes += "=";
-		
         vector<string> escapedValues;
         for (vector<string>::const_iterator vit = (*cit)->second.begin();
                 vit != (*cit)->second.end(); ++vit) {
-            escapedValues.push_back(xEscapedValue(key, *vit));
+            auto singleValue = xEscapedValue(key, *vit);
+            if (!singleValue.empty()) {
+                escapedValues.push_back(xEscapedValue(key, *vit));
+            }
         }
-        string value = NStr::Join(escapedValues, ",");
-		attributes += value;
+        if (!escapedValues.empty()) {
+            if (!attributes.empty()) {
+                attributes += ATTR_SEPARATOR;
+            }
+            attributes += xEscapedString(key);
+            attributes += "=";
+		    attributes += NStr::Join(escapedValues, ",");;
+        }
     }
 
     typedef vector<TScoreCit> SORTSCORES;

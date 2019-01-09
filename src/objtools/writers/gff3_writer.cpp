@@ -2087,7 +2087,7 @@ bool CGff3Writer::xAssignFeatureAttributesQualifiers(
     CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
     const CSeq_feat::TQual& quals = mf.GetQual();
     for (const auto& qual: quals) {
-        if (!qual->IsSetQual()  ||  !qual->IsSetVal()) {
+        if (!qual->IsSetQual()  ||  !qual->IsSetVal()  ||  qual->GetVal().empty()) {
             continue;
         }
         string key = qual->GetQual();
