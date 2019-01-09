@@ -386,12 +386,8 @@ static char* x_IPv6ToString(char* buf, size_t bufsize,
 {
     char ipv6[64/*enough for sizeof(8 * "xxxx:")*/];
     char ipv4[sizeof("255.255.255.255")];
+    size_t i, n, pos, len, zpos, zlen;
     unsigned short word;
-    struct {
-        size_t pos;
-        size_t len;
-    } gap[sizeof(addr->octet) / sizeof(word)];
-    size_t i, n, z, zlen;
     char* ptr = ipv6;
 
     if (x_NcbiIsIPv4(addr, 1/*compat*/)) {
@@ -405,38 +401,37 @@ static char* x_IPv6ToString(char* buf, size_t bufsize,
         *ipv4 = '\0';
     }
 
-    gap[0].pos = 0;
-    i = z = zlen = 0;
-    while (i <= n) {
-        memcpy(&word, &addr->octet[i * sizeof(word)], sizeof(word));
-        if (i == n  ||  word) {
-            size_t len = i - gap[z].pos;
-            if (len > 1) {  /*RFC 5952 4.2.2*/
-                gap[z++].len = len;
-                if (zlen < len)
-                    zlen = len;  /*RFC 5952 4.2.1*/
-            }
-            if (i == n)
-                break;
-            assert(z < sizeof(gap) / sizeof(gap[0]));
-            gap[z].pos = ++i;
-        } else
-            ++i;
-    }
-
-    i = z = 0;
-    while (i < n) {
-        if (zlen  &&  gap[z].pos == i) {
-            assert(zlen > 1);
-            if (zlen == gap[z].len) {
-                *ptr++ = ':';
-                if (zlen == n - i)
-                    *ptr++ = ':';
-                i += zlen;
-                zlen = 0;  /*RFC 5952 4.2.3*/
+    pos = i = zpos = zlen = 0;
+    for (;;) {
+        if (i < n) {
+            memcpy(&word, &addr->octet[i * sizeof(word)], sizeof(word));
+            if (!word) {
+                ++i;
                 continue;
             }
-            z++;
+        }
+        len = i - pos;
+        if (len > 1) {  /*RFC 5952 4.2.2*/
+            if (zlen < len) {
+                zlen = len;  /*RFC 5952 4.2.1*/
+                zpos = pos;
+            }
+        }
+        if (i == n)
+            break;
+        pos = ++i;
+    }
+
+    i = 0;
+    while (i < n) {
+        if (zlen  &&  zpos == i) {
+            assert(zlen > 1);
+            *ptr++ = ':';
+            if (zlen == n - i)
+                *ptr++ = ':';
+            i += zlen;
+            zlen = 0;  /*RFC 5952 4.2.3*/
+            continue;
         }
         memcpy(&word, &addr->octet[i * sizeof(word)], sizeof(word));
         ptr += sprintf(ptr, &":%x"[!i],  /*RFC 5952 4.1, 4.3*/
@@ -451,8 +446,8 @@ static char* x_IPv6ToString(char* buf, size_t bufsize,
             *ptr++ = ':';
     }
     n = (size_t)(ptr - ipv6);
-    z = n + i;
-    if (z < bufsize) {
+    len = n + i;
+    if (len < bufsize) {
         memcpy(buf, ipv6, n);
         buf += n;
         memcpy(buf, ipv4, i);
