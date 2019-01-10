@@ -229,7 +229,7 @@ private:
     CRef<CSeq_entry> ReadSeqEntry(void);
     CRef<CBioseq_set> ReadBioseqSet(void);
 
-    void CreateBiosampleUpdateWebService(biosample_util::TBiosampleFieldDiffList& diffs);
+    void CreateBiosampleUpdateWebService(biosample_util::TBiosampleFieldDiffList& diffs, bool del_okay);
     void PrintResults(biosample_util::TBiosampleFieldDiffList& diffs);
     void PrintDiffs(biosample_util::TBiosampleFieldDiffList& diffs);
     void PrintTable(CRef<CSeq_table> table);
@@ -262,7 +262,8 @@ private:
         e_take_from_biosample,         // update with qualifiers from BioSample, stop if conflict
         e_take_from_biosample_force,   // update with qualifiers from BioSample, no stop on conflict
         e_report_status,               // make table with list of BioSample IDs and statuses
-        e_update                       // use web API for update
+        e_update_with,                 // use web API for update (with delete)
+        e_update_no                    // use web API for update (no delete)
     };
 
     enum E_ListType {
@@ -360,9 +361,10 @@ void CBiosampleChkApp::Init(void)
         "\t4 update with source qualifiers from BioSample unless conflict\n"
         "\t5 update with source qualifiers from BioSample (continue with conflict))\n"
         "\t6 report transaction status\n"
-        "\t7 use web API for update\n",
+        "\t7 use web API for update (with delete)\n"
+        "\t8 use web API for update (no delete)\n",
         CArgDescriptions::eInteger, "1");
-    CArgAllow* constraint = new CArgAllow_Integers(e_report_diffs, e_update);
+    CArgAllow* constraint = new CArgAllow_Integers(e_report_diffs, e_update_no);
     arg_desc->SetConstraint("m", constraint);
     
     arg_desc->AddOptionalKey(
@@ -496,7 +498,7 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
     bool need_to_close_asn = false;
 
     if (!m_ReportStream && 
-        (m_Mode == e_report_diffs || m_Mode == e_update || m_Mode == e_take_from_biosample || m_Mode == e_report_status ||
+        (m_Mode == e_report_diffs || m_Mode == e_update_with || m_Mode == e_update_no || m_Mode == e_take_from_biosample || m_Mode == e_report_status ||
          (m_Handler != NULL && m_Handler->NeedsReportStream()))) {
         string path = fname;
         size_t pos = NStr::Find(path, ".", NStr::eCase, NStr::eReverseSearch);
@@ -548,8 +550,10 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
     if (m_Mode == e_report_diffs) {
         PrintResults(m_Diffs);
     }
-    if (m_Mode == e_update) {
-        CreateBiosampleUpdateWebService(m_Diffs);
+    if (m_Mode == e_update_with) {
+        CreateBiosampleUpdateWebService(m_Diffs, true);
+    } else if (m_Mode == e_update_no) {
+        CreateBiosampleUpdateWebService(m_Diffs, false);
     }
     if (m_Handler != NULL) {
         m_Handler->AddSummary();
@@ -716,7 +720,7 @@ int CBiosampleChkApp::Run(void)
         } else {
             SaveFile(args["o"].AsString(), args["b"]);
         }
-    } else if (m_Mode == e_update) {
+    } else if (m_Mode == e_update_with || m_Mode == e_update_no) {
             m_ReportStream = &NcbiCout;
             if (!m_ReportStream)
             {
@@ -974,7 +978,7 @@ void CBiosampleChkApp::PrintResults(biosample_util::TBiosampleFieldDiffList & di
 }
 
 
-void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampleFieldDiffList & diffs)
+void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampleFieldDiffList & diffs, bool del_okay)
 {
     if (diffs.empty()) {
         return;
@@ -1006,7 +1010,9 @@ void CBiosampleChkApp::CreateBiosampleUpdateWebService(biosample_util::TBiosampl
         } else if (blank_smp) {
             add_item.push_back(it);
         } else if (blank_src) {
-            delete_item.push_back(it);
+            if (del_okay) {
+                delete_item.push_back(it);
+            }
         } else {
             change_item.push_back(it);
         }
@@ -1251,7 +1257,8 @@ void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
         case e_take_from_biosample_force:
             ProcessBioseqForUpdate(bh);
             break;
-        case e_update:
+        case e_update_with:
+        case e_update_no:
             GetBioseqDiffs(bh);
             break;
         default:
