@@ -188,7 +188,7 @@ string CAutoDefFeatureClause_Base::PrintClause(bool print_typeword, bool typewor
 }
 
 
-bool CAutoDefFeatureClause_Base::DisplayAlleleName ()
+bool CAutoDefFeatureClause_Base::DisplayAlleleName () const
 {
     if (NStr::IsBlank(m_AlleleName)) {
         return false;
@@ -341,6 +341,21 @@ void CAutoDefFeatureClause_Base::RemoveGenesMentionedElsewhere()
 }
 
 
+bool HasAlleleChange(const CAutoDefFeatureClause_Base& c1, const CAutoDefFeatureClause_Base& c2)
+{
+    bool has_allele_1 = c1.DisplayAlleleName();
+    bool has_allele_2 = c2.DisplayAlleleName();
+    if ((has_allele_1 && !has_allele_2) ||
+        (!has_allele_1 && has_allele_2) ||
+        (has_allele_1 && has_allele_2)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+
 string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppress_final_and, bool suppress_allele)
 {
     if (m_ClauseList.size() < 1) {
@@ -397,8 +412,7 @@ string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppr
             }
             if (onebefore_has_typeword_change  ||
                 onebefore_has_interval_change  ||
-                (m_ClauseList[k-1]->DisplayAlleleName()  &&
-                 m_ClauseList[k]->DisplayAlleleName())) {
+                HasAlleleChange(*m_ClauseList[k-1], *m_ClauseList[k])) {
                 onebefore_has_detail_change = true;  
             }
         }
@@ -414,8 +428,7 @@ string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppr
             }
             if (oneafter_has_typeword_change  ||
                 oneafter_has_interval_change  ||
-                (m_ClauseList[k+1]->DisplayAlleleName()  &&
-                 m_ClauseList[k]->DisplayAlleleName())) {
+                HasAlleleChange(*m_ClauseList[k], *m_ClauseList[k+1])) {
                 oneafter_has_detail_change = true;
             }
         }

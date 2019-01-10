@@ -88,7 +88,7 @@ public:
     bool IsGeneMentioned(CAutoDefFeatureClause_Base *gene_clause);
     bool IsUnattachedGene() const;
     bool IsTypewordFirst() const { return m_ShowTypewordFirst; }
-    bool DisplayAlleleName ();
+    bool DisplayAlleleName () const;
 
     const string& GetInterval() { return m_Interval; }
     const string& GetTypeword() const { return m_Typeword; }
