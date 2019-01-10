@@ -6,3 +6,8 @@ rw672e PCR primer test case has 3 forward primers and 2 reverse primers. The for
 rw672f tests PCR primer fields - test case has 2 forward primers and 3 reverse primers divided between 3 reactions.
 rw672g tests feature modifiers - note that allow a bioseq to have both protein and gene-ref feature annotations. Biologically, this doesn't make sense, but it is not forbidden by the ASN.1 spec
 rw672h tests error reporting in CModAdder and CModHandler.
+rw672i tests protein feature modifiers and error reporting.
+rw672j tests EHandleExisting = ePreserve.
+rw672k tests EHandleExisting = eAppendPreserve.
+rw672l tests EHandleExisting = eReplace.
+rw672m tests EHandleExisting = eAppendReplace.

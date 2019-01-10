@@ -301,16 +301,16 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CModHandler mod_handler(pMessageListener.get());
     
     CModAdder::TSkippedMods skipped_mods;
-    CModHandler::TModList mods;
     CModHandler::TModList rejected_mods;
 
     try {
+        CModHandler::TModList mods;
         for (string line; getline(ifstr, line);) {
             SModInfo mod_info;
             sGetModInfo(line, mod_info);
             mods.emplace_back(mod_info.name, mod_info.value);
         }
-        mod_handler.AddMods(mods, CModHandler::ePreserve, rejected_mods);
+        mod_handler.AddMods(mods, CModHandler::eAppendReplace, rejected_mods);
 
         CModAdder::Apply(mod_handler, bioseq, pMessageListener.get(), skipped_mods);
     }
@@ -376,18 +376,40 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
                    const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
 
     unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
-    CModHandler::TModList mods;
     CModHandler::TModList rejected_mods;
 
     CModAdder::TSkippedMods skipped_mods;
     CModHandler mod_handler(pMessageListener.get());
+
+    CModHandler::EHandleExisting handle_existing = CModHandler::eAppendReplace;
+    static const map<string, CModHandler::EHandleExisting>
+        handle_existing_map = {{"Preserve", CModHandler::ePreserve},
+                               {"AppendPreserve", CModHandler::eAppendPreserve},
+                               {"Replace", CModHandler::eReplace},
+                               {"AppendReplace", CModHandler::eAppendReplace}};
+    static const set<string> 
+        handle_existing_strings = {"Preserve", "AppendPreserve", "Replace", "AppendReplace"};
+
     try {
+        CModHandler::TModList mods;
         for (string line; getline(ifstr, line);) {
+            NStr::TruncateSpaces(line);
+
+            auto it = handle_existing_map.find(line);
+            if (it != handle_existing_map.end()) {
+                if (!mods.empty()) {
+                    mod_handler.AddMods(mods, handle_existing, rejected_mods);
+                    mods.clear();
+                }
+                handle_existing = it->second;
+                continue;
+            }
             SModInfo mod_info;
             sGetModInfo(line, mod_info);
             mods.emplace_back(mod_info.name, mod_info.value);
         }
-        mod_handler.AddMods(mods, CModHandler::eAppendReplace, rejected_mods);
+
+        mod_handler.AddMods(mods, handle_existing, rejected_mods);
         CModAdder::Apply(mod_handler, bioseq, pMessageListener.get(), skipped_mods);
     }
     catch (...) {
