@@ -820,8 +820,10 @@ CNCAlerts::Register(CNCAlerts::eDebugCacheWrong,"CNCBlobVerManager::ExecuteSlice
     if (write_time != 0) {
         m_CacheData->lock.Unlock();
         if (write_time <= cur_time  ||  CTaskServer::IsInShutdown()) {
-            CNCBlobStorage::ReferenceCacheData(m_CacheData);
-            cur_ver->RequestDataWrite();
+            if (!CNCBlobStorage::IsAbandoned()) {
+                CNCBlobStorage::ReferenceCacheData(m_CacheData);
+                cur_ver->RequestDataWrite();
+            }
         } else {
             RunAfter(write_time - cur_time);
         }

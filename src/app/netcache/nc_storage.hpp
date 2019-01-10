@@ -115,6 +115,8 @@ public:
     static bool AcceptWritesFromPeers(void);
     static void SetDraining(bool draining);
     static bool IsDraining(void);
+    static void AbandonDB(void);
+    static bool IsAbandoned(void);
 
     static string PrintablePassword(const string& pass);
     /// Acquire access to the blob identified by key, subkey and version

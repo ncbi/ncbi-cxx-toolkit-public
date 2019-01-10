@@ -252,6 +252,7 @@ static TTimeBuckets s_TimeTables;
 static Int8 s_CurBlobsCnt = 0;
 static Int8 s_CurKeysCnt = 0;
 static bool s_Draining = false;
+static bool s_AbandonDB = false;
 /// Current size of storage database. Kept here for printing statistics.
 volatile static Int8 s_CurDBSize = 0;
 volatile static Int8 s_GarbageSize = 0;
@@ -722,7 +723,9 @@ s_UnlockInstanceGuard(void)
 {
     if (s_GuardLock.get()) {
         s_GuardLock.reset();
-        CFile(s_GuardName).Remove();
+        if (!s_AbandonDB) {
+            CFile(s_GuardName).Remove();
+        }
     }
 }
 
@@ -2777,6 +2780,16 @@ CNCBlobStorage::SetDraining(bool draining)
             CTaskServer::RequestShutdown(eSrvSlowShutdown);
         }
     }
+}
+
+void CNCBlobStorage::AbandonDB(void)
+{
+    s_AbandonDB = true;
+}
+
+bool CNCBlobStorage::IsAbandoned(void)
+{
+    return s_AbandonDB;
 }
 
 bool

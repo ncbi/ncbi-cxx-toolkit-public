@@ -137,7 +137,7 @@ s_FireTimers(int fire_time)
     TTimerList& tlist = s_TimerLowQ[fire_time & kTimerLowMask];
     while (!tlist.empty()) {
         STimerTicket* ticket = &tlist.front();
-        if (ticket->timer_time != fire_time) {
+        if (ticket->timer_time != fire_time && !CTaskServer::IsInShutdown()) {
             SRV_LOG(Critical, "Timers broken");
         }
         tlist.pop_front();

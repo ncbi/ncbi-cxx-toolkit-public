@@ -1326,6 +1326,8 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // drain: wait until all BLOBs are expired, then shutdown
           { "drain",    eNSPT_Int,  eNSPA_Optional },
+          // reset: shutdown and leave database guard on disk (CXX-10401)
+          { "reset",    eNSPT_Int,  eNSPA_Optional },
           // request Hit ID
           { "ncbi_phid", eNSPT_Str,  eNSPA_Optional }
         } },
@@ -3996,6 +3998,9 @@ CNCMessageHandler::x_DoCmd_Shutdown(void)
     TNSProtoParams& param = m_ParsedCmd.params;
     if (param.find("drain") != param.end() && param["drain"] != "0") {
         CNCBlobStorage::SetDraining(true);
+    } else if (param.find("reset") != param.end() && param["reset"] != "0") {
+        CNCBlobStorage::AbandonDB();
+        CTaskServer::RequestShutdown(eSrvFastShutdown);
     } else {
         CTaskServer::RequestShutdown(eSrvSlowShutdown);
     }
