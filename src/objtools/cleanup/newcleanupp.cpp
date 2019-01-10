@@ -12694,6 +12694,7 @@ void CNewCleanup_imp::x_ExtendedCleanupExtra(CSeq_entry_Handle seh)
     if (CCleanup::RepackageProteins(seh)) {
         ChangeMade(CCleanupChange::eChangeOther);
     }
+#if 0
     // holding back for separate commit
     // as requested in RW-726, uniquify feature IDs
     map<CSeq_feat_Handle, CRef<CSeq_feat> > changed_feats;
@@ -12705,6 +12706,7 @@ void CNewCleanup_imp::x_ExtendedCleanupExtra(CSeq_entry_Handle seh)
         CSeq_feat_EditHandle feh(orig_feat);
         feh.Replace(*new_feat);
     }
+#endif
 }
 
 
