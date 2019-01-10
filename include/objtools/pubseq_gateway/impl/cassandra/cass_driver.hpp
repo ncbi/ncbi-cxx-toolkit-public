@@ -514,12 +514,12 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
         , m_data2(nullptr)
         , m_query(query)
     {
-        ERR_POST(Trace << "CCassQueryCbRef::CCassQueryCbRef " << this);
+//        ERR_POST(Trace << "CCassQueryCbRef::CCassQueryCbRef " << this);
     }
 
     virtual ~CCassQueryCbRef()
     {
-        ERR_POST(Trace << "CCassQueryCbRef::~CCassQueryCbRef " << this);
+//        ERR_POST(Trace << "CCassQueryCbRef::~CCassQueryCbRef " << this);
     }
 
     void Attach(void (*ondata)(CCassQuery&, void*),
@@ -534,8 +534,8 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
 
     void Detach(bool remove_self_ref = false)
     {
-        ERR_POST(Trace << "CCassQueryCbRef::Detach " << this << ", Query: " <<
-                 m_query.lock().get());
+/*        ERR_POST(Trace << "CCassQueryCbRef::Detach " << this << ", Query: " <<
+                 m_query.lock().get());*/
         m_query.reset();
         if (remove_self_ref)
             m_self = nullptr;
@@ -671,7 +671,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         m_onexecute(nullptr),
         m_onexecute_data(nullptr)
     {
-        ERR_POST(Trace << "CCassQuery::CCassQuery this=" << this);
+/*        ERR_POST(Trace << "CCassQuery::CCassQuery this=" << this);*/
         if (!m_connection) {
             NCBI_THROW(CCassandraException, eFatal, "Cassandra connection is not established");
         }
@@ -701,6 +701,9 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     /* returns no resultset */
     void Execute(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM,
                  bool run_async = false, bool allow_prepare = CASS_PREPARED_Q);
+    void RestartExecute(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM);
+    void Restart(CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM);
+
     void SetSerialConsistency(CassConsistency c);
 
     bool IsActive(void) const
