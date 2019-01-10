@@ -2651,8 +2651,6 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
         master_info.m_reject = true;
     }
 
-    // TODO Some HTGS code
-
     if (!common_info.m_acc_assigned.empty()) {
         ConvertAccessionsToRanges(common_info.m_acc_assigned, common_info.m_acc_ranges);
 

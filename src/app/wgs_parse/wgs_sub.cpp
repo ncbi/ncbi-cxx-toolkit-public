@@ -219,6 +219,10 @@ static void FixDbNameInObject(CSerialObject& obj, const map<string, string>& ids
                 if (dbname != ids.end()) {
                     dbtag.SetDb(dbname->second);
                 }
+
+                if (!dbtag.GetTag().IsStr()) {
+                    dbtag.SetTag().SetStr(cur_id);
+                }
             }
         }
         else if (id->IsLocal()) {
@@ -419,8 +423,6 @@ static void AssignNucAccession(CSeq_entry& entry, const string& file, list<CIdIn
         if (GetParams().GetUpdateMode() != eUpdateScaffoldsNew || GetParams().IsScaffoldTestMode()) {
             return;
         }
-
-        // TODO HTGS stuff
     }
     
     if (entry.IsSet()) {

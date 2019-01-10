@@ -1022,17 +1022,6 @@ bool SetParams(const CArgs& args)
         return false;
     }
 
-    if (params->IsUpdateScaffoldsMode()) {
-        // TODO HTGS functionality
-        //wid.clup = WGSConnectHTGS();
-        //if (wid.clup == NULL) {
-        //    ErrPostEx(SEV_FATAL, ERR_HTGS_FailedToConnectToHtgs,
-        //              "Could not connect to htgs database.");
-        //    WGSInputDataFree(&wid);
-        //    return(1);
-        //}
-    }
-
     string input_mask;
     if (args["i"].HasValue()) {
         input_mask = args["i"].AsString();
