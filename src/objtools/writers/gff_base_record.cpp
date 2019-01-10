@@ -395,14 +395,12 @@ string CGffBaseRecord::StrAttributes() const
                 escapedValues.push_back(xEscapedValue(key, *vit));
             }
         }
-        if (!escapedValues.empty()) {
-            if (!attributes.empty()) {
-                attributes += ATTR_SEPARATOR;
-            }
-            attributes += xEscapedString(key);
-            attributes += "=";
-		    attributes += NStr::Join(escapedValues, ",");;
+        if (!attributes.empty()) {
+            attributes += ATTR_SEPARATOR;
         }
+        attributes += xEscapedString(key);
+        attributes += "=";
+		attributes += NStr::Join(escapedValues, ",");;
     }
 
     typedef vector<TScoreCit> SORTSCORES;

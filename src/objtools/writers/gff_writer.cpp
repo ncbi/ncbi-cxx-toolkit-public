@@ -565,7 +565,7 @@ bool CGff2Writer::xAssignFeatureAttributesFormatIndependent(
         xAssignFeatureAttributeOldLocusTag(record, fc, mf)  &&
         xAssignFeatureAttributeGeneBiotype(record, fc, mf)  &&
         xAssignFeatureAttributeMapLoc(record, fc, mf)  &&
-        xAssignFeatureAttributeRibosomalSlippage(record, fc, mf)  &&
+        //xAssignFeatureAttributeRibosomalSlippage(record, fc, mf)  &&
         xAssignFeatureAttributePseudoGene(record, fc, mf)  &&
         xAssignFeatureAttributeFunction(record, fc, mf)  &&
         xAssignFeatureAttributesGoMarkup(record, fc, mf)  &&            
@@ -641,6 +641,7 @@ bool CGff2Writer::xAssignFeatureAttributeTranslationTable(
 //  ----------------------------------------------------------------------------
 {
     if (!mf.IsSetData()  ||  !mf.GetData().IsCdregion()) {
+
         return true;
     }
     const CSeqFeatData::TCdregion& cds = mf.GetData().GetCdregion();
