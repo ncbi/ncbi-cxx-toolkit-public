@@ -59,6 +59,7 @@ class CPubCleaner
 {
 public:
 
+    virtual ~CPubCleaner() {};
     virtual bool Clean(bool fix_initials, bool strip_serial) = 0;
     virtual bool IsEmpty() = 0;
 
