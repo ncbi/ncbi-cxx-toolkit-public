@@ -303,15 +303,33 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CModAdder::TSkippedMods skipped_mods;
     CModHandler::TModList rejected_mods;
 
+    CModHandler::EHandleExisting handle_existing = CModHandler::eAppendReplace;
+    static const map<string, CModHandler::EHandleExisting>
+        handle_existing_map = {{"Preserve", CModHandler::ePreserve},
+                               {"AppendPreserve", CModHandler::eAppendPreserve},
+                               {"Replace", CModHandler::eReplace},
+                               {"AppendReplace", CModHandler::eAppendReplace}};
+
     try {
         CModHandler::TModList mods;
         for (string line; getline(ifstr, line);) {
+            NStr::TruncateSpaces(line);
+
+            auto it = handle_existing_map.find(line);
+            if (it != handle_existing_map.end()) {
+                if (!mods.empty()) {
+                    mod_handler.AddMods(mods, handle_existing, rejected_mods);
+                    mods.clear();
+                }
+                handle_existing = it->second;
+                continue;
+            }
             SModInfo mod_info;
             sGetModInfo(line, mod_info);
             mods.emplace_back(mod_info.name, mod_info.value);
         }
-        mod_handler.AddMods(mods, CModHandler::eAppendReplace, rejected_mods);
 
+        mod_handler.AddMods(mods, handle_existing, rejected_mods);
         CModAdder::Apply(mod_handler, bioseq, pMessageListener.get(), skipped_mods);
     }
     catch (...) {
@@ -387,8 +405,6 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
                                {"AppendPreserve", CModHandler::eAppendPreserve},
                                {"Replace", CModHandler::eReplace},
                                {"AppendReplace", CModHandler::eAppendReplace}};
-    static const set<string> 
-        handle_existing_strings = {"Preserve", "AppendPreserve", "Replace", "AppendReplace"};
 
     try {
         CModHandler::TModList mods;
