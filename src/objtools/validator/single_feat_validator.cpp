@@ -338,6 +338,12 @@ void CSingleFeatValidator::x_ValidateGeneId()
         return;
     }
 
+    // no tse, no feat-handle
+    auto tse = m_Imp.GetTSE_Handle();
+    if (!tse) {
+        return;
+    }
+
     CRef<feature::CFeatTree> feat_tree(NULL);
     CMappedFeat mf = m_Scope.GetSeq_featHandle(m_Feat);
     ITERATE(CSeq_feat::TDbxref, it, m_Feat.GetDbxref()) {
@@ -362,6 +368,7 @@ void CSingleFeatValidator::x_ValidateGeneId()
             }
         }
     }
+
 }
 
 
@@ -1938,6 +1945,10 @@ void CSingleFeatValidator::x_ValidateGeneXRef()
     if (m_Feat.IsSetData() && m_Feat.GetData().IsGene()) {
         return;
     }
+    auto tse = m_Imp.GetTSE_Handle();
+    if (!tse) {
+        return;
+    }
 
     // first, look for gene by feature id xref
     bool has_gene_id_xref = false;
@@ -1945,7 +1956,7 @@ void CSingleFeatValidator::x_ValidateGeneXRef()
         ITERATE(CSeq_feat::TXref, xref, m_Feat.GetXref()) {
             if ((*xref)->IsSetId() && (*xref)->GetId().IsLocal()) {
                 CTSE_Handle::TSeq_feat_Handles gene_feats =
-                    m_Imp.GetTSE_Handle().GetFeaturesWithId(CSeqFeatData::eSubtype_gene, (*xref)->GetId().GetLocal());
+                    tse.GetFeaturesWithId(CSeqFeatData::eSubtype_gene, (*xref)->GetId().GetLocal());
                 if (gene_feats.size() > 0) {
                     has_gene_id_xref = true;
                     ITERATE(CTSE_Handle::TSeq_feat_Handles, gene, gene_feats) {

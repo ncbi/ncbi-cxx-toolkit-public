@@ -761,6 +761,9 @@ void CValidError_feat::ValidateSeqFeatXref(const CSeq_feat& feat)
 
 void CValidError_feat::ValidateSeqFeatXref (const CSeqFeatXref& xref, const CSeq_feat& feat)
 {
+    if (!m_Imp.IsStandaloneAnnot() && !m_TSE) {
+        return;
+    }
     if (!xref.IsSetId() && !xref.IsSetData()) {
         PostErr (eDiag_Warning, eErr_SEQ_FEAT_SeqFeatXrefProblem, 
                  "SeqFeatXref with no id or data field", feat);
