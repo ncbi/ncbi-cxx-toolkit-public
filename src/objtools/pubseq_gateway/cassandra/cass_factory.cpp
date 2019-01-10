@@ -111,7 +111,7 @@ void CCassConnectionFactory::AppParseArgs(const CArgs & /*args*/)
 
 void CCassConnectionFactory::ProcessParams(void)
 {
-    ERR_POST(Trace << "CCassDataConnectionFactory::ProcessParams");
+//    ERR_POST(Trace << "CCassDataConnectionFactory::ProcessParams");
     if (!m_PassFile.empty()) {
         filebuf     fb;
         if (!fb.open(m_PassFile.c_str(), ios::in | ios::binary))
@@ -133,7 +133,7 @@ void CCassConnectionFactory::ProcessParams(void)
 void CCassConnectionFactory::LoadConfig(const string &  cfg_name,
                                         const string &  section)
 {
-    ERR_POST(Trace << "CCassDataConnectionFactory::LoadConfig");
+//    ERR_POST(Trace << "CCassDataConnectionFactory::LoadConfig");
     m_Section = section;
     m_CfgName = cfg_name;
     ReloadConfig();
@@ -143,7 +143,7 @@ void CCassConnectionFactory::LoadConfig(const string &  cfg_name,
 void CCassConnectionFactory::LoadConfig(const CNcbiRegistry &  registry,
                                         const string &  section)
 {
-    ERR_POST(Trace << "CCassDataConnectionFactory::LoadConfig");
+//    ERR_POST(Trace << "CCassDataConnectionFactory::LoadConfig");
     m_Section = section;
     m_CfgName = "";
     ReloadConfig(registry);
@@ -152,7 +152,7 @@ void CCassConnectionFactory::LoadConfig(const CNcbiRegistry &  registry,
 
 void CCassConnectionFactory::ReloadConfig(void)
 {
-    ERR_POST(Trace << "CCassDataConnectionFactory::ReloadConfig");
+//    ERR_POST(Trace << "CCassDataConnectionFactory::ReloadConfig");
     CFastMutexGuard _(m_RunTimeParams);
 
     if (m_CfgName.empty())

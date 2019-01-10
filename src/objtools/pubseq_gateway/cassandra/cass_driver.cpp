@@ -132,9 +132,7 @@ static CassLogLevel s_MapFromToolkitSeverity(EDiagSev  severity)
 
 CCassConnection::~CCassConnection()
 {
-    ERR_POST(Trace <<"CCassConnection::~CCassConnection >>");
     Close();
-    ERR_POST(Trace << "CCassConnection::~CCassConnection <<");
 }
 
 
@@ -410,7 +408,6 @@ void CCassConnection::Reconnect()
 
 void CCassConnection::Close()
 {
-    ERR_POST(Trace << "CCassConnection::Close " << this);
     CloseSession();
     if (m_cluster) {
         cass_cluster_free(m_cluster);
@@ -679,7 +676,7 @@ const CassPrepared *  CCassConnection::Prepare(const string &  sql)
         rv = cass_future_get_prepared(future.get());
         if (!rv)
             RAISE_DB_ERROR(eRsrcFailed, string("failed to obtain prepared handle for sql: ") + sql);
-        ERR_POST(Trace << "Prepared miss: sql: " << sql << ", " << rv);
+/*        ERR_POST(Trace << "Prepared miss: sql: " << sql << ", " << rv);*/
 
         m_prepared.emplace(sql, rv);
     } else {
@@ -833,13 +830,13 @@ CCassQuery::~CCassQuery()
     m_ondata_data = nullptr;
     m_ondata2_data = nullptr;
     m_onexecute_data = nullptr;
-    ERR_POST(Trace << "CCassQuery::~CCassQuery this=" << this);
+/*    ERR_POST(Trace << "CCassQuery::~CCassQuery this=" << this);*/
 }
 
 void CCassQuery::InternalClose(bool  closebatch)
 {
-    ERR_POST(Trace << "CCassQuery::InternalClose: this: " << this <<
-             ", fut: " << m_future);
+/*    ERR_POST(Trace << "CCassQuery::InternalClose: this: " << this <<
+             ", fut: " << m_future);*/
     m_params.clear();
     if (m_future) {
         cass_future_free(m_future);
@@ -880,8 +877,8 @@ void CCassQuery::InternalClose(bool  closebatch)
     m_is_prepared = false;
 
     if (m_cb_ref) {
-        ERR_POST(Trace << "CCassQuery::InternalClose: cb_ref detach, this: " <<
-                 this << ", cb_ref: " << m_cb_ref.get());
+/*        ERR_POST(Trace << "CCassQuery::InternalClose: cb_ref detach, this: " <<
+                 this << ", cb_ref: " << m_cb_ref.get());*/
         m_cb_ref->Detach();
         m_cb_ref = nullptr;
     }
@@ -1051,7 +1048,7 @@ void CCassQuery::NewBatch()
 void CCassQuery::Query(CassConsistency  c, bool  run_async,
                        bool  allow_prepared, unsigned int  page_size)
 {
-    ERR_POST(Trace << "CCassQuery::Query this: " << this);
+/*    ERR_POST(Trace << "CCassQuery::Query this: " << this);*/
     if (!m_connection)
         NCBI_THROW(CCassandraException, eSeqFailed,
                    "invalid sequence of operations, DB connection closed");
@@ -1123,6 +1120,8 @@ void CCassQuery::Query(CassConsistency  c, bool  run_async,
 
 void CCassQuery::RestartQuery(CassConsistency c)
 {
+    if (!m_statement)
+        NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restarteable state");
     unsigned int page_size = m_page_size;
     CCassParams params = move(m_params);
     bool async = m_async, allow_prepared = m_is_prepared;
@@ -1208,6 +1207,30 @@ void CCassQuery::Execute(CassConsistency  c, bool  run_async,
         }
         throw;
     }
+}
+
+void CCassQuery::RestartExecute(CassConsistency c)
+{
+    if (!m_statement)
+        NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restarteable state");
+
+    CCassParams params = move(m_params);
+    bool async = m_async, allow_prepared = m_is_prepared;
+
+    Close();
+    m_params = move(params);
+    Execute(c, async, allow_prepared);
+}
+
+void CCassQuery::Restart(CassConsistency c)
+{
+    if (!m_statement)
+        NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restarteable state");
+
+    if (m_results_expected)
+        RestartQuery(c);
+    else
+        RestartExecute(c);
 }
 
 
@@ -1416,8 +1439,8 @@ void CCassQuery::ProcessFutureResult()
         --m_connection->m_active_statements;
         m_future = nullptr;
         if (m_cb_ref) {
-            ERR_POST(Trace << "CCassQuery::ProcessFutureResult: cb_ref detach, "
-                     "this: " << this << ", cb_ref: " << m_cb_ref.get());
+/*            ERR_POST(Trace << "CCassQuery::ProcessFutureResult: cb_ref detach, "
+                     "this: " << this << ", cb_ref: " << m_cb_ref.get());*/
             m_cb_ref->Detach();
             m_cb_ref = nullptr;
         }
