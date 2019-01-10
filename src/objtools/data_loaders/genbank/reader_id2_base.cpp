@@ -73,7 +73,7 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_DEFINE_ERR_SUBCODE_X(15);
+NCBI_DEFINE_ERR_SUBCODE_X(16);
 
 BEGIN_SCOPE(objects)
 
@@ -2173,6 +2173,7 @@ CId2ReaderBase::x_GetError(CReaderRequestResult& result,
     switch ( error.GetSeverity() ) {
     case CID2_Error::eSeverity_warning:
         error_flags |= fError_warning;
+        ERR_POST_X(16, Warning<<"ID2-Reply: "<<error.GetMessage());
         break;
     case CID2_Error::eSeverity_failed_command:
         error_flags |= fError_bad_command;
