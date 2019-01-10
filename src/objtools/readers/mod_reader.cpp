@@ -232,7 +232,10 @@ void CModHandler::AddMods(const TModList& mods,
 void CModHandler::x_SaveMods(TMods&& mods, EHandleExisting handle_existing, TMods& dest)
 {
     if (handle_existing == eReplace) {
-        dest = mods;
+        for (auto& mod_entry : mods) {
+            const auto& canonical_name = mod_entry.first;
+            dest[canonical_name] = mod_entry.second; 
+        }
     }
     else
     if (handle_existing == ePreserve) {
