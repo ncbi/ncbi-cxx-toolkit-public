@@ -2190,6 +2190,7 @@ void CFeatureItem::x_AddQualsRna(
         break;
     }
     case CRNA_ref::eType_mRNA:
+    case CRNA_ref::eType_rRNA:
     {
         if ( !pseudo  &&  ( cfg.ShowTranscript() || cfg.IsFormatGBSeq() || cfg.IsFormatINSDSeq() ) ) {
             CSeqVector vec(feat.GetLocation(), scope);
