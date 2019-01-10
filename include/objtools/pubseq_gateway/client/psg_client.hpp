@@ -71,6 +71,12 @@ public:
     shared_ptr<TUserContext> GetUserContext() const
     { return static_pointer_cast<TUserContext>(m_UserContext); }
 
+    /// Get request type
+    string GetType() const { return x_GetType(); }
+
+    // Get request ID
+    string GetId() const { return x_GetId(); }
+
 protected:
     CPSG_Request(shared_ptr<void> user_context = {})
         : m_UserContext(user_context)
@@ -79,6 +85,9 @@ protected:
     virtual ~CPSG_Request() = default;
 
 private:
+    virtual string x_GetType() const = 0;
+    virtual string x_GetId() const = 0;
+
     shared_ptr<void> m_UserContext;
 };
 
@@ -148,6 +157,9 @@ public:
     EIncludeData GetIncludeData() const { return m_IncludeData; }
 
 private:
+    string x_GetType() const override { return "biodata"; }
+    string x_GetId() const override { return GetBioId().Get(); }
+
     CPSG_BioId    m_BioId;
     EIncludeData  m_IncludeData = EIncludeData::eDefault;
 };
@@ -189,6 +201,9 @@ public:
     TIncludeInfo      GetIncludeInfo() const { return m_IncludeInfo; }
 
 private:
+    string x_GetType() const override { return "resolve"; }
+    string x_GetId() const override { return GetBioId().Get(); }
+
     CPSG_BioId    m_BioId;
     TIncludeInfo  m_IncludeInfo = 0;
 };
@@ -244,6 +259,9 @@ public:
     EIncludeData GetIncludeData() const { return m_IncludeData; }
 
 private:
+    string x_GetType() const override { return "blob"; }
+    string x_GetId() const override { return GetBlobId().Get(); }
+
     CPSG_BlobId  m_BlobId;
     string       m_LastModified;
     EIncludeData m_IncludeData = EIncludeData::eDefault;

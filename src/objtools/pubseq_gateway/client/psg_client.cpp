@@ -710,38 +710,6 @@ CPSG_BioseqInfo::CPSG_BioseqInfo()
 {
 }
 
-struct SGetRequestTypeAndId
-{
-    SGetRequestTypeAndId(const CPSG_ReplyItem& reply_item) : m_ReplyItem(reply_item) {}
-
-private:
-    const CPSG_ReplyItem& m_ReplyItem;
-
-    friend ostream& operator<<(ostream& os, const SGetRequestTypeAndId& get_id)
-    {
-        auto reply = get_id.m_ReplyItem.GetReply();
-        _ASSERT(reply);
-
-        auto request = reply->GetRequest().get();
-        _ASSERT(request);
-
-        if (auto request_biodata = dynamic_cast<const CPSG_Request_Biodata*>(request)) {
-            os << "biodata request '" << request_biodata->GetBioId().Get() << '\'';
-
-        } else if (auto request_resolve = dynamic_cast<const CPSG_Request_Resolve*>(request)) {
-            os << "resolve request '" << request_resolve->GetBioId().Get() << '\'';
-
-        } else if (auto request_blob = dynamic_cast<const CPSG_Request_Blob*>(request)) {
-            os << "blob request '" << request_blob->GetBlobId().Get() << '\'';
-
-        } else {
-            os << "UNKNOWN_REQUEST";
-        }
-
-        return os;
-    }
-};
-
 CPSG_BioId CPSG_BioseqInfo::GetCanonicalId() const
 {
     auto accession = m_Data.GetString("accession");
@@ -769,8 +737,14 @@ vector<CPSG_BioId> CPSG_BioseqInfo::GetOtherIds() const
     }
 
     if (error) {
+        auto reply = GetReply();
+        _ASSERT(reply);
+
+        auto request = reply->GetRequest().get();
+        _ASSERT(request);
+
         NCBI_THROW_FMT(CPSG_Exception, eServerError, "Wrong seq_ids format: '" << seq_ids.Repr() <<
-                "' for " << SGetRequestTypeAndId(*this));
+                "' for " << request->GetType() << " request '" << request->GetId() << '\'');
     }
 
     return rv;
