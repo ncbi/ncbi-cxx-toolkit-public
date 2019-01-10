@@ -88,6 +88,10 @@ typedef NCBI_PARAM_TYPE(PSG, reader_timeout) TPSG_ReaderTimeout;
 NCBI_PARAM_DECL(string, PSG, debug_printout);
 typedef NCBI_PARAM_TYPE(PSG, debug_printout) TPSG_DebugPrintout;
 
+enum class EPSG_UseCache { eDefault, eNo, eYes };
+NCBI_PARAM_ENUM_DECL(EPSG_UseCache, PSG, use_cache);
+typedef NCBI_PARAM_TYPE(PSG, use_cache) TPSG_UseCache;
+
 struct SPSG_Future
 {
     void NotifyOne()

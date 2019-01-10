@@ -330,6 +330,17 @@ const char* s_GetTSE(CPSG_Request_Biodata::EIncludeData include_data)
     return nullptr;
 }
 
+string s_AddUseCache(ostringstream& os)
+{
+    switch (TPSG_UseCache::GetDefault()) {
+        case EPSG_UseCache::eDefault:                         break;
+        case EPSG_UseCache::eNo:      os << "&use_cache=no";  break;
+        case EPSG_UseCache::eYes:     os << "&use_cache=yes"; break;
+    }
+
+    return os.str();
+}
+
 string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Biodata* request_biodata)
 {
     ostringstream os;
@@ -341,7 +352,7 @@ string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Biodata* request_biodata)
 
     if (const auto tse = s_GetTSE(request_biodata->GetIncludeData())) os << "&tse=" << tse;
 
-    return os.str();
+    return s_AddUseCache(os);
 }
 
 string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Resolve* request_resolve)
@@ -373,7 +384,7 @@ string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Resolve* request_resolve)
     if (include_info & CPSG_Request_Resolve::fHash)         os << "&hash=" << value;
     if (include_info & CPSG_Request_Resolve::fDateChanged)  os << "&date_changed=" << value;
 
-    return os.str();
+    return s_AddUseCache(os);
 }
 
 string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Blob* request_blob)
@@ -388,7 +399,7 @@ string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Blob* request_blob)
 
     if (const auto tse = s_GetTSE(request_blob->GetIncludeData())) os << "&tse=" << tse;
 
-    return os.str();
+    return s_AddUseCache(os);
 }
 
 bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request, CDeadline deadline)

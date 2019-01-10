@@ -67,6 +67,14 @@ NCBI_PARAM_DEF(bool,     PSG, delayed_completion,     true);
 NCBI_PARAM_DEF(unsigned, PSG, reader_timeout,         12);
 NCBI_PARAM_DEF(string,   PSG, debug_printout,         "none");
 
+NCBI_PARAM_ENUM_ARRAY(EPSG_UseCache, PSG, use_cache)
+{
+    { "default", EPSG_UseCache::eDefault },
+    { "no",      EPSG_UseCache::eNo      },
+    { "yes",     EPSG_UseCache::eYes     }
+};
+NCBI_PARAM_ENUM_DEF(EPSG_UseCache, PSG, use_cache, EPSG_UseCache::eDefault);
+
 struct SDebugPrintout
 {
     SDebugPrintout() : m_Level(GetLevel()) {}
