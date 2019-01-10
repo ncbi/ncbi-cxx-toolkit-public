@@ -2524,6 +2524,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
     bool any_changes = false;
 
     int protein_id_counter = 1;
+    bool create_general_only = objects::edit::IsGeneralIdProtPresent(entry.GetTopLevelEntry());
     SAnnotSelector sel(CSeqFeatData::e_Cdregion);
     for (CFeat_CI cds_it(entry, sel); cds_it; ++cds_it) {
         bool change_this_cds = false;
@@ -2545,7 +2546,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry, bool instantiate_missing_prot
                 // need to set product if not set
                 if (!new_cds->IsSetProduct() && !sequence::IsPseudo(*new_cds, entry.GetScope())) {
                     string id_label;
-                    CRef<CSeq_id> new_id = objects::edit::GetNewProtId(entry.GetScope().GetBioseqHandle(new_cds->GetLocation()), protein_id_counter, id_label, false); 
+                    CRef<CSeq_id> new_id = objects::edit::GetNewProtId(entry.GetScope().GetBioseqHandle(new_cds->GetLocation()), protein_id_counter, id_label, create_general_only); 
                     if (new_id) {
                         new_cds->SetProduct().SetWhole().Assign(*new_id);
                         change_this_cds = true;
