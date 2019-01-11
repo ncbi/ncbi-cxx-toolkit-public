@@ -954,14 +954,19 @@ string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
     if ( CVPath::IsPlainAccession(path_or_acc) ) {
         // parse WGS accession
         const SIZE_TYPE start = 0;
-        // then there should be "ABCD01" or "ABCD"
-        if ( path_or_acc.size() == start + 4 ) {
-            // add default version 1
-            return string(path_or_acc) + "01";
-        }
-        if ( 0 && path_or_acc.size() > start + 6 ) {
+        // ID-5322 : WGS prefix can consist of 4 or 6 characters, with optional
+        // 2-digit version.
+        // If no version is specified, set it to a default value 00, which is
+        // resolved to a real version via a symlink on the file system.
+        string acc = path_or_acc.substr(start);
+        size_t acclen = acc.size();
+        size_t digit_pos = acc.find_first_of("0123456789");
+        if (digit_pos == string::npos && (acclen == 4 || acclen == 6)) {
+            return string(path_or_acc) + "00";
+        } else if ((digit_pos == 4 || digit_pos == 6) &&
+                   acclen > digit_pos + 2) {
             // remove contig/scaffold id
-            return path_or_acc.substr(0, start+6);
+            return path_or_acc.substr(0, start+digit_pos+2);
         }
     }
     return path_or_acc;
