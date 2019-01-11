@@ -1,4 +1,4 @@
- #ifndef OBJTOOLS_READERS_SEQDB__SEQDBATLAS_HPP
+#ifndef OBJTOOLS_READERS_SEQDB__SEQDBATLAS_HPP
 #define OBJTOOLS_READERS_SEQDB__SEQDBATLAS_HPP
 
 /*  $Id$
@@ -53,6 +53,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <mutex>
 
 BEGIN_NCBI_SCOPE
 
@@ -302,10 +303,12 @@ public:
     /// Constructor
     ///
     /// Initializes the atlas object.
-    ///
-    /// @param use_mmap
-    ///   If false, use read(); if true, use mmap() or similar.
-    CSeqDBAtlas(bool use_mmap);
+    /// @param use_atlas_lock If true, the atlas lock will be used to protect
+    /// critical regions, otherwise the Lock() and Unlock() functions will be
+    /// noops. Setting the parameter to false improves CPU utilization when
+    /// each thread access a different database volume. It should be set to
+    /// true in other cases.
+    CSeqDBAtlas(bool use_atlas_lock);
 
     /// The destructor unmaps and frees all associated memory.
     ~CSeqDBAtlas();
@@ -488,7 +491,7 @@ public:
     ///   This object tracks whether this thread owns the mutex.
     void Lock(CSeqDBLockHold & locked)
     {
-        if (! locked.m_Locked) {
+        if (m_UseLock && !locked.m_Locked) {
             m_Lock.Lock();
             locked.m_Locked = true;
         }
@@ -505,7 +508,7 @@ public:
     ///   This object tracks whether this thread owns the mutex.
     void Unlock(CSeqDBLockHold & locked)
     {
-        if (locked.m_Locked) {
+        if (m_UseLock && locked.m_Locked) {
             locked.m_Locked = false;
             m_Lock.Unlock();
         }
@@ -574,10 +577,7 @@ public:
         return path;
     }
 
-    map<string, unique_ptr<CMemoryFile> >& GetFilesMemMap(void)
-    {
-        return m_FileMemMap;
-    }
+    CMemoryFile* GetMemoryFile(const string& fileName);
 
     enum EFilesCount{
         eFileCounterNoChange,
@@ -609,9 +609,6 @@ private:
     /// Private method to prevent copy construction.
     CSeqDBAtlas(const CSeqDBAtlas &);
 
-    /// Iterator type for m_Pool member.
-    typedef map<const char *, size_t>::iterator TPoolIter;
-
     /// Try to find the region and free it.
     ///
     /// This method looks for the region in the memory pool (m_Pool),
@@ -635,36 +632,35 @@ private:
    
     /// Protects most of the critical regions of the SeqDB library.
     CMutex m_Lock;
-    
-    /// Bytes of "data" currently known to SeqDBAtlas.  This does not
-    /// include metadata
-    TIndx m_CurAlloc;
 
+    /// Use single atlas lock to protect critical regions. The single lock is
+    /// not needed if each thread access different database volume.
+    bool m_UseLock;
+    
     /// Maps from pointers to dynamically allocated blocks to the byte
     /// size of the allocation.
     map<const char *, size_t> m_Pool;
-
-    /// The most recently assigned FID.
-    int m_LastFID;
-
-    /// Lookup table of fids by filename.
-    map<string, int> m_FileIDs;
+    /// Bytes of "data" currently known to SeqDBAtlas.  This does not
+    /// include metadata
+    TIndx m_CurAlloc;
+    //m_pool was used for mrmory allocation
+    bool m_Alloc;
 
     enum {e_MaxSlice64 = 1 << 30};
     
     /// Cache of file existence and length.
+    std::mutex m_FileSizeMutex;
     map< string, pair<bool, TIndx> > m_FileSize;
-
     /// Maxium file size.
     Uint8 m_MaxFileSize;
 
-    /// BlastDB search path.
-    const string m_SearchPath;
-
-    bool m_Alloc;//m_pool was used for mrmory allocation
+    std::mutex m_FileMemMapMutex;
     map<string, unique_ptr<CMemoryFile> > m_FileMemMap;    
     int m_OpenedFilesCount;
     int m_MaxOpenedFilesCount;
+
+    /// BlastDB search path.
+    const string m_SearchPath;
 };
 
 
@@ -687,12 +683,13 @@ inline CSeqDBMemReg::~CSeqDBMemReg()
 class CSeqDBAtlasHolder {
 public:
     /// Constructor.
-    /// @param use_mmap If true, memory mapping will be used.
-    /// @param flusher The garbage collection callback.
     /// @param locked The lock hold object for this thread (or NULL).
-    CSeqDBAtlasHolder(bool             use_mmap,
-                      //CSeqDBFlushCB  * flusher,
-                      CSeqDBLockHold * lockedp);
+    /// @param use_atlas_lock If true, the atlas lock will be used to protect
+    /// critical regions, otherwise the Lock() and Unlock() functions will be
+    /// noops. Setting the parameter to false improves CPU utilization when
+    /// each thread access a different database volume. It should be set to
+    /// true in other cases.
+    CSeqDBAtlasHolder(CSeqDBLockHold * lockedp, bool use_atlas_lock);
 
     /// Destructor.
     ~CSeqDBAtlasHolder();
@@ -760,48 +757,27 @@ public:
     }
 
     //m_Filename is set
-    void Init(void) {            
-
-            
-        map<string, unique_ptr<CMemoryFile> >& fileMemMap =
-            m_Atlas.GetFilesMemMap();
-            if(IsIndexFile() && fileMemMap.count(m_Filename) > 0) {        
-                m_MappedFile = fileMemMap[m_Filename].get();                
-                x_LogMessage(eMapExists);       
+    void Init(void)
+    {
+        try {
+            if (IsIndexFile()) {
+                m_MappedFile = m_Atlas.GetMemoryFile(m_Filename);
             }
             else {
-                try {                                      
-                    if(IsIndexFile()) {
-                        CSeqDBLockHold locked(m_Atlas);
-                        m_Atlas.Lock(locked);                                                                        
-                        if(fileMemMap.count(m_Filename) == 0) {      
-                            m_MappedFile = new CMemoryFile(m_Filename);
-                            fileMemMap.insert(map<string, unique_ptr<CMemoryFile> >::value_type(m_Filename,unique_ptr<CMemoryFile>(m_MappedFile)));                                                          
-                            m_Atlas.ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterIncrement);
-                            x_LogMessage(eMapNewLocked);
-                        }
-                        else {                                     
-                            m_MappedFile = fileMemMap[m_Filename].get();                            
-                            x_LogMessage(eMapExistsLocked);
-                        }                        
-                    }
-                    else {
-                        m_MappedFile = new CMemoryFile(m_Filename);		                       
-                        m_Atlas.ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterIncrement);                        
-                        x_LogMessage(eMapNew);
-                    }                     
-                    m_Mapped = true;                        
-                }
-                catch(...) {                     
-                     x_LogMessage(eMapError);                     
-                     NCBI_THROW(CSeqDBException,
-                                eFileErr,
-                                "Cannot memory map " + m_Filename + ". Number of files opened: "
-                                + NStr::IntToString(m_Atlas.GetOpenedFilseCount()));                    
-                }
-            }            
-            
-            m_DataPtr = (char *) (m_MappedFile->GetPtr());            
+                m_MappedFile = new CMemoryFile(m_Filename);
+                m_Atlas.ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterIncrement);
+                x_LogMessage(eMapNew);
+            }
+            m_Mapped = true;
+        }
+        catch (const std::exception&) {
+            x_LogMessage(eMapError);
+            NCBI_THROW(CSeqDBException,
+                eFileErr,
+                "Cannot memory map " + m_Filename + ". Number of files opened: " + NStr::IntToString(m_Atlas.GetOpenedFilseCount()));
+        }
+
+        m_DataPtr = (char *)(m_MappedFile->GetPtr());
     }
 
     

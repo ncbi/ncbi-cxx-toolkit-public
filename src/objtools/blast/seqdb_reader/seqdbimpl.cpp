@@ -44,11 +44,11 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
                        char                 prot_nucl,
                        int                  oid_begin,
                        int                  oid_end,
-                       bool                 use_mmap,
                        CSeqDBGiList       * gi_list,
                        CSeqDBNegativeList * neg_list,
-                       CSeqDBIdSet          idset)
-    : m_AtlasHolder     (use_mmap, NULL),
+                       CSeqDBIdSet          idset,
+                       bool                 use_atlas_lock)
+    : m_AtlasHolder     (NULL, use_atlas_lock),
       m_Atlas           (m_AtlasHolder.Get()),
       m_DBNames         (db_name_list),
       m_Aliases         (m_Atlas, db_name_list, prot_nucl),
@@ -149,8 +149,8 @@ CSeqDBImpl::CSeqDBImpl(const string       & db_name_list,
     CHECK_MARKER();
 }
 
-CSeqDBImpl::CSeqDBImpl()
-    : m_AtlasHolder     (false, NULL),
+CSeqDBImpl::CSeqDBImpl(bool use_atlas_lock)
+    : m_AtlasHolder     (NULL, use_atlas_lock),
       m_Atlas           (m_AtlasHolder.Get()),
       m_Aliases         (m_Atlas, "", '-'),
       m_RestrictBegin   (0),
@@ -177,7 +177,7 @@ void CSeqDBImpl::SetIterationRange(int oid_begin, int oid_end)
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
-    if(m_NumThreads > 1) m_Atlas.Lock(locked);
+    m_Atlas.Lock(locked);
 
     m_RestrictBegin = (oid_begin < 0) ? 0 : oid_begin;
     m_RestrictEnd   = (oid_end   < 0) ? 0 : oid_end;
@@ -295,7 +295,7 @@ CSeqDBImpl::GetNextOIDChunk(int         & begin_chunk, // out
 
     int cacheID = (m_NumThreads) ? x_GetCacheID(locked) : 0;
 
-    if(m_NumThreads > 1) m_Atlas.Lock(locked);
+    m_Atlas.Lock(locked);
 
     if (! m_OidListSetup) {
         x_GetOidList(locked);
@@ -399,7 +399,7 @@ int CSeqDBImpl::GetSeqLength(int oid) const
 
 int CSeqDBImpl::x_GetSeqLength(int oid, CSeqDBLockHold & locked) const
 {
-    if(m_NumThreads > 1) m_Atlas.Lock(locked);
+    m_Atlas.Lock(locked);
 
     int vol_oid = 0;
 
@@ -663,7 +663,7 @@ void CSeqDBImpl::x_RetSeqBuffer(SSeqResBuffer * buffer,
 
     buffer->checked_out = 0;
 
-    if(m_NumThreads > 1) m_Atlas.Lock(locked);
+    m_Atlas.Lock(locked);
 /*
     for(Uint4 index = 0; index < buffer->results.size(); ++index) {
         m_Atlas.RetRegion(buffer->results[index].address);
@@ -685,7 +685,7 @@ int CSeqDBImpl::x_GetSeqBuffer(SSeqResBuffer * buffer, int oid,
 
     // Not in cache, fill the cache
     CSeqDBLockHold locked(m_Atlas);
-    if(m_NumThreads > 1) m_Atlas.Lock(locked);
+    m_Atlas.Lock(locked);
     x_FillSeqBuffer(buffer, oid, locked);
     (buffer->checked_out)++;
     *seq = buffer->results[0].address;
@@ -697,7 +697,7 @@ void CSeqDBImpl::x_FillSeqBuffer(SSeqResBuffer  *buffer,
                                  CSeqDBLockHold &locked) const
 {
     // Must lock the atlas
-    if(m_NumThreads > 1) m_Atlas.Lock(locked);
+    m_Atlas.Lock(locked);
 
     // clear the buffer first
     x_RetSeqBuffer(buffer, locked);
@@ -1507,7 +1507,8 @@ CSeqDBImpl::FindVolumePaths(const string   & dbname,
                             bool             recursive,
                             bool             expand_links)
 {
-    CSeqDBAtlasHolder AH(true, NULL);
+    bool use_atlas_lock = true;
+    CSeqDBAtlasHolder AH(NULL, use_atlas_lock);
     CSeqDBAtlas & atlas(AH.Get());
 
     // This constructor handles its own locking.
@@ -2548,7 +2549,7 @@ void CSeqDBImpl::GetMaskData(int                       oid,
 void CSeqDBImpl::SetNumberOfThreads(int num_threads, bool force_mt)
 {
     CSeqDBLockHold locked(m_Atlas);
-    if((num_threads > 1) || (m_NumThreads > 1)) m_Atlas.Lock(locked);
+    m_Atlas.Lock(locked);
 
     if (num_threads < 1) {
         num_threads = 0;
@@ -2590,7 +2591,7 @@ int CSeqDBImpl::x_GetCacheID(CSeqDBLockHold &locked) const
         return m_CacheID[threadID];
 
     int retval;
-    if(m_NumThreads > 1) m_Atlas.Lock(locked);
+    m_Atlas.Lock(locked);
 
     if (m_CacheID.find(threadID) == m_CacheID.end()) {
         m_CacheID[threadID] = m_NextCacheID++;

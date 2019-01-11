@@ -183,13 +183,13 @@ TOut SeqDB_CheckLength(TIn value)
     return result;
 }
 
-CSeqDBAtlas::CSeqDBAtlas(bool use_mmap)
-     :m_CurAlloc          (0),
-      m_LastFID           (0),
+CSeqDBAtlas::CSeqDBAtlas(bool use_atlas_lock)
+     :m_UseLock           (use_atlas_lock),
+      m_CurAlloc          (0),
+      m_Alloc             (false),
       m_MaxFileSize       (0),      
       m_SearchPath        (GenerateSearchPath())
 {
-    m_Alloc = false;
     m_OpenedFilesCount = 0;
     m_MaxOpenedFilesCount = 0;
 }
@@ -203,11 +203,34 @@ CSeqDBAtlas::~CSeqDBAtlas()
     // Erase 'manually allocated' elements - In debug mode, this will
     // not execute, because of the above test.
 
-    for(TPoolIter i = m_Pool.begin(); i != m_Pool.end(); i++) {
+    for(auto i = m_Pool.begin(); i != m_Pool.end(); i++) {
         delete[] (char*)((*i).first);
     }
 
     m_Pool.clear();
+}
+
+CMemoryFile* CSeqDBAtlas::GetMemoryFile(const string& fileName)
+{
+    {
+        std::lock_guard<std::mutex> guard(m_FileMemMapMutex);
+        auto it = m_FileMemMap.find(fileName);
+        if (it != m_FileMemMap.end())
+            return it->second.get();
+    }
+
+    unique_ptr<CMemoryFile> file(new CMemoryFile(fileName));
+
+    {
+        std::lock_guard<std::mutex> guard(m_FileMemMapMutex);
+        auto it = m_FileMemMap.find(fileName);
+        if (it != m_FileMemMap.end())
+            return it->second.get();
+        CMemoryFile* memFile = file.release();
+        m_FileMemMap[fileName].reset(memFile);
+        ChangeOpenedFilseCount(CSeqDBAtlas::eFileCounterIncrement);
+        return memFile;
+    }
 }
 
 bool CSeqDBAtlas::DoesFileExist(const string & fname, CSeqDBLockHold & locked)
@@ -226,37 +249,40 @@ bool CSeqDBAtlas::GetFileSize(const string   & fname,
     return GetFileSizeL(fname, length);
 }
 
-bool CSeqDBAtlas::GetFileSizeL(const string & fname,
-                               TIndx        & length)
+bool CSeqDBAtlas::GetFileSizeL(const string & fname, TIndx &length)
 {
-
-    // Fields: file-exists, file-length
-    pair<bool, TIndx> data;
-
-    map< string, pair<bool, TIndx> >::iterator i =
-        m_FileSize.find(fname);
-
-    if (i == m_FileSize.end()) {
-        CFile whole(fname);
-        Int8 file_length = whole.GetLength();
-
-        if (file_length >= 0) {
-            data.first  = true;
-            data.second = SeqDB_CheckLength<Int8,TIndx>(file_length);
-            if ((Uint8)file_length > m_MaxFileSize) m_MaxFileSize = file_length;
-        } else {
-            data.first  = false;
-            data.second = 0;
+    {
+        std::lock_guard<std::mutex> guard(m_FileSizeMutex);
+        auto it = m_FileSize.find(fname);
+        if (it != m_FileSize.end()) {
+            length = it->second.second;
+            return it->second.first;
         }
-
-        m_FileSize[fname] = data;
-    } else {
-        data = (*i).second;
     }
-    
 
-    length = data.second;
-    return data.first;
+    pair<bool, TIndx> val;
+    CFile whole(fname);
+    Int8 file_length = whole.GetLength();
+
+    if (file_length >= 0) {
+        val.first = true;
+        val.second = SeqDB_CheckLength<Int8, TIndx>(file_length);
+    }
+    else {
+        val.first = false;
+        val.second = 0;
+    }
+
+    {
+        std::lock_guard<std::mutex> guard(m_FileSizeMutex);
+        m_FileSize[fname] = val;
+
+        if (file_length >= 0 && (Uint8)file_length > m_MaxFileSize)
+            m_MaxFileSize = file_length;
+    }
+
+    length = val.second;
+    return val.first;
 }
 
 /// Simple idiom for RIIA with malloc + free.
@@ -365,7 +391,7 @@ void CSeqDBAtlas::Free(const char * freeme, CSeqDBLockHold & locked)
 bool CSeqDBAtlas::x_Free(const char * freeme)
 {
     if(!m_Alloc) return true;
-    TPoolIter i = m_Pool.find((const char*) freeme);
+    auto i = m_Pool.find((const char*) freeme);
 
     if (i == m_Pool.end()) {
         return false;
@@ -410,15 +436,15 @@ void CSeqDBAtlas::UnregisterExternal(CSeqDBMemReg & memreg)
 
 
 
-CSeqDBAtlasHolder::CSeqDBAtlasHolder(bool             use_mmap,                                     
-                                     CSeqDBLockHold * lockedp)
+CSeqDBAtlasHolder::CSeqDBAtlasHolder(CSeqDBLockHold * lockedp,
+                                     bool use_atlas_lock)
     
 {
     {{
     CFastMutexGuard guard(m_Lock);
 
     if (m_Count == 0) {
-        m_Atlas = new CSeqDBAtlas(use_mmap);
+        m_Atlas = new CSeqDBAtlas(use_atlas_lock);
     }
     m_Count ++;
     }}

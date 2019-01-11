@@ -158,31 +158,30 @@ public:
     ///   found in the OID lists (if any) will be returned.
     /// @param oid_end
     ///   Iterator will return up to (but not including) this OID.
-    /// @param use_mmap
-    ///   If kSeqDBMMap is specified (the default), memory mapping is
-    ///   attempted.  If kSeqDBNoMMap is specified, memory mapping
-    ///   fails, or this platform does not support it, the less
-    ///   efficient read and write calls are used instead.
     /// @param gi_list
     ///   If not null, specifies included deflines and OIDs.
     /// @param neg_list
     ///   If not null, specifies excluded deflines and OIDs.
     /// @param idset
     ///   Specifies included or excluded deflines and OIDs.
+    /// @param use_atlas_lock
+    ///   If true, a single atlas lock will be used to protect most of the
+    ///   critical regions. It can be set to false only if each thread
+    ///   accesses a different database volume.
     CSeqDBImpl(const string       & db_name_list,
                char                 prot_nucl,
                int                  oid_begin,
                int                  oid_end,
-               bool                 use_mmap,
                CSeqDBGiList       * gi_list,
                CSeqDBNegativeList * neg_list,
-               CSeqDBIdSet          idset);
+               CSeqDBIdSet          idset,
+               bool                 use_atlas_lock);
 
     /// Default Constructor
     ///
     /// This builds a null version of the CSeqDBImpl object.  It is in
     /// support of the default constructor for the CSeqDBExpert class.
-    CSeqDBImpl();
+    CSeqDBImpl(bool use_atlas_lock = true);
 
     /// Destructor
     ~CSeqDBImpl();

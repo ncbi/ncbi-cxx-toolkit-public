@@ -112,7 +112,7 @@ s_SeqDBInit(const string       & dbname,
             char                 prot_nucl,
             int                  oid_begin,
             int                  oid_end,
-            bool                 use_mmap,
+            bool                 use_atlas_lock,
             CSeqDBGiList       * gi_list = NULL,
             CSeqDBNegativeList * neg_list = NULL,
             CSeqDBIdSet          idset = CSeqDBIdSet())
@@ -126,10 +126,10 @@ s_SeqDBInit(const string       & dbname,
                                   prot_nucl,
                                   oid_begin,
                                   oid_end,
-                                  use_mmap,
                                   gi_list,
                                   neg_list,
-                                  idset);
+                                  idset,
+                                  use_atlas_lock);
         }
         catch(CSeqDBException &) {
             prot_nucl = 'n';
@@ -141,10 +141,10 @@ s_SeqDBInit(const string       & dbname,
                               prot_nucl,
                               oid_begin,
                               oid_end,
-                              use_mmap,
                               gi_list,
                               neg_list,
-                              idset);
+                              idset,
+                              use_atlas_lock);
     }
 
     _ASSERT(impl);
@@ -154,7 +154,9 @@ s_SeqDBInit(const string       & dbname,
 
 CSeqDB::CSeqDB(const string & dbname,
                ESeqType       seqtype,
-               CSeqDBGiList * gi_list)
+               CSeqDBGiList * gi_list,
+               bool           use_atlas_lock)
+
 {
     if (dbname.size() == 0) {
         NCBI_THROW(CSeqDBException,
@@ -168,7 +170,7 @@ CSeqDB::CSeqDB(const string & dbname,
                          seq_type,
                          0,
                          0,
-                         true,
+                         use_atlas_lock,
                          gi_list);
 
     ////m_Impl->Verify();
@@ -184,11 +186,12 @@ CSeqDB::CSeqDB(const string       & dbname,
                    "Database name is required.");
     }
 
+    const bool kUseAtlasLock = true;
     m_Impl = s_SeqDBInit(dbname,
                          s_GetSeqTypeChar(seqtype),
                          0,
                          0,
-                         true,
+                         kUseAtlasLock,
                          NULL,
                          nlist);
 
@@ -295,11 +298,12 @@ CSeqDB::CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBIdSet ids)
         }
     }
 
+    const bool kUseAtlasLock = true;
     m_Impl = s_SeqDBInit(dbname,
                          s_GetSeqTypeChar(seqtype),
                          0,
                          0,
-                         true,
+                         kUseAtlasLock,
                          pos.GetPointerOrNull(),
                          neg.GetPointerOrNull(),
                          ids);
@@ -320,11 +324,12 @@ CSeqDB::CSeqDB(const vector<string> & dbs,
                    "Database name is required.");
     }
 
+    const bool kUseAtlasLock = true;
     m_Impl = s_SeqDBInit(dbname,
                          s_GetSeqTypeChar(seqtype),
                          0,
                          0,
-                         true,
+                         kUseAtlasLock,
                          gi_list);
 
     ////m_Impl->Verify();
@@ -343,11 +348,12 @@ CSeqDB::CSeqDB(const string & dbname,
                    "Database name is required.");
     }
 
+    const bool kUseAtlasLock = true;
     m_Impl = s_SeqDBInit(dbname,
                          s_GetSeqTypeChar(seqtype),
                          oid_begin,
                          oid_end,
-                         use_mmap,
+                         kUseAtlasLock,
                          gi_list);
 
     ////m_Impl->Verify();
@@ -369,11 +375,12 @@ CSeqDB::CSeqDB(const vector<string> & dbs,
                    "Database name is required.");
     }
 
+    const bool kUseAtlasLock = true;
     m_Impl = s_SeqDBInit(dbname,
                          s_GetSeqTypeChar(seqtype),
                          oid_begin,
                          oid_end,
-                         use_mmap,
+                         kUseAtlasLock,
                          gi_list);
 
     ////m_Impl->Verify();
@@ -381,7 +388,7 @@ CSeqDB::CSeqDB(const vector<string> & dbs,
 
 CSeqDB::CSeqDB()
 {
-    m_Impl = new CSeqDBImpl;
+    m_Impl = new CSeqDBImpl();
     ////m_Impl->Verify();
 }
 

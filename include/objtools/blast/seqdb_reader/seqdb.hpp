@@ -326,7 +326,15 @@ public:
     ///   Specify eProtein, eNucleotide, or eUnknown.
     /// @param gilist
     ///   The database will be filtered by this GI list if non-null.
-    CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBGiList * gilist = 0);
+    /// @param use_atlas_lock
+    ///   Enable/diable thread synchronization. If true single Atlas mutex
+    ///   will be used to protect most of critical parts of the code.
+    ///   If false, CSeqdDBAtlas::Lock and CSeqDBAtlas::Unlock functions
+    ///   will be noops. If each thread accesses
+    ///   a different database vloume, then setting this parameter to false
+    ///   will reduce contention. Otherwise it should be set to true.
+    CSeqDB(const string & dbname, ESeqType seqtype, CSeqDBGiList * gilist = 0,
+           bool use_atlas_lock = true);
 
     /// Short Constructor with Negative ID list.
     ///

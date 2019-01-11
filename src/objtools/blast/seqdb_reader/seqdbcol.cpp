@@ -103,7 +103,7 @@ CSeqDBColumn::CSeqDBColumn(const string   & basename,
                            const string   & index_extn,
                            const string   & data_extn,
                            CSeqDBLockHold * lockedp)
-    : m_AtlasHolder      (true, lockedp),
+    : m_AtlasHolder      (lockedp, true),
       m_Atlas            (m_AtlasHolder.Get()),
       m_IndexFile        (m_Atlas),      
       m_DataFile         (m_Atlas),     
