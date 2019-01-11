@@ -5773,7 +5773,7 @@ ncbi_cv_lib_boost_version=\`get_BOOST_LIB_VERSION | tr -d '"'\`
 
    AC_CACHE_CHECK([for Boost.Chrono$in_path], ncbi_cv_lib_boost_chrono,
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
-      LIBS="$BOOST_LIBPATH $BOOST_CHRONO_LIBS $RT_LIBS $orig_LIBS"
+      LIBS="$BOOST_LIBPATH $BOOST_CHRONO_LIBS $BOOST_SYSTEM_LIBS $RT_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
           [AC_LANG_PROGRAM([[#include <boost/chrono.hpp>]],
               [[boost::chrono::system_clock::now();]])],

@@ -37463,7 +37463,7 @@ if test "${ncbi_cv_lib_boost_chrono+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
-      LIBS="$BOOST_LIBPATH $BOOST_CHRONO_LIBS $RT_LIBS $orig_LIBS"
+      LIBS="$BOOST_LIBPATH $BOOST_CHRONO_LIBS $BOOST_SYSTEM_LIBS $RT_LIBS $orig_LIBS"
       cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
