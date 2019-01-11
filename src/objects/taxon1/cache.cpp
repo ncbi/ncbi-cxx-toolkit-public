@@ -159,6 +159,7 @@ COrgRefCache::LookupAndAdd( TTaxId tax_id, CTaxon1Node** ppData )
                             pIt->AddChild( pNode );
                             pIt->GoNode( pNode );
                         }
+                        delete pIt;
                     } else { // Store secondary in index
                         m_ppEntries[ tax_id ] = pNode;
                     }
