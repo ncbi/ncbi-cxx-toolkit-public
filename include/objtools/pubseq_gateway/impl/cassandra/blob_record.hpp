@@ -48,8 +48,7 @@ enum class EBlobFlags : TBlobFlagBase {
     eDead        = 32,
 };
 
-struct CBlobRecord {
-
+class CBlobRecord {
  public:
     using TSatKey = int32_t;
     using TSize = int64_t;
