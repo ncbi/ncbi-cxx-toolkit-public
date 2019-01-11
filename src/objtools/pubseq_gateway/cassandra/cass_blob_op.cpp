@@ -37,6 +37,7 @@
 #include "blob_task/insert_extended.hpp"
 #include "blob_task/insert.hpp"
 #include "blob_task/delete.hpp"
+#include "nannot_task/insert.hpp"
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/delete_expired.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
@@ -199,6 +200,21 @@ void CCassBlobOp::InsertBlobExtended(unsigned int op_timeout_ms,
     Waiter.reset(new CCassBlobTaskInsertExtended(
         op_timeout_ms, m_Conn, m_Keyspace,
         blob_rslt, true, max_retries,
+        move(error_cb)
+    ));
+}
+
+void CCassBlobOp::InsertNAnnot(
+    unsigned int op_timeout_ms,
+    int32_t key, unsigned int max_retries,
+    CBlobRecord * blob, CNAnnotRecord * annot,
+    TDataErrorCallback error_cb,
+    unique_ptr<CCassBlobWaiter> & waiter
+)
+{
+    waiter.reset(new CCassNAnnotTaskInsert(
+        op_timeout_ms, m_Conn, m_Keyspace,
+        blob, annot, max_retries,
         move(error_cb)
     ));
 }

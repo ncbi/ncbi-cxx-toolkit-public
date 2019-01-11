@@ -48,6 +48,7 @@
 #include "IdCassScope.hpp"
 #include "cass_util.hpp"
 #include "blob_record.hpp"
+#include "nannot/record.hpp"
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -415,6 +416,11 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
                          int64_t  LargeTreshold, int64_t  LargeChunkSz,
                          TDataErrorCallback error_cb,
                          unique_ptr<CCassBlobWaiter> &  waiter);
+    void InsertNAnnot(unsigned int  op_timeout_ms,
+                     int32_t  key, unsigned int  max_retries,
+                     CBlobRecord * blob, CNAnnotRecord * annot,
+                     TDataErrorCallback error_cb,
+                     unique_ptr<CCassBlobWaiter> & waiter);
     void DeleteBlobAsync(unsigned int  op_timeout_ms,
                          int32_t  key, unsigned int  max_retries,
                          TDataErrorCallback error_cb,
