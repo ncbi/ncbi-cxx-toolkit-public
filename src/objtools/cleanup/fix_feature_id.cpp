@@ -56,8 +56,17 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
     for ( CFeat_CI feat_it(entry); feat_it; ++feat_it ) 
     {
         bool modified = false;
-        CRef<CSeq_feat> edited(new CSeq_feat);
-        edited->Assign(feat_it->GetOriginalFeature());
+        CRef<CSeq_feat> edited;
+        CSeq_feat_Handle fh = feat_it->GetSeq_feat_Handle();
+        if (changed_feats.find(fh) != changed_feats.end())
+        {
+            edited = changed_feats[fh];
+        }
+        else
+        {
+            edited.Reset(new CSeq_feat);
+            edited->Assign(feat_it->GetOriginalFeature());
+        }
 
         if (edited->IsSetId() && edited->GetId().IsLocal() && edited->GetId().GetLocal().IsId())        
         {
@@ -81,7 +90,6 @@ void CFixFeatureId::s_UpdateFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_
         }
         if (modified)
         {
-            CSeq_feat_Handle fh = feat_it->GetSeq_feat_Handle();
             changed_feats[fh] = edited;
         }
     }
@@ -100,6 +108,79 @@ void CFixFeatureId::s_ApplyToSeqInSet(CSeq_entry_Handle tse, map<CSeq_feat_Handl
             s_UpdateFeatureIds(entry, changed_feats, offset);
             offset += top_id;
         }
+    }
+}
+
+void CFixFeatureId::s_MakeIDPairs(const CSeq_entry_Handle& entry, map<int,int> &id_pairs)
+{
+    int feat_id = 0;
+    for (CFeat_CI feat_it(entry); feat_it; ++feat_it) {
+        if (feat_it->IsSetId()) {
+            const CFeat_id &id = feat_it->GetId();
+            if (id.IsLocal() && id.GetLocal().IsId() && id_pairs.find(id.GetLocal().GetId()) == id_pairs.end()) {
+                id_pairs[id.GetLocal().GetId()] = ++feat_id;
+            }
+        }
+    }
+}
+
+void CFixFeatureId::s_ReassignFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_feat_Handle, CRef<CSeq_feat> > &changed_feats)
+{
+    if (!entry)
+        return;
+    map<int,int> id_pairs;
+    CFixFeatureId::s_MakeIDPairs(entry, id_pairs);
+
+    for ( CFeat_CI feat_it(entry); feat_it; ++feat_it ) 
+    {
+        bool modified = false;
+        CRef<CSeq_feat> edited;
+        CSeq_feat_Handle fh = feat_it->GetSeq_feat_Handle();
+        if (changed_feats.find(fh) != changed_feats.end())
+        {
+            edited = changed_feats[fh];
+        }
+        else
+        {
+            edited.Reset(new CSeq_feat);
+            edited->Assign(feat_it->GetOriginalFeature());
+        }
+
+        if (edited->IsSetId() && edited->GetId().IsLocal() && edited->GetId().GetLocal().IsId())        
+        {
+            int id = id_pairs[edited->GetId().GetLocal().GetId()];
+            edited->SetId().SetLocal().SetId(id);  
+            modified = true;
+        }
+       if (edited->IsSetXref())
+        {
+            CSeq_feat::TXref::iterator xref_it = edited->SetXref().begin();
+            while ( xref_it != edited->SetXref().end() )
+            {
+                if ((*xref_it)-> IsSetId() && (*xref_it)->GetId().IsLocal() && (*xref_it)->GetId().GetLocal().IsId())
+                {
+                    modified = true;
+                    if (id_pairs.find((*xref_it)->GetId().GetLocal().GetId()) != id_pairs.end())
+                        {
+                            int id = id_pairs[(*xref_it)->GetId().GetLocal().GetId()];
+                            (*xref_it)->SetId().SetLocal().SetId(id);
+                        }
+                    else
+                        {
+                            (*xref_it)->ResetId();
+                            xref_it = edited->SetXref().erase(xref_it);
+                            continue;
+                        }
+                }
+                ++xref_it;
+            }
+            if (edited->SetXref().empty())
+                edited->ResetXref();
+        }
+       if (modified)
+       {
+           changed_feats[fh] = edited;
+       }
     }
 }
 
