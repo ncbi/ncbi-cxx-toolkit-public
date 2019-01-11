@@ -299,6 +299,7 @@ void CCassBlobTaskLoadBlob::Wait1()
                     x_RequestChunksAhead();
                     x_CheckChunksFinished(b_need_repeat);
                     if (b_need_repeat) {
+                        b_need_repeat = false;
                         continue;
                     }
                     return;
@@ -377,7 +378,7 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
     auto n_chunks = m_Blob->GetNChunks();
     for (int32_t chunk_no = 0; chunk_no < n_chunks && m_ActiveQueries > 0; ++chunk_no) {
         if (!m_ProcessedChunks[chunk_no]) {
-            auto& qry = m_QueryArr[chunk_no];
+            shared_ptr<CCassQuery>& qry = m_QueryArr[chunk_no];
             if (qry) {
                 bool chunk_repeat = false;
                 bool ready = CheckReady(qry, eLoadingChunks, &chunk_repeat);
@@ -415,6 +416,7 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                 }
 
                 if (chunk_repeat) {
+                    qry->Close();
                     qry = nullptr;
                     --m_ActiveQueries;
                     if (CanRestart()) {
@@ -424,12 +426,9 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                     } else {
                         char msg[1024];
                         msg[0] = '\0';
-                        snprintf(msg, sizeof(msg),
-                             "Failed to fetch blob chunk  (key=%s.%d, chunk=%d)",
-                             m_Keyspace.c_str(), m_Key, chunk_no);
-                        Error(CRequestStatus::e502_BadGateway,
-                              CCassandraException::eFetchFailed,
-                              eDiag_Error, msg);
+                        snprintf(msg, sizeof(msg), "Failed to fetch blob chunk  (key=%s.%d, chunk=%d)",
+                            m_Keyspace.c_str(), m_Key, chunk_no);
+                        Error(CRequestStatus::e502_BadGateway, CCassandraException::eFetchFailed, eDiag_Error, msg);
                         return;
                     }
                 }
