@@ -2906,10 +2906,7 @@ static void s_ReadOrgNamesFromText
     char *         comment_end;
     int            defline_offset;
   
-    //if (string == NULL  ||  string[0] != '>'  ||  afrp == NULL) {
-    //    return;
-    //}
-    if (string == NULL  ||  afrp == NULL) {
+    if (string == NULL  ||  string[0] != '>'  ||  afrp == NULL) {
         return;
     }
 
