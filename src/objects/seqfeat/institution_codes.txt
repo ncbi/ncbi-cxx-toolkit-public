@@ -6726,6 +6726,7 @@ UAM:ES	s	University of Alaska, Museum of the North, Earth Science
 UAM:Fish	s	University of Alaska, Museum of the North, Fish Collection	
 UAM:Herb	s	University of Alaska, Museum of the North, UAM Herbarium		
 UAM:Herp	s	University of Alaska, Museum of the North, Amphibian and Reptile Collection	
+UAM:Inv	s	University of Alaska, Museum of the North, Invertebrate Collection	
 UAM:Mamm	s	University of Alaska, Museum of the North, Mammal Collection	
 UAM:Moll	s	University of Alaska, Museum of the North, Mollusc Collection		
 UAM:Paleo	s	University of Alaska, Museum of the North, paleontology collection		

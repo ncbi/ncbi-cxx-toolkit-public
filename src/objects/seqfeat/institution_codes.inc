@@ -6759,6 +6759,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UAM:Fish\ts\tUniversity of Alaska, Museum of the North, Fish Collection\t",
 "UAM:Herb\ts\tUniversity of Alaska, Museum of the North, UAM Herbarium\t\t",
 "UAM:Herp\ts\tUniversity of Alaska, Museum of the North, Amphibian and Reptile Collection\t",
+"UAM:Inv\ts\tUniversity of Alaska, Museum of the North, Invertebrate Collection\t",
 "UAM:Mamm\ts\tUniversity of Alaska, Museum of the North, Mammal Collection\t",
 "UAM:Moll\ts\tUniversity of Alaska, Museum of the North, Mollusc Collection\t\t",
 "UAM:Paleo\ts\tUniversity of Alaska, Museum of the North, paleontology collection\t\t",
