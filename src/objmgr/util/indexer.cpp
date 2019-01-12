@@ -1055,8 +1055,13 @@ void CBioseqIndex::x_InitGaps (void)
 
         SSeqMapSelector sel;
 
+        size_t resolveCount = 1;
+        if (m_Policy == CSeqEntryIndex::eInternal) {
+            resolveCount = 0;
+        }
+
         sel.SetFlags(CSeqMap::fFindGap)
-           .SetResolveCount(1);
+           .SetResolveCount(resolveCount);
 
         // explore gaps, pass original target BioseqHandle if using Bioseq sublocation
         for (CSeqMap_CI gap_it(m_OrigBsh, sel); gap_it; ++gap_it) {
