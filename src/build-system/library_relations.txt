@@ -204,13 +204,6 @@ build_config_base needs gpinit_register
 bz2 needs3party $(ORIG_LIBS)
 cache_g needs generic_db_utils
 cares needs3party $(ORIG_LIBS)
-cassandra needs $(Z_LIB)
-cassandra needs3party $(KRB5_LIBS)
-cassandra needs3party $(LIBUV_LIBS)
-cassandra needs3party $(NETWORK_LIBS)
-cassandra needs3party $(OPENSSL_LIBS)
-cassandra needs3party $(ORIG_LIBS)
-cassandra needs3party $(Z_LIBS)
 cdd needs cn3d
 cdd needs scoremat
 cdd_access needs id2
@@ -1048,13 +1041,6 @@ proxsort needs taxoscli
 psg_cache needs $(LMDB_LIB)
 psg_cache needs xncbi
 psg_cache needs3party $(LMDB_LIBS)
-psg_cassandra needs $(Z_LIB)
-psg_cassandra needs connect
-psg_cassandra needs xncbi
-psg_cassandra needs3party $(CASSANDRA_LIBS)
-psg_cassandra needs3party $(KRB5_LIBS)
-psg_cassandra needs3party $(OPENSSL_LIBS)
-psg_cassandra needs3party $(Z_LIBS)
 psg_client needs $(SEQ_LIBS)
 psg_client needs pub
 psg_client needs xconnserv
