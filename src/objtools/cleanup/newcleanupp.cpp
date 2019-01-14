@@ -5156,11 +5156,23 @@ void CNewCleanup_imp::x_SeqIntervalBC( CSeq_interval & seq_interval )
         ChangeMade(CCleanupChange::eChangeSeqloc);
     }
     // change bad strand values.
-    if (seq_interval.CanGetStrand()) {
-        ENa_strand strand = seq_interval.GetStrand();
-        if (strand == eNa_strand_unknown ) {
-            seq_interval.ResetStrand();
-            ChangeMade(CCleanupChange::eChangeStrand);
+    if (m_Scope && seq_interval.IsSetId()) {
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq_interval.GetId());
+        if (bsh) {
+            if (bsh.IsProtein()) {
+                if (seq_interval.IsSetStrand()) {
+                    seq_interval.ResetStrand();
+                    ChangeMade(CCleanupChange::eChangeStrand);
+                }
+            } else if (seq_interval.IsSetStrand()) {
+                if (seq_interval.GetStrand() == eNa_strand_unknown) {
+                    seq_interval.SetStrand(eNa_strand_plus);
+                    ChangeMade(CCleanupChange::eChangeStrand);
+                }
+            } else {
+                seq_interval.SetStrand(eNa_strand_plus);
+                ChangeMade(CCleanupChange::eChangeStrand);
+            }
         }
     }
 }
