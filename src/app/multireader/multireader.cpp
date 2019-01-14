@@ -141,7 +141,7 @@ public:
         EDiagSev eDiagSev, const string & msg);
     void WriteMessageImmediately(
         ostream & ostr, const ILineError & line_error_p);
-
+    bool ShowingProgress() const { return m_showingProgress; };
 protected:
 
 private:
@@ -185,6 +185,7 @@ private:
     string m_AnnotName;
     string m_AnnotTitle;
     bool m_bXmlMessages;
+    bool m_showingProgress;
 
     auto_ptr<CIdMapper> m_pMapper;
     //unique_ptr<CMessageListenerBase> m_pErrors;
@@ -195,12 +196,12 @@ private:
 
 
 //  ============================================================================
-class CMessageListenerCustom:
+class CMyMessageListenerCustom:
 //  ============================================================================
     public CMessageListenerBase
 {
 public:
-    CMessageListenerCustom(
+    CMyMessageListenerCustom(
         int iMaxCount,
         int iMaxLevel,
         CMultiReaderApp & multi_reader_app) 
@@ -208,7 +209,7 @@ public:
           m_multi_reader_app(multi_reader_app)
     {};
 
-    ~CMessageListenerCustom() {};
+    ~CMyMessageListenerCustom() {};
 
     bool
     PutMessage(
@@ -237,6 +238,9 @@ public:
         const Uint8 bytesDone,
         const Uint8 dummy)
     {
+        if (!m_multi_reader_app.ShowingProgress()) {
+            return;
+        }
         AutoPtr<ILineError> line_error_p =
             m_multi_reader_app.sCreateSimpleMessage(
                 eDiag_Info,
@@ -264,12 +268,12 @@ QualCompare(
 }
 
 //  ============================================================================
-class CMessageListenerCustomLevel:
+class CMyMessageListenerCustomLevel:
 //  ============================================================================
     public CMessageListenerLevel
 {
 public:
-    CMessageListenerCustomLevel(
+    CMyMessageListenerCustomLevel(
         int level, CMultiReaderApp & multi_reader_app)
         : CMessageListenerLevel(level),
           m_multi_reader_app(multi_reader_app) {};
@@ -280,6 +284,9 @@ public:
         const Uint8 bytesDone,
         const Uint8 dummy)
     {
+        if (!m_multi_reader_app.ShowingProgress()) {
+            return;
+        }
         AutoPtr<ILineError> line_error_p =
             m_multi_reader_app.sCreateSimpleMessage(
                 eDiag_Info,
@@ -342,11 +349,6 @@ void CMultiReaderApp::Init(void)
         CArgDescriptions::eDirectory,
         "");
     arg_desc->AddAlias("r", "outdir");
-
-    //arg_desc->SetDependency("input", CArgDescriptions::eExcludes, "indir");
-    //arg_desc->SetDependency("indir", CArgDescriptions::eExcludes, "input");
-    //arg_desc->SetDependency("output", CArgDescriptions::eExcludes, "outdir");
-    //arg_desc->SetDependency("outdir", CArgDescriptions::eExcludes, "output");
 
     arg_desc->AddDefaultKey(
         "format", 
@@ -839,7 +841,7 @@ void CMultiReaderApp::xProcessWiggle(
     ANNOTS annots;
     
     CWiggleReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
-    if (args["show-progress"]) {
+    if (ShowingProgress()) {
         reader.SetProgressReportInterval(10);
     }
     //TestCanceler canceler;
@@ -889,7 +891,7 @@ void CMultiReaderApp::xProcessBed(
 {
     //  Use ReadSeqAnnot() over ReadSeqAnnots() to keep memory footprint down.
     CBedReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
-    if (args["show-progress"]) {
+    if (ShowingProgress()) {
         reader.SetProgressReportInterval(10);
     }
     //TestCanceler canceler;
@@ -932,7 +934,7 @@ void CMultiReaderApp::xProcessGtf(
         return xProcessGff2(args, istr, ostr);
     }
     CGtfReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
-    if (args["show-progress"]) {
+    if (ShowingProgress()) {
         reader.SetProgressReportInterval(10);
     }
     //TestCanceler canceler;
@@ -958,7 +960,7 @@ void CMultiReaderApp::xProcessGff3(
         return xProcessGff2(args, istr, ostr);
     }
     CGff3Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
-    if (args["show-progress"]) {
+    if (ShowingProgress()) {
         reader.SetProgressReportInterval(10);
     }
     //TestCanceler canceler;
@@ -1021,7 +1023,7 @@ void CMultiReaderApp::xProcessGvf(
         return xProcessGff3(args, istr, ostr);
     }
     CGvfReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
-    if (args["show-progress"]) {
+    if (ShowingProgress()) {
         reader.SetProgressReportInterval(10);
     }
     //TestCanceler canceler;
@@ -1043,7 +1045,7 @@ void CMultiReaderApp::xProcessVcf(
     ANNOTS annots;
 
     CVcfReader reader( m_iFlags );
-    if (args["show-progress"]) {
+    if (ShowingProgress()) {
         reader.SetProgressReportInterval(10);
     }
    //TestCanceler canceler;
@@ -1516,13 +1518,15 @@ CMultiReaderApp::xSetMessageListener(
     if ( args["noerrors"] ) {   // not using error policy at all
         return;
     }
+    m_showingProgress = args["show-progress"];
+
     if ( args["strict"] ) {
         m_pErrors.reset(new CMessageListenerStrict());
     } else if ( args["lenient"] ) {
         m_pErrors.reset(new CMessageListenerLenient());
     } else {    
         int iMaxErrorCount = args["max-error-count"].AsInteger();
-        int iMaxErrorLevel = eDiag_Error;
+        int iMaxErrorLevel = eDiag_Warning;
         string strMaxErrorLevel = args["max-error-level"].AsString();
         if ( strMaxErrorLevel == "info" ) {
             iMaxErrorLevel = eDiag_Info;
@@ -1533,15 +1537,15 @@ CMultiReaderApp::xSetMessageListener(
 
         if ( iMaxErrorCount == -1 ) {
             m_pErrors.reset(
-                new CMessageListenerCustomLevel(iMaxErrorLevel, *this));
+                new CMyMessageListenerCustomLevel(iMaxErrorLevel, *this));
         } else {
             m_pErrors.reset(
-                new CMessageListenerCustom(
+                new CMyMessageListenerCustom(
                     iMaxErrorCount, iMaxErrorLevel, *this));
         }
     }
     // if progress requested, wrap the m_pErrors so that progress is shown
-    if( args["show-progress"] ) {
+    if (ShowingProgress()) {
         m_pErrors->SetProgressOstream( &cerr );
     }
 }
@@ -1559,7 +1563,6 @@ void CMultiReaderApp::xDumpErrors(
         }
     }
 }
-
 
 //  ----------------------------------------------------------------------------
 int main(int argc, const char* argv[])
