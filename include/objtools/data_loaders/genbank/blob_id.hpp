@@ -181,6 +181,13 @@ enum EBlobContentsMask
 typedef int TBlobContentsMask;
 
 
+enum EGBErrorAction {
+    eGBErrorAction_ignore,
+    eGBErrorAction_report,
+    eGBErrorAction_throw
+};
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 

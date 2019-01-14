@@ -2173,7 +2173,18 @@ CId2ReaderBase::x_GetError(CReaderRequestResult& result,
     switch ( error.GetSeverity() ) {
     case CID2_Error::eSeverity_warning:
         error_flags |= fError_warning;
-        ERR_POST_X(16, Warning<<"ID2-Reply: "<<error.GetMessage());
+        if ( error.IsSetMessage() ) {
+            const string& msg = error.GetMessage();
+            if ( msg.find("PTIS_FAILURE") != NPOS ) {
+                EGBErrorAction action = result.GetPTISErrorAction();
+                if ( action == eGBErrorAction_throw ) {
+                    NCBI_THROW_FMT(CLoaderException, eConnectionFailed, msg);
+                }
+                if ( action == eGBErrorAction_report ) {
+                    ERR_POST_X(16, Warning<<msg);
+                }
+            }
+        }
         break;
     case CID2_Error::eSeverity_failed_command:
         error_flags |= fError_bad_command;

@@ -1214,6 +1214,8 @@ public:
 
     virtual bool GetAddWGSMasterDescr(void) const;
 
+    virtual EGBErrorAction GetPTISErrorAction(void) const;
+
     CWriter* GetIdWriter(void) const;
     CWriter* GetBlobWriter(void) const;
 

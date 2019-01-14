@@ -137,6 +137,8 @@ public:
 
     virtual bool GetAddWGSMasterDescr(void) const;
 
+    virtual EGBErrorAction GetPTISErrorAction(void) const;
+    
     friend class CGBDataLoader;
 
 private:
@@ -638,6 +640,28 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
                                  "Bad value of parameter "
                                  NCBI_GBLOADER_PARAM_ADD_WGS_MASTER
                                  ": \""<<param<<"\"");
+            }
+        }
+    }
+    m_PTISErrorAction = eGBErrorAction_report;
+    if ( gb_params ) {
+        string param =
+            GetParam(gb_params, NCBI_GBLOADER_PARAM_PTIS_ERROR_ACTION);
+        if ( !param.empty() ) {
+            if ( NStr::EqualNocase(param, NCBI_GBLOADER_PARAM_PTIS_ERROR_ACTION_IGNORE) ) {
+                m_PTISErrorAction = eGBErrorAction_ignore;
+            }
+            else if ( NStr::EqualNocase(param, NCBI_GBLOADER_PARAM_PTIS_ERROR_ACTION_REPORT) ) {
+                m_PTISErrorAction = eGBErrorAction_report;
+            }
+            else if ( NStr::EqualNocase(param, NCBI_GBLOADER_PARAM_PTIS_ERROR_ACTION_THROW) ) {
+                m_PTISErrorAction = eGBErrorAction_throw;
+            }
+            else {
+                NCBI_THROW_FMT(CLoaderException, eBadConfig,
+                               "Bad value of parameter "
+                               NCBI_GBLOADER_PARAM_PTIS_ERROR_ACTION
+                               ": \""<<param<<"\"");
             }
         }
     }
@@ -1943,6 +1967,12 @@ bool
 CGBReaderRequestResult::GetAddWGSMasterDescr(void) const
 {
     return m_Loader->GetAddWGSMasterDescr();
+}
+
+
+EGBErrorAction CGBReaderRequestResult::GetPTISErrorAction(void) const
+{
+    return m_Loader->GetPTISErrorAction();
 }
 
 

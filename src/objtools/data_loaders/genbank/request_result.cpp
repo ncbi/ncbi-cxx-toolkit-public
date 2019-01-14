@@ -792,6 +792,12 @@ bool CReaderRequestResult::GetAddWGSMasterDescr(void) const
 }
 
 
+EGBErrorAction CReaderRequestResult::GetPTISErrorAction(void) const
+{
+    return eGBErrorAction_report;
+}
+
+
 CReaderRequestResult::~CReaderRequestResult(void)
 {
     ReleaseLocks();

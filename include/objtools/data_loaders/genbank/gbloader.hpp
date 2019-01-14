@@ -454,6 +454,17 @@ public:
             return m_HasHUPIncluded;
         }
 
+    
+    EGBErrorAction GetPTISErrorAction(void) const
+        {
+            return m_PTISErrorAction;
+        }
+
+    void SetPTISErrorAction(EGBErrorAction action)
+        {
+            m_PTISErrorAction = action;
+        }
+
     virtual CObjectManager::TPriority GetDefaultPriority(void) const override;
 
 protected:
@@ -493,6 +504,7 @@ private:
     bool                    m_AlwaysLoadNamedAcc;
     bool                    m_AddWGSMasterDescr;
     bool                    m_HasHUPIncluded;
+    EGBErrorAction          m_PTISErrorAction;
     string                  m_WebCookie;
 
     //
