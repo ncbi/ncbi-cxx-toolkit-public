@@ -111,6 +111,7 @@ void CFixFeatureId::s_ApplyToSeqInSet(CSeq_entry_Handle tse, map<CSeq_feat_Handl
     }
 }
 
+// This function maps existing feature ids to the sequential ints - 1,2,3,...
 void CFixFeatureId::s_MakeIDPairs(const CSeq_entry_Handle& entry, map<int,int> &id_pairs)
 {
     int feat_id = 0;
@@ -124,6 +125,8 @@ void CFixFeatureId::s_MakeIDPairs(const CSeq_entry_Handle& entry, map<int,int> &
     }
 }
 
+// Create a map from the existing feature ids to the sequential ints 1,2,3... 
+// and prepare a map from feature handles to the modified features with the reassigned ids both in the feature id and in the xrefs
 void CFixFeatureId::s_ReassignFeatureIds(const CSeq_entry_Handle& entry, map<CSeq_feat_Handle, CRef<CSeq_feat> > &changed_feats)
 {
     if (!entry)
