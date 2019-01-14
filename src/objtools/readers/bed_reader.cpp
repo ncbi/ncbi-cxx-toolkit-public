@@ -199,6 +199,9 @@ public:
     StripSpaceCharsInPlace(
         string& str)
     {
+        if (str.empty()) {
+            return;
+        }
         auto newFirst = 0;
         while (str[newFirst] == ' ') {
             ++newFirst;
