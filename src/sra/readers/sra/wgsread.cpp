@@ -951,7 +951,8 @@ string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
             return path;
         }
     }
-    if ( CVPath::IsPlainAccession(path_or_acc) ) {
+    if ( CVPath::IsPlainAccession(path_or_acc) &&
+         path_or_acc.find('.') == string::npos ) { // no WGS accession sub-version
         // parse WGS accession
         const SIZE_TYPE start = 0;
         // ID-5322 : WGS prefix can consist of 4 or 6 characters, with optional
