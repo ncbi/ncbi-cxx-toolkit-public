@@ -97,28 +97,6 @@ string s_AlnErrorToString(const CAlnError & error)
 
 
 //  ============================================================================
-void
-DumpMemory(
-    const string& prefix)
-//  ============================================================================
-{
-    Uint8 totalMemory = GetPhysicalMemorySize();
-    size_t usedMemory; size_t residentMemory; size_t sharedMemory;
-    if (!GetMemoryUsage(&usedMemory, &residentMemory, &sharedMemory)) {
-        cerr << "Unable to get memory counts!" << endl;
-    }
-    else {
-        cerr << prefix
-            << "Total:" << totalMemory 
-            << " Used:" << usedMemory << "(" 
-                << (100*usedMemory)/totalMemory <<"%)" 
-            << " Resident:" << residentMemory << "(" 
-                << int((100.0*residentMemory)/totalMemory) <<"%)" 
-            << endl;
-    }
-}
-  
-//  ============================================================================
 class TestCanceler: public ICanceled
 //  ============================================================================
 {
@@ -176,7 +154,6 @@ private:
     void xPostProcessAnnot(const CArgs&, CSeq_annot&);
     void xWriteObject(const CArgs&, CSerialObject&, CNcbiOstream&);
     void xDumpErrors(CNcbiOstream& );
-    void xDumpTrack(const CArgs&, const CSeq_annot&, CNcbiOstream&);
 
     CFormatGuess::EFormat m_uFormat;
     bool m_bCheckOnly;
@@ -257,16 +234,6 @@ protected:
     CMultiReaderApp & m_multi_reader_app;
 };    
         
-//  ----------------------------------------------------------------------------
-int
-QualCompare(
-    const CGb_qual& lhs,
-    const CGb_qual& rhs)
-//  ----------------------------------------------------------------------------
-{
-    return 0;
-}
-
 //  ============================================================================
 class CMyMessageListenerCustomLevel:
 //  ============================================================================
@@ -848,7 +815,6 @@ void CMultiReaderApp::xProcessWiggle(
     //reader.SetCanceler(&canceler);
     reader.ReadSeqAnnots(annots, istr, m_pErrors.get());
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        //xDumpTrack(args, **cit, cerr);
         xWriteObject(args, **cit, ostr);
     }
 }
@@ -1382,36 +1348,6 @@ void CMultiReaderApp::xPostProcessAnnot(
 
     CCleanup cleanup;
     CConstRef<CCleanupChange> changed = cleanup.BasicCleanup(annot);
-}
-
-//  ----------------------------------------------------------------------------
-void CMultiReaderApp::xDumpTrack(
-    const CArgs& args,
-    const CSeq_annot& annot,
-    CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
-{
-    ostr << "[Track name=\"";
-    string name;
-    if (!CReadUtil::GetTrackName(annot, name)) {
-        name = "<>";
-    }
-    ostr << name;
-
-    ostr << "\" assembly=\"";
-    string assembly;
-    if (!CReadUtil::GetTrackAssembly(annot, assembly)) {
-        assembly = "<>";
-    }
-    ostr << assembly;
-
-    ostr << "\" offset=";
-    int offset=0;
-    if (!CReadUtil::GetTrackOffset(annot, offset)) {
-        offset = 0;
-    }
-    ostr << offset;
-    ostr << "]" << endl;
 }
 
 //  ----------------------------------------------------------------------------
