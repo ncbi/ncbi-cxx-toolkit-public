@@ -31,30 +31,8 @@
  * Authors:  Colleen Bollin
  *
  */
+#include <corelib/ncbistd.hpp>
 
-#include <util/creaders/creaders_export.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* defines from ncbistd.h */
-#ifndef FAR
-#define FAR
-#endif
-#ifndef PASCAL
-#define PASCAL
-#endif
-#ifndef EXPORT
-#define EXPORT
-#endif
-
-#ifndef PASCAL
-#define PASCAL
-#endif
-#ifndef EXPORT
-#define EXPORT
-#endif
 
 #if defined (WIN32)
 #    define ALIGNMENT_CALLBACK __stdcall
@@ -93,11 +71,9 @@ typedef void (ALIGNMENT_CALLBACK *FReportErrorFunction) (
   void *        userdata /* data supplied by calling program to library */
 );
 
-NCBI_CREADERS_EXPORT 
-extern TErrorInfoPtr ErrorInfoNew (TErrorInfoPtr list);
+TErrorInfoPtr ErrorInfoNew (TErrorInfoPtr list);
 
-NCBI_CREADERS_EXPORT 
-extern void ErrorInfoFree (TErrorInfoPtr eip);
+void ErrorInfoFree (TErrorInfoPtr eip);
 
 typedef struct SSequenceInfo {
     char * missing;
@@ -108,8 +84,8 @@ typedef struct SSequenceInfo {
     const char * alphabet;
 } SSequenceInfo, * TSequenceInfoPtr;
 
-extern NCBI_CREADERS_EXPORT TSequenceInfoPtr SequenceInfoNew (void);
-extern NCBI_CREADERS_EXPORT void SequenceInfoFree (TSequenceInfoPtr sip);
+TSequenceInfoPtr SequenceInfoNew (void);
+void SequenceInfoFree (TSequenceInfoPtr sip);
 
 typedef struct SAlignmentFile {
     int     num_sequences;
@@ -123,10 +99,10 @@ typedef struct SAlignmentFile {
     char    align_format_found;
 } SAlignmentFile, * TAlignmentFilePtr;
 
-extern NCBI_CREADERS_EXPORT TAlignmentFilePtr AlignmentFileNew (void);
-extern NCBI_CREADERS_EXPORT void AlignmentFileFree (TAlignmentFilePtr afp);
+TAlignmentFilePtr AlignmentFileNew (void);
+void AlignmentFileFree (TAlignmentFilePtr afp);
 
-extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFile (
+TAlignmentFilePtr ReadAlignmentFile (
   FReadLineFunction    readfunc,      /* function for reading lines of 
                                        * alignment file
                                        */
@@ -142,7 +118,7 @@ extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFile (
                                        */
 );
 
-extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFileEx (
+TAlignmentFilePtr ReadAlignmentFileEx (
   FReadLineFunction    readfunc,      /* function for reading lines of 
                                        * alignment file
                                        */
@@ -169,8 +145,7 @@ extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFileEx (
  * legacy code compatibility, hence the new functions with almost the same
  * signature.
  */
-
-extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFile2 (
+NCBI_XOBJREAD_EXPORT TAlignmentFilePtr ReadAlignmentFile2 (
   FReadLineFunction    readfunc,      /* function for reading lines of 
                                        * alignment file
                                        */
@@ -190,7 +165,7 @@ extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFile2 (
                                        */ 
 );
 
-extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFileEx2 (
+NCBI_XOBJREAD_EXPORT TAlignmentFilePtr ReadAlignmentFileEx2 (
   FReadLineFunction    readfunc,      /* function for reading lines of 
                                        * alignment file
                                        */
@@ -215,8 +190,5 @@ extern NCBI_CREADERS_EXPORT TAlignmentFilePtr ReadAlignmentFileEx2 (
                                        */ 
 );
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif // _ALNREAD_HPP_

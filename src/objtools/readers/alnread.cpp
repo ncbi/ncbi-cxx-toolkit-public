@@ -30,7 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <util/creaders/alnread.h>
+#include <objtools/readers/alnread.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,7 +42,6 @@
 
 static const size_t kMaxPrintedIntLen = 10;
 #define             kMaxPrintedIntLenPlusOne 11
-
 
 /*  ---------------------------------------------------------------------- */
 typedef enum {
@@ -149,7 +148,7 @@ static void s_AfrpProcessFastaGap(
  * The new structure will be added to the end of the linked list of error
  * structures pointed to by list.
  */
-extern TErrorInfoPtr ErrorInfoNew (TErrorInfoPtr list)
+TErrorInfoPtr ErrorInfoNew (TErrorInfoPtr list)
 {
     TErrorInfoPtr eip, last;
 
@@ -175,7 +174,7 @@ extern TErrorInfoPtr ErrorInfoNew (TErrorInfoPtr list)
 /* This function recursively frees the memory associated with a list of
  * error structures as well as the member variables of the error structures.
  */
-extern void ErrorInfoFree (TErrorInfoPtr eip)
+void ErrorInfoFree (TErrorInfoPtr eip)
 {
     if (eip == NULL) {
         return;
@@ -762,7 +761,7 @@ static void s_ReportBadNumSegError
  * initializes the member variables.  It returns a pointer to the newly
  * allocated memory.
  */
-extern TSequenceInfoPtr SequenceInfoNew (void)
+TSequenceInfoPtr SequenceInfoNew (void)
 {
     TSequenceInfoPtr sip;
 
@@ -783,7 +782,7 @@ extern TSequenceInfoPtr SequenceInfoNew (void)
 /* This function frees memory associated with the member variables of
  * the SSequenceInfo structure and with the structure itself.
  */
-extern void SequenceInfoFree (TSequenceInfoPtr sip)
+void SequenceInfoFree (TSequenceInfoPtr sip)
 {
     if (sip == NULL) {
         return;
@@ -2705,7 +2704,7 @@ static void s_RemoveOrganismCommentFromLine (char * string)
             if (diff < len-1) {
                 char* pbuf = pbuf1024;
                 if (len > sizeof(pbuf1024)-1) {
-                    pbuf = malloc(len + 1);
+                    pbuf = (char*)malloc(len + 1);
                 }
                 strcpy(pbuf, clp->end + 1);
                 strcpy(clp->start, pbuf);
@@ -2927,9 +2926,11 @@ static void s_ReadOrgNamesFromText
         const char* dummy = "";
         const int linelen = strlen(string);
         afrp->organisms = s_AddLineInfo(
-            afrp->organisms, dummy, line_num, string + linelen);
+            afrp->organisms, 
+            const_cast<char*>(dummy), line_num, 
+            reinterpret_cast<long>(string + linelen));
         afrp->num_organisms ++;
-        s_AddDeflineFromOrganismLine(dummy, line_num, linelen, afrp);
+        s_AddDeflineFromOrganismLine(const_cast<char*>(dummy), line_num, linelen, afrp);
         return;
     }
     while (clp != NULL) {
@@ -4080,12 +4081,12 @@ s_ProcessBlockLines
  * data.
  */
 static void
-s_RemoveCommentsFromBlock
-(TLineInfoPtr first_line,
- int         num_lines_in_block)
+s_RemoveCommentsFromBlock(
+    TLineInfoPtr first_line,
+    int num_lines_in_block)
 {
     TLineInfoPtr lip;
-    int         block_offset;
+    int block_offset;
 
     for (lip = first_line, block_offset = 0;
          lip != NULL  &&  block_offset < num_lines_in_block;
@@ -5378,7 +5379,7 @@ static void s_ProcessAlignFileRawByLengthPattern (SAlignRawFilePtr afrp)
 /* This function allocates memory for a new AligmentFileData structure
  * and initializes its member variables.
  */
-extern TAlignmentFilePtr AlignmentFileNew (void)
+TAlignmentFilePtr AlignmentFileNew (void)
 {
     TAlignmentFilePtr afp;
 
@@ -5401,7 +5402,7 @@ extern TAlignmentFilePtr AlignmentFileNew (void)
 /* This function frees the memory associated with an AligmentFileData
  * structure and its member variables.
  */
-extern void AlignmentFileFree (TAlignmentFilePtr afp)
+void AlignmentFileFree (TAlignmentFilePtr afp)
 {
     int  index;
 
@@ -5643,6 +5644,7 @@ s_FindBadDataCharsInSequence
         return eTrue;
     }
     lirp = s_LineInfoReaderNew (arsp->sequence_data);
+
     if (lirp == NULL) {
         return eTrue;
     }
@@ -5713,6 +5715,7 @@ s_FindBadDataCharsInSequence
         }
         curr_char = s_FindNthDataChar (lirp, data_position);
     }
+
 
     if (! found_middle_start) {
         s_LineInfoReaderFree (lirp);
@@ -5824,6 +5827,7 @@ s_s_FindBadDataCharsInSequenceList
             is_bad = eTrue;
         }
     }
+
     return is_bad;
 }
 
@@ -6043,7 +6047,7 @@ s_ConvertDataToOutput
  * The sequence_info argument contains the sequence alphabet and missing,
  * match, and gap characters to use in interpreting the sequence data.
  */
-extern TAlignmentFilePtr 
+TAlignmentFilePtr 
 ReadAlignmentFileEx2 
 (FReadLineFunction readfunc,
  void * fileuserdata,
@@ -6088,7 +6092,7 @@ ReadAlignmentFileEx2
     if (s_s_FindBadDataCharsInSequenceList (afrp, sequence_info)) {
         s_AlignFileRawFree (afrp);
         return NULL;
-    }
+    } 
 
     afp = s_ConvertDataToOutput (afrp, sequence_info);
     s_AlignFileRawFree (afrp);
@@ -6096,7 +6100,7 @@ ReadAlignmentFileEx2
     return afp;
 }
 
-extern TAlignmentFilePtr 
+TAlignmentFilePtr 
 ReadAlignmentFileEx 
 (FReadLineFunction readfunc,
  void * fileuserdata,
@@ -6109,7 +6113,7 @@ ReadAlignmentFileEx
         sequence_info, use_nexus_file_info, eFalse);
 }
 
-extern TAlignmentFilePtr 
+TAlignmentFilePtr 
 ReadAlignmentFile 
 (FReadLineFunction readfunc,
  void * fileuserdata,
@@ -6121,7 +6125,7 @@ ReadAlignmentFile
                                 sequence_info, eFalse, eFalse);
 }
 
-extern TAlignmentFilePtr 
+TAlignmentFilePtr 
 ReadAlignmentFile2 
 (FReadLineFunction readfunc,
  void * fileuserdata,
