@@ -1478,8 +1478,8 @@ BlastHitList2SeqAlign_OMF(const BlastHitList     * hit_list,
         CRef<CSeq_id> subject_id;
         GetSequenceLengthAndId(seqinfo_src, kOid, subject_id, &subj_length);
         if(subject_id.Empty()){
-        	NCBI_THROW(CBlastException, eCoreBlastError,
-        			   "Failed to retrieve subject id for oid " + NStr::UIntToString(kOid));
+        	LOG_POST(Info << "No unfiltered subject id for oid " + NStr::UIntToString(kOid));
+        	continue;
         }
         
         // Union subject sequence ranges
