@@ -51,11 +51,16 @@ case "$1" in
      elif test "`$CXX -V$1 -dumpversion 2>/dev/null`" = "$1"; then
        CXX="$CXX -V$1"
        CC="$CC -V$1"
-     elif test "`$CXX -dumpversion 2>/dev/null`" \!= "$1"; then
-       cat <<EOF
+     else
+       case "`$CXX -dumpversion 2>/dev/null`" in
+         "$1" | "$1".* ) ;;
+         * )
+           cat <<EOF
 ERROR:  cannot find GCC version $1; you may need to adjust PATH explicitly.
 EOF
-       exit 1
+           exit 1
+           ;;
+       esac
      fi
      shift
   ;;
