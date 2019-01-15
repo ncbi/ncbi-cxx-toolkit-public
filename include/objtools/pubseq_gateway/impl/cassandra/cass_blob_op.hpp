@@ -62,7 +62,7 @@ enum ECassTristate {
     eFalse
 };
 
-using TBlobChunkCallback = function<void(const unsigned char * data, unsigned int size, int chunk_no)>;
+using TBlobChunkCallback = function<void(const unsigned char * data, unsigned int size, int chunk_no, int64_t flags)>;
 using TDataErrorCallback = function<void(
     CRequestStatus::ECode status,
     int code,
