@@ -784,6 +784,7 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
 
         if (!null_column  &&  !is_blob_type(bindcol->column_type)) {
                 TDS_SERVER_TYPE desttype = TDS_INVALID_TYPE;
+                TDSSOCKET * tds = CONN(blkdesc)->tds_socket;
 
 		srcfmt.datatype = srctype;
 		srcfmt.maxlength = srclen;
@@ -813,6 +814,20 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
 			tdsdump_log(TDS_DBG_INFO1, "convert failed for %d \n", srcfmt.datatype);
 			return CS_FAIL;
 		}
+                if (destfmt.maxlength != bindcol->column_size
+                    &&  destfmt.datatype == CS_CHAR_TYPE
+                    &&  is_fixed_type(_ct_get_server_type(tds, srctype))) {
+                        size_t out_len;
+                        const char *buf
+                                = tds_convert_string(tds, bindcol->char_conv,
+                                                     coldata->data, destlen,
+                                                     &out_len);
+                        if (buf != NULL  &&  buf != coldata->data) {
+                                free(coldata->data);
+                                coldata->data = buf;
+                                destlen = out_len;
+                        }
+                }
 	}
 
 	bindcol->bcp_column_data->datalen = destlen;
