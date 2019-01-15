@@ -7,14 +7,12 @@ huge_tar_ftp="ftp://ftp.ncbi.nlm.nih.gov/geo"
 
 if [ "`basename $0 .sh`" != "test_conn_tar" ]; then
   # Locate native tar;  exit successfully if none found
-  string="`whereis tar 2>/dev/null`"
-  if [ -z "$string" ]; then
-    tar="`which tar 2>/dev/null`"
-  else
-    tar="`echo $string | cut -f2 -d' '`"
+  tar="`which tar 2>/dev/null`"
+  if [ -z "$tar" ]; then
+    tar="`whereis tar 2>/dev/null`"
+    test -z "$tar"  ||  tar="`echo $tar | cut -f2 -d' '`"
   fi
-  test -x "$tar"  ||  exit 0
-  # NB:  works correctly only on intprod21
+  test -f "$tar" -a -x "$tar"  ||  exit 0
   huge_tar="$huge_tar_dir"/"$huge_tar_file"
 else
   test_conn_tar="test_conn_tar"
