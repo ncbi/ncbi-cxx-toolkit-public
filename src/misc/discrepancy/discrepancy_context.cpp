@@ -968,6 +968,7 @@ CRef<CDiscrepancyObject> CDiscrepancyContext::CitSubObj(bool autofix, CObject* m
 CRef<CDiscrepancyObject> CDiscrepancyContext::StringObj(const string& str, bool autofix, CObject* more)
 {
     CRef<CReportObjectData> data(new CReportObjectData(str));
+    data->m_FileID = m_File;
     return CRef<CDiscrepancyObject>(new CDiscrepancyObject(*data, autofix, more));
 }
 
