@@ -819,7 +819,7 @@ EUTILS_LIBS = eutils egquery elink epost esearch espell esummary \
               einfo uilist ehistory
 
 # Object readers
-OBJREAD_LIBS = xobjread variation creaders submit xlogging
+OBJREAD_LIBS = xobjread variation submit xlogging
 
 # formatting code
 XFORMAT_LIBS = xformat xcleanup gbseq mlacli mla medlars pubmed valid $(OBJEDIT_LIBS)

@@ -6,7 +6,6 @@ HOSTED_LIBS    = xncbi     \
                  xcompress \
                  tables    \
                  sequtil   \
-                 creaders  \
                  xregexp   \
                  xdiff     \
                  xutil     \
