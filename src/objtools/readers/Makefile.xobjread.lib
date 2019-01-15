@@ -9,7 +9,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = xobjread
 SRC = read_util format_guess_ex \
-      acc_pattern agp_read agp_seq_entry agp_util agp_validate_reader aln_reader bed_reader cigar fasta \
+      acc_pattern agp_read agp_seq_entry agp_util agp_validate_reader alnread aln_reader bed_reader cigar fasta \
 	  fasta_aln_builder fasta_reader_utils getfeature gff_reader track_data reader_data \
       microarray_reader phrap reader_base readfeat rm_reader \
       wiggle_reader gff3_sofa gff3_reader gtf_reader \
@@ -22,7 +22,6 @@ SRC = read_util format_guess_ex \
       message_listener line_error
 
 
-DLL_LIB = submit seqset $(SEQ_LIBS) general creaders xutil xlogging
+DLL_LIB = submit seqset $(SEQ_LIBS) general xutil xlogging
 
-USES_LIBRARIES =  \
-    creaders submit xlogging
+USES_LIBRARIES = submit xlogging
