@@ -358,8 +358,8 @@ void CCassBlobLoader::Wait1(void)
                                       eDiag_Error, msg);
                             } else {
                                 m_State = eDone;
-                                m_DataCb(rawdata, len, 0);
-                                m_DataCb(nullptr, 0, -1);
+                                m_DataCb(rawdata, len, 0, m_BlobStat.flags);
+                                m_DataCb(nullptr, 0, -1, m_BlobStat.flags);
                             }
                             break;
                         } else { // multi-chunk
@@ -439,7 +439,7 @@ void CCassBlobLoader::Wait1(void)
                                 return;
                             }
 
-                            m_DataCb(rawdata, len, ready_chunk_no);
+                            m_DataCb(rawdata, len, ready_chunk_no, m_BlobStat.flags);
                             x_MarkChunkProcessed(ready_chunk_no);
                             x_RequestChunksAhead();
                             continue;
@@ -558,7 +558,7 @@ void CCassBlobLoader::Wait1(void)
                                   eDiag_Error, msg);
                         } else {
                             m_State = eDone;
-                            m_DataCb(nullptr, 0, -1);
+                            m_DataCb(nullptr, 0, -1, m_BlobStat.flags);
                         }
                     } else if (wr == ar_wait) {
                         break;
