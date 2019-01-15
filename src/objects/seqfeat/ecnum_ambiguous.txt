@@ -762,14 +762,18 @@
 7.1.1.n	Hydron translocation or charge separation linked to oxidoreductase reactions
 7.1.2.-	Hydron translocation linked to the hydrolysis of a nucleoside triphosphate
 7.1.2.n	Hydron translocation linked to the hydrolysis of a nucleoside triphosphate
+7.1.3.-	Hydron translocation linked to the hydrolysis of diphosphate
+7.1.3.n	Hydron translocation linked to the hydrolysis of diphosphate
 7.2.-.-	Catalysing the translocation of inorganic cations
 7.2.n.n	Catalysing the translocation of inorganic cations
 7.2.1.-	Linked to oxidoreductase reactions
 7.2.1.n	Linked to oxidoreductase reactions
 7.2.2.-	Linked to the hydrolysis of a nucleoside triphosphate
 7.2.2.n	Linked to the hydrolysis of a nucleoside triphosphate
-7.2.3.-	Linked to decarboxylation
-7.2.3.n	Linked to decarboxylation
+7.2.3.-	Linked to the hydrolysis of diphosphate
+7.2.3.n	Linked to the hydrolysis of diphosphate
+7.2.4.-	Linked to decarboxylation
+7.2.4.n	Linked to decarboxylation
 7.3.-.-	Catalysing the translocation of inorganic anions and their chelates
 7.3.n.n	Catalysing the translocation of inorganic anions and their chelates
 7.3.2.-	Linked to the hydrolysis of a nucleoside triphosphate
