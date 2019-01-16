@@ -776,7 +776,7 @@ Uint8 CSystemInfo::GetAvailPhysicalMemorySize(void)
     MEMORYSTATUSEX st;
     st.dwLength = sizeof(st);
     if ( ::GlobalMemoryStatusEx(&st) ) {
-        return = st.ullAvailPhys;
+        return st.ullAvailPhys;
     }
 
 #elif defined(NCBI_OS_UNIX)  &&  defined(_SC_AVPHYS_PAGES)

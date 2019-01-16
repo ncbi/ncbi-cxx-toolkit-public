@@ -519,7 +519,7 @@ CProcess::CProcess(TPid process, EType type)
 CProcess::CProcess(TProcessHandle process, EType type)
     : m_Process((intptr_t)process), 
       m_Type(type), 
-      m_IsCurrent(eTriState_Unknow)
+      m_IsCurrent(eTriState_Unknown)
 {
     return;
 }
