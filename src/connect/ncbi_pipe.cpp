@@ -102,7 +102,7 @@ static string s_FormatErrorMessage(const string& where, const string& what)
 }
 
 
-static EIO_Status s_Close(const CProcess& process, CPipe::TCreateFlags flags,
+static EIO_Status s_Close(CProcess& process, CPipe::TCreateFlags flags,
                           const STimeout* timeout, int* exitcode)
 {
     CProcess::CExitInfo exitinfo;
@@ -1396,8 +1396,8 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
             }
             status = eIO_Closed;
         } else {
-            status = s_Close(CProcess(m_Pid, CProcess::ePid),
-                             m_Flags, timeout, exitcode);
+            CProcess process(m_Pid, CProcess::ePid);
+            status = s_Close(process, m_Flags, timeout, exitcode);
         }
     } else {
         if ( exitcode ) {
