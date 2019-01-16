@@ -90,5 +90,6 @@ objtools/simple$
 -objects/.*/demo
 -objects/.*/unit_test
 misc$
+misc/jsonwrapp$
 misc/third_party
 misc/third_party_static
