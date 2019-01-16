@@ -509,7 +509,7 @@ int CThreadedApp::Run(void)
 
     unsigned int seed = GetArgs()["seed"]
         ? static_cast<unsigned int>(GetArgs()["seed"].AsInteger())
-        : (static_cast<unsigned int>(CProcess::GetCurrentPid()) ^
+        : (static_cast<unsigned int>(CCurrentProcess::GetPid()) ^
            static_cast<unsigned int>(time(NULL)) % 1000000);
     TESTAPP_LOG_POST("Randomization seed value: " << seed);
     srand(seed);

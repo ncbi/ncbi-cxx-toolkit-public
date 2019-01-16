@@ -59,17 +59,17 @@ int main()
     LOG_POST("Trying to daemonize while running a child thread, expecting failure");
     SChildThread* child = new SChildThread;
     child->Run();
-    _ASSERT(CProcess::Daemonize() == 0);
+    _ASSERT(CCurrentProcess::Daemonize() == 0);
     child->Join();
 #endif
 
-    LOG_POST("Trying to daemonize at \"/\","
-             " expecting failure for the check to continue successfully");
-    _ASSERT(CProcess::Daemonize("/test_ncbi_os_unix.log") == 0);
+    LOG_POST("Trying to daemonize at \"/\", "
+             "expecting failure for the check to continue successfully");
+    _ASSERT(CCurrentProcess::Daemonize("/test_ncbi_os_unix.log") == 0);
     _ASSERT(errno == EACCES  ||  errno == EPERM  ||  errno == ENOENT);
-    _ASSERT(CProcess::Daemonize("./test_ncbi_os_unix.log",
-                                CProcess::fDF_KeepCWD |
-                                CProcess::fDF_KeepStdout) != 0);
+    _ASSERT(CCurrentProcess::Daemonize("./test_ncbi_os_unix.log",
+                                       CCurrentProcess::fDF_KeepCWD |
+                                       CCurrentProcess::fDF_KeepStdout) != 0);
 
     LOG_POST("Trying to daemonize at current location, expecting success");
     _ASSERT(access("./test_ncbi_os_unix.log", F_OK) == 0);

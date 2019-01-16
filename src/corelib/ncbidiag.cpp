@@ -1455,7 +1455,7 @@ CDiagContext::TPID CDiagContext::sm_PID = 0;
 CDiagContext::TPID CDiagContext::GetPID(void)
 {
     if ( !sm_PID ) {
-        sm_PID = CProcess::GetCurrentPid();
+        sm_PID = CCurrentProcess::GetPid();
     }
     return sm_PID;
 }
@@ -1464,7 +1464,7 @@ CDiagContext::TPID CDiagContext::GetPID(void)
 bool CDiagContext::UpdatePID(void)
 {
     TPID old_pid = sm_PID;
-    TPID new_pid = CProcess::GetCurrentPid();
+    TPID new_pid = CCurrentProcess::GetPid();
     if (sm_PID == new_pid) {
         // Parent process does not need to update pid/guid
         return false;
@@ -2133,7 +2133,7 @@ CDiagContext_Extra& CDiagContext_Extra::PrintNcbiRoleAndLocation(void)
 
 CDiagContext_Extra& CDiagContext_Extra::PrintNcbiAppInfoOnStart(void)
 {
-    Print("ncbi_app_username", GetProcessUserName());
+    Print("ncbi_app_username", CSystemInfo::GetUserName());
     CNcbiApplication* ins = CNcbiApplication::Instance();
     if (ins) {
         Print("ncbi_app_path", ins->GetProgramExecutablePath());

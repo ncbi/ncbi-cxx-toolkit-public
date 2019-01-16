@@ -1498,7 +1498,7 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
                 NCBI_THROW(CAppException, eLoadConfig,
                            "Configuration file error:  [NCBI.HeapSizeLimit] > 100%");
             }
-            mem_size_limit = (size_t)(GetPhysicalMemorySize() * percents / 100);
+            mem_size_limit = (size_t)(CSystemInfo::GetTotalPhysicalMemorySize() * percents / 100);
         } else {
             try {
                 // Size is specified in MiB by default if no suffixes

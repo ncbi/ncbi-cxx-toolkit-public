@@ -5444,8 +5444,7 @@ CMemoryFile_Base::CMemoryFile_Base(void)
                    " on this platform");
     }
     if ( !s_VirtualMemoryAllocationGranularity ) {
-        s_VirtualMemoryAllocationGranularity
-            = GetVirtualMemoryAllocationGranularity();
+        s_VirtualMemoryAllocationGranularity = CSystemInfo::GetVirtualMemoryAllocationGranularity();
     }
 }
 
@@ -6429,7 +6428,7 @@ void CFileIO::CreateTemporary(const string& dir,
     Uint8 x_tid = (Uint8) GetCurrentThreadSystemID();
     unsigned int tid = (unsigned int) x_tid;
     string x_prefix = prefix
-        + NStr::NumericToString(CProcess::GetCurrentPid())
+        + NStr::NumericToString(CCurrentProcess::GetPid())
         + NStr::NumericToString(s_Count++)
         + NStr::NumericToString(tid);
 
