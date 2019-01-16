@@ -62,7 +62,8 @@ def main():
              "blast_formatter.exe",
              "deltablast.exe",
              "legacy_blast.pl",
-             "update_blastdb.pl"
+             "update_blastdb.pl",
+             "get_species_taxids.sh"
              ]
     
     cwd = os.getcwd()
