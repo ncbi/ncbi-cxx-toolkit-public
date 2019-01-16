@@ -89,21 +89,6 @@ extern "C" {
 #  include <stdlib.h>
 #  include <windows.h>
 #  include "ncbi_os_mswin_p.hpp"
-
-struct SProcessMemoryCounters
-{
-    DWORD  size;
-    DWORD  page_fault_count;
-    SIZE_T peak_working_set_size;
-    SIZE_T working_set_size;
-    SIZE_T quota_peak_paged_pool_usage;
-    SIZE_T quota_paged_pool_usage;
-    SIZE_T quota_peak_nonpaged_pool_usage;
-    SIZE_T quota_nonpaged_pool_usage;
-    SIZE_T pagefile_usage;
-    SIZE_T peak_pagefile_usage;
-};
-
 #endif //NCBI_OS_MSWIN
 
 
@@ -400,7 +385,7 @@ bool SetMemoryLimitHard(size_t max_size,
     }
     if ( max_size ) {
         rlas.rlim_max = max_size;
-        // Descrease current soft limit of the virtual memory
+        // Decrease current soft limit of the virtual memory
         // to the size of data segment -- min(DATA,AS). 
         if (rlas.rlim_cur > cur_soft_limit) {
             rlas.rlim_cur = cur_soft_limit;
@@ -571,52 +556,404 @@ bool SetCpuTimeLimit(size_t                max_cpu_time,
 }
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
-/// System information
+// System information
 //
 
-unsigned int GetCpuCount(void)
+
+string CSystemInfo::GetUserName(void)
 {
-#if defined(NCBI_OS_MSWIN)
-    SYSTEM_INFO si;
-    GetSystemInfo(&si);
-    return (unsigned int) si.dwNumberOfProcessors;
-
-#elif defined(NCBI_OS_DARWIN)
-    host_basic_info_data_t hinfo;
-    mach_msg_type_number_t hinfo_count = HOST_BASIC_INFO_COUNT;
-    kern_return_t rc;
-
-    rc = host_info(mach_host_self(), HOST_BASIC_INFO,
-                  (host_info_t)&hinfo, &hinfo_count);
-
-    if (rc != KERN_SUCCESS) {
-        return 1;
-    }
-    return hinfo.avail_cpus;
-
-#elif defined(NCBI_OS_UNIX)
-    long nproc = 0;
-# if defined(_SC_NPROC_ONLN)
-    nproc = sysconf(_SC_NPROC_ONLN);
-# elif defined(_SC_NPROCESSORS_ONLN)
-    nproc = sysconf(_SC_NPROCESSORS_ONLN);
-# elif defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_DAWRIN)
-    size_t len = sizeof(nproc);
-    int mib[2];
-    mib[0] = CTL_HW;
-    mib[1] = HW_NCPU;
-    if (sysctl(mib, 2, &nproc, &len, 0, 0) < 0  ||  len != sizeof(nproc))
-        nproc = -1;
-# endif //UNIX_FLAVOR
-    return nproc <= 0 ? 1 : (unsigned int) nproc;
+#if defined(NCBI_OS_UNIX)
+    return CUnixFeature::GetUserNameByUID(geteuid());
+#elif defined(NCBI_OS_MSWIN)
+    return CWinSecurity::GetUserName();
 #else
-    return 1;
-#endif //NCBI_OS_...
+    return string();
+#endif
 }
 
 
+unsigned int CSystemInfo::GetCpuCount(void)
+{
+    static unsigned int cpu = 0;
+    if (!cpu) {
+#if defined(NCBI_OS_MSWIN)
+        SYSTEM_INFO si;
+        GetSystemInfo(&si);
+        cpu = (unsigned int)si.dwNumberOfProcessors;
+
+#elif defined(NCBI_OS_DARWIN)
+        host_basic_info_data_t hinfo;
+        mach_msg_type_number_t hinfo_count = HOST_BASIC_INFO_COUNT;
+        kern_return_t rc;
+        rc = host_info(mach_host_self(), HOST_BASIC_INFO, (host_info_t)&hinfo, &hinfo_count);
+        if (rc == KERN_SUCCESS) {
+            cpu = hinfo.avail_cpus;
+        }
+
+#elif defined(NCBI_OS_UNIX)
+        long x = 0;
+        #if defined(_SC_NPROC_ONLN)
+            x = sysconf(_SC_NPROC_ONLN);
+        #elif defined(_SC_NPROCESSORS_ONLN)
+            x = sysconf(_SC_NPROCESSORS_ONLN);
+        #elif defined(NCBI_OS_BSD) /*|| defined(NCBI_OS_DAWRIN)*/
+            int v;
+            size_t len = sizeof(v);
+            int mib[2] = { CTL_HW, HW_NCPU };
+            if (sysctl(mib, 2, &v, &len, NULL, 0) == 0) {
+                x = v;
+            }
+        #endif // UNIX_FLAVOR
+        cpu = (x <= 0 ? 1 : (unsigned int)x);
+#endif //NCBI_OS_...
+
+        // default assumption
+        if (!cpu) {
+            cpu = 1;
+        }
+    }
+    return cpu;
+}
+
+
+double CSystemInfo::GetUptime(void)
+{
+#if defined(NCBI_OS_MSWIN)
+    return (double)GetTickCount64() / kMilliSecondsPerSecond;
+
+#elif defined(NCBI_OS_UNIX)  &&  defined(CLOCK_UPTIME)
+    struct timespec ts;
+    if (clock_gettime(CLOCK_UPTIME, &ts) == 0) {
+        return ts.tv_sec + (double)ts.tv_nsec/kNanoSecondsPerSecond;
+   }
+
+#elif defined(NCBI_OS_LINUX)
+    // "/proc/uptime" provide more accurate information than
+    // sysinfo(), that is rounded to seconds
+    CNcbiIfstream is("/proc/uptime");
+    if (is) {
+        double ut;
+        is >> ut;
+        return ut;
+    }
+
+#elif defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_DAWRIN)
+    struct timeval boottime;
+    size_t len = sizeof(boottime);
+    int mib[2] = { CTL_KERN, KERN_BOOTTIME };
+    if (sysctl(mib, 2, &boottime, &len, NULL, 0) < 0) {
+        return -1.0;
+    }
+    return  time(NULL) - boottime.tv_sec + (double)boottime.tv_usec/kMicroSecondsPerSecond;
+
+#endif
+    CNcbiError::Set(CNcbiError::eNotSupported);
+    return -1.0;
+}
+
+
+unsigned long CSystemInfo::GetVirtualMemoryPageSize(void)
+{
+    static unsigned long ps = 0;
+    if (ps) {
+        return ps;
+    }
+
+#if defined(NCBI_OS_MSWIN)
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    ps = (unsigned long) si.dwPageSize;
+
+#elif defined(NCBI_OS_UNIX) 
+    long x = 0;
+    #if defined(HAVE_GETPAGESIZE)
+        x = getpagesize();
+    #elif defined(_SC_PAGESIZE)
+        x = sysconf(_SC_PAGESIZE);
+    #elif defined(_SC_PAGE_SIZE)
+        x = sysconf(_SC_PAGE_SIZE);
+    #endif
+    if (x <= 0) {
+        CNcbiError::SetFromErrno();
+        return 0;
+    }
+    ps = x;
+#else
+    CNcbiError::Set(CNcbiError::eNotSupported);
+#endif //NCBI_OS_...
+
+    return ps;
+}
+
+
+unsigned long CSystemInfo::GetVirtualMemoryAllocationGranularity(void)
+{
+    static unsigned long ag = 0;
+    if (!ag) {
+#if defined(NCBI_OS_MSWIN)
+        SYSTEM_INFO si;
+        GetSystemInfo(&si);
+        ag = (unsigned long) si.dwAllocationGranularity;
+#else
+        ag = GetVirtualMemoryPageSize();
+#endif
+    }
+    return ag;
+}
+
+
+Uint8 CSystemInfo::GetTotalPhysicalMemorySize(void)
+{
+    static Uint8 ms = 0;
+    if (ms) {
+        return ms;
+    }
+
+#if defined(NCBI_OS_MSWIN)
+    MEMORYSTATUSEX st;
+    st.dwLength = sizeof(st);
+    if ( ::GlobalMemoryStatusEx(&st) ) {
+        ms = st.ullTotalPhys;
+    }
+
+#elif defined(NCBI_OS_UNIX)  &&  defined(_SC_PHYS_PAGES)
+    unsigned long num_pages = sysconf(_SC_PHYS_PAGES);
+    if (long(num_pages) != -1L) {
+        ms = GetVirtualMemoryPageSize() * Uint8(num_pages);
+    }
+
+#elif defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_DARWIN)
+    int mib[2];
+    mib[0] = CTL_HW;
+    #ifdef HW_MEMSIZE
+        uint64_t physmem;
+        mib[1] = HW_MEMSIZE;
+    #else
+        // Native BSD, may be truncated
+        int physmem;
+        mib[1] = HW_PHYSMEM;
+    #endif
+    size_t len = sizeof(physmem);
+    if (sysctl(mib, 2, &physmem, &len, NULL, 0) == 0  &&  len == sizeof(physmem)){
+        ms = Uint8(physmem);
+    }
+    #if defined(NCBI_OS_DARWIN)
+    {
+        // heavier fallback
+        struct vm_statistics vm_stat;
+        mach_port_t my_host = mach_host_self();
+        mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
+        if (host_statistics(my_host, HOST_VM_INFO,
+                            (integer_t*) &vm_stat, &count) == KERN_SUCCESS) {
+            ms = GetVirtualMemoryPageSize() *
+                   ( Uint8(vm_stat.free_count) + 
+                     Uint8(vm_stat.active_count) +
+                     Uint8(vm_stat.inactive_count) + 
+                     Uint8(vm_stat.wire_count) );
+        }
+    }
+    #endif //NCBI_OS_DARWIN
+
+#elif defined(NCBI_OS_IRIX)
+    struct rminfo rmi;
+    if (sysmp(MP_SAGET, MPSA_RMINFO, &rmi, sizeof(rmi)) >= 0) {
+        ms = GetVirtualMemoryPageSize() * Uint8(rmi.physmem);
+    }
+
+#else
+    CNcbiError::Set(CNcbiError::eNotSupported);
+#endif
+    return ms;
+}
+
+
+Uint8 CSystemInfo::GetAvailPhysicalMemorySize(void)
+{
+#if defined(NCBI_OS_MSWIN)
+    MEMORYSTATUSEX st;
+    st.dwLength = sizeof(st);
+    if ( ::GlobalMemoryStatusEx(&st) ) {
+        return = st.ullAvailPhys;
+    }
+
+#elif defined(NCBI_OS_UNIX)  &&  defined(_SC_AVPHYS_PAGES)
+    unsigned long num_pages = sysconf(_SC_AVPHYS_PAGES);
+    if (long(num_pages) != -1L) {
+        return GetVirtualMemoryPageSize() * Uint8(num_pages);
+    }
+
+#elif (defined(NCBI_OS_BSD) || defined(NCBI_OS_DARWIN))  && defined(HW_USERMEM)
+    int mib[2] = { CTL_HW, HW_USERMEM };
+    uint64_t mem;
+    size_t len = sizeof(mem);
+    if (sysctl(mib, 2, &mem, &len, NULL, 0) == 0  &&  len == sizeof(mem)){
+        return Uint8(mem);
+    }
+    #if defined(NCBI_OS_DARWIN)
+    {
+        // heavier fallback
+        struct vm_statistics vm_stat;
+        mach_port_t my_host = mach_host_self();
+        mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
+        if (host_statistics(my_host, HOST_VM_INFO,
+                            (integer_t*) &vm_stat, &count) == KERN_SUCCESS) {
+            return GetVirtualMemoryPageSize() * Uint8(vm_stat.free_count);
+        }
+    }
+    #endif //NCBI_OS_DARWIN
+
+#elif defined(NCBI_OS_IRIX)
+    struct rminfo rmi;
+    if (sysmp(MP_SAGET, MPSA_RMINFO, &rmi, sizeof(rmi)) >= 0) {
+        return GetVirtualMemoryPageSize() * Uint8(rmi.availrmem);
+    }
+
+#else
+    CNcbiError::Set(CNcbiError::eNotSupported);
+#endif
+    return 0;
+}
+
+
+clock_t CSystemInfo::GetClockTicksPerSecond(void)
+{
+#if defined(NCBI_OS_MSWIN)
+    return CLOCKS_PER_SEC;
+
+#elif defined(NCBI_OS_UNIX)
+    static clock_t ticks = 0;
+    if ( ticks ) {
+        return ticks;
+    }
+    clock_t t = sysconf(_SC_CLK_TCK);
+    #if defined(CLK_TCK)
+        if (!t  ||  t == (clock_t)(-1)) t = CLK_TCK;
+    #elif defined(CLOCKS_PER_SEC)
+        if (!t  ||  t == (clock_t)(-1)) t = CLOCKS_PER_SEC;
+    #endif
+    if (t  &&  t != (clock_t)(-1)) {
+        ticks = t;
+        return t;
+    }
+    CNcbiError::SetFromErrno();
+
+#else
+    CNcbiError::Set(CNcbiError::eNotSupported);
+#endif
+    return 0;
+}
+
+
+// @deprecated
+bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
+{
+    size_t scratch;
+    if ( !total )    { total    = &scratch; }
+    if ( !resident ) { resident = &scratch; }
+    if ( !shared )   { shared   = &scratch; }
+
+#if defined(NCBI_OS_MSWIN)
+    struct SProcessMemoryCounters
+    {
+        DWORD  size;
+        DWORD  page_fault_count;
+        SIZE_T peak_working_set_size;
+        SIZE_T working_set_size;
+        SIZE_T quota_peak_paged_pool_usage;
+        SIZE_T quota_paged_pool_usage;
+        SIZE_T quota_peak_nonpaged_pool_usage;
+        SIZE_T quota_nonpaged_pool_usage;
+        SIZE_T pagefile_usage;
+        SIZE_T peak_pagefile_usage;
+    };
+    try {
+        // Load PSAPI dynamic library -- it should exist on MS-Win NT/2000/XP
+        CDll psapi_dll("psapi.dll", CDll::eLoadNow, CDll::eAutoUnload);
+        BOOL (STDMETHODCALLTYPE FAR * dllGetProcessMemoryInfo) 
+             (HANDLE process, SProcessMemoryCounters& counters, DWORD size) = 0;
+        dllGetProcessMemoryInfo = psapi_dll.GetEntryPoint_Func("GetProcessMemoryInfo", &dllGetProcessMemoryInfo);
+        if (dllGetProcessMemoryInfo) {
+            SProcessMemoryCounters counters;
+            dllGetProcessMemoryInfo(GetCurrentProcess(), counters, sizeof(counters));
+            *total    = counters.quota_paged_pool_usage +
+                        counters.quota_nonpaged_pool_usage;
+            *resident = counters.working_set_size;
+            *shared   = 0;
+            return true;
+        }
+    } catch (CException) {
+        // Just catch all exceptions from CDll
+    }
+
+#elif defined(NCBI_OS_LINUX)
+    CNcbiIfstream statm("/proc/self/statm");
+    if (statm) {
+        unsigned long page_size = CSystemInfo::GetVirtualMemoryPageSize();
+        statm >> *total >> *resident >> *shared;
+        *total    *= page_size;
+        *resident *= page_size;
+        *shared   *= page_size;
+        return true;
+    }
+
+#elif defined(NCBI_OS_SOLARIS)
+    Int8 len = CFile("/proc/self/as").GetLength();
+    if (len > 0) {
+        *total    = (size_t) len;
+        *resident = (size_t) len; // conservative estimate
+        *shared   = 0;            // does this info exist anywhere?
+        return true;
+    }
+
+#elif defined(HAVE_GETRUSAGE)
+    #define _DIV0(a, b) ((a) / ((b) ? (b) : 1))
+    // BIG FAT NOTE:  getrusage() seems to use different size units
+    struct rusage ru;
+    memset(&ru, '\0', sizeof(ru));
+    if (getrusage(RUSAGE_SELF, &ru) == 0  &&  ru.ru_maxrss > 0) {
+        struct tms t;
+        memset(&t, '\0', sizeof(t));
+        if (times(&t) != (clock_t)(-1)) {
+            clock_t ticks = t.tms_utime + t.tms_stime;
+            *resident = _DIV0(ru.ru_idrss,                             ticks);
+            *shared   = _DIV0(ru.ru_ixrss,                             ticks);
+            *total    = _DIV0(ru.ru_ixrss + ru.ru_idrss + ru.ru_isrss, ticks);
+    #ifdef NCBI_OS_DARWIN
+            if (*total > 0)
+    #endif
+                return true;
+        }
+    }
+    #undef _DIV0
+
+    #if defined(NCBI_OS_DARWIN)
+        #ifdef MACH_TASK_BASIC_INFO
+            task_flavor_t               flavor       = MACH_TASK_BASIC_INFO;
+            struct mach_task_basic_info t_info;
+            mach_msg_type_number_t      t_info_count = MACH_TASK_BASIC_INFO_COUNT;
+        #else
+            task_flavor_t               flavor       = TASK_BASIC_INFO;
+            struct task_basic_info      t_info;
+            mach_msg_type_number_t      t_info_count = TASK_BASIC_INFO_COUNT;
+        #endif
+        if (task_info(mach_task_self(), flavor, (task_info_t)&t_info, &t_info_count) == KERN_SUCCESS) {
+            *total = *resident = t_info.resident_size;
+            *shared = 0; // unavailable, even with mach_task_basic_info
+            return true;
+        }
+    #endif
+
+#else
+    CNcbiError::Set(CNcbiError::eNotSupported);
+#endif
+    return false;
+}
+
+
+/// @deprecated
 bool GetCurrentProcessTimes(double* user_time, double* system_time)
 {
 #if defined(NCBI_OS_MSWIN)
@@ -664,222 +1001,118 @@ bool GetCurrentProcessTimes(double* user_time, double* system_time)
 }
 
 
+/// @deprecated
+extern int GetProcessFDCount(int* soft_limit, int* hard_limit)
+{
+#ifdef NCBI_OS_UNIX
+    int            fd_count = 0;
+    struct dirent* dp;
+
+    rlim_t  cur_limit = -1;
+    rlim_t  max_limit = -1;
+
+    struct rlimit rlim;
+    if (getrlimit(RLIMIT_NOFILE, &rlim) == 0) {
+        cur_limit = rlim.rlim_cur;
+        max_limit = rlim.rlim_max;
+    } else {
+        // fallback to sysconf
+        cur_limit = static_cast<rlim_t>(sysconf(_SC_OPEN_MAX));
+    }
+
+    DIR* dir = opendir("/proc/self/fd/");
+    if (dir) {
+        while ((dp = readdir(dir)) != NULL) {
+            ++fd_count;
+        }
+        closedir(dir);
+        fd_count -= 3;  // '.', '..' and the one for 'opendir'
+        if (fd_count < 0) {
+            fd_count = -1;
+        }
+    } else {
+        // Fallback to analysis via looping over all fds
+        if (cur_limit > 0) {
+            int     max_fd = static_cast<int>(cur_limit);
+            if (cur_limit > INT_MAX) {
+                max_fd = INT_MAX;
+            }
+            for (int fd = 0;  fd < max_fd;  ++fd) {
+                if (fcntl(fd, F_GETFD, 0) == -1) {
+                    if (errno == EBADF) {
+                        continue;
+                    }
+                }
+                ++fd_count;
+            }
+        } else {
+            fd_count = -1;
+        }
+    }
+
+    if (soft_limit) {
+        if (cur_limit > INT_MAX)
+            *soft_limit = INT_MAX;
+        else
+            *soft_limit = static_cast<int>(cur_limit);
+    }
+    if (hard_limit) {
+        if (max_limit > INT_MAX)
+            *hard_limit = INT_MAX;
+        else
+            *hard_limit = static_cast<int>(max_limit);
+    }
+    return fd_count;
+
+#else
+    if (soft_limit)
+        *soft_limit = -1;
+    if (hard_limit)
+        *hard_limit = -1;
+    return -1;
+
+#endif //NCBI_OS_UNIX
+}
+
+
+/// @deprecated
+extern int GetProcessThreadCount(void)
+{
+#ifdef NCBI_OS_LINUX
+    int            thread_count = 0;
+    struct dirent* dp;
+
+    DIR* dir = opendir("/proc/self/task/");
+    if (dir) {
+        while ((dp = readdir(dir)) != NULL)
+            ++thread_count;
+        closedir(dir);
+        thread_count -= 2;  // '.' and '..'
+        if (thread_count <= 0)
+            thread_count = -1;
+        return thread_count;
+    }
+    return -1;
+#else
+    return -1;
+#endif //NCBI_OS_LINUX
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Memory utilities
+// Memory advise
 //
 
-unsigned long GetVirtualMemoryPageSize(void)
-{
-    static unsigned long ps = 0;
-
-    if (!ps) {
-#if defined(NCBI_OS_MSWIN)
-        SYSTEM_INFO si;
-        GetSystemInfo(&si);
-        ps = (unsigned long) si.dwPageSize;
-#elif defined(NCBI_OS_UNIX) 
-#  if   defined(_SC_PAGESIZE)
-#    define NCBI_SC_PAGESIZE _SC_PAGESIZE
-#  elif defined(_SC_PAGE_SIZE)
-#    define NCBI_SC_PAGESIZE _SC_PAGE_SIZE
-#  elif defined(NCBI_SC_PAGESIZE)
-#    undef  NCBI_SC_PAGESIZE
-#  endif
-#  ifndef   NCBI_SC_PAGESIZE
-        long x = 0;
-#  else
-        long x = sysconf(NCBI_SC_PAGESIZE);
-#    undef  NCBI_SC_PAGESIZE
-#  endif
-        if (x <= 0) {
-#  ifdef HAVE_GETPAGESIZE
-            if ((x = getpagesize()) <= 0)
-                return 0;
-#  endif
-            return 0;
-        }
-        ps = x;
-#endif //NCBI_OS_...
-    }
-    return ps;
-}
-
-
-unsigned long GetVirtualMemoryAllocationGranularity(void)
-{
-    static unsigned long ag = 0;
-
-    if (!ag) {
-#if defined(NCBI_OS_MSWIN)
-        SYSTEM_INFO si;
-        GetSystemInfo(&si);
-        ag = (unsigned long) si.dwAllocationGranularity;
-#else
-        ag = GetVirtualMemoryPageSize();
-#endif
-    }
-    return ag;
-}
-
-
-Uint8 GetPhysicalMemorySize(void)
-{
-#if defined(NCBI_OS_MSWIN)
-
-    MEMORYSTATUSEX st;
-    st.dwLength = sizeof(st);
-    if ( GlobalMemoryStatusEx(&st) ) {
-        return st.ullTotalPhys;
-    }
-
-#elif defined(NCBI_OS_UNIX)  &&  defined(_SC_PHYS_PAGES)
-
-    unsigned long num_pages = sysconf(_SC_PHYS_PAGES);
-    if (long(num_pages) != -1L) {
-        return GetVirtualMemoryPageSize() * Uint8(num_pages);
-    }
-
-#elif defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_DARWIN)
-
-    size_t   len;
-    int      mib[2];
-#  ifdef HW_MEMSIZE
-    uint64_t physmem;
-    mib[1] = HW_MEMSIZE;
-#  else
-    // Native BSD, may be truncated
-    int      physmem;
-    mib[1] = HW_PHYSMEM;
-#  endif //HW_MEMSIZE
-    mib[0] = CTL_HW;
-    len = sizeof(physmem);
-    if (sysctl(mib, 2, &physmem, &len, 0, 0) == 0  &&  len == sizeof(physmem)){
-        return Uint8(physmem);
-    }
-
-#  ifdef NCBI_OS_DARWIN
-    {
-        // heavier fallback
-        struct vm_statistics vm_stat;
-        mach_port_t my_host = mach_host_self();
-        mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
-        if (host_statistics(my_host, HOST_VM_INFO,
-                            (integer_t*) &vm_stat, &count) == KERN_SUCCESS) {
-            return GetVirtualMemoryPageSize() *
-                (Uint8(vm_stat.free_count) + Uint8(vm_stat.active_count) +
-                 Uint8(vm_stat.inactive_count) + Uint8(vm_stat.wire_count));
-        }
-    }
-#  endif //NCBI_OS_DARWIN
-
-#elif defined(NCBI_OS_IRIX)
-
-    struct rminfo rmi;
-    if (sysmp(MP_SAGET, MPSA_RMINFO, &rmi, sizeof(rmi)) >= 0) {
-        return GetVirtualMemoryPageSize() * Uint8(rmi.physmem);
-    }
-
-#endif
-
-    return 0;
-}
-
-
-bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
-{
-    size_t scratch;
-    if ( !total )    { total    = &scratch; }
-    if ( !resident ) { resident = &scratch; }
-    if ( !shared )   { shared   = &scratch; }
-#if defined(NCBI_OS_MSWIN)
-    try {
-        // Load PSAPI dynamic library -- it should exist on MS-Win NT/2000/XP
-        CDll psapi_dll("psapi.dll", CDll::eLoadNow, CDll::eAutoUnload);
-        BOOL (STDMETHODCALLTYPE FAR * dllGetProcessMemoryInfo)
-            (HANDLE process, SProcessMemoryCounters& counters, DWORD size) = 0;
-        dllGetProcessMemoryInfo
-            = psapi_dll.GetEntryPoint_Func("GetProcessMemoryInfo",
-                                           &dllGetProcessMemoryInfo);
-        if (dllGetProcessMemoryInfo) {
-            SProcessMemoryCounters counters;
-            dllGetProcessMemoryInfo(GetCurrentProcess(), counters,
-                                    sizeof(counters));
-            *total    = counters.quota_paged_pool_usage +
-                        counters.quota_nonpaged_pool_usage;
-            *resident = counters.working_set_size;
-            *shared   = 0;
-            return true;
-        }
-    } catch (CException) {
-        // Just catch all exceptions from CDll
-    }
-#elif defined(NCBI_OS_LINUX)
-    CNcbiIfstream statm("/proc/self/statm");
-    if (statm) {
-        unsigned long page_size = GetVirtualMemoryPageSize();
-        statm >> *total >> *resident >> *shared;
-        *total    *= page_size;
-        *resident *= page_size;
-        *shared   *= page_size;
-        return true;
-    }
-#elif defined(NCBI_OS_SOLARIS)
-    Int8 len = CFile("/proc/self/as").GetLength();
-    if (len > 0) {
-        *total    = (size_t) len;
-        *resident = (size_t) len; // conservative estimate
-        *shared   = 0;            // does this info exist anywhere?
-        return true;
-    }
-#elif defined(HAVE_GETRUSAGE)
-#  define _DIV0(a, b) ((a) / ((b) ? (b) : 1))
-    // BIG FAT NOTE:  getrusage() seems to use different size units
-    struct rusage ru;
-    memset(&ru, '\0', sizeof(ru));
-    if (getrusage(RUSAGE_SELF, &ru) == 0  &&  ru.ru_maxrss > 0) {
-        struct tms t;
-        memset(&t, '\0', sizeof(t));
-        if (times(&t) != (clock_t)(-1)) {
-            clock_t ticks = t.tms_utime + t.tms_stime;
-            *resident = _DIV0(ru.ru_idrss,                             ticks);
-            *shared   = _DIV0(ru.ru_ixrss,                             ticks);
-            *total    = _DIV0(ru.ru_ixrss + ru.ru_idrss + ru.ru_isrss, ticks);
-#  ifdef NCBI_OS_DARWIN
-            if (*total > 0)
-#  endif
-                return true;
-        }
-    }
-#  undef _DIV0
-#  ifdef NCBI_OS_DARWIN
-#    ifdef MACH_TASK_BASIC_INFO
-    task_flavor_t               flavor       = MACH_TASK_BASIC_INFO;
-    struct mach_task_basic_info t_info;
-    mach_msg_type_number_t      t_info_count = MACH_TASK_BASIC_INFO_COUNT;
-#    else
-    task_flavor_t          flavor       = TASK_BASIC_INFO;
-    struct task_basic_info t_info;
-    mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
-#    endif
-    if (task_info(mach_task_self(), flavor, (task_info_t)&t_info,
-                  &t_info_count) == KERN_SUCCESS) {
-        *total = *resident = t_info.resident_size;
-        *shared = 0; // unavailable, even with mach_task_basic_info
-        return true;
-    }
-#  endif
-#endif
-    return false;
-}
-
-
 #ifndef HAVE_MADVISE
+
 bool MemoryAdvise(void*, size_t, EMemoryAdvise) {
     return false;
 }
+
 #else //HAVE_MADVISE
+
 bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise)
 {
     if ( !addr /*|| !len*/ ) {
@@ -913,7 +1146,7 @@ bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise)
             adv = MADV_DOFORK;
             break;
         #else
-            ERR_POST_X_ONCE(12, Warning << "MADV_DOTFORK not supported");
+            ERR_POST_X_ONCE(12, Warning << "MADV_DOFORK not supported");
             CNcbiError::Set(CNcbiError::eNotSupported);
             return false;
         #endif        
@@ -965,10 +1198,8 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
     // Unlike some of its (buggy) Unix counterparts, MS-Win's Sleep() is safe
     // to use with 0, which causes the current thread to sleep at most until
     // the end of the current timeslice (and only if the CPU is not idle).
-    static const unsigned long kMicroSecondsPerMilliSecond
-        = kMicroSecondsPerSecond / kMilliSecondsPerSecond;
-    Sleep((mc_sec + (kMicroSecondsPerMilliSecond / 2))
-          / kMicroSecondsPerMilliSecond);
+    static const unsigned long kMicroSecondsPerMilliSecond = kMicroSecondsPerSecond / kMilliSecondsPerSecond;
+    Sleep((mc_sec + (kMicroSecondsPerMilliSecond / 2)) / kMicroSecondsPerMilliSecond);
 
 #elif defined(NCBI_OS_UNIX)
 
@@ -976,11 +1207,11 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
     struct timespec delay, unslept;
     memset(&unslept, 0, sizeof(unslept));
     delay.tv_sec  =   mc_sec / kMicroSecondsPerSecond;
-    delay.tv_nsec = ((mc_sec % kMicroSecondsPerSecond)
-                     * (kNanoSecondsPerSecond / kMicroSecondsPerSecond));
+    delay.tv_nsec = ((mc_sec % kMicroSecondsPerSecond) * (kNanoSecondsPerSecond / kMicroSecondsPerSecond));
     while (nanosleep(&delay, &unslept) < 0) {
-        if (errno != EINTR  ||  onsignal == eInterruptOnSignal)
+        if (errno != EINTR || onsignal == eInterruptOnSignal) {
             break;
+        }
         delay = unslept;
         memset(&unslept, 0, sizeof(unslept));
     }
@@ -989,8 +1220,9 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
     unsigned int usec = mc_sec % kMicroSecondsPerSecond;
     if (sec) {
         while ((sec = sleep(sec)) > 0) {
-            if (onsignal == eInterruptOnSignal)
+            if (onsignal == eInterruptOnSignal) {
                 return;
+            }
         }
     }
     // usleep() detects errors (such as EINTR) but can't tell unslept time :-/
@@ -1021,8 +1253,7 @@ void SleepMilliSec(unsigned long ml_sec, EInterruptOnSignal onsignal)
 #ifdef NCBI_OS_MSWIN
     Sleep(ml_sec);
 #else
-    SleepMicroSec(ml_sec * (kMicroSecondsPerSecond / kMilliSecondsPerSecond),
-                  onsignal);
+    SleepMicroSec(ml_sec * (kMicroSecondsPerSecond / kMilliSecondsPerSecond), onsignal);
 #endif //NCBI_OS_MSWIN
 }
 
@@ -1109,118 +1340,10 @@ extern void DisableSuppressSystemMessageBox(void)
 extern bool IsSuppressedDebugSystemMessageBox(void)
 {
 #ifdef NCBI_OS_MSWIN
-    return s_DoneSuppressSystemMessageBox  &&
-        s_SuppressedDebugSystemMessageBox;
+    return s_DoneSuppressSystemMessageBox  &&  s_SuppressedDebugSystemMessageBox;
 #else
     return false;
 #endif //NCBI_OS_MSWIN
-}
-
-
-
-extern int GetProcessFDCount(int* soft_limit, int* hard_limit)
-{
-#ifdef NCBI_OS_UNIX
-    int            fd_count = 0;
-    struct dirent* dp;
-
-    rlim_t  cur_limit = -1;
-    rlim_t  max_limit = -1;
-
-    struct rlimit rlim;
-    if (getrlimit(RLIMIT_NOFILE, &rlim) == 0) {
-        cur_limit = rlim.rlim_cur;
-        max_limit = rlim.rlim_max;
-    } else {
-        // fallback to sysconf
-        ERR_POST_ONCE(Warning << "getrlimit(RLIMIT_NOFILE, ...) call failed. "
-                                 "Using sysconf(_SC_OPEN_MAX) instead.");
-        cur_limit = static_cast<rlim_t>(sysconf(_SC_OPEN_MAX));
-    }
-
-    DIR* dir = opendir("/proc/self/fd/");
-    if (dir) {
-        while ((dp = readdir(dir)) != NULL)
-            ++fd_count;
-        closedir(dir);
-        fd_count -= 3;  // '.', '..' and the one for 'opendir'
-        if (fd_count < 0)
-            fd_count = -1;
-    } else {
-        // Fallback to analysis via looping over all fds
-        if (cur_limit > 0) {
-            int     max_fd = static_cast<int>(cur_limit);
-            if (cur_limit > INT_MAX)
-                max_fd = INT_MAX;
-            for (int fd = 0;  fd < max_fd;  ++fd) {
-                if (fcntl(fd, F_GETFD, 0) == -1) {
-                    if (errno == EBADF)
-                        continue;
-                }
-                ++fd_count;
-            }
-        } else {
-            fd_count = -1;
-        }
-    }
-
-    if (soft_limit  ||  hard_limit) {
-        if (soft_limit) {
-            if (cur_limit > INT_MAX)
-                *soft_limit = INT_MAX;
-            else
-                *soft_limit = static_cast<int>(cur_limit);
-        }
-        if (hard_limit) {
-            if (max_limit > INT_MAX)
-                *hard_limit = INT_MAX;
-            else
-                *hard_limit = static_cast<int>(max_limit);
-        }
-    }
-    return fd_count;
-#else
-    if (soft_limit)
-        *soft_limit = -1;
-    if (hard_limit)
-        *hard_limit = -1;
-    return -1;
-#endif //NCBI_OS_UNIX
-}
-
-
-extern int GetProcessThreadCount(void)
-{
-#ifdef NCBI_OS_LINUX
-    int            thread_count = 0;
-    struct dirent* dp;
-
-    DIR* dir = opendir("/proc/self/task/");
-    if (dir) {
-        while ((dp = readdir(dir)) != NULL)
-            ++thread_count;
-        closedir(dir);
-        thread_count -= 2;  // '.' and '..'
-        if (thread_count <= 0)
-            thread_count = -1;
-        return thread_count;
-    }
-    return -1;
-#else
-    return -1;
-#endif //NCBI_OS_LINUX
-}
-
-
-string GetProcessUserName(void)
-{
-#if defined(NCBI_OS_UNIX)
-    return CUnixFeature::GetUserNameByUID(geteuid());
-#elif defined(NCBI_OS_MSWIN)
-    return CWinSecurity::GetUserName();
-#else
-    return string();
-#endif
 }
 
 

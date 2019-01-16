@@ -47,33 +47,58 @@ USING_NCBI_SCOPE;
 // General tests
 //
 
+static void PrintTimes(const string& msg, CProcess& process)
+{
+    string kUnknown = "n/a";
+    double r, u, s;
+
+    if (!process.GetTimes(&r, &u, &s, CProcess::eProcess)) {
+        LOG_POST(msg << ": " << kUnknown);
+        return;
+    }
+    LOG_POST(msg << ": "
+             << "real: " << ((r >= 0) ? NStr::DoubleToString(r, 2, NStr::fDoubleFixed) : kUnknown) << ", "
+             << "user: " << ((u >= 0) ? NStr::DoubleToString(u, 2, NStr::fDoubleFixed) : kUnknown) << ", "
+             << "sys: "  << ((s >= 0) ? NStr::DoubleToString(s, 2, NStr::fDoubleFixed) : kUnknown) 
+    );
+}
+
+
 static void Test_Process(void)
 {
     string app = CNcbiApplication::Instance()->GetArguments().GetProgramName();
     TProcessHandle handle;
     {{
         LOG_POST("CMD = " << app << " -sleep 3");
-        handle = CExec::SpawnL(CExec::eNoWait, app.c_str(),
-                               "-sleep", "3", NULL).GetProcessHandle();
+        handle = CExec::SpawnL(CExec::eNoWait, app.c_str(), "-sleep", "3", NULL).GetProcessHandle();
         LOG_POST("PID/HANDLE = " << (intptr_t)handle);
         CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
+        PrintTimes("Client times", process);
         assert(process.Wait() == 88);
         assert(!process.IsAlive());
+        PrintTimes("Client times", process);
     }}
     {{
         LOG_POST("CMD = " << app << " -sleep 10");
-        handle = CExec::SpawnL(CExec::eNoWait, app.c_str(),
-                               "-sleep", "10", NULL).GetProcessHandle();
+        handle = CExec::SpawnL(CExec::eNoWait, app.c_str(), "-sleep", "10", NULL).GetProcessHandle();
         LOG_POST("PID/HANDLE = " << (intptr_t)handle);
         CProcess process(handle, CProcess::eHandle);
         assert(process.IsAlive());
-        assert( process.Wait(2000) == -1);
+        PrintTimes("Client times", process);
+        assert(process.Wait(2000) == -1);
+        PrintTimes("Client times", process);
         assert(process.Kill());
         assert(!process.IsAlive());
         int exitcode = process.Wait();
         LOG_POST("Wait(pid) = " << exitcode);
         assert(exitcode != 88);
+        PrintTimes("Client times", process);
+    }}
+    {{
+        // Print current process times
+        CProcess process;
+        PrintTimes("\nCurrent process times", process);
     }}
 }
 
@@ -105,7 +130,7 @@ static void Test_PIDGuard(int ppid, string lockfile)
         lockfile = CFile::GetTmpName();
     }
     CFile lf(lockfile);
-    TPid my_pid = CProcess::GetCurrentPid();
+    TPid my_pid = CCurrentProcess::GetPid();
     assert(my_pid > 0);
     LOG_POST("Test_PIDGuard starting:\nmy_pid = " << my_pid
              << ", ppid = " << ppid << ", lockfile = " << lockfile << '\n');

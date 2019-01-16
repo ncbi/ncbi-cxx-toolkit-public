@@ -35,6 +35,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_process.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <math.h>
 #include <memory>
@@ -46,55 +47,66 @@
 USING_NCBI_SCOPE;
 
 
-/////////////////////////////////
-// General tests
+/////////////////////////////////////////////////////////////////////////////
+//
+// General testsSystem information
 //
 
 static void Test_General(void)
 {
-    LOG_POST("\nGeneral tests");
+    #define PRINT(msg, value, res)                        \
+       cout << "    " << left << setw(35) << msg << ": "; \
+       cout << right << setw(12);                         \
+       if (res) {                                         \
+           cout << value;                                 \
+       } else {                                           \
+           cout << "n/a";                                 \
+       }                                                  \
+       cout << endl
 
-    cout << "\nPer system:\n" << endl;
-    cout << "Number of CPUs              : " << GetCpuCount()
-         << endl;
-    cout << "Page size            (bytes): " << GetVirtualMemoryPageSize()
-         << endl;
-    cout << "Physical memory size (bytes): " << GetPhysicalMemorySize()
-         << endl;
+    LOG_POST("\nGeneral test");
 
-    cout << "\nPer process:\n" << endl;
-    size_t total, resident, shared;
-    if (GetMemoryUsage(&total, &resident, &shared)) {
-        cout << "Total memory usage   (bytes): " << total    << endl;
-        cout << "Resident set size    (bytes): " << resident << endl;
-        cout << "Shared memory usage  (bytes): " << shared   << endl;
-    } else {
-        cout << "Couldn't determine memory usage." << endl;
+    cout << "\nSystem information:" << endl;
+
+    PRINT("Number of CPUs",                     CSystemInfo::GetCpuCount(),                true);
+    PRINT("Total physical memory size (bytes)", CSystemInfo::GetTotalPhysicalMemorySize(), true);
+    PRINT("Avail physical memory size (bytes)", CSystemInfo::GetAvailPhysicalMemorySize(), true);
+    PRINT("Virtual memory page size (bytes)",   CSystemInfo::GetVirtualMemoryPageSize(),   true);
+
+    cout << "\nCurrent process information:" << endl;
+
+    CProcess::SMemoryUsage mem_usage;
+    bool res = CCurrentProcess::GetMemoryUsage(mem_usage);
+    
+    PRINT("Memory usage (bytes)", " ", res);
+    if (res) {
+        PRINT("   Total memory usage",        mem_usage.total,         mem_usage.total         > 0);
+        PRINT("   Total memory usage (peak)", mem_usage.total_peak,    mem_usage.total_peak    > 0);
+        PRINT("   Resident set size",         mem_usage.resident,      mem_usage.resident      > 0);
+        PRINT("   Resident set size (peak)",  mem_usage.resident_peak, mem_usage.resident_peak > 0);
+        PRINT("   Shared memory usage",       mem_usage.shared,        mem_usage.shared        > 0);
+        PRINT("   Data segment size",         mem_usage.data,          mem_usage.data          > 0);
+        PRINT("   Stack data size",           mem_usage.stack,         mem_usage.stack         > 0);
+        PRINT("   Text segment size",         mem_usage.text,          mem_usage.text          > 0);
+        PRINT("   Shared library code size",  mem_usage.lib,           mem_usage.lib           > 0);
     }
+
+    int proc_thread_count = CCurrentProcess::GetThreadCount();
+    PRINT("Number of threads", proc_thread_count, proc_thread_count != -1);
+
     int soft_fd_limit, hard_fd_limit, proc_fd_count;
-    proc_fd_count = GetProcessFDCount(&soft_fd_limit, &hard_fd_limit);
-    if (proc_fd_count != -1)
-        cout << "Used file descriptors       : " << proc_fd_count << endl;
-    else
-        cout << "Couldn't determine file descriptors usage." << endl;
-    if (soft_fd_limit != -1)
-        cout << "File descriptors soft limit : " << soft_fd_limit << endl;
-    else
-        cout << "Couldn't determine file descriptors soft limit." << endl;
-    if (hard_fd_limit != -1)
-        cout << "File descriptors hard limit : " << hard_fd_limit << endl;
-    else
-        cout << "Couldn't determine file descriptors hard limit." << endl;
-    int proc_thread_count;
-    proc_thread_count = GetProcessThreadCount();
-    if (proc_thread_count != -1)
-        cout << "Number of threads: " << proc_thread_count << endl;
-    else
-        cout << "Couldn't determine the process thread count." << endl;
+    proc_fd_count = CCurrentProcess::GetFileDescriptorsCount(&soft_fd_limit, &hard_fd_limit);
+    PRINT("Used file descriptors",       proc_fd_count, proc_fd_count != -1);
+    PRINT("File descriptors soft limit", soft_fd_limit, soft_fd_limit != -1);
+    PRINT("File descriptors hard limit", hard_fd_limit, hard_fd_limit != -1);
+
+    cout << endl;
 }
 
 
-/////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // User defined dump print handler
 //
 
@@ -117,7 +129,8 @@ static void PrintHandler(ELimitsExitCode code, size_t limit,
 }
 
 
-/////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
 // Memory limits
 //
 
@@ -126,7 +139,6 @@ static void Test_MemLimit(void)
     LOG_POST("\nMemory limit test\n");
 
     const size_t kMemLimit = 500*1024;
-
     assert( SetMemoryLimit(kMemLimit, PrintHandler, &s_PrintParameter) );
     
     for (size_t i = 0;  i <= kMemLimit/1024;  i++) {
@@ -138,7 +150,8 @@ static void Test_MemLimit(void)
 }
 
 
-/////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
 // CPU time limits
 //
 
@@ -158,7 +171,8 @@ static void Test_CpuLimit(void)
 }
 
 
-/////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+//
 // Test application
 //
 
@@ -173,7 +187,7 @@ public:
 void CTestApplication::Init(void)
 {
     // Set error posting and tracing on maximum
-    SetDiagTrace(eDT_Enable);
+    //SetDiagTrace(eDT_Enable);
     SetDiagPostFlag(eDPF_All);
     SetDiagPostLevel(eDiag_Info);
 
@@ -215,12 +229,7 @@ int CTestApplication::Run(void)
     return 0;
 }
 
-
   
-///////////////////////////////////
-// MAIN
-//
-
 int main(int argc, const char* argv[])
 {
     return CTestApplication().AppMain(argc, argv);

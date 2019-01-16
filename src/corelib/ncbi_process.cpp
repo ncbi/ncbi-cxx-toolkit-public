@@ -38,26 +38,55 @@
 #include <corelib/ncbierror.hpp>
 #include "ncbisys.hpp"
 
-#if   defined(NCBI_OS_UNIX)
+#if defined(NCBI_OS_UNIX)
 #  include <errno.h>
 #  include <fcntl.h>
 #  include <signal.h>
 #  include <stdio.h>
 #  include <unistd.h>
 #  include <sys/types.h>
+#  include <sys/time.h>            // getrusage(), getrlimit()
+#  include <sys/resource.h>        // getrusage(), getrlimit()
+#  include <sys/times.h>           // times()
 #  include <sys/wait.h>
+#  if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_DARWIN)
+#    include <sys/sysctl.h>
+#  endif //NCBI_OS_BSD || NCBI_OS_DARWIN
+#  if defined(NCBI_OS_IRIX)
+#    include <sys/sysmp.h>
+#  endif //NCBI_OS_IRIX
+#  include "ncbi_os_unix_p.hpp"
+
 #elif defined(NCBI_OS_MSWIN)
-#  include <corelib/ncbitime.hpp>  // for CStopWatch
+#  include <corelib/ncbitime.hpp>  // CStopWatch
+#  include <corelib/ncbidll.hpp>   // CDll
 #  include <process.h>
-#  include <tlhelp32.h>
+#  include "ncbi_os_mswin_p.hpp"
 #  pragma warning (disable : 4191)
 #endif
+
+#ifdef NCBI_OS_DARWIN
+extern "C" {
+#  include <mach/mach.h>
+} /* extern "C" */
+#endif //NCBI_OS_DARWIN
 
 
 #define NCBI_USE_ERRCODE_X   Corelib_Process
 
 
 BEGIN_NCBI_SCOPE
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// CProcessBase -- constants initialization
+//
+
+const unsigned long CProcessBase::kDefaultKillTimeout = 1000;
+const unsigned long CProcessBase::kInfiniteTimeoutMs  = kMax_ULong;
+const unsigned long               kWaitPrecision      = 100;
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -157,38 +186,17 @@ int CProcess::CExitInfo::GetSignal(void) const
 }
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
-// CProcess 
+// CCurrentProcess 
 //
-
-// Predefined timeouts (in milliseconds)
-const unsigned long           kWaitPrecision        = 100;
-const unsigned long CProcess::kDefaultKillTimeout   = 1000;
-
-
-CProcess::CProcess(TPid process, EProcessType type)
-    : m_Process(process), m_Type(type)
-{
-    return;
-}
-
-#ifdef NCBI_OS_MSWIN
-// The helper constructor for MS Windows to avoid cast from
-// TProcessHandle to TPid
-CProcess::CProcess(TProcessHandle process, EProcessType type)
-    : m_Process((intptr_t)process), m_Type(type)
-{
-    return;
-}
-#endif //NCBI_OS_MSWIN
-
 
 #ifdef NCBI_THREAD_PID_WORKAROUND
 #  ifndef NCBI_OS_UNIX
 #    error "NCBI_THREAD_PID_WORKAROUND should only be defined on UNIX!"
 #  endif
-TPid CProcess::sx_GetPid(EGetPidFlag flag)
+TPid CCurrentProcess::sx_GetPid(EGetPidFlag flag)
 {
     if ( flag == ePID_GetThread ) {
         // Return real PID, do not cache it.
@@ -225,20 +233,21 @@ TPid CProcess::sx_GetPid(EGetPidFlag flag)
 }
 #endif //NCBI_THREAD_PID_WORKAROUND
 
-TProcessHandle CProcess::GetCurrentHandle(void)
+
+TProcessHandle CCurrentProcess::GetHandle(void)
 {
-#if   defined(NCBI_OS_MSWIN)
-    return GetCurrentProcess();
+#if defined(NCBI_OS_MSWIN)
+    return ::GetCurrentProcess();
 #elif defined(NCBI_OS_UNIX)
-    return GetCurrentPid();
+    return GetPid();
 #endif
 }
 
 
-TPid CProcess::GetCurrentPid(void)
+TPid CCurrentProcess::GetPid(void)
 {
-#if   defined(NCBI_OS_MSWIN)
-    return GetCurrentProcessId();
+#if defined(NCBI_OS_MSWIN)
+    return ::GetCurrentProcessId();
 #elif defined NCBI_THREAD_PID_WORKAROUND
     return sx_GetPid(ePID_GetCurrent);
 #elif defined(NCBI_OS_UNIX)
@@ -247,39 +256,30 @@ TPid CProcess::GetCurrentPid(void)
 }
 
 
-TPid CProcess::GetParentPid(void)
+TPid CCurrentProcess::GetParentPid(void)
 {
-#if   defined(NCBI_OS_MSWIN)
-    TPid ppid = (TPid)(-1);
-    // Open snapshot handle
-    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-
-    if (hSnapshot != INVALID_HANDLE_VALUE) {
-
-        PROCESSENTRY32 pe;
-        DWORD pid = GetCurrentProcessId();
-        pe.dwSize = sizeof(PROCESSENTRY32);
-
-        BOOL retval = Process32First(hSnapshot, &pe);
-        while (retval) {
-            if (pe.th32ProcessID == pid) {
-                ppid = pe.th32ParentProcessID;
-                break;
-            }
-            pe.dwSize = sizeof(PROCESSENTRY32);
-            retval = Process32Next(hSnapshot, &pe);
-        }
-
-        // close snapshot handle
-        CloseHandle(hSnapshot);
+#if defined(NCBI_OS_MSWIN)
+    PROCESSENTRY32 entry;
+    if (CWinFeature::FindProcessEntry(::GetCurrentProcessId(), entry)) {
+        return entry.th32ParentProcessID;
     }
-    return ppid;
+    CNcbiError::SetFromWindowsError();
+    return 0;
+
 #elif defined NCBI_THREAD_PID_WORKAROUND
     return sx_GetPid(ePID_GetParent);
+
 #elif defined(NCBI_OS_UNIX)
     return getppid();
 #endif
 }
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// CCurrentProcess - Forks & Daemons
+//
 
 #ifdef NCBI_OS_UNIX
 namespace {
@@ -298,29 +298,28 @@ static string s_ErrnoToString()
 {
     CErrnoKeeper x_errno;
     const char* error = strerror(x_errno.GetErrno());
-    return error != NULL && *error != '\0' ? string(error) :
-            ("errno=" + NStr::NumericToString(x_errno.GetErrno()));
+    return (error != NULL && *error != '\0') ? 
+                string(error) :
+                ("errno=" + NStr::NumericToString(x_errno.GetErrno()));
 }
 #endif
 
-TPid CProcess::Fork(CProcess::TForkFlags flags)
+TPid CCurrentProcess::Fork(CProcess::TForkFlags flags)
 {
 #ifdef NCBI_OS_UNIX
     TPid pid = ::fork();
     if (pid == 0)
         // Only update PID and UID in the child process.
         CDiagContext::UpdateOnFork((flags & fFF_UpdateDiag) != 0 ?
-                CDiagContext::fOnFork_ResetTimer |
-                        CDiagContext::fOnFork_PrintStart : 0);
-    else if (pid == (TPid) -1 && (flags & fFF_AllowExceptions) != 0) {
+                                   CDiagContext::fOnFork_ResetTimer | CDiagContext::fOnFork_PrintStart : 0);
+    else if (pid == (TPid)(-1) && (flags & fFF_AllowExceptions) != 0) {
         NCBI_THROW_FMT(CCoreException, eCore,
-                "Cannot fork: " << s_ErrnoToString());
+                       "CCurrentProcess::Fork(): Cannot fork: " << s_ErrnoToString());
     }
-
     return pid;
 #else
     NCBI_THROW(CCoreException, eCore,
-               "CProcess::Fork() not implemented on this platform");
+               "CCurrentProcess::Fork() not implemented on this platform");
 #endif
 }
 
@@ -330,14 +329,12 @@ namespace {
     {
     public:
         CSafeRedirect(int fd, bool* success_flag) :
-            m_OrigFD(fd),
-            m_SuccessFlag(success_flag),
-            m_Redirected(false)
+            m_OrigFD(fd), m_SuccessFlag(success_flag), m_Redirected(false)
         {
             if ((m_DupFD = ::fcntl(fd, F_DUPFD, STDERR_FILENO + 1)) < 0) {
                 NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "
-                        "Error duplicating file descriptor #" << fd <<
-                        ": " << s_ErrnoToString());
+                               "Error duplicating file descriptor #" << fd <<
+                               ": " << s_ErrnoToString());
             }
         }
         void Redirect(int new_fd)
@@ -348,8 +345,8 @@ namespace {
                     CErrnoKeeper x_errno;
                     ::close(new_fd);
                     NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "
-                            "Error redirecting file descriptor #" << m_OrigFD <<
-                            ": " << s_ErrnoToString());
+                                   "Error redirecting file descriptor #" << m_OrigFD <<
+                                   ": " << s_ErrnoToString());
                 }
                 ::close(new_fd);
                 m_Redirected = true;
@@ -358,50 +355,48 @@ namespace {
         ~CSafeRedirect()
         {
             CErrnoKeeper x_errno;
-            if (m_Redirected && !*m_SuccessFlag)
+            if (m_Redirected && !*m_SuccessFlag) {
                 // Restore the original std I/O stream descriptor.
                 ::dup2(m_DupFD, m_OrigFD);
+            }
             ::close(m_DupFD);
         }
 
     private:
-        int m_OrigFD;
-        int m_DupFD;
+        int   m_OrigFD;
+        int   m_DupFD;
         bool* m_SuccessFlag;
-        bool m_Redirected;
+        bool  m_Redirected;
     };
 }
 
-TPid CProcess::x_DaemonizeEx(const char* logfile, CProcess::TDaemonFlags flags)
+TPid s_Daemonize(const char* logfile, CCurrentProcess::TDaemonFlags flags)
 {
-    if (!(flags & fDF_AllowThreads)) {
+    if (!(flags & CCurrentProcess::fDF_AllowThreads)) {
         if (unsigned n = CThread::GetThreadsCount()) {
             NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "
-                    "Prohibited, there are already child threads running: " << n);
+                           "Prohibited, there are already child threads running: " << n);
         }
     }
-
     bool success_flag = false;
 
-    CSafeRedirect stdin_redirector(STDIN_FILENO, &success_flag);
+    CSafeRedirect stdin_redirector (STDIN_FILENO,  &success_flag);
     CSafeRedirect stdout_redirector(STDOUT_FILENO, &success_flag);
     CSafeRedirect stderr_redirector(STDERR_FILENO, &success_flag);
 
     int new_fd;
 
-    if (flags & fDF_KeepStdin) {
+    if (flags & CCurrentProcess::fDF_KeepStdin) {
         if ((new_fd = ::open("/dev/null", O_RDONLY)) < 0) {
             NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "
-                    "Error opening /dev/null for reading: " <<
-                    s_ErrnoToString());
+                           "Error opening /dev/null for reading: " << s_ErrnoToString());
         }
         stdin_redirector.Redirect(new_fd);
     }
-    if (flags & fDF_KeepStdout) {
+    if (flags & CCurrentProcess::fDF_KeepStdout) {
         if ((new_fd = ::open("/dev/null", O_WRONLY)) < 0) {
             NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "
-                    "Error opening /dev/null for writing: " <<
-                    s_ErrnoToString());
+                           "Error opening /dev/null for writing: " << s_ErrnoToString());
         }
         NcbiCout.flush();
         ::fflush(stdout);
@@ -411,15 +406,12 @@ TPid CProcess::x_DaemonizeEx(const char* logfile, CProcess::TDaemonFlags flags)
         if (!*logfile) {
             if ((new_fd = ::open("/dev/null", O_WRONLY | O_APPEND)) < 0) {
                 NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "
-                        "Error opening /dev/null for appending: " <<
-                        s_ErrnoToString());
+                               "Error opening /dev/null for appending: " << s_ErrnoToString());
             }
         } else {
-            if ((new_fd = ::open(logfile,
-                    O_WRONLY | O_APPEND | O_CREAT, 0666)) < 0) {
+            if ((new_fd = ::open(logfile, O_WRONLY | O_APPEND | O_CREAT, 0666)) < 0) {
                 NCBI_THROW_FMT(CCoreException, eCore, "[Daemonize] "
-                        "Unable to open logfile \"" << logfile <<
-                        "\": " << s_ErrnoToString());
+                               "Unable to open logfile \"" <<  logfile << "\": " << s_ErrnoToString());
             }
         }
         NcbiCerr.flush();
@@ -427,53 +419,56 @@ TPid CProcess::x_DaemonizeEx(const char* logfile, CProcess::TDaemonFlags flags)
         stderr_redirector.Redirect(new_fd);
     }
     ::fflush(NULL);
-    TPid pid = Fork(fFF_UpdateDiag | fFF_AllowExceptions);
+    TPid pid = CCurrentProcess::Fork(CCurrentProcess::fFF_UpdateDiag | 
+                                     CCurrentProcess::fFF_AllowExceptions);
     if (pid) {
         // Parent process.
         // No need to set success_flag to true here, because
         // either this process must be terminated or
         // the descriptors must be restored.
-        if ((flags & fDF_KeepParent) == 0) {
+        if ((flags & CCurrentProcess::fDF_KeepParent) == 0) {
             GetDiagContext().PrintStop();
             ::_exit(0);
         }
-        return (TPid) pid/*success*/;
+        return pid; /*success*/
     }
     // Child process.
     success_flag = true;
     ::setsid();
-    if (flags & fDF_ImmuneTTY) {
+    if (flags & CCurrentProcess::fDF_ImmuneTTY) {
         try {
-            if (Fork() != 0)
+            if (CCurrentProcess::Fork() != 0) {
                 ::_exit(0); // Exit the second parent process
+            }
         }
         catch (CCoreException& e) {
-            ERR_POST_X(2, "[Daemonize]  Failed to immune from "
-                    "TTY accruals: " << e << " ... continuing anyways");
+            ERR_POST_X(2, "[Daemonize] Failed to immune from "
+                          "TTY accruals: " << e << " ... continuing anyways");
         }
     }
-    if (!(flags & fDF_KeepCWD))
-        if (::chdir("/") ) { /*no-op*/ };  // NB: "/" always exists
-    if (!(flags & fDF_KeepStdin))
+    if (!(flags & CCurrentProcess::fDF_KeepCWD))
+        if (::chdir("/") ) { /*no-op*/ };  // "/" always exists
+    if (!(flags & CCurrentProcess::fDF_KeepStdin))
         ::fclose(stdin);
     else
         ::fflush(stdin);  // POSIX requires this
-    if (!(flags & fDF_KeepStdout))
+    if (!(flags & CCurrentProcess::fDF_KeepStdout))
         ::fclose(stdout);
     if (!logfile)
         ::fclose(stderr);
-    return (TPid)(-1)/*success*/;
+    return (TPid)(-1); /*success*/
 }
 #endif /* NCBI_OS_UNIX */
 
-TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
+
+TPid CCurrentProcess::Daemonize(const char* logfile, CCurrentProcess::TDaemonFlags flags)
 {
 #ifdef NCBI_OS_UNIX
-    if (flags & fDF_AllowExceptions)
-        return CProcess::x_DaemonizeEx(logfile, flags);
+    if (flags & CCurrentProcess::fDF_AllowExceptions)
+        return s_Daemonize(logfile, flags);
     else
         try {
-            return CProcess::x_DaemonizeEx(logfile, flags);
+            return s_Daemonize(logfile, flags);
         }
         catch (CException& e) {
             CErrnoKeeper x_errno;
@@ -485,46 +480,135 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
         }
 #else
     NCBI_THROW(CCoreException, eCore,
-               "CProcess::Daemonize() not implemented on this platform");
+               "CCurrentProcess::Daemonize() not implemented on this platform");
     /*NOTREACHED*/
 #endif
-    return (TPid) 0/*failure*/;
+    return (TPid) 0; /*failure*/
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// CProcess 
+//
+
+CProcess::CProcess(void) 
+    : m_Process(CCurrentProcess::GetPid()), 
+      m_Type(ePid), 
+      m_IsCurrent(eTriState_True)
+{
+    return;
+}
+
+
+CProcess::CProcess(TPid process, EType type)
+    : m_Process(process),
+      m_Type(type),
+      m_IsCurrent(eTriState_Unknown)
+{
+    // We don't try to determine that passed "process" represent
+    // the current process here, probably this information will not be needed.
+    // Otherwise, IsCurrent() will take care about this.
+    return;
+}
+
+#ifdef NCBI_OS_MSWIN
+
+// The helper constructor for MS Windows to avoid cast from
+// TProcessHandle to TPid
+CProcess::CProcess(TProcessHandle process, EType type)
+    : m_Process((intptr_t)process), 
+      m_Type(type), 
+      m_IsCurrent(eTriState_Unknow)
+{
+    return;
+}
+
+TProcessHandle CProcess::x_GetHandle(DWORD desired_access, DWORD* errcode) const
+{
+    TProcessHandle hProcess = NULL;
+    if (GetType() == eHandle) {
+        hProcess = GetHandle();
+        if (!hProcess  ||  hProcess == INVALID_HANDLE_VALUE) {
+            CNcbiError::Set(CNcbiError::eBadAddress);
+            return NULL;
+        }
+    } else {
+        hProcess = ::OpenProcess(desired_access, FALSE, GetPid());
+        if (!hProcess) {
+            if (errcode) {
+                *errcode = ::GetLastError();
+                CNcbiError::SetWindowsError(*errcode);
+            } else {
+                CNcbiError::SetFromWindowsError();
+            }
+        }
+    }
+    return hProcess;
+}
+
+void CProcess::x_CloseHandle(TProcessHandle handle) const
+{
+    if (GetType() == ePid) {
+        ::CloseHandle(handle);
+    }
+}
+
+TPid CProcess::x_GetPid(void) const
+{
+    if (GetType() == eHandle) {
+        return ::GetProcessId(GetHandle());
+    }
+    return GetPid();
+}
+
+#endif //NCBI_OS_MSWIN
+
+
+bool CProcess::IsCurrent(void)
+{
+    if (m_IsCurrent == eTriState_True) {
+        return true;
+    }
+    bool current = false;
+    if (GetType() == ePid  &&  GetPid() == CCurrentProcess::GetPid()) {
+        current = true;
+    }
+#if defined(NCBI_OS_MSWIN)
+    else 
+    if (GetType() == eHandle  &&  GetHandle() == CCurrentProcess::GetHandle()) {
+        current = true;
+    }
+#endif          
+    m_IsCurrent = current ? eTriState_True : eTriState_False;
+    return current;
 }
 
 
 bool CProcess::IsAlive(void) const
 {
-#if   defined(NCBI_OS_UNIX)
-    return kill((TPid)m_Process, 0) == 0  ||  errno == EPERM;
+#if defined(NCBI_OS_UNIX)
+    return kill(GetPid(), 0) == 0  ||  errno == EPERM;
 
 #elif defined(NCBI_OS_MSWIN)
-    HANDLE hProcess = 0;
-    if (m_Type == ePid) {
-        hProcess = OpenProcess(PROCESS_QUERY_INFORMATION,
-                               FALSE, (TPid)m_Process);
-        if (!hProcess) {
-            CNcbiError::SetFromWindowsError();
-            return GetLastError() == ERROR_ACCESS_DENIED;
-        }
-    } else {
-        hProcess = (TProcessHandle)m_Process;
+    DWORD status;
+    HANDLE hProcess = x_GetHandle(PROCESS_QUERY_INFORMATION, &status);
+    if (!hProcess) {
+        return status == ERROR_ACCESS_DENIED;
     }
-    DWORD status = 0;
     _ASSERT(STILL_ACTIVE != 0);
-    GetExitCodeProcess(hProcess, &status);
-    if (m_Type == ePid) {
-        CloseHandle(hProcess);
-    }
+    ::GetExitCodeProcess(hProcess, &status);
+    x_CloseHandle(hProcess);
     return status == STILL_ACTIVE;
 #endif
 }
 
 
-bool CProcess::Kill(unsigned long timeout) const
+bool CProcess::Kill(unsigned long timeout)
 {
-#if   defined(NCBI_OS_UNIX)
+#if defined(NCBI_OS_UNIX)
 
-    TPid pid = (TPid)m_Process;
+    TPid pid = GetPid();
 
     // Try to kill the process with SIGTERM first
     if (kill(pid, SIGTERM) < 0  &&  errno == EPERM) {
@@ -568,6 +652,7 @@ bool CProcess::Kill(unsigned long timeout) const
     SleepMilliSec(kWaitPrecision);
     // Reap the zombie (if child) up from the system
     waitpid(pid, static_cast<int*>(NULL), WNOHANG);
+
     // Check whether the process cannot be killed
     // (most likely due to a kernel problem)
     return kill(pid, 0) < 0;
@@ -578,91 +663,92 @@ bool CProcess::Kill(unsigned long timeout) const
     bool safe = (timeout > 0);
 
     // Try to kill current process?
-    if ( m_Type == ePid  &&  (TPid)m_Process == GetCurrentPid() ) {
-        ExitProcess(-1);
+    if ( IsCurrent() ) {
+        // Just exit
+        ::ExitProcess(-1);
         // NOTREACHED
         return false;
     }
 
     HANDLE hProcess    = NULL;
     HANDLE hThread     = NULL;
-    bool   enable_sync = true;
+    bool   allow_wait  = true;
 
     // Get process handle
-    if (m_Type == eHandle) {
-        hProcess = (TProcessHandle)m_Process;
 
-    } else {  // m_Type == ePid
-        hProcess = OpenProcess(PROCESS_CREATE_THREAD | PROCESS_TERMINATE |
-                               SYNCHRONIZE, FALSE, (TPid)m_Process);
-        if ( !hProcess ) {
-            // Try to open with minimal access right needed
-            // to terminate process.
-            enable_sync = false;
-            hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (TPid)m_Process);
-            if (!hProcess) {
-                if (GetLastError() != ERROR_ACCESS_DENIED) {
-                    CNcbiError::SetFromWindowsError();
-                    return false;
-                }
-                // If we have an administrative rights, that we can try
-                // to terminate the process using SE_DEBUG_NAME privilege,
-                // which system administrators normally have, but it might
-                // be disabled by default. When this privilege is enabled,
-                // the calling thread can open processes with any access
-                // rights regardless of the security descriptor assigned
-                // to the process.
-
-                // Get current thread token 
-                HANDLE hToken;
-                if (!OpenThreadToken(GetCurrentThread(), 
-                                     TOKEN_QUERY|TOKEN_ADJUST_PRIVILEGES,
-                                     FALSE, &hToken)) {
-                    if (GetLastError() != ERROR_NO_TOKEN) {
-                        CNcbiError::SetFromWindowsError();
-                        return false;
-                    }
-                    // Rrevert to the process token, if not impersonating
-                    if (!OpenProcessToken(GetCurrentProcess(),
-                                          TOKEN_QUERY|TOKEN_ADJUST_PRIVILEGES,
-                                          &hToken)) {
-                        CNcbiError::SetFromWindowsError();
-                        return false;
-                    }
-                }
-
-                // Try to enable the SE_DEBUG_NAME privilege
-
-                TOKEN_PRIVILEGES tp, tp_prev;
-                DWORD            tp_prev_size = sizeof(tp_prev);
-
-                tp.PrivilegeCount = 1;
-                tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-                LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &tp.Privileges[0].Luid);
-
-                if (!AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(tp),
-                                           &tp_prev, &tp_prev_size)) {
-                    CNcbiError::SetFromWindowsError();
-                    CloseHandle(hToken);
-                    return false;
-                }
-                if (GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
-                    // The AdjustTokenPrivileges function cannot add new
-                    // privileges to the access token. It can only enable or
-                    // disable the token's existing privileges.
-                    CNcbiError::SetFromWindowsError();
-                    CloseHandle(hToken);
-                    return false;
-                }
-
-                // Try to open process handle again
-                hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (TPid)m_Process);
-                
-                // Restore original privilege state
-                AdjustTokenPrivileges(hToken, FALSE, &tp_prev, sizeof(tp_prev),
-                                      NULL, NULL);
-                CloseHandle(hToken);
+    hProcess = x_GetHandle(PROCESS_CREATE_THREAD | PROCESS_TERMINATE | SYNCHRONIZE);
+    if (!hProcess) {
+        if (GetType() != ePid) {
+            return false;
+        }
+        // SYNCHRONIZE access right is required to wait for the process to terminate
+        allow_wait = false;
+        // Try to open with minimal access right needed to terminate process.
+        DWORD err;
+        hProcess = x_GetHandle(PROCESS_TERMINATE, &err);
+        if (!hProcess) {
+            if (err != ERROR_ACCESS_DENIED) {
+                return false;
             }
+            // If we have an administrative rights, that we can try
+            // to terminate the process using SE_DEBUG_NAME privilege,
+            // which system administrators normally have, but it might
+            // be disabled by default. When this privilege is enabled,
+            // the calling thread can open processes with any access
+            // rights regardless of the security descriptor assigned
+            // to the process.
+
+            // TODO: Use CWinSecurity to adjust privileges
+
+            // Get current thread token 
+            HANDLE hToken;
+            if (!::OpenThreadToken(::GetCurrentThread(),
+                                    TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, FALSE, &hToken)) {
+                err = ::GetLastError();
+                if (err != ERROR_NO_TOKEN) {
+                    CNcbiError::SetWindowsError(err);
+                    return false;
+                }
+                // Revert to the process token, if not impersonating
+                if (!::OpenProcessToken(::GetCurrentProcess(),
+                                        TOKEN_QUERY | TOKEN_ADJUST_PRIVILEGES, &hToken)) {
+                    CNcbiError::SetFromWindowsError();
+                    return false;
+                }
+            }
+
+            // Try to enable the SE_DEBUG_NAME privilege
+
+            TOKEN_PRIVILEGES tp, tp_prev;
+            DWORD            tp_prev_size = sizeof(tp_prev);
+
+            tp.PrivilegeCount = 1;
+            tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+            ::LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &tp.Privileges[0].Luid);
+
+            if (!::AdjustTokenPrivileges(hToken, FALSE, &tp, sizeof(tp), &tp_prev, &tp_prev_size)) {
+                CNcbiError::SetFromWindowsError();
+                ::CloseHandle(hToken);
+                return false;
+            }
+            // To determine that successful call to the AdjustTokenPrivileges()
+            // adjusted all of the specified privileges, check GetLastError():
+            err = ::GetLastError();
+            if (err == ERROR_NOT_ALL_ASSIGNED) {
+                // The AdjustTokenPrivileges function cannot add new
+                // privileges to the access token. It can only enable or
+                // disable the token's existing privileges.
+                CNcbiError::SetWindowsError(err);
+                ::CloseHandle(hToken);
+                return false;
+            }
+
+            // Try to open process handle again
+            hProcess = ::OpenProcess(PROCESS_TERMINATE, FALSE, GetPid());
+                
+            // Restore original privilege state
+            ::AdjustTokenPrivileges(hToken, FALSE, &tp_prev, sizeof(tp_prev), NULL, NULL);
+            ::CloseHandle(hToken);
         }
     }
 
@@ -678,28 +764,31 @@ bool CProcess::Kill(unsigned long timeout) const
         timer.Start();
     }
     // Safe process termination
-    if ( safe  &&  enable_sync ) {
-        // (kernel32.dll loaded at same address in each process)
-        FARPROC exitproc = GetProcAddress(GetModuleHandleA("KERNEL32.DLL"),
-                                          "ExitProcess");
+    if ( safe  &&  allow_wait ) {
+        // kernel32.dll loaded at same address in each process,
+        // so call ::ExitProcess() there.
+        FARPROC exitproc = ::GetProcAddress(::GetModuleHandleA("KERNEL32.DLL"), "ExitProcess");
         if ( exitproc ) {
-            hThread = CreateRemoteThread(hProcess, NULL, 0,
-                                        (LPTHREAD_START_ROUTINE)exitproc,
-                                        0, 0, 0);
+            hThread = ::CreateRemoteThread(hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)exitproc, 0, 0, 0);
             // Wait until process terminated, or timeout expired
             if (hThread   &&
-                (WaitForSingleObject(hProcess, timeout) == WAIT_OBJECT_0)){
+                (::WaitForSingleObject(hProcess, timeout) == WAIT_OBJECT_0)){
                 terminated = true;
             }
         }
     }
     // Try harder to kill stubborn process
     if ( !terminated ) {
-        if ( TerminateProcess(hProcess, -1) != 0  ||
-            GetLastError() == ERROR_INVALID_HANDLE ) {
-            // If process "terminated" succesfuly or error occur but
-            // process handle became invalid -- process has terminated
-            terminated = true;
+        if ( ::TerminateProcess(hProcess, -1) != 0 ) {
+            DWORD err = ::GetLastError();
+            if (err == ERROR_INVALID_HANDLE) {
+                // If process "terminated" successfully or error occur but
+                // process handle became invalid -- process has terminated
+                terminated = true;
+            }
+            else {
+                CNcbiError::SetWindowsError(err);
+            }
         }
         else {
             CNcbiError::SetFromWindowsError();
@@ -712,7 +801,7 @@ bool CProcess::Kill(unsigned long timeout) const
         terminated = false;
         double elapsed = timer.Elapsed() * kMilliSecondsPerSecond;
         unsigned long linger_timeout = (elapsed < timeout) ? 
-            (unsigned long)((double)timeout - elapsed) : 0;
+                                       (unsigned long)((double)timeout - elapsed) : 0;
 
         for (;;) {
             if ( !IsAlive() ) {
@@ -732,11 +821,9 @@ bool CProcess::Kill(unsigned long timeout) const
     }
     // Close temporary process handle
     if ( hThread ) {
-        CloseHandle(hThread);
+        ::CloseHandle(hThread);
     }
-    if (m_Type == ePid) {
-        CloseHandle(hProcess);
-    }
+    x_CloseHandle(hProcess);
     return terminated;
 
 #endif
@@ -748,62 +835,60 @@ bool CProcess::Kill(unsigned long timeout) const
 // MS Windows:
 // A helper function for terminating all processes
 // in the tree within specified timeout.
+// If 'timer' is specified, use safe process termination.
 
-// If 'timer' is specified we use safe process termination.
-static bool s_KillGroup(DWORD pid,
-                        CStopWatch *timer, unsigned long &timeout)
+static bool s_Win_KillGroup(DWORD pid, CStopWatch *timer, unsigned long &timeout)
 {
     // Open snapshot handle.
-    // We cannot use one shapshot for recursive calls, 
+    // We cannot use one snapshot for recursive calls, 
     // because it is not reentrant.
-    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (hSnapshot == INVALID_HANDLE_VALUE) {
+    HANDLE const snapshot = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snapshot == INVALID_HANDLE_VALUE) {
         return false;
     }
-    PROCESSENTRY32 pe;
-    pe.dwSize = sizeof(PROCESSENTRY32);
+    PROCESSENTRY32 entry;
+    entry.dwSize = sizeof(PROCESSENTRY32);
 
     // Terminate all children first
-    if (!Process32First(hSnapshot, &pe)) {
+    if (!::Process32First(snapshot, &entry)) {
+        ::CloseHandle(snapshot);
         return false;
     }
     do {
-        if (pe.th32ParentProcessID == pid) {
+        if (entry.th32ParentProcessID == pid) {
             // Safe termination -- update timeout
             if ( timer ) {
                 double elapsed = timer->Elapsed() * kMilliSecondsPerSecond;
-                timeout = (elapsed < timeout) ?
-                    (unsigned long)((double)timeout - elapsed) : 0;
+                timeout = (elapsed < timeout) ? (unsigned long)((double)timeout - elapsed) : 0;
                 if ( !timeout ) {
-                    CloseHandle(hSnapshot);
+                    ::CloseHandle(snapshot);
                     return false;
                 }
             }
-            bool res = s_KillGroup(pe.th32ProcessID, timer, timeout);
+            bool res = s_Win_KillGroup(entry.th32ProcessID, timer, timeout);
             if ( !res ) {
-                CloseHandle(hSnapshot);
+                ::CloseHandle(snapshot);
                 return false;
             }
         }
     }
-    while (Process32Next(hSnapshot, &pe)); 
+    while (::Process32Next(snapshot, &entry)); 
 
     // Terminate the specified process
 
     // Safe termination -- update timeout
     if ( timer ) {
         double elapsed = timer->Elapsed() * kMilliSecondsPerSecond;
-        timeout = (elapsed < timeout) ?
-            (unsigned long)((double)timeout - elapsed) : 0;
+        timeout = (elapsed < timeout) ? (unsigned long)((double)timeout - elapsed) : 0;
         if ( !timeout ) {
-            CloseHandle(hSnapshot);
+            ::CloseHandle(snapshot);
             return false;
         }
     }
     bool res = CProcess(pid, CProcess::ePid).Kill(timeout);
 
     // Close snapshot handle
-    CloseHandle(hSnapshot);
+    ::CloseHandle(snapshot);
     return res;
 }
 
@@ -812,10 +897,11 @@ static bool s_KillGroup(DWORD pid,
 
 bool CProcess::KillGroup(unsigned long timeout) const
 {
-#if   defined(NCBI_OS_UNIX)
+#if defined(NCBI_OS_UNIX)
 
-    TPid pgid = getpgid((TPid)m_Process);
+    TPid pgid = getpgid(GetPid());
     if (pgid == (TPid)(-1)) {
+         CNcbiError::SetFromErrno();
         // TRUE if PID does not match any process
         return errno == ESRCH;
     }
@@ -823,31 +909,7 @@ bool CProcess::KillGroup(unsigned long timeout) const
 
 #elif defined(NCBI_OS_MSWIN)
 
-    // Convert the process handle to process ID if needed
-    TPid pid = 0;
-    if (m_Type == eHandle) {
-        // Some OS like Windows 2000 and WindowsXP (w/o SP1) don't
-        // have GetProcessId() function. Try to load it directy from 
-        // KERNEL32.DLL
-        static bool  s_TryGetProcessId = true;
-        typedef DWORD (STDMETHODCALLTYPE FAR* LPFN_GETPROCESSID)(HANDLE process);
-        static LPFN_GETPROCESSID s_GetProcessId = NULL;
-
-        if ( s_TryGetProcessId  &&  !s_GetProcessId ) {
-            s_GetProcessId  = (LPFN_GETPROCESSID)GetProcAddress(
-                                    GetModuleHandleA("KERNEL32.DLL"),
-                                    "GetProcessId");
-            s_TryGetProcessId = false;
-        }
-        if ( !s_GetProcessId ) {
-            // GetProcessId() is not available on this platform
-            return false;
-        }
-        pid = s_GetProcessId((TProcessHandle)m_Process);
-
-    } else {  // m_Type == ePid
-        pid = (TPid)m_Process;
-    }
+    TPid pid = x_GetPid();
     if (!pid) {
         return false;
     }
@@ -858,7 +920,7 @@ bool CProcess::KillGroup(unsigned long timeout) const
         timer.Start();
     }
     // Kill process tree
-    bool result = s_KillGroup(pid, (timeout > 0) ? &timer : 0, x_timeout);
+    bool result = s_Win_KillGroup(pid, (timeout > 0) ? &timer : 0, x_timeout);
     return result;
 
 #endif
@@ -867,7 +929,7 @@ bool CProcess::KillGroup(unsigned long timeout) const
 
 bool CProcess::KillGroupById(TPid pgid, unsigned long timeout)
 {
-#if   defined(NCBI_OS_UNIX)
+#if defined(NCBI_OS_UNIX)
 
     // Try to kill the process group with SIGTERM first
     if (kill(-pgid, SIGTERM) < 0  &&  errno == EPERM) {
@@ -917,10 +979,10 @@ bool CProcess::KillGroupById(TPid pgid, unsigned long timeout)
     // (most likely due to a kernel problem)
     return kill(-pgid, 0) < 0;
 
-#elif defined(NCBI_OS_MSWIN)
-
+#else
     // Cannot be implemented, use non-static version of KillGroup()
     // for specified process.
+    CNcbiError::Set(CNcbiError::eNotSupported);
     return false;
 
 #endif
@@ -929,7 +991,7 @@ bool CProcess::KillGroupById(TPid pgid, unsigned long timeout)
 
 int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
 {
-    int  status;
+    int status;
 
     // Reset extended information
     if (info) {
@@ -937,9 +999,9 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
         info->status = 0;
     }
 
-#if   defined(NCBI_OS_UNIX)
+#if defined(NCBI_OS_UNIX)
 
-    TPid pid     = (TPid)m_Process;
+    TPid pid     = GetPid();
     int  options = timeout == kInfiniteTimeoutMs ? 0 : WNOHANG;
 
     // Check process termination (with timeout or indefinitely)
@@ -978,46 +1040,34 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
 
 #elif defined(NCBI_OS_MSWIN)
 
-    HANDLE hProcess;
-    bool   enable_sync = true;
+    bool allow_wait = true;
 
     // Get process handle
-    if (m_Type == ePid) {
-        hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE,
-                               FALSE, (TPid)m_Process);
-        if ( !hProcess ) {
-            enable_sync = false;
-            hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, (TPid)m_Process);
-            if (!hProcess   &&  GetLastError() == ERROR_ACCESS_DENIED) {
-                CNcbiError::SetFromWindowsError();
-                return -1;
-            }
-        }
-    } else {
-        hProcess = (TProcessHandle)m_Process;
-        if (!hProcess  ||  hProcess == INVALID_HANDLE_VALUE) {
-            CNcbiError::Set(CNcbiError::eBadAddress);
+    HANDLE hProcess = x_GetHandle(PROCESS_QUERY_INFORMATION | SYNCHRONIZE);
+    if (!hProcess) {
+        // SYNCHRONIZE access right is required to wait for the process to terminate
+        allow_wait = false;
+        // Try to open with minimal access right needed to terminate process.
+        hProcess = x_GetHandle(PROCESS_TERMINATE);
+        if (!hProcess) {
             return -1;
         }
     }
-
     status = -1;
     DWORD x_status;
     // Is process still running?
-    if (GetExitCodeProcess(hProcess, &x_status)) {
+    if (::GetExitCodeProcess(hProcess, &x_status)) {
         if (x_status == STILL_ACTIVE) {
-            if (enable_sync  &&  timeout) {
-                DWORD tv = (timeout == kInfiniteTimeoutMs
-                            ? INFINITE
-                            : (DWORD)timeout);
-                DWORD ws = WaitForSingleObject(hProcess, tv);
+            if (allow_wait  &&  timeout) {
+                DWORD tv = (timeout == kInfiniteTimeoutMs ? INFINITE : (DWORD)timeout);
+                DWORD ws = ::WaitForSingleObject(hProcess, tv);
                 switch(ws) {
                 case WAIT_TIMEOUT:
                     // still running
                     _ASSERT(x_status == STILL_ACTIVE);
                     break;
                 case WAIT_OBJECT_0:
-                    if (GetExitCodeProcess(hProcess, &x_status)) {
+                    if (::GetExitCodeProcess(hProcess, &x_status)) {
                         if (x_status != STILL_ACTIVE) {
                             // terminated
                             status = 0;
@@ -1051,15 +1101,595 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
         }
         status = x_status;
     }
+    x_CloseHandle(hProcess);
 
-    if (m_Type == ePid) {
-        CloseHandle(hProcess);
-    }
     return status;
 
 #endif
 }
 
+
+#if defined(NCBI_OS_MSWIN)
+
+bool s_Win_GetHandleTimes(HANDLE handle, double* real, double* user, double* sys, CProcess::EWhat what)
+{
+    // Each FILETIME structure contains the number of 100-nanosecond time units
+    FILETIME ft_creation, ft_exit, ft_kernel, ft_user;
+    BOOL res = FALSE;
+
+    if (what == CProcess::eProcess) {
+        res = ::GetProcessTimes(handle, &ft_creation, &ft_exit, &ft_kernel, &ft_user);
+    } else
+    if (what == CProcess::eThread) {
+        res = ::GetThreadTimes(handle, &ft_creation, &ft_exit, &ft_kernel, &ft_user);
+    }
+    if (!res) {
+        CNcbiError::SetFromWindowsError();
+        return false;
+    }
+    if ( real ) {
+        // Calculate real execution time using handle creation time.
+        // clock() is less accurate on Windows, so use GetSystemTime*().
+        // <real time> = <system time> - <creation time>
+       
+        FILETIME ft_sys;
+        ::GetSystemTimeAsFileTime(&ft_sys);
+        // Calculate a difference between FILETIME variables
+        ULARGE_INTEGER i;
+        __int64 v2, v1, v_diff;
+        i.LowPart  = ft_creation.dwLowDateTime;
+        i.HighPart = ft_creation.dwHighDateTime;
+        v1 = i.QuadPart;
+        i.LowPart  = ft_sys.dwLowDateTime;
+        i.HighPart = ft_sys.dwHighDateTime;
+        v2 = i.QuadPart;
+        v_diff = v2 - v1;
+        i.QuadPart = v_diff;
+        *real = (i.LowPart + ((Uint8)i.HighPart << 32)) * 1.0e-7;
+    }
+    if ( sys ) {
+        *sys = (ft_kernel.dwLowDateTime + ((Uint8) ft_kernel.dwHighDateTime << 32)) * 1e-7;
+    }
+    if ( user ) {
+        *user = (ft_user.dwLowDateTime + ((Uint8) ft_user.dwHighDateTime << 32)) * 1e-7;
+    }
+    return true;
+}
+
+#endif
+
+bool CProcess::GetTimes(double* real, double* user, double* sys, CProcess::EWhat what)
+{
+    // Use CCurrentProcess::GetProcessTimes() for the current process,
+    // it can give better results than "generic" version.
+    if ( IsCurrent() ) {
+        return CCurrentProcess::GetTimes(real, user, sys, what);
+    }
+
+    const double kUndefined = -1.0;
+    if ( real ) { *real = kUndefined; }
+    if ( user ) { *user = kUndefined; }
+    if ( sys )  { *sys  = kUndefined; }
+
+    if (what == eThread) {
+        // We don't have information about thread times for some arbitrary process.
+        CNcbiError::Set(CNcbiError::eNotSupported);
+        return false;
+    }
+
+#if defined(NCBI_OS_MSWIN)
+
+    if (what == eChildren) {
+        // On Windows we have information for the process only.
+        // TODO: Try to implemented this for children.
+        CNcbiError::Set(CNcbiError::eNotSupported);
+        return false;
+    }
+    // Get process handle
+    HANDLE hProcess = x_GetHandle(PROCESS_QUERY_INFORMATION | SYNCHRONIZE);
+    if (!hProcess) {
+        return false;
+    }
+    bool res = s_Win_GetHandleTimes(hProcess, real, user, sys, CProcess::eProcess);
+    x_CloseHandle(hProcess);
+    return res;
+
+#elif defined(NCBI_OS_UNIX)
+
+    clock_t tick = CSystemInfo::GetClockTicksPerSecond();
+    if ( !tick ) {
+        // GetClockTicksPerSecond() already set CNcbiError
+        return false;
+    }
+
+#  if defined(NCBI_OS_LINUX)
+
+    // Execution times can be extracted from /proc/<pid>/stat,
+    CLinuxFeature::CProcStat ps(GetPid());
+
+    // Fields numbers in that file, for process itself and children.
+    // Note, all values can be zero.
+    int fu = 14, fs = 15;
+    if (what == eChildren) {
+        fu = 16;
+        fs = 17;
+    }
+    if ( real  &&  (what == eProcess) ) {
+        // Real execution time can be calculated for the process only.
+        // field 22, in ticks per second.
+        Uint8 start = NStr::StringToUInt8(ps.at(22), NStr::fConvErr_NoThrow);
+        double uptime = CSystemInfo::GetUptime();
+        if (start > 0  &&  uptime > 0) {
+            *real = uptime - (double)start / (double)tick;
+        }
+    }
+    if ( user ) {
+        *user = (double)NStr::StringToUInt8(ps.at(fu), NStr::fConvErr_NoThrow) / (double)tick;
+    }
+    if ( sys ) {
+        *sys  = (double)NStr::StringToUInt8(ps.at(fs), NStr::fConvErr_NoThrow) / (double)tick;
+    }
+    return true;
+
+#  else
+    // TODO: Investigate how to determine this on other Unix flavors
+    
+#  endif //NCBI_OS_LINUX
+
+#endif //NCBI_OS_UNIX
+
+    CNcbiError::Set(CNcbiError::eNotSupported);
+    return false;
+}
+
+
+bool CCurrentProcess::GetTimes(double* real, double* user, double* sys, EWhat what)
+{
+    const double kUndefined = -1.0;
+    if ( real ) { *real = kUndefined; }
+    if ( user ) { *user = kUndefined; }
+    if ( sys )  { *sys  = kUndefined; }
+
+#if defined(NCBI_OS_UNIX)
+    clock_t tick = CSystemInfo::GetClockTicksPerSecond();
+    if ( !tick ) {
+        // GetClockTicksPerSecond() already set CNcbiError
+        return false;
+    }
+#endif
+
+#if defined(NCBI_OS_MSWIN)
+
+    if (what == eChildren) {
+        // We have information for the process/thread only.
+        // TODO: Try to implemented this for children.
+        CNcbiError::Set(CNcbiError::eNotSupported);
+        return false;
+    }
+    bool res;
+    if (what == eProcess) {
+        res = s_Win_GetHandleTimes(::GetCurrentProcess(), real, user, sys, CProcess::eProcess);
+    } else {
+        res = s_Win_GetHandleTimes(::GetCurrentThread(), real, user, sys, CProcess::eThread);
+    }
+    return res;
+
+#elif defined(HAVE_GETRUSAGE)
+
+    int who = RUSAGE_SELF;
+    switch ( what ) {
+    case eProcess:
+        // who = RUSAGE_SELF
+        break;
+    case eChildren:
+        who = RUSAGE_CHILDREN;
+        break;
+    case eThread:
+        #ifdef RUSAGE_THREAD
+            who = RUSAGE_THREAD;
+            break;
+        #else
+            CNcbiError::Set(CNcbiError::eNotSupported);
+            return false;
+        #endif
+    default:
+        _TROUBLE;
+    }
+    struct rusage ru;
+    memset(&ru, '\0', sizeof(ru));
+    if (getrusage(who, &ru) != 0) {
+        CNcbiError::SetFromErrno();
+        return false;
+    }
+    // real time will be calculated below
+    
+    if ( user ) {
+        *user = double(ru.ru_utime.tv_sec) + double(ru.ru_utime.tv_usec) / 1e6;
+    }
+    if ( sys ) {
+        *sys = double(ru.ru_stime.tv_sec) + double(ru.ru_stime.tv_usec) / 1e6;
+    }
+
+#elif defined(NCBI_OS_UNIX)
+
+    if (what != eProcess) {
+        // We have information for the current process only
+        CNcbiError::Set(CNcbiError::eNotSupported);
+        return false;
+    }
+    tms buf;
+    clock_t t = times(&buf);
+    if ( t == (clock_t)(-1) ) {
+        CNcbiError::SetFromErrno();
+        return false;
+    }
+   
+    // real time will be calculated below
+    
+    if ( user ) {
+        *user = (double)buf.tms_utime / (double)tick;
+    }
+    if ( sys ) {
+        *sys = (double)buf.tms_stime / (double)tick;
+    }
+
+#else
+    CNcbiError::Set(CNcbiError::eNotSupported);
+    return false;
+
+#endif
+
+// UNIX: Real execution time can be calculated on Linux and for the process only.
+
+#if defined(NCBI_OS_LINUX)
+    if ( real  &&  (what == eProcess) ) {
+        // Real execution time can be get from /proc/<pid>/stat,
+        // field 22, in ticks per second.
+        CLinuxFeature::CProcStat ps;
+        Uint8  start = NStr::StringToUInt8(ps.at(22), NStr::fConvErr_NoThrow);
+        double uptime    = CSystemInfo::GetUptime();
+        if (start > 0  &&  uptime > 0) {
+            *real = uptime - (double)start / (double)tick;
+        }
+    }
+
+#elif defined(NCBI_OS_UNIX)
+    // TODO: Investigate how to determine this on other Unix flavors
+#endif
+
+    return true;
+}
+
+
+#if defined(NCBI_OS_MSWIN)
+
+// PSAPI structure PROCESS_MEMORY_COUNTERS
+struct SProcessMemoryCounters {
+    DWORD  cb;
+    DWORD  PageFaultCount;
+    SIZE_T PeakWorkingSetSize;
+    SIZE_T WorkingSetSize;
+    SIZE_T QuotaPeakPagedPoolUsage;
+    SIZE_T QuotaPagedPoolUsage;
+    SIZE_T QuotaPeakNonPagedPoolUsage;
+    SIZE_T QuotaNonPagedPoolUsage;
+    SIZE_T PagefileUsage; // same as PrivateUsage in PROCESS_MEMORY_COUNTERS_EX
+    SIZE_T PeakPagefileUsage;
+};
+
+bool s_Win_GetMemoryCounters(HANDLE handle, SProcessMemoryCounters& memcounters)
+{
+    try {
+        // Use GetProcessMemoryInfo() from psapi.dll.
+        // Headers/libs to use this API directly may be missed, so we don't use it, but DLL exists usually.
+        CDll psapi_dll("psapi.dll", CDll::eLoadNow, CDll::eAutoUnload);
+        BOOL (STDMETHODCALLTYPE FAR * dllGetProcessMemoryInfo) 
+             (HANDLE process, SProcessMemoryCounters& counters, DWORD size) = 0;
+        dllGetProcessMemoryInfo = psapi_dll.GetEntryPoint_Func("GetProcessMemoryInfo", &dllGetProcessMemoryInfo);
+        if (dllGetProcessMemoryInfo) {
+            if ( !dllGetProcessMemoryInfo(handle, memcounters, sizeof(memcounters)) ) {
+                CNcbiError::SetFromWindowsError();
+                return false;
+            }
+            return true;
+        }
+    } catch (CException) {
+        // Just catch all exceptions from CDll
+    }
+    // Cannot get entry point for GetProcessMemoryInfo()
+    CNcbiError::Set(CNcbiError::eAddressNotAvailable);
+    return false;
+}
+
+// On Windows we count the "working set" only.
+// The "working set" of a process is the set of memory pages currently visible
+// to the process in physical RAM memory. These pages are resident and available
+// for an application to use without triggering a page fault. 
+//
+// https://docs.microsoft.com/en-us/windows/desktop/api/psapi/ns-psapi-_process_memory_counters
+// https://docs.microsoft.com/en-us/windows/desktop/Memory/working-set
+
+bool s_Win_GetMemoryUsage(HANDLE handle, CProcess::SMemoryUsage& usage)
+{
+    SProcessMemoryCounters mc;
+    if (!s_Win_GetMemoryCounters(handle, mc)) {
+        return false;
+    }
+    usage.total         = mc.WorkingSetSize + mc.PagefileUsage;
+    usage.total_peak    = mc.PeakWorkingSetSize + mc.PeakPagefileUsage;
+    usage.resident      = mc.WorkingSetSize;
+    usage.resident_peak = mc.PeakWorkingSetSize;
+    usage.swap          = mc.PagefileUsage;
+    return true;
+}
+#endif
+
+
+bool CProcess::GetMemoryUsage(SMemoryUsage& usage)
+{
+    // Use CCurrentProcess::GetMemoryUsage() for the current process,
+    // it can give better results than "generic" version.
+    if ( IsCurrent() ) {
+        return CCurrentProcess::GetMemoryUsage(usage);
+    }
+    memset(&usage, 0, sizeof(usage));
+
+#if defined(NCBI_OS_MSWIN)
+    // Get process handle
+    HANDLE hProcess = x_GetHandle(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ);
+    if (!hProcess) {
+        return false;
+    }
+    bool res = s_Win_GetMemoryUsage(hProcess, usage);
+    x_CloseHandle(hProcess);
+    return res;
+
+#elif defined(NCBI_OS_LINUX)
+    return CLinuxFeature::GetMemoryUsage(GetPid(), usage);
+    
+#else
+    CNcbiError::Set(CNcbiError::eNotSupported);
+#endif
+    return false;
+}
+
+
+bool CCurrentProcess::GetMemoryUsage(SMemoryUsage& usage)
+{
+    memset(&usage, 0, sizeof(usage));
+
+#if defined(NCBI_OS_MSWIN)
+    return s_Win_GetMemoryUsage(::GetCurrentProcess(), usage);
+
+#elif defined(NCBI_OS_LINUX)
+    // Many getrusage() memory related info fields are unmaintained on Linux,
+    // so read it directly from procfs.
+    return CLinuxFeature::GetMemoryUsage(0 /*current pid*/, usage);
+    
+#elif defined(NCBI_OS_SOLARIS)
+    Int8 len = CFile("/proc/self/as").GetLength();
+    if (len > 0) {
+        usage.total    = (size_t) len;
+        usage.resident = (size_t) len; // conservative estimate
+        return true;
+    }
+    CNcbiError::Set(CNcbiError::eUnknown);
+
+#elif defined(HAVE_GETRUSAGE)
+    //
+    // BIG FAT NOTE !!!:
+    //
+    // We will use peak RSS value only (ru_maxrss) here. And even it can
+    // use different size units depends on OS. Seems it is in KB usually,
+    // but on Darwin it measured in bytes. All other memory related fields
+    // of rusage structure are an "integral" values, measured in 
+    // "kilobytes * ticks-of-execution", whatever that means. Seems no one
+    // know how to use this. Probably it is good for measure relative memory
+    // usage, measure what happens between 2 getrusage() calls, but it is
+    // useless to get "current" memory usage. Most platforms don't maintain
+    // these values at all and all fields are set 0, other like BSD, shows
+    // inconsistent results in tests, and it is impossible to make a relation
+    // between its values and real memory usage.
+    //
+    // Interesting related article to read:
+    //     https://www.perlmonks.org/?node_id=626693
+
+    #if defined(NCBI_OS_LINUX_)
+        // NOTE: NCBI_OS_LINUX should go first to get more reliable results on Linux
+        // We process Linux separately, so ignore it here.
+        // JFY, on Linux:
+        //    ru_maxrss - are in kilobytes
+        //    other - unknown, values are unmaintained and docs says nothing about unit size.
+        _TROUBLE;
+    #endif
+    
+    struct rusage ru;
+    memset(&ru, '\0', sizeof(ru));
+    if (getrusage(RUSAGE_SELF, &ru) == 0) {
+
+        #if defined(NCBI_OS_DARWIN)
+            // ru_maxrss - in bytes
+            usage.total_peak    = ru.ru_maxrss;
+            usage.resident_peak = ru.ru_maxrss;
+        #else
+            // Use BSD rules, ru_maxrss - in kilobytes
+            usage.resident_peak = ru.ru_maxrss * 1024;
+            usage.total_peak    = ru.ru_maxrss * 1024;
+        #endif
+        #if !defined(NCBI_OS_DARWIN)
+            // We have workaround on Darwin, see below.
+            // For other -- exist 
+           return true;
+        #endif
+
+        #if 0 /* disabled for now, probably need to revisit later */
+            // calculates "kilobytes * ticks-of-execution"
+            #define KBT(v) ((v) * 1024 / ticks)
+            usage.total = KBT(ru.ru_ixrss + ru.ru_idrss  + ru.ru_isrss);
+            if (usage.total > 0) {
+                // If total is 0, all other walues doesn't matter.
+                usage.total_peak    = KBT(ru.ru_ixrss + ru.ru_isrss) + maxrss;
+                usage.resident      = KBT(ru.ru_idrss);
+                usage.resident_peak = maxrss;
+                usage.shared        = KBT(ru.ru_ixrss);
+                usage.data          = KBT(ru.ru_idrss);
+                usage.stack         = KBT(ru.ru_isrss);
+            } else {
+                // Use peak values only
+                usage.total_peak    = maxrss;
+                usage.resident_peak = maxrss;
+            }
+            #undef KBT
+            #if defined(NCBI_OS_DARWIN)
+                if (usage.total > 0) {
+                    return true;
+                }
+            #else
+                return true;
+            #endif
+        #endif // 0
+    } // getrusage
+    
+    #if defined(NCBI_OS_DARWIN)
+        // Alternative workaround for DARWIN if no getrusage()
+        #ifdef MACH_TASK_BASIC_INFO
+            task_flavor_t               flavor       = MACH_TASK_BASIC_INFO;
+            struct mach_task_basic_info t_info;
+            mach_msg_type_number_t      t_info_count = MACH_TASK_BASIC_INFO_COUNT;
+        #else
+            task_flavor_t               flavor       = TASK_BASIC_INFO;
+            struct task_basic_info      t_info;
+            mach_msg_type_number_t      t_info_count = TASK_BASIC_INFO_COUNT;
+        #endif
+        if (task_info(mach_task_self(), flavor, (task_info_t)&t_info, &t_info_count) == KERN_SUCCESS) {
+            usage.total    = t_info.resident_size;
+            usage.resident = t_info.resident_size;
+            if (usage.total_peak < usage.total) {
+                usage.total_peak = usage.total;
+            }
+            if (usage.resident_peak < usage.resident) {
+                usage.resident_peak = usage.resident;
+            }
+            // shared memory and etc are unavailable, even with mach_task_basic_info
+            return true;
+        }
+        CNcbiError::SetFromErrno();
+    #else
+        CNcbiError::Set(CNcbiError::eUnknown);
+    #endif
+
+#else
+    CNcbiError::Set(CNcbiError::eNotSupported);
+#endif
+    return false;
+}
+
+
+int CProcess::GetThreadCount(void)
+{
+#if defined(NCBI_OS_MSWIN)
+    PROCESSENTRY32 entry;
+    if (CWinFeature::FindProcessEntry(x_GetPid(), entry)) {
+        return entry.cntThreads;
+    }
+    CNcbiError::SetFromWindowsError();
+
+#elif defined(NCBI_OS_LINUX)
+    return CLinuxFeature::GetThreadCount(GetPid());
+
+#else
+    CNcbiError::Set(CNcbiError::eNotSupported);
+#endif
+    return -1;
+}
+
+
+int CCurrentProcess::GetThreadCount(void)
+{
+#if defined(NCBI_OS_MSWIN)
+    PROCESSENTRY32 entry;
+    if (CWinFeature::FindProcessEntry(::GetCurrentProcessId(), entry)) {
+        return entry.cntThreads;
+    }
+    CNcbiError::SetFromWindowsError();
+
+#elif defined(NCBI_OS_LINUX)
+    return CLinuxFeature::GetThreadCount();
+
+#else
+    CNcbiError::Set(CNcbiError::eNotSupported);
+#endif
+    return -1;
+}
+
+
+int CProcess::GetFileDescriptorsCount(void)
+{
+    // Use CCurrentProcess::GetFileDescriptorsCount() for the current process,
+    // it can give better results than "generic" version.
+    if ( IsCurrent() ) {
+        return CCurrentProcess::GetFileDescriptorsCount();
+    }
+#if defined(NCBI_OS_LINUX)
+    return CLinuxFeature::GetFileDescriptorsCount(GetPid());
+#else
+    CNcbiError::Set(CNcbiError::eNotSupported);
+#endif
+    return -1;
+}
+
+
+int CCurrentProcess::GetFileDescriptorsCount(int* soft_limit, int* hard_limit)
+{
+#if defined(NCBI_OS_UNIX)
+    int n = -1;
+
+    // Get limits first
+    struct rlimit rlim;
+    rlim_t cur_limit = -1;
+    rlim_t max_limit = -1;
+    if (getrlimit(RLIMIT_NOFILE, &rlim) == 0) {
+        cur_limit = rlim.rlim_cur;
+        max_limit = rlim.rlim_max;
+    } else {
+        // fallback to sysconf()
+        cur_limit = static_cast<rlim_t>(sysconf(_SC_OPEN_MAX));
+    }
+    if (soft_limit) {
+        *soft_limit = (cur_limit > INT_MAX) ? INT_MAX : static_cast<int>(cur_limit);
+    }
+    if (hard_limit) {
+        *hard_limit = (max_limit > INT_MAX) ? INT_MAX : static_cast<int>(max_limit);
+    }
+
+    #if defined(NCBI_OS_LINUX)
+    n = CLinuxFeature::GetFileDescriptorsCount(GetPid());
+    #endif
+    // Fallback to analysis via looping over all fds
+    if (n < 0  &&  cur_limit > 0) {
+        int max_fd = (cur_limit > INT_MAX) ? INT_MAX : static_cast<int>(cur_limit);
+        for (int fd = 0;  fd < max_fd;  ++fd) {
+            if (fcntl(fd, F_GETFD, 0) == -1) {
+                if (errno == EBADF) {
+                    continue;
+                }
+            }
+            ++n;
+        }
+    }
+    if (n >= 0) {
+        return n;
+    }
+    CNcbiError::Set(CNcbiError::eUnknown);
+
+#else
+    if ( soft_limit ) { *soft_limit = -1; }
+    if ( hard_limit ) { *hard_limit = -1; }
+    CNcbiError::Set(CNcbiError::eNotSupported);
+#endif
+
+    return -1;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1144,8 +1774,7 @@ void CPIDGuard::Release(void)
         // Check reference counter
         if ( ref ) {
             // Write updated reference counter into the file
-            CNcbiOfstream out(m_Path.c_str(),
-                                IOS_BASE::out | IOS_BASE::trunc);
+            CNcbiOfstream out(m_Path.c_str(), IOS_BASE::out | IOS_BASE::trunc);
             if ( out.good() ) {
                 out << pid << endl << ref << endl;
             }
@@ -1196,7 +1825,7 @@ void CPIDGuard::Remove(void)
 void CPIDGuard::UpdatePID(TPid pid)
 {
     if (pid == 0) {
-        pid = CProcess::GetCurrentPid();
+        pid = CCurrentProcess::GetPid();
     }
     // MT-Safe protect
     CGuard<CInterProcessLock> LOCK(*m_MTGuard);
@@ -1260,6 +1889,7 @@ const char* CPIDGuardException::GetErrCodeString(void) const
     default:            return CException::GetErrCodeString();
     }
 }
+
 
 
 END_NCBI_SCOPE

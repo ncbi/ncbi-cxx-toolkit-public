@@ -34,12 +34,14 @@
 
 
 #include <corelib/ncbitime.hpp>
+#include <time.h>
 
 #if defined(NCBI_OS_MSWIN)
 #  include <corelib/ncbi_os_mswin.hpp>
 #endif
 
 BEGIN_NCBI_SCOPE
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -232,73 +234,138 @@ extern bool SetCpuTimeLimit(size_t                max_cpu_time,
                             size_t                terminate_delay_time = 5);
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// System/memory information
+/// CSystemInfo --
+///
+/// Return various system information.
+/// All methods works on UNIX and Windows, if not specified otherwise.
+
+class NCBI_XNCBI_EXPORT CSystemInfo
+{
+public:
+    /// Get actual user name for the current process.
+    /// @note
+    ///   Doesn't use environment as it can be changed.
+    /// @return
+    ///   Process owner user name, or empty string if it cannot be determined.
+    static string GetUserName(void);
+
+    /// Return number of active CPUs (never less than 1).
+    static unsigned int GetCpuCount(void);
+    
+    /// Get system uptime in seconds.
+    /// @return
+    ///   Seconds since last boot, or negative number if cannot determine it
+    ///   on current platform, or on error.
+    static double GetUptime(void);
+
+    /// Return the amount of actual physical memory, in bytes.
+    /// On some platforms it can be less then installed physical memory,
+    /// and represent a total usable RAM (physical RAM minus reserved and the kernel).
+    /// @return
+    ///   0, if cannot determine it on current platform, or if an error occurs.
+    static Uint8 GetTotalPhysicalMemorySize(void);
+
+    /// Return the amount of available physical memory, in bytes.
+    /// @return
+    ///   0, if cannot determine it on current platform, or on error.
+    static Uint8 GetAvailPhysicalMemorySize(void);
+
+    /// Return virtual memory page size.
+    /// @return
+    ///   0, if cannot determine it on current platform, or on error.
+    static unsigned long GetVirtualMemoryPageSize(void);
+
+    /// Return size of an allocation unit (usually it is a multiple of page size).
+    /// @return
+    ///   0, if cannot determine it on current platform, or on error.
+    static unsigned long GetVirtualMemoryAllocationGranularity(void);
+
+    /// Get number of (statistics) clock ticks per second.
+    /// Many OS system information values use it as a size unit.
+    /// @return
+    ///   0, if cannot determine it on current platform, or on error.
+    static clock_t GetClockTicksPerSecond(void);
+};
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// System/memory information (deprecated, please use CSystemInfo class)
 ///
 
-/// [UNIX & Windows]
+/// Get process owner actual user name
+/// @deprecated  Please use CSystemInfo::GetUserName()
+inline NCBI_DEPRECATED
+string GetProcessUserName(void)
+{
+    return CSystemInfo::GetUserName();
+}
+
 /// Return number of active CPUs (never less than 1).
-NCBI_XNCBI_EXPORT
-extern unsigned int GetCpuCount(void);
+/// @deprecated  Please use CSystemInfo::GetCpuCount()
+inline NCBI_DEPRECATED
+unsigned int GetCpuCount(void)
+{
+    return CSystemInfo::GetCpuCount();
+}
 
-/// [UNIX & Windows]
-/// Get current process execution times.
-/// 
-/// Here is no portable solution to get 'real' process execution time,
-/// not all OS have an API to get such information. To get the time from
-/// the process start you could measure starting time yourself, at early
-/// as possible, and use it to calculate execution time.
-/// For example, you can use CStopWatch class.
-///
-/// @param user_time
-///   Pointer to a value that receives the amount of time in seconds that
-///   the current process has executed in user mode. The time that each
-///   of the threads of the process has executed in user mode is determined,
-///   and then all of those times are summed together to obtain this value.
-/// @param system_time
-///   Pointer to a value that receives the amount of time in second that
-///   the current process has executed in kernel mode. The time that each
-///   of the threads of the process has executed in user mode is determined,
-///   and then all of those times are summed together to obtain this value.
-/// @return
-///   TRUE on success; or FALSE on error.
-/// @note
-///   NULL arguments will not be filled in.
-/// @sa CStopWatch
-NCBI_XNCBI_EXPORT
-extern bool GetCurrentProcessTimes(double* user_time, double* system_time);
-
-/// [UNIX & Windows]
 /// Return virtual memory page size.
-/// Return 0 if cannot determine it on current platform or if an error occurs.
-NCBI_XNCBI_EXPORT
-extern unsigned long GetVirtualMemoryPageSize(void);
+/// @deprecated  Please use CSystemInfo::GetVirtualMemoryPageSize()
+inline NCBI_DEPRECATED
+unsigned long GetVirtualMemoryPageSize(void)
+{
+    return CSystemInfo::GetVirtualMemoryPageSize();
+}
 
-/// [UNIX & Windows]
 /// Return size of an allocation unit (usually it is a multiple of page size).
-/// Return 0 if cannot determine it on current platform or if an error occurs.
-NCBI_XNCBI_EXPORT
-extern unsigned long GetVirtualMemoryAllocationGranularity(void);
+/// @deprecated  Please use CSystemInfo::GetVirtualMemoryAllocationGranularity()
+inline NCBI_DEPRECATED
+unsigned long GetVirtualMemoryAllocationGranularity(void)
+{
+    return CSystemInfo::GetVirtualMemoryAllocationGranularity();
+}
 
-/// [UNIX & Windows]
 /// Return the amount of physical memory available in the system.
-/// Return 0 if cannot determine it on current platform or if an error occurs.
-NCBI_XNCBI_EXPORT
-extern Uint8 GetPhysicalMemorySize(void);
+/// @deprecated  Please use CSystemInfo::GetTotalPhysicalMemorySize()
+inline NCBI_DEPRECATED
+Uint8 GetPhysicalMemorySize(void)
+{
+    return CSystemInfo::GetTotalPhysicalMemorySize();
+}
 
-/// [UNIX & Windows]
-/// Return current memory usage, in bytes.
-/// NULL arguments will not be filled in.
-/// Returns true if able to determine memory usage, and false otherwise.
+/// @deprecated  Please use C[Current]Process::GetMemoryUsage()
 NCBI_XNCBI_EXPORT
+NCBI_DEPRECATED
 extern bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared);
 
 
+/// @deprecated  Please use C[Current]Process::GetTimes()
+NCBI_XNCBI_EXPORT 
+NCBI_DEPRECATED
+extern bool GetCurrentProcessTimes(double* user_time, double* system_time);
+
+
+/// @deprecated  Please use C[Current]Process::GetFileDescriptorsCount
+NCBI_XNCBI_EXPORT
+NCBI_DEPRECATED
+extern int GetProcessFDCount(int* soft_limit = NULL, int* hard_limit = NULL);
+
+
+/// [Linux only]  Provides the number of threads in the current process.
+/// @deprecated  Please use C[Current]Process::GetThreadCount
+NCBI_XNCBI_EXPORT
+NCBI_DEPRECATED
+extern int GetProcessThreadCount(void);
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// 
+/// Memory advise
 ///
 
 
@@ -395,8 +462,7 @@ typedef int TSuppressSystemMessageBox;
 /// Suppresses all error message boxes in both runtime and in debug libraries,
 /// as well as all General Protection Fault messages.
 NCBI_XNCBI_EXPORT
-extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode = 
-                                     fSuppress_Default);
+extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode = fSuppress_Default);
 
 /// Prevent run of SuppressSystemMessageBox().
 ///
@@ -417,35 +483,6 @@ extern void DisableSuppressSystemMessageBox();
 NCBI_XNCBI_EXPORT
 extern bool IsSuppressedDebugSystemMessageBox();
 
-
-/// [UNIX only]  Provides the process consumed file descriptors count as well
-///              as system wide file descriptor limits.
-///
-/// @param soft_limit Pointer to the variable where the system wide soft limit
-///                   will be stored. -1 means it was impossible to get the
-///                   limit. If NULL is passed the limit will not be provided.
-/// @param hard_limit Pointer to the variable where the system wide hard limit
-///                   will be stored. -1 means it was impossible to get the
-///                   limit. If NULL is passed the limit will not be provided.
-/// @return Number of file descriptors consumed by the process the function is
-///         called from. -1 means that it was impossible to get the count.
-NCBI_XNCBI_EXPORT
-extern int GetProcessFDCount(int* soft_limit = NULL, int* hard_limit = NULL);
-
-
-/// [Linux only]  Provides the number of threads in the current process.
-///
-/// @return Number of threads in the current process. -1 means that this
-///         functionality is not implemented for the paltform or that there
-///         was a problem of getting the number of threads.
-NCBI_XNCBI_EXPORT
-extern int GetProcessThreadCount(void);
-
-
-/// Get process owner actual user name, doesn't use environment as it can be changed.
-/// @return Actual process owner user name, or empty string if it cannot be determined.
-NCBI_XNCBI_EXPORT
-string GetProcessUserName(void);
 
 END_NCBI_SCOPE
 
