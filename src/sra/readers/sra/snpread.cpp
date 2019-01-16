@@ -576,7 +576,6 @@ CSNPDb_Impl::x_Update(TSeqInfoList::const_iterator seq)
                 row_before = slot.second;
             }
         }
-        LOG_POST("SNP PAGE lookup: seq["<<seq_row<<"] = "<<info.m_Seq_id_Handle<<" in "<<row_before<<"-"<<max_row);
 
         TVDBRowId row = max_row; // >= seq_row
         while ( row_before+1 < row ) {
@@ -588,7 +587,6 @@ CSNPDb_Impl::x_Update(TSeqInfoList::const_iterator seq)
                 row = mid_row;
             }
         }
-        LOG_POST("SNP PAGE lookup: seq["<<seq_row<<"] = "<<info.m_Seq_id_Handle<<" at "<<row);
         m_Seq2PageMap[seq_row] = row;
         
         for ( ; row <= max_row; ++row ) {
