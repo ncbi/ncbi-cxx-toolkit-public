@@ -48,6 +48,8 @@
 #include <aclapi.h>
 #include <Lmcons.h>
 
+#include <tlhelp32.h>   // CreateToolhelp32Snapshot
+
 
 BEGIN_NCBI_SCOPE
 
@@ -143,7 +145,7 @@ public:
     /// Enables or disables privileges in the specified access token.
     ///
     /// In most case you should have administrative rights to change
-    /// some privilegies.
+    /// some privileges.
     /// @param token
     ///   A handle to the access token that contains the privileges
     ///   to be modified. The handle must have TOKEN_ADJUST_PRIVILEGES
@@ -164,7 +166,7 @@ public:
     /// Enables or disables privileges for the current thread.
     ///
     /// In most case you should have administrative rights to change
-    /// some privilegies.
+    /// some privileges.
     /// @param privilege
     ///   Name of privilege to enable/disable.
     /// @param enable
@@ -180,7 +182,7 @@ public:
 
     /// Get file access permissions.
     ///
-    /// The permisiions will be taken for current process thread owner only.
+    /// The permissions will be taken for current process thread owner only.
     /// @param strPath
     ///   Path to the file object.
     /// @param pPermissions
@@ -189,6 +191,27 @@ public:
     /// @return
     ///   TRUE if the operation was completed successfully; FALSE, otherwise.
     static bool GetFilePermissions(const string& path, ACCESS_MASK*  permissions);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CWinFeature --
+///
+/// Utility class with wrappers for MS Windows specific features.
+
+class CWinFeature
+{
+public:
+    /// Find process entry information by process identifier (pid).
+    ///
+    /// @param id
+    ///   Process identifier to look for.
+    /// @param entry
+    ///   Entry to store retrieved information.
+    /// @return
+    ///   TRUE if the operation was completed successfully; FALSE, otherwise.
+    static bool FindProcessEntry(DWORD id, PROCESSENTRY32& entry);
 };
 
 

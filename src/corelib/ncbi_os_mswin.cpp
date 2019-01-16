@@ -268,7 +268,7 @@ bool CWinSecurity::GetObjectOwner(const string&  obj_name,
 
 // Get current thread token. Return INVALID_HANDLE_VALUE on error.
 
-static HANDLE s_GetThreadToken(DWORD access)
+static HANDLE s_GetCurrentThreadToken(DWORD access)
 {
     HANDLE token;
     if ( !OpenThreadToken(GetCurrentThread(), access, FALSE, &token) ) {
@@ -350,7 +350,7 @@ bool CWinSecurity::SetFileOwner(const string& filename,
     // If the previous call failed because access was denied,
     // enable the necessary admin privileges for the current thread and try again.
 
-    token = s_GetThreadToken(TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY);
+    token = s_GetCurrentThreadToken(TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY);
     if ( token == INVALID_HANDLE_VALUE) {
         goto cleanup;
     }
@@ -431,7 +431,7 @@ bool CWinSecurity::SetTokenPrivilege(HANDLE token, LPCTSTR privilege,
 
 bool CWinSecurity::SetThreadPrivilege(LPCTSTR privilege, bool enable, bool* prev)
 {
-    HANDLE token = s_GetThreadToken(TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY);
+    HANDLE token = s_GetCurrentThreadToken(TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY);
     if ( token == INVALID_HANDLE_VALUE) {
         return false;
     }
@@ -503,7 +503,7 @@ bool CWinSecurity::GetFilePermissions(const string& path,
 
     try {
         // Open current thread token
-        token = s_GetThreadToken(TOKEN_DUPLICATE | TOKEN_QUERY);
+        token = s_GetCurrentThreadToken(TOKEN_DUPLICATE | TOKEN_QUERY);
         if ( token == INVALID_HANDLE_VALUE) {
             throw(0);
         }
@@ -530,6 +530,24 @@ bool CWinSecurity::GetFilePermissions(const string& path,
     LocalFree(sd);
 
     return success;
+}
+
+
+bool CWinFeature::FindProcessEntry(DWORD id, PROCESSENTRY32& entry)
+{
+    entry = { 0 };
+    HANDLE const snapshot = ::CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+
+    if (snapshot != INVALID_HANDLE_VALUE) {
+        entry.dwSize = sizeof(PROCESSENTRY32);
+        BOOL ret = ::Process32First(snapshot, &entry);
+        while (ret  &&  entry.th32ProcessID != id) {
+            ret = ::Process32Next(snapshot, &entry);
+        }
+        ::CloseHandle(snapshot);
+        return true;
+    }
+    return false;
 }
 
 
