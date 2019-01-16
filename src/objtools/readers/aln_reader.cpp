@@ -31,9 +31,9 @@
 
 #include <ncbi_pch.hpp>
 #include <objtools/readers/aln_reader.hpp>
+#include <objtools/readers/alnread.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/error_codes.hpp>
-#include <util/creaders/alnread.h>
 #include <util/format_guess.hpp>
 
 #include <objects/seqalign/Dense_seg.hpp>
@@ -242,6 +242,7 @@ void CAlnReader::Read(bool guess, bool generate_local_ids)
     info.middle_gap    = const_cast<char *>(m_MiddleGap.c_str());
     info.missing       = const_cast<char *>(m_Missing.c_str());
     info.match         = const_cast<char *>(m_Match.c_str());
+
 
     // read the alignment stream
     TAlignmentFilePtr afp;
