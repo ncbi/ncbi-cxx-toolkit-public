@@ -556,7 +556,8 @@ BOOST_AUTO_TEST_CASE(CheckNoGi)
 {
     // have accession, have no GI
     // shouldn't work with ID1 reader
-    CSeq_id_Handle id = CSeq_id_Handle::GetHandle("gnl|Annot:SNP|568802115");
+    CSeq_id_Handle id = CSeq_id_Handle::GetHandle("gnl|Annot:CDD|1786183");
+    //CSeq_id_Handle id = CSeq_id_Handle::GetHandle("gnl|Annot:SNP|568802115");
     //CSeq_id_Handle id = CSeq_id_Handle::GetHandle("gnl|SRA|SRR000010.1.2");
     vector<CSeq_id_Handle> idvec(1, id);
     LOG_POST("CheckNoGi: "<<id);
