@@ -144,5 +144,32 @@ string Trim(const string& s, const string& delimiters) {
 	return TrimLeft(TrimRight(s, delimiters), delimiters);
 }
 
+const string kDtFormat = "Y-M-D h:m:s.lZ";
+
+string TimeTmsToString(int64_t time) {
+    CTime t;
+    time_t time_sec = time / 1000L;
+    time_t time_msec = time % 1000L;
+    if (time_msec < 0) {
+        time_msec += 1000L;
+        --time_sec;
+    }
+    t.SetTimeT(time_sec);
+    t.SetMilliSecond(time_msec);
+    return t.AsString(kDtFormat);
+}
+
+int64_t StringToTimeTms(const string& time) {
+    try {
+        CTime t(time, kDtFormat);
+        return t.GetTimeT() * 1000L + t.MilliSecond();
+    }
+    catch (CTimeException& e) {
+    }
+    CTime t(time, "Y/M/D h:m:g o");
+    return t.GetTimeT() * 1000L + t.MilliSecond();
+}
+
+
 };
 
