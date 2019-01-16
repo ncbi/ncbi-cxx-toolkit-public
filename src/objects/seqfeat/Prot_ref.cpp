@@ -213,6 +213,12 @@ const string& CProt_ref::GetECNumberReplacement(const string& old_ecno)
                    "No replacement defined for EC number " + old_ecno);
         // alternatively, could return old_ecno or kEmptyStr
     } else {
+        // see if this number has also been replaced
+        auto other_it = s_ECNumberReplacementMap.find(it->second);
+        while (other_it != s_ECNumberReplacementMap.end()) {
+            it = other_it;
+            other_it = s_ECNumberReplacementMap.find(it->second);
+        }
         return it->second;
     }
 }

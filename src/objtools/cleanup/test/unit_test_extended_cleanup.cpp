@@ -1856,3 +1856,22 @@ BOOST_AUTO_TEST_CASE(Test_CleanupCollectionDates)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SQD_4592)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    prot->SetData().SetProt().SetEc().push_back("1.14.13.86");
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    CCleanup cleanup(scope);
+    CConstRef<CCleanupChange> changes;
+
+    changes = cleanup.ExtendedCleanup(seh);
+    prot = seh.GetCompleteSeq_entry()->GetSet().GetSeq_set().back()->GetAnnot().back()->GetData().GetFtable().back();
+    BOOST_CHECK_EQUAL(prot->GetData().GetProt().GetEc().back(), "1.14.14.87");
+
+    
+}
+
