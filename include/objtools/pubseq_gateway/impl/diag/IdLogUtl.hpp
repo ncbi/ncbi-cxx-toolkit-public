@@ -104,6 +104,10 @@ string TrimRight(const string& s, const string& delimiters = " \f\n\r\t\v");
 string TrimLeft(const string& s, const string& delimiters = " \f\n\r\t\v");
 string Trim(const string& s, const string& delimiters = " \f\n\r\t\v" );
 
+string TimeTmsToString(int64_t time);
+int64_t StringToTimeTms(const string& time);
+
+
 template<typename T> class CStrMap {
 private:
 	typedef map<string, T> map_to_t;
