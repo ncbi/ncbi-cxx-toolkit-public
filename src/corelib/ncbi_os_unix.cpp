@@ -32,8 +32,13 @@
 #include <ncbi_pch.hpp>
 #include <corelib/error_codes.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbifile.hpp>
 #include "ncbi_os_unix_p.hpp"
+
+#include <string.h>
+
 #include <errno.h>
+#include <dirent.h>        // opendir(), readdir()
 #include <unistd.h>
 
 
@@ -397,9 +402,168 @@ gid_t CUnixFeature::GetGroupGIDByName(const string& group)
     gid = (gid_t)(-1);
 
 #endif
-
     return gid;
 }
+
+
+
+#if defined(NCBI_OS_LINUX)
+
+#define PROCFS(pid, file) \
+    "/proc/" + (!pid ? "self" : NStr::NumericToString(pid)) + "/" + file
+
+// Helper method to read file, to avoid races
+inline
+size_t s_ReadFile(const string& filename, char* buf, size_t size)
+{
+    size_t n = 0;
+    CFileIO f;
+    try {
+        f.Open(filename, CFileIO::eOpen, CFileIO::eRead);
+        n = f.Read(buf, size);
+        buf[n] = '\0';
+    }
+    catch(CFileException& e) {
+    }
+    f.Close();
+    return n;
+}
+
+// Find "name" string in "buf" and parse value following it.
+// Put result to "value". But it shouldn't be less than "min_value".
+// All values are in kB.
+inline
+size_t s_ParseStatusVmValue(const char* name, char* buf, size_t min_value = 0)
+{
+    const NStr::TStringToNumFlags flags = NStr::fConvErr_NoThrow | 
+                                          NStr::fAllowLeadingSpaces | 
+                                          NStr::fAllowTrailingSymbols;
+    char* pos = strstr(buf, name);
+    if (!pos) {
+        return 0;
+    }
+    size_t n = NStr::StringToNumeric<size_t>(pos+strlen(name)+1/*:*/, flags) * 1024;
+    return (n < min_value) ? min_value : n;
+}
+
+bool CLinuxFeature::GetMemoryUsage(pid_t pid, CProcess::SMemoryUsage& usage)
+{
+    char buf[2048];
+    size_t n;
+
+    // Parse /proc/<pid>/statm
+
+    n = s_ReadFile(PROCFS(pid,"statm"), buf, sizeof(buf));
+    if ( n ) {
+        CNcbiIstrstream is(buf, n);
+        is >> usage.total >> usage.resident >> usage.shared >> usage.text >> usage.lib /*>> usage.data*/;
+        const unsigned long page_size = CSystemInfo::GetVirtualMemoryPageSize();
+        usage.total    *= page_size;
+        usage.resident *= page_size;
+        usage.shared   *= page_size;
+        usage.text     *= page_size;
+        usage.lib      *= page_size;
+        //usage.data     *= page_size; 
+    }
+  
+    // Additionally parse /proc/<pid>/status
+    
+    n = s_ReadFile(PROCFS(pid,"status"), buf, sizeof(buf));
+    if ( n ) {
+        // Find starting point for all "Vm*" values
+        char* pos = strstr(buf, "Vm");
+        if (!pos) {
+            return true;
+        }
+        usage.total_peak    = s_ParseStatusVmValue("VmPeak", pos, usage.total);
+        usage.resident_peak = s_ParseStatusVmValue("VmHWM",  pos, usage.resident);
+        usage.data          = s_ParseStatusVmValue("VmData", pos);
+        usage.swap          = s_ParseStatusVmValue("VmSwap", pos);
+        if (!usage.text) {
+            usage.text = s_ParseStatusVmValue("VmExe", pos);
+        }
+        if (!usage.lib) {
+            usage.lib  = s_ParseStatusVmValue("VmLib", pos);
+        }
+        if (!usage.stack) {
+            usage.stack = s_ParseStatusVmValue("VmStk", pos);
+        }
+    }
+    return true;
+}
+
+
+int CLinuxFeature::GetThreadCount(pid_t pid)
+{
+    int n = 0;
+    string name = PROCFS(pid, "task");
+    DIR* dir = opendir(name.c_str());
+    if (dir) {
+        struct dirent* de;
+        while ((de = readdir(dir)) != NULL) {
+            ++n;
+        }
+        closedir(dir);
+        n -= 2;  // '.' and '..'
+        if (n > 0) {
+            return n;
+        }
+    }
+    CNcbiError::Set(CNcbiError::eUnknown);
+    return -1;
+}
+
+
+int CLinuxFeature::GetFileDescriptorsCount(pid_t pid)
+{
+    int n = 0;
+    string name = PROCFS(pid, "fd");
+    DIR* dir = opendir(name.c_str());
+    if (dir) {
+        struct dirent* de;
+        while ((de = readdir(dir)) != NULL) {
+            ++n;
+        }
+        closedir(dir);
+        n -= 3;  // '.', '..'  and the one for opendir()
+        if (n >= 0) {
+            return n;
+        }
+    }
+    CNcbiError::Set(CNcbiError::eUnknown);
+    return -1;
+}
+
+
+CLinuxFeature::CProcStat::CProcStat(pid_t pid)
+{
+    m_Parsed = false;
+
+    char buf[2048];
+    size_t n = s_ReadFile(PROCFS(pid,"stat"), buf, sizeof(buf));
+
+    m_Storage.reserve(n);
+    m_Storage.assign(buf, n);
+    m_List.clear();    
+    m_List.reserve(55);
+
+    size_t p1 = m_Storage.find('(');
+    if (p1 == NPOS) {
+        return;
+    }
+    m_List.push_back(CTempString(m_Storage, 0, p1-1));
+    size_t p2 = m_Storage.find(')', p1+1);
+    if (p2 == NPOS) {
+        return;
+    }
+    m_List.push_back(CTempString(m_Storage, p1+1, p2-p1-1));
+    NStr::Split(m_Storage.data() + p2 + 1, " ", m_List);
+
+    m_Parsed = true;    
+    return;
+}
+
+#endif
 
 
 END_NCBI_SCOPE

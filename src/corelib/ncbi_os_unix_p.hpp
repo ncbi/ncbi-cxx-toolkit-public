@@ -38,13 +38,17 @@
 
 #include <ncbiconf.h>
 #if !defined(NCBI_OS_UNIX)
-#  error "ncbi_os_unix_p.hpp can be used on UNIX platforms only"
+#   error "ncbi_os_unix_p.hpp can be used on UNIX platforms only"
 #endif
-
-#include <string>
 
 #include <grp.h>
 #include <pwd.h>
+
+#if defined(NCBI_OS_LINUX)
+#   include <corelib/tempstr.hpp>
+#   include <corelib/ncbi_process.hpp>
+#   include <sys/types.h>
+#endif
 
 
 BEGIN_NCBI_SCOPE
@@ -91,6 +95,77 @@ public:
     ///   Numeric group ID when succeeded, or (gid_t)(-1) when failed
     static gid_t GetGroupGIDByName(const string& group);
 };
+
+
+#if defined(NCBI_OS_LINUX)
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CLinuxFeature --
+///
+/// Utility class with wrappers for Linux specific features.
+
+class CLinuxFeature : public CUnixFeature
+{
+public:
+    /// Get thread count.
+    ///
+    /// Read and parse /proc/<pid>/task/.
+    /// If "pid" not specified or zero, use pid for the current process.
+    static int GetThreadCount(pid_t pid = 0);
+    
+    /// Get consumed file descriptors count.
+    ///
+    /// Read and parse /proc/<pid>/fd/.
+    /// If "pid" not specified or zero, use pid for the current process.
+    static int GetFileDescriptorsCount(pid_t pid = 0);
+
+    /// Get process memory usage.
+    /// 
+    /// Read and parse /proc/<pid>/statm and /status.
+    /// If "pid" is zero, use pid for the current process.
+    /// @sa
+    ///   CProcess::GetMemoryUsage, CProcess::SMemoryUsage
+    static bool GetMemoryUsage(pid_t pid, CProcess::SMemoryUsage& usage);
+
+    /// Read and parse /proc/<pid>/stat file.
+    class CProcStat
+    {
+    public:
+        /// Read and parse /proc/<pid>/stat file.
+        /// If "pid" not specified or zero, use pid for the current process.
+        CProcStat(pid_t pid = 0);
+
+        bool good() const
+            {
+                return m_Parsed && size() > 2;
+            }
+        
+        /// Returns a reference to the element at position n.
+        CTempString at(size_t n) const
+            {
+                if (n >= size()) {
+                    return CTempString();
+                }
+                return m_List.at(n);
+            }
+
+        /// Returns the number of elements in the file.
+        size_t size(void) const
+            {
+                return m_List.size();
+            }
+
+    private:
+        string m_Storage;
+        vector<CTempString> m_List;
+        bool   m_Parsed;
+    };
+    
+};
+
+#endif
+
 
 
 END_NCBI_SCOPE
