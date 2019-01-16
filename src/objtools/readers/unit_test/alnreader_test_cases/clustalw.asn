@@ -1,0 +1,60 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        local str "FOSB_MOUSE"
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 338,
+        seq-data iupacaa "MFQAFPGDYDSGSRCSSSPSAESQYLSSVDSFGSPPTAAASQECAGLGEMPG
+SFVPTVTAITTSQDLQWLVQPTLISSMAQSQGQPLASQPPAVDPYDMPGTSYSTPGLSAYSTGGASGSGGPSTSTTTS
+GPVSARPARARPRRPREETLTPEEEEKRRVRRERNKLAAAKCRNRRRELTDRLQAETDQLEEEKAELESEIAELQKEK
+ERLEFVLVAHKPGCKIPYEEGPGPGPLAEVRDLPGSTSAKEDGFGWLLPPPPPPPLPFQSSRDAPPNLTASLFTHSEV
+QVLGDPFPVVSPSYTSSFVLTCPEVSAFAGAQRTSGSEQPSDPLNSPSLLAL"
+      }
+    },
+    seq {
+      id {
+        local str "FOSB_HUMAN"
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 338,
+        seq-data iupacaa "MFQAFPGDYDSGSRCSSSPSAESQYLSSVDSFGSPPTAAASQECAGLGEMPG
+SFVPTVTAITTSQDLQWLVQPTLISSMAQSQGQPLASQPPVVDPYDMPGTSYSTPGMSGYSSGGASGSGGPSTSGTTS
+GPGPARPARARPRRPREETLTPEEEEKRRVRRERNKLAAAKCRNRRRELTDRLQAETDQLEEEKAELESEIAELQKEK
+ERLEFVLVAHKPGCKIPYEEGPGPGPLAEVRDLPGSAPAKEDGFSWLLPPPPPPPLPFQTSQDAPPNLTASLFTHSEV
+QVLGDPFPVVNPSYTSSFVLTCPEVSAFAGAQRTSGSDQPSDPLNSPSLLAL"
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 2,
+          segs denseg {
+            dim 2,
+            numseg 1,
+            ids {
+              local str "FOSB_MOUSE",
+              local str "FOSB_HUMAN"
+            },
+            starts {
+              0,
+              0
+            },
+            lens {
+              338
+            }
+          }
+        }
+      }
+    }
+  }
+}

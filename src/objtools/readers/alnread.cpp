@@ -2580,7 +2580,7 @@ static TCommentLocPtr s_FindComment (char * string)
 static void s_RemoveCommentFromLine (char * linestring)
 {
     TCommentLocPtr clp;
-    size_t offset;
+    size_t offset, len;
 
     if (linestring == NULL) {
         return;
@@ -2606,6 +2606,17 @@ static void s_RemoveCommentFromLine (char * linestring)
             linestring[0] = 0;
         }
     }
+    /* if the line ends with a number preceded by a space, 
+     * and is not the PHYLIP header, truncate it at the space */
+    offset = len = strlen(linestring);
+    while (offset > 0 && isdigit(linestring[offset - 1])) {
+        offset--;
+    }
+    if (offset != 0 && offset != len && isspace(linestring[offset - 1]) &&
+        !s_IsTwoNumbersSeparatedBySpace(linestring)) {
+        linestring[offset - 1] = 0;
+    }
+
 
     /* if the line now contains only space, truncate it */
     if (strspn (linestring, " \t\r") == strlen (linestring)) {
