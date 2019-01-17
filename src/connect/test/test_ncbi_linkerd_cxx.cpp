@@ -259,7 +259,7 @@ static STest s_Tests[] = {
     // Full service-based URLs, no scheme
 
     STest(eHttpGet,  eDispd,   s_UrlNcbilbGetTest,      s_kExpData_GetTest),
-    //STest(eHttpGet,  eDispd,   s_UrlNcbilbGetTestFull,  s_kExpData_GetTest),
+    STest(eHttpGet,  eDispd,   s_UrlNcbilbGetTestFull,  s_kExpData_GetTest),
     STest(eHttpGet,  eLbsmd,   s_UrlNcbilbGetTest,      s_kExpData_GetTest),
     STest(eHttpGet,  eLbsmd,   s_UrlNcbilbGetTestFull,  s_kExpData_GetTest),
     STest(eHttpGet,  eLinkerd, s_UrlNcbilbGetFcgi,      s_kExpData_GetFcgi),
@@ -269,7 +269,7 @@ static STest s_Tests[] = {
     STest(eHttpGet,  eNamerd,  s_UrlNcbilbGetTestFull,  s_kExpData_GetTest),
     STest(eHttpGet,  eNamerd,  s_UrlNcbilbGetFcgi,      s_kExpData_GetFcgi),
     STest(eHttpPost, eDispd,   s_UrlNcbilbPostBounce,       s_kExpData_PostBounce),
-    //STest(eHttpPost, eDispd,   s_UrlNcbilbPostBounceFull,   s_kExpData_PostBounce),
+    STest(eHttpPost, eDispd,   s_UrlNcbilbPostBounceFull,   s_kExpData_PostBounce),
     STest(eHttpPost, eLbsmd,   s_UrlNcbilbPostBounce,       s_kExpData_PostBounce),
     STest(eHttpPost, eLbsmd,   s_UrlNcbilbPostBounceFull,   s_kExpData_PostBounce),
     STest(eHttpPost, eLinkerd, s_UrlNcbilbPostFcgi,         s_kExpData_PostFcgi, s_kPostData_Fcgi),
@@ -280,7 +280,7 @@ static STest s_Tests[] = {
     STest(eHttpPost, eNamerd,  s_UrlNcbilbPostFcgi,         s_kExpData_PostFcgi, s_kPostData_Fcgi),
 
     STest(eNewRequestGet,  eDispd,   s_UrlNcbilbGetTest,        s_kExpData_GetTest),
-    //STest(eNewRequestGet,  eDispd,   s_UrlNcbilbGetTestFull,    s_kExpData_GetTest),
+    STest(eNewRequestGet,  eDispd,   s_UrlNcbilbGetTestFull,    s_kExpData_GetTest),
     STest(eNewRequestGet,  eLbsmd,   s_UrlNcbilbGetTest,        s_kExpData_GetTest),
     STest(eNewRequestGet,  eLbsmd,   s_UrlNcbilbGetTestFull,    s_kExpData_GetTest),
     STest(eNewRequestGet,  eLinkerd, s_UrlNcbilbGetFcgi,        s_kExpData_GetFcgi),
@@ -290,7 +290,7 @@ static STest s_Tests[] = {
     STest(eNewRequestGet,  eNamerd,  s_UrlNcbilbGetTestFull,    s_kExpData_GetTest),
     STest(eNewRequestGet,  eNamerd,  s_UrlNcbilbGetFcgi,        s_kExpData_GetFcgi),
     STest(eNewRequestPost, eDispd,   s_UrlNcbilbPostBounce,     s_kExpData_PostBounce),
-    //STest(eNewRequestPost, eDispd,   s_UrlNcbilbPostBounceFull, s_kExpData_PostBounce),
+    STest(eNewRequestPost, eDispd,   s_UrlNcbilbPostBounceFull, s_kExpData_PostBounce),
     STest(eNewRequestPost, eLbsmd,   s_UrlNcbilbPostBounce,     s_kExpData_PostBounce),
     STest(eNewRequestPost, eLbsmd,   s_UrlNcbilbPostBounceFull, s_kExpData_PostBounce),
     STest(eNewRequestPost, eLinkerd, s_UrlNcbilbPostFcgi,       s_kExpData_PostFcgi, s_kPostData_Fcgi),
@@ -303,7 +303,7 @@ static STest s_Tests[] = {
     // Full service-based URLs, http scheme
 
     STest(eHttpGet,  eDispd,   s_UrlNcbilbHttpGetTest,      s_kExpData_GetTest),
-    //STest(eHttpGet,  eDispd,   s_UrlNcbilbHttpGetTestFull,  s_kExpData_GetTest),
+    STest(eHttpGet,  eDispd,   s_UrlNcbilbHttpGetTestFull,  s_kExpData_GetTest),
     STest(eHttpGet,  eLbsmd,   s_UrlNcbilbHttpGetTest,      s_kExpData_GetTest),
     STest(eHttpGet,  eLbsmd,   s_UrlNcbilbHttpGetTestFull,  s_kExpData_GetTest),
     STest(eHttpGet,  eLinkerd, s_UrlNcbilbHttpGetFcgi,      s_kExpData_GetFcgi),
@@ -313,7 +313,7 @@ static STest s_Tests[] = {
     STest(eHttpGet,  eNamerd,  s_UrlNcbilbHttpGetTestFull,  s_kExpData_GetTest),
     STest(eHttpGet,  eNamerd,  s_UrlNcbilbHttpGetFcgi,      s_kExpData_GetFcgi),
     STest(eHttpPost, eDispd,   s_UrlNcbilbHttpPostBounce,       s_kExpData_PostBounce),
-    //STest(eHttpPost, eDispd,   s_UrlNcbilbHttpPostBounceFull,   s_kExpData_PostBounce),
+    STest(eHttpPost, eDispd,   s_UrlNcbilbHttpPostBounceFull,   s_kExpData_PostBounce),
     STest(eHttpPost, eLbsmd,   s_UrlNcbilbHttpPostBounce,       s_kExpData_PostBounce),
     STest(eHttpPost, eLbsmd,   s_UrlNcbilbHttpPostBounceFull,   s_kExpData_PostBounce),
     STest(eHttpPost, eLinkerd, s_UrlNcbilbHttpPostFcgi,         s_kExpData_PostFcgi, s_kPostData_Fcgi),
@@ -324,7 +324,7 @@ static STest s_Tests[] = {
     STest(eHttpPost, eNamerd,  s_UrlNcbilbHttpPostFcgi,         s_kExpData_PostFcgi, s_kPostData_Fcgi),
 
     STest(eNewRequestGet,  eDispd,   s_UrlNcbilbHttpGetTest,        s_kExpData_GetTest),
-    //STest(eNewRequestGet,  eDispd,   s_UrlNcbilbHttpGetTestFull,    s_kExpData_GetTest),
+    STest(eNewRequestGet,  eDispd,   s_UrlNcbilbHttpGetTestFull,    s_kExpData_GetTest),
     STest(eNewRequestGet,  eLbsmd,   s_UrlNcbilbHttpGetTest,        s_kExpData_GetTest),
     STest(eNewRequestGet,  eLbsmd,   s_UrlNcbilbHttpGetTestFull,    s_kExpData_GetTest),
     STest(eNewRequestGet,  eLinkerd, s_UrlNcbilbHttpGetFcgi,        s_kExpData_GetFcgi),
@@ -334,7 +334,7 @@ static STest s_Tests[] = {
     STest(eNewRequestGet,  eNamerd,  s_UrlNcbilbHttpGetTestFull,    s_kExpData_GetTest),
     STest(eNewRequestGet,  eNamerd,  s_UrlNcbilbHttpGetFcgi,        s_kExpData_GetFcgi),
     STest(eNewRequestPost, eDispd,   s_UrlNcbilbHttpPostBounce,     s_kExpData_PostBounce),
-    //STest(eNewRequestPost, eDispd,   s_UrlNcbilbHttpPostBounceFull, s_kExpData_PostBounce),
+    STest(eNewRequestPost, eDispd,   s_UrlNcbilbHttpPostBounceFull, s_kExpData_PostBounce),
     STest(eNewRequestPost, eLbsmd,   s_UrlNcbilbHttpPostBounce,     s_kExpData_PostBounce),
     STest(eNewRequestPost, eLbsmd,   s_UrlNcbilbHttpPostBounceFull, s_kExpData_PostBounce),
     STest(eNewRequestPost, eLinkerd, s_UrlNcbilbHttpPostFcgi,       s_kExpData_PostFcgi, s_kPostData_Fcgi),
@@ -349,7 +349,7 @@ static STest s_Tests[] = {
 // TODO: Add the following when you find a service that can be used for regular testing via HTTPS.
 #if 0
     STest(eHttpGet,  eDispd,   s_UrlNcbilbHttpsGetTest,     s_kExpData_GetTest),
-    //STest(eHttpGet,  eDispd,   s_UrlNcbilbHttpsGetTestFull, s_kExpData_GetTest),
+    STest(eHttpGet,  eDispd,   s_UrlNcbilbHttpsGetTestFull, s_kExpData_GetTest),
     STest(eHttpGet,  eLbsmd,   s_UrlNcbilbHttpsGetTest,     s_kExpData_GetTest),
     STest(eHttpGet,  eLbsmd,   s_UrlNcbilbHttpsGetTestFull, s_kExpData_GetTest),
     STest(eHttpGet,  eLinkerd, s_UrlNcbilbHttpsGetFcgi,     s_kExpData_GetFcgi),
@@ -359,7 +359,7 @@ static STest s_Tests[] = {
     STest(eHttpGet,  eNamerd,  s_UrlNcbilbHttpsGetTestFull, s_kExpData_GetTest),
     STest(eHttpGet,  eNamerd,  s_UrlNcbilbHttpsGetFcgi,     s_kExpData_GetFcgi),
     STest(eHttpPost, eDispd,   s_UrlNcbilbHttpsPostBounce,      s_kExpData_PostBounce),
-    //STest(eHttpPost, eDispd,   s_UrlNcbilbHttpsPostBounceFull,  s_kExpData_PostBounce),
+    STest(eHttpPost, eDispd,   s_UrlNcbilbHttpsPostBounceFull,  s_kExpData_PostBounce),
     STest(eHttpPost, eLbsmd,   s_UrlNcbilbHttpsPostBounce,      s_kExpData_PostBounce),
     STest(eHttpPost, eLbsmd,   s_UrlNcbilbHttpsPostBounceFull,  s_kExpData_PostBounce),
     STest(eHttpPost, eLinkerd, s_UrlNcbilbHttpsPostFcgi,        s_kExpData_PostFcgi, s_kPostData_Fcgi),
@@ -370,7 +370,7 @@ static STest s_Tests[] = {
     STest(eHttpPost, eNamerd,  s_UrlNcbilbHttpsPostFcgi,        s_kExpData_PostFcgi, s_kPostData_Fcgi),
 
     STest(eNewRequestGet,  eDispd,   s_UrlNcbilbHttpsGetTest,       s_kExpData_GetTest),
-    //STest(eNewRequestGet,  eDispd,   s_UrlNcbilbHttpsGetTestFull,   s_kExpData_GetTest),
+    STest(eNewRequestGet,  eDispd,   s_UrlNcbilbHttpsGetTestFull,   s_kExpData_GetTest),
     STest(eNewRequestGet,  eLbsmd,   s_UrlNcbilbHttpsGetTest,       s_kExpData_GetTest),
     STest(eNewRequestGet,  eLbsmd,   s_UrlNcbilbHttpsGetTestFull,   s_kExpData_GetTest),
     STest(eNewRequestGet,  eLinkerd, s_UrlNcbilbHttpsGetFcgi,       s_kExpData_GetFcgi),
@@ -380,7 +380,7 @@ static STest s_Tests[] = {
     STest(eNewRequestGet,  eNamerd,  s_UrlNcbilbHttpsGetTestFull,   s_kExpData_GetTest),
     STest(eNewRequestGet,  eNamerd,  s_UrlNcbilbHttpsGetFcgi,       s_kExpData_GetFcgi),
     STest(eNewRequestPost, eDispd,   s_UrlNcbilbHttpsPostBounce,        s_kExpData_PostBounce),
-    //STest(eNewRequestPost, eDispd,   s_UrlNcbilbHttpsPostBounceFull,    s_kExpData_PostBounce),
+    STest(eNewRequestPost, eDispd,   s_UrlNcbilbHttpsPostBounceFull,    s_kExpData_PostBounce),
     STest(eNewRequestPost, eLbsmd,   s_UrlNcbilbHttpsPostBounce,        s_kExpData_PostBounce),
     STest(eNewRequestPost, eLbsmd,   s_UrlNcbilbHttpsPostBounceFull,    s_kExpData_PostBounce),
     STest(eNewRequestPost, eLinkerd, s_UrlNcbilbHttpsPostFcgi,          s_kExpData_PostFcgi, s_kPostData_Fcgi),

@@ -148,9 +148,10 @@ typedef enum {
 } EEndpointStatus;
 
 
-/* LINKERD_TODO - this is copied from ncbi_connutil.c - make it external? */
-static EURLScheme x_ParseScheme(const char* str, size_t len)
+/* LINKERD_TODO - this is copied from ncbi_connutil.c (but modified) */
+static EURLScheme x_ParseScheme(const char* str)
 {
+    size_t len = str  &&  *str ? strlen(str) : 0;
     if (len == 5  &&  strncasecmp(str, "https", len) == 0)
         return eURL_Https;
     if (len == 4  &&  strncasecmp(str, "http",  len) == 0)
@@ -163,8 +164,7 @@ static EURLScheme x_ParseScheme(const char* str, size_t len)
 }
 
 
-/* LINKERD_TODO - this is copied from ncbi_connutil.c (but modified) -
-    make it external? */
+/* LINKERD_TODO - this is copied from ncbi_connutil.c (but modified) */
 static const char* x_Scheme(EBURLScheme scheme)
 {
     switch ((EURLScheme)scheme) {
@@ -177,7 +177,7 @@ static const char* x_Scheme(EBURLScheme scheme)
     case eURL_Ftp:
         return "FTP";
     case eURL_Unspec:
-        return NULL;
+        break;
     }
     return NULL;
 }
@@ -191,14 +191,11 @@ static EEndpointStatus s_SetEndpoint(
     size_t passlen = pass ? strlen(pass) : 0;
     size_t pathlen = path ? strlen(path) : 0;
     size_t argslen = args ? strlen(args) : 0;
-    if (scheme  &&  *scheme) {
-        end->scheme = x_ParseScheme(scheme, strlen(scheme));
-    } else {
-        end->scheme = eURL_Unspec;
-    }
+
+    end->scheme = x_ParseScheme(scheme);
+
     if (end->scheme == eURL_Unspec) {
-        if (userlen | passlen | pathlen | argslen)
-        {
+        if (userlen | passlen | pathlen | argslen) {
             return eEndStat_NoScheme;
         }
         return eEndStat_NoData;
@@ -436,7 +433,7 @@ static EEndpointStatus s_EndpointFromNamerd(SEndpoint* end, SERV_ITER iter)
     }
 
     /* Assign the endpoint data */
-    end->scheme = ( nd_srv_info->mode & fSERV_Secure ? eURL_Https : eURL_Http );
+    end->scheme = nd_srv_info->mode & fSERV_Secure ? eURL_Https : eURL_Http;
     end->user[0] = NIL; /* username and password wouldn't be in namerd */
     end->pass[0] = NIL;
     memcpy(end->path, path, pathlen + !argslen);
@@ -462,7 +459,7 @@ static int s_Resolve(SERV_ITER iter)
 {
     struct SLINKERD_Data*   data = (struct SLINKERD_Data*) iter->data;
     SConnNetInfo*           dni = data->net_info;
-    char*                   server_description;
+    char*                   server_descriptor;
 
     char ip4[16];
     SOCK_ntoa(SOCK_gethostbyname(dni->host), ip4, sizeof(ip4)-1);
@@ -476,7 +473,7 @@ static int s_Resolve(SERV_ITER iter)
     }
     sprintf(vhost, "%s%s", iter->name, LINKERD_HOST_HDR_SFX);
 
-    const char *secure = ( dni->scheme == eURL_Https ? "YES" : "NO" );
+    const char *secure = dni->scheme == eURL_Https ? "YES" : "NO";
 
     /*  SSERV_Info member to format string mapping:
         mode (secure) --------------------------------------+
@@ -490,32 +487,32 @@ static int s_Resolve(SERV_ITER iter)
                              [  ] [] [] |   []   [ ]   []   [] */
     const char* descr_fmt = "HTTP %s:%u / H=%s R=%lf T=%u $=%s";
 
-    /* Prepare description */
+    /* Prepare descriptor */
     size_t length;
     length = strlen(descr_fmt) + strlen(ip4) + 5 /*length of port*/ +
              strlen(vhost) + 30 /*ample space for R,T*/ + strlen(secure);
-    server_description = (char*)malloc(sizeof(char) * length);
-    if ( ! server_description) {
+    server_descriptor = (char*) malloc(length);
+    if ( ! server_descriptor) {
         CORE_LOG_X(eLSub_Alloc, eLOG_Critical,
-            "Couldn't alloc for server description.");
+            "Couldn't alloc for server descriptor.");
         return 0;
     }
-    sprintf(server_description, descr_fmt, ip4, dni->port, vhost,
+    sprintf(server_descriptor, descr_fmt, ip4, dni->port, vhost,
             LBSM_DEFAULT_RATE, LBSM_DEFAULT_TIME, secure);
 
-    /* Parse description into SSERV_Info */
+    /* Parse descriptor into SSERV_Info */
     CORE_TRACEF(
-        ("Parsing candidate server description: '%s'", server_description));
-    SSERV_Info* cand_info = SERV_ReadInfoEx(server_description, "", 0/*false*/);
+        ("Parsing candidate server descriptor: '%s'", server_descriptor));
+    SSERV_Info* cand_info = SERV_ReadInfoEx(server_descriptor, "", 0/*false*/);
 
     if ( ! cand_info) {
         CORE_LOGF_X(eLSub_BadData, eLOG_Warning,
-            ("Unable to add candidate server info with description '%s'.",
-             server_description));
-        free((void*)server_description);
+            ("Unable to add candidate server info with descriptor '%s'.",
+             server_descriptor));
+        free(server_descriptor);
         return 0;
     }
-    free((void*)server_description);
+    free(server_descriptor);
 
     /* Populate candidate info */
     data->cand.info   = cand_info;
@@ -543,8 +540,9 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
         return NULL;
     }
 
-    if (host_info)
+    if (host_info) {
         *host_info = NULL;
+    }
 
     /* When the last candidate is reached, return it, then for the next
         fetch return NULL, then for the next fetch refetch candidates and
@@ -616,8 +614,9 @@ extern ELGHP_Status LINKERD_GetHttpProxy(char* host, size_t len,
     unsigned short port;
 
     http_proxy = getenv("http_proxy");
-    if ( ! http_proxy)
+    if ( ! http_proxy) {
         return eLGHP_NotSet;
+    }
 
     colon = strchr(http_proxy, (int)':');
     if ( ! colon) {
@@ -829,7 +828,9 @@ extern const SSERV_VTable* SERV_LINKERD_Open(SERV_ITER           iter,
     }
 
     /* call GetNextInfo subsequently if info is actually needed */
-    if (info)   *info = NULL;
+    if (info) {
+        *info = NULL;
+    }
 
     return &s_op;
 }

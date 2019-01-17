@@ -808,17 +808,13 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
     else {
         // Try to resolve service name.
         m_IsService = true;
-        const string& path = m_Url.GetPath();
-        if (!path.empty()) {
-            strncpy0(net_info->path, path.c_str(), sizeof(net_info->path) - 1);
-        }
-        ConnNetInfo_SetUserHeader(net_info, headers.c_str());
         SSERVICE_Extra x_extra;
         memset(&x_extra, 0, sizeof(x_extra));
         x_extra.data = this;
         x_extra.adjust = sx_Adjust;
         x_extra.parse_header = sx_ParseHeader;
         x_extra.flags = m_Session->GetHttpFlags() | fHTTP_AdjustOnRedirect;
+        ConnNetInfo_SetUserHeader(net_info, headers.c_str());
         m_Stream->SetConnStream(new CConn_ServiceStream(
             m_Url.GetService(), // Ignore other fields now, set them in sx_Adjust
             fSERV_Http,
@@ -901,7 +897,7 @@ int/*bool*/ CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
     if (loc) {
         CUrl url(loc);
         if (failure_count == (unsigned int)(-1)  &&  req->m_IsService) {
-            bool adjust = true;
+            bool adjust;
             if (req->m_AdjustUrl) {
                 adjust = req->m_AdjustUrl->AdjustUrl(url);
             }
@@ -909,6 +905,7 @@ int/*bool*/ CHttpRequest::sx_Adjust(SConnNetInfo* net_info,
                 url.Adjust(req->m_Url, CUrl::fScheme_Replace |
                                        CUrl::fPath_Append    |
                                        CUrl::fArgs_Merge);
+                adjust = true;
             }
             if ( adjust ) {
                 ConnNetInfo_ParseURL(net_info, url.ComposeUrl(CUrlArgs::eAmp_Char).c_str());
