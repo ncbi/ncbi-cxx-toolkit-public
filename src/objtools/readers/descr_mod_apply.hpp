@@ -41,41 +41,45 @@ class CDescrCache;
 class CDescrModApply 
 {
 public:
-    CDescrModApply(CBioseq& bioseq);
+    using TSkippedMods = CModAdder::TSkippedMods;
+
+    CDescrModApply(CBioseq& bioseq, IObjtoolsListener* pMessageListener, TSkippedMods& skipped_mods);
     virtual ~CDescrModApply();
 
     using TModEntry = CModHandler::TMods::value_type;
     bool Apply(const TModEntry& mod_entry);
 private:
-    static bool x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserve_taxid, CDescrCache& descr_cache);
-    static bool x_TryPCRPrimerMod(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetSubtype(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    bool x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserve_taxid);
+    bool x_TryPCRPrimerMod(const TModEntry& mod_entry);
+    void x_SetSubtype(const TModEntry& mod_entry);
 
-    static bool x_TryOrgRefMod(const TModEntry& mod_entry, bool& preserve_taxid, CDescrCache& descr_cache);
-    static void x_SetDBxref(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static bool x_TryOrgNameMod(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetOrgMod(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    bool x_TryOrgRefMod(const TModEntry& mod_entry, bool& preserve_taxid);
+    void x_SetDBxref(const TModEntry& mod_entry);
+    bool x_TryOrgNameMod(const TModEntry& mod_entry);
+    void x_SetOrgMod(const TModEntry& mod_entry);
 
-    static void x_SetDBLink(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetDBLinkField(const string& label, const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetDBLinkFieldVals(const string& label, const list<CTempString>& vals, CUser_object& db_link);
+    void x_SetDBLink(const TModEntry& mod_entry);
+    void x_SetDBLinkField(const string& label, const TModEntry& mod_entry, CDescrCache& descr_cache);
+    void x_SetDBLinkFieldVals(const string& label, const list<CTempString>& vals, CUser_object& db_link);
 
-    static void x_SetMolInfoType(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetMolInfoCompleteness(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetMolInfoTech(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetTpaAssembly(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetGBblockIds(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetGBblockKeywords(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetGenomeProjects(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetComment(const TModEntry& mod_entry, CDescrCache& descr_cache);
-    static void x_SetPMID(const TModEntry& mod_entry, CDescrCache& descr_cache);
+    void x_SetMolInfoType(const TModEntry& mod_entry);
+    void x_SetMolInfoCompleteness(const TModEntry& mod_entry);
+    void x_SetMolInfoTech(const TModEntry& mod_entry);
+    void x_SetTpaAssembly(const TModEntry& mod_entry);
+    void x_SetGBblockIds(const TModEntry& mod_entry);
+    void x_SetGBblockKeywords(const TModEntry& mod_entry);
+    void x_SetGenomeProjects(const TModEntry& mod_entry);
+    void x_SetComment(const TModEntry& mod_entry);
+    void x_SetPMID(const TModEntry& mod_entry);
 
     static const string& x_GetModName(const TModEntry& mod_entry);
     static const string& x_GetModValue(const TModEntry& mod_entry);
-    static void x_ThrowInvalidValue(const CModData& mod_data, const string& add_msg="");
+    void x_ReportInvalidValue(const CModData& mod_data, const string& add_msg="");
 
     bool m_PreserveTaxId = false;
     unique_ptr<CDescrCache> m_pDescrCache;
+    IObjtoolsListener* m_pMessageListener;
+    TSkippedMods& m_SkippedMods;
 };
 
 

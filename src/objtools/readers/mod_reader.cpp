@@ -363,7 +363,9 @@ void CModAdder::Apply(const CModHandler& mod_handler,
 {
     skipped_mods.clear();
 
-    CDescrModApply descr_mod_apply(bioseq);
+    CDescrModApply descr_mod_apply(bioseq, 
+                                  pMessageListener, 
+                                  skipped_mods);
     CFeatModApply feat_mod_apply(bioseq);
 
     for (const auto& mod_entry : mod_handler.GetMods()) {

@@ -74,7 +74,6 @@ private:
 
     CRef<CSeq_loc> x_GetWholeSeqLoc(void);
     CBioseq& m_Bioseq;
-
     CRef<CSeq_feat> m_pProtein;
 };
 

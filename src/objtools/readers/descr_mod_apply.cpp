@@ -142,8 +142,12 @@ private:
 };
 
 
-CDescrModApply::CDescrModApply(CBioseq& bioseq) :
-m_pDescrCache(new CDescrCache(bioseq))
+CDescrModApply::CDescrModApply(CBioseq& bioseq, 
+        IObjtoolsListener* pMessageListener, 
+        TSkippedMods& skipped_mods) :
+m_pDescrCache(new CDescrCache(bioseq)),
+m_pMessageListener(pMessageListener),
+m_SkippedMods(skipped_mods)
 {}
 
 
@@ -152,30 +156,33 @@ CDescrModApply::~CDescrModApply() = default;
 
 bool CDescrModApply::Apply(const TModEntry& mod_entry)
 {
-    if (x_TryBioSourceMod(mod_entry, m_PreserveTaxId, *m_pDescrCache)) {
+    if (x_TryBioSourceMod(mod_entry, m_PreserveTaxId)) {
         return true;
     }
 
     {
-        static const unordered_map<string,function<void(const TModEntry&, CDescrCache&)>>
-            s_MethodMap = {{"sra", x_SetDBLink},
-                           {"bioproject", x_SetDBLink},
-                           {"biosample", x_SetDBLink},
-                           {"mol-type", x_SetMolInfoType},
-                           {"completeness", x_SetMolInfoCompleteness},
-                           {"tech", x_SetMolInfoTech},
-                           {"primary-accession", x_SetTpaAssembly},
-                           {"secondary-accession", x_SetGBblockIds},
-                           {"keyword", x_SetGBblockKeywords},
-                           {"project", x_SetGenomeProjects},
-                           {"comment", x_SetComment},
-                           {"pmid", x_SetPMID}
-                          };
+        using TMemFuncPtr = void (CDescrModApply::*)(const TModEntry&);
 
+
+        static const unordered_map<string,TMemFuncPtr>
+            s_MethodMap = {{"sra", &CDescrModApply::x_SetDBLink},
+                           {"bioproject", &CDescrModApply::x_SetDBLink},
+                           {"biosample", &CDescrModApply::x_SetDBLink},
+                           {"mol-type", &CDescrModApply::x_SetMolInfoType},
+                           {"completeness", &CDescrModApply::x_SetMolInfoCompleteness},
+                           {"tech", &CDescrModApply::x_SetMolInfoTech},
+                           {"primary-accession", &CDescrModApply::x_SetTpaAssembly},
+                           {"secondary-accession", &CDescrModApply::x_SetGBblockIds},
+                           {"keyword", &CDescrModApply::x_SetGBblockKeywords},
+                           {"project", &CDescrModApply::x_SetGenomeProjects},
+                           {"comment", &CDescrModApply::x_SetComment},
+                           {"pmid", &CDescrModApply::x_SetPMID}
+                          };
         const auto& mod_name = x_GetModName(mod_entry);
         auto it = s_MethodMap.find(mod_name);
         if (it != s_MethodMap.end()) {
-            it->second(mod_entry, *m_pDescrCache);
+            auto mem_func_ptr = it->second;
+            (this->*mem_func_ptr)(mod_entry);
             return true;
         }
     }
@@ -183,7 +190,7 @@ bool CDescrModApply::Apply(const TModEntry& mod_entry)
 }
 
 
-bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserve_taxid, CDescrCache& descr_cache)
+bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserve_taxid)
 {
     const auto& name = x_GetModName(mod_entry);
     if (name == "location") {
@@ -191,9 +198,10 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
         const auto& value = x_GetModValue(mod_entry);
         auto it = s_GenomeStringToEnum.find(value);
         if (it == s_GenomeStringToEnum.end()) {
-            x_ThrowInvalidValue(mod_entry.second.front());
+            x_ReportInvalidValue(mod_entry.second.front());
+            return true;
         }
-        descr_cache.SetBioSource().SetGenome(it->second);
+        m_pDescrCache->SetBioSource().SetGenome(it->second);
         return true;
     }
 
@@ -202,20 +210,21 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
         const auto& value = x_GetModValue(mod_entry);
         auto it = s_OriginStringToEnum.find(value);
         if (it == s_OriginStringToEnum.end()) {
-            x_ThrowInvalidValue(mod_entry.second.front());
+            x_ReportInvalidValue(mod_entry.second.front());
+            return true;
         }
-        descr_cache.SetBioSource().SetOrigin(it->second);
+        m_pDescrCache->SetBioSource().SetOrigin(it->second);
         return true;
     }
 
     if (name == "focus") {
         const auto& value = x_GetModValue(mod_entry);
         if (NStr::EqualNocase(value, "true")) {
-            descr_cache.SetBioSource().SetIs_focus();
+            m_pDescrCache->SetBioSource().SetIs_focus();
         }
         else 
         if (NStr::EqualNocase(value, "false")) {
-            x_ThrowInvalidValue(mod_entry.second.front());
+            x_ReportInvalidValue(mod_entry.second.front());
         }
         return true;
     }
@@ -224,23 +233,23 @@ bool CDescrModApply::x_TryBioSourceMod(const TModEntry& mod_entry, bool& preserv
     { // check to see if this is a subsource mod
          auto it = s_SubSourceStringToEnum.find(name);
          if (it != s_SubSourceStringToEnum.end()) {
-            x_SetSubtype(mod_entry, descr_cache);
+            x_SetSubtype(mod_entry);
             return true;
          }
     }
 
-    if (x_TryPCRPrimerMod(mod_entry, descr_cache)) {
+    if (x_TryPCRPrimerMod(mod_entry)) {
         return true;
     }
 
-    if (x_TryOrgRefMod(mod_entry, preserve_taxid, descr_cache)) {
+    if (x_TryOrgRefMod(mod_entry, preserve_taxid)) {
         return true;
     }
     return false;
 }
 
 
-void CDescrModApply::x_SetSubtype(const TModEntry& mod_entry, CDescrCache& descr_cache)
+void CDescrModApply::x_SetSubtype(const TModEntry& mod_entry)
 {
     const auto subtype = s_SubSourceStringToEnum.at(x_GetModName(mod_entry));
     const auto needs_no_text = CSubSource::NeedsNoText(subtype);
@@ -250,7 +259,8 @@ void CDescrModApply::x_SetSubtype(const TModEntry& mod_entry, CDescrCache& descr
         const auto& value = mod.GetValue();
         if (needs_no_text &&
             !NStr::EqualNocase(value, "true")) {
-            x_ThrowInvalidValue(mod);
+            x_ReportInvalidValue(mod);
+            return;
         }
         auto pSubSource = Ref(new CSubSource(subtype,value));
         if (mod.IsSetAttrib()) {
@@ -262,7 +272,7 @@ void CDescrModApply::x_SetSubtype(const TModEntry& mod_entry, CDescrCache& descr
     if (subsources.empty()) {
         return;
     }
-    descr_cache.SetSubtype() = move(subsources);
+    m_pDescrCache->SetSubtype() = move(subsources);
 }
 
 
@@ -343,7 +353,7 @@ static void s_AppendPrimerSeqs(const string& mod, vector<string>& reaction_seqs)
 }
 
 
-bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry, CDescrCache& descr_cache)
+bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry)
 {
     const auto& mod_name = x_GetModName(mod_entry);
     
@@ -355,7 +365,7 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry, CDescrCache& 
             s_AppendPrimerNames(mod.GetValue(), names);
         }
 
-        auto& pcr_reaction_set = descr_cache.SetPCR_primers();
+        auto& pcr_reaction_set = m_pDescrCache->SetPCR_primers();
         auto it = pcr_reaction_set.Set().begin();
         for (const auto& reaction_names : names) {
             if (it == pcr_reaction_set.Set().end()) {
@@ -377,7 +387,7 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry, CDescrCache& 
         {
             s_AppendPrimerSeqs(mod.GetValue(), seqs);
         }
-        auto& pcr_reaction_set = descr_cache.SetPCR_primers();
+        auto& pcr_reaction_set = m_pDescrCache->SetPCR_primers();
         auto it = pcr_reaction_set.Set().begin();
         for (const auto& reaction_seqs : seqs) {
             if (it == pcr_reaction_set.Set().end()) {
@@ -400,7 +410,7 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry, CDescrCache& 
             s_AppendPrimerNames(mod.GetValue(), names);
         }
         if (!names.empty()) {
-            auto& pcr_reaction_set = descr_cache.SetPCR_primers();
+            auto& pcr_reaction_set = m_pDescrCache->SetPCR_primers();
             const size_t num_reactions = pcr_reaction_set.Get().size();
             const size_t num_names = names.size();
             if (num_names <= num_reactions) {
@@ -434,7 +444,7 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry, CDescrCache& 
             s_AppendPrimerSeqs(mod.GetValue(), seqs);
         }
         if (!seqs.empty()) {
-            auto& pcr_reaction_set = descr_cache.SetPCR_primers();
+            auto& pcr_reaction_set = m_pDescrCache->SetPCR_primers();
             const size_t num_reactions = pcr_reaction_set.Get().size();
             const size_t num_seqs = seqs.size();
             if (num_seqs <= num_reactions) {
@@ -463,16 +473,16 @@ bool CDescrModApply::x_TryPCRPrimerMod(const TModEntry& mod_entry, CDescrCache& 
 }
 
 
-bool CDescrModApply::x_TryOrgRefMod(const TModEntry& mod_entry, bool& preserve_taxid, CDescrCache& descr_cache)
+bool CDescrModApply::x_TryOrgRefMod(const TModEntry& mod_entry, bool& preserve_taxid)
 {
     const auto& name = x_GetModName(mod_entry);
     if (name == "taxname") {
         const auto& value = x_GetModValue(mod_entry);
-        descr_cache.SetBioSource().SetOrg().SetTaxname(value);
+        m_pDescrCache->SetBioSource().SetOrg().SetTaxname(value);
         if (!preserve_taxid &&
-             descr_cache.SetBioSource().GetOrg().GetTaxId()) { 
+             m_pDescrCache->SetBioSource().GetOrg().GetTaxId()) { 
             // clear taxid if it does not occur in this modifier set
-            descr_cache.SetBioSource().SetOrg().SetTaxId(0);
+            m_pDescrCache->SetBioSource().SetOrg().SetTaxId(0);
         }
         return true;
     }
@@ -484,9 +494,10 @@ bool CDescrModApply::x_TryOrgRefMod(const TModEntry& mod_entry, bool& preserve_t
             taxid = NStr::StringToInt(value);
         }
         catch (...) {
-            x_ThrowInvalidValue(mod_entry.second.front(), "Integer value expected.");
+            x_ReportInvalidValue(mod_entry.second.front(), "Integer value expected.");
+            return true;
         }
-        descr_cache.SetBioSource().SetOrg().SetTaxId(taxid);
+        m_pDescrCache->SetBioSource().SetOrg().SetTaxId(taxid);
         preserve_taxid = true;
         return true;
     }
@@ -494,23 +505,23 @@ bool CDescrModApply::x_TryOrgRefMod(const TModEntry& mod_entry, bool& preserve_t
 
     if (name == "common") {
         const auto& value = x_GetModValue(mod_entry);
-        descr_cache.SetBioSource().SetOrg().SetCommon(value);
+        m_pDescrCache->SetBioSource().SetOrg().SetCommon(value);
         return true;
     }
 
     if (name == "dbxref") {
-        x_SetDBxref(mod_entry, descr_cache);
+        x_SetDBxref(mod_entry);
         return true;
     }
 
-    if (x_TryOrgNameMod(mod_entry, descr_cache)) {
+    if (x_TryOrgNameMod(mod_entry)) {
         return true;
     }
     return false;
 }
 
 
-void CDescrModApply::x_SetDBxref(const TModEntry& mod_entry, CDescrCache& descr_cache)
+void CDescrModApply::x_SetDBxref(const TModEntry& mod_entry)
 {   
    vector<CRef<CDbtag>> dbtags;
    for (const auto& value_attrib : mod_entry.second) {
@@ -533,22 +544,22 @@ void CDescrModApply::x_SetDBxref(const TModEntry& mod_entry, CDescrCache& descr_
        dbtags.push_back(move(pDbtag));
    }
 
-   descr_cache.SetBioSource().SetOrg().SetDb() = dbtags;
+   m_pDescrCache->SetBioSource().SetOrg().SetDb() = dbtags;
 }
 
 
-bool CDescrModApply::x_TryOrgNameMod(const TModEntry& mod_entry, CDescrCache& descr_cache)
+bool CDescrModApply::x_TryOrgNameMod(const TModEntry& mod_entry)
 {
     const auto& name = x_GetModName(mod_entry);
     if (name == "lineage") {
         const auto& value = x_GetModValue(mod_entry);
-        descr_cache.SetBioSource().SetOrg().SetOrgname().SetLineage(value);
+        m_pDescrCache->SetBioSource().SetOrg().SetOrgname().SetLineage(value);
         return true;
     }
 
     if (name == "division") {
         const auto& value = x_GetModValue(mod_entry);
-        descr_cache.SetBioSource().SetOrg().SetOrgname().SetDiv(value);
+        m_pDescrCache->SetBioSource().SetOrg().SetOrgname().SetDiv(value);
         return true;
     }
 
@@ -570,16 +581,17 @@ bool CDescrModApply::x_TryOrgNameMod(const TModEntry& mod_entry, CDescrCache& de
             code = NStr::StringToInt(value);
         }
         catch (...) {
-            x_ThrowInvalidValue(mod_entry.second.front(), "Integer value expected.");
+            x_ReportInvalidValue(mod_entry.second.front(), "Integer value expected.");
+            return true;
         }
-        it->second(descr_cache.SetBioSource().SetOrg().SetOrgname(), code);
+        it->second(m_pDescrCache->SetBioSource().SetOrg().SetOrgname(), code);
         return true;
     }
 
     { //  check for orgmod
         auto it = s_OrgModStringToEnum.find(name);
         if (it != s_OrgModStringToEnum.end()) {
-            x_SetOrgMod(mod_entry, descr_cache);
+            x_SetOrgMod(mod_entry);
             return true;
         }
     }
@@ -587,7 +599,7 @@ bool CDescrModApply::x_TryOrgNameMod(const TModEntry& mod_entry, CDescrCache& de
 }
 
 
-void CDescrModApply::x_SetOrgMod(const TModEntry& mod_entry, CDescrCache& descr_cache)
+void CDescrModApply::x_SetOrgMod(const TModEntry& mod_entry)
 {
     const auto& subtype = s_OrgModStringToEnum.at(x_GetModName(mod_entry));
     for (const auto& mod : mod_entry.second) {
@@ -596,13 +608,12 @@ void CDescrModApply::x_SetOrgMod(const TModEntry& mod_entry, CDescrCache& descr_
         if (mod.IsSetAttrib()) {
             pOrgMod->SetAttrib(mod.GetAttrib());
         }
-        descr_cache.SetOrgMods().push_back(move(pOrgMod));
+        m_pDescrCache->SetOrgMods().push_back(move(pOrgMod));
     }
 }
 
 
-void CDescrModApply::x_SetDBLink(const TModEntry& mod_entry, 
-        CDescrCache& descr_cache) 
+void CDescrModApply::x_SetDBLink(const TModEntry& mod_entry) 
 {
     const auto& name = x_GetModName(mod_entry);
     static const unordered_map<string, string> s_NameToLabel =
@@ -612,7 +623,7 @@ void CDescrModApply::x_SetDBLink(const TModEntry& mod_entry,
 
     const auto& label = s_NameToLabel.at(name);
 
-    x_SetDBLinkField(label, mod_entry, descr_cache);
+    x_SetDBLinkField(label, mod_entry, *m_pDescrCache);
 }
 
 
@@ -666,51 +677,60 @@ void CDescrModApply::x_SetDBLinkFieldVals(const string& label,
 
 }
 
-void CDescrModApply::x_SetMolInfoType(const TModEntry& mod_entry, CDescrCache& descr_cache)
+void CDescrModApply::x_SetMolInfoType(const TModEntry& mod_entry)
 {
     const auto& value = x_GetModValue(mod_entry);
     auto it = s_BiomolStringToEnum.find(value);
     if (it != s_BiomolStringToEnum.end()) {
-        descr_cache.SetMolInfo().SetBiomol(it->second);
+        m_pDescrCache->SetMolInfo().SetBiomol(it->second);
         return;
     }
-    x_ThrowInvalidValue(mod_entry.second.front());
+    x_ReportInvalidValue(mod_entry.second.front());
 }
 
 
-void CDescrModApply::x_SetMolInfoTech(const TModEntry& mod_entry, CDescrCache& descr_cache)
+void CDescrModApply::x_SetMolInfoTech(const TModEntry& mod_entry)
 {
     const auto& value = x_GetModValue(mod_entry);
     auto it = s_TechStringToEnum.find(value);
     if (it != s_TechStringToEnum.end()) {
-        descr_cache.SetMolInfo().SetTech(it->second);
+        m_pDescrCache->SetMolInfo().SetTech(it->second);
         return;
     }
-    x_ThrowInvalidValue(mod_entry.second.front());
+    x_ReportInvalidValue(mod_entry.second.front());
 }
 
 
-void CDescrModApply::x_SetMolInfoCompleteness(const TModEntry& mod_entry, CDescrCache& descr_cache)
+void CDescrModApply::x_SetMolInfoCompleteness(const TModEntry& mod_entry)
 {
     const auto& value = x_GetModValue(mod_entry);
     auto it = s_CompletenessStringToEnum.find(value);
     if (it != s_CompletenessStringToEnum.end()) {
-        descr_cache.SetMolInfo().SetCompleteness(it->second);
+        m_pDescrCache->SetMolInfo().SetCompleteness(it->second);
         return;
     }
-    x_ThrowInvalidValue(mod_entry.second.front());
+    x_ReportInvalidValue(mod_entry.second.front());
 }
 
 
-void CDescrModApply::x_SetTpaAssembly(const TModEntry& mod_entry, CDescrCache& descr_cache)
+void CDescrModApply::x_SetTpaAssembly(const TModEntry& mod_entry)
 { 
     list<CStringUTF8> accession_list; 
     for (const auto& mod : mod_entry.second) {
         list<CTempString> value_sublist;
         const auto& vals = mod.GetValue();
         NStr::Split(vals, ",; \t", value_sublist, NStr::fSplit_Tokenize);
-        transform(value_sublist.begin(), value_sublist.end(), back_inserter(accession_list),
-                [](const CTempString& val) { return CUtf8::AsUTF8(val, eEncoding_UTF8); });
+
+        list<CStringUTF8> accession_sublist;
+        try {
+            transform(value_sublist.begin(), value_sublist.end(), back_inserter(accession_sublist),
+                    [](const CTempString& val) { return CUtf8::AsUTF8(val, eEncoding_UTF8); });
+        }
+        catch (...) {
+            x_ReportInvalidValue(mod);
+            continue;    
+        }
+        accession_list.splice(accession_list.end(), accession_sublist);
     }
 
     if (accession_list.empty()) {
@@ -727,14 +747,14 @@ void CDescrModApply::x_SetTpaAssembly(const TModEntry& mod_entry, CDescrCache& d
         return pField;
     };
 
-    auto& user = descr_cache.SetTpaAssembly();
+    auto& user = m_pDescrCache->SetTpaAssembly();
     user.SetData().resize(accession_list.size());
     transform(accession_list.begin(), accession_list.end(), 
             user.SetData().begin(), make_user_field);
 }
 
 
-void CDescrModApply::x_SetGBblockIds(const TModEntry& mod_entry, CDescrCache& descr_cache)
+void CDescrModApply::x_SetGBblockIds(const TModEntry& mod_entry)
 {
     list<string> id_list;
     for (const auto& mod : mod_entry.second) {
@@ -753,12 +773,12 @@ void CDescrModApply::x_SetGBblockIds(const TModEntry& mod_entry, CDescrCache& de
             }
         }
     }
-    auto& gb_block = descr_cache.SetGBblock();
+    auto& gb_block = m_pDescrCache->SetGBblock();
     gb_block.SetExtra_accessions().assign(id_list.begin(), id_list.end());
 }
 
 
-void CDescrModApply::x_SetGBblockKeywords(const TModEntry& mod_entry, CDescrCache& descr_cache)
+void CDescrModApply::x_SetGBblockKeywords(const TModEntry& mod_entry)
 {
     list<CTempString> value_list;
     for (const auto& mod : mod_entry.second) {
@@ -770,19 +790,27 @@ void CDescrModApply::x_SetGBblockKeywords(const TModEntry& mod_entry, CDescrCach
     if (value_list.empty()) {
         return;
     }
-    descr_cache.SetGBblock().SetKeywords().assign(value_list.begin(), value_list.end());
+    m_pDescrCache->SetGBblock().SetKeywords().assign(value_list.begin(), value_list.end());
 }
 
 
-void CDescrModApply::x_SetGenomeProjects(const TModEntry& mod_entry, CDescrCache& descr_cache)
+void CDescrModApply::x_SetGenomeProjects(const TModEntry& mod_entry)
 {
     list<int> id_list;
     for (const auto& mod : mod_entry.second) {
         list<CTempString> value_sublist;  
         const auto& vals = mod.GetValue();
         NStr::Split(vals, ",; \t", value_sublist, NStr::fSplit_Tokenize);
-        transform(value_sublist.begin(), value_sublist.end(), back_inserter(id_list), 
-                [](const CTempString& val) { return NStr::StringToUInt(val); });
+        list<int> id_sublist;
+        try {
+            transform(value_sublist.begin(), value_sublist.end(), back_inserter(id_sublist), 
+                    [](const CTempString& val) { return NStr::StringToUInt(val); });
+        }
+        catch (...) {
+            x_ReportInvalidValue(mod);
+            continue;
+        }
+        id_list.splice(id_list.end(), id_sublist);
     }
     if (id_list.empty()) {
         return;
@@ -802,25 +830,23 @@ void CDescrModApply::x_SetGenomeProjects(const TModEntry& mod_entry, CDescrCache
         return pField;
     };
 
-    auto& user = descr_cache.SetGenomeProjects();
+    auto& user = m_pDescrCache->SetGenomeProjects();
     user.SetData().resize(id_list.size());
     transform(id_list.begin(), id_list.end(), 
             user.SetData().begin(), make_user_field);
 }
 
 
-void CDescrModApply::x_SetComment(const TModEntry& mod_entry,
-        CDescrCache& descr_cache)
+void CDescrModApply::x_SetComment(const TModEntry& mod_entry)
 {
     for (const auto& mod : mod_entry.second) {
-        descr_cache.SetComment() = mod.GetValue();
+        m_pDescrCache->SetComment() = mod.GetValue();
     }
 
 }
 
 
-void CDescrModApply::x_SetPMID(const TModEntry& mod_entry,
-        CDescrCache& descr_cache) 
+void CDescrModApply::x_SetPMID(const TModEntry& mod_entry)
 {
     for (const auto& mod : mod_entry.second)
     {
@@ -830,14 +856,15 @@ void CDescrModApply::x_SetPMID(const TModEntry& mod_entry,
             pmid = NStr::StringToInt(value);
         }
         catch(...) {
-            x_ThrowInvalidValue(mod_entry.second.front(), "Expected integer value.");
+            x_ReportInvalidValue(mod_entry.second.front(), "Expected integer value.");
+            continue;
         } 
         auto pPub = Ref(new CPub());
         pPub->SetPmid().Set(pmid);
-        descr_cache.SetPubdesc()
-                   .SetPub()
-                   .Set()
-                   .push_back(move(pPub));
+        m_pDescrCache->SetPubdesc()
+                      .SetPub()
+                      .Set()
+                      .push_back(move(pPub));
     }
 }
 
@@ -854,7 +881,7 @@ const string& CDescrModApply::x_GetModValue(const TModEntry& mod_entry)
 }
 
 
-void CDescrModApply::x_ThrowInvalidValue(const CModData& mod_data,
+void CDescrModApply::x_ReportInvalidValue(const CModData& mod_data,
                                     const string& add_msg)
 {
     const auto& mod_name = mod_data.GetName();
@@ -863,6 +890,15 @@ void CDescrModApply::x_ThrowInvalidValue(const CModData& mod_data,
     if (!NStr::IsBlank(add_msg)) {
         msg += " " + add_msg;
     }
+
+
+    if (m_pMessageListener) {
+        m_pMessageListener->PutMessage(
+                CObjtoolsMessage(msg, eDiag_Warning));
+        m_SkippedMods.push_back(mod_data);
+        return;
+    }
+
     NCBI_THROW(CModReaderException, eInvalidValue, msg);
 }
 
