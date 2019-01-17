@@ -923,16 +923,14 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 host = uuu->net_info->host;
                 port = uuu->net_info->port;
                 args = ConnNetInfo_GetArgs(uuu->net_info);
-                if (*args == '#')
-                    args = 0;
-                if (args  &&  (uuu->flags & fHCC_UrlEncodeArgs)  &&
-                    !(path = strndup(uuu->net_info->path,
-                                     (size_t)(args - uuu->net_info->path)))) {
-                    status = eIO_Unknown;
-                    break;
-                } else {
+                if (*args == '#'  ||  !(uuu->flags & fHCC_UrlEncodeArgs)) {
                     path = uuu->net_info->path;
                     args = 0;
+                } else if (!(path = strndup(uuu->net_info->path,
+                                            (size_t)(&args[-1]/*'?'*/
+                                                     - uuu->net_info->path)))){
+                    status = eIO_Unknown;
+                    break;
                 }
             }
 

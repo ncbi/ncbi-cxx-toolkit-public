@@ -1860,7 +1860,7 @@ extern EIO_Status URL_ConnectEx
         : 0;
 
     /* sanity checks */
-    if (!sock  ||  !host  ||  !*host  ||  !path
+    if (!sock  ||  !host  ||  !*host
         ||  !path_len  ||  strcspn(path, "?#") < path_len) {
         CORE_LOG_X(2, eLOG_Critical, "[URL_Connect]  Bad argument(s)");
         if (sock) {
