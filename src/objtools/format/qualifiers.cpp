@@ -865,43 +865,45 @@ void CFlatMolTypeQVal::Format(TFlatQuals& q, const CTempString& name,
 void CFlatSubmitterSeqidQVal::Format(TFlatQuals& q, const CTempString& name,
                             CBioseqContext& ctx, IFlatQVal::TFlags flags) const
 {
-    if ( ctx.Config().IsModeGBench()  ||  ctx.Config().IsModeDump() ) {
-        switch ( m_Tech ) {
-        case CMolInfo::eTech_wgs:
-        case CMolInfo::eTech_tsa:
-        case CMolInfo::eTech_targeted:
-            ITERATE (CBioseq::TId, itr, ctx.GetBioseqIds()) {
-                const CSeq_id& id = **itr;
-                if ( id.Which() != CSeq_id::e_General ) continue;
-                const CDbtag& dbtag = id.GetGeneral();
-                if ( ! dbtag.IsSetDb() ) continue;
-                string dbname = dbtag.GetDb();
-                if ( dbname.length() != 10 ) continue;
-                if ( ! NStr::StartsWith(dbname, "WGS:" ) && ! NStr::StartsWith(dbname, "TSA:" ) && ! NStr::StartsWith(dbname, "TLS:" ) ) continue;
-                bool bail = false;
-                for ( int i = 4; i < 8; i++ ) {
-                    char ch = dbname[i];
-                    if ( ! isupper(ch) && ! islower(ch) ) {
-                        bail = true;
-                    }
-                }
-                if ( bail ) continue;
-                for ( int i = 8; i < 10; i++ ) {
-                    char ch = dbname[i];
-                    if ( ! isdigit(ch) ) {
-                        bail = true;
-                    }
-                }
-                if ( bail ) continue;
-                if ( dbtag.IsSetTag() && dbtag.GetTag().IsStr() ) {
-                    string tag = dbtag.GetTag().GetStr();
-                    x_AddFQ(q, name, tag);
+    switch ( m_Tech ) {
+    case CMolInfo::eTech_wgs:
+    case CMolInfo::eTech_tsa:
+    case CMolInfo::eTech_targeted:
+        ITERATE (CBioseq::TId, itr, ctx.GetBioseqIds()) {
+            const CSeq_id& id = **itr;
+            if ( id.Which() != CSeq_id::e_General ) continue;
+            const CDbtag& dbtag = id.GetGeneral();
+            if ( ! dbtag.IsSetDb() ) continue;
+            string dbname = dbtag.GetDb();
+            if ( ! NStr::StartsWith(dbname, "WGS:" ) && ! NStr::StartsWith(dbname, "TSA:" ) && ! NStr::StartsWith(dbname, "TLS:" ) ) continue;
+            dbname.erase(0, 4);
+            if (NStr::StartsWith(dbname, "NZ_" )) {
+                dbname.erase(0, 3);
+            }
+            if ( dbname.length() != 6 ) continue;
+            bool bail = false;
+            for ( int i = 0; i < 4; i++ ) {
+                char ch = dbname[i];
+                if ( ! isupper(ch) && ! islower(ch) ) {
+                    bail = true;
                 }
             }
-            break;
-        default:
-            break;
+            if ( bail ) continue;
+            for ( int i = 4; i < 6; i++ ) {
+                char ch = dbname[i];
+                if ( ! isdigit(ch) ) {
+                    bail = true;
+                }
+            }
+            if ( bail ) continue;
+            if ( dbtag.IsSetTag() && dbtag.GetTag().IsStr() ) {
+                string tag = dbtag.GetTag().GetStr();
+                x_AddFQ(q, name, tag);
+            }
         }
+        break;
+    default:
+        break;
     }
 }
 
