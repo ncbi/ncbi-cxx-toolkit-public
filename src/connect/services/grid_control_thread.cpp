@@ -182,7 +182,7 @@ public:
             CNcbiApplication* app = CNcbiApplication::Instance();
             if (app)
                 os << "Executable path: " << app->GetProgramExecutablePath()
-                        << "\nPID: " << CProcess::GetCurrentPid() << "\n";
+                        << "\nPID: " << CCurrentProcess::GetPid() << "\n";
         }}
 
         CNetScheduleAPI ns_api(node.GetNetScheduleAPI());

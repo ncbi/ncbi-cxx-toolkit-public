@@ -438,13 +438,13 @@ void SGridWorkerNodeImpl::x_WNCoreInit()
     if (!m_SingleThreadForced) {
         string max_threads = m_SynRegistry->Get("server", "max_threads", "8");
         if (NStr::CompareNocase(max_threads, "auto") == 0)
-            m_MaxThreads = GetCpuCount();
+            m_MaxThreads = CSystemInfo::GetCpuCount();
         else {
             try {
                 m_MaxThreads = NStr::StringToUInt(max_threads);
             }
             catch (exception&) {
-                m_MaxThreads = GetCpuCount();
+                m_MaxThreads = CSystemInfo::GetCpuCount();
                 ERR_POST_X(51, "Could not convert [server"
                     "] max_threads parameter to number.\n"
                     "Using \'auto\' option (" << m_MaxThreads << ").");
@@ -639,7 +639,7 @@ int SGridWorkerNodeImpl::Run(
 #ifdef NCBI_OS_UNIX
     if (is_daemon) {
         LOG_POST_X(53, "Entering UNIX daemon mode...");
-        CProcess::Daemonize("/dev/null",
+        CCurrentProcess::Daemonize("/dev/null",
                 CProcess::fDF_KeepCWD |
                 CProcess::fDF_KeepStdin |
                 CProcess::fDF_KeepStdout |
@@ -691,7 +691,7 @@ int SGridWorkerNodeImpl::Run(
     bool reliable_cleanup = m_SynRegistry->Get("server", "reliable_cleanup", false);
 
     if (reliable_cleanup) {
-        TPid child_pid = CProcess::Fork();
+        TPid child_pid = CCurrentProcess::Fork();
         if (child_pid != 0) {
             CProcess child_process(child_pid);
             CProcess::CExitInfo exit_info;
@@ -706,7 +706,7 @@ int SGridWorkerNodeImpl::Run(
                     int signum = exit_info.GetSignal();
                     ERR_POST(Critical << "Child process " << child_pid <<
                             " was terminated by signal " << signum);
-                    kill(CProcess::GetCurrentPid(), signum);
+                    kill(CCurrentProcess::GetPid(), signum);
                 } else if (exit_info.IsExited()) {
                     retcode = exit_info.GetExitCode();
                     if (retcode == 0) {

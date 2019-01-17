@@ -118,11 +118,11 @@ void CWNJobWatcher::Notify(const CWorkerNodeJobContext& job_context,
         CGridWorkerNode worker_node(job_context.GetWorkerNode());
         Uint8 total_memory_limit = worker_node.GetTotalMemoryLimit();
         if (total_memory_limit > 0) {  // memory check requested
-            size_t memory_usage;
-            if (!GetMemoryUsage(&memory_usage, 0, 0)) {
+            CCurrentProcess::SMemoryUsage memory_usage;
+            if (!CCurrentProcess::GetMemoryUsage(memory_usage)) {
                 ERR_POST("Could not check self memory usage" );
-            } else if (memory_usage > total_memory_limit) {
-                ERR_POST(Warning << "Memory usage (" << memory_usage <<
+            } else if (memory_usage.total > total_memory_limit) {
+                ERR_POST(Warning << "Memory usage (" << memory_usage.total <<
                     ") is above the configured limit (" <<
                     total_memory_limit << ")");
 
@@ -206,7 +206,7 @@ void CWNJobWatcher::x_KillNode(CGridWorkerNode worker)
             worker.GetNSExecutor().PutFailure(job);
         }
     }
-    TPid cpid = CProcess::GetCurrentPid();
+    TPid cpid = CCurrentProcess::GetPid();
     CProcess(cpid).Kill();
 }
 

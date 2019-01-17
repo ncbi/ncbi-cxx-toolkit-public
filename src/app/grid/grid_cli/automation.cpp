@@ -685,7 +685,7 @@ CMessageDumperSender::CMessageDumperSender(
     m_ProtocolDumpFile(protocol_dump_file),
     m_ProtocolDumpTimeFormat("Y/M/D h:m:s.l")
 {
-    string pid_str(NStr::NumericToString((Int8) CProcess::GetCurrentPid()));
+    string pid_str(NStr::NumericToString((Int8) CCurrentProcess::GetPid()));
 
     m_DumpInputHeaderFormat.assign(1, '\n');
     m_DumpInputHeaderFormat.append(71 + pid_str.length(), '=');
