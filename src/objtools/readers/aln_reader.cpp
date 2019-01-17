@@ -55,6 +55,22 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
+string sAlnErrorToString(const CAlnError & error)
+{
+    auto lineNumber = error.GetLineNum();
+    if (lineNumber == -1) {
+        return FORMAT(
+            "At ID '" << error.GetID() << "' "
+            "in category '" << static_cast<int>(error.GetCategory()) << "': "
+            << error.GetMsg() << "'");
+    }
+    return FORMAT(
+        "At ID '" << error.GetID() << "' "
+        "in category '" << static_cast<int>(error.GetCategory()) << "' "
+        "at line " << error.GetLineNum() << ": "
+        << error.GetMsg() << "'");
+}
+
 CAlnError::CAlnError(int category, int line_num, string id, string message)
 {
     switch (category) 
@@ -228,7 +244,10 @@ bool CAlnReader::x_IsReplicatedSequence(const char* seq_data,
 }
 
 
-void CAlnReader::Read(bool guess, bool generate_local_ids)
+void CAlnReader::Read(
+    bool guess, 
+    bool generate_local_ids,
+    ncbi::objects::ILineErrorListener* pErrorListener)
 {
     if (m_ReadDone) {
         return;
@@ -310,6 +329,19 @@ void CAlnReader::Read(bool guess, bool generate_local_ids)
             AlignmentFileFree (afp);
             NCBI_THROW2(CObjReaderParseException, eFormat,
                        "Error reading alignment", 0);
+        }
+    }
+
+    // report any errors through proper channels:
+    if (pErrorListener) {
+        for (const auto& error : GetErrorList()) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                    eDiag_Error,
+                    (error.GetLineNum() == -1 ? 0 : error.GetLineNum()),
+                    sAlnErrorToString(error),
+                    ILineError::eProblem_GeneralParsingError));
+            pErrorListener->PutError(*pErr);
         }
     }
 

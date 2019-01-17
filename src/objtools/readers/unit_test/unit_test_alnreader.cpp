@@ -150,11 +150,12 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CAlnReader reader(ifstr);
 
     try {
-        reader.Read();
+        reader.Read(false, false, &logger);
     } 
     catch (...) {
         ifstr.close();
-        BOOST_FAIL("Error: " << input << " failed during conversion.");
+        BOOST_ERROR("Error: " << input << " failed during conversion.");
+        return;
     }
     ifstr.close();
     cerr << " Produced new error listing " << output << "." << endl;

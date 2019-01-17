@@ -37,6 +37,7 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objtools/readers/fasta_reader_utils.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
 
@@ -190,7 +191,10 @@ public:
     /// Read the file
     /// This is the main function
     /// that would parse the alignment file and create the result data
-    void Read(bool guess=false, bool generate_local_ids=false);
+    void Read(
+        bool guess=false, 
+        bool generate_local_ids=false,
+        ncbi::objects::ILineErrorListener* pErrorListener=nullptr);
 
     /// Parsed result data accessors
     const vector<string>& GetIds(void)       const {return m_Ids;};
