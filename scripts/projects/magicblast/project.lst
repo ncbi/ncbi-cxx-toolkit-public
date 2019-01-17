@@ -95,6 +95,7 @@ sra/readers/sra
 sra/readers$
 sra$
 misc$
+misc/jsonwrapp
 misc/third_party
 misc/third_party_static
 misc/jsonwrapp
