@@ -446,7 +446,8 @@ sub get_num_volumes
 sub get_gcs_latest_dir
 {
     my $cmd = "/usr/bin/curl -s " . GCS_URL . "/" . GCP_BUCKET . "/latest-dir";
-    return `$cmd`;
+    chomp(my $retval = `$cmd`);
+    return $retval;
 }
 
 # Fetches the JSON text containing the BLASTDB metadata in GCS
