@@ -160,7 +160,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     cerr << " Produced new error listing " << output << "." << endl;
 
     CNcbiOfstream ofstr(output.c_str());
-    ofstr << MSerial_AsnText << *reader.GetSeqAlign();
+    ofstr << MSerial_AsnText << *reader.GetSeqEntry();
     ofstr.close();
     cerr << "    Produced new ASN1 file " << output << "." << endl;
 
@@ -211,7 +211,7 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
 
     string resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
-    ofstr << MSerial_AsnText << *(reader.GetSeqAlign());
+    ofstr << MSerial_AsnText << *(reader.GetSeqEntry());
     ofstr.close();
 
     bool success = testInfo.mOutFile.CompareTextContents(resultName, CFile::eIgnoreWs);

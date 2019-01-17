@@ -1,29 +1,73 @@
-Seq-align ::= {
-  type not-set,
-  dim 3,
-  segs denseg {
-    dim 3,
-    numseg 3,
-    ids {
-      local str "03_TAJ",
-      local str "04_TAJ",
-      local str "08_TAJ"
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        local str "03_TAJ"
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 12,
+        seq-data ncbi2na '02AFD5'H
+      }
     },
-    starts {
-      0,
-      0,
-      0,
-      -1,
-      12,
-      12,
-      -1,
-      -1,
-      15
+    seq {
+      id {
+        local str "04_TAJ"
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 15,
+        seq-data ncbi2na '02A57F00'H
+      }
     },
-    lens {
-      12,
-      3,
-      3
+    seq {
+      id {
+        local str "08_TAJ"
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 18,
+        seq-data ncbi2na '1B1B1B1BF0'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 3,
+          segs denseg {
+            dim 3,
+            numseg 3,
+            ids {
+              local str "03_TAJ",
+              local str "04_TAJ",
+              local str "08_TAJ"
+            },
+            starts {
+              0,
+              0,
+              0,
+              -1,
+              12,
+              12,
+              -1,
+              -1,
+              15
+            },
+            lens {
+              12,
+              3,
+              3
+            }
+          }
+        }
+      }
     }
   }
 }
