@@ -331,7 +331,11 @@ END_NCBI_SCOPE
 #define    CHECK_NCBI_LIBRARY_VERSION_MISMATCH     MAKENAME_NCBI_LIBRARY_VERSION_MISMATCH(NCBI_DEVELOPMENT_VER)
 
 NCBI_XNCBI_EXPORT int CHECK_NCBI_LIBRARY_VERSION_MISMATCH(void);
-static int s__check_ncbi_library_version_mismatch = CHECK_NCBI_LIBRARY_VERSION_MISMATCH();
+static int s__check_ncbi_library_version_mismatch
+#ifdef NCBI_COMPILER_GCC
+__attribute__((unused))
+#endif
+= CHECK_NCBI_LIBRARY_VERSION_MISMATCH();
 #endif
 
 /* @} */
