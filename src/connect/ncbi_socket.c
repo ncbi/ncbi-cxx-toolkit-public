@@ -4859,6 +4859,7 @@ static EIO_Status s_CreateOnTop(const void*       handle,
         x_orig->w_len = 0;
         BUF_Splice(&x_sock->w_buf, w_buf);
         BUF_Read(x_sock->w_buf, 0, w_len);
+        BUF_Destroy(w_buf);
     } else
         BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
     x_sock->w_len = BUF_Size(x_sock->w_buf);
