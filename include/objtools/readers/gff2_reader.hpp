@@ -185,11 +185,6 @@ public:
         const map<string, list<CRef<CSeq_align>>>& alignments,
         CRef<CSeq_annot> pAnnot);
 
-
-    virtual bool x_ParseAlignmentGff(
-        const string&,
-        TAnnots&);
-
     virtual bool x_InitAnnot(
         const CGff2Record&,
         CRef< CSeq_annot >,
@@ -332,12 +327,6 @@ public:
 protected:
     virtual CGff2Record* x_CreateRecord() { return new CGff2Record(); };
 
-    virtual void x_SetTrackDataToSeqEntry(
-        CRef<CSeq_entry>&,
-        CRef<CUser_object>&,
-        const string&,
-        const string& );
-                
     void x_PlaceFeature(
         CSeq_feat& feat, 
         const SRecord& );

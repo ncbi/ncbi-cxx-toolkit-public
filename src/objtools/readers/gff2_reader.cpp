@@ -358,31 +358,6 @@ void CGff2Reader::xAssignAnnotId(
 
 
 //  ----------------------------------------------------------------------------
-void CGff2Reader::x_SetTrackDataToSeqEntry(
-    CRef<CSeq_entry>& entry,
-    CRef<CUser_object>& trackdata,
-    const string& strKey,
-    const string& strValue )
-//  ----------------------------------------------------------------------------
-{
-    CSeq_descr& descr = entry->SetDescr();
-
-    if ( strKey == "name" ) {
-        CRef<CSeqdesc> name( new CSeqdesc() );
-        name->SetName( strValue );
-        descr.Set().push_back( name );
-        return;
-    }
-    if ( strKey == "description" ) {
-        CRef<CSeqdesc> title( new CSeqdesc() );
-        title->SetTitle( strValue );
-        descr.Set().push_back( title );
-        return;
-    }
-    trackdata->AddField( strKey, strValue );
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff2Reader::xParseStructuredComment(
     const string& strLine)
 //  ----------------------------------------------------------------------------
@@ -781,63 +756,6 @@ CGff2Reader::xIsCurrentDataType(
     }
     return (!mParsingAlignment  ||  !mCurrentFeatureCount);
 }
-
-
-
-//  ----------------------------------------------------------------------------
-bool CGff2Reader::x_ParseAlignmentGff(
-    const string& strLine,
-    TAnnots& annots )
-//  ----------------------------------------------------------------------------
-{
-    //
-    //  Parse the record and determine which ID the given feature will pertain 
-    //  to:
-    //
-    auto_ptr<CGff2Record> pRecord(x_CreateRecord());
-    if ( ! pRecord->AssignFromGff( strLine ) ) {
-        return false;
-    }
-
-    //
-    //  Search annots for a pre-existing annot pertaining to the same ID:
-    //
-    TAnnotIt it = annots.begin();
-    for ( /*NOOP*/; it != annots.end(); ++it ) {
-        if (!(**it).IsAlign()) continue;
-        const string* strAnnotId = s_GetAnnotId(**it);
-        if (!strAnnotId) {
-            return false;
-        }
-        if ( pRecord->Id() == *strAnnotId ) {
-            break;
-        }
-    }
-
-    //
-    //  If a preexisting annot was found, update it with the new feature
-    //  information:
-    //
-    if ( it != annots.end() ) {
-        if ( ! x_UpdateAnnotAlignment( *pRecord, *it ) ) {
-            return false;
-        }
-    }
-
-    //
-    //  Otherwise, create a new annot pertaining to the new ID and initialize it
-    //  with the given feature information:
-    //
-    else {
-        CRef< CSeq_annot > pAnnot( new CSeq_annot );
-        if ( ! x_InitAnnot( *pRecord, pAnnot ) ) {
-            return false;
-        }
-        annots.insert(annots.begin(), pAnnot );      
-    }
-
-    return true; 
-};
 
 
 //  ----------------------------------------------------------------------------
