@@ -1,0 +1,20 @@
+>seq1 [org=animal 1]cytochrome oxidase
+--GCAAGCATGCATGCAAAA
+TTTTGCGGCCCATGCATG--
+ATGCATGC
+>seq2 [org=animal 2]cytochrome oxidase
+AT--ATGG4TGCATGCAAAA
+TTTTGGGCCCCATGCATGCC
+--GCATGC
+>seq3 cytochrome oxidase
+ATGC--GCAAGCATGCAAAA
+TTTTGGGGCGCATGCATGCC
+AT--ATGC
+>seq4 [org=animal 4]cytochrome oxidase
+ATGCAT--ATGGATGCAAAA
+TTTTGGGGCCCTTGCATGCC
+ATGC--GC
+>seq5 [org=animal 5]cytochrome oxidase
+ATGCATGC--GCAAGCAAAA
+TTTTGGGGCCCATCCATGCC
+ATGCAT--
