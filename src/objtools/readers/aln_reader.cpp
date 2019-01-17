@@ -244,6 +244,26 @@ bool CAlnReader::x_IsReplicatedSequence(const char* seq_data,
 }
 
 
+void
+sReportError(
+    ILineErrorListener* pEC,
+    EDiagSev severity,
+    int lineNumber,
+    const string& message,
+    ILineError::EProblem problemType=ILineError::eProblem_GeneralParsingError)
+{
+    if (!pEC) {
+        NCBI_THROW2(CObjReaderParseException, eFormat, message, 0);
+    }
+    AutoPtr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+        severity,
+        lineNumber,
+        message,
+        problemType));
+    pEC->PutError(*pErr);
+}
+
 void CAlnReader::Read(
     bool guess, 
     bool generate_local_ids,
@@ -271,16 +291,36 @@ void CAlnReader::Read(
                             s_ReportError, &(m_Errors), &info,
                             (generate_local_ids ? eTrue : eFalse));
 
+    // report any errors through proper channels:
+    if (pErrorListener) {
+        for (const auto& error : GetErrorList()) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                    eDiag_Error,
+                    (error.GetLineNum() == -1 ? 0 : error.GetLineNum()),
+                    sAlnErrorToString(error),
+                    ILineError::eProblem_GeneralParsingError));
+            pErrorListener->PutError(*pErr);
+        }
+    }
+
     if (!afp) {
-        NCBI_THROW2(CObjReaderParseException, eFormat,
-                   "Error reading alignment: Invalid input or alphabet", 0);
+        sReportError(
+            pErrorListener,
+            eDiag_Fatal,
+            0,
+            "Error reading alignment: Invalid input or alphabet");
+        return;
     }
     if (1 == afp->num_sequences) {
-        NCBI_THROW2(CObjReaderParseException, eFormat,
-                   "Error reading alignment: Need more than one sequence", 0);
+        sReportError(
+            pErrorListener,
+            eDiag_Fatal,
+            0,
+            "Error reading alignment: Need more than one sequence");
+        return;
     }
  
-
     // Check sequence lengths
     size_t max_len, min_len;
     int max_index;
@@ -290,11 +330,13 @@ void CAlnReader::Read(
         max_index);
 
     if (min_len == 0) {
-        NCBI_THROW2(CObjReaderParseException, eFormat,
-            "Error reading alignment: Missing sequence data", 0);
+        sReportError(
+            pErrorListener,
+            eDiag_Fatal,
+            0,
+            "Error reading alignment: Missing sequence data");
+        return;
     }
-
-
 
     if (max_len != min_len) { 
         // Check for replicated intervals in the longest sequence
@@ -304,12 +346,20 @@ void CAlnReader::Read(
         AlignmentFileFree(afp);
 
         if (is_repeated) {
-            NCBI_THROW2(CObjReaderParseException, eFormat, 
-                "Error reading alignment: Possible sequence replication", 0);
+            sReportError(
+                pErrorListener,
+                eDiag_Fatal,
+                0,
+                "Error reading alignment: Possible sequence replication");
+            return;
         }   
         else {
-            NCBI_THROW2(CObjReaderParseException, eFormat,
-                       "Error reading alignment: Not all sequences have same length", 0);
+            sReportError(
+                pErrorListener,
+                eDiag_Fatal,
+                0,
+                "Error reading alignment: Not all sequences have same length");
+            return;
         }
     }
 
@@ -327,21 +377,12 @@ void CAlnReader::Read(
         }
         if (!found_gap) {
             AlignmentFileFree (afp);
-            NCBI_THROW2(CObjReaderParseException, eFormat,
-                       "Error reading alignment", 0);
-        }
-    }
-
-    // report any errors through proper channels:
-    if (pErrorListener) {
-        for (const auto& error : GetErrorList()) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
-                    eDiag_Error,
-                    (error.GetLineNum() == -1 ? 0 : error.GetLineNum()),
-                    sAlnErrorToString(error),
-                    ILineError::eProblem_GeneralParsingError));
-            pErrorListener->PutError(*pErr);
+            sReportError(
+                pErrorListener,
+                eDiag_Fatal,
+                0,
+                "Error reading alignment");
+            return;
         }
     }
 

@@ -149,22 +149,22 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CNcbiIfstream ifstr(input.c_str());
     CAlnReader reader(ifstr);
 
+    CRef<CSeq_entry> pEntry;
     try {
         reader.Read(false, false, &logger);
+        pEntry = reader.GetSeqEntry();
     } 
     catch (...) {
-        ifstr.close();
-        BOOST_ERROR("Error: " << input << " failed during conversion.");
-        return;
     }
     ifstr.close();
     cerr << " Produced new error listing " << output << "." << endl;
 
     CNcbiOfstream ofstr(output.c_str());
-    ofstr << MSerial_AsnText << *reader.GetSeqEntry();
+    if (pEntry) {
+        ofstr << MSerial_AsnText << *reader.GetSeqEntry();
+    }
     ofstr.close();
     cerr << "    Produced new ASN1 file " << output << "." << endl;
-
     cerr << " ... Done." << endl;
 }
 

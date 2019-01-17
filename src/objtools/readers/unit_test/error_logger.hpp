@@ -63,9 +63,10 @@ public:
         mStream << "Message    : " << err.Message() << endl;
         mStream << endl;
 
-        if (Count() < 500000) {
+        if (Count() < 500000  &&  err.Severity() != eDiag_Fatal) {
             return true;
         }
+        NCBI_THROW2(CObjReaderParseException, eFormat, err.Message(), 0);
         return false;
     };
 
