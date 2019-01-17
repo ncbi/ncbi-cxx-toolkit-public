@@ -213,7 +213,7 @@ void CModHandler::AddMods(const TModList& mods,
         if (!allow_multiple_values &&
             !first_occurrence) {
             rejected_mods.push_back(mod);
-            string msg = mod.GetName() + " conflicts with other modifiers in set.";
+            string msg = mod.GetName() + " conflicts with previously encountered modifier.";
             if (m_pMessageListener) {
                 x_PutMessage(msg, eDiag_Error);
             }   
@@ -442,13 +442,6 @@ bool CModAdder::x_PutMessage(const string& message,
 }
 
 
-bool CModAdder::x_PutError(const CModReaderException& exception,
-                           IObjtoolsListener* pMessageListener)
-{
-    return true;
-}
-
-
 const string& CModAdder::x_GetModName(const TModEntry& mod_entry)
 {
     return CModHandler::GetCanonicalName(mod_entry);
@@ -546,10 +539,6 @@ void CModAdder::x_SetHist(const TModEntry& mod_entry, CSeq_inst& seq_inst)
         NStr::Split(vals, ",; \t", value_sublist, NStr::fSplit_Tokenize);
         for (const auto& val : value_sublist) {
             string value = NStr::TruncateSpaces_Unsafe(val);
-            if (value.length() >= 8 && 
-                value.substr(0,8) == "ref_seq|") { 
-                value.erase(3,4); // ref_seq| -> ref|
-            }
             try {
                 SSeqIdRange idrange(value);
                 id_list.insert(id_list.end(), idrange.begin(), idrange.end());

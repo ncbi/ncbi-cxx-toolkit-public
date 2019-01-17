@@ -60,20 +60,12 @@ static unordered_map<string, TEnum> s_InitModNameToEnumMap(
             continue;
         }
         auto emplace_result = smod_enum_map.emplace(enum_name, enum_val);
-        // emplace must succeed
-        if (!emplace_result.second) {
-            NCBI_USER_THROW_FMT(
-                "s_InitModNameToEnumMap " << enum_name);
-        }
+        assert(emplace_result.second);
     }
 
     for (auto extra_smod_to_enum : extra_enum_names_to_vals) {
         auto emplace_result = smod_enum_map.emplace(extra_smod_to_enum);
-        // emplace must succeed
-        if (!emplace_result.second) {
-            NCBI_USER_THROW_FMT(
-                "s_InitModNameToEnumMap " << extra_smod_to_enum.first);
-        }
+        assert(emplace_result.second);
     }
     return smod_enum_map;
 }

@@ -102,9 +102,6 @@ public:
     TSubtype& SetSubtype(void);
     TOrgMods& SetOrgMods(void);
     CPCRReactionSet& SetPCR_primers(void);
-
-    void SetTaxId(int taxid);
-    bool HasSetTaxId(void) const;
     
 private:
     enum EChoice : size_t {
@@ -1118,18 +1115,6 @@ CDescrCache::TOrgMods& CDescrCache::SetOrgMods()
     return *m_pOrgMods;
 }
 
-
-void CDescrCache::SetTaxId(int taxid)
-{
-    SetBioSource().SetOrg().SetTaxId(taxid);
-    m_HasSetTaxid = true;
-}
-
-
-bool CDescrCache::HasSetTaxId() const
-{
-    return m_HasSetTaxid;
-}
 
 
 CPCRReactionSet& CDescrCache::SetPCR_primers()

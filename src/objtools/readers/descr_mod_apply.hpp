@@ -36,7 +36,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+// LCOV_EXCL_START
 class CDescrCache;
+// LCOV_EXCL_STOP
     
 class CDescrModApply 
 {
