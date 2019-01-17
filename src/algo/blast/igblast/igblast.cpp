@@ -1474,6 +1474,7 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                  
                     // annotate the query frame offset
                     int frame_offset = m_AnnotationInfo.GetFrameOffset(sid);
+                    
                     if (frame_offset >= 0) {
                         int q_start = (*it)->GetSeqStart(0); 
                         int q_stop = (*it)->GetSeqStop(0); 
@@ -1481,7 +1482,28 @@ void CIgBlast::x_AnnotateDomain(CRef<CSearchResultSet>        &gl_results,
                         int q_dif = q_stop - q_start;
                         int frame_adj = (3 - ((*it)->GetSeqStart(1) + 3 - frame_offset) % 3) %3;
                         annot->m_FrameInfo[0] = (q_mid - q_dir *q_dif)/2 + q_dir * frame_adj;
-                        frame_adj = ((*it)->GetSeqStop(1) + 3 - frame_offset) % 3;
+                        
+                        //counting frame from fwr3 end, not the V end since we need to ignore a few bases 
+                        //in the CDR3 to allow any insertion or deletion at V gene end
+                        if (annot->m_DomainInfo[9] > 0) {
+                            int fwr3_stop = annot->m_DomainInfo[9]; 
+                           
+                            if (annot->m_MinusStrand) {
+                                
+                                q_start = max(q_start, fwr3_stop);
+                                q_mid = q_start + q_stop;
+                                q_dif = q_stop - q_start;
+                                frame_adj = (s_map.GetSeqPosFromSeqPos(1, 0, q_start, IAlnExplorer::eBackwards) + 3 - frame_offset) % 3;
+                            } else {
+                                q_stop = min(q_stop, fwr3_stop);
+                                q_mid = q_start + q_stop;
+                                q_dif = q_stop - q_start;
+                                frame_adj = (s_map.GetSeqPosFromSeqPos(1, 0, q_stop, IAlnExplorer::eBackwards) + 3 - frame_offset) % 3;
+                            }
+                        } else {
+                            frame_adj = ((*it)->GetSeqStop(1) + 3 - frame_offset) % 3;
+                        }
+                       
                         annot->m_FrameInfo[1] = (q_mid + q_dir *q_dif)/2 - q_dir * frame_adj;
                     }
                     break;
