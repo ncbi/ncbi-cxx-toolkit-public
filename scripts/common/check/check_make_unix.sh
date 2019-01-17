@@ -457,7 +457,11 @@ if \$is_run; then
    rm -f "$x_build_dir/test_stat_load.log"
 fi
 
-if test "\$NCBI_CHECK_SETLIMITS" != "0"; then
+# Set app limits:
+# Only if $NCBI_CHECK_SETLIMITS not set to 0 before, or not configured with -with-max-debug.
+# Some tools that use this configure flag, like AddressSanitizer, can fail if limited.
+
+if test "\$NCBI_CHECK_SETLIMITS" != "0"  -a  ! -f "$x_conf_dir/status/MaxDebug.enabled"; then
    ulimit -c 1000000
    ulimit -n 8192
    if [ \$cygwin = false ]; then
