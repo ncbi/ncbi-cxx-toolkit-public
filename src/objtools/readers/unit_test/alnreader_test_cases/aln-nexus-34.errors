@@ -1,0 +1,16 @@
+Line No    : 20
+Severity   : Error
+Message    : At ID 'seq3' in category '3' at line 20: Inconsistent block line formatting'
+
+Line No    : 0
+Severity   : Error
+Message    : At ID '' in category '2': Missing organism information'
+
+Line No    : 0
+Severity   : Error
+Message    : At ID 'seq3' in category '3': Expected sequence length 48, actual length 47'
+
+Line No    : 0
+Severity   : Fatal
+Message    : Error reading alignment: Not all sequences have same length
+
