@@ -42,9 +42,9 @@ BEGIN_IDBLOB_SCOPE
 void FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
                                shared_ptr<CCassConnection>  conn,
                                vector<string> &  mapping,
-                               int  mapping_schema,
+                               ECassSchemaType  mapping_schema,
                                string &  resolver_keyspace,
-                               int  resolver_schema,
+                               ECassSchemaType  resolver_schema,
                                string &  err_msg)
 {
     shared_ptr<CCassQuery>  query = conn->NewQuery();

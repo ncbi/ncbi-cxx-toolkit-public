@@ -42,6 +42,17 @@ BEGIN_IDBLOB_SCOPE
 
 USING_NCBI_SCOPE;
 
+// Note: must be in sync with the Cassandra SAT_INFO.SAT2KEYSPACE schema type
+//       values
+enum ECassSchemaType {
+    eResolverSchema = 1,
+    eBlobVer1Schema = 2,
+    eBlobVer2Schema = 3,
+    eNamedAnnotationsSchema = 4
+};
+
+
+
 // Reads the sat2keyspace table from the given keyspace and builds the
 // mapping between the sat and the keyspace name selecting only suitable
 // records. Also picks the resolver (idmain usually) keyspace and checks that
@@ -49,9 +60,9 @@ USING_NCBI_SCOPE;
 void FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
                                shared_ptr<CCassConnection>  conn,
                                vector<string> &  mapping,
-                               int  mapping_schema,
+                               ECassSchemaType  mapping_schema,
                                string &  resolver_keyspace,
-                               int  resolver_schema,
+                               ECassSchemaType  resolver_schema,
                                string &  err_msg);
 
 END_IDBLOB_SCOPE

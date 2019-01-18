@@ -639,7 +639,7 @@ int CPubseqGatewayApp::x_PopulateSatToKeyspaceMap(void)
     try {
         string      err_msg;
         FetchSatToKeyspaceMapping(m_RootKeyspace, m_CassConnection,
-                                  m_SatNames, static_cast<int>(eBlobVer2Schema),
+                                  m_SatNames, eBlobVer2Schema,
                                   m_BioseqKeyspace, eResolverSchema,
                                   err_msg);
         if (!err_msg.empty()) {
