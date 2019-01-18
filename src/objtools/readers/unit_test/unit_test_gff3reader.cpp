@@ -157,8 +157,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
         reader.ReadSeqAnnots(annots, ifstr, &logger);
     }
     catch (...) {
-        ifstr.close();
-        BOOST_FAIL("Error: " << input << " failed during conversion.");
+        BOOST_ERROR("Error: " << input << " failed during conversion.");
     }
     ifstr.close();
     cerr << "    Produced new error listing " << output << "." << endl;
@@ -211,10 +210,8 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         reader.ReadSeqAnnots(annots, ifstr, &logger);
     }
     catch (...) {
-        BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
-        ifstr.close();
-        return;
     }
+    ifstr.close();
 
     string resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
