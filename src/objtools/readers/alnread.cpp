@@ -185,35 +185,66 @@ void ErrorInfoFree (TErrorInfoPtr eip)
     free (eip);
 }
 
+//  ============================================================================
+//  *** Note ***
+//  sReportError takes possession of the memory pointed to by id and errMessage, 
+//  i.e. it will (eventually) free them.
+//  The calling function must therefore allocate id and errMessage on on heap, 
+//  and *not* free them after passing them to this function.
+//
+void
+sReportError(
+    char* id,
+    int lineNumber,
+    EAlnErr errCode,
+    char* errMessage,
+    FReportErrorFunction errReporter,
+    void* errUserData)
+//  ============================================================================
+{
+    TErrorInfoPtr eip;
+
+    if (errReporter == NULL) {
+        return;
+    }
+    eip = ErrorInfoNew(NULL);
+    if (eip == NULL) {
+        return;
+    }
+    eip->category = errCode;
+    eip->id = strdup (id);
+    eip->line_num = lineNumber;
+    eip->message = errMessage;
+    errReporter(eip, errUserData);
+}
+
 /* This function creates and sends an error message regarding a NEXUS comment
  * character.
  */
 static void 
-s_ReportCharCommentError 
-(const char * expected,
- char         seen,
- const char * val_name,
- FReportErrorFunction errfunc,
- void *               errdata)
+s_ReportCharCommentError(
+    const char* expected,
+    char seen,
+    const char* valName,
+    FReportErrorFunction errfunc,
+    void* errdata)
 {
-    TErrorInfoPtr eip;
-    const char * errformat = "Specified %s character does not match NEXUS"
-                             " comment in file (specified %s, comment %c)";
+    const char * errFormat = 
+        "Specified %s character does not match NEXUS comment in file (specified %s, comment %c)";
 
-    if (errfunc == NULL  ||  val_name == NULL || expected == NULL) {
-        return;
+    char* errMessage = (char*)malloc(
+        strlen(errFormat) + strlen(valName) + strlen(expected) + 2);
+    if (errMessage) {
+        sprintf(errMessage, errFormat, valName, expected, seen);
     }
 
-    eip = ErrorInfoNew (NULL);
-    if (eip != NULL) {
-        eip->category = eAlnErr_BadFormat;
-        eip->message = (char *) malloc (strlen (errformat) + strlen (val_name)
-                                        + strlen (expected) + 2);
-        if (eip->message != NULL) {
-            sprintf (eip->message, errformat, val_name, expected, seen);
-        }
-        errfunc (eip, errdata);
-    }
+    sReportError(
+        NULL,
+        -1,
+        eAlnErr_BadFormat,
+        errMessage,
+        errfunc,
+        errdata);
 }
 
 
@@ -221,40 +252,31 @@ s_ReportCharCommentError
  * that is unexpected in sequence data.
  */
 static void 
-s_ReportBadCharError 
-(char *  id,
- char    bad_char,
- int     num_bad,
- int     offset,
- int     line_number,
- const char *  reason,
- FReportErrorFunction errfunc,
- void *             errdata)
+s_ReportBadCharError(
+    char* id,
+    char bad_char,
+    int num_bad,
+    int offset,
+    int line_number,
+    const char* reason,
+    FReportErrorFunction errfunc,
+    void* errdata)
 {
-    TErrorInfoPtr eip;
-    const char *  err_format =
-                          "%d bad characters (%c) found at position %d (%s).";
+    const char * errFormat = "%d bad characters (%c) found at position %d (%s).";
 
-    if (errfunc == NULL  ||  num_bad == 0  ||  bad_char == 0
-        ||  reason == NULL) {
-        return;
+    char* errMessage = (char*)malloc(
+        strlen(errFormat) + 2*kMaxPrintedIntLen + strlen(reason) + 3);
+    if (errMessage) {
+        sprintf(errMessage, errFormat, num_bad, bad_char, offset, reason);
     }
 
-    eip = ErrorInfoNew (NULL);
-    if (eip == NULL) {
-        return;
-    }
-
-    eip->category = eAlnErr_BadData;
-    if (id != NULL) eip->id = strdup (id);
-    eip->line_num = line_number;
-    eip->message = (char*) malloc (strlen (err_format) + 2 * kMaxPrintedIntLen
-                                    + strlen (reason) + 3);
-    if (eip->message != NULL)
-    {
-        sprintf (eip->message, err_format, num_bad, bad_char, offset, reason);
-    }
-    errfunc (eip, errdata);
+    sReportError(
+        id,
+        line_number,
+        eAlnErr_BadData,
+        errMessage,
+        errfunc,
+        errdata);
 }
  
 
@@ -262,26 +284,19 @@ s_ReportBadCharError
  * was found in the wrong location.
  */
 static void 
-s_ReportInconsistentID 
-(char *               id,
- int                  line_number,
- FReportErrorFunction report_error,
- void *              report_error_userdata)
+s_ReportInconsistentID(
+    char* id,
+    int line_number,
+    FReportErrorFunction report_error,
+    void* report_error_userdata)
 {
-    TErrorInfoPtr eip;
-
-    if (report_error == NULL) {
-        return;
-    }
-    eip = ErrorInfoNew (NULL);
-    if (eip == NULL) {
-        return;
-    }
-    eip->category = eAlnErr_BadFormat;
-    eip->id = strdup (id);
-    eip->line_num = line_number;
-    eip->message = strdup ("Found unexpected ID");
-    report_error (eip, report_error_userdata);
+    sReportError(
+        id,
+        line_number,
+        eAlnErr_BadFormat,
+        strdup("Found unexpected ID"),
+        report_error,
+        report_error_userdata);
 }
 
 
@@ -289,26 +304,19 @@ s_ReportInconsistentID
  * of sequence data that was expected to have a different length.
  */
 static void 
-s_ReportInconsistentBlockLine 
-(char *               id,
- int                  line_number,
- FReportErrorFunction report_error,
- void *              report_error_userdata)
+s_ReportInconsistentBlockLine(
+    char* id,
+    int line_number,
+    FReportErrorFunction report_error,
+    void* report_error_userdata)
 {
-    TErrorInfoPtr eip;
-
-    if (report_error == NULL) {
-        return;
-    }
-    eip = ErrorInfoNew (NULL);
-    if (eip == NULL) {
-        return;
-    }
-    eip->category = eAlnErr_BadFormat;
-    eip->id = strdup (id);
-    eip->line_num = line_number;
-    eip->message = strdup ("Inconsistent block line formatting");
-    report_error (eip, report_error_userdata);
+    sReportError(
+        id,
+        line_number,
+        eAlnErr_BadFormat,
+        strdup("Inconsistent block line formatting"),
+        report_error,
+        report_error_userdata);
 }
 
 
@@ -316,40 +324,31 @@ s_ReportInconsistentBlockLine
  * sequence data that was expected to be a different length.
  */
 static void 
-s_ReportLineLengthError 
-(char *               id,
- TLineInfoPtr         lip,
- int                  expected_length,
- FReportErrorFunction report_error,
- void *               report_error_userdata)
+s_ReportLineLengthError(
+    char* id,
+    TLineInfoPtr lip,
+    int expected_length,
+    FReportErrorFunction report_error,
+    void* report_error_userdata)
 {
-    TErrorInfoPtr eip;
-    char *        msg;
-    const char *  format = "Expected line length %d, actual length %d";
-    size_t        len;
-
-    if (lip == NULL  ||  report_error == NULL) {
+    if (!lip) {
         return;
     }
 
-    eip = ErrorInfoNew (NULL);
-    if (eip == NULL) {
-        return;
+    const char * errFormat = "Expected line length %d, actual length %d";
+
+    char* errMessage = (char*)malloc(strlen(errFormat) + kMaxPrintedIntLen + 1);
+    if (errMessage) {
+        size_t len = (lip->data ? strlen(lip->data) : 0);
+        sprintf(errMessage, errFormat, expected_length, len);
     }
-    eip->category = eAlnErr_BadFormat;
-    eip->id = strdup(id);
-    eip->line_num = lip->line_num;
-    msg = (char*)malloc(strlen(format) + kMaxPrintedIntLen + 1);
-    if (msg != NULL) {
-        if (lip->data == NULL) {
-            len = 0;
-        } else {
-            len = strlen(lip->data);
-        }
-        sprintf(msg, format, expected_length, len);
-        eip->message = msg;
-    }
-    report_error(eip, report_error_userdata);
+    sReportError(
+        id,
+        lip->line_num,
+        eAlnErr_BadFormat,
+        errMessage,
+        report_error,
+        report_error_userdata);
 }
 
 
@@ -357,33 +356,27 @@ s_ReportLineLengthError
  * sequence data that was expected to contain more lines.
  */
 static void 
-s_ReportBlockLengthError 
-(char *               id,
- int                  line_num,
- int                  expected_num,
- int                  actual_num,
- FReportErrorFunction report_error,
- void *              report_error_userdata)
+s_ReportBlockLengthError(
+    char* id,
+    int line_num,
+    int expected_num,
+    int actual_num,
+    FReportErrorFunction report_error,
+    void* report_error_userdata)
 {
-    TErrorInfoPtr eip;
-    const char *  err_format = "Expected %d lines in block, found %d";
+    const char* errFormat = "Expected %d lines in block, found %d";
 
-    if (report_error == NULL) {
-        return;
+    char* errMessage = (char*)malloc(strlen(errFormat) + kMaxPrintedIntLen + 1);
+    if (errMessage) {
+        sprintf(errMessage, errFormat, expected_num, actual_num);
     }
-
-    eip = ErrorInfoNew (NULL);
-    if (eip == NULL) {
-        return;
-    }
-    eip->category = eAlnErr_BadFormat;
-    eip->id = strdup (id);
-    eip->line_num = line_num;
-    eip->message = (char*)malloc(strlen(err_format) + 2 * kMaxPrintedIntLen + 1);
-    if (eip->message != NULL) {
-      sprintf (eip->message, err_format, expected_num, actual_num);
-    }
-    report_error (eip, report_error_userdata);
+    sReportError(
+        id,
+        line_num,
+        eAlnErr_BadFormat,
+        errMessage,
+        report_error,
+        report_error_userdata);
 }
 
 
@@ -391,28 +384,19 @@ s_ReportBlockLengthError
  * sequence data that contains duplicate IDs.
  */
 static void 
-s_ReportDuplicateIDError 
-(char *               id,
- int                  line_num,
- FReportErrorFunction report_error,
- void *              report_error_userdata)
+s_ReportDuplicateIDError(
+    char* id,
+    int line_num,
+    FReportErrorFunction report_error,
+    void* report_error_userdata)
 {
-    TErrorInfoPtr eip;
-    const char *  err_format = "Duplicate ID!  Sequences will be concatenated!";
-
-    if (report_error == NULL) {
-        return;
-    }
-
-    eip = ErrorInfoNew (NULL);
-    if (eip == NULL) {
-        return;
-    }
-    eip->category = eAlnErr_BadData;
-    eip->id = strdup (id);
-    eip->line_num = line_num;
-    eip->message = strdup (err_format);
-    report_error (eip, report_error_userdata);
+    sReportError(
+        id,
+        line_num,
+        eAlnErr_BadData,
+        strdup("Duplicate ID!  Sequences will be concatenated!"),
+        report_error,
+        report_error_userdata);
 }
 
 
@@ -420,24 +404,18 @@ s_ReportDuplicateIDError
  * sequence data.
  */
 static void
-s_ReportMissingSequenceData
-(char *               id,
- FReportErrorFunction report_error,
- void *              report_error_userdata)
+s_ReportMissingSequenceData(
+    char* id,
+    FReportErrorFunction report_error,
+    void* report_error_userdata)
 {
-    TErrorInfoPtr eip;
-
-    if (report_error == NULL) {
-        return;
-    }
-    eip = ErrorInfoNew (NULL);
-    if (eip == NULL) {
-        return;
-    }
-    eip->category = eAlnErr_Fatal;
-    eip->id = strdup (id);
-    eip->message = strdup ("No data found");
-    report_error (eip, report_error_userdata);
+    sReportError(
+        id,
+        -1,
+        eAlnErr_Fatal,
+        strdup("No data found"),
+        report_error,
+        report_error_userdata);
 }
 
 
@@ -446,30 +424,26 @@ s_ReportMissingSequenceData
  * found in the file.
  */
 static void 
-s_ReportBadSequenceLength 
-(char *               id,
- int                  expected_length,
- int                  actual_length,
- FReportErrorFunction report_error,
- void *               report_error_userdata)
+s_ReportBadSequenceLength(
+    char* id,
+    int expected_length,
+    int actual_length,
+    FReportErrorFunction report_error,
+    void* report_error_userdata)
 {
-    TErrorInfoPtr eip;
-    const char *  format_str = "Expected sequence length %d, actual length %d";
+    const char*  errFormat = "Expected sequence length %d, actual length %d";
 
-    if (report_error == NULL) {
-        return;
+    char* errMessage = (char*)malloc(strlen(errFormat) + 50);
+    if (errMessage) {
+        sprintf(errMessage, errFormat, expected_length, actual_length);
     }
-    eip = ErrorInfoNew (NULL);
-    if (eip == NULL) {
-        return;
-    }
-    eip->category = eAlnErr_BadFormat;
-    eip->id = strdup (id);
-    eip->message = (char *)malloc (strlen (format_str) + 50);
-    if (eip->message != NULL) {
-        sprintf (eip->message, format_str, expected_length, actual_length);
-    }
-    report_error (eip, report_error_userdata);
+    sReportError(
+        id,
+        -1,
+        eAlnErr_BadFormat,
+        errMessage,
+        report_error,
+        report_error_userdata);
 }
 
 
@@ -477,57 +451,48 @@ s_ReportBadSequenceLength
  * number of sequences read does not match a comment in the alignment file.
  */
 static void
-s_ReportIncorrectNumberOfSequences
-(int                  num_expected,
- int                  num_found,
- FReportErrorFunction report_error,
- void *              report_error_userdata)
+s_ReportIncorrectNumberOfSequences(
+    int num_expected,
+    int num_found,
+    FReportErrorFunction report_error,
+    void* report_error_userdata)
 {
-    TErrorInfoPtr eip;
-    const char *  err_format = "Expected %d sequences, found %d";
- 
-    if (report_error == NULL) {
-        return;
+    const char*  errFormat = "Expected %d sequences, found %d";
+
+    char* errMessage = (char*)malloc(strlen(errFormat) + 2 * kMaxPrintedIntLen + 1);
+    if (errMessage) {
+        sprintf(errMessage, errFormat, num_expected, num_found);
     }
-    eip = ErrorInfoNew (NULL);
-    if (eip == NULL) {
-        return;
-    }
-    eip->category = eAlnErr_BadFormat;
-    eip->message = (char*)malloc(strlen(err_format) + 2 * kMaxPrintedIntLen + 1);
-                                     
-    if (eip->message != NULL)
-    {
-        sprintf (eip->message, err_format, num_expected, num_found);
-    }
-    report_error (eip, report_error_userdata);
+    sReportError(
+        NULL,
+        -1,
+        eAlnErr_BadFormat,
+        errMessage,
+        report_error,
+        report_error_userdata);
 }
 
 
 static void
-s_ReportIncorrectSequenceLength 
-(int                 len_expected,
- int                 len_found,
- FReportErrorFunction report_error,
- void *             report_error_userdata)
+s_ReportIncorrectSequenceLength(
+    int len_expected,
+    int len_found,
+    FReportErrorFunction report_error,
+    void* report_error_userdata)
 {
-    TErrorInfoPtr eip;
-    const char *  err_format = "Expected sequences of length %d, found %d";
+    const char*  errFormat = "Expected sequences of length %d, found %d";
 
-    if (report_error == NULL) {
-        return;
+    char* errMessage = (char*)malloc(strlen(errFormat) + 2 * kMaxPrintedIntLen + 1);
+    if (errMessage) {
+        sprintf(errMessage, errFormat, len_expected, len_found);
     }
-    eip = ErrorInfoNew (NULL);
-    if (eip == NULL) {
-        return;
-    }
-
-    eip->category = eAlnErr_BadFormat;
-    eip->message = (char*)malloc(strlen(err_format) + 2 * kMaxPrintedIntLen + 1);
-    if (eip->message != NULL) {
-      sprintf (eip->message, err_format, len_expected, len_found);
-    }
-    report_error (eip, report_error_userdata);
+    sReportError(
+        NULL,
+        -1,
+        eAlnErr_BadFormat,
+        errMessage,
+        report_error,
+        report_error_userdata);
 }
 
 
@@ -535,23 +500,17 @@ s_ReportIncorrectSequenceLength
  * all of the organism information for the sequences are missing.
  */
 static void
-s_ReportMissingOrganismInfo
-(FReportErrorFunction report_error,
- void *             report_error_userdata)
+s_ReportMissingOrganismInfo(
+    FReportErrorFunction report_error,
+    void* report_error_userdata)
 {
-    TErrorInfoPtr eip;
-
-    if (report_error == NULL) {
-        return;
-    }
-    eip = ErrorInfoNew (NULL);
-    if (eip == NULL) {
-        return;
-    }
-
-    eip->category = eAlnErr_BadData;
-    eip->message = strdup ("Missing organism information");
-    report_error (eip, report_error_userdata);
+    sReportError(
+        NULL,
+        -1,
+        eAlnErr_BadData,
+        strdup ("Missing organism information"),
+        report_error,
+        report_error_userdata);
 }
 
 
@@ -559,45 +518,33 @@ s_ReportMissingOrganismInfo
  * used for more than one sequence.
  */
 static void 
-s_ReportRepeatedId 
-(TStringCountPtr      scp,
- FReportErrorFunction report_error,
- void *              report_error_userdata)
+s_ReportRepeatedId(
+    TStringCountPtr scp,
+    FReportErrorFunction report_error,
+    void* report_error_userdata)
 {
-    TErrorInfoPtr  eip;
-    const char *   err_format = "ID %s appears in the following locations:";
-    char *         cp;
-    TIntLinkPtr    line_number;
+    const char* errFormat = "ID %s appears in the following locations:";
 
-    if (report_error == NULL  ||  scp == NULL  ||  scp->string == NULL) {
+    if (!scp  ||  !scp->string) {
         return;
     }
-
-    eip = ErrorInfoNew(NULL);
-    if (eip == NULL) {
-        return;
-    }
-
-    eip->category = eAlnErr_BadData;
-    eip->id = strdup(scp->string);
-    if (scp->line_numbers != NULL) {
-        eip->line_num = scp->line_numbers->ival;
-    }
-    eip->message = (char*)malloc(strlen(err_format)
-                                 + strlen(scp->string)
-                                 + (size_t)scp->num_appearances * 15
-                                 + 1);
-    if (eip->message != NULL) {
-        sprintf(eip->message, err_format, scp->string);
-        cp = eip->message + strlen (eip->message);
-        for (line_number = scp->line_numbers;
-             line_number != NULL;
-             line_number = line_number->next) {
-            sprintf(cp, " %d", line_number->ival);
-            cp += strlen (cp);
+    char* errMessage = (char*)malloc(
+        strlen(errFormat) + strlen(scp->string) + scp->num_appearances * 15 + 1);
+    if (errMessage) {
+        sprintf(errMessage, errFormat, scp->string);
+        char* errEnd = errMessage + strlen(errMessage);
+        for (TIntLinkPtr t = scp->line_numbers; t != NULL; t = t->next) {
+            sprintf(errEnd, " %d", t->ival);
+            errEnd += strlen(errEnd);
         }
     }
-    report_error(eip, report_error_userdata);
+    sReportError(
+        NULL,
+        -1,
+        eAlnErr_BadData,
+        errMessage,
+        report_error,
+        report_error_userdata);
 }
 
 
@@ -605,27 +552,17 @@ s_ReportRepeatedId
  * being read is an ASN.1 file.
  */
 static void 
-s_ReportASN1Error 
-(FReportErrorFunction errfunc,
- void *             errdata)
+s_ReportASN1Error(
+    FReportErrorFunction errfunc,
+    void* errdata)
 {
-    TErrorInfoPtr eip;
-    const char * msg = "This is an ASN.1 file, "
-        "which cannot be read by this function.";
-
-    if (errfunc == NULL) {
-        return;
-    }
-
-    eip = ErrorInfoNew (NULL);
-    if (eip != NULL) {
-        eip->category = eAlnErr_BadData;
-        eip->message = (char *) malloc (strlen (msg) + 1);
-        if (eip->message != NULL) {
-            sprintf (eip->message, "%s", msg);
-        }
-        errfunc (eip, errdata);
-    }
+    sReportError(
+        NULL,
+        -1,
+        eAlnErr_BadData,
+        strdup("This is an ASN.1 file which cannot be read by this function"),
+        errfunc,
+        errdata);
 }
 
 
@@ -633,127 +570,117 @@ s_ReportASN1Error
  * and that some sequences are outside the brackets.
  */
 static void 
-s_ReportSegmentedAlignmentError 
-(TIntLinkPtr          offset_list,
- FReportErrorFunction errfunc,
- void *               errdata)
+s_ReportSegmentedAlignmentError(
+    TIntLinkPtr offsetList,
+    FReportErrorFunction errfunc,
+    void* errdata)
 {
-    TErrorInfoPtr eip;
-    const char * msg = "This file contains sequences in brackets (indicating "
-        "a segmented alignment) as well as sequences not in brackets at lines "
-        "%s.  Please either add or remove brackets to correct this problem.";
-    size_t      num_lines = 0;
-    size_t      msg_len = 0;
-    TIntLinkPtr t;
-    char *      line_text_list;
-    char *      line_text_list_offset;
+    const char * errFormat = 
+        "This file contains sequences in brackets (indicating a segmented alignment) "
+        "as well as sequences not in brackets at lines %s.\n"  
+        "Please either add or remove brackets to correct this problem.";
 
-    if (errfunc == NULL || offset_list == NULL) {
+    if (!offsetList) {
         return;
     }
-    for (t = offset_list; t != NULL; t = t->next) {
-        ++num_lines;
-    }
-    msg_len = num_lines * (kMaxPrintedIntLen + 2);
-    if (num_lines > 1) {
-        msg_len += 4;
-    }
-    
-    line_text_list = (char*)malloc(msg_len);
-    if (line_text_list == NULL) return;
-    line_text_list_offset = line_text_list;
 
-    for (t = offset_list; t != NULL; t = t->next) {
-        if (t->next == NULL)
-        {
-            sprintf (line_text_list_offset, "%d", t->ival);
-        }
-        else if (num_lines == 2) 
-        {
-            sprintf (line_text_list_offset, "%d and ", t->ival);
-        }
-        else if (t->next->next == NULL)
-        {
-            sprintf (line_text_list_offset, "%d, and ", t->ival);
-        }
-        else
-        {
-            sprintf (line_text_list_offset, "%d, ", t->ival);
-        }
-        line_text_list_offset += strlen (line_text_list_offset);
+    size_t numLines(0);
+    for (TIntLinkPtr t=offsetList; t != NULL; t = t->next) {
+        ++numLines;
+    }
+    size_t msgLen = numLines * (kMaxPrintedIntLen + 2);
+    if (numLines > 1) {
+        msgLen += 4;
     }
 
-    msg_len += strlen(msg) + 1;
+    char* listLineContent = (char*)malloc(msgLen);
+    if (!listLineContent) 
+        return;
+    char* listLineOffset = listLineContent;
+    listLineOffset[0] = 0;
 
-    eip = ErrorInfoNew (NULL);
-    if (eip != NULL) {
-        eip->category = eAlnErr_BadData;
-        eip->message = (char *) malloc (msg_len);
-        if (eip->message != NULL) {
-            sprintf(eip->message, msg, line_text_list);
+    for (TIntLinkPtr t=offsetList; t != NULL; t = t->next) {
+        listLineOffset += strlen(listLineOffset);
+        if (!t->next) {
+            sprintf (listLineOffset, "%d", t->ival);
+            continue;
         }
-        errfunc(eip, errdata);
+        if (numLines == 2) {
+            sprintf (listLineOffset, "%d and ", t->ival);
+            continue;
+        }
+        if (t->next->next == NULL) {
+            sprintf (listLineOffset, "%d, and ", t->ival);
+            continue;
+        }
+        sprintf (listLineOffset, "%d, ", t->ival);
     }
-    free(line_text_list);
+
+    char* errMessage = (char*)malloc(msgLen + strlen(errFormat) + 1);
+    if (errMessage) {
+        sprintf(errMessage, errFormat, listLineContent);
+    }
+    sReportError(
+        NULL,
+        -1,
+        eAlnErr_BadData,
+        errMessage,
+        errfunc,
+        errdata);
 }
 
 
 /* This function reports an error if a line looks like it might contain an organism comment
  * but is somehow improperly formatted
  */
-static void s_ReportOrgCommentError 
-(char *               linestring,
- FReportErrorFunction errfunc,
- void *               errdata)
+static void s_ReportOrgCommentError(
+    char* linestring,
+    FReportErrorFunction errfunc,
+    void* errdata)
 {
-    TErrorInfoPtr eip;
-    const char * msg = "This line may contain an improperly formatted organism description.\n"
-                       "Organism descriptions should be of the form [org=tax name] or [organism=tax name].\n";
-    
-    if (errfunc == NULL || linestring == NULL) {
-        return;
+    const char*  errFormat = 
+        "This line may contain an improperly formatted organism description.\n"
+        "Organism descriptions should be of the form [org=tax name] or [organism=tax name]:"
+        "    %s";
+
+    char* errMessage = (char*)malloc(strlen(errFormat) + strlen(linestring));
+    if (errMessage) {
+        sprintf(errMessage, errFormat, linestring);
     }
-                       
-    eip = ErrorInfoNew (NULL);
-    if (eip != NULL) {
-        eip->category = eAlnErr_BadData;
-        eip->message = (char *) malloc (strlen (msg) + strlen (linestring) + 1);
-        if (eip->message != NULL) {
-            strcpy (eip->message, msg);
-            strcat (eip->message, linestring);
-        }
-        errfunc (eip, errdata);
-    }
+    sReportError(
+        NULL,
+        -1,
+        eAlnErr_BadData,
+        errMessage,
+        errfunc,
+        errdata);
 }
 
  
 /* This function reports that the number of segments in an alignment of
  * segmented sets is inconsistent.
  */
-static void s_ReportBadNumSegError 
-(int                  line_num,
- int                  num_seg,
- int                  num_seg_exp,
- FReportErrorFunction errfunc,
- void *               errdata)
+static void s_ReportBadNumSegError(
+    int line_num,
+    int num_seg,
+    int num_seg_exp,
+    FReportErrorFunction errfunc,
+    void* errdata)
 {
-    TErrorInfoPtr eip;
-    const char * msg = "This segmented set contains a different number of segments (%d) than expected (%d).\n";
-    
-    if (errfunc == NULL) {
-        return;
+    const char*  errFormat = 
+        "This segmented set contains a different number of segments (%d) than expected (%d)";
+
+    char* errMessage = (char*)malloc(strlen(errFormat) + 2 * kMaxPrintedIntLen + 1);
+    if (errMessage) {
+        sprintf(errMessage, errFormat, num_seg, num_seg_exp);
     }
-                       
-    eip = ErrorInfoNew (NULL);
-    if (eip != NULL) {
-        eip->line_num = line_num;
-        eip->category = eAlnErr_BadData;
-        eip->message = (char*) malloc(strlen(msg) + 2 * kMaxPrintedIntLen + 1);
-        if (eip->message != NULL) {
-            sprintf (eip->message, msg, num_seg, num_seg_exp);
-        }
-        errfunc (eip, errdata);
-    }
+    sReportError(
+        NULL,
+        -1,
+        eAlnErr_BadFormat,
+        errMessage,
+        errfunc,
+        errdata);
 }
 
  
