@@ -200,32 +200,46 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
     CAlnReader reader(ifstr);
 
+    string newOutput = CDirEntry::GetTmpName();
+    string newErrors = CDirEntry::GetTmpName();
+    CErrorLogger logger(newErrors.c_str());
+
     CRef<CSeq_entry> pEntry;
     try {
-        reader.Read();
+        reader.Read(false, false, &logger);
         pEntry = reader.GetSeqEntry();
     }
     catch (...) {
     }
     ifstr.close();
 
-    string resultName = CDirEntry::GetTmpName();
-    CNcbiOfstream ofstr(resultName.c_str());
+    CNcbiOfstream ofstr(newOutput.c_str());
     if (pEntry) {
         ofstr << MSerial_AsnText << *(reader.GetSeqEntry());
     }
     ofstr.close();
 
-    bool success = testInfo.mOutFile.CompareTextContents(resultName, CFile::eIgnoreWs);
-    if (!success) {
-        CDirEntry deResult = CDirEntry(resultName);
+    bool successOutput = 
+        testInfo.mOutFile.CompareTextContents(newOutput, CFile::eIgnoreWs);
+    bool successErrors =
+        testInfo.mErrorFile.CompareTextContents(newErrors, CFile::eIgnoreWs);
+    if (!successOutput) {
+        CDirEntry deNewOutput= CDirEntry(newOutput);
         if (keep) {
-            deResult.Copy(testInfo.mOutFile.GetPath() + "." + extKeep);
+            deNewOutput.Copy(testInfo.mOutFile.GetPath() + "." + extKeep);
         }
-        deResult.Remove();
-        BOOST_ERROR("Error: " << sTestName << " failed due to post processing diffs.");
     }   
-    CDirEntry(resultName).Remove();
+    if (!successErrors) {
+        CDirEntry deNewErrors= CDirEntry(newErrors);
+        if (keep) {
+            deNewErrors.Copy(testInfo.mErrorFile.GetPath() + "." + extKeep);
+        }
+    }   
+    if (!successOutput  ||  !successErrors) {
+        BOOST_ERROR("Error: " << sTestName << " failed due to post processing diffs.");
+    }
+    CDirEntry(newOutput).Remove();
+    CDirEntry(newErrors).Remove();
 }
 
 NCBITEST_AUTO_INIT()
