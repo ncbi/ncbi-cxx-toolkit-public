@@ -1,6 +1,6 @@
-Line No    : 0
+Line No    : 4
 Severity   : Error
-Message    : At ID 'seq2' in category '4': 1 bad characters (4) found at position 13 (expect only sequence, missing, match, and middle gap characters here).'
+Message    : At ID 'seq2' in category '4' at line 4: 1 bad characters (4) found at position 13 (expect only sequence, missing, match, and middle gap characters here).'
 
 Line No    : 0
 Severity   : Fatal
