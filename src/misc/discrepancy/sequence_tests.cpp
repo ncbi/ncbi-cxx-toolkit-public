@@ -416,7 +416,7 @@ DISCREPANCY_SUMMARIZE(EXTERNAL_REFERENCE)
 
 // 10_PERCENTN
 
-const string kMoreThan10PercentsN = "[n] sequence[s] [has] > 10%% Ns";
+const string kMoreThan10PercentsN = "[n] sequence[s] [has] > 10% Ns";
 const double MIN_N_PERCENTAGE = 10.0;
 
 DISCREPANCY_CASE(10_PERCENTN, CSeq_inst, eDisc | eSubmitter | eSmart, "Greater than 10 percent Ns")
@@ -599,13 +599,11 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_MOLINFO_TECH)
         }
     }
     string summary = kInconsistentMolinfoTechSummary + " (";
-    if (num_of_missing == num_of_bioseqs) {
-        summary += "all missing)";
+    if (num_of_missing == num_of_bioseqs || (same && !num_of_missing)) {
+        return;
     }
-    else {
-        summary += num_of_missing ? "some missing, " : "all present, ";
-        summary += same ? "all same)" : "some different)";
-    }
+    summary += num_of_missing ? "some missing, " : "all present, ";
+    summary += same ? "all same)" : "some different)";
     if (num_of_missing) {
         if (num_of_missing == num_of_bioseqs) {
             report[summary].SetCount(num_of_missing);
@@ -1125,6 +1123,10 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_STRUCTURED_COMMENTS)
     bool all_present = true;
     bool all_same = true;
     AnalyzeFieldReport(m_Objs[kStructuredCommentReport], all_present, all_same);
+    if (all_present && all_same) {
+        return;
+    }
+
     string top_label = "Structured Comment Report " + GetSummaryLabel(all_present, all_same);
 
     CReportNode::TNodeMap::iterator it = m_Objs.GetMap().begin();
