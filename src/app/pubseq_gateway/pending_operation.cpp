@@ -172,18 +172,22 @@ void CPendingOperation::Clear()
         PSG_TRACE("CPendingOperation::Clear: "
                   "main blob loader: " <<
                   m_MainBlobFetchDetails->m_Loader.get());
-        m_MainBlobFetchDetails->m_Loader->SetDataReadyCB(nullptr, nullptr);
-        m_MainBlobFetchDetails->m_Loader->SetErrorCB(nullptr);
-        m_MainBlobFetchDetails->m_Loader->SetChunkCallback(nullptr);
+        if (m_MainBlobFetchDetails->m_Loader) {
+            m_MainBlobFetchDetails->m_Loader->SetDataReadyCB(nullptr, nullptr);
+            m_MainBlobFetchDetails->m_Loader->SetErrorCB(nullptr);
+            m_MainBlobFetchDetails->m_Loader->SetChunkCallback(nullptr);
+        }
         m_MainBlobFetchDetails = nullptr;
     }
     if (m_Id2InfoFetchDetails) {
         PSG_TRACE("CPendingOperation::Clear: "
                   "Id2Info blob loader: " <<
                   m_Id2InfoFetchDetails->m_Loader.get());
-        m_Id2InfoFetchDetails->m_Loader->SetDataReadyCB(nullptr, nullptr);
-        m_Id2InfoFetchDetails->m_Loader->SetErrorCB(nullptr);
-        m_Id2InfoFetchDetails->m_Loader->SetChunkCallback(nullptr);
+        if (m_Id2InfoFetchDetails->m_Loader) {
+            m_Id2InfoFetchDetails->m_Loader->SetDataReadyCB(nullptr, nullptr);
+            m_Id2InfoFetchDetails->m_Loader->SetErrorCB(nullptr);
+            m_Id2InfoFetchDetails->m_Loader->SetChunkCallback(nullptr);
+        }
         m_Id2InfoFetchDetails = nullptr;
     }
 
@@ -192,9 +196,11 @@ void CPendingOperation::Clear()
             PSG_TRACE("CPendingOperation::Clear: "
                       "Id2SplibChunks blob loader: " <<
                       details->m_Loader.get());
-            details->m_Loader->SetDataReadyCB(nullptr, nullptr);
-            details->m_Loader->SetErrorCB(nullptr);
-            details->m_Loader->SetChunkCallback(nullptr);
+            if (details->m_Loader) {
+                details->m_Loader->SetDataReadyCB(nullptr, nullptr);
+                details->m_Loader->SetErrorCB(nullptr);
+                details->m_Loader->SetChunkCallback(nullptr);
+            }
             details = nullptr;
         }
     }

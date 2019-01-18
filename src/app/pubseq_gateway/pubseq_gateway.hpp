@@ -170,6 +170,7 @@ private:
     unsigned int                        m_MaxRetries;
 
     CTime                               m_StartTime;
+    string                              m_RootKeyspace;
     string                              m_BioseqKeyspace;
 
     unique_ptr<CPubseqGatewayCache>     m_LookupCache;

@@ -39,26 +39,44 @@
 BEGIN_IDBLOB_SCOPE
 
 
-vector<string> FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
-                                         shared_ptr<CCassConnection>  conn)
+void FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
+                               shared_ptr<CCassConnection>  conn,
+                               vector<string> &  mapping,
+                               int  mapping_schema,
+                               string &  resolver_keyspace,
+                               int  resolver_schema,
+                               string &  err_msg)
 {
-    vector<string>          mapping;
     shared_ptr<CCassQuery>  query = conn->NewQuery();
 
-    query->SetSQL("SELECT sat, keyspace_name FROM " +
+    query->SetSQL("SELECT sat, keyspace_name, schema_type FROM " +
                   mapping_keyspace + ".sat2keyspace", 0);
     query->Query(KEYSPACE_MAPPING_CONSISTENCY, false, false);
 
     while (query->NextRow() == ar_dataready) {
         int32_t     sat = query->FieldGetInt32Value(0);
         string      name = query->FieldGetStrValue(1);
+        int32_t     schema_type = query->FieldGetInt32Value(2);
 
-        while (static_cast<int32_t>(mapping.size()) <= sat)
-            mapping.push_back("");
-        mapping[sat] = name;
+        if (schema_type == mapping_schema) {
+            while (static_cast<int32_t>(mapping.size()) <= sat)
+                mapping.push_back("");
+            mapping[sat] = name;
+            continue;
+        }
+
+        if (schema_type == resolver_schema) {
+            if (resolver_keyspace.empty()) {
+                resolver_keyspace = name;
+                continue;
+            }
+
+            // More than one resolver keyspace
+            err_msg = "More than one resolver keyspace in the " +
+                      mapping_keyspace + ".sat2keyspace table";
+            break;
+        }
     }
-
-    return mapping;
 }
 
 

@@ -64,6 +64,7 @@ const unsigned int      kMaxRetriesDefault = 1;
 const unsigned int      kMaxRetriesMin = 0;
 const unsigned int      kMaxRetriesMax = UINT_MAX;
 const bool              kDefaultLog = true;
+const string            kDefaultRootKeyspace = "sat_info";
 
 // Memorize the configured severity level to check before using ERR_POST.
 // Otherwise some expensive operations are executed without a real need.
@@ -142,7 +143,8 @@ void CPubseqGatewayApp::ParseArgs(void)
                                    kMaxRetriesDefault);
     g_Log = registry.GetBool("SERVER", "log",
                              kDefaultLog);
-    m_BioseqKeyspace = registry.GetString("SERVER", "bioseqkeyspace", "");
+    m_RootKeyspace = registry.GetString("SERVER", "root_keyspace",
+                                        kDefaultRootKeyspace);
 
     m_CassConnectionFactory->AppParseArgs(args);
     m_CassConnectionFactory->LoadConfig(registry, "");
@@ -350,12 +352,6 @@ void CPubseqGatewayApp::x_ValidateArgs(void)
                    NStr::NumericToString(kHttpPortMin) + "..." +
                    NStr::NumericToString(kHttpPortMax) + ". Received: " +
                    NStr::NumericToString(m_HttpPort));
-    }
-
-    if (m_BioseqKeyspace.empty()) {
-        NCBI_THROW(CPubseqGatewayException, eConfigurationError,
-                   "[SERVER]/bioseqkeyspace is not provided. It must "
-                   "be supplied for the server to start");
     }
 
     if (m_Si2csiDbFile.empty()) {
@@ -641,7 +637,16 @@ bool CPubseqGatewayApp::x_ConvertIntParameter(const string &  param_name,
 int CPubseqGatewayApp::x_PopulateSatToKeyspaceMap(void)
 {
     try {
-        m_SatNames = FetchSatToKeyspaceMapping("sat_info", m_CassConnection);
+        string      err_msg;
+        FetchSatToKeyspaceMapping(m_RootKeyspace, m_CassConnection,
+                                  m_SatNames, static_cast<int>(eBlobVer2Schema),
+                                  m_BioseqKeyspace, eResolverSchema,
+                                  err_msg);
+        if (!err_msg.empty()) {
+            PSG_CRITICAL(err_msg);
+            return 1;
+        }
+
     } catch (const exception &  exc) {
         PSG_CRITICAL(exc);
         PSG_CRITICAL("Cannot populate the sat to keyspace mapping. "
@@ -653,9 +658,17 @@ int CPubseqGatewayApp::x_PopulateSatToKeyspaceMap(void)
         return 1;
     }
 
+    if (m_BioseqKeyspace.empty()) {
+        PSG_CRITICAL("Cannot find the resolver keyspace "
+                     "(where SI2CSI and BIOSEQ_INFO tables reside) "
+                     "in the " + m_RootKeyspace + ".SAT2KEYSPACE table. "
+                     "PSG server cannot start.");
+        return 1;
+    }
+
     if (m_SatNames.empty()) {
-        PSG_CRITICAL("No sat to keyspace resolutions found in the "
-                     "sat_info keyspace. PSG server cannot start.");
+        PSG_CRITICAL("No sat to keyspace resolutions found in the " +
+                     m_RootKeyspace + " keyspace. PSG server cannot start.");
         return 1;
     }
 
