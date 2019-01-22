@@ -40,6 +40,8 @@
 #    define ALIGNMENT_CALLBACK
 #endif
 
+BEGIN_NCBI_SCOPE
+
 typedef char * (ALIGNMENT_CALLBACK *FReadLineFunction) (void * userdata);
 
 typedef enum {
@@ -190,5 +192,6 @@ NCBI_XOBJREAD_EXPORT TAlignmentFilePtr ReadAlignmentFileEx2 (
                                        */ 
 );
 
+END_NCBI_SCOPE
 
 #endif // _ALNREAD_HPP_

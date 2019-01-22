@@ -385,6 +385,7 @@ void CAlnReader::Read(
             return;
         }
     }
+    
 
     // build the CAlignment
     m_Seqs.resize(afp->num_sequences);
@@ -578,11 +579,12 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
     CDense_seg::TIds& ids = denseg.SetIds();
     ids.resize(m_Dim);
 
+    const auto num_deflines = m_Deflines.size();
     for (auto i=0; i<m_Dim; ++i) {
         // Reconstruct original defline string from results 
         // returned by C code.
         string fasta_defline = ">" + m_Ids[i];
-        if (!m_Deflines[i].empty()) {
+        if (i < num_deflines && !m_Deflines[i].empty()) {
             fasta_defline += " " + m_Deflines[i];
         }
         ids[i] = GenerateID(fasta_defline, i, fasta_flags);

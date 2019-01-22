@@ -40,8 +40,11 @@
 #define strdup _strdup
 #endif
 
+BEGIN_NCBI_SCOPE
+
 static const size_t kMaxPrintedIntLen = 10;
-#define             kMaxPrintedIntLenPlusOne 11
+static const size_t  kMaxPrintedIntLenPlusOne = 11;
+
 
 /*  ---------------------------------------------------------------------- */
 typedef enum {
@@ -2829,6 +2832,23 @@ static void s_AddDeflineFromOrganismLine
     }
 }
 
+
+static void s_ReadSeqInfo(const char* line, int line_num, SAlignRawFilePtr afrp)
+{
+    if (line == NULL || afrp == NULL) {
+        return;
+    }
+
+    if (line[0] != '>') {
+        const auto has_organism = (strstr(line, "org=") != NULL ||
+                                  (strstr(line, "organism=") != NULL));
+        if (!has_organism) {
+            return;
+        }
+    }
+}
+
+
 /* This function is used to read any organism names that may appear in
  * string, including any modifiers that may appear after the organism name.
  */
@@ -2843,16 +2863,16 @@ static void s_ReadOrgNamesFromText
     char *         defline;
     char *         comment_end;
     int            defline_offset;
-  
-    //if (string == NULL  ||  string[0] != '>'  ||  afrp == NULL) {
-    //    return;
-    //}
-    if (string == NULL  ||  afrp == NULL) {
+ 
+    const auto has_organism = (strstr(string, "org=") != NULL ||
+                              (strstr(string, "organism=") != NULL));
+
+    if (string == NULL  ||  (string[0] != '>')  ||  afrp == NULL) {
         return;
     }
 
     clp = s_FindOrganismComment (string);
-    if (clp == NULL && (strstr (string, "org=") != NULL || strstr (string, "organism=") != NULL))
+    if (clp == NULL && has_organism)
     {
       s_ReportOrgCommentError (string, afrp->report_error, afrp->report_error_userdata);
     }
@@ -6075,3 +6095,5 @@ ReadAlignmentFile2
     return ReadAlignmentFileEx2 (readfunc, fileuserdata, errfunc, erroruserdata,
                                 sequence_info, eFalse, gen_local_ids);
 }
+
+END_NCBI_SCOPE
