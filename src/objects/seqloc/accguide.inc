@@ -120,7 +120,7 @@ static const char* const kBuiltInGuide[] = {
     "3+7  S??  embl_prot",
     "3+9  S??  embl_prot",
     "3+11 S??  embl_prot",
-    "3+5  T??  gb_prot",
+    "3+5  T??  gb_wgs_prot",
     "3+7  T??  gb_prot",
     "3+9  T??  gb_prot",
     "3+11 T??  gb_prot",
