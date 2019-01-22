@@ -266,6 +266,11 @@ NCBITEST_INIT_CMDLINE(arg_descrs)
     arg_descrs->AddFlag("keep-diffs",
         "Keep output files that are different from the expected.",
         true );
+    arg_descrs->AddDefaultKey("single-case",
+        "SINGLE_CASE", 
+        "Run specified case only",
+        CArgDescriptions::eString,
+        "");
 }
 
 NCBITEST_AUTO_FINI()
@@ -293,6 +298,20 @@ BOOST_AUTO_TEST_CASE(RunTests)
         return;
     }   
                                    
+    string single_case = args["single-case"].AsString();
+    if (!single_case.empty()) {
+        STestInfo testInfo;
+        testInfo.mInFile = CDir::ConcatPath( 
+            test_cases_dir.GetPath(), single_case + "." + extInput);
+        testInfo.mOutFile = CDir::ConcatPath(
+            test_cases_dir.GetPath(), single_case + "." + extOutput);
+        testInfo.mErrorFile = CDir::ConcatPath( 
+            test_cases_dir.GetPath(), single_case + "." + extErrors);
+        BOOST_CHECK_NO_THROW(
+            sRunTest(single_case, testInfo, args["keep-diffs"]));
+        return;
+    }
+
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(&testNameToInfoMap, extInput, extOutput, extErrors);
