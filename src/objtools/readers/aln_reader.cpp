@@ -411,6 +411,8 @@ void CAlnReader::Read(
         }
     }
 
+
+
     AlignmentFileFree(afp);
 
     {{

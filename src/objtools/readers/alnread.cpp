@@ -30,6 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbistr.hpp>
 #include <objtools/readers/alnread.hpp>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1156,7 +1157,7 @@ s_AddLengthList
  */
 static TLineInfoPtr
 s_LineInfoNew
-(char * string,
+(const char * string,
  int    line_num,
  int    line_offset)
 {
@@ -1232,7 +1233,7 @@ static TLineInfoPtr s_DeleteLineInfos (TLineInfoPtr list)
 static TLineInfoPtr 
 s_AddLineInfo
 (TLineInfoPtr list,
- char * string,
+ const char* string,
  int    line_num,
  int    line_offset)
 {
@@ -2750,6 +2751,7 @@ static char * s_CreateOrderedOrgName (TCommentLocPtr org_clp)
     return ordered_org_name;
 }
 
+/*
 static void s_AddDeflineFromOrganismLine 
 (char             *defline, 
  int              line_num,
@@ -2764,8 +2766,8 @@ static void s_AddDeflineFromOrganismLine
         return;
     }
     
-    /* make sure that we are adding the definition line to the correct position
-     * in the list - should match last organism name */
+    // make sure that we are adding the definition line to the correct position
+    // in the list - should match last organism name 
     lip = afrp->organisms;
     org_num = 0;
     while (lip != NULL)
@@ -2782,7 +2784,7 @@ static void s_AddDeflineFromOrganismLine
     }
     
     if (defline_num == org_num && lip != NULL) {
-        /* if previous defline is empty, replace with new defline */
+        // if previous defline is empty, replace with new defline 
         if (strlen (lip->data) == 0)
         {
             free (lip->data);
@@ -2790,7 +2792,7 @@ static void s_AddDeflineFromOrganismLine
         }
         else
         {
-            /* append defline to the end of the existing entry */
+            // append defline to the end of the existing entry 
             new_len = strlen (lip->data) + strlen (defline) + 2;
             new_defline = (char *) malloc (new_len * sizeof (char));
             if (new_defline != NULL)
@@ -2804,14 +2806,14 @@ static void s_AddDeflineFromOrganismLine
                 defline = NULL;
             }
         }
-        /* use new line numbers */
+        // use new line numbers 
         lip->line_num = line_num + 1;
         lip->line_offset = defline_offset;
         lip->delete_me = eFalse;        
     }
     else
     {
-        /* add empty deflines to get to the correct position */
+        // add empty deflines to get to the correct position 
         while (defline_num < org_num - 1)
         {
             empty_defline = (char *) malloc (sizeof (char));
@@ -2825,26 +2827,45 @@ static void s_AddDeflineFromOrganismLine
             }
             defline_num++;
         }
-        /* now add new defline in correct position */
+         now add new defline in correct position 
         afrp->deflines = s_AddLineInfo (afrp->deflines, defline, 
                                         line_num, defline_offset);
         afrp->num_deflines ++;
     }
 }
+*/
 
-
-static void s_ReadSeqInfo(const char* line, int line_num, SAlignRawFilePtr afrp)
+static void s_ReadDefline
+(const char* line, 
+ int line_num, 
+ SAlignRawFilePtr afrp)
 {
     if (line == NULL || afrp == NULL) {
         return;
     }
 
-    if (line[0] != '>') {
-        const auto has_organism = (strstr(line, "org=") != NULL ||
-                                  (strstr(line, "organism=") != NULL));
-        if (!has_organism) {
-            return;
+    if (line[0] == '>') {
+        const char* defline_offset = strpbrk(line, " \t");
+
+        if (defline_offset) {
+            afrp->deflines = s_AddLineInfo(afrp->deflines, line, 
+                    line_num, reinterpret_cast<long>(defline_offset));
         }
+        else {
+            const int linelen = strlen(line);
+            afrp->deflines = s_AddLineInfo(afrp->deflines, line,
+                    line_num, reinterpret_cast<long>(line + linelen));
+        }
+        afrp->num_deflines++;
+        return;
+    }
+
+
+    if (NStr::FindNoCase(line, "org=") != NPOS ||
+        NStr::FindNoCase(line, "organism=") != NPOS) {
+        afrp->deflines = s_AddLineInfo(afrp->deflines, line, 
+                line_num, 0);
+        afrp->num_deflines++;
     }
 }
 
@@ -2852,6 +2873,7 @@ static void s_ReadSeqInfo(const char* line, int line_num, SAlignRawFilePtr afrp)
 /* This function is used to read any organism names that may appear in
  * string, including any modifiers that may appear after the organism name.
  */
+/*
 static void s_ReadOrgNamesFromText 
 (char *           string,
  int              line_num,
@@ -2915,7 +2937,7 @@ static void s_ReadOrgNamesFromText
         clp = s_FindOrganismComment (comment_end);
     }
 }
-
+*/
 
 /* The following group of functions manages the SAlignRawSeq structure,
  * which is used to track the IDs of sequences in the file, the sequence
@@ -3626,7 +3648,10 @@ s_ReadAlignFileRaw
         linestring = next_line->data;
         overall_line_count = next_line->line_num-1;
 
-        s_ReadOrgNamesFromText (linestring, overall_line_count, afrp);
+        //s_ReadOrgNamesFromText (linestring, overall_line_count, afrp);
+        s_ReadDefline(linestring, overall_line_count, afrp);
+
+
         if (*pformat == ALNFMT_FASTAGAP) {
             s_AfrpProcessFastaGap(afrp, & pattern_list, & last_line_was_marked_id, linestring, overall_line_count);
             continue;
@@ -5488,6 +5513,7 @@ static EBool s_ReprocessIds (SAlignRawFilePtr afrp)
         }
         s_RemoveOrganismCommentFromLine (arsp->id);
         id = s_GetIdFromString (arsp->id);
+    /*
         if (lip == NULL) {
             defline = s_GetDeflineFromIdString (arsp->id);
             afrp->deflines = s_AddLineInfo (afrp->deflines, defline,
@@ -5495,6 +5521,7 @@ static EBool s_ReprocessIds (SAlignRawFilePtr afrp)
             free (defline);
             afrp->num_deflines ++;
         }
+    */
         free (arsp->id);
         arsp->id = id;
         list = s_AddStringCount (arsp->id, line_num, list);
