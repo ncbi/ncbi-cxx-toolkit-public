@@ -1,0 +1,16 @@
+>seq1 [organism=val1][whole_replicon=val1]
+--GCAAGCATGCATGCAAAA
+TTTTGCGGCCCATGCATG--
+ATGCATGC
+>seq2 [organism=val1][whole replicon=val1]
+AT--ATGGATGCATGCAAAA
+TTTTGGGCCCCATGCATGCC
+--GCATGC
+>seq3 [organism=val1][phenotype=val1]
+ATGC--GCAAGCATGCAAAA
+TTTTGGGGCGCATGCATGCC
+AT--ATGC
+>seq4 [organism=val1][altitude=val1]
+ATGCAT--ATGGATGCAAAA
+TTTTGGGGCCCTTGCATGCC
+ATGC--GC
