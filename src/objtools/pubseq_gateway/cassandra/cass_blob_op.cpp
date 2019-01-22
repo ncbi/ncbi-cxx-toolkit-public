@@ -40,6 +40,7 @@
 #include "nannot_task/insert.hpp"
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/load_blob.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_task/delete_expired.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/nannot_task/fetch.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/SyncObj.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
@@ -216,6 +217,24 @@ void CCassBlobOp::InsertNAnnot(
         op_timeout_ms, m_Conn, m_Keyspace,
         blob, annot, max_retries,
         move(error_cb)
+    ));
+}
+
+void CCassBlobOp::FetchNAnnot(
+    unsigned int op_timeout_ms,
+    const string & accession,
+    int16_t version,
+    int16_t seq_id_type,
+    const vector<string>& annot_names,
+    TNAnnotConsumeCallback consume_callback,
+    TDataErrorCallback error_cb,
+    unique_ptr<CCassBlobWaiter> & waiter
+)
+{
+    waiter.reset(new CCassNAnnotTaskFetch(
+        op_timeout_ms, m_Conn, m_Keyspace,
+        accession, version, seq_id_type, annot_names,
+        move(consume_callback), move(error_cb)
     ));
 }
 

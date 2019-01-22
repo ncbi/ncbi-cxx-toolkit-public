@@ -114,6 +114,8 @@ class CNAnnotRecord {
     int16_t m_SeqIdType;
 };
 
+using TNAnnotConsumeCallback = function<bool(CNAnnotRecord &&)>;
+
 END_IDBLOB_SCOPE
 
 #endif  // OBJTOOLS__PUBSEQ_GATEWAY__IMPL__CASSANDRA__NANNOT__RECORD_HPP

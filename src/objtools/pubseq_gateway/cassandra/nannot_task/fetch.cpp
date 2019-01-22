@@ -54,8 +54,8 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     string accession,
     int16_t version,
     int16_t seq_id_type,
-    vector<string> annot_names,
-    TConsumeCallback consume_callback,
+    const vector<string> & annot_names,
+    TNAnnotConsumeCallback consume_callback,
     TDataErrorCallback data_error_cb
 )
     : CCassBlobWaiter(
@@ -65,7 +65,7 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     , m_Accession(move(accession))
     , m_Version(version)
     , m_SeqIdType(seq_id_type)
-    , m_AnnotNames(move(annot_names))
+    , m_AnnotNames(annot_names)
     , m_Consume(move(consume_callback))
 {}
 
@@ -76,7 +76,7 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     string accession,
     int16_t version,
     int16_t seq_id_type,
-    TConsumeCallback consume_callback,
+    TNAnnotConsumeCallback consume_callback,
     TDataErrorCallback data_error_cb
 )
     : CCassBlobWaiter(

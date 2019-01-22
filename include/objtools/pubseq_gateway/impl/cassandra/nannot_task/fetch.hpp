@@ -57,7 +57,6 @@ class CCassNAnnotTaskFetch
     };
 
  public:
-    using TConsumeCallback = function<bool(CNAnnotRecord &&)>;
     CCassNAnnotTaskFetch(
         unsigned int timeout_ms,
         shared_ptr<CCassConnection> connection,
@@ -65,8 +64,8 @@ class CCassNAnnotTaskFetch
         string accession,
         int16_t version,
         int16_t seq_id_type,
-        vector<string> annot_names,
-        TConsumeCallback consume_callback,
+        const vector<string> & annot_names,
+        TNAnnotConsumeCallback consume_callback,
         TDataErrorCallback data_error_cb
     );
 
@@ -77,7 +76,7 @@ class CCassNAnnotTaskFetch
         string accession,
         int16_t version,
         int16_t seq_id_type,
-        TConsumeCallback consume_callback,
+        TNAnnotConsumeCallback consume_callback,
         TDataErrorCallback data_error_cb
     );
 
@@ -89,7 +88,7 @@ class CCassNAnnotTaskFetch
     int16_t m_Version;
     int16_t m_SeqIdType;
     vector<string> m_AnnotNames;
-    TConsumeCallback m_Consume;
+    TNAnnotConsumeCallback m_Consume;
 };
 
 END_IDBLOB_SCOPE
