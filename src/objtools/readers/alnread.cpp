@@ -2848,13 +2848,12 @@ static void s_ReadDefline
         const char* defline_offset = strpbrk(line, " \t");
 
         if (defline_offset) {
-            afrp->deflines = s_AddLineInfo(afrp->deflines, line, 
-                    line_num, reinterpret_cast<long>(defline_offset));
+            afrp->deflines = s_AddLineInfo(afrp->deflines, defline_offset, 
+                    //line_num, reinterpret_cast<long>(defline_offset));
+                    line_num, 0);
         }
         else {
-            const int linelen = strlen(line);
-            afrp->deflines = s_AddLineInfo(afrp->deflines, line,
-                    line_num, reinterpret_cast<long>(line + linelen));
+            afrp->deflines = s_AddLineInfo(afrp->deflines, "", line_num, 0);
         }
         afrp->num_deflines++;
         return;

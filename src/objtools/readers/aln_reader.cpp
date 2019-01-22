@@ -394,6 +394,8 @@ void CAlnReader::Read(
         m_Seqs[i] = afp->sequences[i];
         m_Ids[i] = afp->ids[i];
     }
+
+    
     m_Organisms.resize(afp->num_organisms);
     for (int i = 0;  i < afp->num_organisms;  ++i) {
         if (afp->organisms[i]) {
@@ -402,16 +404,11 @@ void CAlnReader::Read(
             m_Organisms[i].erase();
         }
     }
+
     m_Deflines.resize(afp->num_deflines);
     for (int i = 0;  i < afp->num_deflines;  ++i) {
-        if (afp->deflines[i]) {
-            m_Deflines[i] = afp->deflines[i];
-        } else {
-            m_Deflines[i].erase();
-        }
+        m_Deflines[i] = NStr::TruncateSpaces(afp->deflines[i]);
     }
-
-
 
     AlignmentFileFree(afp);
 
