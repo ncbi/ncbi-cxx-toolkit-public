@@ -880,20 +880,29 @@ void CFlatSubmitterSeqidQVal::Format(TFlatQuals& q, const CTempString& name,
             if (NStr::StartsWith(dbname, "NZ_" )) {
                 dbname.erase(0, 3);
             }
-            if ( dbname.length() != 6 ) continue;
+            int num_letters = 0;
+            int num_digits = 0;
+            int len = dbname.length();
+            if ( len != 6 && len != 8 ) continue;
             bool bail = false;
-            for ( int i = 0; i < 4; i++ ) {
+            for ( int i = 0; i < len; i++ ) {
                 char ch = dbname[i];
-                if ( ! isupper(ch) && ! islower(ch) ) {
+                if ( isupper(ch) || islower(ch) ) {
+                    num_letters++;
+                    if ( num_digits > 0 ) {
+                        bail = true;
+                    }
+                } else if ( isdigit(ch) ) {
+                    num_digits++;
+                } else {
                     bail = true;
                 }
             }
-            if ( bail ) continue;
-            for ( int i = 4; i < 6; i++ ) {
-                char ch = dbname[i];
-                if ( ! isdigit(ch) ) {
-                    bail = true;
-                }
+            if ( num_letters != 4 && num_letters != 6 ) {
+                bail = true;
+            }
+            if ( num_digits != 2 ) {
+                bail = true;
             }
             if ( bail ) continue;
             if ( dbtag.IsSetTag() && dbtag.GetTag().IsStr() ) {
