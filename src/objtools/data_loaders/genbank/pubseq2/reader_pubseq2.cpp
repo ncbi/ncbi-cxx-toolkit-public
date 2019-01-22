@@ -402,7 +402,7 @@ static string s_GetCubbyUserName(const string& web_cookie)
     }
 
     if (cubby_user.empty())
-        cubby_user = GetProcessUserName();
+        cubby_user = CSystemInfo::GetUserName();
 
     return cubby_user;
 }

@@ -63,6 +63,8 @@
 
 #include <util/compress/zlib.hpp>
 
+#include <corelib/ncbi_cookies.hpp>
+
 #define DEFAULT_DB_SERVER   "PUBSEQ_OS_PUBLIC_GI64"
 #define DEFAULT_DB_USER     "anyone"
 #define DEFAULT_DB_PASSWORD "allowed"
@@ -443,7 +445,7 @@ void CPubseqReader::x_ConnectAtSlot(TConn conn_)
     }
     
     if ( m_SetCubbyUser ) {
-        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set cubby_user "+NStr::SQLEncode(GetProcessUserName())));
+        AutoPtr<CDB_LangCmd> cmd(conn->LangCmd("set cubby_user "+NStr::SQLEncode(CSystemInfo::GetUserName())));
         cmd->Send();
         cmd->DumpResults();
     }
@@ -1307,6 +1309,10 @@ void CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
 void CPubseqReader::SetIncludeHUP(bool include_hup, const string& web_cookie)
 {
     m_SetCubbyUser = include_hup;
+    if ( !web_cookie.empty() ) {
+        // link-in corelib classes used by CPubseqReader2
+        CHttpCookies();
+    }
 }
 
 
