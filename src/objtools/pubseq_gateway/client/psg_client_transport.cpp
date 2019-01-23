@@ -388,15 +388,13 @@ namespace HCT {
 
 /** http2_request */
 
-http2_request::http2_request(shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue, string path, string query) :
+http2_request::http2_request(shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue, string full_path) :
     m_session_data(nullptr),
     m_state(http2_request_state::rs_initial),
     m_stream_id(-1),
+    m_full_path(move(full_path)),
     m_reply(move(reply), move(queue))
 {
-    m_query = std::move(query);
-
-    m_full_path = path + "?" + m_query;
 }
 
 void http2_request::on_complete(uint32_t error_code)

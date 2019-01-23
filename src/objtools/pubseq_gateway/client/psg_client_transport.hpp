@@ -357,14 +357,11 @@ private:
     http2_request_state m_state;
     /* The stream ID of this stream */
     int32_t m_stream_id;
-
-    std::string m_query;
-
     std::string m_full_path;
     void do_complete();
     http2_reply m_reply;
 public:
-    http2_request(shared_ptr<SPSG_Reply> reply, std::shared_ptr<SPSG_Future> queue, std::string path, std::string query);
+    http2_request(shared_ptr<SPSG_Reply> reply, shared_ptr<SPSG_Future> queue, string full_path);
 
     ~http2_request()
     {

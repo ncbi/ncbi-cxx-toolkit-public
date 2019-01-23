@@ -69,7 +69,6 @@ const char* CPSG_Exception::GetErrCodeString(void) const
     {
         case eTimeout:          return "eTimeout";
         case eServerError:      return "eServerError";
-        case eUnknownRequest:   return "eUnknownRequest";
         case eInternalError:    return "eInternalError";
         case eParameterMissing: return "eParameterMissing";
         default:                return CException::GetErrCodeString();
@@ -341,31 +340,29 @@ string s_AddUseCache(ostringstream& os)
     return os.str();
 }
 
-string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Biodata* request_biodata)
+string CPSG_Request_Biodata::x_GetAbsPathRef() const
 {
     ostringstream os;
-    const auto& bio_id = request_biodata->GetBioId();
 
-    os << "seq_id=" << bio_id.Get();
+    os << "/ID/get?seq_id=" << m_BioId.Get();
 
-    if (const auto type = bio_id.GetType()) os << "&seq_id_type=" << type;
+    if (const auto type = m_BioId.GetType()) os << "&seq_id_type=" << type;
 
-    if (const auto tse = s_GetTSE(request_biodata->GetIncludeData())) os << "&tse=" << tse;
+    if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
 
     return s_AddUseCache(os);
 }
 
-string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Resolve* request_resolve)
+string CPSG_Request_Resolve::x_GetAbsPathRef() const
 {
     ostringstream os;
-    const auto& bio_id = request_resolve->GetBioId();
 
-    os << "seq_id=" << bio_id.Get() << "&fmt=json&psg_protocol=yes";
+    os << "/ID/resolve?seq_id=" << m_BioId.Get() << "&fmt=json&psg_protocol=yes";
 
-    if (const auto type = bio_id.GetType()) os << "&seq_id_type=" << type;
+    if (const auto type = m_BioId.GetType()) os << "&seq_id_type=" << type;
 
     auto value = "yes";
-    auto include_info = request_resolve->GetIncludeInfo();
+    auto include_info = m_IncludeInfo;
     const auto max_bit = (numeric_limits<unsigned>::max() >> 1) + 1;
 
     if (include_info & max_bit) {
@@ -387,17 +384,15 @@ string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Resolve* request_resolve)
     return s_AddUseCache(os);
 }
 
-string CPSG_Queue::SImpl::GetQuery(const CPSG_Request_Blob* request_blob)
+string CPSG_Request_Blob::x_GetAbsPathRef() const
 {
     ostringstream os;
 
-    os << "blob_id=" << request_blob->GetBlobId().Get();
+    os << "/ID/getblob?blob_id=" << m_BlobId.Get();
 
-    const auto& last_modified = request_blob->GetLastModified();
+    if (!m_LastModified.empty()) os << "&last_modified=" << m_LastModified;
 
-    if (!last_modified.empty()) os << "&last_modified=" << last_modified;
-
-    if (const auto tse = s_GetTSE(request_blob->GetIncludeData())) os << "&tse=" << tse;
+    if (const auto tse = s_GetTSE(m_IncludeData)) os << "&tse=" << tse;
 
     return s_AddUseCache(os);
 }
@@ -407,24 +402,9 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request,
     static HCT::io_coordinator ioc(m_Service);
 
     chrono::milliseconds wait_ms{};
-    shared_ptr<HCT::http2_request> http_request;
     auto reply = make_shared<SPSG_Reply>();
-
-    if (auto request_biodata = dynamic_cast<const CPSG_Request_Biodata*>(user_request.get())) {
-        string query(GetQuery(request_biodata));
-        http_request = make_shared<HCT::http2_request>(reply, m_Requests, "/ID/get", query);
-
-    } else if (auto request_resolve = dynamic_cast<const CPSG_Request_Resolve*>(user_request.get())) {
-        string query(GetQuery(request_resolve));
-        http_request = make_shared<HCT::http2_request>(reply, m_Requests, "/ID/resolve", query);
-
-    } else if (auto request_blob = dynamic_cast<const CPSG_Request_Blob*>(user_request.get())) {
-        string query(GetQuery(request_blob));
-        http_request = make_shared<HCT::http2_request>(reply, m_Requests, "/ID/getblob", query);
-
-    } else {
-        NCBI_THROW(CPSG_Exception, eUnknownRequest, "Unknown request type");
-    }
+    auto abs_path_ref = user_request->x_GetAbsPathRef();
+    auto http_request = make_shared<HCT::http2_request>(reply, m_Requests, move(abs_path_ref));
 
     for (;;) {
         if (ioc.add_request(http_request, wait_ms)) {

@@ -95,10 +95,6 @@ struct CPSG_Queue::SImpl
     bool IsEmpty() const;
 
 private:
-    static string GetQuery(const CPSG_Request_Biodata* request_biodata);
-    static string GetQuery(const CPSG_Request_Resolve* request_resolve);
-    static string GetQuery(const CPSG_Request_Blob* request_blob);
-
     struct SRequest;
     using TRequests = list<SRequest>;
 
