@@ -821,7 +821,11 @@ if (PYTHONINTERP_FOUND)
 
         set(PYTHON3 ${PYTHON_EXECUTABLE})
         set(CD_REPORTER "/am/ncbiapdata/bin/cd_reporter")
-        set(abs_top_srcdir ${abs_top_src_dir})
+        if (DEFINED NCBI_EXTERNAL_TREE_ROOT)
+            set(abs_top_srcdir ${NCBI_EXTERNAL_TREE_ROOT})
+        else()
+            set(abs_top_srcdir ${abs_top_src_dir})
+        endif()
         configure_file(${NCBI_TREE_BUILDCFG}/run_with_cd_reporter.py.in ${build_root}/build-system/run_with_cd_reporter.py)
 
         # copy to build_root and set executable permissions (workaround because configure_file doesn't set permissions)
