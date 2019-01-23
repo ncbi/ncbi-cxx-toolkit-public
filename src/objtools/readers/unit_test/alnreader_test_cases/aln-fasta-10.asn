@@ -10,7 +10,8 @@ Seq-entry ::= set {
           org {
             taxname "animal 1"
           }
-        }
+        },
+        title "cytochrome oxidase"
       },
       inst {
         repr raw,
@@ -28,7 +29,8 @@ Seq-entry ::= set {
           org {
             taxname "animal 2"
           }
-        }
+        },
+        title "cytochrome oxidase"
       },
       inst {
         repr raw,
@@ -40,6 +42,9 @@ Seq-entry ::= set {
     seq {
       id {
         local str "seq3"
+      },
+      descr {
+        title "cytochrome oxidase"
       },
       inst {
         repr raw,
@@ -57,7 +62,8 @@ Seq-entry ::= set {
           org {
             taxname "animal 4"
           }
-        }
+        },
+        title "cytochrome oxidase"
       },
       inst {
         repr raw,
@@ -75,7 +81,8 @@ Seq-entry ::= set {
           org {
             taxname "animal 5"
           }
-        }
+        },
+        title "cytochrome oxidase"
       },
       inst {
         repr raw,

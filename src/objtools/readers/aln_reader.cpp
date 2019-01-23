@@ -842,7 +842,7 @@ void CAlnReader::x_AddMods(const string& defline, CBioseq& bioseq)
 
     // Parse the defline string for modifiers
     CTitleParser::Apply(defline, mod_list, remainder);
-    if (mod_list.empty()) {
+    if (mod_list.empty() && NStr::IsBlank(remainder)) {
         return;
     } 
 

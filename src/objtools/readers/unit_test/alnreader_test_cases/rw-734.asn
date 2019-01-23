@@ -5,6 +5,10 @@ Seq-entry ::= set {
       id {
         local str "03_TAJ"
       },
+      descr {
+        title "HIV-1 isolate 03_TAJ from Tajikistan integrase (pol) gene,
+ partial cds."
+      },
       inst {
         repr raw,
         mol na,
@@ -21,7 +25,9 @@ Seq-entry ::= set {
           org {
             taxname "ia io"
           }
-        }
+        },
+        title "HIV-1 isolate 04_TAJ from Tajikistan integrase (pol) gene,
+ partial cds."
       },
       inst {
         repr raw,
@@ -34,6 +40,10 @@ Seq-entry ::= set {
     seq {
       id {
         local str "08_TAJ"
+      },
+      descr {
+        title "HIV-1 isolate 08_TAJ from Tajikistan integrase (pol) gene,
+ partial cds."
       },
       inst {
         repr raw,

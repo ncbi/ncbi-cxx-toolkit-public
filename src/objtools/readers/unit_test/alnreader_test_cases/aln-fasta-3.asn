@@ -5,6 +5,9 @@ Seq-entry ::= set {
       id {
         local str "seq1"
       },
+      descr {
+        title "gene COX"
+      },
       inst {
         repr raw,
         mol na,
@@ -15,6 +18,9 @@ Seq-entry ::= set {
     seq {
       id {
         local str "seq2"
+      },
+      descr {
+        title "gene COX"
       },
       inst {
         repr raw,
@@ -27,6 +33,9 @@ Seq-entry ::= set {
       id {
         local str "seq3"
       },
+      descr {
+        title "gene COX"
+      },
       inst {
         repr raw,
         mol na,
@@ -38,6 +47,9 @@ Seq-entry ::= set {
       id {
         local str "seq4"
       },
+      descr {
+        title "gene COX"
+      },
       inst {
         repr raw,
         mol na,
@@ -48,6 +60,9 @@ Seq-entry ::= set {
     seq {
       id {
         local str "seq5"
+      },
+      descr {
+        title "gene COX"
       },
       inst {
         repr raw,

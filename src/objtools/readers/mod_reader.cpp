@@ -574,7 +574,13 @@ void CTitleParser::Apply(const CTempString& title, TModList& mods, string& remai
         lb_pos = start_pos;
         if (x_FindBrackets(title, lb_pos, end_pos, eq_pos)) {
             if (lb_pos > start_pos) {
-                remainder.append(NStr::TruncateSpaces_Unsafe(title.substr(start_pos, lb_pos-start_pos)));
+                string left_remainder = title.substr(start_pos, lb_pos-start_pos);
+                if (!remainder.empty() && 
+                    !isspace(left_remainder.front()) &&
+                    !isspace(remainder.back())) {
+                    remainder.append(" ");
+                }
+                remainder.append(left_remainder);
             }
             if (eq_pos < end_pos) {
                 CTempString name = NStr::TruncateSpaces_Unsafe(title.substr(lb_pos+1, eq_pos-(lb_pos+1)));
@@ -584,6 +590,13 @@ void CTitleParser::Apply(const CTempString& title, TModList& mods, string& remai
             start_pos = end_pos+1;
         }
         else {
+            string right_remainder = title.substr(start_pos);
+            if (!remainder.empty() && 
+                !isspace(right_remainder.front()) &&
+                !isspace(remainder.back())) {
+                remainder.append(" ");
+            }
+            remainder.append(right_remainder);
             return;
         }
     }

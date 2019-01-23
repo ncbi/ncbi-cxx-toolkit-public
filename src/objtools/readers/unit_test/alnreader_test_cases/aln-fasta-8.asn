@@ -11,7 +11,7 @@ Seq-entry ::= set {
             taxname "animal 1"
           }
         },
-        title "gene COX"
+        title "gene COX cytochrome oxidase"
       },
       inst {
         repr raw,
@@ -30,7 +30,7 @@ Seq-entry ::= set {
             taxname "animal 2"
           }
         },
-        title "gene COX"
+        title "gene COX cytochrome oxidase"
       },
       inst {
         repr raw,
@@ -49,7 +49,7 @@ Seq-entry ::= set {
             taxname "animal 3"
           }
         },
-        title "gene COX"
+        title "gene COX cytochrome oxidase"
       },
       inst {
         repr raw,
@@ -68,7 +68,7 @@ Seq-entry ::= set {
             taxname "animal 4"
           }
         },
-        title "gene COX"
+        title "gene COX cytochrome oxidase"
       },
       inst {
         repr raw,
@@ -87,7 +87,7 @@ Seq-entry ::= set {
             taxname "animal 5"
           }
         },
-        title "gene COX"
+        title "gene COX cytochrome oxidase"
       },
       inst {
         repr raw,

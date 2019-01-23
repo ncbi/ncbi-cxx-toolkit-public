@@ -43,6 +43,9 @@ Seq-entry ::= set {
       id {
         local str "seq3"
       },
+      descr {
+        title "gene COX"
+      },
       inst {
         repr raw,
         mol na,
