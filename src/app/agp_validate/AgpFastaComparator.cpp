@@ -498,7 +498,7 @@ string CAgpFastaComparator::CTmpSeqVecStorage::x_GetTmpDir(void)
 {
     std::stringstream dir_strm;
     dir_strm << CDir::GetTmpDir() << '/'
-             << "AgpFastaComparator." << CProcess::GetCurrentPid()
+             << "AgpFastaComparator." << CCurrentProcess::GetPid()
              << "."
              << CTime(CTime::eCurrent).AsString("YMDTh:m:s.l");
     return dir_strm.str();
