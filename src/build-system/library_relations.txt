@@ -526,6 +526,9 @@ gpipe_jira needs gpipe_curl
 gpipe_jira needs3party $(GSOAP_LIBS)
 gpipe_kmer needs gpipe_objutil
 gpipe_kmer needs sampling
+gpipe_kmer_metadata_cache needs gpipe_kmer
+gpipe_kmer_metadata_cache needs3party $(MONGODB3_LIBS)
+gpipe_kmer_metadata_cache needs3party $(OPENSSL_LIBS)
 gpipe_kpi needs xmlwrapp
 gpipe_meta_access needs xncbi
 gpipe_minhash needs xncbi
