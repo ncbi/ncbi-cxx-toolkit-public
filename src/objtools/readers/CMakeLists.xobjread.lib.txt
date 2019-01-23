@@ -14,9 +14,10 @@ NCBI_begin_lib(xobjread)
     vcf_reader
     best_feat_finder source_mod_parser fasta_exception agp_converter
     ucscregion_reader struct_cmt_reader
+    mod_reader mod_error descr_mod_apply feature_mod_apply
     message_listener line_error
   )
-  NCBI_uses_toolkit_libraries(submit seqset)
+  NCBI_uses_toolkit_libraries(submit seqset xlogging)
   NCBI_project_watchers(jcherry sapojnik bollin ludwigf ucko gotvyans foleyjp)
 NCBI_end_lib()
 
@@ -35,11 +36,12 @@ add_library(xobjread
     vcf_reader
     best_feat_finder source_mod_parser fasta_exception agp_converter
     ucscregion_reader struct_cmt_reader
+    mod_reader mod_error descr_mod_apply feature_mod_apply
     message_listener line_error
 )
 
 target_link_libraries(xobjread 
-    submit
+    submit xlogging
 )
 add_dependencies(xobjread
     seqset
