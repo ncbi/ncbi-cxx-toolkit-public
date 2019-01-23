@@ -63,6 +63,7 @@ class CCassBlobTaskLoadBlob
 
  public:
     using TBlobPropsCallback = function<void(CBlobRecord const & blob, bool isFound)>;
+    using TBlobChunkCallbackEx = function<void(CBlobRecord const & blob,  const unsigned char * data, unsigned int size, int chunk_no)>;
 
     CCassBlobTaskLoadBlob(
         unsigned int op_timeout_ms,
@@ -107,7 +108,7 @@ class CCassBlobTaskLoadBlob
 
     unique_ptr<CBlobRecord> ConsumeBlobRecord();
     bool IsBlobPropsFound() const;
-    void SetChunkCallback(TBlobChunkCallback callback);
+    void SetChunkCallback(TBlobChunkCallbackEx callback);
     void SetPropsCallback(TBlobPropsCallback callback);
     void SetDataReadyCB(TDataReadyCallback callback, void * data);
 
@@ -123,7 +124,7 @@ class CCassBlobTaskLoadBlob
     void x_RequestChunksAhead(void);
     void x_RequestChunk(CCassQuery& qry, int32_t chunk_no);
 
-    TBlobChunkCallback m_ChunkCallback;
+    TBlobChunkCallbackEx m_ChunkCallback;
     TBlobPropsCallback m_PropsCallback;
     unique_ptr<CBlobRecord> m_Blob;
     CBlobRecord::TTimestamp m_Modified;

@@ -62,7 +62,8 @@ enum ECassTristate {
     eFalse
 };
 
-using TBlobChunkCallback = function<void(const unsigned char * data, unsigned int size, int chunk_no, int64_t flags)>;
+using TBlobChunkCallback = function<void(const unsigned char * data, unsigned int size, int chunk_no)>;
+using TPropsCallback     = function<void(const SBlobStat& stat, bool isFound)>;
 using TDataErrorCallback = function<void(
     CRequestStatus::ECode status,
     int code,
@@ -320,6 +321,10 @@ class CCassBlobLoader: public CCassBlobWaiter
     SBlobStat GetBlobStat(void) const;
     uint64_t GetBlobSize(void) const;
     int32_t GetTotalChunksInBlob(void) const;
+    void SetPropsCallback(TPropsCallback prop_cb)
+    {
+        m_PropsCallback = std::move(prop_cb);
+    }
 
     void Cancel(void);
     virtual bool Restart() override;
@@ -346,6 +351,7 @@ class CCassBlobLoader: public CCassBlobWaiter
     bool x_AreAllChunksProcessed(void);
     void x_MarkChunkProcessed(size_t  chunk_no);
 
+    TPropsCallback      m_PropsCallback;
     bool                m_StatLoaded;
     SBlobStat           m_BlobStat;
     TBlobChunkCallback  m_DataCb;
