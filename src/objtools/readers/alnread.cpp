@@ -216,7 +216,10 @@ sReportError(
         return;
     }
     eip->category = errCode;
-    eip->id = strdup(id ? id : "");
+    if (!id) {
+        id = strdup("");
+    }
+    eip->id;
     eip->line_num = lineNumber;
     eip->message = errMessage;
     errReporter(eip, errUserData);
