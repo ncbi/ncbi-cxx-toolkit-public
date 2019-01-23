@@ -18,6 +18,10 @@ Seq-entry ::= set {
       id {
         gi 786430
       },
+      descr {
+        title "potassium channel blocking toxin 15-1 [Leiurus
+ quinquestriatus=scorpions, ssp. hebreus, venom, Peptide Partial, 32 aa]"
+      },
       inst {
         repr raw,
         mol aa,

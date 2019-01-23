@@ -36,13 +36,13 @@
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objtools/readers/fasta_reader_utils.hpp>
 #include <objtools/readers/message_listener.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
 
 BEGIN_NCBI_SCOPE
-
 // class CAlnError holds error information
 class NCBI_XOBJREAD_EXPORT CAlnError
 {
@@ -267,6 +267,9 @@ private:
     void x_AssignDensegIds(
         TFastaFlags fasta_flags,
         objects::CDense_seg& denseg);
+
+    void x_AddMods(const string& defline, objects::CBioseq& bioseq);
+
 protected:
     virtual CRef<objects::CSeq_id> GenerateID(const string& fasta_defline, 
         const TSeqPos& line_number,

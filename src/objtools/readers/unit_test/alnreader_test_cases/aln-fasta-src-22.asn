@@ -5,6 +5,19 @@ Seq-entry ::= set {
       id {
         local str "seq1"
       },
+      descr {
+        source {
+          org {
+            taxname "val1"
+          },
+          subtype {
+            {
+              subtype frequency,
+              name "val1"
+            }
+          }
+        }
+      },
       inst {
         repr raw,
         mol na,
@@ -15,6 +28,14 @@ Seq-entry ::= set {
     seq {
       id {
         local str "seq2"
+      },
+      descr {
+        source {
+          org {
+            taxname "val1"
+          }
+        },
+        title "[germline=val1]"
       },
       inst {
         repr raw,
@@ -27,6 +48,14 @@ Seq-entry ::= set {
       id {
         local str "seq3"
       },
+      descr {
+        source {
+          org {
+            taxname "val1"
+          }
+        },
+        title "[rearranged=val1]"
+      },
       inst {
         repr raw,
         mol na,
@@ -37,6 +66,19 @@ Seq-entry ::= set {
     seq {
       id {
         local str "seq4"
+      },
+      descr {
+        source {
+          org {
+            taxname "val1"
+          },
+          subtype {
+            {
+              subtype lab-host,
+              name "val1"
+            }
+          }
+        }
       },
       inst {
         repr raw,

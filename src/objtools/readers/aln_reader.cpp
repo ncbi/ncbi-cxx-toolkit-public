@@ -48,6 +48,9 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objtools/readers/fasta.hpp>
+#include <objtools/readers/mod_reader.hpp>
+#include <objtools/logging/listener.hpp>
+#include <cassert>
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Align
 
@@ -405,9 +408,19 @@ void CAlnReader::Read(
         }
     }
 
-    m_Deflines.resize(afp->num_deflines);
-    for (int i = 0;  i < afp->num_deflines;  ++i) {
-        m_Deflines[i] = NStr::TruncateSpaces(afp->deflines[i]);
+   
+
+    const auto num_deflines = afp->num_deflines;
+    if (num_deflines) {
+        if (num_deflines == m_Ids.size()) {
+            m_Deflines.resize(afp->num_deflines);
+            for (int i=0;  i< num_deflines;  ++i) {
+                m_Deflines[i] = NStr::TruncateSpaces(afp->deflines[i]);
+            }
+        }
+        else {
+            // Report an error - cannot associate deflines with sequences
+        }
     }
 
     AlignmentFileFree(afp);
@@ -791,11 +804,67 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags)
             data.SetIupacna().Set(seq_str);
             CSeqportUtil::Pack(&data);
         }
-
     }
-    
-    
+
+    if (!m_Deflines.empty()) {
+        int i=0;
+        for (auto& pSeqEntry : seq_set) {
+            x_AddMods(m_Deflines[i++], pSeqEntry->SetSeq());
+        }
+    }
+
     return m_Entry;
+}
+
+
+static void s_AppendMods(
+    const CModHandler::TModList& mods,
+    string& title
+    )
+{
+    for (const auto& mod : mods) {
+        title.append(" [" 
+            + mod.GetName()
+            + "=" 
+            + mod.GetValue()
+            + "]");
+    }
+}
+
+void CAlnReader::x_AddMods(const string& defline, CBioseq& bioseq)
+{
+    if (NStr::IsBlank(defline)) {
+        return;
+    }
+
+    CModHandler::TModList mod_list;
+    string remainder;
+
+    // Parse the defline string for modifiers
+    CTitleParser::Apply(defline, mod_list, remainder);
+    if (mod_list.empty()) {
+        return;
+    } 
+
+    unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
+
+    CModHandler mod_handler(pMessageListener.get());
+    CModHandler::TModList rejected_mods;
+    mod_handler.AddMods(mod_list, CModHandler::eAppendReplace, rejected_mods);
+    s_AppendMods(rejected_mods, remainder);
+
+    // Apply modifiers to the bioseq
+    CModHandler::TModList skipped_mods;
+    CModAdder::Apply(mod_handler, bioseq, pMessageListener.get(), skipped_mods);
+    s_AppendMods(skipped_mods, remainder);
+
+    // Add title string
+    NStr::TruncateSpacesInPlace(remainder);
+    if (!remainder.empty()) {
+        auto pDesc = Ref(new CSeqdesc());
+        pDesc->SetTitle() = remainder;
+        bioseq.SetDescr().Set().push_back(move(pDesc));
+    }
 }
 
 

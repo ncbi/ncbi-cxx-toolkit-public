@@ -5,6 +5,13 @@ Seq-entry ::= set {
       id {
         local str "seq1"
       },
+      descr {
+        source {
+          org {
+            taxname "animal 1"
+          }
+        }
+      },
       inst {
         repr raw,
         mol na,
@@ -15,6 +22,13 @@ Seq-entry ::= set {
     seq {
       id {
         local str "seq2"
+      },
+      descr {
+        source {
+          org {
+            taxname "animal 2"
+          }
+        }
       },
       inst {
         repr raw,
@@ -27,6 +41,13 @@ Seq-entry ::= set {
       id {
         local str "seq3"
       },
+      descr {
+        source {
+          org {
+            taxname "animal 3"
+          }
+        }
+      },
       inst {
         repr raw,
         mol na,
@@ -38,6 +59,13 @@ Seq-entry ::= set {
       id {
         local str "seq4"
       },
+      descr {
+        source {
+          org {
+            taxname "animal 4"
+          }
+        }
+      },
       inst {
         repr raw,
         mol na,
@@ -48,6 +76,13 @@ Seq-entry ::= set {
     seq {
       id {
         local str "seq5"
+      },
+      descr {
+        source {
+          org {
+            taxname "animal 5"
+          }
+        }
       },
       inst {
         repr raw,

@@ -5,6 +5,21 @@ Seq-entry ::= set {
       id {
         local str "seq1"
       },
+      descr {
+        source {
+          org {
+            taxname "val1",
+            orgname {
+              mod {
+                {
+                  subtype acronym,
+                  subname "val1"
+                }
+              }
+            }
+          }
+        }
+      },
       inst {
         repr raw,
         mol na,
@@ -15,6 +30,21 @@ Seq-entry ::= set {
     seq {
       id {
         local str "seq2"
+      },
+      descr {
+        source {
+          org {
+            taxname "val1",
+            orgname {
+              mod {
+                {
+                  subtype nat-host,
+                  subname "val1"
+                }
+              }
+            }
+          }
+        }
       },
       inst {
         repr raw,
@@ -27,6 +57,21 @@ Seq-entry ::= set {
       id {
         local str "seq3"
       },
+      descr {
+        source {
+          org {
+            taxname "val1",
+            orgname {
+              mod {
+                {
+                  subtype nat-host,
+                  subname "val1"
+                }
+              }
+            }
+          }
+        }
+      },
       inst {
         repr raw,
         mol na,
@@ -37,6 +82,21 @@ Seq-entry ::= set {
     seq {
       id {
         local str "seq4"
+      },
+      descr {
+        source {
+          org {
+            taxname "val1",
+            orgname {
+              mod {
+                {
+                  subtype nat-host,
+                  subname "val1"
+                }
+              }
+            }
+          }
+        }
       },
       inst {
         repr raw,

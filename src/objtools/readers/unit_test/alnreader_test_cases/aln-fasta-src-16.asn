@@ -5,6 +5,21 @@ Seq-entry ::= set {
       id {
         local str "seq1"
       },
+      descr {
+        source {
+          org {
+            taxname "val1",
+            orgname {
+              mod {
+                {
+                  subtype type-material,
+                  subname "val1"
+                }
+              }
+            }
+          }
+        }
+      },
       inst {
         repr raw,
         mol na,
@@ -15,6 +30,19 @@ Seq-entry ::= set {
     seq {
       id {
         local str "seq2"
+      },
+      descr {
+        source {
+          org {
+            taxname "val1"
+          },
+          subtype {
+            {
+              subtype other,
+              name "val1"
+            }
+          }
+        }
       },
       inst {
         repr raw,
@@ -27,6 +55,19 @@ Seq-entry ::= set {
       id {
         local str "seq3"
       },
+      descr {
+        source {
+          org {
+            taxname "val1"
+          },
+          subtype {
+            {
+              subtype chromosome,
+              name "val1"
+            }
+          }
+        }
+      },
       inst {
         repr raw,
         mol na,
@@ -37,6 +78,19 @@ Seq-entry ::= set {
     seq {
       id {
         local str "seq4"
+      },
+      descr {
+        source {
+          org {
+            taxname "val1"
+          },
+          subtype {
+            {
+              subtype map,
+              name "val1"
+            }
+          }
+        }
       },
       inst {
         repr raw,

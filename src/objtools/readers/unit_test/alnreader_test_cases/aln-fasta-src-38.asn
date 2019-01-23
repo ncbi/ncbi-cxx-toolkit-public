@@ -5,6 +5,19 @@ Seq-entry ::= set {
       id {
         local str "seq1"
       },
+      descr {
+        source {
+          org {
+            taxname "val1"
+          },
+          subtype {
+            {
+              subtype other,
+              name "val1"
+            }
+          }
+        }
+      },
       inst {
         repr raw,
         mol na,
@@ -15,6 +28,24 @@ Seq-entry ::= set {
     seq {
       id {
         local str "seq2"
+      },
+      descr {
+        user {
+          type str "DBLink",
+          data {
+            {
+              label str "BioProject",
+              data strs {
+                "val1"
+              }
+            }
+          }
+        },
+        source {
+          org {
+            taxname "val1"
+          }
+        }
       },
       inst {
         repr raw,
@@ -27,6 +58,24 @@ Seq-entry ::= set {
       id {
         local str "seq3"
       },
+      descr {
+        user {
+          type str "DBLink",
+          data {
+            {
+              label str "BioSample",
+              data strs {
+                "val1"
+              }
+            }
+          }
+        },
+        source {
+          org {
+            taxname "val1"
+          }
+        }
+      },
       inst {
         repr raw,
         mol na,
@@ -37,6 +86,199 @@ Seq-entry ::= set {
     seq {
       id {
         local str "seq4"
+      },
+      descr {
+        source {
+          org {
+            taxname "val1",
+            common "val1",
+            orgname {
+              mod {
+                {
+                  subtype acronym,
+                  subname "val1"
+                },
+                {
+                  subtype anamorph,
+                  subname "val1"
+                },
+                {
+                  subtype authority,
+                  subname "val1"
+                },
+                {
+                  subtype bio-material,
+                  subname "val1"
+                },
+                {
+                  subtype biotype,
+                  subname "val1"
+                },
+                {
+                  subtype biovar,
+                  subname "val1"
+                },
+                {
+                  subtype breed,
+                  subname "val1"
+                },
+                {
+                  subtype chemovar,
+                  subname "val1"
+                },
+                {
+                  subtype cultivar,
+                  subname "val1"
+                },
+                {
+                  subtype culture-collection,
+                  subname "val1"
+                },
+                {
+                  subtype ecotype,
+                  subname "val1"
+                },
+                {
+                  subtype forma,
+                  subname "val1"
+                },
+                {
+                  subtype forma-specialis,
+                  subname "val1"
+                },
+                {
+                  subtype gb-acronym,
+                  subname "val1"
+                },
+                {
+                  subtype gb-anamorph,
+                  subname "val1"
+                },
+                {
+                  subtype gb-synonym,
+                  subname "val1"
+                },
+                {
+                  subtype group,
+                  subname "val1"
+                },
+                {
+                  subtype isolate,
+                  subname "val1"
+                },
+                {
+                  subtype metagenome-source,
+                  subname "val1"
+                },
+                {
+                  subtype nat-host,
+                  subname "val1"
+                },
+                {
+                  subtype pathovar,
+                  subname "val1"
+                },
+                {
+                  subtype serogroup,
+                  subname "val1"
+                },
+                {
+                  subtype serotype,
+                  subname "val1"
+                },
+                {
+                  subtype serovar,
+                  subname "val1"
+                },
+                {
+                  subtype specimen-voucher,
+                  subname "val1"
+                },
+                {
+                  subtype strain,
+                  subname "val1"
+                },
+                {
+                  subtype sub-species,
+                  subname "val1"
+                },
+                {
+                  subtype subgroup,
+                  subname "val1"
+                },
+                {
+                  subtype substrain,
+                  subname "val1"
+                },
+                {
+                  subtype subtype,
+                  subname "val1"
+                },
+                {
+                  subtype synonym,
+                  subname "val1"
+                },
+                {
+                  subtype teleomorph,
+                  subname "val1"
+                },
+                {
+                  subtype type,
+                  subname "val1"
+                },
+                {
+                  subtype type-material,
+                  subname "val1"
+                },
+                {
+                  subtype variety,
+                  subname "val1"
+                }
+              }
+            }
+          },
+          subtype {
+            {
+              subtype whole-replicon,
+              name "val1"
+            }
+          },
+          pcr-primers {
+            {
+              forward {
+                {
+                  seq "val1",
+                  name "val1"
+                }
+              },
+              reverse {
+                {
+                  seq "val1",
+                  name "val1"
+                }
+              }
+            }
+          }
+        },
+        user {
+          type str "DBLink",
+          data {
+            {
+              label str "BioProject",
+              data strs {
+                "val1"
+              }
+            },
+            {
+              label str "BioSample",
+              data strs {
+                "val1"
+              }
+            }
+          }
+        },
+        title "[environmental-sample=val1] [germline=val1] [metagenomic=val1]
+ [rearranged=val1] [transgenic=val1]"
       },
       inst {
         repr raw,

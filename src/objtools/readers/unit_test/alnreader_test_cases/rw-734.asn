@@ -16,10 +16,18 @@ Seq-entry ::= set {
       id {
         local str "04_TAJ"
       },
+      descr {
+        source {
+          org {
+            taxname "ia io"
+          }
+        }
+      },
       inst {
         repr raw,
         mol na,
         length 15,
+        topology circular,
         seq-data ncbi2na '02A57F00'H
       }
     },
