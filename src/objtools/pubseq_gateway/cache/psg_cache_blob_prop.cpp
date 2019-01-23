@@ -58,7 +58,7 @@ void CPubseqGatewayCacheBlobProp::Open(const vector<string>& sat_names) {
     for (const auto & it : sat_names) {
         lmdb::dbi dbi = 0;
         if (!it.empty()) {
-            string sat_dbi = string("#SAT") + to_string(sat);
+            string sat_dbi = string("#DATA[") + to_string(sat) + "]";
             try {
                 dbi = lmdb::dbi::open(rdtxn, sat_dbi.c_str(), 0);
             }
