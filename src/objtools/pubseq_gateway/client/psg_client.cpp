@@ -494,16 +494,24 @@ EPSG_Status s_GetStatus(TTsPtr ts, CDeadline deadline)
     assert(ts);
 
     for (;;) {
-        switch (ts->GetLock()->state.GetState()) {
-            case SPSG_Reply::SState::eSuccess:  return EPSG_Status::eSuccess;
+        auto locked = ts->GetLock();
+
+        switch (locked->state.GetState()) {
             case SPSG_Reply::SState::eCanceled: return EPSG_Status::eCanceled;
             case SPSG_Reply::SState::eNotFound: return EPSG_Status::eNotFound;
             case SPSG_Reply::SState::eError:    return EPSG_Status::eError;
+
+            case SPSG_Reply::SState::eSuccess:
+                if (locked->expected.template Cmp<equal_to>(locked->received)) return EPSG_Status::eSuccess;
+
+                locked->state.AddError("Protocol error: received less than expected");
+                return EPSG_Status::eError;
 
             default: // SPSG_Reply::SState::eInProgress;
                 if (deadline.IsExpired()) return EPSG_Status::eInProgress;
         }
 
+        locked.Unlock();
         auto wait_ms = RemainingTimeMs(deadline);
         ts->WaitFor(wait_ms);
     }

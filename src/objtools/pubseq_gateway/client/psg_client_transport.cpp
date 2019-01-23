@@ -290,6 +290,16 @@ void SPSG_Receiver::Add()
         item_ts = &m_Reply->reply_item;
 
     } else {
+        auto reply_item_locked = m_Reply->reply_item.GetLock();
+        auto& reply_item = *reply_item_locked;
+        ++reply_item.received;
+
+        if (reply_item.expected.Cmp<less>(reply_item.received)) {
+            reply_item.state.AddError("Protocol error: received more than expected");
+        }
+
+        reply_item_locked.Unlock();
+
         auto item_id = args.GetValue("item_id");
         auto& item_by_id = m_ItemsByID[item_id];
 
@@ -300,15 +310,6 @@ void SPSG_Receiver::Add()
             item_by_id = &items.back();
             items_locked.Unlock();
             item_by_id->GetLock()->args = args;
-            auto reply_item_locked = m_Reply->reply_item.GetLock();
-            auto& reply_item = *reply_item_locked;
-            ++reply_item.received;
-
-            if (reply_item.expected.Cmp<less>(reply_item.received)) {
-                reply_item.state.AddError("Protocol error: received more than expected");
-            }
-
-            reply_item_locked.Unlock();
             auto reply_item_ts = &m_Reply->reply_item;
             reply_item_ts->NotifyOne();
             m_Queue->NotifyOne();
@@ -1246,7 +1247,7 @@ void http2_session::process_requests()
 
                     bool want_write = nghttp2_session_want_write(m_session) != 0;
                     if (!want_write) {
-                        ERR_POST(Warning << "reached max_requests " << m_num_requests.load());
+                        ERR_POST(Trace << "reached max_requests " << m_num_requests.load());
                         break;
                     }
                     if (!fetch_ng_data(false)) {
