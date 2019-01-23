@@ -267,15 +267,6 @@ shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SRequest::GetNextReply()
         // A reply has already been returned
         if (reply_item.state.Returned()) return {};
 
-        auto returned = [](SPSG_Reply::SItem::TTS& item) { return item.GetLock()->state.Returned(); };
-        if (auto items_locked = m_Reply->items.GetLock()) {
-            auto& items = *items_locked;
-
-            // No reply items to return
-            if (all_of(items.begin(), items.end(), returned) &&
-                    reply_item.expected.Cmp<less_equal>(reply_item.received)) return {};
-        }
-
         reply_item.state.SetReturned();
     }
 
@@ -296,7 +287,11 @@ void CPSG_Queue::SImpl::SRequest::Reset()
 
 bool CPSG_Queue::SImpl::SRequest::IsEmpty() const
 {
-    if (m_Reply->reply_item.GetLock()->state.InProgress()) return false;
+    if (auto reply_item_locked = m_Reply->reply_item.GetLock()) {
+        const auto& state = reply_item_locked->state;
+
+        if (state.InProgress() || !state.Returned()) return false;
+    }
 
     auto items_locked = m_Reply->items.GetLock();
     auto& items = *items_locked;
