@@ -97,7 +97,7 @@ struct SPSG_Future
     void NotifyOne()
     {
         unique_lock<mutex> lock(m_Mutex);
-        m_Signal = true;
+        ++m_Signal;
         m_CV.notify_one();
     }
 
@@ -105,16 +105,15 @@ struct SPSG_Future
     void WaitFor(const TDuration& duration)
     {
         unique_lock<mutex> lock(m_Mutex);
-        auto p = [&](){ return m_Signal; };
-        if (!m_Signal) m_CV.wait_for(lock, duration, p);
-        m_Signal = false;
+        auto p = [&](){ return m_Signal > 0; };
+        if (p() || m_CV.wait_for(lock, duration, p)) --m_Signal;
     }
 
 protected:
     mutable mutex m_Mutex;
 
 private:
-    bool m_Signal = false;
+    int m_Signal = 0;
     condition_variable m_CV;
 };
 
