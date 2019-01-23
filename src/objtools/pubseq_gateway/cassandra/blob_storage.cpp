@@ -39,6 +39,59 @@
 BEGIN_IDBLOB_SCOPE
 
 
+bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
+                               shared_ptr<CCassConnection>  conn,
+                               vector<tuple<string, ECassSchemaType>> &  mapping,
+                               string &  resolver_keyspace,
+                               ECassSchemaType  resolver_schema,
+                               string &  err_msg)
+{
+    bool rv = false;
+    err_msg = "sat2keyspace info is empty";
+    resolver_keyspace.clear();
+    
+    shared_ptr<CCassQuery>  query = conn->NewQuery();
+
+    query->SetSQL("SELECT\n"
+                  "    sat,\n"
+                  "    keyspace_name,\n"
+                  "    schema_type\n"
+                  "FROM"
+                  "    " + mapping_keyspace + ".sat2keyspace", 0);
+    query->Query(KEYSPACE_MAPPING_CONSISTENCY, false, false);
+
+    while (query->NextRow() == ar_dataready) {
+        int32_t     sat = query->FieldGetInt32Value(0);
+        string      name = query->FieldGetStrValue(1);
+        ECassSchemaType schema_type = static_cast<ECassSchemaType>(query->FieldGetInt32Value(2));
+        
+        if (schema_type == resolver_schema) {
+            if (resolver_keyspace.empty()) {
+                resolver_keyspace = name;                
+                rv = true;
+            }
+            else {
+                // More than one resolver keyspace
+                err_msg = "More than one resolver keyspace in the " +
+                          mapping_keyspace + ".sat2keyspace table";
+                rv = false;
+                break;
+            }
+        }
+        else if (sat >= 0) {
+            while (static_cast<int32_t>(mapping.size()) <= sat)
+                mapping.push_back(make_tuple("", eUnknownSchema));
+            mapping[sat] = make_tuple(name, schema_type);
+        }
+    }
+    if (rv && mapping.empty()) {
+        err_msg = "sat2keyspace is incomplete";
+        rv = false;
+    }
+    return rv;
+}
+
+
 void FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
                                shared_ptr<CCassConnection>  conn,
                                vector<string> &  mapping,
@@ -47,36 +100,14 @@ void FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
                                ECassSchemaType  resolver_schema,
                                string &  err_msg)
 {
-    shared_ptr<CCassQuery>  query = conn->NewQuery();
-
-    query->SetSQL("SELECT sat, keyspace_name, schema_type FROM " +
-                  mapping_keyspace + ".sat2keyspace", 0);
-    query->Query(KEYSPACE_MAPPING_CONSISTENCY, false, false);
-
-    while (query->NextRow() == ar_dataready) {
-        int32_t     sat = query->FieldGetInt32Value(0);
-        string      name = query->FieldGetStrValue(1);
-        int32_t     schema_type = query->FieldGetInt32Value(2);
-
-        if (schema_type == mapping_schema) {
-            while (static_cast<int32_t>(mapping.size()) <= sat)
-                mapping.push_back("");
-            mapping[sat] = name;
-            continue;
-        }
-
-        if (schema_type == resolver_schema) {
-            if (resolver_keyspace.empty()) {
-                resolver_keyspace = name;
-                continue;
-            }
-
-            // More than one resolver keyspace
-            err_msg = "More than one resolver keyspace in the " +
-                      mapping_keyspace + ".sat2keyspace table";
-            break;
+    vector<tuple<string, ECassSchemaType>> lmapping;
+    if (FetchSatToKeyspaceMapping(mapping_keyspace, conn, lmapping, resolver_keyspace, resolver_schema, err_msg)) {
+        for (size_t sat_id = 0; sat_id < lmapping.size(); ++sat_id) {
+            ECassSchemaType  schema = get<1>(lmapping[sat_id]);
+            mapping.push_back(schema == mapping_schema ? get<0>(lmapping[sat_id]) : "");
         }
     }
+
 }
 
 

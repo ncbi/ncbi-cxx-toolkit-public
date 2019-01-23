@@ -327,6 +327,8 @@ void CCassBlobLoader::Wait1(void)
                         int64_t len = qry->FieldGetBlobRaw(4, &rawdata);
                         m_RemainingSize -= len;
                         m_StatLoaded = true;
+                        if (m_PropsCallback)
+                            m_PropsCallback(m_BlobStat, true);
                         if ((m_BlobStat.flags & (bfCheckFailed | bfComplete)) != bfComplete) {
                             snprintf(msg, sizeof(msg),
                                     "Blob failed check or it's "
@@ -358,8 +360,8 @@ void CCassBlobLoader::Wait1(void)
                                       eDiag_Error, msg);
                             } else {
                                 m_State = eDone;
-                                m_DataCb(rawdata, len, 0, m_BlobStat.flags);
-                                m_DataCb(nullptr, 0, -1, m_BlobStat.flags);
+                                m_DataCb(rawdata, len, 0);
+                                m_DataCb(nullptr, 0, -1);
                             }
                             break;
                         } else { // multi-chunk
@@ -369,6 +371,8 @@ void CCassBlobLoader::Wait1(void)
                         }
                     } else {
                         if (!m_StatLoaded) {
+                            if (m_PropsCallback)
+                                m_PropsCallback(m_BlobStat, false);
                             // No data at all, i.e. there is no such a blob
                             // in the DB
                             string  msg = "Blob not found, key: " + m_Keyspace +
@@ -439,7 +443,7 @@ void CCassBlobLoader::Wait1(void)
                                 return;
                             }
 
-                            m_DataCb(rawdata, len, ready_chunk_no, m_BlobStat.flags);
+                            m_DataCb(rawdata, len, ready_chunk_no);
                             x_MarkChunkProcessed(ready_chunk_no);
                             x_RequestChunksAhead();
                             continue;
@@ -558,7 +562,7 @@ void CCassBlobLoader::Wait1(void)
                                   eDiag_Error, msg);
                         } else {
                             m_State = eDone;
-                            m_DataCb(nullptr, 0, -1, m_BlobStat.flags);
+                            m_DataCb(nullptr, 0, -1);
                         }
                     } else if (wr == ar_wait) {
                         break;

@@ -127,7 +127,7 @@ bool CCassBlobTaskLoadBlob::IsBlobPropsFound() const
     return m_PropsFound;
 }
 
-void CCassBlobTaskLoadBlob::SetChunkCallback(TBlobChunkCallback callback)
+void CCassBlobTaskLoadBlob::SetChunkCallback(TBlobChunkCallbackEx callback)
 {
     m_ChunkCallback = move(callback);
 }
@@ -284,7 +284,7 @@ void CCassBlobTaskLoadBlob::Wait1()
             case eBeforeLoadingChunks:
                 if (!m_ChunkCallback && m_LoadChunks) {
                     m_ChunkCallback =
-                        [this] (const unsigned char * data, unsigned int size, int chunk_no, int64_t flags) {
+                        [this] (CBlobRecord const & blob, const unsigned char * data, unsigned int size, int chunk_no) {
                             if (chunk_no >= 0) {
                                 this->m_Blob->InsertBlobChunk(chunk_no, CBlobRecord::TBlobChunk(data, data + size));
                             }
@@ -316,7 +316,7 @@ void CCassBlobTaskLoadBlob::Wait1()
                               eDiag_Error, msg);
                         break;
                     }
-                    m_ChunkCallback(nullptr, 0, -1, m_Blob->GetFlags());
+                    m_ChunkCallback(*m_Blob, nullptr, 0, -1);
                     m_State = eDone;
                 }
                 break;
@@ -402,7 +402,7 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                                 return;
                             }
                             m_ProcessedChunks[chunk_no] = true;
-                            m_ChunkCallback(rawdata, len, chunk_no, m_Blob->GetFlags());
+                            m_ChunkCallback(*m_Blob, rawdata, len, chunk_no);
                             qry->Close();
                             qry = nullptr;
                             --m_ActiveQueries;
