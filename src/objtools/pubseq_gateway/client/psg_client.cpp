@@ -261,23 +261,23 @@ CPSG_Queue::SImpl::SRequest::SRequest(shared_ptr<const CPSG_Request> user_reques
 
 shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::SRequest::GetNextReply()
 {
-    auto reply_item_locked = m_Reply->reply_item.GetLock();
-    auto& reply_item = *reply_item_locked;
+    if (auto reply_item_locked = m_Reply->reply_item.GetLock()) {
+        auto& reply_item = *reply_item_locked;
 
-    // A reply has already been returned
-    if (reply_item.state.Returned()) return {};
+        // A reply has already been returned
+        if (reply_item.state.Returned()) return {};
 
-    auto returned = [](SPSG_Reply::SItem::TTS& item) { return item.GetLock()->state.Returned(); };
-    auto items_locked = m_Reply->items.GetLock();
-    auto& items = *items_locked;
+        auto returned = [](SPSG_Reply::SItem::TTS& item) { return item.GetLock()->state.Returned(); };
+        if (auto items_locked = m_Reply->items.GetLock()) {
+            auto& items = *items_locked;
 
-    // No reply items to return
-    if (all_of(items.begin(), items.end(), returned) &&
-            reply_item.expected.Cmp<less_equal>(reply_item.received)) return {};
+            // No reply items to return
+            if (all_of(items.begin(), items.end(), returned) &&
+                    reply_item.expected.Cmp<less_equal>(reply_item.received)) return {};
+        }
 
-    items_locked.Unlock();
-    reply_item.state.SetReturned();
-    reply_item_locked.Unlock();
+        reply_item.state.SetReturned();
+    }
 
     shared_ptr<CPSG_Reply> rv(new CPSG_Reply);
     rv->m_Impl->reply = m_Reply;
@@ -422,21 +422,19 @@ bool CPSG_Queue::SImpl::SendRequest(shared_ptr<const CPSG_Request> user_request,
 shared_ptr<CPSG_Reply> CPSG_Queue::SImpl::GetNextReply(CDeadline deadline)
 {
     for (;;) {
-        auto requests_locked = m_Requests->GetLock();
+        if (auto requests_locked = m_Requests->GetLock()) {
+            auto it = requests_locked->begin();
+            
+            while (it != requests_locked->end()) {
+                if (auto rv = it->GetNextReply()) return rv;
 
-        auto it = requests_locked->begin();
-        
-        while (it != requests_locked->end()) {
-            if (auto rv = it->GetNextReply()) return rv;
-
-            if (it->IsEmpty()) {
-                it = requests_locked->erase(it);
-            } else {
-                ++it;
+                if (it->IsEmpty()) {
+                    it = requests_locked->erase(it);
+                } else {
+                    ++it;
+                }
             }
         }
-
-        requests_locked.Unlock();
 
         if (deadline.IsExpired()) return {};
 
@@ -474,24 +472,23 @@ EPSG_Status s_GetStatus(TTsPtr ts, CDeadline deadline)
     assert(ts);
 
     for (;;) {
-        auto locked = ts->GetLock();
+        if (auto locked = ts->GetLock()) {
+            switch (locked->state.GetState()) {
+                case SPSG_Reply::SState::eCanceled: return EPSG_Status::eCanceled;
+                case SPSG_Reply::SState::eNotFound: return EPSG_Status::eNotFound;
+                case SPSG_Reply::SState::eError:    return EPSG_Status::eError;
 
-        switch (locked->state.GetState()) {
-            case SPSG_Reply::SState::eCanceled: return EPSG_Status::eCanceled;
-            case SPSG_Reply::SState::eNotFound: return EPSG_Status::eNotFound;
-            case SPSG_Reply::SState::eError:    return EPSG_Status::eError;
+                case SPSG_Reply::SState::eSuccess:
+                    if (locked->expected.template Cmp<equal_to>(locked->received)) return EPSG_Status::eSuccess;
 
-            case SPSG_Reply::SState::eSuccess:
-                if (locked->expected.template Cmp<equal_to>(locked->received)) return EPSG_Status::eSuccess;
+                    locked->state.AddError("Protocol error: received less than expected");
+                    return EPSG_Status::eError;
 
-                locked->state.AddError("Protocol error: received less than expected");
-                return EPSG_Status::eError;
-
-            default: // SPSG_Reply::SState::eInProgress;
-                if (deadline.IsExpired()) return EPSG_Status::eInProgress;
+                default: // SPSG_Reply::SState::eInProgress;
+                    if (deadline.IsExpired()) return EPSG_Status::eInProgress;
+            }
         }
 
-        locked.Unlock();
         auto wait_ms = RemainingTimeMs(deadline);
         ts->WaitFor(wait_ms);
     }
@@ -823,25 +820,24 @@ shared_ptr<CPSG_ReplyItem> CPSG_Reply::GetNextItem(CDeadline deadline)
     for (;;) {
         auto reply_item = &m_Impl->reply->reply_item;
         auto reply_item_locked = reply_item->GetLock();
-        auto items_locked = m_Impl->reply->items.GetLock();
-        auto& items = *items_locked;
 
-        for (auto& item_ts : items) {
-            auto item_locked = item_ts.GetLock();
-            auto& item = *item_locked;
+        if (auto items_locked = m_Impl->reply->items.GetLock()) {
+            auto& items = *items_locked;
 
-            if (item.state.Returned()) continue;
+            for (auto& item_ts : items) {
+                if (auto item_locked = item_ts.GetLock()) {
+                    auto& item = *item_locked;
 
-            // Wait for more chunks on this item
-            if (item.chunks.empty() && !item.expected.Cmp<less_equal>(item.received)) continue;
+                    if (item.state.Returned()) continue;
 
-            item_locked.Unlock();
+                    // Wait for more chunks on this item
+                    if (item.chunks.empty() && !item.expected.Cmp<less_equal>(item.received)) continue;
+                }
 
-            // Do not hold lock on item_ts around this call!
-            return m_Impl->Create(&item_ts);
+                // Do not hold lock on item_ts around this call!
+                return m_Impl->Create(&item_ts);
+            }
         }
-
-        items_locked.Unlock();
 
         // No more reply items
         if (!reply_item_locked->state.InProgress()) {

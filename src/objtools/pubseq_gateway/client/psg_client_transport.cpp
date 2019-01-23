@@ -290,25 +290,25 @@ void SPSG_Receiver::Add()
         item_ts = &m_Reply->reply_item;
 
     } else {
-        auto reply_item_locked = m_Reply->reply_item.GetLock();
-        auto& reply_item = *reply_item_locked;
-        ++reply_item.received;
+        if (auto reply_item_locked = m_Reply->reply_item.GetLock()) {
+            auto& reply_item = *reply_item_locked;
+            ++reply_item.received;
 
-        if (reply_item.expected.Cmp<less>(reply_item.received)) {
-            reply_item.state.AddError("Protocol error: received more than expected");
+            if (reply_item.expected.Cmp<less>(reply_item.received)) {
+                reply_item.state.AddError("Protocol error: received more than expected");
+            }
         }
-
-        reply_item_locked.Unlock();
 
         auto item_id = args.GetValue("item_id");
         auto& item_by_id = m_ItemsByID[item_id];
 
         if (!item_by_id) {
-            auto items_locked = m_Reply->items.GetLock();
-            auto& items = *items_locked;
-            items.emplace_back();
-            item_by_id = &items.back();
-            items_locked.Unlock();
+            if (auto items_locked = m_Reply->items.GetLock()) {
+                auto& items = *items_locked;
+                items.emplace_back();
+                item_by_id = &items.back();
+            }
+
             item_by_id->GetLock()->args = args;
             auto reply_item_ts = &m_Reply->reply_item;
             reply_item_ts->NotifyOne();
@@ -318,59 +318,59 @@ void SPSG_Receiver::Add()
         item_ts = item_by_id;
     }
 
-    auto item_locked = item_ts->GetLock();
-    auto& item = *item_locked;
-    ++item.received;
+    if (auto item_locked = item_ts->GetLock()) {
+        auto& item = *item_locked;
+        ++item.received;
 
-    if (item.expected.Cmp<less>(item.received)) {
-        item.state.AddError("Protocol error: received more than expected");
-    }
+        if (item.expected.Cmp<less>(item.received)) {
+            item.state.AddError("Protocol error: received more than expected");
+        }
 
-    auto chunk_type = args.GetValue("chunk_type");
+        auto chunk_type = args.GetValue("chunk_type");
 
-    if (chunk_type == "meta") {
-        auto n_chunks = args.GetValue("n_chunks");
+        if (chunk_type == "meta") {
+            auto n_chunks = args.GetValue("n_chunks");
 
-        if (!n_chunks.empty()) {
-            auto expected = stoul(n_chunks);
+            if (!n_chunks.empty()) {
+                auto expected = stoul(n_chunks);
 
-            if (item.expected.Cmp<not_equal_to>(expected)) {
-                item.state.AddError("Protocol error: contradicting n_chunks");
-            } else {
-                item.expected = expected;
+                if (item.expected.Cmp<not_equal_to>(expected)) {
+                    item.state.AddError("Protocol error: contradicting n_chunks");
+                } else {
+                    item.expected = expected;
 
-                if (item.expected.Cmp<less>(item.received)) {
-                    item.state.AddError("Protocol error: received more than expected");
+                    if (item.expected.Cmp<less>(item.received)) {
+                        item.state.AddError("Protocol error: received more than expected");
+                    }
                 }
             }
-        }
 
-    } else if (chunk_type == "message") {
-        ostringstream os;
+        } else if (chunk_type == "message") {
+            ostringstream os;
 
-        for (auto& p : chunk.data) os.write(p.data(), p.size());
+            for (auto& p : chunk.data) os.write(p.data(), p.size());
 
-        auto severity = args.GetValue("severity");
+            auto severity = args.GetValue("severity");
 
-        if (severity == "warning") {
-            ERR_POST(Warning << os.str());
-        } else if (severity == "info") {
-            ERR_POST(Info << os.str());
-        } else if (severity == "trace") {
-            ERR_POST(Trace << os.str());
+            if (severity == "warning") {
+                ERR_POST(Warning << os.str());
+            } else if (severity == "info") {
+                ERR_POST(Info << os.str());
+            } else if (severity == "trace") {
+                ERR_POST(Trace << os.str());
+            } else {
+                item.state.AddError(os.str());
+            }
+
+        } else if (chunk_type == "data") {
+            item.chunks.push_back(move(chunk));
+
         } else {
-            item.state.AddError(os.str());
+            item.state.AddError("Protocol error: unknown chunk type");
         }
-
-    } else if (chunk_type == "data") {
-        item.chunks.push_back(move(chunk));
-
-    } else {
-        item.state.AddError("Protocol error: unknown chunk type");
     }
 
     // Item must be unlocked before notifying
-    item_locked.Unlock();
     item_ts->NotifyOne();
 
     m_Buffer = SBuffer();

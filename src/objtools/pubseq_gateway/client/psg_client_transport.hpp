@@ -127,7 +127,9 @@ struct SPSG_ThreadSafe : SPSG_Future
         T& operator*()  { assert(m_Object); return *m_Object; }
         T* operator->() { assert(m_Object); return m_Object; }
 
-        void Unlock() { m_Object = nullptr; unique_lock::unlock(); }
+        // A safe and elegant RAII alternative to explicit scopes or 'unlock' method.
+        // It allows locks to be declared inside 'if' condition.
+        explicit operator bool() const { return true; }
 
     private:
         SLock(T* c, std::mutex& m) : unique_lock(m), m_Object(c) {}
