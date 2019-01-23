@@ -671,8 +671,8 @@ BOOST_AUTO_TEST_CASE(CheckNAZoom)
 {
     bool have_na = s_HaveID2();
     LOG_POST("Checking NA Tracks");
-    string id = "NC_000022.11";
-    string na_acc = "NA000000270.4";
+    string id = "NC_000024.10";
+    string na_acc = "NA000000271.4";
 
     for ( int t = 0; t < 4; ++t ) {
         SAnnotSelector sel;
