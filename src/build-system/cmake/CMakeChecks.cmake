@@ -31,6 +31,8 @@ set(NCBI_DIRNAME_INTERNAL        internal)
 set(NCBI_DIRNAME_BUILD           build)
 set(NCBI_DIRNAME_EXPORT          cmake)
 set(NCBI_DIRNAME_TESTING         testing)
+set(NCBI_DIRNAME_SCRIPTS         scripts)
+set(NCBI_DIRNAME_COMMON_SCRIPTS  scripts/common)
 set(NCBI_DIRNAME_BUILDCFG ${NCBI_DIRNAME_SRC}/build-system)
 set(NCBI_DIRNAME_CMAKECFG ${NCBI_DIRNAME_SRC}/build-system/cmake)
 

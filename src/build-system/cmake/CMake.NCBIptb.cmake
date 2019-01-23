@@ -126,9 +126,22 @@ function(NCBI_add_root_subdirectory)
         message("Configuring projects...")
     endif()
 
+    set_property(GLOBAL PROPERTY NCBI_PTBPROP_COUNT_STATIC 0)
+    set_property(GLOBAL PROPERTY NCBI_PTBPROP_COUNT_SHARED 0)
+    set_property(GLOBAL PROPERTY NCBI_PTBPROP_COUNT_CONSOLEAPP 0)
+
     NCBI_add_subdirectory(${NCBI_PTBCFG_COMPOSITE_DLL} ${ARGV})
     if (NCBI_PTBCFG_DOINSTALL)
         NCBI_internal_install_root(${NCBI_PTBCFG_COMPOSITE_DLL} ${ARGV})
+    endif()
+
+    get_property(_app GLOBAL PROPERTY NCBI_PTBPROP_COUNT_CONSOLEAPP)
+    get_property(_lib GLOBAL PROPERTY NCBI_PTBPROP_COUNT_STATIC)
+    get_property(_dll GLOBAL PROPERTY NCBI_PTBPROP_COUNT_SHARED)
+    if(BUILD_SHARED_LIBS)
+        message("Added successfully: ${_app} console apps, ${_dll} shared libs, ${_lib} static libs")
+    else()
+        message("Added successfully: ${_app} console apps, ${_lib} static libs")
     endif()
 endfunction()
 
@@ -1548,6 +1561,9 @@ function(NCBI_internal_install_root)
     install( DIRECTORY ${NCBI_TREE_CMAKECFG} DESTINATION ${NCBI_DIRNAME_BUILDCFG}
             USE_SOURCE_PERMISSIONS REGEX "/[.].*$" EXCLUDE)
 
+    install( DIRECTORY ${NCBI_TREE_ROOT}/${NCBI_DIRNAME_COMMON_SCRIPTS} DESTINATION ${NCBI_DIRNAME_SCRIPTS}
+            USE_SOURCE_PERMISSIONS REGEX "/[.].*$" EXCLUDE)
+
     file(RELATIVE_PATH _dest "${NCBI_TREE_ROOT}" "${NCBI_BUILD_ROOT}")
     install( DIRECTORY ${NCBI_CFGINC_ROOT} DESTINATION "${_dest}"
             REGEX "/[.].*$" EXCLUDE)
@@ -1912,6 +1928,10 @@ endif()
     if (DEFINED NCBI_${NCBI_PROJECT}_OUTPUT)
         set_target_properties(${NCBI_PROJECT} PROPERTIES OUTPUT_NAME ${NCBI_${NCBI_PROJECT}_OUTPUT})
     endif()
+
+    get_property(_count  GLOBAL PROPERTY NCBI_PTBPROP_COUNT_${NCBI_${NCBI_PROJECT}_TYPE})
+    math(EXPR _count "${_count} + 1")
+    set_property(GLOBAL PROPERTY NCBI_PTBPROP_COUNT_${NCBI_${NCBI_PROJECT}_TYPE} ${_count})
 
 if(NCBI_VERBOSE_ALLPROJECTS OR NCBI_VERBOSE_PROJECT_${NCBI_PROJECT})
 message("  ADDED: ${NCBI_CURRENT_SOURCE_DIR}/${NCBI_PROJECT_ID}")
