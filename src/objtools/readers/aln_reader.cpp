@@ -419,7 +419,11 @@ void CAlnReader::Read(
             }
         }
         else {
-            // Report an error - cannot associate deflines with sequences
+            sReportError(
+                pErrorListener,
+                eDiag_Error,
+                0,
+                "Error reading deflines. Unable to associate deflines with sequences");
         }
     }
 
