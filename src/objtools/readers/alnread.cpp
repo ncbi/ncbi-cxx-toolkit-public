@@ -216,10 +216,7 @@ sReportError(
         return;
     }
     eip->category = errCode;
-    if (!id) {
-        id = strdup("");
-    }
-    eip->id;
+    eip->id = id;
     eip->line_num = lineNumber;
     eip->message = errMessage;
     errReporter(eip, errUserData);
@@ -298,7 +295,7 @@ s_ReportInconsistentID(
     void* report_error_userdata)
 {
     sReportError(
-        id,
+        strdup(id),
         line_number,
         eAlnErr_BadFormat,
         strdup("Found unexpected ID"),
@@ -318,7 +315,7 @@ s_ReportInconsistentBlockLine(
     void* report_error_userdata)
 {
     sReportError(
-        id,
+        strdup(id),
         line_number,
         eAlnErr_BadFormat,
         strdup("Inconsistent block line formatting"),
