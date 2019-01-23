@@ -1118,21 +1118,13 @@ void CMultiReaderApp::xProcessAlignment(
     if (args["aln-alphabet"].AsString() == "nuc") {
         reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
     }
-    reader.Read(false, args["force-local-ids"]);
-
-    auto& errorContainer = *m_pErrors.get();
-    for (const auto& error : reader.GetErrorList()) {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-                eDiag_Error,
-                error.GetLineNum(),
-                s_AlnErrorToString(error),
-                ILineError::eProblem_GeneralParsingError));
-        errorContainer.PutError(*pErr);
+    try {
+        reader.Read(false, args["force-local-ids"], m_pErrors.get());
+        CRef<CSeq_entry> pEntry = reader.GetSeqEntry();
+        xWriteObject(args, *pEntry, ostr);
     }
-
-    CRef<CSeq_entry> pEntry = reader.GetSeqEntry();
-    xWriteObject(args, *pEntry, ostr);
+    catch (...) {
+    }
 }
 
 //  ----------------------------------------------------------------------------
