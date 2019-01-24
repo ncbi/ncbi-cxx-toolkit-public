@@ -186,7 +186,7 @@ int CTestHttpUploadApp::Run(void)
 
     string file = "test_ncbi_http_upload_"
         + string(hostname.data())
-        + "_" + NStr::NumericToString(CProcess::GetCurrentPid())
+        + "_" + NStr::NumericToString(CCurrentProcess::GetPid())
         + "_" + now.AsString("YMD_hms_S")
         + "_" + NStr::NumericToString(n);
 

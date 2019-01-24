@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
         seed = NStr::StringToInt(argv[1]);
     } else {
         seed = ((int) CTime(CTime::eCurrent).GetTimeT() ^
-                (int) CProcess::GetCurrentPid());
+                (int) CCurrentProcess::GetPid());
     }
     srand(seed);
 

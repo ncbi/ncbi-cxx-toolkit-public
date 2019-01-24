@@ -352,7 +352,7 @@ int CNCBITestConnStreamApp::Run(void)
         ftpfile += '-';
         ftpfile += NStr::GetField(CSocketAPI::gethostname(), 0, '.');
         ftpfile += '-';
-        ftpfile += NStr::UInt8ToString(CProcess::GetCurrentPid());
+        ftpfile += NStr::UInt8ToString(CCurrentProcess::GetPid());
         ftpfile += '-';
         ftpfile += start.AsString("YMDhms");
         ftpfile += ".tmp";

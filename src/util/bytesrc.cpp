@@ -284,9 +284,9 @@ CRef<CByteSourceReader> CMMapByteSource::Open(void)
 
 CMMapByteSourceReader::CMMapByteSourceReader(const CByteSource* source, CMemoryFileMap* fmap, size_t num_blocks)
     : m_Source(source), m_Fmap(fmap), m_Ptr(nullptr),
-        m_UnitSize(GetVirtualMemoryAllocationGranularity()), m_DefaultSize(0), 
-        m_ChunkOffset(0),  m_CurOffset(0), m_NextOffset(0),
-        m_FileSize(fmap->GetFileSize())
+      m_UnitSize(CSystemInfo::GetVirtualMemoryAllocationGranularity()),
+      m_DefaultSize(0), m_ChunkOffset(0), m_CurOffset(0), m_NextOffset(0),
+      m_FileSize(fmap->GetFileSize())
 {
     if (num_blocks == 0) {
         num_blocks = 128;

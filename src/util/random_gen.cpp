@@ -279,7 +279,7 @@ void CRandom::Randomize(void)
 
     SetSeed(TValue(now.Second() ^
                    now.NanoSecond() ^
-                   CProcess::GetCurrentPid() * 19 ^
+                   CCurrentProcess::GetPid() * 19 ^
                    CThread::GetSelf() * 5));
 }
 

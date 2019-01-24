@@ -1377,7 +1377,7 @@ CTar::~CTar()
 void CTar::x_Init(void)
 {
     _ASSERT(!OFFSET_OF(m_BufferSize));
-    size_t pagesize = (size_t) GetVirtualMemoryPageSize();
+    size_t pagesize = (size_t) CSystemInfo::GetVirtualMemoryPageSize();
     size_t pagemask = pagesize - 1;
     if (pagesize < 4096  ||  (pagesize & pagemask)) {
         pagesize = 4096;  // reasonable default
