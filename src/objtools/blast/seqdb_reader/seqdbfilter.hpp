@@ -52,12 +52,13 @@ class CSeqDB_AliasMask : public CObject {
 public:
     /// Various types of masking.
     enum EMaskType {
-        eGiList,  ///< GI list.
-        eTiList,  ///< TI list.
-        eSiList,  ///< SI list.
-        eOidList, ///< OID list.
-        eOidRange,///< OID Range [start, end).
-        eMemBit   ///< MEMBIT filter.
+        eGiList,   ///< GI list.
+        eTiList,   ///< TI list.
+        eSiList,   ///< SI list.
+        eOidList,  ///< OID list.
+        eOidRange, ///< OID Range [start, end).
+        eMemBit,   ///< MEMBIT filter.
+        eTaxIdList ///< Taxonomay Id List.
     };
     
     /// Constructor for file-based filtering.
@@ -108,7 +109,8 @@ public:
         case eOidRange: p="eOidRange";
             r = true;
             break;
-        case eMemBit:   p="eMemBit";   break;
+        case eMemBit:    p="eMemBit";   break;
+        case eTaxIdList: p="eTaxIdList";   break;
         }
         
         string oss;

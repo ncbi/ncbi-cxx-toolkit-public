@@ -99,10 +99,11 @@ void CSeqDBOIDList::x_Setup(const CSeqDBVolSet       & volset,
     }
     
     if (lmdb_set.IsBlastDBVersion5()  && filters.HasFilter()) {
-   		CSeqDB_BitSet si_bits(0, m_NumOIDs);
-   		si_bits.AssignBitRange(0, m_NumOIDs, true);
-       	x_ComputeFilters(volset, filters, lmdb_set, si_bits);
-		m_AllBits->IntersectWith(si_bits, true);
+   		CSeqDB_BitSet f_bits(0, m_NumOIDs);
+    	f_bits.AssignBitRange(0, m_NumOIDs, true);
+    	if(x_ComputeFilters(volset, filters, lmdb_set, f_bits, gi_list, neg_list)) {
+    		m_AllBits->IntersectWith(f_bits, true);
+    	}
     }
 
     if (gi_list.NotEmpty()) {
@@ -218,7 +219,8 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
         
         if ((mask.GetType() == CSeqDB_AliasMask::eOidRange)
             || (mask.GetType() == CSeqDB_AliasMask::eMemBit)
-            || (isBlastDBv5 && (mask.GetType() == CSeqDB_AliasMask::eSiList))) {
+            || (isBlastDBv5 && (mask.GetType() == CSeqDB_AliasMask::eSiList))
+            || (mask.GetType() == CSeqDB_AliasMask::eTaxIdList)) {
             continue;
         }
         
@@ -255,6 +257,7 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDB_FilterTree & filters,
 
         case CSeqDB_AliasMask::eOidRange:
         case CSeqDB_AliasMask::eMemBit:
+        case CSeqDB_AliasMask::eTaxIdList:
      
             // these should have been handled in the previous loop.
             break;
@@ -472,7 +475,6 @@ CSeqDBOIDList::x_GetOidMask(const CSeqDB_Path & fn,
         
         bitend = bitmap + (((num_oids + 31) / 32) * 4);
     }
-    
     CRef<CSeqDB_BitSet> bitset(new CSeqDB_BitSet(vol_start, vol_end, bitmap, bitend));
     
     
@@ -525,46 +527,104 @@ s_IsOidInFilteredVol(blastdb::TOid oid, vector<const CSeqDBVolEntry * >  & exclu
 	return false;
 }
 
-void
-CSeqDBOIDList::x_ComputeFilters(const CSeqDBVolSet       & volset,
-								const CSeqDB_FilterTree  & filters,
-                           		const CSeqDBLMDBSet      & lmdb_set,
-                           		CSeqDB_BitSet 			 & si_bit)
+void s_AddFilterFile(string & name, const string & vn, vector<string> & fnames, vector<vector<string> > & fnames_vols)
 {
-	vector<string> si_fnames;
-	vector< vector<string> > si_fnames_vols;
+	unsigned int j=0;
+	for(; j < fnames.size(); j++) {
+		if(fnames[j] == name) {
+			fnames_vols[j].push_back(vn);
+			break;
+		}
+	}
+	if( fnames.size() == j) {
+		vector<string> p(1,vn);
+		fnames.push_back(name);
+		fnames_vols.push_back(p);
+	}
+}
 
-	for(int i = 0; i < volset.GetNumVols(); i++) {
-		const CSeqDBVolEntry & vol = *(volset.GetVolEntry(i));
-	    const string & vn = vol.Vol()->GetVolName();
-        CRef<CSeqDB_FilterTree> ft = filters.Specialize(vn);
-       	ITERATE(CSeqDB_FilterTree::TFilters, itr, ft->GetFilters()){
-        	if((*itr)->GetType() == CSeqDB_AliasMask::eSiList){
-        		string si_name = (*itr)->GetPath().GetPathS();
-        		unsigned int j=0;
-        		for(; j < si_fnames.size(); j++) {
-        			if(si_fnames[j] == si_name) {
-        				si_fnames_vols[j].push_back(vn);
-        				break;
-        			}
-        		}
-        		if( si_fnames.size() == j) {
-        			vector<string> p(1,vn);
-        			si_fnames.push_back(si_name);
-        			si_fnames_vols.push_back(p);
-        		}
-        		si_bit.AssignBitRange(vol.OIDStart(), vol.OIDEnd(), false);
-        	}
-        }
+bool s_CompareSeqId(const string & id1, const string & id2)
+{
+	if (id1 == id2){
+		return false;
+	}
+	CSeq_id seq_id1(id1, (CSeq_id::fParse_AnyRaw | CSeq_id::fParse_ValidLocal));
+	CSeq_id seq_id2(id2, (CSeq_id::fParse_AnyRaw | CSeq_id::fParse_ValidLocal));
+	if (seq_id1.Match(seq_id2)){
+		return false;
 	}
 
-	for(unsigned int k=0; k < si_fnames.size(); k++) {
+	int v1;
+	int v2;
+	string id_string1 = seq_id1.GetSeqIdString(&v1);
+	string id_string2 = seq_id2.GetSeqIdString(&v2);
+	if ((v1==0) || (v2 == 0)) {
+		if(id_string1 == id_string2){
+			return false;
+		}
+	}
+
+	return seq_id1.Compare(seq_id2);
+}
+
+void s_ProcessSeqIdFilters(const vector<string>     & fnames,
+						   vector<vector<string> >  & fnames_vols,
+		                   CRef<CSeqDBGiList>		  user_list,
+                           CRef<CSeqDBNegativeList>   neg_user_list,
+                           const CSeqDBLMDBSet      & lmdb_set,
+                           const CSeqDBVolSet       & volset,
+                           CSeqDB_BitSet 			& filter_bit)
+{
+	if (fnames.size() == 0) {
+		return;
+	}
+	vector<string> user_accs;
+	if ((!user_list.Empty()) && (user_list->GetNumSis() > 0)) {
+		user_list->GetSiList(user_accs);
+		sort(user_accs.begin(), user_accs.end());
+	}
+	vector<string> neg_user_accs;
+	if ((!neg_user_list.Empty()) && (neg_user_list->GetNumSis() > 0)) {
+		neg_user_accs = neg_user_list->GetSiList();
+		sort(neg_user_accs.begin(), neg_user_accs.end());
+	}
+
+	for(unsigned int k=0; k < fnames.size(); k++) {
 		vector<const CSeqDBVolEntry * > excluded_vols;
-		CRef<CSeqDBGiList> si_list(new CSeqDBFileGiList(si_fnames[k], CSeqDBFileGiList::eSiList));
-		s_GetFilteredOidRange(volset, si_fnames_vols[k], excluded_vols, si_list);
-		vector<string> accs;
 		vector<blastdb::TOid> oids;
-		si_list->GetSiList(accs);
+		CRef<CSeqDBGiList> list(new CSeqDBFileGiList(fnames[k], CSeqDBFileGiList::eSiList));
+		s_GetFilteredOidRange(volset, fnames_vols[k], excluded_vols, list);
+		vector<string> accs;
+		list->GetSiList(accs);
+		if(accs.size() == 0){
+				continue;
+		}
+		if((user_accs.size() > 0)  || (neg_user_accs.size() > 0)){
+			sort(accs.begin(), accs.end());
+			if (user_accs.size() > 0) {
+				vector<string> common;
+				common.resize(accs.size());
+				vector<string>::iterator itr = set_intersection(accs.begin(), accs.end(),
+					                                            user_accs.begin(), user_accs.end(), common.begin(), s_CompareSeqId);
+				common.resize(itr-common.begin());
+				if(common.size() == 0){
+					continue;
+				}
+				swap(accs, common);
+			}
+			if(neg_user_accs.size() > 0) {
+				vector<string> difference;
+				difference.resize(accs.size());
+				vector<string>::iterator itr = set_difference(accs.begin(), accs.end(),
+									                          neg_user_accs.begin(), neg_user_accs.end(), difference.begin(), s_CompareSeqId);
+				difference.resize(itr-difference.begin());
+				if(difference.size() == 0){
+					continue;
+				}
+				swap(accs, difference);
+			}
+		}
+
 		lmdb_set.AccessionsToOids(accs, oids);
 		for(unsigned int i=0; i < accs.size(); i++) {
 			if(oids[i] == kSeqDBEntryNotFound) {
@@ -575,11 +635,121 @@ CSeqDBOIDList::x_ComputeFilters(const CSeqDBVolSet       & volset,
 					continue;
 				}
 			}
-			si_list->SetSiTranslation(i, oids[i]);
-			si_bit.SetBit(oids[i]);
+			filter_bit.SetBit(oids[i]);
 		}
 	}
-	return;
+}
+
+void s_ProcessTaxIdFilters(const vector<string> &     fnames,
+						   vector<vector<string> >  & fnames_vols,
+		                   CRef<CSeqDBGiList>		  user_list,
+                           CRef<CSeqDBNegativeList>   neg_user_list,
+                           const CSeqDBLMDBSet      & lmdb_set,
+                           const CSeqDBVolSet       & volset,
+                           CSeqDB_BitSet 			& filter_bit)
+{
+	if (fnames.size() == 0) {
+		return;
+	}
+
+	set<Int4> user_taxids;
+	if(!user_list.Empty() && (user_list->GetNumTaxIds() > 0)) {
+		user_taxids = user_list->GetTaxIdsList();
+	}
+	set<Int4> neg_user_taxids;
+	if(!neg_user_list.Empty() && (neg_user_list->GetNumTaxIds() > 0)) {
+		neg_user_taxids = neg_user_list->GetTaxIdsList();
+	}
+
+	for(unsigned int k=0; k < fnames.size(); k++) {
+		vector<const CSeqDBVolEntry * > excluded_vols;
+		vector<blastdb::TOid> oids;
+		CRef<CSeqDBGiList> list(new CSeqDBFileGiList(fnames[k], CSeqDBFileGiList::eTaxIdList));
+		s_GetFilteredOidRange(volset, fnames_vols[k], excluded_vols, list);
+		set<Int4> taxids;
+		taxids = list->GetTaxIdsList();
+		if(taxids.size() == 0){
+			continue;
+		}
+		if(user_taxids.size() > 0){
+			vector<Int4> common;
+			common.resize(taxids.size());
+			vector<Int4>::iterator itr = set_intersection(taxids.begin(), taxids.end(),
+					                                      user_taxids.begin(), user_taxids.end(), common.begin());
+			common.resize(itr-common.begin());
+			if( common.size() == 0) {
+				continue;
+			}
+			taxids.clear();
+			taxids.insert(common.begin(), common.end());
+		}
+		if(neg_user_taxids.size() > 0) {
+			vector<Int4> difference;
+			difference.resize(taxids.size());
+			vector<Int4>::iterator itr = set_difference(taxids.begin(), taxids.end(),
+								                        neg_user_taxids.begin(), neg_user_taxids.end(), difference.begin());
+			difference.resize(itr-difference.begin());
+			if(difference.size() == 0){
+				continue;
+			}
+			taxids.clear();
+			taxids.insert(difference.begin(), difference.end());
+		}
+
+		lmdb_set.TaxIdsToOids(taxids, oids);
+		for(unsigned int i=0; i < oids.size(); i++) {
+			if(excluded_vols.size() != 0) {
+				if (s_IsOidInFilteredVol(oids[i], excluded_vols)) {
+					continue;
+				}
+			}
+			filter_bit.SetBit(oids[i]);
+		}
+	}
+}
+
+bool
+CSeqDBOIDList::x_ComputeFilters(const CSeqDBVolSet       & volset,
+		                        const CSeqDB_FilterTree  & filters,
+   		                        const CSeqDBLMDBSet      & lmdb_set,
+   		                        CSeqDB_BitSet 			 & filter_bit,
+   		                        CRef<CSeqDBGiList>		   user_list,
+   		                        CRef<CSeqDBNegativeList>   neg_user_list)
+{
+	vector<string> seqid_fnames;
+	vector<string> taxid_fnames;
+	vector< vector<string> > seqid_fnames_vols;
+	vector< vector<string> > taxid_fnames_vols;
+
+	for(int i = 0; i < volset.GetNumVols(); i++) {
+		const CSeqDBVolEntry & vol = *(volset.GetVolEntry(i));
+	    const string & vn = vol.Vol()->GetVolName();
+        CRef<CSeqDB_FilterTree> ft = filters.Specialize(vn);
+       	ITERATE(CSeqDB_FilterTree::TFilters, itr, ft->GetFilters()){
+        	if(((*itr)->GetType() == CSeqDB_AliasMask::eSiList) ||
+        	   ((*itr)->GetType() == CSeqDB_AliasMask::eTaxIdList)) {
+        		string name = (*itr)->GetPath().GetPathS();
+        		if((*itr)->GetType() == CSeqDB_AliasMask::eSiList) {
+        			s_AddFilterFile(name, vn, seqid_fnames, seqid_fnames_vols);
+        		}
+        		else {
+        			s_AddFilterFile(name, vn, taxid_fnames, taxid_fnames_vols);
+        		}
+        		filter_bit.AssignBitRange(vol.OIDStart(), vol.OIDEnd(), false);
+        	}
+        }
+	}
+
+	if (seqid_fnames.size() > 0) {
+		s_ProcessSeqIdFilters(seqid_fnames, seqid_fnames_vols, user_list, neg_user_list,
+	                          lmdb_set, volset, filter_bit);
+	}
+	if (taxid_fnames.size() > 0) {
+		s_ProcessTaxIdFilters(taxid_fnames, taxid_fnames_vols, user_list, neg_user_list,
+	                          lmdb_set, volset, filter_bit);
+	}
+
+	return ((seqid_fnames.size() + taxid_fnames.size()) > 0 ? true:false);
 }
 
 

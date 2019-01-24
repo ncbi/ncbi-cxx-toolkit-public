@@ -1082,6 +1082,48 @@ void SeqDB_ReadMemoryPigList(const char * fbeginp,
     }
 }
 
+void SeqDB_ReadMemoryTaxIdList(const char * fbeginp,
+                               const char * fendp,
+                               CSeqDBGiList::STaxIdsOids & taxids)
+{
+    bool long_ids = false;
+    if (s_SeqDB_IsBinaryNumericList(fbeginp, fendp, long_ids)) {
+        Int4* bbeginp = (Int4*) fbeginp;
+        Int4* bendp = (Int4*) fendp;
+
+        Int4 num_taxids = (Int4) (bendp - bbeginp) - 2;
+
+        taxids.tax_ids.clear();
+        taxids.oids.clear();
+
+        if (((bendp - bbeginp) < 2) || (bbeginp[0] != 0xFFFFFFFF)
+              || (SeqDB_GetStdOrd(bbeginp + 1) != (Int4) num_taxids)) {
+            NCBI_THROW(CSeqDBException, eFileErr,
+                       "Specified file is not a valid binary Tax Id List file.");
+        }
+
+        for(Int4 * elem = (bbeginp + 2); elem < bendp; ++elem) {
+           taxids.tax_ids.insert(SeqDB_GetStdOrd(elem));
+        }
+    } else {
+        Int4 elem(0);
+        const string list_type("TAXID");
+
+        for(const char * p = fbeginp; p < fendp; p ++) {
+            int dig = s_ReadDigit(*p, list_type);
+            if (dig == -1) {
+                // Skip blank lines or comments by ignoring zero.
+                if (elem != 0) {
+                    taxids.tax_ids.insert(elem);
+                }
+                elem = 0;
+                continue;
+            }
+            elem *= 10;
+            elem += dig;
+        }
+    }
+}
 
 // [ NOTE: The 8 byte versions described here are not yet
 // implemented. ]
@@ -1411,6 +1453,17 @@ void SeqDB_ReadPigList(const string & fname, vector<CSeqDBGiList::SPigOid> & pig
     SeqDB_ReadMemoryPigList(fbeginp, fendp, pigs, in_order);
 }
 
+void SeqDB_ReadTaxIdList(const string & fname, CSeqDBGiList::STaxIdsOids & taxids)
+{
+    CMemoryFile mfile(SeqDB_MakeOSPath(fname));
+
+    Int8 file_size = mfile.GetSize();
+    const char * fbeginp = (char*) mfile.GetPtr();
+    const char * fendp   = fbeginp + file_size;
+
+    SeqDB_ReadMemoryTaxIdList(fbeginp, fendp, taxids);
+}
+
 void SeqDB_ReadGiList(const string & fname, vector<TGi> & gis, bool * in_order)
 {
     typedef vector<CSeqDBGiList::SGiOid> TPairList;
@@ -1634,6 +1687,10 @@ CSeqDBFileGiList::CSeqDBFileGiList(const string & fname, EIdType idtype)
         	break;
         case ePigList:
         	SeqDB_ReadPigList(fname, m_PigsOids, & in_order);
+        	break;
+        case eTaxIdList:
+        	SeqDB_ReadTaxIdList(fname, m_TaxIdsOids);
+        	in_order = true;
         	break;
     }
     m_CurrentOrder = in_order ? eGi : eNone;

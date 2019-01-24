@@ -1491,6 +1491,10 @@ public:
             m_NeedScan = true;
             return true;
         }
+        if (vars.find("TAXIDLIST") != vars.end()) {
+            m_NeedScan = true;
+            return true;
+        }
         
         // If none of those conditions is met, traversal proceeds.
         return false;
@@ -1877,6 +1881,7 @@ void CSeqDBAliasNode::ComputeMasks(bool & has_filters)
     TVarList::iterator f_oid_iter = m_Values.find(string("FIRST_OID"));
     TVarList::iterator l_oid_iter = m_Values.find(string("LAST_OID"));
     TVarList::iterator mbit_iter  = m_Values.find(string("MEMB_BIT"));
+    TVarList::iterator taxid_iter  = m_Values.find(string("TAXIDLIST"));
     
     if (! m_DBList.empty()) {
         if (oid_iter   != m_Values.end() ||
@@ -1885,7 +1890,8 @@ void CSeqDBAliasNode::ComputeMasks(bool & has_filters)
             sil_iter   != m_Values.end() ||
             f_oid_iter != m_Values.end() ||
             l_oid_iter != m_Values.end() ||
-            mbit_iter  != m_Values.end()) {
+            mbit_iter  != m_Values.end() ||
+            taxid_iter != m_Values.end()) {
             
             has_filters = true;
             
@@ -1982,6 +1988,20 @@ void CSeqDBAliasNode::ComputeMasks(bool & has_filters)
                 m_NodeMasks.push_back(mask);
             }
             
+            if (taxid_iter != m_Values.end()) {
+            	const string & taxid_name = taxid_iter->second;
+                if (taxid_name.find(" ") != taxid_name.npos) {
+                    string msg = string("Alias file (") + m_DBPath.GetDirNameS() +
+                                        ") has multiple Tax ids lists (" + taxid_name + ").";
+                    NCBI_THROW(CSeqDBException, eFileErr, msg);
+                }
+
+                CSeqDB_FileName lst(taxid_name);
+                CSeqDB_Path lst_path(m_DBPath, lst);
+
+                CRef<TMask> mask(new TMask(TMask::eTaxIdList, lst_path));
+                m_NodeMasks.push_back(mask);
+            }
         }
     }
     

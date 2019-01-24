@@ -1881,27 +1881,35 @@ CSeqDBVol::x_GetFilteredHeader(int                    oid,
 
             // Here we must pass both the user-gi and volume-gi test,
             // for each defline, but not necessarily for each Seq-id.
+            if (have_memb) {
+            	if (id_filter && defline.CanGetSeqid()) {
+            		have_memb = false;
+            		bool have_user = false, have_volume = false;
+            		ITERATE(list< CRef<CSeq_id> >, seqid, defline.GetSeqid()) {
+            			x_FilterHasId(**seqid, have_user, have_volume);
+            			if (have_user && have_volume) break;
+            		}
+            		have_memb = have_user && have_volume;
+            	}
 
-            if (have_memb && id_filter && defline.CanGetSeqid()) {
-                have_memb = false;
+            	if(have_memb && (!m_UserGiList.Empty()) && (m_UserGiList->GetNumTaxIds() > 0)) {
+               		have_memb = s_IncludeDefline_Taxid(defline, m_UserGiList->GetTaxIdsList());
+            	}
 
-                bool have_user = false, have_volume = false;
+            	if (!have_memb && !m_VolumeGiLists.empty()) {
+               		NON_CONST_ITERATE(TGiLists, vtaxid, m_VolumeGiLists) {
+               			if( (*vtaxid)->GetNumTaxIds() > 0) {
+               				have_memb = s_IncludeDefline_Taxid(defline, (*vtaxid)->GetTaxIdsList());
+               				if(have_memb){
+               					break;
+               				}
+               			}
+               		}
+            	}
 
-                ITERATE(list< CRef<CSeq_id> >, seqid, defline.GetSeqid()) {
-                    x_FilterHasId(**seqid, have_user, have_volume);
-
-                    if (have_user && have_volume)
-                        break;
-                }
-
-                have_memb = have_user && have_volume;
-            }
-
-            if(have_memb && (!m_UserGiList.Empty()) && (m_UserGiList->GetNumTaxIds() > 0)) {
-               	have_memb = s_IncludeDefline_Taxid(defline, m_UserGiList->GetTaxIdsList());
-            }
-            if(have_memb && (!m_NegativeList.Empty()) && (m_NegativeList->GetNumTaxIds() > 0)) {
-               	have_memb = s_IncludeDefline_NegativeTaxid(defline, m_NegativeList->GetTaxIdsList());
+            	if(have_memb && (!m_NegativeList.Empty()) && (m_NegativeList->GetNumTaxIds() > 0)) {
+               		have_memb = s_IncludeDefline_NegativeTaxid(defline, m_NegativeList->GetTaxIdsList());
+            	}
             }
 
             if (! have_memb) {

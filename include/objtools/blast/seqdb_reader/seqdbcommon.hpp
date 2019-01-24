@@ -1386,7 +1386,8 @@ public:
         eTiList,
         eSiList,
         eMixList,
-        ePigList
+        ePigList,
+        eTaxIdList
     };
 
     /// Build a GI list from a file.

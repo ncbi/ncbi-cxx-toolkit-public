@@ -124,8 +124,8 @@ CBlastLMDBManager::~CBlastLMDBManager()
 {
 	NON_CONST_ITERATE(list <CBlastEnv* >, itr, m_EnvList) {
 		delete *itr;
-		itr = m_EnvList.erase(itr);
 	}
+	m_EnvList.clear();
 }
 
 CSeqDBLMDB::CSeqDBLMDB(const string & fname)

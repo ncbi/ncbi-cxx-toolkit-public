@@ -274,10 +274,12 @@ private:
     ///   True if db is v5
     void x_ApplyNegativeList(CSeqDBNegativeList & neg, bool is_v5);
                              
-    void x_ComputeFilters(const CSeqDBVolSet       & volset,
+    bool x_ComputeFilters(const CSeqDBVolSet       & volset,
     					  const CSeqDB_FilterTree  & filters,
                		      const CSeqDBLMDBSet      & lmdb_set,
-               		      CSeqDB_BitSet 		   & si_bit);
+               		      CSeqDB_BitSet 		   & filter_bit,
+               		      CRef<CSeqDBGiList>	     user_list,
+                          CRef<CSeqDBNegativeList>   neg_user_list);
     
     /// The memory management layer object.
     CSeqDBAtlas & m_Atlas;

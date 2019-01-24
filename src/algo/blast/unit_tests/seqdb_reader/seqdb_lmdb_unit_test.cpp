@@ -189,7 +189,7 @@ BOOST_AUTO_TEST_CASE(Test_Mix_User_SeqIdList_AliasFile)
     for(blastdb::TOid i=0; db.CheckOrFindOID(i); i++) {
         found++;
     }
-    BOOST_REQUIRE_EQUAL(2, found);
+    BOOST_REQUIRE_EQUAL(1, found);
 }
 
 BOOST_AUTO_TEST_CASE(Test_Mix_Negative_User_SeqIdList)
@@ -238,22 +238,43 @@ BOOST_AUTO_TEST_CASE(Test_Negative_UserSeqIdList_MultiDB)
 
 BOOST_AUTO_TEST_CASE(Test_Negative_SeqIdList_With_AliasFile)
 {
-	CRef<CSeqDBGiList> list_file( new CSeqDBFileGiList( "data/alias.seqidlist.bsl", CSeqDBFileGiList::eSiList));
-	CRef<CSeqDBNegativeList> n_list(new CSeqDBNegativeList());
-	n_list->SetListInfo(list_file->GetListInfo());
-	vector<string> sis;
-	list_file->GetSiList(sis);
-	n_list->ReserveSis(sis.size());
-	ITERATE(vector<string>, iter, sis) {
-		n_list->AddSi(*iter);
-	}
-    CSeqDB db("data/prot_alias_v5", CSeqDB::eProtein, n_list);
+	{
+		CRef<CSeqDBGiList> list_file( new CSeqDBFileGiList( "data/alias.seqidlist.bsl", CSeqDBFileGiList::eSiList));
+		CRef<CSeqDBNegativeList> n_list(new CSeqDBNegativeList());
+		n_list->SetListInfo(list_file->GetListInfo());
+		vector<string> sis;
+		list_file->GetSiList(sis);
+		n_list->ReserveSis(sis.size());
+		ITERATE(vector<string>, iter, sis) {
+			n_list->AddSi(*iter);
+		}
+    	CSeqDB db("data/prot_alias_v5", CSeqDB::eProtein, n_list);
 
-    int found = 0;
-    for(blastdb::TOid oid = 0; db.CheckOrFindOID(oid); oid++) {
-        found++;
-    }
-    BOOST_REQUIRE_EQUAL(19, found);
+    	int found = 0;
+    	for(blastdb::TOid oid = 0; db.CheckOrFindOID(oid); oid++) {
+        	found++;
+    	}
+    	BOOST_REQUIRE_EQUAL(0, found);
+	}
+	{
+		CRef<CSeqDBNegativeList> n_list(new CSeqDBNegativeList());
+		const int num_of_sis = 3;
+		static const string sis[num_of_sis] = {"EAI92731.1", "ZP_00197753", "EAA62830.1"};
+		struct SBlastSeqIdListInfo list_info;
+		list_info.is_v4 = false;
+		n_list->SetListInfo(list_info);
+		n_list->ReserveSis(num_of_sis);
+		for (unsigned int i=0; i < num_of_sis; i++) {
+			n_list->AddSi(sis[i]);
+		}
+    	CSeqDB db("data/prot_alias_v5", CSeqDB::eProtein, n_list);
+
+    	int found = 0;
+    	for(blastdb::TOid oid = 0; db.CheckOrFindOID(oid); oid++) {
+        	found++;
+    	}
+    	BOOST_REQUIRE_EQUAL(52, found);
+	}
 }
 
 BOOST_AUTO_TEST_CASE(Test_Negative_Duplicate_SeqIdList_MultiDB)
@@ -395,5 +416,49 @@ BOOST_AUTO_TEST_CASE(Test_GetTaxIdsForOids)
 	}
 }
 
+BOOST_AUTO_TEST_CASE(Test_AliasFileTaxIdsList)
+{
+	{
+		CSeqDB db("data/taxid_alias", CSeqDB::eNucleotide);
+		int found = 0;
+   		for(blastdb::TOid oid = 0; db.CheckOrFindOID(oid); oid++) {
+	   		found++;
+		}
+		BOOST_REQUIRE_EQUAL(10, found);
+	}
+
+	{
+		CSeqDB db("data/taxid_alias data/vols_v5", CSeqDB::eNucleotide);
+		int found = 0;
+   		for(blastdb::TOid oid = 0; db.CheckOrFindOID(oid); oid++) {
+	   		found++;
+		}
+		BOOST_REQUIRE_EQUAL(19, found);
+	}
+	{
+		set<Int4> tax_ids;
+		tax_ids.insert(10116);
+		CRef<CSeqDBGiList> taxid_list(new CSeqDBGiList());
+	   	taxid_list->AddTaxIds(tax_ids);
+		CSeqDB db("data/taxid_alias", CSeqDB::eNucleotide, taxid_list.GetPointer());
+		int found = 0;
+   		for(blastdb::TOid oid = 0; db.CheckOrFindOID(oid); oid++) {
+	   		found++;
+		}
+		BOOST_REQUIRE_EQUAL(4, found);
+	}
+	{
+		set<Int4> tax_ids;
+		tax_ids.insert(10116);
+		CRef<CSeqDBNegativeList> taxid_list(new CSeqDBNegativeList());
+	   	taxid_list->AddTaxIds(tax_ids);
+		CSeqDB db("data/taxid_alias", CSeqDB::eNucleotide, taxid_list.GetPointer());
+		int found = 0;
+   		for(blastdb::TOid oid = 0; db.CheckOrFindOID(oid); oid++) {
+	   		found++;
+		}
+		BOOST_REQUIRE_EQUAL(6, found);
+	}
+}
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
