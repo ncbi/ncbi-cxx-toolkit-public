@@ -49,7 +49,8 @@ enum ECassSchemaType {
     eResolverSchema = 1,
     eBlobVer1Schema = 2,
     eBlobVer2Schema = 3,
-    eNamedAnnotationsSchema = 4
+    eNamedAnnotationsSchema = 4,
+    eMaxSchema = eNamedAnnotationsSchema
 };
 
 
