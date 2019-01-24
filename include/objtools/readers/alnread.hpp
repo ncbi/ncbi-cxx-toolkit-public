@@ -57,25 +57,56 @@ typedef enum {
     eAlnErr_BadFormat
 } EAlnErr;
 
-/* This structure and the accompanying functions are used for storing
- * information about errors encountered while reading the alignment data.
- */
-typedef struct SErrorInfo {
-    EAlnErr             category;
-    int                 line_num;
-    char *              id;
-    char *              message;
-    struct SErrorInfo * next;
-} SErrorInfo, * TErrorInfoPtr;
+//  =====================================================================
+class CErrorInfo
+//  =====================================================================
+{
+public:
+    static const int NO_LINE_NUMBER = -1;
+
+    CErrorInfo(
+        EAlnErr category = eAlnErr_Unknown,
+        int lineNumber = NO_LINE_NUMBER,
+        const string& id = "",
+        const string& message = "",
+        CErrorInfo* next = nullptr):
+        mCategory(category),
+        mLineNumber(lineNumber),
+        mId(id),
+        mMessage(message),
+        mNext(next)
+    {};
+
+    ~CErrorInfo()
+    { delete mNext; };
+
+    const CErrorInfo* 
+    Next() const { return mNext; };
+
+    string
+    Message() const { return mMessage; };
+
+    string
+    Id() const { return mId; };
+
+    int
+    LineNumber() const { return mLineNumber; };
+
+    EAlnErr
+    Category() const { return mCategory; };
+
+protected:
+    EAlnErr mCategory;
+    int mLineNumber;
+    string mId;
+    string mMessage;
+    CErrorInfo* mNext;
+};
 
 typedef void (ALIGNMENT_CALLBACK *FReportErrorFunction) (
-  TErrorInfoPtr err_ptr, /* error to report */
-  void *        userdata /* data supplied by calling program to library */
+  const CErrorInfo&, /* error to report */
+  void* userdata /* data supplied by calling program to library */
 );
-
-TErrorInfoPtr ErrorInfoNew (TErrorInfoPtr list);
-
-void ErrorInfoFree (TErrorInfoPtr eip);
 
 typedef struct SSequenceInfo {
     char * missing;

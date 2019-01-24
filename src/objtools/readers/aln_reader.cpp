@@ -128,49 +128,44 @@ static char * ALIGNMENT_CALLBACK s_ReadLine(void *user_data)
 }
 
 
-static void ALIGNMENT_CALLBACK s_ReportError(TErrorInfoPtr err_ptr,
-                                             void *user_data)
+static void ALIGNMENT_CALLBACK s_ReportError(
+    const CErrorInfo& err,
+    void *user_data)
 {
     CAlnReader::TErrorList *err_list;
-    TErrorInfoPtr           next_err;
    
     const int category_BadData = 2;
     const int category_BadChar = 4;
 
+    const CErrorInfo* err_ptr = &err;
     while (err_ptr != NULL) {    
         if (user_data != NULL) {
             err_list = (CAlnReader::TErrorList *)user_data;
-            int category = err_ptr->category;
-            string err_msg = (err_ptr->message == NULL) ? "" : err_ptr->message;
+            int category = err_ptr->Category();
+            string err_msg = err_ptr->Message();
             if ( (category == category_BadData) &&
                  (err_msg.find("bad char") != string::npos) ) {
                 category = category_BadChar;
             }
-            (*err_list).push_back (CAlnError(category, err_ptr->line_num, 
-                                             err_ptr->id == NULL ? "" : err_ptr->id, 
-                                             err_msg));
+            (*err_list).push_back (
+                CAlnError(category, err_ptr->LineNumber(), err_ptr->Id(), err_msg));
         }
         
         string msg = "Error reading alignment file";
-        if (err_ptr->line_num > -1) {
-            msg += " at line " + NStr::IntToString(err_ptr->line_num);
+        if (err_ptr->LineNumber() != CErrorInfo::NO_LINE_NUMBER) {
+            msg += " at line " + NStr::IntToString(err_ptr->LineNumber());
         }
-        if (err_ptr->message) {
+        if (!err.Message().empty()) {
             msg += ":  ";
-            msg += err_ptr->message;
+            msg += err_ptr->Message();
         }
 
-        if (err_ptr->category == eAlnErr_Fatal) {
+        if (err_ptr->Category() == eAlnErr_Fatal) {
             LOG_POST_X(1, Error << msg);
         } else {
             LOG_POST_X(1, Info << msg);
         }
-
-        next_err = err_ptr->next;  
-        free (err_ptr->id);
-        free (err_ptr->message);
-        free (err_ptr);
-        err_ptr = next_err;
+        err_ptr = err_ptr->Next();
     }
 }
 

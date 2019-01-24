@@ -147,73 +147,29 @@ static void s_AfrpProcessFastaGap(
  * about errors encountered while reading the alignment data.
  */
 
-/* This function allocates memory for a new error structure and populates
- * the structure with default values.
- * The new structure will be added to the end of the linked list of error
- * structures pointed to by list.
- */
-TErrorInfoPtr ErrorInfoNew (TErrorInfoPtr list)
+string StrPrintf(const char *format, ...)
 {
-    TErrorInfoPtr eip, last;
-
-    eip = (TErrorInfoPtr) malloc ( sizeof (SErrorInfo));
-    if (eip == NULL) {
-        return NULL;
-    }
-    eip->category = eAlnErr_Unknown;
-    eip->line_num = -1;
-    eip->id       = NULL;
-    eip->message  = NULL;
-    eip->next     = NULL;
-    last = list;
-    while (last != NULL && last->next != NULL) {
-        last = last->next;
-    }
-    if (last != NULL) {
-        last->next = eip;
-    }
-    return eip;
-}
-
-/* This function recursively frees the memory associated with a list of
- * error structures as well as the member variables of the error structures.
- */
-void ErrorInfoFree (TErrorInfoPtr eip)
-{
-    if (eip == NULL) {
-        return;
-    }
-    ErrorInfoFree (eip->next);
-    free (eip->id);
-    free (eip->message);
-    free (eip);
+    va_list args;
+    va_start(args, format);
+    return NStr::FormatVarargs(format, args);
 }
 
 //  ============================================================================
 void
 sReportError(
-    const char* id,
+    const string& id,
     int lineNumber,
     EAlnErr errCode,
-    const char* errMessage,
+    const string& errMessage,
     FReportErrorFunction errReporter,
     void* errUserData)
 //  ============================================================================
 {
-    TErrorInfoPtr eip;
-
-    if (errReporter == NULL) {
+    if (!errReporter) {
         return;
     }
-    eip = ErrorInfoNew(NULL);
-    if (eip == NULL) {
-        return;
-    }
-    eip->category = errCode;
-    eip->id = strdup(id ? id : "");
-    eip->line_num = lineNumber;
-    eip->message = strdup(errMessage ? errMessage : "");
-    errReporter(eip, errUserData);
+    CErrorInfo errorInfo(errCode, lineNumber, id, errMessage);
+    errReporter(errorInfo, errUserData);
 }
 
 /* This function creates and sends an error message regarding a NEXUS comment
@@ -229,12 +185,7 @@ s_ReportCharCommentError(
 {
     const char * errFormat = 
         "Specified %s character does not match NEXUS comment in file (specified %s, comment %c)";
-
-    char* errMessage = (char*)malloc(
-        strlen(errFormat) + strlen(valName) + strlen(expected) + 2);
-    if (errMessage) {
-        sprintf(errMessage, errFormat, valName, expected, seen);
-    }
+    string errMessage = StrPrintf(errFormat, valName, expected, seen);
 
     sReportError(
         NULL,
@@ -243,7 +194,6 @@ s_ReportCharCommentError(
         errMessage,
         errfunc,
         errdata);
-    free(errMessage);
 }
 
 
@@ -262,13 +212,8 @@ s_ReportBadCharError(
     void* errdata)
 {
     const char * errFormat = "%d bad characters (%c) found at position %d (%s).";
-
-    char* errMessage = (char*)malloc(
-        strlen(errFormat) + 2*kMaxPrintedIntLen + strlen(reason) + 3);
-    if (errMessage) {
-        sprintf(errMessage, errFormat, num_bad, bad_char, offset, reason);
-    }
-
+    string errMessage = StrPrintf(errFormat, num_bad, bad_char, offset, reason);
+    
     sReportError(
         id,
         line_number,
@@ -276,7 +221,6 @@ s_ReportBadCharError(
         errMessage,
         errfunc,
         errdata);
-    free(errMessage);
 }
  
 
@@ -336,12 +280,9 @@ s_ReportLineLengthError(
     }
 
     const char * errFormat = "Expected line length %d, actual length %d";
+    size_t dataLength = (lip->data ? strlen(lip->data) : 0);
+    string errMessage = StrPrintf(errFormat, expected_length, dataLength);
 
-    char* errMessage = (char*)malloc(strlen(errFormat) + kMaxPrintedIntLen + 1);
-    if (errMessage) {
-        size_t len = (lip->data ? strlen(lip->data) : 0);
-        sprintf(errMessage, errFormat, expected_length, len);
-    }
     sReportError(
         id,
         lip->line_num,
@@ -349,7 +290,6 @@ s_ReportLineLengthError(
         errMessage,
         report_error,
         report_error_userdata);
-    free(errMessage);
 }
 
 
@@ -366,11 +306,8 @@ s_ReportBlockLengthError(
     void* report_error_userdata)
 {
     const char* errFormat = "Expected %d lines in block, found %d";
+    string errMessage = StrPrintf(errFormat, expected_num, actual_num);
 
-    char* errMessage = (char*)malloc(strlen(errFormat) + kMaxPrintedIntLen + 1);
-    if (errMessage) {
-        sprintf(errMessage, errFormat, expected_num, actual_num);
-    }
     sReportError(
         id,
         line_num,
@@ -378,7 +315,6 @@ s_ReportBlockLengthError(
         errMessage,
         report_error,
         report_error_userdata);
-    free(errMessage);
 }
 
 
@@ -434,11 +370,8 @@ s_ReportBadSequenceLength(
     void* report_error_userdata)
 {
     const char*  errFormat = "Expected sequence length %d, actual length %d";
+    string errMessage = StrPrintf(errFormat, expected_length, actual_length);
 
-    char* errMessage = (char*)malloc(strlen(errFormat) + 50);
-    if (errMessage) {
-        sprintf(errMessage, errFormat, expected_length, actual_length);
-    }
     sReportError(
         id,
         -1,
@@ -446,7 +379,6 @@ s_ReportBadSequenceLength(
         errMessage,
         report_error,
         report_error_userdata);
-    free(errMessage);
 }
 
 
@@ -461,11 +393,8 @@ s_ReportIncorrectNumberOfSequences(
     void* report_error_userdata)
 {
     const char*  errFormat = "Expected %d sequences, found %d";
+    string errMessage = StrPrintf(errFormat, num_expected, num_found);
 
-    char* errMessage = (char*)malloc(strlen(errFormat) + 2 * kMaxPrintedIntLen + 1);
-    if (errMessage) {
-        sprintf(errMessage, errFormat, num_expected, num_found);
-    }
     sReportError(
         NULL,
         -1,
@@ -473,7 +402,6 @@ s_ReportIncorrectNumberOfSequences(
         errMessage,
         report_error,
         report_error_userdata);
-    free(errMessage);
 }
 
 
@@ -485,11 +413,8 @@ s_ReportIncorrectSequenceLength(
     void* report_error_userdata)
 {
     const char*  errFormat = "Expected sequences of length %d, found %d";
+    string errMessage = StrPrintf(errFormat, len_expected, len_found);
 
-    char* errMessage = (char*)malloc(strlen(errFormat) + 2 * kMaxPrintedIntLen + 1);
-    if (errMessage) {
-        sprintf(errMessage, errFormat, len_expected, len_found);
-    }
     sReportError(
         NULL,
         -1,
@@ -497,7 +422,6 @@ s_ReportIncorrectSequenceLength(
         errMessage,
         report_error,
         report_error_userdata);
-    free(errMessage);
 }
 
 
@@ -528,21 +452,16 @@ s_ReportRepeatedId(
     FReportErrorFunction report_error,
     void* report_error_userdata)
 {
-    const char* errFormat = "ID %s appears in the following locations:";
-
     if (!scp  ||  !scp->string) {
         return;
     }
-    char* errMessage = (char*)malloc(
-        strlen(errFormat) + strlen(scp->string) + scp->num_appearances * 15 + 1);
-    if (errMessage) {
-        sprintf(errMessage, errFormat, scp->string);
-        char* errEnd = errMessage + strlen(errMessage);
-        for (TIntLinkPtr t = scp->line_numbers; t != NULL; t = t->next) {
-            sprintf(errEnd, " %d", t->ival);
-            errEnd += strlen(errEnd);
-        }
+
+    const char* errFormat = "ID %s appears in the following locations:";
+    string errMessage = StrPrintf(errFormat, scp->string);
+    for (TIntLinkPtr t = scp->line_numbers; t != NULL; t = t->next) {
+        errMessage += StrPrintf(" %d", t->ival);
     }
+
     sReportError(
         NULL,
         -1,
@@ -550,7 +469,6 @@ s_ReportRepeatedId(
         errMessage,
         report_error,
         report_error_userdata);
-    free(errMessage);
 }
 
 
@@ -622,10 +540,7 @@ s_ReportSegmentedAlignmentError(
         sprintf (listLineOffset, "%d, ", t->ival);
     }
 
-    char* errMessage = (char*)malloc(msgLen + strlen(errFormat) + 1);
-    if (errMessage) {
-        sprintf(errMessage, errFormat, listLineContent);
-    }
+    string errMessage = StrPrintf(errFormat, listLineContent);
     sReportError(
         NULL,
         -1,
@@ -633,7 +548,6 @@ s_ReportSegmentedAlignmentError(
         errMessage,
         errfunc,
         errdata);
-    free(errMessage);
 }
 
 
@@ -650,10 +564,7 @@ static void s_ReportOrgCommentError(
         "Organism descriptions should be of the form [org=tax name] or [organism=tax name]:"
         "    %s";
 
-    char* errMessage = (char*)malloc(strlen(errFormat) + strlen(linestring));
-    if (errMessage) {
-        sprintf(errMessage, errFormat, linestring);
-    }
+    string errMessage = StrPrintf(errFormat, linestring);
     sReportError(
         NULL,
         -1,
@@ -661,7 +572,6 @@ static void s_ReportOrgCommentError(
         errMessage,
         errfunc,
         errdata);
-    free(errMessage);
 }
 
  
@@ -678,10 +588,7 @@ static void s_ReportBadNumSegError(
     const char*  errFormat = 
         "This segmented set contains a different number of segments (%d) than expected (%d)";
 
-    char* errMessage = (char*)malloc(strlen(errFormat) + 2 * kMaxPrintedIntLen + 1);
-    if (errMessage) {
-        sprintf(errMessage, errFormat, num_seg, num_seg_exp);
-    }
+    string errMessage = StrPrintf(errFormat, num_seg, num_seg_exp);
     sReportError(
         NULL,
         -1,
@@ -689,7 +596,6 @@ static void s_ReportBadNumSegError(
         errMessage,
         errfunc,
         errdata);
-    free(errMessage);
 }
 
  
@@ -703,7 +609,6 @@ s_ReportUnusedLine(
     FReportErrorFunction errfunc,
     void* errdata)
 {
-    TErrorInfoPtr eip;
     const char * errFormat1 = "Line %d could not be assigned to an interleaved block";
     const char * errFormat2 = "Lines %d through %d could not be assigned to an interleaved block";
     const char * errFormat3 = "Contents of unused line: %s";
@@ -713,45 +618,8 @@ s_ReportUnusedLine(
         return;
     }
 
-    eip = ErrorInfoNew (NULL);
-    if (eip != NULL) {
-        if (line_num_start == line_num_stop) {
-            char* errMessage = (char*)malloc(strlen(errFormat1) + 2 * kMaxPrintedIntLen + 1);
-            if (errMessage) {
-                sprintf(errMessage, errFormat1, line_num_start);
-            }
-            sReportError(
-                NULL,
-                line_num_start,
-                eAlnErr_BadFormat,
-                errMessage,
-                errfunc,
-                errdata);
-            free(errMessage);
-        } else {
-            char* errMessage = (char*)malloc(strlen(errFormat2) + 2 * kMaxPrintedIntLen + 1);
-            if (errMessage) {
-                sprintf(errMessage, errFormat2, line_num_start);
-            }
-            sReportError(
-                NULL,
-                line_num_start,
-                eAlnErr_BadFormat,
-                errMessage,
-                errfunc,
-                errdata);
-            free(errMessage);
-        }
-    }
-    /* report contents of unused lines */
-    for (skip = line_num_start; skip < line_num_stop + 1  &&  line_val != NULL; skip++) {
-        if (line_val->data == NULL) {
-            continue;
-        }
-        char* errMessage = (char*)malloc(strlen(errFormat3) + strlen (line_val->data) + 1);
-        if (errMessage) {
-            sprintf(errMessage, errFormat3, line_val->data);
-        }
+    if (line_num_start == line_num_stop) {
+        string errMessage = StrPrintf(errFormat1, line_num_start);
         sReportError(
             NULL,
             line_num_start,
@@ -759,7 +627,30 @@ s_ReportUnusedLine(
             errMessage,
             errfunc,
             errdata);
-        free(errMessage);
+    } else {
+        string errMessage = StrPrintf(errFormat2, line_num_start);
+        sReportError(
+            NULL,
+            line_num_start,
+            eAlnErr_BadFormat,
+            errMessage,
+            errfunc,
+            errdata);
+    }
+
+    /* report contents of unused lines */
+    for (skip = line_num_start; skip < line_num_stop + 1  &&  line_val != NULL; skip++) {
+        if (line_val->data == NULL) {
+            continue;
+        }
+        string errMessage = StrPrintf(errFormat3, line_val->data);
+        sReportError(
+            NULL,
+            line_num_start,
+            eAlnErr_BadFormat,
+            errMessage,
+            errfunc,
+            errdata);
         line_val = line_val->next;
     }
 }
