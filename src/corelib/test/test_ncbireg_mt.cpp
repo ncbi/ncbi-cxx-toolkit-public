@@ -58,6 +58,7 @@ protected:
     virtual bool TestApp_Exit(void);
 private:
     CNcbiRegistry m_Registry;
+    bool          m_INSPXE;
 };
 
 
@@ -65,12 +66,14 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
 {
     // Check if CNcbiEnvironment is thread safe
     {{
-    CNcbiEnvironment env;
-    for (unsigned i = 0; i < s_NumThreads*10; i++) {
-        string e = "TESTENV" + NStr::IntToString(i);
-        assert(!env.Get(e).empty());
-    }
-    env.Reset();
+        CNcbiEnvironment env;
+        if (!m_INSPXE) {
+            for (unsigned i = 0; i < s_NumThreads * 10; i++) {
+                string e = "TESTENV" + NStr::IntToString(i);
+                assert(!env.Get(e).empty());
+            }
+        }
+        env.Reset();
     }}
 
     list<string> sections;
@@ -283,6 +286,10 @@ bool CTestRegApp::Thread_Run(int /*idx*/)
 
 bool CTestRegApp::TestApp_Init(void)
 {
+    // Intel Inspector have problems with putenv() on Windows,
+    // so detect it to avoid false positive.
+    m_INSPXE = ::getenv("NCBI_RUN_UNDER_VALGRIND") != NULL;
+
     NcbiCout << NcbiEndl
              << "Testing NCBIREG with "
              << NStr::IntToString(s_NumThreads)
@@ -319,10 +326,12 @@ bool CTestRegApp::TestApp_Init(void)
         env.Reset();
     }}
 
-    // Put some variables to test CNcbiEnvironment
-    for (unsigned i = 0; i < s_NumThreads*10; i++) {
-        string e = "TESTENV" + NStr::IntToString(i) + "=value";
-        putenv(strdup(e.c_str()));
+    if (!m_INSPXE) {
+        // Put some variables to test CNcbiEnvironment
+        for (unsigned i = 0; i < s_NumThreads*10; i++) {
+            string e = "TESTENV" + NStr::IntToString(i) + "=value";
+            putenv(strdup(e.c_str()));
+        }
     }
 
     // Test sectionless entries
