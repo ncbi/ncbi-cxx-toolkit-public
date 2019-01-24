@@ -723,7 +723,8 @@ public:
     ///  OSLT strings for the secondary ids
     /// @return
     ///  OSLT string for the primary id
-    string ComposeOSLT(list<string>* secondary_ids = nullptr) const;
+    string ComposeOSLT(list<string>* secondary_ids = nullptr,
+                       bool parse_local_id = false) const;
 
     /// ID length restrictions
     const static size_t kMaxLocalIDLength    = 50;

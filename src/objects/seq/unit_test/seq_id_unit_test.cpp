@@ -1108,6 +1108,14 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_GetLabel)
         "pdb|1GAV|xY", "1GAV_xY", "1GAV_xY", "PDB|1GAVX+Y",
         
 
+        "Seq-id ::= local str \"abcdABCD\"",
+        "lcl", "abcdABCD", "lcl|abcdABCD",
+        "lcl|abcdABCD", "abcdABCD", "abcdABCD", "LCL|ABCDABCD",
+
+        "Seq-id ::= local id 1234",
+        "lcl", "1234", "lcl|1234",
+        "lcl|1234", "1234", "1234", "LCL|1234",
+
         NULL, NULL, NULL, NULL, NULL, NULL, NULL
     };
 

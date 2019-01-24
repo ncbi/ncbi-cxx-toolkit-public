@@ -1664,9 +1664,12 @@ void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
             // values returned from the ComposeOSLT function. In the latter case,
             // always look at the first secondary ID in the list (there's almost
             // always just one anyway).
+            // CXX-10440 : Original default version of ComposeOSLT function returns
+            // empty string for local ids, but in this context local Seq-ids must
+            // be parsed, hence use a special flag.
             string primary_id;
             list<string> secondary_id_list;
-            primary_id = ComposeOSLT(&secondary_id_list);
+            primary_id = ComposeOSLT(&secondary_id_list, true);
             if (!primary_id.empty())
                 *label += primary_id;
             else if (secondary_id_list.size() > 0)
@@ -2884,7 +2887,7 @@ bool CSeq_id::AvoidGi(void)
 }
 
 
-string CSeq_id::ComposeOSLT(list<string>* secondary_id_list) const
+string CSeq_id::ComposeOSLT(list<string>* secondary_id_list, bool parse_local_id) const
 {
     string primary_id;
     string secondary_id;
@@ -2969,6 +2972,18 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list) const
             secondary_id = NStr::NumericToString(GetGi());
         }
         break;
+    case CSeq_id::e_Local:
+    {
+        if (parse_local_id && secondary_id_list) {
+            const CObject_id& oid = GetLocal();
+            if (oid.IsId()) {
+                secondary_id = NStr::IntToString(oid.GetId());
+            } else if (oid.IsStr()) {
+                secondary_id = oid.GetStr();
+            }
+        }
+        break;
+    }
     default:
     {
         // In the logic below, any Textseq-id is treated as primary. However a
