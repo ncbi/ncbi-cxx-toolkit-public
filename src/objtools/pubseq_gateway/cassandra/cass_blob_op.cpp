@@ -238,6 +238,41 @@ void CCassBlobOp::FetchNAnnot(
     ));
 }
 
+void CCassBlobOp::FetchNAnnot(
+    unsigned int op_timeout_ms,
+    const string & accession,
+    int16_t version,
+    int16_t seq_id_type,
+    const vector<CTempString>& annot_names,
+    TNAnnotConsumeCallback consume_callback,
+    TDataErrorCallback error_cb,
+    unique_ptr<CCassBlobWaiter> & waiter
+)
+{
+    waiter.reset(new CCassNAnnotTaskFetch(
+        op_timeout_ms, m_Conn, m_Keyspace,
+        accession, version, seq_id_type, annot_names,
+        move(consume_callback), move(error_cb)
+    ));
+}
+
+void CCassBlobOp::FetchNAnnot(
+    unsigned int op_timeout_ms,
+    const string & accession,
+    int16_t version,
+    int16_t seq_id_type,
+    TNAnnotConsumeCallback consume_callback,
+    TDataErrorCallback error_cb,
+    unique_ptr<CCassBlobWaiter> & waiter
+)
+{
+    waiter.reset(new CCassNAnnotTaskFetch(
+        op_timeout_ms, m_Conn, m_Keyspace,
+        accession, version, seq_id_type,
+        move(consume_callback), move(error_cb)
+    ));
+}
+
 
 void CCassBlobOp::DeleteBlobAsync(unsigned int  op_timeout_ms,
                                   int32_t  key, unsigned int  max_retries,

@@ -34,14 +34,16 @@
  *
  */
 
-#include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
-#include <objtools/pubseq_gateway/impl/cassandra/nannot/record.hpp>
-
 #include <functional>
 #include <string>
 #include <memory>
 #include <vector>
+
+#include <corelib/ncbistr.hpp>
+
+#include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/IdCassScope.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/nannot/record.hpp>
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
@@ -49,6 +51,17 @@ USING_NCBI_SCOPE;
 class CCassNAnnotTaskFetch
     : public CCassBlobWaiter
 {
+    union UAnnotNameBox {
+        UAnnotNameBox(const vector<string>& value)
+            : names(value)
+        {}
+        UAnnotNameBox(const vector<CTempString>& value)
+            : names_temp(value)
+        {}
+        ~UAnnotNameBox() {}
+        vector<string> names;
+        vector<CTempString> names_temp;
+    };
     enum EBlobFetchState {
         eInit = 0,
         eFetchStarted,
@@ -76,9 +89,23 @@ class CCassNAnnotTaskFetch
         string accession,
         int16_t version,
         int16_t seq_id_type,
+        const vector<CTempString> & annot_names,
         TNAnnotConsumeCallback consume_callback,
         TDataErrorCallback data_error_cb
     );
+
+    CCassNAnnotTaskFetch(
+        unsigned int timeout_ms,
+        shared_ptr<CCassConnection> connection,
+        const string & keyspace,
+        string accession,
+        int16_t version,
+        int16_t seq_id_type,
+        TNAnnotConsumeCallback consume_callback,
+        TDataErrorCallback data_error_cb
+    );
+
+    virtual ~CCassNAnnotTaskFetch();
 
  protected:
     virtual void Wait1(void) override;
@@ -87,7 +114,8 @@ class CCassNAnnotTaskFetch
     string m_Accession;
     int16_t m_Version;
     int16_t m_SeqIdType;
-    vector<string> m_AnnotNames;
+    UAnnotNameBox m_AnnotNameBox;
+    bool m_AnnotNameTempStrings;
     TNAnnotConsumeCallback m_Consume;
 };
 

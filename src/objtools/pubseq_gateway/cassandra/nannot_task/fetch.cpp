@@ -65,7 +65,31 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     , m_Accession(move(accession))
     , m_Version(version)
     , m_SeqIdType(seq_id_type)
-    , m_AnnotNames(annot_names)
+    , m_AnnotNameBox(annot_names)
+    , m_AnnotNameTempStrings(false)
+    , m_Consume(move(consume_callback))
+{}
+
+CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
+    unsigned int timeout_ms,
+    shared_ptr<CCassConnection> connection,
+    const string & keyspace,
+    string accession,
+    int16_t version,
+    int16_t seq_id_type,
+    const vector<CTempString> & annot_names,
+    TNAnnotConsumeCallback consume_callback,
+    TDataErrorCallback data_error_cb
+)
+    : CCassBlobWaiter(
+        timeout_ms, connection, keyspace,
+        0, true, 0, move(data_error_cb)
+    )
+    , m_Accession(move(accession))
+    , m_Version(version)
+    , m_SeqIdType(seq_id_type)
+    , m_AnnotNameBox(annot_names)
+    , m_AnnotNameTempStrings(true)
     , m_Consume(move(consume_callback))
 {}
 
@@ -86,9 +110,19 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     , m_Accession(move(accession))
     , m_Version(version)
     , m_SeqIdType(seq_id_type)
-    , m_AnnotNames(vector<string>())
+    , m_AnnotNameBox(vector<string>())
+    , m_AnnotNameTempStrings(false)
     , m_Consume(move(consume_callback))
 {}
+
+CCassNAnnotTaskFetch::~CCassNAnnotTaskFetch()
+{
+    if (m_AnnotNameTempStrings) {
+        m_AnnotNameBox.names_temp.~vector<CTempString>();
+    } else {
+        m_AnnotNameBox.names.~vector<string>();
+    }
+}
 
 void CCassNAnnotTaskFetch::Wait1()
 {
@@ -107,15 +141,25 @@ void CCassNAnnotTaskFetch::Wait1()
                 " WHERE"
                 "  accession = ? AND version = ? AND seq_id_type = ?";
             unsigned int params = 3;
-            if (!m_AnnotNames.empty()) {
-                sql += "AND annot_name in (" + NStr::Join(vector<string>(m_AnnotNames.size(), "?"), ",") + ")";
+            unsigned int names_count = 0;
+            if (m_AnnotNameTempStrings && !m_AnnotNameBox.names_temp.empty()) {
+                names_count = m_AnnotNameBox.names_temp.size();
+            } else if (!m_AnnotNameTempStrings && !m_AnnotNameBox.names.empty()) {
+                names_count = m_AnnotNameBox.names.size();
             }
-            m_QueryArr[0]->SetSQL(sql, params + m_AnnotNames.size());
+            if (names_count > 0) {
+                sql += "AND annot_name in (" + NStr::Join(vector<string>(names_count, "?"), ",") + ")";
+            }
+            m_QueryArr[0]->SetSQL(sql, params + names_count);
             m_QueryArr[0]->BindStr(0, m_Accession);
             m_QueryArr[0]->BindInt16(1, m_Version);
             m_QueryArr[0]->BindInt16(2, m_SeqIdType);
-            for (unsigned int i = params; i < m_AnnotNames.size() + params; ++i) {
-                m_QueryArr[0]->BindStr(i, m_AnnotNames[i-params]);
+            for (unsigned int i = params; i < names_count + params; ++i) {
+                if (m_AnnotNameTempStrings) {
+                    m_QueryArr[0]->BindStr(i, m_AnnotNameBox.names_temp[i-params]);
+                } else {
+                    m_QueryArr[0]->BindStr(i, m_AnnotNameBox.names[i-params]);
+                }
             }
             UpdateLastActivity();
             m_QueryArr[0]->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
@@ -138,7 +182,7 @@ void CCassNAnnotTaskFetch::Wait1()
                         .SetModified(m_QueryArr[0]->FieldGetInt64Value(2, 0))
                         .SetStart(m_QueryArr[0]->FieldGetInt32Value(3, 0))
                         .SetStop(m_QueryArr[0]->FieldGetInt32Value(4, 0));
-                    do_next = m_Consume(move(record));
+                    do_next = m_Consume(move(record), false);
                     if (do_next) {
                         state = m_QueryArr[0]->NextRow();
                     }
@@ -147,6 +191,7 @@ void CCassNAnnotTaskFetch::Wait1()
                     CloseAll();
                     m_State = eDone;
                 }
+                m_Consume(CNAnnotRecord(), true);
             }
             break;
         }

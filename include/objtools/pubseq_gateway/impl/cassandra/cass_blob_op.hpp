@@ -436,6 +436,23 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         TDataErrorCallback error_cb,
         unique_ptr<CCassBlobWaiter> & waiter
     );
+    void FetchNAnnot(unsigned int op_timeout_ms,
+        const string & accession,
+        int16_t version,
+        int16_t seq_id_type,
+        const vector<CTempString>& annot_names,
+        TNAnnotConsumeCallback consume_callback,
+        TDataErrorCallback error_cb,
+        unique_ptr<CCassBlobWaiter> & waiter
+    );
+    void FetchNAnnot(unsigned int op_timeout_ms,
+        const string & accession,
+        int16_t version,
+        int16_t seq_id_type,
+        TNAnnotConsumeCallback consume_callback,
+        TDataErrorCallback error_cb,
+        unique_ptr<CCassBlobWaiter> & waiter
+    );
 
     void DeleteBlobAsync(unsigned int  op_timeout_ms,
                          int32_t  key, unsigned int  max_retries,

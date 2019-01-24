@@ -114,7 +114,7 @@ class CNAnnotRecord {
     int16_t m_SeqIdType;
 };
 
-using TNAnnotConsumeCallback = function<bool(CNAnnotRecord &&)>;
+using TNAnnotConsumeCallback = function<bool(CNAnnotRecord &&, bool last)>;
 
 END_IDBLOB_SCOPE
 
