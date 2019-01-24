@@ -540,6 +540,9 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
             break;
         case e_none:
             m_In = OpenFile(fname);
+            if (m_In.get() == nullptr) {
+                NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
+            }
             if (!m_In->InGoodState()) {
                 NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
             }
