@@ -39,25 +39,16 @@ int CSampleObjectsApplication::Run(void)
     int             sec_seq_id_type = args["sec_seq_id_type"].AsInteger();
 
     CSeq_id         seq_id;
-    if (sec_seq_id_type == 11 && sec_seq_id.find('|') == string::npos) {
-//        CDbtag      dbtag;
-//        dbtag.SetDb("tigr");
-//        dbtag.SetTag().SetStr(sec_seq_id);
-        seq_id.Set((CSeq_id::E_Choice) sec_seq_id_type, "tigr", sec_seq_id); //, 0, "");
-    } else {
-        seq_id.Set(CSeq_id::eFasta_AsTypeAndContent,
-                   (CSeq_id::E_Choice) sec_seq_id_type, sec_seq_id);
-    }
+    seq_id.Set(CSeq_id::eFasta_AsTypeAndContent,
+               (CSeq_id::E_Choice) sec_seq_id_type, sec_seq_id);
 
     string          fasta = seq_id.AsFastaString();
 
-//    _ASSERT(seq_id.Which() == sec_seq_id_type);
     string          fasta_type;
     seq_id.GetLabel(&fasta_type, CSeq_id::eType);
 
     string          fasta_content;
     seq_id.GetLabel(&fasta_content, CSeq_id::eFastaContent);
-//    _ASSERT(fasta_content == sec_seq_id);
 
     bool    fasta_content_parsable = false;
     try {
@@ -80,10 +71,6 @@ int CSampleObjectsApplication::Run(void)
          << "which: " << (int) seq_id.Which() << endl
          << "fasta_type: " << fasta_type << endl
          << "fasta_content_parsable: " << fasta_content_parsable;
-
-//    cout <<  setw(6) << i << ":  { " << sec_seq_id_type << ", '" << sec_seq_id << "' }  -->  '"
-//         << fasta << "'  --> { "
-//         << fasta_type << "(" << (int) seq_id.Which() << "), '" << fasta_content << "' } " << endl;
 
     return 0;
 }
