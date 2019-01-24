@@ -304,13 +304,6 @@ CBlastPrelimSearch::Run()
                            BlastErrorCode2String(retval));
             }
         }
-        CRef<TBlastHSPStream> s(m_InternalData->m_HspStream);
-        if (m_Options->GetProgram() != eMapper &&
-            *((*s)->results->hitlist_array) == NULL) {
-
-            CNcbiDiag diag;
-            diag << Warning << "No seeds produced for query" << Endm;
-        }
     }
 
     return m_InternalData;
