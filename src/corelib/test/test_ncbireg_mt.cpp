@@ -288,7 +288,7 @@ bool CTestRegApp::TestApp_Init(void)
 {
     // Intel Inspector have problems with putenv() on Windows,
     // so detect it to avoid false positive.
-    m_INSPXE = ::getenv("NCBI_RUN_UNDER_VALGRIND") != NULL;
+    m_INSPXE = ::getenv("NCBI_RUN_UNDER_INSPXE") != NULL;
 
     NcbiCout << NcbiEndl
              << "Testing NCBIREG with "
