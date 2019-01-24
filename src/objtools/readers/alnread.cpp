@@ -190,18 +190,12 @@ void ErrorInfoFree (TErrorInfoPtr eip)
 }
 
 //  ============================================================================
-//  *** Note ***
-//  sReportError takes possession of the memory pointed to by id and errMessage, 
-//  i.e. it will (eventually) free them.
-//  The calling function must therefore allocate id and errMessage on on heap, 
-//  and *not* free them after passing them to this function.
-//
 void
 sReportError(
-    char* id,
+    const char* id,
     int lineNumber,
     EAlnErr errCode,
-    char* errMessage,
+    const char* errMessage,
     FReportErrorFunction errReporter,
     void* errUserData)
 //  ============================================================================
@@ -216,9 +210,9 @@ sReportError(
         return;
     }
     eip->category = errCode;
-    eip->id = id;
+    eip->id = strdup(id ? id : "");
     eip->line_num = lineNumber;
-    eip->message = errMessage;
+    eip->message = strdup(errMessage ? errMessage : "");
     errReporter(eip, errUserData);
 }
 
@@ -249,6 +243,7 @@ s_ReportCharCommentError(
         errMessage,
         errfunc,
         errdata);
+    free(errMessage);
 }
 
 
@@ -281,6 +276,7 @@ s_ReportBadCharError(
         errMessage,
         errfunc,
         errdata);
+    free(errMessage);
 }
  
 
@@ -295,10 +291,10 @@ s_ReportInconsistentID(
     void* report_error_userdata)
 {
     sReportError(
-        strdup(id),
+        id,
         line_number,
         eAlnErr_BadFormat,
-        strdup("Found unexpected ID"),
+        "Found unexpected ID",
         report_error,
         report_error_userdata);
 }
@@ -315,10 +311,10 @@ s_ReportInconsistentBlockLine(
     void* report_error_userdata)
 {
     sReportError(
-        strdup(id),
+        id,
         line_number,
         eAlnErr_BadFormat,
-        strdup("Inconsistent block line formatting"),
+        "Inconsistent block line formatting",
         report_error,
         report_error_userdata);
 }
@@ -353,6 +349,7 @@ s_ReportLineLengthError(
         errMessage,
         report_error,
         report_error_userdata);
+    free(errMessage);
 }
 
 
@@ -381,6 +378,7 @@ s_ReportBlockLengthError(
         errMessage,
         report_error,
         report_error_userdata);
+    free(errMessage);
 }
 
 
@@ -398,7 +396,7 @@ s_ReportDuplicateIDError(
         id,
         line_num,
         eAlnErr_BadData,
-        strdup("Duplicate ID!  Sequences will be concatenated!"),
+        "Duplicate ID!  Sequences will be concatenated!",
         report_error,
         report_error_userdata);
 }
@@ -417,7 +415,7 @@ s_ReportMissingSequenceData(
         id,
         -1,
         eAlnErr_Fatal,
-        strdup("No data found"),
+        "No data found",
         report_error,
         report_error_userdata);
 }
@@ -448,6 +446,7 @@ s_ReportBadSequenceLength(
         errMessage,
         report_error,
         report_error_userdata);
+    free(errMessage);
 }
 
 
@@ -474,6 +473,7 @@ s_ReportIncorrectNumberOfSequences(
         errMessage,
         report_error,
         report_error_userdata);
+    free(errMessage);
 }
 
 
@@ -497,6 +497,7 @@ s_ReportIncorrectSequenceLength(
         errMessage,
         report_error,
         report_error_userdata);
+    free(errMessage);
 }
 
 
@@ -512,7 +513,7 @@ s_ReportMissingOrganismInfo(
         NULL,
         -1,
         eAlnErr_BadData,
-        strdup ("Missing organism information"),
+        "Missing organism information",
         report_error,
         report_error_userdata);
 }
@@ -549,6 +550,7 @@ s_ReportRepeatedId(
         errMessage,
         report_error,
         report_error_userdata);
+    free(errMessage);
 }
 
 
@@ -564,7 +566,7 @@ s_ReportASN1Error(
         NULL,
         -1,
         eAlnErr_BadData,
-        strdup("This is an ASN.1 file which cannot be read by this function"),
+        "This is an ASN.1 file which cannot be read by this function",
         errfunc,
         errdata);
 }
@@ -631,6 +633,7 @@ s_ReportSegmentedAlignmentError(
         errMessage,
         errfunc,
         errdata);
+    free(errMessage);
 }
 
 
@@ -658,6 +661,7 @@ static void s_ReportOrgCommentError(
         errMessage,
         errfunc,
         errdata);
+    free(errMessage);
 }
 
  
@@ -685,63 +689,24 @@ static void s_ReportBadNumSegError(
         errMessage,
         errfunc,
         errdata);
+    free(errMessage);
 }
 
  
-/* This function allocates memory for a SSequenceInfo structure and
- * initializes the member variables.  It returns a pointer to the newly
- * allocated memory.
- */
-TSequenceInfoPtr SequenceInfoNew (void)
-{
-    TSequenceInfoPtr sip;
-
-    sip = (TSequenceInfoPtr) malloc (sizeof (SSequenceInfo));
-    if (sip == NULL) {
-        return NULL;
-    }
-    sip->missing       = strdup ("?");
-    sip->beginning_gap = strdup (".");
-    sip->middle_gap    = strdup ("-");
-    sip->end_gap       = strdup (".");
-    sip->match         = strdup (".");
-    sip->alphabet      = NULL;
-    return sip;
-}
-
-
-/* This function frees memory associated with the member variables of
- * the SSequenceInfo structure and with the structure itself.
- */
-void SequenceInfoFree (TSequenceInfoPtr sip)
-{
-    if (sip == NULL) {
-        return;
-    }
-    free (sip->missing);
-    free (sip->beginning_gap);
-    free (sip->middle_gap);
-    free (sip->end_gap);
-    free (sip->match);
-    sip->alphabet = NULL;
-    free (sip);
-}
-
-
 /* This function creates and sends an error message regarding an unused line.
  */
 static void 
-s_ReportUnusedLine
-(int                  line_num_start,
- int                  line_num_stop,
- TLineInfoPtr         line_val,
- FReportErrorFunction errfunc,
- void *               errdata)
+s_ReportUnusedLine(
+    int line_num_start,
+    int line_num_stop,
+    TLineInfoPtr line_val,
+    FReportErrorFunction errfunc,
+    void* errdata)
 {
     TErrorInfoPtr eip;
-    const char * errformat1 = "Line %d could not be assigned to an interleaved block";
-    const char * errformat2 = "Lines %d through %d could not be assigned to an interleaved block";
-    const char * errformat3 = "Contents of unused line: %s";
+    const char * errFormat1 = "Line %d could not be assigned to an interleaved block";
+    const char * errFormat2 = "Lines %d through %d could not be assigned to an interleaved block";
+    const char * errFormat3 = "Contents of unused line: %s";
     int skip;
 
     if (errfunc == NULL  ||  line_val == NULL) {
@@ -750,48 +715,57 @@ s_ReportUnusedLine
 
     eip = ErrorInfoNew (NULL);
     if (eip != NULL) {
-        eip->category = eAlnErr_BadFormat;
-        eip->line_num = line_num_start;
         if (line_num_start == line_num_stop) {
-              eip->message = (char*)malloc(strlen(errformat1) + kMaxPrintedIntLen + 1);
-            if (eip->message != NULL) {
-                sprintf (eip->message, errformat1, line_num_start);
+            char* errMessage = (char*)malloc(strlen(errFormat1) + 2 * kMaxPrintedIntLen + 1);
+            if (errMessage) {
+                sprintf(errMessage, errFormat1, line_num_start);
             }
+            sReportError(
+                NULL,
+                line_num_start,
+                eAlnErr_BadFormat,
+                errMessage,
+                errfunc,
+                errdata);
+            free(errMessage);
         } else {
-            eip->message = (char*)malloc(strlen(errformat2) + 2*kMaxPrintedIntLen + 1);
-            if (eip->message != NULL) {
-                sprintf (eip->message, errformat2, line_num_start,
-                         line_num_stop);
+            char* errMessage = (char*)malloc(strlen(errFormat2) + 2 * kMaxPrintedIntLen + 1);
+            if (errMessage) {
+                sprintf(errMessage, errFormat2, line_num_start);
             }
+            sReportError(
+                NULL,
+                line_num_start,
+                eAlnErr_BadFormat,
+                errMessage,
+                errfunc,
+                errdata);
+            free(errMessage);
         }
-        errfunc (eip, errdata);
     }
     /* report contents of unused lines */
-    for (skip = line_num_start;
-         skip < line_num_stop + 1  &&  line_val != NULL;
-         skip++) {
+    for (skip = line_num_start; skip < line_num_stop + 1  &&  line_val != NULL; skip++) {
         if (line_val->data == NULL) {
             continue;
         }
-        eip = ErrorInfoNew (NULL);
-        if (eip != NULL) {
-            eip->category = eAlnErr_BadFormat;
-            eip->line_num = skip;
-            eip->message = (char *) malloc (strlen (errformat3)
-                                            + strlen (line_val->data) + 1);
-            if (eip->message != NULL) {
-                sprintf (eip->message, errformat3, line_val->data);
-            }
-            errfunc (eip, errdata);
+        char* errMessage = (char*)malloc(strlen(errFormat3) + strlen (line_val->data) + 1);
+        if (errMessage) {
+            sprintf(errMessage, errFormat3, line_val->data);
         }
+        sReportError(
+            NULL,
+            line_num_start,
+            eAlnErr_BadFormat,
+            errMessage,
+            errfunc,
+            errdata);
+        free(errMessage);
         line_val = line_val->next;
     }
 }
 
 
-/* The following functions are used to manage a linked list of integer
- * values.
- */
+/* The following functions are used to manage a linked list of integer values. */
 
 /* This function creates a new SIntLink structure with a value of ival.
  * The new structure will be placed at the end of list if list is not NULL.
