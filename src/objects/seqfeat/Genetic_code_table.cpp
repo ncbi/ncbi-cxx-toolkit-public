@@ -758,7 +758,10 @@ const char * CGen_code_table_imp::sm_GenCodeTblMemStr [] =
     "sncbieaa \"----------**-----------------------M----------------------------\" } ,\n",
     "{ name \"Balanophoraceae Plastid\" , id 32 ,\n",
     "ncbieaa  \"FFLLSSSSYY*WCC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG\",\n",
-    "sncbieaa \"---M------*---*----M------------MMMM---------------M------------\" } };\n",
+    "sncbieaa \"---M------*---*----M------------MMMM---------------M------------\" } ,\n",
+    "{ name \"Cephalodiscidae Mitochondrial\" , id 33 ,\n",
+    "ncbieaa  \"FFLLSSSSYYY*CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSSKVVVVAAAADDEEGGGG\",\n",
+    "sncbieaa \"---M-------*-------M---------------M---------------M------------\" } };\n",
     0  // to indicate that there is no more data
 };
 
