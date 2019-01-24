@@ -240,7 +240,7 @@ extern bool SetCpuTimeLimit(size_t                max_cpu_time,
 /// CSystemInfo --
 ///
 /// Return various system information.
-/// All methods works on UNIX and Windows, if not specified otherwise.
+/// All methods work on UNIX and Windows, unless otherwise stated.
 
 class NCBI_XNCBI_EXPORT CSystemInfo
 {
