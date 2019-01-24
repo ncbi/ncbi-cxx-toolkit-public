@@ -46,9 +46,16 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
                                ECassSchemaType  resolver_schema,
                                string &  err_msg)
 {
+    resolver_keyspace.clear();
+    mapping.clear();
+
+    if (mapping_keyspace.empty()) {
+        err_msg = "mapping_keyspace is not specified";
+        return false;
+    }
+
     bool rv = false;
     err_msg = "sat2keyspace info is empty";
-    resolver_keyspace.clear();
     
     shared_ptr<CCassQuery>  query = conn->NewQuery();
 
@@ -56,19 +63,22 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
                   "    sat,\n"
                   "    keyspace_name,\n"
                   "    schema_type\n"
-                  "FROM"
+                  "FROM\n"
                   "    " + mapping_keyspace + ".sat2keyspace", 0);
     query->Query(KEYSPACE_MAPPING_CONSISTENCY, false, false);
 
+    rv = true;
     while (query->NextRow() == ar_dataready) {
         int32_t     sat = query->FieldGetInt32Value(0);
         string      name = query->FieldGetStrValue(1);
         ECassSchemaType schema_type = static_cast<ECassSchemaType>(query->FieldGetInt32Value(2));
-        
-        if (schema_type == resolver_schema) {
+
+        if (schema_type <= eUnknownSchema || schema_type > eMaxSchema) {
+            // ignoring
+        }
+        else if (schema_type == resolver_schema) {
             if (resolver_keyspace.empty()) {
                 resolver_keyspace = name;                
-                rv = true;
             }
             else {
                 // More than one resolver keyspace
@@ -88,6 +98,11 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
         err_msg = "sat2keyspace is incomplete";
         rv = false;
     }
+    if (rv && resolver_keyspace.empty() && resolver_schema != eUnknownSchema) {
+        err_msg = "resolver schema is not found in sat2keyspace";
+        rv = false;
+    }
+
     return rv;
 }
 
