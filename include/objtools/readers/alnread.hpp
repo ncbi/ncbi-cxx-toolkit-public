@@ -45,11 +45,6 @@ BEGIN_NCBI_SCOPE
 typedef char * (ALIGNMENT_CALLBACK *FReadLineFunction) (void * userdata);
 
 typedef enum {
-    eTrue = -1,
-    eFalse = 0
-} EBool;
-
-typedef enum {
     eAlnErr_Unknown = -1,
     eAlnErr_NoError = 0,
     eAlnErr_Fatal,
@@ -165,7 +160,7 @@ TAlignmentFilePtr ReadAlignmentFileEx (
   TSequenceInfoPtr     sequence_info, /* structure containing sequence
                                        * alphabet and special characters
                                        */
-  EBool           use_nexus_file_info /* set to nonzero to replace data in 
+  bool           use_nexus_file_info /* set to nonzero to replace data in 
                                        * sequence_info with characters
                                        * read from NEXUS comment in file,
                                        * set to 0 otherwise.
@@ -192,7 +187,7 @@ NCBI_XOBJREAD_EXPORT TAlignmentFilePtr ReadAlignmentFile2 (
   TSequenceInfoPtr     sequence_info, /* structure containing sequence
                                        * alphabet and special characters
                                        */
-  EBool                gen_local_ids  /* flag indicating whether input IDs
+  bool                gen_local_ids  /* flag indicating whether input IDs
                                        * should be replaced with unique
                                        * local IDs
                                        */ 
@@ -212,12 +207,12 @@ NCBI_XOBJREAD_EXPORT TAlignmentFilePtr ReadAlignmentFileEx2 (
   TSequenceInfoPtr     sequence_info, /* structure containing sequence
                                        * alphabet and special characters
                                        */
-  EBool          use_nexus_file_info, /* set to nonzero to replace data in 
+  bool          use_nexus_file_info, /* set to nonzero to replace data in 
                                        * sequence_info with characters
                                        * read from NEXUS comment in file,
                                        * set to 0 otherwise.
                                        */
-  EBool                gen_local_ids  /* flag indicating whether input IDs
+  bool                gen_local_ids  /* flag indicating whether input IDs
                                        * should be replaced with unique
                                        * local IDs
                                        */ 

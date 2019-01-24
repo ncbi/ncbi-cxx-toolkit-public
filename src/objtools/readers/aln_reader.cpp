@@ -287,7 +287,7 @@ void CAlnReader::Read(
 
     afp = ReadAlignmentFile2(s_ReadLine, (void *) &m_IS,
                             s_ReportError, &(m_Errors), &info,
-                            (generate_local_ids ? eTrue : eFalse));
+                            generate_local_ids);
 
     // report any errors through proper channels:
     if (pErrorListener) {

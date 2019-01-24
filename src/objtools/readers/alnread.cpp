@@ -63,7 +63,7 @@ typedef struct SLineInfo {
     char *             data;
     int                line_num;
     int                line_offset;
-    EBool              delete_me;
+    bool              delete_me;
     struct SLineInfo * next;
 } SLineInfo, * TLineInfoPtr;
 
@@ -124,7 +124,7 @@ typedef struct SAlignFileRaw {
     int                  num_organisms;
     TLineInfoPtr         deflines;
     int                  num_deflines;
-    EBool                marked_ids;
+    bool                marked_ids;
     int                  block_size;
     TIntLinkPtr          offset_list;
     FReportErrorFunction report_error;
@@ -138,10 +138,10 @@ typedef struct SAlignFileRaw {
 
 /* Function declarations
  */
-static EBool s_AfrpInitLineData( 
+static bool s_AfrpInitLineData( 
     SAlignRawFilePtr afrp, FReadLineFunction readfunc, void* pfile);
 static void s_AfrpProcessFastaGap(
-    SAlignRawFilePtr afrp, SLengthListPtr * patterns, EBool * last_line_was_marked_id, char* plinestr, int overall_line_count);
+    SAlignRawFilePtr afrp, SLengthListPtr * patterns, bool * last_line_was_marked_id, char* plinestr, int overall_line_count);
 
 /* These functions are used for storing and transmitting information
  * about errors encountered while reading the alignment data.
@@ -745,10 +745,10 @@ static void s_SizeInfoFree (TSizeInfoPtr list)
 }
 
 
-/* This function returns eTrue if the two SSizeInfo structures have
- * the same size_value and number of appearances, eFalse otherwise.
+/* This function returns true if the two SSizeInfo structures have
+ * the same size_value and number of appearances, false otherwise.
  */
-static EBool 
+static bool 
 s_SizeInfoIsEqual 
 (TSizeInfoPtr s1,
  TSizeInfoPtr s2)
@@ -757,9 +757,9 @@ s_SizeInfoIsEqual
       ||  s2 == NULL
       ||  s1->size_value != s2->size_value
       ||  s1->num_appearances != s2->num_appearances) {
-        return eFalse;
+        return false;
     }
-    return eTrue;
+    return true;
 }
 
 
@@ -952,10 +952,10 @@ s_AddLengthRepeat
  * the structures match if each SSizeInfo structure in llp1->lengthrepeats
  * has the same size_value and num_appearances values as the SSizeInfo
  * structure in the corresponding list position in llp2->lenghrepeats.
- * If the two structures match, the function returns eTrue, otherwise the
- * function returns eFalse.
+ * If the two structures match, the function returns true, otherwise the
+ * function returns false.
  */
-static EBool 
+static bool 
 s_DoLengthPatternsMatch 
 (SLengthListPtr llp1,
  SLengthListPtr llp2)
@@ -965,7 +965,7 @@ s_DoLengthPatternsMatch
     if (llp1 == NULL  ||  llp2 == NULL
         ||  llp1->lengthrepeats == NULL
         ||  llp2->lengthrepeats == NULL) {
-        return eFalse;
+        return false;
     }
     for (sip1 = llp1->lengthrepeats, sip2 = llp2->lengthrepeats;
          sip1 != NULL  &&  sip2 != NULL;
@@ -973,10 +973,10 @@ s_DoLengthPatternsMatch
         if ( ! s_SizeInfoIsEqual (sip1, sip2)
           ||  (sip1->next == NULL  &&  sip2->next != NULL)
           ||  (sip1->next != NULL  &&  sip2->next == NULL)) {
-            return eFalse;
+            return false;
         }
     }
-    return eTrue;
+    return true;
 }
 
 
@@ -1035,7 +1035,7 @@ s_LineInfoNew
     lip->data = strdup (string);
     lip->line_num = line_num + 1;
     lip->line_offset = line_offset;
-    lip->delete_me = eFalse;
+    lip->delete_me = false;
     lip->next = NULL;
     return lip;
 }
@@ -1179,7 +1179,7 @@ static int s_CountSequencesInBracketedComment(TBracketedCommentListPtr comment)
 {
     TLineInfoPtr lip;
     int          num_segments = 0;
-    EBool        skipped_line_since_last_defline = eTrue;
+    bool        skipped_line_since_last_defline = true;
     
     if (comment == NULL || comment->comment_lines == NULL) {
         return 0;
@@ -1203,12 +1203,12 @@ static int s_CountSequencesInBracketedComment(TBracketedCommentListPtr comment)
             else
             {
                 ++num_segments;
-                skipped_line_since_last_defline = eFalse;
+                skipped_line_since_last_defline = false;
             }
         }
         else 
         {
-            skipped_line_since_last_defline = eTrue;
+            skipped_line_since_last_defline = true;
         }
         lip = lip->next;
     }
@@ -1855,67 +1855,67 @@ s_GetFASTAExpectedNumbers
 
 
 /* This function examines the string str to see if it begins with two
- * numbers separated by whitespace.  The function returns eTrue if so,
- * otherwise it returns eFalse.
+ * numbers separated by whitespace.  The function returns true if so,
+ * otherwise it returns false.
  */
-static EBool s_IsTwoNumbersSeparatedBySpace (char * str)
+static bool s_IsTwoNumbersSeparatedBySpace (char * str)
 {
     char * cp;
-    EBool  found_first_number = eFalse;
-    EBool  found_dividing_space = eFalse;
-    EBool  found_second_number = eFalse;
-    EBool  found_second_number_end = eFalse;
+    bool  found_first_number = false;
+    bool  found_dividing_space = false;
+    bool  found_second_number = false;
+    bool  found_second_number_end = false;
 
     if (str == NULL) {
-        return eFalse;
+        return false;
     }
     cp = str;
     while (*cp != 0) {
         if (! isdigit ((unsigned char)*cp)  &&  ! isspace ((unsigned char)*cp)) {
-            return eFalse;
+            return false;
         }
         if (! found_first_number) {
             if (! isdigit ((unsigned char)*cp)) {
-                return eFalse;
+                return false;
             }
-            found_first_number = eTrue;
+            found_first_number = true;
         } else if (! found_dividing_space) {
             if ( isspace ((unsigned char) *cp)) {
-                found_dividing_space = eTrue;
+                found_dividing_space = true;
             } else if ( ! isdigit ((unsigned char)*cp)) {
-                return eFalse;
+                return false;
             }
         } else if (! found_second_number) {
             if ( isdigit ((unsigned char)*cp)) {
-                found_second_number = eTrue;
+                found_second_number = true;
             } else if (! isspace ((unsigned char) *cp)) {
-                return eFalse;
+                return false;
             }
         } else if (! found_second_number_end) {
             if ( isspace ((unsigned char) *cp)) {
-                found_second_number_end = eTrue;
+                found_second_number_end = true;
             } else if (! isdigit ((unsigned char)*cp)) {
-                return eFalse;
+                return false;
             }
         } else if (! isspace ((unsigned char) *cp)) {
-            return eFalse;
+            return false;
         }
         cp++;
     }
     if (found_second_number) {
-        return eTrue;
+        return true;
     }
-    return eFalse;
+    return false;
 }
 
 
 /* This function finds a value name in a string, looks for an equals sign
  * after the value name, and then looks for an integer value after the
  * equals sign.  If the integer value is found, the function copies the
- * integer value into the val location and returns eTrue, otherwise the
- * function returns eFalse.
+ * integer value into the val location and returns true, otherwise the
+ * function returns false.
  */
-static EBool 
+static bool 
 s_GetOneNexusSizeComment 
 (char       * str,
  const char * valname, 
@@ -1927,19 +1927,19 @@ s_GetOneNexusSizeComment
     size_t maxlen;
 
     if (str == NULL  ||  valname == NULL  ||  val == NULL) {
-        return eFalse;
+        return false;
     }
 
     cpstart = strstr (str, valname);
     if (cpstart == NULL) {
-        return eFalse;
+        return false;
     }
     cpstart += strlen (valname);
     while (*cpstart != 0  &&  isspace ((unsigned char)*cpstart)) {
         cpstart++;
     }
     if (*cpstart != '=') {
-        return eFalse;
+        return false;
     }
     cpstart ++;
     while (*cpstart != 0  &&  isspace ((unsigned char)*cpstart)) {
@@ -1947,7 +1947,7 @@ s_GetOneNexusSizeComment
     }
 
     if (! isdigit ((unsigned char)*cpstart)) {
-        return eFalse;
+        return false;
     }
     cpend = cpstart + 1;
     while ( *cpend != 0  &&  isdigit ((unsigned char)*cpend)) {
@@ -1960,20 +1960,20 @@ s_GetOneNexusSizeComment
     strncpy(buf, cpstart, maxlen);
     buf [maxlen] = 0;
     *val = atoi (buf);
-    return eTrue;
+    return true;
 }
 
 
 /* This function looks for Nexus-style comments to indicate the number of
  * sequences and the number of characters per sequence expected from this
- * alignment file.  If the function finds these comments, it returns eTrue,
- * otherwise it returns eFalse.
+ * alignment file.  If the function finds these comments, it returns true,
+ * otherwise it returns false.
  */
 static void 
 s_GetNexusSizeComments 
 (char *           str,
- EBool *          found_ntax,
- EBool *          found_nchar,
+ bool *          found_ntax,
+ bool *          found_nchar,
  SAlignRawFilePtr afrp)
 {
     int  num_sequences;
@@ -1987,15 +1987,15 @@ s_GetNexusSizeComments
         (s_GetOneNexusSizeComment (str, "ntax", &num_sequences)
         ||   s_GetOneNexusSizeComment (str, "NTAX", &num_sequences))) {
         afrp->expected_num_sequence = num_sequences;
-        afrp->align_format_found = eTrue;
-        *found_ntax = eTrue;
+        afrp->align_format_found = true;
+        *found_ntax = true;
     }
     if (! *found_nchar  &&
         (s_GetOneNexusSizeComment (str, "nchar", &num_chars)
         ||  s_GetOneNexusSizeComment (str, "NCHAR", &num_chars))) {
         afrp->expected_sequence_len = num_chars;
-        afrp->align_format_found = eTrue;
-        *found_nchar = eTrue;
+        afrp->align_format_found = true;
+        *found_nchar = true;
     }
 }
 
@@ -2040,10 +2040,10 @@ static char GetNexusTypechar (char * str, const char * val_name)
 /* This function reads a Nexus-style comment line for the characters 
  * specified for missing, match, and gap and compares the characters from
  * the comment with the characters specified in sequence_info.  If any
- * discrepancies are found, the function reports the errors and returns eFalse,
- * otherwise the function returns eTrue.
+ * discrepancies are found, the function reports the errors and returns false,
+ * otherwise the function returns true.
  */ 
-static EBool s_CheckNexusCharInfo 
+static bool s_CheckNexusCharInfo 
 (char *               str,
  TSequenceInfoPtr     sequence_info,
  FReportErrorFunction errfunc,
@@ -2053,7 +2053,7 @@ static EBool s_CheckNexusCharInfo
     char   c;
 
     if (str == NULL  ||  sequence_info == NULL) {
-        return eFalse;
+        return false;
     }
 
     cp = strstr (str, "format ");
@@ -2061,11 +2061,11 @@ static EBool s_CheckNexusCharInfo
         cp = strstr (str, "FORMAT ");
     }
     if (cp == NULL) {
-        return eFalse;
+        return false;
     }
 
     if (errfunc == NULL) {
-        return eTrue;
+        return true;
     }
 
     c = GetNexusTypechar (cp + 7, "missing");
@@ -2100,7 +2100,7 @@ static EBool s_CheckNexusCharInfo
         s_ReportCharCommentError (sequence_info->match, c, "MATCH",
                                 errfunc, errdata);
     }
-    return eTrue;
+    return true;
 } 
 
 
@@ -2126,9 +2126,9 @@ static char * s_ReplaceNexusTypeChar (char *str, char c)
 
 /* This function reads a Nexus-style comment line for the characters 
  * specified for missing, match, and gap and sets those values in sequence_info.
- * The function returns eTrue if a Nexus comment was found, eFalse otherwise.
+ * The function returns true if a Nexus comment was found, false otherwise.
  */ 
-static EBool s_UpdateNexusCharInfo 
+static bool s_UpdateNexusCharInfo 
 (char *               str,
  TSequenceInfoPtr     sequence_info)
 {
@@ -2136,7 +2136,7 @@ static EBool s_UpdateNexusCharInfo
     char   c;
 
     if (str == NULL  ||  sequence_info == NULL) {
-        return eFalse;
+        return false;
     }
 
     cp = strstr (str, "format ");
@@ -2144,7 +2144,7 @@ static EBool s_UpdateNexusCharInfo
         cp = strstr (str, "FORMAT ");
     }
     if (cp == NULL) {
-        return eFalse;
+        return false;
     }
 
     c = GetNexusTypechar (cp + 7, "missing");
@@ -2167,45 +2167,45 @@ static EBool s_UpdateNexusCharInfo
     }
     sequence_info->match = s_ReplaceNexusTypeChar (sequence_info->match, c);
 
-    return eTrue;
+    return true;
 } 
 
 
 /* This function examines the string str to see if it consists entirely of
  * asterisks, colons, periods, and whitespace.  If so, this line is assumed
- * to be a Clustal-style consensus line and the function returns eTrue.
+ * to be a Clustal-style consensus line and the function returns true.
  * otherwise the function returns false;
  */
-static EBool s_IsConsensusLine (char * str)
+static bool s_IsConsensusLine (char * str)
 {
     if (str == NULL 
         ||  strspn (str, "*:. \t\r\n") < strlen (str)
         ||  (strchr (str, '*') == NULL 
              &&  strchr (str, ':') == NULL
              &&  strchr (str, '.') == NULL)) {
-        return eFalse;
+        return false;
     } else {
-        return eTrue;
+        return true;
     } 
 }
 
 
 /* This function identifies lines that begin with a NEXUS keyword and end
  * with a semicolon - they will not contain sequence data.  The function
- * returns eTrue if the line contains only a NEXUS comment, eFalse otherwise.
+ * returns true if the line contains only a NEXUS comment, false otherwise.
  */
-static EBool s_SkippableNexusComment (char *str)
+static bool s_SkippableNexusComment (char *str)
 {
     char * last_semicolon;
 
     if (str == NULL) {
-        return eFalse;
+        return false;
     }
     last_semicolon = strrchr (str, ';');
     if (last_semicolon == NULL
         ||  strspn (last_semicolon + 1, " \t\r") != strlen (last_semicolon + 1)
         ||  strchr (str, ';') != last_semicolon) {
-        return eFalse;
+        return false;
     }
     if (s_StringNICmp (str, "format ", 7) == 0
         ||  s_StringNICmp (str, "dimensions ", 11) == 0
@@ -2213,26 +2213,26 @@ static EBool s_SkippableNexusComment (char *str)
         ||  s_StringNICmp (str, "begin characters", 16) == 0
         ||  s_StringNICmp (str, "begin data", 10) == 0
         ||  s_StringNICmp (str, "begin ncbi", 10) == 0) {
-        return eTrue;
+        return true;
     } else {
-        return eFalse;
+        return false;
     }
 }
 
 
-static EBool s_IsOnlyNumbersAndSpaces (char *str)
+static bool s_IsOnlyNumbersAndSpaces (char *str)
 {
     if (str == NULL) {
-        return eFalse;
+        return false;
     }
 
     while (*str != 0) {
         if (!isspace (*str) && !isdigit(*str)) {
-            return eFalse;
+            return false;
         }
         ++str;
     }
-    return eTrue;
+    return true;
 }
 
 
@@ -2240,7 +2240,7 @@ static EBool s_IsOnlyNumbersAndSpaces (char *str)
  * in that they do not contain sequence data and therefore should not be
  * considered part of any block patterns or sequence data.
  */
-static EBool s_SkippableString (char * str)
+static bool s_SkippableString (char * str)
 {
     if (str == NULL
         ||  s_StringNICmp (str, "matrix", 6) == 0
@@ -2252,9 +2252,9 @@ static EBool s_SkippableString (char * str)
         ||  s_IsOnlyNumbersAndSpaces (str)
         ||  s_IsConsensusLine (str)
         ||  str [0] == ';') {
-        return eTrue;
+        return true;
     } else {
-        return eFalse;
+        return false;
     } 
 }
 
@@ -2262,7 +2262,7 @@ static EBool s_SkippableString (char * str)
 /* This function determines whether str contains a indication
  * that this is real alignment format (nexus, clustal, etc.)
  */
-static EBool s_IsAlnFormatString (char * str)
+static bool s_IsAlnFormatString (char * str)
 {
     if (s_StringNICmp (str, "matrix", 6) == 0
         ||  s_StringNICmp (str, "#NEXUS", 6) == 0
@@ -2270,27 +2270,27 @@ static EBool s_IsAlnFormatString (char * str)
         ||  s_SkippableNexusComment (str)
         ||  s_IsTwoNumbersSeparatedBySpace (str)
         ||  s_IsConsensusLine (str)) {
-        return eTrue;
+        return true;
     } else {
-        return eFalse;
+        return false;
     }
 }
 
 
 /* This function determines whether or not str contains a blank line.
  */
-static EBool s_IsBlank (char * str)
+static bool s_IsBlank (char * str)
 {
     size_t len;
 
     if (str == NULL) {
-        return eTrue;
+        return true;
     }
     len = strspn (str, " \t\r");
     if (len == strlen (str)) {
-        return eTrue;
+        return true;
     }
-    return eFalse;
+    return false;
 }
 
 
@@ -2298,28 +2298,28 @@ static EBool s_IsBlank (char * str)
  * indicating the end of sequence data (organism information and definition
  * lines may occur after this line).
  */
-static EBool s_FoundStopLine (char * linestring)
+static bool s_FoundStopLine (char * linestring)
 {
     if (linestring == NULL) {
-        return eFalse;
+        return false;
     }
     if (s_StringNICmp (linestring, "endblock", 8) == 0
         ||  s_StringNICmp (linestring, "end;", 4) == 0) {
-        return eTrue;
+        return true;
     }
-    return eFalse;
+    return false;
 }
 
 
 /* This function identifies the beginning line of an ASN.1 file, which
  * cannot be read by the alignment reader.
  */
-static EBool s_IsASN1 (char * linestring)
+static bool s_IsASN1 (char * linestring)
 {
     if (linestring != NULL  &&  strstr (linestring, "::=") != NULL) {
-        return eTrue;
+        return true;
     } else {
-        return eFalse;
+        return false;
     }
 }
 
@@ -2425,26 +2425,26 @@ static void s_RemoveCommentFromLine (char * linestring)
 /* This function determines whether or not a comment describes an organism
  * by looking for org= or organism= inside the brackets.
  */
-static EBool s_IsOrganismComment (TCommentLocPtr clp)
+static bool s_IsOrganismComment (TCommentLocPtr clp)
 {
     int    len;
     char * cp;
     char * cp_end;
 
     if (clp == NULL  ||  clp->start == NULL  ||  clp->end == NULL) {
-        return eFalse;
+        return false;
     }
  
     cp = clp->start;
     if (*cp != '[') {
-        return eFalse;
+        return false;
     }
     cp ++;
     len = strspn ( clp->start, " \t\r");
     cp = cp + len;
     cp_end = strstr (cp, "=");
     if (cp_end == NULL) {
-        return eFalse;
+        return false;
     }
     cp_end --;
     while (cp_end > cp  &&  isspace ((unsigned char)*cp_end)) {
@@ -2453,9 +2453,9 @@ static EBool s_IsOrganismComment (TCommentLocPtr clp)
     cp_end ++;
     if ((cp_end - cp == 3  &&  s_StringNICmp (cp, "org", 3) == 0)
         ||  (cp_end - cp == 8  &&  s_StringNICmp (cp, "organism", 8) == 0)) {
-        return eTrue;
+        return true;
     }
-    return eFalse;
+    return false;
 }
 
 
@@ -2674,7 +2674,7 @@ static void s_AddDeflineFromOrganismLine
         // use new line numbers 
         lip->line_num = line_num + 1;
         lip->line_offset = defline_offset;
-        lip->delete_me = eFalse;        
+        lip->delete_me = false;        
     }
     else
     {
@@ -2957,10 +2957,10 @@ s_AddAlignRawSeqById
 
 
 /* This function adds data to the Nth sequence in the sequence list and
- * returns eTrue, unless there aren't that many sequences in the list, in
- * which case the function returns eFalse.
+ * returns true, unless there aren't that many sequences in the list, in
+ * which case the function returns false.
  */
-static EBool 
+static bool 
 s_AddAlignRawSeqByIndex 
 (TAlignRawSeqPtr list,
  int     index,
@@ -2976,13 +2976,13 @@ s_AddAlignRawSeqByIndex
         curr++;
     }
     if (arsp == NULL) {
-        return eFalse;
+        return false;
     } else {
         arsp->sequence_data = s_AddLineInfo (arsp->sequence_data,
                                            data,
                                            data_line_num,
                                            data_line_offset);
-        return eTrue;
+        return true;
     }
 }
 
@@ -3017,7 +3017,7 @@ static SAlignRawFilePtr s_AlignFileRawNew (void)
     if (afrp == NULL) {
         return NULL;
     }
-    afrp->marked_ids            = eFalse;
+    afrp->marked_ids            = false;
     afrp->line_list             = NULL;
     afrp->organisms             = NULL;
     afrp->num_organisms         = 0;
@@ -3032,7 +3032,7 @@ static SAlignRawFilePtr s_AlignFileRawNew (void)
     afrp->expected_num_sequence = 0;
     afrp->expected_sequence_len = 0;
     afrp->num_segments          = 1;
-    afrp->align_format_found    = eFalse;
+    afrp->align_format_found    = false;
     return afrp;
 }
 
@@ -3188,10 +3188,10 @@ s_AugmentBlockPatternOffsetList
 
 
 /* This function looks for lines that could not be assigned to an interleaved
- * block.  It returns eTrue if it finds any such lines after the first offset,
- * eFalse otherwise, and reports all instances of unused lines as errors.
+ * block.  It returns true if it finds any such lines after the first offset,
+ * false otherwise, and reports all instances of unused lines as errors.
  */
-static EBool
+static bool
 s_FindUnusedLines 
 (SLengthListPtr pattern_list,
  SAlignRawFilePtr afrp)
@@ -3200,13 +3200,13 @@ s_FindUnusedLines
     SLengthListPtr llp;
     int            line_counter;
     int            block_line_counter;
-    EBool          rval = eFalse;
+    bool          rval = false;
     TLineInfoPtr   line_val;
     int            skip;
 
     if (pattern_list == NULL  ||  afrp == NULL
         ||  afrp->offset_list == NULL  ||  afrp->block_size < 2) {
-        return eFalse;
+        return false;
     }
     
     offset = afrp->offset_list;
@@ -3224,7 +3224,7 @@ s_FindUnusedLines
                                     afrp->report_error,
                                     afrp->report_error_userdata);
                 if (offset != afrp->offset_list) {
-                    rval = eTrue;
+                    rval = true;
                 }
             }
             line_counter += llp->num_appearances;
@@ -3309,7 +3309,7 @@ s_FindInterleavedBlocks
         afrp->offset_list = NULL;
         afrp->block_size = 0;
     } else {
-        afrp->align_format_found = eTrue;
+        afrp->align_format_found = true;
     }
     s_SizeInfoFree (size_list);
     
@@ -3338,20 +3338,20 @@ static void s_TrimSpace(char** ppline)
     }
 }
 
-static EBool
+static bool
 s_AfrpInitLineData(
     SAlignRawFilePtr afrp,
     FReadLineFunction readfunc,
     void* pfile)
 {
     int overall_line_count = 0;
-    EBool in_taxa_comment = eFalse;
+    bool in_taxa_comment = false;
     char* linestring = readfunc (pfile);
     TLineInfoPtr last_line = NULL, next_line = NULL;
 
     if (s_IsASN1 (linestring)) {
         s_ReportASN1Error (afrp->report_error, afrp->report_error_userdata);
-        return eFalse;
+        return false;
     }
 
     while (linestring != NULL  &&  linestring [0] != EOF) {
@@ -3361,13 +3361,13 @@ s_AfrpInitLineData(
         }
         if (in_taxa_comment) {
             if (strncmp (linestring, "end;", 4) == 0) {
-                in_taxa_comment = eFalse;
+                in_taxa_comment = false;
             } 
             linestring [0] = 0;
         } else if (strncmp (linestring, "begin taxa;", 11) == 0) {
             linestring [0] = 0;
-            in_taxa_comment = eTrue;
-            afrp->align_format_found = eTrue;
+            in_taxa_comment = true;
+            afrp->align_format_found = true;
         }
         next_line = s_LineInfoNew (linestring, overall_line_count, 0);
         if (last_line == NULL) {
@@ -3381,14 +3381,14 @@ s_AfrpInitLineData(
         linestring = readfunc (pfile);
         overall_line_count ++;
     }
-    return eTrue;
+    return true;
 }
 
 static void
 s_AfrpProcessFastaGap(
     SAlignRawFilePtr afrp,
     SLengthListPtr * patterns,
-    EBool * last_line_was_marked_id,
+    bool * last_line_was_marked_id,
     char* linestr,
     int overall_line_count)
 {
@@ -3419,24 +3419,24 @@ s_AfrpProcessFastaGap(
             */
         if (*last_line_was_marked_id)
         {
-            afrp->marked_ids = eFalse;
+            afrp->marked_ids = false;
 //            eFormat = ALNFMT_UNKNOWN;
         }
         else
         {
-            afrp->marked_ids = eTrue;
+            afrp->marked_ids = true;
 //            eFormat = ALNFMT_FASTAGAP;
         }
         new_offset = s_IntLinkNew (overall_line_count + 1,
                                     afrp->offset_list);
         if (afrp->offset_list == NULL) afrp->offset_list = new_offset;
-        *last_line_was_marked_id = eTrue;
+        *last_line_was_marked_id = true;
         return;
     }
 
     /*  Data line
      */
-    *last_line_was_marked_id = eFalse;
+    *last_line_was_marked_id = false;
     /* add to length list for interleaved block search */
     len = strcspn (linestr, " \t\r");
     if (len > 0) {
@@ -3469,7 +3469,7 @@ s_ReadAlignFileRaw
 (FReadLineFunction    readfunc,
  void *               userdata,
  TSequenceInfoPtr     sequence_info,
- EBool                use_nexus_file_info,
+ bool                use_nexus_file_info,
  FReportErrorFunction errfunc,
  void *               errdata,
  EAlignFormat*        pformat)
@@ -3477,17 +3477,17 @@ s_ReadAlignFileRaw
     char *                   linestring;
     SAlignRawFilePtr         afrp;
     int                      overall_line_count;
-    EBool                    found_expected_ntax = eFalse;
-    EBool                    found_expected_nchar = eFalse;
-    EBool                    found_char_comment = eFalse;
+    bool                    found_expected_ntax = false;
+    bool                    found_expected_nchar = false;
+    bool                    found_char_comment = false;
     SLengthListPtr           pattern_list = NULL;
     SLengthListPtr           this_pattern, last_pattern = NULL;
     char *                   cp;
     size_t                   len;
     TIntLinkPtr              new_offset;
-    EBool                    in_bracketed_comment = eFalse;
+    bool                    in_bracketed_comment = false;
     TBracketedCommentListPtr comment_list = NULL, last_comment = NULL;
-    EBool                    last_line_was_marked_id = eFalse;
+    bool                    last_line_was_marked_id = false;
     TLineInfoPtr             next_line;
 
     if (readfunc == NULL  ||  sequence_info == NULL) {
@@ -3503,7 +3503,7 @@ s_ReadAlignFileRaw
     afrp->report_error = errfunc;
     afrp->report_error_userdata = errdata;
 
-    if (eFalse == s_AfrpInitLineData(afrp, readfunc, userdata)) {
+    if (!s_AfrpInitLineData(afrp, readfunc, userdata)) {
         s_AlignFileRawFree (afrp);
         return NULL;
     }
@@ -3529,9 +3529,9 @@ s_ReadAlignFileRaw
         if (! found_expected_ntax  ||  ! found_expected_nchar) {
             if (s_IsTwoNumbersSeparatedBySpace (linestring)) {
                 s_GetFASTAExpectedNumbers (linestring, afrp);
-                found_expected_ntax = eTrue;
-                found_expected_nchar = eTrue;
-                afrp->align_format_found = eTrue;
+                found_expected_ntax = true;
+                found_expected_nchar = true;
+                afrp->align_format_found = true;
            } else {
                 s_GetNexusSizeComments (linestring, &found_expected_ntax,
                                         &found_expected_nchar, afrp);
@@ -3559,11 +3559,11 @@ s_ReadAlignFileRaw
                                                overall_line_count, len);
             }
             if (strchr (linestring, ']') != NULL) {
-                in_bracketed_comment = eFalse;
+                in_bracketed_comment = false;
             }
             linestring [0] = 0;
         } else if (linestring [0] == '[' && strchr (linestring, ']') == NULL) {
-            in_bracketed_comment = eTrue;
+            in_bracketed_comment = true;
             len = strspn (linestring, " \t\r\n");
             last_comment = s_BracketedCommentListNew (comment_list,
                                                       linestring + len,
@@ -3585,7 +3585,7 @@ s_ReadAlignFileRaw
         /*  "junk" line: Just record the empty pattern to keep line counts in sync.
          */
         if (linestring[0] == 0) {
-            last_line_was_marked_id = eFalse;
+            last_line_was_marked_id = false;
             this_pattern = s_GetBlockPattern ("");
             if (pattern_list == NULL) {
                 pattern_list = this_pattern;
@@ -3606,7 +3606,7 @@ s_ReadAlignFileRaw
              */
             if (last_line_was_marked_id)
             {
-                afrp->marked_ids = eFalse;
+                afrp->marked_ids = false;
                 *pformat = ALNFMT_UNKNOWN;
             }
             else
@@ -3618,13 +3618,13 @@ s_ReadAlignFileRaw
             new_offset = s_IntLinkNew (overall_line_count + 1,
                                       afrp->offset_list);
             if (afrp->offset_list == NULL) afrp->offset_list = new_offset;
-            last_line_was_marked_id = eTrue;
+            last_line_was_marked_id = true;
             continue;
         }
 
         /* default case: some real data at last ...
          */
-        last_line_was_marked_id = eFalse;
+        last_line_was_marked_id = false;
         /* add to length list for interleaved block search */
         len = strcspn (linestring, " \t\r");
         if (len > 0) {
@@ -3668,7 +3668,7 @@ s_ReadAlignFileRaw
         else
         {
             afrp->offset_list = GetSegmentOffsetList (comment_list);
-            afrp->marked_ids = eTrue;
+            afrp->marked_ids = true;
         }
     }
     if (! afrp->marked_ids) {
@@ -3683,10 +3683,10 @@ s_ReadAlignFileRaw
 /* This function analyzes a block to see if it contains, as the first element
  * of any of its lines, one of the sequence IDs already identified.  If the
  * one of the lines does begin with a sequence ID, all of the lines are
- * assumed to begin with sequence IDs and the function returns eTrue, otherwise
- * the function returns eFalse.
+ * assumed to begin with sequence IDs and the function returns true, otherwise
+ * the function returns false.
  */
-static EBool 
+static bool 
 s_DoesBlockHaveIds 
 (SAlignRawFilePtr afrp, 
  TLineInfoPtr     first_line,
@@ -3700,7 +3700,7 @@ s_DoesBlockHaveIds
     int             block_offset;
 
     if (afrp->sequences == NULL) {
-         return eTrue;
+         return true;
     }
 
     for (lip = first_line, block_offset = 0;
@@ -3713,43 +3713,43 @@ s_DoesBlockHaveIds
             if (len > 0  &&  len < strlen (linestring)) {
                 this_id = (char *) malloc (len + 1);
                 if (this_id == NULL) {
-                    return eFalse;
+                    return false;
                 }
                 strncpy (this_id, linestring, len);
                 this_id [len] = 0;
                 arsp = s_FindAlignRawSeqById (afrp->sequences, this_id);
                 free (this_id);
                 if (arsp != NULL) {
-                    return eTrue;
+                    return true;
                 }
             }
         }
     }
-    return eFalse;
+    return false;
 }
 
 
 /* This function analyzes the lines of the block to see if the pattern of
  * the lengths of the whitespace-separated pieces of sequence data matches
- * for all lines within the block.  The function returns eTrue if this is so,
- * otherwise the function returns eFalse.
+ * for all lines within the block.  The function returns true if this is so,
+ * otherwise the function returns false.
  */
-static EBool 
+static bool 
 s_BlockIsConsistent
 (SAlignRawFilePtr afrp,
  TLineInfoPtr     first_line,
  int              num_lines_in_block,
- EBool            has_ids,
- EBool            first_block)
+ bool            has_ids,
+ bool            first_block)
 {
     TLineInfoPtr   lip;
     SLengthListPtr list, this_pattern, best;
     int            len, block_offset, id_offset;
     char *         tmp_id;
-    EBool          rval;
+    bool          rval;
     char *         cp;
 
-    rval = eTrue;
+    rval = true;
     list = NULL;
     for (lip = first_line, block_offset = 0;
          lip != NULL  &&  block_offset < num_lines_in_block;
@@ -3767,13 +3767,13 @@ s_BlockIsConsistent
             }
             tmp_id = (char *) malloc ( (len + 1) * sizeof (char));
             if (tmp_id == NULL) {
-                return eFalse;
+                return false;
             }
             strncpy (tmp_id, cp, len);
             tmp_id [len] = 0;
             id_offset = s_FindAlignRawSeqOffsetById (afrp->sequences, tmp_id);
             if (id_offset != block_offset  &&  ! first_block) {
-                rval = eFalse;
+                rval = false;
                 s_ReportInconsistentID (tmp_id, lip->line_num,
                                       afrp->report_error,
                                       afrp->report_error_userdata);
@@ -3817,7 +3817,7 @@ s_BlockIsConsistent
             }        
             tmp_id = (char *) malloc ( (len + 1) * sizeof (char));
             if (tmp_id == NULL) {
-                return eFalse;
+                return false;
             }
             strncpy (tmp_id, cp, len);
             tmp_id [len] = 0;
@@ -3828,7 +3828,7 @@ s_BlockIsConsistent
         }
         this_pattern = s_GetBlockPattern (cp);
         if ( ! s_DoLengthPatternsMatch (this_pattern, best)) {
-            rval = eFalse;
+            rval = false;
             s_ReportInconsistentBlockLine (tmp_id, lip->line_num,
                                          afrp->report_error,
                                          afrp->report_error_userdata);
@@ -3851,7 +3851,7 @@ s_ProcessBlockLines
 (SAlignRawFilePtr afrp,
  TLineInfoPtr     lines,
  int              num_lines_in_block,
- EBool            first_block)
+ bool            first_block)
 {
     TLineInfoPtr    lip;
     char *          linestring;
@@ -3859,7 +3859,7 @@ s_ProcessBlockLines
     char *          this_id;
     int             len;
     int             line_number;
-    EBool           this_block_has_ids;
+    bool           this_block_has_ids;
     TAlignRawSeqPtr arsp;
 
     this_block_has_ids = s_DoesBlockHaveIds (afrp, lines, num_lines_in_block);
@@ -3952,8 +3952,8 @@ static void s_ProcessAlignRawFileByBlockOffsets (SAlignRawFilePtr afrp)
     int           line_counter;
     TIntLinkPtr   offset_ptr;
     TLineInfoPtr  lip;
-    EBool         first_block = eTrue;
-    EBool         in_taxa_comment = eFalse;
+    bool         first_block = true;
+    bool         in_taxa_comment = false;
  
     if (afrp == NULL) {
         return;
@@ -3966,16 +3966,16 @@ static void s_ProcessAlignRawFileByBlockOffsets (SAlignRawFilePtr afrp)
            &&  (in_taxa_comment  ||  ! s_FoundStopLine (lip->data))) {
         if (in_taxa_comment) {
             if (strncmp (lip->data, "end;", 4) == 0) {
-                in_taxa_comment = eFalse;
+                in_taxa_comment = false;
             } 
         } else if (lip->data != NULL
             &&  strncmp (lip->data, "begin taxa;", 11) == 0) {
-            in_taxa_comment = eTrue;
+            in_taxa_comment = true;
         }
         if (line_counter == offset_ptr->ival) {
             s_RemoveCommentsFromBlock (lip, afrp->block_size);
             s_ProcessBlockLines (afrp, lip, afrp->block_size, first_block);
-            first_block = eFalse;
+            first_block = false;
             offset_ptr = offset_ptr->next;
         }
         lip = lip->next;
@@ -3992,7 +3992,7 @@ s_CreateSequencesBasedOnTokenPatterns
  TIntLinkPtr      offset_list,
  SLengthListPtr * anchorpattern,
  SAlignRawFilePtr afrp,
- EBool gen_local_ids)
+ bool gen_local_ids)
 {
     TLineInfoPtr lip;
     int          line_counter;
@@ -4292,7 +4292,7 @@ static void s_RemoveBasePairCountCommentsFromData (SAlignRawFilePtr afrp)
  */
 static void s_ProcessAlignFileRawForMarkedIDs (
     SAlignRawFilePtr afrp,
-    EBool gen_local_ids)
+    bool gen_local_ids)
 {
     SLengthListPtr * anchorpattern;
     
@@ -4344,13 +4344,13 @@ static TLineInfoPtr s_RemoveCommentsFromTokens (TLineInfoPtr list)
     int           num_comment_starts;
     char *        cp_r;
     char *        cp;
-    EBool         in_comment;
+    bool         in_comment;
 
     num_comment_starts = 0;
-    in_comment = eFalse;
+    in_comment = false;
     for (lip = list;  lip != NULL;  lip = lip->next) {
         if (lip->data == NULL) {
-            lip->delete_me = eTrue;
+            lip->delete_me = true;
         } else {
             cp_r = NULL;
             for (cp = lip->data; *cp != 0; cp++) {
@@ -4383,19 +4383,19 @@ static TLineInfoPtr s_RemoveCommentsFromTokens (TLineInfoPtr list)
             }
             if (in_comment) {
                 if (num_comment_starts == 0) {
-                    in_comment = eFalse;
+                    in_comment = false;
                 } else {
-                    lip->delete_me = eTrue;
+                    lip->delete_me = true;
                 }
             } else if (num_comment_starts > 0) {
                 cp_r = strchr (lip->data, '[');
                 if (cp_r != NULL) {
                     *cp_r = 0;
                 }
-                in_comment = eTrue;
+                in_comment = true;
             }
             if (lip->data [0] == 0) {
-                lip->delete_me = eTrue;
+                lip->delete_me = true;
             }
         }
     }
@@ -4425,10 +4425,10 @@ static TLineInfoPtr s_RemoveNexusCommentsFromTokens (TLineInfoPtr list)
             }
             if (end_lip != NULL) {
                 while (start_lip != end_lip) {
-                    start_lip->delete_me = eTrue;
+                    start_lip->delete_me = true;
                     start_lip = start_lip->next;
                 }
-                end_lip->delete_me = eTrue;
+                end_lip->delete_me = true;
                 lip = end_lip->next;
             } else {
                 lip = lip->next;
@@ -4735,7 +4735,7 @@ s_AugmentOffsetList
     TSizeInfoPtr  sip;
     TIntLinkPtr   prev_offset, next_offset, new_offset;
     int           line_counter, forecast_position, line_skip;
-    EBool         skipped_previous = eFalse;
+    bool         skipped_previous = false;
     int           num_chars;
     int           num_additional_offsets = 0;
     int           max_additional_offsets = 5000; /* if it's that bad, forget it */
@@ -4761,7 +4761,7 @@ s_AugmentOffsetList
         if (next_offset != NULL  &&  line_counter > next_offset->ival) {
             next_offset = next_offset->next;
         } else if (next_offset != NULL  &&  line_counter == next_offset->ival) {
-            skipped_previous = eFalse;
+            skipped_previous = false;
             prev_offset = next_offset;
             next_offset = next_offset->next;
             /* advance sip and line counter past the end of this pattern */
@@ -4823,7 +4823,7 @@ s_AugmentOffsetList
                 }
             }
         } else {
-            skipped_previous = eTrue;
+            skipped_previous = true;
             line_counter += sip->num_appearances;
             sip = sip->next;
         }
@@ -5129,17 +5129,17 @@ static void s_InsertNewOffsets
 
 
 /* This function returns true if the string contains digits, false otherwise */
-static EBool s_ContainsDigits (char *data)
+static bool s_ContainsDigits (char *data)
 {
     char *cp;
 
-    if (data == NULL) return eFalse;
+    if (data == NULL) return false;
     for (cp = data; *cp != 0; cp++) {
         if (isdigit ((unsigned char)(*cp))) {
-            return eTrue;
+            return true;
         }
     }
-    return eFalse;
+    return false;
 }
 
 
@@ -5206,7 +5206,7 @@ static void s_ProcessAlignFileRawByLengthPattern (SAlignRawFilePtr afrp)
      * between anchor patterns for sequence data
      */
     s_CreateSequencesBasedOnTokenPatterns (token_list, offset_list,
-                                       anchorpattern, afrp, eFalse);
+                                       anchorpattern, afrp, false);
   
     s_LengthListFree (anchorpattern[0]);
     s_LengthListFree (list);
@@ -5353,18 +5353,18 @@ static char * s_GetDeflineFromIdString (char * str)
  * to obtain a defline (if there is extra text after the ID and/or
  * organism information) and to obtain the actual ID for the sequence.
  */
-static EBool s_ReprocessIds (SAlignRawFilePtr afrp)
+static bool s_ReprocessIds (SAlignRawFilePtr afrp)
 {
     TStringCountPtr list, scp;
     TAlignRawSeqPtr arsp;
     TLineInfoPtr    lip;
     char *          id;
     int             line_num;
-    EBool           rval = eTrue;
+    bool           rval = true;
     char *          defline;
 
     if (afrp == NULL) {
-        return eFalse;
+        return false;
     }
 
     list = NULL;
@@ -5393,7 +5393,7 @@ static EBool s_ReprocessIds (SAlignRawFilePtr afrp)
 
     for (scp = list;  scp != NULL;  scp = scp->next) {
         if (scp->num_appearances > 1) {
-            rval = eFalse;
+            rval = false;
             s_ReportRepeatedId (scp, afrp->report_error,
                               afrp->report_error_userdata);
         }
@@ -5447,10 +5447,10 @@ s_ReportRepeatedBadCharsInSequence
  * gap characters and are not in the specified sequence alphabet are
  * reported as errors.  Match characters in the first sequence are also
  * reported as errors.
- * The function will return eTrue if any errors were found, or eFalse
+ * The function will return true if any errors were found, or false
  * if there were no errors.
  */
-static EBool
+static bool
 s_FindBadDataCharsInSequence
 (TAlignRawSeqPtr      arsp,
  TAlignRawSeqPtr      master_arsp,
@@ -5464,10 +5464,10 @@ s_FindBadDataCharsInSequence
     int                middle_start = 0;
     int                middle_end = 0;
     char               curr_char, master_char;
-    EBool              found_middle_start;
-    EBool              rval = eFalse;
-    EBool              match_not_in_beginning_gap;
-    EBool              match_not_in_end_gap;
+    bool              found_middle_start;
+    bool              rval = false;
+    bool              match_not_in_beginning_gap;
+    bool              match_not_in_end_gap;
 
     char               beginning_gap = '-';
     char               middle_gap = '-';
@@ -5490,18 +5490,18 @@ s_FindBadDataCharsInSequence
 
 
     if (arsp == NULL  ||  master_arsp == NULL  ||  sip == NULL) {
-        return eTrue;
+        return true;
     }
     lirp = s_LineInfoReaderNew (arsp->sequence_data);
 
     if (lirp == NULL) {
-        return eTrue;
+        return true;
     }
     if (arsp != master_arsp) {
         master_lirp = s_LineInfoReaderNew (master_arsp->sequence_data);
         if (master_lirp == NULL) {
             s_LineInfoReaderFree (lirp);
-            return eTrue;
+            return true;
         }
     } else {
         master_lirp = NULL;
@@ -5509,28 +5509,28 @@ s_FindBadDataCharsInSequence
 
     if (strcspn (sip->beginning_gap, sip->match) 
                   == strlen (sip->beginning_gap)) {
-        match_not_in_beginning_gap = eTrue;
+        match_not_in_beginning_gap = true;
     } else {
-        match_not_in_beginning_gap = eFalse;
+        match_not_in_beginning_gap = false;
     }
 
     if (strcspn (sip->end_gap, sip->match) == strlen (sip->end_gap)) {
-        match_not_in_end_gap = eTrue;
+        match_not_in_end_gap = true;
     } else {
-        match_not_in_end_gap = eFalse;
+        match_not_in_end_gap = false;
     }
 
     /* First, find middle start and end positions and report characters
      * that are not beginning gap before the middle
      */
-    found_middle_start = eFalse;
+    found_middle_start = false;
     data_position = 0;
     curr_char = s_FindNthDataChar (lirp, data_position);
     while (curr_char != 0) {
         if (strchr (sip->alphabet, curr_char) != NULL) {
             if (! found_middle_start) {
                 middle_start = data_position;
-                found_middle_start = eTrue;
+                found_middle_start = true;
             }
             middle_end = data_position + 1;
             data_position ++;
@@ -5539,7 +5539,7 @@ s_FindBadDataCharsInSequence
                 &&  strchr (sip->match, curr_char) != NULL)
             {
                 middle_start = data_position;
-                found_middle_start = eTrue;
+                found_middle_start = true;
                 middle_end = data_position + 1;
                 data_position ++;
             } else if (strchr (sip->beginning_gap, curr_char) == NULL) {
@@ -5549,7 +5549,7 @@ s_FindBadDataCharsInSequence
                                                                   arsp->id,
                                 "expect only beginning gap characters here",
                                 report_error, report_error_userdata);
-                rval = eTrue;
+                rval = true;
             } else {
                 *lirp->curr_line_pos = beginning_gap;
                 data_position ++;
@@ -5570,13 +5570,13 @@ s_FindBadDataCharsInSequence
         s_LineInfoReaderFree (lirp);
         if (num_segments > 1)
         {
-            return eFalse;
+            return false;
         }
         else
         {
             s_ReportMissingSequenceData (arsp->id,
                                    report_error, report_error_userdata);
-            return eTrue;
+            return true;
           
         }
     }
@@ -5611,7 +5611,7 @@ s_FindBadDataCharsInSequence
                                 "can't find source for match chars",
                                 report_error, report_error_userdata);
                 }
-                rval = eTrue;
+                rval = true;
             } else {
                 *lirp->curr_line_pos = master_char;
                 data_position ++;
@@ -5626,7 +5626,7 @@ s_FindBadDataCharsInSequence
                                       "expect only sequence, missing, match,"
                                       " and middle gap characters here",
                                       report_error, report_error_userdata);
-            rval = eTrue;
+            rval = true;
         }
     }
 
@@ -5639,7 +5639,7 @@ s_FindBadDataCharsInSequence
             data_position = s_ReportRepeatedBadCharsInSequence (lirp, arsp->id,
                                       "expect only end gap characters here",
                                       report_error, report_error_userdata);
-            rval = eTrue;
+            rval = true;
         } else {
             *lirp->curr_line_pos = end_gap;
             data_position++;
@@ -5653,27 +5653,27 @@ s_FindBadDataCharsInSequence
 
 
 /* This function examines each sequence and replaces the special characters
- * and reports bad characters in each one.  The function will return eTrue
- * if any of the sequences contained bad characters or eFalse if no errors
+ * and reports bad characters in each one.  The function will return true
+ * if any of the sequences contained bad characters or false if no errors
  * were seen.
  */
-static EBool
+static bool
 s_s_FindBadDataCharsInSequenceList
 (SAlignRawFilePtr afrp,
  TSequenceInfoPtr sip)
 {
     TAlignRawSeqPtr arsp;
-    EBool is_bad = eFalse;
+    bool is_bad = false;
 
     if (afrp == NULL  ||  afrp->sequences == NULL) {
-        return eTrue;
+        return true;
     }
     for (arsp = afrp->sequences; arsp != NULL; arsp = arsp->next) {
         if (s_FindBadDataCharsInSequence (arsp, afrp->sequences, sip,
                                         afrp->num_segments,
                                         afrp->report_error,
                                         afrp->report_error_userdata)) {
-            is_bad = eTrue;
+            is_bad = true;
         }
     }
 
@@ -5903,12 +5903,12 @@ ReadAlignmentFileEx2
  FReportErrorFunction errfunc,
  void * erroruserdata,
  TSequenceInfoPtr sequence_info,
- EBool use_nexus_file_info,
- EBool gen_local_ids)
+ bool use_nexus_file_info,
+ bool gen_local_ids)
 {
     SAlignRawFilePtr afrp;
     TAlignmentFilePtr afp;
-    EBool use_file = eFalse;
+    bool use_file = false;
     EAlignFormat format = ALNFMT_UNKNOWN;
 
     if (sequence_info == NULL  ||  sequence_info->alphabet == NULL) {
@@ -5917,7 +5917,7 @@ ReadAlignmentFileEx2
     
     if (use_nexus_file_info != 0)
     {
-      use_file = eTrue;
+      use_file = true;
     }
     
     afrp = s_ReadAlignFileRaw ( readfunc, fileuserdata, sequence_info,
@@ -5956,10 +5956,10 @@ ReadAlignmentFileEx
  FReportErrorFunction errfunc,
  void * erroruserdata,
  TSequenceInfoPtr sequence_info,
- EBool use_nexus_file_info)
+ bool use_nexus_file_info)
 {
     return ReadAlignmentFileEx2 (readfunc, fileuserdata, errfunc, erroruserdata,
-        sequence_info, use_nexus_file_info, eFalse);
+        sequence_info, use_nexus_file_info, false);
 }
 
 TAlignmentFilePtr 
@@ -5971,7 +5971,7 @@ ReadAlignmentFile
  TSequenceInfoPtr sequence_info)
 {
     return ReadAlignmentFileEx2 (readfunc, fileuserdata, errfunc, erroruserdata,
-                                sequence_info, eFalse, eFalse);
+                                sequence_info, false, false);
 }
 
 TAlignmentFilePtr 
@@ -5981,10 +5981,10 @@ ReadAlignmentFile2
  FReportErrorFunction errfunc,
  void * erroruserdata,
  TSequenceInfoPtr sequence_info,
- EBool gen_local_ids)
+ bool gen_local_ids)
 {
     return ReadAlignmentFileEx2 (readfunc, fileuserdata, errfunc, erroruserdata,
-                                sequence_info, eFalse, gen_local_ids);
+                                sequence_info, false, gen_local_ids);
 }
 
 END_NCBI_SCOPE
