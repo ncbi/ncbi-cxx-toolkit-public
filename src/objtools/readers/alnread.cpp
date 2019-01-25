@@ -2043,16 +2043,16 @@ static char GetNexusTypechar (char * str, const char * val_name)
  * discrepancies are found, the function reports the errors and returns false,
  * otherwise the function returns true.
  */ 
-static bool s_CheckNexusCharInfo 
-(char *               str,
- TSequenceInfoPtr     sequence_info,
- FReportErrorFunction errfunc,
- void *              errdata)
+static bool s_CheckNexusCharInfo(
+    char* str,
+    const SSequenceInfo& sequence_info,
+    FReportErrorFunction errfunc,
+    void* errdata)
 {
     char * cp;
     char   c;
 
-    if (str == NULL  ||  sequence_info == NULL) {
+    if (str == NULL) {
         return false;
     }
 
@@ -2072,10 +2072,10 @@ static bool s_CheckNexusCharInfo
     if (c == 0) {
         c = GetNexusTypechar (cp + 7, "MISSING");
     }
-    if (c != 0  &&  sequence_info->missing != NULL
-        &&  strchr (sequence_info->missing, c) == NULL)
+    if (c != 0  &&  sequence_info.missing != NULL
+        &&  strchr (sequence_info.missing, c) == NULL)
     {
-        s_ReportCharCommentError (sequence_info->missing, c, "MISSING",
+        s_ReportCharCommentError (sequence_info.missing, c, "MISSING",
                                 errfunc, errdata);
     }
  
@@ -2083,10 +2083,10 @@ static bool s_CheckNexusCharInfo
     if (c == 0) {
         c = GetNexusTypechar (cp + 7, "GAP");
     }
-    if (c != 0  &&  sequence_info->middle_gap != NULL
-        &&  strchr (sequence_info->middle_gap, c) == NULL)
+    if (c != 0  &&  sequence_info.middle_gap != NULL
+        &&  strchr (sequence_info.middle_gap, c) == NULL)
     {
-        s_ReportCharCommentError (sequence_info->middle_gap, c, "GAP",
+        s_ReportCharCommentError (sequence_info.middle_gap, c, "GAP",
                                 errfunc, errdata);
     }
  
@@ -2094,10 +2094,10 @@ static bool s_CheckNexusCharInfo
     if (c == 0) {
         c = GetNexusTypechar (cp + 7, "MATCH");
     }
-    if (c != 0  &&  sequence_info->match != NULL
-        &&  strchr (sequence_info->match, c) == NULL)
+    if (c != 0  &&  sequence_info.match != NULL
+        &&  strchr (sequence_info.match, c) == NULL)
     {
-        s_ReportCharCommentError (sequence_info->match, c, "MATCH",
+        s_ReportCharCommentError (sequence_info.match, c, "MATCH",
                                 errfunc, errdata);
     }
     return true;
@@ -2128,14 +2128,14 @@ static char * s_ReplaceNexusTypeChar (char *str, char c)
  * specified for missing, match, and gap and sets those values in sequence_info.
  * The function returns true if a Nexus comment was found, false otherwise.
  */ 
-static bool s_UpdateNexusCharInfo 
-(char *               str,
- TSequenceInfoPtr     sequence_info)
+static bool s_UpdateNexusCharInfo(
+    char* str,
+    SSequenceInfo& sequence_info)
 {
     char * cp;
     char   c;
 
-    if (str == NULL  ||  sequence_info == NULL) {
+    if (str == NULL) {
         return false;
     }
 
@@ -2151,21 +2151,21 @@ static bool s_UpdateNexusCharInfo
     if (c == 0) {
         c = GetNexusTypechar (cp + 7, "MISSING");
     }
-    sequence_info->missing = s_ReplaceNexusTypeChar (sequence_info->missing, c);
+    sequence_info.missing = s_ReplaceNexusTypeChar (sequence_info.missing, c);
     
     c = GetNexusTypechar (cp + 7, "gap");
     if (c == 0) {
         c = GetNexusTypechar (cp + 7, "GAP");
     }
-    sequence_info->beginning_gap = s_ReplaceNexusTypeChar (sequence_info->beginning_gap, c);
-    sequence_info->middle_gap = s_ReplaceNexusTypeChar (sequence_info->middle_gap, c);
-    sequence_info->end_gap = s_ReplaceNexusTypeChar (sequence_info->end_gap, c);
+    sequence_info.beginning_gap = s_ReplaceNexusTypeChar(sequence_info.beginning_gap, c);
+    sequence_info.middle_gap = s_ReplaceNexusTypeChar (sequence_info.middle_gap, c);
+    sequence_info.end_gap = s_ReplaceNexusTypeChar (sequence_info.end_gap, c);
  
     c = GetNexusTypechar (cp + 7, "match");
     if (c == 0) {
         c = GetNexusTypechar (cp + 7, "MATCH");
     }
-    sequence_info->match = s_ReplaceNexusTypeChar (sequence_info->match, c);
+    sequence_info.match = s_ReplaceNexusTypeChar (sequence_info.match, c);
 
     return true;
 } 
@@ -3468,7 +3468,7 @@ static SAlignRawFilePtr
 s_ReadAlignFileRaw
 (FReadLineFunction    readfunc,
  void *               userdata,
- TSequenceInfoPtr     sequence_info,
+ SSequenceInfo&     sequence_info,
  bool                use_nexus_file_info,
  FReportErrorFunction errfunc,
  void *               errdata,
@@ -3490,7 +3490,7 @@ s_ReadAlignFileRaw
     bool                    last_line_was_marked_id = false;
     TLineInfoPtr             next_line;
 
-    if (readfunc == NULL  ||  sequence_info == NULL) {
+    if (readfunc == NULL) {
         return NULL;
     }
 
@@ -3499,7 +3499,7 @@ s_ReadAlignFileRaw
         return NULL;
     }
   
-    afrp->alphabet = strdup (sequence_info->alphabet);
+    afrp->alphabet = strdup (sequence_info.alphabet);
     afrp->report_error = errfunc;
     afrp->report_error_userdata = errdata;
 
@@ -5214,80 +5214,6 @@ static void s_ProcessAlignFileRawByLengthPattern (SAlignRawFilePtr afrp)
 }
 
 
-/* The following functions are used to convert data from the internal
- * representation into the form that will be passed to the calling
- * program.  Information from the ID strings is parsed to remove
- * definition lines and organism information, the gap characters are
- * standardized to '-', the missing characters are standardizes to 'N',
- * match characters are replaced with characters from the first record,
- * and bad characters are reported.
- */
-
-/* This function allocates memory for a new AligmentFileData structure
- * and initializes its member variables.
- */
-TAlignmentFilePtr AlignmentFileNew (void)
-{
-    TAlignmentFilePtr afp;
-
-    afp = (TAlignmentFilePtr) malloc (sizeof (SAlignmentFile));
-    if (afp == NULL) {
-        return NULL;
-    }
-    afp->num_sequences = 0;
-    afp->num_organisms = 0;
-    afp->num_deflines  = 0;
-    afp->num_segments  = 0;
-    afp->ids           = NULL;
-    afp->sequences     = NULL;
-    afp->organisms     = NULL;
-    afp->deflines      = NULL;
-    return afp;
-}
-
-
-/* This function frees the memory associated with an AligmentFileData
- * structure and its member variables.
- */
-void AlignmentFileFree (TAlignmentFilePtr afp)
-{
-    int  index;
-
-    if (afp == NULL) {
-        return;
-    }
-    if (afp->ids != NULL) {
-        for (index = 0;  index < afp->num_sequences;  index++) {
-            free (afp->ids [index]);
-        }  
-        free (afp->ids);
-        afp->ids = NULL;
-    }
-    if (afp->sequences != NULL) {
-        for (index = 0;  index < afp->num_sequences;  index++) {
-            free (afp->sequences [index]);
-        }  
-        free (afp->sequences);
-        afp->sequences = NULL;
-    }
-    if (afp->organisms != NULL) {
-        for (index = 0;  index < afp->num_organisms;  index++) {
-            free (afp->organisms [index]);
-        }  
-        free (afp->organisms);
-        afp->sequences = NULL;
-    }
-    if (afp->deflines != NULL) {
-        for (index = 0;  index < afp->num_deflines;  index++) {
-            free (afp->deflines [index]);
-        }  
-        free (afp->deflines);
-        afp->deflines = NULL;
-    }
-    free (afp);
-}
-
-
 /* This function parses the identifier string used by the alignment file
  * to identify a sequence to find the portion of the string that is actually
  * an ID, as opposed to organism information or definition line.
@@ -5454,7 +5380,7 @@ static bool
 s_FindBadDataCharsInSequence
 (TAlignRawSeqPtr      arsp,
  TAlignRawSeqPtr      master_arsp,
- TSequenceInfoPtr     sip,
+ const SSequenceInfo& sequenceInfo,
  int                  num_segments,
  FReportErrorFunction report_error,
  void *               report_error_userdata)
@@ -5473,23 +5399,23 @@ s_FindBadDataCharsInSequence
     char               middle_gap = '-';
     char               end_gap = '-';
 
-    if (strlen(sip->beginning_gap) > 0 &&
-        strchr(sip->beginning_gap, '-') == NULL){
-        beginning_gap = sip->beginning_gap[0];
+    if (strlen(sequenceInfo.beginning_gap) > 0 &&
+        strchr(sequenceInfo.beginning_gap, '-') == NULL){
+        beginning_gap = sequenceInfo.beginning_gap[0];
     }
 
-    if (strlen(sip->middle_gap) > 0 &&
-        strchr(sip->middle_gap, '-') == NULL){
-        middle_gap = sip->middle_gap[0];
+    if (strlen(sequenceInfo.middle_gap) > 0 &&
+        strchr(sequenceInfo.middle_gap, '-') == NULL){
+        middle_gap = sequenceInfo.middle_gap[0];
     }
 
-    if (strlen(sip->end_gap) > 0 &&
-        strchr(sip->end_gap, '-') == NULL){
-        end_gap = sip->end_gap[0];
+    if (strlen(sequenceInfo.end_gap) > 0 &&
+        strchr(sequenceInfo.end_gap, '-') == NULL){
+        end_gap = sequenceInfo.end_gap[0];
     }
 
 
-    if (arsp == NULL  ||  master_arsp == NULL  ||  sip == NULL) {
+    if (arsp == NULL  ||  master_arsp == NULL) {
         return true;
     }
     lirp = s_LineInfoReaderNew (arsp->sequence_data);
@@ -5507,14 +5433,15 @@ s_FindBadDataCharsInSequence
         master_lirp = NULL;
     }
 
-    if (strcspn (sip->beginning_gap, sip->match) 
-                  == strlen (sip->beginning_gap)) {
+    if (strcspn (sequenceInfo.beginning_gap, sequenceInfo.match) 
+                  == strlen (sequenceInfo.beginning_gap)) {
         match_not_in_beginning_gap = true;
     } else {
         match_not_in_beginning_gap = false;
     }
 
-    if (strcspn (sip->end_gap, sip->match) == strlen (sip->end_gap)) {
+    if (strcspn (sequenceInfo.end_gap, sequenceInfo.match) == 
+            strlen (sequenceInfo.end_gap)) {
         match_not_in_end_gap = true;
     } else {
         match_not_in_end_gap = false;
@@ -5527,7 +5454,7 @@ s_FindBadDataCharsInSequence
     data_position = 0;
     curr_char = s_FindNthDataChar (lirp, data_position);
     while (curr_char != 0) {
-        if (strchr (sip->alphabet, curr_char) != NULL) {
+        if (strchr (sequenceInfo.alphabet, curr_char) != NULL) {
             if (! found_middle_start) {
                 middle_start = data_position;
                 found_middle_start = true;
@@ -5536,13 +5463,13 @@ s_FindBadDataCharsInSequence
             data_position ++;
         } else if (! found_middle_start) {
             if (match_not_in_beginning_gap
-                &&  strchr (sip->match, curr_char) != NULL)
+                &&  strchr (sequenceInfo.match, curr_char) != NULL)
             {
                 middle_start = data_position;
                 found_middle_start = true;
                 middle_end = data_position + 1;
                 data_position ++;
-            } else if (strchr (sip->beginning_gap, curr_char) == NULL) {
+            } else if (strchr (sequenceInfo.beginning_gap, curr_char) == NULL) {
                 /* Report error - found character that is not beginning gap
                    in beginning gap */
                 data_position = s_ReportRepeatedBadCharsInSequence (lirp,
@@ -5556,7 +5483,7 @@ s_FindBadDataCharsInSequence
             }
         } else {
             if (match_not_in_end_gap
-                &&  strchr (sip->match, curr_char) != NULL)
+                &&  strchr (sequenceInfo.match, curr_char) != NULL)
             {
                 middle_end = data_position + 1;
             }
@@ -5587,16 +5514,16 @@ s_FindBadDataCharsInSequence
     {
         curr_char = s_FindNthDataChar (lirp, data_position);
         while (data_position < middle_end
-               &&  strchr (sip->alphabet, curr_char) != NULL) {
+               &&  strchr (sequenceInfo.alphabet, curr_char) != NULL) {
             data_position ++;
             curr_char = s_FindNthDataChar (lirp, data_position);
         } 
         if (curr_char == 0  ||  data_position >= middle_end) {
             /* do nothing, done with middle */
-        } else if (strchr (sip->missing, curr_char) != NULL) {
+        } else if (strchr (sequenceInfo.missing, curr_char) != NULL) {
             *lirp->curr_line_pos = 'N';
             data_position ++;
-        } else if (strchr (sip->match, curr_char) != NULL) {
+        } else if (strchr (sequenceInfo.match, curr_char) != NULL) {
             master_char = s_FindNthDataChar (master_lirp, data_position);
             if (master_char == 0) {
                 /* report error - unable to get master char */
@@ -5616,7 +5543,7 @@ s_FindBadDataCharsInSequence
                 *lirp->curr_line_pos = master_char;
                 data_position ++;
             }
-        } else if (strchr (sip->middle_gap, curr_char) != NULL) {
+        } else if (strchr (sequenceInfo.middle_gap, curr_char) != NULL) {
             *lirp->curr_line_pos = middle_gap;
             data_position ++;
         } else {
@@ -5634,7 +5561,7 @@ s_FindBadDataCharsInSequence
     data_position = middle_end;
     curr_char = s_FindNthDataChar (lirp, data_position);
     while (curr_char != 0) {
-        if (strchr (sip->end_gap, curr_char) == NULL) {
+        if (strchr (sequenceInfo.end_gap, curr_char) == NULL) {
             /* Report error - found bad character in middle */
             data_position = s_ReportRepeatedBadCharsInSequence (lirp, arsp->id,
                                       "expect only end gap characters here",
@@ -5658,9 +5585,9 @@ s_FindBadDataCharsInSequence
  * were seen.
  */
 static bool
-s_s_FindBadDataCharsInSequenceList
-(SAlignRawFilePtr afrp,
- TSequenceInfoPtr sip)
+s_s_FindBadDataCharsInSequenceList(
+    SAlignRawFilePtr afrp,
+    const SSequenceInfo& sequenceInfo)
 {
     TAlignRawSeqPtr arsp;
     bool is_bad = false;
@@ -5669,7 +5596,7 @@ s_s_FindBadDataCharsInSequenceList
         return true;
     }
     for (arsp = afrp->sequences; arsp != NULL; arsp = arsp->next) {
-        if (s_FindBadDataCharsInSequence (arsp, afrp->sequences, sip,
+        if (s_FindBadDataCharsInSequence (arsp, afrp->sequences, sequenceInfo,
                                         afrp->num_segments,
                                         afrp->report_error,
                                         afrp->report_error_userdata)) {
@@ -5684,128 +5611,117 @@ s_s_FindBadDataCharsInSequenceList
 /* This function uses the contents of an SAlignRawFileData structure to
  * create an SAlignmentFile structure with the appropriate information.
  */
-static TAlignmentFilePtr
-s_ConvertDataToOutput 
-(SAlignRawFilePtr afrp,
- TSequenceInfoPtr sip)
+bool
+s_ConvertDataToOutput(
+    SAlignRawFilePtr afrp,
+    SAlignmentFile& alignInfo)
 {
     TAlignRawSeqPtr   arsp;
     int               index;
     TSizeInfoPtr    * lengths;
     int             * best_length;
-    TAlignmentFilePtr afp;
     TLineInfoPtr      lip;
     int               curr_seg;
 
-    if (afrp == NULL  ||  sip == NULL  ||  afrp->sequences == NULL ||
+    if (afrp == NULL  ||  afrp->sequences == NULL ||
         afrp->num_segments < 1) {
-        return NULL;
-    }
-    afp = AlignmentFileNew ();
-    if (afp == NULL) {
-        return NULL;
+        return false;
     }
 
-    afp->num_organisms = afrp->num_organisms;
-    afp->num_deflines = afrp->num_deflines;
-    afp->num_segments = afrp->num_segments;
-    afp->num_sequences = 0;
-    afp->align_format_found = afrp->align_format_found;
+    alignInfo.num_organisms = afrp->num_organisms;
+    alignInfo.num_deflines = afrp->num_deflines;
+    alignInfo.num_segments = afrp->num_segments;
+    alignInfo.num_sequences = 0;
+    alignInfo.align_format_found = afrp->align_format_found;
     lengths = NULL;
 
     for (arsp = afrp->sequences;  arsp != NULL;  arsp = arsp->next) {
-        afp->num_sequences++;
+        alignInfo.num_sequences++;
     }
 
-    if (afp->num_organisms > 0 
-        && afp->num_sequences != afrp->num_organisms
-        && afp->num_sequences / afp->num_segments != afrp->num_organisms) {
+    if (alignInfo.num_organisms > 0 
+        && alignInfo.num_sequences != afrp->num_organisms
+        && alignInfo.num_sequences / alignInfo.num_segments != alignInfo.num_organisms) {
         s_ReportMissingOrganismInfo (afrp->report_error,
                                    afrp->report_error_userdata);
     }
 
     // allocate memory to store sequence strings
-    afp->sequences = (char **)malloc (afp->num_sequences 
+    alignInfo.sequences = (char **)malloc (alignInfo.num_sequences 
                                            * sizeof (char *));
-    if (afp->sequences == NULL) {
-        AlignmentFileFree (afp);
-        return NULL;
+    if (alignInfo.sequences == NULL) {
+        return false;
     }
     // initialize afp->sequences, in case AlignmentFileFree must be called
     // before real data can be added
-    for (index = 0; index < afp->num_sequences; index++) {
-        afp->sequences[index] = NULL;
+    for (index = 0; index < alignInfo.num_sequences; index++) {
+        alignInfo.sequences[index] = NULL;
     }
 
     // allocate memory to store sequence IDs
-    afp->ids = (char **)malloc (afp->num_sequences * sizeof (char *));
-    if (afp->ids == NULL) {
-        AlignmentFileFree (afp);
-        return NULL;
+    alignInfo.ids = (char **)malloc (alignInfo.num_sequences * sizeof (char *));
+    if (alignInfo.ids == NULL) {
+        return false;
     }
     // initialize afp->ids, in case AlignmentFileFree must be called
     // before real data can be added
-    for (index = 0; index < afp->num_sequences; index++) {
-        afp->ids[index] = NULL;
+    for (index = 0; index < alignInfo.num_sequences; index++) {
+        alignInfo.ids[index] = NULL;
     }
     
     // allocate memory to store organism names
-    if (afp->num_organisms > 0) {
-        afp->organisms = (char **) malloc (afp->num_organisms
+    if (alignInfo.num_organisms > 0) {
+        alignInfo.organisms = (char **) malloc (alignInfo.num_organisms
                                                 * sizeof (char *));
-        if (afp->organisms == NULL) {
-            AlignmentFileFree (afp);
-            return NULL;
+        if (alignInfo.organisms == NULL) {
+            return false;
         }
     }
     // initialize afp->organisms, in case AlignmentFileFree must be called
     // before real data can be added
-    for (index = 0; index < afp->num_organisms; index++) {
-        afp->organisms[index] = NULL;
+    for (index = 0; index < alignInfo.num_organisms; index++) {
+        alignInfo.organisms[index] = NULL;
     }
 
     // allocate memory to store definition lines
-    if (afp->num_deflines > 0) {
-        afp->deflines = (char **)malloc (afp->num_deflines
+    if (alignInfo.num_deflines > 0) {
+        alignInfo.deflines = (char **)malloc (alignInfo.num_deflines
                                               * sizeof (char *));
-        if (afp->deflines == NULL) {
-            AlignmentFileFree (afp);
-            return NULL;
+        if (alignInfo.deflines == NULL) {
+            return false;
         }
     }
 
     /* copy in deflines */
     for (lip = afrp->deflines, index = 0;
-         lip != NULL  &&  index < afp->num_deflines;
+         lip != NULL  &&  index < alignInfo.num_deflines;
          lip = lip->next, index++) {
         if (lip->data == NULL) {
-            afp->deflines [index] = NULL;
+            alignInfo.deflines [index] = NULL;
         } else {
-            afp->deflines [index] = strdup (lip->data);
+            alignInfo.deflines [index] = strdup (lip->data);
         }
     }
-    while (index < afp->num_deflines) {
-        afp->deflines [index ++] = NULL;
+    while (index < alignInfo.num_deflines) {
+        alignInfo.deflines [index ++] = NULL;
     }
 
     /* copy in organism information */
     for (lip = afrp->organisms, index = 0;
-         lip != NULL  &&  index < afp->num_organisms;
+         lip != NULL  &&  index < alignInfo.num_organisms;
          lip = lip->next, index++) {
-        afp->organisms [index] = strdup (lip->data);
+        alignInfo.organisms [index] = strdup (lip->data);
     }
   
     /* we need to store length information about different segments separately */
     lengths = (TSizeInfoPtr *) malloc (sizeof (TSizeInfoPtr) * afrp->num_segments);
     if (lengths == NULL) {
-        AlignmentFileFree (afp);
-        return NULL;
+        return false;
     }
     best_length = (int *) malloc (sizeof (int) * afrp->num_segments);
     if (best_length == NULL) {
         free (lengths);
-        AlignmentFileFree (afp);
-        return NULL;
+        return false;
     }
     for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++) {
         lengths [curr_seg] = NULL;
@@ -5815,15 +5731,15 @@ s_ConvertDataToOutput
     /* copy in sequence data */
     curr_seg = 0;
     for (arsp = afrp->sequences, index = 0;
-         arsp != NULL  &&  index < afp->num_sequences;
+         arsp != NULL  &&  index < alignInfo.num_sequences;
          arsp = arsp->next, index++) {
-        afp->sequences [index] = 
+        alignInfo.sequences [index] = 
                     s_LineInfoMergeAndStripSpaces (arsp->sequence_data);
 
-        if (afp->sequences [index] != NULL) {
-            lengths [curr_seg] = s_AddSizeInfo(lengths[curr_seg], strlen (afp->sequences[index]));
+        if (alignInfo.sequences [index] != NULL) {
+            lengths [curr_seg] = s_AddSizeInfo(lengths[curr_seg], strlen (alignInfo.sequences[index]));
         }
-        afp->ids [index] = strdup (arsp->id);
+        alignInfo.ids [index] = strdup (arsp->id);
         curr_seg ++;
         if (curr_seg >= afrp->num_segments) {
             curr_seg = 0;
@@ -5838,14 +5754,14 @@ s_ConvertDataToOutput
     }
 
     curr_seg = 0;
-    for (index = 0;  index < afp->num_sequences;  index++) {
-        if (afp->sequences [index] == NULL) {
-            s_ReportMissingSequenceData (afp->ids [index],
+    for (index = 0;  index < alignInfo.num_sequences;  index++) {
+        if (alignInfo.sequences [index] == NULL) {
+            s_ReportMissingSequenceData (alignInfo.ids [index],
                                        afrp->report_error,
                                        afrp->report_error_userdata);
-        } else if ((int) strlen (afp->sequences [index]) != best_length [curr_seg]) {
-            s_ReportBadSequenceLength (afp->ids [index], best_length [curr_seg],
-                                     strlen (afp->sequences [index]),
+        } else if ((int) strlen (alignInfo.sequences [index]) != best_length [curr_seg]) {
+            s_ReportBadSequenceLength (alignInfo.ids [index], best_length [curr_seg],
+                                     strlen (alignInfo.sequences [index]),
                                      afrp->report_error,
                                      afrp->report_error_userdata);
         }
@@ -5856,10 +5772,10 @@ s_ConvertDataToOutput
     }
 
     if (afrp->expected_num_sequence > 0
-      &&  afrp->expected_num_sequence != afp->num_sequences)
+      &&  afrp->expected_num_sequence != alignInfo.num_sequences)
     {
         s_ReportIncorrectNumberOfSequences (afrp->expected_num_sequence,
-                                          afp->num_sequences,
+                                          alignInfo.num_sequences,
                                           afrp->report_error,
                                           afrp->report_error_userdata);
     }
@@ -5878,8 +5794,7 @@ s_ConvertDataToOutput
         s_SizeInfoFree (lengths [curr_seg]);
     }
     free (lengths);
-    
-    return afp;
+    return true;
 }
 
 
@@ -5896,35 +5811,28 @@ s_ConvertDataToOutput
  * The sequence_info argument contains the sequence alphabet and missing,
  * match, and gap characters to use in interpreting the sequence data.
  */
-TAlignmentFilePtr 
-ReadAlignmentFileEx2 
-(FReadLineFunction readfunc,
- void * fileuserdata,
- FReportErrorFunction errfunc,
- void * erroruserdata,
- TSequenceInfoPtr sequence_info,
- bool use_nexus_file_info,
- bool gen_local_ids)
+bool 
+ReadAlignmentFile(
+    FReadLineFunction readfunc,
+    void * fileuserdata,
+    FReportErrorFunction errfunc,
+    void * erroruserdata,
+    SSequenceInfo& sequence_info,
+    bool gen_local_ids,
+    SAlignmentFile& alignmentInfo)
 {
     SAlignRawFilePtr afrp;
-    TAlignmentFilePtr afp;
-    bool use_file = false;
     EAlignFormat format = ALNFMT_UNKNOWN;
 
-    if (sequence_info == NULL  ||  sequence_info->alphabet == NULL) {
-        return NULL;
-    }
-    
-    if (use_nexus_file_info != 0)
-    {
-      use_file = true;
+    if (sequence_info.alphabet == NULL) {
+        return false;
     }
     
     afrp = s_ReadAlignFileRaw ( readfunc, fileuserdata, sequence_info,
-                                use_file,
+                                false,
                                 errfunc, erroruserdata, &format);
     if (afrp == NULL) {
-        return NULL;
+        return false;
     }
 
     if (afrp->block_size > 1) {
@@ -5940,51 +5848,13 @@ ReadAlignmentFileEx2
 
     if (s_s_FindBadDataCharsInSequenceList (afrp, sequence_info)) {
         s_AlignFileRawFree (afrp);
-        return NULL;
+        return false;
     } 
 
-    afp = s_ConvertDataToOutput (afrp, sequence_info);
+    bool result = s_ConvertDataToOutput (afrp, alignmentInfo);
     s_AlignFileRawFree (afrp);
   
-    return afp;
-}
-
-TAlignmentFilePtr 
-ReadAlignmentFileEx 
-(FReadLineFunction readfunc,
- void * fileuserdata,
- FReportErrorFunction errfunc,
- void * erroruserdata,
- TSequenceInfoPtr sequence_info,
- bool use_nexus_file_info)
-{
-    return ReadAlignmentFileEx2 (readfunc, fileuserdata, errfunc, erroruserdata,
-        sequence_info, use_nexus_file_info, false);
-}
-
-TAlignmentFilePtr 
-ReadAlignmentFile 
-(FReadLineFunction readfunc,
- void * fileuserdata,
- FReportErrorFunction errfunc,
- void * erroruserdata,
- TSequenceInfoPtr sequence_info)
-{
-    return ReadAlignmentFileEx2 (readfunc, fileuserdata, errfunc, erroruserdata,
-                                sequence_info, false, false);
-}
-
-TAlignmentFilePtr 
-ReadAlignmentFile2 
-(FReadLineFunction readfunc,
- void * fileuserdata,
- FReportErrorFunction errfunc,
- void * erroruserdata,
- TSequenceInfoPtr sequence_info,
- bool gen_local_ids)
-{
-    return ReadAlignmentFileEx2 (readfunc, fileuserdata, errfunc, erroruserdata,
-                                sequence_info, false, gen_local_ids);
+    return result;
 }
 
 END_NCBI_SCOPE

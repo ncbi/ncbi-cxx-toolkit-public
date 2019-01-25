@@ -196,22 +196,23 @@ int CAlnReader::x_GetGCD(const int a, const int b) const
 }
 
 
-void s_GetSequenceLengthInfo(const TAlignmentFilePtr afp, 
+void s_GetSequenceLengthInfo(
+        const SAlignmentFile& alignmentInfo, 
         size_t& min_len, 
         size_t& max_len, 
         int& max_index) 
 {
 
-    if (afp->num_sequences == 0) {
+    if (alignmentInfo.num_sequences == 0) {
         return;
     }
 
-    max_len = strlen(afp->sequences[0]);
+    max_len = strlen(alignmentInfo.sequences[0]);
     min_len = max_len;
     max_index = 0;
 
-    for (auto i=0; i<afp->num_sequences; ++i) {
-        size_t curr_len = strlen(afp->sequences[i]);
+    for (auto i = 0; i < alignmentInfo.num_sequences; ++i) {
+        size_t curr_len = strlen(alignmentInfo.sequences[i]);
         if (curr_len > max_len) {
             max_len = curr_len;
             max_index = i;
@@ -282,12 +283,12 @@ void CAlnReader::Read(
 
 
     // read the alignment stream
-    TAlignmentFilePtr afp;
     m_Errors.clear();
-
-    afp = ReadAlignmentFile2(s_ReadLine, (void *) &m_IS,
-                            s_ReportError, &(m_Errors), &info,
-                            generate_local_ids);
+    SAlignmentFile alignmentInfo;
+    auto allClear = ReadAlignmentFile(s_ReadLine, (void *) &m_IS,
+                            s_ReportError, &(m_Errors), info,
+                            generate_local_ids,
+                            alignmentInfo);
 
     // report any errors through proper channels:
     if (pErrorListener) {
@@ -302,7 +303,7 @@ void CAlnReader::Read(
         }
     }
 
-    if (!afp) {
+    if (!allClear) {
         sReportError(
             pErrorListener,
             eDiag_Fatal,
@@ -310,7 +311,8 @@ void CAlnReader::Read(
             "Error reading alignment: Invalid input or alphabet");
         return;
     }
-    if (1 == afp->num_sequences) {
+
+    if (1 == alignmentInfo.num_sequences) {
         sReportError(
             pErrorListener,
             eDiag_Fatal,
@@ -322,7 +324,7 @@ void CAlnReader::Read(
     // Check sequence lengths
     size_t max_len, min_len;
     int max_index;
-    s_GetSequenceLengthInfo(afp, 
+    s_GetSequenceLengthInfo(alignmentInfo, 
         min_len,
         max_len,
         max_index);
@@ -340,8 +342,8 @@ void CAlnReader::Read(
         // Check for replicated intervals in the longest sequence
         const int repeat_interval = x_GetGCD(max_len, min_len);
         const bool is_repeated = 
-            x_IsReplicatedSequence(afp->sequences[max_index], max_len, repeat_interval);
-        AlignmentFileFree(afp);
+            x_IsReplicatedSequence(alignmentInfo.sequences[max_index], max_len, repeat_interval);
+        //AlignmentFileFree(afp);
 
         if (is_repeated) {
             sReportError(
@@ -366,15 +368,15 @@ void CAlnReader::Read(
     // and no tell-tale alignment format lines were found,
     // check to see if any of the lines contain gaps.
     // no gaps plus no alignment indicators -> don't guess alignment
-    if (guess && !afp->align_format_found) {
+    if (guess && !alignmentInfo.align_format_found) {
         bool found_gap = false;
-        for (int i = 0; i < afp->num_sequences && !found_gap; i++) {
-            if (strchr (afp->sequences[i], '-') != NULL) {
+        for (int i = 0; i < alignmentInfo.num_sequences && !found_gap; i++) {
+            if (strchr (alignmentInfo.sequences[i], '-') != NULL) {
                 found_gap = true;
             }
         }
         if (!found_gap) {
-            AlignmentFileFree (afp);
+            //AlignmentFileFree (afp);
             sReportError(
                 pErrorListener,
                 eDiag_Fatal,
@@ -386,18 +388,18 @@ void CAlnReader::Read(
     
 
     // build the CAlignment
-    m_Seqs.resize(afp->num_sequences);
-    m_Ids.resize(afp->num_sequences);
-    for (int i = 0;  i < afp->num_sequences;  ++i) {
-        m_Seqs[i] = afp->sequences[i];
-        m_Ids[i] = afp->ids[i];
+    m_Seqs.resize(alignmentInfo.num_sequences);
+    m_Ids.resize(alignmentInfo.num_sequences);
+    for (int i = 0;  i < alignmentInfo.num_sequences;  ++i) {
+        m_Seqs[i] = alignmentInfo.sequences[i];
+        m_Ids[i] = alignmentInfo.ids[i];
     }
 
     
-    m_Organisms.resize(afp->num_organisms);
-    for (int i = 0;  i < afp->num_organisms;  ++i) {
-        if (afp->organisms[i]) {
-            m_Organisms[i] = afp->organisms[i];
+    m_Organisms.resize(alignmentInfo.num_organisms);
+    for (int i = 0;  i < alignmentInfo.num_organisms;  ++i) {
+        if (alignmentInfo.organisms[i]) {
+            m_Organisms[i] = alignmentInfo.organisms[i];
         } else {
             m_Organisms[i].erase();
         }
@@ -405,12 +407,12 @@ void CAlnReader::Read(
 
    
 
-    const auto num_deflines = afp->num_deflines;
+    const auto num_deflines = alignmentInfo.num_deflines;
     if (num_deflines) {
         if (num_deflines == m_Ids.size()) {
-            m_Deflines.resize(afp->num_deflines);
+            m_Deflines.resize(alignmentInfo.num_deflines);
             for (int i=0;  i< num_deflines;  ++i) {
-                m_Deflines[i] = NStr::TruncateSpaces(afp->deflines[i]);
+                m_Deflines[i] = NStr::TruncateSpaces(alignmentInfo.deflines[i]);
             }
         }
         else {
@@ -422,7 +424,7 @@ void CAlnReader::Read(
         }
     }
 
-    AlignmentFileFree(afp);
+    //AlignmentFileFree(afp);
 
     {{
         m_Dim = m_Ids.size();

@@ -33,7 +33,6 @@
  */
 #include <corelib/ncbistd.hpp>
 
-
 #if defined (WIN32)
 #    define ALIGNMENT_CALLBACK __stdcall
 #else
@@ -42,7 +41,7 @@
 
 BEGIN_NCBI_SCOPE
 
-typedef char * (ALIGNMENT_CALLBACK *FReadLineFunction) (void * userdata);
+using FReadLineFunction = char * (ALIGNMENT_CALLBACK *)(void*);
 
 typedef enum {
     eAlnErr_Unknown = -1,
@@ -98,74 +97,69 @@ protected:
     CErrorInfo* mNext;
 };
 
-typedef void (ALIGNMENT_CALLBACK *FReportErrorFunction) (
-  const CErrorInfo&, /* error to report */
-  void* userdata /* data supplied by calling program to library */
-);
+using FReportErrorFunction = void (ALIGNMENT_CALLBACK *)(const CErrorInfo&, void*);
 
-typedef struct SSequenceInfo {
+//  =============================================================================
+class SSequenceInfo {
+//  =============================================================================
+public:
     char * missing;
     char * match;
     char * beginning_gap;
     char * middle_gap;
     char * end_gap;
     const char * alphabet;
-} SSequenceInfo, * TSequenceInfoPtr;
+}; 
+using TSequenceInfoPtr = SSequenceInfo*;
 
-TSequenceInfoPtr SequenceInfoNew (void);
-void SequenceInfoFree (TSequenceInfoPtr sip);
 
-typedef struct SAlignmentFile {
-    int     num_sequences;
-    int     num_organisms;
-    int     num_deflines;
-    int     num_segments;
+//  ============================================================================
+class SAlignmentFile {
+//  ============================================================================
+public:
+    SAlignmentFile():
+        num_sequences(0),
+        num_organisms(0),
+        num_deflines(0),
+        num_segments(0),
+        ids(nullptr),
+        sequences(nullptr),
+        organisms(nullptr),
+        deflines(nullptr)
+    {};
+
+    ~SAlignmentFile()
+    {
+        for (int i=0; i < num_sequences; ++i) {
+            free(ids[i]);
+            free(sequences[i]);
+        }
+        free(ids);
+        free(sequences);
+
+        for (int i=0; i < num_organisms; ++i) {
+            free(organisms[i]);
+        }
+        free(organisms);
+        
+        for (int i=0; i < num_deflines; ++i) {
+            free(deflines[i]);
+        }
+        free(deflines);
+    };
+
+    int num_sequences;
+    int num_organisms;
+    int num_deflines;
+    int num_segments;
     char ** ids;
     char ** sequences;
     char ** organisms;
-    char ** deflines;
-    char    align_format_found;
-} SAlignmentFile, * TAlignmentFilePtr;
+    char** deflines;
+    char align_format_found;
+protected:
+};
 
-TAlignmentFilePtr AlignmentFileNew (void);
-void AlignmentFileFree (TAlignmentFilePtr afp);
-
-TAlignmentFilePtr ReadAlignmentFile (
-  FReadLineFunction    readfunc,      /* function for reading lines of 
-                                       * alignment file
-                                       */
-  void *               fileuserdata,  /* data to be passed back each time
-                                       * readfunc is invoked
-                                       */
-  FReportErrorFunction errfunc,       /* function for reporting errors */
-  void *               erroruserdata, /* data to be passed back each time
-                                       * errfunc is invoked
-                                       */
-  TSequenceInfoPtr     sequence_info  /* structure containing sequence
-                                       * alphabet and special characters
-                                       */
-);
-
-TAlignmentFilePtr ReadAlignmentFileEx (
-  FReadLineFunction    readfunc,      /* function for reading lines of 
-                                       * alignment file
-                                       */
-  void *               fileuserdata,  /* data to be passed back each time
-                                       * readfunc is invoked
-                                       */
-  FReportErrorFunction errfunc,       /* function for reporting errors */
-  void *               erroruserdata, /* data to be passed back each time
-                                       * errfunc is invoked
-                                       */
-  TSequenceInfoPtr     sequence_info, /* structure containing sequence
-                                       * alphabet and special characters
-                                       */
-  bool           use_nexus_file_info /* set to nonzero to replace data in 
-                                       * sequence_info with characters
-                                       * read from NEXUS comment in file,
-                                       * set to 0 otherwise.
-                                       */
-);
 
 /*
  * The following are to accommodate creating of local IDs to replace the IDs
@@ -173,7 +167,8 @@ TAlignmentFilePtr ReadAlignmentFileEx (
  * legacy code compatibility, hence the new functions with almost the same
  * signature.
  */
-NCBI_XOBJREAD_EXPORT TAlignmentFilePtr ReadAlignmentFile2 (
+NCBI_XOBJREAD_EXPORT 
+bool ReadAlignmentFile (
   FReadLineFunction    readfunc,      /* function for reading lines of 
                                        * alignment file
                                        */
@@ -184,38 +179,14 @@ NCBI_XOBJREAD_EXPORT TAlignmentFilePtr ReadAlignmentFile2 (
   void *               erroruserdata, /* data to be passed back each time
                                        * errfunc is invoked
                                        */
-  TSequenceInfoPtr     sequence_info, /* structure containing sequence
+  SSequenceInfo&       sequence_info, /* structure containing sequence
                                        * alphabet and special characters
                                        */
-  bool                gen_local_ids  /* flag indicating whether input IDs
+  bool                gen_local_ids,  /* flag indicating whether input IDs
                                        * should be replaced with unique
                                        * local IDs
                                        */ 
-);
-
-NCBI_XOBJREAD_EXPORT TAlignmentFilePtr ReadAlignmentFileEx2 (
-  FReadLineFunction    readfunc,      /* function for reading lines of 
-                                       * alignment file
-                                       */
-  void *               fileuserdata,  /* data to be passed back each time
-                                       * readfunc is invoked
-                                       */
-  FReportErrorFunction errfunc,       /* function for reporting errors */
-  void *               erroruserdata, /* data to be passed back each time
-                                       * errfunc is invoked
-                                       */
-  TSequenceInfoPtr     sequence_info, /* structure containing sequence
-                                       * alphabet and special characters
-                                       */
-  bool          use_nexus_file_info, /* set to nonzero to replace data in 
-                                       * sequence_info with characters
-                                       * read from NEXUS comment in file,
-                                       * set to 0 otherwise.
-                                       */
-  bool                gen_local_ids  /* flag indicating whether input IDs
-                                       * should be replaced with unique
-                                       * local IDs
-                                       */ 
+    SAlignmentFile& alignmentInfo
 );
 
 END_NCBI_SCOPE
