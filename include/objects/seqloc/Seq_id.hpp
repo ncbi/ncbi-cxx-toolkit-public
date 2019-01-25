@@ -713,6 +713,14 @@ public:
     /// (SeqId/AvoidGi or SEQ_ID_AVOID_GI).
     static bool AvoidGi(void);
 
+    /// Flags specifying special treatment for certain types of Seq-ids in
+    /// ComposeOSLT().
+    /// @sa ComposeOSLT
+    enum EComposeOSLTFlags {
+        fAllowLocalId = 0x1
+    };
+    typedef int TComposeOSLTFlags;
+
     /// JIRA ID-5188 : Compose OSLT string for the primary id, as well as OSLT
     /// strings for the secondary ids, if any.
     /// NB: given a single Seq-id, it is not always possible to determine
@@ -721,10 +729,12 @@ public:
     /// primary, and the final judgement needs to be made by the caller.
     /// @param secondary_ids
     ///  OSLT strings for the secondary ids
+    /// @param parse_flags
+    ///  Flags specifying special treatment for certain types of Seq-ids.
     /// @return
     ///  OSLT string for the primary id
     string ComposeOSLT(list<string>* secondary_ids = nullptr,
-                       bool parse_local_id = false) const;
+                       TComposeOSLTFlags parse_flags = 0) const;
 
     /// ID length restrictions
     const static size_t kMaxLocalIDLength    = 50;

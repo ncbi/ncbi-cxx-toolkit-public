@@ -1669,7 +1669,7 @@ void CSeq_id::GetLabel(string* label, ELabelType type, TLabelFlags flags) const
             // be parsed, hence use a special flag.
             string primary_id;
             list<string> secondary_id_list;
-            primary_id = ComposeOSLT(&secondary_id_list, true);
+            primary_id = ComposeOSLT(&secondary_id_list, fAllowLocalId);
             if (!primary_id.empty())
                 *label += primary_id;
             else if (secondary_id_list.size() > 0)
@@ -2887,7 +2887,8 @@ bool CSeq_id::AvoidGi(void)
 }
 
 
-string CSeq_id::ComposeOSLT(list<string>* secondary_id_list, bool parse_local_id) const
+string CSeq_id::ComposeOSLT(list<string>* secondary_id_list,
+                            TComposeOSLTFlags parse_flags) const
 {
     string primary_id;
     string secondary_id;
@@ -2974,7 +2975,7 @@ string CSeq_id::ComposeOSLT(list<string>* secondary_id_list, bool parse_local_id
         break;
     case CSeq_id::e_Local:
     {
-        if (parse_local_id && secondary_id_list) {
+        if ((parse_flags & fAllowLocalId) != 0 && secondary_id_list) {
             const CObject_id& oid = GetLocal();
             if (oid.IsId()) {
                 secondary_id = NStr::IntToString(oid.GetId());
