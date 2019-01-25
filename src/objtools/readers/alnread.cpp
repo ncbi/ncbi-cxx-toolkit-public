@@ -185,7 +185,7 @@ s_ReportCharCommentError(
 {
     const char * errFormat = 
         "Specified %s character does not match NEXUS comment in file (specified %s, comment %c)";
-    string errMessage = StrPrintf(errFormat, valName, expected, seen);
+    string errMessage = StrPrintf(errFormat, valName, expected.c_str(), seen);
 
     sReportError(
         NULL,
