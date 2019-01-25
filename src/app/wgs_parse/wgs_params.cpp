@@ -383,9 +383,21 @@ const string& CParams::GetTpaKeyword() const
     return m_imp->m_tpa_keyword;
 }
 
+static const size_t ACC_NUM_OF_DIGITS = 2;
+static const size_t ACC_PREFIX_PREFIX_LEN = 3; // 'AB_'
+
 string CParams::GetIdPrefix() const
 {
-    return m_imp->m_accession.substr(0, m_imp->m_accession.size() - 2);
+    return m_imp->m_accession.substr(0, m_imp->m_accession.size() - ACC_NUM_OF_DIGITS);
+}
+
+size_t CParams::GetPrefixLenAfterUnderscore() const
+{
+    size_t len = m_imp->m_accession.size();
+    if (m_imp->m_accession.find('_') != string::npos) {
+        len -= ACC_PREFIX_PREFIX_LEN;
+    }
+    return len - ACC_NUM_OF_DIGITS;
 }
 
 CSeq_id::E_Choice CParams::GetIdChoice() const
@@ -666,28 +678,34 @@ static bool SetBioSampleSRAIds(const list<string>& ids, TIdContainer& biosample_
 
 static bool IsValidAccession(const string& accession)
 {
-    static const size_t ACC_LEN = 6;
-    static const size_t NUM_OF_LETTERS = 4;
+    static const size_t ACC_MIN_LEN = 6;
+    static const size_t VALID_NUM_OF_LETTERS[] = {4, 6};
+    static const auto VALID_NUM_OF_LETTERS_END = VALID_NUM_OF_LETTERS + ARRAYSIZE(VALID_NUM_OF_LETTERS);
 
-    if (accession.size() < ACC_LEN) {
+    if (accession.size() < ACC_MIN_LEN) {
         return false;
     }
 
     string::const_iterator start = accession.begin();
     if (NStr::StartsWith(accession, "NZ_")) {
-        start += 3;
+        start += ACC_PREFIX_PREFIX_LEN;
     }
 
-    size_t len = 0;
-    for (; start != accession.end() && len < NUM_OF_LETTERS; ++start) {
+    size_t num_of_letters = 0;
+    for (; start != accession.end(); ++start) {
         if (!isalpha(*start)) {
-            return false;
+            break;
         }
-        ++len;
+        ++num_of_letters;
+    }
+
+    if (find(VALID_NUM_OF_LETTERS, VALID_NUM_OF_LETTERS_END, num_of_letters) == VALID_NUM_OF_LETTERS_END) {
+        return false;
     }
 
     bool non_zero = false;
-    for (; start != accession.end() && len <= ACC_LEN; ++start) {
+    size_t num_of_digits = 0;
+    for (; start != accession.end(); ++start) {
         if (!isdigit(*start)) {
             return false;
         }
@@ -695,10 +713,10 @@ static bool IsValidAccession(const string& accession)
         if (*start != '0') {
             non_zero = true;
         }
-        ++len;
+        ++num_of_digits;
     }
 
-    return len == ACC_LEN && non_zero;
+    return num_of_digits == ACC_NUM_OF_DIGITS && non_zero;
 }
 
 static int GetMonthNumber(const string& month)
@@ -863,7 +881,7 @@ bool SetParams(const CArgs& args)
     params_imp.SetAccession(NStr::ToUpper(accession));
 
     if (!IsValidAccession(params_imp.m_accession)) {
-        ERR_POST_EX(0, 0, "Incorrect accession provided on input: \"" << params_imp.m_accession << "\". Must be 4 letters + 2 digits (Not 00) or 2 letters + underscore + 4 letters + 2 digits.");
+        ERR_POST_EX(0, 0, "Incorrect accession provided on input: \"" << params_imp.m_accession << "\". Must be 4 or 6 letters + 2 digits (Not 00) or 2 letters + underscore + 4 or 6 letters + 2 digits.");
         return false;
     }
 

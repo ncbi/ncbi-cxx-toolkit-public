@@ -64,7 +64,7 @@ template <typename T> string ToStringLeadZeroes(T num, size_t width)
     return string(zeroes, '0') + str_num;
 }
 
-size_t GetMaxAccessionLen(int accession_num);
+size_t GetMaxAccessionLen(int accession_num, size_t prefix_len);
 
 bool GetInputType(const std::string& str, EInputType& type);
 bool GetInputTypeFromFile(CNcbiIfstream& stream, EInputType& type);

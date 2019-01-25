@@ -362,7 +362,7 @@ static bool OutputMaster(const CRef<CSeq_entry>& entry, const string& fname, int
 
     string path_name = GetParams().GetOutputDir() + '/';
     if (fname.empty()) {
-        path_name += GetParams().GetIdPrefix() + ToStringLeadZeroes(GetParams().GetAssemblyVersion(), 2) + ToStringLeadZeroes(0, GetMaxAccessionLen(num_of_entries));
+        path_name += GetParams().GetIdPrefix() + ToStringLeadZeroes(GetParams().GetAssemblyVersion(), 2) + ToStringLeadZeroes(0, GetMaxAccessionLen(num_of_entries, GetParams().GetPrefixLenAfterUnderscore()));
     }
     else {
         path_name += fname;

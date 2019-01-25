@@ -358,7 +358,7 @@ static CRef<CSeq_id> CreateNewAccession(int num)
         --num;
     }
 
-    text_id->SetAccession(prefix + ToStringLeadZeroes(num, GetMaxAccessionLen(num)));
+    text_id->SetAccession(prefix + ToStringLeadZeroes(num, GetMaxAccessionLen(num, GetParams().GetPrefixLenAfterUnderscore())));
 
     auto set_fun = FindSetTextSeqIdFunc(GetParams().GetIdChoice());
     _ASSERT(set_fun != nullptr && "There should be a valid SetTextId function. Validate the ID choice.");

@@ -167,6 +167,7 @@ public:
     const string& GetProjPrefix() const;
     const string& GetProjAccStr() const;
     const string& GetProjAccVerStr() const;
+    size_t GetPrefixLenAfterUnderscore() const;
 
     const string& GetAccession() const;
 

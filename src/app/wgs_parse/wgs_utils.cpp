@@ -55,17 +55,22 @@ CScope& GetScope()
     return scope;
 }
 
-static const int MAX_SEVEN_DIGITS_NUM = 9999999;
-static const int MAX_SIX_DIGITS_NUM = 999999;
-
-size_t GetMaxAccessionLen(int accession_num)
+size_t GetMaxAccessionLen(int accession_num, size_t prefix_len)
 {
+    static const int MAX_SEVEN_DIGITS_NUM = 9999999;
+    static const int MAX_SIX_DIGITS_NUM = 999999;
+    static const size_t OLD_PREFIX_LEN = 4;
+
     size_t max_accession_len = 6;
     if (accession_num > MAX_SEVEN_DIGITS_NUM) {
         max_accession_len = 8;
     }
     else if (accession_num > MAX_SIX_DIGITS_NUM) {
         max_accession_len = 7;
+    }
+
+    if (prefix_len > OLD_PREFIX_LEN) {
+        ++max_accession_len;
     }
 
     return max_accession_len;

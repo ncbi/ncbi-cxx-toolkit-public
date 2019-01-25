@@ -888,7 +888,7 @@ static const size_t LENGTH_NOT_SET = -1;
 
 static CRef<CSeq_id> CreateAccession(int last_accession_num, size_t accession_len)
 {
-    size_t max_accession_len = GetMaxAccessionLen(last_accession_num);
+    size_t max_accession_len = GetMaxAccessionLen(last_accession_num, GetParams().GetPrefixLenAfterUnderscore());
 
     if (accession_len == LENGTH_NOT_SET) {
         accession_len = max_accession_len;
@@ -1080,7 +1080,7 @@ static void CreateUserObject(const CMasterInfo& info, CBioseq& bioseq, const lis
     accession_last_label += ACCESSION_LAST;
 
     if (ranges.empty()) {
-        size_t max_accession_len = GetMaxAccessionLen(last);
+        size_t max_accession_len = GetMaxAccessionLen(last, GetParams().GetPrefixLenAfterUnderscore());
         accession_first_val = GetParams().GetIdPrefix() + GetAccessionValue(max_accession_len, first);
         accession_last_val = GetParams().GetIdPrefix() + GetAccessionValue(max_accession_len, last);
     }
