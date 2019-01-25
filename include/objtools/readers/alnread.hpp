@@ -100,17 +100,70 @@ protected:
 using FReportErrorFunction = void (ALIGNMENT_CALLBACK *)(const CErrorInfo&, void*);
 
 //  =============================================================================
-class SSequenceInfo {
+class CSequenceInfo {
 //  =============================================================================
 public:
-    char * missing;
-    char * match;
-    char * beginning_gap;
-    char * middle_gap;
-    char * end_gap;
-    const char * alphabet;
+    CSequenceInfo(
+        const string& alphabet,
+        const string& match,
+        const string& missing,
+        const string& beginningGap,
+        const string& middleGap,
+        const string& endGap):
+        mAlphabet(alphabet),
+        mMatch(match),
+        mMissing(missing),
+        mBeginningGap(beginningGap),
+        mMiddleGap(middleGap),
+        mEndGap(endGap)
+    {};
+
+    const string&
+    Alphabet() const { return mAlphabet; };
+
+    const string&
+    Match() const { return mMatch; };
+
+    void
+    SetMatch(
+        char c) { mMatch = string(1, c); };
+
+    const string&
+    Missing() const { return mMissing; };
+
+    void
+    SetMissing(
+        char c) { mMissing = string(1, c); };
+
+    const string&
+    BeginningGap() const { return mBeginningGap; };
+
+    void
+    SetBeginningGap(
+        char c) { mBeginningGap = string(1, c); };
+
+    const string&
+    MiddleGap() const { return mMiddleGap; };
+
+    void
+    SetMiddleGap(
+        char c) { mMiddleGap = string(1, c); };
+
+    const string&
+    EndGap() const { return mEndGap; };
+
+    void
+    SetEndGap(
+        char c) { mEndGap = string(1, c); };
+
+protected:
+    string mMatch;
+    string mAlphabet;
+    string mMissing;
+    string mBeginningGap;
+    string mMiddleGap;
+    string mEndGap;
 }; 
-using TSequenceInfoPtr = SSequenceInfo*;
 
 
 //  ============================================================================
@@ -160,13 +213,6 @@ public:
 protected:
 };
 
-
-/*
- * The following are to accommodate creating of local IDs to replace the IDs
- * found in the actual alignment file. We are retaining the original API for
- * legacy code compatibility, hence the new functions with almost the same
- * signature.
- */
 NCBI_XOBJREAD_EXPORT 
 bool ReadAlignmentFile (
   FReadLineFunction    readfunc,      /* function for reading lines of 
@@ -179,7 +225,7 @@ bool ReadAlignmentFile (
   void *               erroruserdata, /* data to be passed back each time
                                        * errfunc is invoked
                                        */
-  SSequenceInfo&       sequence_info, /* structure containing sequence
+  CSequenceInfo&       sequence_info, /* structure containing sequence
                                        * alphabet and special characters
                                        */
   bool                gen_local_ids,  /* flag indicating whether input IDs

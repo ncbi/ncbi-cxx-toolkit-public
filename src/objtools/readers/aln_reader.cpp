@@ -273,14 +273,8 @@ void CAlnReader::Read(
     }
 
     // make a SSequenceInfo corresponding to our CSequenceInfo argument
-    SSequenceInfo info;
-    info.alphabet      = const_cast<char *>(m_Alphabet.c_str());
-    info.beginning_gap = const_cast<char *>(m_BeginningGap.c_str());
-    info.end_gap       = const_cast<char *>(m_EndGap.c_str());;
-    info.middle_gap    = const_cast<char *>(m_MiddleGap.c_str());
-    info.missing       = const_cast<char *>(m_Missing.c_str());
-    info.match         = const_cast<char *>(m_Match.c_str());
-
+    CSequenceInfo info(
+        m_Alphabet, m_Match, m_Missing, m_BeginningGap, m_MiddleGap, m_EndGap);
 
     // read the alignment stream
     m_Errors.clear();

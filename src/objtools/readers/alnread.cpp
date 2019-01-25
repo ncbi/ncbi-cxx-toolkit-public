@@ -2045,7 +2045,7 @@ static char GetNexusTypechar (char * str, const char * val_name)
  */ 
 static bool s_CheckNexusCharInfo(
     char* str,
-    const SSequenceInfo& sequence_info,
+    const CSequenceInfo& sequence_info,
     FReportErrorFunction errfunc,
     void* errdata)
 {
@@ -2072,57 +2072,32 @@ static bool s_CheckNexusCharInfo(
     if (c == 0) {
         c = GetNexusTypechar (cp + 7, "MISSING");
     }
-    if (c != 0  &&  sequence_info.missing != NULL
-        &&  strchr (sequence_info.missing, c) == NULL)
-    {
-        s_ReportCharCommentError (sequence_info.missing, c, "MISSING",
-                                errfunc, errdata);
+    if (c != 0  &&  sequence_info.Missing().find(c) == string::npos) {
+        s_ReportCharCommentError (
+            sequence_info.Missing().c_str(), c, "MISSING", errfunc, errdata);
     }
  
     c = GetNexusTypechar (cp + 7, "gap");
     if (c == 0) {
         c = GetNexusTypechar (cp + 7, "GAP");
     }
-    if (c != 0  &&  sequence_info.middle_gap != NULL
-        &&  strchr (sequence_info.middle_gap, c) == NULL)
+    if (c != 0  &&  sequence_info.MiddleGap().find(c) == string::npos)
     {
-        s_ReportCharCommentError (sequence_info.middle_gap, c, "GAP",
-                                errfunc, errdata);
+        s_ReportCharCommentError (
+            sequence_info.MiddleGap().c_str(), c, "GAP", errfunc, errdata);
     }
  
     c = GetNexusTypechar (cp + 7, "match");
     if (c == 0) {
         c = GetNexusTypechar (cp + 7, "MATCH");
     }
-    if (c != 0  &&  sequence_info.match != NULL
-        &&  strchr (sequence_info.match, c) == NULL)
+    if (c != 0  &&  sequence_info.Match().find(c) == string::npos)
     {
-        s_ReportCharCommentError (sequence_info.match, c, "MATCH",
-                                errfunc, errdata);
+        s_ReportCharCommentError (
+            sequence_info.Match().c_str(), c, "MATCH", errfunc, errdata);
     }
     return true;
 } 
-
-
-static char * s_ReplaceNexusTypeChar (char *str, char c)
-{
-    if (str == NULL
-        || c != *str 
-        || *(str + 1) != 0)
-    {
-        if (str != NULL)
-        {
-          free (str);
-        }
-        str = (char *)malloc (2 * sizeof (char));
-        if (str != NULL)
-        {
-          str [0] = c;
-          str [1] = 0;
-        }
-    }
-    return str;
-}
 
 /* This function reads a Nexus-style comment line for the characters 
  * specified for missing, match, and gap and sets those values in sequence_info.
@@ -2130,7 +2105,7 @@ static char * s_ReplaceNexusTypeChar (char *str, char c)
  */ 
 static bool s_UpdateNexusCharInfo(
     char* str,
-    SSequenceInfo& sequence_info)
+    CSequenceInfo& sequence_info)
 {
     char * cp;
     char   c;
@@ -2151,22 +2126,21 @@ static bool s_UpdateNexusCharInfo(
     if (c == 0) {
         c = GetNexusTypechar (cp + 7, "MISSING");
     }
-    sequence_info.missing = s_ReplaceNexusTypeChar (sequence_info.missing, c);
+    sequence_info.SetMissing(c);
     
     c = GetNexusTypechar (cp + 7, "gap");
     if (c == 0) {
         c = GetNexusTypechar (cp + 7, "GAP");
     }
-    sequence_info.beginning_gap = s_ReplaceNexusTypeChar(sequence_info.beginning_gap, c);
-    sequence_info.middle_gap = s_ReplaceNexusTypeChar (sequence_info.middle_gap, c);
-    sequence_info.end_gap = s_ReplaceNexusTypeChar (sequence_info.end_gap, c);
+    sequence_info.SetBeginningGap(c);
+    sequence_info.SetMiddleGap(c);
+    sequence_info.SetEndGap(c);
  
     c = GetNexusTypechar (cp + 7, "match");
     if (c == 0) {
         c = GetNexusTypechar (cp + 7, "MATCH");
     }
-    sequence_info.match = s_ReplaceNexusTypeChar (sequence_info.match, c);
-
+    sequence_info.SetMatch(c);
     return true;
 } 
 
@@ -3468,7 +3442,7 @@ static SAlignRawFilePtr
 s_ReadAlignFileRaw
 (FReadLineFunction    readfunc,
  void *               userdata,
- SSequenceInfo&     sequence_info,
+ CSequenceInfo&     sequence_info,
  bool                use_nexus_file_info,
  FReportErrorFunction errfunc,
  void *               errdata,
@@ -3499,7 +3473,7 @@ s_ReadAlignFileRaw
         return NULL;
     }
   
-    afrp->alphabet = strdup (sequence_info.alphabet);
+    afrp->alphabet = strdup (sequence_info.Alphabet().c_str());
     afrp->report_error = errfunc;
     afrp->report_error_userdata = errdata;
 
@@ -5380,7 +5354,7 @@ static bool
 s_FindBadDataCharsInSequence
 (TAlignRawSeqPtr      arsp,
  TAlignRawSeqPtr      master_arsp,
- const SSequenceInfo& sequenceInfo,
+ const CSequenceInfo& sequenceInfo,
  int                  num_segments,
  FReportErrorFunction report_error,
  void *               report_error_userdata)
@@ -5399,21 +5373,17 @@ s_FindBadDataCharsInSequence
     char               middle_gap = '-';
     char               end_gap = '-';
 
-    if (strlen(sequenceInfo.beginning_gap) > 0 &&
-        strchr(sequenceInfo.beginning_gap, '-') == NULL){
-        beginning_gap = sequenceInfo.beginning_gap[0];
+    if (sequenceInfo.BeginningGap().find('-') != string::npos) {
+        beginning_gap = sequenceInfo.BeginningGap()[0];
     }
 
-    if (strlen(sequenceInfo.middle_gap) > 0 &&
-        strchr(sequenceInfo.middle_gap, '-') == NULL){
-        middle_gap = sequenceInfo.middle_gap[0];
+    if (sequenceInfo.MiddleGap().find('-') != string::npos){
+        middle_gap = sequenceInfo.MiddleGap()[0];
     }
 
-    if (strlen(sequenceInfo.end_gap) > 0 &&
-        strchr(sequenceInfo.end_gap, '-') == NULL){
-        end_gap = sequenceInfo.end_gap[0];
+    if (sequenceInfo.EndGap().find('-') != string::npos){
+        end_gap = sequenceInfo.EndGap()[0];
     }
-
 
     if (arsp == NULL  ||  master_arsp == NULL) {
         return true;
@@ -5433,19 +5403,11 @@ s_FindBadDataCharsInSequence
         master_lirp = NULL;
     }
 
-    if (strcspn (sequenceInfo.beginning_gap, sequenceInfo.match) 
-                  == strlen (sequenceInfo.beginning_gap)) {
-        match_not_in_beginning_gap = true;
-    } else {
-        match_not_in_beginning_gap = false;
-    }
+    auto firstMatchB = sequenceInfo.BeginningGap().find_first_of(sequenceInfo.Match());
+    match_not_in_beginning_gap = (firstMatchB == sequenceInfo.BeginningGap().size());
 
-    if (strcspn (sequenceInfo.end_gap, sequenceInfo.match) == 
-            strlen (sequenceInfo.end_gap)) {
-        match_not_in_end_gap = true;
-    } else {
-        match_not_in_end_gap = false;
-    }
+    auto firstMatchE = sequenceInfo.EndGap().find_first_of(sequenceInfo.Match());
+    match_not_in_end_gap = (firstMatchE == sequenceInfo.EndGap().size());
 
     /* First, find middle start and end positions and report characters
      * that are not beginning gap before the middle
@@ -5454,7 +5416,7 @@ s_FindBadDataCharsInSequence
     data_position = 0;
     curr_char = s_FindNthDataChar (lirp, data_position);
     while (curr_char != 0) {
-        if (strchr (sequenceInfo.alphabet, curr_char) != NULL) {
+          if (sequenceInfo.Alphabet().find(curr_char) != string::npos) {
             if (! found_middle_start) {
                 middle_start = data_position;
                 found_middle_start = true;
@@ -5463,14 +5425,14 @@ s_FindBadDataCharsInSequence
             data_position ++;
         } else if (! found_middle_start) {
             if (match_not_in_beginning_gap
-                &&  strchr (sequenceInfo.match, curr_char) != NULL)
+                &&  sequenceInfo.Match().find(curr_char) != string::npos)
             {
                 middle_start = data_position;
                 found_middle_start = true;
                 middle_end = data_position + 1;
                 data_position ++;
-            } else if (strchr (sequenceInfo.beginning_gap, curr_char) == NULL) {
-                /* Report error - found character that is not beginning gap
+            } else if (sequenceInfo.BeginningGap().find(curr_char) == string::npos) {
+            /* Report error - found character that is not beginning gap
                    in beginning gap */
                 data_position = s_ReportRepeatedBadCharsInSequence (lirp,
                                                                   arsp->id,
@@ -5483,7 +5445,7 @@ s_FindBadDataCharsInSequence
             }
         } else {
             if (match_not_in_end_gap
-                &&  strchr (sequenceInfo.match, curr_char) != NULL)
+                &&  sequenceInfo.Match().find(curr_char) != string::npos)
             {
                 middle_end = data_position + 1;
             }
@@ -5513,17 +5475,17 @@ s_FindBadDataCharsInSequence
     while (data_position < middle_end)
     {
         curr_char = s_FindNthDataChar (lirp, data_position);
-        while (data_position < middle_end
-               &&  strchr (sequenceInfo.alphabet, curr_char) != NULL) {
+        while (data_position < middle_end  &&
+                sequenceInfo.Alphabet().find(curr_char) != string::npos) {
             data_position ++;
             curr_char = s_FindNthDataChar (lirp, data_position);
         } 
         if (curr_char == 0  ||  data_position >= middle_end) {
             /* do nothing, done with middle */
-        } else if (strchr (sequenceInfo.missing, curr_char) != NULL) {
+        } else if (sequenceInfo.Missing().find(curr_char) != string::npos) {
             *lirp->curr_line_pos = 'N';
             data_position ++;
-        } else if (strchr (sequenceInfo.match, curr_char) != NULL) {
+        } else if (sequenceInfo.Match().find(curr_char) != string::npos) {
             master_char = s_FindNthDataChar (master_lirp, data_position);
             if (master_char == 0) {
                 /* report error - unable to get master char */
@@ -5543,7 +5505,7 @@ s_FindBadDataCharsInSequence
                 *lirp->curr_line_pos = master_char;
                 data_position ++;
             }
-        } else if (strchr (sequenceInfo.middle_gap, curr_char) != NULL) {
+        } else if (sequenceInfo.MiddleGap().find(curr_char) != string::npos) {
             *lirp->curr_line_pos = middle_gap;
             data_position ++;
         } else {
@@ -5561,8 +5523,8 @@ s_FindBadDataCharsInSequence
     data_position = middle_end;
     curr_char = s_FindNthDataChar (lirp, data_position);
     while (curr_char != 0) {
-        if (strchr (sequenceInfo.end_gap, curr_char) == NULL) {
-            /* Report error - found bad character in middle */
+        if (sequenceInfo.EndGap().find(curr_char) == string::npos) {
+        /* Report error - found bad character in middle */
             data_position = s_ReportRepeatedBadCharsInSequence (lirp, arsp->id,
                                       "expect only end gap characters here",
                                       report_error, report_error_userdata);
@@ -5587,7 +5549,7 @@ s_FindBadDataCharsInSequence
 static bool
 s_s_FindBadDataCharsInSequenceList(
     SAlignRawFilePtr afrp,
-    const SSequenceInfo& sequenceInfo)
+    const CSequenceInfo& sequenceInfo)
 {
     TAlignRawSeqPtr arsp;
     bool is_bad = false;
@@ -5817,14 +5779,14 @@ ReadAlignmentFile(
     void * fileuserdata,
     FReportErrorFunction errfunc,
     void * erroruserdata,
-    SSequenceInfo& sequence_info,
+    CSequenceInfo& sequence_info,
     bool gen_local_ids,
     SAlignmentFile& alignmentInfo)
 {
     SAlignRawFilePtr afrp;
     EAlignFormat format = ALNFMT_UNKNOWN;
 
-    if (sequence_info.alphabet == NULL) {
+    if (sequence_info.Alphabet().empty()) {
         return false;
     }
     
