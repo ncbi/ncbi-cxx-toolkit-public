@@ -3060,6 +3060,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                     break;
                 }
                 gfx::timsort(it.second.begin(), it.second.end());
+                it.second.erase(unique(it.second.begin(), it.second.end()), it.second.end());
                 it.first->LoadChunks(it.second);
             }
             tse.UpdateAnnotIndex(id);
@@ -3571,9 +3572,9 @@ void CAnnot_Collector::x_SearchAll(const CSeq_entry_Info& entry_info)
 {
     {{
         entry_info.UpdateAnnotIndex();
-        CConstRef<CBioseq_Base_Info> base = entry_info.m_Contents;
+        const CBioseq_Base_Info& base = entry_info.x_GetBaseInfo();
         // Collect all annotations from the entry
-        ITERATE( CBioseq_Base_Info::TAnnot, ait, base->GetAnnot() ) {
+        ITERATE( CBioseq_Base_Info::TAnnot, ait, base.GetAnnot() ) {
             x_SearchAll(**ait);
             if ( x_NoMoreObjects() )
                 return;
