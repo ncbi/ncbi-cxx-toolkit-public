@@ -581,7 +581,21 @@ static CRef<CSeq_feat> MakeCDSForNucProtSet (string nuc_id, string prot_id)
 }
 
 
-static CRef<CSeq_entry> BuildNucProtSet(string protein_name)
+static CRef<CSeq_feat> MakeGeneForNucProtSet(const string& nuc_id, const string& locus, const string& allele = kEmptyStr)
+{
+    CRef<CSeq_feat> gene(new CSeq_feat());
+    gene->SetData().SetGene().SetLocus(locus);
+    if (!allele.empty()) {
+        gene->SetData().SetGene().SetAllele(allele);
+    }
+    gene->SetLocation().SetInt().SetId().SetLocal().SetStr(nuc_id);
+    gene->SetLocation().SetInt().SetFrom(0);
+    gene->SetLocation().SetInt().SetTo(26);
+    return gene;
+}
+
+
+static CRef<CSeq_entry> BuildNucProtSet(const string& protein_name, const string& locus = kEmptyStr, const string& allele = kEmptyStr)
 {
     CRef<CBioseq_set> set(new CBioseq_set());
     set->SetClass(CBioseq_set::eClass_nuc_prot);
@@ -603,6 +617,11 @@ static CRef<CSeq_entry> BuildNucProtSet(string protein_name)
 
     CRef<CSeq_entry> nentry(new CSeq_entry());
     nentry->SetSeq(*nseq);
+
+    if (!locus.empty()) {
+        CRef<CSeq_feat> gene = MakeGeneForNucProtSet("nuc", locus, allele);
+        AddFeat(gene, nentry);
+    }
 
     set->SetSeq_set().push_back(nentry);
 
@@ -2406,6 +2425,28 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4529)
 
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4593)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();    
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature(cds);
+    gene->SetData().SetGene().SetLocus("ORF1");
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    unit_test_util::AddFeat(gene, nuc);
+    CRef<CSeq_feat> pfeat = unit_test_util::GetProtFeatFromGoodNucProtSet(entry);
+    pfeat->SetData().SetProt().SetName().clear();
+    pfeat->SetData().SetProt().SetName().push_back("nonstructural polyprotein");
+    CRef<CSeq_entry> prot = unit_test_util::GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> matp = unit_test_util::AddMiscFeature(prot);
+    matp->SetData().SetProt().SetProcessed(CProt_ref::eProcessed_mature);
+    matp->SetData().SetProt().SetName().clear();
+    matp->SetData().SetProt().SetName().push_back("RdRp");
+    matp->ResetComment();
+
+    AddTitle(nuc, "Sebaea microphylla nonstructural polyprotein, RdRp region, (ORF1) gene, complete cds.");
+    CheckDeflineMatches(entry, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

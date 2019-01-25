@@ -67,9 +67,6 @@ CAutoDefFeatureClause_Base::CAutoDefFeatureClause_Base() :
 
 CAutoDefFeatureClause_Base::~CAutoDefFeatureClause_Base()
 {
-    for (auto it : m_ClauseList) {
-        delete it;
-    }
 }
 
 
@@ -99,7 +96,7 @@ bool CAutoDefFeatureClause_Base::IsuORF(const string& product)
 }
 
 
-void CAutoDefFeatureClause_Base::AddSubclause (CAutoDefFeatureClause_Base *subclause)
+void CAutoDefFeatureClause_Base::AddSubclause (CRef<CAutoDefFeatureClause_Base> subclause)
 {
     if (subclause) {
         m_ClauseList.push_back(subclause);
@@ -606,7 +603,7 @@ size_t CAutoDefFeatureClause_Base::x_LastIntervalChangeBeforeEnd () const
     if (m_ClauseList.size() < 2) {
         return 0;
     }
-    string last_interval = m_ClauseList[m_ClauseList.size() - 1]->GetInterval();
+    string last_interval = m_ClauseList.back()->GetInterval();
     
     for (size_t k = m_ClauseList.size() - 2; k > 0; k--) {
         if (!NStr::Equal(m_ClauseList[k]->GetInterval(), last_interval)
@@ -680,33 +677,15 @@ void CAutoDefFeatureClause_Base::PluralizeDescription()
 
 void CAutoDefFeatureClause_Base::RemoveDeletedSubclauses()
 {
-    unsigned int k, j;
-    k = 0;
-    while (k < m_ClauseList.size()) {
-        j = k;
-        while (j < m_ClauseList.size() && (m_ClauseList[j] == NULL || m_ClauseList[j]->IsMarkedForDeletion())) {   
-            if (m_ClauseList[j] != NULL) {
-                delete m_ClauseList[j];         
-            }
-            j++;
+    auto it = m_ClauseList.begin();
+    while (it != m_ClauseList.end()) {
+        if (!(*it) || (*it)->IsMarkedForDeletion()) {
+            it = m_ClauseList.erase(it);
+        } else {
+            (*it)->RemoveDeletedSubclauses();
+            ++it;
         }
-        if (j > k) {
-           unsigned int num_removed = j - k;
-           while (j < m_ClauseList.size()) {
-                m_ClauseList[j - num_removed] = m_ClauseList[j];
-                j++;
-            }
-            while (num_removed > 0) {
-                m_ClauseList[m_ClauseList.size() - 1] = NULL;
-                m_ClauseList.pop_back();
-                num_removed --;
-            }
-        }
-        while (k < m_ClauseList.size() && m_ClauseList[k] != NULL && !m_ClauseList[k]->IsMarkedForDeletion()) {
-            m_ClauseList[k]->RemoveDeletedSubclauses();
-            k++;
-        }
-    }   
+    }
 }
 
 
@@ -1151,7 +1130,7 @@ void CAutoDefFeatureClause_Base::SetProductName(string product_name)
 
 void CAutoDefFeatureClause_Base::CountUnknownGenes()
 {
-    CAutoDefUnknownGeneList *unknown_list = new CAutoDefUnknownGeneList();
+    CRef<CAutoDefUnknownGeneList> unknown_list(new CAutoDefUnknownGeneList());
     bool any_found = false;
     
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
@@ -1167,8 +1146,6 @@ void CAutoDefFeatureClause_Base::CountUnknownGenes()
     
     if (any_found) {
         AddSubclause(unknown_list);
-    } else {
-        delete unknown_list;
     }        
 }
 
@@ -1248,7 +1225,6 @@ void CAutoDefFeatureClause_Base::ExpandExonLists()
             TClauseList subclauses;
             subclauses.clear();
             m_ClauseList[k]->TransferSubclauses(subclauses);
-            delete m_ClauseList[k];
             for (unsigned int j = 0; j < subclauses.size(); j++) {
                 if (k + j < m_ClauseList.size()) {
                     m_ClauseList[k + j] = subclauses[j];
@@ -1548,7 +1524,7 @@ void CAutoDefFeatureClause_Base::RemoveuORFs()
 void CAutoDefFeatureClause_Base::RemoveOptionalMobileElements()
 {
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
-        CAutoDefMobileElementClause* clause = dynamic_cast<CAutoDefMobileElementClause *>(m_ClauseList[k]);        
+        CAutoDefMobileElementClause* clause = dynamic_cast<CAutoDefMobileElementClause *>(m_ClauseList[k].GetPointer());        
         if (clause && clause->IsOptional()) {
             m_ClauseList[k]->MarkForDeletion();
         } else {
@@ -1637,7 +1613,7 @@ CRef<CSeq_loc> CAutoDefExonListClause::SeqLocIntersect (CRef<CSeq_loc> loc1, CRe
 }
 
 
-void CAutoDefExonListClause::AddSubclause (CAutoDefFeatureClause_Base *subclause)
+void CAutoDefExonListClause::AddSubclause (CRef<CAutoDefFeatureClause_Base> subclause)
 {
     CAutoDefFeatureClause_Base::AddSubclause(subclause);
     if (m_ClauseList.size() == 1) {
@@ -2011,7 +1987,7 @@ vector<string> CAutoDefFeatureClause_Base::GetFeatureClausePhrases(string commen
 }
 
 
-CAutoDefFeatureClause_Base * CAutoDefFeatureClause_Base::ClauseFromPhrase(const string& phrase, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool first, bool last)
+CAutoDefFeatureClause * CAutoDefFeatureClause_Base::ClauseFromPhrase(const string& phrase, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool first, bool last)
 {
     if (NStr::Equal(phrase, "control region") ||
         NStr::Equal(phrase, "D-loop")) {

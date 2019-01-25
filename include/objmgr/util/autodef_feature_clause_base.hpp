@@ -40,17 +40,19 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+class CAutoDefFeatureClause;
     
     
-class NCBI_XOBJEDIT_EXPORT CAutoDefFeatureClause_Base
+class NCBI_XOBJEDIT_EXPORT CAutoDefFeatureClause_Base : public CObject
 {
 public:
-    typedef vector<CAutoDefFeatureClause_Base *> TClauseList;
+    typedef vector<CRef<CAutoDefFeatureClause_Base > > TClauseList;
 
     CAutoDefFeatureClause_Base();
     virtual ~CAutoDefFeatureClause_Base();
     
-    virtual void AddSubclause (CAutoDefFeatureClause_Base *subclause);
+    virtual void AddSubclause (CRef<CAutoDefFeatureClause_Base> subclause);
 
     string PrintClause(bool print_typeword, bool typeword_is_plural, bool suppress_allele);
     
@@ -90,7 +92,7 @@ public:
     bool IsTypewordFirst() const { return m_ShowTypewordFirst; }
     bool DisplayAlleleName () const;
 
-    const string& GetInterval() { return m_Interval; }
+    const string& GetInterval() const { return m_Interval; }
     const string& GetTypeword() const { return m_Typeword; }
     const string& GetDescription() const { return m_Description; }
     const string& GetProductName() { return m_ProductName; }
@@ -161,7 +163,7 @@ public:
     static vector<string> GetTrnaIntergenicSpacerClausePhrases(const string& comment);
     static bool IsValidFeatureClausePhrase(const string& phrase);
     static vector<string> GetFeatureClausePhrases(string comment);
-    static CAutoDefFeatureClause_Base *ClauseFromPhrase(const string& phrase, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool first, bool last);
+    static CAutoDefFeatureClause *ClauseFromPhrase(const string& phrase, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool first, bool last);
 
    
 protected:
@@ -239,7 +241,7 @@ class NCBI_XOBJEDIT_EXPORT CAutoDefExonListClause : public CAutoDefFeatureClause
 public:
     CAutoDefExonListClause(CBioseq_Handle bh);
     
-    virtual void AddSubclause (CAutoDefFeatureClause_Base *subclause);
+    virtual void AddSubclause (CRef<CAutoDefFeatureClause_Base> subclause);
     virtual void Label(bool suppress_allele);
     virtual bool IsRecognizedFeature() { return true; }
     virtual bool IsExonList() { return true; }

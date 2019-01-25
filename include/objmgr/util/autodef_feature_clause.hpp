@@ -294,6 +294,9 @@ public:
 CAutoDefParsedtRNAClause *s_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, string comment, bool is_first, bool is_last);
 
 
+vector<CRef<CAutoDefFeatureClause > > FeatureClauseFactory(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, const CAutoDefOptions& opts, bool is_single_misc_feat);
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
