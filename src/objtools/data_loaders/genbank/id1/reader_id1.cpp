@@ -188,9 +188,7 @@ void CId1Reader::x_DisconnectAtSlot(TConn conn, bool failed)
     CReaderServiceConnector::SConnInfo& conn_info = m_Connections[conn];
     m_Connector.RememberIfBad(conn_info);
     if ( conn_info.m_Stream ) {
-        LOG_POST_X(2, Warning << "CId1Reader("<<conn<<"): ID1"
-                   " GenBank connection "<<(failed? "failed": "too old")<<
-                   ": reconnecting...");
+        x_ReportDisconnect("CId1Reader", "ID1", conn, failed);
         conn_info.m_Stream.reset();
     }
 }

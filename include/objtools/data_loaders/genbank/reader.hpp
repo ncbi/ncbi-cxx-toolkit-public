@@ -296,6 +296,9 @@ protected:
     virtual void x_DisconnectAtSlot(TConn conn, bool failed);
     // force connection at connection slot with key 'conn'
     virtual void x_ConnectAtSlot(TConn conn) = 0;
+    // report failed or stale connection
+    void x_ReportDisconnect(const char* reader, const char* server,
+                            TConn conn, bool failed) const;
 
 private:
     friend class CReaderAllocatedConnection;

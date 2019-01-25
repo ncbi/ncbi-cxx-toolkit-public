@@ -193,9 +193,7 @@ void CId2Reader::x_DisconnectAtSlot(TConn conn, bool failed)
     CReaderServiceConnector::SConnInfo& conn_info = m_Connections[conn];
     m_Connector.RememberIfBad(conn_info);
     if ( conn_info.m_Stream ) {
-        LOG_POST_X(1, Warning << "CId2Reader("<<conn<<"): ID2"
-                   " GenBank connection "<<(failed? "failed": "too old")<<
-                   ": reconnecting...");
+        x_ReportDisconnect("CId2Reader", "ID2", conn, failed);
         if ( GetDebugLevel() >= eTraceOpen ) {
             CDebugPrinter s(conn, "CId2Reader");
             s << "Closing ID2 connection";

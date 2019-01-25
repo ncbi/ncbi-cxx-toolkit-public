@@ -230,9 +230,7 @@ void CPubseq2Reader::x_DisconnectAtSlot(TConn conn, bool failed)
     _ASSERT(m_Connections.count(conn));
     SConnection& c = m_Connections[conn];
     if ( c.m_Connection ) {
-        LOG_POST_X(1, Warning << "CPubseq2Reader("<<conn<<"): PubSeqOS2"
-                   " GenBank connection "<<(failed? "failed": "too old")<<
-                   ": reconnecting...");
+        x_ReportDisconnect("CPubseq2Reader", "PubSeqOS2", conn, failed);
         c.m_Result.reset();
         c.m_Connection.reset();
     }

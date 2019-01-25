@@ -277,9 +277,7 @@ void CPubseqReader::x_DisconnectAtSlot(TConn conn, bool failed)
     _ASSERT(m_Connections.count(conn));
     AutoPtr<CDB_Connection>& stream = m_Connections[conn];
     if ( stream ) {
-        LOG_POST_X(1, Warning << "CPubseqReader("<<conn<<"): PubSeqOS"
-                   " GenBank connection "<<(failed? "failed": "too old")<<
-                   ": reconnecting...");
+        x_ReportDisconnect("CPubseqReader", "PubSeqOS", conn, failed);
         stream.reset();
     }
 }
