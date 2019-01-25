@@ -464,13 +464,13 @@ void CAlnReader::x_CalculateMiddleSections()
 
 
     for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
-        TSeqPos begin_len = strspn(m_Seqs[row_i].c_str(), m_BeginningGap.c_str());
+        TSeqPos begin_len = m_Seqs[row_i].find_first_not_of(m_BeginningGap);
         TSeqPos end_len = 0;
         if (begin_len < m_Seqs[row_i].length()) {
             string::iterator s = m_Seqs[row_i].end();
             while (s != m_Seqs[row_i].begin()) {
                 --s;
-                if (strchr(m_EndGap.c_str(), *s) != NULL) {
+                if (m_EndGap.find(*s) != string::npos) {
                     end_len++;
                 } else {
                     break;
@@ -665,7 +665,7 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign(const TFastaFlags fasta_flags)
                     }
 
                     // add to the sequence vector
-                    m_SeqVec[row_i][m_SeqLen[row_i]++] = residue.c_str()[0];
+                    m_SeqVec[row_i][m_SeqLen[row_i]++] = residue[0];
 
                 } else {
   

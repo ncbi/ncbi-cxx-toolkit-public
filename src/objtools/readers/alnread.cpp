@@ -177,7 +177,7 @@ sReportError(
  */
 static void 
 s_ReportCharCommentError(
-    const char* expected,
+    const string& expected,
     char seen,
     const char* valName,
     FReportErrorFunction errfunc,
@@ -2074,7 +2074,7 @@ static bool s_CheckNexusCharInfo(
     }
     if (c != 0  &&  sequence_info.Missing().find(c) == string::npos) {
         s_ReportCharCommentError (
-            sequence_info.Missing().c_str(), c, "MISSING", errfunc, errdata);
+            sequence_info.Missing(), c, "MISSING", errfunc, errdata);
     }
  
     c = GetNexusTypechar (cp + 7, "gap");
@@ -2084,7 +2084,7 @@ static bool s_CheckNexusCharInfo(
     if (c != 0  &&  sequence_info.MiddleGap().find(c) == string::npos)
     {
         s_ReportCharCommentError (
-            sequence_info.MiddleGap().c_str(), c, "GAP", errfunc, errdata);
+            sequence_info.MiddleGap(), c, "GAP", errfunc, errdata);
     }
  
     c = GetNexusTypechar (cp + 7, "match");
@@ -2094,7 +2094,7 @@ static bool s_CheckNexusCharInfo(
     if (c != 0  &&  sequence_info.Match().find(c) == string::npos)
     {
         s_ReportCharCommentError (
-            sequence_info.Match().c_str(), c, "MATCH", errfunc, errdata);
+            sequence_info.Match(), c, "MATCH", errfunc, errdata);
     }
     return true;
 } 
