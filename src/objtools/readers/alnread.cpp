@@ -139,7 +139,7 @@ typedef struct SAlignFileRaw {
 /* Function declarations
  */
 static bool s_AfrpInitLineData( 
-    SAlignRawFilePtr afrp, FReadLineFunction readfunc, void* pfile);
+    SAlignRawFilePtr afrp, FLineReader readfunc, void* pfile);
 static void s_AfrpProcessFastaGap(
     SAlignRawFilePtr afrp, SLengthListPtr * patterns, bool * last_line_was_marked_id, char* plinestr, int overall_line_count);
 
@@ -1712,10 +1712,10 @@ static TStringCountPtr s_AddStringCount (
  * characters (using case-insensitive comparisons), 0 if they are equal,
  * and 1 if str1 is greater than str2.
  */
-static int s_StringNICmp (char * str1, char *str2, int cmp_count)
+static int s_StringNICmp (const char * str1, const char *str2, int cmp_count)
 {
-    char * cp1;
-    char * cp2;
+    const char * cp1;
+    const char * cp2;
     int    char_count, diff;
 
     if (str1 == NULL && str2 == NULL) {
@@ -2272,7 +2272,7 @@ static bool s_IsBlank (char * str)
  * indicating the end of sequence data (organism information and definition
  * lines may occur after this line).
  */
-static bool s_FoundStopLine (char * linestring)
+static bool s_FoundStopLine (const char * linestring)
 {
     if (linestring == NULL) {
         return false;
@@ -2288,13 +2288,9 @@ static bool s_FoundStopLine (char * linestring)
 /* This function identifies the beginning line of an ASN.1 file, which
  * cannot be read by the alignment reader.
  */
-static bool s_IsASN1 (char * linestring)
+static bool s_IsASN1 (const string& line)
 {
-    if (linestring != NULL  &&  strstr (linestring, "::=") != NULL) {
-        return true;
-    } else {
-        return false;
-    }
+    return (line.find("::=") != string::npos);
 }
 
 
@@ -3315,12 +3311,13 @@ static void s_TrimSpace(char** ppline)
 static bool
 s_AfrpInitLineData(
     SAlignRawFilePtr afrp,
-    FReadLineFunction readfunc,
-    void* pfile)
+    FLineReader readfunc,
+    istream& istr)
 {
     int overall_line_count = 0;
     bool in_taxa_comment = false;
-    char* linestring = readfunc (pfile);
+    string linestring;
+    bool dataAvailable = readfunc(istr, linestring);
     TLineInfoPtr last_line = NULL, next_line = NULL;
 
     if (s_IsASN1 (linestring)) {
@@ -3328,22 +3325,22 @@ s_AfrpInitLineData(
         return false;
     }
 
-    while (linestring != NULL  &&  linestring [0] != EOF) {
-        s_TrimSpace (&linestring);
-        if (!in_taxa_comment  &&  s_FoundStopLine(linestring)) {
+    while (dataAvailable) {
+        NStr::TruncateSpacesInPlace(linestring);
+        if (!in_taxa_comment  &&  s_FoundStopLine(linestring.c_str())) {
             linestring [0] = 0;
         }
         if (in_taxa_comment) {
-            if (strncmp (linestring, "end;", 4) == 0) {
+            if (strncmp (linestring.c_str(), "end;", 4) == 0) {
                 in_taxa_comment = false;
             } 
             linestring [0] = 0;
-        } else if (strncmp (linestring, "begin taxa;", 11) == 0) {
+        } else if (strncmp (linestring.c_str(), "begin taxa;", 11) == 0) {
             linestring [0] = 0;
             in_taxa_comment = true;
             afrp->align_format_found = true;
         }
-        next_line = s_LineInfoNew (linestring, overall_line_count, 0);
+        next_line = s_LineInfoNew (linestring.c_str(), overall_line_count, 0);
         if (last_line == NULL) {
             afrp->line_list = next_line;
         } else {
@@ -3351,9 +3348,10 @@ s_AfrpInitLineData(
         }
         last_line = next_line;
 
-        free (linestring);
-        linestring = readfunc (pfile);
-        overall_line_count ++;
+        dataAvailable = readfunc(istr, linestring);
+        if (dataAvailable) {
+            overall_line_count ++;
+        }
     }
     return true;
 }
@@ -3440,8 +3438,8 @@ s_AfrpProcessFastaGap(
 
 static SAlignRawFilePtr
 s_ReadAlignFileRaw
-(FReadLineFunction    readfunc,
- void *               userdata,
+(FLineReader    readfunc,
+    istream& istr,
  CSequenceInfo&     sequence_info,
  bool                use_nexus_file_info,
  FReportErrorFunction errfunc,
@@ -3477,7 +3475,7 @@ s_ReadAlignFileRaw
     afrp->report_error = errfunc;
     afrp->report_error_userdata = errdata;
 
-    if (!s_AfrpInitLineData(afrp, readfunc, userdata)) {
+    if (!s_AfrpInitLineData(afrp, readfunc, istr)) {
         s_AlignFileRawFree (afrp);
         return NULL;
     }
@@ -5775,8 +5773,8 @@ s_ConvertDataToOutput(
  */
 bool 
 ReadAlignmentFile(
-    FReadLineFunction readfunc,
-    void * fileuserdata,
+    FLineReader readfunc,
+    istream& istr,
     FReportErrorFunction errfunc,
     void * erroruserdata,
     CSequenceInfo& sequence_info,
@@ -5790,7 +5788,7 @@ ReadAlignmentFile(
         return false;
     }
     
-    afrp = s_ReadAlignFileRaw ( readfunc, fileuserdata, sequence_info,
+    afrp = s_ReadAlignFileRaw ( readfunc, istr, sequence_info,
                                 false,
                                 errfunc, erroruserdata, &format);
     if (afrp == NULL) {

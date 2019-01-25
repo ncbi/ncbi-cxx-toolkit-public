@@ -128,6 +128,19 @@ static char * ALIGNMENT_CALLBACK s_ReadLine(void *user_data)
 }
 
 
+bool ALIGNMENT_CALLBACK 
+sReadLine(
+    istream& istr,
+    string& line)
+{
+    if (!istr  || istr.eof()) {
+        return false;
+    }
+    NcbiGetline(istr, line, "\r\n");
+    return true;
+}
+
+
 static void ALIGNMENT_CALLBACK s_ReportError(
     const CErrorInfo& err,
     void *user_data)
@@ -137,35 +150,31 @@ static void ALIGNMENT_CALLBACK s_ReportError(
     const int category_BadData = 2;
     const int category_BadChar = 4;
 
-    const CErrorInfo* err_ptr = &err;
-    while (err_ptr != NULL) {    
-        if (user_data != NULL) {
-            err_list = (CAlnReader::TErrorList *)user_data;
-            int category = err_ptr->Category();
-            string err_msg = err_ptr->Message();
-            if ( (category == category_BadData) &&
-                 (err_msg.find("bad char") != string::npos) ) {
-                category = category_BadChar;
-            }
-            (*err_list).push_back (
-                CAlnError(category, err_ptr->LineNumber(), err_ptr->Id(), err_msg));
+    if (user_data != NULL) {
+        err_list = (CAlnReader::TErrorList *)user_data;
+        int category = err.Category();
+        string err_msg = err.Message();
+        if ( (category == category_BadData) &&
+                (err_msg.find("bad char") != string::npos) ) {
+            category = category_BadChar;
         }
+        (*err_list).push_back (
+            CAlnError(category, err.LineNumber(), err.Id(), err_msg));
+    }
         
-        string msg = "Error reading alignment file";
-        if (err_ptr->LineNumber() != CErrorInfo::NO_LINE_NUMBER) {
-            msg += " at line " + NStr::IntToString(err_ptr->LineNumber());
-        }
-        if (!err.Message().empty()) {
-            msg += ":  ";
-            msg += err_ptr->Message();
-        }
+    string msg = "Error reading alignment file";
+    if (err.LineNumber() != CErrorInfo::NO_LINE_NUMBER) {
+        msg += " at line " + NStr::IntToString(err.LineNumber());
+    }
+    if (!err.Message().empty()) {
+        msg += ":  ";
+        msg += err.Message();
+    }
 
-        if (err_ptr->Category() == eAlnErr_Fatal) {
-            LOG_POST_X(1, Error << msg);
-        } else {
-            LOG_POST_X(1, Info << msg);
-        }
-        err_ptr = err_ptr->Next();
+    if (err.Category() == eAlnErr_Fatal) {
+        LOG_POST_X(1, Error << msg);
+    } else {
+        LOG_POST_X(1, Info << msg);
     }
 }
 
@@ -273,14 +282,14 @@ void CAlnReader::Read(
     }
 
     // make a SSequenceInfo corresponding to our CSequenceInfo argument
-    CSequenceInfo info(
+    CSequenceInfo sequenceInfo(
         m_Alphabet, m_Match, m_Missing, m_BeginningGap, m_MiddleGap, m_EndGap);
 
     // read the alignment stream
     m_Errors.clear();
     SAlignmentFile alignmentInfo;
-    auto allClear = ReadAlignmentFile(s_ReadLine, (void *) &m_IS,
-                            s_ReportError, &(m_Errors), info,
+    bool allClear = ReadAlignmentFile(sReadLine, m_IS,
+                            s_ReportError, &(m_Errors), sequenceInfo,
                             generate_local_ids,
                             alignmentInfo);
 
@@ -461,7 +470,6 @@ void CAlnReader::SetPhylip(EAlphabet alpha)
 void CAlnReader::x_CalculateMiddleSections()
 {
     m_MiddleSections.clear();
-
 
     for (TNumrow row_i = 0; row_i < m_Dim; row_i++) {
         TSeqPos begin_len = m_Seqs[row_i].find_first_not_of(m_BeginningGap);

@@ -41,7 +41,7 @@
 
 BEGIN_NCBI_SCOPE
 
-using FReadLineFunction = char * (ALIGNMENT_CALLBACK *)(void*);
+using FLineReader = bool (ALIGNMENT_CALLBACK *)(istream&, string&);
 
 typedef enum {
     eAlnErr_Unknown = -1,
@@ -62,20 +62,12 @@ public:
         EAlnErr category = eAlnErr_Unknown,
         int lineNumber = NO_LINE_NUMBER,
         const string& id = "",
-        const string& message = "",
-        CErrorInfo* next = nullptr):
+        const string& message = ""):
         mCategory(category),
         mLineNumber(lineNumber),
         mId(id),
-        mMessage(message),
-        mNext(next)
+        mMessage(message)
     {};
-
-    ~CErrorInfo()
-    { delete mNext; };
-
-    const CErrorInfo* 
-    Next() const { return mNext; };
 
     string
     Message() const { return mMessage; };
@@ -94,9 +86,7 @@ protected:
     int mLineNumber;
     string mId;
     string mMessage;
-    CErrorInfo* mNext;
 };
-
 using FReportErrorFunction = void (ALIGNMENT_CALLBACK *)(const CErrorInfo&, void*);
 
 //  =============================================================================
@@ -214,13 +204,11 @@ protected:
 };
 
 NCBI_XOBJREAD_EXPORT 
-bool ReadAlignmentFile (
-  FReadLineFunction    readfunc,      /* function for reading lines of 
+bool ReadAlignmentFile(
+  FLineReader    readfunc,      /* function for reading lines of 
                                        * alignment file
                                        */
-  void *               fileuserdata,  /* data to be passed back each time
-                                       * readfunc is invoked
-                                       */
+    istream& istr,  // file object for readfunc to operate on
   FReportErrorFunction errfunc,       /* function for reporting errors */
   void *               erroruserdata, /* data to be passed back each time
                                        * errfunc is invoked
