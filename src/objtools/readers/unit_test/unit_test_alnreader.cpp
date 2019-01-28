@@ -152,7 +152,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CRef<CSeq_entry> pEntry;
     try {
         reader.Read(false, false, &logger);
-        pEntry = reader.GetSeqEntry();
+        pEntry = reader.GetSeqEntry(0, &logger);
     } 
     catch (...) {
     }
@@ -161,7 +161,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 
     CNcbiOfstream ofstr(output.c_str());
     if (pEntry) {
-        ofstr << MSerial_AsnText << *reader.GetSeqEntry();
+        ofstr << MSerial_AsnText << *pEntry;
     }
     ofstr.close();
     cerr << "    Produced new ASN1 file " << output << "." << endl;
@@ -207,7 +207,7 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
     CRef<CSeq_entry> pEntry;
     try {
         reader.Read(false, false, &logger);
-        pEntry = reader.GetSeqEntry();
+        pEntry = reader.GetSeqEntry(0, &logger);
     }
     catch (...) {
     }
@@ -215,7 +215,7 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
 
     CNcbiOfstream ofstr(newOutput.c_str());
     if (pEntry) {
-        ofstr << MSerial_AsnText << *(reader.GetSeqEntry());
+        ofstr << MSerial_AsnText << *pEntry;
     }
     ofstr.close();
 

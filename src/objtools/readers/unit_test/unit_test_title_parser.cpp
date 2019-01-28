@@ -39,8 +39,6 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objtools/readers/mod_reader.hpp>
 #include <objtools/logging/listener.hpp>
@@ -56,19 +54,17 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 //  Customization data:
-const string extTemplate("template");
-const string extInput("mods");
-const string extOutput("asn");
+const string extInput("defline");
+const string extOutput("mods");
 const string extErrors("errors");
 const string extKeep("new");
-const string dirTestFiles("mod_adder_test_cases");
+const string dirTestFiles("title_parser_test_cases");
 // !!!
 // !!! Must also customize reader type in sRunTest !!!
 // !!!
 //  ============================================================================
 
 struct STestInfo {
-    CFile mTemplateFile;
     CFile mInFile;
     CFile mOutFile;
     CFile mErrorFile;
@@ -80,12 +76,10 @@ class CTestNameToInfoMapLoader {
 public:
     CTestNameToInfoMapLoader(
         TTestNameToInfoMap& testNameToInfoMap,
-        const string& extTemplate,
         const string& extInput,
         const string& extOutput,
         const string& extErrors)
         : m_TestNameToInfoMap(testNameToInfoMap),
-          mExtTemplate(extTemplate),
           mExtInput(extInput),
           mExtOutput(extOutput),
           mExtErrors(extErrors)
@@ -116,11 +110,7 @@ public:
         STestInfo & test_info_to_load = m_TestNameToInfoMap[tsTestName];
 
         // figure out what type of file we have and set appropriately
-        if (tsFileType == mExtTemplate) {
-            BOOST_REQUIRE( test_info_to_load.mTemplateFile.GetPath().empty() );
-            test_info_to_load.mTemplateFile = file;
-        }
-        else if (tsFileType == mExtInput) {
+        if (tsFileType == mExtInput) {
             BOOST_REQUIRE( test_info_to_load.mInFile.GetPath().empty() );
             test_info_to_load.mInFile = file;
         } 
@@ -141,122 +131,17 @@ public:
 private:
     // raw pointer because we do NOT own this
     TTestNameToInfoMap& m_TestNameToInfoMap;
-    string mExtTemplate;
     string mExtInput;
     string mExtOutput;
     string mExtErrors;
 };
 
 
-static bool sFindBrackets(const CTempString& line, size_t& start, size_t& stop, size_t& eq_pos)
-{ // Copied from CSourceModParser
-    size_t i = start;
-    bool found = false;
-
-    eq_pos = CTempString::npos;
-    const char* s = line.data() + start;
-
-    int nested_brackets = -1;
-    while (i < line.size())
-    {
-        switch (*s)
-        {
-        case '[':
-            nested_brackets++;
-            if (nested_brackets == 0)
-            {
-                start = i;
-            }
-            break;
-        case '=':
-            if (nested_brackets >= 0 && eq_pos == CTempString::npos) {
-                eq_pos = i;
-            }
-            break;
-        case ']':
-            if (nested_brackets == 0)
-            {
-                stop = i;
-                return true;
-               // if (eq_pos == CTempString::npos)
-               //     eq_pos = i;
-               // return true;
-            }
-            else
-            if (nested_brackets < 0) {
-                return false;
-            }
-            else
-            {
-                nested_brackets--;
-            }
-        }
-        i++; s++;
-    }
-    return false;
-};
-
-
-
-static CRef<CBioseq> sCreateSkeletonBioseq(void)
-{
-    auto pBioseq = Ref(new CBioseq());
-    auto pSeqId = Ref(new CSeq_id());
-    pSeqId->SetLocal().SetStr("dummy");
-    pBioseq->SetId().push_back(pSeqId);
-
-    pBioseq->SetInst().SetRepr(CSeq_inst::eRepr_not_set);
-    pBioseq->SetInst().SetMol(CSeq_inst::eMol_dna);
-
-    return pBioseq;
-}
-
-
-static CRef<CSeq_entry> sCreateSkeletonEntry(void)
-{
-    auto pSeqEntry = Ref(new CSeq_entry());
-    pSeqEntry->SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
-
-    auto pSubEntry = Ref(new CSeq_entry());
-    auto pBioseq = sCreateSkeletonBioseq();
-    pSubEntry->SetSeq(*pBioseq);
-    pSeqEntry->SetSet().SetSeq_set().push_back(pSubEntry);
-
-    return pSeqEntry;
-}
-
-struct SModInfo {
-    string name;
-    string value;
-    CModHandler::EHandleExisting handle_existing = CModHandler::eAppendReplace;
-};
-
-
-static void sGetModInfo(const string& line, SModInfo& mod_info) 
-{
-    if (NStr::IsBlank(line)) {
-        return;
-    }
-    string mod_name;
-    string mod_value;
-
-    NStr::SplitInTwo(line, " \t", mod_name, mod_value);
-
-    if (!mod_name.empty()) {
-        mod_info.name = mod_name;
-    }
-
-    if (!mod_value.empty()) {
-        mod_info.value = NStr::TruncateSpaces(mod_value);
-    }
-    return;
-}
 
 
 void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 {   
     string input  = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
-    string tmplt = CDir::ConcatPath(test_cases_dir.GetPath(), test_name + "." + extTemplate);
     string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
     string errors = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extErrors);
     if (!CFile(input).Exists()) {
@@ -265,57 +150,21 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     cerr << "Creating new test case from " << input << " ..." << endl;
 
     CNcbiIfstream ifstr(input.c_str());
-    CNcbiIfstream tmpltstr(tmplt.c_str());
-    auto pSeqEntry = Ref(new CSeq_entry());
-    tmpltstr >> MSerial_AsnText >> pSeqEntry;
-    pSeqEntry->Parentize();
-
-    auto& bioseq = pSeqEntry->IsSeq() ? 
-                   pSeqEntry->SetSeq() :
-                   const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
-
-    unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
-    CModHandler mod_handler(pMessageListener.get());
-    
-    CModAdder::TSkippedMods skipped_mods;
-    CModHandler::TModList rejected_mods;
-
-    CModHandler::EHandleExisting handle_existing = CModHandler::eAppendReplace;
-    static const map<string, CModHandler::EHandleExisting>
-        handle_existing_map = {{"Preserve", CModHandler::ePreserve},
-                               {"AppendPreserve", CModHandler::eAppendPreserve},
-                               {"Replace", CModHandler::eReplace},
-                               {"AppendReplace", CModHandler::eAppendReplace}};
-
+    CNcbiOfstream ofstr(output.c_str());
     try {
         CModHandler::TModList mods;
         for (string line; getline(ifstr, line);) {
-            NStr::TruncateSpaces(line);
+            string remainder;
+            CTitleParser::Apply(line, mods, remainder);
 
-            auto it = handle_existing_map.find(line);
-            if (it != handle_existing_map.end()) {
-                if (!mods.empty()) {
-                    mod_handler.AddMods(mods, handle_existing, rejected_mods);
-                    mods.clear();
-                }
-                handle_existing = it->second;
-                continue;
+            for (const auto& mod : mods) {
+                ofstr << mod.GetName() << " " << mod.GetValue() << endl;
             }
-
-            if (line[0] == '>') {
-                string remainder;
-                CTitleParser::Apply(line, mods, remainder);
-                mod_handler.AddMods(mods, handle_existing, rejected_mods);
-                continue;
+            if (!remainder.empty()) {
+                ofstr << remainder << endl;
             }
-
-            SModInfo mod_info;
-            sGetModInfo(line, mod_info);
-            mods.emplace_back(mod_info.name, mod_info.value);
+            mods.clear();
         }
-
-        mod_handler.AddMods(mods, handle_existing, rejected_mods);
-        CModAdder::Apply(mod_handler, bioseq, pMessageListener.get(), skipped_mods);
     }
     catch (...) {
         ifstr.close();
@@ -323,18 +172,13 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     }
     ifstr.close();
 
-    CNcbiOfstream ofstr(output.c_str());
-    ofstr << MSerial_AsnText << pSeqEntry;
     ofstr.close();
-    cerr << "    Produced new ASN1 file " << output << "." << endl;
+    cerr << "    Produced new Modifier file " << output << "." << endl;
 
-    CNcbiOfstream errstr(errors.c_str());
-    if (pMessageListener->Count() > 0) {
-        pMessageListener->Dump(errstr);
-    }
-    errstr.close();
-    cerr << "    Produced new error listing " << errors << "." << endl;
-    cerr << " ... Done." << endl;
+  //  CNcbiOfstream errstr(errors.c_str());
+  //  errstr.close();
+  //  cerr << "    Produced new error listing " << errors << "." << endl;
+  //  cerr << " ... Done." << endl;
 }
 
 void sUpdateAll(CDir& test_cases_dir) {
@@ -342,7 +186,7 @@ void sUpdateAll(CDir& test_cases_dir) {
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
-        testNameToInfoMap, extTemplate, extInput, extOutput, extErrors);
+        testNameToInfoMap, extInput, extOutput, extErrors);
     FindFilesInDir(
         test_cases_dir,
         kEmptyStringVec,
@@ -359,79 +203,34 @@ void sUpdateAll(CDir& test_cases_dir) {
 
 void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 {
-    cerr << "Testing " << testInfo.mInFile.GetName() << " and " << 
-        testInfo.mTemplateFile.GetName() << " against " <<
+    cerr << "Testing " << testInfo.mInFile.GetName() << " against " << 
         testInfo.mOutFile.GetName() << " and " <<
         testInfo.mErrorFile.GetName() << endl;
 
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
-    CNcbiIfstream tmpltstr(testInfo.mTemplateFile.GetPath().c_str());
     const string& logName = CDirEntry::GetTmpName();
     CNcbiOfstream errstr(logName.c_str());
     const string& resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
-    auto pSeqEntry = Ref(new CSeq_entry());
-    tmpltstr >> MSerial_AsnText >> pSeqEntry;
-    pSeqEntry->Parentize();
-
-    auto& bioseq = pSeqEntry->IsSeq() ? 
-                   pSeqEntry->SetSeq() :
-                   const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
-
-    unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
-    CModHandler::TModList rejected_mods;
-
-    CModAdder::TSkippedMods skipped_mods;
-    CModHandler mod_handler(pMessageListener.get());
-
-    CModHandler::EHandleExisting handle_existing = CModHandler::eAppendReplace;
-    static const map<string, CModHandler::EHandleExisting>
-        handle_existing_map = {{"Preserve", CModHandler::ePreserve},
-                               {"AppendPreserve", CModHandler::eAppendPreserve},
-                               {"Replace", CModHandler::eReplace},
-                               {"AppendReplace", CModHandler::eAppendReplace}};
-
     try {
         CModHandler::TModList mods;
         for (string line; getline(ifstr, line);) {
-            NStr::TruncateSpaces(line);
+            string remainder;
+            CTitleParser::Apply(line, mods, remainder);
 
-            auto it = handle_existing_map.find(line);
-            if (it != handle_existing_map.end()) {
-                if (!mods.empty()) {
-                    mod_handler.AddMods(mods, handle_existing, rejected_mods);
-                    mods.clear();
-                }
-                handle_existing = it->second;
-                continue;
+            for (const auto& mod : mods) {
+                ofstr << mod.GetName() << " " << mod.GetValue() << endl;
             }
-            // Also check deflines
-            if (line[0] == '>') {
-                string remainder;
-                CTitleParser::Apply(line, mods, remainder);
-                mod_handler.AddMods(mods, handle_existing, rejected_mods);
-                continue;
+            if (!remainder.empty()) {
+                ofstr << remainder << endl;
             }
-
-            SModInfo mod_info;
-            sGetModInfo(line, mod_info);
-            mods.emplace_back(mod_info.name, mod_info.value);
+            mods.clear();
         }
-
-        mod_handler.AddMods(mods, handle_existing, rejected_mods);
-        CModAdder::Apply(mod_handler, bioseq, pMessageListener.get(), skipped_mods);
     }
     catch (...) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
         ifstr.close();
         return;
-    }
-
-    cout << "# skipped mods : " << skipped_mods.size() << endl;
-
-    ofstr << MSerial_AsnText << pSeqEntry;
-    if (pMessageListener->Count() > 0) {
-        pMessageListener->Dump(errstr);
     }
 
     ifstr.close();
@@ -511,7 +310,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
-        testNameToInfoMap, extTemplate, extInput, extOutput, extErrors);
+        testNameToInfoMap, extInput, extOutput, extErrors);
     FindFilesInDir(
         test_cases_dir,
         kEmptyStringVec,
