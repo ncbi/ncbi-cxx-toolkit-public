@@ -107,6 +107,9 @@ class CCassNAnnotTaskFetch
 
     virtual ~CCassNAnnotTaskFetch();
 
+    void SetConsumeCallback(TNAnnotConsumeCallback callback);
+    void Cancel(void);
+
  protected:
     virtual void Wait1(void) override;
 

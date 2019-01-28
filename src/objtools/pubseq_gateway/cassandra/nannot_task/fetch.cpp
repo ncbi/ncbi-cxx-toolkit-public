@@ -124,6 +124,21 @@ CCassNAnnotTaskFetch::~CCassNAnnotTaskFetch()
     }
 }
 
+void CCassNAnnotTaskFetch::SetConsumeCallback(TNAnnotConsumeCallback callback)
+{
+    m_Consume = move(callback);
+}
+
+void CCassNAnnotTaskFetch::Cancel(void)
+{
+    if (m_State != eDone) {
+        m_Cancelled = true;
+        CloseAll();
+        m_QueryArr.clear();
+        m_State = eError;
+    }
+}
+
 void CCassNAnnotTaskFetch::Wait1()
 {
     switch (m_State) {
@@ -182,7 +197,9 @@ void CCassNAnnotTaskFetch::Wait1()
                         .SetModified(m_QueryArr[0]->FieldGetInt64Value(2, 0))
                         .SetStart(m_QueryArr[0]->FieldGetInt32Value(3, 0))
                         .SetStop(m_QueryArr[0]->FieldGetInt32Value(4, 0));
-                    do_next = m_Consume(move(record), false);
+                    if (m_Consume) {
+                        do_next = m_Consume(move(record), false);
+                    }
                     if (do_next) {
                         state = m_QueryArr[0]->NextRow();
                     }
@@ -191,7 +208,9 @@ void CCassNAnnotTaskFetch::Wait1()
                     CloseAll();
                     m_State = eDone;
                 }
-                m_Consume(CNAnnotRecord(), true);
+                if (m_Consume) {
+                    m_Consume(CNAnnotRecord(), true);
+                }
             }
             break;
         }
