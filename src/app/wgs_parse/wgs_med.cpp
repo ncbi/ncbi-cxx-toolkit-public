@@ -293,9 +293,8 @@ static bool IsInpressSet(const ncbi::objects::CCit_art& cit_art)
     else if (cit_art.GetFrom().IsBook() || cit_art.GetFrom().IsProc()) {
         const ncbi::objects::CCit_book& book = cit_art.GetFrom().GetBook();
         ret = book.IsSetImp() && book.GetImp().IsSetPrepub() && book.GetImp().GetPrepub() == CImprint::ePrepub_in_press;
-            return true;
     }
-    return false;
+    return ret;
 }
 
 static CRef<CCit_art> FetchPubPmId(int pmid)

@@ -680,7 +680,7 @@ static bool IsValidAccession(const string& accession)
 {
     static const size_t ACC_MIN_LEN = 6;
     static const size_t VALID_NUM_OF_LETTERS[] = {4, 6};
-    static const auto VALID_NUM_OF_LETTERS_END = VALID_NUM_OF_LETTERS + ARRAYSIZE(VALID_NUM_OF_LETTERS);
+    static const auto VALID_NUM_OF_LETTERS_END = VALID_NUM_OF_LETTERS + sizeof(VALID_NUM_OF_LETTERS) / sizeof(VALID_NUM_OF_LETTERS[0]);
 
     if (accession.size() < ACC_MIN_LEN) {
         return false;
@@ -737,7 +737,6 @@ static bool ParseSubmissionDate(const string& str, CDate_std& date)
     static const size_t DATE_STR_LEN = 11;
     static const size_t FIRST_DASH_POS = 2;
     static const size_t SECOND_DASH_POS = 6;
-    static const size_t DAY_STR_LEN = 2;
     static const size_t MONTH_STR_LEN = 3;
 
     size_t len = str.size();
