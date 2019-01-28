@@ -573,16 +573,16 @@ void CTitleParser::Apply(const CTempString& title, TModList& mods, string& remai
         size_t lb_pos, end_pos, eq_pos;
         lb_pos = start_pos;
         if (x_FindBrackets(title, lb_pos, end_pos, eq_pos)) {
-            if (lb_pos > start_pos) {
-                string left_remainder = title.substr(start_pos, lb_pos-start_pos);
-                if (!remainder.empty() && 
-                    !isspace(left_remainder.front()) &&
-                    !isspace(remainder.back())) {
-                    remainder.append(" ");
-                }
-                remainder.append(left_remainder);
-            }
             if (eq_pos < end_pos) {
+                if ((lb_pos > start_pos) ) {
+                    string left_remainder = title.substr(start_pos, lb_pos-start_pos);
+                    if (!remainder.empty() && 
+                        !isspace(left_remainder.front()) &&
+                        !isspace(remainder.back())) {
+                        remainder.append(" ");
+                    }
+                    remainder.append(left_remainder);
+                }
                 CTempString name = NStr::TruncateSpaces_Unsafe(title.substr(lb_pos+1, eq_pos-(lb_pos+1)));
                 CTempString value = NStr::TruncateSpaces_Unsafe(title.substr(eq_pos+1, end_pos-(eq_pos+1)));
                 mods.emplace_back(name, value);
@@ -652,7 +652,7 @@ bool CTitleParser::x_FindBrackets(const CTempString& line, size_t& start, size_t
             if (num_unmatched_left_brackets == 1)
             {
                 stop = i;
-                return true;
+                return (eq_pos<stop);
             }
             else
             if (num_unmatched_left_brackets == 0) {
