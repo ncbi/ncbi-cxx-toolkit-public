@@ -532,6 +532,7 @@ CWGSDataLoader_Impl::GetFileInfoByAcc(const string& acc)
     if ( !ret.row_id ) {
         return ret;
     }
+    NStr::ToUpper(prefix);
     if ( CConstRef<CWGSFileInfo> info = GetWGSFile(prefix) ) {
         SIZE_TYPE row_digits = acc.size() - row_pos;
         if ( info->m_WGSDb->GetIdRowDigits() == row_digits ) {

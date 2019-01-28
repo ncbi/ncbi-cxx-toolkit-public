@@ -1030,6 +1030,7 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc,
     }
     SWGSSeqInfo seq;
     seq.m_WGSAcc = acc.substr(0, prefix_len);
+    NStr::ToUpper(seq.m_WGSAcc);
     seq.m_IsWGS = true;
     SIZE_TYPE row_pos = prefix_len;
     switch ( acc[row_pos] ) { // optional type letter

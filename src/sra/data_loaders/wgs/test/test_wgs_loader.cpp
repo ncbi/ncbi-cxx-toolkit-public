@@ -1137,7 +1137,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq24)
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
 
-    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("HAAA01000001");
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("hAaa01000001");
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(bsh);
@@ -1153,7 +1153,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq25)
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
 
-    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("HAHQ01000001");
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("HAhq01000001");
     CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
     sx_ReportState(bsh, idh);
     BOOST_REQUIRE(bsh);
