@@ -2468,26 +2468,7 @@ static void s_RemoveOrganismCommentFromLine (char * string)
 
     while ((clp = s_FindOrganismComment (string)) != NULL) {
         if (clp->end != NULL) {
-            const char* to = clp->start;
-            const char* from = clp->end + 1;
-            size_t diff = from - to;
-            size_t len = strlen(from);
-            if (diff < len-1) {
-                char* pbuf = pbuf1024;
-                if (len > sizeof(pbuf1024)-1) {
-                    pbuf = (char*)malloc(len + 1);
-                }
-                strcpy(pbuf, clp->end + 1);
-                strcpy(clp->start, pbuf);
-                if (pbuf != pbuf1024) {
-                    free(pbuf);
-                }
-            }
-            else {
-                memmove(clp->start, clp->end+1, strlen(clp->end));
-                // Note strlen(clp->end) = strlen(clp->end+1)+1
-                // The +1 at the end is needed to copy the null terminator
-            }
+            memmove(clp->start, clp->end+1, strlen(clp->end));
         }
         s_CommentLocFree (clp);
     }
