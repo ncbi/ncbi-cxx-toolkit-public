@@ -31,6 +31,7 @@
 */
 
 #include <ncbi_pch.hpp>
+#include <algorithm>
 #include <objmgr/util/autodef.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <objmgr/seqdesc_ci.hpp>
@@ -967,7 +968,7 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval, bool suppres
         return false;
     } 
     
-    CRef<CAutoDefFeatureClause_Base> utr3(NULL);
+    CRef<CAutoDefFeatureClause_Base> utr3;
     
     if (subtype == CSeqFeatData::eSubtype_operon) {
         // suppress subclauses except promoters
@@ -1436,14 +1437,7 @@ void CAutoDefFeatureClause::ReverseCDSClauseLists()
     ENa_strand this_strand = m_ClauseLocation->GetStrand();
     if (this_strand == eNa_strand_minus 
         && GetMainFeatureSubtype() == CSeqFeatData::eSubtype_cdregion) {
-        TClauseList tmp;
-        tmp.clear();
-        auto it = m_ClauseList.rbegin();
-        while (it != m_ClauseList.rend()) {
-            tmp.push_back(*it);
-        }
-        m_ClauseList.clear();
-        m_ClauseList = tmp;
+        std::reverse(m_ClauseList.begin(), m_ClauseList.end());
     }
     
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
@@ -2175,7 +2169,7 @@ CAutoDefFeatureClause::EClauseType CAutoDefFeatureClause::GetClauseType()
 vector<CRef<CAutoDefFeatureClause > > AddMiscRNAFeatures(const CBioseq_Handle& bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc)
 {
     vector<CRef<CAutoDefFeatureClause > > rval;
-    string comment = "";
+    string comment;
     string::size_type pos;
 
     if (cf.GetData().Which() == CSeqFeatData::e_Rna) {
@@ -2202,17 +2196,15 @@ vector<CRef<CAutoDefFeatureClause > > AddMiscRNAFeatures(const CBioseq_Handle& b
     }
 
     pos = NStr::Find(comment, "spacer");
-    if (pos == NCBI_NS_STD::string::npos) {
+    if (pos == NPOS) {
         return rval;
     }
 
     bool is_region = false;
 
-    if (NStr::StartsWith(comment, "contains ")) {
-        comment = comment.substr(9);
-    }
-    else if (NStr::StartsWith(comment, "may contain ")) {
-        comment = comment.substr(12);
+    NStr::TrimPrefixInPlace(comment, "contains ");
+    if (NStr::StartsWith(comment, "may contain ")) {
+        NStr::TrimPrefixInPlace(comment, "may contain ");
         is_region = true;
     }
 
@@ -2226,26 +2218,26 @@ vector<CRef<CAutoDefFeatureClause > > AddMiscRNAFeatures(const CBioseq_Handle& b
     } else {
         vector<string> elements = CAutoDefFeatureClause::GetMiscRNAElements(comment);
         if (!elements.empty()) {
-            ITERATE(vector<string>, s, elements) {
+            for (auto s : elements) {
                 CRef<CAutoDefParsedClause> new_clause(new CAutoDefParsedClause(bh, cf, mapped_loc,
-                    (*s == elements.front()), (*s == elements.back())));
-                new_clause->SetMiscRNAWord(*s);
+                    (s == elements.front()), (s == elements.back())));
+                new_clause->SetMiscRNAWord(s);
                 rval.push_back(new_clause);
             }
         } else {
             elements = CAutoDefFeatureClause::GetTrnaIntergenicSpacerClausePhrases(comment);
             if (!elements.empty()) {
-                ITERATE(vector<string>, s, elements) {
-                    size_t pos = NStr::Find(*s, "intergenic spacer");
+                for (auto s : elements) {
+                    size_t pos = NStr::Find(s, "intergenic spacer");
                     if (pos != string::npos) {
                         rval.push_back(CRef<CAutoDefFeatureClause>(new CAutoDefParsedIntergenicSpacerClause(bh,
                             cf,
                             mapped_loc,
-                            (*s),
-                            (*s == elements.front()),
-                            (*s == elements.back()))));
+                            (s),
+                            (s == elements.front()),
+                            (s == elements.back()))));
                     } else {
-                        rval.push_back(CRef<CAutoDefFeatureClause>(s_tRNAClauseFromNote(bh, cf, mapped_loc, *s, (*s == elements.front()), (*s == elements.back()))));
+                        rval.push_back(CRef<CAutoDefFeatureClause>(s_tRNAClauseFromNote(bh, cf, mapped_loc, s, (s == elements.front()), (s == elements.back()))));
                     }
                 }
             } else {

@@ -1987,22 +1987,22 @@ vector<string> CAutoDefFeatureClause_Base::GetFeatureClausePhrases(string commen
 }
 
 
-CAutoDefFeatureClause * CAutoDefFeatureClause_Base::ClauseFromPhrase(const string& phrase, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool first, bool last)
+CRef<CAutoDefFeatureClause> CAutoDefFeatureClause_Base::ClauseFromPhrase(const string& phrase, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool first, bool last)
 {
     if (NStr::Equal(phrase, "control region") ||
         NStr::Equal(phrase, "D-loop")) {
         // create a clause of the appropriate type
-        CAutoDefParsedClause* other = new CAutoDefParsedClause(bh, cf, mapped_loc, first, last);
+        CAutoDefParsedClause * other(new CAutoDefParsedClause(bh, cf, mapped_loc, first, last));
         other->SetTypeword(phrase);
         other->SetTypewordFirst(false);
-        return other;
+        return CRef< CAutoDefFeatureClause> (other);
     } else if (x_GetRnaMiscWordType(phrase) != eMiscRnaWordType_Unrecognized) {
         CAutoDefParsedClause *new_clause = new CAutoDefParsedClause(bh, cf, mapped_loc, first, last);
         new_clause->SetMiscRNAWord(phrase);
-        return new_clause;
+        return CRef< CAutoDefFeatureClause>(new_clause);
     } else {
         CAutoDefParsedtRNAClause* trna = s_tRNAClauseFromNote(bh, cf, mapped_loc, phrase, first, last);
-        return trna;
+        return CRef< CAutoDefFeatureClause>(trna);
     }
 }
 

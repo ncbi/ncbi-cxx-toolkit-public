@@ -582,7 +582,7 @@ string CAutoDef::x_GetFeatureClauses(const CBioseq_Handle& bh)
     { 
         vector<CRef<CAutoDefFeatureClause > > fclause = FeatureClauseFactory(bh, feat_ci->GetOriginalFeature(), feat_ci->GetMappedFeature().GetLocation(), m_Options, is_single_misc_feat);
         for (auto it : fclause) {
-            if (it != NULL &&
+            if (it &&
                 (it->IsRecognizedFeature() ||
                 (m_Options.GetKeepRepeatRegion() &&
                     (it->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_repeat_region ||
