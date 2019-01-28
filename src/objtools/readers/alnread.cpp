@@ -58,14 +58,16 @@ typedef enum {
 
 /*  ---------------------------------------------------------------------- */
 
-/* structures used internally */
-typedef struct SLineInfo {
-    char *             data;
-    int                line_num;
-    int                line_offset;
-    bool              delete_me;
-    struct SLineInfo * next;
-} SLineInfo, * TLineInfoPtr;
+//  ===========================================================================
+struct SLineInfo {
+//  ===========================================================================
+    char* data;
+    int line_num;
+    int line_offset;
+    bool delete_me;
+    SLineInfo* next;
+};
+using TLineInfoPtr = SLineInfo*;
 
 typedef struct SLineInfoReader {
     TLineInfoPtr first_line;
@@ -74,10 +76,52 @@ typedef struct SLineInfoReader {
     int          data_pos;
 } SLineInfoReader, * TLineInfoReaderPtr;
 
-typedef struct SIntLink {
+//  ============================================================================
+struct SIntLink {
+    //  ============================================================================
+    SIntLink(
+        int val, SIntLink* next_=nullptr): ival(val), next(next_) {};
+
+    ~SIntLink() {
+        delete next;
+    };
+
+    static SIntLink* 
+    AppendNew(
+        int ival, 
+        SIntLink* list)
+    {
+        SIntLink* ilp, * last;
+
+        ilp = new SIntLink(ival, nullptr);
+        if (ilp == nullptr) {
+            return nullptr;
+        }
+        last = list;
+        while (last != nullptr && last->next != nullptr) {
+            last = last->next;
+        }
+        if (last != nullptr) {
+            last->next = ilp;
+        }
+        return ilp;
+    }
+
+    static void
+    CreateOrAppend(
+        int iVal,
+        SIntLink*& anchor)
+    {
+        SIntLink* ilp = SIntLink::AppendNew(iVal, anchor);
+        if (anchor == nullptr) {
+            anchor = ilp;
+        }
+    }
+
     int               ival;
-    struct SIntLink * next;
-} SIntLink, * TIntLinkPtr;
+    SIntLink * next;
+};
+using TIntLinkPtr = SIntLink*;
 
 typedef struct SStringCount {
     char *                string;
@@ -653,49 +697,6 @@ s_ReportUnusedLine(
             errdata);
         line_val = line_val->next;
     }
-}
-
-
-/* The following functions are used to manage a linked list of integer values. */
-
-/* This function creates a new SIntLink structure with a value of ival.
- * The new structure will be placed at the end of list if list is not NULL.
- * The function will return a pointer to the new structure.
- */
-static TIntLinkPtr 
-s_IntLinkNew 
-(int         ival, 
- TIntLinkPtr list)
-{
-    TIntLinkPtr ilp, last;
-
-    ilp = (TIntLinkPtr) malloc (sizeof (SIntLink));
-    if (ilp == NULL) {
-        return NULL;
-    }
-    ilp->ival = ival;
-    ilp->next = NULL;
-    last = list;
-    while (last != NULL && last->next != NULL) {
-        last = last->next;
-    }
-    if (last != NULL) {
-        last->next = ilp;
-    }
-    return ilp;
-}
-
-
-/* This function recursively frees memory associated with a linked list
- * of SIntLink structures.
- */
-static void s_IntLinkFree (TIntLinkPtr ilp)
-{
-    if (ilp == NULL) {
-        return;
-    }
-    s_IntLinkFree (ilp->next);
-    free (ilp);
 }
 
 
@@ -1279,27 +1280,21 @@ static int s_GetNumSegmentsInAlignment
  */
 static TIntLinkPtr GetSegmentOffsetList (TBracketedCommentListPtr comment_list)
 {
-    TIntLinkPtr              new_offset, offset_list = NULL;
+    TIntLinkPtr offset_list = nullptr;
     TBracketedCommentListPtr comment;
     TLineInfoPtr             lip;
 
-    if (comment_list == NULL) 
-    {
-        return NULL;
+    if (!comment_list) {
+        return nullptr;
     }
     
-    for (comment = comment_list; comment != NULL; comment = comment->next)
-    {
-        if (s_CountSequencesInBracketedComment(comment) == 0) 
-        {
+    for (comment = comment_list; comment != NULL; comment = comment->next) {
+        if (s_CountSequencesInBracketedComment(comment) == 0) {
             continue;
         }
-        for (lip = comment->comment_lines; lip != NULL; lip = lip->next)
-        {
-            if (lip->data != NULL && lip->data[0] == '>') 
-            {
-                new_offset = s_IntLinkNew (lip->line_num + 1, offset_list);
-                if (offset_list == NULL) offset_list = new_offset;
+        for (lip = comment->comment_lines; lip != NULL; lip = lip->next) {
+            if (lip->data != NULL && lip->data[0] == '>') {
+                SIntLink::CreateOrAppend(lip->line_num + 1, offset_list);
             }
         }
     }
@@ -1652,7 +1647,7 @@ static void s_StringCountFree (TStringCountPtr list)
         return;
     }
     s_StringCountFree (list->next);
-    s_IntLinkFree (list->line_numbers);
+    delete list->line_numbers;
     free (list);
 }
 
@@ -1698,10 +1693,7 @@ static TStringCountPtr s_AddStringCount (
     }
     if (add_to != NULL) {
         add_to->num_appearances ++;
-        new_offset = s_IntLinkNew (line_num, add_to->line_numbers);
-        if (add_to->line_numbers == NULL) {
-            add_to->line_numbers = new_offset;
-        }
+        SIntLink::CreateOrAppend(line_num, add_to->line_numbers);
     }
     return list;   
 }
@@ -2586,89 +2578,6 @@ static char * s_CreateOrderedOrgName (TCommentLocPtr org_clp)
     return ordered_org_name;
 }
 
-/*
-static void s_AddDeflineFromOrganismLine 
-(char             *defline, 
- int              line_num,
- int              defline_offset,
- SAlignRawFilePtr afrp)
-{
-    TLineInfoPtr lip;
-    int          org_num, defline_num, new_len;
-    char         *empty_defline, *new_defline;
-    
-    if (afrp == NULL || defline == NULL) {
-        return;
-    }
-    
-    // make sure that we are adding the definition line to the correct position
-    // in the list - should match last organism name 
-    lip = afrp->organisms;
-    org_num = 0;
-    while (lip != NULL)
-    {
-        org_num++;
-        lip = lip->next;
-    }
-    
-    lip = afrp->deflines;
-    defline_num = 0;
-    while (lip != NULL  &&  defline_num < org_num) {
-        lip = lip->next;
-        defline_num ++;
-    }
-    
-    if (defline_num == org_num && lip != NULL) {
-        // if previous defline is empty, replace with new defline 
-        if (strlen (lip->data) == 0)
-        {
-            free (lip->data);
-            lip->data = defline;
-        }
-        else
-        {
-            // append defline to the end of the existing entry 
-            new_len = strlen (lip->data) + strlen (defline) + 2;
-            new_defline = (char *) malloc (new_len * sizeof (char));
-            if (new_defline != NULL)
-            {
-                strcpy (new_defline, lip->data);
-                strcat (new_defline, " ");
-                strcat (new_defline, defline);
-                free (lip->data);
-                lip->data = new_defline;
-                free (defline);
-                defline = NULL;
-            }
-        }
-        // use new line numbers 
-        lip->line_num = line_num + 1;
-        lip->line_offset = defline_offset;
-        lip->delete_me = false;        
-    }
-    else
-    {
-        // add empty deflines to get to the correct position 
-        while (defline_num < org_num - 1)
-        {
-            empty_defline = (char *) malloc (sizeof (char));
-            if (empty_defline != NULL)
-            {
-                *empty_defline = 0;
-                afrp->deflines = s_AddLineInfo (afrp->deflines, 
-                                                empty_defline, 0,
-                                                0);
-                afrp->num_deflines ++;
-            }
-            defline_num++;
-        }
-         now add new defline in correct position 
-        afrp->deflines = s_AddLineInfo (afrp->deflines, defline, 
-                                        line_num, defline_offset);
-        afrp->num_deflines ++;
-    }
-}
-*/
 
 static void s_ReadDefline
 (const char* line, 
@@ -2704,74 +2613,6 @@ static void s_ReadDefline
 }
 
 
-/* This function is used to read any organism names that may appear in
- * string, including any modifiers that may appear after the organism name.
- */
-/*
-static void s_ReadOrgNamesFromText 
-(char *           string,
- int              line_num,
- SAlignRawFilePtr afrp)
-{
-    TCommentLocPtr clp;
-    char *         org_name;
-    char *         cp;
-    char *         defline;
-    char *         comment_end;
-    int            defline_offset;
- 
-    const auto has_organism = (strstr(string, "org=") != NULL ||
-                              (strstr(string, "organism=") != NULL));
-
-    if (string == NULL  ||  (string[0] != '>')  ||  afrp == NULL) {
-        return;
-    }
-
-    clp = s_FindOrganismComment (string);
-    if (clp == NULL && has_organism)
-    {
-      s_ReportOrgCommentError (string, afrp->report_error, afrp->report_error_userdata);
-    }
-    if (clp == NULL) {
-        // if the line does not come with an organism mod and a defline 
-        //  we still need to create and record dummies to remain in sync
-        //  with the sequence data:
-        // 
-        const char* dummy = "";
-        const int linelen = strlen(string);
-        afrp->organisms = s_AddLineInfo(
-            afrp->organisms, 
-            const_cast<char*>(dummy), line_num, 
-            reinterpret_cast<long>(string + linelen));
-        afrp->num_organisms ++;
-        s_AddDeflineFromOrganismLine(const_cast<char*>(dummy), line_num, linelen, afrp);
-        return;
-    }
-    while (clp != NULL) {
-
-        org_name = s_CreateOrderedOrgName (clp);
-        afrp->organisms = s_AddLineInfo (afrp->organisms, org_name, line_num,
-                                       clp->start - string);
-        free (org_name);
-        afrp->num_organisms ++;
-        defline = NULL;
-        defline_offset = 0;
-        if (*clp->end != 0) {
-            cp = clp->end + 1;
-            cp += strspn (cp, " \t\r\n");
-            if (*cp != 0) {
-                defline = clp->end + 1;
-                defline_offset = clp->end - string + 1;
-            }
-        }
-        s_AddDeflineFromOrganismLine (defline, line_num, defline_offset, afrp);
-                                      
-        comment_end = clp->end;
-        s_CommentLocFree (clp);
-        clp = s_FindOrganismComment (comment_end);
-    }
-}
-*/
 
 /* The following group of functions manages the SAlignRawSeq structure,
  * which is used to track the IDs of sequences in the file, the sequence
@@ -2818,7 +2659,7 @@ static void s_AlignRawSeqFree (TAlignRawSeqPtr arsp)
     s_AlignRawSeqFree (arsp->next);
     free (arsp->id);
     s_LineInfoFree (arsp->sequence_data);
-    s_IntLinkFree (arsp->id_lines);
+    delete arsp->id_lines;
     free (arsp);
 }
 
@@ -2920,8 +2761,7 @@ s_AddAlignRawSeqById
                                        data,
                                        data_line_num,
                                        data_line_offset);
-    ilp = s_IntLinkNew (id_line_num, arsp->id_lines);
-    if (arsp->id_lines == NULL) arsp->id_lines = ilp;
+    SIntLink::CreateOrAppend(id_line_num, arsp->id_lines);
     return list;
 }
 
@@ -2969,7 +2809,7 @@ static void s_AlignFileRawFree (SAlignRawFilePtr afrp)
     s_LineInfoFree (afrp->deflines);
     s_LineInfoFree (afrp->line_list);
     s_AlignRawSeqFree (afrp->sequences);
-    s_IntLinkFree (afrp->offset_list);
+    delete afrp->offset_list;
     free (afrp->alphabet);
     free (afrp);
 }
@@ -3128,7 +2968,7 @@ s_AugmentBlockPatternOffsetList
                                                  line_counter,
                                                  block_size);
             if (forecast_pos > 0) {
-                new_offset = s_IntLinkNew (forecast_pos, NULL);
+                new_offset = new SIntLink(forecast_pos);
                 if (new_offset == NULL) {
                     return NULL;
                 }
@@ -3260,13 +3100,8 @@ s_FindInterleavedBlocks
         for (llp = pattern_list; llp != NULL; llp = llp->next) {
             llp_next = llp->next;
             if (llp->num_appearances == afrp->block_size
-                &&  (llp_next == NULL  ||  llp_next->lengthrepeats == NULL))
-            {
-                new_offset = s_IntLinkNew (line_counter, afrp->offset_list);
-                if (new_offset == NULL) {
-                    return;
-                }
-                if (afrp->offset_list == NULL) afrp->offset_list = new_offset;
+                    &&  (llp_next == NULL  ||  llp_next->lengthrepeats == NULL)) {
+                SIntLink::CreateOrAppend(line_counter, afrp->offset_list);
             }
             line_counter += llp->num_appearances;
         }
@@ -3275,7 +3110,7 @@ s_FindInterleavedBlocks
                                                            afrp->block_size);
     }
     if (s_FindUnusedLines (pattern_list, afrp)) {
-        s_IntLinkFree (afrp->offset_list);
+        delete afrp->offset_list;
         afrp->offset_list = NULL;
         afrp->block_size = 0;
     } else {
@@ -3364,7 +3199,6 @@ s_AfrpProcessFastaGap(
     char* linestr,
     int overall_line_count)
 {
-    TIntLinkPtr new_offset = NULL;
     SLengthListPtr this_pattern = NULL;
     int len = 0;
     char* cp;
@@ -3399,9 +3233,7 @@ s_AfrpProcessFastaGap(
             afrp->marked_ids = true;
 //            eFormat = ALNFMT_FASTAGAP;
         }
-        new_offset = s_IntLinkNew (overall_line_count + 1,
-                                    afrp->offset_list);
-        if (afrp->offset_list == NULL) afrp->offset_list = new_offset;
+        SIntLink::CreateOrAppend(overall_line_count + 1, afrp->offset_list);
         *last_line_was_marked_id = true;
         return;
     }
@@ -3456,7 +3288,6 @@ s_ReadAlignFileRaw
     SLengthListPtr           this_pattern, last_pattern = NULL;
     char *                   cp;
     size_t                   len;
-    TIntLinkPtr              new_offset;
     bool                    in_bracketed_comment = false;
     TBracketedCommentListPtr comment_list = NULL, last_comment = NULL;
     bool                    last_line_was_marked_id = false;
@@ -3587,9 +3418,7 @@ s_ReadAlignFileRaw
                 s_AfrpProcessFastaGap(afrp, & pattern_list, & last_line_was_marked_id, linestring, overall_line_count);
                 continue;
             }
-            new_offset = s_IntLinkNew (overall_line_count + 1,
-                                      afrp->offset_list);
-            if (afrp->offset_list == NULL) afrp->offset_list = new_offset;
+            SIntLink::CreateOrAppend(overall_line_count + 1, afrp->offset_list);
             last_line_was_marked_id = true;
             continue;
         }
@@ -4626,14 +4455,7 @@ s_CreateOffsetList
     offset_list = NULL;
     for (sip = list;  sip != NULL;  sip = sip->next) {
         if (s_SizeInfoIsEqual (sip, anchorpattern->lengthrepeats)) {
-            new_offset = s_IntLinkNew (line_counter, offset_list);
-            if (new_offset == NULL) {
-                s_IntLinkFree (offset_list);
-                return NULL;
-            }
-            if (offset_list == NULL) {
-                offset_list = new_offset;
-            }
+            SIntLink::CreateOrAppend(line_counter, offset_list);
         }
  
         line_counter += sip->num_appearances;
@@ -4757,11 +4579,8 @@ s_AugmentOffsetList
                                                      next_offset, line_skip,
                                                      sip);
                 if (forecast_position > 0) {
-                    new_offset = s_IntLinkNew (forecast_position, NULL);
+                    new_offset = SIntLink::AppendNew(forecast_position, NULL);
                     num_additional_offsets++;
-                    if (new_offset == NULL) {
-                        return NULL;
-                    }
                     if (prev_offset == NULL) {
                         new_offset->next = offset_list;
                         offset_list = new_offset;
@@ -4802,7 +4621,7 @@ s_AugmentOffsetList
     }
     if (num_additional_offsets >= max_additional_offsets)
     {
-      s_IntLinkFree (offset_list);
+      delete offset_list;
       offset_list = NULL;
     }
     return offset_list;
@@ -4952,10 +4771,7 @@ s_CountCharactersBetweenOffsets
          lip = lip->next, line_diff++)
     {
         num_chars = strlen (lip->data);
-        length = s_IntLinkNew (num_chars, length_list);
-        if (length_list == NULL) {
-            length_list = length;
-        }
+        SIntLink::CreateOrAppend(num_chars, length_list);
         total_chars += num_chars;
     }
 
@@ -4987,18 +4803,15 @@ s_CountCharactersBetweenOffsets
             length = length->next;
         }
         if (num_chars == desired_num_chars) {
-            length = s_IntLinkNew (line_diff, start_list);
-            if (start_list == NULL) {
-                start_list = length;
-            }
+            SIntLink::CreateOrAppend(line_diff, start_list);
             num_starts ++;
         }
     }
 
     /* now select best set of start points */
     
-    s_IntLinkFree (length_list);
-    s_IntLinkFree (start_list);
+    delete length_list;
+    delete start_list;
     return 0;
 }
 
@@ -5070,7 +4883,7 @@ static void s_InsertNewOffsets
                         line_diff ++;
                     }
                     /* insert new offset value */
-                    splice_offset = s_IntLinkNew (line_start, NULL);
+                    splice_offset = SIntLink::AppendNew(line_start, NULL);
                     if (splice_offset == NULL) {
                         return;
                     }
@@ -5095,7 +4908,7 @@ static void s_InsertNewOffsets
 
     /* if we have room for one more sequence, or even most of one more sequence, add it */
     if (lip != NULL  &&  ! s_SkippableString (lip->data)) {
-        s_IntLinkNew (line_diff + prev_offset->ival, prev_offset);
+        SIntLink::AppendNew(line_diff + prev_offset->ival, prev_offset);
     }
 }
 
