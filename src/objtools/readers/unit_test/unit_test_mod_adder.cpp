@@ -197,6 +197,29 @@ static bool sFindBrackets(const CTempString& line, size_t& start, size_t& stop, 
 };
 
 
+static bool sGetMods(const CTempString& title, multimap<string, string>& mods)
+{
+    size_t pos = 0;
+    while(pos < title.size()) {
+        size_t lb_pos, end_pos, eq_pos;
+        lb_pos = pos;
+        if (sFindBrackets(title, lb_pos, end_pos, eq_pos))
+        {            
+            if (eq_pos < end_pos) {
+                CTempString key = NStr::TruncateSpaces_Unsafe(title.substr(lb_pos+1, eq_pos - lb_pos - 1));
+                CTempString value = NStr::TruncateSpaces_Unsafe(title.substr(eq_pos + 1, end_pos - eq_pos - 1));
+                mods.emplace(key, value);
+            }
+            pos = end_pos + 1;
+        }
+        else
+        { 
+            break;
+        }
+    }
+    return !mods.empty();
+}
+
 
 static CRef<CBioseq> sCreateSkeletonBioseq(void)
 {
@@ -301,14 +324,6 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
                 handle_existing = it->second;
                 continue;
             }
-
-            if (line[0] == '>') {
-                string remainder;
-                CTitleParser::Apply(line, mods, remainder);
-                mod_handler.AddMods(mods, handle_existing, rejected_mods);
-                continue;
-            }
-
             SModInfo mod_info;
             sGetModInfo(line, mod_info);
             mods.emplace_back(mod_info.name, mod_info.value);
@@ -405,14 +420,6 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
                 handle_existing = it->second;
                 continue;
             }
-            // Also check deflines
-            if (line[0] == '>') {
-                string remainder;
-                CTitleParser::Apply(line, mods, remainder);
-                mod_handler.AddMods(mods, handle_existing, rejected_mods);
-                continue;
-            }
-
             SModInfo mod_info;
             sGetModInfo(line, mod_info);
             mods.emplace_back(mod_info.name, mod_info.value);
