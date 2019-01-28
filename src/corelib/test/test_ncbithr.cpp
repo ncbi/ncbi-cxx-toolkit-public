@@ -216,7 +216,7 @@ void test_static_tls(int idx, bool init = true)
     if ( init ) {
         Value* v = new Value;
         v->value = idx;
-        tls.SetValue(v);
+        tls.SetValue(v, CTlsBase::DefaultCleanup<Value>);
     }
     assert(tls.GetValue()->value == idx);
 }

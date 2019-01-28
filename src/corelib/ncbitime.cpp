@@ -85,11 +85,6 @@ static CStaticTls<CTimeFormat> s_TlsFormatTime;
 static CStaticTls<CTimeFormat> s_TlsFormatSpan;
 static CStaticTls<CTimeFormat> s_TlsFormatStopWatch;
 
-static void s_TlsFormatCleanup(CTimeFormat* fmt, void* /* data */)
-{
-    delete fmt;
-}
-
 // Global quick and dirty getter of local time
 static CSafeStatic<CFastLocalTime> s_FastLocalTime;
 
@@ -1271,9 +1266,9 @@ string CTime::DayOfWeekNumToName(int day, ENameFormat fmt)
 void CTime::SetFormat(const CTimeFormat& fmt)
 {
     // Here we do not need to delete a previous value stored in the TLS.
-    // The TLS will destroy it using s_TlsFormatCleanup().
+    // The TLS will destroy it using cleanup function.
     CTimeFormat* ptr = new CTimeFormat(fmt);
-    s_TlsFormatTime.SetValue(ptr, s_TlsFormatCleanup);
+    s_TlsFormatTime.SetValue(ptr, CTlsBase::DefaultCleanup<CTimeFormat>);
 }
 
 
@@ -2642,9 +2637,9 @@ void CTimeSpan::x_Normalize(void)
 void CTimeSpan::SetFormat(const CTimeFormat& fmt)
 {
     // Here we do not need to delete a previous value stored in the TLS.
-    // The TLS will destroy it using s_TlsFormatCleanup().
+    // The TLS will destroy it using cleanup function.
     CTimeFormat* ptr = new CTimeFormat(fmt);
-    s_TlsFormatSpan.SetValue(ptr, s_TlsFormatCleanup);
+    s_TlsFormatSpan.SetValue(ptr, CTlsBase::DefaultCleanup<CTimeFormat>);
 }
 
 
@@ -4098,9 +4093,9 @@ double CStopWatch::GetTimeMark()
 void CStopWatch::SetFormat(const CTimeFormat& fmt)
 {
     // Here we do not need to delete a previous value stored in the TLS.
-    // The TLS will destroy it using s_TlsFormatCleanup().
+    // The TLS will destroy it using cleanup function.
     CTimeFormat* ptr = new CTimeFormat(fmt);
-    s_TlsFormatStopWatch.SetValue(ptr, s_TlsFormatCleanup);
+    s_TlsFormatStopWatch.SetValue(ptr, CTlsBase::DefaultCleanup<CTimeFormat>);
 }
 
 

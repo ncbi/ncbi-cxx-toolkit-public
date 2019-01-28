@@ -72,6 +72,21 @@ class NCBI_XNCBI_EXPORT CTlsBase : public CObject
 public:
     typedef void (*FCleanupBase)(void* value, void* cleanup_data);
 
+    /// Flag indicating if cleanup function should be called when using native threads
+    /// rather than CThread. Native threads may perform cleanup later than CThread,
+    /// so that some resources (like static variables) may be already destroyed.
+    /// To prevent failures the default mode is eSkipCleanup.
+    enum ENativeThreadCleanup {
+        eDoCleanup,
+        eSkipCleanup
+    };
+
+    /// Flag telling which code has called TLS cleanup.
+    enum ECleanupMode {
+        eCleanup_Toolkit, ///< Cleanup is performed by CThread.
+        eCleanup_Native   ///< Cleanup is performed by thread_local destructor.
+    };
+
 protected:
     /// Constructor.
     CTlsBase(bool auto_destroy)
@@ -92,7 +107,7 @@ protected:
     void* x_GetValue(void) const;
 
     /// Helper method to set thread data.
-    void x_SetValue(void* value, FCleanupBase cleanup=0, void* cleanup_data=0);
+    void x_SetValue(void* value, FCleanupBase cleanup, void* cleanup_data, ENativeThreadCleanup native);
 
     /// Helper method to reset thread data.
     void x_Reset(void);
@@ -115,16 +130,26 @@ private:
         void*        m_Value;
         FCleanupBase m_CleanupFunc;
         void*        m_CleanupData;
+        ENativeThreadCleanup m_Native;
     };
 
     /// Helper method to get the STlsData*
     STlsData* x_GetTlsData(void) const;
     /// Deletes STlsData* structure and managed pointer
     /// Returns true if CTlsBase must be deregistered from current thread
-    bool x_DeleteTlsData(void);
+    bool x_DeleteTlsData(ECleanupMode mode = eCleanup_Toolkit);
 
 public:
-    static void CleanupTlsData(void *data);
+    static void CleanupTlsData(void *data, ECleanupMode mode = eCleanup_Toolkit);
+
+    template<class TValue>
+    static void DefaultCleanup(TValue *value, void*) {
+        if (value) {
+            TValue* ptr = static_cast<TValue*>(value);
+            delete ptr;
+        }
+
+    }
 };
 
 
@@ -174,10 +199,10 @@ public:
     ///   One of the parameters to the cleanup function.
     /// @sa
     ///   GetValue()
-    void SetValue(TValue* value, FCleanup cleanup = 0, void* cleanup_data = 0)
+    void SetValue(TValue* value, FCleanup cleanup = 0, void* cleanup_data = 0, ENativeThreadCleanup native = eSkipCleanup)
     {
         x_SetValue(value,
-                   reinterpret_cast<FCleanupBase> (cleanup), cleanup_data);
+                   reinterpret_cast<FCleanupBase> (cleanup), cleanup_data, native);
     }
 
     /// Reset thread local storage.
@@ -309,8 +334,9 @@ public:
     TValue* GetValue(void) {
         return TParent::Get().GetValue();
     }
-    void SetValue(TValue* value, FCleanup cleanup = 0, void* cleanup_data = 0){
-        TParent::Get().SetValue(value, cleanup, cleanup_data);
+    void SetValue(TValue* value, FCleanup cleanup = 0, void* cleanup_data = 0,
+        CTlsBase::ENativeThreadCleanup native = CTlsBase::eSkipCleanup){
+        TParent::Get().SetValue(value, cleanup, cleanup_data, native);
     }
 
     friend class CUsedTlsBases;
@@ -418,13 +444,13 @@ public:
     ///   One of the parameters to the cleanup function.
     /// @sa
     ///   GetValue()
-    void SetValue(TValue* value, FCleanup cleanup = 0, void* cleanup_data = 0)
+    void SetValue(TValue* value, FCleanup cleanup = 0, void* cleanup_data = 0, ENativeThreadCleanup native = eSkipCleanup)
     {
         if (!m_SafeHelper.m_Ptr) {
             x_SafeInit();
         }
         x_SetValue(value,
-                   reinterpret_cast<FCleanupBase> (cleanup), cleanup_data);
+                   reinterpret_cast<FCleanupBase> (cleanup), cleanup_data, native);
     }
 
     /// Reset thread local storage.
@@ -459,11 +485,9 @@ public:
     CUsedTlsBases(void);
     ~CUsedTlsBases(void);
 
-    /// The function must be called before thread termination when
-    /// using native threads instead of CThread. Otherwise any data
-    /// allocated by the thread and put into TLS will not be destroyed
-    /// and will cause memory leaks.
-    void ClearAll(void);
+    /// The function is called before thread termination to cleanup data
+    /// stored in the TLS.
+    void ClearAll(CTlsBase::ECleanupMode mode = CTlsBase::eCleanup_Toolkit);
 
     void Register(CTlsBase* tls);
     void Deregister(CTlsBase* tls);
@@ -472,7 +496,7 @@ public:
     static CUsedTlsBases& GetUsedTlsBases(void);
 
     /// Clear used TLS-es for the current thread
-    static void ClearAllCurrentThread(void);
+    static void ClearAllCurrentThread(CTlsBase::ECleanupMode mode = CTlsBase::eCleanup_Toolkit);
 
     /// Init TLS, call before creating thread
     static void Init(void);

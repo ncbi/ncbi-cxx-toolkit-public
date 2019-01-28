@@ -113,14 +113,6 @@ CMessageListener_Stack::Post(const IProgressMessage& progress)
 }
 
 
-void s_ListenerStackCleanup(CMessageListener_Stack* value,
-                          void* /*cleanup_data*/)
-{
-    if ( !value ) return;
-    delete value;
-}
-
-
 static CStaticTls<CMessageListener_Stack> s_Listeners;
 
 
@@ -129,7 +121,7 @@ CMessageListener_Stack& s_GetListenerStack(void)
     CMessageListener_Stack* ls = s_Listeners.GetValue();
     if ( !ls ) {
         ls = new CMessageListener_Stack;
-        s_Listeners.SetValue(ls, s_ListenerStackCleanup);
+        s_Listeners.SetValue(ls, CTlsBase::DefaultCleanup<CMessageListener_Stack>);
     }
     _ASSERT(ls);
     return *ls;

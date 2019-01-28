@@ -79,7 +79,7 @@ CUsedTlsBases::~CUsedTlsBases(void)
 }
 
 
-void CUsedTlsBases::ClearAll(void)
+void CUsedTlsBases::ClearAll(CTlsBase::ECleanupMode mode)
 {
     CMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
     // Prevent double-destruction
@@ -92,7 +92,7 @@ void CUsedTlsBases::ClearAll(void)
             continue;
         }
         // Prevent double-destruction
-        tls->x_DeleteTlsData();
+        tls->x_DeleteTlsData(mode);
         if (tls->m_AutoDestroy  &&  tls->Referenced()) {
             tls->RemoveReference();
         }
@@ -100,7 +100,7 @@ void CUsedTlsBases::ClearAll(void)
     m_UsedTls.clear();
 
     if (used_tls) {
-        used_tls->x_DeleteTlsData();
+        used_tls->x_DeleteTlsData(mode);
         if (used_tls->m_AutoDestroy  &&  used_tls->Referenced()) {
             used_tls->RemoveReference();
         }
@@ -171,21 +171,34 @@ void CUsedTlsBases::Init(void)
 }
 
 
-void CUsedTlsBases::ClearAllCurrentThread(void)
+void CUsedTlsBases::ClearAllCurrentThread(CTlsBase::ECleanupMode mode)
 {
     if ( CUsedTlsBases* tls = sm_UsedTlsBases.GetValue() ) {
-        tls->ClearAll();
+        tls->ClearAll(mode);
     }
 }
 
 
-void CTlsBase::CleanupTlsData(void* data)
+struct SNativeThreadTlsCleanup
+{
+    SNativeThreadTlsCleanup(void) {
+    }
+    ~SNativeThreadTlsCleanup(void) {
+        CUsedTlsBases::ClearAllCurrentThread(CTlsBase::eCleanup_Native);
+    }
+};
+
+
+static thread_local SNativeThreadTlsCleanup s_NativeThreadTlsCleanup;
+
+
+void CTlsBase::CleanupTlsData(void* data, ECleanupMode mode)
 {
     if (!data) return;
     STlsData* tls_data = static_cast<STlsData*>(data);
-    if (tls_data->m_Value  &&  tls_data->m_CleanupFunc) {
-        tls_data->m_CleanupFunc(tls_data->m_Value, tls_data->m_CleanupData);
-    }
+    if (!tls_data->m_Value || !tls_data->m_CleanupFunc) return;
+    if (mode == eCleanup_Native && tls_data->m_Native == eSkipCleanup) return;
+    tls_data->m_CleanupFunc(tls_data->m_Value, tls_data->m_CleanupData);
 }
 
 
@@ -257,7 +270,8 @@ void s_TlsSetValue(TTlsKey& key, void* data, const char* err_message)
 
 void CTlsBase::x_SetValue(void*        value,
                           FCleanupBase cleanup,
-                          void*        cleanup_data)
+                          void*        cleanup_data,
+                          ENativeThreadCleanup native)
 {
     if ( !m_Initialized ) {
         return;
@@ -275,6 +289,7 @@ void CTlsBase::x_SetValue(void*        value,
         tls_data->m_Value       = 0;
         tls_data->m_CleanupFunc = 0;
         tls_data->m_CleanupData = 0;
+        tls_data->m_Native = eSkipCleanup;
     }
 
     // Cleanup
@@ -286,6 +301,7 @@ void CTlsBase::x_SetValue(void*        value,
     tls_data->m_Value       = value;
     tls_data->m_CleanupFunc = cleanup;
     tls_data->m_CleanupData = cleanup_data;
+    tls_data->m_Native = native;
 
     // Store the structure in the TLS
     s_TlsSetValue(m_Key, tls_data,
@@ -296,7 +312,7 @@ void CTlsBase::x_SetValue(void*        value,
 }
 
 
-bool CTlsBase::x_DeleteTlsData(void)
+bool CTlsBase::x_DeleteTlsData(ECleanupMode mode)
 {
     if ( !m_Initialized ) {
         return false;
@@ -309,7 +325,7 @@ bool CTlsBase::x_DeleteTlsData(void)
     }
 
     // Cleanup & destroy
-    CleanupTlsData(tls_data);
+    CleanupTlsData(tls_data, mode);
     delete tls_data;
 
     // Store NULL in the TLS

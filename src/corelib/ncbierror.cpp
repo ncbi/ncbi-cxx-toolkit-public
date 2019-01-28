@@ -48,12 +48,6 @@ public:
     }
 };
 
-static
-void NcbiError_Cleanup(CNcbiError* e, void*)
-{
-    delete e;
-}
-
 static 
 CStaticTls<CNcbiError> s_Last;
 
@@ -62,7 +56,7 @@ CNcbiError* NcbiError_GetOrCreate(void)
 {
     CNcbiError* e = s_Last.GetValue();
     if (!e) {
-        s_Last.SetValue(e = new CNcbiError_Int(), NcbiError_Cleanup);
+        s_Last.SetValue(e = new CNcbiError_Int(), CTlsBase::DefaultCleanup<CNcbiError>);
     }
     return e;
 }
