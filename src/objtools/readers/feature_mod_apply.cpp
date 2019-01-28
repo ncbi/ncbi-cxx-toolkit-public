@@ -67,7 +67,7 @@ bool CFeatModApply::Apply(const TModEntry& mod_entry)
     static unordered_set<string> protein_quals = {"protein-desc", "protein", "ec-number", "activity"};
     if (m_Bioseq.IsNa() &&
         protein_quals.find(x_GetModName(mod_entry)) != protein_quals.end()) {
-        unordered_set<string> qual_names;
+        set<string> qual_names;
         for (const auto& mod_data : mod_entry.second) {
             qual_names.insert(mod_data.GetName());
         }
