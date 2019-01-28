@@ -2346,7 +2346,9 @@ static void s_RemoveCommentFromLine (char * linestring)
 
     clp = s_FindComment (linestring);
     while (clp != NULL) {
-        strcpy (clp->start, clp->end + 1);
+        memmove(clp->start, clp->end+1, strlen(clp->end));
+        // Note that strlen(clp->end) = strlen(clp->end+1)+1;
+        // This is needed to ensure that the null terminator is copied.
         s_CommentLocFree (clp);
         clp = s_FindComment (linestring);
     }
@@ -2482,7 +2484,9 @@ static void s_RemoveOrganismCommentFromLine (char * string)
                 }
             }
             else {
-                strcpy (clp->start, clp->end + 1);
+                memmove(clp->start, clp->end+1, strlen(clp->end));
+                // Note strlen(clp->end) = strlen(clp->end+1)+1
+                // The +1 at the end is needed to copy the null terminator
             }
         }
         s_CommentLocFree (clp);
