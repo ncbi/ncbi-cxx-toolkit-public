@@ -72,6 +72,7 @@ class CCassNAnnotTaskFetch
  public:
     CCassNAnnotTaskFetch(
         unsigned int timeout_ms,
+        unsigned int max_retries,
         shared_ptr<CCassConnection> connection,
         const string & keyspace,
         string accession,
@@ -84,6 +85,7 @@ class CCassNAnnotTaskFetch
 
     CCassNAnnotTaskFetch(
         unsigned int timeout_ms,
+        unsigned int max_retries,
         shared_ptr<CCassConnection> connection,
         const string & keyspace,
         string accession,
@@ -96,6 +98,7 @@ class CCassNAnnotTaskFetch
 
     CCassNAnnotTaskFetch(
         unsigned int timeout_ms,
+        unsigned int max_retries,
         shared_ptr<CCassConnection> connection,
         const string & keyspace,
         string accession,

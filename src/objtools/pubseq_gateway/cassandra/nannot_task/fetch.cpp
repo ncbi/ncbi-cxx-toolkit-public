@@ -49,6 +49,7 @@ USING_NCBI_SCOPE;
 
 CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     unsigned int timeout_ms,
+    unsigned int max_retries,
     shared_ptr<CCassConnection> connection,
     const string & keyspace,
     string accession,
@@ -60,7 +61,7 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
 )
     : CCassBlobWaiter(
         timeout_ms, connection, keyspace,
-        0, true, 0, move(data_error_cb)
+        0, true, max_retries, move(data_error_cb)
     )
     , m_Accession(move(accession))
     , m_Version(version)
@@ -72,6 +73,7 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
 
 CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     unsigned int timeout_ms,
+    unsigned int max_retries,
     shared_ptr<CCassConnection> connection,
     const string & keyspace,
     string accession,
@@ -83,7 +85,7 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
 )
     : CCassBlobWaiter(
         timeout_ms, connection, keyspace,
-        0, true, 0, move(data_error_cb)
+        0, true, max_retries, move(data_error_cb)
     )
     , m_Accession(move(accession))
     , m_Version(version)
@@ -95,6 +97,7 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
 
 CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     unsigned int timeout_ms,
+    unsigned int max_retries,
     shared_ptr<CCassConnection> connection,
     const string & keyspace,
     string accession,
@@ -105,7 +108,7 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
 )
     : CCassBlobWaiter(
         timeout_ms, connection, keyspace,
-        0, true, 0, move(data_error_cb)
+        0, true, max_retries, move(data_error_cb)
     )
     , m_Accession(move(accession))
     , m_Version(version)

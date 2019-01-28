@@ -428,6 +428,7 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
                      TDataErrorCallback error_cb,
                      unique_ptr<CCassBlobWaiter> & waiter);
     void FetchNAnnot(unsigned int op_timeout_ms,
+        unsigned int max_retries,
         const string & accession,
         int16_t version,
         int16_t seq_id_type,
@@ -437,6 +438,7 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         unique_ptr<CCassBlobWaiter> & waiter
     );
     void FetchNAnnot(unsigned int op_timeout_ms,
+        unsigned int max_retries,
         const string & accession,
         int16_t version,
         int16_t seq_id_type,
@@ -446,6 +448,7 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         unique_ptr<CCassBlobWaiter> & waiter
     );
     void FetchNAnnot(unsigned int op_timeout_ms,
+        unsigned int max_retries,
         const string & accession,
         int16_t version,
         int16_t seq_id_type,

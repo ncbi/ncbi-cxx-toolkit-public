@@ -222,6 +222,7 @@ void CCassBlobOp::InsertNAnnot(
 
 void CCassBlobOp::FetchNAnnot(
     unsigned int op_timeout_ms,
+    unsigned int max_retries,
     const string & accession,
     int16_t version,
     int16_t seq_id_type,
@@ -232,7 +233,7 @@ void CCassBlobOp::FetchNAnnot(
 )
 {
     waiter.reset(new CCassNAnnotTaskFetch(
-        op_timeout_ms, m_Conn, m_Keyspace,
+        op_timeout_ms, max_retries, m_Conn, m_Keyspace,
         accession, version, seq_id_type, annot_names,
         move(consume_callback), move(error_cb)
     ));
@@ -240,6 +241,7 @@ void CCassBlobOp::FetchNAnnot(
 
 void CCassBlobOp::FetchNAnnot(
     unsigned int op_timeout_ms,
+    unsigned int max_retries,
     const string & accession,
     int16_t version,
     int16_t seq_id_type,
@@ -250,7 +252,7 @@ void CCassBlobOp::FetchNAnnot(
 )
 {
     waiter.reset(new CCassNAnnotTaskFetch(
-        op_timeout_ms, m_Conn, m_Keyspace,
+        op_timeout_ms, max_retries, m_Conn, m_Keyspace,
         accession, version, seq_id_type, annot_names,
         move(consume_callback), move(error_cb)
     ));
@@ -258,6 +260,7 @@ void CCassBlobOp::FetchNAnnot(
 
 void CCassBlobOp::FetchNAnnot(
     unsigned int op_timeout_ms,
+    unsigned int max_retries,
     const string & accession,
     int16_t version,
     int16_t seq_id_type,
@@ -267,7 +270,7 @@ void CCassBlobOp::FetchNAnnot(
 )
 {
     waiter.reset(new CCassNAnnotTaskFetch(
-        op_timeout_ms, m_Conn, m_Keyspace,
+        op_timeout_ms, max_retries, m_Conn, m_Keyspace,
         accession, version, seq_id_type,
         move(consume_callback), move(error_cb)
     ));
