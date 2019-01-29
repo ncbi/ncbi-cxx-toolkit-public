@@ -1286,6 +1286,21 @@ static bool s_FindWholeName(const string& taxname, const string& value)
     }
 }
 
+
+static bool s_HasMetagenomeSource(const COrg_ref& org)
+{
+    if (!org.IsSetOrgMod()) {
+        return false;
+    }
+    for (auto it : org.GetOrgname().GetMod()) {
+        if (it->IsSetSubtype() && it->GetSubtype() == COrgMod::eSubtype_metagenome_source) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void CValidError_imp::ValidateOrgRef
 (const COrg_ref&    orgref,
 const CSerialObject& obj,
@@ -1310,6 +1325,8 @@ const CSeq_entry *ctx)
             NStr::StartsWith(lineage, "Bacteria; ", NStr::eNocase) ||
             NStr::StartsWith(lineage, "Archaea; ", NStr::eNocase)) &&
             !IsGenomeSubmission()) {
+            // suppress OrganismIsUndefinedSpecies message
+        } else if (s_HasMetagenomeSource(orgref)) {
             // suppress OrganismIsUndefinedSpecies message
         } else if ((NStr::EndsWith(taxname, " sp.", NStr::eNocase) ||
             NStr::EndsWith(taxname, " sp", NStr::eNocase)) &&
