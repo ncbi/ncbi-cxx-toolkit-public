@@ -550,21 +550,10 @@ bool s_CompareSeqId(const string & id1, const string & id2)
 	}
 	CSeq_id seq_id1(id1, (CSeq_id::fParse_AnyRaw | CSeq_id::fParse_ValidLocal));
 	CSeq_id seq_id2(id2, (CSeq_id::fParse_AnyRaw | CSeq_id::fParse_ValidLocal));
-	if (seq_id1.Match(seq_id2)){
+	if (seq_id1.Match(seq_id2)) {
 		return false;
 	}
-
-	int v1;
-	int v2;
-	string id_string1 = seq_id1.GetSeqIdString(&v1);
-	string id_string2 = seq_id2.GetSeqIdString(&v2);
-	if ((v1==0) || (v2 == 0)) {
-		if(id_string1 == id_string2){
-			return false;
-		}
-	}
-
-	return seq_id1.Compare(seq_id2);
+	return (id1 < id2);
 }
 
 void s_ProcessSeqIdFilters(const vector<string>     & fnames,
@@ -581,7 +570,7 @@ void s_ProcessSeqIdFilters(const vector<string>     & fnames,
 	vector<string> user_accs;
 	if ((!user_list.Empty()) && (user_list->GetNumSis() > 0)) {
 		user_list->GetSiList(user_accs);
-		sort(user_accs.begin(), user_accs.end());
+		sort(user_accs.begin(), user_accs.end(), s_CompareSeqId);
 	}
 	vector<string> neg_user_accs;
 	if ((!neg_user_list.Empty()) && (neg_user_list->GetNumSis() > 0)) {
@@ -600,7 +589,7 @@ void s_ProcessSeqIdFilters(const vector<string>     & fnames,
 				continue;
 		}
 		if((user_accs.size() > 0)  || (neg_user_accs.size() > 0)){
-			sort(accs.begin(), accs.end());
+			sort(accs.begin(), accs.end(), s_CompareSeqId);
 			if (user_accs.size() > 0) {
 				vector<string> common;
 				common.resize(accs.size());

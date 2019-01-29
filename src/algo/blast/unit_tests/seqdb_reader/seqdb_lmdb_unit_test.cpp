@@ -460,5 +460,28 @@ BOOST_AUTO_TEST_CASE(Test_AliasFileTaxIdsList)
 		BOOST_REQUIRE_EQUAL(6, found);
 	}
 }
+
+BOOST_AUTO_TEST_CASE(Test_SeqIdList_With_AliasFile)
+{
+	{
+		CRef<CSeqDBGiList> n_list(new CSeqDBGiList());
+		const int num_of_sis = 3;
+		static const string sis[num_of_sis] = {"EAI92731", "ZP_00197753", "EAA62830"};
+		struct SBlastSeqIdListInfo list_info;
+		list_info.is_v4 = false;
+		n_list->SetListInfo(list_info);
+		n_list->ReserveSis(num_of_sis);
+		for (unsigned int i=0; i < num_of_sis; i++) {
+			n_list->AddSi(sis[i]);
+		}
+    	CSeqDB db("data/prot_alias_v5", CSeqDB::eProtein, n_list);
+
+    	int found = 0;
+    	for(blastdb::TOid oid = 0; db.CheckOrFindOID(oid); oid++) {
+        	found++;
+    	}
+    	BOOST_REQUIRE_EQUAL(3, found);
+	}
+}
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
