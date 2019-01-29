@@ -10343,9 +10343,7 @@ bool CNewCleanup_imp::x_CleanEmptyProt(CProt_ref& prot)
 
 bool CNewCleanup_imp::x_ShouldRemoveEmptyProt(const CProt_ref& prot)
 {
-    if (prot.IsSetProcessed() &&
-        (prot.GetProcessed() == CProt_ref::eProcessed_signal_peptide ||
-        prot.GetProcessed() == CProt_ref::eProcessed_transit_peptide)) {
+    if (prot.IsSetProcessed() && prot.GetProcessed() != CProt_ref::eProcessed_not_set) {
         return false;
     }
 
