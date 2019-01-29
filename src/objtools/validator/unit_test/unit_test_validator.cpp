@@ -1504,7 +1504,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
     BOOST_CHECK_EQUAL(validator::HasInternalStop(*cds, scope, false), true);
 
     // list of expected errors
-    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InternalStop", "3 internal stops (and illegal start codon). Genetic code [0]"));
 
@@ -1519,7 +1519,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
     BOOST_CHECK_EQUAL(validator::HasInternalStop(*cds, scope, false), true);
     BOOST_CHECK_EQUAL(validator::HasBadStartCodon(*cds, scope, false), true);
 
-    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StartCodon", "Illegal start codon (and 3 internal stops). Probably wrong genetic code [0]"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "InternalStop", "3 internal stops (and illegal start codon). Genetic code [0]"));
 
@@ -5952,6 +5952,7 @@ void TestConsultRequired(const string& taxname)
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
+
 }
 
 
@@ -12122,7 +12123,7 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_InternalStop)
     BOOST_CHECK_EQUAL(validator::HasStopInProtein(*cds, scope), true);
     BOOST_CHECK_EQUAL(validator::HasInternalStop(*cds, scope, false), true);
 
-    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "StopInProtein",
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StopInProtein",
                               "[1] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "InternalStop",
                               "1 internal stops. Genetic code [0]"));
@@ -20437,7 +20438,7 @@ BOOST_AUTO_TEST_CASE(Test_GP_9919)
     BOOST_CHECK_EQUAL(validator::HasInternalStop(*cds, scope, false), true);
 
     // list of expected errors
-    expected_errors.push_back(new CExpectedError("lcl|prot", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
+    expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "StopInProtein", "[3] termination symbols in protein sequence (gene? - fake protein name)"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Error, "ExceptionProblem", "unclassified translation discrepancy is not a legal exception explanation"));
     expected_errors.push_back(new CExpectedError("lcl|nuc", eDiag_Warning, "InternalStop", "3 internal stops (and illegal start codon). Genetic code [0]"));
 

@@ -3355,8 +3355,12 @@ void CValidError_bioseq::ValidateRawConst(
                 if (terminations > 0) {
                     string msg = "[" + NStr::SizetToString(terminations) + "] termination symbols in protein sequence";
                     msg += " (" + gene_label + " - " + protein_label + ")";
-
-                    PostErr(eDiag_Error, eErr_SEQ_INST_StopInProtein, msg, seq);
+                    const CSeq_feat* cds = GetCDSForProduct(bsh);
+                    if (cds) {
+                        PostErr(eDiag_Error, eErr_SEQ_INST_StopInProtein, msg, *cds);
+                    } else {
+                        PostErr(eDiag_Error, eErr_SEQ_INST_StopInProtein, msg, seq);
+                    }
                 }
             }
         }
