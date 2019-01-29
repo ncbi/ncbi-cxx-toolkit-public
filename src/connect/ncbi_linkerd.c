@@ -449,8 +449,9 @@ static EEndpointStatus s_EndpointFromNamerd(SEndpoint* end, SERV_ITER iter)
 out:
     ConnNetInfo_Destroy(nd_net_info);
     SERV_Close(nd_iter);
-    if (nd_srv_info)
+    if (nd_srv_info  &&  nd_srv_info != (SSERV_Info*)(-1L)) {
         free((void*)nd_srv_info);
+    }
     return retval;
 }
 
