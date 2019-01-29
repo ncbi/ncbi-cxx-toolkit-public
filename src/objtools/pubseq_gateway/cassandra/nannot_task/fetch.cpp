@@ -144,87 +144,91 @@ void CCassNAnnotTaskFetch::Cancel(void)
 
 void CCassNAnnotTaskFetch::Wait1()
 {
-    switch (m_State) {
-        case eError:
-        case eDone:
-            return;
+    bool b_need_repeat;
+    do {
+        b_need_repeat = false;
+        switch (m_State) {
+            case eError:
+            case eDone:
+                return;
 
-        case eInit: {
-            m_QueryArr.resize(1);
-            m_QueryArr[0] = m_Conn->NewQuery();
-            string sql =
-                " SELECT "
-                "  annot_name, sat_key, last_modified, start, stop "
-                " FROM " + GetKeySpace() + ".bioseq_na "
-                " WHERE"
-                "  accession = ? AND version = ? AND seq_id_type = ?";
-            unsigned int params = 3;
-            unsigned int names_count = 0;
-            if (m_AnnotNameTempStrings && !m_AnnotNameBox.names_temp.empty()) {
-                names_count = m_AnnotNameBox.names_temp.size();
-            } else if (!m_AnnotNameTempStrings && !m_AnnotNameBox.names.empty()) {
-                names_count = m_AnnotNameBox.names.size();
-            }
-            if (names_count > 0) {
-                sql += "AND annot_name in (" + NStr::Join(vector<string>(names_count, "?"), ",") + ")";
-            }
-            m_QueryArr[0]->SetSQL(sql, params + names_count);
-            m_QueryArr[0]->BindStr(0, m_Accession);
-            m_QueryArr[0]->BindInt16(1, m_Version);
-            m_QueryArr[0]->BindInt16(2, m_SeqIdType);
-            for (unsigned int i = params; i < names_count + params; ++i) {
-                if (m_AnnotNameTempStrings) {
-                    m_QueryArr[0]->BindStr(i, m_AnnotNameBox.names_temp[i-params]);
-                } else {
-                    m_QueryArr[0]->BindStr(i, m_AnnotNameBox.names[i-params]);
+            case eInit: {
+                m_QueryArr.resize(1);
+                m_QueryArr[0] = m_Conn->NewQuery();
+                string sql =
+                    " SELECT "
+                    "  annot_name, sat_key, last_modified, start, stop "
+                    " FROM " + GetKeySpace() + ".bioseq_na "
+                    " WHERE"
+                    "  accession = ? AND version = ? AND seq_id_type = ?";
+                unsigned int params = 3;
+                unsigned int names_count = 0;
+                if (m_AnnotNameTempStrings && !m_AnnotNameBox.names_temp.empty()) {
+                    names_count = m_AnnotNameBox.names_temp.size();
+                } else if (!m_AnnotNameTempStrings && !m_AnnotNameBox.names.empty()) {
+                    names_count = m_AnnotNameBox.names.size();
                 }
-            }
-            UpdateLastActivity();
-            m_QueryArr[0]->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
-            m_State = eFetchStarted;
-            break;
-        }
-
-        case eFetchStarted: {
-            if (m_QueryArr[0]->IsReady()) {
-                bool do_next = true;
-                auto state = m_QueryArr[0]->NextRow();
-                while (do_next && state == ar_dataready) {
-                    CNAnnotRecord record;
-                    record
-                        .SetAccession(m_Accession)
-                        .SetVersion(m_Version)
-                        .SetSeqIdType(m_SeqIdType)
-                        .SetAnnotName(m_QueryArr[0]->FieldGetStrValueDef(0, ""))
-                        .SetSatKey(m_QueryArr[0]->FieldGetInt32Value(1, 0))
-                        .SetModified(m_QueryArr[0]->FieldGetInt64Value(2, 0))
-                        .SetStart(m_QueryArr[0]->FieldGetInt32Value(3, 0))
-                        .SetStop(m_QueryArr[0]->FieldGetInt32Value(4, 0));
-                    if (m_Consume) {
-                        do_next = m_Consume(move(record), false);
-                    }
-                    if (do_next) {
-                        state = m_QueryArr[0]->NextRow();
+                if (names_count > 0) {
+                    sql += " AND annot_name in (" + NStr::Join(vector<string>(names_count, "?"), ",") + ")";
+                }
+                m_QueryArr[0]->SetSQL(sql, params + names_count);
+                m_QueryArr[0]->BindStr(0, m_Accession);
+                m_QueryArr[0]->BindInt16(1, m_Version);
+                m_QueryArr[0]->BindInt16(2, m_SeqIdType);
+                for (unsigned int i = params; i < names_count + params; ++i) {
+                    if (m_AnnotNameTempStrings) {
+                        m_QueryArr[0]->BindStr(i, m_AnnotNameBox.names_temp[i-params]);
+                    } else {
+                        m_QueryArr[0]->BindStr(i, m_AnnotNameBox.names[i-params]);
                     }
                 }
-                if (!do_next || m_QueryArr[0]->IsEOF()) {
-                    CloseAll();
-                    m_State = eDone;
-                }
-                if (m_Consume) {
-                    m_Consume(CNAnnotRecord(), true);
-                }
+                UpdateLastActivity();
+                m_QueryArr[0]->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, true);
+                m_State = eFetchStarted;
+                break;
             }
-            break;
-        }
 
-        default: {
-            char msg[1024];
-            snprintf(msg, sizeof(msg), "Failed to fetch named annot (key=%s.%s|%hd|%hd) unexpected state (%d)",
-                m_Keyspace.c_str(), m_Accession.c_str(), m_Version, m_SeqIdType, static_cast<int>(m_State));
-            Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
+            case eFetchStarted: {
+                if (CheckReady(m_QueryArr[0], eInit, &b_need_repeat)) {
+                    bool do_next = true;
+                    auto state = m_QueryArr[0]->NextRow();
+                    while (do_next && state == ar_dataready) {
+                        CNAnnotRecord record;
+                        record
+                            .SetAccession(m_Accession)
+                            .SetVersion(m_Version)
+                            .SetSeqIdType(m_SeqIdType)
+                            .SetAnnotName(m_QueryArr[0]->FieldGetStrValueDef(0, ""))
+                            .SetSatKey(m_QueryArr[0]->FieldGetInt32Value(1, 0))
+                            .SetModified(m_QueryArr[0]->FieldGetInt64Value(2, 0))
+                            .SetStart(m_QueryArr[0]->FieldGetInt32Value(3, 0))
+                            .SetStop(m_QueryArr[0]->FieldGetInt32Value(4, 0));
+                        if (m_Consume) {
+                            do_next = m_Consume(move(record), false);
+                        }
+                        if (do_next) {
+                            state = m_QueryArr[0]->NextRow();
+                        }
+                    }
+                    if (!do_next || m_QueryArr[0]->IsEOF()) {
+                        if (m_Consume) {
+                            m_Consume(CNAnnotRecord(), true);
+                        }
+                        CloseAll();
+                        m_State = eDone;
+                    }
+                }
+                break;
+            }
+
+            default: {
+                char msg[1024];
+                snprintf(msg, sizeof(msg), "Failed to fetch named annot (key=%s.%s|%hd|%hd) unexpected state (%d)",
+                    m_Keyspace.c_str(), m_Accession.c_str(), m_Version, m_SeqIdType, static_cast<int>(m_State));
+                Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
+            }
         }
-    }
+    } while(b_need_repeat);
 }
 
 END_IDBLOB_SCOPE
