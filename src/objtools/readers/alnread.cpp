@@ -58,9 +58,45 @@ typedef enum {
 
 /*  ---------------------------------------------------------------------- */
 
+//  ============================================================================
+template<class T>
+static T* tAppendNew(
+    T* pList,
+    T* pNewItem)
+//
+//  Create pNewItem if pNewItem is not specified.
+//  Append pNewItem to pList if pList is specified.
+//  Return pointer to pNewItem whether it's been created or not.
+//  ============================================================================
+{
+    T* pLast = pList;
+    while (pLast  &&  pLast->next) {
+        pLast = pLast->next;
+    }
+    if (pLast) {
+        pLast->next = pNewItem;
+    }
+    return pNewItem;
+}
+
+
 //  ===========================================================================
 struct SLineInfo {
 //  ===========================================================================
+    SLineInfo(
+        const char* data_,
+        int line_num_,
+        int line_offset_): 
+        data(strdup(data_)), line_num(line_num_ + 1), line_offset(line_offset_),
+        delete_me(false), next(nullptr) 
+    {};
+    
+    ~SLineInfo() { 
+        free(data); 
+        delete next;
+        next = nullptr;
+    };
+    
     char* data;
     int line_num;
     int line_offset;
@@ -69,16 +105,65 @@ struct SLineInfo {
 };
 using TLineInfoPtr = SLineInfo*;
 
-typedef struct SLineInfoReader {
+//  =============================================================================
+struct SLineInfoReader {
+//  =============================================================================
+    SLineInfoReader(
+        SLineInfo& lineList): first_line(&lineList) 
+    {
+        first_line = &lineList;
+        Reset();
+    };
+
+    void
+    Reset() {
+        curr_line = first_line;
+
+        while (curr_line  &&  !curr_line->data) {
+            curr_line = curr_line->next;
+        }
+        if (!curr_line) {
+            curr_line_pos = nullptr;
+            data_pos = -1;
+        } else {
+            curr_line_pos = curr_line->data;
+            AdvancePastSpace();
+            data_pos = (curr_line_pos ? 0 : -1);
+        }
+    };
+
+    void AdvancePastSpace() {
+        if (!curr_line_pos) {
+            return;
+        }
+        while (isspace((unsigned char) *curr_line_pos)  ||  *curr_line_pos == 0) {
+            while (isspace((unsigned char) *curr_line_pos)) {
+                curr_line_pos ++;
+            }
+            if (*curr_line_pos == 0) {
+                curr_line = curr_line->next;
+                while (curr_line  &&  curr_line->data) {
+                    curr_line = curr_line->next;
+                }
+                if (!curr_line) {
+                    curr_line_pos = nullptr;
+                    return;
+                }
+                curr_line_pos = curr_line->data;
+            }
+        }
+    }
+
     TLineInfoPtr first_line;
     TLineInfoPtr curr_line;
-    char *       curr_line_pos;
-    int          data_pos;
-} SLineInfoReader, * TLineInfoReaderPtr;
+    char* curr_line_pos;
+    int data_pos;
+};
+using TLineInfoReaderPtr = SLineInfoReader*;
 
 //  ============================================================================
 struct SIntLink {
-    //  ============================================================================
+//  ============================================================================
     SIntLink(
         int val, SIntLink* next_=nullptr): ival(val), next(next_) {};
 
@@ -123,45 +208,164 @@ struct SIntLink {
 };
 using TIntLinkPtr = SIntLink*;
 
-typedef struct SStringCount {
-    char *                string;
-    int                   num_appearances;
-    TIntLinkPtr           line_numbers;
-    struct SStringCount * next;
-} SStringCount, * TStringCountPtr;
+//  ============================================================================
+struct SStringCount {
+//  ============================================================================
+    SStringCount(): 
+        string(nullptr), num_appearances(0), line_numbers(nullptr), next(nullptr)
+    {};
 
-typedef struct SSizeInfo {
-    int                size_value;
-    int                num_appearances;
-    struct SSizeInfo * next;
-} SSizeInfo, * TSizeInfoPtr;
+    ~SStringCount() {
+        //delete[] string;
+        delete line_numbers;
+        delete next;
+    };
 
-typedef struct SLengthList {
-    TSizeInfoPtr         lengthrepeats;
-    int                  num_appearances;
-    struct SLengthList * next;
-} SLengthListData, * SLengthListPtr;
- 
-typedef struct SCommentLoc {
-  char *               start;
-  char *               end;
-  struct SCommentLoc * next;
-} SCommentLoc, * TCommentLocPtr;
+    static SStringCount*
+    AppendNew(
+        SStringCount* list) { return tAppendNew<SStringCount>(list, new SStringCount); };
 
-typedef struct SBracketedCommentList 
-{
-    TLineInfoPtr                   comment_lines;
-    struct SBracketedCommentList * next;
-} SBracketedCommentList, * TBracketedCommentListPtr;
+    char* string;
+    int num_appearances;
+    TIntLinkPtr line_numbers;
+    struct SStringCount* next;
+};
+using TStringCountPtr = SStringCount*;
 
-typedef struct SAlignRawSeq {
+//  ============================================================================
+struct SSizeInfo {
+//  ============================================================================
+    SSizeInfo(): size_value(0), num_appearances(0), next(nullptr)
+    {};
+
+    bool operator ==(const SSizeInfo& rhs) {
+        return (size_value == rhs.size_value  &&  
+            num_appearances == rhs.num_appearances); };
+
+    ~SSizeInfo() { delete next; };
+
+    static SSizeInfo*
+    AppendNew(
+        SSizeInfo* list) { return tAppendNew<SSizeInfo>(list, new SSizeInfo); };
+
+    int size_value;
+    int num_appearances;
+    struct SSizeInfo* next;
+};
+using TSizeInfoPtr = SSizeInfo*;
+
+//  =============================================================================
+struct SLengthList {
+//  =============================================================================
+    SLengthList(): lengthrepeats(nullptr), num_appearances(0), next(nullptr)
+    {};
+    
+    ~SLengthList() {
+        delete lengthrepeats;
+        delete next;
+    };
+
+    static SLengthList*
+    AppendNew(
+        SLengthList* list) { return tAppendNew<SLengthList>(list, new SLengthList); };
+
+    TSizeInfoPtr lengthrepeats;
+    int num_appearances;
+    SLengthList* next;
+};
+using TLengthListPtr = SLengthList*;
+using TLengthListData = SLengthList;
+
+//  ============================================================================
+struct SCommentLoc {
+//  ============================================================================
+    SCommentLoc(
+        char* start_,
+        char* end_,
+        SCommentLoc* next_=nullptr): start(start_), end(end_), next(next_)
+    {};
+
+    ~SCommentLoc() {
+        delete next;
+    };
+
+    char* start;
+    char* end;
+    SCommentLoc * next;
+};
+using TCommentLocPtr = SCommentLoc*;
+
+//  ============================================================================
+struct SBracketedCommentList  {
+//  ============================================================================
+    SBracketedCommentList(
+        const char* str, int lineNum, int lineOffset): 
+        comment_lines(new SLineInfo(str, lineNum, lineOffset))
+    {};
+
+    static SBracketedCommentList*
+    ApendNew(
+        SBracketedCommentList* list, const char* str, int lineNum, int lineOffset)
+    {
+        auto pNewItem = new SBracketedCommentList(str, lineNum, lineOffset);
+        return tAppendNew<SBracketedCommentList>(list, pNewItem);
+    };
+
+    ~SBracketedCommentList() {
+        delete comment_lines;
+        delete next;
+    };
+
+    SLineInfo* comment_lines;
+    SBracketedCommentList* next;
+};
+using TBracketedCommentListPtr = SBracketedCommentList*;
+
+//  ============================================================================
+struct SAlignRawSeq {
+//  ============================================================================
+    SAlignRawSeq(): 
+        id(nullptr), sequence_data(nullptr), id_lines(nullptr), next(nullptr)
+    {};
+    ~SAlignRawSeq() {
+        delete id;
+        delete sequence_data;
+        delete id_lines;
+        delete next;
+    };
+
+    static SAlignRawSeq*
+    AppendNew(
+        SAlignRawSeq* list) 
+    { return tAppendNew<SAlignRawSeq>(list, new SAlignRawSeq); };
+
     char *                id;
     TLineInfoPtr          sequence_data;
     TIntLinkPtr           id_lines;
     struct SAlignRawSeq * next;
-} SAlignRawSeq, * TAlignRawSeqPtr;
+};
+using TAlignRawSeqPtr = SAlignRawSeq*;
 
-typedef struct SAlignFileRaw {
+//  ============================================================================
+struct SAlignFileRaw {
+//  ============================================================================
+    SAlignFileRaw():
+        marked_ids(false), line_list(nullptr), organisms(nullptr),
+        num_organisms(0), deflines(nullptr), num_deflines(0), block_size(0), 
+        offset_list(nullptr), sequences(nullptr), report_error(nullptr),
+        report_error_userdata(nullptr), alphabet_(""), expected_num_sequence(0),
+        expected_sequence_len(0), num_segments(1), align_format_found(false)
+    {};
+
+    ~SAlignFileRaw() {
+        delete organisms;
+        delete deflines;
+        delete line_list;
+        delete sequences;
+        delete offset_list;
+        //free(alphabet);
+    };
+
     TLineInfoPtr         line_list;
     TLineInfoPtr         organisms;
     TAlignRawSeqPtr      sequences;
@@ -173,19 +377,20 @@ typedef struct SAlignFileRaw {
     TIntLinkPtr          offset_list;
     FReportErrorFunction report_error;
     void *               report_error_userdata;
-    char *               alphabet;
+    string               alphabet_;
     int                  expected_num_sequence;
     int                  expected_sequence_len;
     int                  num_segments;
     char                 align_format_found;
-} SAlignRawFileData, * SAlignRawFilePtr;
+};
+using TAlignRawFilePtr = SAlignFileRaw*;
 
 /* Function declarations
  */
 static bool s_AfrpInitLineData( 
-    SAlignRawFilePtr afrp, FLineReader readfunc, void* pfile);
+    TAlignRawFilePtr afrp, FLineReader readfunc, istream&);
 static void s_AfrpProcessFastaGap(
-    SAlignRawFilePtr afrp, SLengthListPtr * patterns, bool * last_line_was_marked_id, char* plinestr, int overall_line_count);
+    TAlignRawFilePtr afrp, TLengthListPtr * patterns, bool * last_line_was_marked_id, char* plinestr, int overall_line_count);
 
 /* These functions are used for storing and transmitting information
  * about errors encountered while reading the alignment data.
@@ -704,66 +909,6 @@ s_ReportUnusedLine(
  * how often a size of data (number of lines or number of characters) occurs.
  */
 
-/* This function allocates space for a new SSizeInfo structure and 
- * initializes its member variables.  If list is not NULL, the new structure
- * is added to the end of the list.
- * The function returns a pointer to the newly allocated structure.
- */
-static TSizeInfoPtr s_SizeInfoNew (TSizeInfoPtr list)
-{
-    TSizeInfoPtr sip, last;
-
-    sip = (TSizeInfoPtr) malloc (sizeof (SSizeInfo));
-    if (sip == NULL) {
-        return NULL;
-    }
-
-    sip->size_value      = 0;
-    sip->num_appearances = 0;
-    sip->next            = NULL;
-    last = list;
-    while (last != NULL && last->next != NULL) {
-        last = last->next;
-    }
-    if (last != NULL) {
-        last->next = sip;
-    }
-    return sip;
-}
-
-
-/* This function recursively frees the memory associated with a linked list
- * of SSizeInfo structures.
- */
-static void s_SizeInfoFree (TSizeInfoPtr list)
-{
-    if (list == NULL) {
-        return;
-    }
-    s_SizeInfoFree (list->next);
-    list->next = NULL;
-    free (list);
-}
-
-
-/* This function returns true if the two SSizeInfo structures have
- * the same size_value and number of appearances, false otherwise.
- */
-static bool 
-s_SizeInfoIsEqual 
-(TSizeInfoPtr s1,
- TSizeInfoPtr s2)
-{
-    if (s1 == NULL
-      ||  s2 == NULL
-      ||  s1->size_value != s2->size_value
-      ||  s1->num_appearances != s2->num_appearances) {
-        return false;
-    }
-    return true;
-}
-
-
 /* This function searches list for a SSizeInfo structure with the
  * same size_value as size_value.  If it finds such a structure, it
  * adds the value of num_appearances to the num_appearances for that
@@ -866,47 +1011,6 @@ static int  s_GetMostPopularSize (TSizeInfoPtr list)
 }
 
 
-/* The following functions are used to keep track of patterns of line or
- * token lengths, which will be used to identify errors in formatting.
- */
-static SLengthListPtr s_LengthListNew (SLengthListPtr list)
-{
-    SLengthListPtr llp, last;
-
-    llp = (SLengthListPtr) malloc (sizeof (SLengthListData));
-    if (llp == NULL) {
-        return NULL;
-    }
-
-    llp->lengthrepeats   = NULL;
-    llp->num_appearances = 0;
-    llp->next            = NULL;
-
-    last = list;
-    while (last != NULL && last->next != NULL) {
-        last = last->next;
-    }
-    if (last != NULL) {
-        last->next = llp;
-    }
-    return llp;
-}
-
-
-/* This function recursively frees memory for a list of SLengthListData
- * structures and its member variables.
- */
-static void s_LengthListFree (SLengthListPtr llp)
-{
-    if (llp == NULL) {
-        return;
-    }
-    s_LengthListFree (llp->next);
-    s_SizeInfoFree (llp->lengthrepeats);
-    free (llp);
-}
-
-
 /* This function examines the last SSizeInfo structure in the 
  * lengthrepeats member variable of llp.  If the last structure 
  * in the list has the same size_value value as the function argument 
@@ -917,7 +1021,7 @@ static void s_LengthListFree (SLengthListPtr llp)
  */
 static void 
 s_AddLengthRepeat
-(SLengthListPtr llp,
+(TLengthListPtr llp,
  int  size_value)
 {
     TSizeInfoPtr p, last;
@@ -958,8 +1062,8 @@ s_AddLengthRepeat
  */
 static bool 
 s_DoLengthPatternsMatch 
-(SLengthListPtr llp1,
- SLengthListPtr llp2)
+(TLengthListPtr llp1,
+ TLengthListPtr llp2)
 {
     TSizeInfoPtr sip1, sip2;
 
@@ -971,8 +1075,8 @@ s_DoLengthPatternsMatch
     for (sip1 = llp1->lengthrepeats, sip2 = llp2->lengthrepeats;
          sip1 != NULL  &&  sip2 != NULL;
          sip1 = sip1->next, sip2 = sip2->next) {
-        if ( ! s_SizeInfoIsEqual (sip1, sip2)
-          ||  (sip1->next == NULL  &&  sip2->next != NULL)
+        if ( !(*sip1 == *sip2)
+                ||  (sip1->next == NULL  &&  sip2->next != NULL)
           ||  (sip1->next != NULL  &&  sip2->next == NULL)) {
             return false;
         }
@@ -987,12 +1091,12 @@ s_DoLengthPatternsMatch
  * to the end of the list.
  * The function returns a pointer to the list of LenghtListData structures.
  */
-static SLengthListPtr
+static TLengthListPtr
 s_AddLengthList
-(SLengthListPtr list,
- SLengthListPtr llp)
+(TLengthListPtr list,
+ TLengthListPtr llp)
 {
-    SLengthListPtr prev_llp;
+    TLengthListPtr prev_llp;
 
     if (list == NULL) {
         list = llp;
@@ -1003,61 +1107,12 @@ s_AddLengthList
         }
         if (s_DoLengthPatternsMatch (prev_llp, llp)) {
             prev_llp->num_appearances ++;
-            s_LengthListFree (llp);
+            delete llp;
         } else {
             prev_llp->next = llp;
         }
     }
     return list;
-}
-
-
-/* This set of functions is used for storing and analyzing individual lines
- * or tokens from an alignment file.
- */
-
-/* This function allocates memory for a new SLineInfo structure and
- * initializes the structure with a saved copy of string and the specified
- * values of line_num and line_offset.
- * The function returns a pointer to the new SLineInfo structure.
- */
-static TLineInfoPtr
-s_LineInfoNew
-(const char * string,
- int    line_num,
- int    line_offset)
-{
-    TLineInfoPtr lip;
-
-    lip = (TLineInfoPtr) malloc (sizeof (SLineInfo));
-    if (lip == NULL) {
-        return NULL;
-    }
-    lip->data = strdup (string);
-    lip->line_num = line_num + 1;
-    lip->line_offset = line_offset;
-    lip->delete_me = false;
-    lip->next = NULL;
-    return lip;
-}
-
-
-/* This function recursively frees the memory associated with the structures
- * and members of the structures in a linked list of SLineInfo structures.
- */
-static void s_LineInfoFree (TLineInfoPtr lip)
-{
-    TLineInfoPtr next_lip;
-    if (lip == NULL) {
-        return;
-    }
-    while (lip != NULL) {
-        next_lip = lip->next;
-        lip->next = NULL;
-        free (lip->data);
-        free (lip);
-        lip = next_lip; 
-    }
 }
 
 
@@ -1080,7 +1135,7 @@ static TLineInfoPtr s_DeleteLineInfos (TLineInfoPtr list)
                 list = lip->next;
             }
             lip->next = NULL;
-            s_LineInfoFree (lip);
+            delete lip;
         } else {
             prev = lip;
         }
@@ -1108,7 +1163,7 @@ s_AddLineInfo
     if (string == NULL) {
         return list;
     }
-    lip = s_LineInfoNew (string, line_num, line_offset);
+    lip = new SLineInfo(string, line_num, line_offset);
     if (lip == NULL) {
         return NULL;
     }
@@ -1122,43 +1177,6 @@ s_AddLineInfo
         p->next = lip;
     }
     return list;
-}
-
-/* This function creates a new bracketed comment */
-static TBracketedCommentListPtr s_BracketedCommentListNew 
-(TBracketedCommentListPtr list,
- char * string,
- int    line_num,
- int    line_offset)
-{
-    TBracketedCommentListPtr comment;
-        
-    comment = (TBracketedCommentListPtr) malloc (sizeof (SBracketedCommentList));
-    if (comment == NULL) {
-        return NULL;
-    }
-    comment->comment_lines = s_LineInfoNew (string, line_num, line_offset);
-    comment->next = NULL;
-    
-    if (list != NULL) {
-        while (list->next != NULL) {
-            list = list->next;
-        }
-        list->next = comment;
-    }
-    
-    return comment;
-}
-
-/* This function frees a bracketed comment list. */
-static void s_BracketedCommentListFree (TBracketedCommentListPtr list)
-{
-    if (list == NULL) {
-          return;
-    }
-    s_BracketedCommentListFree (list->next);
-    list->next = NULL;
-    s_LineInfoFree (list->comment_lines);
 }
 
 /* This function adds a line to a bracketed comment. */
@@ -1271,7 +1289,7 @@ static int s_GetNumSegmentsInAlignment
     {
         num_segments = segcount_list->size_value;
     }
-    s_SizeInfoFree (segcount_list);
+    delete segcount_list;
     return num_segments;
 }
 
@@ -1419,89 +1437,7 @@ static char * s_LineInfoMergeAndStripSpaces (TLineInfoPtr list)
  * a sequence.
  */
 
-/* This function is used to advance the current data position pointer
- * for a SLineInfoReader structure past white space and blank lines
- * in sequence data.
- */
-static void s_LineInfoReaderAdvancePastSpace (TLineInfoReaderPtr lirp)
-{
-    if (lirp->curr_line_pos == NULL) {
-        return;
-    }
-    while ( isspace ((unsigned char) *lirp->curr_line_pos)
-           ||  *lirp->curr_line_pos == 0) {
-        while ( isspace ((unsigned char)*lirp->curr_line_pos)) {
-            lirp->curr_line_pos ++;
-        }
-        if (*lirp->curr_line_pos == 0) {
-            lirp->curr_line = lirp->curr_line->next;
-            while (lirp->curr_line != NULL
-                   &&  lirp->curr_line->data == NULL) {
-                lirp->curr_line = lirp->curr_line->next;
-            }
-            if (lirp->curr_line == NULL) {
-                lirp->curr_line_pos = NULL;
-                return;
-            } else {
-                lirp->curr_line_pos = lirp->curr_line->data;
-            }
-        }
-    }
-}
-
-
-/* This function sets the current data position pointer to the first
- * non-whitespace character in the sequence data.
- */
-static void s_LineInfoReaderReset (TLineInfoReaderPtr lirp)
-{
-    if (lirp == NULL) {
-        return;
-    }
-    lirp->curr_line = lirp->first_line;
-
-    while (lirp->curr_line != NULL  &&  lirp->curr_line->data == NULL) {
-        lirp->curr_line = lirp->curr_line->next;
-    }
-    if (lirp->curr_line == NULL) {
-        lirp->curr_line_pos = NULL;
-        lirp->data_pos = -1;
-    } else {
-        lirp->curr_line_pos = lirp->curr_line->data;
-        s_LineInfoReaderAdvancePastSpace (lirp);
-        if (lirp->curr_line_pos == NULL) {
-            lirp->data_pos = -1;
-        } else {
-            lirp->data_pos = 0;
-        }
-    }
-}
-
  
-/* This function creates a new SLineInfoReader structure and initializes
- * its member variables.  The current data position pointer is set to the
- * first non-whitespace character in the sequence data, and the data position
- * counter is set to zero.  The function returns a pointer to the new
- * LineInfoReader data structure.
- */
-static TLineInfoReaderPtr s_LineInfoReaderNew (TLineInfoPtr line_list)
-{
-    TLineInfoReaderPtr lirp;
-
-    if (line_list == NULL) {
-        return NULL;
-    }
-    lirp = (TLineInfoReaderPtr) malloc (sizeof (SLineInfoReader));
-    if (lirp == NULL) {
-        return NULL;
-    }
-
-    lirp->first_line = line_list;
-    s_LineInfoReaderReset (lirp);
-    return lirp;
-}
-
-
 /* This function safely interprets the current line number of the
  * SLineInfoReader structure.  If the structure is NULL or the
  * current line is NULL (usually because the data position has been
@@ -1541,20 +1477,6 @@ static int  s_LineInfoReaderGetCurrentLineOffset (TLineInfoReaderPtr lirp)
 }
 
 
-/* This function frees the memory associated with the SLineInfoReader
- * structure.  Notice that this function does NOT free the SLineInfo list.
- * This is by design.
- */
-static void s_LineInfoReaderFree (TLineInfoReaderPtr lirp)
-{
-    if (lirp == NULL) {
-        return;
-    }
-    free (lirp);
-    lirp = NULL;
-}
-
-
 /* This function retrieves the "pos"th sequence data character from the lines
  * of sequence data.  If the data position requested is greater than the
  * current position, the current data pointer will be advanced until the
@@ -1583,13 +1505,13 @@ s_FindNthDataChar
         }
     }
     if (lirp->data_pos > pos) {
-        s_LineInfoReaderReset (lirp);
+        lirp->Reset();
     }
      
     while (lirp->data_pos < pos  &&  lirp->curr_line != NULL) {
         lirp->curr_line_pos ++;
         /* skip over spaces, progress to next line if necessary */
-        s_LineInfoReaderAdvancePastSpace (lirp);
+        lirp->AdvancePastSpace();
         lirp->data_pos ++;
     }
     if (lirp->curr_line_pos != NULL) {
@@ -1606,51 +1528,6 @@ s_FindNthDataChar
  * The structure also tracks the line numbers on which a particular string
  * appeared.
  */
-
-/* This function allocates memory for a new SStringCount structure,
- * initializes its member variables.  The function also places the 
- * structure at the end of list if list is not NULL.
- * The function returns a pointer to the newly allocated SStringCount
- * structure.
- */
-static TStringCountPtr s_StringCountNew (TStringCountPtr list)
-{
-    TStringCountPtr new_item, last;
-
-    new_item = (TStringCountPtr) malloc (sizeof (SStringCount));
-    if (new_item == NULL) {
-        return NULL;
-    }
-    new_item->string          = NULL;
-    new_item->num_appearances = 0;
-    new_item->line_numbers    = NULL;
-    new_item->next            = NULL;
-
-    last = list;
-    while (last != NULL && last->next != NULL) {
-        last = last->next;
-    }
-    if (last != NULL) {
-        last->next = new_item;
-    }
-    return new_item;
-}
-
-
-/* This function recursively frees data associated with the structures
- * and structure member variables in a linked list of SStringCount
- * structures.
- */
-static void s_StringCountFree (TStringCountPtr list)
-{
-    if (list == NULL) {
-        return;
-    }
-    s_StringCountFree (list->next);
-    delete list->line_numbers;
-    free (list);
-}
-
 
 /* This function searches list to see if the string matches any of the
  * existing entries.  If so, the num_appearances value for that entry is
@@ -1685,7 +1562,7 @@ static TStringCountPtr s_AddStringCount (
     }
     
     if (add_to == NULL) {
-        add_to = s_StringCountNew (last);
+        add_to = SStringCount::AppendNew(last);
         if (list == NULL) list = add_to;
         if (add_to != NULL) {
             add_to->string = string;
@@ -1794,7 +1671,7 @@ static int s_StringICmp (char * str1, char *str2)
 static void
 s_GetFASTAExpectedNumbers
 (char *           str,
- SAlignRawFilePtr afrp)
+    TAlignRawFilePtr afrp)
 {
     char *  cp;
     char *  cpend;
@@ -1966,7 +1843,7 @@ s_GetNexusSizeComments
 (char *           str,
  bool *          found_ntax,
  bool *          found_nchar,
- SAlignRawFilePtr afrp)
+    TAlignRawFilePtr afrp)
 {
     int  num_sequences;
     int  num_chars;
@@ -2290,47 +2167,27 @@ static bool s_IsASN1 (const string& line)
  * in brackets.  These comments sometimes include organism information.
  */
 
-/* This function frees memory associated with a SCommentLoc structure. */
-static void s_CommentLocFree (TCommentLocPtr clp)
-{
-    if (clp == NULL) {
-        return;
-    }
-    s_CommentLocFree (clp->next);
-    free (clp);
-}
-
-
 /* This function finds the first comment enclosed in brackets and creates
  * a SCommentLoc structure to indicate the position of the comment
  * in the string.  The function returns a pointer to this structure if a
  * comment is found or a NULL if the string does not contain a bracketed 
  * comment.
  */
-static TCommentLocPtr s_FindComment (char * string)
+static TCommentLocPtr s_FindComment(char * string)
 {
-    char *         cp_start;
-    char *         cp_end;
-    TCommentLocPtr clp;
-
-    if (string == NULL) {
-        return NULL;
+    if (!string) {
+        return nullptr;
     }
-    cp_start = strstr (string, "[");
-    if (cp_start != NULL) {
-        cp_end = strstr (cp_start, "]");
-        if (cp_end != NULL) {
-            clp = (TCommentLocPtr) malloc (sizeof (SCommentLoc));
-            if (clp == NULL) {
-                return NULL;
-            }
-            clp->start = cp_start;
-            clp->end = cp_end;
-            clp->next = NULL;
-            return clp;
-        }
+   
+    char* cp_start = strstr (string, "[");
+    if (!cp_start) {
+        return nullptr;
     }
-    return NULL;
+    char* cp_end = strstr(cp_start, "]");
+    if (!cp_end) {
+        return nullptr;
+    }
+    return new SCommentLoc(cp_start, cp_end);
 }
 
 
@@ -2349,7 +2206,7 @@ static void s_RemoveCommentFromLine (char * linestring)
         memmove(clp->start, clp->end+1, strlen(clp->end)*sizeof(char));
         // Note that strlen(clp->end) = strlen(clp->end+1)+1;
         // This is needed to ensure that the null terminator is copied.
-        s_CommentLocFree (clp);
+        delete clp;
         clp = s_FindComment (linestring);
     }
 
@@ -2470,7 +2327,7 @@ static void s_RemoveOrganismCommentFromLine (char * string)
         if (clp->end != NULL) {
             memmove(clp->start, clp->end+1, strlen(clp->end)*sizeof(char));
         }
-        s_CommentLocFree (clp);
+        delete clp;
     }
 }
 
@@ -2494,8 +2351,8 @@ static TCommentLocPtr s_CreateOrderedOrgCommentList (TCommentLocPtr org_clp)
     ordered_start = s_FindComment (clp_list->end);
     if (s_IsOrganismComment (ordered_start))
     {
-      s_CommentLocFree (ordered_start);
-      ordered_start = NULL;
+      delete ordered_start;
+      ordered_start = nullptr;
     }
     if (ordered_start == NULL) {
         return clp_list;
@@ -2558,8 +2415,7 @@ static char * s_CreateOrderedOrgName (TCommentLocPtr org_clp)
         *cp = 0;
     }
     
-    s_CommentLocFree (clp_list);
-
+    delete clp_list;
     return ordered_org_name;
 }
 
@@ -2567,7 +2423,7 @@ static char * s_CreateOrderedOrgName (TCommentLocPtr org_clp)
 static void s_ReadDefline
 (const char* line, 
  int line_num, 
- SAlignRawFilePtr afrp)
+    TAlignRawFilePtr afrp)
 {
     if (line == NULL || afrp == NULL) {
         return;
@@ -2595,57 +2451,6 @@ static void s_ReadDefline
                 line_num, 0);
         afrp->num_deflines++;
     }
-}
-
-
-
-/* The following group of functions manages the SAlignRawSeq structure,
- * which is used to track the IDs of sequences in the file, the sequence
- * characters for those IDs, and the locations of the IDs and sequence
- * characters.
- */
-
-/* This function allocates memory for an SAlignRawSeq structure,
- * initializes its member variables, and returns a pointer to the newly
- * allocated structure.
- */
-static TAlignRawSeqPtr s_AlignRawSeqNew (TAlignRawSeqPtr list)
-{
-    TAlignRawSeqPtr arsp, last;
-
-    arsp = (TAlignRawSeqPtr)malloc (sizeof (SAlignRawSeq));
-    if (arsp == NULL) {
-        return NULL;
-    }
-    arsp->id            = NULL;
-    arsp->sequence_data = NULL;
-    arsp->id_lines      = NULL;
-    arsp->next          = NULL;
-
-    last = list;
-    while (last != NULL && last->next != NULL) {
-        last = last->next;
-    }
-    if (last != NULL) {
-        last->next = arsp;
-    }
-    return arsp;
-}
-
-
-/* This function frees the memory associated with an SAlignRawSeq
- * structure's member variables and with the structure itself.
- */
-static void s_AlignRawSeqFree (TAlignRawSeqPtr arsp)
-{
-    if (arsp == NULL) {
-        return;
-    }
-    s_AlignRawSeqFree (arsp->next);
-    free (arsp->id);
-    s_LineInfoFree (arsp->sequence_data);
-    delete arsp->id_lines;
-    free (arsp);
 }
 
 
@@ -2735,7 +2540,7 @@ s_AddAlignRawSeqById
 
     arsp = s_FindAlignRawSeqById (list, id);
     if (arsp == NULL) {
-        arsp = s_AlignRawSeqNew (list);
+        arsp = SAlignRawSeq::AppendNew(list);
         if (arsp == NULL) {
             return NULL;
         }
@@ -2782,56 +2587,6 @@ s_AddAlignRawSeqByIndex
 }
 
 
-/* This function frees memory associated with the SAlignRawFileData structure.
- */
-static void s_AlignFileRawFree (SAlignRawFilePtr afrp)
-{
-    if (afrp == NULL) {
-        return;
-    }
-
-    s_LineInfoFree (afrp->organisms);
-    s_LineInfoFree (afrp->deflines);
-    s_LineInfoFree (afrp->line_list);
-    s_AlignRawSeqFree (afrp->sequences);
-    delete afrp->offset_list;
-    free (afrp->alphabet);
-    free (afrp);
-}
-
-
-/* This function allocates memory for an SAlignRawFileData structure and
- * initializes its member variables.  The function returns a pointer to
- * the newly allocated structure.
- */
-static SAlignRawFilePtr s_AlignFileRawNew (void)
-{
-    SAlignRawFilePtr afrp;
-
-    afrp = (SAlignRawFilePtr)malloc (sizeof (SAlignRawFileData));
-    if (afrp == NULL) {
-        return NULL;
-    }
-    afrp->marked_ids            = false;
-    afrp->line_list             = NULL;
-    afrp->organisms             = NULL;
-    afrp->num_organisms         = 0;
-    afrp->deflines              = NULL;
-    afrp->num_deflines          = 0;
-    afrp->block_size            = 0;
-    afrp->offset_list           = NULL;
-    afrp->sequences             = NULL;
-    afrp->report_error          = NULL;
-    afrp->report_error_userdata = NULL;
-    afrp->alphabet              = NULL;
-    afrp->expected_num_sequence = 0;
-    afrp->expected_sequence_len = 0;
-    afrp->num_segments          = 1;
-    afrp->align_format_found    = false;
-    return afrp;
-}
-
-
 /* The following functions are used to analyze the structure of a file and
  * assemble the sequences listed in the file.
  * Sequence data in a file is organized in one of two general formats - 
@@ -2852,12 +2607,12 @@ static SAlignRawFilePtr s_AlignFileRawNew (void)
 /* This function creates a SLengthListData structure that describes the pattern
  * of character lengths in the string pointed to by cp.
  */
-static SLengthListPtr s_GetBlockPattern (char * cp)
+static TLengthListPtr s_GetBlockPattern (char * cp)
 {
-    SLengthListPtr this_pattern;
+    TLengthListPtr this_pattern;
     int           len;
 
-    this_pattern = s_LengthListNew (NULL);
+    this_pattern = SLengthList::AppendNew(nullptr);
     if (this_pattern == NULL) {
         return NULL;
     }
@@ -2879,13 +2634,13 @@ static SLengthListPtr s_GetBlockPattern (char * cp)
  */
 static int 
 s_ForecastBlockPattern 
-(SLengthListPtr pattern_list,
+(TLengthListPtr pattern_list,
  TIntLinkPtr    next_offset,
  int            line_start,
  int            block_size)
 {
     int  line_counter;
-    SLengthListPtr llp;
+    TLengthListPtr llp;
 
     line_counter = line_start;
     if (next_offset != NULL
@@ -2924,12 +2679,12 @@ s_ForecastBlockPattern
  */
 static TIntLinkPtr
 s_AugmentBlockPatternOffsetList
-(SLengthListPtr pattern_list,
+(TLengthListPtr pattern_list,
  TIntLinkPtr    offset_list,
  int            block_size)
 {
     int            line_counter;
-    SLengthListPtr llp;
+    TLengthListPtr llp;
     TIntLinkPtr    next_offset, prev_offset, new_offset;
     int            forecast_pos;
 
@@ -2988,11 +2743,11 @@ s_AugmentBlockPatternOffsetList
  */
 static bool
 s_FindUnusedLines 
-(SLengthListPtr pattern_list,
- SAlignRawFilePtr afrp)
+(TLengthListPtr pattern_list,
+    TAlignRawFilePtr afrp)
 {
     TIntLinkPtr    offset;
-    SLengthListPtr llp;
+    TLengthListPtr llp;
     int            line_counter;
     int            block_line_counter;
     bool          rval = false;
@@ -3055,10 +2810,10 @@ s_FindUnusedLines
  */
 static void
 s_FindInterleavedBlocks 
-(SLengthListPtr pattern_list,
- SAlignRawFilePtr afrp)
+(TLengthListPtr pattern_list,
+    TAlignRawFilePtr afrp)
 {
-    SLengthListPtr llp, llp_next;
+    TLengthListPtr llp, llp_next;
     TSizeInfoPtr   size_list, best_ptr;
     TIntLinkPtr    new_offset;
     int            line_counter;
@@ -3101,7 +2856,7 @@ s_FindInterleavedBlocks
     } else {
         afrp->align_format_found = true;
     }
-    s_SizeInfoFree (size_list);
+    delete size_list;
     
 }
 
@@ -3130,7 +2885,7 @@ static void s_TrimSpace(char** ppline)
 
 static bool
 s_AfrpInitLineData(
-    SAlignRawFilePtr afrp,
+    TAlignRawFilePtr afrp,
     FLineReader readfunc,
     istream& istr)
 {
@@ -3160,7 +2915,7 @@ s_AfrpInitLineData(
             in_taxa_comment = true;
             afrp->align_format_found = true;
         }
-        next_line = s_LineInfoNew (linestring.c_str(), overall_line_count, 0);
+        next_line = new SLineInfo(linestring.c_str(), overall_line_count, 0);
         if (last_line == NULL) {
             afrp->line_list = next_line;
         } else {
@@ -3178,16 +2933,16 @@ s_AfrpInitLineData(
 
 static void
 s_AfrpProcessFastaGap(
-    SAlignRawFilePtr afrp,
-    SLengthListPtr * patterns,
+    TAlignRawFilePtr afrp,
+    TLengthListPtr * patterns,
     bool * last_line_was_marked_id,
     char* linestr,
     int overall_line_count)
 {
-    SLengthListPtr this_pattern = NULL;
+    TLengthListPtr this_pattern = NULL;
     int len = 0;
     char* cp;
-    SLengthListPtr last_pattern;
+    TLengthListPtr last_pattern;
 
     if (patterns == NULL || last_line_was_marked_id == NULL) {
         return;
@@ -3247,30 +3002,30 @@ s_AfrpProcessFastaGap(
         *patterns = this_pattern;
     } else if (s_DoLengthPatternsMatch (last_pattern, this_pattern)) {
         last_pattern->num_appearances ++;
-        s_LengthListFree (this_pattern);
+        delete this_pattern;
     } else {
         last_pattern->next = this_pattern;
     }
 }
 
-static SAlignRawFilePtr
-s_ReadAlignFileRaw
-(FLineReader    readfunc,
+static TAlignRawFilePtr
+s_ReadAlignFileRaw(
+    FLineReader readfunc,
     istream& istr,
- CSequenceInfo&     sequence_info,
- bool                use_nexus_file_info,
- FReportErrorFunction errfunc,
- void *               errdata,
+    CSequenceInfo& sequence_info,
+    bool use_nexus_file_info,
+    FReportErrorFunction errfunc,
+    void* errdata,
  EAlignFormat*        pformat)
 {
     char *                   linestring;
-    SAlignRawFilePtr         afrp;
+    TAlignRawFilePtr         afrp;
     int                      overall_line_count;
     bool                    found_expected_ntax = false;
     bool                    found_expected_nchar = false;
     bool                    found_char_comment = false;
-    SLengthListPtr           pattern_list = NULL;
-    SLengthListPtr           this_pattern, last_pattern = NULL;
+    TLengthListPtr           pattern_list = NULL;
+    TLengthListPtr           this_pattern, last_pattern = NULL;
     char *                   cp;
     size_t                   len;
     bool                    in_bracketed_comment = false;
@@ -3282,18 +3037,15 @@ s_ReadAlignFileRaw
         return NULL;
     }
 
-    afrp = s_AlignFileRawNew ();
-    if (afrp == NULL) {
-        return NULL;
-    }
-  
-    afrp->alphabet = strdup (sequence_info.Alphabet().c_str());
+    afrp = new SAlignFileRaw();
+
+    afrp->alphabet_ = sequence_info.Alphabet();
     afrp->report_error = errfunc;
     afrp->report_error_userdata = errdata;
 
     if (!s_AfrpInitLineData(afrp, readfunc, istr)) {
-        s_AlignFileRawFree (afrp);
-        return NULL;
+        delete afrp;
+        return nullptr;
     }
         
     for (next_line = afrp->line_list; next_line != NULL; next_line = next_line->next) {
@@ -3350,14 +3102,12 @@ s_ReadAlignFileRaw
                 in_bracketed_comment = false;
             }
             linestring [0] = 0;
-        } else if (linestring [0] == '[' && strchr (linestring, ']') == NULL) {
+        } else if (linestring [0] == '[' && strchr (linestring, ']') == nullptr) {
             in_bracketed_comment = true;
             len = strspn (linestring, " \t\r\n");
-            last_comment = s_BracketedCommentListNew (comment_list,
-                                                      linestring + len,
-                                                      overall_line_count, len);
-            if (comment_list == NULL) 
-            {
+            last_comment = SBracketedCommentList::ApendNew(
+                comment_list, linestring + len, overall_line_count, len);
+            if (comment_list == nullptr) {
                 comment_list = last_comment;
             }
             linestring [0] = 0;
@@ -3433,7 +3183,7 @@ s_ReadAlignFileRaw
             last_pattern = this_pattern;
         } else if (s_DoLengthPatternsMatch (last_pattern, this_pattern)) {
             last_pattern->num_appearances ++;
-            s_LengthListFree (this_pattern);
+            delete this_pattern;
         } else {
             last_pattern->next = this_pattern;
             last_pattern = this_pattern;
@@ -3446,10 +3196,10 @@ s_ReadAlignFileRaw
         {
             s_ReportSegmentedAlignmentError (afrp->offset_list,
                                              errfunc, errdata);
-            s_AlignFileRawFree (afrp);
-            s_LengthListFree (pattern_list);
-            s_BracketedCommentListFree (comment_list);
-            return NULL;            
+            delete afrp;
+            delete pattern_list;
+            delete comment_list;
+            return nullptr;            
         }
         else
         {
@@ -3460,8 +3210,8 @@ s_ReadAlignFileRaw
     if (! afrp->marked_ids) {
         s_FindInterleavedBlocks (pattern_list, afrp);
     }
-    s_LengthListFree (pattern_list);
-    s_BracketedCommentListFree (comment_list);
+    delete pattern_list;
+    delete comment_list;
     return afrp;
 }
 
@@ -3474,7 +3224,7 @@ s_ReadAlignFileRaw
  */
 static bool 
 s_DoesBlockHaveIds 
-(SAlignRawFilePtr afrp, 
+(TAlignRawFilePtr afrp, 
  TLineInfoPtr     first_line,
  int             num_lines_in_block)
 {
@@ -3522,14 +3272,14 @@ s_DoesBlockHaveIds
  */
 static bool 
 s_BlockIsConsistent
-(SAlignRawFilePtr afrp,
+(TAlignRawFilePtr afrp,
  TLineInfoPtr     first_line,
  int              num_lines_in_block,
  bool            has_ids,
  bool            first_block)
 {
     TLineInfoPtr   lip;
-    SLengthListPtr list, this_pattern, best;
+    TLengthListPtr list, this_pattern, best;
     int            len, block_offset, id_offset;
     char *         tmp_id;
     bool          rval;
@@ -3619,12 +3369,12 @@ s_BlockIsConsistent
                                          afrp->report_error,
                                          afrp->report_error_userdata);
         }
-        s_LengthListFree (this_pattern);
+        delete this_pattern;
         if (has_ids) {
             free (tmp_id);
         }
     }
-    s_LengthListFree (list);
+    delete list;
     return rval;
 }
 
@@ -3634,7 +3384,7 @@ s_BlockIsConsistent
  */
 static void 
 s_ProcessBlockLines 
-(SAlignRawFilePtr afrp,
+(TAlignRawFilePtr afrp,
  TLineInfoPtr     lines,
  int              num_lines_in_block,
  bool            first_block)
@@ -3733,7 +3483,7 @@ s_RemoveCommentsFromBlock(
 /* This function processes the interleaved block of data found at each
  * location listed in afrp->offset_list.
  */
-static void s_ProcessAlignRawFileByBlockOffsets (SAlignRawFilePtr afrp)
+static void s_ProcessAlignRawFileByBlockOffsets (TAlignRawFilePtr afrp)
 {
     int           line_counter;
     TIntLinkPtr   offset_ptr;
@@ -3776,8 +3526,8 @@ static void
 s_CreateSequencesBasedOnTokenPatterns 
 (TLineInfoPtr     token_list,
  TIntLinkPtr      offset_list,
- SLengthListPtr * anchorpattern,
- SAlignRawFilePtr afrp,
+ TLengthListPtr * anchorpattern,
+    TAlignRawFilePtr afrp,
  bool gen_local_ids)
 {
     TLineInfoPtr lip;
@@ -3890,13 +3640,13 @@ s_CreateSequencesBasedOnTokenPatterns
  * most appearances and returns that pattern as the anchor pattern to use
  * when checking sequence data blocks for consistency with one another.
  */
-static SLengthListPtr *
+static TLengthListPtr *
 s_CreateAnchorPatternForMarkedIDs 
-(SAlignRawFilePtr afrp)
+(TAlignRawFilePtr afrp)
 {
-    SLengthListPtr * list;
-    SLengthListPtr * best;
-    SLengthListPtr this_pattern;
+    TLengthListPtr * list;
+    TLengthListPtr * best;
+    TLengthListPtr this_pattern;
     char *         cp;
     TLineInfoPtr   lip;
     int            curr_seg;
@@ -3906,7 +3656,7 @@ s_CreateAnchorPatternForMarkedIDs
     }
 
     /* initialize length lists */
-    list = (SLengthListPtr *) malloc (afrp->num_segments * sizeof (SLengthListPtr));
+    list = (TLengthListPtr *) malloc (afrp->num_segments * sizeof (TLengthListPtr));
     if (list == NULL) 
     {
         return NULL;
@@ -3917,7 +3667,7 @@ s_CreateAnchorPatternForMarkedIDs
     }
     /* initialize best ptrs */
     /* list is one element longer, to hold null terminator */
-    best = (SLengthListPtr *) malloc ((afrp->num_segments + 1) * sizeof (SLengthListPtr));
+    best = (TLengthListPtr *) malloc ((afrp->num_segments + 1) * sizeof (TLengthListPtr));
     if (best == NULL) 
     {
         return NULL;
@@ -3946,11 +3696,10 @@ s_CreateAnchorPatternForMarkedIDs
                     curr_seg = 0;
                 }
             }
-            this_pattern = s_LengthListNew (NULL);
+            this_pattern = SLengthList::AppendNew(nullptr);
             if (this_pattern == NULL) {
-                for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++)
-                {
-                  s_LengthListFree (list [curr_seg]);
+                for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++) {
+                    delete list [curr_seg];
                 }
                 free (list);
                 free (best);
@@ -3988,7 +3737,7 @@ s_CreateAnchorPatternForMarkedIDs
 
         /* free all patterns before and after anchor pattern */
         if (best [curr_seg] != NULL) {
-            s_LengthListFree (best [curr_seg]->next);
+            delete best [curr_seg]->next;
             best [curr_seg]->next = NULL;
         }
 
@@ -3999,7 +3748,7 @@ s_CreateAnchorPatternForMarkedIDs
             }
             if (this_pattern != NULL) {
                 this_pattern->next = NULL;
-                s_LengthListFree (list [curr_seg]);
+                delete list [curr_seg];
             }
         }
     }
@@ -4015,7 +3764,7 @@ s_CreateAnchorPatternForMarkedIDs
         {
             for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++)
             {
-                s_LengthListFree (best [curr_seg]);
+                delete best [curr_seg];
             }
             free (best);
             return NULL;
@@ -4029,7 +3778,7 @@ s_CreateAnchorPatternForMarkedIDs
 /* This function removes base pair count comments from the data sections
  * for contiguous marked ID sequences.
  */
-static void s_RemoveBasePairCountCommentsFromData (SAlignRawFilePtr afrp)
+static void s_RemoveBasePairCountCommentsFromData (TAlignRawFilePtr afrp)
 {
     TIntLinkPtr  this_offset, next_offset;
     TLineInfoPtr lip;
@@ -4077,10 +3826,10 @@ static void s_RemoveBasePairCountCommentsFromData (SAlignRawFilePtr afrp)
  * errors in formatting.
  */
 static void s_ProcessAlignFileRawForMarkedIDs (
-    SAlignRawFilePtr afrp,
+    TAlignRawFilePtr afrp,
     bool gen_local_ids)
 {
-    SLengthListPtr * anchorpattern;
+    TLengthListPtr * anchorpattern;
     
     if (afrp == NULL) {
         return;
@@ -4093,7 +3842,7 @@ static void s_ProcessAlignFileRawForMarkedIDs (
     }
     s_CreateSequencesBasedOnTokenPatterns (afrp->line_list, afrp->offset_list,
                                          anchorpattern, afrp, gen_local_ids);
-    s_LengthListFree(*anchorpattern);
+    delete *anchorpattern;
     free(anchorpattern);
 }
 
@@ -4250,13 +3999,13 @@ s_FindMostFrequentlyOccurringTokenLength
     best_ptr = s_GetMostPopularSizeInfo (new_list);
     return_best = NULL;
     if (best_ptr != NULL) {
-        return_best = s_SizeInfoNew (NULL);
+        return_best = SSizeInfo::AppendNew(nullptr);
         if (return_best != NULL) {
             return_best->size_value = best_ptr->size_value;
             return_best->num_appearances = best_ptr->num_appearances;
         }
     }
-    s_SizeInfoFree (new_list);
+    delete new_list;
     return return_best;
 }
 
@@ -4272,7 +4021,7 @@ s_FindMostFrequentlyOccurringTokenLength
  */
 static void 
 s_ExtendAnchorPattern 
-(SLengthListPtr anchorpattern,
+(TLengthListPtr anchorpattern,
  TSizeInfoPtr   line_lengths)
 {
     TSizeInfoPtr last_line_lengths, sip, sip_next, twoafter;
@@ -4293,8 +4042,8 @@ s_ExtendAnchorPattern
      * ID for the next pattern and shouldn't be included in the anchor
      */
     for (sip = line_lengths;  sip != NULL;  sip = sip->next) {
-        if (s_SizeInfoIsEqual (sip, anchorpattern->lengthrepeats)) {
-            sip_next = sip->next;
+        if (*sip == *(anchorpattern->lengthrepeats)) {
+                sip_next = sip->next;
             if (sip_next != NULL
                 &&  sip_next->size_value > 0
                 &&  sip_next->size_value != anchor_line_length
@@ -4310,7 +4059,7 @@ s_ExtendAnchorPattern
     if (best_last_line_length > 0) {
         s_AddLengthRepeat (anchorpattern, best_last_line_length);
     }
-    s_SizeInfoFree (last_line_lengths);
+    delete last_line_lengths;
 } 
 
 
@@ -4321,26 +4070,26 @@ s_ExtendAnchorPattern
  * next sequence.  If so, this line length is added to the pattern.
  * The function returns a pointer to this pattern.
  */
-static SLengthListPtr s_FindMostPopularPattern (TSizeInfoPtr list)
+static TLengthListPtr s_FindMostPopularPattern (TSizeInfoPtr list)
 {
-    SLengthListPtr patternlist, newpattern;
+    TLengthListPtr patternlist, newpattern;
     TSizeInfoPtr   sip, popular_line_length;
-    SLengthListPtr index, best;
+    TLengthListPtr index, best;
     int           not_this_length;
 
     patternlist = NULL;
     for (sip = list;  sip != NULL;  sip = sip->next) {
         if (sip->size_value > 0) {
-            newpattern = s_LengthListNew (NULL);
+            newpattern = SLengthList::AppendNew(nullptr);
             if (newpattern == NULL) {
-                s_LengthListFree (patternlist);
+                delete patternlist;
                 return NULL;
             }
             newpattern->num_appearances = 1;
-            newpattern->lengthrepeats = s_SizeInfoNew (NULL);
-            if (newpattern->lengthrepeats == NULL) {
-                s_LengthListFree (patternlist);
-                return NULL;
+            newpattern->lengthrepeats = SSizeInfo::AppendNew(nullptr);
+            if (newpattern->lengthrepeats == nullptr) {
+                delete patternlist;
+                return nullptr;
             }
             newpattern->lengthrepeats->size_value = sip->size_value;
             newpattern->lengthrepeats->num_appearances = sip->num_appearances;
@@ -4372,11 +4121,11 @@ static SLengthListPtr s_FindMostPopularPattern (TSizeInfoPtr list)
     }
     if (index != NULL) {
         index->next = NULL;
-        s_LengthListFree (patternlist);
+        delete patternlist;
     }
     /* Free data in list after best pattern */
     if (best != NULL) {
-        s_LengthListFree (best->next);
+        delete best->next;
         best->next = NULL;
     }
 
@@ -4387,7 +4136,7 @@ static SLengthListPtr s_FindMostPopularPattern (TSizeInfoPtr list)
       &&  best->lengthrepeats->size_value == popular_line_length->size_value)
     {
         not_this_length = popular_line_length->size_value;
-        s_SizeInfoFree (popular_line_length);
+        delete popular_line_length;
         popular_line_length = s_FindMostFrequentlyOccurringTokenLength (list,
                                                         not_this_length);
     }
@@ -4398,14 +4147,14 @@ static SLengthListPtr s_FindMostPopularPattern (TSizeInfoPtr list)
           &&  popular_line_length->num_appearances > best->num_appearances))
     {
         if (best == NULL) {
-            best = s_LengthListNew (NULL);
+            best = SLengthList::AppendNew(nullptr);
             if (best == NULL) {
                 return NULL;
             }
         }
-        best->lengthrepeats = s_SizeInfoNew (NULL);
-        if (best->lengthrepeats == NULL) {
-            return NULL;
+        best->lengthrepeats = SSizeInfo::AppendNew(nullptr);
+        if (best->lengthrepeats == nullptr) {
+            return nullptr;
         }
         best->lengthrepeats->size_value = popular_line_length->size_value;
         best->lengthrepeats->num_appearances = 1;
@@ -4414,8 +4163,7 @@ static SLengthListPtr s_FindMostPopularPattern (TSizeInfoPtr list)
         s_ExtendAnchorPattern (best, list);
     }
 
-    s_SizeInfoFree (popular_line_length);
-
+    delete popular_line_length;
     return best;
 }
 
@@ -4427,7 +4175,7 @@ static SLengthListPtr s_FindMostPopularPattern (TSizeInfoPtr list)
 static TIntLinkPtr 
 s_CreateOffsetList 
 (TSizeInfoPtr list,
- SLengthListPtr anchorpattern)
+ TLengthListPtr anchorpattern)
 {
     int          line_counter;
     TIntLinkPtr  offset_list, new_offset;
@@ -4439,8 +4187,8 @@ s_CreateOffsetList
     line_counter = 0;
     offset_list = NULL;
     for (sip = list;  sip != NULL;  sip = sip->next) {
-        if (s_SizeInfoIsEqual (sip, anchorpattern->lengthrepeats)) {
-            SIntLink::CreateOrAppend(line_counter, offset_list);
+        if (*sip == *(anchorpattern->lengthrepeats)) {
+                SIntLink::CreateOrAppend(line_counter, offset_list);
         }
  
         line_counter += sip->num_appearances;
@@ -4508,7 +4256,7 @@ static TIntLinkPtr
 s_AugmentOffsetList 
 (TIntLinkPtr    offset_list,
  TSizeInfoPtr   list,
- SLengthListPtr anchorpattern)
+ TLengthListPtr anchorpattern)
 {
     int           pattern_length;
     TSizeInfoPtr  sip;
@@ -4636,7 +4384,7 @@ static int  s_GetMostPopularPatternLength (TIntLinkPtr offset_list)
         line_counter = offset->ival;
     }
     best_length = s_GetMostPopularSize (pattern_length_list);
-    s_SizeInfoFree (pattern_length_list);
+    delete pattern_length_list;
     return best_length;
 }
 
@@ -4697,7 +4445,7 @@ s_GetBestCharacterLength
     if (best_num_chars == 0  &&  pattern_length_list != NULL) {
         best_num_chars = pattern_length_list->size_value;
     }
-    s_SizeInfoFree (pattern_length_list);
+    delete pattern_length_list;
     pattern_length_list = NULL;
     return best_num_chars;
 }
@@ -4809,7 +4557,7 @@ static void s_InsertNewOffsets
  TIntLinkPtr  offset_list,
  int          block_length,
  int          best_num_chars,
- char *       alphabet)
+ const char *       alphabet)
 {
     TLineInfoPtr lip;
     TIntLinkPtr  prev_offset, new_offset, splice_offset;
@@ -4849,7 +4597,7 @@ static void s_InsertNewOffsets
                      line_diff < new_offset->ival - prev_offset->ival
                          &&  lip != NULL  &&  num_chars < best_num_chars;
                      line_diff ++) {
-                    num_chars += strlen (lip->data);
+                    num_chars += (lip->data ? strlen(lip->data) : 0);
                     lip = lip->next;
                 }
                 if (lip == NULL) {
@@ -4917,12 +4665,12 @@ static bool s_ContainsDigits (char *data)
  * lines into pieces based on whitespace and looking for patterns of length 
  * in the data. 
  */
-static void s_ProcessAlignFileRawByLengthPattern (SAlignRawFilePtr afrp)
+static void s_ProcessAlignFileRawByLengthPattern (TAlignRawFilePtr afrp)
 {
     TLineInfoPtr   token_list;
-    SLengthListPtr list;
+    TLengthListPtr list;
     TLineInfoPtr   lip;
-    SLengthListPtr anchorpattern[2];
+    TLengthListPtr anchorpattern[2];
     TIntLinkPtr    offset_list;
     int            best_length;
     int            best_num_chars;
@@ -4935,7 +4683,7 @@ static void s_ProcessAlignFileRawByLengthPattern (SAlignRawFilePtr afrp)
     token_list = s_RemoveCommentsFromTokens (token_list);
     token_list = s_RemoveNexusCommentsFromTokens (token_list);
 
-    list = s_LengthListNew ( NULL );
+    list = SLengthList::AppendNew(nullptr);
     for (lip = token_list;
          lip != NULL  &&  ! s_FoundStopLine (lip->data);
          lip = lip->next)
@@ -4950,7 +4698,7 @@ static void s_ProcessAlignFileRawByLengthPattern (SAlignRawFilePtr afrp)
     anchorpattern [0] = s_FindMostPopularPattern (list->lengthrepeats);
     anchorpattern [1] = NULL;
     if (anchorpattern [0] == NULL  ||  anchorpattern[0]->lengthrepeats == NULL) {
-        s_LengthListFree (list);
+        delete list;
         return;
     }
 
@@ -4970,7 +4718,7 @@ static void s_ProcessAlignFileRawByLengthPattern (SAlignRawFilePtr afrp)
     best_num_chars = s_GetBestCharacterLength (token_list, offset_list,
                                              best_length);
     s_InsertNewOffsets (token_list, offset_list, best_length, best_num_chars,
-                      afrp->alphabet);
+                      afrp->alphabet_.c_str());
 
     /* use token before each anchor pattern as ID, use tokens for distance
      * between anchor patterns for sequence data
@@ -4978,9 +4726,9 @@ static void s_ProcessAlignFileRawByLengthPattern (SAlignRawFilePtr afrp)
     s_CreateSequencesBasedOnTokenPatterns (token_list, offset_list,
                                        anchorpattern, afrp, false);
   
-    s_LengthListFree (anchorpattern[0]);
-    s_LengthListFree (list);
-    s_LineInfoFree (token_list);
+    delete anchorpattern[0];
+    delete list;
+    delete token_list;
 }
 
 
@@ -5049,7 +4797,7 @@ static char * s_GetDeflineFromIdString (char * str)
  * to obtain a defline (if there is extra text after the ID and/or
  * organism information) and to obtain the actual ID for the sequence.
  */
-static bool s_ReprocessIds (SAlignRawFilePtr afrp)
+static bool s_ReprocessIds (TAlignRawFilePtr afrp)
 {
     TStringCountPtr list, scp;
     TAlignRawSeqPtr arsp;
@@ -5095,7 +4843,7 @@ static bool s_ReprocessIds (SAlignRawFilePtr afrp)
         }
     }
     /* free string count list */
-    s_StringCountFree (list);
+    delete list;
     return rval;
 }
 
@@ -5184,17 +4932,19 @@ s_FindBadDataCharsInSequence
     if (arsp == NULL  ||  master_arsp == NULL) {
         return true;
     }
-    lirp = s_LineInfoReaderNew (arsp->sequence_data);
+    if (!arsp->sequence_data) {
+        return true;
+    }
+    lirp = new SLineInfoReader(*arsp->sequence_data);
 
     if (lirp == NULL) {
         return true;
     }
     if (arsp != master_arsp) {
-        master_lirp = s_LineInfoReaderNew (master_arsp->sequence_data);
-        if (master_lirp == NULL) {
-            s_LineInfoReaderFree (lirp);
+        if (!master_arsp->sequence_data) {
             return true;
         }
+        master_lirp = new SLineInfoReader(*master_arsp->sequence_data);
     } else {
         master_lirp = NULL;
     }
@@ -5252,7 +5002,7 @@ s_FindBadDataCharsInSequence
 
 
     if (! found_middle_start) {
-        s_LineInfoReaderFree (lirp);
+        delete lirp;
         if (num_segments > 1)
         {
             return false;
@@ -5331,8 +5081,8 @@ s_FindBadDataCharsInSequence
         }
         curr_char = s_FindNthDataChar (lirp, data_position);
     }
-    s_LineInfoReaderFree (lirp);
-    s_LineInfoReaderFree (master_lirp);
+    delete lirp;
+    delete master_lirp;
     return rval;
 }
 
@@ -5344,7 +5094,7 @@ s_FindBadDataCharsInSequence
  */
 static bool
 s_s_FindBadDataCharsInSequenceList(
-    SAlignRawFilePtr afrp,
+    TAlignRawFilePtr afrp,
     const CSequenceInfo& sequenceInfo)
 {
     TAlignRawSeqPtr arsp;
@@ -5371,7 +5121,7 @@ s_s_FindBadDataCharsInSequenceList(
  */
 bool
 s_ConvertDataToOutput(
-    SAlignRawFilePtr afrp,
+    TAlignRawFilePtr afrp,
     SAlignmentFile& alignInfo)
 {
     TAlignRawSeqPtr   arsp;
@@ -5549,7 +5299,7 @@ s_ConvertDataToOutput(
     free (best_length);
     for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++)
     {
-        s_SizeInfoFree (lengths [curr_seg]);
+        delete lengths [curr_seg];
     }
     free (lengths);
     return true;
@@ -5579,7 +5329,7 @@ ReadAlignmentFile(
     bool gen_local_ids,
     SAlignmentFile& alignmentInfo)
 {
-    SAlignRawFilePtr afrp;
+    TAlignRawFilePtr afrp;
     EAlignFormat format = ALNFMT_UNKNOWN;
 
     if (sequence_info.Alphabet().empty()) {
@@ -5605,13 +5355,12 @@ ReadAlignmentFile(
     s_ReprocessIds (afrp);
 
     if (s_s_FindBadDataCharsInSequenceList (afrp, sequence_info)) {
-        s_AlignFileRawFree (afrp);
+        delete afrp;
         return false;
     } 
 
     bool result = s_ConvertDataToOutput (afrp, alignmentInfo);
-    s_AlignFileRawFree (afrp);
-  
+    delete afrp;
     return result;
 }
 
