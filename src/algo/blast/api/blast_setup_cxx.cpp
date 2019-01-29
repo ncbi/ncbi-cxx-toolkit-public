@@ -792,6 +792,9 @@ SetupSubjects_OMF(IBlastQuerySource& subjects,
         		subj = BlastSequenceBlkFree(subj);
         		NCBI_RETHROW_SAME(e, e.GetMsg());
         	}
+        } catch (CException & e) {
+            subj = BlastSequenceBlkFree(subj);
+            NCBI_RETHROW_SAME(e, e.GetMsg());
         }
 
         if (Blast_SubjectIsTranslated(prog)) {

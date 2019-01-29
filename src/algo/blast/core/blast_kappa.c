@@ -3831,8 +3831,6 @@ function_cleanup:
             sfree(thread_data->tld[i]->results->hitlist_array);
             sfree(thread_data->tld[i]->results);
             thread_data->tld[i] = SThreadLocalDataFree(thread_data->tld[i]);
-            results_tld[i] = Blast_HSPResultsFree(results_tld[i]);
-            s_FreeBlastCompo_QueryInfoArray(&query_info_tld[i], numContexts);
         }
         sfree(thread_data->tld);
         sfree(thread_data);
@@ -3866,6 +3864,8 @@ function_cleanup:
         Blast_CompositionWorkspaceFree(&NRrecord_tld[i]);
         s_SavedParametersFree(&savedParams_tld[i]);
         BlastSeqSrcFree(seqsrc_tld[i]);
+        results_tld[i] = Blast_HSPResultsFree(results_tld[i]);
+        s_FreeBlastCompo_QueryInfoArray(&query_info_tld[i], numContexts);
     }
     sfree(alignments_tld);
     sfree(compositionTestIndex_tld);

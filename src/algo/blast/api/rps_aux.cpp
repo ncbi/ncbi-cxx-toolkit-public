@@ -517,8 +517,6 @@ CBlastRPSInfo::CBlastRPSInfo(const string& rps_dbname, int flags)
 
 void CBlastRPSInfo::x_Init(const string& rps_dbname, int flags)
 {
-    m_RpsInfo = NULL;
-
     // Obtain the full path to the database
     string path;
     try {
@@ -534,15 +532,13 @@ void CBlastRPSInfo::x_Init(const string& rps_dbname, int flags)
     auto_ptr<BlastRPSInfo> rps_info;
 
     // Allocate the core data structure
-    try { rps_info.reset(new BlastRPSInfo); }
+    try { m_RpsInfo.reset(new BlastRPSInfo); }
     catch (const bad_alloc&) {
         NCBI_THROW(CBlastSystemException, eOutOfMemory,
                    "RPSInfo allocation failed");
     }
 
     // Assign the pointers to the core data structure
-    m_RpsInfo = rps_info.release();
-
     m_RpsInfo->lookup_header = NULL;
     m_RpsInfo->profile_header = NULL;
     m_RpsInfo->freq_header = NULL;
@@ -609,18 +605,16 @@ void CBlastRPSInfo::x_Init(const string& rps_dbname, int flags)
     }
 }
 
+// Trivial at this point, but left out-of-line so that the header doesn't
+// need to pull in full declarations of the classes to which it takes CRefs.
 CBlastRPSInfo::~CBlastRPSInfo()
 {
-    if ( !m_RpsInfo ) {
-        return;
-    }
-    delete m_RpsInfo;
 }
 
 const BlastRPSInfo*
 CBlastRPSInfo::operator()() const 
 {
-    return m_RpsInfo;
+    return m_RpsInfo.get();
 }
 
 double

@@ -147,9 +147,9 @@ void CGeneFileUtils::ReadGeneInfo(CNcbiIfstream& in,
     }
 
     int nBufSize = k_nGeneAllDataLineMax;
-    char* pBuf = new char[nBufSize + 1];
-    in.getline(pBuf, nBufSize);
-    string strBuf = string(pBuf);
+    AutoArray<char> pBuf(nBufSize + 1);
+    in.getline(pBuf.get(), nBufSize);
+    CTempString strBuf(pBuf.get());
 
     if (strBuf.length() < k_nGeneAllDataLineMin)
     {
@@ -157,7 +157,7 @@ void CGeneFileUtils::ReadGeneInfo(CNcbiIfstream& in,
             "Gene data line appears to be too short: " + strBuf);
     }
 
-    vector<string> strItems;
+    vector<CTempString> strItems;
     NStr::SplitByPattern(strBuf, "\t", strItems);
 
     if (strItems.size() != k_nGeneAllDataNumItems)

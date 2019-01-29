@@ -742,6 +742,18 @@ PSIDiagnosticsResponseFree(PSIDiagnosticsResponse* diags)
         sfree(diags->gapless_column_weights);
     }
 
+    if (diags->sigma) {
+        sfree(diags->sigma);
+    }
+
+    if (diags->interval_sizes) {
+        sfree(diags->interval_sizes);
+    }
+
+    if (diags->num_matching_seqs) {
+        sfree(diags->num_matching_seqs);
+    }
+
     if (diags->independent_observations) {
         sfree(diags->independent_observations);
     }

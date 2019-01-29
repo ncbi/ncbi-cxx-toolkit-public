@@ -3012,6 +3012,8 @@ double &alpha_J_error_)
 
         delete[]delta_E;delta_E=NULL;
         delete[]delta_E_error;delta_E_error=NULL;
+        delete[]delta_E_E;delta_E_E=NULL;
+        delete[]delta_E_E_error;delta_E_E_error=NULL;
         delete[]delta_I;delta_I=NULL;
         delete[]delta_I_error;delta_I_error=NULL;
         delete[]delta_J;delta_J=NULL;
@@ -3030,6 +3032,8 @@ double &alpha_J_error_)
         delete[]cov_J_J_error;cov_J_J_error=NULL;
         delete[]cov_I_I;cov_I_I=NULL;
         delete[]cov_I_I_error;cov_I_I_error=NULL;
+        delete[]cov_E_E;cov_E_E=NULL;
+        delete[]cov_E_E_error;cov_E_E_error=NULL;
 
         if(ee_error_flag)
         {

@@ -242,6 +242,7 @@ CDisplaySeqalign::~CDisplaySeqalign()
             delete m_DynamicFeature;
         }
     }
+    delete m_SeqPropertyLabel;
 }
 
 //8.Display Identities,positives,frames etc
@@ -2246,7 +2247,8 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
         if(bdl.empty()){ //no blast defline struct, should be no such case now
             //actually not so fast...as we now fetch from entrez even when it's not in blast db
             //there is no blast defline in such case.
-			SAlnDispParams *alnDispParams = x_FillAlnDispParams(bsp_handle);
+            CRef<SAlnDispParams> alnDispParams
+                (x_FillAlnDispParams(bsp_handle));
             out << ">";
             if ((m_AlignOption&eSequenceRetrieval)
                 && (m_AlignOption&eHtml) && m_CanRetrieveSeq && isFirst) {
@@ -2309,11 +2311,10 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
             for(list< CRef< CBlast_def_line > >::const_iterator
                     iter = bdl.begin(); iter != bdl.end(); iter++){
 
-				SAlnDispParams *alnDispParams = x_FillAlnDispParams(*iter,
-                                                                    bsp_handle,
-																	aln_vec_info->use_this_seqid,
-																	firstGi,
-                                                                    numBdl);
+				CRef<SAlnDispParams> alnDispParams
+                    (x_FillAlnDispParams(*iter, bsp_handle,
+                                         aln_vec_info->use_this_seqid,
+                                         firstGi, numBdl));
 
 
 
@@ -2406,7 +2407,6 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                     }
                     out<<"\n";
                     isFirst = false;
-		    delete alnDispParams;
                 }
             }
             if(m_AlignOption&eHtml && bMultipleDeflines) {

@@ -66,9 +66,10 @@ CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
     m_Options(options), m_DbAdapter(NULL), m_DbInfo(&dbinfo)
 {
     BlastSeqSrc* seqsrc = CSetupFactory::CreateBlastSeqSrc(dbinfo);
+    CRef<TBlastSeqSrc> wrapped_src(new TBlastSeqSrc(seqsrc, BlastSeqSrcFree));
     x_Init(query_factory, options, CRef<CPssmWithParameters>(), seqsrc);
 
-    m_InternalData->m_SeqSrc.Reset(new TBlastSeqSrc(seqsrc, BlastSeqSrcFree));
+    m_InternalData->m_SeqSrc = wrapped_src;
 }
 
 CBlastPrelimSearch::CBlastPrelimSearch(CRef<IQueryFactory> query_factory,
@@ -419,9 +420,10 @@ bool CBlastPrelimSearch::x_BuildStdSegList( vector<list<CRef<CStd_seg> > >  & l 
 	IBlastSeqInfoSrc * s_seqInfoSrc = m_DbAdapter->MakeSeqInfoSrc();
 	EBlastProgramType program = hsp_stream->program;
 
-	BlastHSPResults * results = ComputeBlastHSPResults(hsp_stream );
+	CStructWrapper<BlastHSPResults> results
+            (ComputeBlastHSPResults(hsp_stream), Blast_HSPResultsFree);
 
-	if(NULL == results)
+	if(NULL == results.GetPointer())
 		return false;
 
 	int num_queries = results->num_queries;

@@ -164,7 +164,7 @@ private:
     
     /// Pointer which contains pointers to data managed by the data members
     /// above
-    BlastRPSInfo* m_RpsInfo;
+    unique_ptr<BlastRPSInfo> m_RpsInfo;
 };
 
 END_SCOPE(blast)

@@ -1800,8 +1800,11 @@ Blast_RunPreliminarySearchWithInterrupt(EBlastProgramType program,
         BLAST_GapAlignSetUp(program, seq_src, score_options,
                             eff_len_options, ext_options, hit_options,
                             query_info, sbp, &score_params, &ext_params,
-                            &hit_params, &eff_len_params, &gap_align)) != 0)
+                            &hit_params, &eff_len_params, &gap_align)) != 0) {
+      /* Blast_DiagnosticsUpdate(diagnostics, local_diagnostics); */
+      Blast_DiagnosticsFree(local_diagnostics);
       return status;
+    }
 
     if ((status=
         BLAST_PreliminarySearchEngine(program, query, query_info,
@@ -1810,8 +1813,16 @@ Blast_RunPreliminarySearchWithInterrupt(EBlastProgramType program,
                                       ext_params, hit_params, eff_len_params,
                                       psi_options, db_options, hsp_stream,
                                       local_diagnostics, interrupt_search,
-                                      progress_info)) != 0)
+                                      progress_info)) != 0) {
+      gap_align = BLAST_GapAlignStructFree(gap_align);
+      score_params = BlastScoringParametersFree(score_params);
+      hit_params = BlastHitSavingParametersFree(hit_params);
+      ext_params = BlastExtensionParametersFree(ext_params);
+      eff_len_params = BlastEffectiveLengthsParametersFree(eff_len_params);
+      /* Blast_DiagnosticsUpdate(diagnostics, local_diagnostics); */
+      Blast_DiagnosticsFree(local_diagnostics);
       return status;
+    }
 
     /* Do not destruct score block here */
     gap_align->sbp = NULL;
