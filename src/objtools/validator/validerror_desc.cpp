@@ -358,6 +358,7 @@ static string s_OfficialPrefixList[] = {
     "BWP:1.0",
     "EpifluData",
     "Evidence-Data",
+    "Evidence-For-Name-Assignment",
     "FluData",
     "Genome-Annotation-Data",
     "Genome-Assembly-Data",
