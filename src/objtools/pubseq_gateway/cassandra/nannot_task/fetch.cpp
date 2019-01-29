@@ -155,7 +155,7 @@ void CCassNAnnotTaskFetch::Wait1()
             string sql =
                 " SELECT "
                 "  annot_name, sat_key, last_modified, start, stop "
-                " FROM" + GetKeySpace() + ".bioseq_na "
+                " FROM " + GetKeySpace() + ".bioseq_na "
                 " WHERE"
                 "  accession = ? AND version = ? AND seq_id_type = ?";
             unsigned int params = 3;
