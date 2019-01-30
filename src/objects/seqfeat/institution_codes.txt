@@ -1008,7 +1008,7 @@ CFSHB	s	North Coast Regional Botanic Gardens
 CFUA	s	Universidad Austral de Chile			
 CG	c	Embrapa Collection of Fungi of Invertebrates			
 CGC	b	Caenorhabditis Genetics Center			
-CGE	s	University of Cambridge, Department of Plant Sciences			
+CGE	s	Cambridge University, Department of Plant Sciences			
 CGEC	s	China Entomological Research Institute			
 CGG	s	Cambridge University Botanic Garden			
 CGH	s	National Museum of Prague			
@@ -2114,7 +2114,7 @@ GAUBA	s	Australian National University, Division of Botany and Zoology
 GAUF	s	Gansu Agricultural University			
 GAW	s	Eastern Botanical Society of Glasgow			
 GAZI	s	Gazi Ueniversitesi, Biyoloji Boeluemue			
-GB	s	Goeteborg University, Department of Plant and Environmental Sciences			
+GB	s	Goteborg University, Department of Plant and Environmental Sciences			
 GBFM	s	Universidad de Panama			
 GBG<SWE>	b	Gotheburg Botanical Garden			
 GBH	s	Herbarium of Geo. B. Hinton			
@@ -2309,7 +2309,7 @@ GXSP	s	Guangxi School of Pharmacy
 GZAC	s	Guizhou Agricultural College, College of Life Science			
 GZM	s	Giessener Zoologisches Museum			
 GZTM	s	Guizhou Institute of Traditional Chinese Medicine			
-GZU	s	Karl-Franzens-Universitaet Graz			
+GZU	s	Karl-Franzens-Universitat Graz			
 GZUH	s	Guizhou University Herbarium			
 H	s	University of Helsinki			
 H-GSP	s	Howard University-Geological Survey of Pakistan Project			
@@ -7626,7 +7626,7 @@ WTSU	s	West Texas A&M University, Natural History Collection
 WTU	s	University of Washington			
 WTU:F	s	University of Washington, Fungal Collection	
 WTUH	s	University of Washington Botanic Gardens, College of Forest Resources			
-WU	s	Universitaet Wien			
+WU	s	Universitat Wien			
 WU<USA-TX>	s	Wayland University			
 WUD	s	Wayne State University, Biological Sciences Department			
 WUH	s	Wuhu School of Traditional Chinese Medicine			
