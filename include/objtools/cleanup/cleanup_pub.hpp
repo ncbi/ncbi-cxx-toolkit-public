@@ -55,7 +55,7 @@ class CName_std;
 
 
 
-class CPubCleaner
+class CPubCleaner : public CObject
 {
 public:
 
@@ -217,7 +217,7 @@ protected:
 };
 
 
-CPubCleaner* PubCleanerFactory(CPub& pub);
+CRef<CPubCleaner> PubCleanerFactory(CPub& pub);
 
 
 class NCBI_CLEANUP_EXPORT CCleanupPub : public CObject 

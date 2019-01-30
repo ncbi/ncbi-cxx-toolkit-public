@@ -176,7 +176,7 @@ bool CPubEquivCleaner::Clean(bool fix_initials, bool strip_serial)
     while (it != pe_set.end()) {
         CPub &pub = **it;
 
-        CPubCleaner* cleaner = PubCleanerFactory(pub);
+        CRef<CPubCleaner> cleaner = PubCleanerFactory(pub);
         if (cleaner) {
             if (cleaner->Clean(fix_initials, strip_serial)) {
                 change = true;
@@ -186,7 +186,6 @@ bool CPubEquivCleaner::Clean(bool fix_initials, bool strip_serial)
                 delete(cleaner);
                 continue;
             }
-            delete(cleaner);
         }
 
         // storing these so at the end we'll know the last values
@@ -291,41 +290,41 @@ bool CPubEquivCleaner::s_Flatten(CPub_equiv& pub_equiv)
 
 
 
-CPubCleaner* PubCleanerFactory(CPub& pub)
+CRef<CPubCleaner> PubCleanerFactory(CPub& pub)
 {
     switch (pub.Which()) {
     case CPub::e_Gen:
-        return new CCitGenCleaner(pub.SetGen());
+        return CRef<CPubCleaner>(new CCitGenCleaner(pub.SetGen()));
         break;
     case CPub::e_Equiv:
-        return new CPubEquivCleaner(pub.SetEquiv());
+        return CRef<CPubCleaner>(new CPubEquivCleaner(pub.SetEquiv()));
         break;
     case CPub::e_Sub:
-        return new CCitSubCleaner(pub.SetSub());
+        return CRef<CPubCleaner>(new CCitSubCleaner(pub.SetSub()));
         break;
     case CPub::e_Article:
-        return new CCitArtCleaner(pub.SetArticle());
+        return CRef<CPubCleaner>(new CCitArtCleaner(pub.SetArticle()));
         break;
     case CPub::e_Journal:
-        return new CCitJourCleaner(pub.SetJournal());
+        return CRef<CPubCleaner>(new CCitJourCleaner(pub.SetJournal()));
         break;
     case CPub::e_Book:
-        return new CCitBookCleaner(pub.SetBook());
+        return CRef<CPubCleaner>(new CCitBookCleaner(pub.SetBook()));
         break;
     case CPub::e_Proc:
-        return new CCitProcCleaner(pub.SetProc());
+        return CRef<CPubCleaner>(new CCitProcCleaner(pub.SetProc()));
         break;
     case CPub::e_Patent:
-        return new CCitPatCleaner(pub.SetPatent());
+        return CRef<CPubCleaner>(new CCitPatCleaner(pub.SetPatent()));
         break;
     case CPub::e_Man:
-        return new CCitLetCleaner(pub.SetMan());
+        return CRef<CPubCleaner>(new CCitLetCleaner(pub.SetMan()));
         break;
     case CPub::e_Medline:
-        return new CMedlineEntryCleaner(pub.SetMedline());
+        return CRef<CPubCleaner>(new CMedlineEntryCleaner(pub.SetMedline()));
         break;
     default:
-        return NULL;
+        return CRef<CPubCleaner>(NULL);
     }
 }
 
