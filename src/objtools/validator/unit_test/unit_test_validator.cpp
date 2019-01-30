@@ -23702,7 +23702,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4560)
     // new accession formats
     TestNewAccessionOnNuc("AAAAAB010000001", false, true);
     TestNewAccessionOnNuc("AA12345678", false, false);
-    TestNewAccessionOnNuc("EAA0000015", true, false);
+    TestNewAccessionOnNuc("EAA0000015", true, true);
     TestNewAccessionOnStandaloneProt("AAAAAB010000001", true, true);
     TestNewAccessionOnStandaloneProt("AA12345678", true, false);
     TestNewAccessionOnStandaloneProt("EAA0000015", false, true);
