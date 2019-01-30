@@ -575,28 +575,28 @@ void CTitleParser::Apply(const CTempString& title, TModList& mods, string& remai
         if (x_FindBrackets(title, lb_pos, end_pos, eq_pos)) {
             if (eq_pos < end_pos) {
                 if ((lb_pos > start_pos) ) {
-                    string left_remainder = title.substr(start_pos, lb_pos-start_pos);
-                    if (!remainder.empty() && 
-                        !isspace(left_remainder.front()) &&
-                        !isspace(remainder.back())) {
-                        remainder.append(" ");
+                    auto left_remainder = NStr::TruncateSpaces_Unsafe(title.substr(start_pos, lb_pos-start_pos));
+                    if (!left_remainder.empty()) {
+                        if (!remainder.empty()) {
+                            remainder.append(" ");
+                        }
+                        remainder.append(left_remainder);
                     }
-                    remainder.append(left_remainder);
                 }
-                CTempString name = NStr::TruncateSpaces_Unsafe(title.substr(lb_pos+1, eq_pos-(lb_pos+1)));
-                CTempString value = NStr::TruncateSpaces_Unsafe(title.substr(eq_pos+1, end_pos-(eq_pos+1)));
+                auto name = NStr::TruncateSpaces_Unsafe(title.substr(lb_pos+1, eq_pos-(lb_pos+1)));
+                auto value = NStr::TruncateSpaces_Unsafe(title.substr(eq_pos+1, end_pos-(eq_pos+1)));
                 mods.emplace_back(name, value);
             }
             start_pos = end_pos+1;
         }
         else {
-            string right_remainder = title.substr(start_pos);
-            if (!remainder.empty() && 
-                !isspace(right_remainder.front()) &&
-                !isspace(remainder.back())) {
-                remainder.append(" ");
+            auto right_remainder = NStr::TruncateSpaces_Unsafe(title.substr(start_pos));
+            if (!right_remainder.empty()) {
+                if (!remainder.empty()) {
+                    remainder.append(" ");
+                }
+                remainder.append(right_remainder);
             }
-            remainder.append(right_remainder);
             return;
         }
     }
