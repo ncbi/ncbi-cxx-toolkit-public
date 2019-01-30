@@ -862,7 +862,7 @@ void CAlnReader::x_AddMods(const string& defline,
     CModAdder::Apply(mod_handler, bioseq, pMessageListener.get(), skipped_mods);
 
 
-    if (fasta_flags & CFastaDeflineReader::fDeflineAsTitle) {
+    if (fasta_flags & CFastaReader::fDeflineAsTitle) {
         x_AddTitle(NStr::TruncateSpaces(defline), bioseq);
         return;
     }
