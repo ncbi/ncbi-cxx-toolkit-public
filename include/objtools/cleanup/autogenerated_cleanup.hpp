@@ -150,7 +150,7 @@
 #include <objects/submit/Submit_block.hpp>
 #include <objects/submit/Contact_info.hpp>
 
-#include <objtools/cleanup/newcleanup.hpp>
+#include "newcleanup.hpp"
 
 
 BEGIN_NCBI_SCOPE
