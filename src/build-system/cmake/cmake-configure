@@ -239,6 +239,8 @@ add_gpipe_warnings() {
 
 #MAIN
 
+DISTCC_OPTS="-DCMAKE_USE_DISTCC=ON"
+
 while [ $# != 0 ]; do
     case "$1" in
         "--prefix="*)
@@ -359,7 +361,10 @@ while [ $# != 0 ]; do
             CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_CCACHE=ON";;
 
         "--with-distcc")
-            CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_USE_DISTCC=ON";;
+            ;;
+
+        "--without-distcc")
+           DISTCC_OPTS="";;
 
         "--with-xcode")
             CMAKE_ARGS="$CMAKE_ARGS -G Xcode";;
@@ -466,6 +471,8 @@ done
 if [ "x${LIBDIR}" = "x" ]; then
     LIBDIR="${PREFIX}/lib"
 fi
+
+CMAKE_ARGS="$CMAKE_ARGS $DISTCC_OPTS"
 
 # Unlike CFLAGS/CXXFLAGS/CC/CXX, LDFLAGS isn't handled by CMake, so we
 # need to parse it here.
