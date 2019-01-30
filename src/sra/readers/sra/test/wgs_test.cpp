@@ -905,6 +905,12 @@ int CWGSTestApp::Run(void)
         out << "Opened WGS in "<<sw.Restart()
             << NcbiEndl;
     }
+    if ( wgs_db->GetProjectGBState() ) {
+        out << "WGS Project GB State: "<< wgs_db->GetProjectGBState() << NcbiEndl;
+    }
+    if ( wgs_db->IsReplaced() ) {
+        out << "WGS Project is replaced by "<< wgs_db->GetReplacedBy() << NcbiEndl;
+    }
     if ( args["master"] ) {
         CWGSDb::EDescrFilter filter = CWGSDb::eDescrDefaultFilter;
         if ( args["master-no-filter"] ) {

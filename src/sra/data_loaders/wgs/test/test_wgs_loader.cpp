@@ -2221,6 +2221,25 @@ BOOST_AUTO_TEST_CASE(FetchIndex2)
 }
 
 
+BOOST_AUTO_TEST_CASE(TestReplaced)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    CScope scope(*om);
+
+    scope.AddDefaults();
+
+    CBioseq_Handle bh;
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("ABAJ01000001"));
+    BOOST_CHECK(!bh);
+
+    scope.AddDataLoader("GBLOADER");
+    
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("ABAJ01000001"));
+    BOOST_CHECK(bh);
+}
+
+
 NCBITEST_INIT_TREE()
 {
     NCBITEST_DISABLE(StateTest);

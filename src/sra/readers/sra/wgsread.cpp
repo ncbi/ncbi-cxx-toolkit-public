@@ -727,7 +727,8 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
       m_ProductNameIndexIsOpened(0),
       m_IsSetMasterDescr(false),
       m_HasNoDefaultGnlId(false),
-      m_FeatLocIdType(eFeatLocIdUninitialized)
+      m_FeatLocIdType(eFeatLocIdUninitialized),
+      m_ProjectGBState(0)
 {
     PROFILE(sw_WGSOpen);
     //static CVDBSchema schema(mgr, "wgs.schema");
@@ -919,6 +920,17 @@ void CWGSDb_Impl::x_InitIdParams(void)
     m_IdPrefixDb = (IsTSA()? "TSA:": "WGS:")+m_IdPrefix;
     m_HasNoDefaultGnlId = seq->m_SEQID_GNL_PREFIX && seq->SEQID_GNL_PREFIX(1).empty();
     Put(seq);
+
+    if ( CKMetadata meta = CKMetadata(SeqTable()) ) {
+        if (  CKMDataNode node = CKMDataNode(meta, "GB_STATE", CKMDataNode::eMissing_Allow) ) {
+            m_ProjectGBState = node.GetUint8();
+        }
+        if ( CKMDataNode node = CKMDataNode(meta, "REPLACED_BY", CKMDataNode::eMissing_Allow) ) {
+            size_t size = node.GetSize();
+            m_ReplacedBy.resize(size);
+            node.GetData(&m_ReplacedBy[0], size);
+        }
+    }
 }
 
 

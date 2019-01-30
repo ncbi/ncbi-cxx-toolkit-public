@@ -124,6 +124,10 @@ NCBI_PARAM_DECL(bool, ID2WGS, SPLIT_FEATURES);
 NCBI_PARAM_DEF(bool, ID2WGS, SPLIT_FEATURES, true);
 
 
+NCBI_PARAM_DECL(bool, ID2WGS, KEEP_REPLACED);
+NCBI_PARAM_DEF(bool, ID2WGS, KEEP_REPLACED, false);
+
+
 static inline bool s_Enabled(void)
 {
     static CSafeStatic<NCBI_PARAM_TYPE(ID2WGS, ENABLE)> s_Value;
@@ -154,6 +158,13 @@ static inline bool s_FilterAll(void)
 static bool s_SplitFeatures(void)
 {
     static bool value = NCBI_PARAM_TYPE(ID2WGS, SPLIT_FEATURES)::GetDefault();
+    return value;
+}
+
+
+static bool s_KeepReplaced(void)
+{
+    static bool value = NCBI_PARAM_TYPE(ID2WGS, KEEP_REPLACED)::GetDefault();
     return value;
 }
 
@@ -462,37 +473,57 @@ void CID2WGSProcessor_Impl::InitContext(CID2WGSContext& context,
 
 CWGSDb CID2WGSProcessor_Impl::GetWGSDb(const string& prefix)
 {
-    CMutexGuard guard(m_Mutex);
-    TWGSDbCache::iterator it = m_WGSDbCache.find(prefix);
-    if ( it != m_WGSDbCache.end() ) {
-        return it->second;
+    CWGSDb wgs_db;
+    {{
+        CMutexGuard guard(m_Mutex);
+        TWGSDbCache::iterator it = m_WGSDbCache.find(prefix);
+        if ( it != m_WGSDbCache.end() ) {
+            // use cached DB
+            wgs_db = it->second;
+        }
+        else {
+            // create new DB
+            try {
+                wgs_db = CWGSDb(m_Mgr, prefix);
+                //wgs_db.LoadMasterDescr();
+                m_WGSDbCache[prefix] = wgs_db;
+            }
+            catch ( CSraException& exc ) {
+                if ( exc.GetErrCode() == exc.eNotFoundDb ||
+                     exc.GetErrCode() == exc.eProtectedDb ) {
+                    // no such WGS table
+                }
+                else {
+                    // problem in VDB or WGS reader
+                    TRACE_X(22, eDebug_error, "ID2WGS: "
+                            "Exception while opening WGS DB "<<prefix<<": "<<exc);
+                }
+                return CWGSDb();
+            }
+            catch ( CException& exc ) {
+                // problem in VDB or WGS reader
+                TRACE_X(22, eDebug_error, "ID2WGS: "
+                        "Exception while opening WGS DB "<<prefix<<": "<<exc);
+                return CWGSDb();
+            }
+            catch ( exception& exc ) {
+                // problem in VDB or WGS reader
+                TRACE_X(22, eDebug_error, "ID2WGS: "
+                        "Exception while opening WGS DB "<<prefix<<": "<<exc.what());
+                return CWGSDb();
+            }
+        }
+    }}
+    if ( wgs_db->IsReplaced() && !s_KeepReplaced() ) {
+        // replaced
+        TRACE_X(17, eDebug_open, "GetWGSDb: "<<prefix<<" is replaced");
+        return CWGSDb();
     }
-    try {
-        CWGSDb wgs_db(m_Mgr, prefix);
-        //wgs_db.LoadMasterDescr();
-        m_WGSDbCache[prefix] = wgs_db;
+    else {
+        // found
         TRACE_X(1, eDebug_open, "GetWGSDb: "<<prefix);
         return wgs_db;
     }
-    catch ( CSraException& exc ) {
-        if ( exc.GetErrCode() == exc.eNotFoundDb ||
-             exc.GetErrCode() == exc.eProtectedDb ) {
-            // no such WGS table
-        }
-        else {
-            TRACE_X(22, eDebug_error, "ID2WGS: "
-                    "Exception while opening WGS DB "<<prefix<<": "<<exc);
-        }
-    }
-    catch ( CException& exc ) {
-        TRACE_X(22, eDebug_error, "ID2WGS: "
-                "Exception while opening WGS DB "<<prefix<<": "<<exc);
-    }
-    catch ( exception& exc ) {
-        TRACE_X(22, eDebug_error, "ID2WGS: "
-                "Exception while opening WGS DB "<<prefix<<": "<<exc.what());
-    }
-    return CWGSDb();
 }
 
 

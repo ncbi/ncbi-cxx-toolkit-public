@@ -385,6 +385,16 @@ public:
 
     EFeatLocIdType GetFeatLocIdType();
 
+    NCBI_gb_state GetProjectGBState() const {
+        return m_ProjectGBState;
+    }
+    const string& GetReplacedBy() const {
+        return m_ReplacedBy;
+    }
+    bool IsReplaced() const {
+        return !m_ReplacedBy.empty();
+    }
+
 protected:
     friend class CWGSSeqIterator;
     friend class CWGSScaffoldIterator;
@@ -569,6 +579,8 @@ private:
     CRef<CSeq_entry> m_MasterEntry;
     TMasterDescr m_MasterDescr;
     CRef<CSeq_id> m_PatentId;
+    NCBI_gb_state m_ProjectGBState;
+    string m_ReplacedBy;
 };
 DECLARE_SAFE_FLAGS(CWGSDb_Impl::EGnlIdFlags);
 DECLARE_SAFE_FLAGS(CWGSDb_Impl::EAllowRowType);

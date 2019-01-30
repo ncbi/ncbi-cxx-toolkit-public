@@ -179,6 +179,18 @@ static bool GetSplitFeaturesParam(void)
 }
 
 
+NCBI_PARAM_DECL(bool, WGS_LOADER, KEEP_REPLACED);
+NCBI_PARAM_DEF(bool, WGS_LOADER, KEEP_REPLACED, false);
+
+
+static bool GetKeepReplacedParam(void)
+{
+    static bool value =
+        NCBI_PARAM_TYPE(WGS_LOADER, KEEP_REPLACED)::GetDefault();
+    return value;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CWGSBlobId
 /////////////////////////////////////////////////////////////////////////////
@@ -327,23 +339,43 @@ CConstRef<CWGSFileInfo> CWGSDataLoader_Impl::GetWGSFile(const string& prefix)
         }
         return null;
     }
+    CConstRef<CWGSFileInfo> info;
     CMutexGuard guard(m_Mutex);
-    TFoundFiles::iterator it = m_FoundFiles.find(prefix);
-    if ( it != m_FoundFiles.end() ) {
-        return it->second;
-    }
-    try {
-        CConstRef<CWGSFileInfo> info(new CWGSFileInfo(*this, prefix));
-        m_FoundFiles[prefix] = info;
-        return info;
-    }
-    catch ( CSraException& exc ) {
-        if ( exc.GetErrCode() == exc.eNotFoundDb ||
-             exc.GetErrCode() == exc.eProtectedDb ) {
-            // no such WGS table
-            return null;
+    {{
+        TFoundFiles::iterator it = m_FoundFiles.find(prefix);
+        if ( it != m_FoundFiles.end() ) {
+            // use cached info
+            info = it->second;
         }
-        throw;
+        else {
+            // create new info
+            try {
+                info = new CWGSFileInfo(*this, prefix);
+                m_FoundFiles[prefix] = info;
+            }
+            catch ( CSraException& exc ) {
+                if ( exc.GetErrCode() == exc.eNotFoundDb ||
+                     exc.GetErrCode() == exc.eProtectedDb ) {
+                    // no such WGS table
+                    return null;
+                }
+                else {
+                    // problem in VDB or WGS reader
+                    throw;
+                }
+            }
+        }
+    }}
+    if ( info->GetDb()->IsReplaced() && !GetKeepReplacedParam() ) {
+        // replaced
+        if ( GetDebugLevel() >= 2 ) {
+            ERR_POST_X(11, "CWGSDataLoader: WGS Project "<<prefix<<" is replaced");
+        }
+        return null;
+    }
+    else {
+        // found
+        return info;
     }
 }
 
