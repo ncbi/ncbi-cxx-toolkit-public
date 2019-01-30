@@ -812,7 +812,7 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags)
     if (!m_Deflines.empty()) {
         int i=0;
         for (auto& pSeqEntry : seq_set) {
-            x_AddMods(m_Deflines[i++], pSeqEntry->SetSeq());
+            x_AddMods(m_Deflines[i++], fasta_flags, pSeqEntry->SetSeq());
         }
     }
 
@@ -834,7 +834,9 @@ static void s_AppendMods(
     }
 }
 
-void CAlnReader::x_AddMods(const string& defline, CBioseq& bioseq)
+void CAlnReader::x_AddMods(const string& defline, 
+        const TFastaFlags fasta_flags, 
+        CBioseq& bioseq)
 {
     if (NStr::IsBlank(defline)) {
         return;
@@ -854,13 +856,19 @@ void CAlnReader::x_AddMods(const string& defline, CBioseq& bioseq)
     CModHandler mod_handler(pMessageListener.get());
     CModHandler::TModList rejected_mods;
     mod_handler.AddMods(mod_list, CModHandler::eAppendReplace, rejected_mods);
-    s_AppendMods(rejected_mods, remainder);
 
     // Apply modifiers to the bioseq
     CModHandler::TModList skipped_mods;
     CModAdder::Apply(mod_handler, bioseq, pMessageListener.get(), skipped_mods);
-    s_AppendMods(skipped_mods, remainder);
 
+
+    if (fasta_flags & CFastaDeflineReader::fDeflineAsTitle) {
+        x_AddTitle(NStr::TruncateSpaces(defline), bioseq);
+        return;
+    }
+
+    s_AppendMods(rejected_mods, remainder);
+    s_AppendMods(skipped_mods, remainder);
     // Add title string
     NStr::TruncateSpacesInPlace(remainder);
     x_AddTitle(remainder, bioseq);
