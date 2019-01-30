@@ -258,26 +258,6 @@ private:
     void DbtagBC (CDbtag& dbt);
 
     void PubdescBC (CPubdesc& pub);
-#if 0
-    void PubEquivBC (CPub_equiv& pub_equiv);
-    EAction PubBC(CPub& pub, bool fix_initials);
-    EAction CitGenBC(CCit_gen& cg, bool fix_initials);
-    EAction CitSubBC(CCit_sub& cs, bool fix_initials);
-    EAction CitArtBC(CCit_art& ca, bool fix_initials);
-    EAction CitBookBC(CCit_book& cb, bool fix_initials);
-    EAction CitPatBC(CCit_pat& cp, bool fix_initials);
-    EAction CitLetBC(CCit_let& cl, bool fix_initials);
-    EAction CitProcBC(CCit_proc& cb, bool fix_initials);
-    EAction CitJourBC(CCit_jour &j, bool fix_initials);
-    EAction MedlineEntryBC(CMedline_entry& ml, bool fix_initials);
-    void AuthListBC( CAuth_list& al, bool fix_initials );
-    void AffilBC( CAffil& af );
-    enum EImprintBC {
-        eImprintBC_AllowStatusChange =  2,
-        eImprintBC_ForbidStatusChange
-    };
-    void ImprintBC( CImprint& imprint, EImprintBC is_status_change_allowed );
-#endif
     void PubSetBC( CPub_set &pub_set );
 
     void ImpFeatBC( CSeq_feat& sf );
