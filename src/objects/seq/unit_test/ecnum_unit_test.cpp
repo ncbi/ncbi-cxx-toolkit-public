@@ -91,16 +91,16 @@ BOOST_AUTO_TEST_CASE(s_TestGetStatus)
 
 BOOST_AUTO_TEST_CASE(s_TestGetReplacement)
 {
-    BOOST_CHECK_THROW(CProt_ref::GetECNumberReplacement("2.7.3.6"),
-                      CCoreException);
-    BOOST_CHECK_THROW(CProt_ref::GetECNumberReplacement("3.4.-.-"),
-                      CCoreException);
+    BOOST_CHECK_EQUAL(CProt_ref::GetECNumberReplacement("2.7.3.6"),
+                      kEmptyStr);
+    BOOST_CHECK_EQUAL(CProt_ref::GetECNumberReplacement("3.4.-.-"),
+                      kEmptyStr);
     BOOST_CHECK_EQUAL(CProt_ref::GetECNumberReplacement("4.2.1.16"),
                       string("4.3.1.19"));
-    BOOST_CHECK_THROW(CProt_ref::GetECNumberReplacement("5.4.3.1"),
-                      CCoreException);
-    BOOST_CHECK_THROW(CProt_ref::GetECNumberReplacement("9.8.7.6"),
-                      CCoreException);
+    BOOST_CHECK_EQUAL(CProt_ref::GetECNumberReplacement("5.4.3.1"),
+                      kEmptyStr);
+    BOOST_CHECK_EQUAL(CProt_ref::GetECNumberReplacement("9.8.7.6"),
+                      kEmptyStr);
 }
 
 

@@ -208,11 +208,7 @@ const string& CProt_ref::GetECNumberReplacement(const string& old_ecno)
     }
     TECNumberReplacementMap::const_iterator it
         = s_ECNumberReplacementMap.find(old_ecno);
-    if (it == s_ECNumberReplacementMap.end()) {
-        NCBI_THROW(CCoreException, eInvalidArg,
-                   "No replacement defined for EC number " + old_ecno);
-        // alternatively, could return old_ecno or kEmptyStr
-    } else {
+    if (it != s_ECNumberReplacementMap.end()) {
         // see if this number has also been replaced
         auto other_it = s_ECNumberReplacementMap.find(it->second);
         while (other_it != s_ECNumberReplacementMap.end()) {
@@ -220,7 +216,10 @@ const string& CProt_ref::GetECNumberReplacement(const string& old_ecno)
             other_it = s_ECNumberReplacementMap.find(it->second);
         }
         return it->second;
+    } else {
+        return kEmptyStr;
     }
+
 }
 
 
