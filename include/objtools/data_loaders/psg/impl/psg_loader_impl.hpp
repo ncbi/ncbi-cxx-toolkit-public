@@ -161,8 +161,8 @@ private:
             ERR_POST("Request failed: null reply");
             return false;
         }
-        EPSG_Status status = reply->GetStatus(CDeadline::eInfinite);
-        if (status == EPSG_Status::eSuccess) return true;
+        EPSG_Status status = reply->GetStatus(CDeadline(0));
+        if (status == EPSG_Status::eSuccess || status == EPSG_Status::eInProgress) return true;
         ERR_POST("Request failed: " << (int)status << " - " << reply->GetNextMessage());
         return false;
     }

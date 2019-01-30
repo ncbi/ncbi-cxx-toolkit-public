@@ -79,7 +79,7 @@ private:
             ret = *m_NextId;
             ++m_NextId;
         }
-        return move(ret);
+        return ret;
     }
 
     size_t m_MaxIds = (size_t)(-1);

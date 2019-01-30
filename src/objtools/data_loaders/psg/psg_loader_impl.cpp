@@ -164,16 +164,18 @@ const unsigned int kMaxWaitSeconds = 3;
 const unsigned int kMaxWaitMillisec = 0;
 
 #define DEFAULT_DEADLINE CDeadline(kMaxWaitSeconds, kMaxWaitMillisec)
+#define ZERO_DEADLINE CDeadline(0)
 
 void* CPsgClientThread::Main(void)
 {
     for (;;) {
         m_WakeSema.Wait();
         if (m_Stop) break;
-        auto reply = m_Queue->GetNextReply(DEFAULT_DEADLINE);
-        if (!reply) {
-            continue;
+        shared_ptr<CPSG_Reply> reply;
+        do {
+            reply = m_Queue->GetNextReply(DEFAULT_DEADLINE);
         }
+        while (!reply && !m_Stop);
         auto context = reply->GetRequest()->GetUserContext<CPsgClientContext>();
         context->SetReply(reply);
     }
@@ -467,7 +469,7 @@ void CPSGDataLoader_Impl::LoadChunk(const CPsgBlobId& blob_id, CTSE_Chunk_Info& 
     // Load split blob-info
     auto psg_blob_found = x_FindBlob(blob_id.ToString());
     if (!psg_blob_found) {
-        ERR_POST("Can not load chunk for unnown blob-id " << blob_id.ToString());
+        ERR_POST("Can not load chunk for unknown blob-id " << blob_id.ToString());
         return; // Blob-id not yet resolved.
     }
 
@@ -548,18 +550,22 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessReply(
     shared_ptr<CPSG_BlobInfo> split_info;
     shared_ptr<CPSG_BlobData> blob_data;
     for (;;) {
-        auto reply_item = reply->GetNextItem(DEFAULT_DEADLINE);
-        if (!reply_item || reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) {
+        auto reply_item = reply->GetNextItem(ZERO_DEADLINE);
+        if (!reply_item) continue;
+        if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) {
             break;
         }
         if (!x_CheckStatus(reply_item)) {
-            // TODO: Report error.
-            break;
+            return move(ret);
         }
+
         if (reply_item->GetType() == CPSG_ReplyItem::eBioseqInfo) {
             // Only one bioseq-info is allowed per reply.
             _ASSERT(!bioseq_info);
             bioseq_info = static_pointer_cast<CPSG_BioseqInfo>(reply_item);
+            m_BioseqCache->Add(*bioseq_info);
+            ret.bioseq_info = bioseq_info;
+            ret.blob_id = bioseq_info->GetBlobId().Get();
         }
         else if (reply_item->GetType() == CPSG_ReplyItem::eBlobInfo) {
             auto blob_info = static_pointer_cast<CPSG_BlobInfo>(reply_item);
@@ -595,17 +601,11 @@ CPSGDataLoader_Impl::SReplyResult CPSGDataLoader_Impl::x_ProcessReply(
             blob_data = static_pointer_cast<CPSG_BlobData>(reply_item);
         }
     }
-    // Cache seq-infos
-    if (bioseq_info) {
-        m_BioseqCache->Add(*bioseq_info);
-        ret.bioseq_info = bioseq_info;
-        ret.blob_id = bioseq_info->GetBlobId().Get();
-    }
 
     // No blob-infos found, nothing else to do.
     if (!main_info) return move(ret);
 
-    // If split-info blob-id is is known, split-info blob-info must be present.
+    // If split-info blob-id is known, split-info blob-info must be present.
     _ASSERT(m_NoSplit || split_blob_id.empty() || split_info);
 
     shared_ptr<SPsgBlobInfo> psg_blob_info;
@@ -654,16 +654,21 @@ shared_ptr<SPsgBioseqInfo> CPSGDataLoader_Impl::x_GetBioseqInfo(const CSeq_id_Ha
 
     shared_ptr<CPSG_BioseqInfo> bioseq_info;
     for (;;) {
-        auto reply_item = reply->GetNextItem(DEFAULT_DEADLINE);
-        if (!reply_item || reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) break;
-        if (!x_CheckStatus(reply_item)) {
-            // TODO: Report error.
+        auto reply_item = reply->GetNextItem(ZERO_DEADLINE);
+        if (!reply_item) continue;
+        if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) {
             break;
         }
+        if (!x_CheckStatus(reply_item)) {
+            bioseq_info.reset();
+            break;
+        }
+
         if (reply_item->GetType() == CPSG_ReplyItem::eBioseqInfo) {
             bioseq_info = static_pointer_cast<CPSG_BioseqInfo>(reply_item);
         }
     }
+
     if (!bioseq_info) {
         ERR_POST("Failed to get bioseq info for seq-id " << idh.AsString());
         return nullptr;
@@ -719,17 +724,19 @@ void CPSGDataLoader_Impl::x_GetBlobInfoAndData(
     auto request = make_shared<CPSG_Request_Blob>(blob_id, kEmptyStr, context);
     auto reply = x_ProcessRequest(request);
     if (!x_CheckStatus(reply)) {
-        // TODO: Report error.
         return;
     }
 
     for (;;) {
-        auto reply_item = reply->GetNextItem(DEFAULT_DEADLINE);
-        if (!reply_item || reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) break;
-        if (!x_CheckStatus(reply_item)) {
-            // TODO: Report error.
+        auto reply_item = reply->GetNextItem(ZERO_DEADLINE);
+        if (!reply_item) continue;
+        if (reply_item->GetType() == CPSG_ReplyItem::eEndOfReply) {
             break;
         }
+        if (!x_CheckStatus(reply_item)) {
+            break;
+        }
+
         switch (reply_item->GetType()) {
         case CPSG_ReplyItem::eBlobInfo:
             blob_info = static_pointer_cast<CPSG_BlobInfo>(reply_item);
