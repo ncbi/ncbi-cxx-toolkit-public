@@ -863,11 +863,18 @@ void CAlnReader::x_AddMods(const string& defline, CBioseq& bioseq)
 
     // Add title string
     NStr::TruncateSpacesInPlace(remainder);
-    if (!remainder.empty()) {
-        auto pDesc = Ref(new CSeqdesc());
-        pDesc->SetTitle() = remainder;
-        bioseq.SetDescr().Set().push_back(move(pDesc));
+    x_AddTitle(remainder, bioseq);
+}
+
+
+void CAlnReader::x_AddTitle(const string& title, CBioseq& bioseq) 
+{
+    if (NStr::IsBlank(title)) {
+        return;
     }
+    auto pDesc = Ref(new CSeqdesc());
+    pDesc->SetTitle() = title;
+    bioseq.SetDescr().Set().push_back(move(pDesc));
 }
 
 

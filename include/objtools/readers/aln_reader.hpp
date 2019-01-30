@@ -269,6 +269,7 @@ private:
         objects::CDense_seg& denseg);
 
     void x_AddMods(const string& defline, objects::CBioseq& bioseq);
+    void x_AddTitle(const string& defline, objects::CBioseq& bioseq);
 
 protected:
     virtual CRef<objects::CSeq_id> GenerateID(const string& fasta_defline, 
