@@ -128,6 +128,17 @@ void  ncbi::CNcbiError::SetFromWindowsError( const std::string& )               
 void  ncbi::CNcbiError::SetFromWindowsError( std::string&& )                    {}
 void  ncbi::CNcbiError::SetFromWindowsError( const char* )                      {}
 void  ncbi::CNcbiError::SetFromWindowsError( const ncbi::CTempString )          {}
+
+
+#if NCBI_DEVELOPMENT_VER > 20190115
+ncbi::CDll::CDll(const std::string&, ncbi::CDll::ELoad, ncbi::CDll::EAutoUnload, ncbi::CDll::EBasename) {}
+ncbi::CDll::~CDll() {}
+ncbi::CDll::TEntryPoint ncbi::CDll::GetEntryPoint(const std::string& name)
+{
+    CDll::TEntryPoint p = {NULL};
+    return p;
+}
+#endif
 #endif
 
 #else

@@ -56,6 +56,7 @@
 
 #ifdef NCBI_OS_MSWIN
 # include <windows.h>
+# include <tlhelp32.h>
 #endif
 
 #include "srv_diag.hpp"

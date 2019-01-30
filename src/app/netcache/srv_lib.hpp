@@ -577,6 +577,14 @@ public:
     {}
 };
 
+class CTlsBase
+{
+public:
+    template<class TValue>
+    static void DefaultCleanup(TValue*, void*) {
+    }
+};
+
 #ifdef NCBI_OS_MSWIN
 
 class CWinSecurity
@@ -593,7 +601,13 @@ public:
                              unsigned int* uid = 0, unsigned int* gid = 0)
     { return false; }
 };
-
+class CWinFeature
+{
+public:
+    static bool FindProcessEntry(DWORD id, PROCESSENTRY32& entry) {
+        return false;
+    }
+};
 #endif
 
 END_NCBI_SCOPE
