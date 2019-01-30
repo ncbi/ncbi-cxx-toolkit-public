@@ -183,7 +183,6 @@ bool CPubEquivCleaner::Clean(bool fix_initials, bool strip_serial)
             }
             if (cleaner->IsEmpty()) {
                 it = pe_set.erase(it);
-                delete(cleaner);
                 continue;
             }
         }
