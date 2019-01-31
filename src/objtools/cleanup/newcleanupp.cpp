@@ -9827,15 +9827,10 @@ void RemoveStrain(string& src, const CBioSource& biosrc)
             it->GetSubtype() == COrgMod::eSubtype_strain &&
             it->IsSetSubname()) {
             const string& strain = it->GetSubname();
-            size_t expected_len = 9 + strain.length();
-            if (src.length() >= pos + expected_len) {
-                string compare = src.substr(pos, expected_len);
-                string expected = "(strain " + strain + ")";
-                if (NStr::Equal(compare, expected)) {
-                    src = src.substr(0, pos - 1) + src.substr(pos + expected_len);
-                    NStr::ReplaceInPlace(src, "  ", " ");
-                }
-            }
+            string expected = "(strain " + strain + ")";
+            NStr::ReplaceInPlace(src, expected, "");
+            NStr::ReplaceInPlace(src, "  ", " ");
+            NStr::TruncateSpacesInPlace(src);
         }
     }
 }

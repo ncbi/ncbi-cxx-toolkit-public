@@ -1902,3 +1902,27 @@ BOOST_AUTO_TEST_CASE(Test_ProtTitleRemoval)
         }
     }
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_StrainRemoval)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> gbblock(new CSeqdesc());
+    SetOrgMod(entry, COrgMod::eSubtype_strain, "x");
+    gbblock->SetGenbank().SetSource("Sebaea microphylla (strain x)");
+    entry->SetDescr().Set().push_back(gbblock);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.ExtendedCleanup(seh);
+    for (auto it : entry->GetSeq().GetDescr().Get()) {
+        BOOST_CHECK(it->Which() != CSeqdesc::e_Genbank);
+    }
+}
+
