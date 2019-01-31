@@ -39,6 +39,7 @@
 #include <corelib/ncbifile.hpp>
 
 #include <objtools/readers/aln_reader.hpp>
+#include <objtools/readers/fasta.hpp>
 #include "error_logger.hpp"
 
 #include <cstdio>
@@ -140,6 +141,10 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
     string errors = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extErrors);
 
+    const CAlnReader::TFastaFlags fasta_flags = 
+        (NStr::FindNoCase(test_name, "defline-as-title") != NPOS) ?
+        CFastaReader::fDeflineAsTitle : 0;
+
     if (!CFile(input).Exists()) {
         BOOST_FAIL("input file " << input << " does not exist.");
     }
@@ -152,7 +157,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CRef<CSeq_entry> pEntry;
     try {
         reader.Read(false, false, &logger);
-        pEntry = reader.GetSeqEntry();
+        pEntry = reader.GetSeqEntry(fasta_flags);
     } 
     catch (...) {
     }
@@ -161,7 +166,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 
     CNcbiOfstream ofstr(output.c_str());
     if (pEntry) {
-        ofstr << MSerial_AsnText << *reader.GetSeqEntry();
+        ofstr << MSerial_AsnText << *pEntry;
     }
     ofstr.close();
     cerr << "    Produced new ASN1 file " << output << "." << endl;
@@ -199,6 +204,9 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
 
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
     CAlnReader reader(ifstr);
+    const CAlnReader::TFastaFlags fasta_flags = 
+        (NStr::FindNoCase(testInfo.mInFile.GetName(), "defline-as-title") != NPOS) ?
+        CFastaReader::fDeflineAsTitle : 0;
 
     string newOutput = CDirEntry::GetTmpName();
     string newErrors = CDirEntry::GetTmpName();
@@ -207,7 +215,7 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
     CRef<CSeq_entry> pEntry;
     try {
         reader.Read(false, false, &logger);
-        pEntry = reader.GetSeqEntry();
+        pEntry = reader.GetSeqEntry(fasta_flags);
     }
     catch (...) {
     }
@@ -215,7 +223,7 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
 
     CNcbiOfstream ofstr(newOutput.c_str());
     if (pEntry) {
-        ofstr << MSerial_AsnText << *(reader.GetSeqEntry());
+        ofstr << MSerial_AsnText << *pEntry;
     }
     ofstr.close();
 
