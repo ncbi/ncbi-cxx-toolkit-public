@@ -81,41 +81,52 @@ bool CHitComparator<THit>::operator() (const THitRef& lhs,
 {
     bool rv;
 
+    auto& ah = *lhs;
+    auto& bh = *rhs;
+    auto a_box = ah.GetBox();
+    auto b_box = bh.GetBox();
+
+
+    // add same extra fields to compare for stability
+#define CMP2(lhs1, rhs1, lhs2, rhs2)\
+                     make_tuple(lhs1, lhs2, a_box[0], a_box[1], a_box[2], a_box[3], \
+                            ah.GetIdentity(), ah.GetScore() \
+                            ) < \
+                     make_tuple(rhs1, rhs2, b_box[0], b_box[1], b_box[2], b_box[3], \
+                            bh.GetIdentity(), bh.GetScore() \
+                            )
+#define CMP1(lhs, rhs) \
+                     CMP2( lhs, rhs, 0, 0)
+
+
     switch(m_SortType) {
 
     case eQueryMin:
 
-        rv = lhs->GetQueryMin() < rhs->GetQueryMin();
+        rv = CMP1(lhs->GetQueryMin(), rhs->GetQueryMin());
+
         break;
 
     case eQueryMinQueryMax:
         {
             const typename THit::TCoord qmin_lhs (lhs->GetQueryMin());
             const typename THit::TCoord qmin_rhs (rhs->GetQueryMin());
-            if(qmin_lhs != qmin_rhs) {
-                return qmin_lhs < qmin_rhs;
-            }
-            else {
-                return lhs->GetQueryMax() < rhs->GetQueryMax();
-            }
+
+            rv = CMP2(qmin_lhs, qmin_rhs, lhs->GetQueryMax(), rhs->GetQueryMax());
         }
         break;
 
     case eSubjMin:
 
-        rv = lhs->GetSubjMin() < rhs->GetSubjMin();
+        rv = CMP1(lhs->GetSubjMin(), rhs->GetSubjMin());
         break;
 
     case eSubjMinSubjMax:
         {
             const typename THit::TCoord smin_lhs = lhs->GetSubjMin();
             const typename THit::TCoord smin_rhs = rhs->GetSubjMin();
-            if(smin_lhs != smin_rhs) {
-                return smin_lhs < smin_rhs;
-            }
-            else {
-                return lhs->GetSubjMax() < rhs->GetSubjMax();
-            }
+
+            rv = CMP2(smin_lhs, smin_rhs, lhs->GetSubjMax(), rhs->GetSubjMax());
         }
         break;
         
@@ -123,12 +134,8 @@ bool CHitComparator<THit>::operator() (const THitRef& lhs,
         {
             const typename THit::TCoord qmin_lhs = lhs->GetQueryMin();
             const typename THit::TCoord qmin_rhs = rhs->GetQueryMin();
-            if(qmin_lhs == qmin_rhs) {
-                return lhs->GetScore() > rhs->GetScore();
-            }
-            else {
-                return qmin_lhs < qmin_rhs;
-            }
+
+            rv = CMP2(qmin_lhs, qmin_rhs, -lhs->GetScore(), -rhs->GetScore());
         }
         break;
         
@@ -136,12 +143,7 @@ bool CHitComparator<THit>::operator() (const THitRef& lhs,
         {
             const typename THit::TCoord smin_lhs = lhs->GetSubjMin();
             const typename THit::TCoord smin_rhs = rhs->GetSubjMin();
-            if(smin_lhs == smin_rhs) {
-                return lhs->GetScore() > rhs->GetScore();
-            }
-            else {
-                return smin_lhs < smin_rhs;
-            }
+            rv = CMP2(smin_lhs, smin_rhs, -lhs->GetScore(), -rhs->GetScore());
         }
         break;
 
@@ -151,60 +153,47 @@ bool CHitComparator<THit>::operator() (const THitRef& lhs,
             const typename THit::TCoord lhs_subj_max = lhs->GetSubjMax();
             const typename THit::TCoord rhs_subj_max = rhs->GetSubjMax();
             
-            if(lhs_subj_max < rhs_subj_max) {
-                rv = true;
-            }
-            else if(lhs_subj_max > rhs_subj_max) {
-                rv = false;
-            }
-            else {
-                rv = lhs->GetQueryMax() < rhs->GetQueryMax();
-            }
+            rv = CMP2(lhs_subj_max, rhs_subj_max, lhs->GetQueryMax(), rhs->GetQueryMax());
         }
         break;
         
     case eQueryId:
-        
-        rv = *(lhs->GetQueryId()) < *(rhs->GetQueryId());
+        {
+            const TIntId co = lhs->GetQueryId()->CompareOrdered( *(rhs->GetQueryId()) );
+            rv =  CMP1(co, 0);
+        }
         break;
 
     case eSubjId:
-        
-        rv = *(lhs->GetSubjId()) < *(rhs->GetSubjId());
+        {
+            const TIntId co = lhs->GetSubjId()->CompareOrdered( *(rhs->GetSubjId()) );
+            rv = CMP1(co, 0);
+        }
         break;
         
     case eSubjIdQueryId: 
         {
-            const TIntId co = lhs->GetSubjId()->CompareOrdered( *(rhs->GetSubjId()) );
-            if(co == 0) {
-                rv = *(lhs->GetQueryId()) < *(rhs->GetQueryId());
-            }
-            else {
-                rv = co < 0;
-            }
+            const TIntId co  = lhs->GetSubjId ()->CompareOrdered( *(rhs->GetSubjId ()) );
+            const TIntId co2 = lhs->GetQueryId()->CompareOrdered( *(rhs->GetQueryId()) );
+            rv = CMP2(co, 0, co2, 0);
         }
         break;
         
     case eSubjStrand:
         
-        rv = lhs->GetSubjStrand() < rhs->GetSubjStrand();
+        rv = CMP1(lhs->GetSubjStrand(), rhs->GetSubjStrand());
         break;
         
         
     case eQueryIdSubjIdSubjStrand:
         {
             const TIntId qid = lhs->GetQueryId()->CompareOrdered(*(rhs->GetQueryId()));
-            const TIntId sid = lhs->GetSubjId()->CompareOrdered(*(rhs->GetSubjId()));
 
-            if(qid == 0) {
-                if(sid == 0) {
-                    const bool subj_strand_lhs  = lhs->GetSubjStrand();
-                    const bool subj_strand_rhs = rhs->GetSubjStrand();
-                    return subj_strand_lhs > subj_strand_rhs;
-                }
-                else {
-                    rv = sid < 0;
-                }
+            if (qid == 0) {
+                const TIntId sid = lhs->GetSubjId()->CompareOrdered(*(rhs->GetSubjId()));
+                const int subj_strand_lhs = lhs->GetSubjStrand();
+                const int subj_strand_rhs = rhs->GetSubjStrand();
+                rv = CMP2(sid, 0, -subj_strand_lhs, -subj_strand_rhs);
             }
             else {
                 rv = qid < 0;
