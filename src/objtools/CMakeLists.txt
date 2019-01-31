@@ -7,7 +7,7 @@ NCBI_add_subdirectory(
   alnmgr cddalignview test manip cleanup format edit validator
   asniotest align seqmasks_io eutils
   align_format snputil uudutil variation writers #pubseq_gateway
-  logging
+  logging import
 )
 if(OFF)
 # Include projects from this directory
