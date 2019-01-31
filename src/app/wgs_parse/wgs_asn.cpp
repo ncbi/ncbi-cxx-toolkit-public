@@ -182,8 +182,10 @@ static bool NeedToProcess(CBioseq_set::EClass bio_set_class)
         CBioseq_set::eClass_pub_set,
         CBioseq_set::eClass_gen_prod_set,
         CBioseq_set::eClass_wgs_set,
+        CBioseq_set::eClass_mut_set,
         CBioseq_set::eClass_eco_set,
         CBioseq_set::eClass_phy_set,
+        CBioseq_set::eClass_pop_set,
         CBioseq_set::eClass_small_genome_set
     };
 
