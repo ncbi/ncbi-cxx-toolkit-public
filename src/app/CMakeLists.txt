@@ -56,6 +56,24 @@ NCBI_add_subdirectory(
   winmasker
 )
 
+if (NCBI_EXPERIMENTAL_CFG)
+NCBI_add_subdirectory(
+  dblb
+  feat_import
+  gff_deconcat
+  magicblast
+  netcache
+  prot_match
+  pub_report
+  rmblastn
+  split_cache
+  sub_fuse
+  tls
+  wgs_parse
+  wig2table
+)
+endif()
+
 if (OFF)
 # Include projects from this directory
 
