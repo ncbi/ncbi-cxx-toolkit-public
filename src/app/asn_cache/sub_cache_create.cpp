@@ -40,6 +40,7 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_signal.hpp>
+#include <corelib/ncbi_process.hpp>
 
 #include <objtools/data_loaders/asn_cache/asn_cache.hpp>
 #include <objtools/data_loaders/asn_cache/file_names.hpp>
@@ -945,13 +946,9 @@ int CAsnSubCacheCreateApplication::Run(void)
     LOG_POST(Error << "total records requested:      " << m_TotalRecords);
     LOG_POST(Error << "total records not found:      " << m_RecordsNotInMainCache);
     LOG_POST(Error << "total records already cached: " << m_RecordsInSubCache);
-                size_t total_mem = 0;
-                size_t resident_mem = 0;
-                size_t shared_mem = 0;
-                GetMemoryUsage(&total_mem,
-                                   &resident_mem,
-                                   &shared_mem);
-    LOG_POST(Error << "total memory consumed: " << total_mem);
+                CProcess::SMemoryUsage memory_usage;
+                CCurrentProcess::GetMemoryUsage(memory_usage);
+    LOG_POST(Error << "total memory consumed: " << memory_usage.total);
     if (fetch_missing) {
         LOG_POST(Error << "total record retrieval failures: " << m_RecordsNotFound);
         LOG_POST(Error << "total records withdrawn:         " << m_RecordsWithdrawn);

@@ -33,6 +33,7 @@
 
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbi_process.hpp>
 
 #include <objmgr/util/sequence.hpp>
 
@@ -264,7 +265,7 @@ CAlignSort::CAlignSort(CScope &scope,
 
     if ( !m_MemoryLimit  &&  !m_CountLimit ) {
         /// default is to use 50% of available RAM for sorting
-        m_MemoryLimit = GetPhysicalMemorySize() / 2;
+        m_MemoryLimit = CSystemInfo::GetTotalPhysicalMemorySize() / 2;
         LOG_POST(Info << "default physical memory size = " << m_MemoryLimit);
     }
 
@@ -342,13 +343,9 @@ void CAlignSort::SortAlignments(IAlignSource &align_source,
                 m_Extractor.count % 10000 == 0)
             {
                 /// check to see if we've exceeded memory limits
-                size_t total_mem = 0;
-                size_t resident_mem = 0;
-                size_t shared_mem = 0;
-                if (GetMemoryUsage(&total_mem,
-                                   &resident_mem,
-                                   &shared_mem)) {
-                    if (total_mem > m_MemoryLimit &&
+                CProcess::SMemoryUsage memory_usage;
+                if (CCurrentProcess::GetMemoryUsage(memory_usage)) {
+                    if (memory_usage.total > m_MemoryLimit &&
                         (!m_CountLimit || m_CountLimit > aligns.size()))
                     {
                         m_CountLimit = aligns.size();
