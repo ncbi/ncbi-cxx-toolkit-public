@@ -24,6 +24,9 @@ TAG_PRE_COMMIT: tagprecommit/use_embedded_ptb.py
 Win64_15        : MSVC15-64-dll : dll    64 ReleaseDLL
 Win64_15        : MSVC15-64     : static 64 ReleaseMT
 
+Win64_17        : MSVC17-64-dll : dll    64 ReleaseDLL
+Win64_17        : MSVC17-64     : static 64 ReleaseMT
+
 Cygwin64        : GCC       : GCC.sh --without-debug --with-mt --with-flat-makefile --without-ncbi-c
 
 Linux64-Centos  : GCC481    : GCC.sh 4.8.1 --without-debug --without-flat-makefile --without-ncbi-c
