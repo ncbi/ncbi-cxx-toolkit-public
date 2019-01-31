@@ -174,21 +174,21 @@ public:
     ~SAlignmentFile()
     {
         for (int i=0; i < num_sequences; ++i) {
-            free(ids[i]);
-            free(sequences[i]);
+            delete[] ids[i];
+            delete[] sequences[i];
         }
-        free(ids);
-        free(sequences);
+        delete[] ids;
+        delete[] sequences;
 
         for (int i=0; i < num_organisms; ++i) {
-            free(organisms[i]);
+            delete[] organisms[i];
         }
-        free(organisms);
+        delete[] organisms;
         
         for (int i=0; i < num_deflines; ++i) {
-            free(deflines[i]);
+            delete[] deflines[i];
         }
-        free(deflines);
+        delete[] deflines;
     };
 
     int num_sequences;
