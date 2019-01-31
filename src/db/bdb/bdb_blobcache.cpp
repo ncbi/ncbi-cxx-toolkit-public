@@ -1281,7 +1281,7 @@ void CBDB_Cache::Open(const string& cache_path,
 
     if (!fl_clean.Exists()) {
         CFileWriter writer(fl_clean.GetPath());
-        string pid = NStr::NumericToString(CProcess::GetCurrentPid());
+        string pid = NStr::NumericToString(CCurrentProcess::GetPid());
         writer.Write(pid.data(), pid.size());
         s_OpenedDirs.insert(m_Path);
     }

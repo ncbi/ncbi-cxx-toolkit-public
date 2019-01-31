@@ -286,12 +286,12 @@ static int s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher, int delay)
 bool s_CheckMemoryLimit(Uint8 total_memory_limit)
 {
     if ( total_memory_limit ) {
-        size_t memory_usage;
-        if ( !GetMemoryUsage(&memory_usage, 0, 0) ) {
+        CCurrentProcess::SMemoryUsage memory_usage;
+        if ( !CCurrentProcess::GetMemoryUsage(memory_usage) ) {
             ERR_POST("Could not check self memory usage" );
         }
-        else if (memory_usage > total_memory_limit) {
-            ERR_POST(Warning << "Memory usage (" << memory_usage <<
+        else if (memory_usage.total > total_memory_limit) {
+            ERR_POST(Warning << "Memory usage (" << memory_usage.total <<
                 ") is above the configured limit (" <<
                 total_memory_limit << ")");
             return true;
@@ -450,7 +450,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     if (restart_delay > 0) {
         // CRandom is higher-quality, but would introduce an extra
         // dependency on libxutil; rand() should be good enough here.
-        srand(CProcess::GetCurrentPid());
+        srand(CCurrentProcess::GetPid());
         double r = rand() / (RAND_MAX + 1.0);
         restart_delay = 1 + (int)(restart_delay * r);
     } else {
@@ -461,7 +461,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                                       CNcbiRegistry::eReturn);
 
     // Diag.prefix related preparations
-    const string prefix_pid(NStr::NumericToString(CProcess::GetCurrentPid()) + "-");
+    const string prefix_pid(NStr::NumericToString(CCurrentProcess::GetPid()) + "-");
 
     // Main Fast-CGI loop
     CTime mtime = s_GetModTime(GetArguments().GetProgramName());
@@ -628,7 +628,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                 m_Context->PutMsg
                     ("FastCGI: "      + NStr::NumericToString(m_Iteration) +
                      " iteration of " + NStr::NumericToString(max_iterations) +
-                     ", pid "         + NStr::NumericToString(CProcess::GetCurrentPid()));
+                     ", pid "         + NStr::NumericToString(CCurrentProcess::GetPid()));
             }
 
             ConfigureDiagnostics(*m_Context);

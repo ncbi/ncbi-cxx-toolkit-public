@@ -79,7 +79,7 @@ void CThreadPoolTester::Init(void)
 
     SetupArgDescriptions(arg_desc.release());
 
-    s_RNG.SetSeed(CProcess::GetCurrentPid());
+    s_RNG.SetSeed(CCurrentProcess::GetPid());
 }
 
 class CTestRequest : public CStdRequest

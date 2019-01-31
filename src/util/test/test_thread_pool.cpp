@@ -171,7 +171,7 @@ bool CThreadPoolTester::TestApp_Init(void)
     s_Timer.Start();
 
     {{
-            TPid pid = CProcess::GetCurrentPid();
+            TPid pid = CCurrentProcess::GetPid();
             s_RNG.SetSeed(pid);
             MSG_POST("Randomization seed value: " << pid);
     }}
