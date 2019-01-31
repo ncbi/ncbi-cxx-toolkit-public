@@ -789,8 +789,15 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags)
 
     if (!m_Deflines.empty()) {
         int i=0;
-        for (auto& pSeqEntry : seq_set) {
-            x_AddMods(m_Deflines[i++], fasta_flags, pSeqEntry->SetSeq());
+        if (fasta_flags & CFastaReader::fAddMods) {
+            for (auto& pSeqEntry : seq_set) {
+                x_AddMods(m_Deflines[i++], pSeqEntry->SetSeq());
+            }
+        }
+        else {
+            for (auto& pSeqEntry : seq_set) {
+                x_AddTitle(m_Deflines[i++], pSeqEntry->SetSeq());
+            }
         }
     }
 
@@ -813,7 +820,6 @@ static void s_AppendMods(
 }
 
 void CAlnReader::x_AddMods(const string& defline, 
-        const TFastaFlags fasta_flags, 
         CBioseq& bioseq)
 {
     if (NStr::IsBlank(defline)) {

@@ -37,7 +37,7 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
-#include <objtools/readers/fasta_reader_utils.hpp>
+#include <objtools/readers/fasta.hpp>
 #include <objtools/readers/message_listener.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 
@@ -208,7 +208,7 @@ public:
     using TFastaFlags = objects::CFastaDeflineReader::TFastaFlags;
     /// Create ASN.1 classes from the parsed alignment
     CRef<objects::CSeq_align> GetSeqAlign(TFastaFlags fasta_flags=0);
-    CRef<objects::CSeq_entry> GetSeqEntry(TFastaFlags fasta_flags=0);
+    CRef<objects::CSeq_entry> GetSeqEntry(TFastaFlags fasta_flags=objects::CFastaReader::fAddMods);
 
 
 private:
@@ -268,9 +268,7 @@ private:
         TFastaFlags fasta_flags,
         objects::CDense_seg& denseg);
 
-    void x_AddMods(const string& defline, 
-           TFastaFlags fasta_flags,
-           objects::CBioseq& bioseq);
+    void x_AddMods(const string& defline, objects::CBioseq& bioseq);
 
     void x_AddTitle(const string& defline, objects::CBioseq& bioseq);
 
