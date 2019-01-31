@@ -1097,18 +1097,9 @@ void CNewCleanup_imp::GBblockBC (
 
     // split keywords at semicolons
     if (gbk.IsSetKeywords()) {
-        auto& keyword_list = gbk.SetKeywords();
-        CGB_block::TKeywords::iterator it = keyword_list.begin();
-        while (it != gbk.SetKeywords().end()) {
-            vector<string> tokens;
-            NStr::Split(*it, ";", tokens, NStr::fSplit_Tokenize);
-            if (tokens.size() > 1) {
-                it = keyword_list.erase(it);
-                keyword_list.insert(it, tokens.begin(), tokens.end());
-            } else {
-                ++it;
-            }
-        }
+        string one_string = NStr::Join(gbk.GetKeywords(), ";");
+        gbk.ResetKeywords();
+        NStr::Split(one_string, ";", gbk.SetKeywords());
     }
 
     CLEAN_STRING_LIST (gbk, Keywords);
@@ -7003,12 +6994,10 @@ void CNewCleanup_imp::GeneFeatBC (
                 if (s_IsEmptyGeneRef(gene_ref)) {
                     xr_itr = seq_feat.SetXref().erase(xr_itr);
                     ChangeMade(CCleanupChange::eChangeDbxrefs);
-                } else {
-                    ++xr_itr;
+                    continue;
                 }
-            } else {
-                ++xr_itr;
             }
+            ++xr_itr;
         }
     }
 
@@ -7315,10 +7304,8 @@ void CNewCleanup_imp::ProtFeatfBC (
         
     // move prot.db to feat.dbxref
     if (pr.IsSetDb()) {
-        auto& dbset = pr.SetDb();
-        for (auto it : dbset) {
-            sf.SetDbxref().push_back(it);
-        }
+        auto& sfxref = sf.SetDbxref();
+        sfxref.insert(sfxref.end(), pr.SetDb().begin(), pr.SetDb().end());
         pr.ResetDb();
         ChangeMade(CCleanupChange::eChangeDbxrefs);
     }
@@ -12475,6 +12462,16 @@ void CNewCleanup_imp::ResynchPeptidePartials (
 }
 
 
+// Helper for removing old-name OrgMod's
+struct STitleMatchString
+{
+    const string& m_Val;
+    bool operator()(CRef<CSeqdesc> desc)
+    {
+        return (desc->IsTitle() && !NStr::Equal(desc->GetTitle(), m_Val));
+    }
+};
+
 void CNewCleanup_imp::RemoveBadProteinTitle(CBioseq& seq)
 {
     if (!seq.IsSetInst() || !seq.GetInst().IsSetMol() || !seq.IsAa()) {
@@ -12496,14 +12493,11 @@ void CNewCleanup_imp::RemoveBadProteinTitle(CBioseq& seq)
 
     string new_defline = sequence::CDeflineGenerator().GenerateDefline(bsh, sequence::CDeflineGenerator::fIgnoreExisting);
     auto& dset = seq.SetDescr().Set();
-    CBioseq::TDescr::Tdata::iterator title_it = dset.begin();
-    while (title_it != dset.end()) {
-        if ((*title_it)->IsTitle() && !NStr::Equal(new_defline, (*title_it)->GetTitle())) {
-            title_it = dset.erase(title_it);
-            ChangeMade(CCleanupChange::eRemoveDescriptor);
-        } else {
-            ++title_it;
-        }
+    size_t orig = dset.size();
+    STitleMatchString matcher{ new_defline };
+    dset.erase(std::remove_if(dset.begin(), dset.end(), matcher), dset.end());
+    if (dset.size() != orig) {
+        ChangeMade(CCleanupChange::eRemoveDescriptor);
     } 
 }
 

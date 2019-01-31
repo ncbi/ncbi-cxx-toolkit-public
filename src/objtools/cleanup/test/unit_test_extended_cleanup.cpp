@@ -1875,3 +1875,30 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4592)
     
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_ProtTitleRemoval)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_entry> prot = GetProteinSequenceFromGoodNucProtSet(entry);
+    CRef<CSeqdesc> title(new CSeqdesc());
+    title->SetTitle("x");
+    prot->SetDescr().Set().push_back(title);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.ExtendedCleanup(seh);
+
+    CConstRef<CSeq_entry> prot_after = seh.GetCompleteSeq_entry()->GetSet().GetSeq_set().back();
+
+    for (auto it : prot_after->GetDescr().Get()) {
+        if (it->Which() == CSeqdesc::e_Title) {
+            BOOST_CHECK(!NStr::Equal(it->GetTitle(), "x"));
+        }
+    }
+}

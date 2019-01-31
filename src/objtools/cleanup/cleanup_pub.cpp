@@ -234,11 +234,7 @@ bool CPubEquivCleaner::Clean(bool fix_initials, bool strip_serial)
 
 bool CPubEquivCleaner::IsEmpty()
 {
-    if (!m_Equiv.IsSet() || m_Equiv.Get().empty()) {
-        return true;
-    } else {
-        return false;
-    }
+    return !m_Equiv.IsSet() || m_Equiv.Get().empty();
 }
 
 bool CPubEquivCleaner::ShouldWeFixInitials(const CPub_equiv& equiv)
