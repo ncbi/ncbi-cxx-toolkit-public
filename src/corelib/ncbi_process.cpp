@@ -1274,6 +1274,35 @@ bool CCurrentProcess::GetTimes(double* real, double* user, double* sys, EWhat wh
     }
     return res;
 
+#elif defined(NCBI_OS_LINUX)
+
+    // Execution times can be extracted from /proc/<pid>/stat,
+    CLinuxFeature::CProcStat ps(0);
+
+    // Fields numbers in that file, for process itself and children.
+    // Note, all values can be zero.
+    int fu = 14, fs = 15;
+    if (what == eChildren) {
+        fu = 16;
+        fs = 17;
+    }
+    if ( real  &&  (what == eProcess) ) {
+        // Real execution time can be calculated for the process only.
+        // field 22, in ticks per second.
+        Uint8 start = NStr::StringToUInt8(ps.at(22), NStr::fConvErr_NoThrow);
+        double uptime = CSystemInfo::GetUptime();
+        if (start > 0  &&  uptime > 0) {
+            *real = uptime - (double)start / (double)tick;
+        }
+    }
+    if ( user ) {
+        *user = (double)NStr::StringToUInt8(ps.at(fu), NStr::fConvErr_NoThrow) / (double)tick;
+    }
+    if ( sys ) {
+        *sys  = (double)NStr::StringToUInt8(ps.at(fs), NStr::fConvErr_NoThrow) / (double)tick;
+    }
+    return true;
+
 #elif defined(HAVE_GETRUSAGE)
 
     int who = RUSAGE_SELF;
