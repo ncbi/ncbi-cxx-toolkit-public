@@ -2231,8 +2231,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SetupSSLEx(FSSLSetup setup);
 
 
 /** Return an SSL vendor name (in a const static storage), with special
- *  considerations:  return "" if SSL has not been properly initialized,
- *  NULL if SSL has not been properly set up.
+ *  considerations:  return NULL if SSL has not been set up (yet), and return
+ *  "" if SSL has not been (properly) initialized for use.
  * @note
  *  "NONE" is returned as a name if SSL has been explicitly disabled.
  * @sa
