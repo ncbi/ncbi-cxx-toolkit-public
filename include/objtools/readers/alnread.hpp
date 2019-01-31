@@ -160,47 +160,20 @@ protected:
 class SAlignmentFile {
 //  ============================================================================
 public:
-    SAlignmentFile():
-        num_sequences(0),
-        num_organisms(0),
-        num_deflines(0),
-        num_segments(0),
-        ids(nullptr),
-        sequences(nullptr),
-        organisms(nullptr),
-        deflines(nullptr)
-    {};
+    int 
+    NumDeflines() const { return mDeflines.size(); };
 
-    ~SAlignmentFile()
-    {
-        for (int i=0; i < num_sequences; ++i) {
-            delete[] ids[i];
-            delete[] sequences[i];
-        }
-        delete[] ids;
-        delete[] sequences;
+    int
+    NumOrganisms() const { return mOrganisms.size(); };
 
-        for (int i=0; i < num_organisms; ++i) {
-            delete[] organisms[i];
-        }
-        delete[] organisms;
-        
-        for (int i=0; i < num_deflines; ++i) {
-            delete[] deflines[i];
-        }
-        delete[] deflines;
-    };
+    int
+    NumSequences() const { return mSequences.size(); };
 
-    int num_sequences;
-    int num_organisms;
-    int num_deflines;
-    int num_segments;
-    char ** ids;
-    char ** sequences;
-    char ** organisms;
-    char** deflines;
+    vector<string> mIds;
+    vector<string> mSequences;
+    vector<string> mOrganisms;
+    vector<string> mDeflines;
     char align_format_found;
-protected:
 };
 
 NCBI_XOBJREAD_EXPORT 

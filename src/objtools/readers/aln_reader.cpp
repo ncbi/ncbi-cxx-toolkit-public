@@ -211,17 +211,17 @@ void s_GetSequenceLengthInfo(
         size_t& max_len, 
         int& max_index) 
 {
-
-    if (alignmentInfo.num_sequences == 0) {
+    const auto numSequences = alignmentInfo.NumSequences();
+    if (numSequences == 0) {
         return;
     }
 
-    max_len = strlen(alignmentInfo.sequences[0]);
+    max_len = alignmentInfo.mSequences[0].size();
     min_len = max_len;
     max_index = 0;
 
-    for (auto i = 0; i < alignmentInfo.num_sequences; ++i) {
-        size_t curr_len = strlen(alignmentInfo.sequences[i]);
+    for (auto i = 0; i < numSequences; ++i) {
+        size_t curr_len = alignmentInfo.mSequences[i].size();
         if (curr_len > max_len) {
             max_len = curr_len;
             max_index = i;
@@ -315,7 +315,7 @@ void CAlnReader::Read(
         return;
     }
 
-    if (1 == alignmentInfo.num_sequences) {
+    if (1 == alignmentInfo.NumSequences()) {
         sReportError(
             pErrorListener,
             eDiag_Fatal,
@@ -345,7 +345,8 @@ void CAlnReader::Read(
         // Check for replicated intervals in the longest sequence
         const int repeat_interval = x_GetGCD(max_len, min_len);
         const bool is_repeated = 
-            x_IsReplicatedSequence(alignmentInfo.sequences[max_index], max_len, repeat_interval);
+            x_IsReplicatedSequence(
+                alignmentInfo.mSequences[max_index].c_str(), max_len, repeat_interval);
         //AlignmentFileFree(afp);
 
         if (is_repeated) {
@@ -371,10 +372,11 @@ void CAlnReader::Read(
     // and no tell-tale alignment format lines were found,
     // check to see if any of the lines contain gaps.
     // no gaps plus no alignment indicators -> don't guess alignment
+    const auto numSequences = alignmentInfo.NumSequences();
     if (guess && !alignmentInfo.align_format_found) {
         bool found_gap = false;
-        for (int i = 0; i < alignmentInfo.num_sequences && !found_gap; i++) {
-            if (strchr (alignmentInfo.sequences[i], '-') != NULL) {
+        for (int i = 0; i < numSequences && !found_gap; i++) {
+            if (alignmentInfo.mSequences[i].find('-') != string::npos) {
                 found_gap = true;
             }
         }
@@ -388,34 +390,17 @@ void CAlnReader::Read(
             return;
         }
     }
-    
 
-    // build the CAlignment
-    m_Seqs.resize(alignmentInfo.num_sequences);
-    m_Ids.resize(alignmentInfo.num_sequences);
-    for (int i = 0;  i < alignmentInfo.num_sequences;  ++i) {
-        m_Seqs[i] = alignmentInfo.sequences[i];
-        m_Ids[i] = alignmentInfo.ids[i];
-    }
+    m_Seqs.assign(alignmentInfo.mSequences.begin(), alignmentInfo.mSequences.end());
+    m_Ids.assign(alignmentInfo.mIds.begin(), alignmentInfo.mIds.end());
+    m_Organisms.assign(alignmentInfo.mOrganisms.begin(), alignmentInfo.mOrganisms.end());
 
-    
-    m_Organisms.resize(alignmentInfo.num_organisms);
-    for (int i = 0;  i < alignmentInfo.num_organisms;  ++i) {
-        if (alignmentInfo.organisms[i]) {
-            m_Organisms[i] = alignmentInfo.organisms[i];
-        } else {
-            m_Organisms[i].erase();
-        }
-    }
-
-   
-
-    const auto num_deflines = alignmentInfo.num_deflines;
-    if (num_deflines) {
-        if (num_deflines == m_Ids.size()) {
-            m_Deflines.resize(alignmentInfo.num_deflines);
-            for (int i=0;  i< num_deflines;  ++i) {
-                m_Deflines[i] = NStr::TruncateSpaces(alignmentInfo.deflines[i]);
+    auto numDeflines = alignmentInfo.NumDeflines();
+    if (numDeflines) {
+        if (numDeflines == m_Ids.size()) {
+            m_Deflines.resize(numDeflines);
+            for (int i=0;  i< numDeflines;  ++i) {
+                m_Deflines[i] = NStr::TruncateSpaces(alignmentInfo.mDeflines[i]);
             }
         }
         else {
@@ -426,13 +411,7 @@ void CAlnReader::Read(
                 "Error reading deflines. Unable to associate deflines with sequences");
         }
     }
-
-    //AlignmentFileFree(afp);
-
-    {{
-        m_Dim = m_Ids.size();
-    }}
-
+    m_Dim = m_Ids.size();
     m_ReadDone = true;
 
     return;
@@ -594,12 +573,11 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
     CDense_seg::TIds& ids = denseg.SetIds();
     ids.resize(m_Dim);
 
-    const auto num_deflines = m_Deflines.size();
     for (auto i=0; i<m_Dim; ++i) {
         // Reconstruct original defline string from results 
         // returned by C code.
         string fasta_defline = ">" + m_Ids[i];
-        if (i < num_deflines && !m_Deflines[i].empty()) {
+        if (i < m_Deflines.size() && !m_Deflines[i].empty()) {
             fasta_defline += " " + m_Deflines[i];
         }
         ids[i] = GenerateID(fasta_defline, i, fasta_flags);

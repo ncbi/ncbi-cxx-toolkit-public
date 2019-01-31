@@ -619,7 +619,7 @@ s_ReportDuplicateIDError(
  */
 static void
 s_ReportMissingSequenceData(
-    char* id,
+    const char* id,
     FReportErrorFunction report_error,
     void* report_error_userdata)
 {
@@ -639,7 +639,7 @@ s_ReportMissingSequenceData(
  */
 static void 
 s_ReportBadSequenceLength(
-    char* id,
+    const char* id,
     int expected_length,
     int actual_length,
     FReportErrorFunction report_error,
@@ -4899,53 +4899,36 @@ s_ConvertDataToOutput(
         return false;
     }
 
-    alignInfo.num_organisms = afrp->num_organisms;
-    alignInfo.num_deflines = afrp->num_deflines;
-    alignInfo.num_segments = afrp->num_segments;
-    alignInfo.num_sequences = 0;
+    auto numOrganisms = afrp->num_organisms;
+    auto numDeflines = afrp->num_deflines;
+    auto numSegments = afrp->num_segments;
+    auto numSequences  = 0;
+    for (arsp = afrp->sequences;  arsp;  arsp = arsp->next) {
+        numSequences++;
+    }
     alignInfo.align_format_found = afrp->align_format_found;
 
-    for (arsp = afrp->sequences;  arsp;  arsp = arsp->next) {
-        alignInfo.num_sequences++;
-    }
 
-    if (alignInfo.num_organisms > 0  &&
-            alignInfo.num_sequences != afrp->num_organisms  &&
-            alignInfo.num_sequences / alignInfo.num_segments != alignInfo.num_organisms) {
+    if (numOrganisms > 0  &&
+            numSequences != numOrganisms  &&
+            numSequences / numSegments != numDeflines) {
         s_ReportMissingOrganismInfo (afrp->report_error,
                                    afrp->report_error_userdata);
     }
 
-    //allocate memory for alinInfo internal data: 
-    if (alignInfo.num_sequences > 0) {
-        alignInfo.sequences = new char*[alignInfo.num_sequences]{nullptr};
-        alignInfo.ids = new char*[alignInfo.num_sequences]{nullptr};
-    }
-    if (alignInfo.num_organisms > 0) {
-        alignInfo.organisms = new char*[alignInfo.num_organisms]{nullptr};
-    }
-    if (alignInfo.num_deflines > 0) {
-        alignInfo.deflines = new char*[alignInfo.num_deflines]{nullptr};
-    }
-
     /* copy in deflines */
+    alignInfo.mDeflines.resize(numDeflines);
     for (lip = afrp->deflines, index = 0;
-            lip  &&  index < alignInfo.num_deflines;
+            lip  &&  index < afrp->num_deflines;
             lip = lip->next, index++) {
-        if (!lip->data) {
-            alignInfo.deflines [index] = nullptr;
-        } else {
-            alignInfo.deflines [index] = new char[strlen(lip->data) + 1];
-            strcpy(alignInfo.deflines[index], lip->data);
-        }
+        alignInfo.mDeflines[index] = string(lip->data ? lip->data : "");
     }
 
     /* copy in organism information */
-    for (lip = afrp->organisms, index = 0;
-            lip  &&  index < alignInfo.num_organisms;
+    alignInfo.mOrganisms.resize(numOrganisms);
+    for (lip = afrp->organisms, index = 0; lip  &&  index < numOrganisms;
             lip = lip->next, index++) {
-        alignInfo.organisms [index] = new char[strlen(lip->data)+1];
-        strcpy(alignInfo.organisms[index], lip->data);
+        alignInfo.mOrganisms[index] = string(lip->data ? lip->data : "");
     }
   
     /* we need to store length information about different segments separately */
@@ -4954,16 +4937,16 @@ s_ConvertDataToOutput(
     
     /* copy in sequence data */
     curr_seg = 0;
+    alignInfo.mSequences.resize(numSequences);
+    alignInfo.mIds.resize(numSequences);
     for (arsp = afrp->sequences, index = 0;
-            arsp  &&  index < alignInfo.num_sequences;
+            arsp  &&  index < numSequences;
             arsp = arsp->next, index++) {
-        alignInfo.sequences [index] = s_LineInfoMergeAndStripSpaces (arsp->sequence_data);
+        auto sequenceLi = s_LineInfoMergeAndStripSpaces (arsp->sequence_data);
+        alignInfo.mSequences [index] = string( sequenceLi ? sequenceLi : "");
+        lengths [curr_seg] = s_AddSizeInfo(lengths[curr_seg], alignInfo.mSequences[index].size());
 
-        if (alignInfo.sequences [index]) {
-            lengths [curr_seg] = s_AddSizeInfo(lengths[curr_seg], strlen (alignInfo.sequences[index]));
-        }
-        alignInfo.ids [index] = new char[strlen(arsp->id) + 1];
-        strcpy(alignInfo.ids [index], arsp->id);
+        alignInfo.mIds[index] = string(arsp->id ? arsp->id : "");
         curr_seg ++;
         if (curr_seg >= afrp->num_segments) {
             curr_seg = 0;
@@ -4977,14 +4960,14 @@ s_ConvertDataToOutput(
     }
 
     curr_seg = 0;
-    for (index = 0;  index < alignInfo.num_sequences;  index++) {
-        if (!alignInfo.sequences [index]) {
-            s_ReportMissingSequenceData (alignInfo.ids [index],
+    for (index = 0;  index < alignInfo.NumSequences();  index++) {
+        if (alignInfo.mSequences [index].empty()) {
+            s_ReportMissingSequenceData (alignInfo.mIds [index].c_str(),
                                        afrp->report_error,
                                        afrp->report_error_userdata);
-        } else if ((int) strlen (alignInfo.sequences [index]) != best_length [curr_seg]) {
-            s_ReportBadSequenceLength (alignInfo.ids [index], best_length [curr_seg],
-                                     strlen (alignInfo.sequences [index]),
+        } else if (alignInfo.mSequences[index].size() != best_length [curr_seg]) {
+            s_ReportBadSequenceLength (alignInfo.mIds [index].c_str(), best_length [curr_seg],
+                                     alignInfo.mSequences [index].size(),
                                      afrp->report_error,
                                      afrp->report_error_userdata);
         }
@@ -4995,9 +4978,9 @@ s_ConvertDataToOutput(
     }
 
     if (afrp->expected_num_sequence > 0  &&  
-            afrp->expected_num_sequence != alignInfo.num_sequences) {
+            afrp->expected_num_sequence != alignInfo.NumSequences()) {
         s_ReportIncorrectNumberOfSequences (afrp->expected_num_sequence,
-                                          alignInfo.num_sequences,
+                                          alignInfo.NumSequences(),
                                           afrp->report_error,
                                           afrp->report_error_userdata);
     }
