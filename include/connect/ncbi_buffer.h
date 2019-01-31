@@ -54,6 +54,9 @@
 #include <stddef.h>     /* ...to define "size_t"... */
 
 
+#define BUF_DEF_CHUNK_SIZE  1024
+
+
 /** @addtogroup BuffServices
  *
  * @{
@@ -75,10 +78,9 @@ typedef struct SNcbiBuf* BUF;  /**< handle of a buffer */
  * NOTE:  if "*pBuf" == NULL then create it;
  *        if "chunk_size" is passed 0 then set it to BUF_DEF_CHUNK_SIZE.
  */
-#define BUF_DEF_CHUNK_SIZE 1024
 extern NCBI_XCONNECT_EXPORT size_t BUF_SetChunkSize
-(BUF*        pBuf,
- size_t      chunk_size
+(BUF*   pBuf,
+ size_t chunk_size
  );
 
 
@@ -146,12 +148,12 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_Append
 /*!
  * Add new data to the end of "*pBuf" (to be read last).
  * On error (failed memory allocation), return zero value;
- * otherwise return non-zero (i.e. including when "size" passed as 0).
+ * otherwise return non-zero (i.e. including when "size" is passed as 0).
  * NOTE:  if "*pBuf" == NULL then create it if necessary (e.g. if size != 0).
  * NOTE:  BUF_Write() with "data" that reside immediately past the end of the
  * data (in the unoccupied space) of a chunk that was previously appended with
- * BUF_AppendEx() results in a zero copy operation (just the pointers updated
- * as necessary).
+ * BUF_AppendEx() results in a zero-copy operation (just the pointers updated
+ * internally as necessary).
  */
 extern NCBI_XCONNECT_EXPORT /*bool*/int BUF_Write
 (BUF*        pBuf,
@@ -246,7 +248,8 @@ extern NCBI_XCONNECT_EXPORT void BUF_Erase(BUF buf);
 
 /*!
  * Append all contents of the source buffer "src" to the destination buffer
- * "*dst", making the source buffer empty (as with BUF_Erase(src)).
+ * "*dst" (creating the buffer as necessary if "dst" is NULL), making the
+ * source buffer "src" empty (as with BUF_Erase(src)).
  * Return non-zero if successful; 0 in case of an error.
  * NOTE: do nothing if "src" is either NULL or contains no data.
  * NOTE: the call re-links internal structures without copying any actual data.
@@ -255,7 +258,7 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ BUF_Splice(BUF* dst, BUF src);
 
 
 /*!
- * Destroy all internal data.
+ * Destroy all buffer data.
  * NOTE: do nothing if "buf" == NULL.
  */
 extern NCBI_XCONNECT_EXPORT void BUF_Destroy(BUF buf);
