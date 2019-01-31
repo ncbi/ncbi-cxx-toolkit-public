@@ -839,12 +839,6 @@ void CAlnReader::x_AddMods(const string& defline,
     CModHandler::TModList skipped_mods;
     CModAdder::Apply(mod_handler, bioseq, pMessageListener.get(), skipped_mods);
 
-
-    if (fasta_flags & CFastaReader::fDeflineAsTitle) {
-        x_AddTitle(NStr::TruncateSpaces(defline), bioseq);
-        return;
-    }
-
     s_AppendMods(rejected_mods, remainder);
     s_AppendMods(skipped_mods, remainder);
     // Add title string
