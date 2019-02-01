@@ -591,7 +591,7 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
     }
 
     if (add_this) {
-        m_Objs[kPartialProblems].Add(*context.DiscrObj(obj, result)).Fatal();
+        m_Objs[kPartialProblems].Add(*context.DiscrObj(obj, result == 1)).Fatal();
     }
 }
 
