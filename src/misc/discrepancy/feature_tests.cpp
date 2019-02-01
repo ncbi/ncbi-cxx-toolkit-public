@@ -436,7 +436,7 @@ bool IsNonExtendable(const CSeq_loc& loc, const CBioseq& seq, CScope* scope, boo
         TSeqPos start = loc.GetStart(eExtreme_Positional);
         if (start > 0) {
             TSeqPos extend_len = 0;
-            if (!IsExtendableLeft(start, seq, scope, extend_len, circular)) {
+            if (IsExtendableLeft(start, seq, scope, extend_len, circular) != 1) {
                 rval = true;
             }
         }
@@ -445,7 +445,7 @@ bool IsNonExtendable(const CSeq_loc& loc, const CBioseq& seq, CScope* scope, boo
         TSeqPos stop = loc.GetStop(eExtreme_Positional);
         if (stop < seq.GetLength() - 1) {
             TSeqPos extend_len = 0;
-            if (!IsExtendableRight(stop, seq, scope, extend_len, circular)) {
+            if (IsExtendableRight(stop, seq, scope, extend_len, circular) != 1) {
                 rval = true;
             }
         }
@@ -567,14 +567,12 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
     }
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
     bool circular = seq->IsSetInst() && seq->GetInst().GetTopology() == CSeq_inst::eTopology_circular;
-    unsigned short result = 0;
     bool add_this = false;
     if (obj.GetLocation().IsPartialStart(eExtreme_Positional)) {
         TSeqPos start = obj.GetLocation().GetStart(eExtreme_Positional);
         if (start > 0) {
             TSeqPos extend_len = 0;
-            result = IsExtendableLeft(start, *seq, &(context.GetScope()), extend_len, circular);
-            if (result) {
+            if (IsExtendableLeft(start, *seq, &(context.GetScope()), extend_len, circular) == 1) {
                 add_this = extend_len > 0 && extend_len <= 3;
             }
         }
@@ -583,15 +581,14 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
         TSeqPos stop = obj.GetLocation().GetStop(eExtreme_Positional);
         if (stop < seq->GetLength() - 1) {
             TSeqPos extend_len = 0;
-            result = IsExtendableRight(stop, *seq, &(context.GetScope()), extend_len, circular);
-            if (result) {
+            if (IsExtendableRight(stop, *seq, &(context.GetScope()), extend_len, circular) == 1) {
                 add_this = extend_len > 0 && extend_len <= 3;
             }
         }
     }
 
     if (add_this) {
-        m_Objs[kPartialProblems].Add(*context.DiscrObj(obj, result == 1)).Fatal();
+        m_Objs[kPartialProblems].Add(*context.DiscrObj(obj, true)).Fatal();
     }
 }
 
