@@ -358,16 +358,16 @@ const string kNonExtendableException = "unextendable partial coding region";
 
 const string kNonExtendable = "[n] feature[s] [has] partial ends that do not abut the end of the sequence or a gap, and cannot be extended by 3 or fewer nucleotides to do so";
 
-bool IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSeqPos& extend_len)
+
+// 1 : autofixable, 2 : non autofixable
+unsigned short IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSeqPos& extend_len, bool circular)
 {
-    bool rval = false;
+    unsigned short rval = 0;
     if (left < 3) {
-        rval = true;
+        rval = circular ? 2 : 1;
         extend_len = left;
-    } else if (seq.IsSetInst() && seq.GetInst().IsSetRepr() &&
-               seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta &&
-               seq.GetInst().IsSetExt() &&
-               seq.GetInst().GetExt().IsDelta()) {
+    }
+    else if (seq.IsSetInst() && seq.GetInst().IsSetRepr() && seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta && seq.GetInst().IsSetExt() && seq.GetInst().GetExt().IsDelta()) {
         TSeqPos offset = 0;
         TSeqPos last_gap_stop = 0;
         ITERATE(CDelta_ext::Tdata, it, seq.GetInst().GetExt().GetDelta().Get()) {
@@ -386,7 +386,7 @@ bool IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSeqPos& 
             }
         }
         if (left >= last_gap_stop && left - last_gap_stop <= 3) {
-            rval = true;
+            rval = 1;
             extend_len = left - last_gap_stop;
         }
     }
@@ -394,16 +394,15 @@ bool IsExtendableLeft(TSeqPos left, const CBioseq& seq, CScope* scope, TSeqPos& 
 }
 
 
-bool IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, TSeqPos& extend_len)
+// 1 : autofixable, 2 : non autofixable
+unsigned short IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, TSeqPos& extend_len, bool circular)
 {
-    bool rval = false;
+    unsigned short rval = false;
     if (right > seq.GetLength() - 4) {
-        rval = true;
+        rval = circular ? 2 : 1;
         extend_len = seq.GetLength() - right - 1;
-    } else if (seq.IsSetInst() && seq.GetInst().IsSetRepr() &&
-        seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta &&
-        seq.GetInst().IsSetExt() &&
-        seq.GetInst().GetExt().IsDelta()) {
+    }
+    else if (seq.IsSetInst() && seq.GetInst().IsSetRepr() && seq.GetInst().GetRepr() == CSeq_inst::eRepr_delta && seq.GetInst().IsSetExt() && seq.GetInst().GetExt().IsDelta()) {
         TSeqPos offset = 0;
         TSeqPos next_gap_start = 0;
         ITERATE(CDelta_ext::Tdata, it, seq.GetInst().GetExt().GetDelta().Get()) {
@@ -422,7 +421,7 @@ bool IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, TSeqPos
             }
         }
         if (next_gap_start > right && next_gap_start - right - 1 <= 3) {
-            rval = true;
+            rval = 1;
             extend_len = next_gap_start - right - 1;
         }
     }
@@ -430,14 +429,14 @@ bool IsExtendableRight(TSeqPos right, const CBioseq& seq, CScope* scope, TSeqPos
 }
 
 
-bool IsNonExtendable(const CSeq_loc& loc, const CBioseq& seq, CScope* scope)
+bool IsNonExtendable(const CSeq_loc& loc, const CBioseq& seq, CScope* scope, bool circular)
 {
     bool rval = false;
     if (loc.IsPartialStart(eExtreme_Positional)) {
         TSeqPos start = loc.GetStart(eExtreme_Positional);
         if (start > 0) {
             TSeqPos extend_len = 0;
-            if (!IsExtendableLeft(start, seq, scope, extend_len)) {
+            if (!IsExtendableLeft(start, seq, scope, extend_len, circular)) {
                 rval = true;
             }
         }
@@ -446,7 +445,7 @@ bool IsNonExtendable(const CSeq_loc& loc, const CBioseq& seq, CScope* scope)
         TSeqPos stop = loc.GetStop(eExtreme_Positional);
         if (stop < seq.GetLength() - 1) {
             TSeqPos extend_len = 0;
-            if (!IsExtendableRight(stop, seq, scope, extend_len)) {
+            if (!IsExtendableRight(stop, seq, scope, extend_len, circular)) {
                 rval = true;
             }
         }
@@ -470,8 +469,9 @@ DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS, CSeq_feat_BY_BIOSEQ, 
         return;
     }
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+    bool circular = seq->IsSetInst() && seq->GetInst().GetTopology() == CSeq_inst::eTopology_circular;
 
-    bool add_this = IsNonExtendable(obj.GetLocation(), *seq, &(context.GetScope()));
+    bool add_this = IsNonExtendable(obj.GetLocation(), *seq, &(context.GetScope()), circular);
 
     if (add_this) {
         m_Objs[kNonExtendable].Add(*context.DiscrObj(obj, true)).Fatal();
@@ -538,8 +538,9 @@ DISCREPANCY_CASE(BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION, CSeq_feat_BY_BIOSEQ,
         return;
     }
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
+    bool circular = seq->IsSetInst() && seq->GetInst().GetTopology() == CSeq_inst::eTopology_circular;
 
-    bool add_this = IsNonExtendable(obj.GetLocation(), *seq, &(context.GetScope()));
+    bool add_this = IsNonExtendable(obj.GetLocation(), *seq, &(context.GetScope()), circular);
 
     if (add_this) {
         m_Objs[kBacterialPartialNonextendableException].Add(*context.DiscrObj(obj), false);
@@ -565,13 +566,15 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
         return;
     }
     CConstRef<CBioseq> seq = context.GetCurrentBioseq();
-
+    bool circular = seq->IsSetInst() && seq->GetInst().GetTopology() == CSeq_inst::eTopology_circular;
+    unsigned short result = 0;
     bool add_this = false;
     if (obj.GetLocation().IsPartialStart(eExtreme_Positional)) {
         TSeqPos start = obj.GetLocation().GetStart(eExtreme_Positional);
         if (start > 0) {
             TSeqPos extend_len = 0;
-            if (IsExtendableLeft(start, *seq, &(context.GetScope()), extend_len)) {
+            result = IsExtendableLeft(start, *seq, &(context.GetScope()), extend_len, circular);
+            if (result) {
                 add_this = extend_len > 0 && extend_len <= 3;
             }
         }
@@ -580,14 +583,15 @@ DISCREPANCY_CASE(PARTIAL_PROBLEMS, CSeq_feat_BY_BIOSEQ, eDisc | eOncaller | eSub
         TSeqPos stop = obj.GetLocation().GetStop(eExtreme_Positional);
         if (stop < seq->GetLength() - 1) {
             TSeqPos extend_len = 0;
-            if (IsExtendableRight(stop, *seq, &(context.GetScope()), extend_len)) {
+            result = IsExtendableRight(stop, *seq, &(context.GetScope()), extend_len, circular);
+            if (result) {
                 add_this = extend_len > 0 && extend_len <= 3;
             }
         }
     }
 
     if (add_this) {
-        m_Objs[kPartialProblems].Add(*context.DiscrObj(obj, true)).Fatal();
+        m_Objs[kPartialProblems].Add(*context.DiscrObj(obj, result)).Fatal();
     }
 }
 
@@ -607,6 +611,8 @@ static bool ExtendToGapsOrEnds(const CSeq_feat& cds, CScope& scope)
         return rval;
     }
     CConstRef<CBioseq> seq = bsh.GetCompleteBioseq();
+    bool circular = seq->IsSetInst() && seq->GetInst().GetTopology() == CSeq_inst::eTopology_circular;
+
     CConstRef<CSeq_feat> gene;
     for (CFeat_CI gene_it(bsh, CSeqFeatData::eSubtype_gene); gene_it; ++gene_it) {
         if (gene_it->GetLocation().GetStart(eExtreme_Positional) == cds.GetLocation().GetStart(eExtreme_Positional) && gene_it->GetLocation().GetStop(eExtreme_Positional) == cds.GetLocation().GetStop(eExtreme_Positional)) {
@@ -628,7 +634,7 @@ static bool ExtendToGapsOrEnds(const CSeq_feat& cds, CScope& scope)
         TSeqPos start = cds.GetLocation().GetStart(eExtreme_Positional);
         if (start > 0) {
             TSeqPos extend_len = 0;
-            if (IsExtendableLeft(start, *seq, &scope, extend_len) &&
+            if (IsExtendableLeft(start, *seq, &scope, extend_len, circular) &&
                 CCleanup::SeqLocExtend(new_feat->SetLocation(), start - extend_len, scope)) {
                 if (gene) {
                     CCleanup::SeqLocExtend(new_gene->SetLocation(), start - extend_len, scope);
@@ -655,7 +661,7 @@ static bool ExtendToGapsOrEnds(const CSeq_feat& cds, CScope& scope)
         TSeqPos stop = cds.GetLocation().GetStop(eExtreme_Positional);
         if (stop > 0) {
             TSeqPos extend_len = 0;
-            if (IsExtendableRight(stop, *seq, &scope, extend_len) &&
+            if (IsExtendableRight(stop, *seq, &scope, extend_len, circular) &&
                 CCleanup::SeqLocExtend(new_feat->SetLocation(), stop + extend_len, scope)) {
                 if (gene) {
                     CCleanup::SeqLocExtend(new_gene->SetLocation(), stop + extend_len, scope);
