@@ -2623,6 +2623,10 @@ bool CGff3Writer::xWriteFeatureRecords(
     unsigned int seqLength )
 //  ============================================================================
 {
+    CRef<CGff3FeatureRecord> pRecord(new CGff3FeatureRecord(
+        dynamic_cast<const CGff3FeatureRecord&>(record)));
+    _ASSERT(pRecord);
+
     const CSeq_loc& loc = record.Location();
     if (!loc.IsPacked_int()  ||  !loc.GetPacked_int().CanGet()) {
         return xWriteRecord(record);
@@ -2636,7 +2640,7 @@ bool CGff3Writer::xWriteFeatureRecords(
     unsigned int curInterval = 1;
     for (it = sublocs.begin(); it != sublocs.end(); ++it) {
         const CSeq_interval& subint = **it;
-        CRef<CGffFeatureRecord> pChild(new CGffFeatureRecord(record));
+        CRef<CGffFeatureRecord> pChild(new CGff3FeatureRecord(*pRecord));
         pChild->SetLocation(subint);
         string part = NStr::IntToString(curInterval++) + totIntervals;
         pChild->SetAttribute("part", part);
