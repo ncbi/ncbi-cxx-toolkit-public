@@ -459,16 +459,6 @@ static bool s_IsEmpty(const CAuthor& auth)
             if (!nstd.IsSetLast() || NStr::IsBlank(nstd.GetLast())) {
                 return true;
             }
-            // also fails if all fields are blank
-            if ((!nstd.IsSetLast() || NStr::IsBlank(nstd.GetLast())) &&
-                (!nstd.IsSetFirst() || NStr::IsBlank(nstd.GetFirst())) &&
-                (!nstd.IsSetMiddle() || NStr::IsBlank(nstd.GetMiddle())) &&
-                (!nstd.IsSetFull() || NStr::IsBlank(nstd.GetFull())) &&
-                (!nstd.IsSetInitials() || NStr::IsBlank(nstd.GetInitials())) &&
-                (!nstd.IsSetSuffix() || NStr::IsBlank(nstd.GetSuffix())) &&
-                (!nstd.IsSetTitle() || NStr::IsBlank(nstd.GetTitle()))) {
-                return true;
-            }
             break;
         }}
 
@@ -527,8 +517,9 @@ bool CCleanup::CleanupAuthList(CAuth_list& al, bool fix_initials)
                     if (s_IsEmpty(**it)) {
                         it = std.erase(it);
                         rval = true;
+                    } else {
+                        ++it;
                     }
-                    ++it;
                 }
                 if (std.empty()) {
                     ResetAuthorNames(alnames);
