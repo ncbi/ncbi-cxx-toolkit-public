@@ -92,7 +92,7 @@ void CSeqDBLMDBEntry::x_AdjustOidsOffset(vector<TOid> & oids) const
 			if (oids[i] != kSeqDBEntryNotFound) {
 				TOid skipped_oids = 0;
 				for(unsigned int j=0;j < m_VolInfo.size(); j++) {
-					if(oids[i] >  m_VolInfo[j].max_oid) {
+					if(oids[i] >=  m_VolInfo[j].max_oid) {
 						skipped_oids += m_VolInfo[j].skipped_oids;
 					}
 					else {
@@ -124,7 +124,7 @@ void CSeqDBLMDBEntry::x_AdjustOidsOffset_TaxList(vector<TOid> & oids) const
 		for(unsigned int i=0; i < oids.size(); i++) {
 			TOid skipped_oids = 0;
 			for(unsigned int j=0;j < m_VolInfo.size(); j++) {
-				if(oids[i] >  m_VolInfo[j].max_oid) {
+				if(oids[i] >=  m_VolInfo[j].max_oid) {
 					skipped_oids += m_VolInfo[j].skipped_oids;
 				}
 				else {
