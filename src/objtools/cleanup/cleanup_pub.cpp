@@ -409,25 +409,30 @@ bool CCitSubCleaner::Clean(bool fix_initials, bool strip_serial)
         if (authors.IsSetAffil()) {
             auto& affil = authors.SetAffil();
             if (affil.IsStr()) {
-                string str = affil.SetStr();
-                if (NStr::StartsWith(str, "to the ", NStr::eNocase) &&
-                    str.size() >= 34 &&
-                    NStr::StartsWith(str.substr(24), " databases", NStr::eNocase)) {
-                    if (str.size() > 34 && str[34] == '.') {
-                        str = str.substr(35);
+                string &str = affil.SetStr();
+                static const string& kBadAffil1 = "to the DDBJ/EMBL/GenBank databases";
+                static const string& kBadAffil2 = "to the INSDC databases";
+                if (NStr::StartsWith(str, kBadAffil1)) {
+                    str = str.substr(kBadAffil1.length());
+                    if (NStr::StartsWith(str, ".")) {
+                        str = str.substr(1);
                     }
-                    else {
-                        str = str.substr(34);
-                    }
-                    affil.SetStr(str);
                     any_change = true;
-                    if (CCleanup::CleanupAffil(affil)) {
-                        any_change = true;
+                }
+                if (NStr::StartsWith(str, kBadAffil2)) {
+                    str = str.substr(kBadAffil2.length());
+                    if (NStr::StartsWith(str, ".")) {
+                        str = str.substr(1);
                     }
-                    if (CCleanup::IsEmpty(affil)) {
-                        authors.ResetAffil();
-                        any_change = true;
-                    }
+                    any_change = true;
+                }
+                    
+                if (CCleanup::CleanupAffil(affil)) {
+                    any_change = true;
+                }
+                if (CCleanup::IsEmpty(affil)) {
+                    authors.ResetAffil();
+                    any_change = true;
                 }
             }
 
