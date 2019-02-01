@@ -415,6 +415,36 @@ CRef<CSeq_entry> sx_ExtractAnnot(const CBioseq_Handle& bh)
     return entry;
 }
 
+struct PStateFlags
+{
+    CBioseq_Handle::TBioseqStateFlags state;
+    
+    explicit PStateFlags(CBioseq_Handle::TBioseqStateFlags state) : state(state) {}
+};
+ostream& operator<<(ostream& out, PStateFlags p_state)
+{
+    CBioseq_Handle::TBioseqStateFlags state = p_state.state;
+    if ( state & CBioseq_Handle::fState_dead ) {
+        out << " dead";
+    }
+    if ( state & CBioseq_Handle::fState_suppress ) {
+        out << " supp";
+        if ( state & CBioseq_Handle::fState_suppress_temp ) {
+            out << " temp";
+        }
+        if ( state & CBioseq_Handle::fState_suppress_perm ) {
+            out << " perm";
+        }
+    }
+    if ( state & CBioseq_Handle::fState_confidential ) {
+        out << " confidential";
+    }
+    if ( state & CBioseq_Handle::fState_withdrawn ) {
+        out << " withdrawn";
+    }
+    return out;
+}
+
 bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
 {
     CRef<CSeq_descr> descr1 = sx_ExtractDescr(bh1);
@@ -494,8 +524,8 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
     if ( has_state_error ) {
         NcbiCout << (report_state_error? "ERROR": "WARNING")
                  << ": States do not match:"
-                 << " WGS: " << bh1.GetState()
-                 << " GB: " << bh2.GetState()
+                 << " WGS: " << bh1.GetState() << PStateFlags(bh1.GetState())
+                 << " GB: " << bh2.GetState() << PStateFlags(bh2.GetState())
                  << NcbiEndl;
     }
     if ( has_id_error ) {
@@ -1845,6 +1875,9 @@ BOOST_AUTO_TEST_CASE(StateTest)
 
     CBioseq_Handle bh;
 
+    // CDBB01000001 is suppressed temporarily in ID.
+    // It's marked as suppressed permanently by WGS VDB reader
+    // because there is no distinction between these suppressions.
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("CDBB01000001"));
     BOOST_REQUIRE(bh);
     /*
@@ -1854,6 +1887,9 @@ BOOST_AUTO_TEST_CASE(StateTest)
     */
     BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
 
+    // AFFP01000011 is dead and suppressed permanently in ID.
+    // It's marked as only dead by WGS VDB reader currently (2/1/2019)
+    // because there's no way to store both 'dead' and 'suppressed' bits together.
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000011"));
     BOOST_REQUIRE(bh);
     /*
@@ -1863,6 +1899,9 @@ BOOST_AUTO_TEST_CASE(StateTest)
     */
     BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
 
+    // JPNT01000001 is dead and suppressed permanently in ID.
+    // It's marked as only suppressed by WGS VDB reader currently (2/1/2019)
+    // because there's no way to store both 'dead' and 'suppressed' bits together.
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("JPNT01000001"));
     BOOST_REQUIRE(bh);
     /*
@@ -1924,21 +1963,31 @@ BOOST_AUTO_TEST_CASE(WithdrawnStateTest)
 
     CBioseq_Handle bh;
 
+    // AFFP02000011.1 is live
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP02000011.1"));
     BOOST_CHECK(bh);
     BOOST_CHECK_EQUAL(bh.GetState(), 0);
     BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
 
+    // AFFP01000011.1 is dead and suppressed permanently in ID.
+    // It's marked as only dead by WGS VDB reader currently (2/1/2019)
+    // because there's no way to store both 'dead' and 'suppressed' bits together.
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000011.1"));
     BOOST_CHECK(bh);
     BOOST_CHECK_EQUAL(bh.GetState(),
                       CBioseq_Handle::fState_dead);
     BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
 
+    // AFFP01000012.1 is dead, suppressed permanently, and withdrawn in ID.
+    // It's marked as only dead and withdrawn by WGS VDB reader currently (2/1/2019)
+    // because there's no way to store both 'dead' and 'suppressed' bits together.
+    // It's marked as only withdrawn by OSG WGS plugin currently (2/1/2019).
+    // Note that Withdrawn state assumes 'no_data'.
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AFFP01000012.1"));
     BOOST_CHECK(!bh);
     BOOST_CHECK_EQUAL(bh.GetState(),
                       CBioseq_Handle::fState_no_data |
+                      CBioseq_Handle::fState_dead |
                       CBioseq_Handle::fState_withdrawn);
 }
 

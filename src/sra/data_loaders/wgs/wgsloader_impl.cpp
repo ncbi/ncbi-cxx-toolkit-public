@@ -1189,11 +1189,32 @@ bool CWGSFileInfo::FindProtAcc(SAccFileInfo& info, const string& acc) const
 }
 
 
+static CBioseq_Handle::TBioseqStateFlags s_GBStateToOM(NCBI_gb_state gb_state)
+{
+    CBioseq_Handle::TBioseqStateFlags state = 0;
+    switch ( gb_state ) {
+    case NCBI_gb_state_eWGSGenBankSuppressed:
+        state |= CBioseq_Handle::fState_suppress_perm;
+        break;
+    case NCBI_gb_state_eWGSGenBankReplaced:
+        state |= CBioseq_Handle::fState_dead;
+        break;
+    case NCBI_gb_state_eWGSGenBankWithdrawn:
+        state |= CBioseq_Handle::fState_withdrawn;
+        break;
+    default:
+        break;
+    }
+    return state;
+}
+
+
 void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
                             CTSE_LoadLock& load_lock) const
 {
     if ( !load_lock.IsLoaded() ) {
-        NCBI_gb_state gb_state = 0;
+        CBioseq_Handle::TBioseqStateFlags project_state = s_GBStateToOM(GetDb()->GetProjectGBState());
+        CBioseq_Handle::TBioseqStateFlags state = project_state;
         CRef<CSeq_entry> entry;
         CRef<CID2S_Split_Info> split;
         if ( blob_id.m_SeqType == 'S' ) {
@@ -1203,16 +1224,16 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
         }
         else if ( blob_id.m_SeqType == 'P' ) {
             if ( CWGSProteinIterator it = GetProteinIterator(blob_id) ) {
-                gb_state = it.GetGBState();
-                if ( gb_state != NCBI_gb_state_eWGSGenBankWithdrawn ) {
+                state = project_state | s_GBStateToOM(it.GetGBState());
+                if ( !(state & CBioseq_Handle::fState_withdrawn) ) {
                     entry = it.GetSeq_entry();
                 }
             }
         }
         else {
             if ( CWGSSeqIterator it = GetContigIterator(blob_id) ) {
-                gb_state = it.GetGBState();
-                if ( gb_state != NCBI_gb_state_eWGSGenBankWithdrawn ) {
+                state = project_state | s_GBStateToOM(it.GetGBState());
+                if ( !(state & CBioseq_Handle::fState_withdrawn) ) {
                     CWGSSeqIterator::TFlags flags = it.fDefaultFlags;
                     if ( !GetSplitQualityGraphParam() ) {
                         flags &= ~it.fSplitQualityGraph;
@@ -1228,22 +1249,6 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
                         entry = it.GetSeq_entry(flags);
                     }
                 }
-            }
-        }
-        CBioseq_Handle::TBioseqStateFlags state = 0;
-        if ( gb_state ) {
-            switch ( gb_state ) {
-            case NCBI_gb_state_eWGSGenBankSuppressed:
-                state |= CBioseq_Handle::fState_suppress_perm;
-                break;
-            case NCBI_gb_state_eWGSGenBankReplaced:
-                state |= CBioseq_Handle::fState_dead;
-                break;
-            case NCBI_gb_state_eWGSGenBankWithdrawn:
-                state |= CBioseq_Handle::fState_withdrawn;
-                break;
-            default:
-                break;
             }
         }
         if ( !entry && !split ) {

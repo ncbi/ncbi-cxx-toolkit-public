@@ -1658,11 +1658,10 @@ NCBI_gb_state CID2WGSProcessor_Impl::GetGBState(SWGSSeqInfo& seq0)
 }
 
 
-CBioseq_Handle::TBioseqStateFlags
-CID2WGSProcessor_Impl::GetBioseqState(SWGSSeqInfo& seq)
+static CBioseq_Handle::TBioseqStateFlags s_GBStateToOM(NCBI_gb_state gb_state)
 {
     CBioseq_Handle::TBioseqStateFlags state = 0;
-    switch ( GetGBState(seq) ) {
+    switch ( gb_state ) {
     case NCBI_gb_state_eWGSGenBankSuppressed:
         state |= CBioseq_Handle::fState_suppress_perm;
         break;
@@ -1680,10 +1679,10 @@ CID2WGSProcessor_Impl::GetBioseqState(SWGSSeqInfo& seq)
 }
 
 
-int CID2WGSProcessor_Impl::GetID2BlobState(SWGSSeqInfo& seq)
+static int s_GBStateToID2(NCBI_gb_state gb_state)
 {
     int state = 0;
-    switch ( GetGBState(seq) ) {
+    switch ( gb_state ) {
     case NCBI_gb_state_eWGSGenBankSuppressed:
         state |= 1<<eID2_Blob_State_suppressed;
         break;
@@ -1697,6 +1696,19 @@ int CID2WGSProcessor_Impl::GetID2BlobState(SWGSSeqInfo& seq)
         break;
     }
     return state;
+}
+
+
+CBioseq_Handle::TBioseqStateFlags
+CID2WGSProcessor_Impl::GetBioseqState(SWGSSeqInfo& seq)
+{
+    return s_GBStateToOM(GetGBState(seq)) | s_GBStateToOM(seq.m_WGSDb->GetProjectGBState());
+}
+
+
+int CID2WGSProcessor_Impl::GetID2BlobState(SWGSSeqInfo& seq)
+{
+    return s_GBStateToID2(GetGBState(seq)) | s_GBStateToID2(seq.m_WGSDb->GetProjectGBState());
 }
 
 
