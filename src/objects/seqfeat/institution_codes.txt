@@ -367,7 +367,7 @@ BAH<GRM>	s	Biologische Anstalt Helgoland Marine Station
 BAI	s	Instituto Forestal Nacional (IFONA), Centro Forestal Castelar			
 BAIL	s	Conservatoire Botanique National de Bailleul			
 BAJ	s	Instituto Municipal de Botanica, Parque Pte. Dr. Nicolas Avellaneda			
-BAK	s	Academy of Sciences of Azerbaijan			
+BAK	s	Azerbaijan National Academy of Sciences (ANAS)			
 BAL	s	INTA, EEA Balcarce, Catedra de Botanica Agricola			
 BALT	s	Towson University, Department of Biological Sciences			
 BAMU	s	Dr. Babasaheb Ambedkar Marathwada University			
@@ -718,7 +718,7 @@ BTU	s	Technische Universitaet Berlin
 BU	s	Brock University			
 BUA	s	University of Baghdad, Plant Protection Department			
 BUAG	s	University of Agronomical Sciences and Veterinary Medicine, Botany and Plant Physiology Department			
-BUC	s	Universitatea din Bucuresti			
+BUC	s	Gradina Botanica D. Brandza			
 BUCA	s	Institute of Biology, Romanian Academy			
 BUCF	s	Forest Research and Management Institute			
 BUCM	s	Institute of Biology Bucharest, Romanian Academy (Mycology Herbarium)			
@@ -2108,7 +2108,7 @@ GAM<USA-GA>	s	University of Georgia
 GAM<VEN>	c	Grupo Actinomicetales Merida Facultad de Medicina			
 GAP	s	Conservatoire Botanique National Alpin			
 GAS	s	Georgia Southern University, Department of Biology			
-GAT	s	Institute of Plant Genetics and Crop Plant Research			
+GAT	s	Leibniz Institute of Plant Genetics and Crop Plant Research (IPK)			
 GAUA	s	Guangxi University			
 GAUBA	s	Australian National University, Division of Botany and Zoology			
 GAUF	s	Gansu Agricultural University			
@@ -4417,7 +4417,7 @@ MSPC	s	Museo di Storia Naturale "Pietro Calderini"
 MSPP	c	Mycology Section, Plant Pathology and Microbiology Division, Department of Agricultural Science			
 MSSC	s	Midwestern State University			
 MSTFM	s	Middle School of the Third Factory Machinery			
-MSTR	s	Westfaelisches Museum fuer Naturkunde			
+MSTR	s	Westfalisches Museum fur Naturkunde			
 MSU<THA>	c	Acetobacter			
 MSU<USA-MI>	s	Michigan State University Museum	MSUC,MSUM		
 MSUD	s	I. I. Mecynikov State University of Odessa, Department of Morphology and Systematics of Plants			
@@ -4449,7 +4449,7 @@ MTSN	s	Trento Museum of Natural Sciences
 MTSU	s	Middle Tennessee State University, Biology Department			
 MTUF	s	University Museum, Tokyo University of Fisheries			
 MU<TUR>	c	Mugla Sitki Kocman University			
-MU<USA-OH>	s	Miami University, Botany Department, Willard Sherman Turrell Herbarium			
+MU<USA-OH>	s	Miami University, Botany Department, Willard Sherman Turrell Herbarium		http://herbarium.muohio.edu/herbariummu/	
 MU<USA-TX>	s	Midwestern University			
 MUACC	c	Murdoch University Algal Culture Collection			
 MUAF	c	Culture collection of Mendel University of Agriculture and Forestry in Brno			
@@ -6712,7 +6712,7 @@ TU<USA-LA>:Herptiles	s	Tulane University, Museum of Natural History, Amphibian A
 TU<USA-LA>:Invertebrates	s	Tulane University, Museum of Natural History, Invertebrate Collection		
 TU<USA-LA>:Mammals	s	Tulane University, Museum of Natural History, Mammal Collection		
 TUAT	s	Tokyo University of Agriculture			
-TUB	s	Eberhard-Karls-Universitaet Tuebingen, Institut fuer Biologie I			
+TUB	s	Eberhard-Karls-Universitat Tubingen, Institut fur Biologie I			
 TUBSB	b	Tohoku University Brassica Seed Bank			
 TUC	s	University of Arizona, Ecology and Evolutionary Biology Department			
 TUCH	s	Tribhuvan University, Central Department of Botany			
