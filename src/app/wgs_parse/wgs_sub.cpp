@@ -123,20 +123,16 @@ static void RemovePubs(CSeq_entry& entry, const list<string>& common_pubs, CPubC
             bool removed = false;
             if ((*cur_descr)->IsPub()) {
 
-                string pubdesc_key;
+                string pubdesc_key = CPubCollection::GetPubdescKey((*cur_descr)->SetPub(), GetParams().IsMedlineLookup());
 
                 /*if (date || GetParams().GetSource() != eNCBI) {
                     pubdesc_key = CPubCollection::GetPubdescKeyForCitSub((*cur_descr)->SetPub(), date);
                 }*/
 
-                if (pubdesc_key.empty()) {
-                    pubdesc_key = ToStringKey((*cur_descr)->GetPub());
-                }
-
                 const CPubInfo& pub_info = all_pubs.GetPubInfo(pubdesc_key);
                 if (pub_info.m_desc.NotEmpty()) {
 
-                    if (find(common_pubs.begin(), common_pubs.end(), pub_info.m_pubdesc_key) != common_pubs.end()) {
+                    if (find(common_pubs.begin(), common_pubs.end(), pubdesc_key) != common_pubs.end()) {
                         cur_descr = descrs->Set().erase(cur_descr);
                         removed = true;
                     }

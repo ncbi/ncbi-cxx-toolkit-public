@@ -61,36 +61,14 @@ static int GetPmid(const CPubdesc& pubdesc)
 
 string CPubCollection::AddPub(CPubdesc& pubdesc, bool medline_lookup)
 {
-	string pubdesc_str = ToStringKey(pubdesc);
-	auto it = m_pubs.find(pubdesc_str);
+    string pubdesc_str = GetPubdescKey(pubdesc, medline_lookup);
+    auto it = m_pubs.find(pubdesc_str);
 
     if (it == m_pubs.end()) {
         
-        CPubInfo& pub_info = m_pubs[pubdesc_str];
-
-        if (medline_lookup) {
-
-            SinglePubLookup(pubdesc);
-            string lookup_pubdesc_str = ToStringKey(pubdesc);
-            auto lookup_it = m_pubs.find(lookup_pubdesc_str);
-
-            if (lookup_it != m_pubs.end()) {
-
-                pub_info.m_desc.Reset(lookup_it->second.m_desc);
-                pub_info.m_pubdesc_key = lookup_it->second.m_pubdesc_key;
-            }
-        }
-
-        if (pub_info.m_pubdesc_key.empty()) { // value is not set
-            pub_info.m_desc.Reset(&pubdesc);
-            pub_info.m_pubdesc_key = pubdesc_str;
-        }
-
-        pubdesc_str = pub_info.m_pubdesc_key;
-        pub_info.m_pmid = GetPmid(*pub_info.m_desc);
-    }
-    else {
-        pubdesc_str = it->second.m_pubdesc_key;
+        it = m_pubs.insert({ pubdesc_str, CPubInfo()}).first;
+        it->second.m_desc.Reset(&pubdesc);
+        it->second.m_pmid = GetPmid(*it->second.m_desc);
     }
 
     return pubdesc_str;
@@ -107,6 +85,15 @@ CPubInfo& CPubCollection::GetPubInfo(const string& pubdesc_key)
     }
 
     return empty_info;
+}
+
+string CPubCollection::GetPubdescKey(CPubdesc& pubdesc, bool medline_lookup)
+{
+    if (medline_lookup) {
+        SinglePubLookup(pubdesc);
+    }
+
+    return ToStringKey(pubdesc);
 }
 
 string CPubCollection::GetPubdescKeyForCitSub(CPubdesc& pubdesc, const CDate_std* submission_date)

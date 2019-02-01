@@ -181,17 +181,17 @@ static size_t CheckPubs(CSeq_entry& entry, const string& file, list<string>& com
         for (auto common_pub = common_pubs.begin(); common_pub != common_pubs.end();) {
 
             bool found = false;
-            const CPubInfo& common_pub_info = all_pubs.GetPubInfo(*common_pub);
+            CPubInfo& common_pub_info = all_pubs.GetPubInfo(*common_pub);
 
             for (auto pub = pubs.begin(); pub != pubs.end(); ++pub) {
 
-                const CPubInfo& pub_info = all_pubs.GetPubInfo(*pub);
-                if (pub_info.m_pubdesc_key == common_pub_info.m_pubdesc_key) {
+                if (*pub == *common_pub) {
                     pubs.erase(pub);
                     found = true;
                     break;
                 }
 
+                CPubInfo& pub_info = all_pubs.GetPubInfo(*pub);
                 if (HasPubOfChoice(*pub_info.m_desc, CPub::e_Sub)) {
                     continue;
                 }

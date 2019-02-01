@@ -49,7 +49,6 @@ struct CPubInfo
 {
     CRef<CPubdesc> m_desc;
     int m_pmid;
-    string m_pubdesc_key;
 
     CPubInfo() :
         m_pmid(0) {};
@@ -63,6 +62,7 @@ public:
     string AddPub(CPubdesc& pubdesc, bool medline_lookup);
     CPubInfo& GetPubInfo(const string& pubdesc_key);
 
+    static string GetPubdescKey(CPubdesc& pubdesc, bool medline_lookup);
     static string GetPubdescKeyForCitSub(CPubdesc& pubdesc, const CDate_std* submission_date);
 
 private:
