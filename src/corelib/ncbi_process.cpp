@@ -1110,7 +1110,6 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
 
 
 #if defined(NCBI_OS_MSWIN)
-
 bool s_Win_GetHandleTimes(HANDLE handle, double* real, double* user, double* sys, CProcess::EWhat what)
 {
     // Each FILETIME structure contains the number of 100-nanosecond time units
@@ -1155,8 +1154,51 @@ bool s_Win_GetHandleTimes(HANDLE handle, double* real, double* user, double* sys
     }
     return true;
 }
-
 #endif
+
+
+#if defined(NCBI_OS_LINUX)
+bool s_Linux_GetTimes_ProcStat(TPid pid, double* real, double* user, double* sys, CProcess::EWhat what)
+{
+    // No need to set errno in this function, it have a backup that overwrite it
+    if (what == CProcess::eThread) {
+        return false;
+    }
+    clock_t tick = CSystemInfo::GetClockTicksPerSecond();
+    if ( !tick ) {
+        return false;
+    }
+
+    // Execution times can be extracted from /proc/<pid>/stat,
+    CLinuxFeature::CProcStat ps(pid);
+
+    // Fields numbers in that file, for process itself and children.
+    // Note, all values can be zero.
+    int fu = 14, fs = 15;
+    if (what == CProcess::eChildren) {
+        fu = 16;
+        fs = 17;
+    }
+    if ( real  &&  (what == CProcess::eProcess) ) {
+        // Real execution time can be calculated for the process only.
+        // field 22, in ticks per second.
+        Uint8 start = NStr::StringToUInt8(ps.at(22), NStr::fConvErr_NoThrow);
+        double uptime = CSystemInfo::GetUptime();
+        if (start > 0  &&  uptime > 0) {
+            *real = uptime - (double)start / (double)tick;
+        }
+    }
+    if ( user ) {
+        *user = (double)NStr::StringToUInt8(ps.at(fu), NStr::fConvErr_NoThrow) / (double)tick;
+    }
+    if ( sys ) {
+        *sys  = (double)NStr::StringToUInt8(ps.at(fs), NStr::fConvErr_NoThrow) / (double)tick;
+    }
+    return true;
+
+}
+#endif
+
 
 bool CProcess::GetTimes(double* real, double* user, double* sys, CProcess::EWhat what)
 {
@@ -1196,44 +1238,10 @@ bool CProcess::GetTimes(double* real, double* user, double* sys, CProcess::EWhat
 
 #elif defined(NCBI_OS_UNIX)
 
-    clock_t tick = CSystemInfo::GetClockTicksPerSecond();
-    if ( !tick ) {
-        // GetClockTicksPerSecond() already set CNcbiError
-        return false;
-    }
-
 #  if defined(NCBI_OS_LINUX)
-
-    // Execution times can be extracted from /proc/<pid>/stat,
-    CLinuxFeature::CProcStat ps(GetPid());
-
-    // Fields numbers in that file, for process itself and children.
-    // Note, all values can be zero.
-    int fu = 14, fs = 15;
-    if (what == eChildren) {
-        fu = 16;
-        fs = 17;
-    }
-    if ( real  &&  (what == eProcess) ) {
-        // Real execution time can be calculated for the process only.
-        // field 22, in ticks per second.
-        Uint8 start = NStr::StringToUInt8(ps.at(22), NStr::fConvErr_NoThrow);
-        double uptime = CSystemInfo::GetUptime();
-        if (start > 0  &&  uptime > 0) {
-            *real = uptime - (double)start / (double)tick;
-        }
-    }
-    if ( user ) {
-        *user = (double)NStr::StringToUInt8(ps.at(fu), NStr::fConvErr_NoThrow) / (double)tick;
-    }
-    if ( sys ) {
-        *sys  = (double)NStr::StringToUInt8(ps.at(fs), NStr::fConvErr_NoThrow) / (double)tick;
-    }
-    return true;
-
+    return s_Linux_GetTimes_ProcStat(GetPid(), real, user, sys, what);
 #  else
     // TODO: Investigate how to determine this on other Unix flavors
-    
 #  endif //NCBI_OS_LINUX
 
 #endif //NCBI_OS_UNIX
@@ -1249,14 +1257,6 @@ bool CCurrentProcess::GetTimes(double* real, double* user, double* sys, EWhat wh
     if ( real ) { *real = kUndefined; }
     if ( user ) { *user = kUndefined; }
     if ( sys )  { *sys  = kUndefined; }
-
-#if defined(NCBI_OS_UNIX)
-    clock_t tick = CSystemInfo::GetClockTicksPerSecond();
-    if ( !tick ) {
-        // GetClockTicksPerSecond() already set CNcbiError
-        return false;
-    }
-#endif
 
 #if defined(NCBI_OS_MSWIN)
 
@@ -1274,37 +1274,21 @@ bool CCurrentProcess::GetTimes(double* real, double* user, double* sys, EWhat wh
     }
     return res;
 
-#elif defined(NCBI_OS_LINUX)
+#elif defined(NCBI_OS_UNIX)
 
-    // Execution times can be extracted from /proc/<pid>/stat,
-    CLinuxFeature::CProcStat ps(0);
+    // UNIX: Real execution time can be calculated on Linux and for the process only.
+    // TODO: Investigate how to determine this on other Unix flavors
 
-    // Fields numbers in that file, for process itself and children.
-    // Note, all values can be zero.
-    int fu = 14, fs = 15;
-    if (what == eChildren) {
-        fu = 16;
-        fs = 17;
-    }
-    if ( real  &&  (what == eProcess) ) {
-        // Real execution time can be calculated for the process only.
-        // field 22, in ticks per second.
-        Uint8 start = NStr::StringToUInt8(ps.at(22), NStr::fConvErr_NoThrow);
-        double uptime = CSystemInfo::GetUptime();
-        if (start > 0  &&  uptime > 0) {
-            *real = uptime - (double)start / (double)tick;
+#  if defined(NCBI_OS_LINUX)
+    // Try Linux specific first, before going to more generic methods
+    // For process and cildren only.
+    if (what != eThread) {
+        if ( s_Linux_GetTimes_ProcStat(0 /*current pid*/, real, user, sys, what) ) {
+            return true;
         }
     }
-    if ( user ) {
-        *user = (double)NStr::StringToUInt8(ps.at(fu), NStr::fConvErr_NoThrow) / (double)tick;
-    }
-    if ( sys ) {
-        *sys  = (double)NStr::StringToUInt8(ps.at(fs), NStr::fConvErr_NoThrow) / (double)tick;
-    }
-    return true;
-
-#elif defined(HAVE_GETRUSAGE)
-
+#  endif
+#  if defined(HAVE_GETRUSAGE)
     int who = RUSAGE_SELF;
     switch ( what ) {
     case eProcess:
@@ -1330,17 +1314,16 @@ bool CCurrentProcess::GetTimes(double* real, double* user, double* sys, EWhat wh
         CNcbiError::SetFromErrno();
         return false;
     }
-    // real time will be calculated below
-    
     if ( user ) {
         *user = double(ru.ru_utime.tv_sec) + double(ru.ru_utime.tv_usec) / 1e6;
     }
     if ( sys ) {
         *sys = double(ru.ru_stime.tv_sec) + double(ru.ru_stime.tv_usec) / 1e6;
     }
+    return true;
 
-#elif defined(NCBI_OS_UNIX)
-
+#  else 
+    // Backup to times()
     if (what != eProcess) {
         // We have information for the current process only
         CNcbiError::Set(CNcbiError::eNotSupported);
@@ -1352,41 +1335,24 @@ bool CCurrentProcess::GetTimes(double* real, double* user, double* sys, EWhat wh
         CNcbiError::SetFromErrno();
         return false;
     }
-   
-    // real time will be calculated below
-    
+    clock_t tick = CSystemInfo::GetClockTicksPerSecond();
+    if ( !tick ) {
+        // GetClockTicksPerSecond() already set CNcbiError
+        return false;
+    }
     if ( user ) {
         *user = (double)buf.tms_utime / (double)tick;
     }
     if ( sys ) {
         *sys = (double)buf.tms_stime / (double)tick;
     }
+    return true;
+    
+#  endif //HAVE_GETRUSAGE
+#endif //NCBI_OS_UNIX
 
-#else
     CNcbiError::Set(CNcbiError::eNotSupported);
     return false;
-
-#endif
-
-// UNIX: Real execution time can be calculated on Linux and for the process only.
-
-#if defined(NCBI_OS_LINUX)
-    if ( real  &&  (what == eProcess) ) {
-        // Real execution time can be get from /proc/<pid>/stat,
-        // field 22, in ticks per second.
-        CLinuxFeature::CProcStat ps;
-        Uint8  start = NStr::StringToUInt8(ps.at(22), NStr::fConvErr_NoThrow);
-        double uptime    = CSystemInfo::GetUptime();
-        if (start > 0  &&  uptime > 0) {
-            *real = uptime - (double)start / (double)tick;
-        }
-    }
-
-#elif defined(NCBI_OS_UNIX)
-    // TODO: Investigate how to determine this on other Unix flavors
-#endif
-
-    return true;
 }
 
 
