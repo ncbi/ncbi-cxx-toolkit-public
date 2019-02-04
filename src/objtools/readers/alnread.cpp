@@ -317,7 +317,8 @@ struct SBracketedCommentList  {
 //  ============================================================================
     SBracketedCommentList(
         const char* str, int lineNum, int lineOffset): 
-        comment_lines(new SLineInfo(str, lineNum, lineOffset))
+        comment_lines(new SLineInfo(str, lineNum, lineOffset)),
+        next(nullptr)
     {};
 
     static SBracketedCommentList*
@@ -382,7 +383,7 @@ struct SAlignFileRaw {
         num_organisms(0), deflines(nullptr), num_deflines(0), block_size(0), 
         offset_list(nullptr), sequences(nullptr), report_error(nullptr),
         report_error_userdata(nullptr), alphabet_(""), expected_num_sequence(0),
-        expected_sequence_len(0), num_segments(1), align_format_found(false)
+        expected_sequence_len(0), align_format_found(false)
     {};
 
     ~SAlignFileRaw() {
@@ -407,7 +408,6 @@ struct SAlignFileRaw {
     string               alphabet_;
     int                  expected_num_sequence;
     int                  expected_sequence_len;
-    int                  num_segments;
     char                 align_format_found;
 };
 using TAlignRawFilePtr = SAlignFileRaw*;
@@ -1201,119 +1201,6 @@ s_BracketedCommentListAddLine(
         comment->comment_lines, string, line_num, line_offset);
 }
 
-/* This function counts the sequences found in a bracketed comment. */
-static int 
-s_CountSequencesInBracketedComment(
-    TBracketedCommentListPtr comment)
-{
-    TLineInfoPtr lip;
-    int          num_segments = 0;
-    bool        skipped_line_since_last_defline = true;
-    
-    if (!comment  || !comment->comment_lines) {
-        return 0;
-    }
-    
-    lip = comment->comment_lines;
-    /* First line must be left bracket on a line by itself */
-    if (NStr::TruncateSpaces(string(lip->data)) != "[") {
-        return 0;
-    }
-    lip = lip->next;
-    while (lip  &&  lip->next) {
-        if (lip->data[0] == '>') {
-            if (!skipped_line_since_last_defline) {
-                return 0;
-            }
-            else {
-                ++num_segments;
-                skipped_line_since_last_defline = false;
-            }
-        }
-        else {
-            skipped_line_since_last_defline = true;
-        }
-        lip = lip->next;
-    }
-    /* Last line must be right bracket on a line by itself */
-    /* First line must be left bracket on a line by itself */
-    if (!lip  ||  !lip->data  ||  (NStr::TruncateSpaces(string(lip->data)) != "]")) {
-        return 0;
-    }
-    
-    return num_segments;
-}
-
-/* This function counts the number of sequences that appear in
- * bracketed comments.  If the number of sequences is inconsistent,
- * the function will issue error messages and return a 1, otherwise
- * the function will return the number of sequences that appear in
- * each bracketed comment.
- */
-static int 
-s_GetNumSegmentsInAlignment(
-    TBracketedCommentListPtr comment_list,
-    FReportErrorFunction errfunc,
-    void* errdata)
-{
-    TSizeInfoPtr             segcount_list = NULL;
-    int                      num_segments = 1;
-    int                      num_segments_this_bracket;
-    int                      num_segments_expected;
-    TSizeInfoPtr             best;
-    
-    if (!comment_list) {
-        return 1;
-    }
-    
-    for (auto comment = comment_list; comment; comment = comment->next) {
-        num_segments_this_bracket = s_CountSequencesInBracketedComment(comment);
-        segcount_list = s_AddSizeInfoAppearances (segcount_list,
-                                                  num_segments_this_bracket,
-                                                  1);
-        if (comment != comment_list && segcount_list->next) {
-            best = s_GetMostPopularSizeInfo (segcount_list);
-            num_segments_expected = best->size_value;
-
-            if (num_segments_expected != num_segments_this_bracket) {
-                s_ReportBadNumSegError (comment->comment_lines->line_num,
-                                        num_segments_this_bracket, num_segments_expected,
-                                        errfunc, errdata);
-            }
-        }
-    }
-    if (segcount_list  &&  !segcount_list->next  && segcount_list->size_value > 0) {
-        num_segments = segcount_list->size_value;
-    }
-    delete segcount_list;
-    return num_segments;
-}
-
-/* This function gets a list of the offsets of the 
- * sequences in bracketed comments.
- */
-static TIntLinkPtr 
-GetSegmentOffsetList(
-    TBracketedCommentListPtr comment_list)
-{
-    TIntLinkPtr offset_list = nullptr;
-
-    if (!comment_list) {
-        return nullptr;
-    }
-    
-    for (auto comment = comment_list; comment; comment = comment->next) {
-        if (s_CountSequencesInBracketedComment(comment) == 0) {
-            continue;
-        }
-        for (auto lip = comment->comment_lines; lip; lip = lip->next) {
-            if (lip->data  &&  lip->data[0] == '>') {
-                SIntLink::CreateOrAppend(lip->line_num + 1, offset_list);
-            }
-        }
-    }
-    return offset_list;
-}
 
 static char * 
 s_TokenizeString(
@@ -3076,13 +2963,11 @@ s_ReadAlignFileRaw(
              * NEXUS file.  If there is no sequence data between
              * the lines, don't process this file for marked IDs.
              */
-            if (last_line_was_marked_id)
-            {
+            if (last_line_was_marked_id) {
                 afrp->marked_ids = false;
                 *pformat = ALNFMT_UNKNOWN;
             }
-            else
-            {
+            else {
                 *pformat = ALNFMT_FASTAGAP;
                 s_AfrpProcessFastaGap(
                     afrp, & pattern_list, & last_line_was_marked_id, linestring, 
@@ -3123,22 +3008,6 @@ s_ReadAlignFileRaw(
         } else {
             last_pattern->next = this_pattern;
             last_pattern = this_pattern;
-        }
-    }
-    afrp->num_segments = s_GetNumSegmentsInAlignment (comment_list, errfunc, errdata);
-    if (afrp->num_segments > 1) 
-    {
-        if (afrp->offset_list) {
-            s_ReportSegmentedAlignmentError (afrp->offset_list,
-                                             errfunc, errdata);
-            delete afrp;
-            delete pattern_list;
-            delete comment_list;
-            return nullptr;            
-        }
-        else {
-            afrp->offset_list = GetSegmentOffsetList (comment_list);
-            afrp->marked_ids = true;
         }
     }
     if (! afrp->marked_ids) {
@@ -3437,7 +3306,7 @@ static void
 s_CreateSequencesBasedOnTokenPatterns(
     TLineInfoPtr     token_list,
     TIntLinkPtr      offset_list,
-    TLengthListPtr * anchorpattern,
+    TLengthListPtr anchorpattern,
     TAlignRawFilePtr afrp,
     bool gen_local_ids)
 {
@@ -3447,22 +3316,18 @@ s_CreateSequencesBasedOnTokenPatterns(
     char *       curr_id;
     TSizeInfoPtr sip;
     int          pattern_line_counter;
-    int          curr_seg;
 
     static int next_local_id = 1;
 
     if (!token_list  ||  !offset_list  ||  !anchorpattern  ||  !afrp) {
         return;
     }
-    for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++) {
-        if (!anchorpattern [curr_seg]  ||  !anchorpattern [curr_seg]->lengthrepeats) {
-            return;
-        }
+    if (!anchorpattern  ||  !anchorpattern->lengthrepeats) {
+        return;
     }
 
     line_counter = 0;
     lip = token_list;
-    curr_seg = 0;
   
     for (offset_ptr = offset_list; offset_ptr  &&  lip; offset_ptr = offset_ptr->next) {
         next_offset_ptr = offset_ptr->next;
@@ -3479,7 +3344,7 @@ s_CreateSequencesBasedOnTokenPatterns(
             curr_id = lip->data;
             lip = lip->next;
             line_counter ++;
-            for (sip = anchorpattern[curr_seg]->lengthrepeats;
+            for (sip = anchorpattern->lengthrepeats;
                     sip  &&  lip  &&  
                       (!next_offset_ptr  ||  line_counter < next_offset_ptr->ival - 1);
                     sip = sip->next) {
@@ -3513,10 +3378,6 @@ s_CreateSequencesBasedOnTokenPatterns(
                                         afrp->report_error_userdata);
             }
         }
-        curr_seg ++;
-        if (curr_seg >= afrp->num_segments) {
-            curr_seg = 0;
-        }
     }
 }
 
@@ -3535,33 +3396,19 @@ s_CreateSequencesBasedOnTokenPatterns(
  * most appearances and returns that pattern as the anchor pattern to use
  * when checking sequence data blocks for consistency with one another.
  */
-static TLengthListPtr *
+static TLengthListPtr
 s_CreateAnchorPatternForMarkedIDs(
     TAlignRawFilePtr afrp)
 {
-    TLengthListPtr * list;
-    TLengthListPtr * best;
-    TLengthListPtr this_pattern;
+    TLengthListPtr list = nullptr, best = nullptr, this_pattern = nullptr;
     char *         cp;
     TLineInfoPtr   lip;
     int            curr_seg;
 
-    if (!afrp  ||  afrp->num_segments < 1) {
+    if (!afrp) {
         return nullptr;
     }
 
-    /* initialize length lists */
-    list = new TLengthListPtr[afrp->num_segments];
-    for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++) {
-        list[curr_seg] = nullptr;
-    }
-    /* initialize best ptrs */
-    /* list is one element longer, to hold null terminator */
-    best = new TLengthListPtr[afrp->num_segments+1];
-    for (curr_seg = 0; curr_seg < afrp->num_segments + 1; curr_seg ++) {
-        best[curr_seg] = nullptr;
-    }
-    
     /* initialize pattern */
     this_pattern = nullptr;
 
@@ -3575,11 +3422,7 @@ s_CreateAnchorPatternForMarkedIDs(
         }
         if (lip->data [0] == '>') {
             if (this_pattern) {
-                list [curr_seg] = s_AddLengthList (list [curr_seg], this_pattern);
-                curr_seg ++;
-                if (curr_seg >= afrp->num_segments) {
-                    curr_seg = 0;
-                }
+                list = s_AddLengthList (list, this_pattern);
             }
             this_pattern = SLengthList::AppendNew(nullptr);
             this_pattern->num_appearances = 1;
@@ -3594,55 +3437,35 @@ s_CreateAnchorPatternForMarkedIDs(
         }
     }
     if (this_pattern) {
-        list[curr_seg] = s_AddLengthList (list [curr_seg], this_pattern);
+        list = s_AddLengthList (list, this_pattern);
     }
 
     /* Now find the pattern with the most appearances for each segment*/
-    for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg++) {
-        for (this_pattern = list [curr_seg]; this_pattern; 
-                this_pattern = this_pattern->next) {
-            if (this_pattern->num_appearances == 0) {
-                continue;
-            }
-            if (!best [curr_seg]  ||  
-                    this_pattern->num_appearances > best[curr_seg]->num_appearances) {
-                best[curr_seg] = this_pattern;
-            }
+    for (this_pattern = list; this_pattern; 
+            this_pattern = this_pattern->next) {
+        if (this_pattern->num_appearances == 0) {
+            continue;
         }
-
-        /* free all patterns before and after anchor pattern */
-        if (best [curr_seg]) {
-            delete best [curr_seg]->next;
-            best [curr_seg]->next = nullptr;
-        }
-
-        if (best [curr_seg] != list [curr_seg]) {
-            this_pattern = list [curr_seg];
-            while ( this_pattern  &&  this_pattern->next != best[curr_seg] ) {
-                this_pattern = this_pattern->next;
-            }
-            if (this_pattern) {
-                this_pattern->next = nullptr;
-                delete list[curr_seg];
-            }
+        if (!best  ||  
+                this_pattern->num_appearances > best->num_appearances) {
+            best = this_pattern;
         }
     }
 
-    /* free list. note that all of the elements of list that are not pointed to by best
-       have already been freed*/
-    delete[] list;
+    best->next = nullptr;
 
-
-    for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++)
-    {
-        if (!best[curr_seg]) {
-            for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++) {
-                delete best[curr_seg];
-            }
-            delete[] best;
-            return nullptr;
+    if (best != list) {
+        this_pattern = list;
+        while (this_pattern  &&  this_pattern->next != best) {
+            this_pattern = this_pattern->next;
+        }
+        if (this_pattern) {
+            this_pattern->next = nullptr;
+            delete list;
+            list = nullptr;
         }
     }
+
     return best;
 }
 
@@ -3701,7 +3524,7 @@ static void s_ProcessAlignFileRawForMarkedIDs (
     TAlignRawFilePtr afrp,
     bool gen_local_ids)
 {
-    TLengthListPtr * anchorpattern;
+    TLengthListPtr anchorpattern;
     
     if (!afrp) {
         return;
@@ -3714,8 +3537,7 @@ static void s_ProcessAlignFileRawForMarkedIDs (
     }
     s_CreateSequencesBasedOnTokenPatterns (afrp->line_list, afrp->offset_list,
                                          anchorpattern, afrp, gen_local_ids);
-    delete *anchorpattern;
-    delete[] anchorpattern;
+    delete anchorpattern;
 }
 
 
@@ -4492,7 +4314,7 @@ s_ProcessAlignFileRawByLengthPattern (
     TLineInfoPtr   token_list;
     TLengthListPtr list;
     TLineInfoPtr   lip;
-    TLengthListPtr anchorpattern[2];
+    TLengthListPtr anchorpattern;
     TIntLinkPtr    offset_list;
     int            best_length;
     int            best_num_chars;
@@ -4514,9 +4336,8 @@ s_ProcessAlignFileRawByLengthPattern (
         }
     }
 
-    anchorpattern [0] = s_FindMostPopularPattern (list->lengthrepeats);
-    anchorpattern [1] = nullptr;
-    if (!anchorpattern [0]  ||  !anchorpattern[0]->lengthrepeats) {
+    anchorpattern = s_FindMostPopularPattern (list->lengthrepeats);
+    if (!anchorpattern  ||  !anchorpattern->lengthrepeats) {
         delete list;
         return;
     }
@@ -4524,10 +4345,10 @@ s_ProcessAlignFileRawByLengthPattern (
     /* find anchor patterns in original list, 
      * find distances between anchor patterns 
      */
-    offset_list = s_CreateOffsetList (list->lengthrepeats, anchorpattern[0]);
+    offset_list = s_CreateOffsetList (list->lengthrepeats, anchorpattern);
     offset_list = s_AugmentOffsetList (offset_list,
                                      list->lengthrepeats,
-                                     anchorpattern[0]);
+                                     anchorpattern);
 
     /* resolve unusual distances between anchor patterns */
     best_length = s_GetMostPopularPatternLength (offset_list);
@@ -4544,7 +4365,7 @@ s_ProcessAlignFileRawByLengthPattern (
     s_CreateSequencesBasedOnTokenPatterns (token_list, offset_list,
                                        anchorpattern, afrp, false);
   
-    delete anchorpattern[0];
+    delete anchorpattern;
     delete list;
     delete token_list;
 }
@@ -4672,7 +4493,6 @@ s_FindBadDataCharsInSequence(
     TAlignRawSeqPtr      arsp,
     TAlignRawSeqPtr      master_arsp,
     const CSequenceInfo& sequenceInfo,
-    int                  num_segments,
     FReportErrorFunction report_error,
     void *               report_error_userdata)
 {
@@ -4770,15 +4590,9 @@ s_FindBadDataCharsInSequence(
 
     if (! found_middle_start) {
         delete lirp;
-        if (num_segments > 1) {
-            return false;
-        }
-        else {
-            s_ReportMissingSequenceData (arsp->id,
+        s_ReportMissingSequenceData (arsp->id,
                                    report_error, report_error_userdata);
-            return true;
-          
-        }
+        return true;
     }
 
     /* Now complain about bad middle characters */
@@ -4869,7 +4683,6 @@ s_FindBadDataCharsInSequenceList(
     }
     for (arsp = afrp->sequences; arsp; arsp = arsp->next) {
         if (s_FindBadDataCharsInSequence (arsp, afrp->sequences, sequenceInfo,
-                                        afrp->num_segments,
                                         afrp->report_error,
                                         afrp->report_error_userdata)) {
             is_bad = true;
@@ -4894,13 +4707,12 @@ s_ConvertDataToOutput(
     TLineInfoPtr      lip;
     int               curr_seg;
 
-    if (!afrp  ||  !afrp->sequences  ||  afrp->num_segments < 1) {
+    if (!afrp  ||  !afrp->sequences) {
         return false;
     }
 
     auto numOrganisms = afrp->num_organisms;
     auto numDeflines = afrp->num_deflines;
-    auto numSegments = afrp->num_segments;
     auto numSequences  = 0;
     for (arsp = afrp->sequences;  arsp;  arsp = arsp->next) {
         numSequences++;
@@ -4910,7 +4722,7 @@ s_ConvertDataToOutput(
 
     if (numOrganisms > 0  &&
             numSequences != numOrganisms  &&
-            numSequences / numSegments != numDeflines) {
+            numSequences != numDeflines) {
         s_ReportMissingOrganismInfo (afrp->report_error,
                                    afrp->report_error_userdata);
     }
@@ -4931,8 +4743,8 @@ s_ConvertDataToOutput(
     }
   
     /* we need to store length information about different segments separately */
-    TSizeInfoPtr* lengths = new TSizeInfoPtr[afrp->num_segments]{nullptr};
-    int* best_length = new int[afrp->num_segments]{0};
+    TSizeInfoPtr lengths = nullptr;
+    int best_length = 0;
     
     /* copy in sequence data */
     curr_seg = 0;
@@ -4943,20 +4755,14 @@ s_ConvertDataToOutput(
             arsp = arsp->next, index++) {
         auto sequenceLi = s_LineInfoMergeAndStripSpaces (arsp->sequence_data);
         alignInfo.mSequences [index] = string( sequenceLi ? sequenceLi : "");
-        lengths [curr_seg] = s_AddSizeInfo(lengths[curr_seg], alignInfo.mSequences[index].size());
+        lengths = s_AddSizeInfo(lengths, alignInfo.mSequences[index].size());
 
         alignInfo.mIds[index] = string(arsp->id ? arsp->id : "");
-        curr_seg ++;
-        if (curr_seg >= afrp->num_segments) {
-            curr_seg = 0;
-        }
     }
-    for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++) {
-        best_length [curr_seg] = s_GetMostPopularSize (lengths [curr_seg]);
-        if (best_length[curr_seg] == 0  &&  lengths [curr_seg]) {
-            best_length[curr_seg] = lengths[curr_seg]->size_value;
-        }   
-    }
+    best_length = s_GetMostPopularSize (lengths);
+    if (best_length == 0  &&  lengths) {
+        best_length = lengths->size_value;
+    }   
 
     curr_seg = 0;
     for (index = 0;  index < alignInfo.NumSequences();  index++) {
@@ -4964,15 +4770,11 @@ s_ConvertDataToOutput(
             s_ReportMissingSequenceData (alignInfo.mIds [index].c_str(),
                                        afrp->report_error,
                                        afrp->report_error_userdata);
-        } else if (alignInfo.mSequences[index].size() != best_length [curr_seg]) {
-            s_ReportBadSequenceLength (alignInfo.mIds [index].c_str(), best_length [curr_seg],
+        } else if (alignInfo.mSequences[index].size() != best_length) {
+            s_ReportBadSequenceLength (alignInfo.mIds [index].c_str(), best_length,
                                      alignInfo.mSequences [index].size(),
                                      afrp->report_error,
                                      afrp->report_error_userdata);
-        }
-        curr_seg ++;
-        if (curr_seg >= afrp->num_segments) {
-            curr_seg = 0;
         }
     }
 
@@ -4984,18 +4786,14 @@ s_ConvertDataToOutput(
                                           afrp->report_error_userdata);
     }
     if (afrp->expected_sequence_len > 0  &&  
-            afrp->expected_sequence_len != best_length [0]) {
+            afrp->expected_sequence_len != best_length) {
         s_ReportIncorrectSequenceLength (afrp->expected_sequence_len,
-                                       best_length [0],
+                                       best_length,
                                        afrp->report_error,
                                        afrp->report_error_userdata);
     }
     
-    delete[] best_length;
-    for (curr_seg = 0; curr_seg < afrp->num_segments; curr_seg ++) {
-        delete lengths[curr_seg];
-    }
-    delete[] lengths;
+    delete lengths;
     return true;
 }
 
