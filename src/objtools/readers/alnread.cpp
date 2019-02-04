@@ -2095,7 +2095,7 @@ s_RemoveCommentFromLine (
 
     clp = s_FindComment (linestring);
     while (clp) {
-        memmove(clp->start, clp->end+1, strlen(clp->end)*sizeof(char));
+        memmove(clp->start, clp->end+1, strlen(clp->end));
         // Note that strlen(clp->end) = strlen(clp->end+1)+1;
         // This is needed to ensure that the null terminator is copied.
         delete clp;
@@ -2216,7 +2216,7 @@ s_RemoveOrganismCommentFromLine (
 
     while (clp) {
         if (clp->end) {
-            memmove(clp->start, clp->end+1, strlen(clp->end)*sizeof(char));
+            memmove(clp->start, clp->end+1, strlen(clp->end));
         }
         delete clp;
         clp = s_FindOrganismComment (string);
