@@ -146,6 +146,11 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     }
     cerr << "Creating new test case from " << input << " ..." << endl;
 
+    CAlnReader::TFastaFlags fasta_flags = 
+        (NStr::FindNoCase(test_name, "no-mods") == NPOS) ?
+        CFastaReader::fAddMods :
+        0;
+
     CErrorLogger logger(errors);
     CNcbiIfstream ifstr(input.c_str());
     CAlnReader reader(ifstr);
@@ -153,7 +158,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CRef<CSeq_entry> pEntry;
     try {
         reader.Read(false, false, &logger);
-        pEntry = reader.GetSeqEntry();
+        pEntry = reader.GetSeqEntry(fasta_flags);
     } 
     catch (...) {
     }
@@ -201,6 +206,12 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
     CAlnReader reader(ifstr);
 
+    CAlnReader::TFastaFlags fasta_flags = 
+        (NStr::FindNoCase(testInfo.mOutFile.GetName(), "no-mods") == NPOS) ?
+        CFastaReader::fAddMods :
+        0;
+
+
     string newOutput = CDirEntry::GetTmpName();
     string newErrors = CDirEntry::GetTmpName();
     CErrorLogger logger(newErrors.c_str());
@@ -208,7 +219,7 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
     CRef<CSeq_entry> pEntry;
     try {
         reader.Read(false, false, &logger);
-        pEntry = reader.GetSeqEntry();
+        pEntry = reader.GetSeqEntry(fasta_flags);
     }
     catch (...) {
     }

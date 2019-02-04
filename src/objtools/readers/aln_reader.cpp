@@ -790,10 +790,6 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags)
 
     if (!m_DeflineInfo.empty()) {
         int i=0;
-        for (auto& pSeqEntry : seq_set) {
-            x_AddMods(m_DeflineInfo[i++], pSeqEntry->SetSeq());
-        }
-    /*
         if (fasta_flags & CFastaReader::fAddMods) {
             for (auto& pSeqEntry : seq_set) {
                 x_AddMods(m_DeflineInfo[i++], pSeqEntry->SetSeq());
@@ -804,7 +800,6 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags)
                 x_AddTitle(m_DeflineInfo[i++].data, pSeqEntry->SetSeq());
             }
         }
-    */
     }
 
     return m_Entry;
