@@ -61,6 +61,47 @@ class CCassNAnnotTaskFetch
         ~UAnnotNameBox() {}
         vector<string> names;
         vector<CTempString> names_temp;
+
+        size_t Size(bool temp_string) const
+        {
+            return temp_string ? names_temp.size() : names.size();
+        }
+
+        size_t Count(bool temp_string, string const & more) const
+        {
+            if (temp_string) {
+                CTempString t(more);
+                return count_if(names_temp.begin(), names_temp.end(),
+                    [&t](CTempString const & val) {
+                        return val > t;
+                    }
+                );
+            } else {
+                return count_if(names.begin(), names.end(),
+                    [&more](string const & val) {
+                        return val > more;
+                    }
+                );
+            }
+        }
+
+        void Bind(shared_ptr<CCassQuery>& query, bool temp_string, string const & more, unsigned int first) const
+        {
+            if (temp_string) {
+                CTempString t(more);
+                for (CTempString const & val : names_temp) {
+                    if (val > t) {
+                        query->BindStr(first++, val);
+                    }
+                }
+            } else {
+                for (string const & val : names) {
+                    if (val > more) {
+                        query->BindStr(first++, val);
+                    }
+                }
+            }
+        }
     };
     enum EBlobFetchState {
         eInit = 0,
@@ -123,6 +164,9 @@ class CCassNAnnotTaskFetch
     UAnnotNameBox m_AnnotNameBox;
     bool m_AnnotNameTempStrings;
     TNAnnotConsumeCallback m_Consume;
+    string m_LastConsumedAnnot;
+ protected:
+    unsigned int m_PageSize;
 };
 
 END_IDBLOB_SCOPE

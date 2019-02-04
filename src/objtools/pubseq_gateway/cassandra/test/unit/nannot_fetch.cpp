@@ -35,6 +35,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -84,11 +85,109 @@ class CNAnnotTaskFetchTest
     unsigned int m_Timeout;
 };
 
+class CCassNAnnotTaskFetchWithTimeout : public CCassNAnnotTaskFetch
+{
+ public:
+    CCassNAnnotTaskFetchWithTimeout(
+        unsigned int timeout_ms,
+        unsigned int max_retries,
+        shared_ptr<CCassConnection> connection,
+        const string & keyspace,
+        string accession,
+        int16_t version,
+        int16_t seq_id_type,
+        TNAnnotConsumeCallback consume_callback,
+        TDataErrorCallback data_error_cb
+    )
+        : CCassNAnnotTaskFetch(timeout_ms, max_retries, connection,
+            keyspace, accession, version, seq_id_type,
+            move(consume_callback), move(data_error_cb)
+        )
+        , m_CallCount(nullptr)
+        , m_RestartTrigger(0)
+        , m_TestRestartDone(false)
+    {
+        m_PageSize = 1;
+    }
+
+    CCassNAnnotTaskFetchWithTimeout(
+        unsigned int timeout_ms,
+        unsigned int max_retries,
+        shared_ptr<CCassConnection> connection,
+        const string & keyspace,
+        string accession,
+        int16_t version,
+        int16_t seq_id_type,
+        const vector<string> & annot_names,
+        TNAnnotConsumeCallback consume_callback,
+        TDataErrorCallback data_error_cb
+    )
+        : CCassNAnnotTaskFetch(timeout_ms, max_retries, connection,
+            keyspace, accession, version, seq_id_type, annot_names,
+            move(consume_callback), move(data_error_cb)
+        )
+        , m_CallCount(nullptr)
+        , m_RestartTrigger(0)
+        , m_TestRestartDone(false)
+    {
+        m_PageSize = 1;
+    }
+
+    virtual void Wait1(void) override
+    {
+        bool restartable_state = m_State != EBlobWaiterState::eInit
+            && m_State != EBlobWaiterState::eDone
+            && m_State != EBlobWaiterState::eError;
+        if (restartable_state && !m_TestRestartDone
+            && m_RestartTrigger != 0
+            && m_CallCount
+            && *m_CallCount == m_RestartTrigger
+        ) {
+            ++m_RestartCounter;
+            m_QueryArr[0]->Close();
+            m_State = EBlobWaiterState::eInit;
+            m_TestRestartDone = true;
+        }
+        // cout << "Wait1 called " << (m_CallCount ? NStr::NumericToString(*m_CallCount) : " null ") << endl;
+        CCassNAnnotTaskFetch::Wait1();
+    }
+
+    void SetCallCount(size_t* value)
+    {
+        m_CallCount = value;
+    }
+
+    void SetRestartTriggerCount(size_t value)
+    {
+        m_RestartTrigger = value;
+    }
+
+    bool RestartTriggered() const
+    {
+        return m_TestRestartDone;
+    }
+
+    bool Cancelled() const
+    {
+        return m_Cancelled;
+    }
+
+    bool HasErrorState() const
+    {
+        return m_State == EBlobWaiterState::eError;
+    }
+
+ private:
+    size_t* m_CallCount;
+    size_t m_RestartTrigger;
+    bool m_TestRestartDone;
+};
+
 const char* CNAnnotTaskFetchTest::m_TestClusterName = "ID_CASS_TEST";
 shared_ptr<CCassConnectionFactory> CNAnnotTaskFetchTest::m_Factory(nullptr);
 shared_ptr<CCassConnection> CNAnnotTaskFetchTest::m_Connection(nullptr);
 
-TEST_F(CNAnnotTaskFetchTest, ListRetrieval) {
+TEST_F(CNAnnotTaskFetchTest, SingleRetrievalVector) {
     size_t call_count = 0;
     CCassNAnnotTaskFetch fetch(
         m_Timeout, 0, m_Connection, m_KeyspaceName,
@@ -104,16 +203,18 @@ TEST_F(CNAnnotTaskFetchTest, ListRetrieval) {
             return true;
         },
         [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
-            cout << "Error callback called: " << status << " " << code << " " << message << endl;
+            EXPECT_TRUE(false) << "Error callback called during the test (status - "
+                << status << ", code - " << code << ", message - '" << message << "')";
         }
     );
     bool done = fetch.Wait();
     while (!done) {
+        usleep(100);
         done = fetch.Wait();
     }
 }
 
-TEST_F(CNAnnotTaskFetchTest, ListRetrievalTempString) {
+TEST_F(CNAnnotTaskFetchTest, SingleRetrievalTempString) {
     size_t call_count = 0;
     string naccession = "NA000122202.1";
     vector<CTempString> annot_names;
@@ -132,12 +233,289 @@ TEST_F(CNAnnotTaskFetchTest, ListRetrievalTempString) {
             return true;
         },
         [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
-            cout << "Error callback called: " << status << " " << code << " " << message << endl;
+            EXPECT_TRUE(false) << "Error callback called during the test (status - "
+                << status << ", code - " << code << ", message - '" << message << "')";
         }
     );
     bool done = fetch.Wait();
     while (!done) {
+        usleep(100);
         done = fetch.Wait();
     }
 }
+
+TEST_F(CNAnnotTaskFetchTest, MultipleRetrieval) {
+    size_t call_count = 0;
+    CCassNAnnotTaskFetch fetch(
+        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        "NW_017889270", 1, 10,
+        [&call_count](CNAnnotRecord && entry, bool last) -> bool {
+            switch(++call_count) {
+                case 1:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122202.1");
+                    EXPECT_EQ(entry.GetStart(), 9853);
+                    EXPECT_EQ(entry.GetStop(), 9858);
+                    EXPECT_EQ(entry.GetSatKey(), 888);
+                    EXPECT_FALSE(last);
+                    return true;
+                case 2:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122203.1");
+                    EXPECT_EQ(entry.GetStart(), 2506);
+                    EXPECT_EQ(entry.GetStop(), 8119);
+                    EXPECT_EQ(entry.GetSatKey(), 19347);
+                    EXPECT_FALSE(last);
+                    return true;
+                case 3:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122204.1");
+                    EXPECT_EQ(entry.GetStart(), 640);
+                    EXPECT_EQ(entry.GetStop(), 5865);
+                    EXPECT_EQ(entry.GetSatKey(), 39419);
+                    EXPECT_FALSE(last);
+                    return true;
+                case 4:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122205.1");
+                    EXPECT_EQ(entry.GetStart(), 992);
+                    EXPECT_EQ(entry.GetStop(), 1445);
+                    EXPECT_EQ(entry.GetSatKey(), 58472);
+                    EXPECT_FALSE(last);
+                    return false;
+                case 5:
+                    EXPECT_TRUE(last);
+                    return false;
+                default:
+                    EXPECT_TRUE(false) << "Callback should not be called " << call_count << " times.";
+            }
+            return true;
+        },
+        [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
+            EXPECT_TRUE(false) << "Error callback called during the test (status - "
+                << status << ", code - " << code << ", message - '" << message << "')";
+        }
+    );
+    bool done = fetch.Wait();
+    while (!done) {
+        usleep(100);
+        done = fetch.Wait();
+    }
+}
+
+TEST_F(CNAnnotTaskFetchTest, MultipleRetrievalWithTimeout) {
+    size_t call_count = 0;
+    CCassNAnnotTaskFetchWithTimeout fetch(
+        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        "NW_017889270", 1, 10,
+        [&call_count](CNAnnotRecord && entry, bool last) -> bool {
+            switch(++call_count) {
+                case 1:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122202.1");
+                    EXPECT_EQ(entry.GetStart(), 9853);
+                    EXPECT_EQ(entry.GetStop(), 9858);
+                    EXPECT_EQ(entry.GetSatKey(), 888);
+                    EXPECT_FALSE(last);
+                    return true;
+                case 2:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122203.1");
+                    EXPECT_EQ(entry.GetStart(), 2506);
+                    EXPECT_EQ(entry.GetStop(), 8119);
+                    EXPECT_EQ(entry.GetSatKey(), 19347);
+                    EXPECT_FALSE(last);
+                    return true;
+                case 3:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122204.1");
+                    EXPECT_EQ(entry.GetStart(), 640);
+                    EXPECT_EQ(entry.GetStop(), 5865);
+                    EXPECT_EQ(entry.GetSatKey(), 39419);
+                    EXPECT_FALSE(last);
+                    return true;
+                case 4:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122205.1");
+                    EXPECT_EQ(entry.GetStart(), 992);
+                    EXPECT_EQ(entry.GetStop(), 1445);
+                    EXPECT_EQ(entry.GetSatKey(), 58472);
+                    EXPECT_FALSE(last);
+                    return false;
+                case 5:
+                    EXPECT_TRUE(last);
+                    return false;
+                default:
+                    EXPECT_TRUE(false) << "Callback should not be called " << call_count << " times.";
+            }
+            return true;
+        },
+        [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
+            EXPECT_TRUE(false) << "Error callback called during the test (status - "
+                << status << ", code - " << code << ", message - '" << message << "')";
+        }
+    );
+    fetch.SetCallCount(&call_count);
+    fetch.SetRestartTriggerCount(3);
+    bool done = fetch.Wait();
+    while (!done) {
+        usleep(1000);
+        done = fetch.Wait();
+    }
+    fetch.SetCallCount(nullptr);
+    EXPECT_TRUE(fetch.RestartTriggered());
+    EXPECT_FALSE(fetch.Cancelled());
+    EXPECT_FALSE(fetch.HasErrorState());
+}
+
+TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithTimeout) {
+    size_t call_count = 0;
+    CCassNAnnotTaskFetchWithTimeout fetch(
+        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        "NW_017889270", 1, 10, vector<string>({"NA000122203.1", "NA000122202.1", "NA000122204.1"}),
+        [&call_count](CNAnnotRecord && entry, bool last) -> bool {
+            switch(++call_count) {
+                case 1:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122202.1");
+                    EXPECT_EQ(entry.GetStart(), 9853);
+                    EXPECT_EQ(entry.GetStop(), 9858);
+                    EXPECT_EQ(entry.GetSatKey(), 888);
+                    EXPECT_FALSE(last);
+                    return true;
+                case 2:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122203.1");
+                    EXPECT_EQ(entry.GetStart(), 2506);
+                    EXPECT_EQ(entry.GetStop(), 8119);
+                    EXPECT_EQ(entry.GetSatKey(), 19347);
+                    EXPECT_FALSE(last);
+                    return true;
+                case 3:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122204.1");
+                    EXPECT_EQ(entry.GetStart(), 640);
+                    EXPECT_EQ(entry.GetStop(), 5865);
+                    EXPECT_EQ(entry.GetSatKey(), 39419);
+                    EXPECT_FALSE(last);
+                    return true;
+                case 4:
+                    EXPECT_TRUE(last);
+                    return false;
+                default:
+                    EXPECT_TRUE(false) << "Callback should not be called " << call_count << " times.";
+            }
+            return true;
+        },
+        [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
+            EXPECT_TRUE(false) << "Error callback called during the test (status - "
+                << status << ", code - " << code << ", message - '" << message << "')";
+        }
+    );
+    fetch.SetCallCount(&call_count);
+    fetch.SetRestartTriggerCount(2);
+    bool done = fetch.Wait();
+    while (!done) {
+        usleep(1000);
+        done = fetch.Wait();
+    }
+    fetch.SetCallCount(nullptr);
+    EXPECT_TRUE(fetch.RestartTriggered());
+    EXPECT_FALSE(fetch.Cancelled());
+    EXPECT_FALSE(fetch.HasErrorState());
+}
+
+TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithTimeoutOnEOF) {
+    size_t call_count = 0;
+    CCassNAnnotTaskFetchWithTimeout fetch(
+        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        "NW_017889270", 1, 10, vector<string>({"NA000122203.1", "NA000122202.1", "NA000122204.1"}),
+        [&call_count](CNAnnotRecord && entry, bool last) -> bool {
+            switch(++call_count) {
+                case 1:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122202.1");
+                    EXPECT_EQ(entry.GetStart(), 9853);
+                    EXPECT_EQ(entry.GetStop(), 9858);
+                    EXPECT_EQ(entry.GetSatKey(), 888);
+                    EXPECT_FALSE(last);
+                    return true;
+                case 2:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122203.1");
+                    EXPECT_EQ(entry.GetStart(), 2506);
+                    EXPECT_EQ(entry.GetStop(), 8119);
+                    EXPECT_EQ(entry.GetSatKey(), 19347);
+                    EXPECT_FALSE(last);
+                    return true;
+                case 3:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122204.1");
+                    EXPECT_EQ(entry.GetStart(), 640);
+                    EXPECT_EQ(entry.GetStop(), 5865);
+                    EXPECT_EQ(entry.GetSatKey(), 39419);
+                    EXPECT_FALSE(last);
+                    return true;
+                case 4:
+                    EXPECT_TRUE(last);
+                    return false;
+                default:
+                    EXPECT_TRUE(false) << "Callback should not be called " << call_count << " times.";
+            }
+            return true;
+        },
+        [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
+            EXPECT_TRUE(false) << "Error callback called during the test (status - "
+                << status << ", code - " << code << ", message - '" << message << "')";
+        }
+    );
+    fetch.SetCallCount(&call_count);
+    fetch.SetRestartTriggerCount(3);
+    bool done = fetch.Wait();
+    while (!done) {
+        usleep(1000);
+        done = fetch.Wait();
+    }
+    fetch.SetCallCount(nullptr);
+    EXPECT_TRUE(fetch.RestartTriggered());
+    fetch.SetConsumeCallback(nullptr);
+    EXPECT_TRUE(fetch.Wait());
+    EXPECT_FALSE(fetch.Cancelled());
+    EXPECT_FALSE(fetch.HasErrorState());
+}
+
+TEST_F(CNAnnotTaskFetchTest, ListRetrievalWithCancel) {
+    size_t call_count = 0;
+    CCassNAnnotTaskFetchWithTimeout fetch(
+        m_Timeout, 0, m_Connection, m_KeyspaceName,
+        "NW_017889270", 1, 10, vector<string>({"NA000122203.1", "NA000122202.1", "NA000122204.1"}),
+        [&call_count](CNAnnotRecord && entry, bool last) -> bool {
+            switch(++call_count) {
+                case 1:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122202.1");
+                    EXPECT_EQ(entry.GetStart(), 9853);
+                    EXPECT_EQ(entry.GetStop(), 9858);
+                    EXPECT_EQ(entry.GetSatKey(), 888);
+                    EXPECT_FALSE(last);
+                    return true;
+                case 2:
+                    EXPECT_EQ(entry.GetAnnotName(), "NA000122203.1");
+                    EXPECT_EQ(entry.GetStart(), 2506);
+                    EXPECT_EQ(entry.GetStop(), 8119);
+                    EXPECT_EQ(entry.GetSatKey(), 19347);
+                    EXPECT_FALSE(last);
+                    return true;
+                default:
+                    EXPECT_TRUE(false) << "Callback should not be called " << call_count << " times.";
+            }
+            return true;
+        },
+        [](CRequestStatus::ECode status, int code, EDiagSev severity, const string & message) {
+            EXPECT_TRUE(false) << "Error callback called during the test (status - "
+                << status << ", code - " << code << ", message - '" << message << "')";
+        }
+    );
+    bool done = fetch.Wait();
+    bool cancelled = false;
+    while (!done) {
+        usleep(1000);
+        done = fetch.Wait();
+        if (call_count == 2 && !cancelled) {
+            fetch.Cancel();
+            cancelled = true;
+        }
+    }
+    EXPECT_FALSE(fetch.RestartTriggered());
+    fetch.SetConsumeCallback(nullptr);
+    EXPECT_TRUE(fetch.Wait());
+    EXPECT_TRUE(fetch.Cancelled());
+    EXPECT_TRUE(fetch.HasErrorState());
+}
+
 }  // namespace

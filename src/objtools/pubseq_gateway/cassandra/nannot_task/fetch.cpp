@@ -69,6 +69,7 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     , m_AnnotNameBox(annot_names)
     , m_AnnotNameTempStrings(false)
     , m_Consume(move(consume_callback))
+    , m_PageSize(CCassQuery::DEFAULT_PAGE_SIZE)
 {}
 
 CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
@@ -93,6 +94,7 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     , m_AnnotNameBox(annot_names)
     , m_AnnotNameTempStrings(true)
     , m_Consume(move(consume_callback))
+    , m_PageSize(CCassQuery::DEFAULT_PAGE_SIZE)
 {}
 
 CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
@@ -116,6 +118,7 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     , m_AnnotNameBox(vector<string>())
     , m_AnnotNameTempStrings(false)
     , m_Consume(move(consume_callback))
+    , m_PageSize(CCassQuery::DEFAULT_PAGE_SIZE)
 {}
 
 CCassNAnnotTaskFetch::~CCassNAnnotTaskFetch()
@@ -161,29 +164,37 @@ void CCassNAnnotTaskFetch::Wait1()
                     " FROM " + GetKeySpace() + ".bioseq_na "
                     " WHERE"
                     "  accession = ? AND version = ? AND seq_id_type = ?";
-                unsigned int params = 3;
-                unsigned int names_count = 0;
-                if (m_AnnotNameTempStrings && !m_AnnotNameBox.names_temp.empty()) {
-                    names_count = m_AnnotNameBox.names_temp.size();
-                } else if (!m_AnnotNameTempStrings && !m_AnnotNameBox.names.empty()) {
-                    names_count = m_AnnotNameBox.names.size();
-                }
-                if (names_count > 0) {
-                    sql += " AND annot_name in (" + NStr::Join(vector<string>(names_count, "?"), ",") + ")";
+                unsigned int params = 3, names_count = 0;
+                if (m_AnnotNameBox.Size(m_AnnotNameTempStrings)) {
+                    names_count = m_AnnotNameBox.Count(m_AnnotNameTempStrings, m_LastConsumedAnnot);
+                    if (names_count > 0) {
+                        sql += " AND annot_name in (" + NStr::Join(vector<string>(names_count, "?"), ",") + ")";
+                    } else {
+                        CloseAll();
+                        m_State = eDone;
+                        break;
+                    }
+                } else {
+                    if (!m_LastConsumedAnnot.empty()) {
+                        sql += " AND annot_name > ?";
+                        ++params;
+                    }
                 }
                 m_QueryArr[0]->SetSQL(sql, params + names_count);
                 m_QueryArr[0]->BindStr(0, m_Accession);
                 m_QueryArr[0]->BindInt16(1, m_Version);
                 m_QueryArr[0]->BindInt16(2, m_SeqIdType);
-                for (unsigned int i = params; i < names_count + params; ++i) {
-                    if (m_AnnotNameTempStrings) {
-                        m_QueryArr[0]->BindStr(i, m_AnnotNameBox.names_temp[i-params]);
-                    } else {
-                        m_QueryArr[0]->BindStr(i, m_AnnotNameBox.names[i-params]);
+
+                if (names_count > 0) {
+                    m_AnnotNameBox.Bind(m_QueryArr[0], m_AnnotNameTempStrings, m_LastConsumedAnnot, 3);
+                } else {
+                    if (!m_LastConsumedAnnot.empty()) {
+                        m_QueryArr[0]->BindStr(3, m_LastConsumedAnnot);
                     }
                 }
+
                 UpdateLastActivity();
-                m_QueryArr[0]->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, true);
+                m_QueryArr[0]->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, true, m_PageSize);
                 m_State = eFetchStarted;
                 break;
             }
@@ -204,7 +215,9 @@ void CCassNAnnotTaskFetch::Wait1()
                             .SetStart(m_QueryArr[0]->FieldGetInt32Value(3, 0))
                             .SetStop(m_QueryArr[0]->FieldGetInt32Value(4, 0));
                         if (m_Consume) {
+                            string annot_name = record.GetAnnotName();
                             do_next = m_Consume(move(record), false);
+                            m_LastConsumedAnnot = move(annot_name);
                         }
                         if (do_next) {
                             state = m_QueryArr[0]->NextRow();
