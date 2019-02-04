@@ -4455,29 +4455,37 @@ void CNewCleanup_imp::x_AddEnvSamplOrMetagenomic(CBioSource& biosrc)
 }
 
 
+struct SRemovableOldname
+{
+    const string& m_Taxname;
+    bool operator()(CRef<COrgMod> mod)
+    {
+        return (mod->IsSetSubtype() &&
+            mod->GetSubtype() == COrgMod::eSubtype_old_name &&
+            mod->IsSetSubname() &&
+            NStr::Equal(mod->GetSubname(), m_Taxname) &&
+            (!mod->IsSetAttrib() || NStr::IsBlank(mod->GetAttrib())));
+    }
+};
+
+
 void CNewCleanup_imp::x_CleanupOldName(COrg_ref& org)
 {
     if (org.IsSetTaxname() && org.IsSetOrgname() && org.GetOrgname().IsSetMod()) {
+        SRemovableOldname matcher{ org.GetTaxname() };
         auto& modset = org.SetOrgname().SetMod();
-        COrgName::TMod::iterator it = modset.begin();
-        while (it != modset.end()) {
-            if ((*it)->IsSetSubtype() &&
-                (*it)->GetSubtype() == COrgMod::eSubtype_old_name &&
-                (*it)->IsSetSubname() &&
-                NStr::Equal((*it)->GetSubname(), org.GetTaxname()) &&
-                (!(*it)->IsSetAttrib() || NStr::IsBlank((*it)->GetAttrib()))) {
-                it = modset.erase(it);
-                ChangeMade(CCleanupChange::eRemoveOrgmod);
-            } else {
-                ++it;
-            }            
+        size_t before = modset.size();
+        modset.erase(std::remove_if(modset.begin(), modset.end(), matcher), modset.end());
+        if (before != modset.size()) {
+            ChangeMade(CCleanupChange::eRemoveOrgmod);         
         }
         if (modset.empty()) {
             org.SetOrgname().ResetMod();
-
+            ChangeMade(CCleanupChange::eRemoveOrgmod);
         }
     }
 }
+
 
 
 bool s_HasMatchingGBMod(const COrgName& org, const string& val)
@@ -4489,8 +4497,8 @@ bool s_HasMatchingGBMod(const COrgName& org, const string& val)
         if ((*it)->IsSetSubtype() &&
             ((*it)->GetSubtype() == COrgMod::eSubtype_gb_acronym ||
             (*it)->GetSubtype() == COrgMod::eSubtype_gb_anamorph ||
-            (*it)->GetSubtype() == COrgMod::eSubtype_gb_synonym) &&
-            (*it)->IsSetSubname() &&
+                (*it)->GetSubtype() == COrgMod::eSubtype_gb_synonym) &&
+                (*it)->IsSetSubname() &&
             NStr::Equal((*it)->GetSubname(), val)) {
             return true;
         }
@@ -4499,24 +4507,29 @@ bool s_HasMatchingGBMod(const COrgName& org, const string& val)
 }
 
 
+struct SRemovableOrgModNote {
+    const COrg_ref& org;
+    bool operator()(CRef<COrgMod> mod) {
+        return (mod->IsSetSubtype() &&
+            mod->GetSubtype() == COrgMod::eSubtype_other &&
+            mod->IsSetSubname() &&
+            (s_HasMatchingGBMod(org.GetOrgname(), mod->GetSubname()) ||
+            (org.IsSetTaxname() && NStr::Equal(org.GetTaxname(), mod->GetSubname()))));
+
+    }
+};
+
 void CNewCleanup_imp::x_CleanupOrgModNoteEC(COrg_ref& org)
 {
     if (!org.IsSetOrgname() || !org.GetOrgname().IsSetMod()) {
         return;
     }
     auto& modset = org.SetOrgname().SetMod();
-    COrgName::TMod::iterator it = modset.begin();
-    while (it != modset.end()) {
-        if ((*it)->IsSetSubtype() && 
-            (*it)->GetSubtype() == COrgMod::eSubtype_other &&
-            (*it)->IsSetSubname() &&
-            (s_HasMatchingGBMod(org.GetOrgname(), (*it)->GetSubname()) ||
-             (org.IsSetTaxname() && NStr::Equal(org.GetTaxname(), (*it)->GetSubname())))) {
-            ChangeMade(CCleanupChange::eRemoveOrgmod);
-            it = modset.erase(it);
-        } else {
-            ++it;
-        }
+    SRemovableOrgModNote matcher{ org };
+    size_t before = modset.size();
+    modset.erase(std::remove_if(modset.begin(), modset.end(), matcher), modset.end());
+    if (before != modset.size()) {
+        ChangeMade(CCleanupChange::eRemoveOrgmod);
     }
     if (modset.empty()) {
         org.SetOrgname().ResetMod();
@@ -9112,28 +9125,41 @@ void CNewCleanup_imp::x_RemoveEmptyUserObject( CSeq_descr & seq_descr )
 }
 
 
-bool CNewCleanup_imp::s_ShouldRemoveKeyword(const string& keyword, CMolInfo::TTech tech)
+// Helper for removing GenBank Block Keywords
+struct SKeywordChecker
 {
-    if (NStr::Equal(keyword, "HTG")) {
-        return true;
-    } else if (tech == CMolInfo::eTech_htgs_0 && NStr::Equal(keyword, "HTGS_PHASE0")) {
-        return true;
-    } else if (tech == CMolInfo::eTech_htgs_1 && NStr::Equal(keyword, "HTGS_PHASE1")) {
-        return true;
-    } else if (tech == CMolInfo::eTech_htgs_2 && NStr::Equal(keyword, "HTGS_PHASE2")) {
-        return true;
-    } else if (tech == CMolInfo::eTech_htgs_3 && NStr::Equal(keyword, "HTGS_PHASE3")) {
-        return true;
-    } else if (tech == CMolInfo::eTech_est && NStr::Equal(keyword, "EST")) {
-        return true;
-    } else if (tech == CMolInfo::eTech_sts && NStr::Equal(keyword, "STS")) {
-        return true;
-    } else if (tech == CMolInfo::eTech_survey && NStr::Equal(keyword, "GSS")) {
-        return true;
-    } else {
-        return false;
+    CMolInfo::TTech m_Tech;
+    bool operator()(const string& keyword)
+    {
+        if (NStr::Equal(keyword, "HTG")) {
+            return true;
+        }
+        else if (m_Tech == CMolInfo::eTech_htgs_0 && NStr::Equal(keyword, "HTGS_PHASE0")) {
+            return true;
+        }
+        else if (m_Tech == CMolInfo::eTech_htgs_1 && NStr::Equal(keyword, "HTGS_PHASE1")) {
+            return true;
+        }
+        else if (m_Tech == CMolInfo::eTech_htgs_2 && NStr::Equal(keyword, "HTGS_PHASE2")) {
+            return true;
+        }
+        else if (m_Tech == CMolInfo::eTech_htgs_3 && NStr::Equal(keyword, "HTGS_PHASE3")) {
+            return true;
+        }
+        else if (m_Tech == CMolInfo::eTech_est && NStr::Equal(keyword, "EST")) {
+            return true;
+        }
+        else if (m_Tech == CMolInfo::eTech_sts && NStr::Equal(keyword, "STS")) {
+            return true;
+        }
+        else if (m_Tech == CMolInfo::eTech_survey && NStr::Equal(keyword, "GSS")) {
+            return true;
+        }
+        else {
+            return false;
+        }
     }
-}
+};
 
 
 bool CNewCleanup_imp::x_CleanGenbankKeywords(CGB_block& blk, CMolInfo::TTech tech)
@@ -9143,17 +9169,14 @@ bool CNewCleanup_imp::x_CleanGenbankKeywords(CGB_block& blk, CMolInfo::TTech tec
     }
     bool any_change = false;
     auto& keywords = blk.SetKeywords();
-    CGB_block::TKeywords::iterator it = keywords.begin();
-    while (it != keywords.end()) {
-        if (s_ShouldRemoveKeyword(*it, tech)) {
-            it = keywords.erase(it);
-            any_change = true;
-        } else {
-            ++it;
-        }
-    }
+    size_t orig = keywords.size();
+    SKeywordChecker matcher{ tech };
+    keywords.erase(std::remove_if(keywords.begin(), keywords.end(), matcher), keywords.end());
+
     if (keywords.empty()) {
         blk.ResetKeywords();
+        any_change = true;
+    } else if (keywords.size() != orig) {
         any_change = true;
     }
     return any_change;
@@ -9360,12 +9383,12 @@ void CNewCleanup_imp::x_CleanupGenbankBlock(CGB_block& gb, bool is_patent, CCons
                 gb.ResetDiv();
                 ChangeMade(CCleanupChange::eChangeOther);
             }
-        } else if (s_ShouldRemoveKeyword(gb.GetDiv(), tech)) {
+        }
+        else if (SKeywordChecker{ tech }(gb.GetDiv())) {
             gb.ResetDiv();
             ChangeMade(CCleanupChange::eChangeOther);
         }
-    }
-    if (gb.IsSetSource() && biosrc && x_CanRemoveGenbankBlockSource(gb.GetSource(), *biosrc)) {
+    } if (gb.IsSetSource() && biosrc && x_CanRemoveGenbankBlockSource(gb.GetSource(), *biosrc)) {
         gb.ResetSource();
         ChangeMade(CCleanupChange::eChangeOther);
     }
@@ -10515,42 +10538,38 @@ bool IsPubInSet(const CSeq_descr& descr, const CPubdesc& pub)
 }
 
 
+struct SPubMatch
+{
+    const CPubdesc& m_Pub;
+    bool operator()(CRef<CSeqdesc> dsc)
+    {
+        return (dsc && dsc->IsPub() && dsc->GetPub().Equals(m_Pub));
+    }
+};
+
+
 void CNewCleanup_imp::x_RemovePub(CSeq_entry& se, const CPubdesc& pub)
 {
+    SPubMatch matcher{ pub };
     if (se.IsSeq()) {
-        x_RemovePub(se.SetSeq(), pub);
+        CBioseq& seq = se.SetSeq();
+        if (seq.IsSetDescr()) {
+            auto& dset = seq.SetDescr().Set();
+            size_t before = dset.size();
+            dset.erase(std::remove_if(dset.begin(), dset.end(), matcher), dset.end());
+            if (dset.size() != before) {
+                ChangeMade(CCleanupChange::eRemoveDescriptor);
+            }
+        }
     } else if (se.IsSet()) {
-        x_RemovePub(se.SetSet(), pub);
-    }
-}
-
-
-void CNewCleanup_imp::x_RemovePub(CBioseq& seq, const CPubdesc& pub)
-{
-    if (seq.IsSetDescr()) {
-        x_RemovePub(seq.SetDescr(), pub);
-    }
-}
-
-
-void CNewCleanup_imp::x_RemovePub(CBioseq_set& set, const CPubdesc& pub)
-{
-    if (set.IsSetDescr()) {
-        x_RemovePub(set.SetDescr(), pub);
-    }
-}
-
-
-void CNewCleanup_imp::x_RemovePub(CSeq_descr& descr, const CPubdesc& pub)
-{
-    auto& dset = descr.Set();
-    CSeq_descr::Tdata::iterator it = dset.begin();
-    while (it != dset.end()) {
-        if ((*it)->IsPub() && (*it)->GetPub().Equals(pub)) {
-            it = dset.erase(it);
-            ChangeMade(CCleanupChange::eRemoveDescriptor);
-        } else {
-            ++it;
+        CBioseq_set& set = se.SetSet();
+        if (set.IsSetDescr()) {
+            auto& dset = set.SetDescr().Set();
+            size_t before = dset.size();
+            dset.erase(std::remove_if(dset.begin(), dset.end(), matcher), dset.end());
+            if (dset.size() != before) {
+                ChangeMade(CCleanupChange::eRemoveDescriptor);
+            }
         }
     }
 }
@@ -11922,7 +11941,7 @@ void CNewCleanup_imp::ResynchPeptidePartials (
 }
 
 
-// Helper for removing old-name OrgMod's
+// Helper for removing non-matching title descriptors
 struct STitleMatchString
 {
     const string& m_Val;

@@ -502,7 +502,6 @@ private:
 
     void x_DecodeXMLMarkChanged( std::string & str );
 
-
 private:
     void x_SortSeqDescs( CSeq_entry & seq_entry );
 
@@ -524,7 +523,6 @@ private:
     void x_RemoveEmptyUserObject( CSeq_descr & seq_descr );
     void x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr, CGB_block& block);
     void x_SetMolInfoTechFromGenBankBlock(CSeq_descr& seq_descr);
-    static bool s_ShouldRemoveKeyword(const string& keyword, CMolInfo::TTech tech);
     static bool x_CleanGenbankKeywords(CGB_block& blk, CMolInfo::TTech tech);
     void x_CleanupGenbankBlock(CBioseq& seq);
     void x_CleanupGenbankBlock(CBioseq_set& set);
@@ -576,9 +574,6 @@ private:
     void x_MoveNpPub(CBioseq_set& np_set, CSeq_descr& descr);
     void x_MovePopPhyMutPub(CBioseq_set& bioseq_set);
     void x_RemovePub(CSeq_entry& se, const CPubdesc& pub);
-    void x_RemovePub(CBioseq& seq, const CPubdesc& pub);
-    void x_RemovePub(CBioseq_set& set, const CPubdesc& pub);
-    void x_RemovePub(CSeq_descr& descr, const CPubdesc& pub);
 
     bool x_IsDBLinkUserObj( const CSeqdesc & desc );
 
