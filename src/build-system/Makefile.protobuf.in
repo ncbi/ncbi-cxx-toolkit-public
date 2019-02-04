@@ -25,8 +25,7 @@ PROTOC = $(PROTOBUF_BIN)/protoc
 GRPC_CPP_PLUGIN = $(GRPC_BIN)/grpc_cpp_plugin
 
 ifneq "" "$(wildcard $(GRPC_CPP_PLUGIN))"
-  GRPC_FILES = $(MODULE).grpc.pb.cc $(INCLUDEDIR)/$(MODULE).grpc.pb.hpp \
-               $(INCLUDEDIR)/$(MODULE).grpc.pb.h
+  GRPC_FILES = $(MODULE).grpc.pb.cc $(INCLUDEDIR)/$(MODULE).grpc.pb.h
 endif
 
 DEPS = $(SPEC) $(PROTOC) $(MODULE).module $(IMPDEPS)
@@ -49,8 +48,7 @@ purge_all_sources:
 purge_all_files:
 	-$(RM) $(FILES) *.pb.[ch]* $(INCLUDEDIR)/*.pb.h*
 
-$(FILES): $(MODULE).pb.cc $(INCLUDEDIR)/$(MODULE).pb.hpp \
-          $(INCLUDEDIR)/$(MODULE).pb.h $(GRPC_FILES)
+$(FILES): $(MODULE).pb.cc $(INCLUDEDIR)/$(MODULE).pb.h $(GRPC_FILES)
 	$(RM) $(MODULE).pb.cpp $(MODULE).grpc.pb.cpp
 	@$(TOUCH) $@
 
@@ -64,13 +62,6 @@ $(MODULE).grpc.pb.cc $(MODULE).grpc.pb.h: $(DEPS) $(GRPC_CPP_PLUGIN)
 $(INCLUDEDIR)/%.pb.h: %.pb.cc # not .h, to avoid duplicate protoc runs
 	$(MKDIR) -p $(INCLUDEDIR)
 	/bin/mv -f $*.pb.h $@
-
-$(INCLUDEDIR)/%.pb.hpp: $(INCLUDEDIR)/%.pb.h
-	@echo '#warning "*.pb.hpp headers are deprecated,"' > $@.tmp
-	@echo '#warning "and available only on Linux."' >> $@.tmp
-	@echo '#warning "Please substitute *.pb.h."' >> $@.tmp
-	echo '#include "$*.pb.h"' >> $@.tmp
-	mv $@.tmp $@
 
 $(MODULE).module:
 	@$(TOUCH) $@
