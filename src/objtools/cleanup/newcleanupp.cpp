@@ -8998,8 +8998,8 @@ static bool s_IsRealTrna(const CSeq_feat& seq_feat)
     }
     const auto& fdata = seq_feat.GetData();
     if (fdata.GetSubtype() != CSeqFeatData::eSubtype_tRNA ||
-        !seq_feat.GetData().GetRna().IsSetExt() ||
-        !seq_feat.GetData().GetRna().GetExt().IsTRNA()) {
+        !fdata.GetRna().IsSetExt() ||
+        !fdata.GetRna().GetExt().IsTRNA()) {
         return false;
     }
 
@@ -12065,45 +12065,67 @@ void CNewCleanup_imp::x_RemoveUnseenTitles(CBioseq_set& set)
 }
 
 
-bool RemoveEarlierDates(CSeq_descr & seq_descr, CSeqdesc::E_Choice date_type)
-{
-    bool any_removed = false;
-    auto& dset = seq_descr.Set();
-    auto it = dset.begin();
-    while (it != dset.end() && (*it)->Which() != date_type) {
-        ++it;
-    }
-    if (it == dset.end()) {
-        return any_removed;
-    }
-    auto prev_date = it;
-    ++it;
-    while (it != dset.end()) {
-        if ((*it)->Which() == date_type) {
-            CDate::ECompare compare;
-            if (date_type == CSeqdesc::e_Create_date) {
-                compare = (*prev_date)->GetCreate_date().Compare((*it)->GetCreate_date());
-            } else {
-                compare = (*prev_date)->GetUpdate_date().Compare((*it)->GetUpdate_date());
-            }
-            if (compare == CDate::eCompare_after) {
-                // previous date is later, get rid of this one
-                it = dset.erase(it);
-            } else {
-                seq_descr.Set().erase(prev_date);
-                prev_date = it;
-                ++it;
-                while (it != dset.end() && (*it)->Which() != date_type) {
-                    ++it;
-                }
-            }
-            any_removed = true;
+struct SLaterDate {
+    const CDate& m_Date;
+    CSeqdesc::E_Choice date_type;
+    bool m_Found;
+
+    bool operator()(CRef<CSeqdesc> desc) {
+        if (desc->Which() != date_type) {
+            return false;
+        }
+        CDate::ECompare compare;
+        if (date_type == CSeqdesc::e_Create_date) {
+            compare = m_Date.Compare(desc->GetCreate_date());
         } else {
-            ++it;
+            compare = m_Date.Compare(desc->GetUpdate_date());
+        }
+        if (compare == CDate::eCompare_same) {
+            // only keep the first one we encounter
+            if (m_Found) {
+                return true;
+            }
+            else {
+                m_Found = true;
+                return false;
+            }
+        } else {
+            return true;
         }
     }
+};
 
-    return any_removed;
+bool RemoveEarlierDates(CSeq_descr & seq_descr, CSeqdesc::E_Choice date_type)
+{
+    auto& dset = seq_descr.Set();
+    CConstRef<CDate> latest_date;
+    size_t num_present = 0;
+    // find latest item
+    for (auto it : dset) {
+        if (it->Which() == date_type) {
+            CConstRef<CDate> this_date;
+            if (date_type == CSeqdesc::e_Create_date) {
+                this_date.Reset(&(it->GetCreate_date()));
+            }
+            else {
+                this_date.Reset(&(it->GetUpdate_date()));
+            }
+
+            if (!latest_date || latest_date->Compare(*this_date) == CDate::eCompare_before) {
+                latest_date = this_date;
+            }
+            ++num_present;
+        }
+    }
+    if (num_present < 2) {
+        // nothing to do here
+        return false;
+    }
+
+    SLaterDate matcher{ *latest_date, date_type, false };
+    dset.erase(std::remove_if(dset.begin(), dset.end(), matcher), dset.end());
+
+    return true;
 }
 
 
