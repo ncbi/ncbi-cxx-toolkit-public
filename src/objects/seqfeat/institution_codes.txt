@@ -2330,7 +2330,7 @@ HAJB	s	Jardin Botanico Nacional
 HAJU	s	Herbario Dr. Armando Jesus Urquiola			
 HAK	s	Hokkaido University, Faculty of Fisheries			
 HAKS	s	Hakgala Botanic Gardens			
-HAL	s	Martin-Luther-Universitaet			
+HAL	s	Martin-Luther-Universitat			
 HALA	s	University of Alabama, Biological Sciences Department			
 HALE	s	Haleakala National Park			
 HALLE	s	Zoologisches Institut der Martin-Luther Universitaet			
@@ -2811,6 +2811,7 @@ ICUI	s	University of Iowa
 ICVI	s	The Volcani Center			
 ID	s	University of Idaho, Biological Sciences Department			
 IDAC	cb	The International Depositary Authority of Canada			
+IDB	sb	Koltzov Institute of Developmental Biology Russian Academy of Sciences			
 IDEA	s	Instituto de Agronomia			
 IDF	s	University of Idaho			
 IDS	s	Idaho State University, Biological Sciences Department			
@@ -3840,7 +3841,7 @@ MAIA	s	Instituto Nacional de Investigaciones Agrarias, Departamento de Ecologia
 MAIC	s	Mediterranean Agronomic Institute of Chania, Department of Natural Products			
 MAINE	s	University of Maine, Department of Biological Sciences			
 MAIS	s	Institut d'Elevage et de Medecine Veterinaire des Pays Tropicaux, Departement de Botanique			
-MAK	s	Tokyo Metropolitan University			
+MAK	s	Tokyo Metropolitan University, Makino Herbarium			
 MAKAR	s	Institut Planina i More			
 MAKFUNGI	s	Macedonian Collection of Fungi,Institute of Biology	Fungi Macedonici		
 MAL	s	Botanic Gardens of Malawi			
@@ -6370,7 +6371,7 @@ STPCM	s	Island Museum, Candie Gardens
 STPE	s	Florida Marine Research Institute, Florida Department of Environmental Protection			
 STPH	s	Direccao Geral do Ambiente, Cabinet of Environment, Ministry of Natural Resources and Environment			
 STPS	s	St. Paul's School			
-STR	s	Institut de Botanique			
+STR	s	University of Strasbourg			
 STRI	sc	Smithsonian Tropical Research Institute	SCZ		
 STRI:ICBG-Panama	c	Smithsonian Tropical Research Institute,  International Cooperative Biodiversity Groups		
 STS	s	Stromness Museum			
@@ -7373,7 +7374,7 @@ VDAC	s	Virginia Department of Agriculture and Consumer Services
 VDAM	s	Institute of Plant Science			
 VDB	s	Vanderbilt University, Department of Biological Sciences			
 VECTOR	sc	State Research Center of Virology and Biotechnology			
-VEN	s	Fundacion Instituto Botanico de Venezuela Dr. Tobias Lasser			
+VEN	s	Herbario Nacional de Venezuela, Instituto Experimental Jardin Botanico Dr. Tobias Lasser			
 VENDA	s	Thohoyandou Botanical Gardens, Department of Agriculture, Land & Environment			
 VER	s	Herbario, Museo Civico di Storia Naturale, Verona			
 VETMED	s	University of Veterinary Medicine			
