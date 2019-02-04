@@ -401,7 +401,6 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
     // look for expected change flags
 	vector<string> changes_str = changes->GetAllDescriptions();
     vector<string> expected;
-    expected.push_back("Change Publication");
     expected.push_back("Change Subsource");
     expected.push_back("Move Descriptor");
     s_ReportUnexpected(changes_str, expected);
@@ -1924,5 +1923,61 @@ BOOST_AUTO_TEST_CASE(Test_StrainRemoval)
     for (auto it : entry->GetSeq().GetDescr().Get()) {
         BOOST_CHECK(it->Which() != CSeqdesc::e_Genbank);
     }
+}
+
+
+void AddCreateDate(CRef<CSeq_entry> entry, size_t year)
+{
+    CRef<CSeqdesc> cdate(new CSeqdesc());
+    cdate->SetCreate_date().SetStd().SetYear(year);
+    entry->SetSeq().SetDescr().Set().push_back(cdate);
+}
+
+
+void AddUpdateDate(CRef<CSeq_entry> entry, size_t year)
+{
+    CRef<CSeqdesc> cdate(new CSeqdesc());
+    cdate->SetUpdate_date().SetStd().SetYear(year);
+    entry->SetSeq().SetDescr().Set().push_back(cdate);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_MultipleDates)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    AddCreateDate(entry, 2013);
+    AddCreateDate(entry, 2014);
+    AddCreateDate(entry, 2012);
+    AddCreateDate(entry, 2014);
+
+    AddUpdateDate(entry, 2017);
+    AddUpdateDate(entry, 2018);
+    AddUpdateDate(entry, 2016);
+    AddUpdateDate(entry, 2018);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.ExtendedCleanup(seh);
+    size_t num_create = 0;
+    size_t num_update = 0;
+    for (auto it : entry->GetSeq().GetDescr().Get()) {
+        if (it->IsCreate_date()) {
+            ++num_create;
+            BOOST_CHECK_EQUAL(it->GetCreate_date().GetStd().GetYear(), 2014);
+        }
+        if (it->IsUpdate_date()) {
+            ++num_update;
+            BOOST_CHECK_EQUAL(it->GetUpdate_date().GetStd().GetYear(), 2018);
+        }
+
+    }
+    BOOST_CHECK_EQUAL(num_create, 1);
+    BOOST_CHECK_EQUAL(num_update, 1);
 }
 
