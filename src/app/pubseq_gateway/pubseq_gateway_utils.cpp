@@ -104,6 +104,10 @@ static string   s_Code = "code=";
 static string   s_Severity = "severity=";
 static string   s_BlobId = "blob_id=";
 static string   s_Fmt = "fmt=";
+static string   s_SecAcc = "seq_acc=";
+static string   s_SeqVer = "seq_ver=";
+static string   s_SeqType = "seq_type=";
+static string   s_NA = "na=";
 
 // Fixed values
 static string   s_BioseqInfo = "bioseq_info";
@@ -115,10 +119,12 @@ static string   s_Meta = "meta";
 static string   s_Message = "message";
 static string   s_Protobuf = "protobuf";
 static string   s_Json = "json";
+static string   s_BioseqNA = "bioseq_na";
 
 // Combinations
 static string   s_BioseqInfoItem = s_ItemType + s_BioseqInfo;
 static string   s_BlobPropItem = s_ItemType + s_BlobProp;
+static string   s_BioseqNAItem = s_ItemType + s_BioseqNA;
 static string   s_BlobItem = s_ItemType + s_Blob;
 static string   s_ReplyItem = s_ItemType + s_Reply;
 
@@ -288,7 +294,8 @@ string  GetBlobChunkHeader(size_t  item_id, const SBlobId &  blob_id,
                            size_t  chunk_size,
                            size_t  chunk_number)
 {
-    // E.g. PSG-Reply-Chunk: item_id=3&item_type=blob&chunk_type=data&size=2345&blob_id=333.444&blob_chunk=37
+    // E.g. PSG-Reply-Chunk: item_id=3&item_type=blob&chunk_type=data&size=2345&blob_id=333.444&blob_chunk=37&flags=7F
+    // Note: flags are hexadecimal
     string      reply;
     reply.reserve(1024);
 
@@ -413,6 +420,92 @@ string  GetReplyMessageHeader(size_t  msg_size,
                 .append(1, '&')
                 .append(s_Severity)
                 .append(SeverityToLowerString(severity))
+                .append(1, '\n');
+}
+
+
+string GetNamedAnnotationHeader(size_t  item_id, const string &  accession,
+                                int16_t  version, int16_t  seq_id_type,
+                                const string &  annot_name,
+                                size_t  annotation_size)
+{
+    // E.g. PSG-Reply-Chunk: item_id=1&item_type=bioseq_na&chunk_type=data&size=150&na=NA000111.1&seq_acc=ABC123&seq_ver=3&seq_type=11
+    string      reply;
+    reply.reserve(1024);
+
+    return reply.append(s_ReplyBegin)
+                .append(NStr::NumericToString(item_id))
+                .append(1, '&')
+                .append(s_BioseqNAItem)
+                .append(1, '&')
+                .append(s_DataChunk)
+                .append(1, '&')
+                .append(s_Size)
+                .append(NStr::NumericToString(annotation_size))
+                .append(1, '&')
+                .append(s_NA)
+                .append(annot_name)
+                .append(1, '&')
+                .append(s_SecAcc)
+                .append(accession)
+                .append(1, '&')
+                .append(s_SeqVer)
+                .append(NStr::NumericToString(version))
+                .append(1, '&')
+                .append(s_SeqType)
+                .append(NStr::NumericToString(seq_id_type))
+                .append(1, '\n');
+}
+
+
+string GetNamedAnnotationMessageHeader(size_t  item_id, size_t  msg_size,
+                                       CRequestStatus::ECode  status, int  code,
+                                       EDiagSev  severity)
+{
+    // The error/warning messages for named annotations are not linked to a
+    // particular annotation (at least not now). So it is sent as the whole
+    // reply message.
+    // E.g. PSG-Reply-Chunk: item_id=0&item_type=reply&chunk_type=message&size=22&status=404&code=5&severity=critical
+
+    string      reply;
+    reply.reserve(1024);
+
+    return reply.append(s_ReplyBegin)
+                .append(1, '0')
+                .append(1, '&')
+                .append(s_ReplyItem)
+                .append(1, '&')
+                .append(s_MessageChunk)
+                .append(1, '&')
+                .append(s_Size)
+                .append(NStr::NumericToString(msg_size))
+                .append(1, '&')
+                .append(s_Status)
+                .append(NStr::NumericToString(static_cast<int>(status)))
+                .append(1, '&')
+                .append(s_Code)
+                .append(NStr::NumericToString(code))
+                .append(1, '&')
+                .append(s_Severity)
+                .append(SeverityToLowerString(severity))
+                .append(1, '\n');
+}
+
+
+string GetNamedAnnotationCompletionHeader(size_t  item_id, size_t  chunk_count)
+{
+    string      reply;
+    reply.reserve(1024);
+
+    return reply.append(s_ReplyBegin)
+                .append(NStr::NumericToString(item_id))
+                .append(1, '&')
+                .append(s_BioseqNAItem)
+                .append(1, '&')
+                .append(s_MetaChunk)
+                .append(1, '&')
+                .append(s_NChunks)
+                .append(NStr::NumericToString(chunk_count))
                 .append(1, '\n');
 }
 

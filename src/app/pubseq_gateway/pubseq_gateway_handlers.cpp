@@ -51,6 +51,7 @@ static string  kSeqIdParam = "seq_id";
 static string  kSeqIdTypeParam = "seq_id_type";
 static string  kTSEParam = "tse";
 static string  kUseCacheParam = "use_cache";
+static string  kNamesParam = "names";
 static vector<pair<string, EServIncludeData>>   kResolveFlagParams =
 {
     make_pair("all_info", fServAllBioseqFields),   // must be first
@@ -108,11 +109,7 @@ int CPubseqGatewayApp::OnGet(HST::CHttpRequest &  req,
     if (tse_param.m_Found) {
         tse_option = x_GetTSEOption(kTSEParam, tse_param.m_Value, err_msg);
         if (tse_option == eUnknownTSE) {
-            m_ErrorCounters.IncMalformedArguments();
-            x_SendMessageAndCompletionChunks(resp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             eMalformedParameter, eDiag_Error);
-            PSG_WARNING(err_msg);
+            x_MalformedArguments(resp, context, err_msg);
             return 0;
         }
     }
@@ -139,11 +136,7 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
     if (tse_param.m_Found) {
         tse_option = x_GetTSEOption(kTSEParam, tse_param.m_Value, err_msg);
         if (tse_option == eUnknownTSE) {
-            m_ErrorCounters.IncMalformedArguments();
-            x_SendMessageAndCompletionChunks(resp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             eMalformedParameter, eDiag_Error);
-            PSG_WARNING(err_msg);
+            x_MalformedArguments(resp, context, err_msg);
             return 0;
         }
     }
@@ -155,26 +148,16 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
             last_modified_value = NStr::StringToLong(
                                             last_modified_param.m_Value);
         } catch (...) {
-            err_msg = "Malformed 'last_modified' parameter. "
-                      "Expected an integer";
-            m_ErrorCounters.IncMalformedArguments();
-            x_SendMessageAndCompletionChunks(resp, err_msg,
-                                             CRequestStatus::e400_BadRequest,
-                                             eMalformedParameter, eDiag_Error);
-            PSG_WARNING(err_msg);
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            x_MalformedArguments(resp, context,
+                                 "Malformed 'last_modified' parameter. "
+                                 "Expected an integer");
             return 0;
         }
     }
 
     ECacheAndCassandraUse   use_cache = x_GetUseCacheParameter(req, err_msg);
     if (!err_msg.empty()) {
-        m_ErrorCounters.IncMalformedArguments();
-        x_SendMessageAndCompletionChunks(resp, err_msg,
-                                         CRequestStatus::e400_BadRequest,
-                                         eMalformedParameter, eDiag_Error);
-        PSG_WARNING(err_msg);
-        x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+        x_MalformedArguments(resp, context, err_msg);
         return 0;
     }
 
@@ -184,16 +167,10 @@ int CPubseqGatewayApp::OnGetBlob(HST::CHttpRequest &  req,
         SBlobId     blob_id(blob_id_param.m_Value);
 
         if (!blob_id.IsValid()) {
-            string  message = "Malformed 'blob_id' parameter. "
-                              "Expected format 'sat.sat_key' where both "
-                              "'sat' and 'sat_key' are integers.";
-
-            m_ErrorCounters.IncMalformedArguments();
-            x_SendMessageAndCompletionChunks(resp, message,
-                                             CRequestStatus::e400_BadRequest,
-                                             eMalformedParameter, eDiag_Error);
-            PSG_WARNING(message);
-            x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+            x_MalformedArguments(resp, context,
+                                 "Malformed 'blob_id' parameter. "
+                                 "Expected format 'sat.sat_key' where both "
+                                 "'sat' and 'sat_key' are integers.");
             return 0;
         }
 
@@ -314,6 +291,85 @@ int CPubseqGatewayApp::OnResolve(HST::CHttpRequest &  req,
             CPendingOperation(
                 SResolveRequest(seq_id, seq_id_type, include_data_flags,
                                 output_format, use_cache, use_psg_protocol),
+                0, m_CassConnection, m_TimeoutMs,
+                m_MaxRetries, context));
+    return 0;
+}
+
+
+int CPubseqGatewayApp::OnGetNA(HST::CHttpRequest &  req,
+                               HST::CHttpReply<CPendingOperation> &  resp)
+{
+    CRequestContextResetter context_resetter;
+    CRef<CRequestContext>   context = x_CreateRequestContext(req);
+
+    // psg_protocol parameter must be present and must be set to true.
+    // At least for now, see CXX-10258
+    bool                psg_protocol_ok = false;
+    SRequestParameter   psg_protocol_param = x_GetParam(req, kPsgProtocolParam);
+    string              err_msg;
+
+    if (psg_protocol_param.m_Found) {
+        psg_protocol_ok = psg_protocol_param.m_Value == "yes";
+    }
+
+    if (!psg_protocol_ok) {
+        x_MalformedArguments(resp, context,
+                             "Invalid '" + kPsgProtocolParam + "' parameter. "
+                             "It must be present and must be set to yes.");
+        return 0;
+    }
+
+    CTempString             seq_id;
+    int                     seq_id_type;
+    ECacheAndCassandraUse   use_cache;
+
+    if (!x_ProcessCommonGetAndResolveParams(req, resp, seq_id,
+                                            seq_id_type, use_cache,
+                                            true)) {
+        x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+        return 0;
+    }
+
+    // At the moment the only json format is supported (native translates
+    // to json). See CXX-10258
+    SRequestParameter   fmt_param = x_GetParam(req, kFmtParam);
+    if (fmt_param.m_Found) {
+        EOutputFormat       output_format = x_GetOutputFormat(kFmtParam,
+                                                              fmt_param.m_Value,
+                                                              err_msg);
+        if (output_format == eProtobufFormat || output_format == eUnknownFormat) {
+            x_MalformedArguments(resp, context,
+                                 "Invalid 'fmt' parameter value. The 'get_na' "
+                                 "command supports 'json' and 'native' values");
+            return 0;
+        }
+    }
+
+
+    // Get the annotation names
+    SRequestParameter   names_param = x_GetParam(req, kNamesParam);
+    if (!names_param.m_Found) {
+        x_MalformedArguments(resp, context,
+                             "The mandatory '" + kNamesParam +
+                             "' parameter is not found");
+        return 0;
+    }
+
+    vector<CTempString>       names;
+
+    NStr::Split(names_param.m_Value, ",", names);
+    if (names.empty()) {
+        x_MalformedArguments(resp, context,
+                             "Named annotation names are not found in the request");
+        return 0;
+    }
+
+    // Parameters processing has finished
+    m_RequestCounters.IncResolve();
+    resp.Postpone(
+            CPendingOperation(
+                SAnnotRequest(seq_id, seq_id_type, names, use_cache),
                 0, m_CassConnection, m_TimeoutMs,
                 m_MaxRetries, context));
     return 0;

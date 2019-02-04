@@ -115,4 +115,26 @@ public:
 };
 
 
+struct SAnnotRequest
+{
+public:
+    SAnnotRequest(const CTempString &  seq_id,
+                  int  seq_id_type,
+                  vector<CTempString>  names,
+                  ECacheAndCassandraUse  use_cache) :
+        m_SeqId(seq_id), m_SeqIdType(seq_id_type),
+        m_Names(names),
+        m_UseCache(use_cache)
+    {}
+
+    SAnnotRequest() = default;
+
+public:
+    CTempString                 m_SeqId;
+    int                         m_SeqIdType;
+    vector<CTempString>         m_Names;
+    ECacheAndCassandraUse       m_UseCache;
+};
+
+
 #endif

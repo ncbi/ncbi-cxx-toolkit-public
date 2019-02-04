@@ -69,6 +69,11 @@ public:
         return m_BioseqKeyspace;
     }
 
+    vector<string> GetBioseqNAKeyspaces(void) const
+    {
+        return m_BioseqNAKeyspaces;
+    }
+
     CPubseqGatewayCache *  GetLookupCache(void)
     {
         return m_LookupCache.get();
@@ -85,6 +90,9 @@ public:
 
     int OnResolve(HST::CHttpRequest &  req,
                   HST::CHttpReply<CPendingOperation> &  resp);
+
+    int OnGetNA(HST::CHttpRequest &  req,
+                HST::CHttpReply<CPendingOperation> &  resp);
 
     int OnConfig(HST::CHttpRequest &  req,
                  HST::CHttpReply<CPendingOperation> &  resp);
@@ -154,10 +162,16 @@ private:
     int x_PopulateSatToKeyspaceMap(void);
 
 private:
+    void x_MalformedArguments(HST::CHttpReply<CPendingOperation> &  resp,
+                              CRef<CRequestContext> &  context,
+                              const string &  err_msg);
+
+private:
     string                              m_Si2csiDbFile;
     string                              m_BioseqInfoDbFile;
     string                              m_BlobPropDbFile;
     vector<string>                      m_SatNames;
+    vector<string>                      m_BioseqNAKeyspaces;
 
     unsigned short                      m_HttpPort;
     unsigned short                      m_HttpWorkers;

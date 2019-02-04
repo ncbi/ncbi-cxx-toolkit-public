@@ -56,7 +56,7 @@ CPendingOperation::CPendingOperation(const SBlobRequest &  blob_request,
     m_Timeout(timeout),
     m_MaxRetries(max_retries),
     m_OverallStatus(CRequestStatus::e200_Ok),
-    m_IsResolveRequest(false),
+    m_RequestType(eBlobRequest),
     m_BlobRequest(blob_request),
     m_TotalSentReplyChunks(initial_reply_chunks),
     m_Cancelled(false),
@@ -89,7 +89,7 @@ CPendingOperation::CPendingOperation(const SResolveRequest &  resolve_request,
     m_Timeout(timeout),
     m_MaxRetries(max_retries),
     m_OverallStatus(CRequestStatus::e200_Ok),
-    m_IsResolveRequest(true),
+    m_RequestType(eResolveRequest),
     m_ResolveRequest(resolve_request),
     m_TotalSentReplyChunks(initial_reply_chunks),
     m_Cancelled(false),
@@ -103,37 +103,81 @@ CPendingOperation::CPendingOperation(const SResolveRequest &  resolve_request,
 }
 
 
+CPendingOperation::CPendingOperation(const SAnnotRequest &  annot_request,
+                                     size_t  initial_reply_chunks,
+                                     shared_ptr<CCassConnection>  conn,
+                                     unsigned int  timeout,
+                                     unsigned int  max_retries,
+                                     CRef<CRequestContext>  request_context) :
+    m_Reply(nullptr),
+    m_Conn(conn),
+    m_Timeout(timeout),
+    m_MaxRetries(max_retries),
+    m_OverallStatus(CRequestStatus::e200_Ok),
+    m_RequestType(eAnnotationRequest),
+    m_AnnotRequest(annot_request),
+    m_TotalSentReplyChunks(initial_reply_chunks),
+    m_Cancelled(false),
+    m_RequestContext(request_context),
+    m_NextItemId(0)
+{
+    PSG_TRACE("CPendingOperation::CPendingOperation: annotation "
+              "request by seq_id/seq_id_type: " <<
+              m_AnnotRequest.m_SeqId << "." << m_AnnotRequest.m_SeqIdType <<
+              ", this: " << this);
+}
+
+
 CPendingOperation::~CPendingOperation()
 {
     CRequestContextResetter     context_resetter;
     x_SetRequestContext();
 
-    if (!m_IsResolveRequest) {
-        if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
-            PSG_TRACE("CPendingOperation::~CPendingOperation: blob "
+    switch (m_RequestType) {
+        case eBlobRequest:
+            if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
+                PSG_TRACE("CPendingOperation::~CPendingOperation: blob "
+                          "requested by seq_id/seq_id_type: " <<
+                          m_BlobRequest.m_SeqId << "." <<
+                          m_BlobRequest.m_SeqIdType <<
+                          ", this: " << this);
+            } else {
+                PSG_TRACE("CPendingOperation::~CPendingOperation: blob "
+                          "requested by sat/sat_key: " <<
+                          m_BlobRequest.m_BlobId.m_Sat << "." <<
+                          m_BlobRequest.m_BlobId.m_SatKey <<
+                          ", this: " << this);
+            }
+            break;
+        case eResolveRequest:
+            PSG_TRACE("CPendingOperation::~CPendingOperation: resolve "
                       "requested by seq_id/seq_id_type: " <<
-                      m_BlobRequest.m_SeqId << "." <<
-                      m_BlobRequest.m_SeqIdType <<
+                      m_ResolveRequest.m_SeqId << "." <<
+                      m_ResolveRequest.m_SeqIdType <<
                       ", this: " << this);
-        } else {
-            PSG_TRACE("CPendingOperation::~CPendingOperation: blob "
-                      "requested by sat/sat_key: " <<
-                      m_BlobRequest.m_BlobId.m_Sat << "." <<
-                      m_BlobRequest.m_BlobId.m_SatKey <<
+
+            break;
+        case eAnnotationRequest:
+            PSG_TRACE("CPendingOperation::~CPendingOperation: annotation "
+                      "requested by seq_id/seq_id_type: " <<
+                      m_AnnotRequest.m_SeqId << "." <<
+                      m_AnnotRequest.m_SeqIdType <<
                       ", this: " << this);
-        }
+            break;
+        default:
+            ;
     }
 
-    if (m_MainBlobFetchDetails)
+    if (m_MainObjectFetchDetails)
         PSG_TRACE("CPendingOperation::~CPendingOperation: "
-                  "main blob loader: " <<
-                  m_MainBlobFetchDetails->m_Loader.get());
+                  "main object loader: " <<
+                  m_MainObjectFetchDetails->m_Loader.get());
     if (m_Id2InfoFetchDetails)
         PSG_TRACE("CPendingOperation::~CPendingOperation: "
                   "Id2Info blob loader: " <<
                   m_Id2InfoFetchDetails->m_Loader.get());
 
-    for (auto &  details: m_Id2ChunkFetchDetails) {
+    for (auto &  details: m_FetchDetails) {
         if (details) {
             PSG_TRACE("CPendingOperation::~CPendingOperation: "
                       "Id2SplibChunks blob loader: " <<
@@ -152,55 +196,62 @@ void CPendingOperation::Clear()
     CRequestContextResetter     context_resetter;
     x_SetRequestContext();
 
-    if (!m_IsResolveRequest) {
-        if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
-            PSG_TRACE("CPendingOperation::Clear: blob "
+    switch (m_RequestType) {
+        case eBlobRequest:
+            if (m_BlobRequest.GetBlobIdentificationType() == eBySeqId) {
+                PSG_TRACE("CPendingOperation::Clear: blob "
+                          "requested by seq_id/seq_id_type: " <<
+                          m_BlobRequest.m_SeqId << "." <<
+                          m_BlobRequest.m_SeqIdType <<
+                          ", this: " << this);
+            } else {
+                PSG_TRACE("CPendingOperation::Clear: blob "
+                          "requested by sat/sat_key: " <<
+                          m_BlobRequest.m_BlobId.m_Sat << "." <<
+                          m_BlobRequest.m_BlobId.m_SatKey <<
+                          ", this: " << this);
+            }
+            break;
+        case eResolveRequest:
+            PSG_TRACE("CPendingOperation::Clear: resolve "
                       "requested by seq_id/seq_id_type: " <<
-                      m_BlobRequest.m_SeqId << "." <<
-                      m_BlobRequest.m_SeqIdType <<
+                      m_ResolveRequest.m_SeqId << "." <<
+                      m_ResolveRequest.m_SeqIdType <<
                       ", this: " << this);
-        } else {
-            PSG_TRACE("CPendingOperation::Clear: blob "
-                      "requested by sat/sat_key: " <<
-                      m_BlobRequest.m_BlobId.m_Sat << "." <<
-                      m_BlobRequest.m_BlobId.m_SatKey <<
+
+            break;
+        case eAnnotationRequest:
+            PSG_TRACE("CPendingOperation::Clear: annotation "
+                      "requested by seq_id/seq_id_type: " <<
+                      m_AnnotRequest.m_SeqId << "." <<
+                      m_AnnotRequest.m_SeqIdType <<
                       ", this: " << this);
-        }
+            break;
+        default:
+            ;
     }
 
-    if (m_MainBlobFetchDetails) {
+    if (m_MainObjectFetchDetails) {
         PSG_TRACE("CPendingOperation::Clear: "
-                  "main blob loader: " <<
-                  m_MainBlobFetchDetails->m_Loader.get());
-        if (m_MainBlobFetchDetails->m_Loader) {
-            m_MainBlobFetchDetails->m_Loader->SetDataReadyCB(nullptr, nullptr);
-            m_MainBlobFetchDetails->m_Loader->SetErrorCB(nullptr);
-            m_MainBlobFetchDetails->m_Loader->SetChunkCallback(nullptr);
-        }
-        m_MainBlobFetchDetails = nullptr;
+                  "main object loader: " <<
+                  m_MainObjectFetchDetails->m_Loader.get());
+        m_MainObjectFetchDetails->ResetCallbacks();
+        m_MainObjectFetchDetails = nullptr;
     }
     if (m_Id2InfoFetchDetails) {
         PSG_TRACE("CPendingOperation::Clear: "
                   "Id2Info blob loader: " <<
                   m_Id2InfoFetchDetails->m_Loader.get());
-        if (m_Id2InfoFetchDetails->m_Loader) {
-            m_Id2InfoFetchDetails->m_Loader->SetDataReadyCB(nullptr, nullptr);
-            m_Id2InfoFetchDetails->m_Loader->SetErrorCB(nullptr);
-            m_Id2InfoFetchDetails->m_Loader->SetChunkCallback(nullptr);
-        }
+        m_Id2InfoFetchDetails->ResetCallbacks();
         m_Id2InfoFetchDetails = nullptr;
     }
 
-    for (auto &  details: m_Id2ChunkFetchDetails) {
+    for (auto &  details: m_FetchDetails) {
         if (details) {
             PSG_TRACE("CPendingOperation::Clear: "
                       "Id2SplibChunks blob loader: " <<
                       details->m_Loader.get());
-            if (details->m_Loader) {
-                details->m_Loader->SetDataReadyCB(nullptr, nullptr);
-                details->m_Loader->SetErrorCB(nullptr);
-                details->m_Loader->SetChunkCallback(nullptr);
-            }
+            details->ResetCallbacks();
             details = nullptr;
         }
     }
@@ -216,12 +267,23 @@ void CPendingOperation::Clear()
 void CPendingOperation::Start(HST::CHttpReply<CPendingOperation>& resp)
 {
     m_Reply = &resp;
-    if (m_IsResolveRequest) {
-        m_UrlUseCache = m_ResolveRequest.m_UseCache;
-        x_ProcessResolveRequest();
-    } else {
-        m_UrlUseCache = m_BlobRequest.m_UseCache;
-        x_ProcessGetRequest();
+    switch (m_RequestType) {
+        case eResolveRequest:
+            m_UrlUseCache = m_ResolveRequest.m_UseCache;
+            x_ProcessResolveRequest();
+            break;
+        case eBlobRequest:
+            m_UrlUseCache = m_BlobRequest.m_UseCache;
+            x_ProcessGetRequest();
+            break;
+        case eAnnotationRequest:
+            m_UrlUseCache = m_AnnotRequest.m_UseCache;
+            x_ProcessAnnotRequest();
+            break;
+        default:
+            NCBI_THROW(CPubseqGatewayException, eLogic,
+                       "Unhandeled request type " +
+                       NStr::NumericToString(static_cast<int>(m_RequestType)));
     }
 }
 
@@ -456,11 +518,90 @@ void CPendingOperation::x_ProcessResolveRequest(void)
 }
 
 
+void CPendingOperation::x_ProcessAnnotRequest(void)
+{
+    string              err_msg;
+    SBioseqResolution   bioseq_resolution = x_ResolveInputSeqId(err_msg);
+
+    if (!err_msg.empty()) {
+        // Bad request error, 400
+        PSG_WARNING(err_msg);
+        PrepareReplyMessage(err_msg, CRequestStatus::e400_BadRequest,
+                            eUnresolvedSeqId, eDiag_Error);
+        x_SendReplyCompletion(true);
+        m_Reply->Send(m_Chunks, true);
+        m_Chunks.clear();
+        return;
+    }
+
+    if (!bioseq_resolution.IsValid()) {
+        // Could not resolve, send 404
+        err_msg = "Could not resolve seq_id " + m_AnnotRequest.m_SeqId;
+        PrepareReplyMessage(err_msg, CRequestStatus::e404_NotFound,
+                            eNoBioseqInfo, eDiag_Error);
+        x_SendReplyCompletion(true);
+        m_Reply->Send(m_Chunks, true);
+        m_Chunks.clear();
+        return;
+    }
+
+    switch (bioseq_resolution.m_ResolutionResult) {
+        case eFromSi2csiCache:
+            ConvertSi2csiToBioseqResolution(
+                    bioseq_resolution.m_CacheInfo, bioseq_resolution);
+            break;
+        case eFromBioseqCache:
+            ConvertBioseqProtobufToBioseqInfo(
+                    bioseq_resolution.m_CacheInfo,
+                    bioseq_resolution.m_BioseqInfo);
+            break;
+        case eFromBioseqDB:
+        case eFromSi2csiDB:
+        default:
+            break;
+    }
+
+
+    vector<string>  bioseq_na_keyspaces =
+                CPubseqGatewayApp::GetInstance()->GetBioseqNAKeyspaces();
+
+    for (const auto &  bioseq_na_keyspace : bioseq_na_keyspaces) {
+        unique_ptr<CPendingOperation::SFetchDetails>   details;
+        details.reset(new CPendingOperation::SFetchDetails(m_AnnotRequest));
+
+        details->m_Loader.reset(
+                new CCassNAnnotTaskFetch(m_Timeout, m_MaxRetries, m_Conn,
+                                         bioseq_na_keyspace,
+                                         bioseq_resolution.m_BioseqInfo.m_Accession,
+                                         bioseq_resolution.m_BioseqInfo.m_Version,
+                                         bioseq_resolution.m_BioseqInfo.m_SeqIdType,
+                                         m_AnnotRequest.m_Names,
+                                         nullptr, nullptr));
+
+        CCassNAnnotTaskFetch *      fetch_task =
+            static_cast<CCassNAnnotTaskFetch*>(details->m_Loader.get());
+
+        fetch_task->SetConsumeCallback(
+            CNamedAnnotationCallback(this, m_Reply, details.get()));
+        fetch_task->SetErrorCB(
+            CNamedAnnotationErrorCallback(this, m_Reply, details.get()));
+
+        m_FetchDetails.push_back(std::move(details));
+    }
+
+    // Initiate the retrieval loop
+    for (auto &  fetch_details: m_FetchDetails) {
+        if (fetch_details)
+            fetch_details->m_Loader->Wait();
+    }
+}
+
+
 void CPendingOperation::x_StartMainBlobRequest(void)
 {
     // Here: m_BlobRequest has the resolved sat and a sat_key regardless
     //       how the blob was requested
-    m_MainBlobFetchDetails.reset(new SBlobFetchDetails(m_BlobRequest));
+    m_MainObjectFetchDetails.reset(new SFetchDetails(m_BlobRequest));
 
     unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
     bool            cache_hit = x_LookupBlobPropCache(
@@ -469,7 +610,7 @@ void CPendingOperation::x_StartMainBlobRequest(void)
                                     m_BlobRequest.m_LastModified,
                                     *blob_record.get());
     if (cache_hit) {
-        m_MainBlobFetchDetails->m_Loader.reset(
+        m_MainObjectFetchDetails->m_Loader.reset(
             new CCassBlobTaskLoadBlob(
                             m_Timeout, m_MaxRetries, m_Conn,
                             m_BlobRequest.m_BlobId.m_SatName,
@@ -488,14 +629,14 @@ void CPendingOperation::x_StartMainBlobRequest(void)
         }
 
         if (m_BlobRequest.m_LastModified == INT64_MIN) {
-            m_MainBlobFetchDetails->m_Loader.reset(
+            m_MainObjectFetchDetails->m_Loader.reset(
                 new CCassBlobTaskLoadBlob(
                                 m_Timeout, m_MaxRetries, m_Conn,
                                 m_BlobRequest.m_BlobId.m_SatName,
                                 m_BlobRequest.m_BlobId.m_SatKey,
                                 false, nullptr));
         } else {
-            m_MainBlobFetchDetails->m_Loader.reset(
+            m_MainObjectFetchDetails->m_Loader.reset(
                 new CCassBlobTaskLoadBlob(
                                 m_Timeout, m_MaxRetries, m_Conn,
                                 m_BlobRequest.m_BlobId.m_SatName,
@@ -505,18 +646,21 @@ void CPendingOperation::x_StartMainBlobRequest(void)
         }
     }
 
-    m_MainBlobFetchDetails->m_Loader->SetDataReadyCB(
-                            HST::CHttpReply<CPendingOperation>::s_DataReady,
-                            m_Reply);
+    CCassBlobTaskLoadBlob *     load_task =
+                static_cast<CCassBlobTaskLoadBlob*>(
+                        m_MainObjectFetchDetails->m_Loader.get());
 
-    m_MainBlobFetchDetails->m_Loader->SetErrorCB(
+    load_task->SetDataReadyCB(HST::CHttpReply<CPendingOperation>::s_DataReady,
+                              m_Reply);
+
+    load_task->SetErrorCB(
                 CGetBlobErrorCallback(this, m_Reply,
-                                      m_MainBlobFetchDetails.get()));
-    m_MainBlobFetchDetails->m_Loader->SetPropsCallback(
+                                      m_MainObjectFetchDetails.get()));
+    load_task->SetPropsCallback(
                 CBlobPropCallback(this, m_Reply,
-                                  m_MainBlobFetchDetails.get()));
+                                  m_MainObjectFetchDetails.get()));
 
-    m_MainBlobFetchDetails->m_Loader->Wait();
+    load_task->Wait();
 }
 
 
@@ -532,14 +676,14 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
     // 1 -> call m_Loader->Wait1 to pick data
     // 2 -> check if we have ready-to-send buffers
     // 3 -> call resp->Send()  to send what we have if it is ready
-    if (m_MainBlobFetchDetails)
-        x_Peek(resp, need_wait, m_MainBlobFetchDetails);
+    if (m_MainObjectFetchDetails)
+        x_Peek(resp, need_wait, m_MainObjectFetchDetails);
     if (m_Id2InfoFetchDetails)
         x_Peek(resp, need_wait, m_Id2InfoFetchDetails);
     if (m_OriginalBlobChunkFetch)
         x_Peek(resp, need_wait, m_OriginalBlobChunkFetch);
 
-    for (auto &  details: m_Id2ChunkFetchDetails) {
+    for (auto &  details: m_FetchDetails) {
         if (details)
             x_Peek(resp, need_wait, details);
     }
@@ -554,7 +698,7 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
 
 void CPendingOperation::x_Peek(HST::CHttpReply<CPendingOperation>& resp,
                                bool  need_wait,
-                               unique_ptr<SBlobFetchDetails> &  fetch_details)
+                               unique_ptr<SFetchDetails> &  fetch_details)
 {
     if (!fetch_details->m_Loader)
         return;
@@ -597,9 +741,9 @@ bool CPendingOperation::x_AllFinishedRead(void) const
 {
     size_t  started_count = 0;
 
-    if (m_MainBlobFetchDetails) {
+    if (m_MainObjectFetchDetails) {
         ++started_count;
-        if (!m_MainBlobFetchDetails->m_FinishedRead)
+        if (!m_MainObjectFetchDetails->m_FinishedRead)
             return false;
     }
 
@@ -615,7 +759,7 @@ bool CPendingOperation::x_AllFinishedRead(void) const
             return false;
     }
 
-    for (const auto &  details: m_Id2ChunkFetchDetails) {
+    for (const auto &  details: m_FetchDetails) {
         if (details) {
             ++started_count;
             if (!details->m_FinishedRead)
@@ -702,14 +846,32 @@ ESeqIdParsingResult CPendingOperation::x_ParseInputSeqId(CSeq_id &  seq_id,
 }
 
 
+void CPendingOperation::x_InitUrlIndentification(void)
+{
+    switch (m_RequestType) {
+        case eBlobRequest:
+            m_UrlSeqId = m_BlobRequest.m_SeqId;
+            m_UrlSeqIdType = m_BlobRequest.m_SeqIdType;
+            break;
+        case eResolveRequest:
+            m_UrlSeqId = m_ResolveRequest.m_SeqId;
+            m_UrlSeqIdType = m_ResolveRequest.m_SeqIdType;
+            break;
+        case eAnnotationRequest:
+            m_UrlSeqId = m_AnnotRequest.m_SeqId;
+            m_UrlSeqIdType = m_AnnotRequest.m_SeqIdType;
+            break;
+        default:
+            NCBI_THROW(CPubseqGatewayException, eLogic,
+                       "Not handled request type " +
+                       NStr::NumericToString(static_cast<int>(m_RequestType)));
+    }
+}
+
+
 SBioseqResolution CPendingOperation::x_ResolveInputSeqId(string &  err_msg)
 {
-    m_UrlSeqId = m_BlobRequest.m_SeqId;
-    m_UrlSeqIdType = m_BlobRequest.m_SeqIdType;
-    if (m_IsResolveRequest) {
-        m_UrlSeqId = m_ResolveRequest.m_SeqId;
-        m_UrlSeqIdType = m_ResolveRequest.m_SeqIdType;
-    }
+    x_InitUrlIndentification();
 
     SBioseqResolution       bioseq_resolution;
     string                  parse_err_msg;
@@ -1233,8 +1395,8 @@ void CPendingOperation::x_SendBioseqInfo(const string &  protobuf_bioseq_info,
 
         ConvertBioseqInfoToJson(
                 bioseq_info,
-                m_IsResolveRequest ? m_ResolveRequest.m_IncludeDataFlags :
-                                     fServAllBioseqFields,
+                m_RequestType == eResolveRequest ? m_ResolveRequest.m_IncludeDataFlags :
+                                                   fServAllBioseqFields,
                 data_to_send);
     } else {
         if (protobuf_bioseq_info.empty()) {
@@ -1263,9 +1425,9 @@ void CPendingOperation::x_SendBioseqInfo(const string &  protobuf_bioseq_info,
 
 bool CPendingOperation::x_UsePsgProtocol(void) const
 {
-    if (!m_IsResolveRequest)
-        return true;
-    return m_ResolveRequest.m_UsePsgProtocol;
+    if (m_RequestType == eResolveRequest)
+        return m_ResolveRequest.m_UsePsgProtocol;
+    return true;
 }
 
 
@@ -1387,7 +1549,7 @@ void CPendingOperation::PrepareBlobPropMessage(
 }
 
 void CPendingOperation::PrepareBlobPropMessage(
-                            SBlobFetchDetails *  fetch_details,
+                            SFetchDetails *  fetch_details,
                             const string &  msg,
                             CRequestStatus::ECode  status, int  err_code,
                             EDiagSev  severity)
@@ -1398,8 +1560,33 @@ void CPendingOperation::PrepareBlobPropMessage(
 }
 
 
+void CPendingOperation::PrepareNamedAnnotationData(
+                                    const string &  accession,
+                                    int16_t  version, int16_t  seq_id_type,
+                                    const string &  annot_name,
+                                    const string &  content)
+{
+    size_t      item_id = GetItemId();
+    string      header = GetNamedAnnotationHeader(item_id, accession,
+                                                  version, seq_id_type,
+                                                  annot_name, content.size());
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(header.data()), header.size()));
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(content.data()), content.size()));
+    ++m_TotalSentReplyChunks;
+
+    // There are always 2 chunks
+    string      bioseq_na_meta = GetNamedAnnotationCompletionHeader(item_id, 2);
+    m_Chunks.push_back(m_Reply->PrepareChunk(
+                (const unsigned char *)(bioseq_na_meta.data()),
+                bioseq_na_meta.size()));
+    ++m_TotalSentReplyChunks;
+}
+
+
 void CPendingOperation::PrepareBlobPropData(
-                            SBlobFetchDetails *  fetch_details,
+                            SFetchDetails *  fetch_details,
                             const string &  content)
 {
     string  header = GetBlobPropHeader(fetch_details->GetBlobPropItemId(this),
@@ -1428,7 +1615,7 @@ void CPendingOperation::PrepareBlobPropCompletion(size_t  item_id,
 
 
 void CPendingOperation::PrepareBlobPropCompletion(
-                            SBlobFetchDetails *  fetch_details)
+                            SFetchDetails *  fetch_details)
 {
     // +1 is for the completion itself
     PrepareBlobPropCompletion(fetch_details->GetBlobPropItemId(this),
@@ -1457,7 +1644,7 @@ void CPendingOperation::PrepareBlobMessage(
 
 
 void CPendingOperation::PrepareBlobMessage(
-                            SBlobFetchDetails *  fetch_details,
+                            SFetchDetails *  fetch_details,
                             const string &  msg,
                             CRequestStatus::ECode  status, int  err_code,
                             EDiagSev  severity)
@@ -1470,7 +1657,7 @@ void CPendingOperation::PrepareBlobMessage(
 
 
 void CPendingOperation::PrepareBlobData(
-                            SBlobFetchDetails *  fetch_details,
+                            SFetchDetails *  fetch_details,
                             const unsigned char *  chunk_data,
                             unsigned int  data_size, int  chunk_no)
 {
@@ -1502,7 +1689,7 @@ void CPendingOperation::PrepareBlobCompletion(size_t  item_id,
 
 
 void CPendingOperation::PrepareBlobCompletion(
-                                    SBlobFetchDetails *  fetch_details)
+                                    SFetchDetails *  fetch_details)
 {
     // +1 is for the completion itself
     PrepareBlobCompletion(fetch_details->GetBlobChunkItemId(this),
@@ -1552,7 +1739,8 @@ void CPendingOperation::x_SendUnknownServerSatelliteError(
 
 // Blob operations callbacks: blob props, blob chunks, errors
 
-void CBlobChunkCallback::operator()(const unsigned char *  chunk_data,
+void CBlobChunkCallback::operator()(CBlobRecord const & /*blob_record*/,
+                                    const unsigned char *  chunk_data,
                                     unsigned int  data_size,
                                     int  chunk_no)
 {
@@ -1561,7 +1749,9 @@ void CBlobChunkCallback::operator()(const unsigned char *  chunk_data,
 
     assert(!m_FetchDetails->m_FinishedRead);
     if (m_PendingOp->m_Cancelled) {
-        m_FetchDetails->m_Loader->Cancel();
+        CCassBlobTaskLoadBlob *     load_task =
+            static_cast<CCassBlobTaskLoadBlob*>(m_FetchDetails->m_Loader.get());
+        load_task->Cancel();
         m_FetchDetails->m_FinishedRead = true;
         return;
     }
@@ -1720,7 +1910,7 @@ void CBlobPropCallback::x_RequestOriginalBlobChunks(CBlobRecord const &  blob)
                                       eUnknownUseCache);
 
     m_PendingOp->m_OriginalBlobChunkFetch.reset(
-            new CPendingOperation::SBlobFetchDetails(orig_blob_request));
+            new CPendingOperation::SFetchDetails(orig_blob_request));
 
     unique_ptr<CBlobRecord>     blob_record(new CBlobRecord(blob));
     m_PendingOp->m_OriginalBlobChunkFetch->m_Loader.reset(
@@ -1732,17 +1922,21 @@ void CBlobPropCallback::x_RequestOriginalBlobChunks(CBlobRecord const &  blob)
                     std::move(blob_record),
                     true, nullptr));
 
-    m_PendingOp->m_OriginalBlobChunkFetch->m_Loader->SetDataReadyCB(
-            HST::CHttpReply<CPendingOperation>::s_DataReady,
-            m_Reply);
-    m_PendingOp->m_OriginalBlobChunkFetch->m_Loader->SetErrorCB(
+    CCassBlobTaskLoadBlob *     load_task =
+            static_cast<CCassBlobTaskLoadBlob*>(
+                    m_PendingOp->m_OriginalBlobChunkFetch->m_Loader.get());
+
+
+    load_task->SetDataReadyCB(HST::CHttpReply<CPendingOperation>::s_DataReady,
+                              m_Reply);
+    load_task->SetErrorCB(
             CGetBlobErrorCallback(m_PendingOp, m_Reply,
                                   m_PendingOp->m_OriginalBlobChunkFetch.get()));
-    m_PendingOp->m_OriginalBlobChunkFetch->m_Loader->SetPropsCallback(nullptr);
-    m_PendingOp->m_OriginalBlobChunkFetch->m_Loader->SetChunkCallback(
+    load_task->SetPropsCallback(nullptr);
+    load_task->SetChunkCallback(
             CBlobChunkCallback(m_PendingOp, m_Reply,
                                m_PendingOp->m_OriginalBlobChunkFetch.get()));
-    m_PendingOp->m_OriginalBlobChunkFetch->m_Loader->Wait();
+    load_task->Wait();
 }
 
 
@@ -1784,7 +1978,7 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob,
 
     // Prepare Id2Info retrieval
     m_PendingOp->m_Id2InfoFetchDetails.reset(
-            new CPendingOperation::SBlobFetchDetails(info_blob_request));
+            new CPendingOperation::SFetchDetails(info_blob_request));
 
     unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
     bool            cache_hit = m_PendingOp->x_LookupBlobPropCache(
@@ -1822,15 +2016,20 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob,
                     info_blob_request.m_BlobId.m_SatKey,
                     true, nullptr));
     }
-    m_PendingOp->m_Id2InfoFetchDetails->m_Loader->SetDataReadyCB(
-            HST::CHttpReply<CPendingOperation>::s_DataReady, m_Reply);
-    m_PendingOp->m_Id2InfoFetchDetails->m_Loader->SetErrorCB(
+
+    CCassBlobTaskLoadBlob *     load_task =
+            static_cast<CCassBlobTaskLoadBlob*>(
+                    m_PendingOp->m_Id2InfoFetchDetails->m_Loader.get());
+
+    load_task->SetDataReadyCB(HST::CHttpReply<CPendingOperation>::s_DataReady,
+                              m_Reply);
+    load_task->SetErrorCB(
             CGetBlobErrorCallback(m_PendingOp, m_Reply,
                                   m_PendingOp->m_Id2InfoFetchDetails.get()));
-    m_PendingOp->m_Id2InfoFetchDetails->m_Loader->SetPropsCallback(
+    load_task->SetPropsCallback(
             CBlobPropCallback(m_PendingOp, m_Reply,
                               m_PendingOp->m_Id2InfoFetchDetails.get()));
-    m_PendingOp->m_Id2InfoFetchDetails->m_Loader->SetChunkCallback(
+    load_task->SetChunkCallback(
             CBlobChunkCallback(m_PendingOp, m_Reply,
                                m_PendingOp->m_Id2InfoFetchDetails.get()));
 
@@ -1842,7 +2041,7 @@ void CBlobPropCallback::x_RequestID2BlobChunks(CBlobRecord const &  blob,
 
     // initiate retrieval
     m_PendingOp->m_Id2InfoFetchDetails->m_Loader->Wait();
-    for (auto &  fetch_details: m_PendingOp->m_Id2ChunkFetchDetails) {
+    for (auto &  fetch_details: m_PendingOp->m_FetchDetails) {
         if (fetch_details)
             fetch_details->m_Loader->Wait();
     }
@@ -1862,8 +2061,8 @@ void CBlobPropCallback::x_RequestId2SplitBlobs(const string &  sat_name)
         SBlobRequest    chunk_request(chunks_blob_id, INT64_MIN, eUnknownTSE,
                                       eUnknownUseCache);
 
-        unique_ptr<CPendingOperation::SBlobFetchDetails>   details;
-        details.reset(new CPendingOperation::SBlobFetchDetails(chunk_request));
+        unique_ptr<CPendingOperation::SFetchDetails>   details;
+        details.reset(new CPendingOperation::SFetchDetails(chunk_request));
 
         unique_ptr<CBlobRecord>     blob_record(new CBlobRecord);
         bool            cache_hit = m_PendingOp->x_LookupBlobPropCache(
@@ -1904,16 +2103,19 @@ void CBlobPropCallback::x_RequestId2SplitBlobs(const string &  sat_name)
                     chunk_request.m_BlobId.m_SatKey,
                     true, nullptr));
         }
-        details->m_Loader->SetDataReadyCB(
+        CCassBlobTaskLoadBlob *     load_task =
+            static_cast<CCassBlobTaskLoadBlob*>(details->m_Loader.get());
+
+        load_task->SetDataReadyCB(
             HST::CHttpReply<CPendingOperation>::s_DataReady, m_Reply);
-        details->m_Loader->SetErrorCB(
+        load_task->SetErrorCB(
             CGetBlobErrorCallback(m_PendingOp, m_Reply, details.get()));
-        details->m_Loader->SetPropsCallback(
+        load_task->SetPropsCallback(
             CBlobPropCallback(m_PendingOp, m_Reply, details.get()));
-        details->m_Loader->SetChunkCallback(
+        load_task->SetChunkCallback(
             CBlobChunkCallback(m_PendingOp, m_Reply, details.get()));
 
-        m_PendingOp->m_Id2ChunkFetchDetails.push_back(std::move(details));
+        m_PendingOp->m_FetchDetails.push_back(std::move(details));
     }
 }
 
@@ -2024,11 +2226,6 @@ void CGetBlobErrorCallback::operator()(CRequestStatus::ECode  status,
     CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
     PSG_ERROR(message);
 
-// TEMPORARY!!!
-//if (message.find("invalid sequence of operations") != string::npos) {
-//    abort();
-//}
-
     if (status == CRequestStatus::e404_NotFound) {
         app->GetErrorCounters().IncGetBlobNotFound();
     } else {
@@ -2071,3 +2268,86 @@ void CGetBlobErrorCallback::operator()(CRequestStatus::ECode  status,
     if (m_Reply->IsOutputReady())
         m_PendingOp->Peek(*m_Reply, false);
 }
+
+bool CNamedAnnotationCallback::operator()(CNAnnotRecord &&  annot_record,
+                                          bool  last)
+{
+    CRequestContextResetter     context_resetter;
+    m_PendingOp->x_SetRequestContext();
+
+
+    if (m_PendingOp->m_Cancelled) {
+        CCassNAnnotTaskFetch *     load_task =
+            static_cast<CCassNAnnotTaskFetch*>(m_FetchDetails->m_Loader.get());
+        load_task->Cancel();
+        m_FetchDetails->m_FinishedRead = true;
+        return false;
+    }
+    if (m_Reply->IsFinished()) {
+        CPubseqGatewayApp::GetInstance()->GetErrorCounters().
+                                                     IncUnknownError();
+        PSG_ERROR("Unexpected data received "
+                  "while the output has finished, ignoring");
+        return false;
+    }
+
+    if (last) {
+        m_FetchDetails->m_FinishedRead = true;
+        m_PendingOp->x_SendReplyCompletion();
+    } else {
+        CJsonNode   json = ConvertBioseqNAToJson(annot_record);
+        m_PendingOp->PrepareNamedAnnotationData(annot_record.GetAccession(),
+                                                annot_record.GetVersion(),
+                                                annot_record.GetSeqIdType(),
+                                                annot_record.GetAnnotName(),
+                                                json.Repr());
+    }
+
+    if (m_Reply->IsOutputReady())
+        m_PendingOp->Peek(*m_Reply, false);
+
+    return true;
+}
+
+
+void CNamedAnnotationErrorCallback::operator()(CRequestStatus::ECode  status,
+                                               int  code,
+                                               EDiagSev  severity,
+                                               const string &  message)
+{
+    CRequestContextResetter     context_resetter;
+    m_PendingOp->x_SetRequestContext();
+
+    // To avoid sending an error in Peek()
+    m_FetchDetails->m_Loader->ClearError();
+
+    // It could be a message or an error
+    bool    is_error = (severity == eDiag_Error ||
+                        severity == eDiag_Critical ||
+                        severity == eDiag_Fatal);
+
+    CPubseqGatewayApp *      app = CPubseqGatewayApp::GetInstance();
+    PSG_ERROR(message);
+
+    if (is_error)
+        app->GetErrorCounters().IncUnknownError();
+
+    m_PendingOp->PrepareReplyMessage(message,
+                                     CRequestStatus::e500_InternalServerError,
+                                     code, severity);
+    if (is_error) {
+        m_PendingOp->UpdateOverallStatus(
+                                    CRequestStatus::e500_InternalServerError);
+
+
+        // There will be no more activity
+        m_FetchDetails->m_FinishedRead = true;
+    }
+
+    m_PendingOp->x_SendReplyCompletion();
+
+    if (m_Reply->IsOutputReady())
+        m_PendingOp->Peek(*m_Reply, false);
+}
+
+

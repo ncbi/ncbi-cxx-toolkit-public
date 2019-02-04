@@ -66,12 +66,14 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
                                ECassSchemaType  resolver_schema,
                                string &  err_msg);
 
-void FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
+bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
                                shared_ptr<CCassConnection>  conn,
                                vector<string> &  mapping,
                                ECassSchemaType  mapping_schema,
                                string &  resolver_keyspace,
                                ECassSchemaType  resolver_schema,
+                               vector<string> &  bioseq_na_keyspaces,
+                               ECassSchemaType  bioseq_na_schema,
                                string &  err_msg);
 
 END_IDBLOB_SCOPE

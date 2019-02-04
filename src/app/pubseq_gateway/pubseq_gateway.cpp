@@ -261,6 +261,13 @@ int CPubseqGatewayApp::Run(void)
                 return OnResolve(req, resp);
             }, &get_parser, nullptr);
     http_handler.emplace_back(
+            "/ID/get_na",
+            [this](HST::CHttpRequest &  req,
+                   HST::CHttpReply<CPendingOperation> &  resp)->int
+            {
+                return OnGetNA(req, resp);
+            }, &get_parser, nullptr);
+    http_handler.emplace_back(
             "/ADMIN/config",
             [this](HST::CHttpRequest &  req,
                    HST::CHttpReply<CPendingOperation> &  resp)->int
@@ -638,11 +645,11 @@ int CPubseqGatewayApp::x_PopulateSatToKeyspaceMap(void)
 {
     try {
         string      err_msg;
-        FetchSatToKeyspaceMapping(m_RootKeyspace, m_CassConnection,
-                                  m_SatNames, eBlobVer2Schema,
-                                  m_BioseqKeyspace, eResolverSchema,
-                                  err_msg);
-        if (!err_msg.empty()) {
+        if (!FetchSatToKeyspaceMapping(m_RootKeyspace, m_CassConnection,
+                                       m_SatNames, eBlobVer2Schema,
+                                       m_BioseqKeyspace, eResolverSchema,
+                                       m_BioseqNAKeyspaces, eNamedAnnotationsSchema,
+                                       err_msg)) {
             PSG_CRITICAL(err_msg);
             return 1;
         }
@@ -668,6 +675,12 @@ int CPubseqGatewayApp::x_PopulateSatToKeyspaceMap(void)
 
     if (m_SatNames.empty()) {
         PSG_CRITICAL("No sat to keyspace resolutions found in the " +
+                     m_RootKeyspace + " keyspace. PSG server cannot start.");
+        return 1;
+    }
+
+    if (m_BioseqNAKeyspaces.empty()) {
+        PSG_CRITICAL("No bioseq named annotation keyspaces found in the " +
                      m_RootKeyspace + " keyspace. PSG server cannot start.");
         return 1;
     }
@@ -757,6 +770,19 @@ void CPubseqGatewayApp::x_SendUnknownClientSatelliteError(
     resp.Send(chunks, true);
 }
 
+
+void CPubseqGatewayApp::x_MalformedArguments(
+                                HST::CHttpReply<CPendingOperation> &  resp,
+                                CRef<CRequestContext> &  context,
+                                const string &  err_msg)
+{
+    m_ErrorCounters.IncMalformedArguments();
+    x_SendMessageAndCompletionChunks(resp, err_msg,
+                                     CRequestStatus::e400_BadRequest,
+                                     eMalformedParameter, eDiag_Error);
+    PSG_WARNING(err_msg);
+    x_PrintRequestStop(context, CRequestStatus::e400_BadRequest);
+}
 
 
 int main(int argc, const char* argv[])

@@ -56,7 +56,7 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
 
     bool rv = false;
     err_msg = "sat2keyspace info is empty";
-    
+
     shared_ptr<CCassQuery>  query = conn->NewQuery();
 
     query->SetSQL("SELECT\n"
@@ -78,7 +78,7 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
         }
         else if (schema_type == resolver_schema) {
             if (resolver_keyspace.empty()) {
-                resolver_keyspace = name;                
+                resolver_keyspace = name;
             }
             else {
                 // More than one resolver keyspace
@@ -107,12 +107,14 @@ bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
 }
 
 
-void FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
+bool FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
                                shared_ptr<CCassConnection>  conn,
                                vector<string> &  mapping,
                                ECassSchemaType  mapping_schema,
                                string &  resolver_keyspace,
                                ECassSchemaType  resolver_schema,
+                               vector<string> &  bioseq_na_keyspaces,
+                               ECassSchemaType  bioseq_na_schema,
                                string &  err_msg)
 {
     vector<tuple<string, ECassSchemaType>> lmapping;
@@ -120,9 +122,13 @@ void FetchSatToKeyspaceMapping(const string &  mapping_keyspace,
         for (size_t sat_id = 0; sat_id < lmapping.size(); ++sat_id) {
             ECassSchemaType  schema = get<1>(lmapping[sat_id]);
             mapping.push_back(schema == mapping_schema ? get<0>(lmapping[sat_id]) : "");
-        }
-    }
 
+            if (schema == bioseq_na_schema)
+                bioseq_na_keyspaces.push_back(get<0>(lmapping[sat_id]));
+        }
+        return true;
+    }
+    return false;
 }
 
 

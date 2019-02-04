@@ -126,4 +126,12 @@ enum ECacheAndCassandraUse {
 };
 
 
+enum EPendingRequestType {
+    eBlobRequest,
+    eResolveRequest,
+    eAnnotationRequest,
+
+    eUnknownRequest
+};
+
 #endif

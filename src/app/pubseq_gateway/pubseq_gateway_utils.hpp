@@ -133,6 +133,17 @@ string  GetBlobMessageHeader(size_t  item_id, const SBlobId &  blob_id,
                              CRequestStatus::ECode  status, int  code,
                              EDiagSev  severity);
 
+// Named annotation messages
+string GetNamedAnnotationHeader(size_t  item_id, const string &  accession,
+                                int16_t  version, int16_t  seq_id_type,
+                                const string &  annot_name,
+                                size_t  annotation_size);
+string GetNamedAnnotationMessageHeader(size_t  item_id, size_t  msg_size,
+                                       CRequestStatus::ECode  status, int  code,
+                                       EDiagSev  severity);
+string GetNamedAnnotationCompletionHeader(size_t  item_id, size_t  chunk_count);
+
+
 // Reply messages
 string  GetReplyCompletionHeader(size_t  chunk_count);
 string  GetReplyMessageHeader(size_t  msg_size,

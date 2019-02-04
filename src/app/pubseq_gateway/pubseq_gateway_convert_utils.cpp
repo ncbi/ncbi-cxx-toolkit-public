@@ -65,6 +65,9 @@ static const string     kId2Info = "Id2Info";
 static const string     kOwner = "Owner";
 static const string     kUserName = "UserName";
 static const string     kNChunks = "NChunks";
+static const string     kStart = "start";
+static const string     kStop = "stop";
+static const string     kNALastModified = "last_modified";
 
 
 void ConvertBioseqInfoToBioseqProtobuf(const SBioseqInfo &  bioseq_info,
@@ -247,5 +250,18 @@ void ConvertBlobPropProtobufToBlobRecord(int  sat_key,
     blob_record.SetSize(protobuf_blob_prop_value.size());
     blob_record.SetSizeUnpacked(protobuf_blob_prop_value.size_unpacked());
     blob_record.SetUserName(protobuf_blob_prop_value.username());
+}
+
+
+CJsonNode ConvertBioseqNAToJson(const CNAnnotRecord &  annot_record)
+{
+    CJsonNode       json(CJsonNode::NewObjectNode());
+
+    json.SetInteger(kNALastModified, annot_record.GetModified());
+    json.SetInteger(kSatKey, annot_record.GetSatKey());
+    json.SetInteger(kStart, annot_record.GetStart());
+    json.SetInteger(kStop, annot_record.GetStop());
+
+    return json;
 }
 

@@ -896,6 +896,12 @@ public:
     string GetHeaderValue(const string &  name);
     TNCBI_IPv6Addr GetClientIP(void);
 
+    CTempString GetEntity(void)
+    {
+        return CTempString(m_Req->entity.base,
+                           m_Req->entity.len);
+    }
+
 private:
     h2o_req_t *                 m_Req;
     CQueryParam                 m_Params[MAX_QUERY_PARAMS];

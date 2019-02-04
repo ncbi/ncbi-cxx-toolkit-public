@@ -73,6 +73,7 @@ public:
         eCannotUpdateDb,
         eInvalidRequest,
         eUnknownTSEOption,
+        eLogic,
 
         eAccessionMismatch,
         eVersionMismatch,

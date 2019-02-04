@@ -36,6 +36,7 @@
 #include <connect/services/json_over_uttp.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/blob_record.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/bioseq_info.hpp>
+#include <objtools/pubseq_gateway/impl/cassandra/nannot/record.hpp>
 
 #include "pubseq_gateway_types.hpp"
 
@@ -66,5 +67,6 @@ void ConvertBlobPropProtobufToBlobRecord(int  sat_key,
 CJsonNode ConvertBioseqInfoToJson(const SBioseqInfo &  bioseq_info,
                                   TServIncludeData  include_data_flags);
 CJsonNode ConvertBlobPropToJson(const CBlobRecord &  blob);
+CJsonNode ConvertBioseqNAToJson(const CNAnnotRecord &  annot_record);
 
 #endif
