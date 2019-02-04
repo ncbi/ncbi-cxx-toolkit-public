@@ -120,7 +120,7 @@ private:
     // types
 
     CObjectIStream* x_OpenIStream(const CArgs& args, const string& filename);
-    void x_OpenOStream(const string& filename, const string& dir = kEmptyStr, bool remove_orig_dir = true, bool binary = false);
+    void x_OpenOStream(const string& filename, const string& dir = kEmptyStr, bool remove_orig_dir = true);
     void x_CloseOStream();
     bool x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is);
     bool x_ProcessBigFile(auto_ptr<CObjectIStream>& is, const string& asn_type);
@@ -180,6 +180,13 @@ void CCleanupApp::Init(void)
             CArgDescriptions::eString);
         arg_desc->SetConstraint("serial", &(*new CArgAllow_Strings,
             "text", "binary", "XML"));
+
+        // output file serial format (AsnText\AsnBinary\XML, default: AsnText)
+        arg_desc->AddOptionalKey("outformat", "OutputSerialFormat", "Output file format",
+            CArgDescriptions::eString);
+        arg_desc->SetConstraint("outformat", &(*new CArgAllow_Strings,
+            "text", "binary", "XML", "JSON"));
+
         // id
         arg_desc->AddOptionalKey("id", "ID", 
             "Specific ID to display", CArgDescriptions::eString);
@@ -585,14 +592,7 @@ void CCleanupApp::x_ProcessOneFile(const string& filename)
     bool opened_output = false;
 
     if (!args["o"] && args["r"]) {
-        bool binary_out = false;
-        if (args["bigfile"] && args["serial"]) {
-            const string& val = args["serial"].AsString();
-            if ( val == "binary" ) {
-                binary_out = true;
-            }
-        }
-        x_OpenOStream(filename, args["r"].AsString(), true, binary_out);
+        x_OpenOStream(filename, args["r"].AsString(), true);
         opened_output = true;
     }
 
@@ -702,16 +702,9 @@ int CCleanupApp::Run(void)
                 return 1;
             }
         }
-        bool binary_out = false;
-        if (args["bigfile"] && args["serial"]) {
-            const string& val = args["serial"].AsString();
-            if ( val == "binary" ) {
-                binary_out = true;
-            }
-        }
         x_OpenOStream(args["o"].AsString(),
                       args["r"] ? args["r"].AsString() : kEmptyStr,
-                      false, binary_out);
+                      false);
         opened_output = true;
     } else if (!args["r"] || args["id"]) {
         x_OpenOStream(kEmptyStr);
@@ -1262,9 +1255,29 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args, const string& file
 }
 
 
-void CCleanupApp::x_OpenOStream(const string& filename, const string& dir, bool remove_orig_dir, bool binary)
+void CCleanupApp::x_OpenOStream(const string& filename, const string& dir, bool remove_orig_dir)
 {
-    ESerialDataFormat outFormat = binary ? eSerial_AsnBinary : eSerial_AsnText;
+    ESerialDataFormat outFormat = eSerial_AsnText;
+    
+    const CArgs& args = GetArgs();
+    if (args["outformat"]) {
+        if (args["outformat"].AsString() == "binary") {
+            outFormat = eSerial_AsnBinary;
+        }
+        else if (args["outformat"].AsString() == "XML") {
+            outFormat = eSerial_Xml;
+        }
+        else if (args["outformat"].AsString() == "JSON") {
+            outFormat = eSerial_Json;
+        }
+    }
+    else if (args["serial"]) {
+        // Set the same format as the input one
+        if (args["serial"].AsString() == "binary" && args["bigfile"]) {
+            outFormat = eSerial_AsnBinary;
+        }
+    }
+
     if (NStr::IsBlank(filename)) {
         m_Out.reset(CObjectOStream::Open(outFormat, cout));
     } else if (!NStr::IsBlank(dir)) {
