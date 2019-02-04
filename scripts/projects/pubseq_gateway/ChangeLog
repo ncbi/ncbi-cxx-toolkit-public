@@ -1,3 +1,9 @@
+Release 1.1.0 (2019-02-04)
+
+    * Implementation of ID/get_na
+    * Adjustments to the changed DB scheme
+    * Various bug fixes
+
 Release 1.0.0 (2018-10-18)
 
     * Initial release based on TRUNK
