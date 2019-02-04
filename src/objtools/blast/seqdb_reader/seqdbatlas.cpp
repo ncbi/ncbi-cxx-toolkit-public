@@ -450,6 +450,22 @@ CSeqDBAtlasHolder::CSeqDBAtlasHolder(CSeqDBLockHold * lockedp,
     }}
 }
 
+
+// FIXME: This constrctor is deprecated
+CSeqDBAtlasHolder::CSeqDBAtlasHolder(bool use_atlas_lock,
+                                     CSeqDBLockHold* locdep)
+{
+    {{
+    CFastMutexGuard guard(m_Lock);
+
+    if (m_Count == 0) {
+        m_Atlas = new CSeqDBAtlas(use_atlas_lock);
+    }
+    m_Count ++;
+    }}
+}
+
+
 DEFINE_CLASS_STATIC_FAST_MUTEX(CSeqDBAtlasHolder::m_Lock);
 
 CSeqDBAtlasHolder::~CSeqDBAtlasHolder()

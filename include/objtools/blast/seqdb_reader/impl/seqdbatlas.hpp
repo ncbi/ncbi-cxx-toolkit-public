@@ -691,6 +691,9 @@ public:
     /// true in other cases.
     CSeqDBAtlasHolder(CSeqDBLockHold * lockedp, bool use_atlas_lock);
 
+    NCBI_DEPRECATED
+    CSeqDBAtlasHolder(bool user_atlas_lock, CSeqDBLockHold* lockdep);
+
     /// Destructor.
     ~CSeqDBAtlasHolder();
 
