@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
     if(p == 0) {
         p= getenv("SQL_SERVER");
     }
-    server_name= p? p : "MS_DEV1";
+    server_name= p? p : "MSDEV1";
 
     p= getParam('d', argc, argv);
     if (p) {

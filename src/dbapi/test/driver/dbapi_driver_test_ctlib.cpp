@@ -66,7 +66,7 @@ CTestLOB::CTestLOB(void)
     DBAPI_RegisterDriver_CTLIB();
 
     const CDBDefaultConnParams def_params
-        ("DBAPI_DEV3", "DBAPI_test", "allowed");
+        ("DBAPI_DEV16_2K", "DBAPI_test", "allowed");
     const CCPPToolkitConnParams params(def_params);
 
     unique_ptr<I_DriverContext> dc(MakeDriverContext(params));

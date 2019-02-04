@@ -156,15 +156,15 @@ CDbapiSampleApp::Init()
 #define FTDS_DRIVERS "ftds", "ftds64", "ftds95", "ftds100"
 
 #if defined(NCBI_OS_MSWIN)
-#define DEF_SERVER    "MS_DEV1"
+#define DEF_SERVER    "MSDEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   "ctlib", FTDS_DRIVERS, "gateway", "odbc"
 #elif defined(HAVE_LIBSYBASE)
-#define DEF_SERVER    "DBAPI_DEV3"
+#define DEF_SERVER    "DBAPI_DEV16_2K"
 #define DEF_DRIVER    "ctlib"
 #define ALL_DRIVERS   "ctlib", FTDS_DRIVERS, "gateway", "odbc"
 #else
-#define DEF_SERVER    "MS_DEV1"
+#define DEF_SERVER    "MSDEV1"
 #define DEF_DRIVER    "ftds"
 #define ALL_DRIVERS   FTDS_DRIVERS, "gateway", "odbc"
 #endif
