@@ -140,10 +140,10 @@ private:
 
 
 CDescrModApply::CDescrModApply(CBioseq& bioseq, 
-        IObjtoolsListener* pMessageListener, 
+        FReportError fReportError,
         TSkippedMods& skipped_mods) :
 m_pDescrCache(new CDescrCache(bioseq)),
-m_pMessageListener(pMessageListener),
+m_fReportError(fReportError),
 m_SkippedMods(skipped_mods)
 {}
 
@@ -888,10 +888,8 @@ void CDescrModApply::x_ReportInvalidValue(const CModData& mod_data,
         msg += " " + add_msg;
     }
 
-
-    if (m_pMessageListener) {
-        m_pMessageListener->PutMessage(
-                CObjtoolsMessage(msg, eDiag_Warning));
+    if (m_fReportError) {
+        m_fReportError(msg, eDiag_Warning);
         m_SkippedMods.push_back(mod_data);
         return;
     }

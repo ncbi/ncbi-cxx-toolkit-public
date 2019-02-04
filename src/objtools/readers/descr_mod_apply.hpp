@@ -44,8 +44,9 @@ class CDescrModApply
 {
 public:
     using TSkippedMods = CModAdder::TSkippedMods;
+    using FReportError = function<void(const string& message, EDiagSev severity)>;
 
-    CDescrModApply(CBioseq& bioseq, IObjtoolsListener* pMessageListener, TSkippedMods& skipped_mods);
+    CDescrModApply(CBioseq& bioseq, FReportError fReportError, TSkippedMods& skipped_mods);
     virtual ~CDescrModApply();
 
     using TModEntry = CModHandler::TMods::value_type;
@@ -80,7 +81,9 @@ private:
 
     bool m_PreserveTaxId = false;
     unique_ptr<CDescrCache> m_pDescrCache;
-    IObjtoolsListener* m_pMessageListener;
+    FReportError m_fReportError;
+
+
     TSkippedMods& m_SkippedMods;
 };
 

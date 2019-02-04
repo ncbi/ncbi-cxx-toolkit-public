@@ -363,9 +363,19 @@ void CModAdder::Apply(const CModHandler& mod_handler,
 {
     skipped_mods.clear();
 
-    CDescrModApply descr_mod_apply(bioseq, 
-                                  pMessageListener, 
-                                  skipped_mods);
+    auto fReportError = [&pMessageListener](const string& message,
+                                            EDiagSev severity)
+    {
+        if (pMessageListener) {
+            pMessageListener->PutMessage(
+                CObjtoolsMessage(message, severity));
+        }
+    };
+
+    CDescrModApply descr_mod_apply(bioseq,
+                                   fReportError,
+                                   skipped_mods);
+                
     CFeatModApply feat_mod_apply(bioseq);
 
     for (const auto& mod_entry : mod_handler.GetMods()) {
@@ -402,7 +412,7 @@ void CModAdder::Apply(const CModHandler& mod_handler,
                     mod_entry.second.begin(),
                     mod_entry.second.end());
             if (pMessageListener) {
-                x_PutMessage(e.GetMsg(), eDiag_Warning, pMessageListener);
+                fReportError(e.GetMsg(), eDiag_Warning);
                 continue;
             }
             throw; // rethrow e
@@ -425,21 +435,6 @@ void CModAdder::x_ThrowInvalidValue(const CModData& mod_data,
     NCBI_THROW(CModReaderException, eInvalidValue, msg);
 }
 
-
-bool CModAdder::x_PutMessage(const string& message,
-                            EDiagSev severity,
-                            IObjtoolsListener* pMessageListener)
-{
-    if (!pMessageListener || NStr::IsBlank(message)) 
-    {
-        return false;
-    }
-
-    pMessageListener->PutMessage(
-        CObjtoolsMessage(message, severity));
-
-    return true;
-}
 
 
 const string& CModAdder::x_GetModName(const TModEntry& mod_entry)

@@ -144,9 +144,6 @@ private:
     static void x_ThrowInvalidValue(const CModData& mod_data,
                                     const string& add_msg="");
 
-    static bool x_PutMessage(const string& message, EDiagSev severity, 
-            IObjtoolsListener* pMessageListener);
-
 };
 
 
