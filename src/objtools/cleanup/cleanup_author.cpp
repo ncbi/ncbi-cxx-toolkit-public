@@ -439,47 +439,66 @@ bool CCleanup::IsEmpty(const CAuth_list::TAffil& affil)
 }
 
 
-static bool s_IsEmpty(const CAuthor& auth)
+// Helpers for cleaning authors
+struct SAuthorClean
 {
-    if (!auth.IsSetName()) {
-        return true;
+    bool m_Changed;
+    bool m_FixInitials;
+    void operator()(CRef<CAuthor> author)
+    {
+        m_Changed |= CCleanup::CleanupAuthor(*author, m_FixInitials);
     }
+};
 
-    const CAuthor::TName& name = auth.GetName();
 
-    const string* str = NULL;
-    switch (name.Which()) {
-    case CAuthor::TName::e_not_set:
-        return true;
+struct SAuthorEmpty
+{
+    bool operator()(CRef<CAuthor>& cauth)
+    {
+        if (!cauth) {
+            return true;
+        }
+        const CAuthor& auth = *cauth;
+        if (!auth.IsSetName()) {
+            return true;
+        }
 
-    case CAuthor::TName::e_Name:
-    { {
-            const CName_std& nstd = name.GetName();
-            // last name is required
-            if (!nstd.IsSetLast() || NStr::IsBlank(nstd.GetLast())) {
-                return true;
-            }
+        const CAuthor::TName& name = auth.GetName();
+
+        const string* str = NULL;
+        switch (name.Which()) {
+        case CAuthor::TName::e_not_set:
+            return true;
+
+        case CAuthor::TName::e_Name:
+        { {
+                const CName_std& nstd = name.GetName();
+                // last name is required
+                if (!nstd.IsSetLast() || NStr::IsBlank(nstd.GetLast())) {
+                    return true;
+                }
+                break;
+            }}
+
+        case CAuthor::TName::e_Ml:
+            str = &(name.GetMl());
             break;
-        }}
+        case CAuthor::TName::e_Str:
+            str = &(name.GetStr());
+            break;
+        case CAuthor::TName::e_Consortium:
+            str = &(name.GetConsortium());
+            break;
 
-    case CAuthor::TName::e_Ml:
-        str = &(name.GetMl());
-        break;
-    case CAuthor::TName::e_Str:
-        str = &(name.GetStr());
-        break;
-    case CAuthor::TName::e_Consortium:
-        str = &(name.GetConsortium());
-        break;
-
-    default:
-        break;
-    };
-    if (str != NULL && NStr::IsBlank(*str)) {
-        return true;
+        default:
+            break;
+        };
+        if (str != NULL && NStr::IsBlank(*str)) {
+            return true;
+        }
+        return false;
     }
-    return false;
-}
+};
 
 
 bool CCleanup::CleanupAuthList(CAuth_list& al, bool fix_initials)
@@ -511,16 +530,16 @@ bool CCleanup::CleanupAuthList(CAuth_list& al, bool fix_initials)
         { {
                 auto& alnames = al.SetNames();
                 auto& std = alnames.SetStd();
-                auto it = std.begin();
-                while (it != std.end()) {
-                    rval |= CCleanup::CleanupAuthor(**it, fix_initials);
-                    if (s_IsEmpty(**it)) {
-                        it = std.erase(it);
-                        rval = true;
-                    } else {
-                        ++it;
-                    }
+                SAuthorClean cleaner{ rval, fix_initials };
+                std::for_each(std.begin(), std.end(), cleaner);
+                rval |= cleaner.m_Changed;
+                size_t before = std.size();
+                SAuthorEmpty em;
+                std.erase(std::remove_if(std.begin(), std.end(), em), std.end());
+                if (std.size() != before) {
+                    rval = true;
                 }
+
                 if (std.empty()) {
                     ResetAuthorNames(alnames);
                     rval = true;
