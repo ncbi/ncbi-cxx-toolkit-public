@@ -195,20 +195,20 @@ bool CPubEquivCleaner::Clean(bool fix_initials, bool strip_serial)
             last_article.Reset(&pub.SetArticle());
             if (last_article->IsSetIds()) {
                 auto& ids = last_article->SetIds().Set();
-                CArticleIdSet::Tdata::iterator id_it = ids.begin();
-                while (id_it != ids.end()) {
-                    if ((*id_it)->IsPubmed() && last_article_pubmed_id != 0 &&
-                        last_article_pubmed_id == (*id_it)->GetPubmed()) {
-                        // erase duplicate
-                        id_it = ids.erase(id_it);
-                        change = true;
+
+                size_t old_size = ids.size();
+                // remove consecutive duplicates
+                ids.erase(std::unique(ids.begin(), ids.end(), 
+                    [](CRef< CArticleId > a, CRef< CArticleId >b) {return a->IsPubmed() && b->IsPubmed() && a->GetPubmed() == b->GetPubmed(); }), ids.end());
+                change = (ids.size() != old_size);
+                // find last article pubmed_id
+                auto id_it = ids.rbegin();
+                while (id_it != ids.rend()) {
+                    if ((*id_it)->IsPubmed()) {
+                        last_article_pubmed_id = (*id_it)->GetPubmed();
+                        break;
                     }
-                    else {
-                        if ((*id_it)->IsPubmed()) {
-                            last_article_pubmed_id = (*id_it)->GetPubmed();
-                        }
-                        ++id_it;
-                    }
+                    ++id_it;
                 }
             }
         }
@@ -414,16 +414,12 @@ bool CCitSubCleaner::Clean(bool fix_initials, bool strip_serial)
                 static const string& kBadAffil2 = "to the INSDC databases";
                 if (NStr::StartsWith(str, kBadAffil1)) {
                     str = str.substr(kBadAffil1.length());
-                    if (NStr::StartsWith(str, ".")) {
-                        str = str.substr(1);
-                    }
+                    NStr::TrimPrefixInPlace(str, ".");
                     any_change = true;
                 }
                 if (NStr::StartsWith(str, kBadAffil2)) {
                     str = str.substr(kBadAffil2.length());
-                    if (NStr::StartsWith(str, ".")) {
-                        str = str.substr(1);
-                    }
+                    NStr::TrimPrefixInPlace(str, ".");
                     any_change = true;
                 }
                     
