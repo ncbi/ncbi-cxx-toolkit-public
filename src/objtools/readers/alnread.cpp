@@ -1297,7 +1297,6 @@ GetSegmentOffsetList(
     TBracketedCommentListPtr comment_list)
 {
     TIntLinkPtr offset_list = nullptr;
-    TLineInfoPtr             lip;
 
     if (!comment_list) {
         return nullptr;
