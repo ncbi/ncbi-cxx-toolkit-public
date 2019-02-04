@@ -134,8 +134,18 @@ public:
         const_iterator end(void)   const { return errors.end();   }
     };
 
+
     // error messages
     typedef CAlnErrorContainer TErrorList;
+
+
+    struct SDeflineInfo {
+        int line_num;
+        string data;
+    };
+
+    using TDeflineInfo = SDeflineInfo;
+
 
     // constructor
     // defaults to protein alphabet and A2M gap characters
@@ -201,6 +211,7 @@ public:
     const vector<string>& GetSeqs(void)      const {return m_Seqs;};
     const vector<string>& GetOrganisms(void) const {return m_Organisms;};
     const vector<string>& GetDeflines(void)  const {return m_Deflines;};
+    const vector<TDeflineInfo>& GetDeflineInfo(void) const { return m_DeflineInfo; };
     int                   GetDim(void)       const {return m_Dim;};
 
     const TErrorList& GetErrorList(void)     const {return m_Errors;};
@@ -241,6 +252,7 @@ private:
     vector<string> m_Seqs;
     vector<string> m_Organisms;
     vector<string> m_Deflines;
+    vector<TDeflineInfo> m_DeflineInfo;
 
 
     /// Other internal data
@@ -268,7 +280,7 @@ private:
         TFastaFlags fasta_flags,
         objects::CDense_seg& denseg);
 
-    void x_AddMods(const string& defline, objects::CBioseq& bioseq);
+    void x_AddMods(const TDeflineInfo& defline_info, objects::CBioseq& bioseq);
 
     void x_AddTitle(const string& defline, objects::CBioseq& bioseq);
 

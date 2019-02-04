@@ -398,9 +398,10 @@ void CAlnReader::Read(
     auto numDeflines = alignmentInfo.NumDeflines();
     if (numDeflines) {
         if (numDeflines == m_Ids.size()) {
-            m_Deflines.resize(numDeflines);
+            m_DeflineInfo.resize(numDeflines);
             for (int i=0;  i< numDeflines;  ++i) {
-                m_Deflines[i] = NStr::TruncateSpaces(alignmentInfo.mDeflines[i]);
+                m_DeflineInfo[i] = {alignmentInfo.mDeflines[i].line_num, 
+                                    alignmentInfo.mDeflines[i].data};
             }
         }
         else {
@@ -577,8 +578,8 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
         // Reconstruct original defline string from results 
         // returned by C code.
         string fasta_defline = ">" + m_Ids[i];
-        if (i < m_Deflines.size() && !m_Deflines[i].empty()) {
-            fasta_defline += " " + m_Deflines[i];
+        if (i < m_DeflineInfo.size() && !m_DeflineInfo[i].data.empty()) {
+            fasta_defline += " " + m_DeflineInfo[i].data;
         }
         ids[i] = GenerateID(fasta_defline, i, fasta_flags);
     }
@@ -787,18 +788,23 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags)
         }
     }
 
-    if (!m_Deflines.empty()) {
+    if (!m_DeflineInfo.empty()) {
         int i=0;
+        for (auto& pSeqEntry : seq_set) {
+            x_AddMods(m_DeflineInfo[i++], pSeqEntry->SetSeq());
+        }
+    /*
         if (fasta_flags & CFastaReader::fAddMods) {
             for (auto& pSeqEntry : seq_set) {
-                x_AddMods(m_Deflines[i++], pSeqEntry->SetSeq());
+                x_AddMods(m_DeflineInfo[i++], pSeqEntry->SetSeq());
             }
         }
         else {
             for (auto& pSeqEntry : seq_set) {
-                x_AddTitle(m_Deflines[i++], pSeqEntry->SetSeq());
+                x_AddTitle(m_DeflineInfo[i++].data, pSeqEntry->SetSeq());
             }
         }
+    */
     }
 
     return m_Entry;
@@ -819,9 +825,10 @@ static void s_AppendMods(
     }
 }
 
-void CAlnReader::x_AddMods(const string& defline, 
+void CAlnReader::x_AddMods(const TDeflineInfo& defline_info, 
         CBioseq& bioseq)
 {
+    auto defline = defline_info.data;
     if (NStr::IsBlank(defline)) {
         return;
     }

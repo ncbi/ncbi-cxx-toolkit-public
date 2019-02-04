@@ -169,10 +169,18 @@ public:
     int
     NumSequences() const { return mSequences.size(); };
 
+
+    struct SDeflineInfo {
+        int line_num;
+        string data;
+    };
+
+    using TDeflineInfo = SDeflineInfo;
+
     vector<string> mIds;
     vector<string> mSequences;
     vector<string> mOrganisms;
-    vector<string> mDeflines;
+    vector<TDeflineInfo> mDeflines;
     char align_format_found;
 };
 

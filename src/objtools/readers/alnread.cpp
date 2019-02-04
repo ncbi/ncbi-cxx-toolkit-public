@@ -4732,7 +4732,7 @@ s_ConvertDataToOutput(
     for (lip = afrp->deflines, index = 0;
             lip  &&  index < afrp->num_deflines;
             lip = lip->next, index++) {
-        alignInfo.mDeflines[index] = string(lip->data ? lip->data : "");
+        alignInfo.mDeflines[index] =  {lip->line_num, string(lip->data ? lip->data : "")};
     }
 
     /* copy in organism information */
