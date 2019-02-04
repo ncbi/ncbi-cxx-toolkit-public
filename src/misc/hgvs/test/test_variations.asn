@@ -1980,7 +1980,7 @@ Variation ::= {
                   point 123,
                   strand minus,
                   id other {
-                    accession "NP_001157285",
+                    accession "NP_001355204",
                     version 1
                   }
                 },
