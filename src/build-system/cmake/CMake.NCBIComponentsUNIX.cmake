@@ -1249,3 +1249,12 @@ if (WGMLST_FOUND)
   set(NCBI_COMPONENT_WGMLST_LIBS    ${WGMLST_LIB})
   set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} WGMLST")
 endif()
+
+#############################################################################
+# GLPK
+if(GLPK_FOUND)
+  set(NCBI_COMPONENT_GLPK_FOUND YES)
+  set(NCBI_COMPONENT_GLPK_INCLUDE ${GLPK_INCLUDE})
+  set(NCBI_COMPONENT_GLPK_LIBS    ${GLPK_LIBS})
+  set(NCBI_ALL_COMPONENTS "${NCBI_ALL_COMPONENTS} GLPK")
+endif()
