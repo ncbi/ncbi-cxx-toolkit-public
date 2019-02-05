@@ -103,6 +103,7 @@ typedef enum {
 class CCassQuery;
 class CCassQueryCbRef;
 class CCassConnection;
+class CCassDataCallbackReceiver;
 
 using TCassQueryOnDataCallback = void(*)(CCassQuery&, void *);
 using TCassQueryOnExecuteCallback = void(*)(CCassQuery&, void *);
@@ -504,6 +505,12 @@ class CCassPrm
 class CCassParams: public vector<CCassPrm>
 {};
 
+class CCassDataCallbackReceiver {
+public:
+    virtual ~CCassDataCallbackReceiver() {}
+    virtual void OnData() = 0;
+};
+
 class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
 {
  public:
@@ -523,13 +530,17 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
     }
 
     void Attach(void (*ondata)(CCassQuery&, void*),
-                void* data, void (*ondata2)(void*), void* data2)
+                void* data, void (*ondata2)(void*), void* data2,
+                weak_ptr<CCassDataCallbackReceiver> ondata3)
     {
         m_self = shared_from_this();
-        m_ondata = ondata;
         m_data = data;
-        m_ondata2 = ondata2;
+        m_ondata = ondata;
+
         m_data2 = data2;
+        m_ondata2 = ondata2;
+
+        m_ondata3 = ondata3;
     }
 
     void Detach(bool remove_self_ref = false)
@@ -537,6 +548,7 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
 /*        ERR_POST(Trace << "CCassQueryCbRef::Detach " << this << ", Query: " <<
                  m_query.lock().get());*/
         m_query.reset();
+        m_ondata3.reset();
         if (remove_self_ref)
             m_self = nullptr;
     }
@@ -561,6 +573,9 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
                     self->m_ondata(*query.get(), self->m_data);
                 if (self->m_ondata2)
                     self->m_ondata2(self->m_data2);
+                auto ondata3 = self->m_ondata3.lock();
+                if (ondata3)
+                    ondata3->OnData();
             }
         }
         catch (const CException& e) {
@@ -579,6 +594,8 @@ class CCassQueryCbRef: public std::enable_shared_from_this<CCassQueryCbRef>
 
     TCassQueryOnData2Callback       m_ondata2;
     void*                           m_data2;
+
+    weak_ptr<CCassDataCallbackReceiver> m_ondata3;
 
     weak_ptr<CCassQuery>            m_query;
     shared_ptr<CCassQueryCbRef>     m_self;
@@ -621,6 +638,8 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
 
     TCassQueryOnData2Callback       m_ondata2;
     void*                           m_ondata2_data;
+
+    weak_ptr<CCassDataCallbackReceiver> m_ondata3;
 
     TCassQueryOnExecuteCallback     m_onexecute;
     void*                           m_onexecute_data;
@@ -689,6 +708,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     bool IsReady(void);
     void NewBatch(void);
     async_rslt_t RunBatch();
+
     void SetSQL(const string& sql, unsigned int PrmCount);
 
     /* returns resultset */
@@ -712,6 +732,7 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
     }
 
     virtual async_rslt_t WaitAsync(unsigned int timeoutmks);
+    string GetSQL() const;
     virtual string ToString(void) const;
 
     virtual bool IsEOF(void) const;
@@ -1214,6 +1235,29 @@ class CCassQuery: public std::enable_shared_from_this<CCassQuery>
         }
         m_ondata2 = cb;
         m_ondata2_data = Data;
+        if (m_future) {
+            SetupOnDataCallback();
+        }
+    }
+
+    void SetOnData3(shared_ptr<CCassDataCallbackReceiver> cb)
+    {
+        auto ondata3 = m_ondata3.lock();
+        if (ondata3 == cb) {
+            return;
+        }
+
+        if (m_future) {
+            if (ondata3) {
+                NCBI_THROW(CCassandraException, eSeqFailed,
+                           "Future callback has already been assigned");
+            }
+            if (!cb) {
+                NCBI_THROW(CCassandraException, eSeqFailed,
+                           "Future callback can not be reset");
+            }
+        }
+        m_ondata3 = cb;
         if (m_future) {
             SetupOnDataCallback();
         }
