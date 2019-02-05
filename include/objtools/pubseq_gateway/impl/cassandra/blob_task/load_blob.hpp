@@ -99,8 +99,8 @@ class CCassBlobTaskLoadBlob
     virtual ~CCassBlobTaskLoadBlob()
     {
         for (auto & it : m_QueryArr) {
-            if (it) {
-                it->Close();
+            if (it.query) {
+                it.query->Close();
             }
         }
         m_QueryArr.clear();
@@ -113,7 +113,6 @@ class CCassBlobTaskLoadBlob
     void SetDataReadyCB(TDataReadyCallback callback, void * data);
 
     void Cancel(void);
-    virtual bool Restart() override;
 
  protected:
     virtual void Wait1(void) override;

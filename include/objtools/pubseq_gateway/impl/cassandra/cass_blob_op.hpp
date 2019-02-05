@@ -98,7 +98,6 @@ class CCassBlobWaiter
       ,  m_State(eInit)
       ,  m_OpTimeoutMs(op_timeout_ms)
       ,  m_LastActivityMs(gettime() / 1000L)
-      ,  m_RestartCounter(0)
       ,  m_MaxRetries(max_retries)  // 0 means no limit in auto-restart count,
                                     // any other positive value is the limit,
                                     // 1 means no 2nd start -> no re-starts at all
@@ -137,19 +136,6 @@ class CCassBlobWaiter
         return (m_State == eDone || m_State == eError);
     }
 
-    virtual bool Restart()
-    {
-        CloseAll();
-        m_State = eInit;
-        if (CanRestart()) {
-            ++m_RestartCounter;
-            UpdateLastActivity();
-            return true;
-        }
-        else
-            return false;
-    }
-
     bool HasError(void) const
     {
         return !m_LastError.empty();
@@ -184,8 +170,15 @@ class CCassBlobWaiter
     {
         ERR_POST(Trace << "CCassBlobWaiter::SetDataReadyCB this=" << this <<
                  " CB: " << datareadycb << ", DATA: " << data);
-        m_DataReadyCb = datareadycb;
         m_DataReadyData = data;
+        m_DataReadyCb = datareadycb;
+    }
+
+    void SetDataReadyCB3(shared_ptr<CCassDataCallbackReceiver> datareadycb3)
+    {
+        ERR_POST(Trace << "CCassBlobWaiter::SetDataReadyCB3 this=" << this <<
+                 " CB: " << static_cast<void*>(datareadycb3.get()));
+        m_DataReadyCb3 = datareadycb3;
     }
 
  protected:
@@ -194,12 +187,18 @@ class CCassBlobWaiter
         eDone = 10000,
         eError = -1
     };
+    struct SQueryRec {
+        shared_ptr<CCassQuery> query;
+        unsigned int restart_count;
+    };
 
     void CloseAll(void)
     {
         for (auto & it : m_QueryArr) {
-            it->Close();
+            it.query->Close();
+            it.restart_count = 0;
         }
+        m_Cancelled = false;
     }
 
     void Error(CRequestStatus::ECode  status,
@@ -221,13 +220,13 @@ class CCassBlobWaiter
         return false;
     }
 
-    bool CanRestart(void) const
+    bool CanRestart(SQueryRec& it) const
     {
         bool    is_timedout = IsTimedOut();
         bool    is_out_of_retries = (m_MaxRetries > 0) &&
-                                    (m_RestartCounter >= m_MaxRetries - 1);
+                                    (it.restart_count >= m_MaxRetries - 1);
 
-        ERR_POST(Info << "CanRestart? t/o=" << is_timedout <<
+        ERR_POST(Info << "CanRestartQ? t/o=" << is_timedout <<
                  ", o/r=" << is_out_of_retries <<
                  ", last_active=" << m_LastActivityMs <<
                  ", time=" << gettime() / 1000L <<
@@ -235,29 +234,49 @@ class CCassBlobWaiter
         return !is_out_of_retries && !is_timedout && !m_Cancelled;
     }
 
-    bool CheckReady(shared_ptr<CCassQuery>  qry, int32_t  restart_to_state,
-                    bool *  restarted)
+    static string AllParams(shared_ptr<CCassQuery> qry) {
+        string rv;
+        for (size_t i = 0; i < qry->ParamCount(); ++i) {
+            if (i > 0)
+                rv.append(", ");
+            rv.append(qry->ParamAsStr(i));
+        }
+        return rv;
+    }
+
+    bool CheckReadyEx(SQueryRec& it)
     {
-        *restarted = false;
+        if (!it.query->IsActive()) {
+            NCBI_THROW(CCassandraException, eSeqFailed, "CCassBlobWaiter::CheckReadyEx: Query is not in Active state (meaning it's closed)");
+        }
+        async_rslt_t wr = (async_rslt_t)-1;
+        bool need_restart = false;
         try {
-            async_rslt_t wr;
             if (m_Async) {
-                wr = qry->WaitAsync(0);
+                wr = it.query->WaitAsync(0);
                 if (wr == ar_wait)
                     return false;
             }
             return true;
         } catch (const CCassandraException& e) {
-            if ((e.GetErrCode() == CCassandraException::eQueryTimeout ||
-                 e.GetErrCode() == CCassandraException::eQueryFailedRestartable) && CanRestart()) {
-                ERR_POST(Info << "In-place restart");
-                ++m_RestartCounter;
-                qry->Close();
-                *restarted = true;
-                m_State = restart_to_state;
+            if ((e.GetErrCode() == CCassandraException::eQueryTimeout || e.GetErrCode() == CCassandraException::eQueryFailedRestartable) && 
+                CanRestart(it))
+            {
+                need_restart = true;
             } else {
                 Error(CRequestStatus::e502_BadGateway,
                       e.GetErrCode(), eDiag_Error, e.what());
+            }
+        }
+
+        if (need_restart) {
+            try {
+                ERR_POST(Warning << "In-place restart:\n" << it.query->GetSQL() << "\nParams:\n" << AllParams(it.query));
+                it.query->Restart();
+                ++it.restart_count;
+            } catch (const exception& ex) {
+                ERR_POST(NCBI_NS_NCBI::Error << "Failed to restart query (p2): " << ex.what());
+                throw;
             }
         }
         return false;
@@ -270,17 +289,16 @@ class CCassBlobWaiter
 
     CassConsistency GetQueryConsistency(void)
     {
-        return (m_RestartCounter > 0 && m_Conn->GetFallBackRdConsistency()) ?
-            CASS_CONSISTENCY_LOCAL_QUORUM : CASS_CONSISTENCY_ONE;
+        return CASS_CONSISTENCY_LOCAL_QUORUM;
     }
 
     bool CheckMaxActive(void);
     virtual void Wait1(void) = 0;
 
- protected:
     TDataErrorCallback              m_ErrorCb;
     TDataReadyCallback              m_DataReadyCb;
     void *                          m_DataReadyData;
+    weak_ptr<CCassDataCallbackReceiver> m_DataReadyCb3;
     shared_ptr<CCassConnection>     m_Conn;
     string                          m_Keyspace;
     int32_t                         m_Key;
@@ -288,12 +306,11 @@ class CCassBlobWaiter
     unsigned int                    m_OpTimeoutMs;
     int64_t                         m_LastActivityMs;
     string                          m_LastError;
-    unsigned int                    m_RestartCounter;
     unsigned int                    m_MaxRetries;
     bool                            m_Async;
     bool                            m_Cancelled;
 
-    vector<shared_ptr<CCassQuery>>  m_QueryArr;
+    vector<SQueryRec>  m_QueryArr;
 };
 
 class CCassBlobLoader: public CCassBlobWaiter
@@ -327,7 +344,6 @@ class CCassBlobLoader: public CCassBlobWaiter
     }
 
     void Cancel(void);
-    virtual bool Restart() override;
 
  protected:
     virtual void Wait1(void) override;
@@ -347,7 +363,7 @@ class CCassBlobLoader: public CCassBlobWaiter
     void x_RequestChunksAhead(void);
 
     void x_PrepareChunkRequests(void);
-    int x_GetReadyChunkNo(bool &  have_inactive, bool &  need_repeat);
+    int x_GetReadyChunkNo(bool &  have_inactive);
     bool x_AreAllChunksProcessed(void);
     void x_MarkChunkProcessed(size_t  chunk_no);
 
@@ -386,7 +402,7 @@ class CCassBlobOp: public enable_shared_from_this<CCassBlobOp>
         m_Keyspace = m_Conn->Keyspace();
     }
 
-    ~CCassBlobOp()
+    virtual ~CCassBlobOp()
     {
         m_Conn = nullptr;
     }
