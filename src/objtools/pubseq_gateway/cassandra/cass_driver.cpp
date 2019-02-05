@@ -884,6 +884,9 @@ void CCassQuery::InternalClose(bool  closebatch)
     }
 }
 
+string CCassQuery::GetSQL() const {
+    return m_sql;
+}
 
 void CCassQuery::SetSQL(const string &  sql, unsigned int  PrmCount)
 {
@@ -1120,7 +1123,7 @@ void CCassQuery::Query(CassConsistency  c, bool  run_async,
 
 void CCassQuery::RestartQuery(CassConsistency c)
 {
-    if (!m_statement)
+    if (!m_future)
         NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restarteable state");
     unsigned int page_size = m_page_size;
     CCassParams params = move(m_params);
@@ -1211,7 +1214,7 @@ void CCassQuery::Execute(CassConsistency  c, bool  run_async,
 
 void CCassQuery::RestartExecute(CassConsistency c)
 {
-    if (!m_statement)
+    if (!m_future)
         NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restarteable state");
 
     CCassParams params = move(m_params);
@@ -1224,7 +1227,7 @@ void CCassQuery::RestartExecute(CassConsistency c)
 
 void CCassQuery::Restart(CassConsistency c)
 {
-    if (!m_statement)
+    if (!m_future)
         NCBI_THROW(CCassandraException, eSeqFailed, "Query is is not in restarteable state");
 
     if (m_results_expected)
@@ -1380,7 +1383,7 @@ void CCassQuery::SetupOnDataCallback()
         m_cb_ref->Detach();
 
     m_cb_ref.reset(new CCassQueryCbRef(shared_from_this()));
-    m_cb_ref->Attach(m_ondata, m_ondata_data, m_ondata2, m_ondata2_data);
+    m_cb_ref->Attach(m_ondata, m_ondata_data, m_ondata2, m_ondata2_data, m_ondata3);
 
     CassError       rv = cass_future_set_callback(m_future,
                                                   CCassQueryCbRef::s_OnFutureCb,
