@@ -82,10 +82,10 @@ void CCassBlobTaskInsertExtended::Wait1()
             case eInsertChunks: {
                 string sql;
                 while (static_cast<size_t>(m_Blob->GetNChunks()) > m_QueryArr.size()) {
-                    m_QueryArr.emplace_back(m_Conn->NewQuery());
+                    m_QueryArr.push_back({m_Conn->NewQuery(), 0});
                 }
                 for (int32_t i = 0; i < m_Blob->GetNChunks(); ++i) {
-                    auto qry = m_QueryArr[i];
+                    auto qry = m_QueryArr[i].query;
                     if (!qry->IsActive()) {
                         sql = "INSERT INTO " + GetKeySpace() + ".blob_chunk "
                               "(sat_key, last_modified, chunk_no, data) VALUES(?, ?, ?, ?)";
@@ -105,14 +105,9 @@ void CCassBlobTaskInsertExtended::Wait1()
             case eWaitingChunksInserted: {
                 bool anyrunning = false;
                 int i = 0;
-                for (auto qry : m_QueryArr) {
-                    if (qry->IsActive()) {
-                        if (!CheckReady(qry, eInsertChunks, &b_need_repeat)) {
-                            if (b_need_repeat) {
-                                ERR_POST(Info << "Restart stInsert key=" <<
-                                    m_Keyspace << "." << m_Key <<
-                                    ", chunk: " << i);
-                            }
+                for (auto& it : m_QueryArr) {
+                    if (it.query->IsActive()) {
+                        if (!CheckReadyEx(it)) {
                             anyrunning = true;
                             break;
                         }
@@ -130,8 +125,9 @@ void CCassBlobTaskInsertExtended::Wait1()
 
             case eInsertProps: {
                 m_QueryArr.resize(1);
-                m_QueryArr[0] = m_Conn->NewQuery();
-                auto qry = m_QueryArr[0];
+                m_QueryArr[0].query = m_Conn->NewQuery();
+                m_QueryArr[0].restart_count = 0;
+                auto qry = m_QueryArr[0].query;
                 string sql = "INSERT INTO " + GetKeySpace() + ".blob_prop "
                       "("
                       " sat_key,"
@@ -205,10 +201,7 @@ void CCassBlobTaskInsertExtended::Wait1()
             }
 
             case eWaitingPropsInserted: {
-                if (!CheckReady(m_QueryArr[0], eInsertProps, &b_need_repeat)) {
-                    if (b_need_repeat) {
-                        ERR_POST(Info << "Restart stUpdatingFlags key=" << m_Keyspace << "." << m_Key);
-                    }
+                if (!CheckReadyEx(m_QueryArr[0])) {
                     break;
                 }
                 CloseAll();

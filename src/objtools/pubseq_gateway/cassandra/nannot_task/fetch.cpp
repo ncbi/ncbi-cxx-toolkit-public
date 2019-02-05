@@ -157,7 +157,7 @@ void CCassNAnnotTaskFetch::Wait1()
 
             case eInit: {
                 m_QueryArr.resize(1);
-                m_QueryArr[0] = m_Conn->NewQuery();
+                m_QueryArr[0] = {m_Conn->NewQuery(), 0};
                 string sql =
                     " SELECT "
                     "  annot_name, sat_key, last_modified, start, stop "
@@ -180,50 +180,49 @@ void CCassNAnnotTaskFetch::Wait1()
                         ++params;
                     }
                 }
-                m_QueryArr[0]->SetSQL(sql, params + names_count);
-                m_QueryArr[0]->BindStr(0, m_Accession);
-                m_QueryArr[0]->BindInt16(1, m_Version);
-                m_QueryArr[0]->BindInt16(2, m_SeqIdType);
-
-                if (names_count > 0) {
-                    m_AnnotNameBox.Bind(m_QueryArr[0], m_AnnotNameTempStrings, m_LastConsumedAnnot, 3);
-                } else {
-                    if (!m_LastConsumedAnnot.empty()) {
-                        m_QueryArr[0]->BindStr(3, m_LastConsumedAnnot);
+                m_QueryArr[0].query->SetSQL(sql, params + names_count);
+                m_QueryArr[0].query->BindStr(0, m_Accession);
+                m_QueryArr[0].query->BindInt16(1, m_Version);
+                m_QueryArr[0].query->BindInt16(2, m_SeqIdType);
+                for (unsigned int i = params; i < names_count + params; ++i) {
+                    if (m_AnnotNameTempStrings) {
+                        m_QueryArr[0].query->BindStr(i, m_AnnotNameBox.names_temp[i-params]);
+                    } else {
+                        m_QueryArr[0].query->BindStr(i, m_AnnotNameBox.names[i-params]);
                     }
                 }
 
                 UpdateLastActivity();
-                m_QueryArr[0]->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, true, m_PageSize);
+                m_QueryArr[0].query->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, true);
                 m_State = eFetchStarted;
                 break;
             }
 
             case eFetchStarted: {
-                if (CheckReady(m_QueryArr[0], eInit, &b_need_repeat)) {
+                if (CheckReadyEx(m_QueryArr[0])) {
                     bool do_next = true;
-                    auto state = m_QueryArr[0]->NextRow();
+                    auto state = m_QueryArr[0].query->NextRow();
                     while (do_next && state == ar_dataready) {
                         CNAnnotRecord record;
                         record
                             .SetAccession(m_Accession)
                             .SetVersion(m_Version)
                             .SetSeqIdType(m_SeqIdType)
-                            .SetAnnotName(m_QueryArr[0]->FieldGetStrValueDef(0, ""))
-                            .SetSatKey(m_QueryArr[0]->FieldGetInt32Value(1, 0))
-                            .SetModified(m_QueryArr[0]->FieldGetInt64Value(2, 0))
-                            .SetStart(m_QueryArr[0]->FieldGetInt32Value(3, 0))
-                            .SetStop(m_QueryArr[0]->FieldGetInt32Value(4, 0));
+                            .SetAnnotName(m_QueryArr[0].query->FieldGetStrValueDef(0, ""))
+                            .SetSatKey(m_QueryArr[0].query->FieldGetInt32Value(1, 0))
+                            .SetModified(m_QueryArr[0].query->FieldGetInt64Value(2, 0))
+                            .SetStart(m_QueryArr[0].query->FieldGetInt32Value(3, 0))
+                            .SetStop(m_QueryArr[0].query->FieldGetInt32Value(4, 0));
                         if (m_Consume) {
                             string annot_name = record.GetAnnotName();
                             do_next = m_Consume(move(record), false);
                             m_LastConsumedAnnot = move(annot_name);
                         }
                         if (do_next) {
-                            state = m_QueryArr[0]->NextRow();
+                            state = m_QueryArr[0].query->NextRow();
                         }
                     }
-                    if (!do_next || m_QueryArr[0]->IsEOF()) {
+                    if (!do_next || m_QueryArr[0].query->IsEOF()) {
                         if (m_Consume) {
                             m_Consume(CNAnnotRecord(), true);
                         }

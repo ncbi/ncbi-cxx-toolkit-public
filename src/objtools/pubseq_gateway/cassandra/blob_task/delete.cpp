@@ -76,9 +76,9 @@ void CCassBlobTaskDelete::Wait1()
             case eInit: {
                 CloseAll();
                 m_QueryArr.clear();
-                m_QueryArr.emplace_back(m_Conn->NewQuery());
+                m_QueryArr.push_back({m_Conn->NewQuery(), 0});
                 if (m_ExtendedSchema) {
-                    auto qry = m_QueryArr[0];
+                    auto qry = m_QueryArr[0].query;
                     string sql = "SELECT last_modified FROM " + GetKeySpace() + ".blob_prop WHERE sat_key = ?";
                     qry->SetSQL(sql, 1);
                     qry->BindInt32(0, m_Key);
@@ -94,17 +94,15 @@ void CCassBlobTaskDelete::Wait1()
 
             case eReadingVersions: {
                 string sql;
-                auto qry = m_QueryArr[0];
-                if (!CheckReady(qry, eInit, &b_need_repeat)) {
-                    if (b_need_repeat)
-                        ERR_POST(Info << "Restart stReadingEntity key=" << m_Keyspace << "." << m_Key);
+                auto& it = m_QueryArr[0];
+                if (!CheckReadyEx(it)) {
                     break;
                 }
                 async_rslt_t wr = static_cast<async_rslt_t>(-1);
-                if (!qry->IsEOF()) {
+                if (!it.query->IsEOF()) {
                     UpdateLastActivity();
-                    while ((wr = qry->NextRow()) == ar_dataready) {
-                        m_ExtendedVersions.push_back(qry->FieldGetInt64Value(0));
+                    while ((wr = it.query->NextRow()) == ar_dataready) {
+                        m_ExtendedVersions.push_back(it.query->FieldGetInt64Value(0));
                         ERR_POST(Trace << "blob, key=" << m_Keyspace << "."
                                  << m_Key << ", last_modified: "
                                  << m_ExtendedVersions[m_ExtendedVersions.size() - 1]
@@ -128,7 +126,7 @@ void CCassBlobTaskDelete::Wait1()
 
             case eDeleteData: {
                 UpdateLastActivity();
-                auto qry = m_QueryArr[0];
+                auto qry = m_QueryArr[0].query;
                 qry->NewBatch();
                 if (m_ExtendedSchema) {
                     CBlobChangelogWriter changelog;
@@ -165,9 +163,7 @@ void CCassBlobTaskDelete::Wait1()
             }
 
             case eWaitDeleteData: {
-                if (!CheckReady(m_QueryArr[0], eDeleteData, &b_need_repeat)) {
-                    if (b_need_repeat)
-                        ERR_POST(Info << "Restart eDeleteData key=" << m_Keyspace << "." << m_Key);
+                if (!CheckReadyEx(m_QueryArr[0])) {
                     break;
                 }
                 CloseAll();

@@ -166,8 +166,8 @@ void CCassBlobTaskLoadBlob::Wait1()
                 } else {
                     CloseAll();
                     m_QueryArr.clear();
-                    m_QueryArr.emplace_back(m_Conn->NewQuery());
-                    auto qry = m_QueryArr[0];
+                    m_QueryArr.push_back({m_Conn->NewQuery(), 0});
+                    auto qry = m_QueryArr[0].query;
                     string sql = "SELECT "
                         "   last_modified,"
                         "   class,"
@@ -196,6 +196,12 @@ void CCassBlobTaskLoadBlob::Wait1()
                     if (m_DataReadyCb) {
                         qry->SetOnData2(m_DataReadyCb, m_DataReadyData);
                     }
+                    {
+                        auto DataReadyCb3 = m_DataReadyCb3.lock();
+                        if (DataReadyCb3) {
+                            qry->SetOnData3(DataReadyCb3);
+                        }
+                    }
                     UpdateLastActivity();
                     qry->Query(GetQueryConsistency(), m_Async, true);
                     m_State = eWaitingForPropsFetch;
@@ -203,34 +209,31 @@ void CCassBlobTaskLoadBlob::Wait1()
             break;
 
             case eWaitingForPropsFetch: {
-                auto qry = m_QueryArr[0];
-                if (!CheckReady(qry, eInit, &b_need_repeat)) {
-                    if (b_need_repeat) {
-                        ERR_POST(Info << "Restart eWaitingForSelect key=" << m_Keyspace << "." << m_Key);
-                    }
+                auto& it = m_QueryArr[0];
+                if (!CheckReadyEx(it)) {
                     break;
                 }
 
-                if (!qry->IsEOF()) {
-                    async_rslt_t wr = qry->NextRow();
+                if (!it.query->IsEOF()) {
+                    async_rslt_t wr = it.query->NextRow();
                     if (wr == ar_dataready) {
                         UpdateLastActivity();
                         (*m_Blob)
-                            .SetModified(qry->FieldGetInt64Value(0))
-                            .SetClass(qry->FieldGetInt16Value(1))
-                            .SetDateAsn1(qry->FieldGetInt64Value(2, 0))
-                            .SetDiv(qry->FieldGetStrValueDef(3, ""))
-                            .SetFlags(qry->FieldGetInt64Value(4))
-                            .SetHupDate(qry->FieldGetInt64Value(5, 0))
-                            .SetId2Info(qry->FieldGetStrValueDef(6, ""))
-                            .SetNChunks(qry->FieldGetInt32Value(7))
-                            .SetOwner(qry->FieldGetInt32Value(8))
-                            .SetSize(qry->FieldGetInt64Value(9))
-                            .SetSizeUnpacked(qry->FieldGetInt64Value(10))
-                            .SetUserName(qry->FieldGetStrValueDef(11, ""));
+                            .SetModified(it.query->FieldGetInt64Value(0))
+                            .SetClass(it.query->FieldGetInt16Value(1))
+                            .SetDateAsn1(it.query->FieldGetInt64Value(2, 0))
+                            .SetDiv(it.query->FieldGetStrValueDef(3, ""))
+                            .SetFlags(it.query->FieldGetInt64Value(4))
+                            .SetHupDate(it.query->FieldGetInt64Value(5, 0))
+                            .SetId2Info(it.query->FieldGetStrValueDef(6, ""))
+                            .SetNChunks(it.query->FieldGetInt32Value(7))
+                            .SetOwner(it.query->FieldGetInt32Value(8))
+                            .SetSize(it.query->FieldGetInt64Value(9))
+                            .SetSizeUnpacked(it.query->FieldGetInt64Value(10))
+                            .SetUserName(it.query->FieldGetStrValueDef(11, ""));
                         m_RemainingSize = m_Blob->GetSize();
                         m_PropsFound = true;
-                        qry->Close();
+                        it.query->Close();
                     } else if (wr == ar_wait) {
                         break;
                     }
@@ -261,7 +264,18 @@ void CCassBlobTaskLoadBlob::Wait1()
                             m_State = eDone;
                         }
                     } else {
-                        if (m_Blob->GetNChunks() < 0) {
+                        TBlobFlagBase flags = static_cast<TBlobFlagBase>(m_Blob->GetFlags());
+                        if ((flags & static_cast<TBlobFlagBase>(EBlobFlags::eCheckFailed)) != 0) {
+                            string msg = "Blob failed check or it's "
+                                         "incomplete ("
+                                         "key=" + m_Keyspace + "." + NStr::NumericToString(m_Key) + 
+                                         ", modified=" + NStr::NumericToString(m_Blob->GetModified()) +
+                                         ", flags=0x" + NStr::NumericToString(flags, 16) + ")";
+                            Error(CRequestStatus::e502_BadGateway,
+                                  CCassandraException::eInconsistentData,
+                                  eDiag_Error, msg);
+                        }
+                        else if (m_Blob->GetNChunks() < 0) {
                             string msg = "Inconsistent n_chunks value: " + NStr::NumericToString(m_Blob->GetNChunks());
                             Error(
                                 CRequestStatus::e500_InternalServerError,
@@ -345,24 +359,6 @@ void CCassBlobTaskLoadBlob::Cancel(void)
     }
 }
 
-bool CCassBlobTaskLoadBlob::Restart()
-{
-    if (m_ExplicitBlob) {
-        m_Blob->ClearBlobChunks();
-    } else {
-        m_Blob.reset(new CBlobRecord(m_Key));
-        m_Blob->SetModified(m_Modified);
-        m_PropsFound = false;
-    }
-    m_RemainingSize = 0;
-    m_ActiveQueries = 0;
-    m_ProcessedChunks = vector<bool>(static_cast<size_t>(m_Blob->GetNChunks()), false);
-    CloseAll();
-    m_QueryArr.clear();
-
-    return CCassBlobWaiter::Restart();
-}
-
 bool CCassBlobTaskLoadBlob::x_AreAllChunksProcessed(void) const
 {
     for (const auto & is_ready : m_ProcessedChunks) {
@@ -378,17 +374,18 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
     auto n_chunks = m_Blob->GetNChunks();
     for (int32_t chunk_no = 0; chunk_no < n_chunks && m_ActiveQueries > 0; ++chunk_no) {
         if (!m_ProcessedChunks[chunk_no]) {
-            shared_ptr<CCassQuery>& qry = m_QueryArr[chunk_no];
-            if (qry) {
-                bool chunk_repeat = false;
-                bool ready = CheckReady(qry, eLoadingChunks, &chunk_repeat);
+            if (m_State == eDone || m_State == eError || m_Cancelled)
+                break;
+            auto& it = m_QueryArr[chunk_no];
+            if (it.query) {
+                bool ready = CheckReadyEx(it);
                 if (ready) {
-                    if (!qry->IsEOF()) {
-                        async_rslt_t wr = qry->NextRow();
+                    if (!it.query->IsEOF()) {
+                        async_rslt_t wr = it.query->NextRow();
                         if (wr == ar_dataready) {
                             UpdateLastActivity();
                             const unsigned char * rawdata = nullptr;
-                            int64_t len = qry->FieldGetBlobRaw(0, &rawdata);
+                            int64_t len = it.query->FieldGetBlobRaw(0, &rawdata);
                             m_RemainingSize -= len;
                             if (m_RemainingSize < 0) {
                                 char msg[1024];
@@ -403,33 +400,13 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                             }
                             m_ProcessedChunks[chunk_no] = true;
                             m_ChunkCallback(*m_Blob, rawdata, len, chunk_no);
-                            qry->Close();
-                            qry = nullptr;
+                            it.query->Close();
+                            it.query = nullptr;
                             --m_ActiveQueries;
                             need_repeat = true;
                         } else if (wr == ar_wait) {
                             continue;
                         }
-                    } else {
-                        chunk_repeat = true;
-                    }
-                }
-
-                if (chunk_repeat) {
-                    qry->Close();
-                    qry = nullptr;
-                    --m_ActiveQueries;
-                    if (CanRestart()) {
-                        need_repeat = true;
-                        ERR_POST(Info << "Restart eLoadingChunks required for key=" <<
-                                m_Keyspace << "." << m_Key << ", chunk=" << chunk_no);
-                    } else {
-                        char msg[1024];
-                        msg[0] = '\0';
-                        snprintf(msg, sizeof(msg), "Failed to fetch blob chunk  (key=%s.%d, chunk=%d)",
-                            m_Keyspace.c_str(), m_Key, chunk_no);
-                        Error(CRequestStatus::e502_BadGateway, CCassandraException::eFetchFailed, eDiag_Error, msg);
-                        return;
                     }
                 }
             }
@@ -442,12 +419,14 @@ void CCassBlobTaskLoadBlob::x_RequestChunksAhead(void)
     auto n_chunks = m_Blob->GetNChunks();
     for (int32_t chunk_no = 0; chunk_no < n_chunks && m_ActiveQueries < kMaxChunksAhead; ++chunk_no) {
         if (!m_ProcessedChunks[chunk_no]) {
-            if (!m_QueryArr[chunk_no]) {
+            auto& it = m_QueryArr[chunk_no];
+            if (!it.query) {
                 if (!CheckMaxActive()) {
                     break;
                 }
-                m_QueryArr[chunk_no] = m_Conn->NewQuery();
-                x_RequestChunk(*m_QueryArr[chunk_no], chunk_no);
+                it.query = m_Conn->NewQuery();
+                it.restart_count = 0;
+                x_RequestChunk(*it.query, chunk_no);
                 ++m_ActiveQueries;
             }
         }
@@ -464,6 +443,12 @@ void CCassBlobTaskLoadBlob::x_RequestChunk(CCassQuery& qry, int32_t chunk_no)
     qry.BindInt32(2, chunk_no);
     if (m_DataReadyCb) {
         qry.SetOnData2(m_DataReadyCb, m_DataReadyData);
+    }
+    {
+        auto DataReadyCb3 = m_DataReadyCb3.lock();
+        if (DataReadyCb3) {
+            qry.SetOnData3(DataReadyCb3);
+        }
     }
     UpdateLastActivity();
     qry.Query(GetQueryConsistency(), true);

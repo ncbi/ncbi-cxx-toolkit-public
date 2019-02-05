@@ -84,13 +84,14 @@ void CCassBlobTaskDeleteExpired::Wait1()
                 m_ExpiredVersionDeleted = false;
                 CloseAll();
                 m_QueryArr.clear();
-                m_QueryArr.emplace_back(m_Conn->NewQuery());
+                m_QueryArr.push_back({m_Conn->NewQuery(), 0});
                 string sql = "SELECT writetime(n_chunks) FROM " + GetKeySpace()
                     + ".blob_prop WHERE sat_key = ? and last_modified = ?";
-                m_QueryArr[0]->SetSQL(sql, 2);
-                m_QueryArr[0]->BindInt32(0, m_Key);
-                m_QueryArr[0]->BindInt64(1, m_LastModified);
-                m_QueryArr[0]->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
+                auto qry = m_QueryArr[0].query;
+                qry->SetSQL(sql, 2);
+                qry->BindInt32(0, m_Key);
+                qry->BindInt64(1, m_LastModified);
+                qry->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);
                 UpdateLastActivity();
                 m_State = eReadingWriteTime;
                 break;
@@ -98,20 +99,15 @@ void CCassBlobTaskDeleteExpired::Wait1()
 
             case eReadingWriteTime: {
                 string sql;
-                auto & qry = m_QueryArr[0];
-                if (!CheckReady(qry, eInit, &b_need_repeat)) {
-                    if (b_need_repeat) {
-                        ERR_POST(Info << "Restart eReadingWriteTime key="
-                             << m_Keyspace << "." << m_Key
-                             << " last_updated = " << m_LastModified);
-                    }
+                auto& it = m_QueryArr[0];
+                if (!CheckReadyEx(it)) {
                     break;
                 }
-                if (!qry->IsEOF()) {
+                if (!it.query->IsEOF()) {
                     UpdateLastActivity();
-                    async_rslt_t wr = qry->NextRow();
+                    async_rslt_t wr = it.query->NextRow();
                     if (wr == ar_dataready) {
-                        CBlobRecord::TTimestamp write_timestamp = qry->FieldGetInt64Value(0);
+                        CBlobRecord::TTimestamp write_timestamp = it.query->FieldGetInt64Value(0);
                         ERR_POST(Trace << "BlobDeleteExpired write_time fetch key=" << m_Keyspace << "."
                                  << m_Key << ", last_modified = " << m_LastModified
                                  << ", write_time = " << write_timestamp
@@ -144,7 +140,7 @@ void CCassBlobTaskDeleteExpired::Wait1()
 
             case eDeleteData: {
                 UpdateLastActivity();
-                auto& qry = m_QueryArr[0];
+                auto& qry = m_QueryArr[0].query;
                 qry->NewBatch();
                 string sql = "DELETE FROM " + GetKeySpace() + ".blob_chunk WHERE sat_key = ? and last_modified = ?";
                 qry->SetSQL(sql, 2);
@@ -170,12 +166,7 @@ void CCassBlobTaskDeleteExpired::Wait1()
             }
 
             case eWaitDeleteData: {
-                if (!CheckReady(m_QueryArr[0], eDeleteData, &b_need_repeat)) {
-                    if (b_need_repeat) {
-                        ERR_POST(Info << "BlobDeleteExpired restarted eDeleteData key="
-                                 << m_Keyspace << "." << m_Key << ", last_modified = " << m_LastModified
-                        );
-                    }
+                if (!CheckReadyEx(m_QueryArr[0])) {
                     break;
                 }
                 ERR_POST(Trace << "BlobDeleteExpired blob key=" << m_Keyspace << "." << m_Key

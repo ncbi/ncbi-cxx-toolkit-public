@@ -82,16 +82,15 @@ void CCassBlobTaskInsert::Wait1()
             case eInit: {
                 CloseAll();
                 if (m_QueryArr.size() == 0) {
-                    m_QueryArr.emplace_back(m_Conn->NewQuery());
+                    m_QueryArr.push_back({m_Conn->NewQuery(), 0});
                 }
                 m_LargeParts = m_Blob->GetSize() >= m_LargeTreshold ? m_Blob->GetNChunks() : 0;
                 if (m_IsNew != eTrue) {
                     ERR_POST(Trace << "CCassBlobInserter: reading stat for "
                              "key=" << m_Keyspace << "." << m_Key <<
                              ", rslt=" << m_Blob);
-                    auto qry = m_QueryArr[0];
-                    CassConsistency c = (m_RestartCounter > 0 && m_Conn->GetFallBackRdConsistency()) ?
-                        CASS_CONSISTENCY_LOCAL_QUORUM : CASS_CONSISTENCY_ONE;
+                    auto qry = m_QueryArr[0].query;
+                    CassConsistency c = CASS_CONSISTENCY_LOCAL_QUORUM;
 
                     // We have to check whether blob exists in largeentity
                     // and remove it if new blob has smaller number of parts
@@ -110,28 +109,26 @@ void CCassBlobTaskInsert::Wait1()
             }
 
             case eFetchOldLargeParts: {
-                auto qry = m_QueryArr[0];
-                if (!CheckReady(qry, eInit, &b_need_repeat)) {
-                    if (b_need_repeat) {
-                        ERR_POST(Info << "Restart stFetchOldLargeParts key=" << m_Keyspace << "." << m_Key);
-                    }
+                auto& it = m_QueryArr[0];
+                if (!CheckReadyEx(it)) {
                     break;
                 }
 
                 async_rslt_t wr = (async_rslt_t) -1;
-                if (!qry->IsEOF()) {
-                    if ((wr = qry->NextRow()) == ar_dataready) {
+                if (!it.query->IsEOF()) {
+                    if ((wr = it.query->NextRow()) == ar_dataready) {
                         UpdateLastActivity();
-                        m_OldFlags = qry->FieldGetInt64Value(0);
-                        m_OldLargeParts = qry->FieldGetInt32Value(1);
-                        qry->Close();
+                        m_OldFlags = it.query->FieldGetInt64Value(0);
+                        m_OldLargeParts = it.query->FieldGetInt32Value(1);
+                        it.query->Close();
+                        it.restart_count = 0;
                         ERR_POST(Trace << "CCassBlobInserter: old_large_parts=" <<
                                  m_OldLargeParts << ", old_flags=" << m_OldFlags <<
                                  ", key=" << m_Keyspace << "." << m_Key);
                     } else if (wr == ar_wait)
                         break;
                 }
-                if (qry->IsEOF() || wr == ar_done) {
+                if (it.query->IsEOF() || wr == ar_done) {
                     m_OldLargeParts  = 0;
                     m_OldFlags = 0;
                 }
@@ -148,7 +145,7 @@ void CCassBlobTaskInsert::Wait1()
             case eDeleteOldLargeParts: {
                 // we have to delete old records in largeentity
                 string          sql;
-                auto            qry = m_QueryArr[0];
+                auto            qry = m_QueryArr[0].query;
 
                 qry->Close();
                 qry->NewBatch();
@@ -180,12 +177,9 @@ void CCassBlobTaskInsert::Wait1()
             }
 
             case eWaitDeleteOldLargeParts: {
-                auto            qry = m_QueryArr[0];
+                auto&           it = m_QueryArr[0];
 
-                if (!CheckReady(qry, eDeleteOldLargeParts, &b_need_repeat)) {
-                    if (b_need_repeat)
-                        ERR_POST(Info << "Restart stDeleteOldLargeParts "
-                                 "key=" << m_Keyspace << "." << m_Key);
+                if (!CheckReadyEx(it)) {
                     break;
                 }
                 UpdateLastActivity();
@@ -198,7 +192,7 @@ void CCassBlobTaskInsert::Wait1()
             case eInsert: {
                 string sql;
                 m_QueryArr.reserve(m_LargeParts + 1);
-                auto qry = m_QueryArr[0];
+                auto qry = m_QueryArr[0].query;
 
                 if (!qry->IsActive()) {
                     string sql =
@@ -234,10 +228,11 @@ void CCassBlobTaskInsert::Wait1()
                 if (m_LargeParts != 0) {
                     for (int32_t  i = 0; i < m_LargeParts; ++i) {
                         while ((size_t)i + 1 >= m_QueryArr.size()) {
-                            m_QueryArr.emplace_back(m_Conn->NewQuery());
+                            m_QueryArr.push_back({m_Conn->NewQuery(), 0});
                         }
-                        qry = m_QueryArr[i + 1];
+                        qry = m_QueryArr[i + 1].query;
                         if (!qry->IsActive()) {
+                            m_QueryArr[i + 1].restart_count = 0;
                             sql = "INSERT INTO " + GetKeySpace() +
                                   ".largeentity (ent, local_id, data) VALUES(?, ?, ?)";
                             qry->SetSQL(sql, 3);
@@ -261,13 +256,9 @@ void CCassBlobTaskInsert::Wait1()
             case eWaitingInserted: {
                 bool anyrunning = false;
                 int i = -1;
-                for (auto qry: m_QueryArr) {
-                    if (qry->IsActive()) {
-                        if (!CheckReady(qry, eInsert, &b_need_repeat)) {
-                            if (b_need_repeat)
-                                ERR_POST(Info << "Restart stInsert key=" <<
-                                    m_Keyspace << "." << m_Key <<
-                                    ", chunk: " << i);
+                for (auto& it: m_QueryArr) {
+                    if (it.query->IsActive()) {
+                        if (!CheckReadyEx(it)) {
                             anyrunning = true;
                             break;
                         }
@@ -285,7 +276,7 @@ void CCassBlobTaskInsert::Wait1()
             case eUpdatingFlags: {
                 if (m_LargeParts > 0) {
                     int64_t flags = m_Blob->GetFlags() | bfComplete;
-                    auto qry = m_QueryArr[0];
+                    auto qry = m_QueryArr[0].query;
                     string sql = "UPDATE " + GetKeySpace() + ".entity set flags = ? where ent = ?";
                     qry->SetSQL(sql, 2);
                     qry->BindInt64(0, flags);
@@ -303,11 +294,8 @@ void CCassBlobTaskInsert::Wait1()
             }
 
             case eWaitingUpdateFlags: {
-                auto qry = m_QueryArr[0];
-                if (!CheckReady(qry, eUpdatingFlags, &b_need_repeat)) {
-                    if (b_need_repeat)
-                        ERR_POST(Info << "Restart stUpdatingFlags key=" <<
-                                 m_Keyspace << "." << m_Key);
+                auto& it = m_QueryArr[0];
+                if (!CheckReadyEx(it)) {
                     break;
                 }
                 CloseAll();

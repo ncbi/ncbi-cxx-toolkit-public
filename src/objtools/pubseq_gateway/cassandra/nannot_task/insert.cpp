@@ -103,8 +103,8 @@ void CCassNAnnotTaskInsert::Wait1()
 
             case eInsertNAnnotInfo: {
                 m_QueryArr.resize(1);
-                m_QueryArr[0] = m_Conn->NewQuery();
-                auto qry = m_QueryArr[0];
+                m_QueryArr[0] = { m_Conn->NewQuery(), 0};
+                auto qry = m_QueryArr[0].query;
                 string sql = "INSERT INTO " + GetKeySpace() + ".bioseq_na "
                       "(accession, version, seq_id_type, annot_name, sat_key, last_modified, start, stop)"
                       "VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
@@ -125,10 +125,7 @@ void CCassNAnnotTaskInsert::Wait1()
             }
 
             case eWaitingNAnnotInfoInserted: {
-                if (!CheckReady(m_QueryArr[0], eInsertNAnnotInfo, &b_need_repeat)) {
-                    if (b_need_repeat) {
-                        ERR_POST(Info << "Restart eInsertNAnnotInfo key=" << m_Keyspace << "." << m_Key);
-                    }
+                if (!CheckReadyEx(m_QueryArr[0])) {
                     break;
                 }
                 CloseAll();
