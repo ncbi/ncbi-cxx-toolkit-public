@@ -52,22 +52,21 @@ static const string     kHash = "hash";
 static const string     kDateChanged = "date_changed";
 static const string     kSeqIds = "seq_ids";
 
-static const string     kKey = "Key";
-static const string     kLastModified = "LastModified";
-static const string     kFlags = "Flags";
-static const string     kSize = "Size";
-static const string     kSizeUnpacked = "SizeUnpacked";
-static const string     kClass = "Class";
-static const string     kDateAsn1 = "DateAsn1";
-static const string     kHupDate = "HupDate";
-static const string     kDiv = "Div";
-static const string     kId2Info = "Id2Info";
-static const string     kOwner = "Owner";
-static const string     kUserName = "UserName";
-static const string     kNChunks = "NChunks";
+static const string     kKey = "key";
+static const string     kLastModified = "last_modified";
+static const string     kFlags = "flags";
+static const string     kSize = "size";
+static const string     kSizeUnpacked = "size_unpacked";
+static const string     kClass = "class";
+static const string     kDateAsn1 = "date_asn1";
+static const string     kHupDate = "hup_date";
+static const string     kDiv = "div";
+static const string     kId2Info = "id2_info";
+static const string     kOwner = "owner";
+static const string     kUserName = "username";
+static const string     kNChunks = "n_chunks";
 static const string     kStart = "start";
 static const string     kStop = "stop";
-static const string     kNALastModified = "last_modified";
 
 
 void ConvertBioseqInfoToBioseqProtobuf(const SBioseqInfo &  bioseq_info,
@@ -257,7 +256,7 @@ CJsonNode ConvertBioseqNAToJson(const CNAnnotRecord &  annot_record)
 {
     CJsonNode       json(CJsonNode::NewObjectNode());
 
-    json.SetInteger(kNALastModified, annot_record.GetModified());
+    json.SetInteger(kLastModified, annot_record.GetModified());
     json.SetInteger(kSatKey, annot_record.GetSatKey());
     json.SetInteger(kStart, annot_record.GetStart());
     json.SetInteger(kStop, annot_record.GetStop());
