@@ -92,7 +92,7 @@
 #define CONN_PORT_HTTP   80
 #define CONN_PORT_HTTPS  443
 
-/* SConnNetInfo's field lengths NOT including the terminating '\0' */
+/* SConnNetInfo's field lengths NOT including the terminating '\0's */
 #define CONN_USER_LEN    63
 #define CONN_PASS_LEN    63
 #define CONN_HOST_LEN    255
@@ -670,7 +670,7 @@ extern NCBI_XCONNECT_EXPORT void        ConnNetInfo_Destroy
  * If the request method contains "eReqMethod_Connect", then the connection is
  * assumed to be tunneled via a proxy, so "path" must specify a "host:port"
  * pair to connect to;  "content_length" can provide initial size of the data
- * been tunneled, in which case "args" must be a pointer to such data, but no
+ * to be tunneled, in which case "args" must be a pointer to such data, but no
  * "Content-Length:" header tag will get added.
  *
  * If "*sock" is non-NULL, the call _does not_ create a new socket, but builds

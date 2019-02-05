@@ -263,42 +263,25 @@ extern int/*bool*/ ConnNetInfo_Boolean(const char* str)
 
 static EURLScheme x_ParseScheme(const char* str, size_t len)
 {
-    if (len == 5  &&  strncasecmp(str, "https", len) == 0)
-        return eURL_Https;
-    if (len == 4  &&  strncasecmp(str, "http",  len) == 0)
-        return eURL_Http;
-    if (len == 4  &&  strncasecmp(str, "file",  len) == 0)
-        return eURL_File;
-    if (len == 3  &&  strncasecmp(str, "ftp",   len) == 0)
-        return eURL_Ftp;
-    return eURL_Unspec;
-}
-
-
-static const char* x_Num(unsigned int num, char buf[])
-{
-    sprintf(buf, "(#%u)", num);
-    return buf;
-}
-
-
-static const char* x_Scheme(EURLScheme scheme, char buf[])
-{
-    switch (scheme) {
-    case eURL_Unspec:
-        return 0;
-    case eURL_Https:
-        return "HTTPS";
-    case eURL_Http:
-        return "HTTP";
-    case eURL_File:
-        return "FILE";
-    case eURL_Ftp:
-        return "FTP";
+    switch (len) {
+    case 5:
+        if (strncasecmp(str, "https", len) == 0)
+            return eURL_Https;
+        break;
+    case 4:
+        if (strncasecmp(str, "http",  len) == 0)
+            return eURL_Http;
+        if (strncasecmp(str, "file",  len) == 0)
+            return eURL_File;
+        break;
+    case 3:
+        if (strncasecmp(str, "ftp",   len) == 0)
+            return eURL_Ftp;
+        break;
     default:
         break;
     }
-    return x_Num(scheme, buf);
+    return eURL_Unspec;
 }
 
 
@@ -1496,6 +1479,33 @@ static const char* x_BadMagic(unsigned int magic, char buf[])
 }
 
 
+static const char* x_Num(unsigned int num, char buf[])
+{
+    sprintf(buf, "(#%u)", num);
+    return buf;
+}
+
+
+static const char* x_Scheme(EURLScheme scheme, char buf[])
+{
+    switch (scheme) {
+    case eURL_Unspec:
+        return "";
+    case eURL_Https:
+        return "HTTPS";
+    case eURL_Http:
+        return "HTTP";
+    case eURL_File:
+        return "FILE";
+    case eURL_Ftp:
+        return "FTP";
+    default:
+        break;
+    }
+    return buf ? x_Num(scheme, buf) : 0;
+}
+
+
 static const char* x_Port(unsigned short port, char buf[])
 {
     assert(port);
@@ -1566,10 +1576,10 @@ static const char* x_CredInfo(NCBI_CRED cred, char buf[])
         case 0:
             return "(GNUTLS X.509 Cert)";
         default:
-            sprintf(buf, "(#%u)", what);
+            sprintf(buf, "(GNUTLS #%u)", what);
             return buf;
         }
-     default:
+    default:
         break;
     }
     return x_Num(cred->type, buf);
@@ -1592,7 +1602,7 @@ static void s_SaveString(char* s, const char* name, const char* str)
 
 static void s_SaveKeyval(char* s, const char* name, const char* str)
 {
-    assert(str);
+    assert(str  &&  *str);
     s_SaveStringQuot(s, name, str, 0);
 }
 
@@ -1694,7 +1704,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
                                            ? "(set)" : "\"\""));
 #endif /*_DEBUG && !NDEBUG*/
     if (*info->http_proxy_pass) {
-        s_SaveKeyval(s, "http_proxy_pass",(info->http_proxy_pass[0]
+        s_SaveKeyval(s, "http_proxy_pass",(info->http_proxy_user[0]
                                            ? "(set)" : "(ignored)"));
     } else
         s_SaveString(s, "http_proxy_pass", info->http_proxy_pass);
@@ -1740,16 +1750,13 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
     const char* path;
     size_t      len;
     char*       url;
-    char        buf[40];
 
     if (!s_InfoIsValid(info))
         return 0/*failed*/;
 
     req_method = info->req_method & (TReqMethod)(~eReqMethod_v1);
-    scheme = x_Scheme((EURLScheme) info->scheme, buf);
-    assert(!scheme  ||  *scheme);
-    if (scheme  &&  !isalpha((unsigned char)(*scheme)))
-        return 0/*failure*/;
+    if (!(scheme = x_Scheme((EURLScheme) info->scheme, 0)))
+        return 0/*failed*/;
 
     if (req_method == eReqMethod_Connect) {
         scheme = "";
@@ -1757,11 +1764,9 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
         path = 0;
         len = 0;
     } else {
-        if (!scheme)
-            scheme = "";
         schlen = strlen(scheme);
         path = info->path;
-        len = schlen+3/*://*/ + strlen(path);
+        len = schlen + 4/*"://",'/'*/ + strlen(path);
     }
     len += strlen(info->host) + 7/*:port\0*/;
 
@@ -1769,13 +1774,12 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
     if (url) {
         strlwr((char*) memcpy(url, scheme, schlen + 1));
         len = schlen;
-        len += (size_t) sprintf(url + len,
-                                &"://%s"[schlen ? 0 : !path ? 3 : 1],
-                                info->host);
+        len += sprintf(url + len,
+                       &"://%s"[schlen ? 0 : path ? 1 : 3], info->host);
         if (info->port  ||  !path/*req_method == eReqMethod_Connect*/)
-            len += (size_t) sprintf(url + len, ":%hu", info->port);
-        sprintf(url + len, "%s%s",
-                &"/"[!path  ||  *path == '/'], path ? path : "");
+            len += sprintf(url + len, ":%hu", info->port);
+        sprintf(url + len,
+                "%s%s", &"/"[!(path  &&  *path != '/')], path ? path : "");
     }
     assert(!url  ||  *url);
     return url;
@@ -1851,17 +1855,17 @@ extern EIO_Status URL_ConnectEx
     EReqMethod  x_req_meth;
     size_t      user_hdr_len = user_hdr  &&  *user_hdr ? strlen(user_hdr) : 0;
 
-    http = kHttp[!(req_method < eReqMethod_v1)];
     x_req_meth = (EReqMethod)(req_method & (TReqMethod)(~eReqMethod_v1));
+    http = kHttp[!(req_method < eReqMethod_v1)];
+    args_len = strcspn(path, "?#")/*temp!*/;
     path_len = path
         ? (x_req_meth != eReqMethod_Connect  &&  !args
-           ? strcspn(path, "?#")
+           ? args_len
            : strlen(path))
         : 0;
 
     /* sanity checks */
-    if (!sock  ||  !host  ||  !*host
-        ||  !path_len  ||  strcspn(path, "?#") < path_len) {
+    if (!sock  ||  !host  ||  !*host  ||  !path_len  ||  args_len < path_len) {
         CORE_LOG_X(2, eLOG_Critical, "[URL_Connect]  Bad argument(s)");
         if (sock) {
             s = *sock;
