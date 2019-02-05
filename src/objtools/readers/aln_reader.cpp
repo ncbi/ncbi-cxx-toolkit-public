@@ -587,7 +587,8 @@ void CAlnReader::x_AssignDensegIds(const TFastaFlags fasta_flags,
 }
 
 
-CRef<CSeq_align> CAlnReader::GetSeqAlign(const TFastaFlags fasta_flags)
+CRef<CSeq_align> CAlnReader::GetSeqAlign(const TFastaFlags fasta_flags,
+        ILineErrorListener* pErrorListener)
 {
     if (m_Aln) {
         return m_Aln;
@@ -708,7 +709,8 @@ CRef<CSeq_align> CAlnReader::GetSeqAlign(const TFastaFlags fasta_flags)
 }
 
 
-CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags)
+CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags,
+        ILineErrorListener* pErrorListener)
 {
     if (m_Entry) {
         return m_Entry;
@@ -719,7 +721,7 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags)
     }
     m_Entry = new CSeq_entry();
 
-    CRef<CSeq_align> seq_align = GetSeqAlign(fasta_flags);
+    CRef<CSeq_align> seq_align = GetSeqAlign(fasta_flags, pErrorListener);
     const CDense_seg& denseg = seq_align->GetSegs().GetDenseg();
     _ASSERT(denseg.GetIds().size() == m_Dim);
 
@@ -792,7 +794,7 @@ CRef<CSeq_entry> CAlnReader::GetSeqEntry(const TFastaFlags fasta_flags)
         int i=0;
         if (fasta_flags & CFastaReader::fAddMods) {
             for (auto& pSeqEntry : seq_set) {
-                x_AddMods(m_DeflineInfo[i++], pSeqEntry->SetSeq());
+                x_AddMods(m_DeflineInfo[i++], pSeqEntry->SetSeq(), pErrorListener);
             }
         }
         else {
@@ -821,13 +823,22 @@ static void s_AppendMods(
 }
 
 void CAlnReader::x_AddMods(const TDeflineInfo& defline_info, 
-        CBioseq& bioseq)
+        CBioseq& bioseq,
+        ILineErrorListener* pErrorListener)
 {
     auto defline = defline_info.data;
     if (NStr::IsBlank(defline)) {
         return;
     }
 
+    auto fReportError = 
+        [&](const string& msg, EDiagSev sev) {
+            return sReportError(pErrorListener, 
+                    sev, 
+                    defline_info.line_num,
+                    msg);
+        };
+        
     CModHandler::TModList mod_list;
     string remainder;
 
@@ -837,15 +848,13 @@ void CAlnReader::x_AddMods(const TDeflineInfo& defline_info,
         return;
     } 
 
-    unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
-
-    CModHandler mod_handler(pMessageListener.get());
+    CModHandler mod_handler(fReportError);
     CModHandler::TModList rejected_mods;
     mod_handler.AddMods(mod_list, CModHandler::eAppendReplace, rejected_mods);
 
     // Apply modifiers to the bioseq
     CModHandler::TModList skipped_mods;
-    CModAdder::Apply(mod_handler, bioseq, pMessageListener.get(), skipped_mods);
+    CModAdder::Apply(mod_handler, bioseq, skipped_mods, fReportError);
 
     s_AppendMods(rejected_mods, remainder);
     s_AppendMods(skipped_mods, remainder);

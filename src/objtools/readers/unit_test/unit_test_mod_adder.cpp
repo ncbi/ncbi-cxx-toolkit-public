@@ -298,7 +298,16 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
                    const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
 
     unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
-    CModHandler mod_handler(pMessageListener.get());
+
+    auto fReportError = [&] (const string& msg, EDiagSev sev) 
+    {
+        if (NStr::IsBlank(msg)) {
+            return;
+        }
+        pMessageListener->PutMessage(
+                CObjtoolsMessage(msg, sev));
+    };
+    CModHandler mod_handler(fReportError);
     
     CModAdder::TSkippedMods skipped_mods;
     CModHandler::TModList rejected_mods;
@@ -330,7 +339,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
         }
 
         mod_handler.AddMods(mods, handle_existing, rejected_mods);
-        CModAdder::Apply(mod_handler, bioseq, pMessageListener.get(), skipped_mods);
+        CModAdder::Apply(mod_handler, bioseq, skipped_mods, fReportError);
     }
     catch (...) {
         ifstr.close();
@@ -394,10 +403,19 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
                    const_cast<CBioseq&>(pSeqEntry->SetSet().GetNucFromNucProtSet());
 
     unique_ptr<CObjtoolsListener> pMessageListener(new CObjtoolsListener());
+    auto fReportError = [&] (const string& msg, EDiagSev sev) 
+    {
+        if (NStr::IsBlank(msg)) {
+            return;
+        }
+        pMessageListener->PutMessage(
+                CObjtoolsMessage(msg, sev));
+    };
+
     CModHandler::TModList rejected_mods;
 
     CModAdder::TSkippedMods skipped_mods;
-    CModHandler mod_handler(pMessageListener.get());
+    CModHandler mod_handler(fReportError);
 
     CModHandler::EHandleExisting handle_existing = CModHandler::eAppendReplace;
     static const map<string, CModHandler::EHandleExisting>
@@ -426,7 +444,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         }
 
         mod_handler.AddMods(mods, handle_existing, rejected_mods);
-        CModAdder::Apply(mod_handler, bioseq, pMessageListener.get(), skipped_mods);
+        CModAdder::Apply(mod_handler, bioseq, skipped_mods, fReportError);
     }
     catch (...) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");

@@ -158,7 +158,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CRef<CSeq_entry> pEntry;
     try {
         reader.Read(false, false, &logger);
-        pEntry = reader.GetSeqEntry(fasta_flags);
+        pEntry = reader.GetSeqEntry(fasta_flags, &logger);
     } 
     catch (...) {
     }
@@ -219,7 +219,7 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
     CRef<CSeq_entry> pEntry;
     try {
         reader.Read(false, false, &logger);
-        pEntry = reader.GetSeqEntry(fasta_flags);
+        pEntry = reader.GetSeqEntry(fasta_flags, &logger);
     }
     catch (...) {
     }

@@ -181,8 +181,8 @@ const CModHandler::TNameSet CModHandler::sm_MultipleValuesForbidden =
 };
 
 
-CModHandler::CModHandler(IObjtoolsListener* listener) 
-    : m_pMessageListener(listener) {}
+CModHandler::CModHandler(FReportError fReportError) 
+    : m_fReportError(fReportError) {}
 
 
 
@@ -203,7 +203,9 @@ void CModHandler::AddMods(const TModList& mods,
         if (x_IsDeprecated(canonical_name)) {
             rejected_mods.push_back(mod);
             string message = mod.GetName() + " is deprecated - ignoring";
-            x_PutMessage(message, eDiag_Warning);
+            if (m_fReportError) {
+                m_fReportError(message, eDiag_Warning);
+            }
             continue;
         }
 
@@ -214,13 +216,11 @@ void CModHandler::AddMods(const TModList& mods,
             !first_occurrence) {
             rejected_mods.push_back(mod);
             string msg = mod.GetName() + " conflicts with previously encountered modifier.";
-            if (m_pMessageListener) {
-                x_PutMessage(msg, eDiag_Error);
+            if (m_fReportError) {
+                m_fReportError(msg, eDiag_Warning);
+                continue;
             }   
-            else { 
-                NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
-            }
-            continue;
+            NCBI_THROW(CModReaderException, eMultipleValuesForbidden, msg);
         }
         accepted_mods[canonical_name].push_back(mod);
     }
@@ -344,33 +344,12 @@ string CModHandler::x_GetNormalizedString(const string& name) const
 }
 
 
-void CModHandler::x_PutMessage(const string& message, 
-                               EDiagSev severity)
-{
-    if (!m_pMessageListener || NStr::IsBlank(message)) {
-        return;
-    }
-
-    m_pMessageListener->PutMessage(
-        CObjtoolsMessage(message, severity));
-}
-
-
 void CModAdder::Apply(const CModHandler& mod_handler,
                       CBioseq& bioseq,
-                      IObjtoolsListener* pMessageListener,
-                      TSkippedMods& skipped_mods)
+                      TSkippedMods& skipped_mods,
+                      FReportError fReportError)
 {
     skipped_mods.clear();
-
-    auto fReportError = [&pMessageListener](const string& message,
-                                            EDiagSev severity)
-    {
-        if (pMessageListener) {
-            pMessageListener->PutMessage(
-                CObjtoolsMessage(message, severity));
-        }
-    };
 
     CDescrModApply descr_mod_apply(bioseq,
                                    fReportError,
@@ -411,7 +390,7 @@ void CModAdder::Apply(const CModHandler& mod_handler,
             skipped_mods.insert(skipped_mods.end(),
                     mod_entry.second.begin(),
                     mod_entry.second.end());
-            if (pMessageListener) {
+            if (fReportError) {
                 fReportError(e.GetMsg(), eDiag_Warning);
                 continue;
             }

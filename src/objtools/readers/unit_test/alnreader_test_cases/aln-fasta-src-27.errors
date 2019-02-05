@@ -1,0 +1,16 @@
+Line No    : 1
+Severity   : Warning
+Message    : transgenic modifier has invalid value: "val1".
+
+Line No    : 5
+Severity   : Warning
+Message    : environmental-sample modifier has invalid value: "val1".
+
+Line No    : 9
+Severity   : Warning
+Message    : environmental_sample modifier has invalid value: "val1".
+
+Line No    : 13
+Severity   : Warning
+Message    : environmental sample modifier has invalid value: "val1".
+

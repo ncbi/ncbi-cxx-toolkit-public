@@ -59,8 +59,6 @@ private:
 };
 
 
-class IObjtoolsListener;
-
 
 class NCBI_XOBJREAD_EXPORT CModHandler 
 {
@@ -77,8 +75,9 @@ public:
 
     using TMods = map<string, list<CModData>>;
     using TModEntry = TMods::value_type;
+    using FReportError = function<void(const string& message, EDiagSev severity)>;
 
-    CModHandler(IObjtoolsListener* listener=nullptr);
+    CModHandler(FReportError fReportError=nullptr);
 
     void AddMods(const TModList& mods, 
                  EHandleExisting handle_existing, 
@@ -95,7 +94,6 @@ private:
     string x_GetCanonicalName(const string& name) const;
     string x_GetNormalizedString(const string& name) const;
     static bool x_MultipleValuesAllowed(const string& canonical_name);
-    void x_PutMessage(const string& message, EDiagSev severity);
     static bool x_IsDeprecated(const string& canonical_name);
     void x_SaveMods(TMods&& mods, EHandleExisting handle_existing, TMods& dest);
 
@@ -107,7 +105,7 @@ private:
     static const TNameSet sm_MultipleValuesForbidden;
     static const TNameSet sm_DeprecatedModifiers;
 
-    IObjtoolsListener* m_pMessageListener;
+    FReportError m_fReportError;
 };
 
 
@@ -123,11 +121,13 @@ public:
     using TMods = CModHandler::TMods;
     using TModEntry = CModHandler::TModEntry;
     using TSkippedMods = list<CModData>;
+    using FReportError = CModHandler::FReportError;
 
-    static void Apply(const CModHandler& mod_handler, 
-            CBioseq& bioseq, 
-            IObjtoolsListener* pMessageListener,
-            TSkippedMods& skipped_mods);
+
+    static void Apply(const CModHandler& mod_handler,
+            CBioseq& bioseq,
+            TSkippedMods& skipped_mods,
+            FReportError fReportError=nullptr);
 
 private:
 

@@ -218,8 +218,10 @@ public:
     
     using TFastaFlags = objects::CFastaDeflineReader::TFastaFlags;
     /// Create ASN.1 classes from the parsed alignment
-    CRef<objects::CSeq_align> GetSeqAlign(TFastaFlags fasta_flags=0);
-    CRef<objects::CSeq_entry> GetSeqEntry(TFastaFlags fasta_flags=objects::CFastaReader::fAddMods);
+    CRef<objects::CSeq_align> GetSeqAlign(TFastaFlags fasta_flags=0,
+            objects::ILineErrorListener* pErrorListener=nullptr);
+    CRef<objects::CSeq_entry> GetSeqEntry(TFastaFlags fasta_flags=objects::CFastaReader::fAddMods,
+            objects::ILineErrorListener* pErrorListener=nullptr);
 
 
 private:
@@ -280,7 +282,9 @@ private:
         TFastaFlags fasta_flags,
         objects::CDense_seg& denseg);
 
-    void x_AddMods(const TDeflineInfo& defline_info, objects::CBioseq& bioseq);
+    void x_AddMods(const TDeflineInfo& defline_info, 
+            objects::CBioseq& bioseq,
+            objects::ILineErrorListener* pErrorListener);
 
     void x_AddTitle(const string& defline, objects::CBioseq& bioseq);
 
