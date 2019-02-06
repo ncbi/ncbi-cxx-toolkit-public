@@ -4368,7 +4368,7 @@ unique_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
                                      fTarGRead | fTarORead);
 
     unsigned int uid = 0, gid = 0;
-    CWinSecurity::GetObjectOwner(CProcess::GetCurrentHandle(),
+    CWinSecurity::GetObjectOwner(CCurrentProcess::GetHandle(),
                                  SE_KERNEL_OBJECT,
                                  &m_Current.m_UserName,
                                  &m_Current.m_GroupName,
