@@ -539,7 +539,7 @@ enum EPSG_BlobInfo_Flags
 
 string CPSG_BlobInfo::GetCompression() const
 {
-    return m_Data.GetInteger("Flags") & fPSGBI_Gzip ? "gzip" : "";
+    return m_Data.GetInteger("flags") & fPSGBI_Gzip ? "gzip" : "";
 }
 
 string CPSG_BlobInfo::GetFormat() const
@@ -549,32 +549,32 @@ string CPSG_BlobInfo::GetFormat() const
 
 Uint8 CPSG_BlobInfo::GetVersion() const
 {
-    return static_cast<Uint8>(m_Data.GetInteger("LastModified"));
+    return static_cast<Uint8>(m_Data.GetInteger("last_modified"));
 }
 
 Uint8 CPSG_BlobInfo::GetStorageSize() const
 {
-    return static_cast<Uint8>(m_Data.GetInteger("Size"));
+    return static_cast<Uint8>(m_Data.GetInteger("size"));
 }
 
 Uint8 CPSG_BlobInfo::GetSize() const
 {
-    return static_cast<Uint8>(m_Data.GetInteger("SizeUnpacked"));
+    return static_cast<Uint8>(m_Data.GetInteger("size_unpacked"));
 }
 
 bool CPSG_BlobInfo::IsDead() const
 {
-    return m_Data.GetInteger("Flags") & fPSGBI_Dead;
+    return m_Data.GetInteger("flags") & fPSGBI_Dead;
 }
 
 bool CPSG_BlobInfo::IsSuppressed() const
 {
-    return m_Data.GetInteger("Flags") & fPSGBI_Suppress;
+    return m_Data.GetInteger("flags") & fPSGBI_Suppress;
 }
 
 bool CPSG_BlobInfo::IsWithdrawn() const
 {
-    return m_Data.GetInteger("Flags") & fPSGBI_Withdrawn;
+    return m_Data.GetInteger("flags") & fPSGBI_Withdrawn;
 }
 
 CTime s_GetTime(Int8 milliseconds)
@@ -584,32 +584,32 @@ CTime s_GetTime(Int8 milliseconds)
 
 CTime CPSG_BlobInfo::GetHupReleaseDate() const
 {
-    return s_GetTime(m_Data.GetInteger("HupDate"));
+    return s_GetTime(m_Data.GetInteger("hup_date"));
 }
 
 Uint8 CPSG_BlobInfo::GetOwner() const
 {
-    return static_cast<Uint8>(m_Data.GetInteger("Owner"));
+    return static_cast<Uint8>(m_Data.GetInteger("owner"));
 }
 
 CTime CPSG_BlobInfo::GetOriginalLoadDate() const
 {
-    return s_GetTime(m_Data.GetInteger("DateAsn1"));
+    return s_GetTime(m_Data.GetInteger("date_asn1"));
 }
 
 objects::CBioseq_set::EClass CPSG_BlobInfo::GetClass() const
 {
-    return static_cast<objects::CBioseq_set::EClass>(m_Data.GetInteger("Class"));
+    return static_cast<objects::CBioseq_set::EClass>(m_Data.GetInteger("class"));
 }
 
 string CPSG_BlobInfo::GetDivision() const
 {
-    return m_Data.GetString("Div");
+    return m_Data.GetString("div");
 }
 
 string CPSG_BlobInfo::GetUsername() const
 {
-    return m_Data.GetString("UserName");
+    return m_Data.GetString("username");
 }
 
 struct SId2Info
@@ -624,9 +624,9 @@ struct SId2Info
 
 CPSG_BlobId SId2Info::GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key, const CPSG_BlobId& id)
 {
-    if (!data.HasKey("Id2Info")) return kEmptyStr;
+    if (!data.HasKey("id2_info")) return kEmptyStr;
 
-    auto id2_info = data.GetString("Id2Info");
+    auto id2_info = data.GetString("id2_info");
 
     if (id2_info.empty()) return kEmptyStr;
 
@@ -634,7 +634,7 @@ CPSG_BlobId SId2Info::GetBlobId(const CJsonNode& data, TGetSatKey get_sat_key, c
     NStr::Split(id2_info, ".", sat_keys);
 
     if (sat_keys.size() != eSize ) {
-        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Wrong Id2Info format: " << id2_info <<
+        NCBI_THROW_FMT(CPSG_Exception, eServerError, "Wrong id2_info format: " << id2_info <<
                 " for blob '" << id.Get() << '\'');
     }
 
