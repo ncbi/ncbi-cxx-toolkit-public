@@ -249,20 +249,20 @@ class CCassBlobWaiter
         return rv;
     }
 
-    bool CheckReady(SQueryRec& it, unsigned int restart_counter, bool& need_repeat)
+    bool CheckReady(shared_ptr<CCassQuery> qry, unsigned int restart_counter, bool& need_repeat)
     {
         async_rslt_t wr = (async_rslt_t)-1;
         need_repeat = false;
         try {
             if (m_Async) {
-                wr = it.query->WaitAsync(0);
+                wr = qry->WaitAsync(0);
                 if (wr == ar_wait)
                     return false;
             }
             return true;
         } catch (const CCassandraException& e) {
             if ((e.GetErrCode() == CCassandraException::eQueryTimeout || e.GetErrCode() == CCassandraException::eQueryFailedRestartable) && 
-                CanRestart(it.query, restart_counter))
+                CanRestart(qry, restart_counter))
             {
                 need_repeat = true;
             } else {
