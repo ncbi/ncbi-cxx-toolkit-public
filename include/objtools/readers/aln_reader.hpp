@@ -209,7 +209,7 @@ public:
     /// Parsed result data accessors
     const vector<string>& GetIds(void)       const {return m_Ids;};
     const vector<string>& GetSeqs(void)      const {return m_Seqs;};
-    const vector<string>& GetOrganisms(void) const {return m_Organisms;};
+    NCBI_DEPRECATED const vector<string>& GetOrganisms(void) const {return m_Organisms;};
     const vector<string>& GetDeflines(void)  const {return m_Deflines;};
     const vector<TDeflineInfo>& GetDeflineInfo(void) const { return m_DeflineInfo; };
     int                   GetDim(void)       const {return m_Dim;};

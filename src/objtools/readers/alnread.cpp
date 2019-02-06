@@ -380,7 +380,7 @@ struct SAlignFileRaw {
 //  ============================================================================
     SAlignFileRaw():
         marked_ids(false), line_list(nullptr), organisms(nullptr),
-        num_organisms(0), deflines(nullptr), num_deflines(0), block_size(0), 
+        deflines(nullptr), num_deflines(0), block_size(0), 
         offset_list(nullptr), sequences(nullptr), report_error(nullptr),
         report_error_userdata(nullptr), alphabet_(""), expected_num_sequence(0),
         expected_sequence_len(0), align_format_found(false)
@@ -397,10 +397,9 @@ struct SAlignFileRaw {
     TLineInfoPtr         line_list;
     TLineInfoPtr         organisms;
     TAlignRawSeqPtr      sequences;
-    int                  num_organisms;
     TLineInfoPtr         deflines;
     int                  num_deflines;
-    bool                marked_ids;
+    bool                 marked_ids;
     int                  block_size;
     TIntLinkPtr          offset_list;
     FReportErrorFunction report_error;
@@ -701,23 +700,6 @@ s_ReportIncorrectSequenceLength(
 }
 
 
-/* This function creates and sends an error message indicating that some or
- * all of the organism information for the sequences are missing.
- */
-static void
-s_ReportMissingOrganismInfo(
-    FReportErrorFunction report_error,
-    void* report_error_userdata)
-{
-    sReportError(
-        nullptr,
-        -1,
-        eAlnErr_BadData,
-        "Missing organism information",
-        report_error,
-        report_error_userdata);
-}
-
 
 /* This function creates and sends an error message regarding an ID that is
  * used for more than one sequence.
@@ -827,29 +809,6 @@ s_ReportSegmentedAlignmentError(
     delete[] listLineContent;
 }
 
-
-/* This function reports an error if a line looks like it might contain an organism comment
- * but is somehow improperly formatted
- */
-static void s_ReportOrgCommentError(
-    char* linestring,
-    FReportErrorFunction errfunc,
-    void* errdata)
-{
-    const char*  errFormat = 
-        "This line may contain an improperly formatted organism description.\n"
-        "Organism descriptions should be of the form [org=tax name] or [organism=tax name]:"
-        "    %s";
-
-    string errMessage = StrPrintf(errFormat, linestring);
-    sReportError(
-        nullptr,
-        -1,
-        eAlnErr_BadData,
-        errMessage,
-        errfunc,
-        errdata);
-}
 
  
 /* This function reports that the number of segments in an alignment of
@@ -2028,7 +1987,6 @@ s_FindOrganismComment (
     clp = s_FindComment (string);
     while (clp  &&  !s_IsOrganismComment (clp)) {
         char * pos = clp->end;
-        delete clp;
         clp = s_FindComment (pos);
     }
 
@@ -4552,21 +4510,12 @@ s_ConvertDataToOutput(
         return false;
     }
 
-    auto numOrganisms = afrp->num_organisms;
     auto numDeflines = afrp->num_deflines;
     auto numSequences  = 0;
     for (arsp = afrp->sequences;  arsp;  arsp = arsp->next) {
         numSequences++;
     }
     alignInfo.align_format_found = afrp->align_format_found;
-
-
-    if (numOrganisms > 0  &&
-            numSequences != numOrganisms  &&
-            numSequences != numDeflines) {
-        s_ReportMissingOrganismInfo (afrp->report_error,
-                                   afrp->report_error_userdata);
-    }
 
     /* copy in deflines */
     alignInfo.mDeflines.resize(numDeflines);
@@ -4576,13 +4525,6 @@ s_ConvertDataToOutput(
         alignInfo.mDeflines[index] =  {lip->line_num, string(lip->data ? lip->data : "")};
     }
 
-    /* copy in organism information */
-    alignInfo.mOrganisms.resize(numOrganisms);
-    for (lip = afrp->organisms, index = 0; lip  &&  index < numOrganisms;
-            lip = lip->next, index++) {
-        alignInfo.mOrganisms[index] = string(lip->data ? lip->data : "");
-    }
-  
     /* we need to store length information about different segments separately */
     TSizeInfoPtr lengths = nullptr;
     int best_length = 0;

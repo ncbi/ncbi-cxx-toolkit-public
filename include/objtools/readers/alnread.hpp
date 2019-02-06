@@ -164,9 +164,6 @@ public:
     NumDeflines() const { return mDeflines.size(); };
 
     int
-    NumOrganisms() const { return mOrganisms.size(); };
-
-    int
     NumSequences() const { return mSequences.size(); };
 
 
@@ -179,7 +176,6 @@ public:
 
     vector<string> mIds;
     vector<string> mSequences;
-    vector<string> mOrganisms;
     vector<TDeflineInfo> mDeflines;
     char align_format_found;
 };

@@ -393,7 +393,6 @@ void CAlnReader::Read(
 
     m_Seqs.assign(alignmentInfo.mSequences.begin(), alignmentInfo.mSequences.end());
     m_Ids.assign(alignmentInfo.mIds.begin(), alignmentInfo.mIds.end());
-    m_Organisms.assign(alignmentInfo.mOrganisms.begin(), alignmentInfo.mOrganisms.end());
 
     auto numDeflines = alignmentInfo.NumDeflines();
     if (numDeflines) {
