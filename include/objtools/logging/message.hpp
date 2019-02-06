@@ -54,7 +54,7 @@ public:
 
 
 //  ============================================================================
-class CObjtoolsMessage : public IObjtoolsMessage 
+class NCBI_XOBJUTIL_EXPORT CObjtoolsMessage : public IObjtoolsMessage 
 //  ============================================================================
 {
 public:
