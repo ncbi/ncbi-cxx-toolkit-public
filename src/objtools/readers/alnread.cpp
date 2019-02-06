@@ -1460,96 +1460,6 @@ s_AddStringCount (
     return list;   
 }
 
-/* The following functions are replacements for strncasecmp and strcasecmp */
-
-/* This function returns -1 if str1 is less than str2 in the first cmp_count
- * characters (using case-insensitive comparisons), 0 if they are equal,
- * and 1 if str1 is greater than str2.
- */
-static int 
-s_StringNICmp (
-    const char * str1, 
-    const char *str2, 
-    int cmp_count)
-{
-    const char * cp1;
-    const char * cp2;
-    int    char_count, diff;
-
-    if (!str1  &&  !str2) {
-        return 0;
-    }
-    if (!str1) {
-        return -1;
-    }
-    if (!str2) {
-        return 1;
-    }
-    cp1 = str1;
-    cp2 = str2;
-    char_count = 0;
-    while (*cp1 != 0  &&  *cp2 != 0  &&  char_count < cmp_count) {
-        diff = toupper ((unsigned char)(*cp1)) - toupper ((unsigned char)(*cp2));
-        if (diff != 0) {
-            return diff;
-        }
-        char_count ++;
-        cp1++;
-        cp2++;
-    }
-    if (char_count == cmp_count) {
-        return 0;
-    } else if (*cp1 == 0  &&  *cp2 != 0) {
-        return -1;
-    } else if (*cp1 != 0  && *cp2 == 0) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
-
-/* This function returns -1 if str1 is less than str2 using case-insensitive
- * comparisons), 0 if they are equal, and 1 if str1 is greater than str2.
- */
-static int 
-s_StringICmp (
-    const char * str1, 
-    const char *str2)
-{
-    const char * cp1;
-    const char * cp2;
-    int    diff;
-
-    if (!str1  &&  !str2) {
-        return 0;
-    }
-    if (!str1) {
-        return -1;
-    }
-    if (!str2) {
-        return 1;
-    }
-    cp1 = str1;
-    cp2 = str2;
-    while (*cp1 != 0  &&  *cp2 != 0) {
-        diff = toupper ((unsigned char) *cp1) - toupper ((unsigned char) *cp2);
-        if (diff != 0) {
-            return diff;
-        }
-        cp1++;
-        cp2++;
-    }
-    if (*cp1 == 0  &&  *cp2 != 0) {
-        return -1;
-    } else if (*cp1 != 0  && *cp2 == 0) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
-
 /* The following functions are used to analyze specific kinds of lines
  * found in alignment files for information regarding the number of
  * expected sequences, the expected length of those sequences, and the
@@ -1622,52 +1532,18 @@ static bool
 s_IsTwoNumbersSeparatedBySpace (
     const char* str)
 {
-    const char * cp;
-    bool  found_first_number = false;
-    bool  found_dividing_space = false;
-    bool  found_second_number = false;
-    bool  found_second_number_end = false;
+    const CTempString DIGITS("0123456789");
 
     if (!str) {
         return false;
     }
-    cp = str;
-    while (*cp != 0) {
-        if (! isdigit ((unsigned char)*cp)  &&  ! isspace ((unsigned char)*cp)) {
-            return false;
-        }
-        if (! found_first_number) {
-            if (! isdigit ((unsigned char)*cp)) {
-                return false;
-            }
-            found_first_number = true;
-        } else if (! found_dividing_space) {
-            if ( isspace ((unsigned char) *cp)) {
-                found_dividing_space = true;
-            } else if ( ! isdigit ((unsigned char)*cp)) {
-                return false;
-            }
-        } else if (! found_second_number) {
-            if ( isdigit ((unsigned char)*cp)) {
-                found_second_number = true;
-            } else if (! isspace ((unsigned char) *cp)) {
-                return false;
-            }
-        } else if (! found_second_number_end) {
-            if ( isspace ((unsigned char) *cp)) {
-                found_second_number_end = true;
-            } else if (! isdigit ((unsigned char)*cp)) {
-                return false;
-            }
-        } else if (! isspace ((unsigned char) *cp)) {
-            return false;
-        }
-        cp++;
+    string teststr(str), first, second;
+    NStr::SplitInTwo(teststr, " \t", first, second, NStr::fSplit_MergeDelimiters);
+    if (second.empty()) {
+        return false;
     }
-    if (found_second_number) {
-        return true;
-    }
-    return false;
+    return (first.find_first_not_of(DIGITS) == string::npos  &&  
+        second.find_first_not_of(DIGITS) == string::npos);
 }
 
 
@@ -1915,13 +1791,16 @@ s_UpdateNexusCharInfo(
  */
 static bool 
 s_IsConsensusLine (
-    const char * str)
+    const char * str_)
 {
-    if (!str  ||  strspn (str, "*:. \t\r\n") < strlen (str)  ||
-            (!strchr (str, '*')  &&  !strchr (str, ':')  &&  !strchr (str, '.'))) {
+    if (!str_) {
         return false;
     }
-    return true; 
+    string str(str_);
+    if (str.find_first_not_of("*:. \t\r\n") != string::npos) {
+        return false;
+    }
+    return (str.find_first_of("*:.") != string::npos);
 }
 
 
@@ -1931,25 +1810,22 @@ s_IsConsensusLine (
  */
 static bool 
 s_SkippableNexusComment (
-    const char *str)
+    const char *str_)
 {
-    const char * last_semicolon;
 
-    if (!str) {
+    if (!str_) {
         return false;
     }
-    last_semicolon = strrchr (str, ';');
-    if (!last_semicolon
-            ||  strspn (last_semicolon + 1, " \t\r") != strlen (last_semicolon + 1)
-            ||  strchr (str, ';') != last_semicolon) {
+    string str = NStr::TruncateSpaces(str_);
+    if (!NStr::EndsWith(str, ';')) {
         return false;
     }
-    return (s_StringNICmp (str, "format ", 7) == 0
-        ||  s_StringNICmp (str, "dimensions ", 11) == 0
-        ||  s_StringNICmp (str, "options ", 8) == 0
-        ||  s_StringNICmp (str, "begin characters", 16) == 0
-        ||  s_StringNICmp (str, "begin data", 10) == 0
-        ||  s_StringNICmp (str, "begin ncbi", 10) == 0); 
+    return (NStr::StartsWith(str, "format ")  ||
+        NStr::StartsWith(str, "dimensions ")  ||
+        NStr::StartsWith(str, "options ")  ||
+        NStr::StartsWith(str, "begin characters")  ||
+        NStr::StartsWith(str, "begin data") ||
+        NStr::StartsWith(str, "begin ncbi"));
 }
 
 
@@ -1957,17 +1833,27 @@ static bool
 s_IsOnlyNumbersAndSpaces (
     const char *str)
 {
-    if (!str) {
+    return (string(str).find_first_not_of(" \t0123456789") == string::npos);
+}
+
+
+/* This function determines whether str contains a indication
+* that this is real alignment format (nexus, clustal, etc.)
+*/
+static bool 
+s_IsAlnFormatString (
+    const char* str_)
+{
+    if (!str_) {
         return false;
     }
-
-    while (*str != 0) {
-        if (!isspace (*str) && !isdigit(*str)) {
-            return false;
-        }
-        ++str;
-    }
-    return true;
+    string str(str_);
+    return (NStr::StartsWith(str, "matrix")  ||
+        NStr::StartsWith(str, "#NEXUS")  ||
+        NStr::StartsWith(str, "CLUSTAL W")  ||
+        s_SkippableNexusComment (str_)  ||
+        s_IsTwoNumbersSeparatedBySpace (str_)  ||
+        s_IsConsensusLine (str_));
 }
 
 
@@ -1975,53 +1861,16 @@ s_IsOnlyNumbersAndSpaces (
  * in that they do not contain sequence data and therefore should not be
  * considered part of any block patterns or sequence data.
  */
-static bool s_SkippableString (char * str)
+static bool s_SkippableString (char * str_)
 {
-    return (!str
-        ||  s_StringNICmp (str, "matrix", 6) == 0
-        ||  s_StringNICmp (str, "sequin", 6) == 0
-        ||  s_StringNICmp (str, "#NEXUS", 6) == 0
-        ||  s_StringNICmp (str, "CLUSTAL W", 9) == 0
-        ||  s_SkippableNexusComment (str)
-        ||  s_IsTwoNumbersSeparatedBySpace (str)
-        ||  s_IsOnlyNumbersAndSpaces (str)
-        ||  s_IsConsensusLine (str)
-        ||  str [0] == ';');
+    if (s_IsAlnFormatString(str_)) {
+        return true;
+    }
+    string str(str_);
+    return (NStr::StartsWith(str, "sequin")  ||
+        s_IsOnlyNumbersAndSpaces(str_)  ||
+        str_[0] == ';');
  }
-
-
-/* This function determines whether str contains a indication
- * that this is real alignment format (nexus, clustal, etc.)
- */
-static bool 
-s_IsAlnFormatString (
-    const char * str)
-{
-    return (s_StringNICmp (str, "matrix", 6) == 0
-        ||  s_StringNICmp (str, "#NEXUS", 6) == 0
-        ||  s_StringNICmp (str, "CLUSTAL W", 9) == 0
-        ||  s_SkippableNexusComment (str)
-        ||  s_IsTwoNumbersSeparatedBySpace (str)
-        ||  s_IsConsensusLine (str));
-}
-
-
-/* This function determines whether or not str contains a blank line.
- */
-static bool s_IsBlank (
-    const char * str)
-{
-    size_t len;
-
-    if (!str) {
-        return true;
-    }
-    len = strspn(str, " \t\r");
-    if (len == strlen (str)) {
-        return true;
-    }
-    return false;
-}
 
 
 /* This function determines whether or not linestring contains a line
@@ -2030,13 +1879,13 @@ static bool s_IsBlank (
  */
 static bool 
 s_FoundStopLine (
-    const char * linestring)
+    const char * str_)
 {
-    if (!linestring) {
+    if (!str_) {
         return false;
     }
-    return (s_StringNICmp (linestring, "endblock", 8) == 0
-        ||  s_StringNICmp (linestring, "end;", 4) == 0);
+    string str(str_);
+    return (NStr::StartsWith(str, "endblock")  ||  NStr::StartsWith(str, "end;"));
 }
 
 
@@ -2148,25 +1997,16 @@ static bool s_IsOrganismComment(
     if (!clp  ||  !clp->start  ||  !clp->end) {
         return false;
     }
- 
-    cp = clp->start;
-    if (*cp != '[') {
+    string comment(clp->start, clp->end - clp->start + 1);
+    if (!NStr::StartsWith(comment, '[')  ||  !NStr::EndsWith(comment, ']')) {
         return false;
     }
-    cp ++;
-    len = strspn ( clp->start, " \t\r");
-    cp = cp + len;
-    cp_end = strstr (cp, "=");
-    if (!cp_end) {
-        return false;
-    }
-    cp_end --;
-    while (cp_end > cp  &&  isspace ((unsigned char)*cp_end)) {
-      cp_end --;
-    }
-    cp_end ++;
-    return ((cp_end - cp == 3  &&  s_StringNICmp (cp, "org", 3) == 0)
-        ||  (cp_end - cp == 8  &&  s_StringNICmp (cp, "organism", 8) == 0));
+    string interior = comment.substr(1, comment.size() -2);
+    string key, value;
+    NStr::SplitInTwo(interior, "=", key, value);
+    NStr::TruncateSpacesInPlace(key);
+    NStr::TruncateSpacesInPlace(value);
+    return (!value.empty()  &&  (key == "org"  ||  key == "organism"));
 }
 
 
@@ -2521,7 +2361,7 @@ s_ForecastBlockPattern(
          * that add up to the desired block size - is the next line blank,
          * or are there additional non-blank lines?
          */
-        if (!llp  || llp->lengthrepeats == NULL) {
+        if (!llp  || llp->lengthrepeats == nullptr) {
             return line_start;
         }
     }
@@ -2758,12 +2598,13 @@ s_AfrpProcessFastaGap(
     TAlignRawFilePtr afrp,
     TLengthListPtr * patterns,
     bool * last_line_was_marked_id,
-    char* linestr,
+    char* linestr_,
     int overall_line_count)
 {
+    const char* linestr = (const char*)linestr_;
     TLengthListPtr this_pattern = nullptr;
     int len = 0;
-    char* cp;
+    const char* cp;
     TLengthListPtr last_pattern;
 
     if (!patterns  || !last_line_was_marked_id) {
@@ -3649,10 +3490,10 @@ s_RemoveNexusCommentsFromTokens (
     TLineInfoPtr lip = list, start_lip = nullptr, end_lip = nullptr;
 
     while (lip) {
-        if (s_StringICmp (lip->data, "#NEXUS") == 0) {
+        if (lip->data  &&  NStr::ToUpper(lip->data)  == "#NEXUS") {
             start_lip = lip;
             end_lip = lip;
-            while (end_lip  &&  s_StringICmp (end_lip->data, "matrix") != 0) {
+            while (end_lip  &&  end_lip->data  && NStr::ToLower(end_lip->data)  !=  "matrix") {
                 end_lip = end_lip->next;
             }
             if (end_lip) {
@@ -4135,7 +3976,7 @@ s_CountCharactersBetweenOffsets(
         num_chars = strlen (lip->data);
         total_chars += num_chars;
     }
-    while (lip  && line_diff < distance  &&  s_IsBlank (lip->data)) {
+    while (lip  &&  lip->data  && line_diff < distance  &&  NStr::IsBlank(lip->data)) {
         lip = lip->next;
         line_diff++;
     }
@@ -4829,7 +4670,7 @@ ReadAlignmentFile(
     }
     
     afrp = s_ReadAlignFileRaw ( readfunc, istr, sequence_info,
-                                false,
+                                !false,
                                 errfunc, erroruserdata, &format);
     if (!afrp) {
         return false;
@@ -4838,8 +4679,7 @@ ReadAlignmentFile(
     if (afrp->block_size > 1) {
         s_ProcessAlignRawFileByBlockOffsets (afrp);
     } else if (afrp->marked_ids) {
-        s_ProcessAlignFileRawForMarkedIDs (
-            afrp, gen_local_ids);
+        s_ProcessAlignFileRawForMarkedIDs (afrp, gen_local_ids);
     } else {
         s_ProcessAlignFileRawByLengthPattern (afrp);
     }
