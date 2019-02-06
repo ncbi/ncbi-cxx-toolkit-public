@@ -1,0 +1,76 @@
+Line No    : 6
+Severity   : Error
+Message    : At ID 'seq1' in category '3' at line 6: Inconsistent block line formatting'
+
+Line No    : 13
+Severity   : Error
+Message    : At ID 'GT--ATGGATGCATGCAAAATTTTGGGCCCCATGCATGCC--GCATGC' in category '3' at line 13: Found unexpected ID'
+
+Line No    : 14
+Severity   : Error
+Message    : At ID 'GTGC--GCAAGCATGCAAAATTTTGGGGCGCATGCATGCCAT--ATGC' in category '3' at line 14: Found unexpected ID'
+
+Line No    : 15
+Severity   : Error
+Message    : At ID '-TGCAT--ATGGATGCAAAATTTTGGGGCCCTTGCATGCCATGC--G-' in category '3' at line 15: Found unexpected ID'
+
+Line No    : 16
+Severity   : Error
+Message    : At ID '-TGCATGC--GCAAGCAAAATTTTGGGGCCCATCCATGCCATGCAT--' in category '3' at line 16: Found unexpected ID'
+
+Line No    : 13
+Severity   : Error
+Message    : At ID 'GT--ATGGATGCATGCAAAATTTTGGGCCCCATGCATGCC--GCATGC' in category '3' at line 13: Inconsistent block line formatting'
+
+Line No    : 14
+Severity   : Error
+Message    : At ID 'GTGC--GCAAGCATGCAAAATTTTGGGGCGCATGCATGCCAT--ATGC' in category '3' at line 14: Inconsistent block line formatting'
+
+Line No    : 15
+Severity   : Error
+Message    : At ID '-TGCAT--ATGGATGCAAAATTTTGGGGCCCTTGCATGCCATGC--G-' in category '3' at line 15: Inconsistent block line formatting'
+
+Line No    : 16
+Severity   : Error
+Message    : At ID '-TGCATGC--GCAAGCAAAATTTTGGGGCCCATCCATGCCATGCAT--' in category '3' at line 16: Inconsistent block line formatting'
+
+Line No    : 19
+Severity   : Error
+Message    : At ID '-T--ATGGATGCATGCAAAATTTTGGGCCCCATGCATGCC--GCATGC' in category '3' at line 19: Found unexpected ID'
+
+Line No    : 20
+Severity   : Error
+Message    : At ID '-TGC--GCAAGCATGCAAAATTTTGGGGCGCATGCATGCCAT--ATGC' in category '3' at line 20: Found unexpected ID'
+
+Line No    : 21
+Severity   : Error
+Message    : At ID 'TTGCAT--ATGGATGCAAAATTTTGGGGCCCTTGCATGCCATGC--G-' in category '3' at line 21: Found unexpected ID'
+
+Line No    : 22
+Severity   : Error
+Message    : At ID 'TTGCATGC--GCAAGCAAAATTTTGGGGCCCATCCATGCCATGCAT--' in category '3' at line 22: Found unexpected ID'
+
+Line No    : 19
+Severity   : Error
+Message    : At ID '-T--ATGGATGCATGCAAAATTTTGGGCCCCATGCATGCC--GCATGC' in category '3' at line 19: Inconsistent block line formatting'
+
+Line No    : 20
+Severity   : Error
+Message    : At ID '-TGC--GCAAGCATGCAAAATTTTGGGGCGCATGCATGCCAT--ATGC' in category '3' at line 20: Inconsistent block line formatting'
+
+Line No    : 21
+Severity   : Error
+Message    : At ID 'TTGCAT--ATGGATGCAAAATTTTGGGGCCCTTGCATGCCATGC--G-' in category '3' at line 21: Inconsistent block line formatting'
+
+Line No    : 22
+Severity   : Error
+Message    : At ID 'TTGCATGC--GCAAGCAAAATTTTGGGGCCCATCCATGCCATGCAT--' in category '3' at line 22: Inconsistent block line formatting'
+
+Line No    : 0
+Severity   : Error
+Message    : At ID 'GT--ATGGATGCATGCAAAATTTTGGGCCCCATGCATGCC--GCATGC' in category '1': No data found'
+
+Line No    : 0
+Severity   : Fatal
+Message    : Error reading alignment: Invalid input or alphabet
+
