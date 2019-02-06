@@ -1010,7 +1010,7 @@ DISCREPANCY_SUMMARIZE(STRAIN_TAXNAME_MISMATCH)
         if (it.second->GetMap().size() > 1) {
             for (auto mm: it.second->GetMap()) {
                 for (auto obj : mm.second->GetObjects()) {
-                    string label = "[n] biosources have strain " + it.first + " but do not have the same taxnames";
+                    string label = "[n] biosources have strain [(]" + it.first + "[)] but do not have the same taxnames";
                     rep["[n] biosources have strain/taxname conflicts"][label].Ext().Add(*obj);
                     rep1[label].Add(*obj);
                 }
@@ -1045,7 +1045,7 @@ DISCREPANCY_SUMMARIZE(SPECVOUCHER_TAXNAME_MISMATCH)
         if (it.second->GetMap().size() > 1) {
             for (auto mm: it.second->GetMap()) {
                 for (auto obj: mm.second->GetObjects()) {
-                    string label = "[n] biosources have specimen voucher " + it.first + " but do not have the same taxnames";
+                    string label = "[n] biosources have specimen voucher [(]" + it.first + "[)] but do not have the same taxnames";
                     rep["[n] biosources have specimen voucher/taxname conflicts"][label].Ext().Add(*obj);
                     rep1[label].Add(*obj);
                 }
@@ -1493,7 +1493,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_BIOSOURCE)
 
         string subtype = kInconsistentBiosources;
         if (!diff_str.empty()) {
-            subtype += " (" + diff_str + ")";
+            subtype += "[(] (" + diff_str + ")";
         }
 
         size_t subcat_index = 0;

@@ -2256,7 +2256,7 @@ DISCREPANCY_SUMMARIZE(PROTEIN_NAMES)
     auto& M = m_Objs.GetMap();
     if (M.size() == 1 && M.begin()->second->GetCount() >= MIN_REPORTABLE_AMOUNT) {
         CReportNode rep;
-        rep["All proteins have same name \"" + M.begin()->first + "\""];
+        rep["All proteins have same name [(]\"" + M.begin()->first + "\""];
         m_ReportItems = rep.Export(*this)->GetSubitems();
     }
 }

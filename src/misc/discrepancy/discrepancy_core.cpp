@@ -220,6 +220,8 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
     NStr::ReplaceInPlace(msg, "[is]", count == 1 ? "is" : "are");
     NStr::ReplaceInPlace(msg, "[does]", count == 1 ? "does" : "do");
     NStr::ReplaceInPlace(msg, "[has]", count == 1 ? "has" : "have");
+    NStr::ReplaceInPlace(msg, "[(]", "");
+    NStr::ReplaceInPlace(msg, "[)]", "");
 
     NStr::ReplaceInPlace(xml, "[n]", "##");
     NStr::ReplaceInPlace(xml, "[n/2]", "##");
@@ -228,6 +230,8 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
     NStr::ReplaceInPlace(xml, "[is]", "are");
     NStr::ReplaceInPlace(xml, "[does]", "do");
     NStr::ReplaceInPlace(xml, "[has]", "have");
+    NStr::ReplaceInPlace(xml, "[(]", "");
+    NStr::ReplaceInPlace(xml, "[)]", "");
 
     size_t n = str.find("[n]");
     if (n != string::npos) {

@@ -241,9 +241,9 @@ DISCREPANCY_SUMMARIZE(TITLE_AUTHOR_CONFLICT)
     }
     for (auto it: m_Objs[kEmptyStr].GetMap()) {
         if (it.second->GetMap().size() > 1) {
-            string top = "[n] articles have title '" + it.first + "' but do not have the same author list";
+            string top = "[n] articles have title [(]'" + it.first + "'[)] but do not have the same author list";
             for (auto aa: it.second->GetMap()) {
-                string label = "[n] article[s] [has] title '" + it.first + "' and author list '" + aa.first + "'";
+                string label = "[n] article[s] [has] title [(]'" + it.first + "'[)] and author list [(]'" + aa.first + "'";
                 for (auto obj: aa.second->GetObjects()) {
                     m_Objs[kTitleAuthorConflict][top][label].Add(*obj).Fatal();
                 }

@@ -464,7 +464,7 @@ DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
     CReportNode& na = m_Objs["n"];
     ITERATE (CReportNode::TNodeMap, it, m_Objs[kEmptyCStr].GetMap()) {
         const string& key = it->first;
-        string label = key + ": " + NStr::NumericToString(aa[key].GetObjects().size() + na[key].GetObjects().size()) + " present";
+        string label = key + ": [(]" + NStr::NumericToString(aa[key].GetObjects().size() + na[key].GetObjects().size()) + "[)] present";
         out[label].Info();
         if (context.IsGui()) {
             if (na[key].GetObjects().size()) {
@@ -476,7 +476,7 @@ DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
                     obj2num[&**obj]++;
                 }
                 NON_CONST_ITERATE (vector<CRef<CReportObj> >, obj, m_Objs["n"][kEmptyStr].GetObjects()) {
-                    string str = "[n] bioseq[s] [has] " + NStr::NumericToString(obj2num[&**obj]) + " " + key + " features";
+                    string str = "[n] bioseq[s] [has] [(]" + NStr::NumericToString(obj2num[&**obj]) + "[)] " + key + " features";
                     out[label][str].Info().Add(**obj);
                 }
             }
@@ -489,7 +489,7 @@ DISCREPANCY_SUMMARIZE(FEATURE_COUNT)
                     obj2num[&**obj]++;
                 }
                 NON_CONST_ITERATE (vector<CRef<CReportObj> >, obj, m_Objs["a"][kEmptyStr].GetObjects()) {
-                    string str = "[n] bioseq[s] [has] " + NStr::NumericToString(obj2num[&**obj]) + " " + key + " features";
+                    string str = "[n] bioseq[s] [has] [(]" + NStr::NumericToString(obj2num[&**obj]) + "[)] " + key + " features";
                     out[label][str].Info().Add(**obj);
                 }
             }

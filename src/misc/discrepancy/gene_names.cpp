@@ -72,7 +72,7 @@ DISCREPANCY_CASE(BAD_GENE_NAME, CSeqFeatData, eDisc | eSubmitter | eSmart, "Bad 
     string locus = obj.GetGene().GetLocus();
     string word;
     if (locus.size() > 10 || Has4Numbers(locus) || HasBadWord(locus, word)) {
-        m_Objs[word.empty() ? "[n] gene[s] contain[S] suspect phrase or characters" : "[n] gene[s] contain[S] " + word].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true));
+        m_Objs[word.empty() ? "[n] gene[s] contain[S] suspect phrase or characters" : "[n] gene[s] contain[S] [(]" + word].Add(*context.DiscrObj(*context.GetCurrentSeq_feat(), true));
     }
 }
 

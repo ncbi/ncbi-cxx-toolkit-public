@@ -163,7 +163,7 @@ DISCREPANCY_CASE(INCONSISTENT_PROTEIN_ID, CSeq_inst, eDisc | eSubmitter | eSmart
     }
     _ASSERT(NStr::EqualNocase(protein_id_prefix, canonical_protein_id_prefix));
 
-    m_Objs[kEmptyStr]["[n] sequence[s] [has] protein ID prefix " + canonical_protein_id_prefix].Fatal().Add(*context.BioseqObj(), false);
+    m_Objs[kEmptyStr]["[n] sequence[s] [has] protein ID prefix [(]" + canonical_protein_id_prefix].Fatal().Add(*context.BioseqObj(), false);
 }
 
 
@@ -1080,7 +1080,7 @@ DISCREPANCY_CASE(INCONSISTENT_LOCUS_TAG_PREFIX, CSeqFeatData, eDisc | eSubmitter
         NStr::SplitInTwo(locus_tag, "_", prefix, tagvalue);
 
         stringstream ss;
-        ss << "[n] feature[s] [has] locus tag prefix " << prefix << ".";
+        ss << "[n] feature[s] [has] locus tag prefix [(]" << prefix << ".";
         m_Objs[ss.str()].Add(*context.DiscrObj(*context.GetCurrentSeq_feat()));
     }
 }
