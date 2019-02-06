@@ -1,6 +1,17 @@
 Seq-entry ::= set {
   class nuc-prot,
   descr {
+    user {
+      type str "DBLink",
+      data {
+        {
+          label str "BioSample",
+          data strs {
+            "biosample_val"
+          }
+        }
+      }
+    },
     source {
       origin natural,
       org {
