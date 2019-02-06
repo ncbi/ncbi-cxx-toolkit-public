@@ -507,7 +507,7 @@ class CCassParams: public vector<CCassPrm>
 
 class CCassDataCallbackReceiver {
 public:
-    virtual ~CCassDataCallbackReceiver() {}
+    virtual ~CCassDataCallbackReceiver() = default;
     virtual void OnData() = 0;
 };
 
