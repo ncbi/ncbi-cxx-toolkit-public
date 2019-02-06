@@ -61,7 +61,7 @@ void CLDS2_UrlHandler_Base::FillInfo(SLDS2_File& info)
 SLDS2_File::TFormat
 CLDS2_UrlHandler_Base::GetFileFormat(const SLDS2_File& file_info)
 {
-    auto_ptr<CNcbiIstream> in(OpenStream(file_info, 0, NULL));
+    shared_ptr<CNcbiIstream> in(OpenStream(file_info, 0, NULL));
     if (!in.get()) {
         return CFormatGuess::eUnknown;
     }
@@ -78,27 +78,25 @@ const string CLDS2_UrlHandler_File::s_GetHandlerName(void)
 
 
 CLDS2_UrlHandler_File::CLDS2_UrlHandler_File(void)
-    : CLDS2_UrlHandler_Base(s_GetHandlerName())
+    : CLDS2_UrlHandler_Base(s_GetHandlerName()),
+      m_StreamCache(new CTls<TStreamCache>)
 {
 }
 
 
-CNcbiIstream*
+shared_ptr<CNcbiIstream>
 CLDS2_UrlHandler_File::OpenStream(const SLDS2_File& file_info,
                                   Int8              stream_pos,
                                   CLDS2_Database*   /*db*/)
 {
-    auto_ptr<CNcbiIfstream> in(
-        new CNcbiIfstream(file_info.name.c_str(), ios::binary));
-    if (!in->is_open()) {
+    shared_ptr<CNcbiIstream> in = OpenOrGetStream(file_info);
+    if (!in.get()) {
         return nullptr;
     }
     // Chunks are not supported for regular files,
     /// offset is relative to the file start.
-    if (stream_pos > 0) {
-        in->seekg(NcbiInt8ToStreampos(stream_pos));
-    }
-    return in.release();
+    in->seekg(NcbiInt8ToStreampos(stream_pos));
+    return in;
 }
 
 
@@ -122,6 +120,66 @@ Int8 CLDS2_UrlHandler_File::GetFileTime(const SLDS2_File& file_info)
     CFile f(file_info.name);
     CFile::SStat stat;
     return f.Stat(&stat) ? stat.mtime_nsec : 0;
+}
+
+
+CLDS2_UrlHandler_File::TStreamCache& CLDS2_UrlHandler_File::x_GetStreamCache(void)
+{
+    TStreamCache* cache = m_StreamCache->GetValue();
+    if (!cache) {
+        cache = new TStreamCache;
+        m_StreamCache->SetValue(cache, CTlsBase::DefaultCleanup<TStreamCache>);
+    }
+    return *cache;
+}
+
+
+NCBI_PARAM_DECL(size_t, LDS2, MAX_CACHED_STREAMS);
+NCBI_PARAM_DEF_EX(size_t, LDS2, MAX_CACHED_STREAMS, 3, eParam_NoThread,
+    LDS2_MAX_CACHED_STREAMS);
+typedef NCBI_PARAM_TYPE(LDS2, MAX_CACHED_STREAMS) TMaxCachedStreams;
+
+
+shared_ptr<CNcbiIstream> CLDS2_UrlHandler_File::OpenOrGetStream(const SLDS2_File& file_info)
+{
+    size_t max_streams = TMaxCachedStreams::GetDefault();
+    if (max_streams == 0) {
+        // Do not use cached streams at all.
+        auto_ptr<CNcbiIfstream> fin(new CNcbiIfstream(file_info.name.c_str(), ios::binary));
+        if (!fin->is_open()) {
+            return nullptr;
+        }
+        return shared_ptr<CNcbiIstream>(fin.release());
+    }
+
+    TStreamCache& cache = x_GetStreamCache();
+    TStreamCache::iterator found = cache.end();
+    NON_CONST_ITERATE(TStreamCache, it, cache) {
+        if (it->first == file_info.name) {
+            found = it;
+            break;
+        }
+    }
+    TNamedStream str;
+    if (found != cache.end()) {
+        str = *found;
+        cache.erase(found);
+        cache.emplace_front(str);
+    }
+    else {
+        // Not yet cached
+        auto_ptr<CNcbiIfstream> fin(new CNcbiIfstream(file_info.name.c_str(), ios::binary));
+        if (!fin->is_open()) {
+            return nullptr;
+        }
+        str.first = file_info.name;
+        str.second.reset(fin.release());
+        while (!cache.empty() && cache.size() >= max_streams) {
+            cache.pop_back();
+        }
+        cache.emplace_front(str);
+    }
+    return str.second;
 }
 
 
@@ -183,33 +241,37 @@ void CLDS2_UrlHandler_GZipFile::SaveChunks(const SLDS2_File& file_info,
 }
 
 
-CNcbiIstream*
+shared_ptr<CNcbiIstream>
 CLDS2_UrlHandler_GZipFile::OpenStream(const SLDS2_File& file_info,
                                       Int8              stream_pos,
                                       CLDS2_Database*   db)
 {
-    auto_ptr<CNcbiIfstream> in(
-        new CNcbiIfstream(file_info.name.c_str(), ios::binary));
-    if ( !in->is_open() ) {
+    shared_ptr<CNcbiIstream> in = OpenOrGetStream(file_info);
+    if (!in.get()) {
         return nullptr;
     }
+    bool rewind = true;
     if ( db ) {
         // Try to use chunks information to optimize loading
         SLDS2_Chunk chunk;
         if ( db->FindChunk(file_info, chunk, stream_pos) ) {
             if (chunk.raw_pos > 0) {
                 in->seekg(NcbiInt8ToStreampos(chunk.raw_pos));
+                rewind = false;
             }
             stream_pos -= chunk.stream_pos;
         }
     }
+    if ( rewind ) {
+        in->seekg(0);
+    }
     auto_ptr<CCompressionIStream> zin(
         new CCompressionIStream(
-        *in.release(),
+        *in,
         new CZipStreamDecompressor(CZipCompression::fGZip),
-        CCompressionStream::fOwnAll));
+        CCompressionStream::fOwnProcessor | CCompressionStream::fOwnReader));
     zin->ignore(NcbiInt8ToStreampos(stream_pos));
-    return zin.release();
+    return shared_ptr<CNcbiIstream>(zin.release());
 }
 
 

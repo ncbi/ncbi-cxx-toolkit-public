@@ -307,7 +307,7 @@ void CLDS2_DataLoader::x_LoadTSE(CTSE_LoadLock& load_lock,
             finfo.handler << "' not found");
         return;
     }
-    auto_ptr<CNcbiIstream> in(handler->OpenStream(finfo, blob.file_pos, m_Db));
+    shared_ptr<CNcbiIstream> in(handler->OpenStream(finfo, blob.file_pos, m_Db));
     if (!in.get()) {
         ERR_POST_X(3, "Failed to open file '" << finfo.name << "'");
         return;
@@ -619,7 +619,7 @@ void CLDS2_DataLoader::GetChunk(TChunk chunk_info)
             finfo.handler << "' not found");
         return;
     }
-    auto_ptr<CNcbiIstream> in(handler->OpenStream(finfo, blob.file_pos, m_Db));
+    shared_ptr<CNcbiIstream> in(handler->OpenStream(finfo, blob.file_pos, m_Db));
     _ASSERT(in.get());
     auto_ptr<CObjectIStream> obj_in;
     switch ( finfo.format ) {

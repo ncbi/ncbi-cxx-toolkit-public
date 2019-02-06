@@ -333,13 +333,6 @@ static const char* s_LDS2_SQL[] = {
 };
 
 
-void CLDS2_Database::sx_DbConn_Cleanup(SLDS2_DbConnection* value,
-                                       void* /*cleanup_data*/)
-{
-    delete value;
-}
-
-
 CLDS2_Database::SLDS2_DbConnection::SLDS2_DbConnection(void)
     : Statements(CLDS2_Database::eSt_StatementsCount)
 {
@@ -361,7 +354,7 @@ CLDS2_Database::x_GetDbConnection(void) const
     if ( !db_conn ) {
         auto_ptr<SLDS2_DbConnection> conn_ptr(new SLDS2_DbConnection);
         db_conn = conn_ptr.get();
-        tls->SetValue(conn_ptr.release(), sx_DbConn_Cleanup, 0);
+        tls->SetValue(conn_ptr.release(), CTlsBase::DefaultCleanup<SLDS2_DbConnection>, 0);
     }
     return *db_conn;
 }

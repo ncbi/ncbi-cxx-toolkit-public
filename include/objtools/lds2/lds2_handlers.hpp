@@ -33,7 +33,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objtools/lds2/lds2_db.hpp>
-
+#include <deque>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -69,9 +69,9 @@ public:
     /// Database is provided so that the handler can fetch
     /// information about chunks.
     /// Return NULL on error (e.g. the file does not exist).
-    virtual CNcbiIstream* OpenStream(const SLDS2_File& /*file_info*/,
-                                     Int8              /*stream_pos*/,
-                                     CLDS2_Database*   /*db*/) = 0;
+    virtual shared_ptr<CNcbiIstream> OpenStream(const SLDS2_File& /*file_info*/,
+                                                Int8              /*stream_pos*/,
+                                                CLDS2_Database*   /*db*/) = 0;
 
 protected:
     /// Allow to change handler name by derived classes.
@@ -104,20 +104,32 @@ class NCBI_LDS2_EXPORT CLDS2_UrlHandler_File : public CLDS2_UrlHandler_Base
 {
 public:
     CLDS2_UrlHandler_File(void);
-    virtual ~CLDS2_UrlHandler_File(void) {}
+    ~CLDS2_UrlHandler_File(void) override {}
 
     /// Open input stream for the URL at the specified position.
     /// The stream will be deleted by the caller.
-    virtual CNcbiIstream* OpenStream(const SLDS2_File& file_info,
-                                     Int8              stream_pos,
-                                     CLDS2_Database*   db);
+    shared_ptr<CNcbiIstream> OpenStream(const SLDS2_File& file_info,
+                                        Int8              stream_pos,
+                                        CLDS2_Database*   db) override;
 
     static const string s_GetHandlerName(void);
 
 protected:
-    virtual Int8 GetFileSize(const SLDS2_File& file_info);
-    virtual Uint4 GetFileCRC(const SLDS2_File& file_info);
-    virtual Int8 GetFileTime(const SLDS2_File& file_info);
+    Int8 GetFileSize(const SLDS2_File& file_info) override;
+    Uint4 GetFileCRC(const SLDS2_File& file_info) override;
+    Int8 GetFileTime(const SLDS2_File& file_info) override;
+
+    // Return cached stream if possible, or open a new one and cache it.
+    shared_ptr<CNcbiIstream> OpenOrGetStream(const SLDS2_File& file_info);
+
+private:
+    typedef shared_ptr<CNcbiIstream> TStream;
+    typedef pair<string, TStream> TNamedStream;
+    typedef deque<TNamedStream> TStreamCache;
+
+    TStreamCache& x_GetStreamCache(void);
+
+    CRef<CTls<TStreamCache>> m_StreamCache;
 };
 
 
@@ -127,17 +139,17 @@ class NCBI_LDS2_EXPORT CLDS2_UrlHandler_GZipFile : public CLDS2_UrlHandler_File
 public:
     /// Create GZip file handler.
     CLDS2_UrlHandler_GZipFile(void);
-    virtual ~CLDS2_UrlHandler_GZipFile(void) {}
+    ~CLDS2_UrlHandler_GZipFile(void) override {}
 
     /// Save information about chunks for the URL in the database.
-    virtual void SaveChunks(const SLDS2_File& file_info,
-                            CLDS2_Database&   db);
+    void SaveChunks(const SLDS2_File& file_info,
+                    CLDS2_Database&   db) override;
 
     /// Open input stream for the URL at the specified position.
     /// The stream will be deleted by the caller.
-    virtual CNcbiIstream* OpenStream(const SLDS2_File& file_info,
-                                     Int8              stream_pos,
-                                     CLDS2_Database*   db);
+    shared_ptr<CNcbiIstream> OpenStream(const SLDS2_File& file_info,
+                                        Int8              stream_pos,
+                                        CLDS2_Database*   db) override;
 
     static const string s_GetHandlerName(void);
 };
