@@ -2615,6 +2615,42 @@ BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomyFromMap)
     DeleteBlastDb(kDbName, CSeqDB::eNucleotide);
 }
 
+BOOST_AUTO_TEST_CASE(CWriteDB_SetTaxonomyFromMapLclIds)
+{
+    const int kTaxId(382);
+    CRef<CTaxIdSet> tis(new CTaxIdSet());
+    const string kDbName("foo");
+    CWriteDB blastdb(kDbName, CWriteDB::eProtein, kDbName);
+    const CFastaReader::TFlags flags =
+        CFastaReader::fAssumeProt | CFastaReader::fAllSeqIds;
+    // This file contains TAB characters, which shouldn't create any warnings
+    CFastaReader reader("data/lclseqs.fsa", flags);
+    CNcbiIfstream taxidmap("data/lclseqs_taxidmap.txt");
+    tis->SetMappingFromFile(taxidmap);
+    while (!reader.AtEOF()) {
+        CRef<CSeq_entry> se = reader.ReadOneSeq();
+        BOOST_REQUIRE(se.NotEmpty());
+        BOOST_REQUIRE(se->IsSeq());
+        CRef<CBioseq> bs(&se->SetSeq());
+        CRef<CBlast_def_line_set> bds(CWriteDB::ExtractBioseqDeflines(*bs));
+        tis->FixTaxId(bds);
+        blastdb.AddSequence(*bs);
+        blastdb.SetDeflines(*bds);
+    }
+    blastdb.Close();
+
+    CSeqDB db(kDbName, CSeqDB::eProtein);
+    int total=db.GetNumSeqs();
+    for (int oid=0; oid<total; oid++)
+    {
+          vector<int> taxids;
+          db.GetTaxIDs(oid, taxids);
+          BOOST_REQUIRE(taxids.size() == 1);
+          BOOST_REQUIRE_EQUAL(kTaxId, taxids.front());
+    }
+    DeleteBlastDb(kDbName, CSeqDB::eNucleotide);
+}
+
 BOOST_AUTO_TEST_CASE(CBuildDatabase_TestDirectoryCreation)
 {
     CTmpFile tmpfile;

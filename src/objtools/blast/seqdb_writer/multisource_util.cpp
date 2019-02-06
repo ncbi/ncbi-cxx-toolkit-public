@@ -95,6 +95,11 @@ string AccessionToKey(const string & acc)
         } else {
             GetSeqIdKey(*seqid, str);
         }
+    } else {
+        string tempID = "lcl|" + acc;
+        if(CheckAccession(tempID, gi, seqid, specific)) {
+            GetSeqIdKey(*seqid, str);
+        }
     }
 
     return str;
