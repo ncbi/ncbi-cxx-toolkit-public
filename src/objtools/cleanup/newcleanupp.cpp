@@ -12068,7 +12068,6 @@ void CNewCleanup_imp::x_RemoveUnseenTitles(CBioseq_set& set)
 struct SLaterDate {
     const CDate& m_Date;
     CSeqdesc::E_Choice date_type;
-    bool m_Found;
 
     bool operator()(CRef<CSeqdesc> desc) {
         if (desc->Which() != date_type) {
@@ -12080,20 +12079,35 @@ struct SLaterDate {
         } else {
             compare = m_Date.Compare(desc->GetUpdate_date());
         }
-        if (compare == CDate::eCompare_same) {
-            // only keep the first one we encounter
-            if (m_Found) {
-                return true;
-            }
-            else {
-                m_Found = true;
-                return false;
-            }
-        } else {
-            return true;
-        }
+        return (compare != CDate::eCompare_same);
     }
 };
+
+
+struct SIsDate{
+    CSeqdesc::E_Choice date_type;
+
+    bool operator()(CRef<CSeqdesc> desc) {
+        return (desc->Which() == date_type);
+    }
+};
+
+
+void RemoveDatesAfterFirst(CSeq_descr& seq_descr, CSeqdesc::E_Choice date_type)
+{
+    auto& dset = seq_descr.Set();
+    auto it = dset.begin();
+    while (it != dset.end() && (*it)->Which() != date_type) {
+        ++it;
+    }
+    if (it == dset.end()) {
+        return;
+    }
+    ++it;
+    SIsDate matcher{ date_type };
+    dset.erase(std::remove_if(it, dset.end(), matcher), dset.end());
+}
+
 
 bool RemoveEarlierDates(CSeq_descr & seq_descr, CSeqdesc::E_Choice date_type)
 {
@@ -12122,8 +12136,10 @@ bool RemoveEarlierDates(CSeq_descr & seq_descr, CSeqdesc::E_Choice date_type)
         return false;
     }
 
-    SLaterDate matcher{ *latest_date, date_type, false };
+    SLaterDate matcher{ *latest_date, date_type };
     dset.erase(std::remove_if(dset.begin(), dset.end(), matcher), dset.end());
+
+    RemoveDatesAfterFirst(seq_descr, date_type);
 
     return true;
 }
