@@ -110,7 +110,7 @@ void CCassBlobTaskInsert::Wait1()
 
             case eFetchOldLargeParts: {
                 auto& it = m_QueryArr[0];
-                if (!CheckReadyEx(it)) {
+                if (!CheckReady(it)) {
                     break;
                 }
 
@@ -179,7 +179,7 @@ void CCassBlobTaskInsert::Wait1()
             case eWaitDeleteOldLargeParts: {
                 auto&           it = m_QueryArr[0];
 
-                if (!CheckReadyEx(it)) {
+                if (!CheckReady(it)) {
                     break;
                 }
                 UpdateLastActivity();
@@ -258,7 +258,7 @@ void CCassBlobTaskInsert::Wait1()
                 int i = -1;
                 for (auto& it: m_QueryArr) {
                     if (it.query->IsActive()) {
-                        if (!CheckReadyEx(it)) {
+                        if (!CheckReady(it)) {
                             anyrunning = true;
                             break;
                         }
@@ -295,7 +295,7 @@ void CCassBlobTaskInsert::Wait1()
 
             case eWaitingUpdateFlags: {
                 auto& it = m_QueryArr[0];
-                if (!CheckReadyEx(it)) {
+                if (!CheckReady(it)) {
                     break;
                 }
                 CloseAll();

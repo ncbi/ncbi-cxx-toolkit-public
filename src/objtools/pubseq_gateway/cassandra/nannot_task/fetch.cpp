@@ -219,7 +219,7 @@ void CCassNAnnotTaskFetch::Wait1()
             }
 
             case eFetchStarted: {
-                if (CheckReadyEx(m_QueryArr[0])) {
+                if (CheckReady(m_QueryArr[0])) {
                     bool do_next = true;
                     auto state = m_QueryArr[0].query->NextRow();
                     while (do_next && state == ar_dataready) {

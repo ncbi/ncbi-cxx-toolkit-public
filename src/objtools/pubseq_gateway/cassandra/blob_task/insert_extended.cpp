@@ -107,7 +107,7 @@ void CCassBlobTaskInsertExtended::Wait1()
                 int i = 0;
                 for (auto& it : m_QueryArr) {
                     if (it.query->IsActive()) {
-                        if (!CheckReadyEx(it)) {
+                        if (!CheckReady(it)) {
                             anyrunning = true;
                             break;
                         }
@@ -201,7 +201,7 @@ void CCassBlobTaskInsertExtended::Wait1()
             }
 
             case eWaitingPropsInserted: {
-                if (!CheckReadyEx(m_QueryArr[0])) {
+                if (!CheckReady(m_QueryArr[0])) {
                     break;
                 }
                 CloseAll();

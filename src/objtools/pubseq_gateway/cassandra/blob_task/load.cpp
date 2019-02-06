@@ -68,10 +68,7 @@ CCassBlobLoader::CCassBlobLoader(
     , m_ExpectedSize(0)
     , m_RemainingSize(0)
     , m_LargeParts(0)
-{
-    ERR_POST(Info << "CCassBlobLoader::CCassBlobLoader max_retries=" <<
-             max_retries);
-}
+{}
 
 void CCassBlobLoader::SetDataChunkCB(TBlobChunkCallback chunk_callback)
 {
@@ -221,7 +218,7 @@ int CCassBlobLoader::x_GetReadyChunkNo(bool &  have_inactive)
         }
 
         if (!m_ProcessedChunks[index]) {
-            bool ready = CheckReadyEx(m_QueryArr[index]);
+            bool ready = CheckReady(m_QueryArr[index]);
             if (ready) {
                 return index;
             }
@@ -279,7 +276,7 @@ void CCassBlobLoader::Wait1(void)
 
             case eReadingEntity: {
                 auto& it = m_QueryArr[0];
-                if (!CheckReadyEx(it)) {
+                if (!CheckReady(it)) {
                     break;
                 }
 
@@ -476,7 +473,7 @@ void CCassBlobLoader::Wait1(void)
                     x_RequestFlags(it.query, false);
                 }
 
-                if (!CheckReadyEx(it)) {
+                if (!CheckReady(it)) {
                     break;
                 }
 

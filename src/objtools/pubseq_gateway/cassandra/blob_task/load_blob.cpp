@@ -210,7 +210,7 @@ void CCassBlobTaskLoadBlob::Wait1()
 
             case eWaitingForPropsFetch: {
                 auto& it = m_QueryArr[0];
-                if (!CheckReadyEx(it)) {
+                if (!CheckReady(it)) {
                     break;
                 }
 
@@ -378,7 +378,7 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                 break;
             auto& it = m_QueryArr[chunk_no];
             if (it.query) {
-                bool ready = CheckReadyEx(it);
+                bool ready = CheckReady(it);
                 if (ready) {
                     if (!it.query->IsEOF()) {
                         async_rslt_t wr = it.query->NextRow();

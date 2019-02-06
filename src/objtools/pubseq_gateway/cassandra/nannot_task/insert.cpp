@@ -125,7 +125,7 @@ void CCassNAnnotTaskInsert::Wait1()
             }
 
             case eWaitingNAnnotInfoInserted: {
-                if (!CheckReadyEx(m_QueryArr[0])) {
+                if (!CheckReady(m_QueryArr[0])) {
                     break;
                 }
                 CloseAll();

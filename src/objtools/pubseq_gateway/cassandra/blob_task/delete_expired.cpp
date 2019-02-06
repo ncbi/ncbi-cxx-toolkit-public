@@ -100,7 +100,7 @@ void CCassBlobTaskDeleteExpired::Wait1()
             case eReadingWriteTime: {
                 string sql;
                 auto& it = m_QueryArr[0];
-                if (!CheckReadyEx(it)) {
+                if (!CheckReady(it)) {
                     break;
                 }
                 if (!it.query->IsEOF()) {
@@ -166,7 +166,7 @@ void CCassBlobTaskDeleteExpired::Wait1()
             }
 
             case eWaitDeleteData: {
-                if (!CheckReadyEx(m_QueryArr[0])) {
+                if (!CheckReady(m_QueryArr[0])) {
                     break;
                 }
                 ERR_POST(Trace << "BlobDeleteExpired blob key=" << m_Keyspace << "." << m_Key

@@ -95,7 +95,7 @@ void CCassBlobTaskDelete::Wait1()
             case eReadingVersions: {
                 string sql;
                 auto& it = m_QueryArr[0];
-                if (!CheckReadyEx(it)) {
+                if (!CheckReady(it)) {
                     break;
                 }
                 async_rslt_t wr = static_cast<async_rslt_t>(-1);
@@ -163,7 +163,7 @@ void CCassBlobTaskDelete::Wait1()
             }
 
             case eWaitDeleteData: {
-                if (!CheckReadyEx(m_QueryArr[0])) {
+                if (!CheckReady(m_QueryArr[0])) {
                     break;
                 }
                 CloseAll();
