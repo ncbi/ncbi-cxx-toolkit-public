@@ -5298,46 +5298,61 @@ void CNewCleanup_imp::x_CleanupOrgModAndSubSourceOther( COrgName &orgname, CBioS
 // * if strain begins with "subsp. " move remaining text to a subspecies
 // qualifier, unless a subspecies qualifier is already present, in which case
 // add to note
+static const string kSubsp = "subsp. ";
+static const string kSerovar = "serovar ";
+struct SRemoveNamedStrain {
+    bool operator()(CRef<COrgMod> m) {
+        bool rval = false;
+        if (m->IsSetSubtype() && m->IsSetSubname()) {
+            auto subtype = m->GetSubtype();
+            auto subname = m->GetSubname();
+            if (subtype == COrgMod::eSubtype_serovar) {
+                if (NStr::StartsWith(subname, kSubsp)) {
+                    rval = true;
+                }
+            } else if (subtype == COrgMod::eSubtype_strain) {
+                if (NStr::StartsWith(subname, kSubsp) || NStr::StartsWith(subname, kSerovar)) {
+                    rval = true;
+                }
+            }
+
+        }
+        return rval;
+    }
+};
+
 void CNewCleanup_imp::x_MovedNamedValuesInStrain(COrgName& orgname)
 {
     if (!orgname.IsSetMod()) {
         return;
     }
     auto& mods = orgname.SetMod();
-    COrgName::TMod::iterator m = mods.begin();
-    while (m != mods.end()) {
-        if ((*m)->IsSetSubtype() && (*m)->IsSetSubname()) {
-            bool do_erase = false;
-            switch ((*m)->GetSubtype()) {
-                case COrgMod::eSubtype_serovar:
-                    if (NStr::StartsWith((*m)->GetSubname(), "subsp. ")) {
-                        string val = (*m)->GetSubname().substr(7);
-                        x_MovedNamedValuesInStrain(orgname, COrgMod::eSubtype_sub_species, val);
-                        do_erase = true;
-                    }
-                    break;
-                case COrgMod::eSubtype_strain:
-                    if (NStr::StartsWith((*m)->GetSubname(), "subsp. ")) {
-                        string val = (*m)->GetSubname().substr(7);
-                        x_MovedNamedValuesInStrain(orgname, COrgMod::eSubtype_sub_species, val);
-                        do_erase = true;
-                    } else if (NStr::StartsWith((*m)->GetSubname(), "serovar ")) {
-                        string val = (*m)->GetSubname().substr(8);
-                        x_MovedNamedValuesInStrain(orgname, COrgMod::eSubtype_serovar, val);
-                        do_erase = true;
-                    }
-                    break;
-                default:
-                    break;
-            }
-            if (do_erase) {
-                m = mods.erase(m);
-                ChangeMade(CCleanupChange::eRemoveOrgmod);
-            } else {
-                ++m;
+    for (auto m : mods) {
+        if (m->IsSetSubtype() && m->IsSetSubname()) {
+            switch (m->GetSubtype()) {
+            case COrgMod::eSubtype_serovar:
+                if (NStr::StartsWith(m->GetSubname(), kSubsp)) {
+                    string val = m->GetSubname().substr(kSubsp.length());
+                    x_MovedNamedValuesInStrain(orgname, COrgMod::eSubtype_sub_species, val);
+                }
+                break;
+            case COrgMod::eSubtype_strain:
+                if (NStr::StartsWith(m->GetSubname(), kSubsp)) {
+                    string val = m->GetSubname().substr(kSubsp.length());
+                    x_MovedNamedValuesInStrain(orgname, COrgMod::eSubtype_sub_species, val);
+                }
+                else if (NStr::StartsWith(m->GetSubname(), kSerovar)) {
+                    string val = m->GetSubname().substr(kSerovar.length());
+                    x_MovedNamedValuesInStrain(orgname, COrgMod::eSubtype_serovar, val);
+                }
+                break;
+            default:
+                break;
             }
         }
     }
+    SRemoveNamedStrain matcher;
+    mods.erase(std::remove_if(mods.begin(), mods.end(), matcher), mods.end());
 }
 
 
