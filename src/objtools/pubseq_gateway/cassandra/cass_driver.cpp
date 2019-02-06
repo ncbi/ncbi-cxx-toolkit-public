@@ -1308,7 +1308,7 @@ void CCassQuery::GetFuture()
         ERR_POST(Trace << "CCassQuery::GetFuture: this: " << this <<
                  ", fut: " << m_future);
 */
-        if (m_ondata || m_ondata2) {
+        if (m_ondata || m_ondata2 || m_ondata3.lock()) {
             SetupOnDataCallback();
         }
     }
@@ -1371,9 +1371,10 @@ void CCassQuery::SetupOnDataCallback()
     if (!m_future)
         NCBI_THROW(CCassandraException, eSeqFailed,
                    "Future is not assigned");
-    if (!m_ondata && !m_ondata2)
+    if (!m_ondata && !m_ondata2 && !m_ondata3.lock()) {
         NCBI_THROW(CCassandraException, eSeqFailed,
                    "invalid sequence of operations, m_ondata is not set");
+    }
 /*
     ERR_POST(Trace << "CCassQuery::SetupOnDataCallback: this: " << this <<
              ", fut: " << m_future << ", ondata: " << m_ondata <<
