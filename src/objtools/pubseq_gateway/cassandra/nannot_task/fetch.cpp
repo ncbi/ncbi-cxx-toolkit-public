@@ -135,6 +135,16 @@ void CCassNAnnotTaskFetch::SetConsumeCallback(TNAnnotConsumeCallback callback)
     m_Consume = move(callback);
 }
 
+void CCassNAnnotTaskFetch::SetDataReadyCB(TDataReadyCallback callback, void * data)
+{
+    if (callback && m_State != eInit) {
+        NCBI_THROW(CCassandraException, eSeqFailed,
+           "CCassNAnnotTaskFetch: DataReadyCB can't be assigned "
+           "after the loading process has started");
+    }
+    CCassBlobWaiter::SetDataReadyCB(callback, data);
+}
+
 void CCassNAnnotTaskFetch::Cancel(void)
 {
     if (m_State != eDone) {
@@ -189,6 +199,16 @@ void CCassNAnnotTaskFetch::Wait1()
                         m_QueryArr[0].query->BindStr(i, m_AnnotNameBox.names_temp[i-params]);
                     } else {
                         m_QueryArr[0].query->BindStr(i, m_AnnotNameBox.names[i-params]);
+                    }
+                }
+
+                if (m_DataReadyCb) {
+                    m_QueryArr[0].query->SetOnData2(m_DataReadyCb, m_DataReadyData);
+                }
+                {
+                    auto DataReadyCb3 = m_DataReadyCb3.lock();
+                    if (DataReadyCb3) {
+                        m_QueryArr[0].query->SetOnData3(DataReadyCb3);
                     }
                 }
 

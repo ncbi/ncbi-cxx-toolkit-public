@@ -151,6 +151,7 @@ class CCassNAnnotTaskFetch
 
     virtual ~CCassNAnnotTaskFetch();
 
+    void SetDataReadyCB(TDataReadyCallback callback, void * data);
     void SetConsumeCallback(TNAnnotConsumeCallback callback);
     void Cancel(void);
 
