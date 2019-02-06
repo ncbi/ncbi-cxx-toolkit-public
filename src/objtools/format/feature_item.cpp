@@ -1685,13 +1685,22 @@ void CFeatureItem::x_AddQualsIdx(
                         subtype == CSeqFeatData::eSubtype_transit_peptide_aa     ||
                         subtype == CSeqFeatData::eSubtype_propeptide_aa) {
                         try {
-                            CRef<CFeatureIndex> fsx = ft->GetBestGene();
-                            if (fsx) {
-                                const CMappedFeat mf = fsx->GetMappedFeat();
-                                if (mf) {
-                                    gene_feat = &(mf.GetMappedFeature());
-                                    gene_ref = &(mf.GetData().GetGene());
+                            if ( m_Feat.IsSetXref() ) {
+                                feat_gene_xref = m_Feat.GetGeneXref();
+                                if ( feat_gene_xref ) {
+                                    gene_ref = feat_gene_xref;
                                     is_mapped = true;
+                                }
+                            }
+                            if (! is_mapped) {
+                                CRef<CFeatureIndex> fsx = ft->GetBestGene();
+                                if (fsx) {
+                                    const CMappedFeat mf = fsx->GetMappedFeat();
+                                    if (mf) {
+                                        gene_feat = &(mf.GetMappedFeature());
+                                        gene_ref = &(mf.GetData().GetGene());
+                                        is_mapped = true;
+                                    }
                                 }
                             }
                             if (! is_mapped) {
