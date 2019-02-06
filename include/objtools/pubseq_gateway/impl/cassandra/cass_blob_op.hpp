@@ -220,11 +220,11 @@ class CCassBlobWaiter
         return false;
     }
 
-    bool CanRestart(SQueryRec& it) const
+    bool CanRestart(shared_ptr<CCassQuery> qry, unsigned int restart_count) const
     {
         bool    is_timedout = IsTimedOut();
         bool    is_out_of_retries = (m_MaxRetries > 0) &&
-                                    (it.restart_count >= m_MaxRetries - 1);
+                                    (restart_count >= m_MaxRetries - 1);
 
         ERR_POST(Info << "CanRestartQ? t/o=" << is_timedout <<
                  ", o/r=" << is_out_of_retries <<
@@ -232,6 +232,11 @@ class CCassBlobWaiter
                  ", time=" << gettime() / 1000L <<
                  ", timeout=" << m_OpTimeoutMs);
         return !is_out_of_retries && !is_timedout && !m_Cancelled;
+    }
+
+    bool CanRestart(SQueryRec& it) const
+    {
+        return CanRestart(it.query, it.restart_count);
     }
 
     static string AllParams(shared_ptr<CCassQuery> qry) {
@@ -244,13 +249,10 @@ class CCassBlobWaiter
         return rv;
     }
 
-    bool CheckReadyEx(SQueryRec& it)
+    bool CheckReady(SQueryRec& it, unsigned int restart_counter, bool& need_repeat)
     {
-        if (!it.query->IsActive()) {
-            NCBI_THROW(CCassandraException, eSeqFailed, "CCassBlobWaiter::CheckReadyEx: Query is not in Active state (meaning it's closed)");
-        }
         async_rslt_t wr = (async_rslt_t)-1;
-        bool need_restart = false;
+        need_repeat = false;
         try {
             if (m_Async) {
                 wr = it.query->WaitAsync(0);
@@ -260,18 +262,25 @@ class CCassBlobWaiter
             return true;
         } catch (const CCassandraException& e) {
             if ((e.GetErrCode() == CCassandraException::eQueryTimeout || e.GetErrCode() == CCassandraException::eQueryFailedRestartable) && 
-                CanRestart(it))
+                CanRestart(it.query, restart_counter))
             {
-                need_restart = true;
+                need_repeat = true;
             } else {
                 Error(CRequestStatus::e502_BadGateway,
                       e.GetErrCode(), eDiag_Error, e.what());
             }
         }
 
-        if (need_restart) {
+        return false;
+    }
+
+    bool CheckReady(SQueryRec& it)
+    {
+        bool need_restart = false;
+        bool rv = CheckReady(it.query, it.restart_count, need_restart);
+        if (!rv && need_restart) {
             try {
-                ERR_POST(Warning << "In-place restart:\n" << it.query->GetSQL() << "\nParams:\n" << AllParams(it.query));
+                ERR_POST(Warning << "In-place restart (" + NStr::NumericToString(it.restart_count + 1) + "):\n" << it.query->GetSQL() << "\nParams:\n" << AllParams(it.query));
                 it.query->Restart();
                 ++it.restart_count;
             } catch (const exception& ex) {
@@ -279,7 +288,7 @@ class CCassBlobWaiter
                 throw;
             }
         }
-        return false;
+        return rv;
     }
 
     void UpdateLastActivity(void)
