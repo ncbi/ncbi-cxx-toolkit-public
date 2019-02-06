@@ -1129,7 +1129,7 @@ size_t CCompartmentFinder<THit>::Run(bool cross_filter)
 
             size_t nullified (sx_XFilter(hitrefs, ihrc_b, ihrc_e, 1, 
                                          kMinCompartmentHitLength));
-            sort(ihrc_b, ihrc_e, THitComparator (THitComparator::eQueryMinQueryMax));
+            stable_sort(ihrc_b, ihrc_e, THitComparator (THitComparator::eQueryMinQueryMax));
 
             nullified += sx_XFilter(hitrefs, ihrc_b, ihrc_e, 0,
                                     kMinCompartmentHitLength);
