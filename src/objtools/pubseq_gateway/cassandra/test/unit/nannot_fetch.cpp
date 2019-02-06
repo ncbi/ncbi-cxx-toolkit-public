@@ -144,7 +144,6 @@ class CCassNAnnotTaskFetchWithTimeout : public CCassNAnnotTaskFetch
             && *m_CallCount == m_RestartTrigger
         ) {
             ++m_RestartCounter;
-            m_QueryArr[0]->Close();
             m_State = EBlobWaiterState::eInit;
             m_TestRestartDone = true;
         }

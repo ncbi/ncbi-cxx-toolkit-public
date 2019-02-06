@@ -168,6 +168,7 @@ class CCassNAnnotTaskFetch
     string m_LastConsumedAnnot;
  protected:
     unsigned int m_PageSize;
+    unsigned int m_RestartCounter;
 };
 
 END_IDBLOB_SCOPE

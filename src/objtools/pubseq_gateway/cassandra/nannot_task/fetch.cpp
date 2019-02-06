@@ -70,6 +70,7 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     , m_AnnotNameTempStrings(false)
     , m_Consume(move(consume_callback))
     , m_PageSize(CCassQuery::DEFAULT_PAGE_SIZE)
+    , m_RestartCounter(0)
 {}
 
 CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
@@ -95,6 +96,7 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     , m_AnnotNameTempStrings(true)
     , m_Consume(move(consume_callback))
     , m_PageSize(CCassQuery::DEFAULT_PAGE_SIZE)
+    , m_RestartCounter(0)
 {}
 
 CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
@@ -119,6 +121,7 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     , m_AnnotNameTempStrings(false)
     , m_Consume(move(consume_callback))
     , m_PageSize(CCassQuery::DEFAULT_PAGE_SIZE)
+    , m_RestartCounter(0)
 {}
 
 CCassNAnnotTaskFetch::~CCassNAnnotTaskFetch()
@@ -157,9 +160,9 @@ void CCassNAnnotTaskFetch::Cancel(void)
 
 void CCassNAnnotTaskFetch::Wait1()
 {
-    bool b_need_repeat;
+    bool restarted;
     do {
-        b_need_repeat = false;
+        restarted = false;
         switch (m_State) {
             case eError:
             case eDone:
@@ -168,6 +171,7 @@ void CCassNAnnotTaskFetch::Wait1()
             case eInit: {
                 m_QueryArr.resize(1);
                 m_QueryArr[0] = {m_Conn->NewQuery(), 0};
+
                 string sql =
                     " SELECT "
                     "  annot_name, sat_key, last_modified, start, stop "
@@ -194,11 +198,12 @@ void CCassNAnnotTaskFetch::Wait1()
                 m_QueryArr[0].query->BindStr(0, m_Accession);
                 m_QueryArr[0].query->BindInt16(1, m_Version);
                 m_QueryArr[0].query->BindInt16(2, m_SeqIdType);
-                for (unsigned int i = params; i < names_count + params; ++i) {
-                    if (m_AnnotNameTempStrings) {
-                        m_QueryArr[0].query->BindStr(i, m_AnnotNameBox.names_temp[i-params]);
-                    } else {
-                        m_QueryArr[0].query->BindStr(i, m_AnnotNameBox.names[i-params]);
+
+                if (names_count > 0) {
+                    m_AnnotNameBox.Bind(m_QueryArr[0].query, m_AnnotNameTempStrings, m_LastConsumedAnnot, 3);
+                } else {
+                    if (!m_LastConsumedAnnot.empty()) {
+                        m_QueryArr[0].query->BindStr(3, m_LastConsumedAnnot);
                     }
                 }
 
@@ -213,13 +218,13 @@ void CCassNAnnotTaskFetch::Wait1()
                 }
 
                 UpdateLastActivity();
-                m_QueryArr[0].query->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, true);
+                m_QueryArr[0].query->Query(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async, true, m_PageSize);
                 m_State = eFetchStarted;
                 break;
             }
 
             case eFetchStarted: {
-                if (CheckReady(m_QueryArr[0])) {
+                if (CheckReady(m_QueryArr[0].query, m_RestartCounter, restarted)) {
                     bool do_next = true;
                     auto state = m_QueryArr[0].query->NextRow();
                     while (do_next && state == ar_dataready) {
@@ -249,6 +254,10 @@ void CCassNAnnotTaskFetch::Wait1()
                         CloseAll();
                         m_State = eDone;
                     }
+                } else if (restarted) {
+                    ++m_RestartCounter;
+                    m_QueryArr[0].query->Close();
+                    m_State = eInit;
                 }
                 UpdateLastActivity();
                 break;
@@ -261,7 +270,7 @@ void CCassNAnnotTaskFetch::Wait1()
                 Error(CRequestStatus::e502_BadGateway, CCassandraException::eQueryFailed, eDiag_Error, msg);
             }
         }
-    } while(b_need_repeat);
+    } while(restarted);
 }
 
 END_IDBLOB_SCOPE
