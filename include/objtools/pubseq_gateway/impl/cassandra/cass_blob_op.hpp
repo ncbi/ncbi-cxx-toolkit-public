@@ -198,7 +198,6 @@ class CCassBlobWaiter
             it.query->Close();
             it.restart_count = 0;
         }
-        m_Cancelled = false;
     }
 
     void Error(CRequestStatus::ECode  status,
