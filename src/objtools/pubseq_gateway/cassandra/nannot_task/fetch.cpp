@@ -250,6 +250,7 @@ void CCassNAnnotTaskFetch::Wait1()
                         m_State = eDone;
                     }
                 }
+                UpdateLastActivity();
                 break;
             }
 
