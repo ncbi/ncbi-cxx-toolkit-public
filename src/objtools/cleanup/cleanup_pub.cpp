@@ -149,6 +149,32 @@ bool s_PubWhichCompare(CRef<CPub> pub1, CRef<CPub> pub2) {
 }
 
 
+struct SPMIDMatch {
+    const CPubMedId& m_ID;
+
+    bool operator()(CRef< CArticleId > other_id) 
+    {
+        return (other_id->IsPubmed() && other_id->GetPubmed() == m_ID);
+    }
+};
+
+void RemoveDuplicatePubMedArticleIds(CArticleIdSet::Tdata& id_set)
+{
+    auto it = id_set.begin();
+    while (it != id_set.end()) {
+        while (it != id_set.end() && !(*it)->IsPubmed()) {
+            ++it;
+        }
+        if (it != id_set.end()) {
+            auto it2 = it;
+            ++it2;
+            SPMIDMatch matcher{ (*it)->GetPubmed() };
+            id_set.erase(std::remove_if(it2, id_set.end(), matcher), id_set.end());
+            ++it;
+        }
+    }
+
+}
 
 bool CPubEquivCleaner::Clean(bool fix_initials, bool strip_serial)
 {
@@ -195,11 +221,8 @@ bool CPubEquivCleaner::Clean(bool fix_initials, bool strip_serial)
             last_article.Reset(&pub.SetArticle());
             if (last_article->IsSetIds()) {
                 auto& ids = last_article->SetIds().Set();
-
                 size_t old_size = ids.size();
-                // remove consecutive duplicates
-                ids.erase(std::unique(ids.begin(), ids.end(), 
-                    [](CRef< CArticleId > a, CRef< CArticleId >b) {return a->IsPubmed() && b->IsPubmed() && a->GetPubmed() == b->GetPubmed(); }), ids.end());
+                RemoveDuplicatePubMedArticleIds(last_article->SetIds());
                 change = (ids.size() != old_size);
                 // find last article pubmed_id
                 auto id_it = ids.rbegin();
