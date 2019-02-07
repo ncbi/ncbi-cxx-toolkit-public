@@ -577,7 +577,7 @@ Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
 }
 
 Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
-                                        vector<TGi>& uids)
+                                        vector<TEntrezId>& uids)
 {
     return x_ParseSearchResults(istr, uids);
 }
@@ -629,7 +629,7 @@ Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
 }
 
 Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
-                                        vector<TGi>& uids)
+                                        vector<TEntrezId>& uids)
 {
     return x_ParseSearchResults(xml_file, uids);
 }
@@ -675,7 +675,7 @@ Uint8 CEutilsClient::Search(const string& db,
 
 Uint8 CEutilsClient::Search(const string& db,
                             const string& term,
-                            vector<TGi>& uids,
+                            vector<TEntrezId>& uids,
                             const string& xml_path)
 {
     return x_Search(db, term, uids, xml_path);
@@ -697,7 +697,7 @@ Uint8 CEutilsClient::x_Search(const string& db,
     if ( !m_UrlTag.empty() ) {
         params += "&user=" + NStr::URLEncode(m_UrlTag);
     }
-    if (is_same<TGi, T>::type::value || is_same<int, T>::type::value) {
+    if (is_same<TEntrezId, T>::type::value || is_same<int, T>::type::value) {
         params += "&idtype=gi";
     } else {
         params += "&idtype=acc";
@@ -986,8 +986,8 @@ void CEutilsClient::Link(const string& db_from,
 
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
-                         const vector<TGi>& uids_from,
-                         vector<TGi>& uids_to,
+                         const vector<TEntrezId>& uids_from,
+                         vector<TEntrezId>& uids_to,
                          const string& xml_path,
                          const string& command)
 {
@@ -998,7 +998,7 @@ void CEutilsClient::Link(const string& db_from,
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
                          const vector<int>& uids_from,
-                         vector<TGi>& uids_to,
+                         vector<TEntrezId>& uids_to,
                          const string& xml_path,
                          const string& command)
 {
@@ -1007,7 +1007,7 @@ void CEutilsClient::Link(const string& db_from,
 
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
-                         const vector<TGi>& uids_from,
+                         const vector<TEntrezId>& uids_from,
                          vector<int>& uids_to,
                          const string& xml_path,
                          const string& command)
@@ -1018,7 +1018,7 @@ void CEutilsClient::Link(const string& db_from,
 
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
-                         const vector<TGi>& uids_from,
+                         const vector<TEntrezId>& uids_from,
                          vector<CSeq_id_Handle>& uids_to,
                          const string& xml_path,
                          const string& command)
@@ -1029,7 +1029,7 @@ void CEutilsClient::Link(const string& db_from,
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
                          const vector<CSeq_id_Handle>& uids_from,
-                         vector<TGi>& uids_to,
+                         vector<TEntrezId>& uids_to,
                          const string& xml_path,
                          const string& command)
 {
@@ -1150,7 +1150,7 @@ void CEutilsClient::Link(const string& db_from,
 
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
-                         const vector<TGi>& uids_from,
+                         const vector<TEntrezId>& uids_from,
                          CNcbiOstream& ostr,
                          const string& command)
 {
@@ -1387,7 +1387,7 @@ void CEutilsClient::Summary(const string& db,
 }
 
 void CEutilsClient::Summary(const string& db,
-                            const vector<TGi>& uids,
+                            const vector<TEntrezId>& uids,
                             xml::document& docsums,
                             const string& version)
 {
@@ -1555,7 +1555,7 @@ void CEutilsClient::Fetch(const string& db,
 }
 
 void CEutilsClient::Fetch(const string& db,
-                          const vector<TGi>& uids,
+                          const vector<TEntrezId>& uids,
                           CNcbiOstream& ostr,
                           const string& retmode)
 {

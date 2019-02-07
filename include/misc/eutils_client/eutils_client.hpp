@@ -59,8 +59,6 @@ public:
 };
 
 /// Class for querying via E-Utils.
-/// NOTE:
-/// TGi will be replaced with TEntrezId in all parameter types in the future.
 class CEutilsClient
 {
 public:
@@ -142,7 +140,7 @@ public:
 
     Uint8 Search(const string& db,
                 const string& term,
-                vector<TGi>& uids,
+                vector<TEntrezId>& uids,
                 const string& xml_path = kEmptyStr);
 
     void Search(const string& db,
@@ -197,8 +195,8 @@ public:
 
     void Link(const string& db_from,
               const string& db_to,
-              const vector<TGi>& uids_from,
-              vector<TGi>& uids_to,
+              const vector<TEntrezId>& uids_from,
+              vector<TEntrezId>& uids_to,
               const string& xml_path = kEmptyStr,
               const string& command = "neighbor");
 
@@ -207,14 +205,14 @@ public:
     void Link(const string& db_from,
               const string& db_to,
               const vector<int>& uids_from,
-              vector<TGi>& uids_to,
+              vector<TEntrezId>& uids_to,
               const string& xml_path = kEmptyStr,
               const string& command = "neighbor");
 
     NCBI_DEPRECATED
     void Link(const string& db_from,
               const string& db_to,
-              const vector<TGi>& uids_from,
+              const vector<TEntrezId>& uids_from,
               vector<int>& uids_to,
               const string& xml_path = kEmptyStr,
               const string& command = "neighbor");
@@ -222,7 +220,7 @@ public:
 
     void Link(const string& db_from,
               const string& db_to,
-              const vector<TGi>& uids_from,
+              const vector<TEntrezId>& uids_from,
               vector<objects::CSeq_id_Handle>& uids_to,
               const string& xml_path = kEmptyStr,
               const string& command ="neighbor");
@@ -230,7 +228,7 @@ public:
     void Link(const string& db_from,
               const string& db_to,
               const vector<objects::CSeq_id_Handle>& uids_from,
-              vector<TGi>& uids_to,
+              vector<TEntrezId>& uids_to,
               const string& xml_path = kEmptyStr,
               const string& command = "neighbor");
 
@@ -257,7 +255,7 @@ public:
 
     void Link(const string& db_from,
               const string& db_to,
-              const vector<TGi>& uids_from,
+              const vector<TEntrezId>& uids_from,
               CNcbiOstream& ostr,
               const string& command = "neighbor");
 
@@ -321,7 +319,7 @@ public:
                 const string& version = "");
 
     void Summary(const string& db,
-                const vector<TGi>& uids,
+                const vector<TEntrezId>& uids,
                 xml::document& docsums,
                 const string& version = "");
 
@@ -365,7 +363,7 @@ public:
                const string& retmode="xml");
 
     void Fetch(const string& db,
-               const vector<TGi>& uids,
+               const vector<TEntrezId>& uids,
                CNcbiOstream& ostr,
                const string& retmode="xml");
 
@@ -407,7 +405,7 @@ protected:
                              vector<string>& uids);
 
     Uint8 ParseSearchResults(CNcbiIstream& istr,
-                             vector<TGi>& uids);
+                             vector<TEntrezId>& uids);
     
 #ifdef NCBI_INT8_GI
     Uint8 ParseSearchResults(const string& xml_file,
@@ -421,7 +419,7 @@ protected:
                              vector<string>& uids);
 
     Uint8 ParseSearchResults(const string& xml_file,
-                             vector<TGi>& uids);
+                             vector<TEntrezId>& uids);
 
     typedef map<string,string> TParamList;
 
