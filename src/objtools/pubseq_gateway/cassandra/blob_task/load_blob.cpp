@@ -407,12 +407,20 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                             need_repeat = true;
                         } else if (wr == ar_wait) {
                             continue;
+                        } else {
+                            char msg[1024];
+                            snprintf(msg, sizeof(msg),
+                                 "Unexpected state (%d) (key=%s.%d, chunk=%d)", static_cast<int>(wr), m_Keyspace.c_str(), m_Key, chunk_no);
+                            Error(CRequestStatus::e502_BadGateway,
+                                  CCassandraException::eInconsistentData,
+                                  eDiag_Error, msg);
+                            return;
                         }
                     }
                     else {
                         char msg[1024];
                         snprintf(msg, sizeof(msg),
-                             "Missed chunk (key=%s.%d, chunk=%d) ", m_Keyspace.c_str(), m_Key, chunk_no);
+                             "Missed chunk (key=%s.%d, chunk=%d)", m_Keyspace.c_str(), m_Key, chunk_no);
                         Error(CRequestStatus::e502_BadGateway,
                               CCassandraException::eInconsistentData,
                               eDiag_Error, msg);

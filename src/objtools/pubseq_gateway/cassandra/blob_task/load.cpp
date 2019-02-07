@@ -390,8 +390,7 @@ void CCassBlobLoader::Wait1(void)
                         wr = it.query->NextRow();
                         if (wr == ar_wait) // paging
                             return;
-
-                        if (wr == ar_dataready) {
+                        else  if (wr == ar_dataready) {
                             UpdateLastActivity();
                             const unsigned char *   rawdata = nullptr;
                             int64_t                 len = it.query->FieldGetBlobRaw(0, &rawdata);
@@ -414,25 +413,24 @@ void CCassBlobLoader::Wait1(void)
                             x_RequestChunksAhead();
                             continue;
                         }
+                        else {
+                            snprintf(msg, sizeof(msg),
+                                     "Missed chunk (key=%s.%d, chunk=%d)",
+                                     m_Keyspace.c_str(), m_Key, ready_chunk_no);
+                            Error(CRequestStatus::e404_NotFound,
+                                  CCassandraException::eNotFound,
+                                  eDiag_Error, msg);
+                            return;
+                        }
+                            
                     }
-
-                    assert(it.query->IsEOF() || wr == ar_done);
-                    if (CanRestart(it)) {
-                        ERR_POST(Info << "Restarting key=" << m_Keyspace << "." << m_Key <<
-                                 ", chunk=" << ready_chunk_no <<" p2");
-                        it.query->Restart();
-                        ++it.restart_count;
-                        continue;
-                    } else {
+                    else {
                         snprintf(msg, sizeof(msg),
-                                 "Failed to fetch blob chunk "
-                                 "(key=%s.%d, chunk=%d) wr=%d",
-                                 m_Keyspace.c_str(), m_Key, ready_chunk_no,
-                                 static_cast<int>(wr));
-                        Error(CRequestStatus::e502_BadGateway,
-                              CCassandraException::eFetchFailed,
+                                 "Missed chunk (key=%s.%d, chunk=%d)",
+                                 m_Keyspace.c_str(), m_Key, ready_chunk_no);
+                        Error(CRequestStatus::e404_NotFound,
+                              CCassandraException::eNotFound,
                               eDiag_Error, msg);
-                        return;
                     }
                 }
 
