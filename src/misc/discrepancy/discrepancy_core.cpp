@@ -281,7 +281,18 @@ TReportObjectList CDiscrepancyCore::GetObjects(void) const
 CRef<CReportItem> CReportItem::CreateReportItem(const string& test, const string& msg, bool autofix)
 {
     CRef<CDiscrepancyCase> t = CDiscrepancyConstructor::GetDiscrepancyConstructor(test)->Create();
-	CRef<CDiscrepancyItem> item(new CDiscrepancyItem(*t, msg, msg, msg, kEmptyCStr, 0));
+    string s = msg;
+    while (true) {
+        size_t n = s.find("[(]");
+        if (n == string::npos) {
+            n = s.find("[)]");
+            if (n == string::npos) {
+                break;
+            }
+        }
+        s = s.substr(0, n) + s.substr(n + 3);
+    }
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(*t, s, msg, msg, kEmptyCStr, 0));
     item->m_Autofix = autofix;
     return CRef<CReportItem>((CReportItem*)item);
 }
