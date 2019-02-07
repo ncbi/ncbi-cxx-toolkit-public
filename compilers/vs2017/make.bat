@@ -58,6 +58,7 @@ rem --- Required parameters
 
 set cmd=%~1%
 set solution=%~2
+set solution_name=%solution:/=_%
 set libdll=%~3
 set arch=%~4
 
@@ -154,7 +155,10 @@ if not "%with_openmp%" == "" (
 
 time /t
 echo INFO: Configure "%libdll%\%solution% [ReleaseDLL|%arch%]"
-%DEVENV% %libdll%\build\%solution%.sln /build "ReleaseDLL|%archwc%" /project "_CONFIGURE_"
+set log=__%libdll%_%solution_name%.configure.log
+echo %DEVENV% %libdll%\build\%solution%.sln /build "ReleaseDLL|%archwc%" /project "_CONFIGURE_" /out %log%
+%DEVENV% %libdll%\build\%solution%.sln /build "ReleaseDLL|%archwc%" /project "_CONFIGURE_" /out %log%
+type %log%
 if errorlevel 1 goto ABORT
 if not _%cmd% == _make goto COMPLETE
 
@@ -186,7 +190,9 @@ rem Subroutines
 
 :build
    echo INFO: Building "%libdll%\%solution% [%1|%arch%]"
-   %DEVENV% %libdll%\build\%solution%.sln /build "%1|%archw%" /project "_BUILD_ALL_"
+   set log=__%libdll%_%solution_name%.build.%1.log
+   %DEVENV% %libdll%\build\%solution%.sln /build "%1|%archw%" /project "_BUILD_ALL_" /out %log%
+   type %log%
    exit /b %errorlevel%
 
 :check
