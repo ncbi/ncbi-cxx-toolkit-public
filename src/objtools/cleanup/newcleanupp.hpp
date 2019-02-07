@@ -505,10 +505,11 @@ private:
 private:
     void x_SortSeqDescs( CSeq_entry & seq_entry );
 
-    void x_RemoveDupBioSource( CBioseq & bioseq );
     void x_FixStructuredCommentKeywords( CBioseq & bioseq );
 
     void x_RemoveDupBioSource( CBioseq_set & bioseq_set );
+    void x_RemoveDupBioSource(CBioseq & bioseq);
+    void x_RemoveDupBioSource(CSeq_entry& se, const CBioSource& src);
 
     void x_RemoveDupPubs(CSeq_descr & descr);
 
