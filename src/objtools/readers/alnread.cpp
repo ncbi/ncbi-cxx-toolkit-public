@@ -1879,6 +1879,7 @@ static bool s_IsOrganismComment(
     string key, value;
     NStr::SplitInTwo(interior, "=", key, value);
     NStr::TruncateSpacesInPlace(key);
+    NStr::ToLower(key);
     NStr::TruncateSpacesInPlace(value);
     return (!value.empty()  &&  (key == "org"  ||  key == "organism"));
 }
