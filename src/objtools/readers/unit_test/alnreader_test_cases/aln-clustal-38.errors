@@ -8,5 +8,5 @@ Message    : At ID 'seq3' in category '3': Expected sequence length 48, actual l
 
 Line No    : 0
 Severity   : Fatal
-Message    : Error reading alignment: Not all sequences have same length
+Message    : Error reading alignment: Invalid input or alphabet
 

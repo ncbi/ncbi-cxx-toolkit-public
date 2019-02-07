@@ -4413,11 +4413,13 @@ s_ConvertDataToOutput(
             s_ReportMissingSequenceData (alignInfo.mIds [index].c_str(),
                                        afrp->report_error,
                                        afrp->report_error_userdata);
+            return false;
         } else if (alignInfo.mSequences[index].size() != best_length) {
             s_ReportBadSequenceLength (alignInfo.mIds [index].c_str(), best_length,
                                      alignInfo.mSequences [index].size(),
                                      afrp->report_error,
                                      afrp->report_error_userdata);
+            return false;
         }
     }
 
@@ -4427,6 +4429,7 @@ s_ConvertDataToOutput(
                                           alignInfo.NumSequences(),
                                           afrp->report_error,
                                           afrp->report_error_userdata);
+        return false;
     }
     if (afrp->expected_sequence_len > 0  &&  
             afrp->expected_sequence_len != best_length) {
@@ -4434,6 +4437,7 @@ s_ConvertDataToOutput(
                                        best_length,
                                        afrp->report_error,
                                        afrp->report_error_userdata);
+        return false;
     }
     
     delete lengths;

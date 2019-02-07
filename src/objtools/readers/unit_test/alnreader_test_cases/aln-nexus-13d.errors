@@ -3,6 +3,6 @@ Severity   : Error
 Message    : At ID '' in category '3': Expected 3 sequences, found 5'
 
 Line No    : 0
-Severity   : Error
-Message    : At ID '' in category '3': Expected sequences of length 48, found 134'
+Severity   : Fatal
+Message    : Error reading alignment: Invalid input or alphabet
 

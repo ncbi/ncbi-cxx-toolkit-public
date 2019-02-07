@@ -3,6 +3,6 @@ Severity   : Error
 Message    : At ID '' in category '3': Expected sequences of length 50, found 48'
 
 Line No    : 0
-Severity   : Error
-Message    : Error reading deflines. Unable to associate deflines with sequences
+Severity   : Fatal
+Message    : Error reading alignment: Invalid input or alphabet
 

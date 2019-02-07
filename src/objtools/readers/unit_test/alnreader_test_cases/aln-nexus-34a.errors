@@ -2,3 +2,7 @@ Line No    : 0
 Severity   : Error
 Message    : At ID '' in category '3': Expected 4 sequences, found 5'
 
+Line No    : 0
+Severity   : Fatal
+Message    : Error reading alignment: Invalid input or alphabet
+
