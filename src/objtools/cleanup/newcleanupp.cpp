@@ -8982,13 +8982,9 @@ static bool s_IsRealTrna(const CSeq_feat& seq_feat)
         return false;
     }
     const auto& fdata = seq_feat.GetData();
-    if (fdata.GetSubtype() != CSeqFeatData::eSubtype_tRNA ||
-        !fdata.GetRna().IsSetExt() ||
-        !fdata.GetRna().GetExt().IsTRNA()) {
-        return false;
-    }
-
-    return true;
+    return (fdata.GetSubtype() == CSeqFeatData::eSubtype_tRNA &&
+            fdata.GetRna().IsSetExt() &&
+            fdata.GetRna().GetExt().IsTRNA());
 }
 
 
