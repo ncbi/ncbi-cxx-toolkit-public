@@ -258,8 +258,20 @@ bool StripSpaces(string& str)
     if (str.empty()) {
         return false;
     }
-
     auto orig_len = str.length();
+
+    NStr::ReplaceInPlace(str, "\t", " ");
+    auto this_len = str.length();
+    NStr::ReplaceInPlace(str, "  ", " ");
+    while (str.length() != this_len) {
+        this_len = str.length();
+        NStr::ReplaceInPlace(str, "  ", " ");
+    }
+    NStr::ReplaceInPlace(str, "( ", "(");
+    NStr::ReplaceInPlace(str, " )", ")");
+    NStr::ReplaceInPlace(str, " ,", ",");
+
+#if 0
 
     string::iterator end = str.end();
     string::iterator it = str.begin();
@@ -279,7 +291,7 @@ bool StripSpaces(string& str)
         }
     }
     str.erase(new_str, str.end());
-
+#endif
     return (orig_len != str.length());
 }
 

@@ -70,6 +70,7 @@
 
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
+#include <objmgr/util/objutil.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -2409,4 +2410,161 @@ BOOST_AUTO_TEST_CASE(Test_Asn2gnbkCompressSpaces)
     TestOneAsn2gnbkCompressSpaces("a ,b , c", "a, b, c"); // remove spaces before commas
     TestOneAsn2gnbkCompressSpaces("a ( b ) c", "a (b) c"); // parentheses
     TestOneAsn2gnbkCompressSpaces("a ; b ; c", "a; b; c"); // spaces before semicolons
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GeneDbToFeatDb)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> gene = AddMiscFeature(entry);
+    gene->SetData().SetGene().SetLocus("X");
+    CRef<CDbtag> db(new CDbtag());
+    db->SetDb("A");
+    db->SetTag().SetStr("B");
+    gene->SetData().SetGene().SetDb().push_back(db);
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    BOOST_CHECK_EQUAL(gene->GetData().GetGene().IsSetDb(), false);
+    BOOST_CHECK_EQUAL(gene->GetDbxref().size(), 1);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_MoveXrefGeneDbToFeatDb)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeq_feat> gene = AddMiscFeature(entry);
+    gene->SetData().SetGene().SetLocus("X");
+
+    CRef<CSeqFeatXref> x1(new CSeqFeatXref());
+    x1->SetId().SetLocal().SetId(1);
+    gene->SetXref().push_back(x1);
+
+    CRef<CSeqFeatXref> x2(new CSeqFeatXref());
+    CRef<CDbtag> db1(new CDbtag());
+    db1->SetDb("A");
+    db1->SetTag().SetStr("B");
+    x2->SetData().SetGene().SetDb().push_back(db1);
+    gene->SetXref().push_back(x2);
+
+    CRef<CSeqFeatXref> x3(new CSeqFeatXref());
+    x3->SetData().SetGene().SetLocus("Z");
+    CRef<CDbtag> db2(new CDbtag());
+    db2->SetDb("C");
+    db2->SetTag().SetStr("D");
+    x3->SetData().SetGene().SetDb().push_back(db2);
+    gene->SetXref().push_back(x3);
+
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    BOOST_CHECK_EQUAL(gene->GetXref().size(), 2);
+    BOOST_CHECK_EQUAL(gene->GetXref().front()->IsSetId(), true);
+    BOOST_CHECK_EQUAL(gene->GetXref().back()->GetData().GetGene().GetLocus(), "Z");
+    BOOST_CHECK_EQUAL(gene->GetXref().back()->GetData().GetGene().IsSetDb(), false);
+    BOOST_CHECK_EQUAL(gene->GetDbxref().size(), 2);
+    BOOST_CHECK_EQUAL(gene->GetDbxref().front()->GetDb(), "A");
+    BOOST_CHECK_EQUAL(gene->GetDbxref().back()->GetDb(), "C");
+
+}
+
+
+// move dbxref in prot to feat.dbxref
+BOOST_AUTO_TEST_CASE(Test_BasicProtCleanup)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CSeq_feat> prot = GetProtFeatFromGoodNucProtSet(entry);
+    CRef<CDbtag> db(new CDbtag());
+    db->SetDb("x");
+    db->SetTag().SetStr("y");
+    prot->SetData().SetProt().SetDb().push_back(db);
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+
+    BOOST_CHECK_EQUAL(prot->GetData().GetProt().IsSetDb(), false);
+    BOOST_CHECK_EQUAL(prot->GetDbxref().size(), 1);
+}
+
+
+void TestOneDate(int hour, int minute, int second, bool expect_hour, bool expect_minute, bool expect_second)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    CRef<CSeqdesc> desc(new CSeqdesc());
+    entry->SetSeq().SetDescr().Set().push_back(desc);
+    auto& createdate = desc->SetCreate_date().SetStd();
+    createdate.SetYear(2019);
+    createdate.SetMonth(1);
+    createdate.SetDay(4);
+    if (hour > 0) {
+        createdate.SetHour(hour);
+    }
+    if (minute > 0) {
+        createdate.SetMinute(minute);
+    }
+    if (second > 0) {
+        createdate.SetSecond(second);
+    }
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope(scope);
+    changes = cleanup.BasicCleanup(*entry);
+    BOOST_CHECK_EQUAL(createdate.IsSetHour(), expect_hour);
+    BOOST_CHECK_EQUAL(createdate.IsSetMinute(), expect_minute);
+    BOOST_CHECK_EQUAL(createdate.IsSetSecond(), expect_second);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_DateCleanup)
+{
+    TestOneDate(8, 61, 32, true, false, false);
+    TestOneDate(8, -1, 32, true, false, false);
+    TestOneDate(25, 30, 32, false, false, false);
+    TestOneDate(-1, 30, 32, false, false, false);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_StripSpaces)
+{
+    string input = "(\t    )";
+    StripSpaces(input);
+    BOOST_CHECK_EQUAL(input, "()");
+    input = "a (   x   )";
+    StripSpaces(input);
+    BOOST_CHECK_EQUAL(input, "a (x)");
+    input = "a , b , c";
+    StripSpaces(input);
+    BOOST_CHECK_EQUAL(input, "a, b, c");
+    input = "a    b";
+    StripSpaces(input);
+    BOOST_CHECK_EQUAL(input, "a b");
 }
