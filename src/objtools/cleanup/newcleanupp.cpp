@@ -6002,8 +6002,7 @@ bool SortGBQuals(CSeq_feat& sf)
     }
     if (it == qualset.end()) {
         ITERATE(vector<string>, s, products) {
-            CRef<CGb_qual> pq(new CGb_qual("product", *s));
-            qualset.emplace_back(pq);
+            qualset.emplace_back(new CGb_qual("product", *s));
         }
     } else {
         ITERATE(vector<string>, s, products) {
