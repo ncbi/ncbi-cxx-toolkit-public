@@ -45,6 +45,7 @@
 #include <objmgr/impl/snp_annot_info.hpp>
 
 #include <serial/serial.hpp>
+#include <thread>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -140,6 +141,9 @@ void CSNPTestApp::Init(void)
     arg_desc->AddFlag("print_objects", "Print generated objects");
 
     arg_desc->AddFlag("test", "Test consistency");
+#ifdef NCBI_THREADS
+    arg_desc->AddFlag("test-seq-mt", "Run MT scan of all sequences");
+#endif
 
     arg_desc->AddDefaultKey("o", "OutputFile",
                             "Output file of ASN.1",
@@ -260,6 +264,27 @@ CRef<CSeq_table> sx_ConvertToTable(const CSeq_annot_SNP_Info& annot)
 }
 
 
+#ifdef NCBI_THREADS
+void RunMTScan(CSNPDb& snp_db)
+{
+    const size_t NT = 4;
+    
+    vector<thread> tt(NT);
+    for ( size_t i = 0; i < NT; ++i ) {
+        tt[i] =
+            thread([&]
+                   ()
+                   {
+                       for ( CSNPDbSeqIterator it(snp_db); it; ++it ) {
+                       }
+                   });
+    }
+    for ( size_t i = 0; i < NT; ++i ) {
+        tt[i].join();
+    }
+}
+#endif
+
 /////////////////////////////////////////////////////////////////////////////
 //  Run test
 /////////////////////////////////////////////////////////////////////////////
@@ -325,6 +350,11 @@ int CSNPTestApp::Run(void)
             query_range.SetTo(args["end"].AsInteger());
         }
     }
+#ifdef NCBI_THREADS
+    if ( args["test-seq-mt"] ) {
+        RunMTScan(snp_db);
+    }
+#endif
     if ( args["q"] ) {
         string q = args["q"].AsString();
         SIZE_TYPE colon_pos = q.find(':');
@@ -557,11 +587,25 @@ int CSNPTestApp::Run(void)
                 range.SetFrom(cur);
                 range.SetLength(len);
                 for ( CSNPDbFeatIterator it(seq, range, sel); it; ++it ) {
-                    TSeqPos pos = it.GetSNPPosition();
-                    _ASSERT(pos >= range.GetFrom());
-                    _ASSERT(pos < range.GetToOpen());
-                    c100_0.at(pos/100) += 1;
-                    c5000_0.at(pos/5000) += 1;
+                    TSeqPos snp_pos = it.GetSNPPosition();
+                    TSeqPos snp_len = it.GetSNPLength();
+                    _ASSERT(snp_pos+snp_len > range.GetFrom());
+                    _ASSERT(snp_pos < range.GetToOpen());
+                    _ASSERT(snp_len > 0);
+                    TSeqPos snp_pos_100 = snp_pos/100;
+                    TSeqPos snp_end_100 = (snp_pos+snp_len-1)/100;
+                    if ( snp_pos >= range.GetFrom() ) {
+                        for ( TSeqPos i = snp_pos_100; i <= snp_pos_100; ++i ) {
+                            c100_0.at(i) += 1;
+                        }
+                    }
+                    TSeqPos snp_pos_5000 = snp_pos/5000;
+                    TSeqPos snp_end_5000 = (snp_pos+snp_len-1)/5000;
+                    if ( snp_pos >= range.GetFrom() ) {
+                        for ( TSeqPos i = snp_pos_5000; i <= snp_pos_5000; ++i ) {
+                            c5000_0.at(i) += 1;
+                        }
+                    }
                 }
                 cur = range.GetToOpen();
             }
