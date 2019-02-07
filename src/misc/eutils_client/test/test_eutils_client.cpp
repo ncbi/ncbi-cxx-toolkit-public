@@ -75,11 +75,11 @@ void CTestEUtilsClientApp::Init(void)
                      CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("idtype", "Type",
-                     "Type of IDs (acc or gi)",
+                     "Type of IDs (acc or entrez_id)",
                      CArgDescriptions::eString);
     arg_desc->SetConstraint("idtype",
                             &(*new CArgAllow_Strings,
-                              "gi",
+                              "entrez_id",
                               "acc"
                               ));
     arg_desc->SetDependency("query",
@@ -131,7 +131,7 @@ void CTestEUtilsClientApp::Init(void)
 /////////////////////////////////////////////////////////////////////////////
 //  Run test (printout arguments obtained from command-line)
 
-static void s_Print(CNcbiOstream& ostr, const vector<TGi>& uids) {
+static void s_Print(CNcbiOstream& ostr, const vector<TEntrezId>& uids) {
     for(auto& x : uids){ 
         ostr << x << NcbiEndl;
     }
@@ -162,7 +162,7 @@ int CTestEUtilsClientApp::Run(void)
             ecli.Search(db, query, uids);
             s_Print(ostr, uids);
         } else {
-            vector<TGi> uids;
+            vector<TEntrezId> uids;
             ecli.Search(db, query, uids);
             s_Print(ostr, uids);
         }
@@ -178,11 +178,11 @@ int CTestEUtilsClientApp::Run(void)
         list<string> idstrs;
         NStr::Split(args["docsum"].AsString(), ",", idstrs,
             NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
-        vector<TGi> uids;
+        vector<TEntrezId> uids;
         for (auto& id : idstrs) {
-            TGi gi = NStr::StringToNumeric<TGi>(id, NStr::fConvErr_NoThrow);
-            if (gi) {
-                uids.push_back(gi);
+            TEntrezId entrez_id = NStr::StringToNumeric<TEntrezId>(id, NStr::fConvErr_NoThrow);
+            if (entrez_id) {
+                uids.push_back(entrez_id);
             }
         }
         xml::document docsums;
@@ -201,12 +201,12 @@ int CTestEUtilsClientApp::Run(void)
     if (args["fetch"]) {
         string db_to = args["db"].AsString();
         string uid = args["fetch"].AsString();
-        TGi gi = NStr::StringToNumeric<TGi>(uid, NStr::fConvErr_NoThrow);
-        if (!gi) {
+        TEntrezId entrez_id = NStr::StringToNumeric<TEntrezId>(uid, NStr::fConvErr_NoThrow);
+        if (!entrez_id) {
             vector<objects::CSeq_id_Handle> uids(1, objects::CSeq_id_Handle::GetHandle(uid));
             ecli.Fetch(db, uids, ostr, args["retmode"].AsString());
         } else {
-            vector<TGi> uids(1, gi);
+            vector<TEntrezId> uids(1, entrez_id);
             ecli.Fetch(db, uids, ostr, args["retmode"].AsString());
         }
     }
