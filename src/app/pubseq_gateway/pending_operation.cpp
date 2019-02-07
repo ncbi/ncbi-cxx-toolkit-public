@@ -585,6 +585,8 @@ void CPendingOperation::x_ProcessAnnotRequest(void)
             CNamedAnnotationCallback(this, m_Reply, details.get()));
         fetch_task->SetErrorCB(
             CNamedAnnotationErrorCallback(this, m_Reply, details.get()));
+        fetch_task->SetDataReadyCB(HST::CHttpReply<CPendingOperation>::s_DataReady,
+                                   m_Reply);
 
         m_FetchDetails.push_back(std::move(details));
     }
