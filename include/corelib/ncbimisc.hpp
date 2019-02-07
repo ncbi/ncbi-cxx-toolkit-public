@@ -1033,6 +1033,10 @@ public:
 #define GI_TO(T, gi) (static_cast<T>(TIntId(gi)))
 #define GI_FROM(T, value) (TGi(static_cast<TIntId>(value)))
 
+/// Temporary macros to convert TEntrezId to other types (int, unsigned etc.).
+#define ENTREZ_ID_TO(T, entrez_id) (static_cast<T>(TIntId(entrez_id)))
+#define ENTREZ_ID_FROM(T, value) (TGi(static_cast<TIntId>(value)))
+
 /// Convert gi-compatible int to/from other types.
 #define INT_ID_TO(T, id) (static_cast<T>(id))
 #define INT_ID_FROM(T, value) (static_cast<TIntId>(value))
