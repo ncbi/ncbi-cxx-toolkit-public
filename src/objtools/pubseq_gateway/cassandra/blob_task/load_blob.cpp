@@ -276,7 +276,8 @@ void CCassBlobTaskLoadBlob::Wait1()
                                   eDiag_Error, msg);
                         }
                         else if (m_Blob->GetNChunks() < 0) {
-                            string msg = "Inconsistent n_chunks value: " + NStr::NumericToString(m_Blob->GetNChunks());
+                            string msg = "Inconsistent n_chunks value: " + NStr::NumericToString(m_Blob->GetNChunks()) + 
+                                         " (key=" + m_Keyspace + "." + NStr::NumericToString(m_Key) + ")";
                             Error(
                                 CRequestStatus::e500_InternalServerError,
                                 CCassandraException::eInconsistentData,
@@ -407,6 +408,15 @@ void CCassBlobTaskLoadBlob::x_CheckChunksFinished(bool& need_repeat)
                         } else if (wr == ar_wait) {
                             continue;
                         }
+                    }
+                    else {
+                        char msg[1024];
+                        snprintf(msg, sizeof(msg),
+                             "Missed chunk (key=%s.%d, chunk=%d) ", m_Keyspace.c_str(), m_Key, chunk_no);
+                        Error(CRequestStatus::e502_BadGateway,
+                              CCassandraException::eInconsistentData,
+                              eDiag_Error, msg);
+                        return;
                     }
                 }
             }
