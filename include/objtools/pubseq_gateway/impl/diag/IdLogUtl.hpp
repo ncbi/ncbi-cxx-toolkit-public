@@ -68,6 +68,7 @@ public:
 		eSybDriver,
 		eMemory,
 		eNoPoolThreads,
+		eUserCancelled,
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
@@ -80,6 +81,7 @@ public:
 			case eSybDriver:		return "eSybDriver";
 			case eMemory:			return "eMemory";
 			case eNoPoolThreads:	return "eNoPoolThreads";
+		    case eUserCancelled:	return "eUserCancelled";
 			default:				return CException::GetErrCodeString();
 	    }
     }
