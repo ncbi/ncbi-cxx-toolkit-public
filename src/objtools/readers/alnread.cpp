@@ -671,7 +671,7 @@ s_ReportIncorrectNumberOfSequences(
     string errMessage = StrPrintf(errFormat, num_expected, num_found);
 
     sReportError(
-        nullptr,
+        "",
         -1,
         eAlnErr_BadFormat,
         errMessage,
@@ -691,7 +691,7 @@ s_ReportIncorrectSequenceLength(
     string errMessage = StrPrintf(errFormat, len_expected, len_found);
 
     sReportError(
-        nullptr,
+        "",
         -1,
         eAlnErr_BadFormat,
         errMessage,
@@ -1440,6 +1440,9 @@ s_GetOneNexusSizeComment(
     if (!str  ||  !valname  ||  !val) {
         return false;
     }
+    string normalized(str);
+    NStr::ToLower(normalized);
+    str = normalized.c_str();
 
     cpstart = strstr (str, valname);
     if (!cpstart) {
@@ -1493,15 +1496,13 @@ static void s_GetNexusSizeComments(
         return;
     }
     if (! *found_ntax  && 
-        (s_GetOneNexusSizeComment (str, "ntax", &num_sequences)
-        ||   s_GetOneNexusSizeComment (str, "NTAX", &num_sequences))) {
+        (s_GetOneNexusSizeComment (str, "ntax", &num_sequences))) {
         afrp->expected_num_sequence = num_sequences;
         afrp->align_format_found = true;
         *found_ntax = true;
     }
     if (! *found_nchar  &&
-        (s_GetOneNexusSizeComment (str, "nchar", &num_chars)
-        ||  s_GetOneNexusSizeComment (str, "NCHAR", &num_chars))) {
+        (s_GetOneNexusSizeComment (str, "nchar", &num_chars))) {
         afrp->expected_sequence_len = num_chars;
         afrp->align_format_found = true;
         *found_nchar = true;
@@ -4471,7 +4472,7 @@ ReadAlignmentFile(
     }
     
     afrp = s_ReadAlignFileRaw ( readfunc, istr, sequence_info,
-                                !false,
+                                false,
                                 errfunc, erroruserdata, &format);
     if (!afrp) {
         return false;

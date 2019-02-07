@@ -89,8 +89,10 @@ public:
 
         CFile file(dirEntry);
         string name = file.GetName();
-        if (NStr::EndsWith(name, ".txt") || NStr::EndsWith(name, ".new")
-                || NStr::StartsWith(name, ".")) {
+        if (NStr::EndsWith(name, ".txt")  ||  
+                NStr::EndsWith(name, ".new")  ||
+                NStr::EndsWith(name, ".sh")  ||  
+                NStr::StartsWith(name, ".")) {
             return;
         }
         // extract info from the file name
