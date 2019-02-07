@@ -539,17 +539,23 @@ CSNPDb_Impl::x_Update(TSeqInfoList::const_iterator seq)
         // already updated
         return;
     }
+    CMutexGuard guard(m_Mutex);
     size_t seq_index = seq-m_SeqList.begin();
     SSeqInfo& info = m_SeqList[seq_index];
+    if ( info.m_Seq_id ) {
+        // already updated
+        return;
+    }
     TVDBRowId seq_row = TVDBRowId(seq_index+1);
 
     // update id and length
+    CRef<CSeq_id> seq_id;
     {
         CRef<SSeqTableCursor> cur = Seq();
         
         CTempString ref_id = *cur->ACCESSION(seq_row);
-        info.m_Seq_id = new CSeq_id(ref_id);
-        info.m_Seq_id_Handle = CSeq_id_Handle::GetHandle(*info.m_Seq_id);
+        seq_id = new CSeq_id(ref_id);
+        info.m_Seq_id_Handle = CSeq_id_Handle::GetHandle(*seq_id);
         info.m_SeqLength = *cur->LEN(seq_row);
         info.m_Circular = false;
 
@@ -588,7 +594,8 @@ CSNPDb_Impl::x_Update(TSeqInfoList::const_iterator seq)
             }
         }
         m_Seq2PageMap[seq_row] = row;
-        
+
+        info.m_PageSets.clear();
         for ( ; row <= max_row; ++row ) {
             if ( *cur->SEQ_ID_ROW_NUM(row) != seq_row ) {
                 break;
@@ -619,6 +626,9 @@ CSNPDb_Impl::x_Update(TSeqInfoList::const_iterator seq)
         }
         info.m_GraphRowId = (info.m_PageSets.front().m_RowId-1) * m_TrackList.size() + 1;
     }
+    
+    // final id assignment is an indication of initialization
+    info.m_Seq_id = seq_id;
 }
 
 

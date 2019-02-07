@@ -364,6 +364,7 @@ private:
 
     TTrackInfoList m_TrackList; // list of cached filter track information
     TTrackInfoMapByName m_TrackMapByName; // index for track lookup
+    CMutex m_Mutex;
 };
 
 
