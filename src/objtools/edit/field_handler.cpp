@@ -149,12 +149,7 @@ CFieldHandlerFactory::Create(const string& field_name)
 
 bool CFieldHandlerFactory::s_IsSequenceIDField(const string& field)
 {
-    if (CFieldHandler::QualifierNamesAreEquivalent(field, kFieldTypeSeqId)
-        || CFieldHandler::QualifierNamesAreEquivalent(field, kFieldTypeSeqId)) {
-        return true;
-    } else {
-        return false;
-    }
+    return CFieldHandler::QualifierNamesAreEquivalent(field, kFieldTypeSeqId);
 }
 
 
@@ -278,7 +273,7 @@ vector<CConstRef<CSeq_feat> > GetRelatedFeatures (const CSeq_feat& obj_feat, CSe
             sequence::GetOverlappingFeatures (obj_feat.GetLocation(), 
                                               CSeqFeatData::GetTypeFromSubtype(constraint_type), 
                                               constraint_type, 
-                                              sequence::eOverlap_Contained, 
+                                              sequence::eOverlap_Contains,
                                               scores, *scope);            
             ITERATE (sequence::TFeatScores, it, scores) {
                 feat_list.push_back(it->second);
