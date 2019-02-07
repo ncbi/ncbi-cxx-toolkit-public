@@ -1,0 +1,14 @@
+Seq-annot ::= {
+  desc {
+  },
+  data ftable {
+    {
+      data region "region: 1",
+      location pnt {
+        point 153453427,
+        id local str "chrX"
+      },
+      title "Line:1"
+    }
+  }
+}

@@ -1,0 +1,45 @@
+#NEXUS
+[This is a single line comment]
+[
+  This
+  is
+  a
+  multi
+  line
+  comment
+]
+[
+This are some ID look alikes but inside a comment
+fake_id1
+fake_id2
+fake_id3
+]
+[!This is a comment that would be printed by PAUP]
+
+BEGIN DATA;
+      Dimensions NTax=5 NChar=48;
+      Format DataType-DNA Interleave=yes Gap =- Missing=?;
+      Matrix
+[    ----+--10|----+--20|]
+seq1 --GCAAGCATGCATGCAAAA
+seq2 AT--ATGGATGCATGCAAAA
+seq3 ATGC--GCAAGCATGCAAAA
+seq4 ATGCAT--ATGGATGCAAAA
+seq5 ATGCATGC--GCAAGCAAAA
+
+[    ----+--30|----+--40|]
+seq1 TTTTGCGGCCCATGCATG--
+seq2 TTTTGGGCCCCATGCATGCC
+seq3 TTTTGGGGCGCATGCATGCC
+seq4 TTTTGGGGCCCTTGCATGCC
+seq5 TTTTGGGGCCCATCCATGCC
+
+[    ----+--50|----]
+seq1 ATGCATGC
+seq2 --GCATGC
+seq3 AT--ATGC
+seq4 ATGC--GC
+seq5 ATGCAT--
+
+END;
+

@@ -739,7 +739,7 @@ s_ReportASN1Error(
     void* errdata)
 {
     sReportError(
-        nullptr,
+        "",
         -1,
         eAlnErr_BadData,
         "This is an ASN.1 file which cannot be read by this function",

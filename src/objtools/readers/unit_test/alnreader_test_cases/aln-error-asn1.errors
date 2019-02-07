@@ -1,0 +1,8 @@
+Line No    : 0
+Severity   : Error
+Message    : At ID '' in category '2': This is an ASN.1 file which cannot be read by this function'
+
+Line No    : 0
+Severity   : Fatal
+Message    : Error reading alignment: Invalid input or alphabet
+
