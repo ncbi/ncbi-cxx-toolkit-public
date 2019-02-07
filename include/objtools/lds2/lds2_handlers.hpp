@@ -126,6 +126,7 @@ private:
     typedef shared_ptr<CNcbiIstream> TStream;
     typedef pair<string, TStream> TNamedStream;
     typedef deque<TNamedStream> TStreamCache;
+    friend void s_StreamCacheCleanup(TStreamCache *value, void*);
 
     TStreamCache& x_GetStreamCache(void);
 
