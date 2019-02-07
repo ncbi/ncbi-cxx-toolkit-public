@@ -282,16 +282,8 @@ CRef<CReportItem> CReportItem::CreateReportItem(const string& test, const string
 {
     CRef<CDiscrepancyCase> t = CDiscrepancyConstructor::GetDiscrepancyConstructor(test)->Create();
     string s = msg;
-    while (true) {
-        size_t n = s.find("[(]");
-        if (n == string::npos) {
-            n = s.find("[)]");
-            if (n == string::npos) {
-                break;
-            }
-        }
-        s = s.substr(0, n) + s.substr(n + 3);
-    }
+    NStr::ReplaceInPlace(s, "[(]", "");
+    NStr::ReplaceInPlace(s, "[)]", "");
     CRef<CDiscrepancyItem> item(new CDiscrepancyItem(*t, s, msg, msg, kEmptyCStr, 0));
     item->m_Autofix = autofix;
     return CRef<CReportItem>((CReportItem*)item);
@@ -339,6 +331,8 @@ string CDiscrepancySet::Format(const string& s, unsigned int count)
     NStr::ReplaceInPlace(str, "[is]", count == 1 ? "is" : "are");
     NStr::ReplaceInPlace(str, "[does]", count == 1 ? "does" : "do");
     NStr::ReplaceInPlace(str, "[has]", count == 1 ? "has" : "have");
+    NStr::ReplaceInPlace(str, "[(]", "");
+    NStr::ReplaceInPlace(str, "[)]", "");
     for (size_t n = NStr::Find(str, "[*"); n != NPOS; n = NStr::Find(str, "[*")) {
         size_t k = NStr::Find(str, "*]");
         if (k != NPOS) {
