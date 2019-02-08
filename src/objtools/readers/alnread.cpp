@@ -447,31 +447,6 @@ sReportError(
     errReporter(errorInfo, errUserData);
 }
 
-/* This function creates and sends an error message regarding a NEXUS comment
- * character.
- */
-static void 
-s_ReportCharCommentError(
-    const string& expected,
-    char seen,
-    const char* valName,
-    FReportErrorFunction errfunc,
-    void* errdata)
-{
-    const char * errFormat = 
-        "Specified %s character does not match NEXUS comment in file (specified %s, comment %c)";
-    string errMessage = StrPrintf(errFormat, valName, expected.c_str(), seen);
-
-    sReportError(
-        "",
-        -1,
-        eAlnErr_BadFormat,
-        errMessage,
-        errfunc,
-        errdata);
-}
-
-
 /* This function creates and sends an error message regarding a character
  * that is unexpected in sequence data.
  */
@@ -1545,7 +1520,7 @@ static char GetNexusTypechar(
  * discrepancies are found, the function reports the errors and returns false,
  * otherwise the function returns true.
  */ 
-static bool s_CheckNexusCharInfo(
+static bool s_IgnoreNexusCharInfo(
     const string& str,
     const CSequenceInfo& sequence_info,
     FReportErrorFunction errfunc,
@@ -1557,25 +1532,6 @@ static bool s_CheckNexusCharInfo(
     auto formatPos = normalized.find("format");
     if (formatPos == string::npos) {
         return false;
-    }
-
-    auto formatInfo = normalized.substr(formatPos + 7);
-    char c = GetNexusTypechar (formatInfo, "missing");
-    if (c != 0  &&  sequence_info.Missing().find(c) == string::npos) {
-        s_ReportCharCommentError (
-            sequence_info.Missing(), c, "MISSING", errfunc, errdata);
-    }
- 
-    c = GetNexusTypechar (formatInfo, "gap");
-    if (c != 0  &&  sequence_info.MiddleGap().find(c) == string::npos) {
-        s_ReportCharCommentError (
-            sequence_info.MiddleGap(), c, "GAP", errfunc, errdata);
-    }
- 
-    c = GetNexusTypechar (formatInfo, "match");
-    if (c != 0  &&  sequence_info.Match().find(c) == string::npos) {
-        s_ReportCharCommentError (
-            sequence_info.Match(), c, "MATCH", errfunc, errdata);
     }
     return true;
 } 
@@ -2519,7 +2475,7 @@ s_ReadAlignFileRaw(
             if (use_nexus_file_info) {
                 found_char_comment = s_UpdateNexusCharInfo (linestring, sequence_info);
           } else {
-                found_char_comment = s_CheckNexusCharInfo (
+                found_char_comment = s_IgnoreNexusCharInfo (
                     linestring, sequence_info, afrp->report_error, afrp->report_error_userdata);
           }
         }

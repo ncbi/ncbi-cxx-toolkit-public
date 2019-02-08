@@ -594,6 +594,10 @@ void CMultiReaderApp::Init(void)
         "treat all IDs as local IDs",
         true);
 
+    arg_desc->AddFlag(
+        "ignore-nexus-info",
+        "ignore char settings in NEXUS format block",
+        true);
     //
     // FASTA reader specific arguments:
     //
@@ -1118,6 +1122,7 @@ void CMultiReaderApp::xProcessAlignment(
     if (args["aln-alphabet"].AsString() == "nuc") {
         reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
     }
+    reader.SetUseNexusInfo(!args["ignore-nexus-info"]);
     try {
         reader.Read(false, args["force-local-ids"], m_pErrors.get());
         CRef<CSeq_entry> pEntry = reader.GetSeqEntry();
