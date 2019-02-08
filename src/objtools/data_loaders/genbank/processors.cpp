@@ -660,8 +660,11 @@ CSeq_id_Handle s_GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
     CTempString acc = text_id->GetAccession();
 
     CSeq_id::EAccessionInfo type = CSeq_id::IdentifyAccession(acc);
+    bool is_cage_ddbj = false;
     switch ( type & CSeq_id::eAcc_division_mask ) {
         // accepted accession types
+    case CSeq_id::eAcc_mga: // 2019/02/08 : For now, it's just CAGE DDBJ
+        is_cage_ddbj = true;
     case CSeq_id::eAcc_wgs:
     case CSeq_id::eAcc_wgs_intermed:
     case CSeq_id::eAcc_tsa:
@@ -670,37 +673,55 @@ CSeq_id_Handle s_GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
         return master_idh;
     }
 
+    SIZE_TYPE digits_pos = acc.find_first_of("0123456789");
     bool have_nz = NStr::StartsWith(acc, "NZ_");
-    SIZE_TYPE letters_pos = have_nz? 3: 0;
-    bool long_acc = false;
-    SIZE_TYPE digits_pos = letters_pos+4; // default WGS accession has 4 letters
-    if ( digits_pos < acc.size() && !isdigit(acc[digits_pos] & 0xff) ) {
-        long_acc = true;
-        digits_pos += 2; // new longer WGS accession has 6 letters
+    SIZE_TYPE letters_pos = (have_nz ? 3 : 0);
+
+    // First check the prefix and suffix lengths.
+    // WGS/TSA/TLS prefixes have 4 or 6 letters; CAGE DDBJ prefixes have 5 letters
+    // WGS/TSA/TLS suffixes have 6-8 or 7-9 digits; CAGE DDBJ suffixes have 7 digits 
+    SIZE_TYPE min_digits = 0;
+    SIZE_TYPE max_digits = 0;
+
+    if (is_cage_ddbj) {
+        if (digits_pos != 5)
+            return master_idh;
+        min_digits = 7;
+        max_digits = 7;
+    } else {
+        if (digits_pos != letters_pos+4 && digits_pos != letters_pos+6)
+            return master_idh;
+        min_digits = ((digits_pos == letters_pos+4) ? 6 : 7);
+        max_digits = min_digits + 2;
     }
+
     SIZE_TYPE digits_count = acc.size() - digits_pos;
-    if ( !long_acc ) {
-        if ( digits_count < 8 || digits_count > 10 ) {
-            return master_idh;
-        }
-    }
-    else {
-        // new longer WGS accession can have 9 to 11 digits
-        if ( digits_count < 9 || digits_count > 11 ) {
-            return master_idh;
-        }
-    }
+    if (digits_count < min_digits || digits_count > max_digits)
+        return master_idh;
+
+    // Check that prefix and suffix actually consist of letters and digits respectively.
     if ( !s_GoodLetters(acc.substr(letters_pos, digits_pos-letters_pos)) ) {
         return master_idh;
     }
     if ( !s_GoodDigits(acc.substr(digits_pos)) ) {
         return master_idh;
     }
-    int version = NStr::StringToNumeric<int>(acc.substr(digits_pos, 2));
-    Uint8 row_id = NStr::StringToNumeric<Uint8>(acc.substr(digits_pos+2));
+
+    // Exclude master accessions
+    // Non-CAGE-DDBJ master accessions may also contain a 2-digit version 
+    int version = 0;
+    Uint8 row_id = 0;
+    if (is_cage_ddbj) {
+        version = 1;
+        row_id = NStr::StringToNumeric<Uint8>(acc.substr(digits_pos));
+    } else {
+        version = NStr::StringToNumeric<int>(acc.substr(digits_pos, 2));
+        row_id = NStr::StringToNumeric<Uint8>(acc.substr(digits_pos+2));
+    }
     if ( !version || !row_id ) {
         return master_idh;
     }
+
     CSeq_id master_id;
     master_id.Assign(*id);
     CTextseq_id* master_text_id =
