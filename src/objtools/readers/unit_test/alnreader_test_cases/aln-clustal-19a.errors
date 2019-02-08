@@ -1,0 +1,32 @@
+Line No    : 3
+Severity   : Error
+Message    : At ID 'seq1' in category '2' at line 3: Duplicate ID!  Sequences will be concatenated!'
+
+Line No    : 5
+Severity   : Error
+Message    : At ID 'seq3' in category '2' at line 5: Duplicate ID!  Sequences will be concatenated!'
+
+Line No    : 9
+Severity   : Error
+Message    : At ID 'seq1' in category '3' at line 9: Found unexpected ID'
+
+Line No    : 10
+Severity   : Error
+Message    : At ID 'seq3' in category '3' at line 10: Found unexpected ID'
+
+Line No    : 11
+Severity   : Error
+Message    : At ID 'seq3' in category '3' at line 11: Found unexpected ID'
+
+Line No    : 15
+Severity   : Error
+Message    : At ID 'seq1' in category '3' at line 15: Found unexpected ID'
+
+Line No    : 16
+Severity   : Error
+Message    : At ID 'seq3' in category '3' at line 16: Found unexpected ID'
+
+Line No    : 17
+Severity   : Error
+Message    : At ID 'seq3' in category '3' at line 17: Found unexpected ID'
+

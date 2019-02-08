@@ -479,7 +479,7 @@ s_ReportBadCharError(
  */
 static void 
 s_ReportInconsistentID(
-    char* id,
+    const string& id,
     int line_number,
     FReportErrorFunction report_error,
     void* report_error_userdata)
@@ -573,7 +573,7 @@ s_ReportBlockLengthError(
  */
 static void 
 s_ReportDuplicateIDError(
-    char* id,
+    const string& id,
     int line_num,
     FReportErrorFunction report_error,
     void* report_error_userdata)
@@ -1891,12 +1891,12 @@ static void s_ReadDefline(
 static TAlignRawSeqPtr 
 s_FindAlignRawSeqById(
     TAlignRawSeqPtr list,
-    char * id)
+    const string& id)
 {
     TAlignRawSeqPtr arsp;
 
     for (arsp = list; arsp; arsp = arsp->next) {
-        if (strcmp (arsp->id, id) == 0) {
+        if (id == arsp->id) {
             return arsp;
         }
     }
@@ -1911,13 +1911,13 @@ s_FindAlignRawSeqById(
 static int  
 s_FindAlignRawSeqOffsetById(
     TAlignRawSeqPtr list, 
-    char * id)
+    const string& id)
 {
     TAlignRawSeqPtr arsp;
     int             offset;
 
     for (arsp = list, offset = 0; arsp; arsp = arsp->next, offset++) {
-        if (strcmp (arsp->id, id) == 0) {
+        if (id == arsp->id) {
             return offset;
         }
     }
@@ -1959,7 +1959,7 @@ s_GetAlignRawSeqIDByOffset(
 static TAlignRawSeqPtr
 s_AddAlignRawSeqById(
     TAlignRawSeqPtr list,
-    char *  id,
+    const string&  id,
     char *  data,
     int     id_line_num,
     int     data_line_num,
@@ -1977,7 +1977,7 @@ s_AddAlignRawSeqById(
         if (!list) {
             list = arsp;
         }
-        arsp->SetId(id);
+        arsp->SetId(id.c_str());
     }
     arsp->sequence_data = s_AddLineInfo (arsp->sequence_data,
                                        data,
@@ -2621,11 +2621,8 @@ s_DoesBlockHaveIds(
         if (linestring) {
             len = strcspn (linestring, " \t\r");
             if (len > 0  &&  len < strlen (linestring)) {
-                this_id = new char[len+1];
-                strncpy (this_id, linestring, len);
-                this_id [len] = 0;
+                string this_id(linestring, len);
                 arsp = s_FindAlignRawSeqById (afrp->sequences, this_id);
-                delete[] this_id;
                 if (arsp) {
                     return true;
                 }
@@ -2672,17 +2669,14 @@ s_BlockIsConsistent(
                  */
                 len = 10;
             }
-            tmp_id = new char[len + 1];
-            strncpy (tmp_id, cp, len);
-            tmp_id [len] = 0;
-            id_offset = s_FindAlignRawSeqOffsetById (afrp->sequences, tmp_id);
+            string tmpId(cp, len);
+            id_offset = s_FindAlignRawSeqOffsetById (afrp->sequences, tmpId);
             if (id_offset != block_offset  &&  ! first_block) {
                 rval = false;
-                s_ReportInconsistentID (tmp_id, lip->line_num,
+                s_ReportInconsistentID (tmpId, lip->line_num,
                                       afrp->report_error,
                                       afrp->report_error_userdata);
             }
-            delete[] tmp_id;
             cp += len;
             cp += strspn (cp, " \t\r");
         }
@@ -2776,9 +2770,7 @@ s_ProcessBlockLines(
                      */
                     len = 10;
                 }
-                this_id = new char[len + 1];
-                strncpy (this_id, linestring, len);
-                this_id [len] = 0;
+                string this_id(linestring, len);
                 cp = linestring + len;
                 len = strspn (cp, " \t\r");
                 cp += len;
@@ -2792,20 +2784,16 @@ s_ProcessBlockLines(
                                               afrp->report_error_userdata);
                     }
                 }
-                afrp->sequences = s_AddAlignRawSeqById (afrp->sequences,
-                                                      this_id, cp,
-                                                      lip->line_num,
-                                                      lip->line_num,
-                                           lip->line_offset + cp - linestring);
-                delete[] this_id;
-            } else {
+                afrp->sequences = s_AddAlignRawSeqById (
+                    afrp->sequences, this_id, cp, lip->line_num, lip->line_num,
+                    lip->line_offset + cp - linestring);
+            } 
+            else {
                 if (!s_AddAlignRawSeqByIndex (afrp->sequences, line_number,
                         linestring, lip->line_num, lip->line_offset)) {
-                    s_ReportBlockLengthError ("", lip->line_num,
-                                            afrp->block_size,
-                                            line_number,
-                                            afrp->report_error,
-                                            afrp->report_error_userdata);
+                    s_ReportBlockLengthError (
+                        "", lip->line_num, afrp->block_size, line_number,
+                        afrp->report_error, afrp->report_error_userdata);
                 }
             }
         }

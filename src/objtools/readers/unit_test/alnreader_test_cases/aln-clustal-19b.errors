@@ -1,0 +1,24 @@
+Line No    : 3
+Severity   : Error
+Message    : At ID 'seq1' in category '2' at line 3: Duplicate ID!  Sequences will be concatenated!'
+
+Line No    : 5
+Severity   : Error
+Message    : At ID 'seq3' in category '2' at line 5: Duplicate ID!  Sequences will be concatenated!'
+
+Line No    : 10
+Severity   : Error
+Message    : At ID '' in category '3' at line 10: Expected 4 lines in block, found 2'
+
+Line No    : 11
+Severity   : Error
+Message    : At ID '' in category '3' at line 11: Expected 4 lines in block, found 3'
+
+Line No    : 16
+Severity   : Error
+Message    : At ID '' in category '3' at line 16: Expected 4 lines in block, found 2'
+
+Line No    : 17
+Severity   : Error
+Message    : At ID '' in category '3' at line 17: Expected 4 lines in block, found 3'
+
