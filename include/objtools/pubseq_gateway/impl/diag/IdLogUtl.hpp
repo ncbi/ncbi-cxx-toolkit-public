@@ -69,6 +69,7 @@ public:
 		eMemory,
 		eNoPoolThreads,
 		eUserCancelled,
+        eConfiguration,
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
@@ -82,6 +83,7 @@ public:
 			case eMemory:			return "eMemory";
 			case eNoPoolThreads:	return "eNoPoolThreads";
 		    case eUserCancelled:	return "eUserCancelled";
+            case eConfiguration:    return "eConfiguration";
 			default:				return CException::GetErrCodeString();
 	    }
     }
