@@ -62,10 +62,47 @@ public:
 
     // format a FASTA style string
     ostream& AsFastaString(ostream& s) const;
+
+    // The *Chain_id_unified methods parallel the *Chain_id base class methods.  They allow the caller to
+    // always treat the PDB chain identifier as a string, ignoring whether it has been populated in
+    // the 'chain' and/or 'chain-id' data members (represented an integer or string, respectively).
+    // As with the *Chain-id methods, the identifier will be returned as a string and never an integer.
+    // 
+    // Conventions:
+    //    a) single-character chain identifier: both fields hold this character
+    //    b) multi-character chain identifier: chain_id holds this string; chain is unset
+    //    c) both fields are defined and not equivalent: return chain_id
+    //       ("equivalent" includes the historical special cases where chain is a lowercase character
+    //        or '|'and chain_id equals that chain's legacy encoding of a doubled uppercase character
+    //        or "VB", respectively)
+    //
+    //  When possible, the reference-returning *_unified methods enforce equivalence by populating the
+    //  unset field if only one of 'chain' and 'chain-id' have been set (as per the above conventions).
+
+    // Check whether the chain or chain_id data member has been assigned a value.
+    bool IsSetChain_id_unified(void) const;
+    // Check whether it is safe to call GetChain_id_unified method.
+    bool CanGetChain_id_unified(void) const;
+    
+    void ResetChain_id_unified(void);
+    void SetDefaultChain_id_unified(void);  // Note:  only chain has a default in the ASN.1 spec
+
+    const TChain_id& GetChain_id_unified(void) const;
+
+    void SetChain_id_unified(const TChain_id& chain_id);
+    void SetChain_id_unified(TChain chain);
+
+    TChain_id& SetChain_id_unified(void);
+
+    //  True iff both 'chain' and 'chain-id' are set and the values aren't equivalent in the sense described above.
+    bool HasChainConflict(void) const;
+
 private:
     // Prohibit copy constructor & assignment operator
     CPDB_seq_id(const CPDB_seq_id&);
     CPDB_seq_id& operator= (const CPDB_seq_id&);
+
+    bool x_GetChain_id_unified(TChain_id& chain_id) const;
 };
 
 

@@ -114,6 +114,209 @@ ostream& CPDB_seq_id::AsFastaString(ostream& s) const
     return s << GetMol().Get() << '|' << chain; 
 }
 
+bool CPDB_seq_id::IsSetChain_id_unified(void) const
+{
+    return IsSetChain() || IsSetChain_id();
+}
+
+
+bool CPDB_seq_id::CanGetChain_id_unified(void) const
+{
+    //  CanGetChain is always true due to default --> this is always true.
+    return CanGetChain() || CanGetChain_id();
+
+//    //  After transition deprecating chain, ignore chain's default as chain-id doesn't have one.
+//    return IsSetChain() || CanGetChain_id();
+}
+
+
+void CPDB_seq_id::ResetChain_id_unified(void)
+{
+    ResetChain_id();
+    ResetChain();
+}
+
+void CPDB_seq_id::SetDefaultChain_id_unified(void)
+{
+    ResetChain_id_unified();
+}
+
+const CPDB_seq_id::TChain_id& CPDB_seq_id::GetChain_id_unified(void) const
+{
+
+    if(HasChainConflict()) {
+	 	ERR_POST(Info << "Inconsistent chain identifiers for PDB Seq-id, mol=" << GetMol().Get() << ":  chain = " 
+	 	              << GetChain() << ", chain-id = " << GetChain_id() <<". Using chain-id.");
+        const_cast<CPDB_seq_id*>(this)->ResetChain();
+		return GetChain_id();
+	}
+
+	TChain_id chain_id;
+	bool bSuccess = x_GetChain_id_unified(chain_id);
+
+	if (!bSuccess) {
+		ThrowUnassigned(3);
+    }
+
+    if (!IsSetChain_id()) {
+        const_cast<CPDB_seq_id*>(this)->SetChain_id(chain_id);
+        //  As per convention (a) (see header), both fields are to hold this single character.
+        //  'chain-id' is used literally (i.e., it never encodes a lowercase char).
+    } else if (!IsSetChain() && chain_id.length() == 1) {
+        const_cast<CPDB_seq_id*>(this)->SetChain( chain_id[0] );
+    }
+    return GetChain_id();
+}
+
+bool CPDB_seq_id::x_GetChain_id_unified(TChain_id& chain_id) const
+{
+    //  Cases:
+    //  a) chain & chain_id set:  chain-id always has priority (even when the chains are inconsistent)
+    //  b) only chain_id set
+    //  c) only chain set
+    //  d) neither set
+
+    if (IsSetChain_id()) {
+        chain_id = GetChain_id();  
+        return true;
+    }
+    else if (IsSetChain()) {
+		// no Upcase per Ostell - Karl 7/2001
+		// Output "VB" when chain id is ASCII 124 ('|').
+
+        //  As per convention (a) (see header), ensure both fields hold this single character.
+        char chain = (char) GetChain();
+
+		if (chain == '|') {
+			chain_id = "VB";
+		} else if ( chain == '\0' || chain == ' ' ) {  // chain has been *explicitly* set to an empty string
+			chain_id = kEmptyStr;
+		}
+		else {
+			chain_id.assign(1, chain); 
+		}
+		return true;
+    }
+    else {
+        //  Neither set.
+        //  Original behavior: return ' ', chain's default value.
+        //  New behavior:      ignore chain's default as chain-id doesn't have one.
+        //                     NOTE:  sync with CanGetChain_id_unified, which should also return false in this situation.
+
+        chain_id = " ";   //  Original behavior
+        return true;
+        
+        //chain_id = kEmptyStr;    //  New behavior
+        //return false;
+	}
+
+    return false;  /*  never reached for original behavior */
+}
+
+
+void CPDB_seq_id::SetChain_id_unified(const CPDB_seq_id::TChain_id& chain_id_in)
+{
+    //  Could possibly replace PDB case in CSeq_id::Set
+    CTempString chain_id = NStr::TruncateSpaces_Unsafe(chain_id_in, NStr::eTrunc_Both);
+
+    if (chain_id_in.empty()) {  // sets both fields to default state
+        ResetChain_id_unified();
+    }
+    else if (chain_id.empty()) {    // chain_id_in contained only whitespace
+        SetChain(' ');              // explicitly set to a space (which happens to be the default)
+        SetChain_id(" ");           // historically allowed
+	}
+    else if (chain_id.size() == 1) {
+    	SetChain( static_cast<unsigned char>(chain_id[0]) );
+		SetChain_id(chain_id);
+	}
+	else if (NStr::EqualCase(chain_id, "VB")) {
+    	SetChain('|');
+		SetChain_id(chain_id);
+	}
+	else if (chain_id.size() == 2  &&  chain_id[0] == chain_id[1] && isupper(chain_id[0]) ) {
+    	SetChain( tolower(static_cast<unsigned char>(chain_id[0])) );
+		SetChain_id(chain_id);
+	}
+	else {
+        ResetChain();              // in all other cases, 'chain' is undefined
+        SetChain_id(chain_id);
+	}
+
+}
+
+void CPDB_seq_id::SetChain_id_unified(CPDB_seq_id::TChain chain)
+{
+    string s(1, (char) chain);
+    SetChain_id(s);
+    SetChain(chain);
+}
+
+CPDB_seq_id::TChain_id& CPDB_seq_id::SetChain_id_unified(void)
+{
+    if(HasChainConflict()) {
+	 	ERR_POST(Info << "Inconsistent chain identifiers for PDB Seq-id, mol=" << SetMol().Get() << ":  chain = " 
+	 	              << string(1, GetChain()) << ", chain-id = " << GetChain_id() <<". Using chain-id.");
+		return SetChain_id();
+	}
+
+    //  Chains are considered consistent when only one (or neither) has been set.
+    if (IsSetChain()) {
+        //  In this scenario, set chain-id as per convention (a) in header.
+        //  And so we can return a valid reference.
+        if (!IsSetChain_id()) {
+            string s(1, (char) SetChain());
+            SetChain_id(s);
+        }
+        return SetChain_id();
+    }
+    else if (IsSetChain_id()) {
+        //  Know chain is unset; no need to set it.
+        return SetChain_id();
+    }
+    else {
+        //  Both unset.
+        //  Original behavior (before transition to chain-id):
+        //      Only chain has been used in practice.  Even though chain-id doesn't have
+        //      a default continue returning chain's default for now.
+        //      Using GetChain() below to avoid changing the state of 'chain' to 'set'.
+        string s(1, (char) GetChain());
+        SetChain_id(s);
+        return SetChain_id();
+
+        //  After transition to chain_id:
+        //      chain-id has no default and shouldn't be set to chain's default.
+        //  return SetChain_id();
+	}
+}
+
+bool CPDB_seq_id::HasChainConflict(void) const
+{
+    if( IsSetChain() && IsSetChain_id() ) {
+		TChain chain = GetChain();
+		string chain_str(1, (char) chain);
+
+		if(chain_str == GetChain_id()) {
+			return false;
+		}
+
+        
+		string chain_strUpperDoubled = chain_str + chain_str;
+        NStr::ToUpper(chain_strUpperDoubled);
+		if (islower(chain) && (chain_strUpperDoubled == GetChain_id()) ) {
+			return false;  //  special case for historic lowercase encoding
+		}
+		else if(chain == '|' && GetChain_id() == "VB") {
+			return false;
+		}
+		else {
+			return true;
+		}
+	}
+	else {
+		return false;
+	}
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
