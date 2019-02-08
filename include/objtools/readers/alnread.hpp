@@ -197,6 +197,7 @@ bool ReadAlignmentFile(
                                        * should be replaced with unique
                                        * local IDs
                                        */ 
+    bool use_nexus_info, //make use of char definitions in NEXUS format directive
     SAlignmentFile& alignmentInfo
 );
 

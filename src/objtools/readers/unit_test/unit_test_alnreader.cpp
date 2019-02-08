@@ -155,7 +155,11 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 
     CErrorLogger logger(errors);
     CNcbiIfstream ifstr(input.c_str());
+
     CAlnReader reader(ifstr);
+    if (NStr::EndsWith(test_name, "-cni")) {
+        reader.SetUseNexusInfo(false);
+    }
 
     CRef<CSeq_entry> pEntry;
     try {
@@ -207,6 +211,9 @@ void sRunTest(const string &sTestName, const STestInfo& testInfo, bool keep)
 
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
     CAlnReader reader(ifstr);
+    if (NStr::EndsWith(sTestName, "-cni")) {
+        reader.SetUseNexusInfo(false);
+    }
 
     CAlnReader::TFastaFlags fasta_flags = 
         (NStr::FindNoCase(testInfo.mOutFile.GetName(), "no-mods") == NPOS) ?

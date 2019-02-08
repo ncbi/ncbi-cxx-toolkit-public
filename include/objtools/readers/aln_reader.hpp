@@ -149,9 +149,15 @@ public:
 
     // constructor
     // defaults to protein alphabet and A2M gap characters
-    CAlnReader(CNcbiIstream& is) : m_IS(is), m_ReadDone(false) { m_Errors.clear();
-                                                                 SetAlphabet(eAlpha_Protein);
-                                                                 SetAllGap(".-"); };
+    CAlnReader(CNcbiIstream& is) : 
+        m_IS(is), 
+        m_ReadDone(false),
+        m_UseNexusInfo(true) 
+    { 
+        m_Errors.clear();
+        SetAlphabet(eAlpha_Protein);
+        SetAllGap(".-");
+    };
 
     // destructor
     virtual ~CAlnReader(void);
@@ -177,6 +183,9 @@ public:
     const string& GetEndGap(void) const;
     string&       SetEndGap(void);
     void          SetEndGap(const string& value);
+
+    bool GetUseNexusInfo() const {return m_UseNexusInfo; };
+    void SetUseNexusInfo(bool useNexusInfo) { m_UseNexusInfo = useNexusInfo; };
 
     /// Convenience function for setting beginning, middle, and
     /// end gap to the same thing
@@ -266,6 +275,7 @@ private:
     vector<string>            m_SeqVec; 
     vector<TSeqPos>           m_SeqLen; 
     TErrorList                m_Errors;
+    bool                      m_UseNexusInfo;
 
     /// characters have different contexts, depending on 
     /// whether they are before the first non-gap character,

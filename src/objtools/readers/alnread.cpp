@@ -4423,6 +4423,7 @@ ReadAlignmentFile(
     void * erroruserdata,
     CSequenceInfo& sequence_info,
     bool gen_local_ids,
+    bool use_nexus_info,
     SAlignmentFile& alignmentInfo)
 {
     TAlignRawFilePtr afrp;
@@ -4432,9 +4433,9 @@ ReadAlignmentFile(
         return false;
     }
     
-    afrp = s_ReadAlignFileRaw ( readfunc, istr, sequence_info,
-                                false,
-                                errfunc, erroruserdata, &format);
+    afrp = s_ReadAlignFileRaw ( 
+        readfunc, istr, sequence_info, use_nexus_info,
+        errfunc, erroruserdata, &format);
     if (!afrp) {
         return false;
     }

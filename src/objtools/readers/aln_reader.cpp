@@ -291,6 +291,7 @@ void CAlnReader::Read(
     bool allClear = ReadAlignmentFile(sReadLine, m_IS,
                             s_ReportError, &(m_Errors), sequenceInfo,
                             generate_local_ids,
+                            m_UseNexusInfo,
                             alignmentInfo);
 
     // report any errors through proper channels:
