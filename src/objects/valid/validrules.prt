@@ -1151,6 +1151,456 @@ AR\|APR\|MAY\|JUN\|JUL\|AUG\|SEP\|OCT\|NOV\|DEC\)-\(19\|20\)\(0\|1\|2\|3\|4\|5
     } ,
     require-order FALSE ,
     allow-unlisted TRUE
+  },
+  {
+    prefix "MIMARKS:5.0-Data-START" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^mimarks-survey\|mimarks-specimen\|$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_broad_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_local_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_medium" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "target_gene" ,
+        required TRUE ,
+        severity info }
+    } ,
+    require-order FALSE ,
+    allow-unlisted TRUE ,
+    dependent-rules {
+      {
+        match-name "investigation_type" ,
+        value-constraint "^mimarks-specimen$" ,
+        other-fields {
+          {
+            field-name "isol_growth_condt" ,
+            required TRUE ,
+            severity info } 
+        }
+      }
+    } 
+  },
+  {
+    prefix "MIMS:5.0-Data-START" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^metagenome$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_broad_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_local_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_medium" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info }
+    } ,
+    require-order FALSE ,
+    allow-unlisted TRUE
+  },
+  {
+    prefix "MISAG:5.0-Data-START" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^misag$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_broad_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_local_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_medium" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly_qual" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "tax_ident" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly_software" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "compl_score" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "compl_software" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "contam_score" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "sort_tech" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "single_cell_lysis_appr" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "wga_amp_appr" ,
+        required TRUE ,
+        severity info }
+    } ,
+    require-order FALSE ,
+    allow-unlisted TRUE
+  },
+  {
+    prefix "MIGS:5.0-Data-START" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^eukaryote\|bacteria_archaea\|plasmid\|virus\|organelle\|$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_broad_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_local_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_medium" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "isol_growth_condt" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly_software" ,
+        required TRUE ,
+        severity info }
+    } ,
+    require-order FALSE ,
+    allow-unlisted TRUE ,
+    dependent-rules {
+      {
+        match-name "investigation_type" ,
+        value-constraint "^eukaryote$" ,
+        other-fields {
+          {
+            field-name "assembly_qual" ,
+            required TRUE ,
+            severity info }  ,
+          {
+            field-name "number_contig" ,
+            required TRUE ,
+            severity info } 
+        }
+      },
+      {
+        match-name "investigation_type" ,
+        value-constraint "^bacteria_archaea$" ,
+        other-fields {
+          {
+            field-name "num_replicons" ,
+            required TRUE ,
+            severity info }  ,
+          {
+            field-name "ref_biomaterial" ,
+            required TRUE ,
+            severity info }  ,
+          {
+            field-name "assembly_qual" ,
+            required TRUE ,
+            severity info }  ,
+          {
+            field-name "number_contig" ,
+            required TRUE ,
+            severity info } 
+        }
+      },
+      {
+        match-name "investigation_type" ,
+        value-constraint "^plasmid$" ,
+        other-fields {
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } 
+        }
+      },
+      {
+        match-name "investigation_type" ,
+        value-constraint "^virus$" ,
+        other-fields {
+          {
+            field-name "propagation" ,
+            required TRUE ,
+            severity info } 
+        }
+      }
+    } 
+  },
+  {
+    prefix "MIUVIG:5.0-Data-START" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^miuvig$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_broad_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_local_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_medium" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly_qual" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "source_uvig" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "virus_enrich_appr" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly_software" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "number_contig" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "vir_ident_software" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "pred_genome_type" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "pred_genome_struc" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "detec_type" ,
+        required TRUE ,
+        severity info }
+    } ,
+    require-order FALSE ,
+    allow-unlisted TRUE
+  },
+  {
+    prefix "MIMAG:5.0-Data-START" ,
+    fields {
+      {
+        field-name "investigation_type" ,
+        match-expression "^mimag$" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "project_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "lat_lon" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "geo_loc_name" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "collection_date" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_broad_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_local_scale" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "env_medium" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "seq_meth" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly_qual" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "tax_ident" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "assembly_software" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "compl_score" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "compl_software" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "contam_score" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "bin_param" ,
+        required TRUE ,
+        severity info } ,
+      {
+        field-name "bin_software" ,
+        required TRUE ,
+        severity info }
+    } ,
+    require-order FALSE ,
+    allow-unlisted TRUE
   }
 }
 
