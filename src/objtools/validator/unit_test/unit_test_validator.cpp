@@ -21506,10 +21506,6 @@ void TestOneStrain(const string& taxname, const string& strain, const string& li
         expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Warning, "StrainContainsTaxInfo",
             "Strain '" + strain + "' contains taxonomic name information"));
     }
-    if (NStr::Equal(taxname, "Bacillus sp.") || NStr::Equal(taxname, "Acetobacter sp.")) {
-        expected_errors.push_back(new CExpectedError("lcl|good", eDiag_Info, "OrganismIsUndefinedSpecies",
-            "Organism '" + taxname + "' is undefined species and does not have a specific identifier."));
-    }
 
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
@@ -23720,6 +23716,33 @@ BOOST_AUTO_TEST_CASE(Test_VR_852)
     BOOST_CHECK_EQUAL("unclassified sequences", objects::validator::FixSpecificHost("unclassified sequences"));
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_VR_875)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(entry, "Phascolarctobacterium sp.");
+    unit_test_util::SetTaxon(entry, 0);
+    unit_test_util::SetTaxon(entry, 2049039);
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_isolate, "P2B-1");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_isolation_source, "human stool");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Homo sapiens");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "TRUE");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_metagenomic, "TRUE");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_metagenome_source, "human gut metagenome");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_collection_date, "2018");
+
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    options |= CValidator::eVal_genome_submission;
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+}
 
 #if 0
 BOOST_AUTO_TEST_CASE(Test_TM_897)

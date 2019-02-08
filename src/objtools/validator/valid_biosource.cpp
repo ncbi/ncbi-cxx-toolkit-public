@@ -1320,30 +1320,22 @@ const CSeq_entry *ctx)
     }
     if (orgref.IsSetTaxname()) {
         taxname = orgref.GetTaxname();
-        if ((NStr::StartsWith(lineage, "Eukaryota; Fungi; ", NStr::eNocase) ||
-            NStr::StartsWith(lineage, "Viruses; ", NStr::eNocase) ||
-            NStr::StartsWith(lineage, "Bacteria; ", NStr::eNocase) ||
-            NStr::StartsWith(lineage, "Archaea; ", NStr::eNocase)) &&
-            !IsGenomeSubmission()) {
-            // suppress OrganismIsUndefinedSpecies message
-        } else if (s_HasMetagenomeSource(orgref)) {
-            // suppress OrganismIsUndefinedSpecies message
-        } else if ((NStr::EndsWith(taxname, " sp.", NStr::eNocase) ||
-            NStr::EndsWith(taxname, " sp", NStr::eNocase)) &&
-            !NStr::StartsWith(taxname, "uncultured ", NStr::eNocase) &&
-            !NStr::Equal(taxname, "Haemoproteus sp.", NStr::eNocase) &&
-            !NStr::StartsWith(taxname, "symbiont ", NStr::eNocase) &&
-            !NStr::StartsWith(taxname, "endosymbiont ", NStr::eNocase) &&
-            NStr::FindNoCase(taxname, " symbiont ") == NPOS &&
-            NStr::FindNoCase(taxname, " endosymbiont ") == NPOS) {
-            EDiagSev sev;
-            if (IsGenomeSubmission())
-                sev = eDiag_Error;
-            else
-                sev = eDiag_Info;
-            PostObjErr(sev, eErr_SEQ_DESCR_OrganismIsUndefinedSpecies,
-                "Organism '" + taxname + "' is undefined species and does not have a specific identifier.",
-                obj, ctx);
+        if (IsGenomeSubmission()) {
+            if (s_HasMetagenomeSource(orgref)) {
+                // suppress OrganismIsUndefinedSpecies message
+            } else if ((NStr::EndsWith(taxname, " sp.", NStr::eNocase) ||
+                NStr::EndsWith(taxname, " sp", NStr::eNocase)) &&
+                !NStr::StartsWith(taxname, "uncultured ", NStr::eNocase) &&
+                !NStr::Equal(taxname, "Haemoproteus sp.", NStr::eNocase) &&
+                !NStr::StartsWith(taxname, "symbiont ", NStr::eNocase) &&
+                !NStr::StartsWith(taxname, "endosymbiont ", NStr::eNocase) &&
+                NStr::FindNoCase(taxname, " symbiont ") == NPOS &&
+                NStr::FindNoCase(taxname, " endosymbiont ") == NPOS) {
+
+                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_OrganismIsUndefinedSpecies,
+                    "Organism '" + taxname + "' is undefined species and does not have a specific identifier.",
+                    obj, ctx);
+            }
         }
         if (s_UnbalancedParentheses(taxname)) {
             PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnbalancedParentheses,
