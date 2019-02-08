@@ -463,7 +463,7 @@ s_ReportCharCommentError(
     string errMessage = StrPrintf(errFormat, valName, expected.c_str(), seen);
 
     sReportError(
-        nullptr,
+        "",
         -1,
         eAlnErr_BadFormat,
         errMessage,
@@ -721,7 +721,7 @@ s_ReportRepeatedId(
     }
 
     sReportError(
-        nullptr,
+        "",
         -1,
         eAlnErr_BadData,
         errMessage,
@@ -771,7 +771,7 @@ s_ReportUnusedLine(
     if (line_num_start == line_num_stop) {
         string errMessage = StrPrintf(errFormat1, line_num_start);
         sReportError(
-            nullptr,
+            "",
             line_num_start,
             eAlnErr_BadFormat,
             errMessage,
@@ -780,7 +780,7 @@ s_ReportUnusedLine(
     } else {
         string errMessage = StrPrintf(errFormat2, line_num_start);
         sReportError(
-            nullptr,
+            "",
             line_num_start,
             eAlnErr_BadFormat,
             errMessage,
@@ -795,7 +795,7 @@ s_ReportUnusedLine(
         }
         string errMessage = StrPrintf(errFormat3, line_val->data);
         sReportError(
-            nullptr,
+            "",
             line_num_start,
             eAlnErr_BadFormat,
             errMessage,
@@ -1517,35 +1517,25 @@ static void s_GetNexusSizeComments(
  * otherwise the function will return a 0.
  */
 static char GetNexusTypechar(
-    const char * str, 
-    const char * val_name)
+        const string& line_, 
+        const string& val_name_)
 {
-    const char * cp;
-    const char * cpend;
+    string line(line_);
+    string val_name(val_name_);
 
-    if (!str  ||  !val_name) {
+    if (!NStr::EndsWith(line, ';')) {
         return 0;
     }
-    cpend = strstr (str, ";");
-    if (!cpend) {
+    auto namePos = line.find(val_name);
+    if (namePos == string::npos) {
         return 0;
     }
-    cp = strstr (str, val_name);
-    if (!cp || cp > cpend) {
-        return 0;
+    line = line.substr(namePos + val_name.size());
+    auto valPos = line.find_first_not_of(" =\t");
+    if (line[valPos] == '\'') {
+        ++valPos;
     }
-    cp += strlen (val_name);
-    while ( isspace ((unsigned char)*cp)) {
-        cp ++;
-    }
-    if (*cp != '=') {
-        return 0;
-    }
-    cp++;
-    while ( isspace ((unsigned char)*cp) || *cp == '\'') {
-        cp ++;
-    }
-    return *cp;
+    return line[valPos];
 }
 
 
@@ -1556,55 +1546,34 @@ static char GetNexusTypechar(
  * otherwise the function returns true.
  */ 
 static bool s_CheckNexusCharInfo(
-    const char* str,
+    const string& str,
     const CSequenceInfo& sequence_info,
     FReportErrorFunction errfunc,
     void* errdata)
 {
-    const char * cp;
-    char   c;
+    string normalized(str);
+    NStr::ToLower(normalized);
 
-    if (!str) {
+    auto formatPos = normalized.find("format");
+    if (formatPos == string::npos) {
         return false;
     }
 
-    cp = strstr (str, "format ");
-    if (!cp) {
-        cp = strstr (str, "FORMAT ");
-    }
-    if (!cp) {
-        return false;
-    }
-
-    if (!errfunc) {
-        return true;
-    }
-
-    c = GetNexusTypechar (cp + 7, "missing");
-    if (c == 0) {
-        c = GetNexusTypechar (cp + 7, "MISSING");
-    }
+    auto formatInfo = normalized.substr(formatPos + 7);
+    char c = GetNexusTypechar (formatInfo, "missing");
     if (c != 0  &&  sequence_info.Missing().find(c) == string::npos) {
         s_ReportCharCommentError (
             sequence_info.Missing(), c, "MISSING", errfunc, errdata);
     }
  
-    c = GetNexusTypechar (cp + 7, "gap");
-    if (c == 0) {
-        c = GetNexusTypechar (cp + 7, "GAP");
-    }
-    if (c != 0  &&  sequence_info.MiddleGap().find(c) == string::npos)
-    {
+    c = GetNexusTypechar (formatInfo, "gap");
+    if (c != 0  &&  sequence_info.MiddleGap().find(c) == string::npos) {
         s_ReportCharCommentError (
             sequence_info.MiddleGap(), c, "GAP", errfunc, errdata);
     }
  
-    c = GetNexusTypechar (cp + 7, "match");
-    if (c == 0) {
-        c = GetNexusTypechar (cp + 7, "MATCH");
-    }
-    if (c != 0  &&  sequence_info.Match().find(c) == string::npos)
-    {
+    c = GetNexusTypechar (formatInfo, "match");
+    if (c != 0  &&  sequence_info.Match().find(c) == string::npos) {
         s_ReportCharCommentError (
             sequence_info.Match(), c, "MATCH", errfunc, errdata);
     }
@@ -1617,42 +1586,29 @@ static bool s_CheckNexusCharInfo(
  */ 
 static bool 
 s_UpdateNexusCharInfo(
-    const char* str,
+    const string& str,
     CSequenceInfo& sequence_info)
 {
-    const char * cp;
     char   c;
 
-    if (!str) {
+    string normalized(str);
+    NStr::ToLower(normalized);
+
+    auto formatPos = normalized.find("format");
+    if (formatPos == string::npos) {
         return false;
     }
 
-    cp = strstr (str, "format ");
-    if (!cp) {
-        cp = strstr (str, "FORMAT ");
-    }
-    if (!cp) {
-        return false;
-    }
-
-    c = GetNexusTypechar (cp + 7, "missing");
-    if (c == 0) {
-        c = GetNexusTypechar (cp + 7, "MISSING");
-    }
+    auto formatInfo = normalized.substr(formatPos + 7);
+    c = GetNexusTypechar (formatInfo, "missing");
     sequence_info.SetMissing(c);
     
-    c = GetNexusTypechar (cp + 7, "gap");
-    if (c == 0) {
-        c = GetNexusTypechar (cp + 7, "GAP");
-    }
+    c = GetNexusTypechar (formatInfo, "gap");
     sequence_info.SetBeginningGap(c);
     sequence_info.SetMiddleGap(c);
     sequence_info.SetEndGap(c);
  
-    c = GetNexusTypechar (cp + 7, "match");
-    if (c == 0) {
-        c = GetNexusTypechar (cp + 7, "MATCH");
-    }
+    c = GetNexusTypechar (formatInfo, "match");
     sequence_info.SetMatch(c);
     return true;
 } 
