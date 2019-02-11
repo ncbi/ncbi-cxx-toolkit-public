@@ -67,14 +67,14 @@ template<class BV>
 inline
 CMergeBitsetBlob<BV>::CMergeBitsetBlob()
 {
-    m_TmpBvBlock = m_TmpBv.allocate_tempblock();
+    m_TmpBvBlock = (bm::word_t*)bm::aligned_new_malloc(bm::set_block_alloc_size);
 }
 
 template<class BV>
 inline
 CMergeBitsetBlob<BV>::~CMergeBitsetBlob()
 {
-    m_TmpBv.free_tempblock(m_TmpBvBlock);
+    bm::aligned_free(m_TmpBvBlock);
 }
 
 template<class BV>

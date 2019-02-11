@@ -39,6 +39,11 @@ For more information please visit:  http://bitmagic.io
 #pragma GCC diagnostic ignored "-Wconversion"
 #endif
 
+#ifdef _MSC_VER
+#pragma warning( push )
+#pragma warning( disable : 4146)
+#endif
+
 
 namespace bm
 {
@@ -54,7 +59,11 @@ namespace bm
             {
                 bm::word_t BM_VECT_ALIGN w32[bm::set_block_size] BM_VECT_ALIGN_ATTR;
                 bm::id64_t BM_VECT_ALIGN w64[bm::set_block_size / 2] BM_VECT_ALIGN_ATTR;
-#ifdef BMAVX2OPT
+                
+#if defined(BMAVX512OPT)
+                __m512i  BM_VECT_ALIGN w512[bm::set_block_size / 16] BM_VECT_ALIGN_ATTR;
+#endif
+#if defined(BMAVX2OPT)
                 __m256i  BM_VECT_ALIGN w256[bm::set_block_size / 8] BM_VECT_ALIGN_ATTR;
 #endif
 #if defined(BMSSE2OPT) || defined(BMSSE42OPT)
@@ -66,6 +75,10 @@ namespace bm
             operator const bm::word_t*() const { return &(b_.w32[0]); }
             explicit operator bm::id64_t*() { return &b_.w64[0]; }
             explicit operator const bm::id64_t*() const { return &b_.w64[0]; }
+#ifdef BMAVX512OPT
+            explicit operator __m512i*() { return &b_.w512[0]; }
+            explicit operator const __m512i*() const { return &b_.w512[0]; }
+#endif
 #ifdef BMAVX2OPT
             explicit operator __m256i*() { return &b_.w256[0]; }
             explicit operator const __m256i*() const { return &b_.w256[0]; }
@@ -80,7 +93,8 @@ namespace bm
             const bm::word_t* end() const { return (b_.w32 + bm::set_block_size); }
             bm::word_t* end() { return (b_.w32 + bm::set_block_size); }
         };
-
+    
+    
 /**
     Get minimum of 2 values
 */
@@ -134,6 +148,34 @@ private:
 private:
     T* ptr_;
 };
+
+/**
+    Portable LZCNT with (uses minimal LUT)
+    @ingroup bitfunc
+    @internal
+*/
+inline 
+unsigned count_leading_zeros(unsigned x) 
+{
+    unsigned n =
+        (x >= (1U << 16)) ?
+        ((x >= (1U << 24)) ? ((x >= (1 << 28)) ? 28u : 24u) : ((x >= (1U << 20)) ? 20u : 16u))
+        :
+        ((x >= (1U << 8)) ? ((x >= (1U << 12)) ? 12u : 8u) : ((x >= (1U << 4)) ? 4u : 0u));
+    return unsigned(bm::lzcnt_table<true>::_lut[x >> n]) - n;
+}
+
+/**
+    Portable TZCNT with (uses 37-LUT)
+    @ingroup bitfunc
+    @internal
+*/
+inline
+unsigned count_trailing_zeros(unsigned v)
+{
+    // (v & -v) isolates the last set bit
+    return unsigned(bm::tzcnt_table<true>::_lut[(-v & v) % 37]);
+}
 
 /**
     Lookup table based integer LOG2
@@ -255,8 +297,94 @@ unsigned bit_scan_reverse32(unsigned value)
 #endif
 }
 
+inline
+unsigned bit_scan_forward32(unsigned value)
+{
+    BM_ASSERT(value);
+#if defined(BM_x86) && (defined(__GNUG__) || defined(_MSC_VER))
+    return bm::bsf_asm32(value);
+#else
+    return bit_scan_fwd(value);
+#endif
+}
+
+
+BMFORCEINLINE
+unsigned long long bmi_bslr_u64(unsigned long long w)
+{
+#if defined(BMAVX2OPT) || defined (BMAVX512OPT)
+    return _blsr_u64(w);
+#else
+    return w & (w - 1);
+#endif
+}
+
+BMFORCEINLINE
+unsigned long long bmi_blsi_u64(unsigned long long w)
+{
+#if defined(BMAVX2OPT) || defined (BMAVX512OPT)
+    return _blsi_u64(w);
+#else
+    return w & (-w);
+#endif
+}
+
+/// 64-bit bit-scan reverse
+inline
+unsigned count_leading_zeros_u64(bm::id64_t w)
+{
+    BM_ASSERT(w);
+
+#if defined(BMAVX2OPT) || defined (BMAVX512OPT)
+    return (unsigned)_lzcnt_u64(w);
+#else
+    unsigned z;
+    unsigned w1 = unsigned(w >> 32);
+    if (!w1)
+    {
+        z = 32;
+        w1 = unsigned(w);
+        z += 31 - bm::bit_scan_reverse32(w1);
+    }
+    else
+    {
+        z = 31 - bm::bit_scan_reverse32(w1);
+    }
+    return z;
+#endif
+}
+
+inline
+unsigned count_trailing_zeros_u64(bm::id64_t w)
+{
+    BM_ASSERT(w);
+
+#if defined(BMAVX2OPT) || defined (BMAVX512OPT)
+    return (unsigned)_tzcnt_u64(w);
+#else
+    unsigned z;
+    unsigned w1 = unsigned(w);
+    if (!w1)
+    {
+        z = 32;
+        w1 = unsigned(w >> 32);
+        z += bm::bit_scan_forward32(w1);
+    }
+    else
+    {
+        z = bm::bit_scan_forward32(w1);
+    }
+    return z;
+#endif
+}
+
+
+
 #ifdef __GNUG__
 #pragma GCC diagnostic pop
+#endif
+#ifdef _MSC_VER
+#pragma warning( pop )
 #endif
 
 

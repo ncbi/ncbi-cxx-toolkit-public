@@ -422,7 +422,7 @@ CBDB_ExtBlobStore<TBV>::CBDB_ExtBlobStore()
 {
     m_BlobContainer.reserve(m_ContainerMax * 2);
     m_LastFromBlobId = m_LastToBlobId = 0;
-    m_STmpBlock = m_BlobIds.allocate_tempblock();
+    m_STmpBlock = (bm::word_t*)bm::aligned_new_malloc(bm::set_block_alloc_size);
 }
 
 template<class TBV>
@@ -444,7 +444,7 @@ CBDB_ExtBlobStore<TBV>::~CBDB_ExtBlobStore()
     }
     delete m_AttrContainer;
     if (m_STmpBlock) {
-        m_BlobIds.free_tempblock(m_STmpBlock);
+        bm::aligned_free(m_STmpBlock);
     }
 
 }

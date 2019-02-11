@@ -44,7 +44,9 @@ public:
 public:
     similarity_descriptor()
      : so1_(0), so2_(0), so1_idx_(0), so2_idx_(0)
-    {}
+    {
+		similarity_ = 0;
+	}
     
     similarity_descriptor(const SO* so1, const SO* so2,
                           const distance_metric_descriptor* dmd_ptr)
@@ -54,6 +56,7 @@ public:
     {
         for (size_t i = 0; i < DMD_SZ; ++i)
             dmd_[i] = dmd_ptr[i];
+		similarity_ = 0;
     }
 
     similarity_descriptor(const SO* so1, IDX_VALUE i1,
@@ -63,6 +66,7 @@ public:
     {
         for (size_t i = 0; i < DMD_SZ; ++i)
             dmd_[i] = dmd_ptr[i];
+		similarity_ = 0;
     }
 
     similarity_descriptor(const similarity_descriptor& sd)
@@ -191,12 +195,12 @@ void build_jaccard_similarity_batch(SIMBATCH& sbatch, const SV& sv)
     //
     for (unsigned i = 0; i < plains; ++i)
     {
-        const typename SV::bvector_type* bv1 = sv.plain(i);
+        const typename SV::bvector_type* bv1 = sv.get_plain(i);
         if (bv1)
         {
             for (unsigned j = i+1; j < plains; ++j)
             {
-                const typename SV::bvector_type* bv2 = sv.plain(j);
+                const typename SV::bvector_type* bv2 = sv.get_plain(j);
                 if (bv2 && bv1 != bv2)
                 {
                     sbatch.push_back(typename SIMBATCH::similaruty_descriptor_type(bv1, i, bv2, j, &dmd[0]));

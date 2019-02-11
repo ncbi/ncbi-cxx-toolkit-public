@@ -56,7 +56,8 @@ public:
     enum format
     {
         ct_time = 0,
-        ct_ops_per_sec = 1
+        ct_ops_per_sec,
+        ct_all
     };
     
     /// test name to duration map
@@ -95,7 +96,17 @@ public:
         auto diff = finish_ - start_;
         if (dmap_)
         {
-            (*dmap_)[name_] = statistics(diff, repeats_);
+            statistics st(diff, repeats_);
+            duration_map_type::iterator it = dmap_->find(name_);
+            if (it == dmap_->end())
+            {
+                (*dmap_)[name_] = st;
+            }
+            else
+            {
+                it->second.repeats++;
+                it->second.duration += st.duration;
+            }
         }
         else // report the measurements
         {
@@ -130,6 +141,7 @@ public:
             switch (f)
             {
             case ct_time:
+            print_time:
                 {
                 auto ms = it->second.duration.count();
                 if (ms > 1000)
@@ -155,6 +167,29 @@ public:
                 }
                 }
                 break;
+            case ct_all:
+                {
+                if (st.repeats <= 1)
+                {
+                    goto print_time;
+                }
+                unsigned iops = (unsigned)((double)st.repeats / (double)it->second.duration.count()) * 1000;
+                if (iops)
+                {
+                    std::cout << it->first << "; " << iops << " ops/sec; "
+                              << std::setprecision(4) << it->second.duration.count() << " ms" << std::endl;
+                }
+                else
+                {
+                    double sec = double(it->second.duration.count()) / 1000;
+
+                    double ops = ((double)st.repeats / (double)it->second.duration.count()) * 1000;
+                    std::cout << it->first << "; " << std::setprecision(4) << ops << " ops/sec; "
+                              << std::setprecision(4) << sec << " sec." << std::endl;
+                }
+                }
+                break;
+
             default:
                 break;
             }

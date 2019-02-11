@@ -53,17 +53,34 @@ For more information please visit:  http://bitmagic.io
 #undef VECT_INVERT_ARR
 #undef VECT_AND_ARR
 #undef VECT_OR_ARR
-#undef VECT_OR_ARR_3WAY
-#undef VECT_OR_ARR_5WAY
+#undef VECT_OR_BLOCK_2WAY
+#undef VECT_OR_BLOCK_3WAY
+#undef VECT_OR_BLOCK_5WAY
 #undef VECT_SUB_ARR
-#undef VECT_XOR_ARR
+#undef VECT_XOR_BLOCK
+#undef VECT_XOR_BLOCK_2WAY
 
 #undef VECT_COPY_BLOCK
 #undef VECT_SET_BLOCK
 #undef VECT_IS_ZERO_BLOCK
 #undef VECT_IS_ONE_BLOCK
 
+#undef VECT_LOWER_BOUND_SCAN_U32
+#undef VECT_SHIFT_R1
+#undef VECT_SHIFT_R1_AND
 
+#undef VECT_ARR_BLOCK_LOOKUP
+#undef VECT_SET_BLOCK_BITS
+#undef VECT_BLOCK_CHANGE
+#undef VECT_BIT_TO_GAP
+
+#undef VECT_AND_DIGEST
+#undef VECT_AND_DIGEST_2WAY
+#undef VECT_AND_DIGEST_5WAY
+#undef VECT_BLOCK_SET_DIGEST
+
+#undef BMI1_SELECT64
+#undef BMI2_SELECT64
 
 #undef BM_UNALIGNED_ACCESS_OK
 #undef BM_x86

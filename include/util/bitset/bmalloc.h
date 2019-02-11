@@ -34,6 +34,9 @@ namespace bm
 #if defined(BMAVX2OPT)
 #define BM_ALLOC_ALIGN 32
 #endif
+#if defined(BMAVX512OPT)
+#define BM_ALLOC_ALIGN 64
+#endif
 
 
 /*! 
@@ -388,6 +391,57 @@ typedef bm::alloc_pool<block_allocator, ptr_allocator> standard_alloc_pool;
 typedef bm::mem_alloc<block_allocator, ptr_allocator, standard_alloc_pool> standard_allocator;
 
 /** @} */
+
+
+/// Aligned malloc (unlike classic malloc it throws bad_alloc exception)
+///
+/// To allocate temp bit-block use: bm::aligned_new_malloc(bm::set_block_alloc_size);
+/// @internal
+inline
+void* aligned_new_malloc(size_t size)
+{
+    void* ptr;
+
+#ifdef BM_ALLOC_ALIGN
+#ifdef _MSC_VER
+    ptr = ::_aligned_malloc(size, BM_ALLOC_ALIGN);
+#else
+    ptr = ::_mm_malloc(size, BM_ALLOC_ALIGN);
+#endif
+#else
+    ptr = ::malloc(size);
+#endif
+    if (!ptr)
+    {
+#ifndef BM_NO_STL
+    throw std::bad_alloc();
+#else
+    BM_THROW(BM_ERR_BADALLOC);
+#endif
+    }
+    return ptr;
+}
+
+/// Aligned free
+///
+/// @internal
+inline
+void aligned_free(void* ptr)
+{
+    if (!ptr)
+        return;
+#ifdef BM_ALLOC_ALIGN
+# ifdef _MSC_VER
+    ::_aligned_free(ptr);
+#else
+    ::_mm_free(ptr);
+# endif
+#else
+    ::free(ptr);
+#endif
+}
+
+
 
 #undef BM_ALLOC_ALIGN
 

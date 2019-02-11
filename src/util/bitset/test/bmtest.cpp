@@ -23,6 +23,7 @@ For more information please visit:  http://bitmagic.io
 #include <time.h>
 #include <stdio.h>
 #include <sstream>
+#include <cassert>
 
 //#define BMSSE2OPT
 //#define BMSSE42OPT
@@ -40,6 +41,7 @@ For more information please visit:  http://bitmagic.io
 
 #include <util/bitset/ncbi_bitset_alloc.hpp>
 #include <util/bitset/ncbi_bitset_util.hpp>
+#include <util/bitset/bmaggregator.h>
 #include <util/bitset/bmsparsevec.h>
 #include <util/bitset/bmsparsevec_algo.h>
 #include <util/bitset/bmsparsevec_serial.h>
@@ -106,19 +108,21 @@ private:
 
 typedef bm::bvector<> bvect;
 
-
 // generate pseudo-random bit-vector, mix of compressed/non-compressed blocks
 //
 static
-void generate_bvector(bvect& bv, unsigned vector_max = 40000000)
+void generate_bvector(bvect& bv, unsigned vector_max = 40000000, bool optimize = true)
 {
     unsigned i, j;
     for (i = 0; i < vector_max;)
     {
         // generate bit-blocks
-        for (j = 0; j < 65535 * 8; i += 10, j++)
         {
-            bv.set(i);
+            bvect::bulk_insert_iterator iit(bv);
+            for (j = 0; j < 65535 * 10; i += 10, j++)
+            {
+                iit = i;
+            }
         }
         if (i > vector_max)
             break;
@@ -132,6 +136,8 @@ void generate_bvector(bvect& bv, unsigned vector_max = 40000000)
                 break;
         }
     }
+    if (optimize)
+        bv.optimize();
 }
 
 
@@ -156,11 +162,11 @@ void SimpleFillSets(test_bitset& bset,
 // 111........111111........111111..........11111111.......1111111...
 //
 static
-void FillSetsIntervals(test_bitset& bset, 
+void FillSetsIntervals(test_bitset* bset,
                        bvect& bv,
-                       unsigned min, 
-                       unsigned max,
-                       unsigned fill_factor,
+                       unsigned min = 0, 
+                       unsigned max = BSIZE,
+                       unsigned fill_factor = 10,
                        bool set_flag=true)
 {
     while(fill_factor==0)
@@ -184,43 +190,98 @@ void FillSetsIntervals(test_bitset& bset,
         {
             if (set_flag)
             {
-                bset[j] = true;
+                if (bset)
+                    bset->set(j, true);
                 bv[j]= true;
             }
             else
             {
-                bset[j] = false;
+                if (bset)
+                    bset->set(j, false);
                 bv[j] = false;
             }
                            
         } // j
-
         i = end;
-
-
         len = rand() % 10;
 
         i+=len;
-
         {
             for(unsigned k=0; k < 1000 && i < max; k+=3,i+=3)
             {
                 if (set_flag)
                 {
-                    bset[i] = true;
+                    if (bset)
+                        bset->set(i, true);
                     bv[i] = true;
                 }
                 else
                 {
-                    bset[j] = false;
+                    if (bset)
+                        bset->set(j, false);
                     bv[j] = false;
                 }
-
             }
         }
 
     } // for i
 
+}
+
+static
+void generate_sparse_bvector(bvect& bv,
+                             unsigned min = 0,
+                             unsigned max = BSIZE,
+                             unsigned fill_factor = 65536)
+{
+    bvect::bulk_insert_iterator iit(bv);
+    unsigned ff = fill_factor / 10;
+    for (unsigned i = min; i < max; i+= ff)
+    {
+        //bv.set(i);
+        iit = i;
+        ff += ff / 2;
+        if (ff > fill_factor)
+            ff = fill_factor / 10;
+    }
+    iit.flush();
+}
+
+
+static
+void GenerateTestCollection(std::vector<bvect>* target,
+                            unsigned count = 30,
+                            unsigned vector_max = 40000000,
+                            bool optimize = true)
+{
+    assert(target);
+    bvect bv_common; // sub-vector common for all collection
+    generate_sparse_bvector(bv_common, vector_max/10, vector_max, 250000);
+    
+    unsigned cnt1 = (count / 2);
+    
+    unsigned i = 0;
+    
+    for (i = 0; i < cnt1; ++i)
+    {
+        std::unique_ptr<bvect> bv (new bvect);
+        generate_bvector(*bv, vector_max, optimize);
+        *bv |= bv_common;
+        if (optimize)
+            bv->optimize();
+        target->push_back(std::move(*bv));
+    } // for
+    
+    unsigned fill_factor = 10;
+    for (; i < count; ++i)
+    {
+        std::unique_ptr<bvect> bv (new bvect);
+        
+        FillSetsIntervals(0, *bv, vector_max/ 10, vector_max, fill_factor);
+        *bv |= bv_common;
+
+        target->push_back(std::move(*bv));
+    } // for
 }
 
 static
@@ -267,7 +328,7 @@ void BitCountTest()
     test_bitset*  bset = new test_bitset();
     unsigned value = 0;
 
-    FillSetsIntervals(*bset, *bv, 0, BSIZE, 10);
+    FillSetsIntervals(bset, *bv, 0, BSIZE, 10);
 
     //if (!platform_test)
     {
@@ -399,6 +460,204 @@ void BitForEachTest()
 }
 
 static
+void WordSelectTest()
+{
+    const unsigned test_size = 50000000;
+
+    std::vector<bm::id64_t> vect_v(test_size);
+    std::vector<unsigned> vect_cnt(test_size);
+    std::vector<unsigned> vect_r1(test_size);
+    std::vector<unsigned> vect_r2(test_size);
+
+    for (unsigned i = 0; i < test_size; ++i)
+    {
+        unsigned w;
+        bm::id64_t w64;
+        do
+        {
+            w = unsigned(rand());
+            if (i % 3 == 0)
+                w64 = w << rand()%2048;
+            else
+            if (i % 4 == 0)
+                w64 = bm::id64_t(w) | (bm::id64_t(w) << 32);
+            else
+                w64 = bm::id64_t(w) | (0xFFAull << 33ull);
+        } while (!w64);
+        
+        if (i % 3 == 0)
+            w64 = w << rand()%32;
+        else
+        if (i % 4 == 0)
+            w64 = w | (bm::id64_t(w) << 32);
+        else
+            w64 = w | (1ull << 60);
+        
+        unsigned bc = bm::word_bitcount64(w64);
+        
+        vect_v[i] = w64;
+        vect_cnt[i] = bc;
+    }
+    
+    {
+        TimeTaker tt("select64 linear", 1);
+        for (unsigned i = 0; i < vect_v.size(); ++i)
+        {
+            bm::id64_t w64 = vect_v[i];
+            unsigned bc = vect_cnt[i];
+            if (bc)
+            {
+                for (unsigned j = 1; j <= bc; ++j)
+                {
+                    unsigned idx = bm::word_select64_linear(w64, j);
+                    vect_r1[i] = idx;
+                }
+            }
+            else
+            {
+                vect_r1[i] = 0;
+            }
+        }
+    }
+
+    {
+        TimeTaker tt("select64 bitscan", 1);
+        for (unsigned i = 0; i < vect_v.size(); ++i)
+        {
+            bm::id64_t w64 = vect_v[i];
+            unsigned bc = vect_cnt[i];
+            if (bc)
+            {
+                for (unsigned j = 1; j <= bc; ++j)
+                {
+                    unsigned idx = bm::word_select64_bitscan(w64, j);
+                    vect_r2[i] = idx;
+                }
+            }
+            else
+            {
+                vect_r2[i] = 0;
+            }
+        }
+    }
+
+#ifdef BMBMI1OPT
+    std::vector<unsigned> vect_r3(test_size);
+    std::vector<unsigned> vect_r4(test_size);
+
+    {
+        TimeTaker tt("select64 BMI1 lead-zero", 1);
+        for (unsigned i = 0; i < vect_v.size(); ++i)
+        {
+            bm::id64_t w64 = vect_v[i];
+            unsigned bc = vect_cnt[i];
+            if (bc)
+            {
+                for (unsigned j = 1; j <= bc; ++j)
+                {
+                    unsigned idx = bm::bmi1_select64_lz(w64, j);
+                    vect_r3[i] = idx;
+                }
+            }
+            else
+            {
+                vect_r3[i] = 0;
+            }
+        }
+    }
+    
+    {
+        TimeTaker tt("select64 BMI1 bitscan", 1);
+        for (unsigned i = 0; i < vect_v.size(); ++i)
+        {
+            bm::id64_t w64 = vect_v[i];
+            unsigned bc = vect_cnt[i];
+            if (bc)
+            {
+                for (unsigned j = 1; j <= bc; ++j)
+                {
+                    unsigned idx = bm::bmi1_select64_tz(w64, j);
+                    vect_r4[i] = idx;
+                }
+            }
+            else
+            {
+                vect_r4[i] = 0;
+            }
+        }
+    }
+#endif
+
+#ifdef BMBMI2OPT
+    std::vector<unsigned> vect_r5(test_size);
+
+    {
+        TimeTaker tt("select64 BMI2 pdep", 1);
+        for (unsigned i = 0; i < vect_v.size(); ++i)
+        {
+            bm::id64_t w64 = vect_v[i];
+            unsigned bc = vect_cnt[i];
+            if (bc)
+            {
+                for (unsigned j = 1; j <= bc; ++j)
+                {
+                    unsigned idx = bm::bmi2_select64_pdep(w64, j);
+                    vect_r5[i] = idx;
+                }
+            }
+            else
+            {
+                vect_r5[i] = 0;
+            }
+        }
+    }
+    
+#endif
+
+
+    // validation
+    //
+    for (unsigned i = 0; i < vect_v.size(); ++i)
+    {
+        auto r1 = vect_r1[i];
+        auto r2 = vect_r2[i];
+        
+        if (r1 != r2)
+        {
+            std::cerr << "WordSelect64 error(1) at: " << i << std::endl;
+            exit(1);
+        }
+#ifdef BMBMI1OPT
+        auto r3 = vect_r3[i];
+        auto r4 = vect_r4[i];
+
+        if (r1 != r3)
+        {
+            std::cerr << "WordSelect64 BMI1 error(3) at: " << i << std::endl;
+            exit(1);
+        }
+        if (r1 != r4)
+        {
+            std::cerr << "WordSelect64 BMI1 error(4) at: " << i << std::endl;
+            exit(1);
+        }
+#endif
+
+#ifdef BMBMI2OPT
+        auto r5 = vect_r5[i];
+
+        if (r1 != r5)
+        {
+            std::cerr << "WordSelect64 BMI2 error(5) at: " << i << std::endl;
+            exit(1);
+        }
+#endif
+
+    }
+
+}
+
+static
 void BitCountSparseTest()
 {
     bvect*  bv = new bvect();
@@ -439,8 +698,8 @@ void BitCountSparseTest()
         }
     }
 
-    bvect::blocks_count bc_arr;
-    bv->running_count_blocks(&bc_arr);
+    std::unique_ptr<bvect::rs_index_type> bc_arr(new bvect::rs_index_type());
+    bv->running_count_blocks(bc_arr.get());
 
     {
         unsigned right = 65535;
@@ -450,7 +709,7 @@ void BitCountSparseTest()
             right = 65525 + (i * 10);
             if (right > BSIZE)
                 right = 0;
-            value += bv->count_to(right, bc_arr);
+            value += bv->count_to(right, *bc_arr);
         }
     }
     delete bv;
@@ -460,12 +719,12 @@ void BitCountSparseTest()
 static
 void BitTestSparseTest()
 {
-    auto_ptr<bvect>  bv0(new bvect());
-    auto_ptr<bvect>  bv1(new bvect());
-    auto_ptr<bvect>  bv2(new bvect());
-    auto_ptr<test_bitset>  bset0(new test_bitset());
-    auto_ptr<test_bitset>  bset1(new test_bitset());
-    auto_ptr<test_bitset>  bset2(new test_bitset());
+    unique_ptr<bvect>  bv0(new bvect());
+    unique_ptr<bvect>  bv1(new bvect());
+    unique_ptr<bvect>  bv2(new bvect());
+    unique_ptr<test_bitset>  bset0(new test_bitset());
+    unique_ptr<test_bitset>  bset1(new test_bitset());
+    unique_ptr<test_bitset>  bset2(new test_bitset());
 
     const unsigned repeats = REPEATS * 300000;
 
@@ -513,12 +772,12 @@ void BitTestSparseTest()
 static
 void EnumeratorGoToTest()
 {
-    auto_ptr<bvect>  bv0(new bvect());
-    auto_ptr<bvect>  bv1(new bvect());
-    auto_ptr<bvect>  bv2(new bvect());
-    auto_ptr<test_bitset>  bset0(new test_bitset());
-    auto_ptr<test_bitset>  bset1(new test_bitset());
-    auto_ptr<test_bitset>  bset2(new test_bitset());
+    unique_ptr<bvect>  bv0(new bvect());
+    unique_ptr<bvect>  bv1(new bvect());
+    unique_ptr<bvect>  bv2(new bvect());
+    unique_ptr<test_bitset>  bset0(new test_bitset());
+    unique_ptr<test_bitset>  bset1(new test_bitset());
+    unique_ptr<test_bitset>  bset2(new test_bitset());
 
     const unsigned repeats = REPEATS * 300000;
 
@@ -691,9 +950,9 @@ void FindTest()
     SimpleFillSets(*bset, bv1, 0, BSIZE/2, 4);
     SimpleFillSets(*bset, bv1, 0, BSIZE/2, 5);
     
-    FillSetsIntervals(*bset, bv2, 0, BSIZE/2, 8);
-    FillSetsIntervals(*bset, bv3, 0, BSIZE/2, 12);
-    FillSetsIntervals(*bset, bv4, 0, BSIZE/2, 120);
+    FillSetsIntervals(bset, bv2, 0, BSIZE/2, 8);
+    FillSetsIntervals(bset, bv3, 0, BSIZE/2, 12);
+    FillSetsIntervals(bset, bv4, 0, BSIZE/2, 120);
     
     unsigned i;
     unsigned pos_sum = 0;
@@ -772,9 +1031,9 @@ void EnumeratorTest()
     SimpleFillSets(*bset, bv1, 0, BSIZE/2, 4);
     SimpleFillSets(*bset, bv1, 0, BSIZE/2, 5);
     
-    FillSetsIntervals(*bset, bv2, 0, BSIZE/2, 8);
-    FillSetsIntervals(*bset, bv3, 0, BSIZE/2, 12);
-    FillSetsIntervals(*bset, bv4, 0, BSIZE/2, 120);
+    FillSetsIntervals(bset, bv2, 0, BSIZE/2, 8);
+    FillSetsIntervals(bset, bv3, 0, BSIZE/2, 12);
+    FillSetsIntervals(bset, bv4, 0, BSIZE/2, 120);
     
     v1.reserve(bv1.count());
     v2.reserve(bv2.count());
@@ -1072,6 +1331,40 @@ void InvertTest()
 }
 
 static
+void OrTest()
+{
+    bvect bv1, bv2;
+    bvect bvt1, bvt2;
+    generate_bvector(bv1, 40000000, false);
+    generate_bvector(bv2, 40000000, false);
+    
+    {
+    TimeTaker tt("OR-optimize (2 operand) bvector test", REPEATS*4);
+    for (unsigned i = 0; i < REPEATS*4; ++i)
+    {
+        bvt1 = bv1;
+        bvt1 |= bv2;
+        bvt1.optimize();
+    }
+    }
+    
+    {
+    TimeTaker tt("OR-optimize (3 operand) bvector test", REPEATS*4);
+    for (unsigned i = 0; i < REPEATS*4; ++i)
+    {
+        bvt2.bit_or(bv1, bv2, bvect::opt_compress);
+    }
+    }
+
+    int cmp = bvt1.compare(bvt2);
+    if (cmp)
+    {
+        cerr << "Error: OR mismatch!" << endl;
+        exit(1);
+    }
+}
+
+static
 void AndTest()
 {
     bvect*  bv1 = new bvect();
@@ -1084,7 +1377,7 @@ void AndTest()
     SimpleFillSets(*bset1, *bv1, 0, BSIZE, 100);
     SimpleFillSets(*bset1, *bv2, 0, BSIZE, 100);
     {
-    TimeTaker tt("AND bvector test", REPEATS*10);
+    TimeTaker tt("AND bvector test", REPEATS*4);
     for (i = 0; i < REPEATS*4; ++i)
     {
         *bv1 &= *bv2;
@@ -1093,7 +1386,7 @@ void AndTest()
 
     if (!platform_test)
     {
-    TimeTaker tt("AND bvector test(STL)", REPEATS*10);
+    TimeTaker tt("AND bvector test(STL)", REPEATS*4);
     for (i = 0; i < REPEATS*4; ++i)
     {
         *bset1 &= *bset2;
@@ -1146,25 +1439,56 @@ void XorTest()
 static
 void SubTest()
 {
-    bvect*  bv1 = new bvect();
-    test_bitset*  bset1 = new test_bitset();
-    bvect*  bv2 = new bvect();
-    unsigned i;
-
-    SimpleFillSets(*bset1, *bv1, 0, BSIZE, 100);
-    SimpleFillSets(*bset1, *bv2, 0, BSIZE, 100);
-    delete bset1;
-
+    bvect bv1, bv2;
+    bvect bvt0, bvt1, bvt2;
+    generate_bvector(bv1, 40000000, false);
+    generate_bvector(bv2, 40000000, false);
+    
     {
-    TimeTaker tt("SUB bvector test", REPEATS*10);
-    for (i = 0; i < REPEATS*4; ++i)
+    TimeTaker tt("AND-NOT bvector test", REPEATS*4);
+    for (unsigned i = 0; i < REPEATS*4; ++i)
     {
-        *bv1 -= *bv2;
-    }
-    }
+        bvect bv_tmp(bv2);
+        bv_tmp.invert();
         
-    delete bv1;
-    delete bv2;
+        bvt0 = bv1;
+        bvt0 &= bv_tmp;
+        bvt0.optimize();
+    }
+
+    }
+    
+    {
+    TimeTaker tt("SUB-optimize (2 operand) bvector test", REPEATS*4);
+    for (unsigned i = 0; i < REPEATS*4; ++i)
+    {
+        bvt1 = bv1;
+        bvt1 -= bv2;
+        bvt1.optimize();
+    }
+    }
+    
+    {
+    TimeTaker tt("SUB-optimize (3 operand) bvector test", REPEATS*4);
+    for (unsigned i = 0; i < REPEATS*4; ++i)
+    {
+        bvt2.bit_sub(bv1, bv2, bvect::opt_compress);
+    }
+    }
+
+    int cmp = bvt1.compare(bvt2);
+    if (cmp)
+    {
+        cerr << "Error: (1)SUB mismatch!" << endl;
+        exit(1);
+    }
+    cmp = bvt0.compare(bvt2);
+    if (cmp)
+    {
+        cerr << "Error: (2)SUB mismatch!" << endl;
+        exit(1);
+    }
+
 }
 
 static
@@ -1732,7 +2056,7 @@ void BitBlockRotateTest()
     bm::word_t blk0[bm::set_block_size] = { 0 };
     bm::word_t blk1[bm::set_block_size] = { 0 };
     unsigned i;
-    unsigned repeats = 10000000;
+    unsigned repeats = 20000000;
 
     for (i = 0; i < bm::set_block_size; ++i)
     {
@@ -1765,6 +2089,48 @@ void BitBlockRotateTest()
 
 }
 
+static
+void BitBlockShiftTest()
+{
+    bm::word_t BM_VECT_ALIGN blk0[bm::set_block_size] BM_VECT_ALIGN_ATTR = { 0 };
+    bm::word_t BM_VECT_ALIGN blk1[bm::set_block_size] BM_VECT_ALIGN_ATTR = { 0 };
+    unsigned i;
+    unsigned repeats = 20000000;
+    unsigned acc0, acc1;
+
+    for (i = 0; i < bm::set_block_size; ++i)
+    {
+        blk0[i] = blk1[i] = unsigned(rand());
+    }
+
+    {
+        TimeTaker tt("Bit-block shift-r(1)", repeats);
+        for (i = 0; i < repeats; ++i)
+        {
+            bm::bit_block_shift_r1(blk0, &acc0, 0);
+        }
+    }
+
+    {
+        TimeTaker tt("Bit-block shift-r(1) unrolled", repeats);
+        for (i = 0; i < repeats; ++i)
+        {
+            bm::bit_block_shift_r1_unr(blk1, &acc1, 0);
+        }
+    }
+
+    for (i = 0; i < bm::set_block_size; ++i)
+    {
+        if (blk0[i] != blk1[i])
+        {
+            cerr << "Stress SHIFT-r(1) check failed" << endl;
+            exit(1);
+        }
+    }
+
+}
+
+
 inline
 void ptest()
 {
@@ -1773,7 +2139,7 @@ void ptest()
 
     test_bitset*  bset = new test_bitset();
 
-    FillSetsIntervals(*bset, *bv_large, 0, 2000000000, 10);
+    FillSetsIntervals(bset, *bv_large, 0, 2000000000, 10);
 
     for (unsigned i = 0; i < 2000; ++i)
     {
@@ -1817,6 +2183,7 @@ void ptest()
 
 
 typedef bm::sparse_vector<unsigned, bvect> svect;
+typedef bm::sparse_vector<unsigned, bvect> sparse_vector_u32;
 
 // create a benchmark svector with a few dufferent distribution patterns
 //
@@ -1828,11 +2195,11 @@ void FillSparseIntervals(svect& sv)
     unsigned i;
     
 
-    for (i = 256000; i < 256000 * 2; ++i)
+    for (i = 256000; i < 712000 * 2; ++i)
     {
         sv.set(i, 0xFFE);
     }
-    for (i = 256000 * 3; i < 256000 * 5; ++i)
+    for (i = 712000 * 3; i < 712000 * 5; ++i)
     {
         sv.set(i, i);
     }
@@ -1994,6 +2361,247 @@ void SparseVectorAccessTest()
 }
 
 static
+void OptimizeTest()
+{
+    std::vector<bvect> bv_coll;
+    std::vector<bvect> bv_coll_control;
+
+    GenerateTestCollection(&bv_coll, 100, 80000000, false);
+    bv_coll_control = bv_coll;
+    
+    BM_DECLARE_TEMP_BLOCK(tb)
+    {
+    TimeTaker tt("bvector<>::optimize() ", 1);
+        for (unsigned k = 0; k < bv_coll.size(); ++k)
+        {
+            bv_coll[k].optimize(tb);
+        }
+    }
+    for (unsigned k = 0; k < bv_coll.size(); ++k)
+    {
+        const bvect& bv1 = bv_coll[k];
+        const bvect& bv2 = bv_coll_control[k];
+        int cmp = bv1.compare(bv2);
+        if (cmp != 0)
+        {
+            std::cerr << "Optimization error!" << endl;
+            exit(1);
+        }
+    }
+
+    
+}
+
+static
+void AggregatorTest()
+{
+    int res;
+    bvect* bv_arr[128] = { 0, };
+    bvect* bv_arr2[128] = { 0, };
+    bm::aggregator<bvect> agg;
+    
+    std::vector<bvect> bv_coll;
+    GenerateTestCollection(&bv_coll, 25, 80000000);
+    std::vector<bvect> bv_coll2;
+    GenerateTestCollection(&bv_coll2, 7, 50000000);
+
+    if (!bv_coll.size())
+        return;
+    
+    std::vector<bvect>& bvc = bv_coll;
+    for (unsigned k = 0; k < bv_coll.size(); ++k)
+    {
+        bv_arr[k] = &(bvc[k]);
+    } // for
+    std::vector<bvect>& bvc2 = bv_coll2;
+    for (unsigned k = 0; k < bv_coll2.size(); ++k)
+    {
+        bv_arr2[k] = &(bvc2[k]);
+    } // for
+
+    std::unique_ptr<bvect> bv_target1(new bvect);
+    std::unique_ptr<bvect> bv_target2(new bvect);
+
+    {
+    TimeTaker tt("Horizontal aggregator OR ", REPEATS);
+    for (unsigned i = 0; i < REPEATS; ++i)
+    {
+        agg.combine_or_horizontal(*bv_target1, bv_arr, unsigned(bv_coll.size()));
+    } // for
+    }
+
+    {
+    TimeTaker tt("aggregator OR", REPEATS);
+    for (unsigned i = 0; i < REPEATS; ++i)
+    {
+        agg.combine_or(*bv_target2, bv_arr, unsigned(bv_coll.size()));
+    } // for
+    }
+
+    res = bv_target1->compare(*bv_target2);
+    if (res != 0)
+    {
+        std::cerr << "Error: Aggregator OR integrity failed." << std::endl;
+        exit(1);
+    }
+
+
+    // ------------------------------------------------------------------
+    {
+    TimeTaker tt("Horizontal aggregator AND", REPEATS);
+    for (unsigned i = 0; i < REPEATS; ++i)
+    {
+        agg.combine_and_horizontal(*bv_target1, bv_arr, unsigned(bv_coll.size()));
+    } // for
+    }
+
+    {
+    TimeTaker tt("aggregator AND", REPEATS);
+    for (unsigned i = 0; i < REPEATS; ++i)
+    {
+        agg.combine_and(*bv_target2, bv_arr, unsigned(bv_coll.size()));
+    } // for
+    }
+    auto and_cnt = bv_target1->count();
+
+    res = bv_target1->compare(*bv_target2);
+    if (res != 0)
+    {
+        std::cerr << "Error: Aggregator AND integrity failed." << std::endl;
+        exit(1);
+    }
+
+    {
+    TimeTaker tt("Horizontal aggregator AND-SUB", REPEATS);
+    for (unsigned i = 0; i < REPEATS; ++i)
+    {
+        agg.combine_and_sub_horizontal(*bv_target1,
+                                        bv_arr, unsigned(bv_coll.size()),
+                                        bv_arr2, unsigned(bv_coll2.size())
+                                        );
+    } // for
+    }
+    
+    auto and_sub_cnt = bv_target1->count();
+    if (and_sub_cnt > and_cnt)
+    {
+        std::cerr << "Error: Aggregator count AND-SUB integrity failed." << std::endl;
+        exit(1);
+    }
+
+    {
+    TimeTaker tt("aggregator AND-SUB", REPEATS);
+    for (unsigned i = 0; i < REPEATS; ++i)
+    {
+        agg.combine_and_sub(*bv_target2,
+                            bv_arr, unsigned(bv_coll.size()),
+                            bv_arr2, unsigned(bv_coll2.size()),
+                            false
+                            );
+    } // for
+    }
+    
+    res = bv_target1->compare(*bv_target2);
+    if (res != 0)
+    {
+        std::cerr << "Error: Aggregator AND-SUB integrity failed." << std::endl;
+        exit(1);
+    }
+
+
+    //std::cout << bv_target1->count() << std::endl;
+}
+
+
+static
+void BvectorShiftTest()
+{
+
+    {
+        std::vector<bvect> bv_coll;
+        GenerateTestCollection(&bv_coll, 25, 80000000);
+
+        if (!bv_coll.size())
+            return;
+
+        {
+            TimeTaker tt("bvector<>::shift_right() ", REPEATS);
+            for (unsigned i = 0; i < REPEATS; ++i)
+            {
+                for (unsigned k = 0; k < bv_coll.size(); ++k)
+                {
+                    bv_coll[k].shift_right();
+                } // for
+            } // for
+        }
+
+    }
+
+    bvect mask_bv; // mask vector
+    mask_bv.init();
+    generate_bvector(mask_bv, 75000000, false); // mask is shorter on both ends
+
+    std::vector<bvect> bv_coll1;
+    GenerateTestCollection(&bv_coll1, 25, 80000000);
+    
+    std::vector<bvect> bv_coll2;
+    GenerateTestCollection(&bv_coll2, 25, 80000000);
+    
+
+    {
+        {
+            TimeTaker tt("bvector<>::shift_right()+AND ", REPEATS);
+            for (unsigned i = 0; i < REPEATS; ++i)
+            {
+                bvect bv(mask_bv);
+                for (unsigned k = 0; k < bv_coll1.size(); ++k)
+                {
+                    bv.shift_right();
+                    bv &= bv_coll1[k];
+                } // for
+            } // for
+        }
+    }
+
+    {
+        bm::aggregator<bvect> agg;
+        
+        {
+            TimeTaker tt("aggregator::shift_right_and() ", REPEATS);
+            agg.add(&mask_bv);
+            for (unsigned k = 0; k < bv_coll2.size(); ++k)
+            {
+                agg.add(&bv_coll2[k]);
+            }
+            for (unsigned i = 0; i < REPEATS; ++i)
+            {
+                bvect bv;
+                agg.combine_shift_right_and(bv);
+            }
+        }
+    }
+/*
+    // check correcness
+    //
+    for (unsigned k = 0; k < bv_coll1.size(); ++k)
+    {
+        const bvect& bv1 = bv_coll1[k];
+        const bvect& bv2 = bv_coll2[k];
+        auto cmp = bv1.compare(bv2);
+        if (cmp != 0)
+        {
+            cerr << "Mismatch error!" << endl;
+            exit(1);
+        }
+    } // for
+*/
+
+    //std::cout << bv_target1->count() << std::endl;
+}
+
+
+
+static
 void Set2SetTransformTest()
 {
     svect   sv;
@@ -2035,7 +2643,7 @@ void Set2SetTransformTest()
     int cnt = 0;
 
     {
-    TimeTaker tt("set2set_11_transform::by_one", REPEATS/10);
+    TimeTaker tt("set2set_11_transform::run()", REPEATS/10);
 
         for (unsigned i = 0; i < REPEATS/10; ++i)
         {
@@ -2043,8 +2651,6 @@ void Set2SetTransformTest()
             set2set.run(bv_sample, sv, bv_out);
 
             cnt += bv_out.any();
-            //cout << bv_out.count() << endl;
-
         }
     }
 
@@ -2129,10 +2735,10 @@ void RankCompressionTest()
 
     bm::rank_compressor<bvect> rc;
 
-    bvect::blocks_count bc1;
-    bv_i1.running_count_blocks(&bc1);
-    bvect::blocks_count bc2;
-    bv_i2.running_count_blocks(&bc2);
+    std::unique_ptr<bvect::rs_index_type> bc1(new bvect::rs_index_type());
+    bv_i1.running_count_blocks(bc1.get());
+    std::unique_ptr<bvect::rs_index_type> bc2(new bvect::rs_index_type());
+    bv_i2.running_count_blocks(bc2.get());
 
     {
         TimeTaker tt("Rank compression test", REPEATS * 10);
@@ -2146,8 +2752,8 @@ void RankCompressionTest()
         TimeTaker tt("Rank compression (by source) test", REPEATS * 10);
         for (unsigned i = 0; i < REPEATS * 10; ++i)
         {
-            rc.compress_by_source(bv21, bv_i1, bc1, bv_s1);
-            rc.compress_by_source(bv22, bv_i2, bc2, bv_s2);
+            rc.compress_by_source(bv21, bv_i1, *bc1, bv_s1);
+            rc.compress_by_source(bv22, bv_i2, *bc2, bv_s2);
         } // for
     }
     
@@ -2190,6 +2796,124 @@ void RankCompressionTest()
     
 }
 
+static
+void generate_scanner_test_set(std::vector<unsigned>& vect,
+                               bvect&               bv_null,
+                               sparse_vector_u32&   sv,
+                               unsigned vector_max = BSIZE)
+{
+    sparse_vector_u32::back_insert_iterator bi(sv.get_back_inserter());
+
+    vect.resize(vector_max);
+    bv_null.reset();
+
+    for (unsigned i = 0; i < vector_max; ++i)
+    {
+        unsigned v = unsigned(rand_dis(gen));
+        vect[i] = v;
+        bv_null[i] = true; // not NULL(assigned) element
+        *bi = v; // push back an element to sparse vector
+        if (i % 64 == 0)
+        {
+            bi.add_null(5);  // add 5 unassigned elements using back inserter
+            i += 5;  // insert a small NULL plate (unassigned values)
+        }
+    } // for
+    sv.optimize();
+}
+
+static
+void vector_search(const std::vector<unsigned>& vect,
+                   const bvect&                 bv_null,
+                   unsigned                     value,
+                   bvect&                       bv_res)
+{
+    bv_res.init(); // always use init() if set_bit_no_check()
+    for (size_t i = 0; i < vect.size(); ++i)
+    {
+        if (vect[i] == value)
+            bv_res.set_bit_no_check((bm::id_t)i);
+    } // for
+    bv_res &= bv_null; // correct results to only include non-NULL values
+}
+
+
+
+static
+void SparseVectorScannerTest()
+{
+    std::vector<unsigned> vect;
+    bvect bv_null;
+    sparse_vector_u32 sv(bm::use_null);
+    
+    generate_scanner_test_set(vect, bv_null, sv, BSIZE);
+
+    // generate a search vector for benchmarking
+    std::vector<unsigned> search_vect;
+    {
+        bm::bvector<> bv_tmp;
+        search_vect.reserve(REPEATS);
+        for (unsigned i = 0; i < REPEATS;)
+        {
+            bm::id_t idx = bm::id_t(rand_dis(gen));
+            if (!bv_tmp.test(idx)) // check if number is unique
+            {
+                search_vect.push_back(idx);
+                bv_tmp[idx] = 1;
+                ++i;
+            }
+        }
+    }
+
+    bm::sparse_vector_scanner<sparse_vector_u32> scanner;
+
+    bvect bv_res1, bv_res2, bv_res3;
+
+    unsigned search_repeats = REPEATS;
+    {
+        TimeTaker tt("std::vector<> scan ", search_repeats);
+        for (unsigned i = 0; i < search_repeats; ++i)
+        {
+            unsigned vs = search_vect[i];
+            vector_search(vect, bv_null, vs, bv_res1);
+        } // for
+    }
+
+    {
+    TimeTaker tt("horizontal sparse vector scanner find_eq()", search_repeats);
+    for (unsigned i = 0; i < search_repeats; ++i)
+    {
+        {
+        bvect bv1;
+        scanner.find_eq_with_nulls_horizontal(sv, search_vect[i], bv1);
+        bv_res2 |= bv1;
+        }
+    } // for
+    scanner.correct_nulls(sv, bv_res2);
+    }
+    
+    {
+    TimeTaker tt("sparse vector scanner find_eq() ", search_repeats);
+    {
+        scanner.find_eq(sv, search_vect.begin(), search_vect.end(), bv_res3);
+    } // for
+    }
+    
+    int res = bv_res3.compare(bv_res1);
+    if (res != 0)
+    {
+        std::cerr << "1. Sparse scanner integrity check failed!" << std::endl;
+        exit(1);
+    }
+
+    res = bv_res2.compare(bv_res1);
+    if (res != 0)
+    {
+        std::cerr << "2. Sparse scanner integrity check failed!" << std::endl;
+        exit(1);
+    }
+
+}
 
 int main(void)
 {
@@ -2200,18 +2924,24 @@ int main(void)
     MemCpyTest();
 
     BitCountTest();
-
+    
     BitCountSparseTest();
 
     BitForEachTest();
+
+    WordSelectTest();
 
     BitTestSparseTest();
 
     BitCompareTest();
 
+    OptimizeTest();
+
     FindTest();
 
     BitBlockRotateTest();
+
+    BitBlockShiftTest();
 
     EnumeratorTest();
 
@@ -2219,10 +2949,17 @@ int main(void)
 
     EnumeratorGoToTest();
 
+    BvectorShiftTest();
+
     RangeCopyTest();
+
+    AggregatorTest();
+
+    OrTest();
 
     AndTest();
     XorTest();
+
     SubTest();  
 
     InvertTest();  
@@ -2235,6 +2972,8 @@ int main(void)
     SerializationTest();
 
     SparseVectorAccessTest();
+
+    SparseVectorScannerTest();
 
     RankCompressionTest();
 

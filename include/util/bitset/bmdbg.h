@@ -23,18 +23,20 @@ For more information please visit:  http://bitmagic.io
 */
 
 
-#include <stdio.h>
+#include <cstdio>
 #include <stdlib.h>
 #include <cassert>
-#include <memory.h>
+#include <memory>
 #include <time.h>
 
 #include <iostream>
-#include <strstream>
+#include <sstream>
 #include <fstream>
 #include <iomanip>
 #include <vector>
 
+#include "bmalgo_similarity.h"
+#include "bmsparsevec_serial.h"
 #include "bmdef.h"
 
 
@@ -145,22 +147,20 @@ int read_dump_file(const std::string& fname, VT& data)
     fin.seekg(0, std::ios::end);
     fsize = fin.tellg();
     
-    data.resize(unsigned(fsize)/sizeof(value_type));
+    data.resize(fsize/sizeof(value_type));
 
     if (!fsize)
     {
         return 0; // empty input
     }
     fin.seekg(0, std::ios::beg);
-    
     fin.read((char*) &data[0], fsize);
     if (!fin.good())
     {
         data.resize(0);
         return -2;
     }
-    return 0;
-    
+    return 0;    
 }
 
 template<class TBV>
@@ -219,10 +219,11 @@ inline
 void SaveBlob(const char* name_prefix, unsigned num, const char* ext,
               const unsigned char* blob, unsigned blob_size)
 {
-    std::strstream fname_str;
+    std::stringstream fname_str;
     fname_str << name_prefix << "-" << num << ext;
     
-    char* fname = fname_str.str();
+	std::string s = fname_str.str();
+    const char* fname = s.c_str();
     std::ofstream bfile (fname, std::ios::out | std::ios::binary);
     if (!bfile.good())
     {
@@ -390,6 +391,7 @@ void print_bvector_stat(const BV& bvect)
     std::cout << " - Blocks: [ "
               << "B:"     << st.bit_blocks
               << ", G:"   << st.gap_blocks << "] "
+              << " count() = " << bvect.count() 
               << ", mem = " << st.memory_used << " " << (st.memory_used / (1024 * 1024)) << "MB "
               << ", max smem:" << st.max_serialize_mem << " " << (st.max_serialize_mem / (1024 * 1024)) << "MB "
               << std::endl;
@@ -533,6 +535,7 @@ unsigned compute_serialization_size(const BV& bv)
 }
 
 
+
 template<class SV>
 void print_svector_stat(const SV& svect, bool print_sim = false)
 {
@@ -591,17 +594,23 @@ void print_svector_stat(const SV& svect, bool print_sim = false)
                 bvx ^= *bv1;
                 
                 unsigned bv_size_x = compute_serialization_size(bvx);
-                size_t diff = bv_size2 - bv_size_x;
-                if (diff > 0) // only positive diff (saving) counts
+                if (bv_size_x < bv_size2) // true savings
                 {
-                    std:: cout << "["  << sim_vec[k].get_first_idx()
-                               << ", " << sim_vec[k].get_second_idx()
-                               << "] = "  << sim
-                               << " size(" << sim_vec[k].get_second_idx() << ")="
-                               << bv_size2
-                               << " size(x)=" << bv_size_x
-                               << " diff=" << diff
-                               << std:: endl;
+                    size_t diff = bv_size2 - bv_size_x;
+                    
+                    // compute 10% cut-off
+                    size_t sz10p = bv_size2 / 10;
+                    if (diff > sz10p)
+                    {
+                        std:: cout << "["  << sim_vec[k].get_first_idx()
+                                   << ", " << sim_vec[k].get_second_idx()
+                                   << "] = "  << sim
+                                   << " size(" << sim_vec[k].get_second_idx() << ")="
+                                   << bv_size2
+                                   << " size(x)=" << bv_size_x
+                                   << " diff=" << diff
+                                   << std:: endl;
+                    }
                 }
             }
         } // for k
@@ -619,11 +628,13 @@ void print_svector_stat(const SV& svect, bool print_sim = false)
     std::cout << "Memory used:      " << st.memory_used << " "
               << (st.memory_used / (1024 * 1024))       << "MB" << std::endl;
     
+    unsigned eff_max_element = svect.effective_vector_max();
+    size_t std_vect_size = sizeof(typename SV::value_type) * svect.size() * eff_max_element;
     std::cout << "Projected mem usage for vector<value_type>:"
-              << sizeof(typename SV::value_type) * svect.size() << " "
-              << (sizeof(typename SV::value_type) * svect.size()) / (1024 * 1024) << "MB"
+              << std_vect_size << " "
+              << std_vect_size / (1024 * 1024) << "MB"
               << std::endl;
-    if (sizeof(typename SV::value_type) > 4)
+    if (sizeof(typename SV::value_type) > 4 && (eff_max_element == 1))
     {
         std::cout << "Projected mem usage for vector<long long>:"
                   << sizeof(long long) * svect.size() << std::endl;
@@ -632,17 +643,18 @@ void print_svector_stat(const SV& svect, bool print_sim = false)
     std::cout << "\nPlains:" << std::endl;
 
     typename SV::bvector_type bv_join; // global OR of all plains
-    for (unsigned i = 0; i < svect.plains(); ++i)
+    auto plains = svect.plains();
+    for (unsigned i = 0; i < plains; ++i)
     {
-        const typename SV::bvector_type* bv_plain = svect.plain(i);
+        const typename SV::bvector_type* bv_plain = svect.get_plain(i);
         std::cout << i << ":";
             if (bv_plain == 0)
             {
                 std::cout << "NULL\n";
                 bool any_else = false;
-                for (unsigned j = i+1; j < svect.plains(); ++j) // look ahead
+                for (unsigned j = i+1; j < plains; ++j) // look ahead
                 {
-                    if (svect.plain(i))
+                    if (svect.get_plain(j))
                     {
                         any_else = true;
                         break;
@@ -681,7 +693,7 @@ void print_svector_stat(const SV& svect, bool print_sim = false)
         std::cout << "Non-zero elements: " << bv_join_cnt << " "
                   << "ratio=" << fr
                   << std::endl;
-        size_t non_zero_mem = bv_join_cnt * sizeof(typename SV::value_type);
+        size_t non_zero_mem = size_t(bv_join_cnt) * sizeof(typename SV::value_type);
         std::cout << "Projected mem usage for non-zero elements: " << non_zero_mem << " "
                   << non_zero_mem / (1024*1024) << " MB"
                   << std::endl;
@@ -689,6 +701,54 @@ void print_svector_stat(const SV& svect, bool print_sim = false)
         
     }
 }
+
+
+template<class SV>
+void print_str_svector_stat(const SV& str_svect)
+{
+    typename SV::plain_octet_matrix_type octet_stat_matr;
+    
+    str_svect.calc_octet_stat(octet_stat_matr);
+    
+    for (unsigned i = 0; i < octet_stat_matr.rows(); ++i)
+    {
+        const typename SV::plain_octet_matrix_type::value_type* row
+                                                = octet_stat_matr.row(i);
+        bool any = false;
+        for (unsigned j = 0; j < octet_stat_matr.cols(); ++j)
+        {
+            if (row[j]) // letter is present
+            {
+                any = true;
+                break;
+            }
+        }
+        if (!any)
+            continue;
+    
+        std::cout << i << " : ";
+        unsigned cnt = 0;
+        for (unsigned j = 0; j < octet_stat_matr.cols(); ++j)
+        {
+            if (row[j]) // letter is present
+            {
+                std::cout << char(j);
+                ++cnt;
+            }
+        } // for j
+        if (cnt)
+        {
+            std::cout << "\t total= " << cnt;
+        }
+        else
+        {
+            std::cout << " (empty) ";
+        }
+        std::cout << std::endl;
+    } // for i
+}
+
+
 
 // save compressed collection to disk
 //
@@ -767,7 +827,7 @@ int file_save_svector(const SV& sv, const std::string& fname, size_t* sv_blob_si
         return -1;
     }
     const char* buf = (char*)sv_lay.buf();
-    fout.write(buf, unsigned(sv_lay.size()));
+    fout.write(buf, sv_lay.size());
     if (!fout.good())
     {
         return -1;

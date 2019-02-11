@@ -18,6 +18,7 @@ limitations under the License.
 For more information please visit:  http://bitmagic.io
 */
 
+#include "bmdef.h"
 
 namespace bm
 {
@@ -54,7 +55,10 @@ public:
     /// Get write access to buffer memory
     unsigned char* data() { return byte_buf_; }
 
-    bool operator==(const byte_buffer_ptr& lhs) const
+    bool operator==(const byte_buffer_ptr& lhs) const { return equal(lhs); }
+    
+    /// return true if content and size is the same
+    bool equal(const byte_buffer_ptr& lhs) const
     {
         if (this == &lhs)
             return true;
@@ -79,6 +83,7 @@ class byte_buffer : public byte_buffer_ptr
 public:
     typedef BVAlloc                                          bv_allocator_type;
     typedef typename bv_allocator_type::block_allocator_type allocator_type;
+    typedef size_t                                           size_type;
     
 public:
     byte_buffer() : capacity_(0), alloc_factor_(0)
@@ -115,16 +120,7 @@ public:
     /// Move assignment operator
     byte_buffer& operator=(byte_buffer&& lhs) BMNOEXEPT
     {
-        if (this == &lhs)
-            return *this;
-
-        free_buffer();
-        
-        this->byte_buf_ = lhs.byte_buf_;
-        lhs.byte_buf_ = 0;
-        this->size_ = lhs.size_;
-        capacity_ = lhs.capacity_;
-        alloc_factor_ = lhs.alloc_factor_;
+        move_from(lhs);
         return *this;
     }
 #endif
@@ -156,6 +152,19 @@ public:
         bm::xor_swap(capacity_, other.capacity_);
         bm::xor_swap(alloc_factor_, other.alloc_factor_);
     }
+    
+    /// take/move content from another buffer
+    void move_from(byte_buffer& other) BMNOEXEPT
+    {
+        if (this == &other)
+            return;
+        free_buffer();
+        this->byte_buf_ = other.byte_buf_; other.byte_buf_ = 0;
+        this->size_ = other.size_;
+        this->capacity_ = other.capacity_;
+        this->alloc_factor_ = other.alloc_factor_;
+    }
+
 
     /// Free underlying memory
     void release()
@@ -233,6 +242,13 @@ public:
         }
     }
     
+    /// return memory consumtion
+    size_t mem_usage() const
+    {
+        return sizeof(capacity_) + sizeof(alloc_factor_) +
+               capacity();
+    }
+    
 private:
     /// Override from the base class
     void set_buf(unsigned char* buf, size_t size);
@@ -268,14 +284,356 @@ private:
             this->byte_buf_ = 0;
         }
     }
+    
 private:
     size_t         capacity_;     ///< current capacity
     size_t         alloc_factor_; ///< number of blocks allocated for buffer
 };
 
+/**
+    Simple heap allocated vector based on bvector allocator
+    @internal
+*/
+template<typename Val, typename BVAlloc>
+class heap_vector
+{
+public:
+    typedef BVAlloc                                          bv_allocator_type;
+    typedef bm::byte_buffer<bv_allocator_type>               buffer_type;
+    typedef Val                                              value_type;
+    typedef typename buffer_type::size_type                  size_type;
 
+    heap_vector()
+        : buffer_()    
+    {}
+
+    heap_vector(const heap_vector<Val, BVAlloc>& hv)
+        : buffer_()
+    {
+        size_type v_size = value_size();
+        size_type new_size = hv.size();
+        buffer_.resize(new_size * v_size);
+        unsigned char* data = buffer_.data();
+        for (size_type i = 0; i < new_size; ++i)
+        {
+            unsigned char *p = data + (i * v_size);
+            new(p) value_type(hv[i]);
+        }
+    }
+
+    heap_vector& operator=(const heap_vector<Val, BVAlloc>& hv)
+    {
+        if (this == &hv)
+            return *this;
+        resize(0);
+
+        size_type v_size = value_size();
+        size_type new_size = hv.size();
+        buffer_.resize(new_size * v_size);
+        unsigned char* data = buffer_.data();
+        for (size_type i = 0; i < new_size; ++i)
+        {
+            unsigned char *p = data + (i * v_size);
+            new(p) value_type(hv[i]);
+        }
+
+        return *this;
+    }
+
+   
+    ~heap_vector()
+    {
+        size_type sz = size();
+        size_type v_size = value_size();
+        unsigned char* data = buffer_.data();
+        for (size_type i = 0; i < sz; ++i) 
+        {
+            unsigned char *p = data + (i * v_size);
+            reinterpret_cast<value_type*>(p)->~Val();
+        }
+    }
+
+    void swap(heap_vector<Val, BVAlloc>& other) BMNOEXEPT
+    {
+        buffer_.swap(other.buffer_);
+    }
+
+    const value_type& operator[](std::size_t pos) const
+    {
+        size_type v_size = value_size();
+        const unsigned char *p = buffer_.buf() + (pos * v_size);
+        return *reinterpret_cast<const value_type*>(p);
+    }
+
+    value_type& operator[](std::size_t pos)
+    {
+        size_type v_size = value_size();
+        unsigned char *p = buffer_.data() + (pos * v_size);
+        return *reinterpret_cast<value_type*>(p);
+    }
+
+    value_type& at(std::size_t pos)
+    {
+        size_type sz = size();
+        if (pos >= sz)
+            throw_range_error("out of range access");
+
+        size_type v_size = value_size();
+        unsigned char *p = buffer_.data() + (pos * v_size);
+        return *reinterpret_cast<value_type*>(p);
+    }
+
+
+    size_type size() const
+    {
+        return buffer_.size() / value_size();
+    }
+
+    size_type capacity() const
+    {
+        return buffer_.capacity() / value_size();
+    }
+
+    bool empty() const
+    {
+        return (buffer_.size() == 0);
+    }
+
+    void reserve(size_type new_size)
+    {
+        size_type sz = size();
+        if (new_size <= sz)
+            return;
+        size_type v_size = value_size();
+        buffer_.reserve(new_size * v_size);
+    }
+
+    void resize(size_type new_size)
+    {
+        size_type sz = size();
+        size_type v_size = value_size();
+        if (new_size == sz)
+            return;
+        if (new_size < sz) // shrink
+        {
+            unsigned char* data = buffer_.data();
+            for (size_type i = new_size; i < sz; ++i)
+            {
+                unsigned char *p = data + (i * v_size);
+                reinterpret_cast<value_type*>(p)->~Val();
+            }
+            buffer_.resize(new_size * v_size);
+        }
+        else
+        {
+            buffer_.resize(new_size * v_size);
+            unsigned char* data = buffer_.data();
+            for (size_type i = sz; i < new_size; ++i)
+            {
+                unsigned char *p = data + (i * v_size);
+                new(p) value_type();
+            }
+        }
+    }
+
+    value_type& add()
+    {
+/*
+        size_type old_size = buffer_.size();
+        size_type v_size = value_size();
+        
+        buffer_.resize(old_size + v_size);
+*/
+        size_type v_size = value_size();
+        size_type sz = size();
+        resize_internal(sz + 1);
+        unsigned char *p = buffer_.data() + (sz * v_size);
+        value_type* v = new(p) value_type();
+        return *v;
+    }
+
+    void push_back(const value_type& v)
+    {
+        /*
+        size_type old_size = buffer_.size();
+        size_type v_size = value_size();
+        buffer_.resize(old_size + v_size);
+        */
+        size_type v_size = value_size();
+        size_type sz = size();
+        resize_internal(sz + 1);
+        unsigned char *p = buffer_.data() + (sz * v_size);
+        new(p) value_type(v);
+    }
+
+protected:
+
+    void resize_internal(size_type new_size)
+    {
+        size_type cap = capacity();
+        size_type v_size = value_size();
+        if (cap <= new_size)    
+            buffer_.reserve((new_size + 1024) * v_size);
+        buffer_.resize(new_size * v_size);
+    }
+
+    static size_type value_size()
+    {
+        size_type size_of = sizeof(value_type);
+        /*
+        #if defined(BM_ALLOC_ALIGN)
+        size_type align = BM_ALLOC_ALIGN;
+        #else
+        size_type align = 4;
+        #endif
+
+        size_type size_of = sizeof(value_type);
+        if (size_of % align)
+        {
+            size_of += size_of % align;
+        }
+        BM_ASSERT(size_of % align == 0);
+        */
+        return size_of;
+    }
+
+    void throw_range_error(const char* err_msg) const
+    {
+    #ifndef BM_NO_STL
+        throw std::range_error(err_msg);
+    #else
+        BM_ASSERT_THROW(false, BM_ERR_RANGE);
+    #endif
+    }
+
+protected:
+    buffer_type     buffer_;
+};
+
+/**
+    Heap allocated scalar-type matrix
+
+    This class can be seen as a matrix (row-column)
+    access adaptor on top of the heap allocated buffer.
+
+    @internal
+*/
+template<typename Val, unsigned ROWS, unsigned COLS, typename BVAlloc>
+class heap_matrix
+{
+public:
+    typedef BVAlloc                                          bv_allocator_type;
+    typedef bm::byte_buffer<bv_allocator_type>               buffer_type;
+    typedef Val                                              value_type;
+    typedef unsigned                                         size_type;
+
+    enum params
+    {
+        n_rows = ROWS,
+        n_columns = COLS,
+        size_in_bytes = sizeof(value_type) * COLS * ROWS,
+        row_size_in_bytes = sizeof(value_type) * COLS
+    };
+
+    static unsigned rows() { return ROWS; }
+    static unsigned cols() { return COLS; }
+
+    /**
+        By default object is constructed NOT allocated.
+    */
+    heap_matrix()
+        : buffer_()
+    {}
+
+    heap_matrix(bool init)
+        : buffer_(init ? size_in_bytes : 0)
+    {
+        if (init)
+            buffer_.resize(size_in_bytes);
+    }
+
+    /**
+        Post construction allocation, initialization
+    */
+    void init()
+    {
+        buffer_.resize(size_in_bytes);
+    }
+
+    value_type get(unsigned row_idx, unsigned col_idx) const
+    {
+        BM_ASSERT(row_idx < ROWS);
+        BM_ASSERT(col_idx < COLS);
+        BM_ASSERT(buffer_.size());
+        const unsigned char* buf = buffer_.buf() + row_idx * row_size_in_bytes;
+        return ((const value_type*)buf)[col_idx];
+    }
+
+    const value_type* row(unsigned row_idx) const
+    {
+        BM_ASSERT(row_idx < ROWS);
+        BM_ASSERT(buffer_.size());
+        const unsigned char* buf = buffer_.buf() + row_idx * row_size_in_bytes;
+        return (const value_type*) buf;
+    }
+
+    value_type* row(unsigned row_idx)
+    {
+        BM_ASSERT(row_idx < ROWS);
+        BM_ASSERT(buffer_.size());
+
+        unsigned char* buf = buffer_.data() + row_idx * row_size_in_bytes;
+        return (value_type*)buf;
+    }
+
+    /** memset all buffer to all zeroes */
+    void set_zero()
+    {
+        ::memset(buffer_.data(), 0, size_in_bytes);
+    }
+    
+    /*!  swap content
+    */
+    void swap(heap_matrix& other) BMNOEXEPT
+    {
+        buffer_.swap(other.buffer_);
+    }
+    
+    /*!  move content from another matrix
+    */
+    void move_from(heap_matrix& other) BMNOEXEPT
+    {
+        buffer_.move_from(other.buffer_);
+    }
+
+    /** Get low-level buffer access */
+    buffer_type& get_buffer() { return buffer_; }
+    /** Get low-level buffer access */
+    const buffer_type& get_buffer() const { return buffer_; }
+
+    /*! remapping: vect[idx] = matrix[idx, vect[idx] ]
+    */
+    template<typename VECT_TYPE>
+    void remap(VECT_TYPE* vect, size_type size) const
+    {
+        BM_ASSERT(size < ROWS);
+        const unsigned char* buf = buffer_.buf();
+        for (size_type i = 0; i < size; ++i)
+        {
+            const value_type* row = buf + i * row_size_in_bytes;
+            VECT_TYPE v0 = vect[i];
+            BM_ASSERT(size_type(v0) < COLS);
+            value_type remap_v = row[unsigned(v0)];
+            vect[i] = VECT_TYPE(remap_v);
+        } // for i
+    }
+
+protected:
+    buffer_type     buffer_;
+};
 
 } // namespace bm
 
+#include "bmundef.h"
 
 #endif

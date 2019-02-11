@@ -139,7 +139,7 @@ inline
 CBDB_BvSplitDictStore<Key, Dictionary, BvStore, BV>::~CBDB_BvSplitDictStore()
 {
     if (m_STmpBlock) {
-        m_TmpVec.free_tempblock(m_STmpBlock);
+        bm::aligned_free(m_STmpBlock);
     }
 }
 
@@ -156,7 +156,7 @@ CBDB_BvSplitDictStore<Key, Dictionary, BvStore, BV>::Deserialize(TBitVector* bv,
 {
     _ASSERT(bv);
     if ( !m_STmpBlock ) {
-        m_STmpBlock = m_TmpVec.allocate_tempblock();
+        m_STmpBlock = (bm::word_t*)bm::aligned_new_malloc(bm::set_block_alloc_size);
     }
     switch (op) {
     case eOp_Replace:
@@ -294,7 +294,7 @@ inline void CBDB_BvSplitDictStore<Key, Dictionary, BvStore, BV>
                        ECompact compact)
 {
     if ( !m_STmpBlock ) {
-        m_STmpBlock = m_TmpVec.allocate_tempblock();
+        m_STmpBlock = (bm::word_t*)bm::aligned_new_malloc(bm::set_block_alloc_size);
     }
 
     const TBitVector* bv_to_store = &bv;

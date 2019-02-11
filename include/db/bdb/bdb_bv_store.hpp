@@ -315,7 +315,7 @@ template<class TBV>
 CBDB_BvStore<TBV>::~CBDB_BvStore()
 {
     if (m_STmpBlock) {
-        m_TmpBVec.free_tempblock(m_STmpBlock);
+        bm::aligned_free(m_STmpBlock);
     }
 }
 
@@ -339,7 +339,7 @@ EBDB_ErrCode CBDB_BvStore<TBV>::ReadVector(TBitVector*       bv,
     }
 
     if (m_STmpBlock == 0) {
-        m_STmpBlock = m_TmpBVec.allocate_tempblock();
+        m_STmpBlock = (bm::word_t*)bm::aligned_new_malloc(bm::set_block_alloc_size);
     }
 
     unsigned cnt =
@@ -358,7 +358,7 @@ template<class TBV>
 bm::word_t* CBDB_BvStore<TBV>::GetSerializationTempBlock()
 {
     if (m_STmpBlock == 0) {
-        m_STmpBlock = m_TmpBVec.allocate_tempblock();
+        m_STmpBlock = (bm::word_t*)bm::aligned_new_malloc(bm::set_block_alloc_size);
     }
     return m_STmpBlock;
 }
@@ -370,7 +370,7 @@ CBDB_BvStore<TBV>::WriteVector(const TBitVector&  bv,
                                ECompact           compact)
 {
     if (m_STmpBlock == 0) {
-        m_STmpBlock = m_TmpBVec.allocate_tempblock();
+        m_STmpBlock = (bm::word_t*)bm::aligned_new_malloc(bm::set_block_alloc_size);
     }
 
     const TBitVector* bv_to_store;
@@ -452,7 +452,7 @@ template<class TBV>
 void CBDB_BvStore<TBV>::Deserialize(TBitVector* bv, const TBufferValue* buf)
 {
     if (m_STmpBlock == 0) {
-        m_STmpBlock = m_TmpBVec.allocate_tempblock();
+        m_STmpBlock = (bm::word_t*)bm::aligned_new_malloc(bm::set_block_alloc_size);
     }
     bm::deserialize(*bv, buf, m_STmpBlock);
 }
@@ -546,7 +546,7 @@ SBDB_BvStore_Id<TBV>::ComputeBitCountMap(TBitCountMap* bc_map,
     _ASSERT(bc_map);
 
     if (this->m_STmpBlock == 0) {
-        this->m_STmpBlock = this->m_TmpBVec.allocate_tempblock();
+        this->m_STmpBlock = (bm::word_t*)bm::aligned_new_malloc(bm::set_block_alloc_size);
     }
 
     EBDB_ErrCode err;

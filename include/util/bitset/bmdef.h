@@ -207,12 +207,25 @@ For more information please visit:  http://bitmagic.io
 # if defined(BM64OPT) || defined(__x86_64) || defined(_M_AMD64) || defined(_WIN64) || \
     defined(__LP64__) || defined(_LP64)
 #   undef BM64OPT
-#   undef  BM64_SSE4
+#   undef BM64_SSE4
 #   define BM64_AVX2
 # endif
 # undef BMSSE2OPT
 # undef BMSSE42OPT
 #endif
+
+#ifdef BMAVX512OPT
+# if defined(BM64OPT) || defined(__x86_64) || defined(_M_AMD64) || defined(_WIN64) || \
+    defined(__LP64__) || defined(_LP64)
+#   undef BM64OPT
+#   undef BM64_SSE4
+#   undef BM64_AVX2
+#   define BM64_AVX512
+# endif
+# undef BMSSE2OPT
+# undef BMSSE42OPT
+#endif
+
 
 
 # ifndef BM_SET_MMX_GUARD
@@ -220,13 +233,15 @@ For more information please visit:  http://bitmagic.io
 # endif
 
 
-#if !(defined(BMSSE2OPT) || defined(BMSSE42OPT) || defined(BMAVX2OPT))
+#if !(defined(BMSSE2OPT) || defined(BMSSE42OPT) || defined(BMAVX2OPT) || defined(BMAVX512OPT))
 
 
 #define BM_ALIGN16 
 #define BM_ALIGN16ATTR
 #define BM_ALIGN32
 #define BM_ALIGN32ATTR
+#define BM_ALIGN64
+#define BM_ALIGN64ATTR
 
 #else  
 
@@ -246,6 +261,11 @@ For more information please visit:  http://bitmagic.io
 #  define BM_ALIGN32ATTR
 #endif
 
+#ifndef BM_ALIGN64
+#  define BM_ALIGN64 __declspec(align(64))
+#  define BM_ALIGN64ATTR
+#endif
+
 
 # else // GCC
 
@@ -257,6 +277,11 @@ For more information please visit:  http://bitmagic.io
 #ifndef BM_ALIGN32
 #  define BM_ALIGN32
 #  define BM_ALIGN32ATTR __attribute__((aligned(32)))
+#endif
+
+#ifndef BM_ALIGN64
+#  define BM_ALIGN64
+#  define BM_ALIGN64ATTR __attribute__((aligned(64)))
 #endif
 
 
@@ -272,8 +297,13 @@ For more information please visit:  http://bitmagic.io
 #       define BM_VECT_ALIGN BM_ALIGN32
 #       define BM_VECT_ALIGN_ATTR BM_ALIGN32ATTR
 #   else
-#       define BM_VECT_ALIGN
-#       define BM_VECT_ALIGN_ATTR
+#       if defined(BMAVX512OPT)
+#          define BM_VECT_ALIGN BM_ALIGN64
+#          define BM_VECT_ALIGN_ATTR BM_ALIGN64ATTR
+#       else
+#          define BM_VECT_ALIGN
+#          define BM_VECT_ALIGN_ATTR
+#       endif
 #   endif
 #endif
 
@@ -286,10 +316,8 @@ For more information please visit:  http://bitmagic.io
 */
 #ifndef BM_INCWORD_BITCOUNT
 
-#if (defined(BMSSE42OPT) || defined(BMAVX2OPT))
-
+#if (defined(BMSSE42OPT) || defined(BMAVX2OPT) || defined(BMAVX512OPT))
 # define BM_INCWORD_BITCOUNT(cnt, w) cnt += unsigned(_mm_popcnt_u32(w));
-
 #else
 
 # define BM_INCWORD_BITCOUNT(cnt, w) cnt += \

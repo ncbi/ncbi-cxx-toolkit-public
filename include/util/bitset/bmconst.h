@@ -19,7 +19,8 @@ For more information please visit:  http://bitmagic.io
 */
 
 /*! \file bmconst.h
-    \brief Various constants and tables
+    \brief Constants, tables and typedefs
+    @internal
 */
 
 namespace bm
@@ -49,8 +50,14 @@ const unsigned set_block_shift = 16u;
 const unsigned set_block_mask  = 0xFFFFu;
 const unsigned set_blkblk_mask = 0xFFFFFFu;
 
-const unsigned set_block_plain_size = set_block_size / 32u;
+// set block size in bytes
+const unsigned set_block_alloc_size = bm::set_block_size * unsigned(sizeof(bm::word_t));
+
+const unsigned set_block_plain_size = bm::set_block_size / 32u;
 const unsigned set_block_plain_cnt = (unsigned)(sizeof(bm::word_t) * 8u);
+
+const unsigned set_block_digest_wave_size = bm::set_block_size / 64;
+const unsigned set_block_digest_pos_shift = 10;
 
 // Word parameters
 
@@ -80,6 +87,14 @@ const unsigned set_total_blocks = (bm::set_array_size * bm::set_array_size);
 const unsigned bits_in_block = bm::set_block_size * (unsigned)(sizeof(bm::word_t) * 8);
 const unsigned bits_in_array = bm::bits_in_block * bm::set_array_size;
 
+// Rank-Select parameters
+const unsigned rs3_border0 = 21824; // 682 words by 32-bits
+const unsigned rs3_border1 = (rs3_border0 * 2); // 43648
+const unsigned rs3_half_span = rs3_border0 / 2;
+
+// misc parameters for sparse vec algorithms
+const unsigned sub_block3_size = bm::gap_max_bits / 4;
+
 
 #if defined(BM64OPT) || defined(BM64_SSE4)
 
@@ -106,6 +121,7 @@ enum strategy
     BM_GAP = 1  //!< GAP compression is ON.
 };
 
+
 /**
     Codes of set operations
     @ingroup bvector
@@ -129,6 +145,18 @@ enum set_operation
     set_END
 };
 
+/**
+    Bit operations
+    @ingroup bvector
+*/
+enum operation
+{
+    BM_AND = set_AND,
+    BM_OR  = set_OR,
+    BM_SUB = set_SUB,
+    BM_XOR = set_XOR
+};
+
 
 /*!
    @brief Sort order declaration
@@ -136,10 +164,10 @@ enum set_operation
 */
 enum sort_order
 {
-    BM_UNSORTED = 0,      //!< input set is NOT sorted
-    BM_SORTED = 1,        //!< input set is sorted (ascending order)
-    BM_SORTED_UNIFORM = 2,//!< input set is sorted and belongs to one address block
-    BM_UNKNOWN = 3        //!< sort order unknown
+    BM_UNSORTED       = 0,  //!< input set is NOT sorted
+    BM_SORTED         = 1,  //!< input set is sorted (ascending order)
+    BM_SORTED_UNIFORM = 2,  //!< sorted and in one block (internal!)
+    BM_UNKNOWN        = 3   //!< sort order unknown
 };
 
 
@@ -177,19 +205,20 @@ template<bool T> struct _copyright
 };
 
 template<bool T> const char _copyright<T>::_p[] = 
-    "BitMagic C++ Library. v.3.12.5 (c) 2002-2018 Anatoliy Kuznetsov.";
-template<bool T> const unsigned _copyright<T>::_v[3] = {3, 12, 5};
+    "BitMagic C++ Library. v.3.19.0 (c) 2002-2018 Anatoliy Kuznetsov.";
+template<bool T> const unsigned _copyright<T>::_v[3] = {3, 18, 0};
 
 
-template<bool T> struct DeBruijn_bit_position
-{
-    static const unsigned _multiply[32];
-};
 
 /**
     DeBruijn majic table
     @internal
 */
+template<bool T> struct DeBruijn_bit_position
+{
+    static const unsigned _multiply[32];
+};
+
 template<bool T>
 const unsigned DeBruijn_bit_position<T>::_multiply[32] = { 
   0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 
@@ -250,6 +279,39 @@ const unsigned char bit_count_table<T>::_count[256] = {
 };
 
 //---------------------------------------------------------------------
+
+/** Structure for LZCNT constants (4-bit)
+    @ingroup bitfunc
+*/
+template<bool T> struct lzcnt_table
+{
+    static unsigned char const _lut[16];
+};
+
+template<bool T>
+const unsigned char lzcnt_table<T>::_lut[16] = 
+{
+    32U, 31U, 30U, 30U, 29U, 29U, 29U, 29U,
+    28U, 28U, 28U, 28U, 28U, 28U, 28U, 28U
+};
+
+/** Structure for TZCNT constants 
+    @ingroup bitfunc
+*/
+template<bool T> struct tzcnt_table
+{
+    static unsigned char const _lut[37];
+};
+
+template<bool T>
+const unsigned char tzcnt_table<T>::_lut[37] =
+{ 
+    32, 0, 1, 26, 2, 23, 27, 0, 3, 16, 24, 30, 28, 11,
+    0, 13, 4, 7, 17, 0, 25, 22, 31, 15, 29, 10, 12, 6, 0, 
+    21, 14, 9, 5, 20, 8, 19, 18 
+};
+
+
 
 /** Structure keeps all-left/right ON bits masks. 
     @ingroup bitfunc 
@@ -331,9 +393,54 @@ enum simd_codes
     simd_none  = 0,   ///!< No SIMD or any other optimization
     simd_sse2  = 1,   ///!< Intel SSE2
     simd_sse42 = 2,   ///!< Intel SSE4.2
-    simd_avx2  = 5    ///!< Intel AVX2
+    simd_avx2  = 5,   ///!< Intel AVX2
+    simd_avx512  = 6  ///!< Intel AVX512
 };
 
+
+/*!
+   \brief Byte orders recognized by the library.
+   @internal
+*/
+enum ByteOrder
+{
+    BigEndian    = 0,
+    LittleEndian = 1
+};
+
+/**
+    Internal structure. Different global settings.
+    @internal
+*/
+template<bool T> struct globals
+{
+    struct bo
+    {
+        ByteOrder  _byte_order;
+
+        bo()
+        {
+            unsigned x;
+            unsigned char *s = (unsigned char *)&x;
+            s[0] = 1; s[1] = 2; s[2] = 3; s[3] = 4;
+            if(x == 0x04030201)
+            {
+                _byte_order = LittleEndian;
+                return;
+            }
+            if(x == 0x01020304)
+            {
+                _byte_order = BigEndian;
+                return;
+            }
+            _byte_order = LittleEndian;
+        }
+    };
+
+    static bo  _bo;
+    static ByteOrder byte_order() { return _bo._byte_order; }
+};
+template<bool T> typename globals<T>::bo globals<T>::_bo;
 
 
 } // namespace

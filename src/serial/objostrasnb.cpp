@@ -461,9 +461,9 @@ void CObjectOStreamAsnBinary::WriteBitString(const CBitString& obj)
         CBitString::statistics st;
         obj.calc_stat(&st);
         buf = (char*)malloc(st.max_serialize_mem);
-        bm::word_t* tmp_block = obj.allocate_tempblock();
+        bm::word_t* tmp_block = (bm::word_t*)bm::aligned_new_malloc(bm::set_block_alloc_size);
         len = 8*bm::serialize(obj, (unsigned char*)buf, tmp_block);
-        free(tmp_block);
+        bm::aligned_free(tmp_block);
     }
 
     WriteSysTag(compressed ? eOctetString : eBitString);

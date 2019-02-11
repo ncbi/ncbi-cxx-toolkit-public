@@ -91,9 +91,9 @@ void CBVector_data::SetBitVector(const bm::bvector<>* bv)
     bv->calc_stat(&stat);
     TData& arr = SetData();
     arr.resize(stat.max_serialize_mem);
-    bm::word_t* temp_block = bv->allocate_tempblock();
+    bm::word_t* temp_block = (bm::word_t*)bm::aligned_new_malloc(bm::set_block_alloc_size);
     size_t size = bm::serialize(*bv, (unsigned char*)&arr[0], temp_block);
-    free(temp_block);
+    bm::aligned_free(temp_block);
     arr.resize(size);
 }
 

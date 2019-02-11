@@ -349,14 +349,14 @@ void CObjectOStreamJson::WriteBitString(const CBitString& obj)
     }
 #else
     if (IsCompressed()) {
-        bm::word_t* tmp_block = obj.allocate_tempblock();
+        bm::word_t* tmp_block = (bm::word_t*)bm::aligned_new_malloc(bm::set_block_alloc_size);
         CBitString::statistics st;
         obj.calc_stat(&st);
         char* buf = (char*)malloc(st.max_serialize_mem);
         unsigned int len = bm::serialize(obj, (unsigned char*)buf, tmp_block);
         WriteBytes(buf,len);
         free(buf);
-        free(tmp_block);
+        bm::aligned_free(tmp_block);
     } else {
         CBitString::size_type i=0;
         CBitString::size_type ilast = obj.size();
