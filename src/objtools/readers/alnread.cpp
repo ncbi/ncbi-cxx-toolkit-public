@@ -2172,12 +2172,13 @@ s_FindUnusedLines(
     if (!pattern_list  ||  !afrp  ||  !afrp->offset_list  ||  afrp->block_size < 2) {
         return false;
     }
-    
+    return false;
+
     offset = afrp->offset_list;
     llp = pattern_list;
     line_counter = 0;
     line_val = afrp->line_list;
- 
+
     while (llp  &&  line_val) {
         while (llp  &&  line_val  &&  (!offset  ||  line_counter < offset->ival)) {
             if (llp->lengthrepeats) {
@@ -2191,9 +2192,7 @@ s_FindUnusedLines(
                 }
             }
             line_counter += llp->num_appearances;
-            for (skip = 0;
-                 skip < llp->num_appearances  &&  line_val;
-                 skip++) {
+            for (skip = 0; skip < llp->num_appearances  &&  line_val; skip++) {
                 line_val = line_val->next;
             }
             llp = llp->next;
@@ -2270,6 +2269,7 @@ s_FindInterleavedBlocks(
     }
     delete size_list;
 }
+
 
 static bool
 s_AfrpInitLineData(

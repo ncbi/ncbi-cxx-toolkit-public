@@ -1,0 +1,145 @@
+Seq-entry ::= set {
+  class pop-set,
+  seq-set {
+    seq {
+      id {
+        local str "seq1"
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 26,
+        seq-data ncbi2na '90939390039390'H
+      }
+    },
+    seq {
+      id {
+        local str "seq2"
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 24,
+        seq-data ncbi2na '33A393900939'H
+      }
+    },
+    seq {
+      id {
+        local str "seq3"
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 24,
+        seq-data ncbi2na '399093900339'H
+      }
+    },
+    seq {
+      id {
+        local str "seq4"
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 24,
+        seq-data ncbi2na '3933A3900399'H
+      }
+    },
+    seq {
+      id {
+        local str "seq5"
+      },
+      inst {
+        repr raw,
+        mol na,
+        length 24,
+        seq-data ncbi2na '393990900393'H
+      }
+    }
+  },
+  annot {
+    {
+      data align {
+        {
+          type not-set,
+          dim 5,
+          segs denseg {
+            dim 5,
+            numseg 10,
+            ids {
+              local str "seq1",
+              local str "seq2",
+              local str "seq3",
+              local str "seq4",
+              local str "seq5"
+            },
+            starts {
+              -1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              -1,
+              2,
+              2,
+              2,
+              2,
+              2,
+              -1,
+              4,
+              4,
+              4,
+              4,
+              4,
+              -1,
+              6,
+              6,
+              6,
+              6,
+              6,
+              -1,
+              8,
+              8,
+              8,
+              8,
+              8,
+              18,
+              -1,
+              18,
+              18,
+              18,
+              20,
+              18,
+              -1,
+              20,
+              20,
+              22,
+              20,
+              20,
+              -1,
+              22,
+              24,
+              22,
+              22,
+              22,
+              -1
+            },
+            lens {
+              2,
+              2,
+              2,
+              2,
+              2,
+              10,
+              2,
+              2,
+              2,
+              2
+            }
+          }
+        }
+      }
+    }
+  }
+}
