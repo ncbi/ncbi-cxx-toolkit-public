@@ -2178,8 +2178,8 @@ s_FindUnusedLines(
     line_counter = 0;
     line_val = afrp->line_list;
  
-    while (!llp  &&  !line_val) {
-        while (!llp  &&  !line_val  &&  (!offset  ||  line_counter < offset->ival)) {
+    while (llp  &&  line_val) {
+        while (llp  &&  line_val  &&  (!offset  ||  line_counter < offset->ival)) {
             if (llp->lengthrepeats) {
                 s_ReportUnusedLine (line_counter,
                                     line_counter + llp->num_appearances - 1,

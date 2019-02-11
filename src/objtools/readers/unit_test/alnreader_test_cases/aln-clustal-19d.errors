@@ -1,0 +1,44 @@
+Line No    : 15
+Severity   : Error
+Message    : At ID '' in category '3' at line 15: Line 15 could not be assigned to an interleaved block'
+
+Line No    : 15
+Severity   : Error
+Message    : At ID '' in category '3' at line 15: Contents of unused line: This line isn't used.'
+
+Line No    : 16
+Severity   : Error
+Message    : At ID '' in category '3' at line 16: Line 16 could not be assigned to an interleaved block'
+
+Line No    : 16
+Severity   : Error
+Message    : At ID '' in category '3' at line 16: Contents of unused line: And neither is this line.'
+
+Line No    : 10
+Severity   : Error
+Message    : At ID 'SEQ1' in category '3' at line 10: Expected line length 20, actual length 8'
+
+Line No    : 13
+Severity   : Error
+Message    : At ID 'AT--ATGC' in category '3' at line 13: Expected line length 20, actual length 4'
+
+Line No    : 17
+Severity   : Error
+Message    : At ID 'THIS' in category '3' at line 17: Expected line length 20, actual length 4'
+
+Line No    : 17
+Severity   : Error
+Message    : At ID 'ISN'T' in category '3' at line 17: Expected line length 20, actual length 5'
+
+Line No    : 18
+Severity   : Error
+Message    : At ID 'AND' in category '3' at line 18: Expected line length 20, actual length 7'
+
+Line No    : 14
+Severity   : Error
+Message    : At ID 'AT--ATGC' in category '4' at line 14: 1 bad characters (4) found at position 3 (expect only end gap characters here).'
+
+Line No    : 0
+Severity   : Fatal
+Message    : Error reading alignment: Invalid input or alphabet
+
