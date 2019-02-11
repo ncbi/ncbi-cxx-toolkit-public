@@ -748,7 +748,7 @@ s_ReportUnusedLine(
             errfunc,
             errdata);
     } else {
-        string errMessage = StrPrintf(errFormat2, line_num_start);
+        string errMessage = StrPrintf(errFormat2, line_num_start, line_num_stop);
         sReportError(
             "",
             line_num_start,

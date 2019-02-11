@@ -1,6 +1,6 @@
 Line No    : 1
 Severity   : Error
-Message    : At ID '' in category '3' at line 1: Lines 1 through 1995820896 could not be assigned to an interleaved block'
+Message    : At ID '' in category '3' at line 1: Lines 1 through 4 could not be assigned to an interleaved block'
 
 Line No    : 1
 Severity   : Error
