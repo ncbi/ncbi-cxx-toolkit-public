@@ -282,6 +282,26 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
     for (CSeqdesc_CI di(bsh, CSeqdesc::e_User); di; ++di) {
         const CUser_object& usr = di->GetUser();
         if ( ! CComment_rule::IsStructuredComment (usr) ) continue;
+        string pfx = CComment_rule::GetStructuredCommentPrefix ( usr, true );
+        if ( NStr::EqualNocase (pfx, "MIGS:5.0-Data" )) {
+            x_AddKeyword("GSC:MIxS");
+            x_AddKeyword("MIGS:5.0.");
+        } else if ( NStr::EqualNocase (pfx, "MIMS:5.0-Data" )) {
+            x_AddKeyword("GSC:MIxS");
+            x_AddKeyword("MIMS:5.0.");
+        } else if ( NStr::EqualNocase (pfx, "MIMARKS:5.0-Data" )) {
+            x_AddKeyword("GSC:MIxS");
+            x_AddKeyword("MIMARKS:5.0.");
+        } else if ( NStr::EqualNocase (pfx, "MISAG:5.0-Data" )) {
+            x_AddKeyword("GSC:MIxS");
+            x_AddKeyword("MISAG:5.0.");
+        } else if ( NStr::EqualNocase (pfx, "MIMAG:5.0-Data" )) {
+            x_AddKeyword("GSC:MIxS");
+            x_AddKeyword("MIMAG:5.0.");
+        } else if ( NStr::EqualNocase (pfx, "MIUVIG:5.0-Data" )) {
+            x_AddKeyword("GSC:MIxS");
+            x_AddKeyword("MIUVIG:5.0.");
+        }
         try {
             list<string> keywords = CComment_set::GetKeywords(usr);
             FOR_EACH_STRING_IN_LIST ( s_itr, keywords ) {
