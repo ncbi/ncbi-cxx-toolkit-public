@@ -316,7 +316,8 @@ DISCREPANCY_AUTOFIX(SWITCH_STRUCTURED_COMMENT_PREFIX)
 
 DISCREPANCY_CASE(MISMATCHED_COMMENTS, CSeqdesc, eDisc, "Mismatched Comments")
 {
-    if (obj.IsComment() && !obj.GetComment().empty()) {
+    auto bs = context.GetCurrentBioseq();
+    if (bs && bs->IsNa() && obj.IsComment() && !obj.GetComment().empty()) {
         m_Objs[obj.GetComment()].Add(*context.SeqdescObj(obj, true));
     }
 }
