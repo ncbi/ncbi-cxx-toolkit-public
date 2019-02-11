@@ -461,6 +461,10 @@ private:
     };
     typedef CTls<SLDS2_DbConnection> TDbConnectionsTls;
 
+    // TLS cleanup function.
+    static void sx_DbConn_Cleanup(SLDS2_DbConnection* value,
+                                  void* cleanup_data);
+
     // Get SLDS2_DbConnection for the current thread (create one
     // if necessary).
     SLDS2_DbConnection& x_GetDbConnection(void) const;
