@@ -949,25 +949,25 @@ void CBlastDBCmdApp::Init()
             "\t\t%S means scientific name\n"
             "\t\t%N means scientific names for leaf-node taxids\n"
             "\t\t%B means BLAST name\n"     /* Is this useful outside NCBI? */
-#if _BLAST_DEBUG
+#if _DEBUG
             "\t\t%n means a list of links integers separated by ';'\n"
-#endif /* _BLAST_DEBUG */
+#endif /* _DEBUG */
             "\t\t%K means taxonomic super kingdom\n"
             "\t\t%P means PIG\n"
-#if _BLAST_DEBUG
+#if _DEBUG
             "\t\t%d means defline in text ASN.1 format\n"
             "\t\t%b means Bioseq in text ASN.1 format\n"
-#endif /* _BLAST_DEBUG */
+#endif /* _DEBUG */
             "\t\t%m means sequence masking data.\n"
             "\t\t   Masking data will be displayed as a series of 'N-M' values\n"
             "\t\t   separated by ';' or the word 'none' if none are available.\n"
-#if _BLAST_DEBUG
+#if _DEBUG
             "\tIf '%f' or '%d' are specified, all other format specifiers are ignored.\n"
             "\tFor every format except '%f' and '%d', each line of output will "
 #else
             "\tIf '%f' is specified, all other format specifiers are ignored.\n"
             "\tFor every format except '%f', each line of output will "
-#endif /* _BLAST_DEBUG */
+#endif /* _DEBUG */
             "correspond\n\tto a sequence.\n",
             CArgDescriptions::eString, "%f");
 
