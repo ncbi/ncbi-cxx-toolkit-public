@@ -488,6 +488,8 @@ private:
         if (err_code != 0)
             return;
 
+        uv_tcp_nodelay(tcp, 1);
+
         tcp->data = this;
         m_connected_list.splice(m_connected_list.begin(), m_free_list, it);
 
