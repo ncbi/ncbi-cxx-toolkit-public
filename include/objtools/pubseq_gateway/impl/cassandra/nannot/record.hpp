@@ -31,35 +31,111 @@
 
 #include <corelib/ncbistd.hpp>
 
+#include <algorithm>
 #include <memory>
+#include <set>
 #include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 #include "../IdCassScope.hpp"
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
+struct SAnnotInfoEntry {
+    int32_t type = 0;
+    int32_t subtype = 0;
+    int64_t start = 0;
+    int64_t stop = 0;
+    int32_t count = 0;
+
+    string ToString() const;
+};
+
 class CNAnnotRecord {
  public:
     using TTimestamp = int64_t;
     using TSatKey = int32_t;
     using TCoord = int32_t;
+    using TAnnotInfo = vector<SAnnotInfoEntry>;
 
  public:
-    CNAnnotRecord();
+    CNAnnotRecord()
+        : m_Modified(0)
+        , m_SatKey(0)
+        , m_Start(0)
+        , m_Stop()
+        , m_Version(0)
+        , m_SeqIdType(0)
+    {
+    }
 
     CNAnnotRecord& operator=(CNAnnotRecord const &) = default;
     CNAnnotRecord& operator=(CNAnnotRecord&&) = default;
 
-    CNAnnotRecord& SetAccession(string value);
-    CNAnnotRecord& SetVersion(int16_t value);
-    CNAnnotRecord& SetSeqIdType(int16_t value);
-    CNAnnotRecord& SetSatKey(TSatKey value);
-    CNAnnotRecord& SetModified(TTimestamp value);
-    CNAnnotRecord& SetAnnotName(string value);
-    CNAnnotRecord& SetStart(TCoord value);
-    CNAnnotRecord& SetStop(TCoord value);
+    CNAnnotRecord& SetAccession(string value)
+    {
+        m_Accession = value;
+        return *this;
+    }
 
+    CNAnnotRecord& SetVersion(int16_t value)
+    {
+        m_Version = value;
+        return *this;
+    }
+
+    CNAnnotRecord& SetSeqIdType(int16_t value)
+    {
+        m_SeqIdType = value;
+        return *this;
+    }
+
+    CNAnnotRecord& SetSatKey(TSatKey value)
+    {
+        m_SatKey = value;
+        return *this;
+    }
+
+    CNAnnotRecord& SetModified(TTimestamp value)
+    {
+        m_Modified = value;
+        return *this;
+    }
+
+    CNAnnotRecord& SetAnnotName(string value)
+    {
+        m_AnnotName = value;
+        return *this;
+    }
+
+    CNAnnotRecord& SetStart(TCoord value)
+    {
+        m_Start = value;
+        return *this;
+    }
+
+    CNAnnotRecord& SetStop(TCoord value)
+    {
+        m_Stop = value;
+        return *this;
+    }
+
+    CNAnnotRecord& SetAnnotInfo(TAnnotInfo const& value)
+    {
+        m_AnnotInfo = value;
+        return *this;
+    }
+
+    CNAnnotRecord& SetAnnotInfo(TAnnotInfo&& value)
+    {
+        m_AnnotInfo = move(value);
+        return *this;
+    }
+
+    // ---------------- Getters ------------------------
     string const & GetAccession() const
     {
         return m_Accession;
@@ -100,12 +176,17 @@ class CNAnnotRecord {
         return m_AnnotName;
     }
 
+    TAnnotInfo const & GetAnnotInfo() const
+    {
+        return m_AnnotInfo;
+    }
+
     string ToString() const;
 
  private:
     string m_Accession;
     string m_AnnotName;
-    string m_AnnotData;
+    TAnnotInfo m_AnnotInfo;
     TTimestamp m_Modified;
     TSatKey m_SatKey;
     TCoord m_Start;

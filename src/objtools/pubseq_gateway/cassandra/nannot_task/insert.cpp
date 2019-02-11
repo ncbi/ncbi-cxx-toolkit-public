@@ -37,7 +37,9 @@
 
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
+#include <vector>
 
 #include <objtools/pubseq_gateway/impl/cassandra/cass_blob_op.hpp>
 #include <objtools/pubseq_gateway/impl/cassandra/cass_driver.hpp>
@@ -45,6 +47,10 @@
 
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
+
+namespace {
+
+}  // namespace
 
 CCassNAnnotTaskInsert::CCassNAnnotTaskInsert(
         unsigned int op_timeout_ms,
@@ -106,9 +112,9 @@ void CCassNAnnotTaskInsert::Wait1()
                 m_QueryArr[0] = { m_Conn->NewQuery(), 0};
                 auto qry = m_QueryArr[0].query;
                 string sql = "INSERT INTO " + GetKeySpace() + ".bioseq_na "
-                      "(accession, version, seq_id_type, annot_name, sat_key, last_modified, start, stop)"
-                      "VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
-                qry->SetSQL(sql, 8);
+                      "(accession, version, seq_id_type, annot_name, sat_key, last_modified, start, stop, annot_info)"
+                      "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                qry->SetSQL(sql, 9);
                 qry->BindStr(0, m_Annot->GetAccession());
                 qry->BindInt16(1, m_Annot->GetVersion());
                 qry->BindInt16(2, m_Annot->GetSeqIdType());
@@ -117,6 +123,16 @@ void CCassNAnnotTaskInsert::Wait1()
                 qry->BindInt64(5, m_Annot->GetModified());
                 qry->BindInt32(6, m_Annot->GetStart());
                 qry->BindInt32(7, m_Annot->GetStop());
+                auto const & annot_info = m_Annot->GetAnnotInfo();
+                vector<tuple<int32_t, int32_t, int64_t, int64_t, int32_t>> cass_value(annot_info.size());
+                for (size_t i = 0; i < annot_info.size(); ++i) {
+                    get<0>(cass_value[i]) = annot_info[i].type;
+                    get<1>(cass_value[i]) = annot_info[i].subtype;
+                    get<2>(cass_value[i]) = annot_info[i].start;
+                    get<3>(cass_value[i]) = annot_info[i].stop;
+                    get<4>(cass_value[i]) = annot_info[i].count;
+                }
+                qry->BindList(8, cass_value.begin(), cass_value.end(), cass_value.size());
 
                 UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);

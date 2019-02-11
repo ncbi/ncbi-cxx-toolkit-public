@@ -37,6 +37,7 @@
 
 #include <memory>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -66,8 +67,7 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     , m_Accession(move(accession))
     , m_Version(version)
     , m_SeqIdType(seq_id_type)
-    , m_AnnotNameBox(annot_names)
-    , m_AnnotNameTempStrings(false)
+    , m_AnnotNames(annot_names)
     , m_Consume(move(consume_callback))
     , m_PageSize(CCassQuery::DEFAULT_PAGE_SIZE)
     , m_RestartCounter(0)
@@ -92,8 +92,7 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     , m_Accession(move(accession))
     , m_Version(version)
     , m_SeqIdType(seq_id_type)
-    , m_AnnotNameBox(annot_names)
-    , m_AnnotNameTempStrings(true)
+    , m_AnnotNamesTemp(annot_names)
     , m_Consume(move(consume_callback))
     , m_PageSize(CCassQuery::DEFAULT_PAGE_SIZE)
     , m_RestartCounter(0)
@@ -117,21 +116,10 @@ CCassNAnnotTaskFetch::CCassNAnnotTaskFetch(
     , m_Accession(move(accession))
     , m_Version(version)
     , m_SeqIdType(seq_id_type)
-    , m_AnnotNameBox(vector<string>())
-    , m_AnnotNameTempStrings(false)
     , m_Consume(move(consume_callback))
     , m_PageSize(CCassQuery::DEFAULT_PAGE_SIZE)
     , m_RestartCounter(0)
 {}
-
-CCassNAnnotTaskFetch::~CCassNAnnotTaskFetch()
-{
-    if (m_AnnotNameTempStrings) {
-        m_AnnotNameBox.names_temp.~vector<CTempString>();
-    } else {
-        m_AnnotNameBox.names.~vector<string>();
-    }
-}
 
 void CCassNAnnotTaskFetch::SetConsumeCallback(TNAnnotConsumeCallback callback)
 {
@@ -158,6 +146,56 @@ void CCassNAnnotTaskFetch::Cancel(void)
     }
 }
 
+size_t CCassNAnnotTaskFetch::x_AnnotNamesSize() const
+{
+    if (m_AnnotNames.empty()) {
+        return m_AnnotNamesTemp.size();
+    } else {
+        assert(m_AnnotNamesTemp.empty());
+        return m_AnnotNames.size();
+    }
+}
+
+size_t CCassNAnnotTaskFetch::x_AnnotNamesCount(string const & more) const
+{
+    if (m_AnnotNames.empty()) {
+        CTempString t(more);
+        return count_if(m_AnnotNamesTemp.begin(), m_AnnotNamesTemp.end(),
+            [&t](CTempString const & val) {
+                return val > t;
+            }
+        );
+    } else {
+        assert(m_AnnotNamesTemp.empty());
+        return count_if(m_AnnotNames.begin(), m_AnnotNames.end(),
+            [&more](string const & val) {
+                return val > more;
+            }
+        );
+    }
+}
+
+void CCassNAnnotTaskFetch::x_AnnotNamesBind(
+    shared_ptr<CCassQuery>& query, string const & more, unsigned int first
+) const
+{
+    if (m_AnnotNames.empty()) {
+        CTempString t(more);
+        for (CTempString const & val : m_AnnotNamesTemp) {
+            if (val > t) {
+                query->BindStr(first++, val);
+            }
+        }
+    } else {
+        assert(m_AnnotNamesTemp.empty());
+        for (string const & val : m_AnnotNames) {
+            if (val > more) {
+                query->BindStr(first++, val);
+            }
+        }
+    }
+}
+
 void CCassNAnnotTaskFetch::Wait1()
 {
     bool restarted;
@@ -174,13 +212,13 @@ void CCassNAnnotTaskFetch::Wait1()
 
                 string sql =
                     " SELECT "
-                    "  annot_name, sat_key, last_modified, start, stop "
+                    "  annot_name, sat_key, last_modified, start, stop, annot_info "
                     " FROM " + GetKeySpace() + ".bioseq_na "
                     " WHERE"
                     "  accession = ? AND version = ? AND seq_id_type = ?";
                 unsigned int params = 3, names_count = 0;
-                if (m_AnnotNameBox.Size(m_AnnotNameTempStrings)) {
-                    names_count = m_AnnotNameBox.Count(m_AnnotNameTempStrings, m_LastConsumedAnnot);
+                if (x_AnnotNamesSize()) {
+                    names_count = x_AnnotNamesCount(m_LastConsumedAnnot);
                     if (names_count > 0) {
                         sql += " AND annot_name in (" + NStr::Join(vector<string>(names_count, "?"), ",") + ")";
                     } else {
@@ -200,7 +238,7 @@ void CCassNAnnotTaskFetch::Wait1()
                 m_QueryArr[0].query->BindInt16(2, m_SeqIdType);
 
                 if (names_count > 0) {
-                    m_AnnotNameBox.Bind(m_QueryArr[0].query, m_AnnotNameTempStrings, m_LastConsumedAnnot, 3);
+                    x_AnnotNamesBind(m_QueryArr[0].query, m_LastConsumedAnnot, 3);
                 } else {
                     if (!m_LastConsumedAnnot.empty()) {
                         m_QueryArr[0].query->BindStr(3, m_LastConsumedAnnot);
@@ -238,6 +276,18 @@ void CCassNAnnotTaskFetch::Wait1()
                             .SetModified(m_QueryArr[0].query->FieldGetInt64Value(2, 0))
                             .SetStart(m_QueryArr[0].query->FieldGetInt32Value(3, 0))
                             .SetStop(m_QueryArr[0].query->FieldGetInt32Value(4, 0));
+                        vector<tuple<int32_t, int32_t, int64_t, int64_t, int32_t>> cass_value;
+                        m_QueryArr[0].query->FieldGetContainerValue(5, back_inserter(cass_value));
+                        CNAnnotRecord::TAnnotInfo annot_info(cass_value.size());
+                        for (size_t i = 0; i < annot_info.size(); ++i) {
+                            annot_info[i].type = get<0>(cass_value[i]);
+                            annot_info[i].subtype = get<1>(cass_value[i]);
+                            annot_info[i].start = get<2>(cass_value[i]);
+                            annot_info[i].stop = get<3>(cass_value[i]);
+                            annot_info[i].count = get<4>(cass_value[i]);
+                        }
+                        record.SetAnnotInfo(move(annot_info));
+
                         if (m_Consume) {
                             string annot_name = record.GetAnnotName();
                             do_next = m_Consume(move(record), false);

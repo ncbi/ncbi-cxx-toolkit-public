@@ -40,60 +40,13 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-CNAnnotRecord::CNAnnotRecord()
-    : m_Modified(0)
-    , m_SatKey(0)
-    , m_Version(0)
-    , m_SeqIdType(0)
+string SAnnotInfoEntry::ToString() const
 {
-}
-
-CNAnnotRecord& CNAnnotRecord::SetAccession(string value)
-{
-    m_Accession = value;
-    return *this;
-}
-
-CNAnnotRecord& CNAnnotRecord::SetVersion(int16_t value)
-{
-    m_Version = value;
-    return *this;
-}
-
-CNAnnotRecord& CNAnnotRecord::SetSeqIdType(int16_t value)
-{
-    m_SeqIdType = value;
-    return *this;
-}
-
-CNAnnotRecord& CNAnnotRecord::SetSatKey(TSatKey value)
-{
-    m_SatKey = value;
-    return *this;
-}
-
-CNAnnotRecord& CNAnnotRecord::SetModified(TTimestamp value)
-{
-    m_Modified = value;
-    return *this;
-}
-
-CNAnnotRecord& CNAnnotRecord::SetAnnotName(string value)
-{
-    m_AnnotName = value;
-    return *this;
-}
-
-CNAnnotRecord& CNAnnotRecord::SetStart(TCoord value)
-{
-    m_Start = value;
-    return *this;
-}
-
-CNAnnotRecord& CNAnnotRecord::SetStop(TCoord value)
-{
-    m_Stop = value;
-    return *this;
+    return "(" + NStr::NumericToString(type)
+        + ", " + NStr::NumericToString(subtype)
+        + ", " + NStr::NumericToString(start)
+        + ", " + NStr::NumericToString(stop)
+        + ", " + NStr::NumericToString(count) + ")";
 }
 
 string CNAnnotRecord::ToString() const
@@ -103,7 +56,11 @@ string CNAnnotRecord::ToString() const
       << "\tm_SatKey: " << m_SatKey << endl
       << "\tm_AnnotName: " << m_AnnotName << endl
       << "\tm_Start: " << m_Start << endl
-      << "\tm_Stop: " << m_Stop << endl;
+      << "\tm_Stop: " << m_Stop << endl
+      << "\tm_AnnotInfo:" << endl;
+    for (auto const& entry : m_AnnotInfo) {
+        s << "\t\t" << entry.ToString() << endl;
+    }
     return s.str();
 }
 
