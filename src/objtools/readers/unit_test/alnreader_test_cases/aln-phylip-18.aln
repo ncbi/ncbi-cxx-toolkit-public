@@ -19,8 +19,8 @@ seq5 ATGCATGC--GCAAGCAAAA
 
 BEGIN ncbi;
 sequin
-[org=animal 1]
-[org=animal 2]
-[org=animal 4]
-[org=animal 5]
+>[org=animal 1]
+>[org=animal 2]
+>[org=animal 4]
+>[org=animal 5]
 END;

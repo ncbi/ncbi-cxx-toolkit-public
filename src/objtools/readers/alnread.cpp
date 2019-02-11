@@ -1845,37 +1845,32 @@ s_RemoveOrganismCommentFromLine (
 }
 
  
-static void s_ReadDefline(
+static bool s_ReadDefline(
     const char* line, 
     int line_num, 
+    const bool is_nexus_type,
     TAlignRawFilePtr afrp)
 {
     if (!line  ||  !afrp) {
-        return;
+        return false;
     }
 
     if (line[0] == '>') {
-        const char* defline_offset = strpbrk(line, " \t");
+        const char* defline_offset = is_nexus_type ?
+            line + 1 :
+            strpbrk(line, " \t");
 
         if (defline_offset) {
             afrp->deflines = s_AddLineInfo(afrp->deflines, defline_offset, 
-                    //line_num, reinterpret_cast<long>(defline_offset));
                     line_num, 0);
         }
         else {
             afrp->deflines = s_AddLineInfo(afrp->deflines, "", line_num, 0);
         }
         afrp->num_deflines++;
-        return;
+        return true;
     }
-
-
-    if (NStr::FindNoCase(line, "org=") != NPOS ||
-        NStr::FindNoCase(line, "organism=") != NPOS) {
-        afrp->deflines = s_AddLineInfo(afrp->deflines, line, 
-                line_num, 0);
-        afrp->num_deflines++;
-    }
+    return false;
 }
 
 
@@ -2434,13 +2429,23 @@ s_ReadAlignFileRaw(
         delete afrp;
         return nullptr;
     }
-        
+   
+
+    bool found_defline = false;
+    bool is_nexus_type = false;
     for (next_line = afrp->line_list; next_line; next_line = next_line->next) {
         linestring = next_line->data;
         overall_line_count = next_line->line_num-1;
 
-        //s_ReadOrgNamesFromText (linestring, overall_line_count, afrp);
-        s_ReadDefline(linestring, overall_line_count, afrp);
+        if (!found_defline && !is_nexus_type) 
+        {
+            is_nexus_type = NStr::StartsWith(linestring, "sequin");
+        }
+
+        found_defline = s_ReadDefline(linestring, 
+                                      overall_line_count, 
+                                      is_nexus_type,
+                                      afrp);
 
 
         if (*pformat == ALNFMT_FASTAGAP) {
