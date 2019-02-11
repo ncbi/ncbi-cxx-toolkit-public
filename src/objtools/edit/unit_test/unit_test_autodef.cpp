@@ -2426,10 +2426,14 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4529)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SQD_4593)
+void TestMatPeptideListing(bool cds_is_partial)
 {
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();    
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    if (cds_is_partial) {
+        cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+        cds->SetPartial(true);
+    }
     CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature(cds);
     gene->SetData().SetGene().SetLocus("ORF1");
     CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
@@ -2444,8 +2448,19 @@ BOOST_AUTO_TEST_CASE(Test_SQD_4593)
     matp->SetData().SetProt().SetName().push_back("RdRp");
     matp->ResetComment();
 
-    AddTitle(nuc, "Sebaea microphylla nonstructural polyprotein, RdRp region, (ORF1) gene, complete cds.");
+    if (cds_is_partial) {
+        AddTitle(nuc, "Sebaea microphylla nonstructural polyprotein, RdRp region, (ORF1) gene, partial cds.");
+    } else {
+        AddTitle(nuc, "Sebaea microphylla nonstructural polyprotein (ORF1) gene, complete cds.");
+    }
     CheckDeflineMatches(entry, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
+
+}
+
+BOOST_AUTO_TEST_CASE(Test_SQD_4593)
+{
+    TestMatPeptideListing(true);
+    TestMatPeptideListing(false);
 }
 
 END_SCOPE(objects)

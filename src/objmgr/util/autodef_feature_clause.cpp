@@ -702,15 +702,18 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
                 CFeat_CI prot_f(prot_h, CSeqFeatData::eSubtype_prot);
                 if (prot_f) {
                     feature::GetLabel(*(prot_f->GetSeq_feat()), &label, feature::fFGL_Content);
-                    CFeat_CI mat_pi(prot_h, CSeqFeatData::eSubtype_mat_peptide_aa);
-                    if (mat_pi && mat_pi->GetData().GetProt().IsSetName()) {
-                        const string&  m_name = mat_pi->GetData().GetProt().GetName().front();
-                        ++mat_pi;
-                        if (!mat_pi && !m_name.empty()) {
-                            if (label.empty()) {
-                                label = m_name;
-                            } else {
-                                label += ", " + m_name + " region,";
+                    if (m_MainFeat.IsSetPartial() && m_MainFeat.GetPartial()) {
+                        CFeat_CI mat_pi(prot_h, CSeqFeatData::eSubtype_mat_peptide_aa);
+                        if (mat_pi && mat_pi->GetData().GetProt().IsSetName()) {
+                            const string&  m_name = mat_pi->GetData().GetProt().GetName().front();
+                            ++mat_pi;
+                            if (!mat_pi && !m_name.empty()) {
+                                if (label.empty()) {
+                                    label = m_name;
+                                }
+                                else {
+                                    label += ", " + m_name + " region,";
+                                }
                             }
                         }
                     }
