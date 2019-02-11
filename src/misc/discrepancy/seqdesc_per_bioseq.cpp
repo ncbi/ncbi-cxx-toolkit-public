@@ -326,13 +326,16 @@ DISCREPANCY_CASE(MISMATCHED_COMMENTS, CSeqdesc, eDisc, "Mismatched Comments")
 DISCREPANCY_SUMMARIZE(MISMATCHED_COMMENTS)
 {
     CReportNode rep;
-    for (auto it: m_Objs.GetMap()) {
-        string subitem = "[n] comment[s] contain[S] " + it.first;
-        for (auto obj: it.second->GetObjects()) {
-            rep["Mismatched comments were found"][subitem].Ext().Add(*obj);
+    auto& all = m_Objs.GetMap();
+    if (all.size() > 1) {
+        for (auto it : all) {
+            string subitem = "[n] comment[s] contain[S] " + it.first;
+            for (auto obj : it.second->GetObjects()) {
+                rep["Mismatched comments were found"][subitem].Ext().Add(*obj);
+            }
         }
+        m_ReportItems = rep.Export(*this)->GetSubitems();
     }
-    m_ReportItems = rep.Export(*this)->GetSubitems();
 }
 
 
