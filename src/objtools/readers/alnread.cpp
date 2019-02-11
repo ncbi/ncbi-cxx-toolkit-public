@@ -227,12 +227,10 @@ using TIntLinkPtr = SIntLink*;
 struct SStringCount {
 //  ============================================================================
     SStringCount(): 
-        string(nullptr), num_appearances(0), line_numbers(nullptr), next(nullptr)
+        string(nullptr), num_appearances(0), next(nullptr)
     {};
 
     ~SStringCount() {
-        //delete[] string;
-        delete line_numbers;
         delete next;
     };
 
@@ -242,8 +240,8 @@ struct SStringCount {
 
     char* string;
     int num_appearances;
-    TIntLinkPtr line_numbers;
-    struct SStringCount* next;
+    list<int> mLineNumbers;
+    SStringCount* next;
 };
 using TStringCountPtr = SStringCount*;
 
@@ -297,8 +295,8 @@ using TLengthListData = SLengthList;
 struct SCommentLoc {
 //  ============================================================================
     SCommentLoc(
-        char* start_,
-        char* end_,
+        const char* start_,
+        const char* end_,
         SCommentLoc* next_=nullptr): start(start_), end(end_), next(next_)
     {};
 
@@ -306,8 +304,8 @@ struct SCommentLoc {
         delete next;
     };
 
-    char* start;
-    char* end;
+    const char* start;
+    const char* end;
     SCommentLoc * next;
 };
 using TCommentLocPtr = SCommentLoc*;
@@ -379,7 +377,7 @@ using TAlignRawSeqPtr = SAlignRawSeq*;
 struct SAlignFileRaw {
 //  ============================================================================
     SAlignFileRaw():
-        marked_ids(false), line_list(nullptr), organisms(nullptr),
+        marked_ids(false), line_list(nullptr),
         deflines(nullptr), num_deflines(0), block_size(0), 
         offset_list(nullptr), sequences(nullptr), report_error(nullptr),
         report_error_userdata(nullptr), alphabet_(""), expected_num_sequence(0),
@@ -387,7 +385,6 @@ struct SAlignFileRaw {
     {};
 
     ~SAlignFileRaw() {
-        delete organisms;
         delete deflines;
         delete line_list;
         delete sequences;
@@ -395,7 +392,6 @@ struct SAlignFileRaw {
     };
 
     TLineInfoPtr         line_list;
-    TLineInfoPtr         organisms;
     TAlignRawSeqPtr      sequences;
     TLineInfoPtr         deflines;
     int                  num_deflines;
@@ -691,10 +687,9 @@ s_ReportRepeatedId(
 
     const char* errFormat = "ID %s appears in the following locations:";
     string errMessage = StrPrintf(errFormat, scp->string);
-    for (TIntLinkPtr t = scp->line_numbers; t != NULL; t = t->next) {
-        errMessage += StrPrintf(" %d", t->ival);
+    for (auto val: scp->mLineNumbers) {
+        errMessage += StrPrintf(" %d", val);
     }
-
     sReportError(
         "",
         -1,
@@ -1303,7 +1298,7 @@ s_AddStringCount (
     }
     if (add_to) {
         add_to->num_appearances ++;
-        SIntLink::CreateOrAppend(line_num, add_to->line_numbers);
+        add_to->mLineNumbers.push_back(line_num);
     }
     return list;   
 }
@@ -1698,17 +1693,17 @@ s_IsASN1 (
  */
 static TCommentLocPtr 
 s_FindComment(
-    char * string)
+    const char * string)
 {
     if (!string) {
         return nullptr;
     }
    
-    char* cp_start = strstr (string, "[");
+    const char* cp_start = strstr (string, "[");
     if (!cp_start) {
         return nullptr;
     }
-    char* cp_end = strstr(cp_start, "]");
+    const char* cp_end = strstr(cp_start, "]");
     if (!cp_end) {
         return nullptr;
     }
@@ -1730,7 +1725,7 @@ s_RemoveCommentFromLine (
 
     clp = s_FindComment (linestring);
     while (clp) {
-        memmove(clp->start, clp->end+1, strlen(clp->end));
+        memmove((char*)clp->start, clp->end+1, strlen(clp->end));
         // Note that strlen(clp->end) = strlen(clp->end+1)+1;
         // This is needed to ensure that the null terminator is copied.
         delete clp;
@@ -1804,7 +1799,7 @@ static bool s_IsOrganismComment(
  */
 static TCommentLocPtr 
 s_FindOrganismComment (
-    char * string)
+    const char * string)
 {
     TCommentLocPtr clp, next_clp;
 
@@ -1814,7 +1809,7 @@ s_FindOrganismComment (
 
     clp = s_FindComment (string);
     while (clp  &&  !s_IsOrganismComment (clp)) {
-        char * pos = clp->end;
+        const char * pos = clp->end;
         clp = s_FindComment (pos);
     }
 
@@ -1842,7 +1837,7 @@ s_RemoveOrganismCommentFromLine (
 
     while (clp) {
         if (clp->end) {
-            memmove(clp->start, clp->end+1, strlen(clp->end));
+            memmove((char*)clp->start, clp->end+1, strlen(clp->end));
         }
         delete clp;
         clp = s_FindOrganismComment (string);
@@ -3101,103 +3096,6 @@ static void s_ProcessAlignFileRawForMarkedIDs (
 }
 
 
-/* The following functions are used for analyzing contiguous sequence data
- * without marked IDs.
- */
-
-/* This function left-shifts a string, character by character. */
-static void
-s_StringLeftShift(
-    char * cp_from,
-    char * cp_to)
-{
-    if (cp_to - cp_from < 0) {
-        return;
-    }
-    if (cp_from == cp_to  ||  !cp_from  ||  !cp_to) {
-        return;
-    }
-    while (*cp_to != 0) {
-        *cp_from = *cp_to;
-        cp_from++;
-        cp_to++;
-    }
-    *cp_from = 0;
-}
-
-
-/* This function removes bracketed comments from a linked list of 
- * SLineInfo structures.  The function returns a pointer to the
- * list without the comments.
- */
-static TLineInfoPtr 
-s_RemoveCommentsFromTokens (
-    TLineInfoPtr list)
-{
-    TLineInfoPtr  lip;
-    int           num_comment_starts;
-    char *        cp_r;
-    char *        cp;
-    bool         in_comment;
-
-    num_comment_starts = 0;
-    in_comment = false;
-    for (lip = list;  lip;  lip = lip->next) {
-        if (!lip->data) {
-            lip->delete_me = true;
-        } else {
-            cp_r = nullptr;
-            for (cp = lip->data; *cp != 0; cp++) {
-                if (*cp == ']') {
-                    if (!cp_r) {
-                        s_StringLeftShift (lip->data, cp + 1);
-                        cp = lip->data - 1;
-                    } else {
-                        s_StringLeftShift (cp_r, cp + 1);
-                        cp = cp_r;
-                        if (cp_r > lip->data) {
-                            cp_r --;
-                            while (cp_r >= lip->data  &&  *cp_r != '[') {
-                                cp_r --;
-                            }
-                            if (cp_r < lip->data) {
-                                cp_r = nullptr;
-                            }
-                        } else {
-                            cp_r = nullptr;
-                        }
-                    }
-                    if (num_comment_starts > 0) {
-                        num_comment_starts --;
-                    }
-                } else if (*cp == '[') {
-                    cp_r = cp;
-                    num_comment_starts ++;
-                }
-            }
-            if (in_comment) {
-                if (num_comment_starts == 0) {
-                    in_comment = false;
-                } else {
-                    lip->delete_me = true;
-                }
-            } else if (num_comment_starts > 0) {
-                cp_r = strchr (lip->data, '[');
-                if (cp_r) {
-                    *cp_r = 0;
-                }
-                in_comment = true;
-            }
-            if (lip->data [0] == 0) {
-                lip->delete_me = true;
-            }
-        }
-    }
-    list = s_DeleteLineInfos (list);
-    return list;
-}
-
-
 /* This function removes Nexus comments from a linked list of SLineInfo
  * structures.  The function returns a pointer to the list without the
  * comments.
@@ -3884,7 +3782,6 @@ s_ProcessAlignFileRawByLengthPattern (
     }
 
     token_list = s_BuildTokenList (afrp->line_list);
-    token_list = s_RemoveCommentsFromTokens (token_list);
     token_list = s_RemoveNexusCommentsFromTokens (token_list);
 
     list = SLengthList::AppendNew(nullptr);
@@ -3935,28 +3832,14 @@ s_ProcessAlignFileRawByLengthPattern (
  * to identify a sequence to find the portion of the string that is actually
  * an ID, as opposed to organism information or definition line.
  */
-static char * 
+static string 
 s_GetIdFromString (
-    const char* str)
+    const string& str)
 {
-    const char * cp;
-    char * id;
-    int    len;
-
-    if (!str) {
-        return nullptr;
-    }
-
-    cp = str;
-    cp += strspn (str, " >\t");
-    len = strcspn (cp, " \t\r\n");
-    if (len == 0) {
-        return nullptr;
-    }
-    id = new char[len + 1];
-    strncpy (id, cp, len);
-    id [ len ] = 0;
-    return id;
+    auto cp = str.find_first_not_of(" >\t");
+    auto idStart = str.substr(cp);
+    auto len = idStart.find_first_of(" \t\r\n");
+    return idStart.substr(0, len);
 }
 
 
@@ -3986,10 +3869,9 @@ s_ReprocessIds (
             line_num = -1;
         }
         s_RemoveOrganismCommentFromLine (arsp->id);
-        char* id = s_GetIdFromString (arsp->id);
-        if (id) {
-            arsp->SetId(id);
-            delete[] id;
+        auto id = s_GetIdFromString (arsp->id);
+        if (!id.empty()) {
+            arsp->SetId(id.c_str());
         }
         list = s_AddStringCount (arsp->id, line_num, list);
     }
