@@ -1,3 +1,35 @@
+Line No    : 1
+Severity   : Error
+Message    : At ID '' in category '3' at line 1: Line 1 could not be assigned to an interleaved block'
+
+Line No    : 1
+Severity   : Error
+Message    : At ID '' in category '3' at line 1: Contents of unused line: BEGIN DATA;'
+
+Line No    : 2
+Severity   : Error
+Message    : At ID '' in category '3' at line 2: Line 2 could not be assigned to an interleaved block'
+
+Line No    : 2
+Severity   : Error
+Message    : At ID '' in category '3' at line 2: Contents of unused line: Dimensions NTax=5 NChar=48;'
+
+Line No    : 3
+Severity   : Error
+Message    : At ID '' in category '3' at line 3: Line 3 could not be assigned to an interleaved block'
+
+Line No    : 3
+Severity   : Error
+Message    : At ID '' in category '3' at line 3: Contents of unused line: Format DataType-DNA Interleave=yes Gap =- Missing=?;'
+
+Line No    : 4
+Severity   : Error
+Message    : At ID '' in category '3' at line 4: Line 4 could not be assigned to an interleaved block'
+
+Line No    : 4
+Severity   : Error
+Message    : At ID '' in category '3' at line 4: Contents of unused line: Matrix'
+
 Line No    : 20
 Severity   : Error
 Message    : At ID 'seq3' in category '3' at line 20: Inconsistent block line formatting'

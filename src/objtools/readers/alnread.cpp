@@ -2167,45 +2167,42 @@ s_FindUnusedLines(
     if (!pattern_list  ||  !afrp  ||  !afrp->offset_list  ||  afrp->block_size < 2) {
         return false;
     }
-    return false;
 
     offset = afrp->offset_list;
     llp = pattern_list;
     line_counter = 0;
     line_val = afrp->line_list;
 
-    while (llp  &&  line_val) {
-        while (llp  &&  line_val  &&  (!offset  ||  line_counter < offset->ival)) {
-            if (llp->lengthrepeats) {
-                s_ReportUnusedLine (line_counter,
-                                    line_counter + llp->num_appearances - 1,
-                                    line_val,
-                                    afrp->report_error,
-                                    afrp->report_error_userdata);
-                if (offset != afrp->offset_list) {
-                    rval = true;
-                }
+    while (llp  &&  line_val  &&  (!offset  ||  line_counter < offset->ival)) {
+        if (llp->lengthrepeats) {
+            s_ReportUnusedLine (line_counter,
+                                line_counter + llp->num_appearances - 1,
+                                line_val,
+                                afrp->report_error,
+                                afrp->report_error_userdata);
+            if (offset != afrp->offset_list) {
+                rval = true;
             }
-            line_counter += llp->num_appearances;
-            for (skip = 0; skip < llp->num_appearances  &&  line_val; skip++) {
-                line_val = line_val->next;
-            }
-            llp = llp->next;
         }
-        block_line_counter = 0;
-        while (block_line_counter < afrp->block_size  &&  llp) {
-            block_line_counter += llp->num_appearances;
-            line_counter += llp->num_appearances;
-            for (skip = 0;
-                 skip < llp->num_appearances  &&  line_val;
-                 skip++) {
-                line_val = line_val->next;
-            }
-            llp = llp->next;
+        line_counter += llp->num_appearances;
+        for (skip = 0; skip < llp->num_appearances  &&  line_val; skip++) {
+            line_val = line_val->next;
         }
-        if (offset) {
-            offset = offset->next;
+        llp = llp->next;
+    }
+    block_line_counter = 0;
+    while (block_line_counter < afrp->block_size  &&  llp) {
+        block_line_counter += llp->num_appearances;
+        line_counter += llp->num_appearances;
+        for (skip = 0;
+            skip < llp->num_appearances  &&  line_val;
+            skip++) {
+            line_val = line_val->next;
         }
+        llp = llp->next;
+    }
+    if (offset) {
+        offset = offset->next;
     }
     return rval;
 }
