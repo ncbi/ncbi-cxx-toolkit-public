@@ -106,15 +106,15 @@ void* CMagicBlastThread::Main(void)
         CRef<CBioseq_set> query_batch(new CBioseq_set);
         const string kDbName = m_DatabaseArgs->GetDatabaseName();
 
-        input_mutex.Lock();
-        isDone = m_Input.End();
-        if (isDone) {
-            input_mutex.Unlock();
-            break;
-        }
+        {
+            CFastMutexGuard guard(input_mutex);
+            isDone = m_Input.End();
+            if (isDone) {
+                break;
+            }
 
-        m_Input.GetNextSeqBatch(*query_batch);
-        input_mutex.Unlock();
+            m_Input.GetNextSeqBatch(*query_batch);
+        }
 
         if (query_batch->IsSetSeq_set() &&
             !query_batch->GetSeq_set().empty()) {
@@ -208,12 +208,12 @@ void* CMagicBlastThread::Main(void)
 
 
             // write formatted ouput to stream
-            output_mutex.Lock();
-            m_OutStream << ostr.str();
-            // flush string
-            ostr.str("");
-            output_mutex.Unlock();
-
+            {
+                CFastMutexGuard guard(output_mutex);
+                m_OutStream << ostr.str();
+                // flush string
+                ostr.str("");
+            }
 
             query_batch.Reset();
         }
