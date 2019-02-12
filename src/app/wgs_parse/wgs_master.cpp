@@ -69,6 +69,7 @@
 #include "wgs_seqentryinfo.hpp"
 #include "wgs_med.hpp"
 #include "wgs_text_accession.hpp"
+#include "wgs_errors.hpp"
 
 
 namespace wgsparse
@@ -169,7 +170,7 @@ static size_t CheckPubs(CSeq_entry& entry, const string& file, list<string>& com
     }
 
     if (pubs.empty()) {
-        ERR_POST_EX(0, 0, Info << "Submission from file \"" << file << "\" is lacking publications.");
+        ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_NoPubsInSeqEntry, Info << "Submission from file \"" << file << "\" is lacking publications.");
         return 0;
     }
 
@@ -199,7 +200,7 @@ static size_t CheckPubs(CSeq_entry& entry, const string& file, list<string>& com
                 if (pub_info.m_pmid > 0 && common_pub_info.m_pmid == pub_info.m_pmid) { // Same PMID in different pubs
 
                     if (!GetParams().IsDblinkOverride()) {
-                        ERR_POST_EX(0, 0, Error << "Varying results returned from PubMed for article with PMID " << pub_info.m_pmid << ".");
+                        ERR_POST_EX(ERR_REFERENCE, ERR_REFERENCE_PubMedArticleDifferences, Critical << "Varying results returned from PubMed for article with PMID " << pub_info.m_pmid << ".");
                         reject = true;
                     }
                 }
@@ -213,7 +214,7 @@ static size_t CheckPubs(CSeq_entry& entry, const string& file, list<string>& com
 
                 string id_str;
                 GetSeqIdStrFromEntry(entry, id_str);
-                ERR_POST_EX(0, 0, Warning << "Inconsistent pubs other than Cit-sub found amongst the input data. First occurence is in record with " << id_str << " from file \"" << file << "\".");
+                ERR_POST_EX(ERR_INPUT, ERR_INPUT_InconsistentPubs, Warning << "Inconsistent pubs other than Cit-sub found amongst the input data. First occurence is in record with " << id_str << " from file \"" << file << "\".");
             }
         }
     }
@@ -276,7 +277,7 @@ static void CommentErrorReport(const CSeq_entry& entry, const string& comment_ty
     if (id_str.empty()) {
         id_str = "Unknown";
     }
-    ERR_POST_EX(0, 0, Warning << comment_type << " descriptor differences were detected. First occurence is in record with " << id_str << " from file \"" << file << "\". Comments will not be removed from contigs, and the master Bioseq will not receive a comment descriptor.");
+    ERR_POST_EX(ERR_MASTER, ERR_MASTER_DifferentComments, Warning << comment_type << " descriptor differences were detected. First occurence is in record with " << id_str << " from file \"" << file << "\". Comments will not be removed from contigs, and the master Bioseq will not receive a comment descriptor.");
 }
 
 static void CheckComments(const CSeq_entry& entry, StringProcessFunc process, bool& comments_not_set, list<string>& comments, CommentErrorReportFunc report_error)
@@ -364,11 +365,11 @@ static bool CheckBioSource(const CSeq_entry& entry, CMasterInfo& info, const str
             size_t num_of_biosources = count_if(descrs->Get().begin(), descrs->Get().end(), is_biosource);
 
             if (num_of_biosources > 1) {
-                ERR_POST_EX(0, 0, Critical << "Multiple BioSource descriptors encountered in record from file \"" << file << "\".");
+                ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_MultipleBioSources, Critical << "Multiple BioSource descriptors encountered in record from file \"" << file << "\".");
                 ret = false;
             }
             else if (num_of_biosources < 1) {
-                ERR_POST_EX(0, 0, Warning << "Submission from file \"" << file << "\" is lacking BioSource.");
+                ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_NoBioSourceInSeqEntry, Warning << "Submission from file \"" << file << "\" is lacking BioSource.");
             }
             else {
 
@@ -447,7 +448,7 @@ static void CollectDblink(CSeq_entry& entry, CDBLinkInfo& info, bool& reject)
                 if (GetParams().IsDiffBioSamplesAllowed()) {
                     if (!ExtractBiosamplesFromDblink(user_obj, reject)) {
 
-                        ERR_POST_EX(0, 0, Critical << "The files being processed contain some records with DBLink User-objects lacking required BioSamples. Rejecting the whole project.");
+                        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_MissingBioSample, Critical << "The files being processed contain some records with DBLink User-objects lacking required BioSamples. Rejecting the whole project.");
                         reject = true;
                     }
                 }
@@ -536,10 +537,10 @@ static bool CheckGPID(const CSeq_entry& entry)
 static bool SubmissionDiffers(const string& file, bool same_submit)
 {
     if (GetParams().IsDblinkOverride()) {
-        ERR_POST_EX(0, 0, "Submission \"" << file << "\" has different Submit block. Using Submit-block from the first submission.");
+        ERR_POST_EX(ERR_MASTER, ERR_MASTER_SubmitBlocksDiffer, Error << "Submission \"" << file << "\" has different Submit block. Using Submit-block from the first submission.");
     }
     else {
-        ERR_POST_EX(0, 0, "Submission \"" << file << "\" has different Submit block. Will not provide Cit-sub descriptor in master Bioseq. This can be overridden by setting \"-X T\" command line switch: it'll use Submit-block from the first file.");
+        ERR_POST_EX(ERR_MASTER, ERR_MASTER_SubmitBlocksDiffer, Critical << "Submission \"" << file << "\" has different Submit block. Will not provide Cit-sub descriptor in master Bioseq. This can be overridden by setting \"-X T\" command line switch: it'll use Submit-block from the first file.");
         same_submit = false;
     }
 
@@ -622,13 +623,13 @@ static bool DBLinkProblemReport(const CMasterInfo& info)
     bool reject = false;
 
     if (info.m_dblink.Empty() && GetParams().IsDiffBioSamplesAllowed()) {
-        ERR_POST_EX(0, 0, Critical << "All records from the files being processed are missing required DBLink User-objects. Rejecting the whole project.");
+        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_Missing, Critical << "All records from the files being processed are missing required DBLink User-objects. Rejecting the whole project.");
         reject = true;
     }
 
     if (info.m_dblink.NotEmpty() && info.m_dblink_state != eDblinkNoProblem) {
         if (info.m_dblink_state & eDblinkDifferentDblink) {
-            ERR_POST_EX(0, 0, Critical << "The files being processed contain DBLink User-objects that are not identical in content. The first difference was encountered at sequence \"" <<
+            ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_NotIdentical, Critical << "The files being processed contain DBLink User-objects that are not identical in content. The first difference was encountered at sequence \"" <<
                         info.m_dblink_diff_info.second << "\" of input file \"" << info.m_dblink_diff_info.first << "\".");
             reject = true;
         }
@@ -637,10 +638,10 @@ static bool DBLinkProblemReport(const CMasterInfo& info)
                 info.m_dblink_empty_info.second + "\" of input file \"" + info.m_dblink_empty_info.first + "\". ";
 
             if (GetParams().IsDblinkOverride()) {
-                ERR_POST_EX(0, 0, Warning << err_msg << "Continue anyway.");
+                ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_Missing, Warning << err_msg << "Continue anyway.");
             }
             else {
-                ERR_POST_EX(0, 0, Critical << err_msg << "Rejecting the whole project.");
+                ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_Missing, Critical << err_msg << "Rejecting the whole project.");
                 reject = true;
             }
         }
@@ -685,11 +686,11 @@ static bool CheckSetOfIds(CRef<CUser_object>& user_obj, const string& tag, const
             CNcbiOstrstream msg;
             msg << "Submission supplied " << tag << " values do not match the ones provided in command line: \"" << NStr::Join(cur_ids, ",") << "\" vs \"" << NStr::Join(ids, ",") << ends;
             if (GetParams().IsDblinkOverride()) {
-                ERR_POST_EX(0, 0, Warning << msg.str() << "\". Using values from the command line.");
+                ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_BioProjectMismatch, Warning << msg.str() << "\". Using values from the command line.");
             }
             else {
                 reject = true;
-                ERR_POST_EX(0, 0, Critical << msg.str() << "\". Rejecting the whole project.");
+                ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_BioProjectMismatch, Critical << msg.str() << "\". Rejecting the whole project.");
             }
 
             ReplaceFieldInDBLink(ids, tag, *user_obj);
@@ -699,7 +700,7 @@ static bool CheckSetOfIds(CRef<CUser_object>& user_obj, const string& tag, const
         if (user_obj.NotEmpty()) {
             ReplaceFieldInDBLink(ids, tag, *user_obj);
         }
-        ERR_POST_EX(0, 0, Info << "All records from files being processed are lacking " << what << ". Using command line \"" << cmd_line_param << "\" values.");
+        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_BioProjectMissing, Info << "All records from files being processed are lacking " << what << ". Using command line \"" << cmd_line_param << "\" values.");
     }
 
     return !cur_ids.empty();
@@ -726,11 +727,11 @@ static void ReportLackOfDBLinkData(const string& tag, const string& val, bool& r
     msg << "The DBLink User-object content from the files being processed lacks \"" << tag << ":" << val << "\" link that is present in the current WGS-Master for this WGS project. " << ends;
 
     if (GetParams().IsDblinkOverride()) {
-        ERR_POST_EX(0, 0, Warning << msg.str() << "Using DBLink from the input data.");
+        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_LinkWithinMasterAbsent, Warning << msg.str() << "Using DBLink from the input data.");
     }
     else {
         reject = true;
-        ERR_POST_EX(0, 0, Critical << msg.str() << "Rejecting the whole project.");
+        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_LinkWithinMasterAbsent, Critical << msg.str() << "Rejecting the whole project.");
     }
 }
 
@@ -747,17 +748,17 @@ static void ReportNewDBLinkData(const string& tag, const string& val, bool& reje
     msg << "The DBLink User-object content from the files being processed contains new link \"" << tag << ":" << val << "\", not present in the current WGS-Master for this WGS project. " << ends;
 
     if (GetParams().IsDblinkOverride()) {
-        ERR_POST_EX(0, 0, Warning << msg.str() << "Using DBLink from the input data.");
+        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_NewLinkForMaster, Warning << msg.str() << "Using DBLink from the input data.");
     }
     else {
         reject = true;
-        ERR_POST_EX(0, 0, Critical << msg.str() << "Rejecting the whole project.");
+        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_NewLinkForMaster, Critical << msg.str() << "Rejecting the whole project.");
     }
 }
 
 static void ReportNewDBLinkDataAll(const string& tag, const CUser_field::C_Data::TStrs& , bool& )
 {
-    ERR_POST_EX(0, 0, Warning << "The DBLink User-object content from the files being processed contains new type of link \"" << tag << "\", not present in the current WGS-Master for this WGS project.");
+    ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_NewLinkTypeForMaster, Warning << "The DBLink User-object content from the files being processed contains new type of link \"" << tag << "\", not present in the current WGS-Master for this WGS project.");
 }
 
 typedef void(*ReportIssue)(const string& tag, const string& val, bool& reject);
@@ -826,7 +827,7 @@ static void CheckMasterDblink(CMasterInfo& info)
 
         auto biosample_field = id_dblink_user_obj->GetFieldRef("BioSample");
         if (biosample_field.NotEmpty() && biosample_field->IsSetData() && biosample_field->GetData().IsStrs()) {
-            ERR_POST_EX(0, 0, Warning << "The DBLink User-object content from the files being processed lacks BioSample link that is present in the current WGS-Master for this WGS project. Using the one from the current Master.");
+            ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_LinkWithinMasterAbsent, Warning << "The DBLink User-object content from the files being processed lacks BioSample link that is present in the current WGS-Master for this WGS project. Using the one from the current Master.");
             info.m_dblink->AddField("BioSample", biosample_field->GetData().GetStrs());
         }
     }
@@ -843,10 +844,10 @@ static void CheckMasterDblink(CMasterInfo& info)
 
                         string error_msg = "The DBLink User-object content from the files being processed lacks \"" + field_label + ":" + field_data + "\" link that is present in the current WGS-Master for this WGS project.";
                         if (GetParams().IsDblinkOverride()) {
-                            ERR_POST_EX(0, 0, Warning << error_msg << " Continue anyway.");
+                            ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_LinkWithinMasterAbsent, Warning << error_msg << " Continue anyway.");
                         }
                         else {
-                            ERR_POST_EX(0, 0, Critical << error_msg << " Rejecting the whole project.");
+                            ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_LinkWithinMasterAbsent, Critical << error_msg << " Rejecting the whole project.");
                             info.m_reject = true;
                         }
                     }
@@ -864,7 +865,7 @@ static void CheckMasterDblink(CMasterInfo& info)
 
                 for (auto& user_field : info.m_dblink->GetData()) {
                     if (user_field->IsSetLabel() && user_field->GetLabel().IsStr()) {
-                        ERR_POST_EX(0, 0, Warning << "The DBLink User - object content from the files being processed contains new type of link \"" << user_field->GetLabel().GetStr() << "\", not present in the current WGS-Master for this WGS project.");
+                        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_NewLinkTypeForMaster, Warning << "The DBLink User-object content from the files being processed contains new type of link \"" << user_field->GetLabel().GetStr() << "\", not present in the current WGS-Master for this WGS project.");
                     }
                 }
             }
@@ -901,11 +902,11 @@ static CRef<CSeq_id> CreateAccession(int last_accession_num, size_t accession_le
         msg << "Incorrect format for accessions, given the total number of contigs in the project: \"N+2+" << accession_len << "\" was used, but only \"N+2+" << max_accession_len << "\" is needed." << ends;
 
         if (GetParams().GetSource() == eNCBI) {
-            ERR_POST_EX(0, 0, Critical << msg.str());
+            ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_WrongLength, Critical << msg.str());
             return ret;
         }
 
-        ERR_POST_EX(0, 0, Info << msg.str());
+        ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_WrongLength, Info << msg.str());
     }
 
     string id_num(accession_len + 2, '0');
@@ -1004,7 +1005,7 @@ static bool CreateBiosource(CBioseq& bioseq, CBioSource& biosource, const list<C
 
     bool is_tax_lookup = GetParams().IsTaxonomyLookup();
     if (!PerformTaxLookup(biosource, org_refs, is_tax_lookup) && is_tax_lookup) {
-        ERR_POST_EX(0, 0, Critical << "Taxonomy lookup failed on Master Bioseq. Cannot proceed.");
+        ERR_POST_EX(ERR_MASTER, ERR_MASTER_TaxLookupFailed, Critical << "Taxonomy lookup failed on Master Bioseq. Cannot proceed.");
         return false;
     }
 
@@ -1154,7 +1155,7 @@ static void UpdateDbLink(CBioseq& bioseq, CUser_object& user_obj)
     for (auto descr = descrs.begin(); descr != descrs.end();) {
 
         if (IsUserObjectOfType(**descr, "GenomeProjectsDB")) {
-            ERR_POST_EX(0, 0, Warning << "Removing GPID User-object in favour of BioProject.");
+            ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_GPID_Removed, Warning << "Removing GPID User-object in favour of BioProject.");
             descr = descrs.erase(descr);
         }
         else if (IsUserObjectOfType(**descr, "DBLink")) {
@@ -1369,7 +1370,7 @@ static CRef<CSeq_entry> CreateMasterBioseq(CMasterInfo& info, CRef<CCit_sub>& ci
     if (info.m_common_comments.empty() && GetParams().GetSource() != eNCBI) {
 
         if (info.m_common_structured_comments.empty()) {
-            ERR_POST_EX(0, 0, Info << "All contigs are missing both text and structured comments.");
+            ERR_POST_EX(ERR_MASTER, ERR_MASTER_MissingComment, Info << "All contigs are missing both text and structured comments.");
         }
     }
 
@@ -1489,7 +1490,7 @@ static bool IsDupIds(const list<string>& ids)
     for (auto& id : ids) {
         if (!unique_ids.insert(id).second) {
 
-            ERR_POST_EX(0, 0, Error << "Found duplicated general or local id: \"" << id << "\".");
+            ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_DuplicatedObjectIds, Error << "Found duplicated general or local id: \"" << id << "\".");
             return true;
         }
     }
@@ -1508,12 +1509,12 @@ static void ReportDateProblem(EDateIssues issue, const string& date_type, bool i
         string first_word_date_type = date_type;
         first_word_date_type[0] = toupper(first_word_date_type[0]);
 
-        ERR_POST_EX(0, 0, (is_error ? Error : Info) <<
+        ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_UpdateDateMissing, (is_error ? Error : Info) <<
                     first_word_date_type << " date is missing from one or more input submissions. Will not propagate " <<
                     date_type << " date to the master record.");
     }
     else if (issue == eDateDiff) {
-        ERR_POST_EX(0, 0, (is_error ? Error : Info) <<
+        ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_UpdateDatesDiffer, (is_error ? Error : Info) <<
                     "Different " << date_type << " dates encountered amongst input submissions. Will not propagate " <<
                     date_type << " date to the master record.");
     }
@@ -1575,10 +1576,10 @@ static void ReportMissingOrDiffCitSub(const CSeq_entry& entry, bool missing)
     }
 
     if (missing) {
-        ERR_POST_EX(0, 0, Error << "Required Cit-sub is missing from the record with id \"" << label << "\".");
+        ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_MissingCitSub, Error << "Required Cit-sub is missing from the record with id \"" << label << "\".");
     }
     else {
-        ERR_POST_EX(0, 0, Error << "Different Cit-subs encountered amongst the data. First appearance is in record with id \"" << label << "\".");
+        ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_DifferentCitSub, Error << "Different Cit-subs encountered amongst the data. First appearance is in record with id \"" << label << "\".");
     }
 }
 
@@ -1793,19 +1794,19 @@ static bool IsSubmitBlockSet(const CSeq_submit& seq_submit)
 static void ReportVersionProblem(int master_accession_ver, int current_master_accession_ver, bool& reject)
 {
     if (master_accession_ver < current_master_accession_ver) {
-        ERR_POST_EX(0, 0, Critical << "The assembly-version of current WGS master (" << ToStringLeadZeroes(current_master_accession_ver - 1, 2) <<
+        ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_RevertedAssemblyVersion, Critical << "The assembly-version of current WGS master (" << ToStringLeadZeroes(current_master_accession_ver - 1, 2) <<
                     ") is the same or higher than the assembly-version used for the contigs " << ToStringLeadZeroes(master_accession_ver, 2) << ".");
         reject = true;
     }
     else {
 
         if (GetParams().GetSource() != eNCBI && GetParams().IsDblinkOverride()) {
-            ERR_POST_EX(0, 0, Warning << "Non-sequential assembly-version " << ToStringLeadZeroes(master_accession_ver, 2) << " is used for contigs : Expected " <<
+            ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_AssemblyVersionSkipped, Warning << "Non-sequential assembly-version " << ToStringLeadZeroes(master_accession_ver, 2) << " is used for contigs : Expected " <<
                         ToStringLeadZeroes(current_master_accession_ver, 2) <<  ": Allowed, based on source or override switch.");
             SetAssemblyVersion(master_accession_ver);
         }
         else {
-            ERR_POST_EX(0, 0, Critical << "Non-sequential assembly-version " << ToStringLeadZeroes(master_accession_ver, 2) << " is used for contigs : Expected " <<
+            ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_AssemblyVersionSkipped, Critical << "Non-sequential assembly-version " << ToStringLeadZeroes(master_accession_ver, 2) << " is used for contigs : Expected " <<
                         ToStringLeadZeroes(current_master_accession_ver, 2) << ".");
             reject = true;
         }
@@ -1895,7 +1896,7 @@ static void CheckScaffoldsFarPointers(const CSeq_entry& entry, const CCurrentMas
 
         if (!IsValidDeltaSeq(entry)) {
 
-            ERR_POST_EX(0, 0, Critical << "Empty or incorrect sequence data for scaffolds provided.");
+            ERR_POST_EX(ERR_SEQUENCE, ERR_SEQUENCE_BadScaffoldSequence, Critical << "Empty or incorrect sequence data for scaffolds provided.");
             reject = true;
             return;
         }
@@ -1909,7 +1910,7 @@ static void CheckScaffoldsFarPointers(const CSeq_entry& entry, const CCurrentMas
 
             if (loc->IsLoc()) {
                 if (!loc->GetLoc().IsInt()) {
-                    ERR_POST_EX(0, 0, Warning << "Other than simple interval \"from..to\" encountered in scaffolds deltas.");
+                    ERR_POST_EX(ERR_SEQUENCE, ERR_SEQUENCE_UnusualSeqLoc, Warning << "Other than simple interval \"from..to\" encountered in scaffolds deltas.");
                 }
 
                 string cur_accession;
@@ -1953,7 +1954,7 @@ static void CheckScaffoldsFarPointers(const CSeq_entry& entry, const CCurrentMas
                         cur_accession = NStr::Quote(cur_accession);
                         cur_accession += ' ';
                     }
-                    ERR_POST_EX(0, 0, Critical << "Missing or incorrect far pointer OSLT " << cur_accession << "provided for scaffolds.");
+                    ERR_POST_EX(ERR_SEQUENCE, ERR_SEQUENCE_BadScaffoldFarPointer, Critical << "Missing or incorrect far pointer OSLT " << cur_accession << "provided for scaffolds.");
                     reject = true;
                     return;
                 }
@@ -2012,7 +2013,7 @@ static bool CheckUniqueAccs(const list<string>& accs)
 
     for (++next; next != accs.end(); ++next) {
         if (*next == *prev) {
-            ERR_POST_EX(0, 0, Critical << "Found duplicated accession \"" << *prev << "\".");
+            ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_DuplicateAccessions, Critical << "Found duplicated accession \"" << *prev << "\".");
             return false;
         }
         ++prev;
@@ -2034,14 +2035,14 @@ static bool CheckAccLengths(const list<string>& accs)
     for (++next; next != accs.end(); ++next) {
         if (next->size() != prev->size()) {
 
-            ERR_POST_EX(0, 0, Critical << "Contigs accessions have different lengths, hence different formats. The first pair is \"" << *prev << "\" and \"" << *next << "\".\n");
+            ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_DifferentLength, Critical << "Contigs accessions have different lengths, hence different formats. The first pair is \"" << *prev << "\" and \"" << *next << "\".\n");
             return false;
         }
 
         CTextAccessionContainer next_acc(*next);
         if (next_acc.GetNumber() - prev_acc.GetNumber() != 1) {
 
-            ERR_POST_EX(0, 0, (GetParams().IsDblinkOverride() ? Warning : Critical) << "Contigs accessions are not contiguous. The first pair is \"" << *prev << "\" and \"" << *next << "\".\n");
+            ERR_POST_EX(ERR_ACCESSION, ERR_ACCESSION_NotContiguous, (GetParams().IsDblinkOverride() ? Warning : Critical) << "Contigs accessions are not contiguous. The first pair is \"" << *prev << "\" and \"" << *next << "\".\n");
             if (!GetParams().IsDblinkOverride()) {
                 return false;
             }
@@ -2084,7 +2085,7 @@ static bool IsScaffoldAccessionPrefixValid(const string& prefix)
 {
     if (prefix.empty()) {
 
-        ERR_POST_EX(0, 0, Critical << "Scaffold submission is missing accession prefix.");
+        ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_IncorrectScfldPrefix, Critical << "Scaffold submission is missing accession prefix.");
         return false;
     }
 
@@ -2115,7 +2116,7 @@ static bool IsScaffoldAccessionPrefixValid(const string& prefix)
     }
 
     if (!valid) {
-        ERR_POST_EX(0, 0, Critical << "Accession prefix \"" << prefix << "\" provided in input submissions do not match the type of scaffolds: \"" << scaffold_type_str << "\". Rejecting the whole set.");
+        ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_IncorrectScfldPrefix, Critical << "Accession prefix \"" << prefix << "\" provided in input submissions do not match the type of scaffolds: \"" << scaffold_type_str << "\". Rejecting the whole set.");
     }
 
     return valid;
@@ -2172,7 +2173,7 @@ static bool CheckContigsAccessionsRange(const list<TAccessionRange>& ranges, TSe
     }
 
     if (is_warning) {
-        ERR_POST_EX(0, 0, (is_reject ? Critical : Warning) << "The range of accessions in input data is incorrect.");
+        ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_IncorrectAccRange, (is_reject ? Critical : Warning) << "The range of accessions in input data is incorrect.");
     }
 
     return is_reject;
@@ -2201,10 +2202,10 @@ static bool CheckScaffoldsAccessionsRange(const list<TAccessionRange>& ranges)
     bool is_reject = false;
     if (bad_ranges > MAX_BAD_RANGES) {
         is_reject = true;
-        ERR_POST_EX(0, 0, Critical << "The number (" << bad_ranges << ") of non-contiguous scaffolds accession ranges exceeds the threshold of 10. Rejecting the whole set.");
+        ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_MultipleScaffoldsRanges, Critical << "The number (" << bad_ranges << ") of non-contiguous scaffolds accession ranges exceeds the threshold of 10. Rejecting the whole set.");
     }
     else if (bad_ranges > MIN_BAD_RANGES) {
-        ERR_POST_EX(0, 0, Warning << "A total of " << bad_ranges << " non-contiguous scaffolds accession ranges exist for this WGS project. Usually there are no more than two.");
+        ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_MultipleScaffoldsRanges, Warning << "A total of " << bad_ranges << " non-contiguous scaffolds accession ranges exist for this WGS project. Usually there are no more than two.");
     }
 
     return is_reject;
@@ -2337,7 +2338,7 @@ static CRef<CSeq_entry> AddScaffoldsToMaster(CMasterInfo& master_info, list<TAcc
     CreateScaffoldsUserObjects(ranges, descrs);
 
     if (!CheckScaffoldsOrganism(descrs, *master_info.m_biosource)) {
-        ERR_POST_EX(0, 0, Error << "One or more scaffolds have altered organisms.");
+        ERR_POST_EX(ERR_ORGANISM, ERR_ORGANISM_UpdateOrganismDiff, Error << "One or more scaffolds have altered organisms.");
     }
 
     if (master_info.m_dblink_state == eDblinkNoProblem && master_info.m_dblink.NotEmpty()) {
@@ -2348,6 +2349,17 @@ static CRef<CSeq_entry> AddScaffoldsToMaster(CMasterInfo& master_info, list<TAcc
     ret->Assign(*master_info.m_id_master_bioseq);
 
     return ret;
+}
+
+static int GetSubmissionTypeErrorCode(EInputType type)
+{
+    static const map<EInputType, int> SUBMISSION_ERROR_CODE = {
+        { eSeqSubmit, ERR_MASTER_SeqSubmitReadFailed },
+        { eSeqEntry, ERR_MASTER_SeqEntryReadFailed },
+        { eBioseqSet, ERR_MASTER_BioseqSetReadFailed }
+    };
+
+    return SUBMISSION_ERROR_CODE.at(type);
 }
 
 bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
@@ -2372,7 +2384,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
         CNcbiIfstream in(file);
 
         if (!in) {
-            ERR_POST_EX(0, 0, "Failed to open submission \"" << file << "\" for reading. Cannot proceed.");
+            ERR_POST_EX(ERR_MASTER, ERR_MASTER_FileOpenFailed, Critical << "Failed to open submission \"" << file << "\" for reading. Cannot proceed.");
             ret = false;
             break;
         }
@@ -2388,7 +2400,8 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
             if (seq_submit.Empty()) {
 
                 if (first) {
-                    ERR_POST_EX(0, 0, "Failed to read " << GetSeqSubmitTypeName(master_info.m_input_type) << " from file \"" << file << "\". Cannot proceed.");
+                    ERR_POST_EX(ERR_MASTER, GetSubmissionTypeErrorCode(master_info.m_input_type),
+                        Critical << "Failed to read " << GetSeqSubmitTypeName(master_info.m_input_type) << " from file \"" << file << "\". Cannot proceed.");
                     ret = false;
                 }
                 break;
@@ -2397,7 +2410,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
             first = false;
 
             if (!FixSeqSubmit(seq_submit, master_info.m_accession_ver, true, master_info.m_reject)) {
-                ERR_POST_EX(0, 0, "Wrapper GenBank set has non-empty annotation (Seq-annot), which is not allowed. Cannot process this submission \"" << file << "\".");
+                ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_SeqAnnotInWrapperGBSet, Critical << "Wrapper GenBank set has non-empty annotation (Seq-annot), which is not allowed. Cannot process this submission \"" << file << "\".");
                 ret = false;
                 break;
             }
@@ -2415,7 +2428,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
             if (!IsSubmitBlockSet(*seq_submit)) {
                 if (master_info.m_input_type == eSeqSubmit) {
-                    ERR_POST_EX(0, 0, "Submission \"" << file << "\" is missing Submit-block.");
+                    ERR_POST_EX(ERR_MASTER, ERR_MASTER_MissingSubmitBlock, Error << "Submission \"" << file << "\" is missing Submit-block.");
                 }
                 else if (same_submit) {
                     same_submit = CheckCitSubsInBioseqSet(master_info, *seq_submit);
@@ -2432,7 +2445,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                 submit_block.ResetTool();
 
                 if (!submit_block.IsSetContact()) {
-                    ERR_POST_EX(0, 0, "Submit block from submission \"" << file << "\" is missing contact information.");
+                    ERR_POST_EX(ERR_MASTER, ERR_MASTER_MissingContactInfo, Error << "Submit block from submission \"" << file << "\" is missing contact information.");
                 }
                 else {
 
@@ -2447,7 +2460,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                 }
 
                 if (!submit_block.IsSetCit()) {
-                    ERR_POST_EX(0, 0, "Submit block from submission \"" << file << "\" is missing Cit-sub.");
+                    ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_MissingCitSub, Error << "Submit block from submission \"" << file << "\" is missing Cit-sub.");
                 }
                 else {
 
@@ -2467,7 +2480,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
             }
 
             if (!seq_submit->IsSetData()) {
-                ERR_POST_EX(0, 0, "Failed to read Seq-entry from file \"" << file << "\". Cannot proceed.");
+                ERR_POST_EX(ERR_MASTER, ERR_MASTER_SeqEntryReadFailed, Critical << "Failed to read Seq-entry from file \"" << file << "\". Cannot proceed.");
                 break;
             }
 
@@ -2514,7 +2527,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
                             rna = "ncRNA";
                     }
 
-                    ERR_POST_EX(0, 0, Warning << "Unusual biomol value \"" << rna << "\" has been used for this TSA project, instead of \"transcribed_RNA\".");
+                    ERR_POST_EX(ERR_INPUT, ERR_INPUT_UnusualBiomolValueUsed, Warning << "Unusual biomol value \"" << rna << "\" has been used for this TSA project, instead of \"transcribed_RNA\".");
                 }
 
                 if (info.m_biomol_state == eBiomolSet) {
@@ -2609,7 +2622,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     if (same_submit && !master_info.m_cit_sub_info.m_dates.empty()) {
 
         if (master_info.m_cit_sub_info.m_dates.size() > 1) {
-            ERR_POST_EX(0, 0, Warning << "Encountered Cit-subs with date differences only. Using the most frequent/earliest one.");
+            ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_DifferentCitSub, Warning << "Encountered Cit-subs with date differences only. Using the most frequent/earliest one.");
         }
         
         CRef<CDate> the_date = GetMostRelevantDate(master_info.m_cit_sub_info.m_dates);
@@ -2647,7 +2660,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
     static const string SCAFFOLD_PREFIX = "CM";
     if (GetParams().GetUpdateMode() == eUpdateScaffoldsNew && GetParams().GetScaffoldPrefix() == SCAFFOLD_PREFIX && !GetParams().IsAccessionAssigned()) {
-        ERR_POST_EX(0, 0, Critical << "Command line switches \"-u 3\" and \"-j 1\" require \"-c T\": htgs database no longet assigning chromosomal accessions. Cannot proceed.");
+        ERR_POST_EX(ERR_INPUT, ERR_INPUT_ConflictingArguments, Critical << "Command line switches \"-u 3\" and \"-j 1\" require \"-c T\": htgs database no longet assigning chromosomal accessions. Cannot proceed.");
         master_info.m_reject = true;
     }
 
@@ -2667,7 +2680,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
     if (master_info.m_has_genome_project_id) {
 
         bool is_reject = !GetParams().IsDblinkOverride();
-        ERR_POST_EX(0, 0, (is_reject ? Critical : Warning) <<
+        ERR_POST_EX(ERR_GPID, ERR_GPID_LegacyUserObjectFound, (is_reject ? Critical : Warning) <<
                     "One or more of the contigs or scaffolds being processed makes use of the legacy GenomeProjectsDB User-object. A DBLink User-object with a BioProject Accession Number should be used instead. " <<
                     (is_reject ? "Rejecting the whole project." : "They all will be removed."));
 

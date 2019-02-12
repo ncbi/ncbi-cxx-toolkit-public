@@ -47,6 +47,7 @@
 #include "wgs_sub.hpp"
 #include "wgs_utils.hpp"
 #include "wgs_seqentryinfo.hpp"
+#include "wgs_errors.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -181,7 +182,7 @@ CRef<CSeq_entry> CWGSParseApp::GetMasterEntry() const
         const string fname = GetParams().GetMasterFileName();
         ret = GetMasterEntryFromFile(fname);
         if (ret.Empty()) {
-            ERR_POST_EX(0, 0, "Failed to read the master record from file \"" << fname << "\".");
+            ERR_POST_EX(ERR_MASTER, ERR_MASTER_CannotReadFromFile, Critical << "Failed to read the master record from file \"" << fname << "\".");
         }
     }
     else {
@@ -272,7 +273,7 @@ static void RemoveBioSourseDesc(CSeq_descr& descrs)
 static bool OpenOutputFile(const string& fname, const string& description, CNcbiOfstream& stream)
 {
     if (!GetParams().IsOverrideExisting() && CFile(fname).Exists()) {
-        ERR_POST_EX(0, 0, Critical << "The " << description << " file already exists: \"" << fname << "\". Override is not allowed.");
+        ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_WontOverrideFile, Error << "The " << description << " file already exists: \"" << fname << "\". Override is not allowed.");
         return false;
     }
 
@@ -280,7 +281,7 @@ static bool OpenOutputFile(const string& fname, const string& description, CNcbi
         stream.open(fname);
     }
     catch (CException& e) {
-        ERR_POST_EX(0, 0, Critical << "Failed to open " << description << " file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
+        ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_CantOpenOutputFile, Error << "Failed to open " << description << " file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
         return false;
     }
 
@@ -304,12 +305,12 @@ static bool IsCitGenUnpublished(const CPubdesc& pubdesc)
 
 static void ReportMultipleCitArts()
 {
-    ERR_POST_EX(0, 0, Warning << "WGS master record for project " << GetParams().GetAccession() << " contains multiple Cit-art publications.");
+    ERR_POST_EX(ERR_REFERENCE, ERR_REFERENCE_MasterHasMultipleCitArts, Warning << "WGS master record for project " << GetParams().GetAccession() << " contains multiple Cit-art publications.");
 }
 
 static void ReportMultipleUnpublished()
 {
-    ERR_POST_EX(0, 0, Warning << "WGS master record for project " << GetParams().GetAccession() << " contains multiple Unpublished Cit-gen publications.");
+    ERR_POST_EX(ERR_REFERENCE, ERR_REFERENCE_MasterMultiUnpublished, Warning << "WGS master record for project " << GetParams().GetAccession() << " contains multiple Unpublished Cit-gen publications.");
 }
 
 
@@ -380,11 +381,11 @@ static bool OutputMaster(const CRef<CSeq_entry>& entry, const string& fname, int
             out << MSerial_AsnText << entry;
     }
     catch (CException& e) {
-        ERR_POST_EX(0, 0, Error << "Failed to save processed submission to file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
+        ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_CantOutputProcessedSub, Critical << "Failed to save processed submission to file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
         return false;
     }
 
-    ERR_POST_EX(0, 0, Info << "Master Bioseq saved in file \"" << fname << "\".");
+    ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_ProcessedSubInFile, Info << "Master Bioseq saved in file \"" << fname << "\".");
 
     return true;
 }
@@ -808,7 +809,7 @@ static void UpdateBioSource(CSeq_entry& master_bioseq, CSeq_entry& id_master_bio
     CBioSource* old_bio_src = GetBioSourceFromDescrs(id_master_bioseq);
     if (old_bio_src == nullptr) {
 
-        ERR_POST_EX(0, 0, (GetParams().GetSource() == eNCBI ? Error : Warning) << "Current master record in ID is lacking BioSource descriptor. Using the one from updated contigs.");
+        ERR_POST_EX(ERR_MASTER, ERR_MASTER_BioSourcesDiff, (GetParams().GetSource() == eNCBI ? Error : Warning) << "Current master record in ID is lacking BioSource descriptor. Using the one from updated contigs.");
 
         CRef<CSeqdesc> descr(new CSeqdesc);
         descr->SetSource(*new_bio_src);
@@ -817,8 +818,7 @@ static void UpdateBioSource(CSeq_entry& master_bioseq, CSeq_entry& id_master_bio
     }
 
     if (!new_bio_src->Equals(*old_bio_src)) {
-        ERR_POST_EX(0, 0, (GetParams().GetSource() == eNCBI ? Error : Warning) <<
-                    "Current master record in ID has a BioSource descriptor which differs from the BioSource obtained from the updated contigs. Using the new BioSource from the contigs.");
+        ERR_POST_EX(ERR_MASTER, ERR_MASTER_BioSourcesDiff, Warning << "Current master record in ID has a BioSource descriptor which differs from the BioSource obtained from the updated contigs. Using the new BioSource from the contigs.");
         old_bio_src->Assign(*new_bio_src);
     }
 }
@@ -994,11 +994,11 @@ static bool UpdateMasterForExtra(CSeq_entry& id_entry, CSeq_entry& master_entry)
 
         if (GetParams().GetSource() == eNCBI && !GetParams().IsDblinkOverride()) {
 
-            ERR_POST_EX(0, 0, Critical << "Accession number range for the contigs within an assembly-version has increased from " << old_length << " to " << new_length << ".");
+            ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_AccessionRangeIncreased, Critical << "Accession number range for the contigs within an assembly-version has increased from " << old_length << " to " << new_length << ".");
             return false;
         }
 
-        ERR_POST_EX(0, 0, Warning << "Accession number range for the contigs within an assembly-version has increased from " << old_length << " to " << new_length << ".");
+        ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_AccessionRangeIncreased, Warning << "Accession number range for the contigs within an assembly-version has increased from " << old_length << " to " << new_length << ".");
         old_bioseq.SetInst().SetLength(new_length);
     }
 
@@ -1064,7 +1064,7 @@ static bool UpdateMasterForExtra(CSeq_entry& id_entry, CSeq_entry& master_entry)
 static void CheckOrganisms(const CSeq_entry& id_entry, const CSeq_entry& master_entry)
 {
     if (!id_entry.IsSeq() || !master_entry.IsSeq()) {
-        ERR_POST_EX(0, 0, Error << "Missing organism info from master record.");
+        ERR_POST_EX(ERR_ORGANISM, ERR_ORGANISM_UpdateOrganismDiff, Error << "Missing organism info from master record.");
         return;
     }
 
@@ -1100,7 +1100,7 @@ static void CheckOrganisms(const CSeq_entry& id_entry, const CSeq_entry& master_
     }
 
     if (!found_same_bio_src) {
-        ERR_POST_EX(0, 0, (GetParams().GetSource() == eNCBI ? Error : Warning) <<
+        ERR_POST_EX(ERR_ORGANISM, ERR_ORGANISM_UpdateOrganismDiff, (GetParams().GetSource() == eNCBI ? Error : Warning) <<
                     "Taxname \"" << new_taxname << "\" in one or more records do not match the taxname in master record in ID \"" << old_taxname << "\".");
     }
 }
@@ -1357,7 +1357,7 @@ static bool ReplaceOldCitSub(CRef<CSeq_entry>& id_entry, CCit_sub& new_cit_sub)
                         is_critical = false;
                     }
 
-                    ERR_POST_EX(0, 0, (is_critical ? Critical : Warning) << "Incorrect parsing mode set in command line: this is not a brand new project.");
+                    ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_UpdateDateIsOld, (is_critical ? Critical : Warning) << "Update date in input CitSubs preceeds at least one in previous update.");
 
                     if (is_critical) {
                         return false;
@@ -1502,7 +1502,9 @@ static const int ERROR_RET = 1;
 int CWGSParseApp::Run(void)
 {
     int ret = 0;
-	// SetDiagPostPrefix("wgsparse"); // TODO for the future use
+
+    //SetDiagPostPrefix("wgsparse"); // TODO for the future use
+    SetDiagHandler(&CWgsParseDiagHandler::GetWgsParseDiagHandler(), false);
 
     if (SetParams(GetArgs())) {
 
@@ -1515,7 +1517,7 @@ int CWGSParseApp::Run(void)
         if (GetParams().GetUpdateMode() == eUpdateNew) {
             if (master_entry.NotEmpty()) {
                 if (!GetParams().EnforceNew()) {
-                    ERR_POST_EX(0, 0, Critical << "Incorrect parsing mode set in command line: this is not a brand new project.");
+                    ERR_POST_EX(ERR_INPUT, ERR_INPUT_WrongParsingMode, Critical << "Incorrect parsing mode set in command line: this is not a brand new project.");
                     return ERROR_RET;
                 }
                 master_entry.Reset();
@@ -1524,7 +1526,7 @@ int CWGSParseApp::Run(void)
         else {
 
             if (master_entry.Empty()) {
-                ERR_POST_EX(0, 0, Critical << "Failed to retrieve master sequence from ID.");
+                ERR_POST_EX(ERR_SERVER, ERR_SERVER_FailedToFetchMasterFromID, Critical << "Failed to retrieve master sequence from ID.");
                 return ERROR_RET;
             }
 
@@ -1535,18 +1537,18 @@ int CWGSParseApp::Run(void)
                 GetCurrentMasterInfo(*master_entry, current_master);
                 if (current_master.m_version <= 0) {
 
-                    ERR_POST_EX(0, 0, Critical << "Failed to get current assembly version from master sequence from ID.");
+                    ERR_POST_EX(ERR_MASTER, ERR_MASTER_CannotGetAssemblyVersion, Critical << "Failed to get current assembly version from master sequence from ID.");
                     return ERROR_RET;
                 }
 
                 if (current_master.m_last_contig <= 0) {
-                    ERR_POST_EX(0, 0, Critical << "Failed to get the range of accession from previous version master.");
+                    ERR_POST_EX(ERR_MASTER, ERR_MASTER_FailedToGetAccsRange, Critical << "Failed to get the range of accession from previous version master.");
                     return ERROR_RET;
                 }
 
                 if (!GetParams().IsTest() && !GetParams().GetAccFile().empty()) {
                     if (!SaveAccessionsRange(current_master)) {
-                        ERR_POST_EX(0, 0, Critical << "Failed to save the range of accessions from previous version master to file \"" << GetParams().GetAccFile() << "\".");
+                        ERR_POST_EX(ERR_MASTER, ERR_MASTER_AccsRangeSaveFailed, Critical << "Failed to save the range of accessions from previous version master to file \"" << GetParams().GetAccFile() << "\".");
                         return ERROR_RET;
                     }
                 }
@@ -1573,10 +1575,10 @@ int CWGSParseApp::Run(void)
                 case eUpdateScaffoldsNew:
                 case eUpdateScaffoldsUpd:
                 case eUpdateExtraContigs:
-                    ERR_POST_EX(0, 0, Error << "Failed to create temporary master Bioseq.");
+                    ERR_POST_EX(ERR_MASTER, ERR_MASTER_FailedToCreate, Critical << "Failed to create temporary master Bioseq.");
                     break;
                 default:
-                    ERR_POST_EX(0, 0, Error << "Failed to create master Bioseq.");
+                    ERR_POST_EX(ERR_MASTER, ERR_MASTER_FailedToCreate, Critical << "Failed to create master Bioseq.");
             }
 
             return ERROR_RET;
@@ -1597,7 +1599,7 @@ int CWGSParseApp::Run(void)
                  GetParams().GetUpdateMode() == eUpdateExtraContigs || GetParams().GetUpdateMode() == eUpdatePartial)) {
                 if(RemoveDescriptors(*master_info.m_id_master_bioseq, [](const CSeqdesc& descr) { return descr.IsComment(); }) &&
                    master_info.m_common_comments.empty())
-                    ERR_POST_EX(0, 0, Warning << "All contigs are missing text comments. Master Bioseq will not receive a comment descriptor.");
+                    ERR_POST_EX(ERR_MASTER, ERR_MASTER_MissingComment, Warning << "All contigs are missing text comments. Master Bioseq will not receive a comment descriptor.");
             }
         }
 
@@ -1609,10 +1611,10 @@ int CWGSParseApp::Run(void)
 
         if (!master_info.m_got_cit_sub && (master_info.m_input_type != eSeqSubmit || GetParams().GetSource() == eNCBI)) {
             if (GetParams().IsDiffCitSubAllowed()) {
-                ERR_POST_EX(0, 0, Warning << "No common CitSub found amongst the data. Keep them all on the contigs.");
+                ERR_POST_EX(ERR_MASTER, ERR_MASTER_NoMasterCitSub, Warning << "No common CitSub found amongst the data. Keep them all on the contigs.");
             }
             else {
-                ERR_POST_EX(0, 0, Critical << "No common CitSub found amongst the data. Reject the whole set.");
+                ERR_POST_EX(ERR_MASTER, ERR_MASTER_NoMasterCitSub, Critical << "No common CitSub found amongst the data. Reject the whole set.");
                 return ERROR_RET;
             }
         }
@@ -1621,11 +1623,11 @@ int CWGSParseApp::Run(void)
 
         if (GetParams().GetUpdateMode() == eUpdateAssembly) {
             if (!IsDescriptorsSame(*master_info.m_id_master_bioseq, *master_info.m_master_bioseq, [](const CSeqdesc& descr) { return descr.IsComment(); })) {
-                ERR_POST_EX(0, 0, Warning << "The new master record has altered comment.");
+                ERR_POST_EX(ERR_MASTER, ERR_MASTER_DifferentMasterComments, Warning << "The new master record has altered comment.");
             }
 
             if (!IsDescriptorsSame(*master_info.m_id_master_bioseq, *master_info.m_master_bioseq, [](const CSeqdesc& descr) { return IsUserObjectOfType(descr, "StructuredComment"); })) {
-                ERR_POST_EX(0, 0, Warning << "The new master record has altered structured comment.");
+                ERR_POST_EX(ERR_MASTER, ERR_MASTER_DifferentMasterComments, Warning << "The new master record has altered structured comment.");
             }
         }
 
@@ -1659,7 +1661,7 @@ int CWGSParseApp::Run(void)
                 }
 
                 if (!master_info.m_got_cit_sub) {
-                    ERR_POST_EX(0, 0, Error << "Cit-subs have been preserved on component sequences, because this WGS submission is a partial update.");
+                    ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_CitSubsStayInUpdParts, Error << "Cit-subs have been preserved on component sequences, because this WGS submission is a partial update.");
                 }
             }
             else {
@@ -1690,7 +1692,7 @@ int CWGSParseApp::Run(void)
         }
 
         if (!master_info.m_same_org) {
-            ERR_POST_EX(0, 0, Error << "Different OrgRefs found in data. Will not populate BioSource descriptor in master record.");
+            ERR_POST_EX(ERR_MASTER, ERR_MASTER_NoMasterBioSource, Error << "Different OrgRefs found in data. Will not populate BioSource descriptor in master record.");
             RemoveBioSourseDesc(master_info.m_master_bioseq->SetDescr());
         }
 

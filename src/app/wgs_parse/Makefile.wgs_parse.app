@@ -1,6 +1,7 @@
 
 SRC     = \
     wgs_asn \
+    wgs_errors \
     wgs_filelist \
     wgs_id1 \
     wgs_master \

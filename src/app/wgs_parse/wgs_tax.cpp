@@ -45,6 +45,7 @@
 #include "wgs_tax.hpp"
 #include "wgs_utils.hpp"
 #include "wgs_seqentryinfo.hpp"
+#include "wgs_errors.hpp"
 
 
 namespace wgsparse
@@ -131,7 +132,7 @@ static CRef<COrg_ref> PerformLookup(const COrg_ref& org_ref, const string& taxna
         if (data.NotEmpty()) {
 
             if (data->IsSetIs_species_level() && !data->GetIs_species_level()) {
-                ERR_POST_EX(0, 0, Warning << "Taxarch hit is not on species level (" << taxname << ").");
+                ERR_POST_EX(ERR_ORGANISM, ERR_ORGANISM_TaxIdNotSpecLevel, Warning << "Taxarch hit is not on species level (" << taxname << ").");
             }
 
             if (!data->IsSetOrg()) {
@@ -141,15 +142,15 @@ static CRef<COrg_ref> PerformLookup(const COrg_ref& org_ref, const string& taxna
         else {
             ret.Reset();
             if (taxon1.GetTaxIdByOrgRef(org_ref) < 0) {
-                ERR_POST_EX(0, 0, Warning << "Not an unique Taxonomic Id for " << taxname << ".");
+                ERR_POST_EX(ERR_ORGANISM, ERR_ORGANISM_TaxIdNotUnique, Warning << "Not an unique Taxonomic Id for " << taxname << ".");
             }
             else {
-                ERR_POST_EX(0, 0, Warning << "Taxon Id not found for [" << taxname << "].");
+                ERR_POST_EX(ERR_ORGANISM, ERR_ORGANISM_TaxNameNotFound, Warning << "Taxon Id not found for [" << taxname << "].");
             }
         }
     }
     else {
-        ERR_POST_EX(0, 0, Critical << "Taxonomy lookup failed for " << taxname << ". Error: [" << taxon1.GetLastError() << "]. Cannot generate ASN.1 for this entry.");
+        ERR_POST_EX(ERR_SERVER, ERR_SERVER_TaxServerDown, Critical << "Taxonomy lookup failed for " << taxname << ". Error: [" << taxon1.GetLastError() << "]. Cannot generate ASN.1 for this entry.");
     }
 
     return ret;
@@ -181,12 +182,12 @@ void LookupCommonOrgRefs(list<COrgRefInfo>& org_refs)
                 NormalizeLineage(*cur_org_ref);
                 org_ref.m_org_ref_after_lookup = cur_org_ref;
 
-                ERR_POST_EX(0, 0, Info << "Taxon Id _was_ found for [" << taxname << "].");
+                ERR_POST_EX(ERR_ORGANISM, ERR_ORGANISM_TaxNameWasFound, Info << "Taxon Id _was_ found for [" << taxname << "].");
             }
         }
     }
     else {
-        ERR_POST_EX(0, 0, Critical << "Taxonomy lookup failed to initialize. Error: [" << taxon1.GetLastError() << "]. Cannot proceed.");
+        ERR_POST_EX(ERR_SERVER, ERR_SERVER_TaxServerDown, Critical << "Taxonomy lookup failed to initialize. Error: [" << taxon1.GetLastError() << "]. Cannot proceed.");
     }
 }
 
@@ -229,7 +230,7 @@ static void CheckMetagenomes(CBioSource& biosource, bool warn)
         biosource.SetSubtype().push_back(sample);
 
         if (warn) {
-            ERR_POST_EX(0, 0, Warning << "Added \"environmental-sample\" SubSource for \"" << GetTaxname(org_ref) << "\" organism based on the contents of the lineage.");
+            ERR_POST_EX(ERR_ORGANISM, ERR_ORGANISM_EnvSampleSubSourceAdded, Warning << "Added \"environmental-sample\" SubSource for \"" << GetTaxname(org_ref) << "\" organism based on the contents of the lineage.");
         }
     }
 
@@ -239,7 +240,7 @@ static void CheckMetagenomes(CBioSource& biosource, bool warn)
         biosource.SetSubtype().push_back(meta);
 
         if (warn) {
-            ERR_POST_EX(0, 0, Warning << "Added \"metagenomic\" SubSource for \"" << GetTaxname(org_ref) << "\" organism based on the contents of the lineage.");
+            ERR_POST_EX(ERR_ORGANISM, ERR_ORGANISM_MetagenomicSubSourceAdded, Warning << "Added \"metagenomic\" SubSource for \"" << GetTaxname(org_ref) << "\" organism based on the contents of the lineage.");
         }
     }
 }
@@ -287,7 +288,7 @@ bool PerformTaxLookup(CBioSource& biosource, const list<COrgRefInfo>& org_refs, 
 
         if (cur_org_ref.NotEmpty()) {
             
-            ERR_POST_EX(0, 0, Info << "Taxon Id _was_ found for [" << taxname << "].");
+            ERR_POST_EX(ERR_ORGANISM, ERR_ORGANISM_TaxNameWasFound, Info << "Taxon Id _was_ found for [" << taxname << "].");
             org_ref.Assign(*cur_org_ref);
         }
         else {

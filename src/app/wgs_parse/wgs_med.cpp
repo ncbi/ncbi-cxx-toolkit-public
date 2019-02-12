@@ -60,6 +60,7 @@
 #include "wgs_med.hpp"
 #include "wgs_utils.hpp"
 #include "wgs_pubs.hpp"
+#include "wgs_errors.hpp"
 
 namespace wgsparse
 {
@@ -133,7 +134,7 @@ static void StripPubComment(string& comment)
         NStr::StartsWith(comment, "Publication-Status", NStr::eNocase) ||
         NStr::StartsWith(comment, "Publication_Status", NStr::eNocase)) {
 
-        ERR_POST_EX(0, 0, Info << "An unusual Publication Status comment exists for this record: \"" << comment <<
+        ERR_POST_EX(ERR_REFERENCE, ERR_REFERENCE_UnusualPubStatus, Warning << "An unusual Publication Status comment exists for this record: \"" << comment <<
                     "\". If it is a new variant of the special comments used to indicate ahead-of-print or online-only articles, then the comment must be added to the appropriate table of the parser.");
     }
 }

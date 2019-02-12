@@ -5,6 +5,7 @@
 NCBI_begin_app(wgs_parse)
   NCBI_sources(
     wgs_asn
+    wgs_errors
     wgs_filelist
     wgs_id1
     wgs_master
