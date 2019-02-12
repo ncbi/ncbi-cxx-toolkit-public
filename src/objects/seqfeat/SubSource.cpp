@@ -1292,6 +1292,33 @@ static string s_InsertSpacesBetweenTokens(const string &old_str)
     return new_str;
 }
 
+static string s_RemoveSpacesWithinNumbers(const string &old_str)
+{
+    string new_str;
+    for (string::const_iterator i = old_str.begin(); i != old_str.end(); ++i) 
+    {
+	TUnicodeSymbol sym = CUtf8::Decode(i);
+	if (sym < 0x80)
+	{
+	    char c = static_cast<char>(sym);
+            size_t j = new_str.size();            
+            if (j >= 4 &&  new_str[j-1] == ' ' && new_str[j-2] == '.' && new_str[j-3] == ' ' && isdigit(new_str[j-4]) && isdigit(c))
+	    {
+                new_str.pop_back();
+                new_str.pop_back();
+                new_str.pop_back();
+                new_str += '.';
+	    }
+            new_str += c;
+        }
+	else
+	{
+	    new_str += ' ';
+	}	
+    }
+    return new_str;
+}
+
 static bool s_IsNumber(const string &token, double *result = NULL)
 {
     double num = NStr::StringToDouble(token, NStr::fConvErr_NoThrow);
@@ -1348,17 +1375,17 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
 	    token = "\"";
 	}
 
-	if (NStr::EqualNocase(token, "degrees") || NStr::EqualNocase(token, "deg")  || NStr::EqualNocase(token, "degree"))
+	if (NStr::EqualNocase(token, "degrees") || NStr::EqualNocase(token, "deg")  || NStr::EqualNocase(token, "deg.") || NStr::EqualNocase(token, "degree"))
 	{
 	    token = "degrees";
 	    pattern.push_back("degrees");
 	}	   
-	else if ( token == "\'"  || NStr::EqualNocase(token, "min") || NStr::EqualNocase(token, "minute") || NStr::EqualNocase(token, "minutes"))
+	else if ( token == "\'"  || NStr::EqualNocase(token, "min") || NStr::EqualNocase(token, "min.") || NStr::EqualNocase(token, "minute") || NStr::EqualNocase(token, "minutes"))
 	{
 	    token  = "\'";
 	    pattern.push_back("\'");
 	}
-	else if (token == "\""   || NStr::EqualNocase(token, "sec") || NStr::EqualNocase(token, "second") || NStr::EqualNocase(token, "seconds") || token == "#")
+	else if (token == "\"" || NStr::EqualNocase(token, "sec") || NStr::EqualNocase(token, "sec.") || NStr::EqualNocase(token, "second") || NStr::EqualNocase(token, "seconds") || token == "#")
 	{
 	    token = "\"";
 	    pattern.push_back("\"");
@@ -1366,12 +1393,13 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
 	else if (token == "," || token == ":" || token == "_" || token == "&" || token == "." || token == ";" || NStr::EqualNocase(token, "and"))
 	{
 	}
-	else if (NStr::EqualNocase(token, "lattitude") || NStr::EqualNocase(token, "lat"))
+	else if (NStr::EqualNocase(token, "lattitude") || NStr::EqualNocase(token, "lat") || NStr::EqualNocase(token, "lat."))
 	{
 	    pattern.push_back("lat");
 	    lat_long.push_back("lat");
 	}
-	else if (NStr::EqualNocase(token, "longitude") || NStr::EqualNocase(token, "lo") || NStr::EqualNocase(token, "lon") || NStr::EqualNocase(token, "long"))
+	else if (NStr::EqualNocase(token, "longitude") || NStr::EqualNocase(token, "lo") || NStr::EqualNocase(token, "lon") || NStr::EqualNocase(token, "long")
+                 || NStr::EqualNocase(token, "lo.") || NStr::EqualNocase(token, "lon.") || NStr::EqualNocase(token, "long."))
 	{
 	    pattern.push_back("lat");
 	    lat_long.push_back("long");
@@ -1427,7 +1455,7 @@ static string s_NormalizeTokens(vector<string> &tokens, vector<double> &numbers,
     return NStr::Join(pattern, " ");
 }
 
-static void s_ReorderNorthSouthEastWest(vector<double> &numbers, vector<int> &precision, const vector<string> &lat_long, const vector<string> &nsew)
+static void s_ReorderNorthSouthEastWest(vector<double> &numbers, vector<int> &precision, const vector<string> &lat_long, vector<string> &nsew)
 {
     if (numbers.size() != 2)
     {
@@ -1440,6 +1468,8 @@ static void s_ReorderNorthSouthEastWest(vector<double> &numbers, vector<int> &pr
 	{
 	    swap(numbers[0], numbers[1]);
 	    swap(precision[0], precision[1]);
+            if (nsew.size() == 2)
+                swap(nsew[0], nsew[1]);
 	}
     }
     else if (!lat_long.empty())
@@ -1449,6 +1479,13 @@ static void s_ReorderNorthSouthEastWest(vector<double> &numbers, vector<int> &pr
     }
     if (nsew.size() == 2)
     {
+        if ((nsew[0] == "E" || nsew[0] == "W") &&
+            (nsew[1] == "N" || nsew[1] == "S"))
+        {
+            swap(numbers[0], numbers[1]);
+	    swap(precision[0], precision[1]);
+            swap(nsew[0], nsew[1]);
+        }
 	if (nsew[0] == "N")
 	    numbers[0] = fabs(numbers[0]);
 	else if (nsew[0] == "S")
@@ -1519,7 +1556,8 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
 	prec[0] = max(precision[0], precision[1] + 4);
 	prec[1] = max(precision[2], precision[3] + 2);
     }
-    else if (pattern == "1 1 ' 1" 
+    else if ( (pattern == "1 1 ' 1" ||
+               pattern == "1 degrees 1 ' N 1 degrees N")
 	     && numbers[1] < 60)
     {
 	degrees[0] = numbers[0] + numbers[1] / 60;
@@ -1563,7 +1601,8 @@ static void s_GetLatLong(const string &new_str, vector<double> &numbers, vector<
 	       pattern == "1 1 N 1 1 N" ||
 	       pattern == "1 degrees 1 ' N 1 degrees 1 ' N" ||
 	       pattern == "1 degrees 1 N 1 degrees 1 N" ||
-	       pattern == "1 degrees 1 N 1 degrees 1 ' N")
+	       pattern == "1 degrees 1 N 1 degrees 1 ' N" ||
+               pattern == "N 1 degrees 1 ' N 1 degrees 1")
 	     && numbers[1] < 60  && numbers[3] < 60)
     {
 	degrees[0] = numbers[0] + numbers[1] / 60;
@@ -1625,16 +1664,17 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 	NStr::TrimSuffixInPlace(old_str, "\"");
     }
     NStr::ReplaceInPlace(old_str, "\'\'", "\""); 
-    NStr::ReplaceInPlace(old_str, ". ", "."); 
-    NStr::ReplaceInPlace(old_str, " .", ".");    
-    string new_str = s_InsertSpacesBetweenTokens(old_str);
+    string fixed_str = s_RemoveSpacesWithinNumbers(old_str);
+    string new_str = s_InsertSpacesBetweenTokens(fixed_str);
     NStr::Sanitize(new_str);
     vector<double> numbers;
     vector<int> precision;
     s_GetLatLong(new_str, numbers, precision);
     string res;
     if (!numbers.empty())
+    {
 	res = MakeLatLon(numbers[0], numbers[1], precision[0], precision[1]);
+    }
     //cout << "After: " << res << endl;
     return res;
 }
