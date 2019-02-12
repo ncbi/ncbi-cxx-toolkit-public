@@ -691,9 +691,21 @@ void CPendingOperation::Peek(HST::CHttpReply<CPendingOperation>& resp,
     }
 
     bool    all_finished_read = x_AllFinishedRead();
-    if (resp.IsOutputReady() && (!m_Chunks.empty() || all_finished_read)) {
-        resp.Send(m_Chunks, all_finished_read);
-        m_Chunks.clear();
+
+    // For resolve and named annotations the packets need to e sent only when
+    // all the data are in chunks
+    if (resp.IsOutputReady()) {
+       if (m_RequestType == eBlobRequest) {
+            if (!m_Chunks.empty() || all_finished_read) {
+                resp.Send(m_Chunks, all_finished_read);
+                m_Chunks.clear();
+            }
+       } else {
+            if (all_finished_read) {
+                resp.Send(m_Chunks, all_finished_read);
+                m_Chunks.clear();
+            }
+       }
     }
 }
 
