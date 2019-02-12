@@ -328,7 +328,7 @@ DISCREPANCY_SUMMARIZE(MISMATCHED_COMMENTS)
     CReportNode rep;
     auto& all = m_Objs.GetMap();
     if (all.size() > 1) {
-        for (auto it : all) {
+        for (auto& it : all) {
             string subitem = "[n] comment[s] contain[S] " + it.first;
             for (auto obj : it.second->GetObjects()) {
                 rep["Mismatched comments were found"][subitem].Ext().Add(*obj);
@@ -344,7 +344,7 @@ DISCREPANCY_AUTOFIX(MISMATCHED_COMMENTS)
     TReportObjectList list = item->GetDetails();
     unsigned int n = 0;
     string comment;
-    for (auto it: list) {
+    for (auto& it: list) {
         if (it->CanAutofix()) {
             const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(dynamic_cast<CDiscrepancyObject*>(it.GetNCPointer())->GetObject().GetPointer());
             if (desc) {
