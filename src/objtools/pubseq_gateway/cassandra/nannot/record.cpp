@@ -40,15 +40,6 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-string SAnnotInfoEntry::ToString() const
-{
-    return "(" + NStr::NumericToString(type)
-        + ", " + NStr::NumericToString(subtype)
-        + ", " + NStr::NumericToString(start)
-        + ", " + NStr::NumericToString(stop)
-        + ", " + NStr::NumericToString(count) + ")";
-}
-
 string CNAnnotRecord::ToString() const
 {
     stringstream s;
@@ -57,10 +48,7 @@ string CNAnnotRecord::ToString() const
       << "\tm_AnnotName: " << m_AnnotName << endl
       << "\tm_Start: " << m_Start << endl
       << "\tm_Stop: " << m_Stop << endl
-      << "\tm_AnnotInfo:" << endl;
-    for (auto const& entry : m_AnnotInfo) {
-        s << "\t\t" << entry.ToString() << endl;
-    }
+      << "\tm_AnnotInfo: " << m_AnnotInfo << endl;
     return s.str();
 }
 

@@ -123,16 +123,7 @@ void CCassNAnnotTaskInsert::Wait1()
                 qry->BindInt64(5, m_Annot->GetModified());
                 qry->BindInt32(6, m_Annot->GetStart());
                 qry->BindInt32(7, m_Annot->GetStop());
-                auto const & annot_info = m_Annot->GetAnnotInfo();
-                vector<tuple<int32_t, int32_t, int64_t, int64_t, int32_t>> cass_value(annot_info.size());
-                for (size_t i = 0; i < annot_info.size(); ++i) {
-                    get<0>(cass_value[i]) = annot_info[i].type;
-                    get<1>(cass_value[i]) = annot_info[i].subtype;
-                    get<2>(cass_value[i]) = annot_info[i].start;
-                    get<3>(cass_value[i]) = annot_info[i].stop;
-                    get<4>(cass_value[i]) = annot_info[i].count;
-                }
-                qry->BindList(8, cass_value.begin(), cass_value.end(), cass_value.size());
+                qry->BindStr(8, m_Annot->GetAnnotInfo());
 
                 UpdateLastActivity();
                 qry->Execute(CASS_CONSISTENCY_LOCAL_QUORUM, m_Async);

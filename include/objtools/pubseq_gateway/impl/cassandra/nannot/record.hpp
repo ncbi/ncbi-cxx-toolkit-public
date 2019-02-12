@@ -44,22 +44,12 @@
 BEGIN_IDBLOB_SCOPE
 USING_NCBI_SCOPE;
 
-struct SAnnotInfoEntry {
-    int32_t type = 0;
-    int32_t subtype = 0;
-    int64_t start = 0;
-    int64_t stop = 0;
-    int32_t count = 0;
-
-    string ToString() const;
-};
-
 class CNAnnotRecord {
  public:
     using TTimestamp = int64_t;
     using TSatKey = int32_t;
     using TCoord = int32_t;
-    using TAnnotInfo = vector<SAnnotInfoEntry>;
+    using TAnnotInfo = string;
 
  public:
     CNAnnotRecord()

@@ -275,18 +275,8 @@ void CCassNAnnotTaskFetch::Wait1()
                             .SetSatKey(m_QueryArr[0].query->FieldGetInt32Value(1, 0))
                             .SetModified(m_QueryArr[0].query->FieldGetInt64Value(2, 0))
                             .SetStart(m_QueryArr[0].query->FieldGetInt32Value(3, 0))
-                            .SetStop(m_QueryArr[0].query->FieldGetInt32Value(4, 0));
-                        vector<tuple<int32_t, int32_t, int64_t, int64_t, int32_t>> cass_value;
-                        m_QueryArr[0].query->FieldGetContainerValue(5, back_inserter(cass_value));
-                        CNAnnotRecord::TAnnotInfo annot_info(cass_value.size());
-                        for (size_t i = 0; i < annot_info.size(); ++i) {
-                            annot_info[i].type = get<0>(cass_value[i]);
-                            annot_info[i].subtype = get<1>(cass_value[i]);
-                            annot_info[i].start = get<2>(cass_value[i]);
-                            annot_info[i].stop = get<3>(cass_value[i]);
-                            annot_info[i].count = get<4>(cass_value[i]);
-                        }
-                        record.SetAnnotInfo(move(annot_info));
+                            .SetStop(m_QueryArr[0].query->FieldGetInt32Value(4, 0))
+                            .SetAnnotInfo(m_QueryArr[0].query->FieldGetStrValueDef(5, ""));
 
                         if (m_Consume) {
                             string annot_name = record.GetAnnotName();
