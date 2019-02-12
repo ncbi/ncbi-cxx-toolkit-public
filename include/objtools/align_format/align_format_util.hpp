@@ -490,7 +490,7 @@ public:
         double total_bit_score;         //total bit_score for Seq Align Set, displayed on the results page as 'Total Score'
         int percent_coverage;           //percent coverage for Seq Align Set, displayed on the results page as 'Query coverage'
                                         //calulated as 100*master_covered_length/queryLength
-        int percent_identity;           //highest percent identity in Seq Align Set, displayed on the results page as 'Max ident'
+        double percent_identity;           //highest percent identity in Seq Align Set, displayed on the results page as 'Max ident'
                                         //calulated as 100*match/align_length
 
         int hspNum;                     //hsp number, number of hits
@@ -1088,6 +1088,8 @@ public:
 	///@param denominator
 	/// int denominator in percent identity calculation.
 	static int GetPercentMatch(int numerator, int denominator);
+    static double GetPercentIdentity(int numerator, int denominator);
+                                            
 
     ///function for Filtering seqalign by expect value
     ///@param source_aln

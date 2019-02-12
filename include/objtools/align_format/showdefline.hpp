@@ -404,7 +404,7 @@ protected:
         int master_covered_length;     //total length covered by alignment
         int align_length;              //length of alignment
         int percent_coverage;          //query coverage 
-        int percent_identity;          //percent identity   
+        double percent_identity;       //percent identity   
         CConstRef<objects::CSeq_id> id;
         int blast_rank;                // "Rank" of defline.
         int hspNum;                    //hsp number
