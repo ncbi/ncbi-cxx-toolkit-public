@@ -67,6 +67,7 @@ static const string     kUserName = "username";
 static const string     kNChunks = "n_chunks";
 static const string     kStart = "start";
 static const string     kStop = "stop";
+static const string     kAnnotInfo = "annot_info";
 
 
 void ConvertBioseqInfoToBioseqProtobuf(const SBioseqInfo &  bioseq_info,
@@ -260,6 +261,7 @@ CJsonNode ConvertBioseqNAToJson(const CNAnnotRecord &  annot_record)
     json.SetInteger(kSatKey, annot_record.GetSatKey());
     json.SetInteger(kStart, annot_record.GetStart());
     json.SetInteger(kStop, annot_record.GetStop());
+    json.SetString(kAnnotInfo, annot_record.GetAnnotInfo());
 
     return json;
 }
