@@ -182,7 +182,7 @@ static DECLARE_TLS_VAR(CAtomicCounter::TValue, s_LastNewType);
 typedef pair<void*, CAtomicCounter::TValue> TLastNewPtrMultipleInfo;
 typedef vector<TLastNewPtrMultipleInfo> TLastNewPtrMultiple;
 #ifdef NCBI_NO_THREADS
-static TLastNewPtrMultiple s_LastNewPtrMultiple;
+static TLastNewPtrMultiple* s_LastNewPtrMultiple_ptr;
 #else
 static TTlsKey s_LastNewPtrMultiple_key;
 #endif
@@ -199,7 +199,11 @@ static
 TLastNewPtrMultiple& sx_GetLastNewPtrMultiple(void)
 {
 #ifdef NCBI_NO_THREADS
-    return s_LastNewPtrMultiple;
+    TLastNewPtrMultiple* set = s_LastNewPtrMultiple_ptr;
+    if ( !set ) {
+        s_LastNewPtrMultiple_ptr = set = new TLastNewPtrMultiple();
+    }
+    return *set;
 #else
     if ( !s_LastNewPtrMultiple_key ) {
         DEFINE_STATIC_FAST_MUTEX(s_InitMutex);
