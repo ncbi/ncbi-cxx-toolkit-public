@@ -397,6 +397,12 @@ public:
 /// Find all features overlapping the location. Features and corresponding
 /// scores are stored in the 'feats' vector. The scores are calculated as
 /// difference between the input location and each feature's location.
+/// NOTE: 'overlap_type' defines how the location must be related to the feature.
+/// For eOverlap_Subset, eOverlap_SubsetRev, eOverlap_CheckIntervals,
+/// eOverlap_CheckIntRev and eOverlap_Interval the relationship is
+/// reversed. E.g. with eOverlap_Contains, the location will contain
+/// the feature, but with eOverlap_Subset the feature will be defined
+/// on a subset of the location.
 NCBI_XOBJUTIL_EXPORT
 void GetOverlappingFeatures(const CSeq_loc& loc,
                             CSeqFeatData::E_Choice feat_type,
@@ -408,12 +414,7 @@ void GetOverlappingFeatures(const CSeq_loc& loc,
                             CGetOverlappingFeaturesPlugin *plugin = NULL );
 
 
-/// overlap_type defines how the location must be related to the feature.
-/// For eOverlap_Subset, eOverlap_SubsetRev, eOverlap_CheckIntervals,
-/// eOverlap_CheckIntRev and eOverlap_Interval the relationship is
-/// reversed. E.g. with eOverlap_Contains, the location will contain
-/// the feature, but with eOverlap_Subset the feature will be defined
-/// on a subset of the location.
+/// See the note above on 'overlap_type' meaning.
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::E_Choice feat_type,
@@ -421,6 +422,7 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CScope& scope,
                                             TBestFeatOpts opts = fBestFeat_Defaults,
                                             CGetOverlappingFeaturesPlugin *plugin = NULL );
+/// See the note above on 'overlap_type' meaning.
 NCBI_XOBJUTIL_EXPORT
 CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             CSeqFeatData::ESubtype feat_type,
