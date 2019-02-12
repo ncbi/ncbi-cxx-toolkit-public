@@ -1,3 +1,11 @@
+Release 1.1.2 (2019-02-12)
+
+    * PSG -- to accumulate smaller responses (RESOLVE, GET_NA) data, send it in
+      one op (JIRA: CXX-10474)
+    * PSG -- improve NamedAnnot metainfo retrieval latency (now around 45ms)
+      (JIRA: CXX-10467)
+    * Add annot_info to the get_na request
+
 Release 1.1.1 (2019-02-05)
 
     * Unified JSON dictionary keys style
