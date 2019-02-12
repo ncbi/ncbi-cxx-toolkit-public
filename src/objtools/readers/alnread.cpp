@@ -671,35 +671,6 @@ s_ReportIncorrectSequenceLength(
 }
 
 
-
-/* This function creates and sends an error message regarding an ID that is
- * used for more than one sequence.
- */
-static void 
-s_ReportRepeatedId(
-    TStringCountPtr scp,
-    FReportErrorFunction report_error,
-    void* report_error_userdata)
-{
-    if (!scp  ||  !scp->string) {
-        return;
-    }
-
-    const char* errFormat = "ID %s appears in the following locations:";
-    string errMessage = StrPrintf(errFormat, scp->string);
-    for (auto val: scp->mLineNumbers) {
-        errMessage += StrPrintf(" %d", val);
-    }
-    sReportError(
-        "",
-        -1,
-        eAlnErr_BadData,
-        errMessage,
-        report_error,
-        report_error_userdata);
-}
-
-
 /* This function creates and sends an error message indicating that the file
  * being read is an ASN.1 file.
  */
@@ -734,7 +705,7 @@ s_ReportUnusedLine(
     const char * errFormat3 = "Contents of unused line: %s";
     int skip;
 
-    if (errfunc == NULL  ||  line_val == NULL) {
+    if (!line_val) {
         return;
     }
 
@@ -2896,7 +2867,8 @@ s_CreateSequencesBasedOnTokenPatterns(
             if (gen_local_ids) {
                 char* replacement_id = new char[32 +strlen(lip->data)];
                 sprintf(replacement_id, "lcl|%d %s", next_local_id++, lip->data+1);
-                delete[] replacement_id; 
+                delete[] lip->data; 
+                lip->data = replacement_id;
             }
             curr_id = lip->data;
             lip = lip->next;
@@ -3880,9 +3852,8 @@ s_ReprocessIds (
 
     for (auto scp = list;  scp;  scp = scp->next) {
         if (scp->num_appearances > 1) {
-            rval = false;
-            s_ReportRepeatedId (scp, afrp->report_error,
-                              afrp->report_error_userdata);
+            _ASSERT(scp->num_appearances > 1);
+            // this should never happen !!!
         }
     }
     /* free string count list */

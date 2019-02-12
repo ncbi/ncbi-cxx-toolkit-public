@@ -1,0 +1,32 @@
+Line No    : 5
+Severity   : Error
+Message    : At ID 'seq1' in category '2' at line 5: Duplicate ID!  Sequences will be concatenated!'
+
+Line No    : 12
+Severity   : Error
+Message    : At ID 'seq1' in category '3' at line 12: Found unexpected ID'
+
+Line No    : 13
+Severity   : Error
+Message    : At ID 'seq5' in category '3' at line 13: Found unexpected ID'
+
+Line No    : 19
+Severity   : Error
+Message    : At ID 'seq1' in category '3' at line 19: Found unexpected ID'
+
+Line No    : 20
+Severity   : Error
+Message    : At ID 'seq5' in category '3' at line 20: Found unexpected ID'
+
+Line No    : 18
+Severity   : Error
+Message    : At ID 'seq3' in category '3' at line 18: Inconsistent block line formatting'
+
+Line No    : 0
+Severity   : Error
+Message    : At ID 'seq1' in category '3': Expected sequence length 48, actual length 96'
+
+Line No    : 0
+Severity   : Fatal
+Message    : Error reading alignment: Invalid input or alphabet
+
