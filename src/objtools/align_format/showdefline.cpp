@@ -903,8 +903,11 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             CAlignFormatUtil::AddSpace(out, m_MaxSumNLen - 
                      NStr::IntToString((*iter)->sum_n).size());
         }
-        if(m_Option & eShowPercentIdent){                        
-            int percent_identity =(*iter)->percent_identity;           
+        if(m_Option & eShowPercentIdent){
+            int percent_identity =(int) (0.5 + (*iter)->percent_identity);
+            if(percent_identity > 100) {
+                percent_identity = min(99, percent_identity);                        
+            }            
             out << kTwoSpaceMargin << percent_identity <<"%";
             CAlignFormatUtil::AddSpace(out, m_MaxPercentIdentityLen - 
                                            NStr::IntToString(percent_identity).size());
@@ -1669,7 +1672,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
         m_AppLogInfo->accVec.push_back(deflAccs);
         m_AppLogInfo->taxidVec.push_back(NStr::IntToString(sdl->taxid));
         m_AppLogInfo->queryCoverageVec.push_back(NStr::IntToString(iter->percent_coverage));
-        m_AppLogInfo->percentIdentityVec.push_back(NStr::IntToString(iter->percent_identity));
+        m_AppLogInfo->percentIdentityVec.push_back(NStr::DoubleToString(iter->percent_identity));
         m_AppLogInfo->currInd++;
     }
 
@@ -1695,7 +1698,7 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     defLine = CAlignFormatUtil::MapTemplate(defLine,"evalue_string",iter->evalue_string);
 
     if(m_Option & eShowPercentIdent){
-        defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_identity",NStr::IntToString(iter->percent_identity));
+        defLine = CAlignFormatUtil::MapTemplate(defLine,"percent_identity",NStr::DoubleToString(iter->percent_identity,2));
     }
 
     if(m_Option & eShowSumN){
@@ -1814,7 +1817,7 @@ void CShowBlastDefline::x_InitFormattingInfo(SScoreInfo* sci)
 	            sdlFormatInfo->total_bit_string = sci->total_bit_string;
                 sdlFormatInfo->percent_coverage = NStr::IntToString(sci->percent_coverage);
                 sdlFormatInfo->evalue_string = sci->evalue_string;
-                sdlFormatInfo->percent_identity = NStr::IntToString(sci->percent_identity);
+                sdlFormatInfo->percent_identity = NStr::DoubleToString(sci->percent_identity);
                 m_SdlFormatInfoVec.push_back(sdlFormatInfo);
 }
 

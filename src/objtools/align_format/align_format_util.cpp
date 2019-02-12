@@ -652,8 +652,7 @@ void CAlignFormatUtil::PrintPhiInfo(int num_patterns,
     out << "pattern probability=" << prob << "\n";
 
 }
-                                    
-
+    
 void CAlignFormatUtil::GetAlnScores(const CSeq_align& aln,
                                     int& score, 
                                     double& bits, 
@@ -1415,6 +1414,7 @@ double CAlignFormatUtil::GetPercentIdentity(const CSeq_align& aln,
     return identity;
 }
 
+
 bool CAlignFormatUtil::
 SortHitByPercentIdentityDescendingEx(const CRef<CSeq_align_set>& info1,
                                      const CRef<CSeq_align_set>& info2)
@@ -1422,37 +1422,29 @@ SortHitByPercentIdentityDescendingEx(const CRef<CSeq_align_set>& info1,
   
     CRef<CSeq_align_set> i1(info1), i2(info2);
     
-    i1->Set().sort(SortHspByPercentIdentityDescending);
-    i2->Set().sort(SortHspByPercentIdentityDescending);
+    //i1->Set().sort(SortHspByPercentIdentityDescending);
+    //i2->Set().sort(SortHspByPercentIdentityDescending);
 
-    int score1, sum_n1, num_ident1;
-    double bits1, evalue1;
-    list<TGi> use_this_gi1;
+
+    CAlignFormatUtil::SSeqAlignSetCalcParams* seqSetInfo1 = CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(*info1);
+    CAlignFormatUtil::SSeqAlignSetCalcParams* seqSetInfo2 = CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(*info2);
+    double evalue1 = seqSetInfo1->evalue;
+    double evalue2 = seqSetInfo2->evalue;
+    double percentIdent1 = seqSetInfo1->percent_identity;
+    double  percentIdent2 = seqSetInfo2->percent_identity;            
     
-    int score2, sum_n2, num_ident2;
-    double bits2, evalue2;
-    list<TGi> use_this_gi2;
-    
-    GetAlnScores(*(info1->Get().front()), score1,  bits1, evalue1, sum_n1, num_ident1, use_this_gi1);
-    GetAlnScores(*(info2->Get().front()), score2,  bits2, evalue2, sum_n2, num_ident2, use_this_gi2);
-    
-    int length1 = GetAlignmentLength(*(info1->Get().front()), kTranslation);
-    int length2 = GetAlignmentLength(*(info2->Get().front()), kTranslation);
     bool retval = false;
     
-    
-    if(length1 > 0 && length2 > 0 && num_ident1 > 0 &&num_ident2 > 0) {
-        if (((double)num_ident1)/length1 == ((double)num_ident2)/length2) {
-       
+    if(percentIdent1 > 0 &&percentIdent2 > 0) {
+        if (percentIdent1 == percentIdent2) {       
             retval = evalue1 < evalue2;
         
         } else {
-            retval = ((double)num_ident1)/length1 >= ((double)num_ident2)/length2;
-          
+            retval = percentIdent1 >= percentIdent2;          
         }
     } else {
         retval = evalue1 < evalue2;
-    }
+    }    
     return retval;
 }
 
@@ -3014,6 +3006,16 @@ int CAlignFormatUtil::GetPercentMatch(int numerator, int denominator)
      }
 }
 
+double CAlignFormatUtil::GetPercentIdentity(int numerator, int denominator)
+{
+     if (numerator == denominator)
+        return 100;
+     else {
+       double retval =100*(double)numerator/(double)denominator;       
+       return retval;
+     }
+}
+
 CRef<CSeq_align_set> CAlignFormatUtil::FilterSeqalignByPercentIdent(CSeq_align_set& source_aln,
                                                                     double percentIdentLow,
                                                                     double percentIdentHigh)                                     
@@ -3029,7 +3031,7 @@ CRef<CSeq_align_set> CAlignFormatUtil::FilterSeqalignByPercentIdent(CSeq_align_s
                                         sum_n, num_ident, use_this_gi);		
         int seqAlnLength = GetAlignmentLength(**iter, kTranslation);		
         if(seqAlnLength > 0 && num_ident > 0) {
-            int alnPercentIdent = GetPercentMatch(num_ident, seqAlnLength);						
+            double alnPercentIdent = GetPercentIdentity(num_ident, seqAlnLength);						
             if(alnPercentIdent >= percentIdentLow && alnPercentIdent <= percentIdentHigh) {				
                 new_aln->Set().push_back(*iter);
             }
@@ -4050,7 +4052,7 @@ CAlignFormatUtil::GetSeqAlignSetCalcParams(const CSeq_align_set& aln,int queryLe
     }
     seqSetInfo->match = highest_ident;      
     seqSetInfo->align_length = highest_length;    
-    seqSetInfo->percent_identity = CAlignFormatUtil::GetPercentMatch(seqSetInfo->match, seqSetInfo->align_length);
+    seqSetInfo->percent_identity = CAlignFormatUtil::GetPercentIdentity(seqSetInfo->match, seqSetInfo->align_length);
     
     seqSetInfo->total_bit_score = total_bits;
     seqSetInfo->bit_score = highest_bits;    
@@ -4067,7 +4069,7 @@ s_GetBlastScore(const container&  scoreList,
                 double& bitScore, 
                 double& totalBitScore,                                     
                 int& percentCoverage,
-                int& percentIdent,
+                double& percentIdent,
                 int& hspNum,
                 double& totalLen,
                 int &rawScore,
@@ -4090,8 +4092,10 @@ s_GetBlastScore(const container&  scoreList,
                 totalBitScore = (*iter)->GetValue().GetReal();                
             } else if (id.GetStr()=="seq_percent_coverage"){
                 percentCoverage = (*iter)->GetValue().GetInt();          
-            } else if (id.GetStr()=="seq_percent_identity"){
+            } else if (id.GetStr()=="seq_percent_identity" && (*iter)->GetValue().IsInt()){
                 percentIdent = (*iter)->GetValue().GetInt();                      
+            } else if (id.GetStr()=="seq_percent_identity" && (*iter)->GetValue().IsReal()){
+                percentIdent = (*iter)->GetValue().GetReal();
             } else if (id.GetStr()=="seq_hspnum"){
                 hspNum = (*iter)->GetValue().GetInt();          
             } else if (id.GetStr()=="seq_align_totlen"){
@@ -4176,7 +4180,7 @@ CAlignFormatUtil::GetSeqAlignSetCalcParamsFromASN(const CSeq_align_set& alnSet)
     double bitScore = -1;
     double totalBitScore = -1;
     int percentCoverage = -1;
-    int percentIdent = -1;
+    double percentIdent = -1;
     int hspNum = 0;
     double totalLen = 0;
     int rawScore = -1;
