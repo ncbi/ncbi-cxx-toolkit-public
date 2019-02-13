@@ -410,7 +410,7 @@ BOOST_AUTO_TEST_CASE(MappingPaired)
     exon.prod_strand = eNa_strand_minus;
     exon.gen_strand = eNa_strand_plus;
     exon.acceptor = "";
-    exon.donor = "AG";
+    exon.donor = "";
     expected_hits[results_idx].exons.push_back(exon);
 
     // HSP #2
@@ -440,7 +440,7 @@ BOOST_AUTO_TEST_CASE(MappingPaired)
     exon.prod_strand = eNa_strand_minus;
     exon.gen_strand = eNa_strand_plus;
     exon.acceptor = "";
-    exon.donor = "AG";
+    exon.donor = "";
     expected_hits[results_idx].exons.push_back(exon);
 
     // HSP #4
@@ -469,7 +469,7 @@ BOOST_AUTO_TEST_CASE(MappingPaired)
     exon.gen_end = 2443327;
     exon.prod_strand = eNa_strand_plus;
     exon.gen_strand = eNa_strand_plus;
-    exon.acceptor = "CT";
+    exon.acceptor = "";
     exon.donor = "";
     expected_hits[results_idx].exons.push_back(exon);
 

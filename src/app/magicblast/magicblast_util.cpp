@@ -1247,7 +1247,8 @@ CNcbiOstream& PrintSAM(CNcbiOstream& ostr, const CSeq_align& align,
         ostr << sep << "XS:A:" << ori;
     }
 
-    if (!md_tag.empty()) {
+    // FIXME: the MD tag misses long deletions
+    if (0 /*!md_tag.empty()*/) {
         ostr << sep << "MD:Z:" << md_tag;
     }
 

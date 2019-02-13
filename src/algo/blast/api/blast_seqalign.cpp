@@ -395,6 +395,60 @@ s_CorrectUASequence(BlastHSP* hsp)
     return;
 }
 
+#if _DEBUG
+static void
+s_ValidateExon(const CSpliced_exon& exon, const CSeq_id& product_id,
+               const CSeq_id& genomic_id)
+{
+    int product_start = exon.GetProduct_start().GetNucpos();
+    int product_end = exon.GetProduct_end().GetNucpos();
+    int genomic_start = exon.GetGenomic_start();
+    int genomic_end = exon.GetGenomic_end();
+
+    int product_length = product_end - product_start + 1;
+    int genomic_length = genomic_end - genomic_start + 1;
+
+    int p = 0, g = 0;
+    for (const auto& it : exon.GetParts()) {
+        switch (it->Which()) {
+        case CSpliced_exon_chunk::e_Match:
+            p += it->GetMatch();
+            g += it->GetMatch();
+            break;
+
+        case CSpliced_exon_chunk::e_Mismatch:
+            p += it->GetMismatch();
+            g += it->GetMismatch();
+            break;
+
+        case CSpliced_exon_chunk::e_Product_ins:
+            p += it->GetProduct_ins();
+            break;
+
+        case CSpliced_exon_chunk::e_Genomic_ins:
+            g += it->GetGenomic_ins();
+            break;
+
+        default:
+            cerr << "Urecognized exon part\t" << product_id.AsFastaString() 
+                 << "\t" << genomic_id.AsFastaString() << endl;
+        }
+    }
+
+    if (p != product_length) {
+        cerr << "Product\t" << product_id.AsFastaString() << "\t"
+             << exon.GetProduct_start().GetNucpos() << "\t"
+             << product_length << "\t" << p << endl;
+    }
+
+    if (g != genomic_length) {
+        cerr << "Genomic\t" << genomic_id.AsFastaString() << "\t"
+             << exon.GetGenomic_start() << "\t"
+             << genomic_length << "\t" << g << endl;
+    }
+    
+}
+#endif
 
 void MakeSplicedSeg(CSpliced_seg& spliced_seg,
                     CRef<CSeq_id> product_id,
@@ -422,7 +476,17 @@ void MakeSplicedSeg(CSpliced_seg& spliced_seg,
 
     for (HSPContainer* h = chain->hsps; h; h = h->next) {
         BlastHSP* hsp = h->hsp;
-        _ASSERT(hsp);
+        HSPContainer* last_h = h;
+        _ASSERT(hsp && last_h);
+
+
+        while (last_h->next &&
+               (last_h->hsp->map_info->right_edge & MAPPER_SPLICE_SIGNAL) == 0) {
+
+            last_h = last_h->next;
+        }
+
+        BlastHSP* last_hsp = last_h->hsp;
 
         _ASSERT(hsp->gap_info->size > 1 ||
                 hsp->query.end - hsp->query.offset ==
@@ -430,17 +494,13 @@ void MakeSplicedSeg(CSpliced_seg& spliced_seg,
 
         CRef<CSpliced_exon> exon(new CSpliced_exon);
         exon->SetProduct_start().SetNucpos(hsp->query.offset);
-        exon->SetProduct_end().SetNucpos(hsp->query.end - 1);
+        exon->SetProduct_end().SetNucpos(last_hsp->query.end - 1);
         exon->SetGenomic_start(hsp->subject.offset);
-        exon->SetGenomic_end(hsp->subject.end - 1);
+        exon->SetGenomic_end(last_hsp->subject.end - 1);
 
         exon->SetProduct_strand(product_strand);
         exon->SetGenomic_strand(genomic_strand);
 
-        const JumperEditsBlock* hsp_edits = hsp->map_info->edits;
-        int query_pos = hsp->query.offset;
-        int subject_pos = hsp->subject.offset;
-        int num_matches = 0;
 
         // save splice signal before next exon
         if (hsp->map_info->left_edge & MAPPER_SPLICE_SIGNAL) {
@@ -453,61 +513,99 @@ void MakeSplicedSeg(CSpliced_seg& spliced_seg,
         }
 
         // save splice signal after exon
-        if (hsp->map_info->right_edge & MAPPER_SPLICE_SIGNAL) {
+        if (last_hsp->map_info->right_edge & MAPPER_SPLICE_SIGNAL) {
             CSpliced_exon::TDonor_after_exon::TBases r_bases(2u, ' ');
             r_bases[0] = BLASTNA_TO_IUPACNA[
-                (int)((hsp->map_info->right_edge >> 2) & 3)];
+                (int)((last_hsp->map_info->right_edge >> 2) & 3)];
             r_bases[1] = BLASTNA_TO_IUPACNA[
-                (int)(hsp->map_info->right_edge & 3)];
+                (int)(last_hsp->map_info->right_edge & 3)];
             exon->SetDonor_after_exon().SetBases(r_bases);
         }
 
-        for (int i=0;i < hsp_edits->num_edits;i++) {
-            num_matches = hsp_edits->edits[i].query_pos - query_pos;
-            query_pos += num_matches;
-            subject_pos += num_matches;
+        
+        for (HSPContainer* hh=h,*prev=NULL;hh != last_h->next;
+             prev = hh, hh = hh->next) {
+
+            int query_pos = hh->hsp->query.offset;
+            int subject_pos = hh->hsp->subject.offset;
+            int num_matches = 0;
+
+            // record gaps between HSPs
+            if (prev) {
+
+                _ASSERT(hh->hsp->query.offset >= prev->hsp->query.end);
+                _ASSERT(hh->hsp->subject.offset >= prev->hsp->subject.end);
+                if (hh->hsp->query.offset > prev->hsp->query.end) {
+                    CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
+                    chunk->SetProduct_ins(hh->hsp->query.offset -
+                                          prev->hsp->query.end);
+
+                    exon->SetParts().push_back(chunk);
+                }
+
+                if (hh->hsp->subject.offset > prev->hsp->subject.end) {
+                    CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
+                    chunk->SetGenomic_ins(hh->hsp->subject.offset -
+                                          prev->hsp->subject.end);
+
+                    exon->SetParts().push_back(chunk);
+                }
+            }
+
+            const JumperEditsBlock* hsp_edits = hh->hsp->map_info->edits;
+            for (int i=0;i < hsp_edits->num_edits;i++) {
+                num_matches = hsp_edits->edits[i].query_pos - query_pos;
+                query_pos += num_matches;
+                subject_pos += num_matches;
+                _ASSERT(num_matches >= 0);
+                if (num_matches > 0) {
+                    // record number of matches
+                    CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
+                    chunk->SetMatch(num_matches);
+                    exon->SetParts().push_back(chunk);
+                }
+
+                // record mismatch or gap
+                CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
+                _ASSERT(hsp_edits->edits[i].query_base != kGap ||
+                        hsp_edits->edits[i].subject_base != kGap);
+
+                if (hsp_edits->edits[i].query_base == kGap) {
+                    chunk->SetGenomic_ins(1);
+                    subject_pos++;
+                }
+                else if (hsp_edits->edits[i].subject_base == kGap) {
+                    chunk->SetProduct_ins(1);
+                    query_pos++;
+                }
+                else {
+                    chunk->SetMismatch(1);
+                    query_pos++;
+                    subject_pos++;
+                }
+
+                exon->SetParts().push_back(chunk);
+            }
+
+            num_matches = MAX(hh->hsp->query.end - query_pos, 0);
+            _ASSERT(hh->hsp->query.end - query_pos >= -1);
+            // an HSP may end with a mismatch or a gap, if a splice signal was
+            // found and HSP extent was updated (mapping reads to a genome)
             _ASSERT(num_matches >= 0);
             if (num_matches > 0) {
-                // record number of matches
                 CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
                 chunk->SetMatch(num_matches);
                 exon->SetParts().push_back(chunk);
             }
-
-            // record mismatch or gap
-            CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
-            _ASSERT(hsp_edits->edits[i].query_base != kGap ||
-                    hsp_edits->edits[i].subject_base != kGap);
-
-            if (hsp_edits->edits[i].query_base == kGap) {
-                chunk->SetGenomic_ins(1);
-                subject_pos++;
-            }
-            else if (hsp_edits->edits[i].subject_base == kGap) {
-                chunk->SetProduct_ins(1);
-                query_pos++;
-            }
-            else {
-                chunk->SetMismatch(1);
-                query_pos++;
-                subject_pos++;
-            }
-
-            exon->SetParts().push_back(chunk);
         }
 
-        num_matches = MAX(hsp->query.end - query_pos, 0);
-        _ASSERT(hsp->query.end - query_pos >= -1);
-        // an HSP may end with a mismatch or a gap, if a splice signal was
-        // found and HSP extent was updated (mapping reads to a genome)
-        _ASSERT(num_matches >= 0);
-        if (num_matches > 0) {
-            CRef<CSpliced_exon_chunk> chunk(new CSpliced_exon_chunk);
-            chunk->SetMatch(num_matches);
-            exon->SetParts().push_back(chunk);
-        }
+#if _DEBUG
+        s_ValidateExon(*exon, *product_id, *genomic_id);
+#endif
+
 
         exons.push_back(exon);
+        h = last_h;
     }
 
 #if _DEBUG

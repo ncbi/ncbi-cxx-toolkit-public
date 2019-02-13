@@ -2947,16 +2947,6 @@ GapEditScript* GapEditScriptCombine(GapEditScript** edit_script_ptr,
 int JumperFindSpliceSignals(BlastHSP* hsp, Int4 query_len,
                             const Uint1* subject, Int4 subject_len)
 {
-    Uint1 signals[NUM_SIGNALS] = {1, /* AC */
-                                  2, /* AG */
-                                  4, /* CA */
-                                  7, /* CT */
-                                  8, /* GA */
-                                  11, /* GT */
-                                  13, /* TC */
-                                  14 /* TG */ };
-
-
     if (!hsp || !subject) {
         return -1;
     }
@@ -2965,41 +2955,23 @@ int JumperFindSpliceSignals(BlastHSP* hsp, Int4 query_len,
         hsp->map_info->left_edge = MAPPER_EXON;
     }
     else {
-        int k;
         hsp->map_info->left_edge =
             (UNPACK_BASE(subject, hsp->subject.offset - 2) << 2) |
             UNPACK_BASE(subject, hsp->subject.offset - 1);
-
-        for (k = 0;k < NUM_SIGNALS;k++) {
-            if (hsp->map_info->left_edge == signals[k]) {
-                hsp->map_info->left_edge |= MAPPER_SPLICE_SIGNAL;
-                break;
-            }
-        }
     }
 
     if (hsp->query.end == query_len || hsp->subject.end == subject_len) {
         hsp->map_info->right_edge = MAPPER_EXON;
     }
     else {
-        int k;
         hsp->map_info->right_edge =
             (UNPACK_BASE(subject, hsp->subject.end) << 2) |
             UNPACK_BASE(subject, hsp->subject.end + 1);
-
-        for (k = 0;k < NUM_SIGNALS;k++) {
-            if (hsp->map_info->right_edge == signals[k]) {
-                hsp->map_info->right_edge |= MAPPER_SPLICE_SIGNAL;
-                break;
-            }
-        }
     }
 
     return 0;
 }
 
-
-#define MAX_SUBJECT_OVERHANG 30
 
 SequenceOverhangs* SequenceOverhangsFree(SequenceOverhangs* overhangs)
 {
@@ -3025,6 +2997,7 @@ static Int4 s_SaveSubjectOverhangs(BlastHSP* hsp, Uint1* subject,
 {
     SequenceOverhangs* overhangs = NULL;
     const Int4 kMinOverhangLength = 0;
+    const Int4 kMaxSubjectOverhang = query_len < 400 ? 30 : 60;
 
     if (hsp->query.offset < kMinOverhangLength &&
         query_len - hsp->query.end < kMinOverhangLength) {
@@ -3041,7 +3014,7 @@ static Int4 s_SaveSubjectOverhangs(BlastHSP* hsp, Uint1* subject,
         Int4 i;
         /* at least two subject bases are needed for the search for splice
            signals */
-        Int4 len = MIN(MAX(hsp->query.offset, 2), MAX_SUBJECT_OVERHANG);
+        Int4 len = MIN(MAX(hsp->query.offset, 2), kMaxSubjectOverhang);
         Uint1* overhang = calloc(len, sizeof(Uint1));
         if (!overhang) {
             SequenceOverhangsFree(overhangs);
@@ -3060,7 +3033,7 @@ static Int4 s_SaveSubjectOverhangs(BlastHSP* hsp, Uint1* subject,
     if (hsp->query.end <= query_len - kMinOverhangLength) {
         Int4 i;
         Int4 len =
-            MIN(MAX(query_len - hsp->query.end + 1, 2), MAX_SUBJECT_OVERHANG);
+            MIN(MAX(query_len - hsp->query.end + 1, 2), kMaxSubjectOverhang);
         Uint1* overhang = calloc(len, sizeof(Uint1));
         if (!overhang) {
             SequenceOverhangsFree(overhangs);
@@ -4590,6 +4563,9 @@ Int4 GetCutoffScore(Int4 query_length)
     else if (query_length <= 50) {
         return query_length - 10;
     }
+    else if (query_length < 200) {
+        return (Int4)(0.6 * query_length);
+    }
 
-    return 40;
+    return 120;
 }

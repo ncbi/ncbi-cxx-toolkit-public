@@ -227,18 +227,10 @@ static void s_ComputeBtopAndIdentity(const HSPChain* chain,
             int query_gap = hsp->query.offset - prev->query.end;
             if (query_gap > 0) {
                 btop += (string)"_" + NStr::IntToString(query_gap) + "_";
+                len += hsp->query.offset - prev->query.end;
             }
             else if (query_gap < 0) {
                 btop += (string)"(" + NStr::IntToString(-query_gap) + ")";
-            }
-
-            // gap in query on exon edge
-            if (hsp->query.offset > prev->query.end) {
-                btop += (string)"_" +
-                    NStr::IntToString(hsp->query.offset - prev->query.end) +
-                    "_";
-
-                len += hsp->query.offset - prev->query.end;
             }
         }
 
