@@ -65,9 +65,11 @@ USING_NCBI_SCOPE;
 
 static void s_TestMisc(void)
 {
-    // Print current time
+    // Get current time
     {{
-        CTime t(CTime::eCurrent);
+        CTime t0(CTime::eCurrent);
+        CCurrentTime t1;
+        assert(CTimeSpan(t1-t0).GetAsDouble() <= 1);
     }}
 
     // Month and Day name<->num conversion
@@ -1000,8 +1002,10 @@ static void s_TestUTC(void)
         assert(t1.AsString() == "03/12/2001 11:22:33 UTC");
 
         // Current time
-        CTime cur_tl(CTime::eCurrent, CTime::eLocal);
-        CTime cur_tu(CTime::eCurrent, CTime::eUTC);
+        CTime        tl(CTime::eCurrent, CTime::eLocal);
+        CTime        tu(CTime::eCurrent, CTime::eUTC);
+        CCurrentTime cl(CTime::eLocal);
+        CCurrentTime cu(CTime::eUTC);
     }}
     //------------------------------------------------------------------------
     // Process timezone string

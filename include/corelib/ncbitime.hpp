@@ -286,13 +286,15 @@ private:
 ///
 /// NOTE: Do not use local time with time span and dates < "1/1/1900"
 /// (use universal time only!!!).
+/// 
+/// @sa CCurrentTime, CTimeSpan
 
 class NCBI_XNCBI_EXPORT CTime
 {
 public:
     /// Which initial value to use for time.
     enum EInitMode {
-        eCurrent,     ///< Use current time
+        eCurrent,     ///< Use current time. See also CCurrentTime.
         eEmpty        ///< Use "empty" time
     };
 
@@ -1261,6 +1263,37 @@ private:
     friend class CFastLocalTime;
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCurrentTime --
+///
+/// Defines a wrapper for CTime class to represent a current time.
+///
+/// Getting current time is one of the most used operation with CTime,
+/// this wrapper allow to do it a bit easier and have cleaner code.
+/// If necessary, it allow to use any other CTime methods.
+///
+/// @sa CTime
+
+class NCBI_XNCBI_EXPORT CCurrentTime : public CTime
+{
+public:
+    /// Constructor.
+    ///
+    /// @param tz
+    ///   Whether to use local time (default, CTime::eLocal) or Universal Coordinated Time (CTime::eUTC).
+    CCurrentTime(ETimeZone tz = eLocal) 
+        : CTime(eCurrent, tz)
+    {};
+
+    /// Update current time.
+    CCurrentTime& Update(void)
+    {
+        SetCurrent();
+        return *this;
+    };
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
