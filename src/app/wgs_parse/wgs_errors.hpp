@@ -242,10 +242,13 @@ namespace wgsparse
 class CWgsParseDiagHandler : public ncbi::CDiagHandler
 {
 public:
+    CWgsParseDiagHandler();
+    ~CWgsParseDiagHandler();
+
+    CWgsParseDiagHandler(const CWgsParseDiagHandler&) = delete;
+    CWgsParseDiagHandler& operator=(const CWgsParseDiagHandler&) = delete;
+
     virtual void Post(const ncbi::SDiagMessage& mess);
-
-    static CWgsParseDiagHandler& GetWgsParseDiagHandler();
-
 };
 
 }

@@ -1502,10 +1502,7 @@ static const int ERROR_RET = 1;
 int CWGSParseApp::Run(void)
 {
     int ret = 0;
-
-    //SetDiagPostPrefix("wgsparse"); // TODO for the future use
-    SetDiagHandler(&CWgsParseDiagHandler::GetWgsParseDiagHandler(), false);
-    IgnoreDiagDieLevel(true);
+    CWgsParseDiagHandler diag_handler;
 
     if (SetParams(GetArgs())) {
 
