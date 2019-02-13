@@ -1115,6 +1115,10 @@ void CMultiReaderApp::xProcessAlignment(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
+    CFastaReader::TFlags fFlags = 0;
+    if( args["parse-mods"] ) {
+        fFlags |= CFastaReader::fAddMods;
+    }
     CAlnReader reader(istr);
     reader.SetAllGap(args["aln-gapchar"].AsString());
     reader.SetMissing(args["aln-missing"].AsString());
@@ -1125,7 +1129,7 @@ void CMultiReaderApp::xProcessAlignment(
     reader.SetUseNexusInfo(!args["ignore-nexus-info"]);
     try {
         reader.Read(false, args["force-local-ids"], m_pErrors.get());
-        CRef<CSeq_entry> pEntry = reader.GetSeqEntry();
+        CRef<CSeq_entry> pEntry = reader.GetSeqEntry(fFlags, m_pErrors.get());
         xWriteObject(args, *pEntry, ostr);
     }
     catch (...) {
