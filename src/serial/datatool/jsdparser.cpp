@@ -547,6 +547,8 @@ void JSDParser::SkipUnknown(TToken tokend)
             SkipUnknown(K_END_ARRAY);
         } else if (tok == K_BEGIN_OBJECT) {
             SkipUnknown(K_END_OBJECT);
+        } else if (tok == T_EOF) {
+            ParseError("Unexpected end-of-file", tokend == K_END_ARRAY ? "end-of-array" : "end-of-object");
         }
     }
 }
