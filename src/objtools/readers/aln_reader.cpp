@@ -127,58 +127,6 @@ static char * ALIGNMENT_CALLBACK s_ReadLine(void *user_data)
     return strdup(s.c_str());
 }
 
-
-bool ALIGNMENT_CALLBACK 
-sReadLine(
-    istream& istr,
-    string& line)
-{
-    if (!istr  || istr.eof()) {
-        return false;
-    }
-    NcbiGetline(istr, line, "\r\n");
-    return true;
-}
-
-
-static void ALIGNMENT_CALLBACK s_ReportError(
-    const CErrorInfo& err,
-    void *user_data)
-{
-    CAlnReader::TErrorList *err_list;
-   
-    const int category_BadData = 2;
-    const int category_BadChar = 4;
-
-    if (user_data != NULL) {
-        err_list = (CAlnReader::TErrorList *)user_data;
-        int category = err.Category();
-        string err_msg = err.Message();
-        if ( (category == category_BadData) &&
-                (err_msg.find("bad char") != string::npos) ) {
-            category = category_BadChar;
-        }
-        (*err_list).push_back (
-            CAlnError(category, err.LineNumber(), err.Id(), err_msg));
-    }
-        
-    string msg = "Error reading alignment file";
-    if (err.LineNumber() != CErrorInfo::NO_LINE_NUMBER) {
-        msg += " at line " + NStr::IntToString(err.LineNumber());
-    }
-    if (!err.Message().empty()) {
-        msg += ":  ";
-        msg += err.Message();
-    }
-
-    if (err.Category() == eAlnErr_Fatal) {
-        LOG_POST_X(1, Error << msg);
-    } else {
-        LOG_POST_X(1, Info << msg);
-    }
-}
-
-
 CAlnReader::~CAlnReader()
 {
 }
@@ -289,7 +237,7 @@ void CAlnReader::Read(
     m_Errors.clear();
     SAlignmentFile alignmentInfo;
     bool allClear = ReadAlignmentFile(
-        m_IS, sReadLine, generate_local_ids, m_UseNexusInfo, 
+        m_IS, generate_local_ids, m_UseNexusInfo, 
         sequenceInfo, alignmentInfo,
         pErrorListener);
 

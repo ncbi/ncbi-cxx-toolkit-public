@@ -402,7 +402,7 @@ using TAlignRawFilePtr = SAlignFileRaw*;
 /* Function declarations
  */
 static bool s_AfrpInitLineData( 
-    TAlignRawFilePtr afrp, FLineReader readfunc, istream&);
+    TAlignRawFilePtr, istream&);
 static void s_AfrpProcessFastaGap(
     TAlignRawFilePtr afrp, TLengthListPtr * patterns, bool * last_line_was_marked_id, char* plinestr, int overall_line_count);
 
@@ -726,6 +726,20 @@ s_ReportUnusedLine(
         eAlnErr_BadFormat,
         errMessage,
         pEl);
+}
+
+//  Extract a single line from the given stream.
+//  Returns false if it is not possible to extract anything.
+bool
+sReadLine(
+    istream& istr,
+    string& line)
+{
+    if (!istr  || istr.eof()) {
+        return false;
+    }
+    NcbiGetline(istr, line, "\r\n");
+    return true;
 }
 
 
@@ -2216,13 +2230,12 @@ s_FindInterleavedBlocks(
 static bool
 s_AfrpInitLineData(
     TAlignRawFilePtr afrp,
-    FLineReader readfunc,
     istream& istr)
 {
     int overall_line_count = 0;
     bool in_taxa_comment = false;
     string linestring;
-    bool dataAvailable = readfunc(istr, linestring);
+    bool dataAvailable = sReadLine(istr, linestring);
     TLineInfoPtr last_line = nullptr, next_line = nullptr;
 
     if (s_IsASN1 (linestring)) {
@@ -2253,7 +2266,7 @@ s_AfrpInitLineData(
         }
         last_line = next_line;
 
-        dataAvailable = readfunc(istr, linestring);
+        dataAvailable = sReadLine(istr, linestring);
         if (dataAvailable) {
             overall_line_count ++;
         }
@@ -2340,7 +2353,6 @@ s_AfrpProcessFastaGap(
 static TAlignRawFilePtr
 sReadAlignFileRaw(
     istream& istr,
-    FLineReader readfunc,
     bool use_nexus_file_info,
     CSequenceInfo& sequence_info,
     EAlignFormat* pformat,
@@ -2361,15 +2373,11 @@ sReadAlignFileRaw(
     bool                     last_line_was_marked_id = false;
     TLineInfoPtr             next_line;
 
-    if (!readfunc) {
-        return nullptr;
-    }
-
     afrp = new SAlignFileRaw(pErrorListener);
 
     afrp->alphabet_ = sequence_info.Alphabet();
 
-    if (!s_AfrpInitLineData(afrp, readfunc, istr)) {
+    if (!s_AfrpInitLineData(afrp, istr)) {
         delete afrp;
         return nullptr;
     }
@@ -4172,7 +4180,6 @@ s_ConvertDataToOutput(
 bool 
 ReadAlignmentFile(
     istream& istr,
-    FLineReader readfunc,
     bool gen_local_ids,
     bool use_nexus_info,
     CSequenceInfo& sequence_info,
@@ -4187,7 +4194,7 @@ ReadAlignmentFile(
     }
 
     afrp = sReadAlignFileRaw ( 
-        istr, readfunc, use_nexus_info, sequence_info, &format, pErrorListener);
+        istr, use_nexus_info, sequence_info, &format, pErrorListener);
     if (!afrp) {
         return false;
     }

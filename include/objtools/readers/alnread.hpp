@@ -42,55 +42,17 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-using FLineReader = bool (ALIGNMENT_CALLBACK *)(istream&, string&);
-
 class ncbi::objects::ILineErrorListener;
 
-typedef enum {
+//  ============================================================================
+enum EAlnErr{
+//  ============================================================================
     eAlnErr_Unknown = -1,
     eAlnErr_NoError = 0,
     eAlnErr_Fatal,
     eAlnErr_BadData,
     eAlnErr_BadFormat
-} EAlnErr;
-
-//  =====================================================================
-class CErrorInfo
-//  =====================================================================
-{
-public:
-    static const int NO_LINE_NUMBER = -1;
-
-    CErrorInfo(
-        EAlnErr category = eAlnErr_Unknown,
-        int lineNumber = NO_LINE_NUMBER,
-        const string& id = "",
-        const string& message = ""):
-        mCategory(category),
-        mLineNumber(lineNumber),
-        mId(id),
-        mMessage(message)
-    {};
-
-    string
-    Message() const { return mMessage; };
-
-    string
-    Id() const { return mId; };
-
-    int
-    LineNumber() const { return mLineNumber; };
-
-    EAlnErr
-    Category() const { return mCategory; };
-
-protected:
-    EAlnErr mCategory;
-    int mLineNumber;
-    string mId;
-    string mMessage;
 };
-using FReportErrorFunction = void (ALIGNMENT_CALLBACK *)(const CErrorInfo&, void*);
 
 //  =============================================================================
 class CSequenceInfo {
@@ -186,7 +148,6 @@ public:
 NCBI_XOBJREAD_EXPORT 
 bool ReadAlignmentFile(
     istream& istr,
-    FLineReader readfunc,
     bool gen_local_ids,
     bool use_nexus_info,
     CSequenceInfo& sequence_info,
