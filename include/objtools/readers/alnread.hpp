@@ -40,8 +40,11 @@
 #endif
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects);
 
 using FLineReader = bool (ALIGNMENT_CALLBACK *)(istream&, string&);
+
+class ncbi::objects::ILineErrorListener;
 
 typedef enum {
     eAlnErr_Unknown = -1,
@@ -182,25 +185,15 @@ public:
 
 NCBI_XOBJREAD_EXPORT 
 bool ReadAlignmentFile(
-  FLineReader    readfunc,      /* function for reading lines of 
-                                       * alignment file
-                                       */
-    istream& istr,  // file object for readfunc to operate on
-  FReportErrorFunction errfunc,       /* function for reporting errors */
-  void *               erroruserdata, /* data to be passed back each time
-                                       * errfunc is invoked
-                                       */
-  CSequenceInfo&       sequence_info, /* structure containing sequence
-                                       * alphabet and special characters
-                                       */
-  bool                gen_local_ids,  /* flag indicating whether input IDs
-                                       * should be replaced with unique
-                                       * local IDs
-                                       */ 
-    bool use_nexus_info, //make use of char definitions in NEXUS format directive
-    SAlignmentFile& alignmentInfo
-);
+    istream& istr,
+    FLineReader readfunc,
+    bool gen_local_ids,
+    bool use_nexus_info,
+    CSequenceInfo& sequence_info,
+    SAlignmentFile& alignmentInfo,
+    ILineErrorListener* pErrorListener=nullptr);
 
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif // _ALNREAD_HPP_

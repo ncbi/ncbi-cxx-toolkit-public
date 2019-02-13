@@ -1,32 +1,20 @@
 Line No    : 18
 Severity   : Error
-Message    : At ID '' in category '3' at line 18: Line 18 could not be assigned to an interleaved block'
-
-Line No    : 18
-Severity   : Error
-Message    : At ID '' in category '3' at line 18: Contents of unused line: BEGIN DATA;'
+Message    : Line 18 could not be assigned to an interleaved block
+             Contents of unused line: BEGIN DATA;
 
 Line No    : 19
 Severity   : Error
-Message    : At ID '' in category '3' at line 19: Line 19 could not be assigned to an interleaved block'
-
-Line No    : 19
-Severity   : Error
-Message    : At ID '' in category '3' at line 19: Contents of unused line: Dimensions NTax=5 NChar=48;'
+Message    : Line 19 could not be assigned to an interleaved block
+             Contents of unused line: Dimensions NTax=5 NChar=48;
 
 Line No    : 20
 Severity   : Error
-Message    : At ID '' in category '3' at line 20: Line 20 could not be assigned to an interleaved block'
-
-Line No    : 20
-Severity   : Error
-Message    : At ID '' in category '3' at line 20: Contents of unused line: Format DataType-DNA Interleave=yes Gap =- Missing=?;'
+Message    : Line 20 could not be assigned to an interleaved block
+             Contents of unused line: Format DataType-DNA Interleave=yes Gap =- Missing=?;
 
 Line No    : 21
 Severity   : Error
-Message    : At ID '' in category '3' at line 21: Line 21 could not be assigned to an interleaved block'
-
-Line No    : 21
-Severity   : Error
-Message    : At ID '' in category '3' at line 21: Contents of unused line: Matrix'
+Message    : Line 21 could not be assigned to an interleaved block
+             Contents of unused line: Matrix
 

@@ -57,10 +57,23 @@ public:
         const ILineError& err ) 
     {
         StoreError(err);
-
-        mStream << "Line No    : " << err.Line() << endl;
+        if (err.Line() == 0) { 
+            mStream << "Line No    : " 
+                    << "None (Encountered during pre or post processing)" << endl;
+        }
+        else {
+            mStream << "Line No    : " << err.Line() << endl;
+        }
         mStream << "Severity   : " << err.SeverityStr() << endl;
-        mStream << "Message    : " << err.Message() << endl;
+
+        vector<string> messageLines;
+        NStr::Split(err.Message(), "\n", messageLines);
+        if (!messageLines.empty()) {
+            mStream << "Message    : " << messageLines.front() << endl;
+            for (auto i=1; i < messageLines.size(); ++i) {
+                mStream << "             " << messageLines[i] << endl;
+            }
+        }
         mStream << endl;
 
         if (Count() < 500000  &&  err.Severity() != eDiag_Fatal) {

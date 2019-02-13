@@ -1,8 +1,8 @@
-Line No    : 0
+Line No    : None (Encountered during pre or post processing)
 Severity   : Error
-Message    : At ID '' in category '2': This is an ASN.1 file which cannot be read by this function'
+Message    : This is an ASN.1 file which cannot be read by this function
 
-Line No    : 0
+Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal
 Message    : Error reading alignment: Invalid input or alphabet
 

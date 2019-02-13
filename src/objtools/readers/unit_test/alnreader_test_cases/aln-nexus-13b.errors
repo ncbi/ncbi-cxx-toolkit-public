@@ -1,28 +1,28 @@
 Line No    : 7
 Severity   : Error
-Message    : At ID 'MATRIX' in category '3' at line 7: Expected line length 48, actual length 4'
+Message    : At ID 'MATRIX': Expected line length 48, actual length 4
 
 Line No    : 8
 Severity   : Error
-Message    : At ID '--GCAAGCATGCATGCAAAATTTTGCGGCCCATGCATG--ATGCATGC' in category '3' at line 8: Expected line length 48, actual length 4'
+Message    : At ID '--GCAAGCATGCATGCAAAATTTTGCGGCCCATGCATG--ATGCATGC': Expected line length 48, actual length 4
 
 Line No    : 9
 Severity   : Error
-Message    : At ID 'AT--ATGGATGCATGCAAAATTTTGGGCCCCATGCATGCC--GCATGC' in category '3' at line 9: Expected line length 48, actual length 4'
+Message    : At ID 'AT--ATGGATGCATGCAAAATTTTGGGCCCCATGCATGCC--GCATGC': Expected line length 48, actual length 4
 
 Line No    : 10
 Severity   : Error
-Message    : At ID 'ATGC--GCAAGCATGCAAAATTTTGGGGCGCATGCATGCCAT--ATGC' in category '3' at line 10: Expected line length 48, actual length 4'
+Message    : At ID 'ATGC--GCAAGCATGCAAAATTTTGGGGCGCATGCATGCCAT--ATGC': Expected line length 48, actual length 4
 
 Line No    : 11
 Severity   : Error
-Message    : At ID 'ATGCAT--ATGGATGCAAAATTTTGGGGCCCTTGCATGCCATGC--G' in category '3' at line 11: Expected 0 lines in block, found 0'
+Message    : At ID 'ATGCAT--ATGGATGCAAAATTTTGGGGCCCTTGCATGCCATGC--G': Expected 0 lines in block, found 0
 
 Line No    : 8
 Severity   : Error
-Message    : At ID 'MATRIX' in category '4' at line 8: 1 bad characters (1) found at position 3 (expect only end gap characters here).'
+Message    : At ID 'MATRIX': 1 bad characters (1) found at position 3 (expect only end gap characters here).
 
-Line No    : 0
+Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal
 Message    : Error reading alignment: Invalid input or alphabet
 

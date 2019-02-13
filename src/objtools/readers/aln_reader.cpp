@@ -288,24 +288,10 @@ void CAlnReader::Read(
     // read the alignment stream
     m_Errors.clear();
     SAlignmentFile alignmentInfo;
-    bool allClear = ReadAlignmentFile(sReadLine, m_IS,
-                            s_ReportError, &(m_Errors), sequenceInfo,
-                            generate_local_ids,
-                            m_UseNexusInfo,
-                            alignmentInfo);
-
-    // report any errors through proper channels:
-    if (pErrorListener) {
-        for (const auto& error : GetErrorList()) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
-                    eDiag_Error,
-                    (error.GetLineNum() == -1 ? 0 : error.GetLineNum()),
-                    sAlnErrorToString(error),
-                    ILineError::eProblem_GeneralParsingError));
-            pErrorListener->PutError(*pErr);
-        }
-    }
+    bool allClear = ReadAlignmentFile(
+        m_IS, sReadLine, generate_local_ids, m_UseNexusInfo, 
+        sequenceInfo, alignmentInfo,
+        pErrorListener);
 
     if (!allClear) {
         sReportError(

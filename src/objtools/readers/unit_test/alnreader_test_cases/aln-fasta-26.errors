@@ -1,12 +1,12 @@
 Line No    : 12
 Severity   : Error
-Message    : At ID '>seq3 gene COX[org=animal 3]' in category '3' at line 12: Expected line length 8, actual length 7'
+Message    : At ID '>seq3 gene COX[org=animal 3]': Expected line length 8, actual length 7
 
-Line No    : 0
+Line No    : None (Encountered during pre or post processing)
 Severity   : Error
-Message    : At ID 'seq3' in category '3': Expected sequence length 48, actual length 47'
+Message    : At ID 'seq3': Expected sequence length 48, actual length 47
 
-Line No    : 0
+Line No    : None (Encountered during pre or post processing)
 Severity   : Fatal
 Message    : Error reading alignment: Invalid input or alphabet
 

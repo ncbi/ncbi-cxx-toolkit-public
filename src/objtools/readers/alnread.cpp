@@ -31,21 +31,13 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/alnread.hpp>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-
-#ifdef _MSC_VER
-#define strdup _strdup
-#endif
 
 BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects);
 
 static const size_t kMaxPrintedIntLen = 10;
-static const size_t  kMaxPrintedIntLenPlusOne = 11;
-
 
 /*  ---------------------------------------------------------------------- */
 typedef enum {
@@ -376,11 +368,12 @@ using TAlignRawSeqPtr = SAlignRawSeq*;
 //  ============================================================================
 struct SAlignFileRaw {
 //  ============================================================================
-    SAlignFileRaw():
+    SAlignFileRaw(
+        ILineErrorListener* pEl):
         marked_ids(false), line_list(nullptr),
         deflines(nullptr), num_deflines(0), block_size(0), 
-        offset_list(nullptr), sequences(nullptr), report_error(nullptr),
-        report_error_userdata(nullptr), alphabet_(""), expected_num_sequence(0),
+        offset_list(nullptr), sequences(nullptr), mpErrorListener(pEl),
+        alphabet_(""), expected_num_sequence(0),
         expected_sequence_len(0), align_format_found(false)
     {};
 
@@ -398,8 +391,7 @@ struct SAlignFileRaw {
     bool                 marked_ids;
     int                  block_size;
     TIntLinkPtr          offset_list;
-    FReportErrorFunction report_error;
-    void *               report_error_userdata;
+    ILineErrorListener*  mpErrorListener;
     string               alphabet_;
     int                  expected_num_sequence;
     int                  expected_sequence_len;
@@ -426,21 +418,45 @@ string StrPrintf(const char *format, ...)
 }
 
 //  ============================================================================
+string
+sMakeErrorMessage(
+    const string& id,
+    const string& description)
+//  ============================================================================
+{
+    if (id.empty()) {
+        return description;
+    }
+    else {
+        const char* format = "At ID \'%s\': %s";
+        return StrPrintf(format, id.c_str(), description.c_str());
+    }
+}
+
+//  ============================================================================
 void
 sReportError(
     const string& id,
     int lineNumber,
     EAlnErr errCode,
-    const string& errMessage,
-    FReportErrorFunction errReporter,
-    void* errUserData)
+    const string& description,
+    ILineErrorListener* pEl)
 //  ============================================================================
 {
-    if (!errReporter) {
-        return;
+    if (!pEl) {
+        NCBI_THROW2(CObjReaderParseException, eFormat, description, 0);
     }
-    CErrorInfo errorInfo(errCode, lineNumber, id, errMessage);
-    errReporter(errorInfo, errUserData);
+    if (lineNumber == -1) {
+        lineNumber = 0;
+    }
+    string message = sMakeErrorMessage(id, description);;
+    AutoPtr<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
+            EDiagSev::eDiag_Error,
+            lineNumber,
+            message,
+            ILineError::eProblem_GeneralParsingError));
+    pEl->PutError(*pErr);
 }
 
 /* This function creates and sends an error message regarding a character
@@ -454,8 +470,7 @@ s_ReportBadCharError(
     int offset,
     int line_number,
     const char* reason,
-    FReportErrorFunction errfunc,
-    void* errdata)
+    ILineErrorListener* pEl)
 {
     const char * errFormat = "%d bad characters (%c) found at position %d (%s).";
     string errMessage = StrPrintf(errFormat, num_bad, bad_char, offset, reason);
@@ -465,8 +480,7 @@ s_ReportBadCharError(
         line_number,
         eAlnErr_BadData,
         errMessage,
-        errfunc,
-        errdata);
+        pEl);
 }
  
 
@@ -477,16 +491,14 @@ static void
 s_ReportInconsistentID(
     const string& id,
     int line_number,
-    FReportErrorFunction report_error,
-    void* report_error_userdata)
+    ILineErrorListener* pEl)
 {
     sReportError(
         id,
         line_number,
         eAlnErr_BadFormat,
         "Found unexpected ID",
-        report_error,
-        report_error_userdata);
+        pEl);
 }
 
 
@@ -497,16 +509,14 @@ static void
 s_ReportInconsistentBlockLine(
     char* id,
     int line_number,
-    FReportErrorFunction report_error,
-    void* report_error_userdata)
+    ILineErrorListener* pEl)
 {
     sReportError(
         id,
         line_number,
         eAlnErr_BadFormat,
         "Inconsistent block line formatting",
-        report_error,
-        report_error_userdata);
+        pEl);
 }
 
 
@@ -518,8 +528,7 @@ s_ReportLineLengthError(
     char* id,
     TLineInfoPtr lip,
     int expected_length,
-    FReportErrorFunction report_error,
-    void* report_error_userdata)
+    ILineErrorListener* pEl)
 {
     if (!lip) {
         return;
@@ -534,8 +543,7 @@ s_ReportLineLengthError(
         lip->line_num,
         eAlnErr_BadFormat,
         errMessage,
-        report_error,
-        report_error_userdata);
+        pEl);
 }
 
 
@@ -548,8 +556,7 @@ s_ReportBlockLengthError(
     int line_num,
     int expected_num,
     int actual_num,
-    FReportErrorFunction report_error,
-    void* report_error_userdata)
+    ILineErrorListener* pEl)
 {
     const char* errFormat = "Expected %d lines in block, found %d";
     string errMessage = StrPrintf(errFormat, expected_num, actual_num);
@@ -559,8 +566,7 @@ s_ReportBlockLengthError(
         line_num,
         eAlnErr_BadFormat,
         errMessage,
-        report_error,
-        report_error_userdata);
+        pEl);
 }
 
 
@@ -571,16 +577,14 @@ static void
 s_ReportDuplicateIDError(
     const string& id,
     int line_num,
-    FReportErrorFunction report_error,
-    void* report_error_userdata)
+    ILineErrorListener* pEl)
 {
     sReportError(
         id,
         line_num,
         eAlnErr_BadData,
         "Duplicate ID!  Sequences will be concatenated!",
-        report_error,
-        report_error_userdata);
+        pEl);
 }
 
 
@@ -590,16 +594,14 @@ s_ReportDuplicateIDError(
 static void
 s_ReportMissingSequenceData(
     const char* id,
-    FReportErrorFunction report_error,
-    void* report_error_userdata)
+    ILineErrorListener* pEl)
 {
     sReportError(
         id,
         -1,
         eAlnErr_Fatal,
         "No data found",
-        report_error,
-        report_error_userdata);
+        pEl);
 }
 
 
@@ -612,8 +614,7 @@ s_ReportBadSequenceLength(
     const char* id,
     int expected_length,
     int actual_length,
-    FReportErrorFunction report_error,
-    void* report_error_userdata)
+    ILineErrorListener* pEl)
 {
     const char*  errFormat = "Expected sequence length %d, actual length %d";
     string errMessage = StrPrintf(errFormat, expected_length, actual_length);
@@ -623,8 +624,7 @@ s_ReportBadSequenceLength(
         -1,
         eAlnErr_BadFormat,
         errMessage,
-        report_error,
-        report_error_userdata);
+        pEl);
 }
 
 
@@ -635,8 +635,7 @@ static void
 s_ReportIncorrectNumberOfSequences(
     int num_expected,
     int num_found,
-    FReportErrorFunction report_error,
-    void* report_error_userdata)
+    ILineErrorListener* pEl)
 {
     const char*  errFormat = "Expected %d sequences, found %d";
     string errMessage = StrPrintf(errFormat, num_expected, num_found);
@@ -646,8 +645,7 @@ s_ReportIncorrectNumberOfSequences(
         -1,
         eAlnErr_BadFormat,
         errMessage,
-        report_error,
-        report_error_userdata);
+        pEl);
 }
 
 
@@ -655,8 +653,7 @@ static void
 s_ReportIncorrectSequenceLength(
     int len_expected,
     int len_found,
-    FReportErrorFunction report_error,
-    void* report_error_userdata)
+    ILineErrorListener* pEl)
 {
     const char*  errFormat = "Expected sequences of length %d, found %d";
     string errMessage = StrPrintf(errFormat, len_expected, len_found);
@@ -666,8 +663,7 @@ s_ReportIncorrectSequenceLength(
         -1,
         eAlnErr_BadFormat,
         errMessage,
-        report_error,
-        report_error_userdata);
+        pEl);
 }
 
 
@@ -676,16 +672,14 @@ s_ReportIncorrectSequenceLength(
  */
 static void 
 s_ReportASN1Error(
-    FReportErrorFunction errfunc,
-    void* errdata)
+    ILineErrorListener* pEl)
 {
     sReportError(
         "",
         -1,
         eAlnErr_BadData,
         "This is an ASN.1 file which cannot be read by this function",
-        errfunc,
-        errdata);
+        pEl);
 }
 
 
@@ -697,53 +691,41 @@ s_ReportUnusedLine(
     int line_num_start,
     int line_num_stop,
     TLineInfoPtr line_val,
-    FReportErrorFunction errfunc,
-    void* errdata)
+    ILineErrorListener* pEl)
 {
     const char * errFormat1 = "Line %d could not be assigned to an interleaved block";
     const char * errFormat2 = "Lines %d through %d could not be assigned to an interleaved block";
     const char * errFormat3 = "Contents of unused line: %s";
     int skip;
 
-    if (!line_val) {
+    if (!pEl  ||  !line_val) {
         return;
     }
 
     if (line_num_start == line_num_stop) {
         string errMessage = StrPrintf(errFormat1, line_num_start);
+        errMessage += "\n" + StrPrintf(errFormat3, line_val->data);
         sReportError(
             "",
             line_num_start,
             eAlnErr_BadFormat,
             errMessage,
-            errfunc,
-            errdata);
-    } else {
-        string errMessage = StrPrintf(errFormat2, line_num_start, line_num_stop);
-        sReportError(
-            "",
-            line_num_start,
-            eAlnErr_BadFormat,
-            errMessage,
-            errfunc,
-            errdata);
+            pEl);
+        return;
     }
-
-    /* report contents of unused lines */
+    string errMessage = StrPrintf(errFormat2, line_num_start, line_num_stop);
     for (skip = line_num_start; skip < line_num_stop + 1  &&  line_val != nullptr; skip++) {
         if (!line_val->data) {
             continue;
         }
-        string errMessage = StrPrintf(errFormat3, line_val->data);
-        sReportError(
-            "",
-            line_num_start,
-            eAlnErr_BadFormat,
-            errMessage,
-            errfunc,
-            errdata);
-        line_val = line_val->next;
+        errMessage += "\n" + StrPrintf(errFormat3, line_val->data);
     }
+    sReportError(
+        "",
+        line_num_start,
+        eAlnErr_BadFormat,
+        errMessage,
+        pEl);
 }
 
 
@@ -1373,7 +1355,7 @@ s_GetOneNexusSizeComment(
     const char * valname, 
     int        * val)
 {
-    char   buf[kMaxPrintedIntLenPlusOne];
+    char   buf[kMaxPrintedIntLen+1];
     const char * cpstart;
     const char * cpend;
     size_t maxlen;
@@ -1488,9 +1470,7 @@ static char GetNexusTypechar(
  */ 
 static bool s_IgnoreNexusCharInfo(
     const string& str,
-    const CSequenceInfo& sequence_info,
-    FReportErrorFunction errfunc,
-    void* errdata)
+    const CSequenceInfo& sequence_info)
 {
     string normalized(str);
     NStr::ToLower(normalized);
@@ -2149,8 +2129,7 @@ s_FindUnusedLines(
             s_ReportUnusedLine (line_counter,
                                 line_counter + llp->num_appearances - 1,
                                 line_val,
-                                afrp->report_error,
-                                afrp->report_error_userdata);
+                                afrp->mpErrorListener);
             if (offset != afrp->offset_list) {
                 rval = true;
             }
@@ -2247,7 +2226,7 @@ s_AfrpInitLineData(
     TLineInfoPtr last_line = nullptr, next_line = nullptr;
 
     if (s_IsASN1 (linestring)) {
-        s_ReportASN1Error (afrp->report_error, afrp->report_error_userdata);
+        s_ReportASN1Error (afrp->mpErrorListener);
         return false;
     }
 
@@ -2359,14 +2338,13 @@ s_AfrpProcessFastaGap(
 }
 
 static TAlignRawFilePtr
-s_ReadAlignFileRaw(
-    FLineReader readfunc,
+sReadAlignFileRaw(
     istream& istr,
-    CSequenceInfo& sequence_info,
+    FLineReader readfunc,
     bool use_nexus_file_info,
-    FReportErrorFunction errfunc,
-    void* errdata,
-    EAlignFormat*        pformat)
+    CSequenceInfo& sequence_info,
+    EAlignFormat* pformat,
+    ILineErrorListener* pErrorListener)
 {
     char *                   linestring;
     TAlignRawFilePtr         afrp;
@@ -2387,17 +2365,15 @@ s_ReadAlignFileRaw(
         return nullptr;
     }
 
-    afrp = new SAlignFileRaw();
+    afrp = new SAlignFileRaw(pErrorListener);
 
     afrp->alphabet_ = sequence_info.Alphabet();
-    afrp->report_error = errfunc;
-    afrp->report_error_userdata = errdata;
 
     if (!s_AfrpInitLineData(afrp, readfunc, istr)) {
         delete afrp;
         return nullptr;
     }
-   
+
 
     bool found_defline = false;
     bool is_nexus_type = false;
@@ -2411,9 +2387,9 @@ s_ReadAlignFileRaw(
         }
 
         found_defline = s_ReadDefline(linestring, 
-                                      overall_line_count, 
-                                      is_nexus_type,
-                                      afrp);
+            overall_line_count, 
+            is_nexus_type,
+            afrp);
 
 
         if (*pformat == ALNFMT_FASTAGAP) {
@@ -2423,33 +2399,32 @@ s_ReadAlignFileRaw(
             continue;
         }
         /* we want to remove the comment from the line for the purpose 
-         * of looking for blank lines and skipping,
-         * but save comments for storing in array if line is not skippable or
-         * blank
-         */ 
- 
+        * of looking for blank lines and skipping,
+        * but save comments for storing in array if line is not skippable or
+        * blank
+        */ 
+
         if (! found_expected_ntax  ||  ! found_expected_nchar) {
             if (s_IsTwoNumbersSeparatedBySpace (linestring)) {
                 s_GetFASTAExpectedNumbers (linestring, afrp);
                 found_expected_ntax = true;
                 found_expected_nchar = true;
                 afrp->align_format_found = true;
-           } else {
+            } else {
                 s_GetNexusSizeComments (linestring, &found_expected_ntax,
-                                        &found_expected_nchar, afrp);
+                    &found_expected_nchar, afrp);
             }
         }
         if (! found_char_comment) {
             if (use_nexus_file_info) {
                 found_char_comment = s_UpdateNexusCharInfo (linestring, sequence_info);
-          } else {
-                found_char_comment = s_IgnoreNexusCharInfo (
-                    linestring, sequence_info, afrp->report_error, afrp->report_error_userdata);
-          }
+            } else {
+                found_char_comment = s_IgnoreNexusCharInfo (linestring, sequence_info);
+            }
         }
 
         /* remove complete single-line bracketed comments from line 
-         *before checking for multiline bracketed comments */
+        *before checking for multiline bracketed comments */
         s_RemoveCommentFromLine (linestring);
 
         if (in_bracketed_comment) {
@@ -2457,7 +2432,7 @@ s_ReadAlignFileRaw(
             if (last_comment) 
             {
                 s_BracketedCommentListAddLine (last_comment, linestring + len,
-                                               overall_line_count, len);
+                    overall_line_count, len);
             }
             if (strchr (linestring, ']') != nullptr) {
                 in_bracketed_comment = false;
@@ -2482,7 +2457,7 @@ s_ReadAlignFileRaw(
         }
 
         /*  "junk" line: Just record the empty pattern to keep line counts in sync.
-         */
+        */
         if (linestring[0] == 0) {
             last_line_was_marked_id = false;
             this_pattern = s_GetBlockPattern ("");
@@ -2497,12 +2472,12 @@ s_ReadAlignFileRaw(
         }
 
         /* Presumably fasta ID:
-         */
+        */
         if (linestring [0] == '>') {
             /* this could be a block of organism lines in a
-             * NEXUS file.  If there is no sequence data between
-             * the lines, don't process this file for marked IDs.
-             */
+            * NEXUS file.  If there is no sequence data between
+            * the lines, don't process this file for marked IDs.
+            */
             if (last_line_was_marked_id) {
                 afrp->marked_ids = false;
                 *pformat = ALNFMT_UNKNOWN;
@@ -2520,7 +2495,7 @@ s_ReadAlignFileRaw(
         }
 
         /* default case: some real data at last ...
-         */
+        */
         last_line_was_marked_id = false;
         /* add to length list for interleaved block search */
         len = strcspn (linestring, " \t\r");
@@ -2538,7 +2513,7 @@ s_ReadAlignFileRaw(
         } else {
             this_pattern = s_GetBlockPattern (linestring);
         }
-        
+
         if (!pattern_list) {
             pattern_list = this_pattern;
             last_pattern = this_pattern;
@@ -2641,9 +2616,8 @@ s_BlockIsConsistent(
             id_offset = s_FindAlignRawSeqOffsetById (afrp->sequences, tmpId);
             if (id_offset != block_offset  &&  ! first_block) {
                 rval = false;
-                s_ReportInconsistentID (tmpId, lip->line_num,
-                                      afrp->report_error,
-                                      afrp->report_error_userdata);
+                s_ReportInconsistentID (
+                    tmpId, lip->line_num, afrp->mpErrorListener);
             }
             cp += len;
             cp += strspn (cp, " \t\r");
@@ -2688,9 +2662,8 @@ s_BlockIsConsistent(
         this_pattern = s_GetBlockPattern (cp);
         if ( ! s_DoLengthPatternsMatch (this_pattern, best)) {
             rval = false;
-            s_ReportInconsistentBlockLine (tmp_id, lip->line_num,
-                                         afrp->report_error,
-                                         afrp->report_error_userdata);
+            s_ReportInconsistentBlockLine (
+                tmp_id, lip->line_num, afrp->mpErrorListener);
         }
         delete this_pattern;
         if (has_ids) {
@@ -2747,9 +2720,8 @@ s_ProcessBlockLines(
                 if (first_block) {
                     arsp = s_FindAlignRawSeqById (afrp->sequences, this_id);
                     if (arsp != NULL) {
-                        s_ReportDuplicateIDError (this_id, lip->line_num,
-                                              afrp->report_error,
-                                              afrp->report_error_userdata);
+                        s_ReportDuplicateIDError (
+                            this_id, lip->line_num, afrp->mpErrorListener);
                     }
                 }
                 afrp->sequences = s_AddAlignRawSeqById (
@@ -2761,7 +2733,7 @@ s_ProcessBlockLines(
                         linestring, lip->line_num, lip->line_offset)) {
                     s_ReportBlockLengthError (
                         "", lip->line_num, afrp->block_size, line_number,
-                        afrp->report_error, afrp->report_error_userdata);
+                        afrp->mpErrorListener);
                 }
             }
         }
@@ -2883,10 +2855,8 @@ s_CreateSequencesBasedOnTokenPatterns(
                         pattern_line_counter ++) {
                     if (lip->data[0]  !=  ']'  &&  lip->data[0]  != '[') {
                         if (strlen (lip->data) != sip->size_value) {
-                            s_ReportLineLengthError (curr_id, lip, 
-                                                     sip->size_value,
-                                                     afrp->report_error,
-                                                     afrp->report_error_userdata);
+                            s_ReportLineLengthError (
+                                curr_id, lip, sip->size_value, afrp->mpErrorListener);
                         }
                         afrp->sequences = s_AddAlignRawSeqById (afrp->sequences, 
                                                                 curr_id, 
@@ -2900,11 +2870,9 @@ s_CreateSequencesBasedOnTokenPatterns(
                 }
             }
             if (sip  &&  lip ) {
-                s_ReportBlockLengthError (curr_id, lip->line_num,
-                                        afrp->block_size,
-                                        line_counter - offset_ptr->ival,
-                                        afrp->report_error,
-                                        afrp->report_error_userdata);
+                s_ReportBlockLengthError (
+                    curr_id, lip->line_num, afrp->block_size,
+                    line_counter - offset_ptr->ival, afrp->mpErrorListener);
             }
         }
     }
@@ -3874,8 +3842,7 @@ s_ReportRepeatedBadCharsInSequence(
     TLineInfoReaderPtr   lirp,
     char *               id,
     const char *         reason,
-    FReportErrorFunction report_error,
-    void *               report_error_userdata)
+    ILineErrorListener*  pEl)
 {
     int bad_line_num = s_LineInfoReaderGetCurrentLineNumber (lirp);
     int bad_line_offset = s_LineInfoReaderGetCurrentLineOffset (lirp);
@@ -3886,9 +3853,8 @@ s_ReportRepeatedBadCharsInSequence(
         num_bad_chars ++;
         data_position ++;
     }
-    s_ReportBadCharError (id, bad_char, num_bad_chars,
-                        bad_line_offset, bad_line_num, reason,
-                        report_error, report_error_userdata);
+    s_ReportBadCharError (
+        id, bad_char, num_bad_chars, bad_line_offset, bad_line_num, reason, pEl);
     return data_position;
 }
 
@@ -3908,8 +3874,7 @@ s_FindBadDataCharsInSequence(
     TAlignRawSeqPtr      arsp,
     TAlignRawSeqPtr      master_arsp,
     const CSequenceInfo& sequenceInfo,
-    FReportErrorFunction report_error,
-    void *               report_error_userdata)
+    ILineErrorListener* pEl)
 {
     TLineInfoReaderPtr lirp, master_lirp;
     int                data_position;
@@ -3983,10 +3948,10 @@ s_FindBadDataCharsInSequence(
             } else if (sequenceInfo.BeginningGap().find(curr_char) == string::npos) {
             /* Report error - found character that is not beginning gap
                    in beginning gap */
-                data_position = s_ReportRepeatedBadCharsInSequence (lirp,
-                                                                  arsp->id,
-                                "expect only beginning gap characters here",
-                                report_error, report_error_userdata);
+                data_position = s_ReportRepeatedBadCharsInSequence (
+                    lirp, arsp->id,
+                    "expect only beginning gap characters here",
+                    pEl);
                 rval = true;
             } else {
                 *lirp->curr_line_pos = beginning_gap;
@@ -4005,8 +3970,7 @@ s_FindBadDataCharsInSequence(
 
     if (! found_middle_start) {
         delete lirp;
-        s_ReportMissingSequenceData (arsp->id,
-                                   report_error, report_error_userdata);
+        s_ReportMissingSequenceData (arsp->id, pEl);
         return true;
     }
 
@@ -4029,15 +3993,15 @@ s_FindBadDataCharsInSequence(
             if (master_char == 0) {
                 /* report error - unable to get master char */
                 if (master_arsp == arsp) {
-                    data_position = s_ReportRepeatedBadCharsInSequence (lirp,
-                                arsp->id,
-                                "can't specify match chars in first sequence",
-                                report_error, report_error_userdata);
+                    data_position = s_ReportRepeatedBadCharsInSequence (
+                        lirp, arsp->id,
+                        "can't specify match chars in first sequence",
+                        pEl);
                 } else {
-                    data_position = s_ReportRepeatedBadCharsInSequence (lirp,
-                                arsp->id,
-                                "can't find source for match chars",
-                                report_error, report_error_userdata);
+                    data_position = s_ReportRepeatedBadCharsInSequence (
+                        lirp, arsp->id,
+                        "can't find source for match chars",
+                        pEl);
                 }
                 rval = true;
             } else {
@@ -4049,11 +4013,10 @@ s_FindBadDataCharsInSequence(
             data_position ++;
         } else {
             /* Report error - found bad character in middle */
-            data_position = s_ReportRepeatedBadCharsInSequence (lirp,
-                                      arsp->id,
-                                      "expect only sequence, missing, match,"
-                                      " and middle gap characters here",
-                                      report_error, report_error_userdata);
+            data_position = s_ReportRepeatedBadCharsInSequence (
+                lirp, arsp->id,
+                "expect only sequence, missing, match, and middle gap characters here",
+                pEl);
             rval = true;
         }
     }
@@ -4064,9 +4027,10 @@ s_FindBadDataCharsInSequence(
     while (curr_char != 0) {
         if (sequenceInfo.EndGap().find(curr_char) == string::npos) {
         /* Report error - found bad character in middle */
-            data_position = s_ReportRepeatedBadCharsInSequence (lirp, arsp->id,
-                                      "expect only end gap characters here",
-                                      report_error, report_error_userdata);
+            data_position = s_ReportRepeatedBadCharsInSequence (
+                lirp, arsp->id,
+                "expect only end gap characters here",
+                pEl);
             rval = true;
         } else {
             *lirp->curr_line_pos = end_gap;
@@ -4097,9 +4061,8 @@ s_FindBadDataCharsInSequenceList(
         return true;
     }
     for (arsp = afrp->sequences; arsp; arsp = arsp->next) {
-        if (s_FindBadDataCharsInSequence (arsp, afrp->sequences, sequenceInfo,
-                                        afrp->report_error,
-                                        afrp->report_error_userdata)) {
+        if (s_FindBadDataCharsInSequence(
+                arsp, afrp->sequences, sequenceInfo, afrp->mpErrorListener)) {
             is_bad = true;
             break;
         }
@@ -4166,33 +4129,28 @@ s_ConvertDataToOutput(
     curr_seg = 0;
     for (index = 0;  index < alignInfo.NumSequences();  index++) {
         if (alignInfo.mSequences [index].empty()) {
-            s_ReportMissingSequenceData (alignInfo.mIds [index].c_str(),
-                                       afrp->report_error,
-                                       afrp->report_error_userdata);
+            s_ReportMissingSequenceData (
+                alignInfo.mIds [index].c_str(), afrp->mpErrorListener);
             return false;
         } else if (alignInfo.mSequences[index].size() != best_length) {
-            s_ReportBadSequenceLength (alignInfo.mIds [index].c_str(), best_length,
-                                     alignInfo.mSequences [index].size(),
-                                     afrp->report_error,
-                                     afrp->report_error_userdata);
+            s_ReportBadSequenceLength (
+                alignInfo.mIds [index].c_str(), best_length, 
+                alignInfo.mSequences[index].size(), afrp->mpErrorListener);
             return false;
         }
     }
 
     if (afrp->expected_num_sequence > 0  &&  
             afrp->expected_num_sequence != alignInfo.NumSequences()) {
-        s_ReportIncorrectNumberOfSequences (afrp->expected_num_sequence,
-                                          alignInfo.NumSequences(),
-                                          afrp->report_error,
-                                          afrp->report_error_userdata);
+        s_ReportIncorrectNumberOfSequences (
+            afrp->expected_num_sequence, alignInfo.NumSequences(),
+            afrp->mpErrorListener);
         return false;
     }
     if (afrp->expected_sequence_len > 0  &&  
             afrp->expected_sequence_len != best_length) {
-        s_ReportIncorrectSequenceLength (afrp->expected_sequence_len,
-                                       best_length,
-                                       afrp->report_error,
-                                       afrp->report_error_userdata);
+        s_ReportIncorrectSequenceLength (
+            afrp->expected_sequence_len, best_length, afrp->mpErrorListener);
         return false;
     }
     
@@ -4200,30 +4158,26 @@ s_ConvertDataToOutput(
     return true;
 }
 
-
 /* This is the function called by the calling program to read an alignment
  * file.  The readfunc argument is a function pointer supplied by the 
  * calling program which this library will use to read in data from the
  * file one line at a time.  The fileuserdata argument is a pointer to 
  * data used by the calling program's readfunc function and will be passed
  * back with each call to readfunc.
- * The errfunc argument is a function pointer supplied by the calling
- * program for reporting errors.  The erroruserdata argument is a pointer
- * to data used by the calling program's errfunc function and will be
- * passed back with each call to readfunc.
  * The sequence_info argument contains the sequence alphabet and missing,
  * match, and gap characters to use in interpreting the sequence data.
  */
+
+
 bool 
 ReadAlignmentFile(
-    FLineReader readfunc,
     istream& istr,
-    FReportErrorFunction errfunc,
-    void * erroruserdata,
-    CSequenceInfo& sequence_info,
+    FLineReader readfunc,
     bool gen_local_ids,
     bool use_nexus_info,
-    SAlignmentFile& alignmentInfo)
+    CSequenceInfo& sequence_info,
+    SAlignmentFile& alignmentInfo,
+    ncbi::objects::ILineErrorListener* pErrorListener)
 {
     TAlignRawFilePtr afrp;
     EAlignFormat format = ALNFMT_UNKNOWN;
@@ -4231,10 +4185,9 @@ ReadAlignmentFile(
     if (sequence_info.Alphabet().empty()) {
         return false;
     }
-    
-    afrp = s_ReadAlignFileRaw ( 
-        readfunc, istr, sequence_info, use_nexus_info,
-        errfunc, erroruserdata, &format);
+
+    afrp = sReadAlignFileRaw ( 
+        istr, readfunc, use_nexus_info, sequence_info, &format, pErrorListener);
     if (!afrp) {
         return false;
     }
@@ -4257,6 +4210,8 @@ ReadAlignmentFile(
     bool result = s_ConvertDataToOutput (afrp, alignmentInfo);
     delete afrp;
     return result;
-}
+};
 
+
+END_SCOPE(objects)
 END_NCBI_SCOPE

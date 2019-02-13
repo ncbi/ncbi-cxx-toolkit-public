@@ -1,20 +1,8 @@
 Line No    : 1
 Severity   : Error
-Message    : At ID '' in category '3' at line 1: Lines 1 through 4 could not be assigned to an interleaved block'
-
-Line No    : 1
-Severity   : Error
-Message    : At ID '' in category '3' at line 1: Contents of unused line: seq1 --GCAAGCATGCATGCAAAA'
-
-Line No    : 1
-Severity   : Error
-Message    : At ID '' in category '3' at line 1: Contents of unused line: seq1 AT--ATGGATGCATGCAAAA'
-
-Line No    : 1
-Severity   : Error
-Message    : At ID '' in category '3' at line 1: Contents of unused line: seq3 ATGC--GCAAGCATGCAAAA'
-
-Line No    : 1
-Severity   : Error
-Message    : At ID '' in category '3' at line 1: Contents of unused line: seq3 ATGCAT--ATGGATGCAAAA'
+Message    : Lines 1 through 4 could not be assigned to an interleaved block
+             Contents of unused line: seq1 --GCAAGCATGCATGCAAAA
+             Contents of unused line: seq1 --GCAAGCATGCATGCAAAA
+             Contents of unused line: seq1 --GCAAGCATGCATGCAAAA
+             Contents of unused line: seq1 --GCAAGCATGCATGCAAAA
 

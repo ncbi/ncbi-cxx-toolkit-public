@@ -1,0 +1,8 @@
+Line No    : None (Encountered during pre or post processing)
+Severity   : Error
+Message    : Expected 5 sequences, found 1
+
+Line No    : None (Encountered during pre or post processing)
+Severity   : Fatal
+Message    : Error reading alignment: Invalid input or alphabet
+
