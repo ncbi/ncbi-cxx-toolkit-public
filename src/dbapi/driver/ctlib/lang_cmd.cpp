@@ -676,7 +676,8 @@ CTL_LRCmd::MakeResultInternal(void)
     if (IsDead()) {
         SetHasFailed();
         SetWasSent(false);
-        return NULL;
+        DATABASE_DRIVER_ERROR( "Connection has died." + GetDbgInfo(), 121009 );
+        // return NULL;
     }
 
 #ifdef FTDS_IN_USE

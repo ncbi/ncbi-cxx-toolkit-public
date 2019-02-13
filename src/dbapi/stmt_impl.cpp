@@ -251,6 +251,8 @@ IResultSet* CStatement::ExecuteQuery(const string& sql)
     while ( HasMoreResults() ) {
         if ( HasRows() ) {
             return GetResultSet();
+        } else if ( Failed() ) {
+            NCBI_DBAPI_THROW("Query failed: " + sql);
         }
     }
 
