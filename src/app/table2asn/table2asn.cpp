@@ -725,7 +725,7 @@ int CTbl2AsnApp::Run(void)
         }
         if (m_validator->TotalErrors() > 0)
         {
-            m_validator->ReportErrorStats(m_context.GetOstream(".stats"));
+            m_validator->ReportErrorStats(m_context.GetOstream(".stats", m_context.m_base_name));
         }
         m_validator->ReportDiscrepancies();
     }
