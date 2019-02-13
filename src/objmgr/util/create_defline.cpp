@@ -531,6 +531,7 @@ void CDeflineGenerator::x_SetFlagsIdx (
     m_UnverifiedPrefix.clear();
     if (m_IsUnverified) {
         int unverified_count = 0;
+        m_UnverifiedPrefix = "UNVERIFIED: ";
         if (bsx->IsUnverifiedOrganism()) {
             m_UnverifiedPrefix = "UNVERIFIED_ORG: ";
             unverified_count++;
