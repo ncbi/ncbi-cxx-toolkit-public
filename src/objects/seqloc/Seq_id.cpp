@@ -2578,94 +2578,40 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
 }
 
 
-int CSeq_id::BaseTextScore(void) const
+int CSeq_id::BaseScore(void) const
 {
     switch (Which()) {
-    case e_not_set:                                return 83;
-    case e_Giim:                                   return 20;
-    case e_Gi: return PreferAccessionOverGi() ? kMaxScore + 1 : 20;
-    case e_General: case e_Gibbsq: case e_Gibbmt:  return 15;
-    case e_Local:   case e_Patent:                 return 10;
-    case e_Gpipe:   case e_Named_annot_track:      return 9;
-    case e_Other:                                  return 8;
-    default:                                       return 5;
-    }
-}
-
-
-int CSeq_id::BaseBestRankScore(void) const
-{
-    switch (Which()) {
-    case e_not_set:                               return 83;
-    case e_General: case e_Local:                 return 80;
-    case e_Gibbsq: case e_Gibbmt: case e_Giim:    return 70;
-    case e_Named_annot_track:                     return 69;
-    case e_Gpipe:                                 return 68;
-    case e_Patent:                                return 67;
-    case e_Other:                                 return 65;
-    case e_Gi: return PreferAccessionOverGi() ? kMaxScore + 1 : 51;
-    default:                                      return 60;
-    }
-}
-
-
-int CSeq_id::BaseFastaNAScore(void) const
-{
-    switch (Which()) {
-        // these few are bogus, at least for nucleotide sequences
-    case e_not_set: case e_Giim:
-    case e_Pir: case e_Swissprot: case e_Prf:  return 255;
-    case e_Local:                              return 230;
-    case e_Gi: return PreferAccessionOverGi() ? kMaxScore + 1 : 120;
+    case e_Other:                   return 10;
+    case e_Swissprot:               return 20;
+    case e_Pir:                     return 30;
+    case e_Pdb:                     return 40;
+    case e_Genbank:                 return 50;
+    case e_Embl:                    return 60;
+    case e_Ddbj:                    return 70;
+    case e_Tpg:                     return 80;
+    case e_Tpe:                     return 90;
+    case e_Tpd:                     return 100;
+    case e_Gpipe:                   return 120;
+    case e_Named_annot_track:       return 130;
+    case e_Prf:                     return 140;
+    case e_Patent:                  return 150;
+    case e_Gi: return PreferAccessionOverGi() ? kMaxScore + 1 : 160;
     case e_General:
-        {
-        const string& db = GetGeneral().GetDb();
-        if (db.compare("TMSMART") == 0 ||
-            db.compare("BankIt") == 0 ||
-            db.compare("NCBIFILE") == 0 )
-            return 240;
-        else
-            return 100;
-        }
-    case e_Patent:                 return 90;
-    case e_Pdb:                    return 80;
-//  see SQD-4175 ticket for priorities 
-    case e_Gibbsq:                 return 72;
-    case e_Gibbmt:                 return 71;
-    case e_Genbank:                return 70;
-    case e_Other:                  return 15;
-    default: /* [third party] GB/EMBL/DDBJ */  return 20;
-    }
-}
-
-
-int CSeq_id::BaseFastaAAScore(void) const
-{
-    switch (Which()) {
-    case e_not_set: case e_Giim:   return 255;
-    case e_Local:                  return 230;
-    case e_Gi: return PreferAccessionOverGi() ? kMaxScore + 1 : 120;
-    case e_General:
-        {
+    {
         const string& db = GetGeneral().GetDb();
         if (db.compare("TMSMART") == 0 ||
             db.compare("BankIt") == 0 ||
             db.compare("NCBIFILE") == 0)
-            return 240;
+            return 180;
         else
-            return 90;
-        }
-    case e_Patent:                 return 80;
-    case e_Prf:                    return 70;
-    case e_Pdb:                    return 50;
-//  see SQD-4175 ticket for priorities 
-    case e_Gibbsq:                 return 42;
-    case e_Gibbmt:                 return 41;
-    case e_Genbank:                return 40;
-    case e_Pir:                    return 30;
-    case e_Swissprot:              return 20;
-    case e_Other:                  return 15;
-    default:                       return 60; // [third party] GB/EMBL/DDBJ
+            return 170;
+    }
+    case e_Local:                   return 190;
+    case e_not_set:                 return 250;
+    case e_Giim:                    return 251;
+    case e_Gibbmt:                  return 252;
+    case e_Gibbsq:                  return 253;
+    default:                        return 255;
     }
 }
 

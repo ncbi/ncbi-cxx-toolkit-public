@@ -669,11 +669,12 @@ public:
     };
 
     int AdjustScore       (int base_score) const;
-    int BaseTextScore     (void)           const;
-    int BaseBestRankScore (void)           const;
+    int BaseTextScore     (void)           const { return BaseScore(); }
+    int BaseBestRankScore (void)           const { return BaseScore(); }
     int BaseWorstRankScore(void)           const { return BaseTextScore(); }
-    int BaseFastaAAScore  (void)           const;
-    int BaseFastaNAScore  (void)           const;
+    int BaseFastaAAScore  (void)           const { return BaseScore(); }
+    int BaseFastaNAScore  (void)           const { return BaseScore(); }
+    int BaseScore         (void)           const;
 
     int TextScore     (void) const { return AdjustScore(BaseTextScore()); }
     int BestRankScore (void) const { return AdjustScore(BaseBestRankScore()); }
