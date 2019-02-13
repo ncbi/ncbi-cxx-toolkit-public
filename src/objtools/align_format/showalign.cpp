@@ -187,7 +187,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign,
     m_Ctx = NULL;
     m_Matrix = NULL; //-RMH-
     m_DomainInfo = NULL;
-    m_SeqPropertyLabel = new vector<string>;
+    m_SeqPropertyLabel.reset(new vector<string>);
     m_TranslatedFrameForLocalSeq = eFirst;
     m_ResultPositionIndex = -1;
     m_currAlignSeqListIndex = 1;
@@ -242,7 +242,6 @@ CDisplaySeqalign::~CDisplaySeqalign()
             delete m_DynamicFeature;
         }
     }
-    delete m_SeqPropertyLabel;
 }
 
 //8.Display Identities,positives,frames etc

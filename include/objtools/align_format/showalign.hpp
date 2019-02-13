@@ -452,8 +452,9 @@ class NCBI_ALIGN_FORMAT_EXPORT CDisplaySeqalign {
         m_DomainInfo = domain;
     }
 
-    void SetSequencePropertyLabel(const vector<string>* SequencePropertyLabel) {
-        m_SeqPropertyLabel = SequencePropertyLabel;
+    void SetSequencePropertyLabel(const vector<string>* SequencePropertyLabel,
+                                  EOwnership ownership = eNoOwnership) {
+        m_SeqPropertyLabel.reset(SequencePropertyLabel, ownership);
     }
  
     //set and add result index in front of seqid in <a name=seqid> for quick link (for multiple result case)
@@ -602,7 +603,7 @@ protected:
     /// external feature such as phiblast
     list < FeatureInfo * >* m_QueryFeature; 
     list <CRef<DomainInfo> >* m_DomainInfo; 
-    const vector<string>* m_SeqPropertyLabel;
+    AutoPtr<const vector<string> > m_SeqPropertyLabel;
 
     objects::CScope & m_Scope;
     objects::CAlnVec *m_AV;                  // current aln vector
