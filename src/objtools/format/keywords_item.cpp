@@ -316,12 +316,15 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         x_AddKeyword("UNVERIFIED");
     }
     if ((unv & CBioseqContext::fUnverified_Organism) != 0) {
+        x_AddKeyword("UNVERIFIED");
         x_AddKeyword("UNVERIFIED_ORGANISM");
     }
     if ((unv & CBioseqContext::fUnverified_Misassembled) != 0) {
+        x_AddKeyword("UNVERIFIED");
         x_AddKeyword("UNVERIFIED_MISASSEMBLY");
     }
     if ((unv & CBioseqContext::fUnverified_Contaminant) != 0) {
+        x_AddKeyword("UNVERIFIED");
         x_AddKeyword("UNVERIFIED_CONTAMINANT");
     }
 
