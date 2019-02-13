@@ -845,7 +845,7 @@ bool SetParams(const CArgs& args)
 
         if (params_imp.m_outdir.empty())
         {
-            ERR_POST_EX(ERR_INPUT, ERR_INPUT_NoOutputDir, Critical << "The name of top-level directory for output ASN.1s and master Bioseq must be provided with \"-d\" command line option.");
+            ERR_POST_EX(ERR_INPUT, ERR_INPUT_NoOutputDir, Fatal << "The name of top-level directory for output ASN.1s and master Bioseq must be provided with \"-d\" command line option.");
             return false;
         }
     }
@@ -853,7 +853,7 @@ bool SetParams(const CArgs& args)
     params_imp.m_update_mode = static_cast<EUpdateMode>(args["u"].AsInteger());
     params_imp.m_keep_refs = args["R"].AsBoolean();
     if (params_imp.m_keep_refs && params_imp.m_update_mode != eUpdateExtraContigs) {
-        ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Critical << "Command line option \"-R\" is allowed to set to TRUE for \"EXTRA CONTIGS\" mode only (\"-u 6\").");
+        ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Fatal << "Command line option \"-R\" is allowed to set to TRUE for \"EXTRA CONTIGS\" mode only (\"-u 6\").");
         return false;
     }
 
@@ -877,18 +877,23 @@ bool SetParams(const CArgs& args)
         return false;
     }
 
+    if (!args["a"].HasValue()) {
+        ERR_POST_EX(ERR_INPUT, ERR_INPUT_NoInputAccession, Fatal << "Accession prefix+version must be provided with \"-a\" command line option.");
+        return false;
+    }
+
     string accession = args["a"].AsString();
     params_imp.SetAccession(NStr::ToUpper(accession));
 
     if (!IsValidAccession(params_imp.m_accession)) {
-        ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectInputAccession, Critical << "Incorrect accession provided on input: \"" << params_imp.m_accession << "\". Must be 4 or 6 letters + 2 digits (Not 00) or 2 letters + underscore + 4 or 6 letters + 2 digits.");
+        ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectInputAccession, Fatal << "Incorrect accession provided on input: \"" << params_imp.m_accession << "\". Must be 4 or 6 letters + 2 digits (Not 00) or 2 letters + underscore + 4 or 6 letters + 2 digits.");
         return false;
     }
 
     params_imp.m_accs_assigned = args["c"].AsBoolean();
 
     if ((params->GetSource() == eDDBJ || params->GetSource() == eEMBL) && !params_imp.m_accs_assigned) {
-        ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Critical << "For DDBJ and EMBL data must use \"-c T\" switch because they always have accessions pre-assigned.");
+        ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Fatal << "For DDBJ and EMBL data must use \"-c T\" switch because they always have accessions pre-assigned.");
         return false;
     }
 
@@ -898,12 +903,12 @@ bool SetParams(const CArgs& args)
 
     if (!params_imp.m_tpa_keyword.empty()) {
         if (!params->IsTpa()) {
-            ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Critical << "TPA keyword may be entered with \"-K\" switch for TPA projects only.");
+            ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Fatal << "TPA keyword may be entered with \"-K\" switch for TPA projects only.");
             return false;
         }
 
         if (params_imp.m_tpa_keyword != "TPA:assembly" && params_imp.m_tpa_keyword != "TPA:experimental") {
-            ERR_POST_EX(ERR_TPA, ERR_TPA_InvalidKeyword, Critical << "Invalid TPA keyword provided via \"-K\" switch: \"" << params_imp.m_tpa_keyword << "\".");
+            ERR_POST_EX(ERR_TPA, ERR_TPA_InvalidKeyword, Fatal << "Invalid TPA keyword provided via \"-K\" switch: \"" << params_imp.m_tpa_keyword << "\".");
             return false;
         }
     }
@@ -962,7 +967,7 @@ bool SetParams(const CArgs& args)
 
         if (!params->IsTls() && params->GetUpdateMode() != eUpdateNew) {
 
-            ERR_POST_EX(ERR_INPUT, ERR_INPUT_ConflictingArguments, Critical << "Different DBLinks (switch \"-D\") are allowed for brand new TLS projects only.");
+            ERR_POST_EX(ERR_INPUT, ERR_INPUT_ConflictingArguments, Fatal << "Different DBLinks (switch \"-D\") are allowed for brand new TLS projects only.");
             return false;
         }
     }
@@ -971,7 +976,7 @@ bool SetParams(const CArgs& args)
 
     if (params_imp.m_scaffold_type != eRegularGenomic && params_imp.m_update_mode != eUpdateScaffoldsNew &&
         params_imp.m_update_mode != eUpdateScaffoldsUpd) {
-        ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Critical << "Command line option \"-j\" is allowed to set to non-zero value for scaffold modes only (\"-u 3\" or \"-u 5\").");
+        ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Fatal << "Command line option \"-j\" is allowed to set to non-zero value for scaffold modes only (\"-u 3\" or \"-u 5\").");
         return false;
     }
 
@@ -979,7 +984,7 @@ bool SetParams(const CArgs& args)
         case eRegularChromosomal:
         case eGenColGenomic:
             if (params->IsTpa()) {
-                ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Critical << "Incorrect \"-j\" selection for non-TPA scaffolds.");
+                ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Fatal << "Incorrect \"-j\" selection for non-TPA scaffolds.");
                 return false;
             }
             break;
@@ -987,7 +992,7 @@ bool SetParams(const CArgs& args)
         case eTPAGenomic:
         case eTPAChromosomal:
             if (!params->IsTpa()) {
-                ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Critical << "Incorrect \"-j\" selection for TPA scaffolds.");
+                ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Fatal << "Incorrect \"-j\" selection for TPA scaffolds.");
                 return false;
             }
             break;
@@ -1002,7 +1007,7 @@ bool SetParams(const CArgs& args)
     }
     else {
         if (params->GetUpdateMode() == eUpdateNew && params->GetAssemblyVersion() != 1) {
-            ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectInputAccession, Critical << "Incorrect accession version provided on input: \"" << params_imp.m_accession << "\". Must be \"01\" for brand new projects.");
+            ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectInputAccession, Fatal << "Incorrect accession version provided on input: \"" << params_imp.m_accession << "\". Must be \"01\" for brand new projects.");
             return false;
         }
     }
@@ -1016,12 +1021,12 @@ bool SetParams(const CArgs& args)
 
     if (!submission_date.empty()) {
         if (params_imp.m_allow_diff_citsubs) {
-            ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Critical << "It is not allowed to use \"-s\" and \"-v\" command line options altogether.");
+            ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Fatal << "It is not allowed to use \"-s\" and \"-v\" command line options altogether.");
             return false;
         }
 
         if (!ParseSubmissionDate(submission_date, params_imp.m_submission_date)) {
-            ERR_POST_EX(ERR_INPUT, ERR_INPUT_BadSubmissionDate, Critical << "Incorrect date of submission, provided with \"-s\" command line option.");
+            ERR_POST_EX(ERR_INPUT, ERR_INPUT_BadSubmissionDate, Fatal << "Incorrect date of submission, provided with \"-s\" command line option.");
             return false;
         }
 
@@ -1036,7 +1041,7 @@ bool SetParams(const CArgs& args)
     params_imp.m_preserve_input_path = args["I"].AsBoolean();
 
     if (args["i"].HasValue() && args["f"].HasValue()) {
-        ERR_POST_EX(ERR_INPUT, ERR_INPUT_InputFileArgsConflict, Critical << "Command line agruments \"-i\" and \"-f\" cannot be used together. Only one of them is allowed.");
+        ERR_POST_EX(ERR_INPUT, ERR_INPUT_InputFileArgsConflict, Fatal << "Command line agruments \"-i\" and \"-f\" cannot be used together. Only one of them is allowed.");
         return false;
     }
 
@@ -1051,13 +1056,13 @@ bool SetParams(const CArgs& args)
     }
 
     if (input_mask.empty() && file_list.empty()) {
-        ERR_POST_EX(ERR_INPUT, ERR_INPUT_NoInputFiles, Critical << "Input file names are missing from command line or empty. Please use \"-i\" or \"-f\" arguments.");
+        ERR_POST_EX(ERR_INPUT, ERR_INPUT_NoInputFiles, Fatal << "Input file names are missing from command line or empty. Please use \"-i\" or \"-f\" arguments.");
         return false;
     }
 
     if (!input_mask.empty()) {
         if (!GetFilesFromDir(input_mask, params_imp.m_file_list)) {
-            ERR_POST_EX(ERR_INPUT, ERR_INPUT_NoMatchingInputData, Critical << "No input files matching input \"" << input_mask << "\" have been found.");
+            ERR_POST_EX(ERR_INPUT, ERR_INPUT_NoMatchingInputData, Fatal << "No input files matching input \"" << input_mask << "\" have been found.");
             return false;
         }
 
@@ -1067,26 +1072,26 @@ bool SetParams(const CArgs& args)
     }
     else {
         if (!GetFilesFromFile(file_list, params_imp.m_file_list)) {
-            ERR_POST_EX(ERR_INPUT, ERR_INPUT_NoInputNamesInFile, Critical << "File with input SeqSubmit names, given by \"-f\" command line option, is not readable or empty: \"" << file_list << "\".");
+            ERR_POST_EX(ERR_INPUT, ERR_INPUT_NoInputNamesInFile, Fatal << "File with input SeqSubmit names, given by \"-f\" command line option, is not readable or empty: \"" << file_list << "\".");
             return false;
         }
     }
 
     string dup_name;
     if (!params_imp.m_preserve_input_path && IsDupFileNames(params_imp.m_file_list, dup_name)) {
-        ERR_POST_EX(ERR_INPUT, ERR_INPUT_DuplicatedInputFileNames, Critical << "Found duplicated names of input files to be processed: \"" << dup_name << "\". Cannot proceed.");
+        ERR_POST_EX(ERR_INPUT, ERR_INPUT_DuplicatedInputFileNames, Fatal << "Found duplicated names of input files to be processed: \"" << dup_name << "\". Cannot proceed.");
         return false;
     }
 
 
     if (!params_imp.m_test && !MakeDir(params_imp.m_outdir)) {
-        ERR_POST_EX(ERR_INPUT, ERR_INPUT_CreateDirFail, Critical << "Failed to create top-level directory \"" << params_imp.m_outdir << "\" for output ASN.1s and master Bioseq.");
+        ERR_POST_EX(ERR_INPUT, ERR_INPUT_CreateDirFail, Fatal << "Failed to create top-level directory \"" << params_imp.m_outdir << "\" for output ASN.1s and master Bioseq.");
         return false;
     }
 
     string input_type = args["y"].AsString();
     if (!GetInputType(input_type, params_imp.m_input_type)) {
-        ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectInputDataType, Critical << "Unknown type of input data provided: \"" << input_type << "\".");
+        ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectInputDataType, Fatal << "Unknown type of input data provided: \"" << input_type << "\".");
         return false;
     }
 
@@ -1102,13 +1107,13 @@ bool SetParams(const CArgs& args)
     params_imp.m_tpa_tsa = args["J"].AsBoolean();
     if(params_imp.m_tpa_tsa && params_imp.m_accession.front() != 'D')
     {
-        ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Critical << "For TPA-TSA projects (\"-J T\" setting) accession prefix MUST start with \"D\", not \"" << params_imp.m_accession.front() << "\".");
+        ERR_POST_EX(ERR_INPUT, ERR_INPUT_CommandLineOptionsMisuse, Fatal << "For TPA-TSA projects (\"-J T\" setting) accession prefix MUST start with \"D\", not \"" << params_imp.m_accession.front() << "\".");
         return false;
     }
 
     params_imp.m_vdb_mode = args["U"].AsBoolean();
     if (params_imp.m_vdb_mode && params_imp.m_update_mode != eUpdateAssembly && params_imp.m_update_mode != eUpdateNew) {
-        ERR_POST_EX(ERR_INPUT, ERR_INPUT_ConflictingArguments, Critical << "VDB parsing mode (\"-U T\") can be used for brand new projects (\"-u 0\") or reassemblies (\"-u 2\") only.");
+        ERR_POST_EX(ERR_INPUT, ERR_INPUT_ConflictingArguments, Fatal << "VDB parsing mode (\"-U T\") can be used for brand new projects (\"-u 0\") or reassemblies (\"-u 2\") only.");
         return false;
     }
 
@@ -1125,7 +1130,7 @@ bool SetParams(const CArgs& args)
     if (!tsa_biomol.empty()) {
 
         if (!params->IsTsa() && !params->IsWgs()) {
-            ERR_POST_EX(ERR_INPUT, ERR_INPUT_BiomolNotSupported, Critical << "Supplying a Biomol value (mRNA, ncRNA, etc) via the \"-T\" command line switch is supported for TSA and WGS projects only.");
+            ERR_POST_EX(ERR_INPUT, ERR_INPUT_BiomolNotSupported, Fatal << "Supplying a Biomol value (mRNA, ncRNA, etc) via the \"-T\" command line switch is supported for TSA and WGS projects only.");
             return false;
         }
 
@@ -1145,7 +1150,7 @@ bool SetParams(const CArgs& args)
             }
             else
             {
-                ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectBiomolTypeSupplied, Critical << "Incorrect biomol type for TSA project provided via \"-T\" command line switch. Valid ones are (case sensitive): \"mRNA\", \"rRNA\" and \"ncRNA\".");
+                ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectBiomolTypeSupplied, Fatal << "Incorrect biomol type for TSA project provided via \"-T\" command line switch. Valid ones are (case sensitive): \"mRNA\", \"rRNA\" and \"ncRNA\".");
                 return false;
             }
         }
@@ -1157,7 +1162,7 @@ bool SetParams(const CArgs& args)
             }
             else
             {
-                ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectBiomolTypeSupplied, Critical << "Incorrect biomol type for WGS project provided via \"-T\" command line switch. Valid one is (case insensitive): \"cRNA\".");
+                ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectBiomolTypeSupplied, Fatal << "Incorrect biomol type for WGS project provided via \"-T\" command line switch. Valid one is (case insensitive): \"cRNA\".");
                 return false;
             }
         }
@@ -1174,7 +1179,7 @@ bool SetParams(const CArgs& args)
     {
         if(!params->IsWgs())
         {
-            ERR_POST_EX(ERR_INPUT, ERR_INPUT_MolTypeNotSupported, Critical << "Supplying a Biomol value (cRNA) via the \"-E\" command line switch is supported for WGS projects only.");
+            ERR_POST_EX(ERR_INPUT, ERR_INPUT_MolTypeNotSupported, Fatal << "Supplying a Biomol value (cRNA) via the \"-E\" command line switch is supported for WGS projects only.");
             return false;
         }
         if(NStr::EqualNocase(moltype, "rna"))
@@ -1183,7 +1188,7 @@ bool SetParams(const CArgs& args)
         }
         else
         {
-            ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectMolTypeSupplied, Critical << "Incorrect Seq-inst.mol type for WGS project provided via \"-E\" command line switch. Valid one is (case sensitive): \"rna\".");
+            ERR_POST_EX(ERR_INPUT, ERR_INPUT_IncorrectMolTypeSupplied, Fatal << "Incorrect Seq-inst.mol type for WGS project provided via \"-E\" command line switch. Valid one is (case sensitive): \"rna\".");
             return false;
         }
     }
@@ -1205,7 +1210,7 @@ bool SetParams(const CArgs& args)
     }
 
     if (params_imp.m_sort_order == eById && params_imp.m_ignore_general_ids) {
-        ERR_POST_EX(ERR_INPUT, ERR_INPUT_ConflictingArguments, Critical << "Cannot assign accessions in sorted by contig/scaffold id order (\"-o 3\") while ignoring general ids flag is set (\"-g T\").");
+        ERR_POST_EX(ERR_INPUT, ERR_INPUT_ConflictingArguments, Fatal << "Cannot assign accessions in sorted by contig/scaffold id order (\"-o 3\") while ignoring general ids flag is set (\"-g T\").");
         return false;
     }
 

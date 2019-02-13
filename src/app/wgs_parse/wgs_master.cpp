@@ -365,7 +365,7 @@ static bool CheckBioSource(const CSeq_entry& entry, CMasterInfo& info, const str
             size_t num_of_biosources = count_if(descrs->Get().begin(), descrs->Get().end(), is_biosource);
 
             if (num_of_biosources > 1) {
-                ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_MultipleBioSources, Critical << "Multiple BioSource descriptors encountered in record from file \"" << file << "\".");
+                ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_MultipleBioSources, Fatal << "Multiple BioSource descriptors encountered in record from file \"" << file << "\".");
                 ret = false;
             }
             else if (num_of_biosources < 1) {
@@ -1006,7 +1006,7 @@ static bool CreateBiosource(CBioseq& bioseq, CBioSource& biosource, const list<C
 
     bool is_tax_lookup = GetParams().IsTaxonomyLookup();
     if (!PerformTaxLookup(biosource, org_refs, is_tax_lookup) && is_tax_lookup) {
-        ERR_POST_EX(ERR_MASTER, ERR_MASTER_TaxLookupFailed, Critical << "Taxonomy lookup failed on Master Bioseq. Cannot proceed.");
+        ERR_POST_EX(ERR_MASTER, ERR_MASTER_TaxLookupFailed, Fatal << "Taxonomy lookup failed on Master Bioseq. Cannot proceed.");
         return false;
     }
 
@@ -2014,7 +2014,7 @@ static bool CheckUniqueAccs(const list<string>& accs)
 
     for (++next; next != accs.end(); ++next) {
         if (*next == *prev) {
-            ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_DuplicateAccessions, Critical << "Found duplicated accession \"" << *prev << "\".");
+            ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_DuplicateAccessions, Fatal << "Found duplicated accession \"" << *prev << "\".");
             return false;
         }
         ++prev;
@@ -2352,17 +2352,6 @@ static CRef<CSeq_entry> AddScaffoldsToMaster(CMasterInfo& master_info, list<TAcc
     return ret;
 }
 
-static int GetSubmissionTypeErrorCode(EInputType type)
-{
-    static const map<EInputType, int> SUBMISSION_ERROR_CODE = {
-        { eSeqSubmit, ERR_MASTER_SeqSubmitReadFailed },
-        { eSeqEntry, ERR_MASTER_SeqEntryReadFailed },
-        { eBioseqSet, ERR_MASTER_BioseqSetReadFailed }
-    };
-
-    return SUBMISSION_ERROR_CODE.at(type);
-}
-
 bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 {
     const list<string>& files = GetParams().GetInputFiles();
@@ -2385,7 +2374,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
         CNcbiIfstream in(file);
 
         if (!in) {
-            ERR_POST_EX(ERR_MASTER, ERR_MASTER_FileOpenFailed, Critical << "Failed to open submission \"" << file << "\" for reading. Cannot proceed.");
+            ERR_POST_EX(ERR_MASTER, ERR_MASTER_FileOpenFailed, Fatal << "Failed to open submission \"" << file << "\" for reading. Cannot proceed.");
             ret = false;
             break;
         }
@@ -2402,7 +2391,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
 
                 if (first) {
                     ERR_POST_EX(ERR_MASTER, GetSubmissionTypeErrorCode(master_info.m_input_type),
-                        Critical << "Failed to read " << GetSeqSubmitTypeName(master_info.m_input_type) << " from file \"" << file << "\". Cannot proceed.");
+                        Fatal << "Failed to read " << GetSeqSubmitTypeName(master_info.m_input_type) << " from file \"" << file << "\". Cannot proceed.");
                     ret = false;
                 }
                 break;
@@ -2411,7 +2400,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
             first = false;
 
             if (!FixSeqSubmit(seq_submit, master_info.m_accession_ver, true, master_info.m_reject)) {
-                ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_SeqAnnotInWrapperGBSet, Critical << "Wrapper GenBank set has non-empty annotation (Seq-annot), which is not allowed. Cannot process this submission \"" << file << "\".");
+                ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_SeqAnnotInWrapperGBSet, Fatal << "Wrapper GenBank set has non-empty annotation (Seq-annot), which is not allowed. Cannot process this submission \"" << file << "\".");
                 ret = false;
                 break;
             }
@@ -2481,7 +2470,7 @@ bool CreateMasterBioseqWithChecks(CMasterInfo& master_info)
             }
 
             if (!seq_submit->IsSetData()) {
-                ERR_POST_EX(ERR_MASTER, ERR_MASTER_SeqEntryReadFailed, Critical << "Failed to read Seq-entry from file \"" << file << "\". Cannot proceed.");
+                ERR_POST_EX(ERR_MASTER, ERR_MASTER_SeqEntryReadFailed, Fatal << "Failed to read Seq-entry from file \"" << file << "\". Cannot proceed.");
                 break;
             }
 

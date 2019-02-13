@@ -150,7 +150,7 @@ static CRef<COrg_ref> PerformLookup(const COrg_ref& org_ref, const string& taxna
         }
     }
     else {
-        ERR_POST_EX(ERR_SERVER, ERR_SERVER_TaxServerDown, Critical << "Taxonomy lookup failed for " << taxname << ". Error: [" << taxon1.GetLastError() << "]. Cannot generate ASN.1 for this entry.");
+        ERR_POST_EX(ERR_SERVER, ERR_SERVER_TaxServerDown, Fatal << "Taxonomy lookup failed for " << taxname << ". Error: [" << taxon1.GetLastError() << "]. Cannot generate ASN.1 for this entry.");
     }
 
     return ret;
@@ -187,7 +187,7 @@ void LookupCommonOrgRefs(list<COrgRefInfo>& org_refs)
         }
     }
     else {
-        ERR_POST_EX(ERR_SERVER, ERR_SERVER_TaxServerDown, Critical << "Taxonomy lookup failed to initialize. Error: [" << taxon1.GetLastError() << "]. Cannot proceed.");
+        ERR_POST_EX(ERR_SERVER, ERR_SERVER_TaxServerDown, Fatal << "Taxonomy lookup failed to initialize. Error: [" << taxon1.GetLastError() << "]. Cannot proceed.");
     }
 }
 

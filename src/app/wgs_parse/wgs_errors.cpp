@@ -310,23 +310,36 @@ static string GetCodeStr(int err_code, int err_sub_code)
 }
 
 static CWgsParseDiagHandler s_diag_handler;
+static CDiagHandler* s_old_handler;
+
 
 void CWgsParseDiagHandler::Post(const SDiagMessage& mess)
 {
-    string sev = CNcbiDiag::SeverityName(mess.m_Severity);
-    NStr::ToUpper(sev);
+    if (mess.m_Module == "wgsparse") {
+        string sev = CNcbiDiag::SeverityName(mess.m_Severity);
+        NStr::ToUpper(sev);
 
-    CNcbiOstrstream str_os;
-    
-    str_os << "[wgsparse] " << sev << ": " << mess.m_Module << "[" << GetCodeStr(mess.m_ErrCode, mess.m_ErrSubCode) << "] " << mess.m_Buffer << '\n';
+        CNcbiOstrstream str_os;
 
-    string str = CNcbiOstrstreamToString(str_os);
-    cerr.write(str.data(), str.size());
-    cerr << NcbiFlush;
+        str_os << "[wgsparse] " << sev << ": " << mess.m_Module << "[" << GetCodeStr(mess.m_ErrCode, mess.m_ErrSubCode) << "] " << mess.m_Buffer << '\n';
+
+        string str = CNcbiOstrstreamToString(str_os);
+        cerr.write(str.data(), str.size());
+        cerr << NcbiFlush;
+    }
+    else {
+        if (s_old_handler) {
+            s_old_handler->Post(mess);
+        }
+    }
 }
 
 CWgsParseDiagHandler& CWgsParseDiagHandler::GetWgsParseDiagHandler()
 {
+    if (s_old_handler == nullptr) {
+        s_old_handler = GetDiagHandler();
+    }
+
     return s_diag_handler;
 }
 

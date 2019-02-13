@@ -182,7 +182,7 @@ CRef<CSeq_entry> CWGSParseApp::GetMasterEntry() const
         const string fname = GetParams().GetMasterFileName();
         ret = GetMasterEntryFromFile(fname);
         if (ret.Empty()) {
-            ERR_POST_EX(ERR_MASTER, ERR_MASTER_CannotReadFromFile, Critical << "Failed to read the master record from file \"" << fname << "\".");
+            ERR_POST_EX(ERR_MASTER, ERR_MASTER_CannotReadFromFile, Fatal << "Failed to read the master record from file \"" << fname << "\".");
         }
     }
     else {
@@ -273,7 +273,7 @@ static void RemoveBioSourseDesc(CSeq_descr& descrs)
 static bool OpenOutputFile(const string& fname, const string& description, CNcbiOfstream& stream)
 {
     if (!GetParams().IsOverrideExisting() && CFile(fname).Exists()) {
-        ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_WontOverrideFile, Error << "The " << description << " file already exists: \"" << fname << "\". Override is not allowed.");
+        ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_WontOverrideFile, Fatal << "The " << description << " file already exists: \"" << fname << "\". Override is not allowed.");
         return false;
     }
 
@@ -281,7 +281,7 @@ static bool OpenOutputFile(const string& fname, const string& description, CNcbi
         stream.open(fname);
     }
     catch (CException& e) {
-        ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_CantOpenOutputFile, Error << "Failed to open " << description << " file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
+        ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_CantOpenOutputFile, Fatal << "Failed to open " << description << " file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
         return false;
     }
 
@@ -1352,14 +1352,14 @@ static bool ReplaceOldCitSub(CRef<CSeq_entry>& id_entry, CCit_sub& new_cit_sub)
             if (cur_cit_sub) {
                 if (IsFirstCitSubDateEarlier(new_cit_sub, *cur_cit_sub)) {
 
-                    bool is_critical = true;
+                    bool is_fatal = true;
                     if (GetParams().IsDblinkOverride() && (GetParams().GetSource() == eDDBJ || GetParams().GetSource() == eEMBL)) {
-                        is_critical = false;
+                        is_fatal = false;
                     }
 
-                    ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_UpdateDateIsOld, (is_critical ? Critical : Warning) << "Update date in input CitSubs preceeds at least one in previous update.");
+                    ERR_POST_EX(ERR_SUBMISSION, ERR_SUBMISSION_UpdateDateIsOld, (is_fatal ? Fatal : Warning) << "Update date in input CitSubs preceeds at least one in previous update.");
 
-                    if (is_critical) {
+                    if (is_fatal) {
                         return false;
                     }
                 }
@@ -1505,6 +1505,7 @@ int CWGSParseApp::Run(void)
 
     //SetDiagPostPrefix("wgsparse"); // TODO for the future use
     SetDiagHandler(&CWgsParseDiagHandler::GetWgsParseDiagHandler(), false);
+    IgnoreDiagDieLevel(true);
 
     if (SetParams(GetArgs())) {
 
@@ -1517,7 +1518,7 @@ int CWGSParseApp::Run(void)
         if (GetParams().GetUpdateMode() == eUpdateNew) {
             if (master_entry.NotEmpty()) {
                 if (!GetParams().EnforceNew()) {
-                    ERR_POST_EX(ERR_INPUT, ERR_INPUT_WrongParsingMode, Critical << "Incorrect parsing mode set in command line: this is not a brand new project.");
+                    ERR_POST_EX(ERR_INPUT, ERR_INPUT_WrongParsingMode, Fatal << "Incorrect parsing mode set in command line: this is not a brand new project.");
                     return ERROR_RET;
                 }
                 master_entry.Reset();
@@ -1526,7 +1527,7 @@ int CWGSParseApp::Run(void)
         else {
 
             if (master_entry.Empty()) {
-                ERR_POST_EX(ERR_SERVER, ERR_SERVER_FailedToFetchMasterFromID, Critical << "Failed to retrieve master sequence from ID.");
+                ERR_POST_EX(ERR_SERVER, ERR_SERVER_FailedToFetchMasterFromID, Fatal << "Failed to retrieve master sequence from ID.");
                 return ERROR_RET;
             }
 
@@ -1537,18 +1538,18 @@ int CWGSParseApp::Run(void)
                 GetCurrentMasterInfo(*master_entry, current_master);
                 if (current_master.m_version <= 0) {
 
-                    ERR_POST_EX(ERR_MASTER, ERR_MASTER_CannotGetAssemblyVersion, Critical << "Failed to get current assembly version from master sequence from ID.");
+                    ERR_POST_EX(ERR_MASTER, ERR_MASTER_CannotGetAssemblyVersion, Fatal << "Failed to get current assembly version from master sequence from ID.");
                     return ERROR_RET;
                 }
 
                 if (current_master.m_last_contig <= 0) {
-                    ERR_POST_EX(ERR_MASTER, ERR_MASTER_FailedToGetAccsRange, Critical << "Failed to get the range of accession from previous version master.");
+                    ERR_POST_EX(ERR_MASTER, ERR_MASTER_FailedToGetAccsRange, Fatal << "Failed to get the range of accession from previous version master.");
                     return ERROR_RET;
                 }
 
                 if (!GetParams().IsTest() && !GetParams().GetAccFile().empty()) {
                     if (!SaveAccessionsRange(current_master)) {
-                        ERR_POST_EX(ERR_MASTER, ERR_MASTER_AccsRangeSaveFailed, Critical << "Failed to save the range of accessions from previous version master to file \"" << GetParams().GetAccFile() << "\".");
+                        ERR_POST_EX(ERR_MASTER, ERR_MASTER_AccsRangeSaveFailed, Fatal << "Failed to save the range of accessions from previous version master to file \"" << GetParams().GetAccFile() << "\".");
                         return ERROR_RET;
                     }
                 }
@@ -1575,10 +1576,10 @@ int CWGSParseApp::Run(void)
                 case eUpdateScaffoldsNew:
                 case eUpdateScaffoldsUpd:
                 case eUpdateExtraContigs:
-                    ERR_POST_EX(ERR_MASTER, ERR_MASTER_FailedToCreate, Critical << "Failed to create temporary master Bioseq.");
+                    ERR_POST_EX(ERR_MASTER, ERR_MASTER_FailedToCreate, Fatal << "Failed to create temporary master Bioseq.");
                     break;
                 default:
-                    ERR_POST_EX(ERR_MASTER, ERR_MASTER_FailedToCreate, Critical << "Failed to create master Bioseq.");
+                    ERR_POST_EX(ERR_MASTER, ERR_MASTER_FailedToCreate, Fatal << "Failed to create master Bioseq.");
             }
 
             return ERROR_RET;
@@ -1614,7 +1615,7 @@ int CWGSParseApp::Run(void)
                 ERR_POST_EX(ERR_MASTER, ERR_MASTER_NoMasterCitSub, Warning << "No common CitSub found amongst the data. Keep them all on the contigs.");
             }
             else {
-                ERR_POST_EX(ERR_MASTER, ERR_MASTER_NoMasterCitSub, Critical << "No common CitSub found amongst the data. Reject the whole set.");
+                ERR_POST_EX(ERR_MASTER, ERR_MASTER_NoMasterCitSub, Fatal << "No common CitSub found amongst the data. Reject the whole set.");
                 return ERROR_RET;
             }
         }

@@ -899,7 +899,7 @@ static bool OutputSubmission(const CBioseq_set& bioseq_set, const string& in_fil
     }
 
     if (!GetParams().IsOverrideExisting() && CFile(fname).Exists()) {
-        ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_WontOverrideFile, Critical << "File to print out processed submission already exists: \"" << fname << "\". Override is not allowed.");
+        ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_WontOverrideFile, Fatal << "File to print out processed submission already exists: \"" << fname << "\". Override is not allowed.");
         return false;
     }
 
@@ -912,7 +912,7 @@ static bool OutputSubmission(const CBioseq_set& bioseq_set, const string& in_fil
             out << MSerial_AsnText << bioseq_set;
     }
     catch (CException& e) {
-        ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_CantOutputProcessedSub, Critical << "Failed to save processed submission to file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
+        ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_CantOutputProcessedSub, Fatal << "Failed to save processed submission to file: \"" << fname << "\" [" << e.GetMsg() << "]. Cannot proceed.");
         return false;
     }
 
@@ -1499,7 +1499,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
         CNcbiIfstream in(file);
 
         if (!in) {
-            ERR_POST_EX(ERR_PARSE, ERR_PARSE_FileOpenFailed, Critical << "Failed to open submission \"" << file << "\" for reading. Cannot proceed.");
+            ERR_POST_EX(ERR_PARSE, ERR_PARSE_FileOpenFailed, Fatal << "Failed to open submission \"" << file << "\" for reading. Cannot proceed.");
             ret = false;
             break;
         }
@@ -1516,7 +1516,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
             if (seq_submit.Empty()) {
 
                 if (first) {
-                    ERR_POST_EX(ERR_PARSE, ERR_PARSE_BioseqSetReadFailed, Critical << "Failed to read " << GetSeqSubmitTypeName(master_info.m_input_type) << " from file \"" << file << "\". Cannot proceed.");
+                    ERR_POST_EX(ERR_PARSE, GetSubmissionTypeErrorCode(master_info.m_input_type), Fatal << "Failed to read " << GetSeqSubmitTypeName(master_info.m_input_type) << " from file \"" << file << "\". Cannot proceed.");
                     ret = false;
                 }
                 break;
@@ -1618,7 +1618,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
                     }
 
                     if (!lookup_succeed) {
-                        ERR_POST_EX(ERR_PARSE, ERR_PARSE_TaxLookupFailed, Critical << "Taxonomy lookup failed on submission \"" << file << "\". Cannot proceed.");
+                        ERR_POST_EX(ERR_PARSE, ERR_PARSE_TaxLookupFailed, Fatal << "Taxonomy lookup failed on submission \"" << file << "\". Cannot proceed.");
                         break;
                     }
 
@@ -1683,7 +1683,7 @@ bool ParseSubmissions(CMasterInfo& master_info)
         }
 
         if (!ret) {
-            ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_ParsedSubToFileFailed, Critical << "Failed to save processed submission \"" << file << "\" to file.");
+            ERR_POST_EX(ERR_OUTPUT, ERR_OUTPUT_ParsedSubToFileFailed, Fatal << "Failed to save processed submission \"" << file << "\" to file.");
             break;
         }
     }

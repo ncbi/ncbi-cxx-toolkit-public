@@ -44,6 +44,7 @@
 #include <objects/biblio/Affil.hpp>
 
 #include "wgs_utils.hpp"
+#include "wgs_errors.hpp"
 
 namespace wgsparse
 {
@@ -553,6 +554,18 @@ bool IsValidBiosample(const string& id)
     }
 
     return IsDigits(id.begin() + offset, id.end());
+}
+
+
+int GetSubmissionTypeErrorCode(EInputType type)
+{
+    static const map<EInputType, int> SUBMISSION_ERROR_CODE = {
+        { eSeqSubmit, ERR_MASTER_SeqSubmitReadFailed },
+        { eSeqEntry, ERR_MASTER_SeqEntryReadFailed },
+        { eBioseqSet, ERR_MASTER_BioseqSetReadFailed }
+    };
+
+    return SUBMISSION_ERROR_CODE.at(type);
 }
 
 }

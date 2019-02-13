@@ -245,6 +245,7 @@ public:
     virtual void Post(const ncbi::SDiagMessage& mess);
 
     static CWgsParseDiagHandler& GetWgsParseDiagHandler();
+
 };
 
 }

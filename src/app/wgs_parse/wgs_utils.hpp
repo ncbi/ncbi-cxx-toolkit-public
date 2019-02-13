@@ -68,6 +68,7 @@ size_t GetMaxAccessionLen(int accession_num, size_t prefix_len);
 
 bool GetInputType(const std::string& str, EInputType& type);
 bool GetInputTypeFromFile(CNcbiIfstream& stream, EInputType& type);
+int GetSubmissionTypeErrorCode(EInputType type);
 
 string GetLocalOrGeneralIdStr(const CSeq_id& id);
 bool IsLocalOrGeneralId(const CSeq_id& id);
