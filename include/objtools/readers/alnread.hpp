@@ -42,7 +42,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects);
 
-class ncbi::objects::ILineErrorListener;
+class ILineErrorListener;
 
 //  ============================================================================
 enum EAlnErr{
