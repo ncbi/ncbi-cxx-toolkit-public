@@ -665,7 +665,8 @@ static void ReplaceFieldInDBLink(const TIdContainer& values, const string& tag, 
     }
 }
 
-static bool CheckSetOfIds(CRef<CUser_object>& user_obj, const string& tag, const TIdContainer& ids, const string& what, const string& cmd_line_param, bool& reject)
+static bool CheckSetOfIds(CRef<CUser_object>& user_obj, const string& tag, const TIdContainer& ids, const string& what, const string& cmd_line_param, bool& reject,
+    int err_code_mismatch, int err_code_missing)
 {
     TIdContainer cur_ids;
 
@@ -686,11 +687,11 @@ static bool CheckSetOfIds(CRef<CUser_object>& user_obj, const string& tag, const
             CNcbiOstrstream msg;
             msg << "Submission supplied " << tag << " values do not match the ones provided in command line: \"" << NStr::Join(cur_ids, ",") << "\" vs \"" << NStr::Join(ids, ",") << ends;
             if (GetParams().IsDblinkOverride()) {
-                ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_BioProjectMismatch, Warning << msg.str() << "\". Using values from the command line.");
+                ERR_POST_EX(ERR_DBLINK, err_code_mismatch, Warning << msg.str() << "\". Using values from the command line.");
             }
             else {
                 reject = true;
-                ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_BioProjectMismatch, Critical << msg.str() << "\". Rejecting the whole project.");
+                ERR_POST_EX(ERR_DBLINK, err_code_mismatch, Critical << msg.str() << "\". Rejecting the whole project.");
             }
 
             ReplaceFieldInDBLink(ids, tag, *user_obj);
@@ -700,7 +701,7 @@ static bool CheckSetOfIds(CRef<CUser_object>& user_obj, const string& tag, const
         if (user_obj.NotEmpty()) {
             ReplaceFieldInDBLink(ids, tag, *user_obj);
         }
-        ERR_POST_EX(ERR_DBLINK, ERR_DBLINK_BioProjectMissing, Info << "All records from files being processed are lacking " << what << ". Using command line \"" << cmd_line_param << "\" values.");
+        ERR_POST_EX(ERR_DBLINK, err_code_missing, Info << "All records from files being processed are lacking " << what << ". Using command line \"" << cmd_line_param << "\" values.");
     }
 
     return !cur_ids.empty();
@@ -809,11 +810,11 @@ static void FixDBLink(CRef<CUser_object>& user_obj)
 
 static void CheckMasterDblink(CMasterInfo& info)
 {
-    CheckSetOfIds(info.m_dblink, "BioProject", GetParams().GetBioProjectIds(), "BioProject Accession Numbers", "-B", info.m_reject);
+    CheckSetOfIds(info.m_dblink, "BioProject", GetParams().GetBioProjectIds(), "BioProject Accession Numbers", "-B", info.m_reject, ERR_DBLINK_BioProjectMismatch, ERR_DBLINK_BioProjectMissing);
 
-    bool biosample_present = CheckSetOfIds(info.m_dblink, "BioSample", GetParams().GetBioSampleIds(), "BioSample ids", "-C", info.m_reject);
+    bool biosample_present = CheckSetOfIds(info.m_dblink, "BioSample", GetParams().GetBioSampleIds(), "BioSample ids", "-C", info.m_reject, ERR_DBLINK_BioSampleMismatch, ERR_DBLINK_BioSampleMissing);
 
-    CheckSetOfIds(info.m_dblink, "Sequence Read Archive", GetParams().GetSRAIds(), "SRA accessions", "-C", info.m_reject);
+    CheckSetOfIds(info.m_dblink, "Sequence Read Archive", GetParams().GetSRAIds(), "SRA accessions", "-C", info.m_reject, ERR_DBLINK_SRAAccessionsMismatch, ERR_DBLINK_SRAAccessionsMissing);
 
     FixDBLink(info.m_dblink);
 

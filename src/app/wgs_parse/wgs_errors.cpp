@@ -317,7 +317,8 @@ void CWgsParseDiagHandler::Post(const SDiagMessage& mess)
     NStr::ToUpper(sev);
 
     CNcbiOstrstream str_os;
-    str_os << "[wgsparse] " << sev << ": wgsparse [" << GetCodeStr(mess.m_ErrCode, mess.m_ErrSubCode) << "] " << mess.m_Buffer << '\n';
+    
+    str_os << "[wgsparse] " << sev << ": " << mess.m_Module << "[" << GetCodeStr(mess.m_ErrCode, mess.m_ErrSubCode) << "] " << mess.m_Buffer << '\n';
 
     string str = CNcbiOstrstreamToString(str_os);
     cerr.write(str.data(), str.size());
