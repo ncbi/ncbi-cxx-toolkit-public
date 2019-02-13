@@ -1,4 +1,5 @@
 #! /bin/sh
+cut -f 3,7 top900_orgn_nucl.txt > lineages.txt
 cut -f 3 top900_orgn_nucl.txt > taxids.txt
 cat taxids.txt |
 epost -db taxonomy |
@@ -19,7 +20,9 @@ sed \
     -e 's/<Division>Viruses<\/Division>/<Division>VRL<\/Division>/g' \
 > taxa.xml
 cat taxa.xml |
-xtract -pattern Taxon -COMM "(-)" -COMM GenbankCommonName -PGCODE "(-)" \
+xtract -transform lineages.txt -pattern Taxon -COMM "(-)" -COMM GenbankCommonName -PGCODE "(-)" \
   -block Property -if PropName -equals pgcode -PGCODE PropValueInt \
-  -block Taxon -element ScientificName "&COMM" GCId MGCId "&PGCODE" TaxId Division Lineage > tax_table.txt
-cat tax_table.txt | sort -f > sorted_taxlist.txt
+  -block Taxon -element ScientificName "&COMM" GCId MGCId "&PGCODE" TaxId Division \
+    -translate TaxId > tax_table.txt
+cat tax_table.txt | sort -f > common_tax.txt
+/am/ncbiapdata/scripts/misc/txt2inc.sh common_tax.txt
