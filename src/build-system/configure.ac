@@ -7938,6 +7938,10 @@ else
 fi
 
 # libssh2
+case "$with_libssh2" in
+   yes | no | '' ) ;;
+   *             ) LIBSSH2_PATH=$with_libssh2 ;;
+esac
 if test -d "$LIBSSH2_PATH"; then
    NCBI_FIX_DIR(LIBSSH2_PATH)
    for d in "$LIBSSH2_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx/lib" \
@@ -7964,6 +7968,10 @@ else
 fi
 
 # Datastax Cassandra driver
+case "$with_cassandra" in
+   yes | no | '' ) ;;
+   *             ) CASSANDRA_PATH=$with_cassandra ;;
+esac
 if test -d "$CASSANDRA_PATH"; then
    NCBI_FIX_DIR(CASSANDRA_PATH)
    for d in "$CASSANDRA_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
@@ -7989,6 +7997,10 @@ else
 fi
 
 # HTTP/2 libraries
+case "$with_nghttp2" in
+   yes | no | '' ) ;;
+   *             ) NGHTTP2_PATH=$with_nghttp2 ;;
+esac
 if test -d "$NGHTTP2_PATH"; then
    NCBI_FIX_DIR(NGHTTP2_PATH)
    for d in "$NGHTTP2_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
@@ -8013,6 +8025,10 @@ else
    NGHTTP2_STATIC_LIBS=$NGHTTP2_LIBS
 fi
 
+case "$with_h2o" in
+   yes | no | '' ) ;;
+   *             ) H2O_PATH=$with_h2o ;;
+esac
 if test -d "$H2O_PATH"; then
    NCBI_FIX_DIR(H2O_PATH)
    for d in "$H2O_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
@@ -8048,6 +8064,10 @@ else
     LIBXLSXWRITER_STATIC_LIBS=$LIBXLSXWRITER_LIBS
 fi
 
+case "$with_grpc" in
+   yes | no | '' ) ;;
+   *             ) GRPC_PATH=$with_grpc ;;
+esac
 if test -d "$GRPC_PATH"; then
    NCBI_FIX_DIR(GRPC_PATH)
    for d in "$GRPC_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
@@ -8118,6 +8138,10 @@ else
    NCBI_MISSING_PACKAGE(msgsl)
 fi
 
+case "$with_aws_sdk" in
+   yes | no | '' ) ;;
+   *             ) AWS_SDK_PATH=$with_aws_sdk ;;
+esac
 if test -d "$AWS_SDK_PATH"; then
    NCBI_FIX_DIR(AWS_SDK_PATH)
    for d in "$AWS_SDK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx" \
