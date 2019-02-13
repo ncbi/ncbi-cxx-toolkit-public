@@ -343,14 +343,11 @@ void CNcbiApplication::x_TryInit(EAppDiagStream diag,
     }
 }
 
-#define NCBI_LOG_PARAM(type,Name,NAME)                                         \
-/* Logging of environment variables: space separated list of names which       \
-   should be logged after each request start.                                */\
-NCBI_PARAM_DECL  (type, Log, LogApp ## Name);                                  \
-NCBI_PARAM_DEF_EX(type, Log, LogApp ## Name, false,                            \
-                  eParam_NoThread, DIAG_LOG_APP_ ## NAME);                     \
-typedef NCBI_PARAM_TYPE(Log, LogApp ## Name) TLogApp ## Name;
-
+// Macro to define a logging parameter
+#define NCBI_LOG_PARAM(type,Name,NAME)             \
+    NCBI_PARAM_DECL  (type, Log, LogApp ## Name);  \
+    NCBI_PARAM_DEF_EX(type, Log, LogApp ## Name, false, eParam_NoThread, DIAG_LOG_APP_ ## NAME); \
+    typedef NCBI_PARAM_TYPE(Log, LogApp ## Name) TLogApp ## Name;
 
 NCBI_LOG_PARAM(bool, Environment,        ENVIRONMENT)
 NCBI_LOG_PARAM(bool, EnvironmentOnStop,  ENVIRONMENT_ON_STOP)
@@ -359,6 +356,7 @@ NCBI_LOG_PARAM(bool, RegistryOnStop,     REGISTRY_ON_STOP)
 NCBI_LOG_PARAM(bool, Arguments,          ARGUMENTS)
 NCBI_LOG_PARAM(bool, Path,               PATH)
 NCBI_LOG_PARAM(bool, RunContext,         RUN_CONTEXT)
+NCBI_LOG_PARAM(bool, ResUsageOnStop,     RESUSAGE_ON_STOP)
 
 
 enum ELogOptionsEvent {
@@ -376,40 +374,73 @@ enum ELogOptions {
     fLogAppRegistryStop     = 0x08, ///< log app registry on app stop
     fLogAppArguments        = 0x10, ///< log app arguments
     fLogAppPath             = 0x20, ///< log app executable path
+    fLogAppResUsageStop     = 0x40, ///< log resource usage on app stop
 };
 
 
 void CNcbiApplication::x_ReadLogOptions()
 {
-    /* Log all */
+    // Log all
     if ( TLogAppRunContext::GetDefault() ) {
         m_LogOptions = 0x7f; // all on
         return;
     }
 
-    /* Log registry */
+    // Log registry
     m_LogOptions |= TLogAppRegistry::GetDefault() ? fLogAppRegistry : 0;
-    m_LogOptions |= 
-        TLogAppRegistryOnStop::GetDefault() ? fLogAppRegistryStop : 0;
+    m_LogOptions |= TLogAppRegistryOnStop::GetDefault() ? fLogAppRegistryStop : 0;
 
-    /* Log environment */
+    // Log environment
     m_LogOptions |= TLogAppEnvironment::GetDefault() ? fLogAppEnvironment : 0;
-    m_LogOptions |= 
-        TLogAppEnvironmentOnStop::GetDefault() ? fLogAppEnvironmentStop : 0;
+    m_LogOptions |= TLogAppEnvironmentOnStop::GetDefault() ? fLogAppEnvironmentStop : 0;
 
-    /* Log arguments */
+    // Log arguments
     m_LogOptions |= TLogAppArguments::GetDefault() ? fLogAppArguments : 0;
 
-    /* Log path */
+    // Log path
     m_LogOptions |= TLogAppPath::GetDefault() ? fLogAppPath : 0;
+
+    // Log resources usage
+    m_LogOptions |= TLogAppResUsageOnStop::GetDefault() ? fLogAppResUsageStop : 0;
 }
+
+
+void s_RoundResUsageSize(Uint8 value_in_bytes, string& suffix, Uint8& value)
+{
+    const Uint8 limit = 1000;
+
+    // KB by default
+    suffix = "_KB";
+    value = value_in_bytes / 1024;
+
+    // Round to MB if value is too big
+    if (value / 1024 > limit) {
+        suffix = "_MB";
+        value /= 1024;
+    }
+}
+
+#define RES_SIZE_USAGE(name, value_in_bytes) \
+    { \
+        string suffix; \
+        Uint8  value; \
+        s_RoundResUsageSize(value_in_bytes, suffix, value); \
+        extra.Print(name + suffix, value); \
+    }
+
+#define RES_TIME_USAGE(name, value) \
+    if (value >= 0 ) \
+        extra.Print(name, (Uint8)value)
 
 
 void CNcbiApplication::x_LogOptions(int /*ELogOptionsEvent*/ event)
 {
+    const bool start = (event & eStartEvent) != 0;
+    const bool stop  = (event & eStopEvent)  != 0;
+
     // Print environment values
-    if ( (m_LogOptions & fLogAppEnvironment  &&  event & eStartEvent) ||
-         (m_LogOptions & fLogAppEnvironmentStop  &&  event & eStopEvent) ) {
+    if ( (m_LogOptions & fLogAppEnvironment      &&  start) ||
+         (m_LogOptions & fLogAppEnvironmentStop  &&  stop) ) {
         CDiagContext_Extra extra = GetDiagContext().Extra();
         extra.Print("LogAppEnvironment", "true");
         list<string> env_keys;
@@ -422,8 +453,8 @@ void CNcbiApplication::x_LogOptions(int /*ELogOptionsEvent*/ event)
     }
 
     // Print registry values
-    if ( (m_LogOptions & fLogAppRegistry  &&  event & eStartEvent) ||
-         (m_LogOptions & fLogAppRegistryStop  &&  event & eStopEvent) ) {
+    if ( (m_LogOptions & fLogAppRegistry      &&  start) ||
+         (m_LogOptions & fLogAppRegistryStop  &&  stop) ) {
         CDiagContext_Extra extra = GetDiagContext().Extra();
         extra.Print("LogAppRegistry", "true");
         list<string> reg_sections;
@@ -440,18 +471,52 @@ void CNcbiApplication::x_LogOptions(int /*ELogOptionsEvent*/ event)
             }
         }
     }
-    
-    if ( m_LogOptions & fLogAppArguments  &&  event & eStartEvent) {
+
+    // Print arguments
+    if ( m_LogOptions & fLogAppArguments  &&  start) {
         CDiagContext_Extra extra = GetDiagContext().Extra();
         extra.Print("LogAppArguments", "true");
         string args_str;
         extra.Print("Arguments", GetArgs().Print(args_str));
     }
 
-    if ( m_LogOptions & fLogAppPath  &&  event & eStartEvent) {
+    // Print app path
+    if ( m_LogOptions & fLogAppPath  &&  start) {
         CDiagContext_Extra extra = GetDiagContext().Extra();
         extra.Print("LogAppPath", "true");
         extra.Print("Path", GetProgramExecutablePath());
+    }
+
+    // Print resource usage
+    if ( m_LogOptions & fLogAppResUsageStop  &&  stop) {
+        CDiagContext_Extra extra = GetDiagContext().Extra();
+        extra.Print("LogAppResUsage", "true");
+        // Memory usage
+        CProcess::SMemoryUsage mem_usage;
+        if ( CCurrentProcess::GetMemoryUsage(mem_usage) ) {
+            RES_SIZE_USAGE("mem_total",      mem_usage.total        );
+            RES_SIZE_USAGE("mem_total_peak", mem_usage.total_peak   );
+            RES_SIZE_USAGE("rss_mem",        mem_usage.resident     );
+            RES_SIZE_USAGE("rss_peak_mem",   mem_usage.resident_peak);
+            RES_SIZE_USAGE("shared.mem",     mem_usage.shared       );
+            RES_SIZE_USAGE("data.mem",       mem_usage.data         );
+            RES_SIZE_USAGE("stack.mem",      mem_usage.stack        );
+        }
+        // CPU time usage
+        double real, user, sys;
+        if ( CCurrentProcess::GetTimes(&real, &user, &sys, CProcess::eProcess) ) {
+            RES_TIME_USAGE("real.proc.cpu", real);
+            RES_TIME_USAGE("user.proc.cpu", user);
+            RES_TIME_USAGE("sys.proc.cpu",  sys);
+        }
+        if ( CCurrentProcess::GetTimes(&real, &user, &sys, CProcess::eChildren) ) {
+            RES_TIME_USAGE("user.child.cpu", user);
+            RES_TIME_USAGE("sys.child.cpu",  sys);
+        }
+        if ( CCurrentProcess::GetTimes(&real, &user, &sys, CProcess::eThread) ) {
+            RES_TIME_USAGE("user.thread.cpu", user);
+            RES_TIME_USAGE("sys.thread.cpu",  sys);
+        }
     }
 }
 
