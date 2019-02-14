@@ -29128,7 +29128,7 @@ no_usr_lib="s,-L$usr_lib ,,g; s,-L/usr/lib/$multiarch ,,g"
 
 : ${with_libunwind:=no}
 if test "$with_libunwind" != "no"; then
-    case "LIBUNWIND_PATH:$with_libunwind" in
+    case "$LIBUNWIND_PATH:$with_libunwind" in
        *:yes | *: | $with_libunwind* ) ;;
        * ) LIBUNWIND_PATH=$with_libunwind ;;
     esac
@@ -29306,7 +29306,7 @@ LIBS="$LIBUNWIND_LIBS $LIBS"
 orig_LIBS="$LIBUNWIND_LIBS $orig_LIBS"
 
 if test "$with_libdw" != "no"; then
-    case "LIBDW_PATH:$with_libdw" in
+    case "$LIBDW_PATH:$with_libdw" in
        *:yes | *: | $with_libdw* ) ;;
        * ) LIBDW_PATH=$with_libdw ;;
     esac
@@ -29483,7 +29483,7 @@ LIBS="$LIBDW_LIBS $LIBS"
 orig_LIBS="$LIBDW_LIBS $orig_LIBS"
 
 if test "$with_backward_cpp" != "no"; then
-    case "BACKWARD_CPP_PATH:$with_backward_cpp" in
+    case "$BACKWARD_CPP_PATH:$with_backward_cpp" in
        *:yes | *: | $with_backward_cpp* ) ;;
        * ) BACKWARD_CPP_PATH=$with_backward_cpp ;;
     esac
@@ -29675,7 +29675,7 @@ _ACEOF
 fi
 
 if test "$with_z" != "no"; then
-    case "Z_PATH:$with_z" in
+    case "$Z_PATH:$with_z" in
        *:yes | *: | $with_z* ) ;;
        * ) Z_PATH=$with_z ;;
     esac
@@ -29862,7 +29862,7 @@ echo "$as_me: using local zlib copy in $zlocal" >&6;}
 fi
 
 if test "$with_bz2" != "no"; then
-    case "BZ2_PATH:$with_bz2" in
+    case "$BZ2_PATH:$with_bz2" in
        *:yes | *: | $with_bz2* ) ;;
        * ) BZ2_PATH=$with_bz2 ;;
     esac
@@ -30070,7 +30070,7 @@ if test -d "$LZO_PATH"; then
  esac
 fi
 if test "$with_lzo" != "no"; then
-    case "LZO_PATH:$with_lzo" in
+    case "$LZO_PATH:$with_lzo" in
        *:yes | *: | $with_lzo* ) ;;
        * ) LZO_PATH=$with_lzo ;;
     esac
@@ -30254,7 +30254,7 @@ if test -z "$PCRE_PATH"  &&  pcre-config --version >/dev/null 2>&1; then
     test "x$p" = "x/usr"  ||  PCRE_PATH=$p
 fi
 if test "$with_pcre" != "no"; then
-    case "PCRE_PATH:$with_pcre" in
+    case "$PCRE_PATH:$with_pcre" in
        *:yes | *: | $with_pcre* ) ;;
        * ) PCRE_PATH=$with_pcre ;;
     esac
@@ -30474,7 +30474,7 @@ if test "x${with_mbedtls-no}" != xno; then
  esac
    fi
    if test "$with_mbedtls" != "no"; then
-    case "MBEDTLS_PATH:$with_mbedtls" in
+    case "$MBEDTLS_PATH:$with_mbedtls" in
        *:yes | *: | $with_mbedtls* ) ;;
        * ) MBEDTLS_PATH=$with_mbedtls ;;
     esac
@@ -30690,7 +30690,7 @@ if test "x$with_gmp" != xno; then
  esac
    fi
    if test "$with_gmp" != "no"; then
-    case "GMP_PATH:$with_gmp" in
+    case "$GMP_PATH:$with_gmp" in
        *:yes | *: | $with_gmp* ) ;;
        * ) GMP_PATH=$with_gmp ;;
     esac
@@ -30976,7 +30976,7 @@ else
    $as_unset GCRYPT_CONFIG_LIBS || test "${GCRYPT_CONFIG_LIBS+set}" != set || { GCRYPT_CONFIG_LIBS=; export GCRYPT_CONFIG_LIBS; }
 fi
 if test "$with_gcrypt" != "no"; then
-    case "GCRYPT_PATH:$with_gcrypt" in
+    case "$GCRYPT_PATH:$with_gcrypt" in
        *:yes | *: | $with_gcrypt* ) ;;
        * ) GCRYPT_PATH=$with_gcrypt ;;
     esac
@@ -31264,7 +31264,7 @@ if test "x$with_nettle" != xno; then
  fi
    fi
    if test "$with_nettle" != "no"; then
-    case "NETTLE_PATH:$with_nettle" in
+    case "$NETTLE_PATH:$with_nettle" in
        *:yes | *: | $with_nettle* ) ;;
        * ) NETTLE_PATH=$with_nettle ;;
     esac
@@ -31598,7 +31598,7 @@ else
    $as_unset GNUTLS_CONFIG_LIBS || test "${GNUTLS_CONFIG_LIBS+set}" != set || { GNUTLS_CONFIG_LIBS=; export GNUTLS_CONFIG_LIBS; }
 fi
 if test "$with_gnutls" != "no"; then
-    case "GNUTLS_PATH:$with_gnutls" in
+    case "$GNUTLS_PATH:$with_gnutls" in
        *:yes | *: | $with_gnutls* ) ;;
        * ) GNUTLS_PATH=$with_gnutls ;;
     esac
@@ -32124,7 +32124,7 @@ done
 fi
 
 if test "$with_openssl" != "no"; then
-    case "OPENSSL_PATH:$with_openssl" in
+    case "$OPENSSL_PATH:$with_openssl" in
        *:yes | *: | $with_openssl* ) ;;
        * ) OPENSSL_PATH=$with_openssl ;;
     esac
@@ -32370,7 +32370,7 @@ else
       KRB5_CONFIG_LIBS=$KRB5_LIBS
 fi
 if test "$with_krb5" != "no"; then
-    case "KRB5_PATH:$with_krb5" in
+    case "$KRB5_PATH:$with_krb5" in
        *:yes | *: | $with_krb5* ) ;;
        * ) KRB5_PATH=$with_krb5 ;;
     esac
@@ -32865,7 +32865,7 @@ fi
 
 
 if test "$with_curl" != "no"; then
-    case "CURL_PATH:$with_curl" in
+    case "$CURL_PATH:$with_curl" in
        *:yes | *: | $with_curl* ) ;;
        * ) CURL_PATH=$with_curl ;;
     esac
@@ -42276,7 +42276,7 @@ fi
 
 ### XML/XSL libraries
 if test "$with_expat" != "no"; then
-    case "EXPAT_PATH:$with_expat" in
+    case "$EXPAT_PATH:$with_expat" in
        *:yes | *: | $with_expat* ) ;;
        * ) EXPAT_PATH=$with_expat ;;
     esac
@@ -42473,7 +42473,7 @@ if test -d "$SABLOT_PATH"; then
  esac
 fi
 if test "$with_sablot" != "no"; then
-    case "SABLOT_PATH:$with_sablot" in
+    case "$SABLOT_PATH:$with_sablot" in
        *:yes | *: | $with_sablot* ) ;;
        * ) SABLOT_PATH=$with_sablot ;;
     esac
@@ -42847,7 +42847,7 @@ fi
 
 : ${LIBXSLT_PATH=$LIBXML_PATH}
 if test "$with_libxslt" != "no"; then
-    case "LIBXSLT_PATH:$with_libxslt" in
+    case "$LIBXSLT_PATH:$with_libxslt" in
        *:yes | *: | $with_libxslt* ) ;;
        * ) LIBXSLT_PATH=$with_libxslt ;;
     esac
@@ -43082,7 +43082,7 @@ else
    exslt_autodep=
 fi
 if test "$with_libexslt" != "no"; then
-    case "LIBEXSLT_PATH:$with_libexslt" in
+    case "$LIBEXSLT_PATH:$with_libexslt" in
        *:yes | *: | $with_libexslt* ) ;;
        * ) LIBEXSLT_PATH=$with_libexslt ;;
     esac
@@ -44008,7 +44008,7 @@ ncbi_rp_L_flags=
     SQLITE3_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
 if test "$with_sqlite3" != "no"; then
-    case "SQLITE3_PATH:$with_sqlite3" in
+    case "$SQLITE3_PATH:$with_sqlite3" in
        *:yes | *: | $with_sqlite3* ) ;;
        * ) SQLITE3_PATH=$with_sqlite3 ;;
     esac
@@ -44763,7 +44763,7 @@ fi
 # somewhat kludgish, as we now wanto to add in oeiupac and oedepict,
 # which depend on oechem....
 if test "$with_oechem" != "no"; then
-    case "OECHEM_PATH:$with_oechem" in
+    case "$OECHEM_PATH:$with_oechem" in
        *:yes | *: | $with_oechem* ) ;;
        * ) OECHEM_PATH=$with_oechem ;;
     esac
@@ -45002,7 +45002,7 @@ if test -d "$SGE_PATH" -a -z "$SGE_LIBPATH"; then
    fi
 fi
 if test "$with_sge" != "no"; then
-    case "SGE_PATH:$with_sge" in
+    case "$SGE_PATH:$with_sge" in
        *:yes | *: | $with_sge* ) ;;
        * ) SGE_PATH=$with_sge ;;
     esac
@@ -45207,7 +45207,7 @@ elif test -d "$MUPARSER_PATH/${compiler_pfx}${DEBUG_SFX}${bit64_sfx}/lib"; then
 fi
 
 if test "$with_muparser" != "no"; then
-    case "MUPARSER_PATH:$with_muparser" in
+    case "$MUPARSER_PATH:$with_muparser" in
        *:yes | *: | $with_muparser* ) ;;
        * ) MUPARSER_PATH=$with_muparser ;;
     esac
@@ -45411,7 +45411,7 @@ if test -d "$HDF5_PATH"; then
 fi
 
 if test "$with_hdf5" != "no"; then
-    case "HDF5_PATH:$with_hdf5" in
+    case "$HDF5_PATH:$with_hdf5" in
        *:yes | *: | $with_hdf5* ) ;;
        * ) HDF5_PATH=$with_hdf5 ;;
     esac
@@ -45590,7 +45590,7 @@ _ACEOF
 # : ${JPEG_PATH=/usr/sfw}
 # Grr... jpeglib.h isn't especially well-behaved.
 if test "$with_jpeg" != "no"; then
-    case "JPEG_PATH:$with_jpeg" in
+    case "$JPEG_PATH:$with_jpeg" in
        *:yes | *: | $with_jpeg* ) ;;
        * ) JPEG_PATH=$with_jpeg ;;
     esac
@@ -45773,7 +45773,7 @@ _ACEOF
 
 # : ${PNG_PATH=/usr/sfw}
 if test "$with_png" != "no"; then
-    case "PNG_PATH:$with_png" in
+    case "$PNG_PATH:$with_png" in
        *:yes | *: | $with_png* ) ;;
        * ) PNG_PATH=$with_png ;;
     esac
@@ -45951,7 +45951,7 @@ _ACEOF
 
 # : ${TIFF_PATH=/usr/sfw}
 if test "$with_tiff" != "no"; then
-    case "TIFF_PATH:$with_tiff" in
+    case "$TIFF_PATH:$with_tiff" in
        *:yes | *: | $with_tiff* ) ;;
        * ) TIFF_PATH=$with_tiff ;;
     esac
@@ -46129,7 +46129,7 @@ _ACEOF
 # Paths?
 with_ungif=$with_gif
 if test "$with_gif" != "no"; then
-    case "GIF_PATH:$with_gif" in
+    case "$GIF_PATH:$with_gif" in
        *:yes | *: | $with_gif* ) ;;
        * ) GIF_PATH=$with_gif ;;
     esac
@@ -46306,7 +46306,7 @@ _ACEOF
 
 if test "$with_gif" = "no"; then
    if test "$with_ungif" != "no"; then
-    case "UNGIF_PATH:$with_ungif" in
+    case "$UNGIF_PATH:$with_ungif" in
        *:yes | *: | $with_ungif* ) ;;
        * ) UNGIF_PATH=$with_ungif ;;
     esac
@@ -46493,7 +46493,7 @@ fi
 
 case "$x_libraries" in */*) : ${XPM_PATH=`dirname "$x_libraries"`} ;; esac
 if test "$with_xpm" != "no"; then
-    case "XPM_PATH:$with_xpm" in
+    case "$XPM_PATH:$with_xpm" in
        *:yes | *: | $with_xpm* ) ;;
        * ) XPM_PATH=$with_xpm ;;
     esac
@@ -46697,7 +46697,7 @@ if test "$with_gl2ps" != "no"; then
  esac
    fi
    if test "$with_gl2ps" != "no"; then
-    case "GL2PS_PATH:$with_gl2ps" in
+    case "$GL2PS_PATH:$with_gl2ps" in
        *:yes | *: | $with_gl2ps* ) ;;
        * ) GL2PS_PATH=$with_gl2ps ;;
     esac
@@ -47200,7 +47200,7 @@ ncbi_rp_L_flags=
  fi
 
 if test "$with_ftgl" != "no"; then
-    case "FTGL_PATH:$with_ftgl" in
+    case "$FTGL_PATH:$with_ftgl" in
        *:yes | *: | $with_ftgl* ) ;;
        * ) FTGL_PATH=$with_ftgl ;;
     esac
@@ -47376,7 +47376,7 @@ _ACEOF
 
 
 if test "$with_magic" != "no"; then
-    case "MAGIC_PATH:$with_magic" in
+    case "$MAGIC_PATH:$with_magic" in
        *:yes | *: | $with_magic* ) ;;
        * ) MAGIC_PATH=$with_magic ;;
     esac
@@ -47616,7 +47616,7 @@ ncbi_rp_L_flags=
  fi
 
 if test "$with_mimetic" != "no"; then
-    case "MIMETIC_PATH:$with_mimetic" in
+    case "$MIMETIC_PATH:$with_mimetic" in
        *:yes | *: | $with_mimetic* ) ;;
        * ) MIMETIC_PATH=$with_mimetic ;;
     esac
@@ -47954,7 +47954,7 @@ fi
 
 
 if test "$with_gsoap" != "no"; then
-    case "GSOAP_PATH:$with_gsoap" in
+    case "$GSOAP_PATH:$with_gsoap" in
        *:yes | *: | $with_gsoap* ) ;;
        * ) GSOAP_PATH=$with_gsoap ;;
     esac
@@ -48180,7 +48180,7 @@ if test "$with_avro" != no; then
    fi
 fi
 if test "$with_avro" != "no"; then
-    case "AVRO_PATH:$with_avro" in
+    case "$AVRO_PATH:$with_avro" in
        *:yes | *: | $with_avro* ) ;;
        * ) AVRO_PATH=$with_avro ;;
     esac
@@ -48512,7 +48512,7 @@ fi
 
 # SASL 2
 if test "$with_sasl2" != "no"; then
-    case "SASL2_PATH:$with_sasl2" in
+    case "$SASL2_PATH:$with_sasl2" in
        *:yes | *: | $with_sasl2* ) ;;
        * ) SASL2_PATH=$with_sasl2 ;;
     esac
@@ -48746,7 +48746,7 @@ ncbi_rp_L_flags=
     MONGODB_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
 if test "$with_mongodb" != "no"; then
-    case "MONGODB_PATH:$with_mongodb" in
+    case "$MONGODB_PATH:$with_mongodb" in
        *:yes | *: | $with_mongodb* ) ;;
        * ) MONGODB_PATH=$with_mongodb ;;
     esac
@@ -49001,7 +49001,7 @@ if $m3pc --exists >/dev/null 2>&1; then
  fi
 fi
 if test "$with_mongodb3" != "no"; then
-    case "MONGODB3_PATH:$with_mongodb3" in
+    case "$MONGODB3_PATH:$with_mongodb3" in
        *:yes | *: | $with_mongodb3* ) ;;
        * ) MONGODB3_PATH=$with_mongodb3 ;;
     esac
@@ -49263,7 +49263,7 @@ ncbi_rp_L_flags=
     GMOCK_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
 if test "$with_gmock" != "no"; then
-    case "GMOCK_PATH:$with_gmock" in
+    case "$GMOCK_PATH:$with_gmock" in
        *:yes | *: | $with_gmock* ) ;;
        * ) GMOCK_PATH=$with_gmock ;;
     esac
@@ -49736,7 +49736,7 @@ fi
 fi
 
 if test "$with_lapack" != "no"; then
-    case "LAPACK_PATH:$with_lapack" in
+    case "$LAPACK_PATH:$with_lapack" in
        *:yes | *: | $with_lapack* ) ;;
        * ) LAPACK_PATH=$with_lapack ;;
     esac
@@ -49912,7 +49912,7 @@ _ACEOF
 
 # LMDB
 if test "$with_lmdb" != "no"; then
-    case "LMDB_PATH:$with_lmdb" in
+    case "$LMDB_PATH:$with_lmdb" in
        *:yes | *: | $with_lmdb* ) ;;
        * ) LMDB_PATH=$with_lmdb ;;
     esac
@@ -50190,7 +50190,7 @@ ncbi_rp_L_flags=
     LIBUV_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
 if test "$with_libuv" != "no"; then
-    case "LIBUV_PATH:$with_libuv" in
+    case "$LIBUV_PATH:$with_libuv" in
        *:yes | *: | $with_libuv* ) ;;
        * ) LIBUV_PATH=$with_libuv ;;
     esac
@@ -50445,7 +50445,7 @@ ncbi_rp_L_flags=
     LIBSSH2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
 if test "$with_libssh2" != "no"; then
-    case "LIBSSH2_PATH:$with_libssh2" in
+    case "$LIBSSH2_PATH:$with_libssh2" in
        *:yes | *: | $with_libssh2* ) ;;
        * ) LIBSSH2_PATH=$with_libssh2 ;;
     esac
@@ -50669,7 +50669,7 @@ if test -d "$CASSANDRA_PATH"; then
    done
 fi
 if test "$with_cassandra" != "no"; then
-    case "CASSANDRA_PATH:$with_cassandra" in
+    case "$CASSANDRA_PATH:$with_cassandra" in
        *:yes | *: | $with_cassandra* ) ;;
        * ) CASSANDRA_PATH=$with_cassandra ;;
     esac
@@ -50924,7 +50924,7 @@ ncbi_rp_L_flags=
     NGHTTP2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
 if test "$with_nghttp2" != "no"; then
-    case "NGHTTP2_PATH:$with_nghttp2" in
+    case "$NGHTTP2_PATH:$with_nghttp2" in
        *:yes | *: | $with_nghttp2* ) ;;
        * ) NGHTTP2_PATH=$with_nghttp2 ;;
     esac
@@ -51148,7 +51148,7 @@ if test -d "$H2O_PATH"; then
    done
 fi
 if test "$with_h2o" != "no"; then
-    case "H2O_PATH:$with_h2o" in
+    case "$H2O_PATH:$with_h2o" in
        *:yes | *: | $with_h2o* ) ;;
        * ) H2O_PATH=$with_h2o ;;
     esac
@@ -51329,7 +51329,7 @@ else
 fi
 
 if test "$with_libxlsxwriter" != "no"; then
-    case "LIBXLSXWRITER_PATH:$with_libxlsxwriter" in
+    case "$LIBXLSXWRITER_PATH:$with_libxlsxwriter" in
        *:yes | *: | $with_libxlsxwriter* ) ;;
        * ) LIBXLSXWRITER_PATH=$with_libxlsxwriter ;;
     esac
@@ -51556,7 +51556,7 @@ fi
 : ${PROTOBUF_PATH=$GRPC_PATH}
 
 if test "$with_protobuf" != "no"; then
-    case "PROTOBUF_PATH:$with_protobuf" in
+    case "$PROTOBUF_PATH:$with_protobuf" in
        *:yes | *: | $with_protobuf* ) ;;
        * ) PROTOBUF_PATH=$with_protobuf ;;
     esac
@@ -51746,7 +51746,7 @@ else
 fi
 
 if test "$with_grpc" != "no"; then
-    case "GRPC_PATH:$with_grpc" in
+    case "$GRPC_PATH:$with_grpc" in
        *:yes | *: | $with_grpc* ) ;;
        * ) GRPC_PATH=$with_grpc ;;
     esac
@@ -52139,7 +52139,7 @@ if test -d "$AWS_SDK_PATH"; then
    done
 fi
 if test "$with_aws_sdk" != "no"; then
-    case "AWS_SDK_PATH:$with_aws_sdk" in
+    case "$AWS_SDK_PATH:$with_aws_sdk" in
        *:yes | *: | $with_aws_sdk* ) ;;
        * ) AWS_SDK_PATH=$with_aws_sdk ;;
     esac
