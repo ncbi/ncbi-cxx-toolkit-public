@@ -212,9 +212,9 @@ AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB,
 
 AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_EX,
 [if test "$with_$1" != "no"; then
-    case "$with_$1" in
-       yes | "" ) ;;
-       *        ) $2_PATH=$with_$1 ;;
+    case "$2_PATH:$with_$1" in
+       *:yes | *: | $with_$1* ) ;;
+       * ) $2_PATH=$with_$1 ;;
     esac
     if test "[$]$2_PATH" != /usr -a -d "[$]$2_PATH"; then
        in_path=" in [$]$2_PATH"
