@@ -876,18 +876,46 @@ void SThrottleParams::SIOFailureThreshold::Init(CSynRegistry& registry, const SR
     }
 }
 
+struct SNameByHost
+{
+    void Set(unsigned host, unsigned short port, string name)
+    {
+        m_Data[host][port] = move(name);
+    }
+
+    const string& Get(unsigned host, unsigned short port)
+    {
+        auto& name = m_Data[host][port];
+
+        // Name was not looked up yet or host changed
+        if (name.empty()) {
+            name = g_NetService_gethostnamebyaddr(host) + ':' + NStr::UIntToString(port);
+        }
+
+        return name;
+    }
+
+    static SNameByHost& GetInstance()
+    {
+        thread_local static SNameByHost name_by_host;
+        return name_by_host;
+    }
+
+private:
+    map<unsigned, map<unsigned short, string>> m_Data;
+};
+
 CNetServer::SAddress::SAddress(unsigned h, unsigned short p) :
     host(h),
-    port(p),
-    name(host, {})
+    port(p)
 {
 }
 
 CNetServer::SAddress::SAddress(string n, unsigned short p) :
     host(g_NetService_gethostbyname(n)),
-    port(p),
-    name(host, move(n))
+    port(p)
 {
+    SNameByHost::GetInstance().Set(host, port, n + ':' + NStr::UIntToString(port));
 }
 
 bool operator==(const CNetServer::SAddress& lhs, const CNetServer::SAddress& rhs)
@@ -904,13 +932,7 @@ bool operator< (const CNetServer::SAddress& lhs, const CNetServer::SAddress& rhs
 
 const string& CNetServer::SAddress::AsString() const
 {
-    // Name was not looked up yet or host changed
-    if (name.second.empty() || name.first != host) {
-        name.first = host;
-        name.second = g_NetService_gethostnamebyaddr(host) + ':' + NStr::UIntToString(port);
-    }
-
-    return name.second;
+    return SNameByHost::GetInstance().Get(host, port);
 }
 
 END_NCBI_SCOPE
