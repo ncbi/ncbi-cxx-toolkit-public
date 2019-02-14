@@ -303,8 +303,9 @@ CFlatFileConfig::CFlatFileConfig(
     TMode mode,
     TStyle style,
     TFlags flags,
-    TView view) :
-    m_Format(format), m_Mode(mode), m_Style(style), m_Flags(flags), m_View(view)
+    TView view,
+    TPolicy policy) :
+    m_Format(format), m_Mode(mode), m_Style(style), m_Flags(flags), m_View(view), m_Policy(policy)
 {
     m_RefSeqConventions = false;
     SetGenbankBlocks(fGenbankBlocks_All);
@@ -519,6 +520,13 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
          arg_desc->SetConstraint("style",
                                  &(*new CArgAllow_Strings, "normal", "segment", "master", "contig"));
 
+         // policy (default: adaptive)
+         arg_desc->AddDefaultKey("policy", "Policy",
+                                 "Far fetch policy",
+                                 CArgDescriptions::eString, "adaptive");
+         arg_desc->SetConstraint("policy",
+                                 &(*new CArgAllow_Strings, "adaptive", "internal", "external", "exhaustive"));
+
          // flags (default: 0)
          arg_desc->AddDefaultKey("flags", "Flags",
                                  "Flags controlling flat file output.  The value is the bitwise OR (logical addition) of:\n"
@@ -717,6 +725,24 @@ CFlatFileConfig::EStyle x_GetStyle(const CArgs& args)
 }
 
 
+CFlatFileConfig::EPolicy x_GetPolicy(const CArgs& args)
+{
+    const string& Policy = args["policy"].AsString();
+    if ( Policy == "adaptive" ) {
+        return CFlatFileConfig::ePolicy_Adaptive;
+    } else if ( Policy == "internal" ) {
+        return CFlatFileConfig::ePolicy_Internal;
+    } else if ( Policy == "external" ) {
+        return CFlatFileConfig::ePolicy_External;
+    } else if ( Policy == "exhaustive" ) {
+        return CFlatFileConfig::ePolicy_Exhaustive;
+    }
+
+    // default
+    return CFlatFileConfig::ePolicy_Adaptive;
+}
+
+
 CFlatFileConfig::EFlags x_GetFlags(const CArgs& args)
 {
     int flags = args["flags"].AsInteger();
@@ -871,6 +897,7 @@ void CFlatFileConfig::FromArguments(const CArgs& args)
     CFlatFileConfig::EStyle         style          = x_GetStyle(args);
     CFlatFileConfig::EFlags         flags          = x_GetFlags(args);
     CFlatFileConfig::EView          view           = x_GetView(args);
+    CFlatFileConfig::EPolicy        policy          = x_GetPolicy(args);
     CFlatFileConfig::TGenbankBlocks genbank_blocks = x_GetGenbankBlocks(args);
     CFlatFileConfig::ECustom        custom         = x_GetCustom(args);
 
@@ -879,6 +906,7 @@ void CFlatFileConfig::FromArguments(const CArgs& args)
     SetStyle(style);
     SetFlags(flags);
     SetView(view);
+    SetPolicy(policy);
     m_fGenbankBlocks = genbank_blocks;
     m_BasicCleanup = args["cleanup"];
     SetCustom(custom);

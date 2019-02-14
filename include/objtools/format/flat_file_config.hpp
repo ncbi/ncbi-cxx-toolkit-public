@@ -208,6 +208,14 @@ public:
         fViewFirst        = 0x4
     };
 
+    enum EPolicy {
+        // far feature fetch policy
+        ePolicy_Adaptive = 0,
+        ePolicy_Internal,
+        ePolicy_External,
+        ePolicy_Exhaustive
+    };
+
     // These flags are used to select the GenBank sections to print or skip.
     enum FGenbankBlocks {
         // default is all sections
@@ -250,6 +258,7 @@ public:
     typedef EFormat         TFormat;
     typedef EMode           TMode;
     typedef EStyle          TStyle;
+    typedef EPolicy         TPolicy;
     typedef unsigned int    TFlags; // binary OR of "EFlags"
     typedef unsigned int    TView;
     typedef unsigned int    TGenbankBlocks;
@@ -373,7 +382,8 @@ public:
                     TMode   mode = eMode_GBench,
                     TStyle  style = eStyle_Normal,
                     TFlags  flags = 0,
-                    TView   view = fViewNucleotides);
+                    TView   view = fViewNucleotides,
+                    TPolicy policy = ePolicy_Adaptive);
 
     // destructor
     ~CFlatFileConfig(void);
@@ -469,6 +479,20 @@ public:
            m_View &= ~fViewFirst;
        }
     }
+
+    // -- Policy
+    // getters
+    const TPolicy& GetPolicy(void) const { return m_Policy; }
+    bool IsPolicyAdaptive (void) const { return m_Policy == ePolicy_Adaptive;  }
+    bool IsPolicyInternal(void) const { return m_Policy == ePolicy_Internal; }
+    bool IsPolicyExternal (void) const { return m_Policy == ePolicy_External;  }
+    bool IsPolicyExhaustive (void) const { return m_Policy == ePolicy_Exhaustive;  }
+    // setters
+    void SetPolicy(const TPolicy& Policy) { m_Policy = Policy;  }
+    void SetPolicyAdaptive (void) { m_Policy = ePolicy_Adaptive;  }
+    void SetPolicyInternal(void) { m_Policy = ePolicy_Internal; }
+    void SetPolicyExternal (void) { m_Policy = ePolicy_External;  }
+    void SetPolicyExhaustive (void) { m_Policy = ePolicy_Exhaustive;  }
 
     // -- Flags
     // getters
@@ -681,6 +705,7 @@ private:
     TStyle      m_Style;
     TFlags      m_Flags;  // custom flags
     TView       m_View;
+    TPolicy     m_Policy;
     bool        m_RefSeqConventions;
     TGenbankBlocks m_fGenbankBlocks;
     CRef<CGenbankBlockCallback> m_GenbankBlockCallback;

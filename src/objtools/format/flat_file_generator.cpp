@@ -310,6 +310,15 @@ void CFlatFileGenerator::Generate
                 if ( m_Ctx->GetConfig().GeneRNACDSFeatures() ) {
                     flags |= CSeqEntryIndex::fGeneRNACDSOnly;
                 }
+                if ( m_Ctx->GetConfig().IsPolicyInternal() ) {
+                    policy = CSeqEntryIndex::eInternal;
+                }
+                if ( m_Ctx->GetConfig().IsPolicyExternal() ) {
+                    policy = CSeqEntryIndex::eExternal;
+                }
+                if ( m_Ctx->GetConfig().IsPolicyExhaustive() ) {
+                    policy = CSeqEntryIndex::eExhaustive;
+                }
                 CRef<CSeqEntryIndex> idx(new CSeqEntryIndex( topseh, policy, flags ));
                 m_Ctx->SetSeqEntryIndex(idx);
                 if (idx->IsIndexFailure()) {
