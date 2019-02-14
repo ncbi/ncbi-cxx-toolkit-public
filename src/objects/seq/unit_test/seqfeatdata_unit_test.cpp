@@ -1794,9 +1794,13 @@ BOOST_AUTO_TEST_CASE(Test_GetBioProjectTypeAndLocation)
 
 BOOST_AUTO_TEST_CASE(Test_OrgRefLookup)
 {
-    string taxname = "Acacia koa";
+    string taxname = "Zea mays";
 
     CConstRef<COrg_ref> lookup = COrg_ref::TableLookup(taxname);
+    if (! lookup) {
+        BOOST_CHECK_EQUAL("", taxname);
+        return;
+    }
     BOOST_CHECK_EQUAL(lookup->GetTaxname(), taxname);
     BOOST_CHECK_EQUAL(lookup->GetOrgname().GetDiv(), "PLN");
 }
